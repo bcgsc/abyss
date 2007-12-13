@@ -1,6 +1,6 @@
 #include "ProofReader.h"
 #include "PhaseSpace.h"
-
+#include <fstream>
 
 int main(int argv, char** argc)
 {
@@ -8,104 +8,130 @@ int main(int argv, char** argc)
 	
 	if(argv < 2)
 	{
-		printf("usage: ProofReader <fasta file> <apb file>\n");
+		printf("usage: ProofReader <fasta file>\n");
 		exit(1);
 	}
 	
 	const char* fastaFile = argc[1];
 	
-	// apb is an annotated prb file, simply a PRB that has been processed with seperateReads.pl to split into two and give the same header as the fasta seq file
-	// the seq and apb file must be a line for line match or else really bad things will happen TODO: check for this
-	const char* apbFile = argc[2];
-	
 	// Read all the sequences into a vector
 	SequenceVector seqVector;
 	bool result = fileReader.readFasta(fastaFile, seqVector);
-	
-	// Read all the prb records into a vector
-	PrbVector prbVector;
-	prbVector.reserve(seqVector.size());
-	//result = fileReader.readAPB(apbFile, prbVector);
-	
+		
+	printf("done reading\n");
+		
+	// assume reads are all the same length
+	int readLen = seqVector.front().length();
+
 	// record all the multiplicity of sequences
 	SeqRecord multiplicity;
 	multiplicity.addMultipleSequences(seqVector);
 	
-	// map of original sequence -> corrected sequence
-	std::map<Sequence, Sequence> corrections;	
+	printf("done multiplicity load\n");
+	
+	// map of sequence->correction
+	std::map<Sequence, Sequence> corrections;
 
-	correctReads(seqVector, prbVector, multiplicity);
-	//fillHoles(seqVector, prbVector, multiplicity, corrections);
-	outputReadSet(seqVector, prbVector, multiplicity, corrections);
+	correctReads(multiplicity, corrections);
+	printf("done correction\n");
+	
+	outputCorrectedSequences(seqVector, multiplicity, corrections);
+	printf("done output\n");
+	
 	return 0;
 }
 
-// Correct the reads by finding low-quality sequences with multiplicity 1. If the read has a multiplicity 1 and a unique, non-singular correction, make the correction
+// Correct the reads by finding sequences with multiplicity 1. If the read has a multiplicity 1 and a unique, non-singular correction, make the correction
 // The correction is performed in place
-void correctReads(SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity)
+void correctReads(const SeqRecord& seqMult, std::map<Sequence, Sequence>& corrections)
 {
 	// perform the actual correction
-	int numElems = seqVector.size();
+	int numElems = seqMult.size();
 	int count = 0;
-	for(int i = 0; i < numElems; i++)
+	
+	for(ConstSeqRecordIter iter = seqMult.begin(); iter != seqMult.end(); iter++)
 	{
-		// get the sequence
-		const Sequence& seq = seqVector[i];
-		const ReadPrb& readPrb = prbVector[i];
-
-		if(multiplicity.getMultiplicity(seq) == 1)
+		if(count % 10000 == 0)
+		{
+			printf("correction: %d/%d\n", count, numElems);
+		}
+		
+		// is the read multiplicity 1?
+		if(iter->second == 1)
 		{
 			// this sequence is potentially correctable
-			seqVector[i] = correctSequence(seq, readPrb, multiplicity);			
+			Sequence corrResult = correctSequence(iter->first, seqMult);
+			if(corrResult != iter->first)
+			{
+				// sequence was corrected
+				corrections[iter->first] = corrResult;
+			}
 		}
+
+		count++;
+	}
+}
+
+// take in a sequence and a prb file and correct it if possible, otherwise return the original sequence
+Sequence correctSequence(const Sequence& seq, const SeqRecord& multiplicity)
+{
+	int seqLen = seq.length();
+	
+	int numCorrections = 0;
+	Sequence correction;
+	
+	SequenceVector perms;
+	makePermutations(seq, perms);
+	
+	for(SequenceVector::const_iterator iter = perms.begin(); iter != perms.end(); iter++)
+	{
+		if(multiplicity.getMultiplicity(*iter) > 1)
+		{
+			numCorrections++;
+			correction = *iter;
+		}
+	}
+	
+	if(numCorrections == 1)
+	{
+		return correction;
+	}
+	else
+	{
+		return seq;
 	}
 }
 
 // this function outputs the reads for assembly
-void outputReadSet(const SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections)
-{
-	std::map<Sequence, bool> seenSeq;
+void outputCorrectedSequences(const SequenceVector& seqVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections)
+{			
+	std::fstream outFasta;
+	outFasta.open("autocorrect.fa", std::ios::out);
 	
-	// assume reads are all the same length
-	int readLen = seqVector.front().length();
-		
-	// should cache this
-	PhaseSpace phase(readLen);
-	phase.addReads(seqVector);
-			
+	int outputCount = 0;
 	int count = 0;
+	int numReads = seqVector.size();
 	for(ConstSequenceVectorIterator iter = seqVector.begin(); iter != seqVector.end(); iter++)
 	{
 		Sequence s = *iter;
-		if(corrections.count(*iter) > 0)
+		if(corrections.find(s) != corrections.end())
 		{
-			s = corrections[*iter];
+			//sequence has correction
+			s = corrections.find(s)->second;
 		}
 		
-		bool hasParent = phase.hasParent(s);
-		bool hasChild = phase.hasChild(s);		
-		if(hasParent && hasChild && !seenSeq.count(s) > 0)
-		{
-			printf(">%d\n%s\n", count, s.c_str());
-			count++;
-			
-			seenSeq[s] = 1;
-		}
+		int mult = multiplicity.getMultiplicity(s);
+		
+		outFasta << ">" << outputCount << " " << mult << "\n" << s << "\n";
+		outputCount++;
 	}
+	outFasta.close();
 }
 
 // Look for high-quality sequences that prematurely end with no extension. Attempt to fill that hole with a low-quality sequence that can be permutated
-void fillHoles(const SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections)
+void fillHoles(const SequenceVector& seqVector, const SeqRecord& multiplicity, const PhaseSpace& phase, std::map<Sequence, Sequence>& corrections)
 {
 	assert(seqVector.size() > 0);
-	
-	// assume reads are all the same length
-	int readLen = seqVector.front().length();
-	
-	// Create the phase space
-	PhaseSpace phase(readLen);
-	
-	phase.addReads(seqVector);
 	
 	// perform the actual correction
 	int numElems = seqVector.size();
@@ -170,36 +196,6 @@ void fillHoles(const SequenceVector& seqVector, const PrbVector& prbVector, cons
 			}	
 		}	
 		count++;
-	}
-}
-
-// take in a sequence and a prb file and correct it if possible, otherwise return the original sequence
-Sequence correctSequence(const Sequence& seq, const ReadPrb& readPrb, const SeqRecord& multiplicity)
-{
-	int seqLen = seq.length();
-	
-	int numCorrections = 0;
-	Sequence correction;
-	
-	SequenceVector perms;
-	makePermutations(seq, perms);
-	
-	for(SequenceVector::const_iterator iter = perms.begin(); iter != perms.end(); iter++)
-	{
-		if(multiplicity.getMultiplicity(*iter) > 1)
-		{
-			numCorrections++;
-			correction = *iter;
-		}
-	}
-	
-	if(numCorrections == 1)
-	{
-		return correction;
-	}
-	else
-	{
-		return seq;
 	}
 }
 

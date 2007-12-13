@@ -18,6 +18,8 @@ void PathDriver::addSequence(const Sequence& seq, std::list<Path>& list, bool is
 
 void PathDriver::addPairsOfSequence(const Sequence& seq, int position)
 {
+	return;
+	
 	// get the pairs of this sequence and add them to the active nodes
 	if(m_pPairRecord->checkForPairs(seq))
 	{

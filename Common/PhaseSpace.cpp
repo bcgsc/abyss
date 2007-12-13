@@ -13,7 +13,7 @@ void PhaseSpace::addReads(const SequenceVector& vec)
 {
 	for(SequenceVector::const_iterator iter = vec.begin(); iter != vec.end(); iter++)
 	{
-		Coord4 c = SequenceToCoord4(*iter);
+		Coord4 c = SequenceToCoord4(*iter);	
 		addSequence(*iter, c);
 	}
 }
@@ -28,7 +28,7 @@ bool PhaseSpace::checkForSequence(const Sequence& seq) const
 {
 	// calculate the coordinate for the sequence
 	Coord4 c = PhaseSpace::SequenceToCoord4(seq);
-	
+
 	// check for the existance of the sequence
 	if(	m_phaseSpace[c.x][c.y][c.z][c.w].count(seq) > 0)
 	{
@@ -62,13 +62,13 @@ HitRecord PhaseSpace::calculateExtension(const Sequence& currSeq, extDirection d
 	return hitRecord;
 }
 
-bool PhaseSpace::hasParent(const Sequence& seq)
+bool PhaseSpace::hasParent(const Sequence& seq) const
 {
 	HitRecord parents = calculateExtension(seq, ANTISENSE);
 	return (parents.getNumHits() > 0);
 }
 
-bool PhaseSpace::hasChild(const Sequence& seq)
+bool PhaseSpace::hasChild(const Sequence& seq) const
 {
 	HitRecord children = calculateExtension(seq, SENSE);
 	return (children.getNumHits() > 0);
@@ -106,24 +106,55 @@ void PhaseSpace::printAll() const
 // Calculate the coordinate of this sequence
 Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 {
-
 	const int strLen = seq.length();
+	const char* data = seq.data();
 	
-	std::map<std::string, int> baseCount;
+	int vals[4][4];
+	memset(vals, 0, sizeof(int) * 4 * 4);
 	
-	std::string twomer;
+	const char* curr;	
 	for(int i = 0; i < strLen - 1; i++)
 	{
-		twomer = seq.substr(i, 2);
-		baseCount[twomer]++;
+		curr = data + i;
+		
+		// get first base index
+		int idx1 = base2Idx(*curr);
+		int idx2 = base2Idx(*(curr + 1));
+		
+		vals[idx1][idx2]++;
 	}
 	
 	Coord4 c;
 	
-	c.x = abs(  2*(baseCount["CC"] + baseCount["CA"] + baseCount["AA"] + baseCount["AC"] + baseCount["TC"] + baseCount["AG"]) + (baseCount["CG"] + baseCount["GC"] + baseCount["AT"] + baseCount["TA"]) - strLen + 1);
-	c.y = baseCount["CC"] + baseCount["GG"] + baseCount["AC"] + baseCount["GT"] + baseCount["CG"] + baseCount["GC"] + baseCount["AG"] + baseCount["CT"];
-	c.z = baseCount["CC"] + baseCount["GG"] + baseCount["CA"] + baseCount["TG"] + baseCount["CG"] + baseCount["GC"] + baseCount["TC"] + baseCount["GA"];
-	c.w = baseCount["CC"] + baseCount["GG"] + baseCount["AC"] + baseCount["GT"] + baseCount["CA"] + baseCount["TG"] + baseCount["AA"] + baseCount["TT"];
+	int idxA = base2Idx('A');
+	int idxC = base2Idx('C');
+	int idxG = base2Idx('G');
+	int idxT = base2Idx('T');
+	
+	c.x = abs(  2*(vals[idxC][idxC] + vals[idxC][idxA] + vals[idxA][idxA] + vals[idxA][idxC] + vals[idxT][idxC] + vals[idxA][idxG]) + (vals[idxC][idxG] + vals[idxG][idxC] + vals[idxA][idxT] + vals[idxT][idxA]) - strLen + 1);
+	c.y = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxA][idxC] + vals[idxG][idxT] + vals[idxC][idxG] + vals[idxG][idxC] + vals[idxA][idxG] + vals[idxC][idxT];
+	c.z = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxC][idxA] + vals[idxT][idxG] + vals[idxC][idxG] + vals[idxG][idxC] + vals[idxT][idxC] + vals[idxG][idxA];
+	c.w = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxA][idxC] + vals[idxG][idxT] + vals[idxC][idxA] + vals[idxT][idxG] + vals[idxA][idxA] + vals[idxT][idxT];
 	
 	return c;
+}
+
+int PhaseSpace::base2Idx(const char c)
+{
+	if(c == 'A')
+	{
+		return 0;
+	}
+	else if(c == 'C')
+	{
+		return 1;
+	}
+	else if(c == 'G')
+	{
+		return 2;
+	}
+	else if(c == 'T')
+	{
+		return 3;
+	}	
 }

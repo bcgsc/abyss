@@ -4,10 +4,17 @@
 #include "Reader.h"
 #include "SeqRecord.h"
 
-void correctReads(SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity);
-void fillHoles(const SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections);
+// Correct the read set using the map of sequences to their multiplicity
+// The corrected reads are output into the vector
+void correctReads(const SeqRecord& seqMult, std::map<Sequence, Sequence>& corrections);
 
-Sequence correctSequence(const Sequence& seq, const ReadPrb& readPrb, const SeqRecord& multiplicity);
-void outputReadSet(const SequenceVector& seqVector, const PrbVector& prbVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections);
+// Experimental correction that operates by filling holes where possible
+void fillHoles(const SequenceVector& seqVector, const SeqRecord& multiplicity, const PhaseSpace& phase, std::map<Sequence, Sequence>& corrections);
+
+// Correct a single sequence by examining the possibly permutations
+Sequence correctSequence(const Sequence& seq, const SeqRecord& multiplicity);
+
+// Output the reads
+void outputCorrectedSequences(const SequenceVector& seqVector, const SeqRecord& multiplicity, std::map<Sequence, Sequence>& corrections);
 
 #endif

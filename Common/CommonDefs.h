@@ -6,6 +6,18 @@
 #include "ReadPrb.h"
 #include "Prb.h"
 
+enum FileMode
+{
+	FM_READ,
+	FM_WRITE
+	
+};
+
+typedef std::vector<int> Count1D;
+typedef std::vector<Count1D> Count2D;
+typedef std::vector<Count2D> Count3D;
+typedef std::vector<Count3D> Count4D;
+
 const int NUM_BASES = 4;
 const char BASES[NUM_BASES] = {'A', 'C', 'G', 'T'};
 

@@ -2,13 +2,16 @@
 #define PHASESPACE_H
 
 #include <vector>
-#include <map>
+#include <ext/hash_map>
 #include <stdio.h>
 #include "Sequence.h"
 #include "HitRecord.h"
 #include "CommonDefs.h"
 
-typedef std::map<Sequence, int> BinItem;
+using namespace std;
+using namespace __gnu_cxx;
+
+typedef hash_map<Sequence, int> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
@@ -43,18 +46,21 @@ class PhaseSpace
 		HitRecord calculateExtension(const Sequence& currSeq, extDirection dir) const;		
 		
 		// does this sequence extend from a different node?
-		bool hasParent(const Sequence& seq);
+		bool hasParent(const Sequence& seq) const;
 
 		// does this sequence have an extension?
-		bool hasChild(const Sequence& seq);
+		bool hasChild(const Sequence& seq) const;
 		
 		// print everything
 		void printAll() const;
 		
 		// compute the coordinate of a sequence
 		static Coord4 SequenceToCoord4(const Sequence& seq);
-	
+
 	private:
+	
+		static inline int base2Idx(const char c); 
+		
 		PhaseSpace();
 		Bin4D m_phaseSpace;
 };

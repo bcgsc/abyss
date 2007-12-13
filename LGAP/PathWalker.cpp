@@ -32,7 +32,7 @@ int main(int argv, char** argc)
 	// Create the pair mapping from all the seqs
 	// pairs are assumed to be in contiguous entries in the array
 	PairRecord pairRecord(allSeqs);
-	
+
 	// Get the length of the reads
 	// The read length is assumed to be uniform for all input sequences
 	int readLength = allSeqs.front().length();
@@ -99,7 +99,7 @@ int main(int argv, char** argc)
 		
 		finalPathAntisense.print();
 		
-		if(finalPathAntisense.getSequence().length() > 100)
+		if(finalPathAntisense.getSequence().length() >= 100)
 		{
 			writer.writeContig(finalPathAntisense.getSequence().c_str());
 		}

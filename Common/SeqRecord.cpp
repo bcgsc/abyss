@@ -36,7 +36,7 @@ void SeqRecord::addSequence(const Sequence& seq)
 // return the multiplicity of a sequence	
 int SeqRecord::getMultiplicity(const Sequence& seq) const
 {
-	std::map<Sequence, int>::const_iterator iter = m_seqRecord.find(seq);
+	ConstSeqRecordIter iter = m_seqRecord.find(seq);
 	if(iter != m_seqRecord.end())
 	{
 		return iter->second;
