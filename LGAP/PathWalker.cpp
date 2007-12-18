@@ -20,8 +20,8 @@ int main(int argv, char** argc)
 	
 	const char* fastaFile = argc[1];
 	int insertLength = atoi(argc[2]);
-		
-	SequenceVector allSeqs;
+#if 0
+	PSequenceVector allSeqs;
 	bool result = fileReader.readFasta(fastaFile, allSeqs);
 	
 	if(result != true && allSeqs.size() > 0)
@@ -53,32 +53,7 @@ int main(int argv, char** argc)
 	
 	SeqRecord extensionRecord;
 	
-/*	for(const_seq_iter iter = allSeqs.begin(); iter != allSeqs.end(); iter++)
-	{
-		// is this sequence path of a contig already?
-		if(extensionRecord.getMultiplicity(*iter) > 0)
-		{
-			continue;	
-		}
-		
-		printf("starting from %s\n", iter->c_str());
-		
-		// Create driver
-		PathDriver driver(&phaseSpace, &pairRecord, &multiplicityRecord, &extensionRecord);
-		driver.seedSequence(*iter);
-		
-		// extend this path
-		Path finalPath = driver.run();
-		if(finalPath.getSequence().length() > 100)
-		{
-			writer.writeContig(finalPath.getSequence().c_str());
-		}	
-	}
-	*/
-	
-	
 	int totalSeqs = allSeqs.size() - 1;
-	
 	
 	for(int i = 0; i < allSeqs.size(); i++)
 	{
@@ -135,6 +110,6 @@ int main(int argv, char** argc)
 		}
 	}
 	*/
-	
+#endif	
 	return 0;
 }

@@ -6,10 +6,7 @@
 #include "Sequence.h"
 #include "PhaseSpace.h"
 #include "ReadPrb.h"
-
-const int MAX_FASTA_LINE = 1024;
-
-
+#include "PackedSeq.h"
 
 // Wrapper class to parse a variety of file types
 class Reader
@@ -19,8 +16,8 @@ class Reader
 	
 		Reader();
 	
-		// read in a fasta file and output the sequences into the map (id->sequence)
-		bool readFasta(const char* filename, SequenceVector& outSequences) const;
+		// read in a fasta file and output the packed sequences into a vector 
+		bool readFasta(const char* filename, PSequenceVector& outSequences) const;
 		
 		// read in an apb file and output the prb values into the map (id->prbvals)
 		bool readAPB(const char* filename, PrbVector& outPrbs) const;

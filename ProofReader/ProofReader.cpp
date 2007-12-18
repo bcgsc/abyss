@@ -13,7 +13,7 @@ int main(int argv, char** argc)
 	}
 	
 	const char* fastaFile = argc[1];
-	
+#if 0
 	// Read all the sequences into a vector
 	SequenceVector seqVector;
 	bool result = fileReader.readFasta(fastaFile, seqVector);
@@ -37,7 +37,7 @@ int main(int argv, char** argc)
 	
 	outputCorrectedSequences(seqVector, multiplicity, corrections);
 	printf("done output\n");
-	
+#endif
 	return 0;
 }
 

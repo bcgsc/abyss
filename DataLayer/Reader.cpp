@@ -9,7 +9,7 @@ Reader::Reader()
 	
 }
 
-bool Reader::readFasta(const char* filename, SequenceVector& outSequences) const
+bool Reader::readFasta(const char* filename, PSequenceVector& outSequences) const
 {
 	char headerBuffer[MAX_FASTA_LINE];
 	char seqBuffer[MAX_FASTA_LINE];
@@ -51,8 +51,8 @@ bool Reader::readFasta(const char* filename, SequenceVector& outSequences) const
 		// create the new sequence
 		std::string idStr(id);
 		Sequence newSeq(seqBuffer);
-		
-		outSequences.push_back(newSeq);
+		PackedSeq* pSeq = new PackedSeq(newSeq);
+		outSequences.push_back(pSeq);
 	}
 	
 	return true;
