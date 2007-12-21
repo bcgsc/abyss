@@ -10,7 +10,16 @@ class PackedSeq
 		// Constructor/Destructor
 		PackedSeq(const Sequence& seq);
 		PackedSeq(char* const pData, int length);
+		
+		// Copy constructor
+		PackedSeq(const PackedSeq& pseq);
+		
+		// Destructor, frees memory
 		~PackedSeq();
+		
+		// Operators
+		bool operator==(const PackedSeq& other) const;
+		bool operator!=(const PackedSeq& other) const;
 		
 		// Decode the sequence
 		Sequence decode() const;
@@ -24,11 +33,17 @@ class PackedSeq
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
 		
+		char getBase(int seqIndex) const;
+		
 		// Reverse and complement this sequence
 		void reverseComplement();
 		
-		// Extend the sequence left/right by the given base
-		// Returns a new sequence
+		// append/prepend
+		// these functions preserve the length of the sequence by shifting first before adding the new base
+		// the base shifted off is returned
+		char shiftAppend(char base);
+		char shiftPrepend(char base);
+
 		
 		// Print
 		void print() const;
@@ -46,6 +61,10 @@ class PackedSeq
 		// complement a base
 		inline int seqIndexToByteNumber(int seqIndex) const;
 		inline int seqIndexToBaseIndex(int seqIndex) const;
+		
+		// shift a single byte
+		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
+		char rightShiftByte(char* pSeq, int byteNum, int index, char base);
 		
 		
 

@@ -5,6 +5,7 @@
 #include <ext/hash_map>
 #include <stdio.h>
 #include "Sequence.h"
+#include "PackedSeq.h"
 #include "HitRecord.h"
 #include "CommonDefs.h"
 
@@ -56,6 +57,9 @@ class PhaseSpace
 		
 		// compute the coordinate of a sequence
 		static Coord4 SequenceToCoord4(const Sequence& seq);
+		
+		// compute the coordinate of a sequence
+		static Coord4 SequenceToCoord4(const PackedSeq* pSeq);		
 
 	private:
 	

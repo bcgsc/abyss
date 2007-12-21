@@ -139,6 +139,40 @@ Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 	return c;
 }
 
+// Calculate the coordinate of this sequence
+// TODO: this could be optimized
+Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq* pSeq)
+{
+	const int strLen = pSeq->getSequenceLength();
+	
+	int vals[4][4];
+	memset(vals, 0, sizeof(int) * 4 * 4);
+	
+	const char* curr;	
+	for(int i = 0; i < strLen - 1; i++)
+	{	
+		// get first base index
+		int idx1 = base2Idx(pSeq->getBase(i));
+		int idx2 = base2Idx(pSeq->getBase(i+1));
+		
+		vals[idx1][idx2]++;
+	}
+	
+	Coord4 c;
+	
+	int idxA = base2Idx('A');
+	int idxC = base2Idx('C');
+	int idxG = base2Idx('G');
+	int idxT = base2Idx('T');
+	
+	c.x = abs(  2*(vals[idxC][idxC] + vals[idxC][idxA] + vals[idxA][idxA] + vals[idxA][idxC] + vals[idxT][idxC] + vals[idxA][idxG]) + (vals[idxC][idxG] + vals[idxG][idxC] + vals[idxA][idxT] + vals[idxT][idxA]) - strLen + 1);
+	c.y = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxA][idxC] + vals[idxG][idxT] + vals[idxC][idxG] + vals[idxG][idxC] + vals[idxA][idxG] + vals[idxC][idxT];
+	c.z = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxC][idxA] + vals[idxT][idxG] + vals[idxC][idxG] + vals[idxG][idxC] + vals[idxT][idxC] + vals[idxG][idxA];
+	c.w = vals[idxC][idxC] + vals[idxG][idxG] + vals[idxA][idxC] + vals[idxG][idxT] + vals[idxC][idxA] + vals[idxT][idxG] + vals[idxA][idxA] + vals[idxT][idxT];
+	
+	return c;
+}
+
 int PhaseSpace::base2Idx(const char c)
 {
 	if(c == 'A')

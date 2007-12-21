@@ -32,11 +32,46 @@ PackedSeq::PackedSeq(const Sequence& seq)
 	
 	for(int i = 0; i < m_length; i++)
 	{
+
+		
 		int byteNumber = seqIndexToByteNumber(i);
 		int baseIndex = seqIndexToBaseIndex(i);
+		
+		//printf("setting %d = (%d %d) to %c\n", i, byteNumber, baseIndex, strData[i]);
 		setBase(m_pSeq, byteNumber, baseIndex, strData[i]);
 	}
 }
+
+PackedSeq::PackedSeq(const PackedSeq& pseq)
+{
+	// allocate memory and copy over the seq
+	m_length = pseq.m_length;
+	int numBytes = getNumCodingBytes(m_length);
+	m_pSeq = new char[numBytes];
+	
+	// copy the sequence over
+	memcpy(m_pSeq, pseq.m_pSeq, numBytes);
+}
+
+bool PackedSeq::operator==(const PackedSeq& other) const
+{
+	int numBytes = getNumCodingBytes(m_length);
+	return (memcmp(m_pSeq, other.m_pSeq, numBytes) == 0);
+}
+
+bool PackedSeq::operator!=(const PackedSeq& other) const
+{
+	return !(*this == other);
+}
+
+char PackedSeq::getBase(int seqIndex) const
+{
+	assert(seqIndex < m_length);
+	int byteNumber = seqIndexToByteNumber(seqIndex);
+	int baseIndex = seqIndexToBaseIndex(seqIndex);	
+	return getBase(m_pSeq, byteNumber, baseIndex);
+}
+
 
 int PackedSeq::getSequenceLength() const
 {
@@ -80,9 +115,8 @@ Sequence PackedSeq::decode() const
 	
 	for(int i = 0; i < m_length; i++)
 	{
-		int byteNumber = seqIndexToByteNumber(i);
-		int baseIndex = seqIndexToBaseIndex(i);
-		char base = getBase(m_pSeq, byteNumber, baseIndex);
+
+		char base = getBase(i);
 		//printf("decoding (%d %d) to %c\n", tripletNumber, baseIndex, base);
 		outstr.push_back(base);
 	}
@@ -120,6 +154,78 @@ void PackedSeq::reverseComplement()
 		// complement each byte
 		m_pSeq[i] = ~m_pSeq[i];
 	}
+}
+
+char PackedSeq::shiftAppend(char base)
+{
+	// shift the sequence left and append a new base to the end
+	int numBytes = getNumCodingBytes(m_length);
+
+	char shiftIn = base;
+	
+	// starting from the last byte, shift the new base in and get the captured base
+	for(int i = numBytes - 1; i >= 0; i--)
+	{
+		// calculate the index
+		// if this is the last byte, use 
+		int index = (i == (numBytes - 1)) ? seqIndexToBaseIndex(m_length - 1) : 3;
+		shiftIn = leftShiftByte(m_pSeq, i, index, shiftIn);
+	}
+	
+	// return the base shifted out of the first byte
+	return shiftIn;
+}
+
+char PackedSeq::shiftPrepend(char base)
+{
+	// shift the sequence right and append a new base to the end
+	int numBytes = getNumCodingBytes(m_length);
+
+	int lastBaseByte = seqIndexToByteNumber(m_length - 1);
+	int lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
+	
+	// save the last base (which gets shifted out)
+	char lastBase = getBase(m_pSeq, lastBaseByte, lastBaseIndex);
+	
+	char shiftIn = base;
+	
+	// starting from the last byte, shift the new base in and get the captured base
+	for(int i = 0; i <= numBytes - 1; i++)
+	{
+		// index is always zero
+		int index = 0;
+		shiftIn = rightShiftByte(m_pSeq, i, index, shiftIn);
+	}
+		
+	return lastBase;	
+}
+
+char PackedSeq::leftShiftByte(char* pSeq, int byteNum, int index, char base)
+{
+	// save the first base
+	char outBase = (pSeq[byteNum] >> 6) & 0x3;
+	
+	// shift left one position
+	pSeq[byteNum] <<= 2;
+	
+	// Set the new base
+	setBase(pSeq, byteNum, index, base);
+
+	return codeToBase(outBase);
+}
+
+char PackedSeq::rightShiftByte(char* pSeq, int byteNum, int index, char base)
+{
+	// save the last base
+	char outBase = pSeq[byteNum] & 0x3;
+	
+	// shift right one position
+	pSeq[byteNum] >>= 2;
+	
+	// add the new base
+	setBase(pSeq, byteNum, index, base);
+	
+	return codeToBase(outBase);
 }
 
 // Set/Get a particular base

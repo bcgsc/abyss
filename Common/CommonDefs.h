@@ -15,6 +15,12 @@ enum FileMode
 	
 };
 
+enum FileType
+{
+	FT_FASTA, //ascii fasta file
+	FT_SQB    //compressed sequence binary format
+};
+
 typedef std::vector<int> Count1D;
 typedef std::vector<Count1D> Count2D;
 typedef std::vector<Count2D> Count3D;

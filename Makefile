@@ -102,7 +102,7 @@ Common/PairRecord.o: Common/PairRecord.h Common/Sequence.h
 Common/PairRecord.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Common/PhaseSpace.o: Common/PhaseSpace.h Common/Sequence.h
 Common/PhaseSpace.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Common/PhaseSpace.o: Common/HitRecord.h
+Common/PhaseSpace.o: Common/PackedSeq.h Common/HitRecord.h
 Common/Prb.o: Common/Prb.h
 Common/ReadPrb.o: Common/ReadPrb.h Common/Prb.h
 Common/SeqRecord.o: Common/SeqRecord.h Common/CommonDefs.h Common/ReadPrb.h
@@ -111,41 +111,55 @@ Common/Sequence.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
 Common/Sequence.o: Common/Prb.h
 Common/SequencePair.o: Common/SequencePair.h Common/Sequence.h
 Common/SequencePair.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+DataLayer/FastaReader.o: DataLayer/FastaReader.h DataLayer/IFileReader.h
+DataLayer/FastaReader.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+DataLayer/FastaReader.o: Common/Sequence.h Common/PackedSeq.h
+DataLayer/FastaWriter.o: DataLayer/FastaWriter.h Common/CommonDefs.h
+DataLayer/FastaWriter.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/FastaWriter.o: Common/PackedSeq.h
 DataLayer/HDF5Interface.o: DataLayer/HDF5Interface.h Common/PhaseSpace.h
 DataLayer/HDF5Interface.o: Common/Sequence.h Common/CommonDefs.h
-DataLayer/HDF5Interface.o: Common/ReadPrb.h Common/Prb.h Common/HitRecord.h
+DataLayer/HDF5Interface.o: Common/ReadPrb.h Common/Prb.h Common/PackedSeq.h
+DataLayer/HDF5Interface.o: Common/HitRecord.h
 DataLayer/NetCDFInterface.o: DataLayer/NetCDFInterface.h Common/PhaseSpace.h
 DataLayer/NetCDFInterface.o: Common/Sequence.h Common/CommonDefs.h
-DataLayer/NetCDFInterface.o: Common/ReadPrb.h Common/Prb.h Common/HitRecord.h
-DataLayer/PartitionIO.o: DataLayer/PartitionIO.h Common/CommonDefs.h
-DataLayer/PartitionIO.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
-DataLayer/PartitionIO.o: Common/PackedSeq.h
+DataLayer/NetCDFInterface.o: Common/ReadPrb.h Common/Prb.h Common/PackedSeq.h
+DataLayer/NetCDFInterface.o: Common/HitRecord.h
+DataLayer/PackedSeqReader.o: DataLayer/PackedSeqReader.h
+DataLayer/PackedSeqReader.o: DataLayer/IFileReader.h Common/CommonDefs.h
+DataLayer/PackedSeqReader.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/PackedSeqReader.o: Common/PackedSeq.h
+DataLayer/PackedSeqWriter.o: DataLayer/PackedSeqWriter.h Common/CommonDefs.h
+DataLayer/PackedSeqWriter.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/PackedSeqWriter.o: Common/PackedSeq.h
 DataLayer/Reader.o: DataLayer/Reader.h Common/CommonDefs.h Common/ReadPrb.h
 DataLayer/Reader.o: Common/Prb.h Common/Sequence.h Common/PhaseSpace.h
-DataLayer/Reader.o: Common/HitRecord.h Common/PackedSeq.h
+DataLayer/Reader.o: Common/PackedSeq.h Common/HitRecord.h
 DataLayer/Writer.o: DataLayer/Writer.h
 LGAP/Path.o: LGAP/Path.h Common/Sequence.h Common/CommonDefs.h
 LGAP/Path.o: Common/ReadPrb.h Common/Prb.h Common/SeqRecord.h
 LGAP/PathDriver.o: LGAP/PathDriver.h LGAP/Path.h Common/Sequence.h
 LGAP/PathDriver.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 LGAP/PathDriver.o: Common/SeqRecord.h Common/HitRecord.h Common/PhaseSpace.h
-LGAP/PathDriver.o: Common/PairRecord.h DataLayer/Writer.h
+LGAP/PathDriver.o: Common/PackedSeq.h Common/PairRecord.h DataLayer/Writer.h
 LGAP/PathDriver.o: Common/SequencePair.h
 LGAP/PathWalker.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
 LGAP/PathWalker.o: Common/Prb.h DataLayer/Reader.h Common/PhaseSpace.h
-LGAP/PathWalker.o: Common/HitRecord.h Common/PackedSeq.h LGAP/PathDriver.h
+LGAP/PathWalker.o: Common/PackedSeq.h Common/HitRecord.h LGAP/PathDriver.h
 LGAP/PathWalker.o: LGAP/Path.h Common/SeqRecord.h Common/PairRecord.h
 LGAP/PathWalker.o: DataLayer/Writer.h Common/SequencePair.h
 ProofReader/ProofReader.o: ProofReader/ProofReader.h DataLayer/Reader.h
 ProofReader/ProofReader.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 ProofReader/ProofReader.o: Common/Sequence.h Common/PhaseSpace.h
-ProofReader/ProofReader.o: Common/HitRecord.h Common/PackedSeq.h
+ProofReader/ProofReader.o: Common/PackedSeq.h Common/HitRecord.h
 ProofReader/ProofReader.o: Common/SeqRecord.h
 Partition/Partition.o: DataLayer/Reader.h Common/CommonDefs.h
 Partition/Partition.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
-Partition/Partition.o: Common/PhaseSpace.h Common/HitRecord.h
-Partition/Partition.o: Common/PackedSeq.h Partition/Partition.h
-Partition/Partition.o: DataLayer/PartitionIO.h
+Partition/Partition.o: Common/PhaseSpace.h Common/PackedSeq.h
+Partition/Partition.o: Common/HitRecord.h Partition/Partition.h
+Partition/Partition.o: DataLayer/IFileReader.h DataLayer/FastaReader.h
+Partition/Partition.o: DataLayer/PackedSeqReader.h
+Partition/Partition.o: DataLayer/PackedSeqWriter.h
 Trimmer/Trimmer.o: Trimmer/Trimmer.h Common/PhaseSpace.h Common/Sequence.h
 Trimmer/Trimmer.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Trimmer/Trimmer.o: Common/HitRecord.h DataLayer/Reader.h Common/PackedSeq.h
+Trimmer/Trimmer.o: Common/PackedSeq.h Common/HitRecord.h DataLayer/Reader.h
