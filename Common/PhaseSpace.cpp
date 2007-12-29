@@ -1,11 +1,31 @@
 #include "PhaseSpace.h"
+#include "CommonUtils.h"
 
 
-// Set up the 4D vectors to all be the readlength
-PhaseSpace::PhaseSpace(int readLength) : m_phaseSpace(readLength, Bin3D(readLength, Bin2D(readLength, Bin1D(readLength))))
+// Set up the 4D space to be the size of the slice passed in
+PhaseSpace::PhaseSpace(int readLength, Coord4 startCoord, Coord4 size)
 {
+	m_start = startCoord;
+	m_size = size;
+	m_readLength = readLength;
 	
-	
+	// ensure the passed in size is a hypercube, ie each dimension is equal in length
+	if(size.x == size.y && size.x == size.z && size.x == size.w)
+	{ 
+		m_pPhaseSpace = new Bin4D(size.x, Bin3D(size.x, Bin2D(size.x, Bin1D(size.x))));
+	}
+	else
+	{
+		printf("partition must be equal in each dimension\n");
+		assert(false);
+	}
+}
+
+// Destructor, free the memory
+PhaseSpace::~PhaseSpace()
+{
+	delete m_pPhaseSpace;
+	m_pPhaseSpace = 0;
 }
 
 // Add a vector of reads to the phase space
@@ -20,7 +40,19 @@ void PhaseSpace::addReads(const SequenceVector& vec)
 // Add a single read to the phasespace
 void PhaseSpace::addSequence(const Sequence& seq, const Coord4& c)
 {
-	m_phaseSpace[c.x][c.y][c.z][c.w][seq]++;
+	// Bounds check
+	if(c.x >= m_start.x && c.x <= m_start.x + m_size.x
+	&& c.y >= m_start.y && c.y <= m_start.y + m_size.y
+	&& c.z >= m_start.z && c.z <= m_start.z + m_size.z
+	&& c.w >= m_start.w && c.w <= m_start.w + m_size.w)
+	{
+		(*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq]++;
+	}
+	else
+	{
+		printf("sequence is out of partition!\n");
+		assert(false);
+	}
 }
 
 // check if a sequence exists in the phase space
@@ -30,7 +62,7 @@ bool PhaseSpace::checkForSequence(const Sequence& seq) const
 	Coord4 c = PhaseSpace::SequenceToCoord4(seq);
 
 	// check for the existance of the sequence
-	if(	m_phaseSpace[c.x][c.y][c.z][c.w].count(seq) > 0)
+	if(	(*m_pPhaseSpace)[c.x][c.y][c.z][c.w].count(seq) > 0)
 	{
 		return true;
 	}
@@ -77,14 +109,14 @@ bool PhaseSpace::hasChild(const Sequence& seq) const
 // get the multiplicity of the sequence
 int PhaseSpace::getMultiplicity(const Sequence& seq, const Coord4& c)
 {
-	return m_phaseSpace[c.x][c.y][c.z][c.w][seq];
+	return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
 }
 
 // print every read's multiplicity
 void PhaseSpace::printAll() const
 {
 	// hideous nested loop
-	for(Bin4D::const_iterator iter4 = m_phaseSpace.begin(); iter4 != m_phaseSpace.end(); iter4++)
+	for(Bin4D::const_iterator iter4 = m_pPhaseSpace->begin(); iter4 != m_pPhaseSpace->end(); iter4++)
 	{
 		for(Bin3D::const_iterator iter3 = iter4->begin(); iter3 != iter4->end(); iter3++)
 		{

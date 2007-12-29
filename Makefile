@@ -94,6 +94,7 @@ clean:
 
 # DO NOT DELETE
 
+Common/Config.o: Common/Config.h
 Common/HitRecord.o: Common/HitRecord.h Common/Sequence.h Common/CommonDefs.h
 Common/HitRecord.o: Common/ReadPrb.h Common/Prb.h
 Common/PackedSeq.o: Common/PackedSeq.h Common/Sequence.h Common/CommonDefs.h
@@ -159,7 +160,7 @@ Partition/Partition.o: Common/PhaseSpace.h Common/PackedSeq.h
 Partition/Partition.o: Common/HitRecord.h Partition/Partition.h
 Partition/Partition.o: DataLayer/IFileReader.h DataLayer/FastaReader.h
 Partition/Partition.o: DataLayer/PackedSeqReader.h
-Partition/Partition.o: DataLayer/PackedSeqWriter.h
+Partition/Partition.o: DataLayer/PackedSeqWriter.h Common/Config.h
 Trimmer/Trimmer.o: Trimmer/Trimmer.h Common/PhaseSpace.h Common/Sequence.h
 Trimmer/Trimmer.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Trimmer/Trimmer.o: Common/PackedSeq.h Common/HitRecord.h DataLayer/Reader.h

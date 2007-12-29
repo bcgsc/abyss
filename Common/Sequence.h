@@ -44,15 +44,4 @@ void seqAppend(Sequence& s, const std::string& str);
 void seqAppendBase(Sequence& s, const char b);
 void seqPrependBase(Sequence& s, const char b);
 
-// make a one base extension of this sequence
-void makeExtensions(const Sequence& seq, extDirection dir, SequenceVector& outVector);
-
-// make all the one base permutations of this sequence
-void makePermutations(const Sequence& seq, SequenceVector& outVector);
-
-extDirection oppositeDirection(extDirection dir);
-
-// calculate the information entropy of the string
-double entropy(const Sequence& s);
-
 #endif

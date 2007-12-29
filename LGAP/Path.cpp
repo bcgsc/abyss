@@ -1,4 +1,5 @@
 #include "Path.h"
+#include "CommonUtils.h"
 
 Path::Path(Sequence seedSeq, extDirection dir) : m_seed(seedSeq), m_growDir(dir), m_length(0)
 {	

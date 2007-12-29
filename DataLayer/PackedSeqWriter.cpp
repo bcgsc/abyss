@@ -3,8 +3,8 @@
 PackedSeqWriter::PackedSeqWriter(const char* filename, int sequenceLength)
 {	
 	m_fileHandle.open(filename, std::ios::out | std::ios::binary);
-	assert(m_fileHandle.is_open());
-	
+	printf("opening %s\n", filename);
+	assert(m_fileHandle.is_open());	
 	// write out the length of the sequences
 	m_fileHandle << sequenceLength;
 	

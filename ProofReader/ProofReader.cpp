@@ -1,5 +1,7 @@
 #include "ProofReader.h"
 #include "PhaseSpace.h"
+#include "CommonUtils.h"
+
 #include <fstream>
 
 int main(int argv, char** argc)

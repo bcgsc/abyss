@@ -18,6 +18,13 @@ typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
 typedef std::vector<Bin3D> Bin4D;
 
+enum PointClassification
+{
+	PC_BORDER,
+	PC_INTERNAL,
+	PC_INVALID
+};
+
 struct Coord4
 {
 	int x;
@@ -29,7 +36,12 @@ struct Coord4
 class PhaseSpace
 {
 	public:
-		PhaseSpace(int readLength);
+	
+		//Allocates phase space
+		PhaseSpace(int readLength, Coord4 startCoord, Coord4 size);
+		
+		//Deallocates phase space
+		~PhaseSpace();
 		
 		// add many sequences
 		void addReads(const SequenceVector& vec);
@@ -66,7 +78,11 @@ class PhaseSpace
 		static inline int base2Idx(const char c); 
 		
 		PhaseSpace();
-		Bin4D m_phaseSpace;
+		
+		Bin4D* m_pPhaseSpace;
+		Coord4 m_start;
+		Coord4 m_size;
+		int m_readLength;
 };
 
 #endif
