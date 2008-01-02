@@ -48,6 +48,7 @@ PackedSeq::PackedSeq(const PackedSeq& pseq)
 	m_length = pseq.m_length;
 	int numBytes = getNumCodingBytes(m_length);
 	m_pSeq = new char[numBytes];
+	memset(m_pSeq, 0, numBytes);	
 	
 	// copy the sequence over
 	memcpy(m_pSeq, pseq.m_pSeq, numBytes);
@@ -62,6 +63,12 @@ bool PackedSeq::operator==(const PackedSeq& other) const
 bool PackedSeq::operator!=(const PackedSeq& other) const
 {
 	return !(*this == other);
+}
+
+bool PackedSeq::operator<(const PackedSeq& other) const
+{
+	int numBytes = getNumCodingBytes(m_length);
+	return (memcmp(m_pSeq, other.m_pSeq, numBytes) < 0);
 }
 
 char PackedSeq::getBase(int seqIndex) const

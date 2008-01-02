@@ -2,8 +2,9 @@
 #include "Config.h"
 
 #define PARTITION_DIR_NAME "partition_dir"
-#define PARTITION_STEP "partition_step"
+#define UNIT_SIZE "unit_size"
 #define SEQUENCE_LENGTH "sequence_length"
+#define SEQUENCE_FILENAME "sequence_filename"
 
 Config::Config() : m_partitionStep(-1), m_sequenceLength(-1)
 {
@@ -32,13 +33,17 @@ void Config::readConfig(const std::string filename)
 		{
 			m_rootDataDirectory = value;
 		}
-		else if(name == PARTITION_STEP)
+		else if(name == UNIT_SIZE)
 		{
-			m_partitionStep = atoi(value.c_str());
+			m_unitSize = atoi(value.c_str());
 		}
 		else if(name == SEQUENCE_LENGTH)
 		{
 			m_sequenceLength = atoi(value.c_str());
+		}
+		else if(name == SEQUENCE_FILENAME)
+		{
+			m_sequenceFilename = value;
 		}
 		else
 		{
@@ -60,6 +65,11 @@ void Config::parseNameValue(const char* buffer, std::string& name, std::string& 
 std::string Config::getRootDataDir() const
 {
 	return m_rootDataDirectory;
+}
+
+std::string Config::getSequenceFilename() const
+{
+	return m_sequenceFilename;
 }
 
 int Config::getSequenceLength() const

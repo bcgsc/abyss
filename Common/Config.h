@@ -10,14 +10,16 @@ class Config
 		void readConfig(const std::string filename);
 		
 		std::string getRootDataDir() const;
+		std::string getSequenceFilename() const;
 		int getSequenceLength() const;
-		int getPartitionStep() const;
+		int getUnitSize() const;
 	
 	private:		
 		void parseNameValue(const char* buffer, std::string& name, std::string& value);
 		
 		std::string m_rootDataDirectory;
-		int m_partitionStep;
+		std::string m_sequenceFilename;
+		int m_unitSize;
 		int m_sequenceLength;
 };
 

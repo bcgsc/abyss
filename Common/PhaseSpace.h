@@ -10,9 +10,8 @@
 #include "CommonDefs.h"
 
 using namespace std;
-using namespace __gnu_cxx;
 
-typedef hash_map<Sequence, int> BinItem;
+typedef map<PackedSeq, int> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
@@ -46,32 +45,35 @@ class PhaseSpace
 		// add many sequences
 		void addReads(const SequenceVector& vec);
 		
-		// add a sequence to a coordinate
-		void addSequence(const Sequence& seq, const Coord4& c);
+		// add a single sequence
+		void addSequence(const PackedSeq& seq);
 		
 		// get the multiplicity of the sequence
-		int getMultiplicity(const Sequence& seq, const Coord4& c);
+		int getMultiplicity(const PackedSeq& seq);
 		
 		// check if a sequence exists
-		bool checkForSequence(const Sequence& seq) const;
+		bool checkForSequence(const PackedSeq& seq) const;
 		
 		// calculate whether this sequence has an extension in the phase space
-		HitRecord calculateExtension(const Sequence& currSeq, extDirection dir) const;		
+		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;		
 		
 		// does this sequence extend from a different node?
-		bool hasParent(const Sequence& seq) const;
+		bool hasParent(const PackedSeq& seq) const;
 
 		// does this sequence have an extension?
-		bool hasChild(const Sequence& seq) const;
+		bool hasChild(const PackedSeq& seq) const;
 		
 		// print everything
 		void printAll() const;
+		
+		// Compute the transformed (phase space) coordinate of this sequence
+		Coord4 SequenceToTransformCoord4(const PackedSeq& seq) const;
 		
 		// compute the coordinate of a sequence
 		static Coord4 SequenceToCoord4(const Sequence& seq);
 		
 		// compute the coordinate of a sequence
-		static Coord4 SequenceToCoord4(const PackedSeq* pSeq);		
+		static Coord4 SequenceToCoord4(const PackedSeq& pSeq);
 
 	private:
 	

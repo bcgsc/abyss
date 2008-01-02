@@ -20,6 +20,7 @@ class PackedSeq
 		// Operators
 		bool operator==(const PackedSeq& other) const;
 		bool operator!=(const PackedSeq& other) const;
+		bool operator<(const PackedSeq& other) const;
 		
 		// Decode the sequence
 		Sequence decode() const;

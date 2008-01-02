@@ -177,7 +177,7 @@ bool Reader::readPhaseSpaceBinFile(const char* filename, PhaseSpace& phaseSpace)
 
 		// add the new sequence at the correct coordinate
 		Sequence newSeq(seqBuffer);
-		phaseSpace.addSequence(newSeq, c);
+		phaseSpace.addSequence(newSeq);
 	}	
 	
 	return true;

@@ -32,34 +32,38 @@ PhaseSpace::~PhaseSpace()
 void PhaseSpace::addReads(const SequenceVector& vec)
 {
 	for(SequenceVector::const_iterator iter = vec.begin(); iter != vec.end(); iter++)
-	{
-		Coord4 c = SequenceToCoord4(*iter);	
-		addSequence(*iter, c);
+	{	
+		PackedSeq s(*iter);
+		addSequence(s);
 	}
 }
+
 // Add a single read to the phasespace
-void PhaseSpace::addSequence(const Sequence& seq, const Coord4& c)
+void PhaseSpace::addSequence(const PackedSeq& seq)
 {
+	Coord4 c = SequenceToTransformCoord4(seq);
 	// Bounds check
-	if(c.x >= m_start.x && c.x <= m_start.x + m_size.x
-	&& c.y >= m_start.y && c.y <= m_start.y + m_size.y
-	&& c.z >= m_start.z && c.z <= m_start.z + m_size.z
-	&& c.w >= m_start.w && c.w <= m_start.w + m_size.w)
-	{
+	if(c.x >= 0 && c.x < m_size.x
+	&& c.y >= 0 && c.y < m_size.y
+	&& c.z >= 0 && c.z < m_size.z
+	&& c.w >= 0 && c.w < m_size.w)
+	{		
 		(*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq]++;
 	}
+#if 0
 	else
 	{
 		printf("sequence is out of partition!\n");
 		assert(false);
 	}
+#endif
 }
 
 // check if a sequence exists in the phase space
-bool PhaseSpace::checkForSequence(const Sequence& seq) const
+bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
 	// calculate the coordinate for the sequence
-	Coord4 c = PhaseSpace::SequenceToCoord4(seq);
+	Coord4 c = PhaseSpace::SequenceToTransformCoord4(seq);
 
 	// check for the existance of the sequence
 	if(	(*m_pPhaseSpace)[c.x][c.y][c.z][c.w].count(seq) > 0)
@@ -74,8 +78,11 @@ bool PhaseSpace::checkForSequence(const Sequence& seq) const
 }
 
 // Calculate the extension of this sequence in the direction given
-HitRecord PhaseSpace::calculateExtension(const Sequence& currSeq, extDirection dir) const
+HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
 {
+	// hey implement this function
+	assert(false);
+#if 0
 	// Create the extensions for this read
 	SequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);
@@ -92,23 +99,25 @@ HitRecord PhaseSpace::calculateExtension(const Sequence& currSeq, extDirection d
 	}
 	
 	return hitRecord;
+#endif
 }
 
-bool PhaseSpace::hasParent(const Sequence& seq) const
+bool PhaseSpace::hasParent(const PackedSeq& seq) const
 {
 	HitRecord parents = calculateExtension(seq, ANTISENSE);
 	return (parents.getNumHits() > 0);
 }
 
-bool PhaseSpace::hasChild(const Sequence& seq) const
+bool PhaseSpace::hasChild(const PackedSeq& seq) const
 {
 	HitRecord children = calculateExtension(seq, SENSE);
 	return (children.getNumHits() > 0);
 }
 
 // get the multiplicity of the sequence
-int PhaseSpace::getMultiplicity(const Sequence& seq, const Coord4& c)
+int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
+	Coord4 c = PhaseSpace::SequenceToTransformCoord4(seq);
 	return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
 }
 
@@ -117,21 +126,13 @@ void PhaseSpace::printAll() const
 {
 	// hideous nested loop
 	for(Bin4D::const_iterator iter4 = m_pPhaseSpace->begin(); iter4 != m_pPhaseSpace->end(); iter4++)
-	{
 		for(Bin3D::const_iterator iter3 = iter4->begin(); iter3 != iter4->end(); iter3++)
-		{
 			for(Bin2D::const_iterator iter2 = iter3->begin(); iter2 != iter3->end(); iter2++)
-			{	
 				for(Bin1D::const_iterator iter1 = iter2->begin(); iter1 != iter2->end(); iter1++)
-				{	
 					for(BinItem::const_iterator itemIter = iter1->begin(); itemIter != iter1->end(); itemIter++)
 					{
-						printf("%d %s\n", itemIter->second, itemIter->first.c_str());	
+						printf("%d %s\n", itemIter->second, itemIter->first.decode().c_str());	
 					}
-				}		
-			}
-		}
-	} 	
 }
 
 
@@ -171,21 +172,32 @@ Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 	return c;
 }
 
+Coord4 PhaseSpace::SequenceToTransformCoord4(const PackedSeq& seq) const
+{
+	Coord4 c = SequenceToCoord4(seq);
+	
+	// transform the coordinate by the start
+	c.x -= m_start.x;	
+	c.y -= m_start.y;	
+	c.z -= m_start.z;	
+	c.w -= m_start.w;				
+	return c;
+}
+
 // Calculate the coordinate of this sequence
 // TODO: this could be optimized
-Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq* pSeq)
+Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq& pSeq)
 {
-	const int strLen = pSeq->getSequenceLength();
+	const int strLen = pSeq.getSequenceLength();
 	
 	int vals[4][4];
 	memset(vals, 0, sizeof(int) * 4 * 4);
 	
-	const char* curr;	
 	for(int i = 0; i < strLen - 1; i++)
 	{	
 		// get first base index
-		int idx1 = base2Idx(pSeq->getBase(i));
-		int idx2 = base2Idx(pSeq->getBase(i+1));
+		int idx1 = base2Idx(pSeq.getBase(i));
+		int idx2 = base2Idx(pSeq.getBase(i+1));
 		
 		vals[idx1][idx2]++;
 	}
@@ -222,5 +234,8 @@ int PhaseSpace::base2Idx(const char c)
 	else if(c == 'T')
 	{
 		return 3;
-	}	
+	}
+	assert(false);
+	return -1;
 }
+
