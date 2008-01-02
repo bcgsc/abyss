@@ -52,7 +52,7 @@ PhaseSpace* PartitionLoader::CreateAndLoadPhaseSpace(Coord4 start, Coord4 size)
 // Function that computes the correct sequence file to load from a coord4 position
 std::string PartitionLoader::Coord4ToPartitionFile(const Coord4& pos) const
 {
-	int stride = m_pConfig->getPartitionStep();
+	int stride = m_pConfig->getUnitSize();
 	int x = (pos.x / stride) * stride;
 	int y = (pos.y / stride) * stride;
 	int z = (pos.z / stride) * stride;

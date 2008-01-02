@@ -6,7 +6,7 @@
 #define SEQUENCE_LENGTH "sequence_length"
 #define SEQUENCE_FILENAME "sequence_filename"
 
-Config::Config() : m_partitionStep(-1), m_sequenceLength(-1)
+Config::Config() : m_unitSize(-1), m_sequenceLength(-1)
 {
 	
 }
@@ -77,7 +77,7 @@ int Config::getSequenceLength() const
 	return m_sequenceLength;
 }
 
-int Config::getPartitionStep() const
+int Config::getUnitSize() const
 {
-	return m_partitionStep;
+	return m_unitSize;
 }
