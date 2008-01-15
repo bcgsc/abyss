@@ -6,6 +6,12 @@
 
 int main(int argv, char** argc)
 {
+	
+}
+
+#if 0
+int main(int argv, char** argc)
+{
 	Reader fileReader;
 	
 	if(argv < 2)
@@ -134,7 +140,8 @@ void outputCorrectedSequences(const SequenceVector& seqVector, const SeqRecord& 
 void fillHoles(const SequenceVector& seqVector, const SeqRecord& multiplicity, const PhaseSpace& phase, std::map<Sequence, Sequence>& corrections)
 {
 	assert(seqVector.size() > 0);
-	
+	assert(false);
+#if 0	
 	// perform the actual correction
 	int numElems = seqVector.size();
 	
@@ -176,10 +183,10 @@ void fillHoles(const SequenceVector& seqVector, const SeqRecord& multiplicity, c
 				}
 				
 				// create the possible extensions
-				SequenceVector extensions;
+				PSequenceVector extensions;
 				makeExtensions(seq, dir, extensions);
 				
-				for(ConstSequenceVectorIterator iter = extensions.begin(); iter != extensions.end(); iter++)
+				for(ConstPSequenceVectorIterator iter = extensions.begin(); iter != extensions.end(); iter++)
 				{
 					SequenceVector permutations;
 					makePermutations(*iter, permutations);
@@ -199,5 +206,6 @@ void fillHoles(const SequenceVector& seqVector, const SeqRecord& multiplicity, c
 		}	
 		count++;
 	}
+#endif	
 }
-
+#endif

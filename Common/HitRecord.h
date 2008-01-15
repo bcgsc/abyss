@@ -1,8 +1,8 @@
 #ifndef HITRECORD_H
 #define HITRECORD_H
 
-#include <vector>
-#include "Sequence.h"
+#include "CommonDefs.h"
+#include "PackedSeq.h"
 
 class HitRecord
 {
@@ -10,19 +10,19 @@ class HitRecord
 		HitRecord();
 		
 		// add a hit to the record
-		void addHit(const Sequence& seq);
+		void addHit(const PackedSeq& seq);
 		
 		// get the number of hits
 		int getNumHits() const;
 		
 		// get a specific hit
-		Sequence getHit(int num) const;
+		PackedSeq getHit(int num) const;
 		
 		// get the first  hit
-		Sequence getFirstHit() const;
+		PackedSeq getFirstHit() const;
 		
 	private:
-		std::vector<Sequence> m_hits;
+		PSequenceVector m_hits;
 	
 };
 

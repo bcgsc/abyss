@@ -1,11 +1,11 @@
 #include "PairRecord.h"
 
-PairRecord::PairRecord(const std::vector<Sequence>& allseqs)
+PairRecord::PairRecord(const PSequenceVector& allseqs)
 {
-	const_seq_iter pairIter;
+	ConstPSequenceVectorIterator pairIter;
 	return;
 	// the pairs are located sequentially in the vector
-	for(const_seq_iter iter = allseqs.begin(); iter != allseqs.end(); iter += 2)
+	for(ConstPSequenceVectorIterator iter = allseqs.begin(); iter != allseqs.end(); iter += 2)
 	{
 		pairIter = iter + 1;
 		m_pairLookup[*iter].push_back(*pairIter);
@@ -14,7 +14,7 @@ PairRecord::PairRecord(const std::vector<Sequence>& allseqs)
 	
 }
 
-bool PairRecord::checkForPairs(const Sequence& seq) const
+bool PairRecord::checkForPairs(const PackedSeq& seq) const
 {
 	if(m_pairLookup.count(seq) > 0)
 	{
@@ -26,7 +26,7 @@ bool PairRecord::checkForPairs(const Sequence& seq) const
 	}
 }
 
-const std::vector<Sequence>& PairRecord::getPairs(const Sequence& seq) const
+const PSequenceVector& PairRecord::getPairs(const PackedSeq& seq) const
 {
 	// for any sequence, there HAS to be some pairs
 	assert(m_pairLookup.count(seq) > 0);

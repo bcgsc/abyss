@@ -1,12 +1,12 @@
 #include "PathDriver.h"
 
-PathDriver::PathDriver(const Sequence& seq, extDirection dir, const PhaseSpace* pPS, const PairRecord* pPR, const SeqRecord* pMR, SeqRecord* pER) : m_seedPath(seq, dir), m_pPhaseSpace(pPS), m_pPairRecord(pPR), m_pMultiplicityRecord(pMR), m_pExtendedSeqRecord(pER)
+PathDriver::PathDriver(const PackedSeq& seq, extDirection dir, const PhaseSpace* pPS, const PairRecord* pPR, const SeqRecord* pMR, SeqRecord* pER) : m_seedPath(seq, dir), m_pPhaseSpace(pPS), m_pPairRecord(pPR), m_pMultiplicityRecord(pMR), m_pExtendedSeqRecord(pER)
 {
 	m_activePaths.push_back(m_seedPath);
 	m_pExtendedSeqRecord->addSequence(seq);
 }
 
-void PathDriver::addSequence(const Sequence& seq, std::list<Path>& list, bool isSeed)
+void PathDriver::addSequence(const PackedSeq& seq, std::list<Path>& list, bool isSeed)
 {
 
 	Path p(seq, m_seedPath.getGrowthDirection());
@@ -16,15 +16,15 @@ void PathDriver::addSequence(const Sequence& seq, std::list<Path>& list, bool is
 	//printf("adding %s\n", seq.c_str());
 }
 
-void PathDriver::addPairsOfSequence(const Sequence& seq, int position)
+void PathDriver::addPairsOfSequence(const PackedSeq& seq, int position)
 {
 	return;
 	
 	// get the pairs of this sequence and add them to the active nodes
 	if(m_pPairRecord->checkForPairs(seq))
 	{
-		const std::vector<Sequence> pairs = m_pPairRecord->getPairs(seq);
-		for(const_seq_iter iter = pairs.begin(); iter != pairs.end(); iter++)
+		const PSequenceVector pairs = m_pPairRecord->getPairs(seq);
+		for(ConstPSequenceVectorIterator iter = pairs.begin(); iter != pairs.end(); iter++)
 		{
 			SequencePair p(*iter, position + 200);
 			m_validPairs.push_back(p);
@@ -178,7 +178,7 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 	// conform the valid pairs into a hash for constant time access
 	
 	// cache this so it doesnt happen every time!
-	std::map<Sequence, bool> pairHash;
+	std::map<PackedSeq, bool> pairHash;
 	for(const_seqPair_iter iter = m_validPairs.begin(); iter != m_validPairs.end(); iter++)
 	{
 		//printf("adding %s and %s\n", iter->getSequence().c_str(), reverseComplement(iter->getSequence()).c_str());
@@ -230,7 +230,7 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 				}
 				else
 				{
-					printf("branch not supported %s\n", hr.getHit(i).c_str());	
+					printf("branch not supported %s\n", hr.getHit(i).decode().c_str());	
 				}
 			}
 			
@@ -259,7 +259,7 @@ bool PathDriver::extendPath(Path& path, bool allowInBranch)
 	
 	if(hr.getNumHits() == 0)
 	{
-		printf("noext of %s\n", path.getCurrentNode().c_str());
+		printf("noext of %s\n", path.getCurrentNode().decode().c_str());
 		
 		// no ext
 		return false;
@@ -272,7 +272,7 @@ bool PathDriver::extendPath(Path& path, bool allowInBranch)
 	}
 	else
 	{
-		printf("ambiext at %d %s\n", path.getPathLength(), path.getCurrentNode().c_str());
+		printf("ambiext at %d %s\n", path.getPathLength(), path.getCurrentNode().decode().c_str());
 		return false;	
 	}
 }
@@ -368,8 +368,8 @@ SequenceAdjacency PathDriver::checkPathAdjacency(const Path& path1, const Path& 
 	SequenceAdjacency rc = SA_NONE;
 	
 	// check the sense direction of path 1 against antisense of path2
-	const Sequence& sSeq1 = path1.getCurrentNode();
-	const Sequence& sSeq2 = path2.getCurrentNode();	
+	const PackedSeq& sSeq1 = path1.getCurrentNode();
+	const PackedSeq& sSeq2 = path2.getCurrentNode();	
 	
 	if(checkSequenceAdjacency(sSeq1, sSeq1, SENSE))
 	{
@@ -384,8 +384,10 @@ SequenceAdjacency PathDriver::checkPathAdjacency(const Path& path1, const Path& 
 	return rc;
 }
 
-bool PathDriver::checkSequenceAdjacency(const Sequence& seq1, const Sequence& seq2, extDirection dir) const
+bool PathDriver::checkSequenceAdjacency(const PackedSeq& seq1, const PackedSeq& seq2, extDirection dir) const
 {
+	assert(false);
+#if 0
 	// chop the sequence by 1 base in the direction of the extension
 	int commonLen = seq1.length() - 1;
 	
@@ -411,6 +413,7 @@ bool PathDriver::checkSequenceAdjacency(const Sequence& seq1, const Sequence& se
 	{
 		return false;
 	}
+#endif
 }
 
 void PathDriver::printAll(Writer& writer) const

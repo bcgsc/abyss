@@ -16,8 +16,10 @@ LGAP_DIR = LGAP
 PROOFREAD_DIR = ProofReader
 PARTITION_DIR = Partition
 TRIMMER_DIR = Trimmer
+REMOVE_MULTIPLICITY_DIR = RemoveMultiplicity
+TEST_DIR = Test
 
-ALL_DIRS = $(COMMON_DIR) $(DATALAYER_DIR) $(LGAP_DIR) $(PROOFREAD_DIR) $(PARTITION_DIR) $(TRIMMER_DIR)
+ALL_DIRS = $(COMMON_DIR) $(DATALAYER_DIR) $(LGAP_DIR) $(PROOFREAD_DIR) $(PARTITION_DIR) $(TRIMMER_DIR) $(REMOVE_MULTIPLICITY_DIR) $(TEST_DIR)
 
 # Source files
 COMMON_SRC = $(wildcard $(COMMON_DIR)/*.cpp)
@@ -26,8 +28,11 @@ LGAP_SRC = $(wildcard $(LGAP_DIR)/*.cpp)
 PROOFREAD_SRC = $(wildcard $(PROOFREAD_DIR)/*.cpp)
 PARTITION_SRC = $(wildcard $(PARTITION_DIR)/*.cpp)
 TRIMMER_SRC = $(wildcard $(TRIMMER_DIR)/*.cpp)
+REMOVE_MULTIPLICITY_SRC = $(wildcard $(REMOVE_MULTIPLICITY_DIR)/*.cpp)
+VALIDATE_SRC = $(TEST_DIR)/ValidatePartition.cpp
+ESTIMATE_CONTIG_SRC = $(TEST_DIR)/EstimateContigs.cpp
 
-ALL_SRC = $(COMMON_SRC) $(DATALAYER_SRC) $(LGAP_SRC) $(PROOFREAD_SRC) $(PARTITION_SRC) $(TRIMMER_SRC)
+ALL_SRC = $(COMMON_SRC) $(DATALAYER_SRC) $(LGAP_SRC) $(PROOFREAD_SRC) $(PARTITION_SRC) $(TRIMMER_SRC) $(REMOVE_MULTIPLICITY_SRC)
 
 # Object files
 COMMON_OBJ = $(patsubst %.cpp,%.o,$(COMMON_SRC))
@@ -36,13 +41,19 @@ LGAP_OBJ = $(patsubst %.cpp,%.o,$(LGAP_SRC))
 PROOFREAD_OBJ = $(patsubst %.cpp,%.o,$(PROOFREAD_SRC))
 PARTITION_OBJ = $(patsubst %.cpp,%.o,$(PARTITION_SRC))
 TRIMMER_OBJ = $(patsubst %.cpp,%.o,$(TRIMMER_SRC))
+REMOVE_MULTIPLICITY_OBJ = $(patsubst %.cpp,%.o,$(REMOVE_MULTIPLICITY_SRC))
+VALIDATE_OBJ = $(patsubst %.cpp,%.o,$(VALIDATE_SRC))
+ESTIMATE_CONTIG_OBJ = $(patsubst %.cpp,%.o,$(ESTIMATE_CONTIG_SRC))
 
-ALL_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(LGAP_OBJ) $(PROOFREAD_OBJ) $(PARTITION_OBJ) $(TRIMMER_OBJ)
+ALL_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(LGAP_OBJ) $(PROOFREAD_OBJ) $(PARTITION_OBJ) $(TRIMMER_OBJ) $(ESTIMATE_CONTIG_OBJ) $(VALIDATE_OBJ) $(REMOVE_MULTIPLICITY_OBJ)
 
 LGAP_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(LGAP_OBJ)
 PROOFREAD_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(PROOFREAD_OBJ)
 PARTITION_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(PARTITION_OBJ)
 TRIMMER_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(TRIMMER_OBJ)
+VALIDATE_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(VALIDATE_OBJ)
+ESTIMATE_CONTIG_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(ESTIMATE_CONTIG_OBJ)
+REMOVE_MULTIPLICITY_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(REMOVE_MULTIPLICITY_OBJ)
 
 # Output dir
 BIN_PATH = $(BASE_PATH)/bin
@@ -53,7 +64,7 @@ CC =		g++
 
 INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
-OPTIMIZE = -O2 
+OPTIMIZE = -O2
 #DEBUG= -g -D DEBUG -Wall -Wno-sign-compare
 #PROFILE = -pg
 
@@ -62,7 +73,7 @@ INCLUDES =	-I$(COMMON_DIR) -I$(DATALAYER_DIR) -I$(INCLUDE_DIR)
 CPPFLAGS = $(OPTIMIZE) $(DEBUG) $(PROFILE) $(INCLUDES) 
 #LDFLAGS = -Wl,-L$(LIB_DIR),-static,-lnetcdf 
 #LDFLAGS = -L$(LIB_DIR) -lnetcdf -lhdf5 -lhdf5_hl -lz -Wl -rpath -L$(LIB_DIR)
-LDFLAGS = -Wl,-L$(LIB_DIR),--rpath=$(LIB_DIR),-lnetcdf,-lhdf5,-lhdf5_hl,-lz $(PROFILE)
+LDFLAGS = -L$(LIB_DIR)
 
 ########################################################################
 # Rules
@@ -71,7 +82,10 @@ LDFLAGS = -Wl,-L$(LIB_DIR),--rpath=$(LIB_DIR),-lnetcdf,-lhdf5,-lhdf5_hl,-lz $(PR
 		$(CC) -c $(CPPFLAGS) $< -o $@ 
 		
 all:
-	$(MAKE) LGAP ProofReader Trimmer Partition 
+	$(MAKE) LGAP ProofReader Partition Trimmer RemoveMultiplicity Test
+	
+Test:
+	$(MAKE) ValidatePartition EstimateContigs
 	
 LGAP:		$(LGAP_OBJECTS)
 	$(CC) -o $(BIN_PATH)/LGAP $(LGAP_OBJECTS)  $(LDFLAGS)
@@ -84,9 +98,18 @@ Partition:		$(PARTITION_OBJECTS)
 	
 Trimmer:		$(TRIMMER_OBJECTS)
 	$(CC) -o $(BIN_PATH)/Trimmer $(TRIMMER_OBJECTS)	$(LDFLAGS)
+	
+ValidatePartition:		$(VALIDATE_OBJECTS)
+	$(CC) -o $(BIN_PATH)/ValidatePartition $(VALIDATE_OBJECTS)	$(LDFLAGS)
+	
+RemoveMultiplicity:		$(REMOVE_MULTIPLICITY_OBJECTS)
+	$(CC) -o $(BIN_PATH)/RemoveMultiplicity $(REMOVE_MULTIPLICITY_OBJECTS)	$(LDFLAGS)
+	
+EstimateContigs:	$(ESTIMATE_CONTIG_OBJECTS)
+	$(CC) -o $(BIN_PATH)/EstimateContigs $(ESTIMATE_CONTIG_OBJECTS)	$(LDFLAGS)
 
 depend:
-	makedepend -Y $(ALL_SRC)
+	makedepend $(ALL_SRC)
 
 clean:
 	$(RM) $(BIN_PATH)/* $(ALL_OBJECTS)
@@ -94,73 +117,255 @@ clean:
 
 # DO NOT DELETE
 
+Common/CommonUtils.o: /usr/include/math.h /usr/include/features.h
+Common/CommonUtils.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Common/CommonUtils.o: /usr/include/bits/huge_val.h
+Common/CommonUtils.o: /usr/include/bits/mathdef.h
+Common/CommonUtils.o: /usr/include/bits/mathcalls.h Common/CommonUtils.h
+Common/CommonUtils.o: Common/PackedSeq.h Common/Sequence.h
+Common/CommonUtils.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+Common/CommonUtils.o: /usr/include/assert.h
 Common/Config.o: Common/Config.h
-Common/HitRecord.o: Common/HitRecord.h Common/Sequence.h Common/CommonDefs.h
-Common/HitRecord.o: Common/ReadPrb.h Common/Prb.h
-Common/PackedSeq.o: Common/PackedSeq.h Common/Sequence.h Common/CommonDefs.h
-Common/PackedSeq.o: Common/ReadPrb.h Common/Prb.h
+Common/HitRecord.o: Common/HitRecord.h Common/CommonDefs.h Common/ReadPrb.h
+Common/HitRecord.o: Common/Prb.h /usr/include/assert.h
+Common/HitRecord.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Common/HitRecord.o: /usr/include/gnu/stubs.h Common/PackedSeq.h
+Common/HitRecord.o: Common/Sequence.h
+Common/PackedSeq.o: /usr/include/math.h /usr/include/features.h
+Common/PackedSeq.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Common/PackedSeq.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+Common/PackedSeq.o: /usr/include/bits/mathcalls.h Common/PackedSeq.h
+Common/PackedSeq.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
+Common/PackedSeq.o: Common/Prb.h /usr/include/assert.h
 Common/PairRecord.o: Common/PairRecord.h Common/Sequence.h
 Common/PairRecord.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Common/PhaseSpace.o: Common/PhaseSpace.h Common/Sequence.h
+Common/PairRecord.o: /usr/include/assert.h /usr/include/features.h
+Common/PairRecord.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Common/PartitionLoader.o: Common/PartitionLoader.h Common/CommonDefs.h
+Common/PartitionLoader.o: Common/ReadPrb.h Common/Prb.h /usr/include/assert.h
+Common/PartitionLoader.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Common/PartitionLoader.o: /usr/include/gnu/stubs.h Common/PhaseSpace.h
+Common/PartitionLoader.o: /usr/include/stdio.h
+Common/PartitionLoader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+Common/PartitionLoader.o: /usr/include/bits/types.h
+Common/PartitionLoader.o: /usr/include/bits/wordsize.h
+Common/PartitionLoader.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+Common/PartitionLoader.o: /usr/include/_G_config.h /usr/include/wchar.h
+Common/PartitionLoader.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+Common/PartitionLoader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+Common/PartitionLoader.o: /usr/include/bits/stdio_lim.h
+Common/PartitionLoader.o: /usr/include/bits/sys_errlist.h Common/Sequence.h
+Common/PartitionLoader.o: Common/PackedSeq.h Common/HitRecord.h
+Common/PartitionLoader.o: Common/Config.h
+Common/PhaseSpace.o: Common/PhaseSpace.h /usr/include/stdio.h
+Common/PhaseSpace.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Common/PhaseSpace.o: /usr/include/gnu/stubs.h
+Common/PhaseSpace.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+Common/PhaseSpace.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+Common/PhaseSpace.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+Common/PhaseSpace.o: /usr/include/_G_config.h /usr/include/wchar.h
+Common/PhaseSpace.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+Common/PhaseSpace.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+Common/PhaseSpace.o: /usr/include/bits/stdio_lim.h
+Common/PhaseSpace.o: /usr/include/bits/sys_errlist.h Common/Sequence.h
 Common/PhaseSpace.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Common/PhaseSpace.o: Common/PackedSeq.h Common/HitRecord.h
-Common/Prb.o: Common/Prb.h
-Common/ReadPrb.o: Common/ReadPrb.h Common/Prb.h
+Common/PhaseSpace.o: /usr/include/assert.h Common/PackedSeq.h
+Common/PhaseSpace.o: Common/HitRecord.h Common/CommonUtils.h
+Common/Prb.o: /usr/include/math.h /usr/include/features.h
+Common/Prb.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Common/Prb.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+Common/Prb.o: /usr/include/bits/mathcalls.h Common/Prb.h
+Common/Prb.o: /usr/include/assert.h
+Common/ReadPrb.o: Common/ReadPrb.h Common/Prb.h /usr/include/assert.h
+Common/ReadPrb.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Common/ReadPrb.o: /usr/include/gnu/stubs.h
 Common/SeqRecord.o: Common/SeqRecord.h Common/CommonDefs.h Common/ReadPrb.h
-Common/SeqRecord.o: Common/Prb.h Common/Sequence.h
-Common/Sequence.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
-Common/Sequence.o: Common/Prb.h
+Common/SeqRecord.o: Common/Prb.h /usr/include/assert.h
+Common/SeqRecord.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Common/SeqRecord.o: /usr/include/gnu/stubs.h Common/Sequence.h
+Common/Sequence.o: /usr/include/stdio.h /usr/include/features.h
+Common/Sequence.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Common/Sequence.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+Common/Sequence.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+Common/Sequence.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+Common/Sequence.o: /usr/include/_G_config.h /usr/include/wchar.h
+Common/Sequence.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+Common/Sequence.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+Common/Sequence.o: /usr/include/bits/stdio_lim.h
+Common/Sequence.o: /usr/include/bits/sys_errlist.h /usr/include/math.h
+Common/Sequence.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+Common/Sequence.o: /usr/include/bits/mathcalls.h Common/Sequence.h
+Common/Sequence.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+Common/Sequence.o: /usr/include/assert.h
 Common/SequencePair.o: Common/SequencePair.h Common/Sequence.h
 Common/SequencePair.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-DataLayer/FastaReader.o: DataLayer/FastaReader.h DataLayer/IFileReader.h
-DataLayer/FastaReader.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+Common/SequencePair.o: /usr/include/assert.h /usr/include/features.h
+Common/SequencePair.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+DataLayer/FastaReader.o: DataLayer/FastaReader.h /usr/include/stdio.h
+DataLayer/FastaReader.o: /usr/include/features.h /usr/include/sys/cdefs.h
+DataLayer/FastaReader.o: /usr/include/gnu/stubs.h
+DataLayer/FastaReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+DataLayer/FastaReader.o: /usr/include/bits/types.h
+DataLayer/FastaReader.o: /usr/include/bits/wordsize.h
+DataLayer/FastaReader.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+DataLayer/FastaReader.o: /usr/include/_G_config.h /usr/include/wchar.h
+DataLayer/FastaReader.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+DataLayer/FastaReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+DataLayer/FastaReader.o: /usr/include/bits/stdio_lim.h
+DataLayer/FastaReader.o: /usr/include/bits/sys_errlist.h
+DataLayer/FastaReader.o: DataLayer/IFileReader.h Common/CommonDefs.h
+DataLayer/FastaReader.o: Common/ReadPrb.h Common/Prb.h /usr/include/assert.h
 DataLayer/FastaReader.o: Common/Sequence.h Common/PackedSeq.h
-DataLayer/FastaWriter.o: DataLayer/FastaWriter.h Common/CommonDefs.h
-DataLayer/FastaWriter.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/FastaWriter.o: DataLayer/FastaWriter.h /usr/include/stdio.h
+DataLayer/FastaWriter.o: /usr/include/features.h /usr/include/sys/cdefs.h
+DataLayer/FastaWriter.o: /usr/include/gnu/stubs.h
+DataLayer/FastaWriter.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+DataLayer/FastaWriter.o: /usr/include/bits/types.h
+DataLayer/FastaWriter.o: /usr/include/bits/wordsize.h
+DataLayer/FastaWriter.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+DataLayer/FastaWriter.o: /usr/include/_G_config.h /usr/include/wchar.h
+DataLayer/FastaWriter.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+DataLayer/FastaWriter.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+DataLayer/FastaWriter.o: /usr/include/bits/stdio_lim.h
+DataLayer/FastaWriter.o: /usr/include/bits/sys_errlist.h Common/CommonDefs.h
+DataLayer/FastaWriter.o: Common/ReadPrb.h Common/Prb.h /usr/include/assert.h
+DataLayer/FastaWriter.o: Common/Sequence.h DataLayer/IFileWriter.h
 DataLayer/FastaWriter.o: Common/PackedSeq.h
-DataLayer/HDF5Interface.o: DataLayer/HDF5Interface.h Common/PhaseSpace.h
-DataLayer/HDF5Interface.o: Common/Sequence.h Common/CommonDefs.h
-DataLayer/HDF5Interface.o: Common/ReadPrb.h Common/Prb.h Common/PackedSeq.h
-DataLayer/HDF5Interface.o: Common/HitRecord.h
-DataLayer/NetCDFInterface.o: DataLayer/NetCDFInterface.h Common/PhaseSpace.h
-DataLayer/NetCDFInterface.o: Common/Sequence.h Common/CommonDefs.h
-DataLayer/NetCDFInterface.o: Common/ReadPrb.h Common/Prb.h Common/PackedSeq.h
-DataLayer/NetCDFInterface.o: Common/HitRecord.h
-DataLayer/PackedSeqReader.o: DataLayer/PackedSeqReader.h
+DataLayer/PackedSeqReader.o: DataLayer/PackedSeqReader.h /usr/include/stdio.h
+DataLayer/PackedSeqReader.o: /usr/include/features.h /usr/include/sys/cdefs.h
+DataLayer/PackedSeqReader.o: /usr/include/gnu/stubs.h
+DataLayer/PackedSeqReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+DataLayer/PackedSeqReader.o: /usr/include/bits/types.h
+DataLayer/PackedSeqReader.o: /usr/include/bits/wordsize.h
+DataLayer/PackedSeqReader.o: /usr/include/bits/typesizes.h
+DataLayer/PackedSeqReader.o: /usr/include/libio.h /usr/include/_G_config.h
+DataLayer/PackedSeqReader.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+DataLayer/PackedSeqReader.o: /usr/include/gconv.h
+DataLayer/PackedSeqReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+DataLayer/PackedSeqReader.o: /usr/include/bits/stdio_lim.h
+DataLayer/PackedSeqReader.o: /usr/include/bits/sys_errlist.h
 DataLayer/PackedSeqReader.o: DataLayer/IFileReader.h Common/CommonDefs.h
-DataLayer/PackedSeqReader.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/PackedSeqReader.o: Common/ReadPrb.h Common/Prb.h
+DataLayer/PackedSeqReader.o: /usr/include/assert.h Common/Sequence.h
 DataLayer/PackedSeqReader.o: Common/PackedSeq.h
-DataLayer/PackedSeqWriter.o: DataLayer/PackedSeqWriter.h Common/CommonDefs.h
-DataLayer/PackedSeqWriter.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+DataLayer/PackedSeqWriter.o: DataLayer/PackedSeqWriter.h /usr/include/stdio.h
+DataLayer/PackedSeqWriter.o: /usr/include/features.h /usr/include/sys/cdefs.h
+DataLayer/PackedSeqWriter.o: /usr/include/gnu/stubs.h
+DataLayer/PackedSeqWriter.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+DataLayer/PackedSeqWriter.o: /usr/include/bits/types.h
+DataLayer/PackedSeqWriter.o: /usr/include/bits/wordsize.h
+DataLayer/PackedSeqWriter.o: /usr/include/bits/typesizes.h
+DataLayer/PackedSeqWriter.o: /usr/include/libio.h /usr/include/_G_config.h
+DataLayer/PackedSeqWriter.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+DataLayer/PackedSeqWriter.o: /usr/include/gconv.h
+DataLayer/PackedSeqWriter.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+DataLayer/PackedSeqWriter.o: /usr/include/bits/stdio_lim.h
+DataLayer/PackedSeqWriter.o: /usr/include/bits/sys_errlist.h
+DataLayer/PackedSeqWriter.o: Common/CommonDefs.h Common/ReadPrb.h
+DataLayer/PackedSeqWriter.o: Common/Prb.h /usr/include/assert.h
+DataLayer/PackedSeqWriter.o: Common/Sequence.h DataLayer/IFileWriter.h
 DataLayer/PackedSeqWriter.o: Common/PackedSeq.h
-DataLayer/Reader.o: DataLayer/Reader.h Common/CommonDefs.h Common/ReadPrb.h
-DataLayer/Reader.o: Common/Prb.h Common/Sequence.h Common/PhaseSpace.h
-DataLayer/Reader.o: Common/PackedSeq.h Common/HitRecord.h
+DataLayer/Reader.o: /usr/include/stdio.h /usr/include/features.h
+DataLayer/Reader.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+DataLayer/Reader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+DataLayer/Reader.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+DataLayer/Reader.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+DataLayer/Reader.o: /usr/include/_G_config.h /usr/include/wchar.h
+DataLayer/Reader.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+DataLayer/Reader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+DataLayer/Reader.o: /usr/include/bits/stdio_lim.h
+DataLayer/Reader.o: /usr/include/bits/sys_errlist.h DataLayer/Reader.h
+DataLayer/Reader.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+DataLayer/Reader.o: /usr/include/assert.h Common/Sequence.h
+DataLayer/Reader.o: Common/PhaseSpace.h Common/PackedSeq.h Common/HitRecord.h
 DataLayer/Writer.o: DataLayer/Writer.h
 LGAP/Path.o: LGAP/Path.h Common/Sequence.h Common/CommonDefs.h
-LGAP/Path.o: Common/ReadPrb.h Common/Prb.h Common/SeqRecord.h
+LGAP/Path.o: Common/ReadPrb.h Common/Prb.h /usr/include/assert.h
+LGAP/Path.o: /usr/include/features.h /usr/include/sys/cdefs.h
+LGAP/Path.o: /usr/include/gnu/stubs.h Common/SeqRecord.h Common/CommonUtils.h
+LGAP/Path.o: Common/PackedSeq.h
 LGAP/PathDriver.o: LGAP/PathDriver.h LGAP/Path.h Common/Sequence.h
 LGAP/PathDriver.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-LGAP/PathDriver.o: Common/SeqRecord.h Common/HitRecord.h Common/PhaseSpace.h
-LGAP/PathDriver.o: Common/PackedSeq.h Common/PairRecord.h DataLayer/Writer.h
-LGAP/PathDriver.o: Common/SequencePair.h
-LGAP/PathWalker.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
-LGAP/PathWalker.o: Common/Prb.h DataLayer/Reader.h Common/PhaseSpace.h
-LGAP/PathWalker.o: Common/PackedSeq.h Common/HitRecord.h LGAP/PathDriver.h
-LGAP/PathWalker.o: LGAP/Path.h Common/SeqRecord.h Common/PairRecord.h
-LGAP/PathWalker.o: DataLayer/Writer.h Common/SequencePair.h
+LGAP/PathDriver.o: /usr/include/assert.h /usr/include/features.h
+LGAP/PathDriver.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+LGAP/PathDriver.o: Common/SeqRecord.h Common/HitRecord.h Common/PackedSeq.h
+LGAP/PathDriver.o: Common/PhaseSpace.h /usr/include/stdio.h
+LGAP/PathDriver.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+LGAP/PathDriver.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+LGAP/PathDriver.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+LGAP/PathDriver.o: /usr/include/_G_config.h /usr/include/wchar.h
+LGAP/PathDriver.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+LGAP/PathDriver.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+LGAP/PathDriver.o: /usr/include/bits/stdio_lim.h
+LGAP/PathDriver.o: /usr/include/bits/sys_errlist.h Common/PairRecord.h
+LGAP/PathDriver.o: DataLayer/Writer.h Common/SequencePair.h
+LGAP/PathWalker.o: /usr/include/stdio.h /usr/include/features.h
+LGAP/PathWalker.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+LGAP/PathWalker.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+LGAP/PathWalker.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+LGAP/PathWalker.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+LGAP/PathWalker.o: /usr/include/_G_config.h /usr/include/wchar.h
+LGAP/PathWalker.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+LGAP/PathWalker.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+LGAP/PathWalker.o: /usr/include/bits/stdio_lim.h
+LGAP/PathWalker.o: /usr/include/bits/sys_errlist.h Common/Sequence.h
+LGAP/PathWalker.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+LGAP/PathWalker.o: /usr/include/assert.h DataLayer/Reader.h
+LGAP/PathWalker.o: Common/PhaseSpace.h Common/PackedSeq.h Common/HitRecord.h
+LGAP/PathWalker.o: LGAP/PathDriver.h LGAP/Path.h Common/SeqRecord.h
+LGAP/PathWalker.o: Common/PairRecord.h DataLayer/Writer.h
+LGAP/PathWalker.o: Common/SequencePair.h
 ProofReader/ProofReader.o: ProofReader/ProofReader.h DataLayer/Reader.h
 ProofReader/ProofReader.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+ProofReader/ProofReader.o: /usr/include/assert.h /usr/include/features.h
+ProofReader/ProofReader.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 ProofReader/ProofReader.o: Common/Sequence.h Common/PhaseSpace.h
-ProofReader/ProofReader.o: Common/PackedSeq.h Common/HitRecord.h
-ProofReader/ProofReader.o: Common/SeqRecord.h
-Partition/Partition.o: DataLayer/Reader.h Common/CommonDefs.h
-Partition/Partition.o: Common/ReadPrb.h Common/Prb.h Common/Sequence.h
+ProofReader/ProofReader.o: /usr/include/stdio.h
+ProofReader/ProofReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+ProofReader/ProofReader.o: /usr/include/bits/types.h
+ProofReader/ProofReader.o: /usr/include/bits/wordsize.h
+ProofReader/ProofReader.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+ProofReader/ProofReader.o: /usr/include/_G_config.h /usr/include/wchar.h
+ProofReader/ProofReader.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+ProofReader/ProofReader.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+ProofReader/ProofReader.o: /usr/include/bits/stdio_lim.h
+ProofReader/ProofReader.o: /usr/include/bits/sys_errlist.h Common/PackedSeq.h
+ProofReader/ProofReader.o: Common/HitRecord.h Common/SeqRecord.h
+ProofReader/ProofReader.o: Common/CommonUtils.h
+Partition/Partition.o: /usr/include/stdio.h /usr/include/features.h
+Partition/Partition.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+Partition/Partition.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+Partition/Partition.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+Partition/Partition.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+Partition/Partition.o: /usr/include/_G_config.h /usr/include/wchar.h
+Partition/Partition.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+Partition/Partition.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+Partition/Partition.o: /usr/include/bits/stdio_lim.h
+Partition/Partition.o: /usr/include/bits/sys_errlist.h /usr/include/stdlib.h
+Partition/Partition.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+Partition/Partition.o: /usr/include/math.h /usr/include/bits/huge_val.h
+Partition/Partition.o: /usr/include/bits/mathdef.h
+Partition/Partition.o: /usr/include/bits/mathcalls.h DataLayer/Reader.h
+Partition/Partition.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
+Partition/Partition.o: /usr/include/assert.h Common/Sequence.h
 Partition/Partition.o: Common/PhaseSpace.h Common/PackedSeq.h
 Partition/Partition.o: Common/HitRecord.h Partition/Partition.h
-Partition/Partition.o: DataLayer/IFileReader.h DataLayer/FastaReader.h
-Partition/Partition.o: DataLayer/PackedSeqReader.h
-Partition/Partition.o: DataLayer/PackedSeqWriter.h Common/Config.h
-Trimmer/Trimmer.o: Trimmer/Trimmer.h Common/PhaseSpace.h Common/Sequence.h
+Partition/Partition.o: DataLayer/IFileWriter.h DataLayer/PackedSeqWriter.h
+Partition/Partition.o: Common/Config.h DataLayer/IFileReader.h
+Partition/Partition.o: DataLayer/FastaReader.h DataLayer/PackedSeqReader.h
+Partition/Partition.o: DataLayer/FastaWriter.h
+Trimmer/Trimmer.o: Trimmer/Trimmer.h Common/PhaseSpace.h /usr/include/stdio.h
+Trimmer/Trimmer.o: /usr/include/features.h /usr/include/sys/cdefs.h
+Trimmer/Trimmer.o: /usr/include/gnu/stubs.h
+Trimmer/Trimmer.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stddef.h
+Trimmer/Trimmer.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+Trimmer/Trimmer.o: /usr/include/bits/typesizes.h /usr/include/libio.h
+Trimmer/Trimmer.o: /usr/include/_G_config.h /usr/include/wchar.h
+Trimmer/Trimmer.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+Trimmer/Trimmer.o: /usr/lib/gcc/i386-redhat-linux/3.4.6/include/stdarg.h
+Trimmer/Trimmer.o: /usr/include/bits/stdio_lim.h
+Trimmer/Trimmer.o: /usr/include/bits/sys_errlist.h Common/Sequence.h
 Trimmer/Trimmer.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Trimmer/Trimmer.o: Common/PackedSeq.h Common/HitRecord.h DataLayer/Reader.h
+Trimmer/Trimmer.o: /usr/include/assert.h Common/PackedSeq.h
+Trimmer/Trimmer.o: Common/HitRecord.h DataLayer/Reader.h
+Trimmer/Trimmer.o: Common/PartitionLoader.h Common/Config.h

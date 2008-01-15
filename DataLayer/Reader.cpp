@@ -23,8 +23,6 @@ bool Reader::readFasta(const char* filename, PSequenceVector& outSequences) cons
 	}
 	
 	char id[SEQUENCE_ID_LENGTH];
-	int x;
-	int y;
 	
 	while(!inFile.eof() && inFile.peek() != EOF)
 	{
@@ -51,7 +49,7 @@ bool Reader::readFasta(const char* filename, PSequenceVector& outSequences) cons
 		// create the new sequence
 		std::string idStr(id);
 		Sequence newSeq(seqBuffer);
-		PackedSeq* pSeq = new PackedSeq(newSeq);
+		PackedSeq pSeq(newSeq);
 		outSequences.push_back(pSeq);
 	}
 	

@@ -3,22 +3,22 @@
 
 #include <map>
 #include <vector>
-#include "Sequence.h"
+#include "PackedSeq.h"
 
 class PairRecord
 {
 	
 	public:
-		PairRecord(const std::vector<Sequence>& allseqs);
+		PairRecord(const PSequenceVector& allseqs);
 		
-		bool checkForPairs(const Sequence& seq) const;
+		bool checkForPairs(const PackedSeq& seq) const;
 		
-		const std::vector<Sequence>& getPairs(const Sequence& seq) const;
+		const PSequenceVector& getPairs(const PackedSeq& seq) const;
 	
 	private:
 	
 		// the pair lookup table, a hash of sequences pointing to a vector of sequences, their pairs
-		std::map<Sequence, std::vector<Sequence> > m_pairLookup;
+		std::map<PackedSeq, PSequenceVector > m_pairLookup;
 };
 
 #endif

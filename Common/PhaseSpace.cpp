@@ -3,16 +3,21 @@
 
 
 // Set up the 4D space to be the size of the slice passed in
-PhaseSpace::PhaseSpace(int readLength, Coord4 startCoord, Coord4 size)
+PhaseSpace::PhaseSpace(int readLength, Coord4 minCoord, Coord4 maxCoord)
 {
-	m_start = startCoord;
-	m_size = size;
+	m_minCoord = minCoord;
+	m_maxCoord = maxCoord;
 	m_readLength = readLength;
 	
+	m_size.x = m_maxCoord.x - m_minCoord.x;
+	m_size.y = m_maxCoord.y - m_minCoord.y;
+	m_size.z = m_maxCoord.z - m_minCoord.z;
+	m_size.w = m_maxCoord.w - m_minCoord.w;
+	
 	// ensure the passed in size is a hypercube, ie each dimension is equal in length
-	if(size.x == size.y && size.x == size.z && size.x == size.w)
+	if(m_size.x == m_size.y && m_size.x == m_size.z && m_size.x == m_size.w)
 	{ 
-		m_pPhaseSpace = new Bin4D(size.x, Bin3D(size.x, Bin2D(size.x, Bin1D(size.x))));
+		m_pPhaseSpace = new Bin4D(m_size.x, Bin3D(m_size.x, Bin2D(m_size.x, Bin1D(m_size.x))));
 	}
 	else
 	{
@@ -41,32 +46,32 @@ void PhaseSpace::addReads(const SequenceVector& vec)
 // Add a single read to the phasespace
 void PhaseSpace::addSequence(const PackedSeq& seq)
 {
-	Coord4 c = SequenceToTransformCoord4(seq);
+	Coord4 index = SequenceToTransformCoord4(seq);
 	// Bounds check
-	if(c.x >= 0 && c.x < m_size.x
-	&& c.y >= 0 && c.y < m_size.y
-	&& c.z >= 0 && c.z < m_size.z
-	&& c.w >= 0 && c.w < m_size.w)
+	if(index.x >= 0 && index.x < m_size.x
+	&& index.y >= 0 && index.y < m_size.y
+	&& index.z >= 0 && index.z < m_size.z
+	&& index.w >= 0 && index.w < m_size.w)
 	{		
-		(*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq]++;
+		//printf("added %s to (%d %d %d %d)\n", seq.decode().c_str(), index.x, index.y, index.z, index.w);
+		(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].insert(seq);
 	}
-#if 0
 	else
 	{
-		printf("sequence is out of partition!\n");
+		Coord4 realCoord = SequenceToCoord4(seq);
+		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 		assert(false);
 	}
-#endif
 }
 
 // check if a sequence exists in the phase space
 bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
 	// calculate the coordinate for the sequence
-	Coord4 c = PhaseSpace::SequenceToTransformCoord4(seq);
+	Coord4 index = PhaseSpace::SequenceToTransformCoord4(seq);
 
 	// check for the existance of the sequence
-	if(	(*m_pPhaseSpace)[c.x][c.y][c.z][c.w].count(seq) > 0)
+	if(	(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].count(seq) > 0)
 	{
 		return true;
 	}
@@ -79,27 +84,28 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 
 // Calculate the extension of this sequence in the direction given
 HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
-{
-	// hey implement this function
-	assert(false);
-#if 0
-	// Create the extensions for this read
-	SequenceVector extVec;
+{	
+	PSequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);
 
 	// Create the return structure
 	HitRecord hitRecord;
 	// test for all the extensions of this sequence
-	for(ConstSequenceVectorIterator iter = extVec.begin(); iter != extVec.end(); iter++)
+	for(ConstPSequenceVectorIterator iter = extVec.begin(); iter != extVec.end(); iter++)
 	{	
-		if(checkForSequence(*iter) || checkForSequence(reverseComplement(*iter)))
+		// Todo: clean this up
+		const PackedSeq& seq = *iter;
+		PackedSeq rcSeq = seq;
+		rcSeq.reverseComplement();
+		  
+		if(checkForSequence(seq) || checkForSequence(rcSeq))
 		{
-			hitRecord.addHit(*iter);
+			hitRecord.addHit(seq);
 		}
 	}
 	
 	return hitRecord;
-#endif
+
 }
 
 bool PhaseSpace::hasParent(const PackedSeq& seq) const
@@ -118,7 +124,9 @@ bool PhaseSpace::hasChild(const PackedSeq& seq) const
 int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
 	Coord4 c = PhaseSpace::SequenceToTransformCoord4(seq);
-	return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
+	assert(false);
+	return 0;
+	//return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
 }
 
 // print every read's multiplicity
@@ -131,10 +139,23 @@ void PhaseSpace::printAll() const
 				for(Bin1D::const_iterator iter1 = iter2->begin(); iter1 != iter2->end(); iter1++)
 					for(BinItem::const_iterator itemIter = iter1->begin(); itemIter != iter1->end(); itemIter++)
 					{
-						printf("%d %s\n", itemIter->second, itemIter->first.decode().c_str());	
+						printf("%d %s\n", itemIter->decode().c_str());	
 					}
 }
 
+// Get the iterator pointing to the first sequence in the bin
+PhaseSpaceBinIter PhaseSpace::getStartIter(Coord4 c) const
+{
+	Coord4 transC = PhaseSpace::TransformCoordinate(c);
+	return (*m_pPhaseSpace)[transC.x][transC.y][transC.z][transC.w].begin();
+}
+		
+// Get the iterator pointing to the last sequence in the bin
+PhaseSpaceBinIter PhaseSpace::getEndIter(Coord4 c) const
+{
+	Coord4 transC = PhaseSpace::TransformCoordinate(c);
+	return (*m_pPhaseSpace)[transC.x][transC.y][transC.z][transC.w].end();
+}
 
 // Calculate the coordinate of this sequence
 Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
@@ -172,16 +193,20 @@ Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 	return c;
 }
 
+Coord4 PhaseSpace::TransformCoordinate(Coord4& c) const
+{
+	Coord4 tc;
+	tc.x = c.x - m_minCoord.x;
+	tc.y = c.y - m_minCoord.y;
+	tc.z = c.z - m_minCoord.z;
+	tc.w = c.w - m_minCoord.w;
+	return tc;
+}
+
 Coord4 PhaseSpace::SequenceToTransformCoord4(const PackedSeq& seq) const
 {
 	Coord4 c = SequenceToCoord4(seq);
-	
-	// transform the coordinate by the start
-	c.x -= m_start.x;	
-	c.y -= m_start.y;	
-	c.z -= m_start.z;	
-	c.w -= m_start.w;				
-	return c;
+	return TransformCoordinate(c);
 }
 
 // Calculate the coordinate of this sequence

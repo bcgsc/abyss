@@ -2,7 +2,7 @@
 #define PHASESPACE_H
 
 #include <vector>
-#include <ext/hash_map>
+#include <set>
 #include <stdio.h>
 #include "Sequence.h"
 #include "PackedSeq.h"
@@ -11,11 +11,13 @@
 
 using namespace std;
 
-typedef map<PackedSeq, int> BinItem;
+
+typedef std::set<PackedSeq> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
 typedef std::vector<Bin3D> Bin4D;
+typedef std::set<PackedSeq>::iterator PhaseSpaceBinIter;
 
 enum PointClassification
 {
@@ -55,7 +57,13 @@ class PhaseSpace
 		bool checkForSequence(const PackedSeq& seq) const;
 		
 		// calculate whether this sequence has an extension in the phase space
-		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;		
+		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;
+		
+		// Get the iterator pointing to the first sequence in the bin
+		PhaseSpaceBinIter getStartIter(Coord4 c) const;
+		
+		// Get the iterator pointing to the last sequence in the bin
+		PhaseSpaceBinIter getEndIter(Coord4 c) const;
 		
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq) const;
@@ -65,6 +73,9 @@ class PhaseSpace
 		
 		// print everything
 		void printAll() const;
+		
+		// Transform a coordinate
+		Coord4 TransformCoordinate(Coord4& c) const;
 		
 		// Compute the transformed (phase space) coordinate of this sequence
 		Coord4 SequenceToTransformCoord4(const PackedSeq& seq) const;
@@ -82,7 +93,8 @@ class PhaseSpace
 		PhaseSpace();
 		
 		Bin4D* m_pPhaseSpace;
-		Coord4 m_start;
+		Coord4 m_minCoord;
+		Coord4 m_maxCoord;
 		Coord4 m_size;
 		int m_readLength;
 };

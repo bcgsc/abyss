@@ -2,6 +2,7 @@
 #define PATHDRIVER_H
 
 #include <list>
+#include "CommonDefs.h"
 #include "Path.h"
 #include "HitRecord.h"
 #include "PhaseSpace.h"
@@ -9,6 +10,7 @@
 #include "Writer.h"
 #include "SeqRecord.h"
 #include "SequencePair.h"
+#include "PackedSeq.h"
 
 typedef std::list<Path>::iterator path_iter;
 typedef std::list<Path>::const_iterator const_path_iter;
@@ -21,13 +23,13 @@ class PathDriver
 	public:
 	
 		// constructor
-		PathDriver(const Sequence& seq, extDirection dir, const PhaseSpace* pPS, const PairRecord* pPR, const SeqRecord* pMR, SeqRecord* pER);
+		PathDriver(const PackedSeq& seq, extDirection dir, const PhaseSpace* pPS, const PairRecord* pPR, const SeqRecord* pMR, SeqRecord* pER);
 		
 		// add a sequence to extend
-		void addSequence(const Sequence& seq, std::list<Path>& list, bool isSeed);
+		void addSequence(const PackedSeq& seq, std::list<Path>& list, bool isSeed);
 		
 		// add the pairs of the sequence to extend
-		void addPairsOfSequence(const Sequence& seq, int position);
+		void addPairsOfSequence(const PackedSeq& seq, int position);
 		
 		// extend all the nodes as far as they can go (until they hit an ambiguous or already seen sequence)
 		bool extendAllActive(bool isSeedPath);
@@ -44,7 +46,7 @@ class PathDriver
 		// check the adjacency between two sequences
 		SequenceAdjacency checkPathAdjacency(const Path& path1, const Path& seq2) const;
 		
-		bool checkSequenceAdjacency(const Sequence& seq1, const Sequence& seq2, extDirection dir) const;
+		bool checkSequenceAdjacency(const PackedSeq& seq1, const PackedSeq& seq2, extDirection dir) const;
 		
 		// check and merge
 		bool checkPathsAndMerge(Path& path1, Path& path2);

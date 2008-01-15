@@ -1,14 +1,13 @@
 #ifndef SEQRECORD_H
 #define SEQRECORD_H
 
-#include <ext/hash_map>
-#include "CommonDefs.h"
+#include <map>
+#include "PackedSeq.h"
 #include "Sequence.h"
 
 using namespace std;
-using namespace __gnu_cxx;
 
-typedef hash_map<Sequence, int>::const_iterator ConstSeqRecordIter;
+typedef map<PackedSeq, int>::const_iterator ConstSeqRecordIter;
 
 // Class to record which sequences have been seen and extended (to prevent duplicate extensions)
 class SeqRecord
@@ -17,19 +16,19 @@ class SeqRecord
 		SeqRecord();
 		
 		// add a lot of sequences to the record via a vector
-		void addMultipleSequences(const std::vector<Sequence>& seqVec);
+		void addMultipleSequences(const PSequenceVector& seqVec);
 		
 		// add a lot of sequences to the record
 		void addMultipleSequences(const SequenceMap& seqMap);
 		
 		// add a single sequence to the record
-		void addSequence(const Sequence& seq);
+		void addSequence(const PackedSeq& seq);
 		
 		// get the number of times this sequence appears in the record
-		int getMultiplicity(const Sequence& seq) const;
+		int getMultiplicity(const PackedSeq& seq) const;
 		
 		// check if this sequence is contained in the record
-		bool contains(const Sequence& seq) const;
+		bool contains(const PackedSeq& seq) const;
 		
 		
 		// Methods that pass through to the underlying stl type
@@ -40,9 +39,9 @@ class SeqRecord
 				
 	private:
 	
-		int getMultiplicityInternal(const Sequence& seq) const;
+		int getMultiplicityInternal(const PackedSeq& seq) const;
 		
-		hash_map<Sequence, int> m_seqRecord;
+		map<PackedSeq, int> m_seqRecord;
 };
 
 #endif

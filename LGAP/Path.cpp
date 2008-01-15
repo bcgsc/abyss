@@ -1,13 +1,13 @@
 #include "Path.h"
 #include "CommonUtils.h"
 
-Path::Path(Sequence seedSeq, extDirection dir) : m_seed(seedSeq), m_growDir(dir), m_length(0)
-{	
+Path::Path(PackedSeq seedSeq, extDirection dir) : m_seed(seedSeq), m_growDir(dir), m_length(0)
+{
 	// add the seed sequence to both paths
 	addToPath(m_seed, false);
 }
 
-const Sequence& Path::getCurrentNode() const
+const PackedSeq& Path::getCurrentNode() const
 {	
 	if(m_growDir == SENSE)
 	{
@@ -20,7 +20,7 @@ const Sequence& Path::getCurrentNode() const
 }
 
 
-const Sequence& Path::getNode(const int index) const
+const PackedSeq& Path::getNode(const int index) const
 {
 	const_seq_list_iter iter = m_extensions.begin();
 	for(int i = 0; i < index; i++)
@@ -35,7 +35,7 @@ int Path::getNumNodes() const
 	return m_extensions.size();
 }
 
-void Path::addToPath(const Sequence& seq, bool antiDir)
+void Path::addToPath(const PackedSeq& seq, bool antiDir)
 {
 	// if antidir is true, add the node in the opposite direction of growth
 	extDirection dir = antiDir ? oppositeDirection(m_growDir) : m_growDir;
@@ -52,7 +52,7 @@ void Path::addToPath(const Sequence& seq, bool antiDir)
 	m_seqCache.addSequence(seq);
 }
 
-bool Path::contains(const Sequence& seq) const
+bool Path::contains(const PackedSeq& seq) const
 {
 	return m_seqCache.contains(seq);
 }
@@ -60,7 +60,7 @@ bool Path::contains(const Sequence& seq) const
 void Path::mergePath(const Path& path2, bool reverseComp, bool antiDir, bool skipFirst)
 {
 
-	std::list<Sequence> path2Full;
+	std::list<PackedSeq> path2Full;
 	path2.getPath(path2Full);
 	
 	printf("merging\npath1: ");
@@ -77,15 +77,11 @@ void Path::mergePath(const Path& path2, bool reverseComp, bool antiDir, bool ski
 			continue;
 		}
 		
-		Sequence newSeq;
+		PackedSeq newSeq(*iter);
 		
-		if(!reverseComp)
+		if(reverseComp)
 		{
-			newSeq = *iter;
-		}
-		else
-		{
-			newSeq = reverseComplement(*iter);	
+			newSeq.reverseComplement();
 		}
 		
 		addToPath(newSeq, antiDir);
@@ -95,7 +91,7 @@ void Path::mergePath(const Path& path2, bool reverseComp, bool antiDir, bool ski
 	print();
 }
 
-void Path::getPath(std::list<Sequence>& outPath) const
+void Path::getPath(std::list<PackedSeq>& outPath) const
 {
 	// push all sequences in this path onto the output vector in the antisense -> sense direction
 	const_seq_list_iter iter;
@@ -112,14 +108,16 @@ void Path::getPath(std::list<Sequence>& outPath) const
 
 Sequence Path::getSequence() const
 {
-	Sequence fullSeq("");
+	assert(false);
+#if 0
+	PackedSeq fullSeq("");
 	
 	// append the first full sequence
 	const_seq_list_iter iter = m_extensions.begin();
 	seqAppend(fullSeq, *iter);
 	iter++;
 	
-	Sequence prevSeq;
+	PackedSeq prevSeq;
 	for(; iter != m_extensions.end(); iter++)
 	{
 		int len = iter->length();
@@ -134,6 +132,7 @@ Sequence Path::getSequence() const
 	}
 	
 	return fullSeq;
+#endif
 	
 }
 

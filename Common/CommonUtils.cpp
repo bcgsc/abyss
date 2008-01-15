@@ -38,32 +38,19 @@ double entropy(const Sequence& s)
 }
 
 // Make all the permutations of this sequence
-void makeExtensions(const Sequence& seq, extDirection dir, SequenceVector& outVector)
+void makeExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outVector)
 {
-	
-	int commonLen = seq.length() - 1;
-	
-	Sequence commonSeq;
-	
-	if(dir == SENSE)
-	{
-		commonSeq = seq.substr(1,commonLen);
-	}
-	else
-	{
-		commonSeq = seq.substr(0,commonLen);
-	}
 	
 	for(int i = 0; i < NUM_BASES; i++)
 	{
-		Sequence testSeq = commonSeq;
+		PackedSeq testSeq = seq;
 		if(dir == SENSE)
 		{
-			seqAppendBase(testSeq, BASES[i]);
+			testSeq.shiftAppend(BASES[i]);
 		}
 		else
 		{
-			seqPrependBase(testSeq, BASES[i]);
+			testSeq.shiftPrepend(BASES[i]);
 		}	
 		outVector.push_back(testSeq);
 	}

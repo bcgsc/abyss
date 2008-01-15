@@ -13,9 +13,11 @@ class PartitionLoader
 	public:
 		PartitionLoader(const Config* pConfig);
 		PhaseSpace* CreateAndLoadPhaseSpace(Coord4 start, Coord4 size);
-		std::string Coord4ToPartitionFile(const Coord4& pos) const;
+		static std::string Coord4ToPartitionFile(const Config* pConfig, const Coord4& pos);
 		
 	private:
+		int min(const int& n1, const int& n2) const;
+		int max(const int& n1, const int& n2) const;
 		const Config* m_pConfig;
 };
 

@@ -1,12 +1,31 @@
 #include <math.h>
 #include "PackedSeq.h"
 
-// Construct a sequence with the memory already allocated
-// The class is responsible for freeing the data
+// Default constructor
+PackedSeq::PackedSeq() : m_pSeq(0), m_length(0)
+{
+	
+}
+
+// Destructor
+PackedSeq::~PackedSeq()
+{
+	delete [] m_pSeq;
+	m_pSeq = NULL;	
+}
+
+// Construct a sequence from a series of bytes
 PackedSeq::PackedSeq(char* const pData, int length)
 {
+	// Allocate space for the sequence
+	int numBytes = getNumCodingBytes(length);
+	m_pSeq = new char[numBytes];
+	
+	// copy over the bytes
+	memcpy(m_pSeq, pData, numBytes);
+	
+	// set the sequence length
 	m_length = length;
-	m_pSeq = pData;
 }
 
 // Construct a sequence from a String-based sequence
@@ -32,8 +51,6 @@ PackedSeq::PackedSeq(const Sequence& seq)
 	
 	for(int i = 0; i < m_length; i++)
 	{
-
-		
 		int byteNumber = seqIndexToByteNumber(i);
 		int baseIndex = seqIndexToBaseIndex(i);
 		
@@ -42,6 +59,7 @@ PackedSeq::PackedSeq(const Sequence& seq)
 	}
 }
 
+// Copy constructor
 PackedSeq::PackedSeq(const PackedSeq& pseq)
 {
 	// allocate memory and copy over the seq
@@ -52,6 +70,32 @@ PackedSeq::PackedSeq(const PackedSeq& pseq)
 	
 	// copy the sequence over
 	memcpy(m_pSeq, pseq.m_pSeq, numBytes);
+}
+
+// Assignment operator
+PackedSeq& PackedSeq::operator=(const PackedSeq& other)
+{
+	// Detect self assignment
+	if (this == &other)
+	{
+		return *this;
+	}
+	
+	// Delete previous seq, this will either be NULL or valid allocated memory
+	delete m_pSeq;
+	m_pSeq = 0;
+	
+	// Allocate and fill the new seq
+	m_length = other.m_length;	
+	int numBytes = getNumCodingBytes(m_length);
+	
+	m_pSeq = new char[numBytes];
+	memset(m_pSeq, 0, numBytes);	
+	
+	// copy the sequence over
+	memcpy(m_pSeq, other.m_pSeq, numBytes);
+	
+	return *this;
 }
 
 bool PackedSeq::operator==(const PackedSeq& other) const
@@ -115,8 +159,6 @@ int PackedSeq::getNumCodingBytes(int seqLength)
 
 Sequence PackedSeq::decode() const
 {
-	
-	//printf("num total bases: %d\n", numBasesTotal);
 	// allocate space for the new string
 	Sequence outstr;
 	
@@ -326,8 +368,9 @@ char PackedSeq::codeToBase(char code) const
 	}
 }
 
-PackedSeq::~PackedSeq()
+PackedSeq reverseComplement(const PackedSeq& seq)
 {
-	delete [] m_pSeq;
-	m_pSeq = NULL;	
+	PackedSeq rc(seq);
+	rc.reverseComplement();
+	return rc;	
 }

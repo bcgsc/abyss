@@ -24,3 +24,17 @@ void FastaWriter::WriteSequence(Sequence& seq)
 	m_count++;
 
 }
+
+// Write out a single sequence
+void FastaWriter::WriteSequence(const PackedSeq& pSeq)
+{
+	
+	// make sure the file is readable
+	assert(m_fileHandle.is_open());
+
+	m_fileHandle << ">" << m_count << "\n" << pSeq.decode() << "\n";
+	
+	m_count++;
+
+}
+

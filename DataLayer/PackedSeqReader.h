@@ -19,7 +19,7 @@ class PackedSeqReader : public IFileReader
 		~PackedSeqReader();
 		
 		// Read in a single sequence
-		PackedSeq* ReadSequence();
+		PackedSeq ReadSequence();
 		
 		// Read all sequences in the file
 		bool ReadAllSequences(PSequenceVector& outVector);

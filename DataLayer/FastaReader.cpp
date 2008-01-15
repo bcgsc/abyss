@@ -17,13 +17,14 @@ bool FastaReader::ReadAllSequences(PSequenceVector& outVector)
 	// open file and check that we can read from it
 	while(isGood())
 	{
-		PackedSeq* pSeq = ReadSequence();	
+		PackedSeq pSeq = ReadSequence();	
 		outVector.push_back(pSeq);
 	}
+	return true;
 }
 
 // Read in a single sequence to the out parameter, return whether there are more sequences to read
-PackedSeq* FastaReader::ReadSequence()
+PackedSeq FastaReader::ReadSequence()
 {
 	char headerBuffer[MAX_FASTA_LINE];
 	char seqBuffer[MAX_FASTA_LINE];	
@@ -32,20 +33,12 @@ PackedSeq* FastaReader::ReadSequence()
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
-	
 	// read in the header
 	m_fileHandle.getline(headerBuffer, MAX_FASTA_LINE);
 
 	// read in the sequence
 	m_fileHandle.getline(seqBuffer, MAX_FASTA_LINE);
-		
-	// check if the reads were successful
-	if(m_fileHandle.fail())
-	{
-		printf("error reading from fasta file. Is the line length too long?\n");
-		return false;
-	}
-	
+			
 	// parse the header
 	if(sscanf(headerBuffer, ">%s %*s", id) != 1)
 	{
@@ -56,7 +49,7 @@ PackedSeq* FastaReader::ReadSequence()
 	Sequence seq(seqBuffer);
 	
 	// Create the packed seq
-	PackedSeq* pSeq = new PackedSeq(seq);
+	PackedSeq pSeq(seq);
 	return pSeq;
 
 }

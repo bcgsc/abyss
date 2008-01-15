@@ -6,7 +6,9 @@ PackedSeqReader::PackedSeqReader(const char* filename)
 	assert(m_fileHandle.is_open());
 	
 	// Read in the length of the sequences (the first record in the file)
-	m_fileHandle >> m_seqLength; 
+	m_fileHandle.read((char*)&m_seqLength, sizeof(int));
+	
+	//printf("seq len: %d\n", m_seqLength);
 }
 
 PackedSeqReader::~PackedSeqReader()
@@ -20,29 +22,36 @@ bool PackedSeqReader::ReadAllSequences(PSequenceVector& outVector)
 	// open file and check that we can read from it
 	while(isGood())
 	{
-		PackedSeq* pSeq = ReadSequence();
+		PackedSeq pSeq = ReadSequence();
 		outVector.push_back(pSeq);
 	}
+	return true;
 }
 
 // Read in a single sequence; this function allocates memory
-PackedSeq* PackedSeqReader::ReadSequence()
+PackedSeq PackedSeqReader::ReadSequence()
 {
 	assert(m_fileHandle.is_open());
 	
 	// How many bytes need to be allocated
 	int numBytes = PackedSeq::getNumCodingBytes(m_seqLength);
 	
+	//printf("allocating %d bytes (%d) pos: %d\n", numBytes, m_seqLength, pos);
+	
 	// allocate storage for the data
 	char* data = new char[numBytes];
+	
 	
 	// read in the sequence
 	m_fileHandle.read(data, numBytes);
 		
-	// allocate the new packed sequence
-	PackedSeq* pSeq = new PackedSeq(data, m_seqLength);
+	// generate the new packed sequence
+	PackedSeq seq(data, m_seqLength);
 	
-	return pSeq;
+	// free temp data
+	delete [] data;
+	
+	return seq;
 }
 
 bool PackedSeqReader::isGood()

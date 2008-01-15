@@ -5,9 +5,10 @@
 #include <fstream>
 #include "CommonDefs.h"
 #include "Sequence.h"
+#include "IFileWriter.h"
 #include "PackedSeq.h"
 
-class FastaWriter
+class FastaWriter : public IFileWriter
 {
 	public:
 	
@@ -19,6 +20,7 @@ class FastaWriter
 		
 		// Read in a single sequence to the out parameter, return whether there are more sequences to read
 		void WriteSequence(Sequence& seq);
+		void WriteSequence(const PackedSeq& pSeq);
 		
 	private:
 		std::ofstream m_fileHandle;

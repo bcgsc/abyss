@@ -17,6 +17,9 @@ class PackedSeq
 		// Destructor, frees memory
 		~PackedSeq();
 		
+		// Assignment Operator
+		PackedSeq& operator=(const PackedSeq& other);
+		
 		// Operators
 		bool operator==(const PackedSeq& other) const;
 		bool operator!=(const PackedSeq& other) const;
@@ -50,6 +53,8 @@ class PackedSeq
 		void print() const;
 		
 	private:
+	
+		PackedSeq();
 		
 		// get/set a particular value
 		inline void setBase(char* pSeq, int byteNum, int index, char base);
@@ -67,13 +72,14 @@ class PackedSeq
 		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
 		char rightShiftByte(char* pSeq, int byteNum, int index, char base);
 		
-		
-
-
 		// sequence is terminated by a null byte (all zeros)
 		char* m_pSeq;
 		char m_length;
 		
 };
+
+// Global function to make a reverse complement of a packed seq
+PackedSeq reverseComplement(const PackedSeq& seq);
+
 
 #endif

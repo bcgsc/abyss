@@ -31,9 +31,7 @@ const char BASES[NUM_BASES] = {'A', 'C', 'G', 'T'};
 
 typedef std::string Sequence;
 
-// forward declare
 class PackedSeq;
-
 
 // typedefs to make stl-based code somewhat more readable
 typedef std::vector<Sequence>::const_iterator const_seq_iter;
@@ -52,7 +50,7 @@ typedef std::vector<Sequence> SequenceVector;
 typedef SequenceVector::const_iterator ConstSequenceVectorIterator;
 typedef SequenceVector::iterator SequenceVectorIterator;
 
-typedef std::vector<PackedSeq*> PSequenceVector;
+typedef std::vector<PackedSeq> PSequenceVector;
 typedef PSequenceVector::const_iterator ConstPSequenceVectorIterator;
 typedef PSequenceVector::iterator PSequenceVectorIterator;
 

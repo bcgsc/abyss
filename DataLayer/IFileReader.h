@@ -12,7 +12,7 @@ class IFileReader
 	public:
 		// Read in a single sequence
 		virtual ~IFileReader() {};
-		virtual PackedSeq* ReadSequence() = 0;
+		virtual PackedSeq ReadSequence() = 0;
 		virtual bool isGood() = 0;
 };
 

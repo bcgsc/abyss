@@ -8,9 +8,9 @@ SeqRecord::SeqRecord()
 }
 
 // add a collection of sequences in a vector
-void SeqRecord::addMultipleSequences(const std::vector<Sequence>& seqVec)
+void SeqRecord::addMultipleSequences(const PSequenceVector& seqVec)
 {
-	for(const_seq_iter iter = seqVec.begin(); iter != seqVec.end(); iter++)
+	for(ConstPSequenceVectorIterator iter = seqVec.begin(); iter != seqVec.end(); iter++)
 	{
 		addSequence(*iter);
 	}	
@@ -26,15 +26,17 @@ void SeqRecord::addMultipleSequences(const SequenceMap& seqMap)
 }
 
 // add a single sequence
-void SeqRecord::addSequence(const Sequence& seq)
+void SeqRecord::addSequence(const PackedSeq& seq)
 {
 	m_seqRecord[seq]++;
-	m_seqRecord[reverseComplement(seq)]++;	
+	PackedSeq reverseComp(seq);
+	reverseComp.reverseComplement();
+	m_seqRecord[reverseComp]++;	
 }
 
 
 // return the multiplicity of a sequence	
-int SeqRecord::getMultiplicity(const Sequence& seq) const
+int SeqRecord::getMultiplicity(const PackedSeq& seq) const
 {
 	ConstSeqRecordIter iter = m_seqRecord.find(seq);
 	if(iter != m_seqRecord.end())
@@ -48,7 +50,7 @@ int SeqRecord::getMultiplicity(const Sequence& seq) const
 }
 
 // check if this sequence exists
-bool SeqRecord::contains(const Sequence& seq) const
+bool SeqRecord::contains(const PackedSeq& seq) const
 {
 	return getMultiplicity(seq) > 0;
 }

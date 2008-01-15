@@ -5,9 +5,10 @@
 #include <fstream>
 #include "CommonDefs.h"
 #include "Sequence.h"
+#include "IFileWriter.h"
 #include "PackedSeq.h"
 
-class PackedSeqWriter
+class PackedSeqWriter : public IFileWriter
 {
 	public:
 	
@@ -18,7 +19,7 @@ class PackedSeqWriter
 		~PackedSeqWriter();
 		
 		// Write a single sequence
-		void WriteSequence(PackedSeq& pSeq);
+		void WriteSequence(const PackedSeq& pSeq);
 		
 	private:
 		std::ofstream m_fileHandle;

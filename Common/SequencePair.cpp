@@ -1,11 +1,11 @@
 #include "SequencePair.h"
 
-SequencePair::SequencePair(Sequence s, int pos) : m_seq(s), m_maxPos(pos), m_distance(0), m_stddev(0.0f)
+SequencePair::SequencePair(PackedSeq s, int pos) : m_seq(s), m_maxPos(pos), m_distance(0), m_stddev(0.0f)
 {
 	
 }
 
-Sequence SequencePair::getSequence() const
+PackedSeq SequencePair::getSequence() const
 {
 	return m_seq;
 }
