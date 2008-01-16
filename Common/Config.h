@@ -11,6 +11,7 @@ class Config
 		
 		std::string getRootDataDir() const;
 		std::string getSequenceFilename() const;
+		std::string getTempFileExtension() const;
 		int getSequenceLength() const;
 		int getUnitSize() const;
 	
@@ -19,6 +20,7 @@ class Config
 		
 		std::string m_rootDataDirectory;
 		std::string m_sequenceFilename;
+		std::string m_tempFileExtension;
 		int m_unitSize;
 		int m_sequenceLength;
 };

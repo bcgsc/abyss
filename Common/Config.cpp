@@ -5,6 +5,7 @@
 #define UNIT_SIZE "unit_size"
 #define SEQUENCE_LENGTH "sequence_length"
 #define SEQUENCE_FILENAME "sequence_filename"
+#define TEMP_FILE_EXTENSION "temp_file_extension"
 
 Config::Config() : m_unitSize(-1), m_sequenceLength(-1)
 {
@@ -45,6 +46,10 @@ void Config::readConfig(const std::string filename)
 		{
 			m_sequenceFilename = value;
 		}
+		else if(name == TEMP_FILE_EXTENSION)
+		{
+			m_tempFileExtension = value;	
+		}
 		else
 		{
 			printf("could not parse config name: %s value: %s\n", name.c_str(), value.c_str());
@@ -70,6 +75,11 @@ std::string Config::getRootDataDir() const
 std::string Config::getSequenceFilename() const
 {
 	return m_sequenceFilename;
+}
+
+std::string Config::getTempFileExtension() const
+{
+	return m_tempFileExtension;
 }
 
 int Config::getSequenceLength() const

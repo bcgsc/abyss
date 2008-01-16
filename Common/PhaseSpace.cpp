@@ -1,29 +1,23 @@
+#include <algorithm>
 #include "PhaseSpace.h"
 #include "CommonUtils.h"
 
 
 // Set up the 4D space to be the size of the slice passed in
-PhaseSpace::PhaseSpace(int readLength, Coord4 minCoord, Coord4 maxCoord)
+PhaseSpace::PhaseSpace(int readLength, Coord4 minCoord, Coord4 maxCoord) : m_writeEnabled(true)
 {
 	m_minCoord = minCoord;
 	m_maxCoord = maxCoord;
 	m_readLength = readLength;
 	
-	m_size.x = m_maxCoord.x - m_minCoord.x;
-	m_size.y = m_maxCoord.y - m_minCoord.y;
-	m_size.z = m_maxCoord.z - m_minCoord.z;
-	m_size.w = m_maxCoord.w - m_minCoord.w;
+	// coordinates are inclusive
+	m_size.x = m_maxCoord.x - m_minCoord.x + 1;
+	m_size.y = m_maxCoord.y - m_minCoord.y + 1;
+	m_size.z = m_maxCoord.z - m_minCoord.z + 1;
+	m_size.w = m_maxCoord.w - m_minCoord.w + 1;
 	
-	// ensure the passed in size is a hypercube, ie each dimension is equal in length
-	if(m_size.x == m_size.y && m_size.x == m_size.z && m_size.x == m_size.w)
-	{ 
-		m_pPhaseSpace = new Bin4D(m_size.x, Bin3D(m_size.x, Bin2D(m_size.x, Bin1D(m_size.x))));
-	}
-	else
-	{
-		printf("partition must be equal in each dimension\n");
-		assert(false);
-	}
+	m_pPhaseSpace = new Bin4D(m_size.x, Bin3D(m_size.y, Bin2D(m_size.z, Bin1D(m_size.w))));
+
 }
 
 // Destructor, free the memory
@@ -44,19 +38,19 @@ void PhaseSpace::addReads(const SequenceVector& vec)
 }
 
 // Add a single read to the phasespace
-void PhaseSpace::addSequence(const PackedSeq& seq)
+void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 {
-	Coord4 index = SequenceToTransformCoord4(seq);
+	// Make sure the phase space is writable (ie it 
+	assert(m_writeEnabled);
+	
+	Coord4 index = SequenceToIndex(seq);
 	// Bounds check
-	if(index.x >= 0 && index.x < m_size.x
-	&& index.y >= 0 && index.y < m_size.y
-	&& index.z >= 0 && index.z < m_size.z
-	&& index.w >= 0 && index.w < m_size.w)
+	if(CheckValidIndex(index))
 	{		
 		//printf("added %s to (%d %d %d %d)\n", seq.decode().c_str(), index.x, index.y, index.z, index.w);
-		(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].insert(seq);
+		(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].push_back(seq);
 	}
-	else
+	else if(boundsCheck)
 	{
 		Coord4 realCoord = SequenceToCoord4(seq);
 		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
@@ -67,19 +61,90 @@ void PhaseSpace::addSequence(const PackedSeq& seq)
 // check if a sequence exists in the phase space
 bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
+	Coord4 realCoord = SequenceToCoord4(seq);
+	printf("checking for %s (%d, %d, %d, %d)...", seq.decode().c_str(), realCoord.x, realCoord.y, realCoord.z, realCoord.w);
+	
 	// calculate the coordinate for the sequence
-	Coord4 index = PhaseSpace::SequenceToTransformCoord4(seq);
-
-	// check for the existance of the sequence
-	if(	(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].count(seq) > 0)
+	Coord4 index = SequenceToIndex(seq);
+	
+	// Make sure we aren't requesting an invalid coordinate
+	// This would indicate that the correct phase space wasn't loaded
+	
+	if(CheckValidIndex(index))
 	{
-		return true;
+		// Reference to the correct vector
+		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+	
+		// Search the SORTED vector
+		bool found = std::binary_search(currBin.begin(), currBin.end(), seq);
+		
+		if(found)
+		{
+			printf("found!\n");
+		}
+		else
+		{
+			printf("notfound\n");
+		}
+		
+		return found;
 	}
 	else
 	{
-		return false;
+		Coord4 realCoord = SequenceToCoord4(seq);
+		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
+		assert(false);		
 	}
+}
+
+void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
+{
+	// Disable writes to the phase space, trim the vectors and sort them
+	//m_writeEnabled = false;
+	printf("finalizing....");
 	
+	for(int x = start.x; x <= end.x; x++)
+		for(int y = start.y; y <= end.y; y++)
+			for(int z = start.z; z <= end.z; z++)
+				for(int w = start.w; w <= end.w; w++)
+				{
+					Coord4 c = {x,y,z,w};
+					Coord4 index = CoordToIndex(c);
+					assert(CheckValidIndex(index));
+					
+				
+					// Get the current bin
+					BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+					
+					// Create a temp bin
+					BinItem tempBin;
+
+					// Sort the current bin
+					std::sort(currBin.begin(), currBin.end());
+					
+					bool first = true;
+					BinItem::const_iterator prevIter;
+					
+					for(BinItem::iterator itemIter = currBin.begin(); itemIter != currBin.end(); itemIter++)
+					{
+						if(first || (*itemIter) != (*prevIter))
+						{
+							tempBin.push_back(*itemIter);
+						}
+						first = false;
+						prevIter = itemIter;
+					}
+					
+					//printf("new load done\n");
+					
+					// swap trick to downsize
+					
+					// what happens here is you create a new exact-sized vector which is a copy of vector1. Then swap it back into vector1
+					// This allows you to trim the vector down to the minimum required size since you can't downsize an stl vector
+					BinItem(tempBin.begin(), tempBin.end()).swap(currBin);
+					//printf("after swap: %d (%d)\n", iter1->size(), iter1->capacity());
+				}
+	printf("done\n");
 }
 
 // Calculate the extension of this sequence in the direction given
@@ -95,9 +160,8 @@ HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection 
 	{	
 		// Todo: clean this up
 		const PackedSeq& seq = *iter;
-		PackedSeq rcSeq = seq;
-		rcSeq.reverseComplement();
-		  
+		PackedSeq rcSeq = reverseComplement(seq);
+		
 		if(checkForSequence(seq) || checkForSequence(rcSeq))
 		{
 			hitRecord.addHit(seq);
@@ -123,7 +187,7 @@ bool PhaseSpace::hasChild(const PackedSeq& seq) const
 // get the multiplicity of the sequence
 int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
-	Coord4 c = PhaseSpace::SequenceToTransformCoord4(seq);
+	Coord4 c = SequenceToIndex(seq);
 	assert(false);
 	return 0;
 	//return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
@@ -132,6 +196,7 @@ int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 // print every read's multiplicity
 void PhaseSpace::printAll() const
 {
+	assert(false);
 	// hideous nested loop
 	for(Bin4D::const_iterator iter4 = m_pPhaseSpace->begin(); iter4 != m_pPhaseSpace->end(); iter4++)
 		for(Bin3D::const_iterator iter3 = iter4->begin(); iter3 != iter4->end(); iter3++)
@@ -139,22 +204,24 @@ void PhaseSpace::printAll() const
 				for(Bin1D::const_iterator iter1 = iter2->begin(); iter1 != iter2->end(); iter1++)
 					for(BinItem::const_iterator itemIter = iter1->begin(); itemIter != iter1->end(); itemIter++)
 					{
-						printf("%d %s\n", itemIter->decode().c_str());	
+						//printf("%d %s\n", itemIter->decode().c_str());	
 					}
 }
 
 // Get the iterator pointing to the first sequence in the bin
 PhaseSpaceBinIter PhaseSpace::getStartIter(Coord4 c) const
 {
-	Coord4 transC = PhaseSpace::TransformCoordinate(c);
-	return (*m_pPhaseSpace)[transC.x][transC.y][transC.z][transC.w].begin();
+	Coord4 index = CoordToIndex(c);
+	assert(CheckValidIndex(index));
+	return (*m_pPhaseSpace)[index.x][index.y][index.z][index.w].begin();
 }
 		
 // Get the iterator pointing to the last sequence in the bin
 PhaseSpaceBinIter PhaseSpace::getEndIter(Coord4 c) const
 {
-	Coord4 transC = PhaseSpace::TransformCoordinate(c);
-	return (*m_pPhaseSpace)[transC.x][transC.y][transC.z][transC.w].end();
+	Coord4 index = CoordToIndex(c);
+	assert(CheckValidIndex(index));	
+	return (*m_pPhaseSpace)[index.x][index.y][index.z][index.w].end();
 }
 
 // Calculate the coordinate of this sequence
@@ -193,7 +260,7 @@ Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 	return c;
 }
 
-Coord4 PhaseSpace::TransformCoordinate(Coord4& c) const
+Coord4 PhaseSpace::CoordToIndex(const Coord4& c) const
 {
 	Coord4 tc;
 	tc.x = c.x - m_minCoord.x;
@@ -203,10 +270,20 @@ Coord4 PhaseSpace::TransformCoordinate(Coord4& c) const
 	return tc;
 }
 
-Coord4 PhaseSpace::SequenceToTransformCoord4(const PackedSeq& seq) const
+bool PhaseSpace::CheckValidCoordinate(const Coord4& c) const
+{
+	return CheckValidIndex(CoordToIndex(c));
+}
+
+bool PhaseSpace::CheckValidIndex(const Coord4& c) const
+{
+	return (c.x >= 0 && c.x < m_size.x && c.y >= 0 && c.y < m_size.y && c.z >= 0 && c.z < m_size.z && c.w >= 0 && c.w < m_size.w);
+}
+
+Coord4 PhaseSpace::SequenceToIndex(const PackedSeq& seq) const
 {
 	Coord4 c = SequenceToCoord4(seq);
-	return TransformCoordinate(c);
+	return CoordToIndex(c);
 }
 
 // Calculate the coordinate of this sequence

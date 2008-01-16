@@ -6,61 +6,70 @@ PartitionLoader::PartitionLoader(const Config* pConfig) : m_pConfig(pConfig)
 	
 }
 
-
-PhaseSpace* PartitionLoader::CreateAndLoadPhaseSpace(Coord4 center, Coord4 size)
+// Coordinates are inclusive
+PhaseSpace* PartitionLoader::CreateAndLoadPhaseSpace(Coord4 minCoord, Coord4 maxCoord)
 {
 
-
-	// Calculate the coordinate extents
-	Coord4 minCoords;
-	Coord4 maxCoords;
-	minCoords.x = max(center.x - size.x, 0);
-	maxCoords.x = min(center.x + size.x + m_pConfig->getUnitSize(), m_pConfig->getSequenceLength());
+	assert(minCoord.x < maxCoord.x && minCoord.y < maxCoord.y && minCoord.z < maxCoord.z && minCoord.w < maxCoord.w);
 	
-	minCoords.y = max(center.y - size.y, 0);
-	maxCoords.y = min(center.y + size.y + m_pConfig->getUnitSize(), m_pConfig->getSequenceLength());
+	// Compute the starting bin coordinates. They are the lowest coordinates that are a multiple of the unitsize
+	Coord4 start;
+	start.x = (minCoord.x / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	start.y = (minCoord.y / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	start.z = (minCoord.z / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	start.w = (minCoord.w / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
 	
-	minCoords.z = max(center.z - size.z, 0);
-	maxCoords.z = min(center.z + size.z + m_pConfig->getUnitSize(), m_pConfig->getSequenceLength());
-	
-	minCoords.w = max(center.w - size.w, 0);
-	maxCoords.w = min(center.w + size.w + m_pConfig->getUnitSize(), m_pConfig->getSequenceLength());
-	
-	printf("mins: (%d, %d, %d, %d)\n", minCoords.x, minCoords.y, minCoords.z, minCoords.w);
-	printf("maxs: (%d, %d, %d, %d)\n", maxCoords.x, maxCoords.y, maxCoords.z, maxCoords.w);
+	// Compute the end bin coordinates. 
+	Coord4 end;
+	end.x = (maxCoord.x / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	end.y = (maxCoord.y / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	end.z = (maxCoord.z / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+	end.w = (maxCoord.w / m_pConfig->getUnitSize()) * m_pConfig->getUnitSize();
+		
+	printf("start load bin: (%d, %d, %d, %d)\n", start.x, start.y, start.z, start.w);
+	printf("end load bin: (%d, %d, %d, %d)\n", end.x, end.y, end.z, end.w);
 	
 	// Create the phase space
-	PhaseSpace* pPS = new PhaseSpace(m_pConfig->getSequenceLength(), minCoords, maxCoords);
-		
-	// Calculate the files that need to be loaded to determine this slice of 4D space
-	std::set<std::string> fileSet;	
-	for(int x = minCoords.x; x < maxCoords.x; x++)
-		for(int y = minCoords.y; y < maxCoords.y; y++)
-			for(int z = minCoords.z; z < maxCoords.z; z++)
-				for(int w = minCoords.w; w < maxCoords.w; w++)
+	PhaseSpace* pPS = new PhaseSpace(m_pConfig->getSequenceLength(), minCoord, maxCoord);
+	
+	int count = 0;
+	
+	// Load up all the files required
+	for(int x = start.x; x <= end.x; x += m_pConfig->getUnitSize())
+		for(int y = start.y; y <= end.y; y += m_pConfig->getUnitSize())
+			for(int z = start.z; z <= end.z; z += m_pConfig->getUnitSize())
+				for(int w = start.w; w <= end.w; w += m_pConfig->getUnitSize())
 				{
 					Coord4 pos = {x,y,z,w};
 					std::string file = Coord4ToPartitionFile(m_pConfig, pos);
-					fileSet.insert(file);
-					//printf("coord (%d, %d, %d, %d)\n", x,y,z,w);
+					printf("loading...%s\n", file.c_str());
+					
+					// read in all the sequences
+					PackedSeqReader reader(file.c_str());
+					while(reader.isGood())
+					{
+						PackedSeq s = reader.ReadSequence();
+						//printf("seq: %s\n", s.decode().c_str());
+						pPS->addSequence(s);
+						count++;
+					}
+					
+					// finalize the bins
+					
+					// make sure the coordinates do not go out of bounds (we could be just reading in a subset of the coordinates
+					Coord4 startBin;
+					startBin.x = max(pos.x, minCoord.x);
+					startBin.y = max(pos.y, minCoord.y);
+					startBin.z = max(pos.z, minCoord.z);
+					startBin.w = max(pos.w, minCoord.w);					
+					
+					Coord4 endBin;
+					endBin.x = min(pos.x + m_pConfig->getUnitSize() - 1, maxCoord.x);
+					endBin.y = min(pos.y + m_pConfig->getUnitSize() - 1, maxCoord.y);
+					endBin.z = min(pos.z + m_pConfig->getUnitSize() - 1, maxCoord.z);
+					endBin.w = min(pos.w + m_pConfig->getUnitSize() - 1, maxCoord.w);
+					pPS->finalizeBins(startBin, endBin);
 				}
-				
-	int count = 0;
-	// Read in the files needed to load up the specified hypercube slice
-	for(std::set<std::string>::const_iterator iter = fileSet.begin(); iter != fileSet.end(); iter++)
-	{
-		printf("file: %s\n", iter->c_str());
-		PackedSeqReader reader(iter->c_str());
-		while(reader.isGood())
-		{
-			// this call allocates memory
-			PackedSeq s = reader.ReadSequence();
-			
-			// this call makes a copy of the packed seq
-			pPS->addSequence(s);
-			count++;
-		}
-	}
 	
 	printf("loaded %d sequences\n", count); 
 	return pPS;	
@@ -83,12 +92,3 @@ std::string PartitionLoader::Coord4ToPartitionFile(const Config* pConfig, const 
 	return s;
 }
 
-int PartitionLoader::min(const int& n1, const int& n2) const
-{
-	return (n1 < n2) ? n1 : n2;	
-}
-
-int PartitionLoader::max(const int& n1, const int& n2) const
-{
-	return (n1 > n2) ? n1 : n2;	
-}

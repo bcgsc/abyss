@@ -82,7 +82,7 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	}
 	
 	// Delete previous seq, this will either be NULL or valid allocated memory
-	delete m_pSeq;
+	delete [] m_pSeq;
 	m_pSeq = 0;
 	
 	// Allocate and fill the new seq

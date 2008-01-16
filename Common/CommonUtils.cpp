@@ -78,3 +78,14 @@ void makePermutations(const Sequence& seq, SequenceVector& outVector)
 		}
 	}
 } 
+
+
+int min(const int& n1, const int& n2)
+{
+	return (n1 < n2) ? n1 : n2;	
+}
+
+int max(const int& n1, const int& n2)
+{
+	return (n1 > n2) ? n1 : n2;	
+}

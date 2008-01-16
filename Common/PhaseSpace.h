@@ -12,12 +12,12 @@
 using namespace std;
 
 
-typedef std::set<PackedSeq> BinItem;
+typedef std::map<PackedSeq, int> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
 typedef std::vector<Bin3D> Bin4D;
-typedef std::set<PackedSeq>::iterator PhaseSpaceBinIter;
+typedef BinItem::iterator PhaseSpaceBinIter;
 
 enum PointClassification
 {
@@ -48,13 +48,22 @@ class PhaseSpace
 		void addReads(const SequenceVector& vec);
 		
 		// add a single sequence
-		void addSequence(const PackedSeq& seq);
+		void addSequence(const PackedSeq& seq, bool boundsCheck = false);
+		
+		// trim and sort the vectors
+		void finalizeBins(Coord4 start, Coord4 end);
 		
 		// get the multiplicity of the sequence
 		int getMultiplicity(const PackedSeq& seq);
 		
 		// check if a sequence exists
 		bool checkForSequence(const PackedSeq& seq) const;
+		
+		// check if the coordinate is valid
+		inline bool CheckValidCoordinate(const Coord4& c) const;
+		
+		// check if the index is valid
+		inline bool CheckValidIndex(const Coord4& c) const;
 		
 		// calculate whether this sequence has an extension in the phase space
 		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;
@@ -73,13 +82,7 @@ class PhaseSpace
 		
 		// print everything
 		void printAll() const;
-		
-		// Transform a coordinate
-		Coord4 TransformCoordinate(Coord4& c) const;
-		
-		// Compute the transformed (phase space) coordinate of this sequence
-		Coord4 SequenceToTransformCoord4(const PackedSeq& seq) const;
-		
+						
 		// compute the coordinate of a sequence
 		static Coord4 SequenceToCoord4(const Sequence& seq);
 		
@@ -88,6 +91,12 @@ class PhaseSpace
 
 	private:
 	
+		// Compute the transformed (phase space) coordinate of this sequence
+		Coord4 SequenceToIndex(const PackedSeq& seq) const;
+			
+		// Transform a coordinate
+		Coord4 CoordToIndex(const Coord4& c) const;
+			
 		static inline int base2Idx(const char c); 
 		
 		PhaseSpace();
@@ -97,6 +106,8 @@ class PhaseSpace
 		Coord4 m_maxCoord;
 		Coord4 m_size;
 		int m_readLength;
+		
+		bool m_writeEnabled;
 };
 
 #endif
