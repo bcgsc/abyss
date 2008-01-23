@@ -18,9 +18,9 @@ PackedSeq::~PackedSeq()
 PackedSeq::PackedSeq(char* const pData, int length)
 {
 	// Allocate space for the sequence
+	allocate(length);
 	int numBytes = getNumCodingBytes(length);
-	m_pSeq = new char[numBytes];
-	
+
 	// copy over the bytes
 	memcpy(m_pSeq, pData, numBytes);
 	
@@ -40,13 +40,7 @@ PackedSeq::PackedSeq(const Sequence& seq)
 
 	m_length = length;
 	int numBytes = getNumCodingBytes(length);
-
-	
-	//printf("length: %d numTrips: %d\n", length, numTriplets);
-	// allocate the triplets adding one to account for the null byte
-	m_pSeq = new char[numBytes];
-	memset(m_pSeq, 0, numBytes);
-	
+	allocate(length);	
 	const char* strData = seq.data();
 	
 	for(int i = 0; i < m_length; i++)
@@ -65,8 +59,7 @@ PackedSeq::PackedSeq(const PackedSeq& pseq)
 	// allocate memory and copy over the seq
 	m_length = pseq.m_length;
 	int numBytes = getNumCodingBytes(m_length);
-	m_pSeq = new char[numBytes];
-	memset(m_pSeq, 0, numBytes);	
+	allocate(m_length);
 	
 	// copy the sequence over
 	memcpy(m_pSeq, pseq.m_pSeq, numBytes);
@@ -89,8 +82,7 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	m_length = other.m_length;	
 	int numBytes = getNumCodingBytes(m_length);
 	
-	m_pSeq = new char[numBytes];
-	memset(m_pSeq, 0, numBytes);	
+	allocate(m_length);
 	
 	// copy the sequence over
 	memcpy(m_pSeq, other.m_pSeq, numBytes);
@@ -98,10 +90,23 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	return *this;
 }
 
+void PackedSeq::allocate(int length)
+{
+	int numBytes = getNumCodingBytes(length);
+	m_pSeq = new char[numBytes];
+	memset(m_pSeq, 0, numBytes);
+}
+
 bool PackedSeq::operator==(const PackedSeq& other) const
 {
-	int numBytes = getNumCodingBytes(m_length);
-	return (memcmp(m_pSeq, other.m_pSeq, numBytes) == 0);
+	for(int i = 0; i < m_length; i++)
+	{
+		if(this->getBase(i) != other.getBase(i))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 bool PackedSeq::operator!=(const PackedSeq& other) const
@@ -111,8 +116,16 @@ bool PackedSeq::operator!=(const PackedSeq& other) const
 
 bool PackedSeq::operator<(const PackedSeq& other) const
 {
-	int numBytes = getNumCodingBytes(m_length);
-	return (memcmp(m_pSeq, other.m_pSeq, numBytes) < 0);
+	//int numBytes = getNumCodingBytes(m_length);
+	//return (memcmp(m_pSeq, other.m_pSeq, numBytes) < 0);
+	for(int i = 0; i < m_length; i++)
+	{
+		if(this->getBase(i) != other.getBase(i))
+		{
+			return (this->getBase(i) < other.getBase(i));
+		}
+	}
+	return 0;
 }
 
 char PackedSeq::getBase(int seqIndex) const

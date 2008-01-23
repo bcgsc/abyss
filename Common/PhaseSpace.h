@@ -12,12 +12,13 @@
 using namespace std;
 
 
-typedef std::map<PackedSeq, int> BinItem;
+typedef std::vector<PackedSeq> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
 typedef std::vector<Bin3D> Bin4D;
 typedef BinItem::iterator PhaseSpaceBinIter;
+typedef BinItem::const_iterator ConstPhaseSpaceBinIter;
 
 enum PointClassification
 {

@@ -7,109 +7,173 @@
 #include "PairRecord.h"
 #include "Writer.h"
 #include "SeqRecord.h"
+#include "Config.h"
+#include "PartitionLoader.h"
+#include "FastaWriter.h"
+#include "FastaReader.h"
 
 int main(int argv, char** argc)
-{
-	Reader fileReader;
-	
+{	
 	if(argv < 2)
 	{
-		printf("usage: PathWalker <fasta file> <insert length>\n");
+		printf("usage: LGAP <fasta file> <config file>\n");
 		exit(1);
 	}
 	
-	const char* fastaFile = argc[1];
-	int insertLength = atoi(argc[2]);
-#if 0
-	PSequenceVector allSeqs;
-	bool result = fileReader.readFasta(fastaFile, allSeqs);
+	std::string fastaFile = argc[1];
+	std::string configFile = argc[2];
 	
-	if(result != true && allSeqs.size() > 0)
+	Config config;
+	config.readConfig(configFile);
+	
+	Coord4 minCoords;
+	Coord4 maxCoords;
+	
+	int maxC = config.getSequenceLength() - 1;
+	// Compute the coordinate extents
+	minCoords.x = 0;
+	maxCoords.x = maxC;
+	
+	minCoords.y = 0;
+	maxCoords.y = maxC;
+	
+	minCoords.z = 0;
+	maxCoords.z = maxC;
+	
+	minCoords.w = 0;
+	maxCoords.w = maxC;	
+	
+	
+	// Load the phase space
+	PhaseSpace* pPS = new PhaseSpace(config.getSequenceLength(), minCoords, maxCoords);
+	
+	// Open file for read
+	FastaReader* reader = new FastaReader(fastaFile.c_str());
+	
+	// Load phase space
+	int count = 0;
+	
+	while(reader->isGood())
 	{
-		printf("error reading fasta file, exiting\n");
+		PackedSeq seq = reader->ReadSequence();
+		pPS->addSequence(seq, true);
+		count++;
 	}
 	
-	// Create the pair mapping from all the seqs
-	// pairs are assumed to be in contiguous entries in the array
-	PairRecord pairRecord(allSeqs);
-
-	// Get the length of the reads
-	// The read length is assumed to be uniform for all input sequences
-	int readLength = allSeqs.front().length();
+	delete reader;
 	
-	//printf("read %d sequences of length %d\n", allSeqs.size(), readLength);	
+	printf("done phase space load (%d sequences)\n", count);
 	
-	// Create phase space
-	PhaseSpace phaseSpace(readLength);
-
-	phaseSpace.addReads(allSeqs);
+	pPS->finalizeBins(minCoords, maxCoords);
 	
 	// create file writer
-	Writer writer("contigs.fa");
+	FastaWriter writer("contigs.fa");
 		
-	// Create the master record of sequences
-	SeqRecord multiplicityRecord;
-	multiplicityRecord.addMultipleSequences(allSeqs);
-	
 	SeqRecord extensionRecord;
 	
-	int totalSeqs = allSeqs.size() - 1;
-	
-	for(int i = 0; i < allSeqs.size(); i++)
-	{
-		Sequence seedSeq = allSeqs[i];
+	printf("done load\n");
 
-		if(extensionRecord.getMultiplicity(seedSeq) > 0)
-		{
-			continue;	
-		}	
+	int noext = 0;
+	int ambiext = 0;
 	
-		PathDriver driver(seedSeq, SENSE, &phaseSpace, &pairRecord, &multiplicityRecord, &extensionRecord);
-		Path finalPathSense = driver.run();
-			
-		PathDriver driver2(seedSeq, ANTISENSE, &phaseSpace, &pairRecord, &multiplicityRecord, &extensionRecord);
-		Path finalPathAntisense = driver2.run();
-		
-		finalPathAntisense.mergePath(finalPathSense, false, true, true);
-		
-		finalPathAntisense.print();
-		
-		if(finalPathAntisense.getSequence().length() >= 100)
-		{
-			writer.writeContig(finalPathAntisense.getSequence().c_str());
-		}
-	}
-		
-	
-	/*
-	for(int index = 0; index < 1500000; index++)
-	{
-		// this is weak 
-		int randNum = rand();
-		int randomIndex = ((double)randNum / (double)RAND_MAX) * (double)totalSeqs;
-		printf("rand %d randidx %d randmax %d\n", randNum, randomIndex, RAND_MAX);
-		Sequence seedSeq = allSeqs[randomIndex];
-		
-		if(extensionRecord.getMultiplicity(seedSeq) > 0)
-		{
-			continue;	
-		}
-		
-
-		PathDriver driver(seedSeq, SENSE, &phaseSpace, &pairRecord, &multiplicityRecord, &extensionRecord);
-		Path finalPathSense = driver.run();
-		
-		PathDriver driver2(seedSeq, ANTISENSE, &phaseSpace, &pairRecord, &multiplicityRecord, &extensionRecord);
-		Path finalPathAntisense = driver2.run();
-		
-		finalPathAntisense.mergePath(finalPathSense, false, true, true);
-		
-		if(finalPathAntisense.getSequence().length() > 200)
-		{
-			writer.writeContig(finalPathAntisense.getSequence().c_str());
-		}
-	}
-	*/
-#endif	
+	count = 0;
+	for(int x = 0; x < maxC; x++)
+		for(int y = 0; y < maxC; y++)
+			for(int z = 0; z < maxC; z++)
+				for(int w = 0; w < maxC; w++)
+				{
+					Coord4 c;
+					c.x = x;
+					c.y = y;
+					c.z = z;
+					c.w = w;
+					
+					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
+					{
+						count++;
+						if(count % 100000 == 0)
+						{
+							printf("processed %d sequences, %d noext %d ambiext\n", count, noext, ambiext);
+						}
+												
+						if(extensionRecord.contains(*iter))
+						{
+							continue;
+						}
+						
+						PSequenceVector extensions[2];
+							
+						int stage = 0;
+						for(int i = 0; i <= 1; i++)
+						{
+							bool stop = false;
+							
+							extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+							PackedSeq currSeq = *iter;
+							SeqRecord loopCheck;
+							
+							while(!stop)
+							{
+								HitRecord hr = pPS->calculateExtension(currSeq, dir);
+								if(hr.getNumHits() == 0)
+								{
+									// no ext
+									stop = true;
+									noext++;
+								}
+								else if(hr.getNumHits() == 1)
+								{
+									// good ext
+									currSeq = hr.getFirstHit();
+									
+									if(loopCheck.contains(currSeq))
+									{
+										stop = true;
+									}
+									else
+									{
+										//printf("good ext (%s)\n", currSeq.decode().c_str());
+										extensions[i].push_back(currSeq);
+									}
+									
+								}
+								else
+								{
+									// ambi ext
+									stop = true;
+									ambiext++;
+								}
+								
+								loopCheck.addSequence(currSeq);
+								extensionRecord.addSequence(currSeq);				
+							}
+						}
+						
+						Sequence contig;
+						contig.reserve(iter->getSequenceLength() + extensions[0].size() + extensions[1].size());
+						
+						// output the contig
+						
+						// output all the antisense extensions
+						for(PSequenceVector::reverse_iterator asIter = extensions[1].rbegin(); asIter != extensions[1].rend(); asIter++)
+						{
+							contig.append(1, asIter->getFirstBase());
+							
+						}
+						
+						// output the current sequence itself
+						contig.append(iter->decode());
+						
+						// output the sense extensions
+						for(PSequenceVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
+						{
+							contig.append(1, sIter->getLastBase());
+						}
+						
+						writer.WriteSequence(contig);	
+					}
+					//return 0;				
+				}
+	printf("processed %d sequences total, %d noext %d ambiext\n", count, noext, ambiext);
 	return 0;
 }

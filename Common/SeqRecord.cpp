@@ -29,8 +29,7 @@ void SeqRecord::addMultipleSequences(const SequenceMap& seqMap)
 void SeqRecord::addSequence(const PackedSeq& seq)
 {
 	m_seqRecord[seq]++;
-	PackedSeq reverseComp(seq);
-	reverseComp.reverseComplement();
+	PackedSeq reverseComp = reverseComplement(seq);
 	m_seqRecord[reverseComp]++;	
 }
 

@@ -62,7 +62,6 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
 	Coord4 realCoord = SequenceToCoord4(seq);
-	printf("checking for %s (%d, %d, %d, %d)...", seq.decode().c_str(), realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 	
 	// calculate the coordinate for the sequence
 	Coord4 index = SequenceToIndex(seq);
@@ -77,16 +76,6 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 	
 		// Search the SORTED vector
 		bool found = std::binary_search(currBin.begin(), currBin.end(), seq);
-		
-		if(found)
-		{
-			printf("found!\n");
-		}
-		else
-		{
-			printf("notfound\n");
-		}
-		
 		return found;
 	}
 	else
@@ -101,7 +90,7 @@ void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
 {
 	// Disable writes to the phase space, trim the vectors and sort them
 	//m_writeEnabled = false;
-	printf("finalizing....");
+	//printf("finalizing....");
 	
 	for(int x = start.x; x <= end.x; x++)
 		for(int y = start.y; y <= end.y; y++)
@@ -115,36 +104,17 @@ void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
 				
 					// Get the current bin
 					BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
-					
-					// Create a temp bin
-					BinItem tempBin;
 
 					// Sort the current bin
 					std::sort(currBin.begin(), currBin.end());
-					
-					bool first = true;
-					BinItem::const_iterator prevIter;
-					
-					for(BinItem::iterator itemIter = currBin.begin(); itemIter != currBin.end(); itemIter++)
-					{
-						if(first || (*itemIter) != (*prevIter))
-						{
-							tempBin.push_back(*itemIter);
-						}
-						first = false;
-						prevIter = itemIter;
-					}
-					
-					//printf("new load done\n");
 					
 					// swap trick to downsize
 					
 					// what happens here is you create a new exact-sized vector which is a copy of vector1. Then swap it back into vector1
 					// This allows you to trim the vector down to the minimum required size since you can't downsize an stl vector
-					BinItem(tempBin.begin(), tempBin.end()).swap(currBin);
+					BinItem(currBin.begin(), currBin.end()).swap(currBin);
 					//printf("after swap: %d (%d)\n", iter1->size(), iter1->capacity());
 				}
-	printf("done\n");
 }
 
 // Calculate the extension of this sequence in the direction given
@@ -187,10 +157,20 @@ bool PhaseSpace::hasChild(const PackedSeq& seq) const
 // get the multiplicity of the sequence
 int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
-	Coord4 c = SequenceToIndex(seq);
 	assert(false);
 	return 0;
-	//return (*m_pPhaseSpace)[c.x][c.y][c.z][c.w][seq];
+	/*
+	Coord4 c = SequenceToIndex(seq);
+	PhaseSpaceBinIter iter = (*m_pPhaseSpace)[c.x][c.y][c.z][c.w].find(seq);
+	
+	if(iter != (*m_pPhaseSpace)[c.x][c.y][c.z][c.w].end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		return 0;
+	}*/
 }
 
 // print every read's multiplicity

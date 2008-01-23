@@ -17,6 +17,9 @@ class PackedSeq
 		// Destructor, frees memory
 		~PackedSeq();
 		
+		// Allocate memory for the string
+		void allocate(int length);
+		
 		// Assignment Operator
 		PackedSeq& operator=(const PackedSeq& other);
 		
@@ -37,6 +40,9 @@ class PackedSeq
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
 		
+		// get a particular base
+		char getFirstBase() const { return getBase(0); }
+		char getLastBase() const { return getBase(m_length - 1); }
 		char getBase(int seqIndex) const;
 		
 		// Reverse and complement this sequence

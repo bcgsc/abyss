@@ -1,6 +1,6 @@
 #include "FastaWriter.h"
 
-FastaWriter::FastaWriter(const char* filename)
+FastaWriter::FastaWriter(const char* filename) : m_count(0)
 {	
 	m_fileHandle.open(filename, std::ios::out);
 	assert(m_fileHandle.is_open());
@@ -19,7 +19,7 @@ void FastaWriter::WriteSequence(Sequence& seq)
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
-	m_fileHandle << ">" << m_count << "\n" << seq << "\n";
+	m_fileHandle << ">" << m_count << " " << seq.length() << "\n" << seq << "\n";
 	
 	m_count++;
 
@@ -32,7 +32,7 @@ void FastaWriter::WriteSequence(const PackedSeq& pSeq)
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
-	m_fileHandle << ">" << m_count << "\n" << pSeq.decode() << "\n";
+	m_fileHandle << ">" << m_count << " " << pSeq.getSequenceLength() << "\n" << pSeq.decode() << "\n";
 	
 	m_count++;
 
