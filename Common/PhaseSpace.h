@@ -60,11 +60,14 @@ class PhaseSpace
 		// check if a sequence exists
 		bool checkForSequence(const PackedSeq& seq) const;
 		
+		// Find a sequence in the phase space
+		void markSequence(const PackedSeq seq, SeqFlag flag);	
+		
 		// check if the coordinate is valid
 		inline bool CheckValidCoordinate(const Coord4& c) const;
 		
 		// check if the index is valid
-		inline bool CheckValidIndex(const Coord4& c) const;
+		bool CheckValidIndex(const Coord4& c) const;
 		
 		// calculate whether this sequence has an extension in the phase space
 		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;

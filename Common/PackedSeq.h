@@ -3,6 +3,12 @@
 
 #include "Sequence.h"
 
+enum SeqFlag
+{
+	SF_SEEN = 0x01,
+	SF_DELETE = 0x02
+};
+
 class PackedSeq
 {
 	public:
@@ -45,6 +51,10 @@ class PackedSeq
 		char getLastBase() const { return getBase(m_length - 1); }
 		char getBase(int seqIndex) const;
 		
+		// flags
+		void setFlag(SeqFlag flag);
+		bool isFlagSet(SeqFlag flag) const;
+		
 		// Reverse and complement this sequence
 		void reverseComplement();
 		
@@ -81,6 +91,7 @@ class PackedSeq
 		// sequence is terminated by a null byte (all zeros)
 		char* m_pSeq;
 		char m_length;
+		char m_flags;
 		
 };
 

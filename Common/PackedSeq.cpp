@@ -2,7 +2,7 @@
 #include "PackedSeq.h"
 
 // Default constructor
-PackedSeq::PackedSeq() : m_pSeq(0), m_length(0)
+PackedSeq::PackedSeq() : m_pSeq(0), m_length(0), m_flags(0)
 {
 	
 }
@@ -15,7 +15,7 @@ PackedSeq::~PackedSeq()
 }
 
 // Construct a sequence from a series of bytes
-PackedSeq::PackedSeq(char* const pData, int length)
+PackedSeq::PackedSeq(char* const pData, int length) : m_flags(0)
 {
 	// Allocate space for the sequence
 	allocate(length);
@@ -29,7 +29,7 @@ PackedSeq::PackedSeq(char* const pData, int length)
 }
 
 // Construct a sequence from a String-based sequence
-PackedSeq::PackedSeq(const Sequence& seq)
+PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0)
 {
 	int length = seq.length();
 	
@@ -136,6 +136,15 @@ char PackedSeq::getBase(int seqIndex) const
 	return getBase(m_pSeq, byteNumber, baseIndex);
 }
 
+void PackedSeq::setFlag(SeqFlag flag)
+{
+	m_flags |= flag;		
+}
+
+bool PackedSeq::isFlagSet(SeqFlag flag) const
+{
+	return m_flags & flag;
+}
 
 int PackedSeq::getSequenceLength() const
 {

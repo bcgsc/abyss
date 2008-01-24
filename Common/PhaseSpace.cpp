@@ -61,8 +61,6 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 // check if a sequence exists in the phase space
 bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
-	Coord4 realCoord = SequenceToCoord4(seq);
-	
 	// calculate the coordinate for the sequence
 	Coord4 index = SequenceToIndex(seq);
 	
@@ -75,8 +73,7 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
 	
 		// Search the SORTED vector
-		bool found = std::binary_search(currBin.begin(), currBin.end(), seq);
-		return found;
+		return std::binary_search(currBin.begin(), currBin.end(), seq);
 	}
 	else
 	{
@@ -84,6 +81,34 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 		assert(false);		
 	}
+}
+
+// Searches the phase space for a particular sequence and returns the reference IN the phase space to it
+// this allows us to manipulate the sequences that make up the phase space (in particular mark them for deletion, etc)
+void PhaseSpace::markSequence(const PackedSeq seq, SeqFlag flag)
+{
+	// calculate the coordinate for the sequence
+	Coord4 index = SequenceToIndex(seq);
+	if(CheckValidIndex(index))
+	{
+		// Reference to the correct vector
+		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+	
+		// Search the SORTED vector
+		PhaseSpaceBinIter iter = std::lower_bound(currBin.begin(), currBin.end(), seq);
+		if(iter != currBin.end() && *iter == seq)
+		{
+			iter->setFlag(flag);
+		}
+	}
+	else
+	{
+		Coord4 realCoord = SequenceToCoord4(seq);
+		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
+		assert(false);		
+	}		
+
+	
 }
 
 void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
@@ -159,18 +184,6 @@ int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
 	assert(false);
 	return 0;
-	/*
-	Coord4 c = SequenceToIndex(seq);
-	PhaseSpaceBinIter iter = (*m_pPhaseSpace)[c.x][c.y][c.z][c.w].find(seq);
-	
-	if(iter != (*m_pPhaseSpace)[c.x][c.y][c.z][c.w].end())
-	{
-		return iter->second;
-	}
-	else
-	{
-		return 0;
-	}*/
 }
 
 // print every read's multiplicity

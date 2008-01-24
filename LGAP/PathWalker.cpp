@@ -68,8 +68,6 @@ int main(int argv, char** argc)
 	
 	// create file writer
 	FastaWriter writer("contigs.fa");
-		
-	SeqRecord extensionRecord;
 	
 	printf("done load\n");
 
@@ -95,8 +93,9 @@ int main(int argv, char** argc)
 						{
 							printf("processed %d sequences, %d noext %d ambiext\n", count, noext, ambiext);
 						}
+											
 												
-						if(extensionRecord.contains(*iter))
+						if(iter->isFlagSet(SF_SEEN))
 						{
 							continue;
 						}
@@ -145,7 +144,10 @@ int main(int argv, char** argc)
 								}
 								
 								loopCheck.addSequence(currSeq);
-								extensionRecord.addSequence(currSeq);				
+								
+								// Mark the flag for the selected sequence
+								pPS->markSequence(currSeq, SF_SEEN);
+								pPS->markSequence(reverseComplement(currSeq), SF_SEEN);
 							}
 						}
 						
