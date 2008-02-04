@@ -1,16 +1,218 @@
 #include <stdio.h>
 
 #include <vector>
-#include "Sequence.h"
-#include "Reader.h"
-#include "PathDriver.h"
-#include "PairRecord.h"
-#include "Writer.h"
-#include "SeqRecord.h"
-#include "Config.h"
-#include "PartitionLoader.h"
-#include "FastaWriter.h"
-#include "FastaReader.h"
+#include <stdio.h>
+#include "PathWalker.h"
+
+
+#if 0
+int main(int argv, char** argc)
+{
+	if(argv < 2)
+	{
+		printf("usage: Trimmer <config file>\n");
+		exit(1);
+	}
+	
+	std::string configFile = argc[1];
+	
+	// Read in the config
+	Config config;
+	config.readConfig(configFile);	
+	
+	// Calculate the coordinate extents, all the sequences in this range will be loaded. these coordinates are INCLUSIVE
+	Coord4 minCoords;
+	Coord4 maxCoords;
+	Coord4 trimCoord = {2, 8, 10, 16};
+	
+	// get the step size
+	int stepSize = config.getUnitSize();
+	
+	// Compute the coordinate extents
+	minCoords.x = max(trimCoord.x - 2, 0);
+	maxCoords.x = min(trimCoord.x + stepSize + 2, config.getSequenceLength() -1);
+	
+	minCoords.y = max(trimCoord.y - 1, 0);
+	maxCoords.y = min(trimCoord.y + stepSize, config.getSequenceLength() - 1);
+	
+	minCoords.z = max(trimCoord.z - 1, 0);
+	maxCoords.z = min(trimCoord.z + stepSize, config.getSequenceLength() - 1);
+	
+	minCoords.w = max(trimCoord.w - 1, 0);
+	maxCoords.w = min(trimCoord.w + stepSize, config.getSequenceLength() - 1);	
+
+	printf("trim coord: (%d, %d, %d, %d)\n", trimCoord.x, trimCoord.y, trimCoord.z, trimCoord.w);
+	printf("min coord: (%d, %d, %d, %d)\n", minCoords.x, minCoords.y, minCoords.z, minCoords.w);
+	printf("max coord: (%d, %d, %d, %d)\n", maxCoords.x, maxCoords.y, maxCoords.z, maxCoords.w);
+	
+	PartitionLoader pl(&config);
+	PhaseSpace* pPS = pl.CreateAndLoadPhaseSpace(minCoords, maxCoords);	
+	
+	// Create the output file
+	std::string outFile = PartitionLoader::Coord4ToPartitionFile(&config, trimCoord);
+	std::string tempFile = outFile + config.getTempFileExtension();	
+	
+	PackedSeqWriter writer(tempFile.c_str(), config.getSequenceLength());
+	printf("opened %s for write\n", tempFile.c_str());
+	
+	Coord4 size;
+	size.x = min(stepSize, config.getSequenceLength() - trimCoord.x);
+	size.y = min(stepSize, config.getSequenceLength() - trimCoord.y);
+	size.z = min(stepSize, config.getSequenceLength() - trimCoord.z);
+	size.w = min(stepSize, config.getSequenceLength() - trimCoord.w);
+	 
+	int noext = 0;
+	int ambiext = 0;
+	int count = 0;
+	int boundary = 0;
+		 
+	for(int x = 0; x < size.x; x++)
+		for(int y = 0; y < size.y; y++)
+			for(int z = 0; z < size.z; z++)
+				for(int w = 0; w < size.w; w++)
+				{
+					Coord4 c;
+					c.x = trimCoord.x + x;
+					c.y = trimCoord.y + y;
+					c.z = trimCoord.z + z;
+					c.w = trimCoord.w + w;
+					
+					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
+					{											
+						if(iter->isFlagSet(SF_SEEN))
+						{
+							continue;
+						}
+						
+						// To hold the extension path
+						PSequenceVector extensions[2];
+						
+						for(int i = 0; i <= 1; i++)
+						{
+							bool stop = false;
+							
+							extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+							PackedSeq currSeq = *iter;
+							SeqRecord loopCheck;
+							
+							while(!stop)
+							{
+								HitRecord hr = pPS->calculateExtension(currSeq, dir);
+								if(hr.getNumHits() == 0)
+								{
+									// no ext
+									stop = true;
+									noext++;
+								}
+								else if(hr.getNumHits() == 1)
+								{
+									// move curr sequence 
+									currSeq = hr.getFirstHit();				
+				
+									extensions[i].push_back(currSeq);							
+									
+									Coord4 currCoord = PhaseSpace::SequenceToCoord4(currSeq);	
+									// check if we should stop because of loops or hit a boundary
+									
+									if(loopCheck.contains(currSeq) || !isCoordInternal(currCoord, trimCoord, size))
+									{
+										stop = true;
+									}
+									else
+									{
+										pPS->markSequence(currSeq, SF_DELETE);
+										pPS->markSequence(reverseComplement(currSeq), SF_DELETE);
+									}
+								}
+								else
+								{
+									// ambi ext
+									stop = true;
+									ambiext++;
+								}
+								
+								loopCheck.addSequence(currSeq);
+								
+								// Mark the flag for the selected sequence
+								pPS->markSequence(currSeq, SF_SEEN);
+								pPS->markSequence(reverseComplement(currSeq), SF_SEEN);
+							}
+						}
+						
+						Sequence contig;
+						contig.reserve(iter->getSequenceLength() + extensions[0].size() + extensions[1].size());
+						
+						// output the contig
+						
+						// output all the antisense extensions
+						for(PSequenceVector::reverse_iterator asIter = extensions[1].rbegin(); asIter != extensions[1].rend(); asIter++)
+						{
+							contig.append(1, asIter->getFirstBase());
+							
+						}
+						
+						// output the current sequence itself
+						contig.append(iter->decode());
+						
+						// output the sense extensions
+						for(PSequenceVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
+						{
+							contig.append(1, sIter->getLastBase());
+						}
+						
+						writer.WriteSequence(contig);
+					}					
+				}
+	
+	printf("processed %d sequences total, %d noext %d ambiext boundary %d\n", count, noext, ambiext, boundary);
+	
+	int cull = 0;
+	int notcull = 0;
+	for(int x = 0; x < size.x; x++)
+		for(int y = 0; y < size.y; y++)
+			for(int z = 0; z < size.z; z++)
+				for(int w = 0; w < size.w; w++)
+				{
+					Coord4 c;
+					c.x = trimCoord.x + x;
+					c.y = trimCoord.y + y;
+					c.z = trimCoord.z + z;
+					c.w = trimCoord.w + w;
+					
+					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
+					{	
+						if(iter->isFlagSet(SF_DELETE))
+						{
+							cull++;
+						}
+						else
+						{
+							notcull++;	
+						}
+					}
+				}
+				
+	printf("%d cull %d not cull\n", cull, notcull);
+	delete pPS;
+	pPS = 0;	
+}
+#endif
+
+bool isCoordInternal(Coord4 c, Coord4 start, Coord4 size)
+{
+	if(c.x >= start.x && c.x < start.x + size.x &&
+	   c.y >= start.y && c.y < start.y + size.y &&
+	   c.z >= start.z && c.z < start.z + size.z &&
+	   c.w >= start.w && c.w < start.w + size.w)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+	
+}
 
 int main(int argv, char** argc)
 {	
@@ -172,7 +374,10 @@ int main(int argv, char** argc)
 							contig.append(1, sIter->getLastBase());
 						}
 						
-						writer.WriteSequence(contig);	
+						if(contig.length() >= 100)
+						{
+							writer.WriteSequence(contig);
+						}
 					}
 					//return 0;				
 				}

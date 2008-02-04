@@ -70,10 +70,10 @@ OPTIMIZE = -O2
 
 INCLUDES =	-I$(COMMON_DIR) -I$(DATALAYER_DIR) -I$(INCLUDE_DIR)
 
-CPPFLAGS = $(OPTIMIZE) $(DEBUG) $(PROFILE) $(INCLUDES)
+CPPFLAGS = $(OPTIMIZE) $(DEBUG) $(PROFILE) $(INCLUDES) -m64
 #LDFLAGS = -Wl,-L$(LIB_DIR),-static,-lnetcdf 
 #LDFLAGS = -L$(LIB_DIR) -lnetcdf -lhdf5 -lhdf5_hl -lz -Wl -rpath -L$(LIB_DIR)
-LDFLAGS = -L$(LIB_DIR)
+LDFLAGS = -L$(LIB_DIR) -m64
 
 ########################################################################
 # Rules
