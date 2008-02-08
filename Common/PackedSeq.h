@@ -37,6 +37,9 @@ class PackedSeq
 		// Decode the sequence
 		Sequence decode() const;
 		
+		// get a subsequence of this packed seq
+		PackedSeq subseq(int start, int len) const;		
+		
 		// get the length of the sequence
 		int getSequenceLength() const;
 		
@@ -73,16 +76,17 @@ class PackedSeq
 		PackedSeq();
 		
 		// get/set a particular value
-		inline void setBase(char* pSeq, int byteNum, int index, char base);
+		static inline void setBase(char* pSeq, int seqIndex, char base);
+		static inline void setBase(char* pSeq, int byteNum, int index, char base);
 		inline char getBase(const char* pSeq, int byteNum, int index) const;
 		
 		// Create the two bit code for the base
-		inline char baseToCode(char base) const;
-		inline char codeToBase(char code) const;
+		static inline char baseToCode(char base);
+		static inline char codeToBase(char code);
 		
 		// complement a base
-		inline int seqIndexToByteNumber(int seqIndex) const;
-		inline int seqIndexToBaseIndex(int seqIndex) const;
+		static inline int seqIndexToByteNumber(int seqIndex);
+		static inline int seqIndexToBaseIndex(int seqIndex);
 		
 		// shift a single byte
 		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
@@ -91,7 +95,7 @@ class PackedSeq
 		// sequence is terminated by a null byte (all zeros)
 		char* m_pSeq;
 		char m_length;
-		char m_flags;
+		mutable char m_flags;
 		
 };
 

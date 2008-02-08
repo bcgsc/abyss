@@ -202,8 +202,8 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 		}
 		else if(hr.getNumHits() == 1)
 		{
-			seedPath.addToPath(hr.getFirstHit(), false);
-			m_pExtendedSeqRecord->addSequence(hr.getFirstHit());
+			seedPath.addToPath(hr.getFirstHit().seq, false);
+			m_pExtendedSeqRecord->addSequence(hr.getFirstHit().seq);
 			distance++;
 		}
 		else
@@ -217,10 +217,10 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 			for(int i = 0; i < numAmbi; i++)
 			{
 				std::vector<Path> subbranches;
-				if(pairHash.find(hr.getHit(i)) != pairHash.end() && !seedPath.contains(hr.getHit(i)))
+				if(pairHash.find(hr.getHit(i).seq) != pairHash.end() && !seedPath.contains(hr.getHit(i).seq))
 				{
 					Path newPath = seedPath;
-					newPath.addToPath(hr.getHit(i), false);
+					newPath.addToPath(hr.getHit(i).seq, false);
 					subbranches = extendSeedPathWithPairs(newPath, distance + 1, maxDistance);
 					
 					for(int j = 0; j < subbranches.size(); j++)
@@ -230,7 +230,7 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 				}
 				else
 				{
-					printf("branch not supported %s\n", hr.getHit(i).decode().c_str());	
+					printf("branch not supported %s\n", hr.getHit(i).seq.decode().c_str());	
 				}
 			}
 			
@@ -266,8 +266,8 @@ bool PathDriver::extendPath(Path& path, bool allowInBranch)
 	}
 	else if(hr.getNumHits() == 1)
 	{
-		path.addToPath(hr.getFirstHit(), false);
-		m_pExtendedSeqRecord->addSequence(hr.getFirstHit());
+		path.addToPath(hr.getFirstHit().seq, false);
+		m_pExtendedSeqRecord->addSequence(hr.getFirstHit().seq);
 		return true;
 	}
 	else

@@ -2,8 +2,9 @@
 #include "PhaseSpace.h"
 #include "CommonUtils.h"
 
-
+//
 // Set up the 4D space to be the size of the slice passed in
+//
 PhaseSpace::PhaseSpace(int readLength, Coord4 minCoord, Coord4 maxCoord) : m_writeEnabled(true)
 {
 	m_minCoord = minCoord;
@@ -20,14 +21,18 @@ PhaseSpace::PhaseSpace(int readLength, Coord4 minCoord, Coord4 maxCoord) : m_wri
 
 }
 
-// Destructor, free the memory
+//
+// Destructor
+//
 PhaseSpace::~PhaseSpace()
 {
 	delete m_pPhaseSpace;
 	m_pPhaseSpace = 0;
 }
 
+//
 // Add a vector of reads to the phase space
+//
 void PhaseSpace::addReads(const SequenceVector& vec)
 {
 	for(SequenceVector::const_iterator iter = vec.begin(); iter != vec.end(); iter++)
@@ -37,7 +42,9 @@ void PhaseSpace::addReads(const SequenceVector& vec)
 	}
 }
 
+//
 // Add a single read to the phasespace
+//
 void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 {
 	// Make sure the phase space is writable (ie it 
@@ -48,7 +55,10 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 	if(CheckValidIndex(index))
 	{		
 		//printf("added %s to (%d %d %d %d)\n", seq.decode().c_str(), index.x, index.y, index.z, index.w);
-		(*m_pPhaseSpace)[index.x][index.y][index.z][index.w].push_back(seq);
+		
+		// perform a sorted insert of the sequence into the vector
+		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+		currBin.insert(seq);
 	}
 	else if(boundsCheck)
 	{
@@ -58,7 +68,23 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 	}
 }
 
+//
+// Remove a read
+//
+void PhaseSpace::removeSequence(const PackedSeq& seq)
+{
+	Coord4 index = SequenceToIndex(seq);
+	// Bounds check
+	if(CheckValidIndex(index))
+	{
+		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+		currBin.erase(seq);
+	}
+}
+
+//
 // check if a sequence exists in the phase space
+//
 bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 {
 	// calculate the coordinate for the sequence
@@ -71,9 +97,8 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 	{
 		// Reference to the correct vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
-	
 		// Search the SORTED vector
-		return std::binary_search(currBin.begin(), currBin.end(), seq);
+		return currBin.find(seq) != currBin.end();
 	}
 	else
 	{
@@ -83,9 +108,11 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 	}
 }
 
+//
 // Searches the phase space for a particular sequence and returns the reference IN the phase space to it
 // this allows us to manipulate the sequences that make up the phase space (in particular mark them for deletion, etc)
-void PhaseSpace::markSequence(const PackedSeq seq, SeqFlag flag)
+//
+void PhaseSpace::markSequence(const PackedSeq& seq, SeqFlag flag)
 {
 	// calculate the coordinate for the sequence
 	Coord4 index = SequenceToIndex(seq);
@@ -93,12 +120,16 @@ void PhaseSpace::markSequence(const PackedSeq seq, SeqFlag flag)
 	{
 		// Reference to the correct vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
-	
-		// Search the SORTED vector
-		PhaseSpaceBinIter iter = std::lower_bound(currBin.begin(), currBin.end(), seq);
-		if(iter != currBin.end() && *iter == seq)
+
+		PhaseSpaceBinIter itemIter = currBin.find(seq);
+		if(itemIter != currBin.end())
 		{
-			iter->setFlag(flag);
+			
+			assert(*itemIter == seq);
+		
+			// this is only valid because setting the flag doesnt not effect the relative ordering of the trees
+			// const_cast is generally pretty hacky
+			const_cast<PackedSeq&>(*itemIter).setFlag(flag);
 		}
 	}
 	else
@@ -106,13 +137,46 @@ void PhaseSpace::markSequence(const PackedSeq seq, SeqFlag flag)
 		Coord4 realCoord = SequenceToCoord4(seq);
 		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 		assert(false);		
-	}		
-
-	
+	}			
 }
 
+//
+//
+//
+bool PhaseSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
+{
+	// calculate the coordinate for the sequence
+	Coord4 index = SequenceToIndex(seq);
+	if(CheckValidIndex(index))
+	{
+		// Reference to the correct vector
+		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
+		
+		PhaseSpaceBinIter itemIter = currBin.find(seq);
+		if(itemIter != currBin.end())
+		{			
+			return itemIter->isFlagSet(flag);
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		Coord4 realCoord = SequenceToCoord4(seq);
+		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
+		assert(false);		
+	}
+}
+
+//
+//
+//
 void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
 {
+	assert(false);
+#if 0
 	// Disable writes to the phase space, trim the vectors and sort them
 	//m_writeEnabled = false;
 	//printf("finalizing....");
@@ -140,9 +204,12 @@ void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
 					BinItem(currBin.begin(), currBin.end()).swap(currBin);
 					//printf("after swap: %d (%d)\n", iter1->size(), iter1->capacity());
 				}
+#endif
 }
 
+//
 // Calculate the extension of this sequence in the direction given
+//
 HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
 {	
 	PSequenceVector extVec;
@@ -157,36 +224,50 @@ HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection 
 		const PackedSeq& seq = *iter;
 		PackedSeq rcSeq = reverseComplement(seq);
 		
-		if(checkForSequence(seq) || checkForSequence(rcSeq))
+		if(checkForSequence(seq))
 		{
-			hitRecord.addHit(seq);
+			hitRecord.addHit(seq, false);
 		}
+		else if(checkForSequence(rcSeq))
+		{
+			hitRecord.addHit(seq, true);
+		}	
 	}
 	
 	return hitRecord;
 
 }
 
+//
+//
+//
 bool PhaseSpace::hasParent(const PackedSeq& seq) const
 {
 	HitRecord parents = calculateExtension(seq, ANTISENSE);
 	return (parents.getNumHits() > 0);
 }
 
+//
+//
+//
 bool PhaseSpace::hasChild(const PackedSeq& seq) const
 {
 	HitRecord children = calculateExtension(seq, SENSE);
 	return (children.getNumHits() > 0);
 }
 
+//
 // get the multiplicity of the sequence
+//
 int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
 	assert(false);
 	return 0;
 }
 
+//
 // print every read's multiplicity
+//
 void PhaseSpace::printAll() const
 {
 	assert(false);
@@ -201,15 +282,19 @@ void PhaseSpace::printAll() const
 					}
 }
 
+//
 // Get the iterator pointing to the first sequence in the bin
+//
 PhaseSpaceBinIter PhaseSpace::getStartIter(Coord4 c) const
 {
 	Coord4 index = CoordToIndex(c);
 	assert(CheckValidIndex(index));
 	return (*m_pPhaseSpace)[index.x][index.y][index.z][index.w].begin();
 }
-		
+
+//
 // Get the iterator pointing to the last sequence in the bin
+//
 PhaseSpaceBinIter PhaseSpace::getEndIter(Coord4 c) const
 {
 	Coord4 index = CoordToIndex(c);
@@ -217,7 +302,9 @@ PhaseSpaceBinIter PhaseSpace::getEndIter(Coord4 c) const
 	return (*m_pPhaseSpace)[index.x][index.y][index.z][index.w].end();
 }
 
+//
 // Calculate the coordinate of this sequence
+//
 Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 {
 	const int strLen = seq.length();
@@ -253,6 +340,9 @@ Coord4 PhaseSpace::SequenceToCoord4(const Sequence& seq)
 	return c;
 }
 
+//
+//
+//
 Coord4 PhaseSpace::CoordToIndex(const Coord4& c) const
 {
 	Coord4 tc;
@@ -263,24 +353,35 @@ Coord4 PhaseSpace::CoordToIndex(const Coord4& c) const
 	return tc;
 }
 
+//
+//
+//
 bool PhaseSpace::CheckValidCoordinate(const Coord4& c) const
 {
 	return CheckValidIndex(CoordToIndex(c));
 }
 
+//
+//
+//
 bool PhaseSpace::CheckValidIndex(const Coord4& c) const
 {
 	return (c.x >= 0 && c.x < m_size.x && c.y >= 0 && c.y < m_size.y && c.z >= 0 && c.z < m_size.z && c.w >= 0 && c.w < m_size.w);
 }
 
+//
+//
+//
 Coord4 PhaseSpace::SequenceToIndex(const PackedSeq& seq) const
 {
 	Coord4 c = SequenceToCoord4(seq);
 	return CoordToIndex(c);
 }
 
+//
 // Calculate the coordinate of this sequence
 // TODO: this could be optimized
+//
 Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq& pSeq)
 {
 	const int strLen = pSeq.getSequenceLength();
@@ -312,6 +413,9 @@ Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq& pSeq)
 	return c;
 }
 
+//
+//
+//
 int PhaseSpace::base2Idx(const char c)
 {
 	if(c == 'A')

@@ -12,7 +12,7 @@
 using namespace std;
 
 
-typedef std::vector<PackedSeq> BinItem;
+typedef std::set<PackedSeq> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
@@ -51,6 +51,9 @@ class PhaseSpace
 		// add a single sequence
 		void addSequence(const PackedSeq& seq, bool boundsCheck = false);
 		
+		// remove a sequence
+		void removeSequence(const PackedSeq& seq);
+		
 		// trim and sort the vectors
 		void finalizeBins(Coord4 start, Coord4 end);
 		
@@ -61,7 +64,10 @@ class PhaseSpace
 		bool checkForSequence(const PackedSeq& seq) const;
 		
 		// Find a sequence in the phase space
-		void markSequence(const PackedSeq seq, SeqFlag flag);	
+		void markSequence(const PackedSeq& seq, SeqFlag flag);
+		
+		// Find if this sequence has the specified flag set
+		bool checkSequenceFlag(const PackedSeq& seq, SeqFlag flag);
 		
 		// check if the coordinate is valid
 		inline bool CheckValidCoordinate(const Coord4& c) const;
