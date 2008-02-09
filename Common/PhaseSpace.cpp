@@ -282,6 +282,17 @@ void PhaseSpace::printAll() const
 					}
 }
 
+int PhaseSpace::countAll() const
+{
+	int total = 0;
+	for(Bin4D::const_iterator iter4 = m_pPhaseSpace->begin(); iter4 != m_pPhaseSpace->end(); iter4++)
+		for(Bin3D::const_iterator iter3 = iter4->begin(); iter3 != iter4->end(); iter3++)
+			for(Bin2D::const_iterator iter2 = iter3->begin(); iter2 != iter3->end(); iter2++)
+				for(Bin1D::const_iterator iter1 = iter2->begin(); iter1 != iter2->end(); iter1++)
+					total += iter1->size();
+	return total;
+}
+
 //
 // Get the iterator pointing to the first sequence in the bin
 //

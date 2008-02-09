@@ -92,6 +92,8 @@ class PhaseSpace
 		
 		// print everything
 		void printAll() const;
+		
+		int countAll() const;
 						
 		// compute the coordinate of a sequence
 		static Coord4 SequenceToCoord4(const Sequence& seq);
