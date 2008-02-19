@@ -1,12 +1,14 @@
 #ifndef PACKEDSEQ_H
 #define PACKEDSEQ_H
 
+#include "CommonUtils.h"
 #include "Sequence.h"
+#include "SeqExt.h"
 
 enum SeqFlag
 {
-	SF_SEEN = 0x01,
-	SF_DELETE = 0x02
+	SF_SEEN = 0x1,
+	SF_DELETE = 0x2
 };
 
 class PackedSeq
@@ -15,16 +17,13 @@ class PackedSeq
 		
 		// Constructor/Destructor
 		PackedSeq(const Sequence& seq);
-		PackedSeq(char* const pData, int length);
+		PackedSeq(const char* const pData, int length);
 		
 		// Copy constructor
 		PackedSeq(const PackedSeq& pseq);
 		
-		// Destructor, frees memory
+		// Destructor
 		~PackedSeq();
-		
-		// Allocate memory for the string
-		void allocate(int length);
 		
 		// Assignment Operator
 		PackedSeq& operator=(const PackedSeq& other);
@@ -33,6 +32,9 @@ class PackedSeq
 		bool operator==(const PackedSeq& other) const;
 		bool operator!=(const PackedSeq& other) const;
 		bool operator<(const PackedSeq& other) const;
+		
+		// Comparison
+		int compare(const PackedSeq& other) const;
 		
 		// Decode the sequence
 		Sequence decode() const;
@@ -58,19 +60,28 @@ class PackedSeq
 		void setFlag(SeqFlag flag);
 		bool isFlagSet(SeqFlag flag) const;
 		
+		// Set a flag indicating this sequence can by extending by base b
+		void setExtension(extDirection dir, char b);
+		void clearExtension(extDirection dir, char b);
+		bool checkExtension(extDirection dir, char b) const;
+		bool hasExtension(extDirection dir) const;
+		bool isAmbiguous(extDirection dir) const;
+		void printExtension() const;
+		
 		// Reverse and complement this sequence
 		void reverseComplement();
 		
 		// append/prepend
 		// these functions preserve the length of the sequence by shifting first before adding the new base
 		// the base shifted off is returned
+		char rotate(extDirection dir, char base);
 		char shiftAppend(char base);
 		char shiftPrepend(char base);
 
 		
 		// Print
 		void print() const;
-		
+
 	private:
 	
 		PackedSeq();
@@ -92,10 +103,17 @@ class PackedSeq
 		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
 		char rightShiftByte(char* pSeq, int byteNum, int index, char base);
 		
-		// sequence is terminated by a null byte (all zeros)
-		char* m_pSeq;
+		// The maximum kmer size is hardcoded to be 64
+		// Why is this? If we use a dynamically allocated character buffer malloc/new will give us 16 or 32 bytes no matter how much we want
+		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
+		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
+		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
+		static const int MAX_KMER = 64;
+		static const int NUM_BYTES = MAX_KMER / 4;
+		char m_seq[NUM_BYTES];
 		char m_length;
-		mutable char m_flags;
+		char m_flags;
+		SeqExt m_extensions[2]; // single byte each
 		
 };
 

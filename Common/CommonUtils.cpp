@@ -79,13 +79,46 @@ void makePermutations(const Sequence& seq, SequenceVector& outVector)
 	}
 } 
 
-
+//
+//
+//
 int min(const int& n1, const int& n2)
 {
 	return (n1 < n2) ? n1 : n2;	
 }
 
+//
+//
+//
 int max(const int& n1, const int& n2)
 {
 	return (n1 > n2) ? n1 : n2;	
+}
+
+//
+//
+//
+char complement(const char& b)
+{
+	if(b == 'A')
+	{
+		return 'T';
+	}
+	else if(b == 'C')
+	{
+		return 'G';
+	}
+	else if(b == 'G')
+	{
+		return 'C';
+	}
+	else if(b == 'T')
+	{
+		return 'A';
+	}
+	else
+	{
+		assert(false);
+		return 'A';
+	}			
 }

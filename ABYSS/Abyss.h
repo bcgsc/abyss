@@ -12,6 +12,7 @@
 #include "FastaWriter.h"
 #include "FastaReader.h"
 #include "PackedSeqWriter.h"
+#include "SimpleSequenceSpace.h"
 
 
 typedef std::pair<PackedSeq, extDirection> branchEnd;
@@ -19,16 +20,17 @@ typedef std::pair<PackedSeq, extDirection> branchEnd;
 
 bool isCoordInternal(Coord4 c, Coord4 start, Coord4 size);
 
-void outputSequences(const char* filename, PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord);
-void assemble(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord);
-void assemble2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord);
-Sequence assembleSequence(PhaseSpace* pPS, 	PhaseSpaceBinIter sequenceIter);
+void outputSequences(const char* filename, SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
+void assemble(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
+void assemble2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
+Sequence assembleSequence(SimpleSequenceSpace* pSS, 	PhaseSpaceBinIter sequenceIter);
 Sequence BuildContig(PSequenceVector& extensions, PackedSeq& originalSeq, extDirection dir);
 Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq);
 void printUsage();
 
 
-void trimSequences(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord);
-void trimSequences2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord, int trimNum);
+void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
+void trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull);
+void outputBranchSizes(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
 
 #endif

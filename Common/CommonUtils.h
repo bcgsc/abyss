@@ -17,7 +17,11 @@ extDirection oppositeDirection(extDirection dir);
 // calculate the information entropy of the string
 double entropy(const Sequence& s);
 
+// min/max
 int min(const int& n1, const int& n2);
 int max(const int& n1, const int& n2);
+
+// complement a base
+char complement(const char& b);
 
 #endif

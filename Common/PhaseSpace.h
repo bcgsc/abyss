@@ -12,7 +12,7 @@
 using namespace std;
 
 
-typedef std::set<PackedSeq> BinItem;
+typedef std::vector<PackedSeq> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;
 typedef std::vector<Bin2D> Bin3D;
@@ -25,14 +25,6 @@ enum PointClassification
 	PC_BORDER,
 	PC_INTERNAL,
 	PC_INVALID
-};
-
-struct Coord4
-{
-	int x;
-	int y;
-	int z;
-	int w;
 };
 
 class PhaseSpace
@@ -55,7 +47,7 @@ class PhaseSpace
 		void removeSequence(const PackedSeq& seq);
 		
 		// trim and sort the vectors
-		void finalizeBins(Coord4 start, Coord4 end);
+		void finalizeBins();
 		
 		// get the multiplicity of the sequence
 		int getMultiplicity(const PackedSeq& seq);

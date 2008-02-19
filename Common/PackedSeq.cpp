@@ -4,9 +4,9 @@
 //
 // Default constructor
 //
-PackedSeq::PackedSeq() : m_pSeq(0), m_length(0), m_flags(0)
+PackedSeq::PackedSeq() : m_length(0), m_flags(0)
 {
-	
+	memset(m_seq, 0, NUM_BYTES);
 }
 
 //
@@ -14,23 +14,20 @@ PackedSeq::PackedSeq() : m_pSeq(0), m_length(0), m_flags(0)
 //
 PackedSeq::~PackedSeq()
 {
-	delete [] m_pSeq;
-	m_pSeq = NULL;	
+
 }
 
 //
 // Construct a sequence from a series of bytes
 //
-PackedSeq::PackedSeq(char* const pData, int length) : m_flags(0)
+PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0)
 {
-	assert(length < 255);
-	
-	// Allocate space for the sequence
-	allocate(length);
+	assert(length < MAX_KMER);
+	memset(m_seq, 0, NUM_BYTES);
 	int numBytes = getNumCodingBytes(length);
 
 	// copy over the bytes
-	memcpy(m_pSeq, pData, numBytes);
+	memcpy(m_seq, pData, numBytes);
 	
 	// set the sequence length
 	m_length = length;
@@ -41,21 +38,21 @@ PackedSeq::PackedSeq(char* const pData, int length) : m_flags(0)
 //
 PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0)
 {
+	memset(m_seq, 0, NUM_BYTES);
 	int length = seq.length();
 	
-	assert(length < 255);
+	assert(length < MAX_KMER);
 	
 	//printf("packing %s\n", seq.c_str());
 	// calculate the number of triplets required
 
 	m_length = length;
 
-	allocate(length);	
 	const char* strData = seq.data();
 	
 	for(int i = 0; i < m_length; i++)
 	{
-		setBase(m_pSeq, i, strData[i]);
+		setBase(m_seq, i, strData[i]);
 	}
 }
 
@@ -64,15 +61,17 @@ PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0)
 //
 PackedSeq::PackedSeq(const PackedSeq& pseq)
 {
+	memset(m_seq, 0, NUM_BYTES);
 	// allocate memory and copy over the seq
 	m_length = pseq.m_length;
 	int numBytes = getNumCodingBytes(m_length);
-	allocate(m_length);
 	
 	// copy the sequence over
-	memcpy(m_pSeq, pseq.m_pSeq, numBytes);
+	memcpy(m_seq, pseq.m_seq, numBytes);
 	
 	m_flags = pseq.m_flags;
+	m_extensions[0] = pseq.m_extensions[0];
+	m_extensions[1] = pseq.m_extensions[1];
 }
 
 //
@@ -85,31 +84,17 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	{
 		return *this;
 	}
-	
-	// Delete previous seq, this will either be NULL or valid allocated memory
-	delete [] m_pSeq;
-	m_pSeq = 0;
-	
+	memset(m_seq, 0, NUM_BYTES);
 	// Allocate and fill the new seq
 	m_length = other.m_length;	
 	int numBytes = getNumCodingBytes(m_length);
-	
-	allocate(m_length);
-	
+
 	// copy the sequence over
-	memcpy(m_pSeq, other.m_pSeq, numBytes);
+	memcpy(m_seq, other.m_seq, numBytes);
+	
+	m_flags = other.m_flags;
 	
 	return *this;
-}
-
-//
-// common allocation function
-//
-void PackedSeq::allocate(int length)
-{
-	int numBytes = getNumCodingBytes(length);
-	m_pSeq = new char[numBytes];
-	memset(m_pSeq, 0, numBytes);
 }
 
 //
@@ -117,16 +102,44 @@ void PackedSeq::allocate(int length)
 //
 bool PackedSeq::operator==(const PackedSeq& other) const
 {
-	for(int i = 0; i < m_length; i++)
-	{
-		if(this->getBase(i) != other.getBase(i))
-		{
-			return false;
-		}
-	}
-	return true;
+	return compare(other) == 0;
 }
 
+int PackedSeq::compare(const PackedSeq& other) const
+{
+	assert(m_length == other.m_length);
+	// This is valid since the remaining portion of the buffer is memset to zero
+	// This HAS to be the case or else the equality will not work
+	//return memcmp(m_seq, other.m_seq, NUM_BYTES);
+	
+	int numBytes = getNumCodingBytes(m_length);
+	if(m_length % 4 != 0)
+	{
+		numBytes--;
+	}
+	
+	int firstCompare = memcmp(m_seq, other.m_seq, numBytes);
+	
+	if(firstCompare != 0)
+	{
+		return firstCompare;
+	}
+	else
+	{
+		for(int i = 4*numBytes; i < m_length; i++)
+		{
+			
+			char base1 = this->getBase(i);
+			char base2 = other.getBase(i);
+			if(base1 != base2)
+			{
+				return base1 - base2;
+			}
+		}
+	}
+	return 0;
+	
+}
 
 //
 // Inequality operator
@@ -142,14 +155,7 @@ bool PackedSeq::operator!=(const PackedSeq& other) const
 //
 bool PackedSeq::operator<(const PackedSeq& other) const
 {	
-	for(int i = 0; i < m_length; i++)
-	{
-		if(this->getBase(i) != other.getBase(i))
-		{
-			return (this->getBase(i) < other.getBase(i));
-		}
-	}
-	return 0;
+	return compare(other) < 0;
 }
 
 //
@@ -186,7 +192,7 @@ int PackedSeq::getSequenceLength() const
 //
 const char* const PackedSeq::getDataPtr() const
 {
-	return m_pSeq;	
+	return m_seq;	
 }
 
 //
@@ -194,7 +200,7 @@ const char* const PackedSeq::getDataPtr() const
 //
 void PackedSeq::print() const
 {
-	const char* iter = m_pSeq;
+	const char* iter = getDataPtr();
 	while(*iter)
 	{
 		printf("%c", *iter);
@@ -251,14 +257,29 @@ void PackedSeq::reverseComplement()
 		
 		char base1 = getBase(i);
 		char base2 = getBase(revPos);
-		setBase(m_pSeq, i, base2);
-		setBase(m_pSeq, revPos, base1);
+		setBase(m_seq, i, base2);
+		setBase(m_seq, revPos, base1);
 	}
 	
 	for(int i = 0; i < numBytes; i++)
 	{
 		// complement each byte
-		m_pSeq[i] = ~m_pSeq[i];
+		m_seq[i] = ~m_seq[i];
+	}
+}
+
+//
+//
+//
+char PackedSeq::rotate(extDirection dir, char base)
+{
+	if(dir == SENSE)
+	{
+		return shiftAppend(base);
+	}
+	else
+	{
+		return shiftPrepend(base);	
 	}
 }
 
@@ -278,7 +299,7 @@ char PackedSeq::shiftAppend(char base)
 		// calculate the index
 		// if this is the last byte, use 
 		int index = (i == (numBytes - 1)) ? seqIndexToBaseIndex(m_length - 1) : 3;
-		shiftIn = leftShiftByte(m_pSeq, i, index, shiftIn);
+		shiftIn = leftShiftByte(m_seq, i, index, shiftIn);
 	}
 	
 	// return the base shifted out of the first byte
@@ -297,7 +318,7 @@ char PackedSeq::shiftPrepend(char base)
 	int lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
 	
 	// save the last base (which gets shifted out)
-	char lastBase = getBase(m_pSeq, lastBaseByte, lastBaseIndex);
+	char lastBase = getBase(m_seq, lastBaseByte, lastBaseIndex);
 	
 	char shiftIn = base;
 	
@@ -306,7 +327,7 @@ char PackedSeq::shiftPrepend(char base)
 	{
 		// index is always zero
 		int index = 0;
-		shiftIn = rightShiftByte(m_pSeq, i, index, shiftIn);
+		shiftIn = rightShiftByte(m_seq, i, index, shiftIn);
 	}
 		
 	return lastBase;	
@@ -344,6 +365,61 @@ char PackedSeq::rightShiftByte(char* pSeq, int byteNum, int index, char base)
 	setBase(pSeq, byteNum, index, base);
 	
 	return codeToBase(outBase);
+}
+
+//
+//
+//
+void PackedSeq::setExtension(extDirection dir, char b)
+{
+	m_extensions[dir].SetBase(b);
+}
+
+
+//
+//
+//
+void PackedSeq::clearExtension(extDirection dir, char b)
+{
+	m_extensions[dir].ClearBase(b);
+}
+
+//
+//
+//
+bool PackedSeq::checkExtension(extDirection dir, char b) const
+{
+	return m_extensions[dir].CheckBase(b);	
+}
+
+//
+//
+//
+bool PackedSeq::hasExtension(extDirection dir) const
+{
+	return m_extensions[dir].HasExtension();	
+}
+
+//
+//
+//
+bool PackedSeq::isAmbiguous(extDirection dir) const
+{
+	return m_extensions[dir].IsAmbiguous();	
+}
+
+//
+//
+//
+void PackedSeq::printExtension() const
+{
+	printf("seq: %s\n", decode().c_str());
+	printf("sxt: ");
+	m_extensions[SENSE].print();
+	
+	printf("as : ");
+	m_extensions[ANTISENSE].print();	
+		
 }
 
 //
@@ -405,7 +481,7 @@ char PackedSeq::getBase(int seqIndex) const
 	assert(seqIndex < m_length);
 	int byteNumber = seqIndexToByteNumber(seqIndex);
 	int baseIndex = seqIndexToBaseIndex(seqIndex);	
-	return getBase(m_pSeq, byteNumber, baseIndex);
+	return getBase(m_seq, byteNumber, baseIndex);
 }
 
 //

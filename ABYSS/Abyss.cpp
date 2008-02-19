@@ -2,20 +2,28 @@
 
 #include <vector>
 #include <stdio.h>
+#include <deque>
+#include <iostream>
+#include <fstream>
 #include "Abyss.h"
 #include "CommonUtils.h"
+#include "SimpleSequenceSpace.h"
 
-int main(int argv, char** argc)
+ofstream branchLog("branchLog.txt");
+
+int main(int argc, char** argv)
 {	
-	if(argv < 4 || argc[1] == "--help")
+
+	if(argc < 5 || argv[1] == "--help")
 	{
 		printUsage();
 		exit(1);
 	}
-	
-	std::string fastaFile = argc[1];
-	int kmerSize = atoi(argc[2]);
-	int numTrims = atoi(argc[3]);
+
+	std::string fastaFile = argv[1];
+	int readLen = atoi(argv[2]);
+	int kmerSize = atoi(argv[3]);
+	int numTrims = atoi(argv[4]);
 
 	// Set up coordinate space
 	int maxC = kmerSize - 1;
@@ -23,14 +31,15 @@ int main(int argv, char** argc)
 	Coord4 maxCoords = {maxC, maxC, maxC, maxC};
 	
 	// Load the phase space
-	PhaseSpace* pPS = new PhaseSpace(kmerSize, minCoords, maxCoords);
+	SimpleSequenceSpace* pSS = new SimpleSequenceSpace(kmerSize, minCoords, maxCoords);
 	
 	// Open file for read
 	FastaReader* reader = new FastaReader(fastaFile.c_str());
 	
 	// Load phase space
 	int count = 0;
-
+	
+	PSequenceVector seqs;
 	
 	while(reader->isGood())
 	{
@@ -40,7 +49,7 @@ int main(int argv, char** argc)
 		for(int i = 0; i < seq.getSequenceLength() - kmerSize  + 1; i++)
 		{
 			PackedSeq sub = seq.subseq(i, kmerSize);
-			pPS->addSequence(sub, true);
+			pSS->addSequence(sub, true);
 
 			count++;
 			
@@ -48,50 +57,79 @@ int main(int argv, char** argc)
 			{
 				printf("loaded %d sequences\n", count);
 			}
+			
+			seqs.push_back(sub);
 		}
 	}
+
+	printf("total sequences: %d\n", pSS->countAll());
+	
+	printf("finalizing\n");
+	pSS->finalizeBins();	
+
+	printf("generating adjacency info\n");
+	pSS->generateAdjacency();
+	
+	count = 0;
+
+	//for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
+	//{
+		//assert(pSS->checkForSequence(*iter));
+	//}
+
 	
 	// close the reader	
 	delete reader;
-	
-	printf("done sequence load (%d sequences)\n", count);
 
 	// trim the reads
-	for(int i = 0; i < numTrims; i++)
+	outputBranchSizes(pSS, minCoords, maxCoords);
+	//for(int i = 0; i < numTrims; i++)
+	int start = 2;
+	int step = 2;
+	int maxBranch =  4 * (readLen - kmerSize + 1);
+	
+	
+	while(start <= maxBranch)
 	{
-		printf("trimming %d/%d\n", i+1, numTrims);
-		trimSequences(pPS, minCoords, maxCoords);
-		//trimSequences2(pPS, minCoords, maxCoords, i+1);
+		//trimSequences(pSS, minCoords, maxCoords);
+		trimSequences2(pSS, minCoords, maxCoords, start);
+		//trimSequences3(pSS, minCoords, maxCoords, i+1, 3 * (readLen - kmerSize + 1));
+		start << 1;
 	}
 	
+	// Now trim at the max branch length
+	for(int i = 0; i < 2; i++)
+	{
+		trimSequences2(pSS, minCoords, maxCoords, maxBranch);
+	}
+	
+	// finally, trim at the min contig length
+	trimSequences2(pSS, minCoords, maxCoords, 100);
+	
+	outputBranchSizes(pSS, minCoords, maxCoords);
+	
 	printf("outputting trimmed reads\n");
-	outputSequences("trimmed.fa", pPS, minCoords, maxCoords);
+	outputSequences("trimmed.fa", pSS, minCoords, maxCoords);
 	
 	printf("assembling sequences\n");
-	assemble(pPS, minCoords, maxCoords);
-	
-	delete pPS;
+	assemble(pSS, minCoords, maxCoords);
+
+	delete pSS;
 	return 0;
 }
 
-void outputSequences(const char* filename, PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
+void outputSequences(const char* filename, SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 {
 	FastaWriter writer(filename);
-	for(int x = minCoord.x; x < maxCoord.x; x++) {
-		for(int y = minCoord.y; y < maxCoord.y; y++) {
-			for(int z = minCoord.z; z < maxCoord.z; z++) {
-				for(int w = minCoord.w; w < maxCoord.w; w++)
-				{
-					Coord4 c = {x,y,z,w};
+
 					
-					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
-					{
-						writer.WriteSequence(*iter);
-					}	
-				}
-			}
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
+	{
+		if(!pSS->checkSequenceFlag(*iter, SF_DELETE))
+		{
+			writer.WriteSequence(*iter);
 		}
-	}	
+	}		
 }
 
 int noext = 0;
@@ -124,39 +162,14 @@ Sequence BuildContig(PSequenceVector& extensions, PackedSeq& originalSeq, extDir
 	return contig;		
 }
 
-void assemble(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
+void assemble(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	
-	std::list<PackedSeq> seqStarts;
-	
-	for(int x = minCoord.x; x < maxCoord.x; x++) {
-		for(int y = minCoord.y; y < maxCoord.y; y++) {
-			for(int z = minCoord.z; z < maxCoord.z; z++) {
-				for(int w = minCoord.w; w < maxCoord.w; w++)
-				{
-					Coord4 c = {x,y,z,w};
-					
-					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
-					{
-						//if(!pPS->hasChild(*iter) || !pPS->hasParent(*iter))
-						{
-							seqStarts.push_back(*iter);
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	printf("num starts: %d\n", seqStarts.size());
-	
 	// create file writer
 	FastaWriter writer("contigs.fa");
-	
-	while(!seqStarts.empty())
+	printf("starting assembly\n");
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
 	{
-		std::list<PackedSeq>::iterator iter = seqStarts.begin();
-	
-		if(!pPS->checkSequenceFlag(*iter, SF_SEEN))
+		if(!pSS->checkSequenceFlag(*iter, SF_SEEN) && !pSS->checkSequenceFlag(*iter, SF_DELETE))
 		{
 			// the record of extensions			
 			PSequenceVector extensions[2];
@@ -172,10 +185,9 @@ void assemble(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
 				{
 					
 					// Mark the flag for the selected sequence
-					pPS->markSequence(currSeq, SF_SEEN);
-					pPS->markSequence(reverseComplement(currSeq), SF_SEEN);
+					pSS->markSequence(currSeq, SF_SEEN);
 									
-					HitRecord hr = pPS->calculateExtension(currSeq, dir);
+					HitRecord hr = pSS->calculateExtension(currSeq, dir);
 					if(hr.getNumHits() == 0)
 					{
 						// no ext
@@ -203,20 +215,6 @@ void assemble(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
 						// ambi ext
 						stop = true;
 						ambiext++;
-						
-						/*
-						for(int i = 0; i < hr.getNumHits(); i++)
-						{
-							if(hr.getHit(i).isReverse)
-							{
-								seqStarts.push_back(reverseComplement(hr.getHit(i).seq));
-							}
-							else
-							{
-								seqStarts.push_back(hr.getHit(i).seq);
-							}
-						}
-						*/
 					}
 					
 					loopCheck.addSequence(currSeq);
@@ -229,42 +227,28 @@ void assemble(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
 			{
 				writer.WriteSequence(contig);
 			}
-		}
-		
-		// remove this sequence from the todo list
-		seqStarts.erase(iter);		
+		}		
 	}
 	
 	printf("noext: %d, ambi: %d\n", noext, ambiext);
 }
 
-void assemble2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
+void assemble2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	
 	std::list<branchEnd> seqStarts;
-	
-	for(int x = minCoord.x; x < maxCoord.x; x++) {
-		for(int y = minCoord.y; y < maxCoord.y; y++) {
-			for(int z = minCoord.z; z < maxCoord.z; z++) {
-				for(int w = minCoord.w; w < maxCoord.w; w++)
-				{
-					Coord4 c = {x,y,z,w};
-					
-					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
-					{
-						bool hasChild = pPS->hasChild(*iter);
-						bool hasParent = pPS->hasParent(*iter);
+			
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
+	{
+		bool hasChild = pSS->hasChild(*iter);
+		bool hasParent = pSS->hasParent(*iter);
 						
-						if(!hasChild)
-						{
-							seqStarts.push_back(branchEnd(*iter, ANTISENSE));
-						}
-						else if(!hasParent)
-						{
-							seqStarts.push_back(branchEnd(*iter, SENSE));
-						}
-					}	
-				}
-			}
+		if(!hasChild)
+		{
+			seqStarts.push_back(branchEnd(*iter, ANTISENSE));
+		}
+		else if(!hasParent)
+		{
+			seqStarts.push_back(branchEnd(*iter, SENSE));
 		}
 	}	
 	
@@ -279,7 +263,7 @@ void assemble2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
 		PackedSeq currSeq = iter->first;
 		extDirection dir = iter->second;
 			
-		if(!pPS->checkSequenceFlag(currSeq, SF_SEEN))
+		if(!pSS->checkSequenceFlag(currSeq, SF_SEEN))
 		{
 			printf("starting from %s\n", currSeq.decode().c_str());
 			
@@ -293,10 +277,10 @@ void assemble2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
 			{
 					
 				// Mark the flag for the selected sequence
-				pPS->markSequence(currSeq, SF_SEEN);
-				pPS->markSequence(reverseComplement(currSeq), SF_SEEN);
+				pSS->markSequence(currSeq, SF_SEEN);
+				pSS->markSequence(reverseComplement(currSeq), SF_SEEN);
 									
-				HitRecord hr = pPS->calculateExtension(currSeq, dir);
+				HitRecord hr = pSS->calculateExtension(currSeq, dir);
 				if(hr.getNumHits() == 0)
 				{
 					// no ext
@@ -380,105 +364,75 @@ Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq)
 	return contig;
 }
 
-Sequence assembleSequence(PhaseSpace* pPS, 	PhaseSpaceBinIter sequenceIter)
+Sequence assembleSequence(SimpleSequenceSpace* pSS, SequenceCollectionIter sequenceIter)
 {		
 	Sequence contig;
 	return contig;
 }
 
-void printUsage()
-{
-	printf("usage: ABYSS <reads fasta file> <kmer size> <number of trimming steps>\n");	
-}
-
-
-
-void trimSequences(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord)
-{
-	for(int x = minCoord.x; x < maxCoord.x; x++) {
-		for(int y = minCoord.y; y < maxCoord.y; y++) {
-			for(int z = minCoord.z; z < maxCoord.z; z++) {
-				for(int w = minCoord.w; w < maxCoord.w; w++)
-				{
-					Coord4 c = {x,y,z,w};
-					
-					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
-					{
-						if(!(pPS->hasChild(*iter) && pPS->hasParent(*iter)))
-						{
-							pPS->removeSequence(*iter);
-						}
-					}	
-				}
-			}
-		}
-	}
-}
-
-void trimSequences2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord, int trimNum)
-{	 
-	std::vector<branchEnd> deadends;
-
-	for(int x = minCoord.x; x < maxCoord.x; x++) {
-		for(int y = minCoord.y; y < maxCoord.y; y++) {
-			for(int z = minCoord.z; z < maxCoord.z; z++) {
-				for(int w = minCoord.w; w < maxCoord.w; w++)
-				{
-					Coord4 c = {x,y,z,w};
-					
-					for(PhaseSpaceBinIter iter = pPS->getStartIter(c); iter != pPS->getEndIter(c); iter++)
-					{
-						bool hasChild = pPS->hasChild(*iter);
-						bool hasParent = pPS->hasParent(*iter);
-						
-						if(!hasChild && !hasParent)
-						{
-							// remove this sequence, it has no extensions
-							pPS->removeSequence(*iter);
-						}
-						else if(!hasChild)
-						{
-							deadends.push_back(branchEnd(*iter, ANTISENSE));
-						}
-						else if(!hasParent)
-						{
-							deadends.push_back(branchEnd(*iter, SENSE));
-						}
-					}	
-				}
+void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+{				
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
+	{
+		if(!iter->isFlagSet(SF_DELETE))
+		{
+			if(!(pSS->hasChild(*iter) && pSS->hasParent(*iter)))
+			{
+				pSS->removeSequence(*iter);
 			}
 		}
 	}	
-	
-	printf("seqs before trimming: %d\n", pPS->countAll());
-	printf("num deadends: %d\n", deadends.size());
-	
-	const int MAX_DEAD_LENGTH = 2*trimNum + 5;
-	
+}
+
+void trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull)
+{
+	const int MAX_DEAD_LENGTH = maxBranchCull;
+	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 	int count = 0;
-	for(std::vector<branchEnd>::iterator iter = deadends.begin(); iter != deadends.end(); iter++)
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
 	{
-		if(count % 10000 == 0)
+		if(iter->isFlagSet(SF_DELETE))
 		{
-			//printf("trimming count: %d\n", count);
+			continue;
 		}
+				
+		bool hasChild = pSS->hasChild(*iter);
+		bool hasParent = pSS->hasParent(*iter);
 		
+		extDirection dir;
+		if(!hasChild && !hasParent)
+		{
+			// remove this sequence, it has no extensions
+			pSS->removeSequence(*iter);
+			continue;
+		}
+		else if(!hasChild)
+		{
+			dir = ANTISENSE;
+		}
+		else if(!hasParent)
+		{
+			dir = SENSE;
+		}
+		else
+		{
+			continue;	
+		}
+
 		count++;
 		PSequenceVector branchElements;
 		
-		
-		extDirection dir = iter->second;
-		extDirection oppositeDir = (dir == SENSE) ? ANTISENSE : SENSE;
+		extDirection oppositeDir = oppositeDirection(dir);
 					
-		PackedSeq currSeq = iter->first;
+		PackedSeq currSeq = *iter;
 		SeqRecord loopCheck;			
 		bool stop = false;
 		
 		while(!stop)
 		{				
-			HitRecord hr = pPS->calculateExtension(currSeq, dir);
-			HitRecord oppHr = pPS->calculateExtension(currSeq, oppositeDir);
+			HitRecord hr = pSS->calculateExtension(currSeq, dir);
+			HitRecord oppHr = pSS->calculateExtension(currSeq, oppositeDir);
 				
 			if(branchElements.size() == MAX_DEAD_LENGTH + 1 )
 			{
@@ -494,14 +448,12 @@ void trimSequences2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord, int trimN
 			else if(hr.getNumHits() == 0 || hr.getNumHits() > 1)
 			{
 				branchElements.push_back(currSeq);
-				branchElements.push_back(reverseComplement(currSeq));
 				//printf("stopped because of noext/ambi branch\n");
 				stop = true;
 			}
 			else
 			{
 				branchElements.push_back(currSeq);
-				branchElements.push_back(reverseComplement(currSeq));
 					
 				// good ext
 				currSeq = hr.getFirstHit().seq;
@@ -515,11 +467,93 @@ void trimSequences2(PhaseSpace* pPS, Coord4 minCoord, Coord4 maxCoord, int trimN
 			numBranchesRemoved++;
 			for(PSequenceVectorIterator bIter = branchElements.begin(); bIter != branchElements.end(); bIter++)
 			{
-				pPS->removeSequence(*bIter);
+				pSS->removeSequence(*bIter);
 			}
 		}
 	}
 	
-	printf("seqs after trimming: %d\n", pPS->countAll());
+	printf("seqs after trimming: %d\n", pSS->countAll());
 	printf("num branches removed: %d\n", numBranchesRemoved);
+}
+
+
+void outputBranchSizes(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+{	 
+	static int trimNum = 0;
+	//printf("seqs before trimming: %d\n", pSS->countAll());
+	int numBranchesRemoved = 0;
+	int count = 0;
+	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
+	{	
+		if(iter->isFlagSet(SF_DELETE))
+		{
+			continue;
+		}
+				
+		// does this sequence have an parent/child extension?
+		bool hasChild = pSS->hasChild(*iter);
+		bool hasParent = pSS->hasParent(*iter);
+		extDirection dir;
+		
+		if(!hasChild && !hasParent)
+		{
+			// remove this sequence, it has no extensions
+			pSS->removeSequence(*iter);
+			continue;
+		}
+		else if(!hasChild)
+		{
+			dir = ANTISENSE;
+		}
+		else if(!hasParent)
+		{
+			dir = SENSE;
+		}
+		else
+		{
+			continue;
+		}
+
+		PSequenceVector branchElements;
+		extDirection oppositeDir = oppositeDirection(dir);
+					
+		PackedSeq currSeq = *iter;
+		SeqRecord loopCheck;			
+		bool stop = false;
+		
+		while(!stop)
+		{				
+			HitRecord hr = pSS->calculateExtension(currSeq, dir);
+			HitRecord oppHr = pSS->calculateExtension(currSeq, oppositeDir);
+				
+			if(oppHr.getNumHits() > 1)
+			{
+				//printf("stopped because of reverse branch\n");
+				stop = true;	
+			}
+			else if(hr.getNumHits() == 0 || hr.getNumHits() > 1)
+			{
+				branchElements.push_back(currSeq);
+				//printf("stopped because of noext/ambi branch\n");
+				stop = true;
+			}
+			else
+			{
+				branchElements.push_back(currSeq);
+					
+				// good ext
+				currSeq = hr.getFirstHit().seq;
+			}
+		}
+		branchLog << trimNum << " " << branchElements.size() << endl;
+	}
+	
+	trimNum++;
+}
+
+
+
+void printUsage()
+{
+	printf("usage: ABYSS <reads fasta file> <max read length> <kmer size> <number of trimming steps>\n");	
 }

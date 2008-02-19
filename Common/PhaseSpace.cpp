@@ -58,7 +58,7 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 		
 		// perform a sorted insert of the sequence into the vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
-		currBin.insert(seq);
+		currBin.push_back(seq);
 	}
 	else if(boundsCheck)
 	{
@@ -73,6 +73,8 @@ void PhaseSpace::addSequence(const PackedSeq& seq, bool boundsCheck)
 //
 void PhaseSpace::removeSequence(const PackedSeq& seq)
 {
+	markSequence(seq, SF_DELETE);
+	/*
 	Coord4 index = SequenceToIndex(seq);
 	// Bounds check
 	if(CheckValidIndex(index))
@@ -80,6 +82,7 @@ void PhaseSpace::removeSequence(const PackedSeq& seq)
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
 		currBin.erase(seq);
 	}
+	*/
 }
 
 //
@@ -98,7 +101,16 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 		// Reference to the correct vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
 		// Search the SORTED vector
-		return currBin.find(seq) != currBin.end();
+		PhaseSpaceBinIter iter = std::lower_bound(currBin.begin(), currBin.end(), seq);
+		if(iter != currBin.end() && *iter == seq)
+		{
+			// sequence was found
+			return !iter->isFlagSet(SF_DELETE);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	else
 	{
@@ -121,15 +133,12 @@ void PhaseSpace::markSequence(const PackedSeq& seq, SeqFlag flag)
 		// Reference to the correct vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
 
-		PhaseSpaceBinIter itemIter = currBin.find(seq);
-		if(itemIter != currBin.end())
+		PhaseSpaceBinIter iter = std::lower_bound(currBin.begin(), currBin.end(), seq);
+		if(iter != currBin.end() && *iter == seq)
 		{
-			
-			assert(*itemIter == seq);
-		
 			// this is only valid because setting the flag doesnt not effect the relative ordering of the trees
 			// const_cast is generally pretty hacky
-			const_cast<PackedSeq&>(*itemIter).setFlag(flag);
+			const_cast<PackedSeq&>(*iter).setFlag(flag);
 		}
 	}
 	else
@@ -152,10 +161,10 @@ bool PhaseSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
 		// Reference to the correct vector
 		BinItem& currBin = (*m_pPhaseSpace)[index.x][index.y][index.z][index.w];
 		
-		PhaseSpaceBinIter itemIter = currBin.find(seq);
-		if(itemIter != currBin.end())
-		{			
-			return itemIter->isFlagSet(flag);
+		PhaseSpaceBinIter iter = std::lower_bound(currBin.begin(), currBin.end(), seq);
+		if(iter != currBin.end() && *iter == seq)
+		{		
+			return iter->isFlagSet(flag);
 		}
 		else
 		{
@@ -173,18 +182,16 @@ bool PhaseSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
 //
 //
 //
-void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
+void PhaseSpace::finalizeBins()
 {
-	assert(false);
-#if 0
 	// Disable writes to the phase space, trim the vectors and sort them
 	//m_writeEnabled = false;
 	//printf("finalizing....");
 	
-	for(int x = start.x; x <= end.x; x++)
-		for(int y = start.y; y <= end.y; y++)
-			for(int z = start.z; z <= end.z; z++)
-				for(int w = start.w; w <= end.w; w++)
+	for(int x = m_minCoord.x; x <= m_maxCoord.x; x++)
+		for(int y = m_minCoord.y; y <= m_maxCoord.y; y++)
+			for(int z = m_minCoord.z; z <= m_maxCoord.z; z++)
+				for(int w = m_minCoord.w; w <= m_maxCoord.w; w++)
 				{
 					Coord4 c = {x,y,z,w};
 					Coord4 index = CoordToIndex(c);
@@ -204,7 +211,6 @@ void PhaseSpace::finalizeBins(Coord4 start, Coord4 end)
 					BinItem(currBin.begin(), currBin.end()).swap(currBin);
 					//printf("after swap: %d (%d)\n", iter1->size(), iter1->capacity());
 				}
-#endif
 }
 
 //

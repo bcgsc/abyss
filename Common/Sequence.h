@@ -15,14 +15,6 @@ enum SequenceAdjacency
 	SA_RC_ANTISENSE	
 };
 
-// SENSE AND ANTISENSE HAVE TO BE ZERO AND ONE
-enum extDirection
-{
-	SENSE = 0,
-	ANTISENSE = 1,
-	NUM_DIRECTIONS
-};
-
 // Hash function for Sequences
 namespace __gnu_cxx {
 template <>

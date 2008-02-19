@@ -69,7 +69,7 @@ PhaseSpace* PartitionLoader::CreateAndLoadPhaseSpace(Coord4 minCoord, Coord4 max
 					endBin.y = min(pos.y + m_pConfig->getUnitSize() - 1, maxCoord.y);
 					endBin.z = min(pos.z + m_pConfig->getUnitSize() - 1, maxCoord.z);
 					endBin.w = min(pos.w + m_pConfig->getUnitSize() - 1, maxCoord.w);
-					pPS->finalizeBins(startBin, endBin);
+
 					filesLoaded++;
 					
 					if(filesLoaded % 1000 == 0)
@@ -77,7 +77,7 @@ PhaseSpace* PartitionLoader::CreateAndLoadPhaseSpace(Coord4 minCoord, Coord4 max
 						printf("loaded %d files\n", filesLoaded);
 					}
 				}
-	
+	pPS->finalizeBins();
 	//printf("loaded %d sequences\n", count); 
 	return pPS;	
 }

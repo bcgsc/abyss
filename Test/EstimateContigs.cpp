@@ -87,9 +87,7 @@ int main(int argv, char** argc)
 	
 	delete seqSet;
 	
-	Coord4 startf = {0,0,0,0};
-	Coord4 endf = {kmerSize-1,kmerSize-1,kmerSize-1,kmerSize-1};
-	ps.finalizeBins(startf, endf);
+	ps.finalizeBins();
 	
 	//printf("done load\n");
 	

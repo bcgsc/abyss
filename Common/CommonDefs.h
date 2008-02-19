@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <stdlib.h>
 #include "ReadPrb.h"
 #include "Prb.h"
 
@@ -19,6 +20,22 @@ enum FileType
 {
 	FT_FASTA, //ascii fasta file
 	FT_SQB    //compressed sequence binary format
+};
+
+struct Coord4
+{
+	int x;
+	int y;
+	int z;
+	int w;
+};
+
+// SENSE AND ANTISENSE HAVE TO BE ZERO AND ONE
+enum extDirection
+{
+	SENSE = 0,
+	ANTISENSE = 1,
+	NUM_DIRECTIONS
 };
 
 typedef std::vector<int> Count1D;
