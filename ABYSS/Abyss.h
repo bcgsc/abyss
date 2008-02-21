@@ -30,7 +30,7 @@ void printUsage();
 
 
 void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
-void trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull);
+int trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull);
 void outputBranchSizes(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord);
 
 #endif

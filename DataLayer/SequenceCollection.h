@@ -1,10 +1,11 @@
-#ifndef SIMPLESEQUENCESPACE_H
-#define SIMPLESEQUENCESPACE_H
+#ifndef SequenceCollection_H
+#define SequenceCollection_H
 
 #include <deque>
 #include <vector>
 #include <set>
 #include <stdio.h>
+#include "ISequenceCollection.h"
 #include "Sequence.h"
 #include "PackedSeq.h"
 #include "HitRecord.h"
@@ -20,21 +21,24 @@ enum SpaceState
 };
 
 
-typedef std::deque<PackedSeq> SequenceCollection;
-typedef SequenceCollection::iterator SequenceCollectionIter;
-typedef SequenceCollection::iterator ConstSequenceCollectionIter;
+typedef std::deque<PackedSeq> SequenceData;
+typedef SequenceData::iterator SequenceCollectionIter;
+typedef SequenceData::iterator ConstSequenceCollectionIter;
 
 typedef std::pair<SequenceCollectionIter, SequenceCollectionIter> SequenceIterPair;
 
-class SimpleSequenceSpace
+
+// This class implements a collection of PackedSeqs with functions to manipulate the data
+// It is meant to be a storage class only and should have minimal logic
+class SequenceCollection : public ISequenceCollection
 {
 	public:
 	
 		//Allocates phase space
-		SimpleSequenceSpace();
+		SequenceCollection();
 		
 		//Deallocates phase space
-		~SimpleSequenceSpace();
+		~SequenceCollection();
 
 		// add a single sequence to the collection
 		void addSequence(const PackedSeq& seq);
@@ -45,9 +49,6 @@ class SimpleSequenceSpace
 		// end the data load and make the sequence space ready for data read
 		void finalize();
 		
-		// generate the adjacency info for every sequence in the collection
-		void generateAdjacency();
-		
 		// check if a sequence exists
 		bool checkForSequence(const PackedSeq& seq) const;
 		
@@ -56,10 +57,10 @@ class SimpleSequenceSpace
 		
 		// Find if this sequence has the specified flag set
 		bool checkSequenceFlag(const PackedSeq& seq, SeqFlag flag);
-
-		// calculate whether this sequence has an extension in the phase space
-		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir) const;
 		
+		// remove the extension to the sequence
+		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
+	
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionIter getStartIter() const;
 		
@@ -78,17 +79,18 @@ class SimpleSequenceSpace
 
 	private:
 
+		// Functions to get iterators to the sequence
+		
+		// Get the iterator to the sequence and its reverse complement
+		// If they don't exist m_pSequences->end() will be returned in the iterator
 		SequenceIterPair GetSequenceIterators(const PackedSeq& seq) const;
 		SequenceCollectionIter FindSequence(const PackedSeq& seq) const;
-		
-		// remove the extension to the sequence
-		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// Check if duplicate entries exist
 		bool checkForDuplicates() const;		
 		
 		// Iterator versions of get/set functions
-		// These are not exposed to the public
+		// These should only be called from this class, hence they are private
 		void removeSequencePrivate(SequenceIterPair seqIters);
 		bool hasChildPrivate(SequenceCollectionIter seqIter) const;
 		bool hasParentPrivate(SequenceCollectionIter seqIter) const;
@@ -100,7 +102,7 @@ class SimpleSequenceSpace
 		// Data members
 		
 		// pointer to the actual collection (typedef'd above)
-		SequenceCollection* m_pSequences;
+		SequenceData* m_pSequences;
 		
 		// the state of the space
 		SpaceState m_state;

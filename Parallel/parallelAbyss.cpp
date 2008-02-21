@@ -72,7 +72,7 @@ void doRead(int kmerSize, std::string file, int numDataNodes)
 			PackedSeq sub = seq.subseq(i, kmerSize);
 			
 			// Send the sequence to the node
-			commLayer.SendSequence(1, sub, APM_SEQLOAD);
+			commLayer.SendSequence(1, sub, APM_SEQADD);
 			count++;
 			seqs.push_back(sub);
 			if(count % 10000 == 0)

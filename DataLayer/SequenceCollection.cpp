@@ -1,28 +1,28 @@
 #include <algorithm>
-#include "SimpleSequenceSpace.h"
+#include "SequenceCollection.h"
 #include "CommonUtils.h"
 
 //
 // Set up the 4D space to be the size of the slice passed in
 //
-SimpleSequenceSpace::SimpleSequenceSpace() : m_state(SS_LOADING)
+SequenceCollection::SequenceCollection() : m_state(SS_LOADING)
 {
-	m_pSequences = new SequenceCollection;
+	m_pSequences = new SequenceData;
 }
 
 //
 // Destructor
 //
-SimpleSequenceSpace::~SimpleSequenceSpace()
+SequenceCollection::~SequenceCollection()
 {
 	delete m_pSequences;
 	m_pSequences = 0;
 }
 
 //
-// Add a single read to the SimpleSequenceSpace
+// Add a single read to the SequenceCollection
 //
-void SimpleSequenceSpace::addSequence(const PackedSeq& seq)
+void SequenceCollection::addSequence(const PackedSeq& seq)
 {
 	m_pSequences->push_back(seq);	
 }
@@ -30,10 +30,12 @@ void SimpleSequenceSpace::addSequence(const PackedSeq& seq)
 //
 // Remove a read
 //
-void SimpleSequenceSpace::removeSequence(const PackedSeq& seq)
+void SequenceCollection::removeSequence(const PackedSeq& seq)
 {
 	markSequence(seq, SF_DELETE);
 	
+	// The extension information will be removed by the calling class
+	/*
 	PackedSeq& realSeq = *FindSequence(seq);
 	
 	// Remove this sequence as an extension to the adjacent sequences
@@ -56,12 +58,13 @@ void SimpleSequenceSpace::removeSequence(const PackedSeq& seq)
 			}
 		}
 	}
+	*/
 }
 
 //
 // Remove the extension to this sequence from the record
 //
-void SimpleSequenceSpace::removeExtension(const PackedSeq& seq, extDirection dir, char base)
+void SequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	SequenceIterPair iters = GetSequenceIterators(seq);
 	removeExtensionPrivate(iters.first, dir, base);
@@ -71,7 +74,7 @@ void SimpleSequenceSpace::removeExtension(const PackedSeq& seq, extDirection dir
 //
 //
 //
-void SimpleSequenceSpace::removeExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base)
+void SequenceCollection::removeExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base)
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -83,7 +86,7 @@ void SimpleSequenceSpace::removeExtensionPrivate(SequenceCollectionIter& seqIter
 //
 // check if a sequence exists in the phase space
 //
-bool SimpleSequenceSpace::checkForSequence(const PackedSeq& seq) const
+bool SequenceCollection::checkForSequence(const PackedSeq& seq) const
 {
 	assert(m_state != SS_LOADING);
 	SequenceCollectionIter iter = FindSequence(seq);
@@ -102,7 +105,7 @@ bool SimpleSequenceSpace::checkForSequence(const PackedSeq& seq) const
 //
 //
 //
-void SimpleSequenceSpace::markSequence(const PackedSeq& seq, SeqFlag flag)
+void SequenceCollection::markSequence(const PackedSeq& seq, SeqFlag flag)
 {
 	assert(m_state == SS_READY);
 	SequenceIterPair iters = GetSequenceIterators(seq);
@@ -113,7 +116,7 @@ void SimpleSequenceSpace::markSequence(const PackedSeq& seq, SeqFlag flag)
 //
 //
 //
-void SimpleSequenceSpace::markSequencePrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
+void SequenceCollection::markSequencePrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
 {
 	assert(m_state == SS_READY);
 	
@@ -126,7 +129,7 @@ void SimpleSequenceSpace::markSequencePrivate(SequenceCollectionIter& seqIter, S
 //
 //
 //
-bool SimpleSequenceSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
+bool SequenceCollection::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
 {
 	assert(m_state == SS_READY);
 	SequenceIterPair seqIters = GetSequenceIterators(seq);
@@ -140,7 +143,7 @@ bool SimpleSequenceSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
 //
 //
 //
-bool SimpleSequenceSpace::checkSequenceFlagPrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
+bool SequenceCollection::checkSequenceFlagPrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
 {
 	assert(m_state == SS_READY);
 
@@ -159,7 +162,7 @@ bool SimpleSequenceSpace::checkSequenceFlagPrivate(SequenceCollectionIter& seqIt
 //
 //
 //
-void SimpleSequenceSpace::finalize()
+void SequenceCollection::finalize()
 {
 	assert(m_state == SS_LOADING);
 	// Sort the sequence space
@@ -175,9 +178,9 @@ void SimpleSequenceSpace::finalize()
 		if(duplicates)
 		{
 			printf("duplicate sequences found, removing them\n");
-			SequenceCollection temp;
+			SequenceData temp;
 			// copy the unique elements over
-			std::back_insert_iterator<SequenceCollection> insertIter(temp);
+			std::back_insert_iterator<SequenceData> insertIter(temp);
 			std::unique_copy(m_pSequences->begin(), m_pSequences->end(), insertIter);
 			
 			// swap vectors
@@ -192,7 +195,7 @@ void SimpleSequenceSpace::finalize()
 //
 //
 //
-bool SimpleSequenceSpace::checkForDuplicates() const
+bool SequenceCollection::checkForDuplicates() const
 {
 	assert(m_state == SS_LOADING);
 	ConstSequenceCollectionIter prev = m_pSequences->begin();
@@ -230,10 +233,11 @@ bool SimpleSequenceSpace::checkForDuplicates() const
 	return duplicates;
 }
 
+/*
 //
 //
 //
-void SimpleSequenceSpace::generateAdjacency()
+void SequenceCollection::generateAdjacency()
 {
 	assert(m_state == SS_FINALIZED);
 	for(SequenceCollectionIter iter = m_pSequences->begin(); iter != m_pSequences->end(); iter++)
@@ -260,13 +264,14 @@ void SimpleSequenceSpace::generateAdjacency()
 	m_state = SS_READY;	
 	printf("done generating adjacency\n");
 }
+*/
 
 //
 // Calculate the extension of this sequence in the direction given
 //
 
 /* OLDE
-HitRecord SimpleSequenceSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
+HitRecord SequenceCollection::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
 {	
 	PSequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);
@@ -294,52 +299,10 @@ HitRecord SimpleSequenceSpace::calculateExtension(const PackedSeq& currSeq, extD
 }
 */
 
-HitRecord SimpleSequenceSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
-{	
-	
-	// Create the return structure
-	HitRecord hitRecord;
-	
-	// Get the iterators to the sequence and its reverse complement	
-	SequenceIterPair iters = GetSequenceIterators(currSeq);
-	
-	extDirection oppDir = oppositeDirection(dir);
-	
-	// Check for the existance of the 4 possible extensions
-	for(int i  = 0; i < NUM_BASES; i++)
-	{
-		char currBase = BASES[i];
-		char compBase = complement(currBase);
-		
-		bool fwdExt = checkSequenceExtensionPrivate(iters.first, dir, currBase);
-		bool revExt = checkSequenceExtensionPrivate(iters.second, oppDir, compBase);
-			
-		// Does this sequence have an extension?
-		if(fwdExt || revExt)
-		{
-			PackedSeq extSeq(currSeq);
-			extSeq.rotate(dir, currBase);
-			
-			// is there a forward extension?
-			if(fwdExt)
-			{
-				hitRecord.addHit(extSeq, false);
-			}
-			else
-			{
-				// extension is of the reverse complement
-				hitRecord.addHit(extSeq, true);	
-			}
-		}
-	}
-		
-	return hitRecord;
-}
-
 //
 //
 //
-bool SimpleSequenceSpace::hasParent(const PackedSeq& seq) const
+bool SequenceCollection::hasParent(const PackedSeq& seq) const
 {
 	assert(m_state == SS_READY);
 	SequenceIterPair iters = GetSequenceIterators(seq);
@@ -354,7 +317,7 @@ bool SimpleSequenceSpace::hasParent(const PackedSeq& seq) const
 //
 //
 //
-bool SimpleSequenceSpace::hasParentPrivate(SequenceCollectionIter seqIter) const
+bool SequenceCollection::hasParentPrivate(SequenceCollectionIter seqIter) const
 {
 	assert(m_state == SS_READY);
 	if(seqIter != m_pSequences->end())
@@ -370,7 +333,7 @@ bool SimpleSequenceSpace::hasParentPrivate(SequenceCollectionIter seqIter) const
 //
 //
 //
-bool SimpleSequenceSpace::hasChild(const PackedSeq& seq) const
+bool SequenceCollection::hasChild(const PackedSeq& seq) const
 {
 	assert(m_state == SS_READY);
 	SequenceIterPair iters = GetSequenceIterators(seq);
@@ -385,7 +348,7 @@ bool SimpleSequenceSpace::hasChild(const PackedSeq& seq) const
 //
 //
 //
-bool SimpleSequenceSpace::hasChildPrivate(SequenceCollectionIter seqIter) const
+bool SequenceCollection::hasChildPrivate(SequenceCollectionIter seqIter) const
 {
 	assert(m_state == SS_READY);
 	if(seqIter != m_pSequences->end())
@@ -401,7 +364,7 @@ bool SimpleSequenceSpace::hasChildPrivate(SequenceCollectionIter seqIter) const
 //
 //
 //
-bool SimpleSequenceSpace::checkSequenceExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base) const
+bool SequenceCollection::checkSequenceExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base) const
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -417,7 +380,7 @@ bool SimpleSequenceSpace::checkSequenceExtensionPrivate(SequenceCollectionIter& 
 // Return the number of sequences held in the collection
 // Note: some sequences will be marked as DELETE and will still be counted
 //
-int SimpleSequenceSpace::countAll() const
+int SequenceCollection::countAll() const
 {
 	return m_pSequences->size();
 }
@@ -425,7 +388,7 @@ int SimpleSequenceSpace::countAll() const
 //
 // Get the iterators pointing to the sequence and its reverse complement
 //
-SequenceIterPair SimpleSequenceSpace::GetSequenceIterators(const PackedSeq& seq) const
+SequenceIterPair SequenceCollection::GetSequenceIterators(const PackedSeq& seq) const
 {
 	SequenceIterPair iters;
 	iters.first = FindSequence(seq);
@@ -436,7 +399,7 @@ SequenceIterPair SimpleSequenceSpace::GetSequenceIterators(const PackedSeq& seq)
 //
 // Get the iterator pointing to the sequence
 //
-SequenceCollectionIter SimpleSequenceSpace::FindSequence(const PackedSeq& seq) const
+SequenceCollectionIter SequenceCollection::FindSequence(const PackedSeq& seq) const
 {
 	SequenceCollectionIter iter = std::lower_bound(m_pSequences->begin(), m_pSequences->end(), seq);
 	if(iter != m_pSequences->end() && *iter != seq)
@@ -449,7 +412,7 @@ SequenceCollectionIter SimpleSequenceSpace::FindSequence(const PackedSeq& seq) c
 //
 // Get the iterator pointing to the first sequence in the bin
 //
-SequenceCollectionIter SimpleSequenceSpace::getStartIter() const
+SequenceCollectionIter SequenceCollection::getStartIter() const
 {
 	return m_pSequences->begin();
 }
@@ -457,7 +420,7 @@ SequenceCollectionIter SimpleSequenceSpace::getStartIter() const
 //
 // Get the iterator pointing to the last sequence in the bin
 //
-SequenceCollectionIter SimpleSequenceSpace::getEndIter() const
+SequenceCollectionIter SequenceCollection::getEndIter() const
 {
 	return m_pSequences->end();
 }

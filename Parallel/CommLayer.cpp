@@ -48,7 +48,7 @@ void CommLayer::SendControlMessage(int destID, APMessage msg)
 //
 //
 //
-void CommLayer::SendSequence(int destID, PackedSeq& seq, APMessage msg)
+void CommLayer::SendSequence(int destID, const PackedSeq& seq, APMessage msg)
 {
 	MPI::COMM_WORLD.Send(seq.getDataPtr(), m_numBytesPerSeq, MPI::BYTE, destID, msg);
 	//printf("%d: sent %s\n", m_id, seq.decode().c_str());

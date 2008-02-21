@@ -7,7 +7,7 @@ DistributedPhaseSpace::DistributedPhaseSpace(int myID, int kmerSize)
 	Coord4 maxCoords = {maxC, maxC, maxC, maxC};
 	
 	// Load the phase space
-	m_pSS = new SimpleSequenceSpace(kmerSize, minCoords, maxCoords);
+	m_pSS = new SimpleSequenceSpace();
 	
 	// Create the comm layer
 	pComm = new CommLayer(myID, kmerSize);
@@ -33,7 +33,7 @@ void DistributedPhaseSpace::MessageLoop()
 		
 		switch(msg)
 		{
-			case APM_SEQLOAD:
+			case APM_SEQADD:
 				{
 					PackedSeq seq = pComm->ReceiveSequence();
 					m_pSS->addSequence(seq);
@@ -44,7 +44,7 @@ void DistributedPhaseSpace::MessageLoop()
 					pComm->ClearControlMessage();
 					printf("loaded: %d sequences\n", m_pSS->countAll());
 					printf("finalizing\n");
-					m_pSS->finalizeBins();
+					m_pSS->finalize();
 					break;
 				}
 			case APM_SEQCHECK:

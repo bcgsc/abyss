@@ -224,7 +224,51 @@ int PackedSeq::getNumCodingBytes(int seqLength)
 }
 
 //
+// This function computes a hash-like value of the packed sequence over the first 8 bases and the reverse complement of the last 8 bases
+// The reverse complement of the last 8 bases is used so that a sequence and its reverse-comp will hash to the same value which is desirable in this case
+// Todo: make this faster?
 //
+unsigned int PackedSeq::getCode() const
+{
+	const int NUM_BYTES = 4;
+	char firstByte[NUM_BYTES];
+	for(int i  = 0; i < NUM_BYTES; i++)
+	{
+		firstByte[i] = m_seq[i];
+	}
+	
+	// Fill out the last byte as the reverse complement of the last 8 bases
+	char lastByte[NUM_BYTES];
+	int prime = 101;
+	
+	for(int i = 0; i < 4*NUM_BYTES; i++)
+	{
+		int index = m_length - 1 - i;
+		char base = getBase(index);
+		setBase(lastByte, i/4, i % 4, complement(base));
+	}
+
+	char f[NUM_BYTES];
+	unsigned int sum = 0;
+	
+	for(int i = 0; i < NUM_BYTES; i++)
+	{
+		int total = 1;
+		for(int j = 0; j < i; j++)
+		{
+			total *= prime;
+		}
+		
+		sum += (firstByte[i] ^ lastByte[i]) * total;
+	}
+	
+	//short f1 = (firstByte[1] ^ lastByte[1]);
+	//printf("%d code\n", code);
+	return sum;
+}
+
+//
+// Decode this sequence into an ascii string
 //
 Sequence PackedSeq::decode() const
 {
@@ -241,6 +285,21 @@ Sequence PackedSeq::decode() const
 	
 	//printf("decode: %s\n", outstr.c_str());
 	return outstr; 
+}
+
+//
+// Decode a single byte into it's ascii representation
+//
+Sequence PackedSeq::decodeByte(const char byte) const
+{
+	Sequence outstr;
+	outstr.reserve(4);
+	for(int i = 0; i < 4; i++)
+	{
+		char base = getBase(&byte, 0, i);
+		outstr.push_back(base);
+	}
+	return outstr;
 }
 
 // Change this sequence into its reverse complement

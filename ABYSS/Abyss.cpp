@@ -10,11 +10,62 @@
 #include "SimpleSequenceSpace.h"
 
 ofstream branchLog("branchLog.txt");
+/*
+int testHash(int argc, char** argv)
+{
+	std::string fastaFile = argv[1];
+	FastaReader* reader = new FastaReader(fastaFile.c_str());
+	
+	int NUM_PROCS = 80;
+	int* vals = new int[NUM_PROCS];
+	for(int i = 0; i < NUM_PROCS; i++)
+	{
+		vals[i] = 0;
+	}
+	
+	int count = 0;
+	while(reader->isGood())
+	{
+		PackedSeq seq = reader->ReadSequence();
+		
+		
+		unsigned int code = seq.getCode();
+		unsigned int rccode = reverseComplement(seq).getCode();
+		assert(code == rccode);
+		
+		unsigned int id = code % NUM_PROCS;
+		vals[id]++;
+		count++;
+		
+		//printf("%d\n", id);
+	}
+	
+	int max = 0;
+	int min = count;
+	for(int i = 0; i < NUM_PROCS; i++)
+	{
+		if(vals[i] > max)
+		{
+			max = vals[i];
+		}
+		if(vals[i] < min)
+		{
+			min = vals[i];
+		}
+	}
+	
+	printf("max: %d min: %d ratio: %lf\n", max, min, (double)min/(double)max);
+	
+	delete [] vals;
+	delete reader;
+	reader = NULL;
+}
+*/
 
 int main(int argc, char** argv)
 {	
 
-	if(argc < 5 || argv[1] == "--help")
+	if(argc < 4 || argv[1] == "--help")
 	{
 		printUsage();
 		exit(1);
@@ -23,7 +74,6 @@ int main(int argc, char** argv)
 	std::string fastaFile = argv[1];
 	int readLen = atoi(argv[2]);
 	int kmerSize = atoi(argv[3]);
-	int numTrims = atoi(argv[4]);
 
 	// Set up coordinate space
 	int maxC = kmerSize - 1;
@@ -31,7 +81,7 @@ int main(int argc, char** argv)
 	Coord4 maxCoords = {maxC, maxC, maxC, maxC};
 	
 	// Load the phase space
-	SimpleSequenceSpace* pSS = new SimpleSequenceSpace(kmerSize, minCoords, maxCoords);
+	SimpleSequenceSpace* pSS = new SimpleSequenceSpace();
 	
 	// Open file for read
 	FastaReader* reader = new FastaReader(fastaFile.c_str());
@@ -49,7 +99,7 @@ int main(int argc, char** argv)
 		for(int i = 0; i < seq.getSequenceLength() - kmerSize  + 1; i++)
 		{
 			PackedSeq sub = seq.subseq(i, kmerSize);
-			pSS->addSequence(sub, true);
+			pSS->addSequence(sub);
 
 			count++;
 			
@@ -65,7 +115,7 @@ int main(int argc, char** argv)
 	printf("total sequences: %d\n", pSS->countAll());
 	
 	printf("finalizing\n");
-	pSS->finalizeBins();	
+	pSS->finalize();	
 
 	printf("generating adjacency info\n");
 	pSS->generateAdjacency();
@@ -94,7 +144,7 @@ int main(int argc, char** argv)
 		//trimSequences(pSS, minCoords, maxCoords);
 		trimSequences2(pSS, minCoords, maxCoords, start);
 		//trimSequences3(pSS, minCoords, maxCoords, i+1, 3 * (readLen - kmerSize + 1));
-		start << 1;
+		start <<= 1;
 	}
 	
 	// Now trim at the max branch length
@@ -104,7 +154,15 @@ int main(int argc, char** argv)
 	}
 	
 	// finally, trim at the min contig length
-	trimSequences2(pSS, minCoords, maxCoords, 100);
+	bool stop = false;
+	while(!stop)
+	{
+		int numRemoved = trimSequences2(pSS, minCoords, maxCoords, 100);
+		if(numRemoved <= 0)
+		{
+			stop = true;
+		}
+	}
 	
 	outputBranchSizes(pSS, minCoords, maxCoords);
 	
@@ -384,7 +442,7 @@ void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 	}	
 }
 
-void trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull)
+int trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull)
 {
 	const int MAX_DEAD_LENGTH = maxBranchCull;
 	printf("trimming max branch: %d\n", maxBranchCull);	
@@ -474,6 +532,7 @@ void trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, 
 	
 	printf("seqs after trimming: %d\n", pSS->countAll());
 	printf("num branches removed: %d\n", numBranchesRemoved);
+	return numBranchesRemoved;
 }
 
 
@@ -555,5 +614,5 @@ void outputBranchSizes(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoor
 
 void printUsage()
 {
-	printf("usage: ABYSS <reads fasta file> <max read length> <kmer size> <number of trimming steps>\n");	
+	printf("usage: ABYSS <reads fasta file> <max read length> <kmer size>\n");	
 }

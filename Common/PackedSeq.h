@@ -38,6 +38,9 @@ class PackedSeq
 		
 		// Decode the sequence
 		Sequence decode() const;
+		Sequence decodeByte(const char byte) const;
+		
+		unsigned int getCode() const;
 		
 		// get a subsequence of this packed seq
 		PackedSeq subseq(int start, int len) const;		

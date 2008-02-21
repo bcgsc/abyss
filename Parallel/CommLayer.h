@@ -7,7 +7,8 @@
 enum APMessage
 {
 	APM_DATA,
-	APM_SEQLOAD,
+	APM_SEQADD,
+	APM_SEQDEL,
 	APM_SEQCHECK,
 	APM_DONELOAD,
 	APM_FINISHED
@@ -29,7 +30,7 @@ class CommLayer
 		void SendControlMessage(int destID, APMessage msg);
 		
 		// Send a sequence to a specific id
-		void SendSequence(int destID, PackedSeq& seq, APMessage msg);
+		void SendSequence(int destID, const PackedSeq& seq, APMessage msg);
 		
 		// Check if this sequence exists in the phase space
 		bool CheckForSequence(int destID, PackedSeq& seq);
