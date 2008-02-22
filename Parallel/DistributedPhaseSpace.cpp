@@ -1,5 +1,5 @@
 #include "DistributedPhaseSpace.h"
-
+#if 0
 DistributedPhaseSpace::DistributedPhaseSpace(int myID, int kmerSize)
 {
 	int maxC = kmerSize - 1;
@@ -65,3 +65,4 @@ void DistributedPhaseSpace::MessageLoop()
 		}
 	}
 }
+#endif

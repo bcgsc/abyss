@@ -5,7 +5,7 @@
 //
 // Set up the 4D space to be the size of the slice passed in
 //
-SequenceCollection::SequenceCollection() : m_state(SS_LOADING)
+SequenceCollection::SequenceCollection() : m_state(CS_LOADING)
 {
 	m_pSequences = new SequenceData;
 }
@@ -22,7 +22,7 @@ SequenceCollection::~SequenceCollection()
 //
 // Add a single read to the SequenceCollection
 //
-void SequenceCollection::addSequence(const PackedSeq& seq)
+void SequenceCollection::add(const PackedSeq& seq)
 {
 	m_pSequences->push_back(seq);	
 }
@@ -30,35 +30,32 @@ void SequenceCollection::addSequence(const PackedSeq& seq)
 //
 // Remove a read
 //
-void SequenceCollection::removeSequence(const PackedSeq& seq)
+void SequenceCollection::remove(const PackedSeq& seq)
 {
-	markSequence(seq, SF_DELETE);
-	
-	// The extension information will be removed by the calling class
-	/*
-	PackedSeq& realSeq = *FindSequence(seq);
-	
-	// Remove this sequence as an extension to the adjacent sequences
-	for(int i = 0; i <= 1; i++)
+	setFlag(seq, SF_DELETE);
+	setFlag(reverseComplement(seq), SF_DELETE);	
+}
+
+//
+// add an extension to this sequence in the record
+//
+void SequenceCollection::addExtension(const PackedSeq& seq, extDirection dir, char base)
+{
+	SequenceIterPair iters = GetSequenceIterators(seq);
+	addExtensionByIter(iters.first, dir, base);
+	addExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
+}
+
+//
+//
+//
+void SequenceCollection::addExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base)
+{
+	if(seqIter != m_pSequences->end())
 	{
-		extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-		extDirection oppDir = oppositeDirection(dir);	
-			
-		for(int i = 0; i < NUM_BASES; i++)
-		{	
-			char currBase = BASES[i];
-			// does this sequence have an extension to the deleted seq?
-			if(realSeq.checkExtension(dir, currBase))
-			{
-				PackedSeq tempSeq(realSeq);				
-				// generate the sequence that the extension is to
-				char extBase = tempSeq.rotate(dir, currBase);				
-				// remove the extension, this removes the reverse complement as well
-				removeExtension(tempSeq, oppDir, extBase);
-			}
-		}
+		seqIter->setExtension(dir, base);
+		//seqIter->printExtension();
 	}
-	*/
 }
 
 //
@@ -67,14 +64,14 @@ void SequenceCollection::removeSequence(const PackedSeq& seq)
 void SequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	SequenceIterPair iters = GetSequenceIterators(seq);
-	removeExtensionPrivate(iters.first, dir, base);
-	removeExtensionPrivate(iters.second, oppositeDirection(dir), complement(base));	
+	removeExtensionByIter(iters.first, dir, base);
+	removeExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
 }
 
 //
 //
 //
-void SequenceCollection::removeExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base)
+void SequenceCollection::removeExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base)
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -86,39 +83,50 @@ void SequenceCollection::removeExtensionPrivate(SequenceCollectionIter& seqIter,
 //
 // check if a sequence exists in the phase space
 //
-bool SequenceCollection::checkForSequence(const PackedSeq& seq) const
+ResultPair SequenceCollection::exists(const PackedSeq& seq) const
 {
-	assert(m_state != SS_LOADING);
-	SequenceCollectionIter iter = FindSequence(seq);
+	assert(m_state != CS_LOADING);
+	ResultPair rp;
 	
-	if(iter != m_pSequences->end())
+	SequenceIterPair iters = GetSequenceIterators(seq);
+	rp.forward = existsByIter(iters.first);
+	rp.reverse = existsByIter(iters.second);
+	return rp;
+}
+
+//
+// Check if this sequence exists using an iterator
+//
+bool SequenceCollection::existsByIter(SequenceCollectionIter& seqIter) const
+{
+	if(seqIter != m_pSequences->end())
 	{
 		// sequence was found
-		return !iter->isFlagSet(SF_DELETE);
+		return !seqIter->isFlagSet(SF_DELETE);
 	}
 	else
 	{
 		return false;
-	}
+	}	
 }
 
 //
 //
 //
-void SequenceCollection::markSequence(const PackedSeq& seq, SeqFlag flag)
+void SequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	SequenceIterPair iters = GetSequenceIterators(seq);
-	markSequencePrivate(iters.first, flag);
-	markSequencePrivate(iters.second, flag);
+	setFlagByIter(iters.first, flag);
+	setFlagByIter(iters.second, flag);
 }
 
 //
 //
 //
-void SequenceCollection::markSequencePrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
+void SequenceCollection::setFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag)
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	
 	if(seqIter != m_pSequences->end())
 	{
@@ -129,23 +137,24 @@ void SequenceCollection::markSequencePrivate(SequenceCollectionIter& seqIter, Se
 //
 //
 //
-bool SequenceCollection::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
+ResultPair SequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
+	ResultPair result;
 	SequenceIterPair seqIters = GetSequenceIterators(seq);
-	bool forwardFlag = checkSequenceFlagPrivate(seqIters.first, flag);
-	bool reverseFlag = checkSequenceFlagPrivate(seqIters.second, flag);
+	result.forward = checkFlagByIter(seqIters.first, flag);
+	result.reverse = checkFlagByIter(seqIters.second, flag);
 
 	//assert(forwardFlag == reverseFlag);
-	return (forwardFlag || reverseFlag);
+	return result;
 }
 
 //
 //
 //
-bool SequenceCollection::checkSequenceFlagPrivate(SequenceCollectionIter& seqIter, SeqFlag flag)
+bool SequenceCollection::checkFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag)
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 
 	// Check whether the sequence and its reverse complement both have the flag set/unset
 	// They SHOULD be the same and the assert will guarentee this
@@ -164,7 +173,7 @@ bool SequenceCollection::checkSequenceFlagPrivate(SequenceCollectionIter& seqIte
 //
 void SequenceCollection::finalize()
 {
-	assert(m_state == SS_LOADING);
+	assert(m_state == CS_LOADING);
 	// Sort the sequence space
 	std::sort(m_pSequences->begin(), m_pSequences->end());
 	
@@ -185,11 +194,11 @@ void SequenceCollection::finalize()
 			
 			// swap vectors
 			temp.swap(*m_pSequences);
-			printf("%d sequences remain after duplicate removal\n", countAll());
+			printf("%d sequences remain after duplicate removal\n", count());
 		}
 			
 	}
-	m_state = SS_FINALIZED;	
+	m_state = CS_FINALIZED;	
 }
 
 //
@@ -197,7 +206,7 @@ void SequenceCollection::finalize()
 //
 bool SequenceCollection::checkForDuplicates() const
 {
-	assert(m_state == SS_LOADING);
+	assert(m_state == CS_LOADING);
 	ConstSequenceCollectionIter prev = m_pSequences->begin();
 	ConstSequenceCollectionIter startIter = m_pSequences->begin() + 1;
 	ConstSequenceCollectionIter endIter = m_pSequences->end();
@@ -304,10 +313,10 @@ HitRecord SequenceCollection::calculateExtension(const PackedSeq& currSeq, extDi
 //
 bool SequenceCollection::hasParent(const PackedSeq& seq) const
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	SequenceIterPair iters = GetSequenceIterators(seq);
-	bool forwardFlag = hasParentPrivate(iters.first);
-	bool reverseFlag = hasChildPrivate(iters.second);
+	bool forwardFlag = hasParentByIter(iters.first);
+	bool reverseFlag = hasChildByIter(iters.second);
 	
 	// assert that the sequence and its reverse complement have identical flags
 	//assert(forwardFlag == reverseFlag);
@@ -317,9 +326,9 @@ bool SequenceCollection::hasParent(const PackedSeq& seq) const
 //
 //
 //
-bool SequenceCollection::hasParentPrivate(SequenceCollectionIter seqIter) const
+bool SequenceCollection::hasParentByIter(SequenceCollectionIter seqIter) const
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	if(seqIter != m_pSequences->end())
 	{
 		return seqIter->hasExtension(ANTISENSE);
@@ -335,10 +344,10 @@ bool SequenceCollection::hasParentPrivate(SequenceCollectionIter seqIter) const
 //
 bool SequenceCollection::hasChild(const PackedSeq& seq) const
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	SequenceIterPair iters = GetSequenceIterators(seq);
-	bool forwardFlag = hasChildPrivate(iters.first);
-	bool reverseFlag = hasParentPrivate(iters.second);
+	bool forwardFlag = hasChildByIter(iters.first);
+	bool reverseFlag = hasParentByIter(iters.second);
 
 	// assert that the sequence and its reverse complement have identical flags
 	//assert(forwardFlag == reverseFlag);
@@ -348,9 +357,9 @@ bool SequenceCollection::hasChild(const PackedSeq& seq) const
 //
 //
 //
-bool SequenceCollection::hasChildPrivate(SequenceCollectionIter seqIter) const
+bool SequenceCollection::hasChildByIter(SequenceCollectionIter seqIter) const
 {
-	assert(m_state == SS_READY);
+	assert(m_state == CS_FINALIZED);
 	if(seqIter != m_pSequences->end())
 	{
 		return seqIter->hasExtension(SENSE);
@@ -364,7 +373,19 @@ bool SequenceCollection::hasChildPrivate(SequenceCollectionIter seqIter) const
 //
 //
 //
-bool SequenceCollection::checkSequenceExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base) const
+ResultPair SequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base) const
+{
+	assert(m_state == CS_FINALIZED);
+	ResultPair rp;
+	SequenceIterPair iters = GetSequenceIterators(seq);
+	rp.forward = checkExtensionByIter(iters.first, dir, base);
+	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
+	return rp;
+}
+//
+//
+//
+bool SequenceCollection::checkExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base) const
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -380,7 +401,7 @@ bool SequenceCollection::checkSequenceExtensionPrivate(SequenceCollectionIter& s
 // Return the number of sequences held in the collection
 // Note: some sequences will be marked as DELETE and will still be counted
 //
-int SequenceCollection::countAll() const
+int SequenceCollection::count() const
 {
 	return m_pSequences->size();
 }

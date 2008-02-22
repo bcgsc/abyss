@@ -12,7 +12,7 @@ int rank;
 
 int main(int argc, char** argv)
 {	
-	
+#if 0
 	if(argc < 4 || argv[1] == "--help")
 	{
 		printUsage();
@@ -99,6 +99,7 @@ void doRead(int kmerSize, std::string file, int numDataNodes)
 	}
 	
 	commLayer.SendControlMessage(1, APM_FINISHED);
+#endif
 }
 
 void printUsage()

@@ -1,5 +1,5 @@
-#ifndef SequenceCollection_H
-#define SequenceCollection_H
+#ifndef SEQUENCECOLLECTION_H
+#define SEQUENCECOLLECTION_H
 
 #include <deque>
 #include <vector>
@@ -13,11 +13,10 @@
 
 using namespace std;
 
-enum SpaceState
+enum CollectionState
 {
-	SS_LOADING,
-	SS_FINALIZED,
-	SS_READY
+	CS_LOADING,
+	CS_FINALIZED
 };
 
 
@@ -29,7 +28,7 @@ typedef std::pair<SequenceCollectionIter, SequenceCollectionIter> SequenceIterPa
 
 
 // This class implements a collection of PackedSeqs with functions to manipulate the data
-// It is meant to be a storage class only and should have minimal logic
+// It is meant to be a storage class only and should have minimal logic for manipulating the data except for getters/setters
 class SequenceCollection : public ISequenceCollection
 {
 	public:
@@ -41,25 +40,31 @@ class SequenceCollection : public ISequenceCollection
 		~SequenceCollection();
 
 		// add a single sequence to the collection
-		void addSequence(const PackedSeq& seq);
+		void add(const PackedSeq& seq);
 		
 		// remove a sequence from the collection
-		void removeSequence(const PackedSeq& seq);
+		void remove(const PackedSeq& seq);
 				
 		// end the data load and make the sequence space ready for data read
 		void finalize();
 		
 		// check if a sequence exists
-		bool checkForSequence(const PackedSeq& seq) const;
+		ResultPair exists(const PackedSeq& seq) const;
 		
 		// Set flag for sequence seq
-		void markSequence(const PackedSeq& seq, SeqFlag flag);
+		void setFlag(const PackedSeq& seq, SeqFlag flag);
 		
 		// Find if this sequence has the specified flag set
-		bool checkSequenceFlag(const PackedSeq& seq, SeqFlag flag);
+		ResultPair checkFlag(const PackedSeq& seq, SeqFlag flag);
+		
+		// add extension
+		void addExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// remove the extension to the sequence
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
+		
+		// check if the extension exists
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
 	
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionIter getStartIter() const;
@@ -74,7 +79,7 @@ class SequenceCollection : public ISequenceCollection
 		bool hasChild(const PackedSeq& seq) const;
 		
 		// Return the number of sequences in the collection
-		int countAll() const;
+		int count() const;
 						
 
 	private:
@@ -89,15 +94,18 @@ class SequenceCollection : public ISequenceCollection
 		// Check if duplicate entries exist
 		bool checkForDuplicates() const;		
 		
-		// Iterator versions of get/set functions
+		// Iterator versions of modification functions
 		// These should only be called from this class, hence they are private
-		void removeSequencePrivate(SequenceIterPair seqIters);
-		bool hasChildPrivate(SequenceCollectionIter seqIter) const;
-		bool hasParentPrivate(SequenceCollectionIter seqIter) const;
-		bool checkSequenceFlagPrivate(SequenceCollectionIter& seqIter, SeqFlag flag);
-		void markSequencePrivate(SequenceCollectionIter& seqIter, SeqFlag flag);
-		void removeExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base);
-		bool checkSequenceExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base) const;
+		void removeByIter(SequenceIterPair seqIters);
+		bool hasChildByIter(SequenceCollectionIter seqIter) const;
+		bool hasParentByIter(SequenceCollectionIter seqIter) const;
+		bool checkFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag);
+		void setFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag);
+		void addExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base);
+		void removeExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base);
+		bool checkExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base) const;
+		bool existsByIter(SequenceCollectionIter& seqIter) const;
+		
 		
 		// Data members
 		
@@ -105,7 +113,7 @@ class SequenceCollection : public ISequenceCollection
 		SequenceData* m_pSequences;
 		
 		// the state of the space
-		SpaceState m_state;
+		CollectionState m_state;
 };
 
 #endif

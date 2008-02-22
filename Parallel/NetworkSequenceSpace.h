@@ -2,7 +2,7 @@
 #define NETWORKSEQUENCESPACE_H
 
 #include "PackedSeq.h"
-#include "SimpleSequenceSpace.h"
+#include "SequenceCollection.h"
 #include "CommLayer.h"
 
 class NetworkSequenceSpace
@@ -56,7 +56,7 @@ class NetworkSequenceSpace
 		
 		// Pointer to the local sequence space
 		// These sequences are held in memory on this process
-		SimpleSequenceSpace* m_pLocalSpace;
+		SequenceCollection* m_pLocalSpace;
 		
 		// The communications layer implements the functions over the network
 		CommLayer* m_pComm;

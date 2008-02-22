@@ -1,6 +1,6 @@
 #ifndef DISTRIBUTEDPHASESPACE_H
 #define DISTRIBUTEDPHASESPACE_H
-
+#if 0
 #include <mpi.h>
 #include "SimpleSequenceSpace.h"
 #include "CommLayer.h"
@@ -21,5 +21,5 @@ class DistributedPhaseSpace
 		
 		SimpleSequenceSpace* m_pSS;
 };
-
+#endif
 #endif

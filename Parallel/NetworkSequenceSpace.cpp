@@ -6,7 +6,7 @@
 NetworkSequenceSpace::NetworkSequenceSpace(int myID, int numDataNodes, int kmerSize) : m_id(myID), m_numDataNodes(numDataNodes)
 {
 	// Load the phase space
-	m_pLocalSpace = new SimpleSequenceSpace();
+	m_pLocalSpace = new SequenceCollection();
 	
 	// Create the comm layer
 	m_pComm = new CommLayer(myID, kmerSize);
@@ -33,7 +33,7 @@ void NetworkSequenceSpace::addSequence(const PackedSeq& seq)
 	// Check if this sequence is local
 	if(isLocal(seq))
 	{
-		m_pLocalSpace->addSequence(seq);
+		m_pLocalSpace->add(seq);
 	}
 	else
 	{
@@ -50,7 +50,7 @@ void NetworkSequenceSpace::removeSequence(const PackedSeq& seq)
 	// Check if this sequence is local
 	if(isLocal(seq))
 	{
-		m_pLocalSpace->removeSequence(seq);
+		m_pLocalSpace->remove(seq);
 	}
 	else
 	{
@@ -91,7 +91,8 @@ bool NetworkSequenceSpace::checkForSequence(const PackedSeq& seq) const
 	// Check if this sequence is local
 	if(isLocal(seq))
 	{
-		return m_pLocalSpace->checkForSequence(seq);
+		assert(false);
+		//return m_pLocalSpace->exist(seq);
 	}
 	else
 	{

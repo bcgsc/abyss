@@ -1,5 +1,5 @@
-#ifndef SIMPLESEQUENCESPACE_H
-#define SIMPLESEQUENCESPACE_H
+#ifndef ASSEMBLYDATA_H
+#define ASSEMBLYDATA_H
 
 #include <deque>
 #include <vector>
@@ -9,32 +9,23 @@
 #include "PackedSeq.h"
 #include "HitRecord.h"
 #include "CommonDefs.h"
+#include "SequenceCollection.h"
 
-using namespace std;
-
-enum SpaceState
+enum DataState
 {
-	SS_LOADING,
-	SS_FINALIZED,
-	SS_READY
+	DS_LOADING,
+	DS_READY
 };
 
-
-typedef std::deque<PackedSeq> SequenceCollection;
-typedef SequenceCollection::iterator SequenceCollectionIter;
-typedef SequenceCollection::iterator ConstSequenceCollectionIter;
-
-typedef std::pair<SequenceCollectionIter, SequenceCollectionIter> SequenceIterPair;
-
-class SimpleSequenceSpace
+class AssemblyData
 {
 	public:
 	
 		//Allocates phase space
-		SimpleSequenceSpace();
+		AssemblyData();
 		
 		//Deallocates phase space
-		~SimpleSequenceSpace();
+		~AssemblyData();
 
 		// add a single sequence to the collection
 		void addSequence(const PackedSeq& seq);
@@ -78,32 +69,15 @@ class SimpleSequenceSpace
 
 	private:
 
-		SequenceIterPair GetSequenceIterators(const PackedSeq& seq) const;
-		SequenceCollectionIter FindSequence(const PackedSeq& seq) const;
-		
-		// remove the extension to the sequence
-		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
-		
-		// Check if duplicate entries exist
-		bool checkForDuplicates() const;		
-		
-		// Iterator versions of get/set functions
-		// These are not exposed to the public
-		void removeSequencePrivate(SequenceIterPair seqIters);
-		bool hasChildPrivate(SequenceCollectionIter seqIter) const;
-		bool hasParentPrivate(SequenceCollectionIter seqIter) const;
-		bool checkSequenceFlagPrivate(SequenceCollectionIter& seqIter, SeqFlag flag);
-		void markSequencePrivate(SequenceCollectionIter& seqIter, SeqFlag flag);
-		void removeExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base);
-		bool checkSequenceExtensionPrivate(SequenceCollectionIter& seqIter, extDirection dir, char base) const;
-		
 		// Data members
 		
 		// pointer to the actual collection (typedef'd above)
 		SequenceCollection* m_pSequences;
 		
-		// the state of the space
-		SpaceState m_state;
+		// The state of the data set
+		// DS_LOADING = Don't read from the data set, load only
+		// READY = ok to start reading and processing
+		DataState m_state;
 };
 
 #endif

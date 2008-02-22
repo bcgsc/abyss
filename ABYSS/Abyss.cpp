@@ -7,7 +7,7 @@
 #include <fstream>
 #include "Abyss.h"
 #include "CommonUtils.h"
-#include "SimpleSequenceSpace.h"
+#include "AssemblyData.h"
 
 ofstream branchLog("branchLog.txt");
 /*
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 	Coord4 maxCoords = {maxC, maxC, maxC, maxC};
 	
 	// Load the phase space
-	SimpleSequenceSpace* pSS = new SimpleSequenceSpace();
+	AssemblyData* pSS = new AssemblyData();
 	
 	// Open file for read
 	FastaReader* reader = new FastaReader(fastaFile.c_str());
@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void outputSequences(const char* filename, SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+void outputSequences(const char* filename, AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {
 	FastaWriter writer(filename);
 
@@ -220,7 +220,7 @@ Sequence BuildContig(PSequenceVector& extensions, PackedSeq& originalSeq, extDir
 	return contig;		
 }
 
-void assemble(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+void assemble(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	
 	// create file writer
 	FastaWriter writer("contigs.fa");
@@ -291,7 +291,7 @@ void assemble(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 	printf("noext: %d, ambi: %d\n", noext, ambiext);
 }
 
-void assemble2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+void assemble2(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	
 	std::list<branchEnd> seqStarts;
 			
@@ -422,13 +422,13 @@ Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq)
 	return contig;
 }
 
-Sequence assembleSequence(SimpleSequenceSpace* pSS, SequenceCollectionIter sequenceIter)
+Sequence assembleSequence(AssemblyData* pSS, SequenceCollectionIter sequenceIter)
 {		
 	Sequence contig;
 	return contig;
 }
 
-void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+void trimSequences(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {				
 	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
 	{
@@ -442,7 +442,7 @@ void trimSequences(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
 	}	
 }
 
-int trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull)
+int trimSequences2(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord, int maxBranchCull)
 {
 	const int MAX_DEAD_LENGTH = maxBranchCull;
 	printf("trimming max branch: %d\n", maxBranchCull);	
@@ -536,7 +536,7 @@ int trimSequences2(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord, i
 }
 
 
-void outputBranchSizes(SimpleSequenceSpace* pSS, Coord4 minCoord, Coord4 maxCoord)
+void outputBranchSizes(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	 
 	static int trimNum = 0;
 	//printf("seqs before trimming: %d\n", pSS->countAll());
