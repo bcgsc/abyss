@@ -39,21 +39,21 @@ void SequenceCollection::remove(const PackedSeq& seq)
 //
 // add an extension to this sequence in the record
 //
-void SequenceCollection::addExtension(const PackedSeq& seq, extDirection dir, char base)
+void SequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
 {
 	SequenceIterPair iters = GetSequenceIterators(seq);
-	addExtensionByIter(iters.first, dir, base);
-	addExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
+	setExtensionByIter(iters.first, dir, extension);
+	setExtensionByIter(iters.second, oppositeDirection(dir), extension.complement());	
 }
 
 //
 //
 //
-void SequenceCollection::addExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base)
+void SequenceCollection::setExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, SeqExt extension)
 {
 	if(seqIter != m_pSequences->end())
 	{
-		seqIter->setExtension(dir, base);
+		seqIter->setExtension(dir, extension);
 		//seqIter->printExtension();
 	}
 }
@@ -223,6 +223,14 @@ bool SequenceCollection::checkForDuplicates() const
 		}
 				
 		if(!(*prev < *iter || equal))
+		{
+			sorted = false;
+			printf("sort failure: %s < %s\n", prev->decode().c_str(), iter->decode().c_str());
+			break;
+		}
+		
+		//slow
+		if(!(prev->decode() < iter->decode() || equal))
 		{
 			sorted = false;
 			printf("sort failure: %s < %s\n", prev->decode().c_str(), iter->decode().c_str());

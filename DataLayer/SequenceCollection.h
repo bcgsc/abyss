@@ -20,7 +20,7 @@ enum CollectionState
 };
 
 
-typedef std::deque<PackedSeq> SequenceData;
+typedef std::vector<PackedSeq> SequenceData;
 typedef SequenceData::iterator SequenceCollectionIter;
 typedef SequenceData::iterator ConstSequenceCollectionIter;
 
@@ -58,7 +58,7 @@ class SequenceCollection : public ISequenceCollection
 		ResultPair checkFlag(const PackedSeq& seq, SeqFlag flag);
 		
 		// add extension
-		void addExtension(const PackedSeq& seq, extDirection dir, char base);
+		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
 		
 		// remove the extension to the sequence
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
@@ -101,7 +101,7 @@ class SequenceCollection : public ISequenceCollection
 		bool hasParentByIter(SequenceCollectionIter seqIter) const;
 		bool checkFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag);
 		void setFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag);
-		void addExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base);
+		void setExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, SeqExt extension);
 		void removeExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base);
 		bool checkExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base) const;
 		bool existsByIter(SequenceCollectionIter& seqIter) const;

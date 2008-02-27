@@ -10,57 +10,6 @@
 #include "AssemblyData.h"
 
 ofstream branchLog("branchLog.txt");
-/*
-int testHash(int argc, char** argv)
-{
-	std::string fastaFile = argv[1];
-	FastaReader* reader = new FastaReader(fastaFile.c_str());
-	
-	int NUM_PROCS = 80;
-	int* vals = new int[NUM_PROCS];
-	for(int i = 0; i < NUM_PROCS; i++)
-	{
-		vals[i] = 0;
-	}
-	
-	int count = 0;
-	while(reader->isGood())
-	{
-		PackedSeq seq = reader->ReadSequence();
-		
-		
-		unsigned int code = seq.getCode();
-		unsigned int rccode = reverseComplement(seq).getCode();
-		assert(code == rccode);
-		
-		unsigned int id = code % NUM_PROCS;
-		vals[id]++;
-		count++;
-		
-		//printf("%d\n", id);
-	}
-	
-	int max = 0;
-	int min = count;
-	for(int i = 0; i < NUM_PROCS; i++)
-	{
-		if(vals[i] > max)
-		{
-			max = vals[i];
-		}
-		if(vals[i] < min)
-		{
-			min = vals[i];
-		}
-	}
-	
-	printf("max: %d min: %d ratio: %lf\n", max, min, (double)min/(double)max);
-	
-	delete [] vals;
-	delete reader;
-	reader = NULL;
-}
-*/
 
 int main(int argc, char** argv)
 {	
@@ -88,9 +37,7 @@ int main(int argc, char** argv)
 	
 	// Load phase space
 	int count = 0;
-	
-	PSequenceVector seqs;
-	
+
 	while(reader->isGood())
 	{
 		PackedSeq seq = reader->ReadSequence();		
@@ -107,8 +54,6 @@ int main(int argc, char** argv)
 			{
 				printf("loaded %d sequences\n", count);
 			}
-			
-			seqs.push_back(sub);
 		}
 	}
 
@@ -119,7 +64,7 @@ int main(int argc, char** argv)
 
 	printf("generating adjacency info\n");
 	pSS->generateAdjacency();
-	
+
 	count = 0;
 
 	//for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
@@ -132,7 +77,7 @@ int main(int argc, char** argv)
 	delete reader;
 
 	// trim the reads
-	outputBranchSizes(pSS, minCoords, maxCoords);
+	//outputBranchSizes(pSS, minCoords, maxCoords);
 	//for(int i = 0; i < numTrims; i++)
 	int start = 2;
 	int step = 2;
@@ -164,7 +109,7 @@ int main(int argc, char** argv)
 		}
 	}
 	
-	outputBranchSizes(pSS, minCoords, maxCoords);
+	//outputBranchSizes(pSS, minCoords, maxCoords);
 	
 	printf("outputting trimmed reads\n");
 	outputSequences("trimmed.fa", pSS, minCoords, maxCoords);
@@ -399,7 +344,7 @@ void assemble2(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 	printf("noext: %d, ambi: %d\n", noext, ambiext);
 }
 
-Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq)
+Sequence BuildContig(PSequenceVector* extensions, const PackedSeq& originalSeq)
 {
 	Sequence contig;
 	contig.reserve(originalSeq.getSequenceLength() + extensions[0].size() + extensions[1].size());
@@ -422,11 +367,6 @@ Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq)
 	return contig;
 }
 
-Sequence assembleSequence(AssemblyData* pSS, SequenceCollectionIter sequenceIter)
-{		
-	Sequence contig;
-	return contig;
-}
 
 void trimSequences(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {				
@@ -608,6 +548,65 @@ void outputBranchSizes(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 	}
 	
 	trimNum++;
+}
+
+int mainHash(int argc, char** argv)
+{
+	std::string fastaFile = argv[1];
+	int readLen = atoi(argv[2]);
+	int kmerSize = atoi(argv[3]);
+	FastaReader* reader = new FastaReader(fastaFile.c_str());
+	
+	int NUM_PROCS = 10000000;
+	int* vals = new int[NUM_PROCS];
+	for(int i = 0; i < NUM_PROCS; i++)
+	{
+		vals[i] = 0;
+	}
+	
+	int count = 0;
+	while(reader->isGood())
+	{
+		PackedSeq seq = reader->ReadSequence();
+		for(int i = 0; i < seq.getSequenceLength() - kmerSize  + 1; i++)
+		{
+			PackedSeq sub = seq.subseq(i, kmerSize);		
+		
+			unsigned int code = sub.getHashCode();
+
+		
+			unsigned int id = code % NUM_PROCS;
+			vals[id]++;
+			count++;
+		}
+		
+		//printf("%d\n", id);
+	}
+	
+	int max = 0;
+	int min = count;
+	int sum = 0;
+	for(int i = 0; i < NUM_PROCS; i++)
+	{
+		if(vals[i] > max)
+		{
+			max = vals[i];
+		}
+		if(vals[i] < min)
+		{
+			min = vals[i];
+		}
+		
+		sum += vals[i];
+		
+		printf("%d\n", vals[i]);
+	}
+	
+	//printf("max: %d min: %d ratio: %lf mean: %lf total: %d\n", max, min, (double)min/(double)max, (double)sum/(double)NUM_PROCS, count);
+	
+	delete [] vals;
+	delete reader;
+	reader = NULL;
 }
 
 

@@ -2,6 +2,7 @@
 #define SEQEXT_H
 
 #include "CommonDefs.h"
+#include "CommonUtils.h"
 
 class SeqExt
 {
@@ -28,6 +29,9 @@ class SeqExt
 		bool IsAmbiguous() const; 
 		
 		void print() const;
+		
+		// Return a seqext object which is complementary to this one (swaps A/T, G/C)
+		SeqExt complement() const;
 		
 	private:
 		unsigned char base2Bit(char base) const;

@@ -53,7 +53,7 @@ class ISequenceCollection
 		virtual void removeExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		
 		// add an extension to the sequence
-		virtual void addExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;
 		
 		// check if the extension exists
 		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const = 0;

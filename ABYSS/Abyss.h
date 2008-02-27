@@ -23,9 +23,9 @@ bool isCoordInternal(Coord4 c, Coord4 start, Coord4 size);
 void outputSequences(const char* filename, AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord);
 void assemble(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord);
 void assemble2(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord);
-Sequence assembleSequence(AssemblyData* pSS, 	PhaseSpaceBinIter sequenceIter);
+
 Sequence BuildContig(PSequenceVector& extensions, PackedSeq& originalSeq, extDirection dir);
-Sequence BuildContig(PSequenceVector* extensions, PackedSeq& originalSeq);
+Sequence BuildContig(PSequenceVector* extensions, const PackedSeq& originalSeq);
 void printUsage();
 
 

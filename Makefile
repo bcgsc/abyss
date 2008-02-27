@@ -124,9 +124,8 @@ Common/AssemblyData.o: Common/AssemblyData.h Common/Sequence.h
 Common/AssemblyData.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Common/AssemblyData.o: Common/PackedSeq.h Common/CommonUtils.h
 Common/AssemblyData.o: Common/SeqExt.h Common/HitRecord.h
-Common/CommonUtils.o: Common/CommonUtils.h Common/PackedSeq.h
-Common/CommonUtils.o: Common/Sequence.h Common/CommonDefs.h Common/ReadPrb.h
-Common/CommonUtils.o: Common/Prb.h Common/SeqExt.h
+Common/CommonUtils.o: Common/CommonUtils.h Common/Sequence.h
+Common/CommonUtils.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Common/Config.o: Common/Config.h
 Common/HitRecord.o: Common/HitRecord.h Common/CommonDefs.h Common/ReadPrb.h
 Common/HitRecord.o: Common/Prb.h Common/PackedSeq.h Common/CommonUtils.h
@@ -150,7 +149,7 @@ Common/PhaseSpace.o: Common/HitRecord.h
 Common/Prb.o: Common/Prb.h
 Common/ReadPrb.o: Common/ReadPrb.h Common/Prb.h
 Common/SeqExt.o: Common/SeqExt.h Common/CommonDefs.h Common/ReadPrb.h
-Common/SeqExt.o: Common/Prb.h
+Common/SeqExt.o: Common/Prb.h Common/CommonUtils.h Common/Sequence.h
 Common/SeqRecord.o: Common/SeqRecord.h Common/PackedSeq.h
 Common/SeqRecord.o: Common/CommonUtils.h Common/Sequence.h
 Common/SeqRecord.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
@@ -186,8 +185,14 @@ DataLayer/SequenceCollection.o: DataLayer/SequenceCollection.h
 DataLayer/SequenceCollection.o: DataLayer/ISequenceCollection.h
 DataLayer/SequenceCollection.o: Common/CommonDefs.h Common/ReadPrb.h
 DataLayer/SequenceCollection.o: Common/Prb.h Common/CommonUtils.h
-DataLayer/SequenceCollection.o: Common/PackedSeq.h Common/Sequence.h
+DataLayer/SequenceCollection.o: Common/Sequence.h Common/PackedSeq.h
 DataLayer/SequenceCollection.o: Common/SeqExt.h Common/HitRecord.h
+DataLayer/SequenceCollectionHash.o: DataLayer/SequenceCollectionHash.h
+DataLayer/SequenceCollectionHash.o: DataLayer/ISequenceCollection.h
+DataLayer/SequenceCollectionHash.o: Common/CommonDefs.h Common/ReadPrb.h
+DataLayer/SequenceCollectionHash.o: Common/Prb.h Common/CommonUtils.h
+DataLayer/SequenceCollectionHash.o: Common/Sequence.h Common/PackedSeq.h
+DataLayer/SequenceCollectionHash.o: Common/SeqExt.h Common/HitRecord.h
 DataLayer/Writer.o: DataLayer/Writer.h
 ABYSS/Abyss.o: ABYSS/Abyss.h Common/Sequence.h Common/CommonDefs.h
 ABYSS/Abyss.o: Common/ReadPrb.h Common/Prb.h DataLayer/Reader.h
@@ -198,6 +203,7 @@ ABYSS/Abyss.o: DataLayer/Writer.h Common/SequencePair.h Common/Config.h
 ABYSS/Abyss.o: Common/PartitionLoader.h DataLayer/FastaWriter.h
 ABYSS/Abyss.o: DataLayer/IFileWriter.h DataLayer/FastaReader.h
 ABYSS/Abyss.o: DataLayer/IFileReader.h DataLayer/PackedSeqWriter.h
+ABYSS/Abyss.o: Common/AssemblyData.h
 ABYSS/Path.o: ABYSS/Path.h Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 ABYSS/Path.o: Common/SeqRecord.h Common/PackedSeq.h Common/CommonUtils.h
 ABYSS/Path.o: Common/Sequence.h Common/SeqExt.h
@@ -244,19 +250,17 @@ Parallel/CommLayer.o: Common/CommonUtils.h Common/Sequence.h
 Parallel/CommLayer.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Parallel/CommLayer.o: Common/SeqExt.h
 Parallel/DistributedPhaseSpace.o: Parallel/DistributedPhaseSpace.h
-Parallel/DistributedPhaseSpace.o: Parallel/CommLayer.h Common/PackedSeq.h
-Parallel/DistributedPhaseSpace.o: Common/CommonUtils.h Common/Sequence.h
-Parallel/DistributedPhaseSpace.o: Common/CommonDefs.h Common/ReadPrb.h
-Parallel/DistributedPhaseSpace.o: Common/Prb.h Common/SeqExt.h
-Parallel/NetworkSequenceSpace.o: Parallel/NetworkSequenceSpace.h
-Parallel/NetworkSequenceSpace.o: Common/PackedSeq.h Common/CommonUtils.h
-Parallel/NetworkSequenceSpace.o: Common/Sequence.h Common/CommonDefs.h
-Parallel/NetworkSequenceSpace.o: Common/ReadPrb.h Common/Prb.h
-Parallel/NetworkSequenceSpace.o: Common/SeqExt.h Parallel/CommLayer.h
+Parallel/NetworkSequenceCollection.o: Parallel/NetworkSequenceCollection.h
+Parallel/NetworkSequenceCollection.o: Common/PackedSeq.h Common/CommonUtils.h
+Parallel/NetworkSequenceCollection.o: Common/Sequence.h Common/CommonDefs.h
+Parallel/NetworkSequenceCollection.o: Common/ReadPrb.h Common/Prb.h
+Parallel/NetworkSequenceCollection.o: Common/SeqExt.h
+Parallel/NetworkSequenceCollection.o: DataLayer/SequenceCollection.h
+Parallel/NetworkSequenceCollection.o: DataLayer/ISequenceCollection.h
+Parallel/NetworkSequenceCollection.o: Common/HitRecord.h Parallel/CommLayer.h
 Parallel/parallelAbyss.o: Parallel/parallelAbyss.h Common/PackedSeq.h
 Parallel/parallelAbyss.o: Common/CommonUtils.h Common/Sequence.h
 Parallel/parallelAbyss.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Parallel/parallelAbyss.o: Common/SeqExt.h DataLayer/FastaReader.h
 Parallel/parallelAbyss.o: DataLayer/IFileReader.h
 Parallel/parallelAbyss.o: Parallel/DistributedPhaseSpace.h
-Parallel/parallelAbyss.o: Parallel/CommLayer.h

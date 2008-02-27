@@ -99,11 +99,21 @@ void AssemblyData::finalize()
 void AssemblyData::generateAdjacency()
 {
 	assert(m_state == DS_LOADING);
-	for(SequenceCollectionIter iter = m_pSequences->getStartIter(); iter != m_pSequences->getEndIter(); iter++)
+	int count = 0;
+	SequenceCollectionIter endIter  = m_pSequences->getEndIter();
+	for(SequenceCollectionIter iter = m_pSequences->getStartIter(); iter != endIter; ++iter)
 	{
+		if(count % 100000 == 0)
+		{
+			printf("curr: %d\n", countAll());
+			printf("generated for %d\n", count);
+		}
+		count++;
+		
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			SeqExt extension;
 			for(int j = 0; j < NUM_BASES; j++)
 			{
 				char currBase = BASES[j];
@@ -112,10 +122,12 @@ void AssemblyData::generateAdjacency()
 				
 				if(checkForSequence(testSeq))
 				{
-					m_pSequences->addExtension(*iter, dir, currBase);
+					extension.SetBase(currBase);
 				}
 			}
+			m_pSequences->setExtension(*iter, dir, extension);			
 		}
+		
 		
 		//iter->printExtension();
 	}
@@ -163,14 +175,12 @@ HitRecord AssemblyData::calculateExtension(const PackedSeq& currSeq, extDirectio
 	// Create the return structure
 	HitRecord hitRecord;
 	
-	extDirection oppDir = oppositeDirection(dir);
-	
 	// Check for the existance of the 4 possible extensions
 	for(int i  = 0; i < NUM_BASES; i++)
 	{
 		char currBase = BASES[i];
-		char compBase = complement(currBase);
 		
+		// SLOW
 		ResultPair hasExt = m_pSequences->checkExtension(currSeq, dir, currBase);
 			
 		// Does this sequence have an extension?

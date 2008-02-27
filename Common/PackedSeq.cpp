@@ -97,6 +97,7 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	return *this;
 }
 
+/*
 //
 // Equality operator
 //
@@ -110,8 +111,8 @@ int PackedSeq::compare(const PackedSeq& other) const
 	assert(m_length == other.m_length);
 	// This is valid since the remaining portion of the buffer is memset to zero
 	// This HAS to be the case or else the equality will not work
-	//return memcmp(m_seq, other.m_seq, NUM_BYTES);
-	
+	return memcmp(m_seq, other.m_seq, NUM_BYTES);
+#if 0
 	int numBytes = getNumCodingBytes(m_length);
 	if(m_length % 4 != 0)
 	{
@@ -138,6 +139,7 @@ int PackedSeq::compare(const PackedSeq& other) const
 		}
 	}
 	return 0;
+#endif
 	
 }
 
@@ -150,14 +152,13 @@ bool PackedSeq::operator!=(const PackedSeq& other) const
 }
 
 //
-// Less than operator for the strings, performs an O(n) comparison (TODO: can be optimized??)
-// this is slow as hell, fix it
+//
 //
 bool PackedSeq::operator<(const PackedSeq& other) const
 {	
 	return compare(other) < 0;
 }
-
+*/
 //
 // return a subsequence of this sequence
 //
@@ -248,7 +249,6 @@ unsigned int PackedSeq::getCode() const
 		setBase(lastByte, i/4, i % 4, complement(base));
 	}
 
-	char f[NUM_BYTES];
 	unsigned int sum = 0;
 	
 	for(int i = 0; i < NUM_BYTES; i++)
@@ -265,6 +265,12 @@ unsigned int PackedSeq::getCode() const
 	//short f1 = (firstByte[1] ^ lastByte[1]);
 	//printf("%d code\n", code);
 	return sum;
+}
+
+size_t PackedSeq::getHashCode() const
+{
+	int code = (m_seq[0] << 24) ^ (m_seq[1] << 16) ^ (m_seq[2] << 8) ^ m_seq[3];
+	return code;
 }
 
 //
@@ -429,9 +435,9 @@ char PackedSeq::rightShiftByte(char* pSeq, int byteNum, int index, char base)
 //
 //
 //
-void PackedSeq::setExtension(extDirection dir, char b)
+void PackedSeq::setExtension(extDirection dir, SeqExt extension)
 {
-	m_extensions[dir].SetBase(b);
+	m_extensions[dir] = extension;
 }
 
 

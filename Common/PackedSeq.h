@@ -16,6 +16,7 @@ class PackedSeq
 	public:
 		
 		// Constructor/Destructor
+		PackedSeq();
 		PackedSeq(const Sequence& seq);
 		PackedSeq(const char* const pData, int length);
 		
@@ -29,18 +30,33 @@ class PackedSeq
 		PackedSeq& operator=(const PackedSeq& other);
 		
 		// Operators
-		bool operator==(const PackedSeq& other) const;
-		bool operator!=(const PackedSeq& other) const;
-		bool operator<(const PackedSeq& other) const;
+		inline bool operator==(const PackedSeq& other) const
+		{
+			return compare(other) == 0;
+		}
+		
+		inline bool operator!=(const PackedSeq& other) const
+		{
+			return compare(other) != 0;
+		}
+		inline bool operator<(const PackedSeq& other) const
+		{
+			return compare(other) < 0;	
+		}
 		
 		// Comparison
-		int compare(const PackedSeq& other) const;
+		inline int compare(const PackedSeq& other) const
+		{ 
+			assert(m_length == other.m_length);
+			return memcmp(m_seq, other.m_seq, NUM_BYTES);
+		}
 		
 		// Decode the sequence
 		Sequence decode() const;
 		Sequence decodeByte(const char byte) const;
 		
 		unsigned int getCode() const;
+		size_t getHashCode() const;
 		
 		// get a subsequence of this packed seq
 		PackedSeq subseq(int start, int len) const;		
@@ -64,7 +80,7 @@ class PackedSeq
 		bool isFlagSet(SeqFlag flag) const;
 		
 		// Set a flag indicating this sequence can by extending by base b
-		void setExtension(extDirection dir, char b);
+		void setExtension(extDirection dir, SeqExt extension);
 		void clearExtension(extDirection dir, char b);
 		bool checkExtension(extDirection dir, char b) const;
 		bool hasExtension(extDirection dir) const;
@@ -86,9 +102,7 @@ class PackedSeq
 		void print() const;
 
 	private:
-	
-		PackedSeq();
-		
+			
 		// get/set a particular value
 		static inline void setBase(char* pSeq, int seqIndex, char base);
 		static inline void setBase(char* pSeq, int byteNum, int index, char base);

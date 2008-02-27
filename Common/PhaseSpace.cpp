@@ -218,6 +218,8 @@ void PhaseSpace::finalizeBins()
 //
 HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
 {	
+	assert(false);
+	/*
 	PSequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);
 
@@ -241,6 +243,7 @@ HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection 
 	}
 	
 	return hitRecord;
+	*/
 
 }
 

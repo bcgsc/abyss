@@ -61,6 +61,23 @@ bool SeqExt::IsAmbiguous() const
 }
 
 //
+//
+//
+SeqExt SeqExt::complement() const
+{
+	SeqExt comp;
+	for(int i = 0; i < NUM_BASES; i++)
+	{
+		char currBase = BASES[i];
+		if(CheckBase(currBase))
+		{
+			comp.SetBase(::complement(currBase));
+		}
+	}
+	return comp;
+}
+
+//
 void SeqExt::print() const
 {
 	int a = CheckBase('A');
