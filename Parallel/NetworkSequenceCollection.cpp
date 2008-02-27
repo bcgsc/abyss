@@ -879,7 +879,7 @@ void NetworkSequenceCollection::assemble()
 	MPI_File handle;
 	MPI_Info info;
 	//MPI_File_open(MPI_COMM_WORLD, "pcontigs.fa", MPI_MODE_WRONLY, info, &handle);
-	 
+
 	printf("starting assembly\n");
 	int count = 0;
 	SequenceCollectionIter endIter  = m_pLocalSpace->getEndIter();
