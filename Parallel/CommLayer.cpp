@@ -12,7 +12,6 @@ CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize)
 	printf("allocating buffer\n");
 	m_buffer = new char[m_bufferSize];
 	MPI_Buffer_attach( m_buffer, m_bufferSize); 
-	//MPI_Buffer_attach(m_buffer, m_bufferSize);
 }
 
 //
@@ -28,10 +27,7 @@ CommLayer::~CommLayer()
 
 void CommLayer::flush()
 {
-	int size;
-	char* buff;
-	//MPI_Buffer_detach( &buff, &size); 
-	//MPI_Buffer_attach( buff, size);
+
 }
 
 //

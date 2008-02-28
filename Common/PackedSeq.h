@@ -47,7 +47,12 @@ class PackedSeq
 		// Comparison
 		inline int compare(const PackedSeq& other) const
 		{ 
+			if(m_length != other.m_length)
+			{
+				printf("fail: %s != %s\n", decode().c_str(), other.decode().c_str());
+			}			
 			assert(m_length == other.m_length);
+
 			return memcmp(m_seq, other.m_seq, NUM_BYTES);
 		}
 		
@@ -96,10 +101,17 @@ class PackedSeq
 		char rotate(extDirection dir, char base);
 		char shiftAppend(char base);
 		char shiftPrepend(char base);
-
 		
 		// Print
 		void print() const;
+		
+		// The maximum kmer size is hardcoded to be 64
+		// Why is this? If we use a dynamically allocated character buffer malloc/new will give us 16 or 32 bytes no matter how much we want
+		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
+		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
+		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
+		static const int MAX_KMER = 64;
+		static const int NUM_BYTES = MAX_KMER / 4;		
 
 	private:
 			
@@ -120,13 +132,6 @@ class PackedSeq
 		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
 		char rightShiftByte(char* pSeq, int byteNum, int index, char base);
 		
-		// The maximum kmer size is hardcoded to be 64
-		// Why is this? If we use a dynamically allocated character buffer malloc/new will give us 16 or 32 bytes no matter how much we want
-		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
-		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
-		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
-		static const int MAX_KMER = 64;
-		static const int NUM_BYTES = MAX_KMER / 4;
 		char m_seq[NUM_BYTES];
 		char m_length;
 		char m_flags;

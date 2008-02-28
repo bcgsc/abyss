@@ -46,7 +46,8 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			case NAS_FINALIZE:
 			{
 				finalize();
-				SetState(NAS_GEN_ADJ);
+				SetState(NAS_WAITING);
+				m_pComm->SendCheckPointMessage();				
 				break;
 			}
 			case NAS_GEN_ADJ:
@@ -114,7 +115,14 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_FINALIZE:
 			{
 				finalize();
+				m_numReachedCheckpoint++;
+				while(!checkpointReached())
+				{
+					pumpNetwork();
+				}
+				
 				SetState(NAS_GEN_ADJ);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);				
 				break;
 			}
 			case NAS_GEN_ADJ:
@@ -181,7 +189,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 APResult NetworkSequenceCollection::pumpNetwork()
 {
 	int senderID;
-	
+	m_pComm->flush();	
 	APMessage msg = m_pComm->CheckMessage(senderID);
 	if(msg != APM_NONE)
 	{
@@ -220,8 +228,9 @@ APResult NetworkSequenceCollection::pumpNetwork()
 	else
 	{
 		//printf("flushing network\n");
-		m_pComm->flush();	
+
 	}
+
 	return APR_NONE;
 }
 
@@ -369,6 +378,11 @@ void NetworkSequenceCollection::parseControlMessage(int senderID)
 			SetState(NAS_ASSEMBLE);
 			break;	
 		}
+		case APC_GEN_ADJ:
+		{
+			SetState(NAS_GEN_ADJ);
+			break;	
+		}		
 	}
 }
 
@@ -491,7 +505,6 @@ void NetworkSequenceCollection::add(const PackedSeq& seq)
 	}
 	else
 	{
-
 		int nodeID = computeNodeID(seq);		
 		m_pComm->SendSeqMessage(nodeID, seq, APO_ADD);
 	}
@@ -542,6 +555,7 @@ bool NetworkSequenceCollection::checkForSequence(const PackedSeq& seq)
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_CHECKSEQ);
+		//PrintDebug(1, "after send\n");
 		result = pumpUntilResult();
 	}
 	return result;
@@ -999,6 +1013,8 @@ void NetworkSequenceCollection::generateAdjacency()
 		}
 		count++;
 		
+		//PrintDebug(0, "gen for: %s\n", iter->decode().c_str());
+		
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
@@ -1085,12 +1101,14 @@ void NetworkSequenceCollection::readSequences(std::string fastaFile, int readLen
 			// Add the sequence to the network space
 			add(sub);
 			
-			if(count % 10000 == 0)
+			if(count % 100000 == 0)
 			{
 				printf("sent %d sequences\n", count);
 			}
 			count++;
 		}
+		
+		pumpNetwork();
 	}
 }
 
