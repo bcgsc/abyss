@@ -9,9 +9,6 @@
 #include "HitRecord.h"
 #include "CommonDefs.h"
 
-using namespace std;
-
-
 typedef std::vector<PackedSeq> BinItem;
 typedef std::vector<BinItem> Bin1D;
 typedef std::vector<Bin1D> Bin2D;

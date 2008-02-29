@@ -83,7 +83,7 @@ void SequenceCollection::removeExtensionByIter(SequenceCollectionIter& seqIter, 
 //
 // check if a sequence exists in the phase space
 //
-ResultPair SequenceCollection::exists(const PackedSeq& seq) const
+bool SequenceCollection::exists(const PackedSeq& seq)
 {
 	assert(m_state != CS_LOADING);
 	ResultPair rp;
@@ -91,7 +91,7 @@ ResultPair SequenceCollection::exists(const PackedSeq& seq) const
 	SequenceIterPair iters = GetSequenceIterators(seq);
 	rp.forward = existsByIter(iters.first);
 	rp.reverse = existsByIter(iters.second);
-	return rp;
+	return (rp.forward || rp.reverse);
 }
 
 //
@@ -137,7 +137,7 @@ void SequenceCollection::setFlagByIter(SequenceCollectionIter& seqIter, SeqFlag 
 //
 //
 //
-ResultPair SequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
+bool SequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair result;
@@ -146,7 +146,7 @@ ResultPair SequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 	result.reverse = checkFlagByIter(seqIters.second, flag);
 
 	//assert(forwardFlag == reverseFlag);
-	return result;
+	return (result.forward || result.reverse);
 }
 
 //
@@ -319,7 +319,7 @@ HitRecord SequenceCollection::calculateExtension(const PackedSeq& currSeq, extDi
 //
 //
 //
-bool SequenceCollection::hasParent(const PackedSeq& seq) const
+bool SequenceCollection::hasParent(const PackedSeq& seq)
 {
 	assert(m_state == CS_FINALIZED);
 	SequenceIterPair iters = GetSequenceIterators(seq);
@@ -350,7 +350,7 @@ bool SequenceCollection::hasParentByIter(SequenceCollectionIter seqIter) const
 //
 //
 //
-bool SequenceCollection::hasChild(const PackedSeq& seq) const
+bool SequenceCollection::hasChild(const PackedSeq& seq)
 {
 	assert(m_state == CS_FINALIZED);
 	SequenceIterPair iters = GetSequenceIterators(seq);
@@ -381,14 +381,14 @@ bool SequenceCollection::hasChildByIter(SequenceCollectionIter seqIter) const
 //
 //
 //
-ResultPair SequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base) const
+bool SequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair rp;
 	SequenceIterPair iters = GetSequenceIterators(seq);
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
 	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
-	return rp;
+	return (rp.forward || rp.reverse);
 }
 //
 //
@@ -441,7 +441,7 @@ SequenceCollectionIter SequenceCollection::FindSequence(const PackedSeq& seq) co
 //
 // Get the iterator pointing to the first sequence in the bin
 //
-SequenceCollectionIter SequenceCollection::getStartIter() const
+SequenceCollectionIter SequenceCollection::getStartIter()
 {
 	return m_pSequences->begin();
 }
@@ -449,7 +449,7 @@ SequenceCollectionIter SequenceCollection::getStartIter() const
 //
 // Get the iterator pointing to the last sequence in the bin
 //
-SequenceCollectionIter SequenceCollection::getEndIter() const
+SequenceCollectionIter SequenceCollection::getEndIter()
 {
 	return m_pSequences->end();
 }

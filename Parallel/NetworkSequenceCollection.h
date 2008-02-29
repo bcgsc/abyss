@@ -4,6 +4,8 @@
 #include "PackedSeq.h"
 #include "SequenceCollection.h"
 #include "CommLayer.h"
+#include "SeqRecord.h"
+#include "AssemblyAlgorithms.h"
 
 enum NetworkAssemblyState
 {
@@ -16,7 +18,7 @@ enum NetworkAssemblyState
 	NAS_DONE // finished, clean up and exit
 };
 
-class NetworkSequenceCollection
+class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
 	
@@ -33,11 +35,8 @@ class NetworkSequenceCollection
 		// end the data load and make the sequence space ready for data read
 		void finalize();
 		
-		// remove a sequence
-		void removeSequence(const PackedSeq& seq);
-		
 		// check if a sequence exists
-		bool checkForSequence(const PackedSeq& seq);
+		bool exists(const PackedSeq& seq);
 		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
@@ -75,29 +74,14 @@ class NetworkSequenceCollection
 		// run the assembly from the controller's point of view (rank 0 node)
 		void runControl(std::string fastaFile, int readLength, int kmerSize);
 		
-		// generate the adjacency for all the local sequences
-		void generateAdjacency();
-		
 		// test if the checkpoint has been reached
 		bool checkpointReached() const;
 		
-		//
-		void NetworkSequenceCollection::performTrim();
+		// get an iterator to the first sequence
+		std::vector<PackedSeq>::iterator getStartIter();
 		
-		//
-		int trimSequences(int maxBranchCull);
-		
-		//
-		void performTrim(int readLen, int kmerSize);
-		
-		//
-		HitRecord calculateExtension(const PackedSeq& currSeq, extDirection dir);
-		
-		//
-		void assemble();
-		
-		//
-		Sequence BuildContig(PSequenceVector* extensions, const PackedSeq& originalSeq);
+		// get an iterator to the last sequence
+		std::vector<PackedSeq>::iterator getEndIter();		
 		
 	private:
 	

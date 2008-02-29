@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <ext/hash_map>
 #include "CommonDefs.h"
 
 enum SequenceAdjacency
@@ -14,17 +13,6 @@ enum SequenceAdjacency
 	SA_RC_SENSE,
 	SA_RC_ANTISENSE	
 };
-
-// Hash function for Sequences
-namespace __gnu_cxx {
-template <>
-struct hash<Sequence> {
-        size_t operator() (const Sequence& x) const {
-                return hash<const char*>()(x.c_str());
-	// hash<const char*> already exists
-        }
-};
-}
 
 const int SEQUENCE_ID_LENGTH = 32;
 

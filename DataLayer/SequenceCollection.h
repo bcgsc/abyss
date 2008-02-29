@@ -11,15 +11,6 @@
 #include "HitRecord.h"
 #include "CommonDefs.h"
 
-using namespace std;
-
-enum CollectionState
-{
-	CS_LOADING,
-	CS_FINALIZED
-};
-
-
 typedef std::vector<PackedSeq> SequenceData;
 typedef SequenceData::iterator SequenceCollectionIter;
 typedef SequenceData::iterator ConstSequenceCollectionIter;
@@ -49,13 +40,13 @@ class SequenceCollection : public ISequenceCollection
 		void finalize();
 		
 		// check if a sequence exists
-		ResultPair exists(const PackedSeq& seq) const;
+		bool exists(const PackedSeq& seq);
 		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
 		
 		// Find if this sequence has the specified flag set
-		ResultPair checkFlag(const PackedSeq& seq, SeqFlag flag);
+		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
 		
 		// add extension
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
@@ -64,22 +55,25 @@ class SequenceCollection : public ISequenceCollection
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
+		bool checkExtension(const PackedSeq& seq, extDirection dir, char base);
 	
 		// Get the iterator pointing to the first sequence in the bin
-		SequenceCollectionIter getStartIter() const;
+		SequenceCollectionIter getStartIter();
 		
 		// Get the iterator pointing to the last sequence in the bin
-		SequenceCollectionIter getEndIter() const;
+		SequenceCollectionIter getEndIter();
 		
 		// does this sequence extend from a different node?
-		bool hasParent(const PackedSeq& seq) const;
+		bool hasParent(const PackedSeq& seq);
 
 		// does this sequence have an extension?
-		bool hasChild(const PackedSeq& seq) const;
+		bool hasChild(const PackedSeq& seq);
 		
 		// Return the number of sequences in the collection
 		int count() const;
+		
+		// Dummy function to conform to the interface
+		APResult pumpNetwork() { return APR_NONE; }
 						
 
 	private:

@@ -25,9 +25,9 @@ int main(int argv, char** argc)
 	std::ifstream handle;
 	handle.open(rawSeqFile.c_str());
 
-	handle.seekg (0, ios::end);
+	handle.seekg (0, std::ios::end);
 	int length = handle.tellg();
-	handle.seekg (0, ios::beg);
+	handle.seekg (0, std::ios::beg);
 	
 	// allocate memory:
 	char* buffer = new char[length];	

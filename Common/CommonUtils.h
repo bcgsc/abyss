@@ -17,4 +17,6 @@ int max(const int& n1, const int& n2);
 // complement a base
 char complement(const char& b);
 
+void PrintBufferAsHex(char* buffer, int length);
+
 #endif

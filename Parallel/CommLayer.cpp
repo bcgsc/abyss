@@ -6,7 +6,7 @@
 CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize)
 {
 
-	m_bufferSize = 100*1024*1024;
+	m_bufferSize = 200*1024*1024;
 	// Create the  buffer
 	
 	printf("allocating buffer\n");
@@ -70,6 +70,10 @@ void CommLayer::SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation 
 	msg.seq = seq;
 	msg.operation = operation;	
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqMessage), MPI::BYTE, destID, APM_SEQ);
+	
+	//printf("%d Sent: ", m_id);
+	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));
+	
 	req.Free();
 
 }
@@ -81,6 +85,8 @@ SeqMessage CommLayer::ReceiveSeqMessage()
 {
 	SeqMessage msg;
 	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
+	//printf("%d Recv: ", m_id);
+	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));	
 	return msg;	
 }
 

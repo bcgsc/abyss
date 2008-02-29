@@ -80,3 +80,13 @@ char complement(const char& b)
 		return 'A';
 	}			
 }
+
+void PrintBufferAsHex(char* buffer, int length)
+{
+	for(int i = 0; i < length; i++)
+	{
+		printf("%X", buffer[i]);
+	}
+	printf("\n");	
+	
+}

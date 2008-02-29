@@ -63,12 +63,12 @@ CC =		mpic++
 
 INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
-OPTIMIZE = -O2 -Wall
+OPTIMIZE = -O2 -Wall -Wno-sign-compare
 #64BIT = -m64
 #DEBUG= -g -D DEBUG -Wall -Wno-sign-compare
 #PROFILE = -pg
 
-INCLUDES =	-I$(COMMON_DIR) -I$(DATALAYER_DIR) -I$(INCLUDE_DIR)
+INCLUDES =	-I$(COMMON_DIR) -I$(DATALAYER_DIR) -I$(PARALLEL_DIR) -I$(INCLUDE_DIR)
 
 CPPFLAGS = $(OPTIMIZE) $(DEBUG) $(PROFILE) $(INCLUDES) $(64BIT)
 #LDFLAGS = -Wl,-L$(LIB_DIR),-static,-lnetcdf 
@@ -120,6 +120,10 @@ clean:
 
 # DO NOT DELETE
 
+Common/AssemblyAlgorithms.o: Common/AssemblyAlgorithms.h Common/SeqRecord.h
+Common/AssemblyAlgorithms.o: Common/PackedSeq.h Common/CommonUtils.h
+Common/AssemblyAlgorithms.o: Common/Sequence.h Common/CommonDefs.h
+Common/AssemblyAlgorithms.o: Common/ReadPrb.h Common/Prb.h Common/SeqExt.h
 Common/AssemblyData.o: Common/AssemblyData.h Common/Sequence.h
 Common/AssemblyData.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Common/AssemblyData.o: Common/PackedSeq.h Common/CommonUtils.h
@@ -187,12 +191,6 @@ DataLayer/SequenceCollection.o: Common/CommonDefs.h Common/ReadPrb.h
 DataLayer/SequenceCollection.o: Common/Prb.h Common/CommonUtils.h
 DataLayer/SequenceCollection.o: Common/Sequence.h Common/PackedSeq.h
 DataLayer/SequenceCollection.o: Common/SeqExt.h Common/HitRecord.h
-DataLayer/SequenceCollectionHash.o: DataLayer/SequenceCollectionHash.h
-DataLayer/SequenceCollectionHash.o: DataLayer/ISequenceCollection.h
-DataLayer/SequenceCollectionHash.o: Common/CommonDefs.h Common/ReadPrb.h
-DataLayer/SequenceCollectionHash.o: Common/Prb.h Common/CommonUtils.h
-DataLayer/SequenceCollectionHash.o: Common/Sequence.h Common/PackedSeq.h
-DataLayer/SequenceCollectionHash.o: Common/SeqExt.h Common/HitRecord.h
 DataLayer/Writer.o: DataLayer/Writer.h
 ABYSS/Abyss.o: ABYSS/Abyss.h Common/Sequence.h Common/CommonDefs.h
 ABYSS/Abyss.o: Common/ReadPrb.h Common/Prb.h DataLayer/Reader.h
@@ -248,7 +246,7 @@ RemoveMultiplicity/RemoveMultiplicity.o: DataLayer/IFileWriter.h
 Parallel/CommLayer.o: Parallel/CommLayer.h Common/PackedSeq.h
 Parallel/CommLayer.o: Common/CommonUtils.h Common/Sequence.h
 Parallel/CommLayer.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
-Parallel/CommLayer.o: Common/SeqExt.h
+Parallel/CommLayer.o: Common/SeqExt.h Parallel/NetworkDefs.h
 Parallel/DistributedPhaseSpace.o: Parallel/DistributedPhaseSpace.h
 Parallel/NetworkSequenceCollection.o: Parallel/NetworkSequenceCollection.h
 Parallel/NetworkSequenceCollection.o: Common/PackedSeq.h Common/CommonUtils.h
@@ -258,9 +256,17 @@ Parallel/NetworkSequenceCollection.o: Common/SeqExt.h
 Parallel/NetworkSequenceCollection.o: DataLayer/SequenceCollection.h
 Parallel/NetworkSequenceCollection.o: DataLayer/ISequenceCollection.h
 Parallel/NetworkSequenceCollection.o: Common/HitRecord.h Parallel/CommLayer.h
+Parallel/NetworkSequenceCollection.o: Parallel/NetworkDefs.h
+Parallel/NetworkSequenceCollection.o: DataLayer/FastaReader.h
+Parallel/NetworkSequenceCollection.o: DataLayer/IFileReader.h
+Parallel/NetworkSequenceCollection.o: Common/SeqRecord.h
+Parallel/NetworkSequenceCollection.o: Common/AssemblyAlgorithms.h
 Parallel/parallelAbyss.o: Parallel/parallelAbyss.h Common/PackedSeq.h
 Parallel/parallelAbyss.o: Common/CommonUtils.h Common/Sequence.h
 Parallel/parallelAbyss.o: Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 Parallel/parallelAbyss.o: Common/SeqExt.h DataLayer/FastaReader.h
 Parallel/parallelAbyss.o: DataLayer/IFileReader.h
-Parallel/parallelAbyss.o: Parallel/DistributedPhaseSpace.h
+Parallel/parallelAbyss.o: Parallel/NetworkSequenceCollection.h
+Parallel/parallelAbyss.o: DataLayer/SequenceCollection.h
+Parallel/parallelAbyss.o: DataLayer/ISequenceCollection.h Common/HitRecord.h
+Parallel/parallelAbyss.o: Parallel/CommLayer.h Parallel/NetworkDefs.h

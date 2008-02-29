@@ -1,6 +1,7 @@
 #ifndef ISEQUENCECOLLECTION_H
 #define ISEQUENCECOLLECTION_H
 
+#include "NetworkDefs.h"
 #include "CommonDefs.h"
 #include "CommonUtils.h"
 #include "PackedSeq.h"
@@ -32,19 +33,19 @@ class ISequenceCollection
 		virtual void finalize() = 0;
 		
 		// check if a sequence exists
-		virtual ResultPair exists(const PackedSeq& seq) const = 0;
-		
+		virtual bool exists(const PackedSeq& seq) = 0;
+
 		// Set flag for sequence seq
 		virtual void setFlag(const PackedSeq& seq, SeqFlag flag) = 0;
 		
 		// Find if this sequence has the specified flag set
-		virtual ResultPair checkFlag(const PackedSeq& seq, SeqFlag flag) = 0;
+		virtual bool checkFlag(const PackedSeq& seq, SeqFlag flag) = 0;
 		
 		// does this sequence extend from a different node?
-		virtual bool hasParent(const PackedSeq& seq) const = 0;
+		virtual bool hasParent(const PackedSeq& seq) = 0;
 
 		// does this sequence have an extension?
-		virtual bool hasChild(const PackedSeq& seq) const = 0;
+		virtual bool hasChild(const PackedSeq& seq) = 0;
 		
 		// Return the number of sequences in the collection
 		virtual int count() const = 0;
@@ -56,7 +57,18 @@ class ISequenceCollection
 		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;
 		
 		// check if the extension exists
-		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const = 0;
+		virtual bool checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		
+		// call to service network operations if needed
+		// for non-network sequence collections this will simply return
+		virtual APResult pumpNetwork() = 0;
+		
+		// get an iterator pointing to the first sequence in the collection
+		virtual std::vector<PackedSeq>::iterator getStartIter() = 0;
+		
+		// get an iterator pointing to the last sequence in the collection
+		virtual std::vector<PackedSeq>::iterator getEndIter() = 0;
+
 };
 
 #endif

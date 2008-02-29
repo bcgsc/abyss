@@ -5,9 +5,7 @@
 #include "PackedSeq.h"
 #include "Sequence.h"
 
-using namespace std;
-
-typedef map<PackedSeq, char>::const_iterator ConstSeqRecordIter;
+typedef std::map<PackedSeq, char>::const_iterator ConstSeqRecordIter;
 
 // Class to record which sequences have been seen and extended (to prevent duplicate extensions)
 class SeqRecord
@@ -41,7 +39,7 @@ class SeqRecord
 	
 		int getMultiplicityInternal(const PackedSeq& seq) const;
 		
-		map<PackedSeq, char> m_seqRecord;
+		std::map<PackedSeq, char> m_seqRecord;
 };
 
 #endif

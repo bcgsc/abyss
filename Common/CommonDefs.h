@@ -38,6 +38,12 @@ enum extDirection
 	NUM_DIRECTIONS
 };
 
+enum CollectionState
+{
+	CS_LOADING,
+	CS_FINALIZED
+};
+
 typedef std::vector<int> Count1D;
 typedef std::vector<Count1D> Count2D;
 typedef std::vector<Count2D> Count3D;
@@ -62,7 +68,7 @@ typedef std::map<std::string, ReadPrb> PrbMap;
 
 typedef std::vector<ReadPrb> PrbVector;
 
-
+// The main data model for the program is a vector (contiguous array) of PackedSeqs
 typedef std::vector<Sequence> SequenceVector;
 typedef SequenceVector::const_iterator ConstSequenceVectorIterator;
 typedef SequenceVector::iterator SequenceVectorIterator;
