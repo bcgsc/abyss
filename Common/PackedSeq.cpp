@@ -105,14 +105,11 @@ bool PackedSeq::operator==(const PackedSeq& other) const
 {
 	return compare(other) == 0;
 }
-
+*/
 int PackedSeq::compare(const PackedSeq& other) const
 {
 	assert(m_length == other.m_length);
-	// This is valid since the remaining portion of the buffer is memset to zero
-	// This HAS to be the case or else the equality will not work
-	return memcmp(m_seq, other.m_seq, NUM_BYTES);
-#if 0
+
 	int numBytes = getNumCodingBytes(m_length);
 	if(m_length % 4 != 0)
 	{
@@ -139,10 +136,9 @@ int PackedSeq::compare(const PackedSeq& other) const
 		}
 	}
 	return 0;
-#endif
-	
 }
 
+/*
 //
 // Inequality operator
 //

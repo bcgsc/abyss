@@ -45,16 +45,7 @@ class PackedSeq
 		}
 		
 		// Comparison
-		inline int compare(const PackedSeq& other) const
-		{ 
-			if(m_length != other.m_length)
-			{
-				printf("fail: %s != %s\n", decode().c_str(), other.decode().c_str());
-			}			
-			assert(m_length == other.m_length);
-
-			return memcmp(m_seq, other.m_seq, NUM_BYTES);
-		}
+		int compare(const PackedSeq& other) const;
 		
 		// Decode the sequence
 		Sequence decode() const;

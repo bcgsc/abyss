@@ -43,7 +43,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
 	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 10000 == 0)
+		if(count % 100000 == 0)
 		{
 			printf("generated for %d\n", count);
 		}
@@ -191,16 +191,17 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
 	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(iter->isFlagSet(SF_DELETE))
-		{
-			continue;
-		}
 		
-		if(count % 10000 == 0)
+		if(count % 100000 == 0)
 		{
 			printf("trimmed: %d\n", count);
 		}
 		count++;
+				
+		if(iter->isFlagSet(SF_DELETE))
+		{
+			continue;
+		}
 				
 		bool child = seqCollection->hasChild(*iter);
 		bool parent = seqCollection->hasParent(*iter);
@@ -225,7 +226,6 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			continue;	
 		}
 
-		count++;
 		PSequenceVector branchElements;
 		
 		extDirection oppositeDir = oppositeDirection(dir);
@@ -293,7 +293,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 void assemble(ISequenceCollection* seqCollection)
 {
 	// create file writer
-	//FastaWriter writer("contigs.fa");
+	FastaWriter writer("contigs.fa");
 	int noext = 0;
 	int ambiext = 0;
 
@@ -302,7 +302,7 @@ void assemble(ISequenceCollection* seqCollection)
 	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
 	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(!iter->isFlagSet(SF_SEEN) && !iter->isFlagSet(SF_DELETE))
+		if(!seqCollection->checkFlag(*iter, SF_SEEN) && !seqCollection->checkFlag(*iter, SF_DELETE))
 		{
 			// the record of extensions			
 			PSequenceVector extensions[2];
@@ -360,13 +360,13 @@ void assemble(ISequenceCollection* seqCollection)
 			if(contig.length() >= 100)
 			{
 				count++;
-				const int bufferSize = 10*1024;
-				char buffer[bufferSize];
-				sprintf(buffer, ">%d\n%s\n", count, contig.c_str());
-				printf("%s", buffer);
+				//const int bufferSize = 10*1024;
+				//char buffer[bufferSize];
+				//sprintf(buffer, ">%d\n%s\n", count, contig.c_str());
+				//printf("%s", buffer);
 				//MPI_Status status;
 				//MPI_File_write(handle, buffer, numChars, MPI::CHAR, &status);
-				//writer.WriteSequence(contig);
+				writer.WriteSequence(contig);
 			}
 		}
 		seqCollection->pumpNetwork();

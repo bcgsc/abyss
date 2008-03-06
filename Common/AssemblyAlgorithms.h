@@ -4,6 +4,7 @@
 #include "ISequenceCollection.h"
 #include "FastaReader.h"
 #include "SeqRecord.h"
+#include "FastaWriter.h"
 
 /*********************************************************
  * 
