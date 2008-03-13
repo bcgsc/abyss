@@ -1,0 +1,123 @@
+#ifndef SEQUENCECOLLECTIONHASH_H
+#define SEQUENCECOLLECTIONHASH_H
+/*
+#include <deque>
+#include <vector>
+#include <set>
+#include <stdio.h>
+#include <ext/hash_set>
+#include "ISequenceCollection.h"
+#include "Sequence.h"
+#include "PackedSeq.h"
+#include "HitRecord.h"
+#include "CommonDefs.h"
+
+using namespace std;
+
+struct PackedSeqEqual
+{
+	bool operator()(const PackedSeq& obj1, const PackedSeq& obj2) const;	
+};
+
+struct PackedSeqHasher
+{
+	size_t operator()(const PackedSeq& myObj) const;
+};
+
+typedef __gnu_cxx::hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+typedef SequenceDataHash::iterator SequenceCollectionHashIter;
+typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
+
+typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> SequenceHashIterPair;
+
+
+// This class implements a collection of PackedSeqs with functions to manipulate the data
+// It is meant to be a storage class only and should have minimal logic for manipulating the data except for getters/setters
+class SequenceCollectionHash : public ISequenceCollection
+{
+	public:
+	
+		//Allocates phase space
+		SequenceCollectionHash();
+		
+		//Deallocates phase space
+		~SequenceCollectionHash();
+
+		// add a single sequence to the collection
+		void add(const PackedSeq& seq);
+		
+		// remove a sequence from the collection
+		void remove(const PackedSeq& seq);
+				
+		// end the data load and make the sequence space ready for data read
+		void finalize();
+		
+		// check if a sequence exists
+		bool exists(const PackedSeq& seq) const;
+		
+		// Set flag for sequence seq
+		void setFlag(const PackedSeq& seq, SeqFlag flag);
+		
+		// Find if this sequence has the specified flag set
+		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
+		
+		// add extension
+		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
+		
+		// remove the extension to the sequence
+		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
+		
+		// check if the extension exists
+		bool checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
+	
+		// Get the iterator pointing to the first sequence in the bin
+		SequenceCollectionHashIter getStartIter();
+		
+		// Get the iterator pointing to the last sequence in the bin
+		SequenceCollectionHashIter getEndIter();
+		
+		// does this sequence extend from a different node?
+		bool hasParent(const PackedSeq& seq);
+
+		// does this sequence have an extension?
+		bool hasChild(const PackedSeq& seq);
+		
+		// Return the number of sequences in the collection
+		int count() const;
+						
+
+	private:
+
+		// Functions to get iterators to the sequence
+		
+		// Get the iterator to the sequence and its reverse complement
+		// If they don't exist m_pSequences->end() will be returned in the iterator
+		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
+		SequenceCollectionHashIter FindSequence(const PackedSeq& seq) const;
+		
+		// Check if duplicate entries exist
+		bool checkForDuplicates() const;		
+		
+		// Iterator versions of modification functions
+		// These should only be called from this class, hence they are private
+		void removeByIter(SequenceHashIterPair seqIters);
+		bool hasChildByIter(SequenceCollectionHashIter seqIter) const;
+		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
+		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
+		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
+		void setExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt extension);
+		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
+		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;
+		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
+		
+		
+		// Data members
+		
+		// pointer to the actual collection (typedef'd above)
+		SequenceDataHash* m_pSequences;
+		
+		// the state of the space
+		CollectionState m_state;
+};
+*/
+#endif
