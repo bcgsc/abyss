@@ -35,6 +35,9 @@ class SequenceCollection : public ISequenceCollection
 		
 		// remove a sequence from the collection
 		void remove(const PackedSeq& seq);
+		
+		// Get the id list for this sequence
+		const IDList getIDs(const PackedSeq& seq);
 				
 		// end the data load and make the sequence space ready for data read
 		void finalize();
@@ -55,13 +58,16 @@ class SequenceCollection : public ISequenceCollection
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// check if the extension exists
-		bool checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		
+		// clear all the extensions for this sequence
+		void clearExtensions(const PackedSeq& seq, extDirection dir);
 	
 		// Get the iterator pointing to the first sequence in the bin
-		SequenceCollectionIter getStartIter();
+		//SequenceCollectionIter getStartIter();
 		
 		// Get the iterator pointing to the last sequence in the bin
-		SequenceCollectionIter getEndIter();
+		//SequenceCollectionIter getEndIter();
 		
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq);
@@ -97,6 +103,7 @@ class SequenceCollection : public ISequenceCollection
 		void setFlagByIter(SequenceCollectionIter& seqIter, SeqFlag flag);
 		void setExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, SeqExt extension);
 		void removeExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base);
+		void clearExtensionsByIter(SequenceCollectionIter& seqIter, extDirection dir);
 		bool checkExtensionByIter(SequenceCollectionIter& seqIter, extDirection dir, char base) const;
 		bool existsByIter(SequenceCollectionIter& seqIter) const;
 		

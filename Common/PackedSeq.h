@@ -1,6 +1,7 @@
 #ifndef PACKEDSEQ_H
 #define PACKEDSEQ_H
 
+#include <list>
 #include "CommonUtils.h"
 #include "Sequence.h"
 #include "SeqExt.h"
@@ -10,6 +11,9 @@ enum SeqFlag
 	SF_SEEN = 0x1,
 	SF_DELETE = 0x2
 };
+
+typedef std::pair<int, short> SeqID;
+typedef std::vector<SeqID> IDList;
 
 class PackedSeq
 {
@@ -78,6 +82,7 @@ class PackedSeq
 		// Set a flag indicating this sequence can by extending by base b
 		void setExtension(extDirection dir, SeqExt extension);
 		void clearExtension(extDirection dir, char b);
+		void clearAllExtensions(extDirection dir);
 		bool checkExtension(extDirection dir, char b) const;
 		bool hasExtension(extDirection dir) const;
 		bool isAmbiguous(extDirection dir) const;
@@ -93,6 +98,11 @@ class PackedSeq
 		char shiftAppend(char base);
 		char shiftPrepend(char base);
 		
+		// add an ID to the list
+		void addID(SeqID id);
+		void addIDList(const IDList& ids);
+		const IDList getIDList() const;
+		
 		// Print
 		void print() const;
 		
@@ -102,7 +112,7 @@ class PackedSeq
 		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
 		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
 		static const int MAX_KMER = 64;
-		static const int NUM_BYTES = MAX_KMER / 4;		
+		static const int NUM_BYTES = MAX_KMER / 4;
 
 	private:
 			
@@ -128,6 +138,9 @@ class PackedSeq
 		char m_flags;
 		SeqExt m_extensions[2]; // single byte each
 		
+#ifndef SAVE_MEM
+		IDList m_ids;
+#endif
 };
 
 // Global function to make a reverse complement of a packed seq

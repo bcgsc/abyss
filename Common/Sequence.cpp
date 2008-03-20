@@ -59,6 +59,8 @@ char complementBase(char base)
 			return 'C';
 		case 'T':
 			return 'A';
+		case 'N':
+			return 'N';
 	}
 	
 	printf("could not complement base %c\n", base);

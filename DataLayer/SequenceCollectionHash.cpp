@@ -1,7 +1,5 @@
 #include <algorithm>
 
-#if 0
-
 #include "SequenceCollectionHash.h"
 #include "CommonUtils.h"
 
@@ -24,7 +22,8 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 {
-	m_pSequences = new SequenceDataHash(10000000);
+	m_pSequences = new SequenceDataHash(2 << 26);
+	//m_pSequences = new SequenceDataHash();
 }
 
 //
@@ -41,7 +40,16 @@ SequenceCollectionHash::~SequenceCollectionHash()
 //
 void SequenceCollectionHash::add(const PackedSeq& seq)
 {
-	m_pSequences->insert(seq);
+	// Check if the sequence exists
+	SequenceCollectionHashIter iter = FindSequence(seq);
+	if(iter != m_pSequences->end())
+	{
+		const_cast<PackedSeq&>(*iter).addIDList(seq.getIDList());
+	}
+	else
+	{
+		m_pSequences->insert(seq);
+	}
 }
 
 //
@@ -51,6 +59,18 @@ void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
 	setFlag(seq, SF_DELETE);
 	setFlag(reverseComplement(seq), SF_DELETE);	
+}
+
+// get id list
+const IDList SequenceCollectionHash::getIDs(const PackedSeq& seq)
+{
+	SequenceCollectionHashIter iter = FindSequence(seq);
+	IDList list;
+	if(iter != m_pSequences->end())
+	{
+		list = iter->getIDList();
+	}
+	return list;	
 }
 
 //
@@ -97,10 +117,32 @@ void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& s
 	}
 }
 
+
+//
+// Clear the extensions for this sequence
+//
+void SequenceCollectionHash::clearExtensions(const PackedSeq& seq, extDirection dir)
+{
+	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	clearExtensionsByIter(iters.first, dir);
+	clearExtensionsByIter(iters.second, oppositeDirection(dir));	
+}
+
+//
+//
+//
+void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir)
+{
+	if(seqIter != m_pSequences->end())
+	{
+		const_cast<PackedSeq&>(*seqIter).clearAllExtensions(dir);	
+		//seqIter->printExtension();
+	}
+}
 //
 // check if a sequence exists in the phase space
 //
-ResultPair SequenceCollectionHash::exists(const PackedSeq& seq) const
+bool SequenceCollectionHash::exists(const PackedSeq& seq)
 {
 	assert(m_state != CS_LOADING);
 	ResultPair rp;
@@ -108,7 +150,7 @@ ResultPair SequenceCollectionHash::exists(const PackedSeq& seq) const
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	rp.forward = existsByIter(iters.first);
 	rp.reverse = existsByIter(iters.second);
-	return rp;
+	return (rp.forward || rp.reverse);
 }
 
 //
@@ -190,33 +232,6 @@ bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter
 //
 void SequenceCollectionHash::finalize()
 {
-	/*
-	assert(m_state == CS_LOADING);
-	// Sort the sequence space
-	std::sort(m_pSequences->begin(), m_pSequences->end());
-	
-	bool checkMultiplicity = true;
-	
-	if(checkMultiplicity)
-	{
-		
-		bool duplicates = checkForDuplicates();
-		
-		if(duplicates)
-		{
-			printf("duplicate sequences found, removing them\n");
-			SequenceData temp;
-			// copy the unique elements over
-			std::back_insert_iterator<SequenceData> insertIter(temp);
-			std::unique_copy(m_pSequences->begin(), m_pSequences->end(), insertIter);
-			
-			// swap vectors
-			temp.swap(*m_pSequences);
-			printf("%d sequences remain after duplicate removal\n", count());
-		}
-			
-	}
-	*/
 	m_state = CS_FINALIZED;
 }
 
@@ -225,115 +240,13 @@ void SequenceCollectionHash::finalize()
 //
 bool SequenceCollectionHash::checkForDuplicates() const
 {
-	/*
-	assert(m_state == CS_LOADING);
-	ConstSequenceCollectionHashIter prev = m_pSequences->begin();
-	ConstSequenceCollectionHashIter startIter = m_pSequences->begin() + 1;
-	ConstSequenceCollectionHashIter endIter = m_pSequences->end();
-	
-	bool sorted = true;
-	bool duplicates = false;
-	for(ConstSequenceCollectionHashIter iter = startIter; iter != endIter; iter++)
-	{
-		bool equal = false;
-		if(*prev == *iter)
-		{
-			equal = true;
-			duplicates = true;
-		}
-				
-		if(!(*prev < *iter || equal))
-		{
-			sorted = false;
-			printf("sort failure: %s < %s\n", prev->decode().c_str(), iter->decode().c_str());
-			break;
-		}
-		
-		if(*prev == *iter)
-		{
-			duplicates = true;
-		}
-		
-		prev = iter;
-	}
-	
-	assert(sorted);
-	
-	return duplicates;
-	*/
 	return false;
 }
 
-/*
 //
 //
 //
-void SequenceCollection::generateAdjacency()
-{
-	assert(m_state == SS_FINALIZED);
-	for(SequenceCollectionHashIter iter = m_pSequences->begin(); iter != m_pSequences->end(); iter++)
-	{
-		for(int i = 0; i <= 1; i++)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			for(int j = 0; j < NUM_BASES; j++)
-			{
-				char currBase = BASES[j];
-				PackedSeq testSeq(*iter);
-				testSeq.rotate(dir, currBase);
-				PackedSeq rc = reverseComplement(testSeq);
-				
-				if(checkForSequence(testSeq) || checkForSequence(rc))
-				{
-					iter->setExtension(dir, currBase);
-				}
-			}
-		}
-		
-		//iter->printExtension();
-	}
-	m_state = SS_READY;	
-	printf("done generating adjacency\n");
-}
-*/
-
-//
-// Calculate the extension of this sequence in the direction given
-//
-
-/* OLDE
-HitRecord SequenceCollection::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
-{	
-	PSequenceVector extVec;
-	makeExtensions(currSeq, dir, extVec);
-
-	// Create the return structure
-	HitRecord hitRecord;
-	// test for all the extensions of this sequence
-	for(ConstPSequenceVectorIterator iter = extVec.begin(); iter != extVec.end(); iter++)
-	{	
-		// Todo: clean this up
-		const PackedSeq& seq = *iter;
-		PackedSeq rcSeq = reverseComplement(seq);
-		
-		if(checkForSequence(seq))
-		{
-			hitRecord.addHit(seq, false);
-		}
-		else if(checkForSequence(rcSeq))
-		{
-			hitRecord.addHit(seq, true);
-		}	
-	}
-	
-	return hitRecord;
-}
-*/
-
-//
-//
-//
-bool SequenceCollectionHash::hasParent(const PackedSeq& seq) const
+bool SequenceCollectionHash::hasParent(const PackedSeq& seq)
 {
 	assert(m_state == CS_FINALIZED);
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
@@ -364,7 +277,7 @@ bool SequenceCollectionHash::hasParentByIter(SequenceCollectionHashIter seqIter)
 //
 //
 //
-bool SequenceCollectionHash::hasChild(const PackedSeq& seq) const
+bool SequenceCollectionHash::hasChild(const PackedSeq& seq)
 {
 	assert(m_state == CS_FINALIZED);
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
@@ -395,7 +308,7 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 //
 //
 //
-ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base) const
+ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair rp;
@@ -447,6 +360,7 @@ SequenceCollectionHashIter SequenceCollectionHash::FindSequence(const PackedSeq&
 	return m_pSequences->find(seq);
 }
 
+
 //
 // Get the iterator pointing to the first sequence in the bin
 //
@@ -463,4 +377,3 @@ SequenceCollectionHashIter SequenceCollectionHash::getEndIter()
 	return m_pSequences->end();
 }
 
-#endif

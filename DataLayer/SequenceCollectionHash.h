@@ -1,6 +1,6 @@
 #ifndef SEQUENCECOLLECTIONHASH_H
 #define SEQUENCECOLLECTIONHASH_H
-/*
+
 #include <deque>
 #include <vector>
 #include <set>
@@ -13,23 +13,6 @@
 #include "CommonDefs.h"
 
 using namespace std;
-
-struct PackedSeqEqual
-{
-	bool operator()(const PackedSeq& obj1, const PackedSeq& obj2) const;	
-};
-
-struct PackedSeqHasher
-{
-	size_t operator()(const PackedSeq& myObj) const;
-};
-
-typedef __gnu_cxx::hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
-typedef SequenceDataHash::iterator SequenceCollectionHashIter;
-typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
-
-typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> SequenceHashIterPair;
-
 
 // This class implements a collection of PackedSeqs with functions to manipulate the data
 // It is meant to be a storage class only and should have minimal logic for manipulating the data except for getters/setters
@@ -52,8 +35,11 @@ class SequenceCollectionHash : public ISequenceCollection
 		// end the data load and make the sequence space ready for data read
 		void finalize();
 		
+		// get id list
+		const IDList getIDs(const PackedSeq& seq);
+		
 		// check if a sequence exists
-		bool exists(const PackedSeq& seq) const;
+		bool exists(const PackedSeq& seq);
 		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
@@ -67,9 +53,12 @@ class SequenceCollectionHash : public ISequenceCollection
 		// remove the extension to the sequence
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
+		// clear the extensions of the sequence
+		void clearExtensions(const PackedSeq& seq, extDirection dir);
+		
 		// check if the extension exists
-		bool checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
-	
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter();
 		
@@ -84,9 +73,13 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// Return the number of sequences in the collection
 		int count() const;
+		
+		// Pump the network. For this sequence collection (non-network) this function just returns
+		virtual APResult pumpNetwork() { return APR_NONE; }
 						
 
 	private:
+
 
 		// Functions to get iterators to the sequence
 		
@@ -101,14 +94,17 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Iterator versions of modification functions
 		// These should only be called from this class, hence they are private
 		void removeByIter(SequenceHashIterPair seqIters);
+		
 		bool hasChildByIter(SequenceCollectionHashIter seqIter) const;
 		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
 		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt extension);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
+		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
 		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
+
 		
 		
 		// Data members
@@ -119,5 +115,5 @@ class SequenceCollectionHash : public ISequenceCollection
 		// the state of the space
 		CollectionState m_state;
 };
-*/
+
 #endif

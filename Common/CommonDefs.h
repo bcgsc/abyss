@@ -2,8 +2,11 @@
 #define COMMONDEFS_H
 
 #include <vector>
+#include <set>
 #include <map>
 #include <stdlib.h>
+#include <ext/hash_set>
+#include <assert.h>
 #include "ReadPrb.h"
 #include "Prb.h"
 
@@ -76,5 +79,27 @@ typedef SequenceVector::iterator SequenceVectorIterator;
 typedef std::vector<PackedSeq> PSequenceVector;
 typedef PSequenceVector::const_iterator ConstPSequenceVectorIterator;
 typedef PSequenceVector::iterator PSequenceVectorIterator;
+
+
+struct PackedSeqEqual
+{
+	bool operator()(const PackedSeq& obj1, const PackedSeq& obj2) const;	
+};
+
+struct PackedSeqHasher
+{
+	size_t operator()(const PackedSeq& myObj) const;
+};
+
+typedef __gnu_cxx::hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+//typedef std::set<PackedSeq> SequenceDataHash;
+typedef SequenceDataHash::iterator SequenceCollectionHashIter;
+typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
+
+typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> SequenceHashIterPair;
+
+
+typedef SequenceCollectionHashIter SequenceCollectionIterator;
+//typedef PSequenceVectorIterator SequenceCollectionIterator;
 
 #endif

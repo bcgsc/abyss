@@ -1,6 +1,7 @@
 #ifndef ASSEMBLYALGORITHMS_H
 #define ASSEMBLYALGORITHMS_H
 
+#include <set>
 #include "ISequenceCollection.h"
 #include "FastaReader.h"
 #include "SeqRecord.h"
@@ -17,6 +18,8 @@
  * 
  **********************************************************/
  
+ // Calculate the extensions for this sequence
+ HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
  
 // Read a sequence file and load them into the collection
 void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, int readLength, int kmerSize);
@@ -31,14 +34,22 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize);
 // Function to perform the actual trimming. Walks the sequence space 
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
 
+// Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
+void splitAmbiguous(ISequenceCollection* seqCollection);
+
 // The actual assembly function, takes in an ISequenceCollection pointer
-void assemble(ISequenceCollection* seqCollection);
+void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize);
 
 // BuildContig generates the sequence of a contig from the 2-element array of 
 // sequence vectors (one for the antisense direction, one for sense direction)
-Sequence BuildContig(PSequenceVector* extensions, const PackedSeq& originalSeq);
+Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, const PackedSeq& originalSeq, int contigID, int readLen, int kmerSize);
 
 // remove the specified sequence from the collection and destroy its extensions
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq);
+void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
+
+void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int contig, int position, const Sequence& s, bool isRC, int readLen, int kmerSize);
+void PrintAlignmentForSeq(ISequenceCollection* seqCollection, std::set<int64_t>& readsAligned, const PackedSeq& seq, int contigID, int position, int readLen, int kmerSize);
+
 
 #endif

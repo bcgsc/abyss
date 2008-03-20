@@ -13,6 +13,7 @@ TRIMMER_DIR = Trimmer
 REMOVE_MULTIPLICITY_DIR = RemoveMultiplicity
 TEST_DIR = Test
 PARALLEL_DIR = Parallel
+SCAFFOLD_DIR = Scaffold
 
 ALL_DIRS = $(COMMON_DIR) $(DATALAYER_DIR) $(ABYSS_DIR) $(PROOFREAD_DIR) $(PARTITION_DIR) $(TRIMMER_DIR) $(REMOVE_MULTIPLICITY_DIR) $(TEST_DIR) $(PARALLEL_DIR)
 
@@ -27,8 +28,9 @@ REMOVE_MULTIPLICITY_SRC = $(wildcard $(REMOVE_MULTIPLICITY_DIR)/*.cpp)
 VALIDATE_SRC = $(TEST_DIR)/ValidatePartition.cpp
 ESTIMATE_CONTIG_SRC = $(TEST_DIR)/EstimateContigs.cpp
 PARALLEL_SRC = $(wildcard $(PARALLEL_DIR)/*.cpp)
+SCAFFOLD_SRC = $(wildcard $(SCAFFOLD_DIR)/*.cpp)
 
-ALL_SRC = $(COMMON_SRC) $(DATALAYER_SRC) $(ABYSS_SRC) $(PROOFREAD_SRC) $(PARTITION_SRC) $(TRIMMER_SRC) $(REMOVE_MULTIPLICITY_SRC) $(PARALLEL_SRC)
+ALL_SRC = $(COMMON_SRC) $(DATALAYER_SRC) $(ABYSS_SRC) $(PROOFREAD_SRC) $(PARTITION_SRC) $(TRIMMER_SRC) $(REMOVE_MULTIPLICITY_SRC) $(PARALLEL_SRC) $(SCAFFOLD_SRC)
 
 # Object files
 COMMON_OBJ = $(patsubst %.cpp,%.o,$(COMMON_SRC))
@@ -41,8 +43,9 @@ REMOVE_MULTIPLICITY_OBJ = $(patsubst %.cpp,%.o,$(REMOVE_MULTIPLICITY_SRC))
 VALIDATE_OBJ = $(patsubst %.cpp,%.o,$(VALIDATE_SRC))
 ESTIMATE_CONTIG_OBJ = $(patsubst %.cpp,%.o,$(ESTIMATE_CONTIG_SRC))
 PARALLEL_OBJ = $(patsubst %.cpp,%.o,$(PARALLEL_SRC))
+SCAFFOLD_OBJ = $(patsubst %.cpp,%.o,$(SCAFFOLD_SRC))
 
-ALL_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(ABYSS_OBJ) $(PROOFREAD_OBJ) $(PARTITION_OBJ) $(TRIMMER_OBJ) $(ESTIMATE_CONTIG_OBJ) $(VALIDATE_OBJ) $(REMOVE_MULTIPLICITY_OBJ) $(PARALLEL_OBJ)
+ALL_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(ABYSS_OBJ) $(PROOFREAD_OBJ) $(PARTITION_OBJ) $(TRIMMER_OBJ) $(ESTIMATE_CONTIG_OBJ) $(VALIDATE_OBJ) $(REMOVE_MULTIPLICITY_OBJ) $(PARALLEL_OBJ) $(SCAFFOLD_OBJ)
 
 ABYSS_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(ABYSS_OBJ)
 PROOFREAD_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(PROOFREAD_OBJ)
@@ -52,14 +55,15 @@ VALIDATE_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(VALIDATE_OBJ)
 ESTIMATE_CONTIG_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(ESTIMATE_CONTIG_OBJ)
 REMOVE_MULTIPLICITY_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(REMOVE_MULTIPLICITY_OBJ)
 PARALLEL_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(PARALLEL_OBJ)
+SCAFFOLD_OBJECTS = $(COMMON_OBJ) $(DATALAYER_OBJ) $(SCAFFOLD_OBJ)
 
 # Output dir
 BIN_PATH = $(BASE_PATH)/bin
 
 #########################################################################
 # FLAGS
-#CC = g++
-CC =		mpic++
+CC = g++
+#CC =		mpic++
 
 INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
@@ -82,31 +86,16 @@ LDFLAGS = -L$(LIB_DIR) $(PROFILE) $(64BIT)
 		$(CC) -c $(CPPFLAGS) $< -o $@ 
 		
 all:
-	$(MAKE) ABYSS ProofReader Partition Trimmer RemoveMultiplicity test ABYSS-P
+	$(MAKE) ABYSS Scaffold
 	
 test:
 	$(MAKE) ValidatePartition EstimateContigs
+
+Scaffold:		$(SCAFFOLD_OBJECTS)
+	$(CC) -o $(BIN_PATH)/Scaffold $(SCAFFOLD_OBJECTS)  $(LDFLAGS)
 	
 ABYSS:		$(ABYSS_OBJECTS)
 	$(CC) -o $(BIN_PATH)/ABYSS $(ABYSS_OBJECTS)  $(LDFLAGS)
-	
-ProofReader:		$(PROOFREAD_OBJECTS)
-	$(CC) -o $(BIN_PATH)/ProofReader $(PROOFREAD_OBJECTS) $(LDFLAGS)
-	
-Partition:		$(PARTITION_OBJECTS)
-	$(CC) -o $(BIN_PATH)/Partition $(PARTITION_OBJECTS) $(LDFLAGS)
-	
-Trimmer:		$(TRIMMER_OBJECTS)
-	$(CC) -o $(BIN_PATH)/Trimmer $(TRIMMER_OBJECTS)	$(LDFLAGS)
-	
-ValidatePartition:		$(VALIDATE_OBJECTS)
-	$(CC) -o $(BIN_PATH)/ValidatePartition $(VALIDATE_OBJECTS)	$(LDFLAGS)
-	
-RemoveMultiplicity:		$(REMOVE_MULTIPLICITY_OBJECTS)
-	$(CC) -o $(BIN_PATH)/RemoveMultiplicity $(REMOVE_MULTIPLICITY_OBJECTS)	$(LDFLAGS)
-	
-EstimateContigs:	$(ESTIMATE_CONTIG_OBJECTS)
-	$(CC) -o $(BIN_PATH)/EstimateContigs $(ESTIMATE_CONTIG_OBJECTS)	$(LDFLAGS)
 	
 ABYSS-P:	$(PARALLEL_OBJECTS)
 	$(CC) -o $(BIN_PATH)/ABYSS-P $(PARALLEL_OBJECTS) $(LDFLAGS)
@@ -191,6 +180,12 @@ DataLayer/SequenceCollection.o: Common/CommonDefs.h Common/ReadPrb.h
 DataLayer/SequenceCollection.o: Common/Prb.h Common/CommonUtils.h
 DataLayer/SequenceCollection.o: Common/Sequence.h Common/PackedSeq.h
 DataLayer/SequenceCollection.o: Common/SeqExt.h Common/HitRecord.h
+DataLayer/SequenceCollectionHash.o: DataLayer/SequenceCollectionHash.h
+DataLayer/SequenceCollectionHash.o: DataLayer/ISequenceCollection.h
+DataLayer/SequenceCollectionHash.o: Common/CommonDefs.h Common/ReadPrb.h
+DataLayer/SequenceCollectionHash.o: Common/Prb.h Common/CommonUtils.h
+DataLayer/SequenceCollectionHash.o: Common/Sequence.h Common/PackedSeq.h
+DataLayer/SequenceCollectionHash.o: Common/SeqExt.h Common/HitRecord.h
 DataLayer/Writer.o: DataLayer/Writer.h
 ABYSS/Abyss.o: ABYSS/Abyss.h Common/Sequence.h Common/CommonDefs.h
 ABYSS/Abyss.o: Common/ReadPrb.h Common/Prb.h DataLayer/Reader.h
@@ -201,7 +196,9 @@ ABYSS/Abyss.o: DataLayer/Writer.h Common/SequencePair.h Common/Config.h
 ABYSS/Abyss.o: Common/PartitionLoader.h DataLayer/FastaWriter.h
 ABYSS/Abyss.o: DataLayer/IFileWriter.h DataLayer/FastaReader.h
 ABYSS/Abyss.o: DataLayer/IFileReader.h DataLayer/PackedSeqWriter.h
-ABYSS/Abyss.o: Common/AssemblyData.h
+ABYSS/Abyss.o: Common/AssemblyData.h DataLayer/SequenceCollection.h
+ABYSS/Abyss.o: DataLayer/ISequenceCollection.h
+ABYSS/Abyss.o: DataLayer/SequenceCollectionHash.h Common/AssemblyAlgorithms.h
 ABYSS/Path.o: ABYSS/Path.h Common/CommonDefs.h Common/ReadPrb.h Common/Prb.h
 ABYSS/Path.o: Common/SeqRecord.h Common/PackedSeq.h Common/CommonUtils.h
 ABYSS/Path.o: Common/Sequence.h Common/SeqExt.h
@@ -257,8 +254,6 @@ Parallel/NetworkSequenceCollection.o: DataLayer/SequenceCollection.h
 Parallel/NetworkSequenceCollection.o: DataLayer/ISequenceCollection.h
 Parallel/NetworkSequenceCollection.o: Common/HitRecord.h Parallel/CommLayer.h
 Parallel/NetworkSequenceCollection.o: Parallel/NetworkDefs.h
-Parallel/NetworkSequenceCollection.o: DataLayer/FastaReader.h
-Parallel/NetworkSequenceCollection.o: DataLayer/IFileReader.h
 Parallel/NetworkSequenceCollection.o: Common/SeqRecord.h
 Parallel/NetworkSequenceCollection.o: Common/AssemblyAlgorithms.h
 Parallel/parallelAbyss.o: Parallel/parallelAbyss.h Common/PackedSeq.h
@@ -270,3 +265,4 @@ Parallel/parallelAbyss.o: Parallel/NetworkSequenceCollection.h
 Parallel/parallelAbyss.o: DataLayer/SequenceCollection.h
 Parallel/parallelAbyss.o: DataLayer/ISequenceCollection.h Common/HitRecord.h
 Parallel/parallelAbyss.o: Parallel/CommLayer.h Parallel/NetworkDefs.h
+Parallel/parallelAbyss.o: Common/SeqRecord.h Common/AssemblyAlgorithms.h

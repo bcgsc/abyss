@@ -4,12 +4,15 @@
 #include "CommonDefs.h"
 #include "PackedSeq.h"
 
+
 struct Hit
 {
 	Hit(PackedSeq s, bool b) : seq(s), isReverse(b) {}
 	PackedSeq seq;
 	bool isReverse;
 };
+
+typedef std::vector<Hit> HitVector;
 
 class HitRecord
 {
@@ -29,7 +32,7 @@ class HitRecord
 		Hit getFirstHit() const;
 		
 	private:
-		std::vector<Hit> m_hits;
+		HitVector m_hits;
 	
 };
 

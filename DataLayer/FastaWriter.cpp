@@ -13,28 +13,28 @@ FastaWriter::~FastaWriter()
 }
 
 // Write out a single sequence
-void FastaWriter::WriteSequence(Sequence& seq)
+void FastaWriter::WriteSequence(Sequence& seq, int64_t id)
 {
 	
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
-	m_fileHandle << ">" << m_count << " " << seq.length() << "\n" << seq << "\n";
+	m_fileHandle << ">" << id << " " << seq.length() << "\n" << seq << "\n";
 	
 	m_count++;
+
 
 }
 
 // Write out a single sequence
-void FastaWriter::WriteSequence(const PackedSeq& pSeq)
+void FastaWriter::WriteSequence(const PackedSeq& pSeq, int64_t id)
 {
 	
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
-	m_fileHandle << ">" << m_count << " " << pSeq.getSequenceLength() << "\n" << pSeq.decode() << "\n";
+	m_fileHandle << ">" << id << " " << pSeq.getSequenceLength() << "\n" << pSeq.decode() << "\n";
 	
 	m_count++;
-
 }
 

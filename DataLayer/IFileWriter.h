@@ -12,7 +12,7 @@ class IFileWriter
 	public:
 		// Read in a single sequence
 		virtual ~IFileWriter() {};
-		virtual void WriteSequence(const PackedSeq& pSeq) = 0;
+		virtual void WriteSequence(const PackedSeq& pSeq, int64_t id) = 0;
 };
 
 #endif //IFILEWRITER_H

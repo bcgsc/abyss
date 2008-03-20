@@ -8,9 +8,12 @@
 #include "Abyss.h"
 #include "CommonUtils.h"
 #include "SequenceCollection.h"
+#include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
 
 std::ofstream branchLog("branchLog.txt");
+
+
 
 int main(int argc, char** argv)
 {	
@@ -24,9 +27,20 @@ int main(int argc, char** argv)
 	std::string fastaFile = argv[1];
 	int readLen = atoi(argv[2]);
 	int kmerSize = atoi(argv[3]);
+	
+	bool noTrim = false;
+	if(argc == 5)
+	{
+		std::string flags = argv[4];
+		if(flags == "-notrim")
+		{
+			noTrim = true;
+		}
+	}
 
 	// Load the phase space
-	SequenceCollection* pSC = new SequenceCollection();
+	SequenceCollectionHash* pSC = new SequenceCollectionHash();
+	//SequenceCollection* pSC = new SequenceCollection();
 	
 	loadSequences(pSC, fastaFile, readLen, kmerSize);
 
@@ -35,12 +49,16 @@ int main(int argc, char** argv)
 	printf("finalizing\n");
 	pSC->finalize();
 
-	printf("generating adjacency info\n");
 	generateAdjacency(pSC);
 
-	performTrim(pSC, readLen, kmerSize);
+	if(!noTrim)
+	{
+		performTrim(pSC, readLen, kmerSize);
+	}
 	
-	assemble(pSC);
+	splitAmbiguous(pSC);
+	
+	assemble(pSC, readLen, kmerSize);
 
 	delete pSC;
 	

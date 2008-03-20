@@ -1,5 +1,6 @@
 #include "AssemblyAlgorithms.h"
 
+std::ofstream alignments("alignments.txt", std::ios::out);
 //
 // Function to load sequences into the collection
 //
@@ -10,25 +11,37 @@ void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, in
 	int count = 0;
 	
 	// Read the sequences and add them to the network sequence space
+	int64_t idNum = 0;
+	
 	while(reader->isGood())
 	{
-		PackedSeq seq = reader->ReadSequence();		
+		PackedSeq seq = reader->ReadSequence();
+		
 		assert(kmerSize <= seq.getSequenceLength());
+		//assert(seq.getSequenceLength() == pairSeq.getSequenceLength());
+		
+		//int l = pairSeq.getSequenceLength();
 		
 		for(int i = 0; i < seq.getSequenceLength() - kmerSize  + 1; i++)
 		{
 			PackedSeq sub = seq.subseq(i, kmerSize);
+			SeqID currID(idNum, i);
 			
-			// Add the sequence to the network space
+			sub.addID(currID);
+			
+			//PackedSeq pairSub = pairSeq.subseq(l - kmerSize - i, kmerSize);
+
+			// Add the sequence to the sequence collection
 			seqCollection->add(sub);
+
 			
-			if(count % 100000 == 0)
+			if(count % 1000000 == 0)
 			{
 				printf("read %d sequences\n", count);
 			}
 			count++;
 		}
-		
+		idNum++;
 		seqCollection->pumpNetwork();
 	}
 }
@@ -38,12 +51,13 @@ void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, in
 //
 void generateAdjacency(ISequenceCollection* seqCollection)
 {
+	
 	printf("generating adjacency info\n");
 	int count = 0;
-	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
-	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 100000 == 0)
+		if(count % 1000000 == 0)
 		{
 			printf("generated for %d\n", count);
 		}
@@ -78,6 +92,35 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 //
 //
 //
+void splitAmbiguous(ISequenceCollection* seqCollection)
+{
+	printf("splitting ambiguous reads\n");
+	int count = 0;
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		if(count % 1000000 == 0)
+		{
+			printf("split %d\n", count);
+		}
+		count++;
+		
+		for(int i = 0; i <= 1; i++)
+		{
+			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			HitRecord hr = calculateExtension(seqCollection, *iter, dir);
+			if(hr.getNumHits() > 1)
+			{
+				removeExtensionsToSequence(seqCollection, *iter, dir);
+				seqCollection->clearExtensions(*iter, dir);				
+			}
+		}
+	}
+}
+
+//
+//
+//
 HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir)
 {
 	
@@ -89,25 +132,24 @@ HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq
 	{
 		char currBase = BASES[i];
 		
-		// SLOW
-		bool hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
+		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
 			
 		// Does this sequence have an extension?
-		if(hasExt)
+		if(hasExt.forward || hasExt.reverse)
 		{
 			PackedSeq extSeq(currSeq);
 			extSeq.rotate(dir, currBase);
 			
 			// is there a forward extension?
-			if(hasExt)
+			if(hasExt.forward)
 			{
 				hitRecord.addHit(extSeq, false);
 			}
-			//else
-			//{
+			else
+			{
 				// extension is of the reverse complement
-				//hitRecord.addHit(extSeq, true);	
-			//}
+				hitRecord.addHit(extSeq, true);	
+			}
 		}
 	}
 		
@@ -121,28 +163,31 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 {
 	// This removes the reverse complement as well
 	seqCollection->remove(seq);
-	
-	// Remove this sequence as an extension to the adjacent sequences
-	for(int i = 0; i <= 1; i++)
-	{
-		extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-		extDirection oppDir = oppositeDirection(dir);	
-			
-		for(int i = 0; i < NUM_BASES; i++)
-		{	
-			char currBase = BASES[i];
-			// does this sequence have an extension to the deleted seq?
-			bool hasExt  = seqCollection->checkExtension(seq, dir, currBase);
-			if(hasExt)
-			{
-				PackedSeq tempSeq(seq);	
-				// generate the sequence that the extension is to
-				char extBase = tempSeq.rotate(dir, currBase);				
-				// remove the extension, this removes the reverse complement as well
-				seqCollection->removeExtension(tempSeq, oppDir, extBase);
-			}
+	removeExtensionsToSequence(seqCollection, seq, SENSE);
+	removeExtensionsToSequence(seqCollection, seq, ANTISENSE);
+}
+
+//
+//
+//
+void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir)
+{
+	extDirection oppDir = oppositeDirection(dir);	
+		
+	for(int i = 0; i < NUM_BASES; i++)
+	{	
+		char currBase = BASES[i];
+		// does this sequence have an extension to the deleted seq?
+		ResultPair hasExt  = seqCollection->checkExtension(seq, dir, currBase);
+		if(hasExt.forward || hasExt.reverse)
+		{
+			PackedSeq tempSeq(seq);	
+			// generate the sequence that the extension is to
+			char extBase = tempSeq.rotate(dir, currBase);				
+			// remove the extension, this removes the reverse complement as well
+			seqCollection->removeExtension(tempSeq, oppDir, extBase);
 		}
-	}
+	}	
 }
 
 //
@@ -151,7 +196,7 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 {
 	int start = 2;
-	int maxBranch =  4 * (readLen - kmerSize + 1);
+	int maxBranch =  3 * (readLen - kmerSize + 1);
 	
 	
 	while(start <= maxBranch)
@@ -160,6 +205,18 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 		start <<= 1;
 	}
 	
+	bool stop = false;
+	while(!stop)
+	{
+		int numRemoved = trimSequences(seqCollection, maxBranch);
+		if(numRemoved <= 0)
+		{
+			stop = true;
+		}
+	}
+	
+	/*	
+
 	// Now trim at the max branch length
 	for(int i = 0; i < 2; i++)
 	{
@@ -175,7 +232,8 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 		{
 			stop = true;
 		}
-	}	
+	}
+	*/
 }
 
 //
@@ -188,16 +246,15 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 	int count = 0;
-	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
-	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		
-		if(count % 100000 == 0)
+		if(count % 1000000 == 0)
 		{
 			printf("trimmed: %d\n", count);
 		}
 		count++;
-				
+
 		if(iter->isFlagSet(SF_DELETE))
 		{
 			continue;
@@ -287,86 +344,142 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	return numBranchesRemoved;
 }
 
+
+bool doPrint = false;
 //
 // Assembly function
 //
-void assemble(ISequenceCollection* seqCollection)
+void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 {
 	// create file writer
 	FastaWriter writer("contigs.fa");
+
+
 	int noext = 0;
 	int ambiext = 0;
 
 	printf("starting assembly\n");
 	int count = 0;
-	PSequenceVectorIterator endIter  = seqCollection->getEndIter();
-	for(PSequenceVectorIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	
+	int contigID = 0;
+	
+
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
 		if(!seqCollection->checkFlag(*iter, SF_SEEN) && !seqCollection->checkFlag(*iter, SF_DELETE))
 		{
-			// the record of extensions			
-			PSequenceVector extensions[2];
-							
-			for(int i = 0; i <= 1; i++)
+
+			
+			// There are 2 cases in which we should extend a read:
+			// 1) It is at the endpoint of a branch (either no parent or child extension)
+			// 2) It is the first read past a branch
+			
+			// Is this sequence a branch endpoint?
+			bool doAssembly = false;
+			extDirection dir;
+			if(!seqCollection->hasParent(*iter))
 			{
-				bool stop = false;
-				extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-				PackedSeq currSeq = *iter;
-				SeqRecord loopCheck;			
-				
-				while(!stop)
+				doAssembly = true;
+				dir = SENSE;
+			}
+			else if(!seqCollection->hasChild(*iter))
+			{
+				doAssembly = true;
+				dir = ANTISENSE;
+			}
+			else
+			{
+				/*
+				// Not a branch endpoint, check if it is the first node after an ambiguous node
+				HitRecord senseHR = calculateExtension(seqCollection, *iter, SENSE);
+				if(senseHR.getNumHits() == 1)
 				{
-					
-					// Mark the flag for the selected sequence
-					seqCollection->setFlag(currSeq, SF_SEEN);
-									
-					HitRecord hr = calculateExtension(seqCollection, currSeq, dir);
-					if(hr.getNumHits() == 0)
+					// the next node is umambiguous
+					HitRecord inHR = calculateExtension(seqCollection, senseHR.getFirstHit().seq, ANTISENSE);
+					if(inHR.getNumHits() > 1)
 					{
-						// no ext
-						stop = true;
-						noext++;
+						doAssembly = true;
 					}
-					else if(hr.getNumHits() == 1)
+				}
+				
+				// Get the next 
+				HitRecord antisenseHR = calculateExtension(seqCollection, *iter, ANTISENSE);
+				if(antisenseHR.getNumHits() == 1)
+				{
+					// the next node is umambiguous
+					HitRecord inHR = calculateExtension(seqCollection, antisenseHR.getFirstHit().seq, SENSE);
+					if(inHR.getNumHits() > 1)
 					{
-						// good ext
-						currSeq = hr.getFirstHit().seq;
-						
-						if(loopCheck.contains(currSeq))
+						doAssembly = true;
+					}
+				}
+				*/
+			}
+
+			if(doAssembly)
+			{
+				// the record of extensions			
+				HitVector extensions[2];
+									
+				//for(int i = 0; i <= 1; i++)
+				{
+					bool stop = false;
+					PackedSeq currSeq = *iter;
+					SeqRecord loopCheck;			
+					
+					while(!stop)
+					{
+						//assert(!seqCollection->checkFlag(currSeq, SF_SEEN));
+						// Mark the flag for the selected sequence
+						seqCollection->setFlag(currSeq, SF_SEEN);
+										
+						HitRecord hr = calculateExtension(seqCollection, currSeq, dir);
+						if(hr.getNumHits() == 0)
 						{
+							// no ext
 							stop = true;
+							noext++;
+						}
+						else if(hr.getNumHits() == 1)
+						{
+							// good ext
+							currSeq = hr.getFirstHit().seq;
+							
+							if(loopCheck.contains(currSeq))
+							{
+								stop = true;
+							}
+							else
+							{
+								//printf("good ext (%s)\n", currSeq.decode().c_str());
+								extensions[dir].push_back(hr.getFirstHit());
+							}
+							
 						}
 						else
 						{
-							//printf("good ext (%s)\n", currSeq.decode().c_str());
-							extensions[i].push_back(currSeq);
+							// ambi ext
+							stop = true;
+							ambiext++;
 						}
 						
-					}
-					else
-					{
-						// ambi ext
-						stop = true;
-						ambiext++;
-					}
-					
-					loopCheck.addSequence(currSeq);
+						loopCheck.addSequence(currSeq);
+					}				
 				}
-			}
-			
-			Sequence contig = BuildContig(extensions, *iter);
-			
-			// is this contig worth outputting?
-			if(contig.length() >= 100)
-			{
-				count++;
-				//const int bufferSize = 10*1024;
-				//char buffer[bufferSize];
-				//sprintf(buffer, ">%d\n%s\n", count, contig.c_str());
-				//printf("%s", buffer);
-				//MPI_Status status;
-				//MPI_File_write(handle, buffer, numChars, MPI::CHAR, &status);
-				writer.WriteSequence(contig);
+				Sequence contig = BuildContig(seqCollection, extensions, *iter, contigID, readLen, kmerSize);
+				
+				// is this contig worth outputting?
+				//if(contig.length() >= 100)
+				{
+					count++;
+					//sprintf(buffer, ">%d\n%s\n", count, contig.c_str());
+					//printf("%s", buffer);
+					//MPI_Status status;
+					//MPI_File_write(handle, buffer, numChars, MPI::CHAR, &status);
+					writer.WriteSequence(contig, contigID);
+					contigID++;
+				}					
 			}
 		}
 		seqCollection->pumpNetwork();
@@ -379,25 +492,70 @@ void assemble(ISequenceCollection* seqCollection)
 //
 // Build the contig from the extension information
 //
-Sequence BuildContig(PSequenceVector* extensions, const PackedSeq& originalSeq)
+Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, const PackedSeq& originalSeq, int contigID, int readLen, int kmerSize)
 {
 	Sequence contig;
+	std::set<int64_t> readsAligned;
+	
 	contig.reserve(originalSeq.getSequenceLength() + extensions[0].size() + extensions[1].size());
 	
+	int position = 0;
 	// output the contig
 	// output all the antisense extensions
-	for(PSequenceVector::reverse_iterator asIter = extensions[1].rbegin(); asIter != extensions[1].rend(); asIter++)
+	for(HitVector::reverse_iterator asIter = extensions[1].rbegin(); asIter != extensions[1].rend(); asIter++)
 	{
-		contig.append(1, asIter->getFirstBase());
+		contig.append(1, asIter->seq.getFirstBase());
+		
+		PrintAlignmentForSeq(seqCollection, readsAligned, asIter->seq, contigID, position, readLen, kmerSize);
+
+		position++;
 	}
 	
 	// output the current sequence itself
 	contig.append(originalSeq.decode());
+	PrintAlignmentForSeq(seqCollection, readsAligned, originalSeq, contigID, position, readLen, kmerSize);
+	position++;
 	
 	// output the sense extensions
-	for(PSequenceVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
+	for(HitVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
 	{
-		contig.append(1, sIter->getLastBase());
+		contig.append(1, sIter->seq.getLastBase());
+		PrintAlignmentForSeq(seqCollection, readsAligned, sIter->seq, contigID, position, readLen, kmerSize);
+		position++;		
 	}	
 	return contig;
+}
+
+void PrintAlignmentForSeq(ISequenceCollection* seqCollection, std::set<int64_t>& readsAligned, const PackedSeq& seq, int contigID, int position, int readLen, int kmerSize)
+{
+	IDList fwdIDs = seqCollection->getIDs(seq);
+	PrintAlignment(fwdIDs, readsAligned, contigID, position, seq.decode(), false, readLen, kmerSize);
+	
+	PackedSeq rcSeq = reverseComplement(seq);
+	IDList revIDs = seqCollection->getIDs(rcSeq);
+	PrintAlignment(revIDs, readsAligned, contigID, position, rcSeq.decode(), true, readLen, kmerSize);	
+}
+
+void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int contig, int position, const Sequence& s, bool isRC, int readLen, int kmerSize)
+{
+	for(IDList::const_iterator iter = ids.begin(); iter != ids.end(); iter++)
+	{
+		int64_t numID = iter->first;
+		if(readsAligned.find(numID) == readsAligned.end())
+		{
+			// Calculate the position of the actual read, not the kmer
+			int truePosition;
+			if(!isRC)
+			{
+				truePosition = position - iter->second;
+			}
+			else
+			{
+				truePosition = position - (readLen - kmerSize - iter->second);
+			}
+	
+			alignments << iter->first << " " << contig << " " << truePosition << " " << isRC << " " << s << std::endl;
+			readsAligned.insert(numID);
+		}
+	}
 }

@@ -37,6 +37,20 @@ void SequenceCollection::remove(const PackedSeq& seq)
 }
 
 //
+// Get the IDs corresponding to this sequence
+//
+const IDList SequenceCollection::getIDs(const PackedSeq& seq)
+{
+	SequenceCollectionIter iter = FindSequence(seq);
+	IDList list;
+	if(iter != m_pSequences->end())
+	{
+		list = iter->getIDList();
+	}
+	return list;
+}
+
+//
 // add an extension to this sequence in the record
 //
 void SequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
@@ -76,6 +90,28 @@ void SequenceCollection::removeExtensionByIter(SequenceCollectionIter& seqIter, 
 	if(seqIter != m_pSequences->end())
 	{
 		seqIter->clearExtension(dir, base);	
+		//seqIter->printExtension();
+	}
+}
+
+//
+// Clear the extensions for this sequence
+//
+void SequenceCollection::clearExtensions(const PackedSeq& seq, extDirection dir)
+{
+	SequenceIterPair iters = GetSequenceIterators(seq);
+	clearExtensionsByIter(iters.first, dir);
+	clearExtensionsByIter(iters.second, oppositeDirection(dir));	
+}
+
+//
+//
+//
+void SequenceCollection::clearExtensionsByIter(SequenceCollectionIter& seqIter, extDirection dir)
+{
+	if(seqIter != m_pSequences->end())
+	{
+		seqIter->clearAllExtensions(dir);	
 		//seqIter->printExtension();
 	}
 }
@@ -189,11 +225,34 @@ void SequenceCollection::finalize()
 			printf("duplicate sequences found, removing them\n");
 			SequenceData temp;
 			// copy the unique elements over
+			SequenceData::iterator iter = m_pSequences->begin();
+			
+			// the first item is trivially unique
+			temp.push_back(*iter);
+
+			iter++;
+			while(iter != m_pSequences->end())
+			{
+				if(*iter == temp.back())
+				{
+					// add iter's ids to the last sequence added to the vector (which is by definition a dup of this sequence()
+					temp.back().addIDList(iter->getIDList());
+				}
+				else
+				{
+					// this item is unique
+					temp.push_back(*iter);
+				}
+				iter++;
+			}
+			
+			/*
 			std::back_insert_iterator<SequenceData> insertIter(temp);
 			std::unique_copy(m_pSequences->begin(), m_pSequences->end(), insertIter);
-			
+			*/
 			// swap vectors
 			temp.swap(*m_pSequences);
+
 			printf("%d sequences remain after duplicate removal\n", count());
 		}
 			
@@ -249,72 +308,6 @@ bool SequenceCollection::checkForDuplicates() const
 	
 	return duplicates;
 }
-
-/*
-//
-//
-//
-void SequenceCollection::generateAdjacency()
-{
-	assert(m_state == SS_FINALIZED);
-	for(SequenceCollectionIter iter = m_pSequences->begin(); iter != m_pSequences->end(); iter++)
-	{
-		for(int i = 0; i <= 1; i++)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			for(int j = 0; j < NUM_BASES; j++)
-			{
-				char currBase = BASES[j];
-				PackedSeq testSeq(*iter);
-				testSeq.rotate(dir, currBase);
-				PackedSeq rc = reverseComplement(testSeq);
-				
-				if(checkForSequence(testSeq) || checkForSequence(rc))
-				{
-					iter->setExtension(dir, currBase);
-				}
-			}
-		}
-		
-		//iter->printExtension();
-	}
-	m_state = SS_READY;	
-	printf("done generating adjacency\n");
-}
-*/
-
-//
-// Calculate the extension of this sequence in the direction given
-//
-
-/* OLDE
-HitRecord SequenceCollection::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
-{	
-	PSequenceVector extVec;
-	makeExtensions(currSeq, dir, extVec);
-
-	// Create the return structure
-	HitRecord hitRecord;
-	// test for all the extensions of this sequence
-	for(ConstPSequenceVectorIterator iter = extVec.begin(); iter != extVec.end(); iter++)
-	{	
-		// Todo: clean this up
-		const PackedSeq& seq = *iter;
-		PackedSeq rcSeq = reverseComplement(seq);
-		
-		if(checkForSequence(seq))
-		{
-			hitRecord.addHit(seq, false);
-		}
-		else if(checkForSequence(rcSeq))
-		{
-			hitRecord.addHit(seq, true);
-		}	
-	}
-	
-	return hitRecord;
-}
-*/
 
 //
 //
@@ -381,14 +374,17 @@ bool SequenceCollection::hasChildByIter(SequenceCollectionIter seqIter) const
 //
 //
 //
-bool SequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
+ResultPair SequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair rp;
 	SequenceIterPair iters = GetSequenceIterators(seq);
+	
+	
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
 	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
-	return (rp.forward || rp.reverse);
+
+	return rp;
 }
 //
 //
@@ -437,7 +433,7 @@ SequenceCollectionIter SequenceCollection::FindSequence(const PackedSeq& seq) co
 	}
 	return iter;
 }
-
+#if 0
 //
 // Get the iterator pointing to the first sequence in the bin
 //
@@ -453,6 +449,4 @@ SequenceCollectionIter SequenceCollection::getEndIter()
 {
 	return m_pSequences->end();
 }
-
-
-
+#endif
