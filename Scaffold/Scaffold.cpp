@@ -3,6 +3,7 @@
 #include "Scaffold.h"
 #include "Sequence.h"
 #include "FastaWriter.h"
+#include "SequenceCollectionHash.h"
 
 using namespace std;
 
@@ -10,21 +11,21 @@ const double MINP = 0.00001f;
 
 int main(int argc, char** argv)
 {
-	std::string pairsFile(argv[1]);
+	std::string alignmentFile(argv[1]);
 	std::string contigFile(argv[2]);
 	int readLen = atoi(argv[3]);
 	int kmer = atoi(argv[4]);
 	
-	Scaffold scaffold(pairsFile, contigFile, readLen, kmer);
+	Scaffold scaffold(alignmentFile, contigFile, readLen, kmer);
 }
 
 //
 //
 //
-Scaffold::Scaffold(std::string pairsFile, std::string contigFile, int readLen, int kmer) : m_readLen(readLen), m_kmer(kmer)
+Scaffold::Scaffold(std::string alignFile, std::string contigFile, int readLen, int kmer) : m_readLen(readLen), m_kmer(kmer)
 {
 	// Read in the pairs
-	ReadPairs(pairsFile);
+	ReadAlignments(alignFile);
 	
 	// Read in the contigs
 	ReadContigs(contigFile);	
@@ -33,8 +34,10 @@ Scaffold::Scaffold(std::string pairsFile, std::string contigFile, int readLen, i
 	// Generate the empirical distribution
 	
 	GenerateEmpDistribution();
-	GenerateGraph("1855");
-	exit(1);
+	//while(AttemptMerge("1855"));
+	//exit(1);
+	//AttemptMerge("1219");
+	//exit(1);
 	/*
 	AttemptMerge("1128");
 	AttemptMerge("2523");
@@ -87,7 +90,7 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 	// Get all the pair alignments for this contig
 	// It will generate a mapping of contig pairs (c1,c2) to a vector of the pairs supporting the contigs
 	// This function populates the cpvMap structure
-	GenerateAllPairAlignments(contigID, cpvMap);
+	GenerateUniquePairAlignments(contigID, cpvMap);
 	
 	cout << "Contig " << contigID << " is linked to: " << endl;
 	
@@ -96,10 +99,14 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 	
 	for(CPVMIter cpvmIter = cpvMap.begin(); cpvmIter != cpvMap.end(); cpvmIter++)
 	{		
-		ContigLinkage link = GenerateLinkage(contigID, cpvmIter->first, cpvmIter->second);
-		if(!link.noLink)
+		if(!m_contigMap[cpvmIter->first].repetitive)
 		{
-			linkages[link.order].push_back(link);
+			ContigLinkage link = GenerateLinkage(contigID, cpvmIter->first, cpvmIter->second);
+			printf("	link[%d]: %s at %d\n", link.order, link.slaveID.c_str(), link.distance);
+			if(!link.noLink)
+			{
+				linkages[link.order].push_back(link);
+			}
 		}
 	}
 	
@@ -107,152 +114,212 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 	{
 		printf("Contig %s (%d bp) has %d linkages on the %d side\n", contigID.c_str(), m_contigMap[contigID].seq.length(), linkages[i].size(), i);
 
-		//while(RefineLinkages(linkages[i]));
-		bool consistent = true;
-		int prevEnd = 0;
+		// Choose the best link
+		bool hasBestLink = false;
+		LinkIter bestLink;
+		int bestDistance = -m_kmer;
 		
-		// Sort the vector
-		sort(linkages[i].begin(), linkages[i].end(), CompareLinkagesByDistance);
-
+		const int REQUIRED_PAIRS = 30;
+		
 		for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
 		{
-			
-			if(iter->noLink)
+			printf("	link %s has %d pairs\n", iter->slaveID.c_str(), iter->numPairs);
+			if(iter->numPairs > REQUIRED_PAIRS)
 			{
-				consistent = false;
-				continue;
-			}
-			
-			Sequence& contig2 = m_contigMap.find(iter->slaveID)->second.seq;			
-			int start = iter->distance;
-			int end = start + contig2.length();
-			int overlap = start - prevEnd;
-							
-			printf("Contig %s is %d bp away starts at %d and ends at %d (overlap %d) (pairs %d)\n", iter->slaveID.c_str(), iter->distance, start, end, overlap, iter->numPairs);
-			if(iter->type == LT_STRONG)
-			{		
-				if(-overlap >= (m_kmer + 10))
+				if(iter->distance > bestDistance)
 				{
-					consistent = false;
+					bestLink = iter;
+					bestDistance = iter->distance;
+					hasBestLink = true;
+				}
+			}
+		}		
+		
+		// Is there a good link for this contig?
+		if(hasBestLink)
+		{
+			printf("Best link is %s at %d bp away(pairs %d)\n", bestLink->slaveID.c_str(), bestLink->distance, bestLink->numPairs);
+			
+			bool consistent = CheckConsistency(*bestLink, linkages[i]);
+			printf("Best link is %s\n", consistent ? "consistent" : "inconsistent");
+			
+			if(consistent)
+			{
+	
+				// Get the sequences
+				Sequence contig0 = m_contigMap[bestLink->masterID].seq;
+				Sequence contig1 = m_contigMap[bestLink->slaveID].seq;
+	
+				// Create pointers to the sequences in the correct order
+				Sequence* leftContig;
+				Sequence* rightContig;
+				
+				// get the pairs of the sequence that can potentially fill the gap
+				bool contig0Comp;
+				bool contig1Comp;
+				
+				if(bestLink->order == CORDER_LEFT)
+				{
+					contig0Comp = false;
+					contig1Comp = true;
+					
+					// set the pointers
+					leftContig = &contig0;
+					rightContig = &contig1;
+				}
+				else
+				{
+					contig0Comp = true;
+					contig1Comp = false;		
+					
+					// set the pointers
+					leftContig = &contig1;
+					rightContig = &contig0;				
 				}
 				
-				prevEnd = end;
-			}	
-		}
+				// If contig1 is in the RC direction, reverse the direction of the required pairs
+				if(bestLink->orientation == CORIEN_OPP)
+				{
+					contig1Comp = !contig1Comp;
+					contig1 = reverseComplement(contig1);
+				}
+	
+				// Get all the pairs for these contigs that fall into the gap between the contigs
+				SeqVec pairs;
+				GetEndPairs(bestLink->masterID, contig0Comp, pairs);
+				GetEndPairs(bestLink->slaveID, contig1Comp, pairs);
+				
+				// Now the contigs are in the correct order (leftContig->rightContig) and are from the same strand
+				
+				// Attempt to assemble the gap between the contigs using the gathered pair info
+					
+				// generate the sequence to start from
+				// this is the last K bases of the reference (contig0) sequence
+				Sequence start = leftContig->substr(leftContig->length() - SUB_ASSEMBLY_K, SUB_ASSEMBLY_K);
+				printf("Starting assembly from %s\n", start.c_str());
+				
+				// Assemble the sequence
+				SeqVec assemblies = SubAssemble(pairs, start, bestLink->distance + 20);
+				
+				
+				// Check if any of the returned assemblies are valid by aligning the original contigs back
+				int bestScore = -1;
+				SeqVecIter bestIter;
+				int bestAlign = -1;
+				
+				for(SeqVecIter iter = assemblies.begin(); iter != assemblies.end(); iter++)
+				{
+					
+					// Estimate the position of the assembly on the right contig
+					int estimatePosition = bestLink->distance;
+					int range = 20;
+					int score;
+					
+					int len = iter->length();
+					int lowerBound = (bestLink->distance - 2*range);
+					int upperBound = (bestLink->distance + 2*range);
 
-		if(consistent)
-		{
-			// The path is consistent, merge the contigs along it
-			int offsetDistance = 0;
-			for(std::vector<ContigLinkage>::iterator iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
-			{
+					// Check if this sequence is a possible closure of the gap
+					if((len >= lowerBound) && (len <= upperBound))
+					{
+						int alignment = alignContigs(*iter, *rightContig, estimatePosition, range, score);
+		
+						printf("position: %d score: %d\n", alignment, score);
+						
+						if(score > bestScore)
+						{
+							bestScore = score;
+							bestIter = iter;
+							bestAlign = alignment;
+						}
+					}
+				}
 				
 				Sequence merged;
-				// Offset the distance between the contigs by the total amount that has been merged in
-				iter->distance -= offsetDistance;
-				
-				
-				if(iter->type == LT_STRONG)
-				//if(iter->distance < 0 || iter->type == LT_STRONG)
+				if(bestScore > 0)
 				{
-					printf("Merging %s in at distance %d (offset: %d)\n", iter->slaveID.c_str(), iter->distance, offsetDistance);					
-					// Perform the merge and update the distance
-					offsetDistance += Merge(*iter, merged);
-										
-					int c0Len = m_contigMap[contigID].seq.length();
-					int c1Len = m_contigMap[iter->slaveID].seq.length();
+					// Merge with the generated path
+					Sequence tempMerged;
 					
-					// Update the pairs record
-					// If this was the left contig, no update needs to happen, else update by the amount of sequence gained
-					if(iter->order == CORDER_RIGHT)
-					{
-						// Offset the master contig pairs by the increase in distance
-						int offset = merged.length() - c0Len;
-						UpdateMasterReads(contigID, offset, m_contigMap[contigID].seq, merged);
-					}
+					// Merge the left contig and the assembly first
+					Merge(*leftContig, *bestIter, 0, tempMerged);
 					
-					// Update the slave record
-					int offset = 0;
-					if(iter->order == CORDER_LEFT)
-					{
-						offset = merged.length() - c1Len;
-					}
-					
-					bool isFlipped = iter->orientation == CORIEN_OPP;
-					UpdateSlaveReads(iter->slaveID, contigID, offset, isFlipped, m_contigMap[iter->slaveID].seq, merged);
-					
-					// Replace the contig with the merged product
-					m_contigMap[contigID].seq = merged;
-					
-					// Erase the existance of the slave contig
-					m_contigMap.erase(iter->slaveID);
-					
-					mergedOccured = true;
+					int mergeDistance = bestAlign - bestIter->length();
+					// Merge the right contig
+					Merge(tempMerged, *rightContig, mergeDistance, merged);
+				}
+				else
+				{
+					// Merge with a gap	
+					Merge(*leftContig, *rightContig, bestLink->distance, merged);
+				}
+	
+				// Perform the merge and update the distance
+											
+				int c0Len = m_contigMap[contigID].seq.length();
+				int c1Len = m_contigMap[bestLink->slaveID].seq.length();
+						
+				// Update the reads for the master contig
+				int offset = 0;
+				if(bestLink->order == CORDER_RIGHT)
+				{
+					// Offset the master contig pairs by the increase in distance
+					offset = merged.length() - c0Len;
 				}
 				
+				UpdateMasterReads(contigID, offset, m_contigMap[contigID].seq, merged);
+						
+				// Update the slave record
+				offset = 0;
+				if(bestLink->order == CORDER_LEFT)
+				{
+					offset = merged.length() - c1Len;
+				}
+				
+				bool isFlipped = bestLink->orientation == CORIEN_OPP;
+				UpdateSlaveReads(bestLink->slaveID, contigID, offset, isFlipped, m_contigMap[bestLink->slaveID].seq, merged);
+				
+				// Replace the contig with the merged product
+				m_contigMap[contigID].seq = merged;
+				
+				// Erase the existance of the slave contig
+				m_contigMap.erase(bestLink->slaveID);
+				
+				mergedOccured = true;
+				
+				// Mark the intermediate links as repetitive so they are no longer considered
+				std::set<ContigID> exclusion;
+				for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
+				{
+					if(iter->slaveID != bestLink->slaveID)
+					{
+						m_contigMap[iter->slaveID].repetitive = true;
+					}
+				}
 			}
+			
+			printf("MERGED (%d): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
 		}
-		
-		printf("MERGED (%d): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
 	}
-	
+
 	return mergedOccured;
 }
 
 //
 // Merge two contigs using the information provided in the link data structure
 //
-int Scaffold::Merge(ContigLinkage& link, Sequence& merged)
+int Scaffold::Merge(Sequence& leftContig, Sequence& rightContig, int distance, Sequence& merged)
 {
-	Sequence& contig0 = m_contigMap.find(link.masterID)->second.seq;
-	Sequence& contig1 = m_contigMap.find(link.slaveID)->second.seq;
-	
-	printf("length (%d %d)\n", contig0.length(), contig1.length());
-	
-	if(link.orientation == CORIEN_OPP)
-	{
-		// Swap the orientation of the slave contig
-		contig1 = reverseComplement(contig1);
-	}
-	
-	Sequence leftContig;
-	Sequence rightContig;
-	if(link.order == CORDER_LEFT)
-	{
-		// The master contig is first
-		leftContig = contig0;
-		rightContig = contig1;
-	}
-	else
-	{
-		leftContig = contig1;
-		rightContig = contig0;	
-	}
-	
-
+	printf("Merging at: %d\n", distance);	
 	// Check if the contigs (potentially overlap)
-
-	if(link.distance < 0)
+	if(distance < 0)
 	{
-		int startAlign = link.distance - 4*((int)(m_stdDev / sqrt(link.numPairs)));
-		if(startAlign < -(m_kmer - 1))
-		{
-			startAlign = -(m_kmer - 1);
-		}
-		int score;
-		int alignDistance = partialAlign(leftContig, rightContig, startAlign, score);
-		
-		// Don't trust mediocre hits
-		if(score < 10)
-		{
-			alignDistance = link.distance;
-		}
-
+		distance = abs(distance);
 		// Generate the merged sequence
 		merged = leftContig;
 		
 		// Add the substring of the second sequence
-		merged.append(rightContig.substr(abs(alignDistance), rightContig.length() - abs(alignDistance)));
+		merged.append(rightContig.substr(distance, rightContig.length() - distance));
 
 		//printf("ALIGN DIST: %d\n", alignDistance);
 	}
@@ -260,39 +327,59 @@ int Scaffold::Merge(ContigLinkage& link, Sequence& merged)
 	{
 		// Positive distance, fill the gap with "N"
 		merged = leftContig;
-		merged.append(link.distance, 'N');
+		merged.append(distance, 'N');
 		merged.append(rightContig);
 	}
-	
-	
-	int distDiff = merged.length() - contig0.length();
-	
-	printf("MERGED AT: %d\n", merged.length() - (contig0.length() + contig1.length()));
-	return distDiff;
+	return distance;
 }
 
 //
-// Align the ends of two contigs based on the passed in distance and return a refined distance for the maximum overlap
-//
-int Scaffold::partialAlign(const Sequence& leftContig, const Sequence& rightContig, int startPos, int &retScore)
+// Align contigs using the input position as a guess to the alignment
+// Assumption: Contigs are from the same strand
+// The estimated position is relative to the beginning of the left contig 
+int Scaffold::alignContigs(const Sequence& leftContig, const Sequence& rightContig, int estimate, int range, int& retScore)
 {
 	int bestScore = -1000;
-	int start = startPos;
-	int bestI = start;
-	//printf("Aligning: %s with %s estimated to be %d\n", leftContig.c_str(), rightContig.c_str(), estDistance);
+	int start = estimate - range;
 	
-	for(int i = start; i < 0; i++)
+	if(start < 0)
 	{
-		int l = abs(i);
+		start = 0;
+	}
+	
+	int stop = estimate + range;
+	int leftLength = leftContig.length();
+	int rightLength = rightContig.length();
+	
+	if(stop > leftLength)
+	{
+		stop = leftContig.length();
+	}
+	
+	int bestI = start;	
+	printf("Aligning: %s with %s estimated to be %d\n", leftContig.c_str(), rightContig.c_str(), estimate);
+	
+	for(int i = start; i < stop; i++)
+	{
 		
-		// Cut off the last l bases of leftContig and the first l bases of rightContig
-		Sequence leftsub = leftContig.substr(leftContig.length() - l, l);
-		Sequence rightsub = rightContig.substr(0, l);
+		// Compute amount of overlap between the contigs
+		int overlap = leftContig.length() - i;
+		
+		// if the amount of overlap is longer than the right contig, trim the amount of overlap (the contig is a strict subset)
+		if(overlap > rightLength)
+		{
+			overlap = rightContig.length();
+		}
+		
+		// Get the subsequences
+		Sequence leftsub = leftContig.substr(i, overlap);
+		Sequence rightsub = rightContig.substr(0, overlap);
+		
 		assert(leftsub.length() == rightsub.length());
 		
 		int matched = 0;
 		int unmatched = 0;
-		for(int j = 0; j < l; j++)
+		for(int j = 0; j < overlap; j++)
 		{
 			if(leftsub[j] == rightsub[j])
 			{
@@ -304,17 +391,19 @@ int Scaffold::partialAlign(const Sequence& leftContig, const Sequence& rightCont
 			}
 		}
 		
-		int score = matched - unmatched;
-		
-		printf("ALIGNL (%d, %d): %s\n", i, score, leftsub.c_str());
-		printf("ALIGNR (%d, %d): %s\n", i, score, rightsub.c_str());
-		
+		int score = matched - unmatched;			
+
+		//printf("ALIGNL (%d, %d): %s\n", i, score, leftsub.c_str());
+		//printf("ALIGNR (%d, %d): %s\n", i, score, rightsub.c_str());
+				
 		if(score > bestScore)
 		{
 			bestScore = score;
 			bestI = i;	
-		}
+		}		
+		
 	}
+
 	retScore = bestScore;
 	return bestI;
 }
@@ -391,12 +480,13 @@ bool Scaffold::CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks)
 	bestEstimatePos.start = bestLink.distance + static_cast<int>(NUM_SIGMA * estDev);
 	bestEstimatePos.end = bestEstimatePos.start + m_contigMap[bestLink.slaveID].seq.length();
 		
-	const int CUTOFF_PAIRS = 10;
+	const int CUTOFF_PAIRS = 5;
 	
 	// For all the links that are well supported (above the threshold cutoff), check if they substationally overlap the best link
 	for(LinkIter iter = alllinks.begin(); iter != alllinks.end(); iter++)
 	{
-		if(iter->numPairs >= CUTOFF_PAIRS)
+		// Ignore the self link and any poor links
+		if(iter->numPairs >= CUTOFF_PAIRS && iter->slaveID != bestLink.slaveID)
 		{
 			// what is the minimum starting point of the current contig
 			range testPosition;
@@ -405,7 +495,8 @@ bool Scaffold::CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks)
 			testPosition.end = testPosition.start + m_contigMap[iter->slaveID].seq.length();
 			
 			int overlap = OverlapRanges(bestEstimatePos, testPosition);
-			if(-overlap > m_kmer)
+			printf("	overlap between %s and %s is %d [%d %d] [%d %d]\n", bestLink.slaveID.c_str(), iter->slaveID.c_str(), overlap, bestEstimatePos.start, bestEstimatePos.end, testPosition.start, testPosition.end);
+			if(overlap > m_kmer)
 			{
 				return false;
 			} 
@@ -464,131 +555,218 @@ int Scaffold::EstimateDistanceBetweenContigs(PairAlignVec& contigPairs, ContigOr
 	
 }
 
+// 
+// Assemble the vector of sequences
+// 
+SeqVec Scaffold::SubAssemble(SeqVec& seqs, Sequence startNode, int maxDistance)
+{
+	// Load the phase space
+	SequenceCollectionHash* pSC = new SequenceCollectionHash();
+	
+	// Add the reads to the phase space
+	assert((int)startNode.length() == SUB_ASSEMBLY_K);
+	
+	
+	// Add the starting node
+	pSC->add(startNode);
+	
+	for(SeqVecIter iter = seqs.begin(); iter != seqs.end(); iter++)
+	{
+		// Break into kmers
+		for(int i = 0; i < SUB_ASSEMBLY_K; i++)
+		{
+			Sequence kmer = iter->substr(i, SUB_ASSEMBLY_K);
+			pSC->add(kmer);
+		}
+	}	
+	
+	printf("Sub assembly loaded %d pairs\n", seqs.size());
+	
+	pSC->finalize();
+	
+	// Generate the adjacency between the sequences
+	generateAdjacency(pSC);
+	
+	extDirection dir = SENSE;
+	assemble(pSC, m_readLen, m_kmer);
+	SeqVec assemblyProducts = AssembleRecursive(pSC, dir, PackedSeq(startNode), 0, maxDistance);
+	printf("assembly returned %d sequences\n", assemblyProducts.size());
+	
+	for(SeqVecIter iter = assemblyProducts.begin(); iter != assemblyProducts.end(); iter++)
+	{
+		printf("sub assembly returned (%d) %s\n", iter->length(), iter->c_str());
+	}
+	
+	delete pSC;
+
+	return assemblyProducts;
+}
+
 //
-// Get all the pairs between the passed in contig and any other contig
+// Recursively assemble
 //
-void Scaffold::GenerateAllPairAlignments(ContigID contigID, ContigPairVecMap& cpvMap)
+SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, int d, int maxDistance)
+{
+	PackedSeq currSeq = start;
+	Sequence extSeq;
+	
+	while(true)
+	{
+		//printf("Curr node: %s\n", currSeq.decode().c_str());
+		HitRecord hr = calculateExtension(pSC, currSeq, dir);
+		if(hr.getNumHits() == 0 || d > maxDistance)
+		{
+			//printf("no hit\n");
+			SeqVec ret;
+			ret.push_back(extSeq);
+			return ret;	
+		}
+		else if(hr.getNumHits() == 1)
+		{
+			// add the extended base to the sequence
+			extSeq.append(1, hr.getFirstHit().seq.getLastBase());
+			currSeq = hr.getFirstHit().seq;
+			++d;
+		}
+		else if(hr.getNumHits() > 1)
+		{
+			++d;
+			SeqVec ret;
+			
+			for(int i = 0; i < hr.getNumHits(); ++i)
+			{
+				// TODO; Make tail recursive
+				//printf("recurring at: %d\n", d);
+				SeqVec outSeqs = AssembleRecursive(pSC, dir, hr.getHit(i).seq, d, maxDistance);
+				
+				// append the current base to the extension seq
+				Sequence temp = extSeq;
+				temp.append(1, hr.getHit(i).seq.getLastBase());				
+				
+				if(outSeqs.empty())
+				{
+					ret.push_back(temp);
+				}
+				else
+				{
+					for(SeqVecIter iter = outSeqs.begin(); iter != outSeqs.end(); iter++)
+					{
+						// build the return sequence 
+						ret.push_back(temp + *iter);
+					}					
+				}
+			}
+			return ret;
+		}
+	}
+}
+
+//
+// Get the unique pairs between the passed in contig and any other contig
+//
+void Scaffold::GenerateUniquePairAlignments(ContigID contigID, ContigPairVecMap& cpvMap)
 {
 	// Get all the reads on this contig
-	const ReadVec contigReadVec = m_contigReadMap.find(contigID)->second;
+	const ReadVec& contigReadVec = m_contigReadMap.find(contigID)->second;
 	
 	// Get all the pairs of this read
 	for(ConstRVIter rvIter = contigReadVec.begin(); rvIter != contigReadVec.end(); rvIter++)
 	{
-		PairAlign pairAlign = GetPairAlignsForRead(*rvIter);
-		if(pairAlign.pairs[0].contig != pairAlign.pairs[1].contig)
-		{
-			// Add this pair to the vector 
-			cpvMap[pairAlign.pairs[1].contig].push_back(pairAlign);
+		// Generate the pair alignment
+		PairAlign pairAlign;
+		bool usable = GetUniquePairAlign(*rvIter, pairAlign);
+		
+		// Is the pair unique and both ends are aligned?
+		if(usable)
+		{	
+			if(pairAlign.pairs[0].contig != pairAlign.pairs[1].contig)
+			{		
+				// Add this pair to the vector 
+				cpvMap[pairAlign.pairs[1].contig].push_back(pairAlign);
+			}
 		}
 	}
-	
 	return;
 	
 }
 
 //
-// Get the pairs between the contigs
+// Get all the reads of the pairs that are of the specified complement
 //
-void Scaffold::GeneratePairAlignmentsBetweenContigs(ContigID contigID0, ContigID contigID1, PairAlignVec& paVec)
+void Scaffold::GetEndPairs(ContigID contigID, bool rcPairs, SeqVec& outSeqs)
 {
-	// Get all the reads on this contig
-	const ReadVec contigReadVec = m_contigReadMap.find(contigID0)->second;
-	
+	const ReadVec contigReadVec = m_contigReadMap.find(contigID)->second;
+
 	// Get all the pairs of this read
 	for(ConstRVIter rvIter = contigReadVec.begin(); rvIter != contigReadVec.end(); rvIter++)
 	{
-		PairAlign pairAlign = GetPairAlignsForRead(*rvIter);
-		if(pairAlign.pairs[0].contig == contigID0 && pairAlign.pairs[1].contig == contigID1)
+		ReadID readID = *rvIter;
+		ReadID pairID = GetPairID(readID);
+		
+		AlignVec readAligns = GetAlignmentsForRead(readID);
+		AlignVec pairAligns = GetAlignmentsForRead(pairID);
+		
+		assert(!readAligns.empty());
+		
+		// skip reads that are ambigiously mapped to this contig
+		if(readAligns.size() > 1)
 		{
-			// Add this pair to the vector 
-			paVec.push_back(pairAlign);
+			continue;
 		}
-	}
-	
-	return;	
-	
+		
+		ReadAlign refAlign = readAligns.front();
+		
+		// Get the alignment of the pair, if its not on the same contig and its facing in the correct direction, add it to the vector
+		if(!pairAligns.empty())
+		{
+			ReadAlign pairAlign = pairAligns.front();
+			if(refAlign.contig != pairAlign.contig)
+	    	{
+			    // Check the pair is facing in the correct direction
+			    if(refAlign.isRC == rcPairs)
+			    {
+					//printf("pair found on contig %s (%s)\n", pairAlign.pairs[1].contig.c_str(), pairAlign.pairs[1].seq.c_str());
+					outSeqs.push_back(pairAlign.seq);
+
+				}
+	    	}				
+		}
+
+    }  
 }
 
 //
-// Refine links
+// Populate the pairAlign data structure if the pairs are unique and both are aligned
+// Returns true if unique/aligned, false otherwise
 //
-bool Scaffold::RefineLinkages(LinkVec& links)
+bool Scaffold::GetUniquePairAlign(ReadID readID, PairAlign& pairAlign)
 {
-	assert(false);
-	bool seqRefined = false;
-	for(LinkIter strIter = links.begin(); strIter != links.end(); strIter++)
+	ReadID pairID = GetPairID(readID);
+	
+	AlignVec readAligns = GetAlignmentsForRead(readID);
+	AlignVec pairAligns = GetAlignmentsForRead(pairID);
+	
+	assert(!readAligns.empty());
+	
+	// Dont use ambigious pairs
+	if(readAligns.empty() || pairAligns.empty() || readAligns.size() > 1 || pairAligns.size() > 1)
 	{
-		if(strIter->type == LT_STRONG)
-		{
-			Sequence strongContig = m_contigMap[strIter->slaveID].seq;
-				
-			int strongStart = strIter->distance;
-			int strongEnd = strongStart + strongContig.length();
-			
-			// Iterate over the strong links, attempting to refine the position of weak links
-			for(LinkIter subIter = links.begin(); subIter != links.end(); subIter++)
-			{
-				//Skip if its the same link or another strong link
-				if(strIter == subIter || subIter->type == LT_STRONG)
-				{
-					continue;
-				}
-				
-
-				Sequence weakContig =  m_contigMap[subIter->slaveID].seq;				
-				
-				int subStart = subIter->distance;
-				//int subEnd = subStart + weakContig.length();
-				
-				// Check if these contigs overlap within a reasonable tolerance
-				//bool posOverlap = (strongStart > subStart) ? strongStart < subEnd : subStart < strongEnd; 
-
-				if(strIter->orientation != subIter->orientation)
-				{
-					weakContig = reverseComplement(weakContig);
-				}
-				
-				Sequence lcontig;
-				Sequence rcontig;
-				if(subStart < strongStart)
-				{
-					lcontig = weakContig;
-					rcontig = strongContig;
-				}
-				else
-				{
-					lcontig = strongContig;
-					rcontig = weakContig;	
-					
-				}
-				
-
-				int	startAlign = -(m_kmer - 1);			
-				int score;
-				int overlap = partialAlign(lcontig, rcontig, startAlign, score);
-				printf("Refine: alignment between (%s, %s) produces overlap of %d\n", subIter->slaveID.c_str(), strIter->slaveID.c_str(), overlap);
-				// Is the overlap sufficient?
-				if(abs(overlap) > 15)
-				{
-					if(subStart < strongStart)
-					{
-						subIter->distance = strongStart - (weakContig.length() + overlap);
-					}
-					else
-					{
-						subIter->distance = strongEnd + overlap;
-					}
-					subIter->type = LT_STRONG;
-					printf("REFINED ALIGNMENT OF %s using %s to distance: %d\n", subIter->slaveID.c_str(), strIter->slaveID.c_str(), subIter->distance);
-					seqRefined = true;
-				}		
-			}
-		}
+		pairAlign.invalid = true;
+		return false;
 	}
-	return seqRefined;
+	else
+	{
+		// Create the pair align structure
+		pairAlign.pairs[0] = readAligns.front();
+		pairAlign.pairs[1] = pairAligns.front();
+		pairAlign.invalid = false;
+		return true;
+	}
 }
 
+//
+// Perform a maximum likelihood estimate over the pdf and input distribution
+//
 int Scaffold::MaxLikelihoodEst(std::vector<int>& pairDistance, PDF& pdf)
 {
 	double maxL = -999999;
@@ -623,7 +801,7 @@ double Scaffold::ComputeLikelihood(int d, std::vector<int>& testDist, PDF& pdf)
 		double p;
 		
 		// Is this value in range of the pdf?
-		if(val >= 0 && val < pdf.size())
+		if(val >= 0 && val < (int)pdf.size())
 		{
 			p = pdf[val];	
 		}
@@ -711,7 +889,15 @@ void Scaffold::UpdateMasterReads(ContigID contigID, int offset, const Sequence& 
 	for(RVIter iter =  reads.begin(); iter != reads.end(); iter++)
 	{
 		//Sequence o = origSeq.substr(m_alignMap[*iter].pos, m_readLen);
-		m_alignMap[*iter].pos += offset;
+		AlignVec& aligns = m_alignMap[*iter];
+		for(AVIter alignIter = aligns.begin(); alignIter != aligns.end(); alignIter++)
+		{
+			if(alignIter->contig == contigID)
+			{
+				alignIter->pos += offset;
+			}
+		}
+		
 		//Sequence n = merged.substr(m_alignMap[*iter].pos, m_readLen);
 		//if(o != n)
 		//{
@@ -730,20 +916,24 @@ void Scaffold::UpdateSlaveReads(ContigID slaveID, ContigID masterID, int offset,
 	for(RVIter iter =  reads.begin(); iter != reads.end(); iter++)
 	{
 		//Sequence o = origSeq.substr(m_alignMap[*iter].pos, m_readLen);
-		int origPos = m_alignMap[*iter].pos;
-		if(isFlipped)
-		{
-			// flip the reads position 
-			m_alignMap[*iter].pos = origSeq.length() - origPos - m_readLen;
-			m_alignMap[*iter].isRC = !m_alignMap[*iter].isRC;
+		AlignVec& aligns = m_alignMap[*iter];
+		for(AVIter alignIter = aligns.begin(); alignIter != aligns.end(); alignIter++)
+		{		
+			int origPos = alignIter->pos;
+			if(isFlipped)
+			{
+				// flip the reads position 
+				alignIter->pos = origSeq.length() - origPos - m_readLen;
+				alignIter->isRC = !alignIter->isRC;
+			}
+			
+			// Offset the position
+			alignIter->pos += offset;
+			alignIter->contig = masterID;
+			
+			// Add the read id to the master contig
+			m_contigReadMap[masterID].push_back(*iter);
 		}
-		
-		// Offset the position
-		m_alignMap[*iter].pos += offset;
-		m_alignMap[*iter].contig = masterID;
-		
-		// Add the read to the master contig
-		m_contigReadMap[masterID].push_back(*iter);
 		
 		//Sequence n = merged.substr(m_alignMap[*iter].pos, m_readLen);
 		//printf("%s == %s (%d %d %d)\n", o.c_str(), n.c_str(), offset, isFlipped, origPos);
@@ -784,22 +974,24 @@ void Scaffold::GenerateEmpDistribution()
 		// Iterate over the reads, checking which ones have a pair on the same contig
 		for(ConstRVIter iter2 = readVec.begin(); iter2 != readVec.end(); iter2++)
 		{
-			ReadID r1ID = *iter2;
-			PairAlign pairAlign = GetPairAlignsForRead(r1ID);
-			
-			// Ensure these reads are on the same contig and have opposite orientations
-			if(pairAlign.pairs[0].contig == pairAlign.pairs[1].contig && pairAlign.pairs[0].isRC != pairAlign.pairs[1].isRC)
+			// Generate the pair alignment
+			PairAlign pairAlign;
+			bool usable = GetUniquePairAlign(*iter2, pairAlign);
+			if(usable)
 			{
-				int distance;
-				if(pairAlign.pairs[0].pos < pairAlign.pairs[1].pos)
+				if(pairAlign.pairs[0].contig == pairAlign.pairs[1].contig && pairAlign.pairs[0].isRC != pairAlign.pairs[1].isRC)
 				{
-					distance = pairAlign.pairs[1].pos - pairAlign.pairs[0].pos;
+					int distance;
+					if(pairAlign.pairs[0].pos < pairAlign.pairs[1].pos)
+					{
+						distance = pairAlign.pairs[1].pos - pairAlign.pairs[0].pos;
+					}
+					else
+					{
+						distance = pairAlign.pairs[0].pos - pairAlign.pairs[1].pos;
+					}
+					distribution[distance]++;
 				}
-				else
-				{
-					distance = pairAlign.pairs[0].pos - pairAlign.pairs[1].pos;
-				}
-				distribution[distance]++;
 			}
 		}
 	}
@@ -892,33 +1084,32 @@ range Scaffold::GenerateRange(int distance, int size, int n, int numDevs)
 	return r;
 }
 
-PairAlign Scaffold::GetPairAlignsForRead(ReadID id)
+//
+//
+//
+AlignVec Scaffold::GetAlignmentsForRead(ReadID id)
 {
-	
 	PairAlign pairAlign;
-		
-	ConstPMIter r2Iter = m_pairMap.find(id);
-	ReadID id2;
-	if(r2Iter != m_pairMap.end())
-	{
-		id2 = r2Iter->second;
-	}
-	else
-	{
-		// Not found (this shouldnt happen)
-		assert(false);
-	}
 	
 	// Get the read alignments
 	ConstAMIter raIter = m_alignMap.find(id);
 	assert(raIter != m_alignMap.end());
-	pairAlign.pairs[0] = raIter->second;
-	
-	raIter = m_alignMap.find(id2);
-	assert(raIter != m_alignMap.end());
-	pairAlign.pairs[1] = raIter->second;
-	
-	return pairAlign;
+	return raIter->second;
+}
+
+
+ReadID Scaffold::GetPairID(ReadID id)
+{
+	if(id % 2 == 0)
+	{
+		// even id
+		return (id + 1);
+	}
+	else
+	{
+		// odd id
+		return (id - 1);
+	}
 }
 
 //
@@ -930,7 +1121,7 @@ void Scaffold::GenerateGraph(ContigID contigID)
 	// Get all the pair alignments for this contig
 	// It will generate a mapping of contig pairs (c1,c2) to a vector of the pairs supporting the contigs
 	// This function populates the cpvMap structure
-	GenerateAllPairAlignments(contigID, cpvMap);
+	GenerateUniquePairAlignments(contigID, cpvMap);
 	
 	ofstream file("contigGraph.dot");
 	file << "digraph G { size = \"8.5, 11.0!\"; ratio = \"fill\";" << endl;
@@ -950,7 +1141,7 @@ void Scaffold::GenerateGraph(ContigID contigID)
 		OutputGVizNode(file, link);
 		//continue;
 		ContigPairVecMap cpvMap2;
-		GenerateAllPairAlignments(link.slaveID, cpvMap2);
+		GenerateUniquePairAlignments(link.slaveID, cpvMap2);
 		
 		for(CPVMIter cpvmIter2 = cpvMap2.begin(); cpvmIter2 != cpvMap2.end(); cpvmIter2++)
 		{
@@ -1016,27 +1207,66 @@ void Scaffold::ReadPairs(std::string file)
 		int pos2;
 		int rc1;
 		int rc2;
+		Sequence seq1;
+		Sequence seq2;
 		
-		fileHandle >> id1 >> c1 >> pos1 >> rc1 >> id2 >> c2 >> pos2 >> rc2;
+		fileHandle >> id1 >> c1 >> pos1 >> rc1 >> seq1 >> id2 >> c2 >> pos2 >> rc2 >> seq2;
 
 		// Check if this read was valid
 		if(fileHandle.eof())
 		{
 			continue;
 		}
-		ReadAlign ra1 = BuildReadAlign(id1, c1, pos1, rc1);
-		ReadAlign ra2 = BuildReadAlign(id2, c2, pos2, rc2);
+		
+		// don't record the sequences for pairs on the same chromosomes (a bit hacky of a way to save memory)
+		if(c1 == c2)
+		{
+			seq1 = "";
+			seq2 = "";
+		}
+		
+		ReadAlign ra1 = BuildReadAlign(id1, c1, pos1, rc1, seq1);
+		ReadAlign ra2 = BuildReadAlign(id2, c2, pos2, rc2, seq2);
 		
 		// Set up all the mappings
-		m_alignMap[id1] = ra1;
-		m_alignMap[id2] = ra2;
-		
-		m_pairMap[id1] = id2;
-		m_pairMap[id2] = id1;
+		m_alignMap[id1].push_back(ra1);
+		m_alignMap[id2].push_back(ra2);
 		
 		m_contigReadMap[c1].push_back(id1);
 		m_contigReadMap[c2].push_back(id2);
 	}
+}
+
+
+void Scaffold::ReadAlignments(std::string file)
+{
+	// Read in the alignments file
+	std::ifstream fileHandle(file.c_str());	
+	while(!(fileHandle.eof() || fileHandle.peek() == EOF))
+	{
+		//fileHandle.getline(buffer, MAX_LINE_LEN);	
+		ReadID id;
+		std::string c;
+		int pos;
+		int rc;
+		Sequence seq;
+
+		fileHandle >> id >> c >> pos >> rc >> seq;
+
+		// Check if this read was valid
+		if(fileHandle.eof())
+		{
+			continue;
+		}
+
+		ReadAlign ra = BuildReadAlign(id, c, pos, rc, seq);
+		
+		// Set up all the mappings
+		m_alignMap[id].push_back(ra);
+		
+		m_contigReadMap[c].push_back(id);
+	}
+	
 }
 
 //
@@ -1066,6 +1296,7 @@ void Scaffold::ReadContigs(std::string file)
 		
 		m_contigMap[contigID].seq = seq;
 		m_contigMap[contigID].merged = false;
+		m_contigMap[contigID].repetitive = false;
 	}
 	
 }
@@ -1074,13 +1305,14 @@ void Scaffold::ReadContigs(std::string file)
 // Build a readalign structure
 //
 
-ReadAlign Scaffold::BuildReadAlign(ReadID id, std::string contig, int position, bool isRC)
+ReadAlign Scaffold::BuildReadAlign(ReadID id, std::string contig, int position, bool isRC, Sequence seq)
 {
 	ReadAlign ra;
 	ra.id = id;
 	ra.contig = contig;
 	ra.pos = position;
 	ra.isRC = isRC;	
+	ra.seq = seq;
 	return ra;
 }
 

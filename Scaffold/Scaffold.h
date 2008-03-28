@@ -5,6 +5,8 @@
 #include <fstream>
 #include <map>
 #include "CommonDefs.h"
+#include "ISequenceCollection.h"
+#include "AssemblyAlgorithms.h"
 
 // CORIEN_SAME = the contigs are from the same strand
 // CORIEN_OPP = the contigs are from different strands
@@ -42,7 +44,8 @@ enum LinkType
 struct Contig
 {
 	Sequence seq;
-	bool merged;	
+	bool merged;
+	bool repetitive;
 };
 
 typedef int ReadID;
@@ -53,12 +56,16 @@ struct ReadAlign
 	ReadID id;
 	std::string contig;
 	int pos;
-	bool isRC;	
+	bool isRC;
+	
+	// Only filled in for reads that are not paired in the same contig (to save memory)
+	Sequence seq;
 };
 
 struct PairAlign
 {
 	ReadAlign pairs[2];
+	bool invalid;
 };
 
 struct ContigLinkage
@@ -78,12 +85,14 @@ struct ContigLinkage
 
 // Typedefs
 typedef std::vector<PairAlign> PairAlignVec;
+typedef std::vector<ReadAlign> AlignVec;
 typedef std::map<ContigID, Contig> ContigMap;
-typedef std::map<ReadID, ReadAlign> AlignmentMap;
+typedef std::map<ReadID, AlignVec> AlignmentMap;
 typedef std::map<ReadID, ReadID> PairingMap;
 typedef std::vector<ReadID> ReadVec;
 typedef std::map<ContigID, ReadVec> ContigReadMap;
 typedef std::vector<ContigLinkage> LinkVec;
+typedef std::vector<Sequence> SeqVec;
 
 typedef std::map<ContigID, PairAlignVec> ContigPairVecMap;
 
@@ -101,6 +110,8 @@ typedef ContigReadMap::iterator CRMIter;
 typedef ContigPairVecMap::iterator CPVMIter;
 typedef PairAlignVec::iterator PAVIter;
 typedef LinkVec::iterator LinkIter;
+typedef SeqVec::iterator SeqVecIter;
+typedef AlignVec::iterator AVIter;
 
 typedef ContigMap::const_iterator ConstCMIter;
 typedef AlignmentMap::const_iterator ConstAMIter;
@@ -113,11 +124,12 @@ class Scaffold
 	
 	
 	public:
-		Scaffold(std::string pairsFile, std::string contigFile, int readLen, int kmer);
+		Scaffold(std::string alignFile, std::string contigFile, int readLen, int kmer);
 		
 		//IO Functions
 		void ReadPairs(std::string file);
-		void ReadContigs(std::string);
+		void ReadAlignments(std::string file);
+		void ReadContigs(std::string file);
 		
 		// Generate the empirical distribution of pair distances
 		void GenerateEmpDistribution();
@@ -137,20 +149,29 @@ class Scaffold
 		void GenerateGraph(ContigID contigID);
 		
 		// Merge contigs
-		int Merge(ContigLinkage& link, Sequence& merged);
+		int Merge(Sequence& leftContig, Sequence& rightContig, int distance, Sequence& merged);
+		
+		// Sub assemble the paired reads
+		SeqVec SubAssemble(SeqVec& seqs, Sequence startNode, int maxDistance);
+		
+		// Recursively assemble
+		SeqVec AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, int d, int maxDistance);
 		
 		// Check if the links are consistent with the chosen best link
 		bool CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks);
+
+		// Align contigs using the input position as a guess to the alignment
+		int alignContigs(const Sequence& leftContig, const Sequence& rightContig, int guess, int range, int& retScore);
 		
-		// Do a small-scale alignment of the contigs based on the estimated distance and the error
-		int partialAlign(const Sequence& leftContig, const Sequence& rightContig, int start, int &retScore);
+		// Get all the reads of the pairs that are of the specified complement
+		void GetEndPairs(ContigID contigID, bool compPairs, SeqVec& outSeqs);
 		
-		// Update the positions of the pairs on the master contig
+		// Update the positions of the reads on the master contig
 		void UpdateMasterReads(ContigID contigID, int offset, const Sequence& origSeq, const Sequence& merged);
-		
-		// Update the positions of the pairs on the slave contig
+
+		// Update the positions of the reads on the slave contig
 		void UpdateSlaveReads(ContigID slaveID, ContigID masterID, int offset, bool isFlipped, const Sequence& origSeq, const Sequence& merged);
-		
+	
 		// Determine the orientation between contigs
 		ContigOrientation DetermineOrientation(PairAlignVec& contigPairs);
 
@@ -164,10 +185,11 @@ class Scaffold
 		int EstimateDistanceBetweenContigs(PairAlignVec& contigPairs, ContigOrder order, Sequence& contig1, Sequence& contig2);
 		
 		// Get all the pairs between the specific contig and any other contigs and places them in cpvMap
-		void GenerateAllPairAlignments(ContigID contigID, ContigPairVecMap& cpvMap);
+		void GenerateUniquePairAlignments(ContigID contigID, ContigPairVecMap& cpvMap);
 		
-		// This function generates all the pairs shared between the specified contigs and places them in paVec
-		void GeneratePairAlignmentsBetweenContigs(ContigID contigID0, ContigID contigID1, PairAlignVec& paVec);
+		// Populate the pairAlign data structure if the pairs are unique and both are aligned
+		// Returns true if unique/aligned, false otherwise
+		bool GetUniquePairAlign(ReadID readID, PairAlign& pairAlign);
 		
 		// Maximum Likelihood Estimator functions
 		int MaxLikelihoodEst(std::vector<int>& pairDistance, PDF& pdf);
@@ -175,11 +197,14 @@ class Scaffold
 		// Compute the likelihood of the distribution
 		double ComputeLikelihood(int d, std::vector<int>& testDist, PDF& pdf);
 		
-		// Get the PairAlign structure for the read of a given ID
-		PairAlign GetPairAlignsForRead(ReadID id);
+		// Get the alignments for a particular read
+		AlignVec GetAlignmentsForRead(ReadID id);
+		
+		// Get the ID of the pair of the read
+		ReadID GetPairID(ReadID id);
 		
 		// Build an alignment structure
-		ReadAlign BuildReadAlign(ReadID id, std::string contig, int position, bool isRC);
+		ReadAlign BuildReadAlign(ReadID id, std::string contig, int position, bool isRC, Sequence seq);
 		
 		// Print a read alignment
 		void PrintReadAlign(ReadAlign& ra);
@@ -201,7 +226,7 @@ class Scaffold
 		
 		// All the mapping datastructures needed
 		AlignmentMap m_alignMap;
-		PairingMap m_pairMap; 
+		//PairingMap m_pairMap; 
 		ContigReadMap m_contigReadMap;
 		ContigMap m_contigMap;
 		
@@ -212,6 +237,7 @@ class Scaffold
 		int m_kmer;
 		
 		static const int STRONG_LINK_CUTOFF = 10;
+		static const int SUB_ASSEMBLY_K = 12;
 };
 
 

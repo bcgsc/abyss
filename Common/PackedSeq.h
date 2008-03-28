@@ -1,6 +1,7 @@
 #ifndef PACKEDSEQ_H
 #define PACKEDSEQ_H
 
+//#define SAVE_MEM
 #include <list>
 #include "CommonUtils.h"
 #include "Sequence.h"

@@ -70,8 +70,6 @@ bool Reader::readAPB(const char* filename, PrbVector& outPrbs) const
 	}
 	
 	char id[SEQUENCE_ID_LENGTH];
-	int x;
-	int y;
 	
 	while(!inFile.eof() && inFile.peek() != EOF)
 	{

@@ -45,7 +45,7 @@ int Prb::getValue(const char base) const
 
 int Prb::getValue(const int index) const
 {
-	assert(index < m_values.size());
+	assert(index < (int)m_values.size());
 	return m_values[index];	
 }
 
@@ -79,6 +79,6 @@ int Prb::baseToIndex(char base)
 int Prb::getOrderStat(int rank) const
 {
 	rank -= 1;
-	assert(rank < m_sortedValues.size());
+	assert(rank < (int)m_sortedValues.size());
 	return m_sortedValues[rank];
 }

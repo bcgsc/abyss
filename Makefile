@@ -67,7 +67,7 @@ CC = g++
 
 INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
-OPTIMIZE = -O2 -Wall -Wno-sign-compare
+OPTIMIZE = -O2 -Wall
 #64BIT = -m64
 #DEBUG= -g -D DEBUG -Wall -Wno-sign-compare
 #PROFILE = -pg

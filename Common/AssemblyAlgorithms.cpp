@@ -297,7 +297,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			HitRecord hr = calculateExtension(seqCollection, currSeq, dir);
 			HitRecord oppHr = calculateExtension(seqCollection, currSeq, oppositeDir);
 			
-			if(branchElements.size() == MAX_DEAD_LENGTH + 1 )
+			if((int)branchElements.size() == MAX_DEAD_LENGTH + 1 )
 			{
 				// no ext
 				stop = true;
@@ -324,7 +324,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		}
 		
 		//printf("	branch has size: %d\n", branchElements.size());
-		if(branchElements.size() <= MAX_DEAD_LENGTH && branchElements.size() > 0)
+		if((int)branchElements.size() <= MAX_DEAD_LENGTH && (int)branchElements.size() > 0)
 		{
 			//printf("		removing\n");
 			numBranchesRemoved++;
