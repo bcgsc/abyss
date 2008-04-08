@@ -1,0 +1,15 @@
+noinst_LIBRARIES = libdatalayer.a
+
+libdatalayer_a_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/Parallel
+
+libdatalayer_a_SOURCES = \
+	FastaReader.cpp FastaReader.h \
+	FastaWriter.cpp FastaWriter.h \
+	IFileReader.h IFileWriter.h \
+	ISequenceCollection.h \
+	PackedSeqReader.cpp PackedSeqReader.h \
+	PackedSeqWriter.cpp PackedSeqWriter.h \
+	Reader.cpp Reader.h \
+	SequenceCollection.cpp SequenceCollection.h \
+	SequenceCollectionHash.cpp SequenceCollectionHash.h \
+	Writer.cpp Writer.h
