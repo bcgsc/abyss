@@ -1,13 +1,13 @@
-bin_PROGRAMS = abyss
+bin_PROGRAMS = ABYSS
 
-abyss_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
+ABYSS_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/Parallel
 
-abyss_LDFLAGS = -L$(top_builddir)/Common -L$(top_builddir)/DataLayer
+ABYSS_LDFLAGS = -L$(top_builddir)/Common -L$(top_builddir)/DataLayer
 
-abyss_LDADD = -lcommon -ldatalayer
+ABYSS_LDADD = -lcommon -ldatalayer
 
-abyss_SOURCES = \
+ABYSS_SOURCES = \
 	Abyss.cpp Abyss.h \
 	Path.cpp Path.h \
 	PathDriver.cpp PathDriver.h
