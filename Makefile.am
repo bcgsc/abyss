@@ -1,1 +1,1 @@
-SUBDIRS = Common DataLayer ABYSS
+SUBDIRS = Common DataLayer ABYSS Scaffold
