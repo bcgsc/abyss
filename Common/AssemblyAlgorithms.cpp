@@ -1,6 +1,5 @@
 #include "AssemblyAlgorithms.h"
 
-std::ofstream alignments("alignments.txt", std::ios::out);
 //
 // Function to load sequences into the collection
 //
@@ -96,6 +95,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 {
 	printf("splitting ambiguous reads\n");
 	int count = 0;
+	int numSplit = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
@@ -112,10 +112,148 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 			if(hr.getNumHits() > 1)
 			{
 				removeExtensionsToSequence(seqCollection, *iter, dir);
-				seqCollection->clearExtensions(*iter, dir);				
+				seqCollection->clearExtensions(*iter, dir);	
+				numSplit++;			
 			}
 		}
+		seqCollection->pumpNetwork();
 	}
+	printf("Split %d ambiguous nodes\n", numSplit);
+}
+
+void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
+{
+	printf("removing loops caused by single base ambiguity\n");
+	int count = 0;
+	int numPopped = 0;
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		/*PackedSeq testSeq("GCTGGCACCACCACCCCTGGCCACCCCAG");
+		if(*iter != testSeq && *iter != reverseComplement(testSeq))
+		{
+			continue;
+		}
+*/
+		if(count % 1000000 == 0)
+		{
+			printf("checked %d for bubbles\n", count);
+		}
+		count++;
+		
+		unsigned int expectedBubbleSize = 2*(kmerSize + 1);
+		
+		for(int i = 0; i <= 1; i++)
+		{
+			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			HitRecord initHR = calculateExtension(seqCollection, *iter, dir);
+
+			if(initHR.getNumHits() == 2)
+			{
+				//printf("Found potential bubble\n");
+				// Found a potential bubble, examine each branch
+				bool stop = false;
+				PSequenceVector branches[2];
+				
+				// Add the initial sequences to the branch
+				for(int j = 0; j <= 1; ++j)
+				{
+					branches[j].push_back(initHR.getHit(j).seq);
+				}
+				
+				bool bubble = false;
+				// Iterate over the branches
+				while(!stop)
+				{
+					for(int j = 0; j <= 1; ++j)
+					{
+						PackedSeq currSeq = branches[j].back();
+						// Check the extension of this sequence
+						HitRecord bubHR = calculateExtension(seqCollection, currSeq, dir);
+						if(bubHR.getNumHits() == 1)
+						{
+							// single extension
+							branches[j].push_back(bubHR.getFirstHit().seq);
+						}
+						else
+						{
+							/*
+							if(bubHR.getNumHits() == 0)
+							{
+								printf("noext stop\n");
+							}
+							else
+							{
+								printf("ambi stop at %d\n", branches[j].size());
+							}
+							*/
+							// If there is no extension or an ambiguous extension, terminate
+							stop = true;
+							bubble = false;
+						}
+					}
+					
+					// Check the stop conditions
+					
+					// Check if the sequences are the same. Note this requires the bubble paths to be the same length which is the case of snp/error bubbles but
+					// not indel bubbles
+					if(branches[0].back() == branches[1].back() || reverseComplement(branches[0].back()) == branches[1].back())
+					{
+						// The paths have merged back together, this is a bubble
+						stop = true;
+						bubble = true;
+					}
+					
+					if(branches[0].size() > expectedBubbleSize)
+					{
+						//printf("bubble too long stop\n");
+						stop = true;
+						bubble = false;
+					}								
+				}
+				
+				/*printf("Bubble found of size %d\n", branches[0].size());
+				for(int j = 0; j <= 1; ++j)
+				{
+					printf("Path %d:\n", j);
+					for(PSequenceVectorIterator bubIter = branches[j].begin(); bubIter != branches[j].end(); bubIter++)
+					{
+						printf("	%s\n", bubIter->decode().c_str());
+					}
+				}				
+				*/
+				// Was a bubble found?
+				if(bubble)
+				{
+					// Remove the bubble (arbitrary decision on which one for now)
+					int removeIndex = 1;
+					
+					// Stop removal at the second last sequence
+					PSequenceVectorIterator endIter = branches[removeIndex].end() - 1;
+					for(PSequenceVectorIterator bubIter = branches[removeIndex].begin(); bubIter != endIter; bubIter++)
+					{
+						removeSequenceAndExtensions(seqCollection, *bubIter);
+					}
+					numPopped++;	
+					
+					printf("Bubble found of size %d\n", branches[0].size());
+					for(int j = 0; j <= 1; ++j)
+					{
+						printf("Path %d:\n", j);
+						for(PSequenceVectorIterator bubIter = branches[j].begin(); bubIter != branches[j].end(); bubIter++)
+						{
+							printf("	%s\n", bubIter->decode().c_str());
+						}
+					}
+					
+				}
+
+		
+			}
+		}
+		seqCollection->pumpNetwork();
+	}
+	printf("Popped %d bubbles\n", numPopped);	
 }
 
 //
@@ -506,21 +644,21 @@ Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, 
 	{
 		contig.append(1, asIter->seq.getFirstBase());
 		
-		PrintAlignmentForSeq(seqCollection, readsAligned, asIter->seq, contigID, position, readLen, kmerSize);
+		//PrintAlignmentForSeq(seqCollection, readsAligned, asIter->seq, contigID, position, readLen, kmerSize);
 
 		position++;
 	}
 	
 	// output the current sequence itself
 	contig.append(originalSeq.decode());
-	PrintAlignmentForSeq(seqCollection, readsAligned, originalSeq, contigID, position, readLen, kmerSize);
+	//PrintAlignmentForSeq(seqCollection, readsAligned, originalSeq, contigID, position, readLen, kmerSize);
 	position++;
 	
 	// output the sense extensions
 	for(HitVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
 	{
 		contig.append(1, sIter->seq.getLastBase());
-		PrintAlignmentForSeq(seqCollection, readsAligned, sIter->seq, contigID, position, readLen, kmerSize);
+		//PrintAlignmentForSeq(seqCollection, readsAligned, sIter->seq, contigID, position, readLen, kmerSize);
 		position++;		
 	}	
 	return contig;
@@ -553,9 +691,27 @@ void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int cont
 			{
 				truePosition = position - (readLen - kmerSize - iter->second);
 			}
-	
-			alignments << iter->first << " " << contig << " " << truePosition << " " << isRC << " " << s << std::endl;
+			assert(false);
+			//alignments << iter->first << " " << contig << " " << truePosition << " " << isRC << " " << s << std::endl;
 			readsAligned.insert(numID);
 		}
 	}
+}
+
+//
+// Write the sequences out to a file
+//
+void outputSequences(const char* filename, ISequenceCollection* pSS)
+{
+	FastaWriter writer(filename);
+	SequenceCollectionIterator endIter  = pSS->getEndIter();
+	int count = 0;
+	for(SequenceCollectionIterator iter = pSS->getStartIter(); iter != endIter; ++iter)
+	{
+		if(!pSS->checkFlag(*iter, SF_DELETE))
+		{
+			writer.WriteSequence(*iter, count);
+			count++;
+		}
+	}	
 }

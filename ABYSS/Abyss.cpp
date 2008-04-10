@@ -56,6 +56,11 @@ int main(int argc, char** argv)
 		performTrim(pSC, readLen, kmerSize);
 	}
 	
+	outputSequences("trimmed.fa", pSC);
+	
+	// Remove bubbles
+	popBubbles(pSC, kmerSize);
+
 	splitAmbiguous(pSC);
 	
 	assemble(pSC, readLen, kmerSize);
@@ -66,20 +71,6 @@ int main(int argc, char** argv)
 }
 
 /*
-void outputSequences(const char* filename, AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
-{
-	FastaWriter writer(filename);
-
-	for(SequenceCollectionIter iter = pSS->getStartIter(); iter != pSS->getEndIter(); iter++)
-	{
-		if(!pSS->checkSequenceFlag(*iter, SF_DELETE))
-		{
-			writer.WriteSequence(*iter);
-		}
-	}		
-}
-
-
 void outputBranchSizes(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	 
 	static int trimNum = 0;

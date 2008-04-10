@@ -19,12 +19,8 @@ class Reader
 		// read in a fasta file and output the packed sequences into a vector 
 		bool readFasta(const char* filename, PSequenceVector& outSequences) const;
 		
-		// read in an apb file and output the prb values into the map (id->prbvals)
-		bool readAPB(const char* filename, PrbVector& outPrbs) const;
-		
 		// read in a phase space file
 		bool readPhaseSpaceBinFile(const char* filename, PhaseSpace& phaseSpace) const;
-	
 };
 
 #endif

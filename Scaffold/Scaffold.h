@@ -41,25 +41,12 @@ enum LinkType
 	LT_REMOVED
 };
 
-struct Contig
-{
-	Sequence seq;
-	bool merged;
-	bool repetitive;
-};
-
-typedef int ReadID;
-typedef std::string ContigID;
-
 struct ReadAlign
 {
 	ReadID id;
-	std::string contig;
+	ContigID contig;
 	int pos;
 	bool isRC;
-	
-	// Only filled in for reads that are not paired in the same contig (to save memory)
-	Sequence seq;
 };
 
 struct PairAlign
@@ -86,11 +73,11 @@ struct ContigLinkage
 // Typedefs
 typedef std::vector<PairAlign> PairAlignVec;
 typedef std::vector<ReadAlign> AlignVec;
-typedef std::map<ContigID, Contig> ContigMap;
+
 typedef std::map<ReadID, AlignVec> AlignmentMap;
 typedef std::map<ReadID, ReadID> PairingMap;
-typedef std::vector<ReadID> ReadVec;
-typedef std::map<ContigID, ReadVec> ContigReadMap;
+typedef std::set<ReadID> ReadSet;
+typedef std::map<ContigID, ReadSet> ContigReadMap;
 typedef std::vector<ContigLinkage> LinkVec;
 typedef std::vector<Sequence> SeqVec;
 
@@ -102,10 +89,9 @@ typedef std::map<int, int> histogram;
 
 
 // Iterators
-typedef ContigMap::iterator CMIter;
 typedef AlignmentMap::iterator AMIter;
 typedef PairingMap::iterator PMIter;
-typedef ReadVec::iterator RVIter;
+typedef ReadSet::iterator RSIter;
 typedef ContigReadMap::iterator CRMIter;
 typedef ContigPairVecMap::iterator CPVMIter;
 typedef PairAlignVec::iterator PAVIter;
@@ -113,20 +99,19 @@ typedef LinkVec::iterator LinkIter;
 typedef SeqVec::iterator SeqVecIter;
 typedef AlignVec::iterator AVIter;
 
-typedef ContigMap::const_iterator ConstCMIter;
+
 typedef AlignmentMap::const_iterator ConstAMIter;
 typedef PairingMap::const_iterator ConstPMIter;
-typedef ReadVec::const_iterator ConstRVIter;
+typedef ReadSet::const_iterator ConstRSIter;
 typedef ContigReadMap::const_iterator ConstCRMIter;
 
 class Scaffold
 {
-	
-	
 	public:
-		Scaffold(std::string alignFile, std::string contigFile, int readLen, int kmer);
+		Scaffold(std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadAlignments, std::string alignmentsFile);
 		
 		//IO Functions
+		void ReadSequenceReads(std::string file);
 		void ReadPairs(std::string file);
 		void ReadAlignments(std::string file);
 		void ReadContigs(std::string file);
@@ -142,6 +127,9 @@ class Scaffold
 		
 	private:
 	
+		// Generate alignments of the read set against the contigs
+		void GenerateAlignments(PSequenceVector& seqs, ContigMap& contigs);
+		 
 		// Refine the linkages, attempting to upgrade weak links to strong links
 		bool RefineLinkages(LinkVec& links);
 	
@@ -152,7 +140,7 @@ class Scaffold
 		int Merge(Sequence& leftContig, Sequence& rightContig, int distance, Sequence& merged);
 		
 		// Sub assemble the paired reads
-		SeqVec SubAssemble(SeqVec& seqs, Sequence startNode, int maxDistance);
+		SeqVec SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxDistance);
 		
 		// Recursively assemble
 		SeqVec AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, int d, int maxDistance);
@@ -164,13 +152,16 @@ class Scaffold
 		int alignContigs(const Sequence& leftContig, const Sequence& rightContig, int guess, int range, int& retScore);
 		
 		// Get all the reads of the pairs that are of the specified complement
-		void GetEndPairs(ContigID contigID, bool compPairs, SeqVec& outSeqs);
+		void GetEndPairs(ContigID contigID, bool compPairs, PSequenceVector& outSeqs);
 		
 		// Update the positions of the reads on the master contig
 		void UpdateMasterReads(ContigID contigID, int offset, const Sequence& origSeq, const Sequence& merged);
 
 		// Update the positions of the reads on the slave contig
 		void UpdateSlaveReads(ContigID slaveID, ContigID masterID, int offset, bool isFlipped, const Sequence& origSeq, const Sequence& merged);
+		
+		// Realign the pairs of the reads on the specified contig
+		void RealignContigPairs(ContigID contigID);
 	
 		// Determine the orientation between contigs
 		ContigOrientation DetermineOrientation(PairAlignVec& contigPairs);
@@ -200,11 +191,14 @@ class Scaffold
 		// Get the alignments for a particular read
 		AlignVec GetAlignmentsForRead(ReadID id);
 		
+		// Get the sequence for a particular read
+		PackedSeq GetSequenceForRead(ReadID id);		
+		
 		// Get the ID of the pair of the read
 		ReadID GetPairID(ReadID id);
 		
 		// Build an alignment structure
-		ReadAlign BuildReadAlign(ReadID id, std::string contig, int position, bool isRC, Sequence seq);
+		ReadAlign BuildReadAlign(ReadID id, std::string contig, int position, bool isRC);
 		
 		// Print a read alignment
 		void PrintReadAlign(ReadAlign& ra);
@@ -224,11 +218,15 @@ class Scaffold
 		// Print a gviz node to the file handle
 		void OutputGVizNode(std::ofstream& ostr, ContigLinkage& link);
 		
+		// Write all the alignments to a file
+		void WriteAlignments(std::string filename);
+		
 		// All the mapping datastructures needed
 		AlignmentMap m_alignMap;
 		//PairingMap m_pairMap; 
 		ContigReadMap m_contigReadMap;
 		ContigMap m_contigMap;
+		PSequenceVector m_readVec;
 		
 		PDF m_pdf;
 		double m_stdDev;

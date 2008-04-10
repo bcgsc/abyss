@@ -18,8 +18,8 @@
  * 
  **********************************************************/
  
- // Calculate the extensions for this sequence
- HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
+// Calculate the extensions for this sequence
+HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
  
 // Read a sequence file and load them into the collection
 void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, int readLength, int kmerSize);
@@ -33,6 +33,9 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize);
 
 // Function to perform the actual trimming. Walks the sequence space 
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
+
+// Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
+void popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 
 // Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
 void splitAmbiguous(ISequenceCollection* seqCollection);
@@ -51,5 +54,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int contig, int position, const Sequence& s, bool isRC, int readLen, int kmerSize);
 void PrintAlignmentForSeq(ISequenceCollection* seqCollection, std::set<int64_t>& readsAligned, const PackedSeq& seq, int contigID, int position, int readLen, int kmerSize);
 
+
+void outputSequences(const char* filename, ISequenceCollection* pSS);
 
 #endif
