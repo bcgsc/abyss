@@ -60,7 +60,6 @@ int main(int argc, char** argv)
 	
 	// Remove bubbles
 	popBubbles(pSC, kmerSize);
-
 	splitAmbiguous(pSC);
 	
 	assemble(pSC, readLen, kmerSize);

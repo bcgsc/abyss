@@ -58,6 +58,7 @@ typedef std::map<std::string, Sequence> SequenceMap;
 // Forward declare of a PackedSeq
 class PackedSeq;
 typedef std::vector<PackedSeq> PSequenceVector;
+typedef std::set<PackedSeq> PSeqSet;
 typedef PSequenceVector::const_iterator ConstPSequenceVectorIterator;
 typedef PSequenceVector::iterator PSequenceVectorIterator;
 

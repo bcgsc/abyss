@@ -99,6 +99,11 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
+		if(iter->isFlagSet(SF_DELETE))
+		{
+			continue;
+		}
+		
 		if(count % 1000000 == 0)
 		{
 			printf("split %d\n", count);
@@ -123,100 +128,153 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 
 void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
-	printf("removing loops caused by single base ambiguity\n");
+	printf("removing loops\n");
 	int count = 0;
 	int numPopped = 0;
+	int asymBubbles = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		/*PackedSeq testSeq("GCTGGCACCACCACCCCTGGCCACCCCAG");
+		/*
+		PackedSeq testSeq("GCTGGCACCACCACCCCTGGCCACCCCAG");
 		if(*iter != testSeq && *iter != reverseComplement(testSeq))
 		{
 			continue;
 		}
-*/
+		*/
+		
+		if(iter->isFlagSet(SF_DELETE))
+		{
+			continue;
+		}
+				
 		if(count % 1000000 == 0)
 		{
 			printf("checked %d for bubbles\n", count);
 		}
 		count++;
 		
+		// Set the cutoffs
 		unsigned int expectedBubbleSize = 2*(kmerSize + 1);
+		const unsigned int maxNumBranches = 4;
 		
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
 			HitRecord initHR = calculateExtension(seqCollection, *iter, dir);
 
-			if(initHR.getNumHits() == 2)
+			if(initHR.getNumHits() > 1)
 			{
 				//printf("Found potential bubble\n");
 				// Found a potential bubble, examine each branch
 				bool stop = false;
-				PSequenceVector branches[2];
+						
+				std::vector<Branch> branches;
 				
 				// Add the initial sequences to the branch
-				for(int j = 0; j <= 1; ++j)
+				for(int j = 0; j < initHR.getNumHits(); ++j)
 				{
-					branches[j].push_back(initHR.getHit(j).seq);
+					Branch newBranch;
+					//printf("Adding start: %s\n", initHR.getHit(j).seq.decode().c_str());
+					newBranch.AddSequence(initHR.getHit(j).seq);
+					branches.push_back(newBranch);
 				}
+
 				
 				bool bubble = false;
 				// Iterate over the branches
 				while(!stop)
 				{
-					for(int j = 0; j <= 1; ++j)
+					int numBranches = branches.size();
+					for(int j = 0; j < numBranches; ++j)
 					{
-						PackedSeq currSeq = branches[j].back();
+						//printf("Curr seq: %s\n", currSeq.decode().c_str());
+												
 						// Check the extension of this sequence
-						HitRecord bubHR = calculateExtension(seqCollection, currSeq, dir);
+						HitRecord bubHR = calculateExtension(seqCollection, branches[j].lastSeq, dir);
 						if(bubHR.getNumHits() == 1)
 						{
 							// single extension
-							branches[j].push_back(bubHR.getFirstHit().seq);
+							//printf("adding single %s\n", bubHR.getFirstHit().seq.decode().c_str());
+							branches[j].AddSequence(bubHR.getFirstHit().seq);
+												
+						}
+						else if(bubHR.getNumHits() > 1)
+						{
+							// Start a new branch for the remaining sequences
+							for(int k = 1; k < bubHR.getNumHits(); k++)
+							{
+								//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
+								// Start a new branch which is a duplicate of the current branch up to this point
+								Branch newBranch(branches[j]);
+								newBranch.AddSequence(bubHR.getHit(k).seq);							
+								branches.push_back(newBranch);	
+							}
+										
+							// Add the first base to the current branch
+							//printf("adding multip %s\n",bubHR.getFirstHit().seq.decode().c_str());
+							branches[j].AddSequence(bubHR.getFirstHit().seq);
 						}
 						else
 						{
-							/*
-							if(bubHR.getNumHits() == 0)
-							{
-								printf("noext stop\n");
-							}
-							else
-							{
-								printf("ambi stop at %d\n", branches[j].size());
-							}
-							*/
-							// If there is no extension or an ambiguous extension, terminate
+							// no ext, terminate
 							stop = true;
 							bubble = false;
 						}
 					}
 					
-					// Check the stop conditions
+					// Check the stop conditions	
+
 					
-					// Check if the sequences are the same. Note this requires the bubble paths to be the same length which is the case of snp/error bubbles but
-					// not indel bubbles
-					if(branches[0].back() == branches[1].back() || reverseComplement(branches[0].back()) == branches[1].back())
+					// Check if all the branches have joined
+					bool joinFound = false;
+					for(unsigned int k = 0; k < branches.size(); k++)
+					{
+						bool allSame = true;
+						PackedSeq testSeq = branches[k].lastSeq;
+						for(unsigned int l = 0; l < branches.size(); l++)
+						{
+							// Skip the branch that is the same as the current
+							if(k == l)
+							{
+								continue;
+							}
+							
+							if(branches[l].seqSet.find(testSeq) == branches[l].seqSet.end())
+							{
+								// Sequence not found
+								allSame = false;
+								break;
+							}	
+						}
+						
+						if(allSame)
+						{
+							joinFound = true;
+							break;
+						}
+					}
+
+					if(joinFound)
 					{
 						// The paths have merged back together, this is a bubble
 						stop = true;
 						bubble = true;
 					}
 					
-					if(branches[0].size() > expectedBubbleSize)
+					if(branches[0].seqSet.size() > expectedBubbleSize || branches.size() > maxNumBranches)
 					{
 						//printf("bubble too long stop\n");
 						stop = true;
 						bubble = false;
-					}								
+					}	
 				}
-				
-				/*printf("Bubble found of size %d\n", branches[0].size());
-				for(int j = 0; j <= 1; ++j)
+				/*
+				printf("Bubble found of size %d\n", branches[0].size());
+				for(unsigned int k = 0; k < branches.size(); k++)
 				{
-					printf("Path %d:\n", j);
-					for(PSequenceVectorIterator bubIter = branches[j].begin(); bubIter != branches[j].end(); bubIter++)
+					printf("Path %d:\n", k);
+					for(PSequenceVectorIterator bubIter = branches[k].begin(); bubIter != branches[k].end(); bubIter++)
 					{
 						printf("	%s\n", bubIter->decode().c_str());
 					}
@@ -225,27 +283,24 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				// Was a bubble found?
 				if(bubble)
 				{
+					//printf("BRANCHES %d %d\n", branches.size(), branches.front().size());
 					// Remove the bubble (arbitrary decision on which one for now)
-					int removeIndex = 1;
-					
-					// Stop removal at the second last sequence
-					PSequenceVectorIterator endIter = branches[removeIndex].end() - 1;
-					for(PSequenceVectorIterator bubIter = branches[removeIndex].begin(); bubIter != endIter; bubIter++)
+					for(unsigned int k = 1; k < branches.size(); k++)
 					{
-						removeSequenceAndExtensions(seqCollection, *bubIter);
-					}
-					numPopped++;	
-					
-					printf("Bubble found of size %d\n", branches[0].size());
-					for(int j = 0; j <= 1; ++j)
-					{
-						printf("Path %d:\n", j);
-						for(PSequenceVectorIterator bubIter = branches[j].begin(); bubIter != branches[j].end(); bubIter++)
+						int removeIndex = k;
+						
+						// Stop removal at the second last sequence
+						for(PSeqSet::iterator bubIter = branches[removeIndex].seqSet.begin(); bubIter != branches[removeIndex].seqSet.end(); bubIter++)
 						{
-							printf("	%s\n", bubIter->decode().c_str());
+							if(*bubIter != branches[removeIndex].lastSeq)
+							{
+								printf("Deleting (%d): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
+								removeSequenceAndExtensions(seqCollection, *bubIter);
+							}
 						}
 					}
-					
+					numPopped++;
+					printf("Popped %d\n", branches[0].seqSet.size());
 				}
 
 		
@@ -253,7 +308,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		}
 		seqCollection->pumpNetwork();
 	}
-	printf("Popped %d bubbles\n", numPopped);	
+	printf("Removed %d bubbles\n", numPopped);	
 }
 
 //
@@ -334,7 +389,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 {
 	int start = 2;
-	int maxBranch =  3 * (readLen - kmerSize + 1);
+	int maxBranch =  6 * (readLen - kmerSize + 1);
 	
 	
 	while(start <= maxBranch)

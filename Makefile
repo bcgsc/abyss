@@ -72,7 +72,7 @@ INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
 OPTIMIZE = -O2 -Wall
 #64BIT = -m64
-#DEBUG= -g -D DEBUG -Wall -Wno-sign-compare
+#DEBUG= -g -D DEBUG -Wall
 #PROFILE = -pg
 
 INCLUDES =	-I$(COMMON_DIR) -I$(DATALAYER_DIR) -I$(PARALLEL_DIR) -I$(ALIGN_DIR) -I$(INCLUDE_DIR)

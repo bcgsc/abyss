@@ -11,13 +11,21 @@
  * 
  * AssemblyAlgorithms.h
  * 
- * A collection of functions to operate on our sequence data
+ * A collection of functions to operate on sequence data
  * sets. These functions are designed to work with network
  * (parallel) or local (single cpu) data
  * 
  * 
  **********************************************************/
- 
+struct Branch
+{
+	PSeqSet seqSet;
+	PackedSeq lastSeq;
+	
+	void AddSequence(const PackedSeq& seq) { seqSet.insert(seq).first; lastSeq = seq;}
+};
+
+
 // Calculate the extensions for this sequence
 HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
  

@@ -72,8 +72,8 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 	
 	GenerateEmpDistribution();
 
-	//while(AttemptMerge("1855"));
-	//exit(1);
+	while(AttemptMerge("1224"));
+	exit(1);
 	//AttemptMerge("1219");
 	//exit(1);
 	/*
