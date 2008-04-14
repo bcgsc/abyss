@@ -30,6 +30,7 @@ AC_FUNC_VPRINTF
 AC_CONFIG_FILES([
 	Makefile
 	ABYSS/Makefile
+	Align/Makefile
 	Common/Makefile
 	DataLayer/Makefile
 	Parallel/Makefile
