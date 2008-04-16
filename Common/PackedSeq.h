@@ -98,6 +98,7 @@ class PackedSeq
 		char rotate(extDirection dir, char base);
 		char shiftAppend(char base);
 		char shiftPrepend(char base);
+		void setLastBase(extDirection dir, char base);
 		
 		// add an ID to the list
 		void addID(SeqID id);

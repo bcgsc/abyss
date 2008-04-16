@@ -376,6 +376,11 @@ char PackedSeq::rotate(extDirection dir, char base)
 	}
 }
 
+void PackedSeq::setLastBase(extDirection dir, char base)
+{
+	setBase(m_seq, dir == SENSE ? m_length - 1 : 0, base);
+}
+
 //
 //
 //
