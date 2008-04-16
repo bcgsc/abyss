@@ -64,14 +64,14 @@ class ISequenceCollection
 		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;
 		
 		// check if the extension exists
-		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const = 0;
 		
 		// call to service network operations if needed
 		// for non-network sequence collections this will simply return
 		virtual APResult pumpNetwork() = 0;
 
-		virtual SequenceCollectionIterator getStartIter() = 0;
-		virtual SequenceCollectionIterator getEndIter() = 0;
+		virtual SequenceCollectionIterator getStartIter() const = 0;
+		virtual SequenceCollectionIterator getEndIter() const = 0;
 		
 		// get an iterator pointing to the first sequence in the collection
 		//virtual std::vector<PackedSeq>::iterator getStartIter() = 0;

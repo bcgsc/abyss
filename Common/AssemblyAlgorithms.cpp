@@ -314,7 +314,8 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 //
 //
 //
-HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir)
+HitRecord calculateExtension(const ISequenceCollection* seqCollection,
+		const PackedSeq& currSeq, extDirection dir)
 {
 	
 	// Create the return structure

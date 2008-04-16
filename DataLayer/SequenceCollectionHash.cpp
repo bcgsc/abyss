@@ -308,7 +308,7 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 //
 //
 //
-ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base)
+ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base) const
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair rp;
@@ -364,7 +364,7 @@ SequenceCollectionHashIter SequenceCollectionHash::FindSequence(const PackedSeq&
 //
 // Get the iterator pointing to the first sequence in the bin
 //
-SequenceCollectionHashIter SequenceCollectionHash::getStartIter()
+SequenceCollectionHashIter SequenceCollectionHash::getStartIter() const
 {
 	return m_pSequences->begin();
 }
@@ -372,7 +372,7 @@ SequenceCollectionHashIter SequenceCollectionHash::getStartIter()
 //
 // Get the iterator pointing to the last sequence in the bin
 //
-SequenceCollectionHashIter SequenceCollectionHash::getEndIter()
+SequenceCollectionHashIter SequenceCollectionHash::getEndIter() const
 {
 	return m_pSequences->end();
 }

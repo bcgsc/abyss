@@ -58,7 +58,7 @@ class SequenceCollection : public ISequenceCollection
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
 		
 		// clear all the extensions for this sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);

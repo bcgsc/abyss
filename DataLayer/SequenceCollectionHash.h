@@ -57,13 +57,13 @@ class SequenceCollectionHash : public ISequenceCollection
 		void clearExtensions(const PackedSeq& seq, extDirection dir);
 		
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
 
 		// Get the iterator pointing to the first sequence in the bin
-		SequenceCollectionHashIter getStartIter();
+		SequenceCollectionHashIter getStartIter() const;
 		
 		// Get the iterator pointing to the last sequence in the bin
-		SequenceCollectionHashIter getEndIter();
+		SequenceCollectionHashIter getEndIter() const;
 		
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq);
