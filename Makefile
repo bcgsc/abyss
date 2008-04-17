@@ -269,3 +269,16 @@ Parallel/parallelAbyss.o: DataLayer/SequenceCollection.h
 Parallel/parallelAbyss.o: DataLayer/ISequenceCollection.h Common/HitRecord.h
 Parallel/parallelAbyss.o: Parallel/CommLayer.h Parallel/NetworkDefs.h
 Parallel/parallelAbyss.o: Common/SeqRecord.h Common/AssemblyAlgorithms.h
+Scaffold/Scaffold.o: Scaffold/Scaffold.h Common/CommonDefs.h Common/ReadPrb.h
+Scaffold/Scaffold.o: Common/Prb.h DataLayer/ISequenceCollection.h
+Scaffold/Scaffold.o: Common/CommonUtils.h Common/Sequence.h
+Scaffold/Scaffold.o: Common/PackedSeq.h Common/SeqExt.h Common/HitRecord.h
+Scaffold/Scaffold.o: Common/AssemblyAlgorithms.h Common/SeqRecord.h
+Scaffold/Scaffold.o: Scaffold/Stats.h DataLayer/FastaWriter.h
+Scaffold/Scaffold.o: DataLayer/IFileWriter.h
+Scaffold/Scaffold.o: DataLayer/SequenceCollectionHash.h
+Scaffold/Scaffold.o: DataLayer/FastaReader.h DataLayer/IFileReader.h
+Scaffold/Stats.o: Scaffold/Stats.h
+Align/Aligner.o: Align/Aligner.h Common/CommonDefs.h Common/ReadPrb.h
+Align/Aligner.o: Common/Prb.h Common/PackedSeq.h Common/CommonUtils.h
+Align/Aligner.o: Common/Sequence.h Common/SeqExt.h

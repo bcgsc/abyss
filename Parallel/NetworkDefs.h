@@ -32,6 +32,7 @@ enum APSeqExtOperation
 {
 	APSEO_CHECK,
 	APSEO_SET,
+	APSEO_CLEAR_ALL,
 	APSEO_REMOVE
 };
 

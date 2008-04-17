@@ -37,20 +37,6 @@ void SequenceCollection::remove(const PackedSeq& seq)
 }
 
 //
-// Get the IDs corresponding to this sequence
-//
-const IDList SequenceCollection::getIDs(const PackedSeq& seq)
-{
-	SequenceCollectionIter iter = FindSequence(seq);
-	IDList list;
-	if(iter != m_pSequences->end())
-	{
-		list = iter->getIDList();
-	}
-	return list;
-}
-
-//
 // add an extension to this sequence in the record
 //
 void SequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
@@ -235,8 +221,7 @@ void SequenceCollection::finalize()
 			{
 				if(*iter == temp.back())
 				{
-					// add iter's ids to the last sequence added to the vector (which is by definition a dup of this sequence()
-					temp.back().addIDList(iter->getIDList());
+					
 				}
 				else
 				{

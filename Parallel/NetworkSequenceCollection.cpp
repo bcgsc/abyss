@@ -3,10 +3,10 @@
 //
 //
 //
-NetworkSequenceCollection::NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize) : m_id(myID), m_numDataNodes(numDataNodes), m_state(NAS_LOADING)
+NetworkSequenceCollection::NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize, int readLen) : m_id(myID), m_numDataNodes(numDataNodes), m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen)
 {
 	// Load the phase space
-	m_pLocalSpace = new SequenceCollection();
+	m_pLocalSpace = new SequenceCollectionHash();
 	
 	// Create the comm layer
 	m_pComm = new CommLayer(myID, kmerSize);
@@ -70,7 +70,7 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			case NAS_ASSEMBLE:
 			{
 				printf("doing noncontrol assemble\n");
-				assemble(this);
+				assemble(this, m_readLen, m_kmer);
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -152,7 +152,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_ASSEMBLE:
 			{
 				printf("doing control assemble\n");
-				assemble(this);
+				assemble(this, m_readLen, m_kmer);
 				m_numReachedCheckpoint++;
 				while(!checkpointReached())
 				{
@@ -217,14 +217,13 @@ APResult NetworkSequenceCollection::pumpNetwork()
 					parseControlMessage(senderID);
 					return APR_NONE;
 				}
+				
+			// APM_RESULT is handled in pumpUntilResult()
 			case APM_RESULT:
-				{
-					//PrintDebug(0, "Result got\n");
-					ResultMessage msg = m_pComm->ReceiveResultMessage();
-					return msg.result;
-				}				
 			default:
-				printf("Unhandled message code: %d\n", msg);
+				{
+					return APR_NONE;	
+				}
 		}
 	}
 	else
@@ -239,18 +238,32 @@ APResult NetworkSequenceCollection::pumpNetwork()
 //
 //
 //
-bool NetworkSequenceCollection::pumpUntilResult()
+ResultPair NetworkSequenceCollection::pumpUntilResult()
 {
 	while(true)
 	{
-		APResult result = pumpNetwork();
-		if(result == APR_TRUE)
-		{
-			return true;
-		}
-		else if(result == APR_FALSE)
-		{
-			return false;
+		// Service incoming requests
+		pumpNetwork();
+		
+		// Check if the result has returned
+		int senderID;
+		m_pComm->flush();	
+		APMessage msg = m_pComm->CheckMessage(senderID);
+		
+		// The result has arrived
+		if(msg == APM_RESULT)
+		{		
+	
+			//PrintDebug(0, "Result got\n");
+			ResultMessage msg = m_pComm->ReceiveResultMessage();
+			
+			// Convert the result to a result pair
+			ResultPair rp;
+			rp.forward = (msg.result[0] == APR_TRUE) ? true : false;
+			rp.reverse = (msg.result[1] == APR_TRUE) ? true : false;
+			
+			// Return the result
+			return rp;
 		}
 	}	
 }
@@ -280,13 +293,13 @@ void NetworkSequenceCollection::parseSeqMessage(int senderID)
 		case APO_HAS_PARENT:
 		{
 			bool result = m_pLocalSpace->hasParent(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, result);			
+			m_pComm->SendResultMessage(senderID, result);
 			break;	
 		}
 		case APO_HAS_CHILD:
 		{
 			bool result = m_pLocalSpace->hasChild(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, result);				
+			m_pComm->SendResultMessage(senderID, result);
 			break;	
 		}
 	}	
@@ -315,7 +328,7 @@ void NetworkSequenceCollection::parseSeqFlagMessage(int senderID)
 }
 
 //
-//
+// Parse a sequence extension message
 //
 void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
 {
@@ -324,7 +337,7 @@ void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
 	{
 		case APSEO_CHECK:
 		{
-			bool result = m_pLocalSpace->checkExtension(extMsg.seq, extMsg.dir, extMsg.base);
+			ResultPair result = m_pLocalSpace->checkExtension(extMsg.seq, extMsg.dir, extMsg.base);
 			m_pComm->SendResultMessage(senderID, result);			
 			break;
 		}
@@ -337,8 +350,14 @@ void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
 		{
 			m_pLocalSpace->removeExtension(extMsg.seq, extMsg.dir, extMsg.base);
 			break;
-		}		
-	}	
+		}
+		case APSEO_CLEAR_ALL:
+		{
+			printf("Clearing extension\n");
+			m_pLocalSpace->clearExtensions(extMsg.seq, extMsg.dir);
+			break;
+		}	
+	}
 }
 
 //
@@ -398,6 +417,7 @@ void NetworkSequenceCollection::add(const PackedSeq& seq)
 	{
 		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
 		m_pLocalSpace->add(seq);
+		//PrintDebug(3, "done add\n");
 	}
 	else
 	{
@@ -451,7 +471,8 @@ bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_CHECKSEQ);
 		//PrintDebug(1, "after send\n");
-		result = pumpUntilResult();
+		ResultPair rp = pumpUntilResult();
+		result = rp.forward || rp.reverse;
 	}
 	return result;
 }
@@ -505,7 +526,8 @@ bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqFlagMessage(nodeID, seq, APSFO_CHECK, flag);
-		result = pumpUntilResult();
+		ResultPair rp = pumpUntilResult();
+		result = rp.forward || rp.reverse;
 	}
 	return result;
 }
@@ -532,7 +554,8 @@ bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_PARENT);
-		result = pumpUntilResult();
+		ResultPair rp = pumpUntilResult();
+		result = rp.forward || rp.reverse;
 	}
 	return result;
 }
@@ -553,14 +576,15 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_CHILD);
-		result = pumpUntilResult();
+		ResultPair rp = pumpUntilResult();
+		result = rp.forward || rp.reverse;
 	}
 
 	return result;
 }
 
 //
-//
+// set the extension for the sequence
 //
 void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
 {
@@ -576,6 +600,28 @@ void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection 
 		int nodeID = computeNodeID(seq);		
 		// base is ignored for now
 		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_SET, dir, extension);
+	}
+}
+
+//
+// clear the extensions for the sequence
+//
+void NetworkSequenceCollection::clearExtensions(const PackedSeq& seq, extDirection dir)
+{
+	// Check if this sequence is local
+	if(isLocal(seq))
+	{
+		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
+		m_pLocalSpace->clearExtensions(seq, dir);
+	}
+	else
+	{
+
+		int nodeID = computeNodeID(seq);		
+		// base is ignored for now
+		SeqExt dummyExt;
+		char dummyBase = 'A';
+		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_CLEAR_ALL, dir, dummyExt, dummyBase);
 	}
 }
 
@@ -609,10 +655,10 @@ void NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirecti
 //
 //
 //
-bool NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
+ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	// Check if this sequence is local
-	bool result;
+	ResultPair result;
 	if(isLocal(seq))
 	{
 		result = m_pLocalSpace->checkExtension(seq, dir, base);
@@ -630,9 +676,18 @@ bool NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDirectio
 }
 
 //
+// GetMultiplicity
+//
+int NetworkSequenceCollection::getMultiplicity(const PackedSeq& seq)
+{
+	// does nothing for now
+	return 0;	
+}
+
+//
 // The iterator functions return the local space's begin/end
 //
-std::vector<PackedSeq>::iterator NetworkSequenceCollection::getStartIter()
+SequenceCollectionIterator NetworkSequenceCollection::getStartIter()
 {
 	return m_pLocalSpace->getStartIter();	
 }
@@ -640,7 +695,7 @@ std::vector<PackedSeq>::iterator NetworkSequenceCollection::getStartIter()
 //
 // The iterator functions return the local space's begin/end
 //
-std::vector<PackedSeq>::iterator NetworkSequenceCollection::getEndIter()
+SequenceCollectionIterator NetworkSequenceCollection::getEndIter()
 {
 	return m_pLocalSpace->getEndIter();	
 }

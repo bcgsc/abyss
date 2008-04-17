@@ -35,9 +35,6 @@ class SequenceCollection : public ISequenceCollection
 		
 		// remove a sequence from the collection
 		void remove(const PackedSeq& seq);
-		
-		// Get the id list for this sequence
-		const IDList getIDs(const PackedSeq& seq);
 				
 		// end the data load and make the sequence space ready for data read
 		void finalize();

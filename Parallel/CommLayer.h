@@ -35,7 +35,7 @@ struct ControlMessage
 
 struct ResultMessage
 {
-	APResult result;
+	APResult result[2];
 };
 
 const int CONTROL_ID = 0;
@@ -66,8 +66,11 @@ class CommLayer
 		// Send a sequence flag message
 		void SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag) const;
 		
+		// Send a bool result
+		void SendResultMessage(int destID, bool b);
+		
 		// Send a result
-		void SendResultMessage(int destID, bool r);
+		void SendResultMessage(int destID, ResultPair rp);
 		
 		// Receive a seq message
 		SeqMessage ReceiveSeqMessage();

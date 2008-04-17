@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 	rank = MPI::COMM_WORLD.Get_rank();
 	int size = MPI::COMM_WORLD.Get_size();
 	
-	NetworkSequenceCollection networkSeqs(rank, size, kmerSize);
+	NetworkSequenceCollection networkSeqs(rank, size, kmerSize, readLen);
 	if(rank == 0)
 	{
 		printf("num nodes: %d\n", size);
@@ -47,6 +47,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
+		printf("%d running\n", rank);
 		networkSeqs.run(readLen, kmerSize);
 	}
 	printf("%d exitting\n", rank);

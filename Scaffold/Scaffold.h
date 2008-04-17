@@ -7,6 +7,7 @@
 #include "CommonDefs.h"
 #include "ISequenceCollection.h"
 #include "AssemblyAlgorithms.h"
+#include "Stats.h"
 
 // CORIEN_SAME = the contigs are from the same strand
 // CORIEN_OPP = the contigs are from different strands
@@ -83,11 +84,6 @@ typedef std::vector<Sequence> SeqVec;
 
 typedef std::map<ContigID, PairAlignVec> ContigPairVecMap;
 
-typedef std::vector<double> PDF;
-typedef std::map<int, int> histogram;
-
-
-
 // Iterators
 typedef AlignmentMap::iterator AMIter;
 typedef PairingMap::iterator PMIter;
@@ -115,11 +111,7 @@ class Scaffold
 		void ReadPairs(std::string file);
 		void ReadAlignments(std::string file);
 		void ReadContigs(std::string file);
-		
-		// Generate the empirical distribution of pair distances
-		void GenerateEmpDistribution();
-		void ConvertHistToPDF(const histogram& h);
-		
+				
 		// Determine the adjacency information between contigs
 		bool AttemptMerge(ContigID contigID);
 		ContigLinkage GenerateLinkage(ContigID contigID0, ContigID contigID1, PairAlignVec& paVec);
@@ -140,10 +132,10 @@ class Scaffold
 		int Merge(Sequence& leftContig, Sequence& rightContig, int distance, Sequence& merged);
 		
 		// Sub assemble the paired reads
-		SeqVec SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxDistance);
+		SeqVec SubAssemble(PSequenceVector& seqs, Sequence startNode, Sequence stopNode, int maxDistance);
 		
 		// Recursively assemble
-		SeqVec AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, int d, int maxDistance);
+		SeqVec AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, PackedSeq stop, int d, int maxDistance);
 		
 		// Check if the links are consistent with the chosen best link
 		bool CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks);
@@ -172,21 +164,24 @@ class Scaffold
 		// Reverse the positions of the pairs for the second contig pairs
 		void ReverseSecondContigPairs(PairAlignVec& contigPairs, int contigLength);
 		
+		// Generate all the needed statistics
+		void GenerateStatistics();
+		
 		// Estimate the distance between the contigs
 		int EstimateDistanceBetweenContigs(PairAlignVec& contigPairs, ContigOrder order, Sequence& contig1, Sequence& contig2);
 		
-		// Get all the pairs between the specific contig and any other contigs and places them in cpvMap
+		// Get unique pairs between the specific contig and any other contigs and places them in cpvMap
 		void GenerateUniquePairAlignments(ContigID contigID, ContigPairVecMap& cpvMap);
+		
+		// Get all the pairs between the specific contig and any other contig
+		void GenerateAllPairAlignments(ContigID contigID, ContigPairVecMap& cpvMap);
 		
 		// Populate the pairAlign data structure if the pairs are unique and both are aligned
 		// Returns true if unique/aligned, false otherwise
 		bool GetUniquePairAlign(ReadID readID, PairAlign& pairAlign);
 		
-		// Maximum Likelihood Estimator functions
-		int MaxLikelihoodEst(std::vector<int>& pairDistance, PDF& pdf);
-		
-		// Compute the likelihood of the distribution
-		double ComputeLikelihood(int d, std::vector<int>& testDist, PDF& pdf);
+		// Get all the paired alignments of the specified read on the specified contig and their pair's alignments
+		bool GetPairAlign(ReadID readID, ContigID readContig, PairAlignVec& pairAlignVec);
 		
 		// Get the alignments for a particular read
 		AlignVec GetAlignmentsForRead(ReadID id);
@@ -209,9 +204,6 @@ class Scaffold
 		// Calculate the amount of overlap between the ranges
 		int OverlapRanges(const range r1, const range r2);
 		
-		// Generate the standard deviation of the estimate
-		double GetStdDevOfEstimate(int n);
-		
 		// generate the maximum coordinate set for the specified number if deviations
 		range GenerateRange(int distance, int size, int n, int numDevs);
 		
@@ -228,14 +220,14 @@ class Scaffold
 		ContigMap m_contigMap;
 		PSequenceVector m_readVec;
 		
-		PDF m_pdf;
-		double m_stdDev;
-		
+		// Statistics about the data set
+		Stats m_stats;
+				
 		int m_readLen;
 		int m_kmer;
 		
 		static const int STRONG_LINK_CUTOFF = 10;
-		static const int SUB_ASSEMBLY_K = 12;
+		static const int SUB_ASSEMBLY_K = 14;
 };
 
 

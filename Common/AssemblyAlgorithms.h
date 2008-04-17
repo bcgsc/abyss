@@ -59,10 +59,6 @@ Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, 
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq);
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
 
-void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int contig, int position, const Sequence& s, bool isRC, int readLen, int kmerSize);
-void PrintAlignmentForSeq(ISequenceCollection* seqCollection, std::set<int64_t>& readsAligned, const PackedSeq& seq, int contigID, int position, int readLen, int kmerSize);
-
-
 void outputSequences(const char* filename, ISequenceCollection* pSS);
 
 #endif

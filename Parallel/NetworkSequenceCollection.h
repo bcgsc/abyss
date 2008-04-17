@@ -2,7 +2,7 @@
 #define NETWORKSEQUENCECOLLECTION_H
 
 #include "PackedSeq.h"
-#include "SequenceCollection.h"
+#include "SequenceCollectionHash.h"
 #include "CommLayer.h"
 #include "SeqRecord.h"
 #include "AssemblyAlgorithms.h"
@@ -23,7 +23,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 	public:
 	
 		// Constructor/destructor
-		NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize);
+		NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize, int readLen);
 		~NetworkSequenceCollection();
 		
 		// add a sequence to the collection
@@ -57,16 +57,22 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// check if the extension exists
-		bool checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// Set the extension of this sequence
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
+		
+		// remove all the extensions of this sequence
+		void clearExtensions(const PackedSeq& seq, extDirection dir);		
+		
+		// get the multiplicity of the sequence
+		int getMultiplicity(const PackedSeq& seq);
 		
 		// The loop to run the network code
 		APResult pumpNetwork();
 		
 		// Loop over the pumping function while waiting for a result from the network
-		bool pumpUntilResult();
+		ResultPair pumpUntilResult();
 		
 		// run the assembly
 		void run(int readLength, int kmerSize);
@@ -78,10 +84,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool checkpointReached() const;
 		
 		// get an iterator to the first sequence
-		std::vector<PackedSeq>::iterator getStartIter();
+		SequenceCollectionIterator getStartIter();
 		
 		// get an iterator to the last sequence
-		std::vector<PackedSeq>::iterator getEndIter();		
+		SequenceCollectionIterator getEndIter();		
 		
 	private:
 	
@@ -109,7 +115,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Pointer to the local sequence space
 		// These sequences are held in memory on this process
-		SequenceCollection* m_pLocalSpace;
+		SequenceCollectionHash* m_pLocalSpace;
 		
 		// The communications layer implements the functions over the network
 		CommLayer* m_pComm;
@@ -125,6 +131,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// The number of processes that have sent a checkpoint reached message, this is used by the control process to determine the state flow
 		int m_numReachedCheckpoint;
+		
+		// the size of k used in the assembly
+		int m_kmer;
+		
+		// the original read length
+		int m_readLen;
 };
 
 #endif

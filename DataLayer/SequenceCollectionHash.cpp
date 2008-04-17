@@ -22,7 +22,7 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 {
-	m_pSequences = new SequenceDataHash(2 << 26);
+	m_pSequences = new SequenceDataHash(2 << 24);
 	//m_pSequences = new SequenceDataHash();
 }
 
@@ -44,7 +44,7 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 	SequenceCollectionHashIter iter = FindSequence(seq);
 	if(iter != m_pSequences->end())
 	{
-		const_cast<PackedSeq&>(*iter).addIDList(seq.getIDList());
+		//const_cast<PackedSeq&>(*iter).addMultiplicity();
 	}
 	else
 	{
@@ -61,16 +61,22 @@ void SequenceCollectionHash::remove(const PackedSeq& seq)
 	setFlag(reverseComplement(seq), SF_DELETE);	
 }
 
-// get id list
-const IDList SequenceCollectionHash::getIDs(const PackedSeq& seq)
+// get the multiplicity of a sequence
+int SequenceCollectionHash::getMultiplicity(const PackedSeq& seq)
 {
-	SequenceCollectionHashIter iter = FindSequence(seq);
-	IDList list;
-	if(iter != m_pSequences->end())
+	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	int mult = 0;
+	if(iters.first != m_pSequences->end())
 	{
-		list = iter->getIDList();
+		mult += iters.first->getMultiplicity();
 	}
-	return list;	
+	
+	if(iters.second != m_pSequences->end())
+	{
+		mult += iters.second->getMultiplicity();
+	}
+	assert(mult != 0);
+	return mult;
 }
 
 //

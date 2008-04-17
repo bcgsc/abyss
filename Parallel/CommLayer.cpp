@@ -70,8 +70,6 @@ void CommLayer::SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation 
 	msg.seq = seq;
 	msg.operation = operation;	
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqMessage), MPI::BYTE, destID, APM_SEQ);
-	
-	//printf("%d Sent: ", m_id);
 	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));
 	
 	req.Free();
@@ -85,7 +83,6 @@ SeqMessage CommLayer::ReceiveSeqMessage()
 {
 	SeqMessage msg;
 	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
-	//printf("%d Recv: ", m_id);
 	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));	
 	return msg;	
 }
@@ -171,17 +168,27 @@ ControlMessage CommLayer::ReceiveControlMessage()
 //
 // Send a result
 //
-void CommLayer::SendResultMessage(int destID, bool r)
+void CommLayer::SendResultMessage(int destID, ResultPair rp)
 {
 	ResultMessage msg;
-	if(r)
-	{
-		msg.result = APR_TRUE;
-	}
-	else
-	{
-		msg.result = APR_FALSE;
-	}
+	
+	// Convert the result pair to a result message
+	msg.result[0] = (rp.forward) ? APR_TRUE : APR_FALSE;
+	msg.result[1] = (rp.reverse) ? APR_TRUE : APR_FALSE;
+	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
+	req.Free();
+}
+
+//
+// Send a bool result
+//
+void CommLayer::SendResultMessage(int destID, bool b)
+{
+	ResultMessage msg;
+	
+	// Convert the result pair to a result message
+	msg.result[0] = (b) ? APR_TRUE : APR_FALSE;
+	msg.result[1] = (b) ? APR_TRUE : APR_FALSE;
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
 	req.Free();
 }

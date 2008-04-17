@@ -18,10 +18,9 @@ class FastaWriter : public IFileWriter
 		// Destructor closes it
 		~FastaWriter();
 		
-		// Read in a single sequence to the out parameter, return whether there are more sequences to read
-		void WriteSequence(Sequence& seq, int64_t id);
+		// write a single sequence
+		void WriteSequence(Sequence& seq, int64_t id, double multiplicity);
 		void WriteSequence(const PackedSeq& pSeq, int64_t);
-		
 	private:
 		std::ofstream m_fileHandle;
 		int m_count;

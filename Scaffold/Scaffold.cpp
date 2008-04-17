@@ -9,8 +9,6 @@
 
 using namespace std;
 
-const double MINP = 0.00001f;
-
 int main(int argc, char** argv)
 {
 	if(argc < 4)
@@ -70,9 +68,9 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 	printf("Done reading\n");
 	// Generate the empirical distribution
 	
-	GenerateEmpDistribution();
+	GenerateStatistics();
 
-	while(AttemptMerge("1224"));
+	while(AttemptMerge("731"));
 	exit(1);
 	//AttemptMerge("1219");
 	//exit(1);
@@ -91,7 +89,7 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 		bool anyMerge = false;
 		for(CMIter iter = m_contigMap.begin(); iter != m_contigMap.end(); iter++)
 		{
-			if(!iter->second.merged && iter->second.seq.length() > 300)
+			if(!iter->second.merged && iter->second.seq.length() > 200)
 			{
 				if(AttemptMerge(iter->first))
 				{
@@ -129,9 +127,7 @@ void Scaffold::GenerateAlignments(PSequenceVector& seqs, ContigMap& /*contigs*/)
 	
 	int id = 0;
 	for(PSequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); ++iter)
-	{
-		//printf("read: %s aligns to:\n", iter->decode().c_str());
-		
+	{	
 		// get the alignments
 		AlignmentVector ar = aligner.GetAlignments(*iter);
 		
@@ -174,9 +170,10 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 		if(!m_contigMap[cpvmIter->first].repetitive)
 		{
 			ContigLinkage link = GenerateLinkage(contigID, cpvmIter->first, cpvmIter->second);
-			printf("	link[%d]: %s at %d\n", link.order, link.slaveID.c_str(), link.distance);
+			
 			if(!link.noLink)
 			{
+				printf("	link[%d]: %s at %d\n", link.order, link.slaveID.c_str(), link.distance);
 				linkages[link.order].push_back(link);
 			}
 		}
@@ -191,7 +188,7 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 		LinkIter bestLink;
 		int bestDistance = -m_kmer;
 		
-		const int REQUIRED_PAIRS = 30;
+		const int REQUIRED_PAIRS = 15;
 		
 		for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
 		{
@@ -268,55 +265,49 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 				// generate the sequence to start from
 				// this is the last K bases of the reference (contig0) sequence
 				Sequence start = leftContig->substr(leftContig->length() - SUB_ASSEMBLY_K, SUB_ASSEMBLY_K);
+				
+				// generate the stop sequence (the first k bases of the right contig)
+				Sequence stop = rightContig->substr(0, SUB_ASSEMBLY_K);
+				
 				printf("Starting assembly from %s\n", start.c_str());
 				
 				// Assemble the sequence
+				int expectedAssemblyLength = bestLink->distance + SUB_ASSEMBLY_K;
 				int range = 20;
-				SeqVec assemblies = SubAssemble(pairs, start, bestLink->distance + range);
-				
-				
-				// Check if any of the returned assemblies are valid by aligning the original contigs back
-				int bestScore = -1;
+				SeqVec assemblies = SubAssemble(pairs, start, stop, expectedAssemblyLength + range);
+					
+				// Check if any of the returned assemblies are valid
+				int bestScore = abs(bestLink->distance);
 				SeqVecIter bestIter;
-				int bestAlign = -1;
+				bool hasAssembly = false;
 				
+				// Choose the assembly that is closest in size to the expected distance
 				for(SeqVecIter iter = assemblies.begin(); iter != assemblies.end(); iter++)
 				{	
 					// Estimate the position of the assembly on the right contig
-					int estimatePosition = bestLink->distance;
-
-					int score;
-					
 					int len = iter->length();
-					int lowerBound = (abs(bestLink->distance) - 2*range);
-					int upperBound = (abs(bestLink->distance) + 2*range);
-
-					// Check if this sequence is a possible closure of the gap
-					if((len >= lowerBound) && (len <= upperBound))
+					int score = abs(len - expectedAssemblyLength);
+					printf("score: %d best: %d\n", score, bestScore);
+					if(score < bestScore)
 					{
-						int alignment = alignContigs(*iter, *rightContig, estimatePosition, range, score);
-		
-						printf("position: %d score: %d\n", alignment, score);
-						
-						if(score > bestScore)
-						{
-							bestScore = score;
-							bestIter = iter;
-							bestAlign = alignment;
-						}
+						bestScore = score;
+						bestIter = iter;
+						hasAssembly = true;
 					}
 				}
 				
 				Sequence merged;
-				if(bestScore > 0)
+				if(hasAssembly)
 				{
 					// Merge with the generated path
 					Sequence tempMerged;
 					
-					// Merge the left contig and the assembly first
+					// Merge the left contig and the assembly first at distance = 0
 					Merge(*leftContig, *bestIter, 0, tempMerged);
 					
-					int mergeDistance = bestAlign - bestIter->length();
+					// The assembly product will overlap the right contig by SUB_ASSEMBLY_K by definition
+					int mergeDistance = -SUB_ASSEMBLY_K;
+					
 					// Merge the right contig
 					Merge(tempMerged, *rightContig, mergeDistance, merged);
 				}
@@ -327,7 +318,6 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 				}
 	
 				// Perform the merge and update the distance
-											
 				int c0Len = m_contigMap[contigID].seq.length();
 				int c1Len = m_contigMap[bestLink->slaveID].seq.length();
 						
@@ -493,6 +483,7 @@ ContigLinkage Scaffold::GenerateLinkage(ContigID contigID0, ContigID contigID1, 
 	ContigLinkage link;
 	Contig& contig0 = m_contigMap.find(contigID0)->second;
 	Contig& contig1 = m_contigMap.find(contigID1)->second;	
+	assert(!paVec.empty());
 	if(paVec.size() > 0)
 	{
 		// TODO: Check if the iter that comes back is end()
@@ -550,7 +541,7 @@ bool Scaffold::CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks)
 {
 	// Get the position range of the best link
 	const double NUM_SIGMA = 3;
-	double estDev = GetStdDevOfEstimate(bestLink.numPairs);
+	double estDev = m_stats.GetStdDevOfEstimate(bestLink.numPairs);
 	
 	// Conservatively estimate the maximum position of the best link
 	range bestEstimatePos;
@@ -567,7 +558,7 @@ bool Scaffold::CheckConsistency(ContigLinkage bestLink, LinkVec& alllinks)
 		{
 			// what is the minimum starting point of the current contig
 			range testPosition;
-			double testDev =  GetStdDevOfEstimate(iter->numPairs);
+			double testDev =  m_stats.GetStdDevOfEstimate(iter->numPairs);
 			testPosition.start = iter->distance - static_cast<int>(NUM_SIGMA * testDev);
 			testPosition.end = testPosition.start + m_contigMap[iter->slaveID].seq.length();
 			
@@ -627,7 +618,7 @@ int Scaffold::EstimateDistanceBetweenContigs(PairAlignVec& contigPairs, ContigOr
 	}
 	
 	// Perform a maximum likelihood estimate over the distances
-	int estDist = MaxLikelihoodEst(pairDistances, m_pdf);
+	int estDist = m_stats.MaxLikelihoodEst(pairDistances);
 	return estDist;
 	
 }
@@ -635,7 +626,7 @@ int Scaffold::EstimateDistanceBetweenContigs(PairAlignVec& contigPairs, ContigOr
 // 
 // Assemble the vector of sequences
 // 
-SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxDistance)
+SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, Sequence stopNode, int maxDistance)
 {
 	// Load the phase space
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
@@ -650,7 +641,7 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 	for(PSequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
 	{
 		// Break into kmers
-		for(int i = 0; i < SUB_ASSEMBLY_K; i++)
+		for(int i = 0; i < (m_readLen - SUB_ASSEMBLY_K + 1); i++)
 		{
 			PackedSeq kmer = iter->subseq(i, SUB_ASSEMBLY_K);
 			pSC->add(kmer);
@@ -658,6 +649,7 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 	}	
 	
 	printf("Sub assembly loaded %lu pairs (max distance %d)\n", seqs.size(), maxDistance);
+	printf("Stop sequence is: %s\n", stopNode.c_str());
 	
 	pSC->finalize();
 	
@@ -666,7 +658,7 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 	
 	extDirection dir = SENSE;
 
-	SeqVec assemblyProducts = AssembleRecursive(pSC, dir, PackedSeq(startNode), 0, maxDistance);
+	SeqVec assemblyProducts = AssembleRecursive(pSC, dir, PackedSeq(startNode), PackedSeq(stopNode), 0, maxDistance);
 	printf("assembly returned %lu sequences\n", assemblyProducts.size());
 	
 	for(SeqVecIter iter = assemblyProducts.begin(); iter != assemblyProducts.end(); iter++)
@@ -682,21 +674,25 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 //
 // Recursively assemble
 //
-SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, int d, int maxDistance)
+SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, PackedSeq start, PackedSeq stop, int d, int maxDistance)
 {
 	PackedSeq currSeq = start;
 	Sequence extSeq;
 	
 	while(true)
 	{
-		//printf("Curr node: %s\n", currSeq.decode().c_str());
 		HitRecord hr = calculateExtension(pSC, currSeq, dir);
 		if(hr.getNumHits() == 0 || d > maxDistance)
 		{
-			//printf("no hit\n");
+			SeqVec ret;
+			return ret;	
+		}
+		else if(currSeq == stop)
+		{
+			printf("STOP SEQ FOUND\n");
 			SeqVec ret;
 			ret.push_back(extSeq);
-			return ret;	
+			return ret;					
 		}
 		else if(hr.getNumHits() == 1)
 		{
@@ -714,15 +710,15 @@ SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, P
 			{
 				// TODO; Make tail recursive
 				//printf("recurring at: %d\n", d);
-				SeqVec outSeqs = AssembleRecursive(pSC, dir, hr.getHit(i).seq, d, maxDistance);
+				SeqVec outSeqs = AssembleRecursive(pSC, dir, hr.getHit(i).seq, stop, d, maxDistance);
 				
 				// append the current base to the extension seq
 				Sequence temp = extSeq;
-				temp.append(1, hr.getHit(i).seq.getLastBase());				
+				temp.append(1, hr.getHit(i).seq.getLastBase());
 				
 				if(outSeqs.empty())
 				{
-					ret.push_back(temp);
+					//ret.push_back(temp);
 				}
 				else
 				{
@@ -736,6 +732,38 @@ SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, P
 			return ret;
 		}
 	}
+}
+
+//
+// Get all pairs from the specified contig to any other contig
+//
+void Scaffold::GenerateAllPairAlignments(ContigID contigID, ContigPairVecMap& cpvMap)
+{
+	// Get all the reads on this contig
+	const ReadSet& contigReadSet = m_contigReadMap.find(contigID)->second;
+	
+	// Get all the pairs of this read
+	for(ConstRSIter rsIter = contigReadSet.begin(); rsIter != contigReadSet.end(); rsIter++)
+	{
+		// Generate the pair alignment
+		PairAlignVec pairAlignVec;
+		bool usable = GetPairAlign(*rsIter, contigID, pairAlignVec);
+		
+		// Is the pair unique and both ends are aligned?
+		if(usable)
+		{	
+			for(PAVIter pavIter = pairAlignVec.begin(); pavIter != pairAlignVec.end(); pavIter++)
+			{
+				if(pavIter->pairs[0].contig != pavIter->pairs[1].contig)
+				{						
+					// Add this pair to the vector 
+					cpvMap[pavIter->pairs[1].contig].push_back(*pavIter);
+				}
+			}
+		}
+	}
+	return;
+	
 }
 
 //
@@ -757,7 +785,9 @@ void Scaffold::GenerateUniquePairAlignments(ContigID contigID, ContigPairVecMap&
 		if(usable)
 		{	
 			if(pairAlign.pairs[0].contig != pairAlign.pairs[1].contig)
-			{		
+			{	
+				assert(pairAlign.pairs[1].contig != "");
+				
 				// Add this pair to the vector 
 				cpvMap[pairAlign.pairs[1].contig].push_back(pairAlign);
 			}
@@ -814,6 +844,54 @@ void Scaffold::GetEndPairs(ContigID contigID, bool rcPairs, PSequenceVector& out
 }
 
 //
+//
+//
+bool Scaffold::GetPairAlign(ReadID readID, ContigID readContig, PairAlignVec& pairAlignVec)
+{
+	ReadID pairID = GetPairID(readID);
+	
+	AlignVec readAligns = GetAlignmentsForRead(readID);
+	AlignVec pairAligns = GetAlignmentsForRead(pairID);
+	
+	assert(!readAligns.empty());
+	
+	// Ensure the root read only has 1 alignment on this contig
+	AlignVec validAligns;
+	for(AlignVec::iterator alignIter = readAligns.begin(); alignIter != readAligns.end(); alignIter++)
+	{
+		if(alignIter->contig == readContig)
+		{
+			validAligns.push_back(*alignIter);
+		}
+	}
+	
+	
+	// Dont use ambigious pairs
+	if(validAligns.empty() || validAligns.size() > 1 || pairAligns.empty())
+	{
+		return false;
+	}
+	else
+	{
+		ReadAlign read0Align = validAligns.front();
+		
+		// Create all the pairs
+		for(AlignVec::iterator pairIter = pairAligns.begin(); pairIter != pairAligns.end(); pairIter++)
+		{
+			PairAlign temp;
+			temp.pairs[0] = read0Align;
+			temp.pairs[1] = *pairIter;
+			temp.invalid = false;
+			pairAlignVec.push_back(temp);
+		}
+		
+		
+	}	
+
+	return true;	
+}
+
+//
 // Populate the pairAlign data structure if the pairs are unique and both are aligned
 // Returns true if unique/aligned, false otherwise
 //
@@ -842,57 +920,6 @@ bool Scaffold::GetUniquePairAlign(ReadID readID, PairAlign& pairAlign)
 	}
 }
 
-//
-// Perform a maximum likelihood estimate over the pdf and input distribution
-//
-int Scaffold::MaxLikelihoodEst(std::vector<int>& pairDistance, PDF& pdf)
-{
-	double maxL = -999999;
-	int bestDist = -50;
-	
-	// TODO: Unhardcode this
-	int minDist = -50;
-	int maxDist = 200;
-	for(int i = minDist; i < maxDist; i++)
-	{
-		double v = 	ComputeLikelihood(i, pairDistance, pdf);
-		if(v > maxL)
-		{
-			maxL = v;
-			bestDist = i;
-		}
-	}
-	
-	return bestDist;
-}
-
-//
-// Compute the log likelihood function over the test distribution
-//
-double Scaffold::ComputeLikelihood(int d, std::vector<int>& testDist, PDF& pdf)
-{
-	double sum = 0.0f;
-
-	for(vector<int>::iterator iter = testDist.begin(); iter != testDist.end(); iter++)
-	{
-		int val = *iter + d;
-		double p;
-		
-		// Is this value in range of the pdf?
-		if(val >= 0 && val < (int)pdf.size())
-		{
-			p = pdf[val];	
-		}
-		else
-		{
-			p = MINP;
-		}
-		
-		sum += log(p);
-	}
-	
-	return sum;
-}
 //
 // Determine the orientation of the contigs
 // ---------->    <------------ is CORIEN_OPP
@@ -1106,98 +1133,8 @@ void Scaffold::ReverseSecondContigPairs(PairAlignVec& contigPairs, int contigLen
 }	
 
 //
-// Build the empirical distribution of pair distances from contigs that have both ends of the pair in the contig
 //
-void Scaffold::GenerateEmpDistribution()
-{
-	
-	std::map<int, int> distribution;
-	for(ConstCRMIter iter = m_contigReadMap.begin(); iter != m_contigReadMap.end(); iter++)
-	{
-		const ContigID id = iter->first;
-		
-		// Get the vector of reads for this contig
-		const ReadSet& readSet = iter->second;
-		
-		// Iterate over the reads, checking which ones have a pair on the same contig
-		for(ConstRSIter iter2 = readSet.begin(); iter2 != readSet.end(); iter2++)
-		{
-			// Generate the pair alignment
-			PairAlign pairAlign;
-			bool usable = GetUniquePairAlign(*iter2, pairAlign);
-			if(usable)
-			{
-				if(pairAlign.pairs[0].contig == pairAlign.pairs[1].contig && pairAlign.pairs[0].isRC != pairAlign.pairs[1].isRC)
-				{
-					int distance;
-					if(pairAlign.pairs[0].pos < pairAlign.pairs[1].pos)
-					{
-						distance = pairAlign.pairs[1].pos - pairAlign.pairs[0].pos;
-					}
-					else
-					{
-						distance = pairAlign.pairs[0].pos - pairAlign.pairs[1].pos;
-					}
-					distribution[distance]++;
-				}
-			}
-		}
-	}
-	
-	// set m_pdf
-	ConvertHistToPDF(distribution);
-}
-
 //
-// Convert the histogram to a probability density function
-// DOUBLE COUNTING PAIRS??
-void Scaffold::ConvertHistToPDF(const histogram& h)
-{
-	int max = 0;
-	double count = 0;
-	double sum = 0;
-	for(histogram::const_iterator histIter = h.begin(); histIter != h.end(); histIter++)
-	{
-		if(histIter->first > max)
-		{
-			max = histIter->first;
-		}
-		count += histIter->second;
-		sum += (histIter->second * histIter->first);
-	}
-	
-	double mean = sum / count;
-	
-	// Compute the standard devition
-	sum = 0;
-	count = 0;
-	for(histogram::const_iterator histIter = h.begin(); histIter != h.end(); histIter++)
-	{
-
-		count += histIter->second;
-		sum += (static_cast<double>(histIter->second) * pow((static_cast<double>(histIter->first) - mean), 2));
-	}
-	sum /= count;
-	m_stdDev = sqrt(sum);	
-	printf("mean distance: %lf std dev: %lf count: %d\n", mean, m_stdDev, (int)count);
-	
-
-	// Create the initial pdf with all values being 0
-	m_pdf = PDF(max+1, 0.0f);
-	for(int i = 0; i < max+1; i++)
-	{
-		histogram::const_iterator iter = h.find(i);
-		if(iter != h.end())
-		{
-			m_pdf[i] = static_cast<double>(iter->second) / count;
-		}
-		else
-		{
-			m_pdf[i] = MINP;
-		}
-	}
-}
-
 int Scaffold::OverlapRanges(const range r1, const range r2)
 {
 	if(r1.start < r2.start)
@@ -1211,20 +1148,11 @@ int Scaffold::OverlapRanges(const range r1, const range r2)
 }
 
 //
-// Get the standard deviation of the estimate based on the empirical standard deviation and the number of data points
-//
-double Scaffold::GetStdDevOfEstimate(int n)
-{
-	return m_stdDev / sqrt((double)n);
-}
-
-
-//
 //
 //
 range Scaffold::GenerateRange(int distance, int size, int n, int numDevs)
 {
-	double s = m_stdDev / double(n);
+	double s = m_stats.GetStdDevOfEstimate(n);
 	int error = (int)s * numDevs;
 	range r;
 	r.start = distance - error;
@@ -1262,7 +1190,9 @@ PackedSeq Scaffold::GetSequenceForRead(ReadID id)
 	return m_readVec[id];
 }
 
-
+//
+// Get the ID of a pair from a readID
+//
 ReadID Scaffold::GetPairID(ReadID id)
 {
 	if(id % 2 == 0)
@@ -1275,6 +1205,49 @@ ReadID Scaffold::GetPairID(ReadID id)
 		// odd id
 		return (id - 1);
 	}
+}
+
+//
+// Build the empirical distribution of pair distances from contigs that have both ends of the pair in the contig
+//
+void Scaffold::GenerateStatistics()
+{
+	
+	std::map<int, int> distribution;
+	for(ConstCRMIter iter = m_contigReadMap.begin(); iter != m_contigReadMap.end(); iter++)
+	{
+		const ContigID id = iter->first;
+		
+		// Get the vector of reads for this contig
+		const ReadSet& readSet = iter->second;
+		
+		// Iterate over the reads, checking which ones have a pair on the same contig
+		for(ConstRSIter iter2 = readSet.begin(); iter2 != readSet.end(); iter2++)
+		{
+			// Generate the pair alignment
+			PairAlign pairAlign;
+			bool usable = GetUniquePairAlign(*iter2, pairAlign);
+			if(usable)
+			{
+				if(pairAlign.pairs[0].contig == pairAlign.pairs[1].contig && pairAlign.pairs[0].isRC != pairAlign.pairs[1].isRC)
+				{
+					int distance;
+					if(pairAlign.pairs[0].pos < pairAlign.pairs[1].pos)
+					{
+						distance = pairAlign.pairs[1].pos - pairAlign.pairs[0].pos;
+					}
+					else
+					{
+						distance = pairAlign.pairs[0].pos - pairAlign.pairs[1].pos;
+					}
+					distribution[distance]++;
+				}
+			}
+		}
+	}
+	
+	// set up the stats
+	m_stats.GenerateStatsFromHistogram(distribution);
 }
 
 //
@@ -1301,12 +1274,14 @@ void Scaffold::ReadSequenceReads(std::string file)
 {
 	// Read in the fasta file
 	FastaReader reader(file.c_str());
-	
+	int count = 0;
 	while(reader.isGood())
 	{
 		PackedSeq seq = reader.ReadSequence();
 		m_readVec.push_back(seq);
+		count++;
 	}
+	printf("Read %d sequences\n", count);
 }
 
 //
@@ -1405,7 +1380,8 @@ void Scaffold::ReadContigs(std::string file)
 		char head;
 
 		std::string contigID;
-		int size;
+		//int size;
+		//double coverage;
 		Sequence seq;
 		fileHandle >> head;
 		
@@ -1416,9 +1392,9 @@ void Scaffold::ReadContigs(std::string file)
 		
 		
 		fileHandle >> contigID;
-		fileHandle >> size;
+		fileHandle.ignore(1000, '\n');	
 		fileHandle >> seq;
-		
+
 		m_contigMap[contigID].seq = seq;
 		m_contigMap[contigID].merged = false;
 		m_contigMap[contigID].repetitive = false;

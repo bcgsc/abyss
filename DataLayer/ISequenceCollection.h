@@ -11,14 +11,6 @@
 // Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
 // This pure virtual class defines the minimum set of functions a sequence collection must provide
 
-
-// Most operations are performed on the forward and reverse reads simulatenously, this structure holds the result of such operations
-struct ResultPair
-{
-	bool forward;
-	bool reverse;
-};
-
 class ISequenceCollection
 {
 	public:
@@ -29,10 +21,7 @@ class ISequenceCollection
 		
 		// remove a sequence from the collection
 		virtual void remove(const PackedSeq& seq) = 0;
-		
-		// get id list
-		virtual const IDList getIDs(const PackedSeq& seq) = 0;
-		
+				
 		// end the data load and make the sequence space ready for data read
 		virtual void finalize() = 0;
 		
@@ -51,6 +40,9 @@ class ISequenceCollection
 		// does this sequence have an extension?
 		virtual bool hasChild(const PackedSeq& seq) = 0;
 		
+		// get the multiplicity of the sequence
+		virtual int getMultiplicity(const PackedSeq& seq) = 0;
+		
 		// Return the number of sequences in the collection
 		virtual int count() const = 0;
 		
@@ -58,7 +50,7 @@ class ISequenceCollection
 		virtual void removeExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		
 		// remove all the extensions of this sequence
-		virtual void clearExtensions(const PackedSeq& seq, extDirection dir) = 0;		
+		virtual void clearExtensions(const PackedSeq& seq, extDirection dir) = 0;
 		
 		// add an extension to the sequence
 		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;

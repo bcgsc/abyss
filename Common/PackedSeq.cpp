@@ -4,7 +4,7 @@
 //
 // Default constructor
 //
-PackedSeq::PackedSeq() : m_length(0), m_flags(0)
+PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
 {
 	memset(m_seq, 0, NUM_BYTES);
 }
@@ -20,7 +20,7 @@ PackedSeq::~PackedSeq()
 //
 // Construct a sequence from a series of bytes
 //
-PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0)
+PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0), m_multiplicity(1)
 {
 	assert(length < MAX_KMER);
 	memset(m_seq, 0, NUM_BYTES);
@@ -36,7 +36,7 @@ PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0)
 //
 // Construct a sequence from a String-based sequence
 //
-PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0)
+PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0), m_multiplicity(1)
 {
 	memset(m_seq, 0, NUM_BYTES);
 	int length = seq.length();
@@ -72,11 +72,7 @@ PackedSeq::PackedSeq(const PackedSeq& pseq)
 	m_flags = pseq.m_flags;
 	m_extensions[0] = pseq.m_extensions[0];
 	m_extensions[1] = pseq.m_extensions[1];
-
-#ifndef SAVE_MEM
-	m_ids = pseq.m_ids;
-#endif
-
+	m_multiplicity = pseq.m_multiplicity;
 }
 
 //
@@ -101,10 +97,7 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	
 	m_extensions[0] = other.m_extensions[0];
 	m_extensions[1] = other.m_extensions[1];	
-	
-#ifndef SAVE_MEM	
-	m_ids = other.m_ids;
-#endif
+	m_multiplicity = other.m_multiplicity;
 
 	return *this;
 }
@@ -142,43 +135,6 @@ int PackedSeq::compare(const PackedSeq& other) const
 		}
 	}
 	return 0;
-}
-
-
-//
-// Add an id to this record
-//
-void PackedSeq::addID(SeqID id)
-{
-#ifndef SAVE_MEM	
-	m_ids.push_back(id);
-#endif	
-}
-
-//
-// Concatenate lists
-//
-void PackedSeq::addIDList(const IDList& ids)
-{
-#ifndef SAVE_MEM	
-	for(IDList::const_iterator iter = ids.begin(); iter != ids.end(); iter++)
-	{
-		m_ids.push_back(*iter);
-	}
-#endif	
-}
-
-//
-// Return a reference to this list
-//
-const IDList PackedSeq::getIDList() const
-{
-#ifndef SAVE_MEM	
-	return m_ids;
-#else
-	IDList dummy;
-	return dummy;
-#endif
 }
 
 //

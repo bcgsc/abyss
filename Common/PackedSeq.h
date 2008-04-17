@@ -13,9 +13,6 @@ enum SeqFlag
 	SF_DELETE = 0x2
 };
 
-typedef std::pair<int, short> SeqID;
-typedef std::vector<SeqID> IDList;
-
 class PackedSeq
 {
 	public:
@@ -65,6 +62,12 @@ class PackedSeq
 		// get the length of the sequence
 		int getSequenceLength() const;
 		
+		// get the multiplicity of this sequence
+		int getMultiplicity() const { return m_multiplicity; }
+		
+		// add to the multiplicity
+		void addMultiplicity() { m_multiplicity++; }
+		
 		// Get the number of bytes in the sequence
 		static int getNumCodingBytes(int seqLength);
 		
@@ -100,11 +103,6 @@ class PackedSeq
 		char shiftPrepend(char base);
 		void setLastBase(extDirection dir, char base);
 		
-		// add an ID to the list
-		void addID(SeqID id);
-		void addIDList(const IDList& ids);
-		const IDList getIDList() const;
-		
 		// Print
 		void print() const;
 		
@@ -138,11 +136,8 @@ class PackedSeq
 		char m_seq[NUM_BYTES];
 		char m_length;
 		char m_flags;
+		short m_multiplicity;
 		SeqExt m_extensions[2]; // single byte each
-		
-#ifndef SAVE_MEM
-		IDList m_ids;
-#endif
 };
 
 // Global function to make a reverse complement of a packed seq
