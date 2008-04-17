@@ -1,63 +1,58 @@
+/** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
+
 #include "DotWriter.h"
+#include "AssemblyAlgorithms.h"
 #include "CommonDefs.h"
-#include <algorithm>
 #include <ostream>
 
 using namespace std;
 
-static const PackedSeq& findSeq(const ISequenceCollection &c,
-		const PackedSeq &seq)
+/** Return true if the specified sequence has a single extension in
+ * the forward direction, and that extension has a single extension in
+ * the reverse direction. If so, return the extension in pSeq.
+ */
+static bool isContiguous(const ISequenceCollection& c,
+		PackedSeq* pSeq)
 {
-	SequenceCollectionIterator i = find(
-			c.getStartIter(), c.getEndIter(),
-			seq);
-	return *i;
+	HitRecord hr = calculateExtension(&c, *pSeq, SENSE);
+	if (hr.getNumHits() != 1)
+		return false;
+	const PackedSeq& ext = hr.getFirstHit().seq;
+	HitRecord rhr = calculateExtension(&c, ext, ANTISENSE);
+	if (rhr.getNumHits() != 1)
+		return false;
+	*pSeq = ext;
+	return true;
 }
 
-static const PackedSeq& getFirstExt(const ISequenceCollection &c,
-		const PackedSeq &seq, extDirection dir)
-{
-	for (int i = 0; i < NUM_BASES; i++) {
-		char base = BASES[i];
-		if (seq.checkExtension(dir, base)) {
-			PackedSeq ext(seq);
-			ext.rotate(dir, base);
-			return findSeq(c, ext);
-		}
-	}
-	assert(false);
-}
-
-static const PackedSeq& findContigEnd(const ISequenceCollection &c,
-		const PackedSeq &seq, extDirection dir,
-		unsigned *pn = NULL)
+/** Find and return the end of the specified contig. Return the length
+ * of the contig (counted in kmers) in pLength.
+ */
+static const PackedSeq findContigEnd(const ISequenceCollection& c,
+		const PackedSeq& seq, unsigned* pLength = NULL)
 {
 	unsigned n = 1;
-	const PackedSeq *p = &seq;
-	while (p->hasExtension(dir) && !p->isAmbiguous(dir)) {
-		const PackedSeq *ext = &getFirstExt(c, *p, dir);
-		extDirection rdir = dir == SENSE ? ANTISENSE : SENSE;
-		if (ext->isAmbiguous(rdir))
-			break;
+	PackedSeq cur = seq;
+	while (isContiguous(c, &cur))
 		n++;
-		p = ext;
-	}
-	if (pn != NULL)
-		*pn = n;
-	return *p;
+	if (pLength != NULL)
+		*pLength = n;
+	return cur;
 }
 
-static void write_contig(ostream &out,
-		const ISequenceCollection &c, const PackedSeq &seq)
+/** Write out the specified contig. */
+static void write_contig(ostream& out,
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	unsigned n;
 	out << seq.decode() << "->"
-		<< findContigEnd(c, seq, SENSE, &n).decode()
+		<< findContigEnd(c, seq, &n).decode()
 		<< "[label=\"" << n << "\"];\n";
 }
 
-static void write_split(ostream &out,
-		const ISequenceCollection &c, const PackedSeq &seq)
+/** Write out the contigs that split at the specified sequence. */
+static void write_split(ostream& out,
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	out << seq.decode() << "->{ ";
 	PackedSeq ext(seq);
@@ -75,13 +70,14 @@ static void write_split(ostream &out,
 		char base = BASES[i];
 		if (seq.checkExtension(SENSE, base)) {
 			ext.setLastBase(SENSE, base);
-			write_contig(out, c, findSeq(c, ext));
+			write_contig(out, c, ext);
 		}
 	}
 }
 
-static void write_join(ostream &out,
-		const ISequenceCollection &c, const PackedSeq &seq)
+/** Write out the contigs that join at the specified sequence. */
+static void write_join(ostream& out,
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	out << "{ ";
 	PackedSeq ext(seq);
@@ -97,11 +93,13 @@ static void write_join(ostream &out,
 	write_contig(out, c, seq);
 }
 
-void DotWriter::write(ostream &out, const ISequenceCollection& c)
+/** Write out a dot graph for the specified collection. */
+void DotWriter::write(ostream& out, const ISequenceCollection& c)
 {
 	out << "digraph g {\n";
-	for (SequenceCollectionIterator i = c.getStartIter(),
-			end = c.getEndIter(); i != end; ++i) {
+	const SequenceCollectionIterator& end = c.getEndIter();
+	for (SequenceCollectionIterator i = c.getStartIter();
+			i != end; ++i) {
 		if (i->isFlagSet(SF_DELETE))
 			continue;
 		if (!i->hasExtension(ANTISENSE))
