@@ -12,10 +12,6 @@
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
 
-std::ofstream branchLog("branchLog.txt");
-
-
-
 int main(int argc, char** argv)
 {	
 
@@ -80,6 +76,7 @@ int main(int argc, char** argv)
 void outputBranchSizes(AssemblyData* pSS, Coord4 minCoord, Coord4 maxCoord)
 {	 
 	static int trimNum = 0;
+	static std::ofstream branchLog("branchLog.txt");
 	//printf("seqs before trimming: %d\n", pSS->countAll());
 	int numBranchesRemoved = 0;
 	int count = 0;
