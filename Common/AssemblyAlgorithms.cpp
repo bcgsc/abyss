@@ -131,7 +131,6 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	printf("removing loops\n");
 	int count = 0;
 	int numPopped = 0;
-	int asymBubbles = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
@@ -294,13 +293,13 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						{
 							if(*bubIter != branches[removeIndex].lastSeq)
 							{
-								printf("Deleting (%d): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
+								printf("Deleting (%lu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
 								removeSequenceAndExtensions(seqCollection, *bubIter);
 							}
 						}
 					}
 					numPopped++;
-					printf("Popped %d\n", branches[0].seqSet.size());
+					printf("Popped %lu\n", branches[0].seqSet.size());
 				}
 
 		

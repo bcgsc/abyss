@@ -14,7 +14,7 @@ Writer::~Writer()
 void Writer::writeContig(const char* seq)
 {
 	char header[64];
-	sprintf(header, ">contig_%d %d\n", m_numContigs, strlen(seq));
+	sprintf(header, ">contig_%d %lu\n", m_numContigs, strlen(seq));
 	
 	m_fContigs << header;
 	m_fContigs << seq << "\n";

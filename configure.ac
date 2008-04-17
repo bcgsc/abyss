@@ -27,6 +27,8 @@ AC_CHECK_FUNCS([memset mkdir pow sqrt])
 AC_FUNC_MEMCMP
 AC_FUNC_VPRINTF
 
+AC_SUBST(AM_CXXFLAGS, '-Wall -Werror')
+
 AC_CONFIG_FILES([
 	Makefile
 	ABYSS/Makefile

@@ -64,7 +64,7 @@ Path PathDriver::run()
 		int bestScore = 0;
 		int secondBestScore = 0;
 		
-		for(int i = 0; i < subpaths.size(); i++)
+		for(unsigned i = 0; i < subpaths.size(); i++)
 		{
 			if(subpaths[i].getPathLength() >= bestScore)
 			{
@@ -74,7 +74,7 @@ Path PathDriver::run()
 			}
 		}
 		
-		printf("search returned %d paths best length %d index %d diff %d\n", subpaths.size(), bestScore, bestPathIndex, bestScore - secondBestScore);
+		printf("search returned %lu paths best length %d index %d diff %d\n", subpaths.size(), bestScore, bestPathIndex, bestScore - secondBestScore);
 		
 		if(bestPathIndex == -1 || (bestScore - secondBestScore) < 20)
 		{
@@ -115,13 +115,8 @@ Path PathDriver::run()
 	*/
 	
 	// extension done
-	printf("extension step finished %d pairs\n", m_validPairs.size());
+	printf("extension step finished %lu pairs\n", m_validPairs.size());
 	return m_inactivePaths.front();
-}
-
-int PathDriver::scoreBranchPath(const Path& path) const
-{
-	int numNodes = 0;	
 }
 
 bool PathDriver::extendAllActive(bool isSeedPath)
@@ -223,7 +218,7 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 					newPath.addToPath(hr.getHit(i).seq, false);
 					subbranches = extendSeedPathWithPairs(newPath, distance + 1, maxDistance);
 					
-					for(int j = 0; j < subbranches.size(); j++)
+					for(unsigned j = 0; j < subbranches.size(); j++)
 					{
 						retPaths.push_back(subbranches[j]);
 					}

@@ -184,7 +184,7 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 	
 	for(int i = 0; i <= 1; i++)
 	{
-		printf("Contig %s (%d bp) has %d linkages on the %d side\n", contigID.c_str(), m_contigMap[contigID].seq.length(), linkages[i].size(), i);
+		printf("Contig %s (%lu bp) has %lu linkages on the %d side\n", contigID.c_str(), m_contigMap[contigID].seq.length(), linkages[i].size(), i);
 
 		// Choose the best link
 		bool hasBestLink = false;
@@ -195,7 +195,7 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 		
 		for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
 		{
-			printf("	link %s has %d pairs [%d %d]\n", iter->slaveID.c_str(), iter->numPairs, iter->distance, m_contigMap[iter->slaveID].seq.length());
+			printf("	link %s has %d pairs [%d %lu]\n", iter->slaveID.c_str(), iter->numPairs, iter->distance, m_contigMap[iter->slaveID].seq.length());
 			if(iter->numPairs > REQUIRED_PAIRS)
 			{
 				if(iter->distance > bestDistance)
@@ -375,7 +375,7 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 				*/
 			}
 			
-			printf("MERGED (%d): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
+			printf("MERGED (%lu): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
 		}
 	}
 
@@ -657,7 +657,7 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 		}
 	}	
 	
-	printf("Sub assembly loaded %d pairs (max distance %d)\n", seqs.size(), maxDistance);
+	printf("Sub assembly loaded %lu pairs (max distance %d)\n", seqs.size(), maxDistance);
 	
 	pSC->finalize();
 	
@@ -667,11 +667,11 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, int maxD
 	extDirection dir = SENSE;
 
 	SeqVec assemblyProducts = AssembleRecursive(pSC, dir, PackedSeq(startNode), 0, maxDistance);
-	printf("assembly returned %d sequences\n", assemblyProducts.size());
+	printf("assembly returned %lu sequences\n", assemblyProducts.size());
 	
 	for(SeqVecIter iter = assemblyProducts.begin(); iter != assemblyProducts.end(); iter++)
 	{
-		printf("sub assembly returned (%d) %s\n", iter->length(), iter->c_str());
+		printf("sub assembly returned (%lu) %s\n", iter->length(), iter->c_str());
 	}
 	
 	delete pSC;
