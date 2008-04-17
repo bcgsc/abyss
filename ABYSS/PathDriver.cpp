@@ -6,7 +6,8 @@ PathDriver::PathDriver(const PackedSeq& seq, extDirection dir, const PhaseSpace*
 	m_pExtendedSeqRecord->addSequence(seq);
 }
 
-void PathDriver::addSequence(const PackedSeq& seq, std::list<Path>& list, bool isSeed)
+void PathDriver::addSequence(const PackedSeq& seq,
+		std::list<Path>& list, bool /*isSeed*/)
 {
 
 	Path p(seq, m_seedPath.getGrowthDirection());
@@ -246,7 +247,7 @@ std::vector<Path> PathDriver::extendSeedPathWithPairs(Path seedPath, int distanc
 
 // the allowInBranch parameter indicates whether we want to allow branching TO a node that has multiple branches incoming
 // for seed nodes we don't care about the number of branches going into a node but for pairs
-bool PathDriver::extendPath(Path& path, bool allowInBranch)
+bool PathDriver::extendPath(Path& path, bool /*allowInBranch*/)
 {
 	HitRecord hr = m_pPhaseSpace->calculateExtension(path.getCurrentNode(), path.getGrowthDirection());
 	
@@ -381,8 +382,10 @@ SequenceAdjacency PathDriver::checkPathAdjacency(const Path& path1, const Path& 
 
 bool PathDriver::checkSequenceAdjacency(const PackedSeq& seq1, const PackedSeq& seq2, extDirection dir) const
 {
+#if 1
+	(void)seq1; (void)seq2; (void)dir;
 	assert(false);
-#if 0
+#else
 	// chop the sequence by 1 base in the direction of the extension
 	int commonLen = seq1.length() - 1;
 	

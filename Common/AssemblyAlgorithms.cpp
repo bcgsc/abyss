@@ -3,7 +3,8 @@
 //
 // Function to load sequences into the collection
 //
-void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, int readLength, int kmerSize)
+void loadSequences(ISequenceCollection* seqCollection,
+		std::string fastaFile, int /*readLength*/, int kmerSize)
 {
 	FastaReader* reader = new FastaReader(fastaFile.c_str());
 	
@@ -685,7 +686,9 @@ void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 //
 // Build the contig from the extension information
 //
-Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, const PackedSeq& originalSeq, int contigID, int readLen, int kmerSize)
+Sequence BuildContig(ISequenceCollection* /*seqCollection*/,
+		HitVector* extensions, const PackedSeq& originalSeq,
+		int /*contigID*/, int /*readLen*/, int /*kmerSize*/)
 {
 	Sequence contig;
 	std::set<int64_t> readsAligned;
@@ -729,7 +732,9 @@ void PrintAlignmentForSeq(ISequenceCollection* seqCollection, std::set<int64_t>&
 	PrintAlignment(revIDs, readsAligned, contigID, position, rcSeq.decode(), true, readLen, kmerSize);	
 }
 
-void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned, int contig, int position, const Sequence& s, bool isRC, int readLen, int kmerSize)
+void PrintAlignment(const IDList& ids, std::set<int64_t>& readsAligned,
+		int /*contig*/, int position, const Sequence& /*s*/,
+		bool isRC, int readLen, int kmerSize)
 {
 	for(IDList::const_iterator iter = ids.begin(); iter != ids.end(); iter++)
 	{

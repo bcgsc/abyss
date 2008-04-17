@@ -121,7 +121,7 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 //
 // Generate the initial alignments for the sequences
 //
-void Scaffold::GenerateAlignments(PSequenceVector& seqs, ContigMap& contigs)
+void Scaffold::GenerateAlignments(PSequenceVector& seqs, ContigMap& /*contigs*/)
 {
 	printf("Creating DB\n");	
 	Aligner aligner(29);
@@ -962,7 +962,8 @@ ContigOrder Scaffold::DetermineOrder(PairAlignVec& contigPairs)
 //
 // Update the position of reads on the master contig
 //
-void Scaffold::UpdateMasterReads(ContigID contigID, int offset, const Sequence& origSeq, const Sequence& merged)
+void Scaffold::UpdateMasterReads(ContigID contigID, int offset,
+		const Sequence& /*origSeq*/, const Sequence& /*merged*/)
 {
 	// Get all the reads for this contig
 	ReadSet& reads = m_contigReadMap[contigID];
@@ -991,7 +992,9 @@ void Scaffold::UpdateMasterReads(ContigID contigID, int offset, const Sequence& 
 //
 // Update the reads of the contig that got merged into the master
 //
-void Scaffold::UpdateSlaveReads(ContigID slaveID, ContigID masterID, int offset, bool isFlipped, const Sequence& origSeq, const Sequence& merged)
+void Scaffold::UpdateSlaveReads(ContigID slaveID, ContigID masterID,
+		int offset, bool isFlipped, const Sequence& origSeq,
+		const Sequence& /*merged*/)
 {
 	// Get all the reads for this contig
 	ReadSet& reads = m_contigReadMap[slaveID];

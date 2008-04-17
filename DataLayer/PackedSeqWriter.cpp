@@ -17,7 +17,7 @@ PackedSeqWriter::~PackedSeqWriter()
 }
 
 // Write out a single sequence
-void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq, int64_t id)
+void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq, int64_t /*id*/)
 {
 	
 	// make sure the file is readable

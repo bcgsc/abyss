@@ -218,8 +218,10 @@ void PhaseSpace::finalizeBins()
 //
 HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection dir) const
 {	
+#if 1
+	(void)currSeq; (void)dir;
 	assert(false);
-	/*
+#else
 	PSequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);
 
@@ -243,8 +245,7 @@ HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection 
 	}
 	
 	return hitRecord;
-	*/
-
+#endif
 }
 
 //
@@ -268,11 +269,13 @@ bool PhaseSpace::hasChild(const PackedSeq& seq) const
 //
 // get the multiplicity of the sequence
 //
+#if 0
 int PhaseSpace::getMultiplicity(const PackedSeq& seq)
 {
 	assert(false);
 	return 0;
 }
+#endif
 
 //
 // print every read's multiplicity

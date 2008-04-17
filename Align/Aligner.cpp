@@ -49,14 +49,6 @@ void Aligner::CreateDatabase(ContigMap refSeqs)
 	printf("Done creating database\n");
 }
 
-//
-// Align the reads to the database
-//
-void Aligner::AlignReads(PSequenceVector seqs)
-{
-
-}
-
 AlignmentVector Aligner::GetAlignments(const PackedSeq& seq)
 {
 	AlignmentVector results;
