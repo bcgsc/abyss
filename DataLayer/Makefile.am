@@ -3,6 +3,7 @@ noinst_LIBRARIES = libdatalayer.a
 libdatalayer_a_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/Parallel
 
 libdatalayer_a_SOURCES = \
+	DotWriter.cpp DotWriter.h \
 	FastaReader.cpp FastaReader.h \
 	FastaWriter.cpp FastaWriter.h \
 	IFileReader.h IFileWriter.h \

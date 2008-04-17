@@ -7,6 +7,7 @@
 #include <fstream>
 #include "Abyss.h"
 #include "CommonUtils.h"
+#include "DotWriter.h"
 #include "SequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
@@ -60,6 +61,12 @@ int main(int argc, char** argv)
 	
 	// Remove bubbles
 	popBubbles(pSC, kmerSize);
+
+	puts("Building graph.dot...");
+	ofstream dot_out("graph.dot");
+	DotWriter::write(dot_out, *pSC);
+	puts("Done.");
+
 	splitAmbiguous(pSC);
 	
 	assemble(pSC, readLen, kmerSize);
