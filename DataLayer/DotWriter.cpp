@@ -14,12 +14,11 @@ using namespace std;
 static bool isContiguous(const ISequenceCollection& c,
 		PackedSeq* pSeq, extDirection dir)
 {
-	extDirection rdir = dir == SENSE ? ANTISENSE : SENSE;
 	HitRecord hr = calculateExtension(&c, *pSeq, dir);
 	if (hr.getNumHits() != 1)
 		return false;
 	const PackedSeq& ext = hr.getFirstHit().seq;
-	HitRecord rhr = calculateExtension(&c, ext, rdir);
+	HitRecord rhr = calculateExtension(&c, ext, !dir);
 	if (rhr.getNumHits() != 1)
 		return false;
 	*pSeq = ext;

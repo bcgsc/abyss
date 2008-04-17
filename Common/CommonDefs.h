@@ -46,6 +46,11 @@ enum extDirection
 	NUM_DIRECTIONS
 };
 
+static inline extDirection operator !(extDirection dir)
+{
+	return dir == SENSE ? ANTISENSE : SENSE;
+}
+
 enum CollectionState
 {
 	CS_LOADING,
