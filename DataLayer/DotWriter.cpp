@@ -45,8 +45,10 @@ static void write_contig(ostream& out,
 		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	unsigned n;
-	out << seq.decode() << "->"
-		<< findContigEnd(c, seq, &n).decode()
+	const PackedSeq& end = findContigEnd(c, seq, &n);
+	if (n == 1)
+		return;
+	out << seq.decode() << "->" << end.decode()
 		<< "[label=\"" << n << "\"];\n";
 }
 
