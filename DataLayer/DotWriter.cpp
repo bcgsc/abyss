@@ -12,17 +12,25 @@ using namespace std;
  * the reverse direction. If so, return the extension in pSeq.
  */
 static bool isContiguous(const ISequenceCollection& c,
-		PackedSeq* pSeq)
+		PackedSeq* pSeq, extDirection dir)
 {
-	HitRecord hr = calculateExtension(&c, *pSeq, SENSE);
+	extDirection rdir = dir == SENSE ? ANTISENSE : SENSE;
+	HitRecord hr = calculateExtension(&c, *pSeq, dir);
 	if (hr.getNumHits() != 1)
 		return false;
 	const PackedSeq& ext = hr.getFirstHit().seq;
-	HitRecord rhr = calculateExtension(&c, ext, ANTISENSE);
+	HitRecord rhr = calculateExtension(&c, ext, rdir);
 	if (rhr.getNumHits() != 1)
 		return false;
 	*pSeq = ext;
 	return true;
+}
+
+static bool isContiguous(const ISequenceCollection& c,
+		const PackedSeq& seq, extDirection dir)
+{
+	PackedSeq ext = seq;
+	return isContiguous(c, &ext, dir);
 }
 
 /** Find and return the end of the specified contig. Return the length
@@ -33,7 +41,7 @@ static const PackedSeq findContigEnd(const ISequenceCollection& c,
 {
 	unsigned n = 1;
 	PackedSeq cur = seq;
-	while (isContiguous(c, &cur))
+	while (isContiguous(c, &cur, SENSE))
 		n++;
 	if (pLength != NULL)
 		*pLength = n;
@@ -53,8 +61,7 @@ static void write_contig(ostream& out,
 }
 
 /** Write out the contigs that split at the specified sequence. */
-static void write_split(ostream& out,
-		const ISequenceCollection& c, const PackedSeq& seq)
+static void write_split(ostream& out, const PackedSeq& seq)
 {
 	out << seq.decode() << "->{ ";
 	PackedSeq ext(seq);
@@ -67,19 +74,10 @@ static void write_split(ostream& out,
 		}
 	}
 	out << "};\n";
-
-	for (int i = 0; i < NUM_BASES; i++) {
-		char base = BASES[i];
-		if (seq.checkExtension(SENSE, base)) {
-			ext.setLastBase(SENSE, base);
-			write_contig(out, c, ext);
-		}
-	}
 }
 
 /** Write out the contigs that join at the specified sequence. */
-static void write_join(ostream& out,
-		const ISequenceCollection& c, const PackedSeq& seq)
+static void write_join(ostream& out, const PackedSeq& seq)
 {
 	out << "{ ";
 	PackedSeq ext(seq);
@@ -92,7 +90,6 @@ static void write_join(ostream& out,
 		}
 	}
 	out << "}->" << seq.decode() << ";\n";
-	write_contig(out, c, seq);
 }
 
 /** Write out a dot graph for the specified collection. */
@@ -104,12 +101,12 @@ void DotWriter::write(ostream& out, const ISequenceCollection& c)
 			i != end; ++i) {
 		if (i->isFlagSet(SF_DELETE))
 			continue;
-		if (!i->hasExtension(ANTISENSE))
-			write_contig(out, c, *i);
 		if (i->isAmbiguous(SENSE))
-			write_split(out, c, *i);
+			write_split(out, *i);
 		if (i->isAmbiguous(ANTISENSE))
-			write_join(out, c, *i);
+			write_join(out, *i);
+		if (!isContiguous(c, *i, ANTISENSE))
+			write_contig(out, c, *i);
 	}
 	out << "}" << endl;
 }
