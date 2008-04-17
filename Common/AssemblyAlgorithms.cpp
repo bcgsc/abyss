@@ -289,7 +289,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						// Stop removal at the second last sequence
 						for(PSeqSet::iterator bubIter = branches[removeIndex].seqSet.begin(); bubIter != branches[removeIndex].seqSet.end(); bubIter++)
 						{
-							if(*bubIter != branches[removeIndex].lastSeq)
+							if(*bubIter != branches[removeIndex].lastSeq && branches[0].seqSet.find(*bubIter) == branches[0].seqSet.end())
 							{
 								printf("Deleting (%lu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
 								removeSequenceAndExtensions(seqCollection, *bubIter);
