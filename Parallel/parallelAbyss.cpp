@@ -7,25 +7,15 @@
 #include "CommonUtils.h"
 #include "FastaReader.h"
 #include "NetworkSequenceCollection.h"
+#include "Options.h"
 #include "ParallelFastaWriter.h"
 
 int rank;
 
 int main(int argc, char** argv)
 {	
+	opt::parse(argc, argv);
 
-	if(argc < 4 || argv[1] == "--help")
-	{
-		printUsage();
-		exit(1);
-	}
-	
-	std::string fastaFile = argv[1];
-	int readLen = atoi(argv[2]);
-	int kmerSize = atoi(argv[3]);
-	//int numTrims = atoi(argv[3]);
-	
-	
    double starttime, endtime; 
    starttime = MPI::Wtime();
 	
@@ -36,7 +26,8 @@ int main(int argc, char** argv)
 	rank = MPI::COMM_WORLD.Get_rank();
 	int size = MPI::COMM_WORLD.Get_size();
 
-	NetworkSequenceCollection networkSeqs(rank, size, kmerSize, readLen);
+	NetworkSequenceCollection networkSeqs(rank, size,
+			opt::kmerSize, opt::readLen);
 	if(rank == 0)
 	{
 		printf("num nodes: %d\n", size);
@@ -44,11 +35,12 @@ int main(int argc, char** argv)
 	
 	if(rank == 0)
 	{
-		networkSeqs.runControl(fastaFile, readLen, kmerSize);
+		networkSeqs.runControl(opt::fastaFile,
+				opt::readLen, opt::kmerSize);
 	}
 	else
 	{
-		networkSeqs.run(readLen, kmerSize);
+		networkSeqs.run(opt::readLen, opt::kmerSize);
 	}
 
 	endtime = MPI::Wtime();

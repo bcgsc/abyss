@@ -9,6 +9,7 @@
 #include "CommonUtils.h"
 #include "DotWriter.h"
 #include "ISequenceCollection.h"
+#include "Options.h"
 #include "SequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
@@ -22,34 +23,17 @@ static void write_graph(const std::string& path,
 	cout << "Done." << endl;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char* const* argv)
 {	
-
-	if(argc < 4 || argv[1] == "--help")
-	{
-		printUsage();
-		exit(1);
-	}
-
-	std::string fastaFile = argv[1];
-	int readLen = atoi(argv[2]);
-	int kmerSize = atoi(argv[3]);
+	opt::parse(argc, argv);
 	
 	bool noTrim = false;
-	if(argc == 5)
-	{
-		std::string flags = argv[4];
-		if(flags == "-notrim")
-		{
-			noTrim = true;
-		}
-	}
 
 	// Load the phase space
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 	//SequenceCollection* pSC = new SequenceCollection();
 	
-	loadSequences(pSC, fastaFile, readLen, kmerSize);
+	loadSequences(pSC, opt::fastaFile, opt::readLen, opt::kmerSize);
 
 	printf("total sequences: %d\n", pSC->count());
 	
@@ -60,29 +44,22 @@ int main(int argc, char** argv)
 
 	if(!noTrim)
 	{
-		performTrim(pSC, readLen, kmerSize);
+		performTrim(pSC, opt::readLen, opt::kmerSize);
 	}
 	
 	outputSequences("trimmed.fa", pSC);
 	write_graph("trimmed.dot", *pSC);
 
 	// Remove bubbles
-	popBubbles(pSC, kmerSize);
+	popBubbles(pSC, opt::kmerSize);
 
 	write_graph("graph.dot", *pSC);
 
 	splitAmbiguous(pSC);
 	
-	assemble(pSC, readLen, kmerSize);
+	assemble(pSC, opt::readLen, opt::kmerSize);
 
 	delete pSC;
 	
 	return 0;
-}
-
-
-
-void printUsage()
-{
-	printf("usage: ABYSS <reads fasta file> <max read length> <kmer size>\n");	
 }

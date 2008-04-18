@@ -1,6 +1,8 @@
 noinst_LIBRARIES = libcommon.a
 
-libcommon_a_CPPFLAGS = -I$(top_srcdir)/DataLayer -I$(top_srcdir)/Parallel
+libcommon_a_CPPFLAGS = \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Parallel
 
 libcommon_a_SOURCES = \
 	AssemblyAlgorithms.cpp AssemblyAlgorithms.h \
@@ -9,6 +11,7 @@ libcommon_a_SOURCES = \
 	CommonUtils.cpp CommonUtils.h \
 	Config.cpp Config.h \
 	HitRecord.cpp HitRecord.h \
+	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
 	PairRecord.cpp PairRecord.h \
 	PartitionLoader.cpp PartitionLoader.h \
