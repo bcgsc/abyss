@@ -8,9 +8,19 @@
 #include "Abyss.h"
 #include "CommonUtils.h"
 #include "DotWriter.h"
+#include "ISequenceCollection.h"
 #include "SequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
+
+static void write_graph(const std::string& path,
+		/*const*/ ISequenceCollection& c)
+{
+	cout << "Building " << path << "..." << endl;
+	ofstream out(path.c_str());
+	DotWriter::write(out, c);
+	cout << "Done." << endl;
+}
 
 int main(int argc, char** argv)
 {	
@@ -54,14 +64,12 @@ int main(int argc, char** argv)
 	}
 	
 	outputSequences("trimmed.fa", pSC);
-	
+	write_graph("trimmed.dot", *pSC);
+
 	// Remove bubbles
 	popBubbles(pSC, kmerSize);
 
-	puts("Building graph.dot...");
-	ofstream dot_out("graph.dot");
-	DotWriter::write(dot_out, *pSC);
-	puts("Done.");
+	write_graph("graph.dot", *pSC);
 
 	splitAmbiguous(pSC);
 	
