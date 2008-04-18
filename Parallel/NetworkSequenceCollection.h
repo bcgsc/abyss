@@ -13,6 +13,8 @@ enum NetworkAssemblyState
 	NAS_FINALIZE, // finalizing the sequence data and getting ready for processing
 	NAS_GEN_ADJ, // generating the sequence data
 	NAS_TRIM, // trimming the data
+	NAS_POPBUBBLE, // remove read errors/SNPs
+	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
 	NAS_ASSEMBLE, // assembling the data
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function
 	NAS_DONE // finished, clean up and exit
@@ -72,7 +74,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		APResult pumpNetwork();
 		
 		// Loop over the pumping function while waiting for a result from the network
-		ResultPair pumpUntilResult();
+		ResultPair pumpUntilResult(); 
 		
 		// run the assembly
 		void run(int readLength, int kmerSize);
@@ -84,10 +86,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool checkpointReached() const;
 		
 		// get an iterator to the first sequence
-		SequenceCollectionIterator getStartIter();
+		SequenceCollectionIterator getStartIter() const;
 		
 		// get an iterator to the last sequence
-		SequenceCollectionIterator getEndIter();		
+		SequenceCollectionIterator getEndIter() const;		
 		
 	private:
 	
@@ -137,6 +139,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// the original read length
 		int m_readLen;
+		
+		// the current length to trim on (comes from the control node)
+		int m_trimStep;
+		
+		// the number of sequences assembled so far
+		int m_numAssembled;
 };
 
 #endif

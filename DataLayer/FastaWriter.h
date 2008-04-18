@@ -19,11 +19,10 @@ class FastaWriter : public IFileWriter
 		~FastaWriter();
 		
 		// write a single sequence
-		void WriteSequence(Sequence& seq, int64_t id, double multiplicity);
-		void WriteSequence(const PackedSeq& pSeq, int64_t);
+		void WriteSequence(const Sequence& seq, const int64_t id, const double multiplicity);
+
 	private:
 		std::ofstream m_fileHandle;
-		int m_count;
 };
 
 #endif //FASTAWRITER_H

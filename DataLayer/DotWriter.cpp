@@ -11,7 +11,7 @@ using namespace std;
  * the forward direction, and that extension has a single extension in
  * the reverse direction. If so, return the extension in pSeq.
  */
-static bool isContiguous(const ISequenceCollection& c,
+static bool isContiguous(ISequenceCollection& c,
 		PackedSeq* pSeq, extDirection dir)
 {
 	HitRecord hr = calculateExtension(&c, *pSeq, dir);
@@ -25,7 +25,7 @@ static bool isContiguous(const ISequenceCollection& c,
 	return true;
 }
 
-static bool isContiguous(const ISequenceCollection& c,
+static bool isContiguous(ISequenceCollection& c,
 		const PackedSeq& seq, extDirection dir)
 {
 	PackedSeq ext = seq;
@@ -35,7 +35,7 @@ static bool isContiguous(const ISequenceCollection& c,
 /** Find and return the end of the specified contig. Return the length
  * of the contig (counted in kmers) in pLength.
  */
-static const PackedSeq findContigEnd(const ISequenceCollection& c,
+static const PackedSeq findContigEnd(ISequenceCollection& c,
 		const PackedSeq& seq, unsigned* pLength = NULL)
 {
 	unsigned n = 1;
@@ -49,7 +49,7 @@ static const PackedSeq findContigEnd(const ISequenceCollection& c,
 
 /** Write out the specified contig. */
 static void write_contig(ostream& out,
-		const ISequenceCollection& c, const PackedSeq& seq)
+		ISequenceCollection& c, const PackedSeq& seq)
 {
 	unsigned n;
 	const PackedSeq& end = findContigEnd(c, seq, &n);
@@ -92,7 +92,7 @@ static void write_join(ostream& out, const PackedSeq& seq)
 }
 
 /** Write out a dot graph for the specified collection. */
-void DotWriter::write(ostream& out, const ISequenceCollection& c)
+void DotWriter::write(ostream& out, ISequenceCollection& c)
 {
 	out << "digraph g {\n";
 	const SequenceCollectionIterator& end = c.getEndIter();

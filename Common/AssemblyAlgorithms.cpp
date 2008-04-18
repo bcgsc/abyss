@@ -291,7 +291,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						{
 							if(*bubIter != branches[removeIndex].lastSeq && branches[0].seqSet.find(*bubIter) == branches[0].seqSet.end())
 							{
-								printf("Deleting (%lu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
+								//printf("Deleting (%lu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
 								removeSequenceAndExtensions(seqCollection, *bubIter);
 							}
 						}
@@ -311,7 +311,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 //
 //
 //
-HitRecord calculateExtension(const ISequenceCollection* seqCollection,
+HitRecord calculateExtension(ISequenceCollection* seqCollection,
 		const PackedSeq& currSeq, extDirection dir)
 {
 	
@@ -560,8 +560,6 @@ void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 	{
 		if(!seqCollection->checkFlag(*iter, SF_SEEN) && !seqCollection->checkFlag(*iter, SF_DELETE))
 		{
-
-			
 			// There are 2 cases in which we should extend a read:
 			// 1) It is at the endpoint of a branch (either no parent or child extension)
 			// 2) It is the first read past a branch
@@ -694,12 +692,12 @@ void outputSequences(const char* filename, ISequenceCollection* pSS)
 {
 	FastaWriter writer(filename);
 	SequenceCollectionIterator endIter  = pSS->getEndIter();
-	int count = 0;
+	int64_t count = 0;
 	for(SequenceCollectionIterator iter = pSS->getStartIter(); iter != endIter; ++iter)
 	{
 		if(!pSS->checkFlag(*iter, SF_DELETE))
 		{
-			writer.WriteSequence(*iter, count);
+			writer.WriteSequence(iter->decode(), count, 0.0f);
 			count++;
 		}
 	}	

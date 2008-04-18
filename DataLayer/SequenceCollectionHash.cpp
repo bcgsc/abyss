@@ -314,7 +314,7 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 //
 //
 //
-ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base) const
+ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	assert(m_state == CS_FINALIZED);
 	ResultPair rp;

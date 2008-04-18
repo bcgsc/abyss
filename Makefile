@@ -65,8 +65,8 @@ BIN_PATH = $(BASE_PATH)/bin
 
 #########################################################################
 # FLAGS
-CC = g++
-#CC =		mpic++
+#CC = g++
+CC =		mpic++
 
 INCLUDE_DIR = $(HOME)/include
 LIB_DIR = $(HOME)/lib
@@ -89,7 +89,7 @@ LDFLAGS = -L$(LIB_DIR) $(PROFILE) $(64BIT)
 		$(CC) -c $(CPPFLAGS) $< -o $@ 
 		
 all:
-	$(MAKE) ABYSS Scaffold
+	$(MAKE) ABYSS Scaffold ABYSS-P
 	
 test:
 	$(MAKE) ValidatePartition EstimateContigs

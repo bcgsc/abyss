@@ -27,7 +27,7 @@ struct Branch
 
 
 // Calculate the extensions for this sequence
-HitRecord calculateExtension(const ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
+HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
  
 // Read a sequence file and load them into the collection
 void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, int readLength, int kmerSize);

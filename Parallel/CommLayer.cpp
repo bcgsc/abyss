@@ -53,10 +53,11 @@ APMessage CommLayer::CheckMessage(int& sendID) const
 }
 
 
-void CommLayer::SendCheckPointMessage() const
+void CommLayer::SendCheckPointMessage(int argument) const
 {
 	ControlMessage msg;
 	msg.msgType = APC_CHECKPOINT;
+	msg.argument = argument;
 	MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, CONTROL_ID, APM_CONTROL);
 }
 
@@ -143,10 +144,11 @@ SeqFlagMessage CommLayer::ReceiveSeqFlagMessage()
 //
 // Send a control message
 //
-void CommLayer::SendControlMessage(int numNodes, APControl m) const
+void CommLayer::SendControlMessage(int numNodes, APControl m, int argument) const
 {
 	ControlMessage msg;
 	msg.msgType = m;
+	msg.argument = argument;
 	
 	for(int i = 1; i < numNodes; i++)
 	{

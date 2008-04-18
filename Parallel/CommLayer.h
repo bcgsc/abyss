@@ -31,6 +31,7 @@ struct SeqExtMessage
 struct ControlMessage
 {
 	APControl msgType;
+	int argument;
 };
 
 struct ResultMessage
@@ -53,9 +54,10 @@ class CommLayer
 		APMessage CheckMessage(int &sendID) const;
 		
 		// Send a control message
-		void SendControlMessage(int numNodes, APControl m) const;
+		void SendControlMessage(int numNodes, APControl m, int argument = 0) const;
 		
-		void SendCheckPointMessage() const;
+		// Send a message that the checkpoint has been reached
+		void SendCheckPointMessage(int argument = 0) const;
 		
 		// Send a sequence to a specific id
 		void SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation operation) const;

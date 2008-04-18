@@ -3,7 +3,12 @@
 //
 //
 //
-NetworkSequenceCollection::NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize, int readLen) : m_id(myID), m_numDataNodes(numDataNodes), m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen)
+NetworkSequenceCollection::NetworkSequenceCollection(int myID, 
+											 int numDataNodes, 
+											 int kmerSize, 
+											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
+											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
+											 m_trimStep(0), m_numAssembled(0)
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
@@ -60,11 +65,29 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			}
 			case NAS_TRIM:
 			{
-				performTrim(this, readLength, kmerSize);
+				assert(m_trimStep != 0);
+				
+				// Perform the trim at the branch length that the control node sent
+				int numRemoved = trimSequences(this, m_trimStep);
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
-				m_pComm->SendCheckPointMessage();				
+				m_pComm->SendCheckPointMessage(numRemoved);
+				break;
+			}
+			case NAS_POPBUBBLE:
+			{
+				//popBubbles(this, kmerSize);
+				//m_pComm->SendCheckPointMessage();
+				SetState(NAS_WAITING);
+				
+				break;	
+			}
+			case NAS_SPLIT:
+			{
+				splitAmbiguous(this);	
+				m_pComm->SendCheckPointMessage();
+				SetState(NAS_WAITING);
 				break;
 			}
 			case NAS_ASSEMBLE:
@@ -86,7 +109,8 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			{
 				stop = true;
 				break;
-			}						
+			}
+			assert(false);			
 		}
 	}
 }
@@ -133,12 +157,67 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				}
 				
 				SetState(NAS_TRIM);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM);
 				break;
 			}
 			case NAS_TRIM:
 			{
-				performTrim(this, readLength, kmerSize);
+				// The control node drives the trimming and passes the value to trim at to the other nodes
+				int start = 2;
+				int maxBranch =  3 * (readLength - kmerSize + 1);
+				
+				bool stopTrimming = false;
+				while(!stopTrimming)
+				{
+					m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, start);
+					
+					// perform the trim
+					int numRemoved = trimSequences(this, start);
+					
+					if(start < maxBranch)
+					{
+						start <<= 1;
+					}
+					
+					if(start > maxBranch)
+					{
+						start = maxBranch;
+					}
+
+					// Wait for all the nodes to hit the checkpoint
+					if(numRemoved == 0)
+					{
+						stopTrimming = true;
+					}			
+
+					m_numReachedCheckpoint++;
+					while(!checkpointReached())
+					{
+						pumpNetwork();
+					}
+					
+					// All checkpoints are reached, reset the state
+					SetState(NAS_TRIM);
+				}
+				
+				// Trimming has been completed
+				SetState(NAS_POPBUBBLE);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_POPBUBBLE);							
+				break;
+			}
+			case NAS_POPBUBBLE:
+			{
+				popBubbles(this, kmerSize);
+				m_numReachedCheckpoint++;
+				while(!checkpointReached())
+				{
+					pumpNetwork();
+				}
+				SetState(NAS_SPLIT);
+				break;
+			}
+			case NAS_SPLIT:
+			{
+				splitAmbiguous(this);
 				m_numReachedCheckpoint++;
 				while(!checkpointReached())
 				{
@@ -146,9 +225,8 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				}
 				
 				SetState(NAS_ASSEMBLE);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_ASSEMBLE);							
-				break;
-			}
+				break;				
+			}	
 			case NAS_ASSEMBLE:
 			{
 				printf("doing control assemble\n");
@@ -172,7 +250,8 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_WAITING:
 			{
 				break;
-			}								
+			}
+			assert(false);							
 		}
 	}
 }
@@ -391,11 +470,25 @@ void NetworkSequenceCollection::parseControlMessage(int senderID)
 		}
 		case APC_TRIM:
 		{
+			// This message came from the control node along with an argument indicating the maximum branch to trim at
+			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
 			break;				
 		}
+		case APC_POPBUBBLE:
+		{		
+			SetState(NAS_POPBUBBLE);
+			break;	
+		}
+		case APC_SPLIT:
+		{
+			SetState(NAS_SPLIT);
+			break;	
+		}
 		case APC_ASSEMBLE:
 		{
+			// This message came from the control node along with an argument indicating the number of sequences assembled so far
+			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
 			break;	
 		}
@@ -687,7 +780,7 @@ int NetworkSequenceCollection::getMultiplicity(const PackedSeq& seq)
 //
 // The iterator functions return the local space's begin/end
 //
-SequenceCollectionIterator NetworkSequenceCollection::getStartIter()
+SequenceCollectionIterator NetworkSequenceCollection::getStartIter() const
 {
 	return m_pLocalSpace->getStartIter();	
 }
@@ -695,7 +788,7 @@ SequenceCollectionIterator NetworkSequenceCollection::getStartIter()
 //
 // The iterator functions return the local space's begin/end
 //
-SequenceCollectionIterator NetworkSequenceCollection::getEndIter()
+SequenceCollectionIterator NetworkSequenceCollection::getEndIter() const
 {
 	return m_pLocalSpace->getEndIter();	
 }

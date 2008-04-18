@@ -7,6 +7,7 @@
 #include "CommonUtils.h"
 #include "FastaReader.h"
 #include "NetworkSequenceCollection.h"
+#include "ParallelFastaWriter.h"
 
 int rank;
 
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
 	// get my rank
 	rank = MPI::COMM_WORLD.Get_rank();
 	int size = MPI::COMM_WORLD.Get_size();
-	
+
 	NetworkSequenceCollection networkSeqs(rank, size, kmerSize, readLen);
 	if(rank == 0)
 	{
@@ -50,8 +51,7 @@ int main(int argc, char** argv)
 		printf("%d running\n", rank);
 		networkSeqs.run(readLen, kmerSize);
 	}
-	printf("%d exitting\n", rank);
-	
+
 	endtime = MPI::Wtime();
 	
 	printf("%d elapsed seconds: %f\n", rank, endtime - starttime);

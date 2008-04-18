@@ -57,7 +57,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void clearExtensions(const PackedSeq& seq, extDirection dir);
 		
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) const;
+		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
 
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter() const;
