@@ -33,7 +33,7 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 //
 //
 //
-void NetworkSequenceCollection::run(int readLength, int kmerSize)
+void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 {
 	bool stop = false;
 	while(!stop)
@@ -444,7 +444,7 @@ void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
 //
 //
 //
-void NetworkSequenceCollection::parseControlMessage(int senderID)
+void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 {
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
@@ -774,7 +774,7 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 //
 // GetMultiplicity
 //
-int NetworkSequenceCollection::getMultiplicity(const PackedSeq& seq)
+int NetworkSequenceCollection::getMultiplicity(const PackedSeq& /*seq*/)
 {
 	// does nothing for now
 	return 0;	
