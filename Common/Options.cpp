@@ -1,3 +1,5 @@
+/** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
+
 #include "config.h"
 #include <getopt.h>
 #include <iostream>
@@ -7,15 +9,36 @@ using namespace std;
 
 namespace opt {
 
+static const char *VERSION_MESSAGE =
+PACKAGE " (ABySS) " VERSION "\n"
+"Written by Jared Simspon.\n"
+"\n"
+"Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PACKAGE " [OPTION]... FASTA_FILE\n"
+"Assemble FASTA_FILE.\n"
+"\n"
+"  -k, --kmer=KMER_SIZE           k-mer size\n"
+"  -l, --read-length=READ_LENGTH  read length\n"
+"      --help     display this help and exit\n"
+"      --version  output version information and exit\n"
+"\n"
+"Report bugs to " PACKAGE_BUGREPORT "\n";
+
 unsigned kmerSize;
 unsigned readLen;
 string fastaFile;
 
 static const char *shortopts = "k:l:";
 
+enum { OPT_HELP = 1, OPT_VERSION };
+
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
+	{ "help",        no_argument,       NULL, OPT_HELP },
+	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -34,6 +57,12 @@ void parse(int argc, char* const* argv)
 			case 'l':
 				arg >> readLen;
 				break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
 		}
 	}
 
@@ -55,8 +84,11 @@ void parse(int argc, char* const* argv)
 		cerr << PACKAGE ": " << "missing FASTA file argument\n";
 		die = true;
 	}
-	if (die)
+	if (die) {
+		cerr << "Try `" << PACKAGE
+			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
+	}
 
 	fastaFile = argv[optind++];
 }
