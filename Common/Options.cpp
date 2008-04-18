@@ -26,8 +26,13 @@ static const char *USAGE_MESSAGE =
 "\n"
 "Report bugs to " PACKAGE_BUGREPORT "\n";
 
+/** k-mer length */
 unsigned kmerSize;
+
+/** read length */
 unsigned readLen;
+
+/** input FASTA path */
 string fastaFile;
 
 static const char *shortopts = "k:l:";
@@ -42,6 +47,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Parse the specified command line. */
 void parse(int argc, char* const* argv)
 {
 	char c;
