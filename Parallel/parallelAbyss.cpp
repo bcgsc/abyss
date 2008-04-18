@@ -48,7 +48,6 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		printf("%d running\n", rank);
 		networkSeqs.run(readLen, kmerSize);
 	}
 

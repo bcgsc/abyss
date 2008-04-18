@@ -77,8 +77,8 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			}
 			case NAS_POPBUBBLE:
 			{
-				//popBubbles(this, kmerSize);
-				//m_pComm->SendCheckPointMessage();
+				popBubbles(this, kmerSize);
+				m_pComm->SendCheckPointMessage();
 				SetState(NAS_WAITING);
 				
 				break;	
@@ -87,6 +87,7 @@ void NetworkSequenceCollection::run(int readLength, int kmerSize)
 			{
 				splitAmbiguous(this);	
 				m_pComm->SendCheckPointMessage();
+				printf("slave finished split\n");
 				SetState(NAS_WAITING);
 				break;
 			}
@@ -219,6 +220,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			{
 				splitAmbiguous(this);
 				m_numReachedCheckpoint++;
+				printf("master finished split\n");
 				while(!checkpointReached())
 				{
 					pumpNetwork();
@@ -482,6 +484,7 @@ void NetworkSequenceCollection::parseControlMessage(int senderID)
 		}
 		case APC_SPLIT:
 		{
+			printf("received split control code\n");
 			SetState(NAS_SPLIT);
 			break;	
 		}
