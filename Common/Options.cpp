@@ -16,6 +16,7 @@ static const char *shortopts = "k:l:";
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
+	{ NULL, 0, NULL, 0 }
 };
 
 void parse(int argc, char* const* argv)
@@ -23,7 +24,9 @@ void parse(int argc, char* const* argv)
 	char c;
 	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL))
 			!= -1) {
-		istringstream arg(optarg);
+		istringstream arg;
+		if (optarg != NULL)
+			arg.str(optarg);
 		switch (c) {
 			case 'k':
 				arg >> kmerSize;
