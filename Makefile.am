@@ -1,1 +1,1 @@
-SUBDIRS = Align Common DataLayer ABYSS Scaffold
+SUBDIRS = Align Common DataLayer ABYSS Parallel Scaffold
