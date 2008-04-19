@@ -27,6 +27,15 @@ AC_CHECK_FUNCS([memset mkdir pow sqrt])
 AC_FUNC_MEMCMP
 AC_FUNC_VPRINTF
 
+# Check for the LAM/MPI parallel computing library.
+AC_LANG([C++])
+AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([lam], [lam_mutex_lock])
+AC_CHECK_LIB([mpi], [MPI_Init])
+AC_CHECK_LIB([lammpi++], [main]) # MPI::Init
+
+# Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
 AC_CONFIG_FILES([
