@@ -37,7 +37,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, in
 void generateAdjacency(ISequenceCollection* seqCollection);
 
 // trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
-void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize);
+void performTrim(ISequenceCollection* seqCollection);
 
 // Function to perform the actual trimming. Walks the sequence space 
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);

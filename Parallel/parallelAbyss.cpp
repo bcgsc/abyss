@@ -49,8 +49,3 @@ int main(int argc, char** argv)
 	MPI::Finalize();
 	return 0;
 }
-
-void printUsage()
-{
-	printf("usage: ABYSS <reads fasta file> <kmer size> <number of trimming steps>\n");	
-}

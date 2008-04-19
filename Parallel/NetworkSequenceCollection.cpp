@@ -1,4 +1,5 @@
 #include "NetworkSequenceCollection.h"
+#include "Options.h"
 
 //
 //
@@ -164,7 +165,6 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			{
 				// The control node drives the trimming and passes the value to trim at to the other nodes
 				int start = 2;
-				int maxBranch =  3 * (readLength - kmerSize + 1);
 				
 				bool stopTrimming = false;
 				while(!stopTrimming)
@@ -174,15 +174,10 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 					// perform the trim
 					int numRemoved = trimSequences(this, start);
 					
-					if(start < maxBranch)
-					{
+					if (start < opt::trimLen)
 						start <<= 1;
-					}
-					
-					if(start > maxBranch)
-					{
-						start = maxBranch;
-					}
+					if (start > opt::trimLen)
+						start = opt::trimLen;
 
 					// Wait for all the nodes to hit the checkpoint
 					if(numRemoved == 0)

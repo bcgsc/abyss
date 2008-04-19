@@ -21,27 +21,33 @@ static const char *USAGE_MESSAGE =
 "\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
+"  -t, --trim-length=TRIM_LENGTH  maximum length of dangling\n"
+"                                 edges to trim\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
 "\n"
 "Report bugs to " PACKAGE_BUGREPORT "\n";
 
 /** k-mer length */
-unsigned kmerSize;
+int kmerSize = -1;
 
 /** read length */
-unsigned readLen;
+int readLen = -1;
+
+/** trim length */
+int trimLen = -1;
 
 /** input FASTA path */
 string fastaFile;
 
-static const char *shortopts = "k:l:";
+static const char *shortopts = "k:l:t:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
+	{ "trim-length", required_argument, NULL, 't' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -63,6 +69,9 @@ void parse(int argc, char* const* argv)
 			case 'l':
 				arg >> readLen;
 				break;
+			case 't':
+				arg >> trimLen;
+				break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -73,11 +82,11 @@ void parse(int argc, char* const* argv)
 	}
 
 	bool die = false;
-	if (kmerSize == 0) {
+	if (kmerSize <= 0) {
 		cerr << PACKAGE ": " << "missing -k,--kmer option\n";
 		die = true;
 	}
-	if (readLen == 0) {
+	if (readLen <= 0) {
 		cerr << PACKAGE ": " << "missing -l,--read-length option\n";
 		die = true;
 	}
@@ -97,6 +106,9 @@ void parse(int argc, char* const* argv)
 	}
 
 	fastaFile = argv[optind++];
+
+	if (trimLen < 0)
+		trimLen = 6 * (readLen - kmerSize + 1);
 }
 
 } // namespace opt

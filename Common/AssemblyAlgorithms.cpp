@@ -1,4 +1,5 @@
 #include "AssemblyAlgorithms.h"
+#include "Options.h"
 
 //
 // Function to load sequences into the collection
@@ -384,13 +385,13 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 //
 // Trimming driver function
 //
-void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
+void performTrim(ISequenceCollection* seqCollection)
 {
+	if (opt::trimLen == 0)
+		return;
+
 	int start = 2;
-	int maxBranch =  6 * (readLen - kmerSize + 1);
-	
-	
-	while(start <= maxBranch)
+	while(start <= opt::trimLen)
 	{
 		trimSequences(seqCollection, start);
 		start <<= 1;
@@ -399,7 +400,7 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 	bool stop = false;
 	while(!stop)
 	{
-		int numRemoved = trimSequences(seqCollection, maxBranch);
+		int numRemoved = trimSequences(seqCollection, opt::trimLen);
 		if(numRemoved <= 0)
 		{
 			stop = true;
@@ -411,7 +412,7 @@ void performTrim(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 	// Now trim at the max branch length
 	for(int i = 0; i < 2; i++)
 	{
-		trimSequences(seqCollection, maxBranch);
+		trimSequences(seqCollection, opt::trimLen);
 	}
 	
 	// finally, trim at the min contig length

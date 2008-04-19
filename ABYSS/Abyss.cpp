@@ -27,8 +27,6 @@ int main(int argc, char* const* argv)
 {	
 	opt::parse(argc, argv);
 	
-	bool noTrim = false;
-
 	// Load the phase space
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 	//SequenceCollection* pSC = new SequenceCollection();
@@ -42,10 +40,7 @@ int main(int argc, char* const* argv)
 
 	generateAdjacency(pSC);
 
-	if(!noTrim)
-	{
-		performTrim(pSC, opt::readLen, opt::kmerSize);
-	}
+	performTrim(pSC);
 	
 	outputSequences("trimmed.fa", pSC);
 	write_graph("trimmed.dot", *pSC);
