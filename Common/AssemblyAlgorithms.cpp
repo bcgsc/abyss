@@ -292,14 +292,14 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						{
 							if(*bubIter != branches[removeIndex].lastSeq && branches[0].seqSet.find(*bubIter) == branches[0].seqSet.end())
 							{
-								//printf("Deleting (%lu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
+								//printf("Deleting (%zu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
 								removeSequenceAndExtensions(seqCollection, *bubIter);
 							}
 						}
 					}
 					numPopped++;
 
-					printf("Popped %lu\n", branches[0].seqSet.size());
+					printf("Popped %zu\n", branches[0].seqSet.size());
 
 				}
 			}

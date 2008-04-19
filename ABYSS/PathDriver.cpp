@@ -75,7 +75,7 @@ Path PathDriver::run()
 			}
 		}
 		
-		printf("search returned %lu paths best length %d index %d diff %d\n", subpaths.size(), bestScore, bestPathIndex, bestScore - secondBestScore);
+		printf("search returned %zu paths best length %d index %d diff %d\n", subpaths.size(), bestScore, bestPathIndex, bestScore - secondBestScore);
 		
 		if(bestPathIndex == -1 || (bestScore - secondBestScore) < 20)
 		{
@@ -116,7 +116,7 @@ Path PathDriver::run()
 	*/
 	
 	// extension done
-	printf("extension step finished %lu pairs\n", m_validPairs.size());
+	printf("extension step finished %zu pairs\n", m_validPairs.size());
 	return m_inactivePaths.front();
 }
 
