@@ -3,12 +3,11 @@
 //
 //
 //
-CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize)
+CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_numSends(0)
 {
 
 	m_bufferSize = 200*1024*1024;
 	// Create the  buffer
-	
 	m_buffer = new char[m_bufferSize];
 	MPI_Buffer_attach( m_buffer, m_bufferSize); 
 }
@@ -18,8 +17,7 @@ CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize)
 //
 CommLayer::~CommLayer()
 {
-	
-	
+	printf("%d: Comm layer performed %lu buffered sends\n", m_id, m_numSends);
 	// Destroy the buffer
 	delete [] m_buffer;
 }
@@ -70,10 +68,8 @@ void CommLayer::SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation 
 	msg.seq = seq;
 	msg.operation = operation;	
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqMessage), MPI::BYTE, destID, APM_SEQ);
-	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));
-	
+	m_numSends++;
 	req.Free();
-
 }
 
 //
@@ -101,8 +97,8 @@ void CommLayer::SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOper
 	msg.base = base;
 
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqExtMessage), MPI::BYTE, destID, APM_SEQ_EXT);
+	m_numSends++;
 	req.Free();
-	
 }
 
 //
@@ -127,6 +123,7 @@ void CommLayer::SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOp
 	msg.flag = flag;
 
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqFlagMessage), MPI::BYTE, destID, APM_SEQ_FLAG);
+	m_numSends++;
 	req.Free();
 }
 
@@ -145,15 +142,24 @@ SeqFlagMessage CommLayer::ReceiveSeqFlagMessage()
 //
 void CommLayer::SendControlMessage(int numNodes, APControl m, int argument) const
 {
+	// i starts at 1 because the control node does not get the message
+	for(int i = 1; i < numNodes; i++)
+	{
+		SendControlMessageToNode(i, m, argument);
+	}
+}
+
+//
+// Send a control message to a specific node
+//
+void CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument) const
+{
 	ControlMessage msg;
 	msg.msgType = m;
 	msg.argument = argument;
 	
-	for(int i = 1; i < numNodes; i++)
-	{
-		// Control messages are synchronous
-		MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, i, APM_CONTROL);
-	}
+	// Control messages are synchronous
+	MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, nodeID, APM_CONTROL);
 }
 
 //
@@ -177,6 +183,7 @@ void CommLayer::SendResultMessage(int destID, ResultPair rp)
 	msg.result[0] = (rp.forward) ? APR_TRUE : APR_FALSE;
 	msg.result[1] = (rp.reverse) ? APR_TRUE : APR_FALSE;
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
+	m_numSends++;
 	req.Free();
 }
 
@@ -191,6 +198,7 @@ void CommLayer::SendResultMessage(int destID, bool b)
 	msg.result[0] = (b) ? APR_TRUE : APR_FALSE;
 	msg.result[1] = (b) ? APR_TRUE : APR_FALSE;
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
+	m_numSends++;
 	req.Free();
 }
 

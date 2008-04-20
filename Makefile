@@ -68,8 +68,10 @@ BIN_PATH = $(BASE_PATH)/bin
 #CC = g++
 CC =		mpic++
 
-INCLUDE_DIR = $(HOME)/include
-LIB_DIR = $(HOME)/lib
+INCLUDE_DIR = /opt/lam-7.1.2/include
+#INCLUDE_DIR = $(HOME)/include
+LIB_DIR = /opt/lam-7.1.2/lib/
+#LIB_DIR = $(HOME)/lib
 OPTIMIZE = -O2 -Wall
 #64BIT = -m64
 #DEBUG= -g -D DEBUG -Wall

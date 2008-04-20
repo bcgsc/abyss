@@ -2,8 +2,10 @@
 #define COMMLAYER
 
 #include <mpi.h>
+#include <list>
 #include "PackedSeq.h"
 #include "NetworkDefs.h"
+
 
 struct SeqMessage
 {
@@ -39,8 +41,14 @@ struct ResultMessage
 	APResult result[2];
 };
 
+struct RequestBuffer
+{
+	char* buffer;
+	MPI::Request request;
+};
 const int CONTROL_ID = 0;
 
+typedef std::list<MPI::Request> RequestList;
 // The comm layer wraps inter-process communication operations
 class CommLayer
 {
@@ -55,6 +63,9 @@ class CommLayer
 		
 		// Send a control message
 		void SendControlMessage(int numNodes, APControl m, int argument = 0) const;
+		
+		// Send a control message to a specific node
+		void SendControlMessageToNode(int nodeID, APControl m, int argument = 0) const;
 		
 		// Send a message that the checkpoint has been reached
 		void SendCheckPointMessage(int argument = 0) const;
@@ -98,6 +109,7 @@ class CommLayer
 		int m_numBytesPerSeq;
 		int m_bufferSize;
 		char* m_buffer;
+		mutable unsigned long m_numSends;
 };
 
 #endif

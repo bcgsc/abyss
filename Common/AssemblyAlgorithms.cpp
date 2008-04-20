@@ -1,3 +1,4 @@
+#include <iostream>
 #include "AssemblyAlgorithms.h"
 #include "Options.h"
 
@@ -34,9 +35,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 
 		}
 	
-		if(count % 1000000 == 0)
+		if(count % 100000 == 0)
 		{
-			printf("read %d sequences\n", count);
+			std::cout << "read " << count << " sequences " << std::endl;
+			std::cout.flush();
 		}
 		count++;
 			
@@ -67,11 +69,12 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
 			SeqExt extension;
+			PackedSeq testSeq(*iter);
+			testSeq.rotate(dir, 'A');
 			for(int j = 0; j < NUM_BASES; j++)
 			{
 				char currBase = BASES[j];
-				PackedSeq testSeq(*iter);
-				testSeq.rotate(dir, currBase);
+				testSeq.setLastBase(dir, currBase);
 				
 				if(seqCollection->exists(testSeq))
 				{
@@ -300,7 +303,6 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					numPopped++;
 
 					printf("Popped %zu\n", branches[0].seqSet.size());
-
 				}
 			}
 		}
@@ -382,6 +384,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	}	
 }
 
+
 //
 // Trimming driver function
 //
@@ -406,26 +409,6 @@ void performTrim(ISequenceCollection* seqCollection)
 			stop = true;
 		}
 	}
-	
-	/*	
-
-	// Now trim at the max branch length
-	for(int i = 0; i < 2; i++)
-	{
-		trimSequences(seqCollection, opt::trimLen);
-	}
-	
-	// finally, trim at the min contig length
-	bool stop = false;
-	while(!stop)
-	{
-		int numRemoved = trimSequences(seqCollection, 100);
-		if(numRemoved <= 0)
-		{
-			stop = true;
-		}
-	}
-	*/
 }
 
 //
@@ -438,16 +421,13 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 	int count = 0;
+
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 1000000 == 0)
-		{
-			printf("trimmed: %d\n", count);
-		}
 		count++;
 
-		if(iter->isFlagSet(SF_DELETE))
+		if(seqCollection->checkFlag(*iter, SF_DELETE))
 		{
 			continue;
 		}
@@ -460,6 +440,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		{
 			// remove this sequence, it has no extensions
 			removeSequenceAndExtensions(seqCollection, *iter);
+			//numEnds++;
 			continue;
 		}
 		else if(!child)
@@ -541,11 +522,8 @@ bool doPrint = false;
 //
 // Assembly function
 //
-void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize)
+void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter)
 {
-	// create file writer
-	FastaWriter writer("contigs.fa");
-
 
 	int noext = 0;
 	int ambiext = 0;
@@ -642,7 +620,7 @@ void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize)
 					//MPI_File_write(handle, buffer, numChars, MPI::CHAR, &status);
 					double numReads = (double)sumMultiplicity / (readLen - kmerSize + 1);
 					double coverage = (numReads * (double)readLen) /  contig.length();
-					writer.WriteSequence(contig, contigID, coverage);
+					fileWriter->WriteSequence(contig, contigID, coverage);
 					contigID++;
 				}					
 			}

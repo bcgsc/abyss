@@ -83,7 +83,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void runControl(std::string fastaFile, int readLength, int kmerSize);
 		
 		// test if the checkpoint has been reached
-		bool checkpointReached() const;
+		bool checkpointReached(int numRequired) const;
 		
 		// get an iterator to the first sequence
 		SequenceCollectionIterator getStartIter() const;
@@ -126,7 +126,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int m_id;
 		
 		// The number of nodes in the network
-		int m_numDataNodes;
+		unsigned int m_numDataNodes;
 		
 		// the state of the assembly
 		NetworkAssemblyState m_state;

@@ -16,3 +16,4 @@ Scaffold_LDADD = -lalign -lcommon -ldatalayer
 Scaffold_SOURCES = \
 	Scaffold.cpp Scaffold.h \
 	Stats.cpp Stats.h
+

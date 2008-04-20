@@ -1,6 +1,6 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
-#include "config.h"
+#include "../config.h"
 #include <getopt.h>
 #include <iostream>
 #include <sstream>
@@ -11,7 +11,7 @@ namespace opt {
 
 static const char *VERSION_MESSAGE =
 PACKAGE " (ABySS) " VERSION "\n"
-"Written by Jared Simspon.\n"
+"Written by Jared Simpson.\n"
 "\n"
 "Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
 

@@ -94,8 +94,10 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			}
 			case NAS_ASSEMBLE:
 			{
-				printf("doing noncontrol assemble\n");
-				assemble(this, m_readLen, m_kmer);
+				printf("%d: Assembling\n", m_id);
+				// The slave node opens the file in append mode
+				FastaWriter writer("pcontigs.fa", true);
+				assemble(this, m_readLen, m_kmer, &writer);
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -134,13 +136,17 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				
 				// Tell the rest of the loaders that the load is finished
 				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);
+				
+				// Touch a file to indicate the load is done
+				ofstream dummyFile("load.done");
+				dummyFile.close();
 				break;
 			}
 			case NAS_FINALIZE:
 			{
 				finalize();
 				m_numReachedCheckpoint++;
-				while(!checkpointReached())
+				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
@@ -153,7 +159,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			{
 				generateAdjacency(this);
 				m_numReachedCheckpoint++;
-				while(!checkpointReached())
+				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
@@ -186,7 +192,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 					}			
 
 					m_numReachedCheckpoint++;
-					while(!checkpointReached())
+					while(!checkpointReached(m_numDataNodes))
 					{
 						pumpNetwork();
 					}
@@ -204,34 +210,57 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			{
 				popBubbles(this, kmerSize);
 				m_numReachedCheckpoint++;
-				while(!checkpointReached())
+				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
 				SetState(NAS_SPLIT);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);				
 				break;
 			}
 			case NAS_SPLIT:
 			{
 				splitAmbiguous(this);
 				m_numReachedCheckpoint++;
-				printf("master finished split\n");
-				while(!checkpointReached())
+				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
 				
-				SetState(NAS_ASSEMBLE);
+				SetState(NAS_ASSEMBLE);			
 				break;				
 			}	
 			case NAS_ASSEMBLE:
 			{
-				printf("doing control assemble\n");
-				assemble(this, m_readLen, m_kmer);
-				m_numReachedCheckpoint++;
-				while(!checkpointReached())
+				// Perform a round-robin assembly
+				// The assembly operations cannot be concurrent since a contig can have a start in two different
+				// nodes and would therefore result in a collision (and it would be output twice)
+				// Using a round-robin assembly like this will have a minimal impact on performance since most of the heavy
+				// computation is already done and the output of the contigs will mostly be bounded by file io
+
+				// First, assemble the local sequences
+				
+				// Note: all other nodes will be in a waiting state so they will service network requests
+				
+				printf("%d: Assembling\n", m_id);
+				
+				// The master opens the file in truncate mode
+				FastaWriter writer("pcontigs.fa");
+				assemble(this, m_readLen, m_kmer, &writer);
+				
+				// Now tell all the slave nodes to perform the assemble one by one
+				for(unsigned int i = 1; i < m_numDataNodes; ++i)
 				{
-					pumpNetwork();
+					m_pComm->SendControlMessageToNode(i, APC_ASSEMBLE);
+					
+					// Wait for this node to return
+					while(!checkpointReached(1))
+					{
+						pumpNetwork();
+					}
+					
+					//Reset the state and loop
+					SetState(NAS_ASSEMBLE);
 				}
 				
 				SetState(NAS_DONE);
@@ -571,9 +600,9 @@ bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 //
 //
 //
-bool NetworkSequenceCollection::checkpointReached() const
+bool NetworkSequenceCollection::checkpointReached(int numRequired) const
 {
-	if(m_numReachedCheckpoint == m_numDataNodes)
+	if(m_numReachedCheckpoint == numRequired)
 	{
 		return true;
 	}

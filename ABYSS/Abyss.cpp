@@ -52,7 +52,10 @@ int main(int argc, char* const* argv)
 
 	splitAmbiguous(pSC);
 	
-	assemble(pSC, opt::readLen, opt::kmerSize);
+	FastaWriter writer("contigs.fa");
+
+	assemble(pSC, opt::readLen, opt::kmerSize, &writer);
+
 
 	delete pSC;
 	

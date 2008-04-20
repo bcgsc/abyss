@@ -13,7 +13,7 @@ class FastaWriter : public IFileWriter
 	public:
 	
 		// Constructor opens file
-		FastaWriter(const char* filename);
+		FastaWriter(const char* filename, bool append = false);
 		
 		// Destructor closes it
 		~FastaWriter();

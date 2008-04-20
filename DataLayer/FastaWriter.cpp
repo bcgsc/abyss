@@ -1,8 +1,20 @@
 #include "FastaWriter.h"
 
-FastaWriter::FastaWriter(const char* filename)
+FastaWriter::FastaWriter(const char* filename, bool append)
 {	
-	m_fileHandle.open(filename, std::ios::out);
+	std::ios_base::openmode mode = std::ios::out;
+	if(append)
+	{
+		// if the append flag is set, open for append
+		mode |= std::ios::app;
+	}
+	else
+	{
+		// otherwise truncate any current data in the file
+		mode |= std::ios::trunc;
+	}
+	
+	m_fileHandle.open(filename, mode);
 	assert(m_fileHandle.is_open());
 }
 

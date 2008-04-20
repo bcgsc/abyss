@@ -49,7 +49,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 void splitAmbiguous(ISequenceCollection* seqCollection);
 
 // The actual assembly function, takes in an ISequenceCollection pointer
-void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize);
+void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter);
 
 // BuildContig generates the sequence of a contig from the 2-element array of 
 // sequence vectors (one for the antisense direction, one for sense direction)

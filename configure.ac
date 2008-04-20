@@ -38,6 +38,7 @@ AC_CHECK_LIB([lammpi++], [main]) # MPI::Init
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
+
 AC_CONFIG_FILES([
 	Makefile
 	ABYSS/Makefile

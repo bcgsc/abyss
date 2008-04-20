@@ -69,7 +69,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool hasParent(const PackedSeq& seq);
 
 		// does this sequence have an extension?
-		bool hasChild(const PackedSeq& seq);
+		bool hasChild(const PackedSeq& seq);	
 		
 		// Return the number of sequences in the collection
 		int count() const;
