@@ -1,1 +1,4 @@
-SUBDIRS = Align Common DataLayer ABYSS Parallel Scaffold
+if HAVE_LIBMPI
+Parallel=Parallel
+endif
+SUBDIRS = Align Common DataLayer ABYSS $(Parallel) Scaffold
