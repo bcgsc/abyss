@@ -1,5 +1,7 @@
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <math.h>
 
@@ -148,6 +150,9 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 		}
 	}
 	
+	Coord4 minpos = { INT_MAX, INT_MAX, INT_MAX, INT_MAX };
+	Coord4 maxpos = { 0, 0, 0, 0 };
+
 	int count = 0;
 	//Perform the partitioning
 	while(pFileReader->isGood())
@@ -160,6 +165,14 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 		
 		// Calculate the coordinate
 		Coord4 pos = PhaseSpace::SequenceToCoord4(pSeq);
+		minpos.x = MIN(minpos.x, pos.x);
+		minpos.y = MIN(minpos.y, pos.y);
+		minpos.z = MIN(minpos.z, pos.z);
+		minpos.w = MIN(minpos.w, pos.w);
+		maxpos.x = MAX(maxpos.x, pos.x);
+		maxpos.y = MAX(maxpos.y, pos.y);
+		maxpos.z = MAX(maxpos.z, pos.z);
+		maxpos.w = MAX(maxpos.w, pos.w);
 		
 		// Calculate the index
 		Coord4 index = transformCoordinateToIndices(pos, start, partitionSize);
@@ -167,7 +180,10 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 		{
 			printf("bad seq %s\n", pSeq.decode().c_str());
 			printf("sequence is in incorrect bin coord: (%d %d %d %d) bin start: (%d %d %d %d)\n", pos.x, pos.y, pos.z, pos.w, start.x, start.y, start.z, start.w);
-			assert(index.x < numPartitions && index.y < numPartitions && index.z < numPartitions && index.w < numPartitions);
+			assert(index.x < numPartitions);
+			assert(index.y < numPartitions);
+			assert(index.z < numPartitions);
+			assert(index.w < numPartitions);
 		}
 		
 		pWriterMap[index.x][index.y][index.z][index.w]->WriteSequence(pSeq.decode(), count, 0);
@@ -178,6 +194,10 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 		}
 		count++;
 	}
+	printf("minimum coord (%d %d %d %d)\n"
+			"maximum coord (%d %d %d %d)\n",
+			minpos.x, minpos.y, minpos.z, minpos.w,
+			maxpos.x, maxpos.y, maxpos.z, maxpos.w);
 
 	// Close the reader
 	delete pFileReader;
