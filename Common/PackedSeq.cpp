@@ -432,6 +432,14 @@ void PackedSeq::setExtension(extDirection dir, SeqExt extension)
 //
 //
 //
+void PackedSeq::setBaseExtension(extDirection dir, char b)
+{
+	m_extensions[dir].SetBase(b);
+}
+
+//
+//
+//
 void PackedSeq::clearAllExtensions(extDirection dir)
 {
 	m_extensions[dir].ClearAll();

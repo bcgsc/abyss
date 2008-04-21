@@ -1,6 +1,6 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
-#include "../config.h"
+#include "config.h"
 #include <getopt.h>
 #include <iostream>
 #include <sstream>

@@ -20,6 +20,15 @@ enum NetworkAssemblyState
 	NAS_DONE // finished, clean up and exit
 };
 
+struct AdjancencyRequest
+{
+	PackedSeq origSeq;
+	PackedSeq requestSeq;
+	extDirection dir;
+	char base;
+};
+
+typedef std::map<uint64_t, AdjancencyRequest> AdjacencyRequests;
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
@@ -27,6 +36,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Constructor/destructor
 		NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize, int readLen);
 		~NetworkSequenceCollection();
+		
+		// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency 
+		// but has been rewritten to hide latency between nodes
+		void networkGenerateAdjacency(ISequenceCollection* seqCollection);
 		
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
@@ -64,6 +77,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Set the extension of this sequence
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
 		
+		// set a single base extension
+		void setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
+		
 		// remove all the extensions of this sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);		
 		
@@ -93,12 +109,16 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 	private:
 	
-	
+		// ComputeAdjacencyRequest
+		void computeAdjacency(const PackedSeq& currSeq, const PackedSeq& requestSeq, extDirection dir, char base);
+		void setAdjacency(const PackedSeq& seq, extDirection dir, char base);
+		
 		// Network message parsers
 		void parseControlMessage(int senderID);
 		void parseSeqMessage(int senderID);
 		void parseSeqFlagMessage(int senderID);
 		void parseSeqExtMessage(int senderID);	
+		void parseAdjacencyMessage(int senderID);
 		
 		// Read a fasta file and distribute the sequences
 		void readSequences(std::string fastaFile, int readLength, int kmerSize);
@@ -145,6 +165,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// the number of sequences assembled so far
 		int m_numAssembled;
+		
+		// the pending requests
+		AdjacencyRequests m_pendingRequests;
 };
 
 #endif

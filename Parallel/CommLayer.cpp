@@ -3,7 +3,7 @@
 //
 //
 //
-CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_numSends(0)
+CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_msgID(0)
 {
 
 	m_bufferSize = 200*1024*1024;
@@ -17,7 +17,7 @@ CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_n
 //
 CommLayer::~CommLayer()
 {
-	printf("%d: Comm layer performed %lu buffered sends\n", m_id, m_numSends);
+	printf("%d: Comm layer performed %lu buffered sends\n", m_id, (unsigned long)m_msgID);
 	// Destroy the buffer
 	delete [] m_buffer;
 }
@@ -50,46 +50,40 @@ APMessage CommLayer::CheckMessage(int& sendID) const
 }
 
 
-void CommLayer::SendCheckPointMessage(int argument) const
+uint64_t CommLayer::SendCheckPointMessage(int argument)
 {
 	ControlMessage msg;
+	msg.id = m_msgID;
 	msg.msgType = APC_CHECKPOINT;
 	msg.argument = argument;
+
 	MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, CONTROL_ID, APM_CONTROL);
+	m_msgID++;
+	return msg.id;
 }
 
 //
 // Send a sequence to a specific id
 //
-void CommLayer::SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation operation) const
+uint64_t CommLayer::SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation operation)
 {
 	SeqMessage msg;
-	
+	msg.id = m_msgID;
 	msg.seq = seq;
 	msg.operation = operation;	
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqMessage), MPI::BYTE, destID, APM_SEQ);
-	m_numSends++;
 	req.Free();
-}
-
-//
-// Receive a seq message
-//
-SeqMessage CommLayer::ReceiveSeqMessage()
-{
-	SeqMessage msg;
-	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
-	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));	
-	return msg;	
+	m_msgID++;
+	return msg.id;	
 }
 
 //
 // Send a sequence extension message
 //
-void CommLayer::SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOperation operation, extDirection dir, SeqExt ext, char base) const
+uint64_t CommLayer::SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOperation operation, extDirection dir, SeqExt ext, char base)
 {
 	SeqExtMessage msg;
-	
+	msg.id = m_msgID;
 	msg.seq = seq;
 	msg.operation = operation;
 	msg.ext = ext;
@@ -97,34 +91,98 @@ void CommLayer::SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOper
 	msg.base = base;
 
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqExtMessage), MPI::BYTE, destID, APM_SEQ_EXT);
-	m_numSends++;
 	req.Free();
+	m_msgID++;
+	return msg.id;	
 }
 
-//
-// Receive a sequence extension message
-//
-SeqExtMessage CommLayer::ReceiveSeqExtMessage()
-{
-	SeqExtMessage msg;
-	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqExtMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
-	return msg;	
-}
 
 //
 // Send a sequence flag message
 //
-void CommLayer::SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag) const
+uint64_t CommLayer::SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag)
 {
 	SeqFlagMessage msg;
-	
+	msg.id = m_msgID;
 	msg.seq = seq;
 	msg.operation = operation;
 	msg.flag = flag;
 
 	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(SeqFlagMessage), MPI::BYTE, destID, APM_SEQ_FLAG);
-	m_numSends++;
+	m_msgID++;
 	req.Free();
+	return msg.id;	
+}
+
+//
+// Send a control message
+//
+void CommLayer::SendControlMessage(int numNodes, APControl m, int argument)
+{
+	// i starts at 1 because the control node does not get the message
+	for(int i = 1; i < numNodes; i++)
+	{
+		SendControlMessageToNode(i, m, argument);
+	}
+}
+
+//
+// Send a control message to a specific node
+//
+uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
+{
+	ControlMessage msg;
+	msg.id = m_msgID;
+	msg.msgType = m;
+	msg.argument = argument;
+	
+	// Control messages are synchronous
+	MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, nodeID, APM_CONTROL);
+	m_msgID++;
+	return msg.id;	
+}
+
+// Send an adjacency result message
+void CommLayer::SendAdjacencyResult(int destID, uint64_t reqID, bool b)
+{
+	ResultPair rp;
+	rp.forward = b;
+	rp.reverse = b;	
+
+	ResultMessage msg;
+	msg.id = reqID;
+	
+	// Convert the result pair to a result message
+	msg.result[0] = (rp.forward) ? APR_TRUE : APR_FALSE;
+	msg.result[1] = (rp.reverse) ? APR_TRUE : APR_FALSE;
+	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT_ADJ);
+	req.Free();		
+}
+
+//
+// Send a bool result
+//
+void CommLayer::SendResultMessage(int destID, uint64_t reqID, bool b)
+{
+	ResultPair rp;
+	rp.forward = b;
+	rp.reverse = b;
+	SendResultMessage(destID, reqID, rp);
+}
+
+//
+// Send a result
+//
+void CommLayer::SendResultMessage(int destID, uint64_t reqID, ResultPair rp)
+{
+	ResultMessage msg;
+	msg.id = reqID;
+		
+	// Convert the result pair to a result message
+	msg.result[0] = (rp.forward) ? APR_TRUE : APR_FALSE;
+	msg.result[1] = (rp.reverse) ? APR_TRUE : APR_FALSE;
+	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
+	req.Free();	
 }
 
 //
@@ -138,29 +196,15 @@ SeqFlagMessage CommLayer::ReceiveSeqFlagMessage()
 }
 
 //
-// Send a control message
+// Receive a sequence extension message
 //
-void CommLayer::SendControlMessage(int numNodes, APControl m, int argument) const
+SeqExtMessage CommLayer::ReceiveSeqExtMessage()
 {
-	// i starts at 1 because the control node does not get the message
-	for(int i = 1; i < numNodes; i++)
-	{
-		SendControlMessageToNode(i, m, argument);
-	}
+	SeqExtMessage msg;
+	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqExtMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
+	return msg;
 }
 
-//
-// Send a control message to a specific node
-//
-void CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument) const
-{
-	ControlMessage msg;
-	msg.msgType = m;
-	msg.argument = argument;
-	
-	// Control messages are synchronous
-	MPI::COMM_WORLD.Ssend(&msg, sizeof(ControlMessage), MPI::BYTE, nodeID, APM_CONTROL);
-}
 
 //
 // Receive a control message
@@ -173,33 +217,14 @@ ControlMessage CommLayer::ReceiveControlMessage()
 }
 
 //
-// Send a result
+// Receive a seq message
 //
-void CommLayer::SendResultMessage(int destID, ResultPair rp)
+SeqMessage CommLayer::ReceiveSeqMessage()
 {
-	ResultMessage msg;
-	
-	// Convert the result pair to a result message
-	msg.result[0] = (rp.forward) ? APR_TRUE : APR_FALSE;
-	msg.result[1] = (rp.reverse) ? APR_TRUE : APR_FALSE;
-	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
-	m_numSends++;
-	req.Free();
-}
-
-//
-// Send a bool result
-//
-void CommLayer::SendResultMessage(int destID, bool b)
-{
-	ResultMessage msg;
-	
-	// Convert the result pair to a result message
-	msg.result[0] = (b) ? APR_TRUE : APR_FALSE;
-	msg.result[1] = (b) ? APR_TRUE : APR_FALSE;
-	MPI::Request req = MPI::COMM_WORLD.Ibsend(&msg, sizeof(ResultMessage), MPI::BYTE, destID, APM_RESULT);
-	m_numSends++;
-	req.Free();
+	SeqMessage msg;
+	MPI::COMM_WORLD.Recv(&msg, sizeof(SeqMessage), MPI::BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG);
+	//PrintBufferAsHex((char*)&msg, sizeof(SeqMessage));	
+	return msg;	
 }
 
 //

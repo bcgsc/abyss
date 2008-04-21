@@ -9,12 +9,14 @@
 
 struct SeqMessage
 {
+	int64_t id;
 	APSeqOperation operation;
 	PackedSeq seq;
 };
 
 struct SeqFlagMessage
 {
+	int64_t id;
 	APSeqFlagOperation operation;
 	PackedSeq seq;
 	SeqFlag flag;
@@ -22,6 +24,7 @@ struct SeqFlagMessage
 
 struct SeqExtMessage
 {
+	int64_t id;
 	APSeqExtOperation operation;
 	PackedSeq seq;
 	extDirection dir;	
@@ -32,12 +35,15 @@ struct SeqExtMessage
 
 struct ControlMessage
 {
+	int64_t id;
 	APControl msgType;
 	int argument;
 };
 
 struct ResultMessage
 {
+	int64_t id;
+	APResultType resultType;
 	APResult result[2];
 };
 
@@ -48,7 +54,6 @@ struct RequestBuffer
 };
 const int CONTROL_ID = 0;
 
-typedef std::list<MPI::Request> RequestList;
 // The comm layer wraps inter-process communication operations
 class CommLayer
 {
@@ -62,28 +67,31 @@ class CommLayer
 		APMessage CheckMessage(int &sendID) const;
 		
 		// Send a control message
-		void SendControlMessage(int numNodes, APControl m, int argument = 0) const;
+		void SendControlMessage(int numNodes, APControl m, int argument = 0);
 		
 		// Send a control message to a specific node
-		void SendControlMessageToNode(int nodeID, APControl m, int argument = 0) const;
+		uint64_t SendControlMessageToNode(int nodeID, APControl m, int argument = 0);
 		
 		// Send a message that the checkpoint has been reached
-		void SendCheckPointMessage(int argument = 0) const;
+		uint64_t SendCheckPointMessage(int argument = 0);
 		
 		// Send a sequence to a specific id
-		void SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation operation) const;
+		uint64_t SendSeqMessage(int destID, const PackedSeq& seq, APSeqOperation operation);
 		
 		// Send a sequence extension message
-		void SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOperation operation, extDirection dir, SeqExt ext, char base = 0) const;
+		uint64_t SendSeqExtMessage(int destID, const PackedSeq& seq, APSeqExtOperation operation, extDirection dir, SeqExt ext, char base = 0);
 		
 		// Send a sequence flag message
-		void SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag) const;
+		uint64_t SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag);
+				
+		// Send an adjacency result message
+		void SendAdjacencyResult(int destID, uint64_t reqID, bool b);
 		
 		// Send a bool result
-		void SendResultMessage(int destID, bool b);
+		void SendResultMessage(int destID, uint64_t reqID, bool b);
 		
 		// Send a result
-		void SendResultMessage(int destID, ResultPair rp);
+		void SendResultMessage(int destID, uint64_t reqID, ResultPair rp);
 		
 		// Receive a seq message
 		SeqMessage ReceiveSeqMessage();
@@ -108,8 +116,8 @@ class CommLayer
 		int m_kmerSize;
 		int m_numBytesPerSeq;
 		int m_bufferSize;
+		uint64_t m_msgID;
 		char* m_buffer;
-		mutable unsigned long m_numSends;
 };
 
 #endif

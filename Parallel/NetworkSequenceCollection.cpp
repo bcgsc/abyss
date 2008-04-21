@@ -30,7 +30,7 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	delete m_pComm;
 	m_pComm = 0;
 }
-
+int adjSet = 0;
 //
 //
 //
@@ -56,7 +56,7 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			}
 			case NAS_GEN_ADJ:
 			{
-				generateAdjacency(this);
+				networkGenerateAdjacency(this);
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -157,13 +157,16 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			}
 			case NAS_GEN_ADJ:
 			{
-				generateAdjacency(this);
+  				double starttime, endtime; 
+  				starttime = MPI::Wtime();
+				networkGenerateAdjacency(this);
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
-				
+				endtime = MPI::Wtime();
+				printf("Gen adjacency took %f seconds\n", endtime - starttime);
 				SetState(NAS_TRIM);
 				break;
 			}
@@ -297,46 +300,51 @@ APResult NetworkSequenceCollection::pumpNetwork()
 {
 	int senderID;
 	m_pComm->flush();	
-	APMessage msg = m_pComm->CheckMessage(senderID);
-	if(msg != APM_NONE)
+	//int numReceived = 0;
+	bool stop = false;
+	
+	// Loop until either a) a APM_RESULT message is found in which case return and allow pump_until_result to handle it or b) no more messages are waiting
+	while(!stop)
 	{
+		APMessage msg = m_pComm->CheckMessage(senderID);
 		switch(msg)
 		{
 			case APM_SEQ:
 				{
 					parseSeqMessage(senderID);
-					return APR_NONE;
+					break;
 				}
 			case APM_SEQ_FLAG:
 				{
 					parseSeqFlagMessage(senderID);
-					return APR_NONE;
+					break;
 				}
 			case APM_SEQ_EXT:
 				{
 					parseSeqExtMessage(senderID);
-					return APR_NONE;	
+					break;
 				}
 			case APM_CONTROL:
 				{
 					parseControlMessage(senderID);
-					return APR_NONE;
+					break;
 				}
-				
-			// APM_RESULT is handled in pumpUntilResult()
-			case APM_RESULT:
-			default:
+			case APM_RESULT_ADJ:
 				{
-					return APR_NONE;	
+					parseAdjacencyMessage(senderID);	
+					break;
+				}
+			// APM_RESULT is handled in pumpUntilResult()				
+			case APM_RESULT:
+			case APM_NONE:
+				{
+					// either there is no message waiting or it is an AP_RESULT in which case pump_until_result will handle it
+					stop = true;
+					break;
 				}
 		}
+		
 	}
-	else
-	{
-		//printf("flushing network\n");
-
-	}
-
 	return APR_NONE;
 }
 
@@ -391,20 +399,21 @@ void NetworkSequenceCollection::parseSeqMessage(int senderID)
 		case APO_CHECKSEQ:
 		{
 			//PrintDebug(0, "Check seq got\n");
+			assert(isLocal(seqMsg.seq));
 			bool result = m_pLocalSpace->exists(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, result);
+			m_pComm->SendAdjacencyResult(senderID, seqMsg.id, result);
 			break;
 		}
 		case APO_HAS_PARENT:
 		{
 			bool result = m_pLocalSpace->hasParent(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, result);
+			m_pComm->SendResultMessage(senderID, seqMsg.id, result);
 			break;	
 		}
 		case APO_HAS_CHILD:
 		{
 			bool result = m_pLocalSpace->hasChild(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, result);
+			m_pComm->SendResultMessage(senderID, seqMsg.id, result);
 			break;	
 		}
 	}	
@@ -421,7 +430,7 @@ void NetworkSequenceCollection::parseSeqFlagMessage(int senderID)
 		case APSFO_CHECK:
 		{
 			bool result = m_pLocalSpace->checkFlag(flagMsg.seq, flagMsg.flag);
-			m_pComm->SendResultMessage(senderID, result);
+			m_pComm->SendResultMessage(senderID, flagMsg.id, result);
 			break;
 		}
 		case APSFO_SET:
@@ -443,7 +452,7 @@ void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
 		case APSEO_CHECK:
 		{
 			ResultPair result = m_pLocalSpace->checkExtension(extMsg.seq, extMsg.dir, extMsg.base);
-			m_pComm->SendResultMessage(senderID, result);			
+			m_pComm->SendResultMessage(senderID, extMsg.id, result);
 			break;
 		}
 		case APSEO_SET:
@@ -508,7 +517,6 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 		}
 		case APC_SPLIT:
 		{
-			printf("received split control code\n");
 			SetState(NAS_SPLIT);
 			break;	
 		}
@@ -525,6 +533,146 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 			break;	
 		}		
 	}
+}
+
+int numAdjMessagesParsed = 0;
+//
+// Parse an adjacency result message
+//
+void NetworkSequenceCollection::parseAdjacencyMessage(int /*senderID*/)
+{
+	ResultMessage resultMsg = m_pComm->ReceiveResultMessage();
+	uint64_t reqID = resultMsg.id;
+	numAdjMessagesParsed++;
+	// Look up the request in the set
+	AdjacencyRequests::iterator iter = m_pendingRequests.find(reqID);
+	
+	// Make sure the request is valid
+	assert(iter != m_pendingRequests.end());
+
+	// Does the sequence exist?
+	if(resultMsg.result[0] == APR_TRUE || resultMsg.result[1] == APR_TRUE)
+	{
+		adjSet++;
+		setAdjacency(iter->second.origSeq, iter->second.dir, iter->second.base);	
+	}
+	
+	// remove the request
+	m_pendingRequests.erase(iter);
+	
+	//printf("%d: parse adj result, %d remain\n", m_id, m_pendingRequests.size());
+	
+}
+int numAdjMessagesSent = 0;
+int localAdj = 0;
+
+//
+// Generate adjacency - Network version
+// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency but has been rewritten to hide latency between nodes
+//
+void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* seqCollection)
+{
+	printf("generating adjacency info - network\n");
+	int count = 0;
+
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		if(count % 10000 == 0)
+		{
+			printf("generated for %d\n", count);
+		}
+		count++;
+		
+		const PackedSeq& currSeq = *iter;
+		//printf("gen for: %s\n", iter->decode().c_str());
+		for(int i = 0; i <= 1; i++)
+		{
+			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			SeqExt extension;
+			
+			PackedSeq testSeq(currSeq);
+			testSeq.rotate(dir, 'A');
+			
+			for(int j = 0; j < NUM_BASES; j++)
+			{
+				char currBase = BASES[j];
+				testSeq.setLastBase(dir, currBase);
+				
+				// Here is the divergence from the common adjacency generation function
+				// We only generate a request for the existance of the sequence at this moment and then carry on
+				// When the data meanders over the network and eventually returns to use, THEN the adjacency is set
+				// See:: SendAdjancencyRequest/ParseAdjancencyResponse
+				computeAdjacency(currSeq, testSeq, dir, currBase);
+			}	
+		}
+		
+		// Simple load balancing, if there are too many pending requests, wait on the network
+		const unsigned int MAX_NUM_PENDING = 200;
+		if(m_pendingRequests.size() > MAX_NUM_PENDING)
+		{
+			while(m_pendingRequests.size() > 10)
+			{
+				pumpNetwork();
+			}
+		}
+	}
+	
+	// Spin until the request queue is clear
+	while(!m_pendingRequests.empty())
+	{
+		// Service the network
+		seqCollection->pumpNetwork();
+	}
+	printf("Genereated %d adj\n", adjSet);
+	printf("Sent %d adj mesagse\n", numAdjMessagesSent);
+	printf("Parsed %d adj mesagse\n", numAdjMessagesParsed);
+	printf("Local adj: %d\n", localAdj);
+	printf("all requests filled, continue\n");
+}
+
+
+//
+// SendAdjacencyRequest - Send an adjacent request over the network 
+// 
+void NetworkSequenceCollection::computeAdjacency(const PackedSeq& currSeq, const PackedSeq& requestSeq, extDirection dir, char base)
+{
+	// Check if the test sequence is local
+	if(isLocal(requestSeq))
+	{
+		localAdj++;
+		// simply look up the sequence in the local space
+		if(m_pLocalSpace->exists(requestSeq))
+		{
+			// set adjacency
+			setAdjacency(currSeq, dir, base);
+		}	
+	}
+	else
+	{
+		numAdjMessagesSent++;
+		// generate a request and send it off
+		AdjancencyRequest request;
+		request.origSeq = currSeq;
+		request.requestSeq = requestSeq;
+		request.dir = dir;
+		request.base = base;
+	
+		// Send the request
+		int nodeID = computeNodeID(requestSeq);
+		assert(nodeID != m_id);
+		// Add the request to the set
+		uint64_t id = m_pComm->SendSeqMessage(nodeID, requestSeq, APO_CHECKSEQ);
+		m_pendingRequests[id] = request;		
+	}
+}
+
+//
+// Set the adjacency of a sequence
+//
+void NetworkSequenceCollection::setAdjacency(const PackedSeq& seq, extDirection dir, char base)
+{
+	setBaseExtension(seq, dir, base);
 }
 
 //
@@ -587,12 +735,12 @@ bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 	}
 	else
 	{
-		int nodeID = computeNodeID(seq);
-		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
-		m_pComm->SendSeqMessage(nodeID, seq, APO_CHECKSEQ);
+		assert(false);
+		/*
 		//PrintDebug(1, "after send\n");
 		ResultPair rp = pumpUntilResult();
 		result = rp.forward || rp.reverse;
+		*/
 	}
 	return result;
 }
@@ -671,6 +819,7 @@ bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
 	}
 	else
 	{
+		assert(false);
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_PARENT);
@@ -693,6 +842,7 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 	}
 	else
 	{
+		assert(false);
 		int nodeID = computeNodeID(seq);
 		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
 		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_CHILD);
@@ -720,6 +870,22 @@ void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection 
 		int nodeID = computeNodeID(seq);		
 		// base is ignored for now
 		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_SET, dir, extension);
+	}
+}
+
+//
+// 
+//
+void NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
+{
+	if(isLocal(seq))
+	{
+		m_pLocalSpace->setBaseExtension(seq, dir, base);
+	}
+	else
+	{	
+		// This function should only be called locally
+		assert(false);	
 	}
 }
 
@@ -781,6 +947,7 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 	ResultPair result;
 	if(isLocal(seq))
 	{
+		//PrintDebug(1, "checking for local seq %s\n", seq.decode().c_str());
 		result = m_pLocalSpace->checkExtension(seq, dir, base);
 	}
 	else
@@ -835,7 +1002,7 @@ bool NetworkSequenceCollection::isLocal(const PackedSeq& seq) const
 int NetworkSequenceCollection::computeNodeID(const PackedSeq& seq) const
 {
 	unsigned int code = seq.getCode();
-	unsigned int id = code % m_numDataNodes;
+	unsigned int id = code % m_numDataNodes;	
 	return id;
 }
 

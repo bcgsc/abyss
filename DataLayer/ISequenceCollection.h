@@ -55,6 +55,9 @@ class ISequenceCollection
 		// add an extension to the sequence
 		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;
 		
+		// set a single base extension
+		virtual void setBaseExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		
 		// check if the extension exists
 		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		

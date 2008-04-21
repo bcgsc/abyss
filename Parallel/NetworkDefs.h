@@ -9,7 +9,8 @@ enum APMessage
 	APM_SEQ_FLAG,
 	APM_SEQ_EXT,
 	APM_CONTROL,	
-	APM_RESULT
+	APM_RESULT,
+	APM_RESULT_ADJ // Special case
 };
 
 // The type of operations on whole sequences that can be performed
@@ -49,6 +50,15 @@ enum APControl
 	APC_ASSEMBLE,
 	APC_CHECKPOINT,	
 	APC_FINISHED	
+};
+
+enum APResultType
+{
+	APRT_SEQCHECK,
+	APRT_HASPARENT,
+	APRT_HASCHILD,
+	APRT_CHECKEXT,
+	APRT_CHECKFLAG
 };
 
 // The type of results that can be sent

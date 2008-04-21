@@ -55,6 +55,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	
 	printf("generating adjacency info\n");
 	int count = 0;
+	int numBasesSet = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
@@ -79,14 +80,16 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 				if(seqCollection->exists(testSeq))
 				{
 					extension.SetBase(currBase);
+					numBasesSet++;
 				}
 			}
-			seqCollection->setExtension(*iter, dir, extension);			
+			seqCollection->setExtension(*iter, dir, extension);	
 		}
 		
 		//iter->printExtension();
 		seqCollection->pumpNetwork();
 	}
+	printf("adjacency set %d bases\n", numBasesSet);
 }
 
 //

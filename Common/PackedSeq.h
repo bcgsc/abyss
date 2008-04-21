@@ -85,6 +85,7 @@ class PackedSeq
 		
 		// Set a flag indicating this sequence can by extending by base b
 		void setExtension(extDirection dir, SeqExt extension);
+		void setBaseExtension(extDirection dir, char b);
 		void clearExtension(extDirection dir, char b);
 		void clearAllExtensions(extDirection dir);
 		bool checkExtension(extDirection dir, char b) const;
