@@ -17,11 +17,18 @@ PackedSeqWriter::~PackedSeqWriter()
 }
 
 // Write out a single sequence
-void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq, int64_t /*id*/)
+void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq,
+		int64_t /*id*/, double /*multiplicity*/)
 {
 	
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 	
 	m_fileHandle.write(pSeq.getDataPtr(), pSeq.getNumCodingBytes(pSeq.getSequenceLength()));
+}
+
+void PackedSeqWriter::WriteSequence(const Sequence& seq,
+		int64_t id, double multiplicity)
+{
+	WriteSequence(PackedSeq(seq), id, multiplicity);
 }

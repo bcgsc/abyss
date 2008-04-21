@@ -19,7 +19,10 @@ class PackedSeqWriter : public IFileWriter
 		~PackedSeqWriter();
 		
 		// Write a single sequence
-		void WriteSequence(const PackedSeq& pSeq, int64_t id = 0);
+		void WriteSequence(const PackedSeq& pSeq,
+				int64_t id, double multiplicity);
+		void WriteSequence(const Sequence& pSeq,
+				int64_t id, double multiplicity);
 		
 	private:
 		std::ofstream m_fileHandle;

@@ -43,12 +43,12 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 	IFileReader* pFileReader;
 	
 	// Check the type of file to read in
-	if(inputFile.find(".fa") != -1)
+	if(inputFile.find(".fa") != std::string::npos)
 	{
 		//printf("opening fasta reader\n");
 		pFileReader = new FastaReader(inputFile.c_str());
 	}
-	else if(inputFile.find(".sqb") != -1)
+	else if(inputFile.find(".sqb") != std::string::npos)
 	{
 		//printf("opening binary reader\n");
 		pFileReader = new PackedSeqReader(inputFile.c_str());
@@ -56,6 +56,7 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 	else
 	{
 		printf("Unknown filetype: %s\n", inputFile.c_str());	
+		exit(EXIT_FAILURE);
 	}
 
 	// Check that partitionSize != originalSize or this will be a waste of time
@@ -169,7 +170,7 @@ void PartitionFile(const Config& config, std::string inputFile, int partitionSiz
 			assert(index.x < numPartitions && index.y < numPartitions && index.z < numPartitions && index.w < numPartitions);
 		}
 		
-		pWriterMap[index.x][index.y][index.z][index.w]->WriteSequence(pSeq);
+		pWriterMap[index.x][index.y][index.z][index.w]->WriteSequence(pSeq.decode(), count, 0);
 		
 		if(count % 100000 == 0)
 		{
@@ -235,6 +236,10 @@ void PartitionFromControl(const Config& config, std::string controlFile)
 
 Coord4 transformCoordinateToIndices(Coord4 position, Coord4 startPos, int length)
 {
+	assert(position.x >= startPos.x);
+	assert(position.y >= startPos.y);
+	assert(position.z >= startPos.z);
+	assert(position.w >= startPos.w);
 	Coord4 tCoord;
 	tCoord.x = (position.x - startPos.x) / length;
 	tCoord.y = (position.y - startPos.y) / length;
@@ -295,10 +300,10 @@ void test()
 #endif	
 }
 
+#if 0
 void createDirectoryStructure(std::string partitionDimension, int sequenceLength, int stride)
 {
 	// Create directories first
-	/*
 	char dirName[128];
 	for(int i = 0; i < seqLen; i += stride)
 	{
@@ -327,8 +332,8 @@ void createDirectoryStructure(std::string partitionDimension, int sequenceLength
 		
 		progress++;
 	}
-	*/
 }
+#endif
 
 int CoordToFileName(char* buffer, const char* rootDir, int x, int y, int z, int w)
 {	

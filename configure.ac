@@ -59,6 +59,7 @@ AC_CONFIG_FILES([
 	Common/Makefile
 	DataLayer/Makefile
 	Parallel/Makefile
+	Partition/Makefile
 	Scaffold/Makefile
 ])
 AC_OUTPUT
