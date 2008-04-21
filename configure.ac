@@ -32,13 +32,13 @@ AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	[specify prefix directory for the installed LAM/MPI parallel
 	computing library]))
 if test "$with_mpi" -a -d "$with_mpi"; then
-	mpicppflags="-I$with_mpi/include"
-	mpildflags="-L$with_mpi/lib"
+	mpi_cppflags="-I$with_mpi/include"
+	mpi_ldflags="-L$with_mpi/lib"
 fi
 
 # Set compiler flags.
-AC_SUBST(CPPFLAGS, "$mpicppflags")
-AC_SUBST(CXXFLAGS, "$mpildflags")
+AC_SUBST(CPPFLAGS, "$mpi_cppflags")
+AC_SUBST(LDFLAGS, "$mpi_ldflags")
 
 # Check for the LAM/MPI parallel computing library.
 AC_LANG([C++])
