@@ -104,6 +104,11 @@ void parse(int argc, char* const* argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+	if (kmerSize > readLen) {
+		cerr << PACKAGE ": "
+			<< "k-mer size must be smaller than the read length\n";
+		exit(EXIT_FAILURE);
+	}
 
 	fastaFile = argv[optind++];
 
