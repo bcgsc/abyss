@@ -22,7 +22,7 @@ struct Branch
 	PSeqSet seqSet;
 	PackedSeq lastSeq;
 	
-	void AddSequence(const PackedSeq& seq) { seqSet.insert(seq).first; lastSeq = seq;}
+	void AddSequence(const PackedSeq& seq) { seqSet.insert(seq); lastSeq = seq;}
 };
 
 

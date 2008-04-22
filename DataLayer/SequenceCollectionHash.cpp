@@ -22,7 +22,9 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 {
-	m_pSequences = new SequenceDataHash(2 << 24);
+	PackedSeqHasher hasher;
+	PackedSeqEqual equal;
+	m_pSequences = new SequenceDataHash(2 << 24, hasher, equal);
 	//m_pSequences = new SequenceDataHash();
 }
 
@@ -66,7 +68,7 @@ void SequenceCollectionHash::copyBranchCache(PSeqSet& outset)
 // Add a single read to the SequenceCollection
 //
 void SequenceCollectionHash::add(const PackedSeq& seq)
-{
+{	
 	// Check if the sequence exists
 	SequenceCollectionHashIter iter = FindSequence(seq);
 	if(iter != m_pSequences->end())
@@ -84,6 +86,7 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 //
 void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
+
 	// Mark the flag as deleted and remove it from the cache of branch ends (if it is there)
 	setFlag(seq, SF_DELETE);
 	m_branchEndCache.erase(seq);
@@ -118,7 +121,7 @@ void SequenceCollectionHash::setExtension(const PackedSeq& seq, extDirection dir
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	setExtensionByIter(iters.first, dir, extension);
-	setExtensionByIter(iters.second, oppositeDirection(dir), extension.complement());	
+	setExtensionByIter(iters.second, oppositeDirection(dir), extension.complement());
 }
 
 //
@@ -158,6 +161,7 @@ void SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& 
 void SequenceCollectionHash::removeExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
+
 	removeExtensionByIter(iters.first, dir, base);
 	removeExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
 }
@@ -296,6 +300,11 @@ bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter
 void SequenceCollectionHash::finalize()
 {
 	m_state = CS_FINALIZED;
+	/*
+	int num_buckets = m_pSequences->bucket_count();
+	int num_seqs = m_pSequences->size();
+	printf("hash buckets: %d sequences: %d load factor: %f\n", num_buckets, num_seqs, (float)num_seqs/(float)num_buckets);
+	*/
 }
 
 //

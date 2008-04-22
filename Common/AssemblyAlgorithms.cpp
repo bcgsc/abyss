@@ -1,7 +1,6 @@
 #include <iostream>
 #include "AssemblyAlgorithms.h"
 #include "Options.h"
-
 //
 // Function to load sequences into the collection
 //
@@ -78,7 +77,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 				testSeq.setLastBase(dir, currBase);
 				
 				if(seqCollection->exists(testSeq))
-				{
+				{		
 					extension.SetBase(currBase);
 					numBasesSet++;
 				}
@@ -139,9 +138,9 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		
+	
 		if(iter->isFlagSet(SF_DELETE))
-		{
+		{		
 			continue;
 		}
 				
@@ -154,7 +153,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		// Set the cutoffs
 		unsigned int expectedBubbleSize = 2*(kmerSize + 1);
 		const unsigned int maxNumBranches = 3;
-		
+
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
@@ -162,7 +161,6 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 
 			if(initHR.getNumHits() > 1)
 			{
-				//printf("Found potential bubble\n");
 				// Found a potential bubble, examine each branch
 				bool stop = false;
 						
@@ -173,6 +171,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				{
 					Branch newBranch;
 					//printf("Adding start: %s\n", initHR.getHit(j).seq.decode().c_str());
+					
 					newBranch.AddSequence(initHR.getHit(j).seq);
 					branches.push_back(newBranch);
 				}
@@ -184,11 +183,10 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				{
 					int numBranches = branches.size();
 					for(int j = 0; j < numBranches; ++j)
-					{
-						//printf("Curr seq: %s\n", currSeq.decode().c_str());
-												
+					{												
 						// Check the extension of this sequence
 						HitRecord bubHR = calculateExtension(seqCollection, branches[j].lastSeq, dir);
+												
 						if(bubHR.getNumHits() == 1)
 						{
 							// single extension
@@ -261,7 +259,6 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					
 					if(branches[0].seqSet.size() > expectedBubbleSize || branches.size() > maxNumBranches)
 					{
-						//printf("bubble too long stop\n");
 						stop = true;
 						bubble = false;
 					}	
@@ -282,6 +279,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				{
 					//printf("BRANCHES %d %d\n", branches.size(), branches.front().size());
 					// Remove the bubble (arbitrary decision on which one for now)
+					//printf("pop!\n");
 					for(unsigned int k = 1; k < branches.size(); k++)
 					{
 						int removeIndex = k;
@@ -323,7 +321,8 @@ HitRecord calculateExtension(ISequenceCollection* seqCollection,
 		char currBase = BASES[i];
 		
 		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
-			
+		//if(printAll) printf("%s has extension(%d) to: %c ? %d\n", currSeq.decode().c_str(), dir, currBase, hasExt.forward || hasExt.reverse);
+		
 		// Does this sequence have an extension?
 		if(hasExt.forward || hasExt.reverse)
 		{
@@ -379,7 +378,6 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 		}
 	}	
 }
-
 
 //
 // Trimming driver function
@@ -442,7 +440,6 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		{
 			// remove this sequence, it has no extensions
 			removeSequenceAndExtensions(seqCollection, *iter);
-			//numEnds++;
 			continue;
 		}
 		else if(!child)
@@ -463,7 +460,6 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		extDirection oppositeDir = oppositeDirection(dir);
 					
 		PackedSeq currSeq = *iter;
-		SeqRecord loopCheck;
 		bool stop = false;
 		
 		while(!stop)
@@ -506,9 +502,6 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			for(PSequenceVectorIterator bIter = branchElements.begin(); bIter != branchElements.end(); bIter++)
 			{
 				removeSequenceAndExtensions(seqCollection, *bIter);
-				
-				// Does this removal create a new branch end?
-				
 			}
 		}
 		

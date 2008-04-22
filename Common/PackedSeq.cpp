@@ -134,6 +134,7 @@ int PackedSeq::compare(const PackedSeq& other) const
 			}
 		}
 	}
+	
 	return 0;
 }
 
