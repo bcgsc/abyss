@@ -69,9 +69,11 @@ void SequenceCollectionHash::copyBranchCache(PSeqSet& outset)
 //
 void SequenceCollectionHash::add(const PackedSeq& seq)
 {	
-	// Check if the sequence exists
-	SequenceCollectionHashIter iter = FindSequence(seq);
-	if(iter != m_pSequences->end())
+	// Check if the sequence exists or reverse complement exists
+	SequenceHashIterPair iters = GetSequenceIterators(seq);
+
+	// If it exists of the reverse complement exists, do not add
+	if(iters.first != m_pSequences->end() || iters.second != m_pSequences->end())
 	{
 		//const_cast<PackedSeq&>(*iter).addMultiplicity();
 	}
