@@ -36,6 +36,33 @@ SequenceCollectionHash::~SequenceCollectionHash()
 }
 
 //
+// Cache all the ends of the branches
+//
+void SequenceCollectionHash::cacheBranchEnds()
+{
+	SequenceCollectionHashIter endIter = getEndIter();
+	for(SequenceCollectionHashIter iter = getStartIter(); iter != endIter; iter++)
+	{
+		if(!iter->isFlagSet(SF_DELETE))
+		{
+			if(!hasParent(*iter) || !hasChild(*iter))
+			{
+				// this sequence is a dead end, add it to the branch cache
+				m_branchEndCache.insert(*iter);
+			}	
+		}
+	}
+}
+
+//
+// Make a copy of the branch end cache
+//
+void SequenceCollectionHash::copyBranchCache(PSeqSet& outset)
+{
+	outset = m_branchEndCache;
+}
+
+//
 // Add a single read to the SequenceCollection
 //
 void SequenceCollectionHash::add(const PackedSeq& seq)
@@ -57,8 +84,13 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 //
 void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
+	// Mark the flag as deleted and remove it from the cache of branch ends (if it is there)
 	setFlag(seq, SF_DELETE);
-	setFlag(reverseComplement(seq), SF_DELETE);	
+	m_branchEndCache.erase(seq);
+	
+	// With the reverse complement as well
+	setFlag(reverseComplement(seq), SF_DELETE);
+	m_branchEndCache.erase(reverseComplement(seq));
 }
 
 // get the multiplicity of a sequence
@@ -137,7 +169,13 @@ void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& s
 {
 	if(seqIter != m_pSequences->end())
 	{
-		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);	
+		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);
+		
+		// Check if the sequence no longer has an extension in this direction, if so add it to the branch ends list
+		if(!seqIter->hasExtension(dir))
+		{
+			m_branchEndCache.insert(*seqIter);
+		}
 		//seqIter->printExtension();
 	}
 }

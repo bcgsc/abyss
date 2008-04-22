@@ -72,15 +72,20 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool hasParent(const PackedSeq& seq);
 
 		// does this sequence have an extension?
-		bool hasChild(const PackedSeq& seq);	
+		bool hasChild(const PackedSeq& seq);
+		
+		// Generate the initial cache of branch ends
+		void cacheBranchEnds();
+		
+		// Make a copy of the branch end cache for the higher-level algorithms to operate on
+		void copyBranchCache(PSeqSet& outset);
 		
 		// Return the number of sequences in the collection
 		int count() const;
 		
 		// Pump the network. For this sequence collection (non-network) this function just returns
 		virtual APResult pumpNetwork() { return APR_NONE; }
-						
-
+								
 	private:
 
 
@@ -109,8 +114,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 
-		
-		
 		// Data members
 		
 		// pointer to the actual collection (typedef'd above)
@@ -118,6 +121,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// the state of the space
 		CollectionState m_state;
+		
+		// Cache of branch ends (sequences that have no extension on either side)
+		PSeqSet m_branchEndCache;
 };
 
 #endif

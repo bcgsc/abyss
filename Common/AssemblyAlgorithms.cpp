@@ -139,13 +139,6 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		/*
-		PackedSeq testSeq("GCTGGCACCACCACCCCTGGCCACCCCAG");
-		if(*iter != testSeq && *iter != reverseComplement(testSeq))
-		{
-			continue;
-		}
-		*/
 		
 		if(iter->isFlagSet(SF_DELETE))
 		{
@@ -305,7 +298,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					}
 					numPopped++;
 
-					printf("Popped %zu\n", branches[0].seqSet.size());
+					//printf("Popped %zu\n", branches[0].seqSet.size());
 				}
 			}
 		}
@@ -396,6 +389,9 @@ void performTrim(ISequenceCollection* seqCollection)
 	if (opt::trimLen == 0)
 		return;
 
+	// Tell the sequence collection to cache all the branch ends
+	seqCollection->cacheBranchEnds();
+	
 	int start = 2;
 	while(start <= opt::trimLen)
 	{
@@ -417,7 +413,6 @@ void performTrim(ISequenceCollection* seqCollection)
 //
 // Trimming (error removal) function
 //
-
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
 	const int MAX_DEAD_LENGTH = maxBranchCull;
@@ -425,8 +420,12 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	int numBranchesRemoved = 0;
 	int count = 0;
 
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	// Make a copy of the branch cache to operate on
+	PSeqSet branchCache;
+	seqCollection->copyBranchCache(branchCache);
+	printf("Cache has %u branches\n", branchCache.size());
+	
+	for(PSeqSet::const_iterator iter = branchCache.begin(); iter != branchCache.end(); ++iter)
 	{
 		count++;
 
@@ -507,6 +506,9 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			for(PSequenceVectorIterator bIter = branchElements.begin(); bIter != branchElements.end(); bIter++)
 			{
 				removeSequenceAndExtensions(seqCollection, *bIter);
+				
+				// Does this removal create a new branch end?
+				
 			}
 		}
 		
