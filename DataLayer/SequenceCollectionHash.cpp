@@ -22,9 +22,7 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 {
-	PackedSeqHasher hasher;
-	PackedSeqEqual equal;
-	m_pSequences = new SequenceDataHash(2 << 24, hasher, equal);
+	m_pSequences = new SequenceDataHash(2 << 24);
 	//m_pSequences = new SequenceDataHash();
 }
 
@@ -35,33 +33,6 @@ SequenceCollectionHash::~SequenceCollectionHash()
 {
 	delete m_pSequences;
 	m_pSequences = 0;
-}
-
-//
-// Cache all the ends of the branches
-//
-void SequenceCollectionHash::cacheBranchEnds()
-{
-	SequenceCollectionHashIter endIter = getEndIter();
-	for(SequenceCollectionHashIter iter = getStartIter(); iter != endIter; iter++)
-	{
-		if(!iter->isFlagSet(SF_DELETE))
-		{
-			if(!hasParent(*iter) || !hasChild(*iter))
-			{
-				// this sequence is a dead end, add it to the branch cache
-				m_branchEndCache.insert(*iter);
-			}	
-		}
-	}
-}
-
-//
-// Make a copy of the branch end cache
-//
-void SequenceCollectionHash::copyBranchCache(PSeqSet& outset)
-{
-	outset = m_branchEndCache;
 }
 
 //
@@ -88,14 +59,11 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 //
 void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
-
 	// Mark the flag as deleted and remove it from the cache of branch ends (if it is there)
 	setFlag(seq, SF_DELETE);
-	m_branchEndCache.erase(seq);
 	
 	// With the reverse complement as well
 	setFlag(reverseComplement(seq), SF_DELETE);
-	m_branchEndCache.erase(reverseComplement(seq));
 }
 
 // get the multiplicity of a sequence
@@ -175,14 +143,7 @@ void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& s
 {
 	if(seqIter != m_pSequences->end())
 	{
-		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);
-		
-		// Check if the sequence no longer has an extension in this direction, if so add it to the branch ends list
-		if(!seqIter->hasExtension(dir))
-		{
-			m_branchEndCache.insert(*seqIter);
-		}
-		//seqIter->printExtension();
+		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);		
 	}
 }
 
@@ -302,11 +263,11 @@ bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter
 void SequenceCollectionHash::finalize()
 {
 	m_state = CS_FINALIZED;
-	/*
+	
 	int num_buckets = m_pSequences->bucket_count();
 	int num_seqs = m_pSequences->size();
 	printf("hash buckets: %d sequences: %d load factor: %f\n", num_buckets, num_seqs, (float)num_seqs/(float)num_buckets);
-	*/
+	
 }
 
 //

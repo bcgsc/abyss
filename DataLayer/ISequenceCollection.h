@@ -61,12 +61,6 @@ class ISequenceCollection
 		// check if the extension exists
 		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		
-		// Generate the initial cache of branch ends
-		virtual void cacheBranchEnds() = 0;
-		
-		// Make a copy of the branch end cache for the higher-level algorithms to operate on
-		virtual void copyBranchCache(PSeqSet& outset) = 0;		
-		
 		// call to service network operations if needed
 		// for non-network sequence collections this will simply return
 		virtual APResult pumpNetwork() = 0;

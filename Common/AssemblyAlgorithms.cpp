@@ -387,9 +387,6 @@ void performTrim(ISequenceCollection* seqCollection)
 	if (opt::trimLen == 0)
 		return;
 
-	// Tell the sequence collection to cache all the branch ends
-	seqCollection->cacheBranchEnds();
-	
 	int start = 2;
 	while(start <= opt::trimLen)
 	{
@@ -416,17 +413,10 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	const int MAX_DEAD_LENGTH = maxBranchCull;
 	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
-	int count = 0;
 
-	// Make a copy of the branch cache to operate on
-	PSeqSet branchCache;
-	seqCollection->copyBranchCache(branchCache);
-	printf("Cache has %u branches\n", branchCache.size());
-	
-	for(PSeqSet::const_iterator iter = branchCache.begin(); iter != branchCache.end(); ++iter)
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		count++;
-
 		if(seqCollection->checkFlag(*iter, SF_DELETE))
 		{
 			continue;

@@ -74,12 +74,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		// does this sequence have an extension?
 		bool hasChild(const PackedSeq& seq);
 		
-		// Generate the initial cache of branch ends
-		void cacheBranchEnds();
-		
-		// Make a copy of the branch end cache for the higher-level algorithms to operate on
-		void copyBranchCache(PSeqSet& outset);
-		
 		// Return the number of sequences in the collection
 		int count() const;
 		
@@ -121,9 +115,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// the state of the space
 		CollectionState m_state;
-		
-		// Cache of branch ends (sequences that have no extension on either side)
-		PSeqSet m_branchEndCache;
+
 };
 
 #endif
