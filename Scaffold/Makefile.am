@@ -6,14 +6,11 @@ Scaffold_CPPFLAGS = \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/Parallel
 
-Scaffold_LDFLAGS = \
-	-L$(top_builddir)/Align \
-	-L$(top_builddir)/Common \
-	-L$(top_builddir)/DataLayer
-
-Scaffold_LDADD = -lalign -lcommon -ldatalayer
+Scaffold_LDADD = \
+	$(top_builddir)/Align/libalign.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(top_builddir)/DataLayer/libdatalayer.a
 
 Scaffold_SOURCES = \
 	Scaffold.cpp Scaffold.h \
 	Stats.cpp Stats.h
-

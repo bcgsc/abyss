@@ -4,11 +4,9 @@ Partition_CPPFLAGS = \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer
 
-Partition_LDFLAGS = \
-	-L$(top_builddir)/Common \
-	-L$(top_builddir)/DataLayer
-
-Partition_LDADD = -lcommon -ldatalayer
+Partition_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(top_builddir)/DataLayer/libdatalayer.a
 
 Partition_SOURCES = \
 	Partition.cpp Partition.h
