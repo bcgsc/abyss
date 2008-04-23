@@ -37,8 +37,8 @@ if test "$with_mpi" -a -d "$with_mpi"; then
 fi
 
 # Set compiler flags.
-AC_SUBST(CPPFLAGS, "$mpi_cppflags")
-AC_SUBST(LDFLAGS, "$mpi_ldflags")
+AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
+AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
 # Check for the LAM/MPI parallel computing library.
 AC_LANG([C++])
