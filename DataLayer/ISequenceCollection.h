@@ -2,12 +2,27 @@
 #define ISEQUENCECOLLECTION_H
 
 #include <iterator>
+#include <google/sparse_hash_set>
 #include "NetworkDefs.h"
 #include "CommonDefs.h"
 #include "CommonUtils.h"
 #include "PackedSeq.h"
 #include "HitRecord.h"
 
+
+//
+// Typedefs for the main data model
+//
+
+// Data model typedefs (this should be templated eventually)
+typedef google::sparse_hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+//typedef __gnu_cxx::hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+//typedef std::set<PackedSeq> SequenceDataHash;
+typedef SequenceDataHash::iterator SequenceCollectionHashIter;
+typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
+
+typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> SequenceHashIterPair;
+typedef SequenceCollectionHashIter SequenceCollectionIterator;
 // Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
 // This pure virtual class defines the minimum set of functions a sequence collection must provide
 
@@ -67,12 +82,6 @@ class ISequenceCollection
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;
-		
-		// get an iterator pointing to the first sequence in the collection
-		//virtual std::vector<PackedSeq>::iterator getStartIter() = 0;
-		
-		// get an iterator pointing to the last sequence in the collection
-		//virtual std::vector<PackedSeq>::iterator getEndIter() = 0;
 };
 
 #endif

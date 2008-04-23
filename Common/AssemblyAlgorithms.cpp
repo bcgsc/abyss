@@ -1,6 +1,8 @@
 #include <iostream>
 #include "AssemblyAlgorithms.h"
 #include "Options.h"
+#include "SequenceCollectionHash.h"
+
 //
 // Function to load sequences into the collection
 //
@@ -36,7 +38,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 	
 		if(count % 100000 == 0)
 		{
-			std::cout << "read " << count << " sequences " << std::endl;
+			std::cout << "read " << count << " sequences (" << seqCollection->count() << ")" << std::endl;
 			std::cout.flush();
 		}
 		count++;

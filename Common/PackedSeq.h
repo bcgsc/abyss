@@ -4,7 +4,6 @@
 //#define SAVE_MEM
 #include <list>
 #include "CommonUtils.h"
-#include "Sequence.h"
 #include "SeqExt.h"
 
 enum SeqFlag
@@ -107,12 +106,12 @@ class PackedSeq
 		// Print
 		void print() const;
 		
-		// The maximum kmer size is hardcoded to be 64
+		// The maximum kmer size is hardcoded to be 40
 		// Why is this? If we use a dynamically allocated character buffer malloc/new will give us 16 or 32 bytes no matter how much we want
 		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
 		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
 		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
-		static const int MAX_KMER = 64;
+		static const int MAX_KMER = 40;
 		static const int NUM_BYTES = MAX_KMER / 4;
 
 	private:

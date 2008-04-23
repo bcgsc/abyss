@@ -34,7 +34,7 @@ int main(int argc, char* const* argv)
 	loadSequences(pSC, opt::fastaFile, opt::readLen, opt::kmerSize);
 
 	printf("total sequences: %d\n", pSC->count());
-	
+
 	printf("finalizing\n");
 	pSC->finalize();
 
