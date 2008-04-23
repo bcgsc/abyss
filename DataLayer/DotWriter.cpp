@@ -60,35 +60,41 @@ static void write_contig(ostream& out,
 }
 
 /** Write out the contigs that split at the specified sequence. */
-static void write_split(ostream& out, const PackedSeq& seq)
+static void write_split(ostream& out,
+		ISequenceCollection& c, const PackedSeq& seq)
 {
+	HitRecord hr = calculateExtension(&c, seq, SENSE);
+	unsigned hits = hr.getNumHits();
+	if (hits <= 1)
+		return;
 	out << seq.decode() << "->{ ";
-	PackedSeq ext(seq);
-	ext.rotate(SENSE, 'A');
-	for (int i = 0; i < NUM_BASES; i++) {
-		char base = BASES[i];
-		if (seq.checkExtension(SENSE, base)) {
-			ext.setLastBase(SENSE, base);
-			out << ext.decode() << " ";
-		}
-	}
+	for (unsigned i = 0; i < hits; i++)
+		out << hr.getHit(i).seq.decode() << ' ';
 	out << "};\n";
 }
 
 /** Write out the contigs that join at the specified sequence. */
-static void write_join(ostream& out, const PackedSeq& seq)
+static void write_join(ostream& out,
+		ISequenceCollection& c, const PackedSeq& seq)
 {
+	HitRecord hr = calculateExtension(&c, seq, ANTISENSE);
+	unsigned hits = hr.getNumHits();
+	if (hits <= 1)
+		return;
 	out << "{ ";
-	PackedSeq ext(seq);
-	ext.rotate(ANTISENSE, 'A');
-	for (int i = 0; i < NUM_BASES; i++) {
-		char base = BASES[i];
-		if (seq.checkExtension(ANTISENSE, base)) {
-			ext.setLastBase(ANTISENSE, base);
-			out << ext.decode() << " ";
-		}
-	}
+	for (unsigned i = 0; i < hits; i++)
+		out << hr.getHit(i).seq.decode() << ' ';
 	out << "}->" << seq.decode() << ";\n";
+}
+
+/** Write out a dot graph around the specified sequence. */
+static void write_node(ostream& out,
+		ISequenceCollection& c, const PackedSeq& seq)
+{
+	write_split(out, c, seq);
+	write_join(out, c, seq);
+	if (!isContiguous(c, seq, ANTISENSE))
+		write_contig(out, c, seq);
 }
 
 /** Write out a dot graph for the specified collection. */
@@ -98,14 +104,13 @@ void DotWriter::write(ostream& out, ISequenceCollection& c)
 	const SequenceCollectionIterator& end = c.getEndIter();
 	for (SequenceCollectionIterator i = c.getStartIter();
 			i != end; ++i) {
-		if (i->isFlagSet(SF_DELETE))
+		const PackedSeq &seq = *i;
+		if (seq.isFlagSet(SF_DELETE))
 			continue;
-		if (i->isAmbiguous(SENSE))
-			write_split(out, *i);
-		if (i->isAmbiguous(ANTISENSE))
-			write_join(out, *i);
-		if (!isContiguous(c, *i, ANTISENSE))
-			write_contig(out, c, *i);
+		write_node(out, c, seq);
+		PackedSeq rseq = reverseComplement(seq);
+		if (seq != rseq)
+			write_node(out, c, rseq);
 	}
 	out << "}" << endl;
 }
