@@ -15,19 +15,19 @@ void loadSequences(ISequenceCollection* seqCollection,
 	
 	// Read the sequences and add them to the network sequence space
 	int64_t idNum = 0;
-	
+	size_t lastNum = 0;
 	while(reader->isGood())
 	{
-		PackedSeq seq = reader->ReadSequence();
-		
-		assert(kmerSize <= seq.getSequenceLength());
+		Sequence seq = reader->ReadSequence();
+		int len = seq.length();
+		assert(kmerSize <= len);
 		//assert(seq.getSequenceLength() == pairSeq.getSequenceLength());
 		
 		//int l = pairSeq.getSequenceLength();
-		
-		for(int i = 0; i < seq.getSequenceLength() - kmerSize  + 1; i++)
+
+		for(int i = 0; i < len - kmerSize  + 1; i++)
 		{
-			PackedSeq sub = seq.subseq(i, kmerSize);
+			PackedSeq sub(seq.substr(i, kmerSize));
 			
 			//PackedSeq pairSub = pairSeq.subseq(l - kmerSize - i, kmerSize);
 
@@ -38,8 +38,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 	
 		if(count % 100000 == 0)
 		{
-			std::cout << "read " << count << " sequences (" << seqCollection->count() << ")" << std::endl;
+			size_t numseqs = seqCollection->count();
+			std::cout << "read " << count << " sequences (" << seqCollection->count() << " delta: " << numseqs - lastNum << ")" << std::endl;
 			std::cout.flush();
+			lastNum = numseqs;
 		}
 		count++;
 			

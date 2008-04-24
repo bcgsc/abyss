@@ -25,7 +25,7 @@ SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 	// Initially tell the has that a lot of sequences are on the way
 	// This will remove many resizes (which are very slow)
 	// Maybe use an even larger value?
-	m_pSequences = new SequenceDataHash(2 << 24);
+	m_pSequences = new SequenceDataHash(2 << 29);
 }
 
 //
@@ -266,9 +266,9 @@ void SequenceCollectionHash::finalize()
 {
 	m_state = CS_FINALIZED;
 	
-	int num_buckets = m_pSequences->bucket_count();
-	int num_seqs = m_pSequences->size();
-	printf("hash buckets: %d sequences: %d load factor: %f\n", num_buckets, num_seqs, (float)num_seqs/(float)num_buckets);
+	size_t num_buckets = m_pSequences->bucket_count();
+	size_t num_seqs = m_pSequences->size();
+	printf("hash buckets: %zu sequences: %zu load factor: %f\n", num_buckets, num_seqs, (float)num_seqs/(float)num_buckets);
 	
 }
 

@@ -29,7 +29,7 @@ bool PackedSeqReader::ReadAllSequences(PSequenceVector& outVector)
 }
 
 // Read in a single sequence; this function allocates memory
-PackedSeq PackedSeqReader::ReadSequence()
+Sequence PackedSeqReader::ReadSequence()
 {
 	assert(m_fileHandle.is_open());
 	
@@ -51,7 +51,7 @@ PackedSeq PackedSeqReader::ReadSequence()
 	// free temp data
 	delete [] data;
 	
-	return seq;
+	return seq.decode();
 }
 
 bool PackedSeqReader::isGood()

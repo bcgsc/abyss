@@ -19,7 +19,7 @@ class FastaReader : public IFileReader
 		~FastaReader();
 		
 		// Read in a single sequence
-		PackedSeq ReadSequence();
+		Sequence ReadSequence();
 		
 		// Read all sequences in the file
 		bool ReadAllSequences(PSequenceVector& outVector);

@@ -24,7 +24,7 @@ bool FastaReader::ReadAllSequences(PSequenceVector& outVector)
 }
 
 // Read in a single sequence to the out parameter, return whether there are more sequences to read
-PackedSeq FastaReader::ReadSequence()
+Sequence FastaReader::ReadSequence()
 {
 	char headerBuffer[MAX_FASTA_LINE];
 	char seqBuffer[MAX_FASTA_LINE];	
@@ -49,8 +49,7 @@ PackedSeq FastaReader::ReadSequence()
 	Sequence seq(seqBuffer);
 	
 	// Create the packed seq
-	PackedSeq pSeq(seq);
-	return pSeq;
+	return seq;
 
 }
 
