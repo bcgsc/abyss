@@ -57,6 +57,8 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 {
 	
 	printf("generating adjacency info\n");
+	double start = std::clock();
+
 	int count = 0;
 	int numBasesSet = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -92,7 +94,10 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 		//iter->printExtension();
 		seqCollection->pumpNetwork();
 	}
-	printf("adjacency set %d bases\n", numBasesSet);
+	
+	double ticks = std::clock() - start;
+	double time = (ticks) / (double)CLOCKS_PER_SEC;		
+	printf("adjacency set %d bases in %lf seconds\n", numBasesSet, time);
 }
 
 //
@@ -148,7 +153,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 			continue;
 		}
 				
-		if(count % 1000000 == 0)
+		if(count % 100000 == 0)
 		{
 			printf("checked %d for bubbles\n", count);
 		}
@@ -190,12 +195,14 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					{												
 						// Check the extension of this sequence
 						HitRecord bubHR = calculateExtension(seqCollection, branches[j].lastSeq, dir);
-												
+						//printf("currSeq: %s size: %d num: %d\n", branches[j].lastSeq.decode().c_str(), branches[j].seqSet.size(), branches.size());
+						
+						bool uniqueEntry = false;
 						if(bubHR.getNumHits() == 1)
 						{
 							// single extension
 							//printf("adding single %s\n", bubHR.getFirstHit().seq.decode().c_str());
-							branches[j].AddSequence(bubHR.getFirstHit().seq);
+							uniqueEntry = branches[j].AddSequence(bubHR.getFirstHit().seq);
 												
 						}
 						else if(bubHR.getNumHits() > 1)
@@ -205,6 +212,8 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 							{
 								//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
 								// Start a new branch which is a duplicate of the current branch up to this point
+								
+								// Always unique so we don't have to check the return
 								Branch newBranch(branches[j]);
 								newBranch.AddSequence(bubHR.getHit(k).seq);							
 								branches.push_back(newBranch);	
@@ -212,13 +221,16 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 										
 							// Add the first base to the current branch
 							//printf("adding multip %s\n",bubHR.getFirstHit().seq.decode().c_str());
-							branches[j].AddSequence(bubHR.getFirstHit().seq);
+							uniqueEntry = branches[j].AddSequence(bubHR.getFirstHit().seq);
 						}
-						else
+						
+						// If there was no extension or we tried to add a duplicate key, return
+						if(bubHR.getNumHits() == 0 || !uniqueEntry)
 						{
 							// no ext, terminate
 							stop = true;
 							bubble = false;
+							break;
 						}
 					}
 					
@@ -261,10 +273,20 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						bubble = true;
 					}
 					
-					if(branches[0].seqSet.size() > expectedBubbleSize || branches.size() > maxNumBranches)
+					// Check stop conditions
+					if(branches.size() > maxNumBranches)
 					{
 						stop = true;
 						bubble = false;
+					}
+					
+					for(unsigned int k = 0; k < branches.size(); k++)
+					{
+						if(branches[k].seqSet.size() > expectedBubbleSize)
+						{
+							stop = true;
+							bubble = false;
+						}
 					}	
 				}
 				/*

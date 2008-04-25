@@ -22,7 +22,13 @@ struct Branch
 	PSeqSet seqSet;
 	PackedSeq lastSeq;
 	
-	void AddSequence(const PackedSeq& seq) { seqSet.insert(seq); lastSeq = seq;}
+	// Returned bool is true if the insert succeeded (the key is unique), false otherwise)
+	bool AddSequence(const PackedSeq& seq) 
+	{ 
+		bool rc = seqSet.insert(seq).second; 
+		lastSeq = seq;
+		return rc;
+	}
 };
 
 
