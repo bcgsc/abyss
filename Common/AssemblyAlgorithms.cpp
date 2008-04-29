@@ -2,6 +2,7 @@
 #include "AssemblyAlgorithms.h"
 #include "Options.h"
 #include "SequenceCollectionHash.h"
+#include "Timer.h"
 
 
 //
@@ -76,6 +77,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 void loadSequences(ISequenceCollection* seqCollection,
 		std::string fastaFile, int /*readLength*/, int kmerSize)
 {
+	Timer timer("LoadSequences");
 	FastaReader* reader = new FastaReader(fastaFile.c_str());
 	
 	int count = 0;
@@ -122,9 +124,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 //
 void generateAdjacency(ISequenceCollection* seqCollection)
 {
-	
+	Timer timer("GenerateAdjacency");
 	printf("generating adjacency info\n");
-	double start = std::clock();
+	
 
 	int count = 0;
 	int numBasesSet = 0;
@@ -162,9 +164,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 		seqCollection->pumpNetwork();
 	}
 	
-	double ticks = std::clock() - start;
-	double time = (ticks) / (double)CLOCKS_PER_SEC;		
-	printf("adjacency set %d bases in %lf seconds\n", numBasesSet, time);
+	printf("adjacency set %d bases\n", numBasesSet);
 }
 
 //
@@ -172,6 +172,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 //
 void splitAmbiguous(ISequenceCollection* seqCollection)
 {
+	Timer timer("SplitAmbiguous");
 	printf("splitting ambiguous reads\n");
 	int count = 0;
 	int numSplit = 0;
@@ -207,6 +208,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 
 void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
+	Timer timer("PopBubbles");
 	printf("removing loops\n");
 	int count = 0;
 	int numPopped = 0;
@@ -500,6 +502,7 @@ TrimStatus checkSeqForTrim(ISequenceCollection* seqCollection, const PackedSeq& 
 //
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
+	Timer timer("TrimSequences");
 	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 
@@ -634,7 +637,7 @@ bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& b
 //
 void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter)
 {
-
+	Timer timer("Assemble");
 	int noext = 0;
 	int ambiext = 0;
 

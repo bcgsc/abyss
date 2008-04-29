@@ -22,4 +22,6 @@ libcommon_a_SOURCES = \
 	SeqRecord.cpp SeqRecord.h \
 	Sequence.cpp Sequence.h \
 	SequencePair.cpp SequencePair.h \
-	BranchRecord.cpp BranchRecord.h
+	BranchRecord.cpp BranchRecord.h \
+	Timer.cpp Timer.h \
+	Log.cpp Log.h

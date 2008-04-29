@@ -1,5 +1,6 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
+#include "Timer.h"
 
 //
 //
@@ -632,6 +633,7 @@ int localAdj = 0;
 //
 void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* seqCollection)
 {
+	Timer timer("NetworkGenerateAdjacency");
 	printf("generating adjacency info - network\n");
 	int count = 0;
 
@@ -730,6 +732,7 @@ void NetworkSequenceCollection::setAdjacency(const PackedSeq& seq, extDirection 
 // 
 int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull)
 {
+	Timer timer("NetworkTrim");
 	printf("network trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 	
