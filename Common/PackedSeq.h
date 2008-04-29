@@ -12,6 +12,15 @@ enum SeqFlag
 	SF_DELETE = 0x2
 };
 
+
+//
+// Sense extension is index 0, antisense extension is index 1
+//
+struct ExtensionRecord
+{
+	SeqExt dir[2];	
+};
+
 class PackedSeq
 {
 	public:
@@ -82,7 +91,8 @@ class PackedSeq
 		void setFlag(SeqFlag flag);
 		bool isFlagSet(SeqFlag flag) const;
 		
-		// Set a flag indicating this sequence can by extending by base b
+		// Extension management
+		SeqExt getExtension(extDirection dir) const;
 		void setExtension(extDirection dir, SeqExt extension);
 		void setBaseExtension(extDirection dir, char b);
 		void clearExtension(extDirection dir, char b);
@@ -137,7 +147,7 @@ class PackedSeq
 		char m_length;
 		char m_flags;
 		short m_multiplicity;
-		SeqExt m_extensions[2]; // single byte each
+		ExtensionRecord m_extRecord;
 };
 
 // Global function to make a reverse complement of a packed seq

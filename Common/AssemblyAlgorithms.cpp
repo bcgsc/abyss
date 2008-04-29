@@ -3,6 +3,73 @@
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 
+
+//
+// Generate a hitrecord for a sequence
+//
+HitRecord calculateExtension(ISequenceCollection* seqCollection,
+		const PackedSeq& currSeq, extDirection dir)
+{
+	
+	// Create the return structure
+	HitRecord hitRecord;
+	
+	// Check for the existance of the 4 possible extensions
+	for(int i  = 0; i < NUM_BASES; i++)
+	{
+		char currBase = BASES[i];
+		
+		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
+		//if(printAll) printf("%s has extension(%d) to: %c ? %d\n", currSeq.decode().c_str(), dir, currBase, hasExt.forward || hasExt.reverse);
+		
+		// Does this sequence have an extension?
+		if(hasExt.forward || hasExt.reverse)
+		{
+			PackedSeq extSeq(currSeq);
+			extSeq.rotate(dir, currBase);
+			
+			// is there a forward extension?
+			if(hasExt.forward)
+			{
+				hitRecord.addHit(extSeq, false);
+			}
+			else
+			{
+				// extension is of the reverse complement
+				hitRecord.addHit(extSeq, true);	
+			}
+		}
+	}
+		
+	return hitRecord;
+}
+
+//
+// Generate a hitrecord for a sequence
+//
+void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs)
+{
+	
+	// Create the return structure
+	PSequenceVector extensions;
+
+	PackedSeq extSeq(currSeq);
+	extSeq.rotate(dir, 'A');
+	
+	// Check for the existance of the 4 possible extensions
+	for(int i  = 0; i < NUM_BASES; i++)
+	{
+		char currBase = BASES[i];
+	
+		// Does this sequence have an extension?
+		if(extension.CheckBase(currBase))
+		{
+			extSeq.setLastBase(dir, currBase);
+			outseqs.push_back(extSeq);
+		}
+	}
+}
+
 //
 // Function to load sequences into the collection
 //
@@ -331,45 +398,7 @@ void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	printf("Removed %d bubbles\n", numPopped);	
 }
 
-//
-//
-//
-HitRecord calculateExtension(ISequenceCollection* seqCollection,
-		const PackedSeq& currSeq, extDirection dir)
-{
-	
-	// Create the return structure
-	HitRecord hitRecord;
-	
-	// Check for the existance of the 4 possible extensions
-	for(int i  = 0; i < NUM_BASES; i++)
-	{
-		char currBase = BASES[i];
-		
-		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
-		//if(printAll) printf("%s has extension(%d) to: %c ? %d\n", currSeq.decode().c_str(), dir, currBase, hasExt.forward || hasExt.reverse);
-		
-		// Does this sequence have an extension?
-		if(hasExt.forward || hasExt.reverse)
-		{
-			PackedSeq extSeq(currSeq);
-			extSeq.rotate(dir, currBase);
-			
-			// is there a forward extension?
-			if(hasExt.forward)
-			{
-				hitRecord.addHit(extSeq, false);
-			}
-			else
-			{
-				// extension is of the reverse complement
-				hitRecord.addHit(extSeq, true);	
-			}
-		}
-	}
-		
-	return hitRecord;
-}
+
 
 //
 // Remove a read and update the extension records of the sequences that extend to it
@@ -432,107 +461,174 @@ void performTrim(ISequenceCollection* seqCollection)
 }
 
 //
+// Check whether a sequence can be trimmed
+//
+TrimStatus checkSeqForTrim(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
+{
+	if(seqCollection->checkFlag(seq, SF_DELETE))
+	{
+		return TS_NOTRIM;
+	}
+			
+	bool child = seqCollection->hasChild(seq);
+	bool parent = seqCollection->hasParent(seq);
+	
+	if(!child && !parent)
+	{
+		//this sequence is completely isolated
+		return TS_ISLAND;
+	}
+	else if(!child)
+	{
+		outDir = ANTISENSE;
+		return TS_TRIMMABLE;
+	}
+	else if(!parent)
+	{
+		outDir = SENSE;
+		return TS_TRIMMABLE;
+	}
+	else
+	{
+		// sequence is contiguous
+		return TS_NOTRIM;	
+	}
+}
+
+//
 // Trimming (error removal) function
 //
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
-	const int MAX_DEAD_LENGTH = maxBranchCull;
 	printf("trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(seqCollection->checkFlag(*iter, SF_DELETE))
+		
+		extDirection dir;
+		// dir will be set to the trimming direction if the sequence can be trimmed
+		TrimStatus status = checkSeqForTrim(seqCollection, *iter, dir);
+
+		if(status == TS_NOTRIM)
 		{
 			continue;
 		}
-				
-		bool child = seqCollection->hasChild(*iter);
-		bool parent = seqCollection->hasParent(*iter);
-		
-		extDirection dir;
-		if(!child && !parent)
+		else if(status == TS_ISLAND)
 		{
 			// remove this sequence, it has no extensions
 			removeSequenceAndExtensions(seqCollection, *iter);
-			continue;
 		}
-		else if(!child)
-		{
-			dir = ANTISENSE;
-		}
-		else if(!parent)
-		{
-			dir = SENSE;
-		}
-		else
-		{
-			continue;	
-		}
+		// Sequence is trimmable, continue
 
-		PSequenceVector branchElements;
-		
-		extDirection oppositeDir = oppositeDirection(dir);
+		// This is a dead-end branch, check it for removal
+		BranchRecord currBranch(dir, maxBranchCull);
 					
 		PackedSeq currSeq = *iter;
-		bool stop = false;
 		
-		while(!stop)
+		while(currBranch.isActive())
 		{		
-				
-			HitRecord hr = calculateExtension(seqCollection, currSeq, dir);
-			HitRecord oppHr = calculateExtension(seqCollection, currSeq, oppositeDir);
+			// Get the extensions for this sequence, this function populates the extRecord structure
+			ExtensionRecord extRec;
+			bool success = seqCollection->getExtensions(currSeq, extRec);
 			
-			if((int)branchElements.size() == MAX_DEAD_LENGTH + 1 )
+			// this call should always succeed
+			if(!success)
 			{
-				// no ext
-				stop = true;
-				//printf("stopped because of too long: %d\n", branchElements.size());
+				printf("seq %s was not found!\n", currSeq.decode().c_str());
 			}
-			else if(oppHr.getNumHits() > 1)
-			{
-				//printf("stopped because of reverse branch\n");
-				stop = true;	
-			}
-			else if(hr.getNumHits() == 0 || hr.getNumHits() > 1)
-			{
-				branchElements.push_back(currSeq);
-				//printf("stopped because of noext/ambi branch\n");
-				stop = true;
-			}
-			else
-			{
-				branchElements.push_back(currSeq);
-					
-				// good ext
-				currSeq = hr.getFirstHit().seq;
-			}
+			assert(success);
+			
+			// process the extension record and extend the current branch, this function updates currSeq on successful extension
+			processExtensionForBranchTrim(currBranch, currSeq, extRec);
 		}
 		
-		//printf("	branch has size: %d\n", branchElements.size());
-		if((int)branchElements.size() <= MAX_DEAD_LENGTH && (int)branchElements.size() > 0)
+		// The branch has ended check it for removal, returns true if it was removed
+		if(processTerminatedBranch(seqCollection, currBranch))
 		{
-			//printf("		removing\n");
 			numBranchesRemoved++;
-			for(PSequenceVectorIterator bIter = branchElements.begin(); bIter != branchElements.end(); bIter++)
-			{
-				removeSequenceAndExtensions(seqCollection, *bIter);
-			}
 		}
-		
 		seqCollection->pumpNetwork();
 	}
 	
-	
-	
-	printf("seqs after trimming: %d\n", seqCollection->count());
 	printf("num branches removed: %d\n", numBranchesRemoved);
 	return numBranchesRemoved;
 }
 
+//
+// Process the extension for this branch for the trimming algorithm
+// CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence
+// After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
+//
+bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions)
+{
+	extDirection dir = branch.getDirection();
+	extDirection oppDir = oppositeDirection(dir);
+	
+	if(branch.getLength() > branch.getMaxLength()) // Check if the branch has extended past the max trim length
+	{
+		// Stop the branch
+		branch.terminate(BS_TOO_LONG);
+	}
+	else if(extensions.dir[oppDir].IsAmbiguous()) // Does this sequence split TO the former node?
+	{
+		//printf("stopped because of reverse branch\n");
+		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
+		branch.terminate(BS_AMBI_OPP);
+	}
+	else if(!extensions.dir[dir].HasExtension()) 
+	{
+		// no extenstion, add the current sequence and terminate the branch
+		branch.addSequence(currSeq);
+		branch.terminate(BS_NOEXT);
+	}
+	else if(extensions.dir[dir].IsAmbiguous())
+	{
+		// this branch has an ambiguous extension, add the current sequence and terminate
+		branch.addSequence(currSeq);
+		branch.terminate(BS_AMBI_SAME);
+	}
+	else
+	{
+		// Add the sequence to the branch
+		branch.addSequence(currSeq);
+		
+		// generate the new current sequence from the extension
+		//printf("currseq: %s ", currSeq.decode().c_str());
+		PSequenceVector newSeqs;
 
-bool doPrint = false;
+		generateSequencesFromExtension(currSeq, dir, extensions.dir[dir], newSeqs);
+		assert(newSeqs.size() == 1);
+		currSeq = newSeqs.front();
+		//printf("newseq: %s \n", currSeq.decode().c_str());
+	}
+	
+	return branch.isActive();
+}
+
+//
+//
+//
+bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& branch)
+{
+	assert(!branch.isActive());
+	//printf("	branch has size: %d\n", branchElements.size());
+	if(branch.getLength() > 0 && branch.getState() != BS_TOO_LONG)
+	{		
+		BranchDataIter endIter  = branch.getEndIter();
+		for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
+		{
+			removeSequenceAndExtensions(seqCollection, *bIter);
+		}
+		return true;
+	}	
+	else
+	{
+		return false;
+	}
+}
+
 //
 // Assembly function
 //
@@ -552,11 +648,7 @@ void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFi
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
 		if(!seqCollection->checkFlag(*iter, SF_SEEN) && !seqCollection->checkFlag(*iter, SF_DELETE))
-		{
-			// There are 2 cases in which we should extend a read:
-			// 1) It is at the endpoint of a branch (either no parent or child extension)
-			// 2) It is the first read past a branch
-			
+		{			
 			// Is this sequence a branch endpoint?
 			bool doAssembly = false;
 			extDirection dir = SENSE;

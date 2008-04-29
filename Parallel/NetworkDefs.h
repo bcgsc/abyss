@@ -10,7 +10,10 @@ enum APMessage
 	APM_SEQ_EXT,
 	APM_CONTROL,	
 	APM_RESULT,
-	APM_RESULT_ADJ // Special case
+	APM_ADJACENCY,
+	APM_RESULT_ADJ,
+	APM_SEQ_EXT_REQUEST, 
+	APM_SEQ_EXT_RESPONSE 
 };
 
 // The type of operations on whole sequences that can be performed

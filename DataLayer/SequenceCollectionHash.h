@@ -14,6 +14,8 @@
 
 using namespace std;
 
+typedef std::pair<bool, SeqExt> SeqExtResult;
+
 // This class implements a collection of PackedSeqs with functions to manipulate the data
 // It is meant to be a storage class only and should have minimal logic for manipulating the data except for getters/setters
 class SequenceCollectionHash : public ISequenceCollection
@@ -61,6 +63,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// check if the extension exists
 		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		
+		// get the extensions of a sequence
+		bool getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord);
 
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter() const;
@@ -107,6 +112,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
 		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
+		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 
 		// Data members
 		

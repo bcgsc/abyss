@@ -38,8 +38,6 @@ class SeqExt
 		char SeqExt::bit2Base(unsigned char code);
 		
 		unsigned char m_record;
-
-	
 };
 
 #endif

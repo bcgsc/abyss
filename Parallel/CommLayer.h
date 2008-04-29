@@ -40,18 +40,50 @@ struct ControlMessage
 	int argument;
 };
 
-struct ResultMessage
+struct ResultPairMessage
 {
 	int64_t id;
-	APResultType resultType;
 	APResult result[2];
 };
 
-struct RequestBuffer
+struct SequenceExtensionRequestMessage
 {
-	char* buffer;
-	MPI::Request request;
+	int64_t id;
+	uint64_t groupID;
+	uint64_t branchID;
+	PackedSeq seq;
 };
+
+struct SequenceExtensionResponseMessage
+{
+	int64_t id;
+	uint64_t groupID;
+	uint64_t branchID;	
+	PackedSeq seq;
+	extDirection dir;	
+	ExtensionRecord extRec;
+};
+
+struct AdjacencyMessage
+{
+	int64_t id;
+	PackedSeq originalSeq;
+	PackedSeq testSeq;	
+	extDirection dir;
+	char base;	
+	
+};
+
+struct AdjacencyResultMessage
+{
+	int64_t id;
+	PackedSeq originalSeq;
+	extDirection dir;
+	char base;
+	APResult result[2];
+};
+
+
 const int CONTROL_ID = 0;
 
 // The comm layer wraps inter-process communication operations
@@ -83,9 +115,19 @@ class CommLayer
 		
 		// Send a sequence flag message
 		uint64_t SendSeqFlagMessage(int destID, const PackedSeq& seq, APSeqFlagOperation operation, SeqFlag flag);
-				
-		// Send an adjacency result message
-		void SendAdjacencyResult(int destID, uint64_t reqID, bool b);
+		
+		// Send a request to a remote node to see if testSequence is present which means originalSeq has extension b in direction dir
+		uint64_t SendAdjacencyRequest(int destID, const PackedSeq& testSequence, const PackedSeq& originalSeq, extDirection dir, char b);
+		
+		// Send a request for the extension of a sequence
+		uint64_t SendExtensionRequest(int destID, uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
+		
+		// Send a request for the extension of a sequence
+		void SendExtensionResponse(int destID, uint64_t reqID, uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
+		
+		// Send an adjacency result message, send back the original sequence and the base that was requested
+		// This is done to help hide the latency. By not requiring the sender to save the state it can proceed ahead at will
+		void SendAdjacencyResult(int destID, uint64_t reqID, PackedSeq originalSeq, extDirection dir, char base, bool b);
 		
 		// Send a bool result
 		void SendResultMessage(int destID, uint64_t reqID, bool b);
@@ -106,7 +148,19 @@ class CommLayer
 		ControlMessage ReceiveControlMessage();
 		
 		// Receive a result message
-		ResultMessage ReceiveResultMessage();
+		ResultPairMessage ReceiveResultMessage();
+		
+		// Receieve an adjacency message
+		AdjacencyMessage ReceiveAdjacencyMessage();
+		
+		// Receive an adjacency result message
+		AdjacencyResultMessage ReceiveAdjacencyResultMessage();
+		
+		// Receive a sequence extension message
+		SequenceExtensionRequestMessage ReceiveSequenceExtensionMessage();
+		
+		// Receive a sequence extension result message
+		SequenceExtensionResponseMessage ReceiveSequenceExtensionResponseMessage();
 		
 		// Flush the buffer
 		void flush();

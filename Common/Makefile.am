@@ -21,4 +21,5 @@ libcommon_a_SOURCES = \
 	SeqExt.cpp SeqExt.h \
 	SeqRecord.cpp SeqRecord.h \
 	Sequence.cpp Sequence.h \
-	SequencePair.cpp SequencePair.h
+	SequencePair.cpp SequencePair.h \
+	BranchRecord.cpp BranchRecord.h

@@ -70,8 +70,8 @@ PackedSeq::PackedSeq(const PackedSeq& pseq)
 	memcpy(m_seq, pseq.m_seq, numBytes);
 	
 	m_flags = pseq.m_flags;
-	m_extensions[0] = pseq.m_extensions[0];
-	m_extensions[1] = pseq.m_extensions[1];
+	m_extRecord.dir[SENSE] = pseq.m_extRecord.dir[SENSE];
+	m_extRecord.dir[ANTISENSE] = pseq.m_extRecord.dir[ANTISENSE];
 	m_multiplicity = pseq.m_multiplicity;
 }
 
@@ -95,8 +95,9 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	
 	m_flags = other.m_flags;
 	
-	m_extensions[0] = other.m_extensions[0];
-	m_extensions[1] = other.m_extensions[1];	
+	
+	m_extRecord.dir[SENSE] = other.m_extRecord.dir[SENSE];
+	m_extRecord.dir[ANTISENSE] = other.m_extRecord.dir[ANTISENSE];
 	m_multiplicity = other.m_multiplicity;
 
 	return *this;
@@ -427,7 +428,7 @@ char PackedSeq::rightShiftByte(char* pSeq, int byteNum, int index, char base)
 //
 void PackedSeq::setExtension(extDirection dir, SeqExt extension)
 {
-	m_extensions[dir] = extension;
+	m_extRecord.dir[dir] = extension;
 }
 
 //
@@ -435,7 +436,7 @@ void PackedSeq::setExtension(extDirection dir, SeqExt extension)
 //
 void PackedSeq::setBaseExtension(extDirection dir, char b)
 {
-	m_extensions[dir].SetBase(b);
+	m_extRecord.dir[dir].SetBase(b);
 }
 
 //
@@ -443,7 +444,7 @@ void PackedSeq::setBaseExtension(extDirection dir, char b)
 //
 void PackedSeq::clearAllExtensions(extDirection dir)
 {
-	m_extensions[dir].ClearAll();
+	m_extRecord.dir[dir].ClearAll();
 }
 
 
@@ -452,7 +453,7 @@ void PackedSeq::clearAllExtensions(extDirection dir)
 //
 void PackedSeq::clearExtension(extDirection dir, char b)
 {
-	m_extensions[dir].ClearBase(b);
+	m_extRecord.dir[dir].ClearBase(b);
 }
 
 //
@@ -460,7 +461,7 @@ void PackedSeq::clearExtension(extDirection dir, char b)
 //
 bool PackedSeq::checkExtension(extDirection dir, char b) const
 {
-	return m_extensions[dir].CheckBase(b);	
+	return m_extRecord.dir[dir].CheckBase(b);	
 }
 
 //
@@ -468,7 +469,7 @@ bool PackedSeq::checkExtension(extDirection dir, char b) const
 //
 bool PackedSeq::hasExtension(extDirection dir) const
 {
-	return m_extensions[dir].HasExtension();	
+	return m_extRecord.dir[dir].HasExtension();	
 }
 
 //
@@ -476,7 +477,15 @@ bool PackedSeq::hasExtension(extDirection dir) const
 //
 bool PackedSeq::isAmbiguous(extDirection dir) const
 {
-	return m_extensions[dir].IsAmbiguous();	
+	return m_extRecord.dir[dir].IsAmbiguous();	
+}
+
+//
+// Return the sequences extension in the specified direction
+//
+SeqExt PackedSeq::getExtension(extDirection dir) const
+{
+	return m_extRecord.dir[dir];
 }
 
 //
@@ -486,10 +495,10 @@ void PackedSeq::printExtension() const
 {
 	printf("seq: %s\n", decode().c_str());
 	printf("sxt: ");
-	m_extensions[SENSE].print();
+	m_extRecord.dir[SENSE].print();
 	
 	printf("as : ");
-	m_extensions[ANTISENSE].print();	
+	m_extRecord.dir[ANTISENSE].print();	
 		
 }
 

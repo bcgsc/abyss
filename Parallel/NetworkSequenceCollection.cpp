@@ -9,7 +9,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 											 int kmerSize, 
 											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
 											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
-											 m_trimStep(0), m_numAssembled(0)
+											 m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0)
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
@@ -65,11 +65,12 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 				break;
 			}
 			case NAS_TRIM:
+			case NAS_TRIM2:
 			{
 				assert(m_trimStep != 0);
 				
 				// Perform the trim at the branch length that the control node sent
-				int numRemoved = trimSequences(this, m_trimStep);
+				int numRemoved = performNetworkTrim(this, m_trimStep);
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -80,8 +81,7 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			{
 				popBubbles(this, kmerSize);
 				m_pComm->SendCheckPointMessage();
-				SetState(NAS_WAITING);
-				
+				SetState(NAS_WAITING);	
 				break;	
 			}
 			case NAS_SPLIT:
@@ -181,7 +181,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 					m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, start);
 					
 					// perform the trim
-					int numRemoved = trimSequences(this, start);
+					int numRemoved = performNetworkTrim(this, start);
 					
 					if (start < opt::trimLen)
 						start <<= 1;
@@ -217,9 +217,20 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				{
 					pumpNetwork();
 				}
-				SetState(NAS_SPLIT);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);				
+				SetState(NAS_TRIM2);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, opt::trimLen);			
 				break;
+			}
+			case NAS_TRIM2:
+			{
+				performNetworkTrim(this, opt::trimLen);
+				m_numReachedCheckpoint++;
+				while(!checkpointReached(m_numDataNodes))
+				{
+					pumpNetwork();
+				}
+				SetState(NAS_SPLIT);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);						
 			}
 			case NAS_SPLIT:
 			{
@@ -329,11 +340,26 @@ APResult NetworkSequenceCollection::pumpNetwork()
 					parseControlMessage(senderID);
 					break;
 				}
+			case APM_ADJACENCY:
+				{
+					parseAdjacencyMessage(senderID);
+					break;	
+				}
 			case APM_RESULT_ADJ:
 				{
-					parseAdjacencyMessage(senderID);	
+					parseAdjacencyResultMessage(senderID);
 					break;
 				}
+			case APM_SEQ_EXT_REQUEST:
+				{
+					parseSequenceExtensionRequest(senderID);
+					break;	
+				}
+			case APM_SEQ_EXT_RESPONSE:
+				{
+					parseSequenceExtensionResponse(senderID);
+					break;	
+				}				
 			// APM_RESULT is handled in pumpUntilResult()				
 			case APM_RESULT:
 			case APM_NONE:
@@ -368,7 +394,7 @@ ResultPair NetworkSequenceCollection::pumpUntilResult()
 		{		
 	
 			//PrintDebug(0, "Result got\n");
-			ResultMessage msg = m_pComm->ReceiveResultMessage();
+			ResultPairMessage msg = m_pComm->ReceiveResultMessage();
 			
 			// Convert the result to a result pair
 			ResultPair rp;
@@ -381,6 +407,21 @@ ResultPair NetworkSequenceCollection::pumpUntilResult()
 	}	
 }
 
+//
+//
+//
+void NetworkSequenceCollection::parseAdjacencyMessage(int senderID)
+{
+	AdjacencyMessage adjMsg = m_pComm->ReceiveAdjacencyMessage();
+	
+	assert(isLocal(adjMsg.testSeq));
+	bool result = m_pLocalSpace->exists(adjMsg.testSeq);
+	m_pComm->SendAdjacencyResult(senderID, adjMsg.id, adjMsg.originalSeq, adjMsg.dir, adjMsg.base, result);
+}
+
+//
+//
+//
 void NetworkSequenceCollection::parseSeqMessage(int senderID)
 {
 	SeqMessage seqMsg = m_pComm->ReceiveSeqMessage();
@@ -399,9 +440,8 @@ void NetworkSequenceCollection::parseSeqMessage(int senderID)
 		case APO_CHECKSEQ:
 		{
 			//PrintDebug(0, "Check seq got\n");
-			assert(isLocal(seqMsg.seq));
-			bool result = m_pLocalSpace->exists(seqMsg.seq);
-			m_pComm->SendAdjacencyResult(senderID, seqMsg.id, result);
+			assert(false);
+
 			break;
 		}
 		case APO_HAS_PARENT:
@@ -535,33 +575,53 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 	}
 }
 
+//
+// Parse an extension request
+//
+void NetworkSequenceCollection::parseSequenceExtensionRequest(int senderID)
+{
+	// Get the message
+	SequenceExtensionRequestMessage msg = m_pComm->ReceiveSequenceExtensionMessage();
+	
+	// Get the extension for this sequence
+	assert(isLocal(msg.seq));
+	
+	ExtensionRecord extRec;
+	bool found = m_pLocalSpace->getExtensions(msg.seq, extRec);
+	assert(found);
+	
+	// Return the extension to the sender
+	m_pComm->SendExtensionResponse(senderID, msg.id, msg.groupID, msg.branchID, msg.seq, extRec);
+}
+
+//
+// Parse an extension request
+//
+void NetworkSequenceCollection::parseSequenceExtensionResponse(int /*senderID*/)
+{
+	SequenceExtensionResponseMessage msg = m_pComm->ReceiveSequenceExtensionResponseMessage();
+	processSequenceExtension(msg.branchID, msg.seq, msg.extRec);
+
+}
+
 int numAdjMessagesParsed = 0;
 //
 // Parse an adjacency result message
 //
-void NetworkSequenceCollection::parseAdjacencyMessage(int /*senderID*/)
+void NetworkSequenceCollection::parseAdjacencyResultMessage(int /*senderID*/)
 {
-	ResultMessage resultMsg = m_pComm->ReceiveResultMessage();
-	uint64_t reqID = resultMsg.id;
-	numAdjMessagesParsed++;
-	// Look up the request in the set
-	AdjacencyRequests::iterator iter = m_pendingRequests.find(reqID);
+	AdjacencyResultMessage resultMsg = m_pComm->ReceiveAdjacencyResultMessage();
 	
-	// Make sure the request is valid
-	assert(iter != m_pendingRequests.end());
+	// Decrement the counter of outstanding events
+	m_numOutstandingRequests--;
+	numAdjMessagesParsed++;
 
 	// Does the sequence exist?
 	if(resultMsg.result[0] == APR_TRUE || resultMsg.result[1] == APR_TRUE)
 	{
 		adjSet++;
-		setAdjacency(iter->second.origSeq, iter->second.dir, iter->second.base);	
+		setAdjacency(resultMsg.originalSeq, resultMsg.dir, resultMsg.base);	
 	}
-	
-	// remove the request
-	m_pendingRequests.erase(iter);
-	
-	//printf("%d: parse adj result, %d remain\n", m_id, m_pendingRequests.size());
-	
 }
 int numAdjMessagesSent = 0;
 int localAdj = 0;
@@ -578,7 +638,7 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 10000 == 0)
+		if(count % 1000000 == 0)
 		{
 			printf("generated for %d\n", count);
 		}
@@ -604,32 +664,25 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 				// When the data meanders over the network and eventually returns to use, THEN the adjacency is set
 				// See:: SendAdjancencyRequest/ParseAdjancencyResponse
 				computeAdjacency(currSeq, testSeq, dir, currBase);
-			}	
-		}
-		
-		// Simple load balancing, if there are too many pending requests, wait on the network
-		const unsigned int MAX_NUM_PENDING = 200;
-		if(m_pendingRequests.size() > MAX_NUM_PENDING)
-		{
-			while(m_pendingRequests.size() > 10)
-			{
 				pumpNetwork();
-			}
+			}	
 		}
 	}
 	
-	// Spin until the request queue is clear
-	while(!m_pendingRequests.empty())
+	// Wait for all the requests to be filled
+	while(m_numOutstandingRequests != 0)
 	{
-		// Service the network
-		seqCollection->pumpNetwork();
+		pumpNetwork();
 	}
+
 	printf("Genereated %d adj\n", adjSet);
 	printf("Sent %d adj mesagse\n", numAdjMessagesSent);
 	printf("Parsed %d adj mesagse\n", numAdjMessagesParsed);
 	printf("Local adj: %d\n", localAdj);
 	printf("all requests filled, continue\n");
 }
+
+
 
 
 //
@@ -650,20 +703,17 @@ void NetworkSequenceCollection::computeAdjacency(const PackedSeq& currSeq, const
 	}
 	else
 	{
-		numAdjMessagesSent++;
-		// generate a request and send it off
-		AdjancencyRequest request;
-		request.origSeq = currSeq;
-		request.requestSeq = requestSeq;
-		request.dir = dir;
-		request.base = base;
-	
+
 		// Send the request
 		int nodeID = computeNodeID(requestSeq);
 		assert(nodeID != m_id);
 		// Add the request to the set
-		uint64_t id = m_pComm->SendSeqMessage(nodeID, requestSeq, APO_CHECKSEQ);
-		m_pendingRequests[id] = request;		
+		m_pComm->SendAdjacencyRequest(nodeID, requestSeq, currSeq, dir, base);
+		
+		// Increment the number of outstanding requests
+		m_numOutstandingRequests++;
+		
+		//m_pendingRequests[id] = request;		
 	}
 }
 
@@ -675,6 +725,149 @@ void NetworkSequenceCollection::setAdjacency(const PackedSeq& seq, extDirection 
 	setBaseExtension(seq, dir, base);
 }
 
+//
+// Distributed trimming function
+// 
+int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull)
+{
+	printf("network trimming max branch: %d\n", maxBranchCull);	
+	int numBranchesRemoved = 0;
+	
+	// The branch ids
+	uint64_t branchID = 0;
+
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		extDirection dir;
+		// dir will be set to the trimming direction if the sequence can be trimmed
+		TrimStatus status = checkSeqForTrim(seqCollection, *iter, dir);
+
+		if(status == TS_NOTRIM)
+		{
+			continue;
+		}
+		else if(status == TS_ISLAND)
+		{
+			// remove this sequence, it has no extensions
+			removeSequenceAndExtensions(seqCollection, *iter);
+		}
+		
+		// Sequence is trimmable, create a new branch for it
+		BranchRecord newBranch(dir, maxBranchCull);
+		m_activeBranches[branchID] = newBranch;
+
+		// Generate the first extension request
+		generateExtensionRequest(branchID, *iter);
+		branchID++;
+		
+		// Process the active branches
+		numBranchesRemoved += processBranches();
+		
+		// Service any waiting network events
+		seqCollection->pumpNetwork();
+	}
+	
+	// Clear out the remaining branches
+	while(!m_activeBranches.empty())
+	{
+		numBranchesRemoved += processBranches();
+		seqCollection->pumpNetwork();
+	}		
+	
+	printf("num branches removed: %d\n", numBranchesRemoved);
+	return numBranchesRemoved;	
+}
+
+//
+// Process current branches, removing those that are finished
+// returns true if the branch list has branches remaining
+//
+int NetworkSequenceCollection::processBranches()
+{
+	int numBranchesRemoved = 0;
+	std::vector<BranchMap::iterator> removeBranches;
+	// Check if any of the current branches have gone inactive
+	for(BranchMap::iterator iter = m_activeBranches.begin(); iter != m_activeBranches.end(); iter++)
+	{
+		if(!iter->second.isActive())
+		{
+			// Trim if possible
+			if(processTerminatedBranch(this, iter->second))
+			{
+				numBranchesRemoved++;
+			}
+			
+			// Mark the branch for removal
+			removeBranches.push_back(iter);
+		}	
+	}
+	
+	// Remove all the finished branches
+	for(std::vector<BranchMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
+	{
+		//printf("erased branch %llu\n", (*rmIter)->first);
+		m_activeBranches.erase(*rmIter);	
+	}	
+	
+	return numBranchesRemoved;
+}
+
+//
+// Generate a request for a sequence's extension, it will be handled in parseSequenceExtensionResponse
+//
+void NetworkSequenceCollection::generateExtensionRequest(uint64_t id, const PackedSeq& seq)
+{
+	// Check if the test sequence is local
+	if(isLocal(seq))
+	{
+		// simply look up the sequence in the local space
+		ExtensionRecord extRec;
+		bool success = m_pLocalSpace->getExtensions(seq, extRec);
+
+		// should never fail
+		assert(success);
+		
+		// process the message
+		processSequenceExtension(id, seq, extRec);
+	}
+	else
+	{
+
+		// Send the request
+		int nodeID = computeNodeID(seq);
+		assert(nodeID != m_id);
+		// Send the request, it will be processed in the callback
+		m_pComm->SendExtensionRequest(nodeID, 0, id, seq);
+	}
+}
+
+//
+// Process a sequence extension
+//
+void NetworkSequenceCollection::processSequenceExtension(uint64_t id, const PackedSeq& seq, const ExtensionRecord& extRec)
+{
+	//printf("processing %llu\n", id);
+	// Find the branch by its ID	
+	BranchMap::iterator iter = m_activeBranches.find(id);
+	
+	// should always exist
+	assert(iter != m_activeBranches.end());
+	
+	// Process the extension, this function will set the state of the branch when it is finished and the networkTrim function will process/clear it
+	PackedSeq currSeq = seq;
+	bool active = processExtensionForBranchTrim(iter->second, currSeq, extRec);
+	
+	// if the branch is still active generate a new request
+	if(active)
+	{
+		return generateExtensionRequest(id, currSeq);
+	}
+	else
+	{
+		return;	
+	}
+}
 //
 //
 //
@@ -706,7 +899,6 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 	}
 	else
 	{
-		
 		int nodeID = computeNodeID(seq);	
 		m_pComm->SendSeqMessage(nodeID, seq, APO_REMOVE);
 	}	
@@ -791,11 +983,8 @@ bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 	}
 	else
 	{
-		int nodeID = computeNodeID(seq);
-		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
-		m_pComm->SendSeqFlagMessage(nodeID, seq, APSFO_CHECK, flag);
-		ResultPair rp = pumpUntilResult();
-		result = rp.forward || rp.reverse;
+		// Check flag should be for local sequences only
+		assert(false);
 	}
 	return result;
 }
@@ -819,12 +1008,8 @@ bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
 	}
 	else
 	{
+		// Never should be called for non-local sequences
 		assert(false);
-		int nodeID = computeNodeID(seq);
-		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
-		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_PARENT);
-		ResultPair rp = pumpUntilResult();
-		result = rp.forward || rp.reverse;
 	}
 	return result;
 }
@@ -842,12 +1027,8 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 	}
 	else
 	{
+		// Never should be called for non-local sequences
 		assert(false);
-		int nodeID = computeNodeID(seq);
-		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
-		m_pComm->SendSeqMessage(nodeID, seq, APO_HAS_CHILD);
-		ResultPair rp = pumpUntilResult();
-		result = rp.forward || rp.reverse;
 	}
 
 	return result;
@@ -961,6 +1142,15 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 
 	return result;
 }
+
+//
+// get the extensions of the sequence
+//
+bool NetworkSequenceCollection::getExtensions(const PackedSeq& /*seq*/, ExtensionRecord& /*extRecord*/)
+{
+	assert(false);
+}
+
 
 //
 // GetMultiplicity

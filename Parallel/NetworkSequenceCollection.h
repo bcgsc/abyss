@@ -14,21 +14,15 @@ enum NetworkAssemblyState
 	NAS_GEN_ADJ, // generating the sequence data
 	NAS_TRIM, // trimming the data
 	NAS_POPBUBBLE, // remove read errors/SNPs
+	NAS_TRIM2, // second trimming step after the bubble removal
 	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
 	NAS_ASSEMBLE, // assembling the data
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function
 	NAS_DONE // finished, clean up and exit
 };
 
-struct AdjancencyRequest
-{
-	PackedSeq origSeq;
-	PackedSeq requestSeq;
-	extDirection dir;
-	char base;
-};
+typedef std::map<uint64_t, BranchRecord> BranchMap;
 
-typedef std::map<uint64_t, AdjancencyRequest> AdjacencyRequests;
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
@@ -39,8 +33,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency 
 		// but has been rewritten to hide latency between nodes
-		void networkGenerateAdjacency(ISequenceCollection* seqCollection);
+		void networkGenerateAdjacency(ISequenceCollection* seqCollection);		
 		
+		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency
+		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
+
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
 		
@@ -86,6 +83,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// get the multiplicity of the sequence
 		int getMultiplicity(const PackedSeq& seq);
 		
+		// get the extensions of the sequence
+		bool getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord);
+		
 		// The loop to run the network code
 		APResult pumpNetwork();
 		
@@ -113,12 +113,20 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void computeAdjacency(const PackedSeq& currSeq, const PackedSeq& requestSeq, extDirection dir, char base);
 		void setAdjacency(const PackedSeq& seq, extDirection dir, char base);
 		
+		// Branch processing
+		int processBranches();
+		void generateExtensionRequest(uint64_t id, const PackedSeq& seq);
+		void processSequenceExtension(uint64_t id, const PackedSeq& seq, const ExtensionRecord& extRec);
+		
 		// Network message parsers
 		void parseControlMessage(int senderID);
 		void parseSeqMessage(int senderID);
 		void parseSeqFlagMessage(int senderID);
 		void parseSeqExtMessage(int senderID);	
 		void parseAdjacencyMessage(int senderID);
+		void parseAdjacencyResultMessage(int senderID);
+		void parseSequenceExtensionRequest(int senderID);		
+		void parseSequenceExtensionResponse(int senderID);
 		
 		// Read a fasta file and distribute the sequences
 		void readSequences(std::string fastaFile, int readLength, int kmerSize);
@@ -166,8 +174,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// the number of sequences assembled so far
 		int m_numAssembled;
 		
-		// the pending requests
-		AdjacencyRequests m_pendingRequests;
+		// The number of requests that are pending
+		int m_numOutstandingRequests;
+		
+		// The current branches that are active
+		BranchMap m_activeBranches;
 };
 
 #endif

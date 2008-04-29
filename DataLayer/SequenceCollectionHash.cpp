@@ -354,6 +354,7 @@ ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirec
 	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
 	return rp;
 }
+
 //
 //
 //
@@ -367,6 +368,46 @@ bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& se
 	{
 		return false;
 	}
+}
+
+//
+// get the extensions of a sequence, populate the extRecord structure
+//
+bool SequenceCollectionHash::getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord)
+{
+	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	bool found = false;
+	if(iters.first != m_pSequences->end())
+	{
+		// seq found
+		extRecord.dir[SENSE] = getExtensionByIter(iters.first, SENSE);
+		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.first, ANTISENSE);
+		found = true;
+	}
+	else if(iters.second != m_pSequences->end())
+	{
+		// reverse seq found, swap the order of the extensions and complement them (to make sure they are in the direction of the requested seq)
+		extRecord.dir[SENSE] = getExtensionByIter(iters.second, ANTISENSE).complement();
+		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.second, SENSE).complement();
+		found = true;
+	}
+
+	return found;
+}
+
+//
+//
+//
+SeqExt SequenceCollectionHash::getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const
+{
+	SeqExt ret;
+	if(seqIter != m_pSequences->end())
+	{
+		// Sequence found
+		ret = seqIter->getExtension(dir);
+	}
+	
+	return ret;	
 }
 
 //
