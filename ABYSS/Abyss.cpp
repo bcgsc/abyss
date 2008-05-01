@@ -13,6 +13,7 @@
 #include "SequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
+#include "Timer.h"
 
 static void write_graph(const std::string& path,
 		/*const*/ ISequenceCollection& c)
@@ -25,6 +26,7 @@ static void write_graph(const std::string& path,
 
 int main(int argc, char* const* argv)
 {	
+	Timer timer("Abyss");
 	opt::parse(argc, argv);
 	
 	// Load the phase space

@@ -206,198 +206,168 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 	printf("Split %d ambiguous nodes\n", numSplit);
 }
 
-void popBubbles(ISequenceCollection* seqCollection, int kmerSize)
+int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
 	Timer timer("PopBubbles");
 	printf("removing loops\n");
-	int count = 0;
 	int numPopped = 0;
 
+	// Set the cutoffs
+	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
+	const unsigned int maxNumBranches = 3;
+		
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-	
+		// Skip sequences that have already been deleted	
 		if(iter->isFlagSet(SF_DELETE))
 		{		
 			continue;
 		}
-				
-		if(count % 100000 == 0)
-		{
-			printf("checked %d for bubbles\n", count);
-		}
-		count++;
+
+		// Get the extensions for this sequence, this function populates the extRecord structure
+		ExtensionRecord extRec;
+		bool success = seqCollection->getExtensions(*iter, extRec);
+		assert(success);
 		
-		// Set the cutoffs
-		unsigned int expectedBubbleSize = 2*(kmerSize + 1);
-		const unsigned int maxNumBranches = 3;
-
-		for(int i = 0; i <= 1; i++)
-		{
+		// Check for ambiguity
+		for(int i = 0; i <= 1; ++i)
+		{	
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			HitRecord initHR = calculateExtension(seqCollection, *iter, dir);
-
-			if(initHR.getNumHits() > 1)
+			
+			if(extRec.dir[dir].IsAmbiguous())
 			{
 				// Found a potential bubble, examine each branch
 				bool stop = false;
-						
-				std::vector<Branch> branches;
 				
-				// Add the initial sequences to the branch
-				for(int j = 0; j < initHR.getNumHits(); ++j)
+				// Create the branch group
+				BranchGroup branchGroup(0, maxNumBranches);
+				
 				{
-					Branch newBranch;
-					//printf("Adding start: %s\n", initHR.getHit(j).seq.decode().c_str());
+					// Generate the vector of sequences that make up this branch
+					PSequenceVector extSeqs;
+					generateSequencesFromExtension(*iter, dir, extRec.dir[dir], extSeqs);
+					assert(extSeqs.size() > 1);
 					
-					newBranch.AddSequence(initHR.getHit(j).seq);
-					branches.push_back(newBranch);
+					for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
+					{
+						// Create a new branch and add it to the group
+						BranchRecord newBranch(dir, expectedBubbleSize);
+						branchGroup.addBranch(newBranch);
+						
+						// Add the sequence to the branch
+						branchGroup.getLastBranch().addSequence(*seqIter);
+					}
 				}
-
+								
+				bool noext = false;
 				
-				bool bubble = false;
 				// Iterate over the branches
 				while(!stop)
 				{
-					int numBranches = branches.size();
-					for(int j = 0; j < numBranches; ++j)
-					{												
-						// Check the extension of this sequence
-						HitRecord bubHR = calculateExtension(seqCollection, branches[j].lastSeq, dir);
-						//printf("currSeq: %s size: %d num: %d\n", branches[j].lastSeq.decode().c_str(), branches[j].seqSet.size(), branches.size());
+					size_t numBranches = branchGroup.getNumBranches();
+					
+					for(unsigned int j = 0; j < numBranches; ++j)
+					{						
+						// Get the extensions of this branch
+						ExtensionRecord extRec;
+						bool success = seqCollection->getExtensions(branchGroup.getBranch(j).getLastSeq(), extRec);
+						assert(success);
 						
-						bool uniqueEntry = false;
-						if(bubHR.getNumHits() == 1)
+						// Generate the extensions of the branch
+						PSequenceVector branchExtSeqs;
+						generateSequencesFromExtension(branchGroup.getBranch(j).getLastSeq(), dir, extRec.dir[dir], branchExtSeqs);
+
+						if(branchExtSeqs.size() == 1)
 						{
 							// single extension
+							
 							//printf("adding single %s\n", bubHR.getFirstHit().seq.decode().c_str());
-							uniqueEntry = branches[j].AddSequence(bubHR.getFirstHit().seq);
+							branchGroup.getBranch(j).addSequence(branchExtSeqs.front());
 												
 						}
-						else if(bubHR.getNumHits() > 1)
+						else if(branchExtSeqs.size() > 1)
 						{
-							// Start a new branch for the remaining sequences
-							for(int k = 1; k < bubHR.getNumHits(); k++)
+							// Start a new branch for the sequences [1..n]
+							PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
+							
+							for(; seqIter != branchExtSeqs.end(); ++seqIter)
 							{
 								//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
-								// Start a new branch which is a duplicate of the current branch up to this point
 								
-								// Always unique so we don't have to check the return
-								Branch newBranch(branches[j]);
-								newBranch.AddSequence(bubHR.getHit(k).seq);							
-								branches.push_back(newBranch);	
-							}
-										
-							// Add the first base to the current branch
-							//printf("adding multip %s\n",bubHR.getFirstHit().seq.decode().c_str());
-							uniqueEntry = branches[j].AddSequence(bubHR.getFirstHit().seq);
-						}
-						
-						// If there was no extension or we tried to add a duplicate key, return
-						if(bubHR.getNumHits() == 0 || !uniqueEntry)
-						{
-							// no ext, terminate
-							stop = true;
-							bubble = false;
-							break;
-						}
-					}
-					
-					// Check the stop conditions	
-
-					
-					// Check if all the branches have joined
-					bool joinFound = false;
-					for(unsigned int k = 0; k < branches.size(); k++)
-					{
-						bool allSame = true;
-						PackedSeq testSeq = branches[k].lastSeq;
-						for(unsigned int l = 0; l < branches.size(); l++)
-						{
-							// Skip the branch that is the same as the current
-							if(k == l)
-							{
-								continue;
+								// Start a new branch which is a duplicate of the current branch up to this point
+								BranchRecord newBranch(branchGroup.getBranch(j));
+								branchGroup.addBranch(newBranch);
+								branchGroup.getLastBranch().addSequence(*seqIter);
 							}
 							
-							if(branches[l].seqSet.find(testSeq) == branches[l].seqSet.end())
-							{
-								// Sequence not found
-								allSame = false;
-								break;
-							}	
+							// Add the first sequence (index 0) to the current branch
+							branchGroup.getBranch(j).addSequence(branchExtSeqs.front());
 						}
-						
-						if(allSame)
+						else
 						{
-							joinFound = true;
-							break;
+							// this branch could not be extended, set a flag
+							noext = true;
 						}
 					}
-
-					if(joinFound)
-					{
-						// The paths have merged back together, this is a bubble
-						stop = true;
-						bubble = true;
-					}
 					
-					// Check stop conditions
-					if(branches.size() > maxNumBranches)
+					
+					// All branches have been extended one sequence, check the stop conditions
+					if(noext)
 					{
 						stop = true;
-						bubble = false;
 					}
-					
-					for(unsigned int k = 0; k < branches.size(); k++)
+					else
 					{
-						if(branches[k].seqSet.size() > expectedBubbleSize)
+						BranchGroupStatus status = branchGroup.checkBubbleStopConditions();
+						
+						// Check if a stop condition was met
+						if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES)
 						{
 							stop = true;
-							bubble = false;
 						}
-					}	
-				}
-				/*
-				printf("Bubble found of size %d\n", branches[0].size());
-				for(unsigned int k = 0; k < branches.size(); k++)
-				{
-					printf("Path %d:\n", k);
-					for(PSequenceVectorIterator bubIter = branches[k].begin(); bubIter != branches[k].end(); bubIter++)
-					{
-						printf("	%s\n", bubIter->decode().c_str());
-					}
-				}				
-				*/
-				// Was a bubble found?
-				if(bubble)
-				{
-					//printf("BRANCHES %d %d\n", branches.size(), branches.front().size());
-					// Remove the bubble (arbitrary decision on which one for now)
-					//printf("pop!\n");
-					for(unsigned int k = 1; k < branches.size(); k++)
-					{
-						int removeIndex = k;
-						
-						// Stop removal at the second last sequence
-						for(PSeqSet::iterator bubIter = branches[removeIndex].seqSet.begin(); bubIter != branches[removeIndex].seqSet.end(); bubIter++)
+						else if(status == BGS_JOINED)
 						{
-							if(*bubIter != branches[removeIndex].lastSeq && branches[0].seqSet.find(*bubIter) == branches[0].seqSet.end())
+							// a join was found, select a branch to keep and remove the rest
+							size_t selectedIndex = branchGroup.selectBranchToKeep();
+							
+							size_t numBranches = branchGroup.getNumBranches();
+							BranchRecord& refRecord = branchGroup.getBranch(selectedIndex);
+							
+							for(size_t i = 0; i < numBranches; ++i)
 							{
-								//printf("Deleting (%zu): %s\n", branches[removeIndex].seqSet.size(), bubIter->decode().c_str());
-								removeSequenceAndExtensions(seqCollection, *bubIter);
+								// Skip the branch that was selected to keep
+								if(i == selectedIndex)
+								{
+									continue;
+								}
+								
+								BranchRecord& currBranch = branchGroup.getBranch(i);
+								for(BranchDataIter branchIter = currBranch.getStartIter(); branchIter != currBranch.getEndIter(); ++branchIter)
+								{
+									// if the sequence is not in the reference branch, remove it
+									if(!refRecord.exists(*branchIter))
+									{
+										removeSequenceAndExtensions(seqCollection, *branchIter);	
+									}
+								}
 							}
+							numPopped++;
+							stop = true;
+						}
+						else
+						{										
+							// the branch is still active, continue
+							assert(status == BGS_ACTIVE);
 						}
 					}
-					numPopped++;
-
-					//printf("Popped %zu\n", branches[0].seqSet.size());
 				}
 			}
 		}
 		seqCollection->pumpNetwork();
 	}
-	printf("Removed %d bubbles\n", numPopped);	
+	printf("Removed %d bubbles\n", numPopped);
+	return numPopped;
 }
 
 
@@ -535,12 +505,6 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			// Get the extensions for this sequence, this function populates the extRecord structure
 			ExtensionRecord extRec;
 			bool success = seqCollection->getExtensions(currSeq, extRec);
-			
-			// this call should always succeed
-			if(!success)
-			{
-				printf("seq %s was not found!\n", currSeq.decode().c_str());
-			}
 			assert(success);
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension

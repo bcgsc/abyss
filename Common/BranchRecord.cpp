@@ -3,7 +3,7 @@
 //
 // Constructor
 //
-BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(0)
+BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(0), m_loopDetected(false)
 {
 	
 }
@@ -11,7 +11,7 @@ BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(0)
 //
 // Constructor
 //
-BranchRecord::BranchRecord(extDirection dir, size_t maxLength) : m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength)
+BranchRecord::BranchRecord(extDirection dir, size_t maxLength) : m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength), m_loopDetected(false)
 {
 	
 }
@@ -21,9 +21,30 @@ BranchRecord::BranchRecord(extDirection dir, size_t maxLength) : m_dir(dir), m_s
 //
 BranchRecord::BranchRecord(const BranchRecord& other)
 {
+	m_data = other.m_data;
+	m_set = other.m_set;
 	m_dir = other.m_dir;
 	m_maxLength = other.m_maxLength;
 	m_state = other.m_state;
+	m_loopDetected = other.m_loopDetected;
+}
+
+// Assignment operator
+BranchRecord& BranchRecord::operator=(const BranchRecord& other)
+{
+	// Detect self assignment
+	if (this == &other)
+	{
+		return *this;
+	}
+		
+	m_data = other.m_data;
+	m_set = other.m_set;
+	m_dir = other.m_dir;
+	m_maxLength = other.m_maxLength;
+	m_state = other.m_state;
+	m_loopDetected = other.m_loopDetected;	
+	return *this;
 }
 
 //
@@ -32,6 +53,13 @@ BranchRecord::BranchRecord(const BranchRecord& other)
 void BranchRecord::addSequence(const PackedSeq& seq)
 {
 	m_data.push_back(seq);
+	
+	// Detect a loop by checking that the sequence is not already in the branch
+	bool unique = m_set.insert(seq).second;
+	if(!unique)
+	{
+		m_loopDetected = true;
+	}
 }
 
 //
@@ -73,6 +101,23 @@ BranchState BranchRecord::getState() const
 extDirection BranchRecord::getDirection() const
 {
 	return m_dir;	
+}
+
+//
+// Get the last sequence in the data structure
+// 
+const PackedSeq& BranchRecord::getLastSeq() const
+{
+	assert(!m_data.empty());
+	return m_data.back();
+}
+
+//
+// Check if a sequence exists in the branch record
+//
+bool BranchRecord::exists(const PackedSeq& seq) const
+{
+	return m_set.find(seq) != m_set.end();	
 }
 
 //

@@ -6,6 +6,7 @@
 #include "FastaReader.h"
 #include "SeqRecord.h"
 #include "FastaWriter.h"
+#include "BranchGroup.h"
 #include "BranchRecord.h"
 
 /*********************************************************
@@ -18,20 +19,6 @@
  * 
  * 
  **********************************************************/
-struct Branch
-{
-	PSeqSet seqSet;
-	PackedSeq lastSeq;
-	
-	// Returned bool is true if the insert succeeded (the key is unique), false otherwise)
-	bool AddSequence(const PackedSeq& seq) 
-	{ 
-		bool rc = seqSet.insert(seq).second; 
-		lastSeq = seq;
-		return rc;
-	}
-};
-
 enum TrimStatus
 {
 	TS_NOTRIM, // sequence is contiguious on both ends
@@ -74,7 +61,7 @@ bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& b
 bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions);
 
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
-void popBubbles(ISequenceCollection* seqCollection, int kmerSize);
+int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 
 // Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
 void splitAmbiguous(ISequenceCollection* seqCollection);
