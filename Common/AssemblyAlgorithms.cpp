@@ -241,25 +241,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				bool stop = false;
 				
 				// Create the branch group
-				BranchGroup branchGroup(0, maxNumBranches);
+				BranchGroup branchGroup(0, dir, maxNumBranches);
+				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], expectedBubbleSize);
 				
-				{
-					// Generate the vector of sequences that make up this branch
-					PSequenceVector extSeqs;
-					generateSequencesFromExtension(*iter, dir, extRec.dir[dir], extSeqs);
-					assert(extSeqs.size() > 1);
-					
-					for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
-					{
-						// Create a new branch and add it to the group
-						BranchRecord newBranch(dir, expectedBubbleSize);
-						branchGroup.addBranch(newBranch);
-						
-						// Add the sequence to the branch
-						branchGroup.getLastBranch().addSequence(*seqIter);
-					}
-				}
-								
 				bool noext = false;
 				
 				// Iterate over the branches
@@ -274,41 +258,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						bool success = seqCollection->getExtensions(branchGroup.getBranch(j).getLastSeq(), extRec);
 						assert(success);
 						
-						// Generate the extensions of the branch
-						PSequenceVector branchExtSeqs;
-						generateSequencesFromExtension(branchGroup.getBranch(j).getLastSeq(), dir, extRec.dir[dir], branchExtSeqs);
-
-						if(branchExtSeqs.size() == 1)
-						{
-							// single extension
-							
-							//printf("adding single %s\n", bubHR.getFirstHit().seq.decode().c_str());
-							branchGroup.getBranch(j).addSequence(branchExtSeqs.front());
-												
-						}
-						else if(branchExtSeqs.size() > 1)
-						{
-							// Start a new branch for the sequences [1..n]
-							PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
-							
-							for(; seqIter != branchExtSeqs.end(); ++seqIter)
-							{
-								//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
-								
-								// Start a new branch which is a duplicate of the current branch up to this point
-								BranchRecord newBranch(branchGroup.getBranch(j));
-								branchGroup.addBranch(newBranch);
-								branchGroup.getLastBranch().addSequence(*seqIter);
-							}
-							
-							// Add the first sequence (index 0) to the current branch
-							branchGroup.getBranch(j).addSequence(branchExtSeqs.front());
-						}
-						else
-						{
-							// this branch could not be extended, set a flag
-							noext = true;
-						}
+						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec);
 					}
 					
 					
@@ -322,36 +272,13 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						BranchGroupStatus status = branchGroup.checkBubbleStopConditions();
 						
 						// Check if a stop condition was met
-						if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES)
+						if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
 						{
 							stop = true;
 						}
 						else if(status == BGS_JOINED)
 						{
-							// a join was found, select a branch to keep and remove the rest
-							size_t selectedIndex = branchGroup.selectBranchToKeep();
-							
-							size_t numBranches = branchGroup.getNumBranches();
-							BranchRecord& refRecord = branchGroup.getBranch(selectedIndex);
-							
-							for(size_t i = 0; i < numBranches; ++i)
-							{
-								// Skip the branch that was selected to keep
-								if(i == selectedIndex)
-								{
-									continue;
-								}
-								
-								BranchRecord& currBranch = branchGroup.getBranch(i);
-								for(BranchDataIter branchIter = currBranch.getStartIter(); branchIter != currBranch.getEndIter(); ++branchIter)
-								{
-									// if the sequence is not in the reference branch, remove it
-									if(!refRecord.exists(*branchIter))
-									{
-										removeSequenceAndExtensions(seqCollection, *branchIter);	
-									}
-								}
-							}
+							collapseJoinedBranches(seqCollection, branchGroup);
 							numPopped++;
 							stop = true;
 						}
@@ -370,8 +297,99 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	return numPopped;
 }
 
+//
+// Populate a branch group with the inital branches from a sequence
+//
+void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, size_t maxBubbleSize)
+{
+	// Generate the vector of sequences that make up this branch
+	PSequenceVector extSeqs;
+	generateSequencesFromExtension(seq, group.getDirection(), extension, extSeqs);
+	assert(extSeqs.size() > 1);
+	
+	for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
+	{
+		// Create a new branch and add it to the group
+		BranchRecord newBranch(group.getDirection(), maxBubbleSize);
+		group.addBranch(newBranch);
+		
+		// Add the sequence to the branch
+		group.getLastBranch().addSequence(*seqIter);
+	}	
+}
 
+//
+// process an a branch group extension
+//
+void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions)
+{
+	// Generate the extensions of the branch
+	PSequenceVector branchExtSeqs;
+	extDirection dir = group.getDirection();
+	generateSequencesFromExtension(seq, dir, extensions.dir[dir], branchExtSeqs);
+	
+	if(branchExtSeqs.size() == 1)
+	{
+		// single extension
+		group.getBranch(branchIndex).addSequence(branchExtSeqs.front());
+							
+	}
+	else if(branchExtSeqs.size() > 1)
+	{
+		// Start a new branch for the sequences [1..n]
+		PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
+		
+		for(; seqIter != branchExtSeqs.end(); ++seqIter)
+		{
+			//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
+			
+			// Start a new branch which is a duplicate of the current branch up to this point
+			BranchRecord newBranch(group.getBranch(branchIndex));
+			group.addBranch(newBranch);
+			group.getLastBranch().addSequence(*seqIter);
+		}
+		
+		// Add the first sequence (index 0) to the current branch
+		group.getBranch(branchIndex).addSequence(branchExtSeqs.front());
+	}
+	else
+	{
+	
+		// this branch could not be extended, set a flag
+		group.setNoExtension();
+	}	
+}
 
+//
+// Collapse joined paths into a single path
+//
+void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group)
+{
+	// a join was found, select a branch to keep and remove the rest
+	size_t selectedIndex = group.selectBranchToKeep();
+	
+	size_t numBranches = group.getNumBranches();
+	BranchRecord& refRecord = group.getBranch(selectedIndex);
+	
+	for(size_t i = 0; i < numBranches; ++i)
+	{
+		// Skip the branch that was selected to keep
+		if(i == selectedIndex)
+		{
+			continue;
+		}
+		
+		BranchRecord& currBranch = group.getBranch(i);
+		for(BranchDataIter branchIter = currBranch.getStartIter(); branchIter != currBranch.getEndIter(); ++branchIter)
+		{
+			// if the sequence is not in the reference branch, remove it
+			if(!refRecord.exists(*branchIter))
+			{
+				removeSequenceAndExtensions(seqCollection, *branchIter);	
+			}
+		}
+	}
+}
 //
 // Remove a read and update the extension records of the sequences that extend to it
 //

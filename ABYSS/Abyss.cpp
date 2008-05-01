@@ -48,13 +48,15 @@ int main(int argc, char* const* argv)
 	write_graph("trimmed.dot", *pSC);
 
 	// Remove bubbles
-	popBubbles(pSC, opt::kmerSize);
+	while(popBubbles(pSC, opt::kmerSize));
 	
 	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
 	// These dead ends can happen when there are two overlapping bubbles and the second one is trimmed first (the bubble with only 2 branches)
 	// There may be a better way to deal with this situation but this will suffice for the moment
 	if (opt::trimLen > 0)
-		trimSequences(pSC, opt::trimLen);
+	{
+		while(trimSequences(pSC, opt::trimLen));
+	}
 
 	write_graph("graph.dot", *pSC);
 

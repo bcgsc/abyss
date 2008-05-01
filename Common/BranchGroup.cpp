@@ -1,6 +1,6 @@
 #include "BranchGroup.h"
 
-BranchGroup::BranchGroup(uint64_t id, size_t maxNumBranches) : m_id(id), m_maxNumBranches(maxNumBranches)
+BranchGroup::BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches) : m_id(id), m_dir(dir), m_maxNumBranches(maxNumBranches), m_noExt(false)
 {
 	
 	
@@ -31,6 +31,12 @@ BranchRecord& BranchGroup::getBranch(unsigned int index)
 //
 BranchGroupStatus BranchGroup::checkBubbleStopConditions() const
 {
+	// Check if the no extension flag is set
+	if(m_noExt)
+	{
+		return BGS_NOEXT;
+	}
+	
 	// Check if there are too many branches
 	if(m_branches.size() > m_maxNumBranches)
 	{

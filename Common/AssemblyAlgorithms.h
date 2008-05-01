@@ -60,8 +60,25 @@ bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& b
 // Process the extensions of the current sequence for trimming
 bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions);
 
+// Polymorphism removal
+
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
+
+// Populate the branch group with the initial extensions to this sequence
+void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, size_t maxBubbleSize);
+
+// process an a branch group extension
+void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions);
+
+// collapse bubbles that are joined together
+void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);
+
+//
+//
+// Split the remaining ambiguous nodes to allow for a non-redundant assembly
+//
+//
 
 // Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
 void splitAmbiguous(ISequenceCollection* seqCollection);

@@ -6,6 +6,7 @@
 enum BranchGroupStatus 
 {
 	BGS_ACTIVE,
+	BGS_NOEXT,
 	BGS_JOINED,
 	BGS_TOOLONG,
 	BGS_LOOPFOUND,
@@ -16,7 +17,7 @@ typedef std::vector<BranchRecord> BranchGroupData;
 class BranchGroup
 {
 	public:
-		BranchGroup(uint64_t id, size_t maxNumBranches);
+		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches);
 		
 		// Add a branch to the group
 		void addBranch(BranchRecord& branch);
@@ -36,12 +37,18 @@ class BranchGroup
 		// Select a branch to keep (for bubble removal) and return it's index
 		size_t selectBranchToKeep() const;
 		
+		// set the no extension flag
+		void setNoExtension() { m_noExt = true; }
+		
+		extDirection getDirection() { return m_dir; }
 		// Iterator accessors 
 		
 	private:
 		BranchGroupData m_branches;
 		uint64_t m_id;
-		size_t m_maxNumBranches;		
+		extDirection m_dir;
+		size_t m_maxNumBranches;
+		bool m_noExt;
 };
 
 #endif

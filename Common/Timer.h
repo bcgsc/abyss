@@ -14,7 +14,7 @@ class Timer
 		
 	private:
 		std::string m_funcStr;
-		double m_start;
+		clock_t m_start;
 };
 
 #endif
