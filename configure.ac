@@ -46,6 +46,7 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([lam], [lam_mutex_lock])
 AC_CHECK_LIB([mpi], [MPI_Init])
+AC_CHECK_LIB([lammpi++], [main]) 
 #AC_CHECK_LIB([mpiP], [main])
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 

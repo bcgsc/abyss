@@ -7,6 +7,8 @@
 #include "SeqRecord.h"
 #include "AssemblyAlgorithms.h"
 #include "MessageBuffer.h"
+#include "Log.h"
+#include "Timer.h"
 
 enum NetworkAssemblyState
 {
@@ -203,6 +205,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Message buffer
 		MessageBuffer* m_pMsgBuffer;
+		
+		// Log file
+		Log* m_pLog;
+		
+		// Timer for the entire lifetime of the object
+		Timer m_timer;
 		
 		static const size_t MAX_ACTIVE = 50;
 		static const size_t LOW_ACTIVE = 10;		

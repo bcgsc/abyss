@@ -91,7 +91,7 @@ void SeqOpMessage::handle(int senderID, NetworkSequenceCollection& handler)
 //
 void SeqOpMessage::print() const
 {
-	printf("Message type: %d Sequence: %s Operation: %d size: %d\n", (int)Message::m_type, m_seq.decode().c_str(), (int)m_operation, getNetworkSize());
+	printf("Message type: %d Sequence: %s Operation: %d size: %d\n", (int)Message::m_type, m_seq.decode().c_str(), (int)m_operation, (int)getNetworkSize());
 }
 
 

@@ -1,7 +1,6 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
-#include "Timer.h"
-#include "Log.h"
+#include <sstream>
 #include <stdarg.h>
 
 //
@@ -12,7 +11,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 											 int kmerSize, 
 											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
 											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
-											 m_numBasesAdjSet(0), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0)
+											 m_numBasesAdjSet(0), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0), m_timer("Total")
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
@@ -22,6 +21,11 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 	
 	// Create the message buffer
 	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
+	
+	stringstream strStrm;
+	strStrm << "log_" << myID << ".txt";
+	m_pLog = new Log(strStrm.str());
+	
 }
 
 //
@@ -29,6 +33,9 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 //
 NetworkSequenceCollection::~NetworkSequenceCollection()
 {
+	// write the last message to the log
+	m_pLog->write(m_timer.toString().c_str());
+	
 	// Delete the objects created in the constructor
 	delete m_pLocalSpace;
 	m_pLocalSpace = 0;
@@ -38,6 +45,9 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	
 	delete m_pMsgBuffer;
 	m_pMsgBuffer = 0;
+	
+	delete m_pLog;
+	m_pLog = 0;
 }
 
 int adjSet = 0;
@@ -156,13 +166,18 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 		{
 			case NAS_LOADING:
 			{
+				Timer timer("LoadSequences");
 				AssemblyAlgorithms::loadSequences(this, fastaFile, readLength, kmerSize);
 				
 				// Cleanup any messages that are pending
 				EndState();
 								
 				SetState(NAS_FINALIZE);
-						
+				Log* pFake = new Log("load.done");
+				pFake->write("done load");
+				delete pFake;
+				
+				m_pLog->write(timer.toString().c_str());
 				// Tell the rest of the loaders that the load is finished
 				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);		
 				break;
@@ -179,12 +194,6 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				{
 					pumpNetwork();
 				}
-				
-				Log* pLoadLog = new Log("done.load");
-				char buffer[256];
-				sprintf(buffer, "Node 0 loaded %d sequences\n", count());
-				pLoadLog->write(buffer);
-				delete pLoadLog;
 						
 				SetState(NAS_GEN_ADJ);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);		
@@ -594,6 +603,7 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 {
 	Timer timer("NetworkGenerateAdjacency");
 	printf("generating adjacency info - network\n");
+	
 	int count = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -641,6 +651,7 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 		pumpNetwork();
 	}
 
+	m_pLog->write(timer.toString().c_str());
 	printf("%d all requests filled, continue\n", m_id);
 }
 
@@ -707,6 +718,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		seqCollection->pumpNetwork();
 	}		
 	
+	m_pLog->write(timer.toString().c_str());
 	printf("num branches removed: %d\n", numBranchesRemoved);
 	return numBranchesRemoved;	
 }
@@ -836,6 +848,8 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 		numPopped += processBranchesPop();
 		seqCollection->pumpNetwork();
 	}
+	
+	m_pLog->write(timer.toString().c_str());
 	printf("Removed %d bubbles\n", numPopped);
 	return numPopped;	
 	
@@ -966,7 +980,7 @@ void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqC
 		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
 		seqCollection->pumpNetwork();
 	}		
-	
+	m_pLog->write(timer.toString().c_str());
 	printf("num assembled: %d\n", numAssembled);
 }
 
