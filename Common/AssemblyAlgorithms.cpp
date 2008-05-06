@@ -339,14 +339,14 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 		// Start a new branch for the sequences [1..n]
 		PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
 		
-		uint64_t startID = group.getNumBranches();
+		
 		for(; seqIter != branchExtSeqs.end(); ++seqIter)
 		{
-			//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
+			uint64_t newID = group.getNumBranches();
 			
 			// Start a new branch which is a duplicate of the current branch up to this point
 			BranchRecord newBranch(group.getBranch(branchIndex));
-			BranchRecord& addedBranch = group.addBranch(startID, newBranch);
+			BranchRecord& addedBranch = group.addBranch(newID, newBranch);
 			addedBranch.addSequence(*seqIter);
 		}
 		
@@ -647,8 +647,8 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		}
 		else if(status == SC_ISLAND)
 		{
-			// this should never happen, island sequences would have been removed by this point
-			assert(false);
+			// singleton, ignore for now
+			continue;
 		}
 
 		// The sequence is an endpoint, begin extending it

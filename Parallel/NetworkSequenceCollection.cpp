@@ -1,6 +1,7 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include "Timer.h"
+#include "Log.h"
 #include <stdarg.h>
 
 //
@@ -163,9 +164,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				SetState(NAS_FINALIZE);
 						
 				// Tell the rest of the loaders that the load is finished
-				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);
-				
-								
+				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);		
 				break;
 			}
 			case NAS_FINALIZE:
@@ -180,7 +179,13 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				{
 					pumpNetwork();
 				}
-								
+				
+				Log* pLoadLog = new Log("done.load");
+				char buffer[256];
+				sprintf(buffer, "Node 0 loaded %d sequences\n", count());
+				pLoadLog->write(buffer);
+				delete pLoadLog;
+						
 				SetState(NAS_GEN_ADJ);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);		
 				
@@ -239,8 +244,6 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 						pumpNetwork();
 					}
 					
-
-									
 					// All checkpoints are reached, reset the state
 					SetState(NAS_TRIM);
 				}
@@ -570,7 +573,7 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 	ExtensionRecord extRec;
 	bool found = m_pLocalSpace->getExtensions(message.m_seq, extRec);
 	assert(found);
-	
+
 	// Return the extension to the sender
 	m_pMsgBuffer->sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, 0);
 }
@@ -630,15 +633,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 				pumpNetwork();
 			}	
 		}
-				
-		/*
-		if(m_numOutstandingRequests > MAX_ACTIVE)
-		{
-			while(m_numOutstandingRequests > LOW_ACTIVE)
-			{
-				pumpNetwork();
-			}
-		}*/
 	}
 	
 	// Wait for all the requests to be filled
@@ -648,49 +642,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	}
 
 	printf("%d all requests filled, continue\n", m_id);
-}
-
-
-
-
-//
-// SendAdjacencyRequest - Send an adjacent request over the network 
-// 
-void NetworkSequenceCollection::computeAdjacency(const PackedSeq& currSeq, const PackedSeq& requestSeq, extDirection dir, char base)
-{
-	// Check if the test sequence is local
-	if(isLocal(requestSeq))
-	{
-		// simply look up the sequence in the local space
-		if(m_pLocalSpace->exists(requestSeq))
-		{
-			// set adjacency
-			setAdjacency(currSeq, dir, base);
-		}	
-	}
-	else
-	{
-
-		// Send the request
-		int nodeID = computeNodeID(requestSeq);
-		assert(nodeID != m_id);
-		// Add the request to the set
-		assert(false);
-		//m_pComm->SendAdjacencyRequest(nodeID, requestSeq, currSeq, dir, base);
-		
-		// Increment the number of outstanding requests
-		m_numOutstandingRequests++;
-		
-		//m_pendingRequests[id] = request;		
-	}
-}
-
-//
-// Set the adjacency of a sequence
-//
-void NetworkSequenceCollection::setAdjacency(const PackedSeq& seq, extDirection dir, char base)
-{
-	setBaseExtension(seq, dir, base);
 }
 
 //
@@ -813,6 +764,8 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 	assert(m_activeBranchGroups.empty());
 	
 	int numPopped = 0;
+	
+	int count = 0;
 
 	// Set the cutoffs
 	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
@@ -827,6 +780,12 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 			continue;
 		}
 
+		if(count % 100000 == 0)
+		{
+			printf("Popping looked at %d\n", count);
+		}
+		count++;
+		
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
 		
@@ -904,7 +863,7 @@ int NetworkSequenceCollection::processBranchesPop()
 		{
 			// Update status is called in processSequenceExtensionPop(), check the status here
 			BranchGroupStatus status = iter->second.getStatus();
-		
+			
 			// Check if a stop condition was met
 			if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
 			{
@@ -961,7 +920,7 @@ void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqC
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{	
 		extDirection dir;
-		// dir will be set to the trimming direction if the sequence can be trimmed
+		// dir will be set to the assembly direction if the sequence can be assembled
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
 
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
@@ -970,8 +929,8 @@ void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqC
 		}
 		else if(status == SC_ISLAND)
 		{
-			// This should not happen
-			assert(false);
+			// singleton, ignore for now
+			continue;
 		}
 		
 		// Sequence is trimmable, create a new branch for it
@@ -1177,7 +1136,7 @@ void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, ui
 	//printf("processing %llu\n", id);
 	// Find the branch by its ID	
 	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
-
+		
 	// If the iterator was not found we finished with that branch already, ensure this is so
 	if(iter == m_activeBranchGroups.end())
 	{
@@ -1188,13 +1147,13 @@ void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, ui
 	
 	PackedSeq currSeq = seq;
 	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(iter->second, branchID, currSeq, extRec);
-	
+
 	// The extendable flag indicates that one round of extension has happened and each branch is equal length
 	if(extendable)
 	{
 		// Update the status of the branch
 		BranchGroupStatus status = iter->second.updateStatus();
-		
+			
 		// if the group is still active, generate new requests for all the branches in the group
 		if(status == BGS_ACTIVE)
 		{

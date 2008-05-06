@@ -124,10 +124,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 	private:
 	
-		// ComputeAdjacencyRequest
-		void computeAdjacency(const PackedSeq& currSeq, const PackedSeq& requestSeq, extDirection dir, char base);
-		void setAdjacency(const PackedSeq& seq, extDirection dir, char base);
-		
 		// Branch processing
 		int processBranchesTrim();
 		int processBranchesPop();
