@@ -14,11 +14,11 @@ using namespace std;
 static bool isContiguous(ISequenceCollection& c,
 		PackedSeq* pSeq, extDirection dir)
 {
-	HitRecord hr = calculateExtension(&c, *pSeq, dir);
+	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, *pSeq, dir);
 	if (hr.getNumHits() != 1)
 		return false;
 	const PackedSeq& ext = hr.getFirstHit().seq;
-	HitRecord rhr = calculateExtension(&c, ext, !dir);
+	HitRecord rhr = AssemblyAlgorithms::calculateExtension(&c, ext, !dir);
 	if (rhr.getNumHits() != 1)
 		return false;
 	*pSeq = ext;
@@ -63,7 +63,7 @@ static void write_contig(ostream& out,
 static void write_split(ostream& out,
 		ISequenceCollection& c, const PackedSeq& seq)
 {
-	HitRecord hr = calculateExtension(&c, seq, SENSE);
+	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, SENSE);
 	unsigned hits = hr.getNumHits();
 	if (hits <= 1)
 		return;
@@ -77,7 +77,7 @@ static void write_split(ostream& out,
 static void write_join(ostream& out,
 		ISequenceCollection& c, const PackedSeq& seq)
 {
-	HitRecord hr = calculateExtension(&c, seq, ANTISENSE);
+	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, ANTISENSE);
 	unsigned hits = hr.getNumHits();
 	if (hits <= 1)
 		return;

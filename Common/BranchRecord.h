@@ -11,7 +11,8 @@ enum BranchState
 	BS_NOEXT, // the branch has ended because of a lack of sequence to extend to
 	BS_AMBI_SAME, // the branch has ended because the extension from this branch is ambigious
 	BS_AMBI_OPP, // the branch has ended because the extension to this branch is ambigiuous
-	BS_TOO_LONG // the branch is too long
+	BS_TOO_LONG, // the branch is too long
+	BS_LOOP // the branch has a loop
 	
 };
 
@@ -26,7 +27,7 @@ class BranchRecord
 		
 		// Constructor
 		BranchRecord();
-		BranchRecord(extDirection dir, size_t maxLength);
+		BranchRecord(extDirection dir, int maxLength);
 		BranchRecord(const BranchRecord&);
 		
 		// Assignment Operator
@@ -47,6 +48,12 @@ class BranchRecord
 		// Get the state of the branch
 		BranchState getState() const;
 		
+		// Check if the branch is empty
+		bool empty() const { return m_data.empty(); }
+		
+		// Get the first sequence added to the branch
+		const PackedSeq& getFirstSeq() const;
+		
 		// Get the last sequence added to this branch
 		const PackedSeq& getLastSeq() const;
 		
@@ -60,8 +67,14 @@ class BranchRecord
 		// Return the maximum branch length
 		size_t getMaxLength() const { return m_maxLength; }
 		
+		// build a contig from the branch
+		void buildContig(Sequence& outseq) const;
+		
 		// check if a sequence exists in the branch record
 		bool exists(const PackedSeq& seq) const;
+		
+		// should the length of the branch be checked?
+		bool doLengthCheck() const;
 		
 		// Does this branch have a loop?
 		bool hasLoop() const { return m_loopDetected; }
@@ -76,7 +89,7 @@ class BranchRecord
 		BranchSet m_set;
 		extDirection m_dir;
 		BranchState m_state;
-		size_t m_maxLength;
+		int m_maxLength;
 		bool m_loopDetected;
 };
 

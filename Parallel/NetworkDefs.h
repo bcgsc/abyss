@@ -5,15 +5,8 @@
 enum APMessage
 {
 	APM_NONE,
-	APM_SEQ,
-	APM_SEQ_FLAG,
-	APM_SEQ_EXT,
-	APM_CONTROL,	
-	APM_RESULT,
-	APM_ADJACENCY,
-	APM_RESULT_ADJ,
-	APM_SEQ_EXT_REQUEST, 
-	APM_SEQ_EXT_RESPONSE 
+	APM_CONTROL,
+	APM_BUFFERED
 };
 
 // The type of operations on whole sequences that can be performed

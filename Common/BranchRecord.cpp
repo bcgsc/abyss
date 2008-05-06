@@ -3,7 +3,7 @@
 //
 // Constructor
 //
-BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(0), m_loopDetected(false)
+BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1), m_loopDetected(false)
 {
 	
 }
@@ -11,7 +11,7 @@ BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(0),
 //
 // Constructor
 //
-BranchRecord::BranchRecord(extDirection dir, size_t maxLength) : m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength), m_loopDetected(false)
+BranchRecord::BranchRecord(extDirection dir, int maxLength) : m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength), m_loopDetected(false)
 {
 	
 }
@@ -103,6 +103,12 @@ extDirection BranchRecord::getDirection() const
 	return m_dir;	
 }
 
+const PackedSeq& BranchRecord::getFirstSeq() const
+{
+	assert(!m_data.empty());
+	return m_data.front();	
+}
+
 //
 // Get the last sequence in the data structure
 // 
@@ -118,6 +124,69 @@ const PackedSeq& BranchRecord::getLastSeq() const
 bool BranchRecord::exists(const PackedSeq& seq) const
 {
 	return m_set.find(seq) != m_set.end();	
+}
+
+//
+// If the maxLength == -1, no length check should be performed
+//
+bool BranchRecord::doLengthCheck() const
+{
+	return (m_maxLength > -1);
+}
+
+
+//
+// Build a contig from a branch
+//
+void BranchRecord::buildContig(Sequence& outseq) const
+{
+	// Is there any sequences in the record?
+	if(m_data.empty())
+	{
+		return;
+	}
+	
+	// Calculate the length of the output sequence
+	size_t outlen = m_data.front().getSequenceLength() + (m_data.size() - 1);
+	// reserve enough room for the entire sequence
+	outseq.reserve(outlen);
+	
+	if(m_dir == SENSE)
+	{
+		bool first = true;
+		for(BranchData::const_iterator iter = m_data.begin(); iter != m_data.end(); ++iter)
+		{
+			if(first)
+			{
+				// add the first sequence in its entirety
+				outseq.append(iter->decode());
+				first = false;
+			}
+			else
+			{
+				outseq.append(1, iter->getLastBase());
+			}
+		}
+	}
+	else
+	{
+		// for antisense, start at the end and traverse backwards
+		bool first = true;
+		for(BranchData::const_reverse_iterator riter = m_data.rbegin(); riter != m_data.rend(); ++riter)
+		{
+			if(first)
+			{
+				// add the first sequence in its entirety
+				outseq.append(riter->decode());
+				first = false;
+			}
+			else
+			{
+				outseq.append(1, riter->getLastBase());
+			}
+		}
+	}
+	return;
 }
 
 //

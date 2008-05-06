@@ -53,7 +53,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
 		
 		// set a base extension
-		void setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
+		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// remove the extension to the sequence
 		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
@@ -107,7 +107,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt extension);
-		void setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
+		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
 		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;

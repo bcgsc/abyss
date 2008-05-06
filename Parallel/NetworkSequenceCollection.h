@@ -6,6 +6,7 @@
 #include "CommLayer.h"
 #include "SeqRecord.h"
 #include "AssemblyAlgorithms.h"
+#include "MessageBuffer.h"
 
 enum NetworkAssemblyState
 {
@@ -21,7 +22,7 @@ enum NetworkAssemblyState
 	NAS_DONE // finished, clean up and exit
 };
 
-typedef std::map<uint64_t, BranchRecord> BranchMap;
+typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 
 class NetworkSequenceCollection : public ISequenceCollection
 {
@@ -37,6 +38,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency
 		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
+		
+		// This function is similar to AssemblyAlgorithms::popBubbles but is optimized to hide latency
+		int performNetworkBubblePop(ISequenceCollection* seqCollection, int kmerSize);
+		
+		// Perform a network assembly
+		void performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);
 
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
@@ -75,7 +82,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
 		
 		// set a single base extension
-		void setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
+		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// remove all the extensions of this sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);		
@@ -105,7 +112,15 @@ class NetworkSequenceCollection : public ISequenceCollection
 		SequenceCollectionIterator getStartIter() const;
 		
 		// get an iterator to the last sequence
-		SequenceCollectionIterator getEndIter() const;		
+		SequenceCollectionIterator getEndIter() const;
+		
+		// Message handlers, polymorphically called by the message types
+		void handleSeqOpMessage(int senderID, const SeqOpMessage& seqMsg);
+		void handleSetBaseMessage(int senderID, const SetBaseMessage& message);
+		void handleSetFlagMessage(int senderID, const SetFlagMessage& message);
+		void handleRemoveExtensionMessage(int senderID, const RemoveExtensionMessage& message);
+		void handleSequenceDataRequest(int senderID, SeqDataRequest& message);
+		void handleSequenceDataResponse(int senderID, SeqDataResponse& message);		
 		
 	private:
 	
@@ -114,19 +129,20 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void setAdjacency(const PackedSeq& seq, extDirection dir, char base);
 		
 		// Branch processing
-		int processBranches();
-		void generateExtensionRequest(uint64_t id, const PackedSeq& seq);
-		void processSequenceExtension(uint64_t id, const PackedSeq& seq, const ExtensionRecord& extRec);
+		int processBranchesTrim();
+		int processBranchesPop();
+		int processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID);
+		
+		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
+		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
+		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
+		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
+		
+		// Check if a branch is redundant with a previously output branch
+		bool isBranchRedundant(BranchRecord& branch);
 		
 		// Network message parsers
 		void parseControlMessage(int senderID);
-		void parseSeqMessage(int senderID);
-		void parseSeqFlagMessage(int senderID);
-		void parseSeqExtMessage(int senderID);	
-		void parseAdjacencyMessage(int senderID);
-		void parseAdjacencyResultMessage(int senderID);
-		void parseSequenceExtensionRequest(int senderID);		
-		void parseSequenceExtensionResponse(int senderID);
 		
 		// Read a fasta file and distribute the sequences
 		void readSequences(std::string fastaFile, int readLength, int kmerSize);
@@ -139,6 +155,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Print function
 		int PrintDebug(int level,char* fmt, ...) const;
+		
+		// Clean up the state
+		void EndState();
 		
 		// Set the state of the network assembly
 		void SetState(NetworkAssemblyState newState);
@@ -168,6 +187,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// the original read length
 		int m_readLen;
 		
+		// the number of bases of adjacency set
+		int m_numBasesAdjSet;
+		
 		// the current length to trim on (comes from the control node)
 		int m_trimStep;
 		
@@ -175,10 +197,19 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int m_numAssembled;
 		
 		// The number of requests that are pending
-		int m_numOutstandingRequests;
+		size_t m_numOutstandingRequests;
 		
 		// The current branches that are active
-		BranchMap m_activeBranches;
+		BranchGroupMap m_activeBranchGroups;
+		
+		// List of IDs of finished groups, used for sanity checking during bubble popping
+		std::set<uint64_t> m_finishedGroups;
+		
+		// Message buffer
+		MessageBuffer* m_pMsgBuffer;
+		
+		static const size_t MAX_ACTIVE = 50;
+		static const size_t LOW_ACTIVE = 10;		
 };
 
 #endif

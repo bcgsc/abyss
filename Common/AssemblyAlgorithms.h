@@ -19,12 +19,16 @@
  * 
  * 
  **********************************************************/
-enum TrimStatus
+enum SeqContiguity
 {
-	TS_NOTRIM, // sequence is contiguious on both ends
-	TS_ISLAND, // sequence is completely isolated
-	TS_TRIMMABLE // sequence can be trimmed
+	SC_INVALID, // sequence has been deleted/seen
+	SC_ISLAND, // sequence is completely isolated
+	SC_ENDPOINT, // one end of the sequence is open 
+	SC_CONTIGUOUS // the sequence is closed on both ends
 };
+
+namespace AssemblyAlgorithms
+{
 
 //
 //
@@ -52,13 +56,13 @@ void performTrim(ISequenceCollection* seqCollection);
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
 
 // Check whether a sequence can be trimmed
-TrimStatus checkSeqForTrim(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir);
+SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir);
 
 // process a terminated branch for trimming
-bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& branch);
+bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
 
 // Process the extensions of the current sequence for trimming
-bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions);
+bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions);
 
 // Polymorphism removal
 
@@ -69,7 +73,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, size_t maxBubbleSize);
 
 // process an a branch group extension
-void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions);
+bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions);
 
 // collapse bubbles that are joined together
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);
@@ -92,9 +96,8 @@ void splitAmbiguous(ISequenceCollection* seqCollection);
 // The actual assembly function, takes in an ISequenceCollection pointer
 void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter);
 
-// BuildContig generates the sequence of a contig from the 2-element array of 
-// sequence vectors (one for the antisense direction, one for sense direction)
-Sequence BuildContig(ISequenceCollection* seqCollection, HitVector* extensions, const PackedSeq& originalSeq, int contigID, int readLen, int kmerSize);
+// A function to process a branch after it has been extended as far as possible
+void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, BranchRecord& branch, Sequence& outseq);
 
 //
 //
@@ -113,5 +116,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 
 // Output all the sequences that remain (have not been deleted) in the dataset
 void outputSequences(const char* filename, ISequenceCollection* pSS);
+
+};
 
 #endif

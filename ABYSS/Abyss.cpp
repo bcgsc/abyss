@@ -33,38 +33,38 @@ int main(int argc, char* const* argv)
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 	//SequenceCollection* pSC = new SequenceCollection();
 	
-	loadSequences(pSC, opt::fastaFile, opt::readLen, opt::kmerSize);
+	AssemblyAlgorithms::loadSequences(pSC, opt::fastaFile, opt::readLen, opt::kmerSize);
 
 	printf("total sequences: %d\n", pSC->count());
 
 	printf("finalizing\n");
 	pSC->finalize();
 
-	generateAdjacency(pSC);
+	AssemblyAlgorithms::generateAdjacency(pSC);
 
-	performTrim(pSC);
+	AssemblyAlgorithms::performTrim(pSC);
 	
-	outputSequences("trimmed.fa", pSC);
+	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
 	write_graph("trimmed.dot", *pSC);
 
 	// Remove bubbles
-	while(popBubbles(pSC, opt::kmerSize));
+	while(AssemblyAlgorithms::popBubbles(pSC, opt::kmerSize));
 	
 	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
 	// These dead ends can happen when there are two overlapping bubbles and the second one is trimmed first (the bubble with only 2 branches)
 	// There may be a better way to deal with this situation but this will suffice for the moment
 	if (opt::trimLen > 0)
 	{
-		while(trimSequences(pSC, opt::trimLen));
+		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
 	}
 
 	write_graph("graph.dot", *pSC);
 
-	splitAmbiguous(pSC);
+	AssemblyAlgorithms::splitAmbiguous(pSC);
 	
 	FastaWriter writer("contigs.fa");
 
-	assemble(pSC, opt::readLen, opt::kmerSize, &writer);
+	AssemblyAlgorithms::assemble(pSC, opt::readLen, opt::kmerSize, &writer);
 
 
 	delete pSC;

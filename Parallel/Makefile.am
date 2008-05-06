@@ -12,4 +12,6 @@ ABYSS_P_SOURCES = \
 	CommLayer.cpp CommLayer.h \
 	DistributedPhaseSpace.cpp DistributedPhaseSpace.h \
 	NetworkDefs.h \
-	NetworkSequenceCollection.cpp NetworkSequenceCollection.h
+	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
+	MessageBuffer.cpp MessageBuffer.h \
+	Messages.cpp Messages.h

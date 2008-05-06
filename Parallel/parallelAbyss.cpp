@@ -9,6 +9,7 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include "ParallelFastaWriter.h"
+#include "Timer.h"
 
 int rank;
 
@@ -16,15 +17,16 @@ int main(int argc, char** argv)
 {	
 	opt::parse(argc, argv);
 
-   double starttime, endtime; 
-   starttime = MPI::Wtime();
+	Timer timer("ParallelAbyss");
 	
 	// start mpi process
-	MPI::Init(argc,argv);
+	MPI_Init(&argc,&argv);
 	
-	// get my rank
-	rank = MPI::COMM_WORLD.Get_rank();
-	int size = MPI::COMM_WORLD.Get_size();
+	// get my rank and the world size
+	int size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	
 
 	NetworkSequenceCollection networkSeqs(rank, size,
 			opt::kmerSize, opt::readLen);
@@ -43,9 +45,6 @@ int main(int argc, char** argv)
 		networkSeqs.run(opt::readLen, opt::kmerSize);
 	}
 
-	endtime = MPI::Wtime();
-	
-	printf("%d elapsed seconds: %f\n", rank, endtime - starttime);
-	MPI::Finalize();
+	MPI_Finalize();
 	return 0;
 }

@@ -4,6 +4,8 @@
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
 
+namespace AssemblyAlgorithms
+{
 
 //
 // Generate a hitrecord for a sequence
@@ -117,6 +119,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 		idNum++;
 		seqCollection->pumpNetwork();
 	}
+	
+	delete reader;
+	reader = 0;
 }
 
 //
@@ -244,8 +249,6 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				BranchGroup branchGroup(0, dir, maxNumBranches);
 				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], expectedBubbleSize);
 				
-				bool noext = false;
-				
 				// Iterate over the branches
 				while(!stop)
 				{
@@ -261,32 +264,27 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec);
 					}
 					
+					// At this point all branches should have the same length or one will be a noext
+					branchGroup.updateStatus();
 					
 					// All branches have been extended one sequence, check the stop conditions
-					if(noext)
+					BranchGroupStatus status = branchGroup.getStatus();
+					
+					// Check if a stop condition was met
+					if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
 					{
 						stop = true;
 					}
-					else
+					else if(status == BGS_JOINED)
 					{
-						BranchGroupStatus status = branchGroup.checkBubbleStopConditions();
-						
-						// Check if a stop condition was met
-						if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
-						{
-							stop = true;
-						}
-						else if(status == BGS_JOINED)
-						{
-							collapseJoinedBranches(seqCollection, branchGroup);
-							numPopped++;
-							stop = true;
-						}
-						else
-						{										
-							// the branch is still active, continue
-							assert(status == BGS_ACTIVE);
-						}
+						collapseJoinedBranches(seqCollection, branchGroup);
+						numPopped++;
+						stop = true;
+					}
+					else
+					{										
+						// the branch is still active, continue
+						assert(status == BGS_ACTIVE);
 					}
 				}
 			}
@@ -306,22 +304,24 @@ void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt&
 	PSequenceVector extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(), extension, extSeqs);
 	assert(extSeqs.size() > 1);
-	
+	uint64_t id = 0;
 	for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
 	{
 		// Create a new branch and add it to the group
 		BranchRecord newBranch(group.getDirection(), maxBubbleSize);
-		group.addBranch(newBranch);
+		BranchRecord& addedBranch = group.addBranch(id, newBranch);
 		
 		// Add the sequence to the branch
-		group.getLastBranch().addSequence(*seqIter);
+		addedBranch.addSequence(*seqIter);
+		
+		id++;
 	}	
 }
 
 //
 // process an a branch group extension
 //
-void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions)
+bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions)
 {
 	// Generate the extensions of the branch
 	PSequenceVector branchExtSeqs;
@@ -339,14 +339,15 @@ void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 		// Start a new branch for the sequences [1..n]
 		PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
 		
+		uint64_t startID = group.getNumBranches();
 		for(; seqIter != branchExtSeqs.end(); ++seqIter)
 		{
 			//printf("adding multip %s\n",bubHR.getHit(k).seq.decode().c_str());
 			
 			// Start a new branch which is a duplicate of the current branch up to this point
 			BranchRecord newBranch(group.getBranch(branchIndex));
-			group.addBranch(newBranch);
-			group.getLastBranch().addSequence(*seqIter);
+			BranchRecord& addedBranch = group.addBranch(startID, newBranch);
+			addedBranch.addSequence(*seqIter);
 		}
 		
 		// Add the first sequence (index 0) to the current branch
@@ -357,7 +358,10 @@ void processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	
 		// this branch could not be extended, set a flag
 		group.setNoExtension();
-	}	
+	}
+	
+	// Return whether the group is extendable
+	return group.isExtendable();
 }
 
 //
@@ -385,6 +389,7 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 			// if the sequence is not in the reference branch, remove it
 			if(!refRecord.exists(*branchIter))
 			{
+				//printf("Deleting %s from branch %x\n", branchIter->decode().c_str(), i);
 				removeSequenceAndExtensions(seqCollection, *branchIter);	
 			}
 		}
@@ -406,21 +411,21 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 //
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir)
 {
-	extDirection oppDir = oppositeDirection(dir);	
-		
+	extDirection oppDir = oppositeDirection(dir);
+	
+	PackedSeq testSeq(seq);
+	
+	char extBase = testSeq.rotate(dir, BASES[0]);
+	
 	for(int i = 0; i < NUM_BASES; i++)
 	{	
 		char currBase = BASES[i];
-		// does this sequence have an extension to the deleted seq?
-		ResultPair hasExt  = seqCollection->checkExtension(seq, dir, currBase);
-		if(hasExt.forward || hasExt.reverse)
-		{
-			PackedSeq tempSeq(seq);	
-			// generate the sequence that the extension is to
-			char extBase = tempSeq.rotate(dir, currBase);				
-			// remove the extension, this removes the reverse complement as well
-			seqCollection->removeExtension(tempSeq, oppDir, extBase);
-		}
+		// don't bother checking if the extension exists, just remove it
+		// if the sequence didnt have the extension, the operation will do nothing
+		testSeq.setLastBase(dir, currBase);
+		
+		// remove the extension, this removes the reverse complement as well
+		seqCollection->removeExtension(testSeq, oppDir, extBase);
 	}	
 }
 
@@ -451,13 +456,13 @@ void performTrim(ISequenceCollection* seqCollection)
 }
 
 //
-// Check whether a sequence can be trimmed
+// Check the adjacency of a sequence
 //
-TrimStatus checkSeqForTrim(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
+SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
 {
-	if(seqCollection->checkFlag(seq, SF_DELETE))
+	if(seqCollection->checkFlag(seq, SF_DELETE) || seqCollection->checkFlag(seq, SF_SEEN) )
 	{
-		return TS_NOTRIM;
+		return SC_INVALID;
 	}
 			
 	bool child = seqCollection->hasChild(seq);
@@ -466,22 +471,22 @@ TrimStatus checkSeqForTrim(ISequenceCollection* seqCollection, const PackedSeq& 
 	if(!child && !parent)
 	{
 		//this sequence is completely isolated
-		return TS_ISLAND;
+		return SC_ISLAND;
 	}
 	else if(!child)
 	{
 		outDir = ANTISENSE;
-		return TS_TRIMMABLE;
+		return SC_ENDPOINT;
 	}
 	else if(!parent)
 	{
 		outDir = SENSE;
-		return TS_TRIMMABLE;
+		return SC_ENDPOINT;
 	}
 	else
 	{
 		// sequence is contiguous
-		return TS_NOTRIM;	
+		return SC_CONTIGUOUS;
 	}
 }
 
@@ -500,13 +505,13 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
-		TrimStatus status = checkSeqForTrim(seqCollection, *iter, dir);
+		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
 
-		if(status == TS_NOTRIM)
+		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
 			continue;
 		}
-		else if(status == TS_ISLAND)
+		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
 			removeSequenceAndExtensions(seqCollection, *iter);
@@ -526,11 +531,11 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			assert(success);
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processExtensionForBranchTrim(currBranch, currSeq, extRec);
+			processLinearExtensionForBranch(currBranch, currSeq, extRec);
 		}
 		
 		// The branch has ended check it for removal, returns true if it was removed
-		if(processTerminatedBranch(seqCollection, currBranch))
+		if(processTerminatedBranchTrim(seqCollection, currBranch))
 		{
 			numBranchesRemoved++;
 		}
@@ -546,15 +551,19 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 // CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence
 // After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
 //
-bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions)
+bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions)
 {
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
 	
-	if(branch.getLength() > branch.getMaxLength()) // Check if the branch has extended past the max trim length
+	if(branch.doLengthCheck() && ((int)branch.getLength() > (int)branch.getMaxLength())) // Check if the branch has extended past the max trim length
 	{
 		// Stop the branch
 		branch.terminate(BS_TOO_LONG);
+	}
+	else if(branch.hasLoop())
+	{
+		branch.terminate(BS_LOOP);
 	}
 	else if(extensions.dir[oppDir].IsAmbiguous()) // Does this sequence split TO the former node?
 	{
@@ -595,7 +604,7 @@ bool processExtensionForBranchTrim(BranchRecord& branch, PackedSeq& currSeq, Ext
 //
 //
 //
-bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& branch)
+bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch)
 {
 	assert(!branch.isActive());
 	//printf("	branch has size: %d\n", branchElements.size());
@@ -617,143 +626,84 @@ bool processTerminatedBranch(ISequenceCollection* seqCollection, BranchRecord& b
 //
 // Assembly function
 //
-void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter)
+void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSize*/, IFileWriter* fileWriter)
 {
 	Timer timer("Assemble");
-	int noext = 0;
-	int ambiext = 0;
-
-	printf("starting assembly\n");
-	int count = 0;
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	
+	int numAssembled = 0;
 	int contigID = 0;
 	
-
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(!seqCollection->checkFlag(*iter, SF_SEEN) && !seqCollection->checkFlag(*iter, SF_DELETE))
-		{			
-			// Is this sequence a branch endpoint?
-			bool doAssembly = false;
-			extDirection dir = SENSE;
-			if(!seqCollection->hasParent(*iter))
-			{
-				doAssembly = true;
-				dir = SENSE;
-			}
-			else if(!seqCollection->hasChild(*iter))
-			{
-				doAssembly = true;
-				dir = ANTISENSE;
-			}
+		
+		extDirection dir;
+		// dir will be set to the trimming direction if the sequence can be trimmed
+		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
 
-			int sumMultiplicity = 0;
-			if(doAssembly)
-			{
-				// the record of extensions			
-				HitVector extensions[2];
-									
-				//for(int i = 0; i <= 1; i++)
-				{
-					bool stop = false;
-					PackedSeq currSeq = *iter;
-					SeqRecord loopCheck;			
-					
-					while(!stop)
-					{
-						//assert(!seqCollection->checkFlag(currSeq, SF_SEEN));
-						// Mark the flag for the selected sequence
-						sumMultiplicity += seqCollection->getMultiplicity(currSeq);
-						seqCollection->setFlag(currSeq, SF_SEEN);
-										
-						HitRecord hr = calculateExtension(seqCollection, currSeq, dir);
-						if(hr.getNumHits() == 0)
-						{
-							// no ext
-							stop = true;
-							noext++;
-						}
-						else if(hr.getNumHits() == 1)
-						{
-							// good ext
-							currSeq = hr.getFirstHit().seq;
-							
-							if(loopCheck.contains(currSeq))
-							{
-								stop = true;
-							}
-							else
-							{
-								//printf("good ext (%s)\n", currSeq.decode().c_str());
-								extensions[dir].push_back(hr.getFirstHit());
-							}
-						}
-						else
-						{
-							// ambi ext
-							stop = true;
-							ambiext++;
-						}
-						
-						loopCheck.addSequence(currSeq);
-					}				
-				}
-				Sequence contig = BuildContig(seqCollection, extensions, *iter, contigID, readLen, kmerSize);
-				
-				// is this contig worth outputting?
-				//if(contig.length() >= 100)
-				{
-					count++;
-					//sprintf(buffer, ">%d\n%s\n", count, contig.c_str());
-					//printf("%s", buffer);
-					//MPI_Status status;
-					//MPI_File_write(handle, buffer, numChars, MPI::CHAR, &status);
-					double numReads = (double)sumMultiplicity / (readLen - kmerSize + 1);
-					double coverage = (numReads * (double)readLen) /  contig.length();
-					fileWriter->WriteSequence(contig, contigID, coverage);
-					contigID++;
-				}					
-			}
+		if(status == SC_INVALID || status == SC_CONTIGUOUS)
+		{
+			continue;
 		}
+		else if(status == SC_ISLAND)
+		{
+			// this should never happen, island sequences would have been removed by this point
+			assert(false);
+		}
+
+		// The sequence is an endpoint, begin extending it
+		// Passing -1 into the branch will disable the length check
+		BranchRecord currBranch(dir, -1);
+					
+		PackedSeq currSeq = *iter;
+		
+		while(currBranch.isActive())
+		{		
+			// Get the extensions for this sequence, this function populates the extRecord structure
+			ExtensionRecord extRec;
+			bool success = seqCollection->getExtensions(currSeq, extRec);
+			assert(success);
+			
+			// process the extension record and extend the current branch, this function updates currSeq on successful extension
+			processLinearExtensionForBranch(currBranch, currSeq, extRec);
+		}
+		
+		// The branch has ended, build the contig
+		Sequence contig;
+		processTerminatedBranchAssemble(seqCollection, currBranch, contig);
+		
+		// Output the contig
+		fileWriter->WriteSequence(contig, contigID, 0);
+		
+		contigID++;				
+		numAssembled++;
+
 		seqCollection->pumpNetwork();
 	}
-	//MPI_File_close(&handle);
-	printf("noext: %d, ambi: %d\n", noext, ambiext);	
 	
+	printf("num branches assembled: %d\n", numAssembled);
 }
 
 //
-// Build the contig from the extension information
 //
-Sequence BuildContig(ISequenceCollection* /*seqCollection*/,
-		HitVector* extensions, const PackedSeq& originalSeq,
-		int /*contigID*/, int /*readLen*/, int /*kmerSize*/)
+//
+void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, BranchRecord& branch, Sequence& outseq)
 {
-	Sequence contig;
+	assert(!branch.isActive());
+	//printf("	branch has size: %d\n", branchElements.size());
 	
-	contig.reserve(originalSeq.getSequenceLength() + extensions[0].size() + extensions[1].size());
+	// the only acceptable condition for the termination of an assembly is a noext or a loop
+	assert(branch.getState() == BS_NOEXT || branch.getState() == BS_LOOP);
 	
-	int position = 0;
-	// output the contig
-	// output all the antisense extensions
-	for(HitVector::reverse_iterator asIter = extensions[1].rbegin(); asIter != extensions[1].rend(); asIter++)
+	// Mark all the sequences in the branch as seen
+	BranchDataIter endIter  = branch.getEndIter();
+	for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
 	{
-		contig.append(1, asIter->seq.getFirstBase());
-		position++;
+		seqCollection->setFlag(*bIter, SF_SEEN);
 	}
 	
-	// output the current sequence itself
-	contig.append(originalSeq.decode());
-	position++;
-	
-	// output the sense extensions
-	for(HitVector::iterator sIter = extensions[0].begin(); sIter != extensions[0].end(); sIter++)
-	{
-		contig.append(1, sIter->seq.getLastBase());
-		position++;		
-	}	
-	return contig;
+	// Assemble the contig
+	branch.buildContig(outseq);
 }
 
 // Write the sequences out to a file
@@ -772,3 +722,5 @@ void outputSequences(const char* filename, ISequenceCollection* pSS)
 		}
 	}	
 }
+
+};

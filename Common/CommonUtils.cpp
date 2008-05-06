@@ -83,10 +83,11 @@ char complement(const char& b)
 
 void PrintBufferAsHex(char* buffer, int length)
 {
-	for(int i = 0; i < length; i++)
+	int ptr = 0;
+	for(;ptr < length;ptr++)
 	{
-		printf("%X", buffer[i]);
+		printf("%02X ",(unsigned char)*(buffer+ptr));
 	}
-	printf("\n");	
+	printf("\n");
 	
 }

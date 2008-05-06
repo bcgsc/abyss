@@ -13,26 +13,31 @@ enum BranchGroupStatus
 	BGS_TOOMANYBRANCHES
 };
 
-typedef std::vector<BranchRecord> BranchGroupData;
+typedef std::map<uint64_t, BranchRecord> BranchGroupData;
+
 class BranchGroup
 {
 	public:
+		BranchGroup();
 		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches);
+		BranchGroup(const BranchGroup& other);
+		
+		BranchGroup& operator=(const BranchGroup& other);
 		
 		// Add a branch to the group
-		void addBranch(BranchRecord& branch);
+		BranchRecord& addBranch(uint64_t id, BranchRecord& branch);
 		
-		// Get the last branch added to the group
-		BranchRecord& getLastBranch();
-		
-		// Get a branch by index
-		BranchRecord& getBranch(unsigned int index);
+		// Get the branch corresponding to an id
+		BranchRecord& getBranch(uint64_t id);
 		
 		// Get the number of groups
 		size_t getNumBranches() const { return m_branches.size(); }
 		
 		// Check the stop conditions for the branch growth
-		BranchGroupStatus checkBubbleStopConditions() const;
+		BranchGroupStatus updateStatus();
+		
+		// return the current status of the branch
+		BranchGroupStatus getStatus() const { return m_status; }
 		
 		// Select a branch to keep (for bubble removal) and return it's index
 		size_t selectBranchToKeep() const;
@@ -40,8 +45,24 @@ class BranchGroup
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }
 		
-		extDirection getDirection() { return m_dir; }
+		// check if the group is active
+		bool isActive() const;
+		
+		// is the no extension flag set?
+		bool isNoExt() const { return m_noExt; }
+		
+		// check if the group is ready for another round of extension (all the branches are the same length)
+		bool isExtendable();
+		
+		// return the direction of growth
+		extDirection getDirection() const { return m_dir; }
+		
+		// print the branches that make up this group
+		void printBranches() const;
+		
 		// Iterator accessors 
+		BranchGroupData::iterator getStartIter() { return m_branches.begin(); }
+		BranchGroupData::iterator getEndIter() { return m_branches.end(); }
 		
 	private:
 		BranchGroupData m_branches;
@@ -49,6 +70,7 @@ class BranchGroup
 		extDirection m_dir;
 		size_t m_maxNumBranches;
 		bool m_noExt;
+		BranchGroupStatus m_status;
 };
 
 #endif

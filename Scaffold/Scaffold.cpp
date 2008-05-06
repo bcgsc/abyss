@@ -654,7 +654,7 @@ SeqVec Scaffold::SubAssemble(PSequenceVector& seqs, Sequence startNode, Sequence
 	pSC->finalize();
 	
 	// Generate the adjacency between the sequences
-	generateAdjacency(pSC);
+	AssemblyAlgorithms::generateAdjacency(pSC);
 	
 	extDirection dir = SENSE;
 
@@ -681,7 +681,7 @@ SeqVec Scaffold::AssembleRecursive(ISequenceCollection* pSC, extDirection dir, P
 	
 	while(true)
 	{
-		HitRecord hr = calculateExtension(pSC, currSeq, dir);
+		HitRecord hr = AssemblyAlgorithms::calculateExtension(pSC, currSeq, dir);
 		if(hr.getNumHits() == 0 || d > maxDistance)
 		{
 			SeqVec ret;

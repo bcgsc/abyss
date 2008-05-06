@@ -1,6 +1,7 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include "Timer.h"
+#include <stdarg.h>
 
 //
 //
@@ -10,13 +11,16 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 											 int kmerSize, 
 											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
 											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
-											 m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0)
+											 m_numBasesAdjSet(0), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0)
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
 	
 	// Create the comm layer
 	m_pComm = new CommLayer(myID, kmerSize);
+	
+	// Create the message buffer
+	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
 }
 
 //
@@ -30,8 +34,15 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	
 	delete m_pComm;
 	m_pComm = 0;
+	
+	delete m_pMsgBuffer;
+	m_pMsgBuffer = 0;
 }
+
 int adjSet = 0;
+int numAdjMessageSent = 0;
+int numAdjMessageParsed = 0;
+
 //
 //
 //
@@ -51,6 +62,9 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			case NAS_FINALIZE:
 			{
 				finalize();
+				
+				// Cleanup any messages that are pending
+				EndState();
 				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage();				
 				break;
@@ -58,20 +72,23 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			case NAS_GEN_ADJ:
 			{
 				networkGenerateAdjacency(this);
+				// Cleanup any messages that are pending
+				EndState();
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage();
-				//SendControlMessageTo 
 				break;
 			}
 			case NAS_TRIM:
 			case NAS_TRIM2:
-			{
+			{					
 				assert(m_trimStep != 0);
 				
 				// Perform the trim at the branch length that the control node sent
 				int numRemoved = performNetworkTrim(this, m_trimStep);
+				// Cleanup any messages that are pending
+				EndState();				
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -80,16 +97,20 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			}
 			case NAS_POPBUBBLE:
 			{
-				popBubbles(this, kmerSize);
+				performNetworkBubblePop(this, kmerSize);
 				m_pComm->SendCheckPointMessage();
+				// Cleanup any messages that are pending
+				EndState();				
 				SetState(NAS_WAITING);	
 				break;	
 			}
 			case NAS_SPLIT:
 			{
-				splitAmbiguous(this);	
+				AssemblyAlgorithms::splitAmbiguous(this);	
 				m_pComm->SendCheckPointMessage();
 				printf("slave finished split\n");
+				// Cleanup any messages that are pending
+				EndState();				
 				SetState(NAS_WAITING);
 				break;
 			}
@@ -98,7 +119,9 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 				printf("%d: Assembling\n", m_id);
 				// The slave node opens the file in append mode
 				FastaWriter writer("pcontigs.fa", true);
-				assemble(this, m_readLen, m_kmer, &writer);
+				performNetworkAssembly(this, &writer);
+				// Cleanup any messages that are pending
+				EndState();				
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
@@ -106,7 +129,7 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 				break;
 			}
 			case NAS_WAITING:
-			{
+			{				
 				pumpNetwork();
 				break;
 			}
@@ -132,47 +155,59 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 		{
 			case NAS_LOADING:
 			{
-				loadSequences(this, fastaFile, readLength, kmerSize);
-				SetState(NAS_FINALIZE);
+				AssemblyAlgorithms::loadSequences(this, fastaFile, readLength, kmerSize);
 				
+				// Cleanup any messages that are pending
+				EndState();
+								
+				SetState(NAS_FINALIZE);
+						
 				// Tell the rest of the loaders that the load is finished
 				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);
 				
-				// Touch a file to indicate the load is done
-				ofstream dummyFile("load.done");
-				dummyFile.close();
+								
 				break;
 			}
 			case NAS_FINALIZE:
 			{
 				finalize();
+				
+				// Cleanup any messages that are pending
+				EndState();
+								
+				m_numReachedCheckpoint++;
+				while(!checkpointReached(m_numDataNodes))
+				{
+					pumpNetwork();
+				}
+								
+				SetState(NAS_GEN_ADJ);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);		
+				
+				//SetState(NAS_DONE);
+				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
+				break;
+			}
+			case NAS_GEN_ADJ:
+			{
+				networkGenerateAdjacency(this);
+				
+				// Cleanup any messages that are pending
+				EndState();
+								
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
 				
-				SetState(NAS_GEN_ADJ);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);				
-				break;
-			}
-			case NAS_GEN_ADJ:
-			{
-  				double starttime, endtime; 
-  				starttime = MPI::Wtime();
-				networkGenerateAdjacency(this);
-				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
-				{
-					pumpNetwork();
-				}
-				endtime = MPI::Wtime();
-				printf("Gen adjacency took %f seconds\n", endtime - starttime);
 				SetState(NAS_TRIM);
+				//SetState(NAS_DONE);
+				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
 				break;
 			}
 			case NAS_TRIM:
-			{
+			{		
 				// The control node drives the trimming and passes the value to trim at to the other nodes
 				int start = 2;
 				
@@ -193,7 +228,10 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 					if(numRemoved == 0)
 					{
 						stopTrimming = true;
-					}			
+					}	
+					
+					// Cleanup any messages that are pending
+					EndState();							
 
 					m_numReachedCheckpoint++;
 					while(!checkpointReached(m_numDataNodes))
@@ -201,23 +239,45 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 						pumpNetwork();
 					}
 					
+
+									
 					// All checkpoints are reached, reset the state
 					SetState(NAS_TRIM);
 				}
 				
+				// Cleanup any messages that are pending
+				EndState();				
+				
 				// Trimming has been completed
-				SetState(NAS_POPBUBBLE);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_POPBUBBLE);							
+				SetState(NAS_POPBUBBLE);					
 				break;
 			}
 			case NAS_POPBUBBLE:
 			{
-				popBubbles(this, kmerSize);
-				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
+				// Perform a round-robin bubble pop to avoid concurrency issues
+				performNetworkBubblePop(this, kmerSize);
+				
+				// Now tell all the slave nodes to perform the pop one by one
+				for(unsigned int i = 1; i < m_numDataNodes; ++i)
 				{
-					pumpNetwork();
+					m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE);
+					
+					// Cleanup any messages that are pending
+					EndState();	
+					
+					// Wait for this node to return
+					while(!checkpointReached(1))
+					{
+						pumpNetwork();
+					}
+					
+					//Reset the state and loop
+					SetState(NAS_POPBUBBLE);
 				}
+				
+				// Cleanup any messages that are pending
+				EndState();				
+								
 				SetState(NAS_TRIM2);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, opt::trimLen);			
 				break;
@@ -225,17 +285,26 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_TRIM2:
 			{
 				performNetworkTrim(this, opt::trimLen);
+				
+				// Cleanup any messages that are pending
+				EndState();
+								
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
 				{
 					pumpNetwork();
 				}
+								
 				SetState(NAS_SPLIT);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);						
 			}
 			case NAS_SPLIT:
 			{
-				splitAmbiguous(this);
+				AssemblyAlgorithms::splitAmbiguous(this);
+
+				// Cleanup any messages that are pending
+				EndState();
+								
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
 				{
@@ -261,8 +330,11 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				
 				// The master opens the file in truncate mode
 				FastaWriter writer("pcontigs.fa");
-				assemble(this, m_readLen, m_kmer, &writer);
-				
+				performNetworkAssembly(this, &writer);
+
+				// Cleanup any messages that are pending
+				EndState();
+								
 				// Now tell all the slave nodes to perform the assemble one by one
 				for(unsigned int i = 1; i < m_numDataNodes; ++i)
 				{
@@ -274,9 +346,15 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 						pumpNetwork();
 					}
 					
+					// Cleanup any messages that are pending
+					EndState();
+					
 					//Reset the state and loop
 					SetState(NAS_ASSEMBLE);
 				}
+				
+				// Cleanup any messages that are pending
+				EndState();
 				
 				SetState(NAS_DONE);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);				
@@ -297,11 +375,20 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 	}
 }
 
+void NetworkSequenceCollection::EndState()
+{
+	// Flush the message buffer
+	m_pMsgBuffer->flush();
+}
+
 //
 // Set the state
 //
 void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 {
+	// Ensure there are no pending messages
+	assert(m_pMsgBuffer->empty());
+	
 	m_state = newState;
 	
 	// Reset the checkpoint counter
@@ -318,51 +405,32 @@ APResult NetworkSequenceCollection::pumpNetwork()
 	// Loop until either a) a APM_RESULT message is found in which case return and allow pump_until_result to handle it or b) no more messages are waiting
 	while(!stop)
 	{
+		
 		APMessage msg = m_pComm->CheckMessage(senderID);
+		
 		switch(msg)
 		{
-			case APM_SEQ:
-				{
-					parseSeqMessage(senderID);
-					break;
-				}
-			case APM_SEQ_FLAG:
-				{
-					parseSeqFlagMessage(senderID);
-					break;
-				}
-			case APM_SEQ_EXT:
-				{
-					parseSeqExtMessage(senderID);
-					break;
-				}
 			case APM_CONTROL:
 				{
 					parseControlMessage(senderID);
 					break;
 				}
-			case APM_ADJACENCY:
+			case APM_BUFFERED:
 				{
-					parseAdjacencyMessage(senderID);
+					MessagePtrVector msgs;
+					m_pComm->ReceiveBufferedMessage(msgs);
+					for(MessagePtrVector::iterator iter = msgs.begin(); iter != msgs.end(); iter++)
+					{
+						// Handle each message based on its type
+						(*iter)->handle(senderID, *this);
+						
+						// Delete the message
+						delete (*iter);
+						*iter = 0;
+					}
+								
 					break;	
 				}
-			case APM_RESULT_ADJ:
-				{
-					parseAdjacencyResultMessage(senderID);
-					break;
-				}
-			case APM_SEQ_EXT_REQUEST:
-				{
-					parseSequenceExtensionRequest(senderID);
-					break;	
-				}
-			case APM_SEQ_EXT_RESPONSE:
-				{
-					parseSequenceExtensionResponse(senderID);
-					break;	
-				}				
-			// APM_RESULT is handled in pumpUntilResult()				
-			case APM_RESULT:
 			case APM_NONE:
 				{
 					// either there is no message waiting or it is an AP_RESULT in which case pump_until_result will handle it
@@ -370,149 +438,64 @@ APResult NetworkSequenceCollection::pumpNetwork()
 					break;
 				}
 		}
-		
 	}
 	return APR_NONE;
 }
 
-//
-//
-//
-ResultPair NetworkSequenceCollection::pumpUntilResult()
-{
-	while(true)
-	{
-		// Service incoming requests
-		pumpNetwork();
-		
-		// Check if the result has returned
-		int senderID;
-		m_pComm->flush();	
-		APMessage msg = m_pComm->CheckMessage(senderID);
-		
-		// The result has arrived
-		if(msg == APM_RESULT)
-		{		
-	
-			//PrintDebug(0, "Result got\n");
-			ResultPairMessage msg = m_pComm->ReceiveResultMessage();
-			
-			// Convert the result to a result pair
-			ResultPair rp;
-			rp.forward = (msg.result[0] == APR_TRUE) ? true : false;
-			rp.reverse = (msg.result[1] == APR_TRUE) ? true : false;
-			
-			// Return the result
-			return rp;
-		}
-	}	
-}
 
 //
 //
 //
-void NetworkSequenceCollection::parseAdjacencyMessage(int senderID)
+void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOpMessage& seqMsg)
 {
-	AdjacencyMessage adjMsg = m_pComm->ReceiveAdjacencyMessage();
-	
-	assert(isLocal(adjMsg.testSeq));
-	bool result = m_pLocalSpace->exists(adjMsg.testSeq);
-	m_pComm->SendAdjacencyResult(senderID, adjMsg.id, adjMsg.originalSeq, adjMsg.dir, adjMsg.base, result);
-}
-
-//
-//
-//
-void NetworkSequenceCollection::parseSeqMessage(int senderID)
-{
-	SeqMessage seqMsg = m_pComm->ReceiveSeqMessage();
-	switch(seqMsg.operation)
+	switch(seqMsg.m_operation)
 	{
-		case APO_ADD:
+		case MO_ADD:
 		{
-			add(seqMsg.seq);
+			add(seqMsg.m_seq);
 			break;
 		}
-		case APO_REMOVE:
+		case MO_REMOVE:
 		{
-			remove(seqMsg.seq);
+			remove(seqMsg.m_seq);
 			break;
 		}
-		case APO_CHECKSEQ:
+		case MO_EXIST:
 		{
-			//PrintDebug(0, "Check seq got\n");
 			assert(false);
-
 			break;
 		}
-		case APO_HAS_PARENT:
+		default:
 		{
-			bool result = m_pLocalSpace->hasParent(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, seqMsg.id, result);
-			break;	
-		}
-		case APO_HAS_CHILD:
-		{
-			bool result = m_pLocalSpace->hasChild(seqMsg.seq);
-			m_pComm->SendResultMessage(senderID, seqMsg.id, result);
-			break;	
-		}
-	}	
+			assert(false);
+			break;
+		}	
+	}
 }
 
 //
 //
 //
-void NetworkSequenceCollection::parseSeqFlagMessage(int senderID)
+void NetworkSequenceCollection::handleSetFlagMessage(int /*senderID*/, const SetFlagMessage& message)
 {
-	SeqFlagMessage flagMsg = m_pComm->ReceiveSeqFlagMessage();
-	switch(flagMsg.operation)
-	{
-		case APSFO_CHECK:
-		{
-			bool result = m_pLocalSpace->checkFlag(flagMsg.seq, flagMsg.flag);
-			m_pComm->SendResultMessage(senderID, flagMsg.id, result);
-			break;
-		}
-		case APSFO_SET:
-		{
-			m_pLocalSpace->setFlag(flagMsg.seq, flagMsg.flag);
-			break;
-		}
-	}	
+	assert(isLocal(message.m_seq));
+	m_pLocalSpace->setFlag(message.m_seq, message.m_flag);
+}
+
+void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const SetBaseMessage& message)
+{
+	numAdjMessageParsed++;
+	assert(isLocal(message.m_seq));
+	setBaseExtension(message.m_seq, message.m_dir, message.m_base);
 }
 
 //
 // Parse a sequence extension message
 //
-void NetworkSequenceCollection::parseSeqExtMessage(int senderID)
+void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, const RemoveExtensionMessage& message)
 {
-	SeqExtMessage extMsg = m_pComm->ReceiveSeqExtMessage();
-	switch(extMsg.operation)
-	{
-		case APSEO_CHECK:
-		{
-			ResultPair result = m_pLocalSpace->checkExtension(extMsg.seq, extMsg.dir, extMsg.base);
-			m_pComm->SendResultMessage(senderID, extMsg.id, result);
-			break;
-		}
-		case APSEO_SET:
-		{
-			m_pLocalSpace->setExtension(extMsg.seq, extMsg.dir, extMsg.ext);
-			break;
-		}
-		case APSEO_REMOVE:
-		{
-			m_pLocalSpace->removeExtension(extMsg.seq, extMsg.dir, extMsg.base);
-			break;
-		}
-		case APSEO_CLEAR_ALL:
-		{
-			printf("Clearing extension\n");
-			m_pLocalSpace->clearExtensions(extMsg.seq, extMsg.dir);
-			break;
-		}	
-	}
+	assert(isLocal(message.m_seq));	
+	m_pLocalSpace->removeExtension(message.m_seq, message.m_dir, message.m_base);
 }
 
 //
@@ -579,53 +562,26 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 //
 // Parse an extension request
 //
-void NetworkSequenceCollection::parseSequenceExtensionRequest(int senderID)
-{
-	// Get the message
-	SequenceExtensionRequestMessage msg = m_pComm->ReceiveSequenceExtensionMessage();
-	
+void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataRequest& message)
+{	
 	// Get the extension for this sequence
-	assert(isLocal(msg.seq));
+	assert(isLocal(message.m_seq));
 	
 	ExtensionRecord extRec;
-	bool found = m_pLocalSpace->getExtensions(msg.seq, extRec);
+	bool found = m_pLocalSpace->getExtensions(message.m_seq, extRec);
 	assert(found);
 	
 	// Return the extension to the sender
-	m_pComm->SendExtensionResponse(senderID, msg.id, msg.groupID, msg.branchID, msg.seq, extRec);
+	m_pMsgBuffer->sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, 0);
 }
 
 //
 // Parse an extension request
 //
-void NetworkSequenceCollection::parseSequenceExtensionResponse(int /*senderID*/)
+void NetworkSequenceCollection::handleSequenceDataResponse(int /*senderID*/, SeqDataResponse& message)
 {
-	SequenceExtensionResponseMessage msg = m_pComm->ReceiveSequenceExtensionResponseMessage();
-	processSequenceExtension(msg.branchID, msg.seq, msg.extRec);
-
+	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord);
 }
-
-int numAdjMessagesParsed = 0;
-//
-// Parse an adjacency result message
-//
-void NetworkSequenceCollection::parseAdjacencyResultMessage(int /*senderID*/)
-{
-	AdjacencyResultMessage resultMsg = m_pComm->ReceiveAdjacencyResultMessage();
-	
-	// Decrement the counter of outstanding events
-	m_numOutstandingRequests--;
-	numAdjMessagesParsed++;
-
-	// Does the sequence exist?
-	if(resultMsg.result[0] == APR_TRUE || resultMsg.result[1] == APR_TRUE)
-	{
-		adjSet++;
-		setAdjacency(resultMsg.originalSeq, resultMsg.dir, resultMsg.base);	
-	}
-}
-int numAdjMessagesSent = 0;
-int localAdj = 0;
 
 //
 // Generate adjacency - Network version
@@ -640,9 +596,9 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 1000000 == 0)
+		if(count % 100000 == 0)
 		{
-			printf("generated for %d\n", count);
+			printf("generated for %d num reqs: %zu\n", count, m_numOutstandingRequests);
 		}
 		count++;
 		
@@ -651,10 +607,11 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			extDirection oppDir = !dir;
 			SeqExt extension;
 			
 			PackedSeq testSeq(currSeq);
-			testSeq.rotate(dir, 'A');
+			char adjBase = testSeq.rotate(dir, 'A');
 			
 			for(int j = 0; j < NUM_BASES; j++)
 			{
@@ -665,10 +622,23 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 				// We only generate a request for the existance of the sequence at this moment and then carry on
 				// When the data meanders over the network and eventually returns to use, THEN the adjacency is set
 				// See:: SendAdjancencyRequest/ParseAdjancencyResponse
-				computeAdjacency(currSeq, testSeq, dir, currBase);
+				//computeAdjacency(currSeq, testSeq, dir, currBase);
+				
+				// Optimistically send a message over the network that there is an extension from testSeq to adjBase
+				setBaseExtension(testSeq, oppDir, adjBase);
+				
 				pumpNetwork();
 			}	
 		}
+				
+		/*
+		if(m_numOutstandingRequests > MAX_ACTIVE)
+		{
+			while(m_numOutstandingRequests > LOW_ACTIVE)
+			{
+				pumpNetwork();
+			}
+		}*/
 	}
 	
 	// Wait for all the requests to be filled
@@ -677,11 +647,7 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 		pumpNetwork();
 	}
 
-	printf("Genereated %d adj\n", adjSet);
-	printf("Sent %d adj mesagse\n", numAdjMessagesSent);
-	printf("Parsed %d adj mesagse\n", numAdjMessagesParsed);
-	printf("Local adj: %d\n", localAdj);
-	printf("all requests filled, continue\n");
+	printf("%d all requests filled, continue\n", m_id);
 }
 
 
@@ -695,7 +661,6 @@ void NetworkSequenceCollection::computeAdjacency(const PackedSeq& currSeq, const
 	// Check if the test sequence is local
 	if(isLocal(requestSeq))
 	{
-		localAdj++;
 		// simply look up the sequence in the local space
 		if(m_pLocalSpace->exists(requestSeq))
 		{
@@ -710,7 +675,8 @@ void NetworkSequenceCollection::computeAdjacency(const PackedSeq& currSeq, const
 		int nodeID = computeNodeID(requestSeq);
 		assert(nodeID != m_id);
 		// Add the request to the set
-		m_pComm->SendAdjacencyRequest(nodeID, requestSeq, currSeq, dir, base);
+		assert(false);
+		//m_pComm->SendAdjacencyRequest(nodeID, requestSeq, currSeq, dir, base);
 		
 		// Increment the number of outstanding requests
 		m_numOutstandingRequests++;
@@ -735,46 +701,58 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 	Timer timer("NetworkTrim");
 	printf("network trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
-	
+
 	// The branch ids
-	uint64_t branchID = 0;
+	uint64_t branchGroupID = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
+	{	
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
-		TrimStatus status = checkSeqForTrim(seqCollection, *iter, dir);
+		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
 
-		if(status == TS_NOTRIM)
+		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
 			continue;
 		}
-		else if(status == TS_ISLAND)
+		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
-			removeSequenceAndExtensions(seqCollection, *iter);
+			AssemblyAlgorithms::removeSequenceAndExtensions(seqCollection, *iter);
 		}
 		
 		// Sequence is trimmable, create a new branch for it
+		BranchGroup newGroup(branchGroupID, dir, 1);
 		BranchRecord newBranch(dir, maxBranchCull);
-		m_activeBranches[branchID] = newBranch;
+		newGroup.addBranch(0, newBranch);
+		m_activeBranchGroups[branchGroupID] = newGroup;
 
 		// Generate the first extension request
-		generateExtensionRequest(branchID, *iter);
-		branchID++;
+		generateExtensionRequest(branchGroupID, 0, *iter);
+		branchGroupID++;
 		
 		// Process the active branches
-		numBranchesRemoved += processBranches();
+		numBranchesRemoved += processBranchesTrim();
 		
 		// Service any waiting network events
 		seqCollection->pumpNetwork();
+		
+		// Primitive load balancing
+		if(m_activeBranchGroups.size() > MAX_ACTIVE)
+		{
+			while(m_activeBranchGroups.size() > LOW_ACTIVE)
+			{
+				seqCollection->pumpNetwork();
+				numBranchesRemoved += processBranchesTrim();
+			}
+		}
 	}
 	
 	// Clear out the remaining branches
-	while(!m_activeBranches.empty())
+	while(!m_activeBranchGroups.empty())
 	{
-		numBranchesRemoved += processBranches();
+		numBranchesRemoved += processBranchesTrim();
 		seqCollection->pumpNetwork();
 	}		
 	
@@ -786,40 +764,339 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 // Process current branches, removing those that are finished
 // returns true if the branch list has branches remaining
 //
-int NetworkSequenceCollection::processBranches()
+int NetworkSequenceCollection::processBranchesTrim()
 {
 	int numBranchesRemoved = 0;
-	std::vector<BranchMap::iterator> removeBranches;
+	std::vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
-	for(BranchMap::iterator iter = m_activeBranches.begin(); iter != m_activeBranches.end(); iter++)
+	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
 	{
 		if(!iter->second.isActive())
 		{
-			// Trim if possible
-			if(processTerminatedBranch(this, iter->second))
+			// In the trimming context, the group should have 1 and only 1 branch
+			assert(iter->second.getNumBranches() == 1);
+			
+			// Trim the branch if possible
+			
+			// Get lastBranch returns the only branch in the group (see assert above)
+			if(AssemblyAlgorithms::processTerminatedBranchTrim(this, iter->second.getBranch(0)))
 			{
 				numBranchesRemoved++;
 			}
 			
-			// Mark the branch for removal
+			// Mark the group for removal
 			removeBranches.push_back(iter);
 		}	
 	}
 	
 	// Remove all the finished branches
-	for(std::vector<BranchMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
+	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
 	{
 		//printf("erased branch %llu\n", (*rmIter)->first);
-		m_activeBranches.erase(*rmIter);	
+		m_activeBranchGroups.erase(*rmIter);	
 	}	
 	
 	return numBranchesRemoved;
 }
 
 //
+// pop bubbles
+//
+int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqCollection, int kmerSize)
+{
+	Timer timer("NetworkPopBubbles");
+	
+	// The branch ids
+	uint64_t branchGroupID = 0;
+	
+	// make sure the branch group structure is initially empty
+	assert(m_activeBranchGroups.empty());
+	
+	int numPopped = 0;
+
+	// Set the cutoffs
+	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
+	const unsigned int maxNumBranches = 3;
+	
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		// Skip sequences that have already been deleted	
+		if(iter->isFlagSet(SF_DELETE))
+		{		
+			continue;
+		}
+
+		// Get the extensions for this sequence, this function populates the extRecord structure
+		ExtensionRecord extRec;
+		
+		// THIS CALL TO GET EXTENSIONS IS GUARENTEED TO BE LOCAL SO WE DO NOT HAVE TO WAIT FOR THE RETURN
+		bool success = seqCollection->getExtensions(*iter, extRec);
+		assert(success);
+		
+		// Check for ambiguity
+		for(int i = 0; i <= 1; ++i)
+		{	
+			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+			
+			if(extRec.dir[dir].IsAmbiguous())
+			{
+				// Found a potential bubble, examine each branch
+				
+				// Create the branch group
+				BranchGroup branchGroup(branchGroupID, dir, maxNumBranches);
+				
+				// insert the new group into the active group map
+				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(std::pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
+				
+				// initiate the new group
+				AssemblyAlgorithms::initiateBranchGroup(groupIter->second, *iter, extRec.dir[dir], expectedBubbleSize);
+				
+				// generate a sequence extension request for each sequence in the group
+				// this will be handled in process sequence extension
+				size_t maxID = groupIter->second.getNumBranches();
+				for(size_t id = 0; id < maxID; ++id)
+				{
+					generateExtensionRequest(groupIter->first, id, groupIter->second.getBranch(id).getLastSeq());
+				}
+				
+				// increment the group id
+				branchGroupID++;
+			}
+		}
+
+		// Process groups that may be finished	
+		numPopped += processBranchesPop();
+		
+		seqCollection->pumpNetwork();
+	}
+	
+	// Clear out the remaining branches
+	while(!m_activeBranchGroups.empty())
+	{
+		numPopped += processBranchesPop();
+		seqCollection->pumpNetwork();
+	}
+	printf("Removed %d bubbles\n", numPopped);
+	return numPopped;	
+	
+}
+
+//
+// Process groups that are finished searching for bubbles
+//
+int NetworkSequenceCollection::processBranchesPop()
+{
+	int numPopped = 0;
+	std::vector<BranchGroupMap::iterator> removeBranches;
+	// Check if any of the current branches have gone inactive
+	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
+	{
+		bool remove = false;
+		// All branches have been extended one sequence, check the stop conditions
+		
+		// First, check if the group hit a no-extension in one of the sequences
+		if(iter->second.isNoExt())
+		{
+			remove = true;
+		}
+		else
+		{
+			// Update status is called in processSequenceExtensionPop(), check the status here
+			BranchGroupStatus status = iter->second.getStatus();
+		
+			// Check if a stop condition was met
+			if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
+			{
+				remove = true;
+			}
+			else if(status == BGS_JOINED)
+			{
+				AssemblyAlgorithms::collapseJoinedBranches(this, iter->second);
+				numPopped++;
+				remove = true;
+			}
+			else
+			{										
+				// the branch is still active, continue
+				assert(status == BGS_ACTIVE);
+			}
+		}
+		
+		if(remove)
+		{
+			// Mark the group for removal
+			removeBranches.push_back(iter);
+		}	
+	}
+	
+	// Remove all the finished branches
+	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
+	{
+		//printf("erased branch %llu\n", (*rmIter)->first);
+		m_finishedGroups.insert((*rmIter)->first);
+		m_activeBranchGroups.erase(*rmIter);	
+	}	
+	
+	return numPopped;		
+}
+
+//
+// Perform a network assembly
+//
+
+//
+// Distributed trimming function
+// 
+void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
+{
+	Timer timer("NetworkAssembly");
+	
+	int numAssembled = 0;
+	
+	// The branch ids
+	uint64_t branchGroupID = 0;
+
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{	
+		extDirection dir;
+		// dir will be set to the trimming direction if the sequence can be trimmed
+		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
+
+		if(status == SC_INVALID || status == SC_CONTIGUOUS)
+		{
+			continue;
+		}
+		else if(status == SC_ISLAND)
+		{
+			// This should not happen
+			assert(false);
+		}
+		
+		// Sequence is trimmable, create a new branch for it
+		BranchGroup newGroup(branchGroupID, dir, 1);
+		BranchRecord newBranch(dir, -1);
+		newGroup.addBranch(0, newBranch);
+		m_activeBranchGroups[branchGroupID] = newGroup;
+
+		// Generate the first extension request
+		generateExtensionRequest(branchGroupID, 0, *iter);
+		branchGroupID++;
+		
+		// Process the active branches
+		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
+		
+		// Service any waiting network events
+		seqCollection->pumpNetwork();
+		
+		// Primitive load balancing
+		if(m_activeBranchGroups.size() > MAX_ACTIVE)
+		{
+			while(m_activeBranchGroups.size() > LOW_ACTIVE)
+			{
+				seqCollection->pumpNetwork();
+				numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
+			}
+		}
+	}
+	
+	// Clear out the remaining branches
+	while(!m_activeBranchGroups.empty())
+	{
+		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
+		seqCollection->pumpNetwork();
+	}		
+	
+	printf("num assembled: %d\n", numAssembled);
+}
+
+//
+// Process current branches, removing those that are finished
+// returns true if the branch list has branches remaining
+//
+int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID)
+{
+	int numAssembled = 0;
+	std::vector<BranchGroupMap::iterator> removeBranches;
+	// Check if any of the current branches have gone inactive
+	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
+	{
+		if(!iter->second.isActive())
+		{
+			// In this context, the group should have 1 and only 1 branch
+			assert(iter->second.getNumBranches() == 1);
+			
+			// check if the branch is redundant, assemble if so, else it will simply be removed
+			if(!isBranchRedundant(iter->second.getBranch(0)))
+			{
+				// Assemble the contig
+				Sequence contig;
+				AssemblyAlgorithms::processTerminatedBranchAssemble(seqCollection, iter->second.getBranch(0), contig);
+				numAssembled++;
+				
+				// Output the contig
+				fileWriter->WriteSequence(contig, currContigID, 0);
+			}
+			
+			// Mark the group for removal
+			removeBranches.push_back(iter);
+		}	
+	}
+	
+	// Remove all the finished branches
+	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
+	{
+		//printf("erased branch %llu\n", (*rmIter)->first);
+		m_activeBranchGroups.erase(*rmIter);	
+	}	
+	
+	return numAssembled;
+}
+
+// Check if a branch is redundant with a previously output branch
+bool NetworkSequenceCollection::isBranchRedundant(BranchRecord& branch)
+{
+	// Since branches are assembled simulatenously it is possibly to start a branch from both ends at the same time
+	// This can only happen if both ends of the branch are in the same node (since we assemble one node at a time)
+	// To get around that, check 1) if both ends are local and 2) if either end has been seen
+	// If so, the branch will be discarded
+	
+	// Since flag sets are atomic within a node, this logic stands up
+	
+	if(branch.empty())
+	{
+		// empty branches are trivally non-redundant (.....or are they?)
+		return false;
+	}
+	
+	// Check if the first and last sequences are in the local node
+	// note: the first node always should be!
+	if(isLocal(branch.getFirstSeq()) && isLocal(branch.getLastSeq()))
+	{
+		// Check if either sequences have the seen flag set
+		// note: this flag returns immediately since both sequenes are local by definition
+		if(checkFlag(branch.getFirstSeq(), SF_SEEN) || checkFlag(branch.getLastSeq(), SF_SEEN))
+		{
+			return true;
+		}
+		else
+		{
+			return false;	
+		}
+	}
+	else
+	{
+		// Unless both sequences are local, the branch is not redundant
+		return false;	
+	}
+}
+
+
+//
 // Generate a request for a sequence's extension, it will be handled in parseSequenceExtensionResponse
 //
-void NetworkSequenceCollection::generateExtensionRequest(uint64_t id, const PackedSeq& seq)
+void NetworkSequenceCollection::generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq)
 {
 	// Check if the test sequence is local
 	if(isLocal(seq))
@@ -832,45 +1109,105 @@ void NetworkSequenceCollection::generateExtensionRequest(uint64_t id, const Pack
 		assert(success);
 		
 		// process the message
-		processSequenceExtension(id, seq, extRec);
+		processSequenceExtension(groupID, branchID, seq, extRec);
 	}
 	else
 	{
-
 		// Send the request
 		int nodeID = computeNodeID(seq);
 		assert(nodeID != m_id);
+		
 		// Send the request, it will be processed in the callback
-		m_pComm->SendExtensionRequest(nodeID, 0, id, seq);
+		m_pMsgBuffer->sendSeqDataRequest(nodeID, groupID, branchID, seq);
 	}
 }
 
 //
-// Process a sequence extension
 //
-void NetworkSequenceCollection::processSequenceExtension(uint64_t id, const PackedSeq& seq, const ExtensionRecord& extRec)
+//
+void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
+{
+	switch(m_state)
+	{
+		case NAS_TRIM:
+		case NAS_TRIM2:
+		case NAS_ASSEMBLE:
+			return processLinearSequenceExtension(groupID, branchID, seq, extRec);
+			break;
+		case NAS_POPBUBBLE:
+			return processSequenceExtensionPop(groupID, branchID, seq, extRec);
+			break;
+		default:
+			assert(false);
+			break;
+	}	
+}
+
+//
+// Process a sequence extension for trimming
+//
+void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
 {
 	//printf("processing %llu\n", id);
 	// Find the branch by its ID	
-	BranchMap::iterator iter = m_activeBranches.find(id);
+	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
 	
 	// should always exist
-	assert(iter != m_activeBranches.end());
-	
-	// Process the extension, this function will set the state of the branch when it is finished and the networkTrim function will process/clear it
+	assert(iter != m_activeBranchGroups.end());
+
 	PackedSeq currSeq = seq;
-	bool active = processExtensionForBranchTrim(iter->second, currSeq, extRec);
+	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(iter->second.getBranch(branchID), currSeq, extRec);
 	
 	// if the branch is still active generate a new request
 	if(active)
 	{
-		return generateExtensionRequest(id, currSeq);
+		return generateExtensionRequest(groupID, branchID, currSeq);
 	}
 	else
 	{
 		return;	
 	}
 }
+
+//
+// Process a sequence extension for popping
+//
+void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
+{
+	//printf("processing %llu\n", id);
+	// Find the branch by its ID	
+	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
+
+	// If the iterator was not found we finished with that branch already, ensure this is so
+	if(iter == m_activeBranchGroups.end())
+	{
+		assert(m_finishedGroups.find(groupID) != m_finishedGroups.end());
+		// do nothing
+		return;
+	}
+	
+	PackedSeq currSeq = seq;
+	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(iter->second, branchID, currSeq, extRec);
+	
+	// The extendable flag indicates that one round of extension has happened and each branch is equal length
+	if(extendable)
+	{
+		// Update the status of the branch
+		BranchGroupStatus status = iter->second.updateStatus();
+		
+		// if the group is still active, generate new requests for all the branches in the group
+		if(status == BGS_ACTIVE)
+		{
+			size_t numBranches = iter->second.getNumBranches();
+			for(size_t i = 0; i < numBranches; ++i)
+			{
+				generateExtensionRequest(groupID, i, iter->second.getBranch(i).getLastSeq());
+			}
+		}
+	}
+}
+
+
 //
 //
 //
@@ -885,8 +1222,8 @@ void NetworkSequenceCollection::add(const PackedSeq& seq)
 	}
 	else
 	{
-		int nodeID = computeNodeID(seq);		
-		m_pComm->SendSeqMessage(nodeID, seq, APO_ADD);
+		int nodeID = computeNodeID(seq);
+		m_pMsgBuffer->sendSeqOpMessage(nodeID, seq, MO_ADD);			
 	}
 }
 
@@ -903,7 +1240,7 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 	else
 	{
 		int nodeID = computeNodeID(seq);	
-		m_pComm->SendSeqMessage(nodeID, seq, APO_REMOVE);
+		m_pMsgBuffer->sendSeqOpMessage(nodeID, seq, MO_REMOVE);
 	}	
 }
 
@@ -969,7 +1306,7 @@ void NetworkSequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		m_pComm->SendSeqFlagMessage(nodeID, seq, APSFO_SET, flag);
+		m_pMsgBuffer->sendSetFlagMessage(nodeID, seq, flag);
 	}
 }
 
@@ -1050,27 +1387,31 @@ void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection 
 	}
 	else
 	{
-
-		int nodeID = computeNodeID(seq);		
-		// base is ignored for now
-		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_SET, dir, extension);
+		assert(false);
 	}
 }
 
 //
 // 
 //
-void NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
+bool NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	if(isLocal(seq))
 	{
-		m_pLocalSpace->setBaseExtension(seq, dir, base);
+		if(m_pLocalSpace->setBaseExtension(seq, dir, base))
+		{
+			m_numBasesAdjSet++;
+		}
 	}
 	else
 	{	
-		// This function should only be called locally
-		assert(false);	
+		numAdjMessageSent++;
+		int nodeID = computeNodeID(seq);
+		m_pMsgBuffer->sendSetBaseExtension(nodeID, seq, dir, base);
 	}
+	
+	// As this call delegates, the return value is meaningless so return false
+	return false;
 }
 
 //
@@ -1086,12 +1427,7 @@ void NetworkSequenceCollection::clearExtensions(const PackedSeq& seq, extDirecti
 	}
 	else
 	{
-
-		int nodeID = computeNodeID(seq);		
-		// base is ignored for now
-		SeqExt dummyExt;
-		char dummyBase = 'A';
-		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_CLEAR_ALL, dir, dummyExt, dummyBase);
+		assert(false);
 	}
 }
 
@@ -1117,8 +1453,7 @@ void NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirecti
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		SeqExt dummy;
-		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_REMOVE, dir, dummy, base);
+		m_pMsgBuffer->sendRemoveExtension(nodeID, seq, dir, base);
 	}
 }
 
@@ -1136,11 +1471,7 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 	}
 	else
 	{
-		int nodeID = computeNodeID(seq);
-		//PrintDebug(1, "checking for non-local seq %s\n", seq.decode().c_str());
-		SeqExt dummy;
-		m_pComm->SendSeqExtMessage(nodeID, seq, APSEO_CHECK, dir, dummy, base);
-		result = pumpUntilResult();
+		assert(false);
 	}
 
 	return result;
@@ -1149,9 +1480,19 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 //
 // get the extensions of the sequence
 //
-bool NetworkSequenceCollection::getExtensions(const PackedSeq& /*seq*/, ExtensionRecord& /*extRecord*/)
+bool NetworkSequenceCollection::getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord)
 {
-	assert(false);
+	// This function can only be called locally, the distributed version is through generateSequenceExtensionMessage
+	if(isLocal(seq))
+	{
+		m_pLocalSpace->getExtensions(seq, extRecord);
+		return true;
+	}
+	else
+	{
+		assert(false);
+		return false;
+	}
 }
 
 

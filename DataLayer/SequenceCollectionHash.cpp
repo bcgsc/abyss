@@ -111,20 +111,24 @@ void SequenceCollectionHash::setExtensionByIter(SequenceCollectionHashIter& seqI
 //
 // Set a single base extension
 //
-void SequenceCollectionHash::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
+bool SequenceCollectionHash::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	setBaseExtensionByIter(iters.first, dir, base);
-	setBaseExtensionByIter(iters.second, oppositeDirection(dir), complement(base));		
+	bool baseSet = false;
+	baseSet = baseSet || setBaseExtensionByIter(iters.first, dir, base);
+	baseSet = baseSet || setBaseExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
+	return baseSet;
 }
 
-void SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base)
+bool SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base)
 {
 	if(seqIter != m_pSequences->end())
 	{
 		const_cast<PackedSeq&>(*seqIter).setBaseExtension(dir, base);
+		return true;
 		//seqIter->printExtension();
 	}	
+	return false;
 }
 
 //
