@@ -129,8 +129,12 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			{
 				printf("%d: Assembling\n", m_id);
 				// The slave node opens the file in append mode
-				FastaWriter writer("pcontigs.fa", true);
-				performNetworkAssembly(this, &writer);
+				FastaWriter* writer = new FastaWriter("pcontigs.fa", true);
+				performNetworkAssembly(this, writer);
+				
+				// Close the writer
+				delete writer;
+				
 				// Cleanup any messages that are pending
 				EndState();				
 				SetState(NAS_WAITING);
@@ -341,8 +345,11 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 				printf("%d: Assembling\n", m_id);
 				
 				// The master opens the file in truncate mode
-				FastaWriter writer("pcontigs.fa");
-				performNetworkAssembly(this, &writer);
+				FastaWriter* writer = new FastaWriter("pcontigs.fa");
+				performNetworkAssembly(this, writer);
+				
+				// Close the writer
+				delete writer;
 
 				// Cleanup any messages that are pending
 				EndState();
