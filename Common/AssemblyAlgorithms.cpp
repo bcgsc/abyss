@@ -141,7 +141,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 			
 		seqCollection->pumpNetwork();
 	}
-	exit(1);
+
 	delete reader;
 	reader = 0;
 }
