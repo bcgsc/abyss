@@ -7,7 +7,7 @@ namespace opt {
 	extern int kmerSize;
 	extern int readLen;
 	extern int trimLen;
-	extern std::string fastaFile;
+	extern std::string inFile;
 
 	void parse(int argc, char* const* argv);
 }

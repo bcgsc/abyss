@@ -10,6 +10,8 @@
 #include "ReadPrb.h"
 #include "Prb.h"
 
+#define PACKED_SEQ_EXT ".psq"
+
 const int MAX_FASTA_LINE = 1024;
 
 // Most operations are performed on the forward and reverse reads simulatenously, this structure holds the result of such operations

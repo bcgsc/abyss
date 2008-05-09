@@ -19,17 +19,15 @@ class PackedSeqReader : public IFileReader
 		~PackedSeqReader();
 		
 		// Read in a single sequence
-		Sequence ReadSequence();
+		virtual bool ReadSequences(PSequenceVector& outseqs);
 		
-		// Read all sequences in the file
-		bool ReadAllSequences(PSequenceVector& outVector);
-		
-		// Returns true if there are sequences left to read
-		bool isGood();
 		
 	private:
 		std::ifstream m_fileHandle;
-		int m_seqLength;
+		static const int m_numToRead = 1;
+		int m_elementSize;
+		int m_readSize;
+		char* m_pBuffer;
 };
 
 #endif //PACKEDSEQREADER_H

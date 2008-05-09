@@ -152,7 +152,7 @@ class PackedSeq
 		char m_seq[NUM_BYTES];
 		char m_length;
 		char m_flags;
-		short m_multiplicity;
+		uint16_t m_multiplicity;
 		ExtensionRecord m_extRecord;
 };
 

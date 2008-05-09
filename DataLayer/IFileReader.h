@@ -12,8 +12,9 @@ class IFileReader
 	public:
 		// Read in a single sequence
 		virtual ~IFileReader() {};
-		virtual Sequence ReadSequence() = 0;
-		virtual bool isGood() = 0;
+		
+		// Returns true if there are more sequences to read
+		virtual bool ReadSequences(PSequenceVector& outseqs) = 0;
 };
 
 #endif //IFILEREADER_H

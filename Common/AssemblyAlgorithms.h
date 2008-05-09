@@ -37,7 +37,7 @@ namespace AssemblyAlgorithms
 //
 
 // Read a sequence file and load them into the collection
-void loadSequences(ISequenceCollection* seqCollection, std::string fastaFile, int readLength, int kmerSize);
+void loadSequences(ISequenceCollection* seqCollection, std::string inFile, int readLength, int kmerSize);
 
 // Generate the adjacency information for all the sequences in the collection
 // This is required before any other algorithm can run

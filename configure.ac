@@ -47,6 +47,7 @@ AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([lam], [lam_mutex_lock])
 AC_CHECK_LIB([mpi], [MPI_Init])
 AC_CHECK_LIB([lammpi++], [main]) 
+AC_CHECK_LIB([lammpio], [MPI_File_open]) 
 #AC_CHECK_LIB([mpiP], [main])
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 
@@ -60,7 +61,7 @@ AC_CONFIG_FILES([
 	Common/Makefile
 	DataLayer/Makefile
 	Parallel/Makefile
-	Partition/Makefile
 	Scaffold/Makefile
+	fasta2psq/Makefile
 ])
 AC_OUTPUT

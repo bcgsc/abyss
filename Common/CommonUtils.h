@@ -4,7 +4,6 @@
 #include "Sequence.h"
 
 // A myriad of functions that don't fit well into any class
-
 extDirection oppositeDirection(extDirection dir);
 
 // calculate the information entropy of the string

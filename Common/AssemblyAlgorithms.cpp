@@ -3,6 +3,7 @@
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
+#include "PackedSeqReader.h"
 
 namespace AssemblyAlgorithms
 {
@@ -77,49 +78,70 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 // Function to load sequences into the collection
 //
 void loadSequences(ISequenceCollection* seqCollection,
-		std::string fastaFile, int /*readLength*/, int kmerSize)
+		std::string inFile, int /*readLength*/, int kmerSize)
 {
 	Timer timer("LoadSequences");
-	FastaReader* reader = new FastaReader(fastaFile.c_str());
+	IFileReader* reader;
+	
+	// Determine the input file type
+	if(inFile.find(PACKED_SEQ_EXT) != std::string::npos)
+	{
+		// The file is a packed seq file
+		printf("Reading packed seq binary file %s\n", inFile.c_str());
+		reader = new PackedSeqReader(inFile.c_str());
+	}
+	else if(inFile.find(".fa") != std::string::npos || inFile.find(".fasta") != std::string::npos)
+	{
+		printf("Reading fasta file %s\n", inFile.c_str());
+		reader = new FastaReader(inFile.c_str());
+	}
+	else
+	{
+		printf("Input file %s has an unknown type (requires .fasta, .fa or .psq)\n", inFile.c_str());
+		exit(0);
+	}
+	
+	
 	
 	int count = 0;
 	
 	// Read the sequences and add them to the network sequence space
-	int64_t idNum = 0;
 	size_t lastNum = 0;
-	while(reader->isGood())
-	{
-		Sequence seq = reader->ReadSequence();
-		int len = seq.length();
-		assert(kmerSize <= len);
-		//assert(seq.getSequenceLength() == pairSeq.getSequenceLength());
-		
-		//int l = pairSeq.getSequenceLength();
-
-		for(int i = 0; i < len - kmerSize  + 1; i++)
-		{
-			PackedSeq sub(seq.substr(i, kmerSize));
-			
-			//PackedSeq pairSub = pairSeq.subseq(l - kmerSize - i, kmerSize);
-
-			// Add the sequence to the sequence collection
-			seqCollection->add(sub);
-
-		}
 	
-		if(count % 100000 == 0)
+	bool stop = false;
+	while(!stop)
+	{
+		PSequenceVector seqs;
+		stop = !reader->ReadSequences(seqs);
+		for(PSequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
 		{
-			size_t numseqs = seqCollection->count();
-			std::cout << "read " << count << " sequences (" << seqCollection->count() << " delta: " << numseqs - lastNum << ")" << std::endl;
-			std::cout.flush();
-			lastNum = numseqs;
-		}
-		count++;
 			
-		idNum++;
+			int len = iter->getSequenceLength();
+			assert(kmerSize <= len);
+			
+			for(int i = 0; i < len - kmerSize  + 1; i++)
+			{
+				PackedSeq sub = iter->subseq(i, kmerSize);
+	
+				// Add the sequence to the sequence collection
+				seqCollection->add(sub);
+	
+			}
+			
+			// Output the progress
+			if(count % 100000 == 0)
+			{
+				size_t numseqs = seqCollection->count();
+				std::cout << "read " << count << " sequences (" << seqCollection->count() << " delta: " << numseqs - lastNum << ")" << std::endl;
+				std::cout.flush();
+				lastNum = numseqs;
+			}
+			count++;
+		}
+			
 		seqCollection->pumpNetwork();
 	}
-	
+	exit(1);
 	delete reader;
 	reader = 0;
 }

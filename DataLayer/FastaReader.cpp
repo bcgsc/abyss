@@ -12,18 +12,7 @@ FastaReader::~FastaReader()
 	assert(!m_fileHandle.is_open());
 }
 
-bool FastaReader::ReadAllSequences(PSequenceVector& outVector)
-{
-	// open file and check that we can read from it
-	while(isGood())
-	{
-		PackedSeq pSeq = ReadSequence();	
-		outVector.push_back(pSeq);
-	}
-	return true;
-}
 
-// Read in a single sequence to the out parameter, return whether there are more sequences to read
 Sequence FastaReader::ReadSequence()
 {
 	char headerBuffer[MAX_FASTA_LINE];
@@ -46,10 +35,14 @@ Sequence FastaReader::ReadSequence()
 		assert(false);
 	}
 	
-	Sequence seq(seqBuffer);
-	
-	// Create the packed seq
-	return seq;
+	return Sequence(seqBuffer);	
+}
+
+// Read in a group of sequences and return whether there are sequences remaining
+bool FastaReader::ReadSequences(PSequenceVector& outseqs)
+{
+	outseqs.push_back(ReadSequence());	
+	return isGood();
 
 }
 

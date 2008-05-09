@@ -8,21 +8,19 @@
 #include "IFileWriter.h"
 #include "PackedSeq.h"
 
-class PackedSeqWriter : public IFileWriter
+class PackedSeqWriter
 {
 	public:
 	
 		// Constructor opens file
-		PackedSeqWriter(const char* filename, int sequenceLength);
+		PackedSeqWriter(const char* filename);
 		
 		// Destructor closes it
 		~PackedSeqWriter();
 		
 		// Write a single sequence
-		void WriteSequence(const PackedSeq& pSeq,
-				int64_t id, double multiplicity);
-		void WriteSequence(const Sequence& pSeq,
-				int64_t id, double multiplicity);
+		void WriteSequence(const PackedSeq& pSeq);
+		void WriteSequence(const Sequence& pSeq);
 		
 	private:
 		std::ofstream m_fileHandle;

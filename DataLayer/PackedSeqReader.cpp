@@ -3,58 +3,62 @@
 PackedSeqReader::PackedSeqReader(const char* filename)
 {	
 	m_fileHandle.open(filename, std::ios::binary);
+	
+	m_elementSize = sizeof(PackedSeq);
+	m_readSize = m_numToRead * m_elementSize;
+	m_pBuffer = new char[m_readSize];
+		
 	assert(m_fileHandle.is_open());
-	
-	// Read in the length of the sequences (the first record in the file)
-	m_fileHandle.read((char*)&m_seqLength, sizeof(int));
-	
-	//printf("seq len: %d\n", m_seqLength);
 }
 
 PackedSeqReader::~PackedSeqReader()
 {	
+	// free the buffer
+	delete [] m_pBuffer;
+	m_pBuffer = 0;
+	
+	// close the file
 	m_fileHandle.close();
 	assert(!m_fileHandle.is_open());
 }
 
-bool PackedSeqReader::ReadAllSequences(PSequenceVector& outVector)
-{
-	// open file and check that we can read from it
-	while(isGood())
-	{
-		PackedSeq pSeq = ReadSequence();
-		outVector.push_back(pSeq);
-	}
-	return true;
-}
-
 // Read in a single sequence; this function allocates memory
-Sequence PackedSeqReader::ReadSequence()
+bool PackedSeqReader::ReadSequences(PSequenceVector& outseqs)
 {
 	assert(m_fileHandle.is_open());
-	
-	// How many bytes need to be allocated
-	int numBytes = PackedSeq::getNumCodingBytes(m_seqLength);
-	
-	//printf("allocating %d bytes (%d) pos: %d\n", numBytes, m_seqLength, pos);
-	
-	// allocate storage for the data
-	char* data = new char[numBytes];
-	
+
 	
 	// read in the sequence
-	m_fileHandle.read(data, numBytes);
-		
-	// generate the new packed sequence
-	PackedSeq seq(data, m_seqLength);
+	m_fileHandle.read(m_pBuffer, m_readSize);
 	
-	// free temp data
-	delete [] data;
-	
-	return seq.decode();
-}
+	// check if eof was hit
+	bool endHit = false;
+	if(m_fileHandle.eof())
+	{
+		endHit = true;
+	}
 
-bool PackedSeqReader::isGood()
-{
-	return !(m_fileHandle.eof() || m_fileHandle.peek() == EOF);
+	int numBytesRead = m_fileHandle.gcount();
+	int numSequencesRead;
+	if(numBytesRead < m_readSize)
+	{
+		assert(endHit);
+	}
+	
+	// Calculate the number of sequences read in
+	numSequencesRead = numBytesRead / m_elementSize;
+	
+	// ensure it is a whole number
+	assert(numBytesRead % m_elementSize == 0);	
+	
+	// build the sequences
+	for(int i = 0; i < numSequencesRead; i++)
+	{
+		PackedSeq seq;
+		seq.unserialize(i*m_elementSize + m_pBuffer);
+		outseqs.push_back(seq);
+	}
+
+	
+	return !endHit;
 }

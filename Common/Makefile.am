@@ -14,7 +14,6 @@ libcommon_a_SOURCES = \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
 	PairRecord.cpp PairRecord.h \
-	PartitionLoader.cpp PartitionLoader.h \
 	PhaseSpace.cpp PhaseSpace.h \
 	Prb.cpp Prb.h \
 	ReadPrb.cpp ReadPrb.h \

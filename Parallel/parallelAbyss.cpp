@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	
 	if(rank == 0)
 	{
-		networkSeqs.runControl(opt::fastaFile,
+		networkSeqs.runControl(opt::inFile,
 				opt::readLen, opt::kmerSize);
 	}
 	else

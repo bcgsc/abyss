@@ -33,7 +33,7 @@ int main(int argc, char* const* argv)
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 	//SequenceCollection* pSC = new SequenceCollection();
 	
-	AssemblyAlgorithms::loadSequences(pSC, opt::fastaFile, opt::readLen, opt::kmerSize);
+	AssemblyAlgorithms::loadSequences(pSC, opt::inFile, opt::readLen, opt::kmerSize);
 
 	printf("total sequences: %d\n", pSC->count());
 

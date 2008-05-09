@@ -8,7 +8,6 @@
 #include "Writer.h"
 #include "SeqRecord.h"
 #include "Config.h"
-#include "PartitionLoader.h"
 #include "FastaWriter.h"
 #include "FastaReader.h"
 #include "PackedSeqWriter.h"

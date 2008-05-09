@@ -1,4 +1,4 @@
 if HAVE_LIBMPI
 Parallel=Parallel
 endif
-SUBDIRS = Align Common DataLayer ABYSS $(Parallel) Partition Scaffold
+SUBDIRS = Align Common DataLayer ABYSS $(Parallel) Scaffold fasta2psq

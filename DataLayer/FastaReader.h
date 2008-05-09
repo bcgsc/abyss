@@ -18,16 +18,18 @@ class FastaReader : public IFileReader
 		// Destructor closes it
 		~FastaReader();
 		
-		// Read in a single sequence
+		// Read a single sequence from the file
 		Sequence ReadSequence();
 		
-		// Read all sequences in the file
-		bool ReadAllSequences(PSequenceVector& outVector);
+		// Read sequences into the vector as packed seqs
+		// Returns true unless eof has been reached
+		virtual bool ReadSequences(PSequenceVector& outseqs);
 		
-		// Returns true if there are sequences left to read
+		// Returns true unless eof has been reached
 		bool isGood();
-		
+				
 	private:
+
 		std::ifstream m_fileHandle;
 };
 
