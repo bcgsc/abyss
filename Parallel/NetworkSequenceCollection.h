@@ -15,6 +15,7 @@ enum NetworkAssemblyState
 	NAS_LOADING, // loading sequences
 	NAS_FINALIZE, // finalizing the sequence data and getting ready for processing
 	NAS_GEN_ADJ, // generating the sequence data
+	NAS_ERODE, // erode the branch ends one sequence at a time
 	NAS_TRIM, // trimming the data
 	NAS_POPBUBBLE, // remove read errors/SNPs
 	NAS_TRIM2, // second trimming step after the bubble removal
@@ -187,6 +188,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// the number of bases of adjacency set
 		int m_numBasesAdjSet;
+		
+		// the starting trim value
+		int m_startTrimLen;
 		
 		// the current length to trim on (comes from the control node)
 		int m_trimStep;

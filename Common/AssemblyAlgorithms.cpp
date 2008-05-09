@@ -452,14 +452,41 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 }
 
 //
+// Erode data off the ends of the graph, one by one
+//
+void erodeEnds(ISequenceCollection* seqCollection)
+{
+	Timer erode("Erode sequences");
+	int count = 0;
+	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
+	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
+	{
+		extDirection dir;
+		// dir will be set to the trimming direction if the sequence can be trimmed
+		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
+				
+		if(status == SC_INVALID || status == SC_CONTIGUOUS)
+		{
+			continue;
+		}
+		else
+		{
+			count++;
+			// This sequence is an endpoint, erode it
+			removeSequenceAndExtensions(seqCollection, *iter);			
+		}		
+	}
+	printf("Eroded %d sequences\n", count);
+}
+
+//
 // Trimming driver function
 //
-void performTrim(ISequenceCollection* seqCollection)
+void performTrim(ISequenceCollection* seqCollection, int start)
 {
 	if (opt::trimLen == 0)
 		return;
 
-	int start = 2;
 	while(start <= opt::trimLen)
 	{
 		trimSequences(seqCollection, start);

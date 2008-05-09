@@ -11,7 +11,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 											 int kmerSize, 
 											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
 											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
-											 m_numBasesAdjSet(0), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0), m_timer("Total")
+											 m_numBasesAdjSet(0), m_startTrimLen(-1), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0), m_timer("Total")
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
@@ -83,6 +83,17 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			case NAS_GEN_ADJ:
 			{
 				networkGenerateAdjacency(this);
+				// Cleanup any messages that are pending
+				EndState();
+				SetState(NAS_WAITING);
+				
+				// Tell the control process this checkpoint has been reached
+				m_pComm->SendCheckPointMessage();
+				break;
+			}
+			case NAS_ERODE:
+			{
+				AssemblyAlgorithms::erodeEnds(this);
 				// Cleanup any messages that are pending
 				EndState();
 				SetState(NAS_WAITING);
@@ -219,15 +230,56 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 					pumpNetwork();
 				}
 				
-				SetState(NAS_TRIM);
+				// should erosion be performed?
+				if(!opt::disableErosion)
+				{
+					printf("setting erode\n");
+					SetState(NAS_ERODE);
+				}
+				else
+				{
+					m_startTrimLen = 2;	
+					SetState(NAS_TRIM);
+				}
 				//SetState(NAS_DONE);
 				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
 				break;
 			}
+			case NAS_ERODE:
+			{
+				int numErodes = opt::readLen - opt::kmerSize + 1;
+				for(int i = 0; i < numErodes; i++)
+				{
+					m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
+					AssemblyAlgorithms::erodeEnds(this);
+					
+					// Cleanup any messages that are pending
+					EndState();							
+
+					m_numReachedCheckpoint++;
+					while(!checkpointReached(m_numDataNodes))
+					{
+						pumpNetwork();
+					}
+					
+					// All checkpoints are reached, reset the state
+					SetState(NAS_ERODE);					
+				}
+				
+				// Cleanup any messages that are pending
+				EndState();				
+				
+				// erosion has been completed
+				m_startTrimLen = numErodes + 1;
+				SetState(NAS_TRIM);				
+				
+			}
 			case NAS_TRIM:
 			{		
 				// The control node drives the trimming and passes the value to trim at to the other nodes
-				int start = 2;
+				int start = m_startTrimLen;
+				
+				assert(start > 1);
 				
 				bool stopTrimming = false;
 				while(!stopTrimming)
@@ -552,6 +604,11 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
 			break;				
+		}
+		case APC_ERODE:
+		{
+			SetState(NAS_ERODE);
+			break;	
 		}
 		case APC_POPBUBBLE:
 		{		

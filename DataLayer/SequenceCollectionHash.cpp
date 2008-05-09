@@ -25,7 +25,7 @@ SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 	// Initially tell the has that a lot of sequences are on the way
 	// This will remove many resizes (which are very slow)
 	// Maybe use an even larger value?
-	m_pSequences = new SequenceDataHash(2 << 27);
+	m_pSequences = new SequenceDataHash(2 << 28);
 }
 
 //

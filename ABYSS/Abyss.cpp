@@ -41,12 +41,28 @@ int main(int argc, char* const* argv)
 	pSC->finalize();
 
 	AssemblyAlgorithms::generateAdjacency(pSC);
-
-	AssemblyAlgorithms::performTrim(pSC);
 	
-	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
-	write_graph("trimmed.dot", *pSC);
+	int startTrimLength;
+	if(!opt::disableErosion)
+	{
+		// erode the ends of branches for n-k+1 steps
+		int numErosions = opt::readLen - opt::kmerSize + 1;
+		for(int i = 0; i < numErosions; i++)
+		{
+			AssemblyAlgorithms::erodeEnds(pSC);
+		}
+		
+		startTrimLength = numErosions + 1;
+	}
+	else
+	{
+		startTrimLength = 2;
+	}
 
+	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
+		
+	write_graph("trimmed.dot", *pSC);
+	
 	// Remove bubbles
 	while(AssemblyAlgorithms::popBubbles(pSC, opt::kmerSize));
 	
@@ -58,6 +74,8 @@ int main(int argc, char* const* argv)
 		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
 	}
 
+	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
+	
 	write_graph("graph.dot", *pSC);
 
 	AssemblyAlgorithms::splitAmbiguous(pSC);

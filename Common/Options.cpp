@@ -23,6 +23,8 @@ static const char *USAGE_MESSAGE =
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling\n"
 "                                 edges to trim\n"
+"  -d, --disable-erosion          disable the erosion step, this will give\n"
+"                                 slightly shorter contigs, but less errors at the ends of contigs\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
 "\n"
@@ -37,10 +39,13 @@ int readLen = -1;
 /** trim length */
 int trimLen = -1;
 
+/** erosion flag */
+bool disableErosion = false;
+
 /** input FASTA files */
 std::string inFile;
 
-static const char *shortopts = "k:l:t:";
+static const char *shortopts = "k:l:t:d";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -48,6 +53,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
+	{ "disable-erosion", no_argument,   NULL, 'd' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -72,6 +78,9 @@ void parse(int argc, char* const* argv)
 			case 't':
 				arg >> trimLen;
 				break;
+			case 'd':
+				disableErosion = true;
+				break;	
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
