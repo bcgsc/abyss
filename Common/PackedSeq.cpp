@@ -650,31 +650,15 @@ int PackedSeq::seqIndexToBaseIndex(int seqIndex)
 // return the two bit code for each base
 // the input base MUST be in upper case
 //
-
 uint8_t PackedSeq::baseToCode(char base)
 {
-	if(base == 'A')
-	{
-		return 0;
-	}
-	else if(base == 'C')
-	{
-		return 1;
-	}
-	else if(base == 'G')
-	{
-		return 2;
-	}
-	else if(base == 'T')
-	{
-		return 3;
-	}
-	else
-	{
-		// unknown base
-		assert(false);
-		return 0;
-	}
+	unsigned i = base - 'A';
+	assert(i < 26);
+	static const uint8_t table[26] = {
+		0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0
+	};
+	return table[i];
 }
 
 //
