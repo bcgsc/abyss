@@ -138,8 +138,8 @@ class PackedSeq
 		inline char getBase(const char* pSeq, int byteNum, int index) const;
 		
 		// Create the two bit code for the base
-		static inline char baseToCode(char base);
-		static inline char codeToBase(char code);
+		static inline uint8_t baseToCode(char base);
+		static inline char codeToBase(uint8_t code);
 		
 		// complement a base
 		static inline int seqIndexToByteNumber(int seqIndex);

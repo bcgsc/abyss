@@ -651,7 +651,7 @@ int PackedSeq::seqIndexToBaseIndex(int seqIndex)
 // the input base MUST be in upper case
 //
 
-char PackedSeq::baseToCode(char base)
+uint8_t PackedSeq::baseToCode(char base)
 {
 	if(base == 'A')
 	{
@@ -680,30 +680,10 @@ char PackedSeq::baseToCode(char base)
 //
 //
 //
-char PackedSeq::codeToBase(char code)
+char PackedSeq::codeToBase(uint8_t code)
 {
-	if(code == 0)
-	{
-		return 'A';
-	}
-	else if(code == 1)
-	{
-		return 'C';
-	}
-	else if(code == 2)
-	{
-		return 'G';
-	}
-	else if(code == 3)
-	{
-		return 'T';
-	}
-	else
-	{
-		// unknown code
-		assert(false);
-		return 'A';
-	}
+	assert(code < 4);
+	return "ACGT"[code];
 }
 
 //
