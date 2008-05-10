@@ -51,9 +51,7 @@ PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0), m_multiplicity(1)
 	const char* strData = seq.data();
 	
 	for(int i = 0; i < m_length; i++)
-	{
-		setBase(m_seq, i, strData[i]);
-	}
+		setBaseChar(m_seq, i, strData[i]);
 }
 
 //
@@ -184,8 +182,8 @@ int PackedSeq::compare(const PackedSeq& other) const
 		for(int i = 4*numBytes; i < m_length; i++)
 		{
 			
-			char base1 = this->getBase(i);
-			char base2 = other.getBase(i);
+			uint8_t base1 = this->getBaseCode(i);
+			uint8_t base2 = other.getBaseCode(i);
 			if(base1 != base2)
 			{
 				return base1 - base2;
@@ -212,7 +210,7 @@ PackedSeq PackedSeq::subseq(int start, int len) const
 	for(int i = start; i < start + len; i++)
 	{
 		int index = i - start;
-		setBase(tempBuffer, index, getBase(i));
+		setBaseCode(tempBuffer, index, getBaseCode(i));
 	}
 	
 	PackedSeq sub(tempBuffer, len);
@@ -285,8 +283,8 @@ unsigned int PackedSeq::getCode() const
 	for(int i = 0; i < 4*NUM_BYTES; i++)
 	{
 		int index = m_length - 1 - i;
-		char base = getBase(index);
-		setBase(lastByte, i/4, i % 4, complement(base));
+		setBaseCode(lastByte, i/4, i % 4,
+				complement(getBaseCode(index)));
 	}
 
 	unsigned int sum = 0;
@@ -327,7 +325,7 @@ Sequence PackedSeq::decode() const
 	for(int i = 0; i < m_length; i++)
 	{
 
-		char base = getBase(i);
+		char base = getBaseChar(i);
 		//printf("decoding (%d %d) to %c\n", tripletNumber, baseIndex, base);
 		outstr.push_back(base);
 	}
@@ -345,7 +343,7 @@ Sequence PackedSeq::decodeByte(const char byte) const
 	outstr.reserve(4);
 	for(int i = 0; i < 4; i++)
 	{
-		char base = getBase(&byte, 0, i);
+		char base = getBaseChar(&byte, 0, i);
 		outstr.push_back(base);
 	}
 	return outstr;
@@ -353,7 +351,7 @@ Sequence PackedSeq::decodeByte(const char byte) const
 
 // Change this sequence into its reverse complement
 
-//TODO: further optimize this. 1) don't need to go code->base->code 2) can reverse within bytes then swap whole bytes?
+//TODO: further optimize this. can reverse within bytes then swap whole bytes?
 void PackedSeq::reverseComplement()
 {
 	int numBytes = getNumCodingBytes(m_length);
@@ -363,10 +361,10 @@ void PackedSeq::reverseComplement()
 	{
 		int revPos = m_length - i - 1;
 		
-		char base1 = getBase(i);
-		char base2 = getBase(revPos);
-		setBase(m_seq, i, base2);
-		setBase(m_seq, revPos, base1);
+		uint8_t base1 = getBaseCode(i);
+		uint8_t base2 = getBaseCode(revPos);
+		setBaseCode(m_seq, i, base2);
+		setBaseCode(m_seq, revPos, base1);
 	}
 	
 	for(int i = 0; i < numBytes; i++)
@@ -393,7 +391,7 @@ char PackedSeq::rotate(extDirection dir, char base)
 
 void PackedSeq::setLastBase(extDirection dir, char base)
 {
-	setBase(m_seq, dir == SENSE ? m_length - 1 : 0, base);
+	setBaseChar(m_seq, dir == SENSE ? m_length - 1 : 0, base);
 }
 
 //
@@ -431,7 +429,7 @@ char PackedSeq::shiftPrepend(char base)
 	int lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
 	
 	// save the last base (which gets shifted out)
-	char lastBase = getBase(m_seq, lastBaseByte, lastBaseIndex);
+	char lastBase = getBaseChar(m_seq, lastBaseByte, lastBaseIndex);
 	
 	char shiftIn = base;
 	
@@ -458,7 +456,7 @@ char PackedSeq::leftShiftByte(char* pSeq, int byteNum, int index, char base)
 	pSeq[byteNum] <<= 2;
 	
 	// Set the new base
-	setBase(pSeq, byteNum, index, base);
+	setBaseChar(pSeq, byteNum, index, base);
 
 	return codeToBase(outBase);
 }
@@ -475,7 +473,7 @@ char PackedSeq::rightShiftByte(char* pSeq, int byteNum, int index, char base)
 	pSeq[byteNum] >>= 2;
 	
 	// add the new base
-	setBase(pSeq, byteNum, index, base);
+	setBaseChar(pSeq, byteNum, index, base);
 	
 	return codeToBase(outBase);
 }
@@ -576,28 +574,35 @@ bool PackedSeq::isFlagSet(SeqFlag flag) const
 }
 
 //
-// set a base by the actual index [0, length)
+// set a base by the index [0, length)
 // beware, this does not check for out of bounds access
 //
-void PackedSeq::setBase(char* pSeq, int seqIndex, char base)
+void PackedSeq::setBaseCode(char* pSeq, int seqIndex, uint8_t base)
 {
 	int byteNumber = seqIndexToByteNumber(seqIndex);
 	int baseIndex = seqIndexToBaseIndex(seqIndex);	
-	return setBase(pSeq, byteNumber, baseIndex, base);
+	return setBaseCode(pSeq, byteNumber, baseIndex, base);
+}
+
+//
+// set a base by the index [0, length)
+// beware, this does not check for out of bounds access
+//
+void PackedSeq::setBaseChar(char* pSeq, int seqIndex, char base)
+{
+	return setBaseCode(pSeq, seqIndex, baseToCode(base));
 }
 
 //
 //Set a base by byte number/ sub index
 // beware, this does not check for out of bounds access
 //
-void PackedSeq::setBase(char* pSeq, int byteNum, int index, char base)
+void PackedSeq::setBaseCode(char* pSeq, int byteNum, int index,
+		uint8_t base)
 {
-	//printf("setting (%d %d) to %c\n", byteNum, index, base);
-	char val = baseToCode(base);
-	
 	// shift the value into position
 	int shiftValue = 2*(3 - index);
-	val <<= shiftValue;
+	base <<= shiftValue;
 	
 	// clear the value
 	char mask = 0x3;
@@ -607,27 +612,52 @@ void PackedSeq::setBase(char* pSeq, int byteNum, int index, char base)
 	
 	
 	// set the appropriate value with an OR
-	pSeq[byteNum] |= val;
+	pSeq[byteNum] |= base;
 }
 
 //
-// get a base by the actual index [0, length)
+//Set a base by byte number/ sub index
+// beware, this does not check for out of bounds access
 //
-char PackedSeq::getBase(int seqIndex) const
+void PackedSeq::setBaseChar(char* pSeq, int byteNum, int index, char base)
+{
+	setBaseCode(pSeq, byteNum, index, baseToCode(base));
+}
+
+//
+// get a base code by the index [0, length)
+//
+uint8_t PackedSeq::getBaseCode(int seqIndex) const
 {
 	assert(seqIndex < m_length);
 	int byteNumber = seqIndexToByteNumber(seqIndex);
 	int baseIndex = seqIndexToBaseIndex(seqIndex);	
-	return getBase(m_seq, byteNumber, baseIndex);
+	return getBaseCode(m_seq, byteNumber, baseIndex);
+}
+
+//
+// get a base by the index [0, length)
+//
+char PackedSeq::getBaseChar(int seqIndex) const
+{
+	return codeToBase(getBaseCode(seqIndex));
+}
+
+//
+// get a base code by the byte number and sub index
+//
+uint8_t PackedSeq::getBaseCode(const char* pSeq, int byteNum, int index) const
+{
+	int shiftLen = 2 * (3 - index);
+	return (pSeq[byteNum] >> shiftLen) & 0x3;
 }
 
 //
 // get a base by the byte number and sub index
 //
-char PackedSeq::getBase(const char* pSeq, int byteNum, int index) const
+char PackedSeq::getBaseChar(const char* pSeq, int byteNum, int index) const
 {
-	int shiftLen = 2 * (3 - index);
-	return codeToBase((pSeq[byteNum] >> shiftLen) & 0x3);
+	return codeToBase(getBaseCode(pSeq, byteNum, index));
 }
 
 //

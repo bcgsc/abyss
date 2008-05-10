@@ -415,8 +415,8 @@ Coord4 PhaseSpace::SequenceToCoord4(const PackedSeq& pSeq)
 	for(int i = 0; i < strLen - 1; i++)
 	{	
 		// get first base index
-		int idx1 = base2Idx(pSeq.getBase(i));
-		int idx2 = base2Idx(pSeq.getBase(i+1));
+		int idx1 = base2Idx(pSeq.getBaseChar(i));
+		int idx2 = base2Idx(pSeq.getBaseChar(i+1));
 		
 		vals[idx1][idx2]++;
 	}

@@ -89,9 +89,10 @@ class PackedSeq
 		const char* const getDataPtr() const;
 		
 		// get a particular base
-		char getFirstBase() const { return getBase(0); }
-		char getLastBase() const { return getBase(m_length - 1); }
-		char getBase(int seqIndex) const;
+		char getFirstBase() const { return getBaseChar(0); }
+		char getLastBase() const { return getBaseChar(m_length - 1); }
+		uint8_t getBaseCode(int seqIndex) const;
+		char getBaseChar(int seqIndex) const;
 		
 		// flags
 		void setFlag(SeqFlag flag);
@@ -133,9 +134,14 @@ class PackedSeq
 	private:
 			
 		// get/set a particular value
-		static inline void setBase(char* pSeq, int seqIndex, char base);
-		static inline void setBase(char* pSeq, int byteNum, int index, char base);
-		inline char getBase(const char* pSeq, int byteNum, int index) const;
+		static inline void setBaseCode(char* pSeq, int seqIndex, uint8_t base);
+		static inline void setBaseCode(char* pSeq, int byteNum, int index, uint8_t base);
+		static inline void setBaseChar(char* pSeq, int seqIndex, char base);
+		static inline void setBaseChar(char* pSeq, int byteNum, int index, char base);
+		inline uint8_t getBaseCode(const char* pSeq,
+				int byteNum, int index) const;
+		inline char getBaseChar(const char* pSeq,
+				int byteNum, int index) const;
 		
 		// Create the two bit code for the base
 		static inline uint8_t baseToCode(char base);
