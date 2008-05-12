@@ -385,12 +385,12 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
-static void rotateLeft(uint64_t *pl, uint64_t *pr, uint8_t n)
+static void shiftRight(uint64_t *pl, uint64_t *pr, uint8_t n)
 {
-	assert(n < 64);
 	uint64_t l = *pl, r = *pr;
-	*pl = l << n | r >> (64 - n);
-	*pr = r << n | l >> (64 - n);
+	*pl = l >> n;
+	*pr = n < 64 ? r >> n | l << (64 - n)
+		: l >> (n - 64);
 }
 
 //
@@ -399,6 +399,8 @@ static void rotateLeft(uint64_t *pl, uint64_t *pr, uint8_t n)
 void PackedSeq::reverseComplement()
 {
 	assert(NUM_BYTES == 10);
+
+	// Reverse bytes.
 	uint64_t l = (uint64_t)(uint8_t)m_seq[0] << 56
 		| (uint64_t)(uint8_t)m_seq[1] << 48
 		| (uint64_t)(uint8_t)m_seq[2] << 40
@@ -410,18 +412,16 @@ void PackedSeq::reverseComplement()
 	uint64_t r = (uint64_t)(uint8_t)m_seq[8] << 56
 		| (uint64_t)(uint8_t)m_seq[9] << 48;
 
-	if (m_length > 32) {
-		rotateLeft(&l, &r, 2*(m_length - 32));
-	} else {
-		l >>= 64 - 2*m_length;
-		r = 0;
-	}
+	// Alight the bits flush to the right.
+	shiftRight(&l, &r, 128 - 2*m_length);
 
+	// Reverse and complement words.
 	uint64_t *pl = (uint64_t *)&m_seq[0];
 	uint16_t *pr = (uint16_t *)&m_seq[8];
-	*pl = ~l;
-	*pr = ~r;
+	*pl = ~r;
+	*pr = ~l;
 
+	// Reverse the pairs of bits withing a byte.
 	unsigned numBytes = getNumCodingBytes(m_length);
 	for (unsigned i = 0; i < numBytes; i++)
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
