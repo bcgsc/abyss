@@ -165,32 +165,19 @@ int PackedSeq::compare(const PackedSeq& other) const
 {
 	assert(m_length == other.m_length);
 
-	int numBytes = getNumCodingBytes(m_length);
-	if(m_length % 4 != 0)
-	{
-		numBytes--;
+	unsigned nbytes = getNumCodingBytes(m_length);
+	if (m_length % 4 == 0)
+		return memcmp(m_seq, other.m_seq, nbytes);
+	nbytes--;
+	int cmp = memcmp(m_seq, other.m_seq, nbytes);
+	if (cmp != 0)
+		return cmp;
+	for (int i = 4 * nbytes; i < m_length; i++) {
+		int diff = (int)this->getBaseCode(i)
+			- (int)other.getBaseCode(i);
+		if (diff != 0)
+			return diff;
 	}
-	
-	int firstCompare = memcmp(m_seq, other.m_seq, numBytes);
-	
-	if(firstCompare != 0)
-	{
-		return firstCompare;
-	}
-	else
-	{
-		for(int i = 4*numBytes; i < m_length; i++)
-		{
-			
-			uint8_t base1 = this->getBaseCode(i);
-			uint8_t base2 = other.getBaseCode(i);
-			if(base1 != base2)
-			{
-				return base1 - base2;
-			}
-		}
-	}
-	
 	return 0;
 }
 
