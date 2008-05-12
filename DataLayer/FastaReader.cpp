@@ -17,7 +17,7 @@ Sequence FastaReader::ReadSequence()
 {
 	char headerBuffer[MAX_FASTA_LINE];
 	char seqBuffer[MAX_FASTA_LINE];	
-	char id[SEQUENCE_ID_LENGTH];
+	char id[MAX_FASTA_LINE];
 	
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());

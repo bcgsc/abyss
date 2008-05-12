@@ -14,7 +14,7 @@ enum SequenceAdjacency
 	SA_RC_ANTISENSE	
 };
 
-const int SEQUENCE_ID_LENGTH = 32;
+const int SEQUENCE_ID_LENGTH = 256;
 
 char complementBase(char base);
 Sequence reverseComplement(const Sequence& s);
