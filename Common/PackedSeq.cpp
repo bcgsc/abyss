@@ -237,16 +237,9 @@ void PackedSeq::print() const
 //
 // Get the number of coding bytes
 // 
-int PackedSeq::getNumCodingBytes(int seqLength)
+unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
 {
-	if(seqLength % 4 == 0)
-	{
-		return seqLength / 4;
-	}
-	else
-	{
-		return (seqLength / 4) + 1;
-	} 
+	return (seqLength + 3) / 4;
 }
 
 //
@@ -705,7 +698,7 @@ char PackedSeq::getBaseChar(const char* pSeq, int byteNum, int index) const
 //
 //
 //
-int PackedSeq::seqIndexToByteNumber(int seqIndex)
+unsigned PackedSeq::seqIndexToByteNumber(unsigned seqIndex)
 {
 	return seqIndex / 4;
 }
@@ -713,7 +706,7 @@ int PackedSeq::seqIndexToByteNumber(int seqIndex)
 //
 //
 //
-int PackedSeq::seqIndexToBaseIndex(int seqIndex)
+unsigned PackedSeq::seqIndexToBaseIndex(unsigned seqIndex)
 {
 	return seqIndex % 4; 
 }

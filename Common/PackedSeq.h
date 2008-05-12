@@ -82,9 +82,6 @@ class PackedSeq
 		// add to the multiplicity
 		void addMultiplicity() { m_multiplicity++; }
 		
-		// Get the number of bytes in the sequence
-		static int getNumCodingBytes(int seqLength);
-		
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
 		
@@ -132,7 +129,6 @@ class PackedSeq
 		static const int NUM_BYTES = MAX_KMER / 4;
 
 	private:
-			
 		// get/set a particular value
 		static inline void setBaseCode(char* pSeq, int seqIndex, uint8_t base);
 		static inline void setBaseCode(char* pSeq, int byteNum, int index, uint8_t base);
@@ -147,9 +143,10 @@ class PackedSeq
 		static inline uint8_t baseToCode(char base);
 		static inline char codeToBase(uint8_t code);
 		
-		// complement a base
-		static inline int seqIndexToByteNumber(int seqIndex);
-		static inline int seqIndexToBaseIndex(int seqIndex);
+		// Get the number of bytes in the sequence
+		static inline unsigned getNumCodingBytes(unsigned seqLength);
+		static inline unsigned seqIndexToByteNumber(unsigned seqIndex);
+		static inline unsigned seqIndexToBaseIndex(unsigned seqIndex);
 		
 		// shift a single byte
 		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
