@@ -400,7 +400,7 @@ void PackedSeq::reverseComplement()
 {
 	assert(NUM_BYTES == 10);
 
-	// Reverse bytes.
+	// Load with appropriate endianness for shifting.
 	uint64_t l = (uint64_t)(uint8_t)m_seq[0] << 56
 		| (uint64_t)(uint8_t)m_seq[1] << 48
 		| (uint64_t)(uint8_t)m_seq[2] << 40
@@ -412,10 +412,12 @@ void PackedSeq::reverseComplement()
 	uint64_t r = (uint64_t)(uint8_t)m_seq[8] << 56
 		| (uint64_t)(uint8_t)m_seq[9] << 48;
 
-	// Alight the bits flush to the right.
+	// Shift the bits flush to the right of the double word.
 	shiftRight(&l, &r, 128 - 2*m_length);
 
-	// Reverse and complement words.
+	// Reverse the bytes by storing them in the reverse order of
+	// loading, and reverse the words in the same fasion. Complement
+	// the bits.
 	uint64_t *pl = (uint64_t *)&m_seq[0];
 	uint16_t *pr = (uint16_t *)&m_seq[8];
 	*pl = ~r;
