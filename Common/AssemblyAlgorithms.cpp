@@ -103,7 +103,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 	
 	
 	
-	int count = 0;
+	unsigned count = 0, count_small = 0;
 	
 	// Read the sequences and add them to the network sequence space
 	size_t lastNum = 0;
@@ -117,7 +117,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 		{
 			
 			int len = iter->getSequenceLength();
-			assert(kmerSize <= len);
+			if (kmerSize > len) {
+				count_small++;
+				continue;
+			}
 			
 			for(int i = 0; i < len - kmerSize  + 1; i++)
 			{
@@ -144,6 +147,15 @@ void loadSequences(ISequenceCollection* seqCollection,
 
 	delete reader;
 	reader = 0;
+
+	if (count_small > 0)
+		fprintf(stderr, "warning: discarded %d sequences "
+				"shorter than %d bases\n", count_small, kmerSize);
+
+	if (count == 0) {
+		fputs("error: input contains no usable sequences\n", stderr);
+		exit(EXIT_FAILURE);
+	}
 }
 
 //
