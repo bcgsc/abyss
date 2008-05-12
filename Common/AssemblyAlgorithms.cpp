@@ -256,6 +256,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		ExtensionRecord extRec;
 		bool success = seqCollection->getExtensions(*iter, extRec);
 		assert(success);
+		(void)success;
 		
 		// Check for ambiguity
 		for(int i = 0; i <= 1; ++i)
@@ -282,6 +283,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 						ExtensionRecord extRec;
 						bool success = seqCollection->getExtensions(branchGroup.getBranch(j).getLastSeq(), extRec);
 						assert(success);
+						(void)success;
 						
 						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec);
 					}
@@ -578,6 +580,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			ExtensionRecord extRec;
 			bool success = seqCollection->getExtensions(currSeq, extRec);
 			assert(success);
+			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
 			processLinearExtensionForBranch(currBranch, currSeq, extRec);
@@ -712,6 +715,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 			ExtensionRecord extRec;
 			bool success = seqCollection->getExtensions(currSeq, extRec);
 			assert(success);
+			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
 			processLinearExtensionForBranch(currBranch, currSeq, extRec);

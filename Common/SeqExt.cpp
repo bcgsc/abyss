@@ -111,6 +111,7 @@ unsigned char SeqExt::base2Bit(char base) const
 	else
 	{
 		assert(false);	
+		return 0x1;
 	}
 }
 

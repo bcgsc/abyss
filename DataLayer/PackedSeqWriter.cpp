@@ -24,6 +24,7 @@ void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq)
 	
 	int nBytes = pSeq.serialize(buffer);
 	assert(nBytes == size);
+	(void)nBytes;
 	// write as raw memory
 	m_fileHandle.write(buffer, sizeof(pSeq));
 }

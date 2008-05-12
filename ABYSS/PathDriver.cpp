@@ -385,6 +385,7 @@ bool PathDriver::checkSequenceAdjacency(const PackedSeq& seq1, const PackedSeq& 
 #if 1
 	(void)seq1; (void)seq2; (void)dir;
 	assert(false);
+	return false;
 #else
 	// chop the sequence by 1 base in the direction of the extension
 	int commonLen = seq1.length() - 1;

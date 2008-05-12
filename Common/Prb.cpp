@@ -74,6 +74,7 @@ int Prb::baseToIndex(char base)
 	}
 	
 	assert(false);	
+	return 0;
 }
 
 int Prb::getOrderStat(int rank) const

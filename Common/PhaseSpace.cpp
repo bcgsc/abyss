@@ -117,6 +117,7 @@ bool PhaseSpace::checkForSequence(const PackedSeq& seq) const
 		Coord4 realCoord = SequenceToCoord4(seq);
 		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 		assert(false);		
+		return false;
 	}
 }
 
@@ -176,6 +177,7 @@ bool PhaseSpace::checkSequenceFlag(const PackedSeq& seq, SeqFlag flag)
 		Coord4 realCoord = SequenceToCoord4(seq);
 		printf("sequence is out of partition! (%d %d %d %d)\n", realCoord.x, realCoord.y, realCoord.z, realCoord.w);
 		assert(false);		
+		return false;
 	}
 }
 
@@ -221,6 +223,7 @@ HitRecord PhaseSpace::calculateExtension(const PackedSeq& currSeq, extDirection 
 #if 1
 	(void)currSeq; (void)dir;
 	assert(false);
+	return HitRecord();
 #else
 	PSequenceVector extVec;
 	makeExtensions(currSeq, dir, extVec);

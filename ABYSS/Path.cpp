@@ -108,8 +108,10 @@ void Path::getPath(std::list<PackedSeq>& outPath) const
 
 Sequence Path::getSequence() const
 {
+#if 1
 	assert(false);
-#if 0
+	return Sequence();
+#else
 	PackedSeq fullSeq("");
 	
 	// append the first full sequence
@@ -133,7 +135,6 @@ Sequence Path::getSequence() const
 	
 	return fullSeq;
 #endif
-	
 }
 
 extDirection Path::getGrowthDirection() const
