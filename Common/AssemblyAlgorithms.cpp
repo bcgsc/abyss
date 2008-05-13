@@ -4,6 +4,7 @@
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
 #include "PackedSeqReader.h"
+#include "PackedSeqWriter.h"
 
 namespace AssemblyAlgorithms
 {
@@ -125,10 +126,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 			for(int i = 0; i < len - kmerSize  + 1; i++)
 			{
 				PackedSeq sub = iter->subseq(i, kmerSize);
-	
 				// Add the sequence to the sequence collection
 				seqCollection->add(sub);
-	
 			}
 			
 			// Output the progress
@@ -488,7 +487,9 @@ void erodeEnds(ISequenceCollection* seqCollection)
 			count++;
 			// This sequence is an endpoint, erode it
 			removeSequenceAndExtensions(seqCollection, *iter);			
-		}		
+		}
+		
+		seqCollection->pumpNetwork();
 	}
 	printf("Eroded %d sequences\n", count);
 }
@@ -783,6 +784,24 @@ void outputSequences(const char* filename, ISequenceCollection* pSS)
 		if(!pSS->checkFlag(*iter, SF_DELETE))
 		{
 			writer.WriteSequence(iter->decode(), count, 0.0f);
+			count++;
+		}
+	}	
+}
+
+// Write the sequences out to a file
+//
+void outputPackedSequences(const char* filename, ISequenceCollection* pSS)
+{
+	PackedSeqWriter writer(filename);
+	SequenceCollectionIterator endIter  = pSS->getEndIter();
+	int64_t count = 0;
+	for(SequenceCollectionIterator iter = pSS->getStartIter(); iter != endIter; ++iter)
+	{
+		
+		if(!pSS->checkFlag(*iter, SF_DELETE))
+		{
+			writer.WriteSequence(*iter);
 			count++;
 		}
 	}	

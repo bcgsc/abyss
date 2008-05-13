@@ -122,6 +122,8 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 // Output all the sequences that remain (have not been deleted) in the dataset
 void outputSequences(const char* filename, ISequenceCollection* pSS);
 
+void outputPackedSequences(const char* filename, ISequenceCollection* pSS);
+
 };
 
 #endif
