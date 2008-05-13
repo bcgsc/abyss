@@ -5,7 +5,6 @@
 #include <vector>
 #include <set>
 #include <stdio.h>
-#include <ext/hash_set>
 #include "ISequenceCollection.h"
 #include "Sequence.h"
 #include "PackedSeq.h"

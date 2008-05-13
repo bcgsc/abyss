@@ -5,7 +5,6 @@
 #include <set>
 #include <map>
 #include <stdlib.h>
-#include <ext/hash_set>
 #include <assert.h>
 #include "ReadPrb.h"
 #include "Prb.h"

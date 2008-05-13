@@ -1,8 +1,8 @@
 #ifndef ISEQUENCECOLLECTION_H
 #define ISEQUENCECOLLECTION_H
 
+#include "config.h"
 #include <iterator>
-#include <google/sparse_hash_set>
 #include "NetworkDefs.h"
 #include "CommonDefs.h"
 #include "CommonUtils.h"
@@ -15,9 +15,17 @@
 //
 
 // Data model typedefs (this should be templated eventually)
-typedef google::sparse_hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
-//typedef __gnu_cxx::hash_set<PackedSeq, PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+# include <google/sparse_hash_set>
+typedef google::sparse_hash_set<PackedSeq,
+		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+#else
+# include <ext/hash_set>
+typedef __gnu_cxx::hash_set<PackedSeq,
+		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
 //typedef std::set<PackedSeq> SequenceDataHash;
+#endif
+
 typedef SequenceDataHash::iterator SequenceCollectionHashIter;
 typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
 

@@ -51,6 +51,9 @@ AC_CHECK_LIB([lammpio], [MPI_File_open])
 #AC_CHECK_LIB([mpiP], [main])
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 
+# Check for the Google sparse hash set.
+AC_CHECK_HEADERS([google/sparse_hash_set])
+
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
