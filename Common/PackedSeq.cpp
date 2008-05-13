@@ -719,10 +719,11 @@ uint8_t PackedSeq::baseToCode(char base)
 {
 	unsigned i = base - 'A';
 	assert(i < 26);
-	static const uint8_t table[26] = {
-		0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0
+	static const int8_t table[26] = {
+		 0, -1,  1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1,
+		-1, -1, -1, -1, -1, -1, 3, -1, -1, -1, -1, -1, -1
 	};
+	assert(table[i] >= 0);
 	return table[i];
 }
 

@@ -41,9 +41,16 @@ Sequence FastaReader::ReadSequence()
 // Read in a group of sequences and return whether there are sequences remaining
 bool FastaReader::ReadSequences(PSequenceVector& outseqs)
 {
-	outseqs.push_back(ReadSequence());	
+	Sequence seq = ReadSequence();
+	size_t pos = seq.find_first_not_of("ACGT");
+	if (pos == std::string::npos) {
+		outseqs.push_back(seq);
+	} else {
+		fprintf(stderr,
+				"warning: discarded sequence containing `%c'\n",
+				seq[pos]);
+	}
 	return isGood();
-
 }
 
 bool FastaReader::isGood()
