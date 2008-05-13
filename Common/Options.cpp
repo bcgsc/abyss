@@ -87,7 +87,7 @@ void parse(int argc, char* const* argv)
 				disableErosion = true;
 				break;	
 			case 'v':
-				verbose = 1;
+				verbose++;
 				break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
