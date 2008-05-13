@@ -21,7 +21,10 @@ class PackedSeqReader : public IFileReader
 		// Read in a single sequence
 		virtual bool ReadSequences(PSequenceVector& outseqs);
 		
-		
+		// Returns the number of sequences containing non-ACGT
+		// characters, which is impossible for a packed sequence.
+		virtual unsigned getNonACGT() { return 0; }
+
 	private:
 		std::ifstream m_fileHandle;
 		static const int m_numToRead = 1;

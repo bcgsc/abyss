@@ -15,6 +15,10 @@ class IFileReader
 		
 		// Returns true if there are more sequences to read
 		virtual bool ReadSequences(PSequenceVector& outseqs) = 0;
+
+		// Returns the number of sequences containing non-ACGT
+		// characters.
+		virtual unsigned getNonACGT() = 0;
 };
 
 #endif //IFILEREADER_H

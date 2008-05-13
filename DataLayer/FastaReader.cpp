@@ -49,6 +49,7 @@ bool FastaReader::ReadSequences(PSequenceVector& outseqs)
 		fprintf(stderr,
 				"warning: discarded sequence containing `%c'\n",
 				seq[pos]);
+		m_nonacgt++;
 	}
 	return isGood();
 }

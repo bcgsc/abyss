@@ -28,9 +28,14 @@ class FastaReader : public IFileReader
 		// Returns true unless eof has been reached
 		bool isGood();
 				
+		// Returns the number of sequences containing non-ACGT
+		// characters.
+		virtual unsigned getNonACGT() { return m_nonacgt; }
+
 	private:
 
 		std::ifstream m_fileHandle;
+		unsigned m_nonacgt;
 };
 
 #endif //FASTAREADER_H

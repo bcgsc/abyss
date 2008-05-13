@@ -144,12 +144,16 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->pumpNetwork();
 	}
 
+	unsigned count_nonacgt = reader->getNonACGT();
 	delete reader;
 	reader = 0;
 
 	if (count_small > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
 				"shorter than %d bases\n", count_small, kmerSize);
+	if (count_nonacgt > 0)
+		fprintf(stderr, "warning: discarded %d sequences "
+				"containing non-ACGT characters\n", count_nonacgt);
 
 	if (count == 0) {
 		fputs("error: input contains no usable sequences\n", stderr);
