@@ -25,6 +25,7 @@ static const char *USAGE_MESSAGE =
 "                                 edges to trim\n"
 "  -d, --disable-erosion          disable the erosion step, this will give\n"
 "                                 slightly shorter contigs, but less errors at the ends of contigs\n"
+"  -v, --verbose                  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
 "\n"
@@ -42,10 +43,13 @@ int trimLen = -1;
 /** erosion flag */
 bool disableErosion = false;
 
+/** verbose output */
+int verbose = 0;
+
 /** input FASTA files */
 std::string inFile;
 
-static const char *shortopts = "k:l:t:d";
+static const char *shortopts = "k:l:t:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -54,6 +58,7 @@ static const struct option longopts[] = {
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "disable-erosion", no_argument,   NULL, 'd' },
+	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -81,6 +86,9 @@ void parse(int argc, char* const* argv)
 			case 'd':
 				disableErosion = true;
 				break;	
+			case 'v':
+				verbose = 1;
+				break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);

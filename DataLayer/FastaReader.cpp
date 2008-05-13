@@ -1,4 +1,5 @@
 #include "FastaReader.h"
+#include "Options.h"
 
 FastaReader::FastaReader(const char* filename)
 {	
@@ -46,9 +47,10 @@ bool FastaReader::ReadSequences(PSequenceVector& outseqs)
 	if (pos == std::string::npos) {
 		outseqs.push_back(seq);
 	} else {
-		fprintf(stderr,
-				"warning: discarded sequence containing `%c'\n",
-				seq[pos]);
+		if (opt::verbose > 0)
+			fprintf(stderr,
+					"warning: discarded sequence containing `%c'\n",
+					seq[pos]);
 		m_nonacgt++;
 	}
 	return isGood();

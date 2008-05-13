@@ -8,6 +8,7 @@ namespace opt {
 	extern int readLen;
 	extern int trimLen;
 	extern bool disableErosion;
+	extern int verbose;
 	extern std::string inFile;
 
 	void parse(int argc, char* const* argv);
