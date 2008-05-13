@@ -71,7 +71,7 @@ SeqExt SeqExt::complement() const
 		char currBase = BASES[i];
 		if(CheckBase(currBase))
 		{
-			comp.SetBase(::complement(currBase));
+			comp.SetBase(::complementBaseChar(currBase));
 		}
 	}
 	return comp;

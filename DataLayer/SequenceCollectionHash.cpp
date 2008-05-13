@@ -116,7 +116,8 @@ bool SequenceCollectionHash::setBaseExtension(const PackedSeq& seq, extDirection
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool baseSet = false;
 	baseSet = baseSet || setBaseExtensionByIter(iters.first, dir, base);
-	baseSet = baseSet || setBaseExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
+	baseSet = baseSet || setBaseExtensionByIter(iters.second,
+			oppositeDirection(dir), complementBaseChar(base));
 	return baseSet;
 }
 
@@ -139,7 +140,8 @@ void SequenceCollectionHash::removeExtension(const PackedSeq& seq, extDirection 
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 
 	removeExtensionByIter(iters.first, dir, base);
-	removeExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
+	removeExtensionByIter(iters.second,
+			oppositeDirection(dir), complementBaseChar(base));	
 }
 
 //
@@ -355,7 +357,8 @@ ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirec
 	ResultPair rp;
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
-	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
+	rp.reverse = checkExtensionByIter(iters.second,
+			oppositeDirection(dir), complementBaseChar(base));
 	return rp;
 }
 

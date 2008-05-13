@@ -14,7 +14,12 @@ int min(const int& n1, const int& n2);
 int max(const int& n1, const int& n2);
 
 // complement a base
-char complement(const char& b);
+char complementBaseChar(char b);
+
+static inline uint8_t complementBaseCode(uint8_t b)
+{
+	return ~b & 0x3;
+}
 
 void PrintBufferAsHex(char* buffer, int length);
 

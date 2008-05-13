@@ -54,30 +54,18 @@ int max(const int& n1, const int& n2)
 }
 
 //
+// Return the complement of the specified base.
 //
-//
-char complement(const char& b)
+char complementBaseChar(char b)
 {
-	if(b == 'A')
-	{
-		return 'T';
-	}
-	else if(b == 'C')
-	{
-		return 'G';
-	}
-	else if(b == 'G')
-	{
-		return 'C';
-	}
-	else if(b == 'T')
-	{
-		return 'A';
-	}
-	else
-	{
-		assert(false);
-		return 'A';
+	switch (b) {
+		case 'A': return 'T';
+		case 'C': return 'G';
+		case 'G': return 'C';
+		case 'T': return 'A';
+		default:
+			assert(false);
+			return 0;
 	}			
 }
 

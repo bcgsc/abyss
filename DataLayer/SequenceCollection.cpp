@@ -65,7 +65,8 @@ void SequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir,
 {
 	SequenceIterPair iters = GetSequenceIterators(seq);
 	removeExtensionByIter(iters.first, dir, base);
-	removeExtensionByIter(iters.second, oppositeDirection(dir), complement(base));	
+	removeExtensionByIter(iters.second, oppositeDirection(dir),
+			complementBaseChar(base));	
 }
 
 //
@@ -367,7 +368,8 @@ ResultPair SequenceCollection::checkExtension(const PackedSeq& seq, extDirection
 	
 	
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
-	rp.reverse = checkExtensionByIter(iters.second, oppositeDirection(dir), complement(base));
+	rp.reverse = checkExtensionByIter(iters.second,
+			oppositeDirection(dir), complementBaseChar(base));
 
 	return rp;
 }

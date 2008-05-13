@@ -264,7 +264,7 @@ unsigned int PackedSeq::getCode() const
 	{
 		int index = m_length - 1 - i;
 		setBaseCode(lastByte, i/4, i % 4,
-				complement(getBaseCode(index)));
+				complementBaseCode(getBaseCode(index)));
 	}
 
 	unsigned int sum = 0;
