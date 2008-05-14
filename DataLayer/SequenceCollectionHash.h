@@ -64,7 +64,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// get the extensions of a sequence
-		bool getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord);
+		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter() const;

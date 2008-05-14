@@ -22,7 +22,7 @@ BranchRecord::BranchRecord(extDirection dir, int maxLength) : m_dir(dir), m_stat
 BranchRecord::BranchRecord(const BranchRecord& other)
 {
 	m_data = other.m_data;
-	m_set = other.m_set;
+	m_seqMap = other.m_seqMap;
 	m_dir = other.m_dir;
 	m_maxLength = other.m_maxLength;
 	m_state = other.m_state;
@@ -39,7 +39,7 @@ BranchRecord& BranchRecord::operator=(const BranchRecord& other)
 	}
 		
 	m_data = other.m_data;
-	m_set = other.m_set;
+	m_seqMap = other.m_seqMap;
 	m_dir = other.m_dir;
 	m_maxLength = other.m_maxLength;
 	m_state = other.m_state;
@@ -55,7 +55,8 @@ void BranchRecord::addSequence(const PackedSeq& seq)
 	m_data.push_back(seq);
 	
 	// Detect a loop by checking that the sequence is not already in the branch
-	bool unique = m_set.insert(seq).second;
+	MultMapPair item(seq, -1);
+	bool unique = m_seqMap.insert(item).second;
 	if(!unique)
 	{
 		m_loopDetected = true;
@@ -69,6 +70,26 @@ void BranchRecord::terminate(BranchState reason)
 {
 	assert(reason != BS_ACTIVE);
 	m_state = reason;
+}
+
+//
+// Get the multiplicity of the sequence
+//
+int BranchRecord::getMultiplicity(const PackedSeq& seq) const
+{
+	BranchMultMap::const_iterator iter = m_seqMap.find(seq);
+	assert(iter != m_seqMap.end());
+	return iter->second;
+}
+
+//
+// Set the multiplicity of a sequence
+//
+void BranchRecord::setMultiplicity(const PackedSeq& seq, int multiplicity)
+{
+	BranchMultMap::iterator iter = m_seqMap.find(seq);
+	assert(iter != m_seqMap.end());
+	iter->second = multiplicity;
 }
 
 //
@@ -123,7 +144,7 @@ const PackedSeq& BranchRecord::getLastSeq() const
 //
 bool BranchRecord::exists(const PackedSeq& seq) const
 {
-	return m_set.find(seq) != m_set.end();	
+	return m_seqMap.find(seq) != m_seqMap.end();
 }
 
 //
@@ -134,6 +155,35 @@ bool BranchRecord::doLengthCheck() const
 	return (m_maxLength > -1);
 }
 
+//
+// Get the total multiplicity of the branch
+// ignoreLast - this flag will be set when determining the branch 
+// multiplicity for bubble removal. Since the multiplicity record
+// lags behind the extension in a branch group, the last sequence
+// will not have its multiplicity set when the branches join back together
+// since that sequence is in all branches by definition it will not
+// contribute any information to choosing a particular branch
+// so it can be safely ignored
+//
+int BranchRecord::getBranchMultiplicity(bool ignoreLast) const
+{
+	int total = 0;
+	
+	BranchData::const_iterator endSeq = m_data.end();
+	
+	if(ignoreLast)
+	{
+		endSeq--;
+	}
+	
+	for(BranchData::const_iterator iter = m_data.begin(); iter != endSeq; ++iter)
+	{
+		int m = getMultiplicity(*iter);
+		assert(m > 0);
+		total += m;
+	}
+	return total;
+}
 
 //
 // Build a contig from a branch

@@ -389,9 +389,9 @@ bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& se
 }
 
 //
-// get the extensions of a sequence, populate the extRecord structure
+// get the extensions and multiplicity information for a sequence
 //
-bool SequenceCollectionHash::getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord)
+bool SequenceCollectionHash::getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool found = false;
@@ -400,6 +400,7 @@ bool SequenceCollectionHash::getExtensions(const PackedSeq& seq, ExtensionRecord
 		// seq found
 		extRecord.dir[SENSE] = getExtensionByIter(iters.first, SENSE);
 		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.first, ANTISENSE);
+		multiplicity = iters.first->getMultiplicity();
 		found = true;
 	}
 	else if(iters.second != m_pSequences->end())
@@ -407,6 +408,7 @@ bool SequenceCollectionHash::getExtensions(const PackedSeq& seq, ExtensionRecord
 		// reverse seq found, swap the order of the extensions and complement them (to make sure they are in the direction of the requested seq)
 		extRecord.dir[SENSE] = getExtensionByIter(iters.second, ANTISENSE).complement();
 		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.second, SENSE).complement();
+		multiplicity = iters.second->getMultiplicity();
 		found = true;
 	}
 

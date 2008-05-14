@@ -644,12 +644,13 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 	assert(isLocal(message.m_seq));
 	
 	ExtensionRecord extRec;
-	bool found = m_pLocalSpace->getExtensions(message.m_seq, extRec);
+	int multiplicity = -1;
+	bool found = m_pLocalSpace->getSeqData(message.m_seq, extRec, multiplicity);
 	assert(found);
 	(void)found;
 
 	// Return the extension to the sender
-	m_pMsgBuffer->sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, 0);
+	m_pMsgBuffer->sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, multiplicity);
 }
 
 //
@@ -657,7 +658,7 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 //
 void NetworkSequenceCollection::handleSequenceDataResponse(int /*senderID*/, SeqDataResponse& message)
 {
-	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord);
+	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord, message.m_multiplicity);
 }
 
 //
@@ -865,9 +866,9 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 		
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
-		
+		int multiplicity = -1;
 		// THIS CALL TO GET EXTENSIONS IS GUARENTEED TO BE LOCAL SO WE DO NOT HAVE TO WAIT FOR THE RETURN
-		bool success = seqCollection->getExtensions(*iter, extRec);
+		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
 		assert(success);
 		(void)success;
 		
@@ -887,7 +888,7 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(std::pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
 				
 				// initiate the new group
-				AssemblyAlgorithms::initiateBranchGroup(groupIter->second, *iter, extRec.dir[dir], expectedBubbleSize);
+				AssemblyAlgorithms::initiateBranchGroup(groupIter->second, *iter, extRec.dir[dir], multiplicity, expectedBubbleSize);
 				
 				// generate a sequence extension request for each sequence in the group
 				// this will be handled in process sequence extension
@@ -1142,12 +1143,13 @@ void NetworkSequenceCollection::generateExtensionRequest(uint64_t groupID, uint6
 	{
 		// simply look up the sequence in the local space
 		ExtensionRecord extRec;
-		bool success = m_pLocalSpace->getExtensions(seq, extRec);
+		int multiplicity = -1;
+		bool success = m_pLocalSpace->getSeqData(seq, extRec, multiplicity);
 		assert(success);
 		(void)success;
 		
 		// process the message
-		processSequenceExtension(groupID, branchID, seq, extRec);
+		processSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
 	}
 	else
 	{
@@ -1163,17 +1165,17 @@ void NetworkSequenceCollection::generateExtensionRequest(uint64_t groupID, uint6
 //
 //
 //
-void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
+void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity)
 {
 	switch(m_state)
 	{
 		case NAS_TRIM:
 		case NAS_TRIM2:
 		case NAS_ASSEMBLE:
-			return processLinearSequenceExtension(groupID, branchID, seq, extRec);
+			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
 			break;
 		case NAS_POPBUBBLE:
-			return processSequenceExtensionPop(groupID, branchID, seq, extRec);
+			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);
 			break;
 		default:
 			assert(false);
@@ -1184,7 +1186,7 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 //
 // Process a sequence extension for trimming
 //
-void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
+void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity)
 {
 	//printf("processing %llu\n", id);
 	// Find the branch by its ID	
@@ -1194,7 +1196,7 @@ void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID,
 	assert(iter != m_activeBranchGroups.end());
 
 	PackedSeq currSeq = seq;
-	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(iter->second.getBranch(branchID), currSeq, extRec);
+	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(iter->second.getBranch(branchID), currSeq, extRec, multiplicity);
 	
 	// if the branch is still active generate a new request
 	if(active)
@@ -1210,7 +1212,7 @@ void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID,
 //
 // Process a sequence extension for popping
 //
-void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec)
+void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity)
 {
 	//printf("processing %llu\n", id);
 	// Find the branch by its ID	
@@ -1225,7 +1227,7 @@ void NetworkSequenceCollection::processSequenceExtensionPop(uint64_t groupID, ui
 	}
 	
 	PackedSeq currSeq = seq;
-	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(iter->second, branchID, currSeq, extRec);
+	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(iter->second, branchID, currSeq, extRec, multiplicity);
 
 	// The extendable flag indicates that one round of extension has happened and each branch is equal length
 	if(extendable)
@@ -1513,12 +1515,12 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 //
 // get the extensions of the sequence
 //
-bool NetworkSequenceCollection::getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord)
+bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity)
 {
 	// This function can only be called locally, the distributed version is through generateSequenceExtensionMessage
 	if(isLocal(seq))
 	{
-		m_pLocalSpace->getExtensions(seq, extRecord);
+		m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
 		return true;
 	}
 	else

@@ -16,8 +16,9 @@ enum BranchState
 	
 };
 
+typedef std::pair<PackedSeq, int> MultMapPair;
 typedef std::vector<PackedSeq> BranchData;
-typedef std::set<PackedSeq> BranchSet;
+typedef std::map<PackedSeq, int> BranchMultMap;
 typedef BranchData::iterator BranchDataIter;
 
 
@@ -47,6 +48,12 @@ class BranchRecord
 		
 		// Get the state of the branch
 		BranchState getState() const;
+		
+		// get the multiplicity of a sequence
+		int getMultiplicity(const PackedSeq& seq) const;
+		
+		// Set the multiplicity of a sequence in the branch
+		void setMultiplicity(const PackedSeq& seq, int multiplicity);
 		
 		// Set the state of the branch
 		void setState(BranchState state) { m_state = state; }
@@ -84,6 +91,8 @@ class BranchRecord
 		// Does this branch have a loop?
 		bool hasLoop() const { return m_loopDetected; }
 		
+		// get the total multiplicity for this branch
+		int getBranchMultiplicity(bool ignoreLast) const;
 		
 		
 	private:
@@ -91,7 +100,7 @@ class BranchRecord
 		// BranchData is used for the ordering/length of the branch, BranchSet is used for the existance of sequences in the branch.
 		// They are populate simulataneously
 		BranchData m_data;
-		BranchSet m_set;
+		BranchMultMap m_seqMap;
 		extDirection m_dir;
 		BranchState m_state;
 		int m_maxLength;

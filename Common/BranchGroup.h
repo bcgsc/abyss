@@ -40,7 +40,7 @@ class BranchGroup
 		BranchGroupStatus getStatus() const { return m_status; }
 		
 		// Select a branch to keep (for bubble removal) and return it's index
-		size_t selectBranchToKeep() const;
+		size_t selectBranchToKeep();
 		
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }

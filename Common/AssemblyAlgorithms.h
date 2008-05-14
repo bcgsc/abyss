@@ -69,7 +69,7 @@ SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const Packe
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
 
 // Process the extensions of the current sequence for trimming
-bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions);
+bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions, int multiplicity);
 
 // Polymorphism removal
 
@@ -77,10 +77,10 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 
 // Populate the branch group with the initial extensions to this sequence
-void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, size_t maxBubbleSize);
+void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, int multiplicity, size_t maxBubbleSize);
 
 // process an a branch group extension
-bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions);
+bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions, int multiplicity);
 
 // collapse bubbles that are joined together
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);

@@ -269,7 +269,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
-		bool success = seqCollection->getExtensions(*iter, extRec);
+		int multiplicity = -1;
+		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
 		assert(success);
 		(void)success;
 		
@@ -285,7 +286,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				
 				// Create the branch group
 				BranchGroup branchGroup(0, dir, maxNumBranches);
-				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], expectedBubbleSize);
+				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], multiplicity, expectedBubbleSize);
 				
 				// Iterate over the branches
 				while(!stop)
@@ -296,11 +297,12 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					{						
 						// Get the extensions of this branch
 						ExtensionRecord extRec;
-						bool success = seqCollection->getExtensions(branchGroup.getBranch(j).getLastSeq(), extRec);
+						int multiplicity = -1;
+						bool success = seqCollection->getSeqData(branchGroup.getBranch(j).getLastSeq(), extRec, multiplicity);
 						assert(success);
 						(void)success;
 						
-						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec);
+						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec, multiplicity);
 					}
 					
 					// At this point all branches should have the same length or one will be a noext
@@ -337,13 +339,17 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 //
 // Populate a branch group with the inital branches from a sequence
 //
-void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, size_t maxBubbleSize)
+void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, int /*multiplicity*/, size_t maxBubbleSize)
 {
+	
+	// As the root sequence is not added to the branch, its multiplicity information is ignored.
+	
 	// Generate the vector of sequences that make up this branch
 	PSequenceVector extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(), extension, extSeqs);
 	assert(extSeqs.size() > 1);
 	uint64_t id = 0;
+	
 	for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
 	{
 		// Create a new branch and add it to the group
@@ -360,12 +366,15 @@ void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt&
 //
 // process an a branch group extension
 //
-bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions)
+bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions, int multiplicity)
 {
 	// Generate the extensions of the branch
 	PSequenceVector branchExtSeqs;
 	extDirection dir = group.getDirection();
 	generateSequencesFromExtension(seq, dir, extensions.dir[dir], branchExtSeqs);
+	
+	// Set the multiplicity of the request sequence
+	group.getBranch(branchIndex).setMultiplicity(seq, multiplicity);
 	
 	if(branchExtSeqs.size() == 1)
 	{
@@ -595,12 +604,13 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		{		
 			// Get the extensions for this sequence, this function populates the extRecord structure
 			ExtensionRecord extRec;
-			bool success = seqCollection->getExtensions(currSeq, extRec);
+			int multiplicity = -1;
+			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
 			assert(success);
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, currSeq, extRec);
+			processLinearExtensionForBranch(currBranch, currSeq, extRec, multiplicity);
 		}
 		
 		// The branch has ended check it for removal, returns true if it was removed
@@ -617,10 +627,11 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 
 //
 // Process the extension for this branch for the trimming algorithm
-// CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence
+// CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence and
+// multiplicity is the number of times that kmer appears in the data set
 // After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
 //
-bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions)
+bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions, int multiplicity)
 {
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
@@ -644,18 +655,21 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	{
 		// no extenstion, add the current sequence and terminate the branch
 		branch.addSequence(currSeq);
+		branch.setMultiplicity(currSeq, multiplicity);
 		branch.terminate(BS_NOEXT);
 	}
 	else if(extensions.dir[dir].IsAmbiguous())
 	{
 		// this branch has an ambiguous extension, add the current sequence and terminate
 		branch.addSequence(currSeq);
+		branch.setMultiplicity(currSeq, multiplicity);
 		branch.terminate(BS_AMBI_SAME);
 	}
 	else
 	{
 		// Add the sequence to the branch
 		branch.addSequence(currSeq);
+		branch.setMultiplicity(currSeq, multiplicity);
 		
 		// generate the new current sequence from the extension
 		//printf("currseq: %s ", currSeq.decode().c_str());
@@ -730,12 +744,14 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		{		
 			// Get the extensions for this sequence, this function populates the extRecord structure
 			ExtensionRecord extRec;
-			bool success = seqCollection->getExtensions(currSeq, extRec);
+			int multiplicity = -1;
+			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
+
 			assert(success);
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, currSeq, extRec);
+			processLinearExtensionForBranch(currBranch, currSeq, extRec, multiplicity);
 		}
 		
 		// The branch has ended, build the contig

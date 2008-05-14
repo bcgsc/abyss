@@ -94,7 +94,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int getMultiplicity(const PackedSeq& seq);
 		
 		// get the extensions of the sequence
-		bool getExtensions(const PackedSeq& seq, ExtensionRecord& extRecord);
+		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 		
 		// The loop to run the network code
 		APResult pumpNetwork();
@@ -133,9 +133,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID);
 		
 		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
-		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
-		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
-		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec);
+		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
+		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
+		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		
 		// Check if a branch is redundant with a previously output branch
 		bool isBranchRedundant(BranchRecord& branch);

@@ -147,10 +147,25 @@ BranchGroupStatus BranchGroup::updateStatus()
 // 
 // Select a branch that survives the bubble removal
 //
-size_t BranchGroup::selectBranchToKeep() const
+size_t BranchGroup::selectBranchToKeep()
 {
+	// Choose the branch with the highest total multiplicity
 	// arbitrarily return 0 for now
-	return 0;
+	int bestMult = 0;
+	int bestIndex = -1;
+	size_t numBranches = getNumBranches();
+	
+	for(size_t index = 0; index < numBranches; ++index)
+	{
+		int currMult = getBranch(index).getBranchMultiplicity(true);
+		if(currMult > bestMult)
+		{
+			bestMult = currMult;
+			bestIndex = index;
+		}
+	}
+
+	return bestIndex;
 }
 
 //
