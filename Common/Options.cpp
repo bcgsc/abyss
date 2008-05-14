@@ -16,21 +16,23 @@ PACKAGE " (ABySS) " VERSION "\n"
 "Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PACKAGE " [OPTION]... [ FASTA FILE | PACKED SEQ FILE(.psq)] ...\n"
-"Assemble FASTA_FILE.\n"
+"Usage: " PACKAGE " [OPTION]... FILE\n"
+"Assemble FILE, which may be in FASTA (.fa) format or packed sequence\n"
+"format (.psq). The contigs are written to contigs.fa.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling\n"
 "                                 edges to trim\n"
-"  -d, --disable-erosion          disable the erosion step, this will give\n"
-"                                 slightly shorter contigs, but less errors at the ends of contigs\n"
+"  -d, --disable-erosion          disable the erosion step, which will give\n"
+"                                 slightly shorter contigs, but fewer errors\n"
+"                                 at the ends of contigs\n"
 "  -g, --graph                    generate a graph in dot format\n"
 "  -v, --verbose                  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
 "\n"
-"Report bugs to " PACKAGE_BUGREPORT "\n";
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 /** k-mer length */
 int kmerSize = -1;
