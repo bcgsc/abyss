@@ -8,6 +8,7 @@ namespace opt {
 	extern int readLen;
 	extern int trimLen;
 	extern bool disableErosion;
+	extern std::string graphPath;
 	extern int verbose;
 	extern std::string inFile;
 

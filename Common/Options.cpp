@@ -25,6 +25,7 @@ static const char *USAGE_MESSAGE =
 "                                 edges to trim\n"
 "  -d, --disable-erosion          disable the erosion step, this will give\n"
 "                                 slightly shorter contigs, but less errors at the ends of contigs\n"
+"  -g, --graph                    generate a graph in dot format\n"
 "  -v, --verbose                  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
@@ -43,13 +44,16 @@ int trimLen = -1;
 /** erosion flag */
 bool disableErosion = false;
 
+/** graph output */
+std::string graphPath;
+
 /** verbose output */
 int verbose = 0;
 
 /** input FASTA files */
 std::string inFile;
 
-static const char *shortopts = "k:l:t:dv";
+static const char *shortopts = "k:l:t:dg:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -58,6 +62,7 @@ static const struct option longopts[] = {
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "disable-erosion", no_argument,   NULL, 'd' },
+	{ "graph",       required_argument, NULL, 'g' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -86,6 +91,9 @@ void parse(int argc, char* const* argv)
 			case 'd':
 				disableErosion = true;
 				break;	
+			case 'g':
+				graphPath = optarg;
+				break;
 			case 'v':
 				verbose++;
 				break;

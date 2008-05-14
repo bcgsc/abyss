@@ -18,10 +18,12 @@
 static void write_graph(const std::string& path,
 		/*const*/ ISequenceCollection& c)
 {
-	cout << "Building " << path << "..." << endl;
+	if (path.length() == 0)
+		return;
+	cout << "Writing graph to " << path << "..." << endl;
 	ofstream out(path.c_str());
 	DotWriter::write(out, c);
-	cout << "Done." << endl;
+	cout << "done." << endl;
 }
 
 int main(int argc, char* const* argv)
@@ -61,8 +63,6 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
 		
-	write_graph("trimmed.dot", *pSC);
-	
 	// Remove bubbles
 	while(AssemblyAlgorithms::popBubbles(pSC, opt::kmerSize));
 	
@@ -77,7 +77,7 @@ int main(int argc, char* const* argv)
 	//AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
 	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
 	
-	write_graph("graph.dot", *pSC);
+	write_graph(opt::graphPath, *pSC);
 
 	AssemblyAlgorithms::splitAmbiguous(pSC);
 	
