@@ -48,6 +48,9 @@ class BranchRecord
 		// Get the state of the branch
 		BranchState getState() const;
 		
+		// Set the state of the branch
+		void setState(BranchState state) { m_state = state; }
+		
 		// Check if the branch is empty
 		bool empty() const { return m_data.empty(); }
 		
@@ -56,6 +59,8 @@ class BranchRecord
 		
 		// Get the last sequence added to this branch
 		const PackedSeq& getLastSeq() const;
+		
+		const PackedSeq& getSeqByIndex(size_t index) const;
 		
 		// Get the iterators
 		BranchDataIter getStartIter();

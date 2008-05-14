@@ -25,7 +25,11 @@ SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 	// Initially tell the has that a lot of sequences are on the way
 	// This will remove many resizes (which are very slow)
 	// Maybe use an even larger value?
+#if HAVE_GOOGLE_SPARSE_HASH_SET
 	m_pSequences = new SequenceDataHash(2 << 28);
+#else
+	m_pSequences = new SequenceDataHash();
+#endif
 }
 
 //
@@ -48,7 +52,14 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 	// If it exists of the reverse complement exists, do not add
 	if(iters.first != m_pSequences->end() || iters.second != m_pSequences->end())
 	{
-		//const_cast<PackedSeq&>(*iter).addMultiplicity();
+		if(iters.first != m_pSequences->end())
+		{
+			const_cast<PackedSeq&>(*iters.first).addMultiplicity();
+		}
+		else if(iters.second != m_pSequences->end())
+		{
+			const_cast<PackedSeq&>(*iters.second).addMultiplicity();
+		}
 	}
 	else
 	{

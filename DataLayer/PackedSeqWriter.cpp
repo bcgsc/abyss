@@ -23,6 +23,7 @@ void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq)
 	char buffer[size];
 	
 	int nBytes = pSeq.serialize(buffer);
+
 	assert(nBytes == size);
 	(void)nBytes;
 	// write as raw memory

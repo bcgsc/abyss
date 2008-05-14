@@ -27,6 +27,8 @@ enum SeqContiguity
 	SC_CONTIGUOUS // the sequence is closed on both ends
 };
 
+
+
 namespace AssemblyAlgorithms
 {
 

@@ -1,17 +1,14 @@
 #include "PairRecord.h"
 
-PairRecord::PairRecord(const PSequenceVector& allseqs)
+PairRecord::PairRecord()
 {
-	ConstPSequenceVectorIterator pairIter;
-	return;
-	// the pairs are located sequentially in the vector
-	for(ConstPSequenceVectorIterator iter = allseqs.begin(); iter != allseqs.end(); iter += 2)
-	{
-		pairIter = iter + 1;
-		m_pairLookup[*iter].push_back(*pairIter);
-		m_pairLookup[*pairIter].push_back(*iter);
-	}
-	
+
+}
+
+void PairRecord::addPairs(const PackedSeq& seq1, const PackedSeq& seq2)
+{
+	m_pairLookup[seq1].push_back(seq2);
+	m_pairLookup[seq2].push_back(seq1);	
 }
 
 bool PairRecord::checkForPairs(const PackedSeq& seq) const
@@ -26,9 +23,23 @@ bool PairRecord::checkForPairs(const PackedSeq& seq) const
 	}
 }
 
-const PSequenceVector& PairRecord::getPairs(const PackedSeq& seq) const
+const PSequenceVector PairRecord::getPairs(const PackedSeq& seq) const
 {
-	// for any sequence, there HAS to be some pairs
-	assert(m_pairLookup.count(seq) > 0);
-	return m_pairLookup.find(seq)->second;
+	PSequenceVector ret;
+	addPairs(seq, ret);
+	addPairs(reverseComplement(seq), ret);
+	return ret;
+}
+
+void PairRecord::addPairs(const PackedSeq& seq, PSequenceVector& vec) const
+{
+	std::map<PackedSeq, PSequenceVector >::const_iterator findIter = m_pairLookup.find(seq);
+	if(findIter != m_pairLookup.end())
+	{
+		for(PSequenceVector::const_iterator iter = findIter->second.begin(); iter != findIter->second.end(); ++iter)
+		{
+			vec.push_back(*iter);
+		}
+	}
+	return;
 }

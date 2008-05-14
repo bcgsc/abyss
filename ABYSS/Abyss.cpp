@@ -74,7 +74,8 @@ int main(int argc, char* const* argv)
 		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
 	}
 
-	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
+	//AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
+	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
 	
 	write_graph("graph.dot", *pSC);
 

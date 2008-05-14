@@ -205,4 +205,9 @@ BranchDataIter BranchRecord::getEndIter()
 	return m_data.end();
 }
 
+const PackedSeq& BranchRecord::getSeqByIndex(size_t index) const
+{
+	assert(index < m_data.size());
+	return m_data[index];
+}
 

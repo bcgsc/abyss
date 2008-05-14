@@ -80,7 +80,7 @@ class PackedSeq
 		int getMultiplicity() const { return m_multiplicity; }
 		
 		// add to the multiplicity
-		void addMultiplicity() { m_multiplicity++; }
+		void addMultiplicity() { ++m_multiplicity; }
 		
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
