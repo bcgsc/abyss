@@ -355,12 +355,48 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
-static void shiftRight(uint64_t *pl, uint64_t *pr, uint8_t n)
+struct seq {
+	uint64_t x[(PackedSeq::NUM_BYTES + 7)/8];
+};
+
+/** Load with appropriate endianness for shifting. */
+static struct seq load(const uint8_t *src)
 {
-	uint64_t l = *pl, r = *pr;
-	*pl = l >> n;
-	*pr = n < 64 ? r >> n | l << (64 - n)
-		: l >> (n - 64);
+	assert(PackedSeq::NUM_BYTES == 10);
+	struct seq seq = {
+		(uint64_t)src[0] << 56
+			| (uint64_t)src[1] << 48
+			| (uint64_t)src[2] << 40
+			| (uint64_t)src[3] << 32
+			| (uint64_t)src[4] << 24
+			| (uint64_t)src[5] << 16
+			| (uint64_t)src[6] << 8
+			| (uint64_t)src[7] << 0,
+		(uint64_t)src[8] << 56
+			| (uint64_t)src[9] << 48
+	};
+	return seq;
+}
+
+/**
+ * Reverse the bytes by storing them in the reverse order of
+ * loading, and reverse the words in the same fasion.
+ */
+static void storeReverse(uint8_t *dest, struct seq seq)
+{
+	uint64_t *p0 = (uint64_t *)&dest[0];
+	uint16_t *p1 = (uint16_t *)&dest[8];
+	*p0 = seq.x[1];
+	*p1 = seq.x[0];
+}
+
+/** Shift right by the specified number of bits. */
+static void shiftRight(struct seq *pseq, uint8_t n)
+{
+	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
+	pseq->x[0] = x0 >> n;
+	pseq->x[1] = n < 64 ? x1 >> n | x0 << (64 - n)
+		: x0 >> (n - 64);
 }
 
 //
@@ -368,30 +404,16 @@ static void shiftRight(uint64_t *pl, uint64_t *pr, uint8_t n)
 //
 void PackedSeq::reverseComplement()
 {
-	assert(NUM_BYTES == 10);
-
-	// Load with appropriate endianness for shifting.
-	uint64_t l = (uint64_t)(uint8_t)m_seq[0] << 56
-		| (uint64_t)(uint8_t)m_seq[1] << 48
-		| (uint64_t)(uint8_t)m_seq[2] << 40
-		| (uint64_t)(uint8_t)m_seq[3] << 32
-		| (uint64_t)(uint8_t)m_seq[4] << 24
-		| (uint64_t)(uint8_t)m_seq[5] << 16
-		| (uint64_t)(uint8_t)m_seq[6] << 8
-		| (uint64_t)(uint8_t)m_seq[7] << 0;
-	uint64_t r = (uint64_t)(uint8_t)m_seq[8] << 56
-		| (uint64_t)(uint8_t)m_seq[9] << 48;
+	struct seq seq = load((uint8_t*)m_seq);
 
 	// Shift the bits flush to the right of the double word.
-	shiftRight(&l, &r, 128 - 2*m_length);
+	shiftRight(&seq, 128 - 2*m_length);
 
-	// Reverse the bytes by storing them in the reverse order of
-	// loading, and reverse the words in the same fasion. Complement
-	// the bits.
-	uint64_t *pl = (uint64_t *)&m_seq[0];
-	uint16_t *pr = (uint16_t *)&m_seq[8];
-	*pl = ~r;
-	*pr = ~l;
+	// Complement the bits.
+	seq.x[0] = ~seq.x[0];
+	seq.x[1] = ~seq.x[1];
+
+	storeReverse((uint8_t*)m_seq, seq);
 
 	// Reverse the pairs of bits withing a byte.
 	unsigned numBytes = getNumCodingBytes(m_length);
