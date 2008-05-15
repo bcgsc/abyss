@@ -186,22 +186,12 @@ int PackedSeq::compare(const PackedSeq& other) const
 //
 PackedSeq PackedSeq::subseq(int start, int len) const
 {
-	assert(start >= 0);
+	assert(start >= 0 && len >= 0);
 	assert(start + len <= m_length);
-	
-	// allocate space to hold the temporary string
-	int numBytes = getNumCodingBytes(len);
-	char* tempBuffer = new char[numBytes];
-	memset(tempBuffer, 0, numBytes);
-	
-	for(int i = start; i < start + len; i++)
-	{
-		int index = i - start;
-		setBaseCode(tempBuffer, index, getBaseCode(i));
-	}
-	
-	PackedSeq sub(tempBuffer, len);
-	delete [] tempBuffer;
+	PackedSeq sub;
+	sub.m_length = len;
+	for (int i = 0; i < len; i++)
+		setBaseCode(sub.m_seq, i, getBaseCode(start + i));
 	return sub;
 }
 
