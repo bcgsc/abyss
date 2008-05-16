@@ -341,15 +341,15 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
-struct seq {
+struct Seq {
 	uint64_t x[(PackedSeq::NUM_BYTES + 7)/8];
 };
 
 /** Load with appropriate endianness for shifting. */
-static struct seq load(const uint8_t *src)
+static Seq load(const uint8_t *src)
 {
 	assert(PackedSeq::NUM_BYTES == 10);
-	struct seq seq = {
+	Seq seq = {
 		(uint64_t)src[0] << 56
 			| (uint64_t)src[1] << 48
 			| (uint64_t)src[2] << 40
@@ -364,7 +364,7 @@ static struct seq load(const uint8_t *src)
 	return seq;
 }
 
-static void store(uint8_t *dest, struct seq seq)
+static void store(uint8_t *dest, Seq seq)
 {
 	dest[0] = seq.x[0] >> 56;
 	dest[1] = seq.x[0] >> 48;
@@ -382,7 +382,7 @@ static void store(uint8_t *dest, struct seq seq)
  * Reverse the bytes by storing them in the reverse order of
  * loading, and reverse the words in the same fasion.
  */
-static void storeReverse(uint8_t *dest, struct seq seq)
+static void storeReverse(uint8_t *dest, Seq seq)
 {
 	uint64_t *p0 = (uint64_t *)&dest[0];
 	uint16_t *p1 = (uint16_t *)&dest[8];
@@ -391,7 +391,7 @@ static void storeReverse(uint8_t *dest, struct seq seq)
 }
 
 /** Shift right by the specified number of bits. */
-static void shiftRight(struct seq *pseq, uint8_t n)
+static void shiftRight(Seq *pseq, uint8_t n)
 {
 	if (n == 0)
 		return;
@@ -402,7 +402,7 @@ static void shiftRight(struct seq *pseq, uint8_t n)
 }
 
 /** Shift left by the specified number of bits. */
-static void shiftLeft(struct seq *pseq, uint8_t n)
+static void shiftLeft(Seq *pseq, uint8_t n)
 {
 	if (n == 0)
 		return;
@@ -419,7 +419,7 @@ PackedSeq PackedSeq::subseq(int start, int len) const
 {
 	assert(start >= 0 && len >= 0);
 	assert(start + len <= m_length);
-	struct seq seq = load((uint8_t*)m_seq);
+	Seq seq = load((uint8_t*)m_seq);
 	shiftLeft(&seq, 2*start);
 	PackedSeq sub;
 	sub.m_length = len;
@@ -432,7 +432,7 @@ PackedSeq PackedSeq::subseq(int start, int len) const
 //
 void PackedSeq::reverseComplement()
 {
-	struct seq seq = load((uint8_t*)m_seq);
+	Seq seq = load((uint8_t*)m_seq);
 
 	// Shift the bits flush to the right of the double word.
 	shiftRight(&seq, 128 - 2*m_length);
