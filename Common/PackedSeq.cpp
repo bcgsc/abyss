@@ -396,9 +396,13 @@ static void shiftRight(Seq *pseq, uint8_t n)
 	if (n == 0)
 		return;
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
-	pseq->x[0] = x0 >> n;
-	pseq->x[1] = n < 64 ? x1 >> n | x0 << (64 - n)
-		: x0 >> (n - 64);
+	if (n < 64) {
+		pseq->x[0] = x0 >> n;
+		pseq->x[1] = x1 >> n | x0 << (64 - n);
+	} else {
+		pseq->x[0] = 0;
+		pseq->x[1] = x0 >> (n - 64);
+	}
 }
 
 /** Shift left by the specified number of bits. */
@@ -407,9 +411,13 @@ static void shiftLeft(Seq *pseq, uint8_t n)
 	if (n == 0)
 		return;
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
-	pseq->x[0] = n < 64 ? x0 << n | x1 >> (64 - n)
-		: x1 << (n - 64);
-	pseq->x[1] = x1 << n;
+	if (n < 64) {
+		pseq->x[0] = x0 << n | x1 >> (64 - n);
+		pseq->x[1] = x1 << n;
+	} else {
+		pseq->x[0] = x1 << (n - 64);
+		pseq->x[1] = 0;
+	}
 }
 
 //
@@ -434,12 +442,12 @@ void PackedSeq::reverseComplement()
 {
 	Seq seq = load((uint8_t*)m_seq);
 
-	// Shift the bits flush to the right of the double word.
-	shiftRight(&seq, 128 - 2*m_length);
-
 	// Complement the bits.
 	seq.x[0] = ~seq.x[0];
 	seq.x[1] = ~seq.x[1];
+
+	// Shift the bits flush to the right of the double word.
+	shiftRight(&seq, 128 - 2*m_length);
 
 	storeReverse((uint8_t*)m_seq, seq);
 
