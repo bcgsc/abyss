@@ -159,26 +159,13 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 }
 
 //
-// Compare two sequences. This could be faster and is something of a bottleneck.
+// Compare two sequences.
 // 
 int PackedSeq::compare(const PackedSeq& other) const
 {
 	assert(m_length == other.m_length);
-
 	unsigned nbytes = getNumCodingBytes(m_length);
-	if (m_length % 4 == 0)
-		return memcmp(m_seq, other.m_seq, nbytes);
-	nbytes--;
-	int cmp = memcmp(m_seq, other.m_seq, nbytes);
-	if (cmp != 0)
-		return cmp;
-	for (int i = 4 * nbytes; i < m_length; i++) {
-		int diff = (int)this->getBaseCode(i)
-			- (int)other.getBaseCode(i);
-		if (diff != 0)
-			return diff;
-	}
-	return 0;
+	return memcmp(m_seq, other.m_seq, nbytes);
 }
 
 //
@@ -428,7 +415,17 @@ PackedSeq PackedSeq::subseq(int start, int len) const
 	assert(start >= 0 && len >= 0);
 	assert(start + len <= m_length);
 	Seq seq = load((uint8_t*)m_seq);
+#if 0
+	// A simple left shift would suffice if it weren't necessary to
+	// zero the bases beyond the end of the sequence. compare requires
+	// that they are zeroed.
 	shiftLeft(&seq, 2*start);
+#else
+	// Zero the bases beyond the end of the sequence. A mask would
+	// probably be faster.
+	shiftRight(&seq, 128 - 2*(len + start));
+	shiftLeft(&seq, 128 - 2*len);
+#endif
 	PackedSeq sub;
 	sub.m_length = len;
 	store((uint8_t*)sub.m_seq, seq);
