@@ -633,22 +633,6 @@ void PackedSeq::printExtension() const
 }
 
 //
-//
-//
-void PackedSeq::setFlag(SeqFlag flag)
-{
-	m_flags |= flag;		
-}
-
-//
-//
-//
-bool PackedSeq::isFlagSet(SeqFlag flag) const
-{
-	return m_flags & flag;
-}
-
-//
 // set a base by the index [0, length)
 // beware, this does not check for out of bounds access
 //
