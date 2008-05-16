@@ -182,20 +182,6 @@ int PackedSeq::compare(const PackedSeq& other) const
 }
 
 //
-// return a subsequence of this sequence
-//
-PackedSeq PackedSeq::subseq(int start, int len) const
-{
-	assert(start >= 0 && len >= 0);
-	assert(start + len <= m_length);
-	PackedSeq sub;
-	sub.m_length = len;
-	for (int i = 0; i < len; i++)
-		setBaseCode(sub.m_seq, i, getBaseCode(start + i));
-	return sub;
-}
-
-//
 // Get the length of the sequence
 //
 int PackedSeq::getSequenceLength() const
@@ -378,6 +364,20 @@ static struct seq load(const uint8_t *src)
 	return seq;
 }
 
+static void store(uint8_t *dest, struct seq seq)
+{
+	dest[0] = seq.x[0] >> 56;
+	dest[1] = seq.x[0] >> 48;
+	dest[2] = seq.x[0] >> 40;
+	dest[3] = seq.x[0] >> 32;
+	dest[4] = seq.x[0] >> 24;
+	dest[5] = seq.x[0] >> 16;
+	dest[6] = seq.x[0] >> 8;
+	dest[7] = seq.x[0] >> 0;
+	dest[8] = seq.x[1] >> 56;
+	dest[9] = seq.x[1] >> 48;
+}
+
 /**
  * Reverse the bytes by storing them in the reverse order of
  * loading, and reverse the words in the same fasion.
@@ -393,10 +393,38 @@ static void storeReverse(uint8_t *dest, struct seq seq)
 /** Shift right by the specified number of bits. */
 static void shiftRight(struct seq *pseq, uint8_t n)
 {
+	if (n == 0)
+		return;
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
 	pseq->x[0] = x0 >> n;
 	pseq->x[1] = n < 64 ? x1 >> n | x0 << (64 - n)
 		: x0 >> (n - 64);
+}
+
+/** Shift left by the specified number of bits. */
+static void shiftLeft(struct seq *pseq, uint8_t n)
+{
+	if (n == 0)
+		return;
+	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
+	pseq->x[0] = n < 64 ? x0 << n | x1 >> (64 - n)
+		: x1 << (n - 64);
+	pseq->x[1] = x1 << n;
+}
+
+//
+// Return a subsequence of this sequence.
+//
+PackedSeq PackedSeq::subseq(int start, int len) const
+{
+	assert(start >= 0 && len >= 0);
+	assert(start + len <= m_length);
+	struct seq seq = load((uint8_t*)m_seq);
+	shiftLeft(&seq, 2*start);
+	PackedSeq sub;
+	sub.m_length = len;
+	store((uint8_t*)sub.m_seq, seq);
+	return sub;
 }
 
 //
