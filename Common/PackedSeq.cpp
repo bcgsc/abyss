@@ -511,6 +511,9 @@ char PackedSeq::shiftPrepend(char base)
 	// save the last base (which gets shifted out)
 	char lastBase = getBaseChar(m_seq, lastBaseByte, lastBaseIndex);
 	
+	// Zero the last base, which is required by compare.
+	setBaseCode(m_seq, lastBaseByte, lastBaseIndex, 0);
+
 	char shiftIn = base;
 	
 	// starting from the last byte, shift the new base in and get the captured base
