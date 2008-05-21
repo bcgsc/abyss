@@ -2,6 +2,7 @@
 #include "Options.h"
 
 FastaReader::FastaReader(const char* filename)
+	: m_nonacgt(0)
 {	
 	m_fileHandle.open(filename);
 	assert(m_fileHandle.is_open());
