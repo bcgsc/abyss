@@ -30,17 +30,11 @@ class PackedSeq
 		PackedSeq(const Sequence& seq);
 		PackedSeq(const char* const pData, int length);
 		
-		// Copy constructor
-		PackedSeq(const PackedSeq& pseq);
-		
 		// Write this packed sequence to the buffer
 		size_t serialize(char* buffer) const;
 		
 		// Read this packed sequence from the buffer
 		size_t unserialize(const char* buffer);		
-		
-		// Destructor
-		~PackedSeq();
 		
 		// Assignment Operator
 		PackedSeq& operator=(const PackedSeq& other);

@@ -10,14 +10,6 @@ PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
 }
 
 //
-// Destructor
-//
-PackedSeq::~PackedSeq()
-{
-
-}
-
-//
 // Construct a sequence from a series of bytes
 //
 PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0), m_multiplicity(1)
@@ -52,25 +44,6 @@ PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0), m_multiplicity(1)
 	
 	for(int i = 0; i < m_length; i++)
 		setBaseChar(m_seq, i, strData[i]);
-}
-
-//
-// Copy constructor
-//
-PackedSeq::PackedSeq(const PackedSeq& pseq)
-{
-	memset(m_seq, 0, NUM_BYTES);
-	// allocate memory and copy over the seq
-	m_length = pseq.m_length;
-	int numBytes = getNumCodingBytes(m_length);
-	
-	// copy the sequence over
-	memcpy(m_seq, pseq.m_seq, numBytes);
-	
-	m_flags = pseq.m_flags;
-	m_extRecord.dir[SENSE] = pseq.m_extRecord.dir[SENSE];
-	m_extRecord.dir[ANTISENSE] = pseq.m_extRecord.dir[ANTISENSE];
-	m_multiplicity = pseq.m_multiplicity;
 }
 
 //
