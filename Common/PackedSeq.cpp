@@ -9,16 +9,6 @@ PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
 }
 
 //
-// Construct a sequence from a series of bytes
-//
-PackedSeq::PackedSeq(const char* const pData, int length)
-	: m_length(length), m_flags(0), m_multiplicity(1)
-{
-	assert(length <= MAX_KMER);
-	memcpy(m_seq, pData, NUM_BYTES);
-}
-
-//
 // Construct a sequence from a String-based sequence
 //
 PackedSeq::PackedSeq(const Sequence& seq)

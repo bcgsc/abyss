@@ -24,11 +24,8 @@ struct ExtensionRecord
 class PackedSeq
 {
 	public:
-		
-		// Constructor/Destructor
 		PackedSeq();
 		PackedSeq(const Sequence& seq);
-		PackedSeq(const char* const pData, int length);
 		
 		// Write this packed sequence to the buffer
 		size_t serialize(char* buffer) const;
