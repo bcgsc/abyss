@@ -6,44 +6,28 @@
 //
 PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
 {
-	memset(m_seq, 0, NUM_BYTES);
 }
 
 //
 // Construct a sequence from a series of bytes
 //
-PackedSeq::PackedSeq(const char* const pData, int length) : m_flags(0), m_multiplicity(1)
+PackedSeq::PackedSeq(const char* const pData, int length)
+	: m_length(length), m_flags(0), m_multiplicity(1)
 {
-	assert(length < MAX_KMER);
-	memset(m_seq, 0, NUM_BYTES);
-	int numBytes = getNumCodingBytes(length);
-
-	// copy over the bytes
-	memcpy(m_seq, pData, numBytes);
-	
-	// set the sequence length
-	m_length = length;
+	assert(length <= MAX_KMER);
+	memcpy(m_seq, pData, NUM_BYTES);
 }
 
 //
 // Construct a sequence from a String-based sequence
 //
-PackedSeq::PackedSeq(const Sequence& seq) : m_flags(0), m_multiplicity(1)
+PackedSeq::PackedSeq(const Sequence& seq)
+	: m_length(seq.length()), m_flags(0), m_multiplicity(1)
 {
-	memset(m_seq, 0, NUM_BYTES);
-	int length = seq.length();
-
-	assert(length <= MAX_KMER);
-	
-	//printf("packing %s\n", seq.c_str());
-	// calculate the number of triplets required
-
-	m_length = length;
-
-	const char* strData = seq.data();
-	
+	assert(m_length <= MAX_KMER);
+	const char* p = seq.data();
 	for(int i = 0; i < m_length; i++)
-		setBaseChar(m_seq, i, strData[i]);
+		setBaseChar(m_seq, i, *p++);
 }
 
 //
