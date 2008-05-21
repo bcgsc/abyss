@@ -79,7 +79,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 // Function to load sequences into the collection
 //
 void loadSequences(ISequenceCollection* seqCollection,
-		std::string inFile, int /*readLength*/, int kmerSize)
+		std::string inFile)
 {
 	Timer timer("LoadSequences");
 	IFileReader* reader;
@@ -118,14 +118,14 @@ void loadSequences(ISequenceCollection* seqCollection,
 		{
 			
 			int len = iter->getSequenceLength();
-			if (kmerSize > len) {
+			if (opt::kmerSize > len) {
 				count_small++;
 				continue;
 			}
 			
-			for(int i = 0; i < len - kmerSize  + 1; i++)
+			for(int i = 0; i < len - opt::kmerSize  + 1; i++)
 			{
-				PackedSeq sub = iter->subseq(i, kmerSize);
+				PackedSeq sub = iter->subseq(i, opt::kmerSize);
 				// Add the sequence to the sequence collection
 				seqCollection->add(sub);
 			}
@@ -150,7 +150,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 
 	if (count_small > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
-				"shorter than %d bases\n", count_small, kmerSize);
+				"shorter than %d bases\n",
+				count_small, opt::kmerSize);
 	if (count_nonacgt > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
 				"containing non-ACGT characters\n", count_nonacgt);

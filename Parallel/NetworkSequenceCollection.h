@@ -103,10 +103,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		ResultPair pumpUntilResult(); 
 		
 		// run the assembly
-		void run(int readLength, int kmerSize);
+		void run();
 		
 		// run the assembly from the controller's point of view (rank 0 node)
-		void runControl(std::string fastaFile, int readLength, int kmerSize);
+		void runControl();
 		
 		// test if the checkpoint has been reached
 		bool checkpointReached(int numRequired) const;

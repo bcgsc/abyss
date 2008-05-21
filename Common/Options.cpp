@@ -19,9 +19,9 @@ PACKAGE " (ABySS) " VERSION "\n"
 "Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PACKAGE " [OPTION]... FILE\n"
-"Assemble FILE, which may be in FASTA (.fa) format or packed sequence\n"
-"format (.psq). The contigs are written to contigs.fa.\n"
+"Usage: " PACKAGE " [OPTION]... FILE...\n"
+"Assemble all input files, FILE, which may be in FASTA (.fa) format or \n"
+"packed sequence format (.psq). The contigs are written to contigs.fa.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
@@ -55,7 +55,7 @@ std::string graphPath;
 int verbose = 0;
 
 /** input FASTA files */
-std::string inFile;
+vector<std::string> inFiles;
 
 static const char *shortopts = "k:l:t:dg:v";
 
@@ -122,11 +122,6 @@ void parse(int argc, char* const* argv)
 		cerr << PACKAGE ": " << "missing -l,--read-length option\n";
 		die = true;
 	}
-	if (argc - optind > 1) {
-		cerr << PACKAGE ": " << "unexpected argument: "
-			<< argv[optind+1] << "\n";
-		die = true;
-	}
 	if (argv[optind] == NULL) {
 		cerr << PACKAGE ": " << "missing input sequence file argument\n";
 		die = true;
@@ -142,7 +137,8 @@ void parse(int argc, char* const* argv)
 		exit(EXIT_FAILURE);
 	}
 
-	inFile = argv[optind++];
+	inFiles.resize(argc - optind);
+	copy(&argv[optind], &argv[argc], inFiles.begin());
 
 	if (trimLen < 0)
 		trimLen = 6 * (readLen - kmerSize + 1);

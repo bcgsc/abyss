@@ -57,7 +57,7 @@ int numAdjMessageParsed = 0;
 //
 //
 //
-void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
+void NetworkSequenceCollection::run()
 {
 	bool stop = false;
 	while(!stop)
@@ -119,7 +119,7 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 			}
 			case NAS_POPBUBBLE:
 			{
-				performNetworkBubblePop(this, kmerSize);
+				performNetworkBubblePop(this, opt::kmerSize);
 				m_pComm->SendCheckPointMessage();
 				// Cleanup any messages that are pending
 				EndState();				
@@ -172,7 +172,7 @@ void NetworkSequenceCollection::run(int /*readLength*/, int kmerSize)
 //
 // The main loop for the controller (rank = 0 process)
 //
-void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength, int kmerSize)
+void NetworkSequenceCollection::runControl()
 {
 	bool stop = false;
 	while(!stop)
@@ -182,7 +182,10 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_LOADING:
 			{
 				Timer timer("LoadSequences");
-				AssemblyAlgorithms::loadSequences(this, fastaFile, readLength, kmerSize);
+				for_each(opt::inFiles.begin(), opt::inFiles.end(),
+					bind1st(
+						ptr_fun(AssemblyAlgorithms::loadSequences),
+						this));
 				
 				// Cleanup any messages that are pending
 				EndState();
@@ -323,7 +326,7 @@ void NetworkSequenceCollection::runControl(std::string fastaFile, int readLength
 			case NAS_POPBUBBLE:
 			{
 				// Perform a round-robin bubble pop to avoid concurrency issues
-				performNetworkBubblePop(this, kmerSize);
+				performNetworkBubblePop(this, opt::kmerSize);
 				
 				// Now tell all the slave nodes to perform the pop one by one
 				for(unsigned int i = 1; i < m_numDataNodes; ++i)

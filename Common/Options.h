@@ -2,6 +2,7 @@
 #define OPTIONS_H
 
 #include <string>
+#include <vector>
 
 namespace opt {
 	extern int kmerSize;
@@ -10,7 +11,7 @@ namespace opt {
 	extern bool disableErosion;
 	extern std::string graphPath;
 	extern int verbose;
-	extern std::string inFile;
+	extern std::vector<std::string> inFiles;
 
 	void parse(int argc, char* const* argv);
 }

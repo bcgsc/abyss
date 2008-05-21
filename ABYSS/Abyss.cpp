@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include <algorithm>
 #include <vector>
 #include <stdio.h>
 #include <deque>
@@ -35,7 +36,8 @@ int main(int argc, char* const* argv)
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 	//SequenceCollection* pSC = new SequenceCollection();
 	
-	AssemblyAlgorithms::loadSequences(pSC, opt::inFile, opt::readLen, opt::kmerSize);
+	for_each(opt::inFiles.begin(), opt::inFiles.end(),
+			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
 
 	printf("total sequences: %d\n", pSC->count());
 

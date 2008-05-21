@@ -30,20 +30,12 @@ int main(int argc, char** argv)
 
 	NetworkSequenceCollection networkSeqs(rank, size,
 			opt::kmerSize, opt::readLen);
-	if(rank == 0)
-	{
+
+	if (rank == 0) {
 		printf("num nodes: %d\n", size);
-	}
-	
-	if(rank == 0)
-	{
-		networkSeqs.runControl(opt::inFile,
-				opt::readLen, opt::kmerSize);
-	}
-	else
-	{
-		networkSeqs.run(opt::readLen, opt::kmerSize);
-	}
+		networkSeqs.runControl();
+	} else
+		networkSeqs.run();
 
 	MPI_Finalize();
 	return 0;
