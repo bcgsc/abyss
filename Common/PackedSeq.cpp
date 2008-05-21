@@ -713,7 +713,8 @@ char PackedSeq::getBaseChar(int seqIndex) const
 //
 // get a base code by the byte number and sub index
 //
-uint8_t PackedSeq::getBaseCode(const char* pSeq, int byteNum, int index) const
+uint8_t PackedSeq::getBaseCode(const char* pSeq,
+		int byteNum, int index)
 {
 	int shiftLen = 2 * (3 - index);
 	return (pSeq[byteNum] >> shiftLen) & 0x3;
@@ -722,7 +723,7 @@ uint8_t PackedSeq::getBaseCode(const char* pSeq, int byteNum, int index) const
 //
 // get a base by the byte number and sub index
 //
-char PackedSeq::getBaseChar(const char* pSeq, int byteNum, int index) const
+char PackedSeq::getBaseChar(const char* pSeq, int byteNum, int index)
 {
 	return codeToBase(getBaseCode(pSeq, byteNum, index));
 }

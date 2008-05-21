@@ -134,10 +134,10 @@ class PackedSeq
 		static inline void setBaseCode(char* pSeq, int byteNum, int index, uint8_t base);
 		static inline void setBaseChar(char* pSeq, int seqIndex, char base);
 		static inline void setBaseChar(char* pSeq, int byteNum, int index, char base);
-		inline uint8_t getBaseCode(const char* pSeq,
-				int byteNum, int index) const;
-		inline char getBaseChar(const char* pSeq,
-				int byteNum, int index) const;
+		static inline uint8_t getBaseCode(const char* pSeq,
+				int byteNum, int index);
+		static inline char getBaseChar(const char* pSeq,
+				int byteNum, int index);
 		
 		// Create the two bit code for the base
 		static inline uint8_t baseToCode(char base);
@@ -149,8 +149,10 @@ class PackedSeq
 		static inline unsigned seqIndexToBaseIndex(unsigned seqIndex);
 		
 		// shift a single byte
-		char leftShiftByte(char* pSeq, int byteNum, int index, char base);
-		char rightShiftByte(char* pSeq, int byteNum, int index, char base);
+		static char leftShiftByte(char* pSeq,
+				int byteNum, int index, char base);
+		static char rightShiftByte(char* pSeq,
+				int byteNum, int index, char base);
 		
 		char m_seq[NUM_BYTES];
 		char m_length;
