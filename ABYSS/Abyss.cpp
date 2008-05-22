@@ -8,17 +8,15 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
-#include <iostream>
 
 static void write_graph(const std::string& path,
 		/*const*/ ISequenceCollection& c)
 {
 	if (path.length() == 0)
 		return;
-	cout << "Writing graph to " << path << "..." << endl;
+	printf("Writing graph to %s\n", path.c_str());
 	ofstream out(path.c_str());
 	DotWriter::write(out, c);
-	cout << "done." << endl;
 }
 
 int main(int argc, char* const* argv)
