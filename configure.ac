@@ -65,6 +65,7 @@ AC_CONFIG_FILES([
 	DataLayer/Makefile
 	Parallel/Makefile
 	Scaffold/Makefile
+	bin/Makefile
 	fasta2psq/Makefile
 ])
 AC_OUTPUT
