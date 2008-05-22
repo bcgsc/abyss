@@ -141,7 +141,7 @@ void NetworkSequenceCollection::run()
 				printf("%d: Assembling\n", m_id);
 				// The slave node opens the file in append mode
 				FastaWriter* writer = new FastaWriter("pcontigs.fa", true);
-				performNetworkAssembly(this, writer);
+				unsigned numAssembled = performNetworkAssembly(this, writer);
 				
 				// Close the writer
 				delete writer;
@@ -151,7 +151,7 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
-				m_pComm->SendCheckPointMessage();	
+				m_pComm->SendCheckPointMessage(numAssembled);
 				break;
 			}
 			case NAS_WAITING:
@@ -401,7 +401,7 @@ void NetworkSequenceCollection::runControl()
 				
 				// The master opens the file in truncate mode
 				FastaWriter* writer = new FastaWriter("pcontigs.fa");
-				performNetworkAssembly(this, writer);
+				unsigned numAssembled = performNetworkAssembly(this, writer);
 				
 				// Close the writer
 				delete writer;
@@ -412,13 +412,17 @@ void NetworkSequenceCollection::runControl()
 				// Now tell all the slave nodes to perform the assemble one by one
 				for(unsigned int i = 1; i < m_numDataNodes; ++i)
 				{
-					m_pComm->SendControlMessageToNode(i, APC_ASSEMBLE);
+					m_pComm->SendControlMessageToNode(i,
+							APC_ASSEMBLE, numAssembled);
 					
 					// Wait for this node to return
+					int slaveNumAssembled = 0;
 					while(!checkpointReached(1))
 					{
-						pumpNetwork();
+						pumpNetwork(&slaveNumAssembled);
 					}
+					printf("slaveNumAssembled: %d\n", slaveNumAssembled);
+					numAssembled += slaveNumAssembled;
 					
 					// Cleanup any messages that are pending
 					EndState();
@@ -469,7 +473,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	m_numReachedCheckpoint = 0;
 }
 
-APResult NetworkSequenceCollection::pumpNetwork()
+APResult NetworkSequenceCollection::pumpNetwork(int* pArg)
 {
 	int senderID;
 	m_pComm->flush();	
@@ -486,7 +490,9 @@ APResult NetworkSequenceCollection::pumpNetwork()
 		{
 			case APM_CONTROL:
 				{
-					parseControlMessage(senderID);
+					int arg = parseControlMessage();
+					if (pArg != NULL)
+						*pArg = arg;
 					break;
 				}
 			case APM_BUFFERED:
@@ -575,7 +581,7 @@ void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, c
 //
 //
 //
-void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
+int NetworkSequenceCollection::parseControlMessage()
 {
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
@@ -636,6 +642,7 @@ void NetworkSequenceCollection::parseControlMessage(int /*senderID*/)
 			break;	
 		}		
 	}
+	return controlMsg.argument;
 }
 
 //
@@ -991,11 +998,11 @@ int NetworkSequenceCollection::processBranchesPop()
 //
 // Distributed trimming function
 // 
-void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
+unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
 	
-	int numAssembled = 0;
+	unsigned numAssembled = 0;
 	
 	// The branch ids
 	uint64_t branchGroupID = 0;
@@ -1052,6 +1059,7 @@ void NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqC
 	}		
 	m_pLog->write(timer.toString().c_str());
 	printf("num assembled: %d\n", numAssembled);
+	return numAssembled;
 }
 
 //
@@ -1079,7 +1087,8 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 				numAssembled++;
 				
 				// Output the contig
-				fileWriter->WriteSequence(contig, currContigID++, 0);
+				fileWriter->WriteSequence(contig,
+						m_numAssembled + currContigID++, 0);
 			}
 			
 			// Mark the group for removal

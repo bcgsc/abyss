@@ -89,7 +89,7 @@ class ISequenceCollection
 		
 		// call to service network operations if needed
 		// for non-network sequence collections this will simply return
-		virtual APResult pumpNetwork() = 0;
+		virtual APResult pumpNetwork(int* pArg = NULL) = 0;
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;

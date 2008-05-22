@@ -46,7 +46,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int performNetworkBubblePop(ISequenceCollection* seqCollection, int kmerSize);
 		
 		// Perform a network assembly
-		void performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);
+		unsigned performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);
 
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
@@ -97,7 +97,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 		
 		// The loop to run the network code
-		APResult pumpNetwork();
+		APResult pumpNetwork(int* pArg = NULL);
 		
 		// Loop over the pumping function while waiting for a result from the network
 		ResultPair pumpUntilResult(); 
@@ -141,7 +141,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool isBranchRedundant(BranchRecord& branch);
 		
 		// Network message parsers
-		void parseControlMessage(int senderID);
+		int parseControlMessage();
 		
 		// Read a fasta file and distribute the sequences
 		void readSequences(std::string fastaFile, int readLength, int kmerSize);
