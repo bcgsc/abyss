@@ -126,6 +126,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void handleSequenceDataResponse(int senderID, SeqDataResponse& message);		
 		
 	private:
+		void loadSequences();
 	
 		// Branch processing
 		int processBranchesTrim();

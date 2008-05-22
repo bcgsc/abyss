@@ -50,6 +50,27 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	m_pLog = 0;
 }
 
+void NetworkSequenceCollection::loadSequences()
+{
+	Timer timer("LoadSequences");
+	for_each(opt::inFiles.begin(), opt::inFiles.end(),
+			bind1st(
+				ptr_fun(AssemblyAlgorithms::loadSequences),
+				this));
+
+	// Cleanup any messages that are pending
+	EndState();
+
+	SetState(NAS_FINALIZE);
+	Log* pFake = new Log("load.done");
+	pFake->write("done load");
+	delete pFake;
+
+	m_pLog->write(timer.toString().c_str());
+	// Tell the rest of the loaders that the load is finished
+	m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);		
+}
+
 int adjSet = 0;
 int numAdjMessageSent = 0;
 int numAdjMessageParsed = 0;
@@ -180,26 +201,8 @@ void NetworkSequenceCollection::runControl()
 		switch(m_state)
 		{
 			case NAS_LOADING:
-			{
-				Timer timer("LoadSequences");
-				for_each(opt::inFiles.begin(), opt::inFiles.end(),
-					bind1st(
-						ptr_fun(AssemblyAlgorithms::loadSequences),
-						this));
-				
-				// Cleanup any messages that are pending
-				EndState();
-								
-				SetState(NAS_FINALIZE);
-				Log* pFake = new Log("load.done");
-				pFake->write("done load");
-				delete pFake;
-				
-				m_pLog->write(timer.toString().c_str());
-				// Tell the rest of the loaders that the load is finished
-				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);		
+				loadSequences();
 				break;
-			}
 			case NAS_FINALIZE:
 			{
 				finalize();
