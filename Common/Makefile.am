@@ -6,7 +6,6 @@ libcommon_a_CPPFLAGS = \
 
 libcommon_a_SOURCES = \
 	AssemblyAlgorithms.cpp AssemblyAlgorithms.h \
-	AssemblyData.cpp AssemblyData.h \
 	CommonDefs.h \
 	CommonUtils.cpp CommonUtils.h \
 	Config.cpp Config.h \

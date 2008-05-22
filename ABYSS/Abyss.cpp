@@ -6,12 +6,10 @@
 #include <deque>
 #include <iostream>
 #include <fstream>
-#include "Abyss.h"
 #include "CommonUtils.h"
 #include "DotWriter.h"
 #include "ISequenceCollection.h"
 #include "Options.h"
-#include "SequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "AssemblyAlgorithms.h"
 #include "Timer.h"
