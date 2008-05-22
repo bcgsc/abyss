@@ -1079,7 +1079,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 				numAssembled++;
 				
 				// Output the contig
-				fileWriter->WriteSequence(contig, currContigID, 0);
+				fileWriter->WriteSequence(contig, currContigID++, 0);
 			}
 			
 			// Mark the group for removal
