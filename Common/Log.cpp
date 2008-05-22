@@ -1,10 +1,13 @@
 #include "Log.h"
+#include <unistd.h>
 
 Log::Log(std::string filename)
+	: m_fileHandle(filename.c_str())
 {
-	std::ios_base::openmode mode = std::ios::out;
-	m_fileHandle.open(filename.c_str(), mode);
 	assert(m_fileHandle.is_open());	
+	char hostname[HOST_NAME_MAX];
+	gethostname(hostname, sizeof hostname);
+	m_fileHandle << hostname << std::endl;
 }
 
 Log::~Log()
@@ -15,7 +18,4 @@ Log::~Log()
 void Log::write(std::string str)
 {
 	m_fileHandle << str << std::endl;
-	
-	// write out the message immediately
-	m_fileHandle.flush();
 }
