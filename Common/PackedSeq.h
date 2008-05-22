@@ -58,17 +58,17 @@ class PackedSeq
 		Sequence decode() const;
 		Sequence decodeByte(const char byte) const;
 		
-		unsigned int getCode() const;
+		unsigned getCode() const;
 		size_t getHashCode() const;
 		
 		// get a subsequence of this packed seq
-		PackedSeq subseq(int start, int len) const;		
+		PackedSeq subseq(unsigned start, unsigned len) const;		
 		
 		// get the length of the sequence
-		int getSequenceLength() const;
+		unsigned getSequenceLength() const;
 		
 		// get the multiplicity of this sequence
-		int getMultiplicity() const { return m_multiplicity; }
+		unsigned getMultiplicity() const { return m_multiplicity; }
 		
 		// add to the multiplicity
 		void addMultiplicity() { ++m_multiplicity; }
@@ -79,8 +79,8 @@ class PackedSeq
 		// get a particular base
 		char getFirstBase() const { return getBaseChar(0); }
 		char getLastBase() const { return getBaseChar(m_length - 1); }
-		uint8_t getBaseCode(int seqIndex) const;
-		char getBaseChar(int seqIndex) const;
+		uint8_t getBaseCode(unsigned seqIndex) const;
+		char getBaseChar(unsigned seqIndex) const;
 		
 		// flags
 		void setFlag(SeqFlag flag) { m_flags |= flag; }
@@ -116,19 +116,23 @@ class PackedSeq
 		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
 		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
 		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
-		static const int MAX_KMER = 40;
-		static const int NUM_BYTES = MAX_KMER / 4;
+		static const unsigned MAX_KMER = 40;
+		static const unsigned NUM_BYTES = MAX_KMER / 4;
 
 	private:
 		// get/set a particular value
-		static inline void setBaseCode(char* pSeq, int seqIndex, uint8_t base);
-		static inline void setBaseCode(char* pSeq, int byteNum, int index, uint8_t base);
-		static inline void setBaseChar(char* pSeq, int seqIndex, char base);
-		static inline void setBaseChar(char* pSeq, int byteNum, int index, char base);
+		static inline void setBaseCode(char* pSeq,
+				unsigned seqIndex, uint8_t base);
+		static inline void setBaseCode(char* pSeq,
+				unsigned byteNum, unsigned index, uint8_t base);
+		static inline void setBaseChar(char* pSeq,
+				unsigned seqIndex, char base);
+		static inline void setBaseChar(char* pSeq,
+				unsigned byteNum, unsigned index, char base);
 		static inline uint8_t getBaseCode(const char* pSeq,
-				int byteNum, int index);
+				unsigned byteNum, unsigned index);
 		static inline char getBaseChar(const char* pSeq,
-				int byteNum, int index);
+				unsigned byteNum, unsigned index);
 		
 		// Create the two bit code for the base
 		static inline uint8_t baseToCode(char base);
@@ -141,12 +145,12 @@ class PackedSeq
 		
 		// shift a single byte
 		static char leftShiftByte(char* pSeq,
-				int byteNum, int index, char base);
+				unsigned byteNum, unsigned index, char base);
 		static char rightShiftByte(char* pSeq,
-				int byteNum, int index, char base);
+				unsigned byteNum, unsigned index, char base);
 		
 		char m_seq[NUM_BYTES];
-		char m_length;
+		uint8_t m_length;
 		char m_flags;
 		uint16_t m_multiplicity;
 		ExtensionRecord m_extRecord;
