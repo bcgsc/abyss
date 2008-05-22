@@ -81,7 +81,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 void loadSequences(ISequenceCollection* seqCollection,
 		std::string inFile)
 {
-	Timer timer("LoadSequences");
+	Timer timer("LoadSequences " + inFile);
 	IFileReader* reader;
 	
 	// Determine the input file type

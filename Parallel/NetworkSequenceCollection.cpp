@@ -10,7 +10,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 											 int numDataNodes, 
 											 int kmerSize, 
 											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
-											 m_state(NAS_LOADING), m_kmer(kmerSize), m_readLen(readLen), 
+											 m_kmer(kmerSize), m_readLen(readLen), 
 											 m_numBasesAdjSet(0), m_startTrimLen(-1), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0), m_timer("Total")
 {
 	// Load the phase space
@@ -53,22 +53,11 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 void NetworkSequenceCollection::loadSequences()
 {
 	Timer timer("LoadSequences");
-	for_each(opt::inFiles.begin(), opt::inFiles.end(),
-			bind1st(
-				ptr_fun(AssemblyAlgorithms::loadSequences),
-				this));
-
-	// Cleanup any messages that are pending
-	EndState();
-
-	SetState(NAS_FINALIZE);
-	Log* pFake = new Log("load.done");
-	pFake->write("done load");
-	delete pFake;
-
+	for (unsigned i = m_id;
+			i < opt::inFiles.size();
+			i += m_numDataNodes)
+		AssemblyAlgorithms::loadSequences(this, opt::inFiles[i]);
 	m_pLog->write(timer.toString().c_str());
-	// Tell the rest of the loaders that the load is finished
-	m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);		
 }
 
 int adjSet = 0;
@@ -80,17 +69,19 @@ int numAdjMessageParsed = 0;
 //
 void NetworkSequenceCollection::run()
 {
+	SetState(NAS_LOADING);
+
 	bool stop = false;
 	while(!stop)
 	{
 		switch(m_state)
 		{
 			case NAS_LOADING:
-			{
-				// Spin in the message loop, waiting for sequences
-				pumpNetwork();
+				loadSequences();
+				EndState();
+				SetState(NAS_WAITING);
+				m_pComm->SendCheckPointMessage();
 				break;
-			}
 			case NAS_FINALIZE:
 			{
 				finalize();
@@ -195,6 +186,8 @@ void NetworkSequenceCollection::run()
 //
 void NetworkSequenceCollection::runControl()
 {
+	SetState(NAS_LOADING);
+
 	bool stop = false;
 	while(!stop)
 	{
@@ -202,6 +195,12 @@ void NetworkSequenceCollection::runControl()
 		{
 			case NAS_LOADING:
 				loadSequences();
+				EndState();
+				m_numReachedCheckpoint++;
+				while (!checkpointReached(m_numDataNodes))
+					pumpNetwork();
+				SetState(NAS_FINALIZE);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);
 				break;
 			case NAS_FINALIZE:
 			{
