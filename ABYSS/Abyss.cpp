@@ -1,18 +1,14 @@
-#include <stdio.h>
-
-#include <algorithm>
-#include <vector>
-#include <stdio.h>
-#include <deque>
-#include <iostream>
-#include <fstream>
+#include "AssemblyAlgorithms.h"
 #include "CommonUtils.h"
 #include "DotWriter.h"
 #include "ISequenceCollection.h"
 #include "Options.h"
 #include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
 #include "Timer.h"
+#include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
 
 static void write_graph(const std::string& path,
 		/*const*/ ISequenceCollection& c)
