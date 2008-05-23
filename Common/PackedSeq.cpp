@@ -159,39 +159,18 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
 //
 unsigned PackedSeq::getCode() const
 {
-	const int NUM_BYTES = 4;
-	char firstByte[NUM_BYTES];
-	for(int i  = 0; i < NUM_BYTES; i++)
-	{
-		firstByte[i] = m_seq[i];
-	}
-	
-	// Fill out the last byte as the reverse complement of the last 8 bases
-	char lastByte[NUM_BYTES];
-	int prime = 101;
-	
-	for(int i = 0; i < 4*NUM_BYTES; i++)
-	{
+	const unsigned NUM_BYTES = 4;
+	char rcSeq[NUM_BYTES];
+	for (unsigned i = 0; i < 4*NUM_BYTES; i++) {
 		unsigned index = m_length - 1 - i;
-		setBaseCode(lastByte, i/4, i % 4,
+		setBaseCode(rcSeq, i,
 				complementBaseCode(getBaseCode(index)));
 	}
 
-	unsigned int sum = 0;
-	
-	for(int i = 0; i < NUM_BYTES; i++)
-	{
-		int total = 1;
-		for(int j = 0; j < i; j++)
-		{
-			total *= prime;
-		}
-		
-		sum += (firstByte[i] ^ lastByte[i]) * total;
-	}
-	
-	//short f1 = (firstByte[1] ^ lastByte[1]);
-	//printf("%d code\n", code);
+	const unsigned prime = 101;
+	unsigned sum = 0;
+	for (unsigned i = 0; i < NUM_BYTES; i++)
+		sum = prime * sum + (m_seq[i] ^ rcSeq[i]);
 	return sum;
 }
 
