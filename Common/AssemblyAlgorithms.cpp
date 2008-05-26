@@ -145,6 +145,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 				size_t numseqs = seqCollection->count();
 				printf("read %u sequences (%zu delta: %zu)\n",
 						count, numseqs, numseqs - lastNum);
+				fflush(stdout);
 				lastNum = numseqs;
 			}
 		}
