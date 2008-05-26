@@ -1,4 +1,3 @@
-#include <iostream>
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastqReader.h"
@@ -7,6 +6,7 @@
 #include "Timer.h"
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
+#include <stdio.h>
 
 namespace AssemblyAlgorithms
 {
@@ -116,7 +116,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 	unsigned count = 0, count_small = 0;
 	
 	// Read the sequences and add them to the network sequence space
-	size_t lastNum = 0;
+	size_t lastNum = seqCollection->count();
 	
 	bool stop = false;
 	while(!stop)
@@ -139,19 +139,21 @@ void loadSequences(ISequenceCollection* seqCollection,
 				seqCollection->add(sub);
 			}
 			
+			count++;
 			// Output the progress
-			if(count % 100000 == 0)
-			{
+			if (count % 100000 == 0) {
 				size_t numseqs = seqCollection->count();
-				std::cout << "read " << count << " sequences (" << seqCollection->count() << " delta: " << numseqs - lastNum << ")" << std::endl;
-				std::cout.flush();
+				printf("read %u sequences (%zu delta: %zu)\n",
+						count, numseqs, numseqs - lastNum);
 				lastNum = numseqs;
 			}
-			count++;
 		}
 			
 		seqCollection->pumpNetwork();
 	}
+	size_t numseqs = seqCollection->count();
+	printf("read %u sequences (%zu delta: %zu)\n",
+			count, numseqs, numseqs - lastNum);
 
 	unsigned count_nonacgt = reader->getNonACGT();
 	delete reader;
