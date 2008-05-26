@@ -400,7 +400,6 @@ void NetworkSequenceCollection::runControl()
 					{
 						pumpNetwork(&slaveNumAssembled);
 					}
-					printf("slaveNumAssembled: %d\n", slaveNumAssembled);
 					numAssembled += slaveNumAssembled;
 					
 					// Cleanup any messages that are pending
