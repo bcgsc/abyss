@@ -131,8 +131,9 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_POPBUBBLE:
 			{
-				performNetworkBubblePop(this, opt::kmerSize);
-				m_pComm->SendCheckPointMessage();
+				unsigned numPopped
+					= performNetworkBubblePop(this, opt::kmerSize);
+				m_pComm->SendCheckPointMessage(numPopped);
 				// Cleanup any messages that are pending
 				EndState();				
 				SetState(NAS_WAITING);	
@@ -326,35 +327,11 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_POPBUBBLE:
-			{
-				// Perform a round-robin bubble pop to avoid concurrency issues
-				performNetworkBubblePop(this, opt::kmerSize);
-				
-				// Now tell all the slave nodes to perform the pop one by one
-				for(unsigned int i = 1; i < m_numDataNodes; ++i)
-				{
-					m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE);
-					
-					// Cleanup any messages that are pending
-					EndState();	
-					
-					// Wait for this node to return
-					while(!checkpointReached(1))
-					{
-						pumpNetwork();
-					}
-					
-					//Reset the state and loop
-					SetState(NAS_POPBUBBLE);
-				}
-				
-				// Cleanup any messages that are pending
-				EndState();				
-								
+				while (controlPopBubbles() > 0);
 				SetState(NAS_TRIM2);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, opt::trimLen);			
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_TRIM, opt::trimLen);
 				break;
-			}
 			case NAS_TRIM2:
 			{
 				performNetworkTrim(this, opt::trimLen);
@@ -929,9 +906,8 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 	}
 	
 	m_pLog->write(timer.toString().c_str());
-	printf("Removed %d bubbles\n", numPopped);
+	PrintDebug(1, "Removed %d bubbles\n", numPopped);
 	return numPopped;	
-	
 }
 
 //
@@ -991,6 +967,35 @@ int NetworkSequenceCollection::processBranchesPop()
 	}	
 	
 	return numPopped;		
+}
+
+int NetworkSequenceCollection::controlPopBubbles()
+{
+	// Perform a round-robin bubble pop to avoid concurrency issues
+	unsigned numPopped = performNetworkBubblePop(this, opt::kmerSize);
+
+	// Now tell all the slave nodes to perform the pop one by one
+	for(unsigned i = 1; i < m_numDataNodes; ++i) {
+		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE);
+
+		// Cleanup any messages that are pending
+		EndState();
+
+		// Wait for this node to return
+		int slaveNumPopped;
+		while (!checkpointReached(1))
+			pumpNetwork(&slaveNumPopped);
+		numPopped += slaveNumPopped;
+
+		//Reset the state and loop
+		SetState(NAS_POPBUBBLE);
+	}
+
+	// Cleanup any messages that are pending
+	EndState();
+
+	printf("Removed %d bubbles\n", numPopped);
+	return numPopped;
 }
 
 //
