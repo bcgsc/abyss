@@ -20,8 +20,9 @@ PACKAGE " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
-"Assemble all input files, FILE, which may be in FASTA (.fa) format or \n"
-"packed sequence format (.psq). The contigs are written to contigs.fa.\n"
+"Assemble all input files, FILE, which may be in FASTA (.fa) format, or\n"
+"FASTQ format (.fastq), or packed sequence format (.psq). The contigs\n"
+"are written to contigs.fa.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"

@@ -1,0 +1,60 @@
+#include "FastqReader.h"
+#include "Options.h"
+
+FastqReader::FastqReader(const char* filename)
+	: m_nonacgt(0)
+{
+	m_fileHandle.open(filename);
+	assert(m_fileHandle.is_open());
+}
+
+FastqReader::~FastqReader()
+{
+	m_fileHandle.close();
+}
+
+
+Sequence FastqReader::ReadSequence()
+{
+	char buf[MAX_FASTA_LINE];
+	char seq[MAX_FASTA_LINE];
+
+	// Read the header.
+	m_fileHandle.getline(buf, sizeof buf);
+	assert(buf[0] == '@');
+
+	// Read the sequence.
+	m_fileHandle.getline(seq, sizeof seq);
+
+	// Read the quality values.
+	m_fileHandle.getline(buf, sizeof buf);
+	assert(buf[0] == '+');
+	m_fileHandle.getline(buf, sizeof buf);
+
+	return Sequence(seq);
+}
+
+/**
+ * Read in a group of sequences and return whether any sequences
+ * remain.
+ */
+bool FastqReader::ReadSequences(PSequenceVector& outseqs)
+{
+	Sequence seq = ReadSequence();
+	size_t pos = seq.find_first_not_of("ACGT");
+	if (pos == std::string::npos) {
+		outseqs.push_back(seq);
+	} else {
+		if (opt::verbose > 0)
+			fprintf(stderr,
+					"warning: discarded sequence containing `%c'\n",
+					seq[pos]);
+		m_nonacgt++;
+	}
+	return isGood();
+}
+
+bool FastqReader::isGood()
+{
+	return !(m_fileHandle.eof() || m_fileHandle.peek() == EOF);
+}

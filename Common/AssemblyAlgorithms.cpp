@@ -1,5 +1,7 @@
 #include <iostream>
 #include "AssemblyAlgorithms.h"
+#include "FastaReader.h"
+#include "FastqReader.h"
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
@@ -91,6 +93,11 @@ void loadSequences(ISequenceCollection* seqCollection,
 		printf("Reading packed seq binary file %s\n", inFile.c_str());
 		reader = new PackedSeqReader(inFile.c_str());
 	}
+	else if(inFile.find(".fastq") != std::string::npos)
+	{
+		printf("Reading fastq file %s\n", inFile.c_str());
+		reader = new FastqReader(inFile.c_str());
+	}
 	else if(inFile.find(".fa") != std::string::npos || inFile.find(".fasta") != std::string::npos)
 	{
 		printf("Reading fasta file %s\n", inFile.c_str());
@@ -98,7 +105,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 	}
 	else
 	{
-		printf("Input file %s has an unknown type (requires .fasta, .fa or .psq)\n", inFile.c_str());
+		printf("Input file %s is an unknown format "
+				"(requires .fasta, .fa, .fastq or .psq)\n",
+				inFile.c_str());
 		exit(0);
 	}
 	
