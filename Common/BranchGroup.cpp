@@ -107,41 +107,13 @@ BranchGroupStatus BranchGroup::updateStatus()
 		}
 	}
 	
-	// Check if the sequences have joined back together
-	
-	// For each sequence check if the last added sequence is present in ALL the other branches
-	// This indidates the branches have joined back together
-	// It is not necessary that the bubbles are the same length
-	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
-	{
-		const PackedSeq& lastSeq = iter->second.getLastSeq();
-		bool allFound = true;
-		for(BranchGroupData::const_iterator otherIter = m_branches.begin(); otherIter != m_branches.end(); ++otherIter)
-		{
-			// Skip selfcheck
-			if(iter == otherIter)
-			{
-				continue;
-			}
-			
-			// Check if the sequence is in this branch
-			if(!otherIter->second.exists(lastSeq))
-			{
-				allFound = false;
-				break;
-			}
-		}
-		
-		if(allFound)
-		{
-			m_status = BGS_JOINED;
-			return m_status;
-		}
-	}
-	
-	// If we reached here, no stop condition was met and no join was found so the extension can continue
-	m_status = BGS_ACTIVE;
-	return m_status;
+	BranchGroupData::const_iterator it = m_branches.begin();
+	const PackedSeq& lastSeq = it->second.getLastSeq();
+	while (++it != m_branches.end())
+		if (it->second.getLastSeq() != lastSeq)
+			return m_status = BGS_ACTIVE;
+	// All the branches of the bubble have joined.
+	return m_status = BGS_JOINED;
 }
 
 // 
