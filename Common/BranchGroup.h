@@ -33,6 +33,12 @@ class BranchGroup
 		// Get the number of groups
 		size_t getNumBranches() const { return m_branches.size(); }
 		
+		// Set the maximum number of branches.
+		void setMaxNumBranches(size_t maxNumBranches)
+		{
+			m_maxNumBranches = maxNumBranches;
+		}
+
 		// Check the stop conditions for the branch growth
 		BranchGroupStatus updateStatus();
 		
