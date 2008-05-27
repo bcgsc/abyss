@@ -63,6 +63,8 @@ AC_CONFIG_FILES([
 	Align/Makefile
 	Common/Makefile
 	DataLayer/Makefile
+	ExpPaired/Makefile
+	Graph/Makefile
 	Parallel/Makefile
 	Scaffold/Makefile
 	bin/Makefile

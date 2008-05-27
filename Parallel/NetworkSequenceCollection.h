@@ -67,6 +67,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Find if this sequence has the specified flag set
 		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
 		
+		// Clear the specified flag from every sequence in the collection
+		void wipeFlag(SeqFlag flag);
+		
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq);
 

@@ -35,3 +35,21 @@ TreeScore NodeScores::getScore(const PackedSeq& seq)
 	
 	return iter->second;
 }
+
+void NodeScores::reset()
+{
+	for(ScoreRecord::iterator iter = m_scoreRecord.begin(); iter != m_scoreRecord.end(); iter++)
+	{
+		iter->second.clear();
+	}
+}
+
+void NodeScores::clearScore(const PackedSeq& seq)
+{
+	ScoreRecord::iterator iter = m_scoreRecord.find(seq);
+	if(iter != m_scoreRecord.end())
+	{
+		iter->second.clear();
+	}	
+}
+

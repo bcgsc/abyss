@@ -20,23 +20,23 @@ Aligner::~Aligner()
 //
 // Create the database for the reference sequences
 //
-void Aligner::CreateDatabase(ContigMap refSeqs)
+void Aligner::CreateDatabase(const idSeqMap& refSeqs)
 {
-	for(CMIter iter = refSeqs.begin(); iter != refSeqs.end(); iter++)
+	for(idSeqMap::const_iterator iter = refSeqs.begin(); iter != refSeqs.end(); iter++)
 	{
 		ContigID currID = iter->first;
-		Sequence& currSeq = iter->second.seq;
+		Sequence* pCurrSeq = iter->second;
 		
 		// Break the ref sequence into kmers of the hash size
-		int size = currSeq.length();
+		int size = pCurrSeq->length();
 		for(int i = 0; i < (size - m_hashSize); ++i)
 		{
-			Sequence subseq = currSeq.substr(i, m_hashSize);
+			Sequence subseq = pCurrSeq->substr(i, m_hashSize);
 			
 			// skip seqs that have unknown bases
 			if(subseq.find("N") == std::string::npos)
 			{
-				PackedSeq kmer(currSeq.substr(i, m_hashSize));
+				PackedSeq kmer(pCurrSeq->substr(i, m_hashSize));
 				//printf("curr seq: %s\n", kmer.decode().c_str());
 				Position p;
 				p.contig = currID;

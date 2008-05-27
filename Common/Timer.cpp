@@ -16,7 +16,7 @@ Timer::~Timer()
 std::string Timer::toString() const
 {
 	clock_t ticks = std::clock() - m_start;
-	clock_t time = ticks / CLOCKS_PER_SEC;
+	double time = (double)ticks / (double)CLOCKS_PER_SEC;
 	
 	std::stringstream os;
 	os << m_funcStr << ": " << time << "s";

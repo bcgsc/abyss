@@ -743,7 +743,16 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		}
 		else if(status == SC_ISLAND)
 		{
-			// singleton, ignore for now
+			// singleton, output
+			BranchRecord currBranch(SENSE, -1);
+			currBranch.addSequence(*iter);
+			currBranch.terminate(BS_NOEXT);
+			Sequence contig;
+			processTerminatedBranchAssemble(seqCollection, currBranch, contig);
+			
+			// Output the contig
+			fileWriter->WriteSequence(contig, contigID, 0);
+			contigID++;
 			continue;
 		}
 
@@ -786,7 +795,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 //
 //
 //
-void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, BranchRecord& branch, Sequence& outseq)
+void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq)
 {
 	assert(!branch.isActive());
 	//printf("	branch has size: %d\n", branchElements.size());
@@ -795,10 +804,9 @@ void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, BranchR
 	assert(branch.getState() == BS_NOEXT || branch.getState() == BS_LOOP);
 	
 	// Mark all the sequences in the branch as seen
-	BranchDataIter endIter  = branch.getEndIter();
-	for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
+	for(size_t idx = 0; idx < branch.getLength(); idx++)
 	{
-		seqCollection->setFlag(*bIter, SF_SEEN);
+		seqCollection->setFlag(branch.getSeqByIndex(idx), SF_SEEN);
 	}
 	
 	// Assemble the contig

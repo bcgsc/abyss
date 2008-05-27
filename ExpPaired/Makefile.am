@@ -1,14 +1,9 @@
-bin_PROGRAMS = ExpPaired
+noinst_LIBRARIES = libexppaired.a
 
-ExpPaired_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
+libexppaired_a_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/Parallel
 
-ExpPaired_LDADD = \
-	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/DataLayer/libdatalayer.a
-
-ExpPaired_SOURCES = \
-	ExpPaired.cpp ExpPaired.h \
+libexppaired_a_SOURCES = \
 	NodeScores.cpp NodeScores.h \
 	ParentTree.cpp ParentTree.h
 

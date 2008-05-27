@@ -276,6 +276,15 @@ bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter
 	}
 }
 
+void SequenceCollectionHash::wipeFlag(SeqFlag flag)
+{
+	SequenceCollectionHashIter endIter = getEndIter();
+	for(SequenceCollectionHashIter iter = getStartIter(); iter != endIter; ++iter)
+	{
+		const_cast<PackedSeq&>(*iter).clearFlag(flag);
+	}
+}
+
 //
 //
 //

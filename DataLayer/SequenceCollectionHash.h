@@ -48,6 +48,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Find if this sequence has the specified flag set
 		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
 		
+		// Clear the specified flag from every sequence in the collection
+		void wipeFlag(SeqFlag flag);
+		
 		// add extension
 		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
 		

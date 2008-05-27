@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <queue>
+
 #include <stdlib.h>
 #include <assert.h>
 #include "ReadPrb.h"
@@ -58,6 +60,7 @@ enum CollectionState
 	CS_FINALIZED
 };
 
+
 // Definition of bases
 const int NUM_BASES = 4;
 const char BASES[NUM_BASES] = {'A', 'C', 'G', 'T'};
@@ -73,6 +76,7 @@ typedef std::map<std::string, Sequence> SequenceMap;
 class PackedSeq;
 typedef std::vector<PackedSeq> PSequenceVector;
 typedef std::set<PackedSeq> PSeqSet;
+typedef std::queue<PackedSeq> PSeqQueue;
 typedef PSequenceVector::const_iterator ConstPSequenceVectorIterator;
 typedef PSequenceVector::iterator PSequenceVectorIterator;
 
@@ -82,6 +86,13 @@ struct Contig
 	Sequence seq;
 	bool merged;
 	bool repetitive;
+	bool super;
+};
+
+
+struct ContigData
+{
+	Sequence seq;
 };
 
 // Contig typedefs

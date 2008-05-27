@@ -200,11 +200,8 @@ int assemble_paired(ISequenceCollection* seqCollection, PairRecord& pairRecord, 
 					}
 				}
 				
-
 				// score all the pairs
 				printf("scoring %zu pairs\n", allPairs.size());
-				
-
 				
 				int count = 0;
 				for(PairScoreVec::iterator pairIter = allPairs.begin(); pairIter != allPairs.end(); pairIter++)

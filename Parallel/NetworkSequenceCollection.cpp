@@ -1559,6 +1559,14 @@ int NetworkSequenceCollection::getMultiplicity(const PackedSeq& /*seq*/)
 }
 
 //
+//
+//
+void NetworkSequenceCollection::wipeFlag(SeqFlag flag)
+{
+	m_pLocalSpace->wipeFlag(flag);
+}
+
+//
 // The iterator functions return the local space's begin/end
 //
 SequenceCollectionIterator NetworkSequenceCollection::getStartIter() const

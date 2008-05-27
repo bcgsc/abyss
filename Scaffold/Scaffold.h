@@ -8,6 +8,9 @@
 #include "ISequenceCollection.h"
 #include "AssemblyAlgorithms.h"
 #include "Stats.h"
+#include "PairRecord.h"
+#include "Timer.h"
+#include "ScaffoldAlgorithms.h"
 
 // CORIEN_SAME = the contigs are from the same strand
 // CORIEN_OPP = the contigs are from different strands
@@ -69,6 +72,14 @@ struct ContigLinkage
 	// Flag indicating there is no good linkage
 	bool noLink;
 };
+
+struct PairScore
+{
+	double weight;
+	PackedSeq pseq;	
+};
+
+typedef std::vector<PairScore> PairScoreVec;
 	
 
 // Typedefs
@@ -104,14 +115,22 @@ typedef ContigReadMap::const_iterator ConstCRMIter;
 class Scaffold
 {
 	public:
-		Scaffold(std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadAlignments, std::string alignmentsFile);
+		Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadPairsCache, std::string pairsCacheFile);
+		~Scaffold();
 		
 		//IO Functions
+		void LoadAdjacency(std::string file);
 		void ReadSequenceReads(std::string file);
 		void ReadPairs(std::string file);
 		void ReadAlignments(std::string file);
 		void ReadContigs(std::string file);
-				
+		
+		void merge2();
+		void merge3();
+		void merge4();
+		
+		Sequence findContig(PackedSeq start, ContigID& id);
+		
 		// Determine the adjacency information between contigs
 		bool AttemptMerge(ContigID contigID);
 		ContigLinkage GenerateLinkage(ContigID contigID0, ContigID contigID1, PairAlignVec& paVec);
@@ -213,6 +232,8 @@ class Scaffold
 		// Write all the alignments to a file
 		void WriteAlignments(std::string filename);
 		
+		void LoadPairsRecord(const PSequenceVector& allreads, int kmerSize);
+		
 		// All the mapping datastructures needed
 		AlignmentMap m_alignMap;
 		//PairingMap m_pairMap; 
@@ -222,9 +243,14 @@ class Scaffold
 		
 		// Statistics about the data set
 		Stats m_stats;
-				
+		
+		// The sequence collection, for adjacency info
+		ISequenceCollection* m_pSC;
+		
 		int m_readLen;
 		int m_kmer;
+		
+		PairRecord m_pairRec;
 		
 		static const int STRONG_LINK_CUTOFF = 10;
 		static const int SUB_ASSEMBLY_K = 14;

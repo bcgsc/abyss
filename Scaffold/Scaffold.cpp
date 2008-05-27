@@ -1,67 +1,97 @@
 #include <stdio.h>
 #include <math.h>
+#include <iostream>
 #include "Scaffold.h"
 #include "Sequence.h"
 #include "FastaWriter.h"
 #include "SequenceCollectionHash.h"
 #include "Aligner.h"
 #include "FastaReader.h"
+#include "ParentTree.h"
+#include "DirectedGraph.h"
+#include "Options.h"
 
 using namespace std;
 
 int main(int argc, char** argv)
-{
+{	
 	if(argc < 4)
 	{
-		printf("usage: Scaffold <readsFile> <contigFile> <readLen> <assembly kmer size> [alignment file]\n");
+		printf("usage: Scaffold <final reads file> <readsFile> <contigFile> <readLen> <assembly kmer size> [alignment file]\n");
 		exit(1);
 	}
 	
-	std::string readsFile(argv[1]);
-	std::string contigFile(argv[2]);
-	int readLen = atoi(argv[3]);
-	int kmer = atoi(argv[4]);
+	std::string finalReadsFile(argv[1]);
+	std::string readsFile(argv[2]);
+	std::string contigFile(argv[3]);
+	int readLen = atoi(argv[4]);
+	int kmer = atoi(argv[5]);
+	
+	// kinda hacky
+	opt::kmerSize = kmer;
+	opt::readLen = readLen;
 	
 	// Should we read in the alignment hints file?
-	bool readAlignments = false;
-	std::string alignmentsFile = "";
-	if(argc > 5)
+	//bool readAlignments = false;
+	//std::string alignmentsFile = "";
+	
+	bool readPairsCache = false;
+	std::string pairsCacheFile = "";
+	
+	if(argc > 6)
 	{
-		readAlignments = true;
-		alignmentsFile = argv[5];
+		readPairsCache = true;
+		pairsCacheFile = argv[6];
 	}
 	
-	Scaffold scaffold(readsFile, contigFile, readLen, kmer, readAlignments, alignmentsFile);
+	Scaffold scaffold(finalReadsFile, readsFile, contigFile, readLen, kmer, readPairsCache, pairsCacheFile);
 }
 
 //
 //
 //
-Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadAlignments, std::string alignmentsFile) : m_readLen(readLen), m_kmer(kmer)
+Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadPairsCache, std::string pairsCacheFile) : m_readLen(readLen), m_kmer(kmer)
 {
 	// Read in the pairs
 	//ReadAlignments(alignFile);
 	
-	// Read in the sequencing reads
-	ReadSequenceReads(readsFile);
-	
+	// Read in the adjacency graph
+	LoadAdjacency(finalReadsFile);
+			
 	// Read in the contigs
-	ReadContigs(contigFile);	
+	ReadContigs(contigFile);
+
+	// Read in the sequencing reads
+	if(!bReadPairsCache)
+	{
+		ReadSequenceReads(readsFile);	
+		LoadPairsRecord(m_readVec, m_kmer);
+		m_pairRec.serialize("PairsCache.bin");		
+	}
+	else
+	{
+		m_pairRec.unserialize(pairsCacheFile);	
+	}
+		
+	merge4();
+	exit(1);
 	
+
 	// Generate the initial alignment database
 	
-	if(!bReadAlignments)
+	
+	//if(!bReadAlignments)
 	{
 		printf("Generating alignments from reads file\n");
 		
 		GenerateAlignments(m_readVec, m_contigMap);
 		WriteAlignments("alignments.txt");
 	}
-	else
+	/*else
 	{
 		printf("Reading the alignments from file %s\n", alignmentsFile.c_str());
 		ReadAlignments(alignmentsFile);
-	}
+	}*/
 	
 
 	
@@ -70,19 +100,9 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 	
 	GenerateStatistics();
 
-	while(AttemptMerge("731"));
-	exit(1);
-	//AttemptMerge("1219");
-	//exit(1);
+	merge2();
+	printf("Done all merges, outputting\n");
 	/*
-	AttemptMerge("1128");
-	AttemptMerge("2523");
-	AttemptMerge("1476");
-	AttemptMerge("2823");
-	//GenerateGraph("1009");	
-	exit(1);
-	*/
-	
 	bool stop = false;
 	while(!stop)
 	{
@@ -103,7 +123,7 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 			stop = true;
 		}
 	}
-	
+	*/
 	// Output the merged contigs
 	ofstream mergeFile("merged.fa");
 	for(CMIter iter = m_contigMap.begin(); iter != m_contigMap.end(); iter++)
@@ -116,13 +136,545 @@ Scaffold::Scaffold(std::string readsFile, std::string contigFile, int readLen, i
 	mergeFile.close();
 }
 
+Scaffold::~Scaffold()
+{
+	delete m_pSC;	
+}
+
+
+
+void Scaffold::merge2()
+{
+	ofstream mergeFile("merged2.fa");
+
+	// Examine each end of the contig to see if it can be extended by pairs
+	for(CMIter iter = m_contigMap.begin(); iter != m_contigMap.end(); iter++)
+	{
+		std::set<ContigID> mergeIDs;
+		if(!iter->second.merged && iter->second.seq.length() > 200)
+		{
+			for(int toggle = 0; toggle <= 1; toggle++)
+			{
+				bool stop = false;
+				
+				if(toggle == 1)
+				{
+					printf("trying rev comp\n");
+					iter->second.seq = reverseComplement(iter->second.seq);
+				}
+				
+				while(!stop)
+				{
+					printf("trying %s for merge\n", iter->first.c_str());
+					
+					// Get the last k bases from the end
+					Sequence& seq = iter->second.seq;
+					
+					int start = seq.length() - m_kmer;
+					PackedSeq endMer(seq.substr(start, m_kmer));
+					
+					// Build the tree from this endmer
+					int lookForwardDepth = 200;
+					int lookBackDepth = 200;
+	
+					ParentTree parentTree(endMer, SENSE, m_pSC, lookForwardDepth);
+	
+					// Get pairs
+					int numNodesInBranch = seq.length();
+					size_t firstIndex;
+					size_t lastIndex;
+					
+					lastIndex = numNodesInBranch - m_kmer;
+									
+									
+					if((int)lastIndex - lookBackDepth < 0)
+					{
+						firstIndex = 0;
+					}
+					else
+					{
+						firstIndex = lastIndex - lookBackDepth;
+					}
+													
+					PSeqSet children = parentTree.getRootChildren();					
+					const double minSupport = 10.0f;
+					
+					PSequenceVector allPairs;
+					
+					int numGood = 0;
+					
+					for(size_t idx = firstIndex; idx < lastIndex; ++idx)
+					{
+						assert(idx + m_kmer < seq.length());
+						PackedSeq firstHalf(seq.substr(idx, m_kmer));
+						
+						double weight = 1.0f;
+						PSequenceVector seqPairs = m_pairRec.getPairs(firstHalf);
+						
+						
+						for(PSequenceVector::iterator pairIter = seqPairs.begin(); pairIter != seqPairs.end(); pairIter++)
+						{
+							// Check if this pair is supporting multiple branches
+							// If it is, do not add the pairs to the set
+							parentTree.addScore(*pairIter, weight);
+						}
+						
+						
+						// Check the number of branches supported by the pairs of this seq
+						int numSupported = 0;
+						int suppIdx = 0;
+						int currIdx = 0;
+						for(PSeqSet::iterator testIter = children.begin(); testIter != children.end(); ++testIter)
+						{
+							double currScore = parentTree.getScore(*testIter).subtreeScore;	
+							if(currScore > 0)
+							{
+								suppIdx = currIdx;
+								numSupported++;
+							}
+							currIdx++;
+						}					
+	
+						if(numSupported == 1)
+						{
+							for(PSequenceVector::iterator pairIter = seqPairs.begin(); pairIter != seqPairs.end(); pairIter++)
+							{
+								allPairs.push_back(*pairIter);
+							}
+							numGood++;
+						}
+						parentTree.resetScore();
+					}
+					
+					printf("%d of %d sequences are usable\n", numGood, lastIndex - firstIndex);
+					
+					int count = 0;
+					for(PSequenceVector::iterator pairIter = allPairs.begin(); pairIter != allPairs.end(); pairIter++)
+					{
+						count++;
+						parentTree.addScore(*pairIter, 1.0f);
+					}
+					
+					parentTree.print(10);
+					
+					parentTree.printRootChildren();
+			
+					PSeqSet::iterator bestIter;
+					
+					int numSupported = 0;
+					for(PSeqSet::iterator testIter = children.begin(); testIter != children.end(); ++testIter)
+					{
+						double currScore = parentTree.getScore(*testIter).subtreeScore;	
+						if(currScore > minSupport)
+						{
+							bestIter = testIter;
+							numSupported++;
+						}
+					}
+					
+					if(numSupported == 1)
+					{
+						//perform a merge
+						
+						// find the contig with the specified kmer as a start
+						ContigID slaveID;
+						Sequence found = findContig(*bestIter, slaveID);
+						if(!found.empty() && slaveID != iter->first && mergeIDs.find(slaveID) == mergeIDs.end())
+						{
+							printf("merging with %s\n", found.c_str());
+							
+							// perform merge
+							seq.append(found.substr(m_kmer - 1));
+							
+							// replace
+							// Replace the contig with the merged product
+							//m_contigMap[contigID].seq = merged;
+							
+							// Erase the existance of the slave contig
+							//m_contigMap.erase(slaveID);
+							iter->second.super = true;	
+							m_contigMap[slaveID].merged = true;
+							mergeIDs.insert(slaveID);				
+						}
+						else
+						{
+							// only append if the seq doesnt exist 
+							if(seq.find(bestIter->decode()) == string::npos)
+							{
+								seq.append(1, bestIter->getLastBase());
+							}
+							else
+							{
+								stop = true;
+							}
+							printf("appending last seq only\n");	
+						}
+						
+						printf("merged %s\n", seq.c_str());
+						
+					}
+					else
+					{
+						stop = true;
+					}
+				}
+			}
+		}
+		
+		if(iter->second.super)
+		{
+			mergeFile << ">" << iter->first << " " << iter->second.seq.length() << endl << iter->second.seq << endl; 
+		}
+	}
+	mergeFile.close();
+}
+
+struct CompareBranches
+{
+	bool operator()(const BranchRecord& r1, const BranchRecord& r2) { return r1.getLength() < r2.getLength(); }
+};
+
+void Scaffold::merge3()
+{
+	Timer timer("MergeAssemble");
+	FastaWriter* fileWriter = new FastaWriter("merge3contigs.fa");
+	FastaWriter* compWriter = new FastaWriter("componentContigs.fa");
+	
+	// generate the master list of starting sequences
+	contigStartVec starts;
+	ScaffoldAlgorithms::generateStartList(m_pSC, starts);
+	
+	printf("discovered %zu starts\n", starts.size());	
+	int numAssembled = 0;
+	int contigID = 0;
+
+	std::priority_queue<BranchRecord, std::vector<BranchRecord>, CompareBranches> branchPQ;
+	
+	for(contigStartVec::iterator iter = starts.begin(); iter != starts.end(); iter++)
+	{	
+		if(m_pSC->checkFlag(iter->seq, SF_SEEN))
+		{
+			continue;
+		}
+		
+		printf("assembing contig %d\n", contigID);
+		
+		PackedSeq currSeq = iter->seq;		
+		if(iter->state == CSS_ISLAND)
+		{
+			// singleton, output
+			BranchRecord currBranch(SENSE, -1);
+			currBranch.addSequence(currSeq);
+			currBranch.terminate(BS_NOEXT);
+			
+			// this will set the seen flag
+			Sequence contig;
+			AssemblyAlgorithms::processTerminatedBranchAssemble(m_pSC, currBranch, contig);
+			compWriter->WriteSequence(contig, contigID, 0);
+			contigID++;
+			branchPQ.push(currBranch);
+			continue;
+		}
+		
+		extDirection dir = iter->dir;
+
+		// The sequence is an endpoint, begin extending it
+		// Passing -1 into the branch will disable the length check
+		BranchRecord currBranch(dir, -1);
+		
+		while(currBranch.isActive())
+		{		
+			// Get the extensions for this sequence, this function populates the extRecord structure
+			ExtensionRecord extRec;
+			int multiplicity = -1;
+			bool success = m_pSC->getSeqData(currSeq, extRec, multiplicity);
+
+			assert(success);
+			(void)success;
+			
+			
+			// process the extension record and extend the current branch, this function updates currSeq on successful extension
+			ScaffoldAlgorithms::processNonlinearExtensionForBranch(m_pSC, &m_pairRec, currBranch, currSeq, extRec, multiplicity);
+		}
+		
+		// hack
+		currBranch.terminate(BS_NOEXT);
+
+		// this will set the seen flag
+		Sequence contig;
+		AssemblyAlgorithms::processTerminatedBranchAssemble(m_pSC, currBranch, contig);
+		compWriter->WriteSequence(contig, contigID, 0);
+		contigID++;	
+		branchPQ.push(currBranch);			
+		numAssembled++;
+
+		m_pSC->pumpNetwork();
+	}
+	
+	// wipe the seen flag
+	m_pSC->wipeFlag(SF_SEEN);
+	
+	// output the branches in terms of priority
+	while(!branchPQ.empty())
+	{
+		const BranchRecord& curr = branchPQ.top();
+		printf("branch len: %zu\n", curr.getLength());
+		
+		bool unique = false;
+		
+		// Output the top branch if all its sequences are not seen (or should this be if ANY sequence is not seen?)
+		for(size_t idx = 0; idx < curr.getLength(); ++idx)
+		{
+			if(!m_pSC->checkFlag(curr.getSeqByIndex(idx), SF_SEEN))
+			{
+				unique = true;
+				break;
+			}
+		}
+		
+		if(unique)
+		{
+			// output the branch
+			Sequence contig;
+			AssemblyAlgorithms::processTerminatedBranchAssemble(m_pSC, curr, contig);
+			
+			// Output the contig
+			fileWriter->WriteSequence(contig, contigID, 0);
+			contigID++;	
+		}
+		
+		branchPQ.pop();
+	}
+	
+	delete fileWriter;
+	delete compWriter;
+	
+	printf("num assembled: %d\n", numAssembled);	
+}
+
+void Scaffold::merge4()
+{
+	printf("Building graph\n");
+	
+	// Create a graph of all the contigs
+	DirectedGraph<ContigID, ContigData> contigGraph;
+	
+	// Add all the vertices
+	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
+	{
+		ContigData data;
+		data.seq = contigIter->second.seq;
+		contigGraph.addVertex(contigIter->first, data);
+	}
+	
+	// Generate a k-mer -> contig lookup table for all the contig ends
+	std::map<PackedSeq, ContigID> contigLUT;
+	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
+	{
+		Sequence& contigSequence = contigIter->second.seq;
+		const unsigned numEnds = 2;
+		PackedSeq seqs[numEnds];
+		seqs[0] = PackedSeq(contigSequence.substr(contigSequence.length() - m_kmer, m_kmer)); //SENSE
+		seqs[1] = PackedSeq(contigSequence.substr(0, m_kmer)); // ANTISENSE
+		
+		size_t numToAdd = (seqs[0] != seqs[1]) ? 2 : 1;
+		
+		for(unsigned idx = 0; idx < numToAdd; idx++)
+		{	
+			//assert(contigLUT.find(seqs[idx]) == contigLUT.end());
+			//assert(contigLUT.find(reverseComplement(seqs[idx])) == contigLUT.end());	
+			
+			// insert sequences into the table
+			contigLUT[seqs[idx]] = contigIter->first;
+		}
+	}
+	
+	// Build the edges
+	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
+	{
+		// Generate edges to/from this node
+		
+		// Since two contigs are not necessarily built from the same strand, two contigs can both have OUT nodes pointing to each other
+		// this situation will get cleaned up when the links are resolved/merged
+		Sequence& contigSequence = contigIter->second.seq;
+		const unsigned numEnds = 2;
+		PackedSeq seqs[numEnds];
+		seqs[0] = PackedSeq(contigSequence.substr(contigSequence.length() - m_kmer, m_kmer)); //SENSE
+		seqs[1] = PackedSeq(contigSequence.substr(0, m_kmer)); // ANTISENSE
+
+		ExtensionRecord extRec;
+		int multiplicity;
+				
+		for(unsigned idx = 0; idx < numEnds; idx++)
+		{
+			PackedSeq& currSeq = seqs[idx];
+			extDirection dir;
+			dir = (idx == 0) ? SENSE : ANTISENSE;
+						
+			m_pSC->getSeqData(currSeq, extRec, multiplicity);
+			
+			// Generate the links
+			PSequenceVector extensions;
+			AssemblyAlgorithms::generateSequencesFromExtension(currSeq, dir, extRec.dir[dir], extensions);
+			
+			for(PSequenceVector::iterator iter = extensions.begin(); iter != extensions.end(); ++iter)
+			{
+				if(contigIter->first == "289")
+				{
+					printf("extension: %s\n", iter->decode().c_str());	
+				}
+				// Get the contig this sequence maps to
+				bool foundEdge = false;
+				for(size_t compIdx = 0; compIdx <= 1; ++compIdx)
+				{
+					bool reverse = (compIdx == 1);
+					PackedSeq testSeq;
+					if(reverse)
+					{
+						testSeq = reverseComplement(*iter);
+					}
+					else
+					{
+						testSeq = *iter;
+					}
+				
+					std::map<PackedSeq, ContigID>::iterator cLUTIter;
+					cLUTIter = contigLUT.find(testSeq);
+					if(cLUTIter != contigLUT.end())
+					{						
+						contigGraph.addEdge(contigIter->first, cLUTIter->second, dir, reverse);
+						foundEdge = true;
+					}
+				}
+				
+				// it should ALWAYS be found since all sequences in the data set must belong to a contig		
+				assert(foundEdge);
+			}
+		}
+
+	}
+	
+	size_t numVert = contigGraph.getNumVertices();
+	size_t numEdges = contigGraph.countEdges(); // SLOW
+	printf("BEFORE: num vert: %zu num edges: %zu\n", numVert, numEdges);
+	
+	contigGraph.printVertex("243");
+	
+	printf("Pre-validating graph\n");	
+	contigGraph.validate(ContigDataFunctions(m_kmer));
+	
+	/*
+	contigGraph.printVertex("1474");
+	contigGraph.printVertex("1309");
+	contigGraph.mergeWrapper("1474", "1309", ContigDataFunctions(m_kmer));
+	contigGraph.printVertex("1474", true);
+	return;
+	*/
+	
+	FastaWriter* pWriter;
+	pWriter = new FastaWriter("BeforeContigs.fa");
+	
+	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
+
+	delete pWriter;
+	pWriter = 0;
+
+	bool stop = false;
+	while(!stop)
+	{
+		size_t numMerged = contigGraph.removeTransitivity(ContigDataFunctions(m_kmer));
+		printf("trans reduce performed %zu merges\n", numMerged);
+			
+		if(numMerged == 0)
+		{
+			stop = true;
+		}
+		else
+		{
+			numVert = contigGraph.getNumVertices();
+			numEdges = contigGraph.countEdges(); // SLOW
+			printf("NOW: num vert: %zu num edges: %zu\n", numVert, numEdges);					
+		}
+	}
+	
+	printf("Post validating graph\n");
+	contigGraph.validate(ContigDataFunctions(m_kmer));
+	
+	numVert = contigGraph.getNumVertices();
+	numEdges = contigGraph.countEdges(); // SLOW
+	printf("AFTER: num vert: %zu num edges: %zu\n", numVert, numEdges);	
+
+	pWriter = new FastaWriter("AfterSimplificationContigs.fa");
+	
+	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
+	delete pWriter;
+	pWriter = 0;
+		
+	printf("Attemping to resolve using pairs\n");
+	
+	size_t maxComponentLength = 220;
+	PairedResolver resolver(m_kmer, maxComponentLength, &m_pairRec);
+	
+	SequenceDataCost dataCost;
+	ContigDataFunctions dataMerger(m_kmer);
+	contigGraph.printVertex("28");
+	contigGraph.printVertex("1103");
+	//contigGraph.printVertex("880");
+	//contigGraph.printVertex("881");	
+	//contigGraph.attemptResolve("1103", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
+	//contigGraph.attemptResolve("1103", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
+	//contigGraph.attemptResolve("28", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
+	//contigGraph.attemptResolve("28", SENSE, maxComponentLength, dataCost, resolver, dataMerger);		
+	contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
+	
+	pWriter = new FastaWriter("ResolvedContigs.fa");
+	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
+	delete pWriter;	
+	contigGraph.validate(ContigDataFunctions(m_kmer));
+}
+
+Sequence Scaffold::findContig(PackedSeq start, ContigID& id)
+{
+	for(CMIter iter = m_contigMap.begin(); iter != m_contigMap.end(); iter++)
+	{
+		if(iter->second.super)
+		{
+			continue;
+		}
+		
+		Sequence test = iter->second.seq;
+		
+		// Get the first k bases
+		PackedSeq sub1 = test.substr(0, m_kmer);
+		
+		// And the last k bases
+		PackedSeq sub2 = test.substr(test.length() - m_kmer, m_kmer);
+		
+		if(start == sub1)
+		{
+			id = iter->first;
+			return test;
+		}
+		else if(reverseComplement(start) == sub2)
+		{
+			id = iter->first;
+			return reverseComplement(test);
+		}
+	}
+	
+	Sequence empty;
+	return empty;
+}
+
 //
 // Generate the initial alignments for the sequences
 //
-void Scaffold::GenerateAlignments(PSequenceVector& seqs, ContigMap& /*contigs*/)
+void Scaffold::GenerateAlignments(PSequenceVector& /*seqs*/, ContigMap& /*contigs*/)
 {
+	assert(false);
+	/*
 	printf("Creating DB\n");	
-	Aligner aligner(29);
+	Aligner aligner(m_kmer);
 	aligner.CreateDatabase(m_contigMap);
 	
 	int id = 0;
@@ -143,9 +695,7 @@ void Scaffold::GenerateAlignments(PSequenceVector& seqs, ContigMap& /*contigs*/)
 	
 		id++;
 	}
-	
-	
-	
+	*/
 }
 
 //
@@ -253,119 +803,105 @@ bool Scaffold::AttemptMerge(ContigID contigID)
 					contig1 = reverseComplement(contig1);
 				}
 	
-				// Get all the pairs for these contigs that fall into the gap between the contigs
-				PSequenceVector pairs;
-				GetEndPairs(bestLink->masterID, contig0Comp, pairs);
-				GetEndPairs(bestLink->slaveID, contig1Comp, pairs);
+				// Reverse assemble based on adjacency info		
 				
-				// Now the contigs are in the correct order (leftContig->rightContig) and are from the same strand
+				// Build the tree fanning out from the last kmer of the master contig
+				int lookForwardDepth = bestDistance + 40;
+				PackedSeq leftSeq(leftContig->substr(leftContig->length() - (m_kmer), m_kmer));
+				PackedSeq rightSeq(rightContig->substr(0, m_kmer));
 				
-				// Attempt to assemble the gap between the contigs using the gathered pair info
-					
-				// generate the sequence to start from
-				// this is the last K bases of the reference (contig0) sequence
-				Sequence start = leftContig->substr(leftContig->length() - SUB_ASSEMBLY_K, SUB_ASSEMBLY_K);
+				printf("Assembling from %s to %s\n", leftSeq.decode().c_str(), rightSeq.decode().c_str());
 				
-				// generate the stop sequence (the first k bases of the right contig)
-				Sequence stop = rightContig->substr(0, SUB_ASSEMBLY_K);
+				ParentTree parentTree(leftSeq, SENSE, m_pSC, lookForwardDepth);
 				
-				printf("Starting assembly from %s\n", start.c_str());
+				std::vector<PSequenceVector> outpaths;
 				
-				// Assemble the sequence
-				int expectedAssemblyLength = bestLink->distance + SUB_ASSEMBLY_K;
-				int range = 20;
-				SeqVec assemblies = SubAssemble(pairs, start, stop, expectedAssemblyLength + range);
-					
-				// Check if any of the returned assemblies are valid
-				int bestScore = abs(bestLink->distance);
-				SeqVecIter bestIter;
-				bool hasAssembly = false;
+				// empty to start
+				PSequenceVector inseq;
 				
-				// Choose the assembly that is closest in size to the expected distance
-				for(SeqVecIter iter = assemblies.begin(); iter != assemblies.end(); iter++)
-				{	
-					// Estimate the position of the assembly on the right contig
-					int len = iter->length();
-					int score = abs(len - expectedAssemblyLength);
-					printf("score: %d best: %d\n", score, bestScore);
-					if(score < bestScore)
-					{
-						bestScore = score;
-						bestIter = iter;
-						hasAssembly = true;
-					}
-				}
-				
+				size_t max_paths = 20;
+				parentTree.buildBackwards(rightSeq, leftSeq, inseq, outpaths, lookForwardDepth, max_paths);
+				printf("Found %zu paths\n", outpaths.size());
 				Sequence merged;
-				if(hasAssembly)
-				{
-					// Merge with the generated path
-					Sequence tempMerged;
-					
-					// Merge the left contig and the assembly first at distance = 0
-					Merge(*leftContig, *bestIter, 0, tempMerged);
-					
-					// The assembly product will overlap the right contig by SUB_ASSEMBLY_K by definition
-					int mergeDistance = -SUB_ASSEMBLY_K;
-					
-					// Merge the right contig
-					Merge(tempMerged, *rightContig, mergeDistance, merged);
-				}
-				else
-				{
-					// Merge with a gap	
-					Merge(*leftContig, *rightContig, bestLink->distance, merged);
-				}
-	
-				// Perform the merge and update the distance
-				int c0Len = m_contigMap[contigID].seq.length();
-				int c1Len = m_contigMap[bestLink->slaveID].seq.length();
-						
-				// Update the reads for the master contig
-				int offset = 0;
-				if(bestLink->order == CORDER_RIGHT)
-				{
-					// Offset the master contig pairs by the increase in distance
-					offset = merged.length() - c0Len;
-				}
 				
-				UpdateMasterReads(contigID, offset, m_contigMap[contigID].seq, merged);
-						
-				// Update the slave record
-				offset = 0;
-				if(bestLink->order == CORDER_LEFT)
-				{
-					offset = merged.length() - c1Len;
-				}
-				
-				bool isFlipped = bestLink->orientation == CORIEN_OPP;
-				UpdateSlaveReads(bestLink->slaveID, contigID, offset, isFlipped, m_contigMap[bestLink->slaveID].seq, merged);
-				
-				// Replace the contig with the merged product
-				m_contigMap[contigID].seq = merged;
-				
-				// Erase the existance of the slave contig
-				m_contigMap.erase(bestLink->slaveID);
-				
-				mergedOccured = true;
-				
-				// Realign the pairs of the contig's reads
-				RealignContigPairs(contigID);
-				
-				/*
-				// Mark the intermediate links as repetitive so they are no longer considered
-				std::set<ContigID> exclusion;
-				for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
-				{
-					if(iter->slaveID != bestLink->slaveID)
+				// Choose best
+				if(outpaths.size() > 0 && outpaths.size() <= max_paths)
+				{				
+					for(std::vector<PSequenceVector>::iterator pathIter = outpaths.begin(); pathIter != outpaths.end(); pathIter++)
 					{
-						m_contigMap[iter->slaveID].repetitive = true;
+						// reverse the vector
+						std::reverse(pathIter->begin(), pathIter->end());
+						printf("Received %zu seqs\n", pathIter->size());
+						// shatter the right contig and append it
+						for(size_t i = 0; i < rightContig->length() - m_kmer; i++)
+						{
+							pathIter->push_back(PackedSeq(rightContig->substr(i, m_kmer)));
+						}
+						
+						Sequence tempMerged = *leftContig;
+						// Build the insert
+						for(PSequenceVector::iterator insIter = (pathIter->begin() + 1); insIter != pathIter->end(); insIter++)
+						{
+							tempMerged.append(1, insIter->getLastBase());
+						}
+						
+						printf("Merged contig: %s\n", tempMerged.c_str());
+						merged = tempMerged;
 					}
+					
+					// Perform the merge and update the distance
+					int c0Len = m_contigMap[contigID].seq.length();
+					int c1Len = m_contigMap[bestLink->slaveID].seq.length();
+							
+					// Update the reads for the master contig
+					int offset = 0;
+					if(bestLink->order == CORDER_RIGHT)
+					{
+						// Offset the master contig pairs by the increase in distance
+						offset = merged.length() - c0Len;
+					}
+					
+	
+					UpdateMasterReads(contigID, offset, m_contigMap[contigID].seq, merged);
+							
+					// Update the slave record
+					offset = 0;
+					if(bestLink->order == CORDER_LEFT)
+					{
+						offset = merged.length() - c1Len;
+					}
+					
+					bool isFlipped = bestLink->orientation == CORIEN_OPP;
+					UpdateSlaveReads(bestLink->slaveID, contigID, offset, isFlipped, m_contigMap[bestLink->slaveID].seq, merged);
+					
+					// Replace the contig with the merged product
+					m_contigMap[contigID].seq = merged;
+					
+					// Erase the existance of the slave contig
+					m_contigMap.erase(bestLink->slaveID);
+					
+					mergedOccured = true;
+					
+					// Realign the pairs of the contig's reads
+					RealignContigPairs(contigID);
+					
+					/*
+					// Mark the intermediate links as repetitive so they are no longer considered
+					std::set<ContigID> exclusion;
+					for(LinkIter iter = linkages[i].begin(); iter != linkages[i].end(); iter++)
+					{
+						if(iter->slaveID != bestLink->slaveID)
+						{
+							m_contigMap[iter->slaveID].repetitive = true;
+						}
+					}
+					*/
+					
+					printf("MERGED (%zu): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
 				}
-				*/
 			}
 			
-			printf("MERGED (%zu): %s\n", m_contigMap[contigID].seq.length(), m_contigMap[contigID].seq.c_str());
+			
 		}
 	}
 
@@ -1061,8 +1597,10 @@ void Scaffold::UpdateSlaveReads(ContigID slaveID, ContigID masterID,
 //
 // Realign the pairs of the reads on the specified contig
 //
-void Scaffold::RealignContigPairs(ContigID contigID)
+void Scaffold::RealignContigPairs(ContigID /*contigID*/)
 {
+	assert(false);
+	/*
 	// Create the aligner
 	printf("Creating DB\n");	
 	Aligner aligner(29);
@@ -1118,6 +1656,7 @@ void Scaffold::RealignContigPairs(ContigID contigID)
 			}
 		}
 	}
+	*/
 }
 
 //
@@ -1267,6 +1806,18 @@ void Scaffold::WriteAlignments(std::string filename)
 	//m_alignMap[id].push_back(ra);
 }
 
+// Load the adjacency info
+void Scaffold::LoadAdjacency(std::string file)
+{
+	m_pSC = new SequenceCollectionHash();
+	
+	AssemblyAlgorithms::loadSequences(m_pSC, file);
+	m_pSC->finalize();
+	AssemblyAlgorithms::generateAdjacency(m_pSC);
+	
+	printf("Done reconstructing DBG\n");
+}
+
 //
 // Read in a fasta file of sequence reads
 //
@@ -1398,6 +1949,7 @@ void Scaffold::ReadContigs(std::string file)
 		m_contigMap[contigID].seq = seq;
 		m_contigMap[contigID].merged = false;
 		m_contigMap[contigID].repetitive = false;
+		m_contigMap[contigID].super = false;
 	}
 	fileHandle.close();
 	
@@ -1511,6 +2063,30 @@ void Scaffold::OutputGVizNode(std::ofstream& ostr, ContigLinkage& link)
 	
 	range r = GenerateRange(link.distance, m_contigMap[link.slaveID].seq.length(), link.numPairs, 1);
 	ostr << "\t" << orderString << " [arrowhead = \"normal\" label = \"[" << r.start << "," << r.end << "], " << link.numPairs << "\"];" << endl;
+}
+
+void Scaffold::LoadPairsRecord(const PSequenceVector& allreads, int kmerSize)
+{
+	size_t numReads = allreads.size();
+	int count = 0;
+	for(size_t index = 0; index < numReads; index += 2)
+	{
+		Sequence seq1 = allreads[index].decode();
+		Sequence seq2 = allreads[index+1].decode();
+				
+		int len = seq1.length();
+		assert(kmerSize <= len);
+		
+		for(int i = 0; i < len - kmerSize  + 1; i++)
+		{
+			PackedSeq sub1 = seq1.substr(i, kmerSize);
+			PackedSeq sub2 = seq2.substr(i, kmerSize);
+			
+			m_pairRec.addPairs(sub1, sub2);
+			count++;
+		}
+	}
+	printf("Read %d pairs\n", count);
 }
 
 //

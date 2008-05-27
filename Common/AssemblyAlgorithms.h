@@ -104,7 +104,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection);
 void assemble(ISequenceCollection* seqCollection, int readLen, int kmerSize, IFileWriter* fileWriter);
 
 // A function to process a branch after it has been extended as far as possible
-void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, BranchRecord& branch, Sequence& outseq);
+void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq);
 
 //
 //
