@@ -14,6 +14,7 @@ PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
 PackedSeq::PackedSeq(const Sequence& seq)
 	: m_length(seq.length()), m_flags(0), m_multiplicity(1)
 {
+	memset(m_seq, 0, NUM_BYTES);
 	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();
 	for(unsigned i = 0; i < m_length; i++)
