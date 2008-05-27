@@ -223,7 +223,8 @@ bool deconvolvePaths(ISequenceCollection* seqCollection, PairRecord* pPairRecord
 		//parentTree.resetScore();
 	}
 	
-	printf("%d of %d sequences are usable\n", numGood, lastIndex - firstIndex);
+	printf("%d of %zd sequences are usable\n",
+			numGood, lastIndex - firstIndex);
 	
 	int count = 0;
 	for(PSequenceVector::iterator pairIter = allPairs.begin(); pairIter != allPairs.end(); pairIter++)
