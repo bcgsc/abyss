@@ -1,5 +1,6 @@
 #include "Timer.h"
 #include <sstream>
+#include <iostream>
 
 // Constructor starts the timer
 Timer::Timer(std::string funcString) : m_funcStr(funcString)

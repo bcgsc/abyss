@@ -1,7 +1,6 @@
 #ifndef SCAFFOLD_H
 #define SCAFFOLD_H
 
-#include <iostream>
 #include <fstream>
 #include <map>
 #include "CommonDefs.h"

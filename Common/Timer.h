@@ -1,7 +1,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <iostream>
+#include <string>
 
 // Simple class to automatically time how long a function takes
 
