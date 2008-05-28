@@ -16,6 +16,7 @@ class PairRecord
 		void addPairs(const PackedSeq& seq1, const PackedSeq& seq2);
 		bool checkForPairs(const PackedSeq& seq) const;
 		
+		void getPairsWithComp(const PackedSeq& seq, bool reverse, PSequenceVector& ret) const;
 		const PSequenceVector getPairs(const PackedSeq& seq) const;
 	
 		size_t getNumReads() const { return m_pairLookup.size(); }

@@ -1,9 +1,10 @@
 #include "VisitAlgorithms.h"
+#include "Timer.h"
 
-void ContigDataFunctions::merge(ContigData& target, const ContigData& slave, extDirection dir, bool reverse)
+void ContigDataFunctions::merge(const ContigID& /*targetKey*/, ContigData& targetData, const ContigID& /*slaveKey*/, const ContigData& slaveData, extDirection dir, bool reverse)
 {
 	// should the slave be reversed?
-	Sequence slaveSeq = slave.seq;
+	Sequence slaveSeq = slaveData.seq;
 	if(reverse)
 	{
 		slaveSeq = reverseComplement(slaveSeq);
@@ -14,13 +15,13 @@ void ContigDataFunctions::merge(ContigData& target, const ContigData& slave, ext
 	// Order the contigs
 	if(dir == SENSE)
 	{
-		leftSeq = &target.seq;
+		leftSeq = &targetData.seq;
 		rightSeq = &slaveSeq;
 	}
 	else
 	{
 		leftSeq = &slaveSeq;
-		rightSeq = &target.seq;
+		rightSeq = &targetData.seq;
 	}
 	
 	// Get the last k bases of the left and the first k bases of the right
@@ -31,7 +32,7 @@ void ContigDataFunctions::merge(ContigData& target, const ContigData& slave, ext
 	
 	if(leftEnd != rightBegin)
 	{
-		printf("merge called data1: %s %s (%d, %d)\n", target.seq.c_str(), slave.seq.c_str(), dir, reverse);	
+		printf("merge called data1: %s %s (%d, %d)\n", targetData.seq.c_str(), slaveData.seq.c_str(), dir, reverse);	
 		printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
 	}
 	assert(leftEnd == rightBegin);
@@ -41,10 +42,18 @@ void ContigDataFunctions::merge(ContigData& target, const ContigData& slave, ext
 	Sequence merged = *leftSeq;
 	merged.append(rightSeq->substr(m_overlap));
 	
-	target.seq = merged;
+	targetData.seq = merged;
+	
+	// Now, update the lookup table
+	//m_pDatabase->addKeys(slaveData.m_seqSet, targetKey);
 	
 	//printf("merge called data1: %s %s (%d, %d)\n", target.seq.c_str(), slave.seq.c_str(), dir, reverse);	
 	//printf("new target seq: %s\n", merged.c_str());
+}
+
+void ContigDataFunctions::deleteContig(const Contig& /*slaveKey*/, const ContigData& /*slaveData*/)
+{
+	//m_pDatabase->
 }
 
 bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse)
@@ -90,25 +99,21 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 	
 	// First, generate the scoring sets, one for each component
 	ScoreSets scoreSets;
-	for(ContigDataComponents::iterator compIter = components.begin(); compIter != components.end(); ++compIter)
 	{
-		PSeqSet newSet;
-		scoreSets.push_back(newSet);
-		for(ContigDataCollection::iterator dataIter = compIter->begin(); dataIter != compIter->end(); ++dataIter)
+		Timer sTimer("ScoreSets");
+		for(ContigDataComponents::iterator compIter = components.begin(); compIter != components.end(); ++compIter)
 		{
-			// break the data into kmers
-			Sequence& seq = dataIter->seq;
-			//printf("Seq len %zu\n", seq.length());
-			for(size_t idx = 0; idx < seq.length() - m_kmer; idx++)
+			
+			PSeqSet newSet;
+			scoreSets.push_back(newSet);
+			for(ContigDataCollection::iterator dataIter = compIter->begin(); dataIter != compIter->end(); ++dataIter)
 			{
-				PackedSeq kmer(seq.substr(idx, m_kmer));
-				//printf("adding %s\n", kmer.decode().c_str());
-				scoreSets.back().insert(kmer);
-				scoreSets.back().insert(reverseComplement(kmer));
+				// union the current set in
+				scoreSets.back().insert((*dataIter)->m_seqSet.begin(), (*dataIter)->m_seqSet.end());
 			}
+			
+			printf("Component has %zu kmers\n", scoreSets.back().size());
 		}
-		
-		printf("Component has %zu kmers\n", scoreSets.back().size());
 	}
 	
 	
@@ -124,31 +129,32 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 	size_t numNodesInBranch = refKmers.size();
 	size_t firstIndex;
 	size_t lastIndex;
+	size_t numNodesToUse = m_maxlength;
 	
 	if(dir == SENSE)
 	{
 		// use the last n sequences
 		lastIndex = (int)numNodesInBranch - 1;						
-		if((int)lastIndex - (int)m_maxlength < 0)
+		if((int)lastIndex - (int)numNodesToUse < 0)
 		{
 			firstIndex = 0;
 		}
 		else
 		{
-			firstIndex = lastIndex - m_maxlength;
+			firstIndex = lastIndex - numNodesToUse;
 		}
 	}
 	else
 	{
 		// use the first n sequences	
 		firstIndex = 0;
-		if(firstIndex + m_maxlength > numNodesInBranch)
+		if(firstIndex + numNodesToUse > numNodesInBranch)
 		{
 			lastIndex = numNodesInBranch - 1;	
 		}
 		else
 		{
-			lastIndex = firstIndex + m_maxlength - 1;
+			lastIndex = firstIndex + numNodesToUse - 1;
 		}
 	}
 	
@@ -162,8 +168,15 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 	{
 		// Get the pairs for this kmer
 		
-		// TODO: make this a reference
-		PSequenceVector seqPairs = m_pPairs->getPairs(refKmers[idx]);
+		PSequenceVector seqPairs;
+		if(dir == SENSE)
+		{
+			m_pPairs->getPairsWithComp(refKmers[idx], false, seqPairs);
+		}
+		else
+		{
+			m_pPairs->getPairsWithComp(refKmers[idx], true, seqPairs);
+		}
 		
 		// score these pairs against the sequence sets
 		int numSupported = 0;

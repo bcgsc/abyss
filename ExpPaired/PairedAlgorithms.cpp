@@ -1,7 +1,42 @@
-#include "ScaffoldAlgorithms.h"
+#include "PairedAlgorithms.h"
 
-namespace ScaffoldAlgorithms
+namespace PairedAlgorithms
 {
+	
+	
+//
+// Read contigs
+//
+void ReadContigs(std::string file, ContigMap& outMap)
+{
+	std::ifstream fileHandle(file.c_str());	
+	while(fileHandle.good())
+	{
+		char head;
+
+		std::string contigID;
+		//int size;
+		//double coverage;
+		Sequence seq;
+		fileHandle >> head;
+		
+		if(head != '>' || fileHandle.eof())
+		{
+			continue;
+		}		
+		
+		
+		fileHandle >> contigID;
+		fileHandle.ignore(1000, '\n');	
+		fileHandle >> seq;
+
+		outMap[contigID].seq = seq;
+		outMap[contigID].merged = false;
+		outMap[contigID].repetitive = false;
+		outMap[contigID].super = false;
+	}
+	fileHandle.close();
+}
 	
 //
 // generate the master start list

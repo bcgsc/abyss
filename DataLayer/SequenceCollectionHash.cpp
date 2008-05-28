@@ -3,9 +3,12 @@
 #include "SequenceCollectionHash.h"
 #include "CommonUtils.h"
 
+
 bool PackedSeqEqual::operator()(const PackedSeq& obj1, const PackedSeq& obj2) const
 {
-	//printf("comp \n");
+	//extern bool turnOnPrint;
+	//if(turnOnPrint)	
+	//	printf("comp %s == %s ? %d\n", obj1.decode().c_str(), obj2.decode().c_str(), obj1 == obj2);
 	return obj1 == obj2;
 }
 

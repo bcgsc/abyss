@@ -10,6 +10,7 @@
 #include "ParentTree.h"
 #include "DirectedGraph.h"
 #include "Options.h"
+#include "ContigData.h"
 
 using namespace std;
 
@@ -35,22 +36,26 @@ int main(int argc, char** argv)
 	//bool readAlignments = false;
 	//std::string alignmentsFile = "";
 	
-	bool readPairsCache = false;
 	std::string pairsCacheFile = "";
+	std::string alignmentCacheFile = "";
 	
 	if(argc > 6)
 	{
-		readPairsCache = true;
 		pairsCacheFile = argv[6];
 	}
 	
-	Scaffold scaffold(finalReadsFile, readsFile, contigFile, readLen, kmer, readPairsCache, pairsCacheFile);
+	if(argc > 7)
+	{
+		alignmentCacheFile = argv[7];
+	}
+	
+	Scaffold scaffold(finalReadsFile, readsFile, contigFile, readLen, kmer, pairsCacheFile, alignmentCacheFile);
 }
 
 //
 //
 //
-Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadPairsCache, std::string pairsCacheFile) : m_readLen(readLen), m_kmer(kmer)
+Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, std::string pairsCacheFile, std::string /*alignCacheFile*/) : m_readLen(readLen), m_kmer(kmer)
 {
 	// Read in the pairs
 	//ReadAlignments(alignFile);
@@ -59,10 +64,10 @@ Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::strin
 	LoadAdjacency(finalReadsFile);
 			
 	// Read in the contigs
-	ReadContigs(contigFile);
+	PairedAlgorithms::ReadContigs(contigFile, m_contigMap);
 
 	// Read in the sequencing reads
-	if(!bReadPairsCache)
+	if(pairsCacheFile.empty())
 	{
 		ReadSequenceReads(readsFile);	
 		LoadPairsRecord(m_readVec, m_kmer);
@@ -72,7 +77,23 @@ Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::strin
 	{
 		m_pairRec.unserialize(pairsCacheFile);	
 	}
+	
+	/*
+	// read in the alignments
+	if(alignCacheFile.empty())
+	{
+		printf("Generating alignments from reads file\n");
+		GenerateAlignmentCache(m_pSC, m_contigMap, m_alignCache);
+		m_alignCache.serialize("alignCache.bin");
 		
+	}
+	else
+	{
+		printf("Reading the alignments from file %s\n", alignCacheFile.c_str());
+		m_alignCache.unserialize(alignCacheFile);
+	}
+	return;
+	*/
 	merge4();
 	exit(1);
 	
@@ -80,18 +101,7 @@ Scaffold::Scaffold(std::string finalReadsFile, std::string readsFile, std::strin
 	// Generate the initial alignment database
 	
 	
-	//if(!bReadAlignments)
-	{
-		printf("Generating alignments from reads file\n");
-		
-		GenerateAlignments(m_readVec, m_contigMap);
-		WriteAlignments("alignments.txt");
-	}
-	/*else
-	{
-		printf("Reading the alignments from file %s\n", alignmentsFile.c_str());
-		ReadAlignments(alignmentsFile);
-	}*/
+
 	
 
 	
@@ -343,7 +353,7 @@ void Scaffold::merge3()
 	
 	// generate the master list of starting sequences
 	contigStartVec starts;
-	ScaffoldAlgorithms::generateStartList(m_pSC, starts);
+	PairedAlgorithms::generateStartList(m_pSC, starts);
 	
 	printf("discovered %zu starts\n", starts.size());	
 	int numAssembled = 0;
@@ -395,7 +405,7 @@ void Scaffold::merge3()
 			
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			ScaffoldAlgorithms::processNonlinearExtensionForBranch(m_pSC, &m_pairRec, currBranch, currSeq, extRec, multiplicity);
+			PairedAlgorithms::processNonlinearExtensionForBranch(m_pSC, &m_pairRec, currBranch, currSeq, extRec, multiplicity);
 		}
 		
 		// hack
@@ -463,8 +473,7 @@ void Scaffold::merge4()
 	// Add all the vertices
 	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
 	{
-		ContigData data;
-		data.seq = contigIter->second.seq;
+		ContigData data(contigIter->second.seq, m_kmer);
 		contigGraph.addVertex(contigIter->first, data);
 	}
 	
@@ -482,9 +491,6 @@ void Scaffold::merge4()
 		
 		for(unsigned idx = 0; idx < numToAdd; idx++)
 		{	
-			//assert(contigLUT.find(seqs[idx]) == contigLUT.end());
-			//assert(contigLUT.find(reverseComplement(seqs[idx])) == contigLUT.end());	
-			
 			// insert sequences into the table
 			contigLUT[seqs[idx]] = contigIter->first;
 		}
@@ -520,10 +526,6 @@ void Scaffold::merge4()
 			
 			for(PSequenceVector::iterator iter = extensions.begin(); iter != extensions.end(); ++iter)
 			{
-				if(contigIter->first == "289")
-				{
-					printf("extension: %s\n", iter->decode().c_str());	
-				}
 				// Get the contig this sequence maps to
 				bool foundEdge = false;
 				for(size_t compIdx = 0; compIdx <= 1; ++compIdx)
@@ -613,20 +615,16 @@ void Scaffold::merge4()
 		
 	printf("Attemping to resolve using pairs\n");
 	
-	size_t maxComponentLength = 220;
+	size_t maxComponentLength = 200;
 	PairedResolver resolver(m_kmer, maxComponentLength, &m_pairRec);
 	
 	SequenceDataCost dataCost;
 	ContigDataFunctions dataMerger(m_kmer);
-	contigGraph.printVertex("28");
-	contigGraph.printVertex("1103");
-	//contigGraph.printVertex("880");
-	//contigGraph.printVertex("881");	
-	//contigGraph.attemptResolve("1103", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
-	//contigGraph.attemptResolve("1103", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
-	//contigGraph.attemptResolve("28", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
-	//contigGraph.attemptResolve("28", SENSE, maxComponentLength, dataCost, resolver, dataMerger);		
-	contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
+	
+	//contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
+
+	contigGraph.attemptResolve("40", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
+	contigGraph.printVertex("40", true);
 	
 	pWriter = new FastaWriter("ResolvedContigs.fa");
 	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
@@ -1919,41 +1917,6 @@ void Scaffold::ReadAlignments(std::string file)
 	}
 	
 	fileHandle.close();
-}
-
-//
-// Read contigs
-//
-void Scaffold::ReadContigs(std::string file)
-{
-	std::ifstream fileHandle(file.c_str());	
-	while(fileHandle.good())
-	{
-		char head;
-
-		std::string contigID;
-		//int size;
-		//double coverage;
-		Sequence seq;
-		fileHandle >> head;
-		
-		if(head != '>' || fileHandle.eof())
-		{
-			continue;
-		}		
-		
-		
-		fileHandle >> contigID;
-		fileHandle.ignore(1000, '\n');	
-		fileHandle >> seq;
-
-		m_contigMap[contigID].seq = seq;
-		m_contigMap[contigID].merged = false;
-		m_contigMap[contigID].repetitive = false;
-		m_contigMap[contigID].super = false;
-	}
-	fileHandle.close();
-	
 }
 
 //

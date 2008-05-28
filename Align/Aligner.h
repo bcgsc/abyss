@@ -19,12 +19,9 @@ struct Alignment
 };
 
 // Typedef the database pairing
-
-typedef std::map<ContigID, Sequence*> idSeqMap;
-
 typedef std::pair<PackedSeq, Position> dbRecord;
-//typedef std::multimap<PackedSeq, Position> SeqPosHashMap;
 typedef __gnu_cxx::hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+
 typedef SeqPosHashMap::const_iterator SPHMConstIter;
 typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
 
@@ -43,7 +40,7 @@ class Aligner
 		~Aligner();
 		
 		// Generate the database to align to
-		void CreateDatabase(const idSeqMap& refSeqs);
+		void CreateDatabase(const ContigMap& refSeqs);
 		
 		// Align the vector of sequences
 		void AlignReads(PSequenceVector seqs);

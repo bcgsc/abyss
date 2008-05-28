@@ -383,7 +383,7 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	assert(edgeFound);
 
 	// merge the data using the functor object
-	dataMerger.merge(pParent->m_data, pChild->m_data, (extDirection)parentsDir, parentsReverse);
+	dataMerger.merge(pParent->m_key, pParent->m_data, pChild->m_key, pChild->m_data, (extDirection)parentsDir, parentsReverse);
 	
 	// update all the edges affected
 	
@@ -547,7 +547,10 @@ bool DirectedGraph<K,D>::attemptResolve(const K& key, extDirection dir, size_t m
 	
 	// Generate the vertex collections for the adjacent sequences
 	VertexComponentVector extensionComponents;
-	generateComponents(pVertex, dir, maxCost, extensionComponents, dataCost);
+	{
+		Timer compTimer("GenComponents");
+		generateComponents(pVertex, dir, maxCost, extensionComponents, dataCost);
+	}
 	
 	// Generate the data components which the resolver will operate on
 	DataComponents dataComponents;
@@ -555,12 +558,13 @@ bool DirectedGraph<K,D>::attemptResolve(const K& key, extDirection dir, size_t m
 	size_t count = 0;
 	for(typename VertexComponentVector::iterator compIter = extensionComponents.begin(); compIter != extensionComponents.end(); ++compIter)
 	{
+		Timer compTimer("DataComponents");
 		DataCollection dataCollection;
 		printf("Component %zu (%zu)\n", count++, compIter->second.size());
 		for(typename VertexCollection::iterator vertIter = compIter->second.begin(); vertIter != compIter->second.end(); ++vertIter)
 		{
 			printf("	key %s len %zu\n", (*vertIter)->m_key.c_str(), (*vertIter)->m_data.seq.length());
-			dataCollection.push_back((*vertIter)->m_data);
+			dataCollection.push_back(&(*vertIter)->m_data);
 		}
 		
 		dataComponents.push_back(dataCollection);

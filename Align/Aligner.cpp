@@ -5,8 +5,8 @@
 // 
 Aligner::Aligner(int hashSize) : m_hashSize(hashSize)
 {
-	m_pDatabase = new SeqPosHashMap(2 << 26);
-	//m_pDatabase = new SeqPosHashMap();
+	//m_pDatabase = new SeqPosHashMap(2 << 26);
+	m_pDatabase = new SeqPosHashMap();
 }
 
 //
@@ -20,28 +20,30 @@ Aligner::~Aligner()
 //
 // Create the database for the reference sequences
 //
-void Aligner::CreateDatabase(const idSeqMap& refSeqs)
+void Aligner::CreateDatabase(const ContigMap& refSeqs)
 {
-	for(idSeqMap::const_iterator iter = refSeqs.begin(); iter != refSeqs.end(); iter++)
+	for(ContigMap::const_iterator iter = refSeqs.begin(); iter != refSeqs.end(); iter++)
 	{
 		ContigID currID = iter->first;
-		Sequence* pCurrSeq = iter->second;
+		const Sequence& currSeq = iter->second.seq;
 		
 		// Break the ref sequence into kmers of the hash size
-		int size = pCurrSeq->length();
+		int size = currSeq.length();
 		for(int i = 0; i < (size - m_hashSize); ++i)
 		{
-			Sequence subseq = pCurrSeq->substr(i, m_hashSize);
+			Sequence subseq = currSeq.substr(i, m_hashSize);
 			
 			// skip seqs that have unknown bases
 			if(subseq.find("N") == std::string::npos)
 			{
-				PackedSeq kmer(pCurrSeq->substr(i, m_hashSize));
-				//printf("curr seq: %s\n", kmer.decode().c_str());
+				PackedSeq kmer(subseq);
+				//printf("indexed seq: %s\n", kmer.decode().c_str());
 				Position p;
 				p.contig = currID;
 				p.pos = i;
 				m_pDatabase->insert(dbRecord(kmer, p));
+				AlignmentVector vec;
+				GetAlignmentsInternal(kmer, false, vec);
 			}
 		}
 	}
@@ -63,17 +65,17 @@ void Aligner::GetAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVe
 	AlignmentSet aligns;
 
 	int seqLen = seq.getSequenceLength();
-	for(int i = 0; i < seqLen - m_hashSize; ++i)
+	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
 		// Generate kmer
 		PackedSeq kmer = seq.subseq(i, m_hashSize);
-		
+
 		// Get the alignment positions
 		LookupResult result = m_pDatabase->equal_range(kmer);
 		
 		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
 		{
-			//printf("Contig: %s position: %d\n", resultIter->second.contig.c_str(), resultIter->second.pos);
+			//printf("Seq: %s Contig: %s position: %d\n", seq.decode().c_str(), resultIter->second.contig.c_str(), resultIter->second.pos);
 			int pos = resultIter->second.pos;
 			ContigID contig = resultIter->second.contig;
 			aligns[contig].insert(pos);

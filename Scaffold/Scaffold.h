@@ -10,7 +10,8 @@
 #include "Stats.h"
 #include "PairRecord.h"
 #include "Timer.h"
-#include "ScaffoldAlgorithms.h"
+#include "PairedAlgorithms.h"
+#include "AlignmentCache.h"
 
 // CORIEN_SAME = the contigs are from the same strand
 // CORIEN_OPP = the contigs are from different strands
@@ -86,7 +87,7 @@ typedef std::vector<PairScore> PairScoreVec;
 typedef std::vector<PairAlign> PairAlignVec;
 typedef std::vector<ReadAlign> AlignVec;
 
-typedef std::map<ReadID, AlignVec> AlignmentMap;
+typedef std::map<ReadID, AlignVec> IDAlignmentMap;
 typedef std::map<ReadID, ReadID> PairingMap;
 typedef std::set<ReadID> ReadSet;
 typedef std::map<ContigID, ReadSet> ContigReadMap;
@@ -96,7 +97,7 @@ typedef std::vector<Sequence> SeqVec;
 typedef std::map<ContigID, PairAlignVec> ContigPairVecMap;
 
 // Iterators
-typedef AlignmentMap::iterator AMIter;
+typedef IDAlignmentMap::iterator AMIter;
 typedef PairingMap::iterator PMIter;
 typedef ReadSet::iterator RSIter;
 typedef ContigReadMap::iterator CRMIter;
@@ -107,7 +108,7 @@ typedef SeqVec::iterator SeqVecIter;
 typedef AlignVec::iterator AVIter;
 
 
-typedef AlignmentMap::const_iterator ConstAMIter;
+typedef IDAlignmentMap::const_iterator ConstAMIter;
 typedef PairingMap::const_iterator ConstPMIter;
 typedef ReadSet::const_iterator ConstRSIter;
 typedef ContigReadMap::const_iterator ConstCRMIter;
@@ -115,7 +116,7 @@ typedef ContigReadMap::const_iterator ConstCRMIter;
 class Scaffold
 {
 	public:
-		Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, bool bReadPairsCache, std::string pairsCacheFile);
+		Scaffold(std::string finalReadsFile, std::string readsFile, std::string contigFile, int readLen, int kmer, std::string pairsCacheFile, std::string alignCacheFile);
 		~Scaffold();
 		
 		//IO Functions
@@ -235,7 +236,7 @@ class Scaffold
 		void LoadPairsRecord(const PSequenceVector& allreads, int kmerSize);
 		
 		// All the mapping datastructures needed
-		AlignmentMap m_alignMap;
+		IDAlignmentMap m_alignMap;
 		//PairingMap m_pairMap; 
 		ContigReadMap m_contigReadMap;
 		ContigMap m_contigMap;
@@ -251,6 +252,7 @@ class Scaffold
 		int m_kmer;
 		
 		PairRecord m_pairRec;
+		AlignmentCache m_alignCache;
 		
 		static const int STRONG_LINK_CUTOFF = 10;
 		static const int SUB_ASSEMBLY_K = 14;

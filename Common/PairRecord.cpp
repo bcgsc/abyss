@@ -24,6 +24,18 @@ bool PairRecord::checkForPairs(const PackedSeq& seq) const
 	}
 }
 
+void PairRecord::getPairsWithComp(const PackedSeq& seq, bool reverse, PSequenceVector& ret) const
+{
+	if(reverse)
+	{
+		addPairs(reverseComplement(seq), ret);
+	}
+	else
+	{
+		addPairs(seq, ret);
+	}
+}
+
 const PSequenceVector PairRecord::getPairs(const PackedSeq& seq) const
 {
 	PSequenceVector ret;

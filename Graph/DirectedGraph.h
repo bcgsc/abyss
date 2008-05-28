@@ -91,7 +91,7 @@ class DirectedGraph
 	typedef std::pair<K, VertexCollection> VertexComponent;
 	typedef std::vector<VertexComponent> VertexComponentVector;
 	
-	typedef std::vector<D> DataCollection;
+	typedef std::vector<D*> DataCollection;
 	typedef std::vector<DataCollection> DataComponents;
 	
 	public:

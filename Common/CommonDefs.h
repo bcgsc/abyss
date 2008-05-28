@@ -89,12 +89,6 @@ struct Contig
 	bool super;
 };
 
-
-struct ContigData
-{
-	Sequence seq;
-};
-
 // Contig typedefs
 typedef std::map<ContigID, Contig> ContigMap;
 typedef ContigMap::iterator CMIter;

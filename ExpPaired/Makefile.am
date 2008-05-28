@@ -5,5 +5,6 @@ libexppaired_a_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
 
 libexppaired_a_SOURCES = \
 	NodeScores.cpp NodeScores.h \
-	ParentTree.cpp ParentTree.h
+	ParentTree.cpp ParentTree.h \
+	PairedAlgorithms.cpp PairedAlgorithms.h
 
