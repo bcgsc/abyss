@@ -657,9 +657,9 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
 	
-	if(branch.doLengthCheck() && ((int)branch.getLength() > (int)branch.getMaxLength())) // Check if the branch has extended past the max trim length
+	if(branch.isTooLong())
 	{
-		// Stop the branch
+		// Check if the branch has extended past the max trim length.
 		branch.terminate(BS_TOO_LONG);
 	}
 	else if(branch.hasLoop())
@@ -677,7 +677,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 		// no extenstion, add the current sequence and terminate the branch
 		branch.addSequence(currSeq);
 		branch.setMultiplicity(currSeq, multiplicity);
-		branch.terminate(BS_NOEXT);
+		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_NOEXT);
 	}
 	else if(extensions.dir[dir].IsAmbiguous())
 	{

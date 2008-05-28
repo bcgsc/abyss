@@ -155,6 +155,12 @@ bool BranchRecord::doLengthCheck() const
 	return (m_maxLength > -1);
 }
 
+/** Check if the branch is too long. */
+bool BranchRecord::isTooLong() const
+{
+	return doLengthCheck() && getLength() > getMaxLength();
+}
+
 //
 // Get the total multiplicity of the branch
 // ignoreLast - this flag will be set when determining the branch 

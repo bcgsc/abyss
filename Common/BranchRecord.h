@@ -88,6 +88,9 @@ class BranchRecord
 		// should the length of the branch be checked?
 		bool doLengthCheck() const;
 		
+		/** Return whether the branch is too long. */
+		bool isTooLong() const;
+		
 		// Does this branch have a loop?
 		bool hasLoop() const { return m_loopDetected; }
 		

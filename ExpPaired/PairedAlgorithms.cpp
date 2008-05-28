@@ -127,9 +127,9 @@ bool processNonlinearExtensionForBranch(ISequenceCollection* seqCollection, Pair
 	extDirection dir = branch.getDirection();
 	//extDirection oppDir = oppositeDirection(dir);
 	
-	if(branch.doLengthCheck() && ((int)branch.getLength() > (int)branch.getMaxLength())) // Check if the branch has extended past the max trim length
+	if(branch.isTooLong())
 	{
-		// Stop the branch
+		// Check if the branch has extended past the max trim length.
 		branch.terminate(BS_TOO_LONG);
 	}
 	else if(branch.hasLoop())
