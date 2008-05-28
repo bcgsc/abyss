@@ -443,6 +443,9 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 	
 	size_t numBranches = group.getNumBranches();
 	BranchRecord& refRecord = group.getBranch(selectedIndex);
+	if (opt::verbose > 4)
+		printf("Popping %zu %s\n", refRecord.getLength(),
+				refRecord.getFirstSeq().decode().c_str());
 	
 	for(size_t i = 0; i < numBranches; ++i)
 	{
@@ -711,9 +714,11 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch)
 {
 	assert(!branch.isActive());
-	//printf("	branch has size: %d\n", branchElements.size());
 	if(branch.getLength() > 0 && branch.getState() != BS_TOO_LONG)
 	{		
+		if (opt::verbose > 4)
+			printf("Trimming %zu %s\n", branch.getLength(),
+					branch.getFirstSeq().decode().c_str());
 		BranchDataIter endIter  = branch.getEndIter();
 		for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
 		{
