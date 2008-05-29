@@ -143,7 +143,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 			// Output the progress
 			if (count % 100000 == 0) {
 				size_t numseqs = seqCollection->count();
-				printf("read %u sequences (%zu delta: %zu)\n",
+				printf("Read %u sequences (%zu unique, %zu new)\n",
 						count, numseqs, numseqs - lastNum);
 				fflush(stdout);
 				lastNum = numseqs;
@@ -153,7 +153,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->pumpNetwork();
 	}
 	size_t numseqs = seqCollection->count();
-	printf("read %u sequences (%zu delta: %zu)\n",
+	printf("Read %u sequences (%zu unique, %zu new)\n",
 			count, numseqs, numseqs - lastNum);
 
 	unsigned count_nonacgt = reader->getNonACGT();
@@ -227,7 +227,6 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 void splitAmbiguous(ISequenceCollection* seqCollection)
 {
 	Timer timer("SplitAmbiguous");
-	printf("splitting ambiguous reads\n");
 	int count = 0;
 	int numSplit = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -238,11 +237,9 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 			continue;
 		}
 		
-		if(count % 1000000 == 0)
-		{
-			printf("split %d\n", count);
-		}
 		count++;
+		if (count % 1000000 == 0)
+			printf("Splitting: %d\n", count);
 		
 		for(int i = 0; i <= 1; i++)
 		{
@@ -257,7 +254,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 		}
 		seqCollection->pumpNetwork();
 	}
-	printf("Split %d ambiguous nodes\n", numSplit);
+	printf("Split %d ambiguous branches\n", numSplit);
 }
 
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)

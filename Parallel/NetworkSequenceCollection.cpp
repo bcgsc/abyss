@@ -143,7 +143,6 @@ void NetworkSequenceCollection::run()
 			{
 				AssemblyAlgorithms::splitAmbiguous(this);	
 				m_pComm->SendCheckPointMessage();
-				printf("slave finished split\n");
 				// Cleanup any messages that are pending
 				EndState();				
 				SetState(NAS_WAITING);
@@ -151,7 +150,6 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_ASSEMBLE:
 			{
-				printf("%d: Assembling\n", m_id);
 				// The slave node opens the file in append mode
 				FastaWriter* writer = new FastaWriter("pcontigs.fa", true);
 				unsigned numAssembled = performNetworkAssembly(this, writer);
@@ -225,6 +223,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_GEN_ADJ:
 			{
+				puts("Generating adjacency");
 				networkGenerateAdjacency(this);
 				
 				// Cleanup any messages that are pending
@@ -239,7 +238,6 @@ void NetworkSequenceCollection::runControl()
 				// should erosion be performed?
 				if(!opt::disableErosion)
 				{
-					printf("setting erode\n");
 					SetState(NAS_ERODE);
 				}
 				else
@@ -253,6 +251,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_ERODE:
 			{
+				puts("Eroding");
 				int numErodes = opt::readLen - opt::kmerSize + 1;
 				for(int i = 0; i < numErodes; i++)
 				{
@@ -290,6 +289,7 @@ void NetworkSequenceCollection::runControl()
 				bool stopTrimming = false;
 				while(!stopTrimming)
 				{
+					printf("Trimming short branches: %d\n", start);	
 					m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, start);
 					
 					// perform the trim
@@ -327,6 +327,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_POPBUBBLE:
+				puts("Popping bubbles");	
 				while (controlPopBubbles() > 0);
 				SetState(NAS_TRIM2);
 				m_pComm->SendControlMessage(m_numDataNodes,
@@ -334,6 +335,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_TRIM2:
 			{
+				printf("Trimming short branches: %d\n", opt::trimLen);
 				performNetworkTrim(this, opt::trimLen);
 				
 				// Cleanup any messages that are pending
@@ -350,6 +352,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_SPLIT:
 			{
+				puts("Splitting ambiguous branches");
 				AssemblyAlgorithms::splitAmbiguous(this);
 
 				// Cleanup any messages that are pending
@@ -366,6 +369,7 @@ void NetworkSequenceCollection::runControl()
 			}	
 			case NAS_ASSEMBLE:
 			{
+				puts("Assembling");
 				// Perform a round-robin assembly
 				// The assembly operations cannot be concurrent since a contig can have a start in two different
 				// nodes and would therefore result in a collision (and it would be output twice)
@@ -375,8 +379,6 @@ void NetworkSequenceCollection::runControl()
 				// First, assemble the local sequences
 				
 				// Note: all other nodes will be in a waiting state so they will service network requests
-				
-				printf("%d: Assembling\n", m_id);
 				
 				// The master opens the file in truncate mode
 				FastaWriter* writer = new FastaWriter("pcontigs.fa");
@@ -418,7 +420,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_DONE:
 			{
-				printf("in done state\n");
+				puts("Done.");
 				stop = true;
 				break;
 			}
@@ -570,7 +572,6 @@ int NetworkSequenceCollection::parseControlMessage()
 		}
 		case APC_DONELOAD:
 		{
-			PrintDebug(0, "got done load message\n");
 			SetState(NAS_FINALIZE);
 			break;	
 		}
@@ -582,7 +583,6 @@ int NetworkSequenceCollection::parseControlMessage()
 		case APC_FINISHED:
 		{
 			SetState(NAS_DONE);
-			PrintDebug(0, "finished message received, exiting\n");							
 			break;	
 		}
 		case APC_TRIM:
@@ -656,18 +656,20 @@ void NetworkSequenceCollection::handleSequenceDataResponse(int /*senderID*/, Seq
 void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* seqCollection)
 {
 	Timer timer("NetworkGenerateAdjacency");
-	printf("generating adjacency info - network\n");
 	
 	int count = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 100000 == 0)
-		{
-			printf("generated for %d num reqs: %zu\n", count, m_numOutstandingRequests);
-		}
 		count++;
+		if(count % 100000 == 0) {
+			PrintDebug(0, "Generating adjacency: %d sequences\n",
+					count);
+			if (m_numOutstandingRequests > 0)
+				PrintDebug(0, "Back log of %zu requests\n",
+						m_numOutstandingRequests);
+		}
 		
 		const PackedSeq& currSeq = *iter;
 		//printf("gen for: %s\n", iter->decode().c_str());
@@ -706,7 +708,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	}
 
 	m_pLog->write(timer.toString().c_str());
-	printf("%d all requests filled, continue\n", m_id);
 }
 
 //
@@ -715,7 +716,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull)
 {
 	Timer timer("NetworkTrim");
-	printf("network trimming max branch: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 
 	// The branch ids
@@ -773,7 +773,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 	}		
 	
 	m_pLog->write(timer.toString().c_str());
-	printf("num branches removed: %d\n", numBranchesRemoved);
+	PrintDebug(0, "Trimmed %d branches\n", numBranchesRemoved);
 	return numBranchesRemoved;	
 }
 
@@ -846,11 +846,9 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 			continue;
 		}
 
-		if(count % 100000 == 0)
-		{
-			printf("Popping looked at %d\n", count);
-		}
 		count++;
+		if (count % 100000 == 0)
+			PrintDebug(0, "Popping bubbles: %d sequences\n", count);
 		
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
@@ -1064,7 +1062,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		seqCollection->pumpNetwork();
 	}		
 	m_pLog->write(timer.toString().c_str());
-	printf("num assembled: %d\n", numAssembled);
+	PrintDebug(0, "Assembled %d contigs\n", numAssembled);
 	return numAssembled;
 }
 
@@ -1308,7 +1306,7 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 void NetworkSequenceCollection::finalize()
 {
 	// this command is broadcast from the controller so we only perform a local finalize
-	PrintDebug(1, "loaded: %d sequences\n", m_pLocalSpace->count());	
+	PrintDebug(1, "Loaded %d sequences\n", m_pLocalSpace->count());	
 	m_pLocalSpace->finalize();
 }
 

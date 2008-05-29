@@ -1,7 +1,7 @@
-#include <algorithm>
-
 #include "SequenceCollectionHash.h"
 #include "CommonUtils.h"
+#include "Options.h"
+#include <algorithm>
 
 
 bool PackedSeqEqual::operator()(const PackedSeq& obj1, const PackedSeq& obj2) const
@@ -297,8 +297,9 @@ void SequenceCollectionHash::finalize()
 	
 	size_t num_buckets = m_pSequences->bucket_count();
 	size_t num_seqs = m_pSequences->size();
-	printf("hash buckets: %zu sequences: %zu load factor: %f\n", num_buckets, num_seqs, (float)num_seqs/(float)num_buckets);
-	
+	if (opt::verbose > 0)
+		printf("hash buckets: %zu sequences: %zu load factor: %f\n",
+				num_buckets, num_seqs, (float)num_seqs/num_buckets);
 }
 
 //

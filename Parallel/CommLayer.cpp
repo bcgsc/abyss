@@ -17,8 +17,7 @@ CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_m
 //
 CommLayer::~CommLayer()
 {
-	printf("%d: Comm layer performed %lu buffered sends\n", m_id, (unsigned long)m_msgID);
-	// Destroy the buffer
+	printf("%d: Sent %lu messages\n", m_id, m_msgID);
 	delete [] m_buffer;
 }
 

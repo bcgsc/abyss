@@ -77,9 +77,6 @@ static const struct option longopts[] = {
 /** Parse the specified command line. */
 void parse(int argc, char* const* argv)
 {
-	copy(argv, &argv[argc], ostream_iterator<string>(cout, " "));
-	cout << endl;
-
 	char c;
 	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL))
 			!= -1) {
