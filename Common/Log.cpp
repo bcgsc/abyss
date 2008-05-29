@@ -1,4 +1,5 @@
 #include "Log.h"
+#include "Options.h"
 #include <stdarg.h>
 #include <unistd.h>
 
@@ -25,7 +26,7 @@ int Log::m_id = -1;
 
 int PrintDebug(int level, const char* format, ...)
 {
-	if (level > 3)
+	if (opt::verbose < level)
 		return 0;
 	if (Log::m_id >= 0)
 		printf("%d: ", Log::m_id);

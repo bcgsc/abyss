@@ -12,7 +12,7 @@ Timer::Timer(std::string funcString) : m_funcStr(funcString)
 // Destructor stops it and prints
 Timer::~Timer()
 {
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		std::cout << toString() << std::endl;
 }
 

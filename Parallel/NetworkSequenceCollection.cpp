@@ -663,7 +663,7 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	{
 		count++;
 		if(count % 100000 == 0) {
-			PrintDebug(0, "Generating adjacency: %d sequences\n",
+			PrintDebug(1, "Generating adjacency: %d sequences\n",
 					count);
 			if (m_numOutstandingRequests > 0)
 				PrintDebug(0, "Back log of %zu requests\n",
@@ -847,7 +847,7 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 
 		count++;
 		if (count % 100000 == 0)
-			PrintDebug(0, "Popping bubbles: %d sequences\n", count);
+			PrintDebug(1, "Popping bubbles: %d sequences\n", count);
 		
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
@@ -902,7 +902,7 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 	}
 	
 	m_pLog->write(timer.toString().c_str());
-	PrintDebug(1, "Removed %d bubbles\n", numPopped);
+	PrintDebug(0, "Removed %d bubbles\n", numPopped);
 	return numPopped;	
 }
 
@@ -1305,7 +1305,7 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 void NetworkSequenceCollection::finalize()
 {
 	// this command is broadcast from the controller so we only perform a local finalize
-	PrintDebug(1, "Loaded %d sequences\n", m_pLocalSpace->count());	
+	PrintDebug(0, "Loaded %d sequences\n", m_pLocalSpace->count());	
 	m_pLocalSpace->finalize();
 }
 

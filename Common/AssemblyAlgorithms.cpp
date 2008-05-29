@@ -142,7 +142,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 			// Output the progress
 			if (count % 100000 == 0) {
 				size_t numseqs = seqCollection->count();
-				PrintDebug(0,
+				PrintDebug(1,
 						"Read %u sequences: %zu unique, %zu new\n",
 						count, numseqs, numseqs - lastNum);
 				fflush(stdout);
@@ -153,7 +153,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->pumpNetwork();
 	}
 	size_t numseqs = seqCollection->count();
-	PrintDebug(0, "Read %u sequences: %zu unique, %zu new\n",
+	PrintDebug(1, "Read %u sequences: %zu unique, %zu new\n",
 			count, numseqs, numseqs - lastNum);
 
 	unsigned count_nonacgt = reader->getNonACGT();
