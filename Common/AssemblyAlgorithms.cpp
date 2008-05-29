@@ -105,13 +105,11 @@ void loadSequences(ISequenceCollection* seqCollection,
 	}
 	else
 	{
-		printf("Input file %s is an unknown format "
+		fprintf(stderr, "error: Input file `%s' is an unknown format "
 				"(requires .fasta, .fa, .fastq or .psq)\n",
 				inFile.c_str());
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
-	
-	
 	
 	unsigned count = 0, count_small = 0;
 	
