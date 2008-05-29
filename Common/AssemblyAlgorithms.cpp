@@ -735,7 +735,6 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 {
 	Timer timer("Assemble");
 	
-	int numAssembled = 0;
 	int contigID = 0;
 	
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -760,8 +759,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 			processTerminatedBranchAssemble(seqCollection, currBranch, contig);
 			
 			// Output the contig
-			fileWriter->WriteSequence(contig, contigID, 0);
-			contigID++;
+			fileWriter->WriteSequence(contig, ++contigID, 0);
 			continue;
 		}
 
@@ -790,15 +788,11 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		processTerminatedBranchAssemble(seqCollection, currBranch, contig);
 		
 		// Output the contig
-		fileWriter->WriteSequence(contig, contigID, 0);
-		
-		contigID++;				
-		numAssembled++;
-
+		fileWriter->WriteSequence(contig, ++contigID, 0);
 		seqCollection->pumpNetwork();
 	}
 	
-	printf("num branches assembled: %d\n", numAssembled);
+	printf("Assembled %d contigs\n", contigID);
 }
 
 //
