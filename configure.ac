@@ -29,12 +29,15 @@ AC_FUNC_VPRINTF
 
 # Options to configure.
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
-	[specify prefix directory for the installed LAM/MPI parallel
+	[specify prefix directory for the installed MPI parallel
 	computing library]))
 if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_cppflags="-I$with_mpi/include"
 	mpi_ldflags="-L$with_mpi/lib"
 fi
+
+AC_ARG_ENABLE(openmpi, AS_HELP_STRING([--enable-openmpi],
+	[use Open MPI (default is to use LAM/MPI)]))
 
 # Set compiler flags.
 AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
@@ -42,13 +45,16 @@ AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
 # Check for the LAM/MPI parallel computing library.
 AC_LANG([C++])
-AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([dl], [dlopen])
-AC_CHECK_LIB([lam], [lam_mutex_lock])
-AC_CHECK_LIB([mpi], [MPI_Init])
-AC_CHECK_LIB([lammpi++], [main]) 
-AC_CHECK_LIB([lammpio], [MPI_File_open]) 
-#AC_CHECK_LIB([mpiP], [main])
+if test "$enable_openmpi"; then
+	AC_CHECK_LIB([mpi], [MPI_Init])
+	AC_CHECK_LIB([mpi_cxx], [main])
+else
+	AC_CHECK_LIB([pthread], [pthread_create])
+	AC_CHECK_LIB([dl], [dlopen])
+	AC_CHECK_LIB([lam], [lam_mutex_lock])
+	AC_CHECK_LIB([mpi], [MPI_Init])
+	AC_CHECK_LIB([lammpi++], [main]) 
+fi
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 
 # Check for the Google sparse hash set.
