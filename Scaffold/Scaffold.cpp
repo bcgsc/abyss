@@ -560,20 +560,16 @@ void Scaffold::merge4()
 	size_t numVert = contigGraph.getNumVertices();
 	size_t numEdges = contigGraph.countEdges(); // SLOW
 	printf("BEFORE: num vert: %zu num edges: %zu\n", numVert, numEdges);
+		
+	// Generate the initial alignment DB
+	AlignmentCache alignDB;
 	
-	contigGraph.printVertex("243");
+	// Create the contig data function object
+	ContigDataFunctions dataFunctor(m_kmer, &alignDB);	
 	
 	printf("Pre-validating graph\n");	
-	contigGraph.validate(ContigDataFunctions(m_kmer));
-	
-	/*
-	contigGraph.printVertex("1474");
-	contigGraph.printVertex("1309");
-	contigGraph.mergeWrapper("1474", "1309", ContigDataFunctions(m_kmer));
-	contigGraph.printVertex("1474", true);
-	return;
-	*/
-	
+	contigGraph.validate(dataFunctor);
+
 	FastaWriter* pWriter;
 	pWriter = new FastaWriter("BeforeContigs.fa");
 	
@@ -582,10 +578,16 @@ void Scaffold::merge4()
 	delete pWriter;
 	pWriter = 0;
 
+	// Populate the database
+	{
+		Timer t("GenDB");
+		contigGraph.iterativeVisit(DBGenerator(&alignDB));
+	}	
+	
 	bool stop = false;
 	while(!stop)
 	{
-		size_t numMerged = contigGraph.removeTransitivity(ContigDataFunctions(m_kmer));
+		size_t numMerged = contigGraph.removeTransitivity(dataFunctor);
 		printf("trans reduce performed %zu merges\n", numMerged);
 			
 		if(numMerged == 0)
@@ -600,8 +602,25 @@ void Scaffold::merge4()
 		}
 	}
 	
+	AlignmentCache db2;
+	contigGraph.iterativeVisit(DBGenerator(&db2));	
+	
+	
 	printf("Post validating graph\n");
-	contigGraph.validate(ContigDataFunctions(m_kmer));
+	contigGraph.validate(dataFunctor);
+
+	size_t maxComponentLength = 500;
+	PairedResolver resolver(m_kmer, maxComponentLength, &m_pairRec, &alignDB);
+	
+	SequenceDataCost dataCost;
+	
+	//contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
+
+	contigGraph.attemptResolve("40", SENSE, maxComponentLength, dataCost, resolver, dataFunctor);
+	
+	contigGraph.printVertex("40", true);
+	
+	return;
 	
 	numVert = contigGraph.getNumVertices();
 	numEdges = contigGraph.countEdges(); // SLOW
@@ -615,21 +634,12 @@ void Scaffold::merge4()
 		
 	printf("Attemping to resolve using pairs\n");
 	
-	size_t maxComponentLength = 200;
-	PairedResolver resolver(m_kmer, maxComponentLength, &m_pairRec);
-	
-	SequenceDataCost dataCost;
-	ContigDataFunctions dataMerger(m_kmer);
-	
-	//contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
 
-	contigGraph.attemptResolve("40", SENSE, maxComponentLength, dataCost, resolver, dataMerger);
-	contigGraph.printVertex("40", true);
 	
 	pWriter = new FastaWriter("ResolvedContigs.fa");
 	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
 	delete pWriter;	
-	contigGraph.validate(ContigDataFunctions(m_kmer));
+	contigGraph.validate(dataFunctor);
 }
 
 Sequence Scaffold::findContig(PackedSeq start, ContigID& id)

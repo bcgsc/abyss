@@ -430,7 +430,7 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	if(pChild->m_edges[expectedChildsDir].empty())
 	{
 		// remove the vertex and update all the links to point to the merged node
-		removeVertex(pChild);
+		removeVertex(pChild, dataMerger);
 	}
 	
 	/*
@@ -446,7 +446,8 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 }
 
 template<typename K, typename D>
-void DirectedGraph<K,D>::removeVertex(VertexType* pVertex)
+template<class DataFunctor>
+void DirectedGraph<K,D>::removeVertex(VertexType* pVertex, DataFunctor functor)
 {
 	const K& key = pVertex->m_key;
 	//printf("Removing %s\n", key.c_str());
@@ -475,6 +476,8 @@ void DirectedGraph<K,D>::removeVertex(VertexType* pVertex)
 	VertexTableIter iter = m_vertexTable.find(key);
 	assert(iter != m_vertexTable.end());
 	
+	// Call the functor to indicate this vertex is being deleted
+	functor.deleteCallback(key, pVertex->m_data);
 	//printf("deleting %s\n", key.c_str());
 
 	
@@ -560,13 +563,13 @@ bool DirectedGraph<K,D>::attemptResolve(const K& key, extDirection dir, size_t m
 	{
 		Timer compTimer("DataComponents");
 		DataCollection dataCollection;
-		printf("Component %zu (%zu)\n", count++, compIter->second.size());
+		printf("Component %zu (%zu) [", count++, compIter->second.size());
 		for(typename VertexCollection::iterator vertIter = compIter->second.begin(); vertIter != compIter->second.end(); ++vertIter)
 		{
-			printf("	key %s len %zu\n", (*vertIter)->m_key.c_str(), (*vertIter)->m_data.seq.length());
+			printf("%s, ", (*vertIter)->m_key.c_str());
 			dataCollection.push_back(&(*vertIter)->m_data);
 		}
-		
+		printf("]\n");
 		dataComponents.push_back(dataCollection);
 	}
 	
@@ -598,10 +601,12 @@ void DirectedGraph<K,D>::generateComponents(VertexType* pVertex, extDirection di
 {
 	// Create a vertex collection for every sequence directly adjacent to this vertex
 	typename VertexType::EdgeCollection& edgeCollection = pVertex->m_edges[dir];
+	
 	for(typename VertexType::EdgeCollectionConstIter iter = edgeCollection.begin(); iter != edgeCollection.end(); ++iter)
 	{
+		printf("Generating component: \n");
 		// explore down this branch until maxCost is hit, accumulating all the vertices
-				
+			
 		// start the branch
 		VertexComponent newComp;
 		newComp.first = iter->pVertex->m_key;
@@ -617,6 +622,8 @@ template<class DataCostFunctor>
 void DirectedGraph<K,D>::accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost)
 {	
 	// Add this vertex
+	printf("	pushing %s %zu\n", pVertex->m_key.c_str(), currCost);
+	
 	accumulator.insert(pVertex);
 	
 	// add the cost
@@ -648,6 +655,12 @@ void DirectedGraph<K,D>::iterativeVisit(Functor visitor)
 	}
 }
 
+template<typename K, typename D>
+void DirectedGraph<K,D>::outputVertexConnectivity() const
+{
+	
+
+}
 
 /*
 template<typename K, typename D>

@@ -6,9 +6,87 @@ AlignmentCache::AlignmentCache()
 	
 }
 
+bool AlignmentCache::compare(const AlignmentCache& otherDB)
+{
+	for(AlignDB::const_iterator keyIter = m_alignmentCache.begin(); keyIter != m_alignmentCache.end(); ++keyIter)
+	{
+		// make sure the key is in the other DB
+		AlignDB::const_iterator dataIter = otherDB.m_alignmentCache.find(keyIter->first);
+		if(dataIter == otherDB.m_alignmentCache.end())
+		{
+			printf("key not found! %s", keyIter->first.decode().c_str());
+			return false;
+		}
+		else
+		{
+			// test sets for equality
+			if(dataIter->second != keyIter->second)
+			{
+				printf("Sets do not match for key %s\n", keyIter->first.decode().c_str());
+				
+				printf("Set1: \n");
+				printSet(keyIter->second);
+
+				printf("Set2: \n");
+				printSet(dataIter->second);
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void AlignmentCache::concatSets(ContigIDSet& seqSet1, const ContigIDSet& seqSet2) const
+{
+	seqSet1.insert(seqSet2.begin(), seqSet2.end());
+}
+
 void AlignmentCache::addAlignment(const PackedSeq& seq, const ContigID& id)
 {
 	m_alignmentCache[seq].insert(id);
+	m_alignmentCache[reverseComplement(seq)].insert(id);
+}
+
+void AlignmentCache::getSet(const PackedSeq& seq, ContigIDSet& outset) const
+{
+	AlignDB::const_iterator iter = m_alignmentCache.find(seq);
+	if(iter != m_alignmentCache.end())
+	{
+		concatSets(outset, iter->second);
+	}
+	return;
+}
+
+void AlignmentCache::removeAlignment(const PackedSeq& seq, const ContigID& id)
+{
+	m_alignmentCache[seq].erase(id);
+	m_alignmentCache[reverseComplement(seq)].erase(id);
+}
+
+void AlignmentCache::addKeys(const PSeqSet& seqSet, const ContigID& id)
+{
+	for(PSeqSet::iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
+	{
+		addAlignment(*iter, id);
+	}	
+}
+
+void AlignmentCache::deleteKeys(const PSeqSet& seqSet, const ContigID& id)
+{
+	for(PSeqSet::iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
+	{
+		removeAlignment(*iter, id);
+	}	
+}
+
+void AlignmentCache::printSet(const ContigIDSet& seqSet) const
+{
+	printf("[ ");
+	for(ContigIDSet::const_iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
+	{
+		printf("%s ", iter->c_str());
+	}
+	printf("] ");
 }
 
 /*

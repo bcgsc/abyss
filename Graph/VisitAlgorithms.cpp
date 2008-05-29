@@ -1,7 +1,7 @@
 #include "VisitAlgorithms.h"
 #include "Timer.h"
 
-void ContigDataFunctions::merge(const ContigID& /*targetKey*/, ContigData& targetData, const ContigID& /*slaveKey*/, const ContigData& slaveData, extDirection dir, bool reverse)
+void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetData, const ContigID& /*slaveKey*/, const ContigData& slaveData, extDirection dir, bool reverse)
 {
 	// should the slave be reversed?
 	Sequence slaveSeq = slaveData.seq;
@@ -44,16 +44,19 @@ void ContigDataFunctions::merge(const ContigID& /*targetKey*/, ContigData& targe
 	
 	targetData.seq = merged;
 	
+	// merge the seq sets
+	targetData.m_seqSet.insert(slaveData.m_seqSet.begin(), slaveData.m_seqSet.end());
+	
 	// Now, update the lookup table
-	//m_pDatabase->addKeys(slaveData.m_seqSet, targetKey);
+	m_pDatabase->addKeys(slaveData.m_seqSet, targetKey);
 	
 	//printf("merge called data1: %s %s (%d, %d)\n", target.seq.c_str(), slave.seq.c_str(), dir, reverse);	
 	//printf("new target seq: %s\n", merged.c_str());
 }
 
-void ContigDataFunctions::deleteContig(const Contig& /*slaveKey*/, const ContigData& /*slaveData*/)
+void ContigDataFunctions::deleteCallback(const ContigID& slaveKey, const ContigData& slaveData)
 {
-	//m_pDatabase->
+	m_pDatabase->deleteKeys(slaveData.m_seqSet, slaveKey);
 }
 
 bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse)
@@ -84,6 +87,12 @@ bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, ext
 	PackedSeq rightBegin = rightSeq->substr(0, m_overlap);
 	
 	return leftEnd == rightBegin;
+}
+
+void DBGenerator::visit(const ContigID& id, const ContigData& data)
+{
+	// add a record for every sequence in the data
+	m_pDatabase->addKeys(data.m_seqSet, id);
 }
 
 void ContigDataOutputter::visit(const ContigID& id, const ContigData& data)
@@ -163,7 +172,8 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 	int firstSupported = -1;
 	int lastSupported = -1;
 	
-	printf("Support string: ");
+	printf("Support string: \n");
+	
 	for(size_t idx = firstIndex; idx <= lastIndex; ++idx)
 	{
 		// Get the pairs for this kmer
@@ -178,6 +188,14 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 			m_pPairs->getPairsWithComp(refKmers[idx], true, seqPairs);
 		}
 		
+
+		ContigIDSet idCollection;
+		for(PSequenceVector::const_iterator seqIter = seqPairs.begin(); seqIter != seqPairs.end(); ++seqIter)
+		{
+			// append into the id collection
+			m_pDatabase->getSet(*seqIter, idCollection);
+		}
+		
 		// score these pairs against the sequence sets
 		int numSupported = 0;
 		for(ScoreSets::iterator iter = scoreSets.begin(); iter != scoreSets.end(); ++iter)
@@ -188,7 +206,11 @@ int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigData
 				numSupported++;
 			}
 		}
-		printf("%d", numSupported);
+		
+		// Get the set of contigs supported
+		printf("%d ", numSupported);
+		m_pDatabase->printSet(idCollection);
+		printf("\n");
 		
 		//printf("Num supported: %d\n", numSupported);
 		

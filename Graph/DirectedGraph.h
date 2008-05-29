@@ -26,11 +26,8 @@ struct Vertex
 			
 			if (cmp == 0)
 			{
-				//printf("Pointers equal (%s %s), returning %d\n", pVertex->m_key.c_str(), e2.pVertex->m_key.c_str(), this->reverse < e2.reverse);
 				return this->reverse < e2.reverse;
 			}
-			//printf("Pointers not equal(%d, %d), %zu %zu (%s %s)\n", cmp, (cmp < 0), (size_t)pVertex, (size_t)e2.pVertex, pVertex->m_key.c_str(), e2.pVertex->m_key.c_str());
-			
 			return (cmp < 0);	  	
 		} 
 	  
@@ -105,7 +102,8 @@ class DirectedGraph
 		VertexType* addVertex(const K& key, const D& data);
 		
 		// remove vertex
-		void removeVertex(VertexType* pVertex);
+		template<class DataFunctor>
+		void removeVertex(VertexType* pVertex, DataFunctor functor);
 		
 		// reduce the graph with paired data		
 		template<class DataCostFunctor, class ResolveFunctor, class DataMerger>
@@ -149,6 +147,8 @@ class DirectedGraph
 		template<class Functor>
 		void bfsVisit(Functor f);
 		
+		void outputVertexConnectivity() const;
+		
 	private:
 	
 		// Merge two vertices
@@ -156,7 +156,6 @@ class DirectedGraph
 		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, Functor dataMerger);
 			
 		VertexType* findVertex(const K& key) const;
-
 		VertexTable m_vertexTable;
 };
 

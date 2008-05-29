@@ -169,8 +169,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 				"containing non-ACGT characters\n", count_nonacgt);
 
 	if (count == 0) {
-		fputs("error: input contains no usable sequences\n", stderr);
-		exit(EXIT_FAILURE);
+		fputs("warning: input contains no usable sequences\n", stderr);
 	}
 }
 

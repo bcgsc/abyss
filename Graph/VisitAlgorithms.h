@@ -10,17 +10,27 @@
 
 struct ContigDataFunctions
 {
-	ContigDataFunctions(size_t k /*,AlignmentCache* pAliCache*/) : m_kmer(k)/*, m_pDatabase(pAliCache)*/ { m_overlap = m_kmer - 1; }
+	ContigDataFunctions(size_t k ,AlignmentCache* pAliDB) : m_kmer(k), m_pDatabase(pAliDB) { m_overlap = m_kmer - 1; }
 	
 	
 	void merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, const ContigData& slaveData, extDirection dir, bool reverse);
-	void deleteContig(const Contig& slaveKey, const ContigData& slaveData);
+	void deleteCallback(const ContigID& slaveKey, const ContigData& slaveData);
 	
 	bool check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse);
 	
 	size_t m_kmer;
 	AlignmentCache* m_pDatabase;
 	size_t m_overlap;
+	
+};
+
+struct DBGenerator
+{
+	DBGenerator(AlignmentCache* pDB) : m_pDatabase(pDB) { }
+	void visit(const ContigID& id, const ContigData& data);
+	
+	AlignmentCache* m_pDatabase;
+	
 	
 };
 
@@ -35,7 +45,7 @@ struct ContigDataOutputter
 
 struct PairedResolver
 {
-	PairedResolver(size_t kmer, size_t maxLength, PairRecord* pPairs) : m_kmer(kmer), m_maxlength(maxLength), m_pPairs(pPairs) { }
+	PairedResolver(size_t kmer, size_t maxLength, PairRecord* pPairs, AlignmentCache* pDB) : m_kmer(kmer), m_maxlength(maxLength), m_pPairs(pPairs), m_pDatabase(pDB) { }
 	
 	typedef std::vector<ContigData*> ContigDataCollection;
 	typedef std::vector<ContigDataCollection> ContigDataComponents;
@@ -48,6 +58,7 @@ struct PairedResolver
 	size_t m_kmer;
 	size_t m_maxlength;
 	PairRecord* m_pPairs;
+	AlignmentCache* m_pDatabase;
 	
 };
 
