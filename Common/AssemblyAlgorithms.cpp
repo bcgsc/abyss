@@ -1,6 +1,7 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastqReader.h"
+#include "Log.h"
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
@@ -84,28 +85,28 @@ void loadSequences(ISequenceCollection* seqCollection,
 		std::string inFile)
 {
 	Timer timer("LoadSequences " + inFile);
-	IFileReader* reader;
-	
+
+	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
+
 	// Determine the input file type
+	IFileReader* reader;
 	if(inFile.find(PACKED_SEQ_EXT) != std::string::npos)
 	{
 		// The file is a packed seq file
-		printf("Reading packed seq binary file %s\n", inFile.c_str());
 		reader = new PackedSeqReader(inFile.c_str());
 	}
 	else if(inFile.find(".fastq") != std::string::npos)
 	{
-		printf("Reading fastq file %s\n", inFile.c_str());
 		reader = new FastqReader(inFile.c_str());
 	}
-	else if(inFile.find(".fa") != std::string::npos || inFile.find(".fasta") != std::string::npos)
+	else if(inFile.find(".fa") != std::string::npos
+			|| inFile.find(".fasta") != std::string::npos)
 	{
-		printf("Reading fasta file %s\n", inFile.c_str());
 		reader = new FastaReader(inFile.c_str());
 	}
 	else
 	{
-		fprintf(stderr, "error: Input file `%s' is an unknown format "
+		fprintf(stderr, "error: `%s' is an unknown format "
 				"(requires .fasta, .fa, .fastq or .psq)\n",
 				inFile.c_str());
 		exit(EXIT_FAILURE);
@@ -141,7 +142,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 			// Output the progress
 			if (count % 100000 == 0) {
 				size_t numseqs = seqCollection->count();
-				printf("Read %u sequences (%zu unique, %zu new)\n",
+				PrintDebug(0,
+						"Read %u sequences: %zu unique, %zu new\n",
 						count, numseqs, numseqs - lastNum);
 				fflush(stdout);
 				lastNum = numseqs;
@@ -151,7 +153,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->pumpNetwork();
 	}
 	size_t numseqs = seqCollection->count();
-	printf("Read %u sequences (%zu unique, %zu new)\n",
+	PrintDebug(0, "Read %u sequences: %zu unique, %zu new\n",
 			count, numseqs, numseqs - lastNum);
 
 	unsigned count_nonacgt = reader->getNonACGT();
@@ -237,7 +239,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 		
 		count++;
 		if (count % 1000000 == 0)
-			printf("Splitting: %d\n", count);
+			PrintDebug(1, "Splitting: %d sequences\n", count);
 		
 		for(int i = 0; i <= 1; i++)
 		{
@@ -252,7 +254,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 		}
 		seqCollection->pumpNetwork();
 	}
-	printf("Split %d ambiguous branches\n", numSplit);
+	PrintDebug(0, "Split %d ambiguous branches\n", numSplit);
 }
 
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)

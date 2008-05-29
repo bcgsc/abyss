@@ -157,9 +157,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Get the node id that this sequence should reside in
 		int computeNodeID(const PackedSeq& seq) const;
 		
-		// Print function
-		int PrintDebug(int level,char* fmt, ...) const;
-		
 		// Clean up the state
 		void EndState();
 		

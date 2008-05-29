@@ -1,7 +1,6 @@
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include <sstream>
-#include <stdarg.h>
 
 //
 //
@@ -1598,23 +1597,3 @@ int NetworkSequenceCollection::computeNodeID(const PackedSeq& seq) const
 	unsigned int id = code % m_numDataNodes;	
 	return id;
 }
-
-//
-//
-//
-int NetworkSequenceCollection::PrintDebug(int level,char* fmt, ...) const
-{	
-	int retval=0;
-	if(level <= 3)
-	{
-		printf("%d: ", m_id);
-		va_list ap;
-		va_start(ap, fmt); /* Initialize the va_list */
-		retval = vprintf(fmt, ap); /* Call vprintf */
-		
-		va_end(ap); /* Cleanup the va_list */
-	}
-
-	return retval;
-}
-

@@ -11,8 +11,6 @@
 #include "ParallelFastaWriter.h"
 #include "Timer.h"
 
-int rank;
-
 int main(int argc, char** argv)
 {	
 	Timer timer("ParallelAbyss");
@@ -21,9 +19,10 @@ int main(int argc, char** argv)
 	MPI_Init(&argc,&argv);
 	
 	// get my rank and the world size
-	int size;
+	int rank, size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	Log::m_id = rank;
 	
 	if (rank == 0) {
 		for (int i = 0; i < argc; i++) {
