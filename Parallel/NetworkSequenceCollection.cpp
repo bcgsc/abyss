@@ -1023,7 +1023,15 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		}
 		else if(status == SC_ISLAND)
 		{
-			// singleton, ignore for now
+			// Output the singleton contig.
+			BranchRecord currBranch(SENSE, -1);
+			currBranch.addSequence(*iter);
+			currBranch.terminate(BS_NOEXT);
+			Sequence contig;
+			AssemblyAlgorithms::processTerminatedBranchAssemble( 
+					seqCollection, currBranch, contig);
+			fileWriter->WriteSequence(contig,
+					m_numAssembled + ++numAssembled, 0);
 			continue;
 		}
 		
@@ -1091,7 +1099,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 				
 				// Output the contig
 				fileWriter->WriteSequence(contig,
-						m_numAssembled + currContigID++, 0);
+						m_numAssembled + ++currContigID, 0);
 			}
 			
 			// Mark the group for removal
