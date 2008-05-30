@@ -285,6 +285,7 @@ void NetworkSequenceCollection::runControl()
 				
 				assert(start > 1);
 				
+				unsigned totalRemoved = 0;
 				bool stopTrimming = false;
 				while(!stopTrimming)
 				{
@@ -299,24 +300,28 @@ void NetworkSequenceCollection::runControl()
 					if (start > opt::trimLen)
 						start = opt::trimLen;
 
-					// Wait for all the nodes to hit the checkpoint
-					if(numRemoved == 0)
-					{
-						stopTrimming = true;
-					}	
-					
 					// Cleanup any messages that are pending
 					EndState();							
 
+					// Wait for all the nodes to hit the checkpoint
 					m_numReachedCheckpoint++;
 					while(!checkpointReached(m_numDataNodes))
 					{
 						pumpNetwork();
 					}
+					numRemoved += m_checkpointSum;
+					
+					if (numRemoved == 0)
+						stopTrimming = true;
+					else
+						printf("Trimmed %d branches\n", numRemoved);
+					totalRemoved += numRemoved;
 					
 					// All checkpoints are reached, reset the state
 					SetState(NAS_TRIM);
 				}
+				printf("Trimmed %d branches in total\n",
+						totalRemoved);
 				
 				// Cleanup any messages that are pending
 				EndState();				
@@ -450,6 +455,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	
 	// Reset the checkpoint counter
 	m_numReachedCheckpoint = 0;
+	m_checkpointSum = 0;
 }
 
 APResult NetworkSequenceCollection::pumpNetwork(int* pArg)
@@ -577,6 +583,7 @@ int NetworkSequenceCollection::parseControlMessage()
 		case APC_CHECKPOINT:
 		{
 			m_numReachedCheckpoint++;
+			m_checkpointSum += controlMsg.argument;
 			break;	
 		}
 		case APC_FINISHED:

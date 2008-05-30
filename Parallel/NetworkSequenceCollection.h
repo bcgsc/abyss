@@ -181,6 +181,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// The number of processes that have sent a checkpoint reached message, this is used by the control process to determine the state flow
 		int m_numReachedCheckpoint;
+
+		/** The sum of the values returned by the slave nodes in their
+		 * checkpoint messages.
+		 */
+		int m_checkpointSum;
 		
 		// the size of k used in the assembly
 		int m_kmer;
