@@ -331,12 +331,20 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_POPBUBBLE:
-				puts("Popping bubbles");	
-				while (controlPopBubbles() > 0);
+			{
+				puts("Popping bubbles");
+				unsigned totalPopped = 0;
+				unsigned numPopped;
+				do {
+					numPopped = controlPopBubbles();
+					totalPopped += numPopped;
+				} while (numPopped > 0);
+				printf("Removed %d bubbles in total\n", totalPopped);
 				SetState(NAS_TRIM2);
 				m_pComm->SendControlMessage(m_numDataNodes,
 						APC_TRIM, opt::trimLen);
 				break;
+			}
 			case NAS_TRIM2:
 			{
 				printf("Trimming short branches: %d\n", opt::trimLen);
