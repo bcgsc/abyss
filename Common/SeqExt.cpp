@@ -80,11 +80,11 @@ SeqExt SeqExt::complement() const
 //
 void SeqExt::print() const
 {
-	int a = CheckBase('A');
-	int c = CheckBase('C');
-	int g = CheckBase('G');
-	int t = CheckBase('T');
-	printf("ext: %d%d%d%d\n", t,g,c,a);
+	printf("ext: %c%c%c%c\n",
+			 CheckBase('T') ? 'T' : ' ',
+			 CheckBase('G') ? 'G' : ' ',
+			 CheckBase('C') ? 'C' : ' ',
+			 CheckBase('A') ? 'A' : ' ');
 }
 
 //
