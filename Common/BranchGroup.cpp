@@ -131,7 +131,9 @@ void BranchGroup::selectBranchToKeep()
 	
 	for(size_t index = 0; index < numBranches; ++index)
 	{
-		int currMult = getBranch(index).getBranchMultiplicity(true);
+		BranchRecord& branch = getBranch(index);
+		int currMult = branch.getBranchMultiplicity(true);
+		branch.clearMultiplicity();
 		if(currMult > bestMult)
 		{
 			bestMult = currMult;

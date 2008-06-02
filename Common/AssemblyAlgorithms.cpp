@@ -452,14 +452,17 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 		}
 		
 		BranchRecord& currBranch = group.getBranch(i);
-		for(BranchDataIter branchIter = currBranch.getStartIter(); branchIter != currBranch.getEndIter(); ++branchIter)
+		// Do not delete the last node, where the branches join.
+		BranchDataIter end = currBranch.getEndIter() - 1;
+		for(BranchDataIter branchIter = currBranch.getStartIter();
+				branchIter != end; ++branchIter)
 		{
-			// if the sequence is not in the reference branch, remove it
-			if(!refRecord.exists(*branchIter))
-			{
-				//printf("Deleting %s from branch %x\n", branchIter->decode().c_str(), i);
-				removeSequenceAndExtensions(seqCollection, *branchIter);	
-			}
+			/* As long as we're only popping simple bubbles, the
+			 * sequence being removed cannot be in the reference
+			 * sequence. By now, we've forgotten the multiplicity map
+			 * used by BranchRecord::exists to save memory. */
+			//assert(!refRecord.exists(*branchIter));
+			removeSequenceAndExtensions(seqCollection, *branchIter);
 		}
 	}
 }

@@ -92,6 +92,12 @@ void BranchRecord::setMultiplicity(const PackedSeq& seq, int multiplicity)
 	iter->second = multiplicity;
 }
 
+/** Forget the multiplicity information. */
+void BranchRecord::clearMultiplicity()
+{
+	m_seqMap.clear();
+}
+
 //
 // Get the branch length
 //
@@ -144,6 +150,7 @@ const PackedSeq& BranchRecord::getLastSeq() const
 //
 bool BranchRecord::exists(const PackedSeq& seq) const
 {
+	assert(!m_seqMap.empty());
 	return m_seqMap.find(seq) != m_seqMap.end();
 }
 
@@ -173,6 +180,7 @@ bool BranchRecord::isTooLong() const
 //
 int BranchRecord::getBranchMultiplicity(bool ignoreLast) const
 {
+	assert(!m_seqMap.empty());
 	int total = 0;
 	
 	BranchData::const_iterator endSeq = m_data.end();
