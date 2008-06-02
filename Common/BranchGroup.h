@@ -45,9 +45,13 @@ class BranchGroup
 		// return the current status of the branch
 		BranchGroupStatus getStatus() const { return m_status; }
 		
-		// Select a branch to keep (for bubble removal) and return it's index
-		size_t selectBranchToKeep();
-		
+		/** Return the branch to keep for bubble popping. */
+		int getBranchToKeep()
+		{
+			assert(m_branchToKeep >= 0);
+			return m_branchToKeep;
+		}
+
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }
 		
@@ -71,12 +75,17 @@ class BranchGroup
 		BranchGroupData::iterator getEndIter() { return m_branches.end(); }
 		
 	private:
+		// Select a branch to keep for bubble removal and return
+		// its index.
+		void selectBranchToKeep();
+		
 		BranchGroupData m_branches;
 		uint64_t m_id;
 		extDirection m_dir;
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;
+		int m_branchToKeep;
 };
 
 #endif

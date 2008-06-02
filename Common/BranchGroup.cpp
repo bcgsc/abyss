@@ -5,16 +5,16 @@
 // Constructors
 //
 
-BranchGroup::BranchGroup() : m_id(0), m_dir(SENSE), m_maxNumBranches(0), m_noExt(false), m_status(BGS_ACTIVE)
+BranchGroup::BranchGroup()
+	: m_id(0), m_dir(SENSE), m_maxNumBranches(0),
+	m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
 {
-	
-	
 }
 
-BranchGroup::BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches) : m_id(id), m_dir(dir), m_maxNumBranches(maxNumBranches), m_noExt(false), m_status(BGS_ACTIVE)
+BranchGroup::BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches)
+	: m_id(id), m_dir(dir), m_maxNumBranches(maxNumBranches),
+	m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
 {
-	
-	
 }
 
 //
@@ -28,7 +28,7 @@ BranchGroup::BranchGroup(const BranchGroup& other)
 	m_maxNumBranches = other.m_maxNumBranches;
 	m_noExt = other.m_noExt;
 	m_status = other.m_status;
-	
+	m_branchToKeep = other.m_branchToKeep;
 }
 
 //
@@ -48,9 +48,9 @@ BranchGroup& BranchGroup::operator=(const BranchGroup& other)
 	m_maxNumBranches = other.m_maxNumBranches;
 	m_noExt = other.m_noExt;
 	m_status = other.m_status;	
+	m_branchToKeep = other.m_branchToKeep;
 	
 	return *this;
-	
 }
 
 // Add a branch to the group
@@ -113,14 +113,16 @@ BranchGroupStatus BranchGroup::updateStatus()
 		if (it->second.getLastSeq() != lastSeq)
 			return m_status = BGS_ACTIVE;
 	// All the branches of the bubble have joined.
+	selectBranchToKeep();
 	return m_status = BGS_JOINED;
 }
 
 // 
 // Select a branch that survives the bubble removal
 //
-size_t BranchGroup::selectBranchToKeep()
+void BranchGroup::selectBranchToKeep()
 {
+	assert(m_branchToKeep == -1);
 	// Choose the branch with the highest total multiplicity
 	// arbitrarily return 0 for now
 	int bestMult = 0;
@@ -137,7 +139,8 @@ size_t BranchGroup::selectBranchToKeep()
 		}
 	}
 
-	return bestIndex;
+	assert(bestIndex >= 0);
+	m_branchToKeep = bestIndex;
 }
 
 //

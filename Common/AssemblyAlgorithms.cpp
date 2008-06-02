@@ -435,7 +435,7 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group)
 {
 	// a join was found, select a branch to keep and remove the rest
-	size_t selectedIndex = group.selectBranchToKeep();
+	size_t selectedIndex = group.getBranchToKeep();
 	
 	size_t numBranches = group.getNumBranches();
 	BranchRecord& refRecord = group.getBranch(selectedIndex);
