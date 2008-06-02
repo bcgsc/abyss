@@ -128,10 +128,20 @@ void NetworkSequenceCollection::run()
 				m_pComm->SendCheckPointMessage(numRemoved);
 				break;
 			}
+			case NAS_DISCOVER_BUBBLES:
+			{
+				unsigned numDiscovered
+					= performNetworkDiscoverBubbles(this,
+							opt::kmerSize);
+				m_pComm->SendCheckPointMessage(numDiscovered);
+				EndState();
+				SetState(NAS_WAITING);
+				break;
+			}
 			case NAS_POPBUBBLE:
 			{
 				unsigned numPopped
-					= performNetworkBubblePop(this, opt::kmerSize);
+					= performNetworkPopBubbles(this);
 				m_pComm->SendCheckPointMessage(numPopped);
 				// Cleanup any messages that are pending
 				EndState();				
@@ -330,6 +340,10 @@ void NetworkSequenceCollection::runControl()
 				SetState(NAS_POPBUBBLE);					
 				break;
 			}
+			case NAS_DISCOVER_BUBBLES:
+				// This state is only used by the slaves.
+				assert(false);
+				exit(EXIT_FAILURE);
 			case NAS_POPBUBBLE:
 			{
 				puts("Popping bubbles");
@@ -611,6 +625,11 @@ int NetworkSequenceCollection::parseControlMessage()
 			SetState(NAS_ERODE);
 			break;	
 		}
+		case APC_DISCOVER_BUBBLES:
+		{
+			SetState(NAS_DISCOVER_BUBBLES);
+			break;
+		}
 		case APC_POPBUBBLE:
 		{		
 			SetState(NAS_POPBUBBLE);
@@ -830,12 +849,10 @@ int NetworkSequenceCollection::processBranchesTrim()
 	return numBranchesRemoved;
 }
 
-//
-// pop bubbles
-//
-int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqCollection, int kmerSize)
+/** Discover bubbles to pop. */
+int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
-	Timer timer("NetworkPopBubbles");
+	Timer timer("NetworkDiscoverBubbles");
 	
 	// The branch ids
 	uint64_t branchGroupID = 0;
@@ -917,7 +934,15 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 	while (processBranchesPopDiscover())
 		seqCollection->pumpNetwork();
 
-	// Pop the bubbles.
+	unsigned numDiscovered = m_activeBranchGroups.size();
+	PrintDebug(1, "Discovered %d bubbles\n", numDiscovered);
+	return numDiscovered;
+}
+
+/** Pop bubbles discovered previously. */
+int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*seqCollection*/)
+{
+	Timer timer("NetworkPopBubbles");
 	unsigned numPopped = processBranchesPop();
 	m_pLog->write(timer.toString().c_str());
 	PrintDebug(0, "Removed %d bubbles\n", numPopped);
@@ -988,10 +1013,36 @@ unsigned NetworkSequenceCollection::processBranchesPop()
 	return numPopped;
 }
 
+/** Discover bubbles to pop. */
+unsigned NetworkSequenceCollection::controlDiscoverBubbles()
+{
+	SetState(NAS_DISCOVER_BUBBLES);
+	m_pComm->SendControlMessage(m_numDataNodes,
+			APC_DISCOVER_BUBBLES);
+
+	unsigned numDiscovered = performNetworkDiscoverBubbles(this,
+			opt::kmerSize);
+	EndState();
+
+	m_numReachedCheckpoint++;
+	while (!checkpointReached(m_numDataNodes))
+		pumpNetwork();
+	numDiscovered += m_checkpointSum;
+	SetState(NAS_POPBUBBLE);
+	if (numDiscovered > 0 && opt::verbose > 0)
+		printf("Discovered %d bubbles\n", numDiscovered);
+	return numDiscovered;
+}
+
+/** Pop the bubbles discovered previously. */
 int NetworkSequenceCollection::controlPopBubbles()
 {
+	unsigned numDiscovered = controlDiscoverBubbles();
+	if (numDiscovered == 0)
+		return 0;
+
 	// Perform a round-robin bubble pop to avoid concurrency issues
-	unsigned numPopped = performNetworkBubblePop(this, opt::kmerSize);
+	unsigned numPopped = performNetworkPopBubbles(this);
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
@@ -1013,7 +1064,8 @@ int NetworkSequenceCollection::controlPopBubbles()
 	// Cleanup any messages that are pending
 	EndState();
 
-	printf("Removed %d bubbles\n", numPopped);
+	if (numPopped > 0)
+		printf("Removed %d bubbles\n", numPopped);
 	return numPopped;
 }
 
@@ -1220,7 +1272,7 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 		case NAS_ASSEMBLE:
 			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
 			break;
-		case NAS_POPBUBBLE:
+		case NAS_DISCOVER_BUBBLES:
 			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);
 			break;
 		default:

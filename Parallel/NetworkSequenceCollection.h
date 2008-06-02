@@ -17,6 +17,7 @@ enum NetworkAssemblyState
 	NAS_GEN_ADJ, // generating the sequence data
 	NAS_ERODE, // erode the branch ends one sequence at a time
 	NAS_TRIM, // trimming the data
+	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
 	NAS_TRIM2, // second trimming step after the bubble removal
 	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
@@ -43,7 +44,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
 		
 		// This function is similar to AssemblyAlgorithms::popBubbles but is optimized to hide latency
-		int performNetworkBubblePop(ISequenceCollection* seqCollection, int kmerSize);
+		int performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize);
+		int performNetworkPopBubbles(ISequenceCollection* seqCollection);
+		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
 		
 		// Perform a network assembly
