@@ -48,7 +48,7 @@ bool FastaReader::ReadSequences(PSequenceVector& outseqs)
 	if (pos == std::string::npos) {
 		outseqs.push_back(seq);
 	} else {
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			fprintf(stderr,
 					"warning: discarded sequence containing `%c'\n",
 					seq[pos]);
