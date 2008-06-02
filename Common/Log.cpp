@@ -34,5 +34,6 @@ int PrintDebug(int level, const char* format, ...)
 	va_start(ap, format);
 	int retval = vprintf(format, ap);
 	va_end(ap);
+	fflush(stdout);
 	return retval;
 }
