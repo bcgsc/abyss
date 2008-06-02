@@ -294,7 +294,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				bool stop = false;
 				
 				// Create the branch group
-				BranchGroup branchGroup(0, dir, maxNumBranches);
+				BranchGroup branchGroup(0, dir, maxNumBranches,
+						*iter);
 				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], multiplicity, expectedBubbleSize);
 
 				// Disallow any further branching.
@@ -434,6 +435,7 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 //
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group)
 {
+	assert(group.isAmbiguous(seqCollection));
 	// a join was found, select a branch to keep and remove the rest
 	size_t selectedIndex = group.getBranchToKeep();
 	

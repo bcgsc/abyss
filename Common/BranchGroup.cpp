@@ -11,9 +11,11 @@ BranchGroup::BranchGroup()
 {
 }
 
-BranchGroup::BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches)
-	: m_id(id), m_dir(dir), m_maxNumBranches(maxNumBranches),
-	m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
+BranchGroup::BranchGroup(uint64_t id, extDirection dir,
+		size_t maxNumBranches, const PackedSeq &origin)
+	: m_id(id), m_dir(dir), m_origin(origin),
+	m_maxNumBranches(maxNumBranches), m_noExt(false),
+	m_status(BGS_ACTIVE), m_branchToKeep(-1)
 {
 }
 
@@ -25,6 +27,7 @@ BranchGroup::BranchGroup(const BranchGroup& other)
 	m_branches = other.m_branches;
 	m_id = other.m_id;
 	m_dir = other.m_dir;
+	m_origin = other.m_origin;
 	m_maxNumBranches = other.m_maxNumBranches;
 	m_noExt = other.m_noExt;
 	m_status = other.m_status;
@@ -45,6 +48,7 @@ BranchGroup& BranchGroup::operator=(const BranchGroup& other)
 	m_branches = other.m_branches;
 	m_id = other.m_id;
 	m_dir = other.m_dir;
+	m_origin = other.m_origin;
 	m_maxNumBranches = other.m_maxNumBranches;
 	m_noExt = other.m_noExt;
 	m_status = other.m_status;	
@@ -176,6 +180,21 @@ bool BranchGroup::isExtendable()
 	bool ret = sameLength && !isNoExt();
 	
 	return ret;
+}
+
+/** Return whether this branch is ambiguous at its origin. Also
+ * returns false if the origin of the branch has since been deleted.
+ */
+bool BranchGroup::isAmbiguous(/*const*/ ISequenceCollection* c) const
+{
+	if (c->checkFlag(m_origin, SF_DELETE))
+		return false;
+	ExtensionRecord ext;
+	int multiplicity;
+	bool found = c->getSeqData(m_origin, ext, multiplicity);
+	assert(found);
+	(void)found;
+	return ext.dir[m_dir].IsAmbiguous();
 }
 
 //

@@ -2,6 +2,7 @@
 #define BRANCHGROUP_H
 
 #include "BranchRecord.h"
+#include <ISequenceCollection.h>
 
 enum BranchGroupStatus 
 {
@@ -19,7 +20,7 @@ class BranchGroup
 {
 	public:
 		BranchGroup();
-		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches);
+		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches, const PackedSeq &origin);
 		BranchGroup(const BranchGroup& other);
 		
 		BranchGroup& operator=(const BranchGroup& other);
@@ -36,6 +37,7 @@ class BranchGroup
 		// Set the maximum number of branches.
 		void setMaxNumBranches(size_t maxNumBranches)
 		{
+			assert(maxNumBranches > 0);
 			m_maxNumBranches = maxNumBranches;
 		}
 
@@ -73,6 +75,8 @@ class BranchGroup
 		// Iterator accessors 
 		BranchGroupData::iterator getStartIter() { return m_branches.begin(); }
 		BranchGroupData::iterator getEndIter() { return m_branches.end(); }
+
+		bool isAmbiguous(/*const*/ ISequenceCollection* c) const;
 		
 	private:
 		// Select a branch to keep for bubble removal and return
@@ -82,6 +86,7 @@ class BranchGroup
 		BranchGroupData m_branches;
 		uint64_t m_id;
 		extDirection m_dir;
+ 		PackedSeq m_origin;
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;

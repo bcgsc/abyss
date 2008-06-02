@@ -753,7 +753,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		}
 		
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1);
+		BranchGroup newGroup(branchGroupID, dir, 1, *iter);
 		BranchRecord newBranch(dir, maxBranchCull);
 		newGroup.addBranch(0, newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
@@ -843,8 +843,6 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 	// make sure the branch group structure is initially empty
 	assert(m_activeBranchGroups.empty());
 	
-	int numPopped = 0;
-	
 	int count = 0;
 
 	// Set the cutoffs
@@ -882,7 +880,7 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 				// Found a potential bubble, examine each branch
 				
 				// Create the branch group
-				BranchGroup branchGroup(branchGroupID, dir, maxNumBranches);
+				BranchGroup branchGroup(branchGroupID, dir, maxNumBranches, *iter);
 				
 				// insert the new group into the active group map
 				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(std::pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
@@ -911,18 +909,16 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 		}
 
 		// Process groups that may be finished	
-		numPopped += processBranchesPop();
-		
+		processBranchesPopDiscover();
 		seqCollection->pumpNetwork();
 	}
 	
-	// Clear out the remaining branches
-	while(!m_activeBranchGroups.empty())
-	{
-		numPopped += processBranchesPop();
+	// Wait until the groups finish extending.
+	while (processBranchesPopDiscover())
 		seqCollection->pumpNetwork();
-	}
-	
+
+	// Pop the bubbles.
+	unsigned numPopped = processBranchesPop();
 	m_pLog->write(timer.toString().c_str());
 	PrintDebug(0, "Removed %d bubbles\n", numPopped);
 	return numPopped;	
@@ -931,60 +927,65 @@ int NetworkSequenceCollection::performNetworkBubblePop(ISequenceCollection* seqC
 //
 // Process groups that are finished searching for bubbles
 //
-int NetworkSequenceCollection::processBranchesPop()
+bool NetworkSequenceCollection::processBranchesPopDiscover()
 {
-	int numPopped = 0;
+	bool active = false;
 	std::vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
-	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
-	{
-		bool remove = false;
-		// All branches have been extended one sequence, check the stop conditions
-		
-		// First, check if the group hit a no-extension in one of the sequences
-		if(iter->second.isNoExt())
-		{
-			remove = true;
+	for (BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
+			iter != m_activeBranchGroups.end(); iter++) {
+		// All branches have been extended one sequence. Check the
+		// stop conditions. updateStatus() is called in
+		// processSequenceExtensionPop().
+		BranchGroupStatus status = iter->second.isNoExt() ? BGS_NOEXT
+			: iter->second.getStatus();
+		switch (status) {
+			case BGS_TOOLONG:
+			case BGS_LOOPFOUND:
+			case BGS_TOOMANYBRANCHES:
+			case BGS_NOEXT:
+				removeBranches.push_back(iter);
+				break;
+			case BGS_JOINED:
+				m_finishedGroups.insert(iter->first);
+				break;
+			case BGS_ACTIVE:
+				active = true;
+				break;
+			default:
+				assert(false);
 		}
-		else
-		{
-			// Update status is called in processSequenceExtensionPop(), check the status here
-			BranchGroupStatus status = iter->second.getStatus();
-			
-			// Check if a stop condition was met
-			if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
-			{
-				remove = true;
-			}
-			else if(status == BGS_JOINED)
-			{
-				AssemblyAlgorithms::collapseJoinedBranches(this, iter->second);
-				numPopped++;
-				remove = true;
-			}
-			else
-			{										
-				// the branch is still active, continue
-				assert(status == BGS_ACTIVE);
-			}
-		}
-		
-		if(remove)
-		{
-			// Mark the group for removal
-			removeBranches.push_back(iter);
-		}	
 	}
-	
+
 	// Remove all the finished branches
-	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
-	{
-		//printf("erased branch %llu\n", (*rmIter)->first);
+	for (std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin();
+			rmIter != removeBranches.end(); rmIter++) {
 		m_finishedGroups.insert((*rmIter)->first);
-		m_activeBranchGroups.erase(*rmIter);	
-	}	
-	
-	return numPopped;		
+		m_activeBranchGroups.erase(*rmIter);
+	}
+	return active;
+}
+
+/** Pop the bubbles discovered previously.
+ * @return the number of bubbles popped
+ */
+unsigned NetworkSequenceCollection::processBranchesPop()
+{
+	unsigned numPopped = 0;
+	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
+			iter != m_activeBranchGroups.end(); iter++)
+	{
+		assert(iter->second.getStatus() == BGS_JOINED);
+		// Check whether this bubble has already been popped.
+		if (!iter->second.isAmbiguous(this))
+			continue;
+		AssemblyAlgorithms::collapseJoinedBranches(
+				this, iter->second);
+		numPopped++;
+		pumpNetwork();
+	}
+	m_activeBranchGroups.clear();
+	return numPopped;
 }
 
 int NetworkSequenceCollection::controlPopBubbles()
@@ -1058,7 +1059,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		}
 		
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1);
+		BranchGroup newGroup(branchGroupID, dir, 1, *iter);
 		BranchRecord newBranch(dir, -1);
 		newGroup.addBranch(0, newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
