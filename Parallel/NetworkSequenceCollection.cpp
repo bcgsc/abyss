@@ -924,6 +924,14 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				branchGroupID++;
 			}
 		}
+		
+		// Primitive load balancing
+		if (m_activeBranchGroups.size() > MAX_ACTIVE) {
+			while (m_activeBranchGroups.size() > LOW_ACTIVE) {
+				seqCollection->pumpNetwork();
+				processBranchesPopDiscover();
+			}
+		}
 
 		// Process groups that may be finished	
 		processBranchesPopDiscover();
