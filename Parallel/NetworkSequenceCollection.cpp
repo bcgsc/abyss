@@ -933,8 +933,9 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	// Wait until the groups finish extending.
 	while (processBranchesPopDiscover())
 		seqCollection->pumpNetwork();
+	assert(m_activeBranchGroups.empty());
 
-	unsigned numDiscovered = m_activeBranchGroups.size();
+	unsigned numDiscovered = m_bubbles.size();
 	PrintDebug(1, "Discovered %d bubbles\n", numDiscovered);
 	return numDiscovered;
 }
@@ -955,24 +956,25 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 bool NetworkSequenceCollection::processBranchesPopDiscover()
 {
 	bool active = false;
-	std::vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
-	for (BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
-			iter != m_activeBranchGroups.end(); iter++) {
+	BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
+	while (iter != m_activeBranchGroups.end()) {
 		// All branches have been extended one sequence. Check the
 		// stop conditions. updateStatus() is called in
 		// processSequenceExtensionPop().
 		BranchGroupStatus status = iter->second.isNoExt() ? BGS_NOEXT
 			: iter->second.getStatus();
+		bool finished = false;
 		switch (status) {
 			case BGS_TOOLONG:
 			case BGS_LOOPFOUND:
 			case BGS_TOOMANYBRANCHES:
 			case BGS_NOEXT:
-				removeBranches.push_back(iter);
+				finished = true;
 				break;
 			case BGS_JOINED:
-				m_finishedGroups.insert(iter->first);
+				m_bubbles.insert(*iter);
+				finished = true;
 				break;
 			case BGS_ACTIVE:
 				active = true;
@@ -980,13 +982,11 @@ bool NetworkSequenceCollection::processBranchesPopDiscover()
 			default:
 				assert(false);
 		}
-	}
-
-	// Remove all the finished branches
-	for (std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin();
-			rmIter != removeBranches.end(); rmIter++) {
-		m_finishedGroups.insert((*rmIter)->first);
-		m_activeBranchGroups.erase(*rmIter);
+		if (finished) {
+			m_finishedGroups.insert(iter->first);
+			m_activeBranchGroups.erase(iter++);
+		} else
+			iter++;
 	}
 	return active;
 }
@@ -997,8 +997,8 @@ bool NetworkSequenceCollection::processBranchesPopDiscover()
 unsigned NetworkSequenceCollection::processBranchesPop()
 {
 	unsigned numPopped = 0;
-	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
-			iter != m_activeBranchGroups.end(); iter++)
+	for(BranchGroupMap::iterator iter = m_bubbles.begin();
+			iter != m_bubbles.end(); iter++)
 	{
 		assert(iter->second.getStatus() == BGS_JOINED);
 		// Check whether this bubble has already been popped.
@@ -1009,7 +1009,7 @@ unsigned NetworkSequenceCollection::processBranchesPop()
 		numPopped++;
 		pumpNetwork();
 	}
-	m_activeBranchGroups.clear();
+	m_bubbles.clear();
 	return numPopped;
 }
 

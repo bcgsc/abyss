@@ -214,6 +214,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// The current branches that are active
 		BranchGroupMap m_activeBranchGroups;
+
+		/** Bubbles, which are branch groups that have joined. */
+		BranchGroupMap m_bubbles;
 		
 		// List of IDs of finished groups, used for sanity checking during bubble popping
 		std::set<uint64_t> m_finishedGroups;
