@@ -929,17 +929,17 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		if (m_activeBranchGroups.size() > MAX_ACTIVE) {
 			while (m_activeBranchGroups.size() > LOW_ACTIVE) {
 				seqCollection->pumpNetwork();
-				processBranchesPopDiscover();
+				processBranchesDiscoverBubbles();
 			}
 		}
 
 		// Process groups that may be finished	
-		processBranchesPopDiscover();
+		processBranchesDiscoverBubbles();
 		seqCollection->pumpNetwork();
 	}
 	
 	// Wait until the groups finish extending.
-	while (processBranchesPopDiscover())
+	while (processBranchesDiscoverBubbles())
 		seqCollection->pumpNetwork();
 	assert(m_activeBranchGroups.empty());
 
@@ -952,16 +952,30 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*seqCollection*/)
 {
 	Timer timer("NetworkPopBubbles");
-	unsigned numPopped = processBranchesPop();
+
+	unsigned numPopped = 0;
+	for (BranchGroupMap::iterator iter = m_bubbles.begin();
+			iter != m_bubbles.end(); iter++) {
+		assert(iter->second.getStatus() == BGS_JOINED);
+		// Check whether this bubble has already been popped.
+		if (!iter->second.isAmbiguous(this))
+			continue;
+		AssemblyAlgorithms::collapseJoinedBranches(
+				this, iter->second);
+		numPopped++;
+		pumpNetwork();
+	}
+	m_bubbles.clear();
+
 	m_pLog->write(timer.toString().c_str());
 	PrintDebug(0, "Removed %d bubbles\n", numPopped);
-	return numPopped;	
+	return numPopped;
 }
 
 //
 // Process groups that are finished searching for bubbles
 //
-bool NetworkSequenceCollection::processBranchesPopDiscover()
+bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 {
 	bool active = false;
 	// Check if any of the current branches have gone inactive
@@ -997,28 +1011,6 @@ bool NetworkSequenceCollection::processBranchesPopDiscover()
 			iter++;
 	}
 	return active;
-}
-
-/** Pop the bubbles discovered previously.
- * @return the number of bubbles popped
- */
-unsigned NetworkSequenceCollection::processBranchesPop()
-{
-	unsigned numPopped = 0;
-	for(BranchGroupMap::iterator iter = m_bubbles.begin();
-			iter != m_bubbles.end(); iter++)
-	{
-		assert(iter->second.getStatus() == BGS_JOINED);
-		// Check whether this bubble has already been popped.
-		if (!iter->second.isAmbiguous(this))
-			continue;
-		AssemblyAlgorithms::collapseJoinedBranches(
-				this, iter->second);
-		numPopped++;
-		pumpNetwork();
-	}
-	m_bubbles.clear();
-	return numPopped;
 }
 
 /** Discover bubbles to pop. */

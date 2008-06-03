@@ -137,8 +137,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 	
 		// Branch processing
 		int processBranchesTrim();
-		bool processBranchesPopDiscover();
-		unsigned processBranchesPop();
+		bool processBranchesDiscoverBubbles();
 		int processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID);
 		
 		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
