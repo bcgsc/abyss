@@ -506,7 +506,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 //
 // Erode data off the ends of the graph, one by one
 //
-void erodeEnds(ISequenceCollection* seqCollection)
+unsigned erodeEnds(ISequenceCollection* seqCollection)
 {
 	Timer erode("Erode sequences");
 	int count = 0;
@@ -530,7 +530,8 @@ void erodeEnds(ISequenceCollection* seqCollection)
 		
 		seqCollection->pumpNetwork();
 	}
-	printf("Eroded %d sequences\n", count);
+	PrintDebug(0, "Eroded %d tips\n", count);
+	return count;
 }
 
 //

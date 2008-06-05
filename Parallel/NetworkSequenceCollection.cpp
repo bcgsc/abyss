@@ -104,13 +104,14 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_ERODE:
 			{
-				AssemblyAlgorithms::erodeEnds(this);
+				unsigned numEroded
+					= AssemblyAlgorithms::erodeEnds(this);
 				// Cleanup any messages that are pending
 				EndState();
 				SetState(NAS_WAITING);
 				
 				// Tell the control process this checkpoint has been reached
-				m_pComm->SendCheckPointMessage();
+				m_pComm->SendCheckPointMessage(numEroded);
 				break;
 			}
 			case NAS_TRIM:
@@ -255,10 +256,11 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ERODE:
 			{
 				puts("Eroding");
-				for(int i = 0; i < opt::erode; i++)
-				{
+				unsigned totalEroded = 0;
+				for (int i = 0; i < opt::erode; i++) {
 					m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
-					AssemblyAlgorithms::erodeEnds(this);
+					unsigned numEroded 
+						= AssemblyAlgorithms::erodeEnds(this);
 					
 					// Cleanup any messages that are pending
 					EndState();							
@@ -268,10 +270,15 @@ void NetworkSequenceCollection::runControl()
 					{
 						pumpNetwork();
 					}
+					numEroded += m_checkpointSum;
+					printf("Eroded %d tips\n", numEroded);
+					totalEroded += numEroded;
 					
 					// All checkpoints are reached, reset the state
 					SetState(NAS_ERODE);					
 				}
+				printf("Eroded %d tips in total\n",
+						totalEroded);
 				
 				// Cleanup any messages that are pending
 				EndState();				
