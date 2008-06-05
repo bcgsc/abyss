@@ -56,21 +56,13 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::generateAdjacency(pSC);
 	
-	int startTrimLength;
-	if(!opt::disableErosion)
-	{
-		// erode the ends of branches for n-k+1 steps
-		int numErosions = opt::readLen - opt::kmerSize + 1;
-		for(int i = 0; i < numErosions; i++)
-		{
+	int startTrimLength = 2;
+
+	if (opt::erode > 0) {
+		puts("Eroding");
+		for (int i = 0; i < opt::erode; i++)
 			AssemblyAlgorithms::erodeEnds(pSC);
-		}
-		
-		startTrimLength = numErosions + 1;
-	}
-	else
-	{
-		startTrimLength = 2;
+		startTrimLength = opt::erode + 1;
 	}
 
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);

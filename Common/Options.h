@@ -7,9 +7,9 @@
 namespace opt {
 	extern int kmerSize;
 	extern int readLen;
+	extern int erode;
 	extern int trimLen;
 	extern int bubbles;
-	extern bool disableErosion;
 	extern std::string graphPath;
 	extern int verbose;
 	extern std::vector<std::string> inFiles;

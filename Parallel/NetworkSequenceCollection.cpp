@@ -244,25 +244,18 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 				}
 				
-				// should erosion be performed?
-				if(!opt::disableErosion)
-				{
+				if (opt::erode > 0) {
 					SetState(NAS_ERODE);
-				}
-				else
-				{
+				} else {
 					m_startTrimLen = 2;	
 					SetState(NAS_TRIM);
 				}
-				//SetState(NAS_DONE);
-				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
 				break;
 			}
 			case NAS_ERODE:
 			{
 				puts("Eroding");
-				int numErodes = opt::readLen - opt::kmerSize + 1;
-				for(int i = 0; i < numErodes; i++)
+				for(int i = 0; i < opt::erode; i++)
 				{
 					m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
 					AssemblyAlgorithms::erodeEnds(this);
@@ -284,7 +277,7 @@ void NetworkSequenceCollection::runControl()
 				EndState();				
 				
 				// erosion has been completed
-				m_startTrimLen = numErodes + 1;
+				m_startTrimLen = opt::erode + 1;
 				SetState(NAS_TRIM);				
 				
 			}

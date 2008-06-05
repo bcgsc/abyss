@@ -27,9 +27,9 @@ static const char *USAGE_MESSAGE =
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
-"  -b, --bubbles                  maximum number of bubble-popping rounds\n"
-"  -d, --disable-erosion          disable the erosion step, which yields\n"
-"                                 slightly shorter contigs, but fewer errors\n"
+"  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
+"  -e, --erode=N                  erode N bases from the ends of contigs\n"
+"                                 produces slightly shorter contigs, but fewer errors\n"
 "                                 at the ends of contigs\n"
 "  -g, --graph                    generate a graph in dot format\n"
 "  -v, --verbose                  display verbose output\n"
@@ -44,14 +44,14 @@ int kmerSize = -1;
 /** read length */
 int readLen = -1;
 
+/** erode length */
+int erode = -1;
+
 /** trim length */
 int trimLen = -1;
 
 /** Maximum number of bubble-popping rounds. */
 int bubbles = 5;
-
-/** erosion flag */
-bool disableErosion = false;
 
 /** graph output */
 std::string graphPath;
@@ -62,7 +62,7 @@ int verbose = 0;
 /** input FASTA files */
 vector<std::string> inFiles;
 
-static const char *shortopts = "b:dg:k:l:t:v";
+static const char *shortopts = "b:e:g:k:l:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -71,7 +71,7 @@ static const struct option longopts[] = {
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "bubbles",     required_argument, NULL, 'b' },
-	{ "disable-erosion", no_argument,   NULL, 'd' },
+	{ "erode",       required_argument, NULL, 'e' },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
@@ -98,12 +98,12 @@ void parse(int argc, char* const* argv)
 			case 'l':
 				arg >> readLen;
 				break;
+			case 'e':
+				arg >> erode;
+				break;	
 			case 't':
 				arg >> trimLen;
 				break;
-			case 'd':
-				disableErosion = true;
-				break;	
 			case 'g':
 				graphPath = optarg;
 				break;
@@ -146,8 +146,11 @@ void parse(int argc, char* const* argv)
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());
 
+	unsigned n = readLen - kmerSize + 1;
+	if (erode < 0)
+		erode = n;
 	if (trimLen < 0)
-		trimLen = 6 * (readLen - kmerSize + 1);
+		trimLen = 6 * n;
 }
 
 } // namespace opt
