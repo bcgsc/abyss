@@ -6,11 +6,18 @@
 //
 //
 NetworkSequenceCollection::NetworkSequenceCollection(int myID, 
-											 int numDataNodes, 
-											 int kmerSize, 
-											 int readLen) : m_id(myID), m_numDataNodes(numDataNodes), 
-											 m_kmer(kmerSize), m_readLen(readLen), 
-											 m_numBasesAdjSet(0), m_startTrimLen(-1), m_trimStep(0), m_numAssembled(0), m_numOutstandingRequests(0), m_timer("Total")
+		int numDataNodes, int kmerSize, int readLen) :
+	m_id(myID),
+	m_numDataNodes(numDataNodes),
+	m_kmer(kmerSize),
+	m_readLen(readLen),
+	m_numBasesAdjSet(0),
+	m_startTrimLen(-1),
+	m_trimStep(0),
+	m_numPopped(0),
+	m_numAssembled(0),
+	m_numOutstandingRequests(0),
+	m_timer("Total")
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
@@ -963,12 +970,17 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		// Check whether this bubble has already been popped.
 		if (!iter->second.isAmbiguous(this))
 			continue;
+		AssemblyAlgorithms::writeSNP(
+				iter->second, ++m_numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
 		numPopped++;
 		pumpNetwork();
 	}
 	m_bubbles.clear();
+
+	if (opt::snpFile != NULL)
+		fflush(opt::snpFile);
 
 	m_pLog->write(timer.toString().c_str());
 	PrintDebug(0, "Removed %d bubbles\n", numPopped);

@@ -334,7 +334,10 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					}
 					else if(status == BGS_JOINED)
 					{
-						collapseJoinedBranches(seqCollection, branchGroup);
+						static unsigned snpID;
+						writeSNP(branchGroup, ++snpID);
+						collapseJoinedBranches(seqCollection,
+								branchGroup);
 						numPopped++;
 						stop = true;
 					}
@@ -348,6 +351,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		}
 		seqCollection->pumpNetwork();
 	}
+
+	if (opt::snpFile != NULL)
+		fflush(opt::snpFile);
 
 	if (numPopped > 0)
 		printf("Removed %d bubbles\n", numPopped);
@@ -428,6 +434,32 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	
 	// Return whether the group is extendable
 	return group.isExtendable();
+}
+
+/** Write SNP information to a file. */
+void writeSNP(BranchGroup& group, unsigned id)
+{
+	FILE* fout = opt::snpFile;
+	if (fout == NULL)
+		return;
+
+	unsigned selectedIndex = group.getBranchToKeep();
+	char allele = 'A';
+
+	BranchRecord& refRecord = group.getBranch(selectedIndex);
+	Sequence refContig;
+	refRecord.buildContig(refContig);
+	fprintf(fout, ">%d%c\n%s\n", id, allele++, refContig.c_str());
+
+	unsigned numBranches = group.getNumBranches();
+	for (unsigned i = 0; i < numBranches; ++i) {
+		if (i == selectedIndex)
+			continue;
+		BranchRecord& currBranch = group.getBranch(i);
+		Sequence contig;
+		currBranch.buildContig(contig);
+		fprintf(fout, ">%d%c\n%s\n", id, allele++, contig.c_str());
+	}
 }
 
 //

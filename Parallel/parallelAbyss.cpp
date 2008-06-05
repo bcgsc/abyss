@@ -36,6 +36,9 @@ int main(int argc, char** argv)
 	}
 
 	opt::parse(argc, argv);
+	if (opt::snpFile != NULL)
+		freopen(NULL, "a", opt::snpFile);
+
 	NetworkSequenceCollection networkSeqs(rank, size,
 			opt::kmerSize, opt::readLen);
 

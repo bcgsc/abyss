@@ -29,9 +29,10 @@ static const char *USAGE_MESSAGE =
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
 "  -e, --erode=N                  erode N bases from the ends of contigs\n"
-"                                 produces slightly shorter contigs, but fewer errors\n"
-"                                 at the ends of contigs\n"
-"  -g, --graph                    generate a graph in dot format\n"
+"                                 Yields slightly shorter contigs, but fewer\n"
+"                                 errors at the ends of contigs.\n"
+"  -g, --graph=FILE               generate a graph in dot format\n"
+"  -s, --snp=FILE                 record SNPs in FILE\n"
 "  -v, --verbose                  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
@@ -56,13 +57,19 @@ int bubbles = 5;
 /** graph output */
 std::string graphPath;
 
+/** output SNP path */
+std::string snpPath;
+
+/** output SNP file */
+FILE* snpFile;
+
 /** verbose output */
 int verbose = 0;
 
 /** input FASTA files */
 vector<std::string> inFiles;
 
-static const char *shortopts = "b:e:g:k:l:t:v";
+static const char *shortopts = "b:e:g:k:l:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -73,6 +80,7 @@ static const struct option longopts[] = {
 	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "graph",       required_argument, NULL, 'g' },
+	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -110,6 +118,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'g':
 				graphPath = optarg;
+				break;
+			case 's':
+				snpPath = optarg;
 				break;
 			case 'v':
 				verbose++;
@@ -154,6 +165,14 @@ void parse(int argc, char* const* argv)
 		erode = n;
 	if (trimLen < 0)
 		trimLen = 6 * n;
+
+	if (snpPath.length() > 0) {
+		snpFile = fopen(snpPath.c_str(), "w");
+		if (snpFile == NULL) {
+			perror(snpPath.c_str());
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 } // namespace opt

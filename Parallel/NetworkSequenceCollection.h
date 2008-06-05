@@ -205,6 +205,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// the current length to trim on (comes from the control node)
 		int m_trimStep;
 		
+		/** The number of bubbles popped so far. */
+		unsigned m_numPopped;
+
 		// the number of sequences assembled so far
 		int m_numAssembled;
 		
