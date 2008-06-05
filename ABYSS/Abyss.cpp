@@ -40,6 +40,10 @@ static void write_graph(const std::string& path,
 int main(int argc, char* const* argv)
 {	
 	Timer timer("Abyss");
+
+	// Set stdout to be line buffered.
+	setvbuf(stdout, NULL, _IOLBF, 0);
+
 	opt::parse(argc, argv);
 	
 	// Load the phase space
@@ -60,8 +64,11 @@ int main(int argc, char* const* argv)
 
 	if (opt::erode > 0) {
 		puts("Eroding");
+		unsigned totalEroded = 0;
 		for (int i = 0; i < opt::erode; i++)
-			AssemblyAlgorithms::erodeEnds(pSC);
+			totalEroded += AssemblyAlgorithms::erodeEnds(pSC);
+		printf("Eroded %d tips in total\n",
+				totalEroded);
 		startTrimLength = opt::erode + 1;
 	}
 

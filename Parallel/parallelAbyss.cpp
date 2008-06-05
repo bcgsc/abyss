@@ -1,7 +1,5 @@
-#include <stdio.h>
-
+#include <cstdio>
 #include <vector>
-#include <stdio.h>
 #include <mpi.h>
 #include "parallelAbyss.h"
 #include "CommonUtils.h"
@@ -15,6 +13,9 @@ int main(int argc, char** argv)
 {	
 	Timer timer("ParallelAbyss");
 	
+	// Set stdout to be line buffered.
+	setvbuf(stdout, NULL, _IOLBF, 0);
+
 	// start mpi process
 	MPI_Init(&argc,&argv);
 	

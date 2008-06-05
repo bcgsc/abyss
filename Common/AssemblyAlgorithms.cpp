@@ -145,7 +145,6 @@ void loadSequences(ISequenceCollection* seqCollection,
 				PrintDebug(1,
 						"Read %u sequences: %zu unique, %zu new\n",
 						count, numseqs, numseqs - lastNum);
-				fflush(stdout);
 				lastNum = numseqs;
 			}
 		}
