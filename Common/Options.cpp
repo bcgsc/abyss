@@ -27,6 +27,7 @@ static const char *USAGE_MESSAGE =
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
+"  -b, --bubbles                  maximum number of bubble-popping rounds\n"
 "  -d, --disable-erosion          disable the erosion step, which yields\n"
 "                                 slightly shorter contigs, but fewer errors\n"
 "                                 at the ends of contigs\n"
@@ -46,6 +47,9 @@ int readLen = -1;
 /** trim length */
 int trimLen = -1;
 
+/** Maximum number of bubble-popping rounds. */
+int bubbles = 5;
+
 /** erosion flag */
 bool disableErosion = false;
 
@@ -58,7 +62,7 @@ int verbose = 0;
 /** input FASTA files */
 vector<std::string> inFiles;
 
-static const char *shortopts = "k:l:t:dg:v";
+static const char *shortopts = "b:dg:k:l:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -66,6 +70,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
+	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "disable-erosion", no_argument,   NULL, 'd' },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -84,6 +89,9 @@ void parse(int argc, char* const* argv)
 		if (optarg != NULL)
 			arg.str(optarg);
 		switch (c) {
+			case 'b':
+				arg >> bubbles;
+				break;
 			case 'k':
 				arg >> kmerSize;
 				break;

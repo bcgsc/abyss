@@ -9,6 +9,24 @@
 #include <cstdio>
 #include <fstream>
 
+static void popBubbles(/*const*/ ISequenceCollection* pSC)
+{
+	if (opt::bubbles <= 0)
+		return;
+	puts("Popping bubbles");
+	unsigned totalPopped = 0;
+	int i;
+	for (i = 0; i < opt::bubbles; i++) {
+		unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC,
+				opt::kmerSize);
+		if (numPopped == 0)
+			break;
+		totalPopped += numPopped;
+	}
+	printf("Removed %d bubbles in %d rounds\n",
+			totalPopped, i);
+}
+
 static void write_graph(const std::string& path,
 		/*const*/ ISequenceCollection& c)
 {
@@ -57,16 +75,13 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
 		
-	// Remove bubbles
-	while(AssemblyAlgorithms::popBubbles(pSC, opt::kmerSize));
+	popBubbles(pSC);
 	
 	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
 	// These dead ends can happen when there are two overlapping bubbles and the second one is trimmed first (the bubble with only 2 branches)
 	// There may be a better way to deal with this situation but this will suffice for the moment
-	if (opt::trimLen > 0)
-	{
+	if (opt::bubbles > 0 && opt::trimLen > 0)
 		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
-	}
 
 	//AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
 	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);

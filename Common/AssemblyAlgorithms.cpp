@@ -260,7 +260,6 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
 	Timer timer("PopBubbles");
-	printf("removing loops\n");
 	int numPopped = 0;
 
 	// Set the cutoffs
@@ -350,7 +349,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		}
 		seqCollection->pumpNetwork();
 	}
-	printf("Removed %d bubbles\n", numPopped);
+
+	if (numPopped > 0)
+		printf("Removed %d bubbles\n", numPopped);
 	return numPopped;
 }
 

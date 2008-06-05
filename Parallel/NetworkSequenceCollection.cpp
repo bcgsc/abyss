@@ -348,12 +348,15 @@ void NetworkSequenceCollection::runControl()
 			{
 				puts("Popping bubbles");
 				unsigned totalPopped = 0;
-				unsigned numPopped;
-				do {
-					numPopped = controlPopBubbles();
+				int i;
+				for (i = 0; i < opt::bubbles; i++) {
+					unsigned numPopped = controlPopBubbles();
+					if (numPopped == 0)
+						break;
 					totalPopped += numPopped;
-				} while (numPopped > 0);
-				printf("Removed %d bubbles in total\n", totalPopped);
+				}
+				printf("Removed %d bubbles in %d rounds\n",
+						totalPopped, i);
 				SetState(NAS_TRIM2);
 				m_pComm->SendControlMessage(m_numDataNodes,
 						APC_TRIM, opt::trimLen);
