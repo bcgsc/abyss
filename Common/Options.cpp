@@ -82,6 +82,7 @@ static const struct option longopts[] = {
 /** Parse the specified command line. */
 void parse(int argc, char* const* argv)
 {
+	bool die = false;
 	char c;
 	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL))
 			!= -1) {
@@ -89,6 +90,9 @@ void parse(int argc, char* const* argv)
 		if (optarg != NULL)
 			arg.str(optarg);
 		switch (c) {
+			case '?':
+				die = true;
+				break;
 			case 'b':
 				arg >> bubbles;
 				break;
@@ -119,7 +123,6 @@ void parse(int argc, char* const* argv)
 		}
 	}
 
-	bool die = false;
 	if (kmerSize <= 0) {
 		cerr << PACKAGE ": " << "missing -k,--kmer option\n";
 		die = true;
