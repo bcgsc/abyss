@@ -35,7 +35,7 @@ class BranchRecord
 		BranchRecord& operator=(const BranchRecord& other);		
 		
 		// Add a single sequence to the branch
-		void addSequence(const PackedSeq& seq);
+		void addSequence(const PackedSeq& seq, int multiplicity = -1);
 		
 		// Terminate the branch and indicate why
 		void terminate(BranchState reason);

@@ -712,22 +712,19 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	else if(!extensions.dir[dir].HasExtension()) 
 	{
 		// no extenstion, add the current sequence and terminate the branch
-		branch.addSequence(currSeq);
-		branch.setMultiplicity(currSeq, multiplicity);
+		branch.addSequence(currSeq, multiplicity);
 		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_NOEXT);
 	}
 	else if(extensions.dir[dir].IsAmbiguous())
 	{
 		// this branch has an ambiguous extension, add the current sequence and terminate
-		branch.addSequence(currSeq);
-		branch.setMultiplicity(currSeq, multiplicity);
+		branch.addSequence(currSeq, multiplicity);
 		branch.terminate(BS_AMBI_SAME);
 	}
 	else
 	{
 		// Add the sequence to the branch
-		branch.addSequence(currSeq);
-		branch.setMultiplicity(currSeq, multiplicity);
+		branch.addSequence(currSeq, multiplicity);
 		
 		// generate the new current sequence from the extension
 		//printf("currseq: %s ", currSeq.decode().c_str());
@@ -791,9 +788,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		{
 			// singleton, output
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter);
-			currBranch.setMultiplicity(*iter,
-					iter->getMultiplicity());
+			currBranch.addSequence(*iter, iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
 			Sequence contig;
 			processTerminatedBranchAssemble(seqCollection, currBranch, contig);

@@ -50,12 +50,12 @@ BranchRecord& BranchRecord::operator=(const BranchRecord& other)
 //
 // Add a single sequence to the branch
 //
-void BranchRecord::addSequence(const PackedSeq& seq)
+void BranchRecord::addSequence(const PackedSeq& seq, int multiplicity)
 {
 	m_data.push_back(seq);
 	
 	// Detect a loop by checking that the sequence is not already in the branch
-	MultMapPair item(seq, -1);
+	MultMapPair item(seq, multiplicity);
 	bool unique = m_seqMap.insert(item).second;
 	if(!unique)
 	{
