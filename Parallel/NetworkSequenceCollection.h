@@ -104,7 +104,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 		
 		// The loop to run the network code
-		APResult pumpNetwork(int* pArg = NULL);
+		APResult pumpNetwork();
 		
 		// Loop over the pumping function while waiting for a result from the network
 		ResultPair pumpUntilResult(); 
@@ -149,7 +149,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool isBranchRedundant(BranchRecord& branch);
 		
 		// Network message parsers
-		int parseControlMessage();
+		void parseControlMessage();
 		
 		// Read a fasta file and distribute the sequences
 		void readSequences(std::string fastaFile, int readLength, int kmerSize);

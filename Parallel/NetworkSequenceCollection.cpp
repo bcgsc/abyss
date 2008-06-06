@@ -432,19 +432,10 @@ void NetworkSequenceCollection::runControl()
 				{
 					m_pComm->SendControlMessageToNode(i,
 							APC_ASSEMBLE, numAssembled);
-					
-					// Wait for this node to return
-					int slaveNumAssembled = 0;
-					while(!checkpointReached(1))
-					{
-						pumpNetwork(&slaveNumAssembled);
-					}
-					numAssembled += slaveNumAssembled;
-					
-					// Cleanup any messages that are pending
+					while (!checkpointReached(1))
+						pumpNetwork();
+					numAssembled += m_checkpointSum;
 					EndState();
-					
-					//Reset the state and loop
 					SetState(NAS_ASSEMBLE);
 				}
 				
@@ -491,7 +482,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	m_checkpointSum = 0;
 }
 
-APResult NetworkSequenceCollection::pumpNetwork(int* pArg)
+APResult NetworkSequenceCollection::pumpNetwork()
 {
 	int senderID;
 	m_pComm->flush();	
@@ -508,9 +499,7 @@ APResult NetworkSequenceCollection::pumpNetwork(int* pArg)
 		{
 			case APM_CONTROL:
 				{
-					int arg = parseControlMessage();
-					if (pArg != NULL)
-						*pArg = arg;
+					parseControlMessage();
 					break;
 				}
 			case APM_BUFFERED:
@@ -599,7 +588,7 @@ void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, c
 //
 //
 //
-int NetworkSequenceCollection::parseControlMessage()
+void NetworkSequenceCollection::parseControlMessage()
 {
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
@@ -665,7 +654,6 @@ int NetworkSequenceCollection::parseControlMessage()
 			break;	
 		}		
 	}
-	return controlMsg.argument;
 }
 
 //

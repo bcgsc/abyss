@@ -85,12 +85,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		int count() const;
 		
 		// Pump the network. For this sequence collection (non-network) this function just returns
-		virtual APResult pumpNetwork(int* pArg = NULL)
-		{
-			assert(pArg == NULL);
-			(void)pArg;
-			return APR_NONE;
-		}
+		virtual APResult pumpNetwork() { return APR_NONE; }
 
 	private:
 
