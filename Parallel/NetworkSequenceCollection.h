@@ -146,7 +146,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		
 		// Check if a branch is redundant with a previously output branch
-		bool isBranchRedundant(BranchRecord& branch);
+		bool isBranchRedundant(const BranchRecord& branch);
 		
 		// Network message parsers
 		void parseControlMessage();

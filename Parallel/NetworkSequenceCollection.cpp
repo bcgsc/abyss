@@ -1107,12 +1107,15 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 			// Output the singleton contig.
 			BranchRecord currBranch(SENSE, -1);
 			currBranch.addSequence(*iter);
+			currBranch.setMultiplicity(*iter,
+					iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
 			Sequence contig;
 			AssemblyAlgorithms::processTerminatedBranchAssemble( 
 					seqCollection, currBranch, contig);
 			fileWriter->WriteSequence(contig,
-					m_numAssembled + ++numAssembled, 0);
+					m_numAssembled + ++numAssembled,
+					currBranch.getBranchMultiplicity());
 			continue;
 		}
 		
@@ -1171,16 +1174,19 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			assert(iter->second.getNumBranches() == 1);
 			
 			// check if the branch is redundant, assemble if so, else it will simply be removed
-			if(!isBranchRedundant(iter->second.getBranch(0)))
-			{
+			const BranchRecord& currBranch
+				= iter->second.getBranch(0);
+			if (!isBranchRedundant(currBranch)) {
 				// Assemble the contig
 				Sequence contig;
-				AssemblyAlgorithms::processTerminatedBranchAssemble(seqCollection, iter->second.getBranch(0), contig);
+				AssemblyAlgorithms::processTerminatedBranchAssemble(
+						seqCollection, currBranch, contig);
 				numAssembled++;
 				
 				// Output the contig
 				fileWriter->WriteSequence(contig,
-						m_numAssembled + ++currContigID, 0);
+						m_numAssembled + ++currContigID,
+						currBranch.getBranchMultiplicity());
 			}
 			
 			// Mark the group for removal
@@ -1199,7 +1205,8 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 }
 
 // Check if a branch is redundant with a previously output branch
-bool NetworkSequenceCollection::isBranchRedundant(BranchRecord& branch)
+bool NetworkSequenceCollection::isBranchRedundant(
+		const BranchRecord& branch)
 {
 	// Since branches are assembled simulatenously it is possibly to start a branch from both ends at the same time
 	// This can only happen if both ends of the branch are in the same node (since we assemble one node at a time)

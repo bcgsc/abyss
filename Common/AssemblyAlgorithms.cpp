@@ -792,12 +792,15 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 			// singleton, output
 			BranchRecord currBranch(SENSE, -1);
 			currBranch.addSequence(*iter);
+			currBranch.setMultiplicity(*iter,
+					iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
 			Sequence contig;
 			processTerminatedBranchAssemble(seqCollection, currBranch, contig);
 			
 			// Output the contig
-			fileWriter->WriteSequence(contig, ++contigID, 0);
+			fileWriter->WriteSequence(contig, ++contigID,
+					currBranch.getBranchMultiplicity());
 			continue;
 		}
 
@@ -826,7 +829,8 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		processTerminatedBranchAssemble(seqCollection, currBranch, contig);
 		
 		// Output the contig
-		fileWriter->WriteSequence(contig, ++contigID, 0);
+		fileWriter->WriteSequence(contig, ++contigID,
+				currBranch.getBranchMultiplicity());
 		seqCollection->pumpNetwork();
 	}
 	

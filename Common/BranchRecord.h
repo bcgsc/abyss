@@ -98,7 +98,7 @@ class BranchRecord
 		bool hasLoop() const { return m_loopDetected; }
 		
 		// get the total multiplicity for this branch
-		int getBranchMultiplicity(bool ignoreLast) const;
+		int getBranchMultiplicity(bool ignoreLast = false) const;
 		
 		
 	private:
