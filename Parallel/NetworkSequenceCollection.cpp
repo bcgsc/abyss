@@ -642,6 +642,7 @@ int NetworkSequenceCollection::parseControlMessage()
 		}
 		case APC_POPBUBBLE:
 		{		
+			m_numPopped = controlMsg.argument;			
 			SetState(NAS_POPBUBBLE);
 			break;	
 		}
@@ -1061,7 +1062,8 @@ int NetworkSequenceCollection::controlPopBubbles()
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
-		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE);
+		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
+				m_numPopped);
 
 		// Cleanup any messages that are pending
 		EndState();
@@ -1071,6 +1073,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 		while (!checkpointReached(1))
 			pumpNetwork(&slaveNumPopped);
 		numPopped += slaveNumPopped;
+		m_numPopped += slaveNumPopped;
 
 		//Reset the state and loop
 		SetState(NAS_POPBUBBLE);
