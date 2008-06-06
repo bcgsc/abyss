@@ -362,6 +362,7 @@ void NetworkSequenceCollection::runControl()
 						break;
 					totalPopped += numPopped;
 				}
+				assert(totalPopped == m_numPopped);
 				printf("Removed %d bubbles in %d rounds\n",
 						totalPopped, i);
 				SetState(NAS_TRIM2);
@@ -971,11 +972,11 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		// Check whether this bubble has already been popped.
 		if (!iter->second.isAmbiguous(this))
 			continue;
+		numPopped++;
 		AssemblyAlgorithms::writeSNP(
-				iter->second, ++m_numPopped);
+				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
-		numPopped++;
 		pumpNetwork();
 	}
 	m_bubbles.clear();
@@ -1063,17 +1064,15 @@ int NetworkSequenceCollection::controlPopBubbles()
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
 		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
-				m_numPopped);
+				m_numPopped + numPopped);
 
 		// Cleanup any messages that are pending
 		EndState();
 
 		// Wait for this node to return
-		int slaveNumPopped;
 		while (!checkpointReached(1))
-			pumpNetwork(&slaveNumPopped);
-		numPopped += slaveNumPopped;
-		m_numPopped += slaveNumPopped;
+			pumpNetwork();
+		numPopped += m_checkpointSum;
 
 		//Reset the state and loop
 		SetState(NAS_POPBUBBLE);
@@ -1082,6 +1081,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 	// Cleanup any messages that are pending
 	EndState();
 
+	m_numPopped += numPopped;
 	if (numPopped > 0)
 		printf("Removed %d bubbles\n", numPopped);
 	return numPopped;
