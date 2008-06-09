@@ -5,7 +5,6 @@
 #include <fstream>
 #include "CommonDefs.h"
 #include "Sequence.h"
-#include "PackedSeq.h"
 
 class IFileReader
 {
@@ -14,7 +13,7 @@ class IFileReader
 		virtual ~IFileReader() {};
 		
 		// Returns true if there are more sequences to read
-		virtual bool ReadSequences(PSequenceVector& outseqs) = 0;
+		virtual bool ReadSequences(SequenceVector& outseqs) = 0;
 
 		// Returns the number of sequences containing non-ACGT
 		// characters.

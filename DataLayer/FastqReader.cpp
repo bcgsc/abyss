@@ -38,7 +38,7 @@ Sequence FastqReader::ReadSequence()
  * Read in a group of sequences and return whether any sequences
  * remain.
  */
-bool FastqReader::ReadSequences(PSequenceVector& outseqs)
+bool FastqReader::ReadSequences(SequenceVector& outseqs)
 {
 	Sequence seq = ReadSequence();
 	size_t pos = seq.find_first_not_of("ACGT");

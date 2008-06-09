@@ -12,7 +12,7 @@ class FastqReader : public IFileReader
 		FastqReader(const char* filename);
 		~FastqReader();
 		Sequence ReadSequence();
-		virtual bool ReadSequences(PSequenceVector& outseqs);
+		virtual bool ReadSequences(SequenceVector& outseqs);
 		bool isGood();
 		virtual unsigned getNonACGT() { return m_nonacgt; }
 

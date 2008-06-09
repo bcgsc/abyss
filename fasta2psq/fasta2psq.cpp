@@ -1,17 +1,7 @@
-#include <stdio.h>
-
-#include <vector>
-#include <stdio.h>
-#include <deque>
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
 #include "fasta2psq.h"
-#include "FastaWriter.h"
 #include "FastaReader.h"
 #include "PackedSeqWriter.h"
-#include "PackedSeqReader.h"
-
+#include <cstdio>
 
 int main(int argc, char* const* argv)
 {	
@@ -28,9 +18,9 @@ int main(int argc, char* const* argv)
 	bool stop = false;
 	while(!stop)
 	{
-		PSequenceVector seqs;
+		SequenceVector seqs;
 		stop = !reader->ReadSequences(seqs);
-		for(PSequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
+		for(SequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
 		{
 			writer->WriteSequence(*iter);
 		}

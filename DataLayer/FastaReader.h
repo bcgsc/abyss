@@ -6,7 +6,6 @@
 #include "IFileReader.h"
 #include "CommonDefs.h"
 #include "Sequence.h"
-#include "PackedSeq.h"
 
 class FastaReader : public IFileReader
 {
@@ -23,7 +22,7 @@ class FastaReader : public IFileReader
 		
 		// Read sequences into the vector as packed seqs
 		// Returns true unless eof has been reached
-		virtual bool ReadSequences(PSequenceVector& outseqs);
+		virtual bool ReadSequences(SequenceVector& outseqs);
 		
 		// Returns true unless eof has been reached
 		bool isGood();

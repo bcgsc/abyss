@@ -114,12 +114,11 @@ void loadSequences(ISequenceCollection* seqCollection,
 	bool stop = false;
 	while(!stop)
 	{
-		PSequenceVector seqs;
+		SequenceVector seqs;
 		stop = !reader->ReadSequences(seqs);
-		for(PSequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
-		{
-			
-			int len = iter->getSequenceLength();
+		for (SequenceVectorIterator iter = seqs.begin();
+				iter != seqs.end(); iter++) {
+			int len = iter->length();
 			if (opt::kmerSize > len) {
 				count_small++;
 				continue;
@@ -127,7 +126,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 			
 			for(int i = 0; i < len - opt::kmerSize  + 1; i++)
 			{
-				PackedSeq sub = iter->subseq(i, opt::kmerSize);
+				PackedSeq sub = iter->substr(i, opt::kmerSize);
 				// Add the sequence to the sequence collection
 				seqCollection->add(sub);
 			}
