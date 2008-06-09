@@ -5,7 +5,6 @@
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
-#include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
 #include <stdio.h>
 
@@ -90,12 +89,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 
 	// Determine the input file type
 	IFileReader* reader;
-	if(inFile.find(PACKED_SEQ_EXT) != std::string::npos)
-	{
-		// The file is a packed seq file
-		reader = new PackedSeqReader(inFile.c_str());
-	}
-	else if(inFile.find(".fastq") != std::string::npos)
+	if(inFile.find(".fastq") != std::string::npos)
 	{
 		reader = new FastqReader(inFile.c_str());
 	}
@@ -106,8 +100,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 	}
 	else
 	{
-		fprintf(stderr, "error: `%s' is an unknown format "
-				"(requires .fasta, .fa, .fastq or .psq)\n",
+		fprintf(stderr, "error: `%s' is an unknown format\n"
+			"Try `" PACKAGE " --help' for more information.\n",
 				inFile.c_str());
 		exit(EXIT_FAILURE);
 	}
