@@ -439,10 +439,12 @@ void writeSNP(BranchGroup& group, unsigned id)
 	unsigned selectedIndex = group.getBranchToKeep();
 	char allele = 'A';
 
-	BranchRecord& refRecord = group.getBranch(selectedIndex);
+	BranchRecord& refBranch = group.getBranch(selectedIndex);
 	Sequence refContig;
-	refRecord.buildContig(refContig);
-	fprintf(fout, ">%d%c\n%s\n", id, allele++, refContig.c_str());
+	refBranch.buildContig(refContig);
+	fprintf(fout, ">%d%c %u\n%s\n", id, allele++,
+			refBranch.getBranchMultiplicity(),
+			refContig.c_str());
 
 	unsigned numBranches = group.getNumBranches();
 	for (unsigned i = 0; i < numBranches; ++i) {
@@ -451,7 +453,9 @@ void writeSNP(BranchGroup& group, unsigned id)
 		BranchRecord& currBranch = group.getBranch(i);
 		Sequence contig;
 		currBranch.buildContig(contig);
-		fprintf(fout, ">%d%c\n%s\n", id, allele++, contig.c_str());
+		fprintf(fout, ">%d%c %u\n%s\n", id, allele++,
+				currBranch.getBranchMultiplicity(),
+				contig.c_str());
 	}
 }
 
@@ -788,7 +792,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 			
 			// Output the contig
 			fileWriter->WriteSequence(contig, ++contigID,
-					currBranch.getBranchMultiplicity());
+					currBranch.calculateBranchMultiplicity());
 			continue;
 		}
 
@@ -818,7 +822,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 		
 		// Output the contig
 		fileWriter->WriteSequence(contig, ++contigID,
-				currBranch.getBranchMultiplicity());
+				currBranch.calculateBranchMultiplicity());
 		seqCollection->pumpNetwork();
 	}
 	

@@ -3,17 +3,19 @@
 //
 // Constructor
 //
-BranchRecord::BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1), m_loopDetected(false)
+BranchRecord::BranchRecord()
+	: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1),
+	m_loopDetected(false), m_multiplicity(-1)
 {
-	
 }
 
 //
 // Constructor
 //
-BranchRecord::BranchRecord(extDirection dir, int maxLength) : m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength), m_loopDetected(false)
+BranchRecord::BranchRecord(extDirection dir, int maxLength)
+	: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
+	m_loopDetected(false), m_multiplicity(-1)
 {
-	
 }
 
 //
@@ -27,6 +29,7 @@ BranchRecord::BranchRecord(const BranchRecord& other)
 	m_maxLength = other.m_maxLength;
 	m_state = other.m_state;
 	m_loopDetected = other.m_loopDetected;
+	m_multiplicity = other.m_multiplicity;
 }
 
 // Assignment operator
@@ -44,6 +47,7 @@ BranchRecord& BranchRecord::operator=(const BranchRecord& other)
 	m_maxLength = other.m_maxLength;
 	m_state = other.m_state;
 	m_loopDetected = other.m_loopDetected;	
+	m_multiplicity = other.m_multiplicity;
 	return *this;
 }
 
@@ -169,7 +173,9 @@ bool BranchRecord::isTooLong() const
 }
 
 //
-// Get the total multiplicity of the branch
+// Calculate the total multiplicity of this branch. The result is
+// saved so that it may be fetched using getBranchMultiplicity after
+// the multiplicity of each individual sequence has been forgotten.
 // ignoreLast - this flag will be set when determining the branch 
 // multiplicity for bubble removal. Since the multiplicity record
 // lags behind the extension in a branch group, the last sequence
@@ -178,7 +184,7 @@ bool BranchRecord::isTooLong() const
 // contribute any information to choosing a particular branch
 // so it can be safely ignored
 //
-int BranchRecord::getBranchMultiplicity(bool ignoreLast) const
+int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 {
 	assert(!m_seqMap.empty());
 	int total = 0;
@@ -196,7 +202,8 @@ int BranchRecord::getBranchMultiplicity(bool ignoreLast) const
 		assert(m > 0);
 		total += m;
 	}
-	return total;
+	assert(total > 0);
+	return m_multiplicity = total;
 }
 
 //

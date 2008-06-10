@@ -97,10 +97,16 @@ class BranchRecord
 		// Does this branch have a loop?
 		bool hasLoop() const { return m_loopDetected; }
 		
-		// get the total multiplicity for this branch
-		int getBranchMultiplicity(bool ignoreLast = false) const;
-		
-		
+		// Calculate the total multiplicity for this branch.
+		int calculateBranchMultiplicity(bool ignorelast = false);
+
+		// Return the precalculated multiplicity for this branch.
+		int getBranchMultiplicity() const
+		{
+			assert(m_multiplicity > 0);
+			return m_multiplicity;
+		}
+
 	private:
 				
 		// BranchData is used for the ordering/length of the branch, BranchSet is used for the existance of sequences in the branch.
@@ -111,6 +117,7 @@ class BranchRecord
 		BranchState m_state;
 		int m_maxLength;
 		bool m_loopDetected;
+		int m_multiplicity;
 };
 
 #endif
