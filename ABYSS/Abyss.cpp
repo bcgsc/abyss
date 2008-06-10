@@ -82,8 +82,8 @@ int main(int argc, char* const* argv)
 	if (opt::bubbles > 0 && opt::trimLen > 0)
 		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
 
-	//AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
-	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
+	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
+	//AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
 	
 	write_graph(opt::graphPath, *pSC);
 
