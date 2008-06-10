@@ -44,6 +44,13 @@ int main(int argc, char* const* argv)
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
+	for (int i = 0; i < argc; i++) {
+		if (i != 0)
+			putchar(' ');
+		fputs(argv[i], stdout);
+	}
+	putchar('\n');
+
 	opt::parse(argc, argv);
 	
 	// Load the phase space
