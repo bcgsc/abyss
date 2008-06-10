@@ -1106,16 +1106,14 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		{
 			// Output the singleton contig.
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter);
-			currBranch.setMultiplicity(*iter,
-					iter->getMultiplicity());
+			currBranch.addSequence(*iter, iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
 			Sequence contig;
 			AssemblyAlgorithms::processTerminatedBranchAssemble( 
 					seqCollection, currBranch, contig);
 			fileWriter->WriteSequence(contig,
 					m_numAssembled + ++numAssembled,
-					currBranch.getBranchMultiplicity());
+					currBranch.calculateBranchMultiplicity());
 			continue;
 		}
 		
@@ -1174,8 +1172,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			assert(iter->second.getNumBranches() == 1);
 			
 			// check if the branch is redundant, assemble if so, else it will simply be removed
-			const BranchRecord& currBranch
-				= iter->second.getBranch(0);
+			BranchRecord& currBranch = iter->second.getBranch(0);
 			if (!isBranchRedundant(currBranch)) {
 				// Assemble the contig
 				Sequence contig;
@@ -1186,7 +1183,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 				// Output the contig
 				fileWriter->WriteSequence(contig,
 						m_numAssembled + ++currContigID,
-						currBranch.getBranchMultiplicity());
+						currBranch.calculateBranchMultiplicity());
 			}
 			
 			// Mark the group for removal
