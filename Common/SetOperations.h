@@ -1,21 +1,22 @@
 #ifndef SETOPERATIONS_H
 #define SETOPERATIONS_H
 
-#include <set>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
+#include <set>
 
 namespace SetOperations
 {
 
 template<typename K>
-void printSet(const std::set<K>& s)
+std::ostream& printSet(const std::set<K>& s)
 {
 	std::cout << "[ ";
-	for(typename std::set<K>::const_iterator iter = s.begin(); iter != s.end(); ++iter)
-	{
-		std::cout << *iter << " ";
-	}
+	std::copy(s.begin(), s.end(),
+			std::ostream_iterator<K>(std::cout, " "));
 	std::cout << "]";
+	return std::cout;
 }
 
 
