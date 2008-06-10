@@ -90,7 +90,7 @@ void SeqExt::print() const
 //
 //
 //
-unsigned char SeqExt::base2Bit(char base) const
+unsigned char SeqExt::base2Bit(char base)
 {
 	if(base == 'A')
 	{

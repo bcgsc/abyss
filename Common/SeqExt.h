@@ -34,8 +34,8 @@ class SeqExt
 		SeqExt complement() const;
 		
 	private:
-		unsigned char base2Bit(char base) const;
-		char SeqExt::bit2Base(unsigned char code);
+		static unsigned char base2Bit(char base);
+		static char bit2Base(unsigned char code);
 		
 		unsigned char m_record;
 };
