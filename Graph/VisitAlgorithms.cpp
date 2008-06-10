@@ -1,10 +1,11 @@
 #include "VisitAlgorithms.h"
 #include "Timer.h"
+#include "SetOperations.h"
 
-void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetData, const ContigID& /*slaveKey*/, const ContigData& slaveData, extDirection dir, bool reverse)
+void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, const ContigData& slaveData, extDirection dir, bool reverse, bool removeMerge)
 {
 	// should the slave be reversed?
-	Sequence slaveSeq = slaveData.seq;
+	Sequence slaveSeq = slaveData.m_seq;
 	if(reverse)
 	{
 		slaveSeq = reverseComplement(slaveSeq);
@@ -15,13 +16,13 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 	// Order the contigs
 	if(dir == SENSE)
 	{
-		leftSeq = &targetData.seq;
+		leftSeq = &targetData.m_seq;
 		rightSeq = &slaveSeq;
 	}
 	else
 	{
 		leftSeq = &slaveSeq;
-		rightSeq = &targetData.seq;
+		rightSeq = &targetData.m_seq;
 	}
 	
 	// Get the last k bases of the left and the first k bases of the right
@@ -32,7 +33,7 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 	
 	if(leftEnd != rightBegin)
 	{
-		printf("merge called data1: %s %s (%d, %d)\n", targetData.seq.c_str(), slaveData.seq.c_str(), dir, reverse);	
+		printf("merge called data1: %s %s (%d, %d)\n", targetData.m_seq.c_str(), slaveData.m_seq.c_str(), dir, reverse);	
 		printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
 	}
 	assert(leftEnd == rightBegin);
@@ -42,27 +43,59 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 	Sequence merged = *leftSeq;
 	merged.append(rightSeq->substr(m_overlap));
 	
-	targetData.seq = merged;
+	targetData.m_seq = merged;
 	
 	// merge the seq sets
-	targetData.m_seqSet.insert(slaveData.m_seqSet.begin(), slaveData.m_seqSet.end());
 	
+	// Add the sequence data for the slave into the target, correctly setting the usable flag
+	// usable = true if the sequences are equivalent (the child is being deleted), else false
+	
+	CKDataVec::iterator insertPos;
+	if(dir == SENSE)
+	{
+		// add to end
+		insertPos = targetData.m_kmerVec.end();
+	}
+	else
+	{
+		// add to beginning
+		insertPos = targetData.m_kmerVec.begin();
+	}
+	
+	// add the new sequences to the contigdata
+	targetData.addSeqs(slaveSeq, insertPos, removeMerge);
+	
+	// add the id, indicating the contig is made up of multiple joined contigs
+	targetData.addID(slaveKey);
+	
+	/*
 	// Now, update the lookup table
-	m_pDatabase->addKeys(slaveData.m_seqSet, targetKey);
+	PSeqSet updateSet;
+	slaveData.copySeqSet(updateSet);
+	m_pDatabase->addKeys(updateSet, targetKey);
+	*/
 	
-	//printf("merge called data1: %s %s (%d, %d)\n", target.seq.c_str(), slave.seq.c_str(), dir, reverse);	
+	(void)targetKey;
+	(void)slaveKey;
+	//printf("merging (%s, %s)\n", targetKey.c_str(), slaveKey.c_str());
+	//printf("merge called data1: %s %s (%d, %d)\n", targetData.seq.c_str(), slaveData.seq.c_str(), dir, reverse);	
 	//printf("new target seq: %s\n", merged.c_str());
+	
+	// validate the new target data
+	targetData.validateSequences();
 }
 
 void ContigDataFunctions::deleteCallback(const ContigID& slaveKey, const ContigData& slaveData)
 {
-	m_pDatabase->deleteKeys(slaveData.m_seqSet, slaveKey);
+	PSeqSet seqSet;
+	slaveData.copySeqSet(seqSet);
+	m_pDatabase->deleteKeys(seqSet, slaveKey);
 }
 
 bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse)
 {
 	// should the slave be reversed?
-	Sequence slaveSeq = slave.seq;
+	Sequence slaveSeq = slave.m_seq;
 	if(reverse)
 	{
 		slaveSeq = reverseComplement(slaveSeq);
@@ -73,205 +106,158 @@ bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, ext
 	// Order the contigs
 	if(dir == SENSE)
 	{
-		leftSeq = &target.seq;
+		leftSeq = &target.m_seq;
 		rightSeq = &slaveSeq;
 	}
 	else
 	{
 		leftSeq = &slaveSeq;
-		rightSeq = &target.seq;
+		rightSeq = &target.m_seq;
 	}
 	
 	// Get the last k bases of the left and the first k bases of the right
 	PackedSeq leftEnd = leftSeq->substr(leftSeq->length() - m_overlap, m_overlap);
 	PackedSeq rightBegin = rightSeq->substr(0, m_overlap);
 	
+	target.validateSequences();
 	return leftEnd == rightBegin;
 }
 
 void DBGenerator::visit(const ContigID& id, const ContigData& data)
 {
 	// add a record for every sequence in the data
-	m_pDatabase->addKeys(data.m_seqSet, id);
+	PSeqSet seqSet;
+	data.copySeqSet(seqSet);
+	m_pDatabase->addKeys(seqSet, id);
 }
 
 void ContigDataOutputter::visit(const ContigID& id, const ContigData& data)
 {
 	// super hacky
 	int iID = atoi(id.c_str());
-	m_pWriter->WriteSequence(data.seq, iID, 0);	
+	m_pWriter->WriteSequence(data.m_seq, iID, 0);	
 }
 
-int PairedResolver::resolve(const ContigData& data, extDirection dir, ContigDataComponents& components)
+int PairedResolver::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const ContigID id)
 {
-	printf("Resolving with %zu pairs\n", m_pPairs->getNumReads());
+	int numMerged = 0;
+	printf("\n\n***ATTEMPTING TO RESOLVE %s***\n\n", id.c_str());
 	
-	// First, generate the scoring sets, one for each component
-	ScoreSets scoreSets;
+	// Functors
+	SequenceDataCost dataCost(m_kmer);
+	LinkFinder linkFinder(m_pPairs, m_pDatabase);
+	ContigDataFunctions dataFunctor(m_kmer, m_pDatabase);
+	
+	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 	{
-		Timer sTimer("ScoreSets");
-		for(ContigDataComponents::iterator compIter = components.begin(); compIter != components.end(); ++compIter)
-		{
-			
-			PSeqSet newSet;
-			scoreSets.push_back(newSet);
-			for(ContigDataCollection::iterator dataIter = compIter->begin(); dataIter != compIter->end(); ++dataIter)
-			{
-				// union the current set in
-				scoreSets.back().insert((*dataIter)->m_seqSet.begin(), (*dataIter)->m_seqSet.end());
-			}
-			
-			printf("Component has %zu kmers\n", scoreSets.back().size());
-		}
-	}
-	
-	
-	// Break the reference contig into kmers
-	PSequenceVector refKmers;
-	for(size_t idx = 0; idx < data.seq.length() - m_kmer; idx++)
-	{
-		PackedSeq kmer(data.seq.substr(idx, m_kmer));
-		refKmers.push_back(kmer);
-	}
-	
-	// Compute the indices to use
-	size_t numNodesInBranch = refKmers.size();
-	size_t firstIndex;
-	size_t lastIndex;
-	size_t numNodesToUse = m_maxlength;
-	
-	if(dir == SENSE)
-	{
-		// use the last n sequences
-		lastIndex = (int)numNodesInBranch - 1;						
-		if((int)lastIndex - (int)numNodesToUse < 0)
-		{
-			firstIndex = 0;
-		}
-		else
-		{
-			firstIndex = lastIndex - numNodesToUse;
-		}
-	}
-	else
-	{
-		// use the first n sequences	
-		firstIndex = 0;
-		if(firstIndex + numNodesToUse > numNodesInBranch)
-		{
-			lastIndex = numNodesInBranch - 1;	
-		}
-		else
-		{
-			lastIndex = firstIndex + numNodesToUse - 1;
-		}
-	}
-	
-	// Filter the possible pairs by only accepting pairs of sequences that only hit one of the possible branches
-	PSequenceVector validPairs;
-	int firstSupported = -1;
-	int lastSupported = -1;
-	
-	printf("Support string: \n");
-	
-	for(size_t idx = firstIndex; idx <= lastIndex; ++idx)
-	{
-		// Get the pairs for this kmer
+		ContigIDSet reachableSet;
+		extDirection dir = (extDirection)dirIdx;
+		const ContigData& data = pGraph->getDataForVertex(id);
 		
+		// get the reachable set using the paired info 
+		linkFinder.getReachableSet(id, data, dir, reachableSet);
+		
+		printf("Nodes reachable by pairs from %s: ", id.c_str());
+		SetOperations::printSet(reachableSet);
+		printf("\n");
+
+		// check if (the shortest?) path from the root node to any node in the set is a super set of all the nodes
+		ContigIDVec superPath;	
+		bool found = pGraph->findSuperpath(id, dir, reachableSet, superPath, dataCost);
+
+		// Create the list of sequences that have been merged so far
+		ContigIDSet mergedPathSet;
+		
+		// add the source node to the merged path set
+		mergedPathSet.insert(id);
+		
+		
+		if(found)
+		{
+			for(ContigIDVec::const_iterator iter = superPath.begin(); iter != superPath.end(); ++iter)
+			{
+				// check if the node should be appended (target node stays) or merged (target node removed)
+				ContigIDSet reachableSet;
+				
+				// Get the edge from the parent to the child
+				
+				EdgeDescription parentEdgeDesc = pGraph->getUniqueEdgeDesc(id, *iter, dir);
+				EdgeDescription relativeDesc = parentEdgeDesc.makeRelativeDesc();
+								
+				printf("Parent dir: %d relative dir: %d\n", parentEdgeDesc.dir, relativeDesc.dir);
+				
+				// Get the reachable set for the target node in the direction towards the parents
+				ContigIDSet targetReachSet;
+				ContigID currID = *iter;
+				const ContigData& currData = pGraph->getDataForVertex(currID);
+				
+				
+				linkFinder.getReachableSet(currID, currData, !relativeDesc.dir, targetReachSet);
+				printf("Nodes reachable by pairs from %s: ", currID.c_str());
+				SetOperations::printSet(targetReachSet);
+				printf("\n");
+				
+				// Get the difference between the merged so far this set
+				
+				// If the resulting set is empty, the defined path is a superset of this node and the node can be removed
+				ContigIDSet pathDiff;
+				SetOperations::difference(targetReachSet, mergedPathSet, pathDiff);
+				
+				printf("Difference from merged path: ");
+				SetOperations::printSet(pathDiff);
+				printf("\n");
+				
+				// if the path child's reachable set is a strict subset of the parent's path, it can be removed
+				bool removeChild = pathDiff.empty() && !targetReachSet.empty();
+				
+				if(currID == "2313")
+					removeChild = false;
+				pGraph->mergePath(id, *iter, dir, removeChild, dataFunctor);
+				
+				mergedPathSet.insert(currID);
+				numMerged++;
+			}
+		}
+	}
+	
+	return numMerged;
+}
+
+
+void LinkFinder::visit(const ContigID& /*id*/, ContigData& /*data*/)
+{
+	assert(false);
+}
+
+void LinkFinder::getReachableSet(const ContigID& /*id*/, const ContigData& data, extDirection dir, ContigIDSet& idSet)
+{
+	// Copy out the usable sequences
+	PSeqSet usableSeqs;
+	data.copyUsableSeqSet(usableSeqs);
+	
+	for(PSeqSet::iterator iter = usableSeqs.begin(); iter != usableSeqs.end(); ++iter)
+	{		
 		PSequenceVector seqPairs;
 		if(dir == SENSE)
 		{
-			m_pPairs->getPairsWithComp(refKmers[idx], false, seqPairs);
+			m_pPairs->getPairsWithComp(*iter, false, seqPairs);
 		}
 		else
 		{
-			m_pPairs->getPairsWithComp(refKmers[idx], true, seqPairs);
+			m_pPairs->getPairsWithComp(*iter, true, seqPairs);
 		}
 		
 
-		ContigIDSet idCollection;
 		for(PSequenceVector::const_iterator seqIter = seqPairs.begin(); seqIter != seqPairs.end(); ++seqIter)
 		{
 			// append into the id collection
-			m_pDatabase->getSet(*seqIter, idCollection);
-		}
-		
-		// score these pairs against the sequence sets
-		int numSupported = 0;
-		for(ScoreSets::iterator iter = scoreSets.begin(); iter != scoreSets.end(); ++iter)
-		{
-			size_t currScore = scorePairsToSet(seqPairs, *iter);
-			if(currScore > 0)
-			{
-				numSupported++;
-			}
-		}
-		
-		// Get the set of contigs supported
-		printf("%d ", numSupported);
-		m_pDatabase->printSet(idCollection);
-		printf("\n");
-		
-		//printf("Num supported: %d\n", numSupported);
-		
-		// if only one branch is supported, add its pairs to the valid set
-		if(numSupported == 1)
-		{
-			validPairs.insert(validPairs.end(), seqPairs.begin(), seqPairs.end());
-			
-			if(firstSupported == -1)
-			{
-				firstSupported = idx;
-			}
-			if((int)idx > lastSupported)
-			{
-				lastSupported = idx;
-			}
-		}
-	}
-	printf("\n");
-	
-	printf("length: %zu valid index range: [%d %d] valid length: %d, num valid pairs: %zu\n", refKmers.size(), firstSupported, lastSupported, lastSupported - firstSupported, validPairs.size());
-	
-	const size_t minSupport = 20;
-	size_t numSupported = 0;
-	int supportedIndex = -1;
-	for(size_t idx = 0; idx < scoreSets.size(); idx++)
-	{
-		size_t currScore = scorePairsToSet(validPairs, scoreSets[idx]);
-		printf("idx: %zu score: %zu\n", idx, currScore);
-		
-		if(currScore > minSupport)
-		{
-			numSupported++;
-			supportedIndex = (int)idx;
+			m_pDatabase->getSet(*seqIter, idSet);
 		}
 	}
 	
-	if(numSupported == 1)
-	{
-		return supportedIndex;
-	}
-	else
-	{
-		return -1;
-	}
-}
+	// Remove the IDs that are in the exclusion list (they have been merged already)
+	SetOperations::removeElements(idSet, data.getExclusionSet());
 
-size_t PairedResolver::scorePairsToSet(PSequenceVector& pairs, PSeqSet& seqSet)
-{
-	size_t score = 0;	
-	for(PSequenceVector::iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
-	{
-		//printf("Scoring pair %s\n", iter->decode().c_str());
-		// look up the seq in the set
-		// as the reverse complements are present in the set we dont have to look them up
-		if(seqSet.find(*iter) != seqSet.end())
-		{
-			score++;
-		}
-	}
-	
-	return score;
+	return;
 }
 

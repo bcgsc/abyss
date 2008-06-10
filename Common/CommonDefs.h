@@ -35,6 +35,9 @@ struct Coord4
 typedef int ReadID;
 typedef std::string ContigID;
 
+typedef std::set<ContigID> ContigIDSet;
+typedef std::vector<ContigID> ContigIDVec;
+
 struct Position
 {
 	ContigID contig;

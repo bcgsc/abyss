@@ -23,4 +23,5 @@ libcommon_a_SOURCES = \
 	BranchRecord.cpp BranchRecord.h \
 	Timer.cpp Timer.h \
 	Log.cpp Log.h \
-	BranchGroup.cpp BranchGroup.h
+	BranchGroup.cpp BranchGroup.h \
+	SetOperations.h

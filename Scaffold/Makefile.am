@@ -18,5 +18,5 @@ Scaffold_LDADD = \
 Scaffold_SOURCES = \
 	Scaffold.cpp Scaffold.h \
 	ContigData.cpp ContigData.h \
-	Stats.cpp Stats.h
+	Stats.cpp Stats.h 
 

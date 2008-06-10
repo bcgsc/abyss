@@ -11,6 +11,8 @@
 #include "DirectedGraph.h"
 #include "Options.h"
 #include "ContigData.h"
+#include "SetOperations.h"
+#include "VisitAlgorithms.h"
 
 using namespace std;
 
@@ -473,7 +475,7 @@ void Scaffold::merge4()
 	// Add all the vertices
 	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
 	{
-		ContigData data(contigIter->second.seq, m_kmer);
+		ContigData data(contigIter->first, contigIter->second.seq, m_kmer);
 		contigGraph.addVertex(contigIter->first, data);
 	}
 	
@@ -565,24 +567,67 @@ void Scaffold::merge4()
 	AlignmentCache alignDB;
 	
 	// Create the contig data function object
-	ContigDataFunctions dataFunctor(m_kmer, &alignDB);	
+	ContigDataFunctions dataFunctor(m_kmer, &alignDB);
+	
+	SequenceDataCost dataCost(m_kmer);
+
 	
 	printf("Pre-validating graph\n");	
 	contigGraph.validate(dataFunctor);
 
-	FastaWriter* pWriter;
-	pWriter = new FastaWriter("BeforeContigs.fa");
 	
-	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
-
-	delete pWriter;
-	pWriter = 0;
-
 	// Populate the database
 	{
 		Timer t("GenDB");
 		contigGraph.iterativeVisit(DBGenerator(&alignDB));
-	}	
+	}
+	
+
+
+	
+	PairedResolver resolver(m_kmer, 0, &m_pairRec, &alignDB);
+	FastaWriter* pWriter;
+	
+	int count = 0;
+	//ContigID id = "1029";
+	ContigID id = "1226";
+	contigGraph.printVertex(id);
+	contigGraph.printVertex("1338");
+		
+	pWriter = new FastaWriter("Tap.fa"); 
+	bool stop2 = false;
+	
+	while(!stop2)
+	{
+		printf("\n\n\n*****CONTIG %d ******\n\n\n", count);
+		contigGraph.printVertex(id);
+		contigGraph.printVertex("736");		
+		contigGraph.printVertex("1338");		
+		contigGraph.printVertex("1124");
+		contigGraph.printVertex("313");
+		contigGraph.printVertex("1774");
+		
+		stop2 = !resolver.resolve(&contigGraph, id);
+		
+		const ContigData& currData = contigGraph.getDataForVertex(id);
+		pWriter->WriteSequence(currData.m_seq, count, 0);
+		count++;
+	}
+	
+	delete pWriter;
+	contigGraph.printVertex(id, true);
+	return;
+	
+	contigGraph.reducePaired(resolver);
+	
+	
+	pWriter = new FastaWriter("PostPaired.fa");
+	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
+	delete pWriter;
+	
+	numVert = contigGraph.getNumVertices();
+	numEdges = contigGraph.countEdges(); // SLOW
+	printf("AFTER: num vert: %zu num edges: %zu\n", numVert, numEdges);		
 	
 	bool stop = false;
 	while(!stop)
@@ -602,44 +647,12 @@ void Scaffold::merge4()
 		}
 	}
 	
-	AlignmentCache db2;
-	contigGraph.iterativeVisit(DBGenerator(&db2));	
-	
-	
 	printf("Post validating graph\n");
 	contigGraph.validate(dataFunctor);
-
-	size_t maxComponentLength = 500;
-	PairedResolver resolver(m_kmer, maxComponentLength, &m_pairRec, &alignDB);
-	
-	SequenceDataCost dataCost;
-	
-	//contigGraph.reducePaired(maxComponentLength, dataCost, resolver, dataMerger);
-
-	contigGraph.attemptResolve("40", SENSE, maxComponentLength, dataCost, resolver, dataFunctor);
-	
-	contigGraph.printVertex("40", true);
-	
-	return;
 	
 	numVert = contigGraph.getNumVertices();
 	numEdges = contigGraph.countEdges(); // SLOW
 	printf("AFTER: num vert: %zu num edges: %zu\n", numVert, numEdges);	
-
-	pWriter = new FastaWriter("AfterSimplificationContigs.fa");
-	
-	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
-	delete pWriter;
-	pWriter = 0;
-		
-	printf("Attemping to resolve using pairs\n");
-	
-
-	
-	pWriter = new FastaWriter("ResolvedContigs.fa");
-	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
-	delete pWriter;	
-	contigGraph.validate(dataFunctor);
 }
 
 Sequence Scaffold::findContig(PackedSeq start, ContigID& id)

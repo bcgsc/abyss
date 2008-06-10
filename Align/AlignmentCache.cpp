@@ -1,3 +1,4 @@
+#include "SetOperations.h"
 #include "AlignmentCache.h"
 #include <fstream>
 
@@ -25,10 +26,10 @@ bool AlignmentCache::compare(const AlignmentCache& otherDB)
 				printf("Sets do not match for key %s\n", keyIter->first.decode().c_str());
 				
 				printf("Set1: \n");
-				printSet(keyIter->second);
+				SetOperations::printSet(keyIter->second);
 
 				printf("Set2: \n");
-				printSet(dataIter->second);
+				SetOperations::printSet(dataIter->second);
 				return false;
 			}
 		}
@@ -79,15 +80,7 @@ void AlignmentCache::deleteKeys(const PSeqSet& seqSet, const ContigID& id)
 	}	
 }
 
-void AlignmentCache::printSet(const ContigIDSet& seqSet) const
-{
-	printf("[ ");
-	for(ContigIDSet::const_iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
-	{
-		printf("%s ", iter->c_str());
-	}
-	printf("] ");
-}
+
 
 /*
 void AlignmentCache::serialize(std::string filename)
