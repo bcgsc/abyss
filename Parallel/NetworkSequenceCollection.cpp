@@ -769,6 +769,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		{
 			// remove this sequence, it has no extensions
 			AssemblyAlgorithms::removeSequenceAndExtensions(seqCollection, *iter);
+			continue;
 		}
 		
 		// Sequence is trimmable, create a new branch for it
