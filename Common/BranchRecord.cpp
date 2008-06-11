@@ -297,7 +297,5 @@ bool BranchRecord::isCanonical() const
 		last.reverseComplement();
 	else
 		first.reverseComplement();
-	int cmp = first.compare(last);
-	assert(cmp != 0);
-	return cmp < 0;
+	return first.compare(last) <= 0;
 }
