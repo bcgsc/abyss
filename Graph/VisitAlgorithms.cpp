@@ -44,7 +44,6 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 	merged.append(rightSeq->substr(m_overlap));
 	
 	targetData.m_seq = merged;
-	
 	// merge the seq sets
 	
 	// Add the sequence data for the slave into the target, correctly setting the usable flag
@@ -62,11 +61,17 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 		insertPos = targetData.m_kmerVec.begin();
 	}
 	
+	
+
 	// add the new sequences to the contigdata
 	targetData.addSeqs(slaveSeq, insertPos, removeMerge);
 	
 	// add the id, indicating the contig is made up of multiple joined contigs
-	targetData.addID(slaveKey);
+	targetData.addID(slaveKey, dir);
+	if(!removeMerge)
+	{
+		const_cast<ContigData*>(&slaveData)->m_copyNumber--;
+	}
 	
 	/*
 	// Now, update the lookup table
@@ -78,7 +83,7 @@ void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetDat
 	(void)targetKey;
 	(void)slaveKey;
 	//printf("merging (%s, %s)\n", targetKey.c_str(), slaveKey.c_str());
-	//printf("merge called data1: %s %s (%d, %d)\n", targetData.seq.c_str(), slaveData.seq.c_str(), dir, reverse);	
+	//printf("merge called data1: %s %s (%d, %d)\n", targetData.m_seq.c_str(), slaveData.m_seq.c_str(), dir, reverse);	
 	//printf("new target seq: %s\n", merged.c_str());
 	
 	// validate the new target data
@@ -180,7 +185,6 @@ int PairedResolver::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const C
 				ContigIDSet reachableSet;
 				
 				// Get the edge from the parent to the child
-				
 				EdgeDescription parentEdgeDesc = pGraph->getUniqueEdgeDesc(id, *iter, dir);
 				EdgeDescription relativeDesc = parentEdgeDesc.makeRelativeDesc();
 								
@@ -207,11 +211,20 @@ int PairedResolver::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const C
 				SetOperations::printSet(pathDiff);
 				printf("\n");
 				
-				// if the path child's reachable set is a strict subset of the parent's path, it can be removed
-				bool removeChild = pathDiff.empty() && !targetReachSet.empty();
+				// Count the number of times this node is in the path
+				int pathMult = 0;
+				for(ContigIDVec::iterator countIter = superPath.begin(); countIter != superPath.end(); ++countIter)
+				{
+					if(*countIter == currID)
+					{
+						pathMult++;
+					}
+				}
 				
-				if(currID == "2313")
-					removeChild = false;
+				// if the path child's reachable set is a strict subset of the parent's path, it can be removed
+				bool removeChild = pathDiff.empty() && !targetReachSet.empty() && (pathMult == 1);
+				//bool removeChild = (data.m_copyNumber == currData.m_copyNumber) && (pathMult == 1);
+				printf("MasterCN: %d SlaveCN: %d (rem: %d)\n", data.m_copyNumber, currData.m_copyNumber, removeChild); 
 				pGraph->mergePath(id, *iter, dir, removeChild, dataFunctor);
 				
 				mergedPathSet.insert(currID);

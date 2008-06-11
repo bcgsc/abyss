@@ -16,9 +16,9 @@ class ContigData
 {
 	public:
 		
-		ContigData(const ContigID& id, const Sequence& s, size_t kmer);
+		ContigData(const ContigID& id, const Sequence& s, size_t kmer, int copyNumber);
 		
-		void addID(const ContigID& id) { m_idParts.insert(id); }
+		void addID(const ContigID& id, extDirection dir) { m_idParts.insert(id); m_mergeRecord[dir].push_back(id); }
 		
 		void addSeqs(const Sequence& s, CKDataVec::iterator position, bool usable);
 		
@@ -36,6 +36,12 @@ class ContigData
 		ContigIDSet m_idParts;
 		
 		size_t m_kmer;
+		
+		int m_copyNumber;
+		
+		// Merge record, for debug
+		ContigIDVec m_mergeRecord[NUM_DIRECTIONS];
+		
 
 	
 	

@@ -15,8 +15,8 @@ void ReadContigs(std::string file, ContigMap& outMap)
 		char head;
 
 		std::string contigID;
-		//int size;
-		//double coverage;
+		int length;
+		double coverage;
 		Sequence seq;
 		fileHandle >> head;
 		
@@ -27,13 +27,15 @@ void ReadContigs(std::string file, ContigMap& outMap)
 		
 		
 		fileHandle >> contigID;
-		fileHandle.ignore(1000, '\n');	
+		fileHandle >> length;
+		fileHandle >> coverage;
 		fileHandle >> seq;
 
 		outMap[contigID].seq = seq;
 		outMap[contigID].merged = false;
 		outMap[contigID].repetitive = false;
 		outMap[contigID].super = false;
+		outMap[contigID].coverage = (int)coverage;
 	}
 	fileHandle.close();
 }

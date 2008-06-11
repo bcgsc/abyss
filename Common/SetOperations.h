@@ -1,9 +1,11 @@
 #ifndef SETOPERATIONS_H
 #define SETOPERATIONS_H
 
+#include <vector>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+
 #include <set>
 
 namespace SetOperations
@@ -11,6 +13,16 @@ namespace SetOperations
 
 template<typename K>
 std::ostream& printSet(const std::set<K>& s)
+{
+	std::cout << "{ ";
+	std::copy(s.begin(), s.end(),
+			std::ostream_iterator<K>(std::cout, " "));
+	std::cout << "}";
+	return std::cout;
+}
+
+template<typename K>
+std::ostream& printPath(const std::vector<K>& s)
 {
 	std::cout << "[ ";
 	std::copy(s.begin(), s.end(),

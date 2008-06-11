@@ -301,9 +301,27 @@ size_t DirectedGraph<K,D>::reducePaired(ResolveFunctor& resolver)
 	
 	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		if(iter->second->m_data.m_seq.length() > 10000)
+		//if(iter->second->m_data.m_copyNumber == 1)
+		if(iter->second->m_data.m_seq.length() > 500)
 		{
-			while(resolver.resolve(this, iter->first));
+			bool merged = false;
+			bool stop = false;
+			while(!stop)
+			{
+				if(resolver.resolve(this, iter->first))
+				{
+					merged = true;
+				}
+				else
+				{
+					stop = true;
+				}
+			}
+			
+			if(!merged)
+			{
+				printf("***** COULD NOT MERGE %s *****\n", iter->first.c_str());
+			}
 		}
 	}
 
@@ -335,7 +353,6 @@ size_t DirectedGraph<K,D>::removeTransitivity(Functor dataMerger)
 				//printf("attempting merge for %s\n", pVertex->m_key.c_str());
 				//pVertex->printEdges();
 				
-				// Can merge edge
 				// Get the vertex to merge with
 				
 				// This statement is only valid because size == 1
@@ -351,7 +368,13 @@ size_t DirectedGraph<K,D>::removeTransitivity(Functor dataMerger)
 				// This implies that the parent has a single extension to the child and the child
 				// has a single extension to the parent so after the append the child will be redundant
 				bool removeChild = pPartner->isEdgeUnique(pVertex, childDir, parentRev);
-									
+				
+				// sanity check
+				if(pVertex == pPartner)
+				{
+					continue;
+				}
+				
 				// attempt the merge
 				if(merge(pVertex, pPartner, (extDirection)idx, parentRev, removeChild, dataMerger))
 				{

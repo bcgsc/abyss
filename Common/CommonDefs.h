@@ -90,6 +90,7 @@ struct Contig
 	bool merged;
 	bool repetitive;
 	bool super;
+	int coverage;
 };
 
 // Contig typedefs

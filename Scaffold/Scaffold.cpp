@@ -475,9 +475,22 @@ void Scaffold::merge4()
 	// Add all the vertices
 	for(ContigMap::iterator contigIter = m_contigMap.begin(); contigIter != m_contigMap.end(); ++contigIter)
 	{
-		ContigData data(contigIter->first, contigIter->second.seq, m_kmer);
+		// Infer the copy number for the contig
+		double coverage = contigIter->second.coverage;
+		int num_kmers = contigIter->second.seq.length() - m_kmer + 1;
+		int kmers_per_read = m_readLen - m_kmer + 1;
+		double seq_coverage = (coverage / ( num_kmers * kmers_per_read)) * m_readLen;
+		double expectCoverage = 100.0f;
+		
+		double copy_number = round(seq_coverage / expectCoverage);
+		//printf("%s: %lf\n", contigIter->first.c_str(), copy_number );
+		ContigData data(contigIter->first, contigIter->second.seq, m_kmer, (int)copy_number);
+		
+		
 		contigGraph.addVertex(contigIter->first, data);
 	}
+	
+	//return;
 	
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUT;
@@ -588,12 +601,14 @@ void Scaffold::merge4()
 	PairedResolver resolver(m_kmer, 0, &m_pairRec, &alignDB);
 	FastaWriter* pWriter;
 	
+	/*
 	int count = 0;
-	//ContigID id = "1029";
-	ContigID id = "1226";
+	//ContigID id = "1775";
+	ContigID id = "1030";
+	//ContigID id = "1638";
+	
 	contigGraph.printVertex(id);
-	contigGraph.printVertex("1338");
-		
+	
 	pWriter = new FastaWriter("Tap.fa"); 
 	bool stop2 = false;
 	
@@ -601,11 +616,6 @@ void Scaffold::merge4()
 	{
 		printf("\n\n\n*****CONTIG %d ******\n\n\n", count);
 		contigGraph.printVertex(id);
-		contigGraph.printVertex("736");		
-		contigGraph.printVertex("1338");		
-		contigGraph.printVertex("1124");
-		contigGraph.printVertex("313");
-		contigGraph.printVertex("1774");
 		
 		stop2 = !resolver.resolve(&contigGraph, id);
 		
@@ -615,15 +625,26 @@ void Scaffold::merge4()
 	}
 	
 	delete pWriter;
+	printf("The merge path was: ");
+	const ContigData& currData = contigGraph.getDataForVertex(id);
+	SetOperations::printPath(currData.m_mergeRecord[SENSE]);
+	printf("\n");
 	contigGraph.printVertex(id, true);
-	return;
 	
+	numVert = contigGraph.getNumVertices();
+	numEdges = contigGraph.countEdges(); // SLOW
+	printf("AFTERMERGE: num vert: %zu num edges: %zu\n", numVert, numEdges);
+	return;
+	*/
 	contigGraph.reducePaired(resolver);
 	
 	
 	pWriter = new FastaWriter("PostPaired.fa");
 	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
 	delete pWriter;
+	
+	printf("Post validating graph\n");
+	contigGraph.validate(dataFunctor);
 	
 	numVert = contigGraph.getNumVertices();
 	numEdges = contigGraph.countEdges(); // SLOW
@@ -653,6 +674,10 @@ void Scaffold::merge4()
 	numVert = contigGraph.getNumVertices();
 	numEdges = contigGraph.countEdges(); // SLOW
 	printf("AFTER: num vert: %zu num edges: %zu\n", numVert, numEdges);	
+	
+	pWriter = new FastaWriter("Final.fa");
+	contigGraph.iterativeVisit(ContigDataOutputter(pWriter));
+	delete pWriter;
 }
 
 Sequence Scaffold::findContig(PackedSeq start, ContigID& id)

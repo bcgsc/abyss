@@ -1,6 +1,6 @@
 #include "ContigData.h"
 
-ContigData::ContigData(const ContigID& id, const Sequence& s, size_t kmer) : m_seq(s), m_kmer(kmer)
+ContigData::ContigData(const ContigID& id, const Sequence& s, size_t kmer, int copyNumber) : m_seq(s), m_kmer(kmer), m_copyNumber(copyNumber)
 {
 	// Create the seq set
 	m_kmerVec.reserve(m_seq.length() - m_kmer + 1);
@@ -8,7 +8,8 @@ ContigData::ContigData(const ContigID& id, const Sequence& s, size_t kmer) : m_s
 	// Add the initial sequences
 	addSeqs(m_seq, m_kmerVec.begin(), true);
 	
-	addID(id);
+	addID(id, SENSE);
+	addID(id, ANTISENSE);
 }
 
 void ContigData::addSeqs(const Sequence& s, CKDataVec::iterator position, bool usable)
