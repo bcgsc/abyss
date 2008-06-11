@@ -1174,13 +1174,13 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			
 			// check if the branch is redundant, assemble if so, else it will simply be removed
 			BranchRecord& currBranch = iter->second.getBranch(0);
-			if (!isBranchRedundant(currBranch)) {
+			if (currBranch.isCanonical()) {
 				// Assemble the contig
 				Sequence contig;
 				AssemblyAlgorithms::processTerminatedBranchAssemble(
 						seqCollection, currBranch, contig);
 				numAssembled++;
-				
+
 				// Output the contig
 				fileWriter->WriteSequence(contig,
 						m_numAssembled + ++currContigID,
@@ -1201,46 +1201,6 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 	
 	return numAssembled;
 }
-
-// Check if a branch is redundant with a previously output branch
-bool NetworkSequenceCollection::isBranchRedundant(
-		const BranchRecord& branch)
-{
-	// Since branches are assembled simulatenously it is possibly to start a branch from both ends at the same time
-	// This can only happen if both ends of the branch are in the same node (since we assemble one node at a time)
-	// To get around that, check 1) if both ends are local and 2) if either end has been seen
-	// If so, the branch will be discarded
-	
-	// Since flag sets are atomic within a node, this logic stands up
-	
-	if(branch.empty())
-	{
-		// empty branches are trivally non-redundant (.....or are they?)
-		return false;
-	}
-	
-	// Check if the first and last sequences are in the local node
-	// note: the first node always should be!
-	if(isLocal(branch.getFirstSeq()) && isLocal(branch.getLastSeq()))
-	{
-		// Check if either sequences have the seen flag set
-		// note: this flag returns immediately since both sequenes are local by definition
-		if(checkFlag(branch.getFirstSeq(), SF_SEEN) || checkFlag(branch.getLastSeq(), SF_SEEN))
-		{
-			return true;
-		}
-		else
-		{
-			return false;	
-		}
-	}
-	else
-	{
-		// Unless both sequences are local, the branch is not redundant
-		return false;	
-	}
-}
-
 
 //
 // Generate a request for a sequence's extension, it will be handled in parseSequenceExtensionResponse

@@ -592,10 +592,8 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 //
 SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
 {
-	if(seqCollection->checkFlag(seq, SF_DELETE) || seqCollection->checkFlag(seq, SF_SEEN) )
-	{
+	if (seqCollection->checkFlag(seq, SF_DELETE))
 		return SC_INVALID;
-	}
 			
 	bool child = seqCollection->hasChild(seq);
 	bool parent = seqCollection->hasParent(seq);
@@ -817,13 +815,17 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 			processLinearExtensionForBranch(currBranch, currSeq, extRec, multiplicity);
 		}
 		
-		// The branch has ended, build the contig
-		Sequence contig;
-		processTerminatedBranchAssemble(seqCollection, currBranch, contig);
-		
-		// Output the contig
-		fileWriter->WriteSequence(contig, ++contigID,
-				currBranch.calculateBranchMultiplicity());
+		if (currBranch.isCanonical()) {
+			// The branch has ended, build the contig
+			Sequence contig;
+			processTerminatedBranchAssemble(seqCollection,
+					currBranch, contig);
+
+			// Output the contig
+			fileWriter->WriteSequence(contig, ++contigID,
+					currBranch.calculateBranchMultiplicity());
+		}
+
 		seqCollection->pumpNetwork();
 	}
 	
@@ -833,19 +835,15 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 //
 //
 //
-void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq)
+void processTerminatedBranchAssemble(
+		ISequenceCollection* /*seqCollection*/,
+		const BranchRecord& branch, Sequence& outseq)
 {
 	assert(!branch.isActive());
 	//printf("	branch has size: %d\n", branchElements.size());
 	
 	// the only acceptable condition for the termination of an assembly is a noext or a loop
 	assert(branch.getState() == BS_NOEXT || branch.getState() == BS_LOOP);
-	
-	// Mark all the sequences in the branch as seen
-	for(size_t idx = 0; idx < branch.getLength(); idx++)
-	{
-		seqCollection->setFlag(branch.getSeqByIndex(idx), SF_SEEN);
-	}
 	
 	// Assemble the contig
 	branch.buildContig(outseq);

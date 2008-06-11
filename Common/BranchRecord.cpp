@@ -282,3 +282,22 @@ const PackedSeq& BranchRecord::getSeqByIndex(size_t index) const
 	return m_data[index];
 }
 
+/**
+ * Return whether this branch is the canonical representation of the
+ * contig that it represents. A contig has two ends, and the contig
+ * is output starting from the lexicographically smaller end.
+ */
+bool BranchRecord::isCanonical() const
+{
+	assert(getState() == BS_NOEXT || getState() == BS_LOOP);
+	assert(getLength() > 1);
+	PackedSeq first = getFirstSeq();
+	PackedSeq last = getLastSeq();
+	if (getDirection() == SENSE)
+		last.reverseComplement();
+	else
+		first.reverseComplement();
+	int cmp = first.compare(last);
+	assert(cmp != 0);
+	return cmp < 0;
+}

@@ -107,6 +107,8 @@ class BranchRecord
 			return m_multiplicity;
 		}
 
+		bool isCanonical() const;
+
 	private:
 				
 		// BranchData is used for the ordering/length of the branch, BranchSet is used for the existance of sequences in the branch.
