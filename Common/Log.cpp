@@ -22,14 +22,12 @@ void Log::write(std::string str)
 	m_fileHandle << str << std::endl;
 }
 
-int Log::m_id = -1;
-
 int PrintDebug(int level, const char* format, ...)
 {
 	if (opt::verbose < level)
 		return 0;
-	if (Log::m_id >= 0)
-		printf("%d: ", Log::m_id);
+	if (opt::rank >= 0)
+		printf("%d: ", opt::rank);
 	va_list ap;
 	va_start(ap, format);
 	int retval = vprintf(format, ap);

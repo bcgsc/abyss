@@ -20,12 +20,11 @@ int main(int argc, char** argv)
 	MPI_Init(&argc,&argv);
 	
 	// get my rank and the world size
-	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	int size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &opt::rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	Log::m_id = rank;
 	
-	if (rank == 0) {
+	if (opt::rank == 0) {
 		for (int i = 0; i < argc; i++) {
 			if (i != 0)
 				putchar(' ');
@@ -39,10 +38,10 @@ int main(int argc, char** argv)
 	if (opt::snpFile != NULL)
 		freopen(NULL, "a", opt::snpFile);
 
-	NetworkSequenceCollection networkSeqs(rank, size,
+	NetworkSequenceCollection networkSeqs(opt::rank, size,
 			opt::kmerSize, opt::readLen);
 
-	if (rank == 0)
+	if (opt::rank == 0)
 		networkSeqs.runControl();
 	else
 		networkSeqs.run();

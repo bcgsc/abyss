@@ -38,6 +38,9 @@ static const char *USAGE_MESSAGE =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
+/** MPI rank */
+int rank = -1;
+
 /** k-mer length */
 int kmerSize = -1;
 

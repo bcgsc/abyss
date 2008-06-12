@@ -6,6 +6,7 @@
 #include <vector>
 
 namespace opt {
+	extern int rank;
 	extern int kmerSize;
 	extern int readLen;
 	extern int erode;
