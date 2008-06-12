@@ -407,41 +407,20 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ASSEMBLE:
 			{
 				puts("Assembling");
-				// Perform a round-robin assembly
-				// The assembly operations cannot be concurrent since a contig can have a start in two different
-				// nodes and would therefore result in a collision (and it would be output twice)
-				// Using a round-robin assembly like this will have a minimal impact on performance since most of the heavy
-				// computation is already done and the output of the contigs will mostly be bounded by file io
-
-				// First, assemble the local sequences
-				
-				// Note: all other nodes will be in a waiting state so they will service network requests
-				
-				// The master opens the file in truncate mode
 				FastaWriter* writer = new FastaWriter("pcontigs.fa");
-				unsigned numAssembled = performNetworkAssembly(this, writer);
-				
-				// Close the writer
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_ASSEMBLE);
+				unsigned numAssembled = performNetworkAssembly(this,
+						writer);
 				delete writer;
+				EndState();
 
-				// Cleanup any messages that are pending
-				EndState();
-								
-				// Now tell all the slave nodes to perform the assemble one by one
-				for(unsigned int i = 1; i < m_numDataNodes; ++i)
-				{
-					m_pComm->SendControlMessageToNode(i,
-							APC_ASSEMBLE, numAssembled);
-					while (!checkpointReached(1))
-						pumpNetwork();
-					numAssembled += m_checkpointSum;
-					EndState();
-					SetState(NAS_ASSEMBLE);
-				}
-				
-				// Cleanup any messages that are pending
-				EndState();
-				
+				m_numReachedCheckpoint++;
+				while (!checkpointReached(m_numDataNodes))
+					pumpNetwork();
+				numAssembled += m_checkpointSum;
+				printf("Assembled %u contigs\n", numAssembled);
+
 				SetState(NAS_DONE);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);				
 				break;

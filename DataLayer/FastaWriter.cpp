@@ -1,36 +1,30 @@
 #include "FastaWriter.h"
+#include <cstdio>
+#include <sys/file.h>
 
 FastaWriter::FastaWriter(const char* filename, bool append)
-{	
-	std::ios_base::openmode mode = std::ios::out;
-	if(append)
-	{
-		// if the append flag is set, open for append
-		mode |= std::ios::app;
-	}
-	else
-	{
-		// otherwise truncate any current data in the file
-		mode |= std::ios::trunc;
-	}
-	
-	m_fileHandle.open(filename, mode);
-	assert(m_fileHandle.is_open());
+	: m_fileHandle(fopen(filename, append ? "a" : "w"))
+{
+	assert(m_fileHandle != NULL);
+	if (!append)
+		freopen(NULL, "a", m_fileHandle);
 }
 
 FastaWriter::~FastaWriter()
-{	
-	m_fileHandle.close();
-	assert(!m_fileHandle.is_open());
+{
+	fclose(m_fileHandle);
+	m_fileHandle = NULL;
 }
 
 // Write out a single sequence
-void FastaWriter::WriteSequence(const Sequence& seq, const int64_t id, const double multiplicity)
+void FastaWriter::WriteSequence(const Sequence& seq,
+		const int64_t id, const double multiplicity)
 {
-	
-	// make sure the file is readable
-	assert(m_fileHandle.is_open());
-
-	m_fileHandle << ">" << id << " " << seq.length() << " " << multiplicity << "\n" << seq << "\n";
-
+	assert(m_fileHandle != NULL);
+	int fd = fileno(m_fileHandle);
+	flock(fd, LOCK_EX);
+	fprintf(m_fileHandle, ">%llu %u %g\n%s\n",
+			id, seq.length(), multiplicity, seq.c_str());
+	fflush(m_fileHandle);
+	flock(fd, LOCK_UN);
 }
