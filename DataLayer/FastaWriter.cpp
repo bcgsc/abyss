@@ -29,10 +29,14 @@ void FastaWriter::WriteSequence(const Sequence& seq,
 	} else {
 		// Parallel
 		int fd = fileno(m_fileHandle);
-		flock(fd, LOCK_EX);
+		int lock_ex = flock(fd, LOCK_EX);
+		assert(lock_ex == 0);
+		(void)lock_ex;
 		fprintf(m_fileHandle, ">%u:%llu %u %g\n%s\n", opt::rank,
 				id, seq.length(), multiplicity, seq.c_str());
 		fflush(m_fileHandle);
-		flock(fd, LOCK_UN);
+		int lock_un = flock(fd, LOCK_UN);
+		assert(lock_un == 0);
+		(void)lock_un;
 	}
 }
