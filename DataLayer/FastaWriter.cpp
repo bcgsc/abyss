@@ -1,7 +1,7 @@
 #include "FastaWriter.h"
 #include "Options.h"
 #include <cstdio>
-#include <sys/file.h>
+#include <unistd.h>
 
 FastaWriter::FastaWriter(const char* filename, bool append)
 	: m_fileHandle(fopen(filename, append ? "a" : "w"))
@@ -29,14 +29,15 @@ void FastaWriter::WriteSequence(const Sequence& seq,
 	} else {
 		// Parallel
 		int fd = fileno(m_fileHandle);
-		int lock_ex = flock(fd, LOCK_EX);
-		assert(lock_ex == 0);
-		(void)lock_ex;
+		int f_lock = lockf(fd, F_LOCK, 0);
+		assert(f_lock == 0);
+		(void)f_lock;
 		fprintf(m_fileHandle, ">%u:%llu %u %g\n%s\n", opt::rank,
 				id, seq.length(), multiplicity, seq.c_str());
 		fflush(m_fileHandle);
-		int lock_un = flock(fd, LOCK_UN);
-		assert(lock_un == 0);
-		(void)lock_un;
+		lseek(fd, 0, SEEK_SET);
+		int f_ulock = lockf(fd, F_ULOCK, 0);
+		assert(f_ulock == 0);
+		(void)f_ulock;
 	}
 }
