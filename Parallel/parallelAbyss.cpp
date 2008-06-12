@@ -24,17 +24,9 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &opt::rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	
-	if (opt::rank == 0) {
-		for (int i = 0; i < argc; i++) {
-			if (i != 0)
-				putchar(' ');
-			fputs(argv[i], stdout);
-		}
-		putchar('\n');
-		printf("Running on %d processors\n", size);
-	}
-
 	opt::parse(argc, argv);
+	if (opt::rank == 0)
+		printf("Running on %d processors\n", size);
 	if (opt::snpFile != NULL)
 		freopen(NULL, "a", opt::snpFile);
 
