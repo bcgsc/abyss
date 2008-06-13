@@ -167,8 +167,8 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_ASSEMBLE:
 			{
-				// The slave node opens the file in append mode
-				FastaWriter* writer = new FastaWriter("pcontigs.fa", true);
+				FastaWriter* writer = new FastaWriter(
+						opt::contigsPath.c_str());
 				unsigned numAssembled = performNetworkAssembly(this, writer);
 				
 				// Close the writer
@@ -407,7 +407,8 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ASSEMBLE:
 			{
 				puts("Assembling");
-				FastaWriter* writer = new FastaWriter("pcontigs.fa");
+				FastaWriter* writer = new FastaWriter(
+						opt::contigsPath.c_str());
 				m_pComm->SendControlMessage(m_numDataNodes,
 						APC_ASSEMBLE);
 				unsigned numAssembled = performNetworkAssembly(this,

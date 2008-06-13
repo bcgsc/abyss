@@ -56,6 +56,9 @@ int trimLen = -1;
 /** Maximum number of bubble-popping rounds. */
 int bubbles = 5;
 
+/** output contigs path */
+std::string contigsPath;
+
 /** graph output */
 std::string graphPath;
 
@@ -173,6 +176,10 @@ void parse(int argc, char* const* argv)
 		erode = n;
 	if (trimLen < 0)
 		trimLen = 6 * n;
+
+	ostringstream s;
+	s << "contigs-" << opt::rank << ".fa";
+	contigsPath = s.str();
 
 	if (snpPath.length() > 0) {
 		snpFile = fopen(snpPath.c_str(), "w");
