@@ -15,6 +15,7 @@ static int mpi_size;
 
 static void concatenateContigs()
 {
+	puts("Concatenating contig files");
 	int ret = system("echo -n >pcontigs.fa");
 	assert(ret == 0);
 	(void)ret;
@@ -52,6 +53,7 @@ int main(int argc, char** argv)
 	if (opt::rank == 0) {
 		networkSeqs.runControl();
 		concatenateContigs();
+		puts("Done.");
 	} else
 		networkSeqs.run();
 

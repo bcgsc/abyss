@@ -428,7 +428,6 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_DONE:
 			{
-				puts("Done.");
 				stop = true;
 				break;
 			}
