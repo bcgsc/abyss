@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <sstream>
 #include <vector>
 #include <mpi.h>
 #include "parallelAbyss.h"
@@ -8,6 +9,22 @@
 #include "Options.h"
 #include "ParallelFastaWriter.h"
 #include "Timer.h"
+
+/** MPI size */
+static int mpi_size;
+
+static void concatenateContigs()
+{
+	int ret = system("echo -n >pcontigs.fa");
+	assert(ret == 0);
+	(void)ret;
+	for (int i = 0; i < mpi_size; i++) {
+		std::ostringstream s;
+		s << "cat contigs-" << i << ".fa >>pcontigs.fa";
+		ret = system(s.str().c_str());
+		assert(ret == 0);
+	}
+}
 
 int main(int argc, char** argv)
 {	
@@ -20,22 +37,22 @@ int main(int argc, char** argv)
 	MPI_Init(&argc,&argv);
 	
 	// get my rank and the world size
-	int size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &opt::rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 	
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
-		printf("Running on %d processors\n", size);
+		printf("Running on %d processors\n", mpi_size);
 	if (opt::snpFile != NULL)
 		freopen(NULL, "a", opt::snpFile);
 
-	NetworkSequenceCollection networkSeqs(opt::rank, size,
+	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size,
 			opt::kmerSize, opt::readLen);
 
-	if (opt::rank == 0)
+	if (opt::rank == 0) {
 		networkSeqs.runControl();
-	else
+		concatenateContigs();
+	} else
 		networkSeqs.run();
 
 	MPI_Finalize();
