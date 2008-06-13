@@ -89,7 +89,7 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::splitAmbiguous(pSC);
 	
-	FastaWriter writer("contigs.fa");
+	FastaWriter writer(opt::contigsPath.c_str());
 
 	AssemblyAlgorithms::assemble(pSC, opt::readLen, opt::kmerSize, &writer);
 

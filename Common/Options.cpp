@@ -177,9 +177,13 @@ void parse(int argc, char* const* argv)
 	if (trimLen < 0)
 		trimLen = 6 * n;
 
-	ostringstream s;
-	s << "contigs-" << opt::rank << ".fa";
-	contigsPath = s.str();
+	if (rank < 0) {
+		contigsPath = "contigs.fa";
+	} else {
+		ostringstream s;
+		s << "contigs-" << opt::rank << ".fa";
+		contigsPath = s.str();
+	}
 
 	if (snpPath.length() > 0) {
 		snpFile = fopen(snpPath.c_str(), "w");
