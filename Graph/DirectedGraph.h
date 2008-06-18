@@ -171,8 +171,7 @@ class DirectedGraph
 		VertexType* addVertex(const K& key, const D& data);
 		
 		// remove vertex
-		template<class DataFunctor>
-		void removeVertex(VertexType* pVertex, DataFunctor functor);
+		void removeVertex(VertexType* pVertex);
 		
 		// reduce the graph with paired data		
 		template<class ResolveFunctor>
@@ -223,8 +222,9 @@ class DirectedGraph
 		template<class DataCostFunctor, class MergerFunctor>
 		bool mergeShortestPath(const K& key1, const K& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger);
 		
+		// debug function to merge two vertices together
 		template<class Functor>
-		bool mergeWrapper(const K& key1, const K& key2, Functor dataMerger);
+		bool mergeWrapper(const K& key1, const K& key2, bool forceRemove, Functor dataMerger);
 		
 		// Iteratively visit each node
 		template<class Functor>

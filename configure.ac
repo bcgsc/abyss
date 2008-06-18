@@ -72,8 +72,8 @@ AC_CONFIG_FILES([
 	ExpPaired/Makefile
 	Graph/Makefile
 	Parallel/Makefile
-	Scaffold/Makefile
 	bin/Makefile
 	fasta2psq/Makefile
+	Paired/Makefile
 ])
 AC_OUTPUT

@@ -2,105 +2,51 @@
 #include "Timer.h"
 #include "SetOperations.h"
 
-void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, const ContigData& slaveData, extDirection dir, bool reverse, bool removeMerge)
+void ContigDataFunctions::merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, 
+								ContigData& slaveData, extDirection dir, bool reverse, 
+								bool usableMerge, bool removeChild)
 {
-	// should the slave be reversed?
-	Sequence slaveSeq = slaveData.m_seq;
-	if(reverse)
-	{
-		slaveSeq = reverseComplement(slaveSeq);
-	}
+	// Perform the merge
+	targetData.merge(slaveData, dir, reverse, usableMerge);
 	
-	Sequence* leftSeq;
-	Sequence* rightSeq;
-	// Order the contigs
-	if(dir == SENSE)
+	// Update the pairs on the master contig
+	targetData.resolvePairs(m_pResolvePolicy, dir);
+	targetData.resolvePairs(m_pResolvePolicy, !dir);
+	
+	// if the child is being removed, tell it to delete its alignments from the DB otherwise update its pairs
+	if(removeChild)
 	{
-		leftSeq = &targetData.m_seq;
-		rightSeq = &slaveSeq;
+		slaveData.removeFromAlignDB(m_pDatabase);
 	}
 	else
 	{
-		leftSeq = &slaveSeq;
-		rightSeq = &targetData.m_seq;
+		slaveData.resolvePairs(m_pResolvePolicy, dir);
+		slaveData.resolvePairs(m_pResolvePolicy, !dir);
 	}
-	
-	// Get the last k bases of the left and the first k bases of the right
-	PackedSeq leftEnd = leftSeq->substr(leftSeq->length() - m_overlap, m_overlap);
-	PackedSeq rightBegin = rightSeq->substr(0, m_overlap);
-	//printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
-	// ensure that there is a legitimate k-1 overlap between these sequences
-	
-	if(leftEnd != rightBegin)
-	{
-		printf("merge called data1: %s %s (%d, %d)\n", targetData.m_seq.c_str(), slaveData.m_seq.c_str(), dir, reverse);	
-		printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
-	}
-	assert(leftEnd == rightBegin);
-	
-	// TODO: make this in-place?
-	// generate the merged sequence
-	Sequence merged = *leftSeq;
-	merged.append(rightSeq->substr(m_overlap));
-	
-	targetData.m_seq = merged;
-	// merge the seq sets
-	
-	// Add the sequence data for the slave into the target, correctly setting the usable flag
-	// usable = true if the sequences are equivalent (the child is being deleted), else false
-	
-	CKDataVec::iterator insertPos;
-	if(dir == SENSE)
-	{
-		// add to end
-		insertPos = targetData.m_kmerVec.end();
-	}
-	else
-	{
-		// add to beginning
-		insertPos = targetData.m_kmerVec.begin();
-	}
-	
-	
-
-	// add the new sequences to the contigdata
-	targetData.addSeqs(slaveSeq, insertPos, removeMerge);
-	
-	// add the id, indicating the contig is made up of multiple joined contigs
-	targetData.addID(slaveKey, dir);
-	if(!removeMerge)
-	{
-		const_cast<ContigData*>(&slaveData)->m_copyNumber--;
-	}
-	
-	/*
-	// Now, update the lookup table
-	PSeqSet updateSet;
-	slaveData.copySeqSet(updateSet);
-	m_pDatabase->addKeys(updateSet, targetKey);
-	*/
 	
 	(void)targetKey;
 	(void)slaveKey;
-	//printf("merging (%s, %s)\n", targetKey.c_str(), slaveKey.c_str());
-	//printf("merge called data1: %s %s (%d, %d)\n", targetData.m_seq.c_str(), slaveData.m_seq.c_str(), dir, reverse);	
-	//printf("new target seq: %s\n", merged.c_str());
+
 	
 	// validate the new target data
-	targetData.validateSequences();
+	targetData.validateSequences();	
+	
+
 }
 
 void ContigDataFunctions::deleteCallback(const ContigID& slaveKey, const ContigData& slaveData)
 {
-	PSeqSet seqSet;
-	slaveData.copySeqSet(seqSet);
-	m_pDatabase->deleteKeys(seqSet, slaveKey);
+	(void)slaveKey;
+	(void)slaveData;
+	printf("Implement the delete keys callback\n");
+	assert(false);
 }
 
 bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse)
 {
 	// should the slave be reversed?
-	Sequence slaveSeq = slave.m_seq;
+	Sequence targetSeq = target.getSeq();
+	Sequence slaveSeq = slave.getSeq();
 	if(reverse)
 	{
 		slaveSeq = reverseComplement(slaveSeq);
@@ -111,13 +57,13 @@ bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, ext
 	// Order the contigs
 	if(dir == SENSE)
 	{
-		leftSeq = &target.m_seq;
+		leftSeq = &targetSeq;
 		rightSeq = &slaveSeq;
 	}
 	else
 	{
 		leftSeq = &slaveSeq;
-		rightSeq = &target.m_seq;
+		rightSeq = &targetSeq;
 	}
 	
 	// Get the last k bases of the left and the first k bases of the right
@@ -128,30 +74,34 @@ bool ContigDataFunctions::check(ContigData& target, const ContigData& slave, ext
 	return leftEnd == rightBegin;
 }
 
-void DBGenerator::visit(const ContigID& id, const ContigData& data)
+void DBGenerator::visit(const ContigID& /*id*/, const ContigData& data)
 {
 	// add a record for every sequence in the data
-	PSeqSet seqSet;
-	data.copySeqSet(seqSet);
-	m_pDatabase->addKeys(seqSet, id);
+	data.writeToAlignDB(m_pDatabase);
+}
+
+void DBValidator::visit(const ContigID& /*id*/, const ContigData& data)
+{
+	// add a record for every sequence in the data
+	data.validateDatabase(m_pDatabase);
 }
 
 void ContigDataOutputter::visit(const ContigID& id, const ContigData& data)
 {
 	// super hacky
 	int iID = atoi(id.c_str());
-	m_pWriter->WriteSequence(data.m_seq, iID, 0);	
+	m_pWriter->WriteSequence(data.getSeq(), iID, 0);
 }
 
-int PairedResolver::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const ContigID id)
+int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const ContigID id)
 {
 	int numMerged = 0;
 	printf("\n\n***ATTEMPTING TO RESOLVE %s***\n\n", id.c_str());
 	
 	// Functors
 	SequenceDataCost dataCost(m_kmer);
-	LinkFinder linkFinder(m_pPairs, m_pDatabase);
-	ContigDataFunctions dataFunctor(m_kmer, m_pDatabase);
+	LinkFinder linkFinder;
+	ContigDataFunctions dataFunctor(m_kmer, m_pResolvePolicy, m_pDatabase);
 	
 	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 	{
@@ -224,7 +174,7 @@ int PairedResolver::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const C
 				// if the path child's reachable set is a strict subset of the parent's path, it can be removed
 				bool removeChild = pathDiff.empty() && !targetReachSet.empty() && (pathMult == 1);
 				//bool removeChild = (data.m_copyNumber == currData.m_copyNumber) && (pathMult == 1);
-				printf("MasterCN: %d SlaveCN: %d (rem: %d)\n", data.m_copyNumber, currData.m_copyNumber, removeChild); 
+
 				pGraph->mergePath(id, *iter, dir, removeChild, dataFunctor);
 				
 				mergedPathSet.insert(currID);
@@ -244,33 +194,60 @@ void LinkFinder::visit(const ContigID& /*id*/, ContigData& /*data*/)
 
 void LinkFinder::getReachableSet(const ContigID& /*id*/, const ContigData& data, extDirection dir, ContigIDSet& idSet)
 {
-	// Copy out the usable sequences
-	PSeqSet usableSeqs;
-	data.copyUsableSeqSet(usableSeqs);
+	ContigSupportMap supportMap;
+	data.getUnresolvedUsableSet(dir, supportMap);
 	
-	for(PSeqSet::iterator iter = usableSeqs.begin(); iter != usableSeqs.end(); ++iter)
-	{		
-		PSequenceVector seqPairs;
-		if(dir == SENSE)
-		{
-			m_pPairs->getPairsWithComp(*iter, false, seqPairs);
-		}
-		else
-		{
-			m_pPairs->getPairsWithComp(*iter, true, seqPairs);
-		}
-		
-
-		for(PSequenceVector::const_iterator seqIter = seqPairs.begin(); seqIter != seqPairs.end(); ++seqIter)
-		{
-			// append into the id collection
-			m_pDatabase->getSet(*seqIter, idSet);
-		}
+	// Convert the support map to a set
+	ContigIDSet reachableSet;
+	for(ContigSupportMap::const_iterator iter = supportMap.begin(); iter != supportMap.end(); ++iter)
+	{
+		printf("Contig: %s Support: %d\n", iter->first.c_str(), iter->second);
+		idSet.insert(iter->first);
 	}
 	
-	// Remove the IDs that are in the exclusion list (they have been merged already)
-	SetOperations::removeElements(idSet, data.getExclusionSet());
-
 	return;
+}
+
+//
+// Generate the histogram of paired distances based on contigs that have self pairings
+// We only use contigs greater than the distance cutoff or else the distribution will be biased towards smaller pairs
+//
+void PairedDistHistogramGenerator::visit(const ContigID& /*id*/, ContigData& data)
+{
+	(void)data;
+	if(data.getLength() > m_distanceCutoff)
+	{
+		data.addSelfPairsToHist(m_pHist);
+	}
+}
+
+//
+// Set up the paired resolution policy, the criteria to decide upon whether a pair is resolved by a single contig or not
+//
+PairedResolvePolicy::PairedResolvePolicy(const PDF& pairedPdf)
+{
+	const double RESOLVED_PROP = 1.0f;
+	// Calculate the minimal range that RESOLVED_PROP% of the pairs will fall into
+	pairedPdf.calculateMinimalRange(RESOLVED_PROP, m_lowerLimit, m_upperLimit);
+	
+	printf("Resolution range is [%zu-%zu] for %lf of the pairs\n", m_lowerLimit, m_upperLimit, RESOLVED_PROP);
+	
+}
+
+
+
+//
+// Based on the policy, is this a resolved pairing
+//
+bool PairedResolvePolicy::isResolved(const ContigID& id1, ContigID& id2, size_t /*distance*/) const
+{
+	if(id1 == id2)// && distance >= m_lowerLimit && distance <= m_upperLimit)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 

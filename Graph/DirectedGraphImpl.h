@@ -286,7 +286,7 @@ void DirectedGraph<K,D>::printVertex(const K& key, bool printData) const
 	if(printData)
 	{
 		// debug, not template friendly
-		std::cout << "Vertex data: " << pVertex->m_data.m_seq << std::endl;
+		std::cout << "Vertex data: " << pVertex->m_data.getSeq() << std::endl;
 	}
 }
 
@@ -302,7 +302,7 @@ size_t DirectedGraph<K,D>::reducePaired(ResolveFunctor& resolver)
 	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
 		//if(iter->second->m_data.m_copyNumber == 1)
-		if(iter->second->m_data.m_seq.length() > 500)
+		if(iter->second->m_data.getLength() > 500)
 		{
 			bool merged = false;
 			bool stop = false;
@@ -392,27 +392,25 @@ size_t DirectedGraph<K,D>::removeTransitivity(Functor dataMerger)
 //
 template<typename K, typename D>
 template<class Functor>
-bool DirectedGraph<K,D>::mergeWrapper(const K& key1, const K& key2, Functor dataMerger)
+bool DirectedGraph<K,D>::mergeWrapper(const K& key1, const K& key2, bool forceRemove, Functor dataMerger)
 {
 	VertexType* pParent = findVertex(key1);
 	VertexType* pChild = findVertex(key2);
 
-	extDirection dir;
-	bool reverse;
-	pParent->findUniqueEdge(key2, dir, reverse);
+	EdgeDescription edgeDesc = pParent->findUniqueEdge(key2);
 	
-	extDirection childDir = EdgeDescription::getTwinDir(dir, reverse);
+	extDirection childDir = EdgeDescription::getTwinDir(edgeDesc.dir, edgeDesc.reverse);
 	
 	// Should the child be removed?
 	bool removeChild = false;
 	
 	// is there only one edge between the parent and child?
-	if(pChild->numEdges(childDir) == 1)
+	if(pChild->numEdges(childDir) == 1 || forceRemove)
 	{
 		removeChild = true;
 	}
 	
-	return merge(pParent, pChild, dir, reverse, removeChild, dataMerger);
+	return merge(pParent, pChild, edgeDesc.dir, edgeDesc.reverse, removeChild, dataMerger);
 }
 
 //
@@ -462,7 +460,7 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	assert(edgeFound);
 
 	// merge the data using the functor object
-	dataMerger.merge(pParent->m_key, pParent->m_data, pChild->m_key, pChild->m_data, (extDirection)parentsDir, parentsReverse, removeChild);
+	dataMerger.merge(pParent->m_key, pParent->m_data, pChild->m_key, pChild->m_data, (extDirection)parentsDir, parentsReverse, removeChild, removeChild);
 	
 	// update all the edges affected
 	
@@ -509,7 +507,7 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	if(removeChild)
 	{
 		// remove the vertex and update all the links to point to the merged node
-		removeVertex(pChild, dataMerger);
+		removeVertex(pChild);
 	}
 	
 	/*
@@ -525,8 +523,7 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 }
 
 template<typename K, typename D>
-template<class DataFunctor>
-void DirectedGraph<K,D>::removeVertex(VertexType* pVertex, DataFunctor functor)
+void DirectedGraph<K,D>::removeVertex(VertexType* pVertex)
 {
 	const K& key = pVertex->m_key;
 	printf("Removing %s\n", key.c_str());
@@ -553,12 +550,7 @@ void DirectedGraph<K,D>::removeVertex(VertexType* pVertex, DataFunctor functor)
 	// Ensure it exists
 	VertexTableIter iter = m_vertexTable.find(key);
 	assert(iter != m_vertexTable.end());
-	
-	// Call the functor to indicate this vertex is being deleted
-	functor.deleteCallback(key, pVertex->m_data);
-	//printf("deleting %s\n", key.c_str());
-
-	
+		
 	delete pVertex;
 	pVertex = NULL;
 	

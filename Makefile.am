@@ -2,6 +2,6 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
-SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) Scaffold \
-	bin fasta2psq
+SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) \
+	bin fasta2psq Paired
 

@@ -7,6 +7,81 @@ AlignmentCache::AlignmentCache()
 	
 }
 
+void AlignmentCache::addAlignment(const PackedSeq& seq, const ContigID& id, int position)
+{
+	//std::cout << "Adding " << seq.decode() << " " << id << " " << position << std::endl;
+	AlignData alignment;
+	alignment.contigID = id;
+	alignment.position = position;
+	alignment.isRC = false;
+	
+	m_alignmentCache[seq].insert(alignment);
+	
+	// insert the reverse complement as well
+	alignment.isRC = true;
+	m_alignmentCache[reverseComplement(seq)].insert(alignment);
+}
+
+void AlignmentCache::removeAlignment(const PackedSeq& seq, const ContigID& id, int position)
+{
+	// Remove the sequence and its reverse complement
+	removeAlignmentInternal(seq, id, position);
+	removeAlignmentInternal(reverseComplement(seq), id, position);
+}
+
+void AlignmentCache::removeAlignmentInternal(const PackedSeq& seq, const ContigID& id, int position)
+{
+	//std::cout << "Removing " << seq.decode() << " " << id << " " << position << std::endl;
+	
+	// Make sure this sequence has alignments
+	AlignDB::iterator alignSetIter = m_alignmentCache.find(seq);
+	assert(alignSetIter != m_alignmentCache.end());
+	
+	// Set up the align data structure
+	AlignData lookupAlign;
+	lookupAlign.contigID = id;
+	lookupAlign.position = position;
+	lookupAlign.isRC = false;
+	
+	// check if exists
+	AlignSet::iterator matchIter = alignSetIter->second.find(lookupAlign);
+	
+	if(matchIter != alignSetIter->second.end())
+	{
+		alignSetIter->second.erase(matchIter);
+	}
+	else
+	{
+		std::cout << "Alignment not found! " << lookupAlign << " Alignments: " << std::endl;
+		assert(false);
+	}
+}
+
+void AlignmentCache::getAlignments(const PackedSeq& seq, AlignSet& outset) const
+{
+	// Make sure this sequence has alignments
+	AlignDB::const_iterator alignDBIter = m_alignmentCache.find(seq);
+	
+	if(alignDBIter == m_alignmentCache.end())
+	{
+		printf("Get alignment failed for %s\n", seq.decode().c_str());
+	}
+	assert(alignDBIter != m_alignmentCache.end());
+	
+	outset = alignDBIter->second;
+}
+
+void AlignmentCache::translatePosition(const PackedSeq& seq, const ContigID& id, int oldPosition, int newPosition)
+{
+	//printf("Updating %s (%d->%d)\n", seq.decode().c_str(), oldPosition, newPosition);
+	
+	// Remove the old alignment
+	removeAlignment(seq, id, oldPosition);
+	
+	// add the new alignment
+	addAlignment(seq, id, newPosition);
+}
+
 bool AlignmentCache::compare(const AlignmentCache& otherDB)
 {
 	for(AlignDB::const_iterator keyIter = m_alignmentCache.begin(); keyIter != m_alignmentCache.end(); ++keyIter)
@@ -18,23 +93,19 @@ bool AlignmentCache::compare(const AlignmentCache& otherDB)
 			printf("key not found! %s", keyIter->first.decode().c_str());
 			return false;
 		}
-		else
-		{
-			// test sets for equality
-			if(dataIter->second != keyIter->second)
-			{
-				printf("Sets do not match for key %s\n", keyIter->first.decode().c_str());
-				
-				printf("Set1: \n");
-				SetOperations::printSet(keyIter->second);
-
-				printf("Set2: \n");
-				SetOperations::printSet(dataIter->second);
-				return false;
-			}
-		}
 	}
 	return true;
+}
+
+void AlignmentCache::printAlignmentsForSeq(const PackedSeq& seq) const
+{
+	AlignSet aSet;
+	getAlignments(seq, aSet);
+	
+	for(AlignSet::iterator iter = aSet.begin(); iter != aSet.end(); ++iter)
+	{
+		std::cout << "Align: " << *iter << std::endl;
+	}
 }
 
 void AlignmentCache::concatSets(ContigIDSet& seqSet1, const ContigIDSet& seqSet2) const
@@ -42,43 +113,20 @@ void AlignmentCache::concatSets(ContigIDSet& seqSet1, const ContigIDSet& seqSet2
 	seqSet1.insert(seqSet2.begin(), seqSet2.end());
 }
 
-void AlignmentCache::addAlignment(const PackedSeq& seq, const ContigID& id)
-{
-	m_alignmentCache[seq].insert(id);
-	m_alignmentCache[reverseComplement(seq)].insert(id);
-}
-
 void AlignmentCache::getSet(const PackedSeq& seq, ContigIDSet& outset) const
 {
+	(void)seq;
+	(void)outset;
+	/*
 	AlignDB::const_iterator iter = m_alignmentCache.find(seq);
 	if(iter != m_alignmentCache.end())
 	{
 		concatSets(outset, iter->second);
 	}
 	return;
+	*/
 }
 
-void AlignmentCache::removeAlignment(const PackedSeq& seq, const ContigID& id)
-{
-	m_alignmentCache[seq].erase(id);
-	m_alignmentCache[reverseComplement(seq)].erase(id);
-}
-
-void AlignmentCache::addKeys(const PSeqSet& seqSet, const ContigID& id)
-{
-	for(PSeqSet::iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
-	{
-		addAlignment(*iter, id);
-	}	
-}
-
-void AlignmentCache::deleteKeys(const PSeqSet& seqSet, const ContigID& id)
-{
-	for(PSeqSet::iterator iter = seqSet.begin(); iter != seqSet.end(); ++iter)
-	{
-		removeAlignment(*iter, id);
-	}	
-}
 
 
 

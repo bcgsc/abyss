@@ -569,7 +569,6 @@ void Scaffold::merge4()
 				assert(foundEdge);
 			}
 		}
-
 	}
 	
 	size_t numVert = contigGraph.getNumVertices();
