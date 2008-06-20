@@ -30,10 +30,24 @@ struct AlignmentPair
 
 typedef std::vector<AlignmentPair> AlignmentPairVec;
 
+// Information about whether a pair was resolved or not
+struct ResolvedData
+{
+	public:
+		ResolvedData() : m_isResolved(false), m_resolvedID("") {}
+		void setResolved(ContigID id) { m_isResolved = true; m_resolvedID = id; }
+		bool isResolved() const { return m_isResolved; }
+		ContigID getResolvedID() const { return m_resolvedID; }
+	
+	private:
+		bool m_isResolved;
+		ContigID m_resolvedID;
+};
+
 struct PairData
 {
 	PackedSeq seq;
-	bool resolved;
+	ResolvedData resolvedData;
 };
 
 typedef std::vector<PairData> PairVector;
@@ -107,10 +121,18 @@ class ContigData
 		// Resolve the pairs on this contig using the resolve policy passed in
 		void resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection dir);
 		
-		// Get the set of contigs that have not been resolved 
-		void getUnresolvedUsableSet(extDirection dir, ContigSupportMap& idSupport) const;
+		// Get the set of contigs that have not been resolved and are unique
+		void getUniqueUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const;
 		
-		// 
+		// Get the set of contigs that have not been resolved 
+		void getAllUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const;
+		
+		// Extract the alignments of all the unresolved pairs in this direction
+		
+		// Get the ids of the contigs that this contig's pairs have been resolved to
+		void getResolvedSet(extDirection dir, ContigIDSet& idSet) const;
+		
+		// Compute a test stat about this contig, this is a debug function
 		void computeTestStat(const PDF& empDist);
 		
 		

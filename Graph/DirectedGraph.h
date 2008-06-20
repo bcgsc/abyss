@@ -162,7 +162,7 @@ class DirectedGraph
 		~DirectedGraph();
 		
 		// get the data pointer
-		const D& getDataForVertex(const K& key) { VertexType* pVertex = findVertex(key); assert(pVertex != NULL); return pVertex->m_data; }
+		const D& getDataForVertex(const K& key) const { VertexType* pVertex = findVertex(key); assert(pVertex != NULL); return pVertex->m_data; }
 		
 		// add edge
 		void addEdge(const K& parent, const K& child, extDirection dir, bool reverse);
@@ -188,7 +188,7 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpath(const K& sourceKey, extDirection dir, const KeySet& reachableSet, KeyVec& superPath, DataCostFunctor& costFunctor);
+		bool findSuperpaths(const K& sourceKey, extDirection dir, const KeySet& reachableSet, std::vector<KeyVec>& solutions, DataCostFunctor& costFunctor);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique
@@ -216,7 +216,7 @@ class DirectedGraph
 		
 		// attempt to merge two vertices along their shortest path with no guarentee they are linked
 		template<class MergerFunctor>
-		bool mergePath(const K& key1, const K& key2, extDirection parentDir, bool removeChild, MergerFunctor dataMerger);
+		bool mergePath(const K& key1, const K& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger);
 		
 		// attempt to merge two vertices along their shortest path with no guarentee they are linked
 		template<class DataCostFunctor, class MergerFunctor>
@@ -247,10 +247,6 @@ class DirectedGraph
 		void greedyDirectedPath(const K& sourceKey, extDirection dir, KeySet& terminals, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
 		
 		//
-		template<class DataCostFunctor>
-		void computeMinimalPath(const K& sourceKey, extDirection dir, VertexPtrSet vertexConstraints, const size_t maxPathLen, VertexPath& outpath, DataCostFunctor& costFunctor);
-		
-		//
 		template<class DataCostFunctor>		
 		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, VertexPtrSet vertexConstraints, 
 										VertexPath currentPath, FeasiblePaths& solutions,
@@ -262,7 +258,7 @@ class DirectedGraph
 		
 		// Merge two vertices
 		template<class Functor>
-		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, Functor dataMerger);
+		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger);
 		
 		// Print a path of vertices
 		template<class DataCostFunctor>

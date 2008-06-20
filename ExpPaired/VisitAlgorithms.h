@@ -10,6 +10,10 @@
 #include "DirectedGraph.h"
 #include "Stats.h"
 
+//
+// Functor objects that can be passed into generic classes
+//
+
 struct PairedResolvePolicy
 {
 	PairedResolvePolicy(const PDF& pairedPdf);
@@ -25,7 +29,7 @@ struct ContigDataFunctions
 	ContigDataFunctions(size_t k, PairedResolvePolicy* pResolvePolicy, AlignmentCache* pAliDB) : m_kmer(k), m_pResolvePolicy(pResolvePolicy), m_pDatabase(pAliDB) { m_overlap = m_kmer - 1; }
 	
 	
-	void merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, ContigData& slaveData, extDirection dir, bool reverse, bool usableMerge, bool removeChild);
+	void merge(const ContigID& targetKey, ContigData& targetData, const ContigID& slaveKey, ContigData& slaveData, extDirection dir, bool reverse, bool removeChild, bool usableMerge);
 	void deleteCallback(const ContigID& slaveKey, const ContigData& slaveData);
 	
 	bool check(ContigData& target, const ContigData& slave, extDirection dir, bool reverse);
@@ -115,7 +119,6 @@ struct PairedDistHistogramGenerator
 
 };
 
-
 struct PairedResolveVisitor
 {
 	PairedResolveVisitor(PairedResolvePolicy* pPolicy) : m_pResolvePolicy(pPolicy) {}
@@ -124,5 +127,11 @@ struct PairedResolveVisitor
 	PairedResolvePolicy* m_pResolvePolicy;
 	
 };
+
+//
+// Utility functions
+//
+size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path);
+size_t calculatePathLength(const DirectedGraph<ContigID, ContigData>* pGraph, const ContigIDVec path, SequenceDataCost costFunctor);
 
 #endif

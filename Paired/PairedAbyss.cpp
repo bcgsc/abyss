@@ -60,9 +60,11 @@ int main(int argc, char** argv)
 	pContigGraph->iterativeVisit(DBValidator(&alignDB));	
 	printf("Database validated\n");
 	
+	printf("Linking pairs to contigs\n");
 	// Add the pairs to contigs
 	pContigGraph->iterativeVisit(PairAdder(&pairRecord));
 	
+	printf("Setting up probability models\n");
 	// Generate the histogram of pair distances
 	Histogram pairDistHist;
 	pContigGraph->iterativeVisit(PairedDistHistogramGenerator(&pairDistHist, 300));
@@ -73,20 +75,51 @@ int main(int argc, char** argv)
 	// Generate the paired resolver policy based on the empirical pdf
 	PairedResolvePolicy pairedResolvePolicy(pairedStats.getPDF());
 	
+	printf("Resolving initial self pairings\n");
 	// Resolve all the self-pairs
 	pContigGraph->iterativeVisit(PairedResolveVisitor(&pairedResolvePolicy));
 	
 	PairedMerger pairedMerger(kmer, pairedStats.getMax(), &pairedResolvePolicy, &alignDB);
-	
 	/*
-	ContigID id = "1345";
-
-	SequenceDataCost dataCost(kmer);
-	while(pairedMerger.resolve(pContigGraph, id))
-	pContigGraph->printVertex(id, true);
+	pContigGraph->printVertex("507");
+	pContigGraph->printVertex("11");
+	pContigGraph->printVertex("805");
+	pContigGraph->printVertex("2419");
+	pContigGraph->printVertex("1747");
+	pContigGraph->printVertex("1750");
+	pContigGraph->printVertex("1008");
+	pContigGraph->printVertex("910");
+	pContigGraph->printVertex("936");
+	pContigGraph->printVertex("1051");
+	return 1;
 	*/
+
 	
-	pContigGraph->reducePaired(pairedMerger);
+	ContigID id = "2085";
+	//ContigID id = "2033";
+	//ContigID id = "2634";
+	SequenceDataCost dataCost(kmer);
+	//while(pairedMerger.resolve(pContigGraph, id))
+	for(int i = 0; i < 2; ++i)
+	{
+		pairedMerger.resolve(pContigGraph, id);
+	}
+	//pContigGraph->getDataForVertex(id).printPairAlignments(ANTISENSE);
+	pContigGraph->printVertex(id, true);
+
+	pContigGraph->printVertex("507");
+	pContigGraph->printVertex("11");
+	pContigGraph->printVertex("805");
+	pContigGraph->printVertex("2427");
+	pContigGraph->printVertex("2419");
+	pContigGraph->printVertex("1747");
+	pContigGraph->printVertex("2023");
+	pContigGraph->printVertex("2529");
+	pContigGraph->printVertex("1750");
+	pContigGraph->printVertex("1008");
+
+	
+	//pContigGraph->reducePaired(pairedMerger);
 	//data.printPairAlignments(SENSE);
 	//const_cast<ContigData*>(&data)->computeTestStat(pairedStats.GetPDF());
 	
@@ -94,12 +127,10 @@ int main(int argc, char** argv)
 	pContigGraph->iterativeVisit(ContigDataOutputter(pWriter));
 	delete pWriter;
 	
-	return 1;
-
 	delete pSC;
 	delete pContigGraph;
 	
-	printf("Done all load\n");
+	printf("Done\n");
 }
 
 void LoadPairsRecord(std::string file, int kmerSize, PairRecord& pairRecord)

@@ -178,7 +178,6 @@ void ContigData::addPairs(PairRecord* pairRecord)
 			{
 				PairData data;
 				data.seq = *pairIter;
-				data.resolved = false;
 				
 				iter->pairs[idx].push_back(data);
 			}
@@ -189,17 +188,17 @@ void ContigData::addPairs(PairRecord* pairRecord)
 //
 //
 //
-void ContigData::getUnresolvedUsableSet(extDirection dir, ContigSupportMap& idSupport) const
+void ContigData::getUniqueUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const
 {
 	size_t pairIdx = dir2Idx(dir);
 	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
 	{
-		if(iter->usable)
+		if(iter->usable || !usableOnly)
 		{
 			const PairVector& pairVec = iter->pairs[pairIdx];	
 			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
 			{
-				if(!pairIter->resolved)
+				if(!pairIter->resolvedData.isResolved())
 				{
 					AlignmentPairVec alignPairs;
 					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
@@ -218,10 +217,12 @@ void ContigData::getUnresolvedUsableSet(extDirection dir, ContigSupportMap& idSu
 					{
 						if(uniqueContig != apIter->pairSeqAlign.alignment.contigID)
 						{
+							idSupport[apIter->pairSeqAlign.alignment.contigID]++;
 							uniqueAlign = false;
 							break;
 						}
 					}
+					
 					
 					if(uniqueAlign)
 					{
@@ -230,6 +231,77 @@ void ContigData::getUnresolvedUsableSet(extDirection dir, ContigSupportMap& idSu
 				}
 			}
 		}		
+	}
+}
+
+//
+//
+//
+void ContigData::getAllUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const
+{
+	size_t pairIdx = dir2Idx(dir);
+	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
+	{
+		if(iter->usable || !usableOnly)
+		{
+			const PairVector& pairVec = iter->pairs[pairIdx];	
+			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
+			{
+				if(!pairIter->resolvedData.isResolved())
+				{
+					AlignmentPairVec alignPairs;
+					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
+					
+					if(alignPairs.empty())
+					{
+						continue;
+					}
+					
+					// Disallow alignments of the same sequence to different contigs
+					// Maybe disallow multiple in general?
+					//bool uniqueAlign = true;
+					ContigID uniqueContig = alignPairs.front().pairSeqAlign.alignment.contigID;
+					
+					for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
+					{
+						//if(uniqueContig != apIter->pairSeqAlign.alignment.contigID)
+						{
+							idSupport[apIter->pairSeqAlign.alignment.contigID]++;
+							//uniqueAlign = false;
+							//break;
+						}
+					}
+					
+					/*
+					if(uniqueAlign)
+					{
+						idSupport[uniqueContig]++;
+					}*/
+				}
+			}
+		}		
+	}
+}
+
+//
+//
+//
+void ContigData::getResolvedSet(extDirection dir, ContigIDSet& idSet) const
+{
+	size_t pairIdx = dir2Idx(dir);
+	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
+	{
+		if(iter->usable)
+		{
+			const PairVector& pairVec = iter->pairs[pairIdx];
+			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
+			{
+				if(pairIter->resolvedData.isResolved())
+				{	
+					idSet.insert(pairIter->resolvedData.getResolvedID());
+				}
+			}
+		}
 	}
 }
 
@@ -292,10 +364,11 @@ void ContigData::resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection 
 			for(PairVector::iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
 			{
 				// pairs can only be resolved once
-				if(!pairIter->resolved)
+				if(!pairIter->resolvedData.isResolved())
 				{
 					// Check if any alignment between these two pairs are resolved, if so, mark them as such
 					bool resolved = false;
+					ContigID resolvedTo;
 					AlignmentPairVec alignPairs;
 					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
 					
@@ -313,6 +386,7 @@ void ContigData::resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection 
 							if(pResolvePolicy->isResolved(apIter->refSeqAlign.alignment.contigID, apIter->pairSeqAlign.alignment.contigID, distance))
 							{
 								resolved = true;
+								resolvedTo = apIter->refSeqAlign.alignment.contigID;
 								break;
 							}
 						}
@@ -321,7 +395,7 @@ void ContigData::resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection 
 					// Mark the pair as resolved
 					if(resolved)
 					{
-						pairIter->resolved = true;
+						pairIter->resolvedData.setResolved(resolvedTo);
 					}
 				}
 			}
@@ -368,9 +442,9 @@ void ContigData::printPairAlignments(extDirection dir, bool showResolved) const
 			
 			for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
 			{		
-				if(!pairIter->resolved || showResolved)
+				if(!pairIter->resolvedData.isResolved() || showResolved)
 				{
-					std::cout << *apIter << " Resolved: " << pairIter->resolved << " " << iter->seq.decode() << " " << pairIter->seq.decode() << std::endl;
+					std::cout << *apIter << " Resolved: " << pairIter->resolvedData.isResolved() << " id: " << pairIter->resolvedData.getResolvedID() << " " << iter->seq.decode() << " " << pairIter->seq.decode() << std::endl;
 				}
 			}
 		}
