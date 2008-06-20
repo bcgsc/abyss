@@ -80,6 +80,7 @@ SeqExt SeqExt::complement() const
 //
 void SeqExt::print() const
 {
+	assert(m_record < 1<<NUM_BASES);
 	printf("ext: %c%c%c%c\n",
 			 CheckBase('T') ? 'T' : ' ',
 			 CheckBase('G') ? 'G' : ' ',
