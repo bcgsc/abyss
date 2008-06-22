@@ -24,6 +24,19 @@ Sequence FastaReader::ReadSequence()
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 
+	// Check if the line is a comment and discard if so
+	while(m_fileHandle.peek() == '#')
+	  {
+	    std::string discard;
+	    getline(m_fileHandle, discard);
+
+	    if(m_fileHandle.peek() == EOF)
+	      {
+		printf("File ends in comments, aborting\n");
+		assert(false);
+	      }
+	  }
+
 	// read in the header
 	m_fileHandle.getline(headerBuffer, MAX_FASTA_LINE);
 
@@ -33,7 +46,7 @@ Sequence FastaReader::ReadSequence()
 	// parse the header
 	if(sscanf(headerBuffer, ">%s %*s", id) != 1)
 	{
-		printf("invalid header format, read failed\n");
+		printf("invalid header format, got: %s, read failed\n", headerBuffer);
 		assert(false);
 	}
 	
