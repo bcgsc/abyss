@@ -100,24 +100,13 @@ int main(int argc, char** argv)
 	//ContigID id = "2634";
 	SequenceDataCost dataCost(kmer);
 	//while(pairedMerger.resolve(pContigGraph, id))
-	for(int i = 0; i < 2; ++i)
+	for(int i = 0; i < 1; ++i)
 	{
 		pairedMerger.resolve(pContigGraph, id);
 	}
-	//pContigGraph->getDataForVertex(id).printPairAlignments(ANTISENSE);
+	pContigGraph->getDataForVertex(id).printPairAlignments(ANTISENSE, PSF_ALL);
 	pContigGraph->printVertex(id, true);
-
-	pContigGraph->printVertex("507");
-	pContigGraph->printVertex("11");
-	pContigGraph->printVertex("805");
-	pContigGraph->printVertex("2427");
-	pContigGraph->printVertex("2419");
-	pContigGraph->printVertex("1747");
-	pContigGraph->printVertex("2023");
-	pContigGraph->printVertex("2529");
-	pContigGraph->printVertex("1750");
-	pContigGraph->printVertex("1008");
-
+	return 1;
 	
 	//pContigGraph->reducePaired(pairedMerger);
 	//data.printPairAlignments(SENSE);

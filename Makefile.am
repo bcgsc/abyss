@@ -3,5 +3,5 @@ Parallel=Parallel
 endif
 
 SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) \
-	bin fasta2psq Paired
+	bin fasta2psq Paired AdjList DistanceEst
 

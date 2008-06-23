@@ -7,6 +7,17 @@
 #include "PairRecord.h"
 #include "Stats.h"
 
+// Flags to indicate what sequences are desired
+// By default there are no filters and every pair is returned
+// Flags can by OR'd to filter on multiple groups
+enum PairSelectFilter
+{
+	PSF_ALL = 0x0,
+	PSF_USABLE_ONLY = 0x1,
+	PSF_UNRESOLVED_ONLY = 0x2,
+	PSF_UNIQUE_ALIGN_ONLY = 0x4
+};
+
 // Forward declare
 struct PairedResolvePolicy;
 
@@ -28,7 +39,8 @@ struct AlignmentPair
 	}	
 };
 
-typedef std::vector<AlignmentPair> AlignmentPairVec;
+typedef std::vector<AlignmentPair> PairAlignments;
+typedef std::vector<PairAlignments> PairAlignmentsCollection;
 
 // Information about whether a pair was resolved or not
 struct ResolvedData
@@ -113,7 +125,7 @@ class ContigData
 		size_t getNumKmers(const Sequence& seq) { return (seq.length() - m_kmer + 1); } 
 		
 		// print all the pair alignments from this contig
-		void printPairAlignments(extDirection dir, bool showResolved = false) const;
+		void printPairAlignments(extDirection dir, unsigned int filter) const;
 		
 		// Convert a direction to a pair index
 		static size_t dir2Idx(extDirection dir) { return (dir == SENSE) ? 0 : 1; }
@@ -121,28 +133,26 @@ class ContigData
 		// Resolve the pairs on this contig using the resolve policy passed in
 		void resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection dir);
 		
-		// Get the set of contigs that have not been resolved and are unique
-		void getUniqueUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const;
-		
-		// Get the set of contigs that have not been resolved 
-		void getAllUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const;
-		
 		// Extract the alignments of all the unresolved pairs in this direction
+		void extractAlignments(extDirection dir, unsigned int filter, PairAlignmentsCollection& allAlignments) const;
 		
-		// Get the ids of the contigs that this contig's pairs have been resolved to
-		void getResolvedSet(extDirection dir, ContigIDSet& idSet) const;
+		// Get the list of contigs that are supported by pairs in the specified direction
+		void getSupportMap(extDirection dir, unsigned int filter, ContigSupportMap& outMap) const;
+		
+		// Convert a support map to an ID set
+		static void supportMap2IDSet(const ContigSupportMap& inMap, ContigIDSet& outSet);
 		
 		// Compute a test stat about this contig, this is a debug function
 		void computeTestStat(const PDF& empDist);
+		
+		// Get the id of this contig
+		ContigID getID() const { return m_id; }
 		
 		
 	private:
 		
 		// Get the alignment pairs for the two specified sequences
-		void getAlignmentPairs(const PackedSeq& refSeq, const PackedSeq& pairSeq, AlignmentPairVec& outAligns) const;
-		
-		// get all the alignment pairs for the given sequence in the given direction
-		void getAllAlignmentPairs(const ContigKmerData& refKmerData, extDirection dir, AlignmentPairVec& outAligns) const;
+		void getAlignmentPairs(const PackedSeq& refSeq, const PackedSeq& pairSeq, unsigned int filter, PairAlignments& outAligns) const;
 		
 		// append a sequence into this sequence
 		void appendSeqString(const Sequence& seq, extDirection dir, bool isReversed);

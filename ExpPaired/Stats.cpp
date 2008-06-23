@@ -44,14 +44,63 @@ void ChiSquare(const PDF& ref, const Histogram& sample)
 		chi += val;
 	}
 	
-	printf("Chi-sq: %lf\n", chi);
+	printf("Chi-sq: %lf\n", chi);	
+}
+
+//
+// Perform a maximum likelihood estimate over the pdf and input distribution
+//
+int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance, const PDF& pdf, double& ratio)
+{
+	double maxL = -999999;
+	double nextBestL = maxL;
+	int bestDist = min;
 	
+	int minDist = min;
+	int maxDist = max;
+	for(int i = minDist; i < maxDist; i++)
+	{
+		double v = computeLikelihood(i, pairDistance, pdf);
+		if(v > maxL)
+		{
+			nextBestL = maxL;
+			maxL = v;
+			bestDist = i;
+		}
+	}
+	
+	// Compute the ratio between the best and second best
+	ratio = maxL / nextBestL;
+	
+	return bestDist;
+}
+
+//
+// Compute the log likelihood function over the test distribution
+//
+double computeLikelihood(int param, std::vector<int>& testDist, const PDF& pdf)
+{
+	double sum = 0.0f;
+
+	for(std::vector<int>::iterator iter = testDist.begin(); iter != testDist.end(); iter++)
+	{
+		int val = *iter + param;
+		double p = pdf.getP(val);
+		sum += log(p);
+	}
+	
+	return sum;
 }
 
 // Classes
 void Histogram::addDataPoint(int data)
 {
 	m_data[data]++;
+}
+
+void Histogram::addMultiplePoints(int value, int count)
+{
+	m_data[value] += count;
 }
 
 int Histogram::getMin() const
@@ -221,57 +270,6 @@ PairedStats::PairedStats() : m_maxDist(0)
 }
 
 //
-// Perform a maximum likelihood estimate over the pdf and input distribution
-//
-int PairedStats::maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance)
-{
-	double maxL = -999999;
-	int bestDist = min;
-	
-	int minDist = min;
-	int maxDist = max;
-	for(int i = minDist; i < maxDist; i++)
-	{
-		double v = 	computeLikelihood(i, pairDistance);
-		if(v > maxL)
-		{
-			maxL = v;
-			bestDist = i;
-		}
-	}
-	
-	return bestDist;
-}
-
-//
-// Compute the log likelihood function over the test distribution
-//
-double PairedStats::computeLikelihood(int d, std::vector<int>& testDist)
-{
-	double sum = 0.0f;
-
-	for(std::vector<int>::iterator iter = testDist.begin(); iter != testDist.end(); iter++)
-	{
-		int val = *iter + d;
-		double p;
-		
-		// Is this value in range of the pdf?
-		if(val >= 0 && val < (int)m_pdf.m_dist.size())
-		{
-			p = m_pdf.m_dist[val];	
-		}
-		else
-		{
-			p = MINP;
-		}
-		
-		sum += log(p);
-	}
-	
-	return sum;
-}
-
-//
 // Estimate number of pairs that would exist between two contigs given an (estimated distance) and the length of the second (non-root) contig
 // The first contig is assumed to be long enough to not be limiting
 //
@@ -291,6 +289,7 @@ int PairedStats::estimateNumberOfPairs(size_t estDist, int contigLength, int num
 // Convert the histogram to a probability density function
 void PairedStats::generateStats(const Histogram& h)
 {
+	assert(false && "fix std dev calc");
 	m_maxDist = h.getMax();
 	double count = 0;
 	double sum = 0;

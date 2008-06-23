@@ -100,7 +100,7 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 	
 	// Functors
 	SequenceDataCost dataCost(m_kmer);
-	LinkFinder linkFinder;
+
 	ContigDataFunctions dataFunctor(m_kmer, m_pResolvePolicy, m_pDatabase);
 	
 	for(size_t dirIdx = 1; dirIdx <= 1; ++dirIdx)
@@ -110,7 +110,7 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 		const ContigData& data = pGraph->getDataForVertex(id);
 		
 		// get the reachable set using the paired info 
-		linkFinder.getReachableSet(id, data, dir, reachableSet);
+		getReachableSet(data, dir, reachableSet);
 		
 		printf("Nodes reachable by pairs from %s: ", id.c_str());
 		SetOperations::printSet(reachableSet);
@@ -124,7 +124,7 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 		
 		// Get all the pairs described by this contig in the direction, even if they are from ambiguous contigs
 		ContigSupportMap totalSupport;
-		data.getAllUnresolvedSet(dir, false, totalSupport);		
+		data.getSupportMap(dir, PSF_UNRESOLVED_ONLY, totalSupport);
 
 		// enumerate all the possible paths that go through these nodes
 		std::vector<ContigIDVec> possibleSolutions;	
@@ -175,7 +175,7 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 				const ContigData& currData = pGraph->getDataForVertex(currID);
 				
 				
-				linkFinder.getReachableSet(currID, currData, !relativeDesc.dir, targetReachSet);
+				getReachableSet(currData, !relativeDesc.dir, targetReachSet);
 				printf("Nodes reachable by pairs from %s: ", currID.c_str());
 				SetOperations::printSet(targetReachSet);
 				printf("\n");
@@ -208,17 +208,10 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 				// if the path child's reachable set is a strict subset of the parent's path, it can be removed
 				bool removeChild = pathDiff.empty() && !targetReachSet.empty() && (pathMult == 1);
 				
-				ContigIDSet previouslyResolvedSet;
-				currData.getResolvedSet(!relativeDesc.dir, previouslyResolvedSet);
+				// Check if the join between this sequence and the  is unique
+				bool uniqueJoin = isJoinUnique(currData, !relativeDesc.dir, id);
 				
-				// Check if the previously resolved set exclusively contains self pairs
-				previouslyResolvedSet.erase(currID);
-				
-				printf("Previously resolved set: ");
-				SetOperations::printSet(previouslyResolvedSet);
-				printf("\n");
-				
-				bool usableChild = removeChild && previouslyResolvedSet.empty();
+				bool usableChild = removeChild && uniqueJoin;
 				printf("%s remove? %d usable? %d\n", currID.c_str(), removeChild, usableChild);
 				
 				pGraph->mergePath(id, *iter, dir, removeChild, usableChild, dataFunctor);
@@ -232,27 +225,8 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 	return numMerged;
 }
 
-void LinkFinder::visit(const ContigID& /*id*/, ContigData& /*data*/)
-{
-	assert(false);
-}
 
-void LinkFinder::getReachableSet(const ContigID& /*id*/, const ContigData& data, extDirection dir, ContigIDSet& idSet)
-{
-	// Get all the unresolved, usable pairs
-	ContigSupportMap supportMap;
-	data.getUniqueUnresolvedSet(dir, true, supportMap);
-	
-	// Convert the support map to a set
-	ContigIDSet reachableSet;
-	for(ContigSupportMap::const_iterator iter = supportMap.begin(); iter != supportMap.end(); ++iter)
-	{
-		idSet.insert(iter->first);
-		printf("Contig: %s Support: %d\n", iter->first.c_str(), iter->second);
-	}
-	
-	return;
-}
+
 
 //
 // Generate the histogram of paired distances based on contigs that have self pairings
@@ -315,7 +289,9 @@ size_t calculatePathLength(const DirectedGraph<ContigID, ContigData>* pGraph, co
 	return len;
 }
 
-
+//
+// Score a path based on the support map passed in
+//
 size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path)
 {
 	size_t score = 0;
@@ -331,5 +307,53 @@ size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path)
 	
 	score /= (path.size());
 	return score;
+}
+
+//
+// Get the set of reachable nodes (by pairs) from the specified contig in the specified direction
+// Maybe move this to the contig data class
+//
+void getReachableSet(const ContigData& data, extDirection dir, ContigIDSet& idSet)
+{
+	// Get all the unresolved, usable pairs
+	ContigSupportMap supportMap;
+	data.getSupportMap(dir, PSF_USABLE_ONLY | PSF_UNRESOLVED_ONLY | PSF_UNIQUE_ALIGN_ONLY, supportMap);
+	
+	ContigData::supportMap2IDSet(supportMap, idSet);
+	return;
+}
+
+//
+// Check if the join between data and targetID satisfies all of contig data's pairs
+//
+bool isJoinUnique(const ContigData& data, extDirection dir, ContigID targetID)
+{
+	PairAlignmentsCollection pairAlignColl;
+	data.extractAlignments(dir, PSF_ALL, pairAlignColl);
+
+	ContigID selfID = data.getID();
+	
+	for(PairAlignmentsCollection::iterator colIter = pairAlignColl.begin(); colIter != pairAlignColl.end(); ++colIter)
+	{
+		bool passedAlign = false;
+		// Ensure that every pair has an alignment pairing that is either (currID, currID) or (currID, targetID)
+		for(PairAlignments::iterator apIter = colIter->begin(); apIter != colIter->end(); ++apIter)
+		{
+			ContigID pairContigID = apIter->pairSeqAlign.alignment.contigID;
+			if(pairContigID == targetID || pairContigID == selfID)
+			{
+				passedAlign = true;
+				break;
+			}
+		}
+		
+		if(!passedAlign)
+		{
+			return false;
+		}
+	}
+	
+	// If we reached here, all the contigs were resolved
+	return true;
 }
 

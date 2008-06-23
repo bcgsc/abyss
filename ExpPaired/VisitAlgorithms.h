@@ -67,8 +67,6 @@ struct ContigDataOutputter
 };
 
 
-
-
 struct PairedMerger
 {
 	PairedMerger(size_t kmer, size_t maxLength, PairedResolvePolicy* pResolvePolicy, AlignmentCache* pDB) : m_kmer(kmer), m_maxlength(maxLength), m_pResolvePolicy(pResolvePolicy), m_pDatabase(pDB) { }
@@ -89,15 +87,6 @@ struct PairAdder
 	
 	void visit(const ContigID& /*id*/, ContigData& data) { data.addPairs(m_pPairs); }
 	PairRecord* m_pPairs;
-};
-
-struct LinkFinder
-{
-	LinkFinder() { }
-	
-	void visit(const ContigID& id, ContigData& data);
-	void getReachableSet(const ContigID& id, const ContigData& data, extDirection dir, ContigIDSet& idSet);
-	
 };
 
 struct SequenceDataCost
@@ -133,5 +122,7 @@ struct PairedResolveVisitor
 //
 size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path);
 size_t calculatePathLength(const DirectedGraph<ContigID, ContigData>* pGraph, const ContigIDVec path, SequenceDataCost costFunctor);
+void getReachableSet(const ContigData& data, extDirection dir, ContigIDSet& idSet);
+bool isJoinUnique(const ContigData& data, extDirection dir, ContigID targetID);
 
 #endif

@@ -75,5 +75,7 @@ AC_CONFIG_FILES([
 	bin/Makefile
 	fasta2psq/Makefile
 	Paired/Makefile
+	AdjList/Makefile
+	DistanceEst/Makefile
 ])
 AC_OUTPUT

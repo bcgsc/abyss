@@ -186,119 +186,25 @@ void ContigData::addPairs(PairRecord* pairRecord)
 }
 
 //
+// Extract the pair alignments for every sequence in the collection
 //
-//
-void ContigData::getUniqueUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const
+void ContigData::extractAlignments(extDirection dir, unsigned int filter, PairAlignmentsCollection& alignmentPairs) const
 {
 	size_t pairIdx = dir2Idx(dir);
 	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
 	{
-		if(iter->usable || !usableOnly)
+		// Filter on usable sequences
+		if(iter->usable || !(filter & PSF_USABLE_ONLY))
 		{
 			const PairVector& pairVec = iter->pairs[pairIdx];	
 			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
 			{
-				if(!pairIter->resolvedData.isResolved())
+				// Filter on resolved pairs
+				if(!pairIter->resolvedData.isResolved() || !(filter & PSF_UNRESOLVED_ONLY))
 				{
-					AlignmentPairVec alignPairs;
-					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
-					
-					if(alignPairs.empty())
-					{
-						continue;
-					}
-					
-					// Disallow alignments of the same sequence to different contigs
-					// Maybe disallow multiple in general?
-					bool uniqueAlign = true;
-					ContigID uniqueContig = alignPairs.front().pairSeqAlign.alignment.contigID;
-					
-					for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
-					{
-						if(uniqueContig != apIter->pairSeqAlign.alignment.contigID)
-						{
-							idSupport[apIter->pairSeqAlign.alignment.contigID]++;
-							uniqueAlign = false;
-							break;
-						}
-					}
-					
-					
-					if(uniqueAlign)
-					{
-						idSupport[uniqueContig]++;
-					}
-				}
-			}
-		}		
-	}
-}
-
-//
-//
-//
-void ContigData::getAllUnresolvedSet(extDirection dir, bool usableOnly, ContigSupportMap& idSupport) const
-{
-	size_t pairIdx = dir2Idx(dir);
-	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
-	{
-		if(iter->usable || !usableOnly)
-		{
-			const PairVector& pairVec = iter->pairs[pairIdx];	
-			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
-			{
-				if(!pairIter->resolvedData.isResolved())
-				{
-					AlignmentPairVec alignPairs;
-					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
-					
-					if(alignPairs.empty())
-					{
-						continue;
-					}
-					
-					// Disallow alignments of the same sequence to different contigs
-					// Maybe disallow multiple in general?
-					//bool uniqueAlign = true;
-					ContigID uniqueContig = alignPairs.front().pairSeqAlign.alignment.contigID;
-					
-					for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
-					{
-						//if(uniqueContig != apIter->pairSeqAlign.alignment.contigID)
-						{
-							idSupport[apIter->pairSeqAlign.alignment.contigID]++;
-							//uniqueAlign = false;
-							//break;
-						}
-					}
-					
-					/*
-					if(uniqueAlign)
-					{
-						idSupport[uniqueContig]++;
-					}*/
-				}
-			}
-		}		
-	}
-}
-
-//
-//
-//
-void ContigData::getResolvedSet(extDirection dir, ContigIDSet& idSet) const
-{
-	size_t pairIdx = dir2Idx(dir);
-	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
-	{
-		if(iter->usable)
-		{
-			const PairVector& pairVec = iter->pairs[pairIdx];
-			for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
-			{
-				if(pairIter->resolvedData.isResolved())
-				{	
-					idSet.insert(pairIter->resolvedData.getResolvedID());
+					PairAlignments pairAligns;
+					getAlignmentPairs(iter->seq, pairIter->seq, filter, pairAligns);
+					alignmentPairs.push_back(pairAligns);
 				}
 			}
 		}
@@ -306,25 +212,41 @@ void ContigData::getResolvedSet(extDirection dir, ContigIDSet& idSet) const
 }
 
 //
+// Get the list of supported contigs in the specified direction and the number of kmers supporting it
 //
-//
-void ContigData::getAllAlignmentPairs(const ContigKmerData& refKmerData, extDirection dir, AlignmentPairVec& outAligns) const
+void ContigData::getSupportMap(extDirection dir, unsigned int filter, ContigSupportMap& outMap) const
 {
-	size_t pairIdx = dir2Idx(dir);
+	PairAlignmentsCollection pairAlignColl;
 	
-	// Now get the alignments for its pairs
-	// Iterate over the pairs for this sequence
-	for(PairVector::const_iterator pairIter = refKmerData.pairs[pairIdx].begin(); pairIter != refKmerData.pairs[pairIdx].end(); ++pairIter)
+	// Extract the alignments that are desired
+	extractAlignments(dir, filter, pairAlignColl);
+	
+	// Convert the alignments to a support map
+	for(PairAlignmentsCollection::iterator colIter = pairAlignColl.begin(); colIter != pairAlignColl.end(); ++colIter)
 	{
-		getAlignmentPairs(refKmerData.seq, pairIter->seq, outAligns);
+		for(PairAlignments::iterator apIter = colIter->begin(); apIter != colIter->end(); ++apIter)
+		{
+			outMap[apIter->pairSeqAlign.alignment.contigID]++;
+		}
 	}	
+}
+
+//
+//
+//
+void ContigData::supportMap2IDSet(const ContigSupportMap& inMap, ContigIDSet& outSet)
+{
+	for(ContigSupportMap::const_iterator iter = inMap.begin(); iter != inMap.end(); ++iter)
+	{
+		outSet.insert(iter->first);
+	}
 }
 
 
 //
 // This could be more efficient
 //
-void ContigData::getAlignmentPairs(const PackedSeq& refSeq, const PackedSeq& pairSeq, AlignmentPairVec& outAligns) const
+void ContigData::getAlignmentPairs(const PackedSeq& refSeq, const PackedSeq& pairSeq, unsigned int filter, PairAlignments& outAligns) const
 {
 	// Get the alignments for each
 	AlignSet seqAlignments;
@@ -332,6 +254,15 @@ void ContigData::getAlignmentPairs(const PackedSeq& refSeq, const PackedSeq& pai
 	
 	AlignSet pairAlignments;
 	m_pDatabase->getAlignments(pairSeq, pairAlignments);
+	
+	// Check if we should make unique pairs only
+	if(filter & PSF_UNIQUE_ALIGN_ONLY)
+	{
+		if(seqAlignments.size() > 1 || pairAlignments.size() > 1)
+		{
+			return;
+		}
+	}
 	
 	// Make up all the pairs
 	for(AlignSet::const_iterator saIter = seqAlignments.begin(); saIter != seqAlignments.end(); ++saIter)
@@ -369,11 +300,11 @@ void ContigData::resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection 
 					// Check if any alignment between these two pairs are resolved, if so, mark them as such
 					bool resolved = false;
 					ContigID resolvedTo;
-					AlignmentPairVec alignPairs;
-					getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
+					PairAlignments alignPairs;
+					getAlignmentPairs(iter->seq, pairIter->seq, PSF_ALL, alignPairs);
 					
-					// Check if these two reads are aligned within the expected distance distribution
-					for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
+					// Check if these two reads are aligned to the same contig
+					for(PairAlignments::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
 					{
 						if(apIter->refSeqAlign.alignment.contigID == apIter->pairSeqAlign.alignment.contigID)
 						{
@@ -408,20 +339,19 @@ void ContigData::resolvePairs(PairedResolvePolicy* pResolvePolicy, extDirection 
 //
 void ContigData::addSelfPairsToHist(Histogram* pHist)
 {
-	// We only check one direction as they are equivalent and checking both would be redundant
 	extDirection dir = SENSE;
-	for(CKDataVec::iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
+	PairAlignmentsCollection pairAlignColl;
+	extractAlignments(dir, PSF_ALL, pairAlignColl);
+
+	for(PairAlignmentsCollection::iterator colIter = pairAlignColl.begin(); colIter != pairAlignColl.end(); ++colIter)
 	{
-		AlignmentPairVec alignPairs;
-		getAllAlignmentPairs(*iter, dir, alignPairs);
-		
-		for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
+		for(PairAlignments::iterator apIter = colIter->begin(); apIter != colIter->end(); ++apIter)
 		{
 			if(apIter->refSeqAlign.alignment.contigID == apIter->pairSeqAlign.alignment.contigID)
 			{
 				int difference = abs(apIter->refSeqAlign.alignment.position - apIter->pairSeqAlign.alignment.position);
 				pHist->addDataPoint(difference);
-			}
+			}			
 		}
 	}
 }
@@ -429,24 +359,16 @@ void ContigData::addSelfPairsToHist(Histogram* pHist)
 //
 //
 //
-void ContigData::printPairAlignments(extDirection dir, bool showResolved) const
+void ContigData::printPairAlignments(extDirection dir, unsigned int filter) const
 {
-	size_t pairIdx = dir2Idx(dir);
-	for(CKDataVec::const_iterator iter = m_kmerVec.begin(); iter != m_kmerVec.end(); ++iter)
+	PairAlignmentsCollection pairAlignColl;
+	extractAlignments(dir, filter, pairAlignColl);
+
+	for(PairAlignmentsCollection::iterator colIter = pairAlignColl.begin(); colIter != pairAlignColl.end(); ++colIter)
 	{
-		PairVector pairVec = iter->pairs[pairIdx];
-		for(PairVector::const_iterator pairIter = pairVec.begin(); pairIter != pairVec.end(); ++pairIter)
+		for(PairAlignments::iterator apIter = colIter->begin(); apIter != colIter->end(); ++apIter)
 		{
-			AlignmentPairVec alignPairs;
-			getAlignmentPairs(iter->seq, pairIter->seq, alignPairs);
-			
-			for(AlignmentPairVec::iterator apIter = alignPairs.begin(); apIter != alignPairs.end(); ++apIter)
-			{		
-				if(!pairIter->resolvedData.isResolved() || showResolved)
-				{
-					std::cout << *apIter << " Resolved: " << pairIter->resolvedData.isResolved() << " id: " << pairIter->resolvedData.getResolvedID() << " " << iter->seq.decode() << " " << pairIter->seq.decode() << std::endl;
-				}
-			}
+			std::cout << *apIter << std::endl;		
 		}
 	}
 }

@@ -13,6 +13,7 @@ struct Histogram
 	Histogram() {}
 	
 	void addDataPoint(int data);
+	void addMultiplePoints(int value, int count);
 	int getSumCount() const;
 	int getCount(int index) const;
 	int getMin() const;
@@ -46,18 +47,18 @@ struct PDF
 void KLDiv(const PDF& p, const PDF& q);
 void ChiSquare(const PDF& ref, const Histogram& sample);
 
+// Maximum Likelihood Estimator functions
+int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance, const PDF& pdf, double& ratio);
+
+// Compute the likelihood of the distribution
+double computeLikelihood(int param, std::vector<int>& testDist, const PDF& pdf);
+
 class PairedStats
 {
 	public:
 		PairedStats();
 		
 		const PDF& getPDF() const { return m_pdf; } 
-		
-		// Maximum Likelihood Estimator functions
-		int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance);
-		
-		// Compute the likelihood of the distribution
-		double computeLikelihood(int d, std::vector<int>& testDist);
 					
 		// Generate stats from the histogram
 		void generateStats(const Histogram& h);
