@@ -32,6 +32,9 @@ class CommLayer
 	
 		// Check if a message exists, if it does return the type
 		APMessage CheckMessage(int &sendID) const;
+
+		// Return whether the queue of messages is empty.
+		bool empty() const;
 		
 		// Send a control message
 		void SendControlMessage(int numNodes, APControl m, int argument = 0);

@@ -142,28 +142,26 @@ void NetworkSequenceCollection::run()
 				unsigned numDiscovered
 					= performNetworkDiscoverBubbles(this,
 							opt::kmerSize);
-				m_pComm->SendCheckPointMessage(numDiscovered);
 				EndState();
 				SetState(NAS_WAITING);
+				m_pComm->SendCheckPointMessage(numDiscovered);
 				break;
 			}
 			case NAS_POPBUBBLE:
 			{
 				unsigned numPopped
 					= performNetworkPopBubbles(this);
-				m_pComm->SendCheckPointMessage(numPopped);
-				// Cleanup any messages that are pending
 				EndState();				
 				SetState(NAS_WAITING);	
+				m_pComm->SendCheckPointMessage(numPopped);
 				break;	
 			}
 			case NAS_SPLIT:
 			{
 				AssemblyAlgorithms::splitAmbiguous(this);	
-				m_pComm->SendCheckPointMessage();
-				// Cleanup any messages that are pending
 				EndState();				
 				SetState(NAS_WAITING);
+				m_pComm->SendCheckPointMessage();
 				break;
 			}
 			case NAS_ASSEMBLE:
@@ -946,7 +944,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
-		pumpNetwork();
+		assert(m_pComm->empty());
 	}
 	m_bubbles.clear();
 
@@ -1029,26 +1027,18 @@ int NetworkSequenceCollection::controlPopBubbles()
 
 	// Perform a round-robin bubble pop to avoid concurrency issues
 	unsigned numPopped = performNetworkPopBubbles(this);
+	EndState();
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
+		SetState(NAS_POPBUBBLE);
 		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
 				m_numPopped + numPopped);
-
-		// Cleanup any messages that are pending
-		EndState();
-
-		// Wait for this node to return
 		while (!checkpointReached(1))
 			pumpNetwork();
 		numPopped += m_checkpointSum;
-
-		//Reset the state and loop
-		SetState(NAS_POPBUBBLE);
+		EndState();
 	}
-
-	// Cleanup any messages that are pending
-	EndState();
 
 	m_numPopped += numPopped;
 	if (numPopped > 0)

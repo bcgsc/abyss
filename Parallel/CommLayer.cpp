@@ -50,6 +50,11 @@ APMessage CommLayer::CheckMessage(int& sendID) const
 	}
 }
 
+bool CommLayer::empty() const
+{
+	int sendID;
+	return CheckMessage(sendID) == APM_NONE;
+}
 
 uint64_t CommLayer::SendCheckPointMessage(int argument)
 {
