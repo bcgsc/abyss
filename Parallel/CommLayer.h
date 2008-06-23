@@ -1,12 +1,14 @@
 #ifndef COMMLAYER
 #define COMMLAYER
 
+class CommLayer;
+
 #include <mpi.h>
 #include <list>
 #include "PackedSeq.h"
 #include "NetworkDefs.h"
 #include "Messages.h"
-
+#include "MessageBuffer.h"
 
 typedef std::vector<Message*> MessagePtrVector;
 
@@ -52,6 +54,12 @@ class CommLayer
 		// Flush the buffer
 		void flush();
 		
+		void setMsgBuffer(const MessageBuffer *pMsgBuffer)
+		{
+			assert(pMsgBuffer != NULL);
+			m_pMsgBuffer = pMsgBuffer;
+		}
+
 	private:
 		int m_id;
 		int m_kmerSize;
@@ -59,6 +67,7 @@ class CommLayer
 		int m_bufferSize;
 		uint64_t m_msgID;
 		char* m_buffer;
+		const MessageBuffer *m_pMsgBuffer;
 };
 
 #endif

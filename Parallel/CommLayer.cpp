@@ -53,6 +53,7 @@ APMessage CommLayer::CheckMessage(int& sendID) const
 
 uint64_t CommLayer::SendCheckPointMessage(int argument)
 {
+	assert(m_pMsgBuffer->empty());
 	ControlMessage msg;
 	msg.id = m_msgID++;
 	msg.msgType = APC_CHECKPOINT;
@@ -67,6 +68,7 @@ uint64_t CommLayer::SendCheckPointMessage(int argument)
 //
 void CommLayer::SendControlMessage(int numNodes, APControl m, int argument)
 {
+	assert(m_pMsgBuffer->empty());
 	// i starts at 1 because the control node does not get the message
 	for(int i = 1; i < numNodes; i++)
 	{
@@ -79,6 +81,7 @@ void CommLayer::SendControlMessage(int numNodes, APControl m, int argument)
 //
 uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
 {
+	assert(m_pMsgBuffer->empty());
 	ControlMessage msg;
 	msg.id = m_msgID++;
 	msg.msgType = m;

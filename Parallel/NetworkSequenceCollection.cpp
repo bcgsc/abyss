@@ -27,6 +27,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 	
 	// Create the message buffer
 	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
+	m_pComm->setMsgBuffer(m_pMsgBuffer);
 	
 	stringstream strStrm;
 	strStrm << "log_" << myID << ".txt";

@@ -1,6 +1,8 @@
 #ifndef MESSAGE_BUFFER_H
 #define MESSAGE_BUFFER_H
 
+class MessageBuffer;
+
 #include <vector>
 #include "NetworkDefs.h"
 #include "CommLayer.h"
