@@ -860,7 +860,8 @@ void outputSequences(const char* filename, ISequenceCollection* pSS)
 	{
 		if(!pSS->checkFlag(*iter, SF_DELETE))
 		{
-			writer.WriteSequence(iter->decode(), count, 0.0f);
+			writer.WriteSequence(iter->decode(), count,
+					iter->getMultiplicity());
 			count++;
 		}
 	}	
