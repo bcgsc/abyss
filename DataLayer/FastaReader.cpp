@@ -39,9 +39,11 @@ Sequence FastaReader::ReadSequence()
 
 	// read in the header
 	m_fileHandle.getline(headerBuffer, MAX_FASTA_LINE);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 
 	// read in the sequence
 	m_fileHandle.getline(seqBuffer, MAX_FASTA_LINE);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 			
 	// parse the header
 	if(sscanf(headerBuffer, ">%s %*s", id) != 1)
