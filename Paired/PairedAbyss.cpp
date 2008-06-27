@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	
 	// Read in the initial contigs
 	ContigMap contigMap;
-	PairedAlgorithms::ReadContigs(contigFile, contigMap);
+	PairedAlgorithms::readContigMap(contigFile, contigMap);
 	
 	// Generate the initial alignment DB, it will be populated during the generation of the graph
 	AlignmentCache alignDB;
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 		pairedMerger.resolve(pContigGraph, id);
 	}
 	pContigGraph->getDataForVertex(id).printPairAlignments(ANTISENSE, PSF_ALL);
-	pContigGraph->printVertex(id, true);
+	pContigGraph->printVertex(id);
 	return 1;
 	
 	//pContigGraph->reducePaired(pairedMerger);

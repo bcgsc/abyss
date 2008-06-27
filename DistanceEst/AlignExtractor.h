@@ -7,8 +7,8 @@
 
 struct AlignPair
 {
-	AlignData refRec;
-	AlignData pairRec;
+	Alignment refRec;
+	Alignment pairRec;
 };
 
 typedef std::vector<AlignPair> AlignPairVec;

@@ -1,6 +1,7 @@
 #include "Stats.h"
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 
 const double MINP = 0.00001f;
 
@@ -11,7 +12,7 @@ void KLDiv(const PDF& p, const PDF& q)
 	p.print();
 	q.print();
 	
-	const size_t maxIdx = q.getMax();
+	const size_t maxIdx = q.getMaxIdx();
 	
 	double sum = 0.0f;
 	
@@ -26,12 +27,61 @@ void KLDiv(const PDF& p, const PDF& q)
 	printf("KLDiv: %lf\n", sum);
 }
 
+void KSTestCont(std::vector<int> observations, const PDF& p)
+{
+	// convert the observations vector to a histogram
+	Histogram hist(observations);
+
+	// convert the histogram to a pdf (a frequency distribution in this case)
+	PDF freqs(hist);
+	
+	// Convert both distributions to CDFs
+	CDF obsCDF(freqs);
+	CDF refCDF(p);
+	
+	// calculate the test statistic which is max[ max(Di), max(Di') ]
+	// where Di = abs(Oi - Fi)
+	// and Di' = abs(Oi-1 - Fi)
+	size_t maxIdx = std::max(refCDF.getMaxIdx(), obsCDF.getMaxIdx());
+	double D = 0.f;
+	for(size_t idx = 0; idx <= maxIdx; ++idx)
+	{
+		double Di = fabs(obsCDF.getP(idx) - refCDF.getP(idx));
+		double Diprev;
+		if(idx == 0)
+		{
+			Diprev = refCDF.getP(idx);
+		}
+		else
+		{
+			Diprev = fabs(obsCDF.getP(idx - 1) - refCDF.getP(idx));
+		}
+		
+		D = std::max(D, Di);
+		D = std::max(D, Diprev);
+		
+		printf("cdf %lf %lf %lf %lf %lf\n", obsCDF.getP(idx), refCDF.getP(idx), Di, Diprev, D);
+	}
+	
+	double alpha = 0.01;
+	double crit = approximateKSCritValue(observations.size(), alpha);
+	printf("D: %lf Crit: %lf Result: %d\n", D, crit, D < crit);
+}
+
+double approximateKSCritValue(int n, double alpha)
+{
+	// Formula from JH Zar - Biostatistical Analysis, 2nd ed, pg 548
+	// The approximation is accurate to ~3.5% for n=10, alpha = 0.001
+	double crit = sqrt(-log(alpha/2) / (2*n)) - (0.16693/n);
+	return crit;
+}
+
 void ChiSquare(const PDF& ref, const Histogram& sample)
 {
 	// Count the number of items in the sample hist
 	int count = sample.getSumCount();
 	count /= 6;
-	size_t maxIdx = ref.getMax();
+	size_t maxIdx = ref.getMaxIdx();
 	
 	// Compute the expected vector
 	double chi = 0.0f;
@@ -93,6 +143,14 @@ double computeLikelihood(int param, std::vector<int>& testDist, const PDF& pdf)
 }
 
 // Classes
+Histogram::Histogram(const std::vector<int>& data)
+{
+	for(std::vector<int>::const_iterator iter = data.begin(); iter != data.end(); ++iter)
+	{
+		addDataPoint(*iter);
+	}
+}
+
 void Histogram::addDataPoint(int data)
 {
 	m_data[data]++;
@@ -169,7 +227,7 @@ void Histogram::print() const
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
-	m_maxVal = h.getMax();
+	m_maxIdx = h.getMax();
 	double count = 0;
 
 	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
@@ -178,8 +236,8 @@ PDF::PDF(const Histogram& h)
 	}
 	
 	// Create the initial pdf with all values being 0
-	m_dist = DoubleVec(m_maxVal+1, 0.0f);
-	for(size_t i = 0; i <= m_maxVal; i++)
+	m_dist = DoubleVec(m_maxIdx+1, 0.0f);
+	for(size_t i = 0; i <= m_maxIdx; i++)
 	{
 		int v = h.getCount(i);
 
@@ -196,7 +254,7 @@ PDF::PDF(const Histogram& h)
 
 double PDF::getP(size_t idx) const 
 { 
-	return (idx <= m_maxVal) ? m_dist[idx] : MINP; 
+	return (idx <= m_maxIdx) ? m_dist[idx] : MINP; 
 }
 
 //
@@ -204,7 +262,7 @@ double PDF::getP(size_t idx) const
 //
 void PDF::print() const
 {
-	for(size_t idx = 0; idx <= m_maxVal; ++idx)
+	for(size_t idx = 0; idx <= m_maxIdx; ++idx)
 	{
 		printf("%zu %lf\n", idx, m_dist[idx]);
 	}
@@ -218,7 +276,7 @@ void PDF::calculateMinimalRange(double p, size_t& low, size_t& high) const
 	// First, find the max prob
 	double max = 0.0f;
 	size_t maxIdx = 0;
-	for(size_t idx = 0; idx <= m_maxVal; ++idx)
+	for(size_t idx = 0; idx <= m_maxIdx; ++idx)
 	{
 		if(m_dist[idx] > max)
 		{
@@ -237,7 +295,7 @@ void PDF::calculateMinimalRange(double p, size_t& low, size_t& high) const
 	{		
 		// compute the next index
 		size_t nextLeft = (leftIdx > 0) ? leftIdx - 1 : leftIdx;
-		size_t nextRight = (rightIdx < m_maxVal) ? rightIdx + 1 : rightIdx;
+		size_t nextRight = (rightIdx < m_maxIdx) ? rightIdx + 1 : rightIdx;
 		
 		// If the range could not be expanded, terminate
 		if(nextLeft == leftIdx && nextRight == rightIdx)
@@ -262,6 +320,36 @@ void PDF::calculateMinimalRange(double p, size_t& low, size_t& high) const
 	
 	low = leftIdx;
 	high = rightIdx;
+}
+
+// Construct a cdf from a pdf
+CDF::CDF(const PDF& pdf)
+{
+	m_maxIdx = pdf.getMaxIdx();
+	double sum = 0.0f;
+	// Create the initial pdf with all values being 0
+	m_dist = DoubleVec(m_maxIdx+1, 0.0f);
+	for(size_t i = 0; i <= m_maxIdx; i++)
+	{
+		sum += pdf.getP(i);
+		m_dist[i] = sum;
+	}	
+}
+
+double CDF::getP(size_t idx) const 
+{ 
+	return (idx <= m_maxIdx) ? m_dist[idx] : m_dist[m_maxIdx]; 
+}
+
+//
+//
+//
+void CDF::print() const
+{
+	for(size_t idx = 0; idx <= m_maxIdx; ++idx)
+	{
+		printf("%zu %lf\n", idx, m_dist[idx]);
+	}
 }
 
 PairedStats::PairedStats() : m_maxDist(0)

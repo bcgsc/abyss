@@ -11,6 +11,7 @@ typedef std::map<int, int> IntIntMap;
 struct Histogram
 {
 	Histogram() {}
+	Histogram(const std::vector<int>& data);
 	
 	void addDataPoint(int data);
 	void addMultiplePoints(int value, int count);
@@ -32,20 +33,36 @@ struct PDF
 	
 	double getP(size_t idx) const;
 	
-	size_t getMax() const { return m_maxVal; }
+	size_t getMaxIdx() const { return m_maxIdx; }
 	void print() const;
 	
-	size_t m_maxVal;
+	size_t m_maxIdx;
 	DoubleVec m_dist;
 	
 	// calculate the minimal range in which p% of the values will fall into
 	void calculateMinimalRange(double p, size_t& low, size_t& high) const;
 };
 
+struct CDF
+{
+	CDF() {};
+	CDF(const PDF& pdf);
+	
+	double getP(size_t idx) const;
+	
+	size_t getMaxIdx() const { return m_maxIdx; }
+	void print() const;
+	
+	size_t m_maxIdx;
+	DoubleVec m_dist;
+};
+
 
 // Functions
 void KLDiv(const PDF& p, const PDF& q);
 void ChiSquare(const PDF& ref, const Histogram& sample);
+void KSTestCont(std::vector<int> observations, const PDF& p);
+double approximateKSCritValue(int n, double alpha);
 
 // Maximum Likelihood Estimator functions
 int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance, const PDF& pdf, double& ratio);

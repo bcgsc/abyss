@@ -77,5 +77,9 @@ AC_CONFIG_FILES([
 	Paired/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
+	SimpleGraph/Makefile
+	MergePaths/Makefile
+	KAligner/Makefile
+	ParseAligns/Makefile
 ])
 AC_OUTPUT

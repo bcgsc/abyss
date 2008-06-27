@@ -4,6 +4,11 @@
 #include "Timer.h"
 #include "SetOperations.h"
 #include <queue>
+#include <list>
+#include <google/sparse_hash_map>
+#include <ext/hash_map>
+#include <iostream>
+#include <string>
 
 enum VisitColor
 {
@@ -11,6 +16,18 @@ enum VisitColor
 	VC_GRAY,
 	VC_BLACK
 };
+
+// Work around gnu_cxx's lack of support for hashing strings
+namespace __gnu_cxx                                                                                 
+{                                                                                             
+  template<> struct hash< std::string >
+  {
+    size_t operator()( const std::string& x ) const                                           
+    {                                                                                         
+      return hash< const char* >()( x.c_str() );
+    }                                                                                         
+  };                                                                                          
+}          
 
 struct EdgeDescription
 {
@@ -50,21 +67,15 @@ struct Vertex
 		VertexType* pVertex;
 		bool reverse;
 		
-		bool operator<(const EdgeData& e2) const 
+		bool operator==(const EdgeData& e2) const
 		{
-			//int cmp = this->pVertex - e2.pVertex;
-			int cmp = strcmp(this->pVertex->m_key.c_str(), e2.pVertex->m_key.c_str());
-			
-			if (cmp == 0)
-			{
-				return this->reverse < e2.reverse;
-			}
-			return (cmp < 0);	  	
-		} 
-	  
+			return (this->pVertex == e2.pVertex && this->reverse == e2.reverse);
+		}		
 	};
+	
+
 		
-	typedef typename std::set<EdgeData> EdgeCollection;
+	typedef typename std::list<EdgeData> EdgeCollection;
 	typedef typename EdgeCollection::iterator EdgeCollectionIter;
 	typedef typename EdgeCollection::const_iterator EdgeCollectionConstIter;
 	
@@ -118,46 +129,53 @@ struct Vertex
 template<typename K, typename D>
 class DirectedGraph 
 {
-	// Lots of typedefs
-	typedef typename std::map<K, Vertex<K, D>* > VertexTable;
-	typedef typename VertexTable::iterator VertexTableIter;
-	typedef typename VertexTable::const_iterator VertexTableConstIter;
-	typedef Vertex<K, D> VertexType;
-	
-	typedef std::set<VertexType*> VertexCollection;
-	typedef std::pair<K, VertexCollection> VertexComponent;
-	typedef std::vector<VertexComponent> VertexComponentVector;
-	
-	typedef std::set<K> KeySet;
-	typedef std::vector<K> KeyVec;
-	typedef std::set<VertexType*> VertexPtrSet;
-	
-	struct VertexDirPair
-	{
-		VertexType* pVertex;
-		extDirection dir;
-	};
-	
-	typedef std::vector<VertexType*> VertexPath;
-	typedef std::vector<VertexPath> FeasiblePaths;
-	
-	typedef std::vector<D*> DataCollection;
-	typedef std::vector<DataCollection> DataComponents;
-	
-	typedef std::map<VertexType*, size_t> DistanceMap;
-	typedef std::map<VertexType*, VisitColor> VisitedMap;
-	typedef std::map<VertexType*, VertexType*> PreviousMap;
-	typedef std::map<VertexType*, extDirection> DirectionMap;
-	
-	struct ShortestPathData
-	{
-		DistanceMap distanceMap;
-		VisitedMap visitedMap;
-		PreviousMap previousMap;
-		DirectionMap directionMap;
-	};
-	
 	public:
+		// Lots of typedefs
+		typedef typename google::sparse_hash_map< K, Vertex<K, D>* > VertexTable;
+		//typedef typename std::map<K, Vertex<K, D>* > VertexTable;
+		typedef typename VertexTable::iterator VertexTableIter;
+		typedef typename VertexTable::const_iterator VertexTableConstIter;
+		typedef Vertex<K, D> VertexType;
+		
+		typedef std::set<VertexType*> VertexCollection;
+		typedef std::pair<K, VertexCollection> VertexComponent;
+		typedef std::vector<VertexComponent> VertexComponentVector;
+		
+		typedef std::set<K> KeySet;
+		typedef std::vector<K> KeyVec;
+		typedef std::set<VertexType*> VertexPtrSet;
+		
+		struct PathNode
+		{
+			K key;
+			bool isRC;
+			
+			friend std::ostream& operator<<(std::ostream& out, const PathNode& object)
+			{
+				out << "(" << object.key << "," << object.isRC << ")";
+				return out;
+			}
+		};
+		
+		typedef std::vector<PathNode> VertexPath;
+		typedef std::vector<VertexPath> FeasiblePaths;
+		
+		typedef std::vector<D*> DataCollection;
+		typedef std::vector<DataCollection> DataComponents;
+		
+		typedef std::map<VertexType*, size_t> DistanceMap;
+		typedef std::map<VertexType*, VisitColor> VisitedMap;
+		typedef std::map<VertexType*, VertexType*> PreviousMap;
+		typedef std::map<VertexType*, extDirection> DirectionMap;
+		
+		struct ShortestPathData
+		{
+			DistanceMap distanceMap;
+			VisitedMap visitedMap;
+			PreviousMap previousMap;
+			DirectionMap directionMap;
+		};
+	
 		DirectedGraph() { };
 		~DirectedGraph();
 		
@@ -188,7 +206,7 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpaths(const K& sourceKey, extDirection dir, const KeySet& reachableSet, std::vector<KeyVec>& solutions, DataCostFunctor& costFunctor);
+		bool findSuperpaths(const K& sourceKey, extDirection dir, const KeySet& reachableSet, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique
@@ -204,7 +222,7 @@ class DirectedGraph
 		size_t countEdges() const;
 		
 		// print a node using ostream
-		void printVertex(const K& key, bool printData = false) const;
+		void printVertex(const K& key) const;
 		
 		// validate the graph, looking for inconsistent links
 		template<class Functor>
@@ -225,6 +243,14 @@ class DirectedGraph
 		// debug function to merge two vertices together
 		template<class Functor>
 		bool mergeWrapper(const K& key1, const K& key2, bool forceRemove, Functor dataMerger);
+		
+		// Calculate the length of this path
+		template<typename DataCostFunctor>
+		size_t calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor);
+		
+		// Make a map of the distances to each node
+		template<typename DataCostFunctor>
+		void makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<K, int>& distanceMap);
 		
 		// Iteratively visit each node
 		template<class Functor>
@@ -250,7 +276,7 @@ class DirectedGraph
 		template<class DataCostFunctor>		
 		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, VertexPtrSet vertexConstraints, 
 										VertexPath currentPath, FeasiblePaths& solutions,
-										size_t currLen, const size_t maxPathLen, DataCostFunctor& costFunctor);	
+										size_t currLen, const size_t maxPathLen, DataCostFunctor& costFunctor, int maxNumPaths);	
 				
 		//
 		template<class DataCostFunctor>
@@ -260,13 +286,6 @@ class DirectedGraph
 		template<class Functor>
 		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger);
 		
-		// Print a path of vertices
-		template<class DataCostFunctor>
-		void printVertexPath(const VertexPath& path, DataCostFunctor costFunctor);
-		
-		// calculate the length of a path
-		template<class DataCostFunctor>
-		size_t calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor);
 			
 		VertexType* findVertex(const K& key) const;
 		VertexTable m_vertexTable;

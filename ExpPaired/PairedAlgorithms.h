@@ -16,7 +16,8 @@ typedef DirectedGraph<ContigID, ContigData> ContigGraph;
 namespace PairedAlgorithms
 {
 
-void ReadContigs(std::string file, ContigMap& outMap);
+void readContigMap(std::string file, ContigMap& outMap);
+void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
 void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB);
 
 };

@@ -6,29 +6,24 @@ namespace PairedAlgorithms
 //
 // Read contigs
 //
-void ReadContigs(std::string file, ContigMap& outMap)
+void readContigMap(std::string file, ContigMap& outMap)
 {
 	std::ifstream fileHandle(file.c_str());	
-	while(fileHandle.good())
+	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
-		char head;
-
-		std::string contigID;
+		ContigID contigID;
+		Sequence seq;
 		int length;
 		double coverage;
-		Sequence seq;
-		fileHandle >> head;
-		
-		if(head != '>' || fileHandle.eof())
+
+		parseContigFromFile(fileHandle, contigID, seq, length, coverage);
+		if(contigID.empty())
 		{
-			continue;
-		}		
+			break; //done
+		}
 		
-		
-		fileHandle >> contigID;
-		fileHandle >> length;
-		fileHandle >> coverage;
-		fileHandle >> seq;
+		assert(!seq.empty());
+		assert(length > 0);
 
 		outMap[contigID].seq = seq;
 		outMap[contigID].merged = false;
@@ -37,6 +32,17 @@ void ReadContigs(std::string file, ContigMap& outMap)
 		outMap[contigID].coverage = (int)coverage;
 	}
 	fileHandle.close();
+}
+
+void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
+{
+	char head;
+
+	stream >> head;		
+	stream >> id;
+	stream >> length;
+	stream >> coverage;
+	stream >> seq;	
 }
 
 void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB)

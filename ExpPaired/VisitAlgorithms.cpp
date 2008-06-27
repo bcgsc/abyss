@@ -127,18 +127,20 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 		data.getSupportMap(dir, PSF_UNRESOLVED_ONLY, totalSupport);
 
 		// enumerate all the possible paths that go through these nodes
-		std::vector<ContigIDVec> possibleSolutions;	
-		pGraph->findSuperpaths(id, dir, reachableSet, possibleSolutions, dataCost);
+		DirectedGraph<ContigID, ContigData>::FeasiblePaths possibleSolutions;
+		
+		// -1 is passed as the max number of paths as we would like everything
+		pGraph->findSuperpaths(id, dir, reachableSet, possibleSolutions, dataCost, -1);
 		
 		// Score the paths
-		ContigIDVec chosenPath;
+		DirectedGraph<ContigID, ContigData>::VertexPath chosenPath;
 		bool found = false;
 		size_t bestScore = 999;
 		
 		printf("Generated paths: \n");
-		for(std::vector<ContigIDVec>::iterator solIter = possibleSolutions.begin(); solIter != possibleSolutions.end(); ++solIter)
+		for(DirectedGraph<ContigID, ContigData>::FeasiblePaths::iterator solIter = possibleSolutions.begin(); solIter != possibleSolutions.end(); ++solIter)
 		{
-			size_t pathScore = calculatePathLength(pGraph, *solIter, dataCost);
+			size_t pathScore = pGraph->calculatePathLength(*solIter, dataCost);
 			//size_t pathScore = scorePath(totalSupport, *solIter);
 			printf("%zu ", pathScore);
 			SetOperations::printPath(*solIter);
@@ -151,27 +153,27 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 				chosenPath = *solIter;
 			}
 		}
-			
+		assert(false && "clean this up to use the dirs passed back in the path");
 		if(found)
 		{
 			printf("Chosen Path: \n");
 			SetOperations::printPath(chosenPath);
 			printf("\n");
 			
-			for(ContigIDVec::const_iterator iter = chosenPath.begin(); iter != chosenPath.end(); ++iter)
+			for(DirectedGraph<ContigID, ContigData>::VertexPath::const_iterator iter = chosenPath.begin(); iter != chosenPath.end(); ++iter)
 			{
 				// check if the node should be appended (target node stays) or merged (target node removed)
 				ContigIDSet reachableSet;
 				
 				// Get the edge from the parent to the child
-				EdgeDescription parentEdgeDesc = pGraph->getUniqueEdgeDesc(id, *iter, dir);
+				EdgeDescription parentEdgeDesc = pGraph->getUniqueEdgeDesc(id, iter->key, dir);
 				EdgeDescription relativeDesc = parentEdgeDesc.makeRelativeDesc();
 								
 				printf("Parent dir: %d relative dir: %d\n", parentEdgeDesc.dir, relativeDesc.dir);
 				
 				// Get the reachable set for the target node in the direction towards the parents
 				ContigIDSet targetReachSet;
-				ContigID currID = *iter;
+				ContigID currID = iter->key;
 				const ContigData& currData = pGraph->getDataForVertex(currID);
 				
 				
@@ -192,9 +194,9 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 				
 				// Count the number of times this node is in the path
 				int pathMult = 0;
-				for(ContigIDVec::iterator countIter = chosenPath.begin(); countIter != chosenPath.end(); ++countIter)
+				for(DirectedGraph<ContigID, ContigData>::VertexPath::const_iterator countIter = chosenPath.begin(); countIter != chosenPath.end(); ++countIter)
 				{
-					if(*countIter == currID)
+					if(countIter->key == currID)
 					{
 						pathMult++;
 					}
@@ -214,7 +216,7 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* pGraph, const Con
 				bool usableChild = removeChild && uniqueJoin;
 				printf("%s remove? %d usable? %d\n", currID.c_str(), removeChild, usableChild);
 				
-				pGraph->mergePath(id, *iter, dir, removeChild, usableChild, dataFunctor);
+				pGraph->mergePath(id, iter->key, dir, removeChild, usableChild, dataFunctor);
 				
 				mergedPathSet.insert(currID);
 				numMerged++;
@@ -276,18 +278,7 @@ bool PairedResolvePolicy::isResolved(const ContigID& id1, ContigID& id2, size_t 
 //
 
 
-//
-// Compute the length of the path which is the sum of the all the internal nodes in the path (not the end)
-//
-size_t calculatePathLength(const DirectedGraph<ContigID, ContigData>* pGraph, const ContigIDVec path, SequenceDataCost costFunctor)
-{
-	size_t len = 0;
-	for(ContigIDVec::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
-	{
-		len += costFunctor.cost(pGraph->getDataForVertex(*iter));
-	}
-	return len;
-}
+
 
 //
 // Score a path based on the support map passed in

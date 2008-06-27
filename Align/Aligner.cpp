@@ -20,46 +20,34 @@ Aligner::~Aligner()
 //
 // Create the database for the reference sequences
 //
-void Aligner::CreateDatabase(const ContigMap& refSeqs)
-{
-	for(ContigMap::const_iterator iter = refSeqs.begin(); iter != refSeqs.end(); iter++)
+void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
+{		
+	// Break the ref sequence into kmers of the hash size
+	int size = seq.length();
+	for(int i = 0; i < (size - m_hashSize + 1); ++i)
 	{
-		ContigID currID = iter->first;
-		const Sequence& currSeq = iter->second.seq;
+		Sequence subseq = seq.substr(i, m_hashSize);
 		
-		// Break the ref sequence into kmers of the hash size
-		int size = currSeq.length();
-		for(int i = 0; i < (size - m_hashSize); ++i)
+		// skip seqs that have unknown bases
+		if(subseq.find("N") == std::string::npos)
 		{
-			Sequence subseq = currSeq.substr(i, m_hashSize);
-			
-			// skip seqs that have unknown bases
-			if(subseq.find("N") == std::string::npos)
-			{
-				PackedSeq kmer(subseq);
-				//printf("indexed seq: %s\n", kmer.decode().c_str());
-				Position p;
-				p.contig = currID;
-				p.pos = i;
-				m_pDatabase->insert(dbRecord(kmer, p));
-				AlignmentVector vec;
-				GetAlignmentsInternal(kmer, false, vec);
-			}
+			PackedSeq kmer(subseq);
+			//printf("indexed seq: %s\n", kmer.decode().c_str());
+			Position p;
+			p.contig = id;
+			p.pos = i;
+			m_pDatabase->insert(dbRecord(kmer, p));
 		}
 	}
-	
-	printf("Done creating database\n");
 }
 
-AlignmentVector Aligner::GetAlignments(const PackedSeq& seq)
+void Aligner::alignRead(const PackedSeq& seq, AlignmentVector& alignVec)
 {
-	AlignmentVector results;
-	GetAlignmentsInternal(seq, false, results);
-	GetAlignmentsInternal(reverseComplement(seq), true, results);
-	return results;
+	getAlignmentsInternal(seq, false, alignVec);
+	getAlignmentsInternal(reverseComplement(seq), true, alignVec);
 }
 
-void Aligner::GetAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVector& resultVector)
+void Aligner::getAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVector& resultVector)
 {
 	// The results
 	AlignmentSet aligns;
@@ -82,10 +70,10 @@ void Aligner::GetAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVe
 		}
 	}
 	
-	CoalesceAlignments(aligns, isRC, resultVector);
+	coalesceAlignments(aligns, isRC, resultVector);
 }
 
-void Aligner::CoalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector)
+void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector)
 {
 	AlignmentResult result;
 	AlignmentVector allAlignments;
@@ -108,7 +96,7 @@ void Aligner::CoalesceAlignments(const AlignmentSet& alignSet, bool isRC, Alignm
 			if(*currIter != *prevIter + 1)
 			{
 				// create the alignment
-				Alignment align = CreateAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
+				Alignment align = createAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
 				
 				// store the best length
 				if(align.length > bestLength)
@@ -127,7 +115,7 @@ void Aligner::CoalesceAlignments(const AlignmentSet& alignSet, bool isRC, Alignm
 		}
 		
 		// Create the last alignment
-		Alignment align = CreateAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
+		Alignment align = createAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
 		if(align.length > bestLength)
 		{
 			bestLength = align.length;
@@ -138,16 +126,17 @@ void Aligner::CoalesceAlignments(const AlignmentSet& alignSet, bool isRC, Alignm
 	}
 	
 	// Filter the alignments to only return the best (longest) alignment(s)	
+	// TODO: axe this? maybe return everything for super-strict alignments
 	for(AlignmentVector::iterator alignIter = allAlignments.begin(); alignIter != allAlignments.end(); alignIter++)
 	{
-		if(alignIter->length >= bestLength)
+		//if(alignIter->length >= bestLength)
 		{
 			resultVector.push_back(*alignIter);	
 		}	
 	}
 }
 
-Alignment Aligner::CreateAlignment(ContigID contig, int start, int end, bool isRC)
+Alignment Aligner::createAlignment(ContigID contig, int start, int end, bool isRC)
 {
 	Alignment align;
 	align.contig = contig;

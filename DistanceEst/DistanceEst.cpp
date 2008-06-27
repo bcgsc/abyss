@@ -7,9 +7,7 @@
 #include "FastaReader.h"
 #include "Stats.h"
 #include "AlignExtractor.h"
-
-
-typedef std::map<ContigID, int> ContigLengthMap;
+#include "PairUtils.h"
 
 typedef std::vector<int> IntVector;
 struct PairedData
@@ -28,13 +26,36 @@ typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
 int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
-void loadContigLengths(std::string contigLenFile, ContigLengthMap& lengthMap);
-int lookupLength(const ContigLengthMap& lengthMap, const ContigID& id);
 void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, const PDF& pdf);
-PDF loadPDF(std::string distCountFile, const int limit);
-void writeRecord(std::ofstream& stream, ContigID id, int distance, int n);
 
+/*
 // Go through a list of pairings and provide a maximum likelihood estimate of the distance
+int main(int argc, char** argv)
+{
+	(void)argc;
+	std::string distanceCountFile(argv[1]);
+	std::string distanceListFile(argv[2]);
+	PDF empiricalPDF = loadPDF(distanceCountFile, 350);
+	
+	std::ifstream inFile(distanceListFile.c_str());
+	const int num_samples = atoi(argv[3]);
+	
+	IntVector distances;
+	
+	for(int i = 0; i < num_samples; ++i)
+	{
+		int d;
+		inFile >> d;
+		if(d < 200)
+			distances.push_back(d);
+	}
+	
+	KSTestCont(distances, empiricalPDF);
+	
+	return 1;
+}
+*/
+
 int main(int argc, char** argv)
 {
 	if(argc < 4)
@@ -59,6 +80,7 @@ int main(int argc, char** argv)
 	// Estimate the distances between contigs, one at a time
 	processContigs(alignFile, contigLens, empiricalPDF);
 	
+	return 1;
 } 
 
 void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, const PDF& pdf)
@@ -72,13 +94,23 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 	int count = 0;
 	//Extract the align records from the file, one contig's worth at a time
 	bool stop = false;
+	
 	while(!stop)
 	{
+		
 		AlignPairVec currPairs;
 		stop = extractor.extractContigAlignments(currPairs);
-		
+
 		assert(currPairs.size() > 0);
-		ContigID refContigID = currPairs.front().refRec.contigID;
+		ContigID refContigID = currPairs.front().refRec.contig;
+		
+		std::cout << "Ref ctg " << refContigID << "\n";
+		// Only process contigs that are a reasonable length
+		int refLength = lookupLength(lengthMap, refContigID);
+		if(refLength < 100)
+		{
+			continue;
+		}
 		
 		// Write the first field to the file
 		outFile << refContigID << " : ";
@@ -100,7 +132,7 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 			{
 				if(iter->refRec.isRC == (bool)dirIdx)
 				{
-					PairedData& pd = dataMap[iter->pairRec.contigID];
+					PairedData& pd = dataMap[iter->pairRec.contig];
 					pd.pairVec.push_back(*iter);
 					size_t compIdx = (size_t)iter->pairRec.isRC;
 					assert(compIdx < 2);
@@ -123,11 +155,21 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 					continue;
 				}
 				
-				// Estimate the distance
-				int distance = estimateDistance(refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
+				const size_t number_of_pairs_threshold = 30;
 				
-				// write the record to file
-				writeRecord(outFile, pairID, distance, pdIter->second.pairVec.size());
+				if(pdIter->second.pairVec.size() > number_of_pairs_threshold)
+				{
+					// Estimate the distance
+					int distance = estimateDistance(refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
+					
+					Estimate est;
+					est.cID = pairID;
+					est.distance = distance;
+					est.numPairs = pdIter->second.pairVec.size();
+					
+					// write the record to file
+					outFile << est << " "; 
+				}
 				//std::cout << "Est dist: " << dist << " ratio " << ratio << std::endl;
 			}
 		}
@@ -169,8 +211,7 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 		// Flip all the positions of the pair aligns
 		for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
 		{
-			const int read_len = 36;
-			apIter->pairRec.position = (pairLen - (apIter->pairRec.position + read_len)); 
+			apIter->pairRec.start = (pairLen - (apIter->pairRec.start + apIter->pairRec.length)); 
 		}
 		
 	}
@@ -193,8 +234,8 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 	for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
 	{
 			int distance;
-			int refTransPos = apIter->refRec.position + refOffset;
-			int pairTransPos = apIter->pairRec.position + pairOffset;
+			int refTransPos = apIter->refRec.start + refOffset;
+			int pairTransPos = apIter->pairRec.start + pairOffset;
 			
 			if(refTransPos < pairTransPos)
 			{
@@ -208,61 +249,22 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 			distanceList.push_back(distance);
 			//std::cout << "Distance: " << distance << std::endl;
 	}
-	
 	// Perform the max-likelihood est
 	double ratio;
 	int dist = maxLikelihoodEst(-25, 200, distanceList, pdf, ratio);
+	
+	/*
+	printf("Num Pairs: %d\n", distanceList.size());
+	// Perform a KS-test
+	IntVector transDistances;
+	for(IntVector::iterator transIter = distanceList.begin(); transIter != distanceList.end(); ++transIter)
+	{
+		transDistances.push_back(*transIter + dist);
+	}
+	KSTestCont(transDistances, pdf);
+	*/
+	
+	
 	return dist;
 }
-
-void writeRecord(std::ofstream& stream, ContigID id, int distance, int n)
-{
-	stream << id << "," << distance << "," << n << " ";
-}
-
-void loadContigLengths(std::string contigLenFile, ContigLengthMap& lengthMap)
-{
-	ifstream contigLenStream(contigLenFile.c_str());
-	while(!contigLenStream.eof() && contigLenStream.peek() != EOF)
-	{
-		ContigID id;
-		int len;
-		contigLenStream >> id >> len;
-		lengthMap[id] = len;
-
-	}
-	contigLenStream.close();
-}
-
-int lookupLength(const ContigLengthMap& lengthMap, const ContigID& id)
-{
-	ContigLengthMap::const_iterator iter = lengthMap.find(id);
-	assert(iter != lengthMap.end());
-	return iter->second;
-}
-
-PDF loadPDF(std::string distCountFile, const int limit)
-{
-	Histogram hist;
-	ifstream distFile(distCountFile.c_str());
-	while(!distFile.eof() && distFile.peek() != EOF)
-	{
-		int value;
-		int count;
-		distFile >> value;
-		distFile >> count;
-
-		if(value < limit)
-		{
-			//std::cout << "adding " << value << " : " << count << std::endl;
-			hist.addMultiplePoints(value, count);
-		}
-	} 
-
-	PDF pdf(hist);
-	return pdf;
-}
-
-
-
 

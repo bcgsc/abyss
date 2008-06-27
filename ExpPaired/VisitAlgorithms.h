@@ -121,8 +121,10 @@ struct PairedResolveVisitor
 // Utility functions
 //
 size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path);
-size_t calculatePathLength(const DirectedGraph<ContigID, ContigData>* pGraph, const ContigIDVec path, SequenceDataCost costFunctor);
 void getReachableSet(const ContigData& data, extDirection dir, ContigIDSet& idSet);
 bool isJoinUnique(const ContigData& data, extDirection dir, ContigID targetID);
+
+
+
 
 #endif

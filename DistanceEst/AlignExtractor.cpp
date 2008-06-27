@@ -18,11 +18,11 @@ bool AlignExtractor::extractContigAlignments(AlignPairVec& outPairs)
 	AlignPair previousPair = m_currPair;
 
 	bool isEOF = false;
-	while(previousPair.refRec.contigID == m_currPair.refRec.contigID && !isEOF)
+	while(previousPair.refRec.contig == m_currPair.refRec.contig && !isEOF)
 	{
 		outPairs.push_back(m_currPair);
 		m_currPair = readRecord();
-
+		
 		isEOF = (m_fileHandle.eof() || m_fileHandle.peek() == EOF);
 	}
 	return isEOF;
@@ -31,26 +31,19 @@ bool AlignExtractor::extractContigAlignments(AlignPairVec& outPairs)
 // Read a single record in
 AlignPair AlignExtractor::readRecord()
 {
-	ContigID id1;
-	ContigID id2;
+
 	std::string readID1;
 	std::string readID2;
-	int pos1;
-	int pos2;
-	bool rc1;
-	bool rc2;
-	std::string discard;
+	/*
+	std::string line;
+	getline(m_fileHandle, line);
+	std::cout << "LINE: " << line << std::endl;
+	*/
+	Alignment ali1;
+	Alignment ali2;
 
-	// ref read
-	m_fileHandle >> readID1 >> discard >> id1 >> discard >> pos1 >> discard >> rc1;
+	m_fileHandle >> readID1 >> ali1 >> readID2 >> ali2;
 
-	// pair read
-	m_fileHandle >> readID2 >> discard >> id2 >> discard >> pos2 >> discard >> rc2;
-
-	// build aligns
-	AlignData ref = {id1, pos1, rc1};
-	AlignData pair = {id2, pos2, rc2};
-
-	AlignPair ap = {ref, pair};
+	AlignPair ap = {ali1, ali2};
 	return ap;
 }
