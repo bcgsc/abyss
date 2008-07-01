@@ -246,11 +246,13 @@ NumericID convertContigIDToNumericID(const ContigID& id)
 ContigID convertNumericIDToContigID(const NumericID& id)
 {
 	std::stringstream ss;
-	
+
 	int rem = id % nodeMult;
 	int pureNode = id - rem;
 	int nodeID = pureNode / nodeMult;
-	
+
 	ss << nodeID << ":" << rem;
-	return ss.str();
+	ContigID ret = ss.str();
+	std::cout << "ret " << ret << std::endl;
+	return ret;
 }

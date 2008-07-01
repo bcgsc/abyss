@@ -11,6 +11,7 @@
 #include "DirectedGraph.h"
 #include "PairUtils.h"
 #include "VisitAlgorithms.h"
+#include "ContigPath.h"
 
 // Typedefs
 typedef std::vector<NumericID> NumericIDVector;
@@ -28,7 +29,8 @@ struct SimpleDataCost
 
 // FUNCTIONS
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer);
-void outputPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const SimpleContigGraph::VertexPath& path);
+void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
+void outputContigPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const ContigPath& contigPath);
 
 //
 //
@@ -69,6 +71,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	(void)pContigGraph;
 	std::ifstream inStream(estFileName.c_str());
 	std::ofstream outStream("ResolvedPaths.txt");
+	SimpleDataCost costFunctor(kmer);
 
 	while(!inStream.eof() && inStream.peek() != EOF)
 	{
@@ -77,27 +80,31 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 		
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
+
 			std::cout << "\n\n****Processing " << er.refID << " dir: " << dirIdx << "****\n\n";
 			// generate the reachable set
-			std::set<NumericID> idSet;
+			SimpleContigGraph::KeyIntMap constraintMap;
 			
-			std::cout << "Reachable: { ";
+			const int distanceBuffer = 5;
 			for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 			{
-				std::cout << *iter << " ";
-				idSet.insert(iter->nID);
+				// Translate the distances produced by the esimator into the coordinate space
+				// used by the graph (a translation of m_overlap)
+				int translatedDistance = iter->distance + costFunctor.m_overlap;
+				constraintMap[iter->nID] = translatedDistance  + distanceBuffer;
 			}
-			
-			std::cout << "}\n";
-			
+
+			std::cout << "Constraints: ";
+			SetOperations::printMap(constraintMap);
+			std::cout << "\n";
+
 			// Generate the paths
-			SimpleDataCost costFunctor(kmer);
 			SimpleContigGraph::FeasiblePaths solutions;
 			
 			// The value at which to abort trying to find a path
 			// only unique paths are being searched for...
 			const int maxNumPaths = 2;
-			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, idSet, solutions, costFunctor, maxNumPaths);
+			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths);
 			
 			std::cout << "Solutions: \n";
 			for(SimpleContigGraph::FeasiblePaths::iterator solIter = solutions.begin(); solIter != solutions.end(); ++solIter)
@@ -150,12 +157,11 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				// If the path is valid, output it.
 				if(validPath)
 				{
-					outputPath(outStream, er.refID, (extDirection)dirIdx, sol);
-				}				
-				
-
+					ContigPath cPath;
+					constructContigPath(sol, cPath);
+					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);
+				}
 			}
-			
 		}
 	}
 	
@@ -163,17 +169,27 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	outStream.close();
 }
 
-void outputPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const SimpleContigGraph::VertexPath& path)
+//
+// Convert the vertext path to a contig path
+// The difference between the two is that the complementness of a vertex path is with respect to the previous node in the path
+// but with a contig path it is with respect to the root contig. Also the contigPath uses true contig ids
+// 
+void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath)
 {
+	bool flip = false;
+	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
+	{
+		ContigID id = convertNumericIDToContigID(iter->key);
+		flip = flip ^ iter->isRC;
+		MergeNode mn = {id, flip};
+		contigPath.appendNode(mn);
+	}
+}
+
+void outputContigPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const ContigPath& contigPath)
+{
+	std::cout << "outting path " << refNode << std::endl;
 	ContigID realID = convertNumericIDToContigID(refNode);
 	outStream << "@ " << realID << "," << dir << " -> ";
-	
-	for(SimpleContigGraph::VertexPath::const_iterator pIter = path.begin(); pIter != path.end(); ++pIter)
-	{
-		ContigID id = convertNumericIDToContigID(pIter->key);
-		MergeNode mn = {id, pIter->isRC};
-		outStream << mn << " ";
-	}
-
-	outStream << "\n";
+	outStream << contigPath << "\n";
 }

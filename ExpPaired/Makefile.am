@@ -11,5 +11,6 @@ libexppaired_a_SOURCES = \
 	Stats.cpp Stats.h \
 	PairedAlgorithms.cpp PairedAlgorithms.h \
 	VisitAlgorithms.cpp VisitAlgorithms.h \
-	PairUtils.cpp PairUtils.h
+	PairUtils.cpp PairUtils.h \
+	ContigPath.cpp ContigPath.h
 

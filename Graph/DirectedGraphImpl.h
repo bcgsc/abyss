@@ -736,6 +736,110 @@ bool DirectedGraph<K,D>::mergeShortestPath(const K& key1, const K& key2, DataCos
 }
 
 //
+// Find a superpath that includes all the nodes in the reachable set
+//
+template<typename K, typename D>
+template<class DataCostFunctor>
+bool DirectedGraph<K,D>::findSuperpaths(const K& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths)
+{
+	VertexType* pSourceVertex = findVertex(sourceKey);
+
+	// Early exit if there are no reachable vertices
+	if(keyConstraints.empty())
+	{
+		return false;
+	}
+	
+	// Create the initial (empty) path
+	VertexPath path;
+	
+	ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);	
+	return !superPaths.empty();
+}
+
+//
+// Perform a constrained DFS through the graph looking for the nodes in the constraint map at the distances specified by the map
+// 
+template<typename K, typename D>
+template<class DataCostFunctor>
+void DirectedGraph<K,D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints, 
+										VertexPath currentPath, FeasiblePaths& solutions,
+										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths)
+{
+	// Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
+	if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
+	{
+		return;
+	}
+	
+	// Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
+	typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
+	for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
+	{
+		VertexType* pNextVertex = eIter->pVertex;
+		
+		// add the node to the path
+		PathNode node;
+		node.key = pNextVertex->m_key;
+		node.isRC = eIter->reverse;
+		
+		VertexPath newPath = currentPath;
+		newPath.push_back(node);
+
+		// Update the constraints set
+		KeyIntMap newConstraints = keyConstraints;
+
+		// Make a copy of the constraints
+		typename KeyIntMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
+		if(constraintIter != newConstraints.end())
+		{
+			// This vertex is a valid constraint, remove it from the set
+			std::cout << "Constraint hit\n";
+			newConstraints.erase(constraintIter);
+		}		
+		
+		// Have all the constraints been satisfied?
+		if(newConstraints.empty())
+		{
+			// this path is valid
+			solutions.push_back(newPath);
+			return;
+		}
+		else
+		{
+			// update the path length
+			size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);
+			
+			// Check if this path can possibly support all the constraints
+			bool constraintViolated = false;
+			for(typename KeyIntMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
+			{
+				//std::cout << "a " << cIter->second << " , " << (int)newLength << " result " << (cIter->second < (int)newLength) << "\n";   
+				if(cIter->second < (int)newLength)
+				{
+					//this constraint is violated, the branch will be explored no further
+					constraintViolated = true;
+					break;
+				}	
+			}
+
+			if(constraintViolated)
+			{
+				continue;
+			}
+
+			//printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
+
+			// Get the relative direction for the new node
+			extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);	
+			
+			// recurse
+			ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths);
+		}
+	}
+}
+
+//
 // Compute the single-source shortest path distance to all nodes using dijkstra's algorithm
 // Note that this does not consider direction so it is unsuitable to compute the djikstra shortest path if you
 // are travelling in a particular direction at all times
@@ -816,70 +920,6 @@ void DirectedGraph<K,D>::dijkstra(const K& sourceKey, ShortestPathData& shortest
 	}
 }
 
-template<typename K, typename D>
-template<class DataCostFunctor>
-void DirectedGraph<K,D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, VertexPtrSet vertexConstraints, 
-										VertexPath currentPath, FeasiblePaths& solutions,
-										size_t currLen, const size_t maxPathLen, DataCostFunctor& costFunctor, int maxNumPaths)
-{
-	// Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-	if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
-	{
-		return;
-	}
-	
-	// Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
-	typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
-	for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
-	{
-		VertexType* pNextVertex = eIter->pVertex;
-		
-		// add the node to the path
-		PathNode node;
-		node.key = pNextVertex->m_key;
-		node.isRC = eIter->reverse;
-		
-		VertexPath newPath = currentPath;
-		newPath.push_back(node);
-
-		// Update the constraints set
-		VertexPtrSet newConstraints = vertexConstraints;
-		newConstraints.erase(pNextVertex);
-		
-		// Have all the constraints been satisfied?
-		if(newConstraints.empty())
-		{
-			// this path is valid
-			solutions.push_back(newPath);
-			return;
-		}
-		else
-		{
-			// update the path length
-			size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);
-			
-			// get the minimum path length of the remaining nodes in the constraint set
-			size_t minLenRemaining = getMinPathLength(newConstraints, costFunctor);
-			
-			//printf("path length: %zu, minRemaining: %zu num contraints: %zu\n", newLength, minLenRemaining, newConstraints.size());
-			
-			// check if the branch is no longer feasible
-			if(newLength + minLenRemaining > maxPathLen)
-			{
-				// the solution is not feasible, explore this branch no further
-				continue;
-			}
-			else
-			{
-				// Get the relative direction for the new node
-				extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);	
-				
-				// recurse
-				ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, maxPathLen, costFunctor, maxNumPaths);
-			}
-		}
-	}
-}
 
 //
 // Return the minimum possible path length that will contain every vertex in the set
@@ -908,40 +948,6 @@ size_t  DirectedGraph<K,D>::getMinPathLength(const VertexPtrSet& vertexSet, Data
 	// Subtract the largest cost
 	pathLength -= maxCost;
 	return pathLength;
-}
-
-//
-// Find a superpath that includes all the nodes in the reachable set
-//
-template<typename K, typename D>
-template<class DataCostFunctor>
-bool DirectedGraph<K,D>::findSuperpaths(const K& sourceKey, extDirection dir, const KeySet& reachableSet, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths)
-{
-	VertexType* pSourceVertex = findVertex(sourceKey);
-	KeySet visitSet = reachableSet;
-
-	// Early exit if there are no reachable vertices
-	if(reachableSet.empty())
-	{
-		return false;
-	}
-	
-	// Convert the key set to a vertex set
-	VertexPtrSet vertexConstraints;
-	
-	for(typename KeySet::iterator iter = reachableSet.begin(); iter != reachableSet.end(); ++iter)
-	{
-		vertexConstraints.insert(findVertex(*iter));
-	}
-	
-	size_t minPathLen = getMinPathLength(vertexConstraints, costFunctor);
-	printf("MinPathLen: %zu\n", minPathLen);
-	
-	// Create the initial (empty) path
-	VertexPath path;
-	
-	ConstrainedDFS(pSourceVertex, dir, vertexConstraints, path, superPaths, 0, 250, costFunctor, maxNumPaths);	
-	return !superPaths.empty();
 }
 
 //

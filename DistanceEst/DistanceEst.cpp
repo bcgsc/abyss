@@ -56,20 +56,27 @@ int main(int argc, char** argv)
 }
 */
 
+int length_cutoff = - 1;
+int number_of_pairs_threshold = - 1;
+
 int main(int argc, char** argv)
 {
-	if(argc < 4)
+	if(argc < 6)
 	{
-		std::cout << "Usage: <alignFile> <length file> <distance count file>\n";
+		std::cout << "Usage: <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
 		exit(1);
 	}
 	
 	std::string alignFile(argv[1]);
 	std::string contigLengthFile(argv[2]);
 	std::string distanceCountFile(argv[3]);
+	length_cutoff = atoi(argv[4]);
+	number_of_pairs_threshold = atoi(argv[5]);
 
-	std::cout << "Align File: " << alignFile << "len file: " << contigLengthFile << " distance file: " << distanceCountFile << std::endl;
-	std::cout << "WARNING UNHARDCODE READ LENGTH\n";
+	std::cout << "Align File: " << alignFile << "len file: " << contigLengthFile << " distance file: " 
+	<< distanceCountFile << " len cutoff " << length_cutoff 
+	<< " num pairs cutoff " << number_of_pairs_threshold << std::endl;
+	
 	PDF empiricalPDF = loadPDF(distanceCountFile, 350);
 
 	
@@ -155,9 +162,9 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 					continue;
 				}
 				
-				const size_t number_of_pairs_threshold = 30;
 				
-				if(pdIter->second.pairVec.size() > number_of_pairs_threshold)
+				
+				if((int)pdIter->second.pairVec.size() > number_of_pairs_threshold)
 				{
 					// Estimate the distance
 					int distance = estimateDistance(refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
