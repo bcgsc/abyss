@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	// Align the reads
 	alignReadsToDB(readsFile, aligner);
 	
-	return 1;
+	return 0;
 } 
 
 void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
