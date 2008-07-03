@@ -8,6 +8,7 @@
 #include "Stats.h"
 #include "PairUtils.h"
 #include "PairedAlgorithms.h"
+#include "Timer.h"
 
 
 // Functions
@@ -27,7 +28,7 @@ int main(int argc, char** argv)
 	std::string readsFile(argv[2]);
 	std::string refFastaFile(argv[3]);
 
-	std::cout << "Kmer " << kmer << " Reads file: " << readsFile << " ref fasta: " << refFastaFile << std::endl;
+	std::cerr << "Kmer " << kmer << " Reads file: " << readsFile << " ref fasta: " << refFastaFile << std::endl;
 
 	Aligner aligner(kmer);
 	
@@ -56,12 +57,11 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 		
 		if(count % 100000 == 0)
 		{
-			std::cout << "Read " << count << " contigs, " << aligner.getNumSeqs() << " seqs in the DB\n";
+			std::cerr << "Read " << count << " contigs, " << aligner.getNumSeqs() << " seqs in the DB\n";
 		}
 		count++;
 	}
 	
-	printf("Done loading reference (%zu seqs in db)\n", aligner.getNumSeqs());
 	fileHandle.close();
 }
 
@@ -74,17 +74,23 @@ void alignReadsToDB(std::string readsFastqFile, Aligner& aligner)
 		Sequence readSeq;
 		
 		readFastqRecord(fileHandle, readID, readSeq);
-		AlignmentVector avec;
-		aligner.alignRead(PackedSeq(readSeq), avec);
 		
-		std::cout << readID << "\t";
-
-		for(AlignmentVector::iterator iter = avec.begin(); iter != avec.end(); ++iter)
+		// Filter for sequences only containing ACGT
+		size_t pos = readSeq.find_first_not_of("ACGT");
+		if (pos == std::string::npos) 
 		{
-			std::cout << *iter << "\t";
+			AlignmentVector avec;
+			aligner.alignRead(readSeq, avec);
+			if(!avec.empty())
+			{
+				std::cout << readID << "\t";
+				for(AlignmentVector::iterator iter = avec.begin(); iter != avec.end(); ++iter)
+				{
+					std::cout << *iter << "\t";
+				}
+				std::cout << "\n";
+			}		
 		}
-		
-		std::cout << "\n";
 	}
 }
 

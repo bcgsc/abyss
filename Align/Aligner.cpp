@@ -6,7 +6,7 @@
 Aligner::Aligner(int hashSize) : m_hashSize(hashSize)
 {
 	//m_pDatabase = new SeqPosHashMap(2 << 26);
-	m_pDatabase = new SeqPosHashMap();
+	m_pDatabase = new SeqPosHashMap(2 << 25);
 }
 
 //
@@ -41,22 +41,22 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 	}
 }
 
-void Aligner::alignRead(const PackedSeq& seq, AlignmentVector& alignVec)
+void Aligner::alignRead(const Sequence& seq, AlignmentVector& alignVec)
 {
 	getAlignmentsInternal(seq, false, alignVec);
 	getAlignmentsInternal(reverseComplement(seq), true, alignVec);
 }
 
-void Aligner::getAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVector& resultVector)
+void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVector& resultVector)
 {
 	// The results
 	AlignmentSet aligns;
 
-	int seqLen = seq.getSequenceLength();
+	int seqLen = seq.length();
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
 		// Generate kmer
-		PackedSeq kmer = seq.subseq(i, m_hashSize);
+		PackedSeq kmer = seq.substr(i, m_hashSize);
 
 		// Get the alignment positions
 		LookupResult result = m_pDatabase->equal_range(kmer);

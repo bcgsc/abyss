@@ -68,6 +68,11 @@ int main(int argc, char** argv)
 //
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer)
 {
+	int totalAttempted = 0;
+	int nopathEnd = 0;
+	int uniqueEnd = 0;
+	int multiEnd = 0;
+
 	(void)pContigGraph;
 	std::ifstream inStream(estFileName.c_str());
 	std::ofstream outStream("ResolvedPaths.txt");
@@ -159,11 +164,26 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				{
 					ContigPath cPath;
 					constructContigPath(sol, cPath);
-					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);
+					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);					
 				}
+				uniqueEnd++;
 			}
+			else if(solutions.size() > 1)
+			{
+				multiEnd++;
+			}
+			else
+			{
+				nopathEnd++;
+			}
+			totalAttempted++;
 		}
 	}
+	
+	printf("Total paths attempted: %d\n", totalAttempted);
+	printf("No paths end: %d\n", nopathEnd);
+	printf("Unique end: %d\n", uniqueEnd);
+	printf("Multi end: %d\n", multiEnd);
 	
 	inStream.close();
 	outStream.close();

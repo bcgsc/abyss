@@ -64,7 +64,7 @@ class Aligner
 		void addReferenceSequence(const ContigID& id, const Sequence& seq);
 		
 		// Align an individual sequence
-		void alignRead(const PackedSeq& seq, AlignmentVector& alignVec);
+		void alignRead(const Sequence& seq, AlignmentVector& alignVec);
 		
 		// Get the number of sequences in the database
 		size_t getNumSeqs() const { return m_pDatabase->size(); }
@@ -72,7 +72,7 @@ class Aligner
 	private:
 	
 		// Internal alignment function, perform the actual alignment
-		void getAlignmentsInternal(const PackedSeq& seq, bool isRC, AlignmentVector& resultVector);	
+		void getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVector& resultVector);	
 		
 		// Coalesce all the hash hits into contiguous alignments
 		void coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector);

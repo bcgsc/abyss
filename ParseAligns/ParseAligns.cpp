@@ -100,6 +100,7 @@ int main(int argc, char* const* argv)
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable)
 {
 	(void)alignTable;
+	std::cout << "Reading " << filename << std::endl;
 	std::ifstream fileStream(filename.c_str());
 	std::string line;
 	while(getline(fileStream,line))
