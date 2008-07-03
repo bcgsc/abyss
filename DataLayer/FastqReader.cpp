@@ -21,19 +21,19 @@ Sequence FastqReader::ReadSequence()
 
 	// Read the header.
 	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount < MAX_FASTA_LINE-1);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 	assert(buf[0] == '@');
 
 	// Read the sequence.
 	m_fileHandle.getline(seq, sizeof seq);
-	assert(m_fileHandle.gcount < MAX_FASTA_LINE-1);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 
 	// Read the quality values.
 	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount < MAX_FASTA_LINE-1);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 	assert(buf[0] == '+');
 	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount < MAX_FASTA_LINE-1);
+	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 
 	return Sequence(seq);
 }
