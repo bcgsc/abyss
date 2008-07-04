@@ -10,11 +10,8 @@
 void readEstimateRecord(std::ifstream& stream, EstimateRecord& er)
 {
 	// read in the id
-	ContigID cID;
-	stream >> cID;
-	
-	er.refID = convertContigIDToNumericID(cID);
-	
+	stream >> er.refID;
+
 	// Discard the seperator
 	std::string discard;
 	stream >> discard;
@@ -66,7 +63,7 @@ void readEstimateRecord(std::ifstream& stream, EstimateRecord& er)
 //
 //
 //
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthMap& lengthMap, std::string file)
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthVec, std::string file)
 {
 	// First, load the vertices
 	std::ifstream inStream(file.c_str());
@@ -74,15 +71,14 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthMap& lengthMap,
 	int numAdded = 0;
 	while(!inStream.eof() && inStream.peek() != EOF)
 	{
-		ContigID id;
+		LinearNumKey id;
 		inStream >> id;
 		
 		SimpleContigData data;
-		data.length = lookupLength(lengthMap, id);
-		NumericID numID = convertContigIDToNumericID(id);
+		data.length = lookupLength(lengthVec, id);
 		
 		// Add the vertex to the graph
-		pGraph->addVertex(numID, data);
+		pGraph->addVertex(id, data);
 		//pGraph->addVertex(id, empty);
 
 		// discard the remainder of the line
@@ -106,7 +102,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthMap& lengthMap,
 	numAdded = 0;
 	while(!inStream.eof() && inStream.peek() != EOF)
 	{
-		ContigID id;
+		LinearNumKey id;
 		inStream >> id;
 
 		// read the adjacency info
@@ -136,7 +132,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthMap& lengthMap,
 //
 //
 //
-void parseAdjacencyLine(std::string& adjLine, ContigID currVert, SimpleContigGraph* pGraph)
+void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleContigGraph* pGraph)
 {
 	//std::cout << "ADJ RECORD: " << adjLine << std::endl;
 	
@@ -163,15 +159,15 @@ void parseAdjacencyLine(std::string& adjLine, ContigID currVert, SimpleContigGra
 			}
 			else
 			{
-				ContigID adjID;
+				LinearNumKey adjID;
 				SimpleEdgeDesc sed;
 				std::stringstream recSS(record);
 				recSS >> sed;
 				
+				adjID = convertContigIDToLinearNumKey(sed.contig);
+				
 				// Convert the ids
-				NumericID currNumID = convertContigIDToNumericID(currVert);
-				NumericID adjNumID = convertContigIDToNumericID(sed.contig);
-				pGraph->addEdge(currNumID, adjNumID, (extDirection)dirIdx, sed.isRC);
+				pGraph->addEdge(currVert, adjID, (extDirection)dirIdx, sed.isRC);
 				//std::cout << dirIdx << " GOT ADJ: " << id << " " << reverse << "\n";
 			}
 		}
@@ -181,25 +177,37 @@ void parseAdjacencyLine(std::string& adjLine, ContigID currVert, SimpleContigGra
 //
 // Length file loader
 //
-void loadContigLengths(std::string contigLenFile, ContigLengthMap& lengthMap)
+void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 {
+	std::cout << "Loading lengths\n";
 	ifstream contigLenStream(contigLenFile.c_str());
 	while(!contigLenStream.eof() && contigLenStream.peek() != EOF)
 	{
-		ContigID id;
+		std::string line;
+		getline(contigLenStream, line);
+		
+		std::stringstream converter(line);
+		LinearNumKey id;
 		int len;
-		contigLenStream >> id >> len;
-		lengthMap[id] = len;
+		converter >> id >> len;
+		
+		if(id != lengthVec.size())
+		{
+			std::cout << id << " is out of sequence (size: " << lengthVec.size() << ")\n";
+			assert(false);
+		}
+
+		lengthVec.push_back(len);
 
 	}
 	contigLenStream.close();
+	std::cout << "Done loading lengths\n";
 }
 
-int lookupLength(const ContigLengthMap& lengthMap, const ContigID& id)
+int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
 {
-	ContigLengthMap::const_iterator iter = lengthMap.find(id);
-	assert(iter != lengthMap.end());
-	return iter->second;
+	assert(id < lengthVec.size());
+	return lengthVec[id];
 }
 
 //
@@ -227,32 +235,9 @@ PDF loadPDF(std::string distCountFile, const int limit)
 	return pdf;
 }
 
-NumericID convertContigIDToNumericID(const ContigID& id)
+LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
 {
-	const int nodeMult = 10000000;
-	std::stringstream ss(id);
-	
-	int node;
-	int number;
-	char placeholder;
-	ss >> node >> placeholder >> number;
-	
-	//std::cout << "id " << id << " converts to node: " << node << " num: " << number << std::endl; 
-	// make sure no collisions are possible
-	assert(number < nodeMult);
-	return node*nodeMult + number;
-}
-
-ContigID convertNumericIDToContigID(const NumericID& id)
-{
-	std::stringstream ss;
-
-	int rem = id % nodeMult;
-	int pureNode = id - rem;
-	int nodeID = pureNode / nodeMult;
-
-	ss << nodeID << ":" << rem;
-	ContigID ret = ss.str();
-	std::cout << "ret " << ret << std::endl;
-	return ret;
+	LinearNumKey key;
+	key = atoi(id.c_str());
+	return key;
 }

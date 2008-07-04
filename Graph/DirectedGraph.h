@@ -10,6 +10,9 @@
 #include <iostream>
 #include <string>
 
+
+typedef uint32_t LinearNumKey;
+
 enum VisitColor
 {
 	VC_WHITE,
@@ -126,30 +129,30 @@ struct Vertex
 	
 };
 
-template<typename K, typename D>
+template<typename D>
 class DirectedGraph 
 {
 	public:
 		// Lots of typedefs
-		typedef typename google::sparse_hash_map< K, Vertex<K, D>* > VertexTable;
+		typedef typename std::vector<Vertex<LinearNumKey, D>* > VertexTable;
 		//typedef typename std::map<K, Vertex<K, D>* > VertexTable;
 		typedef typename VertexTable::iterator VertexTableIter;
 		typedef typename VertexTable::const_iterator VertexTableConstIter;
-		typedef Vertex<K, D> VertexType;
+		typedef Vertex<LinearNumKey, D> VertexType;
 		
 		typedef std::set<VertexType*> VertexCollection;
-		typedef std::pair<K, VertexCollection> VertexComponent;
+		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
 		
-		typedef std::set<K> KeySet;
-		typedef std::map<K, int> KeyIntMap;
-		typedef std::vector<K> KeyVec;
+		typedef std::set<LinearNumKey> KeySet;
+		typedef std::map<LinearNumKey, int> KeyIntMap;
+		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;
 		
 		struct PathNode
 		{
-			K key;
+			LinearNumKey key;
 			bool isRC;
 			
 			friend std::ostream& operator<<(std::ostream& out, const PathNode& object)
@@ -182,13 +185,13 @@ class DirectedGraph
 		~DirectedGraph();
 		
 		// get the data pointer
-		const D& getDataForVertex(const K& key) const { VertexType* pVertex = findVertex(key); assert(pVertex != NULL); return pVertex->m_data; }
+		const D& getDataForVertex(const LinearNumKey& key) const { VertexType* pVertex = findVertex(key); assert(pVertex != NULL); return pVertex->m_data; }
 		
 		// add edge
-		void addEdge(const K& parent, const K& child, extDirection dir, bool reverse);
+		void addEdge(const LinearNumKey& parent, const LinearNumKey& child, extDirection dir, bool reverse);
 		
 		// add vertex
-		VertexType* addVertex(const K& key, const D& data);
+		VertexType* addVertex(const LinearNumKey& key, const D& data);
 		
 		// remove vertex
 		void removeVertex(VertexType* pVertex);
@@ -199,7 +202,7 @@ class DirectedGraph
 		
 		// attempt to resolve 
 		template<class DataCostFunctor, class ResolveFunctor, class DataMerger>
-		bool attemptResolve(const K& key, extDirection dir, size_t maxCost, DataCostFunctor& dataCost, ResolveFunctor& resolver, DataMerger& merger);
+		bool attemptResolve(const LinearNumKey& key, extDirection dir, size_t maxCost, DataCostFunctor& dataCost, ResolveFunctor& resolver, DataMerger& merger);
 		
 		template<class DataCostFunctor>
 		void generateComponents(VertexType* pVertex, extDirection dir, size_t maxCost, VertexComponentVector& outComponents, DataCostFunctor& dataCost);
@@ -208,14 +211,14 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpaths(const K& sourceKey, extDirection dir, const KeyIntMap& constraintMap, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths);
+		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& constraintMap, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique
-		EdgeDescription getUniqueEdgeDesc(const K& key1, const K& key2, extDirection parentDir);
+		EdgeDescription getUniqueEdgeDesc(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir);
 		
 		// return the number of edges a particular node has in the specified direction
-		size_t getDegree(const K& key, extDirection dir);
+		size_t getDegree(const LinearNumKey& key, extDirection dir);
 		
 		// return the number of vertices
 		size_t getNumVertices() const { return m_vertexTable.size(); }
@@ -224,7 +227,7 @@ class DirectedGraph
 		size_t countEdges() const;
 		
 		// print a node using ostream
-		void printVertex(const K& key) const;
+		void printVertex(const LinearNumKey& key) const;
 		
 		// validate the graph, looking for inconsistent links
 		template<class Functor>
@@ -236,15 +239,15 @@ class DirectedGraph
 		
 		// attempt to merge two vertices along their shortest path with no guarentee they are linked
 		template<class MergerFunctor>
-		bool mergePath(const K& key1, const K& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger);
+		bool mergePath(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger);
 		
 		// attempt to merge two vertices along their shortest path with no guarentee they are linked
 		template<class DataCostFunctor, class MergerFunctor>
-		bool mergeShortestPath(const K& key1, const K& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger);
+		bool mergeShortestPath(const LinearNumKey& key1, const LinearNumKey& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger);
 		
 		// debug function to merge two vertices together
 		template<class Functor>
-		bool mergeWrapper(const K& key1, const K& key2, bool forceRemove, Functor dataMerger);
+		bool mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger);
 		
 		// Calculate the length of this path
 		template<typename DataCostFunctor>
@@ -252,7 +255,7 @@ class DirectedGraph
 		
 		// Make a map of the distances to each node
 		template<typename DataCostFunctor>
-		void makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<K, int>& distanceMap);
+		void makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<LinearNumKey, int>& distanceMap);
 		
 		// Iteratively visit each node
 		template<class Functor>
@@ -268,11 +271,11 @@ class DirectedGraph
 		
 		// Run dijkstra's algorithm to find the shortest path between source and target using the cost functor specified
 		template<class DataCostFunctor>
-		void dijkstra(const K& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
+		void dijkstra(const LinearNumKey& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
 		
 		//
 		template<class DataCostFunctor>
-		void greedyDirectedPath(const K& sourceKey, extDirection dir, KeySet& terminals, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
+		void greedyDirectedPath(const LinearNumKey& sourceKey, extDirection dir, KeySet& terminals, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
 		
 		//
 		template<class DataCostFunctor>		
@@ -289,7 +292,7 @@ class DirectedGraph
 		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger);
 		
 			
-		VertexType* findVertex(const K& key) const;
+		VertexType* findVertex(const LinearNumKey& key) const;
 		VertexTable m_vertexTable;
 };
 

@@ -1,4 +1,5 @@
 #include "PairedAlgorithms.h"
+#include "PairUtils.h"
 
 namespace PairedAlgorithms
 {
@@ -6,18 +7,19 @@ namespace PairedAlgorithms
 //
 // Read contigs
 //
-void readContigMap(std::string file, ContigMap& outMap)
+void readContigVec(std::string file, ContigVec& outVec)
 {
 	std::ifstream fileHandle(file.c_str());	
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
-		ContigID contigID;
+		ContigID strID;
+		LinearNumKey numID;
 		Sequence seq;
 		int length;
 		double coverage;
-
-		parseContigFromFile(fileHandle, contigID, seq, length, coverage);
-		if(contigID.empty())
+		
+		
+		if(!parseContigFromFile(fileHandle, strID, seq, length, coverage))
 		{
 			break; //done
 		}
@@ -25,16 +27,24 @@ void readContigMap(std::string file, ContigMap& outMap)
 		assert(!seq.empty());
 		assert(length > 0);
 
-		outMap[contigID].seq = seq;
-		outMap[contigID].merged = false;
-		outMap[contigID].repetitive = false;
-		outMap[contigID].super = false;
-		outMap[contigID].coverage = (int)coverage;
+		numID = convertContigIDToLinearNumKey(strID);
+		
+		Contig nc;
+		
+		// Make sure the index is correct
+		assert(numID == outVec.size());
+		nc.seq = seq;
+		nc.merged = false;
+		nc.repetitive = false;
+		nc.super = false;
+		nc.coverage = (int)coverage;
+		outVec.push_back(nc);
+		
 	}
 	fileHandle.close();
 }
 
-void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
+bool parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
 {
 	char head;
 
@@ -42,9 +52,12 @@ void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int
 	stream >> id;
 	stream >> length;
 	stream >> coverage;
-	stream >> seq;	
+	stream >> seq;
+	
+	return stream.good();
 }
 
+#if 0
 void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB)
 {
 	// Add all the vertices 
@@ -137,5 +150,6 @@ void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCol
 	size_t numEdges = pGraph->countEdges(); // SLOW
 	printf("Initial graph stats: num vert: %zu num edges: %zu\n", numVert, numEdges);
 }
+#endif
 
 };

@@ -212,18 +212,19 @@ void Vertex<K,D>::printEdges() const
 //
 // Graph Implementation
 //
-template<typename K, typename D>
-DirectedGraph<K,D>::~DirectedGraph()
+template<typename D>
+DirectedGraph<D>::~DirectedGraph()
 {
 	// delete all the vertices in the table
 	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		delete iter->second;	
+		delete *iter;
+		*iter = NULL;
 	}
 }
 
-template<typename K, typename D>
-void DirectedGraph<K,D>::addEdge(const K& parent, const K& child, extDirection dir, bool reverse)
+template<typename D>
+void DirectedGraph<D>::addEdge(const LinearNumKey& parent, const LinearNumKey& child, extDirection dir, bool reverse)
 {	
 	// Get iterators to the nodes
 	// If they do not exist, get will add them
@@ -237,8 +238,8 @@ void DirectedGraph<K,D>::addEdge(const K& parent, const K& child, extDirection d
 	pParentVertex->addEdge(pChildVertex, dir, reverse);
 }
 
-template<typename K, typename D>
-typename DirectedGraph<K,D>::VertexType* DirectedGraph<K,D>::addVertex(const K& key, const D& data)
+template<typename D>
+typename DirectedGraph<D>::VertexType* DirectedGraph<D>::addVertex(const LinearNumKey& key, const D& data)
 {
 	//assert(findVertex(key) == NULL);
 	
@@ -246,42 +247,42 @@ typename DirectedGraph<K,D>::VertexType* DirectedGraph<K,D>::addVertex(const K& 
 	VertexType* ptr = new VertexType(key, data);
 	
 	// Insert into the table
-	m_vertexTable[key] = ptr;
+	
+	// ensure contiguitiy of the keys
+	assert(m_vertexTable.size() == key);
+	m_vertexTable.push_back(ptr);
 	
 	return ptr;
 }
 
-template<typename K, typename D>
-typename DirectedGraph<K,D>::VertexType* DirectedGraph<K,D>::findVertex(const K& key) const
+template<typename D>
+typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key) const
 {
 	// Look up the key in the vertex table
-	VertexTableConstIter iter = m_vertexTable.find(key);
+	if(key >= m_vertexTable.size())
+	{
+		std::cerr << "Vertex key is invalid in find! (" << key << ")\n";
+		assert(false);
+	}
 	
-	if(iter != m_vertexTable.end())
-	{
-		return iter->second;
-	}
-	else
-	{
-		return NULL;
-	}
+	return m_vertexTable[key];
 }
 
 // Count all the edges in all the nodes
-template<typename K, typename D>
-size_t DirectedGraph<K,D>::countEdges() const
+template<typename D>
+size_t DirectedGraph<D>::countEdges() const
 {
 	size_t sum = 0;
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		sum += iter->second->countEdges();
+		sum += (*iter)->countEdges();
 	}
 	return sum;
 }
 
 // Print out a node
-template<typename K, typename D>
-void DirectedGraph<K,D>::printVertex(const K& key) const
+template<typename D>
+void DirectedGraph<D>::printVertex(const LinearNumKey& key) const
 {
 	// find the vertex
 	VertexType* pVertex = findVertex(key);
@@ -297,9 +298,9 @@ void DirectedGraph<K,D>::printVertex(const K& key) const
 //
 // Attempt to reduce the data set using paired reads
 //
-template<typename K, typename D>
+template<typename D>
 template<class ResolveFunctor>
-size_t DirectedGraph<K,D>::reducePaired(ResolveFunctor& resolver)
+size_t DirectedGraph<D>::reducePaired(ResolveFunctor& resolver)
 {
 	size_t numMerged = 0;
 	
@@ -336,9 +337,9 @@ size_t DirectedGraph<K,D>::reducePaired(ResolveFunctor& resolver)
 //
 // Remove transitivity in the data set by merging and 
 //
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-size_t DirectedGraph<K,D>::removeTransitivity(Functor dataMerger)
+size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
 {
 
 	size_t numMerged = 0;
@@ -394,9 +395,9 @@ size_t DirectedGraph<K,D>::removeTransitivity(Functor dataMerger)
 //
 //
 //
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-bool DirectedGraph<K,D>::mergeWrapper(const K& key1, const K& key2, bool forceRemove, Functor dataMerger)
+bool DirectedGraph<D>::mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger)
 {
 	VertexType* pParent = findVertex(key1);
 	VertexType* pChild = findVertex(key2);
@@ -420,9 +421,9 @@ bool DirectedGraph<K,D>::mergeWrapper(const K& key1, const K& key2, bool forceRe
 //
 // Append a copy of the child vertex into the parent and update all the links accordingly
 //
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger)
+bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger)
 {
 	// Determine the relative orientation of the nodes
 	// If they point towards each other, the child vertex must be flipped around
@@ -436,8 +437,8 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	printVertex(pChild->m_key);
 	*/
 	
-	K parentKey = pParent->m_key;
-	K childKey = pChild->m_key;
+	LinearNumKey parentKey = pParent->m_key;
+	LinearNumKey childKey = pChild->m_key;
 	
 	/*
 	// check if this node has been merged before
@@ -526,11 +527,11 @@ bool DirectedGraph<K,D>::merge(VertexType* pParent, VertexType* pChild, const ex
 	return true;
 }
 
-template<typename K, typename D>
-void DirectedGraph<K,D>::removeVertex(VertexType* pVertex)
+template<typename D>
+void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 {
-	const K& key = pVertex->m_key;
-	printf("Removing %s\n", key.c_str());
+	const LinearNumKey& key = pVertex->m_key;
+	std::cout << "Removing " << key << "\n";
 
 	// Update the links of this vertex to point to the merged vertex
 	for(size_t dirIdx = 0; dirIdx < NUM_DIRECTIONS; ++dirIdx)
@@ -552,28 +553,24 @@ void DirectedGraph<K,D>::removeVertex(VertexType* pVertex)
 	// Delete this vertex from the table
 
 	// Ensure it exists
-	VertexTableIter iter = m_vertexTable.find(key);
-	assert(iter != m_vertexTable.end());
-		
 	delete pVertex;
 	pVertex = NULL;
-	
-	m_vertexTable.erase(iter);
+	m_vertexTable[key] = NULL;
 }
 
 //
 //
 //
-template<typename K, typename D>
-size_t DirectedGraph<K,D>::getDegree(const K& key, extDirection dir)
+template<typename D>
+size_t DirectedGraph<D>::getDegree(const LinearNumKey& key, extDirection dir)
 {
 	VertexType* pVertex = findVertex(key);
 	return pVertex->numEdges(dir);
 }
 
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-void DirectedGraph<K,D>::validate(Functor dataChecker)
+void DirectedGraph<D>::validate(Functor dataChecker)
 {
 	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
@@ -623,9 +620,9 @@ void DirectedGraph<K,D>::validate(Functor dataChecker)
 }
 
 
-template<typename K, typename D>
+template<typename D>
 template<class DataCostFunctor>
-void DirectedGraph<K,D>::generateComponents(VertexType* pVertex, extDirection dir, size_t maxCost, VertexComponentVector& outComponents, DataCostFunctor& dataCost)
+void DirectedGraph<D>::generateComponents(VertexType* pVertex, extDirection dir, size_t maxCost, VertexComponentVector& outComponents, DataCostFunctor& dataCost)
 {
 	// Create a vertex collection for every sequence directly adjacent to this vertex
 	typename VertexType::EdgeCollection& edgeCollection = pVertex->m_edges[dir];
@@ -645,16 +642,16 @@ void DirectedGraph<K,D>::generateComponents(VertexType* pVertex, extDirection di
 	}
 }
 
-template<typename K, typename D>
-EdgeDescription DirectedGraph<K,D>::getUniqueEdgeDesc(const K& key1, const K& key2, extDirection parentDir)
+template<typename D>
+EdgeDescription DirectedGraph<D>::getUniqueEdgeDesc(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir)
 {
     VertexType* pSourceVertex = findVertex(key1);
     return pSourceVertex->findUniqueEdgeInDir(key2, parentDir);
 }
 
-template<typename K, typename D>
+template<typename D>
 template<class DataCostFunctor>
-void DirectedGraph<K,D>::accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost)
+void DirectedGraph<D>::accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost)
 {	
 	// Add this vertex
 	accumulator.insert(pVertex);
@@ -678,19 +675,19 @@ void DirectedGraph<K,D>::accumulateVertices(VertexType* pVertex, extDirection di
 	}
 }
 
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-void DirectedGraph<K,D>::iterativeVisit(Functor visitor)
+void DirectedGraph<D>::iterativeVisit(Functor visitor)
 {
 	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		visitor.visit(iter->first, iter->second->m_data);
+		visitor.visit((*iter)->m_key, (*iter)->m_data);
 	}
 }
 
-template<typename K, typename D>
+template<typename D>
 template<class Functor>
-void DirectedGraph<K,D>::outputVertexConnectivity(Functor visitor) const
+void DirectedGraph<D>::outputVertexConnectivity(Functor visitor) const
 {
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
@@ -704,14 +701,15 @@ void DirectedGraph<K,D>::outputVertexConnectivity(Functor visitor) const
 //
 // TODO: Move this logic out of this class, its way too specific
 //
-template<typename K, typename D>
+template<typename D>
 template<class MergerFunctor>
-bool DirectedGraph<K,D>::mergePath(const K& key1, const K& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger)
+bool DirectedGraph<D>::mergePath(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger)
 {
 	VertexType* pParent = findVertex(key1);
 	VertexType* pChild = findVertex(key2);
 
-	printf("Path merging %s with %s\n", key1.c_str(), key2.c_str());
+	std::cout << "Path merging " << key1 << " into " << key2 << std::endl;
+
 	//printVertex(key1);
 	//printVertex(key2);
 	
@@ -722,9 +720,9 @@ bool DirectedGraph<K,D>::mergePath(const K& key1, const K& key2, extDirection pa
 	return true;
 }
 
-template<typename K, typename D>
+template<typename D>
 template<class DataCostFunctor, class MergerFunctor>
-bool DirectedGraph<K,D>::mergeShortestPath(const K& key1, const K& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger)
+bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1, const LinearNumKey& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger)
 {
 	// Get the shortest path between the nodes
 	KeyVec path;
@@ -736,117 +734,13 @@ bool DirectedGraph<K,D>::mergeShortestPath(const K& key1, const K& key2, DataCos
 }
 
 //
-// Find a superpath that includes all the nodes in the reachable set
-//
-template<typename K, typename D>
-template<class DataCostFunctor>
-bool DirectedGraph<K,D>::findSuperpaths(const K& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths)
-{
-	VertexType* pSourceVertex = findVertex(sourceKey);
-
-	// Early exit if there are no reachable vertices
-	if(keyConstraints.empty())
-	{
-		return false;
-	}
-	
-	// Create the initial (empty) path
-	VertexPath path;
-	
-	ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);	
-	return !superPaths.empty();
-}
-
-//
-// Perform a constrained DFS through the graph looking for the nodes in the constraint map at the distances specified by the map
-// 
-template<typename K, typename D>
-template<class DataCostFunctor>
-void DirectedGraph<K,D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints, 
-										VertexPath currentPath, FeasiblePaths& solutions,
-										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths)
-{
-	// Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-	if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
-	{
-		return;
-	}
-	
-	// Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
-	typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
-	for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
-	{
-		VertexType* pNextVertex = eIter->pVertex;
-		
-		// add the node to the path
-		PathNode node;
-		node.key = pNextVertex->m_key;
-		node.isRC = eIter->reverse;
-		
-		VertexPath newPath = currentPath;
-		newPath.push_back(node);
-
-		// Update the constraints set
-		KeyIntMap newConstraints = keyConstraints;
-
-		// Make a copy of the constraints
-		typename KeyIntMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
-		if(constraintIter != newConstraints.end())
-		{
-			// This vertex is a valid constraint, remove it from the set
-			std::cout << "Constraint hit\n";
-			newConstraints.erase(constraintIter);
-		}		
-		
-		// Have all the constraints been satisfied?
-		if(newConstraints.empty())
-		{
-			// this path is valid
-			solutions.push_back(newPath);
-			return;
-		}
-		else
-		{
-			// update the path length
-			size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);
-			
-			// Check if this path can possibly support all the constraints
-			bool constraintViolated = false;
-			for(typename KeyIntMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
-			{
-				//std::cout << "a " << cIter->second << " , " << (int)newLength << " result " << (cIter->second < (int)newLength) << "\n";   
-				if(cIter->second < (int)newLength)
-				{
-					//this constraint is violated, the branch will be explored no further
-					constraintViolated = true;
-					break;
-				}	
-			}
-
-			if(constraintViolated)
-			{
-				continue;
-			}
-
-			//printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
-
-			// Get the relative direction for the new node
-			extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);	
-			
-			// recurse
-			ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths);
-		}
-	}
-}
-
-//
 // Compute the single-source shortest path distance to all nodes using dijkstra's algorithm
 // Note that this does not consider direction so it is unsuitable to compute the djikstra shortest path if you
 // are travelling in a particular direction at all times
 //
-template<typename K, typename D>
+template<typename D>
 template<class DataCostFunctor>
-void DirectedGraph<K,D>::dijkstra(const K& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor)
+void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor)
 {
 	//Timer dTimer("dijkstra");
 
@@ -920,13 +814,91 @@ void DirectedGraph<K,D>::dijkstra(const K& sourceKey, ShortestPathData& shortest
 	}
 }
 
+template<typename D>
+template<class DataCostFunctor>
+void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints,
+                                                                                VertexPath currentPath, FeasiblePaths& solutions,
+                                                                                size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths)
+{
+    // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
+    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
+    {
+            return;
+    }
+
+    // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
+    typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
+    for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
+    {
+        VertexType* pNextVertex = eIter->pVertex;
+
+        // add the node to the path
+        PathNode node;
+        node.key = pNextVertex->m_key;
+        node.isRC = eIter->reverse;
+
+        VertexPath newPath = currentPath;
+        newPath.push_back(node);
+
+        // Update the constraints set
+        KeyIntMap newConstraints = keyConstraints;
+
+        // Make a copy of the constraints
+        typename KeyIntMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
+        if(constraintIter != newConstraints.end())
+        {
+                // This vertex is a valid constraint, remove it from the set
+                std::cout << "Constraint hit\n";
+                newConstraints.erase(constraintIter);
+        }
+
+        // Have all the constraints been satisfied?
+        if(newConstraints.empty())
+        {
+                // this path is valid
+                solutions.push_back(newPath);
+                return;
+        }
+        else
+        {
+                // update the path length
+                size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);
+
+                // Check if this path can possibly support all the constraints
+                bool constraintViolated = false;
+                for(typename KeyIntMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
+                {
+                        //std::cout << "a " << cIter->second << " , " << (int)newLength << " result " << (cIter->second < (int)newLength) << "\n";
+                        if(cIter->second < (int)newLength)
+                        {
+                                //this constraint is violated, the branch will be explored no further
+                                constraintViolated = true;
+                                break;
+                        }
+                }
+
+                if(constraintViolated)
+                {
+                        continue;
+                }
+
+                //printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
+
+                // Get the relative direction for the new node
+                extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
+
+                // recurse
+                ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths);
+        }
+    }
+}
 
 //
 // Return the minimum possible path length that will contain every vertex in the set
 //
-template<typename K, typename D>
+template<typename D>
 template<class DataCostFunctor>
-size_t  DirectedGraph<K,D>::getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor)
+size_t  DirectedGraph<D>::getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor)
 {
 	// The minimum possible path length has the longest node as the terminal
 	
@@ -951,10 +923,32 @@ size_t  DirectedGraph<K,D>::getMinPathLength(const VertexPtrSet& vertexSet, Data
 }
 
 //
+// Find a superpath that includes all the nodes in the reachable set
+//
+template<typename D>
+template<class DataCostFunctor>
+bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths)
+{
+    VertexType* pSourceVertex = findVertex(sourceKey);
+
+    // Early exit if there are no reachable vertices
+    if(keyConstraints.empty())
+    {
+            return false;
+    }
+
+    // Create the initial (empty) path
+    VertexPath path;
+
+    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);
+    return !superPaths.empty();
+}
+
 //
 //
-template<typename K, typename D>
-void DirectedGraph<K,D>::extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path)
+//
+template<typename D>
+void DirectedGraph<D>::extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path)
 {
 	VertexType* pCurrVertex = pTarget;
 	while(pCurrVertex != pSource)
@@ -967,9 +961,9 @@ void DirectedGraph<K,D>::extractShortestPath(VertexType* pSource, VertexType* pT
 	std::reverse(path.begin(), path.end());
 }
 
-template<typename K, typename D>
+template<typename D>
 template<typename DataCostFunctor>
-size_t DirectedGraph<K,D>::calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor)
+size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor)
 {
 	size_t len = 0;
 	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
@@ -979,9 +973,9 @@ size_t DirectedGraph<K,D>::calculatePathLength(const VertexPath& path, DataCostF
 	return len;
 }
 
-template<typename K, typename D>
+template<typename D>
 template<typename DataCostFunctor>
-void DirectedGraph<K,D>::makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<K, int>& distanceMap)
+void DirectedGraph<D>::makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<LinearNumKey, int>& distanceMap)
 {
 	// the path distance to a node is the distance that walks through all the nodes leading to it
 	// the first node in a path therefore has a distance of 0 by def

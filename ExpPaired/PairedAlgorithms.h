@@ -11,14 +11,15 @@
 #include "DirectedGraph.h"
 #include "ContigData.h"
 
-typedef DirectedGraph<ContigID, ContigData> ContigGraph;
+typedef DirectedGraph<ContigData> ContigGraph;
+typedef std::vector<Contig> ContigVec;
 
 namespace PairedAlgorithms
 {
 
-void readContigMap(std::string file, ContigMap& outMap);
-void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
-void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB);
+void readContigVec(std::string file, ContigVec& outVec);
+bool parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
+//void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB);
 
 };
 

@@ -35,7 +35,7 @@ void ContigPath::appendPath(const ContigPath& other)
 //
 //
 //
-size_t ContigPath::findFirstOf(ContigID id)
+size_t ContigPath::findFirstOf(LinearNumKey id)
 {
 	size_t maxIdx = getNumNodes();
 	for(size_t idx = 0; idx < maxIdx; ++idx)
@@ -52,7 +52,7 @@ size_t ContigPath::findFirstOf(ContigID id)
 //
 //
 //
-size_t ContigPath::findLastOf(ContigID id)
+size_t ContigPath::findLastOf(LinearNumKey id)
 {
 	size_t maxIdx = getNumNodes();
 	for(size_t idx = 0; idx < maxIdx; ++idx)

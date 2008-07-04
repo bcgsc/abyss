@@ -93,12 +93,12 @@ void ContigDataOutputter::visit(const ContigID& id, const ContigData& data)
 	m_pWriter->WriteSequence(data.getSeq(), iID, 0);
 }
 
+#if 0
 int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* /*pGraph*/, const ContigID /*id*/)
 {
-
 	// function no longer used
 	assert(false);
-#if 0
+
 	int numMerged = 0;
 	printf("\n\n***ATTEMPTING TO RESOLVE %s***\n\n", id.c_str());
 	
@@ -229,10 +229,10 @@ int PairedMerger::resolve(DirectedGraph<ContigID, ContigData>* /*pGraph*/, const
 	}
 	
 	return numMerged;
-#endif
+
 }
 
-
+#endif
 
 
 //

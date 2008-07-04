@@ -14,8 +14,8 @@
 #include "ContigPath.h"
 
 // Typedefs
-typedef std::vector<NumericID> NumericIDVector;
-typedef std::vector<NumericIDVector > NumericIDVectorVector;
+typedef std::vector<LinearNumKey> LinearNumVector;
+typedef std::vector<LinearNumVector > LinearNumKeyVector;
 
 // FUNCTORS
 struct SimpleDataCost
@@ -30,7 +30,7 @@ struct SimpleDataCost
 // FUNCTIONS
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer);
 void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
-void outputContigPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const ContigPath& contigPath);
+void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath);
 
 //
 //
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 	SimpleContigGraph* pContigGraph = new SimpleContigGraph;
 	
 	// Load the lengths
-	ContigLengthMap contigLens;	
+	ContigLengthVec contigLens;	
 	loadContigLengths(lenFile, contigLens);
 	
 	// Load the graph from the adjacency file
@@ -61,6 +61,8 @@ int main(int argc, char** argv)
 	
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(pContigGraph, estFile, kmer);
+	
+	delete pContigGraph;
 }
 
 //
@@ -127,7 +129,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				// Calculate the path distance to each node and see if it is within the estimated distance
 				SimpleContigGraph::VertexPath sol = solutions.front();
 				
-				std::map<NumericID, int> distanceMap;
+				std::map<LinearNumKey, int> distanceMap;
 				pContigGraph->makeDistanceMap(sol, costFunctor, distanceMap);
 				
 				// Filter
@@ -136,7 +138,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					std::cout << "Contig " << *iter << std::endl;
 					
 					// look up in the distance map
-					std::map<NumericID, int>::iterator dmIter = distanceMap.find(iter->nID);
+					std::map<LinearNumKey, int>::iterator dmIter = distanceMap.find(iter->nID);
 					if(dmIter != distanceMap.end())
 					{
 						// translate distance by -overlap to match coordinate space used by the estimate
@@ -164,7 +166,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				{
 					ContigPath cPath;
 					constructContigPath(sol, cPath);
-					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);					
+					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);	
 				}
 				uniqueEnd++;
 			}
@@ -199,17 +201,15 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 	bool flip = false;
 	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
 	{
-		ContigID id = convertNumericIDToContigID(iter->key);
 		flip = flip ^ iter->isRC;
-		MergeNode mn = {id, flip};
+		MergeNode mn = {iter->key, flip};
 		contigPath.appendNode(mn);
 	}
 }
 
-void outputContigPath(std::ofstream& outStream, NumericID refNode, extDirection dir, const ContigPath& contigPath)
+void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
 {
 	std::cout << "outting path " << refNode << std::endl;
-	ContigID realID = convertNumericIDToContigID(refNode);
-	outStream << "@ " << realID << "," << dir << " -> ";
+	outStream << "@ " << refNode << "," << dir << " -> ";
 	outStream << contigPath << "\n";
 }

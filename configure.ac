@@ -74,7 +74,6 @@ AC_CONFIG_FILES([
 	Parallel/Makefile
 	bin/Makefile
 	fasta2psq/Makefile
-	Paired/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
 	SimpleGraph/Makefile

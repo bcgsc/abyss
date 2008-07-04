@@ -10,6 +10,7 @@
 #include "DirectedGraph.h"
 #include "Stats.h"
 
+
 //
 // Functor objects that can be passed into generic classes
 //
@@ -66,7 +67,7 @@ struct ContigDataOutputter
 	size_t m_numOutput;
 };
 
-
+#if 0
 struct PairedMerger
 {
 	PairedMerger(size_t kmer, size_t maxLength, PairedResolvePolicy* pResolvePolicy, AlignmentCache* pDB) : m_kmer(kmer), m_maxlength(maxLength), m_pResolvePolicy(pResolvePolicy), m_pDatabase(pDB) { }
@@ -80,6 +81,7 @@ struct PairedMerger
 	PairedResolvePolicy* m_pResolvePolicy;
 	AlignmentCache* m_pDatabase;
 };
+#endif
 
 struct PairAdder
 {
@@ -123,7 +125,6 @@ struct PairedResolveVisitor
 size_t scorePath(const ContigSupportMap& scoreMap, const ContigIDVec& path);
 void getReachableSet(const ContigData& data, extDirection dir, ContigIDSet& idSet);
 bool isJoinUnique(const ContigData& data, extDirection dir, ContigID targetID);
-
 
 
 

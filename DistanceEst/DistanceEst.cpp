@@ -26,7 +26,7 @@ typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
 int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
-void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, const PDF& pdf);
+void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
 // Go through a list of pairings and provide a maximum likelihood estimate of the distance
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
 	
 	// Load the length map
-	ContigLengthMap contigLens;	
+	ContigLengthVec contigLens;	
 	loadContigLengths(contigLengthFile, contigLens);
 
 	// Estimate the distances between contigs, one at a time
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 	return 1;
 } 
 
-void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, const PDF& pdf)
+void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)
 {
 	(void)pdf;
 	AlignExtractor extractor(alignFile);
@@ -111,9 +111,13 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 		assert(currPairs.size() > 0);
 		ContigID refContigID = currPairs.front().refRec.contig;
 		
-		std::cout << "Ref ctg " << refContigID << "\n";
+		// From this point all ids will be interpreted as integers
+		// They must be strictly > 0 and contiguous
+		LinearNumKey refNumericID = convertContigIDToLinearNumKey(refContigID.c_str());
+		
+		std::cout << "Ref ctg " << refNumericID << "\n";
 		// Only process contigs that are a reasonable length
-		int refLength = lookupLength(lengthMap, refContigID);
+		int refLength = lookupLength(lengthVec, refNumericID);
 		if(refLength < 100)
 		{
 			continue;
@@ -151,9 +155,10 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 			for(PairDataMap::iterator pdIter = dataMap.begin(); pdIter != dataMap.end(); ++pdIter)
 			{
 				ContigID pairID = pdIter->first;
+				LinearNumKey pairNumID = convertContigIDToLinearNumKey(pairID);
 				// get the contig lengths
-				int refContigLength = lookupLength(lengthMap, refContigID);
-				int pairContigLength = lookupLength(lengthMap, pairID);
+				int refContigLength = lookupLength(lengthVec, refNumericID);
+				int pairContigLength = lookupLength(lengthVec, pairNumID);
 				
 				// Check if the pairs are in a valid orientation
 				if(pdIter->second.compCount[0] > 0 && pdIter->second.compCount[1] > 0)
@@ -170,7 +175,7 @@ void processContigs(std::string alignFile, const ContigLengthMap& lengthMap, con
 					int distance = estimateDistance(refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
 					
 					Estimate est;
-					est.cID = pairID;
+					est.nID = pairNumID;
 					est.distance = distance;
 					est.numPairs = pdIter->second.pairVec.size();
 					

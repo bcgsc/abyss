@@ -16,18 +16,18 @@ struct PathMergeRecord
 };
 
 typedef std::list<MergeNode> MergeNodeList;
-typedef std::map<ContigID, PathMergeRecord> ContigPathMap;
+typedef std::map<LinearNumKey, PathMergeRecord> ContigPathMap;
 
 // Functions
-void readIDIntPair(std::string str, ContigID& id, int& i);
+void readIDIntPair(std::string str, LinearNumKey& id, int& i);
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
-void parsePathLine(std::string pathLine, ContigID& id, extDirection& dir, ContigPath& path);
-void linkPaths(ContigID id, ContigPathMap& contigPathMap);
-void mergePath(ContigID cID, ContigMap& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer);
+void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path);
+void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
+void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
-void makeCanonicalPath(ContigID id, const PathMergeRecord& pmr, ContigPath& canonical);
-bool extractMinCoordSet(ContigID anchor, ContigPath& path, size_t& start, size_t& end);
-bool checkPathConsistency(ContigID path1Root, ContigID path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
+void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& canonical);
+bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end);
+bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 int main(int argc, char** argv)
@@ -47,8 +47,8 @@ int main(int argc, char** argv)
 	// Read the contigs
 	
 	// Set up the ID->sequence mapping
-	ContigMap contigMap;
-	PairedAlgorithms::readContigMap(contigFile, contigMap);
+	ContigVec contigVec;
+	PairedAlgorithms::readContigVec(contigFile, contigVec);
 	
 	// Read the paths file
 	ContigPathMap contigPathMap;
@@ -66,16 +66,14 @@ int main(int argc, char** argv)
 	
 	FastaWriter writer("final.fa");
 	
-	// output a path
+	// output the paths
 	iter = contigPathMap.begin();
 	int count = 0;
 	while(iter != contigPathMap.end())
 	{
-		mergePath(iter->first, contigMap, iter->second, count++, kmer, &writer);
+		mergePath(iter->first, contigVec, iter->second, count++, kmer, &writer);
 		iter++;
 	}	
-	
-	
 	
 	return 1;
 } 
@@ -91,7 +89,7 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 		getline(pathStream, pathRecord);
 		
 		// parse the line
-		ContigID id;
+		LinearNumKey id;
 		extDirection dir;
 		ContigPath path;
 		parsePathLine(pathRecord, id, dir, path);
@@ -102,7 +100,7 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 	pathStream.close();
 }
 
-void linkPaths(ContigID id, ContigPathMap& contigPathMap)
+void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 {	
 	// Make the canonical path which is [AS root S]
 	PathMergeRecord& refPMR = contigPathMap[id];
@@ -185,7 +183,7 @@ void linkPaths(ContigID id, ContigPathMap& contigPathMap)
 // Check if the two paths are consistent
 // They are consistent if there is an identical subpath thats belongs to both nodes and that subpath is terminal wrt to its super path
 //
-bool checkPathConsistency(ContigID /*path1Root*/, ContigID path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2)
+bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2)
 {
 	// Find the provisional minimal index set by choosing the closest index pair of the root nodes from each path
 	// Since each path must contain each root node, if the range of these indices are different
@@ -281,7 +279,7 @@ bool checkPathConsistency(ContigID /*path1Root*/, ContigID path2Root, ContigPath
 
 // Extract the minimal coordinate set of the indices of (c1, c2) from path.
 // Returns true if a valid coordinate set is found, false otherwise
-bool extractMinCoordSet(ContigID anchor, ContigPath& path, size_t& start, size_t& end)
+bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end)
 {
 	int coords1[2];
 	
@@ -347,7 +345,7 @@ bool extractMinCoordSet(ContigID anchor, ContigPath& path, size_t& start, size_t
 	
 }
 
-void makeCanonicalPath(ContigID id, const PathMergeRecord& pmr, ContigPath& canonical)
+void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& canonical)
 {
 	MergeNode rootNode = {id, 0};
 	
@@ -362,10 +360,11 @@ void makeCanonicalPath(ContigID id, const PathMergeRecord& pmr, ContigPath& cano
 }
 
 
-void mergePath(ContigID cID, ContigMap& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer)
+void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer)
 {
 	std::cout << "Attempting to merge " << cID << "\n";
 	Sequence merged = sourceContigs[cID].seq;
+	
 	assert(!merged.empty());
 
 	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
@@ -446,7 +445,7 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path)
 	}	
 }
 
-void parsePathLine(std::string pathLine, ContigID& id, extDirection& dir, ContigPath& path)
+void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path)
 {
 	std::string discard;
 	
@@ -470,12 +469,15 @@ void parsePathLine(std::string pathLine, ContigID& id, extDirection& dir, Contig
 }
 
 
-void readIDIntPair(std::string str, ContigID& id, int& i)
+void readIDIntPair(std::string str, LinearNumKey& id, int& i)
 {
 	std::stringstream ss(str);
 	
 	// read in the id
-	getline(ss, id, ',');
+	std::string idLine;
+	getline(ss, idLine, ',');
+	
+	id = convertContigIDToLinearNumKey(idLine);
 	
 	std::string intStr;
 	ss >> intStr;

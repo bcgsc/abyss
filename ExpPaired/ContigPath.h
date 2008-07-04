@@ -6,10 +6,11 @@
 #include <iterator>
 #include <list>
 #include "CommonDefs.h"
+#include "DirectedGraph.h"
 
 struct MergeNode
 {
-	ContigID id;
+	LinearNumKey id;
 	bool isRC;
 	
 	void flip() { isRC = (isRC) ? 0 : 1; }
@@ -63,10 +64,10 @@ class ContigPath
 		MergeNode& getNode(size_t idx) { assert(idx < m_path.size()); return m_path[idx]; }
 		
 		// Returns the index of the first node that matches id
-		size_t findFirstOf(ContigID id);
+		size_t findFirstOf(LinearNumKey id);
 		
 		// Returns the index of the last node that matches id
-		size_t findLastOf(ContigID id);
+		size_t findLastOf(LinearNumKey id);
 		
 		// reverse the path
 		void reverse(bool flipNodes);

@@ -20,25 +20,19 @@ struct SimpleContigData
 	int length;
 };
 
-typedef std::map<ContigID, int> ContigLengthMap;
-typedef int NumericID;
-typedef DirectedGraph<NumericID, SimpleContigData> SimpleContigGraph;
-
-// FUNCTIONS
-NumericID convertContigIDToNumericID(const ContigID& id);
-ContigID convertNumericIDToContigID(const NumericID& id);
+typedef std::vector<int> ContigLengthVec;
+typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
 
 // STRUCTURES
 struct Estimate
 {
-	ContigID cID;
-	NumericID nID;
+	LinearNumKey nID;
 	int distance;
 	int numPairs;
 	
 	friend std::ostream& operator<<(std::ostream& out, const Estimate& object)
 	{
-		out << object.cID << "," << object.distance << "," << object.numPairs;
+		out << object.nID << "," << object.distance << "," << object.numPairs;
 		return out;
 	} 
   
@@ -55,9 +49,7 @@ struct Estimate
 	
 		getline(recss, data, ',');
 		convertor.str(data);
-		convertor >> object.cID;
-		
-		object.nID = convertContigIDToNumericID(object.cID);
+		convertor >> object.nID;
 	
 		getline(recss, data, ',');
 		convertor.clear();
@@ -110,7 +102,7 @@ typedef std::vector<Estimate> EstimateVector;
 
 struct EstimateRecord
 {
-	NumericID refID;
+	LinearNumKey refID;
 	EstimateVector estimates[2];
 };
 
@@ -118,14 +110,19 @@ struct EstimateRecord
 void readEstimateRecord(std::ifstream& stream, EstimateRecord& er);
 
 // Adjacency file
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthMap& lengthMap, std::string file);
-void parseAdjacencyLine(std::string& adjLine, ContigID currVert, SimpleContigGraph* pGraph);
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthMap, std::string file);
+void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleContigGraph* pGraph);
 
 // Length files
-void loadContigLengths(std::string contigLenFile, ContigLengthMap& lengthMap);
-int lookupLength(const ContigLengthMap& lengthMap, const ContigID& id);
+void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
+int lookupLength(const ContigLengthVec& lengthMap, const LinearNumKey& id);
 
 // PDF loader
 PDF loadPDF(std::string distCountFile, const int limit);
+
+// Convertor
+LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
+
+
 
 #endif
