@@ -182,6 +182,7 @@ class DirectedGraph
 		};
 	
 		DirectedGraph() { };
+		DirectedGraph(const size_t sizeHint) { m_vertexTable.reserve(sizeHint); }
 		~DirectedGraph();
 		
 		// get the data pointer

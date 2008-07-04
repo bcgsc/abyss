@@ -822,7 +822,7 @@ void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSiz
 					currBranch, contig);
 
 			// Output the contig
-			fileWriter->WriteSequence(contig, ++contigID,
+			fileWriter->WriteSequence(contig, contigID++,
 					currBranch.calculateBranchMultiplicity());
 		}
 

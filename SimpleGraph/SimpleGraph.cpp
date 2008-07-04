@@ -47,13 +47,33 @@ int main(int argc, char** argv)
 	std::string adjFile(argv[2]);
 	std::string lenFile(argv[3]);
 	std::string estFile(argv[4]);
+	
+	bool preallocVecs = false;
+	size_t preallocSize = 0;
+	if(argc == 6)
+	{
+		preallocVecs = true;
+		preallocSize = atoi(argv[5]);
+	}
+	
 	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << std::endl;
 	
 	// Create the graph
-	SimpleContigGraph* pContigGraph = new SimpleContigGraph;
+	SimpleContigGraph* pContigGraph;
+	ContigLengthVec contigLens;	
+	
+	if(preallocVecs)
+	{
+		std::cout << "preallocating vectors to be " << preallocSize << "\n";
+		pContigGraph = new SimpleContigGraph(preallocSize);
+		contigLens.reserve(preallocSize);
+	}
+	else
+	{
+		pContigGraph = new SimpleContigGraph();
+	}
 	
 	// Load the lengths
-	ContigLengthVec contigLens;	
 	loadContigLengths(lenFile, contigLens);
 	
 	// Load the graph from the adjacency file

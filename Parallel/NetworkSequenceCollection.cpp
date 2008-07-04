@@ -1153,7 +1153,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 
 				// Output the contig
 				fileWriter->WriteSequence(contig,
-						m_numAssembled + ++currContigID,
+						m_numAssembled + currContigID++,
 						currBranch.calculateBranchMultiplicity());
 			}
 			
