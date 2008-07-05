@@ -1083,7 +1083,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 			AssemblyAlgorithms::processTerminatedBranchAssemble( 
 					seqCollection, currBranch, contig);
 			fileWriter->WriteSequence(contig,
-					m_numAssembled + ++numAssembled,
+					m_numAssembled + numAssembled++,
 					currBranch.calculateBranchMultiplicity());
 			continue;
 		}
