@@ -586,6 +586,12 @@ void NetworkSequenceCollection::parseControlMessage()
 			m_checkpointSum += controlMsg.argument;
 			break;	
 		}
+		case APC_BARRIER:
+		{
+			assert(m_state == NAS_WAITING);
+			m_pComm->barrier();
+			break;
+		}
 		case APC_FINISHED:
 		{
 			SetState(NAS_DONE);
@@ -1031,6 +1037,8 @@ int NetworkSequenceCollection::controlPopBubbles()
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
+		m_pComm->SendControlMessage(m_numDataNodes, APC_BARRIER);
+		m_pComm->barrier();
 		SetState(NAS_POPBUBBLE);
 		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
 				m_numPopped + numPopped);

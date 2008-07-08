@@ -36,12 +36,15 @@ class CommLayer
 		// Return whether the queue of messages is empty.
 		bool empty() const;
 		
+		// Block until all processes have reached this routine.
+		void barrier();
+		
 		// Send a control message
 		void SendControlMessage(int numNodes, APControl m, int argument = 0);
 		
 		// Send a control message to a specific node
 		uint64_t SendControlMessageToNode(int nodeID, APControl m, int argument = 0);
-		
+
 		// Receive a control message
 		ControlMessage ReceiveControlMessage();
 		

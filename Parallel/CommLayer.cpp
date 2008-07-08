@@ -1,4 +1,5 @@
 #include "CommLayer.h"
+#include "Log.h"
 
 //
 //
@@ -54,6 +55,14 @@ bool CommLayer::empty() const
 {
 	int sendID;
 	return CheckMessage(sendID) == APM_NONE;
+}
+
+/** Block until all processes have reached this routine. */
+void CommLayer::barrier()
+{
+	PrintDebug(4, "entering barrier\n");
+	MPI_Barrier(MPI_COMM_WORLD);
+	PrintDebug(4, "left barrier\n");
 }
 
 uint64_t CommLayer::SendCheckPointMessage(int argument)
