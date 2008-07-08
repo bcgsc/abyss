@@ -99,10 +99,10 @@ void readFastqRecord(std::ifstream& stream, std::string& readID, Sequence& seq)
 	std::string buffer;
 
 	// Read the header.
+	char c = stream.get();
+	assert(c == '@');
+	stream >> readID;
 	getline(stream, buffer);
-	assert(buffer[0] == '@');
-	
-	readID = buffer.substr(1);
 	
 	// Read the sequence.
 	getline(stream, seq);
