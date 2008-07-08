@@ -64,84 +64,90 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
 		{
 			//printf("Seq: %s Contig: %s position: %d\n", seq.decode().c_str(), resultIter->second.contig.c_str(), resultIter->second.pos);
-			int pos = resultIter->second.pos;
-			ContigID contig = resultIter->second.contig;
-			aligns[contig].insert(pos);
+			int read_pos;
+			
+			// The read position coordinate is wrt to the forward read position
+			if(!isRC)
+			{
+				read_pos = i;
+			}
+			else
+			{
+				read_pos = Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
+			}
+			
+			Alignment align = createAlignment(resultIter->second.contig, resultIter->second.pos, read_pos, m_hashSize, seqLen, isRC);
+			aligns[resultIter->second.contig].push_back(align);
 		}
 	}
 	
 	coalesceAlignments(aligns, isRC, resultVector);
 }
 
-void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector)
+void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, AlignmentVector& resultVector)
 {
 	AlignmentResult result;
 	AlignmentVector allAlignments;
-	int bestLength = 0;
 	
 	// For each contig that this read hits, coalesce the alignments into contiguous groups
 	for(AlignmentSet::const_iterator ctgIter = alignSet.begin(); ctgIter != alignSet.end(); ++ctgIter)
 	{
+		AlignmentVector alignVec = ctgIter->second;
+		
+		if(alignVec.empty())
+		{
+			continue;
+		}
+		
+		// Sort the alignment vector by contig alignment position
+		sort(alignVec.begin(), alignVec.end(), compareContigPos);
+				
 		// Get the starting position
 		assert(!ctgIter->second.empty());
-		IntSet::iterator prevIter = ctgIter->second.begin();
-		IntSet::iterator currIter = prevIter;
-		currIter++;
+		AlignmentVector::iterator prevIter = alignVec.begin();
+		AlignmentVector::iterator currIter = alignVec.begin() + 1;
 		
-		int currAlignStart = *prevIter;
+		Alignment currAlign = *prevIter;
 
-		while(currIter != ctgIter->second.end())
+		while(currIter != alignVec.end())
 		{
+			//std::cout << "CurrAlign: " << currAlign << "\n";
+			//std::cout << "AlignIter: " << *currIter << "\n";
+			
 			// Discontinuity found
-			if(*currIter != *prevIter + 1)
-			{
-				// create the alignment
-				Alignment align = createAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
-				
-				// store the best length
-				if(align.length > bestLength)
-				{
-					bestLength = align.length;
-				}
-				
+			if(currIter->contig_start_pos != prevIter->contig_start_pos + 1)
+			{	
+				//std::cout << "	Discontinous, saving\n";
 				// save the alignment
-				allAlignments.push_back(align);
-					
-				currAlignStart = *currIter;
+				resultVector.push_back(currAlign);	
+				currAlign = *currIter;
+			}
+			else
+			{
+				//bstd::cout << "	Continous, updating\n";
+				// alignments are consistent, increase the length of the alignment
+				currAlign.align_length++;
+				currAlign.read_start_pos = std::min(currAlign.read_start_pos, currIter->read_start_pos);
 			}
 			
 			prevIter = currIter;
 			currIter++;
 		}
 		
-		// Create the last alignment
-		Alignment align = createAlignment(ctgIter->first, currAlignStart, *prevIter, isRC);
-		if(align.length > bestLength)
-		{
-			bestLength = align.length;
-		}		
-		
 		// save the alignment
-		allAlignments.push_back(align);
+		resultVector.push_back(currAlign);
 	}
 	
-	// Filter the alignments to only return the best (longest) alignment(s)	
-	// TODO: axe this? maybe return everything for super-strict alignments
-	for(AlignmentVector::iterator alignIter = allAlignments.begin(); alignIter != allAlignments.end(); alignIter++)
-	{
-		//if(alignIter->length >= bestLength)
-		{
-			resultVector.push_back(*alignIter);	
-		}	
-	}
 }
 
-Alignment Aligner::createAlignment(ContigID contig, int start, int end, bool isRC)
+Alignment Aligner::createAlignment(ContigID contig, int contig_start, int read_start, int align_length, int read_length, bool isRC)
 {
 	Alignment align;
 	align.contig = contig;
-	align.start = start;
-	align.length = (end + m_hashSize) - start;
+	align.contig_start_pos = contig_start;
+	align.read_start_pos = read_start;
+	align.align_length = align_length;
+	align.read_length = read_length;
 	align.isRC = isRC;
 	return align;
 }

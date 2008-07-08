@@ -63,10 +63,15 @@ void readEstimateRecord(std::ifstream& stream, EstimateRecord& er)
 //
 //
 //
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthVec, std::string file)
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile)
 {
+	
+	// Load the lengths temporarily
+	ContigLengthVec* pLengthVec = new ContigLengthVec();
+	loadContigLengths(lengthFile, *pLengthVec);
+	
 	// First, load the vertices
-	std::ifstream inStream(file.c_str());
+	std::ifstream inStream(adjFile.c_str());
 	
 	int numAdded = 0;
 	while(!inStream.eof() && inStream.peek() != EOF)
@@ -75,7 +80,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthVec,
 		inStream >> id;
 		
 		SimpleContigData data;
-		data.length = lookupLength(lengthVec, id);
+		data.length = lookupLength(*pLengthVec, id);
 		
 		// Add the vertex to the graph
 		pGraph->addVertex(id, data);
@@ -93,6 +98,10 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthVec,
 			printf("added %d verts\n", numAdded);
 		}
 	}
+	
+	// Delete the lengths to free up space
+	delete pLengthVec;
+	pLengthVec = NULL;
 	
 	// Now, load the edges
 	
@@ -183,13 +192,12 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 	ifstream contigLenStream(contigLenFile.c_str());
 	while(!contigLenStream.eof() && contigLenStream.peek() != EOF)
 	{
+		LinearNumKey id;
+		int len;		
 		std::string line;
 		getline(contigLenStream, line);
 		
-		std::stringstream converter(line);
-		LinearNumKey id;
-		int len;
-		converter >> id >> len;
+		sscanf(line.c_str(), "%d %d", &id, &len);
 		
 		if(id != lengthVec.size())
 		{

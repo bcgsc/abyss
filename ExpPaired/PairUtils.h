@@ -110,7 +110,7 @@ struct EstimateRecord
 void readEstimateRecord(std::ifstream& stream, EstimateRecord& er);
 
 // Adjacency file
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph, ContigLengthVec& lengthMap, std::string file);
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile);
 void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleContigGraph* pGraph);
 
 // Length files

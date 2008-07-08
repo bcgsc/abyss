@@ -58,12 +58,9 @@ template<typename K, typename D>
 struct Vertex
 {
 	Vertex(const K& k, const D& d) : m_key(k), m_data(d) { }
-	K m_key;
-	D m_data;
 		
 	// typedefs for convienance
 	typedef Vertex<K,D> VertexType;
-	typedef std::set<K> MergeRecord;
 	
 	struct EdgeData
 	{
@@ -78,7 +75,7 @@ struct Vertex
 	
 
 		
-	typedef typename std::list<EdgeData> EdgeCollection;
+	typedef typename std::vector<EdgeData> EdgeCollection;
 	typedef typename EdgeCollection::iterator EdgeCollectionIter;
 	typedef typename EdgeCollection::const_iterator EdgeCollectionConstIter;
 	
@@ -124,8 +121,9 @@ struct Vertex
 	// Print the edges of this node
 	void printEdges() const;
 		
+	K m_key;
+	D m_data;	
 	EdgeCollection m_edges[NUM_DIRECTIONS];
-	MergeRecord m_mergeRecord;
 	
 };
 
@@ -212,7 +210,7 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& constraintMap, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths);
+		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& constraintMap, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths, int& compCost);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique

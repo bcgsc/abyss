@@ -15,27 +15,68 @@
 struct Alignment
 {
 	ContigID contig;
-	int start;
-	int length;
+	int contig_start_pos;
+	int read_start_pos;
+	int align_length;
+	int read_length;
 	bool isRC;
+	
+	// The position in read space is the alignment pos on the contig offset by where in the read the hit was
+	// This can be negative
+	int readSpacePosition() 
+	{ 
+		if(!isRC)
+		{
+			return contig_start_pos - read_start_pos;
+		}
+		else
+		{
+			return contig_start_pos + read_start_pos;
+		}
+	}
+	
+	// flip the alignment with respect to the contig size
+	void flip(int contigLength)
+	{
+		// flip the contig start position
+		contig_start_pos = contigLength - (contig_start_pos + align_length);
+		
+		// flip the read start pos
+		read_start_pos = calculateReverseReadStart(read_start_pos, read_length, align_length);
+		
+		// flip the rc bit
+		isRC = !isRC;
+	}
+	
+	static int calculateReverseReadStart(int pos, int readLen, int alignLength)
+	{
+		return (readLen - pos) - alignLength;
+	}
 	
 	// input a record
 	friend std::istream& operator>> (std::istream& in, Alignment& a)
 	{
 		// Read 1 record from the stream
 		in >> a.contig;
-		in >> a.start;
-		in >> a.length;
+		in >> a.contig_start_pos;
+		in >> a.read_start_pos;
+		in >> a.align_length;
+		in >> a.read_length;
 		in >> a.isRC;
 				
 		return in;
 	}
 	
 	// output a record
-	friend std::ostream& operator<< (std::ostream& o, Alignment& a)
+	friend std::ostream& operator<< (std::ostream& o, const Alignment& a)
 	{
-		o << a.contig << " " << a.start << " " << a.length << " " << a.isRC;
+		o << a.contig << " " << a.contig_start_pos << " " << a.read_start_pos << " " << a.align_length << " " << a.read_length << " " << a.isRC;
 		return o;
+	}
+	
+	friend int compareContigPos(const Alignment& a1, const Alignment& a2)
+	{
+		return a1.contig_start_pos < a2.contig_start_pos;
 	}
 };
 
@@ -46,11 +87,11 @@ typedef __gnu_cxx::hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeq
 typedef SeqPosHashMap::const_iterator SPHMConstIter;
 typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
 
-typedef std::set<int> IntSet;
-typedef std::map<ContigID, IntSet > AlignmentSet;
+typedef std::vector<Alignment> AlignmentVector;
+typedef std::map<ContigID, AlignmentVector > AlignmentSet;
 typedef std::map<ContigID, int > AlignmentResult;
 
-typedef std::vector<Alignment> AlignmentVector;
+
 
 
 
@@ -78,7 +119,7 @@ class Aligner
 		void coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector);
 	
 		// Create a single alignment from a start and end position
-		Alignment createAlignment(ContigID contig, int start, int end, bool isRC);
+		Alignment createAlignment(ContigID contig, int contig_start, int read_start, int align_length, int read_length, bool isRC);
 		
 		// The number of bases to hash on
 		int m_hashSize;

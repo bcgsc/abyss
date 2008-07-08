@@ -19,7 +19,7 @@ void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse)
 	{
 		if(*edgeIter == data)
 		{
-			std::cout << "Warning, attempted to add duplicate edge\n";
+			std::cout << "Warning, attempted to add duplicate edge (" << m_key << ") -> " << pNode->m_key << "," << dir << "," << reverse << "\n";
 			return;
 		}
 	}
@@ -521,8 +521,6 @@ bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extD
 	//printVertex(pPartner->m_key);	
 	*/
 	
-	pParent->m_mergeRecord.insert(childKey);
-	
 	// merged, return true
 	return true;
 }
@@ -814,6 +812,41 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData&
 	}
 }
 
+//
+// Find a superpath that includes all the nodes in the reachable set
+//
+static int gExaminedCount;
+const int EXAMINE_LIMIT = 100000;
+
+template<typename D>
+template<class DataCostFunctor>
+bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths, int& compCost)
+{
+    VertexType* pSourceVertex = findVertex(sourceKey);
+
+    // Early exit if there are no reachable vertices
+    if(keyConstraints.empty())
+    {
+            return false;
+    }
+
+    // Create the initial (empty) path
+    VertexPath path;
+
+    gExaminedCount = 0;
+    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);
+    compCost = gExaminedCount;
+    // was the limit hit?
+    if(gExaminedCount >= EXAMINE_LIMIT)
+    {
+    	// Remove paths, the search did not complete
+    	std::cout << "Computational limit exceeded, aborted search\n";
+    	superPaths.clear();
+    }
+    
+    return !superPaths.empty();
+}
+
 template<typename D>
 template<class DataCostFunctor>
 void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints,
@@ -821,10 +854,12 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
                                                                                 size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths)
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
+    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths || gExaminedCount >= EXAMINE_LIMIT)
     {
             return;
     }
+    
+    gExaminedCount++;
 
     // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
     typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
@@ -920,28 +955,6 @@ size_t  DirectedGraph<D>::getMinPathLength(const VertexPtrSet& vertexSet, DataCo
 	// Subtract the largest cost
 	pathLength -= maxCost;
 	return pathLength;
-}
-
-//
-// Find a superpath that includes all the nodes in the reachable set
-//
-template<typename D>
-template<class DataCostFunctor>
-bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths)
-{
-    VertexType* pSourceVertex = findVertex(sourceKey);
-
-    // Early exit if there are no reachable vertices
-    if(keyConstraints.empty())
-    {
-            return false;
-    }
-
-    // Create the initial (empty) path
-    VertexPath path;
-
-    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);
-    return !superPaths.empty();
 }
 
 //

@@ -12,6 +12,8 @@ typedef std::map<std::string, AlignmentVector> ReadAlignMap;
 
 
 // FUNCTIONS
+bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
+
 std::string makePairID(std::string refID);
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable);
 
@@ -20,11 +22,13 @@ int main(int argc, char* const* argv)
 
 	if(argc < 2)
 	{
-		std::cout << "Usage: <list of files to parse>\n";
+		std::cout << "Usage: <kmer size> <list of files to parse>\n";
 		exit(1);
 	}
 	
-	int numFiles = argc - 1;
+	int kmer = atoi(argv[1]);
+	assert(kmer > 0);
+	int numFiles = argc - 2;
 	
 	std::ofstream pairedAlignFile("PairAligns.txt");
 	std::ofstream distanceList("DistanceList.txt");	
@@ -33,14 +37,17 @@ int main(int argc, char* const* argv)
 	
 	for(int fileIdx = 0; fileIdx < numFiles; ++fileIdx)
 	{
-		std::string file(argv[fileIdx+1]);
+		std::string file(argv[fileIdx+2]);
 		readAlignmentsFile(file, alignTable);
 	}
+	
+	std::cout << "Align table has " << alignTable.size() << " entries\n";
 				
 	int numDifferent = 0;
 	int numSame = 0;
 	int numMissed = 0;
 	int numMulti = 0;
+	int numNonSingle = 0;
 	
 	// parse the alignment table
 	for(ReadAlignMap::iterator iter = alignTable.begin(); iter != alignTable.end(); ++iter)
@@ -52,33 +59,53 @@ int main(int argc, char* const* argv)
 		ReadAlignMap::iterator pairIter = alignTable.find(pairID);
 		if(pairIter != alignTable.end())
 		{
-			if(iter->second.size() == 1 && pairIter->second.size() == 1)
+			// Only use if the ref alignment is singular
+			// The pair alignment can be broken up (but not multiple!)
+			bool isRefUnique = checkUniqueAlignments(kmer, iter->second);
+			bool isPairUnique = checkUniqueAlignments(kmer, pairIter->second);
+			
+			if((iter->second.size() == 1 || pairIter->second.size() == 1) && isRefUnique && isPairUnique)
 			{
-				// Alignments are unique and usable
-				Alignment refAlign = iter->second.front();
-				Alignment pairAlign = pairIter->second.front();
-				
-				// Are they on the same contig?
-				if(refAlign.contig == pairAlign.contig)
+				// Iterate over the vectors, outputting the aligments
+				for(AlignmentVector::iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
 				{
-					// Calculate the distance between the reads
-					int dist = abs(refAlign.start -  pairAlign.start);
-					
-					// Print it to the file
-					distanceList << dist << "\n";
-					numSame++;
+					for(AlignmentVector::iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
+					{
+						// Are they on the same contig?
+						if(refAlignIter->contig == pairAlignIter->contig)
+						{
+							// Calculate the distance between the reads
+							
+							// as the alignments are not necessarily full, offset the start of the alignment by the position on the read it hit to get the
+							// true positions
+							int dist = abs(refAlignIter->readSpacePosition() -  pairAlignIter->readSpacePosition());
+							
+							// Print it to the file
+							distanceList << dist << "\n";
+							numSame++;
+						}
+						else
+						{
+							// Print the alignment and the swapped alignment
+							pairedAlignFile << currID << " " << *refAlignIter << " " << pairID << " " << *pairAlignIter << "\n";
+							pairedAlignFile << pairID << " " << *pairAlignIter << " " << currID << " " << *refAlignIter << "\n";
+							numDifferent++;
+						}							
+					}
 				}
-				else
-				{
-					// Print the alignment and the swapped alignment
-					pairedAlignFile << currID << " " << refAlign << " " << pairID << " " << pairAlign << "\n";
-					pairedAlignFile << pairID << " " << pairAlign << " " << currID << " " << refAlign << "\n";
-					numDifferent++;
-				}					
+				
+				
 			}
 			else
 			{
-				numMulti++;
+				if(!isRefUnique || !isPairUnique)
+				{
+					numMulti++;
+				}
+				else
+				{
+					numNonSingle++;
+				}
 			}
 
 			
@@ -91,16 +118,56 @@ int main(int argc, char* const* argv)
 		}
 	}
 	
-	printf("Num unmatched: %d Num same contig: %d Num diff contig: %d Num multi: %d\n", numMissed, numSame, numDifferent, numMulti);
+	printf("Num unmatched: %d Num same contig: %d Num diff contig: %d Num multi: %d Num not singular: %d\n", numMissed, numSame, numDifferent, numMulti, numNonSingle);
 	
 	pairedAlignFile.close();
 	distanceList.close();
 }
 
+bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
+{
+	// Ensure that no read start position hit to more than 1 contig
+	assert(!alignVec.empty());
+	
+	const int num_starts = alignVec.front().read_length - kmer + 1;
+	int* coverage = new int[num_starts];
+	
+	for(int i = 0; i < num_starts; ++i)
+	{
+		coverage[i] = 0;
+	}
+	
+	for(AlignmentVector::const_iterator iter = alignVec.begin(); iter != alignVec.end(); ++iter)
+	{
+		//std::cout << "Align: " << *iter << "\n";
+		int length = iter->align_length;
+		int start = iter->read_start_pos;
+		for(int i = 0; i < (length - kmer + 1); ++i)
+		{
+			int start_idx = start + i;
+			assert(start_idx >= 0 && start_idx < num_starts);
+			coverage[start_idx]++;
+		}
+	}
+	
+	bool unique = true;
+	//printf("Coverage: \n");
+	for(int i = 0; i < num_starts; ++i)
+	{
+		//printf("%d", coverage[i]);
+		if(coverage[i] > 1)
+		{
+			unique = false;
+		}
+	}
+	//printf("\n");
+	delete [] coverage;
+	return unique;
+}
+
 // Read in the alignments file into the table
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable)
 {
-	(void)alignTable;
 	std::cout << "Reading " << filename << std::endl;
 	std::ifstream fileStream(filename.c_str());
 	std::string line;

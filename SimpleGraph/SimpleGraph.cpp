@@ -56,28 +56,24 @@ int main(int argc, char** argv)
 		preallocSize = atoi(argv[5]);
 	}
 	
-	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << std::endl;
+	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << "\n";
 	
 	// Create the graph
 	SimpleContigGraph* pContigGraph;
-	ContigLengthVec contigLens;	
 	
 	if(preallocVecs)
 	{
 		std::cout << "preallocating vectors to be " << preallocSize << "\n";
 		pContigGraph = new SimpleContigGraph(preallocSize);
-		contigLens.reserve(preallocSize);
 	}
 	else
 	{
 		pContigGraph = new SimpleContigGraph();
 	}
 	
-	// Load the lengths
-	loadContigLengths(lenFile, contigLens);
 	
 	// Load the graph from the adjacency file
-	loadGraphFromAdjFile(pContigGraph, contigLens, adjFile);
+	loadGraphFromAdjFile(pContigGraph, lenFile, adjFile);
 	
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(pContigGraph, estFile, kmer);
@@ -112,7 +108,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			// generate the reachable set
 			SimpleContigGraph::KeyIntMap constraintMap;
 			
-			const int distanceBuffer = 5;
+			const int distanceBuffer = 15;
 			for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 			{
 				// Translate the distances produced by the esimator into the coordinate space
@@ -131,8 +127,10 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			// The value at which to abort trying to find a path
 			// only unique paths are being searched for...
 			const int maxNumPaths = 2;
-			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths);
+			int numVisited = 0;
+			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, numVisited);
 			
+			std::cout << "Computational cost " << numVisited << "\n";
 			std::cout << "Solutions: \n";
 			for(SimpleContigGraph::FeasiblePaths::iterator solIter = solutions.begin(); solIter != solutions.end(); ++solIter)
 			{
@@ -155,7 +153,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				// Filter
 				for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 				{
-					std::cout << "Contig " << *iter << std::endl;
+					std::cout << "Contig " << *iter << "\n";
 					
 					// look up in the distance map
 					std::map<LinearNumKey, int>::iterator dmIter = distanceMap.find(iter->nID);
@@ -163,13 +161,12 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					{
 						// translate distance by -overlap to match coordinate space used by the estimate
 						int actualDistance = dmIter->second - costFunctor.m_overlap;
-						std::cout << " Actual Dist: " << actualDistance << std::endl;
+						std::cout << " Actual Dist: " << actualDistance << "\n";
 						int diff = abs(actualDistance - iter->distance);
-						std::cout << " diff: " << diff << std::endl;
+						std::cout << " diff: " << diff << "\n";
 						
 						// Arbitrary cutoff for now
-						const int dist_cutoff = 5;
-						if(diff > dist_cutoff)
+						if(diff > distanceBuffer)
 						{
 							validPath = false;
 							break;
@@ -188,6 +185,11 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					constructContigPath(sol, cPath);
 					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);	
 				}
+				else
+				{
+					printf("Unique path was not valid!\n");
+				}
+				
 				uniqueEnd++;
 			}
 			else if(solutions.size() > 1)
@@ -229,7 +231,7 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
 {
-	std::cout << "outting path " << refNode << std::endl;
+	std::cout << "outting path " << refNode << "\n";
 	outStream << "@ " << refNode << "," << dir << " -> ";
 	outStream << contigPath << "\n";
 }

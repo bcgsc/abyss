@@ -223,7 +223,8 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 		// Flip all the positions of the pair aligns
 		for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
 		{
-			apIter->pairRec.start = (pairLen - (apIter->pairRec.start + apIter->pairRec.length)); 
+			apIter->pairRec.flip(pairLen);
+			//apIter->pairRec.start = (pairLen - (apIter->pairRec.start + apIter->pairRec.length)); 
 		}
 		
 	}
@@ -246,8 +247,8 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 	for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
 	{
 			int distance;
-			int refTransPos = apIter->refRec.start + refOffset;
-			int pairTransPos = apIter->pairRec.start + pairOffset;
+			int refTransPos = apIter->refRec.contig_start_pos + refOffset;
+			int pairTransPos = apIter->pairRec.contig_start_pos + pairOffset;
 			
 			if(refTransPos < pairTransPos)
 			{
