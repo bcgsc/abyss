@@ -49,7 +49,7 @@ class ContigPath
 		ContigPath();
 		
 		// Add a node to this path
-		void appendNode(MergeNode& mn);
+		void appendNode(const MergeNode& mn);
 		
 		// prepend a path
 		void prependPath(const ContigPath& other);
@@ -59,6 +59,13 @@ class ContigPath
 		
 		// Get the number of nodes in the path
 		size_t getNumNodes() const { return m_path.size(); }
+		
+		// Get the node with a specified index
+		MergeNode& getNode(size_t idx)
+		{
+			assert(idx < m_path.size());
+			return m_path[idx];
+		}
 		
 		// Get the node with a specified index
 		const MergeNode& getNode(size_t idx) const

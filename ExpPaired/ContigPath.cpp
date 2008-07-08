@@ -11,7 +11,7 @@ ContigPath::ContigPath()
 //
 // Append a single node to the list
 //
-void ContigPath::appendNode(MergeNode& mn)
+void ContigPath::appendNode(const MergeNode& mn)
 {
 	m_path.push_back(mn);
 }
