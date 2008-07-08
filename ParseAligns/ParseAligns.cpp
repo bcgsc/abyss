@@ -1,4 +1,5 @@
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include <iostream>
 #include <fstream>
@@ -129,6 +130,14 @@ std::string makePairID(std::string refID)
 	std::string pairID = refID;
 	// Change the last character
 	size_t lastIdx = pairID.size() - 1;
-	pairID[lastIdx] = (pairID[lastIdx] == '1') ? '2' : '1';
+	char c = refID[lastIdx];
+	switch (c) {
+		case '1': c = '2'; break;
+		case '2': c = '1'; break;
+		case 'A': c = 'B'; break;
+		case 'B': c = 'A'; break;
+		default: assert(false); exit(EXIT_FAILURE);
+	}
+	pairID[lastIdx] = c;
 	return pairID;
 }
