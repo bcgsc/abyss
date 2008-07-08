@@ -1224,6 +1224,10 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 		case NAS_DISCOVER_BUBBLES:
 			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);
 			break;
+		case NAS_WAITING:
+			assert(m_finishedGroups.find(groupID)
+					!= m_finishedGroups.end());
+			break;
 		default:
 			assert(false);
 			break;
