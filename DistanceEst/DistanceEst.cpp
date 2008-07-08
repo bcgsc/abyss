@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 	// Estimate the distances between contigs, one at a time
 	processContigs(alignFile, contigLens, empiricalPDF);
 	
-	return 1;
+	return 0;
 } 
 
 void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)

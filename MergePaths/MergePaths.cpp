@@ -75,7 +75,7 @@ int main(int argc, char** argv)
 		iter++;
 	}	
 	
-	return 1;
+	return 0;
 } 
 
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
