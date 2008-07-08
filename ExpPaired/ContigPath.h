@@ -61,7 +61,11 @@ class ContigPath
 		size_t getNumNodes() const { return m_path.size(); }
 		
 		// Get the node with a specified index
-		MergeNode& getNode(size_t idx) { assert(idx < m_path.size()); return m_path[idx]; }
+		const MergeNode& getNode(size_t idx) const
+		{
+			assert(idx < m_path.size());
+			return m_path[idx];
+		}
 		
 		// Returns the index of the first node that matches id
 		size_t findFirstOf(LinearNumKey id);

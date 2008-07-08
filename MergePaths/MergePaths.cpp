@@ -30,6 +30,22 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, si
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
+static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
+{
+	set<size_t> seen;
+	for (ContigPathMap::const_iterator it = contigPathMap.begin();
+			it != contigPathMap.end(); it++) {
+		seen.insert(it->first);
+		for (int dir = 0; dir < 2; dir++) {
+			const ContigPath &cp = it->second.paths[dir];
+			size_t nodes = cp.getNumNodes();
+			for (size_t i = 0; i < nodes; i++)
+				seen.insert(cp.getNode(i).id);
+		}
+	}
+	return seen;
+}
+
 int main(int argc, char** argv)
 {
 	if(argc < 4)
@@ -75,6 +91,12 @@ int main(int argc, char** argv)
 		iter++;
 	}	
 	
+	set<size_t> seen = getContigIDs(contigPathMap);
+	for (size_t i = 0; i < contigVec.size(); i++)
+		if (seen.count(i) == 0)
+			writer.WriteSequence(contigVec[i].seq,
+					i, contigVec[i].coverage);
+
 	return 0;
 } 
 
