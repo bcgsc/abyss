@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	
 	bool preallocVecs = false;
 	size_t preallocSize = 0;
-	if(argc == 7)
+	if(argc == 6)
 	{
 		preallocVecs = true;
 		preallocSize = atoi(argv[5]);
