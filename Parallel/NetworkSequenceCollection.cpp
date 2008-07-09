@@ -841,6 +841,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	
 	// The branch ids
 	uint64_t branchGroupID = 0;
+	m_finishedGroups.clear();
 	
 	// make sure the branch group structure is initially empty
 	assert(m_activeBranchGroups.empty());
