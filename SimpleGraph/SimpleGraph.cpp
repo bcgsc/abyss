@@ -28,7 +28,7 @@ struct SimpleDataCost
 
 
 // FUNCTIONS
-void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer);
+void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost);
 void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath);
 
@@ -37,9 +37,9 @@ void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirecti
 //
 int main(int argc, char** argv)
 {
-	if(argc < 5)
+	if(argc < 6)
 	{
-		std::cout << "Usage: <kvalue> <adj list> <lengths file> <estimate file>\n";
+		std::cout << "Usage: <kvalue> <adj list> <lengths file> <estimate file> <max nodes to explore>\n";
 		exit(1);
 	}
 	
@@ -47,16 +47,17 @@ int main(int argc, char** argv)
 	std::string adjFile(argv[2]);
 	std::string lenFile(argv[3]);
 	std::string estFile(argv[4]);
+	int maxCost = atoi(argv[5]);
 	
 	bool preallocVecs = false;
 	size_t preallocSize = 0;
-	if(argc == 6)
+	if(argc == 7)
 	{
 		preallocVecs = true;
 		preallocSize = atoi(argv[5]);
 	}
 	
-	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << "\n";
+	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << " max cost " << maxCost << " prealloc size " << preallocSize << "\n";
 	
 	// Create the graph
 	SimpleContigGraph* pContigGraph;
@@ -76,7 +77,7 @@ int main(int argc, char** argv)
 	loadGraphFromAdjFile(pContigGraph, lenFile, adjFile);
 	
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(pContigGraph, estFile, kmer);
+	generatePathsThroughEstimates(pContigGraph, estFile, kmer, maxCost);
 	
 	delete pContigGraph;
 }
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
 //
 //
 //
-void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer)
+void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost)
 {
 	int totalAttempted = 0;
 	int nopathEnd = 0;
@@ -132,7 +133,9 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			// only unique paths are being searched for...
 			const int maxNumPaths = 2;
 			int numVisited = 0;
-			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, numVisited);
+			
+			// The number of nodes to explore before bailing out
+			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, maxCost, numVisited);
 			
 			std::cout << "Computational cost " << numVisited << "\n";
 			std::cout << "Solutions: \n";

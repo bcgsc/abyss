@@ -816,11 +816,11 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData&
 // Find a superpath that includes all the nodes in the reachable set
 //
 static int gExaminedCount;
-const int EXAMINE_LIMIT = 100000;
 
 template<typename D>
 template<class DataCostFunctor>
-bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths, int& compCost)
+bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, 
+										DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost)
 {
     VertexType* pSourceVertex = findVertex(sourceKey);
 
@@ -834,10 +834,10 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirectio
     VertexPath path;
 
     gExaminedCount = 0;
-    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths);
+    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths, maxCompCost);
     compCost = gExaminedCount;
     // was the limit hit?
-    if(gExaminedCount >= EXAMINE_LIMIT)
+    if(gExaminedCount >= maxCompCost)
     {
     	// Remove paths, the search did not complete
     	std::cout << "Computational limit exceeded, aborted search\n";
@@ -851,10 +851,10 @@ template<typename D>
 template<class DataCostFunctor>
 void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints,
                                                                                 VertexPath currentPath, FeasiblePaths& solutions,
-                                                                                size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths)
+                                                                                size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost)
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths || gExaminedCount >= EXAMINE_LIMIT)
+    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths || gExaminedCount >= maxCompCost)
     {
             return;
     }
@@ -923,7 +923,7 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
                 extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
 
                 // recurse
-                ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths);
+                ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths, maxCompCost);
         }
     }
 }

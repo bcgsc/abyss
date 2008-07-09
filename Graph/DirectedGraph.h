@@ -210,7 +210,8 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& constraintMap, FeasiblePaths& superPaths, DataCostFunctor& costFunctor, int maxNumPaths, int& compCost);
+		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, 
+				DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique
@@ -280,7 +281,7 @@ class DirectedGraph
 		template<class DataCostFunctor>		
 		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints, 
 										VertexPath currentPath, FeasiblePaths& solutions,
-										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths);	
+										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost);	
 				
 		//
 		template<class DataCostFunctor>
