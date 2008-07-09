@@ -1,5 +1,5 @@
 #include "BranchRecord.h"
-
+#include <iostream>
 //
 // Constructor
 //
@@ -196,12 +196,26 @@ int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 		endSeq--;
 	}
 	
+	size_t idx = 0;
+	size_t numKmers = m_data.size();
+	
 	for(BranchData::const_iterator iter = m_data.begin(); iter != endSeq; ++iter)
 	{
 		int m = getMultiplicity(*iter);
-		assert(m > 0);
+		if(m <= 0)
+		{
+			std::cerr << "Multipliticty check failed! Node idx: " << idx << " branch size(kmers): " << numKmers << "\n";
+			std::cerr << "Ignore last flag: " << ignoreLast << " BranchState: " << m_state << "\n";
+			std::cerr << "Branch: ";
+			printBranch(std::cerr);
+			std::cerr << "\n";
+			assert(m > 0);
+		}
+		
 		total += m;
+		++idx;
 	}
+	
 	assert(total > 0);
 	return m_multiplicity = total;
 }
@@ -258,6 +272,18 @@ void BranchRecord::buildContig(Sequence& outseq) const
 		}
 	}
 	return;
+}
+
+//
+// Print the branch
+//
+void BranchRecord::printBranch(std::ostream& ostr)
+{
+	for(BranchData::const_iterator iter = m_data.begin(); iter != m_data.end(); ++iter)
+	{
+		int m = getMultiplicity(*iter);
+		ostr << iter->decode() << "," << m << " ";
+	}
 }
 
 //
