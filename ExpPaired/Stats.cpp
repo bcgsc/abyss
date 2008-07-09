@@ -250,6 +250,23 @@ PDF::PDF(const Histogram& h)
 			m_dist[i] = 0;
 		}
 	}	
+	
+	// Calculate the mean
+	double sum = 0;
+	double sumsqr = 0;
+	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
+	{
+		sum += (histIter->second * histIter->first);
+		sumsqr += histIter->second * (histIter->first * histIter->first);
+	}
+	
+	m_mean = sum / count;
+	
+	double t1 = sumsqr - (count * pow(m_mean, 2.0f));
+	t1 /= count;
+	m_stdDev = sqrt(t1);
+	
+	printf("Calculated stats - mean: %lf stddev: %lf count: %lf\n", m_mean, m_stdDev, count);
 }
 
 double PDF::getP(size_t idx) const 

@@ -29,10 +29,11 @@ struct Estimate
 	LinearNumKey nID;
 	int distance;
 	int numPairs;
+	int stdDev;
 	
 	friend std::ostream& operator<<(std::ostream& out, const Estimate& object)
 	{
-		out << object.nID << "," << object.distance << "," << object.numPairs;
+		out << object.nID << "," << object.distance << "," << object.numPairs << "," << object.stdDev;
 		return out;
 	} 
   
@@ -60,6 +61,11 @@ struct Estimate
 		convertor.clear();
 		convertor.str(data);	
 		convertor >> object.numPairs;
+		
+		getline(recss, data, ',');
+		convertor.clear();
+		convertor.str(data);	
+		convertor >> object.stdDev;		
 		return in;
 	}  	
 };

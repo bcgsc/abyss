@@ -115,7 +115,7 @@ void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, con
 		// They must be strictly > 0 and contiguous
 		LinearNumKey refNumericID = convertContigIDToLinearNumKey(refContigID.c_str());
 		
-		std::cout << "Ref ctg " << refNumericID << "\n";
+		//std::cout << "Ref ctg " << refNumericID << "\n";
 		// Only process contigs that are a reasonable length
 		int refLength = lookupLength(lengthVec, refNumericID);
 		if(refLength < 100)
@@ -178,6 +178,7 @@ void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, con
 					est.nID = pairNumID;
 					est.distance = distance;
 					est.numPairs = pdIter->second.pairVec.size();
+					est.stdDev = pdf.getSampleStdDev(est.numPairs);
 					
 					// write the record to file
 					outFile << est << " "; 

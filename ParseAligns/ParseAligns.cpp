@@ -71,18 +71,21 @@ int main(int argc, char* const* argv)
 				{
 					for(AlignmentVector::iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
 					{
-						// Are they on the same contig?
+						// Are they on the same contig and the ONLY alignments?
 						if(refAlignIter->contig == pairAlignIter->contig)
 						{
-							// Calculate the distance between the reads
-							
-							// as the alignments are not necessarily full, offset the start of the alignment by the position on the read it hit to get the
-							// true positions
-							int dist = abs(refAlignIter->readSpacePosition() -  pairAlignIter->readSpacePosition());
-							
-							// Print it to the file
-							distanceList << dist << "\n";
-							numSame++;
+							if((iter->second.size() == 1 && pairIter->second.size() == 1))
+							{
+								// Calculate the distance between the reads
+								
+								// as the alignments are not necessarily full, offset the start of the alignment by the position on the read it hit to get the
+								// true positions
+								int dist = abs(refAlignIter->readSpacePosition() -  pairAlignIter->readSpacePosition());
+								
+								// Print it to the file
+								distanceList << dist << "\n";
+								numSame++;
+							}
 						}
 						else
 						{
@@ -203,6 +206,8 @@ std::string makePairID(std::string refID)
 		case '2': c = '1'; break;
 		case 'A': c = 'B'; break;
 		case 'B': c = 'A'; break;
+		case 'F': c = 'R'; break;
+		case 'R': c = 'F'; break;
 		default: assert(false); exit(EXIT_FAILURE);
 	}
 	pairID[lastIdx] = c;

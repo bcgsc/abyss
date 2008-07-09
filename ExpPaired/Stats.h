@@ -4,6 +4,7 @@
 // Simple class for holding stats related to PET data
 #include <vector>
 #include <map>
+#include <math.h>
 
 // Classes
 typedef std::map<int, int> IntIntMap;
@@ -35,9 +36,12 @@ struct PDF
 	
 	size_t getMaxIdx() const { return m_maxIdx; }
 	void print() const;
+	int getSampleStdDev(int n) const { return (int)ceil(m_stdDev / sqrt((double)n)); }
 	
 	size_t m_maxIdx;
 	DoubleVec m_dist;
+	double m_mean;
+	double m_stdDev;
 	
 	// calculate the minimal range in which p% of the values will fall into
 	void calculateMinimalRange(double p, size_t& low, size_t& high) const;

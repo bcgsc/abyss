@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	
 	bool preallocVecs = false;
 	size_t preallocSize = 0;
-	if(argc == 6)
+	if(argc == 7)
 	{
 		preallocVecs = true;
 		preallocSize = atoi(argv[5]);
@@ -96,6 +96,9 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	std::ofstream outStream("ResolvedPaths.txt");
 	SimpleDataCost costFunctor(kmer);
 
+	// How many standard deviations to look for the estimate
+	const int NUM_SIGMA = 3;
+	
 	while(!inStream.eof() && inStream.peek() != EOF)
 	{
 		EstimateRecord er;
@@ -108,12 +111,13 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			// generate the reachable set
 			SimpleContigGraph::KeyIntMap constraintMap;
 			
-			const int distanceBuffer = 15;
 			for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 			{
 				// Translate the distances produced by the esimator into the coordinate space
 				// used by the graph (a translation of m_overlap)
 				int translatedDistance = iter->distance + costFunctor.m_overlap;
+				int distanceBuffer = iter->stdDev * NUM_SIGMA;
+				std::cout << "Adding Constraint " << iter->nID << " range " << distanceBuffer << "\n"; 
 				constraintMap[iter->nID] = translatedDistance  + distanceBuffer;
 			}
 
@@ -150,7 +154,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				std::map<LinearNumKey, int> distanceMap;
 				pContigGraph->makeDistanceMap(sol, costFunctor, distanceMap);
 				
-				// Filter
+				// Filter out potentially bad hits
 				for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 				{
 					std::cout << "Contig " << *iter << "\n";
@@ -165,12 +169,6 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						int diff = abs(actualDistance - iter->distance);
 						std::cout << " diff: " << diff << "\n";
 						
-						// Arbitrary cutoff for now
-						if(diff > distanceBuffer)
-						{
-							validPath = false;
-							break;
-						}
 					}
 					else
 					{
