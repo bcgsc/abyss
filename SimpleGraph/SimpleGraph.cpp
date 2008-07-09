@@ -166,9 +166,16 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						// translate distance by -overlap to match coordinate space used by the estimate
 						int actualDistance = dmIter->second - costFunctor.m_overlap;
 						std::cout << " Actual Dist: " << actualDistance << "\n";
-						int diff = abs(actualDistance - iter->distance);
-						std::cout << " diff: " << diff << "\n";
-						
+						int diff = actualDistance - iter->distance;
+						int buffer = iter->stdDev * NUM_SIGMA;
+						if(abs(diff) > buffer)
+						{
+							validPath = false;
+						}
+						else
+						{
+							std::cout << "diff: " << diff << " n: " << iter->numPairs << " buffer: " << buffer << "\n";
+						}
 					}
 					else
 					{

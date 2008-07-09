@@ -25,8 +25,8 @@ struct PairedData
 typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
-int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
-void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
+int estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
+void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
 // Go through a list of pairings and provide a maximum likelihood estimate of the distance
@@ -61,17 +61,18 @@ int number_of_pairs_threshold = - 1;
 
 int main(int argc, char** argv)
 {
-	if(argc < 6)
+	if(argc < 7)
 	{
-		std::cout << "Usage: <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
+		std::cout << "Usage: <kmer> <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
 		exit(1);
 	}
 	
-	std::string alignFile(argv[1]);
-	std::string contigLengthFile(argv[2]);
-	std::string distanceCountFile(argv[3]);
-	length_cutoff = atoi(argv[4]);
-	number_of_pairs_threshold = atoi(argv[5]);
+	int kmer = atoi(argv[1]);
+	std::string alignFile(argv[2]);
+	std::string contigLengthFile(argv[3]);
+	std::string distanceCountFile(argv[4]);
+	length_cutoff = atoi(argv[5]);
+	number_of_pairs_threshold = atoi(argv[6]);
 
 	std::cout << "Align File: " << alignFile << "len file: " << contigLengthFile << " distance file: " 
 	<< distanceCountFile << " len cutoff " << length_cutoff 
@@ -85,12 +86,12 @@ int main(int argc, char** argv)
 	loadContigLengths(contigLengthFile, contigLens);
 
 	// Estimate the distances between contigs, one at a time
-	processContigs(alignFile, contigLens, empiricalPDF);
+	processContigs(kmer, alignFile, contigLens, empiricalPDF);
 	
 	return 0;
 } 
 
-void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)
+void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)
 {
 	(void)pdf;
 	AlignExtractor extractor(alignFile);
@@ -172,7 +173,7 @@ void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, con
 				if((int)pdIter->second.pairVec.size() > number_of_pairs_threshold)
 				{
 					// Estimate the distance
-					int distance = estimateDistance(refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
+					int distance = estimateDistance(kmer, refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
 					
 					Estimate est;
 					est.nID = pairNumID;
@@ -198,7 +199,7 @@ void processContigs(std::string alignFile, const ContigLengthVec& lengthVec, con
 }
 
 // Estimate the distances between the contigs
-int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
+int estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
 {
 	// Determine the relative orientation of the contigs
 	// As pairs are orientated in opposite (reverse comp) direction, the alignments are in the same
@@ -248,8 +249,8 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 	for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
 	{
 			int distance;
-			int refTransPos = apIter->refRec.contig_start_pos + refOffset;
-			int pairTransPos = apIter->pairRec.contig_start_pos + pairOffset;
+			int refTransPos = apIter->refRec.readSpacePosition() + refOffset;
+			int pairTransPos = apIter->pairRec.readSpacePosition() + pairOffset;
 			
 			if(refTransPos < pairTransPos)
 			{
@@ -265,7 +266,7 @@ int estimateDistance(int refLen, int pairLen, size_t dirIdx, PairedData& pairDat
 	}
 	// Perform the max-likelihood est
 	double ratio;
-	int dist = maxLikelihoodEst(-25, 200, distanceList, pdf, ratio);
+	int dist = maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(), distanceList, pdf, ratio);
 	
 	/*
 	printf("Num Pairs: %d\n", distanceList.size());

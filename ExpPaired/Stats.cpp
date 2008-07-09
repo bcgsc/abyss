@@ -257,13 +257,15 @@ PDF::PDF(const Histogram& h)
 	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
 	{
 		sum += (histIter->second * histIter->first);
-		sumsqr += histIter->second * (histIter->first * histIter->first);
+		sumsqr += histIter->second * (pow(histIter->first, 2.0f));
 	}
 	
 	m_mean = sum / count;
 	
-	double t1 = sumsqr - (count * pow(m_mean, 2.0f));
-	t1 /= count;
+	double msqr = pow(sum,2.0) / count;
+	double ss1 = sumsqr - msqr;
+	double t1 = ss1 / count;
+
 	m_stdDev = sqrt(t1);
 	
 	printf("Calculated stats - mean: %lf stddev: %lf count: %lf\n", m_mean, m_stdDev, count);
