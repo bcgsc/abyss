@@ -71,7 +71,11 @@ class PackedSeq
 		unsigned getMultiplicity() const { return m_multiplicity; }
 		
 		// add to the multiplicity
-		void addMultiplicity() { ++m_multiplicity; }
+		void addMultiplicity()
+		{
+			++m_multiplicity;
+			assert(m_multiplicity > 0);
+		}
 		
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
