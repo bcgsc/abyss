@@ -8,7 +8,7 @@
 #include "Sequence.h"
 #include "PackedSeq.h"
 
-class PackedSeqReader : public IFileReader
+class PackedSeqReader /*: public IFileReader*/
 {
 	public:
 	
@@ -19,11 +19,11 @@ class PackedSeqReader : public IFileReader
 		~PackedSeqReader();
 		
 		// Read in a single sequence
-		virtual bool ReadSequences(PSequenceVector& outseqs);
+		/*virtual*/ bool ReadSequences(PSequenceVector& outseqs);
 		
 		// Returns the number of sequences containing non-ACGT
 		// characters, which is impossible for a packed sequence.
-		virtual unsigned getNonACGT() { return 0; }
+		/*virtual unsigned getNonACGT() { return 0; }*/
 
 	private:
 		std::ifstream m_fileHandle;

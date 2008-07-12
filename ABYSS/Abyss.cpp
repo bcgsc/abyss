@@ -74,6 +74,8 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
 		
+	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
+
 	popBubbles(pSC);
 	
 	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
@@ -82,9 +84,6 @@ int main(int argc, char* const* argv)
 	if (opt::bubbles > 0 && opt::trimLen > 0)
 		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
 
-	AssemblyAlgorithms::outputSequences("trimmed.fa", pSC);
-	//AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
-	
 	write_graph(opt::graphPath, *pSC);
 
 	AssemblyAlgorithms::splitAmbiguous(pSC);

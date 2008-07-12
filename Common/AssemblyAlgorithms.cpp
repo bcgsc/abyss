@@ -5,6 +5,7 @@
 #include "Options.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
+#include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
 #include <stdio.h>
 
@@ -77,6 +78,43 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 	}
 }
 
+/** Load packed sequences into the collection. */ 
+static void loadPackedSequences(ISequenceCollection* seqCollection,
+		std::string inFile)
+{
+	PackedSeqReader reader(inFile.c_str());
+	unsigned count = 0;
+	
+	// Read the sequences and add them to the network sequence space
+	size_t lastNum = seqCollection->count();
+	
+	bool stop = false;
+	while (!stop) {
+		PSequenceVector seqs;
+		stop = !reader.ReadSequences(seqs);
+		for (PSequenceVectorIterator iter = seqs.begin();
+				iter != seqs.end(); iter++) {
+			seqCollection->add(*iter);
+			count++;
+			// Output the progress
+			if (count % 100000 == 0) {
+				size_t numseqs = seqCollection->count();
+				PrintDebug(1,
+						"Read %u sequences: %zu unique, %zu new\n",
+						count, numseqs, numseqs - lastNum);
+				lastNum = numseqs;
+			}
+		}
+		seqCollection->pumpNetwork();
+	}
+	size_t numseqs = seqCollection->count();
+	PrintDebug(1, "Read %u sequences: %zu unique, %zu new\n",
+			count, numseqs, numseqs - lastNum);
+
+	if (count == 0)
+		fputs("warning: input contains no sequences\n", stderr);
+}
+
 //
 // Function to load sequences into the collection
 //
@@ -89,7 +127,12 @@ void loadSequences(ISequenceCollection* seqCollection,
 
 	// Determine the input file type
 	IFileReader* reader;
-	if(inFile.find(".fastq") != std::string::npos)
+	if(inFile.find(".psq") != std::string::npos)
+	{
+		loadPackedSequences(seqCollection, inFile);
+		return;
+	}
+	else if(inFile.find(".fastq") != std::string::npos)
 	{
 		reader = new FastqReader(inFile.c_str());
 	}
