@@ -256,7 +256,7 @@ PDF::PDF(const Histogram& h)
 	double sumsqr = 0;
 	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
 	{
-		sum += (histIter->second * histIter->first);
+		sum += ((double)histIter->second * (double)histIter->first);
 		sumsqr += histIter->second * (pow(histIter->first, 2.0f));
 	}
 	
