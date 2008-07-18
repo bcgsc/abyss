@@ -261,7 +261,7 @@ PDF::PDF(const Histogram& h)
 	}
 	
 	m_mean = sum / count;
-	
+	assert(m_mean > 0);
 	double msqr = pow(sum,2.0) / count;
 	double ss1 = sumsqr - msqr;
 	double t1 = ss1 / count;
