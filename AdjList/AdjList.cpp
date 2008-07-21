@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	ifstream contigFileStream(contigFile.c_str());
 	
 	// Generate a k-mer -> contig lookup table for all the contig ends
-	std::map<PackedSeq, ContigID> contigLUT;
+	std::map<PackedSeq, ContigID> contigLUTs[2];
 	
 	int numAdded = 0;
 	while(!contigFileStream.eof() && contigFileStream.peek() != EOF)
@@ -43,19 +43,13 @@ int main(int argc, char** argv)
 		seqs[0] = PackedSeq(contigSequence.substr(contigSequence.length() - kmer, kmer)); //SENSE
 		seqs[1] = PackedSeq(contigSequence.substr(0, kmer)); // ANTISENSE
 	  
-		size_t numToAdd = (seqs[0] != seqs[1]) ? 2 : 1;
-	  
-		numAdded += numToAdd;
+		contigLUTs[0][seqs[0]] = id;
+		contigLUTs[1][seqs[1]] = id;
+	  	//std::cout << "Added S " << seqs[0].decode() << " AS " << seqs[1].decode() << std::endl;
+		numAdded += 2;
 		if(numAdded % 100000 == 0)
 		{
 			std::cout << "Added " << numAdded << std::endl;
-		}
-	  
-	  
-		for(unsigned idx = 0; idx < numToAdd; idx++)
-		{	
-			// insert sequences into the table
-			contigLUT[seqs[idx]] = id;
 		}
 	} 
 
@@ -91,7 +85,8 @@ int main(int argc, char** argv)
 			PackedSeq& currSeq = seqs[idx];
 			extDirection dir;
 			dir = (idx == 0) ? SENSE : ANTISENSE;
-			  
+
+			
 			// Generate the links
 			PSequenceVector extensions;
 			generatePossibleExtensions(currSeq, dir, extensions);
@@ -101,20 +96,23 @@ int main(int argc, char** argv)
 				// Get the contig this sequence maps to
 				for(size_t compIdx = 0; compIdx <= 1; ++compIdx)
 				{
+					size_t lookuptable_id = 1 - idx;
 					bool reverse = (compIdx == 1);
 					PackedSeq testSeq;
 					if(reverse)
 					{
+						// flip the lookup table id
+						lookuptable_id = 1 - lookuptable_id;
 						testSeq = reverseComplement(*iter);
 					}
 					else
 					{
 						testSeq = *iter;
 					}
-		  
+		  			//std::cout << id << " looking for " << testSeq.decode() << " " << lookuptable_id << std::endl;
 					std::map<PackedSeq, ContigID>::iterator cLUTIter;
-					cLUTIter = contigLUT.find(testSeq);
-					if(cLUTIter != contigLUT.end())
+					cLUTIter = contigLUTs[lookuptable_id].find(testSeq);
+					if(cLUTIter != contigLUTs[lookuptable_id].end())
 					{						
 						// Store the edge
 						SimpleEdgeDesc ed;

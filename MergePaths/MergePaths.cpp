@@ -73,12 +73,12 @@ int main(int argc, char** argv)
 	// link the paths together
 	
 	ContigPathMap::iterator iter = contigPathMap.begin();
+
 	while(iter != contigPathMap.end())
 	{
 		linkPaths(iter->first, contigPathMap);
 		iter++;
-	}
-	
+	}	
 	
 	FastaWriter writer("final.fa");
 	
@@ -116,7 +116,7 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 		extDirection dir;
 		ContigPath path;
 		parsePathLine(pathRecord, id, dir, path);
-
+		//std::cout << "Parsed " << id << " dir " << dir << std::endl;
 		contigPathMap[id].paths[dir] = path;
 	}
 
@@ -131,7 +131,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 	ContigPath initialCanonical;
 	makeCanonicalPath(id, refPMR, initialCanonical);
 	
-	std::cout << "Initial canonical path " << initialCanonical << "\n";
+	//std::cout << "Initial canonical path " << initialCanonical << "\n";
 	
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
@@ -142,7 +142,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 	{	
 		if(iter->id != id)
 		{
-			std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
+			//std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
 			
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
@@ -161,8 +161,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					childCanonPath.reverse(true);
 				}
 				
-				std::cout << " ref: " << refCanonical << "\n";
-				std::cout << "  in: " << childCanonPath << "\n";
+				//std::cout << " ref: " << refCanonical << "\n";
+				//std::cout << "  in: " << childCanonPath << "\n";
 				
 				size_t s1, s2, e1, e2;
 				bool validMerge = checkPathConsistency(id, iter->id, refCanonical, childCanonPath, s1, e1, s2, e2);
@@ -177,8 +177,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					addPathNodesToList(mergeInList, prependNodes);
 					addPathNodesToList(mergeInList, appendNodes);
 					
-					std::cout << "PPN " << prependNodes << "\n";
-					std::cout << "APN " << appendNodes << "\n";
+					//std::cout << "PPN " << prependNodes << "\n";
+					//std::cout << "APN " << appendNodes << "\n";
 					
 					// Reverse the prepend list but dont flip the comp
 					prependNodes.reverse(false);
@@ -189,7 +189,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					
 					ContigPath newCanonical;
 					makeCanonicalPath(id, refPMR, newCanonical);
-					std::cout << " new: " << newCanonical << "\n";
+					//std::cout << " new: " << newCanonical << "\n";
 					
 					// Erase the child id
 					contigPathMap.erase(iter->id);
@@ -226,7 +226,7 @@ bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, Co
 		return false;
 	}
 	
-	printf("Init  coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
+	//printf("Init  coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
 	// low coordinates first
 	bool lowValid = true;
 	while(1)
@@ -278,7 +278,7 @@ bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, Co
 		return false;
 	}
 	
-	printf("Final coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
+	//printf("Final coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
 	
 	// Sanity assert, at this point one of the low coordniates should be zero and one of the high coordinates should be (size -1)	
 	assert(startP1 == 0 || startP2 == 0);
@@ -443,7 +443,7 @@ void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirect
 	// Get the last k bases of the left and the first k bases of the right
 	PackedSeq leftEnd = leftSeq->substr(leftSeq->length() - overlap, overlap);
 	PackedSeq rightBegin = rightSeq->substr(0, overlap);
-
+	
 	// ensure that there is a legitimate k-1 overlap between these sequences	
 	if(leftEnd != rightBegin)
 	{
