@@ -73,7 +73,10 @@ class PackedSeq
 		// add to the multiplicity
 		void addMultiplicity()
 		{
-			++m_multiplicity;
+			if(m_multiplicity != 65535)
+			{
+				++m_multiplicity;
+			}
 			assert(m_multiplicity > 0);
 		}
 		

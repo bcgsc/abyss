@@ -227,6 +227,7 @@ void Histogram::print() const
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
+	
 	m_maxIdx = h.getMax();
 	double count = 0;
 

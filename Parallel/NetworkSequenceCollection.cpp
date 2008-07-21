@@ -836,6 +836,7 @@ int NetworkSequenceCollection::processBranchesTrim()
 }
 
 /** Write a packed sequence checkpoint. */
+/*
 static void writePackedSeqCheckpoint(
 		ISequenceCollection* seqCollection)
 {
@@ -845,11 +846,12 @@ static void writePackedSeqCheckpoint(
 	AssemblyAlgorithms::outputPackedSequences(
 			s.str().c_str(), seqCollection);
 }
+*/
 
 /** Discover bubbles to pop. */
 int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
-	writePackedSeqCheckpoint(seqCollection);
+	//writePackedSeqCheckpoint(seqCollection);
 
 	Timer timer("NetworkDiscoverBubbles");
 	
@@ -965,6 +967,16 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
+
+		if(!m_pComm->empty())
+		{
+			int sendID;
+			std::cerr << " COMM NOT EMPTY MESSAGE WAITING ID: " << (int)m_pComm->CheckMessage(sendID) << " sender " << sendID << std::endl;
+			std::cerr << " Attempting pump " << std::endl;
+			pumpNetwork();
+			std::cerr << " Pump returned ok " << std::endl;
+			assert(false);
+		}
 		assert(m_pComm->empty());
 	}
 	m_bubbles.clear();
