@@ -23,10 +23,11 @@ static void concatenateFiles(string dest,
 		s << ' ' << prefix << i << suffix;
 	s << " >'" << dest << '\'';
 	if (opt::verbose > 0)
-		cout << s.str() << endl;
+		puts(s.str().c_str());
 	int ret = system(s.str().c_str());
 	if (ret != 0) {
-		cout << "error: command failed: " << s.str() << endl;
+		fprintf(stderr, "error: command failed: %s\n",
+				s.str().c_str());
 		if (ret == -1)
 			perror("system");
 		exit(ret == -1 ? EXIT_FAILURE : ret);
