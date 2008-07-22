@@ -13,17 +13,23 @@
 /** MPI size */
 static int mpi_size;
 
-static void concatenateContigs()
+static void concatenateFiles(string dest,
+		string prefix, string suffix)
 {
-	puts("Concatenating contig files");
-	int ret = system("echo -n >pcontigs.fa");
-	assert(ret == 0);
-	(void)ret;
-	for (int i = 0; i < mpi_size; i++) {
-		std::ostringstream s;
-		s << "cat contigs-" << i << ".fa >>pcontigs.fa";
-		ret = system(s.str().c_str());
-		assert(ret == 0);
+	printf("Concatenating to %s\n", dest.c_str());
+	std::ostringstream s;
+	s << "cat";
+	for (int i = 0; i < mpi_size; i++)
+		s << ' ' << prefix << i << suffix;
+	s << " >'" << dest << '\'';
+	if (opt::verbose > 0)
+		cout << s.str() << endl;
+	int ret = system(s.str().c_str());
+	if (ret != 0) {
+		cout << "error: command failed: " << s.str() << endl;
+		if (ret == -1)
+			perror("system");
+		exit(ret == -1 ? EXIT_FAILURE : ret);
 	}
 }
 
@@ -48,13 +54,19 @@ int main(int argc, char** argv)
 	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size,
 			opt::kmerSize, opt::readLen);
 
-	if (opt::rank == 0) {
+	if (opt::rank == 0)
 		networkSeqs.runControl();
-		concatenateContigs();
-		puts("Done.");
-	} else
+	else
 		networkSeqs.run();
 
 	MPI_Finalize();
+
+	if (opt::rank == 0) {
+		concatenateFiles("pcontigs.fa", "contigs-", ".fa");
+		if (opt::snpPath.length() > 0)
+			concatenateFiles(opt::snpPath, "snp-", ".fa");
+		puts("Done.");
+	}
+
 	return 0;
 }
