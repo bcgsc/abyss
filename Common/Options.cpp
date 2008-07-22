@@ -186,9 +186,17 @@ void parse(int argc, char* const* argv)
 	}
 
 	if (snpPath.length() > 0) {
-		snpFile = fopen(snpPath.c_str(), "w");
+		string path;
+		if (rank < 0) {
+			path = snpPath;
+		} else {
+			ostringstream s;
+			s << "snp-" << opt::rank << ".fa";
+			path = s.str();
+		}
+		snpFile = fopen(path.c_str(), "w");
 		if (snpFile == NULL) {
-			perror(snpPath.c_str());
+			perror(path.c_str());
 			exit(EXIT_FAILURE);
 		}
 	}

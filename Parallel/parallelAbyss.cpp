@@ -44,8 +44,6 @@ int main(int argc, char** argv)
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
 		printf("Running on %d processors\n", mpi_size);
-	if (opt::snpFile != NULL)
-		freopen(NULL, "a", opt::snpFile);
 
 	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size,
 			opt::kmerSize, opt::readLen);
