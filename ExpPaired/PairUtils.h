@@ -124,7 +124,7 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
 int lookupLength(const ContigLengthVec& lengthMap, const LinearNumKey& id);
 
 // PDF loader
-PDF loadPDF(std::string distCountFile, const int limit);
+PDF loadPDF(std::string distCountFile);
 
 // Convertor
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);

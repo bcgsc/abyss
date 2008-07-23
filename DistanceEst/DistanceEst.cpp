@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 	<< distanceCountFile << " len cutoff " << length_cutoff 
 	<< " num pairs cutoff " << number_of_pairs_threshold << std::endl;
 	
-	PDF empiricalPDF = loadPDF(distanceCountFile, 350);
+	PDF empiricalPDF = loadPDF(distanceCountFile);
 
 	
 	// Load the length map

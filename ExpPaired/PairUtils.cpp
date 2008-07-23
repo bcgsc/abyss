@@ -221,7 +221,7 @@ int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
 //
 // PDF loader
 //
-PDF loadPDF(std::string distCountFile, const int limit)
+PDF loadPDF(std::string distCountFile)
 {
 	Histogram hist;
 	ifstream distFile(distCountFile.c_str());
@@ -231,12 +231,7 @@ PDF loadPDF(std::string distCountFile, const int limit)
 		int count;
 		distFile >> value;
 		distFile >> count;
-
-		if(value < limit)
-		{
-			//std::cout << "adding " << value << " : " << count << std::endl;
-			hist.addMultiplePoints(value, count);
-		}
+		hist.addMultiplePoints(value, count);
 	} 
 
 	PDF pdf(hist);
