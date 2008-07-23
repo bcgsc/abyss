@@ -119,7 +119,7 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 		//std::cout << "Ref ctg " << refNumericID << "\n";
 		// Only process contigs that are a reasonable length
 		int refLength = lookupLength(lengthVec, refNumericID);
-		if(refLength < 100)
+		if(refLength < length_cutoff)
 		{
 			continue;
 		}

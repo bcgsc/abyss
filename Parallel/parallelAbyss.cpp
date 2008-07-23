@@ -60,14 +60,14 @@ int main(int argc, char** argv)
 	else
 		networkSeqs.run();
 
-	MPI_Finalize();
-
 	if (opt::rank == 0) {
 		concatenateFiles("pcontigs.fa", "contigs-", ".fa");
 		if (opt::snpPath.length() > 0)
 			concatenateFiles(opt::snpPath, "snp-", ".fa");
 		puts("Done.");
 	}
+	
+	MPI_Finalize();
 
 	return 0;
 }
