@@ -48,7 +48,7 @@ int kmerSize = -1;
 int readLen = -1;
 
 /** erode length */
-int erode = -1;
+int erode = 0;
 
 /** trim length */
 int trimLen = -1;
@@ -172,8 +172,6 @@ void parse(int argc, char* const* argv)
 	copy(&argv[optind], &argv[argc], inFiles.begin());
 
 	unsigned n = readLen - kmerSize + 1;
-	if (erode < 0)
-		erode = n;
 	if (trimLen < 0)
 		trimLen = 6 * n;
 
