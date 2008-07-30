@@ -27,7 +27,7 @@ void KLDiv(const PDF& p, const PDF& q)
 	printf("KLDiv: %lf\n", sum);
 }
 
-void KSTestCont(std::vector<int> observations, const PDF& p)
+bool KSTestCont(std::vector<int> observations, const PDF& p)
 {
 	// convert the observations vector to a histogram
 	Histogram hist(observations);
@@ -60,12 +60,13 @@ void KSTestCont(std::vector<int> observations, const PDF& p)
 		D = std::max(D, Di);
 		D = std::max(D, Diprev);
 		
-		printf("cdf %lf %lf %lf %lf %lf\n", obsCDF.getP(idx), refCDF.getP(idx), Di, Diprev, D);
+		//printf("cdf %lf %lf %lf %lf %lf\n", obsCDF.getP(idx), refCDF.getP(idx), Di, Diprev, D);
 	}
 	
 	double alpha = 0.01;
 	double crit = approximateKSCritValue(observations.size(), alpha);
 	printf("D: %lf Crit: %lf Result: %d\n", D, crit, D < crit);
+	return D < crit;
 }
 
 double approximateKSCritValue(int n, double alpha)

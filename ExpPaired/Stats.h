@@ -65,7 +65,7 @@ struct CDF
 // Functions
 void KLDiv(const PDF& p, const PDF& q);
 void ChiSquare(const PDF& ref, const Histogram& sample);
-void KSTestCont(std::vector<int> observations, const PDF& p);
+bool KSTestCont(std::vector<int> observations, const PDF& p);
 double approximateKSCritValue(int n, double alpha);
 
 // Maximum Likelihood Estimator functions
