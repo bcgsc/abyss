@@ -257,7 +257,7 @@ static const uint8_t swapBases[256] = {
 
 #define SEQ_WORDS ((PackedSeq::NUM_BYTES + 7)/8)
 #define SEQ_BITS (64 * SEQ_WORDS)
-#define SEQ_FULL_WORDS (PackedSeq::NUM_BYTES/8)
+#define SEQ_FULL_WORDS ((int)PackedSeq::NUM_BYTES/8)
 #define SEQ_ODD_BYTES (PackedSeq::NUM_BYTES - 8*SEQ_FULL_WORDS)
 
 struct Seq {
@@ -270,7 +270,7 @@ static Seq load(const uint8_t *src)
 	Seq seq;
 	uint64_t *px = seq.x;
 	const uint8_t *p = src;
-	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++) {
+	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
 		*px++ = (uint64_t)p[0] << 56
 			| (uint64_t)p[1] << 48
 			| (uint64_t)p[2] << 40
@@ -299,7 +299,7 @@ static Seq load(const uint8_t *src)
 static void store(uint8_t *dest, Seq seq)
 {
 	const uint64_t *px = seq.x;
-	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++) {
+	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
 		dest[0] = *px >> 56;
 		dest[1] = *px >> 48;
 		dest[2] = *px >> 40;
@@ -329,7 +329,7 @@ static void storeReverse(uint8_t *dest, Seq seq)
 {
 	uint64_t *d = (uint64_t*)dest;
 	uint64_t *px = &seq.x[SEQ_WORDS-1];
-	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++)
+	for (int i = 0; i < SEQ_FULL_WORDS; i++)
 		*d++ = *px--;
 	dest = (uint8_t*)d;
 	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 0;
@@ -347,6 +347,9 @@ static void shiftRight(Seq *pseq, uint8_t n)
 {
 	if (n == 0)
 		return;
+#if MAX_KMER <= 32
+	pseq->x[0] >>= n;
+#elif MAX_KMER <= 64
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
 	if (n < 64) {
 		pseq->x[0] = x0 >> n;
@@ -355,6 +358,7 @@ static void shiftRight(Seq *pseq, uint8_t n)
 		pseq->x[0] = 0;
 		pseq->x[1] = x0 >> (n - 64);
 	}
+#endif
 }
 
 /** Shift left by the specified number of bits. */
@@ -362,6 +366,9 @@ static void shiftLeft(Seq *pseq, uint8_t n)
 {
 	if (n == 0)
 		return;
+#if MAX_KMER <= 32
+	pseq->x[0] <<= n;
+#elif MAX_KMER <= 64
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
 	if (n < 64) {
 		pseq->x[0] = x0 << n | x1 >> (64 - n);
@@ -370,6 +377,7 @@ static void shiftLeft(Seq *pseq, uint8_t n)
 		pseq->x[0] = x1 << (n - 64);
 		pseq->x[1] = 0;
 	}
+#endif
 }
 
 //

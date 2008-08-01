@@ -132,7 +132,13 @@ class PackedSeq
 		// This padding + the size of the pointer effectively negates the gains from use a compressed sequence
 		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
 		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
-		static const unsigned MAX_KMER = 40;
+#define MAX_KMER 40
+#if MAX_KMER > 64
+# error MAX_KMER must be no larger than 64.
+#endif
+#if MAX_KMER % 4 != 0
+# error MAX_KMER must be a multiple of 4.
+#endif
 		static const unsigned NUM_BYTES = MAX_KMER / 4;
 
 	private:
