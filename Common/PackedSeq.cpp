@@ -358,6 +358,27 @@ static void shiftRight(Seq *pseq, uint8_t n)
 		pseq->x[0] = 0;
 		pseq->x[1] = x0 >> (n - 64);
 	}
+#elif MAX_KMER <= 96
+	uint64_t x0 = pseq->x[0], x1 = pseq->x[1], x2 = pseq->x[2];
+	if (n < 64) {
+		pseq->x[0] = x0 >> n;
+		pseq->x[1] = x1 >> n | x0 << (64 - n);
+		pseq->x[2] = x2 >> n | x1 << (64 - n);
+	} else if (n == 64) {
+		pseq->x[0] = 0;
+		pseq->x[1] = x0;
+		pseq->x[2] = x1;
+	} else if (n < 128) {
+		n -= 64;
+		pseq->x[0] = 0;
+		pseq->x[1] = x0 >> n;
+		pseq->x[2] = x1 >> n | x0 << (64 - n);
+	} else {
+		n -= 128;
+		pseq->x[0] = 0;
+		pseq->x[1] = 0;
+		pseq->x[2] = x0 >> n;
+	}
 #endif
 }
 
@@ -376,6 +397,27 @@ static void shiftLeft(Seq *pseq, uint8_t n)
 	} else {
 		pseq->x[0] = x1 << (n - 64);
 		pseq->x[1] = 0;
+	}
+#elif MAX_KMER <= 96
+	uint64_t x0 = pseq->x[0], x1 = pseq->x[1], x2 = pseq->x[2];
+	if (n < 64) {
+		pseq->x[0] = x0 << n | x1 >> (64 - n);
+		pseq->x[1] = x1 << n | x2 >> (64 - n);
+		pseq->x[2] = x2 << n;
+	} else if (n == 64) {
+		pseq->x[0] = x1;
+		pseq->x[1] = x2;
+		pseq->x[2] = 0;
+	} else if (n < 128) {
+		n -= 64;
+		pseq->x[0] = x1 << n | x2 >> (64 - n);
+		pseq->x[1] = x2 << n;
+		pseq->x[2] = 0;
+	} else {
+		n -= 128;
+		pseq->x[0] = x2 << n;
+		pseq->x[1] = 0;
+		pseq->x[2] = 0;
 	}
 #endif
 }

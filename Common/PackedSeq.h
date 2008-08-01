@@ -133,8 +133,8 @@ class PackedSeq
 		// By hardcoding this value we can keep things aligned, plus remove the need for alloc/frees
 		// The alternatives are a) accepting the inefficiency of small dynamic allocations or b) writing a custom small object allocator
 #define MAX_KMER 40
-#if MAX_KMER > 64
-# error MAX_KMER must be no larger than 64.
+#if MAX_KMER > 96
+# error MAX_KMER must be no larger than 96.
 #endif
 #if MAX_KMER % 4 != 0
 # error MAX_KMER must be a multiple of 4.
