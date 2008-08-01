@@ -255,41 +255,70 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
+#define SEQ_WORDS ((PackedSeq::NUM_BYTES + 7)/8)
+#define SEQ_BITS (64 * SEQ_WORDS)
+#define SEQ_FULL_WORDS (PackedSeq::NUM_BYTES/8)
+#define SEQ_ODD_BYTES (PackedSeq::NUM_BYTES - 8*SEQ_FULL_WORDS)
+
 struct Seq {
-	uint64_t x[(PackedSeq::NUM_BYTES + 7)/8];
+	uint64_t x[SEQ_WORDS];
 };
 
 /** Load with appropriate endianness for shifting. */
 static Seq load(const uint8_t *src)
 {
-	assert(PackedSeq::NUM_BYTES == 10);
-	Seq seq = {
-		(uint64_t)src[0] << 56
-			| (uint64_t)src[1] << 48
-			| (uint64_t)src[2] << 40
-			| (uint64_t)src[3] << 32
-			| (uint64_t)src[4] << 24
-			| (uint64_t)src[5] << 16
-			| (uint64_t)src[6] << 8
-			| (uint64_t)src[7] << 0,
-		(uint64_t)src[8] << 56
-			| (uint64_t)src[9] << 48
-	};
+	Seq seq;
+	uint64_t *px = seq.x;
+	const uint8_t *p = src;
+	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++) {
+		*px++ = (uint64_t)p[0] << 56
+			| (uint64_t)p[1] << 48
+			| (uint64_t)p[2] << 40
+			| (uint64_t)p[3] << 32
+			| (uint64_t)p[4] << 24
+			| (uint64_t)p[5] << 16
+			| (uint64_t)p[6] << 8
+			| (uint64_t)p[7] << 0;
+		p += 8;
+	}
+	if (SEQ_ODD_BYTES > 0) {
+		uint64_t x = 0;
+		if (SEQ_ODD_BYTES > 0) x |= (uint64_t)p[0] << 56;
+		if (SEQ_ODD_BYTES > 1) x |= (uint64_t)p[1] << 48;
+		if (SEQ_ODD_BYTES > 2) x |= (uint64_t)p[2] << 40;
+		if (SEQ_ODD_BYTES > 3) x |= (uint64_t)p[3] << 32;
+		if (SEQ_ODD_BYTES > 4) x |= (uint64_t)p[4] << 24;
+		if (SEQ_ODD_BYTES > 5) x |= (uint64_t)p[5] << 16;
+		if (SEQ_ODD_BYTES > 6) x |= (uint64_t)p[6] << 8;
+		if (SEQ_ODD_BYTES > 7) x |= (uint64_t)p[7] << 0;
+		*px = x;
+	}
 	return seq;
 }
 
 static void store(uint8_t *dest, Seq seq)
 {
-	dest[0] = seq.x[0] >> 56;
-	dest[1] = seq.x[0] >> 48;
-	dest[2] = seq.x[0] >> 40;
-	dest[3] = seq.x[0] >> 32;
-	dest[4] = seq.x[0] >> 24;
-	dest[5] = seq.x[0] >> 16;
-	dest[6] = seq.x[0] >> 8;
-	dest[7] = seq.x[0] >> 0;
-	dest[8] = seq.x[1] >> 56;
-	dest[9] = seq.x[1] >> 48;
+	const uint64_t *px = seq.x;
+	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++) {
+		dest[0] = *px >> 56;
+		dest[1] = *px >> 48;
+		dest[2] = *px >> 40;
+		dest[3] = *px >> 32;
+		dest[4] = *px >> 24;
+		dest[5] = *px >> 16;
+		dest[6] = *px >> 8;
+		dest[7] = *px >> 0;
+		dest += 8;
+		px++;
+	}
+	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 56;
+	if (SEQ_ODD_BYTES > 1) dest[1] = *px >> 48;
+	if (SEQ_ODD_BYTES > 2) dest[2] = *px >> 40;
+	if (SEQ_ODD_BYTES > 3) dest[3] = *px >> 32;
+	if (SEQ_ODD_BYTES > 4) dest[4] = *px >> 24;
+	if (SEQ_ODD_BYTES > 5) dest[5] = *px >> 16;
+	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 8;
+	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 0;
 }
 
 /**
@@ -298,10 +327,19 @@ static void store(uint8_t *dest, Seq seq)
  */
 static void storeReverse(uint8_t *dest, Seq seq)
 {
-	uint64_t *p0 = (uint64_t *)&dest[0];
-	uint16_t *p1 = (uint16_t *)&dest[8];
-	*p0 = seq.x[1];
-	*p1 = seq.x[0];
+	uint64_t *d = (uint64_t*)dest;
+	uint64_t *px = &seq.x[SEQ_WORDS-1];
+	for (unsigned i = 0; i < SEQ_FULL_WORDS; i++)
+		*d++ = *px--;
+	dest = (uint8_t*)d;
+	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 0;
+	if (SEQ_ODD_BYTES > 1) dest[1] = *px >> 8;
+	if (SEQ_ODD_BYTES > 2) dest[2] = *px >> 16;
+	if (SEQ_ODD_BYTES > 3) dest[3] = *px >> 24;
+	if (SEQ_ODD_BYTES > 4) dest[4] = *px >> 32;
+	if (SEQ_ODD_BYTES > 5) dest[5] = *px >> 40;
+	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 48;
+	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 56;
 }
 
 /** Shift right by the specified number of bits. */
@@ -349,8 +387,8 @@ PackedSeq PackedSeq::subseq(unsigned start, unsigned len) const
 #else
 	// Zero the bases beyond the end of the sequence. A mask would
 	// probably be faster.
-	shiftRight(&seq, 128 - 2*(len + start));
-	shiftLeft(&seq, 128 - 2*len);
+	shiftRight(&seq, SEQ_BITS - 2*(len + start));
+	shiftLeft(&seq, SEQ_BITS - 2*len);
 #endif
 	PackedSeq sub;
 	sub.m_length = len;
@@ -366,11 +404,11 @@ void PackedSeq::reverseComplement()
 	Seq seq = load((uint8_t*)m_seq);
 
 	// Complement the bits.
-	seq.x[0] = ~seq.x[0];
-	seq.x[1] = ~seq.x[1];
+	for (unsigned i = 0; i < SEQ_WORDS; i++)
+		seq.x[i] = ~seq.x[i];
 
 	// Shift the bits flush to the right of the double word.
-	shiftRight(&seq, 128 - 2*m_length);
+	shiftRight(&seq, SEQ_BITS - 2*m_length);
 
 	storeReverse((uint8_t*)m_seq, seq);
 
