@@ -10,17 +10,25 @@
 #include "PairedAlgorithms.h"
 #include "Timer.h"
 
+enum SequenceFormat
+{
+	SF_FASTA,
+	SF_FASTQ
+};
 
 // Functions
 void readContigsIntoDB(std::string refFastaFile, Aligner& aligner);
-void alignReadsToDB(std::string readsFastqFile, Aligner& aligner);
+void alignReadsToDB(std::string readsFile, Aligner& aligner);
+
+void readSequenceRecord(std::ifstream& stream, SequenceFormat type, std::string& readID, Sequence& seq);
+void readFastaRecord(std::ifstream& stream, std::string& readID, Sequence& seq);
 void readFastqRecord(std::ifstream& stream, std::string& readID, Sequence& seq);
 
 int main(int argc, char** argv)
 {
 	if(argc < 4)
 	{
-		std::cout << "Usage: <kmer> <reads fastq> <ref fasta>\n";
+		std::cout << "Usage: <kmer> <reads fasta | reads fastq> <ref fasta>\n";
 		exit(1);
 	}
 	
@@ -35,7 +43,7 @@ int main(int argc, char** argv)
 	// Read the contigs into the ref DB
 	readContigsIntoDB(refFastaFile, aligner);
 	
-	// Align the reads
+	// Align the reads	
 	alignReadsToDB(readsFile, aligner);
 	
 	return 0;
@@ -65,15 +73,32 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 	fileHandle.close();
 }
 
-void alignReadsToDB(std::string readsFastqFile, Aligner& aligner)
+void alignReadsToDB(std::string readsFile, Aligner& aligner)
 {
-	std::ifstream fileHandle(readsFastqFile.c_str());	
+	
+	// Infer the reads file type
+	SequenceFormat seqType;
+	if(readsFile.find(".fastq") != std::string::npos)
+	{
+		seqType = SF_FASTQ;
+	}
+	else if(readsFile.find(".fa") != std::string::npos || readsFile.find(".fasta") != std::string::npos)
+	{
+		seqType = SF_FASTA;
+	}
+	else
+	{
+		std::cerr << "Unknown file type!\n";
+		assert(false);
+	}
+	
+	std::ifstream fileHandle(readsFile.c_str());	
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
 		std::string readID;
 		Sequence readSeq;
 		
-		readFastqRecord(fileHandle, readID, readSeq);
+		readSequenceRecord(fileHandle, seqType, readID, readSeq);
 		
 		// Filter for sequences only containing ACGT
 		size_t pos = readSeq.find_first_not_of("ACGT");
@@ -92,6 +117,36 @@ void alignReadsToDB(std::string readsFastqFile, Aligner& aligner)
 			}		
 		}
 	}
+}
+
+void readSequenceRecord(std::ifstream& stream, SequenceFormat type, std::string& readID, Sequence& seq)
+{
+	switch(type)
+	{
+		case SF_FASTA:
+			return readFastaRecord(stream, readID, seq);
+		case SF_FASTQ:
+			return readFastqRecord(stream, readID, seq);
+		default:
+			// unknown type;
+			assert(false);
+	}
+}
+
+void readFastaRecord(std::ifstream& stream, std::string& readID, Sequence& seq)
+{
+	std::string buffer;
+
+	// Read the header.
+	char c = stream.get();
+	assert(c == '>');
+	stream >> readID;
+	
+	// discard the remainder of the line
+	getline(stream, buffer);
+	
+	// Read the sequence.
+	getline(stream, seq);	
 }
 
 void readFastqRecord(std::ifstream& stream, std::string& readID, Sequence& seq)
