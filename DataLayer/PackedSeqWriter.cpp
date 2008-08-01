@@ -19,15 +19,10 @@ void PackedSeqWriter::WriteSequence(const PackedSeq& pSeq)
 	// make sure the file is readable
 	assert(m_fileHandle.is_open());
 	
-	const int size = sizeof(pSeq);
+	const size_t size = PackedSeq::serialSize();
 	char buffer[size];
-	
-	int nBytes = pSeq.serialize(buffer);
-
-	assert(nBytes == size);
-	(void)nBytes;
-	// write as raw memory
-	m_fileHandle.write(buffer, sizeof(pSeq));
+	pSeq.serialize(buffer);
+	m_fileHandle.write(buffer, size);
 }
 
 void PackedSeqWriter::WriteSequence(const Sequence& pSeq)

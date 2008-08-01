@@ -4,7 +4,7 @@ PackedSeqReader::PackedSeqReader(const char* filename)
 {	
 	m_fileHandle.open(filename, std::ios::binary);
 	
-	m_elementSize = sizeof(PackedSeq);
+	m_elementSize = PackedSeq::serialSize();
 	m_readSize = m_numToRead * m_elementSize;
 	m_pBuffer = new char[m_readSize];
 		

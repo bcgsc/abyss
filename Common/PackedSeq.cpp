@@ -45,7 +45,7 @@ size_t PackedSeq::serialize(char* buffer) const
 	memcpy(buffer + offset, &m_extRecord, sizeof(m_extRecord));
 	offset += sizeof(m_extRecord);
 	
-	assert(offset == sizeof(PackedSeq));	
+	assert(offset == serialSize());
 
 	return offset;		
 }
@@ -73,7 +73,7 @@ size_t PackedSeq::unserialize(const char* buffer)
 	memcpy(&m_extRecord, buffer + offset, sizeof(m_extRecord));
 	offset += sizeof(m_extRecord);
 	
-	assert(offset == sizeof(PackedSeq));
+	assert(offset == serialSize());
 	
 	return offset;			
 }
