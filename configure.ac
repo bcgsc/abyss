@@ -39,6 +39,11 @@ fi
 AC_ARG_ENABLE(openmpi, AS_HELP_STRING([--enable-openmpi],
 	[use Open MPI (default is to use LAM/MPI)]))
 
+AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
+	[set the maximum k-mer length (default is 64)]),
+	[max_kmer="$enableval"], [max_kmer=64])
+AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length]) 
+
 # Set compiler flags.
 AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
 AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
