@@ -1,0 +1,73 @@
+#!/usr/bin/make -f
+# Run the ABySS paired-end assembler.
+# Written by Shaun Jackman <sjackman@bcgsc.ca>.
+
+ifndef lib
+$(error missing argument lib)
+endif
+ifndef k
+$(error missing argument k)
+endif
+ifndef l
+$(error missing argument l)
+endif
+ifndef n
+$(error missing argument n)
+endif
+
+all: paired-contigs.fa
+
+clean:
+	rm -f *.len *.adj *.align *.pair *.frag *.pairs *.hist *.dist *.path
+
+.PHONY: all clean
+.DELETE_ON_ERROR:
+.SECONDARY:
+
+# Single-end assembly
+
+contigs.fa: $(addsuffix .fa, $(lib))
+	ABYSS -k$k -l$l -e0 $^
+
+%.len: %.fa
+	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
+
+%.adj: %.fa
+	AdjList $k $<
+	mv AdjList.txt $@
+
+# Library paired-end distance estimation
+
+%.align: %.fa contigs.fa
+	KAligner $k $^ >$@
+
+%.pair %.frag: %.align
+	ParseAligns $k $<
+	mv PairAligns.txt $*.pair
+	mv DistanceList.txt $*.frag
+
+%.pairs: %.pair
+	sort -nk2,2 $< -o $@
+
+%.hist: %.frag
+	awk '{x[$$0]++} END {for (i in x) print i, x[i]}' $< >$@
+
+%.dist: %.pairs contigs.len %.hist
+	DistanceEst $k $^ 100 $n
+	mv EstimatedLinks.txt $@
+
+# Paired-end assembly
+
+#paired.dist: $(addsuffix .dist, $(lib))
+#	abyss-joindist $^ >$@
+
+paired.dist: $(addsuffix .dist, $(lib))
+	cp $< $@
+
+%.path: contigs.adj contigs.len %.dist
+	SimpleGraph $k $^ 100000
+	mv ResolvedPaths.txt $@
+
+%-contigs.fa: contigs.fa %.path
+	MergePaths $k $^
+	mv final.fa $@

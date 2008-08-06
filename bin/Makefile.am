@@ -1,1 +1,1 @@
-dist_bin_SCRIPTS=abyss-split
+dist_bin_SCRIPTS=abyss-pe abyss-split
