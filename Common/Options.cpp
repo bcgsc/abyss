@@ -95,10 +95,11 @@ static const struct option longopts[] = {
 /** Parse the specified command line. */
 void parse(int argc, char* const* argv)
 {
+	ostringstream sargv;
 	if (opt::rank <= 0) {
 		char* const* last = argv + argc - 1;
-		copy(argv, last, ostream_iterator<const char *>(cout, " "));
-		cout << *last << endl;
+		copy(argv, last, ostream_iterator<const char *>(sargv, " "));
+		sargv << *last;
 	}
 
 	bool die = false;
@@ -198,6 +199,9 @@ void parse(int argc, char* const* argv)
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	if (opt::rank <= 0)
+		cout << sargv.str() << endl;
 }
 
 } // namespace opt
