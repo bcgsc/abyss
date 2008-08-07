@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+# Join multiple ABySS distance estimate files.
+# Written by Shaun Jackman <sjackman@bcgsc.ca>.
+use strict;
+
+my (%a, %b);
+
+while (<>) {
+	my ($id, $a, $b) = /([0-9]*) *: *([-0-9, ]*) *\| *([-0-9, ]*)/;
+	my @a = split ' ', $a;
+	my @b = split ' ', $b;
+	
+	for (@a) {
+		my ($to, $d, $n, $sd, $s) = split ',';
+		if (!exists $a{$id}{$to} || $sd < $a{$id}{$to}) {
+			$a{$id}{$to} = "$sd $d $n $s";
+		}
+	}
+
+	for (@b) {
+		my ($to, $d, $n, $sd, $s) = split ',';
+		if (!exists $b{$id}{$to} || $sd < $b{$id}{$to}) {
+			$b{$id}{$to} = "$sd $d $n $s";
+		}
+	}
+}
+
+for my $id (sort {$a<=>$b} keys %a) {
+	print "$id :";
+	for my $to (sort {$a<=>$b} keys %{$a{$id}}) {
+		my ($sd, $d, $n, $s) = split ' ', $a{$id}{$to};
+		print " $to,$d,$n,$sd,$s";
+	}
+	print ' |';
+	for my $to (sort {$a<=>$b} keys %{$b{$id}}) {
+		my ($sd, $d, $n, $s) = split ' ', $b{$id}{$to};
+		print " $to,$d,$n,$sd,$s";
+	}
+	print "\n";
+}
