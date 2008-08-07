@@ -1,0 +1,60 @@
+ABySS - assemble short reads into contigs
+
+* Single-end assembly
+
+Assemble short reads in a file named reads.fa into contigs in a
+file named contigs.fa with the following command:
+
+ABYSS -k25 -l42 reads.fa
+
+where -l specifies the read length and -k is an appropriate k-mer
+length. The only method to find the optimal value of k is to run
+multiple trials and inspect the results. The following shell snippet
+will assemble for every value of k from 20 to 40.
+
+for k in {20..40}; do
+	ABYSS -k$k -l42 reads.fa && mv contigs.fa contigs-k$k.fa
+done
+
+The maximum value for k is 40.
+
+* Paired-end assembly
+
+To assemble paired short reads in a file named reads.fa into contigs
+in a file named paired-contigs.fa, run the command:
+
+abyss-pe k=25 l=42 n=5 lib=reads
+
+where k and l are the k-mer length and read length as before, and n is
+the minimum number of pairs needed to consider joining two contigs.
+The optimal value for n must be found by trial.
+
+The last character of the read identifier for a pair of reads must be
+one of '1' and '2', or 'A' and 'B', or 'F' and 'R'.
+
+abyss-pe is a driver script implemented as a Makefile and runs a
+single-end assembly, as described above, and the following commands,
+which must be found in your PATH:
+
+ABYSS - the single-end assembler
+AdjList - finds overlaps of length k-1 between contigs
+KAligner - aligns reads to contigs
+ParseAligns - finds pairs of reads in alignments
+DistanceEst - estimates distances between contigs
+SimpleGraph - finds paths between pairs of contigs
+MergePaths - merges consistent paths
+
+* Notes
+
+The distribution of fragment sizes is calculated empirically by
+aligning paired reads to the contigs produced by the single-end
+assembler, and the distribution is stored in a file with the extension
+.hist, such as reads.hist.
+
+* See also
+
+Try `abyss --help' for more information on command line options, or
+see the manual page in the file `ABYSS.1'.
+
+Written by Jared Simpson and Shaun Jackman.
+Contact the authors by email at <abyss@bcgsc.ca>.
