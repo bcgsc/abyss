@@ -14,7 +14,7 @@ namespace opt {
 
 static const char *VERSION_MESSAGE =
 PACKAGE " (ABySS) " VERSION "\n"
-"Written by Jared Simpson.\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
 
