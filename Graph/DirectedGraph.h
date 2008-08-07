@@ -5,7 +5,6 @@
 #include "SetOperations.h"
 #include <queue>
 #include <list>
-#include <google/sparse_hash_map>
 #include <ext/hash_map>
 #include <iostream>
 #include <string>
