@@ -78,6 +78,7 @@ AC_CONFIG_FILES([
 	Graph/Makefile
 	Parallel/Makefile
 	bin/Makefile
+	doc/Makefile
 	fasta2psq/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile

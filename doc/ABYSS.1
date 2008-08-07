@@ -1,0 +1,47 @@
+.TH ABYSS "1" "August 2008" "abyss (ABySS) 1.0" "User Commands"
+.SH NAME
+abyss \- assemble short reads into contigs
+.SH SYNOPSIS
+.B abyss
+[\fIOPTION\fR]... \fIFILE\fR...
+.SH DESCRIPTION
+Assemble all input files, FILE, which may be in FASTA (.fa) format or
+FASTQ format (.fastq). The contigs are written to contigs.fa.
+.TP
+\fB\-k\fR, \fB\-\-kmer\fR=\fIKMER_SIZE\fR
+k\-mer size
+.TP
+\fB\-l\fR, \fB\-\-read\-length\fR=\fIREAD_LENGTH\fR
+read length
+.TP
+\fB\-t\fR, \fB\-\-trim\-length\fR=\fITRIM_LENGTH\fR
+maximum length of dangling edges to trim
+.TP
+\fB\-b\fR, \fB\-\-bubbles\fR=\fIN\fR
+maximum number of bubble\-popping rounds
+.TP
+\fB\-e\fR, \fB\-\-erode\fR=\fIN\fR
+erode N bases from the ends of contigs.
+Yields slightly shorter contigs, but fewer
+errors at the ends of contigs.
+.TP
+\fB\-g\fR, \fB\-\-graph\fR=\fIFILE\fR
+generate a graph in dot format
+.TP
+\fB\-s\fR, \fB\-\-snp\fR=\fIFILE\fR
+record SNPs in FILE
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+display verbose output
+.TP
+\fB\-\-help\fR
+display this help and exit
+.TP
+\fB\-\-version\fR
+output version information and exit
+.SH AUTHOR
+Written by Jared Simpson and Shaun Jackman.
+.SH "REPORTING BUGS"
+Report bugs to <abyss@bcgsc.ca>.
+.SH COPYRIGHT
+Copyright 2008 Canada's Michael Smith Genome Science Centre
