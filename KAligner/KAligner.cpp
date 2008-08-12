@@ -78,7 +78,7 @@ void alignReadsToDB(std::string readsFile, Aligner& aligner)
 	
 	// Infer the reads file type
 	SequenceFormat seqType;
-	if(readsFile.find(".fastq") != std::string::npos)
+	if(readsFile.find(".fq") != std::string::npos || readsFile.find(".fastq") != std::string::npos)
 	{
 		seqType = SF_FASTQ;
 	}
