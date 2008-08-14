@@ -16,6 +16,9 @@ struct Histogram
 	
 	void addDataPoint(int data);
 	void addMultiplePoints(int value, int count);
+	
+	Histogram trim(double percent);
+	
 	int getSumCount() const;
 	int getCount(int index) const;
 	int getMin() const;

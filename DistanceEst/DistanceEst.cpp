@@ -22,10 +22,16 @@ struct PairedData
 	int compCount[2];
 };
 
+struct EstimateReturn
+{
+	int distance;
+	bool isRC;
+};
+
 typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
-int estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
+EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
 void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
@@ -78,8 +84,19 @@ int main(int argc, char** argv)
 	<< distanceCountFile << " len cutoff " << length_cutoff 
 	<< " num pairs cutoff " << number_of_pairs_threshold << std::endl;
 	
-	PDF empiricalPDF = loadPDF(distanceCountFile);
-
+	// Load the pdf
+	Histogram distanceHist = loadHist(distanceCountFile);
+		
+	// Trim off the outliers of the histogram (the bottom 0.01%)
+	// These cases result from misalignments
+	double trimAmount = 0.0001f;
+	Histogram trimmedHist = distanceHist.trim(trimAmount);
+	
+	//std::cout << "Trimmed hist: \n";
+	//trimmedHist.print();
+	
+	PDF empiricalPDF(trimmedHist);
+	std::cout << "Max in pdf: " << empiricalPDF.getMaxIdx() << std::endl;
 	
 	// Load the length map
 	ContigLengthVec contigLens;	
@@ -173,16 +190,18 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				if((int)pdIter->second.pairVec.size() > number_of_pairs_threshold)
 				{
 					// Estimate the distance
-					int distance = estimateDistance(kmer, refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);
+					EstimateReturn er = estimateDistance(kmer, refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);					
 					
 					Estimate est;
 					est.nID = pairNumID;
-					est.distance = distance;
+					est.distance = er.distance;
 					est.numPairs = pdIter->second.pairVec.size();
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
+					est.isRC = er.isRC;
 					
 					// write the record to file
 					outFile << est << " "; 
+
 				}
 				//std::cout << "Est dist: " << dist << " ratio " << ratio << std::endl;
 			}
@@ -199,8 +218,11 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 }
 
 // Estimate the distances between the contigs
-int estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
+EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
 {
+	
+	EstimateReturn ret;
+	
 	// Determine the relative orientation of the contigs
 	// As pairs are orientated in opposite (reverse comp) direction, the alignments are in the same
 	// orientation if the pairs aligned in the opposite orientation
@@ -264,22 +286,13 @@ int estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedDat
 			distanceList.push_back(distance);
 			//std::cout << "Distance: " << distance << std::endl;
 	}
+	
 	// Perform the max-likelihood est
 	double ratio;
 	int dist = maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(), distanceList, pdf, ratio);
 	
-	/*
-	printf("Num Pairs: %d\n", distanceList.size());
-	// Perform a KS-test
-	IntVector transDistances;
-	for(IntVector::iterator transIter = distanceList.begin(); transIter != distanceList.end(); ++transIter)
-	{
-		transDistances.push_back(*transIter + dist);
-	}
-	KSTestCont(transDistances, pdf);
-	*/
-	
-	
-	return dist;
+	ret.isRC = !sameOrientation;
+	ret.distance = dist;
+	return ret;
 }
 

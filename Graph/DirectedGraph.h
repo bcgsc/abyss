@@ -31,6 +31,37 @@ namespace __gnu_cxx
   };                                                                                          
 }          
 
+// Constraint structure
+struct Constraint
+{
+	int distance;
+	bool isRC;
+	
+	bool isConstraintMet(int d, bool rc)
+	{
+		(void)rc;
+		return (d < distance) && (rc == isRC); 
+	}
+	
+	bool isConstraintPossible(int d)
+	{
+		bool violated = (d > distance);
+		return !violated;
+	}
+	
+	void printStatus(int d, bool rc)
+	{
+		printf("Hit Constraint status: (%d < %d) && (%d == %d)\n", d, distance, rc, isRC);
+	}
+	
+	
+	friend std::ostream& operator<<(std::ostream& out, const Constraint& object)
+	{
+		out << "(" << object.distance << "," << object.isRC << ")";
+		return out;
+	}	
+};
+
 struct EdgeDescription
 {
 	extDirection dir;
@@ -143,6 +174,7 @@ class DirectedGraph
 		
 		typedef std::set<LinearNumKey> KeySet;
 		typedef std::map<LinearNumKey, int> KeyIntMap;
+		typedef std::map<LinearNumKey, Constraint> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;
@@ -209,7 +241,7 @@ class DirectedGraph
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
 		
 		template<class DataCostFunctor>
-		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, 
+		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyConstraintMap& keyConstraints, FeasiblePaths& superPaths, 
 				DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost);
 		
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
@@ -278,7 +310,7 @@ class DirectedGraph
 		
 		//
 		template<class DataCostFunctor>		
-		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints, 
+		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, bool rcFlip, const KeyConstraintMap keyConstraints, 
 										VertexPath currentPath, FeasiblePaths& solutions,
 										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost);	
 				

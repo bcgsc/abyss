@@ -30,6 +30,8 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, si
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
+bool gDebugPrint = false;
+
 static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 {
 	set<size_t> seen;
@@ -77,6 +79,11 @@ int main(int argc, char** argv)
 	while(iter != contigPathMap.end())
 	{
 		linkPaths(iter->first, contigPathMap);
+
+		ContigPath newCanonical;
+		PathMergeRecord& refPMR = contigPathMap[iter->first];
+		makeCanonicalPath(iter->first, refPMR, newCanonical);
+		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl; 
 		iter++;
 	}	
 	
@@ -131,7 +138,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 	ContigPath initialCanonical;
 	makeCanonicalPath(id, refPMR, initialCanonical);
 	
-	//std::cout << "Initial canonical path " << initialCanonical << "\n";
+	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << initialCanonical << "\n";
 	
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
@@ -142,7 +149,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 	{	
 		if(iter->id != id)
 		{
-			//std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
+			if(gDebugPrint) std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
 			
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
@@ -161,8 +168,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					childCanonPath.reverse(true);
 				}
 				
-				//std::cout << " ref: " << refCanonical << "\n";
-				//std::cout << "  in: " << childCanonPath << "\n";
+				if(gDebugPrint) std::cout << " ref: " << refCanonical << "\n";
+				if(gDebugPrint) std::cout << "  in: " << childCanonPath << "\n";
 				
 				size_t s1, s2, e1, e2;
 				bool validMerge = checkPathConsistency(id, iter->id, refCanonical, childCanonPath, s1, e1, s2, e2);
@@ -189,7 +196,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					
 					ContigPath newCanonical;
 					makeCanonicalPath(id, refPMR, newCanonical);
-					//std::cout << " new: " << newCanonical << "\n";
+					if(gDebugPrint) std::cout << " new: " << newCanonical << "\n";
 					
 					// Erase the child id
 					contigPathMap.erase(iter->id);
@@ -206,8 +213,9 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 // Check if the two paths are consistent
 // They are consistent if there is an identical subpath thats belongs to both nodes and that subpath is terminal wrt to its super path
 //
-bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2)
+bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2)
 {
+	(void)path1Root;
 	// Find the provisional minimal index set by choosing the closest index pair of the root nodes from each path
 	// Since each path must contain each root node, if the range of these indices are different
 	// the paths must be different
@@ -274,7 +282,9 @@ bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, Co
 	// Check if there was an actual mismatch in the nodes
 	if(!lowValid || !highValid)
 	{
-		printf("Invalidate path match!\n");
+		if(gDebugPrint) printf("Invalid path match!\n");
+		if(gDebugPrint) std::cout << "Path1 (" << path1Root << ") " << path1 << std::endl;
+		if(gDebugPrint) std::cout << "Path2 (" << path2Root << ") " << path2 << std::endl;
 		return false;
 	}
 	
@@ -291,7 +301,7 @@ bool checkPathConsistency(LinearNumKey /*path1Root*/, LinearNumKey path2Root, Co
 	{
 		if(path1.getNode(startP1 + c).id != path2.getNode(startP2 + c).id)
 		{
-			printf("Internal path mismatch\n");
+			if(gDebugPrint) printf("Internal path mismatch\n");
 			return false;
 		}
 	}
@@ -385,7 +395,11 @@ void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& 
 
 void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer)
 {
-	std::cout << "Attempting to merge " << cID << "\n";
+	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
+	ContigPath newCanonical;
+	makeCanonicalPath(cID, mergeRecord, newCanonical);
+	if(gDebugPrint) std::cout << "Canonical path is: " << newCanonical << std::endl; 	
+	
 	Sequence merged = sourceContigs[cID].seq;
 	
 	assert(!merged.empty());
@@ -400,7 +414,7 @@ void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& merg
 		for(size_t i = 0; i < numNodes; ++i)
 		{
 			MergeNode mn = currPath.getNode(i);
-			std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
+			if(gDebugPrint) std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
 			
 			Sequence otherContig = sourceContigs[mn.id].seq;
 			assert(!otherContig.empty());

@@ -32,6 +32,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath);
 
+bool gDebugPrint = false;
+
 //
 //
 //
@@ -64,7 +66,6 @@ int main(int argc, char** argv)
 	
 	if(preallocVecs)
 	{
-		std::cout << "preallocating vectors to be " << preallocSize << "\n";
 		pContigGraph = new SimpleContigGraph(preallocSize);
 	}
 	else
@@ -108,9 +109,9 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 
-			std::cout << "\n\n****Processing " << er.refID << " dir: " << dirIdx << "****\n\n";
+			std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
 			// generate the reachable set
-			SimpleContigGraph::KeyIntMap constraintMap;
+			SimpleContigGraph::KeyConstraintMap constraintMap;
 			
 			for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 			{
@@ -118,49 +119,98 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				// used by the graph (a translation of m_overlap)
 				int translatedDistance = iter->distance + costFunctor.m_overlap;
 				int distanceBuffer = iter->stdDev * NUM_SIGMA;
-				std::cout << "Adding Constraint " << iter->nID << " range " << distanceBuffer << "\n"; 
-				constraintMap[iter->nID] = translatedDistance  + distanceBuffer;
+				
+				Constraint nc;
+				nc.distance = translatedDistance  + distanceBuffer;
+				nc.isRC = iter->isRC;
+				
+				if(gDebugPrint) std::cout << "Adding Constraint " << iter->nID << " " << nc << "\n";
+
+				constraintMap[iter->nID] = nc;
 			}
 
-			std::cout << "Constraints: ";
-			SetOperations::printMap(constraintMap);
-			std::cout << "\n";
+			if(gDebugPrint)
+			{
+				std::cout << "Constraints: ";
+				SetOperations::printMap(constraintMap);
+				std::cout << "\n";
+			}
 
 			// Generate the paths
 			SimpleContigGraph::FeasiblePaths solutions;
 			
 			// The value at which to abort trying to find a path
 			// only unique paths are being searched for...
-			const int maxNumPaths = 2;
+			const int maxNumPaths = 200;
 			int numVisited = 0;
 			
 			// The number of nodes to explore before bailing out
 			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, maxCost, numVisited);
 			
-			std::cout << "Computational cost " << numVisited << "\n";
-			std::cout << "Solutions: \n";
-			for(SimpleContigGraph::FeasiblePaths::iterator solIter = solutions.begin(); solIter != solutions.end(); ++solIter)
-			{
-				size_t len = pContigGraph->calculatePathLength(*solIter, costFunctor);
-				std::cout << len << " ";
-				SetOperations::printPath(*solIter);
-				std::cout << "\n";
-			}
-			
+			// Select the best path
+			//std::cout << "Computational cost " << numVisited << "\n";
+			//std::cout << "Solutions: \n";
+
+			SimpleContigGraph::FeasiblePaths::iterator bestSol = solutions.end();
+			int minDiff = 999999;
+
 			if(solutions.size() == 1)
 			{
-				printf("Unique solution found!\n");
+			    for(SimpleContigGraph::FeasiblePaths::iterator solIter = solutions.begin(); solIter != solutions.end(); ++solIter)
+			    {
+					size_t len = pContigGraph->calculatePathLength(*solIter, costFunctor);
+					
+					if(gDebugPrint)
+					{
+						std::cout << len << " ";
+						SetOperations::printPath(*solIter);
+					}
+					
+					
+					std::map<LinearNumKey, int> distanceMap;
+					pContigGraph->makeDistanceMap(*solIter, costFunctor, distanceMap); 
+					int sumDiff = 0;
+					for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
+					{
+					    std::map<LinearNumKey, int>::iterator dmIter = distanceMap.find(iter->nID);
+					    if(dmIter != distanceMap.end())
+					    {	
+							int actualDistance = dmIter->second - costFunctor.m_overlap;
+							int diff = actualDistance - iter->distance;
+							sumDiff += abs(diff);
+					    }
+					}
+					
+					if(sumDiff < minDiff)
+					{
+						minDiff = sumDiff;
+						bestSol = solIter;
+					}
+					
+					if(gDebugPrint) std::cout << " Path diff: " << sumDiff << "\n"; 
+			    }
+			}
+			
+			
+			
+			if(bestSol != solutions.end())
+			{
+				if(gDebugPrint)
+				{
+					std::cout << "Selected path with sum diff " << minDiff << std::endl;
+					printf("Solution found!\n");
+				}
+				
 				bool validPath = true;
 				// Calculate the path distance to each node and see if it is within the estimated distance
-				SimpleContigGraph::VertexPath sol = solutions.front();
 				
 				std::map<LinearNumKey, int> distanceMap;
-				pContigGraph->makeDistanceMap(sol, costFunctor, distanceMap);
+				pContigGraph->makeDistanceMap(*bestSol, costFunctor, distanceMap);
 				
 				// Filter out potentially bad hits
 				for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
 				{
-					std::cout << "Contig " << *iter << "\n";
+					if(gDebugPrint)  std::cout << "Contig " << *iter << "\n";
 					
 					// look up in the distance map
 					std::map<LinearNumKey, int>::iterator dmIter = distanceMap.find(iter->nID);
@@ -168,7 +218,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					{
 						// translate distance by -overlap to match coordinate space used by the estimate
 						int actualDistance = dmIter->second - costFunctor.m_overlap;
-						std::cout << " Actual Dist: " << actualDistance << "\n";
+						if(gDebugPrint) std::cout << " Actual Dist: " << actualDistance << "\n";
 						int diff = actualDistance - iter->distance;
 						int buffer = iter->stdDev * NUM_SIGMA;
 						if(abs(diff) > buffer)
@@ -177,7 +227,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						}
 						else
 						{
-							std::cout << "diff: " << diff << " n: " << iter->numPairs << " buffer: " << buffer << "\n";
+							if(gDebugPrint) std::cout << "diff: " << diff << " n: " << iter->numPairs << " buffer: " << buffer << "\n";
 						}
 					}
 					else
@@ -190,19 +240,15 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				if(validPath)
 				{
 					ContigPath cPath;
-					constructContigPath(sol, cPath);
+					constructContigPath(*bestSol, cPath);
 					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);	
 				}
 				else
 				{
-					printf("Unique path was not valid!\n");
+					if(gDebugPrint) printf("Unique path was not valid!\n");
 				}
 				
 				uniqueEnd++;
-			}
-			else if(solutions.size() > 1)
-			{
-				multiEnd++;
 			}
 			else
 			{
@@ -239,7 +285,7 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
 {
-	std::cout << "outting path " << refNode << "\n";
+	std::cout << "Found path for " << refNode << "\n";
 	outStream << "@ " << refNode << "," << dir << " -> ";
 	outStream << contigPath << "\n";
 }

@@ -162,6 +162,41 @@ void Histogram::addMultiplePoints(int value, int count)
 	m_data[value] += count;
 }
 
+// This function will trim off the bottom percent/2 and top percent/2 data points
+// The function will leave AT LEAST  1 - percent of the data in the histogram
+
+Histogram Histogram::trim(double percent)
+{
+	
+	Histogram newHist;
+	
+	// The amount to take off each end
+	double half_percent = percent/2;
+	double low_cutoff = half_percent;
+	double high_cutoff = 1.0f - half_percent;
+	double total = (double)getSumCount();
+
+	int min = 0;
+	int max = getMax();
+	double cumulative = 0.0f;
+	
+	for(int idx = min; idx <= max; ++idx)
+	{
+		int currCount = getCount(idx);
+		double frac = currCount / total;
+		double temp_total = cumulative + frac;
+		//printf("Frac: %lf TT: %lf C: %lf LC: %lf HC: %lf\n", frac, temp_total, cumulative, low_cutoff, high_cutoff);
+		if(temp_total > low_cutoff && cumulative < high_cutoff)
+		{
+			// Add these elements
+			newHist.addMultiplePoints(idx, currCount);
+		}
+		cumulative = temp_total;
+	}
+	
+	return newHist;
+}
+
 int Histogram::getMin() const
 {
 	if(m_data.empty())
@@ -228,7 +263,6 @@ void Histogram::print() const
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
-	
 	m_maxIdx = h.getMax();
 	double count = 0;
 

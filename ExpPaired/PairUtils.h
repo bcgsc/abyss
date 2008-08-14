@@ -30,10 +30,11 @@ struct Estimate
 	int distance;
 	int numPairs;
 	int stdDev;
+	bool isRC;
 	
 	friend std::ostream& operator<<(std::ostream& out, const Estimate& object)
 	{
-		out << object.nID << "," << object.distance << "," << object.numPairs << "," << object.stdDev;
+		out << object.nID << "," << object.distance << "," << object.numPairs << "," << object.stdDev << "," << object.isRC;
 		return out;
 	} 
   
@@ -65,7 +66,13 @@ struct Estimate
 		getline(recss, data, ',');
 		convertor.clear();
 		convertor.str(data);	
-		convertor >> object.stdDev;		
+		convertor >> object.stdDev;	
+
+		getline(recss, data, ',');
+		convertor.clear();
+		convertor.str(data);	
+		convertor >> object.isRC;	
+		
 		return in;
 	}  	
 };
@@ -123,8 +130,8 @@ void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleConti
 void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
 int lookupLength(const ContigLengthVec& lengthMap, const LinearNumKey& id);
 
-// PDF loader
-PDF loadPDF(std::string distCountFile);
+// Hist loader
+Histogram loadHist(std::string distCountFile);
 
 // Convertor
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);

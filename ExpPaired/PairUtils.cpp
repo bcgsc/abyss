@@ -219,9 +219,9 @@ int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
 }
 
 //
-// PDF loader
+// Hist loader
 //
-PDF loadPDF(std::string distCountFile)
+Histogram loadHist(std::string distCountFile)
 {
 	Histogram hist;
 	ifstream distFile(distCountFile.c_str());
@@ -234,8 +234,7 @@ PDF loadPDF(std::string distCountFile)
 		hist.addMultiplePoints(value, count);
 	} 
 
-	PDF pdf(hist);
-	return pdf;
+	return hist;
 }
 
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)

@@ -819,7 +819,7 @@ static int gExaminedCount;
 
 template<typename D>
 template<class DataCostFunctor>
-bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyIntMap& keyConstraints, FeasiblePaths& superPaths, 
+bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyConstraintMap& keyConstraints, FeasiblePaths& superPaths, 
 										DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost)
 {
     VertexType* pSourceVertex = findVertex(sourceKey);
@@ -834,7 +834,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirectio
     VertexPath path;
 
     gExaminedCount = 0;
-    ConstrainedDFS(pSourceVertex, dir, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths, maxCompCost);
+    ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths, maxCompCost);
     compCost = gExaminedCount;
     // was the limit hit?
     if(gExaminedCount >= maxCompCost)
@@ -849,7 +849,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirectio
 
 template<typename D>
 template<class DataCostFunctor>
-void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, const KeyIntMap keyConstraints,
+void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, bool rcFlip, const KeyConstraintMap keyConstraints,
                                                                                 VertexPath currentPath, FeasiblePaths& solutions,
                                                                                 size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost)
 {
@@ -871,20 +871,30 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
         PathNode node;
         node.key = pNextVertex->m_key;
         node.isRC = eIter->reverse;
+                
+        // Get the relative direction and comp for the new node
+        extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
+        bool relativeRC = rcFlip ^ eIter->reverse;
 
         VertexPath newPath = currentPath;
         newPath.push_back(node);
 
         // Update the constraints set
-        KeyIntMap newConstraints = keyConstraints;
+        KeyConstraintMap newConstraints = keyConstraints;
 
         // Make a copy of the constraints
-        typename KeyIntMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
+        typename KeyConstraintMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
         if(constraintIter != newConstraints.end())
         {
-                // This vertex is a valid constraint, remove it from the set
-                std::cout << "Constraint hit\n";
-                newConstraints.erase(constraintIter);
+        		if(constraintIter->second.isConstraintMet(currLen, relativeRC))
+        		{
+	                // This vertex is a valid constraint, remove it from the set
+	                newConstraints.erase(constraintIter);
+        		}
+        		/*else
+        		{
+        			constraintIter->second.printStatus(currLen, relativeRC);
+        		}*/
         }
 
         // Have all the constraints been satisfied?
@@ -892,19 +902,21 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
         {
                 // this path is valid
                 solutions.push_back(newPath);
-                return;
+                continue;
         }
         else
         {
-                // update the path length
-                size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);
-
+        	
+	            // update the path length
+	            size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);    
+	            
                 // Check if this path can possibly support all the constraints
                 bool constraintViolated = false;
-                for(typename KeyIntMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
+                for(typename KeyConstraintMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
                 {
                         //std::cout << "a " << cIter->second << " , " << (int)newLength << " result " << (cIter->second < (int)newLength) << "\n";
-                        if(cIter->second < (int)newLength)
+                	 	//if(cIter->second.distance < (int)newLength)
+                		if(!cIter->second.isConstraintPossible(newLength))
                         {
                                 //this constraint is violated, the branch will be explored no further
                                 constraintViolated = true;
@@ -914,16 +926,13 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
 
                 if(constraintViolated)
                 {
-                        continue;
+                       continue;
                 }
 
                 //printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
 
-                // Get the relative direction for the new node
-                extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
-
                 // recurse
-                ConstrainedDFS(pNextVertex, relativeDir, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths, maxCompCost);
+                ConstrainedDFS(pNextVertex, relativeDir, relativeRC, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths, maxCompCost);
         }
     }
 }
