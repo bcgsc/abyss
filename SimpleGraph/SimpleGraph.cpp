@@ -109,7 +109,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 
-			std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
+		  //std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
 			// generate the reachable set
 			SimpleContigGraph::KeyConstraintMap constraintMap;
 			
@@ -285,7 +285,7 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
 {
-	std::cout << "Found path for " << refNode << "\n";
+  //std::cout << "Found path for " << refNode << "\n";
 	outStream << "@ " << refNode << "," << dir << " -> ";
 	outStream << contigPath << "\n";
 }
