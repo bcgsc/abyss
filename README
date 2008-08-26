@@ -16,7 +16,7 @@ for k in {20..40}; do
 	ABYSS -k$k -l42 reads.fa && mv contigs.fa contigs-k$k.fa
 done
 
-The maximum value for k is 40.
+The maximum value for k is 64.
 
 * Paired-end assembly
 
