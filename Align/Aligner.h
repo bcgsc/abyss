@@ -31,10 +31,10 @@ struct Alignment
 		}
 		else
 		{
-			return contig_start_pos + read_start_pos;
+			return contig_start_pos - ((read_length - read_start_pos) - align_length);
 		}
 	}
-	
+
 	// flip the alignment with respect to the contig size
 	void flip(int contigLength)
 	{
