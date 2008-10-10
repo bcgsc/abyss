@@ -187,6 +187,7 @@ sub make_fake_base_segments
     foreach my $ctg (@sKeys)
     {
 	my $full_seq = $refContigs->{$ctg}->{seq};
+	my @bs;
 	for(my $i = 0; $i < length($full_seq) - $kmer + 1; ++$i)
 	{
 	    my $seq = substr($full_seq, $i, $kmer);
@@ -207,10 +208,9 @@ sub make_fake_base_segments
 	    $fakeAlign->{read_space_pos} = $fakeAlign->{contig_start_pos};
 	    
 	    push(@{$refContigs->{$ctg}->{aligns}}, $fakeAlign);
-	    my @bs;
 	    push(@bs, $fakeAlign);
-	    @{$refContigs->{$ctg}->{bs}}= @bs;
 	}
+	@{$refContigs->{$ctg}->{bs}}= @bs;
     }
 }
 
