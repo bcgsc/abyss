@@ -27,6 +27,12 @@ AC_CHECK_FUNCS([memset mkdir pow sqrt])
 AC_FUNC_MEMCMP
 AC_FUNC_VPRINTF
 
+# Checks for library constants.
+AC_CHECK_DECL(HOST_NAME_MAX, [],
+	AC_DEFINE(HOST_NAME_MAX, [_POSIX_HOST_NAME_MAX],
+			  [Define if the system does not provide HOST_NAME_MAX]),
+	[#include <limits.h>])
+
 # Options to configure.
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	[specify prefix directory for the installed MPI parallel
