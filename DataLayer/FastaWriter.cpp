@@ -20,10 +20,10 @@ void FastaWriter::WriteSequence(const Sequence& seq,
 {
 	assert(m_fileHandle != NULL);
 	if (opt::rank < 0) {
-		fprintf(m_fileHandle, ">%llu %u %g\n%s\n",
+		fprintf(m_fileHandle, ">%llu %zu %g\n%s\n",
 				id, seq.length(), multiplicity, seq.c_str());
 	} else {
-		fprintf(m_fileHandle, ">%u:%llu %u %g\n%s\n", opt::rank,
+		fprintf(m_fileHandle, ">%u:%llu %zu %g\n%s\n", opt::rank,
 				id, seq.length(), multiplicity, seq.c_str());
 	}
 }
