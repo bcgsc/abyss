@@ -56,7 +56,7 @@ class BranchRecord
 		void setMultiplicity(const PackedSeq& seq, int multiplicity);
 		
 		/** Forget the multiplicity information. */
-		void BranchRecord::clearMultiplicity();
+		void clearMultiplicity();
 
 		// Set the state of the branch
 		void setState(BranchState state) { m_state = state; }
