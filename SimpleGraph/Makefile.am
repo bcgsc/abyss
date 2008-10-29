@@ -8,8 +8,6 @@ SimpleGraph_CPPFLAGS = \
 	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
-SimpleGraph_LDFLAGS = -Wl,--start-group
-
 SimpleGraph_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \

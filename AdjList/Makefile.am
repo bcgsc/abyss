@@ -8,8 +8,6 @@ AdjList_CPPFLAGS = \
 	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
-AdjList_LDFLAGS = -Wl,--start-group
-
 AdjList_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \

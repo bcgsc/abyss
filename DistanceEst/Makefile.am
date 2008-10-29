@@ -8,8 +8,6 @@ DistanceEst_CPPFLAGS = \
 	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
-DistanceEst_LDFLAGS = -Wl,--start-group
-
 DistanceEst_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \

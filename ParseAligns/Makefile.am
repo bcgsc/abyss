@@ -8,8 +8,6 @@ ParseAligns_CPPFLAGS = \
 	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
-ParseAligns_LDFLAGS = -Wl,--start-group
-
 ParseAligns_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \
@@ -18,4 +16,4 @@ ParseAligns_LDADD = \
 	$(top_builddir)/Graph/libgraph.a
 
 ParseAligns_SOURCES = \
-	ParseAligns.cpp 
+	ParseAligns.cpp

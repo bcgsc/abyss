@@ -8,14 +8,12 @@ KAligner_CPPFLAGS = \
 	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
-KAligner_LDFLAGS = -Wl,--start-group
-
 KAligner_LDADD = \
 	$(top_builddir)/Align/libalign.a \
-	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/ExpPaired/libexppaired.a \
 	$(top_builddir)/Graph/libgraph.a
 
 KAligner_SOURCES = \
-	KAligner.cpp 
+	KAligner.cpp
