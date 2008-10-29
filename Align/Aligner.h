@@ -73,12 +73,12 @@ struct Alignment
 		o << a.contig << " " << a.contig_start_pos << " " << a.read_start_pos << " " << a.align_length << " " << a.read_length << " " << a.isRC;
 		return o;
 	}
-	
-	friend int compareContigPos(const Alignment& a1, const Alignment& a2)
-	{
-		return a1.contig_start_pos < a2.contig_start_pos;
-	}
 };
+
+static inline int compareContigPos(const Alignment& a1, const Alignment& a2)
+{
+	return a1.contig_start_pos < a2.contig_start_pos;
+}
 
 // Typedef the database pairing
 typedef std::pair<PackedSeq, Position> dbRecord;
