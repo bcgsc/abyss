@@ -1,7 +1,8 @@
 #include "config.h"
 #include "Log.h"
 #include "Options.h"
-#include <stdarg.h>
+#include <cassert>
+#include <cstdarg>
 #include <unistd.h>
 
 Log::Log(std::string filename)

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <fstream>
 #include "Config.h"
 
