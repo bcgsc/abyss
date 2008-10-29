@@ -1,4 +1,5 @@
 #include "Writer.h"
+#include <cassert>
 
 Writer::Writer(const char* contigFilename) : m_numContigs(0)
 {

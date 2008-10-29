@@ -1,5 +1,6 @@
 #include "Stats.h"
-#include <math.h>
+#include <cassert>
+#include <cmath>
 #include <iostream>
 #include <algorithm>
 
