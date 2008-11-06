@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+use strict;
+
+my ($nreads, $id, %seq, %af, %rd);
+
+while (<>) {
+	chomp;
+	next if /^#/;
+
+	if (/^>/) {
+		($id) = split ' ', substr $_, 1;
+		next;
+	}
+	if (/^[acgtACGTN]/) {
+		die if exists $seq{$id};
+		$seq{$id} = $_ if !/N/;
+		undef $id;
+		next;
+	}
+
+	if (/ /) {
+		my @align = split '\t';
+		my $qid = shift @align;
+		my $nalign = @align;
+
+		my $i = 0;
+		for (@align) {
+			my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
+				= split;
+
+			die "no read `$qid'" if !exists $seq{$qid};
+			my $seq = $seq{$qid};
+			die if length $seq != $qlength;
+
+			die "no contig `$tid'" if !exists $seq{$tid};
+			my $tlength = length $seq{$tid};
+
+			# Read IDs must be unique, so add a suffix if this read
+			# has multiple alignments.
+			$i++;
+			my $suffix = $nalign == 1 ? '' : "_$i/$nalign";
+
+			my $qend = $qstart + $alength;
+			if ($sense) {
+				# Reverse complement.
+				($seq = reverse $seq) =~ tr/ACGT/TGCA/;
+				# Reverse coordinates.
+				my $s = $qlength - $qend;
+				my $e = $qlength - $qstart;
+				$qstart = $s;
+				$qend = $e;
+			}
+			$sense = $sense ? 'C' : 'U';
+
+			my $astart = $tstart - $qstart;
+			my $qastart = $qstart <= $tstart ? 1
+				: 1 + $qstart - $tstart;
+
+			my $qaend = $tlength - $astart;
+			$qaend = $qlength if $qaend > $qlength;
+
+			my $afstart = 1 + $astart;
+			push @{$af{$tid}},
+				"AF $qid$suffix $sense $afstart\n";
+			push @{$rd{$tid}},
+				"RD $qid$suffix $qlength 0 0\n" .
+				"$seq\n\n" .
+				"QA 1 $qlength $qastart $qaend\n" .
+				"DS PHD_FILE: x\n";
+
+			$nreads++;
+		}
+
+		next;
+	}
+
+	die;
+}
+
+print 'AS ', scalar keys %rd, ' ',
+	$nreads + scalar keys %rd, "\n";
+
+my $bq_line = '30 ' x 19 . "30\n";
+
+for my $coid (sort {$a<=>$b} keys %rd) {
+	my $seq = $seq{$coid};
+	my $n = length $seq;
+
+	# Split long lines.
+	$seq =~ s/.{60}/$&\n/sg;
+
+	# Fake a base segment.
+	push @{$af{$coid}},
+		"AF CONTIG_$coid U 1\n";
+	push @{$rd{$coid}},
+		"RD CONTIG_$coid $n 0 0\n" .
+		"$seq\n\n" .
+		"QA 1 $n 1 $n\n" .
+		"DS PHD_FILE: x\n";
+
+	# Contig sequence.
+	print "CO $coid $n ",
+		scalar @{$rd{$coid}}, " 1 U\n",
+		$seq, "\n\n";
+
+	# Contig quality.
+	print "BQ\n";
+	print $bq_line for 1..int($n / 20);
+	print '30 ' x ($n % 20 - 1), '30' if $n % 20 > 0;
+	print "\n\n";
+
+	print for @{$af{$coid}};
+	print "BS 1 $n CONTIG_$coid\n";
+	print for @{$rd{$coid}};
+}
