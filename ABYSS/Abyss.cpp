@@ -74,8 +74,6 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
 		
-	AssemblyAlgorithms::outputPackedSequences("trimmed.psq", pSC);
-
 	popBubbles(pSC);
 	
 	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
