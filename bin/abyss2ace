@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 use strict;
 
+for (@ARGV) { die "cannot read `$_'" unless -r }
+
 my ($nreads, $id, %seq, %af, %rd);
 
 while (<>) {
