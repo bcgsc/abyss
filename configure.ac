@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(abyss, 1.0, abyss@bcgsc.ca)
+AC_INIT(abyss, 1.0.1, abyss@bcgsc.ca)
 AM_INIT_AUTOMAKE(foreign)
 AC_CONFIG_SRCDIR([ABYSS/Abyss.cpp])
 AC_CONFIG_HEADER([config.h])
