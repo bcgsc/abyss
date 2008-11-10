@@ -1,4 +1,4 @@
-bin_PROGRAMS = fasta2psq
+noinst_PROGRAMS = fasta2psq
 
 fasta2psq_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer
 

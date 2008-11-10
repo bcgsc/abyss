@@ -2,7 +2,9 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
-EXTRA_DIST = LICENSE README
+docdir = $(datadir)/doc
+pkgdocdir = $(docdir)/$(PACKAGE)
+pkgdoc_DATA = ChangeLog LICENSE README
 
 SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) \
 	bin doc fasta2psq \
