@@ -21,8 +21,34 @@ while (<>) {
 	}
 
 	if (/ /) {
-		my @align = split '\t';
-		my $qid = shift @align;
+		my ($qid, @align) = split '\t';
+		
+		@align = sort {
+			# Sort the alignments first by position on the read and
+			# then by the length of the alignment.
+			my (undef, undef, $a_qstart, $a_alength) = split ' ', $a;
+			my (undef, undef, $b_qstart, $b_alength) = split ' ', $b;
+			$a_qstart <=> $b_qstart || $b_alength <=> $a_alength;
+		} @align;
+
+		my $best_start = 0;
+		my $best_end = 0;
+		@align = grep {
+			my (undef, undef, $qstart, $alength) = split;
+			my $qend = $qstart + $alength;
+			if ($qstart > $best_start && $qend <= $best_end
+					|| $qstart >= $best_start && $qend < $best_end) {
+				# This alignment is entirely covered by another
+				# alignment, so this alignment is inferior.
+				0; # Discard this alignment.
+			} else {
+				die unless $qstart >= $best_start;
+				die unless $qend >= $best_end;
+				$best_start = $qstart;
+				$best_end = $qend;
+				1; # Keep this alignment.
+			}
+		} @align;
 		my $nalign = @align;
 
 		my $i = 0;
