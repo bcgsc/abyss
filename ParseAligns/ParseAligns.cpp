@@ -1,11 +1,11 @@
-#include <cstdio>
-#include <cstdlib>
-
-#include <iostream>
-#include <fstream>
-#include <string>
 #include "Aligner.h"
 #include "PairUtils.h"
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 // TYPEDEFS
 typedef std::map<std::string, AlignmentVector> ReadAlignMap;
@@ -168,11 +168,21 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 	return unique;
 }
 
+static void assert_open(std::ifstream& f, const std::string& p)
+{
+	if (f.is_open())
+		return;
+	std::cerr << p << ": " << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 // Read in the alignments file into the table
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable)
 {
 	std::cout << "Reading " << filename << std::endl;
 	std::ifstream fileStream(filename.c_str());
+	assert_open(fileStream, filename);
+
 	std::string line;
 	while(getline(fileStream,line))
 	{
