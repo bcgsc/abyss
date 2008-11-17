@@ -1,14 +1,15 @@
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
-#include "Stats.h"
-#include "PairUtils.h"
-#include "PairedAlgorithms.h"
 #include "ContigPath.h"
+#include "PairedAlgorithms.h"
+#include "PairUtils.h"
+#include <cerrno>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <set>
+#include <stdlib.h>
+#include <string>
+
+using namespace std;
 
 struct PathMergeRecord
 {	
@@ -108,10 +109,19 @@ int main(int argc, char** argv)
 	return 0;
 } 
 
+static void assert_open(std::ifstream& f, const std::string& p)
+{
+	if (f.is_open())
+		return;
+	std::cerr << p << ": " << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 {
 	std::ifstream pathStream(pathFile.c_str());
-	
+	assert_open(pathStream, pathFile);
+
 	while(!pathStream.eof() && pathStream.peek() != EOF)
 	{
 		// read a line
