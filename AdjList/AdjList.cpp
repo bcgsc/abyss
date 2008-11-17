@@ -1,14 +1,23 @@
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
+#include "PackedSeq.h"
 #include "PairUtils.h"
+#include <cerrno>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
 void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq);
+
+static void assert_open(std::ifstream& f, const std::string& p)
+{
+	if (f.is_open())
+		return;
+	std::cerr << p << ": " << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
 
 int main(int argc, char** argv)
 {
@@ -26,6 +35,7 @@ int main(int argc, char** argv)
 	
 	// Open the contig file
 	ifstream contigFileStream(contigFile.c_str());
+	assert_open(contigFileStream, contigFile);
 	
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUTs[2];
