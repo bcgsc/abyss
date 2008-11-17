@@ -1,13 +1,10 @@
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
-#include "Stats.h"
 #include "AlignExtractor.h"
 #include "PairUtils.h"
+#include "Stats.h"
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 typedef std::vector<int> IntVector;
 struct PairedData
