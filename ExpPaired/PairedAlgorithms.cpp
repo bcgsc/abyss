@@ -1,5 +1,6 @@
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
+#include <cassert>
 
 namespace PairedAlgorithms
 {
@@ -10,6 +11,8 @@ namespace PairedAlgorithms
 void readContigVec(std::string file, ContigVec& outVec)
 {
 	std::ifstream fileHandle(file.c_str());	
+	assert(fileHandle.is_open());
+
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
 		ContigID strID;
