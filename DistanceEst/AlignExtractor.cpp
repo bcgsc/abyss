@@ -1,8 +1,10 @@
 #include "AlignExtractor.h"
+#include <cassert>
 
 AlignExtractor::AlignExtractor(std::string file)
 {
 	m_fileHandle.open(file.c_str());
+	assert(m_fileHandle.is_open());
 
 	// Prime the read by reading in the first contig
 	m_currPair = readRecord();
