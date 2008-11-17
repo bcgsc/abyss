@@ -1,14 +1,12 @@
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
-#include "Stats.h"
-#include "PairUtils.h"
+#include "Aligner.h"
 #include "PairedAlgorithms.h"
-#include "Timer.h"
+#include <cassert>
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 enum SequenceFormat
 {
@@ -49,10 +47,20 @@ int main(int argc, char** argv)
 	return 0;
 } 
 
+static void assert_open(std::ifstream& f, const std::string& p)
+{
+	if (f.is_open())
+		return;
+	std::cerr << p << ": " << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 {
 	int count = 0;
 	std::ifstream fileHandle(refFastaFile.c_str());	
+	assert_open(fileHandle, refFastaFile);
+
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
 		ContigID contigID;
@@ -93,6 +101,8 @@ void alignReadsToDB(std::string readsFile, Aligner& aligner)
 	}
 	
 	std::ifstream fileHandle(readsFile.c_str());	
+	assert_open(fileHandle, readsFile);
+
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
 		std::string readID;
