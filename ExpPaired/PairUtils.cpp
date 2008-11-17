@@ -1,4 +1,5 @@
 #include "PairUtils.h"
+#include <cassert>
 
 //
 // Estimate file loaders
@@ -72,6 +73,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, s
 	
 	// First, load the vertices
 	std::ifstream inStream(adjFile.c_str());
+	assert(inStream.is_open());
 	
 	int numAdded = 0;
 	while(!inStream.eof() && inStream.peek() != EOF)
@@ -190,6 +192,8 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 {
 	std::cout << "Loading lengths\n";
 	ifstream contigLenStream(contigLenFile.c_str());
+	assert(contigLenStream.is_open());
+
 	while(!contigLenStream.eof() && contigLenStream.peek() != EOF)
 	{
 		LinearNumKey id;
@@ -225,6 +229,8 @@ Histogram loadHist(std::string distCountFile)
 {
 	Histogram hist;
 	ifstream distFile(distCountFile.c_str());
+	assert(distFile.is_open());
+
 	while(!distFile.eof() && distFile.peek() != EOF)
 	{
 		int value;
