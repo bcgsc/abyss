@@ -800,6 +800,28 @@ PackedSeq reverseComplement(const PackedSeq& seq)
 	rc.reverseComplement();
 	return rc;	
 }
+
+/** Return true if this sequence is a palindrome. */
+bool PackedSeq::isPalindrome() const
+{
+	return m_length % 2 == 1 ? false
+		: *this == ::reverseComplement(*this);
+}
+
+/** Return true if the length k-1 subsequence is a palindrome. */
+bool PackedSeq::isPalindrome(extDirection dir) const
+{
+	if (m_length % 2 == 0)
+		return false;
+	PackedSeq seq(*this);
+	if (dir == SENSE)
+		seq.shiftAppend('A');
+	else
+		seq.setLastBase(SENSE, 'A');
+	seq.m_length--;
+	return seq.isPalindrome();
+}
+
 /*
 -------------------------------------------------------------------------------
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.

@@ -123,7 +123,10 @@ class PackedSeq
 		char shiftAppend(char base);
 		char shiftPrepend(char base);
 		void setLastBase(extDirection dir, char base);
-		
+
+		bool isPalindrome() const;
+		bool isPalindrome(extDirection dir) const;
+
 		// Print
 		void print() const;
 		

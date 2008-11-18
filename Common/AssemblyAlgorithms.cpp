@@ -256,9 +256,15 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	printf("adjacency set %d bases\n", numBasesSet);
 }
 
-//
-//
-//
+/** Remove all the extensions both from and to this sequence. */
+static void removeExtensions(ISequenceCollection* seqCollection,
+		const PackedSeq& seq, extDirection dir)
+{
+	removeExtensionsToSequence(seqCollection, seq, dir);
+	seqCollection->clearExtensions(seq, dir);
+}
+
+/** Remove ambiguous branches and branches from palindromes. */
 void splitAmbiguous(ISequenceCollection* seqCollection)
 {
 	Timer timer("SplitAmbiguous");
@@ -275,16 +281,23 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 		count++;
 		if (count % 1000000 == 0)
 			PrintDebug(1, "Splitting: %d sequences\n", count);
-		
+
+		if (iter->isPalindrome()) {
+			removeExtensions(seqCollection, *iter, SENSE);
+			removeExtensions(seqCollection, *iter, ANTISENSE);
+			numSplit++;
+			seqCollection->pumpNetwork();
+			continue;
+		}
+
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
 			HitRecord hr = calculateExtension(seqCollection, *iter, dir);
-			if(hr.getNumHits() > 1)
-			{
-				removeExtensionsToSequence(seqCollection, *iter, dir);
-				seqCollection->clearExtensions(*iter, dir);	
-				numSplit++;			
+			if (hr.getNumHits() > 1
+					|| iter->isPalindrome(dir)) {
+				removeExtensions(seqCollection, *iter, dir);
+				numSplit++;
 			}
 		}
 		seqCollection->pumpNetwork();
@@ -551,9 +564,7 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 	removeExtensionsToSequence(seqCollection, seq, ANTISENSE);
 }
 
-//
-//
-//
+/** Remove all the extensions to this sequence. */
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir)
 {
 	extDirection oppDir = oppositeDirection(dir);
