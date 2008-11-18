@@ -132,7 +132,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 		loadPackedSequences(seqCollection, inFile);
 		return;
 	}
-	else if(inFile.find(".fastq") != std::string::npos)
+	else if(inFile.find(".fq") != std::string::npos
+			|| inFile.find(".fastq") != std::string::npos)
 	{
 		reader = new FastqReader(inFile.c_str());
 	}
