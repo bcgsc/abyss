@@ -1,3 +1,8 @@
+2008-11-07  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.1.
+	* Portability improvements to compile for Mac OS X.
+
 2008-08-07  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.
