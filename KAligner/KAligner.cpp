@@ -70,14 +70,16 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 		
 		PairedAlgorithms::parseContigFromFile(fileHandle, contigID, seq, length, coverage);
 		aligner.addReferenceSequence(contigID, seq);
-		
-		if(count % 100000 == 0)
-		{
-			std::cerr << "Read " << count << " contigs, " << aligner.getNumSeqs() << " seqs in the DB\n";
-		}
+
 		count++;
+		if (count % 100000 == 0) {
+			std::cerr << "Read " << count << " contigs, "
+				<< aligner.getNumSeqs() << " unique sequences\n";
+		}
 	}
-	
+	std::cerr << "Read " << count << " contigs, "
+		<< aligner.getNumSeqs() << " unique sequences\n";
+
 	fileHandle.close();
 }
 
