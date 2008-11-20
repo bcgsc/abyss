@@ -586,6 +586,9 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	}	
 }
 
+/** Remove tips with multiplicity at or below this limit. */
+enum { EROSION_MULTIPLICITY = 1 };
+
 //
 // Erode data off the ends of the graph, one by one
 //
@@ -604,8 +607,7 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 		{
 			continue;
 		}
-		else
-		{
+		else if (iter->getMultiplicity() <= EROSION_MULTIPLICITY) {
 			count++;
 			// This sequence is an endpoint, erode it
 			removeSequenceAndExtensions(seqCollection, *iter);			
