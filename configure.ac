@@ -23,8 +23,10 @@ AC_HEADER_STDBOOL
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memset mkdir pow sqrt])
+AC_CHECK_FUNCS([gethostname memset pow setlocale sqrt \
+	strdup strerror])
 AC_FUNC_MEMCMP
+AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
 
 # Checks for library constants.
