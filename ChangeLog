@@ -1,3 +1,10 @@
+2008-11-20  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.2.
+	* Terminate contig extension at palindromic k-mers.
+	* If erosion (-e,--erode) is enabled, remove the tips of blunt
+	contigs that are represented only once.
+
 2008-11-07  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.1.
