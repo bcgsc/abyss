@@ -20,13 +20,8 @@ void readContigVec(std::string file, ContigVec& outVec)
 		Sequence seq;
 		int length;
 		double coverage;
-		
-		
-		if(!parseContigFromFile(fileHandle, strID, seq, length, coverage))
-		{
-			break; //done
-		}
-		
+
+		parseContigFromFile(fileHandle, strID, seq, length, coverage);
 		assert(!seq.empty());
 		assert(length > 0);
 
@@ -47,17 +42,19 @@ void readContigVec(std::string file, ContigVec& outVec)
 	fileHandle.close();
 }
 
-bool parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
+void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
 {
 	char head;
+	string comment;
 
-	stream >> head;		
+	stream >> head;
+	assert(head == '>');
 	stream >> id;
 	stream >> length;
 	stream >> coverage;
-	stream >> seq;
-	
-	return stream.good();
+	getline(stream, comment);
+	getline(stream, seq);
+	assert(stream.good());
 }
 
 #if 0

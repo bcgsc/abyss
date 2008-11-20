@@ -18,7 +18,7 @@ namespace PairedAlgorithms
 {
 
 void readContigVec(std::string file, ContigVec& outVec);
-bool parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
+void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
 //void generateGraph(ContigGraph* pGraph, const ContigMap& contigMap, ISequenceCollection* pSC, size_t kmer, AlignmentCache* pDB);
 
 };
