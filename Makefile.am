@@ -4,7 +4,7 @@ endif
 
 docdir = $(datadir)/doc
 pkgdocdir = $(docdir)/$(PACKAGE)
-pkgdoc_DATA = ChangeLog LICENSE README
+dist_pkgdoc_DATA = ChangeLog LICENSE README
 
 SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) \
 	bin doc fasta2psq \
