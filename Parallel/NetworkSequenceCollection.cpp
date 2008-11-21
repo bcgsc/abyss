@@ -291,7 +291,7 @@ void NetworkSequenceCollection::runControl()
 				EndState();				
 				
 				// erosion has been completed
-				m_startTrimLen = opt::erode + 1;
+				m_startTrimLen = 2;
 				SetState(NAS_TRIM);				
 				
 			}

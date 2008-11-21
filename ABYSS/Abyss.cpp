@@ -60,7 +60,6 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::generateAdjacency(pSC);
 	
-	int startTrimLength = 2;
 
 	if (opt::erode > 0) {
 		puts("Eroding");
@@ -69,9 +68,9 @@ int main(int argc, char* const* argv)
 			totalEroded += AssemblyAlgorithms::erodeEnds(pSC);
 		printf("Eroded %d tips in total\n",
 				totalEroded);
-		startTrimLength = opt::erode + 1;
 	}
 
+	int startTrimLength = 2;
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
 		
 	popBubbles(pSC);
