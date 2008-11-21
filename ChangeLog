@@ -1,4 +1,4 @@
-2008-11-20  Shaun Jackman  <sjackman@bcgsc.ca>
+2008-11-21  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.2.
 	* Terminate contig extension at palindromic k-mers.
