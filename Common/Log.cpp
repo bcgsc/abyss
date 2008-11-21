@@ -3,6 +3,7 @@
 #include "Options.h"
 #include <cassert>
 #include <cstdarg>
+#include <limits.h>
 #include <unistd.h>
 
 Log::Log(std::string filename)
