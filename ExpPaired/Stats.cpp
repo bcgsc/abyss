@@ -265,7 +265,7 @@ void Histogram::print() const
 PDF::PDF(const Histogram& h)
 {
 	m_maxIdx = h.getMax();
-	double count = 0;
+	unsigned count = 0;
 
 	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
 	{
@@ -305,7 +305,8 @@ PDF::PDF(const Histogram& h)
 
 	m_stdDev = sqrt(t1);
 	
-	printf("Calculated stats - mean: %lf stddev: %lf count: %lf\n", m_mean, m_stdDev, count);
+	printf("Stats mean: %.2lf sd: %.2lf n: %u min: %u max: %u\n",
+			m_mean, m_stdDev, count, h.getMin(), h.getMax());
 }
 
 double PDF::getP(size_t idx) const 

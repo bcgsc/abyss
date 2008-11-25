@@ -93,7 +93,6 @@ int main(int argc, char** argv)
 	//trimmedHist.print();
 	
 	PDF empiricalPDF(trimmedHist);
-	std::cout << "Max in pdf: " << empiricalPDF.getMaxIdx() << std::endl;
 	
 	// Load the length map
 	ContigLengthVec contigLens;	
