@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Usage: abyss2ace reads.fa contigs.fa alignments.kalign >out.ace
+# Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;
 
 for (@ARGV) { die "cannot read `$_'" unless -r }
