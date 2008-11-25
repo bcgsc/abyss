@@ -76,18 +76,25 @@ class PackedSeq
 		unsigned getSequenceLength() const;
 		
 		// get the multiplicity of this sequence
-		unsigned getMultiplicity() const { return m_multiplicity; }
-		
-		// add to the multiplicity
-		void addMultiplicity()
+		unsigned getMultiplicity(extDirection dir) const
 		{
-			if(m_multiplicity != 65535)
-			{
-				++m_multiplicity;
-			}
-			assert(m_multiplicity > 0);
+			return m_multiplicity[dir];
 		}
-		
+
+		// get the multiplicity of this sequence
+		unsigned getMultiplicity() const
+		{
+			return m_multiplicity[SENSE] + m_multiplicity[ANTISENSE];
+		}
+
+		// add to the multiplicity
+		void addMultiplicity(extDirection dir)
+		{
+			if (m_multiplicity[dir] < 65535)
+				++m_multiplicity[dir];
+			assert(m_multiplicity[dir] > 0);
+		}
+
 		// Return the pointer to the data
 		const char* const getDataPtr() const;
 		
@@ -171,7 +178,7 @@ class PackedSeq
 		char m_seq[NUM_BYTES];
 		uint8_t m_length;
 		char m_flags;
-		uint16_t m_multiplicity;
+		uint16_t m_multiplicity[2];
 		ExtensionRecord m_extRecord;
 };
 

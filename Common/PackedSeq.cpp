@@ -4,21 +4,25 @@
 //
 // Default constructor
 //
-PackedSeq::PackedSeq() : m_length(0), m_flags(0), m_multiplicity(1)
+PackedSeq::PackedSeq() : m_length(0), m_flags(0)
 {
+	m_multiplicity[SENSE] = 1;
+	m_multiplicity[ANTISENSE] = 0;
 }
 
 //
 // Construct a sequence from a String-based sequence
 //
 PackedSeq::PackedSeq(const Sequence& seq)
-	: m_length(seq.length()), m_flags(0), m_multiplicity(1)
+	: m_length(seq.length()), m_flags(0)
 {
 	memset(m_seq, 0, NUM_BYTES);
 	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();
 	for(unsigned i = 0; i < m_length; i++)
 		setBaseChar(m_seq, i, *p++);
+	m_multiplicity[SENSE] = 1;
+	m_multiplicity[ANTISENSE] = 0;
 }
 
 //
@@ -39,7 +43,7 @@ size_t PackedSeq::serialize(char* buffer) const
 	memcpy(buffer + offset, &m_flags, sizeof(m_flags));
 	offset += sizeof(m_flags);
 	
-	memcpy(buffer + offset, &m_multiplicity, sizeof(m_multiplicity));
+	memcpy(buffer + offset, m_multiplicity, sizeof(m_multiplicity));
 	offset += sizeof(m_multiplicity);	
 	
 	memcpy(buffer + offset, &m_extRecord, sizeof(m_extRecord));
@@ -67,7 +71,7 @@ size_t PackedSeq::unserialize(const char* buffer)
 	memcpy(&m_flags, buffer + offset, sizeof(m_flags));
 	offset += sizeof(m_flags);
 	
-	memcpy(&m_multiplicity, buffer + offset, sizeof(m_multiplicity));
+	memcpy(m_multiplicity, buffer + offset, sizeof(m_multiplicity));
 	offset += sizeof(m_multiplicity);	
 	
 	memcpy(&m_extRecord, buffer + offset, sizeof(m_extRecord));
@@ -101,7 +105,8 @@ PackedSeq& PackedSeq::operator=(const PackedSeq& other)
 	
 	m_extRecord.dir[SENSE] = other.m_extRecord.dir[SENSE];
 	m_extRecord.dir[ANTISENSE] = other.m_extRecord.dir[ANTISENSE];
-	m_multiplicity = other.m_multiplicity;
+	m_multiplicity[SENSE] = other.m_multiplicity[SENSE];
+	m_multiplicity[ANTISENSE] = other.m_multiplicity[ANTISENSE];
 
 	return *this;
 }

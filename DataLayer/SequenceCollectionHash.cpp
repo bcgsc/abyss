@@ -57,11 +57,13 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 	{
 		if(iters.first != m_pSequences->end())
 		{
-			const_cast<PackedSeq&>(*iters.first).addMultiplicity();
+			const_cast<PackedSeq&>(*iters.first).addMultiplicity(
+					SENSE);
 		}
 		else if(iters.second != m_pSequences->end())
 		{
-			const_cast<PackedSeq&>(*iters.second).addMultiplicity();
+			const_cast<PackedSeq&>(*iters.second).addMultiplicity(
+					ANTISENSE);
 		}
 	}
 	else
