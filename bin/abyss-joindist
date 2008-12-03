@@ -3,12 +3,13 @@
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;
 
-my (%a, %b);
+my (%id, %a, %b);
 
 while (<>) {
 	my ($id, $a, $b) = /([0-9]*) *: *([-0-9, ]*) *\| *([-0-9, ]*)/;
 	my @a = split ' ', $a;
 	my @b = split ' ', $b;
+	$id{$id} = 1;
 	
 	for (@a) {
 		my ($to, $d, $n, $sd, $s) = split ',';
@@ -25,7 +26,7 @@ while (<>) {
 	}
 }
 
-for my $id (sort {$a<=>$b} keys %a) {
+for my $id (sort {$a<=>$b} keys %id) {
 	print "$id :";
 	for my $to (sort {$a<=>$b} keys %{$a{$id}}) {
 		my ($sd, $d, $n, $s) = split ' ', $a{$id}{$to};
