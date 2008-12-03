@@ -11,6 +11,5 @@ libdatalayer_a_SOURCES = \
 	ISequenceCollection.h \
 	PackedSeqReader.cpp PackedSeqReader.h \
 	PackedSeqWriter.cpp PackedSeqWriter.h \
-	Reader.cpp Reader.h \
 	SequenceCollectionHash.cpp SequenceCollectionHash.h \
 	Writer.cpp Writer.h
