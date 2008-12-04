@@ -213,10 +213,21 @@ class DirectedGraph
 		DirectedGraph() { };
 		DirectedGraph(const size_t sizeHint) { m_vertexTable.reserve(sizeHint); }
 		~DirectedGraph();
-		
-		// get the data pointer
-		const D& getDataForVertex(const LinearNumKey& key) const { VertexType* pVertex = findVertex(key); assert(pVertex != NULL); return pVertex->m_data; }
-		
+
+		/** Return the vertex specified by the given key. */
+		const VertexType& operator[](const LinearNumKey& key) const
+		{
+			VertexType* pVertex = findVertex(key);
+			assert(pVertex != NULL);
+			return *pVertex;
+		}
+
+		/** Return the vertex data specified by the given key. */
+		const D& getDataForVertex(const LinearNumKey& key) const
+		{
+			return (*this)[key].m_data;
+		}
+
 		// add edge
 		void addEdge(const LinearNumKey& parent, const LinearNumKey& child, extDirection dir, bool reverse);
 		
