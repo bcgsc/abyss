@@ -8,4 +8,5 @@ dist_pkgdoc_DATA = ChangeLog LICENSE README
 
 SUBDIRS = Align Common DataLayer ExpPaired Graph ABYSS $(Parallel) \
 	bin doc fasta2psq \
-	AdjList DistanceEst SimpleGraph MergePaths KAligner ParseAligns
+	AdjList DistanceEst KAligner MergePaths Overlap ParseAligns \
+	SimpleGraph

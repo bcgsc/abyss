@@ -90,6 +90,7 @@ AC_CONFIG_FILES([
 	fasta2psq/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
+	Overlap/Makefile
 	SimpleGraph/Makefile
 	MergePaths/Makefile
 	KAligner/Makefile
