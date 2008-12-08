@@ -1,5 +1,7 @@
 #include "FastqReader.h"
 #include "Options.h"
+#include <algorithm>
+#include <cctype>
 
 FastqReader::FastqReader(const char* filename)
 	: m_nonacgt(0)
@@ -35,7 +37,9 @@ Sequence FastqReader::ReadSequence()
 	m_fileHandle.getline(buf, sizeof buf);
 	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
 
-	return Sequence(seq);
+	Sequence s(seq);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
+	return s;
 }
 
 /**

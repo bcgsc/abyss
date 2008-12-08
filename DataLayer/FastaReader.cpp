@@ -1,5 +1,7 @@
 #include "FastaReader.h"
 #include "Options.h"
+#include <algorithm>
+#include <cctype>
 
 FastaReader::FastaReader(const char* filename)
 	: m_nonacgt(0)
@@ -52,7 +54,9 @@ Sequence FastaReader::ReadSequence()
 		assert(false);
 	}
 	
-	return Sequence(seqBuffer);	
+	Sequence s(seqBuffer);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
+	return s;
 }
 
 // Read in a group of sequences and return whether there are sequences remaining
