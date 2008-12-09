@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <sstream>
 #include <stdlib.h>
 #include <string>
 
@@ -32,6 +33,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 bool gDebugPrint = false;
+static int opt_verbose = 1;
 
 static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 {
@@ -403,13 +405,29 @@ void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& 
 }
 
 
+static string toString(const ContigPath& path)
+{
+	size_t numNodes = path.getNumNodes();
+	assert(numNodes > 0);
+	MergeNode root = path.getNode(0);
+	ostringstream s;
+	s << root.id << (root.isRC ? '-' : '+');
+	for (size_t i = 1; i < numNodes; ++i) {
+		MergeNode mn = path.getNode(i);
+		s << ' ' << mn.id << (mn.isRC ? '-' : '+');
+	}
+	return s.str();
+}
+
 void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer)
 {
 	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
 	ContigPath newCanonical;
 	makeCanonicalPath(cID, mergeRecord, newCanonical);
 	if(gDebugPrint) std::cout << "Canonical path is: " << newCanonical << std::endl; 	
-	
+	if (opt_verbose > 0)
+		cout << toString(newCanonical) << '\n';
+
 	Sequence merged = sourceContigs[cID].seq;
 	
 	assert(!merged.empty());
