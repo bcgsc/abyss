@@ -5,10 +5,13 @@
 
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
+#include <string>
 #include <sstream>
 #include <vector>
 using namespace std;
@@ -66,8 +69,10 @@ class ContigNode {
 		const Sequence m_seq;
 };
 
-static unsigned findOverlap(const ContigNode& t, const ContigNode& h)
+static unsigned findOverlap(const ContigNode& t, const ContigNode& h,
+		bool& mask)
 {
+	mask = false;
 	unsigned len = min(t.length(), h.length());
 	vector<unsigned> overlaps;
 	overlaps.reserve(len);
@@ -101,24 +106,33 @@ static unsigned findOverlap(const ContigNode& t, const ContigNode& h)
 			stats.homopolymer++;
 		else
 			stats.motif++;
+#if 0
+		// Allow the merge and mask the overlapping sequence.
+		mask = true;
+#else
 		return 0;
+#endif
 	}
 
 	return overlaps[0];
 }
 
 static void writeContig(ostream& out,
-		const ContigNode& t, const ContigNode& h, unsigned overlap)
+		const ContigNode& t, const ContigNode& h,
+		unsigned overlap, bool mask)
 {
 	static unsigned n;
 	unsigned id = contigs.size() + n++;
 
 	unsigned gap = opt_k - 1 - overlap;
 	string a = t.sequence().substr(t.length()-opt_k+1, gap);
-	string b = h.sequence().substr(0, opt_k-1);
+	string o = h.sequence().substr(0, overlap);
+	string b = h.sequence().substr(overlap, gap);
+	if (mask)
+		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
 	out << '>' << id << ' ' << opt_k-1 + gap << " 0 "
 		<< t.id() << ' ' << h.id() << " -" << overlap << '\n'
-		<< a << b << '\n';
+		<< a << o << b << '\n';
 }
 
 static bool unseen(const ContigNode &t, const ContigNode &h)
@@ -147,10 +161,11 @@ static void findOverlap(ostream& out,
 	const ContigNode& t = dir == SENSE ? ref : pair;
 	const ContigNode& h = dir == SENSE ? pair : ref;
 	unsigned overlap = 0;
+	bool mask = false;
 	if (t.outDegree() == 0 && h.inDegree() == 0)
-		overlap = findOverlap(t, h);
+		overlap = findOverlap(t, h, mask);
 	if (overlap > 0 && unseen(t, h))
-		writeContig(out, t, h, overlap);
+		writeContig(out, t, h, overlap, mask);
 }
 
 static void assert_open(ifstream& f, const string& p)
