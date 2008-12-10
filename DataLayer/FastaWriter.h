@@ -14,9 +14,18 @@ class FastaWriter : public IFileWriter
 		
 		// Destructor closes it
 		~FastaWriter();
-		
-		// write a single sequence
-		void WriteSequence(const Sequence& seq, const int64_t id, const double multiplicity);
+
+		/** Write a sequence with a comment. */
+		void WriteSequence(const Sequence& seq,
+				const int64_t id, const double multiplicity,
+				const std::string& comment);
+
+		/** Write a sequence. */
+		void WriteSequence(const Sequence& seq,
+				const int64_t id, const double multiplicity)
+		{
+			WriteSequence(seq, id, multiplicity, "");
+		}
 
 	private:
 		FILE* m_fileHandle;
