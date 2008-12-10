@@ -33,7 +33,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 bool gDebugPrint = false;
-static int opt_verbose = 1;
+static int opt_verbose = 0;
 
 static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 {
@@ -414,7 +414,7 @@ static string toString(const ContigPath& path)
 	s << root.id << (root.isRC ? '-' : '+');
 	for (size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = path.getNode(i);
-		s << ' ' << mn.id << (mn.isRC ? '-' : '+');
+		s << ',' << mn.id << (mn.isRC ? '-' : '+');
 	}
 	return s.str();
 }
@@ -425,8 +425,9 @@ void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& merg
 	ContigPath newCanonical;
 	makeCanonicalPath(cID, mergeRecord, newCanonical);
 	if(gDebugPrint) std::cout << "Canonical path is: " << newCanonical << std::endl; 	
+	string comment = toString(newCanonical);
 	if (opt_verbose > 0)
-		cout << toString(newCanonical) << '\n';
+		cout << comment << '\n';
 
 	Sequence merged = sourceContigs[cID].seq;
 	
@@ -450,7 +451,7 @@ void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& merg
 		}
 	}
 
-	writer->WriteSequence(merged, count, 0.0f);
+	writer->WriteSequence(merged, count, 0.0f, comment);
 }
 
 
