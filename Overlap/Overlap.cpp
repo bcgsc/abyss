@@ -25,6 +25,7 @@ static ContigVec contigs;
 static SimpleContigGraph contigGraph;
 
 static struct {
+	unsigned overlap;
 	unsigned tooshort;
 	unsigned homopolymer;
 	unsigned motif;
@@ -164,8 +165,10 @@ static void findOverlap(ostream& out,
 	bool mask = false;
 	if (t.outDegree() == 0 && h.inDegree() == 0)
 		overlap = findOverlap(t, h, mask);
-	if (overlap > 0 && unseen(t, h))
+	if (overlap > 0 && unseen(t, h)) {
+		stats.overlap++;
 		writeContig(out, t, h, overlap, mask);
+	}
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -212,7 +215,8 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	cout << "Insignificant (<" << MINIMUM_OVERLAP << "bp): "
+	cout << "Overlap: " << stats.overlap << "\n"
+		"Insignificant (<" << MINIMUM_OVERLAP << "bp): "
 		<< stats.tooshort << "\n"
 		"Homopolymer: " << stats.homopolymer << "\n"
 		"Motif: " << stats.motif << "\n";
