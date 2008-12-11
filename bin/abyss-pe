@@ -47,8 +47,12 @@ clean:
 
 %-2.fa: %-1.fa
 	awk '/^>/ { getline s; if ($$3/($$2-$k+1)>=$c) \
-		{ $$1 = ">" i++; print $$0 "\n" s } }' $< >$@
+		{ print $$0 "\n" s } }' $< >$@
 
+%-3.fa: %-2.fa
+	ABYSS -k$k -l$l -e0 $^
+	mv contigs.fa $@
+	
 # Estimate distances between contigs
 
 %.align: $(lib).fa %.fa
@@ -74,7 +78,7 @@ clean:
 %-overlap.fa: %.fa %.adj %.len %.dist
 	Overlap $k $^ $@
 
-%-3.fa: %-2.fa %-2-overlap.fa
+%-4.fa: %-3.fa %-3-overlap.fa
 	ABYSS -k$k -l$l -e0 $^
 	mv contigs.fa $@
 
@@ -84,6 +88,6 @@ clean:
 	SimpleGraph $k $^ 100000
 	mv ResolvedPaths.txt $@
 
-%-contigs.fa: %-3.fa %-3.path
+%-contigs.fa: %-4.fa %-4.path
 	MergePaths $k $^
 	mv final.fa $@
