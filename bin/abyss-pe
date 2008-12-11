@@ -11,11 +11,17 @@ endif
 ifndef l
 $(error missing argument l)
 endif
+ifndef e
+$(error missing argument e)
+endif
+ifndef c
+$(error missing argument c)
+endif
 ifndef n
 $(error missing argument n)
 endif
 
-all: paired-contigs.fa
+all: $(lib)-contigs.fa
 
 clean:
 	rm -f *.len *.adj *.align *.pair *.frag *.pairs *.hist *.dist *.path
@@ -26,8 +32,9 @@ clean:
 
 # Single-end assembly
 
-contigs.fa: $(addsuffix .fa, $(lib))
-	ABYSS -k$k -l$l -e0 $^
+%-1.fa: %.fa
+	ABYSS -k$k -l$l -e$e -b99 -ssnp.fa $^
+	mv contigs.fa $@
 
 %.len: %.fa
 	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
@@ -36,9 +43,15 @@ contigs.fa: $(addsuffix .fa, $(lib))
 	AdjList $k $<
 	mv AdjList.txt $@
 
-# Library paired-end distance estimation
+# Coverage cutoff
 
-%.align: %.fa contigs.fa
+%-2.fa: %-1.fa
+	awk '/^>/ { getline s; if ($$3/($$2-$k+1)>=$c) \
+		{ $$1 = ">" i++; print $$0 "\n" s } }' $< >$@
+
+# Estimate distances between contigs
+
+%.align: $(lib).fa %.fa
 	KAligner $k $^ >$@
 
 %.pair %.frag: %.align
@@ -52,22 +65,25 @@ contigs.fa: $(addsuffix .fa, $(lib))
 %.hist: %.frag
 	awk '{x[$$0]++} END {for (i in x) print i, x[i]}' $< >$@
 
-%.dist: %.pairs contigs.len %.hist
+%.dist: %.pairs %.len %.hist
 	DistanceEst $k $^ 100 $n
 	mv EstimatedLinks.txt $@
 
+# Find overlaps between contigs
+
+%-overlap.fa: %.fa %.adj %.len %.dist
+	Overlap $k $^ $@
+
+%-3.fa: %-2.fa %-2-overlap.fa
+	ABYSS -k$k -l$l -e0 $^
+	mv contigs.fa $@
+
 # Paired-end assembly
 
-#paired.dist: $(addsuffix .dist, $(lib))
-#	abyss-joindist $^ >$@
-
-paired.dist: $(addsuffix .dist, $(lib))
-	cp $< $@
-
-%.path: contigs.adj contigs.len %.dist
+%.path: %.adj %.len %.dist
 	SimpleGraph $k $^ 100000
 	mv ResolvedPaths.txt $@
 
-%-contigs.fa: contigs.fa %.path
+%-contigs.fa: %-3.fa %-3.path
 	MergePaths $k $^
 	mv final.fa $@
