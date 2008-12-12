@@ -159,7 +159,8 @@ static void findOverlap(
 	if (overlap > 0) {
 		g_edges[t.id()].insert(h.id());
 		g_edges[h.idComplement()].insert(t.idComplement());
-		g_overlaps[t.id()] = overlapContigs(t, h, overlap, mask);
+		if (g_overlaps.count(t.id()) == 0)
+			g_overlaps[t.id()] = overlapContigs(t, h, overlap, mask);
 	}
 }
 
