@@ -1,4 +1,5 @@
 #include "PackedSeqReader.h"
+#include <cassert>
 
 PackedSeqReader::PackedSeqReader(const char* filename)
 {	
@@ -9,6 +10,8 @@ PackedSeqReader::PackedSeqReader(const char* filename)
 	m_pBuffer = new char[m_readSize];
 		
 	assert(m_fileHandle.is_open());
+	if (m_fileHandle.peek() == EOF)
+		fprintf(stderr, "warning: `%s' is empty\n", filename);
 }
 
 PackedSeqReader::~PackedSeqReader()
@@ -26,28 +29,16 @@ PackedSeqReader::~PackedSeqReader()
 bool PackedSeqReader::ReadSequences(PSequenceVector& outseqs)
 {
 	assert(m_fileHandle.is_open());
+	if (m_fileHandle.eof())
+		return false;
 
-	
 	// read in the sequence
 	m_fileHandle.read(m_pBuffer, m_readSize);
-	
-	// check if eof was hit
-	bool endHit = false;
-	if(m_fileHandle.eof())
-	{
-		endHit = true;
-	}
-
 	int numBytesRead = m_fileHandle.gcount();
-	int numSequencesRead;
-	if(numBytesRead < m_readSize)
-	{
-		assert(endHit);
-	}
-	
+
 	// Calculate the number of sequences read in
-	numSequencesRead = numBytesRead / m_elementSize;
-	
+	int numSequencesRead = numBytesRead / m_elementSize;
+
 	// ensure it is a whole number
 	assert(numBytesRead % m_elementSize == 0);	
 	
@@ -59,6 +50,5 @@ bool PackedSeqReader::ReadSequences(PSequenceVector& outseqs)
 		outseqs.push_back(seq);
 	}
 
-	
-	return !endHit;
+	return true;
 }

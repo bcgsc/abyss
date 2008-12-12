@@ -1,6 +1,7 @@
 #include "FastaReader.h"
 #include "Options.h"
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 
 FastaReader::FastaReader(const char* filename)
@@ -8,6 +9,8 @@ FastaReader::FastaReader(const char* filename)
 {	
 	m_fileHandle.open(filename);
 	assert(m_fileHandle.is_open());
+	if (m_fileHandle.peek() == EOF)
+		fprintf(stderr, "warning: `%s' is empty\n", filename);
 }
 
 FastaReader::~FastaReader()
@@ -62,6 +65,8 @@ Sequence FastaReader::ReadSequence()
 // Read in a group of sequences and return whether there are sequences remaining
 bool FastaReader::ReadSequences(SequenceVector& outseqs)
 {
+	if (!isGood())
+		return false;
 	Sequence seq = ReadSequence();
 	size_t pos = seq.find_first_not_of("ACGT");
 	if (pos == std::string::npos) {
@@ -73,7 +78,7 @@ bool FastaReader::ReadSequences(SequenceVector& outseqs)
 					seq[pos]);
 		m_nonacgt++;
 	}
-	return isGood();
+	return true;
 }
 
 bool FastaReader::isGood()

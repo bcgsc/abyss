@@ -1,6 +1,7 @@
 #include "FastqReader.h"
 #include "Options.h"
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 
 FastqReader::FastqReader(const char* filename)
@@ -8,6 +9,8 @@ FastqReader::FastqReader(const char* filename)
 {
 	m_fileHandle.open(filename);
 	assert(m_fileHandle.is_open());
+	if (m_fileHandle.peek() == EOF)
+		fprintf(stderr, "warning: `%s' is empty\n", filename);
 }
 
 FastqReader::~FastqReader()
@@ -48,6 +51,8 @@ Sequence FastqReader::ReadSequence()
  */
 bool FastqReader::ReadSequences(SequenceVector& outseqs)
 {
+	if (!isGood())
+		return false;
 	Sequence seq = ReadSequence();
 	size_t pos = seq.find_first_not_of("ACGT");
 	if (pos == std::string::npos) {
@@ -59,7 +64,7 @@ bool FastqReader::ReadSequences(SequenceVector& outseqs)
 					seq[pos]);
 		m_nonacgt++;
 	}
-	return isGood();
+	return true;
 }
 
 bool FastqReader::isGood()

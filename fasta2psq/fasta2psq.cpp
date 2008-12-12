@@ -14,12 +14,9 @@ int main(int argc, char* const* argv)
 	// write data
 	FastaReader* reader = new FastaReader(pp_opt::fastaFile.c_str());
 	PackedSeqWriter* writer = new PackedSeqWriter(pp_opt::outFile.c_str());
-	
-	bool stop = false;
-	while(!stop)
-	{
-		SequenceVector seqs;
-		stop = !reader->ReadSequences(seqs);
+
+	for (SequenceVector seqs;
+			reader->ReadSequences(seqs); seqs.clear()) {
 		for(SequenceVectorIterator iter = seqs.begin(); iter != seqs.end(); iter++)
 		{
 			writer->WriteSequence(*iter);

@@ -88,10 +88,8 @@ static void loadPackedSequences(ISequenceCollection* seqCollection,
 	// Read the sequences and add them to the network sequence space
 	size_t lastNum = seqCollection->count();
 	
-	bool stop = false;
-	while (!stop) {
-		PSequenceVector seqs;
-		stop = !reader.ReadSequences(seqs);
+	for (PSequenceVector seqs;
+			reader.ReadSequences(seqs); seqs.clear()) {
 		for (PSequenceVectorIterator iter = seqs.begin();
 				iter != seqs.end(); iter++) {
 			seqCollection->add(*iter);
@@ -155,11 +153,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 	// Read the sequences and add them to the network sequence space
 	size_t lastNum = seqCollection->count();
 	
-	bool stop = false;
-	while(!stop)
-	{
-		SequenceVector seqs;
-		stop = !reader->ReadSequences(seqs);
+	for (SequenceVector seqs;
+			reader->ReadSequences(seqs); seqs.clear()) {
 		for (SequenceVectorIterator iter = seqs.begin();
 				iter != seqs.end(); iter++) {
 			int len = iter->length();

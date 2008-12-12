@@ -54,6 +54,7 @@ int main(int argc, char* const* argv)
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
 
 	printf("total sequences: %d\n", pSC->count());
+	assert(pSC->count() > 0);
 
 	printf("finalizing\n");
 	pSC->finalize();
