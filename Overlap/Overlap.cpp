@@ -11,6 +11,8 @@
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <set>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -138,14 +140,8 @@ static string overlapContigs(const ContigNode& t, const ContigNode& h,
 	return s.str();
 }
 
-struct Overlap {
-	string id;
-	string contig;
-	Overlap(string id, string contig)
-		: id(id), contig(contig) { }
-};
-
-static multimap<string, Overlap> g_edges;
+static map<string, set<string> > g_edges;
+static map<string, string*> g_overlaps;
 
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
@@ -161,18 +157,10 @@ static void findOverlap(
 	if (t.outDegree() == 0 && h.inDegree() == 0)
 		overlap = findOverlap(t, h, mask);
 	if (overlap > 0) {
-		string contig = overlapContigs(t, h, overlap, mask);
-		string hc = h.idComplement();
-		string tc = t.idComplement();
-		unsigned t_outdeg = g_edges.count(t.id());
-		unsigned h_indeg = g_edges.count(hc);
-		if (t_outdeg == 0 || t_outdeg == 1
-				&& g_edges.find(t.id())->second.id != h.id())
-			g_edges.insert(make_pair(t.id(),
-						Overlap(h.id(), contig)));
-		if (h_indeg == 0 || h_indeg == 1
-				&& g_edges.find(hc)->second.id != tc)
-			g_edges.insert(make_pair(hc, Overlap(tc, contig)));
+		g_edges[t.id()].insert(h.id());
+		g_edges[h.idComplement()].insert(t.idComplement());
+		g_overlaps[t.id()] = g_overlaps[h.idComplement()]
+			= new string(overlapContigs(t, h, overlap, mask));
 	}
 }
 
@@ -187,6 +175,23 @@ static string complement(const string& id)
 		default: assert(false);
 	}
 	return comp;
+}
+
+static bool unambiguous(const string &t, string &h)
+{
+	h.clear();
+	const set<string>& heads = g_edges[t];
+	if (heads.size() > 1) {
+		stats.ambiguous += heads.size();
+		return false;
+	}
+	assert(heads.size() > 0);
+	h = *heads.begin();
+	if (g_edges[complement(h)].size() > 1) {
+		stats.ambiguous++;
+		return false;
+	}
+	return true;
 }
 
 static bool unseen(const string &t, const string &h)
@@ -251,18 +256,15 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	for (multimap<string, Overlap>::const_iterator i
+	for (map<string, set<string> >::const_iterator i
 			= g_edges.begin(); i != g_edges.end(); ++i) {
 		const string& t = i->first;
-		const string& h = i->second.id;
-		const string& hc = complement(h);
-		if (g_edges.count(t) == 1 && g_edges.count(hc) == 1) {
-			if (unseen(t, h)) {
-				stats.overlap++;
-				out << i->second.contig;
-			}
-		} else
-			stats.ambiguous++;
+		string h;
+		if (unambiguous(t, h) && unseen(t, h)) {
+			stats.overlap++;
+			assert(g_overlaps[t] == g_overlaps[complement(h)]);
+			out << *g_overlaps[t];
+		}
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
