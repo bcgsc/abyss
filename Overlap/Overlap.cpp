@@ -29,6 +29,7 @@ static struct {
 	unsigned tooshort;
 	unsigned homopolymer;
 	unsigned motif;
+	unsigned ambiguous;
 } stats;
 
 static const Sequence getSequence(LinearNumKey id, extDirection sense)
@@ -118,8 +119,7 @@ static unsigned findOverlap(const ContigNode& t, const ContigNode& h,
 	return overlaps[0];
 }
 
-static void writeContig(ostream& out,
-		const ContigNode& t, const ContigNode& h,
+static string overlapContigs(const ContigNode& t, const ContigNode& h,
 		unsigned overlap, bool mask)
 {
 	static unsigned n;
@@ -131,28 +131,23 @@ static void writeContig(ostream& out,
 	string b = h.sequence().substr(overlap, gap);
 	if (mask)
 		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
-	out << '>' << id << ' ' << opt_k-1 + gap << " 0 "
+	ostringstream s;
+	s << '>' << id << ' ' << opt_k-1 + gap << " 0 "
 		<< t.id() << ' ' << h.id() << " -" << overlap << '\n'
 		<< a << o << b << '\n';
+	return s.str();
 }
 
-static bool unseen(const ContigNode &t, const ContigNode &h)
-{
-	static map<string, string> seen;
-	if (seen.count(t.id()) > 0) {
-		assert(seen[t.id()] == h.id());
-		return false;
-	}
-	if (seen.count(h.idComplement()) > 0) {
-		assert(seen[h.idComplement()] == t.idComplement());
-		return false;
-	}
-	seen.insert(make_pair(t.id(), h.id()));
-	seen.insert(make_pair(h.idComplement(), t.idComplement()));
-	return true;
-}
+struct Overlap {
+	string id;
+	string contig;
+	Overlap(string id, string contig)
+		: id(id), contig(contig) { }
+};
 
-static void findOverlap(ostream& out,
+static multimap<string, Overlap> g_edges;
+
+static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
 {
 	if (est.distance >= 0)
@@ -165,10 +160,51 @@ static void findOverlap(ostream& out,
 	bool mask = false;
 	if (t.outDegree() == 0 && h.inDegree() == 0)
 		overlap = findOverlap(t, h, mask);
-	if (overlap > 0 && unseen(t, h)) {
-		stats.overlap++;
-		writeContig(out, t, h, overlap, mask);
+	if (overlap > 0) {
+		string contig = overlapContigs(t, h, overlap, mask);
+		string hc = h.idComplement();
+		string tc = t.idComplement();
+		unsigned t_outdeg = g_edges.count(t.id());
+		unsigned h_indeg = g_edges.count(hc);
+		if (t_outdeg == 0 || t_outdeg == 1
+				&& g_edges.find(t.id())->second.id != h.id())
+			g_edges.insert(make_pair(t.id(),
+						Overlap(h.id(), contig)));
+		if (h_indeg == 0 || h_indeg == 1
+				&& g_edges.find(hc)->second.id != tc)
+			g_edges.insert(make_pair(hc, Overlap(tc, contig)));
 	}
+}
+
+static string complement(const string& id)
+{
+	string comp(id);
+	int i = comp.length() - 1;
+	assert(i > 0);
+	switch (comp[i]) {
+		case '+': comp[i] = '-'; break;
+		case '-': comp[i] = '+'; break;
+		default: assert(false);
+	}
+	return comp;
+}
+
+static bool unseen(const string &t, const string &h)
+{
+	static map<string, string> seen;
+	if (seen.count(t) > 0) {
+		assert(seen[t] == h);
+		return false;
+	}
+	string tc = complement(t);
+	string hc = complement(h);
+	if (seen.count(hc) > 0) {
+		assert(seen[hc] == tc);
+		return false;
+	}
+	seen.insert(make_pair(t, h));
+	seen.insert(make_pair(hc, tc));
+	return true;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -211,14 +247,29 @@ int main(int argc, const char *argv[])
 			const vector<Estimate>& ests = er.estimates[dirIdx];
 			for (EstimateVector::const_iterator iter = ests.begin();
 					iter != ests.end(); ++iter)
-				findOverlap(out, er.refID, dir, *iter);
+				findOverlap(er.refID, dir, *iter);
 		}
+	}
+
+	for (multimap<string, Overlap>::const_iterator i
+			= g_edges.begin(); i != g_edges.end(); ++i) {
+		const string& t = i->first;
+		const string& h = i->second.id;
+		const string& hc = complement(h);
+		if (g_edges.count(t) == 1 && g_edges.count(hc) == 1) {
+			if (unseen(t, h)) {
+				stats.overlap++;
+				out << i->second.contig;
+			}
+		} else
+			stats.ambiguous++;
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
 		"Insignificant (<" << MINIMUM_OVERLAP << "bp): "
 		<< stats.tooshort << "\n"
 		"Homopolymer: " << stats.homopolymer << "\n"
-		"Motif: " << stats.motif << "\n";
+		"Motif: " << stats.motif << "\n"
+		"Ambiguous: " << stats.ambiguous << "\n";
 	return 0;
 }
