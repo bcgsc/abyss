@@ -141,7 +141,7 @@ static string overlapContigs(const ContigNode& t, const ContigNode& h,
 }
 
 static map<string, set<string> > g_edges;
-static map<string, string*> g_overlaps;
+static map<string, string> g_overlaps;
 
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
@@ -159,8 +159,7 @@ static void findOverlap(
 	if (overlap > 0) {
 		g_edges[t.id()].insert(h.id());
 		g_edges[h.idComplement()].insert(t.idComplement());
-		g_overlaps[t.id()] = g_overlaps[h.idComplement()]
-			= new string(overlapContigs(t, h, overlap, mask));
+		g_overlaps[t.id()] = overlapContigs(t, h, overlap, mask);
 	}
 }
 
@@ -182,7 +181,7 @@ static bool unambiguous(const string &t, string &h)
 	h.clear();
 	const set<string>& heads = g_edges[t];
 	if (heads.size() > 1) {
-		stats.ambiguous += heads.size();
+		stats.ambiguous++;
 		return false;
 	}
 	assert(heads.size() > 0);
@@ -256,14 +255,13 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	for (map<string, set<string> >::const_iterator i
-			= g_edges.begin(); i != g_edges.end(); ++i) {
+	for (map<string, string>::const_iterator i
+			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
 		const string& t = i->first;
 		string h;
 		if (unambiguous(t, h) && unseen(t, h)) {
 			stats.overlap++;
-			assert(g_overlaps[t] == g_overlaps[complement(h)]);
-			out << *g_overlaps[t];
+			out << i->second;
 		}
 	}
 
