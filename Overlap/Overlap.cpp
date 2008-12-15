@@ -179,16 +179,13 @@ static void findOverlap(
 static bool unambiguous(const ContigNode &t)
 {
 	const set<ContigNode>& heads = g_edges[t];
-	if (heads.size() > 1) {
-		stats.ambiguous++;
+	if (heads.size() > 1)
 		return false;
-	}
 	assert(heads.size() == 1);
 	ContigNode h = *heads.begin();
-	if (g_edges[~h].size() > 1) {
-		stats.ambiguous++;
+	if (g_edges[~h].size() > 1)
 		return false;
-	}
+	assert(g_edges[~h].size() == 1);
 	return true;
 }
 
@@ -242,7 +239,8 @@ int main(int argc, const char *argv[])
 		if (unambiguous(t)) {
 			stats.overlap++;
 			out << i->second;
-		}
+		} else
+			stats.ambiguous++;
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
