@@ -37,8 +37,6 @@ static struct {
 class ContigNode
 {
 	public:
-		ContigNode()
-			: m_id((unsigned)-1), m_sense(SENSE) { }
 		ContigNode(LinearNumKey id, extDirection sense)
 			: m_id(id), m_sense(sense) { }
 
@@ -80,8 +78,8 @@ class ContigNode
 		}
 
 	private:
-		LinearNumKey m_id;
-		extDirection m_sense;
+		const LinearNumKey m_id;
+		const extDirection m_sense;
 };
 
 static unsigned findOverlap(const ContigNode& t_id,
@@ -177,41 +175,24 @@ static void findOverlap(
 	if (overlap > 0) {
 		g_edges[t].insert(h);
 		g_edges[~h].insert(~t);
-		if (g_overlaps.count(t) == 0)
+		if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
 			g_overlaps[t] = overlapContigs(t, h, overlap, mask);
 	}
 }
 
-static bool unambiguous(const ContigNode &t, ContigNode &h)
+static bool unambiguous(const ContigNode &t)
 {
-	h = ContigNode();
 	const set<ContigNode>& heads = g_edges[t];
 	if (heads.size() > 1) {
 		stats.ambiguous++;
 		return false;
 	}
 	assert(heads.size() == 1);
-	h = *heads.begin();
+	ContigNode h = *heads.begin();
 	if (g_edges[~h].size() > 1) {
 		stats.ambiguous++;
 		return false;
 	}
-	return true;
-}
-
-static bool unseen(const ContigNode &t, const ContigNode &h)
-{
-	static map<ContigNode, ContigNode> seen;
-	if (seen.count(t) > 0) {
-		assert(seen[t] == h);
-		return false;
-	}
-	if (seen.count(~h) > 0) {
-		assert(seen[~h] == ~t);
-		return false;
-	}
-	seen[t] = h;
-	seen[~h] = ~t;
 	return true;
 }
 
@@ -262,8 +243,7 @@ int main(int argc, const char *argv[])
 	for (map<ContigNode, string>::const_iterator i
 			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
 		const ContigNode& t = i->first;
-		ContigNode h;
-		if (unambiguous(t, h) && unseen(t, h)) {
+		if (unambiguous(t)) {
 			stats.overlap++;
 			out << i->second;
 		}
