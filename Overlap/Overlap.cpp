@@ -55,13 +55,6 @@ class ContigNode
 			return ContigNode(m_id, !m_sense);
 		}
 
-		const string str() const
-		{
-			ostringstream s;
-			s << m_id << (m_sense == SENSE ? '+' : '-');
-			return s.str();
-		}
-
 		unsigned outDegree() const
 		{
 			return contigGraph[m_id].numEdges(m_sense);
@@ -75,6 +68,11 @@ class ContigNode
 		{
 			const Sequence& seq = contigs[m_id].seq;
 			return m_sense == SENSE ? seq : reverseComplement(seq);
+		}
+
+		friend ostream& operator <<(ostream& o, const ContigNode a)
+		{
+			return o << a.m_id << (a.m_sense == SENSE ? '+' : '-');
 		}
 
 	private:
@@ -102,11 +100,10 @@ static unsigned findOverlap(const ContigNode& t_id,
 		return 0;
 
 	if (opt_verbose > 0) {
-		cout << t_id.str() << '\t' << h_id.str();
+		cout << t_id << '\t' << h_id;
 		for (vector<unsigned>::const_iterator i = overlaps.begin();
-				i != overlaps.end(); ++i) {
+				i != overlaps.end(); ++i)
 			cout << '\t' << *i;
-		}
 		cout << '\n';
 	}
 
@@ -150,8 +147,7 @@ static string overlapContigs(const ContigNode& t_id,
 		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
 	ostringstream s;
 	s << '>' << id << ' ' << opt_k-1 + gap << " 0 "
-		<< t_id.str() << ' ' << h_id.str()
-		<< " -" << overlap << '\n'
+		<< t_id << ' ' << h_id << " -" << overlap << '\n'
 		<< a << o << b << '\n';
 	return s.str();
 }
