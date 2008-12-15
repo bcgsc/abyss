@@ -100,12 +100,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 
 	// How many standard deviations to look for the estimate
 	const int NUM_SIGMA = 3;
-	
-	while(!inStream.eof() && inStream.peek() != EOF)
-	{
-		EstimateRecord er;
-		readEstimateRecord(inStream, er);
-		
+
+	for (EstimateRecord er; inStream >> er;) {
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 
