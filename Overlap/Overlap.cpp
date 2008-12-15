@@ -221,9 +221,7 @@ int main(int argc, const char *argv[])
 	ifstream in(estPath.c_str());
 	assert_open(in, estPath);
 
-	while (!in.eof()) {
-		EstimateRecord er;
-		readEstimateRecord(in, er);
+	for (EstimateRecord er; in >> er;) {
 		for (size_t dirIdx = 0; dirIdx <= 1; ++dirIdx) {
 			extDirection dir = (extDirection)dirIdx;
 			const vector<Estimate>& ests = er.estimates[dirIdx];

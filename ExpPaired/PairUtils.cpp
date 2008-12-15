@@ -8,8 +8,12 @@
 //
 // Read in a single estimate from the stream
 //
-void readEstimateRecord(std::ifstream& stream, EstimateRecord& er)
+std::istream& readEstimateRecord(std::istream& stream,
+		EstimateRecord& er)
 {
+	er.estimates[SENSE].clear();
+	er.estimates[ANTISENSE].clear();
+
 	// read in the id
 	stream >> er.refID;
 
@@ -51,7 +55,7 @@ void readEstimateRecord(std::ifstream& stream, EstimateRecord& er)
 		}
 	}
 
-	return;
+	return stream;
 }
 
 

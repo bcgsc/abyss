@@ -113,14 +113,21 @@ struct SimpleEdgeDesc
 
 typedef std::vector<Estimate> EstimateVector;
 
+struct EstimateRecord;
+
+std::istream& readEstimateRecord(std::istream& stream,
+		EstimateRecord& er);
+
 struct EstimateRecord
 {
 	LinearNumKey refID;
 	EstimateVector estimates[2];
+	friend std::istream& operator >>(std::istream& in,
+			EstimateRecord& er)
+	{
+		return readEstimateRecord(in, er);
+	}
 };
-
-// Estimate
-void readEstimateRecord(std::ifstream& stream, EstimateRecord& er);
 
 // Adjacency file
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile);
