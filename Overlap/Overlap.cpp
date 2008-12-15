@@ -34,55 +34,69 @@ static struct {
 	unsigned ambiguous;
 } stats;
 
-static const Sequence getSequence(LinearNumKey id, extDirection sense)
+class ContigNode
 {
-	const Sequence& seq = contigs[id].seq;
-	return sense == SENSE ? seq : reverseComplement(seq);
-}
-
-class ContigNode {
 	public:
+		ContigNode()
+			: m_id((unsigned)-1), m_sense(SENSE) { }
 		ContigNode(LinearNumKey id, extDirection sense)
-			: m_id(id), m_sense(sense), m_seq(getSequence(id, sense))
-			{}
-		Sequence sequence() const { return m_seq; }
-		size_t length() const { return m_seq.length(); }
-		unsigned inDegree() const
+			: m_id(id), m_sense(sense) { }
+
+		bool operator==(const ContigNode& b) const
 		{
-			return contigGraph[m_id].numEdges(!m_sense);
+			return m_id == b.m_id && m_sense == b.m_sense;
 		}
-		unsigned outDegree() const
+		bool operator<(const ContigNode b) const
 		{
-			return contigGraph[m_id].numEdges(m_sense);
+			return m_id != b.m_id ? m_id < b.m_id
+				: m_sense < b.m_sense;
 		}
-		string id() const
+
+		const ContigNode operator~() const
+		{
+			return ContigNode(m_id, !m_sense);
+		}
+
+		const string str() const
 		{
 			ostringstream s;
 			s << m_id << (m_sense == SENSE ? '+' : '-');
 			return s.str();
 		}
-		string idComplement() const
+
+		unsigned outDegree() const
 		{
-			ostringstream s;
-			s << m_id << (m_sense == SENSE ? '-' : '+');
-			return s.str();
+			return contigGraph[m_id].numEdges(m_sense);
 		}
+		unsigned inDegree() const
+		{
+			return contigGraph[m_id].numEdges(!m_sense);
+		}
+
+		const Sequence sequence() const
+		{
+			const Sequence& seq = contigs[m_id].seq;
+			return m_sense == SENSE ? seq : reverseComplement(seq);
+		}
+
 	private:
 		LinearNumKey m_id;
 		extDirection m_sense;
-		const Sequence m_seq;
 };
 
-static unsigned findOverlap(const ContigNode& t, const ContigNode& h,
+static unsigned findOverlap(const ContigNode& t_id,
+		const ContigNode& h_id,
 		bool& mask)
 {
 	mask = false;
+	Sequence t = t_id.sequence();
+	Sequence h = h_id.sequence();
 	unsigned len = min(t.length(), h.length());
 	vector<unsigned> overlaps;
 	overlaps.reserve(len);
 	for (unsigned overlap = len; overlap >= 1; overlap--) {
-		string a = t.sequence().substr(t.length()-overlap, overlap);
-		string b = h.sequence().substr(0, overlap);
+		string a = t.substr(t.length()-overlap, overlap);
+		string b = h.substr(0, overlap);
 		if (a == b)
 			overlaps.push_back(overlap);
 	}
@@ -90,7 +104,7 @@ static unsigned findOverlap(const ContigNode& t, const ContigNode& h,
 		return 0;
 
 	if (opt_verbose > 0) {
-		cout << t.id() << '\t' << h.id();
+		cout << t_id.str() << '\t' << h_id.str();
 		for (vector<unsigned>::const_iterator i = overlaps.begin();
 				i != overlaps.end(); ++i) {
 			cout << '\t' << *i;
@@ -121,27 +135,31 @@ static unsigned findOverlap(const ContigNode& t, const ContigNode& h,
 	return overlaps[0];
 }
 
-static string overlapContigs(const ContigNode& t, const ContigNode& h,
+static string overlapContigs(const ContigNode& t_id,
+		const ContigNode& h_id,
 		unsigned overlap, bool mask)
 {
 	static unsigned n;
 	unsigned id = contigs.size() + n++;
 
+	Sequence t = t_id.sequence();
+	Sequence h = h_id.sequence();
 	unsigned gap = opt_k - 1 - overlap;
-	string a = t.sequence().substr(t.length()-opt_k+1, gap);
-	string o = h.sequence().substr(0, overlap);
-	string b = h.sequence().substr(overlap, gap);
+	string a = t.substr(t.length()-opt_k+1, gap);
+	string o = h.substr(0, overlap);
+	string b = h.substr(overlap, gap);
 	if (mask)
 		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
 	ostringstream s;
 	s << '>' << id << ' ' << opt_k-1 + gap << " 0 "
-		<< t.id() << ' ' << h.id() << " -" << overlap << '\n'
+		<< t_id.str() << ' ' << h_id.str()
+		<< " -" << overlap << '\n'
 		<< a << o << b << '\n';
 	return s.str();
 }
 
-static map<string, set<string> > g_edges;
-static map<string, string> g_overlaps;
+static map<ContigNode, set<ContigNode> > g_edges;
+static map<ContigNode, string> g_overlaps;
 
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
@@ -157,58 +175,43 @@ static void findOverlap(
 	if (t.outDegree() == 0 && h.inDegree() == 0)
 		overlap = findOverlap(t, h, mask);
 	if (overlap > 0) {
-		g_edges[t.id()].insert(h.id());
-		g_edges[h.idComplement()].insert(t.idComplement());
-		if (g_overlaps.count(t.id()) == 0)
-			g_overlaps[t.id()] = overlapContigs(t, h, overlap, mask);
+		g_edges[t].insert(h);
+		g_edges[~h].insert(~t);
+		if (g_overlaps.count(t) == 0)
+			g_overlaps[t] = overlapContigs(t, h, overlap, mask);
 	}
 }
 
-static string complement(const string& id)
+static bool unambiguous(const ContigNode &t, ContigNode &h)
 {
-	string comp(id);
-	int i = comp.length() - 1;
-	assert(i > 0);
-	switch (comp[i]) {
-		case '+': comp[i] = '-'; break;
-		case '-': comp[i] = '+'; break;
-		default: assert(false);
-	}
-	return comp;
-}
-
-static bool unambiguous(const string &t, string &h)
-{
-	h.clear();
-	const set<string>& heads = g_edges[t];
+	h = ContigNode();
+	const set<ContigNode>& heads = g_edges[t];
 	if (heads.size() > 1) {
 		stats.ambiguous++;
 		return false;
 	}
-	assert(heads.size() > 0);
+	assert(heads.size() == 1);
 	h = *heads.begin();
-	if (g_edges[complement(h)].size() > 1) {
+	if (g_edges[~h].size() > 1) {
 		stats.ambiguous++;
 		return false;
 	}
 	return true;
 }
 
-static bool unseen(const string &t, const string &h)
+static bool unseen(const ContigNode &t, const ContigNode &h)
 {
-	static map<string, string> seen;
+	static map<ContigNode, ContigNode> seen;
 	if (seen.count(t) > 0) {
 		assert(seen[t] == h);
 		return false;
 	}
-	string tc = complement(t);
-	string hc = complement(h);
-	if (seen.count(hc) > 0) {
-		assert(seen[hc] == tc);
+	if (seen.count(~h) > 0) {
+		assert(seen[~h] == ~t);
 		return false;
 	}
-	seen.insert(make_pair(t, h));
-	seen.insert(make_pair(hc, tc));
+	seen[t] = h;
+	seen[~h] = ~t;
 	return true;
 }
 
@@ -256,10 +259,10 @@ int main(int argc, const char *argv[])
 		}
 	}
 
-	for (map<string, string>::const_iterator i
+	for (map<ContigNode, string>::const_iterator i
 			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
-		const string& t = i->first;
-		string h;
+		const ContigNode& t = i->first;
+		ContigNode h;
 		if (unambiguous(t, h) && unseen(t, h)) {
 			stats.overlap++;
 			out << i->second;
