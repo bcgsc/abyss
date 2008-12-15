@@ -222,9 +222,8 @@ int main(int argc, const char *argv[])
 	assert_open(in, estPath);
 
 	for (EstimateRecord er; in >> er;) {
-		for (size_t dirIdx = 0; dirIdx <= 1; ++dirIdx) {
-			extDirection dir = (extDirection)dirIdx;
-			const vector<Estimate>& ests = er.estimates[dirIdx];
+		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
+			const vector<Estimate>& ests = er.estimates[dir];
 			for (EstimateVector::const_iterator iter = ests.begin();
 					iter != ests.end(); ++iter)
 				findOverlap(er.refID, dir, *iter);

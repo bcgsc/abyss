@@ -57,6 +57,12 @@ static inline extDirection operator !(extDirection dir)
 	return dir == SENSE ? ANTISENSE : SENSE;
 }
 
+static inline extDirection& operator ++(extDirection& dir)
+{
+	assert(dir == SENSE || dir == ANTISENSE);
+	return dir = extDirection(dir + 1);
+}
+
 enum CollectionState
 {
 	CS_LOADING,
