@@ -77,10 +77,13 @@ int main(int argc, char** argv)
 	length_cutoff = atoi(argv[5]);
 	number_of_pairs_threshold = atoi(argv[6]);
 
-	std::cout << "Align File: " << alignFile << "len file: " << contigLengthFile << " distance file: " 
-	<< distanceCountFile << " len cutoff " << length_cutoff 
-	<< " num pairs cutoff " << number_of_pairs_threshold << std::endl;
-	
+	std::cout << "Alignments: " << alignFile
+		<< " Contigs: " << contigLengthFile
+		<< " Distribution: " << distanceCountFile
+		<< " Length cutoff: " << length_cutoff
+		<< " Num pairs cutoff: " << number_of_pairs_threshold
+		<< std::endl;
+
 	// Load the pdf
 	Histogram distanceHist = loadHist(distanceCountFile);
 		
