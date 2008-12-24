@@ -25,11 +25,10 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
 {
-	// Initially tell the has that a lot of sequences are on the way
-	// This will remove many resizes (which are very slow)
-	// Maybe use an even larger value?
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-	m_pSequences = new SequenceDataHash(2 << 28);
+	// Make room for 2^30 elements, over one billion, using 2 bits
+	// per element or 256 MiB.
+	m_pSequences = new SequenceDataHash(1 << 30);
 #else
 	m_pSequences = new SequenceDataHash();
 #endif
