@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 
-const double MINP = 0.00001f;
+static const double MINP = 1e-7;
 
 // Functions
 
