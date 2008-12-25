@@ -184,10 +184,10 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					continue;
 				}
 
+				unsigned pairDirIdx = pdIter->second.pairVec[0].size()
+					> number_of_pairs_threshold ? 0 : 1;
 				AlignPairVec& pairVec
-					= pdIter->second.pairVec[0].size() > 0
-					? pdIter->second.pairVec[0]
-					: pdIter->second.pairVec[1];
+					= pdIter->second.pairVec[pairDirIdx];
 				unsigned numPairs = pairVec.size();
 				if (numPairs > number_of_pairs_threshold) {
 					// Determine the relative orientation of the
@@ -195,8 +195,7 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					// (reverse comp) direction, the alignments are in
 					// the same orientation if the pairs aligned in
 					// the opposite orientation.
-					bool sameOrientation
-						= pdIter->second.pairVec[dirIdx].size() == 0;
+					bool sameOrientation = dirIdx != pairDirIdx;
 
 					EstimateReturn er = estimateDistance(kmer,
 							refContigLength, pairContigLength,
