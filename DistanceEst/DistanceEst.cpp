@@ -9,14 +9,7 @@
 typedef std::vector<int> IntVector;
 struct PairedData
 {
-	PairedData()
-	{
-		compCount[0] = 0;
-		compCount[1] = 0;
-	}
-
-	AlignPairVec pairVec;
-	int compCount[2];
+	AlignPairVec pairVec[2];
 };
 
 struct EstimateReturn
@@ -162,10 +155,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				if(iter->refRec.isRC == (bool)dirIdx)
 				{
 					PairedData& pd = dataMap[iter->pairRec.contig];
-					pd.pairVec.push_back(*iter);
 					size_t compIdx = (size_t)iter->pairRec.isRC;
 					assert(compIdx < 2);
-					pd.compCount[compIdx]++;
+					pd.pairVec[compIdx].push_back(*iter);
 				}
 			}
 
@@ -179,18 +171,20 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				int pairContigLength = lookupLength(lengthVec, pairNumID);
 				
 				// Check if the pairs are in a valid orientation
-				if(pdIter->second.compCount[0] > 0 && pdIter->second.compCount[1] > 0)
-				{
+				if (pdIter->second.pairVec[0].size() > 0
+						&& pdIter->second.pairVec[1].size() > 0) {
 					cerr << "warning: inconsistent pairing between "
 						<< refContigID << (dirIdx ? '-' : '+') << ' '
 						<< pairID << '+' << ' '
-						<< pdIter->second.compCount[0] << ' '
+						<< pdIter->second.pairVec[0].size() << ' '
 						<< pairID << '-' << ' '
-						<< pdIter->second.compCount[1] << '\n';
+						<< pdIter->second.pairVec[1].size() << '\n';
 					continue;
 				}
 
-				unsigned numPairs = pdIter->second.pairVec.size();
+				const AlignPairVec& pairVec = pdIter->second.pairVec[0].size() > 0
+					? pdIter->second.pairVec[0] : pdIter->second.pairVec[1];
+				unsigned numPairs = pairVec.size();
 				if (numPairs > number_of_pairs_threshold) {
 					EstimateReturn er = estimateDistance(kmer,
 							refContigLength, pairContigLength,
@@ -232,16 +226,9 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 	// Determine the relative orientation of the contigs
 	// As pairs are orientated in opposite (reverse comp) direction, the alignments are in the same
 	// orientation if the pairs aligned in the opposite orientation
-	bool sameOrientation = false;
-	if(pairData.compCount[1 - dirIdx] > 0)
-	{
-		// the contigs have the correct orientation
-		sameOrientation = true;
-	}
-	else
-	{
-		sameOrientation = false;
-	}
+	bool sameOrientation = pairData.pairVec[dirIdx].size() == 0;
+	AlignPairVec& pairVec = pairData.pairVec[0].size() > 0
+		? pairData.pairVec[0] : pairData.pairVec[1];
 
 	// Calculate the distance list for this contig
 	// The provisional distances are calculated as if the contigs overlap perfectly by k-1 bases
@@ -251,8 +238,8 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 	if(!sameOrientation)
 	{
 		// Flip all the positions of the pair aligns
-		for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
-		{
+		for (AlignPairVec::iterator apIter = pairVec.begin();
+				apIter != pairVec.end(); ++apIter) {
 			apIter->pairRec.flip(pairLen);
 			//apIter->pairRec.start = (pairLen - (apIter->pairRec.start + apIter->pairRec.length)); 
 		}
@@ -274,8 +261,8 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 	}	
 	
 	IntVector distanceList;
-	for(AlignPairVec::iterator apIter = pairData.pairVec.begin(); apIter != pairData.pairVec.end(); ++apIter)
-	{
+	for (AlignPairVec::iterator apIter = pairVec.begin();
+			apIter != pairVec.end(); ++apIter) {
 			int distance;
 			int refTransPos = apIter->refRec.readSpacePosition() + refOffset;
 			int pairTransPos = apIter->pairRec.readSpacePosition() + pairOffset;
