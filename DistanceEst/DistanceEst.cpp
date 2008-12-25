@@ -173,8 +173,10 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				int pairContigLength = lookupLength(lengthVec, pairNumID);
 				
 				// Check if the pairs are in a valid orientation
-				if (pdIter->second.pairVec[0].size() > 0
-						&& pdIter->second.pairVec[1].size() > 0) {
+				if (pdIter->second.pairVec[0].size()
+							> number_of_pairs_threshold
+						&& pdIter->second.pairVec[1].size()
+							> number_of_pairs_threshold) {
 					cerr << "warning: inconsistent pairing between "
 						<< refContigID << (dirIdx ? '-' : '+') << ' '
 						<< pairID << '+' << ' '
