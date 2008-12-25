@@ -4,8 +4,6 @@
 #include <iostream>
 #include <algorithm>
 
-static const double MINP = 1e-7;
-
 // Functions
 
 void KLDiv(const PDF& p, const PDF& q)
@@ -143,7 +141,7 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
 		int val = *iter + param;
 		double p = pdf.getP(val);
 		sum += log(p);
-		if (p > MINP)
+		if (p > pdf.getMinP())
 			n++;
 	}
 	return sum;
@@ -276,15 +274,16 @@ PDF::PDF(const Histogram& h)
 	{
 		count += histIter->second;
 	}
-	
+	m_minp = (double)1 / count;
+
 	// Create the initial pdf with all values being 0
 	m_dist = DoubleVec(m_maxIdx+1, 0.0f);
 	for(size_t i = 0; i <= m_maxIdx; i++)
 	{
 		unsigned v = h.getCount(i);
-		m_dist[i] = v > 0 ? (double)v / count : MINP;
-	}	
-	
+		m_dist[i] = v > 0 ? (double)v / count : m_minp;
+	}
+
 	// Calculate the mean
 	double sum = 0;
 	double sumsqr = 0;
@@ -306,9 +305,9 @@ PDF::PDF(const Histogram& h)
 			m_mean, m_stdDev, count, h.getMin(), h.getMax());
 }
 
-double PDF::getP(size_t idx) const 
-{ 
-	return (idx <= m_maxIdx) ? m_dist[idx] : MINP; 
+double PDF::getP(size_t idx) const
+{
+	return (idx <= m_maxIdx) ? m_dist[idx] : m_minp;
 }
 
 //

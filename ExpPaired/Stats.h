@@ -36,7 +36,7 @@ struct PDF
 	PDF(const Histogram& h);
 	
 	double getP(size_t idx) const;
-	
+	double getMinP() const { return m_minp; }
 	size_t getMaxIdx() const { return m_maxIdx; }
 	void print() const;
 	int getSampleStdDev(int n) const { return (int)ceil(m_stdDev / sqrt((double)n)); }
@@ -45,6 +45,7 @@ struct PDF
 	DoubleVec m_dist;
 	double m_mean;
 	double m_stdDev;
+	double m_minp;
 	
 	// calculate the minimal range in which p% of the values will fall into
 	void calculateMinimalRange(double p, size_t& low, size_t& high) const;
