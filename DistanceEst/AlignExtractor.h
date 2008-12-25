@@ -9,6 +9,11 @@ struct AlignPair
 {
 	Alignment refRec;
 	Alignment pairRec;
+	friend std::ostream& operator <<(std::ostream& o,
+			const AlignPair& p)
+	{
+		return o << p.refRec << ' ' << p.pairRec;
+	}
 };
 
 typedef std::vector<AlignPair> AlignPairVec;
