@@ -22,7 +22,9 @@ struct EstimateReturn
 typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
-EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf);
+EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
+		size_t dirIdx, AlignPairVec& pairData, bool sameOrientation,
+		const PDF& pdf);
 void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
@@ -182,13 +184,24 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					continue;
 				}
 
-				const AlignPairVec& pairVec = pdIter->second.pairVec[0].size() > 0
-					? pdIter->second.pairVec[0] : pdIter->second.pairVec[1];
+				AlignPairVec& pairVec
+					= pdIter->second.pairVec[0].size() > 0
+					? pdIter->second.pairVec[0]
+					: pdIter->second.pairVec[1];
 				unsigned numPairs = pairVec.size();
 				if (numPairs > number_of_pairs_threshold) {
+					// Determine the relative orientation of the
+					// contigs. As pairs are orientated in opposite
+					// (reverse comp) direction, the alignments are in
+					// the same orientation if the pairs aligned in
+					// the opposite orientation.
+					bool sameOrientation
+						= pdIter->second.pairVec[dirIdx].size() == 0;
+
 					EstimateReturn er = estimateDistance(kmer,
 							refContigLength, pairContigLength,
-							dirIdx, pdIter->second, pdf);
+							dirIdx, pairVec, sameOrientation, pdf);
+
 					if (er.numPairs > number_of_pairs_threshold) {
 						Estimate est;
 						est.nID = pairNumID;
@@ -221,15 +234,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 }
 
 // Estimate the distances between the contigs
-EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
+EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, AlignPairVec& pairVec, bool sameOrientation,
+		const PDF& pdf)
 {
-	// Determine the relative orientation of the contigs
-	// As pairs are orientated in opposite (reverse comp) direction, the alignments are in the same
-	// orientation if the pairs aligned in the opposite orientation
-	bool sameOrientation = pairData.pairVec[dirIdx].size() == 0;
-	AlignPairVec& pairVec = pairData.pairVec[0].size() > 0
-		? pairData.pairVec[0] : pairData.pairVec[1];
-
 	// Calculate the distance list for this contig
 	// The provisional distances are calculated as if the contigs overlap perfectly by k-1 bases
 	// The maximum likelihood estimate will refine this
