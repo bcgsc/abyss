@@ -23,6 +23,7 @@ struct EstimateReturn
 {
 	int distance;
 	bool isRC;
+	unsigned numPairs;
 };
 
 typedef std::map<ContigID, PairedData> PairDataMap;
@@ -60,7 +61,7 @@ int main(int argc, char** argv)
 */
 
 int length_cutoff = - 1;
-int number_of_pairs_threshold = - 1;
+unsigned number_of_pairs_threshold;
 
 int main(int argc, char** argv)
 {
@@ -180,29 +181,38 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				// Check if the pairs are in a valid orientation
 				if(pdIter->second.compCount[0] > 0 && pdIter->second.compCount[1] > 0)
 				{
-					// The pairs are inconsistent, do not use this contig
+					cerr << "warning: inconsistent pairing between "
+						<< refContigID << (dirIdx ? '-' : '+') << ' '
+						<< pairID << '+' << ' '
+						<< pdIter->second.compCount[0] << ' '
+						<< pairID << '-' << ' '
+						<< pdIter->second.compCount[1] << '\n';
 					continue;
 				}
-				
-				
-				
-				if((int)pdIter->second.pairVec.size() > number_of_pairs_threshold)
-				{
-					// Estimate the distance
-					EstimateReturn er = estimateDistance(kmer, refContigLength, pairContigLength, dirIdx, pdIter->second, pdf);					
-					
-					Estimate est;
-					est.nID = pairNumID;
-					est.distance = er.distance;
-					est.numPairs = pdIter->second.pairVec.size();
-					est.stdDev = pdf.getSampleStdDev(est.numPairs);
-					est.isRC = er.isRC;
-					
-					// write the record to file
-					outFile << est << " "; 
 
+				unsigned numPairs = pdIter->second.pairVec.size();
+				if (numPairs > number_of_pairs_threshold) {
+					EstimateReturn er = estimateDistance(kmer,
+							refContigLength, pairContigLength,
+							dirIdx, pdIter->second, pdf);
+					if (er.numPairs > number_of_pairs_threshold) {
+						Estimate est;
+						est.nID = pairNumID;
+						est.distance = er.distance;
+						est.numPairs = er.numPairs;
+						est.stdDev = pdf.getSampleStdDev(er.numPairs);
+						est.isRC = er.isRC;
+						outFile << est << " ";
+					} else {
+						cerr << "warning: "
+							<< refContigID << (dirIdx ? '-' : '+')
+							<< ','
+							<< pairID << (er.isRC ? '-' : '+') << ' '
+							<< er.numPairs << " of "
+							<< numPairs << " pairs"
+							" fit the expected distribution\n";
+					}
 				}
-				//std::cout << "Est dist: " << dist << " ratio " << ratio << std::endl;
 			}
 		}
 		outFile << "\n";
@@ -219,9 +229,6 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 // Estimate the distances between the contigs
 EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, PairedData& pairData, const PDF& pdf)
 {
-	
-	EstimateReturn ret;
-	
 	// Determine the relative orientation of the contigs
 	// As pairs are orientated in opposite (reverse comp) direction, the alignments are in the same
 	// orientation if the pairs aligned in the opposite orientation
@@ -283,15 +290,16 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 			}
 			
 			distanceList.push_back(distance);
-			//std::cout << "Distance: " << distance << std::endl;
+			std::cout << "Distance: " << distance << std::endl;
 	}
 	
 	// Perform the max-likelihood est
-	double ratio;
-	int dist = maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(), distanceList, pdf, ratio);
+	unsigned numPairs;
+	int dist = maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(), distanceList, pdf, numPairs);
 	
+	EstimateReturn ret;
 	ret.isRC = !sameOrientation;
 	ret.distance = dist;
+	ret.numPairs = numPairs;
 	return ret;
 }
-

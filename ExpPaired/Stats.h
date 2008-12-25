@@ -72,10 +72,13 @@ bool KSTestCont(std::vector<int> observations, const PDF& p);
 double approximateKSCritValue(int n, double alpha);
 
 // Maximum Likelihood Estimator functions
-int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance, const PDF& pdf, double& ratio);
+int maxLikelihoodEst(int min, int max,
+		const std::vector<int>& pairDistance, const PDF& pdf,
+		unsigned& n);
 
 // Compute the likelihood of the distribution
-double computeLikelihood(int param, std::vector<int>& testDist, const PDF& pdf);
+double computeLikelihood(int param, const std::vector<int>& testDist,
+		const PDF& pdf, unsigned& n);
 
 class PairedStats
 {

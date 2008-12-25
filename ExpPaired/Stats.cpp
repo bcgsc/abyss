@@ -102,45 +102,50 @@ void ChiSquare(const PDF& ref, const Histogram& sample)
 //
 // Perform a maximum likelihood estimate over the pdf and input distribution
 //
-int maxLikelihoodEst(int min, int max, std::vector<int>& pairDistance, const PDF& pdf, double& ratio)
+int maxLikelihoodEst(int min, int max,
+		const std::vector<int>& pairDistance, const PDF& pdf,
+		unsigned& n)
 {
 	double maxL = -999999;
 	double nextBestL = maxL;
 	int bestDist = min;
+	unsigned bestn = 0;
 	
 	int minDist = min;
 	int maxDist = max;
 	for(int i = minDist; i < maxDist; i++)
 	{
-		double v = computeLikelihood(i, pairDistance, pdf);
+		unsigned trialn;
+		double v = computeLikelihood(i, pairDistance, pdf, trialn);
 		if(v > maxL)
 		{
 			nextBestL = maxL;
 			maxL = v;
 			bestDist = i;
+			bestn = trialn;
 		}
 	}
-	
-	// Compute the ratio between the best and second best
-	ratio = maxL / nextBestL;
-	
+
+	n = bestn;
 	return bestDist;
 }
 
 //
 // Compute the log likelihood function over the test distribution
 //
-double computeLikelihood(int param, std::vector<int>& testDist, const PDF& pdf)
+double computeLikelihood(int param, const std::vector<int>& testDist,
+		const PDF& pdf, unsigned &n)
 {
+	n = 0;
 	double sum = 0.0f;
-
-	for(std::vector<int>::iterator iter = testDist.begin(); iter != testDist.end(); iter++)
-	{
+	for (std::vector<int>::const_iterator iter = testDist.begin();
+			iter != testDist.end(); ++iter) {
 		int val = *iter + param;
 		double p = pdf.getP(val);
 		sum += log(p);
+		if (p > MINP)
+			n++;
 	}
-	
 	return sum;
 }
 
