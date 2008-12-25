@@ -290,7 +290,6 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 			}
 			
 			distanceList.push_back(distance);
-			std::cout << "Distance: " << distance << std::endl;
 	}
 	
 	// Perform the max-likelihood est
