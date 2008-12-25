@@ -231,19 +231,13 @@ int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
 //
 Histogram loadHist(std::string distCountFile)
 {
-	Histogram hist;
 	ifstream distFile(distCountFile.c_str());
 	assert(distFile.is_open());
 
-	while(!distFile.eof() && distFile.peek() != EOF)
-	{
-		int value;
-		int count;
-		distFile >> value;
-		distFile >> count;
+	Histogram hist;
+	unsigned value, count;
+	while (distFile >> value >> count)
 		hist.addMultiplePoints(value, count);
-	} 
-
 	return hist;
 }
 
