@@ -205,6 +205,12 @@ int main(int argc, const char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	if (string(argv[1]) == "-v") {
+		opt_verbose++;
+		argv++;
+		argc--;
+	}
+
 	istringstream(argv[1]) >> opt_k;
 	assert(opt_k > 0);
 	string contigPath(argv[2]);
