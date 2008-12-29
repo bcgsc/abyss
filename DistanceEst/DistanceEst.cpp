@@ -180,10 +180,10 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					cerr << "warning: inconsistent pairing between "
 						<< refContigID << (dirIdx ? '-' : '+') << ' '
 						<< pairID << '+' << ' '
-						<< pdIter->second.pairVec[!dirIdx].size()
+						<< pdIter->second.pairVec[1].size()
 						<< ' '
 						<< pairID << '-' << ' '
-						<< pdIter->second.pairVec[dirIdx].size()
+						<< pdIter->second.pairVec[0].size()
 						<< '\n';
 					continue;
 				}
