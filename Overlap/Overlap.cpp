@@ -28,6 +28,7 @@ static SimpleContigGraph contigGraph;
 
 static struct {
 	unsigned overlap;
+	unsigned none;
 	unsigned tooshort;
 	unsigned homopolymer;
 	unsigned motif;
@@ -96,8 +97,6 @@ static unsigned findOverlap(const ContigNode& t_id,
 		if (a == b)
 			overlaps.push_back(overlap);
 	}
-	if (overlaps.size() == 0)
-		return 0;
 
 	if (opt_verbose > 0) {
 		cout << t_id << '\t' << h_id;
@@ -105,6 +104,11 @@ static unsigned findOverlap(const ContigNode& t_id,
 				i != overlaps.end(); ++i)
 			cout << '\t' << *i;
 		cout << '\n';
+	}
+
+	if (overlaps.size() == 0) {
+		stats.none++;
+		return 0;
 	}
 
 	if (overlaps[0] < MINIMUM_OVERLAP) {
@@ -247,6 +251,7 @@ int main(int argc, const char *argv[])
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
+		"No overlap: " << stats.none << "\n"
 		"Insignificant (<" << MINIMUM_OVERLAP << "bp): "
 		<< stats.tooshort << "\n"
 		"Homopolymer: " << stats.homopolymer << "\n"
