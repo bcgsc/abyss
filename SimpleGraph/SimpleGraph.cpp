@@ -105,7 +105,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 
-		  //std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
+		  if(gDebugPrint) std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
 			// generate the reachable set
 			SimpleContigGraph::KeyConstraintMap constraintMap;
 			
@@ -145,7 +145,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			
 			// Select the best path
 			//std::cout << "Computational cost " << numVisited << "\n";
-			//std::cout << "Solutions: \n";
+			if(gDebugPrint) std::cout << "Solutions: \n";
 
 			SimpleContigGraph::FeasiblePaths::iterator bestSol = solutions.end();
 			int minDiff = 999999;
@@ -217,14 +217,15 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						if(gDebugPrint) std::cout << " Actual Dist: " << actualDistance << "\n";
 						int diff = actualDistance - iter->distance;
 						int buffer = iter->stdDev * NUM_SIGMA;
-						if(abs(diff) > buffer)
-						{
+						bool invalid = abs(diff) > buffer;
+						if (invalid)
 							validPath = false;
-						}
-						else
-						{
-							if(gDebugPrint) std::cout << "diff: " << diff << " n: " << iter->numPairs << " buffer: " << buffer << "\n";
-						}
+						if (gDebugPrint)
+							std::cout << "diff: " << diff
+								<< " n: " << iter->numPairs
+								<< " buffer: " << buffer
+								<< (invalid ? " invalid" : "")
+								<< "\n";
 					}
 					else
 					{
