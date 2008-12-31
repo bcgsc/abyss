@@ -59,13 +59,16 @@ int main(int argc, char* const* argv)
 		ReadAlignMap::iterator pairIter = alignTable.find(pairID);
 		if(pairIter != alignTable.end())
 		{
-			// Only use if the ref alignment is singular
-			// The pair alignment can be broken up (but not multiple!)
+			// Both reads must align to a unique location.
+			// The reads are allowed to span more than one contig, but
+			// at least one of the two reads must span no more than
+			// two contigs.
 			bool isRefUnique = checkUniqueAlignments(kmer, iter->second);
 			bool isPairUnique = checkUniqueAlignments(kmer, pairIter->second);
-			
-			if((iter->second.size() == 1 || pairIter->second.size() == 1) && isRefUnique && isPairUnique)
-			{
+			const unsigned MAX_SPAN = 2;
+			if ((iter->second.size() <= MAX_SPAN
+						|| pairIter->second.size() <= MAX_SPAN)
+					&& isRefUnique && isPairUnique) {
 				// Iterate over the vectors, outputting the aligments
 				for(AlignmentVector::iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
 				{
