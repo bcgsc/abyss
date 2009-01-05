@@ -220,58 +220,27 @@ int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 	return m_multiplicity = total;
 }
 
-//
-// Build a contig from a branch
-//
+/** Build a contig from a branch. */
 void BranchRecord::buildContig(Sequence& outseq) const
 {
-	// Is there any sequences in the record?
-	if(m_data.empty())
-	{
-		return;
+	assert(!m_data.empty());
+	outseq.clear();
+	outseq.reserve(m_data.front().getSequenceLength()
+			+ m_data.size() - 1);
+
+	if (m_dir == SENSE) {
+		BranchData::const_iterator iter = m_data.begin();
+		outseq = iter->decode();
+		++iter;
+		for (; iter != m_data.end(); ++iter)
+			outseq.append(1, iter->getLastBase());
+	} else {
+		BranchData::const_reverse_iterator iter = m_data.rbegin();
+		outseq = iter->decode();
+		++iter;
+		for (; iter != m_data.rend(); ++iter)
+			outseq.append(1, iter->getLastBase());
 	}
-	
-	// Calculate the length of the output sequence
-	size_t outlen = m_data.front().getSequenceLength() + (m_data.size() - 1);
-	// reserve enough room for the entire sequence
-	outseq.reserve(outlen);
-	
-	if(m_dir == SENSE)
-	{
-		bool first = true;
-		for(BranchData::const_iterator iter = m_data.begin(); iter != m_data.end(); ++iter)
-		{
-			if(first)
-			{
-				// add the first sequence in its entirety
-				outseq.append(iter->decode());
-				first = false;
-			}
-			else
-			{
-				outseq.append(1, iter->getLastBase());
-			}
-		}
-	}
-	else
-	{
-		// for antisense, start at the end and traverse backwards
-		bool first = true;
-		for(BranchData::const_reverse_iterator riter = m_data.rbegin(); riter != m_data.rend(); ++riter)
-		{
-			if(first)
-			{
-				// add the first sequence in its entirety
-				outseq.append(riter->decode());
-				first = false;
-			}
-			else
-			{
-				outseq.append(1, riter->getLastBase());
-			}
-		}
-	}
-	return;
 }
 
 //
