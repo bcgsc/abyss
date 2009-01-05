@@ -36,6 +36,10 @@ class BranchRecord
 		
 		// Add a single sequence to the branch
 		void addSequence(const PackedSeq& seq, int multiplicity = -1);
+
+		// Remove all the sequences including and following the
+		// specified iterator.
+		void truncate(BranchDataIter position);
 		
 		// Terminate the branch and indicate why
 		void terminate(BranchState reason);

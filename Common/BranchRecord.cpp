@@ -67,6 +67,18 @@ void BranchRecord::addSequence(const PackedSeq& seq, int multiplicity)
 	}
 }
 
+/**
+ * Remove all the sequences including and following the specified
+ * iterator.
+ */
+void BranchRecord::truncate(BranchDataIter position)
+{
+	ssize_t size = position - m_data.begin();
+	assert(size > 0);
+	assert((size_t)size < m_data.size());
+	m_data.resize(size);
+}
+
 //
 // Terminate the branch and indicate why
 //

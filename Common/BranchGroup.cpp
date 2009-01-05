@@ -143,6 +143,9 @@ void BranchGroup::selectBranchToKeep()
 			bestMult = currMult;
 			bestIndex = index;
 		}
+
+		// Remove the last base, which is identical for every branch.
+		branch.truncate(branch.getEndIter() - 1);
 	}
 
 	assert(bestIndex >= 0);
