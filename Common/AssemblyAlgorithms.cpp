@@ -537,8 +537,7 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 		}
 		
 		BranchRecord& currBranch = group.getBranch(i);
-		// Do not delete the last node, where the branches join.
-		BranchDataIter end = currBranch.getEndIter() - 1;
+		BranchDataIter end = currBranch.getEndIter();
 		for(BranchDataIter branchIter = currBranch.getStartIter();
 				branchIter != end; ++branchIter)
 		{
@@ -550,6 +549,7 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 			removeSequenceAndExtensions(seqCollection, *branchIter);
 		}
 	}
+	assert(!group.isAmbiguous(seqCollection));
 }
 //
 // Remove a read and update the extension records of the sequences that extend to it
