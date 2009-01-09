@@ -212,8 +212,10 @@ std::string makePairID(std::string refID)
 {
 	std::string pairID = refID;
 	// Change the last character
-	size_t lastIdx = pairID.size() - 1;
+	ssize_t lastIdx = pairID.size() - 1;
+	assert(lastIdx > 0);
 	char c = refID[lastIdx];
+	bool matched = true;
 	switch (c) {
 		case '1': c = '2'; break;
 		case '2': c = '1'; break;
@@ -221,8 +223,29 @@ std::string makePairID(std::string refID)
 		case 'B': c = 'A'; break;
 		case 'F': c = 'R'; break;
 		case 'R': c = 'F'; break;
-		default: assert(false); exit(EXIT_FAILURE);
+		default: matched = false; break;
 	}
-	pairID[lastIdx] = c;
+	if (matched) {
+		pairID[lastIdx] = c;
+	} else {
+		static const char *suffix0 = "forward";
+		static const char *suffix1 = "reverse";
+		ssize_t i = refID.length() - strlen(suffix0);
+		assert(i > 0);
+		string suffix = refID.substr(i);
+		if (suffix == suffix0) {
+			pairID.replace(i, string::npos, suffix1);
+		} else if (suffix == suffix1) {
+			pairID.replace(i, string::npos, suffix0);
+		} else {
+			cerr << "error: read ID `" << refID
+				<< "' must end in one of\n"
+				"\t/1 and /2 or"
+				" _A and _B or"
+				" _F and _R or"
+				" _forward and _reverse\n";
+			exit(EXIT_FAILURE);
+		}
+	}
 	return pairID;
 }
