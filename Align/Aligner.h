@@ -20,19 +20,16 @@ struct Alignment
 	int align_length;
 	int read_length;
 	bool isRC;
-	
-	// The position in read space is the alignment pos on the contig offset by where in the read the hit was
-	// This can be negative
-	int readSpacePosition() 
-	{ 
-		if(!isRC)
-		{
-			return contig_start_pos - read_start_pos;
-		}
-		else
-		{
-			return contig_start_pos - ((read_length - read_start_pos) - align_length);
-		}
+
+	/**
+	 * Return the taret position at the query start.
+	 * Note: not alignment start, and may be negative
+	 */
+	int readSpacePosition() const
+	{
+		unsigned e = read_start_pos + align_length;
+		unsigned s = !isRC ? read_start_pos : read_length - e;
+		return contig_start_pos - s;
 	}
 
 	// flip the alignment with respect to the contig size
