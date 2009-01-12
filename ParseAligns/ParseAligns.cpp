@@ -91,8 +91,7 @@ int main(int argc, char* const* argv)
 								unsigned dist = fragmentDist(
 										*refAlignIter,
 										*pairAlignIter);
-								distanceList << dist << '\t'
-									<< refAlignIter->contig << "\n";
+								distanceList << dist << "\n";
 								numSame++;
 							}
 						}
