@@ -17,6 +17,15 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
 std::string makePairID(std::string refID);
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable);
 
+/**
+ * Return the distance between the two specified alignments.
+ */
+static unsigned fragmentDist(const Alignment& a0, const Alignment& a1)
+{
+	assert(a0.contig == a1.contig);
+	return abs(a0.readSpacePosition() - a1.readSpacePosition());
+}
+								
 int main(int argc, char* const* argv)
 {
 
@@ -79,14 +88,11 @@ int main(int argc, char* const* argv)
 						{
 							if((iter->second.size() == 1 && pairIter->second.size() == 1))
 							{
-								// Calculate the distance between the reads
-								
-								// as the alignments are not necessarily full, offset the start of the alignment by the position on the read it hit to get the
-								// true positions
-								int dist = abs(refAlignIter->readSpacePosition() -  pairAlignIter->readSpacePosition());
-								
-								// Print it to the file
-								distanceList << dist << "\n";
+								unsigned dist = fragmentDist(
+										*refAlignIter,
+										*pairAlignIter);
+								distanceList << dist << '\t'
+									<< refAlignIter->contig << "\n";
 								numSame++;
 							}
 						}
