@@ -235,9 +235,11 @@ Histogram loadHist(std::string distCountFile)
 	assert(distFile.is_open());
 
 	Histogram hist;
-	unsigned value, count;
+	int value;
+	unsigned count;
 	while (distFile >> value >> count)
 		hist.addMultiplePoints(value, count);
+	assert(distFile.eof());
 	return hist;
 }
 

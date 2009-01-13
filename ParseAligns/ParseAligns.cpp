@@ -19,11 +19,16 @@ void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable);
 
 /**
  * Return the distance between the two specified alignments.
+ * @return INT_MIN if the pair is invalid
  */
-static unsigned fragmentDist(const Alignment& a0, const Alignment& a1)
+static int fragmentDist(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
-	return abs(a0.readSpacePosition() - a1.readSpacePosition());
+	if (a0.isRC == a1.isRC)
+		return INT_MIN;
+	const Alignment& a = a0.isRC ? a1 : a0;
+	const Alignment& b = a0.isRC ? a0 : a1;
+	return b.readSpacePosition() - a.readSpacePosition();
 }
 								
 int main(int argc, char* const* argv)
@@ -54,6 +59,7 @@ int main(int argc, char* const* argv)
 				
 	int numDifferent = 0;
 	int numSame = 0;
+	int numInvalid = 0;
 	int numMissed = 0;
 	int numMulti = 0;
 	int numNonSingle = 0;
@@ -88,11 +94,14 @@ int main(int argc, char* const* argv)
 						{
 							if((iter->second.size() == 1 && pairIter->second.size() == 1))
 							{
-								unsigned dist = fragmentDist(
+								int dist = fragmentDist(
 										*refAlignIter,
 										*pairAlignIter);
-								distanceList << dist << "\n";
-								numSame++;
+								if (dist > INT_MIN) {
+									distanceList << dist << "\n";
+									numSame++;
+								} else
+									numInvalid++;
 							}
 						}
 						else
@@ -129,7 +138,11 @@ int main(int argc, char* const* argv)
 		}
 	}
 	
-	printf("Num unmatched: %d Num same contig: %d Num diff contig: %d Num multi: %d Num not singular: %d\n", numMissed, numSame, numDifferent, numMulti, numNonSingle);
+	printf("Num unmatched: %d Num same contig: %d Invalid: %d "
+			"Num diff contig: %d Num multi: %d "
+			"Num not singular: %d\n",
+			numMissed, numSame, numInvalid, numDifferent, numMulti,
+			numNonSingle);
 	
 	pairedAlignFile.close();
 	distanceList.close();
