@@ -25,11 +25,20 @@ struct Alignment
 	 * Return the taret position at the query start.
 	 * Note: not alignment start, and may be negative
 	 */
-	int readSpacePosition() const
+	int targetAtQueryStart() const
 	{
 		unsigned e = read_start_pos + align_length;
 		unsigned s = !isRC ? read_start_pos : read_length - e;
 		return contig_start_pos - s;
+	}
+
+	/**
+	 * Return the target position at the query end.
+	 * Note: not alignment end
+	 */
+	int targetAtQueryEnd() const
+	{
+		return targetAtQueryStart() + read_length;
 	}
 
 	// flip the alignment with respect to the contig size

@@ -263,16 +263,16 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 		if (dirIdx == 0) {
 			// refContig is on the left, offset pairContig by the
 			// length of refContig
-			int refPos = apIter->refRec.readSpacePosition();
+			int refPos = apIter->refRec.targetAtQueryStart();
 			int pairPos = refLen
-				+ apIter->pairRec.readSpacePosition();
+				+ apIter->pairRec.targetAtQueryEnd();
 			distance = pairPos - refPos;
 		} else {
 			// pairContig is on the left, offset refContig by the
 			// length of pairContig
-			int pairPos = apIter->pairRec.readSpacePosition();
+			int pairPos = apIter->pairRec.targetAtQueryStart();
 			int refPos = pairLen
-				+ apIter->refRec.readSpacePosition();
+				+ apIter->refRec.targetAtQueryEnd();
 			distance = refPos - pairPos;
 		}
 		assert(distance > 0);

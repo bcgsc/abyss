@@ -18,17 +18,18 @@ std::string makePairID(std::string refID);
 void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable);
 
 /**
- * Return the distance between the two specified alignments.
+ * Return the size of the fragment demarcated by the specified
+ * alignments.
  * @return INT_MIN if the pair is invalid
  */
-static int fragmentDist(const Alignment& a0, const Alignment& a1)
+static int fragmentSize(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
 	if (a0.isRC == a1.isRC)
 		return INT_MIN;
 	const Alignment& a = a0.isRC ? a1 : a0;
 	const Alignment& b = a0.isRC ? a0 : a1;
-	return b.readSpacePosition() - a.readSpacePosition();
+	return b.targetAtQueryEnd() - a.targetAtQueryStart();
 }
 								
 int main(int argc, char* const* argv)
@@ -94,11 +95,11 @@ int main(int argc, char* const* argv)
 						{
 							if((iter->second.size() == 1 && pairIter->second.size() == 1))
 							{
-								int dist = fragmentDist(
+								int size = fragmentSize(
 										*refAlignIter,
 										*pairAlignIter);
-								if (dist > INT_MIN) {
-									distanceList << dist << "\n";
+								if (size > INT_MIN) {
+									distanceList << size << "\n";
 									numSame++;
 								} else
 									numInvalid++;
