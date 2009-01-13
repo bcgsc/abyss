@@ -103,10 +103,15 @@ int main(int argc, char** argv)
 	
 	set<size_t> seen = getContigIDs(contigPathMap);
 	unsigned id = contigPathMap.size();
-	for (size_t i = 0; i < contigVec.size(); i++)
-		if (seen.count(i) == 0)
+	for (size_t i = 0; i < contigVec.size(); i++) {
+		if (seen.count(i) == 0) {
+			ostringstream s;
+			s << i << '+';
 			writer.WriteSequence(contigVec[i].seq,
-					id++, contigVec[i].coverage);
+					id++, contigVec[i].coverage,
+					s.str());
+		}
+	}
 
 	return 0;
 } 
