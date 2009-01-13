@@ -100,6 +100,11 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 
 	// How many standard deviations to look for the estimate
 	const int NUM_SIGMA = 3;
+	/**
+	 * Additional constant error. The error expected that does not
+	 * vary with the number of samples.
+	 */
+	const unsigned CONSTANT_ERROR = 4;
 
 	for (EstimateRecord er; inStream >> er;) {
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
@@ -114,7 +119,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				// Translate the distances produced by the esimator into the coordinate space
 				// used by the graph (a translation of m_overlap)
 				int translatedDistance = iter->distance + costFunctor.m_overlap;
-				int distanceBuffer = iter->stdDev * NUM_SIGMA;
+				int distanceBuffer = iter->stdDev * NUM_SIGMA + CONSTANT_ERROR;
 				
 				Constraint nc;
 				nc.distance = translatedDistance  + distanceBuffer;
@@ -216,7 +221,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						int actualDistance = dmIter->second - costFunctor.m_overlap;
 						if(gDebugPrint) std::cout << " Actual Dist: " << actualDistance << "\n";
 						int diff = actualDistance - iter->distance;
-						int buffer = iter->stdDev * NUM_SIGMA;
+						int buffer = iter->stdDev * NUM_SIGMA + CONSTANT_ERROR;
 						bool invalid = abs(diff) > buffer;
 						if (invalid)
 							validPath = false;
