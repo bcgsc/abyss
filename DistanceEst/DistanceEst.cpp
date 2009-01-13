@@ -256,37 +256,27 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 		
 	}
 
-	int refOffset = 0;
-	int pairOffset = 0;
-	
-	if(dirIdx == 0)
-	{
-		// refContig is on the left, offset pairContig by the length of refContig
-		pairOffset = refLen;
-	}
-	else
-	{
-		// pairContig is on the left, offset refContig by the length of pairContig
-		refOffset = pairLen;
-	}	
-	
 	IntVector distanceList;
 	for (AlignPairVec::iterator apIter = pairVec.begin();
 			apIter != pairVec.end(); ++apIter) {
-			int distance;
-			int refTransPos = apIter->refRec.readSpacePosition() + refOffset;
-			int pairTransPos = apIter->pairRec.readSpacePosition() + pairOffset;
-			
-			if(refTransPos < pairTransPos)
-			{
-				distance = 	pairTransPos - refTransPos;
-			}
-			else
-			{
-				distance = 	refTransPos - pairTransPos;
-			}
-			
-			distanceList.push_back(distance);
+		int distance;
+		if (dirIdx == 0) {
+			// refContig is on the left, offset pairContig by the
+			// length of refContig
+			int refPos = apIter->refRec.readSpacePosition();
+			int pairPos = refLen
+				+ apIter->pairRec.readSpacePosition();
+			distance = pairPos - refPos;
+		} else {
+			// pairContig is on the left, offset refContig by the
+			// length of pairContig
+			int pairPos = apIter->pairRec.readSpacePosition();
+			int refPos = pairLen
+				+ apIter->refRec.readSpacePosition();
+			distance = refPos - pairPos;
+		}
+		assert(distance > 0);
+		distanceList.push_back(distance);
 	}
 	
 	// Perform the max-likelihood est
