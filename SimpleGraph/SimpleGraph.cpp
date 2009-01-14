@@ -93,7 +93,7 @@ unsigned allowedError(float stddev)
 	 * Additional constant error. The error expected that does not
 	 * vary with the number of samples.
 	 */
-	const unsigned CONSTANT_ERROR = 4;
+	const unsigned CONSTANT_ERROR = 6;
 
 	return (unsigned)ceilf(NUM_SIGMA * stddev + CONSTANT_ERROR);
 }
