@@ -32,7 +32,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath);
 
-bool gDebugPrint = false;
+static bool gDebugPrint = false;
 
 //
 //
@@ -45,6 +45,12 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 	
+	if (string(argv[1]) == "-v") {
+		gDebugPrint = true;
+		argv++;
+		argc--;
+	}
+
 	int kmer = atoi(argv[1]);
 	std::string adjFile(argv[2]);
 	std::string lenFile(argv[3]);
