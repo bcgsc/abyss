@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -107,6 +106,7 @@ unsigned allowedError(float stddev)
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost)
 {
 	int totalAttempted = 0;
+	int noPossiblePaths = 0;
 	int nopathEnd = 0;
 	int uniqueEnd = 0;
 	int multiEnd = 0;
@@ -159,12 +159,78 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			
 			// Select the best path
 			//std::cout << "Computational cost " << numVisited << "\n";
-			if(gDebugPrint) std::cout << "Solutions: "
-				<< solutions.size() << "\n";
+			if (gDebugPrint)
+				std::cout << "Possible solutions: "
+					<< solutions.size() << "\n";
 
-			SimpleContigGraph::FeasiblePaths::iterator bestSol = solutions.end();
+			totalAttempted++;
+			if (solutions.size() == 0) {
+				noPossiblePaths++;
+				continue;
+			}
+
+			for (SimpleContigGraph::FeasiblePaths::iterator
+					solIter = solutions.begin();
+					solIter != solutions.end();) {
+				if (gDebugPrint) {
+					SetOperations::printPath(*solIter);
+					std::cout << '\n';
+				}
+
+				// Calculate the path distance to each node and see if
+				// it is within the estimated distance.
+
+				std::map<LinearNumKey, int> distanceMap;
+				pContigGraph->makeDistanceMap(*solIter,
+						costFunctor, distanceMap);
+
+				// Filter out potentially bad hits
+				bool validPath = true;
+				for (EstimateVector::iterator
+						iter = er.estimates[dirIdx].begin();
+						iter != er.estimates[dirIdx].end(); ++iter) {
+					if (gDebugPrint)
+						std::cout << "Contig " << *iter << "\n";
+
+					// look up in the distance map
+					std::map<LinearNumKey, int>::iterator
+						dmIter = distanceMap.find(iter->nID);
+					if (dmIter != distanceMap.end()) {
+						// translate distance by -overlap to match
+						// coordinate space used by the estimate
+						int actualDistance
+							= dmIter->second - costFunctor.m_overlap;
+						if (gDebugPrint)
+							std::cout << " Actual Dist: "
+								<< actualDistance << "\n";
+						int diff = actualDistance - iter->distance;
+						unsigned buffer = allowedError(iter->stdDev);
+						bool invalid = abs(diff) > buffer;
+						if (invalid)
+							validPath = false;
+						if (gDebugPrint)
+							std::cout << "diff: " << diff
+								<< " n: " << iter->numPairs
+								<< " buffer: " << buffer
+								<< (invalid ? " invalid" : "")
+								<< "\n";
+					} else
+						validPath = false;
+				}
+
+				if (validPath)
+					++solIter;
+				else
+					solIter = solutions.erase(solIter);
+			}
+
+			if (gDebugPrint)
+				std::cout << "Solutions: "
+					<< solutions.size() << "\n";
+
+			SimpleContigGraph::FeasiblePaths::iterator bestSol
+				= solutions.end();
 			int minDiff = 999999;
-
 			for (SimpleContigGraph::FeasiblePaths::iterator
 					solIter = solutions.begin();
 					solIter != solutions.end(); ++solIter) {
@@ -172,8 +238,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						*solIter, costFunctor);
 
 				if (gDebugPrint) {
-					std::cout << len << " ";
 					SetOperations::printPath(*solIter);
+					std::cout << " length: " << len;
 				}
 
 				std::map<LinearNumKey, int> distanceMap;
@@ -199,7 +265,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				}
 
 				if (gDebugPrint)
-					std::cout << " Path diff: " << sumDiff << "\n";
+					std::cout << " sumdiff: " << sumDiff << "\n";
 			}
 
 			if (solutions.size() == 0) {
@@ -209,65 +275,21 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			} else {
 				assert(solutions.size() == 1);
 				assert(bestSol != solutions.end());
-
-				bool validPath = true;
-				// Calculate the path distance to each node and see if it is within the estimated distance
-				
-				std::map<LinearNumKey, int> distanceMap;
-				pContigGraph->makeDistanceMap(*bestSol, costFunctor, distanceMap);
-				
-				// Filter out potentially bad hits
-				for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
-				{
-					if(gDebugPrint)  std::cout << "Contig " << *iter << "\n";
-					
-					// look up in the distance map
-					std::map<LinearNumKey, int>::iterator dmIter = distanceMap.find(iter->nID);
-					if(dmIter != distanceMap.end())
-					{
-						// translate distance by -overlap to match coordinate space used by the estimate
-						int actualDistance = dmIter->second - costFunctor.m_overlap;
-						if(gDebugPrint) std::cout << " Actual Dist: " << actualDistance << "\n";
-						int diff = actualDistance - iter->distance;
-						unsigned buffer = allowedError(iter->stdDev);
-						bool invalid = abs(diff) > buffer;
-						if (invalid)
-							validPath = false;
-						if (gDebugPrint)
-							std::cout << "diff: " << diff
-								<< " n: " << iter->numPairs
-								<< " buffer: " << buffer
-								<< (invalid ? " invalid" : "")
-								<< "\n";
-					}
-					else
-					{
-						validPath = false;
-					}
-				}
-				
-				// If the path is valid, output it.
-				if(validPath)
-				{
-					ContigPath cPath;
-					constructContigPath(*bestSol, cPath);
-					outputContigPath(outStream, er.refID, (extDirection)dirIdx, cPath);	
-				}
-				else
-				{
-					if(gDebugPrint) printf("Unique path was not valid!\n");
-				}
-				
 				uniqueEnd++;
+				ContigPath cPath;
+				constructContigPath(*bestSol, cPath);
+				outputContigPath(outStream,
+						er.refID, (extDirection)dirIdx, cPath);
 			}
-			totalAttempted++;
 		}
 	}
 	
-	printf("Total paths attempted: %d\n", totalAttempted);
-	printf("No paths end: %d\n", nopathEnd);
-	printf("Unique end: %d\n", uniqueEnd);
-	printf("Multi end: %d\n", multiEnd);
+	cout <<
+		"Total paths attempted: " << totalAttempted << "\n"
+		"No possible paths: " << noPossiblePaths << "\n"
+		"No valid paths: " << nopathEnd << "\n"
+		"Multiple valid paths: " << multiEnd << "\n"
+		"Unique path: " << uniqueEnd << "\n";
 	
 	inStream.close();
 	outStream.close();
