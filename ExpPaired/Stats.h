@@ -39,8 +39,12 @@ struct PDF
 	double getMinP() const { return m_minp; }
 	size_t getMaxIdx() const { return m_maxIdx; }
 	void print() const;
-	int getSampleStdDev(int n) const { return (int)ceil(m_stdDev / sqrt((double)n)); }
-	
+
+	double getSampleStdDev(unsigned n) const
+	{
+		return m_stdDev / sqrt((double)n);
+	}
+
 	size_t m_maxIdx;
 	DoubleVec m_dist;
 	double m_mean;

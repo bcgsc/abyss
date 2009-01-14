@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -29,12 +30,16 @@ struct Estimate
 	LinearNumKey nID;
 	int distance;
 	int numPairs;
-	int stdDev;
+	float stdDev;
 	bool isRC;
 	
 	friend std::ostream& operator<<(std::ostream& out, const Estimate& object)
 	{
-		out << object.nID << "," << object.distance << "," << object.numPairs << "," << object.stdDev << "," << object.isRC;
+		out << object.nID << ","
+			<< object.distance
+			<< "," << object.numPairs
+			<< "," << fixed << setprecision(1) << object.stdDev
+			<< "," << object.isRC;
 		return out;
 	} 
   
