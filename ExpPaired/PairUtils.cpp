@@ -70,78 +70,51 @@ std::istream& readEstimateRecord(std::istream& stream,
 //
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile)
 {
-	
 	// Load the lengths temporarily
 	ContigLengthVec* pLengthVec = new ContigLengthVec();
 	loadContigLengths(lengthFile, *pLengthVec);
-	
+
 	// First, load the vertices
 	std::ifstream inStream(adjFile.c_str());
 	assert(inStream.is_open());
-	
+
 	int numAdded = 0;
-	while(!inStream.eof() && inStream.peek() != EOF)
-	{
-		LinearNumKey id;
-		inStream >> id;
-		
+	LinearNumKey id;
+	std::string adjRecord;
+	while (inStream >> id
+			&& getline(inStream, adjRecord)) {
 		SimpleContigData data;
 		data.length = lookupLength(*pLengthVec, id);
-		
-		// Add the vertex to the graph
 		pGraph->addVertex(id, data);
-		//pGraph->addVertex(id, empty);
 
-		// discard the remainder of the line
-		std::string discard;
-		getline(inStream, discard);
-		
 		numAdded++;
-		
-		
-		if(numAdded % 1000000 == 0)
-		{
+		if (numAdded % 1000000 == 0)
 			printf("added %d verts\n", numAdded);
-		}
 	}
-	
+	assert(inStream.eof());
+
 	// Delete the lengths to free up space
 	delete pLengthVec;
 	pLengthVec = NULL;
-	
-	// Now, load the edges
-	
-	// rewind the stream
-	inStream.seekg(ios_base::beg);
-	inStream.clear();
-	numAdded = 0;
-	while(!inStream.eof() && inStream.peek() != EOF)
-	{
-		LinearNumKey id;
-		inStream >> id;
 
-		// read the adjacency info
-		std::string adjRecord;
-		getline(inStream, adjRecord);
-		
-		// parse it and add the edge
+	// Now, load the edges
+	inStream.clear();
+	inStream.seekg(ios_base::beg);
+	numAdded = 0;
+	while (inStream >> id
+			&& getline(inStream, adjRecord)) {
 		parseAdjacencyLine(adjRecord, id, pGraph);
-		
+
 		numAdded++;
-		
-		if(numAdded % 1000000 == 0)
-		{
+		if (numAdded % 1000000 == 0)
 			printf("added edges for %d verts\n", numAdded);
-		}		
-		
 	}
-	
-	printf("end con %d %d\n", inStream.eof(), inStream.peek() != EOF);
-	printf("added: %d\n", numAdded);
+	assert(inStream.eof());
+
 	size_t numVert = pGraph->getNumVertices();
 	size_t numEdges = pGraph->countEdges(); // SLOW
-	printf("Initial graph stats: num vert: %zu num edges: %zu\n", numVert, numEdges);	
-	
+	printf("Initial graph stats: num vert: %zu num edges: %zu\n",
+			numVert, numEdges);
 }
 
 //
