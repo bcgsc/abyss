@@ -190,7 +190,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						iter = er.estimates[dirIdx].begin();
 						iter != er.estimates[dirIdx].end(); ++iter) {
 					if (gDebugPrint)
-						std::cout << "Contig " << *iter << "\n";
+						std::cout << "Estimate " << *iter << "\n";
 
 					// look up in the distance map
 					std::map<LinearNumKey, int>::iterator
@@ -200,18 +200,17 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						// coordinate space used by the estimate
 						int actualDistance
 							= dmIter->second - costFunctor.m_overlap;
-						if (gDebugPrint)
-							std::cout << " Actual Dist: "
-								<< actualDistance << "\n";
 						int diff = actualDistance - iter->distance;
 						unsigned buffer = allowedError(iter->stdDev);
 						bool invalid = abs(diff) > buffer;
 						if (invalid)
 							validPath = false;
 						if (gDebugPrint)
-							std::cout << "diff: " << diff
-								<< " n: " << iter->numPairs
+							std::cout
+								<< "Actual dist: " << actualDistance
+								<< " diff: " << diff
 								<< " buffer: " << buffer
+								<< " n: " << iter->numPairs
 								<< (invalid ? " invalid" : "")
 								<< "\n";
 					} else
