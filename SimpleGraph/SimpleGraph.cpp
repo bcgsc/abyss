@@ -179,7 +179,6 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 
 				// Calculate the path distance to each node and see if
 				// it is within the estimated distance.
-
 				std::map<LinearNumKey, int> distanceMap;
 				pContigGraph->makeDistanceMap(*solIter,
 						costFunctor, distanceMap);
@@ -192,29 +191,26 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					if (gDebugPrint)
 						std::cout << "Estimate " << *iter << "\n";
 
-					// look up in the distance map
 					std::map<LinearNumKey, int>::iterator
 						dmIter = distanceMap.find(iter->nID);
-					if (dmIter != distanceMap.end()) {
-						// translate distance by -overlap to match
-						// coordinate space used by the estimate
-						int actualDistance
-							= dmIter->second - costFunctor.m_overlap;
-						int diff = actualDistance - iter->distance;
-						unsigned buffer = allowedError(iter->stdDev);
-						bool invalid = abs(diff) > buffer;
-						if (invalid)
-							validPath = false;
-						if (gDebugPrint)
-							std::cout
-								<< "Actual dist: " << actualDistance
-								<< " diff: " << diff
-								<< " buffer: " << buffer
-								<< " n: " << iter->numPairs
-								<< (invalid ? " invalid" : "")
-								<< "\n";
-					} else
+					assert(dmIter != distanceMap.end());
+					// translate distance by -overlap to match
+					// coordinate space used by the estimate
+					int actualDistance
+						= dmIter->second - costFunctor.m_overlap;
+					int diff = actualDistance - iter->distance;
+					unsigned buffer = allowedError(iter->stdDev);
+					bool invalid = abs(diff) > buffer;
+					if (invalid)
 						validPath = false;
+					if (gDebugPrint)
+						std::cout
+							<< "Actual dist: " << actualDistance
+							<< " diff: " << diff
+							<< " buffer: " << buffer
+							<< " n: " << iter->numPairs
+							<< (invalid ? " invalid" : "")
+							<< "\n";
 				}
 
 				if (validPath)
