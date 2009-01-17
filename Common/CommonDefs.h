@@ -13,7 +13,7 @@
 
 #define PACKED_SEQ_EXT ".psq"
 
-const int MAX_FASTA_LINE = 65536;
+const unsigned MAX_FASTA_LINE = 262144;
 
 // Most operations are performed on the forward and reverse reads simulatenously, this structure holds the result of such operations
 struct ResultPair
