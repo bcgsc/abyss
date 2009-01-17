@@ -22,26 +22,25 @@ FastqReader::~FastqReader()
 Sequence FastqReader::ReadSequence()
 {
 	char buf[MAX_FASTA_LINE];
-	char seq[MAX_FASTA_LINE];
 
 	// Read the header.
-	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
+	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
 	assert(buf[0] == '@');
 
 	// Read the sequence.
-	m_fileHandle.getline(seq, sizeof seq);
-	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
+	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+	Sequence s(buf);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
 
 	// Read the quality values.
-	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
+	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
 	assert(buf[0] == '+');
-	m_fileHandle.getline(buf, sizeof buf);
-	assert(m_fileHandle.gcount() < MAX_FASTA_LINE-1);
+	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
 
-	Sequence s(seq);
-	transform(s.begin(), s.end(), s.begin(), ::toupper);
 	return s;
 }
 
