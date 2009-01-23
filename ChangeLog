@@ -1,3 +1,20 @@
+2009-01-23  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.3.
+	* Merge contigs that ended due to a lack of coverage, but which
+	are connected by paired-end reads and overlap unambiguously.
+	* Track the multiplicity the sense and antisense strand
+	separately. Erode the end of a blunt contig until it is
+	represented by both strands.
+	* Ignore the case of the nucleotide sequence of a FASTA file.
+	* Increase the maximum FASTA line length from 1 kB to 64 kB to
+	allow loading contigs.
+	* Output the path through the single-end contigs in the comment
+	field of the paired-end contig.
+	* In the paired-end driver script, abyss-pe,
+	Implement a coverage cutoff, c.
+	Pass the erosion parameter, e, to the single-end assembler.
+
 2008-11-21  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.2.
