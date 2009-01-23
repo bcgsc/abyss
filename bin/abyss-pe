@@ -68,7 +68,7 @@ clean:
 	sort -nk2,2 $< -o $@
 
 %.hist: %.frag
-	awk '{x[$$0]++} END {for (i in x) print i, x[i]}' $< >$@
+	awk '{x[$$1]++} END {for (i in x) print i, x[i]}' $< >$@
 
 %.dist: %.pairs %.len %.hist
 	DistanceEst $k $^ 100 $n
