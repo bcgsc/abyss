@@ -20,6 +20,7 @@ endif
 ifndef n
 $(error missing argument n)
 endif
+#v=-v
 
 all: $(lib)-contigs.fa
 
@@ -33,7 +34,7 @@ clean:
 # Single-end assembly
 
 %-1.fa: %.fa
-	ABYSS -k$k -l$l -e$e -b99 -ssnp.fa $^
+	ABYSS $v -k$k -l$l -e$e -b99 -ssnp.fa $^
 	mv contigs.fa $@
 
 %.len: %.fa
@@ -76,7 +77,7 @@ clean:
 # Find overlaps between contigs
 
 %-overlap.fa: %.fa %.adj %.len %.dist
-	Overlap $k $^ $@
+	Overlap $v $k $^ $@
 
 %-4.fa: %-3.fa %-3-overlap.fa
 	ABYSS -k$k -l$l -e0 $^
@@ -85,7 +86,7 @@ clean:
 # Paired-end assembly
 
 %.path: %.adj %.len %.dist
-	SimpleGraph $k $^ 100000
+	SimpleGraph $v $k $^ 100000
 	mv ResolvedPaths.txt $@
 
 %-contigs.fa: %-4.fa %-4.path
