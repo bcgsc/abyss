@@ -10,7 +10,6 @@ ABYSS_P_LDADD = \
 ABYSS_P_SOURCES = \
 	parallelAbyss.cpp parallelAbyss.h \
 	CommLayer.cpp CommLayer.h \
-	DistributedPhaseSpace.cpp DistributedPhaseSpace.h \
 	NetworkDefs.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
