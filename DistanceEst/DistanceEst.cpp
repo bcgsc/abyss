@@ -135,10 +135,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 		{
 			continue;
 		}
-		
-		// Write the first field to the file
-		outFile << refContigID << " : ";
-		
+
+		outFile << refContigID << " :";
+
 		//std::cout << "Contig " << refContigID << " has " << currPairs.size() << " alignments\n";
 
 		// Seperate the pairings by direction (pairs aligning in the same comp as the contig
@@ -146,11 +145,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 			// If this is the second direction, write a seperator
-			if(dirIdx == 1)
-			{
-				outFile << " | ";
-			}
-			
+			if (dirIdx == 1)
+				outFile << " |";
+
 			PairDataMap dataMap;
 			for(AlignPairVec::iterator iter = currPairs.begin(); iter != currPairs.end(); ++iter)
 			{
@@ -212,7 +209,7 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 						est.numPairs = er.numPairs;
 						est.stdDev = pdf.getSampleStdDev(er.numPairs);
 						est.isRC = er.isRC;
-						outFile << est << " ";
+						outFile << ' ' << est;
 					} else {
 						cerr << "warning: "
 							<< refContigID << (dirIdx ? '-' : '+')
