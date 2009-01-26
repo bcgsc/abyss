@@ -3,7 +3,6 @@
 
 class CommLayer;
 
-#include <mpi.h>
 #include <list>
 #include "PackedSeq.h"
 #include "NetworkDefs.h"

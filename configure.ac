@@ -56,21 +56,24 @@ AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length])
 AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
 AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
-# Check for the LAM/MPI parallel computing library.
-AC_LANG([C++])
+# Check for the MPI parallel computing library.
 if test "$enable_openmpi"; then
 	AC_CHECK_LIB([mpi], [MPI_Init])
-	AC_CHECK_LIB([mpi_cxx], [main])
+	AC_DEFINE(OMPI_SKIP_MPICXX, 1,
+			  [Define to disable OpenMPI C++ bindings])
 else
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([dl], [dlopen])
 	AC_CHECK_LIB([lam], [lam_mutex_lock])
 	AC_CHECK_LIB([mpi], [MPI_Init])
+	AC_LANG_PUSH([C++])
 	AC_CHECK_LIB([lammpi++], [main]) 
+	AC_LANG_POP([C++])
 fi
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 
 # Check for the Google sparse hash set.
+AC_LANG([C++])
 AC_CHECK_HEADERS([google/sparse_hash_set])
 
 # Set compiler flags.
