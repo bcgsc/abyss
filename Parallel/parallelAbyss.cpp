@@ -7,7 +7,6 @@
 #include "FastaReader.h"
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
-#include "ParallelFastaWriter.h"
 #include "Timer.h"
 
 /** MPI size */
