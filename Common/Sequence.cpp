@@ -33,7 +33,7 @@ Sequence reverseComplement(const Sequence& s)
 	
 	for(std::string::const_reverse_iterator iter = s.rbegin(); iter != s.rend(); iter++)
 	{	
-		rc.push_back(complementBase(*iter));
+		rc.push_back(complementBaseChar(*iter));
 	}
 	
 	return rc;
@@ -46,24 +46,16 @@ void print(const Sequence& s)
 }
 
 
-// complement a single base
-char complementBase(char base)
+/** Return the complement of the specified base. */
+char complementBaseChar(char base)
 {
-	switch(base)	
-	{
-		case 'A':
-			return 'T';
-		case 'C':
-			return 'G';
-		case 'G':
-			return 'C';
-		case 'T':
-			return 'A';
-		case 'N':
-			return 'N';
+	switch (base) {
+		case 'A': return 'T';
+		case 'C': return 'G';
+		case 'G': return 'C';
+		case 'T': return 'A';
+		default:
+			assert(false);
+			return 0;
 	}
-	
-	printf("could not complement base %c\n", base);
-	assert(false && "unknown base");
-	return 'N';
 }

@@ -3,7 +3,6 @@
 
 #include "config.h"
 #include <list>
-#include "CommonUtils.h"
 #include "SeqExt.h"
 
 enum SeqFlag

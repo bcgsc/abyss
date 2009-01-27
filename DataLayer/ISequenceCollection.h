@@ -5,7 +5,6 @@
 #include <iterator>
 #include "NetworkDefs.h"
 #include "CommonDefs.h"
-#include "CommonUtils.h"
 #include "PackedSeq.h"
 #include "HitRecord.h"
 

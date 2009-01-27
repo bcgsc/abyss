@@ -16,7 +16,7 @@ enum SequenceAdjacency
 
 const int SEQUENCE_ID_LENGTH = 256;
 
-char complementBase(char base);
+char complementBaseChar(char base);
 Sequence reverseComplement(const Sequence& s);
 
 // append a base to the string

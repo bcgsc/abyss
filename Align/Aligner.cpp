@@ -1,4 +1,5 @@
 #include "Aligner.h"
+#include "Sequence.h"
 
 //
 // Constructor

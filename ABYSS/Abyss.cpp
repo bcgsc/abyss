@@ -1,5 +1,4 @@
 #include "AssemblyAlgorithms.h"
-#include "CommonUtils.h"
 #include "DotWriter.h"
 #include "ISequenceCollection.h"
 #include "Options.h"

@@ -9,7 +9,6 @@ libcommon_a_SOURCES = \
 	BranchGroup.cpp BranchGroup.h \
 	BranchRecord.cpp BranchRecord.h \
 	CommonDefs.h \
-	CommonUtils.cpp CommonUtils.h \
 	Config.cpp Config.h \
 	HitRecord.cpp HitRecord.h \
 	Log.cpp Log.h \

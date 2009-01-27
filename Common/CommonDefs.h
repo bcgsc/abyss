@@ -63,6 +63,11 @@ static inline extDirection& operator ++(extDirection& dir)
 	return dir = extDirection(dir + 1);
 }
 
+static inline extDirection oppositeDirection(extDirection dir)
+{
+	return !dir;
+}
+
 enum CollectionState
 {
 	CS_LOADING,

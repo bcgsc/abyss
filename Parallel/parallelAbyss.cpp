@@ -4,7 +4,6 @@
 #include <vector>
 #include <mpi.h>
 #include "parallelAbyss.h"
-#include "CommonUtils.h"
 #include "FastaReader.h"
 #include "NetworkSequenceCollection.h"
 #include "Options.h"

@@ -1,4 +1,5 @@
 #include "SeqExt.h"
+#include "Sequence.h" // for complementBaseChar
 
 SeqExt::SeqExt() : m_record(0)
 {

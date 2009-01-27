@@ -2,7 +2,6 @@
 #define SEQEXT_H
 
 #include "CommonDefs.h"
-#include "CommonUtils.h"
 
 class SeqExt
 {

@@ -158,6 +158,11 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
 	return (seqLength + 3) / 4;
 }
 
+static uint8_t complementBaseCode(uint8_t b)
+{
+	return ~b & 0x3;
+}
+
 //
 // This function computes a hash-like value of the packed sequence over the first 8 bases and the reverse complement of the last 8 bases
 // The reverse complement of the last 8 bases is used so that a sequence and its reverse-comp will hash to the same value which is desirable in this case
