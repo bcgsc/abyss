@@ -13,7 +13,6 @@ libcommon_a_SOURCES = \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
-	PairRecord.cpp PairRecord.h \
 	Prb.cpp Prb.h \
 	ReadPrb.cpp ReadPrb.h \
 	SeqExt.cpp SeqExt.h \
