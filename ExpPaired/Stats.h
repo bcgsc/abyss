@@ -85,38 +85,4 @@ int maxLikelihoodEst(int min, int max,
 double computeLikelihood(int param, const std::vector<int>& testDist,
 		const PDF& pdf, unsigned& n);
 
-class PairedStats
-{
-	public:
-		PairedStats();
-		
-		const PDF& getPDF() const { return m_pdf; } 
-					
-		// Generate stats from the histogram
-		void generateStats(const Histogram& h);
-		
-		// Generate the standard deviation of the estimate
-		double getStdDevOfEstimate(int n);	
-		
-		// Estimate the number of pairs that should exist between the contigs given the input parameters
-		int estimateNumberOfPairs(size_t estDist, int contigLength, int numberOfReads);
-
-		// Compute the sum of probablities between low and high
-		void computeCDF(int low, int high);
-		
-		// Return the maximum distance
-		size_t getMax() const { return m_maxDist; }
-		
-		double getMean() const { return m_mean; }
-		double getStdDev() const { return m_stdDev; }
-				
-	private:
-		PDF m_pdf;
-		double m_stdDev;
-		double m_mean;
-		size_t m_maxDist;
-	
-	
-};
-
 #endif
