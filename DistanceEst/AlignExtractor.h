@@ -1,5 +1,5 @@
-#ifndef ALIGNEXTRACtOR
-#define ALIGNEXTRACTOR
+#ifndef ALIGNEXTRACTOR
+#define ALIGNEXTRACTOR 1
 
 #include <iostream>
 #include <fstream>
