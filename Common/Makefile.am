@@ -6,10 +6,13 @@ libcommon_a_CPPFLAGS = \
 
 libcommon_a_SOURCES = \
 	AssemblyAlgorithms.cpp AssemblyAlgorithms.h \
+	BranchGroup.cpp BranchGroup.h \
+	BranchRecord.cpp BranchRecord.h \
 	CommonDefs.h \
 	CommonUtils.cpp CommonUtils.h \
 	Config.cpp Config.h \
 	HitRecord.cpp HitRecord.h \
+	Log.cpp Log.h \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
 	PairRecord.cpp PairRecord.h \
@@ -20,8 +23,5 @@ libcommon_a_SOURCES = \
 	SeqRecord.cpp SeqRecord.h \
 	Sequence.cpp Sequence.h \
 	SequencePair.cpp SequencePair.h \
-	BranchRecord.cpp BranchRecord.h \
-	Timer.cpp Timer.h \
-	Log.cpp Log.h \
-	BranchGroup.cpp BranchGroup.h \
-	SetOperations.h
+	SetOperations.h \
+	Timer.cpp Timer.h
