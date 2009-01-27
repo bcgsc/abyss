@@ -1,4 +1,4 @@
-#include "fasta2psq.h"
+#include "fasta2psqOptions.h"
 #include "FastaReader.h"
 #include "PackedSeqWriter.h"
 #include <cstdio>

@@ -7,5 +7,5 @@ fasta2psq_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 fasta2psq_SOURCES = \
-	fasta2psq.cpp fasta2psq.h \
+	fasta2psq.cpp \
 	fasta2psqOptions.cpp fasta2psqOptions.h
