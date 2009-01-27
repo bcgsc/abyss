@@ -3,7 +3,6 @@
 
 #include <set>
 #include "ISequenceCollection.h"
-#include "SeqRecord.h"
 #include "FastaWriter.h"
 #include "BranchGroup.h"
 #include "BranchRecord.h"

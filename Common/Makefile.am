@@ -14,7 +14,6 @@ libcommon_a_SOURCES = \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
 	SeqExt.cpp SeqExt.h \
-	SeqRecord.cpp SeqRecord.h \
 	Sequence.cpp Sequence.h \
 	SequencePair.cpp SequencePair.h \
 	SetOperations.h \

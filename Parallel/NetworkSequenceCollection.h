@@ -4,7 +4,6 @@
 #include "PackedSeq.h"
 #include "SequenceCollectionHash.h"
 #include "CommLayer.h"
-#include "SeqRecord.h"
 #include "AssemblyAlgorithms.h"
 #include "MessageBuffer.h"
 #include "Log.h"
