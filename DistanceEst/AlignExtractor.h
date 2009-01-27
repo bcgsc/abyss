@@ -1,9 +1,9 @@
 #ifndef ALIGNEXTRACTOR
 #define ALIGNEXTRACTOR 1
 
-#include <iostream>
+#include "Aligner.h"
 #include <fstream>
-#include "AlignmentCache.h"
+#include <ostream>
 
 struct AlignPair
 {
