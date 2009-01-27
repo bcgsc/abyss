@@ -210,21 +210,18 @@ void loadSequences(ISequenceCollection* seqCollection,
 void generateAdjacency(ISequenceCollection* seqCollection)
 {
 	Timer timer("GenerateAdjacency");
-	printf("generating adjacency info\n");
-	
+	puts("Generating adjacency");
 
 	int count = 0;
 	int numBasesSet = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(count % 1000000 == 0)
-		{
-			printf("generated for %d\n", count);
-		}
 		count++;
-		
-		//printf("gen for: %s\n", iter->decode().c_str());
+		if (count % 1000000 == 0)
+			PrintDebug(1, "Generating adjacency: %d sequences\n",
+					count);
+
 		for(int i = 0; i <= 1; i++)
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
@@ -248,8 +245,8 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 		//iter->printExtension();
 		seqCollection->pumpNetwork();
 	}
-	
-	printf("adjacency set %d bases\n", numBasesSet);
+
+	printf("Generated %u edges\n", numBasesSet);
 }
 
 /** Remove all the extensions both from and to this sequence. */
