@@ -7,7 +7,4 @@ ABYSS_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/DataLayer/libdatalayer.a
 
-ABYSS_SOURCES = \
-	Abyss.cpp \
-	Path.cpp Path.h \
-	PathDriver.cpp PathDriver.h
+ABYSS_SOURCES = Abyss.cpp
