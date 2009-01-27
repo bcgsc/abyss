@@ -9,6 +9,23 @@
 #include <cstdio>
 #include <fstream>
 
+static void erodeTips(/*const*/ ISequenceCollection* pSC)
+{
+	if (opt::erode <= 0)
+		return;
+	puts("Eroding");
+	unsigned totalEroded = 0;
+	int i;
+	for (i = 0; i < opt::erode; i++) {
+		unsigned numEroded = AssemblyAlgorithms::erodeEnds(pSC);
+		if (numEroded == 0)
+			break;
+		totalEroded += numEroded;
+	}
+	printf("Eroded %d tips in %d rounds\n",
+			totalEroded, i);
+}
+
 static void popBubbles(/*const*/ ISequenceCollection* pSC)
 {
 	if (opt::bubbles <= 0)
@@ -60,14 +77,7 @@ int main(int argc, char* const* argv)
 
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
-	if (opt::erode > 0) {
-		puts("Eroding");
-		unsigned totalEroded = 0;
-		for (int i = 0; i < opt::erode; i++)
-			totalEroded += AssemblyAlgorithms::erodeEnds(pSC);
-		printf("Eroded %d tips in total\n",
-				totalEroded);
-	}
+	erodeTips(pSC);
 
 	int startTrimLength = 2;
 	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
