@@ -264,7 +264,8 @@ void NetworkSequenceCollection::runControl()
 			{
 				puts("Eroding");
 				unsigned totalEroded = 0;
-				for (int i = 0; i < opt::erode; i++) {
+				int i;
+				for (i = 0; i < opt::erode; i++) {
 					m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
 					unsigned numEroded 
 						= AssemblyAlgorithms::erodeEnds(this);
@@ -278,22 +279,25 @@ void NetworkSequenceCollection::runControl()
 						pumpNetwork();
 					}
 					numEroded += m_checkpointSum;
-					printf("Eroded %d tips\n", numEroded);
+					if (numEroded > 0 && opt::verbose > 0)
+						printf("Eroded %d tips\n", numEroded);
 					totalEroded += numEroded;
-					
+
 					// All checkpoints are reached, reset the state
 					SetState(NAS_ERODE);					
+
+					if (numEroded == 0)
+						break;
 				}
-				printf("Eroded %d tips in total\n",
-						totalEroded);
-				
+				printf("Eroded %d tips in %d rounds\n",
+						totalEroded, i);
+
 				// Cleanup any messages that are pending
 				EndState();				
-				
+
 				// erosion has been completed
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);				
-				
 			}
 			case NAS_TRIM:
 			{		
