@@ -14,7 +14,7 @@ static const char *VERSION_MESSAGE =
 PACKAGE " (ABySS) " VERSION "\n"
 "Written by Jared Simpson.\n"
 "\n"
-"Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
 "Usage: PreProcess [OPTION]... FASTA_FILE\n"

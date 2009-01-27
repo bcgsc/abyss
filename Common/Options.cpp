@@ -16,7 +16,7 @@ static const char *VERSION_MESSAGE =
 PACKAGE " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
-"Copyright 2008 Canada's Michael Smith Genome Science Centre\n";
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
