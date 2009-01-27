@@ -1,15 +1,13 @@
 #ifndef COMMONDEFS_H
 #define COMMONDEFS_H
 
-#include <vector>
-#include <set>
+#include <cassert>
+#include <cstdlib>
 #include <map>
 #include <queue>
-
-#include <stdlib.h>
-#include <assert.h>
-#include "ReadPrb.h"
-#include "Prb.h"
+#include <set>
+#include <string>
+#include <vector>
 
 #define PACKED_SEQ_EXT ".psq"
 
@@ -22,14 +20,6 @@ struct ResultPair
 	bool reverse;
 };
 
-
-struct Coord4
-{
-	int x;
-	int y;
-	int z;
-	int w;
-};
 
 // IDs for reads and contigs
 typedef int ReadID;
