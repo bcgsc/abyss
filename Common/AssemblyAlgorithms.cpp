@@ -675,7 +675,7 @@ SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const Packe
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
 	Timer timer("TrimSequences");
-	printf("trimming max branch: %d\n", maxBranchCull);	
+	printf("Trimming short branches: %d\n", maxBranchCull);	
 	int numBranchesRemoved = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -723,8 +723,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		}
 		seqCollection->pumpNetwork();
 	}
-	
-	printf("num branches removed: %d\n", numBranchesRemoved);
+
+	PrintDebug(0, "Trimmed %d branches\n", numBranchesRemoved);
 	return numBranchesRemoved;
 }
 
