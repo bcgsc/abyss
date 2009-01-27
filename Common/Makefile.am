@@ -15,6 +15,5 @@ libcommon_a_SOURCES = \
 	PackedSeq.cpp PackedSeq.h \
 	SeqExt.cpp SeqExt.h \
 	Sequence.cpp Sequence.h \
-	SequencePair.cpp SequencePair.h \
 	SetOperations.h \
 	Timer.cpp Timer.h
