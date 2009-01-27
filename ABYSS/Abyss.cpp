@@ -53,14 +53,12 @@ int main(int argc, char* const* argv)
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
 
-	printf("total sequences: %d\n", pSC->count());
+	printf("Loaded %u sequences\n", pSC->count());
 	assert(pSC->count() > 0);
 
-	printf("finalizing\n");
 	pSC->finalize();
 
 	AssemblyAlgorithms::generateAdjacency(pSC);
-	
 
 	if (opt::erode > 0) {
 		puts("Eroding");
