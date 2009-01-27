@@ -9,7 +9,6 @@
 #include "Stats.h"
 #include "DirectedGraph.h"
 #include "PairUtils.h"
-#include "VisitAlgorithms.h"
 #include "ContigPath.h"
 
 // Typedefs
