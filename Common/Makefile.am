@@ -9,13 +9,11 @@ libcommon_a_SOURCES = \
 	BranchGroup.cpp BranchGroup.h \
 	BranchRecord.cpp BranchRecord.h \
 	CommonDefs.h \
-	Config.cpp Config.h \
 	HitRecord.cpp HitRecord.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
 	PairRecord.cpp PairRecord.h \
-	PhaseSpace.cpp PhaseSpace.h \
 	Prb.cpp Prb.h \
 	ReadPrb.cpp ReadPrb.h \
 	SeqExt.cpp SeqExt.h \
