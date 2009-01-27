@@ -373,12 +373,14 @@ void ContigData::printPairAlignments(extDirection dir, unsigned int filter) cons
 	}
 }
 
+#if 0
 void ContigData::computeTestStat(const PDF& empDist)
 {
 	Histogram testHist;
 	addSelfPairsToHist(&testHist);
 	ChiSquare(empDist, testHist);
 }
+#endif
 
 //
 //
