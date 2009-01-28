@@ -8,7 +8,7 @@ ABYSS_P_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a
 
 ABYSS_P_SOURCES = \
-	parallelAbyss.cpp parallelAbyss.h \
+	parallelAbyss.cpp \
 	CommLayer.cpp CommLayer.h \
 	NetworkDefs.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \

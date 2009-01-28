@@ -3,7 +3,6 @@
 #include <sstream>
 #include <vector>
 #include <mpi.h>
-#include "parallelAbyss.h"
 #include "FastaReader.h"
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
