@@ -71,6 +71,8 @@ else
 	AC_LANG_POP([C++])
 fi
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
+AC_SUBST(MPI_LIBS, "$LIBS")
+unset LIBS
 
 # Check for the Google sparse hash set.
 AC_LANG([C++])

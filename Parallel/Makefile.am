@@ -5,7 +5,8 @@ ABYSS_P_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
 
 ABYSS_P_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/DataLayer/libdatalayer.a
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(MPI_LIBS)
 
 ABYSS_P_SOURCES = \
 	parallelAbyss.cpp \
