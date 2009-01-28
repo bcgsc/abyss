@@ -2,7 +2,6 @@
 #define DIRECTEDGRAPH_H
 
 #include "Timer.h"
-#include "SetOperations.h"
 #include <queue>
 #include <list>
 #include <ext/hash_map>

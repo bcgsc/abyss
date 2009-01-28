@@ -10,6 +10,7 @@
 #include "DirectedGraph.h"
 #include "PairUtils.h"
 #include "ContigPath.h"
+#include "SetOperations.h"
 
 // Typedefs
 typedef std::vector<LinearNumKey> LinearNumVector;
