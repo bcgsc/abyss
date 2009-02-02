@@ -2,7 +2,8 @@
 #define BRANCHGROUP_H
 
 #include "BranchRecord.h"
-#include <ISequenceCollection.h>
+#include "ISequenceCollection.h"
+#include <map>
 
 enum BranchGroupStatus 
 {

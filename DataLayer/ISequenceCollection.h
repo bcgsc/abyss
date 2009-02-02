@@ -4,16 +4,9 @@
 #include "config.h"
 #include <iterator>
 #include "NetworkDefs.h"
-#include "CommonDefs.h"
 #include "PackedSeq.h"
 #include "HitRecord.h"
 
-
-//
-// Typedefs for the main data model
-//
-
-// Data model typedefs (this should be templated eventually)
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_set>
 typedef google::sparse_hash_set<PackedSeq,
@@ -32,6 +25,13 @@ typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> Sequen
 typedef SequenceCollectionHashIter SequenceCollectionIterator;
 // Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
 // This pure virtual class defines the minimum set of functions a sequence collection must provide
+
+// Most operations are performed on the forward and reverse reads simulatenously, this structure holds the result of such operations
+struct ResultPair
+{
+	bool forward;
+	bool reverse;
+};
 
 class ISequenceCollection
 {

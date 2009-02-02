@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <fstream>
-#include "CommonDefs.h"
 #include "Sequence.h"
 #include "IFileWriter.h"
 #include "PackedSeq.h"

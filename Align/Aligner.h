@@ -5,11 +5,15 @@
 // Aligner - Simple class to do an approximate alignment of reads to the input reference sequence
 //
 
-#include "CommonDefs.h"
 #include "PackedSeq.h"
 #include <ext/hash_map>
+#include <string>
 #include <sstream>
 #include <iostream>
+#include <map>
+#include <vector>
+
+typedef std::string ContigID;
 
 // Alignment information
 struct Alignment
@@ -85,6 +89,13 @@ static inline int compareContigPos(const Alignment& a1, const Alignment& a2)
 {
 	return a1.contig_start_pos < a2.contig_start_pos;
 }
+
+
+struct Position
+{
+	ContigID contig;
+	int pos; // 0 indexed
+};
 
 // Typedef the database pairing
 typedef std::pair<PackedSeq, Position> dbRecord;

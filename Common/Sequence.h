@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include "CommonDefs.h"
 
 enum SequenceAdjacency
 {
@@ -16,6 +15,8 @@ enum SequenceAdjacency
 
 const int SEQUENCE_ID_LENGTH = 256;
 
+typedef std::string Sequence;
+
 char complementBaseChar(char base);
 Sequence reverseComplement(const Sequence& s);
 
@@ -23,5 +24,8 @@ Sequence reverseComplement(const Sequence& s);
 void seqAppend(Sequence& s, const std::string& str);
 void seqAppendBase(Sequence& s, const char b);
 void seqPrependBase(Sequence& s, const char b);
+
+typedef std::vector<Sequence> SequenceVector;
+typedef SequenceVector::iterator SequenceVectorIterator;
 
 #endif

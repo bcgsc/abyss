@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <set>
 #include <sstream>
 #include <stdlib.h>

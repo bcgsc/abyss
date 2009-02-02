@@ -1,5 +1,5 @@
-#include <math.h>
 #include "PackedSeq.h"
+#include "Sequence.h"
 
 //
 // Default constructor

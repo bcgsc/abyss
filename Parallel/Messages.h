@@ -1,7 +1,6 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-#include "CommonDefs.h"
 #include "NetworkDefs.h"
 #include "PackedSeq.h"
 

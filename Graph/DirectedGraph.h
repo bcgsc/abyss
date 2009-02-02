@@ -1,11 +1,12 @@
 #ifndef DIRECTEDGRAPH_H
 #define DIRECTEDGRAPH_H
 
+#include "Sense.h"
 #include "Timer.h"
-#include <queue>
-#include <list>
 #include <ext/hash_map>
 #include <iostream>
+#include <map>
+#include <set>
 #include <string>
 
 

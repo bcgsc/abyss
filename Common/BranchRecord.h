@@ -1,8 +1,9 @@
 #ifndef BRANCHRECORD_H
 #define BRANCHRECORD_H
 
-#include "CommonDefs.h"
 #include "PackedSeq.h"
+#include <map>
+#include <vector>
 
 enum BranchState
 {

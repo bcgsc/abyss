@@ -2,7 +2,6 @@
 
 #include "DotWriter.h"
 #include "AssemblyAlgorithms.h"
-#include "CommonDefs.h"
 #include <ostream>
 
 using namespace std;

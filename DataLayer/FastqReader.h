@@ -1,7 +1,6 @@
 #ifndef FASTQREADER_H
 #define FASTQREADER_H 1
 
-#include "CommonDefs.h"
 #include "IFileReader.h"
 #include "Sequence.h"
 #include <fstream>

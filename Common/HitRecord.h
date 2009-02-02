@@ -1,9 +1,8 @@
 #ifndef HITRECORD_H
 #define HITRECORD_H
 
-#include "CommonDefs.h"
 #include "PackedSeq.h"
-
+#include <vector>
 
 struct Hit
 {

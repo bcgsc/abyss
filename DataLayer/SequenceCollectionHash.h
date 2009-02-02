@@ -9,7 +9,6 @@
 #include "Sequence.h"
 #include "PackedSeq.h"
 #include "HitRecord.h"
-#include "CommonDefs.h"
 
 using namespace std;
 
@@ -122,8 +121,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		SequenceDataHash* m_pSequences;
 		
 		// the state of the space
-		CollectionState m_state;
-
+		enum CollectionState {
+			CS_LOADING,
+			CS_FINALIZED
+		} m_state;
 };
 
 #endif

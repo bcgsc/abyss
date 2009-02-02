@@ -1,11 +1,23 @@
 #ifndef PAIREDALGORITHMS_H
 #define PAIREDALGORITHMS_H
 
-#include "CommonDefs.h"
+#include "Sequence.h"
 #include <fstream>
 #include <string>
+#include <vector>
+
+struct Contig
+{
+	Sequence seq;
+	bool merged;
+	bool repetitive;
+	bool super;
+	int coverage;
+};
 
 typedef std::vector<Contig> ContigVec;
+
+typedef std::string ContigID;
 
 namespace PairedAlgorithms
 {

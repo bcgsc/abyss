@@ -1,7 +1,8 @@
 #ifndef SEQEXT_H
 #define SEQEXT_H
 
-#include "CommonDefs.h"
+const int NUM_BASES = 4;
+const char BASES[NUM_BASES] = {'A', 'C', 'G', 'T'};
 
 class SeqExt
 {

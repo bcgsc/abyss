@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <fstream>
 #include "IFileReader.h"
-#include "CommonDefs.h"
 #include "Sequence.h"
 #include "PackedSeq.h"
 

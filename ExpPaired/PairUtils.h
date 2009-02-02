@@ -82,6 +82,8 @@ struct Estimate
 	}  	
 };
 
+typedef std::string ContigID;
+
 struct SimpleEdgeDesc
 {
 	ContigID contig;

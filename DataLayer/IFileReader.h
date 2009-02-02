@@ -3,8 +3,9 @@
 
 #include <stdio.h>
 #include <fstream>
-#include "CommonDefs.h"
 #include "Sequence.h"
+
+const unsigned MAX_FASTA_LINE = 262144;
 
 class IFileReader
 {

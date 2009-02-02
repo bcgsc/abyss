@@ -1,12 +1,9 @@
 #ifndef CONTIGPATH_H
 #define CONTIGPATH_H
 
+#include "DirectedGraph.h"
 #include <iostream>
 #include <sstream>
-#include <iterator>
-#include <list>
-#include "CommonDefs.h"
-#include "DirectedGraph.h"
 
 struct MergeNode
 {

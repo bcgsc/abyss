@@ -4,7 +4,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <sstream>
-#include "CommonDefs.h"
 
 using namespace std;
 
@@ -87,6 +86,7 @@ void parse(int argc, char* const* argv)
 	fastaFile = argv[optind++];
 		
 	// Make sure the correct extension is set
+	const char *PACKED_SEQ_EXT = ".psq";
 	if(outFile.substr(outFile.length() - 4) != PACKED_SEQ_EXT)
 	{
 		cerr << PACKAGE ": " << "invalid extension on output: " << PACKED_SEQ_EXT << " is required\n";

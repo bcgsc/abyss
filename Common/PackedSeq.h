@@ -2,8 +2,10 @@
 #define PACKEDSEQ_H
 
 #include "config.h"
-#include <list>
+#include "Sense.h"
 #include "SeqExt.h"
+#include "Sequence.h"
+#include <vector>
 
 enum SeqFlag
 {
@@ -184,5 +186,18 @@ class PackedSeq
 // Global function to make a reverse complement of a packed seq
 PackedSeq reverseComplement(const PackedSeq& seq);
 
+typedef std::vector<PackedSeq> PSequenceVector;
+typedef PSequenceVector::iterator PSequenceVectorIterator;
+
+// Hash/Set functions
+struct PackedSeqEqual
+{
+	bool operator()(const PackedSeq& obj1, const PackedSeq& obj2) const;	
+};
+
+struct PackedSeqHasher
+{
+	size_t operator()(const PackedSeq& myObj) const;
+};
 
 #endif
