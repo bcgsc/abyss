@@ -1,16 +1,10 @@
-#include <cmath>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
-#include "Stats.h"
-#include "DirectedGraph.h"
-#include "PairUtils.h"
 #include "ContigPath.h"
+#include "PairUtils.h"
 #include "SetOperations.h"
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
