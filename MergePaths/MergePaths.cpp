@@ -1,5 +1,6 @@
 #include "ContigPath.h"
 #include "FastaWriter.h"
+#include "PackedSeq.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <cerrno>
