@@ -1,5 +1,6 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
+#include "FastaWriter.h"
 #include "FastqReader.h"
 #include "Log.h"
 #include "Options.h"

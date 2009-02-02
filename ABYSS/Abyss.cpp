@@ -1,5 +1,6 @@
 #include "AssemblyAlgorithms.h"
 #include "DotWriter.h"
+#include "FastaWriter.h"
 #include "ISequenceCollection.h"
 #include "Options.h"
 #include "SequenceCollectionHash.h"

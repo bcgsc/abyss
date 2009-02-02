@@ -8,6 +8,7 @@
 #include "MessageBuffer.h"
 #include "Log.h"
 #include "Timer.h"
+#include <set>
 
 enum NetworkAssemblyState
 {

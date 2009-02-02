@@ -1,4 +1,5 @@
 #include "NetworkSequenceCollection.h"
+#include "FastaWriter.h"
 #include "Options.h"
 #include <sstream>
 #include <iostream>

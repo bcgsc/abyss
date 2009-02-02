@@ -1,11 +1,10 @@
 #ifndef ASSEMBLYALGORITHMS_H
 #define ASSEMBLYALGORITHMS_H
 
-#include <set>
-#include "ISequenceCollection.h"
-#include "FastaWriter.h"
 #include "BranchGroup.h"
 #include "BranchRecord.h"
+#include "IFileWriter.h"
+#include "ISequenceCollection.h"
 
 /*********************************************************
  * 
