@@ -1,10 +1,12 @@
 #ifndef NETWORKSEQUENCECOLLECTION_H
-#define NETWORKSEQUENCECOLLECTION_H
+#define NETWORKSEQUENCECOLLECTION_H 1
 
 #include "PackedSeq.h"
 #include "SequenceCollectionHash.h"
+#include "BranchGroup.h"
+#include "BranchRecord.h"
 #include "CommLayer.h"
-#include "AssemblyAlgorithms.h"
+#include "IFileWriter.h"
 #include "MessageBuffer.h"
 #include "Log.h"
 #include "Timer.h"

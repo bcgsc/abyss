@@ -1,12 +1,12 @@
 #ifndef MESSAGE_BUFFER_H
-#define MESSAGE_BUFFER_H
+#define MESSAGE_BUFFER_H 1
 
 class MessageBuffer;
 
-#include <vector>
-#include "NetworkDefs.h"
 #include "CommLayer.h"
 #include "Messages.h"
+#include "NetworkDefs.h"
+#include <vector>
 
 typedef std::vector<Message*> MsgBuffer;
 typedef std::vector<MsgBuffer> MessageQueues;

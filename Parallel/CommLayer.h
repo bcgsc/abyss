@@ -1,10 +1,8 @@
-#ifndef COMMLAYER
-#define COMMLAYER
+#ifndef COMMLAYER_H
+#define COMMLAYER_H 1
 
 class CommLayer;
 
-#include <list>
-#include "PackedSeq.h"
 #include "NetworkDefs.h"
 #include "Messages.h"
 #include "MessageBuffer.h"
