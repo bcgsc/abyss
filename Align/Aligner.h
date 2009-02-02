@@ -1,5 +1,5 @@
 #ifndef ALIGNER_H
-#define ALIGNER_H
+#define ALIGNER_H 1
 
 //
 // Aligner - Simple class to do an approximate alignment of reads to the input reference sequence
@@ -8,8 +8,7 @@
 #include "PackedSeq.h"
 #include <ext/hash_map>
 #include <string>
-#include <sstream>
-#include <iostream>
+#include <ostream>
 #include <map>
 #include <vector>
 
