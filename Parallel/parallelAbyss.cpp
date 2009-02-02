@@ -8,6 +8,8 @@
 #include "Options.h"
 #include "Timer.h"
 
+using namespace std;
+
 /** MPI size */
 static int mpi_size;
 

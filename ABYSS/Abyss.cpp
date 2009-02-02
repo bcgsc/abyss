@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <fstream>
 
+using namespace std;
+
 static void erodeTips(/*const*/ ISequenceCollection* pSC)
 {
 	if (opt::erode <= 0)

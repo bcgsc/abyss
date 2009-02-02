@@ -12,6 +12,8 @@
 #include "ContigPath.h"
 #include "SetOperations.h"
 
+using namespace std;
+
 // Typedefs
 typedef std::vector<LinearNumKey> LinearNumVector;
 typedef std::vector<LinearNumVector > LinearNumKeyVector;

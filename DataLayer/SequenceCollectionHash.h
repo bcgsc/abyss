@@ -1,16 +1,8 @@
 #ifndef SEQUENCECOLLECTIONHASH_H
-#define SEQUENCECOLLECTIONHASH_H
+#define SEQUENCECOLLECTIONHASH_H 1
 
-#include <deque>
-#include <vector>
-#include <set>
-#include <stdio.h>
 #include "ISequenceCollection.h"
-#include "Sequence.h"
 #include "PackedSeq.h"
-#include "HitRecord.h"
-
-using namespace std;
 
 typedef std::pair<bool, SeqExt> SeqExtResult;
 
