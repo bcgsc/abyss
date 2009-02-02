@@ -1,7 +1,7 @@
 #ifndef CONTIGPATH_H
 #define CONTIGPATH_H
 
-#include "DirectedGraph.h"
+#include "DirectedGraph.h" // for LinearNumKey
 #include <iostream>
 #include <sstream>
 
