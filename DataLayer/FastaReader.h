@@ -1,10 +1,9 @@
 #ifndef FASTAREADER_H
 #define FASTAREADER_H
 
-#include <stdio.h>
-#include <fstream>
 #include "IFileReader.h"
 #include "Sequence.h"
+#include <fstream>
 
 class FastaReader : public IFileReader
 {

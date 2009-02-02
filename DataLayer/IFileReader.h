@@ -1,8 +1,6 @@
 #ifndef IFILEREADER_H
 #define IFILEREADER_H
 
-#include <stdio.h>
-#include <fstream>
 #include "Sequence.h"
 
 const unsigned MAX_FASTA_LINE = 262144;

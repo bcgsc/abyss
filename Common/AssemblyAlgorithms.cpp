@@ -2,13 +2,14 @@
 #include "FastaReader.h"
 #include "FastaWriter.h"
 #include "FastqReader.h"
+#include "HitRecord.h"
 #include "Log.h"
 #include "Options.h"
-#include "SequenceCollectionHash.h"
+#include "ISequenceCollection.h"
 #include "Timer.h"
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
-#include <stdio.h>
+#include <cstdio>
 
 namespace AssemblyAlgorithms
 {

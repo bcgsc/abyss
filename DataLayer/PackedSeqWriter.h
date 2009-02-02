@@ -1,11 +1,9 @@
 #ifndef PACKEDSEQWRITER_H
 #define PACKEDSEQWRITER_H
 
-#include <stdio.h>
-#include <fstream>
-#include "Sequence.h"
-#include "IFileWriter.h"
 #include "PackedSeq.h"
+#include "Sequence.h"
+#include <fstream>
 
 class PackedSeqWriter
 {

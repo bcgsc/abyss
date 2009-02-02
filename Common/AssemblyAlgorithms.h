@@ -3,6 +3,7 @@
 
 #include "BranchGroup.h"
 #include "BranchRecord.h"
+#include "HitRecord.h"
 #include "IFileWriter.h"
 #include "ISequenceCollection.h"
 

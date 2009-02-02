@@ -2,10 +2,8 @@
 #define ISEQUENCECOLLECTION_H
 
 #include "config.h"
-#include <iterator>
 #include "NetworkDefs.h"
 #include "PackedSeq.h"
-#include "HitRecord.h"
 
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_set>

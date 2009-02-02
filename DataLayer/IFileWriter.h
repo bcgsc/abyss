@@ -1,10 +1,7 @@
 #ifndef IFILEWRITER_H
-#define IFILEWRITER_H
+#define IFILEWRITER_H 1
 
-#include <stdio.h>
-#include <fstream>
 #include "Sequence.h"
-#include "PackedSeq.h"
 
 class IFileWriter
 {

@@ -1,11 +1,9 @@
 #ifndef PACKEDSEQREADER_H
 #define PACKEDSEQREADER_H
 
-#include <stdio.h>
-#include <fstream>
 #include "IFileReader.h"
-#include "Sequence.h"
 #include "PackedSeq.h"
+#include <fstream>
 
 class PackedSeqReader /*: public IFileReader*/
 {
