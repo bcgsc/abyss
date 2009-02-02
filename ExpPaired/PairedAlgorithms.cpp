@@ -1,6 +1,9 @@
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <cassert>
+#include <string>
+
+using namespace std;
 
 namespace PairedAlgorithms
 {

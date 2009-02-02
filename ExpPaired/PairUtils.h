@@ -1,20 +1,12 @@
-#ifndef LOADERS_H
-#define LOADERS_H
+#ifndef PAIRUTILS_H
+#define PAIRUTILS_H 1
 
-#include <stdio.h>
-#include <math.h>
+#include "DirectedGraph.h"
+#include "Stats.h" // for Histogram
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include "SequenceCollectionHash.h"
-#include "AssemblyAlgorithms.h"
-#include "Options.h"
-#include "FastaReader.h"
-#include "Stats.h"
-#include "DirectedGraph.h"
-
-const int nodeMult = 10000000;
 
 struct SimpleContigData
 {
@@ -38,7 +30,8 @@ struct Estimate
 		out << object.nID << ","
 			<< object.distance
 			<< "," << object.numPairs
-			<< "," << fixed << setprecision(1) << object.stdDev
+			<< ","
+			<< std::fixed << std::setprecision(1) << object.stdDev
 			<< "," << object.isRC;
 		return out;
 	} 

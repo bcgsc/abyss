@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 // TYPEDEFS
 typedef std::map<std::string, AlignmentVector> ReadAlignMap;
 

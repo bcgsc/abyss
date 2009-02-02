@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 typedef std::vector<int> IntVector;
 struct PairedData
 {

@@ -1,5 +1,8 @@
 #include "PairUtils.h"
 #include <cassert>
+#include <fstream>
+
+using namespace std;
 
 //
 // Estimate file loaders

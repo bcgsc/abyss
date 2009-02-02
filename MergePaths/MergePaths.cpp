@@ -1,14 +1,15 @@
 #include "ContigPath.h"
+#include "FastaWriter.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <set>
 #include <sstream>
-#include <stdlib.h>
 #include <string>
 
 using namespace std;
