@@ -2,7 +2,6 @@
 #define ISEQUENCECOLLECTION_H
 
 #include "config.h"
-#include "NetworkDefs.h"
 #include "PackedSeq.h"
 
 #if HAVE_GOOGLE_SPARSE_HASH_SET
@@ -89,7 +88,7 @@ class ISequenceCollection
 		
 		// call to service network operations if needed
 		// for non-network sequence collections this will simply return
-		virtual APResult pumpNetwork() = 0;
+		virtual void pumpNetwork() = 0;
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;

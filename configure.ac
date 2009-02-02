@@ -85,6 +85,7 @@ AC_CONFIG_FILES([
 	Makefile
 	ABYSS/Makefile
 	Align/Makefile
+	Assembly/Makefile
 	Common/Makefile
 	DataLayer/Makefile
 	ExpPaired/Makefile

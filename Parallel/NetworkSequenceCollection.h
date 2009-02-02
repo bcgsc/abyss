@@ -106,7 +106,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 		
 		// The loop to run the network code
-		APResult pumpNetwork();
+		void pumpNetwork();
 		
 		// Loop over the pumping function while waiting for a result from the network
 		ResultPair pumpUntilResult(); 

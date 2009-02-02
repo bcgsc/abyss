@@ -469,7 +469,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	m_checkpointSum = 0;
 }
 
-APResult NetworkSequenceCollection::pumpNetwork()
+void NetworkSequenceCollection::pumpNetwork()
 {
 	int senderID;
 	m_pComm->flush();	
@@ -513,7 +513,6 @@ APResult NetworkSequenceCollection::pumpNetwork()
 				}
 		}
 	}
-	return APR_NONE;
 }
 
 

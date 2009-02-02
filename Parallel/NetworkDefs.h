@@ -51,21 +51,4 @@ enum APControl
 	APC_FINISHED	
 };
 
-enum APResultType
-{
-	APRT_SEQCHECK,
-	APRT_HASPARENT,
-	APRT_HASCHILD,
-	APRT_CHECKEXT,
-	APRT_CHECKFLAG
-};
-
-// The type of results that can be sent
-enum APResult
-{
-	APR_NONE,
-	APR_TRUE,
-	APR_FALSE
-};
-
 #endif

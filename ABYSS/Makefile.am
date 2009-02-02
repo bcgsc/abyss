@@ -1,9 +1,12 @@
 bin_PROGRAMS = ABYSS
 
-ABYSS_CPPFLAGS = -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer \
-	-I$(top_srcdir)/Parallel
+ABYSS_CPPFLAGS = \
+	-I$(top_srcdir)/Assembly \
+	-I$(top_srcdir)/Common \
+	-I$(top_srcdir)/DataLayer
 
 ABYSS_LDADD = \
+	$(top_builddir)/Assembly/libassembly.a \
 	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/DataLayer/libdatalayer.a
 
