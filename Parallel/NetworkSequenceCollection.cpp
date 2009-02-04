@@ -276,6 +276,14 @@ void NetworkSequenceCollection::runControl()
 					
 					// Cleanup any messages that are pending
 					EndState();							
+					
+					// We are not an observer of the sequence
+					// datastore in the waiting state and so will not
+					// receive notifications of changes. Because we've
+					// missed notifications, multiple passes will be
+					// necessary. Do not call SetState because it
+					// clears the checkpoint info.
+					m_state = NAS_WAITING;
 
 					m_numReachedCheckpoint++;
 					while(!checkpointReached(m_numDataNodes))
