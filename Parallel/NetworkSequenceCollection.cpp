@@ -515,6 +515,20 @@ void NetworkSequenceCollection::pumpNetwork()
 	}
 }
 
+/** Call the observers of the specified sequence. */
+void NetworkSequenceCollection::notify(
+		const PackedSeq& key)
+{
+	const PackedSeq& seq = m_pLocalSpace->getSeqAndData(key);
+	switch (m_state) {
+		case NAS_ERODE:
+			AssemblyAlgorithms::erode(this, seq);
+			break;
+		default:
+			// Nothing to do.
+			break;
+	}
+}
 
 //
 //
@@ -568,7 +582,10 @@ void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const Set
 void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, const RemoveExtensionMessage& message)
 {
 	assert(isLocal(message.m_seq));	
-	m_pLocalSpace->removeExtension(message.m_seq, message.m_dir, message.m_base);
+	bool found = m_pLocalSpace->removeExtension(
+			message.m_seq, message.m_dir, message.m_base);
+	if (found)
+		notify(message.m_seq);
 }
 
 //
@@ -1565,21 +1582,26 @@ int NetworkSequenceCollection::count() const
 	return m_pLocalSpace->count();
 }
 
-//
-//
-//
-void NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir, char base)
+/** Remove the specified extension from the specified sequence if it
+ * exists in this collection.
+ * @return true if the specified sequence is local and exists and
+ * false otherwise
+ */
+bool NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir, char base)
 {
 	// Check if this sequence is local
 	if(isLocal(seq))
 	{
-		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
-		m_pLocalSpace->removeExtension(seq, dir, base);
+		bool found = m_pLocalSpace->removeExtension(seq, dir, base);
+		if (found)
+			notify(seq);
+		return found;
 	}
 	else
 	{
 		int nodeID = computeNodeID(seq);
 		m_pMsgBuffer->sendRemoveExtension(nodeID, seq, dir, base);
+		return false;
 	}
 }
 

@@ -582,34 +582,50 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	}	
 }
 
+/** Consider the specified sequence for erosion.
+ * @return the number of sequences eroded, zero or one
+ */
+unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
+{
+	extDirection dir;
+	SeqContiguity contiguity = checkSeqContiguity(c, seq, dir);
+	if (contiguity == SC_INVALID || contiguity == SC_CONTIGUOUS)
+		return 0;
+
+	if (seq.getMultiplicity(SENSE) < 1
+			|| seq.getMultiplicity(ANTISENSE) < 1) {
+		removeSequenceAndExtensions(c, seq);
+		return 1;
+	} else
+		return 0;
+}
+
+/** The given sequence has changed. */
+static void erosionObserver(ISequenceCollection* c,
+		const PackedSeq& seq)
+{
+	erode(c, seq);
+}
+
 //
 // Erode data off the ends of the graph, one by one
 //
 unsigned erodeEnds(ISequenceCollection* seqCollection)
 {
-	Timer erode("Erode sequences");
-	int count = 0;
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
-		extDirection dir;
-		// dir will be set to the trimming direction if the sequence can be trimmed
-		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
-				
-		if(status == SC_INVALID || status == SC_CONTIGUOUS)
-		{
-			continue;
-		}
-		else if (iter->getMultiplicity(SENSE) < 1
-				|| iter->getMultiplicity(ANTISENSE) < 1) {
-			count++;
-			// This sequence is an endpoint, erode it
-			removeSequenceAndExtensions(seqCollection, *iter);			
-		}
-		
+	Timer erodeEndsTimer("Erode sequences");
+	seqCollection->attach(erosionObserver);
+
+	unsigned count = 0;
+	SequenceCollectionIterator endIter = seqCollection->getEndIter();
+	for (SequenceCollectionIterator iter
+			= seqCollection->getStartIter();
+			iter != endIter; ++iter) {
+		count += erode(seqCollection, *iter);
 		seqCollection->pumpNetwork();
 	}
 	PrintDebug(0, "Eroded %d tips\n", count);
+
+	seqCollection->detach(erosionObserver);
 	return count;
 }
 

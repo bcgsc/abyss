@@ -69,7 +69,7 @@ class ISequenceCollection
 		virtual void wipeFlag(SeqFlag flag) = 0;
 		
 		// remove the extension to the sequence
-		virtual void removeExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual bool removeExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		
 		// remove all the extensions of this sequence
 		virtual void clearExtensions(const PackedSeq& seq, extDirection dir) = 0;
@@ -92,6 +92,12 @@ class ISequenceCollection
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;
+
+		// Observer pattern
+		typedef void (*SeqObserver)(ISequenceCollection* c,
+				const PackedSeq& seq);
+		virtual void attach(SeqObserver f) = 0;
+		virtual void detach(SeqObserver f) = 0;
 };
 
 #endif

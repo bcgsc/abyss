@@ -1,7 +1,8 @@
 #include "SequenceCollectionHash.h"
 #include "Log.h"
 #include <algorithm>
-
+#include <cassert>
+#include <cstdlib>
 
 bool PackedSeqEqual::operator()(const PackedSeq& obj1, const PackedSeq& obj2) const
 {
@@ -22,7 +23,8 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 //
 // 
 //
-SequenceCollectionHash::SequenceCollectionHash() : m_state(CS_LOADING)
+SequenceCollectionHash::SequenceCollectionHash()
+	: m_state(CS_LOADING), m_seqObserver(NULL)
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 	// Make room for 2^30 elements, over one billion, using 2 bits
@@ -146,16 +148,24 @@ bool SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& 
 	return false;
 }
 
-//
-// Remove the extension to this sequence from the record
-//
-void SequenceCollectionHash::removeExtension(const PackedSeq& seq, extDirection dir, char base)
+/** Remove the specified extension from the specified sequence if it
+ * exists in this collection.
+ * @return true if the specified sequence exists and false otherwise
+ */
+bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
+		extDirection dir, char base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	if (iters.first == m_pSequences->end()
+			&& iters.second == m_pSequences->end())
+		return false;
 
 	removeExtensionByIter(iters.first, dir, base);
 	removeExtensionByIter(iters.second,
 			oppositeDirection(dir), complementBaseChar(base));	
+
+	notify(getSeqAndData(iters));
+	return true;
 }
 
 //
@@ -462,6 +472,35 @@ SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(const PackedSe
 	return iters;
 }
 
+/** Return the sequence and data of the specified iterator pair. */
+const PackedSeq& SequenceCollectionHash::getSeqAndData(
+		const SequenceHashIterPair& iters) const
+{
+	if (iters.first != m_pSequences->end())
+		return *iters.first;
+	if (iters.second != m_pSequences->end())
+		return *iters.second;
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
+/** Return the sequence and data of the specified key.
+ * The key sequence may not contain data. The returned sequence will
+ * contain data.
+ */
+const PackedSeq& SequenceCollectionHash::getSeqAndData(
+		const PackedSeq& key) const
+{
+	SequenceCollectionHashIter i = FindSequence(key);
+	if (i != m_pSequences->end())
+		return *i;
+	i = FindSequence(reverseComplement(key));
+	if (i != m_pSequences->end())
+		return *i;
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
 //
 // Get the iterator pointing to the sequence
 //
@@ -486,4 +525,3 @@ SequenceCollectionHashIter SequenceCollectionHash::getEndIter() const
 {
 	return m_pSequences->end();
 }
-

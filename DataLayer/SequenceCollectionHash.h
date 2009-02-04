@@ -49,7 +49,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// remove the extension to the sequence
-		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
+		bool removeExtension(const PackedSeq& seq,
+				extDirection dir, char base);
 		
 		// clear the extensions of the sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);
@@ -59,6 +60,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
+
+		const PackedSeq& SequenceCollectionHash::getSeqAndData(
+				const PackedSeq& key) const;
 
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter() const;
@@ -78,15 +82,30 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Pump the network. For this sequence collection (non-network) this function just returns
 		virtual void pumpNetwork() { }
 
+		/** Attach the specified observer. */
+		virtual void attach(SeqObserver f)
+		{
+			assert(m_seqObserver == NULL);
+			m_seqObserver = f;
+		}
+
+		/** Detach the specified observer. */
+		virtual void detach(SeqObserver f)
+		{
+			assert(m_seqObserver == f);
+			m_seqObserver = NULL;
+		}
+
 	private:
-
-
 		// Functions to get iterators to the sequence
 		
 		// Get the iterator to the sequence and its reverse complement
 		// If they don't exist m_pSequences->end() will be returned in the iterator
 		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
 		SequenceCollectionHashIter FindSequence(const PackedSeq& seq) const;
+		const PackedSeq& SequenceCollectionHash::getSeqAndData(
+				const SequenceHashIterPair& iters) const;
+
 		
 		// Check if duplicate entries exist
 		bool checkForDuplicates() const;		
@@ -107,6 +126,13 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 
+		/** Call the observers of the specified sequence. */
+		void SequenceCollectionHash::notify(const PackedSeq& seq)
+		{
+			if (m_seqObserver != NULL)
+				m_seqObserver(this, seq);
+		}
+
 		// Data members
 		
 		// pointer to the actual collection (typedef'd above)
@@ -117,6 +143,9 @@ class SequenceCollectionHash : public ISequenceCollection
 			CS_LOADING,
 			CS_FINALIZED
 		} m_state;
+
+		/** The observers. Only a single observer is implemented.*/
+		SeqObserver m_seqObserver;
 };
 
 #endif

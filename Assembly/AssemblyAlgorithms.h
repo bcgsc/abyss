@@ -54,6 +54,7 @@ void generateAdjacency(ISequenceCollection* seqCollection);
 // Uniformly remove one sequence from the end of all branches 
 //
 unsigned erodeEnds(ISequenceCollection* seqCollection);
+unsigned erode(ISequenceCollection* c, const PackedSeq& seq);
 
 // trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
 void performTrim(ISequenceCollection* seqCollection, int start);

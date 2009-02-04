@@ -85,7 +85,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int count() const;
 		
 		// remove the extension to the sequence
-		void removeExtension(const PackedSeq& seq, extDirection dir, char base);
+		bool removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
 		// check if the extension exists
 		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
@@ -134,7 +134,13 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void handleSequenceDataRequest(int senderID, SeqDataRequest& message);
 		void handleSequenceDataResponse(int senderID, SeqDataResponse& message);		
 		
+		// Observer pattern, not implemented.
+		virtual void attach(SeqObserver f) { (void)f; }
+		virtual void detach(SeqObserver f) { (void)f; }
 	private:
+		// Observer pattern
+		void notify(const PackedSeq& seq);
+
 		void loadSequences();
 	
 		// Branch processing
