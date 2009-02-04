@@ -72,16 +72,10 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 	}
 }
 
-//
-// Remove a read
-//
+/** Remove the specified sequence if it exists. */
 void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
-	// Mark the flag as deleted and remove it from the cache of branch ends (if it is there)
 	setFlag(seq, SF_DELETE);
-	
-	// With the reverse complement as well
-	setFlag(reverseComplement(seq), SF_DELETE);
 }
 
 // get the multiplicity of a sequence
