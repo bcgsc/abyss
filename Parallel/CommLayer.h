@@ -54,9 +54,6 @@ class CommLayer
 		// Receive a buffered sequence of messages
 		void ReceiveBufferedMessage(MessagePtrVector& outmessages);
 		
-		// Flush the buffer
-		void flush();
-		
 		void setMsgBuffer(const MessageBuffer *pMsgBuffer)
 		{
 			assert(pMsgBuffer != NULL);

@@ -471,17 +471,10 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 
 void NetworkSequenceCollection::pumpNetwork()
 {
-	int senderID;
-	m_pComm->flush();	
-	//int numReceived = 0;
 	bool stop = false;
-	
-	// Loop until either a) a APM_RESULT message is found in which case return and allow pump_until_result to handle it or b) no more messages are waiting
-	while(!stop)
-	{
-		
+	while (!stop) {
+		int senderID;
 		APMessage msg = m_pComm->CheckMessage(senderID);
-		
 		switch(msg)
 		{
 			case APM_CONTROL:
@@ -507,7 +500,6 @@ void NetworkSequenceCollection::pumpNetwork()
 				}
 			case APM_NONE:
 				{
-					// either there is no message waiting or it is an AP_RESULT in which case pump_until_result will handle it
 					stop = true;
 					break;
 				}

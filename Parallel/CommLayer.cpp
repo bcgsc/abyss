@@ -25,11 +25,6 @@ CommLayer::~CommLayer()
 	delete [] m_buffer;
 }
 
-void CommLayer::flush()
-{
-
-}
-
 //
 //
 //
