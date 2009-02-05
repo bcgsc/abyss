@@ -85,10 +85,9 @@ class ISequenceCollection
 		
 		// check if the extension exists
 		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
-		
-		// call to service network operations if needed
-		// for non-network sequence collections this will simply return
-		virtual void pumpNetwork() = 0;
+
+		// Receive and dispatch packets if necessary.
+		virtual unsigned pumpNetwork() = 0;
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;

@@ -477,10 +477,12 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	m_checkpointSum = 0;
 }
 
-void NetworkSequenceCollection::pumpNetwork()
+/** Receive and dispatch packets.
+ * @return the number of packets received
+ */
+unsigned NetworkSequenceCollection::pumpNetwork()
 {
-	bool stop = false;
-	while (!stop) {
+	for (unsigned count = 0; ; count++) {
 		int senderID;
 		APMessage msg = m_pComm->CheckMessage(senderID);
 		switch(msg)
@@ -507,10 +509,7 @@ void NetworkSequenceCollection::pumpNetwork()
 					break;	
 				}
 			case APM_NONE:
-				{
-					stop = true;
-					break;
-				}
+				return count;
 		}
 	}
 }

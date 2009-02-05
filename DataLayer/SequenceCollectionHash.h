@@ -78,9 +78,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// Return the number of sequences in the collection
 		int count() const;
-		
-		// Pump the network. For this sequence collection (non-network) this function just returns
-		virtual void pumpNetwork() { }
+
+		// Not a network sequence collection. Nothing to do.
+		virtual unsigned pumpNetwork() { return 0; }
 
 		/** Attach the specified observer. */
 		virtual void attach(SeqObserver f)
