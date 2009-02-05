@@ -582,6 +582,9 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	}	
 }
 
+/** The number of sequences that have been eroded. */
+static unsigned g_numEroded;
+
 /** Consider the specified sequence for erosion.
  * @return the number of sequences eroded, zero or one
  */
@@ -595,6 +598,7 @@ unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 	if (seq.getMultiplicity(SENSE) < 1
 			|| seq.getMultiplicity(ANTISENSE) < 1) {
 		removeSequenceAndExtensions(c, seq);
+		g_numEroded++;
 		return 1;
 	} else
 		return 0;
@@ -613,20 +617,22 @@ static void erosionObserver(ISequenceCollection* c,
 unsigned erodeEnds(ISequenceCollection* seqCollection)
 {
 	Timer erodeEndsTimer("Erode sequences");
+	assert(g_numEroded == 0);
 	seqCollection->attach(erosionObserver);
 
-	unsigned count = 0;
 	SequenceCollectionIterator endIter = seqCollection->getEndIter();
 	for (SequenceCollectionIterator iter
 			= seqCollection->getStartIter();
 			iter != endIter; ++iter) {
-		count += erode(seqCollection, *iter);
+		erode(seqCollection, *iter);
 		seqCollection->pumpNetwork();
 	}
-	PrintDebug(0, "Eroded %d tips\n", count);
+	unsigned numEroded = g_numEroded;
+	g_numEroded = 0;
+	PrintDebug(0, "Eroded %d tips\n", numEroded);
 
 	seqCollection->detach(erosionObserver);
-	return count;
+	return numEroded;
 }
 
 //
