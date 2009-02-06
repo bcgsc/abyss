@@ -11,9 +11,6 @@ endif
 ifndef l
 $(error missing argument l)
 endif
-ifndef e
-$(error missing argument e)
-endif
 ifndef c
 $(error missing argument c)
 endif
@@ -34,7 +31,7 @@ clean:
 # Single-end assembly
 
 %-1.fa: %.fa
-	ABYSS $v -k$k -l$l -e$e -b99 -ssnp.fa $^
+	ABYSS $v -k$k -l$l -b99 -ssnp.fa $^
 	mv contigs.fa $@
 
 %.len: %.fa

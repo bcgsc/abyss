@@ -27,9 +27,9 @@ static const char *USAGE_MESSAGE =
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
-"  -e, --erode=N                  erode N bases from the ends of contigs\n"
-"                                 Yields slightly shorter contigs, but fewer\n"
-"                                 errors at the ends of contigs.\n"
+"  -e, --erode=0|1                erode bases at the ends of blunt contigs\n"
+"                                 that are represented in only one strand\n"
+"                                 Enabled by default. Set to 0 to disable.\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record SNPs in FILE\n"
 "  -v, --verbose                  display verbose output\n"
@@ -47,8 +47,8 @@ int kmerSize = -1;
 /** read length */
 int readLen = -1;
 
-/** erode length */
-int erode = 0;
+/** enable erosion */
+int erode = 1;
 
 /** trim length */
 int trimLen = -1;
