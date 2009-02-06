@@ -320,17 +320,10 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_ERODE:
 			{
+				assert(opt::erode > 0);
 				puts("Eroding tips");
-				unsigned total = 0;
-				int i;
-				for (i = 0; i < opt::erode; i++) {
-					unsigned count = controlErode();
-					if (count == 0)
-						break;
-					total += count;
-				}
-				printf("Eroded %d tips in %d rounds\n", total, i);
-
+				controlErode();
+				assert(controlErode() == 0);
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;
