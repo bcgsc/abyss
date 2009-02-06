@@ -62,6 +62,19 @@ void CommLayer::barrier()
 	PrintDebug(4, "left barrier\n");
 }
 
+/** Block until all processes have reached this routine.
+ * @return the sum of count from all processors
+ */
+unsigned CommLayer::reduce(unsigned count)
+{
+	PrintDebug(4, "entering reduce: %u\n", count);
+	unsigned sum;
+	MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED, MPI_SUM,
+			MPI_COMM_WORLD);
+	PrintDebug(4, "left reduce: %u\n", sum);
+	return sum;
+}
+
 uint64_t CommLayer::SendCheckPointMessage(int argument)
 {
 	assert(m_pMsgBuffer->empty());

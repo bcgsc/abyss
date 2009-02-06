@@ -76,6 +76,22 @@ int adjSet = 0;
 int numAdjMessageSent = 0;
 int numAdjMessageParsed = 0;
 
+/** Receive packets and process them until no more work exists for any
+ * slave processor.
+ */
+void NetworkSequenceCollection::completeOperation()
+{
+	Timer timer("completeOperation");
+	m_pComm->barrier();
+	for (;;) {
+		unsigned count = pumpNetwork();
+		m_pMsgBuffer->flush();
+		unsigned sum = m_pComm->reduce(count);
+		if (sum == 0)
+			break;
+	}
+}
+
 //
 //
 //
@@ -121,12 +137,20 @@ void NetworkSequenceCollection::run()
 					= AssemblyAlgorithms::erodeEnds(this);
 				// Cleanup any messages that are pending
 				EndState();
-				SetState(NAS_WAITING);
-				
+				SetState(NAS_ERODE_WAITING);
+
 				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage(numEroded);
 				break;
 			}
+			case NAS_ERODE_WAITING:
+				pumpNetwork();
+				break;
+			case NAS_ERODE_COMPLETE:
+				completeOperation();
+				m_pComm->reduce(AssemblyAlgorithms::getNumEroded());
+				SetState(NAS_WAITING);
+				break;
 			case NAS_TRIM:
 			case NAS_TRIM2:
 			{					
@@ -270,20 +294,16 @@ void NetworkSequenceCollection::runControl()
 				unsigned totalEroded = 0;
 				int i;
 				for (i = 0; i < opt::erode; i++) {
-					m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
-					unsigned numEroded 
+					m_pComm->SendControlMessage(m_numDataNodes,
+							APC_ERODE);
+					unsigned numEroded
 						= AssemblyAlgorithms::erodeEnds(this);
-					
-					// Cleanup any messages that are pending
-					EndState();							
-					
-					// We are not an observer of the sequence
-					// datastore in the waiting state and so will not
-					// receive notifications of changes. Because we've
-					// missed notifications, multiple passes will be
-					// necessary. Do not call SetState because it
-					// clears the checkpoint info.
-					m_state = NAS_WAITING;
+					EndState();
+
+					// Do not call SetState, because it clears the
+					// checkpoint information.
+					//SetState(NAS_ERODE_WAITING);
+					m_state = NAS_ERODE_WAITING;
 
 					m_numReachedCheckpoint++;
 					while(!checkpointReached(m_numDataNodes))
@@ -291,6 +311,15 @@ void NetworkSequenceCollection::runControl()
 						pumpNetwork();
 					}
 					numEroded += m_checkpointSum;
+					EndState();
+
+					SetState(NAS_ERODE_COMPLETE);
+					m_pComm->SendControlMessage(m_numDataNodes,
+							APC_ERODE_COMPLETE);
+					completeOperation();
+
+					numEroded += m_pComm->reduce(
+							AssemblyAlgorithms::getNumEroded());
 					if (numEroded > 0 && opt::verbose > 0)
 						printf("Eroded %d tips\n", numEroded);
 					totalEroded += numEroded;
@@ -309,8 +338,15 @@ void NetworkSequenceCollection::runControl()
 
 				// erosion has been completed
 				m_startTrimLen = 2;
-				SetState(NAS_TRIM);				
+				SetState(NAS_TRIM);
+				break;
 			}
+			case NAS_ERODE_WAITING:
+			case NAS_ERODE_COMPLETE:
+				// These states are used only by the slaves.
+				assert(false);
+				exit(EXIT_FAILURE);
+
 			case NAS_TRIM:
 			{		
 				// The control node drives the trimming and passes the value to trim at to the other nodes
@@ -521,6 +557,8 @@ void NetworkSequenceCollection::notify(
 	const PackedSeq& seq = m_pLocalSpace->getSeqAndData(key);
 	switch (m_state) {
 		case NAS_ERODE:
+		case NAS_ERODE_WAITING:
+		case NAS_ERODE_COMPLETE:
 			AssemblyAlgorithms::erode(this, seq);
 			break;
 		default:
@@ -631,7 +669,14 @@ void NetworkSequenceCollection::parseControlMessage()
 		case APC_ERODE:
 		{
 			SetState(NAS_ERODE);
-			break;	
+			break;
+		}
+		case APC_ERODE_COMPLETE:
+		{
+			assert(m_state == NAS_ERODE_WAITING);
+			EndState();
+			SetState(NAS_ERODE_COMPLETE);
+			break;
 		}
 		case APC_DISCOVER_BUBBLES:
 		{

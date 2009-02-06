@@ -35,7 +35,10 @@ class CommLayer
 		
 		// Block until all processes have reached this routine.
 		void barrier();
-		
+
+		// Block until all processes have reached this routine.
+		unsigned reduce(unsigned count);
+
 		// Send a control message
 		void SendControlMessage(int numNodes, APControl m, int argument = 0);
 		

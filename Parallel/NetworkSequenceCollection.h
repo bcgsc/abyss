@@ -18,6 +18,8 @@ enum NetworkAssemblyState
 	NAS_FINALIZE, // finalizing the sequence data and getting ready for processing
 	NAS_GEN_ADJ, // generating the sequence data
 	NAS_ERODE, // erode the branch ends one sequence at a time
+	NAS_ERODE_WAITING,
+	NAS_ERODE_COMPLETE,
 	NAS_TRIM, // trimming the data
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
@@ -107,6 +109,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// Receive and dispatch packets.
 		unsigned pumpNetwork();
+
+		void completeOperation();
 
 		// Loop over the pumping function while waiting for a result from the network
 		ResultPair pumpUntilResult(); 

@@ -55,6 +55,7 @@ void generateAdjacency(ISequenceCollection* seqCollection);
 //
 unsigned erodeEnds(ISequenceCollection* seqCollection);
 unsigned erode(ISequenceCollection* c, const PackedSeq& seq);
+unsigned getNumEroded();
 
 // trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
 void performTrim(ISequenceCollection* seqCollection, int start);

@@ -585,6 +585,15 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 /** The number of sequences that have been eroded. */
 static unsigned g_numEroded;
 
+/** Return the number of sequences that have been eroded. */
+unsigned getNumEroded()
+{
+	unsigned numEroded = g_numEroded;
+	g_numEroded = 0;
+	PrintDebug(0, "Eroded %d tips\n", numEroded);
+	return numEroded;
+}
+
 /** Consider the specified sequence for erosion.
  * @return the number of sequences eroded, zero or one
  */
@@ -627,12 +636,9 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 		erode(seqCollection, *iter);
 		seqCollection->pumpNetwork();
 	}
-	unsigned numEroded = g_numEroded;
-	g_numEroded = 0;
-	PrintDebug(0, "Eroded %d tips\n", numEroded);
 
 	seqCollection->detach(erosionObserver);
-	return numEroded;
+	return getNumEroded();
 }
 
 //
