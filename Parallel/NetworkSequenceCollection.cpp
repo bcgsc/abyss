@@ -243,15 +243,17 @@ unsigned NetworkSequenceCollection::controlErode()
 	numEroded += m_checkpointSum;
 	EndState();
 
+	if (numEroded == 0)
+		return 0;
+
 	SetState(NAS_ERODE_COMPLETE);
 	m_pComm->SendControlMessage(m_numDataNodes,
 			APC_ERODE_COMPLETE);
 	completeOperation();
-
 	numEroded += m_pComm->reduce(
 			AssemblyAlgorithms::getNumEroded());
-	if (numEroded > 0 && opt::verbose > 0)
-		printf("Eroded %d tips\n", numEroded);
+
+	printf("Eroded %u tips\n", numEroded);
 	return numEroded;
 }
 
