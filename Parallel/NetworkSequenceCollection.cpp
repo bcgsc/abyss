@@ -898,24 +898,9 @@ int NetworkSequenceCollection::processBranchesTrim()
 	return numBranchesRemoved;
 }
 
-/** Write a packed sequence checkpoint. */
-/*
-static void writePackedSeqCheckpoint(
-		ISequenceCollection* seqCollection)
-{
-	Timer timer("PackedSequenceCheckpoint");
-	ostringstream s;
-	s << "trimmed-" << opt::rank << ".psq";
-	AssemblyAlgorithms::outputPackedSequences(
-			s.str().c_str(), seqCollection);
-}
-*/
-
 /** Discover bubbles to pop. */
 int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
-	//writePackedSeqCheckpoint(seqCollection);
-
 	Timer timer("NetworkDiscoverBubbles");
 	
 	// The branch ids
