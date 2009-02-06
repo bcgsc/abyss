@@ -227,6 +227,7 @@ void NetworkSequenceCollection::run()
 
 unsigned NetworkSequenceCollection::controlErode()
 {
+	SetState(NAS_ERODE);
 	m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
@@ -251,8 +252,6 @@ unsigned NetworkSequenceCollection::controlErode()
 			AssemblyAlgorithms::getNumEroded());
 	if (numEroded > 0 && opt::verbose > 0)
 		printf("Eroded %d tips\n", numEroded);
-
-	SetState(NAS_ERODE);
 	return numEroded;
 }
 
@@ -331,7 +330,6 @@ void NetworkSequenceCollection::runControl()
 					total += count;
 				}
 				printf("Eroded %d tips in %d rounds\n", total, i);
-				EndState();
 
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
