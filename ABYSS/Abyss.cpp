@@ -15,7 +15,7 @@ static void erodeTips(/*const*/ ISequenceCollection* pSC)
 {
 	if (opt::erode <= 0)
 		return;
-	puts("Eroding");
+	puts("Eroding tips");
 	unsigned totalEroded = 0;
 	int i;
 	for (i = 0; i < opt::erode; i++) {

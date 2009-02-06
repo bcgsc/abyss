@@ -225,6 +225,37 @@ void NetworkSequenceCollection::run()
 	}
 }
 
+unsigned NetworkSequenceCollection::controlErode()
+{
+	m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
+	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
+	EndState();
+
+	// Do not call SetState, because it clears the
+	// checkpoint information.
+	//SetState(NAS_ERODE_WAITING);
+	m_state = NAS_ERODE_WAITING;
+
+	m_numReachedCheckpoint++;
+	while (!checkpointReached(m_numDataNodes))
+		pumpNetwork();
+	numEroded += m_checkpointSum;
+	EndState();
+
+	SetState(NAS_ERODE_COMPLETE);
+	m_pComm->SendControlMessage(m_numDataNodes,
+			APC_ERODE_COMPLETE);
+	completeOperation();
+
+	numEroded += m_pComm->reduce(
+			AssemblyAlgorithms::getNumEroded());
+	if (numEroded > 0 && opt::verbose > 0)
+		printf("Eroded %d tips\n", numEroded);
+
+	SetState(NAS_ERODE);
+	return numEroded;
+}
+
 //
 // The main loop for the controller (rank = 0 process)
 //
@@ -290,53 +321,18 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_ERODE:
 			{
-				puts("Eroding");
-				unsigned totalEroded = 0;
+				puts("Eroding tips");
+				unsigned total = 0;
 				int i;
 				for (i = 0; i < opt::erode; i++) {
-					m_pComm->SendControlMessage(m_numDataNodes,
-							APC_ERODE);
-					unsigned numEroded
-						= AssemblyAlgorithms::erodeEnds(this);
-					EndState();
-
-					// Do not call SetState, because it clears the
-					// checkpoint information.
-					//SetState(NAS_ERODE_WAITING);
-					m_state = NAS_ERODE_WAITING;
-
-					m_numReachedCheckpoint++;
-					while(!checkpointReached(m_numDataNodes))
-					{
-						pumpNetwork();
-					}
-					numEroded += m_checkpointSum;
-					EndState();
-
-					SetState(NAS_ERODE_COMPLETE);
-					m_pComm->SendControlMessage(m_numDataNodes,
-							APC_ERODE_COMPLETE);
-					completeOperation();
-
-					numEroded += m_pComm->reduce(
-							AssemblyAlgorithms::getNumEroded());
-					if (numEroded > 0 && opt::verbose > 0)
-						printf("Eroded %d tips\n", numEroded);
-					totalEroded += numEroded;
-
-					// All checkpoints are reached, reset the state
-					SetState(NAS_ERODE);					
-
-					if (numEroded == 0)
+					unsigned count = controlErode();
+					if (count == 0)
 						break;
+					total += count;
 				}
-				printf("Eroded %d tips in %d rounds\n",
-						totalEroded, i);
+				printf("Eroded %d tips in %d rounds\n", total, i);
+				EndState();
 
-				// Cleanup any messages that are pending
-				EndState();				
-
-				// erosion has been completed
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;

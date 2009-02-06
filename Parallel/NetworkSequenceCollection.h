@@ -50,9 +50,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// This function is similar to AssemblyAlgorithms::popBubbles but is optimized to hide latency
 		int performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize);
 		int performNetworkPopBubbles(ISequenceCollection* seqCollection);
+
+		unsigned controlErode();
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
-		
+
 		// Perform a network assembly
 		unsigned performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);
 
