@@ -27,8 +27,6 @@ enum MessageOp
 	MO_VOID,
 	MO_ADD,
 	MO_REMOVE,
-	MO_EXIST,
-	MO_DATA,
 };
 
 size_t serializeData(void* ptr, char* buffer, size_t size);

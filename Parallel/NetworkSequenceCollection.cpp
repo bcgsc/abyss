@@ -584,11 +584,6 @@ void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOp
 			remove(seqMsg.m_seq);
 			break;
 		}
-		case MO_EXIST:
-		{
-			assert(false);
-			break;
-		}
 		default:
 		{
 			assert(false);
@@ -1460,11 +1455,6 @@ bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 	{
 		assert(false);
 		return false;
-		/*
-		//PrintDebug(1, "after send\n");
-		ResultPair rp = pumpUntilResult();
-		return rp.forward || rp.reverse;
-		*/
 	}
 }
 

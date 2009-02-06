@@ -112,9 +112,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void completeOperation();
 
-		// Loop over the pumping function while waiting for a result from the network
-		ResultPair pumpUntilResult(); 
-		
 		// run the assembly
 		void run();
 		
