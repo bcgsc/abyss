@@ -27,9 +27,10 @@ static const char *USAGE_MESSAGE =
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
-"  -e, --erode=0|1                erode bases at the ends of blunt contigs\n"
+"      --erode                    erode bases at the ends of blunt contigs\n"
 "                                 that are represented in only one strand\n"
-"                                 Enabled by default. Set to 0 to disable.\n"
+"                                 enabled by default\n"
+"  -e0, --no-erode                do not erode\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record SNPs in FILE\n"
 "  -v, --verbose                  display verbose output\n"
@@ -83,7 +84,8 @@ static const struct option longopts[] = {
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "bubbles",     required_argument, NULL, 'b' },
-	{ "erode",       required_argument, NULL, 'e' },
+	{ "erode",       no_argument,       &erode, 1 },
+	{ "no-erode",    no_argument,       &erode, 0 },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
