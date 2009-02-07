@@ -9,10 +9,9 @@
 struct Contig
 {
 	Sequence seq;
-	bool merged;
-	bool repetitive;
-	bool super;
-	int coverage;
+	unsigned coverage;
+	Contig(Sequence seq, unsigned coverage)
+		: seq(seq), coverage(coverage) { }
 };
 
 typedef std::vector<Contig> ContigVec;

@@ -30,17 +30,9 @@ void readContigVec(std::string file, ContigVec& outVec)
 
 		numID = convertContigIDToLinearNumKey(strID);
 		
-		Contig nc;
-		
 		// Make sure the index is correct
 		assert(numID == outVec.size());
-		nc.seq = seq;
-		nc.merged = false;
-		nc.repetitive = false;
-		nc.super = false;
-		nc.coverage = (int)coverage;
-		outVec.push_back(nc);
-		
+		outVec.push_back(Contig(seq, (unsigned)coverage));
 	}
 	fileHandle.close();
 }
