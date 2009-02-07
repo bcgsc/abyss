@@ -19,18 +19,15 @@ void readContigVec(std::string file, ContigVec& outVec)
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
 	{
 		ContigID strID;
-		LinearNumKey numID;
 		Sequence seq;
 		int length;
 		double coverage;
-
 		parseContigFromFile(fileHandle, strID, seq, length, coverage);
 		assert(!seq.empty());
 		assert(length > 0);
 
-		numID = convertContigIDToLinearNumKey(strID);
-		
-		// Make sure the index is correct
+		LinearNumKey numID = convertContigIDToLinearNumKey(strID);
+		// The numeric ID must match the index in the vector.
 		assert(numID == outVec.size());
 		outVec.push_back(Contig(seq, (unsigned)coverage));
 	}
@@ -40,13 +37,12 @@ void readContigVec(std::string file, ContigVec& outVec)
 void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
 {
 	char head;
-	string comment;
-
 	stream >> head;
 	assert(head == '>');
 	stream >> id;
 	stream >> length;
 	stream >> coverage;
+	string comment;
 	getline(stream, comment);
 	getline(stream, seq);
 	assert(stream.good());
