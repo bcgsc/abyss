@@ -2,7 +2,7 @@
 #define PAIREDALGORITHMS_H
 
 #include "Sequence.h"
-#include <fstream>
+#include <istream>
 #include <string>
 #include <vector>
 
@@ -22,7 +22,7 @@ namespace PairedAlgorithms
 {
 
 void readContigVec(std::string file, ContigVec& outVec);
-void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
+void parseContigFromFile(std::istream& stream, ContigID& id, Sequence& seq, int& length, double& coverage);
 };
 
 

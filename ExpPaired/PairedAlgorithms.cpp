@@ -1,7 +1,9 @@
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <cassert>
+#include <fstream>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -34,18 +36,27 @@ void readContigVec(std::string file, ContigVec& outVec)
 	fileHandle.close();
 }
 
-void parseContigFromFile(std::ifstream& stream, ContigID& id, Sequence& seq, int& length, double& coverage)
+void parseContigFromFile(std::istream& in,
+		ContigID& id, Sequence& seq, int& length, double& coverage)
 {
+	assert(in.good());
+	string header;
+	getline(in, header);
+	id.clear();
+	length = 0;
+	coverage = 0;
 	char head;
-	stream >> head;
+	istringstream s(header);
+   	s >> head >> id >> length >> coverage;
 	assert(head == '>');
-	stream >> id;
-	stream >> length;
-	stream >> coverage;
-	string comment;
-	getline(stream, comment);
-	getline(stream, seq);
-	assert(stream.good());
+
+	assert(in.peek() != '>');
+	seq.clear();
+	while (in.peek() != '>' && !in.eof()) {
+		string line;
+		getline(in, line);
+		seq += line;
+	}
 }
 
 };
