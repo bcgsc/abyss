@@ -8,6 +8,8 @@
 
 using namespace std;
 
+static int opt_verbose = 0;
+
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
 void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq);
 
@@ -23,15 +25,12 @@ int main(int argc, char** argv)
 {
 	if(argc < 3)
 	{
-		std::cout << "Usage: <kmer> <contig file>\n";
+		std::cerr << "Usage: <kmer> <contig file>\n";
 		return 1;
 	}
 	
 	int kmer = atoi(argv[1]);
 	std::string contigFile(argv[2]);
-	
-	//Load the kmer->contig map ends of the contigs
-	std::cout << "File " << contigFile << " kmer " << kmer << std::endl;
 	
 	// Open the contig file
 	ifstream contigFileStream(contigFile.c_str());
@@ -40,7 +39,6 @@ int main(int argc, char** argv)
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUTs[2];
 	
-	int numAdded = 0;
 	while(!contigFileStream.eof() && contigFileStream.peek() != EOF)
 	{
 		ContigID id;
@@ -55,18 +53,12 @@ int main(int argc, char** argv)
 	  
 		contigLUTs[0][seqs[0]] = id;
 		contigLUTs[1][seqs[1]] = id;
-	  	//std::cout << "Added S " << seqs[0].decode() << " AS " << seqs[1].decode() << std::endl;
-		numAdded += 2;
-		if(numAdded % 100000 == 0)
-		{
-			std::cout << "Added " << numAdded << std::endl;
-		}
 	} 
 
 	// Rewind the file stream to the beginning
 	contigFileStream.seekg(ios_base::beg);
 	contigFileStream.clear();
-	ofstream adjOutFile("AdjList.txt");
+	ostream& adjOutFile = cout;
 
 	int numVerts = 0;
 	int numEdges = 0;
@@ -119,7 +111,6 @@ int main(int argc, char** argv)
 					{
 						testSeq = *iter;
 					}
-		  			//std::cout << id << " looking for " << testSeq.decode() << " " << lookuptable_id << std::endl;
 					std::map<PackedSeq, ContigID>::iterator cLUTIter;
 					cLUTIter = contigLUTs[lookuptable_id].find(testSeq);
 					if(cLUTIter != contigLUTs[lookuptable_id].end())
@@ -141,11 +132,11 @@ int main(int argc, char** argv)
 		adjOutFile << "\n";
 		numVerts++;
 	}
-
-	printf("Found %d edges for %d verts\n", numEdges, numVerts);
-  
 	contigFileStream.close();
-	adjOutFile.close();
+
+	if (opt_verbose > 0)
+		fprintf(stderr, "Found %d edges for %d verts\n",
+				numEdges, numVerts);
 } 
 
 void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq)
@@ -164,8 +155,6 @@ void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq)
   
   // Read in the sequence
   getline(inStream, seq);
-  
-  //std::cout << "ID: " << id << " seq: " << seq << std::endl;
 }
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs)

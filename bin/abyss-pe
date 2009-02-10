@@ -38,8 +38,7 @@ clean:
 	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
 
 %.adj: %.fa
-	AdjList $k $<
-	mv AdjList.txt $@
+	AdjList $k $< >$@
 
 # Coverage cutoff
 
