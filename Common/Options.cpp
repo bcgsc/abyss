@@ -21,8 +21,10 @@ PACKAGE " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
 "Assemble all input files, FILE, which may be in FASTA (.fa) format or\n"
-"FASTQ format (.fastq). The contigs are written to contigs.fa.\n"
+"FASTQ format (.fastq).\n"
 "\n"
+"  -o, --out=FILE                 write the contigs to FILE\n"
+"                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
@@ -58,7 +60,12 @@ int trimLen = -1;
 int bubbles = INT_MAX;
 
 /** output contigs path */
-std::string contigsPath;
+std::string contigsPath = "contigs.fa";
+
+/** temporary output contigs path
+ * Each node stores its contigs in its own file temporarily.
+ */
+std::string contigsTempPath;
 
 /** graph output */
 std::string graphPath;
@@ -75,11 +82,12 @@ int verbose = 0;
 /** input FASTA files */
 vector<std::string> inFiles;
 
-static const char *shortopts = "b:e:g:k:l:s:t:v";
+static const char *shortopts = "b:e:g:k:l:o:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "out",         required_argument, NULL, 'o' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
@@ -124,6 +132,8 @@ void parse(int argc, char* const* argv)
 			case 'l':
 				arg >> readLen;
 				break;
+			case 'o':
+				contigsPath = optarg;
 			case 'e':
 				arg >> erode;
 				break;	
@@ -178,12 +188,10 @@ void parse(int argc, char* const* argv)
 	if (trimLen < 0)
 		trimLen = 6 * n;
 
-	if (rank < 0) {
-		contigsPath = "contigs.fa";
-	} else {
+	if (rank >= 0) {
 		ostringstream s;
 		s << "contigs-" << opt::rank << ".fa";
-		contigsPath = s.str();
+		contigsTempPath = s.str();
 	}
 
 	if (snpPath.length() > 0) {

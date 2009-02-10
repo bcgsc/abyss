@@ -13,6 +13,7 @@ namespace opt {
 	extern int trimLen;
 	extern int bubbles;
 	extern std::string contigsPath;
+	extern std::string contigsTempPath;
 	extern std::string graphPath;
 	extern std::string snpPath;
 	extern FILE* snpFile;

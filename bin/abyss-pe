@@ -31,8 +31,7 @@ clean:
 # Single-end assembly
 
 %-1.fa: %.fa
-	ABYSS $v -k$k -l$l -ssnp.fa $^
-	mv contigs.fa $@
+	ABYSS $v -k$k -l$l -ssnp.fa -o $@ $^
 
 %.len: %.fa
 	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
@@ -47,9 +46,8 @@ clean:
 		{ print $$0 "\n" s } }' $< >$@
 
 %-3.fa: %-2.fa
-	ABYSS -k$k -l$l -e0 $^
-	mv contigs.fa $@
-	
+	ABYSS -k$k -l$l -e0 -o $@ $^
+
 # Estimate distances between contigs
 
 %.align: $(lib).fa %.fa
@@ -76,8 +74,7 @@ clean:
 	Overlap $v $k $^ $@
 
 %-4.fa: %-3.fa %-3-overlap.fa
-	ABYSS -k$k -l$l -e0 $^
-	mv contigs.fa $@
+	ABYSS -k$k -l$l -e0 -o $@ $^
 
 # Paired-end assembly
 
