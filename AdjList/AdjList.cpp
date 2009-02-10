@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 		ContigID id;
 		Sequence contigSequence;
 		readIdAndSeq(contigFileStream, id, contigSequence);
-		out << id << " ";
+		out << id;
 		// Generate edges to/from this node
   
 		// Since two contigs are not necessarily built from the same strand, two contigs can both have OUT nodes pointing to each other
@@ -123,12 +123,12 @@ int main(int argc, char** argv)
 				}
 			}
 			// Print the edges
-			out << "[ ";
+			out << " [ ";
 			std::copy(edges.begin(), edges.end(), std::ostream_iterator<SimpleEdgeDesc>(out, " "));
-			out << "] ";
+			out << ']';
 			numEdges += edges.size();
 		}
-		out << "\n";
+		out << '\n';
 		numVerts++;
 	}
 	contigFileStream.close();
