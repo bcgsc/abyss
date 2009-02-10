@@ -44,8 +44,8 @@ if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_ldflags="-L$with_mpi/lib"
 fi
 
-AC_ARG_ENABLE(openmpi, AS_HELP_STRING([--enable-openmpi],
-	[use Open MPI (default is to use LAM/MPI)]))
+AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
+	[use LAM/MPI (default is to use Open MPI)]))
 
 AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
 	[set the maximum k-mer length (default is 64)]),
@@ -57,11 +57,7 @@ AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
 AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
 # Check for the MPI parallel computing library.
-if test "$enable_openmpi"; then
-	AC_CHECK_LIB([mpi], [MPI_Init])
-	AC_DEFINE(OMPI_SKIP_MPICXX, 1,
-			  [Define to disable OpenMPI C++ bindings])
-else
+if test "$enable_lammpi"; then
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([dl], [dlopen])
 	AC_CHECK_LIB([lam], [lam_mutex_lock])
@@ -69,6 +65,10 @@ else
 	AC_LANG_PUSH([C++])
 	AC_CHECK_LIB([lammpi++], [main]) 
 	AC_LANG_POP([C++])
+else
+	AC_CHECK_LIB([mpi], [MPI_Init])
+	AC_DEFINE(OMPI_SKIP_MPICXX, 1,
+			  [Define to disable OpenMPI C++ bindings])
 fi
 AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
