@@ -134,6 +134,7 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'o':
 				contigsPath = optarg;
+				break;
 			case 'e':
 				arg >> erode;
 				break;	
