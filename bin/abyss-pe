@@ -31,7 +31,7 @@ clean:
 # Single-end assembly
 
 %-1.fa: %.fa
-	ABYSS $v -k$k -l$l -b99 -ssnp.fa $^
+	ABYSS $v -k$k -l$l -ssnp.fa $^
 	mv contigs.fa $@
 
 %.len: %.fa

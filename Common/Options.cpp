@@ -55,7 +55,7 @@ int erode = 1;
 int trimLen = -1;
 
 /** Maximum number of bubble-popping rounds. */
-int bubbles = 5;
+int bubbles = INT_MAX;
 
 /** output contigs path */
 std::string contigsPath;
