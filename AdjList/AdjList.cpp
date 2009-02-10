@@ -1,10 +1,9 @@
 #include "PackedSeq.h"
 #include "PairUtils.h"
 #include <cerrno>
-#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <stdlib.h>
 
 using namespace std;
 
@@ -135,8 +134,8 @@ int main(int argc, char** argv)
 	contigFileStream.close();
 
 	if (opt_verbose > 0)
-		fprintf(stderr, "Found %d edges for %d verts\n",
-				numEdges, numVerts);
+		cerr << "vertices: " << numVerts << " "
+			"edges: " << numEdges << endl;
 } 
 
 void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq)
