@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 	// Rewind the file stream to the beginning
 	contigFileStream.seekg(ios_base::beg);
 	contigFileStream.clear();
-	ostream& adjOutFile = cout;
+	ostream& out = cout;
 
 	int numVerts = 0;
 	int numEdges = 0;
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 		ContigID id;
 		Sequence contigSequence;
 		readIdAndSeq(contigFileStream, id, contigSequence);
-		adjOutFile << id << " ";
+		out << id << " ";
 		// Generate edges to/from this node
   
 		// Since two contigs are not necessarily built from the same strand, two contigs can both have OUT nodes pointing to each other
@@ -124,12 +124,12 @@ int main(int argc, char** argv)
 				}
 			}
 			// Print the edges
-			adjOutFile << "[ ";
-			std::copy(edges.begin(), edges.end(), std::ostream_iterator<SimpleEdgeDesc>(adjOutFile, " "));
-			adjOutFile << "] ";
+			out << "[ ";
+			std::copy(edges.begin(), edges.end(), std::ostream_iterator<SimpleEdgeDesc>(out, " "));
+			out << "] ";
 			numEdges += edges.size();
 		}
-		adjOutFile << "\n";
+		out << "\n";
 		numVerts++;
 	}
 	contigFileStream.close();
