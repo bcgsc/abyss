@@ -239,6 +239,8 @@ int main(int argc, const char *argv[])
 				findOverlap(er.refID, dir, *iter);
 		}
 	}
+	assert(in.eof());
+	in.close();
 
 	for (map<ContigNode, string>::const_iterator i
 			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
@@ -246,9 +248,11 @@ int main(int argc, const char *argv[])
 		if (unambiguous(t)) {
 			stats.overlap++;
 			out << i->second;
+			assert(out.good());
 		} else
 			stats.ambiguous++;
 	}
+	out.close();
 
 	cout << "Overlap: " << stats.overlap << "\n"
 		"No overlap: " << stats.none << "\n"
