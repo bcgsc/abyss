@@ -2,6 +2,8 @@
 #include "PairUtils.h"
 #include "Stats.h"
 #include <cassert>
+#include <cerrno>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -103,13 +105,23 @@ int main(int argc, char** argv)
 	processContigs(kmer, alignFile, contigLens, empiricalPDF);
 	
 	return 0;
-} 
+}
+
+static void assert_open(std::ifstream& f, const std::string& p)
+{
+	if (f.is_open())
+		return;
+	std::cerr << p << ": " << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
 
 void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)
 {
 	(void)pdf;
-	AlignExtractor extractor(alignFile);
-	
+	ifstream in(alignFile.c_str());
+	assert_open(in, alignFile);
+	AlignExtractor extractor(in);
+
 	// open the output file
 	std::ofstream outFile("EstimatedLinks.txt");
 	
@@ -231,7 +243,8 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 			std::cout << "Processed " << count << " contigs\n";
 		}
 	}
-	
+
+	in.close();
 	outFile.close();
 }
 
