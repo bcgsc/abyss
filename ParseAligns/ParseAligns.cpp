@@ -138,11 +138,7 @@ int main(int argc, char* const* argv)
 		exit(EXIT_FAILURE);
 	}
 
-	std::ofstream pairedAlignFile("PairAligns.txt");
-	std::ofstream distanceList("DistanceList.txt");
-
 	ReadAlignMap alignTable;
-
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
 				bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
@@ -150,8 +146,12 @@ int main(int argc, char* const* argv)
 		cout << "Reading from standard input..." << endl;
 		readAlignments(cin, &alignTable);
 	}
+	cout << "Align table has " << alignTable.size() << " entries\n";
 
-	std::cout << "Align table has " << alignTable.size() << " entries\n";
+	ofstream pairedAlignFile("PairAligns.txt");
+	assert(pairedAlignFile.is_open());
+	ofstream distanceList("DistanceList.txt");
+	assert(distanceList.is_open());
 
 	int numDifferent = 0;
 	int numSame = 0;
@@ -197,6 +197,7 @@ int main(int argc, char* const* argv)
 										*pairAlignIter);
 								if (size > INT_MIN) {
 									distanceList << size << "\n";
+									assert(distanceList.good());
 									numSame++;
 								} else
 									numInvalid++;
@@ -207,6 +208,7 @@ int main(int argc, char* const* argv)
 							// Print the alignment and the swapped alignment
 							pairedAlignFile << currID << " " << *refAlignIter << " " << pairID << " " << *pairAlignIter << "\n";
 							pairedAlignFile << pairID << " " << *pairAlignIter << " " << currID << " " << *refAlignIter << "\n";
+							assert(pairedAlignFile.good());
 							numDifferent++;
 						}							
 					}
