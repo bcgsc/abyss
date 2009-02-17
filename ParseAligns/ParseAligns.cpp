@@ -6,14 +6,53 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <getopt.h>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 using namespace std;
 
+#define PROGRAM "ParseAligns"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+"Write read pairs that align to the same contig to DistanceList.txt.\n"
+"Write read pairs that align to different contigs to PairAligns.txt.\n"
+"Alignments may be in FILE(s) or standard input.\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+namespace opt {
+	int k;
+	int verbose;
+}
+
+static const char* shortopts = "k:";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",    required_argument, NULL, 'k' },
+	{ "help",    no_argument,       NULL, OPT_HELP },
+	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
+
+
 // TYPEDEFS
 typedef std::map<std::string, AlignmentVector> ReadAlignMap;
-
 
 // FUNCTIONS
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
@@ -71,16 +110,33 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 
 int main(int argc, char* const* argv)
 {
-
-	if(argc < 2)
-	{
-		std::cout << "Usage: <kmer size> <list of files to parse>\n";
-		exit(1);
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
 
-	int kmer = atoi(argv[1]);
-	assert(kmer > 0);
-	int optind = 2;
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	std::ofstream pairedAlignFile("PairAligns.txt");
 	std::ofstream distanceList("DistanceList.txt");
@@ -118,8 +174,10 @@ int main(int argc, char* const* argv)
 			// The reads are allowed to span more than one contig, but
 			// at least one of the two reads must span no more than
 			// two contigs.
-			bool isRefUnique = checkUniqueAlignments(kmer, iter->second);
-			bool isPairUnique = checkUniqueAlignments(kmer, pairIter->second);
+			bool isRefUnique = checkUniqueAlignments(opt::k,
+					iter->second);
+			bool isPairUnique = checkUniqueAlignments(opt::k,
+					pairIter->second);
 			const unsigned MAX_SPAN = 2;
 			if ((iter->second.size() <= MAX_SPAN
 						|| pairIter->second.size() <= MAX_SPAN)
