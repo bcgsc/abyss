@@ -57,14 +57,12 @@ clean:
 	ParseAligns $k $<
 	mv PairAligns.txt $*.pair
 	mv DistanceList.txt $*.frag
-
-%.pairs: %.pair
-	sort -nk2,2 $< -o $@
+	sort -nk2,2 $*.pair -o $*.pair
 
 %.hist: %.frag
 	awk '{x[$$1]++} END {for (i in x) print i, x[i]}' $< |sort -n >$@
 
-%.dist: %.pairs %.len %.hist
+%.dist: %.pair %.len %.hist
 	DistanceEst $k $^ 100 $n
 	mv EstimatedLinks.txt $@
 
