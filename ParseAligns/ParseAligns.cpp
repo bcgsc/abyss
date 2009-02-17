@@ -1,9 +1,11 @@
 #include "Aligner.h"
 #include "PairUtils.h"
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <string>
 
@@ -17,7 +19,6 @@ typedef std::map<std::string, AlignmentVector> ReadAlignMap;
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
 
 std::string makePairID(std::string refID);
-void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable);
 
 /**
  * Return the size of the fragment demarcated by the specified
@@ -33,7 +34,41 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	const Alignment& b = a0.isRC ? a0 : a1;
 	return b.targetAtQueryEnd() - a.targetAtQueryStart();
 }
-								
+
+// Read in the alignments file into the table
+static void readAlignments(istream& in, ReadAlignMap* pout)
+{
+	ReadAlignMap& out = *pout;
+	string line;
+	for (string line; getline(in, line);) {
+		stringstream s(line);
+		string readID;
+		s >> readID;
+		AlignmentVector& alignments = out[readID];
+		assert(alignments.empty());
+		for (Alignment ali; s >> ali;)
+			alignments.push_back(ali);
+	}
+	assert(in.eof());
+}
+
+static void assert_open(ifstream& f, const string& p)
+{
+	if (!f.is_open()) {
+		cerr << p << ": " << strerror(errno) << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void readAlignmentsFile(string path, ReadAlignMap* pout)
+{
+	cout << "Reading `" << path << "'..." << endl;
+	ifstream fin(path.c_str());
+	assert_open(fin, path);
+	readAlignments(fin, pout);
+	fin.close();
+}
+
 int main(int argc, char* const* argv)
 {
 
@@ -42,24 +77,26 @@ int main(int argc, char* const* argv)
 		std::cout << "Usage: <kmer size> <list of files to parse>\n";
 		exit(1);
 	}
-	
+
 	int kmer = atoi(argv[1]);
 	assert(kmer > 0);
-	int numFiles = argc - 2;
-	
+	int optind = 2;
+
 	std::ofstream pairedAlignFile("PairAligns.txt");
-	std::ofstream distanceList("DistanceList.txt");	
-	
+	std::ofstream distanceList("DistanceList.txt");
+
 	ReadAlignMap alignTable;
-	
-	for(int fileIdx = 0; fileIdx < numFiles; ++fileIdx)
-	{
-		std::string file(argv[fileIdx+2]);
-		readAlignmentsFile(file, alignTable);
+
+	if (optind < argc) {
+		for_each(argv + optind, argv + argc,
+				bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
+	} else {
+		cout << "Reading from standard input..." << endl;
+		readAlignments(cin, &alignTable);
 	}
-	
+
 	std::cout << "Align table has " << alignTable.size() << " entries\n";
-				
+
 	int numDifferent = 0;
 	int numSame = 0;
 	int numInvalid = 0;
@@ -190,42 +227,6 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 	//printf("\n");
 	delete [] coverage;
 	return unique;
-}
-
-static void assert_open(std::ifstream& f, const std::string& p)
-{
-	if (f.is_open())
-		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
-	exit(EXIT_FAILURE);
-}
-
-// Read in the alignments file into the table
-void readAlignmentsFile(std::string filename, ReadAlignMap& alignTable)
-{
-	std::cout << "Reading " << filename << std::endl;
-	std::ifstream fileStream(filename.c_str());
-	assert_open(fileStream, filename);
-
-	std::string line;
-	while(getline(fileStream,line))
-	{
-		// Parse the id
-		std::string readID;
-		
-		std::stringstream ss(line);
-		
-		ss >> readID;
-		
-		// parse the alignments
-		Alignment ali;
-		while(ss >> ali)
-		{
-			alignTable[readID].push_back(ali);
-		}
-	}
-	
-	fileStream.close();
 }
 
 // Change the id into the id of its pair
