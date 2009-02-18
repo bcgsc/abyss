@@ -30,6 +30,7 @@ static SimpleContigGraph contigGraph;
 
 static struct {
 	unsigned overlap;
+	unsigned scaffold;
 	unsigned none;
 	unsigned tooshort;
 	unsigned homopolymer;
@@ -161,6 +162,7 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 		const Estimate& est, unsigned overlap, bool mask)
 {
 	if (overlap > 0) {
+		stats.overlap++;
 		int dist = -overlap;
 		int diff = dist - est.distance;
 		if (fabs(diff) > allowedError(est.stdDev))
@@ -169,6 +171,7 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 				<< dist << ' ' << est << endl;
 		return overlapContigs(t, h, overlap, mask);
 	} else if (opt_scaffold) {
+		stats.scaffold++;
 		if (opt_verbose > 0)
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
 		string gap = est.distance <= 0 ? string("-")
@@ -292,7 +295,6 @@ int main(int argc, const char *argv[])
 			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
 		const ContigNode& t = i->first;
 		if (unambiguous(t)) {
-			stats.overlap++;
 			out << mergeContigs(t, i->second);
 			assert(out.good());
 		} else
@@ -301,6 +303,7 @@ int main(int argc, const char *argv[])
 	out.close();
 
 	cout << "Overlap: " << stats.overlap << "\n"
+		"Scaffold: " << stats.scaffold << "\n"
 		"No overlap: " << stats.none << "\n"
 		"Insignificant (<" << MINIMUM_OVERLAP << "bp): "
 		<< stats.tooshort << "\n"
