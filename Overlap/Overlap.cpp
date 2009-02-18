@@ -23,6 +23,7 @@ static const unsigned MINIMUM_OVERLAP = 5;
 static unsigned opt_k;
 static unsigned opt_verbose;
 static bool opt_mask;
+static bool opt_scaffold;
 
 static ContigVec contigs;
 static SimpleContigGraph contigGraph;
@@ -124,23 +125,28 @@ static unsigned findOverlap(const ContigNode& t_id,
 			stats.homopolymer++;
 		else
 			stats.motif++;
-		if (opt_mask) {
-			// Allow the merge and mask the overlapping sequence.
-			mask = true;
-		} else
-			return 0;
+		mask = true;
 	}
 
 	return overlaps[0];
+}
+
+static string newContig(const ContigNode& t, const ContigNode& h,
+		int dist, const string& seq)
+{
+	static unsigned n;
+	unsigned id = contigs.size() + n++;
+	ostringstream s;
+	s << '>' << id << ' ' << seq.length() << " 0 "
+		<< t << ' ' << h << ' ' << dist << '\n'
+		<< seq << '\n';
+	return s.str();
 }
 
 static string overlapContigs(const ContigNode& t_id,
 		const ContigNode& h_id,
 		unsigned overlap, bool mask)
 {
-	static unsigned n;
-	unsigned id = contigs.size() + n++;
-
 	Sequence t = t_id.sequence();
 	Sequence h = h_id.sequence();
 	unsigned gap = opt_k - 1 - overlap;
@@ -149,11 +155,7 @@ static string overlapContigs(const ContigNode& t_id,
 	string b = h.substr(overlap, gap);
 	if (mask)
 		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
-	ostringstream s;
-	s << '>' << id << ' ' << opt_k-1 + gap << " 0 "
-		<< t_id << ' ' << h_id << " -" << overlap << '\n'
-		<< a << o << b << '\n';
-	return s.str();
+	return newContig(t_id, h_id, -overlap, a + o + b);
 }
 
 static map<ContigNode, set<ContigNode> > g_edges;
@@ -162,22 +164,43 @@ static map<ContigNode, string> g_overlaps;
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
 {
-	if (est.distance >= 0)
+	if (est.distance >= 0 && !opt_scaffold)
 		return;
 	ContigNode ref(refID, SENSE);
 	ContigNode pair(est.nID, est.isRC ? ANTISENSE : SENSE);
 	const ContigNode& t = dir == SENSE ? ref : pair;
 	const ContigNode& h = dir == SENSE ? pair : ref;
-	unsigned overlap = 0;
-	bool mask = false;
-	if (t.outDegree() == 0 && h.inDegree() == 0)
-		overlap = findOverlap(t, h, mask);
+	if (t.outDegree() > 0 || h.inDegree() > 0)
+		return;
+	bool mask;
+	unsigned overlap = findOverlap(t, h, mask);
+	string merged;
 	if (overlap > 0) {
-		g_edges[t].insert(h);
-		g_edges[~h].insert(~t);
-		if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
-			g_overlaps[t] = overlapContigs(t, h, overlap, mask);
-	}
+		if (mask && !opt_mask)
+			return;
+		int dist = -overlap;
+		int diff = dist - est.distance;
+		if (fabs(diff) > allowedError(est.stdDev))
+			cerr << "warning: overlap does not agree with estimate\n"
+				<< '\t' << t << ',' << h << ' '
+				<< dist << ' ' << est << endl;
+		merged = overlapContigs(t, h, overlap, mask);
+	} else if (opt_scaffold) {
+		if (opt_verbose > 0)
+			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
+		string gap = est.distance <= 0 ? string("-")
+			: string(est.distance, 'N');
+		string ts = t.sequence();
+		string hs = h.sequence();
+		merged = newContig(t, h, est.distance,
+				ts.substr(ts.length()-opt_k) + gap
+				+ hs.substr(0, opt_k));
+	} else
+		return;
+	g_edges[t].insert(h);
+	g_edges[~h].insert(~t);
+	if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
+		g_overlaps[t] = merged;
 }
 
 static bool unambiguous(const ContigNode &t)
