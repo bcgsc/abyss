@@ -22,6 +22,7 @@ static const unsigned MINIMUM_OVERLAP = 5;
 
 static unsigned opt_k;
 static unsigned opt_verbose;
+static bool opt_mask;
 
 static ContigVec contigs;
 static SimpleContigGraph contigGraph;
@@ -123,12 +124,11 @@ static unsigned findOverlap(const ContigNode& t_id,
 			stats.homopolymer++;
 		else
 			stats.motif++;
-#if 0
-		// Allow the merge and mask the overlapping sequence.
-		mask = true;
-#else
-		return 0;
-#endif
+		if (opt_mask) {
+			// Allow the merge and mask the overlapping sequence.
+			mask = true;
+		} else
+			return 0;
 	}
 
 	return overlaps[0];
