@@ -84,21 +84,6 @@ int main(int argc, char** argv)
 	delete pContigGraph;
 }
 
-/** Return the allowed error for the given estimate. */
-unsigned allowedError(float stddev)
-{
-	/** The number of standard deviations. */
-	const int NUM_SIGMA = 3;
-
-	/**
-	 * Additional constant error. The error expected that does not
-	 * vary with the number of samples.
-	 */
-	const unsigned CONSTANT_ERROR = 6;
-
-	return (unsigned)ceilf(NUM_SIGMA * stddev + CONSTANT_ERROR);
-}
-
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost)
 {
 	int totalAttempted = 0;

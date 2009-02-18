@@ -3,6 +3,7 @@
 
 #include "DirectedGraph.h"
 #include "Stats.h" // for Histogram
+#include <cmath> // for ceilf
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -74,6 +75,22 @@ struct Estimate
 		return in;
 	}  	
 };
+
+/** Return the allowed error for the given estimate. */
+static inline unsigned allowedError(float stddev)
+{
+	/** The number of standard deviations. */
+	const int NUM_SIGMA = 3;
+
+	/**
+	 * Additional constant error. The error expected that does not
+	 * vary with the number of samples.
+	 */
+	const unsigned CONSTANT_ERROR = 6;
+
+	return (unsigned)ceilf(NUM_SIGMA * stddev + CONSTANT_ERROR);
+}
+
 
 typedef std::string ContigID;
 
