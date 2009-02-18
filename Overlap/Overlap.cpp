@@ -144,8 +144,7 @@ static string newContig(const ContigNode& t, const ContigNode& h,
 }
 
 static string overlapContigs(const ContigNode& t_id,
-		const ContigNode& h_id,
-		unsigned overlap, bool mask)
+		const ContigNode& h_id, unsigned overlap, bool mask)
 {
 	Sequence t = t_id.sequence();
 	Sequence h = h_id.sequence();
@@ -158,8 +157,50 @@ static string overlapContigs(const ContigNode& t_id,
 	return newContig(t_id, h_id, -overlap, a + o + b);
 }
 
+static string mergeContigs(const ContigNode& t, const ContigNode& h,
+		const Estimate& est, unsigned overlap, bool mask)
+{
+	if (overlap > 0) {
+		int dist = -overlap;
+		int diff = dist - est.distance;
+		if (fabs(diff) > allowedError(est.stdDev))
+			cerr << "warning: overlap does not agree with estimate\n"
+				<< '\t' << t << ',' << h << ' '
+				<< dist << ' ' << est << endl;
+		return overlapContigs(t, h, overlap, mask);
+	} else if (opt_scaffold) {
+		if (opt_verbose > 0)
+			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
+		string gap = est.distance <= 0 ? string("-")
+			: string(est.distance, 'N');
+		string ts = t.sequence();
+		string hs = h.sequence();
+		return newContig(t, h, est.distance,
+				ts.substr(ts.length()-opt_k) + gap
+				+ hs.substr(0, opt_k));
+	} else
+		assert(false);
+}
+
+struct Overlap {
+	const ContigNode h;
+	const Estimate est;
+	const unsigned overlap;
+	const bool mask;
+	Overlap(const ContigNode& h,
+			const Estimate& est, unsigned overlap, bool mask)
+		: h(h), est(est), overlap(overlap), mask(mask) { }
+};
+
+static string mergeContigs(const ContigNode& t,
+		const Overlap& overlap)
+{
+	return mergeContigs(t, overlap.h, overlap.est, overlap.overlap,
+			overlap.mask);
+}
+
 static map<ContigNode, set<ContigNode> > g_edges;
-static map<ContigNode, string> g_overlaps;
+static map<ContigNode, Overlap> g_overlaps;
 
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
@@ -174,33 +215,15 @@ static void findOverlap(
 		return;
 	bool mask;
 	unsigned overlap = findOverlap(t, h, mask);
-	string merged;
-	if (overlap > 0) {
-		if (mask && !opt_mask)
-			return;
-		int dist = -overlap;
-		int diff = dist - est.distance;
-		if (fabs(diff) > allowedError(est.stdDev))
-			cerr << "warning: overlap does not agree with estimate\n"
-				<< '\t' << t << ',' << h << ' '
-				<< dist << ' ' << est << endl;
-		merged = overlapContigs(t, h, overlap, mask);
-	} else if (opt_scaffold) {
-		if (opt_verbose > 0)
-			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
-		string gap = est.distance <= 0 ? string("-")
-			: string(est.distance, 'N');
-		string ts = t.sequence();
-		string hs = h.sequence();
-		merged = newContig(t, h, est.distance,
-				ts.substr(ts.length()-opt_k) + gap
-				+ hs.substr(0, opt_k));
-	} else
+	if (mask && !opt_mask)
 		return;
-	g_edges[t].insert(h);
-	g_edges[~h].insert(~t);
-	if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
-		g_overlaps[t] = merged;
+	if (overlap > 0 || opt_scaffold) {
+		g_edges[t].insert(h);
+		g_edges[~h].insert(~t);
+		if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
+			g_overlaps.insert(make_pair(t,
+						Overlap(h, est, overlap, mask)));
+	}
 }
 
 static bool unambiguous(const ContigNode &t)
@@ -265,12 +288,12 @@ int main(int argc, const char *argv[])
 	assert(in.eof());
 	in.close();
 
-	for (map<ContigNode, string>::const_iterator i
+	for (map<ContigNode, Overlap>::const_iterator i
 			= g_overlaps.begin(); i != g_overlaps.end(); ++i) {
 		const ContigNode& t = i->first;
 		if (unambiguous(t)) {
 			stats.overlap++;
-			out << i->second;
+			out << mergeContigs(t, i->second);
 			assert(out.good());
 		} else
 			stats.ambiguous++;
