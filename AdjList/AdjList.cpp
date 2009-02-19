@@ -8,10 +8,13 @@
 
 using namespace std;
 
-static int opt_verbose = 0;
+namespace opt {
+	static int k;
+	static int verbose;
+}
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
-void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq);
+void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq);
 
 static void assert_open(std::ifstream& f, const std::string& p)
 {
@@ -31,6 +34,20 @@ struct ContigEndSeq {
 		: id(id), l(l), r(r) { }
 };
 
+void readContigs(istream& in, vector<ContigEndSeq>& contigs)
+{
+	while (!in.eof() && in.peek() != EOF) {
+		ContigID id;
+		Sequence seq;
+		readIdAndSeq(in, id, seq);
+		assert(in.good());
+		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
+		PackedSeq seqr = seq.substr(0, opt::k);
+		contigs.push_back(ContigEndSeq(id, seql, seqr));
+	}
+	assert(in.eof());
+}
+
 int main(int argc, char** argv)
 {
 	if(argc < 3)
@@ -39,30 +56,22 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	int kmer = atoi(argv[1]);
+	opt::k = atoi(argv[1]);
 	string contigPath(argv[2]);
 
+	vector<ContigEndSeq> contigs;
 	ifstream contigFileStream(contigPath.c_str());
 	assert_open(contigFileStream, contigPath);
+	readContigs(contigFileStream, contigs);
+	contigFileStream.close();
 
 	// Generate a k-mer -> contig lookup table for all the contig ends
-	vector<ContigEndSeq> contigs;
 	std::map<PackedSeq, ContigID> contigLUTs[2];
-
-	while(!contigFileStream.eof() && contigFileStream.peek() != EOF)
-	{
-		ContigID id;
-		Sequence seq;
-		readIdAndSeq(contigFileStream, id, seq);
-		assert(contigFileStream.good());
-		PackedSeq seql = seq.substr(seq.length() - kmer, kmer);
-		PackedSeq seqr = seq.substr(0, kmer);
-		contigs.push_back(ContigEndSeq(id, seql, seqr));
-		contigLUTs[0][seql] = id;
-		contigLUTs[1][seqr] = id;
+	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
+			i != contigs.end(); ++i) {
+		contigLUTs[0][i->l] = i->id;
+		contigLUTs[1][i->r] = i->id;
 	}
-	assert(contigFileStream.eof());
-	contigFileStream.close();
 
 	ostream& out = cout;
 	int numVerts = 0;
@@ -127,12 +136,12 @@ int main(int argc, char** argv)
 		numVerts++;
 	}
 
-	if (opt_verbose > 0)
+	if (opt::verbose > 0)
 		cerr << "vertices: " << numVerts << " "
 			"edges: " << numEdges << endl;
 } 
 
-void readIdAndSeq(ifstream& inStream, ContigID& id, Sequence& seq)
+void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq)
 {
 
   // Read the contig id and the sequence
