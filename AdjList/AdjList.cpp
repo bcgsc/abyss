@@ -6,14 +6,47 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <getopt.h>
 #include <iostream>
 
 using namespace std;
+
+#define PROGRAM "AdjList"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+"Find all contigs that overlap by exactly k-1 bases. Contigs may be read\n"
+"from FILE(s) or standard input. Output is written to standard output.\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
 	static int k;
 	static int verbose;
 }
+
+static const char* shortopts = "k:v";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",    required_argument, NULL, 'k' },
+	{ "verbose", no_argument,       NULL, 'v' },
+	{ "help",    no_argument,       NULL, OPT_HELP },
+	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
 void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq);
@@ -61,13 +94,33 @@ static void readContigsFile(string path,
 
 int main(int argc, char** argv)
 {
-	if (argc < 2) {
-		std::cerr << "Usage: <kmer> <contig file>\n";
-		exit(EXIT_FAILURE);
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
 
-	opt::k = atoi(argv[1]);
-	int optind = 2;
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
