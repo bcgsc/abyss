@@ -1,9 +1,11 @@
 #include "PackedSeq.h"
 #include "PairUtils.h"
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
 
 using namespace std;
@@ -34,7 +36,7 @@ struct ContigEndSeq {
 		: id(id), l(l), r(r) { }
 };
 
-static void readContigs(istream& in, vector<ContigEndSeq>& contigs)
+static void readContigs(istream& in, vector<ContigEndSeq>* pContigs)
 {
 	while (!in.eof() && in.peek() != EOF) {
 		ContigID id;
@@ -43,33 +45,36 @@ static void readContigs(istream& in, vector<ContigEndSeq>& contigs)
 		assert(in.good());
 		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
 		PackedSeq seqr = seq.substr(0, opt::k);
-		contigs.push_back(ContigEndSeq(id, seql, seqr));
+		pContigs->push_back(ContigEndSeq(id, seql, seqr));
 	}
 	assert(in.eof());
 }
 
-static void readContigsPath(const string& path,
+static void readContigsFile(string path,
 		vector<ContigEndSeq>* pContigs)
 {
 	ifstream fin(path.c_str());
 	assert_open(fin, path);
-	readContigs(fin, *pContigs);
+	readContigs(fin, pContigs);
 	fin.close();
 }
 
 int main(int argc, char** argv)
 {
-	if(argc < 3)
-	{
+	if (argc < 2) {
 		std::cerr << "Usage: <kmer> <contig file>\n";
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
 	opt::k = atoi(argv[1]);
-	string contigPath(argv[2]);
+	int optind = 2;
 
 	vector<ContigEndSeq> contigs;
-	readContigsPath(contigPath, &contigs);
+	if (optind < argc) {
+		for_each(argv + optind, argv + argc,
+				bind2nd(ptr_fun(readContigsFile), &contigs));
+	} else
+		readContigs(cin, &contigs);
 
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUTs[2];
