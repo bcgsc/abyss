@@ -30,11 +30,12 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ LEN DIST OUT\n"
+"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ LEN DIST\n"
 "Find overlaps between blunt contigs that have negative distance estimates.\n"
-"Write the small contigs that fill in the gaps to OUT.\n"
+"Output the small contigs that fill in the gaps.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -48,14 +49,16 @@ namespace opt {
 	static int verbose;
 	static int mask;
 	static int scaffold;
+	string out;
 }
 
-static const char* shortopts = "k:v";
+static const char* shortopts = "k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -296,6 +299,7 @@ int main(int argc, char *const argv[])
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'o': arg >> opt::out; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -311,8 +315,18 @@ int main(int argc, char *const argv[])
 		die = true;
 	}
 
-	if (argc - optind < 5) {
+	if (opt::out.empty()) {
+		cerr << PROGRAM ": " << "missing -o,--out option\n";
+		die = true;
+	}
+
+	if (argc - optind < 4) {
 		cerr << "Overlap: missing arguments\n";
+		die = true;
+	}
+
+	if (argc - optind > 4) {
+		cerr << "Overlap: too many arguments\n";
 		die = true;
 	}
 
@@ -326,12 +340,11 @@ int main(int argc, char *const argv[])
 	string adjPath(argv[optind++]);
 	string lenPath(argv[optind++]);
 	string estPath(argv[optind++]);
-	string outPath(argv[optind++]);
 
 	PairedAlgorithms::readContigVec(contigPath, contigs);
 	loadGraphFromAdjFile(&contigGraph, lenPath, adjPath);
 
-	ofstream out(outPath.c_str());
+	ofstream out(opt::out.c_str());
 	assert(out.is_open());
 	ifstream in(estPath.c_str());
 	assert_open(in, estPath);
