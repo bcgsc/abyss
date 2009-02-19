@@ -3,6 +3,7 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
+#include "config.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
+#include <getopt.h>
 #include <map>
 #include <set>
 #include <string>
@@ -18,6 +20,26 @@
 #include <vector>
 
 using namespace std;
+
+#define PROGRAM "Overlap"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ LEN DIST OUT\n"
+"Find overlaps between blunt contigs that have negative distance estimates.\n"
+"Write the small contigs that fill in the gaps to OUT.\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 static const unsigned MINIMUM_OVERLAP = 5;
 
@@ -27,6 +49,18 @@ namespace opt {
 	static int mask;
 	static int scaffold;
 }
+
+static const char* shortopts = "k:v";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",    required_argument, NULL, 'k' },
+	{ "verbose", no_argument,       NULL, 'v' },
+	{ "help",    no_argument,       NULL, OPT_HELP },
+	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
 
 static ContigVec contigs;
 static SimpleContigGraph contigGraph;
@@ -253,27 +287,46 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, char *const argv[])
 {
-	if (argc < 7) {
-		cerr << "Overlap: missing arguments\n"
-			"usage: Overlap K CONTIGS ADJ LEN DIST OUT\n";
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
+	}
+
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (argc - optind < 5) {
+		cerr << "Overlap: missing arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
-	if (string(argv[1]) == "-v") {
-		opt::verbose++;
-		argv++;
-		argc--;
-	}
-
-	istringstream(argv[1]) >> opt::k;
-	assert(opt::k > 0);
-	string contigPath(argv[2]);
-	string adjPath(argv[3]);
-	string lenPath(argv[4]);
-	string estPath(argv[5]);
-	string outPath(argv[6]);
+	string contigPath(argv[optind++]);
+	string adjPath(argv[optind++]);
+	string lenPath(argv[optind++]);
+	string estPath(argv[optind++]);
+	string outPath(argv[optind++]);
 
 	PairedAlgorithms::readContigVec(contigPath, contigs);
 	loadGraphFromAdjFile(&contigGraph, lenPath, adjPath);
