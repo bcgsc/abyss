@@ -34,7 +34,7 @@ struct ContigEndSeq {
 		: id(id), l(l), r(r) { }
 };
 
-void readContigs(istream& in, vector<ContigEndSeq>& contigs)
+static void readContigs(istream& in, vector<ContigEndSeq>& contigs)
 {
 	while (!in.eof() && in.peek() != EOF) {
 		ContigID id;
@@ -46,6 +46,15 @@ void readContigs(istream& in, vector<ContigEndSeq>& contigs)
 		contigs.push_back(ContigEndSeq(id, seql, seqr));
 	}
 	assert(in.eof());
+}
+
+static void readContigsPath(const string& path,
+		vector<ContigEndSeq>* pContigs)
+{
+	ifstream fin(path.c_str());
+	assert_open(fin, path);
+	readContigs(fin, *pContigs);
+	fin.close();
 }
 
 int main(int argc, char** argv)
@@ -60,10 +69,7 @@ int main(int argc, char** argv)
 	string contigPath(argv[2]);
 
 	vector<ContigEndSeq> contigs;
-	ifstream contigFileStream(contigPath.c_str());
-	assert_open(contigFileStream, contigPath);
-	readContigs(contigFileStream, contigs);
-	contigFileStream.close();
+	readContigsPath(contigPath, &contigs);
 
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUTs[2];
