@@ -1,5 +1,6 @@
 #include "PackedSeq.h"
 #include "PairUtils.h"
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
@@ -20,6 +21,16 @@ static void assert_open(std::ifstream& f, const std::string& p)
 	exit(EXIT_FAILURE);
 }
 
+/** A contig ID and its end sequences. */
+struct ContigEndSeq {
+	ContigID id;
+	PackedSeq l;
+	PackedSeq r;
+	ContigEndSeq(const ContigID& id,
+			const PackedSeq& l, const PackedSeq& r)
+		: id(id), l(l), r(r) { }
+};
+
 int main(int argc, char** argv)
 {
 	if(argc < 3)
@@ -27,63 +38,47 @@ int main(int argc, char** argv)
 		std::cerr << "Usage: <kmer> <contig file>\n";
 		return 1;
 	}
-	
+
 	int kmer = atoi(argv[1]);
-	std::string contigFile(argv[2]);
-	
-	// Open the contig file
-	ifstream contigFileStream(contigFile.c_str());
-	assert_open(contigFileStream, contigFile);
-	
+	string contigPath(argv[2]);
+
+	ifstream contigFileStream(contigPath.c_str());
+	assert_open(contigFileStream, contigPath);
+
 	// Generate a k-mer -> contig lookup table for all the contig ends
+	vector<ContigEndSeq> contigs;
 	std::map<PackedSeq, ContigID> contigLUTs[2];
-	
+
 	while(!contigFileStream.eof() && contigFileStream.peek() != EOF)
 	{
 		ContigID id;
-		Sequence contigSequence;
-		readIdAndSeq(contigFileStream, id, contigSequence);
-	      
-		// Generate the end->id mapping
-		const unsigned numEnds = 2;
-		PackedSeq seqs[numEnds];
-		seqs[0] = PackedSeq(contigSequence.substr(contigSequence.length() - kmer, kmer)); //SENSE
-		seqs[1] = PackedSeq(contigSequence.substr(0, kmer)); // ANTISENSE
-	  
-		contigLUTs[0][seqs[0]] = id;
-		contigLUTs[1][seqs[1]] = id;
-	} 
+		Sequence seq;
+		readIdAndSeq(contigFileStream, id, seq);
+		assert(contigFileStream.good());
+		PackedSeq seql = seq.substr(seq.length() - kmer, kmer);
+		PackedSeq seqr = seq.substr(0, kmer);
+		contigs.push_back(ContigEndSeq(id, seql, seqr));
+		contigLUTs[0][seql] = id;
+		contigLUTs[1][seqr] = id;
+	}
+	assert(contigFileStream.eof());
+	contigFileStream.close();
 
-	// Rewind the file stream to the beginning
-	contigFileStream.seekg(ios_base::beg);
-	contigFileStream.clear();
 	ostream& out = cout;
-
 	int numVerts = 0;
 	int numEdges = 0;
+	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
+			i != contigs.end(); ++i) {
+		const ContigID& id = i->id;
+		const PackedSeq seqs[2] = { i->l, i->r };
 
-	// Build the edges and write them out
-	while(!contigFileStream.eof() && contigFileStream.peek() != EOF)
-	{
-		ContigID id;
-		Sequence contigSequence;
-		readIdAndSeq(contigFileStream, id, contigSequence);
 		out << id;
-		// Generate edges to/from this node
-  
-		// Since two contigs are not necessarily built from the same strand, two contigs can both have OUT nodes pointing to each other
-		// this situation will get cleaned up when the links are resolved/merged
+
 		const unsigned numEnds = 2;
-		PackedSeq seqs[numEnds];
-		seqs[0] = PackedSeq(contigSequence.substr(contigSequence.length() - kmer, kmer)); //SENSE
-		seqs[1] = PackedSeq(contigSequence.substr(0, kmer)); // ANTISENSE
-		  
-		ExtensionRecord extRec;
-		  
 		for(unsigned idx = 0; idx < numEnds; idx++)
 		{
 			std::vector<SimpleEdgeDesc> edges;
-			PackedSeq& currSeq = seqs[idx];
+			const PackedSeq& currSeq = seqs[idx];
 			extDirection dir;
 			dir = (idx == 0) ? SENSE : ANTISENSE;
 
@@ -131,7 +126,6 @@ int main(int argc, char** argv)
 		out << '\n';
 		numVerts++;
 	}
-	contigFileStream.close();
 
 	if (opt_verbose > 0)
 		cerr << "vertices: " << numVerts << " "
