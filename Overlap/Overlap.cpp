@@ -35,6 +35,8 @@ static const char *USAGE_MESSAGE =
 "Output the small contigs that fill in the gaps.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
+"                        default is 5 bases\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -42,22 +44,22 @@ static const char *USAGE_MESSAGE =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-static const unsigned MINIMUM_OVERLAP = 5;
-
 namespace opt {
 	static int k;
+	static unsigned minimum_overlap = 5;
 	static int verbose;
 	static int mask;
 	static int scaffold;
 	string out;
 }
 
-static const char* shortopts = "k:o:v";
+static const char* shortopts = "k:m:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "min",     required_argument, NULL, 'm' },
 	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -154,7 +156,7 @@ static unsigned findOverlap(const ContigNode& t_id,
 		return 0;
 	}
 
-	if (overlaps[0] < MINIMUM_OVERLAP) {
+	if (overlaps[0] < opt::minimum_overlap) {
 		stats.tooshort++;
 		return 0;
 	}
@@ -299,6 +301,7 @@ int main(int argc, char *const argv[])
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'm': arg >> opt::minimum_overlap; break;
 			case 'o': arg >> opt::out; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -374,7 +377,7 @@ int main(int argc, char *const argv[])
 	cout << "Overlap: " << stats.overlap << "\n"
 		"Scaffold: " << stats.scaffold << "\n"
 		"No overlap: " << stats.none << "\n"
-		"Insignificant (<" << MINIMUM_OVERLAP << "bp): "
+		"Insignificant (<" << opt::minimum_overlap << "bp): "
 		<< stats.tooshort << "\n"
 		"Homopolymer: " << stats.homopolymer << "\n"
 		"Motif: " << stats.motif << "\n"
