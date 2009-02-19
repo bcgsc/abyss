@@ -39,12 +39,13 @@ namespace opt {
 	int verbose;
 }
 
-static const char* shortopts = "k:";
+static const char* shortopts = "k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
