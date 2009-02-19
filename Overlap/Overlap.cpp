@@ -16,14 +16,17 @@
 #include <string>
 #include <sstream>
 #include <vector>
+
 using namespace std;
 
 static const unsigned MINIMUM_OVERLAP = 5;
 
-static unsigned opt_k;
-static unsigned opt_verbose;
-static bool opt_mask;
-static bool opt_scaffold;
+namespace opt {
+	static int k;
+	static int verbose;
+	static int mask;
+	static int scaffold;
+}
 
 static ContigVec contigs;
 static SimpleContigGraph contigGraph;
@@ -101,7 +104,7 @@ static unsigned findOverlap(const ContigNode& t_id,
 			overlaps.push_back(overlap);
 	}
 
-	if (opt_verbose > 0) {
+	if (opt::verbose > 0) {
 		cout << t_id << '\t' << h_id;
 		for (vector<unsigned>::const_iterator i = overlaps.begin();
 				i != overlaps.end(); ++i)
@@ -149,8 +152,8 @@ static string overlapContigs(const ContigNode& t_id,
 {
 	Sequence t = t_id.sequence();
 	Sequence h = h_id.sequence();
-	unsigned gap = opt_k - 1 - overlap;
-	string a = t.substr(t.length()-opt_k+1, gap);
+	unsigned gap = opt::k - 1 - overlap;
+	string a = t.substr(t.length() - opt::k+1, gap);
 	string o = h.substr(0, overlap);
 	string b = h.substr(overlap, gap);
 	if (mask)
@@ -170,17 +173,17 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 				<< '\t' << t << ',' << h << ' '
 				<< dist << ' ' << est << endl;
 		return overlapContigs(t, h, overlap, mask);
-	} else if (opt_scaffold) {
+	} else if (opt::scaffold) {
 		stats.scaffold++;
-		if (opt_verbose > 0)
+		if (opt::verbose > 0)
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
 		string gap = est.distance <= 0 ? string("-")
 			: string(est.distance, 'N');
 		string ts = t.sequence();
 		string hs = h.sequence();
 		return newContig(t, h, est.distance,
-				ts.substr(ts.length()-opt_k) + gap
-				+ hs.substr(0, opt_k));
+				ts.substr(ts.length() - opt::k) + gap
+				+ hs.substr(0, opt::k));
 	} else
 		assert(false);
 }
@@ -208,7 +211,7 @@ static map<ContigNode, Overlap> g_overlaps;
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
 {
-	if (est.distance >= 0 && !opt_scaffold)
+	if (est.distance >= 0 && !opt::scaffold)
 		return;
 	ContigNode ref(refID, SENSE);
 	ContigNode pair(est.nID, est.isRC ? ANTISENSE : SENSE);
@@ -218,9 +221,9 @@ static void findOverlap(
 		return;
 	bool mask;
 	unsigned overlap = findOverlap(t, h, mask);
-	if (mask && !opt_mask)
+	if (mask && !opt::mask)
 		return;
-	if (overlap > 0 || opt_scaffold) {
+	if (overlap > 0 || opt::scaffold) {
 		g_edges[t].insert(h);
 		g_edges[~h].insert(~t);
 		if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
@@ -259,13 +262,13 @@ int main(int argc, const char *argv[])
 	}
 
 	if (string(argv[1]) == "-v") {
-		opt_verbose++;
+		opt::verbose++;
 		argv++;
 		argc--;
 	}
 
-	istringstream(argv[1]) >> opt_k;
-	assert(opt_k > 0);
+	istringstream(argv[1]) >> opt::k;
+	assert(opt::k > 0);
 	string contigPath(argv[2]);
 	string adjPath(argv[3]);
 	string lenPath(argv[4]);
