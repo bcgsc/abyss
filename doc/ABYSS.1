@@ -1,12 +1,15 @@
-.TH ABYSS "1" "August 2008" "abyss (ABySS) 1.0" "User Commands"
+.TH ABYSS "1" "February 2009" "ABYSS (ABySS) 1.0.3" "User Commands"
 .SH NAME
-abyss \- assemble short reads into contigs
+ABYSS \- assemble short reads into contigs
 .SH SYNOPSIS
-.B abyss
+.B ABYSS
 [\fIOPTION\fR]... \fIFILE\fR...
 .SH DESCRIPTION
 Assemble all input files, FILE, which may be in FASTA (.fa) format or
-FASTQ format (.fastq). The contigs are written to contigs.fa.
+FASTQ format (.fastq).
+.TP
+\fB\-o\fR, \fB\-\-out\fR=\fIFILE\fR
+write the contigs to FILE
 .TP
 \fB\-k\fR, \fB\-\-kmer\fR=\fIKMER_SIZE\fR
 k\-mer size
@@ -20,10 +23,12 @@ maximum length of dangling edges to trim
 \fB\-b\fR, \fB\-\-bubbles\fR=\fIN\fR
 maximum number of bubble\-popping rounds
 .TP
-\fB\-e\fR, \fB\-\-erode\fR=\fIN\fR
-erode N bases from the ends of contigs.
-Yields slightly shorter contigs, but fewer
-errors at the ends of contigs.
+\fB\-\-erode\fR
+erode bases at the ends of blunt contigs that are represented in only
+one strand (enabled by default)
+.TP
+\fB\-e0\fR, \fB\-\-no-erode\fR
+do not erode
 .TP
 \fB\-g\fR, \fB\-\-graph\fR=\fIFILE\fR
 generate a graph in dot format
@@ -44,4 +49,4 @@ Written by Jared Simpson and Shaun Jackman.
 .SH "REPORTING BUGS"
 Report bugs to <abyss@bcgsc.ca>.
 .SH COPYRIGHT
-Copyright 2008 Canada's Michael Smith Genome Science Centre
+Copyright 2009 Canada's Michael Smith Genome Science Centre
