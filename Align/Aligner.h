@@ -49,10 +49,6 @@ struct Alignment
 	{
 		// flip the contig start position
 		contig_start_pos = contigLength - (contig_start_pos + align_length);
-		
-		// flip the read start pos
-		read_start_pos = calculateReverseReadStart(read_start_pos, read_length, align_length);
-		
 		// flip the rc bit
 		isRC = !isRC;
 	}
