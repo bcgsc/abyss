@@ -10,47 +10,18 @@
 
 using namespace std;
 
-typedef std::vector<int> IntVector;
 struct PairedData
 {
 	AlignPairVec pairVec[2];
 };
 
-typedef std::map<ContigID, PairedData> PairDataMap;
+typedef map<ContigID, PairedData> PairDataMap;
 
 int estimateDistance(int kmer, int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
 
-void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
-
-/*
-// Go through a list of pairings and provide a maximum likelihood estimate of the distance
-int main(int argc, char** argv)
-{
-	(void)argc;
-	std::string distanceCountFile(argv[1]);
-	std::string distanceListFile(argv[2]);
-	PDF empiricalPDF = loadPDF(distanceCountFile, 350);
-	
-	std::ifstream inFile(distanceListFile.c_str());
-	const int num_samples = atoi(argv[3]);
-	
-	IntVector distances;
-	
-	for(int i = 0; i < num_samples; ++i)
-	{
-		int d;
-		inFile >> d;
-		if(d < 200)
-			distances.push_back(d);
-	}
-	
-	KSTestCont(distances, empiricalPDF);
-	
-	return 1;
-}
-*/
+void processContigs(int kmer, string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 int length_cutoff = - 1;
 unsigned number_of_pairs_threshold;
@@ -59,23 +30,23 @@ int main(int argc, char** argv)
 {
 	if(argc < 7)
 	{
-		std::cout << "Usage: <kmer> <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
+		cerr << "Usage: <kmer> <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
 		exit(1);
 	}
 	
 	int kmer = atoi(argv[1]);
-	std::string alignFile(argv[2]);
-	std::string contigLengthFile(argv[3]);
-	std::string distanceCountFile(argv[4]);
+	string alignFile(argv[2]);
+	string contigLengthFile(argv[3]);
+	string distanceCountFile(argv[4]);
 	length_cutoff = atoi(argv[5]);
 	number_of_pairs_threshold = atoi(argv[6]);
 
-	std::cout << "Alignments: " << alignFile
+	cout << "Alignments: " << alignFile
 		<< " Contigs: " << contigLengthFile
 		<< " Distribution: " << distanceCountFile
 		<< " Length cutoff: " << length_cutoff
 		<< " Num pairs cutoff: " << number_of_pairs_threshold
-		<< std::endl;
+		<< endl;
 
 	// Load the pdf
 	Histogram distanceHist = loadHist(distanceCountFile);
@@ -84,10 +55,6 @@ int main(int argc, char** argv)
 	// These cases result from misalignments
 	double trimAmount = 0.0001f;
 	Histogram trimmedHist = distanceHist.trim(trimAmount);
-	
-	//std::cout << "Trimmed hist: \n";
-	//trimmedHist.print();
-	
 	PDF empiricalPDF(trimmedHist);
 	
 	// Load the length map
@@ -100,23 +67,23 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-static void assert_open(std::ifstream& f, const std::string& p)
+static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
+	cerr << p << ": " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 
-void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf)
+void processContigs(int kmer, string alignFile,
+		const ContigLengthVec& lengthVec, const PDF& pdf)
 {
-	(void)pdf;
 	ifstream in(alignFile.c_str());
 	assert_open(in, alignFile);
 	AlignExtractor extractor(in);
 
-	// open the output file
-	std::ofstream outFile("EstimatedLinks.txt");
+	ofstream outFile("EstimatedLinks.txt");
+	assert(outFile.is_open());
 	
 	int count = 0;
 	//Extract the align records from the file, one contig's worth at a time
@@ -124,7 +91,6 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 	
 	while(!stop)
 	{
-		
 		AlignPairVec currPairs;
 		stop = extractor.extractContigAlignments(currPairs);
 
@@ -145,10 +111,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 
 		outFile << refContigID << " :";
 
-		//std::cout << "Contig " << refContigID << " has " << currPairs.size() << " alignments\n";
-
-		// Seperate the pairings by direction (pairs aligning in the same comp as the contig
-		// are sense pairs) and by the contig they align to
+		// Seperate the pairings by direction (pairs aligning in the
+		// same comp as the contig are sense pairs) and by the contig
+		// they align to
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 			// If this is the second direction, write a seperator
@@ -224,11 +189,11 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 			}
 		}
 		outFile << "\n";
+		assert(outFile.good());
+
 		count++;
-		if(count % 10000 == 0)
-		{
-			std::cout << "Processed " << count << " contigs\n";
-		}
+		if (count % 10000 == 0)
+			cout << "Processed " << count << " contigs\n";
 	}
 
 	in.close();
@@ -242,7 +207,7 @@ int estimateDistance(int kmer, int refLen, int pairLen,
 {
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
-	IntVector distanceList;
+	vector<int> distanceList;
 	for (AlignPairVec::const_iterator it = pairVec.begin();
 			it != pairVec.end(); ++it) {
 		const Alignment& ref = it->refRec;
