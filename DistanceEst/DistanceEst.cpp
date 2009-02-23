@@ -170,12 +170,7 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 			// For each contig that is paired, compute the distance
 			for (PairDataMap::const_iterator pdIter = dataMap.begin();
 					pdIter != dataMap.end(); ++pdIter) {
-				ContigID pairID = pdIter->first;
-				LinearNumKey pairNumID = convertContigIDToLinearNumKey(pairID);
-				// get the contig lengths
-				int refContigLength = lookupLength(lengthVec, refNumericID);
-				int pairContigLength = lookupLength(lengthVec, pairNumID);
-				
+				const ContigID& pairID = pdIter->first;
 				// Check if the pairs are in a valid orientation
 				if (pdIter->second.pairVec[0].size()
 							> number_of_pairs_threshold
@@ -206,9 +201,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					bool sameOrientation = dirIdx != pairDirIdx;
 
 					Estimate est;
-					est.nID = pairNumID;
+					est.nID = convertContigIDToLinearNumKey(pairID);
 					est.distance = estimateDistance(kmer,
-							refContigLength, pairContigLength,
+							refLength, lengthVec.at(est.nID),
 							dirIdx, pairVec, sameOrientation, pdf,
 							est.numPairs);
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
