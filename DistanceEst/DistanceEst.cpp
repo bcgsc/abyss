@@ -27,8 +27,8 @@ typedef std::map<ContigID, PairedData> PairDataMap;
 
 // FUNCTIONS
 EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
-		size_t dirIdx, AlignPairVec& pairData, bool sameOrientation,
-		const PDF& pdf);
+		size_t dirIdx, const AlignPairVec& pairData,
+		bool sameOrientation, const PDF& pdf);
 void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
@@ -163,8 +163,8 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 				outFile << " |";
 
 			PairDataMap dataMap;
-			for(AlignPairVec::iterator iter = currPairs.begin(); iter != currPairs.end(); ++iter)
-			{
+			for (AlignPairVec::const_iterator iter = currPairs.begin();
+					iter != currPairs.end(); ++iter) {
 				if(iter->refRec.isRC == (bool)dirIdx)
 				{
 					PairedData& pd = dataMap[iter->pairRec.contig];
@@ -175,8 +175,8 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 			}
 
 			// For each contig that is paired, compute the distance
-			for(PairDataMap::iterator pdIter = dataMap.begin(); pdIter != dataMap.end(); ++pdIter)
-			{
+			for (PairDataMap::const_iterator pdIter = dataMap.begin();
+					pdIter != dataMap.end(); ++pdIter) {
 				ContigID pairID = pdIter->first;
 				LinearNumKey pairNumID = convertContigIDToLinearNumKey(pairID);
 				// get the contig lengths
@@ -201,7 +201,7 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 
 				unsigned pairDirIdx = pdIter->second.pairVec[0].size()
 					> number_of_pairs_threshold ? 0 : 1;
-				AlignPairVec& pairVec
+				const AlignPairVec& pairVec
 					= pdIter->second.pairVec[pairDirIdx];
 				unsigned numPairs = pairVec.size();
 				if (numPairs > number_of_pairs_threshold) {
@@ -249,30 +249,30 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 }
 
 // Estimate the distances between the contigs
-EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, AlignPairVec& pairVec, bool sameOrientation,
-		const PDF& pdf)
+EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
+		size_t dirIdx, const AlignPairVec& pairVec,
+		bool sameOrientation, const PDF& pdf)
 {
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
 	IntVector distanceList;
-	for (AlignPairVec::iterator apIter = pairVec.begin();
-			apIter != pairVec.end(); ++apIter) {
-		if (!sameOrientation)
-			apIter->pairRec.flipTarget(pairLen);
+	for (AlignPairVec::const_iterator it = pairVec.begin();
+			it != pairVec.end(); ++it) {
+		const Alignment& ref = it->refRec;
+		Alignment pair = sameOrientation ? it->pairRec
+			: it->pairRec.flipTarget(pairLen);
 		int distance;
 		if (dirIdx == 0) {
 			// refContig is on the left, offset pairContig by the
 			// length of refContig
-			int refPos = apIter->refRec.targetAtQueryStart();
-			int pairPos = refLen
-				+ apIter->pairRec.targetAtQueryEnd();
+			int refPos = ref.targetAtQueryStart();
+			int pairPos = refLen + pair.targetAtQueryEnd();
 			distance = pairPos - refPos;
 		} else {
 			// pairContig is on the left, offset refContig by the
 			// length of pairContig
-			int pairPos = apIter->pairRec.targetAtQueryStart();
-			int refPos = pairLen
-				+ apIter->refRec.targetAtQueryEnd();
+			int pairPos = pair.targetAtQueryStart();
+			int refPos = pairLen + ref.targetAtQueryEnd();
 			distance = refPos - pairPos;
 		}
 		assert(distance > 0);

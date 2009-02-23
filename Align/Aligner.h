@@ -47,11 +47,13 @@ struct Alignment
 	/** This alignment is converted to the corresponding alignment of
 	 * the same query to the reverse complement of the target.
 	 */
-	void flipTarget(unsigned tlength)
+	Alignment flipTarget(unsigned tlength) const
 	{
+		Alignment rc(*this);
 		unsigned tend = contig_start_pos + align_length;
-		contig_start_pos = tlength - tend;
-		isRC = !isRC;
+		rc.contig_start_pos = tlength - tend;
+		rc.isRC = !isRC;
+		return rc;
 	}
 
 	static int calculateReverseReadStart(int read_start_pos,
