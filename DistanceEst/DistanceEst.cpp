@@ -133,11 +133,11 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 		
 		// From this point all ids will be interpreted as integers
 		// They must be strictly > 0 and contiguous
-		LinearNumKey refNumericID = convertContigIDToLinearNumKey(refContigID.c_str());
-		
-		//std::cout << "Ref ctg " << refNumericID << "\n";
+		LinearNumKey refNumericID
+			= convertContigIDToLinearNumKey(refContigID);
+
 		// Only process contigs that are a reasonable length
-		int refLength = lookupLength(lengthVec, refNumericID);
+		int refLength = lengthVec.at(refNumericID);
 		if(refLength < length_cutoff)
 		{
 			continue;

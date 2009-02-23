@@ -87,7 +87,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, s
 	while (inStream >> id
 			&& getline(inStream, adjRecord)) {
 		SimpleContigData data;
-		data.length = lookupLength(*pLengthVec, id);
+		data.length = pLengthVec->at(id);
 		pGraph->addVertex(id, data);
 
 		numAdded++;
@@ -193,12 +193,6 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 		lengthVec.push_back(len);
 	}
 	contigLenStream.close();
-}
-
-int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
-{
-	assert(id < lengthVec.size());
-	return lengthVec[id];
 }
 
 //

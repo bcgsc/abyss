@@ -152,7 +152,6 @@ void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleConti
 
 // Length files
 void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
-int lookupLength(const ContigLengthVec& lengthMap, const LinearNumKey& id);
 
 // Hist loader
 Histogram loadHist(std::string distCountFile);
