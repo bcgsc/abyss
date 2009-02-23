@@ -252,23 +252,13 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx, AlignPairVec& pairVec, bool sameOrientation,
 		const PDF& pdf)
 {
-	// Calculate the distance list for this contig
-	// The provisional distances are calculated as if the contigs overlap perfectly by k-1 bases
-	// The maximum likelihood estimate will refine this
-
-	// Setup the offsets
-	if(!sameOrientation)
-	{
-		// Flip all the positions of the pair aligns
-		for (AlignPairVec::iterator apIter = pairVec.begin();
-				apIter != pairVec.end(); ++apIter) {
-			apIter->pairRec.flipTarget(pairLen);
-		}
-	}
-
+	// The provisional fragment sizes are calculated as if the contigs
+	// were perfectly adjacent with no overlap or gap.
 	IntVector distanceList;
 	for (AlignPairVec::iterator apIter = pairVec.begin();
 			apIter != pairVec.end(); ++apIter) {
+		if (!sameOrientation)
+			apIter->pairRec.flipTarget(pairLen);
 		int distance;
 		if (dirIdx == 0) {
 			// refContig is on the left, offset pairContig by the
