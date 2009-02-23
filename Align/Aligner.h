@@ -44,20 +44,23 @@ struct Alignment
 		return targetAtQueryStart() + read_length;
 	}
 
-	// flip the alignment with respect to the contig size
-	void flip(int contigLength)
+	/** This alignment is converted to the corresponding alignment of
+	 * the same query to the reverse complement of the target.
+	 */
+	void flipTarget(unsigned tlength)
 	{
-		// flip the contig start position
-		contig_start_pos = contigLength - (contig_start_pos + align_length);
-		// flip the rc bit
+		unsigned tend = contig_start_pos + align_length;
+		contig_start_pos = tlength - tend;
 		isRC = !isRC;
 	}
-	
-	static int calculateReverseReadStart(int pos, int readLen, int alignLength)
+
+	static int calculateReverseReadStart(int read_start_pos,
+			int read_length, int align_length)
 	{
-		return (readLen - pos) - alignLength;
+		unsigned qend = read_start_pos + align_length;
+		return read_length - qend;
 	}
-	
+
 	// input a record
 	friend std::istream& operator>> (std::istream& in, Alignment& a)
 	{

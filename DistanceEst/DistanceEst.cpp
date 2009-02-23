@@ -262,10 +262,8 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen, size_t dirIdx
 		// Flip all the positions of the pair aligns
 		for (AlignPairVec::iterator apIter = pairVec.begin();
 				apIter != pairVec.end(); ++apIter) {
-			apIter->pairRec.flip(pairLen);
-			//apIter->pairRec.start = (pairLen - (apIter->pairRec.start + apIter->pairRec.length)); 
+			apIter->pairRec.flipTarget(pairLen);
 		}
-		
 	}
 
 	IntVector distanceList;
