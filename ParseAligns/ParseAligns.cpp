@@ -70,9 +70,9 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	assert(a0.contig == a1.contig);
 	if (a0.isRC == a1.isRC)
 		return INT_MIN;
-	const Alignment& a = a0.isRC ? a1 : a0;
-	const Alignment& b = a0.isRC ? a0 : a1;
-	return b.targetAtQueryEnd() - a.targetAtQueryStart();
+	const Alignment& f = a0.isRC ? a1 : a0;
+	const Alignment& r = a0.isRC ? a0 : a1;
+	return r - f;
 }
 
 // Read in the alignments file into the table

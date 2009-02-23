@@ -44,6 +44,15 @@ struct Alignment
 		return targetAtQueryStart() + read_length;
 	}
 
+	/** Return the distance between the specified alignments.
+	 * May be used to calculate fragment size when the alignments are
+	 * mate pairs.
+	 */
+	int operator-(const Alignment& o) const
+	{
+		return targetAtQueryEnd() - o.targetAtQueryStart();
+	}
+
 	/** This alignment is converted to the corresponding alignment of
 	 * the same query to the reverse complement of the target.
 	 */

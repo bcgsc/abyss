@@ -261,20 +261,9 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
 		const Alignment& ref = it->refRec;
 		Alignment pair = sameOrientation ? it->pairRec
 			: it->pairRec.flipTarget(pairLen);
-		int distance;
-		if (dirIdx == 0) {
-			// refContig is on the left, offset pairContig by the
-			// length of refContig
-			int refPos = ref.targetAtQueryStart();
-			int pairPos = refLen + pair.targetAtQueryEnd();
-			distance = pairPos - refPos;
-		} else {
-			// pairContig is on the left, offset refContig by the
-			// length of pairContig
-			int pairPos = pair.targetAtQueryStart();
-			int refPos = pairLen + ref.targetAtQueryEnd();
-			distance = refPos - pairPos;
-		}
+		int distance = dirIdx == 0
+			? refLen + (pair - ref)
+			: pairLen + (ref - pair);
 		assert(distance > 0);
 		distanceList.push_back(distance);
 	}
