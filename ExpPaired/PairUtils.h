@@ -22,7 +22,7 @@ struct Estimate
 {
 	LinearNumKey nID;
 	int distance;
-	int numPairs;
+	unsigned numPairs;
 	float stdDev;
 	bool isRC;
 	

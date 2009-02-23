@@ -16,19 +16,12 @@ struct PairedData
 	AlignPairVec pairVec[2];
 };
 
-struct EstimateReturn
-{
-	int distance;
-	bool isRC;
-	unsigned numPairs;
-};
-
 typedef std::map<ContigID, PairedData> PairDataMap;
 
-// FUNCTIONS
-EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
+int estimateDistance(int kmer, int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
-		bool sameOrientation, const PDF& pdf);
+		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
+
 void processContigs(int kmer, std::string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
 /*
@@ -212,24 +205,23 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 					// the opposite orientation.
 					bool sameOrientation = dirIdx != pairDirIdx;
 
-					EstimateReturn er = estimateDistance(kmer,
+					Estimate est;
+					est.nID = pairNumID;
+					est.distance = estimateDistance(kmer,
 							refContigLength, pairContigLength,
-							dirIdx, pairVec, sameOrientation, pdf);
+							dirIdx, pairVec, sameOrientation, pdf,
+							est.numPairs);
+					est.stdDev = pdf.getSampleStdDev(est.numPairs);
+					est.isRC = !sameOrientation;
 
-					if (er.numPairs > number_of_pairs_threshold) {
-						Estimate est;
-						est.nID = pairNumID;
-						est.distance = er.distance;
-						est.numPairs = er.numPairs;
-						est.stdDev = pdf.getSampleStdDev(er.numPairs);
-						est.isRC = er.isRC;
+					if (est.numPairs > number_of_pairs_threshold) {
 						outFile << ' ' << est;
 					} else {
 						cerr << "warning: "
 							<< refContigID << (dirIdx ? '-' : '+')
 							<< ','
-							<< pairID << (er.isRC ? '-' : '+') << ' '
-							<< er.numPairs << " of "
+							<< pairID << (est.isRC ? '-' : '+') << ' '
+							<< est.numPairs << " of "
 							<< numPairs << " pairs"
 							" fit the expected distribution\n";
 					}
@@ -249,9 +241,9 @@ void processContigs(int kmer, std::string alignFile, const ContigLengthVec& leng
 }
 
 // Estimate the distances between the contigs
-EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
+int estimateDistance(int kmer, int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairVec,
-		bool sameOrientation, const PDF& pdf)
+		bool sameOrientation, const PDF& pdf, unsigned& numPairs)
 {
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
@@ -268,13 +260,6 @@ EstimateReturn estimateDistance(int kmer, int refLen, int pairLen,
 		distanceList.push_back(distance);
 	}
 	
-	// Perform the max-likelihood est
-	unsigned numPairs;
-	int dist = maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(), distanceList, pdf, numPairs);
-	
-	EstimateReturn ret;
-	ret.isRC = !sameOrientation;
-	ret.distance = dist;
-	ret.numPairs = numPairs;
-	return ret;
+	return maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(),
+			distanceList, pdf, numPairs);
 }
