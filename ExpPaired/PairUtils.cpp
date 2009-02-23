@@ -170,7 +170,6 @@ void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleConti
 //
 void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 {
-	std::cout << "Loading lengths\n";
 	ifstream contigLenStream(contigLenFile.c_str());
 	assert(contigLenStream.is_open());
 
@@ -185,15 +184,15 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 		
 		if(id != lengthVec.size())
 		{
-			std::cout << id << " is out of sequence (size: " << lengthVec.size() << ")\n";
+			cerr << id << " is out of sequence (size: "
+				<< lengthVec.size() << ")\n";
 			assert(false);
+			exit(EXIT_FAILURE);
 		}
 
 		lengthVec.push_back(len);
-
 	}
 	contigLenStream.close();
-	std::cout << "Done loading lengths\n";
 }
 
 int lookupLength(const ContigLengthVec& lengthVec, const LinearNumKey& id)
