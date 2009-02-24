@@ -22,7 +22,7 @@ endif
 all: $(lib)-contigs.fa
 
 clean:
-	rm -f *.len *.adj *.align *.pair *.frag *.pairs *.hist *.dist *.path
+	rm -f *.len *.adj *.pair *.frag *.hist *.dist *.path
 
 .PHONY: all clean
 .DELETE_ON_ERROR:
