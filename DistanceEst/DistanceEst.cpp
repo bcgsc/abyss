@@ -67,11 +67,12 @@ struct PairedData
 
 typedef map<ContigID, PairedData> PairDataMap;
 
-int estimateDistance(int kmer, int refLen, int pairLen,
+int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
 
-void processContigs(int kmer, string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
+void processContigs(string alignFile,
+		const ContigLengthVec& lengthVec, const PDF& pdf);
 
 
 int main(int argc, char** argv)
@@ -138,7 +139,7 @@ int main(int argc, char** argv)
 	loadContigLengths(contigLengthFile, contigLens);
 
 	// Estimate the distances between contigs, one at a time
-	processContigs(opt::k, alignFile, contigLens, empiricalPDF);
+	processContigs(alignFile, contigLens, empiricalPDF);
 
 	return 0;
 }
@@ -151,7 +152,7 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-void processContigs(int kmer, string alignFile,
+void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf)
 {
 	ifstream in(alignFile.c_str());
@@ -243,7 +244,7 @@ void processContigs(int kmer, string alignFile,
 
 					Estimate est;
 					est.nID = convertContigIDToLinearNumKey(pairID);
-					est.distance = estimateDistance(kmer,
+					est.distance = estimateDistance(
 							refLength, lengthVec.at(est.nID),
 							dirIdx, pairVec, sameOrientation, pdf,
 							est.numPairs);
@@ -274,7 +275,7 @@ void processContigs(int kmer, string alignFile,
 }
 
 // Estimate the distances between the contigs
-int estimateDistance(int kmer, int refLen, int pairLen,
+int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairVec,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs)
 {
@@ -292,7 +293,7 @@ int estimateDistance(int kmer, int refLen, int pairLen,
 		assert(distance > 0);
 		distanceList.push_back(distance);
 	}
-	
-	return maxLikelihoodEst(-kmer+1, pdf.getMaxIdx(),
+
+	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
 			distanceList, pdf, numPairs);
 }
