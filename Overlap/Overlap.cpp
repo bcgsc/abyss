@@ -324,12 +324,12 @@ int main(int argc, char *const argv[])
 	}
 
 	if (argc - optind < 4) {
-		cerr << "Overlap: missing arguments\n";
+		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
 
 	if (argc - optind > 4) {
-		cerr << "Overlap: too many arguments\n";
+		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
 
