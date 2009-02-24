@@ -5,10 +5,60 @@
 #include <cerrno>
 #include <cstdlib>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <string>
 
 using namespace std;
+
+#define PROGRAM "DistanceEst"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... LEN HIST PAIR\n"
+"Estimate distances between contigs using paired-end alignments.\n"
+"  LEN   lengths of the contigs\n"
+"  HIST  distribution of fragments size\n"
+"  PAIR  alignments between contigs\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -n, --npairs=NPAIRS   minimum number of pairs\n"
+"  -s, --seed-length=L   minimum length of the seed contigs\n"
+"  -o, --out=FILE        write result to FILE\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+namespace opt {
+	static unsigned k;
+	static unsigned npairs;
+	static unsigned seedLen = 100;
+	static int verbose;
+	static string out;
+}
+
+static const char* shortopts = "k:n:o:s:v";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",        required_argument, NULL, 'k' },
+	{ "npairs",      required_argument, NULL, 'n' },
+	{ "out",         required_argument, NULL, 'o' },
+	{ "seed-length", required_argument, NULL, 's' },
+	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "help",        no_argument,       NULL, OPT_HELP },
+	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
+
 
 struct PairedData
 {
@@ -23,29 +73,67 @@ int estimateDistance(int kmer, int refLen, int pairLen,
 
 void processContigs(int kmer, string alignFile, const ContigLengthVec& lengthVec, const PDF& pdf);
 
-int length_cutoff = - 1;
-unsigned number_of_pairs_threshold;
 
 int main(int argc, char** argv)
 {
-	if(argc < 7)
-	{
-		cerr << "Usage: <kmer> <SORTED alignFile> <length file> <distance count file> <length cutoff> <num pairs cutoff>\n";
-		exit(1);
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'n': arg >> opt::npairs; break;
+			case 'o': arg >> opt::out; break;
+			case 's': arg >> opt::seedLen; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
-	
-	int kmer = atoi(argv[1]);
-	string alignFile(argv[2]);
-	string contigLengthFile(argv[3]);
-	string distanceCountFile(argv[4]);
-	length_cutoff = atoi(argv[5]);
-	number_of_pairs_threshold = atoi(argv[6]);
+
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (opt::npairs <= 0) {
+		cerr << PROGRAM ": missing -n,--npairs option\n";
+		die = true;
+	}
+
+	if (opt::out.empty()) {
+		cerr << PROGRAM ": missing -o,--out option\n";
+		die = true;
+	}
+
+	if (argc - optind < 3) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	} else if (argc - optind > 3) {
+		cerr << PROGRAM ": too many arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	string contigLengthFile(argv[optind++]);
+	string distanceCountFile(argv[optind++]);
+	string alignFile(argv[optind++]);
 
 	cout << "Alignments: " << alignFile
 		<< " Contigs: " << contigLengthFile
 		<< " Distribution: " << distanceCountFile
-		<< " Length cutoff: " << length_cutoff
-		<< " Num pairs cutoff: " << number_of_pairs_threshold
+		<< " Seed length: " << opt::seedLen
+		<< " Num pairs: " << opt::npairs
 		<< endl;
 
 	// Load the pdf
@@ -62,8 +150,8 @@ int main(int argc, char** argv)
 	loadContigLengths(contigLengthFile, contigLens);
 
 	// Estimate the distances between contigs, one at a time
-	processContigs(kmer, alignFile, contigLens, empiricalPDF);
-	
+	processContigs(opt::k, alignFile, contigLens, empiricalPDF);
+
 	return 0;
 }
 
@@ -82,9 +170,9 @@ void processContigs(int kmer, string alignFile,
 	assert_open(in, alignFile);
 	AlignExtractor extractor(in);
 
-	ofstream outFile("EstimatedLinks.txt");
+	ofstream outFile(opt::out.c_str());
 	assert(outFile.is_open());
-	
+
 	int count = 0;
 	//Extract the align records from the file, one contig's worth at a time
 	bool stop = false;
@@ -103,11 +191,9 @@ void processContigs(int kmer, string alignFile,
 			= convertContigIDToLinearNumKey(refContigID);
 
 		// Only process contigs that are a reasonable length
-		int refLength = lengthVec.at(refNumericID);
-		if(refLength < length_cutoff)
-		{
+		unsigned refLength = lengthVec.at(refNumericID);
+		if (refLength < opt::seedLen)
 			continue;
-		}
 
 		outFile << refContigID << " :";
 
@@ -137,10 +223,9 @@ void processContigs(int kmer, string alignFile,
 					pdIter != dataMap.end(); ++pdIter) {
 				const ContigID& pairID = pdIter->first;
 				// Check if the pairs are in a valid orientation
-				if (pdIter->second.pairVec[0].size()
-							> number_of_pairs_threshold
+				if (pdIter->second.pairVec[0].size() > opt::npairs
 						&& pdIter->second.pairVec[1].size()
-							> number_of_pairs_threshold) {
+							> opt::npairs) {
 					cerr << "warning: inconsistent pairing between "
 						<< refContigID << (dirIdx ? '-' : '+') << ' '
 						<< pairID << '+' << ' '
@@ -153,11 +238,11 @@ void processContigs(int kmer, string alignFile,
 				}
 
 				unsigned pairDirIdx = pdIter->second.pairVec[0].size()
-					> number_of_pairs_threshold ? 0 : 1;
+					> opt::npairs ? 0 : 1;
 				const AlignPairVec& pairVec
 					= pdIter->second.pairVec[pairDirIdx];
 				unsigned numPairs = pairVec.size();
-				if (numPairs > number_of_pairs_threshold) {
+				if (numPairs > opt::npairs) {
 					// Determine the relative orientation of the
 					// contigs. As pairs are orientated in opposite
 					// (reverse comp) direction, the alignments are in
@@ -174,7 +259,7 @@ void processContigs(int kmer, string alignFile,
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
 					est.isRC = !sameOrientation;
 
-					if (est.numPairs > number_of_pairs_threshold) {
+					if (est.numPairs > opt::npairs) {
 						outFile << ' ' << est;
 					} else {
 						cerr << "warning: "
