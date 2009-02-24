@@ -106,11 +106,6 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (opt::out.empty()) {
-		cerr << PROGRAM ": missing -o,--out option\n";
-		die = true;
-	}
-
 	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
@@ -128,13 +123,6 @@ int main(int argc, char** argv)
 	string contigLengthFile(argv[optind++]);
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind++]);
-
-	cout << "Alignments: " << alignFile
-		<< " Contigs: " << contigLengthFile
-		<< " Distribution: " << distanceCountFile
-		<< " Seed length: " << opt::seedLen
-		<< " Num pairs: " << opt::npairs
-		<< endl;
 
 	// Load the pdf
 	Histogram distanceHist = loadHist(distanceCountFile);
@@ -170,10 +158,13 @@ void processContigs(int kmer, string alignFile,
 	assert_open(in, alignFile);
 	AlignExtractor extractor(in);
 
-	ofstream outFile(opt::out.c_str());
-	assert(outFile.is_open());
+	ofstream outFile;
+	if (!opt::out.empty()) {
+		outFile.open(opt::out.c_str());
+		assert(outFile.is_open());
+	}
+	ostream& out = opt::out.empty() ? cout : outFile;
 
-	int count = 0;
 	//Extract the align records from the file, one contig's worth at a time
 	bool stop = false;
 	
@@ -195,7 +186,7 @@ void processContigs(int kmer, string alignFile,
 		if (refLength < opt::seedLen)
 			continue;
 
-		outFile << refContigID << " :";
+		out << refContigID << " :";
 
 		// Seperate the pairings by direction (pairs aligning in the
 		// same comp as the contig are sense pairs) and by the contig
@@ -204,7 +195,7 @@ void processContigs(int kmer, string alignFile,
 		{
 			// If this is the second direction, write a seperator
 			if (dirIdx == 1)
-				outFile << " |";
+				out << " |";
 
 			PairDataMap dataMap;
 			for (AlignPairVec::const_iterator iter = currPairs.begin();
@@ -260,7 +251,7 @@ void processContigs(int kmer, string alignFile,
 					est.isRC = !sameOrientation;
 
 					if (est.numPairs > opt::npairs) {
-						outFile << ' ' << est;
+						out << ' ' << est;
 					} else {
 						cerr << "warning: "
 							<< refContigID << (dirIdx ? '-' : '+')
@@ -273,16 +264,13 @@ void processContigs(int kmer, string alignFile,
 				}
 			}
 		}
-		outFile << "\n";
-		assert(outFile.good());
-
-		count++;
-		if (count % 10000 == 0)
-			cout << "Processed " << count << " contigs\n";
+		out << "\n";
+		assert(out.good());
 	}
 
 	in.close();
-	outFile.close();
+	if (!opt::out.empty())
+		outFile.close();
 }
 
 // Estimate the distances between the contigs
