@@ -215,9 +215,9 @@ void processContigs(string alignFile,
 					pdIter != dataMap.end(); ++pdIter) {
 				const ContigID& pairID = pdIter->first;
 				// Check if the pairs are in a valid orientation
-				if (pdIter->second.pairVec[0].size() > opt::npairs
+				if (pdIter->second.pairVec[0].size() >= opt::npairs
 						&& pdIter->second.pairVec[1].size()
-							> opt::npairs) {
+							>= opt::npairs) {
 					cerr << "warning: inconsistent pairing between "
 						<< refContigID << (dirIdx ? '-' : '+') << ' '
 						<< pairID << '+' << ' '
@@ -230,11 +230,11 @@ void processContigs(string alignFile,
 				}
 
 				unsigned pairDirIdx = pdIter->second.pairVec[0].size()
-					> opt::npairs ? 0 : 1;
+					>= opt::npairs ? 0 : 1;
 				const AlignPairVec& pairVec
 					= pdIter->second.pairVec[pairDirIdx];
 				unsigned numPairs = pairVec.size();
-				if (numPairs > opt::npairs) {
+				if (numPairs >= opt::npairs) {
 					// Determine the relative orientation of the
 					// contigs. As pairs are orientated in opposite
 					// (reverse comp) direction, the alignments are in
@@ -251,7 +251,7 @@ void processContigs(string alignFile,
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
 					est.isRC = !sameOrientation;
 
-					if (est.numPairs > opt::npairs) {
+					if (est.numPairs >= opt::npairs) {
 						out << ' ' << est;
 					} else {
 						cerr << "warning: "
