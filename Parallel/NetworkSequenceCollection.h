@@ -37,7 +37,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 	public:
 	
 		// Constructor/destructor
-		NetworkSequenceCollection(int myID, int numDataNodes, int kmerSize, int readLen);
+		NetworkSequenceCollection(int myID, int numDataNodes);
 		~NetworkSequenceCollection();
 		
 		// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency 
@@ -162,9 +162,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Network message parsers
 		void parseControlMessage();
 		
-		// Read a fasta file and distribute the sequences
-		void readSequences(std::string fastaFile, int readLength, int kmerSize);
-	
 		// Check if this sequence belongs in the local phase space
 		bool isLocal(const PackedSeq& seq) const;
 		
@@ -200,12 +197,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		 * checkpoint messages.
 		 */
 		int m_checkpointSum;
-		
-		// the size of k used in the assembly
-		int m_kmer;
-		
-		// the original read length
-		int m_readLen;
 		
 		// the number of bases of adjacency set
 		int m_numBasesAdjSet;

@@ -10,12 +10,10 @@ using namespace std;
 //
 //
 //
-NetworkSequenceCollection::NetworkSequenceCollection(int myID, 
-		int numDataNodes, int kmerSize, int readLen) :
+NetworkSequenceCollection::NetworkSequenceCollection(
+		int myID, int numDataNodes) :
 	m_id(myID),
 	m_numDataNodes(numDataNodes),
-	m_kmer(kmerSize),
-	m_readLen(readLen),
 	m_numBasesAdjSet(0),
 	m_startTrimLen(-1),
 	m_trimStep(0),
@@ -26,10 +24,10 @@ NetworkSequenceCollection::NetworkSequenceCollection(int myID,
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
-	
+
 	// Create the comm layer
-	m_pComm = new CommLayer(myID, kmerSize);
-	
+	m_pComm = new CommLayer(myID);
+
 	// Create the message buffer
 	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
 	m_pComm->setMsgBuffer(m_pMsgBuffer);

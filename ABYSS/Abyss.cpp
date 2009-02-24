@@ -85,8 +85,7 @@ int main(int argc, char* const* argv)
 	
 	FastaWriter writer(opt::contigsPath.c_str());
 
-	AssemblyAlgorithms::assemble(pSC, opt::readLen, opt::kmerSize, &writer);
-
+	AssemblyAlgorithms::assemble(pSC, &writer);
 
 	delete pSC;
 	

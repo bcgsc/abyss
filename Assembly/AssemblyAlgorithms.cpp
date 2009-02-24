@@ -841,7 +841,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 //
 // Assembly function
 //
-void assemble(ISequenceCollection* seqCollection, int /*readLen*/, int /*kmerSize*/, IFileWriter* fileWriter)
+void assemble(ISequenceCollection* seqCollection,
+		IFileWriter* fileWriter)
 {
 	Timer timer("Assemble");
 	

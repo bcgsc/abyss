@@ -6,13 +6,12 @@
 //
 //
 //
-CommLayer::CommLayer(int id, int kmerSize) : m_id(id), m_kmerSize(kmerSize), m_msgID(0)
+CommLayer::CommLayer(int id) : m_id(id), m_msgID(0)
 {
-
-	m_bufferSize = 200*1024*1024;
+	unsigned bufferSize = 200*1024*1024;
 	// Create the  buffer
-	m_buffer = new char[m_bufferSize];
-	MPI_Buffer_attach( m_buffer, m_bufferSize); 
+	m_buffer = new char[bufferSize];
+	MPI_Buffer_attach(m_buffer, bufferSize);
 }
 
 //

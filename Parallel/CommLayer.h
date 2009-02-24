@@ -24,7 +24,7 @@ class CommLayer
 	public:
 	
 		// Constructor/Destructor
-		CommLayer(int id, int kmerSize);
+		CommLayer(int id);
 		~CommLayer();
 	
 		// Check if a message exists, if it does return the type
@@ -65,9 +65,6 @@ class CommLayer
 
 	private:
 		int m_id;
-		int m_kmerSize;
-		int m_numBytesPerSeq;
-		int m_bufferSize;
 		uint64_t m_msgID;
 		char* m_buffer;
 		const MessageBuffer *m_pMsgBuffer;

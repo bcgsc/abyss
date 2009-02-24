@@ -52,8 +52,7 @@ int main(int argc, char** argv)
 	if (opt::rank == 0)
 		printf("Running on %d processors\n", mpi_size);
 
-	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size,
-			opt::kmerSize, opt::readLen);
+	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size);
 
 	if (opt::rank == 0)
 		networkSeqs.runControl();
