@@ -30,18 +30,9 @@ struct Alignment
 	 */
 	int targetAtQueryStart() const
 	{
-		unsigned e = read_start_pos + align_length;
-		unsigned s = !isRC ? read_start_pos : read_length - e;
-		return contig_start_pos - s;
-	}
-
-	/**
-	 * Return the target position at the query end.
-	 * Note: not alignment end
-	 */
-	int targetAtQueryEnd() const
-	{
-		return targetAtQueryStart() + read_length;
+		unsigned tend = contig_start_pos + align_length;
+		return !isRC ? contig_start_pos - read_start_pos
+			: tend + read_start_pos;
 	}
 
 	/** Return the distance between the specified alignments.
@@ -50,7 +41,7 @@ struct Alignment
 	 */
 	int operator-(const Alignment& o) const
 	{
-		return targetAtQueryEnd() - o.targetAtQueryStart();
+		return targetAtQueryStart() - o.targetAtQueryStart();
 	}
 
 	/** This alignment is converted to the corresponding alignment of
