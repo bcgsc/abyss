@@ -50,7 +50,7 @@ namespace opt {
 	static int verbose;
 	static int mask;
 	static int scaffold;
-	string out;
+	static string out;
 }
 
 static const char* shortopts = "k:m:o:v";
