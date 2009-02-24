@@ -47,9 +47,6 @@ int rank = -1;
 /** k-mer length */
 int kmerSize = -1;
 
-/** read length */
-int readLen = -1;
-
 /** enable erosion */
 int erode = 1;
 
@@ -112,6 +109,9 @@ void parse(int argc, char* const* argv)
 		sargv << *last;
 	}
 
+	/** read length */
+	int readLen = -1;
+
 	bool die = false;
 	char c;
 	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL))
@@ -159,35 +159,36 @@ void parse(int argc, char* const* argv)
 		}
 	}
 
+	if (readLen > 0) {
+		if (kmerSize > readLen) {
+			cerr << PACKAGE ": k-mer size must not be larger than "
+				"the read length\n";
+			exit(EXIT_FAILURE);
+		}
+		if (trimLen < 0)
+			trimLen = 6 * (readLen - kmerSize + 1);
+	}
+
 	if (kmerSize <= 0) {
-		cerr << PACKAGE ": " << "missing -k,--kmer option\n";
+		cerr << PACKAGE ": missing -k,--kmer option\n";
 		die = true;
 	}
-	if (readLen <= 0) {
-		cerr << PACKAGE ": " << "missing -l,--read-length option\n";
+	if (trimLen <= 0) {
+		cerr << PACKAGE ": missing either -l,--read-length "
+			"or -t,--trim-length option\n";
 		die = true;
 	}
 	if (argv[optind] == NULL) {
-		cerr << PACKAGE ": " << "missing input sequence file argument\n";
+		cerr << PACKAGE ": missing input sequence file argument\n";
 		die = true;
 	}
 	if (die) {
-		cerr << "Try `" << PACKAGE
-			<< " --help' for more information.\n";
-		exit(EXIT_FAILURE);
-	}
-	if (kmerSize > readLen) {
-		cerr << PACKAGE ": "
-			<< "k-mer size must be smaller than the read length\n";
+		cerr << "Try `" PACKAGE " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());
-
-	unsigned n = readLen - kmerSize + 1;
-	if (trimLen < 0)
-		trimLen = 6 * n;
 
 	if (rank >= 0) {
 		ostringstream s;

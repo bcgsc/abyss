@@ -8,7 +8,6 @@
 namespace opt {
 	extern int rank;
 	extern int kmerSize;
-	extern int readLen;
 	extern int erode;
 	extern int trimLen;
 	extern int bubbles;
