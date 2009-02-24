@@ -26,7 +26,7 @@ static const char *USAGE_MESSAGE =
 "  DIST  distance estimates between the contigs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
-"      --max-cost=COST   maximum cost\n"
+"      --max-cost=COST   maximum computational cost\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
