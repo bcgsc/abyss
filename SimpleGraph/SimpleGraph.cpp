@@ -121,37 +121,21 @@ int main(int argc, char** argv)
 	string adjFile(argv[optind++]);
 	string lenFile(argv[optind++]);
 	string estFile(argv[optind++]);
-	
-	size_t preallocSize = 0;
-	
+
 	std::cout << "Adj file: " << adjFile
 		<< " Estimate File: " << estFile
 		<< " len file: " << lenFile
 		<< " kmer " << opt::k
 		<< " max cost " << opt::maxCost
-		<< " prealloc size " << preallocSize << "\n";
-	
-	// Create the graph
-	SimpleContigGraph* pContigGraph;
-	
-	if(preallocSize > 0)
-	{
-		pContigGraph = new SimpleContigGraph(preallocSize);
-	}
-	else
-	{
-		pContigGraph = new SimpleContigGraph();
-	}
-	
-	
+		<< endl;
+
 	// Load the graph from the adjacency file
-	loadGraphFromAdjFile(pContigGraph, lenFile, adjFile);
-	
+	SimpleContigGraph contigGraph;
+	loadGraphFromAdjFile(&contigGraph, lenFile, adjFile);
+
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(pContigGraph, estFile,
+	generatePathsThroughEstimates(&contigGraph, estFile,
 			opt::k, opt::maxCost);
-	
-	delete pContigGraph;
 }
 
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost)
