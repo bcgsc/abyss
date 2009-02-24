@@ -1,12 +1,60 @@
+#include "config.h"
 #include "ContigPath.h"
 #include "PairUtils.h"
 #include "SetOperations.h"
 #include <cmath>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <vector>
 
 using namespace std;
+
+#define PROGRAM "SimpleGraph"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... ADJ LEN DIST\n"
+"Find paths through contigs using distance estimates.\n"
+"  ADJ   adjacency of the contigs\n"
+"  LEN   lengths of the contigs\n"
+"  DIST  distance estimates between the contigs\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"      --max-cost=COST   maximum cost\n"
+"  -o, --out=FILE        write result to FILE\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+namespace opt {
+	static unsigned k;
+	static unsigned maxCost = 100000;
+	static int verbose;
+	static string out;
+}
+
+static const char* shortopts = "k:o:v";
+
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
+
+static const struct option longopts[] = {
+	{ "kmer",        required_argument, NULL, 'k' },
+	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
+	{ "out",         required_argument, NULL, 'o' },
+	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "help",        no_argument,       NULL, OPT_HELP },
+	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
+
 
 // Typedefs
 typedef std::vector<LinearNumKey> LinearNumVector;
@@ -27,45 +75,66 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath);
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath);
 
-static bool gDebugPrint = false;
-
 //
 //
 //
 int main(int argc, char** argv)
 {
-	if(argc < 6)
-	{
-		std::cout << "Usage: <kvalue> <adj list> <lengths file> <estimate file> <max nodes to explore>\n";
-		exit(1);
-	}
-	
-	if (string(argv[1]) == "-v") {
-		gDebugPrint = true;
-		argv++;
-		argc--;
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case OPT_MAX_COST: arg >> opt::maxCost; break;
+			case 'o': arg >> opt::out; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
 
-	int kmer = atoi(argv[1]);
-	std::string adjFile(argv[2]);
-	std::string lenFile(argv[3]);
-	std::string estFile(argv[4]);
-	int maxCost = atoi(argv[5]);
-	
-	bool preallocVecs = false;
-	size_t preallocSize = 0;
-	if(argc == 7)
-	{
-		preallocVecs = true;
-		preallocSize = atoi(argv[5]);
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
 	}
+
+	if (argc - optind < 3) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	} else if (argc - optind > 3) {
+		cerr << PROGRAM ": too many arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	string adjFile(argv[optind++]);
+	string lenFile(argv[optind++]);
+	string estFile(argv[optind++]);
 	
-	std::cout << "Adj file: " << adjFile << " Estimate File: " << estFile << " len file: " << lenFile << " kmer " << kmer << " max cost " << maxCost << " prealloc size " << preallocSize << "\n";
+	size_t preallocSize = 0;
+	
+	std::cout << "Adj file: " << adjFile
+		<< " Estimate File: " << estFile
+		<< " len file: " << lenFile
+		<< " kmer " << opt::k
+		<< " max cost " << opt::maxCost
+		<< " prealloc size " << preallocSize << "\n";
 	
 	// Create the graph
 	SimpleContigGraph* pContigGraph;
 	
-	if(preallocVecs)
+	if(preallocSize > 0)
 	{
 		pContigGraph = new SimpleContigGraph(preallocSize);
 	}
@@ -79,7 +148,8 @@ int main(int argc, char** argv)
 	loadGraphFromAdjFile(pContigGraph, lenFile, adjFile);
 	
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(pContigGraph, estFile, kmer, maxCost);
+	generatePathsThroughEstimates(pContigGraph, estFile,
+			opt::k, opt::maxCost);
 	
 	delete pContigGraph;
 }
@@ -94,13 +164,13 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 
 	(void)pContigGraph;
 	std::ifstream inStream(estFileName.c_str());
-	std::ofstream outStream("ResolvedPaths.txt");
+	std::ofstream outStream(opt::out.c_str());
 	SimpleDataCost costFunctor(kmer);
 
 	for (EstimateRecord er; inStream >> er;) {
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
-
+			bool gDebugPrint = opt::verbose > 0;
 		  if(gDebugPrint) std::cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
 			// generate the reachable set
 			SimpleContigGraph::KeyConstraintMap constraintMap;

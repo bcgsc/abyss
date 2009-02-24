@@ -73,8 +73,7 @@ clean:
 # Paired-end assembly
 
 %.path: %.adj %.len %.dist
-	SimpleGraph $v $k $^ 100000
-	mv ResolvedPaths.txt $@
+	SimpleGraph $v -k$k $^ -o $@
 
 %-contigs.fa: %-4.fa %-4.path
 	MergePaths $k $^
