@@ -76,5 +76,4 @@ clean:
 	SimpleGraph $v -k$k $^ -o $@
 
 %-contigs.fa: %-4.fa %-4.path
-	MergePaths $k $^
-	mv final.fa $@
+	MergePaths $v -k$k $^ -o $@

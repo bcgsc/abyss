@@ -1,3 +1,4 @@
+#include "config.h"
 #include "ContigPath.h"
 #include "FastaWriter.h"
 #include "PackedSeq.h"
@@ -7,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <list>
 #include <set>
@@ -14,6 +16,48 @@
 #include <string>
 
 using namespace std;
+
+#define PROGRAM "MergePaths"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... CONTIG PATH\n"
+"Merge paths and contigs.\n"
+"  CONTIG  contigs in FASTA format\n"
+"  PATH    paths through these contigs\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -o, --out=FILE        write result to FILE\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+namespace opt {
+	static unsigned k;
+	static int verbose;
+	static string out;
+}
+
+static const char* shortopts = "k:o:v";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",        required_argument, NULL, 'k' },
+	{ "out",         required_argument, NULL, 'o' },
+	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "help",        no_argument,       NULL, OPT_HELP },
+	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
+
 
 struct PathMergeRecord
 {	
@@ -35,8 +79,7 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, si
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
-bool gDebugPrint = false;
-static int opt_verbose = 0;
+static bool gDebugPrint;
 
 static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 {
@@ -56,20 +99,48 @@ static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 
 int main(int argc, char** argv)
 {
-	if(argc < 4)
-	{
-		std::cout << "Usage: <kmer> <contigFile> <paths file>\n";
-		exit(1);
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'o': arg >> opt::out; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
-	
-	size_t kmer = atoi(argv[1]);
-	std::string contigFile(argv[2]);
-	std::string pathFile(argv[3]);
 
-	std::cout << "Kmer " << kmer << " Contig File: " << contigFile << " path file: " << pathFile << std::endl;
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
 
-	// Read the contigs
-	
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	} else if (argc - optind > 2) {
+		cerr << PROGRAM ": too many arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	gDebugPrint = opt::verbose > 1;
+
+	string contigFile(argv[optind++]);
+	string pathFile(argv[optind++]);
+
 	// Set up the ID->sequence mapping
 	ContigVec contigVec;
 	PairedAlgorithms::readContigVec(contigFile, contigVec);
@@ -92,15 +163,16 @@ int main(int argc, char** argv)
 		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl; 
 		iter++;
 	}	
-	
-	FastaWriter writer("final.fa");
-	
+
+	FastaWriter writer(opt::out.c_str());
+
 	// output the paths
 	iter = contigPathMap.begin();
 	int count = 0;
 	while(iter != contigPathMap.end())
 	{
-		mergePath(iter->first, contigVec, iter->second, count++, kmer, &writer);
+		mergePath(iter->first, contigVec, iter->second, count++,
+				opt::k, &writer);
 		iter++;
 	}	
 	
@@ -434,7 +506,7 @@ void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& merg
 	makeCanonicalPath(cID, mergeRecord, newCanonical);
 	if(gDebugPrint) std::cout << "Canonical path is: " << newCanonical << std::endl; 	
 	string comment = toString(newCanonical);
-	if (opt_verbose > 0)
+	if (opt::verbose > 0)
 		cout << comment << '\n';
 
 	Sequence merged = sourceContigs[cID].seq;
