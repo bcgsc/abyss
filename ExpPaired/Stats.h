@@ -3,6 +3,7 @@
 
 // Simple class for holding stats related to PET data
 #include <cmath>
+#include <ostream>
 #include <vector>
 #include <map>
 
@@ -27,6 +28,15 @@ struct Histogram
 	void print() const;
 	
 	IntIntMap m_data;
+
+	friend std::ostream& operator<<(std::ostream& o,
+			const Histogram& h)
+	{
+		for (std::map<int, int>::const_iterator it = h.m_data.begin();
+				it != h.m_data.end(); ++it)
+			o << it->first << '\t' << it->second << '\n';
+		return o;
+	}
 };
 
 typedef std::vector<double> DoubleVec;
