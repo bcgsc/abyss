@@ -2,7 +2,6 @@
 #include "PairUtils.h"
 #include <algorithm>
 #include <cerrno>
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <functional>
@@ -102,7 +101,8 @@ static void assert_open(ifstream& f, const string& p)
 
 static void readAlignmentsFile(string path, ReadAlignMap* pout)
 {
-	cout << "Reading `" << path << "'..." << endl;
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'..." << endl;
 	ifstream fin(path.c_str());
 	assert_open(fin, path);
 	readAlignments(fin, pout);
@@ -144,10 +144,12 @@ int main(int argc, char* const* argv)
 		for_each(argv + optind, argv + argc,
 				bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
 	} else {
-		cout << "Reading from standard input..." << endl;
+		if (opt::verbose > 0)
+			cerr << "Reading from standard input..." << endl;
 		readAlignments(cin, &alignTable);
 	}
-	cout << "Align table has " << alignTable.size() << " entries\n";
+	if (opt::verbose > 0)
+		cerr << "Alignments: " << alignTable.size() << endl;
 
 	ofstream pairedAlignFile("PairAligns.txt");
 	assert(pairedAlignFile.is_open());
@@ -239,11 +241,14 @@ int main(int argc, char* const* argv)
 		}
 	}
 	
-	printf("Num unmatched: %d Num same contig: %d Invalid: %d "
-			"Num diff contig: %d Num multi: %d "
-			"Num not singular: %d\n",
-			numMissed, numSame, numInvalid, numDifferent, numMulti,
-			numNonSingle);
+	if (opt::verbose > 0)
+		cerr << "Unmatched: " << numMissed 
+			<< " Same: " << numSame 
+			<< " Invalid: " << numInvalid 
+			<< " Diff: " << numDifferent 
+			<< " Multi: " << numMulti
+			<< " Non-singular: " << numNonSingle
+			<< endl;
 	
 	pairedAlignFile.close();
 	distanceList.close();
@@ -264,7 +269,6 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 	
 	for(AlignmentVector::const_iterator iter = alignVec.begin(); iter != alignVec.end(); ++iter)
 	{
-		//std::cout << "Align: " << *iter << "\n";
 		int length = iter->align_length;
 		int start = iter->read_start_pos;
 		for(int i = 0; i < (length - kmer + 1); ++i)
