@@ -65,7 +65,7 @@ clean:
 # Find overlaps between contigs
 
 %-overlap.fa: %.fa %.adj %.len %.dist
-	Overlap $v -k$k $^ -o $@
+	Overlap $v -k$k -o $@ $^
 
 %-4.fa: %-3.fa %-3-overlap.fa
 	ABYSS -k$k -l$l -e0 -o $@ $^
@@ -73,7 +73,7 @@ clean:
 # Paired-end assembly
 
 %.path: %.adj %.len %.dist
-	SimpleGraph $v -k$k $^ -o $@
+	SimpleGraph $v -k$k -o $@ $^
 
 %-contigs.fa: %-4.fa %-4.path
-	MergePaths $v -k$k $^ -o $@
+	MergePaths $v -k$k -o $@ $^
