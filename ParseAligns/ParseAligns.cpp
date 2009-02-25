@@ -22,11 +22,12 @@ PROGRAM " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Write read pairs that align to the same contig to DistanceList.txt.\n"
+"Write read pairs that align to the same contig to FRAGMENTS.\n"
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -34,16 +35,18 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	int k;
-	int verbose;
+	static int k;
+	static int verbose;
+	static string fragPath;
 }
 
-static const char* shortopts = "k:v";
+static const char* shortopts = "k:f:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "frag",    required_argument, NULL, 'f' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -118,6 +121,7 @@ int main(int argc, char* const* argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'f': arg >> opt::fragPath; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -130,6 +134,11 @@ int main(int argc, char* const* argv)
 
 	if (opt::k <= 0) {
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (opt::fragPath.empty()) {
+		cerr << PROGRAM ": " << "missing -f,--frag option\n";
 		die = true;
 	}
 
@@ -152,7 +161,7 @@ int main(int argc, char* const* argv)
 		cerr << "Read " << alignTable.size() << " alignments" << endl;
 
 	ostream& pairedAlignFile = cout;
-	ofstream distanceList("DistanceList.txt");
+	ofstream distanceList(opt::fragPath.c_str());
 	assert(distanceList.is_open());
 
 	int numDifferent = 0;
