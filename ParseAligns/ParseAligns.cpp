@@ -1,5 +1,6 @@
 #include "Aligner.h"
 #include "PairUtils.h"
+#include "Stats.h"
 #include <algorithm>
 #include <cerrno>
 #include <cstdlib>
@@ -22,12 +23,13 @@ PROGRAM " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Write read pairs that align to the same contig to FRAGMENTS.\n"
+"Write read pairs that align to the same contig to FRAGMENTS or HISTOGRAM.\n"
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
+"  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -38,15 +40,17 @@ namespace opt {
 	static int k;
 	static int verbose;
 	static string fragPath;
+	static string histPath;
 }
 
-static const char* shortopts = "k:f:v";
+static const char* shortopts = "k:f:h:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "frag",    required_argument, NULL, 'f' },
+	{ "hist",    required_argument, NULL, 'h' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -122,6 +126,7 @@ int main(int argc, char* const* argv)
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'f': arg >> opt::fragPath; break;
+			case 'h': arg >> opt::histPath; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -137,8 +142,9 @@ int main(int argc, char* const* argv)
 		die = true;
 	}
 
-	if (opt::fragPath.empty()) {
-		cerr << PROGRAM ": " << "missing -f,--frag option\n";
+	if (opt::fragPath.empty() && opt::histPath.empty()) {
+		cerr << PROGRAM ": " << "missing either -f,--frag or "
+			"-h,--hist option\n";
 		die = true;
 	}
 
@@ -161,8 +167,13 @@ int main(int argc, char* const* argv)
 		cerr << "Read " << alignTable.size() << " alignments" << endl;
 
 	ostream& pairedAlignFile = cout;
-	ofstream distanceList(opt::fragPath.c_str());
-	assert(distanceList.is_open());
+	ofstream fragFile;
+	if (!opt::fragPath.empty()) {
+		fragFile.open(opt::fragPath.c_str());
+		assert(fragFile.is_open());
+	}
+
+	Histogram histogram;
 
 	int numDifferent = 0;
 	int numSame = 0;
@@ -207,8 +218,11 @@ int main(int argc, char* const* argv)
 										*refAlignIter,
 										*pairAlignIter);
 								if (size > INT_MIN) {
-									distanceList << size << "\n";
-									assert(distanceList.good());
+									histogram.addDataPoint(size);
+									if (!opt::fragPath.empty()) {
+										fragFile << size << "\n";
+										assert(fragFile.good());
+									}
 									numSame++;
 								} else
 									numInvalid++;
@@ -258,7 +272,16 @@ int main(int argc, char* const* argv)
 			<< " Non-singular: " << numNonSingle
 			<< endl;
 
-	distanceList.close();
+	if (!opt::fragPath.empty())
+		fragFile.close();
+
+	if (!opt::histPath.empty()) {
+		ofstream histFile(opt::histPath.c_str());
+		assert(histFile.is_open());
+		histFile << histogram;
+		assert(histFile.good());
+		histFile.close();
+	}
 }
 
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
