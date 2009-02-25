@@ -23,7 +23,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Write read pairs that align to the same contig to DistanceList.txt.\n"
-"Write read pairs that align to different contigs to PairAligns.txt.\n"
+"Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
@@ -149,10 +149,9 @@ int main(int argc, char* const* argv)
 		readAlignments(cin, &alignTable);
 	}
 	if (opt::verbose > 0)
-		cerr << "Alignments: " << alignTable.size() << endl;
+		cerr << "Read " << alignTable.size() << " alignments" << endl;
 
-	ofstream pairedAlignFile("PairAligns.txt");
-	assert(pairedAlignFile.is_open());
+	ostream& pairedAlignFile = cout;
 	ofstream distanceList("DistanceList.txt");
 	assert(distanceList.is_open());
 
@@ -249,8 +248,7 @@ int main(int argc, char* const* argv)
 			<< " Multi: " << numMulti
 			<< " Non-singular: " << numNonSingle
 			<< endl;
-	
-	pairedAlignFile.close();
+
 	distanceList.close();
 }
 

@@ -51,10 +51,9 @@ clean:
 # Estimate distances between contigs
 
 %.pair %.frag: $(lib).fa %.fa
-	KAligner $k $^ |ParseAligns $v -k$k
-	mv PairAligns.txt $*.pair
+	KAligner $k $^ |ParseAligns $v -k$k \
+		|sort -nk2,2 -o $*.pair
 	mv DistanceList.txt $*.frag
-	sort -nk2,2 $*.pair -o $*.pair
 
 %.hist: %.frag
 	awk '{x[$$1]++} END {for (i in x) print i, x[i]}' $< |sort -n >$@
