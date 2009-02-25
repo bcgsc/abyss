@@ -24,9 +24,7 @@ struct Histogram
 	int getCount(int index) const;
 	int getMin() const;
 	int getMax() const;
-	
-	void print() const;
-	
+
 	IntIntMap m_data;
 
 	friend std::ostream& operator<<(std::ostream& o,

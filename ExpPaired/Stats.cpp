@@ -158,19 +158,6 @@ int Histogram::getSumCount() const
 	return sum;
 }
 
-void Histogram::print() const
-{
-	
-	int min = 0;
-	int max = getMax();
-	
-	printf("Hist: [%d-%d]\n", min, max);
-	for(int idx = min; idx <= max; ++idx)
-	{
-		printf("%d %d\n", idx, getCount(idx));
-	}
-}
-
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
