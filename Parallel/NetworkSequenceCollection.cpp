@@ -745,27 +745,19 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
 			extDirection oppDir = !dir;
-			SeqExt extension;
-			
+
 			PackedSeq testSeq(currSeq);
 			char adjBase = testSeq.rotate(dir, 'A');
-			
-			for(int j = 0; j < NUM_BASES; j++)
-			{
+
+			for (int j = 0; j < NUM_BASES; j++) {
 				char currBase = BASES[j];
 				testSeq.setLastBase(dir, currBase);
-				
-				// Here is the divergence from the common adjacency generation function
-				// We only generate a request for the existance of the sequence at this moment and then carry on
-				// When the data meanders over the network and eventually returns to use, THEN the adjacency is set
-				// See:: SendAdjancencyRequest/ParseAdjancencyResponse
-				//computeAdjacency(currSeq, testSeq, dir, currBase);
-				
-				// Optimistically send a message over the network that there is an extension from testSeq to adjBase
+				// Optimistically send a message over the network that
+				// there is an extension from testSeq to adjBase. If
+				// testSeq doesn't exist, the message will be ignored.
 				setBaseExtension(testSeq, oppDir, adjBase);
-				
 				pumpNetwork();
-			}	
+			}
 		}
 	}
 	
