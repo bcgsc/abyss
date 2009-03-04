@@ -61,8 +61,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 
-		const PackedSeq& SequenceCollectionHash::getSeqAndData(
-				const PackedSeq& key) const;
+		const PackedSeq& getSeqAndData(const PackedSeq& key) const;
 
 		// Get the iterator pointing to the first sequence in the bin
 		SequenceCollectionHashIter getStartIter() const;
@@ -103,7 +102,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		// If they don't exist m_pSequences->end() will be returned in the iterator
 		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
 		SequenceCollectionHashIter FindSequence(const PackedSeq& seq) const;
-		const PackedSeq& SequenceCollectionHash::getSeqAndData(
+		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
 		
@@ -127,7 +126,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 
 		/** Call the observers of the specified sequence. */
-		void SequenceCollectionHash::notify(const PackedSeq& seq)
+		void notify(const PackedSeq& seq)
 		{
 			if (m_seqObserver != NULL)
 				m_seqObserver(this, seq);
