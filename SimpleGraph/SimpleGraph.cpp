@@ -235,7 +235,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						= dmIter->second - costFunctor.m_overlap;
 					int diff = actualDistance - iter->distance;
 					unsigned buffer = allowedError(iter->stdDev);
-					bool invalid = abs(diff) > buffer;
+					bool invalid = (unsigned)abs(diff) > buffer;
 					if (invalid)
 						validPath = false;
 					if (gDebugPrint)
