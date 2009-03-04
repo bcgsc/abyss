@@ -27,9 +27,12 @@ SequenceCollectionHash::SequenceCollectionHash()
 	: m_state(CS_LOADING), m_seqObserver(NULL)
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-	// Make room for 2^30 elements, over one billion, using 2 bits
-	// per element or 256 MiB.
-	m_pSequences = new SequenceDataHash(1 << 30);
+	// Make room for 100 million k-mers. Approximately 58 million
+	// k-mers fit into 2 GB of ram.
+	// sparse_hash_set uses 2.67 bits per element on a 64-bit
+	// architecture and 2 bits per element on a 32-bit architecture.
+	// The number of elements is rounded up to a power of two.
+	m_pSequences = new SequenceDataHash(100000000);
 #else
 	m_pSequences = new SequenceDataHash();
 #endif
