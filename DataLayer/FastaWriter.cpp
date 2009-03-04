@@ -1,5 +1,6 @@
 #include "FastaWriter.h"
 #include "Options.h"
+#include <cassert>
 #include <cstdio>
 
 FastaWriter::FastaWriter(const char* filename, bool append)

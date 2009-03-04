@@ -1,9 +1,9 @@
 #include "SeqExt.h"
 #include "Sequence.h" // for complementBaseChar
+#include <cassert>
 
 SeqExt::SeqExt() : m_record(0)
 {
-	
 }
 
 //
