@@ -1,15 +1,16 @@
 #include "Sequence.h"
+#include <cassert>
+
+using namespace std;
 
 // generate the reverse complement of the sequence
 Sequence reverseComplement(const Sequence& s)
 {
 	Sequence rc;
-	
-	for(std::string::const_reverse_iterator iter = s.rbegin(); iter != s.rend(); iter++)
-	{	
+	rc.reserve(s.length());
+	for (string::const_reverse_iterator iter = s.rbegin();
+			iter != s.rend(); iter++)
 		rc.push_back(complementBaseChar(*iter));
-	}
-	
 	return rc;
 }
 
