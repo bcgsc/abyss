@@ -493,7 +493,7 @@ void writeSNP(BranchGroup& group, unsigned id)
 	BranchRecord& refBranch = group.getBranch(selectedIndex);
 	Sequence refContig;
 	refBranch.buildContig(refContig);
-	fprintf(fout, ">%d%c %u %u\n%s\n", id, allele++,
+	fprintf(fout, ">%u%c %zu %u\n%s\n", id, allele++,
 			refContig.length(),
 			refBranch.getBranchMultiplicity(),
 			refContig.c_str());
@@ -505,7 +505,7 @@ void writeSNP(BranchGroup& group, unsigned id)
 		BranchRecord& currBranch = group.getBranch(i);
 		Sequence contig;
 		currBranch.buildContig(contig);
-		fprintf(fout, ">%d%c %u %u\n%s\n", id, allele++,
+		fprintf(fout, ">%u%c %zu %u\n%s\n", id, allele++,
 				contig.length(),
 				currBranch.getBranchMultiplicity(),
 				contig.c_str());
