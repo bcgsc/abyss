@@ -51,7 +51,7 @@ clean:
 # Estimate distances between contigs
 
 %.pair %.hist: $(lib).fa %.fa
-	KAligner -k$k $^ |ParseAligns $v -k$k -h $*.hist \
+	KAligner $v -k$k $^ |ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
 %.dist: %.len %.hist %.pair
