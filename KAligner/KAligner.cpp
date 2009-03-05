@@ -185,25 +185,23 @@ void alignReadsToDB(std::string readsFile, Aligner& aligner)
 	{
 		std::string readID;
 		Sequence readSeq;
-		
 		readSequenceRecord(fileHandle, seqType, readID, readSeq);
-		
-		// Filter for sequences only containing ACGT
+
 		size_t pos = readSeq.find_first_not_of("ACGT");
-		if (pos == std::string::npos) 
-		{
-			AlignmentVector avec;
-			aligner.alignRead(readSeq, avec);
-			if(!avec.empty())
-			{
-				std::cout << readID << "\t";
-				for(AlignmentVector::iterator iter = avec.begin(); iter != avec.end(); ++iter)
-				{
-					std::cout << *iter << "\t";
-				}
-				std::cout << "\n";
-			}		
-		}
+		if (pos != string::npos)
+			continue;
+
+		AlignmentVector avec;
+		aligner.alignRead(readSeq, avec);
+		if (avec.empty())
+			continue;
+
+		cout << readID;
+		for (AlignmentVector::iterator iter = avec.begin();
+				iter != avec.end(); ++iter)
+			cout << '\t' << *iter;
+		cout << "\n";
+		assert(cout.good());
 	}
 }
 
