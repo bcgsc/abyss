@@ -6,7 +6,49 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <getopt.h>
+#include <sstream>
 #include <string>
+
+using namespace std;
+
+#define PROGRAM "KAligner"
+
+static const char *VERSION_MESSAGE =
+PROGRAM " (ABySS) " VERSION "\n"
+"Written by Jared Simpson and Shaun Jackman.\n"
+"\n"
+"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+
+static const char *USAGE_MESSAGE =
+"Usage: " PROGRAM " [OPTION]... QUERY TARGET\n"
+"Align the sequences of QUERY against those of TARGET.\n"
+"All perfect matches of at least k bases will be found.\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+namespace opt {
+	static unsigned k;
+	static int verbose;
+}
+
+static const char* shortopts = "k:o:v";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = {
+	{ "kmer",        required_argument, NULL, 'k' },
+	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "help",        no_argument,       NULL, OPT_HELP },
+	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
+
 
 enum SequenceFormat
 {
@@ -24,20 +66,53 @@ void readFastqRecord(std::ifstream& stream, std::string& readID, Sequence& seq);
 
 int main(int argc, char** argv)
 {
-	if(argc < 4)
-	{
-		std::cout << "Usage: <kmer> <reads fasta | reads fastq> <ref fasta>\n";
-		exit(1);
+	bool die = false;
+	for (char c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+		}
 	}
-	
-	size_t kmer = atoi(argv[1]);
-	std::string readsFile(argv[2]);
-	std::string refFastaFile(argv[3]);
 
-	std::cerr << "Kmer " << kmer << " Reads file: " << readsFile << " ref fasta: " << refFastaFile << std::endl;
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
 
-	Aligner aligner(kmer);
-	
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	} else if (argc - optind > 2) {
+		cerr << PROGRAM ": too many arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	string readsFile(argv[optind++]);
+	string refFastaFile(argv[optind++]);
+
+	if (opt::verbose > 0)
+		cerr << "k: " << opt::k
+			<< " Query: " << readsFile
+			<< " Target: " << refFastaFile
+			<< endl;
+
+	Aligner aligner(opt::k);
+
 	// Read the contigs into the ref DB
 	readContigsIntoDB(refFastaFile, aligner);
 	
@@ -72,13 +147,14 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 		aligner.addReferenceSequence(contigID, seq);
 
 		count++;
-		if (count % 100000 == 0) {
-			std::cerr << "Read " << count << " contigs, "
+		if (opt::verbose > 0
+				&& count % 100000 == 0)
+			cerr << "Read " << count << " contigs, "
 				<< aligner.getNumSeqs() << " unique sequences\n";
-		}
 	}
-	std::cerr << "Read " << count << " contigs, "
-		<< aligner.getNumSeqs() << " unique sequences\n";
+	if (opt::verbose > 0)
+		cerr << "Read " << count << " contigs, "
+			<< aligner.getNumSeqs() << " unique sequences\n";
 
 	fileHandle.close();
 }
