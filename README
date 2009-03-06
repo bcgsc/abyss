@@ -16,7 +16,10 @@ for k in {20..40}; do
 	ABYSS -k$k -l42 reads.fa && mv contigs.fa contigs-k$k.fa
 done
 
-The maximum value for k is 64.
+The maximum value for k is 64. This limit may be changed at compile
+time using the --enable-maxk option of configure. It may be decreased
+to 32 to decrease memory usage, which is particularly useful for large
+parallel jobs, or increased to 96.
 
 * Paired-end assembly
 
