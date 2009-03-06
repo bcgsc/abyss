@@ -44,6 +44,7 @@ AdjList - finds overlaps of length k-1 between contigs
 KAligner - aligns reads to contigs
 ParseAligns - finds pairs of reads in alignments
 DistanceEst - estimates distances between contigs
+Overlap - find overlaps between blunt contigs
 SimpleGraph - finds paths between pairs of contigs
 MergePaths - merges consistent paths
 
