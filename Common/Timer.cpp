@@ -1,5 +1,5 @@
 #include "Timer.h"
-#include "Options.h"
+#include "Log.h"
 #include <sstream>
 #include <iostream>
 
@@ -12,8 +12,7 @@ Timer::Timer(std::string funcString) : m_funcStr(funcString)
 // Destructor stops it and prints
 Timer::~Timer()
 {
-	if (opt::verbose > 1)
-		std::cout << toString() << std::endl;
+	PrintDebug(2, "%s\n", toString().c_str());
 }
 
 std::string Timer::toString() const
