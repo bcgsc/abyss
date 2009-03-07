@@ -57,7 +57,7 @@ bool FastqReader::ReadSequences(SequenceVector& outseqs)
 	if (pos == std::string::npos) {
 		outseqs.push_back(seq);
 	} else {
-		if (opt::verbose > 1)
+		if (opt::verbose > 3)
 			fprintf(stderr,
 					"warning: discarded sequence containing `%c'\n",
 					seq[pos]);
