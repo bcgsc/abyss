@@ -10,8 +10,7 @@ enum APMessage
 
 enum APControl
 {
-	APC_LOAD,
-	APC_DONELOAD,
+	APC_FINALIZE,
 	APC_GEN_ADJ,
 	APC_ERODE,
 	APC_ERODE_COMPLETE,

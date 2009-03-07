@@ -283,7 +283,7 @@ void NetworkSequenceCollection::runControl()
 				while (!checkpointReached(m_numDataNodes))
 					pumpNetwork();
 				SetState(NAS_FINALIZE);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_DONELOAD);
+				m_pComm->SendControlMessage(m_numDataNodes, APC_FINALIZE);
 				break;
 			case NAS_FINALIZE:
 			{
@@ -626,11 +626,7 @@ void NetworkSequenceCollection::parseControlMessage()
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
 	{
-		case APC_LOAD:
-		{
-			break;	
-		}
-		case APC_DONELOAD:
+		case APC_FINALIZE:
 		{
 			SetState(NAS_FINALIZE);
 			break;	
