@@ -14,6 +14,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 		int myID, int numDataNodes) :
 	m_id(myID),
 	m_numDataNodes(numDataNodes),
+	m_state(NAS_WAITING),
 	m_numBasesAdjSet(0),
 	m_startTrimLen(-1),
 	m_trimStep(0),
@@ -225,6 +226,9 @@ void NetworkSequenceCollection::run()
 
 unsigned NetworkSequenceCollection::controlErode()
 {
+	m_pComm->SendControlMessage(m_numDataNodes, APC_BARRIER);
+	m_pComm->barrier();
+
 	SetState(NAS_ERODE);
 	m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
@@ -241,8 +245,12 @@ unsigned NetworkSequenceCollection::controlErode()
 	numEroded += m_checkpointSum;
 	EndState();
 
-	if (numEroded == 0)
+	if (numEroded == 0) {
+		SetState(NAS_WAITING);
+		m_pComm->SendControlMessage(m_numDataNodes, APC_WAIT);
+		m_pComm->barrier();
 		return 0;
+	}
 
 	SetState(NAS_ERODE_COMPLETE);
 	m_pComm->SendControlMessage(m_numDataNodes,
@@ -250,6 +258,7 @@ unsigned NetworkSequenceCollection::controlErode()
 	completeOperation();
 	numEroded += m_pComm->reduce(
 			AssemblyAlgorithms::getNumEroded());
+	SetState(NAS_WAITING);
 
 	printf("Eroded %u tips\n", numEroded);
 	return numEroded;
@@ -490,6 +499,8 @@ void NetworkSequenceCollection::EndState()
 //
 void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 {
+	PrintDebug(2, "SetState %u (was %u)\n", newState, m_state);
+
 	// Ensure there are no pending messages
 	assert(m_pMsgBuffer->empty());
 	
@@ -511,10 +522,10 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 		switch(msg)
 		{
 			case APM_CONTROL:
-				{
-					parseControlMessage();
-					break;
-				}
+				parseControlMessage();
+				// Deal with the control packet before we continue
+				// processing further packets.
+				return ++count;
 			case APM_BUFFERED:
 				{
 					MessagePtrVector msgs;
@@ -629,6 +640,12 @@ void NetworkSequenceCollection::parseControlMessage()
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
 			break;	
+		}
+		case APC_WAIT:
+		{
+			SetState(NAS_WAITING);
+			m_pComm->barrier();
+			break;
 		}
 		case APC_BARRIER:
 		{
@@ -981,6 +998,12 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*seqCollection*/)
 {
 	Timer timer("NetworkPopBubbles");
+
+	// Deal with any packets still in the queue. The barrier
+	// synchronization guarantees that the packets have been
+	// delivered, but we may not have dealt with them yet.
+	pumpNetwork();
+	assert(m_pComm->empty());
 
 	unsigned numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
