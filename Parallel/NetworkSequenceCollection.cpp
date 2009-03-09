@@ -110,7 +110,6 @@ void NetworkSequenceCollection::run()
 				m_pComm->SendCheckPointMessage();
 				break;
 			case NAS_FINALIZE:
-			{
 				finalize();
 				
 				// Cleanup any messages that are pending
@@ -118,9 +117,7 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage();				
 				break;
-			}
 			case NAS_GEN_ADJ:
-			{
 				networkGenerateAdjacency(this);
 				// Cleanup any messages that are pending
 				EndState();
@@ -129,7 +126,6 @@ void NetworkSequenceCollection::run()
 				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage();
 				break;
-			}
 			case NAS_ERODE:
 			{
 				unsigned numEroded
@@ -152,7 +148,7 @@ void NetworkSequenceCollection::run()
 				break;
 			case NAS_TRIM:
 			case NAS_TRIM2:
-			{					
+			{
 				assert(m_trimStep != 0);
 				
 				// Perform the trim at the branch length that the control node sent
@@ -185,13 +181,11 @@ void NetworkSequenceCollection::run()
 				break;	
 			}
 			case NAS_SPLIT:
-			{
 				AssemblyAlgorithms::splitAmbiguous(this);	
 				EndState();				
 				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage();
 				break;
-			}
 			case NAS_ASSEMBLE:
 			{
 				FastaWriter* writer = new FastaWriter(
@@ -210,15 +204,11 @@ void NetworkSequenceCollection::run()
 				break;
 			}
 			case NAS_WAITING:
-			{				
 				pumpNetwork();
 				break;
-			}
 			case NAS_DONE:
-			{
 				stop = true;
 				break;
-			}
 			assert(false);			
 		}
 	}
@@ -286,7 +276,6 @@ void NetworkSequenceCollection::runControl()
 				m_pComm->SendControlMessage(m_numDataNodes, APC_FINALIZE);
 				break;
 			case NAS_FINALIZE:
-			{
 				finalize();
 				
 				// Cleanup any messages that are pending
@@ -304,9 +293,7 @@ void NetworkSequenceCollection::runControl()
 				//SetState(NAS_DONE);
 				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
 				break;
-			}
 			case NAS_GEN_ADJ:
-			{
 				puts("Generating adjacency");
 				networkGenerateAdjacency(this);
 				
@@ -326,9 +313,7 @@ void NetworkSequenceCollection::runControl()
 					SetState(NAS_TRIM);
 				}
 				break;
-			}
 			case NAS_ERODE:
-			{
 				assert(opt::erode > 0);
 				puts("Eroding tips");
 				controlErode();
@@ -336,7 +321,6 @@ void NetworkSequenceCollection::runControl()
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;
-			}
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
 				// These states are used only by the slaves.
@@ -419,7 +403,6 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_TRIM2:
-			{
 				printf("Trimming short branches: %d\n", opt::trimLen);
 				performNetworkTrim(this, opt::trimLen);
 				
@@ -434,9 +417,8 @@ void NetworkSequenceCollection::runControl()
 								
 				SetState(NAS_SPLIT);
 				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);						
-			}
+				break;
 			case NAS_SPLIT:
-			{
 				puts("Splitting ambiguous branches");
 				AssemblyAlgorithms::splitAmbiguous(this);
 
@@ -451,7 +433,6 @@ void NetworkSequenceCollection::runControl()
 				
 				SetState(NAS_ASSEMBLE);			
 				break;				
-			}	
 			case NAS_ASSEMBLE:
 			{
 				puts("Assembling");
@@ -475,14 +456,10 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_DONE:
-			{
 				stop = true;
 				break;
-			}
 			case NAS_WAITING:
-			{
 				break;
-			}
 			assert(false);							
 		}
 	}
@@ -573,20 +550,14 @@ void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOp
 	switch(seqMsg.m_operation)
 	{
 		case MO_ADD:
-		{
 			add(seqMsg.m_seq);
 			break;
-		}
 		case MO_REMOVE:
-		{
 			remove(seqMsg.m_seq);
 			break;
-		}
 		default:
-		{
 			assert(false);
 			break;
-		}	
 	}
 }
 
@@ -627,80 +598,54 @@ void NetworkSequenceCollection::parseControlMessage()
 	switch(controlMsg.msgType)
 	{
 		case APC_FINALIZE:
-		{
 			SetState(NAS_FINALIZE);
 			break;	
-		}
 		case APC_CHECKPOINT:
-		{
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
 			break;	
-		}
 		case APC_WAIT:
-		{
 			SetState(NAS_WAITING);
 			m_pComm->barrier();
 			break;
-		}
 		case APC_BARRIER:
-		{
 			assert(m_state == NAS_WAITING);
 			m_pComm->barrier();
 			break;
-		}
 		case APC_FINISHED:
-		{
 			SetState(NAS_DONE);
 			break;	
-		}
 		case APC_TRIM:
-		{
 			// This message came from the control node along with an argument indicating the maximum branch to trim at
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
 			break;				
-		}
 		case APC_ERODE:
-		{
 			SetState(NAS_ERODE);
 			break;
-		}
 		case APC_ERODE_COMPLETE:
-		{
 			assert(m_state == NAS_ERODE_WAITING);
 			EndState();
 			SetState(NAS_ERODE_COMPLETE);
 			break;
-		}
 		case APC_DISCOVER_BUBBLES:
-		{
 			SetState(NAS_DISCOVER_BUBBLES);
 			break;
-		}
 		case APC_POPBUBBLE:
-		{		
 			m_numPopped = controlMsg.argument;			
 			SetState(NAS_POPBUBBLE);
 			break;	
-		}
 		case APC_SPLIT:
-		{
 			SetState(NAS_SPLIT);
 			break;	
-		}
 		case APC_ASSEMBLE:
-		{
 			// This message came from the control node along with an argument indicating the number of sequences assembled so far
 			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
 			break;	
-		}
 		case APC_GEN_ADJ:
-		{
 			SetState(NAS_GEN_ADJ);
 			break;	
-		}		
 	}
 }
 
@@ -1293,10 +1238,8 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 		case NAS_TRIM2:
 		case NAS_ASSEMBLE:
 			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
-			break;
 		case NAS_DISCOVER_BUBBLES:
 			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);
-			break;
 		case NAS_WAITING:
 			if(m_finishedGroups.find(groupID) == m_finishedGroups.end())
 			{
