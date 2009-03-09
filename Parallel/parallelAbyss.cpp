@@ -1,9 +1,11 @@
 #include "config.h"
 #include <cstdio>
 #include <sstream>
+#include <unistd.h> // for gethostname
 #include <vector>
 #include <mpi.h>
 #include "FastaReader.h"
+#include "Log.h"
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include "Timer.h"
@@ -51,6 +53,10 @@ int main(int argc, char** argv)
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
 		printf("Running on %d processors\n", mpi_size);
+
+	char hostname[HOST_NAME_MAX];
+	gethostname(hostname, sizeof hostname);
+	PrintDebug(0, "Running on host %s\n", hostname);
 
 	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size);
 
