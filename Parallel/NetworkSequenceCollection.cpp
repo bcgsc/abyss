@@ -1,8 +1,8 @@
 #include "NetworkSequenceCollection.h"
 #include "AssemblyAlgorithms.h"
 #include "FastaWriter.h"
+#include "Log.h"
 #include "Options.h"
-#include <sstream>
 #include <iostream>
 
 using namespace std;
@@ -32,11 +32,6 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	// Create the message buffer
 	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
 	m_pComm->setMsgBuffer(m_pMsgBuffer);
-	
-	stringstream strStrm;
-	strStrm << "log_" << myID << ".txt";
-	m_pLog = new Log(strStrm.str());
-	
 }
 
 //
@@ -44,9 +39,6 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 //
 NetworkSequenceCollection::~NetworkSequenceCollection()
 {
-	// write the last message to the log
-	m_pLog->write(m_timer.toString().c_str());
-	
 	// Delete the objects created in the constructor
 	delete m_pLocalSpace;
 	m_pLocalSpace = 0;
@@ -56,9 +48,6 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	
 	delete m_pMsgBuffer;
 	m_pMsgBuffer = 0;
-	
-	delete m_pLog;
-	m_pLog = 0;
 }
 
 void NetworkSequenceCollection::loadSequences()
@@ -68,7 +57,6 @@ void NetworkSequenceCollection::loadSequences()
 			i < opt::inFiles.size();
 			i += m_numDataNodes)
 		AssemblyAlgorithms::loadSequences(this, opt::inFiles[i]);
-	m_pLog->write(timer.toString().c_str());
 }
 
 int adjSet = 0;
@@ -724,8 +712,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 	{
 		pumpNetwork();
 	}
-
-	m_pLog->write(timer.toString().c_str());
 }
 
 //
@@ -789,9 +775,8 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 	{
 		numBranchesRemoved += processBranchesTrim();
 		seqCollection->pumpNetwork();
-	}		
-	
-	m_pLog->write(timer.toString().c_str());
+	}
+
 	PrintDebug(0, "Trimmed %d branches\n", numBranchesRemoved);
 	return numBranchesRemoved;	
 }
@@ -975,7 +960,6 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	if (opt::snpFile != NULL)
 		fflush(opt::snpFile);
 
-	m_pLog->write(timer.toString().c_str());
 	PrintDebug(0, "Removed %d bubbles\n", numPopped);
 	return numPopped;
 }
@@ -1146,8 +1130,8 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 	{
 		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
 		seqCollection->pumpNetwork();
-	}		
-	m_pLog->write(timer.toString().c_str());
+	}
+
 	PrintDebug(0, "Assembled %d contigs\n", numAssembled);
 	return numAssembled;
 }

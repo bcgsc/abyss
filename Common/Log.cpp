@@ -1,29 +1,6 @@
-#include "config.h"
 #include "Log.h"
 #include "Options.h"
-#include <cassert>
 #include <cstdarg>
-#include <limits.h>
-#include <unistd.h>
-
-Log::Log(std::string filename)
-	: m_fileHandle(filename.c_str())
-{
-	assert(m_fileHandle.is_open());
-	char hostname[HOST_NAME_MAX];
-	gethostname(hostname, sizeof hostname);
-	m_fileHandle << hostname << std::endl;
-}
-
-Log::~Log()
-{
-	m_fileHandle.close();
-}
-
-void Log::write(std::string str)
-{
-	m_fileHandle << str << std::endl;
-}
 
 int PrintDebug(int level, const char* format, ...)
 {

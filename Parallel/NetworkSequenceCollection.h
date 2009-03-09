@@ -8,7 +8,6 @@
 #include "CommLayer.h"
 #include "IFileWriter.h"
 #include "MessageBuffer.h"
-#include "Log.h"
 #include "Timer.h"
 #include <set>
 
@@ -227,10 +226,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Message buffer
 		MessageBuffer* m_pMsgBuffer;
-		
-		// Log file
-		Log* m_pLog;
-		
+
 		// Timer for the entire lifetime of the object
 		Timer m_timer;
 		
