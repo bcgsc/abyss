@@ -1,3 +1,71 @@
+2009-03-04  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.4.
+
+	ABYSS:
+	* Remove the need to specify a -e,--erode parameter by improving
+	the erosion algorithm to complete in a single pass.
+	* Removet the default limit on the maximum number of bubble
+	popping rounds. A limit may be specified using -b,--bubbles.
+	* Generate a warning if an input file is empty, but do not die.
+	* When using a Google sparsehash, allocate room for 100 million
+	k-mers.
+	* Increase the maximum FASTA line length from 64 kB to 256 kB.
+	* Require only one of either -l,--read-length or -t,--trim-length
+	to be specified.
+	* Allow read pairs to be named `_forward' and `_reverse'.
+	* Ensure that exactly k-1 bases of context is given on each side
+	of the bubble sequence. Previously, one side would have k bases of
+	context, and the other side would have k-1 bases.
+	* Add command line options to each of the paired-end programs.
+
+	ABYSS-P:
+	* Use Open MPI as the default MPI library.
+	* Do not link against the Open MPI C++ library.
+
+	abyss-pe:
+	* Use pipes where possible to avoid intermediate files.
+	* The semantics of the n argument have changed. See DistanceEst
+	-n,--npairs below.
+
+	SimpleGraph:
+	* If more than one path is found but only one meets all of the
+	constraints, use it.
+	* Allow for some constant error in distance estimates that does
+	not decrease with the number of samples. The expected fragment
+	size seems to vary with genomic coordinate to a certain degree.
+	So, the distribution of fragment size spanning two given contigs
+	may differ from the empirical distribution by a roughly constant
+	offset.
+
+	DistanceEst:
+	* The semantics of the -n,--npairs option has changed.
+	Require at least NPAIRS pairs between contigs (>= NPAIRS).
+	Previously, required strictly more than NPAIRS pairs between
+	contigs (> NPAIRS).
+	* Give the estimated error to a single decimal place.
+	* When counting the number of pairs that join two contigs, only
+	count pairs that fit the empirical distribution.
+	* When deciding whether the pairs joining two contigs are
+	inconsistent in sense, require NPAIRS read pairs joining two
+	contigs in each sense before considering the pair data to be
+	inconsistent.
+
+	ParseAligns:
+	* Measure fragments in total size, not alignment distance.
+	* Allow a read that spans two contigs to be used in distance
+	estimates.
+	* Add the -h,--hist option to produce a histogram.
+	* Bug fix. When measuring the empirical fragment size, ensure that
+	the sense of the alignments is correct. Output a negative fragment
+	size if the reverse read aligns ahead of the forward read.
+	* Bug fix. Miscalculated the fragment size estimate between two
+	contigs if they did not have the same sense and one contig
+	required flipping. It was possible to see one distance estimate
+	from contig A to contig B and a differing estimate from contig B
+	to contig A. Typically, the distance estimate would be off by
+	one.
+
 2009-01-23  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.3.
