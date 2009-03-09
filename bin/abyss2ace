@@ -2,6 +2,22 @@
 # Usage: abyss2ace reads.fa contigs.fa alignments.kalign >out.ace
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;
+use Getopt::Long;
+use Pod::Usage;
+
+my %opt;
+GetOptions(\%opt, qw'help man version');
+pod2usage(-verbose => 1) if $opt{help};
+pod2usage(-verbose => 2) if $opt{man};
+if ($opt{version}) {
+	print <<EOF;
+abyss (ABySS) 1.0.4
+Written by Shaun Jackman.
+
+Copyright 2009 Canada's Michael Smith Genome Science Centre
+EOF
+	exit;
+}
 
 for (@ARGV) { die "cannot read `$_'" unless -r }
 
@@ -143,3 +159,39 @@ for my $coid (sort {$a<=>$b} keys %rd) {
 	print "BS 1 $n CONTIG_$coid\n";
 	print for @{$rd{$coid}};
 }
+
+=pod
+
+=head1 NAME
+
+abyss2ace - create a Consed ACE assembly from an ABySS assembly
+
+=head1 SYNOPSIS
+
+B<KAligner> B<-k> I<K> F<reads.fa> F<contigs.fa> >F<alignments.kalign>
+
+B<abyss2ace> F<reads.fa> F<contigs.fa> F<alignments.kalign> >F<out.ace>
+
+=head1 DESCRIPTION
+
+Create a Consed ACE assembly from an ABySS assembly. The reads are
+first aligned against the contigs using KAligner. These alignments are
+then converted to an ACE assembly.
+
+=head1 AUTHOR
+
+Written by Shaun Jackman.
+
+=head1 REPORTING BUGS
+
+Report bugs to <abyss@bcgsc.ca>.
+
+=head1 COPYRIGHT
+
+Copyright 2009 Canada’s Michael Smith Genome Science Centre
+
+=head1 SEE ALSO
+
+L<ABYSS(1)>
+
+http://www.bcgsc.ca/platform/bioinfo/software/abyss
