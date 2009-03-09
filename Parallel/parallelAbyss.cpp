@@ -1,4 +1,5 @@
 #include "config.h"
+#include <climits> // for HOST_NAME_MAX
 #include <cstdio>
 #include <sstream>
 #include <unistd.h> // for gethostname
