@@ -172,6 +172,8 @@ B<KAligner> B<-k> I<K> F<reads.fa> F<contigs.fa> >F<alignments.kalign>
 
 B<abyss2ace> F<reads.fa> F<contigs.fa> F<alignments.kalign> >F<out.ace>
 
+B<consed> B<-nophd> B<-ace> F<out.ace>
+
 =head1 DESCRIPTION
 
 Create a Consed ACE assembly from an ABySS assembly. The reads are
