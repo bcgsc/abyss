@@ -4,12 +4,11 @@
 #include "Sense.h"
 #undef __DEPRECATED
 #include <ext/hash_map>
-#include <istream>
 #include <ostream>
 #include <map>
 #include <set>
 #include <string>
-
+#include <vector>
 
 typedef uint32_t LinearNumKey;
 
