@@ -1,6 +1,7 @@
 /** Written by Jared Simpson <jsimpson@bcgsc.ca>. */
 
 #include "config.h"
+#include <cstdlib>
 #include <getopt.h>
 #include <iostream>
 #include <sstream>

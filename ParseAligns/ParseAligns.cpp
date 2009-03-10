@@ -3,7 +3,9 @@
 #include "Stats.h"
 #include <algorithm>
 #include <cerrno>
+#include <climits> // for INT_MIN
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <getopt.h>

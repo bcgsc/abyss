@@ -11,6 +11,7 @@
 #include <cctype>
 #include <cerrno>
 #include <cstdlib>
+#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <map>

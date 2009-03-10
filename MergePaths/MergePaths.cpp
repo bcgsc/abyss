@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>

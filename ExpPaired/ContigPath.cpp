@@ -1,4 +1,8 @@
 #include "ContigPath.h"
+#include <algorithm>
+#include <istream>
+#include <ostream>
+#include <iterator>
 
 //
 //

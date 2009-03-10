@@ -4,8 +4,10 @@
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
+#include <cstring> // for strerror
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <getopt.h>
 #include <iostream>
 

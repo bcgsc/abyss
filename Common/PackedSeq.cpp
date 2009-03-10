@@ -1,5 +1,6 @@
 #include "PackedSeq.h"
 #include "Sequence.h"
+#include <cstring>
 
 //
 // Default constructor

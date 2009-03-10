@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include <algorithm>
+#include <climits> // for INT_MAX
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
