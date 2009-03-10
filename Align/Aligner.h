@@ -8,6 +8,7 @@
 #include "PackedSeq.h"
 #include <ext/hash_map>
 #include <string>
+#include <istream>
 #include <ostream>
 #include <map>
 #include <vector>

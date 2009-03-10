@@ -3,6 +3,7 @@
 
 #include "Sense.h"
 #include <ext/hash_map>
+#include <istream>
 #include <ostream>
 #include <map>
 #include <set>
