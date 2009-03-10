@@ -132,7 +132,7 @@ unsigned PackedSeq::getSequenceLength() const
 //
 // Return a pointer to the raw data
 //
-const char* const PackedSeq::getDataPtr() const
+const char* PackedSeq::getDataPtr() const
 {
 	return m_seq;	
 }

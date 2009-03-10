@@ -35,7 +35,7 @@ class PackedSeq
 		size_t unserialize(const char* buffer);		
 		
 		/** The size of the serialized structure. */
-		static const size_t serialSize() {
+		static size_t serialSize() {
 			PackedSeq *p = NULL;
 			return sizeof p->m_seq + sizeof p->m_length
 				+ sizeof p->m_flags + sizeof p->m_multiplicity
@@ -97,7 +97,7 @@ class PackedSeq
 		}
 
 		// Return the pointer to the data
-		const char* const getDataPtr() const;
+		const char* getDataPtr() const;
 		
 		// get a particular base
 		char getFirstBase() const { return getBaseChar(0); }
