@@ -130,27 +130,6 @@ unsigned PackedSeq::getSequenceLength() const
 }
 
 //
-// Return a pointer to the raw data
-//
-const char* PackedSeq::getDataPtr() const
-{
-	return m_seq;	
-}
-
-//
-// Print the string to stdout
-//
-void PackedSeq::print() const
-{
-	const char* iter = getDataPtr();
-	while(*iter)
-	{
-		printf("%c", *iter);
-		iter++;
-	}
-}
-
-//
 // Get the number of coding bytes
 // 
 unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)

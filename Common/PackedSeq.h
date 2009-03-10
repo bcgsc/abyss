@@ -96,9 +96,6 @@ class PackedSeq
 			assert(m_multiplicity[dir] > 0);
 		}
 
-		// Return the pointer to the data
-		const char* getDataPtr() const;
-		
 		// get a particular base
 		char getFirstBase() const { return getBaseChar(0); }
 		char getLastBase() const { return getBaseChar(m_length - 1); }
@@ -135,9 +132,6 @@ class PackedSeq
 		bool isPalindrome() const;
 		bool isPalindrome(extDirection dir) const;
 
-		// Print
-		void print() const;
-		
 #if MAX_KMER > 96
 # error MAX_KMER must be no larger than 96.
 #endif
