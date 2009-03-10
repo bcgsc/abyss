@@ -2,6 +2,7 @@
 #define DIRECTEDGRAPH_H 1
 
 #include "Sense.h"
+#undef __DEPRECATED
 #include <ext/hash_map>
 #include <istream>
 #include <ostream>

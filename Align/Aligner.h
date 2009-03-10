@@ -6,6 +6,7 @@
 //
 
 #include "PackedSeq.h"
+#undef __DEPRECATED
 #include <ext/hash_map>
 #include <string>
 #include <istream>
