@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cstdlib> // for exit
 #include <iostream>
 
 //
@@ -856,10 +858,9 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
                                                                                 size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost)
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-    if(maxNumPaths != -1 && (int)solutions.size() > maxNumPaths || gExaminedCount >= maxCompCost)
-    {
-            return;
-    }
+    if ((maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
+			|| gExaminedCount >= maxCompCost)
+		return;
     
     gExaminedCount++;
 

@@ -77,7 +77,9 @@ int main(int argc, char* const* argv)
 	// These dead ends can happen when there are two overlapping bubbles and the second one is trimmed first (the bubble with only 2 branches)
 	// There may be a better way to deal with this situation but this will suffice for the moment
 	if (opt::bubbles > 0 && opt::trimLen > 0)
-		while(AssemblyAlgorithms::trimSequences(pSC, opt::trimLen));
+		while (AssemblyAlgorithms::trimSequences(
+					pSC, opt::trimLen) > 0)
+			;
 
 	write_graph(opt::graphPath, *pSC);
 

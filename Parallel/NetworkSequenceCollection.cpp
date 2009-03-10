@@ -84,7 +84,8 @@ void NetworkSequenceCollection::completeOperation()
 
 	m_pMsgBuffer->flush(); // Send.
 	m_pComm->barrier(); // Synchronize.
-	while (pumpFlushReduce() > 0);
+	while (pumpFlushReduce() > 0)
+		;
 
 	assert(m_pMsgBuffer->empty()); // Nothing to send.
 	m_pComm->barrier(); // Synchronize.
