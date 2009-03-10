@@ -110,6 +110,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// Receive and dispatch packets.
 		unsigned pumpNetwork();
+		unsigned pumpFlushReduce();
 
 		void completeOperation();
 

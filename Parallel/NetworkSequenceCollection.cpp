@@ -63,20 +63,32 @@ int adjSet = 0;
 int numAdjMessageSent = 0;
 int numAdjMessageParsed = 0;
 
+/** Receive, process, send, and synchronize.
+ * @return the number of packets received
+ */
+unsigned NetworkSequenceCollection::pumpFlushReduce()
+{
+	unsigned count = pumpNetwork(); // Receive and process.
+	if (count > 0)
+		m_pMsgBuffer->flush(); // Send.
+	assert(m_pMsgBuffer->empty());
+	return m_pComm->reduce(count); // Synchronize.
+}
+
 /** Receive packets and process them until no more work exists for any
  * slave processor.
  */
 void NetworkSequenceCollection::completeOperation()
 {
 	Timer timer("completeOperation");
-	m_pComm->barrier();
-	for (;;) {
-		unsigned count = pumpNetwork();
-		m_pMsgBuffer->flush();
-		unsigned sum = m_pComm->reduce(count);
-		if (sum == 0)
-			break;
-	}
+
+	m_pMsgBuffer->flush(); // Send.
+	m_pComm->barrier(); // Synchronize.
+	while (pumpFlushReduce() > 0);
+
+	assert(m_pMsgBuffer->empty()); // Nothing to send.
+	m_pComm->barrier(); // Synchronize.
+	assert(m_pComm->empty()); // Nothing to receive.
 }
 
 //
