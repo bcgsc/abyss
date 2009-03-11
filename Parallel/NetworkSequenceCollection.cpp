@@ -60,10 +60,6 @@ void NetworkSequenceCollection::loadSequences()
 		AssemblyAlgorithms::loadSequences(this, opt::inFiles[i]);
 }
 
-int adjSet = 0;
-int numAdjMessageSent = 0;
-int numAdjMessageParsed = 0;
-
 /** Receive, process, send, and synchronize.
  * @return the number of packets received
  */
@@ -574,7 +570,6 @@ void NetworkSequenceCollection::handleSetFlagMessage(int /*senderID*/, const Set
 
 void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const SetBaseMessage& message)
 {
-	numAdjMessageParsed++;
 	assert(isLocal(message.m_seq));
 	setBaseExtension(message.m_seq, message.m_dir, message.m_base);
 }
@@ -1497,20 +1492,14 @@ void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection 
 //
 bool NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
 {
-	if(isLocal(seq))
-	{
-		if(m_pLocalSpace->setBaseExtension(seq, dir, base))
-		{
+	if (isLocal(seq)) {
+		if (m_pLocalSpace->setBaseExtension(seq, dir, base))
 			m_numBasesAdjSet++;
-		}
-	}
-	else
-	{	
-		numAdjMessageSent++;
+	} else {
 		int nodeID = computeNodeID(seq);
 		m_pMsgBuffer->sendSetBaseExtension(nodeID, seq, dir, base);
 	}
-	
+
 	// As this call delegates, the return value is meaningless so return false
 	return false;
 }
