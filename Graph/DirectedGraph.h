@@ -2,8 +2,7 @@
 #define DIRECTEDGRAPH_H 1
 
 #include "Sense.h"
-#undef __DEPRECATED
-#include <ext/hash_map>
+#include "HashMap.h"
 #include <ostream>
 #include <map>
 #include <set>
@@ -18,18 +17,6 @@ enum VisitColor
 	VC_GRAY,
 	VC_BLACK
 };
-
-// Work around gnu_cxx's lack of support for hashing strings
-namespace __gnu_cxx                                                                                 
-{                                                                                             
-  template<> struct hash< std::string >
-  {
-    size_t operator()( const std::string& x ) const                                           
-    {                                                                                         
-      return hash< const char* >()( x.c_str() );
-    }                                                                                         
-  };                                                                                          
-}          
 
 // Constraint structure
 struct Constraint

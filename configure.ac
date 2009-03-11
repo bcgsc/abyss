@@ -74,9 +74,15 @@ AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
 unset LIBS
 
-# Check for the Google sparse hash set.
+# Check for the hash table implementation.
 AC_LANG([C++])
-AC_CHECK_HEADERS([google/sparse_hash_set])
+AC_CHECK_HEADERS(
+	google/sparse_hash_set \
+	unordered_map \
+	tr1/unordered_map \
+	backward/hash_map \
+	ext/hash_map \
+	hash_map)
 
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')

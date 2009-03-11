@@ -6,8 +6,7 @@
 //
 
 #include "PackedSeq.h"
-#undef __DEPRECATED
-#include <ext/hash_map>
+#include "HashMap.h"
 #include <string>
 #include <istream>
 #include <ostream>
@@ -101,7 +100,7 @@ struct Position
 
 // Typedef the database pairing
 typedef std::pair<PackedSeq, Position> dbRecord;
-typedef __gnu_cxx::hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+typedef hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
 
 typedef SeqPosHashMap::const_iterator SPHMConstIter;
 typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
