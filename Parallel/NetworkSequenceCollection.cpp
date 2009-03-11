@@ -1355,16 +1355,8 @@ void NetworkSequenceCollection::finalize()
 //
 bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		return m_pLocalSpace->exists(seq);
-	}
-	else
-	{
-		assert(false);
-		return false;
-	}
+	assert(isLocal(seq));
+	return m_pLocalSpace->exists(seq);
 }
 
 //
@@ -1372,14 +1364,7 @@ bool NetworkSequenceCollection::exists(const PackedSeq& seq)
 //
 bool NetworkSequenceCollection::checkpointReached(int numRequired) const
 {
-	if(m_numReachedCheckpoint == numRequired)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return m_numReachedCheckpoint == numRequired;
 }
 
 //
@@ -1405,17 +1390,8 @@ void NetworkSequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 //
 bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		return m_pLocalSpace->checkFlag(seq, flag);
-	}
-	else
-	{
-		// Check flag should be for local sequences only
-		assert(false);
-		return false;
-	}
+	assert(isLocal(seq));
+	return m_pLocalSpace->checkFlag(seq, flag);
 }
 
 //
@@ -1429,17 +1405,8 @@ bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
 //
 bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		return m_pLocalSpace->hasParent(seq);
-	}
-	else
-	{
-		// Never should be called for non-local sequences
-		assert(false);
-		return false;
-	}
+	assert(isLocal(seq));
+	return m_pLocalSpace->hasParent(seq);
 }
 
 //
@@ -1447,17 +1414,8 @@ bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
 //
 bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		return m_pLocalSpace->hasChild(seq);
-	}
-	else
-	{
-		// Never should be called for non-local sequences
-		assert(false);
-		return false;
-	}
+	assert(isLocal(seq));
+	return m_pLocalSpace->hasChild(seq);
 }
 
 //
@@ -1465,16 +1423,8 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 //
 void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
-		m_pLocalSpace->setExtension(seq, dir, extension);
-	}
-	else
-	{
-		assert(false);
-	}
+	assert(isLocal(seq));
+	m_pLocalSpace->setExtension(seq, dir, extension);
 }
 
 //
@@ -1499,16 +1449,8 @@ bool NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirect
 //
 void NetworkSequenceCollection::clearExtensions(const PackedSeq& seq, extDirection dir)
 {
-	// Check if this sequence is local
-	if(isLocal(seq))
-	{
-		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
-		m_pLocalSpace->clearExtensions(seq, dir);
-	}
-	else
-	{
-		assert(false);
-	}
+	assert(isLocal(seq));
+	m_pLocalSpace->clearExtensions(seq, dir);
 }
 
 //
@@ -1567,17 +1509,11 @@ ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDi
 //
 bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity)
 {
-	// This function can only be called locally, the distributed version is through generateSequenceExtensionMessage
-	if(isLocal(seq))
-	{
-		m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
-		return true;
-	}
-	else
-	{
-		assert(false);
-		return false;
-	}
+	// This function can only be called locally, the distributed
+	// version is through generateSequenceExtensionMessage.
+	assert(isLocal(seq));
+	m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
+	return true;
 }
 
 
