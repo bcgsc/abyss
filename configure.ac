@@ -78,10 +78,8 @@ unset LIBS
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
 	google/sparse_hash_set \
-	unordered_map tr1/unordered_map \
-	backward/hash_map ext/hash_map hash_map \
-	unordered_set tr1/unordered_set \
-	backward/hash_set ext/hash_set hash_set \
+	unordered_map tr1/unordered_map ext/hash_map \
+	unordered_set tr1/unordered_set ext/hash_set \
 ])
 
 # Set compiler flags.
