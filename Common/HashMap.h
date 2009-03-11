@@ -11,7 +11,7 @@
 # define hash_multimap std::tr1::unordered_multimap
 #elif HAVE_BACKWARD_HASH_MAP || HAVE_EXT_HASH_MAP || HAVE_HASH_MAP
 # undef __DEPRECATED
-# if HAVE_BACKWARDS_HASH_MAP
+# if HAVE_BACKWARD_HASH_MAP
 #  include <backward/hash_map>
 # elif HAVE_EXT_HASH_MAP
 #  include <ext/hash_map>
