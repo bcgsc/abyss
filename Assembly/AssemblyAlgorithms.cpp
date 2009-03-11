@@ -213,43 +213,31 @@ void loadSequences(ISequenceCollection* seqCollection,
 void generateAdjacency(ISequenceCollection* seqCollection)
 {
 	Timer timer("GenerateAdjacency");
-	puts("Generating adjacency");
 
-	int count = 0;
-	int numBasesSet = 0;
+	unsigned count = 0;
+	unsigned numBasesSet = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
-		count++;
-		if (count % 1000000 == 0)
-			PrintDebug(1, "Generating adjacency: %d sequences\n",
-					count);
+	for (SequenceCollectionIterator iter = seqCollection->getStartIter();
+			iter != endIter; ++iter) {
+		if (++count % 1000000 == 0)
+			PrintDebug(1, "Generating adjacency: %d sequences\n", count);
 
-		for(int i = 0; i <= 1; i++)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			SeqExt extension;
+		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			PackedSeq testSeq(*iter);
-			testSeq.rotate(dir, 'A');
-			for(int j = 0; j < NUM_BASES; j++)
-			{
+			char adjBase = testSeq.rotate(dir, 'A');
+			for (int j = 0; j < NUM_BASES; j++) {
 				char currBase = BASES[j];
 				testSeq.setLastBase(dir, currBase);
-				
-				if(seqCollection->exists(testSeq))
-				{		
-					extension.SetBase(currBase);
+				if (seqCollection->setBaseExtension(
+							testSeq, !dir, adjBase))
 					numBasesSet++;
-				}
 			}
-			seqCollection->setExtension(*iter, dir, extension);	
 		}
-		
-		//iter->printExtension();
 		seqCollection->pumpNetwork();
 	}
 
-	printf("Generated %u edges\n", numBasesSet);
+	if (numBasesSet > 0)
+		PrintDebug(0, "Generated %u edges\n", numBasesSet);
 }
 
 /** Remove all the extensions both from and to this sequence. */

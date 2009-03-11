@@ -60,6 +60,7 @@ int main(int argc, char* const* argv)
 
 	pSC->finalize();
 
+	puts("Generating adjacency");
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
 	if (opt::erode > 0) {
