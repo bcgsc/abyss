@@ -106,10 +106,9 @@ class PackedSeq
 		void setFlag(SeqFlag flag) { m_flags |= flag; }
 		bool isFlagSet(SeqFlag flag) const { return m_flags & flag; }
 		void clearFlag(SeqFlag flag) { m_flags &= ~flag; }
-		
+
 		// Extension management
 		SeqExt getExtension(extDirection dir) const;
-		void setExtension(extDirection dir, SeqExt extension);
 		void setBaseExtension(extDirection dir, char b);
 		void clearExtension(extDirection dir, char b);
 		void clearAllExtensions(extDirection dir);

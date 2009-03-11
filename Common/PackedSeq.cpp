@@ -571,14 +571,6 @@ char PackedSeq::rightShiftByte(char* pSeq,
 //
 //
 //
-void PackedSeq::setExtension(extDirection dir, SeqExt extension)
-{
-	m_extRecord.dir[dir] = extension;
-}
-
-//
-//
-//
 void PackedSeq::setBaseExtension(extDirection dir, char b)
 {
 	m_extRecord.dir[dir].SetBase(b);
