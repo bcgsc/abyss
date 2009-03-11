@@ -57,6 +57,7 @@ AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
 AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
 # Check for the MPI parallel computing library.
+AC_CHECK_HEADERS([mpi.h])
 if test "$enable_lammpi"; then
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([dl], [dlopen])
@@ -70,7 +71,8 @@ else
 	AC_DEFINE(OMPI_SKIP_MPICXX, 1,
 			  [Define to disable OpenMPI C++ bindings])
 fi
-AM_CONDITIONAL([HAVE_LIBMPI], [test $ac_cv_lib_mpi_MPI_Init = yes])
+AM_CONDITIONAL([HAVE_LIBMPI],
+	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
 unset LIBS
 
