@@ -9,10 +9,9 @@
 typedef google::sparse_hash_set<PackedSeq,
 		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
 #else
-# include <ext/hash_set>
-typedef __gnu_cxx::hash_set<PackedSeq,
+# include "HashSet.h"
+typedef hash_set<PackedSeq,
 		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
-//typedef std::set<PackedSeq> SequenceDataHash;
 #endif
 
 typedef SequenceDataHash::iterator SequenceCollectionHashIter;
