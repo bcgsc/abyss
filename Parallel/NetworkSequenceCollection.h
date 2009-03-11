@@ -16,6 +16,7 @@ enum NetworkAssemblyState
 	NAS_LOADING, // loading sequences
 	NAS_FINALIZE, // finalizing the sequence data and getting ready for processing
 	NAS_GEN_ADJ, // generating the sequence data
+	NAS_ADJ_COMPLETE, // adjacency generation is complete
 	NAS_ERODE, // erode the branch ends one sequence at a time
 	NAS_ERODE_WAITING,
 	NAS_ERODE_COMPLETE,

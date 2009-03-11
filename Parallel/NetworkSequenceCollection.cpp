@@ -123,6 +123,15 @@ void NetworkSequenceCollection::run()
 				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage();
 				break;
+			case NAS_ADJ_COMPLETE:
+				m_pComm->barrier();
+				pumpNetwork();
+				PrintDebug(0, "Generated %u edges\n",
+						m_numBasesAdjSet);
+				m_pComm->reduce(m_numBasesAdjSet);
+				EndState();
+				SetState(NAS_WAITING);
+				break;
 			case NAS_ERODE:
 			{
 				unsigned numEroded
@@ -302,7 +311,18 @@ void NetworkSequenceCollection::runControl()
 				{
 					pumpNetwork();
 				}
-				
+
+				SetState(NAS_ADJ_COMPLETE);
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_ADJ_COMPLETE);
+				m_pComm->barrier();
+				pumpNetwork();
+				PrintDebug(0, "Generated %u edges\n",
+						m_numBasesAdjSet);
+				printf("Generated %u edges\n",
+						m_pComm->reduce(m_numBasesAdjSet));
+				EndState();
+
 				if (opt::erode > 0) {
 					SetState(NAS_ERODE);
 				} else {
@@ -318,6 +338,7 @@ void NetworkSequenceCollection::runControl()
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;
+			case NAS_ADJ_COMPLETE:
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
 				// These states are used only by the slaves.
@@ -642,6 +663,9 @@ void NetworkSequenceCollection::parseControlMessage()
 		case APC_GEN_ADJ:
 			SetState(NAS_GEN_ADJ);
 			break;	
+		case APC_ADJ_COMPLETE:
+			SetState(NAS_ADJ_COMPLETE);
+			break;
 	}
 }
 
