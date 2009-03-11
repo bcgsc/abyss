@@ -3,6 +3,7 @@
 #include "FastaWriter.h"
 #include "Log.h"
 #include "Options.h"
+#include <cstdlib>
 #include <iostream>
 
 using namespace std;

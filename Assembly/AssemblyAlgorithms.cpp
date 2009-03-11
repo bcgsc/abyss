@@ -10,6 +10,7 @@
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
 #include <cstdio>
+#include <cstdlib>
 
 namespace AssemblyAlgorithms
 {
