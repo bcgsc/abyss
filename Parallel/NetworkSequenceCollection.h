@@ -39,10 +39,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		NetworkSequenceCollection(int myID, int numDataNodes);
 		~NetworkSequenceCollection();
 		
-		// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency 
-		// but has been rewritten to hide latency between nodes
-		void networkGenerateAdjacency(ISequenceCollection* seqCollection);		
-		
 		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency
 		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
 		

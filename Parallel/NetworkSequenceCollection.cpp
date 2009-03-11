@@ -115,7 +115,7 @@ void NetworkSequenceCollection::run()
 				m_pComm->SendCheckPointMessage();				
 				break;
 			case NAS_GEN_ADJ:
-				networkGenerateAdjacency(this);
+				AssemblyAlgorithms::generateAdjacency(this);
 				// Cleanup any messages that are pending
 				EndState();
 				SetState(NAS_WAITING);
@@ -292,7 +292,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
-				networkGenerateAdjacency(this);
+				AssemblyAlgorithms::generateAdjacency(this);
 				
 				// Cleanup any messages that are pending
 				EndState();
@@ -669,48 +669,6 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 void NetworkSequenceCollection::handleSequenceDataResponse(int /*senderID*/, SeqDataResponse& message)
 {
 	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord, message.m_multiplicity);
-}
-
-//
-// Generate adjacency - Network version
-// This function operates in the same manner as AssemblyAlgorithms::GenerateAdjacency but has been rewritten to hide latency between nodes
-//
-void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* seqCollection)
-{
-	Timer timer("NetworkGenerateAdjacency");
-	
-	int count = 0;
-
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
-		count++;
-		if(count % 100000 == 0) {
-			PrintDebug(1, "Generating adjacency: %d sequences\n",
-					count);
-		}
-		
-		const PackedSeq& currSeq = *iter;
-		//printf("gen for: %s\n", iter->decode().c_str());
-		for(int i = 0; i <= 1; i++)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			extDirection oppDir = !dir;
-
-			PackedSeq testSeq(currSeq);
-			char adjBase = testSeq.rotate(dir, 'A');
-
-			for (int j = 0; j < NUM_BASES; j++) {
-				char currBase = BASES[j];
-				testSeq.setLastBase(dir, currBase);
-				// Optimistically send a message over the network that
-				// there is an extension from testSeq to adjBase. If
-				// testSeq doesn't exist, the message will be ignored.
-				setBaseExtension(testSeq, oppDir, adjBase);
-				pumpNetwork();
-			}
-		}
-	}
 }
 
 //
