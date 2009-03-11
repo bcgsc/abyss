@@ -21,7 +21,6 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	m_trimStep(0),
 	m_numPopped(0),
 	m_numAssembled(0),
-	m_numOutstandingRequests(0),
 	m_timer("Total")
 {
 	// Load the phase space
@@ -689,9 +688,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 		if(count % 100000 == 0) {
 			PrintDebug(1, "Generating adjacency: %d sequences\n",
 					count);
-			if (m_numOutstandingRequests > 0)
-				PrintDebug(0, "Back log of %zu requests\n",
-						m_numOutstandingRequests);
 		}
 		
 		const PackedSeq& currSeq = *iter;
@@ -714,12 +710,6 @@ void NetworkSequenceCollection::networkGenerateAdjacency(ISequenceCollection* se
 				pumpNetwork();
 			}
 		}
-	}
-	
-	// Wait for all the requests to be filled
-	while(m_numOutstandingRequests != 0)
-	{
-		pumpNetwork();
 	}
 }
 

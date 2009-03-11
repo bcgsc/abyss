@@ -213,9 +213,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// the number of sequences assembled so far
 		int m_numAssembled;
 		
-		// The number of requests that are pending
-		size_t m_numOutstandingRequests;
-		
 		// The current branches that are active
 		BranchGroupMap m_activeBranchGroups;
 
