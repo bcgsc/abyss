@@ -88,10 +88,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// check if the extension exists
 		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
-		
-		// Set the extension of this sequence
-		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
-		
+
 		// set a single base extension
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
 		

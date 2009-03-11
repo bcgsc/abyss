@@ -41,10 +41,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
-		
-		// add extension
-		void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension);
-		
+
 		// set a base extension
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
 		
@@ -117,7 +114,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
 		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
-		void setExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt extension);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);

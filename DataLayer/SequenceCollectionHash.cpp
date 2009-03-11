@@ -100,28 +100,6 @@ int SequenceCollectionHash::getMultiplicity(const PackedSeq& seq)
 }
 
 //
-// add an extension to this sequence in the record
-//
-void SequenceCollectionHash::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	setExtensionByIter(iters.first, dir, extension);
-	setExtensionByIter(iters.second, oppositeDirection(dir), extension.complement());
-}
-
-//
-//
-//
-void SequenceCollectionHash::setExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt extension)
-{
-	if(seqIter != m_pSequences->end())
-	{
-		const_cast<PackedSeq&>(*seqIter).setExtension(dir, extension);
-		//seqIter->printExtension();
-	}
-}
-
-//
 // Set a single base extension
 //
 bool SequenceCollectionHash::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)

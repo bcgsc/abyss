@@ -72,10 +72,7 @@ class ISequenceCollection
 		
 		// remove all the extensions of this sequence
 		virtual void clearExtensions(const PackedSeq& seq, extDirection dir) = 0;
-		
-		// add an extension to the sequence
-		virtual void setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension) = 0;
-		
+
 		// set a single base extension
 		virtual bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
 		

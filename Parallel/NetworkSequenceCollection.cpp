@@ -1377,16 +1377,7 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 }
 
 //
-// set the extension for the sequence
 //
-void NetworkSequenceCollection::setExtension(const PackedSeq& seq, extDirection dir, SeqExt extension)
-{
-	assert(isLocal(seq));
-	m_pLocalSpace->setExtension(seq, dir, extension);
-}
-
-//
-// 
 //
 bool NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
 {
