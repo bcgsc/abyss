@@ -512,10 +512,9 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 	
 	size_t numBranches = group.getNumBranches();
 	BranchRecord& refRecord = group.getBranch(selectedIndex);
-	if (opt::verbose > 4)
-		printf("Popping %zu %s\n", refRecord.getLength(),
+	PrintDebug(5, "Popping %zu %s\n", refRecord.getLength(),
 				refRecord.getFirstSeq().decode().c_str());
-	
+
 	for(size_t i = 0; i < numBranches; ++i)
 	{
 		// Skip the branch that was selected to keep
@@ -810,9 +809,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 {
 	assert(!branch.isActive());
 	if(branch.getLength() > 0 && branch.getState() != BS_TOO_LONG)
-	{		
-		if (opt::verbose > 4)
-			printf("Trimming %zu %s\n", branch.getLength(),
+	{
+		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
 					branch.getFirstSeq().decode().c_str());
 		BranchDataIter endIter  = branch.getEndIter();
 		for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
