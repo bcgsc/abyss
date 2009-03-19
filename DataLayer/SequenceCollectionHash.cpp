@@ -266,15 +266,14 @@ void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 	}
 }
 
-//
-//
-//
-void SequenceCollectionHash::finalize()
+/** Print the load of the hash table. */
+void SequenceCollectionHash::printLoad()
 {
-	size_t num_buckets = m_pSequences->bucket_count();
-	size_t num_seqs = m_pSequences->size();
-	PrintDebug(2, "hash buckets: %zu sequences: %zu load factor: %f\n",
-			num_buckets, num_seqs, (float)num_seqs/num_buckets);
+	size_t size = m_pSequences->size();
+	size_t buckets = m_pSequences->bucket_count();
+	PrintDebug(0, "Loaded %zu sequences\n", size);
+	PrintDebug(1, "Hash load: %zu / %zu = %f\n",
+			size, buckets, (float)size / buckets);
 }
 
 //

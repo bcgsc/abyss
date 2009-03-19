@@ -60,9 +60,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// remove a sequence from the collection
 		void remove(const PackedSeq& seq);
 		
-		// end the data load and make the sequence space ready for data read
-		void finalize();
-		
 		// check if a sequence exists
 		bool exists(const PackedSeq& seq);
 		

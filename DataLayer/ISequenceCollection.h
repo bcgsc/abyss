@@ -40,9 +40,6 @@ class ISequenceCollection
 		// remove a sequence from the collection
 		virtual void remove(const PackedSeq& seq) = 0;
 				
-		// end the data load and make the sequence space ready for data read
-		virtual void finalize() = 0;
-		
 		// check if a sequence exists
 		virtual bool exists(const PackedSeq& seq) = 0;
 

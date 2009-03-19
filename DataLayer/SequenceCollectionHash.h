@@ -27,8 +27,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Get the multiplicity of a sequence
 		int getMultiplicity(const PackedSeq& seq);
 		
-		// end the data load and make the sequence space ready for data read
-		void finalize();
+		// Print the load of the hash table.
+		void printLoad();
 		
 		// check if a sequence exists
 		bool exists(const PackedSeq& seq);

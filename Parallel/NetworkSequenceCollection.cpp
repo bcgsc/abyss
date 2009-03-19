@@ -109,7 +109,7 @@ void NetworkSequenceCollection::run()
 			case NAS_LOAD_COMPLETE:
 				m_pComm->barrier();
 				pumpNetwork();
-				finalize();
+				m_pLocalSpace->printLoad();
 				m_pComm->reduce(m_pLocalSpace->count());
 				EndState();
 				SetState(NAS_WAITING);
@@ -285,7 +285,7 @@ void NetworkSequenceCollection::runControl()
 						APC_LOAD_COMPLETE);
 				m_pComm->barrier();
 				pumpNetwork();
-				finalize();
+				m_pLocalSpace->printLoad();
 				printf("Loaded %u sequences\n",
 						m_pComm->reduce(m_pLocalSpace->count()));
 				EndState();
@@ -1316,16 +1316,6 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 		int nodeID = computeNodeID(seq);	
 		m_pMsgBuffer->sendSeqOpMessage(nodeID, seq, MO_REMOVE);
 	}	
-}
-
-//
-//
-//
-void NetworkSequenceCollection::finalize()
-{
-	// this command is broadcast from the controller so we only perform a local finalize
-	PrintDebug(0, "Loaded %d sequences\n", m_pLocalSpace->count());	
-	m_pLocalSpace->finalize();
 }
 
 //

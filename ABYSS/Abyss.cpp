@@ -54,11 +54,8 @@ int main(int argc, char* const* argv)
 	
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
-
-	printf("Loaded %u sequences\n", pSC->count());
+	pSC->printLoad();
 	assert(pSC->count() > 0);
-
-	pSC->finalize();
 
 	puts("Generating adjacency");
 	AssemblyAlgorithms::generateAdjacency(pSC);
