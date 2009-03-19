@@ -106,13 +106,13 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage();
 				break;
-			case NAS_FINALIZE:
+			case NAS_LOAD_COMPLETE:
+				m_pComm->barrier();
+				pumpNetwork();
 				finalize();
-				
-				// Cleanup any messages that are pending
+				m_pComm->reduce(m_pLocalSpace->count());
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->SendCheckPointMessage();				
 				break;
 			case NAS_GEN_ADJ:
 				AssemblyAlgorithms::generateAdjacency(this);
@@ -275,29 +275,24 @@ void NetworkSequenceCollection::runControl()
 			case NAS_LOADING:
 				loadSequences();
 				EndState();
+
 				m_numReachedCheckpoint++;
 				while (!checkpointReached(m_numDataNodes))
 					pumpNetwork();
-				SetState(NAS_FINALIZE);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_FINALIZE);
-				break;
-			case NAS_FINALIZE:
+
+				SetState(NAS_LOAD_COMPLETE);
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_LOAD_COMPLETE);
+				m_pComm->barrier();
+				pumpNetwork();
 				finalize();
-				
-				// Cleanup any messages that are pending
+				printf("Loaded %u sequences\n",
+						m_pComm->reduce(m_pLocalSpace->count()));
 				EndState();
-								
-				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
-				{
-					pumpNetwork();
-				}
-						
+
 				SetState(NAS_GEN_ADJ);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_GEN_ADJ);		
-				
-				//SetState(NAS_DONE);
-				//m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);		
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_GEN_ADJ);
 				break;
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
@@ -338,6 +333,7 @@ void NetworkSequenceCollection::runControl()
 				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;
+			case NAS_LOAD_COMPLETE:
 			case NAS_ADJ_COMPLETE:
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
@@ -614,9 +610,9 @@ void NetworkSequenceCollection::parseControlMessage()
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
 	{
-		case APC_FINALIZE:
-			SetState(NAS_FINALIZE);
-			break;	
+		case APC_LOAD_COMPLETE:
+			SetState(NAS_LOAD_COMPLETE);
+			break;
 		case APC_CHECKPOINT:
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
