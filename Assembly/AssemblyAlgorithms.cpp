@@ -202,9 +202,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 		fprintf(stderr, "warning: discarded %d sequences "
 				"containing non-ACGT characters\n", count_nonacgt);
 
-	if (count == 0) {
-		fputs("warning: input contains no usable sequences\n", stderr);
-	}
+	if (count == 0)
+		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
+				inFile.c_str());
 }
 
 //
