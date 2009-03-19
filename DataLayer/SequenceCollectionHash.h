@@ -132,12 +132,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// pointer to the actual collection (typedef'd above)
 		SequenceDataHash* m_pSequences;
-		
-		// the state of the space
-		enum CollectionState {
-			CS_LOADING,
-			CS_FINALIZED
-		} m_state;
 
 		/** The observers. Only a single observer is implemented.*/
 		SeqObserver m_seqObserver;

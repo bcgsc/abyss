@@ -24,7 +24,7 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 // 
 //
 SequenceCollectionHash::SequenceCollectionHash()
-	: m_state(CS_LOADING), m_seqObserver(NULL)
+	: m_seqObserver(NULL)
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 	// Make room for 100 million k-mers. Approximately 58 million
@@ -181,7 +181,6 @@ void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& s
 //
 bool SequenceCollectionHash::exists(const PackedSeq& seq)
 {
-	assert(m_state != CS_LOADING);
 	ResultPair rp;
 	
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
@@ -211,7 +210,6 @@ bool SequenceCollectionHash::existsByIter(SequenceCollectionHashIter& seqIter) c
 //
 void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
 {
-	assert(m_state == CS_FINALIZED);
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	setFlagByIter(iters.first, flag);
 	setFlagByIter(iters.second, flag);
@@ -222,8 +220,6 @@ void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
 //
 void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag)
 {
-	assert(m_state == CS_FINALIZED);
-	
 	if(seqIter != m_pSequences->end())
 	{
 		const_cast<PackedSeq&>(*seqIter).setFlag(flag);
@@ -235,7 +231,6 @@ void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, 
 //
 bool SequenceCollectionHash::checkFlag(const PackedSeq& seq, SeqFlag flag)
 {
-	assert(m_state == CS_FINALIZED);
 	ResultPair result;
 	SequenceHashIterPair seqIters = GetSequenceIterators(seq);
 	result.forward = checkFlagByIter(seqIters.first, flag);
@@ -250,8 +245,6 @@ bool SequenceCollectionHash::checkFlag(const PackedSeq& seq, SeqFlag flag)
 //
 bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag)
 {
-	assert(m_state == CS_FINALIZED);
-
 	// Check whether the sequence and its reverse complement both have the flag set/unset
 	// They SHOULD be the same and the assert will guarentee this
 	if(seqIter != m_pSequences->end())
@@ -278,8 +271,6 @@ void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 //
 void SequenceCollectionHash::finalize()
 {
-	m_state = CS_FINALIZED;
-	
 	size_t num_buckets = m_pSequences->bucket_count();
 	size_t num_seqs = m_pSequences->size();
 	PrintDebug(2, "hash buckets: %zu sequences: %zu load factor: %f\n",
@@ -299,7 +290,6 @@ bool SequenceCollectionHash::checkForDuplicates() const
 //
 bool SequenceCollectionHash::hasParent(const PackedSeq& seq)
 {
-	assert(m_state == CS_FINALIZED);
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool forwardFlag = hasParentByIter(iters.first);
 	bool reverseFlag = hasChildByIter(iters.second);
@@ -314,7 +304,6 @@ bool SequenceCollectionHash::hasParent(const PackedSeq& seq)
 //
 bool SequenceCollectionHash::hasParentByIter(SequenceCollectionHashIter seqIter) const
 {
-	assert(m_state == CS_FINALIZED);
 	if(seqIter != m_pSequences->end())
 	{
 		return seqIter->hasExtension(ANTISENSE);
@@ -330,7 +319,6 @@ bool SequenceCollectionHash::hasParentByIter(SequenceCollectionHashIter seqIter)
 //
 bool SequenceCollectionHash::hasChild(const PackedSeq& seq)
 {
-	assert(m_state == CS_FINALIZED);
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool forwardFlag = hasChildByIter(iters.first);
 	bool reverseFlag = hasParentByIter(iters.second);
@@ -345,7 +333,6 @@ bool SequenceCollectionHash::hasChild(const PackedSeq& seq)
 //
 bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) const
 {
-	assert(m_state == CS_FINALIZED);
 	if(seqIter != m_pSequences->end())
 	{
 		return seqIter->hasExtension(SENSE);
@@ -361,7 +348,6 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 //
 ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base)
 {
-	assert(m_state == CS_FINALIZED);
 	ResultPair rp;
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
