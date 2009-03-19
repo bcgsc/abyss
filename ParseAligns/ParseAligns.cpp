@@ -93,7 +93,11 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		string readID;
 		s >> readID;
 		AlignmentVector& alignments = out[readID];
-		assert(alignments.empty());
+		if (!alignments.empty()) {
+			cerr << "error: duplicate read ID `"
+				<< readID << "'\n";
+			exit(EXIT_FAILURE);
+		}
 		for (Alignment ali; s >> ali;)
 			alignments.push_back(ali);
 	}
