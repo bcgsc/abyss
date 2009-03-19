@@ -2,6 +2,13 @@
 # Join multiple ABySS distance estimate files.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;
+use Getopt::Long;
+use Pod::Usage;
+
+my %opt;
+GetOptions(\%opt, qw'help man');
+pod2usage(-verbose => 1) if $opt{help};
+pod2usage(-verbose => 2) if $opt{man};
 
 my (%id, %a, %b);
 
@@ -39,3 +46,32 @@ for my $id (sort {$a<=>$b} keys %id) {
 	}
 	print "\n";
 }
+
+=pod
+
+=head1 NAME
+
+abyss-joindist -
+Join multiple ABySS distance estimate files.
+
+=head1 SYNOPSIS
+
+B<abyss-joindist> F<in.dist>... >F<out.dist>
+
+=head1 AUTHOR
+
+Written by Shaun Jackman.
+
+=head1 REPORTING BUGS
+
+Report bugs to <abyss@bcgsc.ca>.
+
+=head1 COPYRIGHT
+
+Copyright 2009 Canada’s Michael Smith Genome Science Centre
+
+=head1 SEE ALSO
+
+L<ABYSS(1)>
+
+http://www.bcgsc.ca/platform/bioinfo/software/abyss
