@@ -17,7 +17,6 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	m_numDataNodes(numDataNodes),
 	m_state(NAS_WAITING),
 	m_numBasesAdjSet(0),
-	m_startTrimLen(-1),
 	m_trimStep(0),
 	m_numPopped(0),
 	m_numAssembled(0),
@@ -318,19 +317,13 @@ void NetworkSequenceCollection::runControl()
 						m_pComm->reduce(m_numBasesAdjSet));
 				EndState();
 
-				if (opt::erode > 0) {
-					SetState(NAS_ERODE);
-				} else {
-					m_startTrimLen = 2;	
-					SetState(NAS_TRIM);
-				}
+				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 			case NAS_ERODE:
 				assert(opt::erode > 0);
 				puts("Eroding tips");
 				controlErode();
 				assert(controlErode() == 0);
-				m_startTrimLen = 2;
 				SetState(NAS_TRIM);
 				break;
 			case NAS_LOAD_COMPLETE:
@@ -342,12 +335,8 @@ void NetworkSequenceCollection::runControl()
 				exit(EXIT_FAILURE);
 
 			case NAS_TRIM:
-			{		
-				// The control node drives the trimming and passes the value to trim at to the other nodes
-				int start = m_startTrimLen;
-				
-				assert(start > 1);
-				
+			{
+				int start = 2;
 				unsigned totalRemoved = 0;
 				bool stopTrimming = false;
 				while(!stopTrimming)

@@ -191,10 +191,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// the number of bases of adjacency set
 		int m_numBasesAdjSet;
-		
-		// the starting trim value
-		int m_startTrimLen;
-		
+
 		// the current length to trim on (comes from the control node)
 		int m_trimStep;
 		
