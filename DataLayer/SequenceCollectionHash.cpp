@@ -276,17 +276,6 @@ void SequenceCollectionHash::printLoad()
 			size, buckets, (float)size / buckets);
 }
 
-//
-//
-//
-bool SequenceCollectionHash::checkForDuplicates() const
-{
-	return false;
-}
-
-//
-//
-//
 bool SequenceCollectionHash::hasParent(const PackedSeq& seq)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);

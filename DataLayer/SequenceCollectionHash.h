@@ -102,10 +102,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
-		
-		// Check if duplicate entries exist
-		bool checkForDuplicates() const;		
-		
 		// Iterator versions of modification functions
 		// These should only be called from this class, hence they are private
 		void removeByIter(SequenceHashIterPair seqIters);
