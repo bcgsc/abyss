@@ -56,9 +56,11 @@ int main(int argc, char** argv)
 	if (opt::rank == 0)
 		printf("Running on %d processors\n", mpi_size);
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	char hostname[HOST_NAME_MAX];
 	gethostname(hostname, sizeof hostname);
 	PrintDebug(0, "Running on host %s\n", hostname);
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size);
 
