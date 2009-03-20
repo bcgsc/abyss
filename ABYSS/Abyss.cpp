@@ -13,8 +13,6 @@ using namespace std;
 
 static void popBubbles(/*const*/ ISequenceCollection* pSC)
 {
-	if (opt::bubbles <= 0)
-		return;
 	puts("Popping bubbles");
 	unsigned totalPopped = 0;
 	int i;
@@ -66,18 +64,20 @@ int main(int argc, char* const* argv)
 		assert(AssemblyAlgorithms::erodeEnds(pSC) == 0);
 	}
 
-	int startTrimLength = 2;
-	AssemblyAlgorithms::performTrim(pSC, startTrimLength);
-		
-	popBubbles(pSC);
-	
-	// Perform an additional trim at the max trim length to get rid of any new dead ends that formed during the bubble popping
-	// These dead ends can happen when there are two overlapping bubbles and the second one is trimmed first (the bubble with only 2 branches)
-	// There may be a better way to deal with this situation but this will suffice for the moment
-	if (opt::bubbles > 0 && opt::trimLen > 0)
-		while (AssemblyAlgorithms::trimSequences(
-					pSC, opt::trimLen) > 0)
-			;
+	AssemblyAlgorithms::performTrim(pSC, 2);
+
+	if (opt::bubbles > 0) {
+		popBubbles(pSC);
+
+		// Perform an additional trim at the max trim length to get
+		// rid of any new dead ends that formed during the bubble
+		// popping. These dead ends can happen when there are two
+		// overlapping bubbles and the second one is trimmed first
+		// (the bubble with only 2 branches). There may be a better
+		// way to deal with this situation, but this will suffice for
+		// the moment.
+		AssemblyAlgorithms::performTrim(pSC, opt::trimLen);
+	}
 
 	write_graph(opt::graphPath, *pSC);
 
