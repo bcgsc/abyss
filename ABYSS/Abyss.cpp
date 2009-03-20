@@ -38,8 +38,8 @@ static void write_graph(const std::string& path,
 }
 
 int main(int argc, char* const* argv)
-{	
-	Timer timer("Abyss");
+{
+	Timer timer("Total");
 
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
