@@ -39,9 +39,9 @@ static void concatenateFiles(string dest,
 }
 
 int main(int argc, char** argv)
-{	
-	Timer timer("ParallelAbyss");
-	
+{
+	Timer timer("Total");
+
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
 

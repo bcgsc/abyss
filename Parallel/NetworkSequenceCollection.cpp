@@ -19,8 +19,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	m_numBasesAdjSet(0),
 	m_trimStep(0),
 	m_numPopped(0),
-	m_numAssembled(0),
-	m_timer("Total")
+	m_numAssembled(0)
 {
 	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();

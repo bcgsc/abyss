@@ -213,9 +213,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Message buffer
 		MessageBuffer* m_pMsgBuffer;
 
-		// Timer for the entire lifetime of the object
-		Timer m_timer;
-		
 		static const size_t MAX_ACTIVE = 50;
 		static const size_t LOW_ACTIVE = 10;		
 };
