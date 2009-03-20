@@ -629,29 +629,15 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 	return getNumEroded();
 }
 
-//
-// Trimming driver function
-//
+/** Trimming driver function */
 void performTrim(ISequenceCollection* seqCollection, int start)
 {
 	if (opt::trimLen == 0)
 		return;
-
-	while(start <= opt::trimLen)
-	{
-		trimSequences(seqCollection, start);
-		start <<= 1;
-	}
-	
-	bool stop = false;
-	while(!stop)
-	{
-		int numRemoved = trimSequences(seqCollection, opt::trimLen);
-		if(numRemoved <= 0)
-		{
-			stop = true;
-		}
-	}
+	for (int trim = start; trim < opt::trimLen; trim *= 2)
+		trimSequences(seqCollection, trim);
+	while (trimSequences(seqCollection, opt::trimLen) > 0)
+		;
 }
 
 //
