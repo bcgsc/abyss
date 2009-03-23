@@ -4,6 +4,8 @@
 #include <ostream>
 #include <iterator>
 
+using namespace std;
+
 //
 //
 //
@@ -104,10 +106,12 @@ ContigPath ContigPath::extractNodes(size_t start, size_t end)
 //
 // Write the path to the stream
 //
-std::ostream& operator<<(std::ostream& out, const ContigPath& object)
+ostream& operator<<(ostream& out, const ContigPath& object)
 {
-	std::copy(object.m_path.begin(), object.m_path.end(), std::ostream_iterator<MergeNode>(out, " "));
-	return out;
+	vector<MergeNode>::const_iterator last = object.m_path.end() - 1;
+	copy(object.m_path.begin(), last,
+			ostream_iterator<MergeNode>(out, " "));
+	return out << *last;
 }
 
 //
