@@ -23,7 +23,6 @@ enum NetworkAssemblyState
 	NAS_TRIM, // trimming the data
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
-	NAS_TRIM2, // second trimming step after the bubble removal
 	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
 	NAS_ASSEMBLE, // assembling the data
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function
@@ -48,6 +47,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int performNetworkPopBubbles(ISequenceCollection* seqCollection);
 
 		unsigned controlErode();
+		unsigned controlTrimRound(unsigned trimLen);
+		void controlTrim(unsigned start);
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
 

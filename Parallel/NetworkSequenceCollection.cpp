@@ -150,7 +150,6 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				break;
 			case NAS_TRIM:
-			case NAS_TRIM2:
 			{
 				assert(m_trimStep != 0);
 				
@@ -257,6 +256,40 @@ unsigned NetworkSequenceCollection::controlErode()
 	return numEroded;
 }
 
+/** Perform a single round of trimming at the specified length. */
+unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
+{
+	printf("Trimming short branches: %d\n", trimLen);
+	SetState(NAS_TRIM);
+	m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, trimLen);
+	unsigned numRemoved = performNetworkTrim(this, trimLen);
+	EndState();
+
+	m_numReachedCheckpoint++;
+	while (!checkpointReached(m_numDataNodes))
+		pumpNetwork();
+	numRemoved += m_checkpointSum;
+	if (numRemoved > 0)
+		printf("Trimmed %u branches\n", numRemoved);
+	return numRemoved;
+}
+
+/** Perform multiple rounds of trimming until complete. */
+void NetworkSequenceCollection::controlTrim(unsigned start)
+{
+	unsigned rounds = 0, total = 0;
+	for (int trim = start; trim < opt::trimLen; trim *= 2) {
+		rounds++;
+		total += controlTrimRound(trim);
+	}
+	unsigned count;
+	while ((count = controlTrimRound(opt::trimLen)) > 0) {
+		rounds++;
+		total += count;
+	}
+	printf("Trimmed %u branches in %u rounds\n", total, rounds);
+}
+
 //
 // The main loop for the controller (rank = 0 process)
 //
@@ -328,60 +361,16 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ADJ_COMPLETE:
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
+			case NAS_DISCOVER_BUBBLES:
 				// These states are used only by the slaves.
 				assert(false);
 				exit(EXIT_FAILURE);
 
 			case NAS_TRIM:
-			{
-				int start = 2;
-				unsigned rounds = 0, totalRemoved = 0;
-				for (;;) {
-					printf("Trimming short branches: %d\n", start);	
-					m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, start);
-					
-					// perform the trim
-					int numRemoved = performNetworkTrim(this, start);
-					
-					if (start < opt::trimLen)
-						start <<= 1;
-					if (start > opt::trimLen)
-						start = opt::trimLen;
-
-					// Cleanup any messages that are pending
-					EndState();							
-
-					// Wait for all the nodes to hit the checkpoint
-					m_numReachedCheckpoint++;
-					while(!checkpointReached(m_numDataNodes))
-					{
-						pumpNetwork();
-					}
-					numRemoved += m_checkpointSum;
-					if (numRemoved == 0)
-						break;
-
-					printf("Trimmed %u branches\n", numRemoved);
-					rounds++;
-					totalRemoved += numRemoved;
-
-					// All checkpoints are reached, reset the state
-					SetState(NAS_TRIM);
-				}
-				printf("Trimmed %u branches in %u rounds\n",
-						totalRemoved, rounds);
-
-				// Cleanup any messages that are pending
-				EndState();				
-
-				// Trimming has been completed
-				SetState(NAS_POPBUBBLE);					
+				controlTrim(2);
+				SetState(NAS_POPBUBBLE);
 				break;
-			}
-			case NAS_DISCOVER_BUBBLES:
-				// This state is only used by the slaves.
-				assert(false);
-				exit(EXIT_FAILURE);
+
 			case NAS_POPBUBBLE:
 			{
 				puts("Popping bubbles");
@@ -396,29 +385,18 @@ void NetworkSequenceCollection::runControl()
 				assert(totalPopped == m_numPopped);
 				printf("Removed %d bubbles in %d rounds\n",
 						totalPopped, i);
-				SetState(NAS_TRIM2);
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_TRIM, opt::trimLen);
+
+				// Another round of trimming to remove tips created by
+				// popping complex bubbles.
+				if (totalPopped > 0)
+					controlTrim(opt::trimLen);
+
+				SetState(NAS_SPLIT);
 				break;
 			}
-			case NAS_TRIM2:
-				printf("Trimming short branches: %d\n", opt::trimLen);
-				performNetworkTrim(this, opt::trimLen);
-				
-				// Cleanup any messages that are pending
-				EndState();
-								
-				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
-				{
-					pumpNetwork();
-				}
-								
-				SetState(NAS_SPLIT);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);						
-				break;
 			case NAS_SPLIT:
 				puts("Splitting ambiguous branches");
+				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);
 				AssemblyAlgorithms::splitAmbiguous(this);
 
 				// Cleanup any messages that are pending
@@ -1181,7 +1159,6 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 	switch(m_state)
 	{
 		case NAS_TRIM:
-		case NAS_TRIM2:
 		case NAS_ASSEMBLE:
 			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
 		case NAS_DISCOVER_BUBBLES:
