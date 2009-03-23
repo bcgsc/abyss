@@ -1,5 +1,6 @@
 #include "SequenceCollectionHash.h"
 #include "Log.h"
+#include "Timer.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -95,6 +96,7 @@ void SequenceCollectionHash::remove(const PackedSeq& seq)
  */
 unsigned SequenceCollectionHash::removeMarked()
 {
+	Timer(__func__);
 	unsigned count = 0;
 	for (SequenceCollectionHashIter it = m_pSequences->begin();
 			it != m_pSequences->end();) {
