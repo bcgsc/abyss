@@ -104,6 +104,11 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (opt::out.empty()) {
+		cerr << PROGRAM ": " << "missing -o,--out option\n";
+		die = true;
+	}
+
 	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
@@ -149,6 +154,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	(void)pContigGraph;
 	std::ifstream inStream(estFileName.c_str());
 	std::ofstream outStream(opt::out.c_str());
+	assert(outStream.is_open());
 	SimpleDataCost costFunctor(kmer);
 
 	for (EstimateRecord er; inStream >> er;) {
@@ -310,6 +316,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				constructContigPath(*bestSol, cPath);
 				outputContigPath(outStream,
 						er.refID, (extDirection)dirIdx, cPath);
+				assert(outStream.good());
 			}
 		}
 	}
