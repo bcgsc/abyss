@@ -35,10 +35,6 @@ mixing with 12*3 instructions on 3 integers than you can with 3 instructions
 on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 -------------------------------------------------------------------------------
 */
-#define SELF_TEST 1
-
-#include <stdio.h>      /* defines printf for tests */
-#include <time.h>       /* defines time_t for timings in the test */
 #include <stdint.h>     /* defines uint32_t etc */
 #include <sys/param.h>  /* attempt to define endianness */
 #ifdef linux
