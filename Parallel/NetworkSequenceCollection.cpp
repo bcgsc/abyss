@@ -147,6 +147,11 @@ void NetworkSequenceCollection::run()
 			case NAS_ERODE_COMPLETE:
 				completeOperation();
 				m_pComm->reduce(AssemblyAlgorithms::getNumEroded());
+
+				m_pLocalSpace->removeMarked();
+				m_pLocalSpace->printLoad();
+				m_pComm->barrier();
+
 				SetState(NAS_WAITING);
 				break;
 			case NAS_TRIM:
@@ -250,9 +255,13 @@ unsigned NetworkSequenceCollection::controlErode()
 	completeOperation();
 	numEroded += m_pComm->reduce(
 			AssemblyAlgorithms::getNumEroded());
-	SetState(NAS_WAITING);
-
 	printf("Eroded %u tips\n", numEroded);
+
+	m_pLocalSpace->removeMarked();
+	m_pLocalSpace->printLoad();
+	m_pComm->barrier();
+
+	SetState(NAS_WAITING);
 	return numEroded;
 }
 

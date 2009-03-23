@@ -33,6 +33,15 @@ SequenceCollectionHash::SequenceCollectionHash()
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
 	m_pSequences = new SequenceDataHash(100000000);
+
+	/* sparse_hash_set requires you call set_deleted_key() before
+	* calling erase().
+	* See http://google-sparsehash.googlecode.com
+	* /svn/trunk/doc/sparse_hash_set.html#4
+	*/
+	PackedSeq deleted_key;
+	memset(&deleted_key, 0, sizeof deleted_key);
+	m_pSequences->set_deleted_key(deleted_key);
 #else
 	m_pSequences = new SequenceDataHash();
 #endif
@@ -79,6 +88,23 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 void SequenceCollectionHash::remove(const PackedSeq& seq)
 {
 	setFlag(seq, SF_DELETE);
+}
+
+/** Remove marked sequences from the set.
+ * @return the number of sequences removed
+ */
+unsigned SequenceCollectionHash::removeMarked()
+{
+	unsigned count = 0;
+	for (SequenceCollectionHashIter it = m_pSequences->begin();
+			it != m_pSequences->end();) {
+		if (it->isFlagSet(SF_DELETE)) {
+			m_pSequences->erase(it++);
+			count++;
+		} else
+			++it;
+	}
+	return count;
 }
 
 // get the multiplicity of a sequence
