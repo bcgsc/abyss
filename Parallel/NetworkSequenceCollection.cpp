@@ -335,10 +335,8 @@ void NetworkSequenceCollection::runControl()
 			case NAS_TRIM:
 			{
 				int start = 2;
-				unsigned totalRemoved = 0;
-				bool stopTrimming = false;
-				while(!stopTrimming)
-				{
+				unsigned rounds = 0, totalRemoved = 0;
+				for (;;) {
 					printf("Trimming short branches: %d\n", start);	
 					m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, start);
 					
@@ -360,22 +358,22 @@ void NetworkSequenceCollection::runControl()
 						pumpNetwork();
 					}
 					numRemoved += m_checkpointSum;
-					
 					if (numRemoved == 0)
-						stopTrimming = true;
-					else
-						printf("Trimmed %d branches\n", numRemoved);
+						break;
+
+					printf("Trimmed %u branches\n", numRemoved);
+					rounds++;
 					totalRemoved += numRemoved;
-					
+
 					// All checkpoints are reached, reset the state
 					SetState(NAS_TRIM);
 				}
-				printf("Trimmed %d branches in total\n",
-						totalRemoved);
-				
+				printf("Trimmed %u branches in %u rounds\n",
+						totalRemoved, rounds);
+
 				// Cleanup any messages that are pending
 				EndState();				
-				
+
 				// Trimming has been completed
 				SetState(NAS_POPBUBBLE);					
 				break;

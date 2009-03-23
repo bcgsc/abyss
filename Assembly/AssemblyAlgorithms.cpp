@@ -634,10 +634,17 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 {
 	if (opt::trimLen == 0)
 		return;
-	for (int trim = start; trim < opt::trimLen; trim *= 2)
-		trimSequences(seqCollection, trim);
-	while (trimSequences(seqCollection, opt::trimLen) > 0)
-		;
+	unsigned rounds = 0, total = 0;
+	for (int trim = start; trim < opt::trimLen; trim *= 2) {
+		rounds++;
+		total += trimSequences(seqCollection, trim);
+	}
+	unsigned count;
+	while ((count = trimSequences(seqCollection, opt::trimLen)) > 0) {
+		rounds++;
+		total += count;
+	}
+	printf("Trimmed %u branches in %u rounds\n", total, rounds);
 }
 
 //
