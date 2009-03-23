@@ -62,11 +62,12 @@ void NetworkSequenceCollection::loadSequences()
  */
 unsigned NetworkSequenceCollection::pumpFlushReduce()
 {
+	m_pMsgBuffer->flush(); // Send.
+	m_pComm->barrier(); // Synchronize.
 	unsigned count = pumpNetwork(); // Receive and process.
-	if (count > 0)
-		m_pMsgBuffer->flush(); // Send.
-	assert(m_pMsgBuffer->empty());
-	return m_pComm->reduce(count); // Synchronize.
+	if (count == 0)
+		assert(m_pMsgBuffer->empty());
+	return m_pComm->reduce(count); // Reduce.
 }
 
 /** Receive packets and process them until no more work exists for any
@@ -76,8 +77,6 @@ void NetworkSequenceCollection::completeOperation()
 {
 	Timer timer("completeOperation");
 
-	m_pMsgBuffer->flush(); // Send.
-	m_pComm->barrier(); // Synchronize.
 	while (pumpFlushReduce() > 0)
 		;
 
