@@ -299,7 +299,6 @@ void SequenceCollectionHash::printLoad()
 {
 	size_t size = m_pSequences->size();
 	size_t buckets = m_pSequences->bucket_count();
-	PrintDebug(0, "Loaded %zu sequences\n", size);
 	PrintDebug(1, "Hash load: %zu / %zu = %f\n",
 			size, buckets, (float)size / buckets);
 }

@@ -45,13 +45,12 @@ int main(int argc, char* const* argv)
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
 	opt::parse(argc, argv);
-	
-	// Load the phase space
+
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
-	//SequenceCollection* pSC = new SequenceCollection();
-	
+
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
+	PrintDebug(0, "Loaded %zu sequences\n", pSC->count());
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 

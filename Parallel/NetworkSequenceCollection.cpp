@@ -106,6 +106,8 @@ void NetworkSequenceCollection::run()
 			case NAS_LOAD_COMPLETE:
 				m_pComm->barrier();
 				pumpNetwork();
+				PrintDebug(0, "Loaded %zu sequences\n",
+					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				m_pComm->reduce(m_pLocalSpace->count());
 				EndState();
@@ -325,6 +327,8 @@ void NetworkSequenceCollection::runControl()
 						APC_LOAD_COMPLETE);
 				m_pComm->barrier();
 				pumpNetwork();
+				PrintDebug(0, "Loaded %zu sequences\n",
+					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				printf("Loaded %u sequences\n",
 						m_pComm->reduce(m_pLocalSpace->count()));
