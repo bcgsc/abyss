@@ -59,7 +59,7 @@ class ISequenceCollection
 		virtual int getMultiplicity(const PackedSeq& seq) = 0;
 		
 		// Return the number of sequences in the collection
-		virtual int count() const = 0;
+		virtual size_t count() const = 0;
 		
 		// Clear the specified flag from every sequence in the collection
 		virtual void wipeFlag(SeqFlag flag) = 0;

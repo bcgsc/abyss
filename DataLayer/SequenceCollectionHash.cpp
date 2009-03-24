@@ -432,7 +432,7 @@ SeqExt SequenceCollectionHash::getExtensionByIter(SequenceCollectionHashIter& se
 // Return the number of sequences held in the collection
 // Note: some sequences will be marked as DELETE and will still be counted
 //
-int SequenceCollectionHash::count() const
+size_t SequenceCollectionHash::count() const
 {
 	return m_pSequences->size();
 }

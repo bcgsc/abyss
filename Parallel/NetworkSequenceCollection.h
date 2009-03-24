@@ -80,7 +80,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool hasChild(const PackedSeq& seq);
 		
 		// Return the number of sequences in the collection
-		int count() const;
+		size_t count() const;
 		
 		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq, extDirection dir, char base);

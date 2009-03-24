@@ -1391,7 +1391,7 @@ void NetworkSequenceCollection::clearExtensions(const PackedSeq& seq, extDirecti
 //
 //
 //
-int NetworkSequenceCollection::count() const
+size_t NetworkSequenceCollection::count() const
 {
 	return m_pLocalSpace->count();
 }

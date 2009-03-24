@@ -76,7 +76,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool hasChild(const PackedSeq& seq);
 		
 		// Return the number of sequences in the collection
-		int count() const;
+		size_t count() const;
 
 		// Not a network sequence collection. Nothing to do.
 		virtual unsigned pumpNetwork() { return 0; }
