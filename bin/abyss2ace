@@ -11,7 +11,7 @@ pod2usage(-verbose => 1) if $opt{help};
 pod2usage(-verbose => 2) if $opt{man};
 if ($opt{version}) {
 	print <<EOF;
-abyss (ABySS) 1.0.5
+abyss (ABySS) 1.0.6
 Written by Shaun Jackman.
 
 Copyright 2009 Canada's Michael Smith Genome Science Centre

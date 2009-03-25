@@ -10,7 +10,7 @@ my $args = join ' ', @ARGV;
 
 sub version {
 	print <<EOF;
-abyss (ABySS) 1.0.5
+abyss (ABySS) 1.0.6
 Written by Shaun Jackman.
 
 Copyright 2009 Canada's Michael Smith Genome Science Centre
