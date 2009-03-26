@@ -54,7 +54,8 @@ APMessage CommLayer::CheckMessage(int& sendID)
 bool CommLayer::empty()
 {
 	int flag;
-	MPI_Request_get_status(m_request, &flag, MPI_STATUS_IGNORE);
+	MPI_Status status;
+	MPI_Request_get_status(m_request, &flag, &status);
 	return !flag;
 }
 
