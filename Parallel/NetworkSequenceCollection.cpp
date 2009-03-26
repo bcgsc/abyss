@@ -1009,13 +1009,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 	return numPopped;
 }
 
-//
-// Perform a network assembly
-//
-
-//
-// Distributed trimming function
-// 
+/** Assemble contigs. */
 unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
