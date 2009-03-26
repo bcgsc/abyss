@@ -70,7 +70,6 @@ class CommLayer
 		uint8_t* m_txBuffer;
 		uint8_t* m_rxBuffer;
 		MPI_Request m_request;
-		MPI_Status m_status;
 		const MessageBuffer *m_pMsgBuffer;
 };
 

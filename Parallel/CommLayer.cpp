@@ -17,7 +17,6 @@ CommLayer::CommLayer(int id)
 	  m_request(MPI_REQUEST_NULL),
 	  m_pMsgBuffer(NULL)
 {
-	memset(&m_status, 0, sizeof m_status);
 	MPI_Buffer_attach(m_txBuffer, TX_BUFSIZE);
 	assert(m_request == MPI_REQUEST_NULL);
 	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
@@ -37,24 +36,21 @@ CommLayer::~CommLayer()
 }
 
 /** Return the tag of the received message or APM_NONE if no message
- * has been received. This call must be followed by a call to either
- * ReceiveControlMessage or ReceiveBufferedMessage.
+ * has been received. If a message has been received, this call should
+ * be followed by a call to either ReceiveControlMessage or
+ * ReceiveBufferedMessage.
  */
 APMessage CommLayer::CheckMessage(int& sendID)
 {
 	int flag;
-	MPI_Test(&m_request, &flag, &m_status);
+	MPI_Status status;
+	MPI_Request_get_status(m_request, &flag, &status);
 	if (flag)
-		sendID = m_status.MPI_SOURCE;
-	return flag ? (APMessage)m_status.MPI_TAG : APM_NONE;
+		sendID = status.MPI_SOURCE;
+	return flag ? (APMessage)status.MPI_TAG : APM_NONE;
 }
 
-/** Return true if no message has been received.
- * This function is intended to be used solely in the idiom
- * assert(commlayer.empty());
- * If a message has in fact been received, this communicator will be
- * left in a broken state.
- */
+/** Return true if no message has been received. */
 bool CommLayer::empty()
 {
 	int sendID;
@@ -126,10 +122,14 @@ uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argume
 /** Receive a control message. */
 ControlMessage CommLayer::ReceiveControlMessage()
 {
-	assert((APMessage)m_status.MPI_TAG == APM_CONTROL);
+	int flag;
+	MPI_Status status;
+	MPI_Test(&m_request, &flag, &status);
+	assert(flag);
+	assert((APMessage)status.MPI_TAG == APM_CONTROL);
 
 	int count;
-	MPI_Get_count(&m_status, MPI_BYTE, &count);
+	MPI_Get_count(&status, MPI_BYTE, &count);
 	ControlMessage msg;
 	assert(count == sizeof msg);
 	memcpy(&msg, m_rxBuffer, sizeof msg);
@@ -156,10 +156,14 @@ void CommLayer::SendBufferedMessage(int destID, char* msg, size_t size)
 /** Receive a buffered message. */
 void CommLayer::ReceiveBufferedMessage(MessagePtrVector& outmessages)
 {
-	assert((APMessage)m_status.MPI_TAG == APM_BUFFERED);
+	int flag;
+	MPI_Status status;
+	MPI_Test(&m_request, &flag, &status);
+	assert(flag);
+	assert((APMessage)status.MPI_TAG == APM_BUFFERED);
 
 	int size;
-	MPI_Get_count(&m_status, MPI_BYTE, &size);
+	MPI_Get_count(&status, MPI_BYTE, &size);
 
 	int offset = 0;
 	while (offset < size) {
