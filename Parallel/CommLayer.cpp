@@ -53,8 +53,9 @@ APMessage CommLayer::CheckMessage(int& sendID)
 /** Return true if no message has been received. */
 bool CommLayer::empty()
 {
-	int sendID;
-	return CheckMessage(sendID) == APM_NONE;
+	int flag;
+	MPI_Request_get_status(m_request, &flag, MPI_STATUS_IGNORE);
+	return !flag;
 }
 
 /** Block until all processes have reached this routine. */
