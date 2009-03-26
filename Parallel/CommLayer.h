@@ -6,6 +6,7 @@ class CommLayer;
 #include "NetworkDefs.h"
 #include "Messages.h"
 #include "MessageBuffer.h"
+#include <mpi.h>
 
 typedef std::vector<Message*> MessagePtrVector;
 
@@ -26,13 +27,13 @@ class CommLayer
 		// Constructor/Destructor
 		CommLayer(int id);
 		~CommLayer();
-	
+
 		// Check if a message exists, if it does return the type
-		APMessage CheckMessage(int &sendID) const;
+		APMessage CheckMessage(int &sendID);
 
 		// Return whether the queue of messages is empty.
-		bool empty() const;
-		
+		bool empty();
+
 		// Block until all processes have reached this routine.
 		void barrier();
 
@@ -66,7 +67,10 @@ class CommLayer
 	private:
 		int m_id;
 		uint64_t m_msgID;
-		char* m_buffer;
+		uint8_t* m_txBuffer;
+		uint8_t* m_rxBuffer;
+		MPI_Request m_request;
+		MPI_Status m_status;
 		const MessageBuffer *m_pMsgBuffer;
 };
 

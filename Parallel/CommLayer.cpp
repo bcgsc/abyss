@@ -2,16 +2,27 @@
 #include "CommLayer.h"
 #include "Log.h"
 #include <mpi.h>
+#include <stdint.h>
+
+static const unsigned TX_BUFSIZE = 200*1024*1024;
+static const unsigned RX_BUFSIZE = 16*1024;
 
 //
 //
 //
-CommLayer::CommLayer(int id) : m_id(id), m_msgID(0)
+CommLayer::CommLayer(int id)
+	: m_id(id), m_msgID(0),
+	  m_txBuffer(new uint8_t[TX_BUFSIZE]),
+	  m_rxBuffer(new uint8_t[RX_BUFSIZE]),
+	  m_request(MPI_REQUEST_NULL),
+	  m_pMsgBuffer(NULL)
 {
-	unsigned bufferSize = 200*1024*1024;
-	// Create the  buffer
-	m_buffer = new char[bufferSize];
-	MPI_Buffer_attach(m_buffer, bufferSize);
+	memset(&m_status, 0, sizeof m_status);
+	MPI_Buffer_attach(m_txBuffer, TX_BUFSIZE);
+	assert(m_request == MPI_REQUEST_NULL);
+	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
+			MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+			&m_request);
 }
 
 //
@@ -21,33 +32,30 @@ CommLayer::~CommLayer()
 {
 	printf("%d: Sent %llu messages\n", m_id,
 			(unsigned long long)m_msgID);
-	delete [] m_buffer;
+	delete[] m_txBuffer;
+	delete[] m_rxBuffer;
 }
 
-//
-//
-//
-APMessage CommLayer::CheckMessage(int& sendID) const
-{ 
-	MPI_Status status;
+/** Return the tag of the received message or APM_NONE if no message
+ * has been received. This call must be followed by a call to either
+ * ReceiveControlMessage or ReceiveBufferedMessage.
+ */
+APMessage CommLayer::CheckMessage(int& sendID)
+{
 	int flag;
-	MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-	
-	// check if a message waits
-	if(flag)
-	{
-		//printf("message found of type: %d (flag: %d)\n", status.Get_tag(), flag);
-		sendID = status.MPI_SOURCE;
-		return (APMessage)status.MPI_TAG;
-	}
-	else
-	{
-		// no messsage
-		return APM_NONE;
-	}
+	MPI_Test(&m_request, &flag, &m_status);
+	if (flag)
+		sendID = m_status.MPI_SOURCE;
+	return flag ? (APMessage)m_status.MPI_TAG : APM_NONE;
 }
 
-bool CommLayer::empty() const
+/** Return true if no message has been received.
+ * This function is intended to be used solely in the idiom
+ * assert(commlayer.empty());
+ * If a message has in fact been received, this communicator will be
+ * left in a broken state.
+ */
+bool CommLayer::empty()
 {
 	int sendID;
 	return CheckMessage(sendID) == APM_NONE;
@@ -115,15 +123,21 @@ uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argume
 	return msg.id;	
 }
 
-//
-// Receive a control message
-//
+/** Receive a control message. */
 ControlMessage CommLayer::ReceiveControlMessage()
 {
+	assert((APMessage)m_status.MPI_TAG == APM_CONTROL);
+
+	int count;
+	MPI_Get_count(&m_status, MPI_BYTE, &count);
 	ControlMessage msg;
-	MPI_Status status;	
-	MPI_Recv(&msg, sizeof(ControlMessage), MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-	return msg;	
+	assert(count == sizeof msg);
+	memcpy(&msg, m_rxBuffer, sizeof msg);
+	assert(m_request == MPI_REQUEST_NULL);
+	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
+			MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+			&m_request);
+	return msg;
 }
 
 //
@@ -139,37 +153,20 @@ void CommLayer::SendBufferedMessage(int destID, char* msg, size_t size)
 	//printf("buffered send: %zu bytes\n", size);
 }
 
-// Receive a buffered message
+/** Receive a buffered message. */
 void CommLayer::ReceiveBufferedMessage(MessagePtrVector& outmessages)
 {
-	int size;
-	MPI_Status status;
-	
-	MPI_Probe( MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status );
-	MPI_Get_count(&status, MPI_BYTE, &size);
+	assert((APMessage)m_status.MPI_TAG == APM_BUFFERED);
 
-	//printf("buffered recv: %zu bytes\n", size);	
-	
-	// Allocate a buffer to hold the messages
-	char* buffer = new char[size];
-	
-	// Copy the messages (blocking)
-	MPI_Recv(buffer, size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-	
-	//printf("Received %d bytes\n", size);	
-	//printf("Receive buffer: \n");
-	//PrintBufferAsHex(buffer, size);	
-	// Interpret the sequences
+	int size;
+	MPI_Get_count(&m_status, MPI_BYTE, &size);
+
 	int offset = 0;
-	
-	//printf("Received Messages: \n");
-	while(offset < size)
-	{
-		// Read the type of the current message
-		MessageType type = Message::readMessageType(buffer + offset);
-		//printf("pos: %d type: %d\n", offset, (int)type);
+	while (offset < size) {
+		MessageType type = Message::readMessageType(
+				(char*)m_rxBuffer + offset);
+
 		Message* pNewMessage;
-		
 		switch(type)
 		{
 			case MT_SEQ_OP:
@@ -210,17 +207,17 @@ void CommLayer::ReceiveBufferedMessage(MessagePtrVector& outmessages)
 		}
 		
 		// Unserialize the new message from the buffer
-		offset += pNewMessage->unserialize(buffer + offset);
+		offset += pNewMessage->unserialize(
+				(char*)m_rxBuffer + offset);
 		//pNewMessage->print();
 		
 		// Constructed message will be deleted in the NetworkSequenceCollection calling function
 		outmessages.push_back(pNewMessage);
 	}
-	
 	assert(offset == size);
-	
-	delete [] buffer;
-	
+
+	assert(m_request == MPI_REQUEST_NULL);
+	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
+			MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+			&m_request);
 }
-
-
