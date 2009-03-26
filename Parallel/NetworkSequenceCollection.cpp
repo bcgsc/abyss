@@ -150,7 +150,7 @@ void NetworkSequenceCollection::run()
 				completeOperation();
 				m_pComm->reduce(AssemblyAlgorithms::getNumEroded());
 
-				m_pComm->reduce(m_pLocalSpace->removeMarked());
+				m_pComm->reduce(m_pLocalSpace->cleanup());
 				m_pLocalSpace->printLoad();
 				m_pComm->barrier();
 
@@ -259,7 +259,7 @@ unsigned NetworkSequenceCollection::controlErode()
 			AssemblyAlgorithms::getNumEroded());
 	printf("Eroded %u tips\n", numEroded);
 
-	unsigned removed = m_pComm->reduce(m_pLocalSpace->removeMarked());
+	unsigned removed = m_pComm->reduce(m_pLocalSpace->cleanup());
 	m_pLocalSpace->printLoad();
 	m_pComm->barrier();
 	assert(removed == numEroded);

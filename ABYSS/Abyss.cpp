@@ -61,7 +61,7 @@ int main(int argc, char* const* argv)
 		puts("Eroding tips");
 		AssemblyAlgorithms::erodeEnds(pSC);
 		assert(AssemblyAlgorithms::erodeEnds(pSC) == 0);
-		pSC->removeMarked();
+		pSC->cleanup();
 		pSC->printLoad();
 	}
 

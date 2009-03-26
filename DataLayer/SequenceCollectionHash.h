@@ -24,8 +24,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		// remove a sequence from the collection
 		void remove(const PackedSeq& seq);
 
-		// Remove marked sequences from the collection.
-		unsigned removeMarked();
+		// Clean up by erasing sequences flagged as deleted.
+		unsigned cleanup();
 
 		// Get the multiplicity of a sequence
 		int getMultiplicity(const PackedSeq& seq);

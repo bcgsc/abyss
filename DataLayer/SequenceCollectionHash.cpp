@@ -91,10 +91,10 @@ void SequenceCollectionHash::remove(const PackedSeq& seq)
 	setFlag(seq, SF_DELETE);
 }
 
-/** Remove marked sequences from the set.
- * @return the number of sequences removed
+/** Clean up by erasing sequences flagged as deleted.
+ * @return the number of sequences erased
  */
-unsigned SequenceCollectionHash::removeMarked()
+unsigned SequenceCollectionHash::cleanup()
 {
 	Timer(__func__);
 	unsigned count = 0;
