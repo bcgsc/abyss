@@ -988,22 +988,21 @@ int NetworkSequenceCollection::controlPopBubbles()
 		return 0;
 
 	// Perform a round-robin bubble pop to avoid concurrency issues
-	unsigned numPopped = performNetworkPopBubbles(this);
+	m_checkpointSum = performNetworkPopBubbles(this);
 	EndState();
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
 		m_pComm->SendControlMessage(m_numDataNodes, APC_BARRIER);
 		m_pComm->barrier();
-		SetState(NAS_POPBUBBLE);
+		m_numReachedCheckpoint = 0;
 		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
-				m_numPopped + numPopped);
+				m_numPopped + m_checkpointSum);
 		while (!checkpointReached(1))
 			pumpNetwork();
-		numPopped += m_checkpointSum;
-		EndState();
 	}
 
+	unsigned numPopped = m_checkpointSum;
 	m_numPopped += numPopped;
 	if (numPopped > 0)
 		printf("Removed %d bubbles\n", numPopped);
