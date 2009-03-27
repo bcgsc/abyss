@@ -248,12 +248,14 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 	seqCollection->clearExtensions(seq, dir);
 }
 
-/** Remove ambiguous branches and branches from palindromes. */
-void splitAmbiguous(ISequenceCollection* seqCollection)
+/** Remove ambiguous branches and branches from palindromes.
+ * @return the number of branches split
+ */
+unsigned splitAmbiguous(ISequenceCollection* seqCollection)
 {
 	Timer timer("SplitAmbiguous");
-	int count = 0;
-	int numSplit = 0;
+	unsigned count = 0;
+	unsigned numSplit = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
@@ -287,6 +289,7 @@ void splitAmbiguous(ISequenceCollection* seqCollection)
 		seqCollection->pumpNetwork();
 	}
 	PrintDebug(0, "Split %d ambiguous branches\n", numSplit);
+	return numSplit;
 }
 
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)

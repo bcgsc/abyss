@@ -190,11 +190,14 @@ void NetworkSequenceCollection::run()
 				break;
 			}
 			case NAS_SPLIT:
-				AssemblyAlgorithms::splitAmbiguous(this);
+			{
+				unsigned count
+					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->SendCheckPointMessage();
+				m_pComm->SendCheckPointMessage(count);
 				break;
+			}
 			case NAS_ASSEMBLE:
 			{
 				FastaWriter* writer = new FastaWriter(
@@ -426,21 +429,21 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_SPLIT:
+			{
 				puts("Splitting ambiguous branches");
-				m_pComm->SendControlMessage(m_numDataNodes, APC_SPLIT);
-				AssemblyAlgorithms::splitAmbiguous(this);
-
-				// Cleanup any messages that are pending
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_SPLIT);
+				m_checkpointSum
+					+= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
-								
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
-				{
 					pumpNetwork();
-				}
-				
-				SetState(NAS_ASSEMBLE);			
-				break;				
+				printf("Split %u ambiguous branches\n",
+						m_checkpointSum);
+				SetState(NAS_ASSEMBLE);
+				break;
+			}
 			case NAS_ASSEMBLE:
 			{
 				puts("Assembling");
