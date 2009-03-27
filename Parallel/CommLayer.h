@@ -67,7 +67,6 @@ class CommLayer
 	private:
 		int m_id;
 		uint64_t m_msgID;
-		uint8_t* m_txBuffer;
 		uint8_t* m_rxBuffer;
 		MPI_Request m_request;
 		const MessageBuffer *m_pMsgBuffer;

@@ -4,7 +4,6 @@
 #include <mpi.h>
 #include <stdint.h>
 
-static const unsigned TX_BUFSIZE = 200*1024*1024;
 static const unsigned RX_BUFSIZE = 16*1024;
 
 //
@@ -12,12 +11,10 @@ static const unsigned RX_BUFSIZE = 16*1024;
 //
 CommLayer::CommLayer(int id)
 	: m_id(id), m_msgID(0),
-	  m_txBuffer(new uint8_t[TX_BUFSIZE]),
 	  m_rxBuffer(new uint8_t[RX_BUFSIZE]),
 	  m_request(MPI_REQUEST_NULL),
 	  m_pMsgBuffer(NULL)
 {
-	MPI_Buffer_attach(m_txBuffer, TX_BUFSIZE);
 	assert(m_request == MPI_REQUEST_NULL);
 	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
 			MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
@@ -31,7 +28,6 @@ CommLayer::~CommLayer()
 {
 	printf("%d: Sent %llu messages\n", m_id,
 			(unsigned long long)m_msgID);
-	delete[] m_txBuffer;
 	delete[] m_rxBuffer;
 }
 
@@ -147,12 +143,8 @@ ControlMessage CommLayer::ReceiveControlMessage()
 //
 void CommLayer::SendBufferedMessage(int destID, char* msg, size_t size)
 {
-	MPI_Request req;
-			
-	MPI_Ibsend(msg, size, MPI_BYTE, destID, APM_BUFFERED, MPI_COMM_WORLD, &req);
-	MPI_Request_free(&req);	
-	
-	//printf("buffered send: %zu bytes\n", size);
+	MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED,
+			MPI_COMM_WORLD);
 }
 
 /** Receive a buffered message. */
