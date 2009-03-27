@@ -58,7 +58,7 @@ unsigned erode(ISequenceCollection* c, const PackedSeq& seq);
 unsigned getNumEroded();
 
 // trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
-void performTrim(ISequenceCollection* seqCollection, int start);
+void performTrim(ISequenceCollection* seqCollection, int start = 1);
 
 // Function to perform the actual trimming. Walks the sequence space 
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);

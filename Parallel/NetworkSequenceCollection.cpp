@@ -396,7 +396,7 @@ void NetworkSequenceCollection::runControl()
 				exit(EXIT_FAILURE);
 
 			case NAS_TRIM:
-				controlTrim(2);
+				controlTrim();
 				SetState(NAS_POPBUBBLE);
 				break;
 

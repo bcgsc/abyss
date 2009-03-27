@@ -65,7 +65,7 @@ int main(int argc, char* const* argv)
 		pSC->printLoad();
 	}
 
-	AssemblyAlgorithms::performTrim(pSC, 2);
+	AssemblyAlgorithms::performTrim(pSC);
 
 	if (opt::bubbles > 0) {
 		popBubbles(pSC);

@@ -49,7 +49,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		unsigned controlErode();
 		unsigned controlTrimRound(unsigned trimLen);
-		void controlTrim(unsigned start);
+		void controlTrim(unsigned start = 1);
 		unsigned controlRemoveMarked();
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
