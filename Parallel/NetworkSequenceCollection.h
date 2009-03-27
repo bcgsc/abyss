@@ -21,6 +21,7 @@ enum NetworkAssemblyState
 	NAS_ERODE_WAITING,
 	NAS_ERODE_COMPLETE,
 	NAS_TRIM, // trimming the data
+	NAS_REMOVE_MARKED, // remove marked sequences
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
 	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
@@ -49,6 +50,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		unsigned controlErode();
 		unsigned controlTrimRound(unsigned trimLen);
 		void controlTrim(unsigned start);
+		unsigned controlRemoveMarked();
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
 

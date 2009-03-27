@@ -171,6 +171,15 @@ void NetworkSequenceCollection::run()
 				m_pComm->SendCheckPointMessage(numRemoved);
 				break;
 			}
+			case NAS_REMOVE_MARKED: {
+				m_pComm->barrier();
+				unsigned count
+					= AssemblyAlgorithms::removeMarked(this);
+				EndState();
+				SetState(NAS_WAITING);
+				m_pComm->SendCheckPointMessage(count);
+				break;
+			}
 			case NAS_DISCOVER_BUBBLES:
 			{
 				unsigned numDiscovered
@@ -267,6 +276,25 @@ unsigned NetworkSequenceCollection::controlErode()
 	return numEroded;
 }
 
+/** Remove marked sequences.
+ * @return the number of sequences removed
+ */
+unsigned NetworkSequenceCollection::controlRemoveMarked()
+{
+	if (opt::verbose > 0)
+		puts("Sweeping");
+	SetState(NAS_REMOVE_MARKED);
+	m_pComm->SendControlMessage(m_numDataNodes, APC_REMOVE_MARKED);
+	m_pComm->barrier();
+	m_checkpointSum += AssemblyAlgorithms::removeMarked(this);
+	EndState();
+
+	m_numReachedCheckpoint++;
+	while (!checkpointReached(m_numDataNodes))
+		pumpNetwork();
+	return m_checkpointSum;
+}
+
 /** Perform a single round of trimming at the specified length. */
 unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
@@ -280,8 +308,12 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	while (!checkpointReached(m_numDataNodes))
 		pumpNetwork();
 	numRemoved += m_checkpointSum;
+
+	unsigned numSweeped = controlRemoveMarked();
+
 	if (numRemoved > 0)
-		printf("Trimmed %u branches\n", numRemoved);
+		printf("Trimmed %u sequences in %u branches\n",
+				numSweeped, numRemoved);
 	return numRemoved;
 }
 
@@ -372,6 +404,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_LOAD_COMPLETE:
 			case NAS_ADJ_COMPLETE:
+			case NAS_REMOVE_MARKED:
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
 			case NAS_DISCOVER_BUBBLES:
@@ -605,10 +638,12 @@ void NetworkSequenceCollection::parseControlMessage()
 			SetState(NAS_DONE);
 			break;	
 		case APC_TRIM:
-			// This message came from the control node along with an argument indicating the maximum branch to trim at
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
-			break;				
+			break;
+		case APC_REMOVE_MARKED:
+			SetState(NAS_REMOVE_MARKED);
+			break;
 		case APC_ERODE:
 			SetState(NAS_ERODE);
 			break;

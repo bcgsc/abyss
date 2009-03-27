@@ -62,6 +62,7 @@ void performTrim(ISequenceCollection* seqCollection, int start);
 
 // Function to perform the actual trimming. Walks the sequence space 
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
+unsigned removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
 SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir);

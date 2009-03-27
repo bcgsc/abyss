@@ -687,7 +687,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
 	Timer timer("TrimSequences");
 	printf("Trimming short branches: %d\n", maxBranchCull);	
-	int numBranchesRemoved = 0;
+	unsigned numBranchesRemoved = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
@@ -704,7 +704,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
-			removeSequenceAndExtensions(seqCollection, *iter);
+			seqCollection->mark(*iter);
 			continue;
 		}
 		// Sequence is trimmable, continue
@@ -735,7 +735,11 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		seqCollection->pumpNetwork();
 	}
 
-	PrintDebug(0, "Trimmed %d branches\n", numBranchesRemoved);
+	unsigned numSweeped = removeMarked(seqCollection);
+
+	if (numBranchesRemoved > 0)
+		PrintDebug(0, "Trimmed %u sequences in %u branches\n",
+				numSweeped, numBranchesRemoved);
 	return numBranchesRemoved;
 }
 
@@ -806,16 +810,37 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
 					branch.getFirstSeq().decode().c_str());
 		BranchDataIter endIter  = branch.getEndIter();
-		for(BranchDataIter bIter = branch.getStartIter(); bIter != endIter; bIter++)
-		{
-			removeSequenceAndExtensions(seqCollection, *bIter);
-		}
+		for (BranchDataIter bIter = branch.getStartIter();
+				bIter != endIter; bIter++)
+			seqCollection->mark(*bIter);
 		return true;
 	}	
 	else
 	{
 		return false;
 	}
+}
+
+/** Remove all marked sequences.
+ * @return the number of removed sequences
+ */
+unsigned removeMarked(ISequenceCollection* pSC)
+{
+	Timer timer(__func__);
+	unsigned count = 0;
+	SequenceCollectionIterator end = pSC->getEndIter();
+	for (SequenceCollectionIterator it = pSC->getStartIter();
+			it != end; ++it) {
+		if (pSC->checkFlag(*it, SF_DELETE))
+			continue;
+		if (pSC->isMarked(*it)) {
+			removeSequenceAndExtensions(pSC, *it);
+			count++;
+		}
+	}
+	if (count > 0)
+		PrintDebug(1, "Removed %u marked sequences\n", count);
+	return count;
 }
 
 //

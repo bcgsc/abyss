@@ -9,7 +9,7 @@
 
 enum SeqFlag
 {
-	SF_SEEN = 0x1,
+	SF_MARK = 0x1,
 	SF_DELETE = 0x2
 };
 

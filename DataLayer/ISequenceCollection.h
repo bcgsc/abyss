@@ -48,7 +48,19 @@ class ISequenceCollection
 		
 		// Find if this sequence has the specified flag set
 		virtual bool checkFlag(const PackedSeq& seq, SeqFlag flag) = 0;
-		
+
+		/** Mark the specified sequence. */
+		void mark(const PackedSeq& seq)
+		{
+			setFlag(seq, SF_MARK);
+		}
+
+		/** Return true if the specified sequence is marked. */
+		bool isMarked(const PackedSeq& seq)
+		{
+			return checkFlag(seq, SF_MARK);
+		}
+
 		// does this sequence extend from a different node?
 		virtual bool hasParent(const PackedSeq& seq) = 0;
 
