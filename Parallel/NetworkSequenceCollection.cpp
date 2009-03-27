@@ -133,6 +133,7 @@ void NetworkSequenceCollection::run()
 				break;
 			case NAS_ERODE:
 			{
+				m_pComm->barrier();
 				unsigned numEroded
 					= AssemblyAlgorithms::erodeEnds(this);
 				// Cleanup any messages that are pending
@@ -225,11 +226,9 @@ void NetworkSequenceCollection::run()
 
 unsigned NetworkSequenceCollection::controlErode()
 {
-	m_pComm->SendControlMessage(m_numDataNodes, APC_BARRIER);
-	m_pComm->barrier();
-
 	SetState(NAS_ERODE);
 	m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
+	m_pComm->barrier();
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
 
