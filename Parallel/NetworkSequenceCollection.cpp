@@ -115,11 +115,8 @@ void NetworkSequenceCollection::run()
 				break;
 			case NAS_GEN_ADJ:
 				AssemblyAlgorithms::generateAdjacency(this);
-				// Cleanup any messages that are pending
 				EndState();
 				SetState(NAS_WAITING);
-				
-				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage();
 				break;
 			case NAS_ADJ_COMPLETE:
@@ -136,11 +133,8 @@ void NetworkSequenceCollection::run()
 				m_pComm->barrier();
 				unsigned numEroded
 					= AssemblyAlgorithms::erodeEnds(this);
-				// Cleanup any messages that are pending
 				EndState();
 				SetState(NAS_ERODE_WAITING);
-
-				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage(numEroded);
 				break;
 			}
@@ -160,14 +154,9 @@ void NetworkSequenceCollection::run()
 			case NAS_TRIM:
 			{
 				assert(m_trimStep != 0);
-				
-				// Perform the trim at the branch length that the control node sent
 				int numRemoved = performNetworkTrim(this, m_trimStep);
-				// Cleanup any messages that are pending
-				EndState();				
+				EndState();
 				SetState(NAS_WAITING);
-				
-				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage(numRemoved);
 				break;
 			}
@@ -194,14 +183,14 @@ void NetworkSequenceCollection::run()
 			{
 				unsigned numPopped
 					= performNetworkPopBubbles(this);
-				EndState();				
-				SetState(NAS_WAITING);	
+				EndState();
+				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage(numPopped);
-				break;	
+				break;
 			}
 			case NAS_SPLIT:
-				AssemblyAlgorithms::splitAmbiguous(this);	
-				EndState();				
+				AssemblyAlgorithms::splitAmbiguous(this);
+				EndState();
 				SetState(NAS_WAITING);
 				m_pComm->SendCheckPointMessage();
 				break;
@@ -210,15 +199,9 @@ void NetworkSequenceCollection::run()
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
 				unsigned numAssembled = performNetworkAssembly(this, writer);
-				
-				// Close the writer
 				delete writer;
-				
-				// Cleanup any messages that are pending
-				EndState();				
+				EndState();
 				SetState(NAS_WAITING);
-				
-				// Tell the control process this checkpoint has been reached
 				m_pComm->SendCheckPointMessage(numAssembled);
 				break;
 			}
@@ -228,7 +211,7 @@ void NetworkSequenceCollection::run()
 			case NAS_DONE:
 				stop = true;
 				break;
-			assert(false);			
+			assert(false);
 		}
 	}
 }
