@@ -154,6 +154,7 @@ void NetworkSequenceCollection::run()
 			case NAS_TRIM:
 			{
 				assert(m_trimStep != 0);
+				m_pComm->barrier();
 				int numRemoved = performNetworkTrim(this, m_trimStep);
 				EndState();
 				SetState(NAS_WAITING);
@@ -284,6 +285,7 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	printf("Trimming short branches: %d\n", trimLen);
 	SetState(NAS_TRIM);
 	m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, trimLen);
+	m_pComm->barrier();
 	unsigned numRemoved = performNetworkTrim(this, trimLen);
 	EndState();
 
