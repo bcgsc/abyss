@@ -191,6 +191,7 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_SPLIT:
 			{
+				m_pComm->barrier();
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
@@ -433,6 +434,7 @@ void NetworkSequenceCollection::runControl()
 				puts("Splitting ambiguous branches");
 				m_pComm->SendControlMessage(m_numDataNodes,
 						APC_SPLIT);
+				m_pComm->barrier();
 				m_checkpointSum
 					+= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
