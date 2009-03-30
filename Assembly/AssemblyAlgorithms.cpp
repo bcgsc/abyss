@@ -840,6 +840,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
 			removeSequenceAndExtensions(pSC, *it);
 			count++;
 		}
+		pSC->pumpNetwork();
 	}
 	if (count > 0)
 		PrintDebug(1, "Removed %u marked sequences\n", count);
