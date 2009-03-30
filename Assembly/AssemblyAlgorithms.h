@@ -97,6 +97,7 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 //
 
 // Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
+unsigned markAmbiguous(ISequenceCollection* seqCollection);
 unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 
 //

@@ -24,7 +24,7 @@ enum NetworkAssemblyState
 	NAS_REMOVE_MARKED, // remove marked sequences
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
-	NAS_SPLIT, // remove ambiguous links (just before assembling into contigs)
+	NAS_SPLIT, // split ambiguous branches
 	NAS_ASSEMBLE, // assembling the data
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function
 	NAS_DONE // finished, clean up and exit
@@ -53,6 +53,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 		unsigned controlRemoveMarked();
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
+		unsigned controlMarkAmbiguous();
+		unsigned controlSplitAmbiguous();
 
 		// Perform a network assembly
 		unsigned performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);

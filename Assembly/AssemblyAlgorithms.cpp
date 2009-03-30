@@ -248,31 +248,27 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 	seqCollection->clearExtensions(seq, dir);
 }
 
-/** Remove ambiguous branches and branches from palindromes.
- * @return the number of branches split
+/** Mark ambiguous branches and branches from palindromes for removal.
+ * @return the number of branches marked
  */
-unsigned splitAmbiguous(ISequenceCollection* seqCollection)
+unsigned markAmbiguous(ISequenceCollection* seqCollection)
 {
-	Timer timer("SplitAmbiguous");
+	Timer timer(__func__);
+	unsigned progress = 0;
 	unsigned count = 0;
-	unsigned numSplit = 0;
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
 		if(iter->isFlagSet(SF_DELETE))
-		{
 			continue;
-		}
-		
-		count++;
-		if (count % 1000000 == 0)
-			PrintDebug(1, "Splitting: %d sequences\n", count);
+
+		if (++progress % 1000000 == 0)
+			PrintDebug(1, "Splitting: %u sequences\n", progress);
 
 		if (iter->isPalindrome()) {
-			removeExtensions(seqCollection, *iter, SENSE);
-			removeExtensions(seqCollection, *iter, ANTISENSE);
-			numSplit++;
-			seqCollection->pumpNetwork();
+			seqCollection->mark(*iter, SENSE);
+			seqCollection->mark(*iter, ANTISENSE);
+			count += 2;
 			continue;
 		}
 
@@ -282,14 +278,38 @@ unsigned splitAmbiguous(ISequenceCollection* seqCollection)
 			HitRecord hr = calculateExtension(seqCollection, *iter, dir);
 			if (hr.getNumHits() > 1
 					|| iter->isPalindrome(dir)) {
-				removeExtensions(seqCollection, *iter, dir);
-				numSplit++;
+				seqCollection->mark(*iter, dir);
+				count++;
 			}
 		}
-		seqCollection->pumpNetwork();
 	}
-	PrintDebug(0, "Split %d ambiguous branches\n", numSplit);
-	return numSplit;
+	PrintDebug(0, "Marked %u ambiguous branches\n", count);
+	return count;
+}
+
+/** Remove marked branches.
+ * @return the number of branches removed
+ */
+unsigned splitAmbiguous(ISequenceCollection* pSC)
+{
+	Timer timer(__func__);
+	unsigned count = 0;
+	SequenceCollectionIterator end = pSC->getEndIter();
+	for (SequenceCollectionIterator it = pSC->getStartIter();
+			it != end; ++it) {
+		if (pSC->checkFlag(*it, SF_DELETE))
+			continue;
+		for (extDirection sense = SENSE;
+				sense <= ANTISENSE; ++sense) {
+			if (pSC->isMarked(*it, sense)) {
+				removeExtensions(pSC, *it, sense);
+				count++;
+			}
+		}
+		pSC->pumpNetwork();
+	}
+	PrintDebug(0, "Split %u ambiguous branches\n", count);
+	return count;
 }
 
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)

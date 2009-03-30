@@ -192,6 +192,12 @@ void NetworkSequenceCollection::run()
 			case NAS_SPLIT:
 			{
 				m_pComm->barrier();
+				assert(m_pComm->empty());
+				m_pComm->reduce(
+						AssemblyAlgorithms::markAmbiguous(this));
+				assert(m_pMsgBuffer->empty());
+				assert(m_pComm->empty());
+				m_pComm->barrier();
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
@@ -431,18 +437,12 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_SPLIT:
 			{
-				puts("Splitting ambiguous branches");
 				m_pComm->SendControlMessage(m_numDataNodes,
 						APC_SPLIT);
 				m_pComm->barrier();
-				m_checkpointSum
-					+= AssemblyAlgorithms::splitAmbiguous(this);
-				EndState();
-				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
-					pumpNetwork();
-				printf("Split %u ambiguous branches\n",
-						m_checkpointSum);
+				unsigned marked = controlMarkAmbiguous();
+				unsigned split = controlSplitAmbiguous();
+				assert(marked == split);
 				SetState(NAS_ASSEMBLE);
 				break;
 			}
@@ -1031,6 +1031,35 @@ int NetworkSequenceCollection::controlPopBubbles()
 	if (numPopped > 0)
 		printf("Removed %d bubbles\n", numPopped);
 	return numPopped;
+}
+
+/** Mark ambiguous branches. */
+unsigned NetworkSequenceCollection::controlMarkAmbiguous()
+{
+	puts("Marking ambiguous branches");
+	assert(m_pComm->empty());
+	unsigned count = m_pComm->reduce(
+			AssemblyAlgorithms::markAmbiguous(this));
+	assert(m_pMsgBuffer->empty());
+	assert(m_pComm->empty());
+	m_pComm->barrier();
+	printf("Marked %u ambiguous branches\n", count);
+	return count;
+}
+
+/** Remove ambiguous branches. */
+unsigned NetworkSequenceCollection::controlSplitAmbiguous()
+{
+	puts("Splitting ambiguous branches");
+	m_checkpointSum
+		+= AssemblyAlgorithms::splitAmbiguous(this);
+	EndState();
+	m_numReachedCheckpoint++;
+	while (!checkpointReached(m_numDataNodes))
+		pumpNetwork();
+	printf("Split %u ambiguous branches\n",
+			m_checkpointSum);
+	return m_checkpointSum;
 }
 
 /** Assemble contigs. */

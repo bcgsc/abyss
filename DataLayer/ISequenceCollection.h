@@ -50,15 +50,18 @@ class ISequenceCollection
 		virtual bool checkFlag(const PackedSeq& seq, SeqFlag flag) = 0;
 
 		/** Mark the specified sequence. */
-		void mark(const PackedSeq& seq)
+		void mark(const PackedSeq& seq, extDirection sense = SENSE)
 		{
-			setFlag(seq, SF_MARK);
+			setFlag(seq, sense == SENSE
+					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 		}
 
 		/** Return true if the specified sequence is marked. */
-		bool isMarked(const PackedSeq& seq)
+		bool isMarked(const PackedSeq& seq,
+				extDirection sense = SENSE)
 		{
-			return checkFlag(seq, SF_MARK);
+			return checkFlag(seq, sense == SENSE
+					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 		}
 
 		// does this sequence extend from a different node?

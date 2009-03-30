@@ -82,8 +82,10 @@ int main(int argc, char* const* argv)
 
 	write_graph(opt::graphPath, *pSC);
 
-	AssemblyAlgorithms::splitAmbiguous(pSC);
-	
+	unsigned marked = AssemblyAlgorithms::markAmbiguous(pSC);
+	unsigned split = AssemblyAlgorithms::splitAmbiguous(pSC);
+	assert(marked == split);
+
 	FastaWriter writer(opt::contigsPath.c_str());
 
 	AssemblyAlgorithms::assemble(pSC, &writer);
