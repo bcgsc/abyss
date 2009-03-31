@@ -1,6 +1,6 @@
 2009-03-31  Shaun Jackman  <sjackman@bcgsc.ca>
 
-	* Release version 1.0.6.
+	* Release version 1.0.7.
 	* Use a mark-and-sweep trimming algorithm to remove errors at the
 	ends of blunt contigs.
 	* The parallel (ABYSS-P) trimming algorithm is now deterministic;
