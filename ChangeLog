@@ -19,7 +19,7 @@
 	ABYSS:
 	* Remove the need to specify a -e,--erode parameter by improving
 	the erosion algorithm to complete in a single pass.
-	* Removet the default limit on the maximum number of bubble
+	* Remove the default limit on the maximum number of bubble
 	popping rounds. A limit may be specified using -b,--bubbles.
 	* Generate a warning if an input file is empty, but do not die.
 	* When using a Google sparsehash, allocate room for 100 million
