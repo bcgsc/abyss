@@ -1,3 +1,22 @@
+2009-03-31  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.6.
+	* Use a mark-and-sweep trimming algorithm to remove errors at the
+	ends of blunt contigs.
+	* The parallel (ABYSS-P) trimming algorithm is now deterministic;
+	it will produce the same result every time. In addition, the
+	result of the parallel trimming algorithm is identical to the
+	result of the non-parallel trimming algorithm.
+	* Start trimming branches at length 1, previously 2.
+	* Bug fix in ABYSS-P. Repeat sequences of k-1 bases could
+	potentially be misassembled. Use a mark-and-sweep algorithm to
+	split ambiguous edges before contig generation. The previous
+	algorithm was not deterministic.
+	* Reduce memory usage by 200 MB by removing the MPI transmit
+	buffer.
+	* Bug fix in ABYSS-P. Fix an additional race condition in the
+	erosion algorithm.
+
 2009-03-24  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.6.
