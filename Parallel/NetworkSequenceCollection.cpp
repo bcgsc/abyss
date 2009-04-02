@@ -280,7 +280,8 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 	SetState(NAS_REMOVE_MARKED);
 	m_pComm->SendControlMessage(m_numDataNodes, APC_REMOVE_MARKED);
 	m_pComm->barrier();
-	m_checkpointSum += AssemblyAlgorithms::removeMarked(this);
+	unsigned count = AssemblyAlgorithms::removeMarked(this);
+	m_checkpointSum += count;
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -1051,8 +1052,8 @@ unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 {
 	puts("Splitting ambiguous branches");
-	m_checkpointSum
-		+= AssemblyAlgorithms::splitAmbiguous(this);
+	unsigned count = AssemblyAlgorithms::splitAmbiguous(this);
+	m_checkpointSum += count;
 	EndState();
 	m_numReachedCheckpoint++;
 	while (!checkpointReached(m_numDataNodes))
