@@ -1,3 +1,9 @@
+2009-04-02  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.8.
+	* Bug fix. Fix the undefined behaviour causing the error
+	Assertion `marked == split' failed.
+
 2009-03-31  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.7.
