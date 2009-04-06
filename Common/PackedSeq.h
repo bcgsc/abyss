@@ -5,6 +5,7 @@
 #include "Sense.h"
 #include "SeqExt.h"
 #include "Sequence.h"
+#include <stdint.h>
 #include <vector>
 
 enum SeqFlag
