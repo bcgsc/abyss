@@ -20,6 +20,7 @@ using __gnu_cxx::hash_multimap;
 #if HAVE_UNORDERED_MAP || HAVE_TR1_UNORDERED_MAP
 #elif HAVE_EXT_HASH_MAP
 # include <cstddef>
+# include <string>
 // Implement a string hash function so that a string can be used as
 // a key in STL maps and set.
 namespace __gnu_cxx {
