@@ -361,12 +361,13 @@ void NetworkSequenceCollection::runControl()
 						m_pComm->reduce(m_pLocalSpace->count()));
 				EndState();
 
-				SetState(NAS_GEN_ADJ);
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_GEN_ADJ);
+				SetState(m_pLocalSpace->isAdjacencyLoaded()
+						? NAS_ERODE : NAS_GEN_ADJ);
 				break;
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
+				m_pComm->SendControlMessage(m_numDataNodes,
+						APC_GEN_ADJ);
 				AssemblyAlgorithms::generateAdjacency(this);
 				
 				// Cleanup any messages that are pending

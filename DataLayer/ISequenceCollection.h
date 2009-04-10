@@ -105,6 +105,8 @@ class ISequenceCollection
 				const PackedSeq& seq);
 		virtual void attach(SeqObserver f) = 0;
 		virtual void detach(SeqObserver f) = 0;
+
+		virtual void load(const char *path) = 0;
 };
 
 #endif

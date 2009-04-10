@@ -133,6 +133,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 		loadPackedSequences(seqCollection, inFile);
 		return;
 	}
+	else if(inFile.find(".kmer") != std::string::npos) {
+		seqCollection->load(inFile.c_str());
+		return;
+	}
 	else if(inFile.find(".fq") != std::string::npos
 			|| inFile.find(".fastq") != std::string::npos)
 	{

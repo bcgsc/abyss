@@ -25,7 +25,7 @@ size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 // 
 //
 SequenceCollectionHash::SequenceCollectionHash()
-	: m_seqObserver(NULL)
+	: m_seqObserver(NULL), m_adjacencyLoaded(false)
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 	// Make room for 100 million k-mers. Approximately 58 million
@@ -500,4 +500,49 @@ SequenceCollectionHashIter SequenceCollectionHash::getStartIter() const
 SequenceCollectionHashIter SequenceCollectionHash::getEndIter() const
 {
 	return m_pSequences->end();
+}
+
+#include "Options.h"
+#include <cstdio>
+
+/** Write this collection to disk. */
+void SequenceCollectionHash::store() const
+{
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+	char path[100];
+	snprintf(path, sizeof path, "checkpoint-%03u.kmer", opt::rank);
+	FILE* f = fopen(path, "w");
+	if (f == NULL) {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}
+	m_pSequences->resize(0); // Shrink the hash table.
+	m_pSequences->write_metadata(f);
+	m_pSequences->write_nopointer_data(f);
+	fclose(f);
+#else
+	// Not supported.
+	assert(false);
+	exit(EXIT_FAILURE);
+#endif
+}
+
+/** Load this collection from disk. */
+void SequenceCollectionHash::load(const char* path)
+{
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+	FILE* f = fopen(path, "r");
+	if (f == NULL) {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}
+	m_pSequences->read_metadata(f);
+	m_pSequences->read_nopointer_data(f);
+	fclose(f);
+	m_adjacencyLoaded = true;
+#else
+	// Not supported.
+	assert(false);
+	exit(EXIT_FAILURE);
+#endif
 }

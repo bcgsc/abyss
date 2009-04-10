@@ -136,6 +136,13 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Observer pattern, not implemented.
 		virtual void attach(SeqObserver f) { (void)f; }
 		virtual void detach(SeqObserver f) { (void)f; }
+
+		/** Load this collection from disk. */
+		void load(const char *path)
+		{
+			m_pLocalSpace->load(path);
+		}
+
 	private:
 		// Observer pattern
 		void notify(const PackedSeq& seq);

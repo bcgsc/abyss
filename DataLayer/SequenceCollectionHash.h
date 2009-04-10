@@ -95,6 +95,10 @@ class SequenceCollectionHash : public ISequenceCollection
 			m_seqObserver = NULL;
 		}
 
+		void load(const char *path);
+		void store() const;
+		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
+
 	private:
 		// Functions to get iterators to the sequence
 		
@@ -134,6 +138,9 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		/** The observers. Only a single observer is implemented.*/
 		SeqObserver m_seqObserver;
+
+		/** Whether adjacency information has been loaded. */
+		bool m_adjacencyLoaded;
 };
 
 #endif
