@@ -31,7 +31,7 @@ while (<>) {
 		($id) = split ' ', substr $_, 1;
 		next;
 	}
-	if (/^[acgtACGTN]/) {
+	if (/^[acgtnACGTN]/) {
 		die if exists $seq{$id};
 		$seq{$id} = $_ if !/N/;
 		undef $id;
