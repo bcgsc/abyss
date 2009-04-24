@@ -176,8 +176,9 @@ void alignReadsToDB(std::string readsFile, Aligner& aligner)
 	{
 		std::cerr << "Unknown file type!\n";
 		assert(false);
+		exit(EXIT_FAILURE);
 	}
-	
+
 	std::ifstream fileHandle(readsFile.c_str());	
 	assert_open(fileHandle, readsFile);
 
