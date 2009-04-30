@@ -33,7 +33,7 @@ while (<>) {
 	}
 	if (/^[acgtnACGTN]+$/) {
 		die if exists $seq{$id};
-		$seq{$id} = $_ if !/N/;
+		$seq{$id} = $_ if !/[Nn]/;
 		undef $id;
 		next;
 	}
