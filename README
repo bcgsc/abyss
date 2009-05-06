@@ -26,7 +26,7 @@ parallel jobs, or increased to 96.
 To assemble paired short reads in a file named reads.fa into contigs
 in a file named paired-contigs.fa, run the command:
 
-abyss-pe k=25 l=42 c=2 n=5 lib=reads
+abyss-pe k=25 l=42 c=2 n=10 lib=reads
 
 where k and l are the k-mer length and read length as before.
 c is the minimum average k-mer coverage of a contig and may be
