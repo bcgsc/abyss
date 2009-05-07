@@ -1,6 +1,9 @@
 #include "Aligner.h"
 #include "Sequence.h"
 #include <algorithm>
+#include <utility>
+
+using namespace std;
 
 //
 // Constructor
@@ -38,7 +41,7 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 			Position p;
 			p.contig = id;
 			p.pos = i;
-			m_pDatabase->insert(dbRecord(kmer, p));
+			m_pDatabase->insert(make_pair(kmer, p));
 		}
 	}
 }

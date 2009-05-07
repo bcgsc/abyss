@@ -99,7 +99,6 @@ struct Position
 };
 
 // Typedef the database pairing
-typedef std::pair<PackedSeq, Position> dbRecord;
 typedef hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
 
 typedef SeqPosHashMap::const_iterator SPHMConstIter;
