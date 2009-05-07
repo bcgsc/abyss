@@ -541,6 +541,7 @@ void SequenceCollectionHash::load(const char* path)
 	fclose(f);
 	m_adjacencyLoaded = true;
 #else
+	(void)path;
 	// Not supported.
 	assert(false);
 	exit(EXIT_FAILURE);
