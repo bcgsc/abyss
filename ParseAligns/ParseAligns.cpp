@@ -59,6 +59,14 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+struct PairStats {
+	int numDifferent;
+	int numSame;
+	int numInvalid;
+	int numMissed;
+	int numMulti;
+	int numNonSingle;
+};
 
 // TYPEDEFS
 typedef std::map<std::string, AlignmentVector> ReadAlignMap;
@@ -122,6 +130,73 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 	fin.close();
 }
 
+static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
+		ReadAlignMap::const_iterator pairIter,
+		Histogram& histogram, ofstream& fragFile, ostream& pairedAlignFile,
+		const string& currID, const string& pairID, PairStats& stats)
+{
+	// Both reads must align to a unique location.
+	// The reads are allowed to span more than one contig, but
+	// at least one of the two reads must span no more than
+	// two contigs.
+	bool isRefUnique = checkUniqueAlignments(opt::k,
+			iter->second);
+	bool isPairUnique = checkUniqueAlignments(opt::k,
+			pairIter->second);
+	const unsigned MAX_SPAN = 2;
+	if ((iter->second.size() <= MAX_SPAN
+				|| pairIter->second.size() <= MAX_SPAN)
+			&& isRefUnique && isPairUnique) {
+		// Iterate over the vectors, outputting the aligments
+		for(AlignmentVector::const_iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
+		{
+			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
+			{
+				// Are they on the same contig and the ONLY alignments?
+				if(refAlignIter->contig == pairAlignIter->contig)
+				{
+					if((iter->second.size() == 1 && pairIter->second.size() == 1))
+					{
+						int size = fragmentSize(
+								*refAlignIter,
+								*pairAlignIter);
+						if (size > INT_MIN) {
+							histogram.addDataPoint(size);
+							if (!opt::fragPath.empty()) {
+								fragFile << size << "\n";
+								assert(fragFile.good());
+							}
+							stats.numSame++;
+						} else
+							stats.numInvalid++;
+					}
+				}
+				else
+				{
+					// Print the alignment and the swapped alignment
+					pairedAlignFile << currID << " " << *refAlignIter << " " << pairID << " " << *pairAlignIter << "\n";
+					pairedAlignFile << pairID << " " << *pairAlignIter << " " << currID << " " << *refAlignIter << "\n";
+					assert(pairedAlignFile.good());
+					stats.numDifferent++;
+				}
+			}
+		}
+
+
+	}
+	else
+	{
+		if(!isRefUnique || !isPairUnique)
+		{
+			stats.numMulti++;
+		}
+		else
+		{
+			stats.numNonSingle++;
+		}
+	}
+}
+
 int main(int argc, char* const* argv)
 {
 	bool die = false;
@@ -180,102 +255,34 @@ int main(int argc, char* const* argv)
 	}
 
 	Histogram histogram;
+	PairStats stats;
 
-	int numDifferent = 0;
-	int numSame = 0;
-	int numInvalid = 0;
-	int numMissed = 0;
-	int numMulti = 0;
-	int numNonSingle = 0;
-	
 	// parse the alignment table
 	for(ReadAlignMap::iterator iter = alignTable.begin(); iter != alignTable.end(); ++iter)
 	{
 		std::string currID = iter->first;
 		std::string pairID = makePairID(currID);
-		
+
 		// Find the pair align
 		ReadAlignMap::iterator pairIter = alignTable.find(pairID);
-		if(pairIter != alignTable.end())
-		{
-			// Both reads must align to a unique location.
-			// The reads are allowed to span more than one contig, but
-			// at least one of the two reads must span no more than
-			// two contigs.
-			bool isRefUnique = checkUniqueAlignments(opt::k,
-					iter->second);
-			bool isPairUnique = checkUniqueAlignments(opt::k,
-					pairIter->second);
-			const unsigned MAX_SPAN = 2;
-			if ((iter->second.size() <= MAX_SPAN
-						|| pairIter->second.size() <= MAX_SPAN)
-					&& isRefUnique && isPairUnique) {
-				// Iterate over the vectors, outputting the aligments
-				for(AlignmentVector::iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
-				{
-					for(AlignmentVector::iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
-					{
-						// Are they on the same contig and the ONLY alignments?
-						if(refAlignIter->contig == pairAlignIter->contig)
-						{
-							if((iter->second.size() == 1 && pairIter->second.size() == 1))
-							{
-								int size = fragmentSize(
-										*refAlignIter,
-										*pairAlignIter);
-								if (size > INT_MIN) {
-									histogram.addDataPoint(size);
-									if (!opt::fragPath.empty()) {
-										fragFile << size << "\n";
-										assert(fragFile.good());
-									}
-									numSame++;
-								} else
-									numInvalid++;
-							}
-						}
-						else
-						{
-							// Print the alignment and the swapped alignment
-							pairedAlignFile << currID << " " << *refAlignIter << " " << pairID << " " << *pairAlignIter << "\n";
-							pairedAlignFile << pairID << " " << *pairAlignIter << " " << currID << " " << *refAlignIter << "\n";
-							assert(pairedAlignFile.good());
-							numDifferent++;
-						}							
-					}
-				}
-				
-				
-			}
-			else
-			{
-				if(!isRefUnique || !isPairUnique)
-				{
-					numMulti++;
-				}
-				else
-				{
-					numNonSingle++;
-				}
-			}
+		if(pairIter != alignTable.end()) {
+			handleAlignmentPair(iter, pairIter, histogram, fragFile,
+pairedAlignFile, currID, pairID, stats);
 
-			
 			// Erase the pair as its not needed (faster to mark it as invalid?)
 			alignTable.erase(pairIter);
-		}
-		else
-		{
-			numMissed++;
+		} else {
+			stats.numMissed++;
 		}
 	}
-	
+
 	if (opt::verbose > 0)
-		cerr << "Unmatched: " << numMissed 
-			<< " Same: " << numSame 
-			<< " Invalid: " << numInvalid 
-			<< " Diff: " << numDifferent 
-			<< " Multi: " << numMulti
-			<< " Non-singular: " << numNonSingle
+		cerr << "Unmatched: " << stats.numMissed
+			<< " Same: " << stats.numSame
+			<< " Invalid: " << stats.numInvalid
+			<< " Diff: " << stats.numDifferent
+			<< " Multi: " << stats.numMulti
+			<< " Non-singular: " << stats.numNonSingle
 			<< endl;
 
 	if (!opt::fragPath.empty())
