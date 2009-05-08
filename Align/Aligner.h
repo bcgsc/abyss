@@ -5,8 +5,8 @@
 // Aligner - Simple class to do an approximate alignment of reads to the input reference sequence
 //
 
+#include "config.h"
 #include "PackedSeq.h"
-#include "HashMap.h"
 #include <string>
 #include <istream>
 #include <ostream>
@@ -98,8 +98,15 @@ struct Position
 	int pos; // 0 indexed
 };
 
-// Typedef the database pairing
-typedef hash_multimap<PackedSeq, Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+# include <google/sparse_hash_map>
+typedef google::sparse_hash_map<PackedSeq,
+		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+#else
+# include "HashMap.h"
+typedef hash_map<PackedSeq,
+		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+#endif
 
 typedef SeqPosHashMap::const_iterator SPHMConstIter;
 typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
