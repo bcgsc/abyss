@@ -5,13 +5,16 @@
 
 #if HAVE_UNORDERED_MAP
 # include <unordered_map>
+# define hash_map std::unordered_map
 # define hash_multimap std::unordered_multimap
 #elif HAVE_TR1_UNORDERED_MAP
 # include <tr1/unordered_map>
+# define hash_map std::tr1::unordered_map
 # define hash_multimap std::tr1::unordered_multimap
 #elif HAVE_EXT_HASH_MAP
 # undef __DEPRECATED
 # include <ext/hash_map>
+using __gnu_cxx::hash_map;
 using __gnu_cxx::hash_multimap;
 #else
 #  error A hash map implementation is required.
