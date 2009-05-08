@@ -130,6 +130,15 @@ static void assert_open(std::ifstream& f, const std::string& p)
 	exit(EXIT_FAILURE);
 }
 
+static void printProgress(const Aligner& align, unsigned count)
+{
+	size_t size = align.size();
+	size_t buckets = align.bucket_count();
+	cerr << "Read " << count << " contigs. "
+		<< "Hash load: " << size <<
+		" / " << buckets << " = " << (float)size / buckets << endl;
+}
+
 void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 {
 	int count = 0;
@@ -147,14 +156,11 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 		aligner.addReferenceSequence(contigID, seq);
 
 		count++;
-		if (opt::verbose > 0
-				&& count % 100000 == 0)
-			cerr << "Read " << count << " contigs, "
-				<< aligner.getNumSeqs() << " unique sequences\n";
+		if (opt::verbose > 0 && count % 100000 == 0)
+			printProgress(aligner, count);
 	}
 	if (opt::verbose > 0)
-		cerr << "Read " << count << " contigs, "
-			<< aligner.getNumSeqs() << " unique sequences\n";
+			printProgress(aligner, count);
 
 	fileHandle.close();
 }

@@ -130,10 +130,13 @@ class Aligner
 		
 		// Align an individual sequence
 		void alignRead(const Sequence& seq, AlignmentVector& alignVec);
-		
-		// Get the number of sequences in the database
-		size_t getNumSeqs() const { return m_pDatabase->size(); }
-		
+
+		size_t size() const { return m_pDatabase->size(); }
+		size_t bucket_count() const
+		{
+			return m_pDatabase->bucket_count();
+		}
+
 	private:
 	
 		// Internal alignment function, perform the actual alignment
