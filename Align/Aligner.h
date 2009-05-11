@@ -91,11 +91,10 @@ static inline int compareContigPos(const Alignment& a1, const Alignment& a2)
 	return a1.contig_start_pos < a2.contig_start_pos;
 }
 
-
 struct Position
 {
 	ContigID contig;
-	int pos; // 0 indexed
+	uint32_t pos; // 0 indexed
 };
 
 #if HAVE_GOOGLE_SPARSE_HASH_SET
