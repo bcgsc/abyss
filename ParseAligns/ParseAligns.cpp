@@ -80,10 +80,6 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
 
 std::string makePairID(std::string refID);
 
-static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
-		ReadAlignMap::const_iterator pairIter,
-		const string& currID, const string& pairID);
-
 /**
  * Return the size of the fragment demarcated by the specified
  * alignments.
@@ -97,59 +93,6 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	const Alignment& f = a0.isRC ? a1 : a0;
 	const Alignment& r = a0.isRC ? a0 : a1;
 	return r - f;
-}
-
-// Read in the alignments file into the table
-static void readAlignments(istream& in, ReadAlignMap* pout)
-{
-	ReadAlignMap& out = *pout;
-	string line;
-	for (string line; getline(in, line);) {
-		stringstream s(line);
-		string readID;
-		s >> readID;
-		AlignmentVector& alignments = out[readID];
-		if (!alignments.empty()) {
-			cerr << "error: duplicate read ID `"
-				<< readID << "'\n";
-			exit(EXIT_FAILURE);
-		}
-		for (Alignment ali; s >> ali;)
-			alignments.push_back(ali);
-		stats.alignments++;
-
-		string pairID = makePairID(readID);
-
-		// Find the pair align
-		ReadAlignMap::iterator iter = out.find(readID);
-		ReadAlignMap::iterator pairIter = out.find(pairID);
-		if(pairIter != out.end()) {
-			handleAlignmentPair(iter, pairIter, readID, pairID);
-
-			// Erase the pair as its not needed (faster to mark it as invalid?)
-			out.erase(pairIter);
-			out.erase(iter);
-		}
-	}
-	assert(in.eof());
-}
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (!f.is_open()) {
-		cerr << p << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void readAlignmentsFile(string path, ReadAlignMap* pout)
-{
-	if (opt::verbose > 0)
-		cerr << "Reading `" << path << "'..." << endl;
-	ifstream fin(path.c_str());
-	assert_open(fin, path);
-	readAlignments(fin, pout);
-	fin.close();
 }
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
@@ -214,6 +157,59 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 			stats.numNonSingle++;
 		}
 	}
+}
+
+// Read in the alignments file into the table
+static void readAlignments(istream& in, ReadAlignMap* pout)
+{
+	ReadAlignMap& out = *pout;
+	string line;
+	for (string line; getline(in, line);) {
+		stringstream s(line);
+		string readID;
+		s >> readID;
+		AlignmentVector& alignments = out[readID];
+		if (!alignments.empty()) {
+			cerr << "error: duplicate read ID `"
+				<< readID << "'\n";
+			exit(EXIT_FAILURE);
+		}
+		for (Alignment ali; s >> ali;)
+			alignments.push_back(ali);
+		stats.alignments++;
+
+		string pairID = makePairID(readID);
+
+		// Find the pair align
+		ReadAlignMap::iterator iter = out.find(readID);
+		ReadAlignMap::iterator pairIter = out.find(pairID);
+		if(pairIter != out.end()) {
+			handleAlignmentPair(iter, pairIter, readID, pairID);
+
+			// Erase the pair as its not needed (faster to mark it as invalid?)
+			out.erase(pairIter);
+			out.erase(iter);
+		}
+	}
+	assert(in.eof());
+}
+
+static void assert_open(ifstream& f, const string& p)
+{
+	if (!f.is_open()) {
+		cerr << p << ": " << strerror(errno) << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void readAlignmentsFile(string path, ReadAlignMap* pout)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'..." << endl;
+	ifstream fin(path.c_str());
+	assert_open(fin, path);
+	readAlignments(fin, pout);
+	fin.close();
 }
 
 int main(int argc, char* const* argv)
