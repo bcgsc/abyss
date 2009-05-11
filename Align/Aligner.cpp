@@ -7,11 +7,10 @@ using namespace std;
 
 //
 // Constructor
-// 
+//
 Aligner::Aligner(int hashSize) : m_hashSize(hashSize)
 {
-	//m_pDatabase = new SeqPosHashMap(2 << 26);
-	m_pDatabase = new SeqPosHashMap(2 << 25);
+	m_pDatabase = new SeqPosHashMap(1 << 26);
 }
 
 //
