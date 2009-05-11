@@ -80,8 +80,10 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 			{
 				read_pos = Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
 			}
-			
-			Alignment align = createAlignment(resultIter->second.contig, resultIter->second.pos, read_pos, m_hashSize, seqLen, isRC);
+
+			Alignment align(resultIter->second.contig,
+					resultIter->second.pos, read_pos, m_hashSize,
+					seqLen, isRC);
 			aligns[resultIter->second.contig].push_back(align);
 		}
 	}
@@ -142,17 +144,4 @@ void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, Al
 		// save the alignment
 		resultVector.push_back(currAlign);
 	}
-	
-}
-
-Alignment Aligner::createAlignment(ContigID contig, int contig_start, int read_start, int align_length, int read_length, bool isRC)
-{
-	Alignment align;
-	align.contig = contig;
-	align.contig_start_pos = contig_start;
-	align.read_start_pos = read_start;
-	align.align_length = align_length;
-	align.read_length = read_length;
-	align.isRC = isRC;
-	return align;
 }

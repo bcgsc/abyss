@@ -25,6 +25,19 @@ struct Alignment
 	int read_length;
 	bool isRC;
 
+	Alignment() { }
+
+	Alignment(ContigID contig, int contig_start, int read_start,
+			int align_length, int read_length, bool isRC) :
+		contig(contig),
+		contig_start_pos(contig_start),
+		read_start_pos(read_start),
+		align_length(align_length),
+		read_length(read_length),
+		isRC(isRC)
+	{
+	}
+
 	/**
 	 * Return the taret position at the query start.
 	 * Note: not alignment start, and may be negative
@@ -143,10 +156,7 @@ class Aligner
 		
 		// Coalesce all the hash hits into contiguous alignments
 		void coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector);
-	
-		// Create a single alignment from a start and end position
-		Alignment createAlignment(ContigID contig, int contig_start, int read_start, int align_length, int read_length, bool isRC);
-		
+
 		// The number of bases to hash on
 		int m_hashSize;
 		
