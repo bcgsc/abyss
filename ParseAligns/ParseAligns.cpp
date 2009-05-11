@@ -59,22 +59,30 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-struct PairStats {
+static struct {
+	int alignments;
 	int numDifferent;
 	int numSame;
 	int numInvalid;
 	int numMissed;
 	int numMulti;
 	int numNonSingle;
-};
+} stats;
+static ostream& pairedAlignFile = cout;
+static ofstream fragFile;
+static Histogram histogram;
 
 // TYPEDEFS
-typedef std::map<std::string, AlignmentVector> ReadAlignMap;
+typedef hash_map<string, AlignmentVector> ReadAlignMap;
 
 // FUNCTIONS
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
 
 std::string makePairID(std::string refID);
+
+static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
+		ReadAlignMap::const_iterator pairIter,
+		const string& currID, const string& pairID);
 
 /**
  * Return the size of the fragment demarcated by the specified
@@ -108,6 +116,20 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		}
 		for (Alignment ali; s >> ali;)
 			alignments.push_back(ali);
+		stats.alignments++;
+
+		string pairID = makePairID(readID);
+
+		// Find the pair align
+		ReadAlignMap::iterator iter = out.find(readID);
+		ReadAlignMap::iterator pairIter = out.find(pairID);
+		if(pairIter != out.end()) {
+			handleAlignmentPair(iter, pairIter, readID, pairID);
+
+			// Erase the pair as its not needed (faster to mark it as invalid?)
+			out.erase(pairIter);
+			out.erase(iter);
+		}
 	}
 	assert(in.eof());
 }
@@ -132,8 +154,7 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		ReadAlignMap::const_iterator pairIter,
-		Histogram& histogram, ofstream& fragFile, ostream& pairedAlignFile,
-		const string& currID, const string& pairID, PairStats& stats)
+		const string& currID, const string& pairID)
 {
 	// Both reads must align to a unique location.
 	// The reads are allowed to span more than one contig, but
@@ -181,8 +202,6 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				}
 			}
 		}
-
-
 	}
 	else
 	{
@@ -235,6 +254,11 @@ int main(int argc, char* const* argv)
 		exit(EXIT_FAILURE);
 	}
 
+	if (!opt::fragPath.empty()) {
+		fragFile.open(opt::fragPath.c_str());
+		assert(fragFile.is_open());
+	}
+
 	ReadAlignMap alignTable;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
@@ -245,36 +269,9 @@ int main(int argc, char* const* argv)
 		readAlignments(cin, &alignTable);
 	}
 	if (opt::verbose > 0)
-		cerr << "Read " << alignTable.size() << " alignments" << endl;
+		cerr << "Read " << stats.alignments << " alignments" << endl;
 
-	ostream& pairedAlignFile = cout;
-	ofstream fragFile;
-	if (!opt::fragPath.empty()) {
-		fragFile.open(opt::fragPath.c_str());
-		assert(fragFile.is_open());
-	}
-
-	Histogram histogram;
-	PairStats stats;
-
-	// parse the alignment table
-	for(ReadAlignMap::iterator iter = alignTable.begin(); iter != alignTable.end(); ++iter)
-	{
-		std::string currID = iter->first;
-		std::string pairID = makePairID(currID);
-
-		// Find the pair align
-		ReadAlignMap::iterator pairIter = alignTable.find(pairID);
-		if(pairIter != alignTable.end()) {
-			handleAlignmentPair(iter, pairIter, histogram, fragFile,
-pairedAlignFile, currID, pairID, stats);
-
-			// Erase the pair as its not needed (faster to mark it as invalid?)
-			alignTable.erase(pairIter);
-		} else {
-			stats.numMissed++;
-		}
-	}
+	stats.numMissed = alignTable.size();
 
 	if (opt::verbose > 0)
 		cerr << "Unmatched: " << stats.numMissed
