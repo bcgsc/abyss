@@ -6,6 +6,7 @@
 //
 
 #include "config.h"
+#include "HashMap.h"
 #include "PackedSeq.h"
 #include <string>
 #include <istream>
@@ -106,7 +107,7 @@ static inline int compareContigPos(const Alignment& a1, const Alignment& a2)
 
 struct Position
 {
-	ContigID contig;
+	uint32_t contig;
 	uint32_t pos; // 0 indexed
 };
 
@@ -162,7 +163,13 @@ class Aligner
 		
 		// The database of sequence hashes to alignment positions
 		SeqPosHashMap* m_pDatabase;
-	
+
+		// A dictionary of contig IDs.
+		typedef hash_map<ContigID, uint32_t> ContigDict;
+		ContigDict m_contigDict;
+		std::vector<ContigID> m_contigIDs;
+		unsigned contigIDToIndex(ContigID id);
+		const ContigID& contigIndexToID(unsigned index);
 };
 
 #endif

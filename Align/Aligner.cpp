@@ -21,6 +21,22 @@ Aligner::~Aligner()
 	delete m_pDatabase;
 }
 
+/** Convert the specified contig ID string to a numeric index. */
+unsigned Aligner::contigIDToIndex(ContigID id)
+{
+	pair<ContigDict::const_iterator, bool> inserted
+		= m_contigDict.insert(make_pair(id, m_contigDict.size()));
+	if (inserted.second)
+		m_contigIDs.push_back(id);
+	return inserted.first->second;
+}
+
+/** Convert the specified contig ID numeric index to a string. */
+const ContigID& Aligner::contigIndexToID(unsigned index)
+{
+	return m_contigIDs.at(index);
+}
+
 //
 // Create the database for the reference sequences
 //
@@ -38,7 +54,7 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 			PackedSeq kmer(subseq);
 			//printf("indexed seq: %s\n", kmer.decode().c_str());
 			Position p;
-			p.contig = id;
+			p.contig = contigIDToIndex(id);
 			p.pos = i;
 			pair<SeqPosHashMap::const_iterator, bool> inserted
 				= m_pDatabase->insert(make_pair(kmer, p));
@@ -82,13 +98,14 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 				read_pos = Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
 			}
 
-			Alignment align(resultIter->second.contig,
-					resultIter->second.pos, read_pos, m_hashSize,
-					seqLen, isRC);
-			aligns[resultIter->second.contig].push_back(align);
+			const string& ctgID
+				= contigIndexToID(resultIter->second.contig);
+			Alignment align(ctgID, resultIter->second.pos,
+					read_pos, m_hashSize, seqLen, isRC);
+			aligns[ctgID].push_back(align);
 		}
 	}
-	
+
 	coalesceAlignments(aligns, isRC, resultVector);
 }
 
