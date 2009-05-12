@@ -40,8 +40,9 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 			Position p;
 			p.contig = id;
 			p.pos = i;
-			assert(m_pDatabase->count(kmer) == 0);
-			m_pDatabase->insert(make_pair(kmer, p));
+			pair<SeqPosHashMap::const_iterator, bool> inserted
+				= m_pDatabase->insert(make_pair(kmer, p));
+			assert(inserted.second);
 		}
 	}
 }
