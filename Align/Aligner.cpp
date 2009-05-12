@@ -98,11 +98,11 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 				read_pos = Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
 			}
 
-			const string& ctgID
-				= contigIndexToID(resultIter->second.contig);
-			Alignment align(ctgID, resultIter->second.pos,
-					read_pos, m_hashSize, seqLen, isRC);
-			aligns[ctgID].push_back(align);
+			unsigned ctgIndex = resultIter->second.contig;
+			Alignment align(contigIndexToID(ctgIndex),
+					resultIter->second.pos, read_pos, m_hashSize,
+					seqLen, isRC);
+			aligns[ctgIndex].push_back(align);
 		}
 	}
 
