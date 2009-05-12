@@ -111,9 +111,6 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 
 void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, AlignmentVector& resultVector)
 {
-	AlignmentResult result;
-	AlignmentVector allAlignments;
-	
 	// For each contig that this read hits, coalesce the alignments into contiguous groups
 	for(AlignmentSet::const_iterator ctgIter = alignSet.begin(); ctgIter != alignSet.end(); ++ctgIter)
 	{

@@ -126,11 +126,6 @@ typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
 
 typedef std::vector<Alignment> AlignmentVector;
 typedef std::map<ContigID, AlignmentVector > AlignmentSet;
-typedef std::map<ContigID, int > AlignmentResult;
-
-
-
-
 
 class Aligner
 {
