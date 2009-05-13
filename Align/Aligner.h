@@ -117,7 +117,7 @@ typedef google::sparse_hash_map<PackedSeq,
 		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
 #else
 # include "HashMap.h"
-typedef hash_map<PackedSeq,
+typedef hash_multimap<PackedSeq,
 		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
 #endif
 
