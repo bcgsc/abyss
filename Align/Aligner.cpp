@@ -10,7 +10,12 @@ using namespace std;
 //
 Aligner::Aligner(int hashSize) : m_hashSize(hashSize)
 {
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+	m_pDatabase = new SeqPosHashMap(1 << 28);
+	m_pDatabase->max_load_factor(0.2);
+#else
 	m_pDatabase = new SeqPosHashMap(1 << 26);
+#endif
 }
 
 //
