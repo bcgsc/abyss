@@ -17,6 +17,7 @@ endif
 ifndef n
 $(error missing argument n)
 endif
+ext=fa
 #v=-v
 
 all: $(lib)-contigs.fa
@@ -30,7 +31,7 @@ clean:
 
 # Single-end assembly
 
-%-1.fa: %.fa
+%-1.fa: %.$(ext)
 	ABYSS $v -k$k -l$l -ssnp.fa -o $@ $^
 
 %.len: %.fa
@@ -50,7 +51,7 @@ clean:
 
 # Estimate distances between contigs
 
-%.pair %.hist: $(lib).fa %.fa
+%.pair %.hist: $(lib).$(ext) %.fa
 	KAligner $v -k$k $^ |ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
