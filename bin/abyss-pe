@@ -58,8 +58,9 @@ clean:
 
 # Estimate distances between contigs
 
-%.pair %.hist: $(in) %.fa
-	KAligner $v -k$k $^ |ParseAligns $v -k$k -h $*.hist \
+%.pair %.hist: %.fa
+	cat $(in) |KAligner $v -k$k - $< \
+		|ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
 %.dist: %.len %.hist %.pair
