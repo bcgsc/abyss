@@ -174,7 +174,7 @@ void parse(int argc, char* const* argv)
 		cerr << PACKAGE ": missing -k,--kmer option\n";
 		die = true;
 	}
-	if (trimLen <= 0) {
+	if (trimLen < 0) {
 		cerr << PACKAGE ": missing either -l,--read-length "
 			"or -t,--trim-length option\n";
 		die = true;
