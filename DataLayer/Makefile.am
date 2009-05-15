@@ -4,7 +4,6 @@ libdatalayer_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libdatalayer_a_SOURCES = \
 	FastaReader.cpp FastaReader.h \
-	FastqReader.cpp FastqReader.h \
 	FastaWriter.cpp FastaWriter.h \
 	IFileReader.h IFileWriter.h \
 	ISequenceCollection.h \
