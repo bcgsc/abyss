@@ -3,22 +3,25 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <iostream>
 
-FastaReader::FastaReader(const char* filename)
-	: m_nonacgt(0), m_inPath(filename)
-{	
-	m_fileHandle.open(filename);
-	assert(m_fileHandle.is_open());
+using namespace std;
+
+FastaReader::FastaReader(const char* path)
+	: m_inPath(path), m_inFile(path),
+	m_fileHandle(strcmp(path, "-") == 0 ? cin : m_inFile),
+	m_nonacgt(0)
+{
+	if (strcmp(path, "-") != 0)
+		assert(m_inFile.is_open());
 	if (m_fileHandle.peek() == EOF)
-		fprintf(stderr, "warning: `%s' is empty\n", filename);
+		fprintf(stderr, "warning: `%s' is empty\n", path);
 }
 
 FastaReader::~FastaReader()
-{	
-	m_fileHandle.close();
-	assert(!m_fileHandle.is_open());
+{
+	m_inFile.close();
 }
-
 
 Sequence FastaReader::ReadSequence()
 {

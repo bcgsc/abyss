@@ -4,14 +4,15 @@
 #include "IFileReader.h"
 #include "Sequence.h"
 #include <fstream>
+#include <istream>
 
 class FastaReader : public IFileReader
 {
 	public:
-	
+
 		// Constructor opens file
-		FastaReader(const char* filename);
-		
+		FastaReader(const char* path);
+
 		// Destructor closes it
 		~FastaReader();
 		
@@ -30,10 +31,10 @@ class FastaReader : public IFileReader
 		virtual unsigned getNonACGT() { return m_nonacgt; }
 
 	private:
-
-		std::ifstream m_fileHandle;
-		unsigned m_nonacgt;
 		const char* m_inPath;
+		std::ifstream m_inFile;
+		std::istream& m_fileHandle;
+		unsigned m_nonacgt;
 };
 
 #endif //FASTAREADER_H
