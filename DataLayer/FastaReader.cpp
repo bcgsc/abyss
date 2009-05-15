@@ -23,7 +23,7 @@ FastaReader::~FastaReader()
 	m_inFile.close();
 }
 
-Sequence FastaReader::ReadSequence()
+Sequence FastaReader::ReadSequence(string& id)
 {
 	char buf[MAX_FASTA_LINE];
 
@@ -38,16 +38,18 @@ Sequence FastaReader::ReadSequence()
 	}
 
 	// Read the header.
+	char recordType;
+	m_fileHandle >> recordType >> id;
 	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
 	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
 	Sequence s;
-	if (buf[0] == '>') {
+	if (recordType == '>') {
 		// Read the sequence.
 		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
 		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
 		s = Sequence(buf);
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
-	} else if (buf[0] == '@') {
+	} else if (recordType == '@') {
 		// Read the sequence.
 		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
 		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
@@ -63,7 +65,7 @@ Sequence FastaReader::ReadSequence()
 	} else {
 		fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' and saw `%c'\n",
-				m_inPath, buf[0]);
+				m_inPath, recordType);
 		exit(EXIT_FAILURE);
 	}
 	return s;

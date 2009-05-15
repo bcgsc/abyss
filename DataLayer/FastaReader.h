@@ -15,10 +15,15 @@ class FastaReader : public IFileReader
 
 		// Destructor closes it
 		~FastaReader();
-		
+
 		// Read a single sequence from the file
-		Sequence ReadSequence();
-		
+		Sequence ReadSequence(std::string& id);
+		Sequence ReadSequence()
+		{
+			std::string id;
+			return ReadSequence(id);
+		}
+
 		// Read sequences into the vector as packed seqs
 		// Returns true unless eof has been reached
 		virtual bool ReadSequences(SequenceVector& outseqs);
