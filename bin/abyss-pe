@@ -3,11 +3,12 @@
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
 ifdef lib
-ext=.fa
-in=$(addsuffix $(ext), $(lib))
+ext?=.fa
+in?=$(addsuffix $(ext), $(lib))
 else
-lib=$(basename $(in))
+lib?=$(basename $(in))
 endif
+out?=$(firstword $(lib))-contigs.fa
 
 ifndef in
 $(error missing argument in)
@@ -25,8 +26,6 @@ ifndef n
 $(error missing argument n)
 endif
 #v=-v
-
-out=$(firstword $(lib))-contigs.fa
 
 all: $(out)
 
