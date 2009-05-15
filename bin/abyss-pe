@@ -2,8 +2,15 @@
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
-ifndef lib
-$(error missing argument lib)
+ifdef lib
+ext=.fa
+in=$(addsuffix $(ext), $(lib))
+else
+lib=$(basename $(in))
+endif
+
+ifndef in
+$(error missing argument in)
 endif
 ifndef k
 $(error missing argument k)
@@ -17,10 +24,11 @@ endif
 ifndef n
 $(error missing argument n)
 endif
-ext=fa
 #v=-v
 
-all: $(lib)-contigs.fa
+out=$(firstword $(lib))-contigs.fa
+
+all: $(out)
 
 clean:
 	rm -f *.len *.adj *.pair *.hist *.dist *.path
@@ -31,7 +39,7 @@ clean:
 
 # Single-end assembly
 
-%-1.fa: %.$(ext)
+%-1.fa: $(in)
 	ABYSS $v -k$k -l$l -ssnp.fa -o $@ $^
 
 %.len: %.fa
@@ -51,7 +59,7 @@ clean:
 
 # Estimate distances between contigs
 
-%.pair %.hist: $(lib).$(ext) %.fa
+%.pair %.hist: $(in) %.fa
 	KAligner $v -k$k $^ |ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
