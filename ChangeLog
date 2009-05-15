@@ -1,3 +1,25 @@
+2009-05-15  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.9.
+
+	abyss-pe:
+	* Allow multiple input files specified by the parameter `in'.
+	* Support reading FASTA or FASTQ file formats.
+
+	KAligner:
+	* Support using Google sparsehash to reduce memory usage.
+	Google sparsehash does not provide a multimap, so KAligner built
+	using Google sparsehash cannot handle a duplicate k-mer in the
+	reference sequence. It will print an error message and die if a
+	duplicate k-mer is encountered. If Google sparsehash is not used,
+	the standard STL multimap will be used which does permit duplicate
+	k-mer.
+	* Support reading the query sequence from standard input.
+
+	ParseAligns:
+	* Significantly reduce memory usage if the mate reads are
+	encountered one after the next in the same file.
+
 2009-04-02  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.8.
