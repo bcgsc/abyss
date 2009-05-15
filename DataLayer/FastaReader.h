@@ -33,6 +33,7 @@ class FastaReader : public IFileReader
 
 		std::ifstream m_fileHandle;
 		unsigned m_nonacgt;
+		const char* m_inPath;
 };
 
 #endif //FASTAREADER_H

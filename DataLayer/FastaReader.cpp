@@ -5,7 +5,7 @@
 #include <cctype>
 
 FastaReader::FastaReader(const char* filename)
-	: m_nonacgt(0)
+	: m_nonacgt(0), m_inPath(filename)
 {	
 	m_fileHandle.open(filename);
 	assert(m_fileHandle.is_open());
@@ -37,14 +37,32 @@ Sequence FastaReader::ReadSequence()
 	// Read the header.
 	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
 	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
-	assert(buf[0] == '>');
+	Sequence s;
+	if (buf[0] == '>') {
+		// Read the sequence.
+		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+		s = Sequence(buf);
+		transform(s.begin(), s.end(), s.begin(), ::toupper);
+	} else if (buf[0] == '@') {
+		// Read the sequence.
+		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+		s = Sequence(buf);
+		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-	// Read the sequence.
-	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
-
-	Sequence s(buf);
-	transform(s.begin(), s.end(), s.begin(), ::toupper);
+		// Read the quality values.
+		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+		assert(buf[0] == '+');
+		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
+		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+	} else {
+		fprintf(stderr, "error: `%s' is an unknown format\n"
+					"Expected either `>' or `@' and saw `%c'\n",
+				m_inPath, buf[0]);
+		exit(EXIT_FAILURE);
+	}
 	return s;
 }
 

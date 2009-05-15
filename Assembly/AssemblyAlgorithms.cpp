@@ -1,7 +1,6 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
-#include "FastqReader.h"
 #include "HitRecord.h"
 #include "Log.h"
 #include "Options.h"
@@ -137,22 +136,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->load(inFile.c_str());
 		return;
 	}
-	else if(inFile.find(".fq") != std::string::npos
-			|| inFile.find(".fastq") != std::string::npos)
-	{
-		reader = new FastqReader(inFile.c_str());
-	}
-	else if(inFile.find(".fa") != std::string::npos
-			|| inFile.find(".fasta") != std::string::npos)
-	{
-		reader = new FastaReader(inFile.c_str());
-	}
 	else
 	{
-		fprintf(stderr, "error: `%s' is an unknown format\n"
-			"Try `" PACKAGE " --help' for more information.\n",
-				inFile.c_str());
-		exit(EXIT_FAILURE);
+		reader = new FastaReader(inFile.c_str());
 	}
 	
 	unsigned count = 0, count_small = 0;
