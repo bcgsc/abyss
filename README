@@ -26,13 +26,16 @@ parallel jobs, or increased to 96.
 To assemble paired short reads in a file named reads.fa into contigs
 in a file named paired-contigs.fa, run the command:
 
-abyss-pe k=25 l=42 c=2 n=10 in=reads.fa
+abyss-pe k=25 l=42 c=2 n=10 in='reads1.fa reads2.fa' lib=ecoli
 
 where k and l are the k-mer length and read length as before.
 c is the minimum average k-mer coverage of a contig and may be
 disabled by setting c=0.
 n is the minimum number of pairs needed to consider joining two
 contigs. The optimal value for n must be found by trial.
+in specifies the input files to read, which must be in either FASTA or
+FASTQ format.
+The assembled contigs will be stored in ${lib}-contigs.fa.
 
 The last character of the read identifier for a pair of reads must be
 one of '1' and '2', or 'A' and 'B', or 'F' and 'R'.
