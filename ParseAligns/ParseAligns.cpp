@@ -96,9 +96,11 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 }
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
-		ReadAlignMap::const_iterator pairIter,
-		const string& currID, const string& pairID)
+		ReadAlignMap::const_iterator pairIter)
 {
+	const string& currID = iter->first;
+	const string& pairID = pairIter->first;
+
 	// Both reads must align to a unique location.
 	// The reads are allowed to span more than one contig, but
 	// at least one of the two reads must span no more than
@@ -184,7 +186,7 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		ReadAlignMap::iterator iter = out.find(readID);
 		ReadAlignMap::iterator pairIter = out.find(pairID);
 		if(pairIter != out.end()) {
-			handleAlignmentPair(iter, pairIter, readID, pairID);
+			handleAlignmentPair(iter, pairIter);
 
 			// Erase the pair as its not needed (faster to mark it as invalid?)
 			out.erase(pairIter);
