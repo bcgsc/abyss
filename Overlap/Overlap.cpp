@@ -208,7 +208,7 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 		stats.overlap++;
 		int dist = -overlap;
 		int diff = dist - est.distance;
-		if (abs(diff) > allowedError(est.stdDev))
+		if ((unsigned)abs(diff) > allowedError(est.stdDev))
 			cerr << "warning: overlap does not agree with estimate\n"
 				<< '\t' << t << ',' << h << ' '
 				<< dist << ' ' << est << endl;
