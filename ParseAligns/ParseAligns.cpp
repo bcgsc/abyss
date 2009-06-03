@@ -29,7 +29,10 @@ static const char *USAGE_MESSAGE =
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
+"  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -a, --adj=ADJACENCY   write adjacency based on read integrity to this file\n"
+"  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
 "  -v, --verbose         display verbose output\n"
@@ -40,19 +43,25 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	static int k;
+	static unsigned c;
 	static int verbose;
+	static string adjPath;
+	static string distPath;
 	static string fragPath;
 	static string histPath;
 }
 
-static const char* shortopts = "k:f:h:v";
+static const char* shortopts = "a:d:k:f:h:c:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "dist",    required_argument, NULL, 'd' },
+	{ "adj",     required_argument, NULL, 'a' },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "frag",    required_argument, NULL, 'f' },
 	{ "hist",    required_argument, NULL, 'h' },
+	{ "cover",   required_argument, NULL, 'c' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -74,6 +83,10 @@ static Histogram histogram;
 
 // TYPEDEFS
 typedef hash_map<string, AlignmentVector> ReadAlignMap;
+typedef hash_map<ContigID, EstimateRecord> EstimateMap;
+
+static EstimateMap estMap;
+static EstimateMap adjMap;
 
 // FUNCTIONS
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
@@ -93,6 +106,112 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	const Alignment& f = a0.isRC ? a1 : a0;
 	const Alignment& r = a0.isRC ? a0 : a1;
 	return r - f;
+}
+
+static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est)
+{
+	//count up the number of estimates that agree
+	bool placed = false;
+	EstimateMap::iterator estimatesIt = map.find(a.contig);
+	if (estimatesIt != map.end()) {
+		EstimateRecord& estimates = estimatesIt->second;
+		for (EstimateVector::iterator estIt = estimates.estimates[a.isRC].begin();
+				estIt != estimates.estimates[a.isRC].end(); ++estIt) {
+			if (estIt->nID == est.nID) {
+				if (estIt->distance == est.distance && estIt->numPairs != 0)
+					estIt->numPairs++;
+				else
+					estIt->numPairs = 0;
+				placed = true;
+				break;
+			}
+		}
+	}
+	if (!placed)
+		map[a.contig].estimates[a.isRC].push_back(est);
+
+}
+
+static void doReadIntegrity(ReadAlignMap::const_iterator iter)
+{
+	//for each alignment in the vector iter->second
+	for (AlignmentVector::const_iterator refAlignIter = iter->second.begin();
+			refAlignIter != iter->second.end(); ++refAlignIter) {
+		//for each alignment after the current one
+		for (AlignmentVector::const_iterator alignIter = refAlignIter;
+				alignIter != iter->second.end(); ++alignIter) {
+			//make sure both alignments aren't for the same contig
+			if (alignIter->contig != refAlignIter->contig) {
+				Estimate est;
+				//Make sure the distance is read as 0 if the two contigs are
+				//directly adjacent to each other. A -ve number suggests an
+				//overlap.
+				assert(refAlignIter->read_start_pos != alignIter->read_start_pos);
+				const Alignment& a = refAlignIter->read_start_pos < alignIter->read_start_pos ? *refAlignIter : *alignIter;
+				const Alignment& b = refAlignIter->read_start_pos > alignIter->read_start_pos ? *refAlignIter : *alignIter;
+				unsigned a_end = a.read_start_pos + a.align_length - opt::k;
+				int distance = b.read_start_pos - a_end;
+				est.nID = convertContigIDToLinearNumKey(b.contig);
+				est.distance = distance - opt::k;
+				est.numPairs = 1;
+				est.stdDev = 0;
+				//weird file format...
+				est.isRC = a.isRC ? !b.isRC : b.isRC;
+
+				if (est.distance == 1 - opt::k) {
+					addEstimate(adjMap, a, est);
+					continue;
+				}
+				addEstimate(estMap, a, est);
+			}
+		}
+	}
+}
+
+static void generateDistFile()
+{
+	ofstream distFile(opt::distPath.c_str());
+	assert(distFile.is_open());
+	for (EstimateMap::const_iterator mapIt = estMap.begin();
+			mapIt != estMap.end(); ++mapIt) {
+		//Skip empty iterators
+		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
+		distFile << mapIt->first << " :";
+		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
+			if (refIsRC)
+				distFile << " |";
+			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
+				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0)
+					distFile << " " << *vecIt;
+			}
+		}
+		distFile << endl;
+	}
+	distFile.close();
+}
+
+static void generateAdjFile()
+{
+	ofstream adjFile(opt::adjPath.c_str());
+	assert(adjFile.is_open());
+	for (EstimateMap::const_iterator mapIt = adjMap.begin();
+			mapIt != adjMap.end(); ++mapIt) {
+		//Skip empty iterators
+		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
+		adjFile << mapIt->first;
+		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
+			adjFile << " [";
+			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
+				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0)
+					adjFile << " " << vecIt->nID << "," << vecIt->isRC;
+			}
+			adjFile << " ]";
+		}
+		adjFile << endl;
+	}
+	adjFile.close();
 }
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
@@ -185,6 +304,10 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		// Find the pair align
 		ReadAlignMap::iterator iter = out.find(readID);
 		ReadAlignMap::iterator pairIter = out.find(pairID);
+
+		if ((!opt::distPath.empty() || !opt::adjPath.empty()) && iter->second.size() >= 2)
+			doReadIntegrity(iter);
+
 		if(pairIter != out.end()) {
 			handleAlignmentPair(iter, pairIter);
 
@@ -223,6 +346,9 @@ int main(int argc, char* const* argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'c': arg >> opt::c; break;
+			case 'a': arg >> opt::adjPath; break;
+			case 'd': arg >> opt::distPath; break;
 			case 'f': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
 			case 'v': opt::verbose++; break;
@@ -279,6 +405,11 @@ int main(int argc, char* const* argv)
 			<< " Multi: " << stats.numMulti
 			<< " Non-singular: " << stats.numNonSingle
 			<< endl;
+
+	if (!opt::distPath.empty())
+		generateDistFile();
+	if (!opt::adjPath.empty())
+		generateAdjFile();
 
 	if (!opt::fragPath.empty())
 		fragFile.close();
