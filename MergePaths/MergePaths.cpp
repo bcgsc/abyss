@@ -167,30 +167,21 @@ int main(int argc, char** argv)
 
 	FastaWriter writer(opt::out.c_str());
 
-	// output the paths
-	iter = contigPathMap.begin();
-	int count = 0;
-	while(iter != contigPathMap.end())
-	{
-		mergePath(iter->first, contigVec, iter->second, count++,
-				opt::k, &writer);
-		iter++;
-	}	
-	
 	set<size_t> seen = getContigIDs(contigPathMap);
-	unsigned id = contigPathMap.size();
 	for (size_t i = 0; i < contigVec.size(); i++) {
-		if (seen.count(i) == 0) {
-			ostringstream s;
-			s << i << '+';
+		if (seen.count(i) == 0)
 			writer.WriteSequence(contigVec[i].seq,
-					id++, contigVec[i].coverage,
-					s.str());
-		}
+					i, contigVec[i].coverage);
 	}
 
+	int id = contigVec.size();
+	for (ContigPathMap::iterator it = contigPathMap.begin();
+			it != contigPathMap.end(); ++it)
+		mergePath(it->first, contigVec, it->second, id++,
+				opt::k, &writer);
+
 	return 0;
-} 
+}
 
 static void assert_open(std::ifstream& f, const std::string& p)
 {
