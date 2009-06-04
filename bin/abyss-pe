@@ -49,12 +49,10 @@ clean:
 
 # Coverage cutoff
 
-%-2.fa: %-1.fa
+%-3.fa: %-1.fa
 	awk '/^>/ { getline s; if ($$3/($$2-$k+1)>=$c) \
-		{ print $$0 "\n" s } }' $< >$@
-
-%-3.fa: %-2.fa
-	ABYSS -k$k -l$l -e0 -o $@ $^
+		{ print $$0 "\n" s } }' $< \
+		|ABYSS -k$k -l$l -e0 -o $@ -
 
 # Estimate distances between contigs
 
