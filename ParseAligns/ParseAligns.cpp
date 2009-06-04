@@ -186,7 +186,8 @@ static void generateDistFile()
 					distFile << " " << *vecIt;
 			}
 		}
-		distFile << endl;
+		distFile << '\n';
+		assert(distFile.good());
 	}
 	distFile.close();
 }
