@@ -66,7 +66,7 @@ struct PathMergeRecord
 };
 
 typedef std::list<MergeNode> MergeNodeList;
-typedef std::map<LinearNumKey, PathMergeRecord> ContigPathMap;
+typedef std::map<LinearNumKey, PathMergeRecord*> ContigPathMap;
 
 // Functions
 void readIDIntPair(std::string str, LinearNumKey& id, int& i);
@@ -91,7 +91,7 @@ static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 			it != contigPathMap.end(); it++) {
 		seen.insert(it->first);
 		for (int dir = 0; dir < 2; dir++) {
-			const ContigPath &cp = it->second.paths[dir];
+			const ContigPath &cp = it->second->paths[dir];
 			size_t nodes = cp.getNumNodes();
 			for (size_t i = 0; i < nodes; i++)
 				seen.insert(cp.getNode(i).id);
@@ -158,9 +158,9 @@ int main(int argc, char** argv)
 		linkPaths(iter->first, contigPathMap);
 
 		ContigPath newCanonical;
-		PathMergeRecord& refPMR = contigPathMap[iter->first];
-		makeCanonicalPath(iter->first, refPMR, newCanonical);
-		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl; 
+		PathMergeRecord* ptrPMR = contigPathMap[iter->first];
+		makeCanonicalPath(iter->first, *ptrPMR, newCanonical);
+		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl;
 	}
 
 	FastaWriter writer(opt::out.c_str());
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
 	int id = contigVec.size();
 	for (ContigPathMap::const_iterator it = contigPathMap.begin();
 			it != contigPathMap.end(); ++it)
-		mergePath(it->first, contigVec, it->second, id++,
+		mergePath(it->first, contigVec, *it->second, id++,
 				opt::k, &writer);
 
 	return 0;
@@ -206,22 +206,25 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 		ContigPath path;
 		parsePathLine(pathRecord, id, dir, path);
 		//std::cout << "Parsed " << id << " dir " << dir << std::endl;
-		contigPathMap[id].paths[dir] = path;
+		if (contigPathMap.find(id) == contigPathMap.end())
+			(contigPathMap[id] = new PathMergeRecord)->paths[dir] = path;
+		else
+			contigPathMap[id]->paths[dir] = path;
 	}
 
 	pathStream.close();
 }
 
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
-{	
+{
 	// Make the canonical path which is [AS root S]
-	PathMergeRecord& refPMR = contigPathMap[id];
-	
+	PathMergeRecord* ptrPMR = contigPathMap[id];
+
 	ContigPath initialCanonical;
-	makeCanonicalPath(id, refPMR, initialCanonical);
-	
+	makeCanonicalPath(id, *ptrPMR, initialCanonical);
+
 	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << initialCanonical << "\n";
-	
+
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
 	addPathNodesToList(mergeInList, initialCanonical);
@@ -235,15 +238,14 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 			
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
-			if(findIter != contigPathMap.end())
-			{
+			if (findIter != contigPathMap.end()) {
 				ContigPath refCanonical;
-				makeCanonicalPath(id, refPMR, refCanonical);
-				
+				makeCanonicalPath(id, *ptrPMR, refCanonical);
+
 				// Make the full path of the child node
 				ContigPath childCanonPath;
-				makeCanonicalPath(iter->id, findIter->second, childCanonPath);
-				
+				makeCanonicalPath(iter->id, *findIter->second, childCanonPath);
+
 				if(iter->isRC)
 				{
 					// Flip the path
@@ -273,13 +275,13 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					prependNodes.reverse(false);
 					
 					// Add the nodes to the ref contig
-					refPMR.paths[ANTISENSE].appendPath(prependNodes);
-					refPMR.paths[SENSE].appendPath(appendNodes);
-					
+					ptrPMR->paths[ANTISENSE].appendPath(prependNodes);
+					ptrPMR->paths[SENSE].appendPath(appendNodes);
+
 					ContigPath newCanonical;
-					makeCanonicalPath(id, refPMR, newCanonical);
+					makeCanonicalPath(id, *ptrPMR, newCanonical);
 					if(gDebugPrint) std::cout << " new: " << newCanonical << "\n";
-					
+
 					// Erase the child id
 					contigPathMap.erase(iter->id);
 				}
