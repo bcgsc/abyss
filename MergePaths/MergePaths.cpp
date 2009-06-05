@@ -73,7 +73,9 @@ void readIDIntPair(std::string str, LinearNumKey& id, int& i);
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
 void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
-void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer);
+void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
+		const PathMergeRecord& mergeRecord, int count, int kmer,
+		FastaWriter* writer);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
 void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& canonical);
 bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end);
@@ -171,7 +173,7 @@ int main(int argc, char** argv)
 	}
 
 	int id = contigVec.size();
-	for (ContigPathMap::iterator it = contigPathMap.begin();
+	for (ContigPathMap::const_iterator it = contigPathMap.begin();
 			it != contigPathMap.end(); ++it)
 		mergePath(it->first, contigVec, it->second, id++,
 				opt::k, &writer);
@@ -487,8 +489,9 @@ static string toString(const ContigPath& path)
 	return s.str();
 }
 
-void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& mergeRecord, int count, int kmer, FastaWriter* writer)
-{
+void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
+		const PathMergeRecord& mergeRecord, int count, int kmer,
+		FastaWriter* writer) {
 	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
 	ContigPath newCanonical;
 	makeCanonicalPath(cID, mergeRecord, newCanonical);
@@ -503,11 +506,8 @@ void mergePath(LinearNumKey cID, ContigVec& sourceContigs, PathMergeRecord& merg
 
 	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 	{
-	
-		ContigPath& currPath = mergeRecord.paths[dirIdx];
-		
+		const ContigPath& currPath = mergeRecord.paths[dirIdx];
 		size_t numNodes = currPath.getNumNodes();
-		
 		for(size_t i = 0; i < numNodes; ++i)
 		{
 			MergeNode mn = currPath.getNode(i);
