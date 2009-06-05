@@ -149,21 +149,17 @@ int main(int argc, char** argv)
 	// Read the paths file
 	ContigPathMap contigPathMap;
 	readPathsFromFile(pathFile, contigPathMap);
-	
-	// link the paths together
-	
-	ContigPathMap::iterator iter = contigPathMap.begin();
 
-	while(iter != contigPathMap.end())
-	{
+	// link the paths together
+	for (ContigPathMap::const_iterator iter = contigPathMap.begin();
+			iter != contigPathMap.end(); ++iter) {
 		linkPaths(iter->first, contigPathMap);
 
 		ContigPath newCanonical;
 		PathMergeRecord& refPMR = contigPathMap[iter->first];
 		makeCanonicalPath(iter->first, refPMR, newCanonical);
 		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl; 
-		iter++;
-	}	
+	}
 
 	FastaWriter writer(opt::out.c_str());
 
