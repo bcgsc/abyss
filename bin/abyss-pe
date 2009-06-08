@@ -39,7 +39,11 @@ clean:
 # Single-end assembly
 
 %-1.fa: $(in)
+ifdef np
+	mpirun -np $(np) ABYSS-P $v -k$k -l$l -ssnp.fa -o $@ $^
+else
 	ABYSS $v -k$k -l$l -ssnp.fa -o $@ $^
+endif
 
 %.len: %.fa
 	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
