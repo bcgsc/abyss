@@ -59,14 +59,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-
-struct PathMergeRecord
-{	
-	ContigPath paths[2];	
-};
-
 typedef std::list<MergeNode> MergeNodeList;
-typedef std::map<LinearNumKey, PathMergeRecord*> ContigPathMap;
+typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
 
 // Functions
 void readIDIntPair(std::string str, LinearNumKey& id, int& i);
@@ -74,10 +68,9 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
 void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
-		const PathMergeRecord& mergeRecord, int count, int kmer,
+		const ContigPath& mergeRecord, int count, int kmer,
 		FastaWriter* writer);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
-void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& canonical);
 bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end);
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
@@ -89,13 +82,10 @@ static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
 	set<size_t> seen;
 	for (ContigPathMap::const_iterator it = contigPathMap.begin();
 			it != contigPathMap.end(); it++) {
-		seen.insert(it->first);
-		for (int dir = 0; dir < 2; dir++) {
-			const ContigPath &cp = it->second->paths[dir];
-			size_t nodes = cp.getNumNodes();
-			for (size_t i = 0; i < nodes; i++)
-				seen.insert(cp.getNode(i).id);
-		}
+		const ContigPath &cp = *it->second;
+		size_t nodes = cp.getNumNodes();
+		for (size_t i = 0; i < nodes; i++)
+			seen.insert(cp.getNode(i).id);
 	}
 	return seen;
 }
@@ -157,9 +147,7 @@ int main(int argc, char** argv)
 			iter != contigPathMap.end(); ++iter) {
 		linkPaths(iter->first, contigPathMap);
 
-		ContigPath newCanonical;
-		PathMergeRecord* ptrPMR = contigPathMap[iter->first];
-		makeCanonicalPath(iter->first, *ptrPMR, newCanonical);
+		ContigPath& newCanonical = *contigPathMap[iter->first];
 		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl;
 	}
 
@@ -206,10 +194,18 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 		ContigPath path;
 		parsePathLine(pathRecord, id, dir, path);
 		//std::cout << "Parsed " << id << " dir " << dir << std::endl;
-		if (contigPathMap.find(id) == contigPathMap.end())
-			(contigPathMap[id] = new PathMergeRecord)->paths[dir] = path;
-		else
-			contigPathMap[id]->paths[dir] = path;
+
+		if (contigPathMap.find(id) == contigPathMap.end()) {
+			MergeNode rootNode = {id, 0};
+			(contigPathMap[id] = new ContigPath)->appendNode(rootNode);
+		}
+		if (dir == 0)
+			contigPathMap[id]->appendPath(path);
+		else {
+			path.reverse(false);
+			contigPathMap[id]->prependPath(path);
+		}
+		//cout << "Adding: " << path << " to: " << id << "," << dir << " to get: " << *contigPathMap[id] << endl;
 	}
 
 	pathStream.close();
@@ -217,37 +213,27 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 {
-	// Make the canonical path which is [AS root S]
-	PathMergeRecord* ptrPMR = contigPathMap[id];
+	ContigPath& refCanonical = *contigPathMap[id];
 
-	ContigPath initialCanonical;
-	makeCanonicalPath(id, *ptrPMR, initialCanonical);
-
-	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << initialCanonical << "\n";
+	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << refCanonical << "\n";
 
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
-	addPathNodesToList(mergeInList, initialCanonical);
+	addPathNodesToList(mergeInList, refCanonical);
 	
 	MergeNodeList::iterator iter = mergeInList.begin();
-	while(!mergeInList.empty())
-	{	
-		if(iter->id != id)
-		{
+	while(!mergeInList.empty()) {
+		if(iter->id != id) {
 			if(gDebugPrint) std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
 			
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
 			if (findIter != contigPathMap.end()) {
-				ContigPath refCanonical;
-				makeCanonicalPath(id, *ptrPMR, refCanonical);
-
 				// Make the full path of the child node
-				ContigPath childCanonPath;
-				makeCanonicalPath(iter->id, *findIter->second, childCanonPath);
+				ContigPath childCanonPath = *findIter->second;
+				size_t childKeyIndex = childCanonPath.findFirstOf(iter->id);
 
-				if(iter->isRC)
-				{
+				if(iter->isRC != childCanonPath.getNode(childKeyIndex).isRC) {
 					// Flip the path
 					childCanonPath.reverse(true);
 				}
@@ -258,8 +244,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 				size_t s1, s2, e1, e2;
 				bool validMerge = checkPathConsistency(id, iter->id, refCanonical, childCanonPath, s1, e1, s2, e2);
 				
-				if(validMerge)
-				{
+				if(validMerge) {
 					// Extract the extra nodes from the child path that can be added in
 					ContigPath prependNodes = childCanonPath.extractNodes(0, s2);
 					ContigPath appendNodes = childCanonPath.extractNodes(e2+1, childCanonPath.getNumNodes());
@@ -271,16 +256,11 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					//std::cout << "PPN " << prependNodes << "\n";
 					//std::cout << "APN " << appendNodes << "\n";
 					
-					// Reverse the prepend list but dont flip the comp
-					prependNodes.reverse(false);
-					
 					// Add the nodes to the ref contig
-					ptrPMR->paths[ANTISENSE].appendPath(prependNodes);
-					ptrPMR->paths[SENSE].appendPath(appendNodes);
+					refCanonical.prependPath(prependNodes);
+					refCanonical.appendPath(appendNodes);
 
-					ContigPath newCanonical;
-					makeCanonicalPath(id, *ptrPMR, newCanonical);
-					if(gDebugPrint) std::cout << " new: " << newCanonical << "\n";
+					if(gDebugPrint) std::cout << " new: " << refCanonical << "\n";
 
 					// Erase the child id
 					contigPathMap.erase(iter->id);
@@ -462,21 +442,6 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, si
 	
 }
 
-void makeCanonicalPath(LinearNumKey id, const PathMergeRecord& pmr, ContigPath& canonical)
-{
-	MergeNode rootNode = {id, 0};
-	
-	// Make the canonical path describing this contig
-	ContigPath sensePath = pmr.paths[SENSE];
-	ContigPath antisensePath = pmr.paths[ANTISENSE];
-	
-	antisensePath.reverse(false);
-	canonical.appendPath(antisensePath);
-	canonical.appendNode(rootNode);
-	canonical.appendPath(sensePath);
-}
-
-
 static string toString(const ContigPath& path)
 {
 	size_t numNodes = path.getNumNodes();
@@ -492,33 +457,30 @@ static string toString(const ContigPath& path)
 }
 
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
-		const PathMergeRecord& mergeRecord, int count, int kmer,
-		FastaWriter* writer) {
+		const ContigPath& currPath, int count, int kmer,
+		FastaWriter* writer)
+{
 	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
-	ContigPath newCanonical;
-	makeCanonicalPath(cID, mergeRecord, newCanonical);
-	if(gDebugPrint) std::cout << "Canonical path is: " << newCanonical << std::endl; 	
-	string comment = toString(newCanonical);
+	if(gDebugPrint) std::cout << "Canonical path is: " << currPath << "\n"; 	
+	string comment = toString(currPath);
 	if (opt::verbose > 0)
 		cout << comment << '\n';
 
-	Sequence merged = sourceContigs[cID].seq;
-	
+	size_t numNodes = currPath.getNumNodes();
+
+	MergeNode firstNode = currPath.getNode(0);
+	Sequence merged = sourceContigs[firstNode.id].seq;
+	if (firstNode.isRC)
+		merged = reverseComplement(merged);
 	assert(!merged.empty());
 
-	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-	{
-		const ContigPath& currPath = mergeRecord.paths[dirIdx];
-		size_t numNodes = currPath.getNumNodes();
-		for(size_t i = 0; i < numNodes; ++i)
-		{
-			MergeNode mn = currPath.getNode(i);
-			if(gDebugPrint) std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
-			
-			Sequence otherContig = sourceContigs[mn.id].seq;
-			assert(!otherContig.empty());
-			mergeSequences(merged, otherContig, (extDirection)dirIdx, mn.isRC, kmer);
-		}
+	for(size_t i = 1; i < numNodes; ++i) {
+		MergeNode mn = currPath.getNode(i);
+		if(gDebugPrint) std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
+
+		Sequence otherContig = sourceContigs[mn.id].seq;
+		assert(!otherContig.empty());
+		mergeSequences(merged, otherContig, (extDirection)0, mn.isRC, kmer);
 	}
 
 	writer->WriteSequence(merged, count, 0.0f, comment);
