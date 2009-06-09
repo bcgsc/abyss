@@ -147,9 +147,15 @@ int main(int argc, char** argv)
 			iter != contigPathMap.end(); ++iter) {
 		linkPaths(iter->first, contigPathMap);
 
-		ContigPath& newCanonical = *contigPathMap[iter->first];
-		if(gDebugPrint) std::cout << "Final path from " << iter->first << " is " << newCanonical << std::endl;
+		if (gDebugPrint)
+			std::cout << "Pseudo final path from " << iter->first
+				<< ' ' << iter->second << " is " << *iter->second << std::endl;
 	}
+
+	set<ContigPath*> unique;
+	for (ContigPathMap::const_iterator it = contigPathMap.begin();
+			it != contigPathMap.end(); ++it)
+		unique.insert(it->second);
 
 	FastaWriter writer(opt::out.c_str());
 
@@ -161,9 +167,9 @@ int main(int argc, char** argv)
 	}
 
 	int id = contigVec.size();
-	for (ContigPathMap::const_iterator it = contigPathMap.begin();
-			it != contigPathMap.end(); ++it)
-		mergePath(it->first, contigVec, *it->second, id++,
+	for (set<ContigPath*>::const_iterator it = unique.begin();
+			it != unique.end(); ++it)
+		mergePath((**it).getNode(0).id, contigVec, **it, id++,
 				opt::k, &writer);
 
 	return 0;
@@ -213,61 +219,75 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 {
-	ContigPath& refCanonical = *contigPathMap[id];
+	ContigPath* refCanonical = contigPathMap[id];
 
-	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << refCanonical << "\n";
+	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << *refCanonical << "\n";
 
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
-	addPathNodesToList(mergeInList, refCanonical);
-	
+	addPathNodesToList(mergeInList, *refCanonical);
+
 	MergeNodeList::iterator iter = mergeInList.begin();
 	while(!mergeInList.empty()) {
 		if(iter->id != id) {
 			if(gDebugPrint) std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
-			
+
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
-			if (findIter != contigPathMap.end()) {
+			if (findIter != contigPathMap.end() && refCanonical != findIter->second) {
 				// Make the full path of the child node
-				ContigPath childCanonPath = *findIter->second;
-				size_t childKeyIndex = childCanonPath.findFirstOf(iter->id);
+				ContigPath* childCanonPath = findIter->second;
+				size_t childKeyIndex = childCanonPath->findFirstOf(iter->id);
 
-				if(iter->isRC != childCanonPath.getNode(childKeyIndex).isRC) {
+				if(iter->isRC != childCanonPath->getNode(childKeyIndex).isRC) {
 					// Flip the path
-					childCanonPath.reverse(true);
+					childCanonPath->reverse(true);
 				}
-				
-				if(gDebugPrint) std::cout << " ref: " << refCanonical << "\n";
-				if(gDebugPrint) std::cout << "  in: " << childCanonPath << "\n";
-				
+
+				if(gDebugPrint) std::cout << " ref: " << refCanonical
+					<< ' ' << *refCanonical << "\n";
+				if(gDebugPrint) std::cout << "  in: " <<
+					childCanonPath << ' ' << *childCanonPath << "\n";
+
 				size_t s1, s2, e1, e2;
-				bool validMerge = checkPathConsistency(id, iter->id, refCanonical, childCanonPath, s1, e1, s2, e2);
-				
+				bool validMerge = checkPathConsistency(id, iter->id,
+					*refCanonical, *childCanonPath, s1, e1, s2, e2);
+
 				if(validMerge) {
 					// Extract the extra nodes from the child path that can be added in
-					ContigPath prependNodes = childCanonPath.extractNodes(0, s2);
-					ContigPath appendNodes = childCanonPath.extractNodes(e2+1, childCanonPath.getNumNodes());
-	
+					ContigPath prependNodes = childCanonPath->extractNodes(0, s2);
+					ContigPath appendNodes = childCanonPath->extractNodes(e2+1, childCanonPath->getNumNodes());
+
 					// Add the nodes to the list of contigs to try to merge in
 					addPathNodesToList(mergeInList, prependNodes);
 					addPathNodesToList(mergeInList, appendNodes);
-					
+
 					//std::cout << "PPN " << prependNodes << "\n";
 					//std::cout << "APN " << appendNodes << "\n";
-					
+
 					// Add the nodes to the ref contig
-					refCanonical.prependPath(prependNodes);
-					refCanonical.appendPath(appendNodes);
+					refCanonical->prependPath(prependNodes);
+					refCanonical->appendPath(appendNodes);
 
-					if(gDebugPrint) std::cout << " new: " << refCanonical << "\n";
+					if(gDebugPrint) std::cout << " new: " <<
+						refCanonical << ' ' << *refCanonical << "\n";
 
-					// Erase the child id
-					contigPathMap.erase(iter->id);
+					// Alias all pointers to the child to the reference
+					MergeNodeList::iterator mergeIt = mergeInList.begin();
+					while (mergeIt != mergeInList.end()) {
+						ContigPathMap::iterator delIt = contigPathMap.find(mergeIt->id);
+						if (delIt->second == childCanonPath) {
+							delIt->second = refCanonical;
+							if (mergeIt != iter) {
+								mergeInList.erase(mergeIt++);
+							}
+						} else
+							++mergeIt;
+					}
 				}
 			}
 		}
-		
+
 		// Erase the iterator and move forward
 		mergeInList.erase(iter++);
 	}
