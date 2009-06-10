@@ -71,7 +71,7 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		FastaWriter* writer);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
-bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end);
+bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, vector<size_t>& coords);
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
@@ -237,12 +237,6 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 			if (findIter != contigPathMap.end() && refCanonical != findIter->second) {
 				// Make the full path of the child node
 				ContigPath* childCanonPath = findIter->second;
-				size_t childKeyIndex = childCanonPath->findFirstOf(iter->id);
-
-				if(iter->isRC != childCanonPath->getNode(childKeyIndex).isRC) {
-					// Flip the path
-					childCanonPath->reverse(true);
-				}
 
 				if(gDebugPrint) std::cout << " ref: " << refCanonical
 					<< ' ' << *refCanonical << "\n";
@@ -303,69 +297,83 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	// Find the provisional minimal index set by choosing the closest index pair of the root nodes from each path
 	// Since each path must contain each root node, if the range of these indices are different
 	// the paths must be different
-	
+
 	assert(path1.getNumNodes() != 0 && path2.getNumNodes() != 1);
-	
+
 	// Extract the minimal coordinates of the root nodes in the paths
 	// These coordinates should have the same size
-	bool valid1 = extractMinCoordSet(path2Root, path1, startP1, endP1);
-	bool valid2 = extractMinCoordSet(path2Root, path2, startP2, endP2);
-	
+	vector<size_t> coords1, coords2;
+	bool valid1 = extractMinCoordSet(path2Root, path1, coords1);
+	bool valid2 = extractMinCoordSet(path2Root, path2, coords2);
+
 	// Check that the nodes are both found and the range is the same size
-	if(!valid1 || !valid2 || (endP1 - startP1) != (endP2 - startP2))
-	{
-		//trivially inconsistent
+	if(!valid1 || !valid2) //trivially inconsistent
 		return false;
-	}
-	
+
 	//printf("Init  coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
-	// low coordinates first
 	bool lowValid = true;
-	while(1)
-	{
-		if(path1.getNode(startP1).id != path2.getNode(startP2).id)
-		{
-			// The nodes no longer match, this path is not valid
-			lowValid = false;
-			break;
-		}
-		
-		// Can we expand any further?
-		if(startP1 == 0 || startP2 == 0)
-		{
-			break;
-		}
-		
-		startP1--;
-		startP2--;
-	}
-	
-	// high coordinates	
+	bool highValid = true;
+	bool flipped = false;
 	size_t max1 = path1.getNumNodes() - 1;
 	size_t max2 = path2.getNumNodes() - 1;
-	bool highValid = true;
-	while(1)
-	{
-		if(path1.getNode(endP1).id != path2.getNode(endP2).id)
-		{
-			// The nodes no longer match, this path is not valid
-			highValid = false;
-			break;
+	for (unsigned i = 0; i < coords1.size(); i++) {
+		for (unsigned j = 0; j < coords2.size(); j++) {
+			if(path1.getNode(coords1[i]).isRC != path2.getNode(coords2[j]).isRC) {
+				// Flip the path if node direction is different
+				path2.reverse(true);
+				flipped = !flipped;
+			}
+			startP1 = coords1[i];
+			endP1 = coords1[i];
+			if (flipped) {
+				startP2 = max2 - coords2[j];
+				endP2 = max2 - coords2[j];
+			} else {
+				startP2 = coords2[j];
+				endP2 = coords2[j];
+			}
+
+			lowValid = true;
+			while(1) {
+				if(path1.getNode(startP1).id != path2.getNode(startP2).id) {
+					// The nodes no longer match, this path is not valid
+					lowValid = false;
+					break;
+				}
+
+				// Can we expand any further?
+				if(startP1 == 0 || startP2 == 0)
+					break;
+
+				startP1--;
+				startP2--;
+			}
+
+			// high coordinates
+			highValid = true;
+			while(1) {
+				if(path1.getNode(endP1).id != path2.getNode(endP2).id) {
+					// The nodes no longer match, this path is not valid
+					highValid = false;
+					break;
+				}
+
+				// Can we expand any further?
+				if(endP1 == max1 || endP2 == max2)
+					break;
+
+				endP1++;
+				endP2++;
+			}
+			if (lowValid && highValid)
+				break;
 		}
-		
-		// Can we expand any further?
-		if(endP1 == max1 || endP2 == max2)
-		{
+		if (lowValid && highValid)
 			break;
-		}
-		
-		endP1++;
-		endP2++;
 	}
-	
+
 	// Check if there was an actual mismatch in the nodes
-	if(!lowValid || !highValid)
-	{
+	if(!lowValid || !highValid) {
 		if(gDebugPrint) printf("Invalid path match!\n");
 		if(gDebugPrint) std::cout << "Path1 (" << path1Root << ") " << path1 << std::endl;
 		if(gDebugPrint) std::cout << "Path2 (" << path2Root << ") " << path2 << std::endl;
@@ -396,32 +404,24 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 // Extract the minimal coordinate set of the indices of (c1, c2) from path.
 // Returns true if a valid coordinate set is found, false otherwise
-bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, size_t& start, size_t& end)
+bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
+		vector<size_t>& coords)
 {
-	int coords1[2];
-	
-	coords1[0] = path.findFirstOf(anchor);
-	coords1[1] = path.findLastOf(anchor);
-	
-	if(coords1[0] == (int)path.getNumNodes())
-	{
-		// anchor coord not found
-		return false;
+	size_t maxIdx = path.getNumNodes();
+	for(size_t idx = 0; idx < maxIdx; ++idx) {
+		size_t tIdx = maxIdx - idx - 1;
+		if(path.getNode(tIdx).id == anchor)
+			coords.push_back(tIdx);
 	}
-	
-	if(coords1[0] != coords1[1])
-	{
-		// Duplicate anchor coord
+
+	if(coords.empty()) // anchor coord not found
 		return false;
-	}
-	
-	start = coords1[0];
-	end = coords1[1];
+
 	return true;
-	
+
 	/*
 	printf("	found %zu %zu %zu %zu\n", coords1[0], coords1[1], coords2[0], coords2[1]);
-	
+
 	// Were coordinates found for each contig?
 	if(coords1[0] == (int)path.getNumNodes() || coords2[0] == (int)path.getNumNodes())
 	{
