@@ -274,7 +274,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 							delIt->second = refCanonical;
 							if (mergeIt != iter) {
 								mergeInList.erase(mergeIt++);
-							}
+							} else
+								++mergeIt;
 						} else
 							++mergeIt;
 					}
