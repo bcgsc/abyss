@@ -59,6 +59,15 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+struct PathConsistencyStats {
+	size_t startP1;
+	size_t endP1;
+	size_t startP2;
+	size_t endP2;
+	bool flipped;
+	bool duplicateSize;
+};
+
 typedef std::list<MergeNode> MergeNodeList;
 typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
 
@@ -317,6 +326,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	bool flipped = false;
 	size_t max1 = path1.getNumNodes() - 1;
 	size_t max2 = path2.getNumNodes() - 1;
+	map<size_t, PathConsistencyStats> pathAlignments;
+
 	for (unsigned i = 0; i < coords1.size(); i++) {
 		for (unsigned j = 0; j < coords2.size(); j++) {
 			if(path1.getNode(coords1[i]).isRC != path2.getNode(coords2[j]).isRC) {
@@ -366,39 +377,66 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 				endP1++;
 				endP2++;
 			}
-			if (lowValid && highValid)
-				break;
+			if (lowValid && highValid) {
+				size_t count = endP1 - startP1;
+				assert(endP2 - startP2 == count);
+				if (pathAlignments.find(count) == pathAlignments.end()) {
+					PathConsistencyStats& pathAlignment = pathAlignments[count];
+					pathAlignment.startP1 = startP1;
+					pathAlignment.endP1 = endP1;
+					pathAlignment.startP2 = startP2;
+					pathAlignment.endP2 = endP2;
+					pathAlignment.flipped = flipped;
+					pathAlignment.duplicateSize = false;
+				} else
+					pathAlignments[count].duplicateSize = true;
+			}
 		}
-		if (lowValid && highValid)
-			break;
 	}
 
 	// Check if there was an actual mismatch in the nodes
-	if(!lowValid || !highValid) {
+	if(pathAlignments.empty()) {
 		if(gDebugPrint) printf("Invalid path match!\n");
 		if(gDebugPrint) std::cout << "Path1 (" << path1Root << ") " << path1 << std::endl;
 		if(gDebugPrint) std::cout << "Path2 (" << path2Root << ") " << path2 << std::endl;
 		return false;
 	}
-	
+
 	//printf("Final coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
-	
-	// Sanity assert, at this point one of the low coordniates should be zero and one of the high coordinates should be (size -1)	
-	assert(startP1 == 0 || startP2 == 0);
-	assert(endP1 == max1 || endP2 == max2);
-	
-	// Ensure the consistency is met
-	size_t count = endP1 - startP1;
-	assert(endP2 - startP2 == count);	
-	for(size_t c = 0; c < count; ++c)
-	{
-		if(path1.getNode(startP1 + c).id != path2.getNode(startP2 + c).id)
-		{
+
+	map<size_t, PathConsistencyStats>::const_iterator biggestIt =
+		pathAlignments.end();
+	--biggestIt;
+
+	// Sanity assert, at this point one of the low coordniates should be zero and one of the high coordinates should be (size -1)
+	assert(biggestIt->second.startP1 == 0 || biggestIt->second.startP2 == 0);
+	assert(biggestIt->second.endP1 == max1 || biggestIt->second.endP2 == max2);
+
+	// If either path aligns to the front and back of the other, it is
+	// not a valid path.
+	size_t count = biggestIt->first;
+	if (biggestIt->second.duplicateSize
+			&& biggestIt->first != min(max1, max2)) {
+		if (gDebugPrint) printf("Duplicate path match found\n");
+		return false;
+	}
+
+	startP1 = biggestIt->second.startP1;
+	endP1 = biggestIt->second.endP1;
+	startP2 = biggestIt->second.startP2;
+	endP2 = biggestIt->second.endP2;
+	if (biggestIt->second.flipped != flipped) {
+		path2.reverse(true);
+	}
+
+	for(size_t c = 0; c < count; ++c) {
+		if(path1.getNode(startP1 + c).id !=
+				path2.getNode(startP2 + c).id) {
 			if(gDebugPrint) printf("Internal path mismatch\n");
 			return false;
 		}
 	}
-	
+
 	// If we got to this point there is a legal subpath that describes both nodes and they can be merged
 	return true;
 }
