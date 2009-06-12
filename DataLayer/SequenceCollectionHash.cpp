@@ -1,5 +1,6 @@
 #include "SequenceCollectionHash.h"
 #include "Log.h"
+#include "Options.h"
 #include "Timer.h"
 #include <algorithm>
 #include <cassert>
@@ -28,12 +29,18 @@ SequenceCollectionHash::SequenceCollectionHash()
 	: m_seqObserver(NULL), m_adjacencyLoaded(false)
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-	// Make room for 100 million k-mers. Approximately 58 million
-	// k-mers fit into 2 GB of ram.
 	// sparse_hash_set uses 2.67 bits per element on a 64-bit
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
-	m_pSequences = new SequenceDataHash(100000000);
+	if (opt::rank >= 0) {
+		// Make room for 100 million k-mers. Approximately 58 million
+		// k-mers fit into 2 GB of ram.
+		m_pSequences = new SequenceDataHash(100000000);
+	} else {
+		// Allocate a big hash for a single processor.
+		m_pSequences = new SequenceDataHash(1<<29);
+		m_pSequences->max_load_factor(0.5);
+	}
 
 	/* sparse_hash_set requires you call set_deleted_key() before
 	* calling erase().
