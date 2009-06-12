@@ -75,7 +75,9 @@ class ISequenceCollection
 		
 		// Return the number of sequences in the collection
 		virtual size_t count() const = 0;
-		
+
+		virtual void printLoad() const = 0;
+
 		// Clear the specified flag from every sequence in the collection
 		virtual void wipeFlag(SeqFlag flag) = 0;
 		

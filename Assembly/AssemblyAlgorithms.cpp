@@ -85,31 +85,24 @@ static void loadPackedSequences(ISequenceCollection* seqCollection,
 		std::string inFile)
 {
 	PackedSeqReader reader(inFile.c_str());
+
 	unsigned count = 0;
-	
-	// Read the sequences and add them to the network sequence space
-	size_t lastNum = seqCollection->count();
-	
 	for (PSequenceVector seqs;
 			reader.ReadSequences(seqs); seqs.clear()) {
 		for (PSequenceVectorIterator iter = seqs.begin();
 				iter != seqs.end(); iter++) {
 			seqCollection->add(*iter);
-			count++;
+
 			// Output the progress
-			if (count % 100000 == 0) {
-				size_t numseqs = seqCollection->count();
-				PrintDebug(1,
-						"Read %u sequences: %zu unique, %zu new\n",
-						count, numseqs, numseqs - lastNum);
-				lastNum = numseqs;
+			if (++count % 100000 == 0) {
+				PrintDebug(1, "Read %u reads. ", count);
+				seqCollection->printLoad();
 			}
 		}
 		seqCollection->pumpNetwork();
 	}
-	size_t numseqs = seqCollection->count();
-	PrintDebug(1, "Read %u sequences: %zu unique, %zu new\n",
-			count, numseqs, numseqs - lastNum);
+	PrintDebug(1, "Read %u reads. ", count);
+	seqCollection->printLoad();
 
 	if (count == 0)
 		fputs("warning: input contains no sequences\n", stderr);
@@ -140,12 +133,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 	{
 		reader = new FastaReader(inFile.c_str());
 	}
-	
+
 	unsigned count = 0, count_small = 0;
-	
-	// Read the sequences and add them to the network sequence space
-	size_t lastNum = seqCollection->count();
-	
 	for (SequenceVector seqs;
 			reader->ReadSequences(seqs); seqs.clear()) {
 		for (SequenceVectorIterator iter = seqs.begin();
@@ -162,23 +151,17 @@ void loadSequences(ISequenceCollection* seqCollection,
 				// Add the sequence to the sequence collection
 				seqCollection->add(sub);
 			}
-			
-			count++;
+
 			// Output the progress
-			if (count % 100000 == 0) {
-				size_t numseqs = seqCollection->count();
-				PrintDebug(1,
-						"Read %u sequences: %zu unique, %zu new\n",
-						count, numseqs, numseqs - lastNum);
-				lastNum = numseqs;
+			if (++count % 100000 == 0) {
+				PrintDebug(1, "Read %u reads. ", count);
+				seqCollection->printLoad();
 			}
 		}
-			
 		seqCollection->pumpNetwork();
 	}
-	size_t numseqs = seqCollection->count();
-	PrintDebug(1, "Read %u sequences: %zu unique, %zu new\n",
-			count, numseqs, numseqs - lastNum);
+	PrintDebug(1, "Read %u reads. ", count);
+	seqCollection->printLoad();
 
 	unsigned count_nonacgt = reader->getNonACGT();
 	delete reader;

@@ -31,8 +31,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		int getMultiplicity(const PackedSeq& seq);
 		
 		// Print the load of the hash table.
-		void printLoad();
-		
+		virtual void printLoad() const;
+
 		// check if a sequence exists
 		bool exists(const PackedSeq& seq);
 		

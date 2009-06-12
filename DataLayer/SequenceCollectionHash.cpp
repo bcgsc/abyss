@@ -302,7 +302,7 @@ void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 }
 
 /** Print the load of the hash table. */
-void SequenceCollectionHash::printLoad()
+void SequenceCollectionHash::printLoad() const
 {
 	size_t size = m_pSequences->size();
 	size_t buckets = m_pSequences->bucket_count();

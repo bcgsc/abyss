@@ -85,7 +85,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Return the number of sequences in the collection
 		size_t count() const;
-		
+
+		virtual void printLoad() const { m_pLocalSpace->printLoad(); }
+
 		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq, extDirection dir, char base);
 		
