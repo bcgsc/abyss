@@ -80,6 +80,7 @@ static struct {
 static ostream& pairedAlignFile = cout;
 static ofstream fragFile;
 static Histogram histogram;
+static LinearNumKey lastContig;
 
 // TYPEDEFS
 typedef hash_map<string, AlignmentVector> ReadAlignMap;
@@ -108,15 +109,16 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	return r - f;
 }
 
-static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est)
+static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
 {
 	//count up the number of estimates that agree
 	bool placed = false;
+	bool a_isRC = a.isRC != reverse;
 	EstimateMap::iterator estimatesIt = map.find(a.contig);
 	if (estimatesIt != map.end()) {
 		EstimateRecord& estimates = estimatesIt->second;
-		for (EstimateVector::iterator estIt = estimates.estimates[a.isRC].begin();
-				estIt != estimates.estimates[a.isRC].end(); ++estIt) {
+		for (EstimateVector::iterator estIt = estimates.estimates[a_isRC].begin();
+				estIt != estimates.estimates[a_isRC].end(); ++estIt) {
 			if (estIt->nID == est.nID) {
 				if (estIt->distance == est.distance && estIt->numPairs != 0)
 					estIt->numPairs++;
@@ -128,7 +130,7 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est)
 		}
 	}
 	if (!placed)
-		map[a.contig].estimates[a.isRC].push_back(est);
+		map[a.contig].estimates[a_isRC].push_back(est);
 
 }
 
@@ -156,13 +158,23 @@ static void doReadIntegrity(ReadAlignMap::const_iterator iter)
 				est.numPairs = 1;
 				est.stdDev = 0;
 				//weird file format...
-				est.isRC = a.isRC ? !b.isRC : b.isRC;
+				est.isRC = a.isRC != b.isRC;
 
 				if (est.distance == 1 - opt::k) {
-					addEstimate(adjMap, a, est);
+					//Distance of 1 - k means alignments a and b are
+					//adjacent. Add forward and reverse estimates to
+					//adjMap.
+					addEstimate(adjMap, a, est, false);
+					Estimate revEst;
+					revEst.nID = convertContigIDToLinearNumKey(a.contig);
+					revEst.distance = est.distance;
+					revEst.numPairs = 1;
+					revEst.stdDev = 0;
+					revEst.isRC = est.isRC;
+					addEstimate(adjMap, b, revEst, true);
 					continue;
 				}
-				addEstimate(estMap, a, est);
+				addEstimate(estMap, a, est, false);
 			}
 		}
 	}
@@ -196,21 +208,25 @@ static void generateAdjFile()
 {
 	ofstream adjFile(opt::adjPath.c_str());
 	assert(adjFile.is_open());
-	for (EstimateMap::const_iterator mapIt = adjMap.begin();
-			mapIt != adjMap.end(); ++mapIt) {
-		//Skip empty iterators
-		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
-		adjFile << mapIt->first;
-		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
-			adjFile << " [";
-			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
-					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0)
+
+	//Need to have adjacency for all possible contigs.
+	for (unsigned contig = 0; contig <= lastContig; contig++) {
+		stringstream s;
+		s << contig;
+		EstimateMap::const_iterator mapIt = adjMap.find(s.str());
+		if (mapIt != adjMap.end()) {
+			assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
+			adjFile << mapIt->first;
+			for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
+				adjFile << " [";
+				for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+						vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt)
 					adjFile << " " << vecIt->nID << "," << vecIt->isRC;
+				adjFile << " ]";
 			}
-			adjFile << " ]";
-		}
-		adjFile << endl;
+			adjFile << "\n";
+		} else
+			adjFile << contig << " [ ] [ ]\n";
 	}
 	adjFile.close();
 }
@@ -296,8 +312,13 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 				<< readID << "'\n";
 			exit(EXIT_FAILURE);
 		}
-		for (Alignment ali; s >> ali;)
+		for (Alignment ali; s >> ali;) {
 			alignments.push_back(ali);
+
+			LinearNumKey readIDKey = convertContigIDToLinearNumKey(ali.contig);
+			if (readIDKey > lastContig)
+				lastContig = readIDKey;
+		}
 		stats.alignments++;
 
 		string pairID = makePairID(readID);
