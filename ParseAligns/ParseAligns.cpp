@@ -241,14 +241,17 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 	// The reads are allowed to span more than one contig, but
 	// at least one of the two reads must span no more than
 	// two contigs.
-	bool isRefUnique = checkUniqueAlignments(opt::k,
-			iter->second);
-	bool isPairUnique = checkUniqueAlignments(opt::k,
-			pairIter->second);
 	const unsigned MAX_SPAN = 2;
-	if ((iter->second.size() <= MAX_SPAN
-				|| pairIter->second.size() <= MAX_SPAN)
-			&& isRefUnique && isPairUnique) {
+	if (iter->second.size() == 0
+			|| pairIter->second.size() == 0) {
+		stats.numMissed++;
+	} else if (!checkUniqueAlignments(opt::k, iter->second)
+			|| !checkUniqueAlignments(opt::k, pairIter->second)) {
+		stats.numMulti++;
+	} else if (iter->second.size() > MAX_SPAN
+			&& pairIter->second.size() > MAX_SPAN) {
+		stats.numNonSingle++;
+	} else {
 		// Iterate over the vectors, outputting the aligments
 		for(AlignmentVector::const_iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
 		{
@@ -282,17 +285,6 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 					stats.numDifferent++;
 				}
 			}
-		}
-	}
-	else
-	{
-		if(!isRefUnique || !isPairUnique)
-		{
-			stats.numMulti++;
-		}
-		else
-		{
-			stats.numNonSingle++;
 		}
 	}
 }
@@ -417,8 +409,7 @@ int main(int argc, char* const* argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 
-	stats.numMissed = alignTable.size();
-
+	stats.numMissed += alignTable.size();
 	if (opt::verbose > 0)
 		cerr << "Unmatched: " << stats.numMissed
 			<< " Same: " << stats.numSame
