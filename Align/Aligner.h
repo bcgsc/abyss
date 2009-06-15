@@ -135,9 +135,10 @@ class Aligner
 		
 		// Generate the database to align to
 		void addReferenceSequence(const ContigID& id, const Sequence& seq);
-		
+
 		// Align an individual sequence
-		void alignRead(const Sequence& seq, AlignmentVector& alignVec);
+		template<typename oiterator>
+		void alignRead(const Sequence& seq, oiterator dest);
 
 		size_t size() const { return m_pDatabase->size(); }
 		size_t bucket_count() const
@@ -146,12 +147,16 @@ class Aligner
 		}
 
 	private:
-	
+
 		// Internal alignment function, perform the actual alignment
-		void getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVector& resultVector);	
-		
+		template<typename oiterator>
+		void getAlignmentsInternal(const Sequence& seq, bool isRC,
+				oiterator dest);
+
 		// Coalesce all the hash hits into contiguous alignments
-		void coalesceAlignments(const AlignmentSet& alignSet, bool isRC, AlignmentVector& resultVector);
+		template<typename oiterator>
+		void coalesceAlignments(const AlignmentSet& alignSet,
+				oiterator dest);
 
 		// The number of bases to hash on
 		int m_hashSize;

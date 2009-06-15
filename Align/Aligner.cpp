@@ -67,13 +67,23 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 	}
 }
 
-void Aligner::alignRead(const Sequence& seq, AlignmentVector& alignVec)
+template<typename oiterator>
+void Aligner::alignRead(const Sequence& seq,
+		oiterator dest)
 {
-	getAlignmentsInternal(seq, false, alignVec);
-	getAlignmentsInternal(reverseComplement(seq), true, alignVec);
+	getAlignmentsInternal(seq, false, dest);
+	getAlignmentsInternal(reverseComplement(seq), true, dest);
 }
 
-void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVector& resultVector)
+// Explicit instantiation.
+template void Aligner::alignRead
+		<back_insert_iterator<AlignmentVector> >(
+		const Sequence& seq,
+		back_insert_iterator<AlignmentVector> dest);
+
+template<typename oiterator>
+void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,
+		oiterator dest)
 {
 	// The results
 	AlignmentSet aligns;
@@ -110,10 +120,12 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC, AlignmentVec
 		}
 	}
 
-	coalesceAlignments(aligns, isRC, resultVector);
+	coalesceAlignments(aligns, dest);
 }
 
-void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, AlignmentVector& resultVector)
+template<typename oiterator>
+void Aligner::coalesceAlignments(const AlignmentSet& alignSet,
+		oiterator dest)
 {
 	// For each contig that this read hits, coalesce the alignments into contiguous groups
 	for(AlignmentSet::const_iterator ctgIter = alignSet.begin(); ctgIter != alignSet.end(); ++ctgIter)
@@ -142,10 +154,9 @@ void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, Al
 			
 			// Discontinuity found
 			if(currIter->contig_start_pos != prevIter->contig_start_pos + 1)
-			{	
+			{
 				//std::cout << "	Discontinous, saving\n";
-				// save the alignment
-				resultVector.push_back(currAlign);	
+				*dest++ = currAlign;
 				currAlign = *currIter;
 			}
 			else
@@ -159,8 +170,7 @@ void Aligner::coalesceAlignments(const AlignmentSet& alignSet, bool /*isRC*/, Al
 			prevIter = currIter;
 			currIter++;
 		}
-		
-		// save the alignment
-		resultVector.push_back(currAlign);
+
+		*dest++ = currAlign;
 	}
 }

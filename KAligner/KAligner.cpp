@@ -162,7 +162,7 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 			continue;
 
 		AlignmentVector avec;
-		aligner.alignRead(readSeq, avec);
+		aligner.alignRead(readSeq, back_inserter(avec));
 
 		cout << readID;
 		for (AlignmentVector::iterator iter = avec.begin();
