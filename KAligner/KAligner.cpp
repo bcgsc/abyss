@@ -158,12 +158,10 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 		string readID;
 		Sequence readSeq = fileHandle.ReadSequence(readID);
 
-		size_t pos = readSeq.find_first_not_of("ACGT");
-		if (pos != string::npos)
-			continue;
-
 		list<Alignment> alignments;
-		aligner.alignRead(readSeq, back_inserter(alignments));
+		size_t pos = readSeq.find_first_not_of("ACGT");
+		if (pos == string::npos)
+			aligner.alignRead(readSeq, back_inserter(alignments));
 
 		cout << readID;
 		for (list<Alignment>::iterator iter = alignments.begin();
