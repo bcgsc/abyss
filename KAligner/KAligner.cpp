@@ -154,6 +154,7 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 {
 	FastaReader fileHandle(readsFile.c_str());
 
+	unsigned count = 0;
 	while (fileHandle.isGood()) {
 		string readID;
 		Sequence readSeq = fileHandle.ReadSequence(readID);
@@ -169,5 +170,10 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 			cout << '\t' << *iter;
 		cout << '\n';
 		assert(cout.good());
+
+		if (opt::verbose > 0 && ++count % 1000000 == 0)
+			cerr << "Aligned " << count << " reads\n";
 	}
+	if (opt::verbose > 0)
+		cerr << "Aligned " << count << " reads\n";
 }
