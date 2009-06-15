@@ -1,7 +1,7 @@
 #include "Aligner.h"
+#include "PrefixIterator.h"
 #include "Sequence.h"
 #include <algorithm>
-#include <list>
 #include <utility>
 
 using namespace std;
@@ -78,9 +78,9 @@ void Aligner::alignRead(const Sequence& seq,
 
 // Explicit instantiation.
 template void Aligner::alignRead
-		<back_insert_iterator<list<Alignment> > >(
+		<prefix_ostream_iterator<Alignment> >(
 		const Sequence& seq,
-		back_insert_iterator<list<Alignment> > dest);
+		prefix_ostream_iterator<Alignment> dest);
 
 template<typename oiterator>
 void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,

@@ -1,5 +1,6 @@
 #include "Aligner.h"
 #include "PairedAlgorithms.h"
+#include "PrefixIterator.h"
 #include "FastaReader.h"
 #include <cassert>
 #include <cerrno>
@@ -8,7 +9,6 @@
 #include <iostream>
 #include <fstream>
 #include <getopt.h>
-#include <list>
 #include <sstream>
 #include <string>
 
@@ -153,21 +153,17 @@ static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
 static void alignReadsToDB(string readsFile, Aligner& aligner)
 {
 	FastaReader fileHandle(readsFile.c_str());
+	prefix_ostream_iterator<Alignment> out(cout, "\t");
 
 	unsigned count = 0;
 	while (fileHandle.isGood()) {
 		string readID;
 		Sequence readSeq = fileHandle.ReadSequence(readID);
 
-		list<Alignment> alignments;
+		cout << readID;
 		size_t pos = readSeq.find_first_not_of("ACGT");
 		if (pos == string::npos)
-			aligner.alignRead(readSeq, back_inserter(alignments));
-
-		cout << readID;
-		for (list<Alignment>::iterator iter = alignments.begin();
-				iter != alignments.end(); ++iter)
-			cout << '\t' << *iter;
+			aligner.alignRead(readSeq, out);
 		cout << '\n';
 		assert(cout.good());
 
