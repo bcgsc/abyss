@@ -50,16 +50,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-
-enum SequenceFormat
-{
-	SF_FASTA,
-	SF_FASTQ
-};
-
-// Functions
-void readContigsIntoDB(std::string refFastaFile, Aligner& aligner);
-void alignReadsToDB(std::string readsFile, Aligner& aligner);
+static void readContigsIntoDB(string refFastaFile, Aligner& aligner);
+static void alignReadsToDB(string readsFile, Aligner& aligner);
 
 int main(int argc, char** argv)
 {
@@ -109,21 +101,16 @@ int main(int argc, char** argv)
 			<< endl;
 
 	Aligner aligner(opt::k);
-
-	// Read the contigs into the ref DB
 	readContigsIntoDB(refFastaFile, aligner);
-	
-	// Align the reads	
 	alignReadsToDB(readsFile, aligner);
-	
 	return 0;
-} 
+}
 
-static void assert_open(std::ifstream& f, const std::string& p)
+static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
+	cerr << p << ": " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -136,10 +123,10 @@ static void printProgress(const Aligner& align, unsigned count)
 		" / " << buckets << " = " << (float)size / buckets << endl;
 }
 
-void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
+static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
 {
 	int count = 0;
-	std::ifstream fileHandle(refFastaFile.c_str());	
+	ifstream fileHandle(refFastaFile.c_str());
 	assert_open(fileHandle, refFastaFile);
 
 	while(!fileHandle.eof() && fileHandle.peek() != EOF)
@@ -148,7 +135,7 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 		Sequence seq;
 		int length;
 		double coverage;
-		
+
 		PairedAlgorithms::parseContigFromFile(fileHandle, contigID, seq, length, coverage);
 		aligner.addReferenceSequence(contigID, seq);
 
@@ -162,9 +149,9 @@ void readContigsIntoDB(std::string refFastaFile, Aligner& aligner)
 	fileHandle.close();
 }
 
-void alignReadsToDB(std::string readsFile, Aligner& aligner)
+static void alignReadsToDB(string readsFile, Aligner& aligner)
 {
-	FastaReader fileHandle(readsFile.c_str());	
+	FastaReader fileHandle(readsFile.c_str());
 
 	while (fileHandle.isGood()) {
 		string readID;
