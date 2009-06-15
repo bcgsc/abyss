@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <getopt.h>
+#include <list>
 #include <sstream>
 #include <string>
 
@@ -161,14 +162,14 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 		if (pos != string::npos)
 			continue;
 
-		AlignmentVector avec;
-		aligner.alignRead(readSeq, back_inserter(avec));
+		list<Alignment> alignments;
+		aligner.alignRead(readSeq, back_inserter(alignments));
 
 		cout << readID;
-		for (AlignmentVector::iterator iter = avec.begin();
-				iter != avec.end(); ++iter)
+		for (list<Alignment>::iterator iter = alignments.begin();
+				iter != alignments.end(); ++iter)
 			cout << '\t' << *iter;
-		cout << "\n";
+		cout << '\n';
 		assert(cout.good());
 	}
 }
