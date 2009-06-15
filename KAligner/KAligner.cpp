@@ -176,8 +176,6 @@ void alignReadsToDB(std::string readsFile, Aligner& aligner)
 
 		AlignmentVector avec;
 		aligner.alignRead(readSeq, avec);
-		if (avec.empty())
-			continue;
 
 		cout << readID;
 		for (AlignmentVector::iterator iter = avec.begin();
