@@ -11,6 +11,12 @@ struct MergeNode
 	bool isRC;
 	
 	void flip() { isRC = (isRC) ? 0 : 1; }
+
+	bool operator <(const MergeNode& o) const
+	{
+		return id != o.id ? id < o.id : isRC < o.isRC;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const MergeNode& object)
 	{
 		out << object.id << "," << object.isRC;
@@ -74,7 +80,12 @@ class ContigPath
 		
 		// Extract a subset from the path
 		ContigPath extractNodes(size_t start, size_t end);
-	
+
+		bool operator <(const ContigPath& o) const
+		{
+			return m_path < o.m_path;
+		}
+
 		// Insertion/Extraction operators
 		friend std::ostream& operator<<(std::ostream& out, const ContigPath& object);
 		friend std::istream& operator>>(std::istream& in, ContigPath& object);

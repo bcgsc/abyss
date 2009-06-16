@@ -161,24 +161,32 @@ int main(int argc, char** argv)
 				<< ' ' << iter->second << " is " << *iter->second << std::endl;
 	}
 
-	set<ContigPath*> unique;
+	set<ContigPath*> uniquePtr;
 	for (ContigPathMap::const_iterator it = contigPathMap.begin();
 			it != contigPathMap.end(); ++it)
-		unique.insert(it->second);
+		uniquePtr.insert(it->second);
 
 	FastaWriter writer(opt::out.c_str());
 
-	set<size_t> seen = getContigIDs(unique);
+	set<size_t> seen = getContigIDs(uniquePtr);
 	for (size_t i = 0; i < contigVec.size(); i++) {
 		if (seen.count(i) == 0)
 			writer.WriteSequence(contigVec[i].seq,
 					i, contigVec[i].coverage);
 	}
 
+	// Sort the set of unique paths by the path itself rather than by
+	// pointer. This ensures that the order of the contig IDs does not
+	// depend on arbitrary pointer values.
+	set<ContigPath> uniquePaths;
+	for (set<ContigPath*>::const_iterator it = uniquePtr.begin();
+			it != uniquePtr.end(); it++)
+		uniquePaths.insert(**it);
+
 	int id = contigVec.size();
-	for (set<ContigPath*>::const_iterator it = unique.begin();
-			it != unique.end(); ++it)
-		mergePath((**it).getNode(0).id, contigVec, **it, id++,
+	for (set<ContigPath>::const_iterator it = uniquePaths.begin();
+			it != uniquePaths.end(); ++it)
+		mergePath(it->getNode(0).id, contigVec, *it, id++,
 				opt::k, &writer);
 
 	return 0;
