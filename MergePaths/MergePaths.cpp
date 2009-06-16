@@ -197,28 +197,24 @@ static void assert_open(std::ifstream& f, const std::string& p)
 	exit(EXIT_FAILURE);
 }
 
-void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
+void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 {
-	std::ifstream pathStream(pathFile.c_str());
+	ifstream pathStream(pathFile.c_str());
 	assert_open(pathStream, pathFile);
 
-	while(!pathStream.eof() && pathStream.peek() != EOF)
-	{
-		string line;
-		getline(pathStream, line);
-		assert(pathStream.good());
-		istringstream s(line);
-
+	string line;
+	while (getline(pathStream, line)) {
 		char at = 0, comma = 0;
 		LinearNumKey id;
 		unsigned dir;
 		string sep;
 		ContigPath path;
+		istringstream s(line);
 		s >> at >> id >> comma >> dir >> sep >> path;
+		assert(s.eof());
 		assert(at == '@');
 		assert(comma == ',');
 		assert(sep == "->");
-		assert(s.eof());
 
 		if (contigPathMap.find(id) == contigPathMap.end()) {
 			MergeNode rootNode = {id, 0};
