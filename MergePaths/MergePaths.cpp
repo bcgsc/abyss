@@ -86,12 +86,12 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
 
-static set<size_t> getContigIDs(const ContigPathMap& contigPathMap)
+static set<size_t> getContigIDs(const set<ContigPath*> paths)
 {
 	set<size_t> seen;
-	for (ContigPathMap::const_iterator it = contigPathMap.begin();
-			it != contigPathMap.end(); it++) {
-		const ContigPath &cp = *it->second;
+	for (set<ContigPath*>::const_iterator it = paths.begin();
+			it != paths.end(); it++) {
+		const ContigPath &cp = **it;
 		size_t nodes = cp.getNumNodes();
 		for (size_t i = 0; i < nodes; i++)
 			seen.insert(cp.getNode(i).id);
@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 
 	FastaWriter writer(opt::out.c_str());
 
-	set<size_t> seen = getContigIDs(contigPathMap);
+	set<size_t> seen = getContigIDs(unique);
 	for (size_t i = 0; i < contigVec.size(); i++) {
 		if (seen.count(i) == 0)
 			writer.WriteSequence(contigVec[i].seq,
