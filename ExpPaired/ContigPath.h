@@ -3,7 +3,6 @@
 
 #include "DirectedGraph.h" // for LinearNumKey
 #include <iostream>
-#include <sstream>
 
 struct MergeNode
 {
@@ -17,33 +16,20 @@ struct MergeNode
 		return id != o.id ? id < o.id : isRC < o.isRC;
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const MergeNode& object)
+	friend std::ostream& operator<<(std::ostream& out,
+			const MergeNode& o)
 	{
-		out << object.id << "," << object.isRC;
-		return out;
-	} 
-  
-	friend std::istream& operator>>(std::istream& in, MergeNode& object)
+		return out << o.id << ',' << o.isRC;
+	}
+
+	friend std::istream& operator>>(std::istream& in, MergeNode& o)
 	{
-		// Read 1 record from the stream
-		std::string record;
-		in >> record;
-		
-		// parse the record
-		std::stringstream recss(record);
-		std::stringstream convertor;
-		std::string data;
-	
-		getline(recss, data, ',');
-		convertor.str(data);
-		convertor >> object.id;
-	
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.isRC;
+		char c;
+		in >> o.id >> c >> o.isRC;
+		if (in.good())
+			assert(c == ',');
 		return in;
-	}  	
+	}
 };
 
 class ContigPath

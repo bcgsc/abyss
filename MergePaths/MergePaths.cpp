@@ -72,9 +72,7 @@ typedef std::list<MergeNode> MergeNodeList;
 typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
 
 // Functions
-void readIDIntPair(std::string str, LinearNumKey& id, int& i);
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
-void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
@@ -206,16 +204,21 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 
 	while(!pathStream.eof() && pathStream.peek() != EOF)
 	{
-		// read a line
-		std::string pathRecord;
-		getline(pathStream, pathRecord);
-		
-		// parse the line
+		string line;
+		getline(pathStream, line);
+		assert(pathStream.good());
+		istringstream s(line);
+
+		char at = 0, comma = 0;
 		LinearNumKey id;
-		extDirection dir;
+		unsigned dir;
+		string sep;
 		ContigPath path;
-		parsePathLine(pathRecord, id, dir, path);
-		//std::cout << "Parsed " << id << " dir " << dir << std::endl;
+		s >> at >> id >> comma >> dir >> sep >> path;
+		assert(at == '@');
+		assert(comma == ',');
+		assert(sep == "->");
+		assert(s.eof());
 
 		if (contigPathMap.find(id) == contigPathMap.end()) {
 			MergeNode rootNode = {id, 0};
@@ -227,8 +230,8 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap)
 			path.reverse(false);
 			contigPathMap[id]->prependPath(path);
 		}
-		//cout << "Adding: " << path << " to: " << id << "," << dir << " to get: " << *contigPathMap[id] << endl;
 	}
+	assert(pathStream.eof());
 
 	pathStream.close();
 }
@@ -608,45 +611,3 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path)
 		list.push_back(path.getNode(idx));
 	}	
 }
-
-void parsePathLine(std::string pathLine, LinearNumKey& id, extDirection& dir, ContigPath& path)
-{
-	std::string discard;
-	
-	// discard the seperator
-	std::stringstream pStream(pathLine);	
-	pStream >> discard;
-	
-	// read in the root info
-	std::string rootInfo;
-	pStream >> rootInfo;
-
-	int dirNum;
-	readIDIntPair(rootInfo, id, dirNum);
-	
-	dir = (extDirection)dirNum;
-	
-	// discard the seperator
-	pStream >> discard;
-	
-	pStream >> path;
-}
-
-
-void readIDIntPair(std::string str, LinearNumKey& id, int& i)
-{
-	std::stringstream ss(str);
-	
-	// read in the id
-	std::string idLine;
-	getline(ss, idLine, ',');
-	
-	id = convertContigIDToLinearNumKey(idLine);
-	
-	std::string intStr;
-	ss >> intStr;
-	
-	std::stringstream convertor(intStr);
-	convertor >> i;
-}
-
