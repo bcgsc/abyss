@@ -86,15 +86,14 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
 
-static set<size_t> getContigIDs(const set<ContigPath*> paths)
+static set<size_t> getContigIDs(const set<ContigPath>& paths)
 {
 	set<size_t> seen;
-	for (set<ContigPath*>::const_iterator it = paths.begin();
+	for (set<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); it++) {
-		const ContigPath &cp = **it;
-		size_t nodes = cp.getNumNodes();
+		size_t nodes = it->getNumNodes();
 		for (size_t i = 0; i < nodes; i++)
-			seen.insert(cp.getNode(i).id);
+			seen.insert(it->getNode(i).id);
 	}
 	return seen;
 }
@@ -168,13 +167,6 @@ int main(int argc, char** argv)
 
 	FastaWriter writer(opt::out.c_str());
 
-	set<size_t> seen = getContigIDs(uniquePtr);
-	for (size_t i = 0; i < contigVec.size(); i++) {
-		if (seen.count(i) == 0)
-			writer.WriteSequence(contigVec[i].seq,
-					i, contigVec[i].coverage);
-	}
-
 	// Sort the set of unique paths by the path itself rather than by
 	// pointer. This ensures that the order of the contig IDs does not
 	// depend on arbitrary pointer values.
@@ -182,6 +174,13 @@ int main(int argc, char** argv)
 	for (set<ContigPath*>::const_iterator it = uniquePtr.begin();
 			it != uniquePtr.end(); it++)
 		uniquePaths.insert(**it);
+
+	set<size_t> seen = getContigIDs(uniquePaths);
+	for (size_t i = 0; i < contigVec.size(); i++) {
+		if (seen.count(i) == 0)
+			writer.WriteSequence(contigVec[i].seq,
+					i, contigVec[i].coverage);
+	}
 
 	int id = contigVec.size();
 	for (set<ContigPath>::const_iterator it = uniquePaths.begin();
