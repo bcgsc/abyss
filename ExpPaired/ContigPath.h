@@ -11,6 +11,11 @@ struct MergeNode
 	
 	void flip() { isRC = (isRC) ? 0 : 1; }
 
+	bool operator ==(const MergeNode& o) const
+	{
+		return id == o.id && isRC == o.isRC;
+	}
+
 	bool operator <(const MergeNode& o) const
 	{
 		return id != o.id ? id < o.id : isRC < o.isRC;

@@ -206,7 +206,7 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	while (getline(pathStream, line)) {
 		char at = 0, comma = 0;
 		LinearNumKey id;
-		unsigned dir;
+		bool dir;
 		string sep;
 		ContigPath path;
 		istringstream s(line);
@@ -216,15 +216,19 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 		assert(comma == ',');
 		assert(sep == "->");
 
-		if (contigPathMap.find(id) == contigPathMap.end()) {
-			MergeNode rootNode = {id, 0};
-			(contigPathMap[id] = new ContigPath)->appendNode(rootNode);
-		}
-		if (dir == 0)
-			contigPathMap[id]->appendPath(path);
-		else {
+		MergeNode rootNode = {id, 0};
+		if (contigPathMap.find(id) == contigPathMap.end())
+			(contigPathMap[id] = new ContigPath)
+				->appendNode(rootNode);
+		ContigPath* p = contigPathMap[id];
+		if (!dir) {
+			assert(p->getNumNodes() == 1);
+			assert(p->getNode(0) == rootNode);
+			p->appendPath(path);
+		} else {
+			assert(p->getNode(0) == rootNode);
 			path.reverse(false);
-			contigPathMap[id]->prependPath(path);
+			p->prependPath(path);
 		}
 	}
 	assert(pathStream.eof());
