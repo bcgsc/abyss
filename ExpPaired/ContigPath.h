@@ -43,8 +43,6 @@ struct MergeNode
 class ContigPath
 {
 	public:
-		ContigPath();
-		
 		// Add a node to this path
 		void appendNode(const MergeNode& mn);
 		
@@ -70,13 +68,7 @@ class ContigPath
 			assert(idx < m_path.size());
 			return m_path[idx];
 		}
-		
-		// Returns the index of the first node that matches id
-		size_t findFirstOf(LinearNumKey id);
-		
-		// Returns the index of the last node that matches id
-		size_t findLastOf(LinearNumKey id);
-		
+
 		// reverse the path
 		void reverse(bool flipNodes);
 		

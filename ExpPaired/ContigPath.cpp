@@ -7,14 +7,6 @@
 using namespace std;
 
 //
-//
-//
-ContigPath::ContigPath()
-{
-	
-}
-
-//
 // Append a single node to the list
 //
 void ContigPath::appendNode(const MergeNode& mn)
@@ -36,41 +28,6 @@ void ContigPath::prependPath(const ContigPath& other)
 void ContigPath::appendPath(const ContigPath& other)
 {
 	m_path.insert(m_path.end(), other.m_path.begin(), other.m_path.end());
-}
-
-//
-//
-//
-size_t ContigPath::findFirstOf(LinearNumKey id)
-{
-	size_t maxIdx = getNumNodes();
-	for(size_t idx = 0; idx < maxIdx; ++idx)
-	{
-		if(getNode(idx).id == id)
-		{
-			return idx;
-		}
-	}
-	
-	return maxIdx;
-}
-
-//
-//
-//
-size_t ContigPath::findLastOf(LinearNumKey id)
-{
-	size_t maxIdx = getNumNodes();
-	for(size_t idx = 0; idx < maxIdx; ++idx)
-	{
-		size_t tIdx = maxIdx - idx - 1;
-		if(getNode(tIdx).id == id)
-		{
-			return tIdx;
-		}
-	}
-	
-	return maxIdx;
 }
 
 //
