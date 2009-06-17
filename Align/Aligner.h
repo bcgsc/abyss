@@ -151,12 +151,12 @@ class Aligner
 		// Internal alignment function, perform the actual alignment
 		template<typename oiterator>
 		void getAlignmentsInternal(const Sequence& seq, bool isRC,
-				oiterator dest);
+				oiterator& dest);
 
 		// Coalesce all the hash hits into contiguous alignments
 		template<typename oiterator>
 		void coalesceAlignments(const AlignmentSet& alignSet,
-				oiterator dest);
+				oiterator& dest);
 
 		// The number of bases to hash on
 		int m_hashSize;

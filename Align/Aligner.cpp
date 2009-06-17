@@ -84,7 +84,7 @@ template void Aligner::alignRead
 
 template<typename oiterator>
 void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,
-		oiterator dest)
+		oiterator& dest)
 {
 	// The results
 	AlignmentSet aligns;
@@ -126,7 +126,7 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,
 
 template<typename oiterator>
 void Aligner::coalesceAlignments(const AlignmentSet& alignSet,
-		oiterator dest)
+		oiterator& dest)
 {
 	// For each contig that this read hits, coalesce the alignments into contiguous groups
 	for(AlignmentSet::const_iterator ctgIter = alignSet.begin(); ctgIter != alignSet.end(); ++ctgIter)
