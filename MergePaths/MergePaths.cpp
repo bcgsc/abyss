@@ -340,11 +340,6 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 	for (unsigned i = 0; i < coords1.size(); i++) {
 		for (unsigned j = 0; j < coords2.size(); j++) {
-			if(path1.getNode(coords1[i]).isRC != path2.getNode(coords2[j]).isRC) {
-				// Flip the path if node direction is different
-				path2.reverse(true);
-				flipped = !flipped;
-			}
 			startP1 = coords1[i];
 			endP1 = coords1[i];
 			if (flipped) {
@@ -353,6 +348,14 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			} else {
 				startP2 = coords2[j];
 				endP2 = coords2[j];
+			}
+
+			if(path1.getNode(startP1).isRC != path2.getNode(startP2).isRC) {
+				// Flip the path if node direction is different
+				path2.reverse(true);
+				flipped = !flipped;
+				startP2 = max2 - startP2;
+				endP2 = max2 - endP2;
 			}
 
 			lowValid = true;
