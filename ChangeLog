@@ -1,3 +1,31 @@
+2009-06-18  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.10.
+
+	abyss-pe:
+	* Start an MPI ABySS assembly if the np option is specified.
+
+	ABYSS:
+	* For a non-parallel assembly, allocate more hash buckets to allow
+	for large single-machine jobs.
+	* Print the hash load during the loading process.
+
+	KAligner:
+	* Output the IDs of reads that do not align.
+	* Print a progress report of the number of reads aligned.
+
+	ParseAligns:
+	* To reduce memory usage, do not track reads that did not align.
+	KAligner and ParseAligns should now be able to handle any amount
+	of data in a single run.
+
+	MergePaths:
+	* Number paired-end contigs so that their IDs do not overlap with
+	the single-end contigs. If a single-end contig is not used in a
+	paired-end contig, its ID will not change.
+	* Merge overlapping paired-end contigs that were previously
+	being missed in some situations.
+
 2009-05-15  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.9.
