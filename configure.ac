@@ -109,3 +109,9 @@ AC_CONFIG_FILES([
 	ParseAligns/Makefile
 ])
 AC_OUTPUT
+
+if test $ac_cv_header_google_sparse_hash_set != yes; then
+	echo 'warning: ABySS should be compiled with Google sparsehash to
+	reduce memory usage. It may be downloaded here:
+	http://code.google.com/p/google-sparsehash' >&2
+fi

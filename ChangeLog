@@ -26,6 +26,9 @@
 	* Merge overlapping paired-end contigs that were previously
 	being missed in some situations.
 
+	configure:
+	* Print a warning if Google sparsehash was not found.
+
 2009-05-15  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.9.
