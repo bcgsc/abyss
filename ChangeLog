@@ -16,8 +16,8 @@
 
 	ParseAligns:
 	* To reduce memory usage, do not track reads that did not align.
-	KAligner and ParseAligns should now be able to handle any amount
-	of data in a single run.
+	KAligner and ParseAligns should now be able to handle any number
+	of reads in a single run.
 
 	MergePaths:
 	* Number paired-end contigs so that their IDs do not overlap with
