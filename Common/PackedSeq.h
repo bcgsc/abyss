@@ -67,8 +67,7 @@ class PackedSeq
 		
 		// Decode the sequence
 		Sequence decode() const;
-		Sequence decodeByte(const char byte) const;
-		
+
 		unsigned getCode() const;
 		size_t getHashCode() const;
 		

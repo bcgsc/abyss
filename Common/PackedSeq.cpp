@@ -196,21 +196,6 @@ Sequence PackedSeq::decode() const
 	return outstr; 
 }
 
-//
-// Decode a single byte into it's ascii representation
-//
-Sequence PackedSeq::decodeByte(const char byte) const
-{
-	Sequence outstr;
-	outstr.reserve(4);
-	for(unsigned i = 0; i < 4; i++)
-	{
-		char base = getBaseChar(&byte, 0, i);
-		outstr.push_back(base);
-	}
-	return outstr;
-}
-
 /** Swap the positions of four bases. */
 static const uint8_t swapBases[256] = {
 	0x00, 0x40, 0x80, 0xc0, 0x10, 0x50, 0x90, 0xd0,
