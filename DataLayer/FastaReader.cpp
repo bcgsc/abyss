@@ -26,12 +26,9 @@ FastaReader::~FastaReader()
 
 Sequence FastaReader::ReadSequence(string& id)
 {
-	char buf[MAX_FASTA_LINE];
-
 	// Discard comments.
 	while (m_fileHandle.peek() == '#') {
-		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 		if (m_fileHandle.peek() == EOF) {
 			fputs("error: file ends in comments\n", stderr);
 			assert(false);
@@ -41,8 +38,9 @@ Sequence FastaReader::ReadSequence(string& id)
 	// Read the header.
 	char recordType;
 	m_fileHandle >> recordType >> id;
-	m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-	assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+	m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+
+	char buf[MAX_FASTA_LINE];
 	Sequence s;
 	if (recordType == '>') {
 		// Read the sequence.
