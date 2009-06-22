@@ -13,31 +13,51 @@ static inline uint8_t complementBaseCode(uint8_t base)
 class SeqExt
 {
 	public:
-		SeqExt();
+		SeqExt() : m_record(0) { };
 
-		// Set a particular base as being present
-		void setBase(uint8_t base);
+		/** Set the specified adjacency. */
+		void setBase(uint8_t base)
+		{
+			m_record |= 1 << base;
+		}
 
-		// Clear a base
-		void clearBase(uint8_t base);
+		/** Clear the specified adjacency. */
+		void clearBase(uint8_t base)
+		{
+			m_record &= ~(1 << base);
+		}
 
-		// Check whether a base is set
-		bool checkBase(uint8_t base) const;
+		/** Return wheter the specified base is adjacent. */
+		bool checkBase(uint8_t base) const
+		{
+			return m_record & (1 << base);
+		}
 
-		// Clear all the bits
-		void ClearAll();
-		
-		// Check whether the sequence has any extension
-		bool HasExtension() const;
-		
-		// Check whether the sequence has more than 1 extension
-		bool IsAmbiguous() const; 
-		
+		/** Clear all adjacency. */
+		void ClearAll()
+		{
+			m_record = 0;
+		}
+
+		/** Return whether this kmer has any adjacent kmer. */
+		bool HasExtension() const
+		{
+			return m_record > 0;
+		}
+
+		/** Return whether this kmer has more than one adjacent kmer.
+		 */
+		bool IsAmbiguous() const
+		{
+			bool powerOfTwo = (m_record & (m_record - 1)) > 0;
+			return m_record > 0 && powerOfTwo;
+		}
+
 		void print() const;
-		
-		// Return a seqext object which is complementary to this one (swaps A/T, G/C)
+
+		/** Return the complementary adjacency. */
 		SeqExt complement() const;
-		
+
 	private:
 		uint8_t m_record;
 };
