@@ -2,6 +2,9 @@
 #include "HashFunction.h"
 #include "Sequence.h"
 #include <cstring>
+#include <iostream>
+
+using namespace std;
 
 //
 // Default constructor
@@ -659,20 +662,17 @@ unsigned PackedSeq::seqIndexToBaseIndex(unsigned seqIndex)
 	return seqIndex % 4; 
 }
 
-//
-// return the two bit code for each base
-// the input base MUST be in upper case
-//
+/** Return the base enumeration for the specified character. */
 uint8_t PackedSeq::baseToCode(char base)
 {
-	unsigned i = base - 'A';
-	assert(i < 26);
-	static const int8_t table[26] = {
-		 0, -1,  1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, 3, -1, -1, -1, -1, -1, -1
-	};
-	assert(table[i] >= 0);
-	return table[i];
+	switch (base) {
+		case 'A': case '0': return 0;
+		case 'C': case '1': return 1;
+		case 'G': case '2': return 2;
+		case 'T': case '3': return 3;
+	}
+	cerr << "error: unexpected character: `" << base << "'\n";
+	exit(EXIT_FAILURE);
 }
 
 char PackedSeq::codeToBase(uint8_t code)

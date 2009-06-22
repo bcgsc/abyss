@@ -68,7 +68,7 @@ bool FastaReader::ReadSequences(SequenceVector& outseqs)
 	if (!isGood())
 		return false;
 	Sequence seq = ReadSequence();
-	size_t pos = seq.find_first_not_of("ACGT");
+	size_t pos = seq.find_first_not_of("ACGT0123");
 	if (pos == std::string::npos) {
 		outseqs.push_back(seq);
 	} else {
