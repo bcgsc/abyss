@@ -40,22 +40,14 @@ Sequence FastaReader::ReadSequence(string& id)
 	m_fileHandle >> recordType >> id;
 	m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	char buf[MAX_FASTA_LINE];
 	Sequence s;
-	if (recordType == '>') {
-		// Read the sequence.
-		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
-		s = Sequence(buf);
-		transform(s.begin(), s.end(), s.begin(), ::toupper);
-	} else if (recordType == '@') {
-		// Read the sequence.
-		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
-		s = Sequence(buf);
-		transform(s.begin(), s.end(), s.begin(), ::toupper);
+	getline(m_fileHandle, s);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-		// Read the quality values.
+	if (recordType == '>') {
+		// Nothing to do.
+	} else if (recordType == '@') {
+		// Discard the quality values.
 		char c;
 		m_fileHandle >> c;
 		assert(c == '+');
