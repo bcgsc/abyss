@@ -118,7 +118,11 @@ class RemoveExtensionMessage : public Message
 {
 	public:
 		RemoveExtensionMessage() : Message(MT_REMOVE_EXT) { }
-		RemoveExtensionMessage(const PackedSeq& seq, extDirection dir, char base) : Message(seq, MT_REMOVE_EXT), m_dir(dir), m_base(base) { }
+		RemoveExtensionMessage(const PackedSeq& seq, extDirection dir,
+				uint8_t base)
+			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_base(base)
+		{
+		}
 		
 		virtual ~RemoveExtensionMessage() { }
 
@@ -137,7 +141,7 @@ class RemoveExtensionMessage : public Message
 		virtual void print() const;
 		
 		extDirection m_dir;
-		char m_base;
+		uint8_t m_base;
 };
 
 class SeqDataRequest : public Message
@@ -206,8 +210,12 @@ class SetBaseMessage : public Message
 {
 	public:
 		SetBaseMessage() : Message(MT_SET_BASE) { }
-		SetBaseMessage(const PackedSeq& seq, extDirection dir, char base) : Message(seq, MT_SET_BASE), m_dir(dir), m_base(base) { }
-		
+		SetBaseMessage(const PackedSeq& seq, extDirection dir,
+				uint8_t base)
+			: Message(seq, MT_SET_BASE), m_dir(dir), m_base(base)
+		{
+		}
+
 		virtual ~SetBaseMessage() { }
 		
 		// Get the size that will be transmitted
@@ -225,7 +233,7 @@ class SetBaseMessage : public Message
 		virtual void print() const;
 				
 		extDirection m_dir;
-		char m_base;
+		uint8_t m_base;
 };
 
 

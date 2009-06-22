@@ -134,20 +134,21 @@ int SequenceCollectionHash::getMultiplicity(const PackedSeq& seq)
 	return mult;
 }
 
-//
 // Set a single base extension
-//
-bool SequenceCollectionHash::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
+bool SequenceCollectionHash::setBaseExtension(
+		const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool baseSet = false;
 	baseSet = baseSet || setBaseExtensionByIter(iters.first, dir, base);
 	baseSet = baseSet || setBaseExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseChar(base));
+			oppositeDirection(dir), complementBaseCode(base));
 	return baseSet;
 }
 
-bool SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base)
+bool SequenceCollectionHash::setBaseExtensionByIter(
+		SequenceCollectionHashIter& seqIter, extDirection dir,
+		uint8_t base)
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -163,7 +164,7 @@ bool SequenceCollectionHash::setBaseExtensionByIter(SequenceCollectionHashIter& 
  * @return true if the specified sequence exists and false otherwise
  */
 bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
-		extDirection dir, char base)
+		extDirection dir, uint8_t base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	if (iters.first == m_pSequences->end()
@@ -172,16 +173,13 @@ bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
 
 	removeExtensionByIter(iters.first, dir, base);
 	removeExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseChar(base));	
+			oppositeDirection(dir), complementBaseCode(base));
 
 	notify(getSeqAndData(iters));
 	return true;
 }
 
-//
-//
-//
-void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base)
+void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base)
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -365,23 +363,17 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 	}
 }
 
-//
-//
-//
-ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, char base)
+ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	ResultPair rp;
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	rp.forward = checkExtensionByIter(iters.first, dir, base);
 	rp.reverse = checkExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseChar(base));
+			oppositeDirection(dir), complementBaseCode(base));
 	return rp;
 }
 
-//
-//
-//
-bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const
+bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base) const
 {
 	if(seqIter != m_pSequences->end())
 	{

@@ -89,14 +89,17 @@ class NetworkSequenceCollection : public ISequenceCollection
 		virtual void printLoad() const { m_pLocalSpace->printLoad(); }
 
 		// remove the extension to the sequence
-		bool removeExtension(const PackedSeq& seq, extDirection dir, char base);
-		
+		bool removeExtension(const PackedSeq& seq, extDirection dir,
+				uint8_t base);
+
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
+		ResultPair checkExtension(
+				const PackedSeq& seq, extDirection dir, uint8_t base);
 
 		// set a single base extension
-		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
-		
+		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
+				uint8_t base);
+
 		// remove all the extensions of this sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);		
 		

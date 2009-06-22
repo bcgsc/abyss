@@ -28,7 +28,7 @@ void MessageBuffer::sendSetFlagMessage(int nodeID, const PackedSeq& seq, SeqFlag
 }
 
 // Send a remove extension message
-void MessageBuffer::sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, char base)
+void MessageBuffer::sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	queueMessage(nodeID, new RemoveExtensionMessage(seq, dir, base), SM_BUFFERED);
 }
@@ -46,7 +46,7 @@ void MessageBuffer::sendSeqDataResponse(int nodeID, IDType group, IDType id, con
 }
 
 // Send a set base message
-void MessageBuffer::sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDirection dir, char base)
+void MessageBuffer::sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	queueMessage(nodeID, new SetBaseMessage(seq, dir, base), SM_BUFFERED);
 }

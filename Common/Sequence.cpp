@@ -3,6 +3,8 @@
 
 using namespace std;
 
+static char complementBaseChar(char base);
+
 // generate the reverse complement of the sequence
 Sequence reverseComplement(const Sequence& s)
 {

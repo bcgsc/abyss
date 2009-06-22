@@ -46,18 +46,20 @@ class SequenceCollectionHash : public ISequenceCollection
 		void wipeFlag(SeqFlag flag);
 
 		// set a base extension
-		bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base);
-		
+		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
+				uint8_t base);
+
 		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq,
-				extDirection dir, char base);
-		
+				extDirection dir, uint8_t base);
+
 		// clear the extensions of the sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);
-		
+
 		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base);
-		
+		ResultPair checkExtension(const PackedSeq& seq,
+				extDirection dir, uint8_t base);
+
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
 
@@ -117,10 +119,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
 		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
-		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
-		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base);
+		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
+		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
-		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, char base) const;
+		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base) const;
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 

@@ -29,19 +29,21 @@ class MessageBuffer
 		
 		// Send a set flag message
 		void sendSetFlagMessage(int nodeID, const PackedSeq& seq, SeqFlag flag);
-		
+
 		// Send a remove extension message
-		void sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, char base);
-				
+		void sendRemoveExtension(int nodeID,
+				const PackedSeq& seq, extDirection dir, uint8_t base);
+
 		// Send a sequence data request
 		void sendSeqDataRequest(int nodeID, IDType group, IDType id, const PackedSeq& seq);
 		
 		// Send a sequence data response
 		void sendSeqDataResponse(int nodeID, IDType group, IDType id, const PackedSeq& seq, ExtensionRecord extRec, int multiplicity);
-		
+
 		// Send an adjacency message
-		void sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDirection dir, char base);
-		
+		void sendSetBaseExtension(int nodeID,
+				const PackedSeq& seq, extDirection dir, uint8_t base);
+
 		// Send an existance response message
 		void sendExistResponse(int nodeID, const PackedSeq& seq, bool result);
 		

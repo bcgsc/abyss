@@ -228,13 +228,12 @@ void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq)
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs)
 {
   PackedSeq extSeq(seq);
-  extSeq.rotate(dir, 'A');
+  extSeq.shift(dir);
   
   // Check for the existance of the 4 possible extensions
   for(int i  = 0; i < NUM_BASES; i++)
     {
-      char currBase = BASES[i];
-      extSeq.setLastBase(dir, currBase);
+      extSeq.setLastBase(dir, i);
       outseqs.push_back(extSeq);
     }
 }

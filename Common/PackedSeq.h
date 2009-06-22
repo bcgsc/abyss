@@ -97,12 +97,9 @@ class PackedSeq
 			assert(m_multiplicity[dir] > 0);
 		}
 
-		// get a particular base
-		char getFirstBase() const { return getBaseChar(0); }
-		char getLastBase() const { return getBaseChar(m_length - 1); }
 		uint8_t getBaseCode(unsigned seqIndex) const;
-		char getBaseChar(unsigned seqIndex) const;
-		
+		uint8_t getLastBaseChar() const;
+
 		// flags
 		void setFlag(SeqFlag flag) { m_flags |= flag; }
 		bool isFlagSet(SeqFlag flag) const { return m_flags & flag; }
@@ -110,10 +107,10 @@ class PackedSeq
 
 		// Extension management
 		SeqExt getExtension(extDirection dir) const;
-		void setBaseExtension(extDirection dir, char b);
-		void clearExtension(extDirection dir, char b);
+		void setBaseExtension(extDirection dir, uint8_t base);
+		void clearExtension(extDirection dir, uint8_t base);
 		void clearAllExtensions(extDirection dir);
-		bool checkExtension(extDirection dir, char b) const;
+		bool checkExtension(extDirection dir, uint8_t base) const;
 		bool hasExtension(extDirection dir) const;
 		bool isAmbiguous(extDirection dir) const;
 		void printExtension() const;
@@ -124,10 +121,10 @@ class PackedSeq
 		// append/prepend
 		// these functions preserve the length of the sequence by shifting first before adding the new base
 		// the base shifted off is returned
-		char rotate(extDirection dir, char base);
-		char shiftAppend(char base);
-		char shiftPrepend(char base);
-		void setLastBase(extDirection dir, char base);
+		uint8_t shift(extDirection dir, uint8_t base = 0);
+		uint8_t shiftAppend(uint8_t base);
+		uint8_t shiftPrepend(uint8_t base);
+		void setLastBase(extDirection dir, uint8_t base);
 
 		bool isPalindrome() const;
 		bool isPalindrome(extDirection dir) const;
@@ -143,18 +140,12 @@ class PackedSeq
 	private:
 		// get/set a particular value
 		static inline void setBaseCode(char* pSeq,
-				unsigned seqIndex, uint8_t base);
+				unsigned seqIndex, uint8_t code);
 		static inline void setBaseCode(char* pSeq,
-				unsigned byteNum, unsigned index, uint8_t base);
-		static inline void setBaseChar(char* pSeq,
-				unsigned seqIndex, char base);
-		static inline void setBaseChar(char* pSeq,
-				unsigned byteNum, unsigned index, char base);
+				unsigned byteNum, unsigned index, uint8_t code);
 		static inline uint8_t getBaseCode(const char* pSeq,
 				unsigned byteNum, unsigned index);
-		static inline char getBaseChar(const char* pSeq,
-				unsigned byteNum, unsigned index);
-		
+
 		// Create the two bit code for the base
 		static inline uint8_t baseToCode(char base);
 		static inline char codeToBase(uint8_t code);
@@ -163,13 +154,13 @@ class PackedSeq
 		static inline unsigned getNumCodingBytes(unsigned seqLength);
 		static inline unsigned seqIndexToByteNumber(unsigned seqIndex);
 		static inline unsigned seqIndexToBaseIndex(unsigned seqIndex);
-		
+
 		// shift a single byte
-		static char leftShiftByte(char* pSeq,
-				unsigned byteNum, unsigned index, char base);
-		static char rightShiftByte(char* pSeq,
-				unsigned byteNum, unsigned index, char base);
-		
+		static uint8_t leftShiftByte(char* pSeq,
+				unsigned byteNum, unsigned index, uint8_t base);
+		static uint8_t rightShiftByte(char* pSeq,
+				unsigned byteNum, unsigned index, uint8_t base);
+
 		char m_seq[NUM_BYTES];
 		uint8_t m_length;
 		char m_flags;

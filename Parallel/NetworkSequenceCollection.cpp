@@ -1410,10 +1410,8 @@ bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
 	return m_pLocalSpace->hasChild(seq);
 }
 
-//
-//
-//
-bool NetworkSequenceCollection::setBaseExtension(const PackedSeq& seq, extDirection dir, char base)
+bool NetworkSequenceCollection::setBaseExtension(
+		const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	if (isLocal(seq)) {
 		if (m_pLocalSpace->setBaseExtension(seq, dir, base))
@@ -1449,7 +1447,8 @@ size_t NetworkSequenceCollection::count() const
  * @return true if the specified sequence is local and exists and
  * false otherwise
  */
-bool NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirection dir, char base)
+bool NetworkSequenceCollection::removeExtension(
+		const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	// Check if this sequence is local
 	if(isLocal(seq))
@@ -1467,10 +1466,8 @@ bool NetworkSequenceCollection::removeExtension(const PackedSeq& seq, extDirecti
 	}
 }
 
-//
-//
-//
-ResultPair NetworkSequenceCollection::checkExtension(const PackedSeq& seq, extDirection dir, char base)
+ResultPair NetworkSequenceCollection::checkExtension(
+		const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	// Check if this sequence is local
 	ResultPair result;

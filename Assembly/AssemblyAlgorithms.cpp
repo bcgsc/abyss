@@ -27,17 +27,12 @@ HitRecord calculateExtension(ISequenceCollection* seqCollection,
 	// Check for the existance of the 4 possible extensions
 	for(int i  = 0; i < NUM_BASES; i++)
 	{
-		char currBase = BASES[i];
-		
-		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, currBase);
-		//if(printAll) printf("%s has extension(%d) to: %c ? %d\n", currSeq.decode().c_str(), dir, currBase, hasExt.forward || hasExt.reverse);
-		
+		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, i);
 		// Does this sequence have an extension?
 		if(hasExt.forward || hasExt.reverse)
 		{
 			PackedSeq extSeq(currSeq);
-			extSeq.rotate(dir, currBase);
-			
+			extSeq.shift(dir, i);
 			// is there a forward extension?
 			if(hasExt.forward)
 			{
@@ -62,19 +57,15 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 	
 	// Create the return structure
 	PSequenceVector extensions;
-
 	PackedSeq extSeq(currSeq);
-	extSeq.rotate(dir, 'A');
-	
+	extSeq.shift(dir);
+
 	// Check for the existance of the 4 possible extensions
-	for(int i  = 0; i < NUM_BASES; i++)
-	{
-		char currBase = BASES[i];
-	
+	for (int i  = 0; i < NUM_BASES; i++) {
 		// Does this sequence have an extension?
-		if(extension.CheckBase(currBase))
+		if(extension.checkBase(i))
 		{
-			extSeq.setLastBase(dir, currBase);
+			extSeq.setLastBase(dir, i);
 			outseqs.push_back(extSeq);
 		}
 	}
@@ -197,10 +188,9 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			PackedSeq testSeq(*iter);
-			char adjBase = testSeq.rotate(dir, 'A');
-			for (int j = 0; j < NUM_BASES; j++) {
-				char currBase = BASES[j];
-				testSeq.setLastBase(dir, currBase);
+			uint8_t adjBase = testSeq.shift(dir);
+			for (int i = 0; i < NUM_BASES; i++) {
+				testSeq.setLastBase(dir, i);
 				if (seqCollection->setBaseExtension(
 							testSeq, !dir, adjBase))
 					numBasesSet++;
@@ -551,15 +541,12 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	extDirection oppDir = oppositeDirection(dir);
 	
 	PackedSeq testSeq(seq);
-	
-	char extBase = testSeq.rotate(dir, BASES[0]);
-	
+	uint8_t extBase = testSeq.shift(dir);
 	for(int i = 0; i < NUM_BASES; i++)
-	{	
-		char currBase = BASES[i];
+	{
 		// don't bother checking if the extension exists, just remove it
 		// if the sequence didnt have the extension, the operation will do nothing
-		testSeq.setLastBase(dir, currBase);
+		testSeq.setLastBase(dir, i);
 		
 		// remove the extension, this removes the reverse complement as well
 		seqCollection->removeExtension(testSeq, oppDir, extBase);

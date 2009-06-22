@@ -1,58 +1,41 @@
 #include "SeqExt.h"
-#include "Sequence.h" // for complementBaseChar
 #include <cassert>
+#include <cstdio>
 
 SeqExt::SeqExt() : m_record(0)
 {
 }
 
-//
-//
-//
-void SeqExt::SetBase(char base)
+static uint8_t baseCodeToBit(uint8_t base)
 {
-	unsigned char bit = base2Bit(base);
-	m_record |= bit;
+	return 1 << base;
 }
 
-//
-//
-//
-void SeqExt::ClearBase(char base)
+void SeqExt::setBase(uint8_t base)
 {
-	unsigned char bit = base2Bit(base);
-	unsigned char mask = ~bit;
-	m_record &= mask;
+	m_record |= baseCodeToBit(base);
 }
 
-//
-//
-//
-bool SeqExt::CheckBase(char base) const
+void SeqExt::clearBase(uint8_t base)
 {
-	unsigned char bit = base2Bit(base);
-	return (m_record & bit);
+	m_record &= ~baseCodeToBit(base);
 }
 
-//
-//
-//
+bool SeqExt::checkBase(uint8_t base) const
+{
+	return m_record & baseCodeToBit(base);
+}
+
 void SeqExt::ClearAll()
 {
 	m_record = 0;
 }
 
-//
-//
-//
 bool SeqExt::HasExtension() const
 {
 	return (m_record > 0);
 }
 
-//
-//
-//
 bool SeqExt::IsAmbiguous() const
 {
 	// if the value isn't a power of 2, there is more than one extension
@@ -61,87 +44,21 @@ bool SeqExt::IsAmbiguous() const
 	return nonZero && powerOfTwo;
 }
 
-//
-//
-//
 SeqExt SeqExt::complement() const
 {
 	SeqExt comp;
-	for(int i = 0; i < NUM_BASES; i++)
-	{
-		char currBase = BASES[i];
-		if(CheckBase(currBase))
-		{
-			comp.SetBase(::complementBaseChar(currBase));
-		}
-	}
+	for (int i = 0; i < NUM_BASES; i++)
+		if (checkBase(i))
+			comp.setBase(complementBaseCode(i));
 	return comp;
 }
 
-//
 void SeqExt::print() const
 {
 	assert(m_record < 1<<NUM_BASES);
 	printf("ext: %c%c%c%c\n",
-			 CheckBase('T') ? 'T' : ' ',
-			 CheckBase('G') ? 'G' : ' ',
-			 CheckBase('C') ? 'C' : ' ',
-			 CheckBase('A') ? 'A' : ' ');
-}
-
-//
-//
-//
-unsigned char SeqExt::base2Bit(char base)
-{
-	if(base == 'A')
-	{
-		return 0x1;
-	}
-	else if(base == 'C')
-	{
-		return 0x2;
-	}
-	else if(base == 'G')
-	{
-		return 0x4;
-	}
-	else if(base == 'T')
-	{
-		return 0x8;
-	}
-	else
-	{
-		assert(false);	
-		return 0x1;
-	}
-}
-
-//
-//
-//
-char SeqExt::bit2Base(unsigned char code)
-{
-	if(code == 0x1)
-	{
-		return 'A';
-	}
-	else if(code == 0x2)
-	{
-		return 'C';
-	}
-	else if(code == 0x4)
-	{
-		return 'G';
-	}
-	else if(code == 0x8)
-	{
-		return 'T';
-	}
-	else
-	{
-		// unknown code
-		assert(false);
-		return 'A';
-	}
+			 checkBase(3) ? 'T' : ' ',
+			 checkBase(2) ? 'G' : ' ',
+			 checkBase(1) ? 'C' : ' ',
+			 checkBase(0) ? 'A' : ' ');
 }

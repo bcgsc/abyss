@@ -1,24 +1,29 @@
 #ifndef SEQEXT_H
-#define SEQEXT_H
+#define SEQEXT_H 1
 
-const int NUM_BASES = 4;
-const char BASES[NUM_BASES] = {'A', 'C', 'G', 'T'};
+#include <stdint.h>
+
+static const int NUM_BASES = 4;
+
+static inline uint8_t complementBaseCode(uint8_t base)
+{
+    return ~base & 0x3;
+}
 
 class SeqExt
 {
 	public:
-		
 		SeqExt();
-		
+
 		// Set a particular base as being present
-		void SetBase(char base);
-		
+		void setBase(uint8_t base);
+
 		// Clear a base
-		void ClearBase(char base);
-		
+		void clearBase(uint8_t base);
+
 		// Check whether a base is set
-		bool CheckBase(char base) const;
-		
+		bool checkBase(uint8_t base) const;
+
 		// Clear all the bits
 		void ClearAll();
 		
@@ -34,10 +39,7 @@ class SeqExt
 		SeqExt complement() const;
 		
 	private:
-		static unsigned char base2Bit(char base);
-		static char bit2Base(unsigned char code);
-		
-		unsigned char m_record;
+		uint8_t m_record;
 };
 
 #endif

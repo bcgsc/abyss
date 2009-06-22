@@ -82,19 +82,19 @@ class ISequenceCollection
 		virtual void wipeFlag(SeqFlag flag) = 0;
 		
 		// remove the extension to the sequence
-		virtual bool removeExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual bool removeExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
 		
 		// remove all the extensions of this sequence
 		virtual void clearExtensions(const PackedSeq& seq, extDirection dir) = 0;
 
 		// set a single base extension
-		virtual bool setBaseExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual bool setBaseExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
 		
 		// get the extension for a sequence
 		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) = 0;
 		
 		// check if the extension exists
-		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, char base) = 0;
+		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;

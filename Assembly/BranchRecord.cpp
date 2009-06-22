@@ -245,13 +245,13 @@ void BranchRecord::buildContig(Sequence& outseq) const
 		outseq = iter->decode();
 		++iter;
 		for (; iter != m_data.end(); ++iter)
-			outseq.append(1, iter->getLastBase());
+			outseq.append(1, iter->getLastBaseChar());
 	} else {
 		BranchData::const_reverse_iterator iter = m_data.rbegin();
 		outseq = iter->decode();
 		++iter;
 		for (; iter != m_data.rend(); ++iter)
-			outseq.append(1, iter->getLastBase());
+			outseq.append(1, iter->getLastBaseChar());
 	}
 }
 

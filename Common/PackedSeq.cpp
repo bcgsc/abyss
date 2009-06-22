@@ -22,7 +22,7 @@ PackedSeq::PackedSeq(const Sequence& seq)
 	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();
 	for(unsigned i = 0; i < m_length; i++)
-		setBaseChar(m_seq, i, *p++);
+		setBaseCode(m_seq, i, baseToCode(*p++));
 	m_multiplicity[SENSE] = 1;
 	m_multiplicity[ANTISENSE] = 0;
 }
@@ -141,11 +141,6 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
 	return (seqLength + 3) / 4;
 }
 
-static uint8_t complementBaseCode(uint8_t b)
-{
-	return ~b & 0x3;
-}
-
 //
 // This function computes a hash-like value of the packed sequence over the first 8 bases and the reverse complement of the last 8 bases
 // The reverse complement of the last 8 bases is used so that a sequence and its reverse-comp will hash to the same value which is desirable in this case
@@ -186,8 +181,7 @@ Sequence PackedSeq::decode() const
 	
 	for(unsigned i = 0; i < m_length; i++)
 	{
-
-		char base = getBaseChar(i);
+		char base = codeToBase(getBaseCode(i));
 		//printf("decoding (%d %d) to %c\n", tripletNumber, baseIndex, base);
 		outstr.push_back(base);
 	}
@@ -445,10 +439,7 @@ void PackedSeq::reverseComplement()
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
 
-//
-//
-//
-char PackedSeq::rotate(extDirection dir, char base)
+uint8_t PackedSeq::shift(extDirection dir, uint8_t base)
 {
 	if(dir == SENSE)
 	{
@@ -460,21 +451,16 @@ char PackedSeq::rotate(extDirection dir, char base)
 	}
 }
 
-void PackedSeq::setLastBase(extDirection dir, char base)
+void PackedSeq::setLastBase(extDirection dir, uint8_t base)
 {
-	setBaseChar(m_seq, dir == SENSE ? m_length - 1 : 0, base);
+	setBaseCode(m_seq, dir == SENSE ? m_length - 1 : 0, base);
 }
 
-//
-//
-//
-char PackedSeq::shiftAppend(char base)
+uint8_t PackedSeq::shiftAppend(uint8_t base)
 {
 	// shift the sequence left and append a new base to the end
 	unsigned numBytes = getNumCodingBytes(m_length);
-
-	char shiftIn = base;
-	
+	uint8_t shiftIn = base;
 	// starting from the last byte, shift the new base in and get the captured base
 	for(int i = numBytes - 1; i >= 0; i--)
 	{
@@ -489,25 +475,21 @@ char PackedSeq::shiftAppend(char base)
 	return shiftIn;
 }
 
-//
-//
-//
-char PackedSeq::shiftPrepend(char base)
+uint8_t PackedSeq::shiftPrepend(uint8_t base)
 {
 	// shift the sequence right and append a new base to the end
 	unsigned numBytes = getNumCodingBytes(m_length);
 
 	unsigned lastBaseByte = seqIndexToByteNumber(m_length - 1);
 	unsigned lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
-	
+
 	// save the last base (which gets shifted out)
-	char lastBase = getBaseChar(m_seq, lastBaseByte, lastBaseIndex);
-	
+	uint8_t lastBase = getBaseCode(m_seq,
+			lastBaseByte, lastBaseIndex);
 	// Zero the last base, which is required by compare.
 	setBaseCode(m_seq, lastBaseByte, lastBaseIndex, 0);
 
-	char shiftIn = base;
-	
+	uint8_t shiftIn = base;
 	// starting from the last byte, shift the new base in and get the captured base
 	for(unsigned i = 0; i <= numBytes - 1; i++)
 	{
@@ -519,48 +501,39 @@ char PackedSeq::shiftPrepend(char base)
 	return lastBase;	
 }
 
-//
-//
-//
-char PackedSeq::leftShiftByte(char* pSeq,
-		unsigned byteNum, unsigned index, char base)
+uint8_t PackedSeq::leftShiftByte(char* pSeq,
+		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// save the first base
-	char outBase = (pSeq[byteNum] >> 6) & 0x3;
+	uint8_t outBase = (pSeq[byteNum] >> 6) & 0x3;
 	
 	// shift left one position
 	pSeq[byteNum] <<= 2;
 	
 	// Set the new base
-	setBaseChar(pSeq, byteNum, index, base);
+	setBaseCode(pSeq, byteNum, index, base);
 
-	return codeToBase(outBase);
+	return outBase;
 }
 
-//
-//
-//
-char PackedSeq::rightShiftByte(char* pSeq,
-		unsigned byteNum, unsigned index, char base)
+uint8_t PackedSeq::rightShiftByte(char* pSeq,
+		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// save the last base
-	char outBase = pSeq[byteNum] & 0x3;
+	uint8_t outBase = pSeq[byteNum] & 0x3;
 	
 	// shift right one position
 	pSeq[byteNum] >>= 2;
 	
 	// add the new base
-	setBaseChar(pSeq, byteNum, index, base);
+	setBaseCode(pSeq, byteNum, index, base);
 	
-	return codeToBase(outBase);
+	return outBase;
 }
 
-//
-//
-//
-void PackedSeq::setBaseExtension(extDirection dir, char b)
+void PackedSeq::setBaseExtension(extDirection dir, uint8_t base)
 {
-	m_extRecord.dir[dir].SetBase(b);
+	m_extRecord.dir[dir].setBase(base);
 }
 
 //
@@ -572,20 +545,14 @@ void PackedSeq::clearAllExtensions(extDirection dir)
 }
 
 
-//
-//
-//
-void PackedSeq::clearExtension(extDirection dir, char b)
+void PackedSeq::clearExtension(extDirection dir, uint8_t base)
 {
-	m_extRecord.dir[dir].ClearBase(b);
+	m_extRecord.dir[dir].clearBase(base);
 }
 
-//
-//
-//
-bool PackedSeq::checkExtension(extDirection dir, char b) const
+bool PackedSeq::checkExtension(extDirection dir, uint8_t base) const
 {
-	return m_extRecord.dir[dir].CheckBase(b);	
+	return m_extRecord.dir[dir].checkBase(base);
 }
 
 //
@@ -640,16 +607,6 @@ void PackedSeq::setBaseCode(char* pSeq,
 }
 
 //
-// set a base by the index [0, length)
-// beware, this does not check for out of bounds access
-//
-void PackedSeq::setBaseChar(char* pSeq,
-		unsigned seqIndex, char base)
-{
-	return setBaseCode(pSeq, seqIndex, baseToCode(base));
-}
-
-//
 //Set a base by byte number/ sub index
 // beware, this does not check for out of bounds access
 //
@@ -659,26 +616,15 @@ void PackedSeq::setBaseCode(char* pSeq,
 	// shift the value into position
 	unsigned shiftValue = 2*(3 - index);
 	base <<= shiftValue;
-	
+
 	// clear the value
-	char mask = 0x3;
+	uint8_t mask = 0x3;
 	mask <<= shiftValue;
 	mask = ~mask;
 	pSeq[byteNum] &= mask;
-	
-	
+
 	// set the appropriate value with an OR
 	pSeq[byteNum] |= base;
-}
-
-//
-//Set a base by byte number/ sub index
-// beware, this does not check for out of bounds access
-//
-void PackedSeq::setBaseChar(char* pSeq,
-		unsigned byteNum, unsigned index, char base)
-{
-	setBaseCode(pSeq, byteNum, index, baseToCode(base));
 }
 
 //
@@ -692,12 +638,9 @@ uint8_t PackedSeq::getBaseCode(unsigned seqIndex) const
 			seqIndexToBaseIndex(seqIndex));
 }
 
-//
-// get a base by the index [0, length)
-//
-char PackedSeq::getBaseChar(unsigned seqIndex) const
+uint8_t PackedSeq::getLastBaseChar() const
 {
-	return codeToBase(getBaseCode(seqIndex));
+	return codeToBase(getBaseCode(m_length - 1));
 }
 
 //
@@ -708,15 +651,6 @@ uint8_t PackedSeq::getBaseCode(const char* pSeq,
 {
 	unsigned shiftLen = 2 * (3 - index);
 	return (pSeq[byteNum] >> shiftLen) & 0x3;
-}
-
-//
-// get a base by the byte number and sub index
-//
-char PackedSeq::getBaseChar(const char* pSeq,
-		unsigned byteNum, unsigned index)
-{
-	return codeToBase(getBaseCode(pSeq, byteNum, index));
 }
 
 //
@@ -751,18 +685,12 @@ uint8_t PackedSeq::baseToCode(char base)
 	return table[i];
 }
 
-//
-//
-//
 char PackedSeq::codeToBase(uint8_t code)
 {
 	assert(code < 4);
 	return "ACGT"[code];
 }
 
-//
-//
-//
 PackedSeq reverseComplement(const PackedSeq& seq)
 {
 	PackedSeq rc(seq);
@@ -784,9 +712,9 @@ bool PackedSeq::isPalindrome(extDirection dir) const
 		return false;
 	PackedSeq seq(*this);
 	if (dir == SENSE)
-		seq.shiftAppend('A');
+		seq.shiftAppend(0);
 	else
-		seq.setLastBase(SENSE, 'A');
+		seq.setLastBase(SENSE, 0);
 	seq.m_length--;
 	return seq.isPalindrome();
 }
