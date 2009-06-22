@@ -53,12 +53,14 @@ class SeqExt
 			return m_record > 0 && powerOfTwo;
 		}
 
+		/** Return the complementary adjacency. */
+		SeqExt SeqExt::complement() const;
+
 		void print() const;
 
-		/** Return the complementary adjacency. */
-		SeqExt complement() const;
-
 	private:
+		SeqExt(uint8_t ext) : m_record(ext) { };
+
 		uint8_t m_record;
 };
 
