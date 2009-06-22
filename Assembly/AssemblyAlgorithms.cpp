@@ -235,9 +235,7 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 			continue;
 		}
 
-		for(int i = 0; i <= 1; i++)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			HitRecord hr = calculateExtension(seqCollection, *iter, dir);
 			if (hr.getNumHits() > 1
 					|| iter->isPalindrome(dir)) {
@@ -299,11 +297,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
 		assert(success);
 		(void)success;
-		
+
 		// Check for ambiguity
-		for(int i = 0; i <= 1; ++i)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
 				bool stop = false;

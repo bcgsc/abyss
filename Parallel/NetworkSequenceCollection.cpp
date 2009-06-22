@@ -838,11 +838,9 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
 		assert(success);
 		(void)success;
-		
+
 		// Check for ambiguity
-		for(int i = 0; i <= 1; ++i)
-		{
-			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
+		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
 				
