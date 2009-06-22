@@ -56,11 +56,11 @@ Sequence FastaReader::ReadSequence(string& id)
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
 		// Read the quality values.
-		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
-		assert(buf[0] == '+');
-		m_fileHandle.getline(buf, (ssize_t)sizeof buf);
-		assert(m_fileHandle.gcount() < (ssize_t)sizeof buf - 1);
+		char c;
+		m_fileHandle >> c;
+		assert(c == '+');
+		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 	} else {
 		fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' and saw `%c'\n",
