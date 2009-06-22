@@ -197,7 +197,7 @@ bool BranchGroup::isAmbiguous(/*const*/ ISequenceCollection* c) const
 	bool found = c->getSeqData(m_origin, ext, multiplicity);
 	assert(found);
 	(void)found;
-	return ext.dir[m_dir].IsAmbiguous();
+	return ext.dir[m_dir].isAmbiguous();
 }
 
 //

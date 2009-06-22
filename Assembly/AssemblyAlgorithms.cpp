@@ -302,11 +302,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		
 		// Check for ambiguity
 		for(int i = 0; i <= 1; ++i)
-		{	
+		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			
-			if(extRec.dir[dir].IsAmbiguous())
-			{
+			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
 				bool stop = false;
 				
@@ -745,21 +743,14 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	else if(branch.hasLoop())
 	{
 		branch.terminate(BS_LOOP);
-	}
-	else if(extensions.dir[oppDir].IsAmbiguous()) // Does this sequence split TO the former node?
-	{
-		//printf("stopped because of reverse branch\n");
+	} else if (extensions.dir[oppDir].isAmbiguous()) {
 		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
 		branch.terminate(BS_AMBI_OPP);
-	}
-	else if(!extensions.dir[dir].HasExtension()) 
-	{
+	} else if (!extensions.dir[dir].hasExtension()) {
 		// no extenstion, add the current sequence and terminate the branch
 		branch.addSequence(currSeq, multiplicity);
 		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_NOEXT);
-	}
-	else if(extensions.dir[dir].IsAmbiguous())
-	{
+	} else if (extensions.dir[dir].isAmbiguous()) {
 		// this branch has an ambiguous extension, add the current sequence and terminate
 		branch.addSequence(currSeq, multiplicity);
 		branch.terminate(BS_AMBI_SAME);

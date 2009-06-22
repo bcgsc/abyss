@@ -34,20 +34,20 @@ class SeqExt
 		}
 
 		/** Clear all adjacency. */
-		void ClearAll()
+		void clear()
 		{
 			m_record = 0;
 		}
 
 		/** Return whether this kmer has any adjacent kmer. */
-		bool HasExtension() const
+		bool hasExtension() const
 		{
 			return m_record > 0;
 		}
 
 		/** Return whether this kmer has more than one adjacent kmer.
 		 */
-		bool IsAmbiguous() const
+		bool isAmbiguous() const
 		{
 			bool powerOfTwo = (m_record & (m_record - 1)) > 0;
 			return m_record > 0 && powerOfTwo;

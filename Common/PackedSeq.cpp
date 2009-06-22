@@ -536,14 +536,10 @@ void PackedSeq::setBaseExtension(extDirection dir, uint8_t base)
 	m_extRecord.dir[dir].setBase(base);
 }
 
-//
-//
-//
 void PackedSeq::clearAllExtensions(extDirection dir)
 {
-	m_extRecord.dir[dir].ClearAll();
+	m_extRecord.dir[dir].clear();
 }
-
 
 void PackedSeq::clearExtension(extDirection dir, uint8_t base)
 {
@@ -555,20 +551,14 @@ bool PackedSeq::checkExtension(extDirection dir, uint8_t base) const
 	return m_extRecord.dir[dir].checkBase(base);
 }
 
-//
-//
-//
 bool PackedSeq::hasExtension(extDirection dir) const
 {
-	return m_extRecord.dir[dir].HasExtension();	
+	return m_extRecord.dir[dir].hasExtension();
 }
 
-//
-//
-//
 bool PackedSeq::isAmbiguous(extDirection dir) const
 {
-	return m_extRecord.dir[dir].IsAmbiguous();	
+	return m_extRecord.dir[dir].isAmbiguous();
 }
 
 //

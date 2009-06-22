@@ -841,11 +841,9 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		
 		// Check for ambiguity
 		for(int i = 0; i <= 1; ++i)
-		{	
+		{
 			extDirection dir = (i == 0) ? SENSE : ANTISENSE;
-			
-			if(extRec.dir[dir].IsAmbiguous())
-			{
+			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
 				
 				// Create the branch group
