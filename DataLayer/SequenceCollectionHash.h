@@ -38,10 +38,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
-		
+
 		// Find if this sequence has the specified flag set
-		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
-		
+		bool checkFlag(const PackedSeq& seq, SeqFlag flag) const;
+
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 
@@ -61,7 +61,8 @@ class SequenceCollectionHash : public ISequenceCollection
 				extDirection dir, uint8_t base);
 
 		// get the extensions of a sequence
-		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
+		bool getSeqData(const PackedSeq& seq,
+				ExtensionRecord& extRecord, int& multiplicity) const;
 
 		const PackedSeq& getSeqAndData(const PackedSeq& key) const;
 
@@ -114,10 +115,11 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Iterator versions of modification functions
 		// These should only be called from this class, hence they are private
 		void removeByIter(SequenceHashIterPair seqIters);
-		
+
 		bool hasChildByIter(SequenceCollectionHashIter seqIter) const;
 		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
-		bool checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
+		bool checkFlagByIter(SequenceCollectionHashIter& seqIter,
+				SeqFlag flag) const;
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);

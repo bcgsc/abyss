@@ -45,9 +45,10 @@ class ISequenceCollection
 
 		// Set flag for sequence seq
 		virtual void setFlag(const PackedSeq& seq, SeqFlag flag) = 0;
-		
+
 		// Find if this sequence has the specified flag set
-		virtual bool checkFlag(const PackedSeq& seq, SeqFlag flag) = 0;
+		virtual bool checkFlag(const PackedSeq& seq,
+				SeqFlag flag) const = 0;
 
 		/** Mark the specified sequence. */
 		void mark(const PackedSeq& seq, extDirection sense = SENSE)
@@ -89,10 +90,10 @@ class ISequenceCollection
 
 		// set a single base extension
 		virtual bool setBaseExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
-		
+
 		// get the extension for a sequence
-		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) = 0;
-		
+		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) const = 0;
+
 		// check if the extension exists
 		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
 

@@ -188,7 +188,7 @@ bool BranchGroup::isExtendable()
 /** Return whether this branch is ambiguous at its origin. Also
  * returns false if the origin of the branch has since been deleted.
  */
-bool BranchGroup::isAmbiguous(/*const*/ ISequenceCollection* c) const
+bool BranchGroup::isAmbiguous(const ISequenceCollection* c) const
 {
 	if (c->checkFlag(m_origin, SF_DELETE))
 		return false;

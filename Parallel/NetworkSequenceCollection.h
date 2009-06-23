@@ -70,10 +70,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
-		
+
 		// Find if this sequence has the specified flag set
-		bool checkFlag(const PackedSeq& seq, SeqFlag flag);
-		
+		bool checkFlag(const PackedSeq& seq, SeqFlag flag) const;
+
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 		
@@ -105,9 +105,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// get the multiplicity of the sequence
 		int getMultiplicity(const PackedSeq& seq);
-		
+
 		// get the extensions of the sequence
-		bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity);
+		bool getSeqData(const PackedSeq& seq,
+				ExtensionRecord& extRecord, int& multiplicity) const;
 
 		// Receive and dispatch packets.
 		unsigned pumpNetwork();

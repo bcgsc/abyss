@@ -259,10 +259,8 @@ void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, 
 	}
 }
 
-//
-//
-//
-bool SequenceCollectionHash::checkFlag(const PackedSeq& seq, SeqFlag flag)
+bool SequenceCollectionHash::checkFlag(const PackedSeq& seq,
+		SeqFlag flag) const
 {
 	ResultPair result;
 	SequenceHashIterPair seqIters = GetSequenceIterators(seq);
@@ -273,10 +271,8 @@ bool SequenceCollectionHash::checkFlag(const PackedSeq& seq, SeqFlag flag)
 	return (result.forward || result.reverse);
 }
 
-//
-//
-//
-bool SequenceCollectionHash::checkFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag)
+bool SequenceCollectionHash::checkFlagByIter(
+		SequenceCollectionHashIter& seqIter, SeqFlag flag) const
 {
 	// Check whether the sequence and its reverse complement both have the flag set/unset
 	// They SHOULD be the same and the assert will guarentee this
@@ -385,10 +381,9 @@ bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& se
 	}
 }
 
-//
 // get the extensions and multiplicity information for a sequence
-//
-bool SequenceCollectionHash::getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity)
+bool SequenceCollectionHash::getSeqData(const PackedSeq& seq,
+		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool found = false;

@@ -1373,10 +1373,8 @@ void NetworkSequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 	}
 }
 
-//
-//
-//
-bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq, SeqFlag flag)
+bool NetworkSequenceCollection::checkFlag(const PackedSeq& seq,
+		SeqFlag flag) const
 {
 	assert(isLocal(seq));
 	return m_pLocalSpace->checkFlag(seq, flag);
@@ -1480,10 +1478,9 @@ ResultPair NetworkSequenceCollection::checkExtension(
 	return result;
 }
 
-//
 // get the extensions of the sequence
-//
-bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity)
+bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq,
+		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	// This function can only be called locally, the distributed
 	// version is through generateSequenceExtensionMessage.

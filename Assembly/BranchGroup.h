@@ -77,8 +77,8 @@ class BranchGroup
 		BranchGroupData::iterator getStartIter() { return m_branches.begin(); }
 		BranchGroupData::iterator getEndIter() { return m_branches.end(); }
 
-		bool isAmbiguous(/*const*/ ISequenceCollection* c) const;
-		
+		bool isAmbiguous(const ISequenceCollection* c) const;
+
 	private:
 		// Select a branch to keep for bubble removal and return
 		// its index.
