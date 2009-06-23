@@ -89,10 +89,8 @@ typedef hash_map<ContigID, EstimateRecord> EstimateMap;
 static EstimateMap estMap;
 static EstimateMap adjMap;
 
-// FUNCTIONS
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
-
-std::string makePairID(std::string refID);
+string makePairID(string id);
 
 /**
  * Return the size of the fragment demarcated by the specified
@@ -476,45 +474,47 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 	return unique;
 }
 
-// Change the id into the id of its pair
-std::string makePairID(std::string refID)
+static bool endsWith(const string& s, const string& suffix)
 {
-	std::string pairID = refID;
-	// Change the last character
-	ssize_t lastIdx = pairID.size() - 1;
-	assert(lastIdx > 0);
-	char c = refID[lastIdx];
-	bool matched = true;
+	ssize_t i = s.length() - suffix.length();
+	return i < 0 ? false : s.substr(i) == suffix;
+}
+
+static bool replaceSuffix(string& s,
+		const string& suffix0, const string& suffix1)
+{
+	if (endsWith(s, suffix0)) {
+		s.replace(s.length() - suffix0.length(), string::npos,
+				suffix1);
+		return true;
+	} else if (endsWith(s, suffix1)) {
+		s.replace(s.length() - suffix1.length(), string::npos,
+				suffix0);
+		return true;
+	} else
+		return false;
+}
+
+/** Return the mate ID of the specified read ID. */
+string makePairID(string id)
+{
+	assert(!id.empty());
+	char& c = id[id.length() - 1];
 	switch (c) {
-		case '1': c = '2'; break;
-		case '2': c = '1'; break;
-		case 'A': c = 'B'; break;
-		case 'B': c = 'A'; break;
-		case 'F': c = 'R'; break;
-		case 'R': c = 'F'; break;
-		default: matched = false; break;
+		case '1': c = '2'; return id;
+		case '2': c = '1'; return id;
+		case 'A': c = 'B'; return id;
+		case 'B': c = 'A'; return id;
+		case 'F': c = 'R'; return id;
+		case 'R': c = 'F'; return id;
 	}
-	if (matched) {
-		pairID[lastIdx] = c;
-	} else {
-		static const char *suffix0 = "forward";
-		static const char *suffix1 = "reverse";
-		ssize_t i = refID.length() - strlen(suffix0);
-		assert(i > 0);
-		string suffix = refID.substr(i);
-		if (suffix == suffix0) {
-			pairID.replace(i, string::npos, suffix1);
-		} else if (suffix == suffix1) {
-			pairID.replace(i, string::npos, suffix0);
-		} else {
-			cerr << "error: read ID `" << refID
-				<< "' must end in one of\n"
-				"\t/1 and /2 or"
-				" _A and _B or"
-				" _F and _R or"
-				" _forward and _reverse\n";
-			exit(EXIT_FAILURE);
-		}
-	}
-	return pairID;
+
+	if (replaceSuffix(id, "forward", "reverse")
+				|| replaceSuffix(id, "F3", "R3"))
+		return id;
+
+	cerr << "error: read ID `" << id << "' must end in one of\n"
+		"\t1 and 2 or A and B or F and R or"
+		" F3 and R3 or forward and reverse\n";
+	exit(EXIT_FAILURE);
 }
