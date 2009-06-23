@@ -144,25 +144,22 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
 	return (seqLength + 3) / 4;
 }
 
-//
-// This function computes a hash-like value of the packed sequence over the first 8 bases and the reverse complement of the last 8 bases
-// The reverse complement of the last 8 bases is used so that a sequence and its reverse-comp will hash to the same value which is desirable in this case
-// Todo: make this faster?
-//
+/** Compute a hash-like value of the packed sequence over the first 16
+ * bases and the reverse complement of the last 16 bases
+ * The reverse complement of the last 16 bases is used so that a
+ * sequence and its reverse complement will hash to the same value.
+ * @todo make this faster
+ */
 unsigned PackedSeq::getCode() const
 {
 	const unsigned NUM_BYTES = 4;
-	char rcSeq[NUM_BYTES];
-	for (unsigned i = 0; i < 4*NUM_BYTES; i++) {
-		unsigned index = m_length - 1 - i;
-		setBaseCode(rcSeq, i,
-				complementBaseCode(getBaseCode(index)));
-	}
+	PackedSeq rc = *this;
+	rc.reverseComplement();
 
 	const unsigned prime = 101;
 	unsigned sum = 0;
 	for (unsigned i = 0; i < NUM_BYTES; i++)
-		sum = prime * sum + (m_seq[i] ^ rcSeq[i]);
+		sum = prime * sum + (m_seq[i] ^ rc.m_seq[i]);
 	return sum;
 }
 
