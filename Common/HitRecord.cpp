@@ -7,9 +7,9 @@ HitRecord::HitRecord()
 }
 
 // add a hit to the record
-void HitRecord::addHit(const PackedSeq& seq, bool isReverse)
+void HitRecord::addHit(const PackedSeq& seq)
 {
-	m_hits.push_back(Hit(seq, isReverse));
+	m_hits.push_back(seq);
 }
 
 // get the number of hits
@@ -18,13 +18,13 @@ int HitRecord::getNumHits() const
 	return m_hits.size();
 }
 
-Hit HitRecord::getHit(int num) const
+PackedSeq HitRecord::getHit(int num) const
 {
 	return m_hits[num];
 }
 
 // get the first  hit
-Hit HitRecord::getFirstHit() const
+PackedSeq HitRecord::getFirstHit() const
 {
 	return m_hits.front();
 }

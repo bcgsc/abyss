@@ -28,16 +28,7 @@ HitRecord calculateExtension(const ISequenceCollection* seqCollection,
 		{
 			PackedSeq extSeq(currSeq);
 			extSeq.shift(dir, i);
-			// is there a forward extension?
-			if(hasExt.forward)
-			{
-				hitRecord.addHit(extSeq, false);
-			}
-			else
-			{
-				// extension is of the reverse complement
-				hitRecord.addHit(extSeq, true);	
-			}
+			hitRecord.addHit(extSeq);
 		}
 	}
 		

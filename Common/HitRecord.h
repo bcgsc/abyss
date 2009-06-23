@@ -4,14 +4,7 @@
 #include "PackedSeq.h"
 #include <vector>
 
-struct Hit
-{
-	Hit(PackedSeq s, bool b) : seq(s), isReverse(b) {}
-	PackedSeq seq;
-	bool isReverse;
-};
-
-typedef std::vector<Hit> HitVector;
+typedef std::vector<PackedSeq> HitVector;
 
 class HitRecord
 {
@@ -19,16 +12,16 @@ class HitRecord
 		HitRecord();
 		
 		// add a hit to the record
-		void addHit(const PackedSeq& seq, bool isReverse);
+		void addHit(const PackedSeq& seq);
 		
 		// get the number of hits
 		int getNumHits() const;
 		
 		// get a specific hit
-		Hit getHit(int num) const;
+		PackedSeq getHit(int num) const;
 		
 		// get the first  hit
-		Hit getFirstHit() const;
+		PackedSeq getFirstHit() const;
 		
 	private:
 		HitVector m_hits;

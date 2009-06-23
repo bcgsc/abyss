@@ -16,7 +16,7 @@ static bool isContiguous(const ISequenceCollection& c,
 	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, *pSeq, dir);
 	if (hr.getNumHits() != 1)
 		return false;
-	const PackedSeq& ext = hr.getFirstHit().seq;
+	const PackedSeq& ext = hr.getFirstHit();
 	HitRecord rhr = AssemblyAlgorithms::calculateExtension(&c, ext, !dir);
 	if (rhr.getNumHits() != 1)
 		return false;
@@ -68,7 +68,7 @@ static void write_split(ostream& out,
 		return;
 	out << seq.decode() << "->{ ";
 	for (unsigned i = 0; i < hits; i++)
-		out << hr.getHit(i).seq.decode() << ' ';
+		out << hr.getHit(i).decode() << ' ';
 	out << "};\n";
 }
 
@@ -82,7 +82,7 @@ static void write_join(ostream& out,
 		return;
 	out << "{ ";
 	for (unsigned i = 0; i < hits; i++)
-		out << hr.getHit(i).seq.decode() << ' ';
+		out << hr.getHit(i).decode() << ' ';
 	out << "}->" << seq.decode() << ";\n";
 }
 
