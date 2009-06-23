@@ -80,17 +80,45 @@ Overlap - find overlaps between blunt contigs
 SimpleGraph - finds paths between pairs of contigs
 MergePaths - merges consistent paths
 
+* Parallel assembly
+
+The `np' option of abyss-pe specifies the number of processes to
+use for the ABYSS-P parallel MPI job. Without any MPI configuration,
+this will allow you to make use of multiple cores on a single machine.
+To use multiple machines for assembly, you must create a hostfile for
+mpirun, which is describe in the mpirun man page.
+
+The paired-end assembly runs on a single processor. For very large
+jobs, a good portion of the paired-end assembly (KAligner,
+ParseAligns, DistanceEst) may be run in parallel separate processes,
+but this process is not automated by the driver script abyss-pe.
+
+Open MPI integrates well with SGE (Sun Grid Engine). For example, to
+submit an array of jobs to assemble every odd value of k between 51
+and 63 using 64 processes for each job:
+
+qsub -pe openmpi 64 -t 51-63:2 \
+	mpirun ABYSS-P -k$SGE_TASK_ID -l75 reads.fa -o k$SGE_TASK_ID.fa
+
+For more information on using SGE and qsub, please refer to the qsub
+manual page. Open MPI must have been compiled with support for SGE
+using the ./configure --with-sge option.
+
 * Notes
 
 The distribution of fragment sizes is calculated empirically by
 aligning paired reads to the contigs produced by the single-end
 assembler, and the distribution is stored in a file with the extension
-.hist, such as reads.hist.
+.hist, such as ecoli-4.hist. The N50 of the single-end assembly must
+be well over the fragment-size to obtain an accurate empirical
+distribution.
 
 * See also
 
 Try `abyss --help' for more information on command line options, or
 see the manual page in the file `ABYSS.1'.
+Please refer to the mpirun manual page for information on configuring
+parallel jobs.
 
 Written by Jared Simpson and Shaun Jackman.
 Subscribe to the users' mailing list at
