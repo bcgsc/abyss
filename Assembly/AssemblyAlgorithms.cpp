@@ -231,8 +231,7 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 		}
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			HitRecord hr = calculateExtension(seqCollection, *iter, dir);
-			if (hr.getNumHits() > 1
+			if (iter->getExtension(dir).isAmbiguous()
 					|| iter->isPalindrome(dir)) {
 				seqCollection->mark(*iter, dir);
 				count++;
