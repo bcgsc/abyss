@@ -54,7 +54,7 @@ class SeqExt
 		}
 
 		/** Return the complementary adjacency. */
-		SeqExt SeqExt::complement() const;
+		SeqExt complement() const;
 
 		void print() const;
 
