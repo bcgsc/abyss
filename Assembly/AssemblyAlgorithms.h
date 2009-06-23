@@ -123,7 +123,8 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
 
 // Calculate the extensions for this sequence
-HitRecord calculateExtension(ISequenceCollection* seqCollection, const PackedSeq& currSeq, extDirection dir);
+HitRecord calculateExtension(const ISequenceCollection* seqCollection,
+		const PackedSeq& currSeq, extDirection dir);
 
 // Generate all the sequences for the extension record
 void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs);

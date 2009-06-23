@@ -10,7 +10,7 @@ using namespace std;
  * the forward direction, and that extension has a single extension in
  * the reverse direction. If so, return the extension in pSeq.
  */
-static bool isContiguous(ISequenceCollection& c,
+static bool isContiguous(const ISequenceCollection& c,
 		PackedSeq* pSeq, extDirection dir)
 {
 	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, *pSeq, dir);
@@ -24,7 +24,7 @@ static bool isContiguous(ISequenceCollection& c,
 	return true;
 }
 
-static bool isContiguous(ISequenceCollection& c,
+static bool isContiguous(const ISequenceCollection& c,
 		const PackedSeq& seq, extDirection dir)
 {
 	PackedSeq ext = seq;
@@ -34,7 +34,7 @@ static bool isContiguous(ISequenceCollection& c,
 /** Find and return the end of the specified contig. Return the length
  * of the contig (counted in kmers) in pLength.
  */
-static const PackedSeq findContigEnd(ISequenceCollection& c,
+static const PackedSeq findContigEnd(const ISequenceCollection& c,
 		const PackedSeq& seq, unsigned* pLength = NULL)
 {
 	unsigned n = 1;
@@ -48,7 +48,7 @@ static const PackedSeq findContigEnd(ISequenceCollection& c,
 
 /** Write out the specified contig. */
 static void write_contig(ostream& out,
-		ISequenceCollection& c, const PackedSeq& seq)
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	unsigned n;
 	const PackedSeq& end = findContigEnd(c, seq, &n);
@@ -60,7 +60,7 @@ static void write_contig(ostream& out,
 
 /** Write out the contigs that split at the specified sequence. */
 static void write_split(ostream& out,
-		ISequenceCollection& c, const PackedSeq& seq)
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, SENSE);
 	unsigned hits = hr.getNumHits();
@@ -74,7 +74,7 @@ static void write_split(ostream& out,
 
 /** Write out the contigs that join at the specified sequence. */
 static void write_join(ostream& out,
-		ISequenceCollection& c, const PackedSeq& seq)
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, ANTISENSE);
 	unsigned hits = hr.getNumHits();
@@ -88,7 +88,7 @@ static void write_join(ostream& out,
 
 /** Write out a dot graph around the specified sequence. */
 static void write_node(ostream& out,
-		ISequenceCollection& c, const PackedSeq& seq)
+		const ISequenceCollection& c, const PackedSeq& seq)
 {
 	write_split(out, c, seq);
 	write_join(out, c, seq);
@@ -97,7 +97,7 @@ static void write_node(ostream& out,
 }
 
 /** Write out a dot graph for the specified collection. */
-void DotWriter::write(ostream& out, ISequenceCollection& c)
+void DotWriter::write(ostream& out, const ISequenceCollection& c)
 {
 	out << "digraph g {\n";
 	const SequenceCollectionIterator& end = c.getEndIter();

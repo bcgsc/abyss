@@ -1461,7 +1461,7 @@ bool NetworkSequenceCollection::removeExtension(
 }
 
 ResultPair NetworkSequenceCollection::checkExtension(
-		const PackedSeq& seq, extDirection dir, uint8_t base)
+		const PackedSeq& seq, extDirection dir, uint8_t base) const
 {
 	// Check if this sequence is local
 	ResultPair result;

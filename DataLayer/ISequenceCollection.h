@@ -95,7 +95,8 @@ class ISequenceCollection
 		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) const = 0;
 
 		// check if the extension exists
-		virtual ResultPair checkExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
+		virtual ResultPair checkExtension(const PackedSeq& seq,
+				extDirection dir, uint8_t base) const = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;

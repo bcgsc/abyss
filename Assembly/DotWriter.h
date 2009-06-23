@@ -7,7 +7,7 @@
 class DotWriter {
 	public:
 		static void write(std::ostream& out,
-				ISequenceCollection& c);
+				const ISequenceCollection& c);
 };
 
 #endif

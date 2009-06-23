@@ -14,16 +14,11 @@
 namespace AssemblyAlgorithms
 {
 
-//
 // Generate a hitrecord for a sequence
-//
-HitRecord calculateExtension(ISequenceCollection* seqCollection,
+HitRecord calculateExtension(const ISequenceCollection* seqCollection,
 		const PackedSeq& currSeq, extDirection dir)
 {
-	
-	// Create the return structure
 	HitRecord hitRecord;
-	
 	// Check for the existance of the 4 possible extensions
 	for(int i  = 0; i < NUM_BASES; i++)
 	{

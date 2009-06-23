@@ -359,7 +359,8 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 	}
 }
 
-ResultPair SequenceCollectionHash::checkExtension(const PackedSeq& seq, extDirection dir, uint8_t base)
+ResultPair SequenceCollectionHash::checkExtension(
+		const PackedSeq& seq, extDirection dir, uint8_t base) const
 {
 	ResultPair rp;
 	SequenceHashIterPair iters = GetSequenceIterators(seq);

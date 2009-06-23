@@ -58,7 +58,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		// check if the extension exists
 		ResultPair checkExtension(const PackedSeq& seq,
-				extDirection dir, uint8_t base);
+				extDirection dir, uint8_t base) const;
 
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq,

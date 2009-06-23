@@ -11,7 +11,7 @@
 
 using namespace std;
 
-static void popBubbles(/*const*/ ISequenceCollection* pSC)
+static void popBubbles(ISequenceCollection* pSC)
 {
 	puts("Popping bubbles");
 	unsigned totalPopped = 0;
@@ -27,8 +27,8 @@ static void popBubbles(/*const*/ ISequenceCollection* pSC)
 			totalPopped, i);
 }
 
-static void write_graph(const std::string& path,
-		/*const*/ ISequenceCollection& c)
+static void write_graph(const string& path,
+		const ISequenceCollection& c)
 {
 	if (path.length() == 0)
 		return;
