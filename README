@@ -1,5 +1,29 @@
 ABySS - assemble short reads into contigs
 
+* Compiling ABySS
+
+Compiling ABySS should be as easy as
+./configure && make
+
+To install ABySS in a specified directory
+./configure --prefix=/opt/ABySS && make && sudo make install
+
+If you wish to build the parallel assembler with MPI support,
+MPI should be found in /usr/include and /usr/lib or its location
+specified to configure:
+./configure --with-mpi=/usr/lib/openmpi && make
+
+ABySS should be built using Google sparsehash to reduce memory usage,
+although it will build without. Google sparsehash should be found in
+/usr/include or its location specified to configure:
+./configure CPPFLAGS=-I/usr/local/include
+
+The default maximum k-mer size is 64 and may be decreased to reduce
+memory usage or increased at compile time:
+./configure --enable-maxk=96 && make
+
+To run ABySS, its binaries should be found in your PATH.
+
 * Single-end assembly
 
 Assemble short reads in a file named reads.fa into contigs in a
@@ -37,8 +61,11 @@ in specifies the input files to read, which must be in either FASTA or
 FASTQ format.
 The assembled contigs will be stored in ${lib}-contigs.fa.
 
-The last character of the read identifier for a pair of reads must be
-one of '1' and '2', or 'A' and 'B', or 'F' and 'R'.
+The suffix of the read identifier for a pair of reads must be one of
+'1' and '2', or 'A' and 'B', or 'F' and 'R', or 'F3' and 'R3', or
+'forward' and 'reverse'. The reads may be interleaved in the same file
+or found in different files; however, interleaved mates will use less
+memory.
 
 abyss-pe is a driver script implemented as a Makefile and runs a
 single-end assembly, as described above, and the following commands,
@@ -66,5 +93,7 @@ Try `abyss --help' for more information on command line options, or
 see the manual page in the file `ABYSS.1'.
 
 Written by Jared Simpson and Shaun Jackman.
-Contact the authors by email at <abyss@bcgsc.ca> or
-the users' mailing list at <abyss-users@bcgsc.ca>.
+Subscribe to the users' mailing list at
+http://www.bcgsc.ca/mailman/listinfo/abyss-users
+Contact the users' mailing list at <abyss-users@bcgsc.ca>
+or the authors directly at <abyss@bcgsc.ca>.
