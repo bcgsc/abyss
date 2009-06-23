@@ -6,6 +6,30 @@
 
 using namespace std;
 
+/** Return the kmer which are adjacent to this kmer. */
+static vector<PackedSeq> getExtensions(
+		const PackedSeq& seq, extDirection dir)
+{
+	vector<PackedSeq> v;
+	AssemblyAlgorithms::generateSequencesFromExtension(seq, dir,
+			seq.getExtension(dir), v);
+	return v;
+}
+
+/** Return the kmer which are adjacent to this kmer. */
+static vector<PackedSeq> getExtensions(
+		const ISequenceCollection& c,
+		const PackedSeq& key, extDirection dir)
+{
+	ExtensionRecord ext;
+	int multiplicity = -1;
+	c.getSeqData(key, ext, multiplicity);
+	vector<PackedSeq> v;
+	AssemblyAlgorithms::generateSequencesFromExtension(key, dir,
+			ext.dir[dir], v);
+	return v;
+}
+
 /** Return true if the specified sequence has a single extension in
  * the forward direction, and that extension has a single extension in
  * the reverse direction. If so, return the extension in pSeq.
@@ -13,12 +37,12 @@ using namespace std;
 static bool isContiguous(const ISequenceCollection& c,
 		PackedSeq* pSeq, extDirection dir)
 {
-	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, *pSeq, dir);
-	if (hr.getNumHits() != 1)
+	vector<PackedSeq> exts = getExtensions(c, *pSeq, dir);
+	if (exts.size() != 1)
 		return false;
-	const PackedSeq& ext = hr.getFirstHit();
-	HitRecord rhr = AssemblyAlgorithms::calculateExtension(&c, ext, !dir);
-	if (rhr.getNumHits() != 1)
+	const PackedSeq& ext = exts[0];
+	vector<PackedSeq> rexts = getExtensions(c, ext, !dir);
+	if (rexts.size() != 1)
 		return false;
 	*pSeq = ext;
 	return true;
@@ -59,30 +83,26 @@ static void write_contig(ostream& out,
 }
 
 /** Write out the contigs that split at the specified sequence. */
-static void write_split(ostream& out,
-		const ISequenceCollection& c, const PackedSeq& seq)
+static void write_split(ostream& out, const PackedSeq& seq)
 {
-	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, SENSE);
-	unsigned hits = hr.getNumHits();
-	if (hits <= 1)
+	vector<PackedSeq> exts = getExtensions(seq, SENSE);
+	if (exts.size() <= 1)
 		return;
 	out << seq.decode() << "->{ ";
-	for (unsigned i = 0; i < hits; i++)
-		out << hr.getHit(i).decode() << ' ';
+	for (unsigned i = 0; i < exts.size(); i++)
+		out << exts[i].decode() << ' ';
 	out << "};\n";
 }
 
 /** Write out the contigs that join at the specified sequence. */
-static void write_join(ostream& out,
-		const ISequenceCollection& c, const PackedSeq& seq)
+static void write_join(ostream& out, const PackedSeq& seq)
 {
-	HitRecord hr = AssemblyAlgorithms::calculateExtension(&c, seq, ANTISENSE);
-	unsigned hits = hr.getNumHits();
-	if (hits <= 1)
+	vector<PackedSeq> exts = getExtensions(seq, ANTISENSE);
+	if (exts.size() <= 1)
 		return;
 	out << "{ ";
-	for (unsigned i = 0; i < hits; i++)
-		out << hr.getHit(i).decode() << ' ';
+	for (unsigned i = 0; i < exts.size(); i++)
+		out << exts[i].decode() << ' ';
 	out << "}->" << seq.decode() << ";\n";
 }
 
@@ -90,8 +110,8 @@ static void write_join(ostream& out,
 static void write_node(ostream& out,
 		const ISequenceCollection& c, const PackedSeq& seq)
 {
-	write_split(out, c, seq);
-	write_join(out, c, seq);
+	write_split(out, seq);
+	write_join(out, seq);
 	if (!isContiguous(c, seq, ANTISENSE))
 		write_contig(out, c, seq);
 }

@@ -1,7 +1,6 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
-#include "HitRecord.h"
 #include "Log.h"
 #include "Options.h"
 #include "ISequenceCollection.h"
@@ -14,30 +13,7 @@
 namespace AssemblyAlgorithms
 {
 
-// Generate a hitrecord for a sequence
-HitRecord calculateExtension(const ISequenceCollection* seqCollection,
-		const PackedSeq& currSeq, extDirection dir)
-{
-	HitRecord hitRecord;
-	// Check for the existance of the 4 possible extensions
-	for(int i  = 0; i < NUM_BASES; i++)
-	{
-		ResultPair hasExt = seqCollection->checkExtension(currSeq, dir, i);
-		// Does this sequence have an extension?
-		if(hasExt.forward || hasExt.reverse)
-		{
-			PackedSeq extSeq(currSeq);
-			extSeq.shift(dir, i);
-			hitRecord.addHit(extSeq);
-		}
-	}
-		
-	return hitRecord;
-}
-
-//
-// Generate a hitrecord for a sequence
-//
+/** Return the kmer which are adjacent to this kmer. */
 void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs)
 {
 	
