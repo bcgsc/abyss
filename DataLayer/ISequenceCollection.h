@@ -60,10 +60,7 @@ class ISequenceCollection
 
 		// does this sequence have an extension?
 		virtual bool hasChild(const PackedSeq& seq) = 0;
-		
-		// get the multiplicity of the sequence
-		virtual int getMultiplicity(const PackedSeq& seq) = 0;
-		
+
 		// Return the number of sequences in the collection
 		virtual size_t count() const = 0;
 

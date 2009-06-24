@@ -1459,19 +1459,6 @@ bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq,
 	return true;
 }
 
-
-//
-// GetMultiplicity
-//
-int NetworkSequenceCollection::getMultiplicity(const PackedSeq& /*seq*/)
-{
-	// does nothing for now
-	return 0;	
-}
-
-//
-//
-//
 void NetworkSequenceCollection::wipeFlag(SeqFlag flag)
 {
 	m_pLocalSpace->wipeFlag(flag);

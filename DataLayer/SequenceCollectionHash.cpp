@@ -116,24 +116,6 @@ unsigned SequenceCollectionHash::cleanup()
 	return count;
 }
 
-// get the multiplicity of a sequence
-int SequenceCollectionHash::getMultiplicity(const PackedSeq& seq)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	int mult = 0;
-	if(iters.first != m_pSequences->end())
-	{
-		mult += iters.first->getMultiplicity();
-	}
-	
-	if(iters.second != m_pSequences->end())
-	{
-		mult += iters.second->getMultiplicity();
-	}
-	assert(mult != 0);
-	return mult;
-}
-
 // Set a single base extension
 bool SequenceCollectionHash::setBaseExtension(
 		const PackedSeq& seq, extDirection dir, uint8_t base)

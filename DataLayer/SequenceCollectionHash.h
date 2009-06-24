@@ -27,9 +27,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Clean up by erasing sequences flagged as deleted.
 		unsigned cleanup();
 
-		// Get the multiplicity of a sequence
-		int getMultiplicity(const PackedSeq& seq);
-		
 		// Print the load of the hash table.
 		virtual void printLoad() const;
 

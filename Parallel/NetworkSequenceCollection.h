@@ -94,10 +94,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 				uint8_t base);
 
 		// remove all the extensions of this sequence
-		void clearExtensions(const PackedSeq& seq, extDirection dir);		
-		
-		// get the multiplicity of the sequence
-		int getMultiplicity(const PackedSeq& seq);
+		void clearExtensions(const PackedSeq& seq, extDirection dir);
 
 		// get the extensions of the sequence
 		bool getSeqData(const PackedSeq& seq,
