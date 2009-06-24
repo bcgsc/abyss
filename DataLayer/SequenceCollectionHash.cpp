@@ -210,30 +210,6 @@ void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& s
 	}
 }
 
-// check if a sequence exists in the phase space
-bool SequenceCollectionHash::exists(const PackedSeq& seq)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	return existsByIter(iters.first) || existsByIter(iters.second);
-}
-
-// Check if this sequence exists using an iterator
-bool SequenceCollectionHash::existsByIter(SequenceCollectionHashIter& seqIter) const
-{
-	if(seqIter != m_pSequences->end())
-	{
-		// sequence was found
-		return !seqIter->isFlagSet(SF_DELETE);
-	}
-	else
-	{
-		return false;
-	}	
-}
-
-//
-//
-//
 void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);

@@ -32,9 +32,6 @@ class ISequenceCollection
 		
 		// remove a sequence from the collection
 		virtual void remove(const PackedSeq& seq) = 0;
-				
-		// check if a sequence exists
-		virtual bool exists(const PackedSeq& seq) = 0;
 
 		// Set flag for sequence seq
 		virtual void setFlag(const PackedSeq& seq, SeqFlag flag) = 0;

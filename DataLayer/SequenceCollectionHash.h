@@ -33,9 +33,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Print the load of the hash table.
 		virtual void printLoad() const;
 
-		// check if a sequence exists
-		bool exists(const PackedSeq& seq);
-		
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
 

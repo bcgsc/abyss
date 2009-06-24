@@ -1338,18 +1338,6 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 	}	
 }
 
-//
-//
-//
-bool NetworkSequenceCollection::exists(const PackedSeq& seq)
-{
-	assert(isLocal(seq));
-	return m_pLocalSpace->exists(seq);
-}
-
-//
-//
-//
 bool NetworkSequenceCollection::checkpointReached(int numRequired) const
 {
 	return m_numReachedCheckpoint == numRequired;

@@ -64,10 +64,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// remove a sequence from the collection
 		void remove(const PackedSeq& seq);
-		
-		// check if a sequence exists
-		bool exists(const PackedSeq& seq);
-		
+
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
 
