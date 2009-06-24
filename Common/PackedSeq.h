@@ -110,7 +110,6 @@ class PackedSeq
 		void setBaseExtension(extDirection dir, uint8_t base);
 		void clearExtension(extDirection dir, uint8_t base);
 		void clearAllExtensions(extDirection dir);
-		bool checkExtension(extDirection dir, uint8_t base) const;
 		bool hasExtension(extDirection dir) const;
 		bool isAmbiguous(extDirection dir) const;
 		void printExtension() const;

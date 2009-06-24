@@ -209,22 +209,15 @@ void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& s
 		//seqIter->printExtension();
 	}
 }
-//
+
 // check if a sequence exists in the phase space
-//
 bool SequenceCollectionHash::exists(const PackedSeq& seq)
 {
-	ResultPair rp;
-	
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	rp.forward = existsByIter(iters.first);
-	rp.reverse = existsByIter(iters.second);
-	return (rp.forward || rp.reverse);
+	return existsByIter(iters.first) || existsByIter(iters.second);
 }
 
-//
 // Check if this sequence exists using an iterator
-//
 bool SequenceCollectionHash::existsByIter(SequenceCollectionHashIter& seqIter) const
 {
 	if(seqIter != m_pSequences->end())
@@ -262,13 +255,9 @@ void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, 
 bool SequenceCollectionHash::checkFlag(const PackedSeq& seq,
 		SeqFlag flag) const
 {
-	ResultPair result;
 	SequenceHashIterPair seqIters = GetSequenceIterators(seq);
-	result.forward = checkFlagByIter(seqIters.first, flag);
-	result.reverse = checkFlagByIter(seqIters.second, flag);
-
-	//assert(forwardFlag == reverseFlag);
-	return (result.forward || result.reverse);
+	return checkFlagByIter(seqIters.first, flag)
+		|| checkFlagByIter(seqIters.second, flag);
 }
 
 bool SequenceCollectionHash::checkFlagByIter(
@@ -352,29 +341,6 @@ bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) 
 	if(seqIter != m_pSequences->end())
 	{
 		return seqIter->hasExtension(SENSE);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-ResultPair SequenceCollectionHash::checkExtension(
-		const PackedSeq& seq, extDirection dir, uint8_t base) const
-{
-	ResultPair rp;
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	rp.forward = checkExtensionByIter(iters.first, dir, base);
-	rp.reverse = checkExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseCode(base));
-	return rp;
-}
-
-bool SequenceCollectionHash::checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base) const
-{
-	if(seqIter != m_pSequences->end())
-	{
-		return seqIter->checkExtension(dir, base);
 	}
 	else
 	{

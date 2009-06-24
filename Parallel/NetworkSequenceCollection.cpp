@@ -1460,24 +1460,6 @@ bool NetworkSequenceCollection::removeExtension(
 	}
 }
 
-ResultPair NetworkSequenceCollection::checkExtension(
-		const PackedSeq& seq, extDirection dir, uint8_t base) const
-{
-	// Check if this sequence is local
-	ResultPair result;
-	if(isLocal(seq))
-	{
-		//PrintDebug(1, "checking for local seq %s\n", seq.decode().c_str());
-		result = m_pLocalSpace->checkExtension(seq, dir, base);
-	}
-	else
-	{
-		assert(false);
-	}
-
-	return result;
-}
-
 // get the extensions of the sequence
 bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq,
 		ExtensionRecord& extRecord, int& multiplicity) const

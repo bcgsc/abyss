@@ -546,11 +546,6 @@ void PackedSeq::clearExtension(extDirection dir, uint8_t base)
 	m_extRecord.dir[dir].clearBase(base);
 }
 
-bool PackedSeq::checkExtension(extDirection dir, uint8_t base) const
-{
-	return m_extRecord.dir[dir].checkBase(base);
-}
-
 bool PackedSeq::hasExtension(extDirection dir) const
 {
 	return m_extRecord.dir[dir].hasExtension();

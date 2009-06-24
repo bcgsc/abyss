@@ -56,10 +56,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		// clear the extensions of the sequence
 		void clearExtensions(const PackedSeq& seq, extDirection dir);
 
-		// check if the extension exists
-		ResultPair checkExtension(const PackedSeq& seq,
-				extDirection dir, uint8_t base) const;
-
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
@@ -124,7 +120,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
-		bool checkExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base) const;
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 
