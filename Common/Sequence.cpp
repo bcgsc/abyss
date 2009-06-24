@@ -1,20 +1,8 @@
 #include "Sequence.h"
+#include <algorithm>
 #include <cassert>
 
 using namespace std;
-
-static char complementBaseChar(char base);
-
-// generate the reverse complement of the sequence
-Sequence reverseComplement(const Sequence& s)
-{
-	Sequence rc;
-	rc.reserve(s.length());
-	for (string::const_reverse_iterator iter = s.rbegin();
-			iter != s.rend(); iter++)
-		rc.push_back(complementBaseChar(*iter));
-	return rc;
-}
 
 /** Return the complement of the specified base. */
 char complementBaseChar(char base)
@@ -28,4 +16,13 @@ char complementBaseChar(char base)
 			assert(false);
 			return 0;
 	}
+}
+
+/** Return the reverse complement of the specified sequence. */
+Sequence reverseComplement(const Sequence& s)
+{
+	Sequence rc(s);
+	reverse(rc.begin(), rc.end());
+	transform(rc.begin(), rc.end(), rc.begin(), complementBaseChar);
+	return rc;
 }
