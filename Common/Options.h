@@ -18,6 +18,7 @@ namespace opt {
 	extern FILE* snpFile;
 	extern int verbose;
 	extern std::vector<std::string> inFiles;
+	extern bool colourSpace;
 
 	void parse(int argc, char* const* argv);
 }

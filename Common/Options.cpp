@@ -80,6 +80,9 @@ int verbose = 0;
 /** input FASTA files */
 vector<std::string> inFiles;
 
+/** Colour space sequences */
+bool colourSpace;
+
 static const char *shortopts = "b:e:g:k:l:o:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
