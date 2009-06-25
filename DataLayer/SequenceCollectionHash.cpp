@@ -39,7 +39,7 @@ SequenceCollectionHash::SequenceCollectionHash()
 	} else {
 		// Allocate a big hash for a single processor.
 		m_pSequences = new SequenceDataHash(1<<29);
-		m_pSequences->max_load_factor(0.5);
+		m_pSequences->max_load_factor(0.4);
 	}
 
 	/* sparse_hash_set requires you call set_deleted_key() before
