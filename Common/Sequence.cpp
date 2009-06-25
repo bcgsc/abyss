@@ -1,4 +1,5 @@
 #include "Sequence.h"
+#include "Options.h"
 #include <algorithm>
 #include <cassert>
 
@@ -23,6 +24,8 @@ Sequence reverseComplement(const Sequence& s)
 {
 	Sequence rc(s);
 	reverse(rc.begin(), rc.end());
-	transform(rc.begin(), rc.end(), rc.begin(), complementBaseChar);
+	if (!opt::colourSpace)
+		transform(rc.begin(), rc.end(), rc.begin(),
+				complementBaseChar);
 	return rc;
 }

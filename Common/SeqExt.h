@@ -5,11 +5,6 @@
 
 static const int NUM_BASES = 4;
 
-static inline uint8_t complementBaseCode(uint8_t base)
-{
-    return ~base & 0x3;
-}
-
 class SeqExt
 {
 	public:

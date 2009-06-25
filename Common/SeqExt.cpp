@@ -1,8 +1,11 @@
 #include "SeqExt.h"
+#include "Options.h"
 #include <cassert>
 #include <cstdio>
 
-/** Return the complementary adjacency. */
+/** Return the complementary adjacency.
+ * If the assembly is in colour space, this is a no-op.
+ */
 SeqExt SeqExt::complement() const
 {
 	static const uint8_t complements[16] = {
@@ -10,7 +13,7 @@ SeqExt SeqExt::complement() const
 		0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf
 	};
 	assert(m_record < 1<<NUM_BASES);
-	return SeqExt(complements[m_record]);
+	return opt::colourSpace ? *this : SeqExt(complements[m_record]);
 }
 
 void SeqExt::print() const

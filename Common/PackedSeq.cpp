@@ -1,5 +1,6 @@
 #include "PackedSeq.h"
 #include "HashFunction.h"
+#include "Options.h"
 #include "Sequence.h"
 #include <cstring>
 #include <iostream>
@@ -171,23 +172,14 @@ size_t PackedSeq::getHashCode() const
 	return code;
 }
 
-//
-// Decode this sequence into an ascii string
-//
+/** Return the string representation of this sequence. */
 Sequence PackedSeq::decode() const
 {
-	// allocate space for the new string
-	Sequence outstr;
-	
-	for(unsigned i = 0; i < m_length; i++)
-	{
-		char base = codeToBase(getBaseCode(i));
-		//printf("decoding (%d %d) to %c\n", tripletNumber, baseIndex, base);
-		outstr.push_back(base);
-	}
-	
-	//printf("decode: %s\n", outstr.c_str());
-	return outstr; 
+	Sequence s;
+	s.reserve(m_length);
+	for (unsigned i = 0; i < m_length; i++)
+		s.push_back(codeToBase(getBaseCode(i)));
+	return s;
 }
 
 /** Swap the positions of four bases. */
@@ -425,8 +417,9 @@ void PackedSeq::reverseComplement()
 	Seq seq = load((uint8_t*)m_seq);
 
 	// Complement the bits.
-	for (unsigned i = 0; i < SEQ_WORDS; i++)
-		seq.x[i] = ~seq.x[i];
+	if (!opt::colourSpace)
+		for (unsigned i = 0; i < SEQ_WORDS; i++)
+			seq.x[i] = ~seq.x[i];
 
 	// Shift the bits flush to the right of the double word.
 	shiftRight(&seq, SEQ_BITS - 2*m_length);
@@ -670,7 +663,7 @@ uint8_t PackedSeq::baseToCode(char base)
 char PackedSeq::codeToBase(uint8_t code)
 {
 	assert(code < 4);
-	return "ACGT"[code];
+	return (opt::colourSpace ? "0123" : "ACGT")[code];
 }
 
 PackedSeq reverseComplement(const PackedSeq& seq)

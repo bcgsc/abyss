@@ -116,6 +116,14 @@ unsigned SequenceCollectionHash::cleanup()
 	return count;
 }
 
+/** Return the complement of the specified base.
+ * If the assembly is in colour space, this is a no-op.
+ */
+static inline uint8_t complementBaseCode(uint8_t base)
+{
+	return opt::colourSpace ? base : ~base & 0x3;
+}
+
 // Set a single base extension
 bool SequenceCollectionHash::setBaseExtension(
 		const PackedSeq& seq, extDirection dir, uint8_t base)
