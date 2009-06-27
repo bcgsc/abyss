@@ -562,13 +562,14 @@ void NetworkSequenceCollection::notify(
 //
 void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOpMessage& seqMsg)
 {
+	assert(isLocal(seqMsg.m_seq));
 	switch(seqMsg.m_operation)
 	{
 		case MO_ADD:
-			add(seqMsg.m_seq);
+			m_pLocalSpace->add(seqMsg.m_seq);
 			break;
 		case MO_REMOVE:
-			remove(seqMsg.m_seq);
+			m_pLocalSpace->remove(seqMsg.m_seq);
 			break;
 		default:
 			assert(false);
