@@ -1,8 +1,9 @@
 #include "MessageBuffer.h"
+#include "Options.h"
+#include <iostream>
 
-//
-//
-//
+using namespace std;
+
 MessageBuffer::MessageBuffer(int numNodes, CommLayer* pComm) : m_pCommLayer(pComm)
 {
 	m_msgQueues.resize(numNodes);
@@ -53,6 +54,8 @@ void MessageBuffer::sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDi
 
 void MessageBuffer::queueMessage(int nodeID, Message* message, SendMode mode)
 {
+	if (opt::verbose >= 9)
+		cout << opt::rank << " to " << nodeID << ": " << *message;
 	m_msgQueues[nodeID].push_back(message);	
 	checkQueueForSend(nodeID, mode);	
 }
@@ -131,18 +134,23 @@ void MessageBuffer::flush()
 	}
 }
 
-//
 // Check if all the queues are empty
-//
 bool MessageBuffer::empty() const
 {
-	for(size_t id = 0; id < m_msgQueues.size(); ++id)
-	{
-		if(!m_msgQueues[id].empty())
-		{
-			return false;
+	bool isEmpty = true;
+	for (MessageQueues::const_iterator it = m_msgQueues.begin();
+			it != m_msgQueues.end(); ++it) {
+		if (!it->empty()) {
+			cerr
+				<< opt::rank << ": error: tx buffer should be empty: "
+				<< it->size() << " messages from "
+				<< opt::rank << " to " << it - m_msgQueues.begin()
+				<< '\n';
+			for (MsgBuffer::const_iterator j = it->begin();
+					j != it->end(); ++j)
+				cerr << **j << '\n';
+			isEmpty = false;
 		}
 	}
-	
-	return true;
+	return isEmpty;
 }

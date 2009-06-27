@@ -3,6 +3,7 @@
 
 #include "NetworkDefs.h"
 #include "PackedSeq.h"
+#include <ostream>
 
 // Forward declare the network sequence class
 class NetworkSequenceCollection;
@@ -56,7 +57,14 @@ class Message
 		virtual size_t unserialize(const char* buffer);
 		
 		virtual void print() const { }
-		
+
+		friend std::ostream& operator <<(std::ostream& o,
+				const Message& m)
+		{
+			m.print();
+			return o;
+		}
+
 		MessageType m_type;
 		PackedSeq m_seq;
 };
