@@ -25,6 +25,9 @@ endif
 ifndef n
 $(error missing argument n)
 endif
+ifndef s
+s=100
+endif
 #v=-v
 
 all: $(out)
@@ -66,7 +69,7 @@ endif
 		|sort -nk2,2 -o $*.pair
 
 %.dist: %.len %.hist %.pair
-	DistanceEst $v -k$k -n$n -o $@ $^
+	DistanceEst $v -k$k -s$s -n$n -o $@ $^
 
 # Find overlaps between contigs
 
