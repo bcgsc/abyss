@@ -8,7 +8,7 @@ in?=$(addsuffix $(ext), $(lib))
 else
 lib?=$(basename $(in))
 endif
-out?=$(firstword $(lib))-contigs.fa
+out?=$(notdir $(firstword $(lib)))-contigs.fa
 
 ifndef in
 $(error missing argument in)
