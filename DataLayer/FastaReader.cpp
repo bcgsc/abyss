@@ -51,9 +51,7 @@ Sequence FastaReader::ReadSequence(string& id)
 		// base of the sample, which is not part of the assembly.
 		assert(isalpha(s[0]));
 		s = s.substr(2);
-		opt::colourSpace = true;
-	} else
-		assert(!opt::colourSpace);
+	}
 
 	if (recordType == '>') {
 		// Nothing to do.
