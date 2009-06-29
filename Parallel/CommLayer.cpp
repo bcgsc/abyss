@@ -89,22 +89,16 @@ uint64_t CommLayer::SendCheckPointMessage(int argument)
 	return msg.id;
 }
 
-//
 // Send a control message
-//
 void CommLayer::SendControlMessage(int numNodes, APControl m, int argument)
 {
 	assert(m_pMsgBuffer->empty());
-	// i starts at 1 because the control node does not get the message
-	for(int i = 1; i < numNodes; i++)
-	{
-		SendControlMessageToNode(i, m, argument);
-	}
+	for (int i = 0; i < numNodes; i++)
+		if (i != m_id) // Don't send the message to myself.
+			SendControlMessageToNode(i, m, argument);
 }
 
-//
 // Send a control message to a specific node
-//
 uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
 {
 	assert(m_pMsgBuffer->empty());
