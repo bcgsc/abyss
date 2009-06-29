@@ -474,3 +474,11 @@ void SequenceCollectionHash::load(const char* path)
 	exit(EXIT_FAILURE);
 #endif
 }
+
+/** Indicate that this is a colour-space collection. */
+void SequenceCollectionHash::setColourSpace(bool flag)
+{
+	if (m_pSequences->size() > 0)
+		assert(opt::colourSpace == flag);
+	opt::colourSpace = flag;
+}

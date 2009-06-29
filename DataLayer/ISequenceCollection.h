@@ -94,6 +94,8 @@ class ISequenceCollection
 		virtual void detach(SeqObserver f) = 0;
 
 		virtual void load(const char *path) = 0;
+
+		virtual void setColourSpace(bool flag) = 0;
 };
 
 #endif

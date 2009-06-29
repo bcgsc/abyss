@@ -97,7 +97,17 @@ void loadSequences(ISequenceCollection* seqCollection,
 				count_small++;
 				continue;
 			}
-			
+
+			if (count == 0) {
+				// Detect colour-space reads.
+				seqCollection->setColourSpace(isdigit(iter->at(0)));
+			} else {
+				if (opt::colourSpace)
+					assert(isdigit(iter->at(0)));
+				else
+					assert(isalpha(iter->at(0)));
+			}
+
 			for(int i = 0; i < len - opt::kmerSize  + 1; i++)
 			{
 				PackedSeq sub = iter->substr(i, opt::kmerSize);

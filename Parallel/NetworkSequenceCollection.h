@@ -139,6 +139,14 @@ class NetworkSequenceCollection : public ISequenceCollection
 			m_pLocalSpace->load(path);
 		}
 
+		/** Indicate that this is a colour-space collection. */
+		virtual void setColourSpace(bool flag)
+		{
+			m_pLocalSpace->setColourSpace(flag);
+			m_pComm->SendControlMessage(m_numDataNodes,
+					APC_SET_COLOURSPACE, flag);
+		}
+
 	private:
 		// Observer pattern
 		void notify(const PackedSeq& seq);

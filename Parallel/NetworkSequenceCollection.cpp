@@ -612,6 +612,9 @@ void NetworkSequenceCollection::parseControlMessage()
 	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
 	switch(controlMsg.msgType)
 	{
+		case APC_SET_COLOURSPACE:
+			m_pLocalSpace->setColourSpace(controlMsg.argument);
+			break;
 		case APC_LOAD_COMPLETE:
 			SetState(NAS_LOAD_COMPLETE);
 			break;

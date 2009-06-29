@@ -91,6 +91,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void load(const char *path);
 		void store() const;
 		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
+		virtual void setColourSpace(bool flag);
 
 	private:
 		// Functions to get iterators to the sequence
