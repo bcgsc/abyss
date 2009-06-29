@@ -785,16 +785,16 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	return count;
 }
 
-//
-// Assembly function
-//
-void assemble(ISequenceCollection* seqCollection,
+/** Assemble contigs.
+ * @return the number of contigs assembled
+ */
+unsigned assemble(ISequenceCollection* seqCollection,
 		IFileWriter* fileWriter)
 {
 	Timer timer("Assemble");
-	
-	int contigID = 0;
-	
+
+	unsigned contigID = 0;
+
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
@@ -855,8 +855,9 @@ void assemble(ISequenceCollection* seqCollection,
 
 		seqCollection->pumpNetwork();
 	}
-	
+
 	printf("Assembled %d contigs\n", contigID);
+	return contigID;
 }
 
 //

@@ -88,9 +88,13 @@ int main(int argc, char* const* argv)
 
 	FastaWriter writer(opt::contigsPath.c_str());
 
-	AssemblyAlgorithms::assemble(pSC, &writer);
+	unsigned nContigs = AssemblyAlgorithms::assemble(pSC, &writer);
+	if (nContigs == 0) {
+		fputs("error: no contigs assembled\n", stderr);
+		exit(EXIT_FAILURE);
+	}
 
 	delete pSC;
-	
+
 	return 0;
 }

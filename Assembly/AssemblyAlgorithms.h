@@ -105,8 +105,7 @@ unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 // 
 //
 
-// The actual assembly function, takes in an ISequenceCollection pointer
-void assemble(ISequenceCollection* seqCollection,
+unsigned assemble(ISequenceCollection* seqCollection,
 		IFileWriter* fileWriter);
 
 // A function to process a branch after it has been extended as far as possible
