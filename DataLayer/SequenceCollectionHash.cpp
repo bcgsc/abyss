@@ -370,8 +370,8 @@ size_t SequenceCollectionHash::count() const
 SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(const PackedSeq& seq) const
 {
 	SequenceHashIterPair iters;
-	iters.first = FindSequence(seq);
-	iters.second = FindSequence(reverseComplement(seq));
+	iters.first = m_pSequences->find(seq);
+	iters.second = m_pSequences->find(reverseComplement(seq));
 	return iters;
 }
 
@@ -394,24 +394,15 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 const PackedSeq& SequenceCollectionHash::getSeqAndData(
 		const PackedSeq& key) const
 {
-	SequenceCollectionHashIter i = FindSequence(key);
+	SequenceCollectionHashIter i = m_pSequences->find(key);
 	if (i != m_pSequences->end())
 		return *i;
-	i = FindSequence(reverseComplement(key));
+	i = m_pSequences->find(reverseComplement(key));
 	if (i != m_pSequences->end())
 		return *i;
 	assert(false);
 	exit(EXIT_FAILURE);
 }
-
-//
-// Get the iterator pointing to the sequence
-//
-SequenceCollectionHashIter SequenceCollectionHash::FindSequence(const PackedSeq& seq) const
-{
-	return m_pSequences->find(seq);
-}
-
 
 //
 // Get the iterator pointing to the first sequence in the bin
