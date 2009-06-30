@@ -28,7 +28,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		unsigned cleanup();
 
 		// Print the load of the hash table.
-		virtual void printLoad() const;
+		void printLoad() const;
 
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
@@ -78,17 +78,17 @@ class SequenceCollectionHash : public ISequenceCollection
 		size_t count() const { return m_pSequences->size(); }
 
 		// Not a network sequence collection. Nothing to do.
-		virtual unsigned pumpNetwork() { return 0; }
+		unsigned pumpNetwork() { return 0; }
 
 		/** Attach the specified observer. */
-		virtual void attach(SeqObserver f)
+		void attach(SeqObserver f)
 		{
 			assert(m_seqObserver == NULL);
 			m_seqObserver = f;
 		}
 
 		/** Detach the specified observer. */
-		virtual void detach(SeqObserver f)
+		void detach(SeqObserver f)
 		{
 			assert(m_seqObserver == f);
 			m_seqObserver = NULL;
@@ -97,7 +97,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void load(const char *path);
 		void store() const;
 		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
-		virtual void setColourSpace(bool flag);
+		void setColourSpace(bool flag);
 
 	private:
 		// Functions to get iterators to the sequence

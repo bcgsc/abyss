@@ -83,7 +83,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Return the number of sequences in the collection
 		size_t count() const;
 
-		virtual void printLoad() const { m_pLocalSpace->printLoad(); }
+		void printLoad() const { m_pLocalSpace->printLoad(); }
 
 		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq, extDirection dir,
@@ -128,10 +128,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void handleRemoveExtensionMessage(int senderID, const RemoveExtensionMessage& message);
 		void handleSequenceDataRequest(int senderID, SeqDataRequest& message);
 		void handleSequenceDataResponse(int senderID, SeqDataResponse& message);		
-		
+
 		// Observer pattern, not implemented.
-		virtual void attach(SeqObserver f) { (void)f; }
-		virtual void detach(SeqObserver f) { (void)f; }
+		void attach(SeqObserver f) { (void)f; }
+		void detach(SeqObserver f) { (void)f; }
 
 		/** Load this collection from disk. */
 		void load(const char *path)
@@ -140,7 +140,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		}
 
 		/** Indicate that this is a colour-space collection. */
-		virtual void setColourSpace(bool flag)
+		void setColourSpace(bool flag)
 		{
 			m_pLocalSpace->setColourSpace(flag);
 			m_pComm->SendControlMessage(m_numDataNodes,
