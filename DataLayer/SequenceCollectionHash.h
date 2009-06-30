@@ -56,20 +56,26 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		const PackedSeq& getSeqAndData(const PackedSeq& key) const;
 
-		// Get the iterator pointing to the first sequence in the bin
-		SequenceCollectionHashIter getStartIter() const;
-		
-		// Get the iterator pointing to the last sequence in the bin
-		SequenceCollectionHashIter getEndIter() const;
-		
+		/** Returns an iterator referring to the first element. */
+		SequenceCollectionHashIter getStartIter() const
+		{
+			return m_pSequences->begin();
+		}
+
+		/** Returns an iterator referring to the last element. */
+		SequenceCollectionHashIter getEndIter() const
+		{
+			return m_pSequences->end();
+		}
+
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq);
 
 		// does this sequence have an extension?
 		bool hasChild(const PackedSeq& seq);
-		
-		// Return the number of sequences in the collection
-		size_t count() const;
+
+		/** Return the number of sequences in this collection. */
+		size_t count() const { return m_pSequences->size(); }
 
 		// Not a network sequence collection. Nothing to do.
 		virtual unsigned pumpNetwork() { return 0; }

@@ -356,15 +356,6 @@ SeqExt SequenceCollectionHash::getExtensionByIter(SequenceCollectionHashIter& se
 }
 
 //
-// Return the number of sequences held in the collection
-// Note: some sequences will be marked as DELETE and will still be counted
-//
-size_t SequenceCollectionHash::count() const
-{
-	return m_pSequences->size();
-}
-
-//
 // Get the iterators pointing to the sequence and its reverse complement
 //
 SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(const PackedSeq& seq) const
@@ -402,22 +393,6 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 		return *i;
 	assert(false);
 	exit(EXIT_FAILURE);
-}
-
-//
-// Get the iterator pointing to the first sequence in the bin
-//
-SequenceCollectionHashIter SequenceCollectionHash::getStartIter() const
-{
-	return m_pSequences->begin();
-}
-
-//
-// Get the iterator pointing to the last sequence in the bin
-//
-SequenceCollectionHashIter SequenceCollectionHash::getEndIter() const
-{
-	return m_pSequences->end();
 }
 
 #include "Options.h"
