@@ -35,6 +35,8 @@ static const char *USAGE_MESSAGE =
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
+"      --fr              expect forward-reverse orientation [default]\n"
+"      --ff              expect forward-forward orientation\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -44,6 +46,11 @@ static const char *USAGE_MESSAGE =
 namespace opt {
 	static int k;
 	static unsigned c;
+
+	/** True if the expected orientation of mate pairs is
+	 * forward-reverse. */
+	static int fr = true;
+
 	static int verbose;
 	static string adjPath;
 	static string distPath;
@@ -56,6 +63,8 @@ static const char* shortopts = "a:d:k:f:h:c:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "fr",      no_argument,       &opt::fr, 1 },
+	{ "ff",      no_argument,       &opt::fr, 0 },
 	{ "dist",    required_argument, NULL, 'd' },
 	{ "adj",     required_argument, NULL, 'a' },
 	{ "kmer",    required_argument, NULL, 'k' },
@@ -100,11 +109,21 @@ string makePairID(string id);
 static int fragmentSize(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
-	if (a0.isRC == a1.isRC)
-		return INT_MIN;
-	const Alignment& f = a0.isRC ? a1 : a0;
-	const Alignment& r = a0.isRC ? a0 : a1;
-	return r - f;
+	if (opt::fr) {
+		if (a0.isRC == a1.isRC)
+			return INT_MIN;
+		const Alignment& f = a0.isRC ? a1 : a0;
+		const Alignment& r = a0.isRC ? a0 : a1;
+		return r - f;
+	} else {
+		if (a0.isRC != a1.isRC)
+			return INT_MIN;
+		/* todo fixme: The correct order of the fragments needs to be
+		 * determined to decide whether the distance is positive or
+		 * negative. Using abs to force a positive distance is a hack.
+		 */
+		return abs(a0 - a1);
+	}
 }
 
 static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
