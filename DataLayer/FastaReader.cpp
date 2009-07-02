@@ -3,10 +3,19 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cerrno>
 #include <cstring>
 #include <iostream>
 
 using namespace std;
+
+static void assert_open(ifstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
 
 FastaReader::FastaReader(const char* path)
 	: m_inPath(path), m_inFile(path),
@@ -14,7 +23,7 @@ FastaReader::FastaReader(const char* path)
 	m_nonacgt(0)
 {
 	if (strcmp(path, "-") != 0)
-		assert(m_inFile.is_open());
+		assert_open(m_inFile, path);
 	if (m_fileHandle.peek() == EOF)
 		fprintf(stderr, "warning: `%s' is empty\n", path);
 }
