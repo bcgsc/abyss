@@ -409,7 +409,7 @@ int main(int argc, char* const* argv)
 
 	if (opt::verbose > 0)
 		cerr << "Mateless: " << alignTable.size()
-			<< "Unaligned: " << stats.numMissed
+			<< " Unaligned: " << stats.numMissed
 			<< " Same: " << stats.numSame
 			<< " Invalid: " << stats.numInvalid
 			<< " Diff: " << stats.numDifferent
