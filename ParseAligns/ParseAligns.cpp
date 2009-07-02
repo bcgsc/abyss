@@ -340,7 +340,7 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 			doReadIntegrity(iter);
 
 		if(pairIter != out.end()) {
-			handleAlignmentPair(iter, pairIter);
+			handleAlignmentPair(pairIter, iter);
 
 			// Erase the pair as its not needed (faster to mark it as invalid?)
 			out.erase(pairIter);
