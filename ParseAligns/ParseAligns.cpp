@@ -81,7 +81,7 @@ static struct {
 	int alignments;
 	int numDifferent;
 	int numSame;
-	int numInvalid;
+	int numMisoriented;
 	int numMissed;
 	int numMulti;
 	int numSplit;
@@ -290,7 +290,7 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 							}
 							stats.numSame++;
 						} else
-							stats.numInvalid++;
+							stats.numMisoriented++;
 					}
 				}
 				else
@@ -430,7 +430,7 @@ int main(int argc, char* const* argv)
 		cerr << "Mateless: " << alignTable.size()
 			<< " Unaligned: " << stats.numMissed
 			<< " Same: " << stats.numSame
-			<< " Invalid: " << stats.numInvalid
+			<< " Misoriented: " << stats.numMisoriented
 			<< " Diff: " << stats.numDifferent
 			<< " Multi: " << stats.numMulti
 			<< " Split: " << stats.numSplit
