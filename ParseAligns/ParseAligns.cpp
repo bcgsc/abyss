@@ -75,7 +75,7 @@ static struct {
 	int numInvalid;
 	int numMissed;
 	int numMulti;
-	int numNonSingle;
+	int numSplit;
 } stats;
 static ostream& pairedAlignFile = cout;
 static ofstream fragFile;
@@ -248,7 +248,7 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		stats.numMulti++;
 	} else if (iter->second.size() > MAX_SPAN
 			&& pairIter->second.size() > MAX_SPAN) {
-		stats.numNonSingle++;
+		stats.numSplit++;
 	} else {
 		// Iterate over the vectors, outputting the aligments
 		for(AlignmentVector::const_iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
@@ -414,7 +414,7 @@ int main(int argc, char* const* argv)
 			<< " Invalid: " << stats.numInvalid
 			<< " Diff: " << stats.numDifferent
 			<< " Multi: " << stats.numMulti
-			<< " Non-singular: " << stats.numNonSingle
+			<< " Split: " << stats.numSplit
 			<< endl;
 
 	if (!opt::distPath.empty())
