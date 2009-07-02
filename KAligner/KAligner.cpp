@@ -37,6 +37,7 @@ static const char *USAGE_MESSAGE =
 namespace opt {
 	static unsigned k;
 	static int verbose;
+	extern bool colourSpace;
 }
 
 static const char* shortopts = "k:o:v";
@@ -138,6 +139,17 @@ static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
 		double coverage;
 
 		PairedAlgorithms::parseContigFromFile(fileHandle, contigID, seq, length, coverage);
+
+		if (count == 0) {
+			// Detect colour-space contigs.
+			opt::colourSpace = isdigit(seq[0]);
+		} else {
+			if (opt::colourSpace)
+				assert(isdigit(seq[0]));
+			else
+				assert(isalpha(seq[0]));
+		}
+
 		aligner.addReferenceSequence(contigID, seq);
 
 		count++;
@@ -157,13 +169,18 @@ static void alignReadsToDB(string readsFile, Aligner& aligner)
 
 	unsigned count = 0;
 	while (fileHandle.isGood()) {
-		string readID;
-		Sequence readSeq = fileHandle.ReadSequence(readID);
+		string id;
+		Sequence seq = fileHandle.ReadSequence(id);
 
-		cout << readID;
-		size_t pos = readSeq.find_first_not_of("ACGT");
+		if (opt::colourSpace)
+			assert(isdigit(seq[0]));
+		else
+			assert(isalpha(seq[0]));
+
+		cout << id;
+		size_t pos = seq.find_first_not_of("ACGT0123");
 		if (pos == string::npos)
-			aligner.alignRead(readSeq, out);
+			aligner.alignRead(seq, out);
 		cout << '\n';
 		assert(cout.good());
 
