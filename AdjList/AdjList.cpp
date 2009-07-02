@@ -1,8 +1,8 @@
+#include "FastaReader.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
 #include <algorithm>
 #include <cassert>
-#include <cerrno>
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
@@ -51,15 +51,6 @@ static const struct option longopts[] = {
 };
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
-void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq);
-
-static void assert_open(std::ifstream& f, const std::string& p)
-{
-	if (f.is_open())
-		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
-	exit(EXIT_FAILURE);
-}
 
 /** A contig ID and its end sequences. */
 struct ContigEndSeq {
@@ -71,27 +62,16 @@ struct ContigEndSeq {
 		: id(id), l(l), r(r) { }
 };
 
-static void readContigs(istream& in, vector<ContigEndSeq>* pContigs)
+static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 {
-	while (!in.eof() && in.peek() != EOF) {
+	FastaReader in(path.c_str());
+	while (in.isGood()) {
 		ContigID id;
-		Sequence seq;
-		readIdAndSeq(in, id, seq);
-		assert(in.good());
+		Sequence seq = in.ReadSequence(id);
 		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
 		PackedSeq seqr = seq.substr(0, opt::k);
 		pContigs->push_back(ContigEndSeq(id, seql, seqr));
 	}
-	assert(in.eof());
-}
-
-static void readContigsFile(string path,
-		vector<ContigEndSeq>* pContigs)
-{
-	ifstream fin(path.c_str());
-	assert_open(fin, path);
-	readContigs(fin, pContigs);
-	fin.close();
 }
 
 int main(int argc, char** argv)
@@ -127,9 +107,9 @@ int main(int argc, char** argv)
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
-				bind2nd(ptr_fun(readContigsFile), &contigs));
+				bind2nd(ptr_fun(readContigs), &contigs));
 	} else
-		readContigs(cin, &contigs);
+		readContigs("-", &contigs);
 
 	// Generate a k-mer -> contig lookup table for all the contig ends
 	std::map<PackedSeq, ContigID> contigLUTs[2];
@@ -206,24 +186,6 @@ int main(int argc, char** argv)
 		cerr << "vertices: " << numVerts << " "
 			"edges: " << numEdges << endl;
 } 
-
-void readIdAndSeq(istream& inStream, ContigID& id, Sequence& seq)
-{
-
-  // Read the contig id and the sequence
-  std::string tempName;
-  inStream >> tempName;
-      
-  // Chop the first character to produce the name
-  id = tempName.substr(1);
-  
-  // Read to the end of the line
-  std::string discard;
-  getline(inStream, discard);
-  
-  // Read in the sequence
-  getline(inStream, seq);
-}
 
 void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs)
 {
