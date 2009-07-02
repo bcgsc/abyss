@@ -45,11 +45,10 @@ Sequence FastaReader::ReadSequence(string& id)
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
 
 	assert(s.length() > 2);
-	if (isdigit(s[1])) {
+	if (isalpha(s[0]) && isdigit(s[1])) {
 		// The first character is the primer base. The second
 		// character is the dibase read of the primer and the first
 		// base of the sample, which is not part of the assembly.
-		assert(isalpha(s[0]));
 		s = s.substr(2);
 	}
 
