@@ -36,6 +36,7 @@ static const char *USAGE_MESSAGE =
 namespace opt {
 	static int k;
 	static int verbose;
+	extern bool colourSpace;
 }
 
 static const char* shortopts = "k:v";
@@ -64,10 +65,22 @@ struct ContigEndSeq {
 
 static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 {
+	unsigned count = 0;
 	FastaReader in(path.c_str());
 	while (in.isGood()) {
 		ContigID id;
 		Sequence seq = in.ReadSequence(id);
+
+		if (count++ == 0) {
+			// Detect colour-space contigs.
+			opt::colourSpace = isdigit(seq[0]);
+		} else {
+			if (opt::colourSpace)
+				assert(isdigit(seq[0]));
+			else
+				assert(isalpha(seq[0]));
+		}
+
 		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
 		PackedSeq seqr = seq.substr(0, opt::k);
 		pContigs->push_back(ContigEndSeq(id, seql, seqr));
