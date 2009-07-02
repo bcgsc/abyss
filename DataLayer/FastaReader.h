@@ -27,10 +27,13 @@ class FastaReader : public IFileReader
 		// Read sequences into the vector as packed seqs
 		// Returns true unless eof has been reached
 		virtual bool ReadSequences(SequenceVector& outseqs);
-		
+
 		// Returns true unless eof has been reached
-		bool isGood();
-				
+		bool isGood()
+		{
+			return !m_fileHandle.eof() && m_fileHandle.peek() != EOF;
+		}
+
 		// Returns the number of sequences containing non-ACGT
 		// characters.
 		virtual unsigned getNonACGT() { return m_nonacgt; }

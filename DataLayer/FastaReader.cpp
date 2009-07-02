@@ -97,8 +97,3 @@ bool FastaReader::ReadSequences(SequenceVector& outseqs)
 	}
 	return true;
 }
-
-bool FastaReader::isGood()
-{
-	return !(m_fileHandle.eof() || m_fileHandle.peek() == EOF);
-}
