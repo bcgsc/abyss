@@ -407,9 +407,9 @@ int main(int argc, char* const* argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 
-	stats.numMissed += alignTable.size();
 	if (opt::verbose > 0)
-		cerr << "Unmatched: " << stats.numMissed
+		cerr << "Mateless: " << alignTable.size()
+			<< "Unaligned: " << stats.numMissed
 			<< " Same: " << stats.numSame
 			<< " Invalid: " << stats.numInvalid
 			<< " Diff: " << stats.numDifferent
