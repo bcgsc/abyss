@@ -51,6 +51,7 @@ namespace opt {
 	static int verbose;
 	static int mask;
 	static int scaffold;
+	extern bool colourSpace;
 	static string out;
 }
 
@@ -346,6 +347,9 @@ int main(int argc, char *const argv[])
 	string estPath(argv[optind++]);
 
 	PairedAlgorithms::readContigVec(contigPath, contigs);
+	assert(!contigs.empty());
+	opt::colourSpace = isdigit(contigs[0].seq[0]);
+
 	loadGraphFromAdjFile(&contigGraph, lenPath, adjPath);
 
 	ofstream out(opt::out.c_str());
