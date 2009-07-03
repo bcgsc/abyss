@@ -295,9 +295,19 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				}
 				else
 				{
+					const Alignment& a0 = *refAlignIter;
+					// If the expected orientation is forward-forward,
+					// then reverse the second alignment, so that the
+					// alignment is forward-reverse, which is required
+					// by DistanceEst.
+					Alignment a1 = opt::fr ? *pairAlignIter
+						: pairAlignIter->flipQuery();
 					// Print the alignment and the swapped alignment
-					pairedAlignFile << currID << " " << *refAlignIter << " " << pairID << " " << *pairAlignIter << "\n";
-					pairedAlignFile << pairID << " " << *pairAlignIter << " " << currID << " " << *refAlignIter << "\n";
+					pairedAlignFile
+						<< currID << ' ' << a0 << ' '
+						<< pairID << ' ' << a1 << '\n'
+						<< pairID << ' ' << a1 << ' '
+						<< currID << ' ' << a0 << '\n';
 					assert(pairedAlignFile.good());
 					stats.numDifferent++;
 				}

@@ -71,6 +71,18 @@ struct Alignment
 		return rc;
 	}
 
+	/** Return an alignment of the reverse complement of the query to
+	 * the same target.
+	 */
+	Alignment flipQuery() const
+	{
+		Alignment rc(*this);
+		unsigned qend = read_start_pos + align_length;
+		rc.read_start_pos = read_length - qend;
+		rc.isRC = !isRC;
+		return rc;
+	}
+
 	static int calculateReverseReadStart(int read_start_pos,
 			int read_length, int align_length)
 	{
