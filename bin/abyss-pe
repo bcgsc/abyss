@@ -64,7 +64,7 @@ endif
 # Estimate distances between contigs
 
 %.pair %.hist: %.fa
-	cat $(in) |KAligner $v -k$k - $< \
+	KAligner $v -k$k $(in) $< \
 		|ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
