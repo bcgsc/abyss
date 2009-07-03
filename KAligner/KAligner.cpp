@@ -12,6 +12,8 @@
 #include <getopt.h>
 #include <sstream>
 #include <string>
+#include <pthread.h>
+#include <semaphore.h>
 
 using namespace std;
 
@@ -29,6 +31,8 @@ static const char *USAGE_MESSAGE =
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -j, --threads=THREADS the max number of threads created\n"
+"                        set to 0 for one thread per reads file\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -37,16 +41,18 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	static unsigned k;
+	static int threads = 1;
 	static int verbose;
 	extern bool colourSpace;
 }
 
-static const char* shortopts = "k:o:v";
+static const char* shortopts = "k:o:j:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -62,9 +68,14 @@ static Aligner *aligner;
 static unsigned readCount;
 static pthread_mutex_t mutexCout, mutexCerr;
 static pthread_attr_t attr;
+static sem_t activeThreads;
 
 static void getReadFiles(string readsFile, vector<pthread_t>* threads)
 {
+	// Ensure we don't create more than opt::threads threads at a time.
+	if (opt::threads > 0)
+		sem_wait(&activeThreads);
+
 	if (opt::verbose > 0) {
 		pthread_mutex_lock(&mutexCerr);
 		cerr << "Reading `" << readsFile << "'...\n";
@@ -89,6 +100,7 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -128,6 +140,8 @@ int main(int argc, char** argv)
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&mutexCout, NULL);
 	pthread_mutex_init(&mutexCerr, NULL);
+	if (opt::threads > 0)
+		sem_init(&activeThreads, 0, opt::threads);
 
 	// Make the threads joinable so this main thread can wait untill
 	// they are finished.
@@ -238,5 +252,7 @@ void *alignReadsToDB(void *readsFile)
 			pthread_mutex_unlock(&mutexCerr);
 		}
 	}
+	if (opt::threads > 0)
+		sem_post(&activeThreads);
 	pthread_exit(NULL);
 }
