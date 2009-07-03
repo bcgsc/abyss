@@ -56,6 +56,13 @@ static const struct option longopts[] = {
 static void readContigsIntoDB(string refFastaFile, Aligner& aligner);
 static void alignReadsToDB(string readsFile, Aligner& aligner);
 
+static void getReadFiles(string readsFile, Aligner* aligner)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << readsFile << "'...\n";
+	alignReadsToDB(readsFile, *aligner);
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -83,9 +90,6 @@ int main(int argc, char** argv)
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 2) {
-		cerr << PROGRAM ": too many arguments\n";
-		die = true;
 	}
 
 	if (die) {
@@ -94,18 +98,17 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	string readsFile(argv[optind++]);
-	string refFastaFile(argv[optind++]);
+	string refFastaFile(argv[argc - 1]);
 
 	if (opt::verbose > 0)
 		cerr << "k: " << opt::k
-			<< " Query: " << readsFile
 			<< " Target: " << refFastaFile
 			<< endl;
 
 	Aligner aligner(opt::k);
 	readContigsIntoDB(refFastaFile, aligner);
-	alignReadsToDB(readsFile, aligner);
+	for_each(argv + optind, argv + argc - 1,
+			bind2nd(ptr_fun(getReadFiles), &aligner));
 	return 0;
 }
 
