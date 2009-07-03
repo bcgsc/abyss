@@ -3,6 +3,7 @@
 #include "PrefixIterator.h"
 #include "FastaReader.h"
 #include <cassert>
+#include <cctype>
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>

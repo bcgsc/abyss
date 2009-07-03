@@ -7,6 +7,7 @@
 #include "Timer.h"
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 

@@ -3,6 +3,7 @@
 #include "PairUtils.h"
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
