@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 		cerr << "Aligned " << g_readCount << " reads\n";
 
 	delete g_aligner;
-	pthread_exit(NULL);
+	return 0;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -245,5 +245,5 @@ void *alignReadsToDB(void* readsFile)
 	}
 	if (opt::threads > 0)
 		sem_post(&g_activeThreads);
-	pthread_exit(NULL);
+	return NULL;
 }
