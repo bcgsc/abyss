@@ -69,7 +69,8 @@ static unsigned g_readCount;
 static pthread_mutex_t g_mutexCout, g_mutexCerr;
 static sem_t g_activeThreads;
 
-static void getReadFiles(string readsFile, vector<pthread_t>* threads)
+static void getReadFiles(const char *readsFile,
+		vector<pthread_t>* threads)
 {
 	// Ensure we don't create more than opt::threads threads at a time.
 	if (opt::threads > 0)
@@ -81,12 +82,8 @@ static void getReadFiles(string readsFile, vector<pthread_t>* threads)
 		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
-	// Create a copy of the readsFile string to prevent it from being
-	// overwriten in next iteration.
-	string* temp = new string(readsFile);
-
 	pthread_t thread;
-	pthread_create(&thread, NULL, alignReadsToDB, (void*) temp);
+	pthread_create(&thread, NULL, alignReadsToDB, (void*)readsFile);
 	threads->push_back(thread);
 }
 
@@ -213,10 +210,9 @@ static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
 	fileHandle.close();
 }
 
-void *alignReadsToDB(void *readsFile)
+void *alignReadsToDB(void* readsFile)
 {
-	FastaReader fileHandle(((string*)readsFile)->c_str());
-	delete (string*)readsFile;
+	FastaReader fileHandle((const char *)readsFile);
 
 	ostringstream output;
 	prefix_ostream_iterator<Alignment> out(output, "\t");
