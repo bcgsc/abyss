@@ -64,22 +64,21 @@ static void readContigsIntoDB(string refFastaFile, Aligner& aligner);
 void *alignReadsToDB(void *arg);
 
 // Global variables
-static Aligner *aligner;
-static unsigned readCount;
-static pthread_mutex_t mutexCout, mutexCerr;
-static pthread_attr_t attr;
-static sem_t activeThreads;
+static Aligner *g_aligner;
+static unsigned g_readCount;
+static pthread_mutex_t g_mutexCout, g_mutexCerr;
+static sem_t g_activeThreads;
 
 static void getReadFiles(string readsFile, vector<pthread_t>* threads)
 {
 	// Ensure we don't create more than opt::threads threads at a time.
 	if (opt::threads > 0)
-		sem_wait(&activeThreads);
+		sem_wait(&g_activeThreads);
 
 	if (opt::verbose > 0) {
-		pthread_mutex_lock(&mutexCerr);
+		pthread_mutex_lock(&g_mutexCerr);
 		cerr << "Reading `" << readsFile << "'...\n";
-		pthread_mutex_unlock(&mutexCerr);
+		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
 	// Create a copy of the readsFile string to prevent it from being
@@ -87,7 +86,7 @@ static void getReadFiles(string readsFile, vector<pthread_t>* threads)
 	string* temp = new string(readsFile);
 
 	pthread_t thread;
-	pthread_create(&thread, &attr, alignReadsToDB, (void*) temp);
+	pthread_create(&thread, NULL, alignReadsToDB, (void*) temp);
 	threads->push_back(thread);
 }
 
@@ -134,21 +133,16 @@ int main(int argc, char** argv)
 			<< " Target: " << refFastaFile
 			<< endl;
 
-	aligner = new Aligner(opt::k);
-	readContigsIntoDB(refFastaFile, *aligner);
+	g_aligner = new Aligner(opt::k);
+	readContigsIntoDB(refFastaFile, *g_aligner);
 
 	// Need to initialize mutex's before threads are created.
-	pthread_mutex_init(&mutexCout, NULL);
-	pthread_mutex_init(&mutexCerr, NULL);
+	pthread_mutex_init(&g_mutexCout, NULL);
+	pthread_mutex_init(&g_mutexCerr, NULL);
 	if (opt::threads > 0)
-		sem_init(&activeThreads, 0, opt::threads);
+		sem_init(&g_activeThreads, 0, opt::threads);
 
-	// Make the threads joinable so this main thread can wait untill
-	// they are finished.
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-	readCount = 0;
+	g_readCount = 0;
 	vector<pthread_t> threads;
 	for_each(argv + optind, argv + argc - 1,
 			bind2nd(ptr_fun(getReadFiles), &threads));
@@ -159,8 +153,9 @@ int main(int argc, char** argv)
 		pthread_join(threads[i], &status);
 
 	if (opt::verbose > 0)
-		cerr << "Aligned " << readCount << " reads\n";
+		cerr << "Aligned " << g_readCount << " reads\n";
 
+	delete g_aligner;
 	pthread_exit(NULL);
 }
 
@@ -221,6 +216,7 @@ static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
 void *alignReadsToDB(void *readsFile)
 {
 	FastaReader fileHandle(((string*)readsFile)->c_str());
+	delete (string*)readsFile;
 
 	ostringstream output;
 	prefix_ostream_iterator<Alignment> out(output, "\t");
@@ -236,23 +232,23 @@ void *alignReadsToDB(void *readsFile)
 
 		size_t pos = seq.find_first_not_of("ACGT0123");
 		if (pos == string::npos)
-			aligner->alignRead(seq, out);
+			g_aligner->alignRead(seq, out);
 
-		pthread_mutex_lock(&mutexCout);
+		pthread_mutex_lock(&g_mutexCout);
 		cout << id << output.str() << '\n';
 		assert(cout.good());
-		pthread_mutex_unlock(&mutexCout);
+		pthread_mutex_unlock(&g_mutexCout);
 
 		output.str("");
 
 		if (opt::verbose > 0) {
-			pthread_mutex_lock(&mutexCerr);
-			if (++readCount % 1000000 == 0)
-				cerr << "Aligned " << readCount << " reads\n";
-			pthread_mutex_unlock(&mutexCerr);
+			pthread_mutex_lock(&g_mutexCerr);
+			if (++g_readCount % 1000000 == 0)
+				cerr << "Aligned " << g_readCount << " reads\n";
+			pthread_mutex_unlock(&g_mutexCerr);
 		}
 	}
 	if (opt::threads > 0)
-		sem_post(&activeThreads);
+		sem_post(&g_activeThreads);
 	pthread_exit(NULL);
 }
