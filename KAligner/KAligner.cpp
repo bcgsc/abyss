@@ -69,8 +69,7 @@ static unsigned g_readCount;
 static pthread_mutex_t g_mutexCout, g_mutexCerr;
 static sem_t g_activeThreads;
 
-static void getReadFiles(const char *readsFile,
-		vector<pthread_t>* threads)
+static pthread_t getReadFiles(const char *readsFile)
 {
 	// Ensure we don't create more than opt::threads threads at a time.
 	if (opt::threads > 0)
@@ -84,7 +83,7 @@ static void getReadFiles(const char *readsFile,
 
 	pthread_t thread;
 	pthread_create(&thread, NULL, alignReadsToDB, (void*)readsFile);
-	threads->push_back(thread);
+	return thread;
 }
 
 int main(int argc, char** argv)
@@ -141,8 +140,8 @@ int main(int argc, char** argv)
 
 	g_readCount = 0;
 	vector<pthread_t> threads;
-	for_each(argv + optind, argv + argc - 1,
-			bind2nd(ptr_fun(getReadFiles), &threads));
+	transform(argv + optind, argv + argc - 1, back_inserter(threads),
+			getReadFiles);
 
 	void *status;
 	// Wait for all threads to finish.
