@@ -25,8 +25,11 @@ endif
 ifndef n
 $(error missing argument n)
 endif
-ifndef s
-s=100
+s?=100
+ifdef np
+j?=$(np)
+else
+j?=1
 endif
 #v=-v
 
@@ -64,7 +67,7 @@ endif
 # Estimate distances between contigs
 
 %.pair %.hist: %.fa
-	KAligner $v -k$k $(in) $< \
+	KAligner $v -j$j -k$k $(in) $< \
 		|ParseAligns $v -k$k -h $*.hist \
 		|sort -nk2,2 -o $*.pair
 
