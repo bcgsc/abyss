@@ -109,21 +109,11 @@ string makePairID(string id);
 static int fragmentSize(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
-	if (opt::fr) {
-		if (a0.isRC == a1.isRC)
-			return INT_MIN;
-		const Alignment& f = a0.isRC ? a1 : a0;
-		const Alignment& r = a0.isRC ? a0 : a1;
-		return r - f;
-	} else {
-		if (a0.isRC != a1.isRC)
-			return INT_MIN;
-		/* todo fixme: The correct order of the fragments needs to be
-		 * determined to decide whether the distance is positive or
-		 * negative. Using abs to force a positive distance is a hack.
-		 */
-		return abs(a0 - a1);
-	}
+	if (a0.isRC == a1.isRC)
+		return INT_MIN;
+	const Alignment& f = a0.isRC ? a1 : a0;
+	const Alignment& r = a0.isRC ? a0 : a1;
+	return r - f;
 }
 
 static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
@@ -274,14 +264,19 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		{
 			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
 			{
+				// If the expected orientation is forward-forward,
+				// then reverse the first alignment, so that the
+				// alignment is forward-reverse, which is required
+				// by DistanceEst.
+				const Alignment& a0 = opt::fr ? *refAlignIter
+					: refAlignIter->flipQuery();
+				const Alignment& a1 = *pairAlignIter;
+
 				// Are they on the same contig and the ONLY alignments?
-				if(refAlignIter->contig == pairAlignIter->contig)
-				{
+				if (a0.contig == a1.contig) {
 					if((iter->second.size() == 1 && pairIter->second.size() == 1))
 					{
-						int size = fragmentSize(
-								*refAlignIter,
-								*pairAlignIter);
+						int size = fragmentSize(a0, a1);
 						if (size > INT_MIN) {
 							histogram.addDataPoint(size);
 							if (!opt::fragPath.empty()) {
@@ -295,13 +290,6 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				}
 				else
 				{
-					const Alignment& a0 = *refAlignIter;
-					// If the expected orientation is forward-forward,
-					// then reverse the second alignment, so that the
-					// alignment is forward-reverse, which is required
-					// by DistanceEst.
-					Alignment a1 = opt::fr ? *pairAlignIter
-						: pairAlignIter->flipQuery();
 					// Print the alignment and the swapped alignment
 					pairedAlignFile
 						<< currID << ' ' << a0 << ' '
