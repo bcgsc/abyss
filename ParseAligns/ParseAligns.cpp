@@ -238,6 +238,23 @@ static void generateAdjFile()
 	adjFile.close();
 }
 
+/** A pair of alignments. */
+typedef pair<Alignment, Alignment> AlignmentPair;
+
+/**
+ * Return a pair of alignments flipped as necessary to produce an
+ * alignment pair whose expected orientation is forward-reverse.
+ * If the expected orientation is forward-forward, then reverse the
+ * first alignment, so that the alignment is forward-reverse, which is
+ * required by DistanceEst.
+ */
+static const AlignmentPair flipAlignments(const AlignmentPair& a)
+{
+	return make_pair(
+			opt::fr ? a.first : a.first.flipQuery(),
+			a.second);
+}
+
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		ReadAlignMap::const_iterator pairIter)
 {
@@ -264,19 +281,14 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		{
 			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
 			{
-				// If the expected orientation is forward-forward,
-				// then reverse the first alignment, so that the
-				// alignment is forward-reverse, which is required
-				// by DistanceEst.
-				const Alignment& a0 = opt::fr ? *refAlignIter
-					: refAlignIter->flipQuery();
-				const Alignment& a1 = *pairAlignIter;
+				const AlignmentPair& a = flipAlignments(
+						make_pair(*refAlignIter, *pairAlignIter));
 
 				// Are they on the same contig and the ONLY alignments?
-				if (a0.contig == a1.contig) {
+				if (a.first.contig == a.second.contig) {
 					if((iter->second.size() == 1 && pairIter->second.size() == 1))
 					{
-						int size = fragmentSize(a0, a1);
+						int size = fragmentSize(a.first, a.second);
 						if (size > INT_MIN) {
 							histogram.addDataPoint(size);
 							if (!opt::fragPath.empty()) {
@@ -292,10 +304,10 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				{
 					// Print the alignment and the swapped alignment
 					pairedAlignFile
-						<< currID << ' ' << a0 << ' '
-						<< pairID << ' ' << a1 << '\n'
-						<< pairID << ' ' << a1 << ' '
-						<< currID << ' ' << a0 << '\n';
+						<< currID << ' ' << a.first << ' '
+						<< pairID << ' ' << a.second << '\n'
+						<< pairID << ' ' << a.second << ' '
+						<< currID << ' ' << a.first << '\n';
 					assert(pairedAlignFile.good());
 					stats.numDifferent++;
 				}
