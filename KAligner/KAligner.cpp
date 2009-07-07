@@ -223,10 +223,9 @@ void *alignReadsToDB(void* readsFile)
 
 		ostringstream output;
 		size_t pos = seq.find_first_not_of("ACGT0123");
-		if (pos == string::npos) {
-			prefix_ostream_iterator<Alignment> out(output, "\t");
-			g_aligner->alignRead(seq, out);
-		}
+		if (pos == string::npos)
+			g_aligner->alignRead(seq,
+					prefix_ostream_iterator<Alignment>(output, "\t"));
 
 		pthread_mutex_lock(&g_mutexCout);
 		cout << id << output.str() << '\n';
