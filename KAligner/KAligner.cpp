@@ -225,6 +225,7 @@ void *alignReadsToDB(void* readsFile)
 		else
 			assert(isalpha(seq[0]));
 
+		output.clear();
 		size_t pos = seq.find_first_not_of("ACGT0123");
 		if (pos == string::npos)
 			g_aligner->alignRead(seq, out);
@@ -233,8 +234,6 @@ void *alignReadsToDB(void* readsFile)
 		cout << id << output.str() << '\n';
 		assert(cout.good());
 		pthread_mutex_unlock(&g_mutexCout);
-
-		output.str("");
 
 		if (opt::verbose > 0) {
 			pthread_mutex_lock(&g_mutexCerr);
