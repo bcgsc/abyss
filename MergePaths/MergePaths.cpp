@@ -44,6 +44,7 @@ namespace opt {
 	static unsigned k;
 	static int verbose;
 	static string out;
+	extern bool colourSpace;
 }
 
 static const char* shortopts = "k:o:v";
@@ -140,10 +141,12 @@ int main(int argc, char** argv)
 	string contigFile(argv[optind++]);
 	string pathFile(argv[optind++]);
 
-	// Set up the ID->sequence mapping
+	// Read the contigs.
 	ContigVec contigVec;
 	PairedAlgorithms::readContigVec(contigFile, contigVec);
-	
+	assert(!contigVec.empty());
+	opt::colourSpace = isdigit(contigVec[0].seq[0]);
+
 	// Read the paths file
 	ContigPathMap contigPathMap;
 	readPathsFromFile(pathFile, contigPathMap);
