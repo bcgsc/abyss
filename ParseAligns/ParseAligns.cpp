@@ -35,8 +35,6 @@ static const char *USAGE_MESSAGE =
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
-"      --fr              expect forward-reverse orientation [default]\n"
-"      --ff              expect forward-forward orientation\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -46,11 +44,6 @@ static const char *USAGE_MESSAGE =
 namespace opt {
 	static int k;
 	static unsigned c;
-
-	/** True if the expected orientation of mate pairs is
-	 * forward-reverse. */
-	static int fr = true;
-
 	static int verbose;
 	static string adjPath;
 	static string distPath;
@@ -63,8 +56,6 @@ static const char* shortopts = "a:d:k:f:h:c:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "fr",      no_argument,       &opt::fr, 1 },
-	{ "ff",      no_argument,       &opt::fr, 0 },
 	{ "dist",    required_argument, NULL, 'd' },
 	{ "adj",     required_argument, NULL, 'a' },
 	{ "kmer",    required_argument, NULL, 'k' },
@@ -238,6 +229,8 @@ static void generateAdjFile()
 	adjFile.close();
 }
 
+static bool needsFlipping(const string& id);
+
 /** A pair of alignments. */
 typedef pair<Alignment, Alignment> AlignmentPair;
 
@@ -248,11 +241,12 @@ typedef pair<Alignment, Alignment> AlignmentPair;
  * first alignment, so that the alignment is forward-reverse, which is
  * required by DistanceEst.
  */
-static const AlignmentPair flipAlignments(const AlignmentPair& a)
+static const AlignmentPair flipAlignments(const AlignmentPair& a,
+		const string& id0, const string& id1)
 {
 	return make_pair(
-			opt::fr ? a.first : a.first.flipQuery(),
-			a.second);
+		needsFlipping(id0) ? a.first.flipQuery() : a.first,
+		needsFlipping(id1) ? a.second.flipQuery() : a.second);
 }
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
@@ -282,7 +276,8 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
 			{
 				const AlignmentPair& a = flipAlignments(
-						make_pair(*refAlignIter, *pairAlignIter));
+						make_pair(*refAlignIter, *pairAlignIter),
+						currID, pairID);
 
 				// Are they on the same contig and the ONLY alignments?
 				if (a.first.contig == a.second.contig) {
@@ -546,4 +541,9 @@ string makePairID(string id)
 		"\t1 and 2 or A and B or F and R or"
 		" F3 and R3 or forward and reverse\n";
 	exit(EXIT_FAILURE);
+}
+
+static bool needsFlipping(const string& id)
+{
+	return endsWith(id, "F3");
 }
