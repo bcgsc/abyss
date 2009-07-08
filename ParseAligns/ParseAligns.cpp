@@ -231,22 +231,17 @@ static void generateAdjFile()
 
 static bool needsFlipping(const string& id);
 
-/** A pair of alignments. */
-typedef pair<Alignment, Alignment> AlignmentPair;
-
 /**
- * Return a pair of alignments flipped as necessary to produce an
- * alignment pair whose expected orientation is forward-reverse.
- * If the expected orientation is forward-forward, then reverse the
- * first alignment, so that the alignment is forward-reverse, which is
+ * Return an alignment flipped as necessary to produce an alignment
+ * pair whose expected orientation is forward-reverse.  If the
+ * expected orientation is forward-forward, then reverse the first
+ * alignment, so that the alignment is forward-reverse, which is
  * required by DistanceEst.
  */
-static const AlignmentPair flipAlignments(const AlignmentPair& a,
-		const string& id0, const string& id1)
+static const Alignment flipAlignment(const Alignment& a,
+		const string& id)
 {
-	return make_pair(
-		needsFlipping(id0) ? a.first.flipQuery() : a.first,
-		needsFlipping(id1) ? a.second.flipQuery() : a.second);
+	return needsFlipping(id) ? a.flipQuery() : a;
 }
 
 static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
@@ -275,15 +270,16 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 		{
 			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
 			{
-				const AlignmentPair& a = flipAlignments(
-						make_pair(*refAlignIter, *pairAlignIter),
-						currID, pairID);
+				const Alignment& a0 = flipAlignment(*refAlignIter,
+						currID);
+				const Alignment& a1 = flipAlignment(*pairAlignIter,
+						pairID);
 
 				// Are they on the same contig and the ONLY alignments?
-				if (a.first.contig == a.second.contig) {
+				if (a0.contig == a1.contig) {
 					if((iter->second.size() == 1 && pairIter->second.size() == 1))
 					{
-						int size = fragmentSize(a.first, a.second);
+						int size = fragmentSize(a0, a1);
 						if (size > INT_MIN) {
 							histogram.addDataPoint(size);
 							if (!opt::fragPath.empty()) {
@@ -299,10 +295,10 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				{
 					// Print the alignment and the swapped alignment
 					pairedAlignFile
-						<< currID << ' ' << a.first << ' '
-						<< pairID << ' ' << a.second << '\n'
-						<< pairID << ' ' << a.second << ' '
-						<< currID << ' ' << a.first << '\n';
+						<< currID << ' ' << a0 << ' '
+						<< pairID << ' ' << a1 << '\n'
+						<< pairID << ' ' << a1 << ' '
+						<< currID << ' ' << a0 << '\n';
 					assert(pairedAlignFile.good());
 					stats.numDifferent++;
 				}
