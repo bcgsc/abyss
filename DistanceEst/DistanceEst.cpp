@@ -156,8 +156,12 @@ static void assert_open(ifstream& f, const string& p)
 void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf)
 {
-	ifstream in(alignFile.c_str());
-	assert_open(in, alignFile);
+	ifstream inFile(alignFile.c_str());
+	istream& in(strcmp(alignFile.c_str(), "-") == 0 ? cin : inFile);
+
+	if (strcmp(alignFile.c_str(), "-") != 0)
+		assert_open(inFile, alignFile);
+
 	AlignExtractor extractor(in);
 
 	ofstream outFile;
@@ -270,7 +274,7 @@ void processContigs(string alignFile,
 		assert(out.good());
 	}
 
-	in.close();
+	inFile.close();
 	if (!opt::out.empty())
 		outFile.close();
 }
