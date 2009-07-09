@@ -66,13 +66,14 @@ endif
 
 # Estimate distances between contigs
 
-%.pair %.hist: %.fa
+%.pair.gz %.hist: %.fa
 	KAligner $v -j$j -k$k $(in) $< \
 		|ParseAligns $v -k$k -h $*.hist \
-		|sort -nk2,2 -o $*.pair
+		|sort -nk2,2 \
+		|gzip >$*.pair.gz
 
-%.dist: %.len %.hist %.pair
-	DistanceEst $v -k$k -s$s -n$n -o $@ $^
+%.dist: %.pair.gz %.len %.hist
+	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ $*.len $*.hist -
 
 # Find overlaps between contigs
 
