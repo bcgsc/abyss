@@ -33,9 +33,11 @@ SequenceCollectionHash::SequenceCollectionHash()
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
 	if (opt::rank >= 0) {
-		// Make room for 100 million k-mers. Approximately 58 million
-		// k-mers fit into 2 GB of ram.
-		m_pSequences = new SequenceDataHash(100000000);
+		// Make room for 200 million k-mers. Approximately 58 million
+		// 96-mers fit into 2 GB of ram, which results in a hash load
+		// of 0.216, and approximately 116 million 32-mers, which
+		// results in a hash load of 0.432.
+		m_pSequences = new SequenceDataHash(200000000);
 	} else {
 		// Allocate a big hash for a single processor.
 		m_pSequences = new SequenceDataHash(1<<29);
