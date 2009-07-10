@@ -1,5 +1,5 @@
 #ifndef FASTAWRITER_H
-#define FASTAWRITER_H
+#define FASTAWRITER_H 1
 
 #include "IFileWriter.h"
 #include "Sequence.h"
@@ -8,10 +8,9 @@
 class FastaWriter : public IFileWriter
 {
 	public:
-	
 		// Constructor opens file
-		FastaWriter(const char* filename, bool append = false);
-		
+		FastaWriter(const char* path, bool append = false);
+
 		// Destructor closes it
 		~FastaWriter();
 
@@ -28,7 +27,8 @@ class FastaWriter : public IFileWriter
 		}
 
 	private:
+		const char *m_path;
 		FILE* m_fileHandle;
 };
 
-#endif //FASTAWRITER_H
+#endif
