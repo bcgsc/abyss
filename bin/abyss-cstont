@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+# Convert colour-space FASTA sequences to nucleotide FASTA sequences.
+# Written by Shaun Jackman <sjackman@bcgsc.ca>.
+# Usage: cstofasta data.csfa >data.fa
+
+use strict;
+
+my %table = (
+	'A' => ['A', 'C', 'G', 'T'],
+	'C' => ['C', 'A', 'T', 'G'],
+	'G' => ['G', 'T', 'A', 'C'],
+	'T' => ['T', 'G', 'C', 'A']
+);
+
+sub cs_to_nt($$)
+{
+	my $seed = shift;
+	my $cs = shift;
+	for (my $i = 0; $i < length $cs; $i++) {
+		my $p = \substr($cs, $i, 1);
+		$$p = $seed = $table{$seed}[$$p];
+	}
+	return $cs;
+}
+
+my ($id, $comment);
+while (<>) {
+	chomp;
+	if (/^[ACGT]/) {
+		my $seed = substr $_, 0, 1, '';
+		print "$id$comment\n",
+			substr(cs_to_nt($seed, $_), 1),
+			"\n";
+	} elsif (/^[0123]/) {
+		for my $seed (qw'A C G T') {
+			print "${id}_$seed$comment\n$seed",
+				cs_to_nt($seed, $_), "\n";
+		}
+	} elsif (/^>/) {
+		($id, $comment) = split ' ', $_, 2;
+		$comment = ' ' . $comment if $comment;
+	} elsif (/^#/) {
+		print "$_\n";
+	} else {
+		die "error: what is `$_'";
+	}
+}
