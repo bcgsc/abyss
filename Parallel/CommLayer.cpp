@@ -7,11 +7,8 @@
 
 static const unsigned RX_BUFSIZE = 16*1024;
 
-//
-//
-//
-CommLayer::CommLayer(int id)
-	: m_id(id), m_msgID(0),
+CommLayer::CommLayer()
+	: m_msgID(0),
 	  m_rxBuffer(new uint8_t[RX_BUFSIZE]),
 	  m_request(MPI_REQUEST_NULL),
 	  m_pMsgBuffer(NULL)
@@ -22,9 +19,6 @@ CommLayer::CommLayer(int id)
 			&m_request);
 }
 
-//
-//
-//
 CommLayer::~CommLayer()
 {
 	PrintDebug(1, "Sent %u control messages\n", (unsigned)m_msgID);
@@ -93,7 +87,7 @@ void CommLayer::sendControlMessage(APControl m, int argument)
 {
 	assert(m_pMsgBuffer->empty());
 	for (int i = 0; i < opt::numProc; i++)
-		if (i != m_id) // Don't send the message to myself.
+		if (i != opt::rank) // Don't send the message to myself.
 			SendControlMessageToNode(i, m, argument);
 }
 

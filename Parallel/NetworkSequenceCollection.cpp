@@ -25,7 +25,7 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	m_pLocalSpace = new SequenceCollectionHash();
 
 	// Create the comm layer
-	m_pComm = new CommLayer(myID);
+	m_pComm = new CommLayer();
 
 	// Create the message buffer
 	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);

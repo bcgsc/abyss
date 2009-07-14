@@ -23,9 +23,7 @@ const int CONTROL_ID = 0;
 class CommLayer
 {
 	public:
-	
-		// Constructor/Destructor
-		CommLayer(int id);
+		CommLayer();
 		~CommLayer();
 
 		// Check if a message exists, if it does return the type
@@ -65,7 +63,6 @@ class CommLayer
 		}
 
 	private:
-		int m_id;
 		uint64_t m_msgID;
 		uint8_t* m_rxBuffer;
 		MPI_Request m_request;
