@@ -1,6 +1,7 @@
 #include "config.h"
 #include "CommLayer.h"
 #include "Log.h"
+#include "Options.h"
 #include <cstring>
 #include <mpi.h>
 #include <stdint.h>
@@ -89,11 +90,11 @@ uint64_t CommLayer::SendCheckPointMessage(int argument)
 	return msg.id;
 }
 
-// Send a control message
-void CommLayer::SendControlMessage(int numNodes, APControl m, int argument)
+/** Send a control message to every other process. */
+void CommLayer::sendControlMessage(APControl m, int argument)
 {
 	assert(m_pMsgBuffer->empty());
-	for (int i = 0; i < numNodes; i++)
+	for (int i = 0; i < opt::numProc; i++)
 		if (i != m_id) // Don't send the message to myself.
 			SendControlMessageToNode(i, m, argument);
 }

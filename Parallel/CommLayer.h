@@ -41,8 +41,8 @@ class CommLayer
 		unsigned reduce(unsigned count);
 
 		// Send a control message
-		void SendControlMessage(int numNodes, APControl m, int argument = 0);
-		
+		void sendControlMessage(APControl m, int argument = 0);
+
 		// Send a control message to a specific node
 		uint64_t SendControlMessageToNode(int nodeID, APControl m, int argument = 0);
 

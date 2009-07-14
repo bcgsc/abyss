@@ -143,8 +143,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void setColourSpace(bool flag)
 		{
 			m_pLocalSpace->setColourSpace(flag);
-			m_pComm->SendControlMessage(m_numDataNodes,
-					APC_SET_COLOURSPACE, flag);
+			m_pComm->sendControlMessage(APC_SET_COLOURSPACE, flag);
 		}
 
 	private:

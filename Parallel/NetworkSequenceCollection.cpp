@@ -230,7 +230,7 @@ void NetworkSequenceCollection::run()
 unsigned NetworkSequenceCollection::controlErode()
 {
 	SetState(NAS_ERODE);
-	m_pComm->SendControlMessage(m_numDataNodes, APC_ERODE);
+	m_pComm->sendControlMessage(APC_ERODE);
 	m_pComm->barrier();
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
@@ -248,14 +248,13 @@ unsigned NetworkSequenceCollection::controlErode()
 
 	if (numEroded == 0) {
 		SetState(NAS_WAITING);
-		m_pComm->SendControlMessage(m_numDataNodes, APC_WAIT);
+		m_pComm->sendControlMessage(APC_WAIT);
 		m_pComm->barrier();
 		return 0;
 	}
 
 	SetState(NAS_ERODE_COMPLETE);
-	m_pComm->SendControlMessage(m_numDataNodes,
-			APC_ERODE_COMPLETE);
+	m_pComm->sendControlMessage(APC_ERODE_COMPLETE);
 	completeOperation();
 	numEroded += m_pComm->reduce(
 			AssemblyAlgorithms::getNumEroded());
@@ -278,7 +277,7 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 	if (opt::verbose > 0)
 		puts("Sweeping");
 	SetState(NAS_REMOVE_MARKED);
-	m_pComm->SendControlMessage(m_numDataNodes, APC_REMOVE_MARKED);
+	m_pComm->sendControlMessage(APC_REMOVE_MARKED);
 	m_pComm->barrier();
 	unsigned count = AssemblyAlgorithms::removeMarked(this);
 	m_checkpointSum += count;
@@ -295,7 +294,7 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
 	printf("Trimming short branches: %d\n", trimLen);
 	SetState(NAS_TRIM);
-	m_pComm->SendControlMessage(m_numDataNodes, APC_TRIM, trimLen);
+	m_pComm->sendControlMessage(APC_TRIM, trimLen);
 	m_pComm->barrier();
 	unsigned numRemoved = performNetworkTrim(this, trimLen);
 	EndState();
@@ -350,8 +349,7 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_LOAD_COMPLETE);
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_LOAD_COMPLETE);
+				m_pComm->sendControlMessage(APC_LOAD_COMPLETE);
 				m_pComm->barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu sequences\n",
@@ -366,13 +364,10 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_GEN_ADJ);
+				m_pComm->sendControlMessage(APC_GEN_ADJ);
 				AssemblyAlgorithms::generateAdjacency(this);
-				
-				// Cleanup any messages that are pending
 				EndState();
-								
+
 				m_numReachedCheckpoint++;
 				while(!checkpointReached(m_numDataNodes))
 				{
@@ -380,8 +375,7 @@ void NetworkSequenceCollection::runControl()
 				}
 
 				SetState(NAS_ADJ_COMPLETE);
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_ADJ_COMPLETE);
+				m_pComm->sendControlMessage(APC_ADJ_COMPLETE);
 				m_pComm->barrier();
 				pumpNetwork();
 				PrintDebug(0, "Generated %u edges\n",
@@ -439,8 +433,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_SPLIT:
 			{
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_SPLIT);
+				m_pComm->sendControlMessage(APC_SPLIT);
 				m_pComm->barrier();
 				unsigned marked = controlMarkAmbiguous();
 				unsigned split = controlSplitAmbiguous();
@@ -453,8 +446,7 @@ void NetworkSequenceCollection::runControl()
 				puts("Assembling");
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
-				m_pComm->SendControlMessage(m_numDataNodes,
-						APC_ASSEMBLE);
+				m_pComm->sendControlMessage(APC_ASSEMBLE);
 				unsigned numAssembled = performNetworkAssembly(this,
 						writer);
 				delete writer;
@@ -467,7 +459,7 @@ void NetworkSequenceCollection::runControl()
 				printf("Assembled %u contigs\n", numAssembled);
 
 				SetState(NAS_DONE);
-				m_pComm->SendControlMessage(m_numDataNodes, APC_FINISHED);				
+				m_pComm->sendControlMessage(APC_FINISHED);
 				break;
 			}
 			case NAS_DONE:
@@ -989,8 +981,7 @@ bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 {
 	SetState(NAS_DISCOVER_BUBBLES);
-	m_pComm->SendControlMessage(m_numDataNodes,
-			APC_DISCOVER_BUBBLES);
+	m_pComm->sendControlMessage(APC_DISCOVER_BUBBLES);
 
 	unsigned numDiscovered = performNetworkDiscoverBubbles(this,
 			opt::kmerSize);
@@ -1019,7 +1010,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(unsigned i = 1; i < m_numDataNodes; ++i) {
-		m_pComm->SendControlMessage(m_numDataNodes, APC_BARRIER);
+		m_pComm->sendControlMessage(APC_BARRIER);
 		m_pComm->barrier();
 		m_numReachedCheckpoint = 0;
 		m_pComm->SendControlMessageToNode(i, APC_POPBUBBLE,
