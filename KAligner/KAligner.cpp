@@ -216,16 +216,16 @@ void *alignReadsToDB(void* readsFile)
 		string id;
 		Sequence seq = fileHandle.ReadSequence(id);
 
-		if (opt::colourSpace)
-			assert(isdigit(seq[0]));
-		else
-			assert(isalpha(seq[0]));
-
 		ostringstream output;
-		size_t pos = seq.find_first_not_of("ACGT0123");
-		if (pos == string::npos)
+		if (seq.find_first_not_of("ACGT0123") == string::npos) {
+			if (opt::colourSpace)
+				assert(isdigit(seq[0]));
+			else
+				assert(isalpha(seq[0]));
+
 			g_aligner->alignRead(seq,
 					prefix_ostream_iterator<Alignment>(output, "\t"));
+		}
 
 		pthread_mutex_lock(&g_mutexCout);
 		cout << id << output.str() << '\n';
