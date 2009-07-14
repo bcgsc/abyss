@@ -2,7 +2,7 @@
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
-# Integrate with qsub or Sun Grid Engine (SGE).
+# Integrate with Sun Grid Engine (SGE).
 ifdef JOB_NAME
 lib?=$(JOB_NAME)
 endif
