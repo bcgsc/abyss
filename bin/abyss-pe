@@ -2,6 +2,8 @@
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
+mpirun = $(shell which mpirun)
+
 ifdef lib
 ext?=.fa
 in?=$(addsuffix $(ext), $(lib))
@@ -46,7 +48,8 @@ clean:
 
 %-1.fa: $(in)
 ifdef np
-	mpirun -np $(np) ABYSS-P $v -k$k -l$l -s bubbles.fa.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l \
+		-s bubbles.fa.fa -o $@ $^
 else
 	ABYSS $v -k$k -l$l -s bubbles.fa.fa -o $@ $^
 endif
