@@ -35,11 +35,9 @@ typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
-	
-		// Constructor/destructor
-		NetworkSequenceCollection(int myID, int numDataNodes);
+		NetworkSequenceCollection(int numDataNodes);
 		~NetworkSequenceCollection();
-		
+
 		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency
 		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
 		
@@ -186,10 +184,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// The communications layer implements the functions over the network
 		CommLayer* m_pComm;
-		
-		// The ID for this node, assigned by MPI
-		int m_id;
-		
+
 		// The number of nodes in the network
 		unsigned int m_numDataNodes;
 		

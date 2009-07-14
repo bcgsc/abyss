@@ -9,8 +9,7 @@
 using namespace std;
 
 NetworkSequenceCollection::NetworkSequenceCollection(
-		int myID, int numDataNodes) :
-	m_id(myID),
+		int numDataNodes) :
 	m_numDataNodes(numDataNodes),
 	m_state(NAS_WAITING),
 	m_numBasesAdjSet(0),
@@ -40,8 +39,7 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 void NetworkSequenceCollection::loadSequences()
 {
 	Timer timer("LoadSequences");
-	for (unsigned i = m_id;
-			i < opt::inFiles.size();
+	for (unsigned i = opt::rank; i < opt::inFiles.size();
 			i += m_numDataNodes)
 		AssemblyAlgorithms::loadSequences(this, opt::inFiles[i]);
 }
@@ -1184,11 +1182,7 @@ void NetworkSequenceCollection::generateExtensionRequest(uint64_t groupID, uint6
 	}
 	else
 	{
-		// Send the request
 		int nodeID = computeNodeID(seq);
-		assert(nodeID != m_id);
-		
-		// Send the request, it will be processed in the callback
 		m_pMsgBuffer->sendSeqDataRequest(nodeID, groupID, branchID, seq);
 	}
 }
@@ -1464,18 +1458,12 @@ SequenceCollectionIterator NetworkSequenceCollection::getEndIter() const
 	return m_pLocalSpace->getEndIter();	
 }
 
-//
-// Check if this sequence belongs in the local space
-//
+/** Return whether this sequence belongs to this process. */
 bool NetworkSequenceCollection::isLocal(const PackedSeq& seq) const
 {
-	int id = computeNodeID(seq);
-	return id == m_id;
+	return computeNodeID(seq) == opt::rank;
 }
 
-//
-// 
-//
 int NetworkSequenceCollection::computeNodeID(const PackedSeq& seq) const
 {
 	unsigned int code = seq.getCode();
