@@ -88,6 +88,7 @@ Sequence FastaReader::ReadSequence(string& id)
 				id.append("_");
 				id.append(fields[i]);
 			}
+			id.append("/");
 			id.append(fields[7]);
 			s = fields[8];
 		} else {
