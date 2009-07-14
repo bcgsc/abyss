@@ -111,6 +111,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void runControl();
 		
 		// test if the checkpoint has been reached
+		bool checkpointReached() const;
 		bool checkpointReached(int numRequired) const;
 		
 		// get an iterator to the first sequence

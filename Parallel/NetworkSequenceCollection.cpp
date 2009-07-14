@@ -228,7 +228,7 @@ unsigned NetworkSequenceCollection::controlErode()
 	m_state = NAS_ERODE_WAITING;
 
 	m_numReachedCheckpoint++;
-	while (!checkpointReached(m_numDataNodes))
+	while (!checkpointReached())
 		pumpNetwork();
 	numEroded += m_checkpointSum;
 	EndState();
@@ -271,7 +271,7 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 	EndState();
 
 	m_numReachedCheckpoint++;
-	while (!checkpointReached(m_numDataNodes))
+	while (!checkpointReached())
 		pumpNetwork();
 	return m_checkpointSum;
 }
@@ -287,7 +287,7 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	EndState();
 
 	m_numReachedCheckpoint++;
-	while (!checkpointReached(m_numDataNodes))
+	while (!checkpointReached())
 		pumpNetwork();
 	numRemoved += m_checkpointSum;
 
@@ -332,7 +332,7 @@ void NetworkSequenceCollection::runControl()
 				EndState();
 
 				m_numReachedCheckpoint++;
-				while (!checkpointReached(m_numDataNodes))
+				while (!checkpointReached())
 					pumpNetwork();
 
 				SetState(NAS_LOAD_COMPLETE);
@@ -356,10 +356,8 @@ void NetworkSequenceCollection::runControl()
 				EndState();
 
 				m_numReachedCheckpoint++;
-				while(!checkpointReached(m_numDataNodes))
-				{
+				while (!checkpointReached())
 					pumpNetwork();
-				}
 
 				SetState(NAS_ADJ_COMPLETE);
 				m_pComm->sendControlMessage(APC_ADJ_COMPLETE);
@@ -440,7 +438,7 @@ void NetworkSequenceCollection::runControl()
 				EndState();
 
 				m_numReachedCheckpoint++;
-				while (!checkpointReached(m_numDataNodes))
+				while (!checkpointReached())
 					pumpNetwork();
 				numAssembled += m_checkpointSum;
 				printf("Assembled %u contigs\n", numAssembled);
@@ -975,7 +973,7 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 	EndState();
 
 	m_numReachedCheckpoint++;
-	while (!checkpointReached(m_numDataNodes))
+	while (!checkpointReached())
 		pumpNetwork();
 	numDiscovered += m_checkpointSum;
 	SetState(NAS_POPBUBBLE);
@@ -1035,7 +1033,7 @@ unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 	m_checkpointSum += count;
 	EndState();
 	m_numReachedCheckpoint++;
-	while (!checkpointReached(m_numDataNodes))
+	while (!checkpointReached())
 		pumpNetwork();
 	printf("Split %u ambiguous branches\n",
 			m_checkpointSum);
@@ -1314,6 +1312,11 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 		int nodeID = computeNodeID(seq);	
 		m_pMsgBuffer->sendSeqOpMessage(nodeID, seq, MO_REMOVE);
 	}	
+}
+
+bool NetworkSequenceCollection::checkpointReached() const
+{
+	return (unsigned)m_numReachedCheckpoint == m_numDataNodes;
 }
 
 bool NetworkSequenceCollection::checkpointReached(int numRequired) const
