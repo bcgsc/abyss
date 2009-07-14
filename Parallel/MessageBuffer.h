@@ -20,10 +20,9 @@ enum SendMode
 class MessageBuffer
 {
 	public:
-	
 		// Constructor, create a message buffer for every process
-		MessageBuffer(int numNodes, CommLayer* pComm);
-		
+		MessageBuffer(CommLayer* pComm);
+
 		// send a sequence operation message
 		void sendSeqOpMessage(int nodeID, const PackedSeq& seq, MessageOp op);
 		

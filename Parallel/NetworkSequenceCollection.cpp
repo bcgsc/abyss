@@ -8,9 +8,6 @@
 
 using namespace std;
 
-//
-//
-//
 NetworkSequenceCollection::NetworkSequenceCollection(
 		int myID, int numDataNodes) :
 	m_id(myID),
@@ -21,20 +18,12 @@ NetworkSequenceCollection::NetworkSequenceCollection(
 	m_numPopped(0),
 	m_numAssembled(0)
 {
-	// Load the phase space
 	m_pLocalSpace = new SequenceCollectionHash();
-
-	// Create the comm layer
 	m_pComm = new CommLayer();
-
-	// Create the message buffer
-	m_pMsgBuffer = new MessageBuffer(numDataNodes, m_pComm);
+	m_pMsgBuffer = new MessageBuffer(m_pComm);
 	m_pComm->setMsgBuffer(m_pMsgBuffer);
 }
 
-//
-//
-//
 NetworkSequenceCollection::~NetworkSequenceCollection()
 {
 	// Delete the objects created in the constructor

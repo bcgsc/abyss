@@ -4,18 +4,13 @@
 
 using namespace std;
 
-MessageBuffer::MessageBuffer(int numNodes, CommLayer* pComm) : m_pCommLayer(pComm)
+MessageBuffer::MessageBuffer(CommLayer* pComm)
+	: m_msgQueues(opt::numProc), m_pCommLayer(pComm)
 {
-	m_msgQueues.resize(numNodes);
-	for(int i = 0; i < numNodes; ++i)
-	{
+	for (unsigned i = 0; i < m_msgQueues.size(); i++)
 		m_msgQueues[i].reserve(MAX_MESSAGES);
-	}
 }
 
-//
-//
-//
 void MessageBuffer::sendSeqOpMessage(int nodeID, const PackedSeq& seq, MessageOp op)
 {
 	// add the message to the buffer
