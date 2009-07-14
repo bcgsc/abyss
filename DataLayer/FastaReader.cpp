@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cerrno>
 #include <cstring>
+#include <sstream>
 #include <iostream>
 
 using namespace std;
@@ -44,38 +45,60 @@ Sequence FastaReader::ReadSequence(string& id)
 		}
 	}
 
-	// Read the header.
-	char recordType;
-	m_fileHandle >> recordType >> id;
-	m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
-
+	char recordType = m_fileHandle.peek();
 	Sequence s;
-	getline(m_fileHandle, s);
-	transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-	assert(s.length() > 2);
-	if (isalpha(s[0]) && isdigit(s[1])) {
-		// The first character is the primer base. The second
-		// character is the dibase read of the primer and the first
-		// base of the sample, which is not part of the assembly.
-		s = s.substr(2);
-	}
+	if (recordType == '>' || recordType == '@') {
+		// Read the header.
+		m_fileHandle >> recordType >> id;
+		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	if (recordType == '>') {
-		// Nothing to do.
-	} else if (recordType == '@') {
-		// Discard the quality values.
-		char c;
-		m_fileHandle >> c;
-		assert(c == '+');
-		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
-		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+		getline(m_fileHandle, s);
+		transform(s.begin(), s.end(), s.begin(), ::toupper);
+
+		assert(s.length() > 2);
+		if (isalpha(s[0]) && isdigit(s[1])) {
+			// The first character is the primer base. The second
+			// character is the dibase read of the primer and the first
+			// base of the sample, which is not part of the assembly.
+			s = s.substr(2);
+		}
+
+		if (recordType == '@') {
+			// Discard the quality values.
+			char c;
+			m_fileHandle >> c;
+			assert(c == '+');
+			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+		}
 	} else {
-		fprintf(stderr, "error: `%s' is an unknown format\n"
-					"Expected either `>' or `@' and saw `%c'\n",
-				m_inPath, recordType);
-		exit(EXIT_FAILURE);
+		string line;
+		vector<string> fields;
+		fields.reserve(11);
+		getline(m_fileHandle, line);
+		istringstream in(line);
+		string field;
+		while (in >> field)
+			fields.push_back(field);
+
+		if (fields.size() == 11) {
+			id = fields[0];
+			for (int i = 1; i < 6; i++) {
+				id.append("_");
+				id.append(fields[i]);
+			}
+			id.append(fields[7]);
+			s = fields[8];
+		} else {
+			fprintf(stderr, "error: `%s' is an unknown format\n"
+					"Expected either `>' or `@' or 11 fields\n"
+					"and saw `%c' and %d fields\n",
+					m_inPath, recordType, fields.size());
+			exit(EXIT_FAILURE);
+		}
 	}
+
 	return s;
 }
 
