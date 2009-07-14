@@ -83,14 +83,13 @@ Sequence FastaReader::ReadSequence(string& id)
 			fields.push_back(field);
 
 		if (fields.size() == 11) {
-			id = fields[0];
-			for (int i = 1; i < 6; i++) {
-				id.append("_");
-				id.append(fields[i]);
-			}
-			id.append("/");
-			id.append(fields[7]);
+			ostringstream o(fields[0]);
+			for (int i = 1; i < 6; i++)
+				o << '_' << fields[i];
+			o << '/' << fields[7];
+			id = o.str();
 			s = fields[8];
+			assert(s.length() > 2);
 		} else {
 			fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
