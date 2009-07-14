@@ -4,7 +4,6 @@
 #include "Options.h"
 #include <cstring>
 #include <mpi.h>
-#include <stdint.h>
 
 static const unsigned RX_BUFSIZE = 16*1024;
 
@@ -28,8 +27,7 @@ CommLayer::CommLayer(int id)
 //
 CommLayer::~CommLayer()
 {
-	printf("%d: Sent %llu messages\n", m_id,
-			(unsigned long long)m_msgID);
+	PrintDebug(1, "Sent %u control messages\n", (unsigned)m_msgID);
 	delete[] m_rxBuffer;
 }
 
