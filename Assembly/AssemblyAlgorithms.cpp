@@ -99,7 +99,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 				continue;
 			}
 
-			if (count == 0) {
+			if (opt::rank == 0 && count == 0 && seqCollection->count() == 0) {
 				// Detect colour-space reads.
 				seqCollection->setColourSpace(isdigit(iter->at(0)));
 			} else {

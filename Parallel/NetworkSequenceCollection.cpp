@@ -83,6 +83,8 @@ void NetworkSequenceCollection::run()
 		switch(m_state)
 		{
 			case NAS_LOADING:
+				// Wait for the control to set the ColourSpace flag.
+				m_pComm->barrier();
 				loadSequences();
 				EndState();
 				SetState(NAS_WAITING);
