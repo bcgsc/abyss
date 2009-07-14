@@ -14,16 +14,13 @@
 
 using namespace std;
 
-/** MPI size */
-static int mpi_size;
-
 static void concatenateFiles(string dest,
 		string prefix, string suffix)
 {
 	printf("Concatenating to %s\n", dest.c_str());
 	std::ostringstream s;
 	s << "cat";
-	for (int i = 0; i < mpi_size; i++)
+	for (int i = 0; i < opt::numProc; i++)
 		s << ' ' << prefix << i << suffix;
 	s << " >'" << dest << '\'';
 	if (opt::verbose > 0)
@@ -45,16 +42,13 @@ int main(int argc, char** argv)
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
-	// start mpi process
 	MPI_Init(&argc,&argv);
-	
-	// get my rank and the world size
 	MPI_Comm_rank(MPI_COMM_WORLD, &opt::rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-	
+	MPI_Comm_size(MPI_COMM_WORLD, &opt::numProc);
+
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
-		printf("Running on %d processors\n", mpi_size);
+		printf("Running on %d processors\n", opt::numProc);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	char hostname[HOST_NAME_MAX];
@@ -62,7 +56,7 @@ int main(int argc, char** argv)
 	PrintDebug(0, "Running on host %s\n", hostname);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	NetworkSequenceCollection networkSeqs(opt::rank, mpi_size);
+	NetworkSequenceCollection networkSeqs(opt::rank, opt::numProc);
 
 	if (opt::rank == 0)
 		networkSeqs.runControl();

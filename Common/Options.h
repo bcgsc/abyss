@@ -7,6 +7,7 @@
 
 namespace opt {
 	extern int rank;
+	extern int numProc;
 	extern int kmerSize;
 	extern int erode;
 	extern int trimLen;

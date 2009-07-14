@@ -45,6 +45,9 @@ static const char *USAGE_MESSAGE =
 /** MPI rank */
 int rank = -1;
 
+/** Number of MPI processes */
+int numProc = 1;
+
 /** k-mer length */
 int kmerSize = -1;
 
