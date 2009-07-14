@@ -35,7 +35,7 @@ typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
-		NetworkSequenceCollection(int numDataNodes);
+		NetworkSequenceCollection();
 		~NetworkSequenceCollection();
 
 		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency

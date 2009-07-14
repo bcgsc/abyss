@@ -56,8 +56,7 @@ int main(int argc, char** argv)
 	PrintDebug(0, "Running on host %s\n", hostname);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	NetworkSequenceCollection networkSeqs(opt::numProc);
-
+	NetworkSequenceCollection networkSeqs;
 	if (opt::rank == 0)
 		networkSeqs.runControl();
 	else

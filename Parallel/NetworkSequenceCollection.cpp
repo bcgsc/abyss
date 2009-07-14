@@ -8,10 +8,8 @@
 
 using namespace std;
 
-NetworkSequenceCollection::NetworkSequenceCollection(
-		int numDataNodes) :
-	m_numDataNodes(numDataNodes),
-	m_state(NAS_WAITING),
+NetworkSequenceCollection::NetworkSequenceCollection()
+	: m_state(NAS_WAITING),
 	m_numBasesAdjSet(0),
 	m_trimStep(0),
 	m_numPopped(0),
@@ -40,7 +38,7 @@ void NetworkSequenceCollection::loadSequences()
 {
 	Timer timer("LoadSequences");
 	for (unsigned i = opt::rank; i < opt::inFiles.size();
-			i += m_numDataNodes)
+			i += opt::numProc)
 		AssemblyAlgorithms::loadSequences(this, opt::inFiles[i]);
 }
 
@@ -994,7 +992,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 	EndState();
 
 	// Now tell all the slave nodes to perform the pop one by one
-	for(unsigned i = 1; i < m_numDataNodes; ++i) {
+	for(int i = 1; i < opt::numProc; i++) {
 		m_pComm->sendControlMessage(APC_BARRIER);
 		m_pComm->barrier();
 		m_numReachedCheckpoint = 0;
@@ -1316,7 +1314,7 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 
 bool NetworkSequenceCollection::checkpointReached() const
 {
-	return (unsigned)m_numReachedCheckpoint == m_numDataNodes;
+	return m_numReachedCheckpoint == opt::numProc;
 }
 
 bool NetworkSequenceCollection::checkpointReached(int numRequired) const
@@ -1467,9 +1465,8 @@ bool NetworkSequenceCollection::isLocal(const PackedSeq& seq) const
 	return computeNodeID(seq) == opt::rank;
 }
 
+/** Return the process ID to which the specified kmer belongs. */
 int NetworkSequenceCollection::computeNodeID(const PackedSeq& seq) const
 {
-	unsigned int code = seq.getCode();
-	unsigned int id = code % m_numDataNodes;	
-	return id;
+	return seq.getCode() % (unsigned)opt::numProc;
 }
