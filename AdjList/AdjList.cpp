@@ -28,14 +28,23 @@ static const char *USAGE_MESSAGE =
 "from FILE(s) or standard input. Output is written to standard output.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"      --adj             output the results in adj format [DEFAULT]\n"
+"      --dot             output the results in dot format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
+/** Enumeration of output formats */
+enum format { ADJ, DOT };
+
 namespace opt {
 	static int k;
+
+	/** Output formats */
+	static int format;
+
 	static int verbose;
 	extern bool colourSpace;
 }
@@ -46,6 +55,8 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "adj",     no_argument,       &opt::format, ADJ },
+	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -134,6 +145,9 @@ int main(int argc, char** argv)
 	}
 
 	ostream& out = cout;
+	if (opt::format == DOT)
+		out << "digraph adj {\n";
+
 	int numVerts = 0;
 	int numEdges = 0;
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
@@ -141,7 +155,8 @@ int main(int argc, char** argv)
 		const ContigID& id = i->id;
 		const PackedSeq seqs[2] = { i->l, i->r };
 
-		out << id;
+		if (opt::format == ADJ)
+			out << id;
 
 		const unsigned numEnds = 2;
 		for(unsigned idx = 0; idx < numEnds; idx++)
@@ -186,15 +201,36 @@ int main(int argc, char** argv)
 					}
 				}
 			}
-			// Print the edges
-			out << " [ ";
-			std::copy(edges.begin(), edges.end(), std::ostream_iterator<SimpleEdgeDesc>(out, " "));
-			out << ']';
+
+			switch (opt::format) {
+			  case ADJ:
+				out << " [ ";
+				copy(edges.begin(), edges.end(),
+						ostream_iterator<SimpleEdgeDesc>(out, " "));
+				out << ']';
+				break;
+			  case DOT:
+				out << '"' << id << (idx ? '-' : '+') << '"';
+				if (!edges.empty()) {
+					out << " -> {";
+					for (vector<SimpleEdgeDesc>::const_iterator it
+							= edges.begin(); it != edges.end(); ++it)
+						out << " \"" << it->contig
+							<< (idx != it->isRC ? '-' : '+') << '"';
+					out << " }";
+				}
+				out << ";\n";
+				break;
+			}
 			numEdges += edges.size();
 		}
-		out << '\n';
+		if (opt::format == ADJ)
+			out << '\n';
 		numVerts++;
 	}
+
+	if (opt::format == DOT)
+		out << "}\n";
 
 	if (opt::verbose > 0)
 		cerr << "vertices: " << numVerts << " "
