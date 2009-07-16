@@ -279,6 +279,7 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 /** Perform a single round of trimming at the specified length. */
 unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
+	assert(trimLen > 0);
 	printf("Trimming short branches: %d\n", trimLen);
 	SetState(NAS_TRIM);
 	m_pComm->sendControlMessage(APC_TRIM, trimLen);
@@ -302,6 +303,8 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 /** Perform multiple rounds of trimming until complete. */
 void NetworkSequenceCollection::controlTrim(unsigned start)
 {
+	if (opt::trimLen == 0)
+		return;
 	unsigned rounds = 0, total = 0;
 	for (int trim = start; trim < opt::trimLen; trim *= 2) {
 		rounds++;
