@@ -2,6 +2,7 @@
 #include "PairedAlgorithms.h"
 #include "PrefixIterator.h"
 #include "FastaReader.h"
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cerrno>
