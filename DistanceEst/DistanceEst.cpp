@@ -29,7 +29,7 @@ static const char *USAGE_MESSAGE =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
-"  -s, --seed-length=L   minimum length of the seed contigs\n"
+"  -s, --seed-length=L   minimum length of the seed contigs [100]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -121,6 +121,10 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (opt::seedLen < 2*opt::k)
+		cerr << "warning: the seed-length should be at least twice k:"
+			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
 
 	string contigLengthFile(argv[optind++]);
 	string distanceCountFile(argv[optind++]);
