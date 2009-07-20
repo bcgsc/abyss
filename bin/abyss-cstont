@@ -4,6 +4,13 @@
 # Usage: cstofasta data.csfa >data.fa
 
 use strict;
+use Getopt::Long;
+use Pod::Usage;
+
+my %opt;
+GetOptions(\%opt, qw'help man');
+pod2usage(-verbose => 1) if $opt{help};
+pod2usage(-verbose => 2) if $opt{man};
 
 my %table = (
 	'A' => ['A', 'C', 'G', 'T'],
@@ -45,3 +52,54 @@ while (<>) {
 		die "error: what is `$_'";
 	}
 }
+
+=pod
+
+=head1 NAME
+
+abyss-cstont - convert colour-space FASTA sequences to nucleotide FASTA sequences
+
+=head1 SYNOPSIS
+
+B<cstofasta> F<data.csfa> >F<data.fa>
+
+=head1 DESCRIPTION
+
+Either reads or contigs may be converted from colour-space sequences
+to nucleotide sequences. If the first character of the input sequence
+is not a nucleotide, each colour-space contig will be converted to
+four nucleotide contigs, one for each possible starting nucleotide.
+
+=head1 EXAMPLE
+
+ $ printf '>1\nA0000' |abyss-cstont
+ >1
+ AAA
+
+ $ printf '>1\n0000' |abyss-cstont
+ >1_A
+ AAAAA
+ >1_C
+ CCCCC
+ >1_G
+ GGGGG
+ >1_T
+ TTTTT
+
+=head1 AUTHOR
+
+Written by Shaun Jackman.
+
+=head1 REPORTING BUGS
+
+Report bugs to <abyss-users@bcgsc.ca>.
+
+=head1 COPYRIGHT
+
+Copyright 2009 Canada’s Michael Smith Genome Science Centre
+
+=head1 SEE ALSO
+
+L<ABYSS(1)>
+
+http://www.bcgsc.ca/platform/bioinfo/software/abyss
