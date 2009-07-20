@@ -59,10 +59,9 @@ clean:
 
 %-1.fa: $(in)
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l \
-		-s bubbles.fa.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l -s bubbles.fa -o $@ $^
 else
-	ABYSS $v -k$k -l$l -s bubbles.fa.fa -o $@ $^
+	ABYSS $v -k$k -l$l -s bubbles.fa -o $@ $^
 endif
 
 %.len: %.fa
