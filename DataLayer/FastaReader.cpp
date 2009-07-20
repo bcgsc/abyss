@@ -93,7 +93,7 @@ Sequence FastaReader::ReadSequence(string& id)
 		} else {
 			fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
-					"and saw `%c' and %d fields\n",
+					"and saw `%c' and %zu fields\n",
 					m_inPath, recordType, fields.size());
 			exit(EXIT_FAILURE);
 		}
