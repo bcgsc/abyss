@@ -94,6 +94,7 @@ void CommLayer::sendControlMessage(APControl m, int argument)
 // Send a control message to a specific node
 uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
 {
+	assert(opt::rank == 0);
 	assert(m_pMsgBuffer->empty());
 	ControlMessage msg;
 	msg.id = m_msgID++;
