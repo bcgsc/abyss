@@ -2,6 +2,7 @@
 #include "HashFunction.h"
 #include "Options.h"
 #include "Sequence.h"
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 

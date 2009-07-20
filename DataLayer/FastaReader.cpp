@@ -5,8 +5,9 @@
 #include <cctype>
 #include <cerrno>
 #include <cstring>
-#include <sstream>
 #include <iostream>
+#include <limits> // for numeric_limits
+#include <sstream>
 
 using namespace std;
 
