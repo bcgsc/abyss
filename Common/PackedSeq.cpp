@@ -154,7 +154,10 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
  */
 unsigned PackedSeq::getCode() const
 {
-	const unsigned NUM_BYTES = 4;
+	/* At k=19, this hash function always returns a positive number
+	 * due to the sequence and its reverse complement overlapping when
+	 * the xor is calculated. A more general solution is needed. */
+	const unsigned NUM_BYTES = m_length < 20 ? m_length/8 : 4;
 	PackedSeq rc = *this;
 	rc.reverseComplement();
 
