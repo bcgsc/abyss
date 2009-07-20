@@ -284,9 +284,9 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 
 				// Are they on the same contig and the ONLY alignments?
 				if (a0.contig == a1.contig) {
+					int size = fragmentSize(a0, a1);
 					if((iter->second.size() == 1 && pairIter->second.size() == 1))
 					{
-						int size = fragmentSize(a0, a1);
 						if (size > INT_MIN) {
 							histogram.addDataPoint(size);
 							if (!opt::fragPath.empty()) {
@@ -297,9 +297,14 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 						} else
 							stats.numMisoriented++;
 					}
-				}
-				else
-				{
+					if (size < opt::k) {
+						// Print the alignment
+						pairedAlignFile
+							<< currID << ' ' << a0 << ' '
+							<< pairID << ' ' << a1 << '\n';
+						assert(pairedAlignFile.good());
+					}
+				} else {
 					// Print the alignment and the swapped alignment
 					pairedAlignFile
 						<< currID << ' ' << a0 << ' '
