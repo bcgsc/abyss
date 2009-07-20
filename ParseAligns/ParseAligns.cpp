@@ -87,7 +87,6 @@ typedef hash_map<string, AlignmentVector> ReadAlignMap;
 typedef hash_map<ContigID, EstimateRecord> EstimateMap;
 
 static EstimateMap estMap;
-static EstimateMap adjMap;
 
 bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
 string makePairID(string id);
@@ -158,20 +157,6 @@ static void doReadIntegrity(ReadAlignMap::const_iterator iter)
 				//weird file format...
 				est.isRC = a.isRC != b.isRC;
 
-				if (est.distance == 1 - opt::k) {
-					//Distance of 1 - k means alignments a and b are
-					//adjacent. Add forward and reverse estimates to
-					//adjMap.
-					addEstimate(adjMap, a, est, false);
-					Estimate revEst;
-					revEst.nID = convertContigIDToLinearNumKey(a.contig);
-					revEst.distance = est.distance;
-					revEst.numPairs = 1;
-					revEst.stdDev = 0;
-					revEst.isRC = est.isRC;
-					addEstimate(adjMap, b, revEst, true);
-					continue;
-				}
 				addEstimate(estMap, a, est, false);
 			}
 		}
@@ -190,9 +175,30 @@ static void generateDistFile()
 		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
 			if (refIsRC)
 				distFile << " |";
+
+			/*bool next = false;
 			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0)
+				EstimateVector::const_iterator compIt = vecIt;
+				++compIt;
+				while (compIt != mapIt->second.estimates[refIsRC].end()) {
+					if (compIt->distance == vecIt->distance) {
+						next = true;
+						break;
+					}
+					++compIt;
+				}
+				if (next)
+					break;
+			}
+
+			if (next)
+				continue;*/
+
+			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
+				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0
+						&& vecIt->distance > 1 - opt::k)
 					distFile << " " << *vecIt;
 			}
 		}
@@ -211,20 +217,21 @@ static void generateAdjFile()
 	for (unsigned contig = 0; contig <= lastContig; contig++) {
 		stringstream s;
 		s << contig;
-		EstimateMap::const_iterator mapIt = adjMap.find(s.str());
-		if (mapIt != adjMap.end()) {
+		EstimateMap::const_iterator mapIt = estMap.find(s.str());
+		adjFile << s;
+		if (mapIt != estMap.end()) {
 			assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
-			adjFile << mapIt->first;
 			for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
 				adjFile << " [";
 				for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
 						vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt)
-					adjFile << " " << vecIt->nID << "," << vecIt->isRC;
+					if (vecIt->distance == 1 - opt::k)
+						adjFile << " " << vecIt->nID << "," << vecIt->isRC;
 				adjFile << " ]";
 			}
 			adjFile << "\n";
 		} else
-			adjFile << contig << " [ ] [ ]\n";
+			adjFile << " [ ] [ ]\n";
 	}
 	adjFile.close();
 }
