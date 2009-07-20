@@ -1,6 +1,8 @@
 #include "PairUtils.h"
 #include <cassert>
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 
@@ -209,6 +211,12 @@ Histogram loadHist(std::string distCountFile)
 	while (distFile >> value >> count)
 		hist.addMultiplePoints(value, count);
 	assert(distFile.eof());
+
+	if (hist.getSumCount() == 0) {
+		cerr << "error: the histogram `" << distCountFile
+			<< "' is empty\n";
+		exit(EXIT_FAILURE);
+	}
 	return hist;
 }
 
