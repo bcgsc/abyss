@@ -1,5 +1,5 @@
 #!/bin/bash
-# Written by Shaun Jackman <sjackman@gmail.com>.
+# Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
 set -e
 if [ $# != 2 ]; then
