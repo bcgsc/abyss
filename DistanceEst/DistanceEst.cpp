@@ -75,6 +75,33 @@ int estimateDistance(int refLen, int pairLen,
 void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf);
 
+static void assert_open(ifstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
+/** Load a histogram from the specified file. */
+Histogram loadHist(string path)
+{
+	ifstream in(path.c_str());
+	assert_open(in, path);
+
+	Histogram hist;
+	int value;
+	unsigned count;
+	while (in >> value >> count)
+		hist.addMultiplePoints(value, count);
+	assert(in.eof());
+
+	if (hist.getSumCount() == 0) {
+		cerr << "error: the histogram `" << path << "' is empty\n";
+		exit(EXIT_FAILURE);
+	}
+	return hist;
+}
 
 int main(int argc, char** argv)
 {
@@ -147,14 +174,6 @@ int main(int argc, char** argv)
 	processContigs(alignFile, contigLens, empiricalPDF);
 
 	return 0;
-}
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
 }
 
 void processContigs(string alignFile,

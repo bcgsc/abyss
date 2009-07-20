@@ -153,12 +153,7 @@ void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleConti
 // Length files
 void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
 
-// Hist loader
-Histogram loadHist(std::string distCountFile);
-
 // Convertor
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
-
-
 
 #endif

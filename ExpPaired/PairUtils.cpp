@@ -197,29 +197,6 @@ void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
 	contigLenStream.close();
 }
 
-//
-// Hist loader
-//
-Histogram loadHist(std::string distCountFile)
-{
-	ifstream distFile(distCountFile.c_str());
-	assert(distFile.is_open());
-
-	Histogram hist;
-	int value;
-	unsigned count;
-	while (distFile >> value >> count)
-		hist.addMultiplePoints(value, count);
-	assert(distFile.eof());
-
-	if (hist.getSumCount() == 0) {
-		cerr << "error: the histogram `" << distCountFile
-			<< "' is empty\n";
-		exit(EXIT_FAILURE);
-	}
-	return hist;
-}
-
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
 {
 	LinearNumKey key;
