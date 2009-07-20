@@ -220,7 +220,7 @@ void parse(int argc, char* const* argv)
 	}
 
 	if (opt::rank <= 0)
-		cout << sargv.str() << endl;
+		cout << "ABySS " VERSION "\n" << sargv.str() << endl;
 }
 
 } // namespace opt
