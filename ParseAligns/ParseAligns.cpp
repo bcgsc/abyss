@@ -298,12 +298,19 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 							stats.numMisoriented++;
 					}
 					if (size < opt::k) {
-						// Print the alignment
+						/* For an inverted repeat, print only the
+						 * one alignment because only one distance
+						 * estimate is expected. For a non-inverted
+						 * repeat, two distance esimates are expected
+						 * (both to and from the repeat to itself) so
+						 * print both alignments. */
 						pairedAlignFile
 							<< currID << ' ' << a0 << ' '
-							<< pairID << ' ' << a1 << '\n'
-							<< pairID << ' ' << a1 << ' '
-							<< currID << ' ' << a0 << '\n';
+							<< pairID << ' ' << a1 << '\n';
+						if (a0.isRC != a1.isRC)
+							pairedAlignFile
+								<< pairID << ' ' << a1 << ' '
+								<< currID << ' ' << a0 << '\n';
 						assert(pairedAlignFile.good());
 					}
 				} else {
