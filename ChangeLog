@@ -1,3 +1,32 @@
+2009-07-21  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.11.
+	* Assemble colour-space reads. Read identifiers must be named with
+	the suffixes F3 and R3.
+	* Read files in qseq format. Thanks to Tony Raymond (tgr).
+	* Prevent misassemblies mediated by tandem segmental duplications.
+	A sequence XRRY, where R is a repeat sequence, could have been
+	misassembled as XRY. (tgr)
+
+	abyss-pe:
+	* Integrate with Sun Grid Engine (SGE). A parallel, paired-end
+	assembly can be run with a single qsub command. The parameters
+	lib, np and k default to the qsub environment variables JOB_NAME
+	(qsub -N), NSLOTS (qsub -pe) and SGE_TASK_ID (qsub -t)
+	respectively.
+	* The .pair file, the largest intermediate file, is now gzipped.
+
+	ABYSS-P:
+	* Bug fix. At k=19, k-mer would be distributed to even-numbered
+	processes only.
+
+	KAligner:
+	* Multithreaded. The -j, --threads option specifies the number of
+	threads to use. The order in which the alignments are output will
+	vary from run to run, but the alignments are deterministic and
+	will not vary. Each thread reads and aligns one file, so the reads
+	must be in more than one file to use this feature. (tgr)
+
 2009-06-18  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.10.
