@@ -301,7 +301,9 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 						// Print the alignment
 						pairedAlignFile
 							<< currID << ' ' << a0 << ' '
-							<< pairID << ' ' << a1 << '\n';
+							<< pairID << ' ' << a1 << '\n'
+							<< pairID << ' ' << a1 << ' '
+							<< currID << ' ' << a0 << '\n';
 						assert(pairedAlignFile.good());
 					}
 				} else {
