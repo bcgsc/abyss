@@ -2,7 +2,6 @@
 #define DIRECTEDGRAPH_H 1
 
 #include "Sense.h"
-#include "HashMap.h"
 #include <ostream>
 #include <map>
 #include <set>
