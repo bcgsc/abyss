@@ -125,43 +125,6 @@ EdgeDescription Vertex<K,D>::findUniqueEdge(const K& key)
 	return ret;
 }
 
-//
-//
-//
-template<typename K, typename D>
-EdgeDescription Vertex<K,D>::findUniqueEdgeInDir(const K& key, extDirection dir)
-{
-	bool found = false;
-	EdgeDescription ret;
-
-	const EdgeCollection& currEdgeSet = m_edges[dir];
-	for(EdgeCollectionConstIter edgeIter = currEdgeSet.begin(); edgeIter != currEdgeSet.end(); ++edgeIter)
-	{
-		if(edgeIter->pVertex->m_key == key)
-		{
-			if(!found)
-			{
-				ret.dir = dir;
-				ret.reverse = edgeIter->reverse;
-				found = true;
-			}
-			/*else
-			{
-				printf("Error: Tried to get an edge without checking for uniqueness!\n");
-				assert(false);
-			}*/
-		}
-	}
-
-	if(!found)
-	{
-		printf("Could not find edge %s for vertex %s\n", key.c_str(), m_key.c_str());
-		assert(found);
-	}
-	
-	return ret;
-}
-
 template<typename K, typename D>
 bool Vertex<K,D>::edgeExists(const K& key, extDirection dir, bool reverse)
 {
@@ -645,13 +608,6 @@ void DirectedGraph<D>::generateComponents(VertexType* pVertex, extDirection dir,
 }
 
 template<typename D>
-EdgeDescription DirectedGraph<D>::getUniqueEdgeDesc(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir)
-{
-    VertexType* pSourceVertex = findVertex(key1);
-    return pSourceVertex->findUniqueEdgeInDir(key2, parentDir);
-}
-
-template<typename D>
 template<class DataCostFunctor>
 void DirectedGraph<D>::accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost)
 {	
@@ -1013,13 +969,3 @@ void DirectedGraph<D>::makeDistanceMap(const VertexPath& path, DataCostFunctor c
 	}
 	return;	
 }
-
-
-/*
-template<typename K, typename D>
-template<class Functor>
-void DirectedGraph<T,D>::bfsVisit(Functor f)
-{
-	T def("ATAGAC");
-	f(def);
-}*/
