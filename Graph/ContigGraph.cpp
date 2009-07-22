@@ -13,7 +13,8 @@ using namespace std;
 template class DirectedGraph<SimpleContigData>;
 
 /** Load an adjacency graph. */
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph, string& lengthFile, string adjFile)
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
+		string& lengthFile, string adjFile)
 {
 	// Load the lengths temporarily
 	ContigLengthVec* pLengthVec = new ContigLengthVec();
@@ -62,7 +63,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph, string& lengthFile, string 
 			numVert, numEdges);
 }
 
-void parseAdjacencyLine(string& adjLine, LinearNumKey currVert, SimpleContigGraph* pGraph)
+void parseAdjacencyLine(string& adjLine, LinearNumKey currVert,
+		SimpleContigGraph* pGraph)
 {
 	// convert to string stream
 	stringstream ss(adjLine);
@@ -84,18 +86,13 @@ void parseAdjacencyLine(string& adjLine, LinearNumKey currVert, SimpleContigGrap
 			if(record == "]")
 			{
 				done = true;
-			}
-			else
-			{
-				LinearNumKey adjID;
-				SimpleEdgeDesc sed;
+			} else {
 				stringstream recSS(record);
+				SimpleEdgeDesc sed;
 				recSS >> sed;
-
-				adjID = convertContigIDToLinearNumKey(sed.contig);
-
-				// Convert the ids
-				pGraph->addEdge(currVert, adjID, (extDirection)dirIdx, sed.isRC);
+				pGraph->addEdge(currVert,
+						convertContigIDToLinearNumKey(sed.contig),
+						(extDirection)dirIdx, sed.isRC);
 			}
 		}
 	}
