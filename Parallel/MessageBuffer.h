@@ -23,6 +23,26 @@ class MessageBuffer
 		// Constructor, create a message buffer for every process
 		MessageBuffer(CommLayer* pComm);
 
+		void sendCheckPointMessage(int argument = 0)
+		{
+			assert(empty());
+			m_pCommLayer->SendCheckPointMessage(argument);
+		}
+
+		void sendControlMessage(APControl command, int argument = 0)
+		{
+			assert(empty());
+			m_pCommLayer->sendControlMessage(command, argument);
+		}
+
+		void sendControlMessageToNode(int dest,
+				APControl command, int argument = 0)
+		{
+			assert(empty());
+			m_pCommLayer->SendControlMessageToNode(dest,
+					command, argument);
+		}
+
 		// send a sequence operation message
 		void sendSeqOpMessage(int nodeID, const PackedSeq& seq, MessageOp op);
 		
