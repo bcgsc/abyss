@@ -78,7 +78,8 @@ uint64_t CommLayer::SendCheckPointMessage(int argument)
 	msg.msgType = APC_CHECKPOINT;
 	msg.argument = argument;
 
-	MPI_Ssend(&msg, sizeof(ControlMessage), MPI_BYTE, CONTROL_ID, APM_CONTROL, MPI_COMM_WORLD);
+	MPI_Send(&msg, sizeof msg,
+			MPI_BYTE, 0, APM_CONTROL, MPI_COMM_WORLD);
 	return msg.id;
 }
 
@@ -100,10 +101,10 @@ uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argume
 	msg.id = m_msgID++;
 	msg.msgType = m;
 	msg.argument = argument;
-	
-	// Control messages are synchronous
-	MPI_Ssend(&msg, sizeof(ControlMessage), MPI_BYTE, nodeID, APM_CONTROL, MPI_COMM_WORLD);
-	return msg.id;	
+
+	MPI_Send(&msg, sizeof msg,
+			MPI_BYTE, nodeID, APM_CONTROL, MPI_COMM_WORLD);
+	return msg.id;
 }
 
 /** Receive a control message. */

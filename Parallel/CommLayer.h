@@ -17,8 +17,6 @@ struct ControlMessage
 	int argument;
 };
 
-const int CONTROL_ID = 0;
-
 // The comm layer wraps inter-process communication operations
 class CommLayer
 {
