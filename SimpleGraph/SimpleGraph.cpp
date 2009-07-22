@@ -1,5 +1,6 @@
 #include "config.h"
 #include "ContigPath.h"
+#include "DirectedGraphImpl.h"
 #include "PairUtils.h"
 #include "SetOperations.h"
 #include <cmath>

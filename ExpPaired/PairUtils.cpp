@@ -63,16 +63,12 @@ std::istream& readEstimateRecord(std::istream& stream,
 	return stream;
 }
 
+#include "DirectedGraphImpl.h"
 
-//
-//
-// Adjacency file loaders
-//
-//
+// Explicit instantiation of the class.
+template class DirectedGraph<SimpleContigData>;
 
-//
-//
-//
+/** Load an adjacency graph. */
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile)
 {
 	// Load the lengths temporarily

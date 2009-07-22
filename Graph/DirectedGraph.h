@@ -326,7 +326,4 @@ class DirectedGraph
 		VertexTable m_vertexTable;
 };
 
-// the template implementation file
-#include "DirectedGraphImpl.h"
-
 #endif
