@@ -11,8 +11,7 @@ static const unsigned RX_BUFSIZE = 16*1024;
 CommLayer::CommLayer()
 	: m_msgID(0),
 	  m_rxBuffer(new uint8_t[RX_BUFSIZE]),
-	  m_request(MPI_REQUEST_NULL),
-	  m_pMsgBuffer(NULL)
+	  m_request(MPI_REQUEST_NULL)
 {
 	assert(m_request == MPI_REQUEST_NULL);
 	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
@@ -73,7 +72,7 @@ unsigned CommLayer::reduce(unsigned count)
 
 uint64_t CommLayer::SendCheckPointMessage(int argument)
 {
-	assert(m_pMsgBuffer->empty());
+	assert(opt::rank != 0);
 	ControlMessage msg;
 	msg.id = m_msgID++;
 	msg.msgType = APC_CHECKPOINT;
@@ -87,7 +86,6 @@ uint64_t CommLayer::SendCheckPointMessage(int argument)
 /** Send a control message to every other process. */
 void CommLayer::sendControlMessage(APControl m, int argument)
 {
-	assert(m_pMsgBuffer->empty());
 	for (int i = 0; i < opt::numProc; i++)
 		if (i != opt::rank) // Don't send the message to myself.
 			SendControlMessageToNode(i, m, argument);
@@ -97,7 +95,6 @@ void CommLayer::sendControlMessage(APControl m, int argument)
 uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
 {
 	assert(opt::rank == 0);
-	assert(m_pMsgBuffer->empty());
 	ControlMessage msg;
 	msg.id = m_msgID++;
 	msg.msgType = m;

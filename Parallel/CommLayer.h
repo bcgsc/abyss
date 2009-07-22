@@ -14,8 +14,6 @@ struct ControlMessage
 	int argument;
 };
 
-class MessageBuffer;
-
 // The comm layer wraps inter-process communication operations
 class CommLayer
 {
@@ -52,18 +50,11 @@ class CommLayer
 
 		// Receive a buffered sequence of messages
 		void ReceiveBufferedMessage(MessagePtrVector& outmessages);
-		
-		void setMsgBuffer(const MessageBuffer *pMsgBuffer)
-		{
-			assert(pMsgBuffer != NULL);
-			m_pMsgBuffer = pMsgBuffer;
-		}
 
 	private:
 		uint64_t m_msgID;
 		uint8_t* m_rxBuffer;
 		MPI_Request m_request;
-		const MessageBuffer *m_pMsgBuffer;
 };
 
 #endif

@@ -18,7 +18,6 @@ NetworkSequenceCollection::NetworkSequenceCollection()
 	m_pLocalSpace = new SequenceCollectionHash();
 	m_pComm = new CommLayer();
 	m_pMsgBuffer = new MessageBuffer(m_pComm);
-	m_pComm->setMsgBuffer(m_pMsgBuffer);
 }
 
 NetworkSequenceCollection::~NetworkSequenceCollection()
