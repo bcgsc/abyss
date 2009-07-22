@@ -1,6 +1,7 @@
 #include "config.h"
 #include "CommLayer.h"
 #include "Log.h"
+#include "MessageBuffer.h"
 #include "Options.h"
 #include <cstring>
 #include <mpi.h>

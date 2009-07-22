@@ -1,11 +1,8 @@
 #ifndef COMMLAYER_H
 #define COMMLAYER_H 1
 
-class CommLayer;
-
 #include "NetworkDefs.h"
 #include "Messages.h"
-#include "MessageBuffer.h"
 #include <mpi.h>
 
 typedef std::vector<Message*> MessagePtrVector;
@@ -16,6 +13,8 @@ struct ControlMessage
 	APControl msgType;
 	int argument;
 };
+
+class MessageBuffer;
 
 // The comm layer wraps inter-process communication operations
 class CommLayer
