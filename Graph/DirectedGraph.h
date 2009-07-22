@@ -14,7 +14,6 @@ typedef uint32_t LinearNumKey;
 enum VisitColor
 {
 	VC_WHITE,
-	VC_GRAY,
 	VC_BLACK
 };
 
