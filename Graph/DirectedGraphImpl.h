@@ -1,3 +1,4 @@
+#include "DirectedGraph.h"
 #include <algorithm>
 #include <cstdlib> // for exit
 #include <iostream>

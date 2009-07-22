@@ -1,4 +1,5 @@
 #include "config.h"
+#include "ContigGraph.h"
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"

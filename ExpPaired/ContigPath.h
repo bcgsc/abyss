@@ -1,8 +1,11 @@
 #ifndef CONTIGPATH_H
-#define CONTIGPATH_H
+#define CONTIGPATH_H 1
 
-#include "DirectedGraph.h" // for LinearNumKey
-#include <iostream>
+#include "PairUtils.h" // for LinearNumKey
+#include <cassert>
+#include <istream>
+#include <ostream>
+#include <vector>
 
 struct MergeNode
 {

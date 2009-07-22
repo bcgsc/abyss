@@ -4,6 +4,7 @@
  */
 
 #include "config.h"
+#include "ContigGraph.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
 #include <algorithm>

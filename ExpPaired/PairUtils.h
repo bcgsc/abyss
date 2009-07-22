@@ -1,7 +1,6 @@
 #ifndef PAIRUTILS_H
 #define PAIRUTILS_H 1
 
-#include "DirectedGraph.h"
 #include "Stats.h" // for Histogram
 #include <cmath> // for ceilf
 #include <iomanip>
@@ -9,13 +8,9 @@
 #include <sstream>
 #include <vector>
 
-struct SimpleContigData
-{
-	int length;
-};
-
 typedef std::vector<int> ContigLengthVec;
-typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
+
+typedef uint32_t LinearNumKey;
 
 // STRUCTURES
 struct Estimate
@@ -145,10 +140,6 @@ struct EstimateRecord
 		return readEstimateRecord(in, er);
 	}
 };
-
-// Adjacency file
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph,  std::string& lengthFile, std::string adjFile);
-void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert, SimpleContigGraph* pGraph);
 
 // Length files
 void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
