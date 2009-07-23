@@ -50,7 +50,7 @@ unsigned NetworkSequenceCollection::pumpFlushReduce()
 	m_pComm->barrier(); // Synchronize.
 	unsigned count = pumpNetwork(); // Receive and process.
 	if (count == 0)
-		assert(m_pMsgBuffer->empty());
+		assert(m_pMsgBuffer->transmitBufferEmpty());
 	return m_pComm->reduce(count); // Reduce.
 }
 
@@ -64,7 +64,7 @@ void NetworkSequenceCollection::completeOperation()
 	while (pumpFlushReduce() > 0)
 		;
 
-	assert(m_pMsgBuffer->empty()); // Nothing to send.
+	assert(m_pMsgBuffer->transmitBufferEmpty()); // Nothing to send.
 	m_pComm->barrier(); // Synchronize.
 	assert(m_pComm->receiveEmpty()); // Nothing to receive.
 }
@@ -181,7 +181,7 @@ void NetworkSequenceCollection::run()
 				assert(m_pComm->receiveEmpty());
 				m_pComm->reduce(
 						AssemblyAlgorithms::markAmbiguous(this));
-				assert(m_pMsgBuffer->empty());
+				assert(m_pMsgBuffer->transmitBufferEmpty());
 				assert(m_pComm->receiveEmpty());
 				m_pComm->barrier();
 				unsigned count
@@ -473,10 +473,10 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	PrintDebug(2, "SetState %u (was %u)\n", newState, m_state);
 
 	// Ensure there are no pending messages
-	assert(m_pMsgBuffer->empty());
-	
+	assert(m_pMsgBuffer->transmitBufferEmpty());
+
 	m_state = newState;
-	
+
 	// Reset the checkpoint counter
 	m_numReachedCheckpoint = 0;
 	m_checkpointSum = 0;
@@ -1020,7 +1020,7 @@ unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 	assert(m_pComm->receiveEmpty());
 	unsigned count = m_pComm->reduce(
 			AssemblyAlgorithms::markAmbiguous(this));
-	assert(m_pMsgBuffer->empty());
+	assert(m_pMsgBuffer->transmitBufferEmpty());
 	assert(m_pComm->receiveEmpty());
 	m_pComm->barrier();
 	printf("Marked %u ambiguous branches\n", count);

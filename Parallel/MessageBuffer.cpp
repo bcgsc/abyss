@@ -130,7 +130,7 @@ void MessageBuffer::flush()
 }
 
 // Check if all the queues are empty
-bool MessageBuffer::empty() const
+bool MessageBuffer::transmitBufferEmpty() const
 {
 	bool isEmpty = true;
 	for (MessageQueues::const_iterator it = m_msgQueues.begin();

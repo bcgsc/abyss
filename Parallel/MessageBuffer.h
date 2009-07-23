@@ -25,20 +25,20 @@ class MessageBuffer
 
 		void sendCheckPointMessage(int argument = 0)
 		{
-			assert(empty());
+			assert(transmitBufferEmpty());
 			m_pCommLayer->sendCheckPointMessage(argument);
 		}
 
 		void sendControlMessage(APControl command, int argument = 0)
 		{
-			assert(empty());
+			assert(transmitBufferEmpty());
 			m_pCommLayer->sendControlMessage(command, argument);
 		}
 
 		void sendControlMessageToNode(int dest,
 				APControl command, int argument = 0)
 		{
-			assert(empty());
+			assert(transmitBufferEmpty());
 			m_pCommLayer->sendControlMessageToNode(dest,
 					command, argument);
 		}
@@ -71,13 +71,11 @@ class MessageBuffer
 		
 		// Queue a message
 		void queueMessage(int nodeID, Message* message, SendMode mode);
-		
+
 		// clear out a queue
 		void clearQueue(int nodeID);
-		
-		// check if the message buffer is empty (no messages pending)
-		bool empty() const;
-		
+		bool transmitBufferEmpty() const;
+
 		// check if a queue is full, if so, send the messages
 		// if the immediate mode flag is set, send even if the queue is not full
 		void checkQueueForSend(int nodeID, SendMode mode);
