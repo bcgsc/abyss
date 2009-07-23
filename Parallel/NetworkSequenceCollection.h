@@ -184,9 +184,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Pointer to the local sequence space
 		// These sequences are held in memory on this process
 		SequenceCollectionHash* m_pLocalSpace;
-		
+
 		// The communications layer implements the functions over the network
-		CommLayer* m_pComm;
+		MessageBuffer* m_pComm;
 
 		// The number of nodes in the network
 		unsigned int m_numDataNodes;
@@ -222,9 +222,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// List of IDs of finished groups, used for sanity checking during bubble popping
 		std::set<uint64_t> m_finishedGroups;
-		
-		// Message buffer
-		MessageBuffer* m_pMsgBuffer;
 
 		static const size_t MAX_ACTIVE = 50;
 		static const size_t LOW_ACTIVE = 10;		

@@ -4,8 +4,8 @@
 
 using namespace std;
 
-MessageBuffer::MessageBuffer(CommLayer* pComm)
-	: m_msgQueues(opt::numProc), m_pCommLayer(pComm)
+MessageBuffer::MessageBuffer()
+	: m_msgQueues(opt::numProc)
 {
 	for (unsigned i = 0; i < m_msgQueues.size(); i++)
 		m_msgQueues[i].reserve(MAX_MESSAGES);
@@ -91,7 +91,7 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		//printf("TotalSize: %zu\n", totalSize);
 		//PrintBufferAsHex(buffer, totalSize);
 		// Send the message
-		m_pCommLayer->sendBufferedMessage(nodeID, buffer, totalSize);
+		sendBufferedMessage(nodeID, buffer, totalSize);
 
 		// free the buffer
 		delete [] buffer;

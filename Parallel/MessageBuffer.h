@@ -17,29 +17,28 @@ enum SendMode
 	SM_IMMEDIATE
 };
 
-class MessageBuffer
+class MessageBuffer : public CommLayer
 {
 	public:
-		// Constructor, create a message buffer for every process
-		MessageBuffer(CommLayer* pComm);
+		MessageBuffer();
 
 		void sendCheckPointMessage(int argument = 0)
 		{
 			assert(transmitBufferEmpty());
-			m_pCommLayer->sendCheckPointMessage(argument);
+			CommLayer::sendCheckPointMessage(argument);
 		}
 
 		void sendControlMessage(APControl command, int argument = 0)
 		{
 			assert(transmitBufferEmpty());
-			m_pCommLayer->sendControlMessage(command, argument);
+			CommLayer::sendControlMessage(command, argument);
 		}
 
 		void sendControlMessageToNode(int dest,
 				APControl command, int argument = 0)
 		{
 			assert(transmitBufferEmpty());
-			m_pCommLayer->sendControlMessageToNode(dest,
+			CommLayer::sendControlMessageToNode(dest,
 					command, argument);
 		}
 
@@ -83,7 +82,6 @@ class MessageBuffer
 	private:
 		static const size_t MAX_MESSAGES = 100;
 		MessageQueues m_msgQueues;
-		CommLayer* m_pCommLayer;
 };
 
 #endif
