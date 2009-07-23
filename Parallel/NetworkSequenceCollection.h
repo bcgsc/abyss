@@ -142,9 +142,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void setColourSpace(bool flag)
 		{
 			m_pLocalSpace->setColourSpace(flag);
-			m_comm.sendControlMessage(APC_SET_COLOURSPACE, flag);
-			// Start loading all files now that the ColourSpace flag is set.
-			m_comm.barrier();
+			m_comm.broadcast(flag);
 		}
 
 	private:

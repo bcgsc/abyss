@@ -74,8 +74,8 @@ void NetworkSequenceCollection::run()
 		switch(m_state)
 		{
 			case NAS_LOADING:
-				// Wait for the control to set the ColourSpace flag.
-				m_comm.barrier();
+				m_pLocalSpace->setColourSpace(
+						m_comm.receiveBroadcast());
 				loadSequences();
 				EndState();
 				SetState(NAS_WAITING);
@@ -583,9 +583,6 @@ void NetworkSequenceCollection::parseControlMessage()
 	ControlMessage controlMsg = m_comm.receiveControlMessage();
 	switch(controlMsg.msgType)
 	{
-		case APC_SET_COLOURSPACE:
-			m_pLocalSpace->setColourSpace(controlMsg.argument);
-			break;
 		case APC_LOAD_COMPLETE:
 			SetState(NAS_LOAD_COMPLETE);
 			break;
