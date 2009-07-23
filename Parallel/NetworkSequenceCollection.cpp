@@ -489,7 +489,7 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 {
 	for (unsigned count = 0; ; count++) {
 		int senderID;
-		APMessage msg = m_pComm->CheckMessage(senderID);
+		APMessage msg = m_pComm->checkMessage(senderID);
 		switch(msg)
 		{
 			case APM_CONTROL:
@@ -500,7 +500,7 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 			case APM_BUFFERED:
 				{
 					MessagePtrVector msgs;
-					m_pComm->ReceiveBufferedMessage(msgs);
+					m_pComm->receiveBufferedMessage(msgs);
 					for(MessagePtrVector::iterator iter = msgs.begin(); iter != msgs.end(); iter++)
 					{
 						// Handle each message based on its type
@@ -588,7 +588,7 @@ void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, c
 //
 void NetworkSequenceCollection::parseControlMessage()
 {
-	ControlMessage controlMsg = m_pComm->ReceiveControlMessage();
+	ControlMessage controlMsg = m_pComm->receiveControlMessage();
 	switch(controlMsg.msgType)
 	{
 		case APC_SET_COLOURSPACE:
@@ -905,10 +905,12 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 
 		if (!m_pComm->receiveEmpty()) {
 			int sendID;
-			std::cerr << " COMM NOT EMPTY MESSAGE WAITING ID: " << (int)m_pComm->CheckMessage(sendID) << " sender " << sendID << std::endl;
-			std::cerr << " Attempting pump " << std::endl;
+			cerr << " COMM NOT EMPTY MESSAGE WAITING ID: "
+				<< (int)m_pComm->checkMessage(sendID)
+				<< " sender " << sendID << endl;
+			cerr << " Attempting pump " << endl;
 			pumpNetwork();
-			std::cerr << " Pump returned ok " << std::endl;
+			cerr << " Pump returned ok " << endl;
 		}
 		assert(m_pComm->receiveEmpty());
 	}

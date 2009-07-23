@@ -91,8 +91,8 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		//printf("TotalSize: %zu\n", totalSize);
 		//PrintBufferAsHex(buffer, totalSize);
 		// Send the message
-		m_pCommLayer->SendBufferedMessage(nodeID, buffer, totalSize);
-		
+		m_pCommLayer->sendBufferedMessage(nodeID, buffer, totalSize);
+
 		// free the buffer
 		delete [] buffer;
 		

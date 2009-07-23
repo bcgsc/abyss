@@ -26,7 +26,7 @@ class MessageBuffer
 		void sendCheckPointMessage(int argument = 0)
 		{
 			assert(empty());
-			m_pCommLayer->SendCheckPointMessage(argument);
+			m_pCommLayer->sendCheckPointMessage(argument);
 		}
 
 		void sendControlMessage(APControl command, int argument = 0)
@@ -39,7 +39,7 @@ class MessageBuffer
 				APControl command, int argument = 0)
 		{
 			assert(empty());
-			m_pCommLayer->SendControlMessageToNode(dest,
+			m_pCommLayer->sendControlMessageToNode(dest,
 					command, argument);
 		}
 

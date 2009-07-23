@@ -30,7 +30,7 @@ CommLayer::~CommLayer()
  * be followed by a call to either ReceiveControlMessage or
  * ReceiveBufferedMessage.
  */
-APMessage CommLayer::CheckMessage(int& sendID)
+APMessage CommLayer::checkMessage(int& sendID)
 {
 	int flag;
 	MPI_Status status;
@@ -70,7 +70,7 @@ unsigned CommLayer::reduce(unsigned count)
 	return sum;
 }
 
-uint64_t CommLayer::SendCheckPointMessage(int argument)
+uint64_t CommLayer::sendCheckPointMessage(int argument)
 {
 	assert(opt::rank != 0);
 	ControlMessage msg;
@@ -88,11 +88,12 @@ void CommLayer::sendControlMessage(APControl m, int argument)
 {
 	for (int i = 0; i < opt::numProc; i++)
 		if (i != opt::rank) // Don't send the message to myself.
-			SendControlMessageToNode(i, m, argument);
+			sendControlMessageToNode(i, m, argument);
 }
 
-// Send a control message to a specific node
-uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argument)
+/** Send a control message to a specific node. */
+uint64_t CommLayer::sendControlMessageToNode(int nodeID,
+		APControl m, int argument)
 {
 	assert(opt::rank == 0);
 	ControlMessage msg;
@@ -106,7 +107,7 @@ uint64_t CommLayer::SendControlMessageToNode(int nodeID, APControl m, int argume
 }
 
 /** Receive a control message. */
-ControlMessage CommLayer::ReceiveControlMessage()
+ControlMessage CommLayer::receiveControlMessage()
 {
 	int flag;
 	MPI_Status status;
@@ -126,17 +127,16 @@ ControlMessage CommLayer::ReceiveControlMessage()
 	return msg;
 }
 
-//
-// Send a buffered collection of messages
-//
-void CommLayer::SendBufferedMessage(int destID, char* msg, size_t size)
+/** Send a buffered collection of messages. */
+void CommLayer::sendBufferedMessage(int destID,
+		char* msg, size_t size)
 {
 	MPI_Send(msg, size, MPI_BYTE, destID, APM_BUFFERED,
 			MPI_COMM_WORLD);
 }
 
 /** Receive a buffered message. */
-void CommLayer::ReceiveBufferedMessage(MessagePtrVector& outmessages)
+void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 {
 	int flag;
 	MPI_Status status;

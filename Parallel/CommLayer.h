@@ -22,7 +22,7 @@ class CommLayer
 		~CommLayer();
 
 		// Check if a message exists, if it does return the type
-		APMessage CheckMessage(int &sendID);
+		APMessage checkMessage(int &sendID);
 
 		// Return whether a message has been received.
 		bool receiveEmpty();
@@ -37,19 +37,20 @@ class CommLayer
 		void sendControlMessage(APControl m, int argument = 0);
 
 		// Send a control message to a specific node
-		uint64_t SendControlMessageToNode(int nodeID, APControl m, int argument = 0);
+		uint64_t sendControlMessageToNode(int nodeID,
+				APControl command, int argument = 0);
 
 		// Receive a control message
-		ControlMessage ReceiveControlMessage();
-		
+		ControlMessage receiveControlMessage();
+
 		// Send a message that the checkpoint has been reached
-		uint64_t SendCheckPointMessage(int argument = 0);
+		uint64_t sendCheckPointMessage(int argument = 0);
 
 		// Send a buffered message
-		void SendBufferedMessage(int destID, char* msg, size_t size);
+		void sendBufferedMessage(int destID, char* msg, size_t size);
 
 		// Receive a buffered sequence of messages
-		void ReceiveBufferedMessage(MessagePtrVector& outmessages);
+		void receiveBufferedMessage(MessagePtrVector& outmessages);
 
 	private:
 		uint64_t m_msgID;
