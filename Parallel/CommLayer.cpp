@@ -57,6 +57,24 @@ void CommLayer::barrier()
 	PrintDebug(4, "left barrier\n");
 }
 
+/** Broadcast a message. */
+void CommLayer::broadcast(int message)
+{
+	assert(opt::rank == 0);
+	MPI_Bcast(&message, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	barrier();
+}
+
+/** Receive a broadcast message. */
+int CommLayer::receiveBroadcast()
+{
+	assert(opt::rank != 0);
+	int message;
+	MPI_Bcast(&message, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	barrier();
+	return message;
+}
+
 /** Block until all processes have reached this routine.
  * @return the sum of count from all processors
  */

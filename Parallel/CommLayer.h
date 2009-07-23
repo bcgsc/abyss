@@ -30,6 +30,9 @@ class CommLayer
 		// Block until all processes have reached this routine.
 		void barrier();
 
+		void broadcast(int message);
+		int receiveBroadcast();
+
 		// Block until all processes have reached this routine.
 		unsigned reduce(unsigned count);
 
