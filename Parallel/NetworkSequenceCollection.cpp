@@ -66,7 +66,7 @@ void NetworkSequenceCollection::completeOperation()
 
 	assert(m_pMsgBuffer->empty()); // Nothing to send.
 	m_pComm->barrier(); // Synchronize.
-	assert(m_pComm->empty()); // Nothing to receive.
+	assert(m_pComm->receiveEmpty()); // Nothing to receive.
 }
 
 //
@@ -178,11 +178,11 @@ void NetworkSequenceCollection::run()
 			case NAS_SPLIT:
 			{
 				m_pComm->barrier();
-				assert(m_pComm->empty());
+				assert(m_pComm->receiveEmpty());
 				m_pComm->reduce(
 						AssemblyAlgorithms::markAmbiguous(this));
 				assert(m_pMsgBuffer->empty());
-				assert(m_pComm->empty());
+				assert(m_pComm->receiveEmpty());
 				m_pComm->barrier();
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
@@ -888,7 +888,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	// synchronization guarantees that the packets have been
 	// delivered, but we may not have dealt with them yet.
 	pumpNetwork();
-	assert(m_pComm->empty());
+	assert(m_pComm->receiveEmpty());
 
 	unsigned numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
@@ -903,16 +903,14 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
 
-		if(!m_pComm->empty())
-		{
+		if (!m_pComm->receiveEmpty()) {
 			int sendID;
 			std::cerr << " COMM NOT EMPTY MESSAGE WAITING ID: " << (int)m_pComm->CheckMessage(sendID) << " sender " << sendID << std::endl;
 			std::cerr << " Attempting pump " << std::endl;
 			pumpNetwork();
 			std::cerr << " Pump returned ok " << std::endl;
-			assert(false);
 		}
-		assert(m_pComm->empty());
+		assert(m_pComm->receiveEmpty());
 	}
 	m_bubbles.clear();
 
@@ -1017,11 +1015,11 @@ int NetworkSequenceCollection::controlPopBubbles()
 unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 {
 	puts("Marking ambiguous branches");
-	assert(m_pComm->empty());
+	assert(m_pComm->receiveEmpty());
 	unsigned count = m_pComm->reduce(
 			AssemblyAlgorithms::markAmbiguous(this));
 	assert(m_pMsgBuffer->empty());
-	assert(m_pComm->empty());
+	assert(m_pComm->receiveEmpty());
 	m_pComm->barrier();
 	printf("Marked %u ambiguous branches\n", count);
 	return count;

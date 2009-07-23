@@ -41,7 +41,7 @@ APMessage CommLayer::CheckMessage(int& sendID)
 }
 
 /** Return true if no message has been received. */
-bool CommLayer::empty()
+bool CommLayer::receiveEmpty()
 {
 	int flag;
 	MPI_Status status;

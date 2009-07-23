@@ -24,8 +24,8 @@ class CommLayer
 		// Check if a message exists, if it does return the type
 		APMessage CheckMessage(int &sendID);
 
-		// Return whether the queue of messages is empty.
-		bool empty();
+		// Return whether a message has been received.
+		bool receiveEmpty();
 
 		// Block until all processes have reached this routine.
 		void barrier();
