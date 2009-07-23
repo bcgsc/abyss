@@ -10,7 +10,6 @@ using namespace std;
 
 NetworkSequenceCollection::NetworkSequenceCollection()
 	: m_pLocalSpace(new SequenceCollectionHash()),
-	m_pComm(new MessageBuffer()),
 	m_state(NAS_WAITING),
 	m_numBasesAdjSet(0),
 	m_trimStep(0),
@@ -24,9 +23,6 @@ NetworkSequenceCollection::~NetworkSequenceCollection()
 	// Delete the objects created in the constructor
 	delete m_pLocalSpace;
 	m_pLocalSpace = 0;
-	
-	delete m_pComm;
-	m_pComm = 0;
 }
 
 void NetworkSequenceCollection::loadSequences()
@@ -42,12 +38,12 @@ void NetworkSequenceCollection::loadSequences()
  */
 unsigned NetworkSequenceCollection::pumpFlushReduce()
 {
-	m_pComm->flush(); // Send.
-	m_pComm->barrier(); // Synchronize.
+	m_comm.flush(); // Send.
+	m_comm.barrier(); // Synchronize.
 	unsigned count = pumpNetwork(); // Receive and process.
 	if (count == 0)
-		assert(m_pComm->transmitBufferEmpty());
-	return m_pComm->reduce(count); // Reduce.
+		assert(m_comm.transmitBufferEmpty());
+	return m_comm.reduce(count); // Reduce.
 }
 
 /** Receive packets and process them until no more work exists for any
@@ -60,9 +56,9 @@ void NetworkSequenceCollection::completeOperation()
 	while (pumpFlushReduce() > 0)
 		;
 
-	assert(m_pComm->transmitBufferEmpty()); // Nothing to send.
-	m_pComm->barrier(); // Synchronize.
-	assert(m_pComm->receiveEmpty()); // Nothing to receive.
+	assert(m_comm.transmitBufferEmpty()); // Nothing to send.
+	m_comm.barrier(); // Synchronize.
+	assert(m_comm.receiveEmpty()); // Nothing to receive.
 }
 
 //
@@ -79,19 +75,19 @@ void NetworkSequenceCollection::run()
 		{
 			case NAS_LOADING:
 				// Wait for the control to set the ColourSpace flag.
-				m_pComm->barrier();
+				m_comm.barrier();
 				loadSequences();
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage();
+				m_comm.sendCheckPointMessage();
 				break;
 			case NAS_LOAD_COMPLETE:
-				m_pComm->barrier();
+				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu sequences\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
-				m_pComm->reduce(m_pLocalSpace->count());
+				m_comm.reduce(m_pLocalSpace->count());
 				EndState();
 				SetState(NAS_WAITING);
 				break;
@@ -99,25 +95,25 @@ void NetworkSequenceCollection::run()
 				AssemblyAlgorithms::generateAdjacency(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage();
+				m_comm.sendCheckPointMessage();
 				break;
 			case NAS_ADJ_COMPLETE:
-				m_pComm->barrier();
+				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Generated %u edges\n",
 						m_numBasesAdjSet);
-				m_pComm->reduce(m_numBasesAdjSet);
+				m_comm.reduce(m_numBasesAdjSet);
 				EndState();
 				SetState(NAS_WAITING);
 				break;
 			case NAS_ERODE:
 			{
-				m_pComm->barrier();
+				m_comm.barrier();
 				unsigned numEroded
 					= AssemblyAlgorithms::erodeEnds(this);
 				EndState();
 				SetState(NAS_ERODE_WAITING);
-				m_pComm->sendCheckPointMessage(numEroded);
+				m_comm.sendCheckPointMessage(numEroded);
 				break;
 			}
 			case NAS_ERODE_WAITING:
@@ -125,31 +121,31 @@ void NetworkSequenceCollection::run()
 				break;
 			case NAS_ERODE_COMPLETE:
 				completeOperation();
-				m_pComm->reduce(AssemblyAlgorithms::getNumEroded());
+				m_comm.reduce(AssemblyAlgorithms::getNumEroded());
 
-				m_pComm->reduce(m_pLocalSpace->cleanup());
+				m_comm.reduce(m_pLocalSpace->cleanup());
 				m_pLocalSpace->printLoad();
-				m_pComm->barrier();
+				m_comm.barrier();
 
 				SetState(NAS_WAITING);
 				break;
 			case NAS_TRIM:
 			{
 				assert(m_trimStep != 0);
-				m_pComm->barrier();
+				m_comm.barrier();
 				int numRemoved = performNetworkTrim(this, m_trimStep);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(numRemoved);
+				m_comm.sendCheckPointMessage(numRemoved);
 				break;
 			}
 			case NAS_REMOVE_MARKED: {
-				m_pComm->barrier();
+				m_comm.barrier();
 				unsigned count
 					= AssemblyAlgorithms::removeMarked(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(count);
+				m_comm.sendCheckPointMessage(count);
 				break;
 			}
 			case NAS_DISCOVER_BUBBLES:
@@ -159,7 +155,7 @@ void NetworkSequenceCollection::run()
 							opt::kmerSize);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(numDiscovered);
+				m_comm.sendCheckPointMessage(numDiscovered);
 				break;
 			}
 			case NAS_POPBUBBLE:
@@ -168,23 +164,23 @@ void NetworkSequenceCollection::run()
 					= performNetworkPopBubbles(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(numPopped);
+				m_comm.sendCheckPointMessage(numPopped);
 				break;
 			}
 			case NAS_SPLIT:
 			{
-				m_pComm->barrier();
-				assert(m_pComm->receiveEmpty());
-				m_pComm->reduce(
+				m_comm.barrier();
+				assert(m_comm.receiveEmpty());
+				m_comm.reduce(
 						AssemblyAlgorithms::markAmbiguous(this));
-				assert(m_pComm->transmitBufferEmpty());
-				assert(m_pComm->receiveEmpty());
-				m_pComm->barrier();
+				assert(m_comm.transmitBufferEmpty());
+				assert(m_comm.receiveEmpty());
+				m_comm.barrier();
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(count);
+				m_comm.sendCheckPointMessage(count);
 				break;
 			}
 			case NAS_ASSEMBLE:
@@ -195,7 +191,7 @@ void NetworkSequenceCollection::run()
 				delete writer;
 				EndState();
 				SetState(NAS_WAITING);
-				m_pComm->sendCheckPointMessage(numAssembled);
+				m_comm.sendCheckPointMessage(numAssembled);
 				break;
 			}
 			case NAS_WAITING:
@@ -212,8 +208,8 @@ void NetworkSequenceCollection::run()
 unsigned NetworkSequenceCollection::controlErode()
 {
 	SetState(NAS_ERODE);
-	m_pComm->sendControlMessage(APC_ERODE);
-	m_pComm->barrier();
+	m_comm.sendControlMessage(APC_ERODE);
+	m_comm.barrier();
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
 
@@ -230,21 +226,21 @@ unsigned NetworkSequenceCollection::controlErode()
 
 	if (numEroded == 0) {
 		SetState(NAS_WAITING);
-		m_pComm->sendControlMessage(APC_WAIT);
-		m_pComm->barrier();
+		m_comm.sendControlMessage(APC_WAIT);
+		m_comm.barrier();
 		return 0;
 	}
 
 	SetState(NAS_ERODE_COMPLETE);
-	m_pComm->sendControlMessage(APC_ERODE_COMPLETE);
+	m_comm.sendControlMessage(APC_ERODE_COMPLETE);
 	completeOperation();
-	numEroded += m_pComm->reduce(
+	numEroded += m_comm.reduce(
 			AssemblyAlgorithms::getNumEroded());
 	printf("Eroded %u tips\n", numEroded);
 
-	unsigned removed = m_pComm->reduce(m_pLocalSpace->cleanup());
+	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
 	m_pLocalSpace->printLoad();
-	m_pComm->barrier();
+	m_comm.barrier();
 	assert(removed == numEroded);
 
 	SetState(NAS_WAITING);
@@ -259,8 +255,8 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 	if (opt::verbose > 0)
 		puts("Sweeping");
 	SetState(NAS_REMOVE_MARKED);
-	m_pComm->sendControlMessage(APC_REMOVE_MARKED);
-	m_pComm->barrier();
+	m_comm.sendControlMessage(APC_REMOVE_MARKED);
+	m_comm.barrier();
 	unsigned count = AssemblyAlgorithms::removeMarked(this);
 	m_checkpointSum += count;
 	EndState();
@@ -277,8 +273,8 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	assert(trimLen > 0);
 	printf("Trimming short branches: %d\n", trimLen);
 	SetState(NAS_TRIM);
-	m_pComm->sendControlMessage(APC_TRIM, trimLen);
-	m_pComm->barrier();
+	m_comm.sendControlMessage(APC_TRIM, trimLen);
+	m_comm.barrier();
 	unsigned numRemoved = performNetworkTrim(this, trimLen);
 	EndState();
 
@@ -334,14 +330,14 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_LOAD_COMPLETE);
-				m_pComm->sendControlMessage(APC_LOAD_COMPLETE);
-				m_pComm->barrier();
+				m_comm.sendControlMessage(APC_LOAD_COMPLETE);
+				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu sequences\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				printf("Loaded %u sequences\n",
-						m_pComm->reduce(m_pLocalSpace->count()));
+						m_comm.reduce(m_pLocalSpace->count()));
 				EndState();
 
 				SetState(m_pLocalSpace->isAdjacencyLoaded()
@@ -349,7 +345,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
-				m_pComm->sendControlMessage(APC_GEN_ADJ);
+				m_comm.sendControlMessage(APC_GEN_ADJ);
 				AssemblyAlgorithms::generateAdjacency(this);
 				EndState();
 
@@ -358,13 +354,13 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_ADJ_COMPLETE);
-				m_pComm->sendControlMessage(APC_ADJ_COMPLETE);
-				m_pComm->barrier();
+				m_comm.sendControlMessage(APC_ADJ_COMPLETE);
+				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Generated %u edges\n",
 						m_numBasesAdjSet);
 				printf("Generated %u edges\n",
-						m_pComm->reduce(m_numBasesAdjSet));
+						m_comm.reduce(m_numBasesAdjSet));
 				EndState();
 
 				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
@@ -416,8 +412,8 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_SPLIT:
 			{
-				m_pComm->sendControlMessage(APC_SPLIT);
-				m_pComm->barrier();
+				m_comm.sendControlMessage(APC_SPLIT);
+				m_comm.barrier();
 				unsigned marked = controlMarkAmbiguous();
 				unsigned split = controlSplitAmbiguous();
 				assert(marked == split);
@@ -429,7 +425,7 @@ void NetworkSequenceCollection::runControl()
 				puts("Assembling");
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
-				m_pComm->sendControlMessage(APC_ASSEMBLE);
+				m_comm.sendControlMessage(APC_ASSEMBLE);
 				unsigned numAssembled = performNetworkAssembly(this,
 						writer);
 				delete writer;
@@ -442,7 +438,7 @@ void NetworkSequenceCollection::runControl()
 				printf("Assembled %u contigs\n", numAssembled);
 
 				SetState(NAS_DONE);
-				m_pComm->sendControlMessage(APC_FINISHED);
+				m_comm.sendControlMessage(APC_FINISHED);
 				break;
 			}
 			case NAS_DONE:
@@ -458,7 +454,7 @@ void NetworkSequenceCollection::runControl()
 void NetworkSequenceCollection::EndState()
 {
 	// Flush the message buffer
-	m_pComm->flush();
+	m_comm.flush();
 }
 
 //
@@ -469,7 +465,7 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 	PrintDebug(2, "SetState %u (was %u)\n", newState, m_state);
 
 	// Ensure there are no pending messages
-	assert(m_pComm->transmitBufferEmpty());
+	assert(m_comm.transmitBufferEmpty());
 
 	m_state = newState;
 
@@ -485,7 +481,7 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 {
 	for (unsigned count = 0; ; count++) {
 		int senderID;
-		APMessage msg = m_pComm->checkMessage(senderID);
+		APMessage msg = m_comm.checkMessage(senderID);
 		switch(msg)
 		{
 			case APM_CONTROL:
@@ -496,7 +492,7 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 			case APM_BUFFERED:
 				{
 					MessagePtrVector msgs;
-					m_pComm->receiveBufferedMessage(msgs);
+					m_comm.receiveBufferedMessage(msgs);
 					for(MessagePtrVector::iterator iter = msgs.begin(); iter != msgs.end(); iter++)
 					{
 						// Handle each message based on its type
@@ -584,7 +580,7 @@ void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, c
 //
 void NetworkSequenceCollection::parseControlMessage()
 {
-	ControlMessage controlMsg = m_pComm->receiveControlMessage();
+	ControlMessage controlMsg = m_comm.receiveControlMessage();
 	switch(controlMsg.msgType)
 	{
 		case APC_SET_COLOURSPACE:
@@ -599,11 +595,11 @@ void NetworkSequenceCollection::parseControlMessage()
 			break;	
 		case APC_WAIT:
 			SetState(NAS_WAITING);
-			m_pComm->barrier();
+			m_comm.barrier();
 			break;
 		case APC_BARRIER:
 			assert(m_state == NAS_WAITING);
-			m_pComm->barrier();
+			m_comm.barrier();
 			break;
 		case APC_FINISHED:
 			SetState(NAS_DONE);
@@ -662,7 +658,7 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 	(void)found;
 
 	// Return the extension to the sender
-	m_pComm->sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, multiplicity);
+	m_comm.sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, multiplicity);
 }
 
 //
@@ -884,7 +880,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	// synchronization guarantees that the packets have been
 	// delivered, but we may not have dealt with them yet.
 	pumpNetwork();
-	assert(m_pComm->receiveEmpty());
+	assert(m_comm.receiveEmpty());
 
 	unsigned numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
@@ -899,16 +895,16 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
 
-		if (!m_pComm->receiveEmpty()) {
+		if (!m_comm.receiveEmpty()) {
 			int sendID;
 			cerr << " COMM NOT EMPTY MESSAGE WAITING ID: "
-				<< (int)m_pComm->checkMessage(sendID)
+				<< (int)m_comm.checkMessage(sendID)
 				<< " sender " << sendID << endl;
 			cerr << " Attempting pump " << endl;
 			pumpNetwork();
 			cerr << " Pump returned ok " << endl;
 		}
-		assert(m_pComm->receiveEmpty());
+		assert(m_comm.receiveEmpty());
 	}
 	m_bubbles.clear();
 
@@ -964,7 +960,7 @@ bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 {
 	SetState(NAS_DISCOVER_BUBBLES);
-	m_pComm->sendControlMessage(APC_DISCOVER_BUBBLES);
+	m_comm.sendControlMessage(APC_DISCOVER_BUBBLES);
 
 	unsigned numDiscovered = performNetworkDiscoverBubbles(this,
 			opt::kmerSize);
@@ -993,10 +989,10 @@ int NetworkSequenceCollection::controlPopBubbles()
 
 	// Now tell all the slave nodes to perform the pop one by one
 	for(int i = 1; i < opt::numProc; i++) {
-		m_pComm->sendControlMessage(APC_BARRIER);
-		m_pComm->barrier();
+		m_comm.sendControlMessage(APC_BARRIER);
+		m_comm.barrier();
 		m_numReachedCheckpoint = 0;
-		m_pComm->sendControlMessageToNode(i, APC_POPBUBBLE,
+		m_comm.sendControlMessageToNode(i, APC_POPBUBBLE,
 				m_numPopped + m_checkpointSum);
 		while (!checkpointReached(1))
 			pumpNetwork();
@@ -1013,12 +1009,12 @@ int NetworkSequenceCollection::controlPopBubbles()
 unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 {
 	puts("Marking ambiguous branches");
-	assert(m_pComm->receiveEmpty());
-	unsigned count = m_pComm->reduce(
+	assert(m_comm.receiveEmpty());
+	unsigned count = m_comm.reduce(
 			AssemblyAlgorithms::markAmbiguous(this));
-	assert(m_pComm->transmitBufferEmpty());
-	assert(m_pComm->receiveEmpty());
-	m_pComm->barrier();
+	assert(m_comm.transmitBufferEmpty());
+	assert(m_comm.receiveEmpty());
+	m_comm.barrier();
 	printf("Marked %u ambiguous branches\n", count);
 	return count;
 }
@@ -1179,7 +1175,7 @@ void NetworkSequenceCollection::generateExtensionRequest(uint64_t groupID, uint6
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		m_pComm->sendSeqDataRequest(nodeID, groupID, branchID, seq);
+		m_comm.sendSeqDataRequest(nodeID, groupID, branchID, seq);
 	}
 }
 
@@ -1291,7 +1287,7 @@ void NetworkSequenceCollection::add(const PackedSeq& seq)
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		m_pComm->sendSeqOpMessage(nodeID, seq, MO_ADD);
+		m_comm.sendSeqOpMessage(nodeID, seq, MO_ADD);
 	}
 }
 
@@ -1308,7 +1304,7 @@ void NetworkSequenceCollection::remove(const PackedSeq& seq)
 	else
 	{
 		int nodeID = computeNodeID(seq);	
-		m_pComm->sendSeqOpMessage(nodeID, seq, MO_REMOVE);
+		m_comm.sendSeqOpMessage(nodeID, seq, MO_REMOVE);
 	}
 }
 
@@ -1336,7 +1332,7 @@ void NetworkSequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		m_pComm->sendSetFlagMessage(nodeID, seq, flag);
+		m_comm.sendSetFlagMessage(nodeID, seq, flag);
 	}
 }
 
@@ -1379,7 +1375,7 @@ bool NetworkSequenceCollection::setBaseExtension(
 			m_numBasesAdjSet++;
 	} else {
 		int nodeID = computeNodeID(seq);
-		m_pComm->sendSetBaseExtension(nodeID, seq, dir, base);
+		m_comm.sendSetBaseExtension(nodeID, seq, dir, base);
 	}
 
 	// As this call delegates, the return value is meaningless so return false
@@ -1422,7 +1418,7 @@ bool NetworkSequenceCollection::removeExtension(
 	else
 	{
 		int nodeID = computeNodeID(seq);
-		m_pComm->sendRemoveExtension(nodeID, seq, dir, base);
+		m_comm.sendRemoveExtension(nodeID, seq, dir, base);
 		return false;
 	}
 }

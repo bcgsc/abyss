@@ -142,9 +142,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void setColourSpace(bool flag)
 		{
 			m_pLocalSpace->setColourSpace(flag);
-			m_pComm->sendControlMessage(APC_SET_COLOURSPACE, flag);
+			m_comm.sendControlMessage(APC_SET_COLOURSPACE, flag);
 			// Start loading all files now that the ColourSpace flag is set.
-			m_pComm->barrier();
+			m_comm.barrier();
 		}
 
 	private:
@@ -186,7 +186,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		SequenceCollectionHash* m_pLocalSpace;
 
 		// The communications layer implements the functions over the network
-		MessageBuffer* m_pComm;
+		MessageBuffer m_comm;
 
 		// The number of nodes in the network
 		unsigned int m_numDataNodes;
