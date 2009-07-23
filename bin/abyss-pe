@@ -94,11 +94,11 @@ endif
 	Overlap $v -k$k -o $@ $^
 
 %-4.fa: %-3.fa %-3-overlap.fa
-	ABYSS $v -k$k -l$l -e0 -o $@ $^
+	cat $^ >$@
 
 # Paired-end assembly
 
-%.path: %.adj %.len %.dist
+%-4.path: %-4.adj %-4.len %-3.dist
 	SimpleGraph $v -k$k -o $@ $^
 
 %-contigs.fa: %-4.fa %-4.path
