@@ -2,6 +2,9 @@
 #include "PrefixIterator.h"
 #include "Sequence.h"
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <iostream>
 #include <utility>
 
 using namespace std;
@@ -63,7 +66,12 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 			p.contig = contigIDToIndex(id);
 			p.pos = i;
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-			assert(m_pDatabase->count(kmer) == 0);
+			if (m_pDatabase->count(kmer) > 0) {
+				cerr << "error: duplicate k-mer in "
+					<< (*m_pDatabase)[kmer].contig << " also in "
+					<< id << ": " << kmer.decode() << '\n';
+				exit(EXIT_FAILURE);
+			}
 #endif
 			m_pDatabase->insert(make_pair(kmer, p));
 		}
