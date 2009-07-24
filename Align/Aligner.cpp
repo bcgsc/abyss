@@ -62,7 +62,9 @@ void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
 			Position p;
 			p.contig = contigIDToIndex(id);
 			p.pos = i;
+#if HAVE_GOOGLE_SPARSE_HASH_SET
 			assert(m_pDatabase->count(kmer) == 0);
+#endif
 			m_pDatabase->insert(make_pair(kmer, p));
 		}
 	}
