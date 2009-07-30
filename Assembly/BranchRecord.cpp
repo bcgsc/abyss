@@ -255,10 +255,8 @@ void BranchRecord::buildContig(Sequence& outseq) const
 	}
 }
 
-//
-// Print the branch
-//
-void BranchRecord::printBranch(std::ostream& ostr)
+/** Print this branch. */
+void BranchRecord::printBranch(std::ostream& ostr) const
 {
 	for(BranchData::const_iterator iter = m_data.begin(); iter != m_data.end(); ++iter)
 	{
