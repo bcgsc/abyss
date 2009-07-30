@@ -1132,25 +1132,11 @@ void NetworkSequenceCollection::assembleContig(
 		ISequenceCollection* seqCollection, IFileWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
-	// Assemble the contig
-	Sequence contig;
-	AssemblyAlgorithms::processTerminatedBranchAssemble(
-			seqCollection, branch, contig);
-
-	unsigned kmerCount = branch.calculateBranchMultiplicity();
-	if (writer != NULL)
-		writer->WriteSequence(contig, id, kmerCount);
-
-	// Remove low-coverage contigs.
-	float coverage = (float)kmerCount / branch.getLength();
-	BranchDataIter end = branch.getEndIter();
-	if (opt::coverage > 0 && coverage < opt::coverage) {
-		for (BranchDataIter it
-				= branch.getStartIter();
-				it != end; ++it)
-			seqCollection->remove(*it);
+	unsigned removed = AssemblyAlgorithms::assembleContig(
+			seqCollection, writer, branch, id);
+	if (removed > 0) {
 		m_lowCoverageContigs++;
-		m_lowCoverageKmer += branch.getLength();
+		m_lowCoverageKmer += removed;
 	}
 }
 
