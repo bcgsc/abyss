@@ -651,25 +651,6 @@ unsigned PackedSeq::seqIndexToBaseIndex(unsigned seqIndex)
 	return seqIndex % 4; 
 }
 
-/** Return the base enumeration for the specified character. */
-uint8_t PackedSeq::baseToCode(char base)
-{
-	switch (base) {
-		case 'A': case '0': return 0;
-		case 'C': case '1': return 1;
-		case 'G': case '2': return 2;
-		case 'T': case '3': return 3;
-	}
-	cerr << "error: unexpected character: `" << base << "'\n";
-	exit(EXIT_FAILURE);
-}
-
-char PackedSeq::codeToBase(uint8_t code)
-{
-	assert(code < 4);
-	return (opt::colourSpace ? "0123" : "ACGT")[code];
-}
-
 PackedSeq reverseComplement(const PackedSeq& seq)
 {
 	PackedSeq rc(seq);

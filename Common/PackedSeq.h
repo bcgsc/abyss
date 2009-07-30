@@ -145,10 +145,6 @@ class PackedSeq
 		static inline uint8_t getBaseCode(const char* pSeq,
 				unsigned byteNum, unsigned index);
 
-		// Create the two bit code for the base
-		static inline uint8_t baseToCode(char base);
-		static inline char codeToBase(uint8_t code);
-		
 		// Get the number of bytes in the sequence
 		static inline unsigned getNumCodingBytes(unsigned seqLength);
 		static inline unsigned seqIndexToByteNumber(unsigned seqIndex);
