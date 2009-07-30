@@ -157,6 +157,9 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for (SequenceCollectionIterator iter = seqCollection->getStartIter();
 			iter != endIter; ++iter) {
+		if (iter->isFlagSet(SF_DELETE))
+			continue;
+
 		if (++count % 1000000 == 0)
 			PrintDebug(1, "Generating adjacency: %d sequences\n", count);
 
