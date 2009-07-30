@@ -1,6 +1,7 @@
 #include "Sequence.h"
 #include "Options.h"
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <cassert>
 
@@ -48,4 +49,17 @@ char codeToBase(uint8_t code)
 {
 	assert(code < 4);
 	return (opt::colourSpace ? "0123" : "ACGT")[code];
+}
+
+Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
+{
+	int seed = baseToCode(anchor);
+
+	stringstream s;
+	for (string::const_iterator it = seq.begin();
+			it != seq.end(); ++it) {
+		seed = cstont[seed][baseToCode(*it)];
+		s << codeToBase(seed);
+	}
+	return s.str();
 }
