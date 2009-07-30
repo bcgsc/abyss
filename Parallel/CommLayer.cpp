@@ -90,6 +90,7 @@ unsigned CommLayer::reduce(unsigned count)
 
 uint64_t CommLayer::sendCheckPointMessage(int argument)
 {
+	PrintDebug(4, "checkpoint: %d\n", argument);
 	assert(opt::rank != 0);
 	ControlMessage msg;
 	msg.id = m_msgID++;

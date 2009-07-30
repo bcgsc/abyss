@@ -22,6 +22,8 @@ enum NetworkAssemblyState
 	NAS_ERODE_COMPLETE,
 	NAS_TRIM, // trimming the data
 	NAS_REMOVE_MARKED, // remove marked sequences
+	NAS_COVERAGE, // remove low-coverage contigs
+	NAS_COVERAGE_COMPLETE,
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
 	NAS_SPLIT, // split ambiguous branches
@@ -49,13 +51,17 @@ class NetworkSequenceCollection : public ISequenceCollection
 		unsigned controlTrimRound(unsigned trimLen);
 		void controlTrim(unsigned start = 1);
 		unsigned controlRemoveMarked();
+		void controlCoverage();
 		unsigned controlDiscoverBubbles();
 		int controlPopBubbles();
 		unsigned controlMarkAmbiguous();
 		unsigned controlSplitAmbiguous();
+		unsigned controlSplit();
 
 		// Perform a network assembly
-		unsigned performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter);
+		unsigned performNetworkAssembly(
+				ISequenceCollection* seqCollection,
+				IFileWriter* fileWriter = NULL);
 
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
@@ -160,13 +166,17 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
-		
+
+		void NetworkSequenceCollection::assembleContig(
+				ISequenceCollection* seqCollection,
+				IFileWriter* fileWriter,
+				BranchRecord& branch, unsigned id);
+
 		// Check if a branch is redundant with a previously output branch
 		bool isBranchRedundant(const BranchRecord& branch);
-		
-		// Network message parsers
-		void parseControlMessage();
-		
+
+		void parseControlMessage(int source);
+
 		// Check if this sequence belongs in the local phase space
 		bool isLocal(const PackedSeq& seq) const;
 		
@@ -205,7 +215,13 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// the current length to trim on (comes from the control node)
 		int m_trimStep;
-		
+
+		/** The number of low-coverage contigs removed. */
+		unsigned m_lowCoverageContigs;
+
+		/** The number of low-coverage k-mer removed. */
+		unsigned m_lowCoverageKmer;
+
 		/** The number of bubbles popped so far. */
 		unsigned m_numPopped;
 

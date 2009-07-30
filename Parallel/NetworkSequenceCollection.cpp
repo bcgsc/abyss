@@ -11,7 +11,6 @@ using namespace std;
 NetworkSequenceCollection::NetworkSequenceCollection()
 	: m_pLocalSpace(new SequenceCollectionHash()),
 	m_state(NAS_WAITING),
-	m_numBasesAdjSet(0),
 	m_trimStep(0),
 	m_numPopped(0),
 	m_numAssembled(0)
@@ -92,6 +91,8 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				break;
 			case NAS_GEN_ADJ:
+				m_comm.barrier();
+				m_numBasesAdjSet = 0;
 				AssemblyAlgorithms::generateAdjacency(this);
 				EndState();
 				SetState(NAS_WAITING);
@@ -148,6 +149,31 @@ void NetworkSequenceCollection::run()
 				m_comm.sendCheckPointMessage(count);
 				break;
 			}
+
+			case NAS_COVERAGE:
+			{
+				m_comm.barrier();
+				m_lowCoverageContigs = 0;
+				m_lowCoverageKmer = 0;
+				unsigned numContigs = performNetworkAssembly(this);
+				EndState();
+				SetState(NAS_WAITING);
+				m_comm.sendCheckPointMessage(numContigs);
+				break;
+			}
+			case NAS_COVERAGE_COMPLETE:
+				m_comm.barrier();
+				pumpNetwork();
+				m_pLocalSpace->wipeFlag(
+						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+				m_comm.reduce(m_lowCoverageContigs);
+				m_comm.reduce(m_lowCoverageKmer);
+				m_comm.reduce(m_pLocalSpace->cleanup());
+				opt::coverage = 0;
+				EndState();
+				SetState(NAS_WAITING);
+				break;
+
 			case NAS_DISCOVER_BUBBLES:
 			{
 				unsigned numDiscovered
@@ -185,6 +211,7 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_ASSEMBLE:
 			{
+				m_comm.barrier();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
 				unsigned numAssembled = performNetworkAssembly(this, writer);
@@ -309,6 +336,50 @@ void NetworkSequenceCollection::controlTrim(unsigned start)
 	printf("Trimmed %u branches in %u rounds\n", total, rounds);
 }
 
+/** Remove low-coverage contigs. */
+void NetworkSequenceCollection::controlCoverage()
+{
+	assert(opt::coverage > 0);
+
+	// Split ambiguous branches.
+	SetState(NAS_SPLIT);
+	controlSplit();
+
+	// Remove low-coverage contigs.
+	printf("Removing low-coverage contigs "
+			"(mean k-mer coverage < %f)\n", opt::coverage);
+	SetState(NAS_COVERAGE);
+	m_comm.sendControlMessage(APC_COVERAGE);
+	m_comm.barrier();
+	m_lowCoverageContigs = 0;
+	m_lowCoverageKmer = 0;
+	unsigned numContigs = performNetworkAssembly(this);
+	EndState();
+
+	m_numReachedCheckpoint++;
+	while (!checkpointReached())
+		pumpNetwork();
+	numContigs += m_checkpointSum;
+	printf("Found %u contigs before removing low-coverage contigs\n",
+			numContigs);
+
+	// Count the number of low-coverage contigs.
+	SetState(NAS_COVERAGE_COMPLETE);
+	m_comm.sendControlMessage(APC_COVERAGE_COMPLETE);
+	m_comm.barrier();
+	pumpNetwork();
+	m_pLocalSpace->wipeFlag(
+			SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+	unsigned lowCoverageContigs = m_comm.reduce(m_lowCoverageContigs);
+	unsigned lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
+	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
+	printf("Removed %u k-mer in %u low-coverage contigs\n",
+			lowCoverageKmer, lowCoverageContigs);
+	printf("Removed %u marked k-mer\n", removed);
+	opt::coverage = 0;
+	EndState();
+}
+
 //
 // The main loop for the controller (rank = 0 process)
 //
@@ -346,6 +417,8 @@ void NetworkSequenceCollection::runControl()
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
 				m_comm.sendControlMessage(APC_GEN_ADJ);
+				m_comm.barrier();
+				m_numBasesAdjSet = 0;
 				AssemblyAlgorithms::generateAdjacency(this);
 				EndState();
 
@@ -372,11 +445,13 @@ void NetworkSequenceCollection::runControl()
 				assert(controlErode() == 0);
 				SetState(NAS_TRIM);
 				break;
+
 			case NAS_LOAD_COMPLETE:
 			case NAS_ADJ_COMPLETE:
 			case NAS_REMOVE_MARKED:
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
+			case NAS_COVERAGE_COMPLETE:
 			case NAS_DISCOVER_BUBBLES:
 				// These states are used only by the slaves.
 				assert(false);
@@ -384,7 +459,14 @@ void NetworkSequenceCollection::runControl()
 
 			case NAS_TRIM:
 				controlTrim();
-				SetState(NAS_POPBUBBLE);
+				SetState(opt::coverage > 0 ? NAS_COVERAGE
+						: opt::bubbles > 0 ? NAS_POPBUBBLE
+						: NAS_SPLIT);
+				break;
+
+			case NAS_COVERAGE:
+				controlCoverage();
+				SetState(NAS_GEN_ADJ);
 				break;
 
 			case NAS_POPBUBBLE:
@@ -411,21 +493,16 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_SPLIT:
-			{
-				m_comm.sendControlMessage(APC_SPLIT);
-				m_comm.barrier();
-				unsigned marked = controlMarkAmbiguous();
-				unsigned split = controlSplitAmbiguous();
-				assert(marked == split);
+				controlSplit();
 				SetState(NAS_ASSEMBLE);
 				break;
-			}
 			case NAS_ASSEMBLE:
 			{
 				puts("Assembling");
+				m_comm.sendControlMessage(APC_ASSEMBLE);
+				m_comm.barrier();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
-				m_comm.sendControlMessage(APC_ASSEMBLE);
 				unsigned numAssembled = performNetworkAssembly(this,
 						writer);
 				delete writer;
@@ -485,7 +562,7 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 		switch(msg)
 		{
 			case APM_CONTROL:
-				parseControlMessage();
+				parseControlMessage(senderID);
 				// Deal with the control packet before we continue
 				// processing further packets.
 				return ++count;
@@ -578,7 +655,7 @@ void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, c
 //
 //
 //
-void NetworkSequenceCollection::parseControlMessage()
+void NetworkSequenceCollection::parseControlMessage(int source)
 {
 	ControlMessage controlMsg = m_comm.receiveControlMessage();
 	switch(controlMsg.msgType)
@@ -587,6 +664,8 @@ void NetworkSequenceCollection::parseControlMessage()
 			SetState(NAS_LOAD_COMPLETE);
 			break;
 		case APC_CHECKPOINT:
+			PrintDebug(4, "checkpoint from %u: %d\n",
+					source, controlMsg.argument);
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
 			break;	
@@ -615,6 +694,12 @@ void NetworkSequenceCollection::parseControlMessage()
 			assert(m_state == NAS_ERODE_WAITING);
 			EndState();
 			SetState(NAS_ERODE_COMPLETE);
+			break;
+		case APC_COVERAGE:
+			SetState(NAS_COVERAGE);
+			break;
+		case APC_COVERAGE_COMPLETE:
+			SetState(NAS_COVERAGE_COMPLETE);
 			break;
 		case APC_DISCOVER_BUBBLES:
 			SetState(NAS_DISCOVER_BUBBLES);
@@ -1031,6 +1116,44 @@ unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 	return m_checkpointSum;
 }
 
+/** Split ambiguous edges. */
+unsigned NetworkSequenceCollection::controlSplit()
+{
+	m_comm.sendControlMessage(APC_SPLIT);
+	m_comm.barrier();
+	unsigned marked = controlMarkAmbiguous();
+	unsigned split = controlSplitAmbiguous();
+	assert(marked == split);
+	return split;
+}
+
+/** Assemble a contig. */
+void NetworkSequenceCollection::assembleContig(
+		ISequenceCollection* seqCollection, IFileWriter* writer,
+		BranchRecord& branch, unsigned id)
+{
+	// Assemble the contig
+	Sequence contig;
+	AssemblyAlgorithms::processTerminatedBranchAssemble(
+			seqCollection, branch, contig);
+
+	unsigned kmerCount = branch.calculateBranchMultiplicity();
+	if (writer != NULL)
+		writer->WriteSequence(contig, id, kmerCount);
+
+	// Remove low-coverage contigs.
+	float coverage = (float)kmerCount / branch.getLength();
+	BranchDataIter end = branch.getEndIter();
+	if (opt::coverage > 0 && coverage < opt::coverage) {
+		for (BranchDataIter it
+				= branch.getStartIter();
+				it != end; ++it)
+			seqCollection->remove(*it);
+		m_lowCoverageContigs++;
+		m_lowCoverageKmer += branch.getLength();
+	}
+}
+
 /** Assemble contigs. */
 unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
 {
@@ -1040,6 +1163,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 	
 	// The branch ids
 	uint64_t branchGroupID = 0;
+	assert(m_activeBranchGroups.empty());
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
@@ -1058,12 +1182,8 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 			BranchRecord currBranch(SENSE, -1);
 			currBranch.addSequence(*iter, iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
-			Sequence contig;
-			AssemblyAlgorithms::processTerminatedBranchAssemble( 
-					seqCollection, currBranch, contig);
-			fileWriter->WriteSequence(contig,
-					m_numAssembled + numAssembled++,
-					currBranch.calculateBranchMultiplicity());
+			assembleContig(seqCollection, fileWriter, currBranch,
+					m_numAssembled + numAssembled++);
 			continue;
 		}
 		
@@ -1101,14 +1221,20 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		seqCollection->pumpNetwork();
 	}
 
-	PrintDebug(0, "Assembled %d contigs\n", numAssembled);
+	if (opt::coverage > 0) {
+		PrintDebug(0, "Found %u contigs before removing "
+				"low-coverage contigs\n", numAssembled);
+		PrintDebug(0, "Removed %u k-mer in %u low-coverage contigs\n",
+				m_lowCoverageKmer, m_lowCoverageContigs);
+	} else
+		PrintDebug(0, "Assembled %d contigs\n", numAssembled);
 	return numAssembled;
 }
 
-//
-// Process current branches, removing those that are finished
-// returns true if the branch list has branches remaining
-//
+/** Processes branches that are in progress, removing those that have
+ * completed.
+ * @return the number that have completed
+ */
 int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID)
 {
 	int numAssembled = 0;
@@ -1123,19 +1249,13 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			
 			// check if the branch is redundant, assemble if so, else it will simply be removed
 			BranchRecord& currBranch = iter->second.getBranch(0);
+			assert(currBranch.getState() == BS_NOEXT);
 			if (currBranch.isCanonical()) {
-				// Assemble the contig
-				Sequence contig;
-				AssemblyAlgorithms::processTerminatedBranchAssemble(
-						seqCollection, currBranch, contig);
 				numAssembled++;
-
-				// Output the contig
-				fileWriter->WriteSequence(contig,
-						m_numAssembled + currContigID++,
-						currBranch.calculateBranchMultiplicity());
+				assembleContig(seqCollection, fileWriter, currBranch,
+						m_numAssembled + currContigID++);
 			}
-			
+
 			// Mark the group for removal
 			removeBranches.push_back(iter);
 		}	
@@ -1185,6 +1305,7 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 	{
 		case NAS_TRIM:
 		case NAS_ASSEMBLE:
+		case NAS_COVERAGE:
 			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
 		case NAS_DISCOVER_BUBBLES:
 			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);

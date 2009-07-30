@@ -1,6 +1,7 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
 #include "config.h"
+#include "Options.h"
 #include <algorithm>
 #include <climits> // for INT_MAX
 #include <getopt.h>
@@ -29,6 +30,8 @@ static const char *USAGE_MESSAGE =
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
+"  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
+"                                 less than this threshold [default=0]\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
 "      --erode                    erode bases at the ends of blunt contigs\n"
 "                                 that are represented in only one strand\n"
@@ -56,6 +59,9 @@ int erode = 1;
 
 /** trim length */
 int trimLen = -1;
+
+/** Coverage cutoff. */
+float coverage;
 
 /** Maximum number of bubble-popping rounds. */
 int bubbles = INT_MAX;
@@ -86,7 +92,7 @@ vector<std::string> inFiles;
 /** Colour space sequences */
 bool colourSpace;
 
-static const char *shortopts = "b:e:g:k:l:o:s:t:v";
+static const char *shortopts = "b:c:e:g:k:l:o:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -95,6 +101,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
+	{ "coverage",    required_argument, NULL, 'c' },
 	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "erode",       no_argument,       &erode, 1 },
 	{ "no-erode",    no_argument,       &erode, 0 },
@@ -132,6 +139,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'b':
 				arg >> bubbles;
+				break;
+			case 'c':
+				arg >> coverage;
 				break;
 			case 'k':
 				arg >> kmerSize;

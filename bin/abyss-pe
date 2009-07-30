@@ -57,11 +57,12 @@ clean:
 
 # Single-end assembly
 
-%-1.fa: $(in)
+%-3.fa: $(in)
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l -s bubbles.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l -c$c \
+		-s bubbles.fa -o $@ $^
 else
-	ABYSS $v -k$k -l$l -s bubbles.fa -o $@ $^
+	ABYSS $v -k$k -l$l -c$c -s bubbles.fa -o $@ $^
 endif
 
 %.len: %.fa
@@ -69,13 +70,6 @@ endif
 
 %.adj: %.fa
 	AdjList -k$k $< >$@
-
-# Coverage cutoff
-
-%-3.fa: %-1.fa
-	awk '/^>/ { getline s; if ($$3/($$2-$k+1)>=$c) \
-		{ print $$0 "\n" s } }' $< \
-		|ABYSS $v -k$k -l$l -e0 -o $@ -
 
 # Estimate distances between contigs
 

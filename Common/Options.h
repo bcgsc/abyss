@@ -11,6 +11,7 @@ namespace opt {
 	extern int kmerSize;
 	extern int erode;
 	extern int trimLen;
+	extern float coverage;
 	extern int bubbles;
 	extern std::string contigsPath;
 	extern std::string contigsTempPath;
