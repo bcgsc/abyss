@@ -99,14 +99,10 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 unsigned markAmbiguous(ISequenceCollection* seqCollection);
 unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 
-//
-//
-// Assembly functions
-// 
-//
-
+unsigned assembleContig(ISequenceCollection* seqCollection,
+		IFileWriter* writer, BranchRecord& branch, unsigned id);
 unsigned assemble(ISequenceCollection* seqCollection,
-		IFileWriter* fileWriter);
+		IFileWriter* fileWriter = NULL);
 
 // A function to process a branch after it has been extended as far as possible
 void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq);

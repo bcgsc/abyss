@@ -790,6 +790,35 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	return count;
 }
 
+/** Assemble a contig.
+ * @return the number of k-mer below the coverage threshold
+ */
+unsigned assembleContig(
+		ISequenceCollection* seqCollection, IFileWriter* writer,
+		BranchRecord& branch, unsigned id)
+{
+	// Assemble the contig.
+	Sequence contig;
+	AssemblyAlgorithms::processTerminatedBranchAssemble(
+			seqCollection, branch, contig);
+
+	unsigned kmerCount = branch.calculateBranchMultiplicity();
+	if (writer != NULL)
+		writer->WriteSequence(contig, id, kmerCount);
+
+	// Remove low-coverage contigs.
+	float coverage = (float)kmerCount / branch.getLength();
+	BranchDataIter end = branch.getEndIter();
+	if (opt::coverage > 0 && coverage < opt::coverage) {
+		for (BranchDataIter it
+				= branch.getStartIter();
+				it != end; ++it)
+			seqCollection->remove(*it);
+		return branch.getLength();
+	}
+	return 0;
+}
+
 /** Assemble contigs.
  * @return the number of contigs assembled
  */
@@ -799,6 +828,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	Timer timer("Assemble");
 
 	unsigned contigID = 0;
+	unsigned lowCoverageKmer = 0;
+	unsigned lowCoverageContigs = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
@@ -818,12 +849,11 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			BranchRecord currBranch(SENSE, -1);
 			currBranch.addSequence(*iter, iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
-			Sequence contig;
-			processTerminatedBranchAssemble(seqCollection, currBranch, contig);
-			
-			// Output the contig
-			fileWriter->WriteSequence(contig, contigID++,
-					currBranch.calculateBranchMultiplicity());
+			unsigned count = assembleContig(seqCollection, fileWriter,
+					currBranch, contigID++);
+			lowCoverageKmer += count;
+			if (count > 0)
+				lowCoverageContigs++;
 			continue;
 		}
 
@@ -848,20 +878,23 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		}
 		
 		if (currBranch.isCanonical()) {
-			// The branch has ended, build the contig
-			Sequence contig;
-			processTerminatedBranchAssemble(seqCollection,
-					currBranch, contig);
-
-			// Output the contig
-			fileWriter->WriteSequence(contig, contigID++,
-					currBranch.calculateBranchMultiplicity());
+			unsigned count = assembleContig(seqCollection, fileWriter,
+					currBranch, contigID++);
+			lowCoverageKmer += count;
+			if (count > 0)
+				lowCoverageContigs++;
 		}
 
 		seqCollection->pumpNetwork();
 	}
 
-	printf("Assembled %d contigs\n", contigID);
+	if (opt::coverage > 0) {
+		printf("Found %u contigs before removing "
+				"low-coverage contigs\n", contigID);
+		printf("Removed %u k-mer in %u low-coverage contigs\n",
+				lowCoverageKmer, lowCoverageContigs);
+	} else
+		printf("Assembled %u contigs\n", contigID);
 	return contigID;
 }
 

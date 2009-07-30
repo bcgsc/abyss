@@ -11,6 +11,26 @@
 
 using namespace std;
 
+static void splitAmbiguousEdges(ISequenceCollection* pSC)
+{
+	unsigned marked = AssemblyAlgorithms::markAmbiguous(pSC);
+	unsigned split = AssemblyAlgorithms::splitAmbiguous(pSC);
+	assert(marked == split);
+}
+
+static void removeLowCoverageContigs(ISequenceCollection* pSC)
+{
+	splitAmbiguousEdges(pSC);
+
+	printf("Removing low-coverage contigs "
+			"(mean k-mer coverage < %f)\n", opt::coverage);
+
+	AssemblyAlgorithms::assemble(pSC);
+
+	pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+	opt::coverage = 0;
+}
+
 static void popBubbles(ISequenceCollection* pSC)
 {
 	puts("Popping bubbles");
@@ -54,6 +74,7 @@ int main(int argc, char* const* argv)
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
+generate_adjacency:
 	puts("Generating adjacency");
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
@@ -66,6 +87,11 @@ int main(int argc, char* const* argv)
 	}
 
 	AssemblyAlgorithms::performTrim(pSC);
+
+	if (opt::coverage > 0) {
+		removeLowCoverageContigs(pSC);
+		goto generate_adjacency;
+	}
 
 	if (opt::bubbles > 0) {
 		popBubbles(pSC);
@@ -82,9 +108,7 @@ int main(int argc, char* const* argv)
 
 	write_graph(opt::graphPath, *pSC);
 
-	unsigned marked = AssemblyAlgorithms::markAmbiguous(pSC);
-	unsigned split = AssemblyAlgorithms::splitAmbiguous(pSC);
-	assert(marked == split);
+	splitAmbiguousEdges(pSC);
 
 	FastaWriter writer(opt::contigsPath.c_str());
 
