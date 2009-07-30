@@ -849,11 +849,12 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			BranchRecord currBranch(SENSE, -1);
 			currBranch.addSequence(*iter, iter->getMultiplicity());
 			currBranch.terminate(BS_NOEXT);
-			unsigned count = assembleContig(seqCollection, fileWriter,
-					currBranch, contigID++);
-			lowCoverageKmer += count;
-			if (count > 0)
+			unsigned removed = assembleContig(seqCollection,
+					fileWriter, currBranch, contigID++);
+			if (removed > 0) {
 				lowCoverageContigs++;
+				lowCoverageKmer += removed;
+			}
 			continue;
 		}
 
@@ -878,11 +879,12 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		}
 		
 		if (currBranch.isCanonical()) {
-			unsigned count = assembleContig(seqCollection, fileWriter,
-					currBranch, contigID++);
-			lowCoverageKmer += count;
-			if (count > 0)
+			unsigned removed = assembleContig(seqCollection,
+					fileWriter, currBranch, contigID++);
+			if (removed > 0) {
 				lowCoverageContigs++;
+				lowCoverageKmer += removed;
+			}
 		}
 
 		seqCollection->pumpNetwork();
