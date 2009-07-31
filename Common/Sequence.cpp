@@ -53,7 +53,7 @@ char codeToBase(uint8_t code)
 
 char colourToNucleotideSpace(char anchor, char cs)
 {
-	return codeToBase(cstont[baseToCode(anchor)][baseToCode(cs)]);
+	return "ACGT"[cstont[baseToCode(anchor)][baseToCode(cs)]];
 }
 
 Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
@@ -61,6 +61,7 @@ Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
 	int seed = baseToCode(anchor);
 
 	stringstream s;
+	s << anchor;
 	for (string::const_iterator it = seq.begin();
 			it != seq.end(); ++it) {
 		seed = cstont[seed][baseToCode(*it)];
