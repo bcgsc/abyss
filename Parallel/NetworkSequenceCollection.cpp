@@ -60,18 +60,12 @@ void NetworkSequenceCollection::completeOperation()
 	assert(m_comm.receiveEmpty()); // Nothing to receive.
 }
 
-//
-//
-//
+/** Run the assembly state machine. */
 void NetworkSequenceCollection::run()
 {
 	SetState(NAS_LOADING);
-
-	bool stop = false;
-	while(!stop)
-	{
-		switch(m_state)
-		{
+	while (m_state != NAS_DONE) {
+		switch (m_state) {
 			case NAS_LOADING:
 				m_pLocalSpace->setColourSpace(
 						m_comm.receiveBroadcast());
@@ -225,9 +219,7 @@ void NetworkSequenceCollection::run()
 				pumpNetwork();
 				break;
 			case NAS_DONE:
-				stop = true;
 				break;
-			assert(false);
 		}
 	}
 }
@@ -380,18 +372,12 @@ void NetworkSequenceCollection::controlCoverage()
 	EndState();
 }
 
-//
-// The main loop for the controller (rank = 0 process)
-//
+/** Run the assembly state machine for the controller (rank = 0). */
 void NetworkSequenceCollection::runControl()
 {
 	SetState(NAS_LOADING);
-
-	bool stop = false;
-	while(!stop)
-	{
-		switch(m_state)
-		{
+	while (m_state != NAS_DONE) {
+		switch (m_state) {
 			case NAS_LOADING:
 				loadSequences();
 				EndState();
@@ -453,6 +439,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ERODE_COMPLETE:
 			case NAS_COVERAGE_COMPLETE:
 			case NAS_DISCOVER_BUBBLES:
+			case NAS_WAITING:
 				// These states are used only by the slaves.
 				assert(false);
 				exit(EXIT_FAILURE);
@@ -519,11 +506,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_DONE:
-				stop = true;
 				break;
-			case NAS_WAITING:
-				break;
-			assert(false);							
 		}
 	}
 }
