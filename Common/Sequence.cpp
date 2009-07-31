@@ -51,6 +51,11 @@ char codeToBase(uint8_t code)
 	return (opt::colourSpace ? "0123" : "ACGT")[code];
 }
 
+char colourToNucleotideSpace(char anchor, char cs)
+{
+	return codeToBase(cstont[baseToCode(anchor)][baseToCode(cs)]);
+}
+
 Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
 {
 	int seed = baseToCode(anchor);
