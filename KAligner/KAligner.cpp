@@ -35,6 +35,7 @@ static const char *USAGE_MESSAGE =
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
 "  -v, --verbose         display verbose output\n"
+"      --seq             print the sequence with the alignments\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 "\n"
@@ -45,16 +46,18 @@ namespace opt {
 	static int threads = 1;
 	static int verbose;
 	extern bool colourSpace;
+	static bool printSeq = false;
 }
 
 static const char* shortopts = "k:o:j:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "seq",		 no_argument,		NULL, OPT_SEQ },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -98,6 +101,7 @@ int main(int argc, char** argv)
 			case 'k': arg >> opt::k; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
+			case OPT_SEQ: opt::printSeq = true; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -215,7 +219,8 @@ void *alignReadsToDB(void* readsFile)
 	FastaReader fileHandle((const char *)readsFile);
 	while (fileHandle.isGood()) {
 		string id;
-		Sequence seq = fileHandle.ReadSequence(id);
+		char anchor;
+		Sequence seq = fileHandle.ReadSequence(id, anchor);
 
 		ostringstream output;
 		if (seq.find_first_not_of("ACGT0123") == string::npos) {
@@ -229,7 +234,13 @@ void *alignReadsToDB(void* readsFile)
 		}
 
 		pthread_mutex_lock(&g_mutexCout);
-		cout << id << output.str() << '\n';
+		cout << id;
+		if (opt::printSeq)
+			if (opt::colourSpace)
+				cout << '\t' << anchor << seq;
+			else
+				cout << '\t' << seq;
+		cout << output.str() << '\n';
 		assert(cout.good());
 		pthread_mutex_unlock(&g_mutexCout);
 
