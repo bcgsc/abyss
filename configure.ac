@@ -107,6 +107,7 @@ AC_CONFIG_FILES([
 	MergePaths/Makefile
 	KAligner/Makefile
 	ParseAligns/Makefile
+	Consensus/Makefile
 ])
 AC_OUTPUT
 
