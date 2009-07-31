@@ -7,6 +7,14 @@
 
 using namespace std;
 
+enum { A, C, G, T };
+static const int cstont[4][4] = {
+	{ A, C, G, T },
+	{ C, A, T, G },
+	{ G, T, A, C },
+	{ T, G, C, A }
+};
+
 /** Return the complement of the specified base. */
 char complementBaseChar(char base)
 {
