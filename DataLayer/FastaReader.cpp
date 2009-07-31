@@ -35,7 +35,7 @@ FastaReader::~FastaReader()
 	m_inFile.close();
 }
 
-Sequence FastaReader::ReadSequence(string& id)
+Sequence FastaReader::ReadSequence(string& id, char& anchor)
 {
 	// Discard comments.
 	while (m_fileHandle.peek() == '#') {
@@ -62,6 +62,7 @@ Sequence FastaReader::ReadSequence(string& id)
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the first
 			// base of the sample, which is not part of the assembly.
+			anchor = colourToNucleotideSpace(s.at(0), s.at(1));
 			s = s.substr(2);
 		}
 
