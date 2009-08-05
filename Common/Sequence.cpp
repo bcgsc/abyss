@@ -77,3 +77,8 @@ Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
 	}
 	return s.str();
 }
+
+char nucleotideToColourSpace(char a, char b)
+{
+	return "0123"[cstont[baseToCode(a)][baseToCode(b)]];
+}
