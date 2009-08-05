@@ -121,6 +121,8 @@ struct Position
 {
 	uint32_t contig;
 	uint32_t pos; // 0 indexed
+	Position(uint32_t contig, uint32_t pos)
+		: contig(contig), pos(pos) { }
 };
 
 typedef hash_multimap<PackedSeq, Position,

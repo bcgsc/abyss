@@ -55,10 +55,8 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 				exit(EXIT_FAILURE);
 			}
 		}
-		Position p;
-		p.contig = contigIDToIndex(id);
-		p.pos = i;
-		m_target.insert(make_pair(kmer, p));
+		m_target.insert(make_pair(kmer,
+					Position(contigIDToIndex(id), i)));
 	}
 }
 
