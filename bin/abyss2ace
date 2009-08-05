@@ -38,9 +38,15 @@ while (<>) {
 		next;
 	}
 
-	my ($qid, @align) = split '\t';
+	my ($query, @align) = split '\t';
 	next if @align == 0;
-	
+
+	my ($qid, $qseq) = split ' ', $query;
+	if (!defined $qseq) {
+		die "no read `$qid'" unless exists $seq{$qid};
+		$qseq = $seq{$qid};
+	}
+
 	@align = sort {
 		# Sort the alignments first by position on the read and
 		# then by the length of the alignment.
@@ -73,10 +79,7 @@ while (<>) {
 	for (@align) {
 		my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
 			= split;
-
-		die "no read `$qid'" if !exists $seq{$qid};
-		my $seq = $seq{$qid};
-		die if length $seq != $qlength;
+		die if length $qseq != $qlength;
 
 		die "no contig `$tid'" if !exists $seq{$tid};
 		my $tlength = length $seq{$tid};
@@ -86,6 +89,7 @@ while (<>) {
 		$i++;
 		my $suffix = $nalign == 1 ? '' : "_$i/$nalign";
 
+		my $seq = $qseq;
 		my $qend = $qstart + $alength;
 		if ($sense) {
 			# Reverse complement.
