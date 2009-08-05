@@ -24,11 +24,13 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_CHECK_LIB([m], [sqrt])
-AC_CHECK_FUNCS([gethostname ceilf memset pow setlocale sqrt \
+AC_CHECK_FUNCS([gethostname memset pow setlocale sqrt \
 	strdup strerror])
 AC_FUNC_MEMCMP
 AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
+AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
+			  [Define if the system does not provide ceilf]))
 
 # Checks for library constants.
 AC_CHECK_DECL(HOST_NAME_MAX, [],
