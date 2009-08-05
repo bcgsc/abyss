@@ -50,7 +50,8 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 				= m_target.find(kmer);
 			if (it != m_target.end()) {
 				cerr << "error: duplicate k-mer in "
-					<< it->second.contig << " also in " << id << ": "
+					<< contigIndexToID(it->second.contig)
+					<< " also in " << id << ": "
 					<< kmer.decode() << '\n';
 				exit(EXIT_FAILURE);
 			}
