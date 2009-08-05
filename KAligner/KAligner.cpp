@@ -270,11 +270,12 @@ void *alignReadsToDB(void* readsFile)
 
 		pthread_mutex_lock(&g_mutexCout);
 		cout << id;
-		if (opt::printSeq)
+		if (opt::printSeq) {
+			cout << ' ';
 			if (opt::colourSpace)
-				cout << '\t' << anchor << seq;
-			else
-				cout << '\t' << seq;
+				cout << anchor;
+			cout << seq;
+		}
 		cout << output.str() << '\n';
 		assert(cout.good());
 		pthread_mutex_unlock(&g_mutexCout);
