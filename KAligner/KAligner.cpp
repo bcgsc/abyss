@@ -32,6 +32,8 @@ static const char *USAGE_MESSAGE =
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -m, --multimap        allow duplicate k-mer in the target\n"
+"      --no-multimap     disallow duplicate k-mer in the target [default]\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
 "  -v, --verbose         display verbose output\n"
@@ -43,18 +45,21 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	static unsigned k;
+	int multimap; // used by Aligner
 	static int threads = 1;
 	static int verbose;
 	extern bool colourSpace;
 	static bool printSeq = false;
 }
 
-static const char* shortopts = "k:o:j:v";
+static const char* shortopts = "k:mo:j:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "multimap",    no_argument,       &opt::multimap, 1 },
+	{ "no-multi",    no_argument,       &opt::multimap, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "seq",		 no_argument,		NULL, OPT_SEQ },
@@ -63,12 +68,17 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-// Functions
-static void readContigsIntoDB(string refFastaFile, Aligner& aligner);
+template <class SeqPosHashMap>
+static void readContigsIntoDB(string refFastaFile,
+		Aligner<SeqPosHashMap>& aligner);
 void *alignReadsToDB(void *arg);
 
-// Global variables
-static Aligner *g_aligner;
+/** Unique aligner using map */
+static Aligner<SeqPosHashUniqueMap> *g_aligner_u;
+
+/** Multimap aligner using multimap */
+static Aligner<SeqPosHashMultiMap> *g_aligner_m;
+
 static unsigned g_readCount;
 static pthread_mutex_t g_mutexCout, g_mutexCerr;
 static sem_t g_activeThreads;
@@ -99,6 +109,7 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'm': opt::multimap = 1; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_SEQ: opt::printSeq = true; break;
@@ -134,8 +145,18 @@ int main(int argc, char** argv)
 			<< " Target: " << refFastaFile
 			<< endl;
 
-	g_aligner = new Aligner(opt::k);
-	readContigsIntoDB(refFastaFile, *g_aligner);
+	if (opt::multimap) {
+		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k, 1<<26);
+		readContigsIntoDB(refFastaFile, *g_aligner_m);
+	} else {
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<28);
+		g_aligner_u->max_load_factor(0.2);
+#else
+		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<26);
+#endif
+		readContigsIntoDB(refFastaFile, *g_aligner_u);
+	}
 
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&g_mutexCout, NULL);
@@ -156,7 +177,11 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Aligned " << g_readCount << " reads\n";
 
-	delete g_aligner;
+	if (opt::multimap)
+		delete g_aligner_m;
+	else
+		delete g_aligner_u;
+
 	return 0;
 }
 
@@ -168,7 +193,9 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-static void printProgress(const Aligner& align, unsigned count)
+template <class SeqPosHashMap>
+static void printProgress(const Aligner<SeqPosHashMap>& align,
+		unsigned count)
 {
 	size_t size = align.size();
 	size_t buckets = align.bucket_count();
@@ -177,7 +204,9 @@ static void printProgress(const Aligner& align, unsigned count)
 		" / " << buckets << " = " << (float)size / buckets << endl;
 }
 
-static void readContigsIntoDB(string refFastaFile, Aligner& aligner)
+template <class SeqPosHashMap>
+static void readContigsIntoDB(string refFastaFile,
+		Aligner<SeqPosHashMap>& aligner)
 {
 	int count = 0;
 	ifstream fileHandle(refFastaFile.c_str());
@@ -229,8 +258,14 @@ void *alignReadsToDB(void* readsFile)
 			else
 				assert(isalpha(seq[0]));
 
-			g_aligner->alignRead(seq,
-					prefix_ostream_iterator<Alignment>(output, "\t"));
+			if (opt::multimap)
+				g_aligner_m->alignRead(seq,
+						prefix_ostream_iterator<Alignment>(
+							output, "\t"));
+			else
+				g_aligner_u->alignRead(seq,
+						prefix_ostream_iterator<Alignment>(
+							output, "\t"));
 		}
 
 		pthread_mutex_lock(&g_mutexCout);

@@ -9,29 +9,13 @@
 
 using namespace std;
 
-//
-// Constructor
-//
-Aligner::Aligner(int hashSize) : m_hashSize(hashSize)
-{
-#if HAVE_GOOGLE_SPARSE_HASH_SET
-	m_pDatabase = new SeqPosHashMap(1 << 28);
-	m_pDatabase->max_load_factor(0.2);
-#else
-	m_pDatabase = new SeqPosHashMap(1 << 26);
-#endif
-}
-
-//
-// Destructor
-//
-Aligner::~Aligner()
-{
-	delete m_pDatabase;
-}
+namespace opt {
+	extern int multimap;
+};
 
 /** Convert the specified contig ID string to a numeric index. */
-unsigned Aligner::contigIDToIndex(ContigID id)
+template <class SeqPosHashMap>
+unsigned Aligner<SeqPosHashMap>::contigIDToIndex(ContigID id)
 {
 	pair<ContigDict::const_iterator, bool> inserted
 		= m_contigDict.insert(make_pair(id, m_contigDict.size()));
@@ -41,59 +25,56 @@ unsigned Aligner::contigIDToIndex(ContigID id)
 }
 
 /** Convert the specified contig ID numeric index to a string. */
-const ContigID& Aligner::contigIndexToID(unsigned index)
+template <class SeqPosHashMap>
+const ContigID& Aligner<SeqPosHashMap>::
+contigIndexToID(unsigned index)
 {
 	return m_contigIDs.at(index);
 }
 
-//
-// Create the database for the reference sequences
-//
-void Aligner::addReferenceSequence(const ContigID& id, const Sequence& seq)
-{		
+/** Create an index of the target sequence. */
+template <class SeqPosHashMap>
+void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequence& seq)
+{
 	// Break the ref sequence into kmers of the hash size
 	int size = seq.length();
 	for(int i = 0; i < (size - m_hashSize + 1); ++i)
 	{
 		Sequence subseq = seq.substr(i, m_hashSize);
-		
-		// skip seqs that have unknown bases
-		if(subseq.find("N") == std::string::npos)
-		{
-			PackedSeq kmer(subseq);
-			//printf("indexed seq: %s\n", kmer.decode().c_str());
-			Position p;
-			p.contig = contigIDToIndex(id);
-			p.pos = i;
-#if HAVE_GOOGLE_SPARSE_HASH_SET
-			if (m_pDatabase->count(kmer) > 0) {
+		if (subseq.find("N") != string::npos)
+			continue;
+
+		PackedSeq kmer(subseq);
+		if (!opt::multimap) {
+			class SeqPosHashMap::const_iterator it
+				= m_pDatabase->find(kmer);
+			if (it != m_pDatabase->end()) {
 				cerr << "error: duplicate k-mer in "
-					<< (*m_pDatabase)[kmer].contig << " also in "
-					<< id << ": " << kmer.decode() << '\n';
+					<< it->second.contig << " also in " << id << ": "
+					<< kmer.decode() << '\n';
 				exit(EXIT_FAILURE);
 			}
-#endif
-			m_pDatabase->insert(make_pair(kmer, p));
 		}
+		Position p;
+		p.contig = contigIDToIndex(id);
+		p.pos = i;
+		m_pDatabase->insert(make_pair(kmer, p));
 	}
 }
 
-template<typename oiterator>
-void Aligner::alignRead(const Sequence& seq,
+template <class SeqPosHashMap>
+template <class oiterator>
+void Aligner<SeqPosHashMap>::alignRead(const Sequence& seq,
 		oiterator dest)
 {
 	getAlignmentsInternal(seq, false, dest);
 	getAlignmentsInternal(reverseComplement(seq), true, dest);
 }
 
-// Explicit instantiation.
-template void Aligner::alignRead
-		<prefix_ostream_iterator<Alignment> >(
-		const Sequence& seq,
-		prefix_ostream_iterator<Alignment> dest);
-
-template<typename oiterator>
-void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,
+template <class SeqPosHashMap>
+template <class oiterator>
+void Aligner<SeqPosHashMap>::
+getAlignmentsInternal(const Sequence& seq, bool isRC,
 		oiterator& dest)
 {
 	// The results
@@ -134,8 +115,10 @@ void Aligner::getAlignmentsInternal(const Sequence& seq, bool isRC,
 	coalesceAlignments(aligns, dest);
 }
 
-template<typename oiterator>
-void Aligner::coalesceAlignments(const AlignmentSet& alignSet,
+template <class SeqPosHashMap>
+template <class oiterator>
+void Aligner<SeqPosHashMap>::
+coalesceAlignments(const AlignmentSet& alignSet,
 		oiterator& dest)
 {
 	// For each contig that this read hits, coalesce the alignments into contiguous groups
@@ -185,3 +168,18 @@ void Aligner::coalesceAlignments(const AlignmentSet& alignSet,
 		*dest++ = currAlign;
 	}
 }
+
+// Explicit instantiation.
+template void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
+		const ContigID& id, const Sequence& seq);
+
+template void Aligner<SeqPosHashUniqueMap>::addReferenceSequence(
+		const ContigID& id, const Sequence& seq);
+
+template void Aligner<SeqPosHashMultiMap>::
+alignRead<prefix_ostream_iterator<Alignment> >(
+		const Sequence& seq, prefix_ostream_iterator<Alignment> dest);
+
+template void Aligner<SeqPosHashUniqueMap>::
+alignRead<prefix_ostream_iterator<Alignment> >(
+		const Sequence& seq, prefix_ostream_iterator<Alignment> dest);

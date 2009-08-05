@@ -123,33 +123,39 @@ struct Position
 	uint32_t pos; // 0 indexed
 };
 
+typedef hash_multimap<PackedSeq, Position,
+		PackedSeqHasher, PackedSeqEqual> SeqPosHashMultiMap;
+
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_map>
-typedef google::sparse_hash_map<PackedSeq,
-		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+typedef google::sparse_hash_map<PackedSeq, Position,
+		PackedSeqHasher, PackedSeqEqual> SeqPosHashUniqueMap;
 #else
-# include "HashMap.h"
-typedef hash_multimap<PackedSeq,
-		Position, PackedSeqHasher, PackedSeqEqual> SeqPosHashMap;
+typedef hash_map<PackedSeq, Position,
+		PackedSeqHasher, PackedSeqEqual> SeqPosHashUniqueMap;
 #endif
 
-typedef SeqPosHashMap::const_iterator SPHMConstIter;
-typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
 
 typedef std::vector<Alignment> AlignmentVector;
 typedef std::map<unsigned, AlignmentVector> AlignmentSet;
 
+template <class SeqPosHashMap>
 class Aligner
 {
 	public:
-		Aligner(int hashSize);
-		~Aligner();
-		
-		// Generate the database to align to
+		typedef typename SeqPosHashMap::const_iterator SPHMConstIter;
+		typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
+
+		Aligner(int hashSize, int buckets)
+			: m_hashSize(hashSize),
+			m_pDatabase(new SeqPosHashMap(buckets)) { }
+
+		~Aligner() { delete m_pDatabase; }
+
 		void addReferenceSequence(const ContigID& id, const Sequence& seq);
 
 		// Align an individual sequence
-		template<typename oiterator>
+		template <class oiterator>
 		void alignRead(const Sequence& seq, oiterator dest);
 
 		size_t size() const { return m_pDatabase->size(); }
@@ -158,15 +164,21 @@ class Aligner
 			return m_pDatabase->bucket_count();
 		}
 
+		/** Set the maximum load factor. */
+		void max_load_factor(float factor)
+		{
+			m_pDatabase->max_load_factor(factor);
+		}
+
 	private:
 
 		// Internal alignment function, perform the actual alignment
-		template<typename oiterator>
+		template <class oiterator>
 		void getAlignmentsInternal(const Sequence& seq, bool isRC,
 				oiterator& dest);
 
 		// Coalesce all the hash hits into contiguous alignments
-		template<typename oiterator>
+		template <class oiterator>
 		void coalesceAlignments(const AlignmentSet& alignSet,
 				oiterator& dest);
 
