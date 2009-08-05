@@ -147,10 +147,7 @@ class Aligner
 		typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
 
 		Aligner(int hashSize, int buckets)
-			: m_hashSize(hashSize),
-			m_pDatabase(new SeqPosHashMap(buckets)) { }
-
-		~Aligner() { delete m_pDatabase; }
+			: m_hashSize(hashSize), m_target(buckets) { }
 
 		void addReferenceSequence(const ContigID& id, const Sequence& seq);
 
@@ -158,16 +155,16 @@ class Aligner
 		template <class oiterator>
 		void alignRead(const Sequence& seq, oiterator dest);
 
-		size_t size() const { return m_pDatabase->size(); }
+		size_t size() const { return m_target.size(); }
 		size_t bucket_count() const
 		{
-			return m_pDatabase->bucket_count();
+			return m_target.bucket_count();
 		}
 
 		/** Set the maximum load factor. */
 		void max_load_factor(float factor)
 		{
-			m_pDatabase->max_load_factor(factor);
+			m_target.max_load_factor(factor);
 		}
 
 	private:
@@ -184,9 +181,9 @@ class Aligner
 
 		// The number of bases to hash on
 		int m_hashSize;
-		
-		// The database of sequence hashes to alignment positions
-		SeqPosHashMap* m_pDatabase;
+
+		/** A map of k-mer to contig coordinates. */
+		SeqPosHashMap m_target;
 
 		// A dictionary of contig IDs.
 		typedef hash_map<ContigID, uint32_t> ContigDict;

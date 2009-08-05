@@ -47,8 +47,8 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 		PackedSeq kmer(subseq);
 		if (!opt::multimap) {
 			class SeqPosHashMap::const_iterator it
-				= m_pDatabase->find(kmer);
-			if (it != m_pDatabase->end()) {
+				= m_target.find(kmer);
+			if (it != m_target.end()) {
 				cerr << "error: duplicate k-mer in "
 					<< it->second.contig << " also in " << id << ": "
 					<< kmer.decode() << '\n';
@@ -58,7 +58,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 		Position p;
 		p.contig = contigIDToIndex(id);
 		p.pos = i;
-		m_pDatabase->insert(make_pair(kmer, p));
+		m_target.insert(make_pair(kmer, p));
 	}
 }
 
@@ -83,12 +83,9 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	int seqLen = seq.length();
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
-		// Generate kmer
 		PackedSeq kmer = seq.substr(i, m_hashSize);
+		LookupResult result = m_target.equal_range(kmer);
 
-		// Get the alignment positions
-		LookupResult result = m_pDatabase->equal_range(kmer);
-		
 		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
 		{
 			//printf("Seq: %s Contig: %s position: %d\n", seq.decode().c_str(), resultIter->second.contig.c_str(), resultIter->second.pos);
