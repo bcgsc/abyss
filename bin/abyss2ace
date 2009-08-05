@@ -38,89 +38,84 @@ while (<>) {
 		next;
 	}
 
-	if (/ /) {
-		my ($qid, @align) = split '\t';
-		
-		@align = sort {
-			# Sort the alignments first by position on the read and
-			# then by the length of the alignment.
-			my (undef, undef, $a_qstart, $a_alength) = split ' ', $a;
-			my (undef, undef, $b_qstart, $b_alength) = split ' ', $b;
-			$a_qstart <=> $b_qstart || $b_alength <=> $a_alength;
-		} @align;
+	my ($qid, @align) = split '\t';
+	next if @align == 0;
+	
+	@align = sort {
+		# Sort the alignments first by position on the read and
+		# then by the length of the alignment.
+		my (undef, undef, $a_qstart, $a_alength) = split ' ', $a;
+		my (undef, undef, $b_qstart, $b_alength) = split ' ', $b;
+		$a_qstart <=> $b_qstart || $b_alength <=> $a_alength;
+	} @align;
 
-		my $best_start = 0;
-		my $best_end = 0;
-		@align = grep {
-			my (undef, undef, $qstart, $alength) = split;
-			my $qend = $qstart + $alength;
-			if ($qstart > $best_start && $qend <= $best_end
-					|| $qstart >= $best_start && $qend < $best_end) {
-				# This alignment is entirely covered by another
-				# alignment, so this alignment is inferior.
-				0; # Discard this alignment.
-			} else {
-				die unless $qstart >= $best_start;
-				die unless $qend >= $best_end;
-				$best_start = $qstart;
-				$best_end = $qend;
-				1; # Keep this alignment.
-			}
-		} @align;
-		my $nalign = @align;
-
-		my $i = 0;
-		for (@align) {
-			my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
-				= split;
-
-			die "no read `$qid'" if !exists $seq{$qid};
-			my $seq = $seq{$qid};
-			die if length $seq != $qlength;
-
-			die "no contig `$tid'" if !exists $seq{$tid};
-			my $tlength = length $seq{$tid};
-
-			# Read IDs must be unique, so add a suffix if this read
-			# has multiple alignments.
-			$i++;
-			my $suffix = $nalign == 1 ? '' : "_$i/$nalign";
-
-			my $qend = $qstart + $alength;
-			if ($sense) {
-				# Reverse complement.
-				($seq = reverse $seq) =~ tr/ACGT/TGCA/;
-				# Reverse coordinates.
-				my $s = $qlength - $qend;
-				my $e = $qlength - $qstart;
-				$qstart = $s;
-				$qend = $e;
-			}
-			$sense = $sense ? 'C' : 'U';
-
-			my $astart = $tstart - $qstart;
-			my $qastart = $qstart <= $tstart ? 1
-				: 1 + $qstart - $tstart;
-
-			my $qaend = $tlength - $astart;
-			$qaend = $qlength if $qaend > $qlength;
-
-			my $afstart = 1 + $astart;
-			push @{$af{$tid}},
-				"AF $qid$suffix $sense $afstart\n";
-			push @{$rd{$tid}},
-				"RD $qid$suffix $qlength 0 0\n" .
-				"$seq\n\n" .
-				"QA 1 $qlength $qastart $qaend\n" .
-				"DS PHD_FILE: x\n";
-
-			$nreads++;
+	my $best_start = 0;
+	my $best_end = 0;
+	@align = grep {
+		my (undef, undef, $qstart, $alength) = split;
+		my $qend = $qstart + $alength;
+		if ($qstart > $best_start && $qend <= $best_end
+				|| $qstart >= $best_start && $qend < $best_end) {
+			# This alignment is entirely covered by another
+			# alignment, so this alignment is inferior.
+			0; # Discard this alignment.
+		} else {
+			die unless $qstart >= $best_start;
+			die unless $qend >= $best_end;
+			$best_start = $qstart;
+			$best_end = $qend;
+			1; # Keep this alignment.
 		}
+	} @align;
+	my $nalign = @align;
 
-		next;
+	my $i = 0;
+	for (@align) {
+		my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
+			= split;
+
+		die "no read `$qid'" if !exists $seq{$qid};
+		my $seq = $seq{$qid};
+		die if length $seq != $qlength;
+
+		die "no contig `$tid'" if !exists $seq{$tid};
+		my $tlength = length $seq{$tid};
+
+		# Read IDs must be unique, so add a suffix if this read
+		# has multiple alignments.
+		$i++;
+		my $suffix = $nalign == 1 ? '' : "_$i/$nalign";
+
+		my $qend = $qstart + $alength;
+		if ($sense) {
+			# Reverse complement.
+			($seq = reverse $seq) =~ tr/ACGT/TGCA/;
+			# Reverse coordinates.
+			my $s = $qlength - $qend;
+			my $e = $qlength - $qstart;
+			$qstart = $s;
+			$qend = $e;
+		}
+		$sense = $sense ? 'C' : 'U';
+
+		my $astart = $tstart - $qstart;
+		my $qastart = $qstart <= $tstart ? 1
+			: 1 + $qstart - $tstart;
+
+		my $qaend = $tlength - $astart;
+		$qaend = $qlength if $qaend > $qlength;
+
+		my $afstart = 1 + $astart;
+		push @{$af{$tid}},
+			"AF $qid$suffix $sense $afstart\n";
+		push @{$rd{$tid}},
+			"RD $qid$suffix $qlength 0 0\n" .
+			"$seq\n\n" .
+			"QA 1 $qlength $qastart $qaend\n" .
+			"DS PHD_FILE: x\n";
+
+		$nreads++;
 	}
-
-	die;
 }
 
 print 'AS ', scalar keys %rd, ' ',

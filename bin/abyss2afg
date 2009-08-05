@@ -99,77 +99,72 @@ while (<>) {
 		next;
 	}
 
-	if (/ /) {
-		my ($qid, @align) = split '\t';
+	my ($qid, @align) = split '\t';
+	next if @align == 0;
 
-		@align = sort {
-			# Sort the alignments first by position on the read and
-			# then by the length of the alignment.
-			my (undef, undef, $a_qstart, $a_alength) = split ' ', $a;
-			my (undef, undef, $b_qstart, $b_alength) = split ' ', $b;
-			$a_qstart <=> $b_qstart || $b_alength <=> $a_alength;
-		} @align;
+	@align = sort {
+		# Sort the alignments first by position on the read and
+		# then by the length of the alignment.
+		my (undef, undef, $a_qstart, $a_alength) = split ' ', $a;
+		my (undef, undef, $b_qstart, $b_alength) = split ' ', $b;
+		$a_qstart <=> $b_qstart || $b_alength <=> $a_alength;
+	} @align;
 
-		my $best_start = 0;
-		my $best_end = 0;
-		@align = grep {
-			my (undef, undef, $qstart, $alength) = split;
-			my $qend = $qstart + $alength;
-			if ($qstart > $best_start && $qend <= $best_end
-					|| $qstart >= $best_start && $qend < $best_end) {
-				# This alignment is entirely covered by another
-				# alignment, so this alignment is inferior.
-				0; # Discard this alignment.
-			} else {
-				die unless $qstart >= $best_start;
-				die unless $qend >= $best_end;
-				$best_start = $qstart;
-				$best_end = $qend;
-				1; # Keep this alignment.
-			}
-		} @align;
-		my $nalign = @align;
+	my $best_start = 0;
+	my $best_end = 0;
+	@align = grep {
+		my (undef, undef, $qstart, $alength) = split;
+		my $qend = $qstart + $alength;
+		if ($qstart > $best_start && $qend <= $best_end
+				|| $qstart >= $best_start && $qend < $best_end) {
+			# This alignment is entirely covered by another
+			# alignment, so this alignment is inferior.
+			0; # Discard this alignment.
+		} else {
+			die unless $qstart >= $best_start;
+			die unless $qend >= $best_end;
+			$best_start = $qstart;
+			$best_end = $qend;
+			1; # Keep this alignment.
+		}
+	} @align;
+	my $nalign = @align;
 
-		for (@align) {
-			my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
-				= split;
+	for (@align) {
+		my ($tid, $tstart, $qstart, $alength, $qlength, $sense)
+			= split;
 
-			die "no read `$qid'" unless exists $seq{$qid};
-			my $seq = $seq{$qid};
-			die if length $seq != $qlength;
+		die "no read `$qid'" unless exists $seq{$qid};
+		my $seq = $seq{$qid};
+		die if length $seq != $qlength;
 
-			die "no contig `$tid'" unless exists $seq{$tid};
-			my $tlength = length $seq{$tid};
+		die "no contig `$tid'" unless exists $seq{$tid};
+		my $tlength = length $seq{$tid};
 
-			my $qend = $qstart + $alength;
-			if ($sense) {
-				# Reverse coordinates.
-				($qstart, $qend)
-					= ($qlength - $qend, $qlength - $qstart);
-			}
-
-			my $astart = $tstart - $qstart;
-			my $off = max $astart, 0;
-			my $qastart = max 0, 0 - $astart;
-			my $qaend = min $qlength, $tlength - $astart;
-
-			if ($sense) {
-				# Reverse coordinates.
-				($qastart, $qaend)
-					= ($qlength - $qaend, $qlength - $qastart);
-			}
-			my $clr = $sense ? "$qaend,$qastart" : "$qastart,$qaend";
-
-			die unless exists $reds{$qid};
-			my $red_iid = $reds{$qid};
-			push @{$tle{$tid}},
-				"{TLE\nclr:$clr\noff:$off\nsrc:$red_iid\n}\n";
+		my $qend = $qstart + $alength;
+		if ($sense) {
+			# Reverse coordinates.
+			($qstart, $qend)
+				= ($qlength - $qend, $qlength - $qstart);
 		}
 
-		next;
-	}
+		my $astart = $tstart - $qstart;
+		my $off = max $astart, 0;
+		my $qastart = max 0, 0 - $astart;
+		my $qaend = min $qlength, $tlength - $astart;
 
-	die;
+		if ($sense) {
+			# Reverse coordinates.
+			($qastart, $qaend)
+				= ($qlength - $qaend, $qlength - $qastart);
+		}
+		my $clr = $sense ? "$qaend,$qastart" : "$qastart,$qaend";
+
+		die unless exists $reds{$qid};
+		my $red_iid = $reds{$qid};
+		push @{$tle{$tid}},
+			"{TLE\nclr:$clr\noff:$off\nsrc:$red_iid\n}\n";
+	}
 }
 
 my $ctg_iid;
