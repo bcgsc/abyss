@@ -27,7 +27,7 @@ GetOptions(
    	'man' => sub { pod2usage(-verbose => 2) },
    	'version' => \&version);
 
-for (@ARGV) { die "cannot read `$_'" unless -r }
+for (@ARGV) { die "cannot read `$_'" unless $_ eq '-' || -r }
 
 print <<EOF;
 {UNV

@@ -19,7 +19,7 @@ EOF
 	exit;
 }
 
-for (@ARGV) { die "cannot read `$_'" unless -r }
+for (@ARGV) { die "cannot read `$_'" unless $_ eq '-' || -r }
 
 my ($nreads, $id, %seq, %af, %rd);
 
