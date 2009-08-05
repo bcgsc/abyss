@@ -24,7 +24,7 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_CHECK_LIB([m], [sqrt])
-AC_CHECK_FUNCS([gethostname memset pow setlocale sqrt \
+AC_CHECK_FUNCS([gethostname getopt_long memset pow setlocale sqrt \
 	strdup strerror])
 AC_FUNC_MEMCMP
 AC_FUNC_SETVBUF_REVERSED
