@@ -205,9 +205,8 @@ abyss2afg - create an AMOS AFG assembly from an ABySS assembly
 
 =head1 SYNOPSIS
 
-B<KAligner> B<-k> I<K> F<reads.fa> F<contigs.fa> >F<alignments.kalign>
-
-B<abyss2afg> F<reads.fa> F<contigs.fa> F<alignments.kalign> >F<out.afg>
+B<KAligner> B<--seq> B<-mk> I<K> F<reads.fa> F<contigs.fa> |
+ B<abyss2afg> F<contigs.fa> - >F<out.afg>
 
 B<bank-transact> B<-cb> F<out.bnk> B<-m> F<out.afg>
 
