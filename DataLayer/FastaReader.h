@@ -17,7 +17,13 @@ class FastaReader : public IFileReader
 		~FastaReader();
 
 		// Read a single sequence from the file
-		Sequence ReadSequence(std::string& id, char& anchor);
+		Sequence ReadSequence(std::string& id, std::string& comment,
+				char& anchor);
+		Sequence ReadSequence(std::string& id, char& anchor)
+		{
+			std::string comment;
+			return ReadSequence(id, comment, anchor);
+		}
 		Sequence ReadSequence(std::string& id)
 		{
 			char anchor;

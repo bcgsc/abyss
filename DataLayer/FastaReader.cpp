@@ -35,7 +35,7 @@ FastaReader::~FastaReader()
 	m_inFile.close();
 }
 
-Sequence FastaReader::ReadSequence(string& id, char& anchor)
+Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 {
 	// Discard comments.
 	while (m_fileHandle.peek() == '#') {
@@ -51,8 +51,11 @@ Sequence FastaReader::ReadSequence(string& id, char& anchor)
 
 	if (recordType == '>' || recordType == '@') {
 		// Read the header.
-		m_fileHandle >> recordType >> id;
-		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+		string header;
+		getline(m_fileHandle, header);
+		stringstream headerStream(header);
+		headerStream >> recordType >> id;
+		while(headerStream >> comment);
 
 		getline(m_fileHandle, s);
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
