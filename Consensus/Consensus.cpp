@@ -130,6 +130,19 @@ static void buildBaseQuality()
 		AlignmentVector alignments;
 		readAlignment(line, readID, seq, alignments);
 
+		if (opt::csToNt) {
+			bool good = false;
+			for (AlignmentVector::const_iterator alignIter = alignments.begin();
+					alignIter != alignments.end(); ++alignIter) {
+				if (alignIter->read_start_pos == 0) {
+					good = true;
+					break;
+				}
+			}
+			if (!good)
+				continue;
+		}
+
 		for (AlignmentVector::const_iterator alignIter = alignments.begin();
 				alignIter != alignments.end(); ++alignIter) {
 			const char* s;
@@ -154,9 +167,10 @@ static void buildBaseQuality()
 			} else {
 				read_min = a.read_start_pos;
 				read_max = read_min + a.align_length + 1;
-				if (read_min != 0)
-					continue;
 			}
+
+			assert((int)g_baseCounts[a.contig].size() >= a.contig_start_pos
+					- a.read_start_pos + read_max - 1);
 
 			for (int x = read_min; x < read_max; x++) {
 				int base;
@@ -165,21 +179,38 @@ static void buildBaseQuality()
 				else
 					base = charToInt(s[x]);
 				unsigned loc = a.contig_start_pos - a.read_start_pos + x;
+				assert(loc < g_baseCounts[a.contig].size());
 				g_baseCounts[a.contig][loc].count[base]++;
 			}
+
+#if 0
+			for (unsigned x = 0; x < align_length; x++) {
+				int base = opt::colourSpace ? charToInt(s[read_min + x]) :
+					baseToCode(s[read_min + x]);
+				g_baseCounts[a.contig][a.contig_start_pos + x]
+					.count[base]++;
+			}
+#endif
 		}
 	}
 }
 
-static char selectBase(const BaseCount& count)
+static char selectBase(const BaseCount& count, unsigned& sumBest,
+		unsigned& sumSecond)
 {
 	int bestBase = -1;
 	unsigned bestCount = 0;
-	for (int x = 0; x < 4; x++)
+	unsigned secondCount = 0;
+	for (int x = 0; x < 4; x++) {
 		if (count.count[x] > bestCount) {
 			bestBase = x;
+			secondCount = bestCount;
 			bestCount = count.count[x];
 		}
+	}
+
+	sumBest += bestCount;
+	sumSecond += secondCount;
 
 	if (bestBase == -1)
 		return '?';
@@ -197,15 +228,34 @@ static void consensus(const char* outPath)
 		char outSeq[seqLength];
 		memset(outSeq, '?', seqLength);
 
-		transform(it->second.begin(), it->second.end(), outSeq, selectBase);
+		unsigned sumBest;
+		unsigned sumSecond;
+		for (unsigned x = 0; x < seqLength; x++) {
+			outSeq[x] = selectBase(it->second[x], sumBest, sumSecond);
+		}
+		//transform(it->second.begin(), it->second.end(), outSeq, selectBase);
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
-		outFile.WriteSequence(Sequence(outSeq, seqLength), idKey, 0.0f, it->first);
-		for (unsigned i = 0; i < seqLength; i++)
-			cout << idKey << ' ' << seqLength << ' ' << i
-				<< ' ' << outSeq[i]
-				<< ' ' << g_contigs[it->first].at(i)
-				<< ' ' << g_baseCounts[it->first][i] << '\n';
+		Sequence outString = Sequence(outSeq, seqLength);
+		if (outString.find_first_of("ACGT") != string::npos) {
+			outFile.WriteSequence(Sequence(outSeq, seqLength), idKey, 0.0f);
+			if (opt::csToNt)
+				for (unsigned i = 0; i < seqLength - 1; i++)
+					cout << idKey << ' ' << seqLength << ' ' << i << ' '
+//						<< nucleotideToColourSpace(outSeq[i], outSeq[i + 1])
+						<< ' ' << g_contigs[it->first].at(i)
+						<< ' ' << g_baseCounts[it->first][i] << '\n';
+			else
+				for (unsigned i = 0; i < seqLength; i++)
+					cout << idKey << ' ' << seqLength << ' ' << i
+						<< ' ' << outSeq[i]
+						<< ' ' << g_contigs[it->first].at(i)
+						<< ' ' << g_baseCounts[it->first][i] << '\n';
+		} else if (opt::verbose > 0) {
+			cerr << "Warning: contig " << it->first
+				<< " was not supported\n"
+				<< "by a complete read and was ommited.\n";
+		}
 	}
 }
 
