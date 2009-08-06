@@ -13,25 +13,6 @@ namespace opt {
 	extern int multimap;
 };
 
-/** Convert the specified contig ID string to a numeric index. */
-template <class SeqPosHashMap>
-unsigned Aligner<SeqPosHashMap>::contigIDToIndex(ContigID id)
-{
-	pair<ContigDict::const_iterator, bool> inserted
-		= m_contigDict.insert(make_pair(id, m_contigDict.size()));
-	if (inserted.second)
-		m_contigIDs.push_back(id);
-	return inserted.first->second;
-}
-
-/** Convert the specified contig ID numeric index to a string. */
-template <class SeqPosHashMap>
-const ContigID& Aligner<SeqPosHashMap>::
-contigIndexToID(unsigned index)
-{
-	return m_contigIDs.at(index);
-}
-
 /** Create an index of the target sequence. */
 template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequence& seq)

@@ -6,6 +6,7 @@
 //
 
 #include "config.h"
+#include "Dictionary.h"
 #include "HashMap.h"
 #include "PackedSeq.h"
 #include <string>
@@ -187,12 +188,18 @@ class Aligner
 		/** A map of k-mer to contig coordinates. */
 		SeqPosHashMap m_target;
 
-		// A dictionary of contig IDs.
-		typedef hash_map<ContigID, uint32_t> ContigDict;
-		ContigDict m_contigDict;
-		std::vector<ContigID> m_contigIDs;
-		unsigned contigIDToIndex(ContigID id);
-		const ContigID& contigIndexToID(unsigned index);
+		/** A dictionary of contig IDs. */
+		Dictionary m_contigDict;
+
+		unsigned contigIDToIndex(const ContigID& id)
+		{
+			return m_contigDict.serial(id);
+		}
+
+		const ContigID& contigIndexToID(unsigned index)
+		{
+			return m_contigDict.key(index);
+		}
 };
 
 #endif
