@@ -79,10 +79,8 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 {
 	unsigned count = 0;
 	FastaReader in(path.c_str());
-	while (in.isGood()) {
-		ContigID id;
-		Sequence seq = in.ReadSequence(id);
-
+	for (FastaRecord rec; in >> rec;) {
+		const Sequence& seq = rec.seq;
 		if (count++ == 0) {
 			// Detect colour-space contigs.
 			opt::colourSpace = isdigit(seq[0]);
@@ -95,8 +93,9 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 
 		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
 		PackedSeq seqr = seq.substr(0, opt::k);
-		pContigs->push_back(ContigEndSeq(id, seql, seqr));
+		pContigs->push_back(ContigEndSeq(rec.id, seql, seqr));
 	}
+	assert(in.eof());
 }
 
 int main(int argc, char** argv)

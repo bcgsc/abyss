@@ -45,6 +45,9 @@ class FastaReader : public IFileReader
 			return !m_fileHandle.eof() && m_fileHandle.peek() != EOF;
 		}
 
+		/** Return whether this stream is at end-of-file. */
+		bool eof() const { return m_fileHandle.eof(); };
+
 		/** Return whether this stream is good. */
 		operator void*() const { return m_fileHandle; }
 
