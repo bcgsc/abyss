@@ -45,6 +45,9 @@ class FastaReader : public IFileReader
 			return !m_fileHandle.eof() && m_fileHandle.peek() != EOF;
 		}
 
+		/** Return whether this stream is good. */
+		operator void*() const { return m_fileHandle; }
+
 		// Returns the number of sequences containing non-ACGT
 		// characters.
 		virtual unsigned getNonACGT() { return m_nonacgt; }
@@ -54,6 +57,24 @@ class FastaReader : public IFileReader
 		std::ifstream m_inFile;
 		std::istream& m_fileHandle;
 		unsigned m_nonacgt;
+};
+
+struct FastaRecord
+{
+	/** Identifier */
+	std::string id;
+	/** Comment following the first white-space of the header */
+	std::string comment;
+	/** Anchor base for a colour-space sequence */
+	char anchor;
+	/** The sequence */
+	Sequence seq;
+
+	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
+	{
+		o.seq = in.ReadSequence(o.id, o.comment, o.anchor);
+		return in;
+	}
 };
 
 #endif //FASTAREADER_H

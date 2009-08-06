@@ -49,7 +49,10 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 	char recordType = m_fileHandle.peek();
 	Sequence s;
 
-	if (recordType == '>' || recordType == '@') {
+	if (recordType == EOF) {
+		m_fileHandle.get();
+		return s;
+	} else if (recordType == '>' || recordType == '@') {
 		// Read the header.
 		string header;
 		getline(m_fileHandle, header);
