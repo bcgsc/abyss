@@ -116,11 +116,6 @@ struct Alignment
 	}
 };
 
-static inline int compareContigPos(const Alignment& a1, const Alignment& a2)
-{
-	return a1.contig_start_pos < a2.contig_start_pos;
-}
-
 struct Position
 {
 	uint32_t contig;

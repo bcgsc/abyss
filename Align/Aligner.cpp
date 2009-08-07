@@ -92,6 +92,11 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	coalesceAlignments(aligns, dest);
 }
 
+static int compareContigPos(const Alignment& a1, const Alignment& a2)
+{
+	return a1.contig_start_pos < a2.contig_start_pos;
+}
+
 template <class SeqPosHashMap>
 template <class oiterator>
 void Aligner<SeqPosHashMap>::
