@@ -9,10 +9,11 @@
 #include "Dictionary.h"
 #include "HashMap.h"
 #include "PackedSeq.h"
-#include <string>
+#include <cassert>
 #include <istream>
-#include <ostream>
 #include <map>
+#include <ostream>
+#include <string>
 #include <vector>
 
 typedef std::string ContigID;
@@ -67,6 +68,7 @@ struct Alignment
 	{
 		Alignment rc(*this);
 		unsigned tend = contig_start_pos + align_length;
+		assert(tend < tlength);
 		rc.contig_start_pos = tlength - tend;
 		rc.isRC = !isRC;
 		return rc;
@@ -79,6 +81,7 @@ struct Alignment
 	{
 		Alignment rc(*this);
 		unsigned qend = read_start_pos + align_length;
+		assert(qend < (unsigned)read_length);
 		rc.read_start_pos = read_length - qend;
 		rc.isRC = !isRC;
 		return rc;
