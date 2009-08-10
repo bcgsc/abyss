@@ -68,11 +68,12 @@ void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenc
 /** A contig ID and its end sequences. */
 struct ContigEndSeq {
 	ContigID id;
+	unsigned length;
 	PackedSeq l;
 	PackedSeq r;
-	ContigEndSeq(const ContigID& id,
+	ContigEndSeq(const ContigID& id, unsigned length,
 			const PackedSeq& l, const PackedSeq& r)
-		: id(id), l(l), r(r) { }
+		: id(id), length(length), l(l), r(r) { }
 };
 
 static void readContigs(string path, vector<ContigEndSeq>* pContigs)
@@ -93,7 +94,8 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 
 		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
 		PackedSeq seqr = seq.substr(0, opt::k);
-		pContigs->push_back(ContigEndSeq(rec.id, seql, seqr));
+		pContigs->push_back(ContigEndSeq(rec.id, seq.length(),
+					seql, seqr));
 	}
 	assert(in.eof());
 }
@@ -155,7 +157,7 @@ int main(int argc, char** argv)
 		const PackedSeq seqs[2] = { i->l, i->r };
 
 		if (opt::format == ADJ)
-			out << id;
+			out << id << ' ' << i->length;
 
 		const unsigned numEnds = 2;
 		for(unsigned idx = 0; idx < numEnds; idx++)
