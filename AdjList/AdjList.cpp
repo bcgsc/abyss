@@ -211,7 +211,9 @@ int main(int argc, char** argv)
 				out << ']';
 				break;
 			  case DOT:
-				out << '"' << id << (idx ? '-' : '+') << '"';
+				out << '"' << id << (idx ? '-' : '+') << "\" [len="
+					<< i->length << "];\n"
+					<< '"' << id << (idx ? '-' : '+') << '"';
 				if (!edges.empty()) {
 					out << " -> {";
 					for (vector<SimpleEdgeDesc>::const_iterator it
