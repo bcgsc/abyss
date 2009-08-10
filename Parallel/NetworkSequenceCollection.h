@@ -6,7 +6,7 @@
 #include "BranchGroup.h"
 #include "BranchRecord.h"
 #include "CommLayer.h"
-#include "IFileWriter.h"
+#include "FastaWriter.h"
 #include "MessageBuffer.h"
 #include "Timer.h"
 #include <set>
@@ -61,7 +61,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Perform a network assembly
 		unsigned performNetworkAssembly(
 				ISequenceCollection* seqCollection,
-				IFileWriter* fileWriter = NULL);
+				FastaWriter* fileWriter = NULL);
 
 		// add a sequence to the collection
 		void add(const PackedSeq& seq);
@@ -160,8 +160,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Branch processing
 		int processBranchesTrim();
 		bool processBranchesDiscoverBubbles();
-		int processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID);
-		
+		int processBranchesAssembly(
+				ISequenceCollection* seqCollection,
+				FastaWriter* fileWriter, int currContigID);
+
 		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
 		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
@@ -169,7 +171,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void NetworkSequenceCollection::assembleContig(
 				ISequenceCollection* seqCollection,
-				IFileWriter* fileWriter,
+				FastaWriter* fileWriter,
 				BranchRecord& branch, unsigned id);
 
 		// Check if a branch is redundant with a previously output branch

@@ -1112,7 +1112,7 @@ unsigned NetworkSequenceCollection::controlSplit()
 
 /** Assemble a contig. */
 void NetworkSequenceCollection::assembleContig(
-		ISequenceCollection* seqCollection, IFileWriter* writer,
+		ISequenceCollection* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
 	unsigned removed = AssemblyAlgorithms::assembleContig(
@@ -1124,7 +1124,7 @@ void NetworkSequenceCollection::assembleContig(
 }
 
 /** Assemble contigs. */
-unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter)
+unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
 	
@@ -1204,7 +1204,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
  * completed.
  * @return the number that have completed
  */
-int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, IFileWriter* fileWriter, int currContigID)
+int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter, int currContigID)
 {
 	int numAssembled = 0;
 	std::vector<BranchGroupMap::iterator> removeBranches;

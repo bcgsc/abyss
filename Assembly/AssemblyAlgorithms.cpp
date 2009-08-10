@@ -73,7 +73,6 @@ void loadSequences(ISequenceCollection* seqCollection,
 	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
 
 	// Determine the input file type
-	IFileReader* reader;
 	if(inFile.find(".psq") != std::string::npos)
 	{
 		loadPackedSequences(seqCollection, inFile);
@@ -83,11 +82,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 		seqCollection->load(inFile.c_str());
 		return;
 	}
-	else
-	{
-		reader = new FastaReader(inFile.c_str());
-	}
 
+	FastaReader* reader = new FastaReader(inFile.c_str());
 	unsigned count = 0, count_small = 0;
 	for (SequenceVector seqs;
 			reader->ReadSequences(seqs); seqs.clear()) {
@@ -794,7 +790,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
  * @return the number of k-mer below the coverage threshold
  */
 unsigned assembleContig(
-		ISequenceCollection* seqCollection, IFileWriter* writer,
+		ISequenceCollection* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
 	// Assemble the contig.
@@ -823,7 +819,7 @@ unsigned assembleContig(
  * @return the number of contigs assembled
  */
 unsigned assemble(ISequenceCollection* seqCollection,
-		IFileWriter* fileWriter)
+		FastaWriter* fileWriter)
 {
 	Timer timer("Assemble");
 

@@ -3,7 +3,7 @@
 
 #include "BranchGroup.h"
 #include "BranchRecord.h"
-#include "IFileWriter.h"
+#include "FastaWriter.h"
 #include "ISequenceCollection.h"
 
 /*********************************************************
@@ -100,9 +100,9 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection);
 unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 
 unsigned assembleContig(ISequenceCollection* seqCollection,
-		IFileWriter* writer, BranchRecord& branch, unsigned id);
+		FastaWriter* writer, BranchRecord& branch, unsigned id);
 unsigned assemble(ISequenceCollection* seqCollection,
-		IFileWriter* fileWriter = NULL);
+		FastaWriter* fileWriter = NULL);
 
 // A function to process a branch after it has been extended as far as possible
 void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq);

@@ -1,12 +1,10 @@
 #ifndef FASTAWRITER_H
 #define FASTAWRITER_H 1
 
-#include "IFileWriter.h"
 #include "Sequence.h"
 #include <cstdio>
 
-class FastaWriter : public IFileWriter
-{
+class FastaWriter {
 	public:
 		// Constructor opens file
 		FastaWriter(const char* path, bool append = false);
