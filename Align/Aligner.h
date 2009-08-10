@@ -68,7 +68,7 @@ struct Alignment
 	{
 		Alignment rc(*this);
 		unsigned tend = contig_start_pos + align_length;
-		assert(tend < tlength);
+		assert(tend <= tlength);
 		rc.contig_start_pos = tlength - tend;
 		rc.isRC = !isRC;
 		return rc;
@@ -81,7 +81,7 @@ struct Alignment
 	{
 		Alignment rc(*this);
 		unsigned qend = read_start_pos + align_length;
-		assert(qend < (unsigned)read_length);
+		assert(qend <= (unsigned)read_length);
 		rc.read_start_pos = read_length - qend;
 		rc.isRC = !isRC;
 		return rc;
