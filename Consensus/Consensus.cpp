@@ -238,7 +238,8 @@ static void consensus(const char* outPath)
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
 		Sequence outString = Sequence(outSeq, seqLength);
 		if (outString.find_first_of("ACGT") != string::npos) {
-			outFile.WriteSequence(Sequence(outSeq, seqLength), idKey, 0.0f);
+			outFile.WriteSequence(Sequence(outSeq, seqLength), idKey,
+					0);
 			if (opt::csToNt)
 				for (unsigned i = 0; i < seqLength - 1; i++)
 					cout << idKey << ' ' << seqLength << ' ' << i << ' '
