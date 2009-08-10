@@ -73,11 +73,9 @@ void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,
 	stringstream ss(adjLine);
 	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 	{
-		// Extract the opening bracket
-		string bracket;
-		ss >> bracket;
+		ss.ignore(numeric_limits<streamsize>::max(), '[');
+		assert(ss.gcount() > 0);
 
-		// Begin extracting adjacency records
 		bool done = false;
 		while(!done)
 		{
