@@ -60,7 +60,9 @@ clean:
 %-3.fa: $(in)
 ifdef np
 	$(mpirun) -np $(np) ABYSS-P $v -k$k -l$l -c$c \
-		-s bubbles.fa -o $@ $^
+		-s bubbles.fa -o $*-3p.fa $^
+	awk '/^>/ { $$1=">" i++ } { print }' $*-3p.fa >$@
+	rm -f $*-3p.fa
 else
 	ABYSS $v -k$k -l$l -c$c -s bubbles.fa -o $@ $^
 endif
