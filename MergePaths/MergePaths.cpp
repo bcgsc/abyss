@@ -544,7 +544,9 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 	size_t numNodes = currPath.getNumNodes();
 
 	MergeNode firstNode = currPath.getNode(0);
-	Sequence merged = sourceContigs[firstNode.id].seq;
+	const Contig& firstContig = sourceContigs[firstNode.id];
+	Sequence merged = firstContig.seq;
+	unsigned coverage = firstContig.coverage;
 	if (firstNode.isRC)
 		merged = reverseComplement(merged);
 	assert(!merged.empty());
@@ -553,12 +555,14 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		MergeNode mn = currPath.getNode(i);
 		if(gDebugPrint) std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
 
-		Sequence otherContig = sourceContigs[mn.id].seq;
-		assert(!otherContig.empty());
-		mergeSequences(merged, otherContig, (extDirection)0, mn.isRC, kmer);
+		const Contig& contig = sourceContigs[mn.id];
+		assert(!contig.seq.empty());
+		mergeSequences(merged, contig.seq, (extDirection)0, mn.isRC,
+				kmer);
+		coverage += contig.coverage;
 	}
 
-	writer->WriteSequence(merged, count, 0.0f, comment);
+	writer->WriteSequence(merged, count, coverage, comment);
 }
 
 
