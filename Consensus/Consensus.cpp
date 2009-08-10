@@ -20,13 +20,13 @@ PROGRAM " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "\n"
-"Alignments and read sequences are read in by standard input from KAligner\n"
-"Ensure that the --seq option was used when running KAligner\n"
-"Write the consensus results of all reads to OUTPUT\n"
-"Write the the pile-up of each base in each contig to standard output.\n"
+"Alignments and read sequences from KAligner are read in from standard\n"
+"input. Ensure that the --seq option was used when running KAligner.\n"
+"Write the consensus results of all reads to OUTPUT. Call a consensus\n"
+"at each position of each contig and write the result to standard output.\n"
 "\n"
-"  -o, --out=OUTPUT		 write converted sequences in fasta format to this file\n"
-"  -C, --cstont			 convert the colour space input to nucleotide space\n"
+"  -o, --out=OUTPUT      write converted sequences in fasta format to this file\n"
+"  -C, --cstont          convert the colour space input to nucleotide space\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -192,7 +192,7 @@ static void buildBaseQuality()
 			assert(read_max <= (int)seq.length());
 			assert(read_min >= 0);
 
-			// 
+			// Pile-up every base in the read to the contig. 
 			for (int x = read_min; x < read_max; x++) {
 				int base;
 				if (!opt::colourSpace)
