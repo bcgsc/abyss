@@ -58,7 +58,7 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 		getline(m_fileHandle, header);
 		stringstream headerStream(header);
 		headerStream >> recordType >> id;
-		while(headerStream >> comment);
+		comment = headerStream.str();
 
 		getline(m_fileHandle, s);
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
