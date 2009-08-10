@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define PROGRAM "ParseAligns"
+#define PROGRAM "Consensus"
 
 static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
@@ -19,10 +19,14 @@ PROGRAM " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Write read pairs that align to the same contig to FRAGMENTS or HISTOGRAM.\n"
-"Write read pairs that align to different contigs to standard output.\n"
-"Alignments may be in FILE(s) or standard input.\n"
 "\n"
+"Alignments and read sequences are read in by standard input from KAligner\n"
+"Ensure that the --seq option was used when running KAligner\n"
+"Write the consensus results of all reads to OUTPUT\n"
+"Write the the pile-up of each base in each contig to standard output.\n"
+"\n"
+"  -o, --out=OUTPUT		 write converted sequences in fasta format to this file\n"
+"  -C, --cstont			 convert the colour space input to nucleotide space\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
