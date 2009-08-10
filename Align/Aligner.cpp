@@ -97,34 +97,24 @@ static int compareContigPos(const Alignment& a1, const Alignment& a2)
 	return a1.contig_start_pos < a2.contig_start_pos;
 }
 
+/** Coalesce the k-mer alignments into a read alignment. */
 template <class SeqPosHashMap>
 template <class oiterator>
 void Aligner<SeqPosHashMap>::
-coalesceAlignments(const AlignmentSet& alignSet,
-		oiterator& dest)
+coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
 {
-	// For each contig that this read hits, coalesce the alignments into contiguous groups
-	for(AlignmentSet::const_iterator ctgIter = alignSet.begin(); ctgIter != alignSet.end(); ++ctgIter)
-	{
+	for (AlignmentSet::const_iterator ctgIter = alignSet.begin();
+			ctgIter != alignSet.end(); ++ctgIter) {
 		AlignmentVector alignVec = ctgIter->second;
-		
-		if(alignVec.empty())
-		{
-			continue;
-		}
-		
-		// Sort the alignment vector by contig alignment position
+		assert(!alignVec.empty());
+
 		sort(alignVec.begin(), alignVec.end(), compareContigPos);
-				
-		// Get the starting position
+
 		assert(!ctgIter->second.empty());
 		AlignmentVector::iterator prevIter = alignVec.begin();
 		AlignmentVector::iterator currIter = alignVec.begin() + 1;
-		
 		Alignment currAlign = *prevIter;
-
-		while(currIter != alignVec.end())
-		{
+		while (currIter != alignVec.end()) {
 			int qstep = currIter->isRC ? -1 : 1;
 			if (currIter->read_start_pos
 						!= prevIter->read_start_pos + qstep
@@ -132,15 +122,13 @@ coalesceAlignments(const AlignmentSet& alignSet,
 						!= prevIter->contig_start_pos + 1) {
 				*dest++ = currAlign;
 				currAlign = *currIter;
-			}
-			else
-			{
-				//bstd::cout << "	Continous, updating\n";
-				// alignments are consistent, increase the length of the alignment
+			} else {
 				currAlign.align_length++;
-				currAlign.read_start_pos = std::min(currAlign.read_start_pos, currIter->read_start_pos);
+				currAlign.read_start_pos = min(
+						currAlign.read_start_pos,
+						currIter->read_start_pos);
 			}
-			
+
 			prevIter = currIter;
 			currIter++;
 		}
