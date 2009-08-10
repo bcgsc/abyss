@@ -64,32 +64,25 @@ std::istream& readEstimateRecord(std::istream& stream,
 	return stream;
 }
 
-// Length file loader
-void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthVec)
+/** Load contig lengths. */
+void loadContigLengths(const string& path, ContigLengthVec& lengths)
 {
-	ifstream contigLenStream(contigLenFile.c_str());
-	assert(contigLenStream.is_open());
+	ifstream in(path.c_str());
+	assert(in.is_open());
 
-	while(!contigLenStream.eof() && contigLenStream.peek() != EOF)
-	{
-		LinearNumKey id;
-		int len;		
-		std::string line;
-		getline(contigLenStream, line);
-		
-		sscanf(line.c_str(), "%d %d", &id, &len);
-		
-		if(id != lengthVec.size())
-		{
+	string id;
+	unsigned len;
+	while (in >> id >> len) {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		LinearNumKey serial = convertContigIDToLinearNumKey(id);
+		if (serial != lengths.size()) {
 			cerr << id << " is out of sequence (size: "
-				<< lengthVec.size() << ")\n";
-			assert(false);
+				<< lengths.size() << ")\n";
 			exit(EXIT_FAILURE);
 		}
-
-		lengthVec.push_back(len);
+		lengths.push_back(len);
 	}
-	contigLenStream.close();
+	assert(in.eof());
 }
 
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)

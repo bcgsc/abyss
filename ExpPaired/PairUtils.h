@@ -141,8 +141,8 @@ struct EstimateRecord
 	}
 };
 
-// Length files
-void loadContigLengths(std::string contigLenFile, ContigLengthVec& lengthMap);
+void loadContigLengths(const std::string& path,
+		ContigLengthVec& lengths);
 
 // Convertor
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
