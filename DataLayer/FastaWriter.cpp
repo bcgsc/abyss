@@ -23,19 +23,18 @@ FastaWriter::~FastaWriter()
 	m_fileHandle = NULL;
 }
 
-void FastaWriter::WriteSequence(const Sequence& seq,
-		const int64_t id, const double multiplicity,
-		const std::string& comment)
+void FastaWriter::WriteSequence(const Sequence& seq, unsigned id,
+		unsigned multiplicity, const std::string& comment)
 {
 	assert(m_fileHandle != NULL);
 	const char *sep = comment.empty() ? "" : " ";
 	int n = opt::rank < 0
-		? fprintf(m_fileHandle, ">%llu %zu %g%s%s\n%s\n",
+		? fprintf(m_fileHandle, ">%llu %zu %u%s%s\n%s\n",
 				(long long unsigned)id,
 				seq.length(), multiplicity,
 				sep, comment.c_str(),
 				seq.c_str())
-		: fprintf(m_fileHandle, ">%u:%llu %zu %g%s%s\n%s\n",
+		: fprintf(m_fileHandle, ">%u:%llu %zu %u%s%s\n%s\n",
 				opt::rank,
 				(long long unsigned)id,
 				seq.length(), multiplicity,

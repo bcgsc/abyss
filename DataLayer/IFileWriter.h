@@ -8,7 +8,8 @@ class IFileWriter
 	public:
 		// Read in a single sequence
 		virtual ~IFileWriter() {};
-		virtual void WriteSequence(const Sequence& seq, const int64_t id, const double multiplicity) = 0;
+		virtual void WriteSequence(const Sequence& seq, unsigned id,
+				unsigned multiplicity) = 0;
 };
 
-#endif //IFILEWRITER_H
+#endif

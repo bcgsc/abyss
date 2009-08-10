@@ -15,13 +15,12 @@ class FastaWriter : public IFileWriter
 		~FastaWriter();
 
 		/** Write a sequence with a comment. */
-		void WriteSequence(const Sequence& seq,
-				const int64_t id, const double multiplicity,
-				const std::string& comment);
+		void WriteSequence(const Sequence& seq, unsigned id,
+				unsigned multiplicity, const std::string& comment);
 
 		/** Write a sequence. */
-		void WriteSequence(const Sequence& seq,
-				const int64_t id, const double multiplicity)
+		void WriteSequence(const Sequence& seq, unsigned id,
+				unsigned multiplicity)
 		{
 			WriteSequence(seq, id, multiplicity, "");
 		}
