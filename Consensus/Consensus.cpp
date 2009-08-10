@@ -110,6 +110,8 @@ static void readAlignment(string& line, string& readID,
 		s >> readID >> anchor >> seq;
 	else if (opt::csToNt) {
 		s >> readID >> anchor >> seq;
+		if (seq.find_first_not_of("0123") != string::npos)
+			return;
 		seq = colourToNucleotideSpace(anchor, seq);
 	} else
 		s >> readID >> seq;
