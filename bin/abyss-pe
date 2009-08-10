@@ -49,7 +49,7 @@ endif
 all: $(out)
 
 clean:
-	rm -f *.len *.adj *.pair *.hist *.dist *.path
+	rm -f *.len *.adj *.pair.gz *.hist *.dist *.path
 
 .PHONY: all clean
 .DELETE_ON_ERROR:
