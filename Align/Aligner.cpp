@@ -125,13 +125,11 @@ coalesceAlignments(const AlignmentSet& alignSet,
 
 		while(currIter != alignVec.end())
 		{
-			//std::cout << "CurrAlign: " << currAlign << "\n";
-			//std::cout << "AlignIter: " << *currIter << "\n";
-			
-			// Discontinuity found
-			if(currIter->contig_start_pos != prevIter->contig_start_pos + 1)
-			{
-				//std::cout << "	Discontinous, saving\n";
+			int qstep = currIter->isRC ? -1 : 1;
+			if (currIter->read_start_pos
+						!= prevIter->read_start_pos + qstep
+					|| currIter->contig_start_pos
+						!= prevIter->contig_start_pos + 1) {
 				*dest++ = currAlign;
 				currAlign = *currIter;
 			}
