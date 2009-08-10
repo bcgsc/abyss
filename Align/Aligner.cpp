@@ -92,9 +92,9 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	coalesceAlignments(aligns, dest);
 }
 
-static int compareContigPos(const Alignment& a1, const Alignment& a2)
+static int compareQueryPos(const Alignment& a1, const Alignment& a2)
 {
-	return a1.contig_start_pos < a2.contig_start_pos;
+	return a1.read_start_pos < a2.read_start_pos;
 }
 
 /** Coalesce the k-mer alignments into a read alignment. */
@@ -108,25 +108,24 @@ coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
 		AlignmentVector alignVec = ctgIter->second;
 		assert(!alignVec.empty());
 
-		sort(alignVec.begin(), alignVec.end(), compareContigPos);
+		sort(alignVec.begin(), alignVec.end(), compareQueryPos);
 
-		assert(!ctgIter->second.empty());
 		AlignmentVector::iterator prevIter = alignVec.begin();
 		AlignmentVector::iterator currIter = alignVec.begin() + 1;
 		Alignment currAlign = *prevIter;
 		while (currIter != alignVec.end()) {
-			int qstep = currIter->isRC ? -1 : 1;
+			int qstep = 1;
+			int tstep = currIter->isRC ? -1 : 1;
 			if (currIter->read_start_pos
 						!= prevIter->read_start_pos + qstep
 					|| currIter->contig_start_pos
-						!= prevIter->contig_start_pos + 1) {
+						!= prevIter->contig_start_pos + tstep) {
 				*dest++ = currAlign;
 				currAlign = *currIter;
 			} else {
 				currAlign.align_length++;
-				currAlign.read_start_pos = min(
-						currAlign.read_start_pos,
-						currIter->read_start_pos);
+				if (currAlign.isRC)
+					currAlign.contig_start_pos--;
 			}
 
 			prevIter = currIter;
