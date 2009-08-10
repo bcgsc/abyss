@@ -12,9 +12,12 @@ using namespace std;
 // Explicit instantiation.
 template class DirectedGraph<SimpleContigData>;
 
+void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,
+		SimpleContigGraph* pGraph);
+
 /** Load an adjacency graph. */
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
-		string& lengthFile, string adjFile)
+		const string& lengthFile, const string& adjFile)
 {
 	// Load the lengths temporarily
 	ContigLengthVec* pLengthVec = new ContigLengthVec();
@@ -63,7 +66,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 			numVert, numEdges);
 }
 
-void parseAdjacencyLine(string& adjLine, LinearNumKey currVert,
+void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,
 		SimpleContigGraph* pGraph)
 {
 	// convert to string stream

@@ -11,9 +11,6 @@ struct SimpleContigData
 typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
 
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
-		std::string& lengthFile, std::string adjFile);
-
-void parseAdjacencyLine(std::string& adjLine, LinearNumKey currVert,
-		SimpleContigGraph* pGraph);
+		const std::string& lengthFile, const std::string& adjFile);
 
 #endif
