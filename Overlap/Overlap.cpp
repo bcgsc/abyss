@@ -32,7 +32,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ LEN DIST\n"
+"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ DIST\n"
 "Find overlaps between blunt contigs that have negative distance estimates.\n"
 "Output the small contigs that fill in the gaps.\n"
 "\n"
@@ -326,12 +326,12 @@ int main(int argc, char *const argv[])
 		die = true;
 	}
 
-	if (argc - optind < 4) {
+	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
 
-	if (argc - optind > 4) {
+	if (argc - optind > 3) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -344,8 +344,8 @@ int main(int argc, char *const argv[])
 
 	string contigPath(argv[optind++]);
 	string adjPath(argv[optind++]);
-	string lenPath(argv[optind++]);
 	string estPath(argv[optind++]);
+	const string& lenPath = adjPath;
 
 	PairedAlgorithms::readContigVec(contigPath, contigs);
 	assert(!contigs.empty());

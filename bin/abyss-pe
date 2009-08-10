@@ -49,7 +49,7 @@ endif
 all: $(out)
 
 clean:
-	rm -f *.len *.adj *.pair.gz *.hist *.dist *.path
+	rm -f *.adj *.pair.gz *.hist *.dist *.path
 
 .PHONY: all clean
 .DELETE_ON_ERROR:
@@ -67,9 +67,6 @@ else
 	ABYSS $v -k$k -l$l -c$c -s bubbles.fa -o $@ $^
 endif
 
-%.len: %.fa
-	awk '/^>/ {getline s; print substr($$1, 2), length(s)}' $< >$@
-
 %.adj: %.fa
 	AdjList -k$k $< >$@
 
@@ -81,12 +78,12 @@ endif
 		|sort -nk2,2 \
 		|gzip >$*.pair.gz
 
-%.dist: %.pair.gz %.len %.hist
-	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ $*.len $*.hist -
+%.dist: %.pair.gz %.adj %.hist
+	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ $*.adj $*.hist -
 
 # Find overlaps between contigs
 
-%-overlap.fa: %.fa %.adj %.len %.dist
+%-overlap.fa: %.fa %.adj %.dist
 	Overlap $v -k$k -o $@ $^
 
 %-4.fa: %-3.fa %-3-overlap.fa
@@ -94,7 +91,7 @@ endif
 
 # Paired-end assembly
 
-%-4.path: %-4.adj %-4.len %-3.dist
+%-4.path: %-4.adj %-3.dist
 	SimpleGraph $v -k$k -o $@ $^
 
 %-contigs.fa: %-4.fa %-4.path

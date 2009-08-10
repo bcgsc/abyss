@@ -21,10 +21,9 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... ADJ LEN DIST\n"
+"Usage: " PROGRAM " [OPTION]... ADJ DIST\n"
 "Find paths through contigs using distance estimates.\n"
 "  ADJ   adjacency of the contigs\n"
-"  LEN   lengths of the contigs\n"
 "  DIST  distance estimates between the contigs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
@@ -111,10 +110,10 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 3) {
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 3) {
+	} else if (argc - optind > 2) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -126,8 +125,8 @@ int main(int argc, char** argv)
 	}
 
 	string adjFile(argv[optind++]);
-	string lenFile(argv[optind++]);
 	string estFile(argv[optind++]);
+	const string& lenFile = adjFile;
 
 	std::cout << "Adj file: " << adjFile
 		<< " Estimate File: " << estFile
