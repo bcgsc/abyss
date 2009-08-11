@@ -83,10 +83,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 		return;
 	}
 
-	FastaReader* reader = new FastaReader(inFile.c_str());
+	FastaReader reader(inFile.c_str());
 	unsigned count = 0, count_small = 0;
 	for (SequenceVector seqs;
-			reader->ReadSequences(seqs); seqs.clear()) {
+			reader.ReadSequences(seqs); seqs.clear()) {
 		for (SequenceVectorIterator iter = seqs.begin();
 				iter != seqs.end(); iter++) {
 			int len = iter->length();
@@ -124,10 +124,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 	PrintDebug(1, "Read %u reads. ", count);
 	seqCollection->printLoad();
 
-	unsigned count_nonacgt = reader->getNonACGT();
-	delete reader;
-	reader = 0;
-
+	unsigned count_nonacgt = reader.getNonACGT();
 	if (count_small > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
 				"shorter than %d bases\n",
