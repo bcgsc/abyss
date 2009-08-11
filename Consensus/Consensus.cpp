@@ -350,7 +350,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (argc - optind < 2) {
+	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
