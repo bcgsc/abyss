@@ -350,6 +350,11 @@ int main(int argc, char** argv)
 		}
 	}
 
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	}
+
 	string contigsPath(argv[argc - 1]);
 
 	if (die) {
