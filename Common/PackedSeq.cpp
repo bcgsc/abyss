@@ -290,7 +290,7 @@ static void store(uint8_t *dest, Seq seq)
 
 /**
  * Reverse the bytes by storing them in the reverse order of
- * loading, and reverse the words in the same fasion.
+ * loading, and reverse the words in the same fashion.
  */
 static void storeReverse(uint8_t *dest, Seq seq)
 {
