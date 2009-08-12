@@ -45,7 +45,7 @@ static const struct option longopts[] = {
 void parse(int argc, char* const* argv)
 {
 	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1) {
+					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg;
 		if (optarg != NULL)
 			arg.str(optarg);
