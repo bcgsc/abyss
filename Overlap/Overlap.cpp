@@ -298,7 +298,7 @@ static void assert_open(ifstream& f, const string& p)
 int main(int argc, char *const argv[])
 {
 	bool die = false;
-	for (char c; (c = getopt_long(argc, argv,
+	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {

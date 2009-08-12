@@ -103,7 +103,7 @@ static pthread_t getReadFiles(const char *readsFile)
 int main(int argc, char** argv)
 {
 	bool die = false;
-	for (char c; (c = getopt_long(argc, argv,
+	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {

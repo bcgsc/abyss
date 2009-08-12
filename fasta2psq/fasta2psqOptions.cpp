@@ -44,9 +44,8 @@ static const struct option longopts[] = {
 /** Parse the specified command line. */
 void parse(int argc, char* const* argv)
 {
-	char c;
-	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL))
-			!= -1) {
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1) {
 		istringstream arg;
 		if (optarg != NULL)
 			arg.str(optarg);
