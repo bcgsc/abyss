@@ -100,6 +100,17 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 	assert(in.eof());
 }
 
+template<class T> static bool predTrue(T o)
+{
+	(void)o;
+	return true;
+}
+
+template<typename T, class P> const T& second(const P& o)
+{
+	return o.second;
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -167,37 +178,37 @@ int main(int argc, char** argv)
 			out << id << ' ' << i->length;
 
 		for (unsigned idx = 0; idx < 2; idx++) {
-			vector<SimpleEdgeDesc> edges;
 			const PackedSeq& seq = idx == 0 ? i->l : i->r;
 			pair<KmerMap::const_iterator, KmerMap::const_iterator>
-				x = ends[!idx].equal_range(seq);
-			for (KmerMap::const_iterator xi = x.first;
-					xi != x.second; ++xi)
-				edges.push_back(xi->second);
+				edges = ends[!idx].equal_range(seq);
 
 			switch (opt::format) {
 			  case ADJ:
 				out << " [ ";
-				copy(edges.begin(), edges.end(),
-						ostream_iterator<SimpleEdgeDesc>(out, " "));
+				transform(edges.first, edges.second,
+						ostream_iterator<SimpleEdgeDesc>(out, " "),
+						second<KmerMap::mapped_type,
+							KmerMap::value_type>);
 				out << ']';
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" [len="
 					<< i->length << "];\n"
 					<< '"' << id << (idx ? '-' : '+') << '"';
-				if (!edges.empty()) {
+				if (edges.first != edges.second) {
 					out << " -> {";
-					for (vector<SimpleEdgeDesc>::const_iterator it
-							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << it->contig
-							<< (idx != it->isRC ? '-' : '+') << '"';
+					for (KmerMap::const_iterator it = edges.first;
+							it != edges.second; ++it)
+						out << " \"" << it->second.contig
+							<< (idx != it->second.isRC ? '-' : '+')
+							<< '"';
 					out << " }";
 				}
 				out << ";\n";
 				break;
 			}
-			numEdges += edges.size();
+			numEdges += count_if(edges.first, edges.second,
+					predTrue<KmerMap::value_type>);
 		}
 		if (opt::format == ADJ)
 			out << '\n';
