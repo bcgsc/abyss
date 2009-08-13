@@ -139,12 +139,18 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
-	typedef multimap<PackedSeq, ContigID> KmerMap;
+	typedef multimap<PackedSeq, SimpleEdgeDesc> KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
-		ends[0].insert(make_pair(i->l, i->id));
-		ends[1].insert(make_pair(i->r, i->id));
+		ends[0].insert(make_pair(i->l,
+					SimpleEdgeDesc(i->id, false)));
+		ends[1].insert(make_pair(reverseComplement(i->l),
+					SimpleEdgeDesc(i->id, true)));
+		ends[1].insert(make_pair(i->r,
+					SimpleEdgeDesc(i->id, false)));
+		ends[0].insert(make_pair(reverseComplement(i->r),
+					SimpleEdgeDesc(i->id, true)));
 	}
 
 	ostream& out = cout;
@@ -163,16 +169,11 @@ int main(int argc, char** argv)
 		for (unsigned idx = 0; idx < 2; idx++) {
 			vector<SimpleEdgeDesc> edges;
 			const PackedSeq& seq = idx == 0 ? i->l : i->r;
-
-			for (unsigned adjSense = 0; adjSense < 2; adjSense++) {
-				pair<KmerMap::const_iterator, KmerMap::const_iterator>
-					x = ends[idx == adjSense].equal_range(
-							adjSense ? reverseComplement(seq) : seq);
-				for (KmerMap::const_iterator i = x.first;
-						i != x.second; ++i)
-					edges.push_back(
-							SimpleEdgeDesc(i->second, adjSense));
-			}
+			pair<KmerMap::const_iterator, KmerMap::const_iterator>
+				x = ends[!idx].equal_range(seq);
+			for (KmerMap::const_iterator xi = x.first;
+					xi != x.second; ++xi)
+				edges.push_back(xi->second);
 
 			switch (opt::format) {
 			  case ADJ:
