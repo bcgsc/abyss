@@ -8,9 +8,11 @@
 #include <cstring> // for strerror
 #include <fstream>
 #include <functional>
-#include <iterator>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
+#include <map>
+#include <vector>
 
 using namespace std;
 
@@ -100,17 +102,6 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 	assert(in.eof());
 }
 
-template<class T> static bool predTrue(T o)
-{
-	(void)o;
-	return true;
-}
-
-template<typename T, class P> const T& second(const P& o)
-{
-	return o.second;
-}
-
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -150,18 +141,18 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
-	typedef multimap<PackedSeq, SimpleEdgeDesc> KmerMap;
+	typedef map<PackedSeq, vector<SimpleEdgeDesc> > KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
-		ends[0].insert(make_pair(i->l,
-					SimpleEdgeDesc(i->id, false)));
-		ends[1].insert(make_pair(reverseComplement(i->l),
-					SimpleEdgeDesc(i->id, true)));
-		ends[1].insert(make_pair(i->r,
-					SimpleEdgeDesc(i->id, false)));
-		ends[0].insert(make_pair(reverseComplement(i->r),
-					SimpleEdgeDesc(i->id, true)));
+		ends[0][i->l].push_back(
+				SimpleEdgeDesc(i->id, false));
+		ends[1][reverseComplement(i->l)].push_back(
+				SimpleEdgeDesc(i->id, true));
+		ends[1][i->r].push_back(
+				SimpleEdgeDesc(i->id, false));
+		ends[0][reverseComplement(i->r)].push_back(
+					SimpleEdgeDesc(i->id, true));
 	}
 
 	ostream& out = cout;
@@ -179,36 +170,31 @@ int main(int argc, char** argv)
 
 		for (unsigned idx = 0; idx < 2; idx++) {
 			const PackedSeq& seq = idx == 0 ? i->l : i->r;
-			pair<KmerMap::const_iterator, KmerMap::const_iterator>
-				edges = ends[!idx].equal_range(seq);
+			const KmerMap::mapped_type& edges = ends[!idx][seq];
 
 			switch (opt::format) {
 			  case ADJ:
 				out << " [ ";
-				transform(edges.first, edges.second,
-						ostream_iterator<SimpleEdgeDesc>(out, " "),
-						second<KmerMap::mapped_type,
-							KmerMap::value_type>);
+				copy(edges.begin(), edges.end(),
+						ostream_iterator<SimpleEdgeDesc>(out, " "));
 				out << ']';
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" [len="
 					<< i->length << "];\n"
 					<< '"' << id << (idx ? '-' : '+') << '"';
-				if (edges.first != edges.second) {
+				if (!edges.empty()) {
 					out << " -> {";
-					for (KmerMap::const_iterator it = edges.first;
-							it != edges.second; ++it)
-						out << " \"" << it->second.contig
-							<< (idx != it->second.isRC ? '-' : '+')
-							<< '"';
+					for (KmerMap::mapped_type::const_iterator it
+							= edges.begin(); it != edges.end(); ++it)
+						out << " \"" << it->contig
+							<< (idx != it->isRC ? '-' : '+') << '"';
 					out << " }";
 				}
 				out << ";\n";
 				break;
 			}
-			numEdges += count_if(edges.first, edges.second,
-					predTrue<KmerMap::value_type>);
+			numEdges += edges.size();
 		}
 		if (opt::format == ADJ)
 			out << '\n';
