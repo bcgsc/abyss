@@ -263,6 +263,10 @@ static Seq load(const uint8_t *src)
 	return seq;
 }
 
+#if WORDS_BIGENDIAN
+# error Big-endian architectures are not supported.
+#else
+
 static void store(uint8_t *dest, Seq seq)
 {
 	const uint64_t *px = seq.x;
@@ -308,6 +312,8 @@ static void storeReverse(uint8_t *dest, Seq seq)
 	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 48;
 	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 56;
 }
+
+#endif
 
 /** Shift right by the specified number of bits. */
 static void shiftRight(Seq *pseq, uint8_t n)

@@ -21,6 +21,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_HEADER_STDBOOL
 AC_TYPE_SIZE_T
+AC_C_BIGENDIAN
 
 # Checks for library functions.
 AC_CHECK_LIB([m], [sqrt])
