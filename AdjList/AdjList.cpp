@@ -139,7 +139,6 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
-	// Generate a k-mer -> contig lookup table for all the contig ends
 	typedef multimap<PackedSeq, ContigID> KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
@@ -162,9 +161,8 @@ int main(int argc, char** argv)
 			out << id << ' ' << i->length;
 
 		const unsigned numEnds = 2;
-		for(unsigned idx = 0; idx < numEnds; idx++)
-		{
-			std::vector<SimpleEdgeDesc> edges;
+		for (unsigned idx = 0; idx < numEnds; idx++) {
+			vector<SimpleEdgeDesc> edges;
 			const PackedSeq& seq = idx == 0 ? i->l : i->r;
 
 			for (unsigned adjSense = 0; adjSense <= 1; ++adjSense) {
@@ -172,12 +170,9 @@ int main(int argc, char** argv)
 					x = ends[idx == adjSense].equal_range(
 							adjSense ? reverseComplement(seq) : seq);
 				for (KmerMap::const_iterator i = x.first;
-						i != x.second; ++i) {
-					SimpleEdgeDesc ed;
-					ed.contig = i->second;
-					ed.isRC = adjSense;
-					edges.push_back(ed);
-				}
+						i != x.second; ++i)
+					edges.push_back(
+							SimpleEdgeDesc(i->second, adjSense));
 			}
 
 			switch (opt::format) {

@@ -94,6 +94,10 @@ struct SimpleEdgeDesc
 	ContigID contig;
 	bool isRC;
 
+	SimpleEdgeDesc() { }
+	SimpleEdgeDesc(ContigID contig, bool isRC)
+		: contig(contig), isRC(isRC) { }
+
 	friend std::ostream& operator<<(std::ostream& out, const SimpleEdgeDesc& object)
 	{
 		out << object.contig << "," << object.isRC;
