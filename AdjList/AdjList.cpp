@@ -160,12 +160,11 @@ int main(int argc, char** argv)
 		if (opt::format == ADJ)
 			out << id << ' ' << i->length;
 
-		const unsigned numEnds = 2;
-		for (unsigned idx = 0; idx < numEnds; idx++) {
+		for (unsigned idx = 0; idx < 2; idx++) {
 			vector<SimpleEdgeDesc> edges;
 			const PackedSeq& seq = idx == 0 ? i->l : i->r;
 
-			for (unsigned adjSense = 0; adjSense <= 1; ++adjSense) {
+			for (unsigned adjSense = 0; adjSense < 2; adjSense++) {
 				pair<KmerMap::const_iterator, KmerMap::const_iterator>
 					x = ends[idx == adjSense].equal_range(
 							adjSense ? reverseComplement(seq) : seq);
