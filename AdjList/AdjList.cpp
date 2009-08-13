@@ -41,6 +41,7 @@ enum format { ADJ, DOT };
 
 namespace opt {
 	static int k;
+	static int overlap;
 
 	/** Output formats */
 	static int format;
@@ -62,8 +63,6 @@ static const struct option longopts[] = {
 	{ "version", no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs);
 
 /** A contig ID and its end sequences. */
 struct ContigEndSeq {
@@ -92,8 +91,9 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 				assert(isalpha(seq[0]));
 		}
 
-		PackedSeq seql = seq.substr(seq.length() - opt::k, opt::k);
-		PackedSeq seqr = seq.substr(0, opt::k);
+		PackedSeq seql = seq.substr(seq.length() - opt::overlap,
+				opt::overlap);
+		PackedSeq seqr = seq.substr(0, opt::overlap);
 		pContigs->push_back(ContigEndSeq(rec.id, seq.length(),
 					seql, seqr));
 	}
@@ -130,6 +130,8 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	opt::overlap = opt::k - 1;
+
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
@@ -138,11 +140,12 @@ int main(int argc, char** argv)
 		readContigs("-", &contigs);
 
 	// Generate a k-mer -> contig lookup table for all the contig ends
-	std::map<PackedSeq, ContigID> contigLUTs[2];
+	typedef multimap<PackedSeq, ContigID> KmerMap;
+	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
-		contigLUTs[0][i->l] = i->id;
-		contigLUTs[1][i->r] = i->id;
+		ends[0].insert(make_pair(i->l, i->id));
+		ends[1].insert(make_pair(i->r, i->id));
 	}
 
 	ostream& out = cout;
@@ -154,7 +157,6 @@ int main(int argc, char** argv)
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
 		const ContigID& id = i->id;
-		const PackedSeq seqs[2] = { i->l, i->r };
 
 		if (opt::format == ADJ)
 			out << id << ' ' << i->length;
@@ -163,43 +165,18 @@ int main(int argc, char** argv)
 		for(unsigned idx = 0; idx < numEnds; idx++)
 		{
 			std::vector<SimpleEdgeDesc> edges;
-			const PackedSeq& currSeq = seqs[idx];
-			extDirection dir;
-			dir = (idx == 0) ? SENSE : ANTISENSE;
+			const PackedSeq& seq = idx == 0 ? i->l : i->r;
 
-			
-			// Generate the links
-			PSequenceVector extensions;
-			generatePossibleExtensions(currSeq, dir, extensions);
-		  
-			for(PSequenceVector::iterator iter = extensions.begin(); iter != extensions.end(); ++iter)
-			{
-				// Get the contig this sequence maps to
-				for(size_t compIdx = 0; compIdx <= 1; ++compIdx)
-				{
-					size_t lookuptable_id = 1 - idx;
-					bool reverse = (compIdx == 1);
-					PackedSeq testSeq;
-					if(reverse)
-					{
-						// flip the lookup table id
-						lookuptable_id = 1 - lookuptable_id;
-						testSeq = reverseComplement(*iter);
-					}
-					else
-					{
-						testSeq = *iter;
-					}
-					std::map<PackedSeq, ContigID>::iterator cLUTIter;
-					cLUTIter = contigLUTs[lookuptable_id].find(testSeq);
-					if(cLUTIter != contigLUTs[lookuptable_id].end())
-					{						
-						// Store the edge
-						SimpleEdgeDesc ed;
-						ed.contig = cLUTIter->second;
-						ed.isRC = reverse;
-						edges.push_back(ed);
-					}
+			for (unsigned adjSense = 0; adjSense <= 1; ++adjSense) {
+				pair<KmerMap::const_iterator, KmerMap::const_iterator>
+					x = ends[idx == adjSense].equal_range(
+							adjSense ? reverseComplement(seq) : seq);
+				for (KmerMap::const_iterator i = x.first;
+						i != x.second; ++i) {
+					SimpleEdgeDesc ed;
+					ed.contig = i->second;
+					ed.isRC = adjSense;
+					edges.push_back(ed);
 				}
 			}
 
@@ -238,17 +215,4 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "vertices: " << numVerts << " "
 			"edges: " << numEdges << endl;
-} 
-
-void generatePossibleExtensions(const PackedSeq& seq, extDirection dir, PSequenceVector& outseqs)
-{
-  PackedSeq extSeq(seq);
-  extSeq.shift(dir);
-  
-  // Check for the existance of the 4 possible extensions
-  for(int i  = 0; i < NUM_BASES; i++)
-    {
-      extSeq.setLastBase(dir, i);
-      outseqs.push_back(extSeq);
-    }
 }
