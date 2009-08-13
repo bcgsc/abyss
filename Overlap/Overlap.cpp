@@ -119,7 +119,7 @@ class ContigNode
 			return m_sense == SENSE ? seq : reverseComplement(seq);
 		}
 
-		friend ostream& operator <<(ostream& o, const ContigNode a)
+		friend ostream& operator <<(ostream& o, const ContigNode& a)
 		{
 			return o << a.m_id << (a.m_sense == SENSE ? '+' : '-');
 		}
