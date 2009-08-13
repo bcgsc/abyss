@@ -93,7 +93,7 @@ class ContigNode
 		{
 			return m_id == b.m_id && m_sense == b.m_sense;
 		}
-		bool operator<(const ContigNode b) const
+		bool operator<(const ContigNode& b) const
 		{
 			return m_id != b.m_id ? m_id < b.m_id
 				: m_sense < b.m_sense;
