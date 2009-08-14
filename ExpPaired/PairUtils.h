@@ -11,7 +11,7 @@ typedef std::vector<int> ContigLengthVec;
 
 typedef uint32_t LinearNumKey;
 
-// STRUCTURES
+/** Distance estimate between two contigs. */
 struct Estimate
 {
 	LinearNumKey nID;
