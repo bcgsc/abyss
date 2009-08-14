@@ -102,29 +102,14 @@ struct SimpleEdgeDesc
 	{
 		out << object.contig << "," << object.isRC;
 		return out;
-	} 
-  
-	friend std::istream& operator>>(std::istream& in, SimpleEdgeDesc& object)
+	}
+
+	friend std::istream& operator>>(std::istream& in,
+			SimpleEdgeDesc& object)
 	{
-		// Read 1 record from the stream
-		std::string record;
-		in >> record;
-		
-		// parse the record
-		std::stringstream recss(record);
-		std::stringstream convertor;
-		std::string data;
-	
-		getline(recss, data, ',');
-		convertor.str(data);
-		convertor >> object.contig;
-	
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.isRC;
-		return in;
-	}    
+		getline(in, object.contig, ',');
+		return in >> object.isRC;
+	}
 };
 
 typedef std::vector<Estimate> EstimateVector;
