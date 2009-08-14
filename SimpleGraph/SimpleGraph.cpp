@@ -8,6 +8,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 using namespace std;

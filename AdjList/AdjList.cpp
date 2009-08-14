@@ -12,6 +12,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <sstream>
 #include <vector>
 
 using namespace std;
