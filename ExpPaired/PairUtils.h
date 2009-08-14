@@ -5,7 +5,6 @@
 #include <cmath> // for ceilf
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <vector>
 
 typedef std::vector<int> ContigLengthVec;
