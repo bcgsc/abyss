@@ -30,45 +30,20 @@ struct Estimate
 			<< std::fixed << std::setprecision(1) << object.stdDev
 			<< "," << object.isRC;
 		return out;
-	} 
-  
-	friend std::istream& operator>> (std::istream& in, Estimate& object)
-	{
-		// Read 1 record from the stream
-		std::string record;
-		in >> record;
-		
-		// parse the record
-		std::stringstream recss(record);
-		std::stringstream convertor;
-		std::string data;
-	
-		getline(recss, data, ',');
-		convertor.str(data);
-		convertor >> object.nID;
-	
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.distance;
-		
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.numPairs;
-		
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.stdDev;	
+	}
 
-		getline(recss, data, ',');
-		convertor.clear();
-		convertor.str(data);	
-		convertor >> object.isRC;	
-		
+	friend std::istream& operator>> (std::istream& in,
+			Estimate& o)
+	{
+		char commas[5] = {};
+		in >> o.nID >> commas[0]
+			>> o.distance >> commas[1]
+			>> o.numPairs >> commas[2]
+			>> o.stdDev >> commas[3]
+			>> o.isRC;
+		assert(std::string(commas) == ",,,,");
 		return in;
-	}  	
+	}
 };
 
 /** Return the allowed error for the given estimate. */
