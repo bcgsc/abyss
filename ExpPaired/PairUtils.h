@@ -21,15 +21,14 @@ struct Estimate
 	float stdDev;
 	bool isRC;
 	
-	friend std::ostream& operator<<(std::ostream& out, const Estimate& object)
+	friend std::ostream& operator<<(std::ostream& out,
+			const Estimate& o)
 	{
-		out << object.nID << ","
-			<< object.distance
-			<< "," << object.numPairs
-			<< ","
-			<< std::fixed << std::setprecision(1) << object.stdDev
-			<< "," << object.isRC;
-		return out;
+		return out << o.nID << ","
+			<< o.distance << ","
+			<< o.numPairs << ","
+			<< std::fixed << std::setprecision(1) << o.stdDev << ","
+			<< o.isRC;
 	}
 
 	friend std::istream& operator>> (std::istream& in,
@@ -73,17 +72,17 @@ struct SimpleEdgeDesc
 	SimpleEdgeDesc(ContigID contig, bool isRC)
 		: contig(contig), isRC(isRC) { }
 
-	friend std::ostream& operator<<(std::ostream& out, const SimpleEdgeDesc& object)
+	friend std::ostream& operator<<(std::ostream& out,
+			const SimpleEdgeDesc& o)
 	{
-		out << object.contig << "," << object.isRC;
-		return out;
+		return out << o.contig << "," << o.isRC;
 	}
 
 	friend std::istream& operator>>(std::istream& in,
-			SimpleEdgeDesc& object)
+			SimpleEdgeDesc& o)
 	{
-		getline(in, object.contig, ',');
-		return in >> object.isRC;
+		getline(in, o.contig, ',');
+		return in >> o.isRC;
 	}
 };
 
@@ -108,7 +107,6 @@ struct EstimateRecord
 void loadContigLengths(const std::string& path,
 		ContigLengthVec& lengths);
 
-// Convertor
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
 
 #endif
