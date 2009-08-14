@@ -223,9 +223,10 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 			: string(est.distance, 'N');
 		string ts = t.sequence();
 		string hs = h.sequence();
+		unsigned overlap = opt::k - 1;
 		return newContig(t, h, est.distance,
-				ts.substr(ts.length() - opt::k) + gap
-				+ hs.substr(0, opt::k));
+				ts.substr(ts.length() - overlap) + gap
+				+ hs.substr(0, overlap));
 	} else
 		assert(false);
 }
