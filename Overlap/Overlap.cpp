@@ -39,6 +39,8 @@ static const char *USAGE_MESSAGE =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
 "                        default is 5 bases\n"
+"      --scaffold        join contigs with Ns\n"
+"      --no-scaffold     do not scaffold [default]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -63,6 +65,8 @@ enum { OPT_HELP = 1, OPT_VERSION };
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "min",     required_argument, NULL, 'm' },
+	{ "scaffold", no_argument,      &opt::scaffold, 1 },
+	{ "no-scaffold", no_argument,   &opt::scaffold, 0 },
 	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
