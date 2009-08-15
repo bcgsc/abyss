@@ -39,7 +39,8 @@ struct Estimate
 			>> o.numPairs >> commas[2]
 			>> o.stdDev >> commas[3]
 			>> o.isRC;
-		assert(std::string(commas) == ",,,,");
+		if (in.good())
+			assert(std::string(commas) == ",,,,");
 		return in;
 	}
 };

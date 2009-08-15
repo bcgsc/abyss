@@ -3,66 +3,32 @@
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <iterator>
+#include <sstream>
 
 using namespace std;
 
-//
-// Estimate file loaders
-//
-
-//
-// Read in a single estimate from the stream
-//
-std::istream& readEstimateRecord(std::istream& stream,
-		EstimateRecord& er)
+/** Read in a single estimate from the stream. */
+std::istream& readEstimateRecord(std::istream& in, EstimateRecord& o)
 {
-	er.estimates[SENSE].clear();
-	er.estimates[ANTISENSE].clear();
+	o.estimates[SENSE].clear();
+	o.estimates[ANTISENSE].clear();
 
-	// read in the id
-	stream >> er.refID;
+	in >> o.refID;
+	in.ignore(numeric_limits<streamsize>::max(), ':');
 
-	// Discard the seperator
-	std::string discard;
-	stream >> discard;
-	
-	std::string records;
-	getline(stream, records);
-
-	// convert the record to a stringstream
-	std::stringstream recss(records);
-	
-	// Begin reading records
-	size_t currIdx = 0;
-	
-	bool stop = false;
-	while(!stop)
-	{
-		std::string data;
-		recss >> data;
-		
-		if(data == "|")
-		{
-			currIdx = 1;
-		}
-		else if(data.empty())
-		{
-			stop = true;
-		}
-		else
-		{
-			std::stringstream dataStream(data);
-			
-			Estimate est;
-			dataStream >> est;
-			er.estimates[currIdx].push_back(est);
-			//std::cout << "RECORD: " << id << " dist " << distance << " numpairs " << numPairs << std::endl;
-		}
+	for (extDirection sense = SENSE; sense <= ANTISENSE; ++sense) {
+		string s;
+		getline(in, s, sense == SENSE ? '|' : '\n');
+		istringstream ss(s);
+		copy(istream_iterator<Estimate>(ss),
+				istream_iterator<Estimate>(),
+				back_inserter(o.estimates[sense]));
+		assert(ss.eof());
 	}
 
-	return stream;
+	return in;
 }
 
 /** Load contig lengths. */
