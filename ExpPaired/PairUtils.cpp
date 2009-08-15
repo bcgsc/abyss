@@ -9,8 +9,8 @@
 
 using namespace std;
 
-/** Read in a single estimate from the stream. */
-std::istream& readEstimateRecord(std::istream& in, EstimateRecord& o)
+/** Read the distance estimates for one contig. */
+istream& operator >>(istream& in, EstimateRecord& o)
 {
 	o.estimates[SENSE].clear();
 	o.estimates[ANTISENSE].clear();
