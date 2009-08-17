@@ -74,8 +74,7 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 
 		if (recordType == '@') {
 			// Discard the quality values.
-			char c;
-			m_fileHandle >> c;
+			char c = m_fileHandle.get();
 			assert(c == '+');
 			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
