@@ -231,10 +231,6 @@ struct Seq {
 	uint64_t x[SEQ_WORDS];
 };
 
-#if WORDS_BIGENDIAN
-# error Big-endian architectures are not supported.
-#else
-
 /** Load with appropriate endianness for shifting. */
 static Seq load(const uint8_t *src)
 {
@@ -298,11 +294,26 @@ static void store(uint8_t *dest, Seq seq)
  */
 static void storeReverse(uint8_t *dest, Seq seq)
 {
-	uint64_t *d = (uint64_t*)dest;
 	uint64_t *px = &seq.x[SEQ_WORDS-1];
+#if WORDS_BIGENDIAN
+	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
+		dest[0] = *px >> 0;
+		dest[1] = *px >> 8;
+		dest[2] = *px >> 16;
+		dest[3] = *px >> 24;
+		dest[4] = *px >> 32;
+		dest[5] = *px >> 40;
+		dest[6] = *px >> 48;
+		dest[7] = *px >> 56;
+		dest += 8;
+		px--;
+	}
+#else
+	uint64_t *d = (uint64_t*)dest;
 	for (int i = 0; i < SEQ_FULL_WORDS; i++)
 		*d++ = *px--;
 	dest = (uint8_t*)d;
+#endif
 	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 0;
 	if (SEQ_ODD_BYTES > 1) dest[1] = *px >> 8;
 	if (SEQ_ODD_BYTES > 2) dest[2] = *px >> 16;
@@ -312,8 +323,6 @@ static void storeReverse(uint8_t *dest, Seq seq)
 	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 48;
 	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 56;
 }
-
-#endif
 
 /** Shift right by the specified number of bits. */
 static void shiftRight(Seq *pseq, uint8_t n)
