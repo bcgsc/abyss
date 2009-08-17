@@ -65,12 +65,16 @@ struct BaseCount {
 	}
 };
 
-typedef map<ContigID, Sequence> ContigMap;
 typedef vector<BaseCount> BaseCounts;
-typedef map<ContigID, BaseCounts> BaseCountsMap;
+
+struct ContigCount {
+	Sequence seq;
+	BaseCounts counts;
+};
+
+typedef hash_map<ContigID, ContigCount> ContigMap;
 
 static ContigMap g_contigs;
-static BaseCountsMap g_baseCounts;
 
 /** Read all contigs in and store the contigs in g_contigs and make a
  * g_baseCounts, to store pile-up for each base. */
@@ -80,24 +84,26 @@ static void readContigs(const string& contigsPath)
 	int count = 0;
 	while(contigsFile.isGood()) {
 		ContigID id;
-		Sequence contig = contigsFile.ReadSequence(id);
+		Sequence seq = contigsFile.ReadSequence(id);
 
-		g_contigs[id] = contig;
+		ContigCount& contig = g_contigs[id];
+		contig.seq = seq;
 		
-		unsigned numBases = opt::csToNt ? contig.length() + 1 : contig.length();
-		g_baseCounts[id] = BaseCounts(numBases);
+		unsigned numBases = opt::csToNt ? contig.seq.length() + 1 :
+			contig.seq.length();
+		contig.counts = BaseCounts(numBases);
 		if (count == 0) {
 			// Detect colour-space contigs.
-			opt::colourSpace = isdigit(contig[0]);
+			opt::colourSpace = isdigit(seq[0]);
 		} else {
 			if (opt::colourSpace)
-				assert(isdigit(contig[0]));
+				assert(isdigit(seq[0]));
 			else
-				assert(isalpha(contig[0]));
+				assert(isalpha(seq[0]));
 		}
 		count++;
 	}
-	cerr << "size of g_contigs: " << count << '\n';
+	cerr << "Number of Contigs loaded into Consensus: " << count << '\n';
 }
 
 static void readAlignment(string& line, string& readID,
@@ -106,19 +112,18 @@ static void readAlignment(string& line, string& readID,
 	char anchor;
 	stringstream s(line);
 
-	if (opt::colourSpace)
+	if (opt::colourSpace || opt::csToNt)
 		s >> readID >> anchor >> seq;
-	else if (opt::csToNt) {
-		s >> readID >> anchor >> seq;
-		if (seq.find_first_not_of("0123") != string::npos)
-			return;
-		seq = colourToNucleotideSpace(anchor, seq);
-	} else
+	else
 		s >> readID >> seq;
 
 	Alignment alignment;
 	while (s >> alignment)
 		alignments.push_back(alignment);
+
+	if (!alignments.empty() && opt::csToNt
+			&& seq.find_first_not_of("0123") == string::npos)
+		seq = colourToNucleotideSpace(anchor, seq);
 }
 
 /** Builds the pile up of all reads based on the alignments and
@@ -166,17 +171,19 @@ static void buildBaseQuality()
 				a = *alignIter;
 			}
 
-			if (g_baseCounts.find(a.contig) == g_baseCounts.end())
+			ContigMap::iterator contigIt = g_contigs.find(a.contig);
+			if (contigIt == g_contigs.end())
 				continue;
 
-			BaseCounts& countsVec = g_baseCounts[a.contig];
+			BaseCounts& countsVec = contigIt->second.counts;
+
 			int read_min;
 			int read_max;
 			if (!opt::csToNt) {
 				read_min = a.read_start_pos - a.contig_start_pos;
 				read_min = read_min > 0 ? read_min : 0;
 
-				read_max = a.read_start_pos + g_contigs[a.contig].length() -
+				read_max = a.read_start_pos + countsVec.size() -
 					a.contig_start_pos;
 				read_max = read_max < a.read_length ? read_max : a.read_length;
 			} else {
@@ -184,7 +191,7 @@ static void buildBaseQuality()
 				read_max = read_min + a.align_length + 1;
 			}
 
-			if ((int)g_baseCounts[a.contig].size() < a.contig_start_pos
+			if ((int)countsVec.size() < a.contig_start_pos
 					- a.read_start_pos + read_max - 1)
 				cerr << countsVec.size() << '\n';
 
@@ -274,9 +281,10 @@ static void consensus(const char* outPath)
 	FastaWriter outFile(outPath);
 
 	unsigned numIgnored = 0;
-	for (BaseCountsMap::const_iterator it = g_baseCounts.begin();
-			it != g_baseCounts.end(); ++it) {
-		unsigned seqLength = it->second.size();
+	for (ContigMap::const_iterator it = g_contigs.begin();
+			it != g_contigs.end(); ++it) {
+		ContigCount& contig = g_contigs[it->first];
+		unsigned seqLength = it->second.counts.size();
 
 		char outSeq[seqLength];
 		memset(outSeq, 'N', seqLength);
@@ -284,7 +292,7 @@ static void consensus(const char* outPath)
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
-			outSeq[x] = selectBase(it->second[x], sumBest, sumSecond);
+			outSeq[x] = selectBase(it->second.counts[x], sumBest, sumSecond);
 		}
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
@@ -305,7 +313,7 @@ static void consensus(const char* outPath)
 					continue;
 			} else {
 				if (opt::csToNt)
-					fixUnknown(outString, g_contigs[it->first]);
+					fixUnknown(outString, contig.seq);
 				outFile.WriteSequence(outString, idKey, 0);
 			}
 
@@ -314,14 +322,14 @@ static void consensus(const char* outPath)
 				for (unsigned i = 0; i < seqLength - 1; i++)
 					cout << idKey << ' ' << seqLength << ' ' << i << ' '
 						<< nucleotideToColourSpace(outSeq[i], outSeq[i + 1])
-						<< ' ' << g_contigs[it->first].at(i)
-						<< ' ' << g_baseCounts[it->first][i] << '\n';
+						<< ' ' << contig.seq.at(i)
+						<< ' ' << contig.counts[i] << '\n';
 			else
 				for (unsigned i = 0; i < seqLength; i++)
 					cout << idKey << ' ' << seqLength << ' ' << i
 						<< ' ' << outSeq[i]
-						<< ' ' << g_contigs[it->first].at(i)
-						<< ' ' << g_baseCounts[it->first][i] << '\n';
+						<< ' ' << contig.seq.at(i)
+						<< ' ' << contig.counts[i] << '\n';
 		} else if (opt::verbose > 0) {
 			cerr << "Warning: Contig " << it->first
 				<< " was not supported\n"
