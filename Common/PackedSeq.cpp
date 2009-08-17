@@ -231,6 +231,10 @@ struct Seq {
 	uint64_t x[SEQ_WORDS];
 };
 
+#if WORDS_BIGENDIAN
+# error Big-endian architectures are not supported.
+#else
+
 /** Load with appropriate endianness for shifting. */
 static Seq load(const uint8_t *src)
 {
@@ -262,10 +266,6 @@ static Seq load(const uint8_t *src)
 	}
 	return seq;
 }
-
-#if WORDS_BIGENDIAN
-# error Big-endian architectures are not supported.
-#else
 
 static void store(uint8_t *dest, Seq seq)
 {
