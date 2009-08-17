@@ -10,6 +10,9 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
+
+using namespace std;
 
 namespace AssemblyAlgorithms
 {
@@ -124,11 +127,16 @@ void loadSequences(ISequenceCollection* seqCollection,
 	PrintDebug(1, "Read %u reads. ", count);
 	seqCollection->printLoad();
 
-	unsigned count_nonacgt = reader.getNonACGT();
 	if (count_small > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
 				"shorter than %d bases\n",
 				count_small, opt::kmerSize);
+
+	if (reader.unchaste() > 0)
+		cerr << "warning: discarded " << reader.unchaste()
+			<< " unchaste reads" << endl;
+
+	unsigned count_nonacgt = reader.getNonACGT();
 	if (count_nonacgt > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
 				"containing non-ACGT characters\n", count_nonacgt);

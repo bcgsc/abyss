@@ -13,6 +13,7 @@ namespace opt {
 	extern int trimLen;
 	extern float coverage;
 	extern int bubbles;
+	extern int chastityFilter;
 	extern std::string contigsPath;
 	extern std::string contigsTempPath;
 	extern std::string graphPath;

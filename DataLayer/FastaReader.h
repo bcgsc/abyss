@@ -49,6 +49,9 @@ class FastaReader {
 		/** Return whether this stream is good. */
 		operator void*() const { return m_fileHandle; }
 
+		/** Returns the number of unchaste reads. */
+		unsigned unchaste() { return m_unchaste; }
+
 		// Returns the number of sequences containing non-ACGT
 		// characters.
 		unsigned getNonACGT() { return m_nonacgt; }
@@ -57,6 +60,7 @@ class FastaReader {
 		const char* m_inPath;
 		std::ifstream m_inFile;
 		std::istream& m_fileHandle;
+		unsigned m_unchaste;
 		unsigned m_nonacgt;
 };
 

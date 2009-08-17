@@ -22,9 +22,12 @@ PACKAGE " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
-"Assemble all input files, FILE, which may be in FASTA (.fa) format or\n"
-"FASTQ format (.fastq).\n"
+"Assemble all input files, FILE, which may be in FASTA, FASTQ,\n"
+"qseq, or export format.\n"
 "\n"
+"      --chastity                 discard unchaste reads [default]\n"
+"                                 for qseq- and export-formatted files only\n"
+"      --no-chastity              do not discard unchaste reads\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
 "                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
@@ -66,6 +69,9 @@ float coverage;
 /** Maximum number of bubble-popping rounds. */
 int bubbles = INT_MAX;
 
+/** Discard reads that failed the chastity filter. */
+int chastityFilter = 1;
+
 /** output contigs path */
 std::string contigsPath = "contigs.fa";
 
@@ -101,6 +107,8 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
+	{ "chastity",    no_argument,       &opt::chastityFilter, 1 },
+	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "erode",       no_argument,       &erode, 1 },

@@ -22,7 +22,7 @@ static void assert_open(ifstream& f, const string& p)
 FastaReader::FastaReader(const char* path)
 	: m_inPath(path), m_inFile(path),
 	m_fileHandle(strcmp(path, "-") == 0 ? cin : m_inFile),
-	m_nonacgt(0)
+	m_unchaste(0), m_nonacgt(0)
 {
 	if (strcmp(path, "-") != 0)
 		assert_open(m_inFile, path);
@@ -35,8 +35,22 @@ FastaReader::~FastaReader()
 	m_inFile.close();
 }
 
+static bool isChaste(const string &s)
+{
+	if (s == "1" || s == "Y") {
+		return true;
+	} else if (s == "0" || s == "N") {
+		return false;
+	} else {
+		cerr << "error: chastity filter should be either "
+			<< "0, 1, N or Y and saw `" << s << "'\n";
+		exit(EXIT_FAILURE);
+	}
+}
+
 Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 {
+next_record:
 	// Discard comments.
 	while (m_fileHandle.peek() == '#') {
 		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -90,6 +104,11 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 			fields.push_back(field);
 
 		if (fields.size() == 11 || fields.size() == 22) {
+			if (opt::chastityFilter && !isChaste(fields.back())) {
+				m_unchaste++;
+				goto next_record;
+			}
+
 			ostringstream o(fields[0]);
 			for (int i = 1; i < 6; i++)
 				o << '_' << fields[i];
