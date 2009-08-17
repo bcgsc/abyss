@@ -82,7 +82,7 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 	} else {
 		string line;
 		vector<string> fields;
-		fields.reserve(11);
+		fields.reserve(22);
 		getline(m_fileHandle, line);
 		istringstream in(line);
 		string field;
