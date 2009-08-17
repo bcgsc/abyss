@@ -87,10 +87,10 @@ Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
 		getline(m_fileHandle, line);
 		istringstream in(line);
 		string field;
-		while (in >> field)
+		while (getline(in, field, '\t'))
 			fields.push_back(field);
 
-		if (fields.size() == 11) {
+		if (fields.size() == 11 || fields.size() == 22) {
 			ostringstream o(fields[0]);
 			for (int i = 1; i < 6; i++)
 				o << '_' << fields[i];
