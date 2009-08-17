@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <limits> // for numeric_limits
 #include <sstream>
 
 using namespace std;

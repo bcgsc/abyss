@@ -2,6 +2,7 @@
 #define PAIRUTILS_H 1
 
 #include "Stats.h" // for Histogram
+#include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
 #include <iostream>

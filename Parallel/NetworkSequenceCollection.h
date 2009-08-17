@@ -169,8 +169,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
 
-		void NetworkSequenceCollection::assembleContig(
-				ISequenceCollection* seqCollection,
+		void assembleContig(ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter,
 				BranchRecord& branch, unsigned id);
 

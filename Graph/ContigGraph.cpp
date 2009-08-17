@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdio>
 #include <fstream>
+#include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
 

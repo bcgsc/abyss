@@ -3,6 +3,7 @@
 #include "PairUtils.h"
 #include "FastaWriter.h"
 #include <getopt.h>
+#include <cstring> // for memset
 #include <string>
 #include <sstream>
 #include <iostream>
