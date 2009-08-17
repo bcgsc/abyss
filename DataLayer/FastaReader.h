@@ -50,11 +50,11 @@ class FastaReader {
 		operator void*() const { return m_fileHandle; }
 
 		/** Returns the number of unchaste reads. */
-		unsigned unchaste() { return m_unchaste; }
+		unsigned unchaste() const { return m_unchaste; }
 
-		// Returns the number of sequences containing non-ACGT
-		// characters.
-		unsigned getNonACGT() { return m_nonacgt; }
+		/** Returns the number of reads containing non-ACGT
+		 * characters. */
+		unsigned nonACGT() const { return m_nonacgt; }
 
 	private:
 		const char* m_inPath;

@@ -131,15 +131,12 @@ void loadSequences(ISequenceCollection* seqCollection,
 		fprintf(stderr, "warning: discarded %d sequences "
 				"shorter than %d bases\n",
 				count_small, opt::kmerSize);
-
 	if (reader.unchaste() > 0)
 		cerr << "warning: discarded " << reader.unchaste()
 			<< " unchaste reads" << endl;
-
-	unsigned count_nonacgt = reader.getNonACGT();
-	if (count_nonacgt > 0)
+	if (reader.nonACGT() > 0)
 		fprintf(stderr, "warning: discarded %d sequences "
-				"containing non-ACGT characters\n", count_nonacgt);
+				"containing non-ACGT characters\n", reader.nonACGT());
 
 	if (count == 0)
 		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
