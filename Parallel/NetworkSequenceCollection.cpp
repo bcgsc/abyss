@@ -290,7 +290,7 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
 	assert(trimLen > 0);
-	printf("Trimming short branches: %d\n", trimLen);
+	printf("Trimming short branches: %u\n", trimLen);
 	SetState(NAS_TRIM);
 	m_comm.sendControlMessage(APC_TRIM, trimLen);
 	m_comm.barrier();
@@ -468,7 +468,7 @@ void NetworkSequenceCollection::runControl()
 					totalPopped += numPopped;
 				}
 				assert(totalPopped == m_numPopped);
-				printf("Removed %d bubbles in %d rounds\n",
+				printf("Removed %u bubbles in %u rounds\n",
 						totalPopped, i);
 
 				// Another round of trimming to remove tips created by
@@ -647,7 +647,7 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			SetState(NAS_LOAD_COMPLETE);
 			break;
 		case APC_CHECKPOINT:
-			PrintDebug(4, "checkpoint from %u: %d\n",
+			PrintDebug(4, "checkpoint from %u: %u\n",
 					source, controlMsg.argument);
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
@@ -796,7 +796,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		seqCollection->pumpNetwork();
 	}
 
-	PrintDebug(0, "Trimmed %d branches\n", numBranchesRemoved);
+	PrintDebug(0, "Trimmed %u branches\n", numBranchesRemoved);
 	return numBranchesRemoved;	
 }
 
@@ -864,7 +864,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 			continue;
 
 		if (++count % 100000 == 0)
-			PrintDebug(1, "Popping bubbles: %d u-mer\n", count);
+			PrintDebug(1, "Popping bubbles: %u k-mer\n", count);
 
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
@@ -927,7 +927,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	assert(m_activeBranchGroups.empty());
 
 	unsigned numDiscovered = m_bubbles.size();
-	PrintDebug(1, "Discovered %d bubbles\n", numDiscovered);
+	PrintDebug(1, "Discovered %u bubbles\n", numDiscovered);
 	return numDiscovered;
 }
 
@@ -971,7 +971,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	if (opt::snpFile != NULL)
 		fflush(opt::snpFile);
 
-	PrintDebug(0, "Removed %d bubbles\n", numPopped);
+	PrintDebug(0, "Removed %u bubbles\n", numPopped);
 	return numPopped;
 }
 
@@ -1032,7 +1032,7 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 	numDiscovered += m_checkpointSum;
 	SetState(NAS_POPBUBBLE);
 	if (numDiscovered > 0 && opt::verbose > 0)
-		printf("Discovered %d bubbles\n", numDiscovered);
+		printf("Discovered %u bubbles\n", numDiscovered);
 	return numDiscovered;
 }
 
@@ -1061,7 +1061,7 @@ int NetworkSequenceCollection::controlPopBubbles()
 	unsigned numPopped = m_checkpointSum;
 	m_numPopped += numPopped;
 	if (numPopped > 0)
-		printf("Removed %d bubbles\n", numPopped);
+		printf("Removed %u bubbles\n", numPopped);
 	return numPopped;
 }
 
@@ -1191,7 +1191,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		PrintDebug(0, "Removed %u k-mer in %u low-coverage contigs\n",
 				m_lowCoverageKmer, m_lowCoverageContigs);
 	} else
-		PrintDebug(0, "Assembled %d contigs\n", numAssembled);
+		PrintDebug(0, "Assembled %u contigs\n", numAssembled);
 	return numAssembled;
 }
 

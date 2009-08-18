@@ -122,14 +122,14 @@ void loadSequences(ISequenceCollection* seqCollection,
 	seqCollection->printLoad();
 
 	if (count_small > 0)
-		fprintf(stderr, "warning: discarded %d reads "
-				"shorter than %d bases\n",
+		fprintf(stderr, "warning: discarded %u reads "
+				"shorter than %u bases\n",
 				count_small, opt::kmerSize);
 	if (reader.unchaste() > 0)
 		cerr << "warning: discarded " << reader.unchaste()
 			<< " unchaste reads" << endl;
 	if (reader.nonACGT() > 0)
-		fprintf(stderr, "warning: discarded %d reads "
+		fprintf(stderr, "warning: discarded %u reads "
 				"containing non-ACGT characters\n", reader.nonACGT());
 
 	if (count == 0)
@@ -153,7 +153,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 			continue;
 
 		if (++count % 1000000 == 0)
-			PrintDebug(1, "Generating adjacency: %d k-mer\n", count);
+			PrintDebug(1, "Generating adjacency: %u k-mer\n", count);
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			PackedSeq testSeq(*iter);
@@ -334,7 +334,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		fflush(opt::snpFile);
 
 	if (numPopped > 0)
-		printf("Removed %d bubbles\n", numPopped);
+		printf("Removed %u bubbles\n", numPopped);
 	return numPopped;
 }
 
@@ -518,7 +518,7 @@ unsigned getNumEroded()
 {
 	unsigned numEroded = g_numEroded;
 	g_numEroded = 0;
-	PrintDebug(0, "Eroded %d tips\n", numEroded);
+	PrintDebug(0, "Eroded %u tips\n", numEroded);
 	return numEroded;
 }
 
@@ -626,7 +626,7 @@ SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const Packe
 int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 {
 	Timer timer("TrimSequences");
-	printf("Trimming short branches: %d\n", maxBranchCull);	
+	printf("Trimming short branches: %u\n", maxBranchCull);
 	unsigned numBranchesRemoved = 0;
 
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
@@ -887,19 +887,13 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	return contigID;
 }
 
-//
-//
-//
 void processTerminatedBranchAssemble(
 		ISequenceCollection* /*seqCollection*/,
 		const BranchRecord& branch, Sequence& outseq)
 {
 	assert(!branch.isActive());
-	//printf("	branch has size: %d\n", branchElements.size());
-	
 	// the only acceptable condition for the termination of an assembly is a noext or a loop
 	assert(branch.getState() == BS_NOEXT || branch.getState() == BS_LOOP);
-	
 	// Assemble the contig
 	branch.buildContig(outseq);
 }
