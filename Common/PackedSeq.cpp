@@ -1,3 +1,4 @@
+#include "config.h"
 #include "PackedSeq.h"
 #include "HashFunction.h"
 #include "Options.h"
