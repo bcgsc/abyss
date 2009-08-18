@@ -37,7 +37,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 	}
 }
 
-/** Load packed sequences into the collection. */ 
+/** Load packed k-mer into the collection. */
 static void loadPackedSequences(ISequenceCollection* seqCollection,
 		std::string inFile)
 {
@@ -62,12 +62,11 @@ static void loadPackedSequences(ISequenceCollection* seqCollection,
 	seqCollection->printLoad();
 
 	if (count == 0)
-		fputs("warning: input contains no sequences\n", stderr);
+		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
+				inFile.c_str());
 }
 
-//
-// Function to load sequences into the collection
-//
+/** Load sequence data into the collection. */
 void loadSequences(ISequenceCollection* seqCollection,
 		std::string inFile)
 {
@@ -123,14 +122,14 @@ void loadSequences(ISequenceCollection* seqCollection,
 	seqCollection->printLoad();
 
 	if (count_small > 0)
-		fprintf(stderr, "warning: discarded %d sequences "
+		fprintf(stderr, "warning: discarded %d reads "
 				"shorter than %d bases\n",
 				count_small, opt::kmerSize);
 	if (reader.unchaste() > 0)
 		cerr << "warning: discarded " << reader.unchaste()
 			<< " unchaste reads" << endl;
 	if (reader.nonACGT() > 0)
-		fprintf(stderr, "warning: discarded %d sequences "
+		fprintf(stderr, "warning: discarded %d reads "
 				"containing non-ACGT characters\n", reader.nonACGT());
 
 	if (count == 0)
@@ -154,7 +153,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 			continue;
 
 		if (++count % 1000000 == 0)
-			PrintDebug(1, "Generating adjacency: %d sequences\n", count);
+			PrintDebug(1, "Generating adjacency: %d k-mer\n", count);
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			PackedSeq testSeq(*iter);
@@ -196,7 +195,7 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 			continue;
 
 		if (++progress % 1000000 == 0)
-			PrintDebug(1, "Splitting: %u sequences\n", progress);
+			PrintDebug(1, "Splitting: %u k-mer\n", progress);
 
 		if (iter->isPalindrome()) {
 			seqCollection->mark(*iter, SENSE);
@@ -254,11 +253,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		// Skip sequences that have already been deleted	
-		if(iter->isFlagSet(SF_DELETE))
-		{		
+		if (iter->isFlagSet(SF_DELETE))
 			continue;
-		}
 
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
@@ -347,10 +343,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 //
 void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, int /*multiplicity*/, size_t maxBubbleSize)
 {
-	
 	// As the root sequence is not added to the branch, its multiplicity information is ignored.
-	
-	// Generate the vector of sequences that make up this branch
+	// Generate the vector of k-mer that make up this branch
 	PSequenceVector extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(), extension, extSeqs);
 	assert(extSeqs.size() > 1);
@@ -390,10 +384,8 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	}
 	else if(branchExtSeqs.size() > 1)
 	{
-		// Start a new branch for the sequences [1..n]
+		// Start a new branch for the k-mer [1..n]
 		PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
-		
-		
 		for(; seqIter != branchExtSeqs.end(); ++seqIter)
 		{
 			uint64_t newID = group.getNumBranches();
@@ -487,9 +479,11 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 	}
 	assert(!group.isAmbiguous(seqCollection));
 }
-//
-// Remove a read and update the extension records of the sequences that extend to it
-//
+
+/**
+ * Remove a k-mer and update the extension records of the k-mer that
+ * extend to it.
+ */
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq)
 {
 	// This removes the reverse complement as well
@@ -516,10 +510,10 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 	}	
 }
 
-/** The number of sequences that have been eroded. */
+/** The number of k-mer that have been eroded. */
 static unsigned g_numEroded;
 
-/** Return the number of sequences that have been eroded. */
+/** Return the number of k-mer that have been eroded. */
 unsigned getNumEroded()
 {
 	unsigned numEroded = g_numEroded;
@@ -528,8 +522,8 @@ unsigned getNumEroded()
 	return numEroded;
 }
 
-/** Consider the specified sequence for erosion.
- * @return the number of sequences eroded, zero or one
+/** Consider the specified k-mer for erosion.
+ * @return the number of k-mer eroded, zero or one
  */
 unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 {
@@ -559,7 +553,7 @@ static void erosionObserver(ISequenceCollection* c,
 //
 unsigned erodeEnds(ISequenceCollection* seqCollection)
 {
-	Timer erodeEndsTimer("Erode sequences");
+	Timer erodeEndsTimer("Erode");
 	assert(g_numEroded == 0);
 	seqCollection->attach(erosionObserver);
 
@@ -684,7 +678,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	unsigned numSweeped = removeMarked(seqCollection);
 
 	if (numBranchesRemoved > 0)
-		PrintDebug(0, "Trimmed %u sequences in %u branches\n",
+		PrintDebug(0, "Trimmed %u k-mer in %u branches\n",
 				numSweeped, numBranchesRemoved);
 	return numBranchesRemoved;
 }
@@ -760,8 +754,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 	}
 }
 
-/** Remove all marked sequences.
- * @return the number of removed sequences
+/** Remove all marked k-mer.
+ * @return the number of removed k-mer
  */
 unsigned removeMarked(ISequenceCollection* pSC)
 {
@@ -779,7 +773,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
 		pSC->pumpNetwork();
 	}
 	if (count > 0)
-		PrintDebug(1, "Removed %u marked sequences\n", count);
+		PrintDebug(1, "Removed %u marked k-mer\n", count);
 	return count;
 }
 
@@ -910,7 +904,7 @@ void processTerminatedBranchAssemble(
 	branch.buildContig(outseq);
 }
 
-// Write the sequences out to a file
+// Write the k-mer out to a file
 //
 void outputSequences(const char* filename, ISequenceCollection* pSS)
 {
@@ -928,7 +922,7 @@ void outputSequences(const char* filename, ISequenceCollection* pSS)
 	}	
 }
 
-// Write the sequences out to a file
+// Write the packed k-mer out to a file
 //
 void outputPackedSequences(const char* filename, ISequenceCollection* pSS)
 {

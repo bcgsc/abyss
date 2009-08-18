@@ -77,7 +77,7 @@ void NetworkSequenceCollection::run()
 			case NAS_LOAD_COMPLETE:
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu sequences\n",
+				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
@@ -266,8 +266,8 @@ unsigned NetworkSequenceCollection::controlErode()
 	return numEroded;
 }
 
-/** Remove marked sequences.
- * @return the number of sequences removed
+/** Remove marked k-mer.
+ * @return the number of k-mer removed
  */
 unsigned NetworkSequenceCollection::controlRemoveMarked()
 {
@@ -305,7 +305,7 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	unsigned numSweeped = controlRemoveMarked();
 
 	if (numRemoved > 0)
-		printf("Trimmed %u sequences in %u branches\n",
+		printf("Trimmed %u k-mer in %u branches\n",
 				numSweeped, numRemoved);
 	return numRemoved;
 }
@@ -390,10 +390,10 @@ void NetworkSequenceCollection::runControl()
 				m_comm.sendControlMessage(APC_LOAD_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu sequences\n",
+				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
-				printf("Loaded %u sequences\n",
+				printf("Loaded %u k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 				EndState();
 
@@ -695,7 +695,6 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			SetState(NAS_SPLIT);
 			break;	
 		case APC_ASSEMBLE:
-			// This message came from the control node along with an argument indicating the number of sequences assembled so far
 			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
 			break;	
@@ -861,16 +860,12 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		// Skip sequences that have already been deleted	
-		if(iter->isFlagSet(SF_DELETE))
-		{		
+		if (iter->isFlagSet(SF_DELETE))
 			continue;
-		}
 
-		count++;
-		if (count % 100000 == 0)
-			PrintDebug(1, "Popping bubbles: %d sequences\n", count);
-		
+		if (++count % 100000 == 0)
+			PrintDebug(1, "Popping bubbles: %d u-mer\n", count);
+
 		// Get the extensions for this sequence, this function populates the extRecord structure
 		ExtensionRecord extRec;
 		int multiplicity = -1;
