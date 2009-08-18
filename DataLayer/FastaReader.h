@@ -52,6 +52,12 @@ class FastaReader {
 		 * characters. */
 		unsigned nonACGT() const { return m_nonacgt; }
 
+		FastaReader& operator >>(Sequence& seq)
+		{
+			seq = this->ReadSequence();
+			return *this;
+		}
+
 	private:
 		const char* m_inPath;
 		std::ifstream m_inFile;
@@ -74,12 +80,6 @@ struct FastaRecord
 	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
 	{
 		o.seq = in.ReadSequence(o.id, o.comment, o.anchor);
-		return in;
-	}
-
-	friend FastaReader& operator >>(FastaReader& in, Sequence& seq)
-	{
-		seq = in.ReadSequence();
 		return in;
 	}
 };
