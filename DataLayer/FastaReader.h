@@ -33,10 +33,6 @@ class FastaReader {
 			return ReadSequence(id);
 		}
 
-		// Read sequences into the vector as packed seqs
-		// Returns true unless eof has been reached
-		bool ReadSequences(SequenceVector& outseqs);
-
 		// Returns true unless eof has been reached
 		bool isGood()
 		{

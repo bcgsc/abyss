@@ -137,14 +137,3 @@ next_record:
 
 	return s;
 }
-
-// Read in a group of sequences and return whether there are sequences remaining
-bool FastaReader::ReadSequences(SequenceVector& outseqs)
-{
-	Sequence seq;
-	if (*this >> seq) {
-		outseqs.push_back(ReadSequence());
-		return true;
-	} else
-		return false;
-}
