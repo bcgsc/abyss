@@ -83,11 +83,9 @@ static void readContigs(const string& contigsPath)
 {
 	FastaReader contigsFile(contigsPath.c_str());
 	int count = 0;
-	while(contigsFile.isGood()) {
-		ContigID id;
-		Sequence seq = contigsFile.read(id);
-
-		ContigCount& contig = g_contigs[id];
+	for (FastaRecord rec; contigsFile >> rec;) {
+		const Sequence& seq = rec.seq;
+		ContigCount& contig = g_contigs[rec.id];
 		contig.seq = seq;
 		
 		unsigned numBases = opt::csToNt ? contig.seq.length() + 1 :
@@ -105,6 +103,7 @@ static void readContigs(const string& contigsPath)
 		count++;
 	}
 	cerr << "Number of Contigs loaded into Consensus: " << count << '\n';
+	assert(contigsFile.eof());
 }
 
 static void readAlignment(string& line, string& readID,
