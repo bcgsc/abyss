@@ -14,23 +14,25 @@ class FastaReader {
 		// Destructor closes it
 		~FastaReader();
 
-		// Read a single sequence from the file
-		Sequence ReadSequence(std::string& id, std::string& comment,
+		Sequence read(std::string& id, std::string& comment,
 				char& anchor);
-		Sequence ReadSequence(std::string& id, char& anchor)
+
+		Sequence read(std::string& id, char& anchor)
 		{
 			std::string comment;
-			return ReadSequence(id, comment, anchor);
+			return read(id, comment, anchor);
 		}
-		Sequence ReadSequence(std::string& id)
+
+		Sequence read(std::string& id)
 		{
 			char anchor;
-			return ReadSequence(id, anchor);
+			return read(id, anchor);
 		}
-		Sequence ReadSequence()
+
+		Sequence read()
 		{
 			std::string id;
-			return ReadSequence(id);
+			return read(id);
 		}
 
 		// Returns true unless eof has been reached
@@ -54,7 +56,7 @@ class FastaReader {
 
 		FastaReader& operator >>(Sequence& seq)
 		{
-			seq = this->ReadSequence();
+			seq = this->read();
 			return *this;
 		}
 
@@ -79,7 +81,7 @@ struct FastaRecord
 
 	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
 	{
-		o.seq = in.ReadSequence(o.id, o.comment, o.anchor);
+		o.seq = in.read(o.id, o.comment, o.anchor);
 		return in;
 	}
 };

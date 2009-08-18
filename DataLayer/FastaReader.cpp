@@ -48,7 +48,7 @@ static bool isChaste(const string &s)
 	}
 }
 
-Sequence FastaReader::ReadSequence(string& id, string& comment, char& anchor)
+Sequence FastaReader::read(string& id, string& comment, char& anchor)
 {
 next_record:
 	// Discard comments.

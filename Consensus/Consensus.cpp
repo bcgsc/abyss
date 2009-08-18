@@ -85,7 +85,7 @@ static void readContigs(const string& contigsPath)
 	int count = 0;
 	while(contigsFile.isGood()) {
 		ContigID id;
-		Sequence seq = contigsFile.ReadSequence(id);
+		Sequence seq = contigsFile.read(id);
 
 		ContigCount& contig = g_contigs[id];
 		contig.seq = seq;

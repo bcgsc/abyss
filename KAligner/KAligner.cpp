@@ -249,7 +249,7 @@ void *alignReadsToDB(void* readsFile)
 	while (fileHandle.isGood()) {
 		string id;
 		char anchor;
-		Sequence seq = fileHandle.ReadSequence(id, anchor);
+		Sequence seq = fileHandle.read(id, anchor);
 
 		ostringstream output;
 		if (seq.find_first_not_of("ACGT0123") == string::npos) {
