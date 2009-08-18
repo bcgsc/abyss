@@ -70,7 +70,7 @@ int main(int argc, char* const* argv)
 
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
-	printf("Loaded %zu sequences\n", pSC->count());
+	printf("Loaded %zu k-mer\n", pSC->count());
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
