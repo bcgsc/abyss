@@ -31,7 +31,6 @@ static const char *USAGE_MESSAGE =
 "\n"
 "  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
-"  -a, --adj=ADJACENCY   write adjacency based on read integrity to this file\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
@@ -45,19 +44,17 @@ namespace opt {
 	static int k;
 	static unsigned c;
 	static int verbose;
-	static string adjPath;
 	static string distPath;
 	static string fragPath;
 	static string histPath;
 }
 
-static const char* shortopts = "a:d:k:f:h:c:v";
+static const char* shortopts = "d:k:f:h:c:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "dist",    required_argument, NULL, 'd' },
-	{ "adj",     required_argument, NULL, 'a' },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "frag",    required_argument, NULL, 'f' },
 	{ "hist",    required_argument, NULL, 'h' },
@@ -208,34 +205,6 @@ static void generateDistFile()
 	distFile.close();
 }
 
-static void generateAdjFile()
-{
-	ofstream adjFile(opt::adjPath.c_str());
-	assert(adjFile.is_open());
-
-	//Need to have adjacency for all possible contigs.
-	for (unsigned contig = 0; contig <= lastContig; contig++) {
-		stringstream s;
-		s << contig;
-		EstimateMap::const_iterator mapIt = estMap.find(s.str());
-		adjFile << s;
-		if (mapIt != estMap.end()) {
-			assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
-			for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
-				adjFile << " [";
-				for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
-						vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt)
-					if (vecIt->distance == 1 - opt::k)
-						adjFile << " " << vecIt->nID << "," << vecIt->isRC;
-				adjFile << " ]";
-			}
-			adjFile << "\n";
-		} else
-			adjFile << " [ ] [ ]\n";
-	}
-	adjFile.close();
-}
-
 static bool needsFlipping(const string& id);
 
 /**
@@ -358,7 +327,7 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		ReadAlignMap::iterator iter = out.find(readID);
 		ReadAlignMap::iterator pairIter = out.find(pairID);
 
-		if ((!opt::distPath.empty() || !opt::adjPath.empty()) && iter->second.size() >= 2)
+		if (!opt::distPath.empty() && iter->second.size() >= 2)
 			doReadIntegrity(iter);
 
 		if(pairIter != out.end()) {
@@ -400,7 +369,6 @@ int main(int argc, char* const* argv)
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'c': arg >> opt::c; break;
-			case 'a': arg >> opt::adjPath; break;
 			case 'd': arg >> opt::distPath; break;
 			case 'f': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
@@ -460,8 +428,6 @@ int main(int argc, char* const* argv)
 
 	if (!opt::distPath.empty())
 		generateDistFile();
-	if (!opt::adjPath.empty())
-		generateAdjFile();
 
 	if (!opt::fragPath.empty())
 		fragFile.close();
