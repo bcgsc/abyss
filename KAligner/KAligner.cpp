@@ -246,11 +246,8 @@ static void readContigsIntoDB(string refFastaFile,
 void *alignReadsToDB(void* readsFile)
 {
 	FastaReader fileHandle((const char *)readsFile);
-	while (fileHandle.isGood()) {
-		string id;
-		char anchor;
-		Sequence seq = fileHandle.read(id, anchor);
-
+	for (FastaRecord rec; fileHandle >> rec;) {
+		const Sequence& seq = rec.seq;
 		ostringstream output;
 		if (seq.find_first_not_of("ACGT0123") == string::npos) {
 			if (opt::colourSpace)
@@ -269,11 +266,11 @@ void *alignReadsToDB(void* readsFile)
 		}
 
 		pthread_mutex_lock(&g_mutexCout);
-		cout << id;
+		cout << rec.id;
 		if (opt::printSeq) {
 			cout << ' ';
 			if (opt::colourSpace)
-				cout << anchor;
+				cout << rec.anchor;
 			cout << seq;
 		}
 		cout << output.str() << '\n';
@@ -287,6 +284,7 @@ void *alignReadsToDB(void* readsFile)
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
 	}
+	assert(fileHandle.eof());
 	if (opt::threads > 0)
 		sem_post(&g_activeThreads);
 	return NULL;
