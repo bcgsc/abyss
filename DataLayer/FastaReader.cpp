@@ -125,24 +125,26 @@ next_record:
 		}
 	}
 
+	size_t pos = s.find_first_not_of("ACGT0123");
+	if (pos != std::string::npos) {
+		if (opt::verbose > 4)
+			fprintf(stderr,
+					"warning: discarded sequence containing `%c'\n",
+					s[pos]);
+		m_nonacgt++;
+		goto next_record;
+	}
+
 	return s;
 }
 
 // Read in a group of sequences and return whether there are sequences remaining
 bool FastaReader::ReadSequences(SequenceVector& outseqs)
 {
-	if (!isGood())
+	Sequence seq;
+	if (*this >> seq) {
+		outseqs.push_back(ReadSequence());
+		return true;
+	} else
 		return false;
-	Sequence seq = ReadSequence();
-	size_t pos = seq.find_first_not_of("ACGT0123");
-	if (pos == std::string::npos) {
-		outseqs.push_back(seq);
-	} else {
-		if (opt::verbose > 4)
-			fprintf(stderr,
-					"warning: discarded sequence containing `%c'\n",
-					seq[pos]);
-		m_nonacgt++;
-	}
-	return true;
 }

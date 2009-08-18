@@ -80,6 +80,12 @@ struct FastaRecord
 		o.seq = in.ReadSequence(o.id, o.comment, o.anchor);
 		return in;
 	}
+
+	friend FastaReader& operator >>(FastaReader& in, Sequence& seq)
+	{
+		seq = in.ReadSequence();
+		return in;
+	}
 };
 
 #endif //FASTAREADER_H

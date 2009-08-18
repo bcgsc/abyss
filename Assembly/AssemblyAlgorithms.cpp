@@ -86,44 +86,39 @@ void loadSequences(ISequenceCollection* seqCollection,
 		return;
 	}
 
-	FastaReader reader(inFile.c_str());
 	unsigned count = 0, count_small = 0;
-	for (SequenceVector seqs;
-			reader.ReadSequences(seqs); seqs.clear()) {
-		for (SequenceVectorIterator iter = seqs.begin();
-				iter != seqs.end(); iter++) {
-			int len = iter->length();
-			if (opt::kmerSize > len) {
-				count_small++;
-				continue;
-			}
+	FastaReader reader(inFile.c_str());
+	for (Sequence seq; reader >> seq;) {
+		int len = seq.length();
+		if (opt::kmerSize > len) {
+			count_small++;
+			continue;
+		}
 
-			if (opt::rank <= 0
-					&& count == 0 && seqCollection->count() == 0) {
-				// Detect colour-space reads.
-				seqCollection->setColourSpace(isdigit(iter->at(0)));
-			} else {
-				if (opt::colourSpace)
-					assert(isdigit(iter->at(0)));
-				else
-					assert(isalpha(iter->at(0)));
-			}
+		if (opt::rank <= 0
+				&& count == 0 && seqCollection->count() == 0) {
+			// Detect colour-space reads.
+			seqCollection->setColourSpace(isdigit(seq.at(0)));
+		} else {
+			if (opt::colourSpace)
+				assert(isdigit(seq.at(0)));
+			else
+				assert(isalpha(seq.at(0)));
+		}
 
-			for(int i = 0; i < len - opt::kmerSize  + 1; i++)
-			{
-				PackedSeq sub = iter->substr(i, opt::kmerSize);
-				// Add the sequence to the sequence collection
-				seqCollection->add(sub);
-			}
+		for (int i = 0; i < len - opt::kmerSize  + 1; i++) {
+			PackedSeq sub = seq.substr(i, opt::kmerSize);
+			seqCollection->add(sub);
+		}
 
-			// Output the progress
-			if (++count % 100000 == 0) {
-				PrintDebug(1, "Read %u reads. ", count);
-				seqCollection->printLoad();
-			}
+		if (++count % 100000 == 0) {
+			PrintDebug(1, "Read %u reads. ", count);
+			seqCollection->printLoad();
 		}
 		seqCollection->pumpNetwork();
 	}
+	assert(reader.eof());
+
 	PrintDebug(1, "Read %u reads. ", count);
 	seqCollection->printLoad();
 
