@@ -7,11 +7,9 @@
 
 class FastaReader {
 	public:
+		FastaReader(const char* path, bool discardN = true);
+		enum { KEEP_N = false, DISCARD_N = true };
 
-		// Constructor opens file
-		FastaReader(const char* path);
-
-		// Destructor closes it
 		~FastaReader();
 
 		Sequence read(std::string& id, std::string& comment,
@@ -43,6 +41,7 @@ class FastaReader {
 		const char* m_inPath;
 		std::ifstream m_inFile;
 		std::istream& m_fileHandle;
+		bool m_discardN;
 		unsigned m_unchaste;
 		unsigned m_nonacgt;
 };

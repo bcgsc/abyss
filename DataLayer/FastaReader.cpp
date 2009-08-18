@@ -19,9 +19,10 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-FastaReader::FastaReader(const char* path)
+FastaReader::FastaReader(const char* path, bool discardN)
 	: m_inPath(path), m_inFile(path),
 	m_fileHandle(strcmp(path, "-") == 0 ? cin : m_inFile),
+	m_discardN(discardN),
 	m_unchaste(0), m_nonacgt(0)
 {
 	if (strcmp(path, "-") != 0)
@@ -120,14 +121,16 @@ next_record:
 		}
 	}
 
-	size_t pos = s.find_first_not_of("ACGT0123");
-	if (pos != std::string::npos) {
-		if (opt::verbose > 4)
-			fprintf(stderr,
-					"warning: discarded sequence containing `%c'\n",
-					s[pos]);
-		m_nonacgt++;
-		goto next_record;
+	if (m_discardN) {
+		size_t pos = s.find_first_not_of("ACGT0123");
+		if (pos != string::npos) {
+			if (opt::verbose > 4)
+				fprintf(stderr,
+						"warning: discarded sequence containing "
+						"`%c'\n", s[pos]);
+			m_nonacgt++;
+			goto next_record;
+		}
 	}
 
 	return s;
