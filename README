@@ -37,7 +37,7 @@ multiple trials and inspect the results. The following shell snippet
 will assemble for every value of k from 20 to 40.
 
 for k in {20..40}; do
-	ABYSS -k$k -l42 reads.fa && mv contigs.fa contigs-k$k.fa
+	ABYSS -k$k -l42 reads.fa -o contigs-k$k.fa
 done
 
 The maximum value for k is 64. This limit may be changed at compile
@@ -57,8 +57,8 @@ c is the minimum average k-mer coverage of a contig and may be
 disabled by setting c=0.
 n is the minimum number of pairs needed to consider joining two
 contigs. The optimal value for n must be found by trial.
-in specifies the input files to read, which must be in either FASTA or
-FASTQ format.
+in specifies the input files to read, which must be in either FASTA,
+FASTQ, qseq or export format.
 The assembled contigs will be stored in ${lib}-contigs.fa.
 
 The suffix of the read identifier for a pair of reads must be one of
@@ -79,6 +79,8 @@ DistanceEst - estimates distances between contigs
 Overlap - find overlaps between blunt contigs
 SimpleGraph - finds paths between pairs of contigs
 MergePaths - merges consistent paths
+Consensus - for a colour-space assembly, convert the colour-space
+            contigs to nucleotide contigs
 
 * Parallel assembly
 

@@ -1,4 +1,4 @@
-.TH ABYSS "1" "March 2009" "ABYSS (ABySS) 1.0.7" "User Commands"
+.TH ABYSS "1" "2009-Aug" "ABYSS (ABySS) 1.0.12" "User Commands"
 .SH NAME
 ABYSS \- assemble short reads into contigs
 .SH SYNOPSIS
@@ -7,6 +7,13 @@ ABYSS \- assemble short reads into contigs
 .SH DESCRIPTION
 Assemble all input files, FILE, which may be in FASTA (.fa) format or
 FASTQ format (.fastq).
+.TP
+\fB--chastity\fR
+discard unchaste reads [default]
+for qseq- and export-formatted files only
+.TP
+\fB--no-chastity\fR
+do not discard unchaste reads
 .TP
 \fB\-o\fR, \fB\-\-out\fR=\fIFILE\fR
 write the contigs to FILE
@@ -19,6 +26,10 @@ read length
 .TP
 \fB\-t\fR, \fB\-\-trim\-length\fR=\fITRIM_LENGTH\fR
 maximum length of dangling edges to trim
+.TP
+\fB\-c\fR, \fB\-\-coverage\fR=\fICOVERAGE\fR
+remove contigs with mean k-mer coverage less than this threshold
+[default=0]
 .TP
 \fB\-b\fR, \fB\-\-bubbles\fR=\fIN\fR
 maximum number of bubble\-popping rounds
