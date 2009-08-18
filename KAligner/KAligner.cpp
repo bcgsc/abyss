@@ -50,6 +50,7 @@ namespace opt {
 	static int verbose;
 	extern bool colourSpace;
 	static bool printSeq = false;
+	extern int chastityFilter; // used by FastaReader
 }
 
 static const char* shortopts = "k:mo:j:v";
@@ -245,7 +246,9 @@ static void readContigsIntoDB(string refFastaFile,
 
 void *alignReadsToDB(void* readsFile)
 {
-	FastaReader fileHandle((const char *)readsFile);
+	opt::chastityFilter = false;
+	FastaReader fileHandle((const char *)readsFile,
+			FastaReader::KEEP_N);
 	for (FastaRecord rec; fileHandle >> rec;) {
 		const Sequence& seq = rec.seq;
 		ostringstream output;
