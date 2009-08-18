@@ -11,5 +11,4 @@ libcommon_a_SOURCES = \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \
-	SetOperations.h \
 	Timer.cpp Timer.h

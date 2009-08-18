@@ -3,11 +3,11 @@
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"
-#include "SetOperations.h"
 #include <cmath>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <vector>
 
@@ -145,6 +145,25 @@ int main(int argc, char** argv)
 			opt::k, opt::maxCost);
 }
 
+template<typename K, typename D>
+ostream& printMap(const map<K,D>& s)
+{
+	cout << "{ ";
+	for (typename map<K,D>::const_iterator iter = s.begin();
+			iter != s.end(); ++iter)
+		cout << iter->first << ',' << iter->second << ' ';
+	return cout << '}';
+}
+
+template<typename K>
+ostream& printPath(const vector<K>& s)
+{
+	cout << "[ ";
+	copy(s.begin(), s.end(),
+			ostream_iterator<K>(cout, " "));
+	return cout << ']';
+}
+
 void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string estFileName, int kmer, int maxCost)
 {
 	int totalAttempted = 0;
@@ -186,7 +205,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 			if(gDebugPrint)
 			{
 				std::cout << "Constraints: ";
-				SetOperations::printMap(constraintMap);
+				printMap(constraintMap);
 				std::cout << "\n";
 			}
 
@@ -216,7 +235,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					solIter = solutions.begin();
 					solIter != solutions.end();) {
 				if (gDebugPrint) {
-					SetOperations::printPath(*solIter);
+					printPath(*solIter);
 					std::cout << '\n';
 				}
 
@@ -276,7 +295,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						*solIter, costFunctor);
 
 				if (gDebugPrint) {
-					SetOperations::printPath(*solIter);
+					printPath(*solIter);
 					std::cout << " length: " << len;
 				}
 
