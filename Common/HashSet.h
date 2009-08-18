@@ -14,7 +14,7 @@
 # include <ext/hash_set>
 using __gnu_cxx::hash_set;
 #else
-#  error A hash set implementation is required.
+# error A hash set implementation is required.
 #endif
 
 #endif

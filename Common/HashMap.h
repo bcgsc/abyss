@@ -17,7 +17,7 @@
 using __gnu_cxx::hash_map;
 using __gnu_cxx::hash_multimap;
 #else
-#  error A hash map implementation is required.
+# error A hash map implementation is required.
 #endif
 
 #if HAVE_UNORDERED_MAP || HAVE_TR1_UNORDERED_MAP
