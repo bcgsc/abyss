@@ -801,7 +801,11 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirectio
     if(gExaminedCount >= maxCompCost)
     {
     	// Remove paths, the search did not complete
-    	std::cout << "Computational limit exceeded, aborted search\n";
+		static bool warned;
+		if (!warned) {
+			warned = true;
+			std::cout << "Computational limit exceeded\n";
+		}
     	superPaths.clear();
     }
     
