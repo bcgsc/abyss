@@ -17,24 +17,6 @@ class FastaReader {
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor);
 
-		Sequence read(std::string& id, char& anchor)
-		{
-			std::string comment;
-			return read(id, comment, anchor);
-		}
-
-		Sequence read(std::string& id)
-		{
-			char anchor;
-			return read(id, anchor);
-		}
-
-		Sequence read()
-		{
-			std::string id;
-			return read(id);
-		}
-
 		/** Return whether this stream is at end-of-file. */
 		bool eof() const { return m_fileHandle.eof(); };
 
@@ -50,7 +32,10 @@ class FastaReader {
 
 		FastaReader& operator >>(Sequence& seq)
 		{
-			seq = this->read();
+			std::string id;
+			std::string comment;
+			char anchor;
+			seq = this->read(id, comment, anchor);
 			return *this;
 		}
 
