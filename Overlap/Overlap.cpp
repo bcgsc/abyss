@@ -27,7 +27,7 @@ using namespace std;
 
 static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
-"Written by Jared Simpson and Shaun Jackman.\n"
+"Written by Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
