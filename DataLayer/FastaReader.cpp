@@ -52,13 +52,8 @@ Sequence FastaReader::read(string& id, string& comment, char& anchor)
 {
 next_record:
 	// Discard comments.
-	while (m_fileHandle.peek() == '#') {
+	while (m_fileHandle.peek() == '#')
 		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
-		if (m_fileHandle.peek() == EOF) {
-			fputs("error: file ends in comments\n", stderr);
-			assert(false);
-		}
-	}
 
 	char recordType = m_fileHandle.peek();
 	Sequence s;
