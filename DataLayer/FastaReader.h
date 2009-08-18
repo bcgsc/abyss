@@ -35,12 +35,6 @@ class FastaReader {
 			return read(id);
 		}
 
-		// Returns true unless eof has been reached
-		bool isGood()
-		{
-			return !m_fileHandle.eof() && m_fileHandle.peek() != EOF;
-		}
-
 		/** Return whether this stream is at end-of-file. */
 		bool eof() const { return m_fileHandle.eof(); };
 
