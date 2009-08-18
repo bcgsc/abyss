@@ -898,40 +898,4 @@ void processTerminatedBranchAssemble(
 	branch.buildContig(outseq);
 }
 
-// Write the k-mer out to a file
-//
-void outputSequences(const char* filename, ISequenceCollection* pSS)
-{
-	FastaWriter writer(filename);
-	SequenceCollectionIterator endIter  = pSS->getEndIter();
-	int64_t count = 0;
-	for(SequenceCollectionIterator iter = pSS->getStartIter(); iter != endIter; ++iter)
-	{
-		if(!pSS->checkFlag(*iter, SF_DELETE))
-		{
-			writer.WriteSequence(iter->decode(), count,
-					iter->getMultiplicity());
-			count++;
-		}
-	}	
-}
-
-// Write the packed k-mer out to a file
-//
-void outputPackedSequences(const char* filename, ISequenceCollection* pSS)
-{
-	PackedSeqWriter writer(filename);
-	SequenceCollectionIterator endIter  = pSS->getEndIter();
-	int64_t count = 0;
-	for(SequenceCollectionIterator iter = pSS->getStartIter(); iter != endIter; ++iter)
-	{
-		
-		if(!pSS->checkFlag(*iter, SF_DELETE))
-		{
-			writer.WriteSequence(*iter);
-			count++;
-		}
-	}	
-}
-
 };

@@ -119,11 +119,6 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection, const Packed
 // Generate all the sequences for the extension record
 void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs);
 
-// Output all the sequences that remain (have not been deleted) in the dataset
-void outputSequences(const char* filename, ISequenceCollection* pSS);
-
-void outputPackedSequences(const char* filename, ISequenceCollection* pSS);
-
 };
 
 #endif
