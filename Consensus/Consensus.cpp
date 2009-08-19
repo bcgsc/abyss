@@ -73,6 +73,8 @@ typedef vector<BaseCount> BaseCounts;
 
 struct ContigCount {
 	Sequence seq;
+	unsigned coverage;
+	string comment;
 	BaseCounts counts;
 };
 
@@ -90,7 +92,12 @@ static void readContigs(const string& contigsPath)
 		const Sequence& seq = rec.seq;
 		ContigCount& contig = g_contigs[rec.id];
 		contig.seq = seq;
-		
+
+		istringstream ss(rec.comment);
+		unsigned length;
+		ss >> length >> contig.coverage >> ws;
+		getline(ss, contig.comment);
+
 		unsigned numBases = opt::csToNt ? contig.seq.length() + 1 :
 			contig.seq.length();
 		contig.counts = BaseCounts(numBases);
@@ -325,7 +332,8 @@ static void consensus(const char* outPath)
 			} else {
 				if (opt::csToNt)
 					fixUnknown(outString, contig.seq);
-				outFile.WriteSequence(outString, idKey, 0);
+				outFile.WriteSequence(outString, idKey,
+						contig.coverage, contig.comment);
 			}
 
 			if (opt::verbose > 1) {
