@@ -369,8 +369,16 @@ int main(int argc, char** argv)
 		}
 	}
 
+	if (opt::outPath.empty()) {
+		cerr << PROGRAM ": " << "missing -o,--out option\n";
+		die = true;
+	}
+
 	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	} else if (argc - optind > 1) {
+		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
 
@@ -384,9 +392,5 @@ int main(int argc, char** argv)
 
 	readContigs(contigsPath);
 	buildBaseQuality();
-
-	if (opt::outPath.empty())
-		consensus("consensus.fa");
-	else
-		consensus(opt::outPath.c_str());
+	consensus(opt::outPath.c_str());
 }
