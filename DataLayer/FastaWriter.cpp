@@ -1,14 +1,19 @@
 #include "FastaWriter.h"
 #include "Options.h"
 #include <cassert>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring> // for strerror
+#include <iostream>
+
+using namespace std;
 
 FastaWriter::FastaWriter(const char* path, bool append)
 	: m_path(path), m_fileHandle(fopen(path, append ? "a" : "w"))
 {
 	if (m_fileHandle == NULL) {
-		perror(m_path);
+		cerr << m_path << ": " << strerror(errno) << endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -17,7 +22,7 @@ FastaWriter::~FastaWriter()
 {
 	int n = fclose(m_fileHandle);
 	if (n < 0) {
-		perror(m_path);
+		cerr << m_path << ": " << strerror(errno) << endl;
 		exit(EXIT_FAILURE);
 	}
 	m_fileHandle = NULL;
@@ -41,7 +46,7 @@ void FastaWriter::WriteSequence(const Sequence& seq, unsigned id,
 				sep, comment.c_str(),
 				seq.c_str());
 	if (n < 0) {
-		perror(m_path);
+		cerr << m_path << ": " << strerror(errno) << endl;
 		exit(EXIT_FAILURE);
 	}
 }
