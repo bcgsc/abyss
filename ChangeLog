@@ -1,3 +1,41 @@
+2009-08-18  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.12.
+
+	abyss-pe:
+	* Both ABYSS and KAligner are run only once per assembly, which
+	speeds up the paired-end assembly by nearly a factor of two.
+	* The k-mer coverage information is correct in every contig file.
+	* A new parameter, cs, converts colour-space contigs to nucleotide
+	contigs using Consensus.
+	* A new parameter, ABYSS_OPTIONS, may be used to disable chastity
+	filtering by specifying ABYSS_OPTIONS=--no-chastity.
+
+	ABYSS:
+	* Read files in export format, which is similar to qseq format.
+	* Discard reads that failed the chastity filter. Use the
+	--no-chastity option to retain these unchaste reads. Chastity
+	filtering affects only qseq- and export formatted-files.
+	* Remove low-coverage contigs within ABYSS rather than filtering
+	using awk and reassembling.
+	* Support big-endian architecture machines.
+
+	KAligner:
+	* A new option, -m or --multimap, specifies that a duplicate k-mer
+	may be seen in the target sequence. By default, every k-mer in the
+	target sequence must be unique.
+	* A new option, --seq, prints the read sequence of each alignment.
+
+	Overlap:
+	* A new option, --scaffold, fills the gap between two blunt
+	contigs with Ns. This feature is disabled by default.
+
+	Consensus:
+	* Call the consensus sequence for each contig based on the
+	alignment of reads to contigs.
+	* Convert colour-space contigs to nucleotide contigs.
+	* Written by Tony Raymond.
+
 2009-07-21  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.11.
