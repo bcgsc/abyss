@@ -67,8 +67,8 @@ next_record:
 		string header;
 		getline(m_fileHandle, header);
 		stringstream headerStream(header);
-		headerStream >> recordType >> id;
-		comment = headerStream.str();
+		headerStream >> recordType >> id >> ws;
+		getline(headerStream, comment);
 
 		getline(m_fileHandle, s);
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
