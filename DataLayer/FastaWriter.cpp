@@ -29,7 +29,7 @@ FastaWriter::~FastaWriter()
 }
 
 void FastaWriter::WriteSequence(const Sequence& seq, unsigned id,
-		unsigned multiplicity, const std::string& comment)
+		unsigned multiplicity, const string& comment)
 {
 	assert(m_fileHandle != NULL);
 	const char *sep = comment.empty() ? "" : " ";
