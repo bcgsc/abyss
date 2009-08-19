@@ -14,7 +14,7 @@ using namespace std;
 
 static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
-"Written by Shaun Jackman and Tony Raymond.\n"
+"Written by Tony Raymond and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
@@ -39,16 +39,17 @@ namespace opt {
 	static int verbose;
 	extern bool colourSpace;
 	static bool csToNt;
+	static bool csToCs;
 }
 
-static const char* shortopts = "v:o:C";
+static const char* shortopts = "o:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_CS };
 
 static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "out",		 required_argument, NULL, 'o' },
-	{ "cstont",		 no_argument,		NULL, 'C' },
+	{ "cs",			 no_argument,		NULL, OPT_CS },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -94,6 +95,12 @@ static void readContigs(const string& contigsPath)
 		if (count == 0) {
 			// Detect colour-space contigs.
 			opt::colourSpace = isdigit(seq[0]);
+			if (!opt::csToCs)
+				opt::csToNt = opt::colourSpace;
+			else if (!opt::colourSpace) {
+				cerr << "Error: Cannot run CS to CS conversion on NT data.\n";
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			if (opt::colourSpace)
 				assert(isdigit(seq[0]));
@@ -317,19 +324,21 @@ static void consensus(const char* outPath)
 				outFile.WriteSequence(outString, idKey, 0);
 			}
 
-			// <contig id> <length> <consensus result> <expected> <A> <C> <G> <T>
-			if (opt::csToNt)
-				for (unsigned i = 0; i < seqLength - 1; i++)
-					cout << idKey << ' ' << seqLength << ' ' << i << ' '
-						<< nucleotideToColourSpace(outSeq[i], outSeq[i + 1])
-						<< ' ' << contig.seq.at(i)
-						<< ' ' << contig.counts[i] << '\n';
-			else
-				for (unsigned i = 0; i < seqLength; i++)
-					cout << idKey << ' ' << seqLength << ' ' << i
-						<< ' ' << outSeq[i]
-						<< ' ' << contig.seq.at(i)
-						<< ' ' << contig.counts[i] << '\n';
+			if (opt::verbose > 1) {
+				// <contig id> <length> <consensus result> <expected> <A> <C> <G> <T>
+				if (opt::csToNt)
+					for (unsigned i = 0; i < seqLength - 1; i++)
+						cout << idKey << ' ' << seqLength << ' ' << i << ' '
+							<< nucleotideToColourSpace(outSeq[i], outSeq[i + 1])
+							<< ' ' << contig.seq.at(i)
+							<< ' ' << contig.counts[i] << '\n';
+				else
+					for (unsigned i = 0; i < seqLength; i++)
+						cout << idKey << ' ' << seqLength << ' ' << i
+							<< ' ' << outSeq[i]
+							<< ' ' << contig.seq.at(i)
+							<< ' ' << contig.counts[i] << '\n';
+			}
 		} else if (opt::verbose > 0) {
 			cerr << "Warning: Contig " << it->first
 				<< " was not supported\n"
@@ -348,7 +357,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'v': opt::verbose++; break;
 			case 'o': arg >> opt::outPath; break;
-			case 'C': opt::csToNt = true; break;
+			case OPT_CS: opt::csToCs = true; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
