@@ -94,5 +94,18 @@ endif
 %-4.path: %-4.adj %-3.dist
 	SimpleGraph $v -k$k -o $@ $^
 
+ifndef cs
+
 %-contigs.fa: %-4.fa %-4.path
 	MergePaths $v -k$k -o $@ $^
+
+else
+
+%-cs.fa: %-4.fa %-4.path
+	MergePaths $v -k$k -o $@ $^
+
+%-contigs.fa: %-cs.fa
+	KAligner $v --seq -m -j$j -k$k $(in) $< \
+		|Consensus $v -o $@ $<
+
+endif
