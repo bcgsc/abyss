@@ -122,6 +122,11 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (opt::out.empty()) {
+		cerr << PROGRAM ": " << "missing -o,--out option\n";
+		die = true;
+	}
+
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
