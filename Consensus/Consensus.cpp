@@ -98,7 +98,8 @@ static void readContigs(const string& contigsPath)
 			if (!opt::csToCs)
 				opt::csToNt = opt::colourSpace;
 			else if (!opt::colourSpace) {
-				cerr << "Error: Cannot run CS to CS conversion on NT data.\n";
+				cerr << "error: Cannot convert nucleotide data to "
+					"colour space.\n";
 				exit(EXIT_FAILURE);
 			}
 		} else {
@@ -109,8 +110,9 @@ static void readContigs(const string& contigsPath)
 		}
 		count++;
 	}
-	cerr << "Number of Contigs loaded into Consensus: " << count << '\n';
+	cerr << "Read " << count << " contigs\n";
 	assert(contigsFile.eof());
+	assert(count > 0);
 }
 
 static void readAlignment(string& line, string& readID,
@@ -313,9 +315,9 @@ static void consensus(const char* outPath)
 				numIgnored++;
 				if (opt::csToNt) {
 					if (opt::verbose > 0)
-						cerr << "Warning: Contig " << it->first
-							<< " has less than 90\% agreement\n"
-							<< "and will not be converted.\n";
+						cerr << "warning: Contig " << it->first
+							<< " has less than 90% agreement "
+							"and will not be converted.\n";
 				} else
 					continue;
 			} else {
@@ -340,9 +342,9 @@ static void consensus(const char* outPath)
 							<< ' ' << contig.counts[i] << '\n';
 			}
 		} else if (opt::verbose > 0) {
-			cerr << "Warning: Contig " << it->first
-				<< " was not supported\n"
-				<< "by a complete read and was ommited.\n";
+			cerr << "warning: Contig " << it->first
+				<< " was not supported by a complete read "
+				"and was ommited.\n";
 		}
 	}
 }
