@@ -27,7 +27,8 @@ static const char *USAGE_MESSAGE =
 "at each position of each contig and write the result to standard output.\n"
 "\n"
 "  -o, --out=OUTPUT      write converted sequences in fasta format to this file\n"
-"  -C, --cstont          convert the colour space input to nucleotide space\n"
+"      --nt              output nucleotide contigs [default]\n"
+"      --cs              output colour-space contigs\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -39,17 +40,18 @@ namespace opt {
 	static int verbose;
 	extern bool colourSpace;
 	static bool csToNt;
-	static bool csToCs;
+	static int outputCS;
 }
 
 static const char* shortopts = "o:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_CS };
+enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "out",		 required_argument, NULL, 'o' },
-	{ "cs",			 no_argument,		NULL, OPT_CS },
+	{ "nt",			 no_argument,		&opt::outputCS, 0 },
+	{ "cs",			 no_argument,		&opt::outputCS, 1 },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -95,7 +97,7 @@ static void readContigs(const string& contigsPath)
 		if (count == 0) {
 			// Detect colour-space contigs.
 			opt::colourSpace = isdigit(seq[0]);
-			if (!opt::csToCs)
+			if (!opt::outputCS)
 				opt::csToNt = opt::colourSpace;
 			else if (!opt::colourSpace) {
 				cerr << "error: Cannot convert nucleotide data to "
@@ -359,7 +361,6 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'v': opt::verbose++; break;
 			case 'o': arg >> opt::outPath; break;
-			case OPT_CS: opt::csToCs = true; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
