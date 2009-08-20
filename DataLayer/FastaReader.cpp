@@ -105,7 +105,8 @@ next_record:
 				goto next_record;
 			}
 
-			ostringstream o(fields[0]);
+			ostringstream o;
+			o << fields[0];
 			for (int i = 1; i < 6; i++)
 				o << '_' << fields[i];
 			o << '/' << fields[7];
