@@ -1,6 +1,23 @@
 #include "Log.h"
 #include "Options.h"
 #include <cstdarg>
+#include <iostream>
+
+using namespace std;
+
+/** Print a log message if the verbosity level is at least the
+ * specified level.
+ */
+ostream& clog(int level)
+{
+	if (opt::verbose < level) {
+		static ostream bitBucket(NULL);
+		return bitBucket;
+	}
+	if (opt::rank >= 0)
+		cout << opt::rank << ": ";
+	return cout;
+}
 
 int PrintDebug(int level, const char* format, ...)
 {
