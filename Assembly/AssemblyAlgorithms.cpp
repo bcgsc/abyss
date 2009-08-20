@@ -105,10 +105,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 				assert(isalpha(seq.at(0)));
 		}
 
-		for (int i = 0; i < len - opt::kmerSize  + 1; i++) {
-			PackedSeq sub = seq.substr(i, opt::kmerSize);
-			seqCollection->add(sub);
-		}
+		for (int i = 0; i < len - opt::kmerSize  + 1; i++)
+			seqCollection->add(
+					PackedSeq(seq.substr(i, opt::kmerSize)));
 
 		if (++count % 100000 == 0) {
 			PrintDebug(1, "Read %u reads. ", count);

@@ -28,8 +28,8 @@ class PackedSeq
 {
 	public:
 		PackedSeq();
-		PackedSeq(const Sequence& seq);
-		
+		explicit PackedSeq(const Sequence& seq);
+
 		// Write this packed sequence to the buffer
 		size_t serialize(char* buffer) const;
 		

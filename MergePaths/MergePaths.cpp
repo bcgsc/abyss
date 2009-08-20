@@ -598,11 +598,12 @@ void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirect
 		leftSeq = &slaveSeq;
 		rightSeq = &rootContig;
 	}
-	
+
 	// Get the last k bases of the left and the first k bases of the right
-	PackedSeq leftEnd = leftSeq->substr(leftSeq->length() - overlap, overlap);
-	PackedSeq rightBegin = rightSeq->substr(0, overlap);
-	
+	PackedSeq leftEnd(leftSeq->substr(leftSeq->length() - overlap,
+				overlap));
+	PackedSeq rightBegin(rightSeq->substr(0, overlap));
+
 	// ensure that there is a legitimate k-1 overlap between these sequences	
 	if(leftEnd != rightBegin)
 	{

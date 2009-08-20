@@ -63,9 +63,8 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	int seqLen = seq.length();
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
-		PackedSeq kmer = seq.substr(i, m_hashSize);
-		LookupResult result = m_target.equal_range(kmer);
-
+		LookupResult result = m_target.equal_range(
+				PackedSeq(seq.substr(i, m_hashSize)));
 		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
 		{
 			//printf("Seq: %s Contig: %s position: %d\n", seq.decode().c_str(), resultIter->second.contig.c_str(), resultIter->second.pos);

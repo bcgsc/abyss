@@ -94,9 +94,9 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 				assert(isalpha(seq[0]));
 		}
 
-		PackedSeq seql = seq.substr(seq.length() - opt::overlap,
-				opt::overlap);
-		PackedSeq seqr = seq.substr(0, opt::overlap);
+		PackedSeq seql(seq.substr(seq.length() - opt::overlap,
+				opt::overlap));
+		PackedSeq seqr(seq.substr(0, opt::overlap));
 		pContigs->push_back(ContigEndSeq(rec.id, seq.length(),
 					seql, seqr));
 	}
