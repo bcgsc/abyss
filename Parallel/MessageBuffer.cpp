@@ -93,11 +93,12 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		// Send the message
 		sendBufferedMessage(nodeID, buffer, totalSize);
 
-		// free the buffer
 		delete [] buffer;
-		
 		clearQueue(nodeID);
-		//printf("message buffer sent %zu\n", numMsgs);
+
+		m_txPackets++;
+		m_txMessages += numMsgs;
+		m_txBytes += totalSize;
 	}	
 }
 	

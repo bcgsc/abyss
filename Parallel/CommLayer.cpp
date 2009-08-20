@@ -11,7 +11,9 @@ static const unsigned RX_BUFSIZE = 16*1024;
 CommLayer::CommLayer()
 	: m_msgID(0),
 	  m_rxBuffer(new uint8_t[RX_BUFSIZE]),
-	  m_request(MPI_REQUEST_NULL)
+	  m_request(MPI_REQUEST_NULL),
+	  m_rxPackets(0), m_rxMessages(0), m_rxBytes(0),
+	  m_txPackets(0), m_txMessages(0), m_txBytes(0)
 {
 	assert(m_request == MPI_REQUEST_NULL);
 	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
@@ -21,8 +23,14 @@ CommLayer::CommLayer()
 
 CommLayer::~CommLayer()
 {
-	PrintDebug(1, "Sent %u control messages\n", (unsigned)m_msgID);
 	delete[] m_rxBuffer;
+	clog(1) << "Sent " << m_msgID << " control, "
+		<< m_txPackets << " packets, "
+		<< m_txMessages << " messages, "
+		<< m_txBytes << " bytes. "
+		<< "Received " << m_rxPackets << " packets, "
+		<< m_rxMessages << " messages, "
+		<< m_rxBytes << " bytes.\n";
 }
 
 /** Return the tag of the received message or APM_NONE if no message
@@ -157,6 +165,7 @@ void CommLayer::sendBufferedMessage(int destID,
 /** Receive a buffered message. */
 void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 {
+	assert(outmessages.empty());
 	int flag;
 	MPI_Status status;
 	MPI_Test(&m_request, &flag, &status);
@@ -225,4 +234,8 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 	MPI_Irecv(m_rxBuffer, RX_BUFSIZE,
 			MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
 			&m_request);
+
+	m_rxPackets++;
+	m_rxMessages += outmessages.size();
+	m_rxBytes += size;
 }

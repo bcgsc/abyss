@@ -59,6 +59,15 @@ class CommLayer
 		uint64_t m_msgID;
 		uint8_t* m_rxBuffer;
 		MPI_Request m_request;
+
+	protected:
+		// Counters
+		uint64_t m_rxPackets;
+		uint64_t m_rxMessages;
+		uint64_t m_rxBytes;
+		uint64_t m_txPackets;
+		uint64_t m_txMessages;
+		uint64_t m_txBytes;
 };
 
 #endif
