@@ -1,5 +1,6 @@
 #include "MessageBuffer.h"
 #include "Options.h"
+#include "Log.h"
 #include <iostream>
 
 using namespace std;
@@ -49,8 +50,7 @@ void MessageBuffer::sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDi
 
 void MessageBuffer::queueMessage(int nodeID, Message* message, SendMode mode)
 {
-	if (opt::verbose >= 9)
-		cout << opt::rank << " to " << nodeID << ": " << *message;
+	logger(9) << "to " << nodeID << ": " << *message;
 	m_msgQueues[nodeID].push_back(message);	
 	checkQueueForSend(nodeID, mode);	
 }
