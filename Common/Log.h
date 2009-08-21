@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-std::ostream& clog(int level);
+std::ostream& logger(int level);
 
 int PrintDebug(int level, const char* format, ...)
 	__attribute__((format(printf, 2, 3)));

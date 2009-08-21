@@ -8,7 +8,7 @@ using namespace std;
 /** Print a log message if the verbosity level is at least the
  * specified level.
  */
-ostream& clog(int level)
+ostream& logger(int level)
 {
 	if (opt::verbose < level) {
 		static ostream bitBucket(NULL);

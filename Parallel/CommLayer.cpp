@@ -24,7 +24,7 @@ CommLayer::CommLayer()
 CommLayer::~CommLayer()
 {
 	delete[] m_rxBuffer;
-	clog(1) << "Sent " << m_msgID << " control, "
+	logger(1) << "Sent " << m_msgID << " control, "
 		<< m_txPackets << " packets, "
 		<< m_txMessages << " messages, "
 		<< m_txBytes << " bytes. "
