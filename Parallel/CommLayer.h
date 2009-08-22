@@ -55,6 +55,11 @@ class CommLayer
 		// Receive a buffered sequence of messages
 		void receiveBufferedMessage(MessagePtrVector& outmessages);
 
+		uint64_t reduceInflight()
+		{
+			return reduce(m_txPackets - m_rxPackets);
+		}
+
 	private:
 		uint64_t m_msgID;
 		uint8_t* m_rxBuffer;

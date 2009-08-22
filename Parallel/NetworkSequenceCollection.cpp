@@ -33,16 +33,13 @@ void NetworkSequenceCollection::loadSequences()
 }
 
 /** Receive, process, send, and synchronize.
- * @return the number of packets received
+ * @return the number of inflight messages
  */
 unsigned NetworkSequenceCollection::pumpFlushReduce()
 {
-	m_comm.flush(); // Send.
-	m_comm.barrier(); // Synchronize.
-	unsigned count = pumpNetwork(); // Receive and process.
-	if (count == 0)
-		assert(m_comm.transmitBufferEmpty());
-	return m_comm.reduce(count); // Reduce.
+	pumpNetwork();
+	m_comm.flush();
+	return m_comm.reduceInflight();
 }
 
 /** Receive packets and process them until no more work exists for any
@@ -58,6 +55,7 @@ void NetworkSequenceCollection::completeOperation()
 	assert(m_comm.transmitBufferEmpty()); // Nothing to send.
 	m_comm.barrier(); // Synchronize.
 	assert(m_comm.receiveEmpty()); // Nothing to receive.
+	assert(m_comm.reduceInflight() == 0);
 }
 
 /** Run the assembly state machine. */
