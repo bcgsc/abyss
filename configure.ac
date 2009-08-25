@@ -13,20 +13,23 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdint.h stdlib.h sys/param.h])
+AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h sys/param.h])
 AC_HEADER_STDC
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_HEADER_STDBOOL
+AC_TYPE_MODE_T
+AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
 
 # Checks for library functions.
 AC_CHECK_LIB([m], [sqrt])
-AC_CHECK_FUNCS([gethostname getopt_long memset pow setlocale sqrt \
-	strdup strerror])
+AC_CHECK_FUNCS([dup2 gethostname getopt_long memset pow \
+	sqrt strdup strerror])
+AC_FUNC_FORK
 AC_FUNC_MEMCMP
 AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
