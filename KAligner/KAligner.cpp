@@ -27,8 +27,8 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... QUERY TARGET\n"
-"Align the sequences of QUERY against those of TARGET.\n"
+"Usage: " PROGRAM " [OPTION]... QUERY... TARGET\n"
+"Align the sequences of the files QUERY against those of the file TARGET.\n"
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
