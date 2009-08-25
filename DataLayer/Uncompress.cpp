@@ -7,6 +7,9 @@
  * @author Shaun Jackman <sjackman@bcgsc.ca>
  */
 
+#include "config.h"
+#if HAVE_LIBDL
+
 #include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>
@@ -108,3 +111,5 @@ int open(const char *path, int flags, mode_t mode)
 }
 
 } // extern "C"
+
+#endif // HAVE_LIBDL

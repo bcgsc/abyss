@@ -13,7 +13,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Checks for header files.
-AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h sys/param.h])
+AC_CHECK_HEADERS([dlfcn.h stddef.h stdint.h stdlib.h sys/param.h])
 AC_HEADER_STDC
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -82,6 +82,9 @@ AM_CONDITIONAL([HAVE_LIBMPI],
 	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
 unset LIBS
+
+# Check for the dynamic linking library.
+AC_CHECK_LIB([dl], [dlsym])
 
 # Check for the hash table implementation.
 AC_LANG([C++])
