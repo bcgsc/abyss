@@ -1,8 +1,8 @@
 #include "Stats.h"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <algorithm>
 
 //
 // Perform a maximum likelihood estimate over the pdf and input distribution

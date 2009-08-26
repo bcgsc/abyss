@@ -1,9 +1,9 @@
 #include "Sequence.h"
 #include "Options.h"
-#include <iostream>
-#include <sstream>
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 

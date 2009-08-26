@@ -1,16 +1,16 @@
 #include "config.h"
-#include <climits> // for HOST_NAME_MAX
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-#include <unistd.h> // for gethostname
-#include <vector>
-#include <mpi.h>
 #include "FastaReader.h"
 #include "Log.h"
 #include "NetworkSequenceCollection.h"
 #include "Options.h"
 #include "Timer.h"
+#include <climits> // for HOST_NAME_MAX
+#include <cstdio>
+#include <cstdlib>
+#include <mpi.h>
+#include <sstream>
+#include <unistd.h> // for gethostname
+#include <vector>
 
 using namespace std;
 

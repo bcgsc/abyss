@@ -1,21 +1,21 @@
 #include "Aligner.h"
+#include "FastaReader.h"
 #include "PairedAlgorithms.h"
 #include "PrefixIterator.h"
-#include "FastaReader.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cerrno>
-#include <cstring>
 #include <cstdlib>
-#include <iostream>
+#include <cstring>
 #include <fstream>
 #include <getopt.h>
-#include <sstream>
-#include <string>
+#include <iostream>
 #include <pthread.h>
 #include <semaphore.h>
+#include <sstream>
+#include <string>
 
 using namespace std;
 

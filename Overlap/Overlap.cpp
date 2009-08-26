@@ -5,8 +5,8 @@
 
 #include "config.h"
 #include "ContigGraph.h"
-#include "PairedAlgorithms.h"
 #include "PairUtils.h"
+#include "PairedAlgorithms.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -18,8 +18,8 @@
 #include <getopt.h>
 #include <map>
 #include <set>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 using namespace std;

@@ -1,14 +1,14 @@
 #include "Aligner.h"
 #include "FastaReader.h"
-#include "PairUtils.h"
 #include "FastaWriter.h"
+#include "PairUtils.h"
 #include "Uncompress.h"
-#include <getopt.h>
 #include <cstdlib>
 #include <cstring> // for memset
-#include <string>
-#include <sstream>
+#include <getopt.h>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 using namespace std;
 

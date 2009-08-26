@@ -1,12 +1,12 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
+#include "ISequenceCollection.h"
 #include "Log.h"
 #include "Options.h"
-#include "ISequenceCollection.h"
-#include "Timer.h"
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
+#include "Timer.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
