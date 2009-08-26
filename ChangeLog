@@ -1,3 +1,11 @@
+2009-08-26  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.13.
+	* Read files compressed with gzip (.gz) or bzip2 (.bz2).
+
+	ABYSS-P:
+	* Bug fix. Fix a race condition in the erosion algorithm.
+
 2009-08-18  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.12.
