@@ -23,6 +23,8 @@ char complementBaseChar(char base)
 		case 'C': return 'G';
 		case 'G': return 'C';
 		case 'T': return 'A';
+		case 'N': return 'N';
+		case '-': return '-';
 		default:
 			assert(false);
 			return 0;
