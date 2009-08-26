@@ -1,6 +1,7 @@
 #include "AlignExtractor.h"
 #include "PairUtils.h"
 #include "Stats.h"
+#include "Uncompress.h"
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>

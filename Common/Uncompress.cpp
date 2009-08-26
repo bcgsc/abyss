@@ -113,3 +113,9 @@ int open(const char *path, int flags, mode_t mode)
 } // extern "C"
 
 #endif // HAVE_LIBDL
+
+/** Initialize the uncompress module. */
+bool uncompress_init()
+{
+	return HAVE_LIBDL;
+}

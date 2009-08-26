@@ -12,4 +12,4 @@ libcommon_a_SOURCES = \
 	Sense.h \
 	Sequence.cpp Sequence.h \
 	Timer.cpp Timer.h \
-	Uncompress.cpp
+	Uncompress.cpp Uncompress.h
