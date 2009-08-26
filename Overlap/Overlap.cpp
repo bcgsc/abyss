@@ -7,6 +7,7 @@
 #include "ContigGraph.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>

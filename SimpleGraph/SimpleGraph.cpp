@@ -3,6 +3,7 @@
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"
+#include "Uncompress.h"
 #include <cmath>
 #include <fstream>
 #include <getopt.h>

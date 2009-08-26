@@ -2,6 +2,7 @@
 #include "FastaReader.h"
 #include "PairUtils.h"
 #include "FastaWriter.h"
+#include "Uncompress.h"
 #include <getopt.h>
 #include <cstdlib>
 #include <cstring> // for memset

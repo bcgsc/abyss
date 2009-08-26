@@ -1,6 +1,7 @@
 #include "FastaReader.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>

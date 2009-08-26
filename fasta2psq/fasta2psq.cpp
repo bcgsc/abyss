@@ -1,6 +1,7 @@
 #include "fasta2psqOptions.h"
 #include "FastaReader.h"
 #include "PackedSeqWriter.h"
+#include "Uncompress.h"
 #include <cstdio>
 
 int main(int argc, char* const* argv)

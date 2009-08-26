@@ -1,6 +1,7 @@
 #include "Aligner.h"
 #include "PairUtils.h"
 #include "Stats.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>
 #include <climits> // for INT_MIN

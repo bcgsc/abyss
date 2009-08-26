@@ -4,6 +4,7 @@
 #include "PackedSeq.h"
 #include "PairedAlgorithms.h"
 #include "PairUtils.h"
+#include "Uncompress.h"
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
