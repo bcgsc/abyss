@@ -8,5 +8,4 @@ libdatalayer_a_SOURCES = \
 	ISequenceCollection.h \
 	PackedSeqReader.cpp PackedSeqReader.h \
 	PackedSeqWriter.cpp PackedSeqWriter.h \
-	SequenceCollectionHash.cpp SequenceCollectionHash.h \
-	Uncompress.cpp
+	SequenceCollectionHash.cpp SequenceCollectionHash.h
