@@ -1,9 +1,9 @@
 /** Uncompress input files using pipes.
  * Hook the standard file opening functions, open, fopen and fopen64.
  * If the extension of the file being opened indicates the file is
- * compressed (.gz or .bz2), open a pipe to a program that
- * decompresses that file (zcat or bzcat), and return a handle to the
- * open pipe.
+ * compressed (.gz, .bz2, .xz), open a pipe to a program that
+ * decompresses that file (zcat, bzcat or xzdec) and return a handle
+ * to the open pipe.
  * @author Shaun Jackman <sjackman@bcgsc.ca>
  */
 

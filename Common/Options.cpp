@@ -23,7 +23,7 @@ PACKAGE " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
-"qseq or export format and compressed with gz or bz2.\n"
+"qseq or export format and compressed with gz, bz2 or xz.\n"
 "\n"
 "      --chastity                 discard unchaste reads [default]\n"
 "                                 for qseq- and export-formatted files only\n"
