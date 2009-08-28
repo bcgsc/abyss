@@ -54,31 +54,11 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
 	return sum;
 }
 
-// Classes
-Histogram::Histogram(const std::vector<int>& data)
-{
-	for(std::vector<int>::const_iterator iter = data.begin(); iter != data.end(); ++iter)
-	{
-		addDataPoint(*iter);
-	}
-}
-
-void Histogram::addDataPoint(int data)
-{
-	m_data[data]++;
-}
-
-void Histogram::addMultiplePoints(int value, int count)
-{
-	m_data[value] += count;
-}
-
-// This function will trim off the bottom percent/2 and top percent/2 data points
-// The function will leave AT LEAST  1 - percent of the data in the histogram
-
+/** Trim off the bottom percent/2 and top percent/2 data points.
+ * At least (1 - percent) of the data will remain.
+ */
 Histogram Histogram::trim(double percent)
 {
-	
 	Histogram newHist;
 	
 	// The amount to take off each end
@@ -108,66 +88,15 @@ Histogram Histogram::trim(double percent)
 	return newHist;
 }
 
-int Histogram::getMin() const
-{
-	if(m_data.empty())
-	{
-		return 0;
-	}
-	else
-	{
-		return m_data.begin()->first;
-	}	
-}
-
-int Histogram::getMax() const
-{
-	if(m_data.empty())
-	{
-		return 0;
-	}
-	else
-	{
-		return m_data.rbegin()->first;
-	}
-}
-
-int Histogram::getCount(int index) const
-{
-	IntIntMap::const_iterator iter = m_data.find(index);
-	if(m_data.find(index) == m_data.end())
-	{
-		return 0;
-	}
-	else
-	{
-		return iter->second;
-	}
-}
-
-int Histogram::getSumCount() const
-{
-	int min = 0;
-	int max = getMax();
-	
-	int sum = 0;
-	for(int idx = min; idx <= max; ++idx)
-	{
-		sum += getCount(idx);
-	}
-	return sum;
-}
-
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
 	m_maxIdx = h.getMax();
 	unsigned count = 0;
 
-	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
-	{
+	for(Histogram::Map::const_iterator histIter = h.begin();
+			histIter != h.end(); histIter++)
 		count += histIter->second;
-	}
 	m_minp = (double)1 / count;
 
 	// Create the initial pdf with all values being 0
@@ -181,12 +110,12 @@ PDF::PDF(const Histogram& h)
 	// Calculate the mean
 	double sum = 0;
 	double sumsqr = 0;
-	for(IntIntMap::const_iterator histIter = h.m_data.begin(); histIter != h.m_data.end(); histIter++)
-	{
+	for(Histogram::Map::const_iterator histIter = h.begin();
+			histIter != h.end(); histIter++) {
 		sum += ((double)histIter->second * (double)histIter->first);
 		sumsqr += histIter->second * (pow(histIter->first, 2.0f));
 	}
-	
+
 	m_mean = sum / count;
 	assert(m_mean > 0);
 	double msqr = pow(sum,2.0) / count;

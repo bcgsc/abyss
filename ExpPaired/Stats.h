@@ -1,37 +1,64 @@
 #ifndef STATS_H
-#define STATS_H
+#define STATS_H 1
 
-// Simple class for holding stats related to PET data
 #include <cmath>
+#include <map>
 #include <ostream>
 #include <vector>
-#include <map>
 
-// Classes
-typedef std::map<int, int> IntIntMap;
-
-struct Histogram
+class Histogram : public std::map<int, unsigned>
 {
-	Histogram() {}
-	Histogram(const std::vector<int>& data);
-	
-	void addDataPoint(int data);
-	void addMultiplePoints(int value, int count);
-	
-	Histogram trim(double percent);
-	
-	int getSumCount() const;
-	int getCount(int index) const;
-	int getMin() const;
-	int getMax() const;
+  public:
+	typedef std::map<int, unsigned> Map;
 
-	IntIntMap m_data;
+	Histogram() {}
+	Histogram(const std::vector<int>& data)
+	{
+		for (std::vector<int>::const_iterator iter = data.begin();
+				iter != data.end(); ++iter)
+			addDataPoint(*iter);
+	}
+
+	void addDataPoint(int data) { (*this)[data]++; }
+
+	void addMultiplePoints(int value, unsigned count)
+	{
+		(*this)[value] += count;
+	}
+
+	Histogram trim(double percent);
+
+	unsigned getSumCount() const
+	{
+		int min = 0;
+		int max = getMax();
+		unsigned sum = 0;
+		for (int i = min; i <= max; ++i)
+			sum += getCount(i);
+		return sum;
+	}
+
+	unsigned getCount(int index) const
+	{
+		Map::const_iterator iter = find(index);
+		return find(index) == end() ? 0 : iter->second;
+	}
+
+	int getMin() const
+	{
+		return empty() ? 0 : begin()->first;
+	}
+
+	int getMax() const
+	{
+		return empty() ? 0 : rbegin()->first;
+	}
 
 	friend std::ostream& operator<<(std::ostream& o,
 			const Histogram& h)
 	{
-		for (std::map<int, int>::const_iterator it = h.m_data.begin();
-				it != h.m_data.end(); ++it)
+		for (Map::const_iterator it = h.begin();
+				it != h.end(); ++it)
 			o << it->first << '\t' << it->second << '\n';
 		return o;
 	}
