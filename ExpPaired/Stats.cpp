@@ -57,7 +57,7 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
 // Construct a pdf from a histogram
 PDF::PDF(const Histogram& h)
 {
-	m_maxIdx = h.getMax();
+	m_maxIdx = h.maximum();
 	unsigned count = 0;
 
 	for(Histogram::Map::const_iterator histIter = h.begin();
@@ -69,7 +69,7 @@ PDF::PDF(const Histogram& h)
 	m_dist = DoubleVec(m_maxIdx+1, 0.0f);
 	for(size_t i = 0; i <= m_maxIdx; i++)
 	{
-		unsigned v = h.getCount(i);
+		unsigned v = h.count(i);
 		m_dist[i] = v > 0 ? (double)v / count : m_minp;
 	}
 
@@ -89,9 +89,9 @@ PDF::PDF(const Histogram& h)
 	double t1 = ss1 / count;
 
 	m_stdDev = sqrt(t1);
-	
+
 	printf("Stats mean: %.2lf sd: %.2lf n: %u min: %u max: %u\n",
-			m_mean, m_stdDev, count, h.getMin(), h.getMax());
+			m_mean, m_stdDev, count, h.minimum(), h.maximum());
 }
 
 double PDF::getP(size_t idx) const

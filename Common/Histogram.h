@@ -5,6 +5,10 @@
 #include <vector>
 #include <ostream>
 
+/** A histogram of type T, which is int be default.
+ * A histogram may be implemented as a multiset. This class aims
+ * to provide a similar interface to a multiset.
+ */
 class Histogram : public std::map<int, unsigned>
 {
   public:
@@ -16,43 +20,43 @@ class Histogram : public std::map<int, unsigned>
 	{
 		for (std::vector<T>::const_iterator iter = data.begin();
 				iter != data.end(); ++iter)
-			addDataPoint(*iter);
+			insert(*iter);
 	}
 
-	void addDataPoint(T value) { (*this)[value]++; }
+	void insert(T value) { (*this)[value]++; }
 
-	void addMultiplePoints(T value, unsigned count)
+	void insert(T value, unsigned count)
 	{
 		(*this)[value] += count;
 	}
 
-	Histogram trim(double percent);
-
-	unsigned getSumCount() const
+	unsigned size() const
 	{
 		T min = 0;
-		T max = getMax();
+		T max = maximum();
 		unsigned sum = 0;
 		for (T value = min; value <= max; ++value)
-			sum += getCount(value);
+			sum += count(value);
 		return sum;
 	}
 
-	unsigned getCount(T value) const
+	unsigned count(T value) const
 	{
 		Map::const_iterator iter = find(value);
 		return find(value) == end() ? 0 : iter->second;
 	}
 
-	T getMin() const
+	T minimum() const
 	{
 		return empty() ? 0 : begin()->first;
 	}
 
-	T getMax() const
+	T maximum() const
 	{
 		return empty() ? 0 : rbegin()->first;
 	}
+
+	Histogram trim(double percent) const;
 
 	friend std::ostream& operator<<(std::ostream& o,
 			const Histogram& h)

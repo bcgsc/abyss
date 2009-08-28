@@ -258,7 +258,7 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 					if((iter->second.size() == 1 && pairIter->second.size() == 1))
 					{
 						if (size > INT_MIN) {
-							histogram.addDataPoint(size);
+							histogram.insert(size);
 							if (!opt::fragPath.empty()) {
 								fragFile << size << "\n";
 								assert(fragFile.good());

@@ -92,13 +92,13 @@ Histogram loadHist(string path)
 	assert_open(in, path);
 
 	Histogram hist;
-	int value;
+	Histogram::T value;
 	unsigned count;
 	while (in >> value >> count)
-		hist.addMultiplePoints(value, count);
+		hist.insert(value, count);
 	assert(in.eof());
 
-	if (hist.getSumCount() == 0) {
+	if (hist.size() == 0) {
 		cerr << "error: the histogram `" << path << "' is empty\n";
 		exit(EXIT_FAILURE);
 	}
