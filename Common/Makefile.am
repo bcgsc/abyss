@@ -4,6 +4,7 @@ libcommon_a_SOURCES = \
 	Dictionary.h \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h HashSet.h \
+	Histogram.cpp Histogram.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
