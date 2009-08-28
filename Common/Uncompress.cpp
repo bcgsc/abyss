@@ -31,6 +31,7 @@ static const char* zcatExec(const string& path)
 	return
 		endsWith(path, ".gz") ? "zcat" :
 		endsWith(path, ".bz2") ? "bzcat" :
+		endsWith(path, ".xz") ? "xzdec" :
 		NULL;
 }
 
