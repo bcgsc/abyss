@@ -9,19 +9,20 @@
 class Histogram : public std::map<int, unsigned>
 {
   public:
-	typedef std::map<int, unsigned> Map;
+	typedef int T;
+	typedef std::map<T, unsigned> Map;
 
 	Histogram() {}
-	Histogram(const std::vector<int>& data)
+	Histogram(const std::vector<T>& data)
 	{
-		for (std::vector<int>::const_iterator iter = data.begin();
+		for (std::vector<T>::const_iterator iter = data.begin();
 				iter != data.end(); ++iter)
 			addDataPoint(*iter);
 	}
 
-	void addDataPoint(int data) { (*this)[data]++; }
+	void addDataPoint(T value) { (*this)[value]++; }
 
-	void addMultiplePoints(int value, unsigned count)
+	void addMultiplePoints(T value, unsigned count)
 	{
 		(*this)[value] += count;
 	}
@@ -30,26 +31,26 @@ class Histogram : public std::map<int, unsigned>
 
 	unsigned getSumCount() const
 	{
-		int min = 0;
-		int max = getMax();
+		T min = 0;
+		T max = getMax();
 		unsigned sum = 0;
-		for (int i = min; i <= max; ++i)
-			sum += getCount(i);
+		for (T value = min; value <= max; ++value)
+			sum += getCount(value);
 		return sum;
 	}
 
-	unsigned getCount(int index) const
+	unsigned getCount(T value) const
 	{
-		Map::const_iterator iter = find(index);
-		return find(index) == end() ? 0 : iter->second;
+		Map::const_iterator iter = find(value);
+		return find(value) == end() ? 0 : iter->second;
 	}
 
-	int getMin() const
+	T getMin() const
 	{
 		return empty() ? 0 : begin()->first;
 	}
 
-	int getMax() const
+	T getMax() const
 	{
 		return empty() ? 0 : rbegin()->first;
 	}

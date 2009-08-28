@@ -59,32 +59,30 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
  */
 Histogram Histogram::trim(double percent)
 {
-	Histogram newHist;
-	
 	// The amount to take off each end
 	double half_percent = percent/2;
 	double low_cutoff = half_percent;
 	double high_cutoff = 1.0f - half_percent;
 	double total = (double)getSumCount();
 
-	int min = 0;
-	int max = getMax();
+	T min = 0;
+	T max = getMax();
 	double cumulative = 0.0f;
-	
-	for(int idx = min; idx <= max; ++idx)
-	{
-		int currCount = getCount(idx);
+
+	Histogram newHist;
+	for (T value = min; value <= max; ++value) {
+		unsigned currCount = getCount(value);
 		double frac = currCount / total;
 		double temp_total = cumulative + frac;
 		//printf("Frac: %lf TT: %lf C: %lf LC: %lf HC: %lf\n", frac, temp_total, cumulative, low_cutoff, high_cutoff);
 		if(temp_total > low_cutoff && cumulative < high_cutoff)
 		{
 			// Add these elements
-			newHist.addMultiplePoints(idx, currCount);
+			newHist.addMultiplePoints(value, currCount);
 		}
 		cumulative = temp_total;
 	}
-	
+
 	return newHist;
 }
 
