@@ -7,7 +7,6 @@
 #include "ContigGraph.h"
 #include "FastaReader.h"
 #include "PairUtils.h"
-#include "PairedAlgorithms.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -76,7 +75,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static ContigVec contigs;
+static vector<Sequence> contigs;
 static SimpleContigGraph contigGraph;
 
 static struct {
@@ -121,7 +120,7 @@ class ContigNode
 
 		const Sequence sequence() const
 		{
-			const Sequence& seq = contigs[m_id].seq;
+			const Sequence& seq = contigs[m_id];
 			return m_sense == SENSE ? seq : reverseComplement(seq);
 		}
 
@@ -306,10 +305,10 @@ static void readContigs(const char *contigPath)
 {
 	FastaReader in(contigPath, FastaReader::KEEP_N);
 	for (FastaRecord rec; in >> rec;)
-		contigs.push_back(Contig(rec.seq, 0));
+		contigs.push_back(rec.seq);
 	assert(in.eof());
 	assert(!contigs.empty());
-	opt::colourSpace = isdigit(contigs[0].seq[0]);
+	opt::colourSpace = isdigit(contigs[0][0]);
 }
 
 int main(int argc, char *const argv[])
