@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "ContigGraph.h"
+#include "FastaReader.h"
 #include "PairUtils.h"
 #include "PairedAlgorithms.h"
 #include "Uncompress.h"
@@ -301,6 +302,16 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
+static void readContigs(const char *contigPath)
+{
+	FastaReader in(contigPath, FastaReader::KEEP_N);
+	for (FastaRecord rec; in >> rec;)
+		contigs.push_back(Contig(rec.seq, 0));
+	assert(in.eof());
+	assert(!contigs.empty());
+	opt::colourSpace = isdigit(contigs[0].seq[0]);
+}
+
 int main(int argc, char *const argv[])
 {
 	bool die = false;
@@ -348,14 +359,12 @@ int main(int argc, char *const argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	string contigPath(argv[optind++]);
+	const char* contigPath(argv[optind++]);
 	string adjPath(argv[optind++]);
 	string estPath(argv[optind++]);
 	const string& lenPath = adjPath;
 
-	PairedAlgorithms::readContigVec(contigPath, contigs);
-	assert(!contigs.empty());
-	opt::colourSpace = isdigit(contigs[0].seq[0]);
+	readContigs(contigPath);
 
 	loadGraphFromAdjFile(&contigGraph, lenPath, adjPath);
 
