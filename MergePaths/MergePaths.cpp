@@ -1,5 +1,6 @@
 #include "config.h"
 #include "ContigPath.h"
+#include "FastaReader.h"
 #include "FastaWriter.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
@@ -144,12 +145,18 @@ int main(int argc, char** argv)
 
 	gDebugPrint = opt::verbose > 1;
 
-	string contigFile(argv[optind++]);
+	const char* contigFile(argv[optind++]);
 	string pathFile(argv[optind++]);
 
-	// Read the contigs.
 	ContigVec contigVec;
-	PairedAlgorithms::readContigVec(contigFile, contigVec);
+	FastaReader in(contigFile, FastaReader::KEEP_N);
+	for (FastaRecord rec; in >> rec;) {
+		istringstream ss(rec.comment);
+		unsigned length, coverage;
+		ss >> length >> coverage;
+		contigVec.push_back(Contig(rec.seq, coverage));
+	}
+	assert(in.eof());
 	assert(!contigVec.empty());
 	opt::colourSpace = isdigit(contigVec[0].seq[0]);
 
