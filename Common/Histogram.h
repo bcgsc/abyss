@@ -4,7 +4,6 @@
 #include <cmath>
 #include <map>
 #include <ostream>
-#include <vector>
 
 /** A histogram of type T, which is int be default.
  * A histogram may be implemented as a multiset. This class aims
@@ -15,14 +14,6 @@ class Histogram : std::map<int, unsigned>
   public:
 	typedef int T;
 	typedef std::map<T, unsigned> Map;
-
-	Histogram() {}
-	Histogram(const std::vector<T>& data)
-	{
-		for (std::vector<T>::const_iterator iter = data.begin();
-				iter != data.end(); ++iter)
-			insert(*iter);
-	}
 
 	void insert(T value) { (*this)[value]++; }
 
