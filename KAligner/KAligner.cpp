@@ -1,6 +1,5 @@
 #include "Aligner.h"
 #include "FastaReader.h"
-#include "PairedAlgorithms.h"
 #include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -187,14 +186,6 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 template <class SeqPosHashMap>
 static void printProgress(const Aligner<SeqPosHashMap>& align,
 		unsigned count)
@@ -210,39 +201,28 @@ template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
 		Aligner<SeqPosHashMap>& aligner)
 {
-	int count = 0;
-	ifstream fileHandle(refFastaFile.c_str());
-	assert_open(fileHandle, refFastaFile);
-
-	while(!fileHandle.eof() && fileHandle.peek() != EOF)
-	{
-		ContigID contigID;
-		Sequence seq;
-		int length;
-		double coverage;
-
-		PairedAlgorithms::parseContigFromFile(fileHandle, contigID, seq, length, coverage);
-
+	unsigned count = 0;
+	FastaReader in(refFastaFile.c_str());
+	for (FastaRecord rec; in >> rec;) {
 		if (count == 0) {
 			// Detect colour-space contigs.
-			opt::colourSpace = isdigit(seq[0]);
+			opt::colourSpace = isdigit(rec.seq[0]);
 		} else {
 			if (opt::colourSpace)
-				assert(isdigit(seq[0]));
+				assert(isdigit(rec.seq[0]));
 			else
-				assert(isalpha(seq[0]));
+				assert(isalpha(rec.seq[0]));
 		}
 
-		aligner.addReferenceSequence(contigID, seq);
+		aligner.addReferenceSequence(rec.id, rec.seq);
 
 		count++;
 		if (opt::verbose > 0 && count % 100000 == 0)
 			printProgress(aligner, count);
 	}
+	assert(in.eof());
 	if (opt::verbose > 0)
-			printProgress(aligner, count);
-
-	fileHandle.close();
+		printProgress(aligner, count);
 }
 
 void *alignReadsToDB(void* readsFile)
