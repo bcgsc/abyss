@@ -55,23 +55,20 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
 }
 
 // Construct a pdf from a histogram
-PDF::PDF(const Histogram& h)
+PDF::PDF(const Histogram& h) :
+	m_maxIdx(h.maximum()),
+	m_dist(m_maxIdx + 1),
+	m_mean(h.mean()),
+	m_stdDev(h.sd())
 {
-	m_maxIdx = h.maximum();
 	unsigned count = h.size();
-
 	m_minp = (double)1 / count;
 
-	// Create the initial pdf with all values being 0
-	m_dist = DoubleVec(m_maxIdx+1, 0.0f);
-	for(size_t i = 0; i <= m_maxIdx; i++)
-	{
+	for (size_t i = 0; i <= m_maxIdx; i++) {
 		unsigned v = h.count(i);
 		m_dist[i] = v > 0 ? (double)v / count : m_minp;
 	}
 
-	m_mean = h.mean();
-	m_stdDev = h.sd();
 	printf("Stats mean: %.2lf sd: %.2lf n: %u min: %u max: %u\n",
 			m_mean, m_stdDev, count, h.minimum(), h.maximum());
 }
