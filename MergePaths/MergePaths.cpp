@@ -4,7 +4,6 @@
 #include "FastaWriter.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
-#include "PairedAlgorithms.h"
 #include "Uncompress.h"
 #include <cerrno>
 #include <cstdio>
@@ -73,6 +72,14 @@ struct PathConsistencyStats {
 
 typedef std::list<MergeNode> MergeNodeList;
 typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
+
+struct Contig {
+	Sequence seq;
+	unsigned coverage;
+	Contig(Sequence seq, unsigned coverage)
+		: seq(seq), coverage(coverage) { }
+};
+typedef vector<Contig> ContigVec;
 
 // Functions
 void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
