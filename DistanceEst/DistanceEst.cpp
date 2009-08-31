@@ -161,7 +161,10 @@ int main(int argc, char** argv)
 
 	// Load the pdf
 	Histogram distanceHist = loadHist(distanceCountFile);
-		
+
+	// Remove the negative samples.
+	distanceHist.eraseNegative();
+
 	// Trim off the outliers of the histogram (the bottom 0.01%)
 	// These cases result from misalignments
 	double trimAmount = 0.0001f;

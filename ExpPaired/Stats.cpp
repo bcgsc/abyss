@@ -58,11 +58,8 @@ double computeLikelihood(int param, const std::vector<int>& testDist,
 PDF::PDF(const Histogram& h)
 {
 	m_maxIdx = h.maximum();
-	unsigned count = 0;
+	unsigned count = h.size();
 
-	for(Histogram::Map::const_iterator histIter = h.begin();
-			histIter != h.end(); histIter++)
-		count += histIter->second;
 	m_minp = (double)1 / count;
 
 	// Create the initial pdf with all values being 0
@@ -73,23 +70,8 @@ PDF::PDF(const Histogram& h)
 		m_dist[i] = v > 0 ? (double)v / count : m_minp;
 	}
 
-	// Calculate the mean
-	double sum = 0;
-	double sumsqr = 0;
-	for(Histogram::Map::const_iterator histIter = h.begin();
-			histIter != h.end(); histIter++) {
-		sum += ((double)histIter->second * (double)histIter->first);
-		sumsqr += histIter->second * (pow(histIter->first, 2.0f));
-	}
-
-	m_mean = sum / count;
-	assert(m_mean > 0);
-	double msqr = pow(sum,2.0) / count;
-	double ss1 = sumsqr - msqr;
-	double t1 = ss1 / count;
-
-	m_stdDev = sqrt(t1);
-
+	m_mean = h.mean();
+	m_stdDev = h.sd();
 	printf("Stats mean: %.2lf sd: %.2lf n: %u min: %u max: %u\n",
 			m_mean, m_stdDev, count, h.minimum(), h.maximum());
 }
