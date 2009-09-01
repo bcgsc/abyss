@@ -129,14 +129,16 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (opt::k <= 0 && argc - optind > 1) {
-		cerr << PROGRAM ": missing -k,--kmer option\n";
-		die = true;
-	}
+	if (argc - optind > 1) {
+		if (opt::k <= 0) {
+			cerr << PROGRAM ": missing -k,--kmer option\n";
+			die = true;
+		}
 
-	if (opt::out.empty()) {
-		cerr << PROGRAM ": " << "missing -o,--out option\n";
-		die = true;
+		if (opt::out.empty()) {
+			cerr << PROGRAM ": " << "missing -o,--out option\n";
+			die = true;
+		}
 	}
 
 	if (argc - optind < 1) {
@@ -201,7 +203,8 @@ int main(int argc, char** argv)
 		uniquePaths.insert(**it);
 
 	if (contigVec.empty()) {
-		ofstream out(opt::out.c_str());
+		ofstream fout(opt::out.c_str());
+		ostream& out = opt::out.empty() ? cout : fout;
 		assert(out.good());
 		for (set<ContigPath>::const_iterator it = uniquePaths.begin();
 				it != uniquePaths.end(); ++it)
