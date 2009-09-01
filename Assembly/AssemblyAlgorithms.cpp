@@ -105,15 +105,17 @@ void loadSequences(ISequenceCollection* seqCollection,
 				assert(isalpha(seq.at(0)));
 		}
 
-		bool good = false;
-		for (int i = 0; i < len - opt::kmerSize  + 1; i++) {
-			Sequence kmer = seq.substr(i, opt::kmerSize);
-			if (kmer.find_first_not_of("ACGT0123") == string::npos) {
+		bool good = seq.find_first_not_of("ACGT0123") == string::npos;
+		bool discarded = true;
+		for (int i = 0; i < len - opt::kmerSize + 1; i++) {
+			Sequence kmer(seq, i, opt::kmerSize);
+			if (good || kmer.find_first_not_of("ACGT0123")
+					== string::npos) {
 				seqCollection->add(PackedSeq(kmer));
-				good = true;
+				discarded = false;
 			}
 		}
-		if (!good)
+		if (discarded)
 			count_nonACGT++;
 
 		if (++count % 100000 == 0) {
