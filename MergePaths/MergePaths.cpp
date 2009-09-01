@@ -28,8 +28,9 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... CONTIG PATH\n"
-"Merge paths and contigs.\n"
+"Usage: " PROGRAM " [OPTION]... [CONTIG] PATH\n"
+"Merge paths and contigs. If CONTIG is specified, the output is\n"
+"FASTA and merged paths otherwise.\n"
 "  CONTIG  contigs in FASTA format\n"
 "  PATH    paths through these contigs\n"
 "\n"
@@ -106,6 +107,8 @@ static set<size_t> getContigIDs(const set<ContigPath>& paths)
 	return seen;
 }
 
+static string toString(const ContigPath& path, char sep = ',');
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -126,7 +129,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (opt::k <= 0) {
+	if (opt::k <= 0 && argc - optind > 1) {
 		cerr << PROGRAM ": missing -k,--kmer option\n";
 		die = true;
 	}
@@ -136,7 +139,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
+	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	} else if (argc - optind > 2) {
@@ -152,20 +155,23 @@ int main(int argc, char** argv)
 
 	gDebugPrint = opt::verbose > 1;
 
-	const char* contigFile(argv[optind++]);
+	const char* contigFile = argc - optind == 1 ? NULL
+		: argv[optind++];
 	string pathFile(argv[optind++]);
 
 	ContigVec contigVec;
-	FastaReader in(contigFile, FastaReader::KEEP_N);
-	for (FastaRecord rec; in >> rec;) {
-		istringstream ss(rec.comment);
-		unsigned length, coverage;
-		ss >> length >> coverage;
-		contigVec.push_back(Contig(rec.seq, coverage));
+	if (contigFile != NULL) {
+		FastaReader in(contigFile, FastaReader::KEEP_N);
+		for (FastaRecord rec; in >> rec;) {
+			istringstream ss(rec.comment);
+			unsigned length, coverage;
+			ss >> length >> coverage;
+			contigVec.push_back(Contig(rec.seq, coverage));
+		}
+		assert(in.eof());
+		assert(!contigVec.empty());
+		opt::colourSpace = isdigit(contigVec[0].seq[0]);
 	}
-	assert(in.eof());
-	assert(!contigVec.empty());
-	opt::colourSpace = isdigit(contigVec[0].seq[0]);
 
 	// Read the paths file
 	ContigPathMap contigPathMap;
@@ -186,8 +192,6 @@ int main(int argc, char** argv)
 			it != contigPathMap.end(); ++it)
 		uniquePtr.insert(it->second);
 
-	FastaWriter writer(opt::out.c_str());
-
 	// Sort the set of unique paths by the path itself rather than by
 	// pointer. This ensures that the order of the contig IDs does not
 	// depend on arbitrary pointer values.
@@ -196,6 +200,17 @@ int main(int argc, char** argv)
 			it != uniquePtr.end(); it++)
 		uniquePaths.insert(**it);
 
+	if (contigVec.empty()) {
+		ofstream out(opt::out.c_str());
+		assert(out.good());
+		for (set<ContigPath>::const_iterator it = uniquePaths.begin();
+				it != uniquePaths.end(); ++it)
+			out << toString(*it, ' ') << '\n';
+		assert(out.good());
+		return 0;
+	}
+
+	FastaWriter writer(opt::out.c_str());
 	set<size_t> seen = getContigIDs(uniquePaths);
 	for (size_t i = 0; i < contigVec.size(); i++) {
 		if (seen.count(i) == 0)
@@ -534,10 +549,10 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
 	
 	return true;
 	*/
-	
 }
 
-static string toString(const ContigPath& path)
+/** Return a string representation of the specified path. */
+static string toString(const ContigPath& path, char sep)
 {
 	size_t numNodes = path.getNumNodes();
 	assert(numNodes > 0);
@@ -546,7 +561,7 @@ static string toString(const ContigPath& path)
 	s << root.id << (root.isRC ? '-' : '+');
 	for (size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = path.getNode(i);
-		s << ',' << mn.id << (mn.isRC ? '-' : '+');
+		s << sep << mn.id << (mn.isRC ? '-' : '+');
 	}
 	return s.str();
 }
