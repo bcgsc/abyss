@@ -145,9 +145,8 @@ static unsigned findOverlap(const ContigNode& t_id,
 	vector<unsigned> overlaps;
 	overlaps.reserve(len);
 	for (unsigned overlap = len; overlap >= 1; overlap--) {
-		string a = t.substr(t.length()-overlap, overlap);
-		string b = h.substr(0, overlap);
-		if (a == b)
+		if (t.substr(t.length()-overlap, overlap)
+				== h.substr(0, overlap))
 			overlaps.push_back(overlap);
 	}
 
@@ -200,9 +199,9 @@ static string overlapContigs(const ContigNode& t_id,
 	Sequence t = t_id.sequence();
 	Sequence h = h_id.sequence();
 	unsigned gap = opt::k - 1 - overlap;
-	string a = t.substr(t.length() - opt::k+1, gap);
-	string o = h.substr(0, overlap);
-	string b = h.substr(overlap, gap);
+	string a(t, t.length() - opt::k+1, gap);
+	string o(h, 0, overlap);
+	string b(h, overlap, gap);
 	if (mask)
 		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
 	return newContig(t_id, h_id, -overlap, a + o + b);

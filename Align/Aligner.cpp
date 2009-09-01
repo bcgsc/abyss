@@ -21,7 +21,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 	int size = seq.length();
 	for(int i = 0; i < (size - m_hashSize + 1); ++i)
 	{
-		Sequence subseq = seq.substr(i, m_hashSize);
+		Sequence subseq(seq, i, m_hashSize);
 		if (subseq.find("N") != string::npos)
 			continue;
 

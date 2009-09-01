@@ -79,7 +79,7 @@ next_record:
 			// character is the dibase read of the primer and the first
 			// base of the sample, which is not part of the assembly.
 			anchor = colourToNucleotideSpace(s.at(0), s.at(1));
-			s = s.substr(2);
+			s.erase(0, 2);
 		}
 
 		if (recordType == '@') {

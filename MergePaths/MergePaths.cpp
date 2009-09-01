@@ -626,12 +626,8 @@ void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirect
 		printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
 		assert(leftEnd == rightBegin);
 	}
-	
-	// TODO: make this in-place?
-	// generate the merged sequence
-	Sequence merged = *leftSeq;
-	merged.append(rightSeq->substr(overlap));
-	rootContig = merged;
+
+	rootContig = *leftSeq + rightSeq->substr(overlap);
 }
 
 void addPathNodesToList(MergeNodeList& list, ContigPath& path)
