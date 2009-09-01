@@ -73,18 +73,18 @@ int bubbles = INT_MAX;
 int chastityFilter = 1;
 
 /** output contigs path */
-std::string contigsPath = "contigs.fa";
+string contigsPath = "contigs.fa";
 
 /** temporary output contigs path
  * Each node stores its contigs in its own file temporarily.
  */
-std::string contigsTempPath;
+string contigsTempPath;
 
 /** graph output */
-std::string graphPath;
+string graphPath;
 
 /** output SNP path */
-std::string snpPath;
+string snpPath;
 
 /** output SNP file */
 FILE* snpFile;
@@ -93,7 +93,7 @@ FILE* snpFile;
 int verbose = 0;
 
 /** input FASTA files */
-vector<std::string> inFiles;
+vector<string> inFiles;
 
 /** Colour space sequences */
 bool colourSpace;

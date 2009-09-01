@@ -18,7 +18,7 @@ static void concatenateFiles(string dest,
 		string prefix, string suffix)
 {
 	printf("Concatenating to %s\n", dest.c_str());
-	std::ostringstream s;
+	ostringstream s;
 	s << "cat";
 	for (int i = 0; i < opt::numProc; i++)
 		s << ' ' << prefix << i << suffix;

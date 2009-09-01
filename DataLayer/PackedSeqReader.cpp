@@ -1,10 +1,11 @@
 #include "PackedSeqReader.h"
 #include <cassert>
 
+using namespace std;
+
 PackedSeqReader::PackedSeqReader(const char* filename)
 {	
-	m_fileHandle.open(filename, std::ios::binary);
-	
+	m_fileHandle.open(filename, ios::binary);
 	m_elementSize = PackedSeq::serialSize();
 	m_readSize = m_numToRead * m_elementSize;
 	m_pBuffer = new char[m_readSize];

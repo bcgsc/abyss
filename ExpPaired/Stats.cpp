@@ -4,12 +4,11 @@
 #include <cmath>
 #include <iostream>
 
-//
+using namespace std;
+
 // Perform a maximum likelihood estimate over the pdf and input distribution
-//
 int maxLikelihoodEst(int min, int max,
-		const std::vector<int>& pairDistance, const PDF& pdf,
-		unsigned& n)
+		const vector<int>& pairDistance, const PDF& pdf, unsigned& n)
 {
 	double maxL = -999999;
 	double nextBestL = maxL;
@@ -38,12 +37,12 @@ int maxLikelihoodEst(int min, int max,
 //
 // Compute the log likelihood function over the test distribution
 //
-double computeLikelihood(int param, const std::vector<int>& testDist,
+double computeLikelihood(int param, const vector<int>& testDist,
 		const PDF& pdf, unsigned &n)
 {
 	n = 0;
 	double sum = 0.0f;
-	for (std::vector<int>::const_iterator iter = testDist.begin();
+	for (vector<int>::const_iterator iter = testDist.begin();
 			iter != testDist.end(); ++iter) {
 		int val = *iter + param;
 		double p = pdf.getP(val);

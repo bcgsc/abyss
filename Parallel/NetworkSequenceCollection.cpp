@@ -805,7 +805,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 int NetworkSequenceCollection::processBranchesTrim()
 {
 	int numBranchesRemoved = 0;
-	std::vector<BranchGroupMap::iterator> removeBranches;
+	vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
 	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
 	{
@@ -826,14 +826,12 @@ int NetworkSequenceCollection::processBranchesTrim()
 			removeBranches.push_back(iter);
 		}	
 	}
-	
+
 	// Remove all the finished branches
-	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
-	{
-		//printf("erased branch %llu\n", (*rmIter)->first);
+	for (vector<BranchGroupMap::iterator>::iterator rmIter
+				= removeBranches.begin();
+			rmIter != removeBranches.end(); rmIter++)
 		m_activeBranchGroups.erase(*rmIter);	
-	}	
-	
 	return numBranchesRemoved;
 }
 
@@ -879,10 +877,10 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				
 				// Create the branch group
 				BranchGroup branchGroup(branchGroupID, dir, maxNumBranches, *iter);
-				
+
 				// insert the new group into the active group map
-				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(std::pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
-				
+				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
+
 				// initiate the new group
 				AssemblyAlgorithms::initiateBranchGroup(groupIter->second, *iter, extRec.dir[dir], multiplicity, expectedBubbleSize);
 				
@@ -1200,7 +1198,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter, int currContigID)
 {
 	int numAssembled = 0;
-	std::vector<BranchGroupMap::iterator> removeBranches;
+	vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
 	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
 	{
@@ -1222,14 +1220,12 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			removeBranches.push_back(iter);
 		}	
 	}
-	
+
 	// Remove all the finished branches
-	for(std::vector<BranchGroupMap::iterator>::iterator rmIter = removeBranches.begin(); rmIter != removeBranches.end(); rmIter++)
-	{
-		//printf("erased branch %llu\n", (*rmIter)->first);
+	for (vector<BranchGroupMap::iterator>::iterator rmIter
+				= removeBranches.begin();
+			rmIter != removeBranches.end(); rmIter++)
 		m_activeBranchGroups.erase(*rmIter);	
-	}	
-	
 	return numAssembled;
 }
 

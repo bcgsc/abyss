@@ -39,7 +39,7 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 
 /** Load packed k-mer into the collection. */
 static void loadPackedSequences(ISequenceCollection* seqCollection,
-		std::string inFile)
+		string inFile)
 {
 	PackedSeqReader reader(inFile.c_str());
 
@@ -67,20 +67,17 @@ static void loadPackedSequences(ISequenceCollection* seqCollection,
 }
 
 /** Load sequence data into the collection. */
-void loadSequences(ISequenceCollection* seqCollection,
-		std::string inFile)
+void loadSequences(ISequenceCollection* seqCollection, string inFile)
 {
 	Timer timer("LoadSequences " + inFile);
 
 	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
 
 	// Determine the input file type
-	if(inFile.find(".psq") != std::string::npos)
-	{
+	if (inFile.find(".psq") != string::npos) {
 		loadPackedSequences(seqCollection, inFile);
 		return;
-	}
-	else if(inFile.find(".kmer") != std::string::npos) {
+	} else if(inFile.find(".kmer") != string::npos) {
 		seqCollection->load(inFile.c_str());
 		return;
 	}

@@ -1,8 +1,10 @@
 #include "Timer.h"
 #include "Log.h"
 
+using namespace std;
+
 // Constructor starts the timer
-Timer::Timer(std::string funcString)
+Timer::Timer(string funcString)
 	: m_funcStr(funcString), m_start(clock())
 {
 }

@@ -1,9 +1,10 @@
 #include "PackedSeqWriter.h"
 
+using namespace std;
+
 PackedSeqWriter::PackedSeqWriter(const char* filename)
 {	
-	m_fileHandle.open(filename, std::ios::out | std::ios::binary);
-	//printf("opening %s\n", filename);
+	m_fileHandle.open(filename, ios::out | ios::binary);
 	assert(m_fileHandle.is_open());		
 }
 

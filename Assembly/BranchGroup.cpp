@@ -1,5 +1,6 @@
 #include "BranchGroup.h"
 
+using namespace std;
 
 //
 // Constructors
@@ -60,9 +61,9 @@ BranchGroup& BranchGroup::operator=(const BranchGroup& other)
 // Add a branch to the group
 BranchRecord& BranchGroup::addBranch(uint64_t id, BranchRecord& branch)
 {
-	BranchGroupData::iterator newBranch = m_branches.insert(std::pair<uint64_t, BranchRecord>(id, branch)).first;
+	BranchGroupData::iterator newBranch = m_branches.insert(
+			pair<uint64_t, BranchRecord>(id, branch)).first;
 	return newBranch->second;
-	
 }
 
 //
