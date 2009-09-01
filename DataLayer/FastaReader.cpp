@@ -56,7 +56,7 @@ next_record:
 	while (m_fileHandle.peek() == '#')
 		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	int recordType = m_fileHandle.peek();
+	char recordType = m_fileHandle.peek();
 	Sequence s;
 
 	if (recordType == EOF) {
