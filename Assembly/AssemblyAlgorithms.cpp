@@ -85,8 +85,8 @@ void loadSequences(ISequenceCollection* seqCollection,
 		return;
 	}
 
-	unsigned count = 0, count_small = 0;
-	FastaReader reader(inFile.c_str());
+	unsigned count = 0, count_small = 0, count_nonACGT = 0;
+	FastaReader reader(inFile.c_str(), FastaReader::KEEP_N);
 	for (Sequence seq; reader >> seq;) {
 		int len = seq.length();
 		if (opt::kmerSize > len) {
@@ -105,9 +105,16 @@ void loadSequences(ISequenceCollection* seqCollection,
 				assert(isalpha(seq.at(0)));
 		}
 
-		for (int i = 0; i < len - opt::kmerSize  + 1; i++)
-			seqCollection->add(
-					PackedSeq(seq.substr(i, opt::kmerSize)));
+		bool good = false;
+		for (int i = 0; i < len - opt::kmerSize  + 1; i++) {
+			Sequence kmer = seq.substr(i, opt::kmerSize);
+			if (kmer.find_first_not_of("ACGT0123") == string::npos) {
+				seqCollection->add(PackedSeq(kmer));
+				good = true;
+			}
+		}
+		if (!good)
+			count_nonACGT++;
 
 		if (++count % 100000 == 0) {
 			PrintDebug(1, "Read %u reads. ", count);
@@ -127,9 +134,9 @@ void loadSequences(ISequenceCollection* seqCollection,
 	if (reader.unchaste() > 0)
 		cerr << "warning: discarded " << reader.unchaste()
 			<< " unchaste reads" << endl;
-	if (reader.nonACGT() > 0)
+	if (count_nonACGT > 0)
 		fprintf(stderr, "warning: discarded %u reads "
-				"containing non-ACGT characters\n", reader.nonACGT());
+				"containing non-ACGT characters\n", count_nonACGT);
 
 	if (count == 0)
 		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
