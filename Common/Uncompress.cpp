@@ -29,6 +29,7 @@ static bool endsWith(const string& s, const string& suffix)
 static const char* zcatExec(const string& path)
 {
 	return
+		endsWith(path, ".Z") ? "zcat" :
 		endsWith(path, ".gz") ? "zcat" :
 		endsWith(path, ".bz2") ? "bzcat" :
 		endsWith(path, ".xz") ? "xzdec" :
