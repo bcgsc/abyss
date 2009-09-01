@@ -225,8 +225,8 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
 		string gap = est.distance <= 0 ? string("-")
 			: string(est.distance, 'N');
-		string ts = t.sequence();
-		string hs = h.sequence();
+		const string& ts = t.sequence();
+		const string& hs = h.sequence();
 		unsigned overlap = opt::k - 1;
 		return newContig(t, h, est.distance,
 				ts.substr(ts.length() - overlap) + gap
