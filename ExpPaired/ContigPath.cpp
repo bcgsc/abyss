@@ -71,11 +71,11 @@ ostream& operator<<(ostream& out, const ContigPath& object)
 	return out << *last;
 }
 
-//
-// Read the path from the stream
-//
-std::istream& operator>>(std::istream& in, ContigPath& object)
+/** Read a path. */
+istream& operator>>(istream& in, ContigPath& object)
 {
-	std::copy(std::istream_iterator<MergeNode>(in), std::istream_iterator<MergeNode>(), back_inserter(object.m_path));
+	copy(istream_iterator<MergeNode>(in),
+			istream_iterator<MergeNode>(),
+			back_inserter(object.m_path));
 	return in;
 }
