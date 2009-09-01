@@ -166,7 +166,7 @@ int main(int argc, char** argv)
 		FastaReader in(contigFile, FastaReader::KEEP_N);
 		for (FastaRecord rec; in >> rec;) {
 			istringstream ss(rec.comment);
-			unsigned length, coverage;
+			unsigned length, coverage = 0;
 			ss >> length >> coverage;
 			contigVec.push_back(Contig(rec.seq, coverage));
 		}

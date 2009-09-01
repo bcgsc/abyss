@@ -97,6 +97,7 @@ static void readContigs(const string& contigsPath)
 
 		istringstream ss(rec.comment);
 		unsigned length;
+		contig.coverage = 0;
 		ss >> length >> contig.coverage >> ws;
 		getline(ss, contig.comment);
 
