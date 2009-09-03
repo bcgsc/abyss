@@ -59,7 +59,27 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Return the last character of s and remove it. */
+static char chop(string& s)
+{
+	assert(s.length() > 1);
+	unsigned back = s.length() - 1;
+	char c = s[back];
+	s.erase(back);
+	return c;
+}
+
 static unsigned line_num;
+
+static void assert_plus_minus(char c)
+{
+	if (c != '+' && c != '-') {
+		cerr << "error: " << line_num
+			<< ": expected `+' or `-' and saw `" << c << '\''
+			<< endl;
+		exit(EXIT_FAILURE);
+	}
+}
 
 struct ContigNode {
 	string id;
@@ -67,22 +87,11 @@ struct ContigNode {
 
 	friend istream& operator >>(istream& in, ContigNode& o)
 	{
-		unsigned id;
-		char c;
-		in >> id >> c;
-
-		ostringstream ss;
-		ss << id;
-		o.id = ss.str();
-
-		if (c != '+' && c != '-') {
-			cerr << "error: " << line_num
-				<< ": expected `+' or `-' and saw `" << c << '\''
-				<< endl;
-			exit(EXIT_FAILURE);
+		if (in >> o.id) {
+			char c = chop(o.id);
+			assert_plus_minus(c);
+			o.sense = c == '-';
 		}
-		o.sense = c == '-';
-
 		return in;
 	}
 
