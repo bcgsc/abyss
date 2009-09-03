@@ -260,6 +260,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
+		g_dict.lock();
 	}
 
 	vector<Path> paths;
