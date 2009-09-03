@@ -100,7 +100,15 @@ struct ContigNode {
 	}
 };
 
-typedef vector<ContigNode> Path;
+struct Path : vector<ContigNode>
+{
+	friend ostream& operator <<(ostream& out, const Path& o)
+	{
+		copy(o.begin(), o.end()-1,
+				ostream_iterator<ContigNode>(out, ","));
+		return out << o.back();
+	}
+};
 
 static const string& contigNodeToId(const ContigNode& node)
 {
@@ -284,10 +292,8 @@ int main(int argc, char** argv)
 		Contig contig = mergePath(path, contigs);
 
 		ostringstream s;
-		s << contig.seq.length() << ' ' << contig.coverage << ' ';
-		copy(path.begin(), path.end()-1,
-				ostream_iterator<ContigNode>(s, ","));
-		s << path.back();
+		s << contig.seq.length() << ' ' << contig.coverage << ' '
+			<< path;
 
 		out << FastaRecord(toString(id++), s.str(), contig.seq);
 		assert(out.good());
