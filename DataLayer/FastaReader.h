@@ -4,6 +4,7 @@
 #include "Sequence.h"
 #include <fstream>
 #include <istream>
+#include <ostream>
 
 class FastaReader {
 	public:
@@ -57,10 +58,24 @@ struct FastaRecord
 	/** The sequence */
 	Sequence seq;
 
+	FastaRecord() { }
+	FastaRecord(const std::string& id, const std::string& comment,
+			const Sequence& seq)
+		: id(id), comment(comment), anchor(0), seq(seq) { }
+
 	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
 	{
 		o.seq = in.read(o.id, o.comment, o.anchor);
 		return in;
+	}
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const FastaRecord& o)
+	{
+		out << '>' << o.id;
+		if (!o.comment.empty())
+			out << ' ' << o.comment;
+		return out << '\n' << o.seq << '\n';
 	}
 };
 

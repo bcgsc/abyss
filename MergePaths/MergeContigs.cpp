@@ -1,7 +1,6 @@
 #include "config.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
-#include "FastaWriter.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cerrno>
@@ -135,9 +134,16 @@ struct Contig {
     unsigned coverage;
     Contig(string id, Sequence seq, unsigned coverage)
         : id(id), seq(seq), coverage(coverage) { }
+
+	friend ostream& operator <<(ostream& out, const Contig& o)
+	{
+		return out << '>' << o.id << ' '
+			<< o.seq.length() << ' ' << o.coverage << '\n'
+			<< o.seq << '\n';
+	}
 };
 
-static Contig mergePath(const Path& path, const string& id,
+static Contig mergePath(const Path& path,
 		const vector<Contig>& contigs)
 {
 	Sequence seq;
@@ -171,7 +177,14 @@ static Contig mergePath(const Path& path, const string& id,
 		}
 		seq += b;
 	}
-	return Contig(id, seq, coverage);
+	return Contig("", seq, coverage);
+}
+
+template<typename T> static string toString(T x)
+{
+	ostringstream s;
+	s << x;
+	return s.str();
 }
 
 int main(int argc, char** argv)
@@ -255,26 +268,29 @@ int main(int argc, char** argv)
 		assert(in.eof());
 	}
 
-	FastaWriter writer(opt::out.c_str());
+	ofstream out(opt::out.c_str());
+	assert(out.good());
+
 	set<string> seen = getContigIDs(paths);
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
 		if (seen.count(it->id) == 0)
-			writer.WriteSequence(it->seq, it->id, it->coverage);
+			out << *it;
 
 	int id = contigs.size();
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const Path& path = *it;
-		ostringstream ss;
-		ss << id++;
-		Contig contig = mergePath(path, ss.str(), contigs);
-		ss.str("");
+		Contig contig = mergePath(path, contigs);
+
+		ostringstream s;
+		s << contig.seq.length() << ' ' << contig.coverage << ' ';
 		copy(path.begin(), path.end()-1,
-				ostream_iterator<ContigNode>(ss, ","));
-		ss << path.back();
-		writer.WriteSequence(contig.seq, contig.id,
-				contig.coverage, ss.str());
+				ostream_iterator<ContigNode>(s, ","));
+		s << path.back();
+
+		out << FastaRecord(toString(id++), s.str(), contig.seq);
+		assert(out.good());
 	}
 
 	return 0;
