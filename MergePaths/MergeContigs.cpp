@@ -296,7 +296,7 @@ int main(int argc, char** argv)
 		Contig contig = mergePath(path, contigs);
 		contig.id = toString(id++);
 		FastaRecord rec(contig);
-		rec.comment += " " + toString(path);
+		rec.comment += ' ' + toString(path);
 		out << rec;
 		assert(out.good());
 	}
