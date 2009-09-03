@@ -80,14 +80,18 @@ static void assert_plus_minus(char c)
 	}
 }
 
+static Dictionary g_dict;
+
 struct ContigNode {
-	string id;
+	unsigned id;
 	bool sense;
 
 	friend istream& operator >>(istream& in, ContigNode& o)
 	{
-		if (in >> o.id) {
-			char c = chop(o.id);
+		string s;
+		if (in >> s) {
+			char c = chop(s);
+			o.id = g_dict.serial(s);
 			assert_plus_minus(c);
 			o.sense = c == '-';
 		}
@@ -96,7 +100,7 @@ struct ContigNode {
 
 	friend ostream& operator <<(ostream& out, const ContigNode& o)
 	{
-		return out << o.id << (o.sense ? '-' : '+');
+		return out << g_dict.key(o.id) << (o.sense ? '-' : '+');
 	}
 };
 
@@ -117,8 +121,6 @@ static void assert_open(std::ifstream& f, const std::string& p)
 	std::cerr << p << ": " << strerror(errno) << std::endl;
 	exit(EXIT_FAILURE);
 }
-
-static Dictionary g_dict;
 
 struct Contig {
 	string id;
@@ -149,8 +151,7 @@ static Contig mergePath(const Path& path,
 	unsigned coverage = 0;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		unsigned serial = g_dict.serial(it->id);
-		const Contig& contig = contigs[serial];
+		const Contig& contig = contigs[it->id];
 		coverage += contig.coverage;
 
 		Sequence h = it->sense ? reverseComplement(contig.seq)
@@ -274,7 +275,7 @@ int main(int argc, char** argv)
 			it != paths.end(); ++it)
 		for (Path::const_iterator itc = it->begin();
 				itc != it->end(); ++itc)
-			seen[g_dict.serial(itc->id)] = true;
+			seen[itc->id] = true;
 
 	// Output those contigs that were not seen in a path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
