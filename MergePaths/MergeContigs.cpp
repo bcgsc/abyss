@@ -110,22 +110,6 @@ struct Path : vector<ContigNode>
 	}
 };
 
-static const string& contigNodeToId(const ContigNode& node)
-{
-	return node.id;
-}
-
-static set<string> getContigIDs(const vector<Path>& paths)
-{
-	set<string> seen;
-	for (vector<Path>::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		transform(it->begin(), it->end(),
-				inserter(seen, seen.begin()),
-				contigNodeToId);
-	return seen;
-}
-
 static void assert_open(std::ifstream& f, const std::string& p)
 {
 	if (f.is_open())
@@ -284,10 +268,18 @@ int main(int argc, char** argv)
 	ofstream out(opt::out.c_str());
 	assert(out.good());
 
-	set<string> seen = getContigIDs(paths);
+	// Record all the contigs that were seen in a path.
+	vector<bool> seen(contigs.size());
+	for (vector<Path>::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		for (Path::const_iterator itc = it->begin();
+				itc != it->end(); ++itc)
+			seen[g_dict.serial(itc->id)] = true;
+
+	// Output those contigs that were not seen in a path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if (seen.count(it->id) == 0)
+		if (!seen[g_dict.serial(it->id)])
 			out << *it;
 
 	int id = contigs.size();
