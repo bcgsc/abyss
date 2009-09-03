@@ -143,6 +143,13 @@ struct Contig {
     Contig(string id, Sequence seq, unsigned coverage)
         : id(id), seq(seq), coverage(coverage) { }
 
+	operator FastaRecord()
+	{
+		ostringstream s;
+		s << seq.length() << ' ' << coverage;
+		return FastaRecord(id, s.str(), seq);
+	}
+
 	friend ostream& operator <<(ostream& out, const Contig& o)
 	{
 		return out << '>' << o.id << ' '
@@ -290,12 +297,10 @@ int main(int argc, char** argv)
 			it != paths.end(); ++it) {
 		const Path& path = *it;
 		Contig contig = mergePath(path, contigs);
-
-		ostringstream s;
-		s << contig.seq.length() << ' ' << contig.coverage << ' '
-			<< path;
-
-		out << FastaRecord(toString(id++), s.str(), contig.seq);
+		contig.id = toString(id++);
+		FastaRecord rec(contig);
+		rec.comment += " " + toString(path);
+		out << rec;
 		assert(out.good());
 	}
 
