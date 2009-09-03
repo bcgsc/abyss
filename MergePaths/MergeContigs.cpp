@@ -126,7 +126,7 @@ struct Contig {
 	string id;
     Sequence seq;
     unsigned coverage;
-    Contig(string id, Sequence seq, unsigned coverage)
+    Contig(const string& id, const Sequence& seq, unsigned coverage)
         : id(id), seq(seq), coverage(coverage) { }
 
 	operator FastaRecord()
