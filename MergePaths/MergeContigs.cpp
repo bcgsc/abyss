@@ -184,10 +184,7 @@ static Contig mergePath(const Path& path,
 		if (ao != bo) {
 			cerr << "error: the head of `" << contig.id << "' "
 				"does not match the tail of the previous contig\n"
-				<< ao << '\n' << bo << '\n';
-			copy(path.begin(), path.end(),
-					ostream_iterator<ContigNode>(cerr, " "));
-			cerr << endl;
+				<< ao << '\n' << bo << '\n' << path << endl;
 			exit(EXIT_FAILURE);
 		}
 		seq += b;
