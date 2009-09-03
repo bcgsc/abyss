@@ -1,4 +1,4 @@
-bin_PROGRAMS = MergePaths
+bin_PROGRAMS = MergePaths MergeContigs
 
 MergePaths_CPPFLAGS = \
 	-I$(top_srcdir)/Common \
@@ -14,3 +14,13 @@ MergePaths_LDADD = \
 
 MergePaths_SOURCES = \
 	MergePaths.cpp
+
+MergeContigs_CPPFLAGS = \
+	-I$(top_srcdir)/Common \
+	-I$(top_srcdir)/DataLayer
+
+MergeContigs_LDADD = \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a
+
+MergeContigs_SOURCES = MergeContigs.cpp
