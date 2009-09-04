@@ -13,7 +13,7 @@ ifdef NSLOTS
 np?=$(NSLOTS)
 endif
 
-mpirun = $(shell which mpirun)
+mpirun=$(shell which mpirun)
 
 ifdef name
 out?=$(name)-contigs.fa
