@@ -4,7 +4,7 @@
 
 # Integrate with Sun Grid Engine (SGE).
 ifdef JOB_NAME
-lib?=$(JOB_NAME)
+name?=$(JOB_NAME)
 endif
 ifdef SGE_TASK_ID
 k?=$(SGE_TASK_ID)
@@ -15,14 +15,25 @@ endif
 
 mpirun = $(shell which mpirun)
 
-ifdef lib
-ext?=.fa
-in?=$(addsuffix $(ext), $(lib))
-else
-lib?=$(basename $(in))
+ifdef name
+out?=$(name)-contigs.fa
 endif
-out?=$(notdir $(firstword $(lib)))-contigs.fa
+ifdef out
+name?=$(out:-contigs.fa=)
+endif
 
+ifdef lib
+map=$(foreach a,$(2),$(call $(1),$(a)))
+deref=$($1)
+in?=$(call map, deref, $(lib))
+else
+lib?=$(name)
+$(lib)?=$(in)
+endif
+
+ifndef out
+$(error missing argument out)
+endif
 ifndef in
 $(error missing argument in)
 endif
@@ -57,7 +68,7 @@ clean:
 
 # Single-end assembly
 
-%-3.fa: $(in)
+%-3.fa: $(in) $(se)
 ifdef np
 	$(mpirun) -np $(np) ABYSS-P $(ABYSS_OPTIONS) $v -k$k -l$l -c$c \
 		-s bubbles.fa -o $*-3p.fa $^
@@ -72,16 +83,22 @@ endif
 
 # Estimate distances between contigs
 
-%.pair.gz %.hist: %.fa
-	KAligner $v -j$j -k$k $(in) $< \
-		|ParseAligns $v -k$k -h $*.hist \
+%-3.pair.gz %-3.hist: $(name)-3.fa
+	KAligner $v -j$j -k$k $($*) $< \
+		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -nk2,2 \
-		|gzip >$*.pair.gz
+		|gzip >$*-3.pair.gz
 
-%.dist: %.pair.gz %.adj %.hist
-	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ $*.adj $*.hist -
+dist=$(addsuffix -3.dist, $(notdir $(lib)))
+
+$(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
+	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ \
+		$(wordlist 2, 3, $^) -
 
 # Find overlaps between contigs
+
+%.dist: $(dist)
+	abyss-joindist $^ >$@
 
 %-overlap.fa: %.fa %.adj %.dist
 	Overlap $v -k$k -o $@ $^

@@ -1,2 +1,2 @@
-dist_bin_SCRIPTS=abyss-pe abyss2ace abyss2afg
-dist_noinst_SCRIPTS=abyss-joindist abyss-split abyss-cstont
+dist_bin_SCRIPTS=abyss-pe abyss-joindist abyss2ace abyss2afg
+dist_noinst_SCRIPTS=abyss-cstont abyss-split
