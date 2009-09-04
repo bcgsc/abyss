@@ -5,6 +5,7 @@
 #include "PackedSeq.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +13,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
 #include <list>
 #include <set>
 #include <sstream>
@@ -95,10 +97,10 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
 
-static set<size_t> getContigIDs(const set<ContigPath>& paths)
+static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 {
 	set<size_t> seen;
-	for (set<ContigPath>::const_iterator it = paths.begin();
+	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); it++) {
 		size_t nodes = it->getNumNodes();
 		for (size_t i = 0; i < nodes; i++)
@@ -108,6 +110,11 @@ static set<size_t> getContigIDs(const set<ContigPath>& paths)
 }
 
 static string toString(const ContigPath& path, char sep = ',');
+
+template <typename T> static const T& deref(const T* x)
+{
+	return *x;
+}
 
 int main(int argc, char** argv)
 {
@@ -197,16 +204,18 @@ int main(int argc, char** argv)
 	// Sort the set of unique paths by the path itself rather than by
 	// pointer. This ensures that the order of the contig IDs does not
 	// depend on arbitrary pointer values.
-	set<ContigPath> uniquePaths;
-	for (set<ContigPath*>::const_iterator it = uniquePtr.begin();
-			it != uniquePtr.end(); it++)
-		uniquePaths.insert(**it);
+	vector<ContigPath> uniquePaths;
+	uniquePaths.reserve(uniquePtr.size());
+	transform(uniquePtr.begin(), uniquePtr.end(),
+			back_inserter(uniquePaths), deref<ContigPath>);
+	sort(uniquePaths.begin(), uniquePaths.end());
 
 	if (contigVec.empty()) {
 		ofstream fout(opt::out.c_str());
 		ostream& out = opt::out.empty() ? cout : fout;
 		assert(out.good());
-		for (set<ContigPath>::const_iterator it = uniquePaths.begin();
+		for (vector<ContigPath>::const_iterator it
+					= uniquePaths.begin();
 				it != uniquePaths.end(); ++it)
 			out << toString(*it, ' ') << '\n';
 		assert(out.good());
@@ -222,7 +231,7 @@ int main(int argc, char** argv)
 	}
 
 	int id = contigVec.size();
-	for (set<ContigPath>::const_iterator it = uniquePaths.begin();
+	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
 		mergePath(it->getNode(0).id, contigVec, *it, id++,
 				opt::k, &writer);
