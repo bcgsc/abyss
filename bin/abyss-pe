@@ -31,6 +31,13 @@ lib?=$(name)
 $(lib)?=$(in)
 endif
 
+ifdef in
+override in:=$(strip $(in))
+endif
+ifdef se
+override se:=$(strip $(se))
+endif
+
 ifndef out
 $(error missing argument out)
 endif
@@ -84,7 +91,7 @@ endif
 # Estimate distances between contigs
 
 %-3.pair.gz %-3.hist: $(name)-3.fa
-	KAligner $v -j$j -k$k $($*) $< \
+	KAligner $v -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -nk2,2 \
 		|gzip >$*-3.pair.gz
