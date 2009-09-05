@@ -127,7 +127,7 @@ else
 	MergePaths $v -k$k -o $@ $^
 
 %-contigs.fa: %-cs.fa
-	KAligner $v --seq -m -j$j -k$k $(in) $< \
+	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \
 		|Consensus $v -o $@ $<
 
 endif
