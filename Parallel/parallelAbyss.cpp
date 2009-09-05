@@ -14,12 +14,13 @@
 
 using namespace std;
 
-static void concatenateFiles(string dest,
-		string prefix, string suffix)
+static void concatenateFiles(const string& dest,
+		const string& prefix, const string& suffix,
+		const string& command = "cat")
 {
 	printf("Concatenating to %s\n", dest.c_str());
 	ostringstream s;
-	s << "cat";
+	s << command;
 	for (int i = 0; i < opt::numProc; i++)
 		s << ' ' << prefix << i << suffix;
 	s << " >'" << dest << '\'';
@@ -63,7 +64,8 @@ int main(int argc, char** argv)
 		networkSeqs.run();
 
 	if (opt::rank == 0) {
-		concatenateFiles(opt::contigsPath, "contigs-", ".fa");
+		concatenateFiles(opt::contigsPath, "contigs-", ".fa",
+				"awk '/^>/ { $1=\">\" i++ } { print }'");
 		if (opt::snpPath.length() > 0)
 			concatenateFiles(opt::snpPath, "snp-", ".fa");
 		puts("Done.");
