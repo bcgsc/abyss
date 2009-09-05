@@ -96,7 +96,7 @@ endif
 		|sort -nk2,2 \
 		|gzip >$*-3.pair.gz
 
-dist=$(addsuffix -3.dist, $(notdir $(lib)))
+dist=$(addsuffix -3.dist, $(lib))
 
 $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
 	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ \
