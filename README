@@ -50,7 +50,7 @@ parallel jobs, or increased to 96.
 To assemble paired short reads in a file named reads.fa into contigs
 in a file named paired-contigs.fa, run the command:
 
-abyss-pe k=25 l=42 c=2 n=10 in='reads1.fa reads2.fa' lib=ecoli
+abyss-pe k=25 l=42 c=2 n=10 in='reads1.fa reads2.fa' name=ecoli
 
 where k and l are the k-mer length and read length as before.
 c is the minimum average k-mer coverage of a contig and may be
@@ -59,7 +59,7 @@ n is the minimum number of pairs needed to consider joining two
 contigs. The optimal value for n must be found by trial.
 in specifies the input files to read, which may be in FASTA, FASTQ,
 qseq or export format and compressed with gz, bz2 or xz.
-The assembled contigs will be stored in ${lib}-contigs.fa.
+The assembled contigs will be stored in ${name}-contigs.fa.
 
 The suffix of the read identifier for a pair of reads must be one of
 '1' and '2', or 'A' and 'B', or 'F' and 'R', or 'F3' and 'R3', or
@@ -81,6 +81,29 @@ SimpleGraph - finds paths between pairs of contigs
 MergePaths - merges consistent paths
 Consensus - for a colour-space assembly, convert the colour-space
             contigs to nucleotide contigs
+
+* Paired-end assembly of multiple fragment libraries
+
+The distribution of fragment sizes of each library is calculated
+empirically by aligning paired reads to the contigs produced by the
+single-end assembler, and the distribution is stored in a file with
+the extension .hist, such as ecoli-4.hist. The N50 of the single-end
+assembly must be well over the fragment-size to obtain an accurate
+empirical distribution.
+
+Consider the following data set:
+Library lib1 has reads in two files, lib1_1.fa and lib1_2.fa.
+Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
+We also have single-end reads in two files se1.fa and se2.fa.
+
+abyss-pe k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \
+	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
+	se='se1.fa se2.fa'
+
+The empirical distribution of fragment sizes will be store in two files
+named lib1-3.hist and lib2-3.hist. These files may be plotted to check
+that the empirical distribution agrees with the expected distribution.
+The assembled contigs will be stored in ${name}-contigs.fa.
 
 * Parallel assembly
 
@@ -105,15 +128,6 @@ qsub -pe openmpi 64 -t 51-63:2 \
 For more information on using SGE and qsub, please refer to the qsub
 manual page. Open MPI must have been compiled with support for SGE
 using the ./configure --with-sge option.
-
-* Notes
-
-The distribution of fragment sizes is calculated empirically by
-aligning paired reads to the contigs produced by the single-end
-assembler, and the distribution is stored in a file with the extension
-.hist, such as ecoli-4.hist. The N50 of the single-end assembly must
-be well over the fragment-size to obtain an accurate empirical
-distribution.
 
 * See also
 
