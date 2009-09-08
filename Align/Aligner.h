@@ -94,25 +94,25 @@ struct Alignment
 		return read_length - qend;
 	}
 
-	// input a record
-	friend std::istream& operator>> (std::istream& in, Alignment& a)
+	friend std::istream& operator >>(std::istream& in, Alignment& a)
 	{
-		// Read 1 record from the stream
-		in >> a.contig;
-		in >> a.contig_start_pos;
-		in >> a.read_start_pos;
-		in >> a.align_length;
-		in >> a.read_length;
-		in >> a.isRC;
-				
-		return in;
+		return in >> a.contig
+			>> a.contig_start_pos
+			>> a.read_start_pos
+			>> a.align_length
+			>> a.read_length
+			>> a.isRC;
 	}
-	
-	// output a record
-	friend std::ostream& operator<< (std::ostream& o, const Alignment& a)
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const Alignment& a)
 	{
-		o << a.contig << " " << a.contig_start_pos << " " << a.read_start_pos << " " << a.align_length << " " << a.read_length << " " << a.isRC;
-		return o;
+		return out << a.contig << ' '
+			<< a.contig_start_pos << ' '
+			<< a.read_start_pos << ' '
+			<< a.align_length << ' '
+			<< a.read_length << ' '
+			<< a.isRC;
 	}
 };
 
