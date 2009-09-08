@@ -2,6 +2,7 @@
 #define DICTIONARY_H 1
 
 #include "HashMap.h"
+#include <cassert>
 #include <string>
 #include <vector>
 
