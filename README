@@ -91,14 +91,22 @@ the extension .hist, such as ecoli-4.hist. The N50 of the single-end
 assembly must be well over the fragment-size to obtain an accurate
 empirical distribution.
 
-Consider the following data set:
+Here's an example scenario of assembling a data set with two different
+fragment libraries and single-end reads:
+
 Library lib1 has reads in two files, lib1_1.fa and lib1_2.fa.
 Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
-We also have single-end reads in two files se1.fa and se2.fa.
+Single-end reads are stored in two files se1.fa and se2.fa.
 
-abyss-pe k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \
+The command line to assemble this example data set is...
+abyss-pe -j2 k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
 	se='se1.fa se2.fa'
+
+The paired-end assembly of lib1 and lib2 may be run in parallel by
+specifying the -j option of make to abyss-pe, which is implemented as
+a Makefile script. The -j option should be set to the number of
+libraries, but setting it higher will not cause any trouble.
 
 The empirical distribution of fragment sizes will be store in two
 files named lib1-3.hist and lib2-3.hist. These files may be plotted to
