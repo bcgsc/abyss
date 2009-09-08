@@ -1,0 +1,107 @@
+.TH abyss-pe "1" "2009-Aug" "abyss-pe (ABySS) 1.0.14" "User Commands"
+.SH NAME
+abyss-pe - assemble reads into paired-end contigs
+.SH SYNOPSIS
+.B abyss-pe
+[\fIOPTION\fR]...  [\fIPARAMETER\fR=\fIVALUE\fR]...
+.SH DESCRIPTION
+Assemble the reads of the input files into contigs. The reads may be
+in FASTA, FASTQ or qseq format and may be compressed with gz, bz2 or
+xz.
+
+abyss-pe is a Makefile script. Any options of make may also be used
+with abyss-pe.
+
+.SS "Parameters of abyss-pe"
+.TP
+\fBname\fR, \fBJOB_NAME\fR
+The name of this assembly. The resulting contigs will be stored in
+${name}-contigs.fa.
+.TP
+\fBin\fR
+input files. Use this variable when assembling data from a single
+library.
+.TP
+\fBlib\fR
+list of libraries. Use this varible when assembling data from multiple
+fragment libraries. For each library mention in lib, a variable with
+the same name must specify the files containing those reads.
+.TP
+\fBse\fR
+files containing single-end reads
+.TP
+\fBk\fR, \fBSGE_TASK_ID\fR
+k-mer size. k should be no less than half the read length.
+.TP
+\fBl\fR
+read length. The read length is used only to calculate the trim-length
+parameter using the heuristic t=6*(l-k+1). If multiple read lengths
+are being assembled, a reasonable value for l is the longest read
+length.
+.TP
+\fBc\fR
+mean k-mer coverage threshold. This parameter depends on coverage, but
+2 is a conservative default.
+.TP
+\fBn\fR
+minimum number of pairs. This parameter depends on coverage, but 10 is
+a reasonable default.
+.TP
+\fBs\fR
+minimum length of a seed contig (default: 100). The seed length should
+be at least twice the read length.
+.TP
+\fBnp\fR, \fBNSLOTS\fR
+the number of processes of an MPI assembly
+.TP
+\fBmpirun\fR
+the path to mpirun
+.TP
+\fBj\fR
+the number of threads to use for KAligner. Defaults to the value of
+np or 1.
+.TP
+\fBABYSS_OPTIONS\fR
+additional options to the single-end assembler, ABYSS
+.TP
+\fBcs\fR
+convert colour-space contigs to nucleotide contigs following assembly
+.SS "Options of make"
+.TP
+\fB-n\fR
+Print the commands that would be executed, but do not execute them.
+.TP
+\fB-j\fR \fIjobs\fR
+Specifies the number of jobs to run simultaneously. For abyss-pe, this
+parameter should be set to the number of libraries being assembled. 
+.SH "ENVIRONMENT VARIABLES"
+Any parameter that may be specified on the command line may also be
+specified in an environment variable.
+
+PATH should contain the directory where ABYSS was installed.
+.SS "SGE integration"
+The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
+used to specify the parameters name, k and np, respectively.
+.SH EXAMPLES
+.SS "Single library"
+ abyss-pe k=25 l=42 c=2 n=10 name=ecoli in='reads1.fa reads2.fa'
+.SS "Multiple libraries"
+ abyss-pe -j2 k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \\
+.br
+	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \\
+.br
+	se='se1.fa se2.fa'
+.SS MPI
+ abyss-pe np=8 k=25 l=42 c=2 n=10 name=ecoli in='reads1.fa reads2.fa'
+.SS SGE
+ qsub -N ecoli -t25 -pe openmpi 8 \\
+.br
+	abyss-pe l=42 c=2 n=10 in='reads1.fa reads2.fa'
+.SH "SEE ALSO"
+make(1), ABYSS(1)
+.SH AUTHOR
+Written by Shaun Jackman.
+.SH "REPORTING BUGS"
+Report bugs to <abyss-users@bcgsc.ca>.
+.SH COPYRIGHT
+Copyright 2009 Canada's Michael Smith Genome Science Centre
