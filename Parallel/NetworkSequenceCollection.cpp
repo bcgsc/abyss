@@ -378,6 +378,7 @@ void NetworkSequenceCollection::runControl()
 		switch (m_state) {
 			case NAS_LOADING:
 				loadSequences();
+				assert(m_pLocalSpace->count() > 0);
 				EndState();
 
 				m_numReachedCheckpoint++;
