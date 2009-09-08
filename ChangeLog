@@ -1,3 +1,19 @@
+2009-09-08  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.14.
+	* Read files compressed with xzip (.xz) and compress (.Z).
+
+	abyss-pe:
+	* Assemble multiple libraries with different fragment sizes.
+	* New manual page.
+
+	ABYSS:
+	* Don't necessarily discard reads that contain an N. Keep those
+	k-mer that do not contain an N.
+
+	ABYSS-P:
+	* Serially renumber the contigs output by ABYSS-P using awk.
+
 2009-08-26  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.13.
