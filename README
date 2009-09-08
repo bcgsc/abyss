@@ -100,10 +100,16 @@ abyss-pe k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
 	se='se1.fa se2.fa'
 
-The empirical distribution of fragment sizes will be store in two files
-named lib1-3.hist and lib2-3.hist. These files may be plotted to check
-that the empirical distribution agrees with the expected distribution.
-The assembled contigs will be stored in ${name}-contigs.fa.
+The empirical distribution of fragment sizes will be store in two
+files named lib1-3.hist and lib2-3.hist. These files may be plotted to
+check that the empirical distribution agrees with the expected
+distribution.  The assembled contigs will be stored in
+${name}-contigs.fa.
+
+Reads without mates should be placed in a file specified by the `se'
+(single-end) parameter. Reads without mates in the paired-end files
+will slow down the paired-end assembler considerably during the
+ParseAligns stage.
 
 * Parallel assembly
 
