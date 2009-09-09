@@ -82,7 +82,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		return;
 	}
 
-	unsigned count = 0, count_small = 0, count_nonACGT = 0;
+	unsigned count = 0, count_good = 0,
+			 count_small = 0, count_nonACGT = 0;
 	FastaReader reader(inFile.c_str(), FastaReader::KEEP_N);
 	for (Sequence seq; reader >> seq;) {
 		int len = seq.length();
@@ -114,6 +115,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		}
 		if (discarded)
 			count_nonACGT++;
+		else
+			count_good++;
 
 		if (++count % 100000 == 0) {
 			PrintDebug(1, "Read %u reads. ", count);
@@ -137,7 +140,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		fprintf(stderr, "warning: discarded %u reads "
 				"containing non-ACGT characters\n", count_nonACGT);
 
-	if (count == 0)
+	if (count_good == 0)
 		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
 				inFile.c_str());
 }
