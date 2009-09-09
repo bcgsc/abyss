@@ -87,6 +87,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	FastaReader reader(inFile.c_str(), FastaReader::KEEP_N);
 	for (Sequence seq; reader >> seq;) {
 		int len = seq.length();
+		assert(len > 0);
 		if (opt::kmerSize > len) {
 			count_small++;
 			continue;
@@ -95,12 +96,18 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		if (opt::rank <= 0
 				&& count == 0 && seqCollection->count() == 0) {
 			// Detect colour-space reads.
-			seqCollection->setColourSpace(isdigit(seq.at(0)));
-		} else {
+			bool colourSpace
+				= seq.find_first_of("0123") != string::npos;
+			seqCollection->setColourSpace(colourSpace);
+			if (colourSpace)
+				puts("Colour-space assembly");
+		}
+
+		if (isalnum(seq[0])) {
 			if (opt::colourSpace)
-				assert(isdigit(seq.at(0)));
+				assert(isdigit(seq[0]));
 			else
-				assert(isalpha(seq.at(0)));
+				assert(isalpha(seq[0]));
 		}
 
 		bool good = seq.find_first_not_of("ACGT0123") == string::npos;
