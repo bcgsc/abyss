@@ -23,13 +23,13 @@ using namespace std;
 
 #define PROGRAM "MergePaths"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [CONTIG] PATH\n"
 "Merge paths and contigs. If CONTIG is specified, the output is\n"
 "FASTA and merged paths otherwise.\n"
@@ -51,7 +51,7 @@ namespace opt {
 	extern bool colourSpace;
 }
 
-static const char* shortopts = "k:o:v";
+static const char shortopts[] = "k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

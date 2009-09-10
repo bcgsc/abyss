@@ -16,13 +16,13 @@ using namespace std;
 
 #define PROGRAM "SimpleGraph"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... ADJ DIST\n"
 "Find paths through contigs using distance estimates.\n"
 "  ADJ   adjacency of the contigs\n"
@@ -44,7 +44,7 @@ namespace opt {
 	static string out;
 }
 
-static const char* shortopts = "k:o:v";
+static const char shortopts[] = "k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
 

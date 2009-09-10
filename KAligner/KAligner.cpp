@@ -20,13 +20,13 @@ using namespace std;
 
 #define PROGRAM "KAligner"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... QUERY... TARGET\n"
 "Align the sequences of the files QUERY against those of the file TARGET.\n"
 "All perfect matches of at least k bases will be found.\n"
@@ -53,7 +53,7 @@ namespace opt {
 	extern int chastityFilter; // used by FastaReader
 }
 
-static const char* shortopts = "k:mo:j:v";
+static const char shortopts[] = "k:mo:j:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 

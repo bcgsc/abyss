@@ -26,13 +26,13 @@ using namespace std;
 
 #define PROGRAM "Overlap"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIGS ADJ DIST\n"
 "Find overlaps between blunt contigs that have negative distance estimates.\n"
 "Output the small contigs that fill in the gaps.\n"
@@ -59,7 +59,7 @@ namespace opt {
 	static string out;
 }
 
-static const char* shortopts = "k:m:o:v";
+static const char shortopts[] = "k:m:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

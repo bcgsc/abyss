@@ -18,13 +18,13 @@ using namespace std;
 
 #define PROGRAM "MergeContigs"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIG PATH\n"
 "Merge paths of contigs to create larger contigs.\n"
 "  CONTIG  contigs in FASTA format\n"
@@ -45,7 +45,7 @@ namespace opt {
 	extern bool colourSpace;
 }
 
-static const char* shortopts = "k:o:v";
+static const char shortopts[] = "k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

@@ -14,13 +14,13 @@ using namespace std;
 
 #define PROGRAM "Consensus"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Tony Raymond and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "\n"
 "Alignments and read sequences from KAligner are read in from standard\n"
@@ -45,7 +45,7 @@ namespace opt {
 	static int outputCS;
 }
 
-static const char* shortopts = "o:v";
+static const char shortopts[] = "o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

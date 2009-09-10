@@ -20,13 +20,13 @@ using namespace std;
 
 #define PROGRAM "AdjList"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Find all contigs that overlap by exactly k-1 bases. Contigs may be read\n"
 "from FILE(s) or standard input. Output is written to standard output.\n"
@@ -54,7 +54,7 @@ namespace opt {
 	extern bool colourSpace;
 }
 
-static const char* shortopts = "k:v";
+static const char shortopts[] = "k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

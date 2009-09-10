@@ -10,13 +10,13 @@ using namespace std;
 
 namespace pp_opt {
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PACKAGE " (ABySS) " VERSION "\n"
 "Written by Jared Simpson.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: PreProcess [OPTION]... FASTA_FILE\n"
 "PreProcess FASTA_FILE.\n"
 "\n"
@@ -30,7 +30,7 @@ static const char *USAGE_MESSAGE =
 string outFile;
 string fastaFile;
 
-static const char *shortopts = "o:";
+static const char shortopts[] = "o:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

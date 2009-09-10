@@ -19,13 +19,13 @@ using namespace std;
 
 #define PROGRAM "ParseAligns"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Write read pairs that align to the same contig to FRAGMENTS or HISTOGRAM.\n"
 "Write read pairs that align to different contigs to standard output.\n"
@@ -51,7 +51,7 @@ namespace opt {
 	static string histPath;
 }
 
-static const char* shortopts = "d:k:f:h:c:v";
+static const char shortopts[] = "d:k:f:h:c:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

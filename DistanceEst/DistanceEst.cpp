@@ -16,13 +16,13 @@ using namespace std;
 
 #define PROGRAM "DistanceEst"
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... LEN HIST PAIR\n"
 "Estimate distances between contigs using paired-end alignments.\n"
 "  LEN   lengths of the contigs\n"
@@ -47,7 +47,7 @@ namespace opt {
 	static string out;
 }
 
-static const char* shortopts = "k:n:o:s:v";
+static const char shortopts[] = "k:n:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 

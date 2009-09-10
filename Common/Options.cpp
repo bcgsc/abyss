@@ -14,13 +14,13 @@ using namespace std;
 
 namespace opt {
 
-static const char *VERSION_MESSAGE =
+static const char VERSION_MESSAGE[] =
 PACKAGE " (ABySS) " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
-static const char *USAGE_MESSAGE =
+static const char USAGE_MESSAGE[] =
 "Usage: " PACKAGE " [OPTION]... FILE...\n"
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
 "qseq or export format and compressed with gz, bz2 or xz.\n"
@@ -98,7 +98,7 @@ vector<string> inFiles;
 /** Colour space sequences */
 bool colourSpace;
 
-static const char *shortopts = "b:c:e:g:k:l:o:s:t:v";
+static const char shortopts[] = "b:c:e:g:k:l:o:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
