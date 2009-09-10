@@ -323,9 +323,7 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 			handleAlignmentPair(*pairIter, alignments);
 			out.erase(pairIter);
 		} else {
-			pair<ReadAlignMap::iterator, bool> inserted
-				= out.insert(alignments);
-			if (!inserted.second) {
+			if (!out.insert(alignments).second) {
 				cerr << "error: duplicate read ID `"
 					<< readID << "'\n";
 				exit(EXIT_FAILURE);
