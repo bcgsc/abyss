@@ -11,6 +11,7 @@
 #include <functional>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -311,8 +312,9 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 
 		ReadAlignMap::value_type alignments(
 				readID, AlignmentVector());
-		for (Alignment ali; s >> ali;)
-			alignments.second.push_back(ali);
+		copy(istream_iterator<Alignment>(s),
+				istream_iterator<Alignment>(),
+				back_inserter(alignments.second));
 		stats.alignments++;
 
 		string pairID = makePairID(readID);
