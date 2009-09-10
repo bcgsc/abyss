@@ -142,9 +142,7 @@ int main(int argc, char** argv)
 	string refFastaFile(argv[argc - 1]);
 
 	if (opt::verbose > 0)
-		cerr << "k: " << opt::k
-			<< " Target: " << refFastaFile
-			<< endl;
+		cerr << "Target: " << refFastaFile << endl;
 
 	if (opt::multimap) {
 		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k, 1<<26);
