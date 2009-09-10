@@ -78,7 +78,6 @@ static struct {
 static ostream& pairedAlignFile = cout;
 static ofstream fragFile;
 static Histogram histogram;
-static LinearNumKey lastContig;
 
 // TYPEDEFS
 typedef hash_map<string, AlignmentVector> ReadAlignMap;
@@ -312,13 +311,8 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 
 		ReadAlignMap::value_type alignments(
 				readID, AlignmentVector());
-		for (Alignment ali; s >> ali;) {
+		for (Alignment ali; s >> ali;)
 			alignments.second.push_back(ali);
-
-			LinearNumKey readIDKey = convertContigIDToLinearNumKey(ali.contig);
-			if (readIDKey > lastContig)
-				lastContig = readIDKey;
-		}
 		stats.alignments++;
 
 		string pairID = makePairID(readID);
