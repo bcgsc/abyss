@@ -129,14 +129,14 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, boo
 
 }
 
-static void doReadIntegrity(ReadAlignMap::const_iterator iter)
+static void doReadIntegrity(const ReadAlignMap::value_type& a)
 {
-	//for each alignment in the vector iter->second
-	for (AlignmentVector::const_iterator refAlignIter = iter->second.begin();
-			refAlignIter != iter->second.end(); ++refAlignIter) {
+	//for each alignment in the vector a.second
+	for (AlignmentVector::const_iterator refAlignIter = a.second.begin();
+			refAlignIter != a.second.end(); ++refAlignIter) {
 		//for each alignment after the current one
 		for (AlignmentVector::const_iterator alignIter = refAlignIter;
-				alignIter != iter->second.end(); ++alignIter) {
+				alignIter != a.second.end(); ++alignIter) {
 			//make sure both alignments aren't for the same contig
 			if (alignIter->contig != refAlignIter->contig) {
 				Estimate est;
@@ -221,32 +221,34 @@ static const Alignment flipAlignment(const Alignment& a,
 	return needsFlipping(id) ? a.flipQuery() : a;
 }
 
-static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
-		ReadAlignMap::const_iterator pairIter)
+static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
+		const ReadAlignMap::value_type& pair)
 {
-	const string& currID = iter->first;
-	const string& pairID = pairIter->first;
+	const string& currID = curr.first;
+	const string& pairID = pair.first;
 
 	// Both reads must align to a unique location.
 	// The reads are allowed to span more than one contig, but
 	// at least one of the two reads must span no more than
 	// two contigs.
 	const unsigned MAX_SPAN = 2;
-	if (iter->second.size() == 0
-			|| pairIter->second.size() == 0) {
+	if (curr.second.size() == 0 || pair.second.size() == 0) {
 		stats.numMissed++;
-	} else if (!checkUniqueAlignments(opt::k, iter->second)
-			|| !checkUniqueAlignments(opt::k, pairIter->second)) {
+	} else if (!checkUniqueAlignments(opt::k, curr.second)
+			|| !checkUniqueAlignments(opt::k, pair.second)) {
 		stats.numMulti++;
-	} else if (iter->second.size() > MAX_SPAN
-			&& pairIter->second.size() > MAX_SPAN) {
+	} else if (curr.second.size() > MAX_SPAN
+			&& pair.second.size() > MAX_SPAN) {
 		stats.numSplit++;
 	} else {
 		// Iterate over the vectors, outputting the aligments
-		for(AlignmentVector::const_iterator refAlignIter = iter->second.begin(); refAlignIter != iter->second.end(); ++refAlignIter)
-		{
-			for(AlignmentVector::const_iterator pairAlignIter = pairIter->second.begin(); pairAlignIter != pairIter->second.end(); ++pairAlignIter)
-			{
+		for (AlignmentVector::const_iterator refAlignIter
+					= curr.second.begin();
+				refAlignIter != curr.second.end(); ++refAlignIter) {
+			for (AlignmentVector::const_iterator pairAlignIter
+						= pair.second.begin();
+					pairAlignIter != pair.second.end();
+					++pairAlignIter) {
 				const Alignment& a0 = flipAlignment(*refAlignIter,
 						currID);
 				const Alignment& a1 = flipAlignment(*pairAlignIter,
@@ -255,8 +257,8 @@ static void handleAlignmentPair(ReadAlignMap::const_iterator iter,
 				// Are they on the same contig and the ONLY alignments?
 				if (a0.contig == a1.contig) {
 					int size = fragmentSize(a0, a1);
-					if((iter->second.size() == 1 && pairIter->second.size() == 1))
-					{
+					if (curr.second.size() == 1
+							&& pair.second.size() == 1) {
 						if (size > INT_MIN) {
 							histogram.insert(size);
 							if (!opt::fragPath.empty()) {
@@ -304,17 +306,14 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 	ReadAlignMap& out = *pout;
 	string line;
 	for (string line; getline(in, line);) {
-		stringstream s(line);
+		istringstream s(line);
 		string readID;
 		s >> readID;
-		AlignmentVector& alignments = out[readID];
-		if (!alignments.empty()) {
-			cerr << "error: duplicate read ID `"
-				<< readID << "'\n";
-			exit(EXIT_FAILURE);
-		}
+
+		ReadAlignMap::value_type alignments(
+				readID, AlignmentVector());
 		for (Alignment ali; s >> ali;) {
-			alignments.push_back(ali);
+			alignments.second.push_back(ali);
 
 			LinearNumKey readIDKey = convertContigIDToLinearNumKey(ali.contig);
 			if (readIDKey > lastContig)
@@ -323,21 +322,22 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 		stats.alignments++;
 
 		string pairID = makePairID(readID);
-
-		// Find the pair align
-		ReadAlignMap::iterator iter = out.find(readID);
 		ReadAlignMap::iterator pairIter = out.find(pairID);
-
-		if (!opt::distPath.empty() && iter->second.size() >= 2)
-			doReadIntegrity(iter);
-
-		if(pairIter != out.end()) {
-			handleAlignmentPair(pairIter, iter);
-
-			// Erase the pair as its not needed (faster to mark it as invalid?)
+		if (pairIter != out.end()) {
+			handleAlignmentPair(*pairIter, alignments);
 			out.erase(pairIter);
-			out.erase(iter);
+		} else {
+			pair<ReadAlignMap::iterator, bool> inserted
+				= out.insert(alignments);
+			if (!inserted.second) {
+				cerr << "error: duplicate read ID `"
+					<< readID << "'\n";
+				exit(EXIT_FAILURE);
+			}
 		}
+
+		if (!opt::distPath.empty() && alignments.second.size() >= 2)
+			doReadIntegrity(alignments);
 	}
 	assert(in.eof());
 }
