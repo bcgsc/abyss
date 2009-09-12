@@ -547,8 +547,9 @@ unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 	if (contiguity == SC_INVALID || contiguity == SC_CONTIGUOUS)
 		return 0;
 
-	if (seq.getMultiplicity(SENSE) < 1
-			|| seq.getMultiplicity(ANTISENSE) < 1) {
+	if (seq.getMultiplicity() < opt::erode
+			|| seq.getMultiplicity(SENSE) < opt::erodeStrand
+			|| seq.getMultiplicity(ANTISENSE) < opt::erodeStrand) {
 		removeSequenceAndExtensions(c, seq);
 		g_numEroded++;
 		return 1;

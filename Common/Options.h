@@ -9,7 +9,8 @@ namespace opt {
 	extern int rank;
 	extern int numProc;
 	extern int kmerSize;
-	extern int erode;
+	extern unsigned erode;
+	extern unsigned erodeStrand;
 	extern int trimLen;
 	extern float coverage;
 	extern int bubbles;

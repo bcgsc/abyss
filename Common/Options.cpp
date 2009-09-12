@@ -36,9 +36,12 @@ static const char USAGE_MESSAGE[] =
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
 "                                 less than this threshold [default=0]\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
-"      --erode                    erode bases at the ends of blunt contigs\n"
-"                                 that are represented in only one strand\n"
-"                                 enabled by default\n"
+"  -e, --erode=COVERAGE           erode bases at the ends of blunt contigs\n"
+"                                 that have less than the specified coverage\n"
+"                                 default=2\n"
+"  -E, --erode-strand=COVERAGE    erode bases at the ends of blunt contigs\n"
+"                                 that have less than the specified coverage\n"
+"                                 on either strand. default=1\n"
 "  -e0, --no-erode                do not erode\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record SNPs in FILE\n"
@@ -57,8 +60,11 @@ int numProc = 1;
 /** k-mer length */
 int kmerSize = -1;
 
-/** enable erosion */
-int erode = 1;
+/** erosion coverage */
+unsigned erode = 2;
+
+/** erosion strand coverage */
+unsigned erodeStrand = 1;
 
 /** trim length */
 int trimLen = -1;
@@ -98,7 +104,7 @@ vector<string> inFiles;
 /** Colour space sequences */
 bool colourSpace;
 
-static const char shortopts[] = "b:c:e:g:k:l:o:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:l:o:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -111,8 +117,9 @@ static const struct option longopts[] = {
 	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "bubbles",     required_argument, NULL, 'b' },
-	{ "erode",       no_argument,       &erode, 1 },
-	{ "no-erode",    no_argument,       &erode, 0 },
+	{ "erode",       required_argument, NULL, 'e' },
+	{ "erode-strand", required_argument, NULL, 'E' },
+	{ "no-erode",    no_argument,       (int*)&erode, 0 },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -161,7 +168,10 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'e':
 				arg >> erode;
-				break;	
+				break;
+			case 'E':
+				arg >> erodeStrand;
+				break;
 			case 't':
 				arg >> trimLen;
 				break;
