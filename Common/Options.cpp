@@ -44,7 +44,7 @@ static const char USAGE_MESSAGE[] =
 "                                 on either strand. default=1\n"
 "  -e0, --no-erode                do not erode\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
-"  -s, --snp=FILE                 record SNPs in FILE\n"
+"  -s, --snp=FILE                 record popped bubbles in FILE\n"
 "  -v, --verbose                  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
@@ -89,10 +89,10 @@ string contigsTempPath;
 /** graph output */
 string graphPath;
 
-/** output SNP path */
+/** output bubble path */
 string snpPath;
 
-/** output SNP file */
+/** output bubble file */
 FILE* snpFile;
 
 /** verbose output */
