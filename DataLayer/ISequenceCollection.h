@@ -25,6 +25,9 @@ typedef SequenceCollectionHashIter SequenceCollectionIterator;
 class ISequenceCollection
 {
 	public:
+		typedef SequenceDataHash::iterator iterator;
+		typedef SequenceDataHash::const_iterator const_iterator;
+
 		virtual ~ISequenceCollection() {};
 				
 		// add a sequence to the collection
@@ -86,6 +89,9 @@ class ISequenceCollection
 
 		virtual SequenceCollectionIterator getStartIter() const = 0;
 		virtual SequenceCollectionIterator getEndIter() const = 0;
+
+		iterator begin() { return getStartIter(); }
+		iterator end() { return getEndIter(); }
 
 		// Observer pattern
 		typedef void (*SeqObserver)(ISequenceCollection* c,
