@@ -401,11 +401,14 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 #include <cstdio>
 
 /** Write this collection to disk. */
-void SequenceCollectionHash::store() const
+void SequenceCollectionHash::store(const char* path) const
 {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-	char path[100];
-	snprintf(path, sizeof path, "checkpoint-%03u.kmer", opt::rank);
+	char buf[100];
+	if (path == NULL) {
+		snprintf(buf, sizeof buf, "checkpoint-%03u.kmer", opt::rank);
+		path = buf;
+	}
 	FILE* f = fopen(path, "w");
 	if (f == NULL) {
 		perror(path);
