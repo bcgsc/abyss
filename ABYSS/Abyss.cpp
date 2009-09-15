@@ -74,15 +74,15 @@ int main(int argc, char* const* argv)
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
-generate_adjacency:
-	puts("Generating adjacency");
-	AssemblyAlgorithms::generateAdjacency(pSC);
-
 	unsigned minCov = AssemblyAlgorithms::minimumCoverage(*pSC);
 	if ((int)opt::erode < 0)
 		opt::erode = minCov;
 	if (opt::coverage < 0)
 		opt::coverage = minCov;
+
+generate_adjacency:
+	puts("Generating adjacency");
+	AssemblyAlgorithms::generateAdjacency(pSC);
 
 	if (opt::erode > 0) {
 		puts("Eroding tips");
