@@ -55,6 +55,8 @@ ifndef n
 $(error missing argument n)
 endif
 
+abyssopt += -k$k -l$l
+
 # Optional parameters.
 ifdef np
 j?=$(np)
@@ -76,6 +78,7 @@ endif
 ifdef b
 abyssopt += -b$b
 endif
+abyssopt += $v
 s?=100
 
 all: $(out)
@@ -91,11 +94,10 @@ clean:
 
 %-3.fa: $(in) $(se)
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) $v \
-		-k$k -l$l -s bubbles.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) \
+		-s bubbles.fa -o $@ $^
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) $v \
-		-k$k -l$l -s bubbles.fa -o $@ $^
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -s bubbles.fa -o $@ $^
 endif
 
 %.adj: %.fa
