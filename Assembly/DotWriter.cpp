@@ -120,9 +120,8 @@ static void write_node(ostream& out,
 void DotWriter::write(ostream& out, const ISequenceCollection& c)
 {
 	out << "digraph g {\n";
-	const SequenceCollectionIterator& end = c.getEndIter();
-	for (SequenceCollectionIterator i = c.getStartIter();
-			i != end; ++i) {
+	for (ISequenceCollection::const_iterator i = c.begin();
+			i != c.end(); ++i) {
 		const PackedSeq &seq = *i;
 		if (seq.isFlagSet(SF_DELETE))
 			continue;

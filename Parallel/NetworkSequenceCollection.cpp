@@ -1516,22 +1516,6 @@ void NetworkSequenceCollection::wipeFlag(SeqFlag flag)
 	m_pLocalSpace->wipeFlag(flag);
 }
 
-//
-// The iterator functions return the local space's begin/end
-//
-SequenceCollectionIterator NetworkSequenceCollection::getStartIter() const
-{
-	return m_pLocalSpace->getStartIter();	
-}
-
-//
-// The iterator functions return the local space's begin/end
-//
-SequenceCollectionIterator NetworkSequenceCollection::getEndIter() const
-{
-	return m_pLocalSpace->getEndIter();	
-}
-
 /** Return whether this sequence belongs to this process. */
 bool NetworkSequenceCollection::isLocal(const PackedSeq& seq) const
 {

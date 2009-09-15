@@ -120,12 +120,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool checkpointReached() const;
 		bool checkpointReached(int numRequired) const;
 		
-		// get an iterator to the first sequence
-		SequenceCollectionIterator getStartIter() const;
-		
-		// get an iterator to the last sequence
-		SequenceCollectionIterator getEndIter() const;
-		
 		// Message handlers, polymorphically called by the message types
 		void handleSeqOpMessage(int senderID, const SeqOpMessage& seqMsg);
 		void handleSetBaseMessage(int senderID, const SetBaseMessage& message);
@@ -151,6 +145,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 			m_comm.broadcast(flag);
 		}
 
+		iterator begin() { return m_pLocalSpace->begin(); }
+		const_iterator begin() const { return m_pLocalSpace->begin(); }
+		iterator end() { return m_pLocalSpace->end(); }
+		const_iterator end() const { return m_pLocalSpace->end(); }
+		
 	private:
 		// Observer pattern
 		void notify(const PackedSeq& seq);

@@ -56,17 +56,10 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		const PackedSeq& getSeqAndData(const PackedSeq& key) const;
 
-		/** Returns an iterator referring to the first element. */
-		SequenceCollectionHashIter getStartIter() const
-		{
-			return m_pSequences->begin();
-		}
-
-		/** Returns an iterator referring to the last element. */
-		SequenceCollectionHashIter getEndIter() const
-		{
-			return m_pSequences->end();
-		}
+		iterator begin() { return m_pSequences->begin(); }
+		const_iterator begin() const { return m_pSequences->begin(); }
+		iterator end() { return m_pSequences->end(); }
+		const_iterator end() const { return m_pSequences->end(); }
 
 		// does this sequence extend from a different node?
 		bool hasParent(const PackedSeq& seq);

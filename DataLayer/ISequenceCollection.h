@@ -87,11 +87,13 @@ class ISequenceCollection
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;
 
-		virtual SequenceCollectionIterator getStartIter() const = 0;
-		virtual SequenceCollectionIterator getEndIter() const = 0;
+		virtual iterator begin() = 0;
+		virtual const_iterator begin() const = 0;
+		virtual iterator end() = 0;
+		virtual const_iterator end() const = 0;
 
-		iterator begin() { return getStartIter(); }
-		iterator end() { return getEndIter(); }
+		virtual iterator getStartIter() { return begin(); }
+		virtual iterator getEndIter() { return end(); }
 
 		// Observer pattern
 		typedef void (*SeqObserver)(ISequenceCollection* c,
