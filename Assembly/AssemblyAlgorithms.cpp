@@ -915,7 +915,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 }
 
 /** Return the first local minimum of the k-mer coverage histogram. */
-unsigned minimumCoverage(/*const*/ ISequenceCollection& c)
+unsigned minimumCoverage(const ISequenceCollection& c)
 {
 	Histogram h;
 	for (ISequenceCollection::const_iterator it = c.begin();

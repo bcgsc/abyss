@@ -44,7 +44,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 void generateAdjacency(ISequenceCollection* seqCollection);
 
 /** Return the first local minimum of the k-mer coverage histogram. */
-unsigned minimumCoverage(/*const*/ ISequenceCollection& c);
+unsigned minimumCoverage(const ISequenceCollection& c);
 
 /* Erosion. Remove k-mer from the ends of blunt contigs. */
 unsigned erodeEnds(ISequenceCollection* seqCollection);
