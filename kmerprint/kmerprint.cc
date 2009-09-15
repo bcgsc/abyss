@@ -35,11 +35,10 @@ static void print(const PackedSeq& seq, extDirection sense)
 	cout << seq.getMultiplicity(sense) << '\n';
 }
 
-int main(int argc, const char* argv[])
+static void print(const char* path)
 {
 	SequenceCollectionHash c;
-	assert(argc > 1);
-	c.load(argv[1]);
+	c.load(path);
 	for (SequenceCollectionHash::const_iterator it = c.begin();
 			it != c.end(); ++it) {
 		if (it->deleted())
@@ -50,5 +49,11 @@ int main(int argc, const char* argv[])
 		} else
 			print(*it);
 	}
+}
+
+int main(int argc, const char* argv[])
+{
+	assert(argc > 1);
+	print(argv[1]);
 	return 0;
 }
