@@ -1,4 +1,4 @@
-bin_PROGRAMS = kmerprint
+noinst_PROGRAMS = kmerprint
 
 kmerprint_CPPFLAGS = \
 	-I$(top_srcdir)/Common \
