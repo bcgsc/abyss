@@ -38,6 +38,7 @@ ifdef se
 override se:=$(strip $(se))
 endif
 
+# Mandatory parameters.
 ifndef out
 $(error missing argument out)
 endif
@@ -50,19 +51,20 @@ endif
 ifndef l
 $(error missing argument l)
 endif
-ifndef c
-$(error missing argument c)
-endif
 ifndef n
 $(error missing argument n)
 endif
-s?=100
+
+# Optional parameters.
 ifdef np
 j?=$(np)
 else
 j?=1
 endif
-#v=-v
+ifdef c
+abyssopt += -c$c
+endif
+s?=100
 
 all: $(out)
 
@@ -77,10 +79,11 @@ clean:
 
 %-3.fa: $(in) $(se)
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(ABYSS_OPTIONS) $v -k$k -l$l -c$c \
-		-s bubbles.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) $v \
+		-k$k -l$l -s bubbles.fa -o $@ $^
 else
-	ABYSS $(ABYSS_OPTIONS) $v -k$k -l$l -c$c -s bubbles.fa -o $@ $^
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) $v \
+		-k$k -l$l -s bubbles.fa -o $@ $^
 endif
 
 %.adj: %.fa
