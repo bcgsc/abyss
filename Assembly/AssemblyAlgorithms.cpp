@@ -919,8 +919,11 @@ unsigned minimumCoverage(/*const*/ ISequenceCollection& c)
 {
 	Histogram h;
 	for (ISequenceCollection::const_iterator it = c.begin();
-			it != c.end(); ++it)
+			it != c.end(); ++it) {
+		if (it->deleted())
+			continue;
 		h.insert(it->getMultiplicity());
+	}
 	unsigned minCov = h.firstLocalMinimum();
 	logger(0) << "Minimum k-mer coverage is " << minCov << ".\n";
 	return minCov;
