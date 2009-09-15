@@ -116,6 +116,7 @@ AC_CONFIG_FILES([
 	bin/Makefile
 	doc/Makefile
 	fasta2psq/Makefile
+	kmerprint/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
 	Overlap/Makefile
