@@ -245,11 +245,9 @@ bool SequenceCollectionHash::checkFlagByIter(
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 {
-	SequenceCollectionHashIter endIter = getEndIter();
-	for(SequenceCollectionHashIter iter = getStartIter(); iter != endIter; ++iter)
-	{
-		const_cast<PackedSeq&>(*iter).clearFlag(flag);
-	}
+	for (SequenceCollectionHash::iterator it = m_pSequences->begin();
+			it != m_pSequences->end(); ++it)
+		const_cast<PackedSeq&>(*it).clearFlag(flag);
 }
 
 /** Print the load of the hash table. */
