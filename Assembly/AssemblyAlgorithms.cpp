@@ -1,6 +1,7 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
+#include "Histogram.h"
 #include "ISequenceCollection.h"
 #include "Log.h"
 #include "Options.h"
@@ -911,6 +912,18 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	} else
 		printf("Assembled %u contigs\n", contigID);
 	return contigID;
+}
+
+/** Return the first local minimum of the k-mer coverage histogram. */
+unsigned minimumCoverage(/*const*/ ISequenceCollection& c)
+{
+	Histogram h;
+	for (ISequenceCollection::const_iterator it = c.begin();
+			it != c.end(); ++it)
+		h.insert(it->getMultiplicity());
+	unsigned minCov = h.firstLocalMinimum();
+	logger(0) << "Minimum k-mer coverage is " << minCov << ".\n";
+	return minCov;
 }
 
 };

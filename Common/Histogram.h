@@ -75,6 +75,17 @@ class Histogram : std::map<int, unsigned>
 		return sqrt(variance());
 	}
 
+	/** Return the first local minimum. */
+	T firstLocalMinimum() const
+	{
+		assert(!empty());
+		Histogram::const_iterator minimum = begin();
+		for (Histogram::const_iterator it = begin();
+				it != end() && it->second <= minimum->second; ++it)
+			minimum = it;
+		return minimum->first;
+	}
+
 	void eraseNegative()
 	{
 		for (Histogram::Map::iterator it = begin();

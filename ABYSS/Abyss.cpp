@@ -78,6 +78,12 @@ generate_adjacency:
 	puts("Generating adjacency");
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
+	unsigned minCov = AssemblyAlgorithms::minimumCoverage(*pSC);
+	if ((int)opt::erode < 0)
+		opt::erode = minCov;
+	if (opt::coverage < 0)
+		opt::coverage = minCov;
+
 	if (opt::erode > 0) {
 		puts("Eroding tips");
 		AssemblyAlgorithms::erodeEnds(pSC);

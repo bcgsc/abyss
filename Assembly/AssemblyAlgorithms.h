@@ -43,15 +43,10 @@ void loadSequences(ISequenceCollection* seqCollection,
 // This is required before any other algorithm can run
 void generateAdjacency(ISequenceCollection* seqCollection);
 
-//
-//
-// Trimming (error removal functions)
-//
-//
+/** Return the first local minimum of the k-mer coverage histogram. */
+unsigned minimumCoverage(/*const*/ ISequenceCollection& c);
 
-//
-// Uniformly remove one sequence from the end of all branches 
-//
+/* Erosion. Remove k-mer from the ends of blunt contigs. */
 unsigned erodeEnds(ISequenceCollection* seqCollection);
 unsigned erode(ISequenceCollection* c, const PackedSeq& seq);
 unsigned getNumEroded();
