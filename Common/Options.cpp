@@ -34,7 +34,7 @@ static const char USAGE_MESSAGE[] =
 "  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
-"                                 less than this threshold [default=0]\n"
+"                                 less than this threshold\n"
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
 "  -e, --erode=COVERAGE           erode bases at the ends of blunt contigs\n"
 "                                 that have less than the specified coverage\n"
@@ -69,7 +69,7 @@ unsigned erodeStrand = 1;
 int trimLen = -1;
 
 /** Coverage cutoff. */
-float coverage;
+float coverage = -1;
 
 /** Maximum number of bubble-popping rounds. */
 int bubbles = INT_MAX;
