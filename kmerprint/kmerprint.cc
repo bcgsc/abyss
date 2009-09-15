@@ -10,8 +10,8 @@
 using namespace std;
 
 namespace opt {
-	bool sequence = true;
-	bool strands = true;
+	bool sequence;
+	bool strands;
 }
 
 static void print(const PackedSeq& seq)
