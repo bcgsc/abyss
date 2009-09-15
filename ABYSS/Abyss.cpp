@@ -75,10 +75,14 @@ int main(int argc, char* const* argv)
 	assert(pSC->count() > 0);
 
 	unsigned minCov = AssemblyAlgorithms::minimumCoverage(*pSC);
-	if ((int)opt::erode < 0)
+	if ((int)opt::erode < 0) {
+		printf("Setting parameter e (erode) to %u\n", minCov);
 		opt::erode = minCov;
-	if (opt::coverage < 0)
+	}
+	if (opt::coverage < 0) {
+		printf("Setting parameter c (coverage) to %u\n", minCov);
 		opt::coverage = minCov;
+	}
 
 generate_adjacency:
 	puts("Generating adjacency");
