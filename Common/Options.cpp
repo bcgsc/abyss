@@ -38,7 +38,6 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bubbles=N                maximum number of bubble-popping rounds\n"
 "  -e, --erode=COVERAGE           erode bases at the ends of blunt contigs\n"
 "                                 that have less than the specified coverage\n"
-"                                 default=2\n"
 "  -E, --erode-strand=COVERAGE    erode bases at the ends of blunt contigs\n"
 "                                 that have less than the specified coverage\n"
 "                                 on either strand. default=1\n"
@@ -61,7 +60,7 @@ int numProc = 1;
 int kmerSize = -1;
 
 /** erosion coverage */
-unsigned erode = 2;
+unsigned erode = (unsigned)-1;
 
 /** erosion strand coverage */
 unsigned erodeStrand = 1;
