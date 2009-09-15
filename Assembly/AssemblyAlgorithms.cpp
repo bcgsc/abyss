@@ -925,7 +925,7 @@ unsigned minimumCoverage(/*const*/ ISequenceCollection& c)
 		h.insert(it->getMultiplicity());
 	}
 	unsigned minCov = h.firstLocalMinimum();
-	logger(0) << "Minimum k-mer coverage is " << minCov << ".\n";
+	logger(0) << "Minimum k-mer coverage is " << minCov << '\n';
 	return minCov;
 }
 
