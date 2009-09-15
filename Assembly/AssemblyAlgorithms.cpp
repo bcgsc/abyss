@@ -793,6 +793,17 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	return count;
 }
 
+static void processTerminatedBranchAssemble(
+		const BranchRecord& branch, Sequence& outseq)
+{
+	assert(!branch.isActive());
+	// The only acceptable condition for the termination of an
+	// assembly is a noext or a loop.
+	assert(branch.getState() == BS_NOEXT
+			|| branch.getState() == BS_LOOP);
+	branch.buildContig(outseq);
+}
+
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
@@ -802,8 +813,7 @@ unsigned assembleContig(
 {
 	// Assemble the contig.
 	Sequence contig;
-	AssemblyAlgorithms::processTerminatedBranchAssemble(
-			seqCollection, branch, contig);
+	processTerminatedBranchAssemble(branch, contig);
 
 	unsigned kmerCount = branch.calculateBranchMultiplicity();
 	if (writer != NULL)
@@ -901,17 +911,6 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	} else
 		printf("Assembled %u contigs\n", contigID);
 	return contigID;
-}
-
-void processTerminatedBranchAssemble(
-		ISequenceCollection* /*seqCollection*/,
-		const BranchRecord& branch, Sequence& outseq)
-{
-	assert(!branch.isActive());
-	// the only acceptable condition for the termination of an assembly is a noext or a loop
-	assert(branch.getState() == BS_NOEXT || branch.getState() == BS_LOOP);
-	// Assemble the contig
-	branch.buildContig(outseq);
 }
 
 };

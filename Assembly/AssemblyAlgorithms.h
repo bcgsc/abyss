@@ -104,14 +104,6 @@ unsigned assembleContig(ISequenceCollection* seqCollection,
 unsigned assemble(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter = NULL);
 
-// A function to process a branch after it has been extended as far as possible
-void processTerminatedBranchAssemble(ISequenceCollection* seqCollection, const BranchRecord& branch, Sequence& outseq);
-
-//
-//
-// Generic functions to operate on the data set
-//
-//
 // remove the specified sequence from the collection and destroy its extensions
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq);
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
