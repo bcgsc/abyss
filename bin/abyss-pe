@@ -61,8 +61,20 @@ j?=$(np)
 else
 j?=1
 endif
+ifdef e
+abyssopt += -e$e
+endif
+ifdef E
+abyssopt += -E$E
+endif
+ifdef t
+abyssopt += -t$t
+endif
 ifdef c
 abyssopt += -c$c
+endif
+ifdef b
+abyssopt += -b$b
 endif
 s?=100
 
