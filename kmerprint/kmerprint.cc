@@ -4,6 +4,7 @@
  */
 
 #include "SequenceCollectionHash.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -35,7 +36,7 @@ static void print(const PackedSeq& seq, extDirection sense)
 	cout << seq.getMultiplicity(sense) << '\n';
 }
 
-static void print(const char* path)
+static void printFile(const char* path)
 {
 	SequenceCollectionHash c;
 	c.load(path);
@@ -54,6 +55,6 @@ static void print(const char* path)
 int main(int argc, const char* argv[])
 {
 	assert(argc > 1);
-	print(argv[1]);
+	for_each(argv + 1, argv + argc, printFile);
 	return 0;
 }
