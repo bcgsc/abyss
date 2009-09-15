@@ -1,3 +1,8 @@
+/**
+ * Print a kmer file. A kmer file is a serialized Google sparsehash.
+ * Written by Shaun Jackman <sjackman@bcgsc.ca>.
+ */
+
 #include "SequenceCollectionHash.h"
 #include <cassert>
 #include <iostream>
