@@ -80,7 +80,12 @@ static Aligner<SeqPosHashUniqueMap> *g_aligner_u;
 /** Multimap aligner using multimap */
 static Aligner<SeqPosHashMultiMap> *g_aligner_m;
 
+/** Number of reads. */
 static unsigned g_readCount;
+
+/** Number of reads that aligned. */
+static unsigned g_alignedCount;
+
 static pthread_mutex_t g_mutexCout, g_mutexCerr;
 static sem_t g_activeThreads;
 
@@ -174,7 +179,9 @@ int main(int argc, char** argv)
 		pthread_join(threads[i], &status);
 
 	if (opt::verbose > 0)
-		cerr << "Aligned " << g_readCount << " reads\n";
+		cerr << "Aligned " << g_alignedCount
+			<< " of " << g_readCount << " reads ("
+			<< (float)100 * g_alignedCount / g_readCount << "%)\n";
 
 	if (opt::multimap)
 		delete g_aligner_m;
@@ -255,12 +262,15 @@ void *alignReadsToDB(void* readsFile)
 				cout << rec.anchor;
 			cout << seq;
 		}
-		cout << output.str() << '\n';
+		string s = output.str();
+		cout << s << '\n';
 		assert(cout.good());
 		pthread_mutex_unlock(&g_mutexCout);
 
 		if (opt::verbose > 0) {
 			pthread_mutex_lock(&g_mutexCerr);
+			if (!s.empty())
+				g_alignedCount++;
 			if (++g_readCount % 1000000 == 0)
 				cerr << "Aligned " << g_readCount << " reads\n";
 			pthread_mutex_unlock(&g_mutexCerr);
