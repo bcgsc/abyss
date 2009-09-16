@@ -242,6 +242,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 		stats.numSplit++;
 	} else {
 		// Iterate over the vectors, outputting the aligments
+		bool counted = false;
 		for (AlignmentVector::const_iterator refAlignIter
 					= curr.second.begin();
 				refAlignIter != curr.second.end(); ++refAlignIter) {
@@ -268,6 +269,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							stats.numSame++;
 						} else
 							stats.numMisoriented++;
+						counted = true;
 					}
 					if (size < opt::k) {
 						/* For an inverted repeat, print only the
@@ -293,10 +295,11 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						<< pairID << ' ' << a1 << ' '
 						<< currID << ' ' << a0 << '\n';
 					assert(pairedAlignFile.good());
-					stats.numDifferent++;
 				}
 			}
 		}
+		if (!counted)
+			stats.numDifferent++;
 	}
 }
 
