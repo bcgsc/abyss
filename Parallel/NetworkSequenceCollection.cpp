@@ -3,6 +3,7 @@
 #include "FastaWriter.h"
 #include "Log.h"
 #include "Options.h"
+#include <cmath> // for roundf
 #include <cstdlib>
 #include <iostream>
 
@@ -79,6 +80,8 @@ void NetworkSequenceCollection::run()
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
+				m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
+							*m_pLocalSpace));
 				EndState();
 				SetState(NAS_WAITING);
 				break;
@@ -394,6 +397,24 @@ void NetworkSequenceCollection::runControl()
 				m_pLocalSpace->printLoad();
 				printf("Loaded %u k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
+
+				unsigned minCovSum =
+					m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
+							*m_pLocalSpace));
+				float minCov = (float)minCovSum / opt::numProc;
+				printf("Minimum k-mer coverage is %f\n", minCov);
+
+				if ((int)opt::erode < 0) {
+					opt::erode = (unsigned)roundf(minCov);
+					printf("Setting parameter e (erode) to %u\n",
+							opt::erode);
+				}
+				if (opt::coverage < 0) {
+					opt::coverage = minCov;
+					printf("Setting parameter c (coverage) to %f\n",
+							opt::coverage);
+				}
+
 				EndState();
 
 				SetState(m_pLocalSpace->isAdjacencyLoaded()
