@@ -32,8 +32,8 @@ while (<>) {
 		next;
 	}
 	if (/^[acgtnACGTN]+$/) {
-		die if exists $seq{$id};
-		$seq{$id} = $_ if !/[Nn]/;
+		die "error: duplicate sequence ID `$id'" if exists $seq{$id};
+		$seq{$id} = $_ unless /[Nn]/;
 		undef $id;
 		next;
 	}

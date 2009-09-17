@@ -67,8 +67,8 @@ my ($red_iid, $frg_iid, %reds, %frgs, $id, %seq, %tle);
 sub new_read($$)
 {
 	my ($id, $seq) = @_;
-	die if exists $seq{$id};
-	$seq{$id} = $seq unless /N/;
+	die "error: duplicate sequence ID `$id'" if exists $seq{$id};
+	$seq{$id} = $seq unless /[Nn]/;
 
 	my $mate_id = find_mate($id);
 	return unless defined $mate_id;
