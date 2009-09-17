@@ -83,6 +83,8 @@ class ISequenceCollection
 
 		// get the extension for a sequence
 		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) const = 0;
+		virtual const PackedSeq& getSeqAndData(
+				const PackedSeq& key) const = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;

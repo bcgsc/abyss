@@ -103,6 +103,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// get the extensions of the sequence
 		bool getSeqData(const PackedSeq& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
+		const PackedSeq& getSeqAndData(const PackedSeq& key) const
+		{
+			assert(isLocal(key));
+			return m_pLocalSpace->getSeqAndData(key);
+		}
 
 		// Receive and dispatch packets.
 		unsigned pumpNetwork();
