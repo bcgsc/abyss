@@ -191,14 +191,10 @@ bool BranchGroup::isExtendable()
  */
 bool BranchGroup::isAmbiguous(const ISequenceCollection* c) const
 {
-	if (c->checkFlag(m_origin, SF_DELETE))
-		return false;
-	ExtensionRecord ext;
-	int multiplicity;
-	bool found = c->getSeqData(m_origin, ext, multiplicity);
-	assert(found);
-	(void)found;
-	return ext.dir[m_dir].isAmbiguous();
+	// Get fresh data from the collection to check that this bubble
+	// does in fact still exist.
+	const PackedSeq& seq = c->getSeqAndData(m_origin);
+	return seq.deleted() ? false : seq.isAmbiguous(m_dir);
 }
 
 //
