@@ -109,7 +109,7 @@ unsigned SequenceCollectionHash::cleanup()
 	unsigned count = 0;
 	for (SequenceCollectionHashIter it = m_pSequences->begin();
 			it != m_pSequences->end();) {
-		if (it->isFlagSet(SF_DELETE)) {
+		if (it->deleted()) {
 			m_pSequences->erase(it++);
 			count++;
 		} else

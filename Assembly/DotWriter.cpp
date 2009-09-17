@@ -123,7 +123,7 @@ void DotWriter::write(ostream& out, const ISequenceCollection& c)
 	for (ISequenceCollection::const_iterator i = c.begin();
 			i != c.end(); ++i) {
 		const PackedSeq &seq = *i;
-		if (seq.isFlagSet(SF_DELETE))
+		if (seq.deleted())
 			continue;
 		write_node(out, c, seq);
 		PackedSeq rseq = reverseComplement(seq);

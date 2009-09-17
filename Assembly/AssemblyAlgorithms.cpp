@@ -165,7 +165,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for (SequenceCollectionIterator iter = seqCollection->getStartIter();
 			iter != endIter; ++iter) {
-		if (iter->isFlagSet(SF_DELETE))
+		if (iter->deleted())
 			continue;
 
 		if (++count % 1000000 == 0)
@@ -207,7 +207,7 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if(iter->isFlagSet(SF_DELETE))
+		if (iter->deleted())
 			continue;
 
 		if (++progress % 1000000 == 0)
@@ -242,7 +242,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	SequenceCollectionIterator end = pSC->getEndIter();
 	for (SequenceCollectionIterator it = pSC->getStartIter();
 			it != end; ++it) {
-		if (pSC->checkFlag(*it, SF_DELETE))
+		if (it->deleted())
 			continue;
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
@@ -269,7 +269,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if (iter->isFlagSet(SF_DELETE))
+		if (iter->deleted())
 			continue;
 
 		// Get the extensions for this sequence, this function populates the extRecord structure
@@ -609,7 +609,7 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 //
 SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
 {
-	if (seqCollection->checkFlag(seq, SF_DELETE))
+	if (seq.deleted())
 		return SC_INVALID;
 			
 	bool child = seqCollection->hasChild(seq);
@@ -781,7 +781,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	SequenceCollectionIterator end = pSC->getEndIter();
 	for (SequenceCollectionIterator it = pSC->getStartIter();
 			it != end; ++it) {
-		if (pSC->checkFlag(*it, SF_DELETE))
+		if (it->deleted())
 			continue;
 		if (pSC->isMarked(*it)) {
 			removeSequenceAndExtensions(pSC, *it);
