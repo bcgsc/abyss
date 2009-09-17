@@ -94,12 +94,6 @@ void SequenceCollectionHash::add(const PackedSeq& seq)
 	}
 }
 
-/** Remove the specified sequence if it exists. */
-void SequenceCollectionHash::remove(const PackedSeq& seq)
-{
-	setFlag(seq, SF_DELETE);
-}
-
 /** Clean up by erasing sequences flagged as deleted.
  * @return the number of sequences erased
  */

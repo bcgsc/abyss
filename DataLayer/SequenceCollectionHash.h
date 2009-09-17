@@ -20,9 +20,12 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		// add a single sequence to the collection
 		void add(const PackedSeq& seq);
-		
-		// remove a sequence from the collection
-		void remove(const PackedSeq& seq);
+
+		/** Remove the specified sequence if it exists. */
+		void remove(const PackedSeq& seq)
+		{
+			setFlag(seq, SF_DELETE);
+		}
 
 		// Clean up by erasing sequences flagged as deleted.
 		unsigned cleanup();
