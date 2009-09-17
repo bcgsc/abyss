@@ -878,7 +878,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
 	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
 	{
-		if (iter->isFlagSet(SF_DELETE))
+		if (iter->deleted())
 			continue;
 
 		if (++count % 100000 == 0)
