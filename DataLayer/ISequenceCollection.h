@@ -39,22 +39,10 @@ class ISequenceCollection
 		// Set flag for sequence seq
 		virtual void setFlag(const PackedSeq& seq, SeqFlag flag) = 0;
 
-		// Find if this sequence has the specified flag set
-		virtual bool checkFlag(const PackedSeq& seq,
-				SeqFlag flag) const = 0;
-
 		/** Mark the specified sequence. */
 		void mark(const PackedSeq& seq, extDirection sense = SENSE)
 		{
 			setFlag(seq, sense == SENSE
-					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
-		}
-
-		/** Return true if the specified sequence is marked. */
-		bool isMarked(const PackedSeq& seq,
-				extDirection sense = SENSE)
-		{
-			return checkFlag(seq, sense == SENSE
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 		}
 

@@ -214,29 +214,6 @@ void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, 
 	}
 }
 
-bool SequenceCollectionHash::checkFlag(const PackedSeq& seq,
-		SeqFlag flag) const
-{
-	SequenceHashIterPair seqIters = GetSequenceIterators(seq);
-	return checkFlagByIter(seqIters.first, flag)
-		|| checkFlagByIter(seqIters.second, flag);
-}
-
-bool SequenceCollectionHash::checkFlagByIter(
-		SequenceCollectionHashIter& seqIter, SeqFlag flag) const
-{
-	// Check whether the sequence and its reverse complement both have the flag set/unset
-	// They SHOULD be the same and the assert will guarentee this
-	if(seqIter != m_pSequences->end())
-	{
-		return seqIter->isFlagSet(flag);
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 {
 	for (SequenceCollectionHash::iterator it = m_pSequences->begin();

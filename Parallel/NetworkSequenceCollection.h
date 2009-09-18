@@ -72,9 +72,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Set flag for sequence seq
 		void setFlag(const PackedSeq& seq, SeqFlag flag);
 
-		// Find if this sequence has the specified flag set
-		bool checkFlag(const PackedSeq& seq, SeqFlag flag) const;
-
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 		
