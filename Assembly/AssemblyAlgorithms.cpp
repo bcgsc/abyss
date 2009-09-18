@@ -162,9 +162,8 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 
 	unsigned count = 0;
 	unsigned numBasesSet = 0;
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for (SequenceCollectionIterator iter = seqCollection->getStartIter();
-			iter != endIter; ++iter) {
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		if (iter->deleted())
 			continue;
 
@@ -204,9 +203,8 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 	Timer timer(__func__);
 	unsigned progress = 0;
 	unsigned count = 0;
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		if (iter->deleted())
 			continue;
 
@@ -239,9 +237,8 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 {
 	Timer timer(__func__);
 	unsigned count = 0;
-	SequenceCollectionIterator end = pSC->getEndIter();
-	for (SequenceCollectionIterator it = pSC->getStartIter();
-			it != end; ++it) {
+	for (ISequenceCollection::iterator it = pSC->begin();
+			it != pSC->end(); ++it) {
 		if (it->deleted())
 			continue;
 		for (extDirection sense = SENSE;
@@ -265,10 +262,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	// Set the cutoffs
 	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
-		
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
+
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		if (iter->deleted())
 			continue;
 
@@ -574,10 +570,8 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 	assert(g_numEroded == 0);
 	seqCollection->attach(erosionObserver);
 
-	SequenceCollectionIterator endIter = seqCollection->getEndIter();
-	for (SequenceCollectionIterator iter
-			= seqCollection->getStartIter();
-			iter != endIter; ++iter) {
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		erode(seqCollection, *iter);
 		seqCollection->pumpNetwork();
 	}
@@ -646,10 +640,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	printf("Trimming short branches: %u\n", maxBranchCull);
 	unsigned numBranchesRemoved = 0;
 
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
-		
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
@@ -778,9 +770,8 @@ unsigned removeMarked(ISequenceCollection* pSC)
 {
 	Timer timer(__func__);
 	unsigned count = 0;
-	SequenceCollectionIterator end = pSC->getEndIter();
-	for (SequenceCollectionIterator it = pSC->getStartIter();
-			it != end; ++it) {
+	for (ISequenceCollection::iterator it = pSC->begin();
+			it != pSC->end(); ++it) {
 		if (it->deleted())
 			continue;
 		if (it->marked()) {
@@ -845,10 +836,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	unsigned lowCoverageKmer = 0;
 	unsigned lowCoverageContigs = 0;
 
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
-		
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);

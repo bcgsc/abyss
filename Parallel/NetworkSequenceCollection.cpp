@@ -764,9 +764,8 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 	// The branch ids
 	uint64_t branchGroupID = 0;
 
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{	
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
@@ -874,10 +873,9 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	// Set the cutoffs
 	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
-	
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{
+
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		if (iter->deleted())
 			continue;
 
@@ -1147,9 +1145,8 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 	uint64_t branchGroupID = 0;
 	assert(m_activeBranchGroups.empty());
 
-	SequenceCollectionIterator endIter  = seqCollection->getEndIter();
-	for(SequenceCollectionIterator iter = seqCollection->getStartIter(); iter != endIter; ++iter)
-	{	
+	for (ISequenceCollection::iterator iter = seqCollection->begin();
+			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the assembly direction if the sequence can be assembled
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);

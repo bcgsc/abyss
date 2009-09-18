@@ -82,9 +82,6 @@ class ISequenceCollection
 		virtual iterator end() = 0;
 		virtual const_iterator end() const = 0;
 
-		virtual iterator getStartIter() { return begin(); }
-		virtual iterator getEndIter() { return end(); }
-
 		// Observer pattern
 		typedef void (*SeqObserver)(ISequenceCollection* c,
 				const PackedSeq& seq);
