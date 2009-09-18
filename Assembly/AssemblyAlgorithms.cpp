@@ -472,21 +472,17 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 	{
 		// Skip the branch that was selected to keep
 		if(i == selectedIndex)
-		{
 			continue;
-		}
-		
-		BranchRecord& currBranch = group.getBranch(i);
-		BranchDataIter end = currBranch.getEndIter();
-		for(BranchDataIter branchIter = currBranch.getStartIter();
-				branchIter != end; ++branchIter)
-		{
+
+		BranchRecord& branch = group.getBranch(i);
+		for (BranchRecord::iterator it = branch.begin();
+				it != branch.end(); ++it) {
 			/* As long as we're only popping simple bubbles, the
 			 * sequence being removed cannot be in the reference
 			 * sequence. By now, we've forgotten the multiplicity map
 			 * used by BranchRecord::exists to save memory. */
 			//assert(!refRecord.exists(*branchIter));
-			removeSequenceAndExtensions(seqCollection, *branchIter);
+			removeSequenceAndExtensions(seqCollection, *it);
 		}
 	}
 	assert(!group.isAmbiguous(seqCollection));
@@ -751,10 +747,9 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 	{
 		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
 					branch.getFirstSeq().decode().c_str());
-		BranchDataIter endIter  = branch.getEndIter();
-		for (BranchDataIter bIter = branch.getStartIter();
-				bIter != endIter; bIter++)
-			seqCollection->mark(*bIter);
+		for (BranchRecord::iterator it = branch.begin();
+				it != branch.end(); ++it)
+			seqCollection->mark(*it);
 		return true;
 	}	
 	else
@@ -813,11 +808,9 @@ unsigned assembleContig(
 
 	// Remove low-coverage contigs.
 	float coverage = (float)kmerCount / branch.getLength();
-	BranchDataIter end = branch.getEndIter();
 	if (opt::coverage > 0 && coverage < opt::coverage) {
-		for (BranchDataIter it
-				= branch.getStartIter();
-				it != end; ++it)
+		for (BranchRecord::iterator it = branch.begin();
+				it != branch.end(); ++it)
 			seqCollection->remove(*it);
 		return branch.getLength();
 	}

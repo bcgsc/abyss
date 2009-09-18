@@ -71,7 +71,7 @@ BranchRecord& BranchGroup::addBranch(uint64_t id, BranchRecord& branch)
 //
 BranchRecord& BranchGroup::getBranch(uint64_t id)
 {
-	BranchGroupData::iterator branch = m_branches.find(id);
+	BranchGroup::iterator branch = m_branches.find(id);
 	// should never fail
 	assert(branch != m_branches.end());
 	return branch->second;
@@ -146,7 +146,7 @@ void BranchGroup::selectBranchToKeep()
 		}
 
 		// Remove the last base, which is identical for every branch.
-		branch.truncate(branch.getEndIter() - 1);
+		branch.truncate(branch.end() - 1);
 	}
 
 	assert(bestIndex >= 0);

@@ -1,5 +1,6 @@
 #include "BranchRecord.h"
 #include <iostream>
+#include <utility>
 
 using namespace std;
 
@@ -59,8 +60,8 @@ void BranchRecord::addSequence(const PackedSeq& seq, int multiplicity)
 	m_data.push_back(seq);
 	
 	// Detect a loop by checking that the sequence is not already in the branch
-	MultMapPair item(seq, multiplicity);
-	bool unique = m_seqMap.insert(item).second;
+	bool unique = m_seqMap.insert(
+			make_pair(seq, multiplicity)).second;
 	if(!unique)
 	{
 		m_loopDetected = true;
@@ -71,7 +72,7 @@ void BranchRecord::addSequence(const PackedSeq& seq, int multiplicity)
  * Remove all the sequences including and following the specified
  * iterator.
  */
-void BranchRecord::truncate(BranchDataIter position)
+void BranchRecord::truncate(BranchRecord::iterator position)
 {
 	ssize_t size = position - m_data.begin();
 	assert(size > 0);
@@ -265,22 +266,6 @@ void BranchRecord::printBranch(ostream& ostr) const
 		int m = getMultiplicity(*iter);
 		ostr << iter->decode() << "," << m << " ";
 	}
-}
-
-//
-// Get the starting iterator
-//
-BranchDataIter BranchRecord::getStartIter()
-{
-	return m_data.begin();
-}
-
-//
-// Get the ending iterator
-//
-BranchDataIter BranchRecord::getEndIter()
-{
-	return m_data.end();
 }
 
 const PackedSeq& BranchRecord::getSeqByIndex(size_t index) const

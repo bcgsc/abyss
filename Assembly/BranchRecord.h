@@ -17,17 +17,14 @@ enum BranchState
 	
 };
 
-typedef std::pair<PackedSeq, int> MultMapPair;
-typedef std::vector<PackedSeq> BranchData;
-typedef std::map<PackedSeq, int> BranchMultMap;
-typedef BranchData::iterator BranchDataIter;
-
-
 class BranchRecord
 {
 	public:
-		
-		// Constructor
+		typedef std::vector<PackedSeq> BranchData;
+		typedef std::map<PackedSeq, int> BranchMultMap;
+		typedef BranchData::iterator iterator;
+		typedef BranchData::const_iterator const_iterator;
+
 		BranchRecord();
 		BranchRecord(extDirection dir, int maxLength);
 		BranchRecord(const BranchRecord&);
@@ -40,8 +37,8 @@ class BranchRecord
 
 		// Remove all the sequences including and following the
 		// specified iterator.
-		void truncate(BranchDataIter position);
-		
+		void truncate(iterator position);
+
 		// Terminate the branch and indicate why
 		void terminate(BranchState reason);
 		
@@ -76,11 +73,10 @@ class BranchRecord
 		const PackedSeq& getLastSeq() const;
 		
 		const PackedSeq& getSeqByIndex(size_t index) const;
-		
-		// Get the iterators
-		BranchDataIter getStartIter();
-		BranchDataIter getEndIter();
-		
+
+		iterator begin() { return m_data.begin(); }
+		iterator end() { return m_data.end(); }
+
 		// Get the direction of extension
 		extDirection getDirection() const;
 		

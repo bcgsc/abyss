@@ -15,11 +15,13 @@ enum BranchGroupStatus
 	BGS_TOOMANYBRANCHES
 };
 
-typedef std::map<uint64_t, BranchRecord> BranchGroupData;
-
 class BranchGroup
 {
 	public:
+		typedef std::map<uint64_t, BranchRecord> BranchGroupData;
+		typedef BranchGroupData::iterator iterator;
+		typedef BranchGroupData::const_iterator const_iterator;
+
 		BranchGroup();
 		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches, const PackedSeq &origin);
 		BranchGroup(const BranchGroup& other);
@@ -72,10 +74,9 @@ class BranchGroup
 		
 		// print the branches that make up this group
 		void printBranches() const;
-		
-		// Iterator accessors 
-		BranchGroupData::iterator getStartIter() { return m_branches.begin(); }
-		BranchGroupData::iterator getEndIter() { return m_branches.end(); }
+
+		iterator begin() { return m_branches.begin(); }
+		iterator end() { return m_branches.end(); }
 
 		bool isAmbiguous(const ISequenceCollection* c) const;
 
