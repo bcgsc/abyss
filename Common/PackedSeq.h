@@ -115,6 +115,7 @@ class PackedSeq
 
 		// Extension management
 		SeqExt getExtension(extDirection dir) const;
+		ExtensionRecord extension() const { return m_extRecord; }
 		void setBaseExtension(extDirection dir, uint8_t base);
 		void clearExtension(extDirection dir, uint8_t base);
 		void clearAllExtensions(extDirection dir);

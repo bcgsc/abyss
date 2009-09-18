@@ -268,14 +268,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		if (iter->deleted())
 			continue;
 
-		// Get the extensions for this sequence, this function populates the extRecord structure
-		ExtensionRecord extRec;
-		int multiplicity = -1;
-		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
-		assert(success);
-		(void)success;
-
-		// Check for ambiguity
+		ExtensionRecord extRec = iter->extension();
+		unsigned multiplicity = iter->getMultiplicity();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
