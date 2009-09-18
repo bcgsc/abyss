@@ -32,15 +32,12 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 # Checks for library functions.
-AC_CHECK_LIB([m], [sqrt])
 AC_CHECK_FUNCS([dup2 gethostname getopt_long memset pow \
 	sqrt strdup strerror])
 AC_FUNC_FORK
 AC_FUNC_MEMCMP
 AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
-AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
-			  [Define if the system does not provide ceilf]))
 
 # Checks for library constants.
 AC_CHECK_DECL(HOST_NAME_MAX, [],
@@ -88,6 +85,11 @@ AM_CONDITIONAL([HAVE_LIBMPI],
 	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
 unset LIBS
+
+# Check for the math library.
+AC_CHECK_LIB([m], [sqrt])
+AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
+			  [Define if the system does not provide ceilf]))
 
 # Check for the dynamic linking library.
 AC_CHECK_LIB([dl], [dlsym])
