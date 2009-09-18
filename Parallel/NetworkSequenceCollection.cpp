@@ -1431,21 +1431,6 @@ void NetworkSequenceCollection::setFlag(const PackedSeq& seq, SeqFlag flag)
 	}
 }
 
-bool NetworkSequenceCollection::hasParent(const PackedSeq& seq)
-{
-	assert(isLocal(seq));
-	return m_pLocalSpace->hasParent(seq);
-}
-
-//
-//
-//
-bool NetworkSequenceCollection::hasChild(const PackedSeq& seq)
-{
-	assert(isLocal(seq));
-	return m_pLocalSpace->hasChild(seq);
-}
-
 bool NetworkSequenceCollection::setBaseExtension(
 		const PackedSeq& seq, extDirection dir, uint8_t base)
 {

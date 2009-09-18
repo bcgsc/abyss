@@ -75,12 +75,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 		
-		// does this sequence extend from a different node?
-		bool hasParent(const PackedSeq& seq);
-
-		// does this sequence have an extension?
-		bool hasChild(const PackedSeq& seq);
-		
 		// Return the number of sequences in the collection
 		size_t count() const;
 

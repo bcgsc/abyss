@@ -61,12 +61,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		iterator end() { return m_pSequences->end(); }
 		const_iterator end() const { return m_pSequences->end(); }
 
-		// does this sequence extend from a different node?
-		bool hasParent(const PackedSeq& seq);
-
-		// does this sequence have an extension?
-		bool hasChild(const PackedSeq& seq);
-
 		/** Return the number of sequences in this collection. */
 		size_t count() const { return m_pSequences->size(); }
 
@@ -105,8 +99,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		// These should only be called from this class, hence they are private
 		void removeByIter(SequenceHashIterPair seqIters);
 
-		bool hasChildByIter(SequenceCollectionHashIter seqIter) const;
-		bool hasParentByIter(SequenceCollectionHashIter seqIter) const;
 		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);

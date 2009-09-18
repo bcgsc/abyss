@@ -45,12 +45,6 @@ class ISequenceCollection
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 		}
 
-		// does this sequence extend from a different node?
-		virtual bool hasParent(const PackedSeq& seq) = 0;
-
-		// does this sequence have an extension?
-		virtual bool hasChild(const PackedSeq& seq) = 0;
-
 		// Return the number of sequences in the collection
 		virtual size_t count() const = 0;
 

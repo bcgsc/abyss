@@ -230,61 +230,6 @@ void SequenceCollectionHash::printLoad() const
 			size, buckets, (float)size / buckets);
 }
 
-bool SequenceCollectionHash::hasParent(const PackedSeq& seq)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool forwardFlag = hasParentByIter(iters.first);
-	bool reverseFlag = hasChildByIter(iters.second);
-	
-	// assert that the sequence and its reverse complement have identical flags
-	//assert(forwardFlag == reverseFlag);
-	return (forwardFlag || reverseFlag);
-}
-
-//
-//
-//
-bool SequenceCollectionHash::hasParentByIter(SequenceCollectionHashIter seqIter) const
-{
-	if(seqIter != m_pSequences->end())
-	{
-		return seqIter->hasExtension(ANTISENSE);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-//
-//
-//
-bool SequenceCollectionHash::hasChild(const PackedSeq& seq)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool forwardFlag = hasChildByIter(iters.first);
-	bool reverseFlag = hasParentByIter(iters.second);
-
-	// assert that the sequence and its reverse complement have identical flags
-	//assert(forwardFlag == reverseFlag);
-	return (forwardFlag || reverseFlag);
-}
-
-//
-//
-//
-bool SequenceCollectionHash::hasChildByIter(SequenceCollectionHashIter seqIter) const
-{
-	if(seqIter != m_pSequences->end())
-	{
-		return seqIter->hasExtension(SENSE);
-	}
-	else
-	{
-		return false;
-	}
-}
-
 // get the extensions and multiplicity information for a sequence
 bool SequenceCollectionHash::getSeqData(const PackedSeq& seq,
 		ExtensionRecord& extRecord, int& multiplicity) const
