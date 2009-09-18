@@ -882,15 +882,8 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		if (++count % 100000 == 0)
 			PrintDebug(1, "Popping bubbles: %u k-mer\n", count);
 
-		// Get the extensions for this sequence, this function populates the extRecord structure
-		ExtensionRecord extRec;
-		int multiplicity = -1;
-		// THIS CALL TO GET EXTENSIONS IS GUARENTEED TO BE LOCAL SO WE DO NOT HAVE TO WAIT FOR THE RETURN
-		bool success = seqCollection->getSeqData(*iter, extRec, multiplicity);
-		assert(success);
-		(void)success;
-
-		// Check for ambiguity
+		ExtensionRecord extRec = iter->extension();
+		unsigned multiplicity = iter->getMultiplicity();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
