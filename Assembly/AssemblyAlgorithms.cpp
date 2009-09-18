@@ -536,7 +536,7 @@ unsigned getNumEroded()
 unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 {
 	extDirection dir;
-	SeqContiguity contiguity = checkSeqContiguity(c, seq, dir);
+	SeqContiguity contiguity = checkSeqContiguity(seq, dir);
 	if (contiguity == SC_INVALID || contiguity == SC_CONTIGUOUS)
 		return 0;
 
@@ -594,17 +594,15 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 	printf("Trimmed %u branches in %u rounds\n", total, rounds);
 }
 
-//
-// Check the adjacency of a sequence
-//
-SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir)
+/** Return the adjacency of this sequence. */
+SeqContiguity checkSeqContiguity(const PackedSeq& seq,
+		extDirection& outDir)
 {
 	if (seq.deleted())
 		return SC_INVALID;
-			
-	bool child = seqCollection->hasChild(seq);
-	bool parent = seqCollection->hasParent(seq);
-	
+
+	bool child = seq.hasExtension(SENSE);
+	bool parent = seq.hasExtension(ANTISENSE);
 	if(!child && !parent)
 	{
 		//this sequence is completely isolated
@@ -640,7 +638,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
-		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
+		SeqContiguity status = checkSeqContiguity(*iter, dir);
 
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
@@ -833,7 +831,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
-		SeqContiguity status = checkSeqContiguity(seqCollection, *iter, dir);
+		SeqContiguity status = checkSeqContiguity(*iter, dir);
 
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{

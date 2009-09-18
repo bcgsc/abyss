@@ -768,8 +768,8 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
-		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
-
+		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
+				*iter, dir);
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
 			continue;
@@ -1149,8 +1149,8 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 			iter != seqCollection->end(); ++iter) {
 		extDirection dir;
 		// dir will be set to the assembly direction if the sequence can be assembled
-		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(seqCollection, *iter, dir);
-
+		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
+				*iter, dir);
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
 			continue;

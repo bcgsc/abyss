@@ -59,7 +59,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
 unsigned removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
-SeqContiguity checkSeqContiguity(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection& outDir);
+SeqContiguity checkSeqContiguity(const PackedSeq& seq,
+		extDirection& outDir);
 
 // process a terminated branch for trimming
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
