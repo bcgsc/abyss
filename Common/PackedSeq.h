@@ -104,7 +104,14 @@ class PackedSeq
 		void setFlag(SeqFlag flag) { m_flags |= flag; }
 		bool isFlagSet(SeqFlag flag) const { return m_flags & flag; }
 		void clearFlag(SeqFlag flag) { m_flags &= ~flag; }
-		bool deleted() const { return m_flags & SF_DELETE; }
+		/** Return true if the specified sequence is deleted. */
+		bool deleted() const { return isFlagSet(SF_DELETE); }
+		/** Return true if the specified sequence is marked. */
+		bool marked(extDirection sense = SENSE) const
+		{
+			return isFlagSet(sense == SENSE
+					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
+		}
 
 		// Extension management
 		SeqExt getExtension(extDirection dir) const;

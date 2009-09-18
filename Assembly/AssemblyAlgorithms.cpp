@@ -246,7 +246,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 			continue;
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
-			if (pSC->isMarked(*it, sense)) {
+			if (it->marked(sense)) {
 				removeExtensions(pSC, *it, sense);
 				count++;
 			}
@@ -783,7 +783,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
 			it != end; ++it) {
 		if (it->deleted())
 			continue;
-		if (pSC->isMarked(*it)) {
+		if (it->marked()) {
 			removeSequenceAndExtensions(pSC, *it);
 			count++;
 		}
