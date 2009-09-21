@@ -78,11 +78,18 @@ class Histogram : std::map<int, unsigned>
 	/** Return the first local minimum. */
 	T firstLocalMinimum() const
 	{
+		const unsigned SMOOTHING = 4;
 		assert(!empty());
 		Histogram::const_iterator minimum = begin();
+		unsigned count = 0;
 		for (Histogram::const_iterator it = begin();
-				it != end() && it->second <= minimum->second; ++it)
-			minimum = it;
+				it != end(); ++it) {
+			if (it->second <= minimum->second) {
+				minimum = it;
+				count = 0;
+			} else if (++count >= SMOOTHING)
+				break;
+		}
 		return minimum->first;
 	}
 
