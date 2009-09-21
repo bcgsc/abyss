@@ -74,17 +74,25 @@ void NetworkSequenceCollection::run()
 				m_comm.sendCheckPointMessage();
 				break;
 			case NAS_LOAD_COMPLETE:
+			{
 				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
-				m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
+				unsigned minCovSum =
+					m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
 							*m_pLocalSpace));
+				float minCov = (float)minCovSum / opt::numProc;
+				if ((int)opt::erode < 0)
+					opt::erode = (unsigned)roundf(minCov);
+				if (opt::coverage < 0)
+					opt::coverage = minCov;
 				EndState();
 				SetState(NAS_WAITING);
 				break;
+			}
 			case NAS_GEN_ADJ:
 				m_comm.barrier();
 				m_numBasesAdjSet = 0;
