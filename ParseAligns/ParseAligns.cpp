@@ -1,6 +1,7 @@
 #include "Aligner.h"
 #include "Histogram.h"
 #include "PairUtils.h"
+#include "SAM.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>
@@ -49,6 +50,9 @@ namespace opt {
 	static string distPath;
 	static string fragPath;
 	static string histPath;
+
+	/** Alignments are in SAM format. */
+	static bool sam;
 }
 
 static const char shortopts[] = "d:k:f:h:c:v";
@@ -303,38 +307,52 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	}
 }
 
+static void handleAlignment(
+		const ReadAlignMap::value_type& alignments,
+		ReadAlignMap& out)
+{
+	stats.alignments++;
+
+	string pairID = makePairID(alignments.first);
+	ReadAlignMap::iterator pairIter = out.find(pairID);
+	if (pairIter != out.end()) {
+		handleAlignmentPair(*pairIter, alignments);
+		out.erase(pairIter);
+	} else if (!out.insert(alignments).second) {
+		cerr << "error: duplicate read ID `" << alignments.first
+			<< "'\n";
+		exit(EXIT_FAILURE);
+	}
+
+	if (!opt::distPath.empty() && alignments.second.size() >= 2)
+		doReadIntegrity(alignments);
+}
+
 // Read in the alignments file into the table
 static void readAlignments(istream& in, ReadAlignMap* pout)
 {
-	ReadAlignMap& out = *pout;
 	string line;
 	for (string line; getline(in, line);) {
 		istringstream s(line);
-		string readID;
-		s >> readID;
-
-		ReadAlignMap::value_type alignments(
-				readID, AlignmentVector());
-		copy(istream_iterator<Alignment>(s),
-				istream_iterator<Alignment>(),
-				back_inserter(alignments.second));
-		stats.alignments++;
-
-		string pairID = makePairID(readID);
-		ReadAlignMap::iterator pairIter = out.find(pairID);
-		if (pairIter != out.end()) {
-			handleAlignmentPair(*pairIter, alignments);
-			out.erase(pairIter);
+		if (opt::sam) {
+			SAMRecord sam;
+			s >> sam;
+			assert(s);
+			ReadAlignMap::value_type alignments(
+					sam.qname, AlignmentVector());
+			if (!(sam.flag & SAMRecord::FUNMAP))
+				alignments.second.push_back(sam);
+			handleAlignment(alignments, *pout);
 		} else {
-			if (!out.insert(alignments).second) {
-				cerr << "error: duplicate read ID `"
-					<< readID << "'\n";
-				exit(EXIT_FAILURE);
-			}
+			string readID;
+			s >> readID;
+			ReadAlignMap::value_type alignments(
+					readID, AlignmentVector());
+			copy(istream_iterator<Alignment>(s),
+					istream_iterator<Alignment>(),
+					back_inserter(alignments.second));
+			handleAlignment(alignments, *pout);
 		}
-
-		if (!opt::distPath.empty() && alignments.second.size() >= 2)
-			doReadIntegrity(alignments);
 	}
 	assert(in.eof());
 }
