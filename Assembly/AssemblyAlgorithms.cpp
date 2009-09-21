@@ -709,7 +709,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	} else if (extensions.dir[dir].isAmbiguous()) {
 		// this branch has an ambiguous extension, add the current sequence and terminate
 		branch.addSequence(currSeq, multiplicity);
-		branch.terminate(BS_AMBI_SAME);
+		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_AMBI_SAME);
 	}
 	else
 	{
