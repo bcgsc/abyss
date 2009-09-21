@@ -1303,30 +1303,15 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 	}	
 }
 
-//
-// Process a sequence extension for trimming
-//
+/** Process a sequence extension for trimming. */
 void NetworkSequenceCollection::processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity)
 {
-	//printf("processing %llu\n", id);
-	// Find the branch by its ID	
 	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
-	
-	// should always exist
 	assert(iter != m_activeBranchGroups.end());
-
 	PackedSeq currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(iter->second.getBranch(branchID), currSeq, extRec, multiplicity);
-	
-	// if the branch is still active generate a new request
-	if(active)
-	{
-		return generateExtensionRequest(groupID, branchID, currSeq);
-	}
-	else
-	{
-		return;	
-	}
+	if (active)
+		generateExtensionRequest(groupID, branchID, currSeq);
 }
 
 //
