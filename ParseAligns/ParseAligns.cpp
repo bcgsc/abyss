@@ -1,6 +1,6 @@
 #include "Aligner.h"
+#include "Histogram.h"
 #include "PairUtils.h"
-#include "Stats.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>

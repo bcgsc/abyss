@@ -1,4 +1,5 @@
 #include "Stats.h"
+#include "Histogram.h"
 #include <algorithm>
 #include <cassert>
 #include <cmath>

@@ -1,9 +1,10 @@
 #ifndef STATS_H
 #define STATS_H 1
 
-#include "Histogram.h"
 #include <cmath>
 #include <vector>
+
+class Histogram;
 
 typedef std::vector<double> DoubleVec;
 struct PDF

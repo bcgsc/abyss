@@ -1,7 +1,7 @@
 #ifndef PAIRUTILS_H
 #define PAIRUTILS_H 1
 
-#include "Stats.h" // for Histogram
+#include "Histogram.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
