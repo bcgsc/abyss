@@ -695,43 +695,42 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 	{
 		// Check if the branch has extended past the max trim length.
 		branch.terminate(BS_TOO_LONG);
+		return false;
 	}
 	else if(branch.hasLoop())
 	{
 		branch.terminate(BS_LOOP);
+		return false;
 	} else if (extensions.dir[oppDir].isAmbiguous()) {
 		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
 		branch.terminate(BS_AMBI_OPP);
-	} else if (!extensions.dir[dir].hasExtension()) {
-		// no extenstion, add the current sequence and terminate the branch
-		branch.addSequence(currSeq, multiplicity);
-		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_NOEXT);
-	} else if (extensions.dir[dir].isAmbiguous()) {
-		// this branch has an ambiguous extension, add the current sequence and terminate
-		branch.addSequence(currSeq, multiplicity);
-		branch.terminate(branch.isTooLong() ? BS_TOO_LONG : BS_AMBI_SAME);
+		return false;
 	}
-	else
-	{
-		// Add the sequence to the branch
-		branch.addSequence(currSeq, multiplicity);
-		
-		// generate the new current sequence from the extension
-		//printf("currseq: %s ", currSeq.decode().c_str());
-		PSequenceVector newSeqs;
 
+	branch.addSequence(currSeq, multiplicity);
+	if (branch.isTooLong()) {
+		branch.terminate(BS_TOO_LONG);
+		return false;
+	}
+
+	if (!extensions.dir[dir].hasExtension()) {
+		// no extenstion
+		branch.terminate(BS_NOEXT);
+		return false;
+	} else if (extensions.dir[dir].isAmbiguous()) {
+		// ambiguous extension
+		branch.terminate(BS_AMBI_SAME);
+		return false;
+	} else {
+		// generate the new current sequence from the extension
+		PSequenceVector newSeqs;
 		generateSequencesFromExtension(currSeq, dir, extensions.dir[dir], newSeqs);
 		assert(newSeqs.size() == 1);
 		currSeq = newSeqs.front();
-		//printf("newseq: %s \n", currSeq.decode().c_str());
+		return true;
 	}
-	
-	return branch.isActive();
 }
 
-//
-//
-//
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch)
 {
 	assert(!branch.isActive());
