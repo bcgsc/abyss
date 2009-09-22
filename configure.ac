@@ -33,8 +33,8 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([dup2 gethostname getopt_long memset pow \
-	sqrt strdup strerror])
+AC_CHECK_FUNCS([dup2 gethostname getopt_long memset \
+	strdup strerror])
 AC_FUNC_FORK
 AC_FUNC_MEMCMP
 AC_FUNC_SETVBUF_REVERSED
@@ -89,6 +89,7 @@ unset LIBS
 
 # Check for the math library.
 AC_CHECK_LIB([m], [sqrt])
+AC_CHECK_FUNCS([pow sqrt])
 AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
 			  [Define if the system does not provide ceilf]))
 
