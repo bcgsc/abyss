@@ -14,14 +14,16 @@ using namespace std;
 
 namespace opt {
 
+#define PROGRAM "ABYSS"
+
 static const char VERSION_MESSAGE[] =
-PACKAGE " (" PACKAGE_NAME ") " VERSION "\n"
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PACKAGE " [OPTION]... FILE...\n"
+"Usage: " PROGRAM " [OPTION]... FILE...\n"
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
 "qseq or export format and compressed with gz, bz2 or xz.\n"
 "\n"
@@ -194,7 +196,7 @@ void parse(int argc, char* const* argv)
 
 	if (readLen > 0) {
 		if (kmerSize > readLen) {
-			cerr << PACKAGE ": k-mer size must not be larger than "
+			cerr << PROGRAM ": k-mer size must not be larger than "
 				"the read length\n";
 			exit(EXIT_FAILURE);
 		}
@@ -203,20 +205,20 @@ void parse(int argc, char* const* argv)
 	}
 
 	if (kmerSize <= 0) {
-		cerr << PACKAGE ": missing -k,--kmer option\n";
+		cerr << PROGRAM ": missing -k,--kmer option\n";
 		die = true;
 	}
 	if (trimLen < 0) {
-		cerr << PACKAGE ": missing either -l,--read-length "
+		cerr << PROGRAM ": missing either -l,--read-length "
 			"or -t,--trim-length option\n";
 		die = true;
 	}
 	if (argv[optind] == NULL) {
-		cerr << PACKAGE ": missing input sequence file argument\n";
+		cerr << PROGRAM ": missing input sequence file argument\n";
 		die = true;
 	}
 	if (die) {
-		cerr << "Try `" PACKAGE " --help' for more information.\n";
+		cerr << "Try `" PROGRAM " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
