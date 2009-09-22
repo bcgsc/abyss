@@ -51,8 +51,8 @@ namespace opt {
 	static string fragPath;
 	static string histPath;
 
-	/** Alignments are in SAM format. */
-	static bool sam;
+	/** Input alignment format. */
+	static enum { KALIGNER, SAM } inputFormat;
 }
 
 static const char shortopts[] = "d:k:f:h:c:v";
@@ -334,7 +334,9 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 	string line;
 	for (string line; getline(in, line);) {
 		istringstream s(line);
-		if (opt::sam) {
+		switch (opt::inputFormat) {
+		  case opt::SAM:
+		  {
 			SAMRecord sam;
 			s >> sam;
 			assert(s);
@@ -343,7 +345,10 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 			if (!(sam.flag & SAMRecord::FUNMAP))
 				alignments.second.push_back(sam);
 			handleAlignment(alignments, *pout);
-		} else {
+			break;
+		  }
+		  case opt::KALIGNER:
+		  {
 			string readID;
 			s >> readID;
 			ReadAlignMap::value_type alignments(
@@ -352,6 +357,8 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 					istream_iterator<Alignment>(),
 					back_inserter(alignments.second));
 			handleAlignment(alignments, *pout);
+			break;
+		  }
 		}
 	}
 	assert(in.eof());
