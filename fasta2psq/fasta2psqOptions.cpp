@@ -10,8 +10,10 @@ using namespace std;
 
 namespace pp_opt {
 
+#define PROGRAM "fasta2psq"
+
 static const char VERSION_MESSAGE[] =
-PACKAGE " (ABySS) " VERSION "\n"
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Jared Simpson.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
@@ -65,20 +67,20 @@ void parse(int argc, char* const* argv)
 	bool die = false;
 	
 	if (argc - optind > 1) {
-		cerr << PACKAGE ": " << "unexpected argument: "
+		cerr << PROGRAM ": " << "unexpected argument: "
 			<< argv[optind+1] << "\n";
 		die = true;
 	}
 	if (argv[optind] == NULL) {
-		cerr << PACKAGE ": " << "missing FASTA file argument\n";
+		cerr << PROGRAM ": " << "missing FASTA file argument\n";
 		die = true;
 	}
 	if (outFile.empty()) {
-		cerr << PACKAGE ": " << "missing -o,--outfile option\n";
+		cerr << PROGRAM ": " << "missing -o,--outfile option\n";
 		die = true;
 	}	
 	if (die) {
-		cerr << "Try `" << PACKAGE
+		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
@@ -89,7 +91,7 @@ void parse(int argc, char* const* argv)
 	const char *PACKED_SEQ_EXT = ".psq";
 	if(outFile.substr(outFile.length() - 4) != PACKED_SEQ_EXT)
 	{
-		cerr << PACKAGE ": " << "invalid extension on output: " << PACKED_SEQ_EXT << " is required\n";
+		cerr << PROGRAM ": " << "invalid extension on output: " << PACKED_SEQ_EXT << " is required\n";
 		exit(EXIT_FAILURE);
 	}
 }

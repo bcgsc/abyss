@@ -15,7 +15,7 @@ using namespace std;
 namespace opt {
 
 static const char VERSION_MESSAGE[] =
-PACKAGE " (ABySS) " VERSION "\n"
+PACKAGE " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
@@ -246,7 +246,7 @@ void parse(int argc, char* const* argv)
 	}
 
 	if (opt::rank <= 0)
-		cout << "ABySS " VERSION "\n" << sargv.str() << endl;
+		cout << PACKAGE_STRING "\n" << sargv.str() << endl;
 }
 
 } // namespace opt

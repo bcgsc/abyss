@@ -21,7 +21,7 @@ using namespace std;
 #define PROGRAM "AdjList"
 
 static const char VERSION_MESSAGE[] =
-PROGRAM " (ABySS) " VERSION "\n"
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
 "Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
