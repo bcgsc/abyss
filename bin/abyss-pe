@@ -21,6 +21,9 @@ endif
 ifdef out
 name?=$(out:-contigs.fa=)
 endif
+ifndef name
+$(error missing argument name)
+endif
 
 ifdef lib
 map=$(foreach a,$(2),$(call $(1),$(a)))
@@ -39,11 +42,8 @@ override se:=$(strip $(se))
 endif
 
 # Mandatory parameters.
-ifndef out
-$(error missing argument out)
-endif
 ifndef in
-$(error missing argument in)
+$(error missing argument in or lib)
 endif
 ifndef k
 $(error missing argument k)
