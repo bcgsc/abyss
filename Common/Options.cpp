@@ -12,9 +12,9 @@
 
 using namespace std;
 
-namespace opt {
-
 #define PROGRAM "ABYSS"
+
+namespace opt {
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"

@@ -8,9 +8,9 @@
 
 using namespace std;
 
-namespace pp_opt {
-
 #define PROGRAM "fasta2psq"
+
+namespace pp_opt {
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
