@@ -32,11 +32,13 @@ static const char USAGE_MESSAGE[] =
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
-"  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
+"      --sam             alignments are in SAM format\n"
+"      --kaligner        alignments are in KAligner format\n"
+"  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -52,7 +54,8 @@ namespace opt {
 	static string histPath;
 
 	/** Input alignment format. */
-	static enum { KALIGNER, SAM } inputFormat;
+	static int inputFormat;
+	enum { KALIGNER, SAM };
 }
 
 static const char shortopts[] = "d:k:f:h:c:v";
@@ -64,6 +67,8 @@ static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "frag",    required_argument, NULL, 'f' },
 	{ "hist",    required_argument, NULL, 'h' },
+	{ "kaligner",no_argument, &opt::inputFormat, opt::KALIGNER },
+	{ "sam",     no_argument, &opt::inputFormat, opt::SAM },
 	{ "cover",   required_argument, NULL, 'c' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
