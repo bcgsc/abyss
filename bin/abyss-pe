@@ -2,7 +2,7 @@
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
-# Integrate with Sun Grid Engine (SGE).
+# Integrate with Sun Grid Engine (SGE)
 ifdef JOB_NAME
 name?=$(JOB_NAME)
 endif
@@ -41,7 +41,7 @@ ifdef se
 override se:=$(strip $(se))
 endif
 
-# Mandatory parameters.
+# Mandatory parameters
 ifndef in
 $(error missing argument in or lib)
 endif
@@ -55,7 +55,7 @@ ifndef n
 $(error missing argument n)
 endif
 
-# ABYSS parameters.
+# ABYSS parameters
 abyssopt += -k$k
 ifdef l
 abyssopt += -l$l
@@ -78,7 +78,7 @@ endif
 abyssopt += $v
 s?=100
 
-# KAligner parameters.
+# KAligner parameters
 ifdef np
 j?=$(np)
 else
