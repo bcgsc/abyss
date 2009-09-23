@@ -80,8 +80,7 @@ next_record:
 		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-		assert(s.length() >= 2);
-		if (isalpha(s[0]) && isdigit(s[1])) {
+		if (s.length() > 2 && isalpha(s[0]) && isdigit(s[1])) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
