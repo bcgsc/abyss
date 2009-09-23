@@ -48,20 +48,17 @@ endif
 ifndef k
 $(error missing argument k)
 endif
-ifndef l
-$(error missing argument l)
+ifeq '$(origin l) $(origin t)' 'undefined undefined'
+$(error missing argument l or t)
 endif
 ifndef n
 $(error missing argument n)
 endif
 
-abyssopt += -k$k -l$l
-
-# Optional parameters.
-ifdef np
-j?=$(np)
-else
-j?=1
+# ABYSS parameters.
+abyssopt += -k$k
+ifdef l
+abyssopt += -l$l
 endif
 ifdef e
 abyssopt += -e$e
@@ -80,6 +77,13 @@ abyssopt += -b$b
 endif
 abyssopt += $v
 s?=100
+
+# KAligner parameters.
+ifdef np
+j?=$(np)
+else
+j?=1
+endif
 
 all: $(out)
 
