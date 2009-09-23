@@ -30,6 +30,9 @@ static const char USAGE_MESSAGE[] =
 "      --chastity                 discard unchaste reads [default]\n"
 "                                 for qseq- and export-formatted files only\n"
 "      --no-chastity              do not discard unchaste reads\n"
+"      --trim-masked              trim masked bases from the ends of reads\n"
+"                                 [default]\n"
+"      --no-trim-masked           do not trim masked bases from the ends of reads\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
 "                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
@@ -80,7 +83,7 @@ int bubbles = INT_MAX;
 int chastityFilter = 1;
 
 /** Trim masked (lower case) characters from the ends of sequence. */
-int trimMasked;
+int trimMasked = 1;
 
 /** output contigs path */
 string contigsPath = "contigs.fa";
@@ -119,6 +122,8 @@ static const struct option longopts[] = {
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "chastity",    no_argument,       &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
+	{ "trim-masked",    no_argument,    &opt::trimMasked, 1 },
+	{ "no-trim-masked", no_argument,    &opt::trimMasked, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "erode",       required_argument, NULL, 'e' },
