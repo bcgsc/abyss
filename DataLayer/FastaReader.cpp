@@ -80,12 +80,13 @@ next_record:
 		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-		assert(s.length() > 2);
+		assert(s.length() >= 2);
 		if (isalpha(s[0]) && isdigit(s[1])) {
 			// The first character is the primer base. The second
-			// character is the dibase read of the primer and the first
-			// base of the sample, which is not part of the assembly.
-			anchor = colourToNucleotideSpace(s.at(0), s.at(1));
+			// character is the dibase read of the primer and the
+			// first base of the sample, which is not part of the
+			// assembly.
+			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
 		}
 
@@ -119,7 +120,6 @@ next_record:
 			o << '/' << fields[7];
 			id = o.str();
 			s = fields[8];
-			assert(s.length() > 2);
 		} else {
 			fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
