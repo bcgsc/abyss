@@ -71,6 +71,13 @@ next_record:
 		getline(headerStream, comment);
 
 		getline(m_fileHandle, s);
+
+		if (opt::trimMasked) {
+			// Removed masked (lower case) sequence at the beginning
+			// and end of the read.
+			s.erase(s.find_last_not_of("acgtn") + 1);
+			s.erase(0, s.find_first_not_of("acgtn"));
+		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
 		assert(s.length() > 2);

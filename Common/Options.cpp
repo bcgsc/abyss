@@ -79,6 +79,9 @@ int bubbles = INT_MAX;
 /** Discard reads that failed the chastity filter. */
 int chastityFilter = 1;
 
+/** Trim masked (lower case) characters from the ends of sequence. */
+int trimMasked;
+
 /** output contigs path */
 string contigsPath = "contigs.fa";
 

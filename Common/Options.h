@@ -15,6 +15,7 @@ namespace opt {
 	extern float coverage;
 	extern int bubbles;
 	extern int chastityFilter;
+	extern int trimMasked;
 	extern std::string contigsPath;
 	extern std::string contigsTempPath;
 	extern std::string graphPath;
