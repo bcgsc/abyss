@@ -1,5 +1,5 @@
 #include "Sequence.h"
-#include "Options.h"
+#include "Common/Options.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>

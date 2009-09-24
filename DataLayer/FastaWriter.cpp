@@ -1,5 +1,5 @@
 #include "FastaWriter.h"
-#include "Options.h"
+#include "Common/Options.h"
 #include <cassert>
 #include <cerrno>
 #include <cstdio>

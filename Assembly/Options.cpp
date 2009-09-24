@@ -1,7 +1,8 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
 #include "config.h"
-#include "Options.h"
+#include "Common/Options.h"
+#include "DataLayer/Options.h"
 #include <algorithm>
 #include <climits> // for INT_MAX
 #include <getopt.h>
@@ -55,12 +56,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** MPI rank */
-int rank = -1;
-
-/** Number of MPI processes */
-int numProc = 1;
-
 /** k-mer length */
 int kmerSize = -1;
 
@@ -79,12 +74,6 @@ float coverage = -1;
 /** Maximum number of bubble-popping rounds. */
 int bubbles = INT_MAX;
 
-/** Discard reads that failed the chastity filter. */
-int chastityFilter = 1;
-
-/** Trim masked (lower case) characters from the ends of sequence. */
-int trimMasked = 1;
-
 /** output contigs path */
 string contigsPath = "contigs.fa";
 
@@ -102,14 +91,8 @@ string snpPath;
 /** output bubble file */
 FILE* snpFile;
 
-/** verbose output */
-int verbose = 0;
-
 /** input FASTA files */
 vector<string> inFiles;
-
-/** Colour space sequences */
-bool colourSpace;
 
 static const char shortopts[] = "b:c:e:E:g:k:l:o:s:t:v";
 

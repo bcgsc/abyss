@@ -1,5 +1,6 @@
 #include "FastaReader.h"
-#include "Options.h"
+#include "DataLayer/Options.h"
+#include "Log.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -131,10 +132,8 @@ next_record:
 	if (m_discardN) {
 		size_t pos = s.find_first_not_of("ACGT0123");
 		if (pos != string::npos) {
-			if (opt::verbose > 4)
-				fprintf(stderr,
-						"warning: discarded sequence containing "
-						"`%c'\n", s[pos]);
+			logger(5) << "warning: discarded sequence containing `"
+				<< s[pos] << "'\n";
 			m_nonacgt++;
 			goto next_record;
 		}

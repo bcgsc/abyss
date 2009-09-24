@@ -1,6 +1,6 @@
 bin_PROGRAMS = ABYSS-P
 
-ABYSS_P_CPPFLAGS = \
+ABYSS_P_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Assembly \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer

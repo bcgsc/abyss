@@ -1,6 +1,6 @@
 #include "SequenceCollectionHash.h"
 #include "Log.h"
-#include "Options.h"
+#include "Common/Options.h"
 #include "Timer.h"
 #include <algorithm>
 #include <cassert>
@@ -311,7 +311,6 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 	exit(EXIT_FAILURE);
 }
 
-#include "Options.h"
 #include <cstdio>
 
 /** Write this collection to disk. */

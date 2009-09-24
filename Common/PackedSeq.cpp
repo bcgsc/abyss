@@ -1,7 +1,7 @@
 #include "config.h"
+#include "Common/Options.h"
 #include "PackedSeq.h"
 #include "HashFunction.h"
-#include "Options.h"
 #include "Sequence.h"
 #include <cstdlib>
 #include <cstring>

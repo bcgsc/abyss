@@ -2,7 +2,8 @@
 #include "FastaReader.h"
 #include "Log.h"
 #include "NetworkSequenceCollection.h"
-#include "Options.h"
+#include "Assembly/Options.h"
+#include "Common/Options.h"
 #include "Timer.h"
 #include <climits> // for HOST_NAME_MAX
 #include <cstdio>

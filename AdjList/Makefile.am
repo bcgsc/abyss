@@ -7,10 +7,10 @@ AdjList_CPPFLAGS = \
 	-I$(top_srcdir)/Graph
 
 AdjList_LDADD = \
-	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/ExpPaired/libexppaired.a \
-	$(top_builddir)/Graph/libgraph.a
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a
 
 AdjList_SOURCES = \
 	AdjList.cpp

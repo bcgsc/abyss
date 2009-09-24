@@ -2,7 +2,8 @@
 #include "AssemblyAlgorithms.h"
 #include "FastaWriter.h"
 #include "Log.h"
-#include "Options.h"
+#include "Common/Options.h"
+#include "Assembly/Options.h"
 #include <cmath> // for roundf
 #include <cstdlib>
 #include <iostream>
