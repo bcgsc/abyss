@@ -33,6 +33,17 @@ CommLayer::~CommLayer()
 		<< m_rxBytes << " bytes.\n";
 }
 
+/** Return the status of an MPI request.
+ * Wraps MPI_Request_get_status.
+ */
+static bool request_get_status(const MPI_Request& req,
+		MPI_Status& status)
+{
+	int flag;
+	MPI_Request_get_status(req, &flag, &status);
+	return flag;
+}
+
 /** Return the tag of the received message or APM_NONE if no message
  * has been received. If a message has been received, this call should
  * be followed by a call to either ReceiveControlMessage or
@@ -40,9 +51,8 @@ CommLayer::~CommLayer()
  */
 APMessage CommLayer::checkMessage(int& sendID)
 {
-	int flag;
 	MPI_Status status;
-	MPI_Request_get_status(m_request, &flag, &status);
+	bool flag = request_get_status(m_request, status);
 	if (flag)
 		sendID = status.MPI_SOURCE;
 	return flag ? (APMessage)status.MPI_TAG : APM_NONE;
@@ -51,10 +61,8 @@ APMessage CommLayer::checkMessage(int& sendID)
 /** Return true if no message has been received. */
 bool CommLayer::receiveEmpty()
 {
-	int flag;
 	MPI_Status status;
-	MPI_Request_get_status(m_request, &flag, &status);
-	return !flag;
+	return !request_get_status(m_request, status);
 }
 
 /** Block until all processes have reached this routine. */
