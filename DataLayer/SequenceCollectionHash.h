@@ -82,7 +82,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		}
 
 		void load(const char *path);
-		void store(const char* path = NULL) const;
+		void store(const char* path) const;
 		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
 		void setColourSpace(bool flag);
 

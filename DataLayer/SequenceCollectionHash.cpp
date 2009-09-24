@@ -5,6 +5,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
+
+using namespace std;
 
 bool PackedSeqEqual::operator()(const PackedSeq& a,
 		const PackedSeq& b) const
@@ -305,18 +309,21 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 
 #include <cstdio>
 
-/** Write this collection to disk. */
+/** Write this collection to disk.
+ * @param path does not include the extension
+ */
 void SequenceCollectionHash::store(const char* path) const
 {
+	assert(path != NULL);
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-	char buf[100];
-	if (path == NULL) {
-		snprintf(buf, sizeof buf, "checkpoint-%03u.kmer", opt::rank);
-		path = buf;
-	}
-	FILE* f = fopen(path, "w");
+	ostringstream s;
+	s << path;
+	if (opt::rank >= 0)
+		s << '-' << setfill('0') << setw(3) << opt::rank;
+	s << ".kmer";
+	FILE* f = fopen(s.str().c_str(), "w");
 	if (f == NULL) {
-		perror(path);
+		perror(s.str().c_str());
 		exit(EXIT_FAILURE);
 	}
 	m_pSequences->resize(0); // Shrink the hash table.
