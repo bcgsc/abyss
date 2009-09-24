@@ -41,6 +41,11 @@ static bool request_get_status(const MPI_Request& req,
 {
 	int flag;
 	MPI_Request_get_status(req, &flag, &status);
+	// Work around a bug present in Open MPI 1.3.3 and earlier.
+	// MPI_Request_get_status may return false on the first call even
+	// though a message is waiting. The second call should work.
+	if (!flag)
+		MPI_Request_get_status(req, &flag, &status);
 	return flag;
 }
 
