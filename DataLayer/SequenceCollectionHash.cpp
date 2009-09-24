@@ -6,25 +6,17 @@
 #include <cassert>
 #include <cstdlib>
 
-bool PackedSeqEqual::operator()(const PackedSeq& obj1, const PackedSeq& obj2) const
+bool PackedSeqEqual::operator()(const PackedSeq& a,
+		const PackedSeq& b) const
 {
-	//extern bool turnOnPrint;
-	//if(turnOnPrint)	
-	//	printf("comp %s == %s ? %d\n", obj1.decode().c_str(), obj2.decode().c_str(), obj1 == obj2);
-	return obj1 == obj2;
+	return a == b;
 }
 
-size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const 
+size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
 {
-	int code = myObj.getHashCode();
-  	//printf("hash: %d\n", code);
-	return code;
-	//return 1;
+	return myObj.getHashCode();
 }
 
-//
-// 
-//
 SequenceCollectionHash::SequenceCollectionHash()
 	: m_seqObserver(NULL), m_adjacencyLoaded(false)
 {
