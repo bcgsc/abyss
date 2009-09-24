@@ -12,6 +12,16 @@
 
 using namespace std;
 
+namespace opt {
+	/** Discard reads that failed the chastity filter. */
+	int chastityFilter = 1;
+
+	/** Trim masked (lower case) characters from the ends of
+	 * sequences.
+	 */
+	int trimMasked = 1;
+}
+
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
