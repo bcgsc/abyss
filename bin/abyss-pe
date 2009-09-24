@@ -118,7 +118,7 @@ endif
 dist=$(addsuffix -3.dist, $(lib))
 
 $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
-	zcat $< |DistanceEst $v -k$k -s$s -n$n -o $@ \
+	gunzip -c $< |DistanceEst $v -k$k -s$s -n$n -o $@ \
 		$(wordlist 2, 3, $^) -
 
 # Find overlaps between contigs
