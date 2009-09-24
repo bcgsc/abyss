@@ -1,4 +1,5 @@
 #include "Aligner.h"
+#include "Align/Options.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
@@ -47,7 +48,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned k;
-	int multimap; // used by Aligner
 	static int threads = 1;
 	static bool printSeq = false;
 }

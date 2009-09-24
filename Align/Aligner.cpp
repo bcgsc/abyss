@@ -1,4 +1,5 @@
 #include "Aligner.h"
+#include "Align/Options.h"
 #include "PrefixIterator.h"
 #include "Sequence.h"
 #include <algorithm>
@@ -10,7 +11,7 @@
 using namespace std;
 
 namespace opt {
-	extern int multimap;
+	int multimap;
 };
 
 /** Create an index of the target sequence. */
