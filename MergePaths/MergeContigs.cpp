@@ -1,4 +1,5 @@
 #include "config.h"
+#include "Common/Options.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include <algorithm>
@@ -40,9 +41,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned k;
-	static int verbose;
 	static string out;
-	extern bool colourSpace;
 }
 
 static const char shortopts[] = "k:o:v";

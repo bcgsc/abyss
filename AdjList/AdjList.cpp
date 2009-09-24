@@ -1,3 +1,4 @@
+#include "Common/Options.h"
 #include "FastaReader.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
@@ -49,9 +50,6 @@ namespace opt {
 
 	/** Output formats */
 	static int format;
-
-	static int verbose;
-	extern bool colourSpace;
 }
 
 static const char shortopts[] = "k:v";

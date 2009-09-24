@@ -1,4 +1,6 @@
 #include "Aligner.h"
+#include "Common/Options.h"
+#include "DataLayer/Options.h"
 #include "FastaReader.h"
 #include "PrefixIterator.h"
 #include "Uncompress.h"
@@ -47,11 +49,7 @@ namespace opt {
 	static unsigned k;
 	int multimap; // used by Aligner
 	static int threads = 1;
-	static int verbose;
-	extern bool colourSpace;
 	static bool printSeq = false;
-	extern int chastityFilter; // used by FastaReader
-	extern int trimMasked; // used by FastaReader
 }
 
 static const char shortopts[] = "k:mo:j:v";

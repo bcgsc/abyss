@@ -1,6 +1,6 @@
 bin_PROGRAMS = MergePaths MergeContigs
 
-MergePaths_CPPFLAGS = \
+MergePaths_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/ExpPaired \
@@ -15,7 +15,7 @@ MergePaths_LDADD = \
 MergePaths_SOURCES = \
 	MergePaths.cpp
 
-MergeContigs_CPPFLAGS = \
+MergeContigs_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer
 

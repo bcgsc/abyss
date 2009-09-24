@@ -1,6 +1,6 @@
 bin_PROGRAMS = KAligner
 
-KAligner_CPPFLAGS = -pthread \
+KAligner_CPPFLAGS = -pthread -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \

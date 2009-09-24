@@ -1,6 +1,6 @@
 bin_PROGRAMS = Consensus
 
-Consensus_CPPFLAGS = \
+Consensus_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \

@@ -1,6 +1,6 @@
 bin_PROGRAMS = AdjList
 
-AdjList_CPPFLAGS = \
+AdjList_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/ExpPaired \

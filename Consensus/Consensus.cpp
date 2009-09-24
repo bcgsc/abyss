@@ -1,4 +1,5 @@
 #include "Aligner.h"
+#include "Common/Options.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
 #include "PairUtils.h"
@@ -39,8 +40,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static string outPath;
-	static int verbose;
-	extern bool colourSpace;
 	static bool csToNt;
 	static int outputCS;
 }

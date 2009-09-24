@@ -4,6 +4,7 @@
  */
 
 #include "config.h"
+#include "Common/Options.h"
 #include "ContigGraph.h"
 #include "FastaReader.h"
 #include "PairUtils.h"
@@ -52,10 +53,8 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static int k;
 	static unsigned minimum_overlap = 5;
-	static int verbose;
 	static int mask;
 	static int scaffold;
-	extern bool colourSpace;
 	static string out;
 }
 
