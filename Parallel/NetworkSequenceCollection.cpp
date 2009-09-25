@@ -389,6 +389,7 @@ void NetworkSequenceCollection::runControl()
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
 			case NAS_LOADING:
+			{
 				loadSequences();
 				assert(m_pLocalSpace->count() > 0);
 				EndState();
@@ -429,6 +430,7 @@ void NetworkSequenceCollection::runControl()
 				SetState(m_pLocalSpace->isAdjacencyLoaded()
 						? NAS_ERODE : NAS_GEN_ADJ);
 				break;
+			}
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
 				m_comm.sendControlMessage(APC_GEN_ADJ);
