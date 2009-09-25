@@ -1,6 +1,7 @@
 #ifndef SEQUENCE_H
 #define SEQUENCE_H 1
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 

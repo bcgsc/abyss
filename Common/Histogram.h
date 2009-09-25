@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H 1
 
+#include <cassert>
 #include <cmath>
 #include <map>
 #include <ostream>
