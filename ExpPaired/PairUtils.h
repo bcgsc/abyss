@@ -6,6 +6,7 @@
 #include <cmath> // for ceilf
 #include <iomanip>
 #include <iostream>
+#include <stdint.h>
 #include <vector>
 
 typedef std::vector<int> ContigLengthVec;

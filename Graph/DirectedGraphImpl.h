@@ -103,26 +103,14 @@ EdgeDescription Vertex<K,D>::findUniqueEdge(const K& key)
 		{
 			if(edgeIter->pVertex->m_key == key)
 			{
-				if(!found)
-				{
-					ret.dir = (extDirection)dirIdx;
-					ret.reverse = edgeIter->reverse;
-					found = true;
-				}
-				else
-				{
-					printf("Error: Tried to get an edge without checking for uniqueness!\n");
-					assert(false);
-				}
+				assert(!found);
+				found = true;
+				ret.dir = (extDirection)dirIdx;
+				ret.reverse = edgeIter->reverse;
 			}
 		}
 	}
-
-	if(!found)
-	{
-		printf("Could not find edge %s for vertex %s\n", key.c_str(), m_key.c_str());
-		assert(found);
-	}
+	assert(found);
 	return ret;
 }
 

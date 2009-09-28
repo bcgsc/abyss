@@ -6,7 +6,6 @@
 
 class Histogram;
 
-typedef std::vector<double> DoubleVec;
 struct PDF
 {
 	PDF() {};
@@ -23,7 +22,7 @@ struct PDF
 	}
 
 	size_t m_maxIdx;
-	DoubleVec m_dist;
+	std::vector<double> m_dist;
 	double m_mean;
 	double m_stdDev;
 	double m_minp;

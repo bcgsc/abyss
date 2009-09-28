@@ -34,13 +34,7 @@ struct Constraint
 		bool violated = (d > distance);
 		return !violated;
 	}
-	
-	void printStatus(int d, bool rc)
-	{
-		printf("Hit Constraint status: (%d < %d) && (%d == %d)\n", d, distance, rc, isRC);
-	}
-	
-	
+
 	friend std::ostream& operator<<(std::ostream& out, const Constraint& object)
 	{
 		out << "(" << object.distance << "," << object.isRC << ")";
