@@ -14,7 +14,6 @@ struct PDF
 	double getP(size_t idx) const;
 	double getMinP() const { return m_minp; }
 	size_t getMaxIdx() const { return m_maxIdx; }
-	void print() const;
 
 	double getSampleStdDev(unsigned n) const
 	{

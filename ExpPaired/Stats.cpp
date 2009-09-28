@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 
 using namespace std;
@@ -78,20 +79,6 @@ double PDF::getP(size_t idx) const
 	return (idx <= m_maxIdx) ? m_dist[idx] : m_minp;
 }
 
-//
-//
-//
-void PDF::print() const
-{
-	for(size_t idx = 0; idx <= m_maxIdx; ++idx)
-	{
-		printf("%zu %lf\n", idx, m_dist[idx]);
-	}
-}
-
-//
-//
-//
 void PDF::calculateMinimalRange(double p, size_t& low, size_t& high) const
 {
 	// First, find the max prob
