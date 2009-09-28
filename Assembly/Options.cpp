@@ -48,6 +48,7 @@ static const char USAGE_MESSAGE[] =
 "                                 that have less than the specified coverage\n"
 "                                 on either strand. default=1\n"
 "  -e0, --no-erode                do not erode\n"
+"      --coverage-hist=FILE       record the k-mer coverage histogram in FILE\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record popped bubbles in FILE\n"
 "  -v, --verbose                  display verbose output\n"
@@ -74,6 +75,9 @@ float coverage = -1;
 /** Maximum number of bubble-popping rounds. */
 int bubbles = INT_MAX;
 
+/** coverage histogram path */
+string coverageHistPath;
+
 /** output contigs path */
 string contigsPath = "contigs.fa";
 
@@ -96,7 +100,7 @@ vector<string> inFiles;
 
 static const char shortopts[] = "b:c:e:E:g:k:l:o:s:t:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
@@ -108,6 +112,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",    no_argument,    &opt::trimMasked, 1 },
 	{ "no-trim-masked", no_argument,    &opt::trimMasked, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
+	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubbles",     required_argument, NULL, 'b' },
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "erode-strand", required_argument, NULL, 'E' },
@@ -154,6 +159,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'l':
 				arg >> readLen;
+				break;
+			case COVERAGE_HIST:
+				coverageHistPath = optarg;
 				break;
 			case 'o':
 				contigsPath = optarg;

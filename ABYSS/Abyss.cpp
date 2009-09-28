@@ -76,6 +76,13 @@ int main(int argc, char* const* argv)
 	assert(pSC->count() > 0);
 
 	Histogram h = AssemblyAlgorithms::coverageHistogram(*pSC);
+	if (!opt::coverageHistPath.empty()) {
+		ofstream histFile(opt::coverageHistPath.c_str());
+		assert(histFile.is_open());
+		histFile << h;
+		assert(histFile.good());
+	}
+
 	unsigned minCov = h.firstLocalMinimum();
 	printf("Minimum k-mer coverage is %u\n", minCov);
 

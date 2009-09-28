@@ -415,8 +415,12 @@ void NetworkSequenceCollection::runControl()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
-				ofstream histFile("coverage.hist");
-				histFile << h;
+				if (!opt::coverageHistPath.empty()) {
+					ofstream histFile(opt::coverageHistPath.c_str());
+					assert(histFile.is_open());
+					histFile << h;
+					assert(histFile.good());
+				}
 
 				unsigned minCov = h.firstLocalMinimum();
 				printf("Minimum k-mer coverage is %u\n", minCov);
