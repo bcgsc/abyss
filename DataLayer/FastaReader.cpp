@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cctype>
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <limits> // for numeric_limits

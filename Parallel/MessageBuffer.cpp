@@ -78,19 +78,10 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		
 		// Copy the messages into the buffer
 		size_t offset = 0;
-		//printf("Sending messages: \n");
 		for(size_t i = 0; i < numMsgs; i++)
-		{
-			//m_msgQueues[nodeID][i]->print();
 			offset += m_msgQueues[nodeID][i]->serialize(buffer + offset);
-			//printf("offset now: %d\n", offset);
-		}
-		
+
 		assert(offset == totalSize);
-		
-		//printf("TotalSize: %zu\n", totalSize);
-		//PrintBufferAsHex(buffer, totalSize);
-		// Send the message
 		sendBufferedMessage(nodeID, buffer, totalSize);
 
 		delete [] buffer;

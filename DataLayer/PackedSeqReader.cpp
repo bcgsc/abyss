@@ -1,5 +1,6 @@
 #include "PackedSeqReader.h"
 #include <cassert>
+#include <cstdio>
 
 using namespace std;
 

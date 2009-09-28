@@ -68,9 +68,7 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 				PackedSeq(seq.substr(i, m_hashSize)));
 		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
 		{
-			//printf("Seq: %s Contig: %s position: %d\n", seq.decode().c_str(), resultIter->second.contig.c_str(), resultIter->second.pos);
 			int read_pos;
-			
 			// The read position coordinate is wrt to the forward read position
 			if(!isRC)
 			{

@@ -196,15 +196,3 @@ bool BranchGroup::isAmbiguous(const ISequenceCollection* c) const
 	const PackedSeq& seq = c->getSeqAndData(m_origin);
 	return seq.deleted() ? false : seq.isAmbiguous(m_dir);
 }
-
-//
-// Print the sizes of the branches
-//
-void BranchGroup::printBranches() const
-{
-	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
-	{
-		printf("	%zu\n", iter->second.getLength());
-	}	
-	
-}

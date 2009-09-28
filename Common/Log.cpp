@@ -1,6 +1,7 @@
 #include "Log.h"
 #include "Common/Options.h"
 #include <cstdarg>
+#include <cstdio>
 #include <iostream>
 
 using namespace std;

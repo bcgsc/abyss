@@ -71,9 +71,6 @@ class BranchGroup
 		
 		// return the direction of growth
 		extDirection getDirection() const { return m_dir; }
-		
-		// print the branches that make up this group
-		void printBranches() const;
 
 		iterator begin() { return m_branches.begin(); }
 		iterator end() { return m_branches.end(); }

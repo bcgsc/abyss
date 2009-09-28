@@ -493,18 +493,13 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 			coverage[start_idx]++;
 		}
 	}
-	
+
 	bool unique = true;
-	//printf("Coverage: \n");
 	for(int i = 0; i < num_starts; ++i)
 	{
-		//printf("%d", coverage[i]);
 		if(coverage[i] > 1)
-		{
 			unique = false;
-		}
 	}
-	//printf("\n");
 	delete [] coverage;
 	return unique;
 }

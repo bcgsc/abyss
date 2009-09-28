@@ -6,6 +6,7 @@
 #include "Histogram.h"
 #include "Log.h"
 #include <cmath> // for roundf
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 

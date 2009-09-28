@@ -1,5 +1,6 @@
 #include "Messages.h"
 #include "NetworkSequenceCollection.h"
+#include <cstdio>
 #include <cstring>
 
 size_t serializeData(void* ptr, char* buffer, size_t size)

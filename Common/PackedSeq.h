@@ -121,8 +121,7 @@ class PackedSeq
 		void clearAllExtensions(extDirection dir);
 		bool hasExtension(extDirection dir) const;
 		bool isAmbiguous(extDirection dir) const;
-		void printExtension() const;
-		
+
 		// Reverse and complement this sequence
 		void reverseComplement();
 		

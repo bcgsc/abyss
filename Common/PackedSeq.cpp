@@ -577,24 +577,8 @@ SeqExt PackedSeq::getExtension(extDirection dir) const
 	return m_extRecord.dir[dir];
 }
 
-//
-//
-//
-void PackedSeq::printExtension() const
-{
-	printf("seq: %s\n", decode().c_str());
-	printf("sxt: ");
-	m_extRecord.dir[SENSE].print();
-	
-	printf("as : ");
-	m_extRecord.dir[ANTISENSE].print();	
-		
-}
-
-//
 // set a base by the index [0, length)
 // beware, this does not check for out of bounds access
-//
 void PackedSeq::setBaseCode(char* pSeq,
 		unsigned seqIndex, uint8_t base)
 {
