@@ -8,6 +8,7 @@
 #include <cmath> // for roundf
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 using namespace std;
@@ -414,6 +415,9 @@ void NetworkSequenceCollection::runControl()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
+				ofstream histFile("coverage.hist");
+				histFile << h;
+
 				unsigned minCov = h.firstLocalMinimum();
 				printf("Minimum k-mer coverage is %u\n", minCov);
 
