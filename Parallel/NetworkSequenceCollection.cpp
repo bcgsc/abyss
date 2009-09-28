@@ -84,10 +84,9 @@ void NetworkSequenceCollection::run()
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
 
-				vector<unsigned> myh
-					= AssemblyAlgorithms::coverageHistogram(
-						*m_pLocalSpace);
-				Histogram h = m_comm.reduce(myh);
+				Histogram h = m_comm.reduce(
+						AssemblyAlgorithms::coverageHistogram(
+							*m_pLocalSpace));
 				unsigned minCov = h.firstLocalMinimum();
 				if ((int)opt::erode < 0)
 					opt::erode = minCov;
@@ -411,10 +410,9 @@ void NetworkSequenceCollection::runControl()
 				printf("Loaded %u k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 
-				vector<unsigned> myh
-					= AssemblyAlgorithms::coverageHistogram(
-						*m_pLocalSpace);
-				Histogram h = m_comm.reduce(myh);
+				Histogram h = m_comm.reduce(
+						AssemblyAlgorithms::coverageHistogram(
+							*m_pLocalSpace));
 				unsigned minCov = h.firstLocalMinimum();
 				printf("Minimum k-mer coverage is %u\n", minCov);
 
