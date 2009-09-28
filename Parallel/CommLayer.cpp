@@ -113,11 +113,12 @@ unsigned CommLayer::reduce(unsigned count)
 }
 
 /** Reduce the specified vector. */
-vector<unsigned> CommLayer::reduce(/*const*/ vector<unsigned>& v)
+vector<unsigned> CommLayer::reduce(const vector<unsigned>& v)
 {
 	PrintDebug(4, "entering reduce\n");
 	vector<unsigned> sum(v.size());
-	MPI_Allreduce(&v[0], &sum[0], v.size(), MPI_UNSIGNED, MPI_SUM,
+	MPI_Allreduce(const_cast<unsigned*>(&v[0]),
+			&sum[0], v.size(), MPI_UNSIGNED, MPI_SUM,
 			MPI_COMM_WORLD);
 	PrintDebug(4, "left reduce\n");
 	return sum;

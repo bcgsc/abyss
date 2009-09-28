@@ -36,8 +36,7 @@ class CommLayer
 
 		// Block until all processes have reached this routine.
 		unsigned reduce(unsigned count);
-		std::vector<unsigned> reduce(
-				/*const*/ std::vector<unsigned>& v);
+		std::vector<unsigned> reduce(const std::vector<unsigned>& v);
 
 		// Send a control message
 		void sendControlMessage(APControl m, int argument = 0);
