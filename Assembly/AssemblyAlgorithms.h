@@ -6,6 +6,8 @@
 #include "FastaWriter.h"
 #include "ISequenceCollection.h"
 
+class Histogram;
+
 /*********************************************************
  * 
  * AssemblyAlgorithms.h
@@ -24,8 +26,6 @@ enum SeqContiguity
 	SC_CONTIGUOUS // the sequence is closed on both ends
 };
 
-
-
 namespace AssemblyAlgorithms
 {
 
@@ -43,8 +43,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 // This is required before any other algorithm can run
 void generateAdjacency(ISequenceCollection* seqCollection);
 
-/** Return the first local minimum of the k-mer coverage histogram. */
-unsigned minimumCoverage(const ISequenceCollection& c);
+Histogram coverageHistogram(const ISequenceCollection& c);
 
 /* Erosion. Remove k-mer from the ends of blunt contigs. */
 unsigned erodeEnds(ISequenceCollection* seqCollection);

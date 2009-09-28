@@ -3,8 +3,11 @@
 #include "Common/Options.h"
 #include "Log.h"
 #include "MessageBuffer.h"
-#include <cstring>
 #include <mpi.h>
+#include <cstring>
+#include <vector>
+
+using namespace std;
 
 static const unsigned RX_BUFSIZE = 16*1024;
 
@@ -106,6 +109,17 @@ unsigned CommLayer::reduce(unsigned count)
 	MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED, MPI_SUM,
 			MPI_COMM_WORLD);
 	PrintDebug(4, "left reduce: %u\n", sum);
+	return sum;
+}
+
+/** Reduce the specified vector. */
+vector<unsigned> CommLayer::reduce(/*const*/ vector<unsigned>& v)
+{
+	PrintDebug(4, "entering reduce\n");
+	vector<unsigned> sum(v.size());
+	MPI_Allreduce(&v[0], &sum[0], v.size(), MPI_UNSIGNED, MPI_SUM,
+			MPI_COMM_WORLD);
+	PrintDebug(4, "left reduce\n");
 	return sum;
 }
 

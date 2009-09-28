@@ -888,8 +888,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	return contigID;
 }
 
-/** Return the first local minimum of the k-mer coverage histogram. */
-unsigned minimumCoverage(const ISequenceCollection& c)
+/** Return the k-mer coverage histogram. */
+Histogram coverageHistogram(const ISequenceCollection& c)
 {
 	Histogram h;
 	for (ISequenceCollection::const_iterator it = c.begin();
@@ -898,9 +898,7 @@ unsigned minimumCoverage(const ISequenceCollection& c)
 			continue;
 		h.insert(it->getMultiplicity());
 	}
-	unsigned minCov = h.firstLocalMinimum();
-	logger(0) << "Minimum k-mer coverage is " << minCov << '\n';
-	return minCov;
+	return h;
 }
 
 };

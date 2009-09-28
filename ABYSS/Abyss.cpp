@@ -2,6 +2,7 @@
 #include "AssemblyAlgorithms.h"
 #include "DotWriter.h"
 #include "FastaWriter.h"
+#include "Histogram.h"
 #include "ISequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
@@ -74,7 +75,10 @@ int main(int argc, char* const* argv)
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
-	unsigned minCov = AssemblyAlgorithms::minimumCoverage(*pSC);
+	Histogram h = AssemblyAlgorithms::coverageHistogram(*pSC);
+	unsigned minCov = h.firstLocalMinimum();
+	printf("Minimum k-mer coverage is %u\n", minCov);
+
 	if ((int)opt::erode < 0) {
 		printf("Setting parameter e (erode) to %u\n", minCov);
 		opt::erode = minCov;

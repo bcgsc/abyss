@@ -5,6 +5,7 @@
 #include <cmath>
 #include <map>
 #include <ostream>
+#include <vector>
 
 /** A histogram of type T, which is int be default.
  * A histogram may be implemented as a multiset. This class aims
@@ -15,6 +16,15 @@ class Histogram : std::map<int, unsigned>
   public:
 	typedef int T;
 	typedef std::map<T, unsigned> Map;
+
+	Histogram() { }
+
+	Histogram(std::vector<unsigned> v)
+	{
+		for (T i = 0; i < (T)v.size(); i++)
+			if (v[i] > 0)
+				Map::insert(std::make_pair(i, v[i]));
+	}
 
 	void insert(T value) { (*this)[value]++; }
 
@@ -105,6 +115,22 @@ class Histogram : std::map<int, unsigned>
 	}
 
 	Histogram trim(double percent) const;
+
+	/** Return a vector representing this histogram. */
+	operator std::vector<unsigned>() const
+	{
+		assert(minimum() >= 0);
+#if 0
+		std::vector<unsigned> v(maximum()+1);
+#else
+		// CommLayer::reduce requires the arrays have the same size.
+		std::vector<unsigned> v(2*65536);
+		assert(maximum() < (T)v.size());
+#endif
+		for (Map::const_iterator it = begin(); it != end(); ++it)
+			v[it->first] = it->second;
+		return v;
+	}
 
 	friend std::ostream& operator<<(std::ostream& o,
 			const Histogram& h)

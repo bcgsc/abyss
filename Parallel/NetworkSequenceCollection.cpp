@@ -1,9 +1,10 @@
 #include "NetworkSequenceCollection.h"
-#include "AssemblyAlgorithms.h"
-#include "FastaWriter.h"
-#include "Log.h"
-#include "Common/Options.h"
 #include "Assembly/Options.h"
+#include "AssemblyAlgorithms.h"
+#include "Common/Options.h"
+#include "FastaWriter.h"
+#include "Histogram.h"
+#include "Log.h"
 #include <cmath> // for roundf
 #include <cstdlib>
 #include <iostream>
@@ -82,12 +83,14 @@ void NetworkSequenceCollection::run()
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
-				unsigned minCovSum =
-					m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
-							*m_pLocalSpace));
-				float minCov = (float)minCovSum / opt::numProc;
+
+				vector<unsigned> myh
+					= AssemblyAlgorithms::coverageHistogram(
+						*m_pLocalSpace);
+				Histogram h = m_comm.reduce(myh);
+				unsigned minCov = h.firstLocalMinimum();
 				if ((int)opt::erode < 0)
-					opt::erode = (unsigned)roundf(minCov);
+					opt::erode = minCov;
 				if (opt::coverage < 0)
 					opt::coverage = minCov;
 				EndState();
@@ -408,14 +411,15 @@ void NetworkSequenceCollection::runControl()
 				printf("Loaded %u k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 
-				unsigned minCovSum =
-					m_comm.reduce(AssemblyAlgorithms::minimumCoverage(
-							*m_pLocalSpace));
-				float minCov = (float)minCovSum / opt::numProc;
-				printf("Minimum k-mer coverage is %f\n", minCov);
+				vector<unsigned> myh
+					= AssemblyAlgorithms::coverageHistogram(
+						*m_pLocalSpace);
+				Histogram h = m_comm.reduce(myh);
+				unsigned minCov = h.firstLocalMinimum();
+				printf("Minimum k-mer coverage is %u\n", minCov);
 
 				if ((int)opt::erode < 0) {
-					opt::erode = (unsigned)roundf(minCov);
+					opt::erode = minCov;
 					printf("Setting parameter e (erode) to %u\n",
 							opt::erode);
 				}
