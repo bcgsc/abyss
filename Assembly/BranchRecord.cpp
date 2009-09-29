@@ -102,10 +102,7 @@ void BranchRecord::setMultiplicity(const PackedSeq& key,
 {
 	BranchMultMap::iterator iter = m_seqMap.find(key);
 	assert(iter != m_seqMap.end());
-	PackedSeq data(key);
-	data.setMultiplicity(multiplicity);
-	m_seqMap.erase(iter);
-	m_seqMap.insert(data);
+	const_cast<PackedSeq&>(*iter).setMultiplicity(multiplicity);
 }
 
 /** Forget the multiplicity information. */
