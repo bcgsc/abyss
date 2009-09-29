@@ -5,6 +5,7 @@
 #include "Sense.h"
 #include "SeqExt.h"
 #include "Sequence.h"
+#include <cassert>
 #include <stdint.h>
 #include <vector>
 
@@ -100,6 +101,7 @@ class PackedSeq
 		/** Set the multiplicity (not strand specific). */
 		void setMultiplicity(unsigned multiplicity)
 		{
+			assert(multiplicity <= 65535);
 			m_multiplicity[SENSE] = multiplicity;
 			m_multiplicity[ANTISENSE] = 0;
 		}
