@@ -101,9 +101,10 @@ class PackedSeq
 		/** Set the multiplicity (not strand specific). */
 		void setMultiplicity(unsigned multiplicity)
 		{
-			assert(multiplicity <= 65535);
-			m_multiplicity[SENSE] = multiplicity;
-			m_multiplicity[ANTISENSE] = 0;
+			assert(multiplicity <= 2*65535);
+			// Split the multiplicity over both senses.
+			m_multiplicity[SENSE] = (multiplicity + 1) / 2;
+			m_multiplicity[ANTISENSE] = multiplicity / 2;
 		}
 
 		uint8_t getBaseCode(unsigned seqIndex) const;
