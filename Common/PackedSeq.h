@@ -97,6 +97,13 @@ class PackedSeq
 			assert(m_multiplicity[dir] > 0);
 		}
 
+		/** Set the multiplicity (not strand specific). */
+		void setMultiplicity(unsigned multiplicity)
+		{
+			m_multiplicity[SENSE] = multiplicity;
+			m_multiplicity[ANTISENSE] = 0;
+		}
+
 		uint8_t getBaseCode(unsigned seqIndex) const;
 		uint8_t getLastBaseChar() const;
 

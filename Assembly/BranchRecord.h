@@ -1,8 +1,8 @@
 #ifndef BRANCHRECORD_H
-#define BRANCHRECORD_H
+#define BRANCHRECORD_H 1
 
 #include "PackedSeq.h"
-#include <map>
+#include <set>
 #include <vector>
 
 enum BranchState
@@ -21,7 +21,7 @@ class BranchRecord
 {
 	public:
 		typedef std::vector<PackedSeq> BranchData;
-		typedef std::map<PackedSeq, int> BranchMultMap;
+		typedef std::set<PackedSeq> BranchMultMap;
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 

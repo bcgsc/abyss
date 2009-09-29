@@ -52,20 +52,17 @@ BranchRecord& BranchRecord::operator=(const BranchRecord& other)
 	return *this;
 }
 
-//
-// Add a single sequence to the branch
-//
-void BranchRecord::addSequence(const PackedSeq& seq, int multiplicity)
+/** Add a single sequence to the branch. */
+void BranchRecord::addSequence(const PackedSeq& key, int multiplicity)
 {
+	PackedSeq seq(key);
+	seq.setMultiplicity(multiplicity);
 	m_data.push_back(seq);
-	
+
 	// Detect a loop by checking that the sequence is not already in the branch
-	bool unique = m_seqMap.insert(
-			make_pair(seq, multiplicity)).second;
+	bool unique = m_seqMap.insert(seq).second;
 	if(!unique)
-	{
 		m_loopDetected = true;
-	}
 }
 
 /**
@@ -96,17 +93,19 @@ int BranchRecord::getMultiplicity(const PackedSeq& seq) const
 {
 	BranchMultMap::const_iterator iter = m_seqMap.find(seq);
 	assert(iter != m_seqMap.end());
-	return iter->second;
+	return iter->getMultiplicity();
 }
 
-//
-// Set the multiplicity of a sequence
-//
-void BranchRecord::setMultiplicity(const PackedSeq& seq, int multiplicity)
+/** Set the multiplicity of a sequence. */
+void BranchRecord::setMultiplicity(const PackedSeq& key,
+		int multiplicity)
 {
-	BranchMultMap::iterator iter = m_seqMap.find(seq);
+	BranchMultMap::iterator iter = m_seqMap.find(key);
 	assert(iter != m_seqMap.end());
-	iter->second = multiplicity;
+	PackedSeq data(key);
+	data.setMultiplicity(multiplicity);
+	m_seqMap.erase(iter);
+	m_seqMap.insert(data);
 }
 
 /** Forget the multiplicity information. */
