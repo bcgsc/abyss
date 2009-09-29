@@ -54,6 +54,8 @@ if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_ldflags="-L$with_mpi/lib"
 fi
 
+AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
+	[use MPICH (default is to use Open MPI)]))
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
 	[use LAM/MPI (default is to use Open MPI)]))
 
@@ -68,7 +70,11 @@ AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
 
 # Check for the MPI parallel computing library.
 AC_CHECK_HEADERS([mpi.h])
-if test "$enable_lammpi"; then
+if test "$enable_mpich"; then
+	AC_CHECK_LIB([pthread], [pthread_create])
+	AC_CHECK_LIB([mpich], [MPI_Init])
+	ac_cv_lib_mpi_MPI_Init=$ac_cv_lib_mpich_MPI_Init
+elif test "$enable_lammpi"; then
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([dl], [dlopen])
 	AC_CHECK_LIB([lam], [lam_mutex_lock])
