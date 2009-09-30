@@ -114,6 +114,7 @@ class PackedSeq
 			// Split the multiplicity over both senses.
 			m_multiplicity[SENSE] = (multiplicity + 1) / 2;
 			m_multiplicity[ANTISENSE] = multiplicity / 2;
+			assert(getMultiplicity() == multiplicity);
 		}
 
 		uint8_t getBaseCode(unsigned seqIndex) const;
