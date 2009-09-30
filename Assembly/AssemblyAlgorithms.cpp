@@ -497,21 +497,19 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 }
 
 /** Remove all the extensions to this sequence. */
-void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir)
+void removeExtensionsToSequence(ISequenceCollection* seqCollection,
+		const PackedSeq& seq, extDirection dir)
 {
+	SeqExt extension(seq.getExtension(dir));
 	extDirection oppDir = oppositeDirection(dir);
-	
 	PackedSeq testSeq(seq);
 	uint8_t extBase = testSeq.shift(dir);
-	for(int i = 0; i < NUM_BASES; i++)
-	{
-		// don't bother checking if the extension exists, just remove it
-		// if the sequence didnt have the extension, the operation will do nothing
-		testSeq.setLastBase(dir, i);
-		
-		// remove the extension, this removes the reverse complement as well
-		seqCollection->removeExtension(testSeq, oppDir, extBase);
-	}	
+	for (int i = 0; i < NUM_BASES; i++) {
+		if (extension.checkBase(i)) {
+			testSeq.setLastBase(dir, i);
+			seqCollection->removeExtension(testSeq, oppDir, extBase);
+		}
+	}
 }
 
 /** The number of k-mer that have been eroded. */
