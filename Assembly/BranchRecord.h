@@ -68,8 +68,6 @@ class BranchRecord
 		
 		// Get the last sequence added to this branch
 		const PackedSeq& getLastSeq() const;
-		
-		const PackedSeq& getSeqByIndex(size_t index) const;
 
 		iterator begin() { return m_data.begin(); }
 		iterator end() { return m_data.end(); }

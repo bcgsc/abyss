@@ -227,12 +227,6 @@ void BranchRecord::buildContig(Sequence& outseq) const
 	}
 }
 
-const PackedSeq& BranchRecord::getSeqByIndex(size_t index) const
-{
-	assert(index < m_data.size());
-	return m_data[index];
-}
-
 /**
  * Return whether this branch is the canonical representation of the
  * contig that it represents. A contig has two ends, and the contig
