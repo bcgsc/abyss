@@ -96,13 +96,13 @@ int BranchRecord::getMultiplicity(const PackedSeq& seq) const
 	return iter->getMultiplicity();
 }
 
-/** Set the multiplicity of a sequence. */
-void BranchRecord::setMultiplicity(const PackedSeq& key,
-		int multiplicity)
+/** Set the extensions and multiplicity of a sequence. */
+void BranchRecord::setData(const PackedSeq& seqData)
 {
-	BranchMultMap::iterator iter = m_seqMap.find(key);
+	BranchMultMap::iterator iter = m_seqMap.find(seqData);
 	assert(iter != m_seqMap.end());
-	const_cast<PackedSeq&>(*iter).setMultiplicity(multiplicity);
+	assert(*iter == seqData);
+	const_cast<PackedSeq&>(*iter) = seqData;
 }
 
 /** Forget the multiplicity information. */

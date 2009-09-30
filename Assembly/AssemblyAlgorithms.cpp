@@ -379,10 +379,11 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	PSequenceVector branchExtSeqs;
 	extDirection dir = group.getDirection();
 	generateSequencesFromExtension(seq, dir, extensions.dir[dir], branchExtSeqs);
-	
-	// Set the multiplicity of the request sequence
-	group.getBranch(branchIndex).setMultiplicity(seq, multiplicity);
-	
+
+	// Set the multiplicity and extensions of the request sequence.
+	group.getBranch(branchIndex).setData(
+			PackedSeq(seq, multiplicity, extensions));
+
 	if(branchExtSeqs.size() == 1)
 	{
 		// single extension

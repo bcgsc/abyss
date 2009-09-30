@@ -31,6 +31,15 @@ class PackedSeq
 		PackedSeq();
 		explicit PackedSeq(const Sequence& seq);
 
+		/** Create a PackedSeq of the specified key and data. */
+		PackedSeq(const PackedSeq& key,
+				unsigned multiplicity, ExtensionRecord ext)
+			: m_length(key.m_length), m_flags(0), m_extRecord(ext)
+		{
+			memcpy(m_seq, key.m_seq, sizeof m_seq);
+			setMultiplicity(multiplicity);
+		}
+
 		// Write this packed sequence to the buffer
 		size_t serialize(char* buffer) const;
 		

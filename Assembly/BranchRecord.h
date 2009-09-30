@@ -53,10 +53,10 @@ class BranchRecord
 		
 		// get the multiplicity of a sequence
 		int getMultiplicity(const PackedSeq& seq) const;
-		
-		// Set the multiplicity of a sequence in the branch
-		void setMultiplicity(const PackedSeq& seq, int multiplicity);
-		
+
+		// Set the data of a sequence in the branch.
+		void setData(const PackedSeq& seq);
+
 		/** Forget the multiplicity information. */
 		void clearMultiplicity();
 
