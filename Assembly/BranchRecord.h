@@ -109,7 +109,6 @@ class BranchRecord
 		}
 
 		bool isCanonical() const;
-		void printBranch(std::ostream& ostr) const;
 
 	private:
 				
