@@ -3,54 +3,6 @@
 
 using namespace std;
 
-BranchRecord::BranchRecord()
-	: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1),
-	m_loopDetected(false), m_multiplicity(-1)
-{
-}
-
-//
-// Constructor
-//
-BranchRecord::BranchRecord(extDirection dir, int maxLength)
-	: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
-	m_loopDetected(false), m_multiplicity(-1)
-{
-}
-
-//
-// Copy Constructor
-//
-BranchRecord::BranchRecord(const BranchRecord& other)
-{
-	m_data = other.m_data;
-	m_seqMap = other.m_seqMap;
-	m_dir = other.m_dir;
-	m_maxLength = other.m_maxLength;
-	m_state = other.m_state;
-	m_loopDetected = other.m_loopDetected;
-	m_multiplicity = other.m_multiplicity;
-}
-
-// Assignment operator
-BranchRecord& BranchRecord::operator=(const BranchRecord& other)
-{
-	// Detect self assignment
-	if (this == &other)
-	{
-		return *this;
-	}
-		
-	m_data = other.m_data;
-	m_seqMap = other.m_seqMap;
-	m_dir = other.m_dir;
-	m_maxLength = other.m_maxLength;
-	m_state = other.m_state;
-	m_loopDetected = other.m_loopDetected;	
-	m_multiplicity = other.m_multiplicity;
-	return *this;
-}
-
 /** Add a single sequence to the branch. */
 void BranchRecord::addSequence(const PackedSeq& key, int multiplicity)
 {

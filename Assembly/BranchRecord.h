@@ -25,13 +25,13 @@ class BranchRecord
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 
-		BranchRecord();
-		BranchRecord(extDirection dir, int maxLength);
-		BranchRecord(const BranchRecord&);
-		
-		// Assignment Operator
-		BranchRecord& operator=(const BranchRecord& other);		
-		
+		BranchRecord()
+			: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1),
+			m_loopDetected(false), m_multiplicity(-1) { }
+		BranchRecord(extDirection dir, int maxLength)
+			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
+			m_loopDetected(false), m_multiplicity(-1) { }
+
 		// Add a single sequence to the branch
 		void addSequence(const PackedSeq& seq, int multiplicity = 0);
 
