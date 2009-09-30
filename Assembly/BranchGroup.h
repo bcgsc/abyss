@@ -22,12 +22,17 @@ class BranchGroup
 		typedef BranchGroupData::iterator iterator;
 		typedef BranchGroupData::const_iterator const_iterator;
 
-		BranchGroup();
-		BranchGroup(uint64_t id, extDirection dir, size_t maxNumBranches, const PackedSeq &origin);
-		BranchGroup(const BranchGroup& other);
-		
-		BranchGroup& operator=(const BranchGroup& other);
-		
+		BranchGroup()
+			: m_id(0), m_dir(SENSE), m_maxNumBranches(0),
+			m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
+			{ }
+
+		BranchGroup(uint64_t id, extDirection dir, size_t
+				maxNumBranches, const PackedSeq &origin)
+			: m_id(id), m_dir(dir), m_origin(origin),
+			m_maxNumBranches(maxNumBranches), m_noExt(false),
+			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
+
 		// Add a branch to the group
 		BranchRecord& addBranch(uint64_t id, BranchRecord& branch);
 		

@@ -2,62 +2,6 @@
 
 using namespace std;
 
-//
-// Constructors
-//
-
-BranchGroup::BranchGroup()
-	: m_id(0), m_dir(SENSE), m_maxNumBranches(0),
-	m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
-{
-}
-
-BranchGroup::BranchGroup(uint64_t id, extDirection dir,
-		size_t maxNumBranches, const PackedSeq &origin)
-	: m_id(id), m_dir(dir), m_origin(origin),
-	m_maxNumBranches(maxNumBranches), m_noExt(false),
-	m_status(BGS_ACTIVE), m_branchToKeep(-1)
-{
-}
-
-//
-// Copy constructor
-//
-BranchGroup::BranchGroup(const BranchGroup& other)
-{
-	m_branches = other.m_branches;
-	m_id = other.m_id;
-	m_dir = other.m_dir;
-	m_origin = other.m_origin;
-	m_maxNumBranches = other.m_maxNumBranches;
-	m_noExt = other.m_noExt;
-	m_status = other.m_status;
-	m_branchToKeep = other.m_branchToKeep;
-}
-
-//
-// Assignment operator
-//
-BranchGroup& BranchGroup::operator=(const BranchGroup& other)
-{
-	// Detect self assignment
-	if (this == &other)
-	{
-		return *this;
-	}
-			
-	m_branches = other.m_branches;
-	m_id = other.m_id;
-	m_dir = other.m_dir;
-	m_origin = other.m_origin;
-	m_maxNumBranches = other.m_maxNumBranches;
-	m_noExt = other.m_noExt;
-	m_status = other.m_status;	
-	m_branchToKeep = other.m_branchToKeep;
-	
-	return *this;
-}
-
 // Add a branch to the group
 BranchRecord& BranchGroup::addBranch(uint64_t id, BranchRecord& branch)
 {
