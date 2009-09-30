@@ -537,6 +537,8 @@ string makePairID(string id)
 		case 'B': c = 'A'; return id;
 		case 'F': c = 'R'; return id;
 		case 'R': c = 'F'; return id;
+		case 'f': c = 'r'; return id;
+		case 'r': c = 'f'; return id;
 	}
 
 	if (replaceSuffix(id, "forward", "reverse")
