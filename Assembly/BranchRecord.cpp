@@ -99,6 +99,9 @@ int BranchRecord::getMultiplicity(const PackedSeq& seq) const
 /** Set the extensions and multiplicity of a sequence. */
 void BranchRecord::setData(const PackedSeq& seqData)
 {
+	assert(m_data.back() == seqData);
+	m_data.back() = seqData;
+
 	BranchMultMap::iterator iter = m_seqMap.find(seqData);
 	assert(iter != m_seqMap.end());
 	assert(*iter == seqData);
