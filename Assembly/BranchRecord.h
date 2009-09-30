@@ -50,9 +50,6 @@ class BranchRecord
 		
 		// Get the state of the branch
 		BranchState getState() const;
-		
-		// get the multiplicity of a sequence
-		int getMultiplicity(const PackedSeq& seq) const;
 
 		// Set the data of a sequence in the branch.
 		void setData(const PackedSeq& seq);

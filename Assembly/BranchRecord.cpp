@@ -85,16 +85,6 @@ void BranchRecord::terminate(BranchState reason)
 	m_state = reason;
 }
 
-//
-// Get the multiplicity of the sequence
-//
-int BranchRecord::getMultiplicity(const PackedSeq& seq) const
-{
-	BranchMultMap::const_iterator iter = m_seqMap.find(seq);
-	assert(iter != m_seqMap.end());
-	return iter->getMultiplicity();
-}
-
 /** Set the extensions and multiplicity of a sequence. */
 void BranchRecord::setData(const PackedSeq& seqData)
 {
@@ -198,22 +188,18 @@ bool BranchRecord::isTooLong() const
 int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 {
 	assert(!m_seqMap.empty());
-	int total = 0;
-	
+
 	BranchData::const_iterator endSeq = m_data.end();
-	
 	if(ignoreLast)
 		endSeq--;
 
-	size_t idx = 0;
+	int total = 0;
 	for(BranchData::const_iterator iter = m_data.begin(); iter != endSeq; ++iter)
 	{
-		int m = getMultiplicity(*iter);
+		int m = iter->getMultiplicity();
 		assert(m > 0);
 		total += m;
-		++idx;
 	}
-	
 	assert(total > 0);
 	return m_multiplicity = total;
 }
