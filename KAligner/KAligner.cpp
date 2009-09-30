@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 	} else {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
-				1<<28, 0.2);
+				500000000, 0.2);
 #else
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<26);
 #endif
