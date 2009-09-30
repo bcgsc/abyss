@@ -57,12 +57,6 @@ class BranchRecord
 		/** Forget the multiplicity information. */
 		void clearMultiplicity();
 
-		// Set the state of the branch
-		void setState(BranchState state) { m_state = state; }
-		
-		// Check if the branch is empty
-		bool empty() const { return m_data.empty(); }
-		
 		// Get the first sequence added to the branch
 		const PackedSeq& getFirstSeq() const;
 		
@@ -83,10 +77,7 @@ class BranchRecord
 		
 		// check if a sequence exists in the branch record
 		bool exists(const PackedSeq& seq) const;
-		
-		// should the length of the branch be checked?
-		bool doLengthCheck() const;
-		
+
 		/** Return whether the branch is too long. */
 		bool isTooLong() const;
 		

@@ -111,21 +111,13 @@ bool BranchRecord::exists(const PackedSeq& seq) const
 	return m_seqMap.find(seq) != m_seqMap.end();
 }
 
-//
-// If the maxLength == -1, no length check should be performed
-//
-bool BranchRecord::doLengthCheck() const
-{
-	return (m_maxLength > -1);
-}
-
 /** Check if the branch is too long. */
 bool BranchRecord::isTooLong() const
 {
-	return doLengthCheck() && getLength() > getMaxLength();
+	// If the maxLength == -1, no length check should be performed.
+	return m_maxLength > -1 && getLength() > getMaxLength();
 }
 
-//
 // Calculate the total multiplicity of this branch. The result is
 // saved so that it may be fetched using getBranchMultiplicity after
 // the multiplicity of each individual sequence has been forgotten.
