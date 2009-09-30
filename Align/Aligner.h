@@ -150,6 +150,13 @@ class Aligner
 		Aligner(int hashSize, int buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
 
+		Aligner(int hashSize, int buckets, float factor)
+			: m_hashSize(hashSize)
+		{
+			m_target.max_load_factor(factor);
+			m_target.rehash(buckets);
+		}
+
 		void addReferenceSequence(const ContigID& id, const Sequence& seq);
 
 		// Align an individual sequence
@@ -160,12 +167,6 @@ class Aligner
 		size_t bucket_count() const
 		{
 			return m_target.bucket_count();
-		}
-
-		/** Set the maximum load factor. */
-		void max_load_factor(float factor)
-		{
-			m_target.max_load_factor(factor);
 		}
 
 	private:

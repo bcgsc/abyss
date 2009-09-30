@@ -153,8 +153,8 @@ int main(int argc, char** argv)
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
 	} else {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<28);
-		g_aligner_u->max_load_factor(0.2);
+		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
+				1<<28, 0.2);
 #else
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<26);
 #endif
