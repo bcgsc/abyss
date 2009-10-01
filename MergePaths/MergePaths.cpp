@@ -214,10 +214,11 @@ int main(int argc, char** argv)
 		ofstream fout(opt::out.c_str());
 		ostream& out = opt::out.empty() ? cout : fout;
 		assert(out.good());
+		unsigned pathID = 0;
 		for (vector<ContigPath>::const_iterator it
 					= uniquePaths.begin();
 				it != uniquePaths.end(); ++it)
-			out << toString(*it, ' ') << '\n';
+			out << pathID++ << " " << toString(*it, ' ') << '\n';
 		assert(out.good());
 		return 0;
 	}
