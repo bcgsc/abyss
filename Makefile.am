@@ -10,4 +10,4 @@ SUBDIRS = Align Assembly Common DataLayer ExpPaired Graph \
 	ABYSS $(Parallel) \
 	bin doc fasta2psq kmerprint \
 	AdjList DistanceEst KAligner MergePaths Overlap ParseAligns \
-	SimpleGraph Consensus
+	SimpleGraph Consensus PathOverlap
