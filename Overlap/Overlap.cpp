@@ -197,6 +197,7 @@ static string overlapContigs(const ContigNode& t_id,
 {
 	Sequence t = t_id.sequence();
 	Sequence h = h_id.sequence();
+	assert(overlap < (unsigned)opt::k - 1);
 	unsigned gap = opt::k - 1 - overlap;
 	string a(t, t.length() - opt::k+1, gap);
 	string o(h, 0, overlap);
