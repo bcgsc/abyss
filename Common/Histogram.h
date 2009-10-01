@@ -62,7 +62,7 @@ class Histogram : std::map<int, unsigned>
 
 	double mean() const
 	{
-		unsigned n = 0, total = 0;
+		long unsigned n = 0, total = 0;
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
@@ -73,7 +73,7 @@ class Histogram : std::map<int, unsigned>
 
 	double variance() const
 	{
-		unsigned n = 0, total = 0, squares = 0;
+		long unsigned n = 0, total = 0, squares = 0;
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
