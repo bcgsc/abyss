@@ -197,8 +197,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				Constraint nc;
 				nc.distance = translatedDistance  + distanceBuffer;
 				nc.isRC = iter->isRC;
-				
-				if(gDebugPrint) std::cout << "Adding Constraint " << iter->nID << " " << nc << "\n";
+
+				if(gDebugPrint) std::cout << "Adding Constraint " << iter->nID << ' ' << nc << "\n";
 
 				constraintMap[iter->nID] = nc;
 			}

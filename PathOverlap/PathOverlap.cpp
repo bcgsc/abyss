@@ -128,8 +128,8 @@ static void printOverlap(const PathStruct& refPathStruct,
 		currIndex++;
 		refIndex++;
 	}
-	cout << refPathStruct.pathID << "," << refIsRC << " "
-			<< currPathStruct.pathID << "," << currIsRC << " "
+	cout << refPathStruct.pathID << "," << refIsRC << ' '
+			<< currPathStruct.pathID << "," << currIsRC << ' '
 			<< currIndex << '\n';
 }
 

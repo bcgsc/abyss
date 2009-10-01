@@ -206,7 +206,7 @@ static void generateDistFile()
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
 				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0
 						&& vecIt->distance > 1 - opt::k)
-					distFile << " " << *vecIt;
+					distFile << ' ' << *vecIt;
 			}
 		}
 		distFile << '\n';

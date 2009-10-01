@@ -218,7 +218,7 @@ int main(int argc, char** argv)
 		for (vector<ContigPath>::const_iterator it
 					= uniquePaths.begin();
 				it != uniquePaths.end(); ++it)
-			out << pathID++ << " " << toString(*it, ' ') << '\n';
+			out << pathID++ << ' ' << toString(*it, ' ') << '\n';
 		assert(out.good());
 		return 0;
 	}

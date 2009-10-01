@@ -205,6 +205,6 @@ int main(int argc, char** argv)
 		out << "}\n";
 
 	if (opt::verbose > 0)
-		cerr << "vertices: " << numVerts << " "
-			"edges: " << numEdges << endl;
+		cerr << "vertices: " << numVerts
+			<< " edges: " << numEdges << endl;
 }
