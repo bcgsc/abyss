@@ -99,7 +99,7 @@ Histogram loadHist(string path)
 		hist.insert(value, count);
 	assert(in.eof());
 
-	if (hist.size() == 0) {
+	if (hist.empty()) {
 		cerr << "error: the histogram `" << path << "' is empty\n";
 		exit(EXIT_FAILURE);
 	}

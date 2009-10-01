@@ -227,7 +227,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					<< solutions.size() << "\n";
 
 			totalAttempted++;
-			if (solutions.size() == 0) {
+			if (solutions.empty()) {
 				noPossiblePaths++;
 				continue;
 			}
@@ -326,7 +326,7 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 					std::cout << " sumdiff: " << sumDiff << "\n";
 			}
 
-			if (solutions.size() == 0) {
+			if (solutions.empty()) {
 				nopathEnd++;
 			} else if (solutions.size() > 1) {
 				multiEnd++;

@@ -241,7 +241,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	// at least one of the two reads must span no more than
 	// two contigs.
 	const unsigned MAX_SPAN = 2;
-	if (curr.second.size() == 0 || pair.second.size() == 0) {
+	if (curr.second.empty() || pair.second.empty()) {
 		stats.numMissed++;
 	} else if (!checkUniqueAlignments(opt::k, curr.second)
 			|| !checkUniqueAlignments(opt::k, pair.second)) {

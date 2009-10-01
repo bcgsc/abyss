@@ -157,7 +157,7 @@ static unsigned findOverlap(const ContigNode& t_id,
 		cout << '\n';
 	}
 
-	if (overlaps.size() == 0) {
+	if (overlaps.empty()) {
 		stats.none++;
 		return 0;
 	}
