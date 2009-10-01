@@ -105,7 +105,7 @@ else
 endif
 
 %.adj: %.fa
-	AdjList -k$k $< >$@
+	AdjList $v -k$k $< >$@
 
 # Estimate distances between contigs
 
