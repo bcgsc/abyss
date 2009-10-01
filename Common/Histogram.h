@@ -49,6 +49,8 @@ class Histogram : std::map<int, unsigned>
 		return empty() ? 0 : rbegin()->first;
 	}
 
+	using Map::empty;
+
 	unsigned size() const
 	{
 		unsigned n = 0;
