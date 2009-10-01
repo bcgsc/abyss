@@ -258,7 +258,8 @@ static map<ContigNode, Overlap> g_overlaps;
 static void findOverlap(
 		LinearNumKey refID, extDirection dir, const Estimate& est)
 {
-	if (est.distance >= 0 && !opt::scaffold)
+	if (refID == est.nID
+			|| est.distance >= 0 && !opt::scaffold)
 		return;
 	ContigNode ref(refID, SENSE);
 	ContigNode pair(est.nID, est.isRC ? ANTISENSE : SENSE);
