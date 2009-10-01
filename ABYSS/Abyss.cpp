@@ -51,7 +51,7 @@ static void popBubbles(ISequenceCollection* pSC)
 static void write_graph(const string& path,
 		const ISequenceCollection& c)
 {
-	if (path.length() == 0)
+	if (path.empty())
 		return;
 	printf("Writing graph to %s\n", path.c_str());
 	ofstream out(path.c_str());
