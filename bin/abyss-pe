@@ -127,7 +127,7 @@ $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
 	abyss-joindist $^ >$@
 
 %-overlap.fa: %.fa %.adj %.dist
-	Overlap $v -k$k -o $@ $^
+	Overlap $v $(OVERLAP_OPTIONS) -k$k -o $@ $^
 
 %-4.fa: %-3.fa %-3-overlap.fa
 	cat $^ >$@
