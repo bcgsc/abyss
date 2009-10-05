@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <climits> // for INT_MIN
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -85,6 +86,7 @@ static struct {
 	int numMulti;
 	int numSplit;
 } stats;
+
 static ostream& pairedAlignFile = cout;
 static ofstream fragFile;
 static Histogram histogram;
@@ -120,14 +122,13 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, boo
 	bool a_isRC = a.isRC != reverse;
 	EstimateMap::iterator estimatesIt = map.find(a.contig);
 	if (estimatesIt != map.end()) {
-		EstimateRecord& estimates = estimatesIt->second;
-		for (EstimateVector::iterator estIt = estimates.estimates[a_isRC].begin();
-				estIt != estimates.estimates[a_isRC].end(); ++estIt) {
+		EstimateVector& estimates =
+			estimatesIt->second.estimates[a_isRC];
+		for (EstimateVector::iterator estIt = estimates.begin();
+				estIt != estimates.end(); ++estIt) {
 			if (estIt->nID == est.nID) {
-				if (estIt->distance == est.distance && estIt->numPairs != 0)
-					estIt->numPairs++;
-				else
-					estIt->numPairs = 0;
+				estIt->numPairs++;
+				estIt->distance += est.distance;
 				placed = true;
 				break;
 			}
@@ -140,11 +141,73 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, boo
 
 static void doReadIntegrity(const ReadAlignMap::value_type& a)
 {
+	AlignmentVector::const_iterator refAlignIter = a.second.begin();
+	unsigned firstStart, lastEnd, largestSize;
+	Alignment first, last, largest;
+
+	firstStart = refAlignIter->read_start_pos;
+	lastEnd = firstStart + refAlignIter->align_length;
+	largestSize = refAlignIter->align_length;
+	first = last = largest = *refAlignIter;
+	++refAlignIter;
+
+	//for each alignment in the vector a.second
+	for (; refAlignIter != a.second.end(); ++refAlignIter) {
+		if ((unsigned)refAlignIter->read_start_pos < firstStart) {
+			firstStart = refAlignIter->read_start_pos;
+			first = *refAlignIter;
+		}
+		if ((unsigned)(refAlignIter->read_start_pos +
+					refAlignIter->align_length) > lastEnd) {
+			lastEnd = refAlignIter->read_start_pos +
+				refAlignIter->align_length;
+			last = *refAlignIter;
+		}
+		if ((unsigned)refAlignIter->align_length > largestSize) {
+			largestSize = refAlignIter->align_length;
+			largest = *refAlignIter;
+		}
+	}
+
+	if (largest.contig != last.contig) {
+		Estimate est;
+		unsigned largest_end = 
+			largest.read_start_pos + largest.align_length - opt::k;
+		int distance = last.read_start_pos - largest_end;
+		est.nID = convertContigIDToLinearNumKey(last.contig);
+		est.distance = distance - opt::k;
+		est.numPairs = 1;
+		est.stdDev = 0;
+		//weird file format...
+		est.isRC = largest.isRC != last.isRC;
+
+		addEstimate(estMap, largest, est, false);
+	}
+
+	if (largest.contig != first.contig) {
+		largest.flipQuery();
+		first.flipQuery();
+		Estimate est;
+		unsigned largest_end = 
+			largest.read_start_pos + largest.align_length - opt::k;
+		int distance = first.read_start_pos - largest_end;
+		est.nID = convertContigIDToLinearNumKey(first.contig);
+		est.distance = distance - opt::k;
+		est.numPairs = 1;
+		est.stdDev = 0;
+		//weird file format...
+		est.isRC = largest.isRC != first.isRC;
+
+		addEstimate(estMap, largest, est, false);
+	}
+
+
+#if 0
 	//for each alignment in the vector a.second
 	for (AlignmentVector::const_iterator refAlignIter = a.second.begin();
 			refAlignIter != a.second.end(); ++refAlignIter) {
 		//for each alignment after the current one
-		for (AlignmentVector::const_iterator alignIter = refAlignIter;
+		for (AlignmentVector::const_iterator alignIter = a.second.begin();
 				alignIter != a.second.end(); ++alignIter) {
 			//make sure both alignments aren't for the same contig
 			if (alignIter->contig != refAlignIter->contig) {
@@ -168,13 +231,14 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 			}
 		}
 	}
+#endif
 }
 
 static void generateDistFile()
 {
 	ofstream distFile(opt::distPath.c_str());
 	assert(distFile.is_open());
-	for (EstimateMap::const_iterator mapIt = estMap.begin();
+	for (EstimateMap::iterator mapIt = estMap.begin();
 			mapIt != estMap.end(); ++mapIt) {
 		//Skip empty iterators
 		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
@@ -183,29 +247,12 @@ static void generateDistFile()
 			if (refIsRC)
 				distFile << " |";
 
-			/*bool next = false;
-			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+			for (EstimateVector::iterator vecIt = mapIt->second.estimates[refIsRC].begin();
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				EstimateVector::const_iterator compIt = vecIt;
-				++compIt;
-				while (compIt != mapIt->second.estimates[refIsRC].end()) {
-					if (compIt->distance == vecIt->distance) {
-						next = true;
-						break;
-					}
-					++compIt;
-				}
-				if (next)
-					break;
-			}
-
-			if (next)
-				continue;*/
-
-			for (EstimateVector::const_iterator vecIt = mapIt->second.estimates[refIsRC].begin();
-					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
+				vecIt->distance = (int)round((double)vecIt->distance /
+						(double)vecIt->numPairs);
 				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0
-						&& vecIt->distance > 1 - opt::k)
+						/*&& vecIt->distance > 1 - opt::k*/)
 					distFile << ' ' << *vecIt;
 			}
 		}
@@ -529,6 +576,7 @@ static bool replaceSuffix(string& s,
 string makePairID(string id)
 {
 	assert(!id.empty());
+	string oldId = id;
 	char& c = id[id.length() - 1];
 	switch (c) {
 		case '1': c = '2'; return id;
@@ -544,6 +592,7 @@ string makePairID(string id)
 	if (replaceSuffix(id, "forward", "reverse")
 				|| replaceSuffix(id, "F3", "R3"))
 		return id;
+	return oldId;
 
 	cerr << "error: read ID `" << id << "' must end in one of\n"
 		"\t1 and 2 or A and B or F and R or"
