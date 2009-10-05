@@ -576,7 +576,6 @@ static bool replaceSuffix(string& s,
 string makePairID(string id)
 {
 	assert(!id.empty());
-	string oldId = id;
 	char& c = id[id.length() - 1];
 	switch (c) {
 		case '1': c = '2'; return id;
