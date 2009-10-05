@@ -102,13 +102,13 @@ int CommLayer::receiveBroadcast()
 /** Block until all processes have reached this routine.
  * @return the sum of count from all processors
  */
-unsigned CommLayer::reduce(unsigned count)
+long unsigned CommLayer::reduce(long unsigned count)
 {
-	PrintDebug(4, "entering reduce: %u\n", count);
-	unsigned sum;
-	MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED, MPI_SUM,
+	PrintDebug(4, "entering reduce: %lu\n", count);
+	long unsigned sum;
+	MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED_LONG, MPI_SUM,
 			MPI_COMM_WORLD);
-	PrintDebug(4, "left reduce: %u\n", sum);
+	PrintDebug(4, "left reduce: %lu\n", sum);
 	return sum;
 }
 

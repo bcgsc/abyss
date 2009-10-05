@@ -409,7 +409,7 @@ void NetworkSequenceCollection::runControl()
 				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
 				m_pLocalSpace->printLoad();
-				printf("Loaded %u k-mer\n",
+				printf("Loaded %lu k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 
 				Histogram h = m_comm.reduce(
@@ -460,7 +460,7 @@ void NetworkSequenceCollection::runControl()
 				pumpNetwork();
 				PrintDebug(0, "Generated %u edges\n",
 						m_numBasesAdjSet);
-				printf("Generated %u edges\n",
+				printf("Generated %lu edges\n",
 						m_comm.reduce(m_numBasesAdjSet));
 				EndState();
 
