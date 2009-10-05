@@ -592,7 +592,6 @@ string makePairID(string id)
 	if (replaceSuffix(id, "forward", "reverse")
 				|| replaceSuffix(id, "F3", "R3"))
 		return id;
-	return oldId;
 
 	cerr << "error: read ID `" << id << "' must end in one of\n"
 		"\t1 and 2 or A and B or F and R or"
