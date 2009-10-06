@@ -760,6 +760,8 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 	ExtensionRecord extRec;
 	int multiplicity = -1;
 	bool found = m_pLocalSpace->getSeqData(message.m_seq, extRec, multiplicity);
+	if (!found)
+		cout << "error: from " << senderID << ' ' << message << endl;
 	assert(found);
 	(void)found;
 
