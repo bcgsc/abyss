@@ -1174,7 +1174,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		{
 			// Output the singleton contig.
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter, iter->getMultiplicity());
+			currBranch.addSequence(*iter);
 			currBranch.terminate(BS_NOEXT);
 			assembleContig(seqCollection, fileWriter, currBranch,
 					m_numAssembled + numAssembled++);

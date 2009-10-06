@@ -33,7 +33,7 @@ class BranchRecord
 			m_loopDetected(false), m_multiplicity(-1) { }
 
 		// Add a single sequence to the branch
-		void addSequence(const PackedSeq& seq, int multiplicity = 0);
+		void addSequence(const PackedSeq& seq);
 
 		// Remove all the sequences including and following the
 		// specified iterator.

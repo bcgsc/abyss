@@ -4,10 +4,8 @@
 using namespace std;
 
 /** Add a single sequence to the branch. */
-void BranchRecord::addSequence(const PackedSeq& key, int multiplicity)
+void BranchRecord::addSequence(const PackedSeq& seq)
 {
-	PackedSeq seq(key);
-	seq.setMultiplicity(multiplicity);
 	m_data.push_back(seq);
 
 	// Detect a loop by checking that the sequence is not already in the branch

@@ -707,7 +707,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 		return false;
 	}
 
-	branch.addSequence(currSeq, multiplicity);
+	branch.addSequence(PackedSeq(currSeq, multiplicity, extensions));
 	if (branch.isTooLong()) {
 		branch.terminate(BS_TOO_LONG);
 		return false;
@@ -834,7 +834,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		{
 			// singleton, output
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter, iter->getMultiplicity());
+			currBranch.addSequence(*iter);
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
