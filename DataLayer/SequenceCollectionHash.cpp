@@ -168,9 +168,7 @@ void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& s
 }
 
 
-//
-// Clear the extensions for this sequence
-//
+/** Remove the edges of this k-mer. */
 void SequenceCollectionHash::clearExtensions(const PackedSeq& seq, extDirection dir)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
@@ -178,16 +176,10 @@ void SequenceCollectionHash::clearExtensions(const PackedSeq& seq, extDirection 
 	clearExtensionsByIter(iters.second, oppositeDirection(dir));	
 }
 
-//
-//
-//
 void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir)
 {
 	if(seqIter != m_pSequences->end())
-	{
 		const_cast<PackedSeq&>(*seqIter).clearAllExtensions(dir);	
-		//seqIter->printExtension();
-	}
 }
 
 void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
