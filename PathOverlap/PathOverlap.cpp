@@ -47,9 +47,24 @@ static const struct option longopts[] = {
 struct PathStruct {
 	LinearNumKey pathID;
 	ContigPath path;
+	bool isKeyFirst;
 };
+
+struct OverlapStruct {
+	LinearNumKey firstID, secondID;
+	bool firstIsRC, secondIsRC;
+	unsigned overlap;
+};
+
+struct TrimPathStruct {
+	ContigPath path;
+	vector<unsigned> numRemoved;
+};
+
 typedef multimap<LinearNumKey, PathStruct> PathMap;
 typedef pair<PathMap::iterator, PathMap::iterator> PathMapPair;
+typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
+typedef vector<OverlapStruct> OverlapVec;
 
 static PathMap loadPaths(istream& pathStream)
 {
@@ -81,67 +96,66 @@ static PathMap loadPaths(istream& pathStream)
 
 		path.path = contigPath;
 		path.pathID = pathID;
+		path.isKeyFirst = true;
 		pathMap.insert(pair<LinearNumKey, PathStruct>(first, path));
+		path.isKeyFirst = false;
 		pathMap.insert(pair<LinearNumKey, PathStruct>(last, path));
 	}
 	return pathMap;
 }
 
-static void printOverlap(const PathStruct& refPathStruct,
-		const PathStruct& currPathStruct, unsigned refIndex)
+static void addOverlap(const PathStruct& refPathStruct,
+		const PathStruct& currPathStruct, unsigned refIndex,
+		OverlapVec& overlaps)
 {
 	if (refPathStruct.pathID == currPathStruct.pathID) return;
+
+	OverlapStruct overlap;
 	ContigPath refPath = refPathStruct.path;
 	ContigPath currPath = currPathStruct.path;
 	MergeNode refNode, currNode;
-	bool refIsRC, currIsRC;
 	unsigned currIndex = 0;
 
 	refNode = refPath.getNode(refIndex);
-	assert(refPath.getNode(refIndex).id ==
-			currPath.getNode(currIndex).id || 
-			refPath.getNode(refIndex).id ==
-			currPath.getNode(currPath.getNumNodes()-1).id );
-	//this may be too simple...
-	if (refNode.id == currPath.getNode(0).id)
-		currIsRC = false;
+
+	if (currPathStruct.isKeyFirst)
+		overlap.secondIsRC = false;
 	else {
-		currIsRC = true;
+		overlap.secondIsRC = true;
 		currPath.reverse(true);
 	}
 
 	currNode = currPath.getNode(currIndex);
-	refIsRC = refNode.isRC != currNode.isRC;
+	assert(refNode.id == currNode.id);
+	overlap.firstIsRC = refNode.isRC != currNode.isRC;
 
-	if (refIsRC) {
+	if (overlap.firstIsRC) {
 		refPath.reverse(true);
 		refIndex = refPath.getNumNodes() - refIndex - 1;
 	}
 
-	bool isMatch = true;
 	while (currIndex < currPath.getNumNodes() &&
 			refIndex < refPath.getNumNodes()) {
-		isMatch = refPath.getNode(refIndex) ==
-			currPath.getNode(currIndex);
-		if (!isMatch)
+		if (refPath.getNode(refIndex) == currPath.getNode(currIndex)) {
+			currIndex++;
+			refIndex++;
+		} else
 			return;
-		currIndex++;
-		refIndex++;
 	}
-	char refSense = refIsRC ? '-' : '+';
-	char currSense = currIsRC ? '-' : '+';
-	cout << refPathStruct.pathID << refSense << ' '
-			<< currPathStruct.pathID << currSense << ' '
-			<< currIndex << '\n';
+	overlap.overlap = currIndex;
+	overlap.firstID = refPathStruct.pathID;
+	overlap.secondID = currPathStruct.pathID;
+	overlaps.push_back(overlap);
 }
 
-static void findOverlaps(PathMap& pathMap)
+static OverlapVec findOverlaps(PathMap& pathMap)
 {
+	OverlapVec overlaps;
 	for (PathMap::const_iterator pathIt = pathMap.begin();
 			pathIt != pathMap.end(); pathIt++) {
-		//cout << pathIt->second << '\n';
-
 		const PathStruct& path = pathIt->second;
+		if (!path.isKeyFirst)
+			continue;
 
 		for (unsigned i = 0; i < path.path.getNumNodes(); i++) {
 			PathMapPair result = pathMap.equal_range(path.path.getNode(i).id);
@@ -152,14 +166,97 @@ static void findOverlaps(PathMap& pathMap)
 			dist = i == 0 || i == path.path.getNumNodes() - 1 ?
 					dist - 1 : dist;
 
-			if (dist > 0) {
+			if (dist > 0)
 				for (PathMap::const_iterator currIt = result.first;
-						currIt != result.second; currIt++) {
-					printOverlap(path, currIt->second, i);
-				}
-			}
+						currIt != result.second; currIt++)
+					addOverlap(path, currIt->second, i, overlaps);
 		}
 	}
+	return overlaps;
+}
+
+static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
+		unsigned overlap)
+{
+	if (pathStruct.numRemoved[fromBack] >= overlap)
+		return;
+	ContigPath newPath;
+	int max, min;
+	if (fromBack) {
+		//subtract the found overlap from the original length
+		max = pathStruct.path.getNumNodes() - overlap +
+			pathStruct.numRemoved[fromBack];
+		min = 0;
+	} else {
+		max = pathStruct.path.getNumNodes();
+		min = overlap - pathStruct.numRemoved[fromBack];
+	}
+	assert(min >= 0 && max <= (int)pathStruct.path.getNumNodes());
+
+	pathStruct.path = pathStruct.path.extractNodes(min, max);
+	pathStruct.numRemoved[fromBack] = overlap;
+}
+
+static void trimOverlaps(TrimPathMap& pathMap, OverlapVec& overlaps)
+{
+	 for (OverlapVec::const_iterator overlapIt = overlaps.begin();
+			 overlapIt != overlaps.end(); overlapIt++) {
+		 TrimPathStruct& firstPath =
+			 pathMap.find(overlapIt->firstID)->second;
+		 removeContigs(firstPath, !overlapIt->firstIsRC, overlapIt->overlap);
+		 TrimPathStruct& secondPath =
+			 pathMap.find(overlapIt->secondID)->second;
+		 removeContigs(secondPath, overlapIt->secondIsRC, overlapIt->overlap);
+	}
+}
+
+static string toString(const ContigPath& path, char sep)
+{
+	size_t numNodes = path.getNumNodes();
+	assert(numNodes > 0);
+	MergeNode root = path.getNode(0);
+	ostringstream s;
+	s << root.id << (root.isRC ? '-' : '+');
+	for (size_t i = 1; i < numNodes; ++i) {
+		MergeNode mn = path.getNode(i);
+		s << sep << mn.id << (mn.isRC ? '-' : '+');
+	}
+	return s.str();
+}
+
+static TrimPathMap makeTrimPathMap(const PathMap& pathMap)
+{
+	TrimPathMap trimMap;
+	for (PathMap::const_iterator pathIt = pathMap.begin();
+			pathIt != pathMap.end(); pathIt++) {
+		if (pathIt->second.isKeyFirst) {
+			TrimPathStruct path;
+			path.path = pathIt->second.path;
+			vector<unsigned> numRemoved(2);
+			path.numRemoved = numRemoved;
+			trimMap[pathIt->second.pathID] = path;
+		}
+	}
+	return trimMap;
+}
+
+static PathMap makePathMap(const TrimPathMap& trimPathMap)
+{
+	PathMap pathMap;
+	for (TrimPathMap::const_iterator trimIt = trimPathMap.begin();
+			trimIt != trimPathMap.end(); trimIt++) {
+		PathStruct path;
+		LinearNumKey key;
+		path.path = trimIt->second.path;
+		path.pathID = trimIt->first;
+		path.isKeyFirst = true;
+		key = path.path.getNode(0).id;
+		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
+		path.isKeyFirst = false;
+		key = path.path.getNode(path.path.getNumNodes() - 1).id;
+		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
+	}
+	return pathMap;
 }
 
 int main(int argc, char** argv)
@@ -188,12 +285,33 @@ int main(int argc, char** argv)
 	}
 
 	PathMap pathMap;
-	if (opt::out.empty())
-		pathMap = loadPaths(cin);
-	else {
-		ifstream fin(opt::out.c_str());
+	if (optind < argc) {
+		ifstream fin(argv[argc - 1]);
 		pathMap = loadPaths(fin);
+	} else {
+		pathMap = loadPaths(cin);
 	}
 
-	findOverlaps(pathMap);
+	int trimIterations = 0;
+	OverlapVec overlaps;
+	TrimPathMap trimPaths;
+
+	overlaps = findOverlaps(pathMap);
+	while (overlaps.size() > 0) {
+		cerr << "There were  " << overlaps.size() / 2 << " found.\n";
+		trimPaths = makeTrimPathMap(pathMap);
+		trimOverlaps(trimPaths, overlaps);
+		pathMap = makePathMap(trimPaths);
+		overlaps = findOverlaps(pathMap);
+		trimIterations++;
+	}
+
+	for (TrimPathMap::const_iterator trimPathsIt = trimPaths.begin();
+			trimPathsIt != trimPaths.end(); trimPathsIt++) {
+		//if (trimPathsIt->second.path.getNumNodes() <= 1) continue;
+		string pathString = toString(trimPathsIt->second.path, ' ');
+		cout << pathString << '\n';
+	}
+	cerr << PROGRAM " completed after " << trimIterations
+		<< " trim iterations.\n";
 }
