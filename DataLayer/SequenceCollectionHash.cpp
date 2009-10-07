@@ -185,19 +185,19 @@ void SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& s
 void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	setFlagByIter(iters.first, flag);
-	setFlagByIter(iters.second, flag);
+	bool found = setFlagByIter(iters.first, flag)
+		|| setFlagByIter(iters.second, flag);
+	assert(found);
 }
 
-//
-//
-//
-void SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag)
+bool SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter,
+		SeqFlag flag)
 {
-	if(seqIter != m_pSequences->end())
-	{
+	if (seqIter != m_pSequences->end()) {
 		const_cast<PackedSeq&>(*seqIter).setFlag(flag);
-	}
+		return true;
+	} else
+		return false;
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)

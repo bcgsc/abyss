@@ -99,7 +99,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		// These should only be called from this class, hence they are private
 		void removeByIter(SequenceHashIterPair seqIters);
 
-		void setFlagByIter(SequenceCollectionHashIter& seqIter, SeqFlag flag);
+		bool setFlagByIter(SequenceCollectionHashIter& seqIter,
+				SeqFlag flag);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		void clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
