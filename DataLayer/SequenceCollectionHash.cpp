@@ -116,16 +116,14 @@ static inline uint8_t complementBaseCode(uint8_t base)
 	return opt::colourSpace ? base : ~base & 0x3;
 }
 
-// Set a single base extension
+/** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
 		const PackedSeq& seq, extDirection dir, uint8_t base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool baseSet = false;
-	baseSet = baseSet || setBaseExtensionByIter(iters.first, dir, base);
-	baseSet = baseSet || setBaseExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseCode(base));
-	return baseSet;
+	return setBaseExtensionByIter(iters.first, dir, base)
+		|| setBaseExtensionByIter(iters.second,
+				oppositeDirection(dir), complementBaseCode(base));
 }
 
 bool SequenceCollectionHash::setBaseExtensionByIter(
