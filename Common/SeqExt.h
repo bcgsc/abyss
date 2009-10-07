@@ -1,6 +1,8 @@
 #ifndef SEQEXT_H
 #define SEQEXT_H 1
 
+#include <cassert>
+#include <ostream>
 #include <stdint.h>
 
 static const int NUM_BASES = 4;
@@ -52,6 +54,17 @@ class SeqExt
 		SeqExt complement() const;
 
 		void print() const;
+
+		friend std::ostream& operator <<(std::ostream& out,
+				const SeqExt& o)
+		{
+			assert(o.m_record < 1<<NUM_BASES);
+			return out
+				<< (o.checkBase(0) ? 'A' : '-')
+				<< (o.checkBase(1) ? 'C' : '-')
+				<< (o.checkBase(2) ? 'G' : '-')
+				<< (o.checkBase(3) ? 'T' : '-');
+		}
 
 	private:
 		SeqExt(uint8_t ext) : m_record(ext) { };
