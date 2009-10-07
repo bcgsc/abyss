@@ -11,14 +11,18 @@
 using namespace std;
 
 namespace opt {
-	bool sequence;
 	bool strands;
+	bool sequence;
+	bool adj;
 }
 
 static void print(const PackedSeq& seq)
 {
 	if (opt::sequence)
 		cout << seq.decode() << '\t';
+	if (opt::adj)
+		cout << seq.getExtension(SENSE) << '\t'
+			<< seq.getExtension(ANTISENSE) << '\t';
 	cout << seq.getMultiplicity() << '\n';
 }
 
@@ -33,6 +37,8 @@ static void print(const PackedSeq& seq, extDirection sense)
 			cout << seq.decode();
 		cout << '\t';
 	}
+	if (opt::adj)
+		cout << seq.getExtension(sense) << '\t';
 	cout << seq.getMultiplicity(sense) << '\n';
 }
 
