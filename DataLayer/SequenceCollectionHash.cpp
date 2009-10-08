@@ -260,14 +260,18 @@ SeqExt SequenceCollectionHash::getExtensionByIter(SequenceCollectionHashIter& se
 	return ret;	
 }
 
-//
-// Get the iterators pointing to the sequence and its reverse complement
-//
-SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(const PackedSeq& seq) const
+/** Return the iterators pointing to the specified k-mer and its
+ * reverse complement.
+ */
+SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(
+		const PackedSeq& seq) const
 {
 	SequenceHashIterPair iters;
 	iters.first = m_pSequences->find(seq);
-	iters.second = m_pSequences->find(reverseComplement(seq));
+	if (iters.first != m_pSequences->end())
+		iters.second = m_pSequences->end();
+	else
+		iters.second = m_pSequences->find(reverseComplement(seq));
 	return iters;
 }
 
