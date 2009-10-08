@@ -87,10 +87,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		// Functions to get iterators to the sequence
-		
-		// Get the iterator to the sequence and its reverse complement
-		// If they don't exist m_pSequences->end() will be returned in the iterator
 		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
 		const_iterator SequenceCollectionHash::find(
 				const PackedSeq& key, bool& rc) const;
@@ -100,7 +96,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
-		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 
 		/** Call the observers of the specified sequence. */
 		void notify(const PackedSeq& seq)
@@ -109,9 +104,7 @@ class SequenceCollectionHash : public ISequenceCollection
 				m_seqObserver(this, seq);
 		}
 
-		// Data members
-		
-		// pointer to the actual collection (typedef'd above)
+		/** The underlying collection. */
 		SequenceDataHash* m_pSequences;
 
 		/** The observers. Only a single observer is implemented.*/
