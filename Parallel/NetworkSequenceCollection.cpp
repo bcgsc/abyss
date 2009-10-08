@@ -1489,15 +1489,12 @@ bool NetworkSequenceCollection::removeExtension(
 	}
 }
 
-// get the extensions of the sequence
+/** Return the data associated with the specified k-mer. */
 bool NetworkSequenceCollection::getSeqData(const PackedSeq& seq,
 		ExtensionRecord& extRecord, int& multiplicity) const
 {
-	// This function can only be called locally, the distributed
-	// version is through generateSequenceExtensionMessage.
 	assert(isLocal(seq));
-	m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
-	return true;
+	return m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
 }
 
 void NetworkSequenceCollection::wipeFlag(SeqFlag flag)
