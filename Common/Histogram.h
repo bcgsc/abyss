@@ -6,6 +6,7 @@
 #include <map>
 #include <ostream>
 #include <vector>
+#include <iostream>
 
 /** A histogram of type T, which is int be default.
  * A histogram may be implemented as a multiset. This class aims
@@ -66,7 +67,7 @@ class Histogram : std::map<int, unsigned>
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
-			total += it->first * it->second;
+			total += (long unsigned)it->first * it->second;
 		}
 		return (double)total / n;
 	}
@@ -77,8 +78,8 @@ class Histogram : std::map<int, unsigned>
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
-			total += it->first * it->second;
-			squares += it->first * it->first * it->second;
+			total += (long unsigned)it->first * it->second;
+			squares += (long unsigned)it->first * it->first * it->second;
 		}
 		return (squares - total * total / (double)n) / n;
 	}
