@@ -102,7 +102,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setFlagByIter(SequenceCollectionHashIter& seqIter,
 				SeqFlag flag);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
-		void removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
+		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
 		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;

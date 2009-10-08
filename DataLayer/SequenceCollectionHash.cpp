@@ -147,24 +147,23 @@ bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
 		extDirection dir, uint8_t base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	if (iters.first == m_pSequences->end()
-			&& iters.second == m_pSequences->end())
-		return false;
-
-	removeExtensionByIter(iters.first, dir, base);
-	removeExtensionByIter(iters.second,
-			oppositeDirection(dir), complementBaseCode(base));
-
-	notify(getSeqAndData(iters));
-	return true;
+	bool found = removeExtensionByIter(iters.first, dir, base)
+		|| removeExtensionByIter(iters.second,
+				oppositeDirection(dir), complementBaseCode(base));
+	if (found)
+		notify(getSeqAndData(iters));
+	return found;
 }
 
-void SequenceCollectionHash::removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base)
+bool SequenceCollectionHash::removeExtensionByIter(
+		SequenceCollectionHashIter& seqIter, extDirection dir,
+		uint8_t base)
 {
-	if(seqIter != m_pSequences->end())
-	{
-		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);		
-	}
+	if (seqIter != m_pSequences->end()) {
+		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);
+		return true;
+	} else
+		return false;
 }
 
 /** Remove the edges of this k-mer. */
