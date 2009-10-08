@@ -62,32 +62,16 @@ SequenceCollectionHash::~SequenceCollectionHash()
 	m_pSequences = 0;
 }
 
-//
-// Add a single read to the SequenceCollection
-//
+/** Add the specified k-mer to this collection. */
 void SequenceCollectionHash::add(const PackedSeq& seq)
-{	
-	// Check if the sequence exists or reverse complement exists
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-
-	// If it exists of the reverse complement exists, do not add
-	if(iters.first != m_pSequences->end() || iters.second != m_pSequences->end())
-	{
-		if(iters.first != m_pSequences->end())
-		{
-			const_cast<PackedSeq&>(*iters.first).addMultiplicity(
-					SENSE);
-		}
-		else if(iters.second != m_pSequences->end())
-		{
-			const_cast<PackedSeq&>(*iters.second).addMultiplicity(
-					ANTISENSE);
-		}
-	}
-	else
-	{
+{
+	bool rc;
+	SequenceCollectionHash::iterator it = find(seq, rc);
+	if (it == m_pSequences->end())
 		m_pSequences->insert(seq);
-	}
+	else
+		const_cast<PackedSeq&>(*it).addMultiplicity(
+				rc ? ANTISENSE : SENSE);
 }
 
 /** Clean up by erasing sequences flagged as deleted.
