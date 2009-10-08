@@ -219,47 +219,6 @@ void SequenceCollectionHash::printLoad() const
 			size, buckets, (float)size / buckets);
 }
 
-// get the extensions and multiplicity information for a sequence
-bool SequenceCollectionHash::getSeqData(const PackedSeq& seq,
-		ExtensionRecord& extRecord, int& multiplicity) const
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool found = false;
-	if(iters.first != m_pSequences->end())
-	{
-		// seq found
-		extRecord.dir[SENSE] = getExtensionByIter(iters.first, SENSE);
-		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.first, ANTISENSE);
-		multiplicity = iters.first->getMultiplicity();
-		found = true;
-	}
-	else if(iters.second != m_pSequences->end())
-	{
-		// reverse seq found, swap the order of the extensions and complement them (to make sure they are in the direction of the requested seq)
-		extRecord.dir[SENSE] = getExtensionByIter(iters.second, ANTISENSE).complement();
-		extRecord.dir[ANTISENSE] = getExtensionByIter(iters.second, SENSE).complement();
-		multiplicity = iters.second->getMultiplicity();
-		found = true;
-	}
-
-	return found;
-}
-
-//
-//
-//
-SeqExt SequenceCollectionHash::getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const
-{
-	SeqExt ret;
-	if(seqIter != m_pSequences->end())
-	{
-		// Sequence found
-		ret = seqIter->getExtension(dir);
-	}
-	
-	return ret;	
-}
-
 /** Return the iterators pointing to the specified k-mer and its
  * reverse complement.
  */
@@ -316,6 +275,19 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 	// The edges of this k-mer should be complemented.
 	assert(it != m_pSequences->end());
 	return *it;
+}
+
+/** Return the data of the specified key. */
+bool SequenceCollectionHash::getSeqData(const PackedSeq& key,
+		ExtensionRecord& extRecord, int& multiplicity) const
+{
+	bool rc;
+	SequenceCollectionHash::const_iterator it = find(key, rc);
+	if (it == m_pSequences->end())
+		return false;
+	extRecord = rc ? ~it->extension() : it->extension();
+	multiplicity = it->getMultiplicity();
+	return true;
 }
 
 #include <cstdio>

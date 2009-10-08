@@ -107,7 +107,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
 		bool existsByIter(SequenceCollectionHashIter& seqIter) const;
-		SeqExt getExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir) const;
 
 		/** Call the observers of the specified sequence. */
 		void notify(const PackedSeq& seq)

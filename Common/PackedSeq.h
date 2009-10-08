@@ -16,13 +16,16 @@ enum SeqFlag
 	SF_DELETE = 0x4,
 };
 
-
-//
-// Sense extension is index 0, antisense extension is index 1
-//
 struct ExtensionRecord
 {
-	SeqExt dir[2];	
+	SeqExt dir[2];
+	ExtensionRecord operator ~()
+	{
+		ExtensionRecord o;
+		o.dir[SENSE] = dir[ANTISENSE].complement();
+		o.dir[ANTISENSE] = dir[SENSE].complement();
+		return o;
+	}
 };
 
 class PackedSeq
