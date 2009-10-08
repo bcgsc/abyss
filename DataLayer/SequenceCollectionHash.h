@@ -97,12 +97,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
-		// Iterator versions of modification functions
-		// These should only be called from this class, hence they are private
-		void removeByIter(SequenceHashIterPair seqIters);
-
-		bool setFlagByIter(SequenceCollectionHashIter& seqIter,
-				SeqFlag flag);
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
 		bool clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);

@@ -169,22 +169,13 @@ bool SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& s
 		return false;
 }
 
-void SequenceCollectionHash::setFlag(const PackedSeq& seq, SeqFlag flag)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool found = setFlagByIter(iters.first, flag)
-		|| setFlagByIter(iters.second, flag);
-	assert(found);
-}
-
-bool SequenceCollectionHash::setFlagByIter(SequenceCollectionHashIter& seqIter,
+void SequenceCollectionHash::setFlag(const PackedSeq& key,
 		SeqFlag flag)
 {
-	if (seqIter != m_pSequences->end()) {
-		const_cast<PackedSeq&>(*seqIter).setFlag(flag);
-		return true;
-	} else
-		return false;
+	bool rc;
+	SequenceCollectionHash::iterator it = find(key, rc);
+	assert(it != m_pSequences->end());
+	const_cast<PackedSeq&>(*it).setFlag(flag);
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
