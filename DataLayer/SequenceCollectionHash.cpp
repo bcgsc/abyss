@@ -287,6 +287,22 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 	exit(EXIT_FAILURE);
 }
 
+/** Return an iterator pointing to the specified k-mer or its
+ * reverse complement. Return in rc whether the sequence is reversed.
+ */
+SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
+		const PackedSeq& key, bool& rc) const
+{
+	SequenceCollectionHash::const_iterator it = m_pSequences->find(key);
+	if (it != m_pSequences->end()) {
+		rc = false;
+		return it;
+	} else {
+		rc = true;
+		return m_pSequences->find(reverseComplement(key));
+	}
+}
+
 /** Return the sequence and data of the specified key.
  * The key sequence may not contain data. The returned sequence will
  * contain data.
@@ -294,14 +310,12 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 const PackedSeq& SequenceCollectionHash::getSeqAndData(
 		const PackedSeq& key) const
 {
-	SequenceCollectionHashIter i = m_pSequences->find(key);
-	if (i != m_pSequences->end())
-		return *i;
-	i = m_pSequences->find(reverseComplement(key));
-	if (i != m_pSequences->end())
-		return *i;
-	assert(false);
-	exit(EXIT_FAILURE);
+	bool rc;
+	SequenceCollectionHash::const_iterator it = find(key, rc);
+	// rc should not be ignored. This seems quite dubious.
+	// The edges of this k-mer should be complemented.
+	assert(it != m_pSequences->end());
+	return *it;
 }
 
 #include <cstdio>

@@ -92,6 +92,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Get the iterator to the sequence and its reverse complement
 		// If they don't exist m_pSequences->end() will be returned in the iterator
 		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
+		const_iterator SequenceCollectionHash::find(
+				const PackedSeq& key, bool& rc) const;
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
