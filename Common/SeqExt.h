@@ -11,6 +11,15 @@ class SeqExt
 {
 	public:
 		SeqExt() : m_record(0) { };
+		explicit SeqExt(uint8_t base) : m_record(1<<base) { };
+
+		/** Return a SeqExt with the specified bits set. */
+		static SeqExt mask(uint8_t bits)
+		{
+			SeqExt ext;
+			ext.m_record = bits;
+			return ext;
+		}
 
 		/** Set the specified adjacency. */
 		void setBase(uint8_t base)
@@ -22,6 +31,12 @@ class SeqExt
 		void clearBase(uint8_t base)
 		{
 			m_record &= ~(1 << base);
+		}
+
+		/** Remove the specified edges. */
+		void clear(SeqExt ext)
+		{
+			m_record &= ~ext.m_record;
 		}
 
 		/** Return wheter the specified base is adjacent. */
@@ -52,6 +67,7 @@ class SeqExt
 
 		/** Return the complementary adjacency. */
 		SeqExt complement() const;
+		SeqExt operator ~() const { return complement(); }
 
 		void print() const;
 
@@ -67,8 +83,6 @@ class SeqExt
 		}
 
 	private:
-		SeqExt(uint8_t ext) : m_record(ext) { };
-
 		uint8_t m_record;
 };
 

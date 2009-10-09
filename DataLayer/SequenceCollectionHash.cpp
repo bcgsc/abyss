@@ -123,17 +123,16 @@ bool SequenceCollectionHash::setBaseExtensionByIter(
 	return false;
 }
 
-/** Remove the specified extension from the specified sequence if it
- * exists in this collection.
+/** Remove the specified extensions from this k-mer if it exists in
+ * this collection.
  * @return true if the specified sequence exists and false otherwise
  */
 bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
-		extDirection dir, uint8_t base)
+		extDirection dir, SeqExt ext)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool found = removeExtensionByIter(iters.first, dir, base)
-		|| removeExtensionByIter(iters.second,
-				oppositeDirection(dir), complementBaseCode(base));
+	bool found = removeExtensionByIter(iters.first, dir, ext)
+		|| removeExtensionByIter(iters.second, !dir, ~ext);
 	if (found)
 		notify(getSeqAndData(iters));
 	return found;
@@ -141,29 +140,10 @@ bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
 
 bool SequenceCollectionHash::removeExtensionByIter(
 		SequenceCollectionHashIter& seqIter, extDirection dir,
-		uint8_t base)
+		SeqExt ext)
 {
 	if (seqIter != m_pSequences->end()) {
-		const_cast<PackedSeq&>(*seqIter).clearExtension(dir, base);
-		return true;
-	} else
-		return false;
-}
-
-/** Remove the edges of this k-mer. */
-void SequenceCollectionHash::clearExtensions(const PackedSeq& seq, extDirection dir)
-{
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
-	bool found = clearExtensionsByIter(iters.first, dir)
-		|| clearExtensionsByIter(iters.second, oppositeDirection(dir));
-	assert(found);
-}
-
-bool SequenceCollectionHash::clearExtensionsByIter(SequenceCollectionHashIter& seqIter,
-		extDirection dir)
-{
-	if (seqIter != m_pSequences->end()) {
-		const_cast<PackedSeq&>(*seqIter).clearAllExtensions(dir);
+		const_cast<PackedSeq&>(*seqIter).removeExtension(dir, ext);
 		return true;
 	} else
 		return false;

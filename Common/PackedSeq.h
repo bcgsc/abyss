@@ -140,8 +140,7 @@ class PackedSeq
 		SeqExt getExtension(extDirection dir) const;
 		ExtensionRecord extension() const { return m_extRecord; }
 		void setBaseExtension(extDirection dir, uint8_t base);
-		void clearExtension(extDirection dir, uint8_t base);
-		void clearAllExtensions(extDirection dir);
+		void removeExtension(extDirection dir, SeqExt ext);
 		bool hasExtension(extDirection dir) const;
 		bool isAmbiguous(extDirection dir) const;
 

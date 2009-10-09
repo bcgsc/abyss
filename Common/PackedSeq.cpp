@@ -549,14 +549,9 @@ void PackedSeq::setBaseExtension(extDirection dir, uint8_t base)
 	m_extRecord.dir[dir].setBase(base);
 }
 
-void PackedSeq::clearAllExtensions(extDirection dir)
+void PackedSeq::removeExtension(extDirection dir, SeqExt ext)
 {
-	m_extRecord.dir[dir].clear();
-}
-
-void PackedSeq::clearExtension(extDirection dir, uint8_t base)
-{
-	m_extRecord.dir[dir].clearBase(base);
+	m_extRecord.dir[dir].clear(ext);
 }
 
 bool PackedSeq::hasExtension(extDirection dir) const

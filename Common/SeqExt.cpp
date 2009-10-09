@@ -13,7 +13,7 @@ SeqExt SeqExt::complement() const
 		0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf
 	};
 	assert(m_record < 1<<NUM_BASES);
-	return opt::colourSpace ? *this : SeqExt(complements[m_record]);
+	return opt::colourSpace ? *this : mask(complements[m_record]);
 }
 
 void SeqExt::print() const

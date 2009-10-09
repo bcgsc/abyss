@@ -3,11 +3,9 @@
 
 #include "ISequenceCollection.h"
 #include "PackedSeq.h"
+#include <cassert>
 
-typedef std::pair<bool, SeqExt> SeqExtResult;
-
-// This class implements a collection of PackedSeqs with functions to manipulate the data
-// It is meant to be a storage class only and should have minimal logic for manipulating the data except for getters/setters
+/** A k-mer graph. A map of k-mer to edges. */
 class SequenceCollectionHash : public ISequenceCollection
 {
 	public:
@@ -39,16 +37,22 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 
-		// set a base extension
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
 				uint8_t base);
-
-		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq,
-				extDirection dir, uint8_t base);
-
-		// clear the extensions of the sequence
-		void clearExtensions(const PackedSeq& seq, extDirection dir);
+				extDirection dir, SeqExt ext);
+		/** Remove the specified edge of this k-mer. */
+		bool removeExtension(const PackedSeq& seq,
+				extDirection dir, uint8_t base)
+		{
+			return removeExtension(seq, dir, SeqExt(base));
+		}
+		/** Remove all the edges of this k-mer. */
+		void clearExtensions(const PackedSeq& seq, extDirection dir)
+		{
+			bool found = removeExtension(seq, dir, SeqExt::mask(0xf));
+			assert(found);
+		}
 
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq,
@@ -94,8 +98,7 @@ class SequenceCollectionHash : public ISequenceCollection
 				const SequenceHashIterPair& iters) const;
 
 		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
-		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
-		bool clearExtensionsByIter(SequenceCollectionHashIter& seqIter, extDirection dir);
+		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt ext);
 
 		/** Call the observers of the specified sequence. */
 		void notify(const PackedSeq& seq)
