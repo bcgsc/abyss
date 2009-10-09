@@ -671,10 +671,9 @@ void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const Set
 void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, const RemoveExtensionMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	bool found = m_pLocalSpace->removeExtension(
+	m_pLocalSpace->removeExtension(
 			message.m_seq, message.m_dir, message.m_ext);
-	if (found)
-		notify(message.m_seq);
+	notify(message.m_seq);
 }
 
 //
@@ -1453,23 +1452,16 @@ size_t NetworkSequenceCollection::count() const
 	return m_pLocalSpace->count();
 }
 
-/** Remove the specified extension from the specified sequence if it
- * exists in this collection.
- * @return true if the specified sequence is local and exists and
- * false otherwise
- */
-bool NetworkSequenceCollection::removeExtension(
+/** Remove the specified extensions from this k-mer. */
+void NetworkSequenceCollection::removeExtension(
 		const PackedSeq& seq, extDirection dir, SeqExt ext)
 {
 	if (isLocal(seq)) {
-		bool found = m_pLocalSpace->removeExtension(seq, dir, ext);
-		if (found)
-			notify(seq);
-		return found;
+		m_pLocalSpace->removeExtension(seq, dir, ext);
+		notify(seq);
 	} else {
 		int nodeID = computeNodeID(seq);
 		m_comm.sendRemoveExtension(nodeID, seq, dir, ext);
-		return false;
 	}
 }
 

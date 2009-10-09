@@ -80,7 +80,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void printLoad() const { m_pLocalSpace->printLoad(); }
 
-		bool removeExtension(const PackedSeq& seq, extDirection dir,
+		void removeExtension(const PackedSeq& seq, extDirection dir,
 				SeqExt ext);
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
 				uint8_t base);

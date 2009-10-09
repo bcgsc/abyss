@@ -123,19 +123,15 @@ bool SequenceCollectionHash::setBaseExtensionByIter(
 	return false;
 }
 
-/** Remove the specified extensions from this k-mer if it exists in
- * this collection.
- * @return true if the specified sequence exists and false otherwise
- */
-bool SequenceCollectionHash::removeExtension(const PackedSeq& seq,
+/** Remove the specified extensions from this k-mer. */
+void SequenceCollectionHash::removeExtension(const PackedSeq& seq,
 		extDirection dir, SeqExt ext)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	bool found = removeExtensionByIter(iters.first, dir, ext)
 		|| removeExtensionByIter(iters.second, !dir, ~ext);
-	if (found)
-		notify(getSeqAndData(iters));
-	return found;
+	assert(found);
+	notify(getSeqAndData(iters));
 }
 
 bool SequenceCollectionHash::removeExtensionByIter(

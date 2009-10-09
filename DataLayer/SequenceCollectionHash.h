@@ -39,7 +39,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
 				uint8_t base);
-		bool removeExtension(const PackedSeq& seq,
+		void removeExtension(const PackedSeq& seq,
 				extDirection dir, SeqExt ext);
 
 		// get the extensions of a sequence
