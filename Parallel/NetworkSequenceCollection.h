@@ -80,18 +80,11 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void printLoad() const { m_pLocalSpace->printLoad(); }
 
-		// remove the extension to the sequence
 		bool removeExtension(const PackedSeq& seq, extDirection dir,
-				uint8_t base);
-
-		// set a single base extension
+				SeqExt ext);
 		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
 				uint8_t base);
 
-		// remove all the extensions of this sequence
-		void clearExtensions(const PackedSeq& seq, extDirection dir);
-
-		// get the extensions of the sequence
 		bool getSeqData(const PackedSeq& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
 		const PackedSeq& getSeqAndData(const PackedSeq& key) const

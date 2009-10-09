@@ -127,29 +127,25 @@ class RemoveExtensionMessage : public Message
 	public:
 		RemoveExtensionMessage() : Message(MT_REMOVE_EXT) { }
 		RemoveExtensionMessage(const PackedSeq& seq, extDirection dir,
-				uint8_t base)
-			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_base(base)
+				SeqExt ext)
+			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_ext(ext)
 		{
 		}
-		
 		virtual ~RemoveExtensionMessage() { }
 
-		// Get the size that will be transmitted
-		virtual size_t getNetworkSize() const { return (Message::getNetworkSize() + sizeof(m_dir) + sizeof(m_base)); }
-				
-		// Handle the message by calling the appropriate function in the network sequence collection
+		virtual size_t getNetworkSize() const
+		{
+			return Message::getNetworkSize()
+				+ sizeof m_dir + sizeof m_ext;
+		}
+
 		virtual void handle(int senderID, NetworkSequenceCollection& handler);
-		
-		// Write the message into a buffer
 		virtual size_t serialize(char* buffer);
-		
-		// Read the message back from a buffer
 		virtual size_t unserialize(const char* buffer);
-		
 		virtual void print() const;
-		
+
 		extDirection m_dir;
-		uint8_t m_base;
+		SeqExt m_ext;
 };
 
 class SeqDataRequest : public Message

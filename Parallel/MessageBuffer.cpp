@@ -24,11 +24,12 @@ void MessageBuffer::sendSetFlagMessage(int nodeID, const PackedSeq& seq, SeqFlag
 }
 
 // Send a remove extension message
-void MessageBuffer::sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, uint8_t base)
+void MessageBuffer::sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, SeqExt ext)
 {
-	queueMessage(nodeID, new RemoveExtensionMessage(seq, dir, base), SM_BUFFERED);
+	queueMessage(nodeID, new RemoveExtensionMessage(seq, dir, ext),
+			SM_BUFFERED);
 }
-		
+
 // Send a sequence data request
 void MessageBuffer::sendSeqDataRequest(int nodeID, IDType group, IDType id, const PackedSeq& seq)
 {

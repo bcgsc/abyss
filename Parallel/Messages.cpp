@@ -153,17 +153,10 @@ void SetFlagMessage::print() const
 //
 size_t RemoveExtensionMessage::serialize(char* buffer)
 {
-	// Base class serialize first
 	size_t offset = 0;
 	offset += Message::serialize(buffer + offset);
-		
-	// Copy the direction in
-	offset += serializeData(&m_dir, buffer + offset, sizeof(m_dir));
-		
-	// Copy the base in
-	offset += serializeData(&m_base, buffer + offset, sizeof(m_base));
-	
-	// return the update buffer position
+	offset += serializeData(&m_dir, buffer + offset, sizeof m_dir);
+	offset += serializeData(&m_ext, buffer + offset, sizeof m_ext);
 	return offset;
 }
 
@@ -174,12 +167,10 @@ size_t RemoveExtensionMessage::unserialize(const char* buffer)
 {
 	// Base class unserialize first
 	size_t offset = 0;
-	offset += Message::unserialize(buffer);	
-	offset += unserializeData(&m_dir, buffer + offset, sizeof(m_dir));	
-	offset += unserializeData(&m_base, buffer + offset, sizeof(m_base));
-
+	offset += Message::unserialize(buffer);
+	offset += unserializeData(&m_dir, buffer + offset, sizeof m_dir);
+	offset += unserializeData(&m_ext, buffer + offset, sizeof m_ext);
 	return offset;
-	
 }
 
 //
@@ -195,7 +186,9 @@ void RemoveExtensionMessage::handle(int senderID, NetworkSequenceCollection& han
 //
 void RemoveExtensionMessage::print() const
 {
-	printf("Message type: %d Sequence: %s Dir: %d Base: %c\n", (int)Message::m_type, m_seq.decode().c_str(), (int)m_dir, m_base);
+	printf("Message type: %d Sequence: %s Dir: %d ",
+			(int)Message::m_type, m_seq.decode().c_str(), (int)m_dir);
+	m_ext.print();
 }
 
 

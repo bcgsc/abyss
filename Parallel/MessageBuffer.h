@@ -50,7 +50,7 @@ class MessageBuffer : public CommLayer
 
 		// Send a remove extension message
 		void sendRemoveExtension(int nodeID,
-				const PackedSeq& seq, extDirection dir, uint8_t base);
+				const PackedSeq& seq, extDirection dir, SeqExt ext);
 
 		// Send a sequence data request
 		void sendSeqDataRequest(int nodeID, IDType group, IDType id, const PackedSeq& seq);

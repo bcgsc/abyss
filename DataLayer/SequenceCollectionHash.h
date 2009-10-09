@@ -41,18 +41,6 @@ class SequenceCollectionHash : public ISequenceCollection
 				uint8_t base);
 		bool removeExtension(const PackedSeq& seq,
 				extDirection dir, SeqExt ext);
-		/** Remove the specified edge of this k-mer. */
-		bool removeExtension(const PackedSeq& seq,
-				extDirection dir, uint8_t base)
-		{
-			return removeExtension(seq, dir, SeqExt(base));
-		}
-		/** Remove all the edges of this k-mer. */
-		void clearExtensions(const PackedSeq& seq, extDirection dir)
-		{
-			bool found = removeExtension(seq, dir, SeqExt::mask(0xf));
-			assert(found);
-		}
 
 		// get the extensions of a sequence
 		bool getSeqData(const PackedSeq& seq,
