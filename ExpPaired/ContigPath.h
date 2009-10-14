@@ -43,9 +43,9 @@ struct MergeNode
 class ContigPath
 {
 	public:
-		// Add a node to this path
-		void appendNode(const MergeNode& mn);
-		
+		/** Append a single node to this path. */
+		void appendNode(const MergeNode& mn) { m_path.push_back(mn); }
+
 		// prepend a path
 		void prependPath(const ContigPath& other);
 		

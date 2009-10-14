@@ -6,17 +6,6 @@
 
 using namespace std;
 
-//
-// Append a single node to the list
-//
-void ContigPath::appendNode(const MergeNode& mn)
-{
-	m_path.push_back(mn);
-}
-
-//
-//
-//
 void ContigPath::prependPath(const ContigPath& other)
 {
 	m_path.insert(m_path.begin(), other.m_path.begin(), other.m_path.end());
