@@ -10,7 +10,6 @@
 #include "config.h"
 #if HAVE_LIBDL
 
-#include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>
 #include <dlfcn.h>
@@ -54,7 +53,10 @@ FILE *fopen(const char *path, const char *mode)
 	static fopen_t real_fopen;
 	if (real_fopen == NULL)
 		real_fopen = (fopen_t)dlsym(RTLD_NEXT, "fopen");
-	assert(real_fopen != NULL);
+	if (real_fopen == NULL) {
+		fprintf(stderr, "error: dlsym fopen: %s\n", dlerror());
+		exit(EXIT_FAILURE);
+	}
 
 	string command = zcatCommand(string(path));
 	return command.empty() ? real_fopen(path, mode)
@@ -69,7 +71,10 @@ FILE *fopen64(const char *path, const char *mode)
 	static fopen_t real_fopen64;
 	if (real_fopen64 == NULL)
 		real_fopen64 = (fopen_t)dlsym(RTLD_NEXT, "fopen64");
-	assert(real_fopen64 != NULL);
+	if (real_fopen64 == NULL) {
+		fprintf(stderr, "error: dlsym fopen64: %s\n", dlerror());
+		exit(EXIT_FAILURE);
+	}
 
 	string command = zcatCommand(string(path));
 	return command.empty() ? real_fopen64(path, mode)
@@ -86,7 +91,10 @@ int open(const char *path, int flags, mode_t mode)
 	static open_t real_open;
 	if (real_open == NULL)
 		real_open = (open_t)dlsym(RTLD_NEXT, "open");
-	assert(real_open != NULL);
+	if (real_open == NULL) {
+		fprintf(stderr, "error: dlsym open: %s\n", dlerror());
+		exit(EXIT_FAILURE);
+	}
 
 	const char *zcat = zcatExec(path);
 	if (zcat == NULL)
