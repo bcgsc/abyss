@@ -200,6 +200,22 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 /** Return an iterator pointing to the specified k-mer or its
  * reverse complement. Return in rc whether the sequence is reversed.
  */
+SequenceCollectionHash::iterator SequenceCollectionHash::find(
+		const PackedSeq& key, bool& rc)
+{
+	SequenceCollectionHash::iterator it = m_pSequences->find(key);
+	if (it != m_pSequences->end()) {
+		rc = false;
+		return it;
+	} else {
+		rc = true;
+		return m_pSequences->find(reverseComplement(key));
+	}
+}
+
+/** Return an iterator pointing to the specified k-mer or its
+ * reverse complement. Return in rc whether the sequence is reversed.
+ */
 SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
 		const PackedSeq& key, bool& rc) const
 {
