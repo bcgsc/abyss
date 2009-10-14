@@ -29,10 +29,10 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	assert(inStream.is_open());
 
 	int numAdded = 0;
-	LinearNumKey id;
+	string idString;
 	string adjRecord;
-	while (inStream >> id
-			&& getline(inStream, adjRecord)) {
+	while (inStream >> idString && getline(inStream, adjRecord)) {
+		LinearNumKey id = convertContigIDToLinearNumKey(idString);
 		SimpleContigData data;
 		data.length = pLengthVec->at(id);
 		pGraph->addVertex(id, data);
@@ -51,8 +51,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	inStream.clear();
 	inStream.seekg(ios_base::beg);
 	numAdded = 0;
-	while (inStream >> id
-			&& getline(inStream, adjRecord)) {
+	while (inStream >> idString && getline(inStream, adjRecord)) {
+		LinearNumKey id = convertContigIDToLinearNumKey(idString);
 		parseAdjacencyLine(adjRecord, id, pGraph);
 
 		numAdded++;

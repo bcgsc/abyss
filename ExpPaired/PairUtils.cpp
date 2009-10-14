@@ -16,7 +16,9 @@ istream& operator >>(istream& in, EstimateRecord& o)
 	o.estimates[SENSE].clear();
 	o.estimates[ANTISENSE].clear();
 
-	in >> o.refID;
+	string id;
+	in >> id;
+	o.refID = convertContigIDToLinearNumKey(id);
 	in.ignore(numeric_limits<streamsize>::max(), ':');
 
 	for (extDirection sense = SENSE; sense <= ANTISENSE; ++sense) {
