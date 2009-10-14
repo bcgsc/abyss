@@ -6,6 +6,7 @@
 #include "SeqExt.h"
 #include "Sequence.h"
 #include <cassert>
+#include <cstring> // for memcpy
 #include <stdint.h>
 #include <vector>
 
