@@ -2,7 +2,6 @@
 #include "Common/Options.h"
 #include "ContigPath.h"
 #include "FastaReader.h"
-#include "FastaWriter.h"
 #include "PackedSeq.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
@@ -77,11 +76,21 @@ typedef std::list<MergeNode> MergeNodeList;
 typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
 
 struct Contig {
+	string id;
 	Sequence seq;
 	unsigned coverage;
-	Contig(Sequence seq, unsigned coverage)
-		: seq(seq), coverage(coverage) { }
+
+	Contig(const string& id, const Sequence& seq, unsigned coverage)
+		: id(id), seq(seq), coverage(coverage) { }
+
+	friend ostream& operator <<(ostream& out, const Contig& o)
+	{
+		return out << '>' << o.id << ' '
+			<< o.seq.length() << ' ' << o.coverage << '\n'
+			<< o.seq << '\n';
+	}
 };
+
 typedef vector<Contig> ContigVec;
 
 // Functions
@@ -89,7 +98,7 @@ void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
-		FastaWriter* writer);
+		ostream& out);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
 bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, vector<size_t>& coords);
 bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
@@ -175,7 +184,7 @@ int main(int argc, char** argv)
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
 			ss >> length >> coverage;
-			contigVec.push_back(Contig(rec.seq, coverage));
+			contigVec.push_back(Contig(rec.id, rec.seq, coverage));
 		}
 		assert(in.eof());
 		assert(!contigVec.empty());
@@ -223,19 +232,19 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	FastaWriter writer(opt::out.c_str());
+	ofstream out(opt::out.c_str());
 	set<size_t> seen = getContigIDs(uniquePaths);
 	for (size_t i = 0; i < contigVec.size(); i++) {
 		if (seen.count(i) == 0)
-			writer.WriteSequence(contigVec[i].seq,
-					i, contigVec[i].coverage);
+			out << contigVec[i];
 	}
 
 	int id = contigVec.size();
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
 		mergePath(it->getNode(0).id, contigVec, *it, id++,
-				opt::k, &writer);
+				opt::k, out);
+	assert(out.good());
 
 	return 0;
 }
@@ -564,6 +573,14 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
 	*/
 }
 
+/** Return a string representation of the specified object. */
+template<typename T> static string toString(T x)
+{
+	ostringstream s;
+	s << x;
+	return s.str();
+}
+
 /** Return a string representation of the specified path. */
 static string toString(const ContigPath& path, char sep)
 {
@@ -581,7 +598,7 @@ static string toString(const ContigPath& path, char sep)
 
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& currPath, int count, int kmer,
-		FastaWriter* writer)
+		ostream& out)
 {
 	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
 	if(gDebugPrint) std::cout << "Canonical path is: " << currPath << "\n"; 	
@@ -610,13 +627,11 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		coverage += contig.coverage;
 	}
 
-	writer->WriteSequence(merged, count, coverage, comment);
+	ostringstream s;
+	s << merged.length() << ' ' << coverage << ' ' << comment;
+	out << FastaRecord(toString(count), s.str(), merged);
 }
 
-
-//
-//
-//
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer)
 {
 	size_t overlap = kmer - 1;
