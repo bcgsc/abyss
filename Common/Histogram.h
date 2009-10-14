@@ -81,7 +81,7 @@ class Histogram : std::map<int, unsigned>
 			total += (long unsigned)it->first * it->second;
 			squares += (long unsigned)it->first * it->first * it->second;
 		}
-		return (squares - total * total / (double)n) / n;
+		return (squares - (double)total * total / n) / n;
 	}
 
 	double sd() const
