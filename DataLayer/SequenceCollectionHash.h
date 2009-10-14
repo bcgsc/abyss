@@ -80,8 +80,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 	private:
 		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
-		const_iterator SequenceCollectionHash::find(
-				const PackedSeq& key, bool& rc) const;
+		const_iterator find(const PackedSeq& key, bool& rc) const;
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
