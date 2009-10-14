@@ -1,5 +1,6 @@
 #include "ContigPath.h"
 #include "config.h"
+#include <cstdlib>
 #include <string>
 #include <sstream>
 #include <iostream>
