@@ -44,11 +44,8 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 	while (in >> id >> len) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		LinearNumKey serial = convertContigIDToLinearNumKey(id);
-		assert(serial < 1000000000);
-		if (lengths.size() < serial+1)
-			lengths.resize(serial+1);
-		assert(lengths[serial] == 0);
-		lengths[serial] = len;
+		assert(serial == lengths.size());
+		lengths.push_back(len);
 	}
 	assert(in.eof());
 }
