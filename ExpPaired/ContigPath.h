@@ -48,12 +48,20 @@ class ContigPath
 		/** Append a single node to this path. */
 		void appendNode(const MergeNode& mn) { m_path.push_back(mn); }
 
-		// prepend a path
-		void prependPath(const ContigPath& other);
-		
-		// append a path
-		void appendPath(const ContigPath& other);
-		
+		/** Prepend the specified path to this path. */
+		void prependPath(const ContigPath& o)
+		{
+			m_path.insert(m_path.begin(),
+					o.m_path.begin(), o.m_path.end());
+		}
+
+		/** Append the specified path to this path. */
+		void appendPath(const ContigPath& o)
+		{
+			m_path.insert(m_path.end(),
+					o.m_path.begin(), o.m_path.end());
+		}
+
 		// Get the number of nodes in the path
 		size_t getNumNodes() const { return m_path.size(); }
 		

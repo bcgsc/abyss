@@ -6,19 +6,6 @@
 
 using namespace std;
 
-void ContigPath::prependPath(const ContigPath& other)
-{
-	m_path.insert(m_path.begin(), other.m_path.begin(), other.m_path.end());
-}
-
-//
-//
-//
-void ContigPath::appendPath(const ContigPath& other)
-{
-	m_path.insert(m_path.end(), other.m_path.begin(), other.m_path.end());
-}
-
 //
 // Reverse the path and flip every merge node
 //
