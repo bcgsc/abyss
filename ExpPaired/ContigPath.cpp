@@ -37,19 +37,6 @@ void ContigPath::reverse(bool flipNodes)
 }
 
 //
-// Extract a subset
-//
-ContigPath ContigPath::extractNodes(size_t start, size_t end)
-{
-	ContigPath np;
-	for(; start < end; ++start)
-	{
-		np.appendNode(getNode(start));
-	}
-	return np;
-}
-
-//
 // Write the path to the stream
 //
 ostream& operator<<(ostream& out, const ContigPath& object)

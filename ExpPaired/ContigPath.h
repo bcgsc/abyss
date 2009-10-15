@@ -43,6 +43,8 @@ struct MergeNode
 class ContigPath
 {
 	public:
+		ContigPath() { }
+
 		/** Append a single node to this path. */
 		void appendNode(const MergeNode& mn) { m_path.push_back(mn); }
 
@@ -71,9 +73,13 @@ class ContigPath
 
 		// reverse the path
 		void reverse(bool flipNodes);
-		
-		// Extract a subset from the path
-		ContigPath extractNodes(size_t start, size_t end);
+
+		/** Return a subsequence of this path. */
+		ContigPath extractNodes(size_t start, size_t end)
+		{
+			std::vector<MergeNode> v(&m_path[start], &m_path[end]);
+			return ContigPath(v);
+		}
 
 		bool operator <(const ContigPath& o) const
 		{
@@ -85,6 +91,9 @@ class ContigPath
 		friend std::istream& operator>>(std::istream& in, ContigPath& object);
 
 	private:
+		explicit ContigPath(const std::vector<MergeNode>& v)
+			: m_path(v) { }
+
 		std::vector<MergeNode> m_path;
 };
 
