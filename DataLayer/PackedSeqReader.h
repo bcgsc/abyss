@@ -1,5 +1,5 @@
 #ifndef PACKEDSEQREADER_H
-#define PACKEDSEQREADER_H
+#define PACKEDSEQREADER_H 1
 
 #include "PackedSeq.h"
 #include <fstream>

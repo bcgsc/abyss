@@ -1,5 +1,5 @@
 #ifndef PREPROCESSOPTIONS_H
-#define PREPROCESSOPTIONS_H
+#define PREPROCESSOPTIONS_H 1
 
 #include <string>
 

@@ -1,5 +1,5 @@
 #ifndef MESSAGES_H
-#define MESSAGES_H
+#define MESSAGES_H 1
 
 #include "NetworkDefs.h"
 #include "PackedSeq.h"

@@ -1,5 +1,5 @@
 #ifndef FASTAREADER_H
-#define FASTAREADER_H
+#define FASTAREADER_H 1
 
 #include "Sequence.h"
 #include <fstream>

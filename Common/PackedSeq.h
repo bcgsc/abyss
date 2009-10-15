@@ -1,5 +1,5 @@
 #ifndef PACKEDSEQ_H
-#define PACKEDSEQ_H
+#define PACKEDSEQ_H 1
 
 #include "config.h"
 #include "Sense.h"

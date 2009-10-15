@@ -1,5 +1,5 @@
 #ifndef PACKEDSEQWRITER_H
-#define PACKEDSEQWRITER_H
+#define PACKEDSEQWRITER_H 1
 
 #include "PackedSeq.h"
 #include "Sequence.h"

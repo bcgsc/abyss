@@ -1,5 +1,5 @@
 #ifndef ISEQUENCECOLLECTION_H
-#define ISEQUENCECOLLECTION_H
+#define ISEQUENCECOLLECTION_H 1
 
 #include "config.h"
 #include "PackedSeq.h"
