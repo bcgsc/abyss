@@ -642,6 +642,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		{
 			// remove this sequence, it has no extensions
 			seqCollection->mark(*iter);
+			numBranchesRemoved++;
 			continue;
 		}
 		// Sequence is trimmable, continue

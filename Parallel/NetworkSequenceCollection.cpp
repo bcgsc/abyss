@@ -801,6 +801,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		{
 			// remove this sequence, it has no extensions
 			AssemblyAlgorithms::removeSequenceAndExtensions(seqCollection, *iter);
+			numBranchesRemoved++;
 			continue;
 		}
 		
