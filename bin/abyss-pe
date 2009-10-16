@@ -10,7 +10,9 @@ ifdef SGE_TASK_ID
 k?=$(SGE_TASK_ID)
 endif
 ifdef NSLOTS
+ifneq ($(NSLOTS), 1)
 np?=$(NSLOTS)
+endif
 endif
 
 mpirun=$(shell which mpirun)
