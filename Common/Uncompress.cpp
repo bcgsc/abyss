@@ -2,8 +2,8 @@
  * Hook the standard file opening functions, open, fopen and fopen64.
  * If the extension of the file being opened indicates the file is
  * compressed (.gz, .bz2, .xz), open a pipe to a program that
- * decompresses that file (zcat, bzcat or xzdec) and return a handle
- * to the open pipe.
+ * decompresses that file (gunzip, bunzip2 or xzdec) and return a
+ * handle to the open pipe.
  * @author Shaun Jackman <sjackman@bcgsc.ca>
  */
 
