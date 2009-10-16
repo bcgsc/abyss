@@ -50,9 +50,6 @@ endif
 ifndef k
 $(error missing argument k)
 endif
-ifeq '$(origin l) $(origin t)' 'undefined undefined'
-$(error missing argument l or t)
-endif
 ifndef n
 $(error missing argument n)
 endif
