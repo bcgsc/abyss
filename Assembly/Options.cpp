@@ -193,23 +193,8 @@ void parse(int argc, char* const* argv)
 		}
 	}
 
-	if (readLen > 0) {
-		if (kmerSize > readLen) {
-			cerr << PROGRAM ": k-mer size must not be larger than "
-				"the read length\n";
-			exit(EXIT_FAILURE);
-		}
-		if (trimLen < 0)
-			trimLen = 6 * (readLen - kmerSize + 1);
-	}
-
 	if (kmerSize <= 0) {
 		cerr << PROGRAM ": missing -k,--kmer option\n";
-		die = true;
-	}
-	if (trimLen < 0) {
-		cerr << PROGRAM ": missing either -l,--read-length "
-			"or -t,--trim-length option\n";
 		die = true;
 	}
 	if (argv[optind] == NULL) {
@@ -220,6 +205,18 @@ void parse(int argc, char* const* argv)
 		cerr << "Try `" PROGRAM " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (readLen > 0) {
+		if (kmerSize > readLen) {
+			cerr << PROGRAM ": k-mer size must not be larger than "
+				"the read length\n";
+			exit(EXIT_FAILURE);
+		}
+		if (trimLen < 0)
+			trimLen = 6 * (readLen - kmerSize + 1);
+	}
+	if (trimLen < 0)
+		trimLen = kmerSize;
 
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());
