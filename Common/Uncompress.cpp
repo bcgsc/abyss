@@ -28,9 +28,9 @@ static bool endsWith(const string& s, const string& suffix)
 static const char* zcatExec(const string& path)
 {
 	return
-		endsWith(path, ".Z") ? "zcat" :
-		endsWith(path, ".gz") ? "zcat" :
-		endsWith(path, ".bz2") ? "bzcat" :
+		endsWith(path, ".Z") ? "gunzip" :
+		endsWith(path, ".gz") ? "gunzip" :
+		endsWith(path, ".bz2") ? "bunzip2" :
 		endsWith(path, ".xz") ? "xzdec" :
 		NULL;
 }
@@ -38,7 +38,7 @@ static const char* zcatExec(const string& path)
 static string zcatCommand(const string& path)
 {
 	const char *zcat = zcatExec(path);
-	return zcat == NULL ? "" : string(zcat) + ' ' + path;
+	return zcat == NULL ? "" : string(zcat) + " -c " + path;
 }
 
 extern "C" {
@@ -114,7 +114,7 @@ int open(const char *path, int flags, mode_t mode)
 	} else {
 		close(fd[0]);
 		dup2(fd[1], STDOUT_FILENO);
-		execlp(zcat, zcat, path, NULL);
+		execlp(zcat, zcat, "-c", path, NULL);
 		perror(zcat);
 		exit(EXIT_FAILURE);
 	}
