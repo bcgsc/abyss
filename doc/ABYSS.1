@@ -35,17 +35,17 @@ maximum length of dangling edges to trim
 .TP
 \fB\-c\fR, \fB\-\-coverage\fR=\fICOVERAGE\fR
 remove contigs with mean k-mer coverage less than this threshold
-[default=0]
 .TP
 \fB\-b\fR, \fB\-\-bubbles\fR=\fIN\fR
 maximum number of bubble\-popping rounds
 .TP
-\fB\-\-erode\fR
-erode bases at the ends of blunt contigs that are represented in only
-one strand (enabled by default)
+\fB\-e\fR, \fB\-\-erode\fR=\fICOVERAGE\fR
+erode bases at the ends of blunt contigs with coverage less than this
+threshold
 .TP
-\fB\-e0\fR, \fB\-\-no-erode\fR
-do not erode
+\fB\-E\fR, \fB\-\-erode-strand\fR=\fICOVERAGE\fR
+erode bases at the ends of blunt contigs with coverage less than this
+threshold on either strand. default=1
 .TP
 \fB\-\-coverage-hist\fR=\fIFILE\fR
 record the k-mer coverage histogram in FILE
@@ -54,7 +54,7 @@ record the k-mer coverage histogram in FILE
 generate a graph in dot format
 .TP
 \fB\-s\fR, \fB\-\-snp\fR=\fIFILE\fR
-record SNPs in FILE
+record popped bubbles in FILE
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 display verbose output
