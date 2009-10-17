@@ -75,25 +75,8 @@ int main(int argc, char* const* argv)
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
-	Histogram h = AssemblyAlgorithms::coverageHistogram(*pSC);
-	if (!opt::coverageHistPath.empty()) {
-		ofstream histFile(opt::coverageHistPath.c_str());
-		assert(histFile.is_open());
-		histFile << h;
-		assert(histFile.good());
-	}
-
-	unsigned minCov = h.firstLocalMinimum();
-	printf("Minimum k-mer coverage is %u\n", minCov);
-
-	if ((int)opt::erode < 0) {
-		printf("Setting parameter e (erode) to %u\n", minCov);
-		opt::erode = minCov;
-	}
-	if (opt::coverage < 0) {
-		printf("Setting parameter c (coverage) to %u\n", minCov);
-		opt::coverage = minCov;
-	}
+	AssemblyAlgorithms::determineMinimumCoverage(
+			AssemblyAlgorithms::coverageHistogram(*pSC));
 
 generate_adjacency:
 	puts("Generating adjacency");

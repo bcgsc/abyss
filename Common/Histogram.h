@@ -89,7 +89,8 @@ class Histogram : std::map<int, unsigned>
 		return sqrt(variance());
 	}
 
-	/** Return the first local minimum. */
+	/** Return the first local minimum or zero if a minimum is not
+	 * found. */
 	T firstLocalMinimum() const
 	{
 		const unsigned SMOOTHING = 4;
@@ -104,6 +105,8 @@ class Histogram : std::map<int, unsigned>
 			} else if (++count >= SMOOTHING)
 				break;
 		}
+		if (minimum->first == maximum())
+			return 0;
 		return minimum->first;
 	}
 

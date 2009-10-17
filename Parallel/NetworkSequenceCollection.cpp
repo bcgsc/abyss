@@ -89,11 +89,7 @@ void NetworkSequenceCollection::run()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
-				unsigned minCov = h.firstLocalMinimum();
-				if ((int)opt::erode < 0)
-					opt::erode = minCov;
-				if (opt::coverage < 0)
-					opt::coverage = minCov;
+				AssemblyAlgorithms::determineMinimumCoverage(h);
 				EndState();
 				SetState(NAS_WAITING);
 				break;
@@ -415,27 +411,7 @@ void NetworkSequenceCollection::runControl()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
-				if (!opt::coverageHistPath.empty()) {
-					ofstream histFile(opt::coverageHistPath.c_str());
-					assert(histFile.is_open());
-					histFile << h;
-					assert(histFile.good());
-				}
-
-				unsigned minCov = h.firstLocalMinimum();
-				printf("Minimum k-mer coverage is %u\n", minCov);
-
-				if ((int)opt::erode < 0) {
-					opt::erode = minCov;
-					printf("Setting parameter e (erode) to %u\n",
-							opt::erode);
-				}
-				if (opt::coverage < 0) {
-					opt::coverage = minCov;
-					printf("Setting parameter c (coverage) to %f\n",
-							opt::coverage);
-				}
-
+				AssemblyAlgorithms::determineMinimumCoverage(h);
 				EndState();
 
 				SetState(m_pLocalSpace->isAdjacencyLoaded()

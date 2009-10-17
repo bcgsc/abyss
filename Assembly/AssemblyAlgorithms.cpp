@@ -901,4 +901,36 @@ Histogram coverageHistogram(const ISequenceCollection& c)
 	return h;
 }
 
+void determineMinimumCoverage(const Histogram& h)
+{
+	if (!opt::coverageHistPath.empty() && opt::rank <= 0) {
+		ofstream histFile(opt::coverageHistPath.c_str());
+		assert(histFile.is_open());
+		histFile << h;
+		assert(histFile.good());
+	}
+
+	unsigned minCov = h.firstLocalMinimum();
+	if (minCov == 0) {
+		if (opt::rank <= 0)
+			puts("Unable to determine minimum k-mer coverage");
+		minCov = 2;
+	} else {
+		if (opt::rank <= 0)
+			printf("Minimum k-mer coverage is %u\n", minCov);
+	}
+
+	if ((int)opt::erode < 0) {
+		opt::erode = minCov;
+		if (opt::rank <= 0)
+			printf("Setting parameter e (erode) to %u\n", opt::erode);
+	}
+	if (opt::coverage < 0) {
+		opt::coverage = minCov;
+		if (opt::rank <= 0)
+			printf("Setting parameter c (coverage) to %f\n",
+					opt::coverage);
+	}
+}
+
 };
