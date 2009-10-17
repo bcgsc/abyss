@@ -47,7 +47,6 @@ static const char USAGE_MESSAGE[] =
 "  -E, --erode-strand=COVERAGE    erode bases at the ends of blunt contigs with\n"
 "                                 coverage less than this threshold on either\n"
 "                                 strand. default=1\n"
-"  -e0, --no-erode                do not erode\n"
 "      --coverage-hist=FILE       record the k-mer coverage histogram in FILE\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record popped bubbles in FILE\n"
