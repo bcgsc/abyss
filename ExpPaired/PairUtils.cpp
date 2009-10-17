@@ -1,6 +1,7 @@
 #include "PairUtils.h"
 #include "Sense.h"
 #include <cassert>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -50,10 +51,9 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 	assert(in.eof());
 }
 
-#include "Dictionary.h"
-
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
 {
-	static Dictionary s_contigIDs;
-	return s_contigIDs.serial(id);
+	LinearNumKey key;
+	key = atoi(id.c_str());
+	return key;
 }
