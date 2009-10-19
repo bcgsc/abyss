@@ -29,7 +29,7 @@ To run ABySS, its binaries should be found in your PATH.
 Assemble short reads in a file named reads.fa into contigs in a
 file named contigs.fa with the following command:
 
-ABYSS -k25 reads.fa
+ABYSS -k25 reads.fa -o contigs.fa
 
 where -k is an appropriate k-mer length. The only method to find the
 optimal value of k is to run multiple trials and inspect the results.
@@ -50,11 +50,9 @@ parallel jobs, or increased to 96.
 To assemble paired short reads in a file named reads.fa into contigs
 in a file named paired-contigs.fa, run the command:
 
-abyss-pe k=25 l=42 c=2 n=10 in='reads1.fa reads2.fa' name=ecoli
+abyss-pe k=25 n=10 in='reads1.fa reads2.fa' name=ecoli
 
-where k and l are the k-mer length and read length as before.
-c is the minimum average k-mer coverage of a contig and may be
-disabled by setting c=0.
+where k is the k-mer length as before.
 n is the minimum number of pairs needed to consider joining two
 contigs. The optimal value for n must be found by trial.
 in specifies the input files to read, which may be in FASTA, FASTQ,
@@ -99,7 +97,7 @@ Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
 Single-end reads are stored in two files se1.fa and se2.fa.
 
 The command line to assemble this example data set is...
-abyss-pe -j2 k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \
+abyss-pe -j2 k=25 n=10 name=ecoli lib='lib1 lib2' \
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
 	se='se1.fa se2.fa'
 
@@ -108,10 +106,10 @@ specifying the -j option of make to abyss-pe, which is implemented as
 a Makefile script. The -j option should be set to the number of
 libraries, but setting it higher will not cause any trouble.
 
-The empirical distribution of fragment sizes will be store in two
+The empirical distribution of fragment sizes will be stored in two
 files named lib1-3.hist and lib2-3.hist. These files may be plotted to
 check that the empirical distribution agrees with the expected
-distribution.  The assembled contigs will be stored in
+distribution. The assembled contigs will be stored in
 ${name}-contigs.fa.
 
 Reads without mates should be placed in a file specified by the `se'
