@@ -4,6 +4,8 @@
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
+#include <algorithm> // for min
+#include <climits> // for UINT_MAX
 #include <cmath>
 #include <fstream>
 #include <getopt.h>
@@ -173,6 +175,11 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	int uniqueEnd = 0;
 	int multiEnd = 0;
 
+	/** The fewest number of pairs in a distance estimate. */
+	unsigned minNumPairs = UINT_MAX;
+	/** The fewest number of pairs used in a path. */
+	unsigned minNumPairsUsed = UINT_MAX;
+
 	(void)pContigGraph;
 	std::ifstream inStream(estFileName.c_str());
 	std::ofstream outStream(opt::out.c_str());
@@ -201,6 +208,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 				if(gDebugPrint) std::cout << "Adding Constraint " << iter->nID << ' ' << nc << "\n";
 
 				constraintMap[iter->nID] = nc;
+
+				minNumPairs = min(minNumPairs, iter->numPairs);
 			}
 
 			if(gDebugPrint)
@@ -340,6 +349,11 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 						er.refID, (extDirection)dirIdx, cPath);
 				assert(outStream.good());
 			}
+
+			const EstimateVector& v = er.estimates[dirIdx];
+			for (EstimateVector::const_iterator it = v.begin();
+					it != v.end(); ++it)
+				minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
 		}
 	}
 	
@@ -352,6 +366,14 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph, std::string 
 	
 	inStream.close();
 	outStream.close();
+
+	cout << "The minimum number of pairs in a distance estimate is "
+		<< minNumPairs << ".\n"
+		"The minimum number of pairs used in a path is "
+		<< minNumPairsUsed << ".\n";
+	if (minNumPairs < minNumPairsUsed)
+		cout << "Consider increasing the number of pairs threshold "
+			"paramter, n, to " << minNumPairsUsed << ".\n";
 }
 
 //
