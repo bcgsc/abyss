@@ -134,8 +134,7 @@ Open MPI integrates well with SGE (Sun Grid Engine). For example, to
 submit an array of jobs to assemble every odd value of k between 51
 and 63 using 64 processes for each job:
 
-qsub -pe openmpi 64 -t 51-63:2 \
-	mpirun ABYSS-P -k$SGE_TASK_ID reads.fa -o k$SGE_TASK_ID.fa
+qsub -pe openmpi 64 -t 51-63:2 -N testing abyss-pe in=reads.fa n=10
 
 For more information on using SGE and qsub, please refer to the qsub
 manual page. Open MPI must have been compiled with support for SGE
