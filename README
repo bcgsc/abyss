@@ -29,15 +29,15 @@ To run ABySS, its binaries should be found in your PATH.
 Assemble short reads in a file named reads.fa into contigs in a
 file named contigs.fa with the following command:
 
-ABYSS -k25 -l42 reads.fa
+ABYSS -k25 reads.fa
 
-where -l specifies the read length and -k is an appropriate k-mer
-length. The only method to find the optimal value of k is to run
-multiple trials and inspect the results. The following shell snippet
-will assemble for every value of k from 20 to 40.
+where -k is an appropriate k-mer length. The only method to find the
+optimal value of k is to run multiple trials and inspect the results.
+The following shell snippet will assemble for every value of k from 20
+to 40.
 
 for k in {20..40}; do
-	ABYSS -k$k -l42 reads.fa -o contigs-k$k.fa
+	ABYSS -k$k reads.fa -o contigs-k$k.fa
 done
 
 The maximum value for k is 64. This limit may be changed at compile
@@ -137,7 +137,7 @@ submit an array of jobs to assemble every odd value of k between 51
 and 63 using 64 processes for each job:
 
 qsub -pe openmpi 64 -t 51-63:2 \
-	mpirun ABYSS-P -k$SGE_TASK_ID -l75 reads.fa -o k$SGE_TASK_ID.fa
+	mpirun ABYSS-P -k$SGE_TASK_ID reads.fa -o k$SGE_TASK_ID.fa
 
 For more information on using SGE and qsub, please refer to the qsub
 manual page. Open MPI must have been compiled with support for SGE
