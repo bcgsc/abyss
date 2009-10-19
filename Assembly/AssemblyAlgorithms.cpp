@@ -911,14 +911,14 @@ void determineMinimumCoverage(const Histogram& h)
 	}
 
 	unsigned minCov = h.firstLocalMinimum();
-	if (minCov == 0) {
-		if (opt::rank <= 0)
+	if (opt::rank <= 0) {
+		if (minCov == 0)
 			puts("Unable to determine minimum k-mer coverage");
-		minCov = 2;
-	} else {
-		if (opt::rank <= 0)
+		else
 			printf("Minimum k-mer coverage is %u\n", minCov);
 	}
+	if (minCov < 2)
+		minCov = 2;
 
 	if ((int)opt::erode < 0) {
 		opt::erode = minCov;
