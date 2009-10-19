@@ -6,6 +6,7 @@
 #include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +15,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <list>
 #include <map>
 #include <set>
@@ -234,10 +236,30 @@ int main(int argc, char** argv)
 
 	ofstream out(opt::out.c_str());
 	set<size_t> seen = getContigIDs(uniquePaths);
+	float minCov = numeric_limits<float>::infinity(),
+		  minCovUsed = numeric_limits<float>::infinity();
 	for (size_t i = 0; i < contigVec.size(); i++) {
-		if (seen.count(i) == 0)
-			out << contigVec[i];
+		const Contig& contig = contigVec[i];
+		bool used = seen.count(i) > 0;
+		if (!used)
+			out << contig;
+		if (contig.coverage > 0) {
+			assert((int)contig.seq.length() - opt::k + 1 > 0);
+			float cov = (float)contig.coverage
+				/ (contig.seq.length() - opt::k + 1);
+			minCov = min(minCov, cov);
+			if (used)
+				minCovUsed = min(minCovUsed, cov);
+		}
 	}
+
+	cout << "The minimum coverage of single-end contigs is "
+		<< minCov << ".\n"
+		<< "The minimum coverage of merged contigs is "
+		<< minCovUsed << ".\n";
+	if (minCov < minCovUsed)
+		cout << "Consider increasing the coverage threshold "
+			"parameter, c, to " << minCovUsed << ".\n";
 
 	int id = contigVec.size();
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
