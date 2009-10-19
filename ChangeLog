@@ -1,3 +1,50 @@
+2009-10-15  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.15.
+
+	ABYSS:
+	* New options, -e, --erode and -E, --erode-strand.
+	The parameter e erodes bases at the ends of blunt contigs with
+	coverage less than the specified threshold.
+	The parameter E erodes bases at the ends of blunt contigs with
+	coverage less than the specified threshold on either strand.
+	* New feature. If the parameters e and c are not specified,
+	attempt to choose appropriate values based on the observed k-mer
+	coverage. This feature will work best for higher coverage data.
+	For lower coverage data, setting e=c=2 is reasonable.
+	* New option, --trim-masked. Removed masked (lower case) sequence
+	at the beginning and end of the read. Disable with
+	--no-trim-masked.
+	* The read length, l, is an optional parameter. If the read length
+	is specified, the trim parameter, t, will default to 6*(l-k+1), as
+	before. If the read length is not specified, t will be set to the
+	same value as k. For longer reads or when k is less than 85% of l,
+	it should not be necessary to specify l. The parameter t may be
+	specified directly if desired.
+
+	DistanceEst:
+	* Bug fix. The standard deviation could be calculated incorrectly
+	for larger numbers, particularly for libraries with large fragment
+	sizes. Thanks to Tony Raymond.
+
+	Overlap:
+	* Bug fix. If Overlap found mate pairs on the same contig with
+	incorrect orientation, it would generate a misassembled contig.
+	These misassembled contigs are easily identified in the
+	xxx-3-overlap.fa file. The two contigs IDs, in the fourth and
+	fifth column, will be identical.
+	* New option, --mask-repeat. If two contigs are joined by mate
+	pairs and are found to overlap by a simple repeat so that the
+	exact number of the repeat is unknown, join the contigs estimating
+	the number of the repeat, and mask (lower case) the repeat
+	sequence. This feature is disabled by default.
+
+	abyss-pe:
+	* Use gunzip -c rather than zcat for portability.
+
+	configure:
+	* New option, --enable-mpich. Use the MPICH2 MPI library.
+
 2009-09-08  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.14.
