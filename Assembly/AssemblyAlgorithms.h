@@ -79,8 +79,8 @@ void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt&
 // process an a branch group extension
 bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions, int multiplicity);
 
-/** Write SNP information to a file. */
-void writeSNP(BranchGroup& group, unsigned id);
+void openBubbleFile(std::ofstream& out);
+void writeBubble(std::ostream& out, BranchGroup& group, unsigned id);
 
 // collapse bubbles that are joined together
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);

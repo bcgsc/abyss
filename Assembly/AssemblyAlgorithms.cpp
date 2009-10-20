@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -255,6 +256,26 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	return count;
 }
 
+/** Open the bubble file. */
+void openBubbleFile(ofstream& out)
+{
+	if (opt::snpPath.empty())
+		return;
+	string path;
+	if (opt::rank < 0) {
+		path = opt::snpPath;
+	} else {
+		ostringstream s;
+		s << "snp-" << opt::rank << ".fa";
+		path = s.str();
+	}
+	out.open(path.c_str());
+	if (!out.is_open()) {
+		perror(path.c_str());
+		exit(EXIT_FAILURE);
+	}
+}
+
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 {
 	Timer timer("PopBubbles");
@@ -263,6 +284,9 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	// Set the cutoffs
 	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
+
+	ofstream out;
+	openBubbleFile(out);
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
@@ -320,7 +344,7 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 					else if(status == BGS_JOINED)
 					{
 						static unsigned snpID;
-						writeSNP(branchGroup, ++snpID);
+						writeBubble(out, branchGroup, ++snpID);
 						collapseJoinedBranches(seqCollection,
 								branchGroup);
 						numPopped++;
@@ -336,9 +360,6 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 		}
 		seqCollection->pumpNetwork();
 	}
-
-	if (opt::snpFile != NULL)
-		fflush(opt::snpFile);
 
 	if (numPopped > 0)
 		printf("Removed %u bubbles\n", numPopped);
@@ -418,11 +439,10 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	return group.isExtendable();
 }
 
-/** Write SNP information to a file. */
-void writeSNP(BranchGroup& group, unsigned id)
+/** Write a bubble to the specified file. */
+void writeBubble(ostream& out, BranchGroup& group, unsigned id)
 {
-	FILE* fout = opt::snpFile;
-	if (fout == NULL)
+	if (opt::snpPath.empty())
 		return;
 
 	unsigned selectedIndex = group.getBranchToKeep();
@@ -431,10 +451,10 @@ void writeSNP(BranchGroup& group, unsigned id)
 	BranchRecord& refBranch = group.getBranch(selectedIndex);
 	Sequence refContig;
 	refBranch.buildContig(refContig);
-	fprintf(fout, ">%u%c %zu %u\n%s\n", id, allele++,
-			refContig.length(),
-			refBranch.getBranchMultiplicity(),
-			refContig.c_str());
+	out << '>' << id << allele++ << ' '
+		<< refContig.length() << ' '
+		<< refBranch.getBranchMultiplicity() << '\n'
+		<< refContig.c_str() << '\n';
 
 	unsigned numBranches = group.getNumBranches();
 	for (unsigned i = 0; i < numBranches; ++i) {
@@ -443,11 +463,12 @@ void writeSNP(BranchGroup& group, unsigned id)
 		BranchRecord& currBranch = group.getBranch(i);
 		Sequence contig;
 		currBranch.buildContig(contig);
-		fprintf(fout, ">%u%c %zu %u\n%s\n", id, allele++,
-				contig.length(),
-				currBranch.getBranchMultiplicity(),
-				contig.c_str());
+		out << '>' << id << allele++ << ' '
+			<< contig.length() << ' '
+			<< currBranch.getBranchMultiplicity() << '\n'
+			<< contig.c_str() << '\n';
 	}
+	assert(out.good());
 }
 
 //

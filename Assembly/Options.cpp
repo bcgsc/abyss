@@ -91,9 +91,6 @@ string graphPath;
 /** output bubble path */
 string snpPath;
 
-/** output bubble file */
-FILE* snpFile;
-
 /** input FASTA files */
 vector<string> inFiles;
 
@@ -224,22 +221,6 @@ void parse(int argc, char* const* argv)
 		ostringstream s;
 		s << "contigs-" << opt::rank << ".fa";
 		contigsTempPath = s.str();
-	}
-
-	if (snpPath.length() > 0) {
-		string path;
-		if (rank < 0) {
-			path = snpPath;
-		} else {
-			ostringstream s;
-			s << "snp-" << opt::rank << ".fa";
-			path = s.str();
-		}
-		snpFile = fopen(path.c_str(), "w");
-		if (snpFile == NULL) {
-			perror(path.c_str());
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	if (opt::rank <= 0)

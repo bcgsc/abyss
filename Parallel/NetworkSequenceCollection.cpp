@@ -951,6 +951,9 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	pumpNetwork();
 	assert(m_comm.receiveEmpty());
 
+	ofstream out;
+	AssemblyAlgorithms::openBubbleFile(out);
+
 	unsigned numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
 			iter != m_bubbles.end(); iter++) {
@@ -959,7 +962,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		if (!iter->second.isAmbiguous(this))
 			continue;
 		numPopped++;
-		AssemblyAlgorithms::writeSNP(
+		AssemblyAlgorithms::writeBubble(out,
 				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
@@ -976,9 +979,6 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 		assert(m_comm.receiveEmpty());
 	}
 	m_bubbles.clear();
-
-	if (opt::snpFile != NULL)
-		fflush(opt::snpFile);
 
 	PrintDebug(0, "Removed %u bubbles\n", numPopped);
 	return numPopped;
