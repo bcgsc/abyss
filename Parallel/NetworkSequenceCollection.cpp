@@ -1048,9 +1048,7 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 /** Pop the bubbles discovered previously. */
 int NetworkSequenceCollection::controlPopBubbles()
 {
-	unsigned numDiscovered = controlDiscoverBubbles();
-	if (numDiscovered == 0)
-		return 0;
+	controlDiscoverBubbles();
 
 	// Perform a round-robin bubble pop to avoid concurrency issues
 	m_checkpointSum = performNetworkPopBubbles(this);
