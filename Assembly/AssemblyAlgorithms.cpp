@@ -838,21 +838,25 @@ unsigned assemble(ISequenceCollection* seqCollection,
 {
 	Timer timer("Assemble");
 
-	unsigned contigID = 0;
 	unsigned kmerCount = 0;
+	unsigned contigID = 0;
+	unsigned assembledKmer = 0;
 	unsigned lowCoverageKmer = 0;
 	unsigned lowCoverageContigs = 0;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
+		if (iter->deleted())
+			continue;
+		kmerCount++;
+
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = checkSeqContiguity(*iter, dir);
 
-		if(status == SC_INVALID || status == SC_CONTIGUOUS)
-		{
+		assert(status != SC_INVALID);
+		if (status == SC_CONTIGUOUS)
 			continue;
-		}
 		else if(status == SC_ISLAND)
 		{
 			// singleton, output
@@ -861,7 +865,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
-			kmerCount += currBranch.getLength();
+			assembledKmer += currBranch.getLength();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;
@@ -893,7 +897,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		if (currBranch.isCanonical()) {
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
-			kmerCount += currBranch.getLength();
+			assembledKmer += currBranch.getLength();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;
@@ -909,9 +913,13 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		printf("Removed %u k-mer in %u low-coverage contigs\n",
 				lowCoverageKmer, lowCoverageContigs);
 	} else {
-		seqCollection->printLoad();
+		assert(assembledKmer <= kmerCount);
+		unsigned cyclicKmer = kmerCount - assembledKmer;
+		if (cyclicKmer > 0)
+			printf("%u unassembled k-mer in cyclic contigs\n",
+					cyclicKmer);
 		printf("Assembled %u k-mer in %u contigs\n",
-				kmerCount, contigID);
+				assembledKmer, contigID);
 	}
 	return contigID;
 }
