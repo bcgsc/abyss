@@ -67,6 +67,9 @@ void NetworkSequenceCollection::completeOperation()
 /** Run the assembly state machine. */
 void NetworkSequenceCollection::run()
 {
+	/** The number of contigs and k-mer assembled. */
+	pair<unsigned, unsigned> numAssembled;
+
 	SetState(NAS_LOADING);
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
@@ -160,10 +163,10 @@ void NetworkSequenceCollection::run()
 				m_comm.barrier();
 				m_lowCoverageContigs = 0;
 				m_lowCoverageKmer = 0;
-				unsigned numContigs = performNetworkAssembly(this);
+				numAssembled = performNetworkAssembly(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_comm.sendCheckPointMessage(numContigs);
+				m_comm.sendCheckPointMessage(numAssembled.first);
 				break;
 			}
 			case NAS_COVERAGE_COMPLETE:
@@ -215,20 +218,17 @@ void NetworkSequenceCollection::run()
 				break;
 			}
 			case NAS_ASSEMBLE:
-			{
 				m_comm.barrier();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
-				unsigned numAssembled = performNetworkAssembly(this, writer);
+				numAssembled = performNetworkAssembly(this, writer);
 				delete writer;
 				EndState();
 				SetState(NAS_WAITING);
-				m_comm.sendCheckPointMessage(numAssembled);
+				m_comm.sendCheckPointMessage(numAssembled.first);
 				break;
-			}
 			case NAS_ASSEMBLE_COMPLETE:
-				m_comm.reduce(m_pLocalSpace->cleanup());
-				m_comm.reduce(m_pLocalSpace->count());
+				m_comm.reduce(numAssembled.second);
 				EndState();
 				SetState(NAS_DONE);
 				break;
@@ -362,15 +362,16 @@ void NetworkSequenceCollection::controlCoverage()
 	m_comm.barrier();
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
-	unsigned numContigs = performNetworkAssembly(this);
+	pair<unsigned, unsigned> numAssembled
+		= performNetworkAssembly(this);
 	EndState();
 
 	m_numReachedCheckpoint++;
 	while (!checkpointReached())
 		pumpNetwork();
-	numContigs += m_checkpointSum;
+	numAssembled.first += m_checkpointSum;
 	printf("Found %u contigs before removing low-coverage contigs\n",
-			numContigs);
+			numAssembled.first);
 
 	// Count the number of low-coverage contigs.
 	SetState(NAS_COVERAGE_COMPLETE);
@@ -516,24 +517,23 @@ void NetworkSequenceCollection::runControl()
 				m_comm.barrier();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
-				unsigned numAssembled = performNetworkAssembly(this,
-						writer);
+				pair<unsigned, unsigned> numAssembled
+					= performNetworkAssembly(this, writer);
 				delete writer;
 				EndState();
 
 				m_numReachedCheckpoint++;
 				while (!checkpointReached())
 					pumpNetwork();
-				numAssembled += m_checkpointSum;
+				numAssembled.first += m_checkpointSum;
 
 				SetState(NAS_ASSEMBLE_COMPLETE);
 				m_comm.sendControlMessage(APC_ASSEMBLE_COMPLETE);
 
-				printf("Removed %lu marked k-mer\n",
-						m_comm.reduce(m_pLocalSpace->cleanup()));
-				printf("Assembled %lu k-mer in %u contigs\n",
-						m_comm.reduce(m_pLocalSpace->count()),
-						numAssembled);
+				numAssembled.second = m_comm.reduce(
+						numAssembled.second);
+				printf("Assembled %u k-mer in %u contigs\n",
+						numAssembled.second, numAssembled.first);
 
 				SetState(NAS_DONE);
 				break;
@@ -1150,8 +1150,12 @@ namespace std {
 	}
 };
 
-/** Assemble contigs. */
-unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter)
+/** Assemble contigs.
+ * @return the number of contigs and k-mer assembled
+ */
+pair<unsigned, unsigned> NetworkSequenceCollection::
+performNetworkAssembly(ISequenceCollection* seqCollection,
+		FastaWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
 	pair<unsigned, unsigned> numAssembled(0, 0);
@@ -1223,7 +1227,7 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 	} else
 		PrintDebug(0, "Assembled %u k-mer in %u contigs\n",
 				numAssembled.second, numAssembled.first);
-	return numAssembled.first;
+	return numAssembled;
 }
 
 /** Processes branches that are in progress, removing those that have

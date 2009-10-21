@@ -61,7 +61,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		unsigned controlSplit();
 
 		// Perform a network assembly
-		unsigned performNetworkAssembly(
+		std::pair<unsigned, unsigned> performNetworkAssembly(
 				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter = NULL);
 
