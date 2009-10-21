@@ -840,6 +840,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	Timer timer("Assemble");
 
 	unsigned contigID = 0;
+	unsigned kmerCount = 0;
 	unsigned lowCoverageKmer = 0;
 	unsigned lowCoverageContigs = 0;
 
@@ -861,12 +862,14 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
+			kmerCount += currBranch.getLength();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;
 			}
 			continue;
 		}
+		assert(status == SC_ENDPOINT);
 
 		// The sequence is an endpoint, begin extending it
 		// Passing -1 into the branch will disable the length check
@@ -891,6 +894,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		if (currBranch.isCanonical()) {
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
+			kmerCount += currBranch.getLength();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;
@@ -905,8 +909,11 @@ unsigned assemble(ISequenceCollection* seqCollection,
 				"low-coverage contigs\n", contigID);
 		printf("Removed %u k-mer in %u low-coverage contigs\n",
 				lowCoverageKmer, lowCoverageContigs);
-	} else
-		printf("Assembled %u contigs\n", contigID);
+	} else {
+		seqCollection->printLoad();
+		printf("Assembled %u k-mer in %u contigs\n",
+				kmerCount, contigID);
+	}
 	return contigID;
 }
 
