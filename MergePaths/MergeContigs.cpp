@@ -216,9 +216,6 @@ int main(int argc, char** argv)
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 2) {
-		cerr << PROGRAM ": too many arguments\n";
-		die = true;
 	}
 
 	if (die) {
@@ -244,7 +241,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		g_dict.lock();
+		if (argc - optind == 0) g_dict.lock();
 	}
 
 	vector<Path> paths;
@@ -265,16 +262,53 @@ int main(int argc, char** argv)
 		assert(in.eof());
 	}
 
+	vector<Path> prevPaths;
+	for (;optind < argc; optind++){
+		ifstream fin(argv[optind]);
+		if (argv[optind] != "-")
+			assert_open(fin, argv[optind]);
+		istream& in = argv[optind] == "-" ? cin : fin;
+		for (string s; getline(in, s);) {
+			line_num++;
+			istringstream ss(s);
+			Path path;
+			copy(istream_iterator<ContigNode>(ss),
+					istream_iterator<ContigNode>(),
+					back_inserter(path));
+			prevPaths.push_back(path);
+		}
+		assert(in.eof());
+	}
+
 	ofstream out(opt::out.c_str());
 	assert(out.good());
 
 	// Record all the contigs that were seen in a path.
 	vector<bool> seen(contigs.size());
 	for (vector<Path>::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
+			it != paths.end(); ++it) {
+		if (it->at(0).id > contigs.size() - 1 ||
+				it->at(it->size() - 1).id > contigs.size() - 1)
+			continue;
+		if (prevPaths.size() == 0) {
+			if (it->at(0).id < contigs.size() - 1)
+				seen[it->at(0).id] = true;
+			if (it->at(it->size() - 1).id < contigs.size() - 1)
+				seen[it->at(it->size() - 1).id] = true;
+		} else
+			for (Path::const_iterator itc = it->begin();
+					itc != it->end(); ++itc)
+				if (itc->id < contigs.size())
+					seen[itc->id] = true;
+	}
+
+	for (vector<Path>::const_iterator it = prevPaths.begin();
+			it != prevPaths.end(); ++it) {
 		for (Path::const_iterator itc = it->begin();
 				itc != it->end(); ++itc)
-			seen[itc->id] = true;
+			if (itc->id < contigs.size())
+				seen[itc->id] = true;
+	}
 
 	// Output those contigs that were not seen in a path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
@@ -282,7 +316,10 @@ int main(int argc, char** argv)
 		if (!seen[g_dict.serial(it->id)])
 			out << *it;
 
-	int id = contigs.size();
+	int id;
+	stringstream s(g_dict.key(contigs.size() - 1));
+	s >> id;
+	id++;
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const Path& path = *it;

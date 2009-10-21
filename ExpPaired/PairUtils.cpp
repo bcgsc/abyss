@@ -51,9 +51,9 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 }
 
 #include "Dictionary.h"
+Dictionary g_contigIDs;
 
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
 {
-	static Dictionary s_contigIDs;
-	return s_contigIDs.serial(id);
+	return g_contigIDs.serial(id);
 }

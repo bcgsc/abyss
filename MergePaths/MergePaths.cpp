@@ -186,8 +186,11 @@ int main(int argc, char** argv)
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
 			ss >> length >> coverage;
+			LinearNumKey id = g_contigIDs.serial(rec.id);
+			assert(id == contigVec.size());
 			contigVec.push_back(Contig(rec.id, rec.seq, coverage));
 		}
+		g_contigIDs.lock();
 		assert(in.eof());
 		assert(!contigVec.empty());
 		opt::colourSpace = isdigit(contigVec[0].seq[0]);
@@ -261,7 +264,9 @@ int main(int argc, char** argv)
 		cout << "Consider increasing the coverage threshold "
 			"parameter, c, to " << minCovUsed << ".\n";
 
-	int id = contigVec.size();
+	stringstream s(g_contigIDs.key(contigVec.size() - 1));
+	int id;
+	s >> id;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
 		mergePath(it->getNode(0).id, contigVec, *it, id++,
@@ -286,16 +291,18 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 
 	string line;
 	while (getline(pathStream, line)) {
-		char at = 0, comma = 0;
+		char at = 0;
 		LinearNumKey id;
 		bool dir;
 		string sep;
 		ContigPath path;
+		MergeNode pivot;
 		istringstream s(line);
-		s >> at >> id >> comma >> dir >> sep >> path;
+		s >> at >> pivot >> sep >> path;
+		id = pivot.id;
+		dir = pivot.isRC;
 		assert(s.eof());
 		assert(at == '@');
-		assert(comma == ',');
 		assert(sep == "->");
 
 		MergeNode rootNode = {id, 0};
@@ -610,10 +617,10 @@ static string toString(const ContigPath& path, char sep)
 	assert(numNodes > 0);
 	MergeNode root = path.getNode(0);
 	ostringstream s;
-	s << root.id << (root.isRC ? '-' : '+');
+	s << g_contigIDs.key(root.id) << (root.isRC ? '-' : '+');
 	for (size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = path.getNode(i);
-		s << sep << mn.id << (mn.isRC ? '-' : '+');
+		s << sep << g_contigIDs.key(mn.id) << (mn.isRC ? '-' : '+');
 	}
 	return s.str();
 }

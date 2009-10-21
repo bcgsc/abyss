@@ -395,6 +395,6 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 void outputContigPath(std::ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
 {
   //std::cout << "Found path for " << refNode << "\n";
-	outStream << "@ " << refNode << "," << dir << " -> ";
+	outStream << "@ " << g_contigIDs.key(refNode) << "," << dir << " -> ";
 	outStream << contigPath << "\n";
 }

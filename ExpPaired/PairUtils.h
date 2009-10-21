@@ -102,6 +102,9 @@ struct EstimateRecord
 void loadContigLengths(const std::string& path,
 		ContigLengthVec& lengths);
 
+class Dictionary;
+extern Dictionary g_contigIDs;
+
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
 
 #endif

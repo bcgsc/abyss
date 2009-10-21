@@ -1,10 +1,12 @@
 #ifndef CONTIGPATH_H
 #define CONTIGPATH_H 1
 
+#include "Dictionary.h"
 #include "PairUtils.h" // for LinearNumKey
 #include <cassert>
 #include <istream>
 #include <ostream>
+#include <sstream>
 #include <vector>
 
 struct MergeNode
@@ -27,13 +29,17 @@ struct MergeNode
 	friend std::ostream& operator<<(std::ostream& out,
 			const MergeNode& o)
 	{
-		return out << o.id << ',' << o.isRC;
+		return out << g_contigIDs.key(o.id) << ',' << o.isRC;
 	}
 
 	friend std::istream& operator>>(std::istream& in, MergeNode& o)
 	{
 		char c;
-		in >> o.id >> c >> o.isRC;
+		unsigned cid;
+		in >> cid >> c >> o.isRC;
+		std::stringstream s;
+		s << cid;
+		o.id = g_contigIDs.serial(s.str());
 		if (in.good())
 			assert(c == ',');
 		return in;
