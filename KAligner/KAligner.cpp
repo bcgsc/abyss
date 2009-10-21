@@ -52,11 +52,12 @@ namespace opt {
 	static bool printSeq = false;
 }
 
-static const char shortopts[] = "k:mo:j:v";
+static const char shortopts[] = "dk:mo:j:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 
 static const struct option longopts[] = {
+	{ "duplicates",  no_argument,       NULL, 'd' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "multimap",    no_argument,       &opt::multimap, 1 },
 	{ "no-multi",    no_argument,       &opt::multimap, 0 },
@@ -115,6 +116,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'm': opt::multimap = 1; break;
+			case 'd': opt::duplicates = 1; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_SEQ: opt::printSeq = true; break;

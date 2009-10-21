@@ -15,6 +15,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <limits> //for uint32_t.max
 
 typedef std::string ContigID;
 
@@ -122,6 +123,8 @@ struct Position
 	uint32_t pos; // 0 indexed
 	Position(uint32_t contig, uint32_t pos)
 		: contig(contig), pos(pos) { }
+	void setDuplicate() {contig = std::numeric_limits<uint32_t>::max ();}
+	bool isDuplicate() const {return contig == std::numeric_limits<uint32_t>::max();}
 };
 
 typedef hash_multimap<PackedSeq, Position,

@@ -12,6 +12,7 @@ using namespace std;
 
 namespace opt {
 	int multimap;
+	int duplicates;
 };
 
 /** Create an index of the target sequence. */
@@ -28,9 +29,12 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 
 		PackedSeq kmer(subseq);
 		if (!opt::multimap) {
-			class SeqPosHashMap::const_iterator it
+			class SeqPosHashMap::iterator it
 				= m_target.find(kmer);
-			if (it != m_target.end()) {
+			if (opt::duplicates && it != m_target.end()) {
+				it->second.setDuplicate();
+				continue;
+			} else if (it != m_target.end()) {
 				cerr << "error: duplicate k-mer in "
 					<< contigIndexToID(it->second.contig)
 					<< " also in " << id << ": "
@@ -66,18 +70,16 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	{
 		LookupResult result = m_target.equal_range(
 				PackedSeq(seq.substr(i, m_hashSize)));
-		for (SPHMConstIter resultIter = result.first; resultIter != result.second; ++resultIter)
-		{
+		for (SPHMConstIter resultIter = result.first;
+				resultIter != result.second; ++resultIter) {
+			if (opt::duplicates && resultIter->second.isDuplicate())
+				break;
 			int read_pos;
 			// The read position coordinate is wrt to the forward read position
-			if(!isRC)
-			{
-				read_pos = i;
-			}
+			if(!isRC) read_pos = i;
 			else
-			{
-				read_pos = Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
-			}
+				read_pos =
+					Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
 
 			unsigned ctgIndex = resultIter->second.contig;
 			Alignment align(contigIndexToID(ctgIndex),

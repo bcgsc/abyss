@@ -3,6 +3,7 @@
 
 namespace opt {
 	extern int multimap;
+	extern int duplicates;
 };
 
 #endif
