@@ -9,7 +9,6 @@
 #include "PackedSeqReader.h"
 #include "PackedSeqWriter.h"
 #include "Timer.h"
-#include "Uncompress.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
