@@ -225,9 +225,10 @@ void NetworkSequenceCollection::run()
 				delete writer;
 				EndState();
 				SetState(NAS_WAITING);
-				m_comm.sendCheckPointMessage(numAssembled.first);
+				m_comm.sendCheckPointMessage();
 				break;
 			case NAS_ASSEMBLE_COMPLETE:
+				m_comm.reduce(numAssembled.first);
 				m_comm.reduce(numAssembled.second);
 				EndState();
 				SetState(NAS_DONE);
@@ -525,11 +526,12 @@ void NetworkSequenceCollection::runControl()
 				m_numReachedCheckpoint++;
 				while (!checkpointReached())
 					pumpNetwork();
-				numAssembled.first += m_checkpointSum;
 
 				SetState(NAS_ASSEMBLE_COMPLETE);
 				m_comm.sendControlMessage(APC_ASSEMBLE_COMPLETE);
 
+				numAssembled.first = m_comm.reduce(
+						numAssembled.first);
 				numAssembled.second = m_comm.reduce(
 						numAssembled.second);
 				printf("Assembled %u k-mer in %u contigs\n",
