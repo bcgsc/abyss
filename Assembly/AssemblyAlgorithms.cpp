@@ -914,10 +914,10 @@ unsigned assemble(ISequenceCollection* seqCollection,
 				lowCoverageKmer, lowCoverageContigs);
 	} else {
 		assert(assembledKmer <= kmerCount);
-		unsigned cyclicKmer = kmerCount - assembledKmer;
-		if (cyclicKmer > 0)
-			printf("%u unassembled k-mer in cyclic contigs\n",
-					cyclicKmer);
+		unsigned circularKmer = kmerCount - assembledKmer;
+		if (circularKmer > 0)
+			printf("%u unassembled k-mer in circular contigs\n",
+					circularKmer);
 		printf("Assembled %u k-mer in %u contigs\n",
 				assembledKmer, contigID);
 	}
