@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 using namespace std;
 
@@ -1139,14 +1140,21 @@ void NetworkSequenceCollection::assembleContig(
 	}
 }
 
+namespace std {
+	pair<unsigned, unsigned>& operator +=(pair<unsigned, unsigned>& a,
+			pair<unsigned, unsigned> b)
+	{
+		a.first += b.first;
+		a.second += b.second;
+		return a;
+	}
+};
+
 /** Assemble contigs. */
 unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
-	
-	unsigned numAssembled = 0;
-	
-	// The branch ids
+	pair<unsigned, unsigned> numAssembled(0, 0);
 	uint64_t branchGroupID = 0;
 	assert(m_activeBranchGroups.empty());
 
@@ -1167,7 +1175,9 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 			currBranch.addSequence(*iter);
 			currBranch.terminate(BS_NOEXT);
 			assembleContig(seqCollection, fileWriter, currBranch,
-					m_numAssembled + numAssembled++);
+					m_numAssembled + numAssembled.first);
+			numAssembled.first++;
+			numAssembled.second += currBranch.getLength();
 			continue;
 		}
 		
@@ -1180,20 +1190,18 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 		// Generate the first extension request
 		generateExtensionRequest(branchGroupID, 0, *iter);
 		branchGroupID++;
-		
-		// Process the active branches
-		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
-		
-		// Service any waiting network events
+
+		numAssembled += processBranchesAssembly(seqCollection,
+				fileWriter, numAssembled.first);
 		seqCollection->pumpNetwork();
-		
-		// Primitive load balancing
+
 		if(m_activeBranchGroups.size() > MAX_ACTIVE)
 		{
 			while(m_activeBranchGroups.size() > LOW_ACTIVE)
 			{
 				seqCollection->pumpNetwork();
-				numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
+				numAssembled += processBranchesAssembly(seqCollection,
+						fileWriter, numAssembled.first);
 			}
 		}
 	}
@@ -1201,27 +1209,32 @@ unsigned NetworkSequenceCollection::performNetworkAssembly(ISequenceCollection* 
 	// Clear out the remaining branches
 	while(!m_activeBranchGroups.empty())
 	{
-		numAssembled += processBranchesAssembly(seqCollection, fileWriter, numAssembled);
+		numAssembled += processBranchesAssembly(seqCollection,
+				fileWriter, numAssembled.first);
 		seqCollection->pumpNetwork();
 	}
 
 	if (opt::coverage > 0) {
-		PrintDebug(0, "Found %u contigs before removing "
-				"low-coverage contigs\n", numAssembled);
+		PrintDebug(0, "Found %u k-mer in %u contigs before removing "
+				"low-coverage contigs\n",
+				numAssembled.second, numAssembled.first);
 		PrintDebug(0, "Removed %u k-mer in %u low-coverage contigs\n",
 				m_lowCoverageKmer, m_lowCoverageContigs);
 	} else
-		PrintDebug(0, "Assembled %u contigs\n", numAssembled);
-	return numAssembled;
+		PrintDebug(0, "Assembled %u k-mer in %u contigs\n",
+				numAssembled.second, numAssembled.first);
+	return numAssembled.first;
 }
 
 /** Processes branches that are in progress, removing those that have
  * completed.
- * @return the number that have completed
+ * @return the number of contigs and k-mer assembled
  */
-int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqCollection, FastaWriter* fileWriter, int currContigID)
+pair<unsigned, unsigned> NetworkSequenceCollection::
+processBranchesAssembly(ISequenceCollection* seqCollection,
+		FastaWriter* fileWriter, int currContigID)
 {
-	int numAssembled = 0;
+	unsigned assembledContigs = 0, assembledKmer = 0;
 	vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
 	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
@@ -1235,7 +1248,8 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 			BranchRecord& currBranch = iter->second.getBranch(0);
 			assert(currBranch.getState() == BS_NOEXT);
 			if (currBranch.isCanonical()) {
-				numAssembled++;
+				assembledContigs++;
+				assembledKmer += currBranch.getLength();
 				assembleContig(seqCollection, fileWriter, currBranch,
 						m_numAssembled + currContigID++);
 			}
@@ -1250,7 +1264,7 @@ int NetworkSequenceCollection::processBranchesAssembly(ISequenceCollection* seqC
 				= removeBranches.begin();
 			rmIter != removeBranches.end(); rmIter++)
 		m_activeBranchGroups.erase(*rmIter);	
-	return numAssembled;
+	return make_pair(assembledContigs, assembledKmer);
 }
 
 //

@@ -10,6 +10,7 @@
 #include "MessageBuffer.h"
 #include "Timer.h"
 #include <set>
+#include <utility>
 
 enum NetworkAssemblyState
 {
@@ -145,13 +146,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void notify(const PackedSeq& seq);
 
 		void loadSequences();
-	
-		// Branch processing
-		int processBranchesTrim();
-		bool processBranchesDiscoverBubbles();
-		int processBranchesAssembly(
+
+		std::pair<unsigned, unsigned> processBranchesAssembly(
 				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter, int currContigID);
+		int processBranchesTrim();
+		bool processBranchesDiscoverBubbles();
 
 		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
 		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
