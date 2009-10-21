@@ -225,6 +225,12 @@ void NetworkSequenceCollection::run()
 				m_comm.sendCheckPointMessage(numAssembled);
 				break;
 			}
+			case NAS_ASSEMBLE_COMPLETE:
+				m_comm.reduce(m_pLocalSpace->cleanup());
+				m_comm.reduce(m_pLocalSpace->count());
+				EndState();
+				SetState(NAS_DONE);
+				break;
 			case NAS_WAITING:
 				pumpNetwork();
 				break;
@@ -457,6 +463,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ERODE_COMPLETE:
 			case NAS_COVERAGE_COMPLETE:
 			case NAS_DISCOVER_BUBBLES:
+			case NAS_ASSEMBLE_COMPLETE:
 			case NAS_WAITING:
 				// These states are used only by the slaves.
 				assert(false);
@@ -517,10 +524,17 @@ void NetworkSequenceCollection::runControl()
 				while (!checkpointReached())
 					pumpNetwork();
 				numAssembled += m_checkpointSum;
-				printf("Assembled %u contigs\n", numAssembled);
+
+				SetState(NAS_ASSEMBLE_COMPLETE);
+				m_comm.sendControlMessage(APC_ASSEMBLE_COMPLETE);
+
+				printf("Removed %lu marked k-mer\n",
+						m_comm.reduce(m_pLocalSpace->cleanup()));
+				printf("Assembled %lu k-mer in %u contigs\n",
+						m_comm.reduce(m_pLocalSpace->count()),
+						numAssembled);
 
 				SetState(NAS_DONE);
-				m_comm.sendControlMessage(APC_FINISHED);
 				break;
 			}
 			case NAS_DONE:
@@ -677,9 +691,6 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			assert(m_state == NAS_WAITING);
 			m_comm.barrier();
 			break;
-		case APC_FINISHED:
-			SetState(NAS_DONE);
-			break;	
 		case APC_TRIM:
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
@@ -714,7 +725,10 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 		case APC_ASSEMBLE:
 			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
-			break;	
+			break;
+		case APC_ASSEMBLE_COMPLETE:
+			SetState(NAS_ASSEMBLE_COMPLETE);
+			break;
 		case APC_GEN_ADJ:
 			SetState(NAS_GEN_ADJ);
 			break;	

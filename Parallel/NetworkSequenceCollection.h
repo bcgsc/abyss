@@ -28,6 +28,7 @@ enum NetworkAssemblyState
 	NAS_POPBUBBLE, // remove read errors/SNPs
 	NAS_SPLIT, // split ambiguous branches
 	NAS_ASSEMBLE, // assembling the data
+	NAS_ASSEMBLE_COMPLETE, // assembling is complete
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function
 	NAS_DONE // finished, clean up and exit
 };
