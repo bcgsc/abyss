@@ -166,7 +166,7 @@ void NetworkSequenceCollection::run()
 				numAssembled = performNetworkAssembly(this);
 				EndState();
 				SetState(NAS_WAITING);
-				m_comm.sendCheckPointMessage(numAssembled.first);
+				m_comm.sendCheckPointMessage();
 				break;
 			}
 			case NAS_COVERAGE_COMPLETE:
@@ -174,6 +174,8 @@ void NetworkSequenceCollection::run()
 				pumpNetwork();
 				m_pLocalSpace->wipeFlag(
 						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+				m_comm.reduce(numAssembled.first);
+				m_comm.reduce(numAssembled.second);
 				m_comm.reduce(m_lowCoverageContigs);
 				m_comm.reduce(m_lowCoverageKmer);
 				m_comm.reduce(m_pLocalSpace->cleanup());
@@ -370,9 +372,6 @@ void NetworkSequenceCollection::controlCoverage()
 	m_numReachedCheckpoint++;
 	while (!checkpointReached())
 		pumpNetwork();
-	numAssembled.first += m_checkpointSum;
-	printf("Found %u contigs before removing low-coverage contigs\n",
-			numAssembled.first);
 
 	// Count the number of low-coverage contigs.
 	SetState(NAS_COVERAGE_COMPLETE);
@@ -381,6 +380,13 @@ void NetworkSequenceCollection::controlCoverage()
 	pumpNetwork();
 	m_pLocalSpace->wipeFlag(
 			SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+
+	numAssembled.first = m_comm.reduce(numAssembled.first);
+	numAssembled.second = m_comm.reduce(numAssembled.second);
+	printf("Found %u k-mer in %u contigs "
+			"before removing low-coverage contigs\n",
+			numAssembled.second, numAssembled.first);
+
 	unsigned lowCoverageContigs = m_comm.reduce(m_lowCoverageContigs);
 	unsigned lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
 	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
