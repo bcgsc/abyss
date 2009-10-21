@@ -908,8 +908,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 	}
 
 	if (opt::coverage > 0) {
-		printf("Found %u contigs before removing "
-				"low-coverage contigs\n", contigID);
+		printf("Found %u k-mer in %u contigs before removing "
+				"low-coverage contigs\n", assembledKmer, contigID);
 		printf("Removed %u k-mer in %u low-coverage contigs\n",
 				lowCoverageKmer, lowCoverageContigs);
 	} else {
