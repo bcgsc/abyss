@@ -37,6 +37,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -m, --multimap        allow duplicate k-mer in the target\n"
 "      --no-multimap     disallow duplicate k-mer in the target [default]\n"
+"  -d, --duplicates      ignore duplicate k-mer in the target\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
 "  -v, --verbose         display verbose output\n"
