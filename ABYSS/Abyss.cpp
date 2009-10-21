@@ -6,6 +6,7 @@
 #include "ISequenceCollection.h"
 #include "SequenceCollectionHash.h"
 #include "Timer.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cstdio>
 #include <fstream>

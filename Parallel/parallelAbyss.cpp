@@ -5,6 +5,7 @@
 #include "Assembly/Options.h"
 #include "Common/Options.h"
 #include "Timer.h"
+#include "Uncompress.h"
 #include <climits> // for HOST_NAME_MAX
 #include <cstdio>
 #include <cstdlib>
