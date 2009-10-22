@@ -147,6 +147,7 @@ template <class SeqPosHashMap>
 class Aligner
 {
 	public:
+		typedef typename SeqPosHashMap::iterator map_iterator;
 		typedef typename SeqPosHashMap::const_iterator
 			map_const_iterator;
 

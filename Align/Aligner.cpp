@@ -29,7 +29,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 
 		PackedSeq kmer(subseq);
 		if (!opt::multimap) {
-			map_const_iterator it = m_target.find(kmer);
+			map_iterator it = m_target.find(kmer);
 			if (opt::duplicates && it != m_target.end()) {
 				it->second.setDuplicate();
 				continue;
