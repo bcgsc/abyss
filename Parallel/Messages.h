@@ -45,7 +45,10 @@ class Message
 		// handle this message
 		virtual void handle(int senderID, NetworkSequenceCollection& handler) = 0;
 		
-		virtual size_t getNetworkSize() const { return (sizeof(MessageType) + sizeof(PackedSeq)); }
+		virtual size_t getNetworkSize() const
+		{
+			return sizeof m_type + PackedSeq::serialSize();
+		}
 		
 		// read the message type from a stream
 		static MessageType readMessageType(char* buffer);
