@@ -89,13 +89,9 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 			if (opt::duplicates && resultIter->second.isDuplicate())
 				break;
 
-			int read_pos;
-			// The read position coordinate is wrt to the forward read position
-			if(!isRC) read_pos = i;
-			else
-				read_pos =
-					Alignment::calculateReverseReadStart(i, seqLen, m_hashSize);
-
+			int read_pos = !isRC ? i
+				: Alignment::calculateReverseReadStart(
+						i, seqLen, m_hashSize);
 			unsigned ctgIndex = resultIter->second.contig;
 			Alignment align(contigIndexToID(ctgIndex),
 					resultIter->second.pos, read_pos, m_hashSize,
