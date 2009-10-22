@@ -30,15 +30,17 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 		PackedSeq kmer(subseq);
 		if (!opt::multimap) {
 			map_iterator it = m_target.find(kmer);
-			if (opt::duplicates && it != m_target.end()) {
-				it->second.setDuplicate();
+			if (it != m_target.end()) {
+				if (opt::duplicates) {
+					it->second.setDuplicate();
+				} else {
+					cerr << "error: duplicate k-mer in "
+						<< contigIndexToID(it->second.contig)
+						<< " also in " << id << ": "
+						<< kmer.decode() << '\n';
+					exit(EXIT_FAILURE);
+				}
 				continue;
-			} else if (it != m_target.end()) {
-				cerr << "error: duplicate k-mer in "
-					<< contigIndexToID(it->second.contig)
-					<< " also in " << id << ": "
-					<< kmer.decode() << '\n';
-				exit(EXIT_FAILURE);
 			}
 		}
 		m_target.insert(make_pair(kmer,
