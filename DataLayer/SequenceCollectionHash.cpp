@@ -10,17 +10,6 @@
 
 using namespace std;
 
-bool PackedSeqEqual::operator()(const PackedSeq& a,
-		const PackedSeq& b) const
-{
-	return a == b;
-}
-
-size_t PackedSeqHasher::operator()(const PackedSeq& myObj) const
-{
-	return myObj.getHashCode();
-}
-
 SequenceCollectionHash::SequenceCollectionHash()
 	: m_seqObserver(NULL), m_adjacencyLoaded(false)
 {
