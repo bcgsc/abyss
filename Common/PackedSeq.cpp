@@ -9,28 +9,15 @@
 
 using namespace std;
 
-//
-// Default constructor
-//
-PackedSeq::PackedSeq() : m_length(0), m_flags(0)
-{
-	m_multiplicity[SENSE] = 1;
-	m_multiplicity[ANTISENSE] = 0;
-}
-
-//
-// Construct a sequence from a String-based sequence
-//
-PackedSeq::PackedSeq(const Sequence& seq)
-	: m_length(seq.length()), m_flags(0)
+/** Construct a k-mer from a string. */
+Kmer::Kmer(const Sequence& seq)
+	: m_length(seq.length())
 {
 	memset(m_seq, 0, NUM_BYTES);
 	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();
-	for(unsigned i = 0; i < m_length; i++)
+	for (unsigned i = 0; i < m_length; i++)
 		setBaseCode(m_seq, i, baseToCode(*p++));
-	m_multiplicity[SENSE] = 1;
-	m_multiplicity[ANTISENSE] = 0;
 }
 
 //
@@ -90,39 +77,8 @@ size_t PackedSeq::unserialize(const char* buffer)
 	return offset;			
 }
 
-//
-// Assignment operator
-//
-PackedSeq& PackedSeq::operator=(const PackedSeq& other)
-{
-	// Detect self assignment
-	if (this == &other)
-	{
-		return *this;
-	}
-	memset(m_seq, 0, NUM_BYTES);
-	// Allocate and fill the new seq
-	m_length = other.m_length;	
-	unsigned numBytes = getNumCodingBytes(m_length);
-
-	// copy the sequence over
-	memcpy(m_seq, other.m_seq, numBytes);
-	
-	m_flags = other.m_flags;
-	
-	
-	m_extRecord.dir[SENSE] = other.m_extRecord.dir[SENSE];
-	m_extRecord.dir[ANTISENSE] = other.m_extRecord.dir[ANTISENSE];
-	m_multiplicity[SENSE] = other.m_multiplicity[SENSE];
-	m_multiplicity[ANTISENSE] = other.m_multiplicity[ANTISENSE];
-
-	return *this;
-}
-
-//
-// Compare two sequences.
-// 
-int PackedSeq::compare(const PackedSeq& other) const
+/** Compare two k-mer. */
+int Kmer::compare(const Kmer& other) const
 {
 	if (m_length == 0 || other.m_length == 0)
 		return (int)m_length - other.m_length;
@@ -134,7 +90,7 @@ int PackedSeq::compare(const PackedSeq& other) const
 //
 // Get the length of the sequence
 //
-unsigned PackedSeq::getSequenceLength() const
+unsigned Kmer::getSequenceLength() const
 {
 	return m_length;
 }
@@ -142,7 +98,7 @@ unsigned PackedSeq::getSequenceLength() const
 //
 // Get the number of coding bytes
 // 
-unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
+unsigned Kmer::getNumCodingBytes(unsigned seqLength)
 {
 	return (seqLength + 3) / 4;
 }
@@ -153,13 +109,13 @@ unsigned PackedSeq::getNumCodingBytes(unsigned seqLength)
  * sequence and its reverse complement will hash to the same value.
  * @todo make this faster
  */
-unsigned PackedSeq::getCode() const
+unsigned Kmer::getCode() const
 {
 	/* At k=19, this hash function always returns a positive number
 	 * due to the sequence and its reverse complement overlapping when
 	 * the xor is calculated. A more general solution is needed. */
 	const unsigned NUM_BYTES = m_length < 20 ? m_length/8 : 4;
-	PackedSeq rc = *this;
+	Kmer rc = *this;
 	rc.reverseComplement();
 
 	const unsigned prime = 101;
@@ -169,7 +125,7 @@ unsigned PackedSeq::getCode() const
 	return sum;
 }
 
-size_t PackedSeq::getHashCode() const
+size_t Kmer::getHashCode() const
 {
 	// Hash on the numbytes - 1. This is to avoid getting different hash values for the same sequence for n % 4 != 0 sequences
 	int code = hashlittle(m_seq, getNumCodingBytes(m_length) - 1, 131);
@@ -178,7 +134,7 @@ size_t PackedSeq::getHashCode() const
 }
 
 /** Return the string representation of this sequence. */
-Sequence PackedSeq::decode() const
+Sequence Kmer::decode() const
 {
 	Sequence s;
 	s.reserve(m_length);
@@ -223,10 +179,10 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
-#define SEQ_WORDS ((PackedSeq::NUM_BYTES + 7)/8)
+#define SEQ_WORDS ((Kmer::NUM_BYTES + 7)/8)
 #define SEQ_BITS (64 * SEQ_WORDS)
-#define SEQ_FULL_WORDS ((int)PackedSeq::NUM_BYTES/8)
-#define SEQ_ODD_BYTES (PackedSeq::NUM_BYTES - 8*SEQ_FULL_WORDS)
+#define SEQ_FULL_WORDS ((int)Kmer::NUM_BYTES/8)
+#define SEQ_ODD_BYTES (Kmer::NUM_BYTES - 8*SEQ_FULL_WORDS)
 
 struct Seq {
 	uint64_t x[SEQ_WORDS];
@@ -408,7 +364,7 @@ static void shiftLeft(Seq *pseq, uint8_t n)
 //
 // Return a subsequence of this sequence.
 //
-PackedSeq PackedSeq::subseq(unsigned start, unsigned len) const
+Kmer Kmer::subseq(unsigned start, unsigned len) const
 {
 	assert(start + len <= m_length);
 	Seq seq = load((uint8_t*)m_seq);
@@ -423,7 +379,7 @@ PackedSeq PackedSeq::subseq(unsigned start, unsigned len) const
 	shiftRight(&seq, SEQ_BITS - 2*(len + start));
 	shiftLeft(&seq, SEQ_BITS - 2*len);
 #endif
-	PackedSeq sub;
+	Kmer sub;
 	sub.m_length = len;
 	store((uint8_t*)sub.m_seq, seq);
 	return sub;
@@ -432,7 +388,7 @@ PackedSeq PackedSeq::subseq(unsigned start, unsigned len) const
 //
 // Change this sequence into its reverse complement
 //
-void PackedSeq::reverseComplement()
+void Kmer::reverseComplement()
 {
 	Seq seq = load((uint8_t*)m_seq);
 
@@ -452,7 +408,7 @@ void PackedSeq::reverseComplement()
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
 
-uint8_t PackedSeq::shift(extDirection dir, uint8_t base)
+uint8_t Kmer::shift(extDirection dir, uint8_t base)
 {
 	if(dir == SENSE)
 	{
@@ -464,12 +420,12 @@ uint8_t PackedSeq::shift(extDirection dir, uint8_t base)
 	}
 }
 
-void PackedSeq::setLastBase(extDirection dir, uint8_t base)
+void Kmer::setLastBase(extDirection dir, uint8_t base)
 {
 	setBaseCode(m_seq, dir == SENSE ? m_length - 1 : 0, base);
 }
 
-uint8_t PackedSeq::shiftAppend(uint8_t base)
+uint8_t Kmer::shiftAppend(uint8_t base)
 {
 	// shift the sequence left and append a new base to the end
 	unsigned numBytes = getNumCodingBytes(m_length);
@@ -488,7 +444,7 @@ uint8_t PackedSeq::shiftAppend(uint8_t base)
 	return shiftIn;
 }
 
-uint8_t PackedSeq::shiftPrepend(uint8_t base)
+uint8_t Kmer::shiftPrepend(uint8_t base)
 {
 	// shift the sequence right and append a new base to the end
 	unsigned numBytes = getNumCodingBytes(m_length);
@@ -514,7 +470,7 @@ uint8_t PackedSeq::shiftPrepend(uint8_t base)
 	return lastBase;	
 }
 
-uint8_t PackedSeq::leftShiftByte(char* pSeq,
+uint8_t Kmer::leftShiftByte(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// save the first base
@@ -529,7 +485,7 @@ uint8_t PackedSeq::leftShiftByte(char* pSeq,
 	return outBase;
 }
 
-uint8_t PackedSeq::rightShiftByte(char* pSeq,
+uint8_t Kmer::rightShiftByte(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// save the last base
@@ -544,22 +500,22 @@ uint8_t PackedSeq::rightShiftByte(char* pSeq,
 	return outBase;
 }
 
-void PackedSeq::setBaseExtension(extDirection dir, uint8_t base)
+void KmerData::setBaseExtension(extDirection dir, uint8_t base)
 {
 	m_extRecord.dir[dir].setBase(base);
 }
 
-void PackedSeq::removeExtension(extDirection dir, SeqExt ext)
+void KmerData::removeExtension(extDirection dir, SeqExt ext)
 {
 	m_extRecord.dir[dir].clear(ext);
 }
 
-bool PackedSeq::hasExtension(extDirection dir) const
+bool KmerData::hasExtension(extDirection dir) const
 {
 	return m_extRecord.dir[dir].hasExtension();
 }
 
-bool PackedSeq::isAmbiguous(extDirection dir) const
+bool KmerData::isAmbiguous(extDirection dir) const
 {
 	return m_extRecord.dir[dir].isAmbiguous();
 }
@@ -567,14 +523,14 @@ bool PackedSeq::isAmbiguous(extDirection dir) const
 //
 // Return the sequences extension in the specified direction
 //
-SeqExt PackedSeq::getExtension(extDirection dir) const
+SeqExt KmerData::getExtension(extDirection dir) const
 {
 	return m_extRecord.dir[dir];
 }
 
 // set a base by the index [0, length)
 // beware, this does not check for out of bounds access
-void PackedSeq::setBaseCode(char* pSeq,
+void Kmer::setBaseCode(char* pSeq,
 		unsigned seqIndex, uint8_t base)
 {
 	return setBaseCode(pSeq,
@@ -587,7 +543,7 @@ void PackedSeq::setBaseCode(char* pSeq,
 //Set a base by byte number/ sub index
 // beware, this does not check for out of bounds access
 //
-void PackedSeq::setBaseCode(char* pSeq,
+void Kmer::setBaseCode(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// shift the value into position
@@ -607,7 +563,7 @@ void PackedSeq::setBaseCode(char* pSeq,
 //
 // get a base code by the index [0, length)
 //
-uint8_t PackedSeq::getBaseCode(unsigned seqIndex) const
+uint8_t Kmer::getBaseCode(unsigned seqIndex) const
 {
 	assert(seqIndex < m_length);
 	return getBaseCode(m_seq,
@@ -615,7 +571,7 @@ uint8_t PackedSeq::getBaseCode(unsigned seqIndex) const
 			seqIndexToBaseIndex(seqIndex));
 }
 
-uint8_t PackedSeq::getLastBaseChar() const
+uint8_t Kmer::getLastBaseChar() const
 {
 	return codeToBase(getBaseCode(m_length - 1));
 }
@@ -623,49 +579,50 @@ uint8_t PackedSeq::getLastBaseChar() const
 //
 // get a base code by the byte number and sub index
 //
-uint8_t PackedSeq::getBaseCode(const char* pSeq,
+uint8_t Kmer::getBaseCode(const char* pSeq,
 		unsigned byteNum, unsigned index)
 {
 	unsigned shiftLen = 2 * (3 - index);
 	return (pSeq[byteNum] >> shiftLen) & 0x3;
 }
 
-//
-//
-//
-unsigned PackedSeq::seqIndexToByteNumber(unsigned seqIndex)
+unsigned Kmer::seqIndexToByteNumber(unsigned seqIndex)
 {
 	return seqIndex / 4;
 }
 
-//
-//
-//
-unsigned PackedSeq::seqIndexToBaseIndex(unsigned seqIndex)
+unsigned Kmer::seqIndexToBaseIndex(unsigned seqIndex)
 {
 	return seqIndex % 4; 
+}
+
+static Kmer reverseComplement(const Kmer& seq)
+{
+	Kmer rc(seq);
+	rc.reverseComplement();
+	return rc;
 }
 
 PackedSeq reverseComplement(const PackedSeq& seq)
 {
 	PackedSeq rc(seq);
 	rc.reverseComplement();
-	return rc;	
+	return rc;
 }
 
 /** Return true if this sequence is a palindrome. */
-bool PackedSeq::isPalindrome() const
+bool Kmer::isPalindrome() const
 {
 	return m_length % 2 == 1 ? false
 		: *this == ::reverseComplement(*this);
 }
 
 /** Return true if the length k-1 subsequence is a palindrome. */
-bool PackedSeq::isPalindrome(extDirection dir) const
+bool Kmer::isPalindrome(extDirection dir) const
 {
 	if (m_length % 2 == 0)
 		return false;
-	PackedSeq seq(*this);
+	Kmer seq(*this);
 	if (dir == SENSE)
 		seq.shiftAppend(0);
 	else
