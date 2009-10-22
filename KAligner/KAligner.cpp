@@ -35,8 +35,8 @@ static const char USAGE_MESSAGE[] =
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
-"  -m, --multimap        allow duplicate k-mer in the target\n"
 "      --no-multimap     disallow duplicate k-mer in the target [default]\n"
+"  -m, --multimap        allow duplicate k-mer in the target\n"
 "  -d, --duplicates      ignore duplicate k-mer in the target\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
@@ -58,10 +58,10 @@ static const char shortopts[] = "dk:mo:j:v";
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 
 static const struct option longopts[] = {
-	{ "duplicates",  no_argument,       NULL, 'd' },
 	{ "kmer",        required_argument, NULL, 'k' },
-	{ "multimap",    no_argument,       &opt::multimap, 1 },
-	{ "no-multi",    no_argument,       &opt::multimap, 0 },
+	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
+	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
+	{ "duplicates",  no_argument,     &opt::multimap, opt::IGNORE },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "seq",		 no_argument,		NULL, OPT_SEQ },
@@ -116,8 +116,8 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
-			case 'm': opt::multimap = 1; break;
-			case 'd': opt::duplicates = 1; break;
+			case 'm': opt::multimap = opt::MULTIMAP; break;
+			case 'd': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_SEQ: opt::printSeq = true; break;
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Target: " << refFastaFile << endl;
 
-	if (opt::multimap) {
+	if (opt::multimap == opt::MULTIMAP) {
 		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k, 1<<26);
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
 	} else {
@@ -185,7 +185,7 @@ int main(int argc, char** argv)
 			<< " of " << g_readCount << " reads ("
 			<< (float)100 * g_alignedCount / g_readCount << "%)\n";
 
-	if (opt::multimap)
+	if (opt::multimap == opt::MULTIMAP)
 		delete g_aligner_m;
 	else
 		delete g_aligner_u;
@@ -247,7 +247,7 @@ void *alignReadsToDB(void* readsFile)
 			else
 				assert(isalpha(seq[0]));
 
-			if (opt::multimap)
+			if (opt::multimap == opt::MULTIMAP)
 				g_aligner_m->alignRead(seq,
 						prefix_ostream_iterator<Alignment>(
 							output, "\t"));

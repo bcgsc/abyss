@@ -11,15 +11,19 @@
 using namespace std;
 
 namespace opt {
+	/** For a duplicate k-mer in the target
+	 * ERROR: report an error and exit
+	 * MULTIMAP: report all alignments
+	 * IGNORE: do not report any alignments
+	 */
 	int multimap;
-	int duplicates;
 };
 
 template <>
 void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
 		const PackedSeq& kmer, Position pos)
 {
-	assert(opt::multimap);
+	assert(opt::multimap == opt::MULTIMAP);
 	m_target.insert(make_pair(kmer, pos));
 }
 
@@ -27,12 +31,12 @@ template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(
 		const PackedSeq& kmer, Position pos)
 {
-	assert(!opt::multimap);
+	assert(opt::multimap != opt::MULTIMAP);
 	pair<map_iterator, bool> inserted
 		= m_target.insert(make_pair(kmer, pos));
 	if (inserted.second)
 		return;
-	if (opt::duplicates) {
+	if (opt::multimap == opt::IGNORE) {
 		inserted.first->second.setDuplicate();
 	} else {
 		cerr << "error: duplicate k-mer in "
@@ -86,7 +90,8 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 					PackedSeq(seq.substr(i, m_hashSize)));
 		for (map_const_iterator resultIter = range.first;
 				resultIter != range.second; ++resultIter) {
-			if (opt::duplicates && resultIter->second.isDuplicate())
+			if (opt::multimap == opt::IGNORE
+					&& resultIter->second.isDuplicate())
 				break;
 
 			int read_pos = !isRC ? i
