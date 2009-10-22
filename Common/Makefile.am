@@ -7,6 +7,7 @@ libcommon_a_SOURCES = \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h HashSet.h \
 	Histogram.cpp Histogram.h \
+	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
 	PackedSeq.cpp PackedSeq.h \
