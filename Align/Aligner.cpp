@@ -29,8 +29,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 
 		PackedSeq kmer(subseq);
 		if (!opt::multimap) {
-			class SeqPosHashMap::iterator it
-				= m_target.find(kmer);
+			map_const_iterator it = m_target.find(kmer);
 			if (opt::duplicates && it != m_target.end()) {
 				it->second.setDuplicate();
 				continue;
@@ -68,12 +67,14 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	int seqLen = seq.length();
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
-		LookupResult result = m_target.equal_range(
-				PackedSeq(seq.substr(i, m_hashSize)));
-		for (SPHMConstIter resultIter = result.first;
-				resultIter != result.second; ++resultIter) {
+		pair<map_const_iterator, map_const_iterator> range
+			= m_target.equal_range(
+					PackedSeq(seq.substr(i, m_hashSize)));
+		for (map_const_iterator resultIter = range.first;
+				resultIter != range.second; ++resultIter) {
 			if (opt::duplicates && resultIter->second.isDuplicate())
 				break;
+
 			int read_pos;
 			// The read position coordinate is wrt to the forward read position
 			if(!isRC) read_pos = i;

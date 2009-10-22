@@ -147,8 +147,8 @@ template <class SeqPosHashMap>
 class Aligner
 {
 	public:
-		typedef typename SeqPosHashMap::const_iterator SPHMConstIter;
-		typedef std::pair<SPHMConstIter, SPHMConstIter> LookupResult;
+		typedef typename SeqPosHashMap::const_iterator
+			map_const_iterator;
 
 		Aligner(int hashSize, int buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
