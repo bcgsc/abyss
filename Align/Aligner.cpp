@@ -15,27 +15,33 @@ namespace opt {
 	int duplicates;
 };
 
+template <>
+void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
+		const PackedSeq& kmer, Position pos)
+{
+	assert(opt::multimap);
+	m_target.insert(make_pair(kmer, pos));
+}
+
 template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(
 		const PackedSeq& kmer, Position pos)
 {
-	if (!opt::multimap) {
-		map_iterator it = m_target.find(kmer);
-		if (it != m_target.end()) {
-			if (opt::duplicates) {
-				it->second.setDuplicate();
-			} else {
-				cerr << "error: duplicate k-mer in "
-					<< contigIndexToID(it->second.contig)
-					<< " also in "
-					<< contigIndexToID(pos.contig) << ": "
-					<< kmer.decode() << '\n';
-				exit(EXIT_FAILURE);
-			}
-			return;
-		}
+	assert(!opt::multimap);
+	pair<map_iterator, bool> inserted
+		= m_target.insert(make_pair(kmer, pos));
+	if (inserted.second)
+		return;
+	if (opt::duplicates) {
+		inserted.first->second.setDuplicate();
+	} else {
+		cerr << "error: duplicate k-mer in "
+			<< contigIndexToID(inserted.first->second.contig)
+			<< " also in "
+			<< contigIndexToID(pos.contig)
+			<< ": " << kmer.decode() << '\n';
+		exit(EXIT_FAILURE);
 	}
-	m_target.insert(make_pair(kmer, pos));
 }
 
 /** Create an index of the target sequence. */
