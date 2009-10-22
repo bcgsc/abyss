@@ -161,9 +161,11 @@ class Aligner
 			m_target.rehash(buckets);
 		}
 
-		void addReferenceSequence(const ContigID& id, const Sequence& seq);
+		void addReferenceSequence(const ContigID& id,
+				const Sequence& seq);
+		void addReferenceSequence(const PackedSeq& kmer,
+				Position pos);
 
-		// Align an individual sequence
 		template <class oiterator>
 		void alignRead(const Sequence& seq, oiterator dest);
 

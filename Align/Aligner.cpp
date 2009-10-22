@@ -15,6 +15,29 @@ namespace opt {
 	int duplicates;
 };
 
+template <class SeqPosHashMap>
+void Aligner<SeqPosHashMap>::addReferenceSequence(
+		const PackedSeq& kmer, Position pos)
+{
+	if (!opt::multimap) {
+		map_iterator it = m_target.find(kmer);
+		if (it != m_target.end()) {
+			if (opt::duplicates) {
+				it->second.setDuplicate();
+			} else {
+				cerr << "error: duplicate k-mer in "
+					<< contigIndexToID(it->second.contig)
+					<< " also in "
+					<< contigIndexToID(pos.contig) << ": "
+					<< kmer.decode() << '\n';
+				exit(EXIT_FAILURE);
+			}
+			return;
+		}
+	}
+	m_target.insert(make_pair(kmer, pos));
+}
+
 /** Create an index of the target sequence. */
 template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequence& seq)
@@ -26,25 +49,8 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 		Sequence subseq(seq, i, m_hashSize);
 		if (subseq.find("N") != string::npos)
 			continue;
-
-		PackedSeq kmer(subseq);
-		if (!opt::multimap) {
-			map_iterator it = m_target.find(kmer);
-			if (it != m_target.end()) {
-				if (opt::duplicates) {
-					it->second.setDuplicate();
-				} else {
-					cerr << "error: duplicate k-mer in "
-						<< contigIndexToID(it->second.contig)
-						<< " also in " << id << ": "
-						<< kmer.decode() << '\n';
-					exit(EXIT_FAILURE);
-				}
-				continue;
-			}
-		}
-		m_target.insert(make_pair(kmer,
-					Position(contigIDToIndex(id), i)));
+		addReferenceSequence(PackedSeq(subseq),
+				Position(contigIDToIndex(id), i));
 	}
 }
 
