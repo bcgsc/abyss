@@ -299,7 +299,7 @@ int main(int argc, char** argv)
 
 	overlaps = findOverlaps(pathMap);
 	while (overlaps.size() > 0) {
-		cerr << "There were  " << overlaps.size() / 2 << " found.\n";
+		cerr << "There were  " << overlaps.size() / 2 << " overlaps found.\n";
 		trimPaths = makeTrimPathMap(pathMap);
 		trimOverlaps(trimPaths, overlaps);
 		pathMap = makePathMap(trimPaths);
@@ -309,7 +309,7 @@ int main(int argc, char** argv)
 
 	for (TrimPathMap::const_iterator trimPathsIt = trimPaths.begin();
 			trimPathsIt != trimPaths.end(); trimPathsIt++) {
-		//if (trimPathsIt->second.path.getNumNodes() <= 1) continue;
+		if (trimPathsIt->second.path.getNumNodes() < 2) continue;
 		string pathString = toString(trimPathsIt->second.path, ' ');
 		cout << pathString << '\n';
 	}
