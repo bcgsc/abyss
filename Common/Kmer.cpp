@@ -339,18 +339,6 @@ void Kmer::reverseComplement()
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
 
-uint8_t Kmer::shift(extDirection dir, uint8_t base)
-{
-	if(dir == SENSE)
-	{
-		return shiftAppend(base);
-	}
-	else
-	{
-		return shiftPrepend(base);	
-	}
-}
-
 void Kmer::setLastBase(extDirection dir, uint8_t base)
 {
 	setBaseCode(m_seq, dir == SENSE ? m_length - 1 : 0, base);

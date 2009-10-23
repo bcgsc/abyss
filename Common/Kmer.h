@@ -41,9 +41,13 @@ class Kmer
 
 	bool isPalindrome() const;
 	bool isPalindrome(extDirection dir) const;
-	uint8_t shift(extDirection dir, uint8_t base = 0);
 	void setLastBase(extDirection dir, uint8_t base);
 	uint8_t getLastBaseChar() const;
+
+	uint8_t shift(extDirection dir, uint8_t base = 0)
+	{
+		return dir == SENSE ? shiftAppend(base) : shiftPrepend(base);
+	}
 
   private:
 	uint8_t shiftAppend(uint8_t base);
