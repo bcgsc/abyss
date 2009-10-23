@@ -84,4 +84,6 @@ class Kmer
 	uint8_t m_length;
 };
 
+Kmer reverseComplement(const Kmer& seq);
+
 #endif

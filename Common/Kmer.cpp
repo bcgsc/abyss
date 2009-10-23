@@ -487,7 +487,7 @@ unsigned Kmer::seqIndexToBaseIndex(unsigned seqIndex)
 	return seqIndex % 4; 
 }
 
-static Kmer reverseComplement(const Kmer& seq)
+Kmer reverseComplement(const Kmer& seq)
 {
 	Kmer rc(seq);
 	rc.reverseComplement();
