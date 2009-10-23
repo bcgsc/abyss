@@ -1,6 +1,6 @@
 #include "Common/Options.h"
 #include "FastaReader.h"
-#include "PackedSeq.h"
+#include "Kmer.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -70,10 +70,10 @@ static const struct option longopts[] = {
 struct ContigEndSeq {
 	ContigID id;
 	unsigned length;
-	PackedSeq l;
-	PackedSeq r;
+	Kmer l;
+	Kmer r;
 	ContigEndSeq(const ContigID& id, unsigned length,
-			const PackedSeq& l, const PackedSeq& r)
+			const Kmer& l, const Kmer& r)
 		: id(id), length(length), l(l), r(r) { }
 };
 
@@ -93,9 +93,9 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 				assert(isalpha(seq[0]));
 		}
 
-		PackedSeq seql(seq.substr(seq.length() - opt::overlap,
+		Kmer seql(seq.substr(seq.length() - opt::overlap,
 				opt::overlap));
-		PackedSeq seqr(seq.substr(0, opt::overlap));
+		Kmer seqr(seq.substr(0, opt::overlap));
 		pContigs->push_back(ContigEndSeq(rec.id, seq.length(),
 					seql, seqr));
 	}
@@ -141,7 +141,7 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
-	typedef map<PackedSeq, vector<SimpleEdgeDesc> > KmerMap;
+	typedef map<Kmer, vector<SimpleEdgeDesc> > KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 			out << id << ' ' << i->length;
 
 		for (unsigned idx = 0; idx < 2; idx++) {
-			const PackedSeq& seq = idx == 0 ? i->l : i->r;
+			const Kmer& seq = idx == 0 ? i->l : i->r;
 			const KmerMap::mapped_type& edges = ends[!idx][seq];
 
 			switch (opt::format) {
