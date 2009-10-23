@@ -4,7 +4,7 @@
 #include "FastaWriter.h"
 #include "Histogram.h"
 #include "ISequenceCollection.h"
-#include "SequenceCollectionHash.h"
+#include "SequenceCollection.h"
 #include "Timer.h"
 #include "Uncompress.h"
 #include <algorithm>

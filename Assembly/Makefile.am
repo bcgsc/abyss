@@ -9,4 +9,7 @@ libassembly_a_SOURCES = \
 	BranchGroup.cpp BranchGroup.h \
 	BranchRecord.cpp BranchRecord.h \
 	DotWriter.cpp DotWriter.h \
-	Options.cpp Options.h
+	ISequenceCollection.h \
+	Options.cpp Options.h \
+	PackedSeq.cpp PackedSeq.h \
+	SequenceCollection.cpp SequenceCollection.h

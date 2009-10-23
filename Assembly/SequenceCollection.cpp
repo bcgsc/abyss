@@ -1,4 +1,4 @@
-#include "SequenceCollectionHash.h"
+#include "SequenceCollection.h"
 #include "Log.h"
 #include "Common/Options.h"
 #include "Timer.h"

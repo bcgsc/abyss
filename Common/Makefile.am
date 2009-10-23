@@ -10,7 +10,6 @@ libcommon_a_SOURCES = \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
-	PackedSeq.cpp PackedSeq.h \
 	PrefixIterator.h \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \

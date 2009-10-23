@@ -2,7 +2,7 @@
 #define NETWORKSEQUENCECOLLECTION_H 1
 
 #include "PackedSeq.h"
-#include "SequenceCollectionHash.h"
+#include "SequenceCollection.h"
 #include "BranchGroup.h"
 #include "BranchRecord.h"
 #include "CommLayer.h"

@@ -3,7 +3,7 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
-#include "SequenceCollectionHash.h"
+#include "SequenceCollection.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
