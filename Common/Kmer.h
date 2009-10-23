@@ -84,6 +84,12 @@ class Kmer
 	uint8_t m_length;
 };
 
-Kmer reverseComplement(const Kmer& seq);
+/** Return the reverse complement of the specified sequence. */
+Kmer reverseComplement(const Kmer& seq)
+{
+	Kmer rc(seq);
+	rc.reverseComplement();
+	return rc;
+}
 
 #endif

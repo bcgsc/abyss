@@ -487,13 +487,6 @@ unsigned Kmer::seqIndexToBaseIndex(unsigned seqIndex)
 	return seqIndex % 4; 
 }
 
-Kmer reverseComplement(const Kmer& seq)
-{
-	Kmer rc(seq);
-	rc.reverseComplement();
-	return rc;
-}
-
 /** Return true if this sequence is a palindrome. */
 bool Kmer::isPalindrome() const
 {

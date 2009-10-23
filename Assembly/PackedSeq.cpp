@@ -65,10 +65,3 @@ size_t PackedSeq::unserialize(const char* buffer)
 	
 	return offset;			
 }
-
-PackedSeq reverseComplement(const PackedSeq& seq)
-{
-	PackedSeq rc(seq);
-	rc.reverseComplement();
-	return rc;
-}
