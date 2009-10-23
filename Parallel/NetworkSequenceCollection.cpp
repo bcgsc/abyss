@@ -222,10 +222,8 @@ void NetworkSequenceCollection::run()
 			case NAS_ASSEMBLE:
 			{
 				m_comm.barrier();
-				FastaWriter* writer = new FastaWriter(
-						opt::contigsTempPath.c_str());
-				numAssembled = performNetworkAssembly(this, writer);
-				delete writer;
+				FastaWriter writer(opt::contigsTempPath.c_str());
+				numAssembled = performNetworkAssembly(this, &writer);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage();
