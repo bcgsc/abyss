@@ -2,8 +2,9 @@
 #include "Common/Options.h"
 #include "ContigPath.h"
 #include "FastaReader.h"
-#include "PackedSeq.h"
 #include "PairUtils.h"
+#include "Sense.h"
+#include "Sequence.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -682,16 +683,15 @@ void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirect
 		rightSeq = &rootContig;
 	}
 
-	// Get the last k bases of the left and the first k bases of the right
-	PackedSeq leftEnd(leftSeq->substr(leftSeq->length() - overlap,
+	Sequence leftEnd(leftSeq->substr(leftSeq->length() - overlap,
 				overlap));
-	PackedSeq rightBegin(rightSeq->substr(0, overlap));
-
-	// ensure that there is a legitimate k-1 overlap between these sequences	
-	if(leftEnd != rightBegin)
-	{
-		printf("merge called data1: %s %s (%d, %d)\n", rootContig.c_str(), otherContig.c_str(), dir, isReversed);	
-		printf("left end %s, right begin %s\n", leftEnd.decode().c_str(), rightBegin.decode().c_str());
+	Sequence rightBegin(rightSeq->substr(0, overlap));
+	if (leftEnd != rightBegin) {
+		printf("merge called data1: %s %s (%d, %d)\n",
+				rootContig.c_str(), otherContig.c_str(),
+				dir, isReversed);
+		printf("left end %s, right begin %s\n",
+				leftEnd.c_str(), rightBegin.c_str());
 		assert(leftEnd == rightBegin);
 	}
 
