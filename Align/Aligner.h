@@ -148,8 +148,8 @@ typedef hash_multimap<Kmer, Position,
 typedef google::sparse_hash_map<Kmer, Position,
 		KmerHasher, KmerEqual> SeqPosHashUniqueMap;
 #else
-typedef hash_map<KmerSeq, Position,
-		KmerSeqHasher, KmerSeqEqual> SeqPosHashUniqueMap;
+typedef hash_map<Kmer, Position,
+		KmerHasher, KmerEqual> SeqPosHashUniqueMap;
 #endif
 
 
