@@ -21,7 +21,7 @@ namespace opt {
 
 template <>
 void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
-		const PackedSeq& kmer, Position pos)
+		const Kmer& kmer, Position pos)
 {
 	assert(opt::multimap == opt::MULTIMAP);
 	m_target.insert(make_pair(kmer, pos));
@@ -29,7 +29,7 @@ void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
 
 template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(
-		const PackedSeq& kmer, Position pos)
+		const Kmer& kmer, Position pos)
 {
 	assert(opt::multimap != opt::MULTIMAP);
 	pair<map_iterator, bool> inserted
@@ -59,7 +59,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequ
 		Sequence subseq(seq, i, m_hashSize);
 		if (subseq.find("N") != string::npos)
 			continue;
-		addReferenceSequence(PackedSeq(subseq),
+		addReferenceSequence(Kmer(subseq),
 				Position(contigIDToIndex(id), i));
 	}
 }
@@ -86,8 +86,7 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
 		pair<map_const_iterator, map_const_iterator> range
-			= m_target.equal_range(
-					PackedSeq(seq.substr(i, m_hashSize)));
+			= m_target.equal_range(Kmer(seq.substr(i, m_hashSize)));
 		for (map_const_iterator resultIter = range.first;
 				resultIter != range.second; ++resultIter) {
 			if (opt::multimap == opt::IGNORE

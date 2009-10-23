@@ -8,7 +8,7 @@
 #include "config.h"
 #include "Dictionary.h"
 #include "HashMap.h"
-#include "PackedSeq.h"
+#include "Kmer.h"
 #include <cassert>
 #include <istream>
 #include <map>
@@ -127,16 +127,29 @@ struct Position
 	bool isDuplicate() const {return contig == std::numeric_limits<uint32_t>::max();}
 };
 
-typedef hash_multimap<PackedSeq, Position,
-		PackedSeqHasher, PackedSeqEqual> SeqPosHashMultiMap;
+struct KmerEqual
+{
+	bool operator()(const Kmer& a, const Kmer& b) const
+	{
+		return a == b;
+	}
+};
+
+struct KmerHasher
+{
+	size_t operator()(const Kmer& o) const { return o.getHashCode(); }
+};
+
+typedef hash_multimap<Kmer, Position,
+		KmerHasher, KmerEqual> SeqPosHashMultiMap;
 
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_map>
-typedef google::sparse_hash_map<PackedSeq, Position,
-		PackedSeqHasher, PackedSeqEqual> SeqPosHashUniqueMap;
+typedef google::sparse_hash_map<Kmer, Position,
+		KmerHasher, KmerEqual> SeqPosHashUniqueMap;
 #else
-typedef hash_map<PackedSeq, Position,
-		PackedSeqHasher, PackedSeqEqual> SeqPosHashUniqueMap;
+typedef hash_map<KmerSeq, Position,
+		KmerSeqHasher, KmerSeqEqual> SeqPosHashUniqueMap;
 #endif
 
 
@@ -163,8 +176,7 @@ class Aligner
 
 		void addReferenceSequence(const ContigID& id,
 				const Sequence& seq);
-		void addReferenceSequence(const PackedSeq& kmer,
-				Position pos);
+		void addReferenceSequence(const Kmer& kmer, Position pos);
 
 		template <class oiterator>
 		void alignRead(const Sequence& seq, oiterator dest);
