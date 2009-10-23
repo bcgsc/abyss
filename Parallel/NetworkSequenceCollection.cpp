@@ -220,6 +220,7 @@ void NetworkSequenceCollection::run()
 				break;
 			}
 			case NAS_ASSEMBLE:
+			{
 				m_comm.barrier();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
@@ -229,6 +230,7 @@ void NetworkSequenceCollection::run()
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage();
 				break;
+			}
 			case NAS_ASSEMBLE_COMPLETE:
 				m_comm.reduce(numAssembled.first);
 				m_comm.reduce(numAssembled.second);
