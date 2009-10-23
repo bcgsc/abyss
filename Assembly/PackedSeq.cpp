@@ -66,34 +66,6 @@ size_t PackedSeq::unserialize(const char* buffer)
 	return offset;			
 }
 
-void KmerData::setBaseExtension(extDirection dir, uint8_t base)
-{
-	m_extRecord.dir[dir].setBase(base);
-}
-
-void KmerData::removeExtension(extDirection dir, SeqExt ext)
-{
-	m_extRecord.dir[dir].clear(ext);
-}
-
-bool KmerData::hasExtension(extDirection dir) const
-{
-	return m_extRecord.dir[dir].hasExtension();
-}
-
-bool KmerData::isAmbiguous(extDirection dir) const
-{
-	return m_extRecord.dir[dir].isAmbiguous();
-}
-
-//
-// Return the sequences extension in the specified direction
-//
-SeqExt KmerData::getExtension(extDirection dir) const
-{
-	return m_extRecord.dir[dir];
-}
-
 PackedSeq reverseComplement(const PackedSeq& seq)
 {
 	PackedSeq rc(seq);

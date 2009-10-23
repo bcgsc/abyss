@@ -83,12 +83,32 @@ class KmerData
 				? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 	}
 
-	SeqExt getExtension(extDirection dir) const;
 	ExtensionRecord extension() const { return m_extRecord; }
-	void setBaseExtension(extDirection dir, uint8_t base);
-	void removeExtension(extDirection dir, SeqExt ext);
-	bool hasExtension(extDirection dir) const;
-	bool isAmbiguous(extDirection dir) const;
+
+	SeqExt getExtension(extDirection dir) const
+	{
+		return m_extRecord.dir[dir];
+	}
+
+	void setBaseExtension(extDirection dir, uint8_t base)
+	{
+		m_extRecord.dir[dir].setBase(base);
+	}
+
+	void removeExtension(extDirection dir, SeqExt ext)
+	{
+		m_extRecord.dir[dir].clear(ext);
+	}
+
+	bool hasExtension(extDirection dir) const
+	{
+		return m_extRecord.dir[dir].hasExtension();
+	}
+
+	bool isAmbiguous(extDirection dir) const
+	{
+		return m_extRecord.dir[dir].isAmbiguous();
+	}
 
   protected:
 	char m_flags;
