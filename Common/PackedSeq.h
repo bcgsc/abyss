@@ -101,8 +101,7 @@ class PackedSeq : public Kmer, public KmerData
 {
   public:
 	PackedSeq() { }
-	PackedSeq::PackedSeq(const Sequence& seq)
-		: Kmer(seq) { }
+	PackedSeq(const Sequence& seq) : Kmer(seq) { }
 
 	/** Create a PackedSeq of the specified key and data. */
 	PackedSeq(const Kmer& key,
