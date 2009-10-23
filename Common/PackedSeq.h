@@ -1,7 +1,6 @@
 #ifndef PACKEDSEQ_H
 #define PACKEDSEQ_H 1
 
-#include "config.h"
 #include "Kmer.h"
 #include "Sense.h"
 #include "SeqExt.h"
