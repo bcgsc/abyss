@@ -85,7 +85,7 @@ class Kmer
 };
 
 /** Return the reverse complement of the specified sequence. */
-Kmer reverseComplement(const Kmer& seq)
+static inline Kmer reverseComplement(const Kmer& seq)
 {
 	Kmer rc(seq);
 	rc.reverseComplement();

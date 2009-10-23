@@ -142,7 +142,7 @@ class PackedSeq : public Kmer, public KmerData
 };
 
 /** Return the reverse complement of the specified sequence. */
-PackedSeq reverseComplement(const PackedSeq& seq)
+static inline PackedSeq reverseComplement(const PackedSeq& seq)
 {
 	PackedSeq rc(seq);
 	rc.reverseComplement();
