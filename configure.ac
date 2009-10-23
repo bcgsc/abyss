@@ -124,7 +124,6 @@ AC_CONFIG_FILES([
 	Parallel/Makefile
 	bin/Makefile
 	doc/Makefile
-	fasta2psq/Makefile
 	kmerprint/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
