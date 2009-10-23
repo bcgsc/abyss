@@ -74,8 +74,8 @@ struct PathConsistencyStats {
 	bool duplicateSize;
 };
 
-typedef std::list<MergeNode> MergeNodeList;
-typedef std::map<LinearNumKey, ContigPath*> ContigPathMap;
+typedef list<MergeNode> MergeNodeList;
+typedef map<LinearNumKey, ContigPath*> ContigPathMap;
 
 struct Contig {
 	string id;
@@ -95,8 +95,7 @@ struct Contig {
 
 typedef vector<Contig> ContigVec;
 
-// Functions
-void readPathsFromFile(std::string pathFile, ContigPathMap& contigPathMap);
+void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
@@ -206,8 +205,8 @@ int main(int argc, char** argv)
 		linkPaths(iter->first, contigPathMap);
 
 		if (gDebugPrint)
-			std::cout << "Pseudo final path from " << iter->first
-				<< ' ' << iter->second << " is " << *iter->second << std::endl;
+			cout << "Pseudo final path from " << iter->first << ' '
+				<< iter->second << " is " << *iter->second << '\n';
 	}
 
 	set<ContigPath*> uniquePtr;
@@ -276,11 +275,11 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-static void assert_open(std::ifstream& f, const std::string& p)
+static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
+	cerr << p << ": " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -329,7 +328,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 {
 	ContigPath* refCanonical = contigPathMap[id];
 
-	if(gDebugPrint) std::cout << "Initial canonical path (" << id << ") " << *refCanonical << "\n";
+	if(gDebugPrint) cout << "Initial canonical path (" << id << ") " << *refCanonical << '\n';
 
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
@@ -338,7 +337,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 	MergeNodeList::iterator iter = mergeInList.begin();
 	while(!mergeInList.empty()) {
 		if(iter->id != id) {
-			if(gDebugPrint) std::cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
+			if(gDebugPrint) cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
 
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
@@ -346,10 +345,10 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 				// Make the full path of the child node
 				ContigPath* childCanonPath = findIter->second;
 
-				if(gDebugPrint) std::cout << " ref: " << refCanonical
-					<< ' ' << *refCanonical << "\n";
-				if(gDebugPrint) std::cout << "  in: " <<
-					childCanonPath << ' ' << *childCanonPath << "\n";
+				if(gDebugPrint) cout << " ref: " << refCanonical
+					<< ' ' << *refCanonical << '\n';
+				if(gDebugPrint) cout << "  in: " <<
+					childCanonPath << ' ' << *childCanonPath << '\n';
 
 				size_t s1, s2, e1, e2;
 				bool validMerge = checkPathConsistency(id, iter->id,
@@ -364,15 +363,12 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					addPathNodesToList(mergeInList, prependNodes);
 					addPathNodesToList(mergeInList, appendNodes);
 
-					//std::cout << "PPN " << prependNodes << "\n";
-					//std::cout << "APN " << appendNodes << "\n";
-
 					// Add the nodes to the ref contig
 					refCanonical->prependPath(prependNodes);
 					refCanonical->appendPath(appendNodes);
 
-					if(gDebugPrint) std::cout << " new: " <<
-						refCanonical << ' ' << *refCanonical << "\n";
+					if(gDebugPrint) cout << " new: " <<
+						refCanonical << ' ' << *refCanonical << '\n';
 
 					// Alias all pointers to the child to the reference
 					MergeNodeList::iterator mergeIt = mergeInList.begin();
@@ -499,8 +495,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	// Check if there was an actual mismatch in the nodes
 	if(pathAlignments.empty()) {
 		if(gDebugPrint) printf("Invalid path match!\n");
-		if(gDebugPrint) std::cout << "Path1 (" << path1Root << ") " << path1 << std::endl;
-		if(gDebugPrint) std::cout << "Path2 (" << path2Root << ") " << path2 << std::endl;
+		if(gDebugPrint) cout << "Path1 (" << path1Root << ") " << path1 << '\n';
+		if(gDebugPrint) cout << "Path2 (" << path2Root << ") " << path2 << '\n';
 		return false;
 	}
 
@@ -629,8 +625,8 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& currPath, int count, int kmer,
 		ostream& out)
 {
-	if(gDebugPrint) std::cout << "Attempting to merge " << cID << "\n";
-	if(gDebugPrint) std::cout << "Canonical path is: " << currPath << "\n"; 	
+	if(gDebugPrint) cout << "Attempting to merge " << cID << '\n';
+	if(gDebugPrint) cout << "Canonical path is: " << currPath << '\n';
 	string comment = toString(currPath);
 	if (opt::verbose > 0)
 		cout << comment << '\n';
@@ -647,7 +643,7 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 
 	for(size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = currPath.getNode(i);
-		if(gDebugPrint) std::cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
+		if(gDebugPrint) cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
 
 		const Contig& contig = sourceContigs[mn.id];
 		assert(!contig.seq.empty());
