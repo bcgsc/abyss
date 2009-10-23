@@ -264,10 +264,11 @@ int main(int argc, char** argv)
 
 	vector<Path> prevPaths;
 	for (;optind < argc; optind++){
-		ifstream fin(argv[optind]);
-		if (argv[optind] != "-")
-			assert_open(fin, argv[optind]);
-		istream& in = argv[optind] == "-" ? cin : fin;
+		string filename(argv[optind]);
+		ifstream fin(filename.c_str());
+		if (filename != "-")
+			assert_open(fin, filename);
+		istream& in = filename == "-" ? cin : fin;
 		for (string s; getline(in, s);) {
 			line_num++;
 			istringstream ss(s);
