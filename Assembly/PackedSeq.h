@@ -37,7 +37,7 @@ class KmerData
 	}
 
 	KmerData(unsigned multiplicity, ExtensionRecord ext)
-		: m_flags(0), m_extRecord(ext)
+		: m_flags(0), m_ext(ext)
 	{
 		setMultiplicity(multiplicity);
 	}
@@ -83,37 +83,37 @@ class KmerData
 				? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 	}
 
-	ExtensionRecord extension() const { return m_extRecord; }
+	ExtensionRecord extension() const { return m_ext; }
 
 	SeqExt getExtension(extDirection dir) const
 	{
-		return m_extRecord.dir[dir];
+		return m_ext.dir[dir];
 	}
 
 	void setBaseExtension(extDirection dir, uint8_t base)
 	{
-		m_extRecord.dir[dir].setBase(base);
+		m_ext.dir[dir].setBase(base);
 	}
 
 	void removeExtension(extDirection dir, SeqExt ext)
 	{
-		m_extRecord.dir[dir].clear(ext);
+		m_ext.dir[dir].clear(ext);
 	}
 
 	bool hasExtension(extDirection dir) const
 	{
-		return m_extRecord.dir[dir].hasExtension();
+		return m_ext.dir[dir].hasExtension();
 	}
 
 	bool isAmbiguous(extDirection dir) const
 	{
-		return m_extRecord.dir[dir].isAmbiguous();
+		return m_ext.dir[dir].isAmbiguous();
 	}
 
   protected:
 	char m_flags;
 	uint16_t m_multiplicity[2];
-	ExtensionRecord m_extRecord;
+	ExtensionRecord m_ext;
 };
 
 class PackedSeq : public Kmer, public KmerData
@@ -137,7 +137,7 @@ class PackedSeq : public Kmer, public KmerData
 		PackedSeq *p = NULL;
 		return sizeof p->m_seq + sizeof p->m_length
 			+ sizeof p->m_flags + sizeof p->m_multiplicity
-			+ sizeof p->m_extRecord;
+			+ sizeof p->m_ext;
 	}
 };
 
