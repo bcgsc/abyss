@@ -3,23 +3,14 @@
 
 #include "PackedSeq.h"
 #include <fstream>
+#include <vector>
 
 class PackedSeqReader
 {
 	public:
-	
-		// Constructor opens file
 		PackedSeqReader(const char* filename);
-		
-		// Destructor closes it
 		~PackedSeqReader();
-		
-		// Read in a single sequence
-		/*virtual*/ bool ReadSequences(PSequenceVector& outseqs);
-		
-		// Returns the number of sequences containing non-ACGT
-		// characters, which is impossible for a packed sequence.
-		/*virtual unsigned getNonACGT() { return 0; }*/
+		bool ReadSequences(std::vector<PackedSeq>& outseqs);
 
 	private:
 		std::ifstream m_fileHandle;
@@ -29,4 +20,4 @@ class PackedSeqReader
 		char* m_pBuffer;
 };
 
-#endif //PACKEDSEQREADER_H
+#endif

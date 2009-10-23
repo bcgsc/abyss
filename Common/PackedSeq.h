@@ -8,7 +8,6 @@
 #include "Sequence.h"
 #include <cassert>
 #include <stdint.h>
-#include <vector>
 
 enum SeqFlag
 {
@@ -125,9 +124,6 @@ class PackedSeq : public Kmer, public KmerData
 };
 
 PackedSeq reverseComplement(const PackedSeq& seq);
-
-typedef std::vector<PackedSeq> PSequenceVector;
-typedef PSequenceVector::iterator PSequenceVectorIterator;
 
 struct PackedSeqEqual
 {

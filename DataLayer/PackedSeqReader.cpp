@@ -27,8 +27,7 @@ PackedSeqReader::~PackedSeqReader()
 	assert(!m_fileHandle.is_open());
 }
 
-// Read in a single sequence; this function allocates memory
-bool PackedSeqReader::ReadSequences(PSequenceVector& outseqs)
+bool PackedSeqReader::ReadSequences(vector<PackedSeq>& outseqs)
 {
 	assert(m_fileHandle.is_open());
 	if (m_fileHandle.eof())

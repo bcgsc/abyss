@@ -20,6 +20,8 @@ using namespace std;
 namespace AssemblyAlgorithms
 {
 
+typedef std::vector<PackedSeq> PSequenceVector;
+
 /** Return the kmer which are adjacent to this kmer. */
 void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs)
 {
@@ -49,7 +51,7 @@ static void loadPackedSequences(ISequenceCollection* seqCollection,
 	unsigned count = 0;
 	for (PSequenceVector seqs;
 			reader.ReadSequences(seqs); seqs.clear()) {
-		for (PSequenceVectorIterator iter = seqs.begin();
+		for (PSequenceVector::iterator iter = seqs.begin();
 				iter != seqs.end(); iter++) {
 			seqCollection->add(*iter);
 

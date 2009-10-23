@@ -5,6 +5,7 @@
 #include "BranchRecord.h"
 #include "FastaWriter.h"
 #include "ISequenceCollection.h"
+#include <vector>
 
 class Histogram;
 
@@ -105,7 +106,9 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const Packe
 void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
 
 // Generate all the sequences for the extension record
-void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs);
+void generateSequencesFromExtension(const PackedSeq& currSeq,
+		extDirection dir, SeqExt extension,
+		std::vector<PackedSeq>& outseqs);
 
 };
 
