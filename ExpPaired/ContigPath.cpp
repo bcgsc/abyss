@@ -6,26 +6,18 @@
 
 using namespace std;
 
-//
-// Reverse the path and flip every merge node
-//
+/** Reverse the path and flip every node. */
 void ContigPath::reverse(bool flipNodes)
-{ 
+{
 	std::reverse(m_path.begin(), m_path.end());
-	
-	if(flipNodes)
-	{
+	if (flipNodes) {
 		size_t maxIdx = getNumNodes();
-		for(size_t idx = 0; idx < maxIdx; ++idx)
-		{
+		for (size_t idx = 0; idx < maxIdx; ++idx)
 			getNode(idx).flip();
-		}
 	}
 }
 
-//
-// Write the path to the stream
-//
+/** Write a path. */
 ostream& operator<<(ostream& out, const ContigPath& object)
 {
 	vector<MergeNode>::const_iterator last = object.m_path.end() - 1;

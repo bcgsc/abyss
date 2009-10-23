@@ -113,11 +113,11 @@ struct Path : vector<ContigNode>
 	}
 };
 
-static void assert_open(std::ifstream& f, const std::string& p)
+static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
-	std::cerr << p << ": " << strerror(errno) << std::endl;
+	cerr << p << ": " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 

@@ -20,7 +20,7 @@ using namespace std;
 namespace AssemblyAlgorithms
 {
 
-typedef std::vector<PackedSeq> PSequenceVector;
+typedef vector<PackedSeq> PSequenceVector;
 
 /** Return the kmer which are adjacent to this kmer. */
 void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs)

@@ -1320,14 +1320,12 @@ void NetworkSequenceCollection::processSequenceExtension(uint64_t groupID, uint6
 		case NAS_WAITING:
 			if(m_finishedGroups.find(groupID) == m_finishedGroups.end())
 			{
-				// The extension message is not in the finished groups list therefore it is unexpected
-				// Print some debug info and return
-				std::cerr << "Unexpected sequence extension message! gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
+				cerr << "Unexpected sequence extension message! gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
 				assert(false);
 			}
 			break;
 		default:
-			std::cerr << "Unexpected sequence extension message! State: " << m_state << " gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
+			cerr << "Unexpected sequence extension message! State: " << m_state << " gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
 			assert(false);
 			break;
 	}	
