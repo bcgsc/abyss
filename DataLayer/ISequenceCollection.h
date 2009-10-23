@@ -4,14 +4,6 @@
 #include "config.h"
 #include "PackedSeq.h"
 
-struct PackedSeqEqual
-{
-	bool operator()(const PackedSeq& a, const PackedSeq& b) const
-	{
-		return a == b;
-	}
-};
-
 struct PackedSeqHasher
 {
 	size_t operator()(const PackedSeq& o) const
@@ -23,11 +15,10 @@ struct PackedSeqHasher
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_set>
 typedef google::sparse_hash_set<PackedSeq,
-		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+		PackedSeqHasher> SequenceDataHash;
 #else
 # include "HashSet.h"
-typedef hash_set<PackedSeq,
-		PackedSeqHasher, PackedSeqEqual> SequenceDataHash;
+typedef hash_set<PackedSeq, PackedSeqHasher> SequenceDataHash;
 #endif
 
 typedef SequenceDataHash::iterator SequenceCollectionHashIter;
