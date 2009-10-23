@@ -76,8 +76,6 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph,
 void constructContigPath(
 		const SimpleContigGraph::VertexPath& vertexPath,
 		ContigPath& contigPath);
-void outputContigPath(ofstream& outStream, LinearNumKey refNode,
-		extDirection dir, const ContigPath& contigPath);
 
 int main(int argc, char** argv)
 {
@@ -337,8 +335,8 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph,
 				uniqueEnd++;
 				ContigPath cPath;
 				constructContigPath(*bestSol, cPath);
-				outputContigPath(outStream,
-						er.refID, (extDirection)dirIdx, cPath);
+				outStream << "@ " << g_contigIDs.key(er.refID) << ','
+					<< dirIdx << " -> " << cPath << '\n';
 				assert(outStream.good());
 			}
 
@@ -382,11 +380,4 @@ void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, Contig
 		MergeNode mn = {iter->key, flip};
 		contigPath.appendNode(mn);
 	}
-}
-
-void outputContigPath(ofstream& outStream, LinearNumKey refNode, extDirection dir, const ContigPath& contigPath)
-{
-	outStream << "@ " << g_contigIDs.key(refNode) << ","
-		<< dir << " -> ";
-	outStream << contigPath << '\n';
 }
