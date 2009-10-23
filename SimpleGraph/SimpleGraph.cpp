@@ -71,9 +71,10 @@ struct SimpleDataCost
 	size_t m_overlap;
 };
 
-void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph,
-		string estFileName, int kmer, int maxCost);
-void constructContigPath(
+static void generatePathsThroughEstimates(
+		SimpleContigGraph* pContigGraph, string estFileName,
+		int kmer, int maxCost);
+static void constructContigPath(
 		const SimpleContigGraph::VertexPath& vertexPath,
 		ContigPath& contigPath);
 
@@ -161,8 +162,9 @@ ostream& printPath(const vector<K>& s)
 	return cout << ']';
 }
 
-void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph,
-		string estFileName, int kmer, int maxCost)
+static void generatePathsThroughEstimates(
+		SimpleContigGraph* pContigGraph, string estFileName,
+		int kmer, int maxCost)
 {
 	int totalAttempted = 0;
 	int noPossiblePaths = 0;
@@ -370,8 +372,10 @@ void generatePathsThroughEstimates(SimpleContigGraph* pContigGraph,
 // Convert the vertext path to a contig path
 // The difference between the two is that the complementness of a vertex path is with respect to the previous node in the path
 // but with a contig path it is with respect to the root contig. Also the contigPath uses true contig ids
-// 
-void constructContigPath(const SimpleContigGraph::VertexPath& vertexPath, ContigPath& contigPath)
+//
+static void constructContigPath(
+		const SimpleContigGraph::VertexPath& vertexPath,
+		ContigPath& contigPath)
 {
 	bool flip = false;
 	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
