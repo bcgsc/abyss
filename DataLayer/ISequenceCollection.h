@@ -4,6 +4,22 @@
 #include "config.h"
 #include "PackedSeq.h"
 
+struct PackedSeqEqual
+{
+	bool operator()(const PackedSeq& a, const PackedSeq& b) const
+	{
+		return a == b;
+	}
+};
+
+struct PackedSeqHasher
+{
+	size_t operator()(const PackedSeq& o) const
+	{
+		return o.getHashCode();
+	}
+};
+
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_set>
 typedef google::sparse_hash_set<PackedSeq,

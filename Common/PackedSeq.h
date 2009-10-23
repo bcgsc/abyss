@@ -124,20 +124,4 @@ class PackedSeq : public Kmer, public KmerData
 
 PackedSeq reverseComplement(const PackedSeq& seq);
 
-struct PackedSeqEqual
-{
-	bool operator()(const PackedSeq& a, const PackedSeq& b) const
-	{
-		return a == b;
-	}
-};
-
-struct PackedSeqHasher
-{
-	size_t operator()(const PackedSeq& o) const
-	{
-		return o.getHashCode();
-	}
-};
-
 #endif
