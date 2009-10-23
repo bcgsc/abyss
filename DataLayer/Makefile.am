@@ -8,6 +8,4 @@ libdatalayer_a_SOURCES = \
 	FastaWriter.cpp FastaWriter.h \
 	ISequenceCollection.h \
 	Options.h \
-	PackedSeqReader.cpp PackedSeqReader.h \
-	PackedSeqWriter.cpp PackedSeqWriter.h \
 	SequenceCollectionHash.cpp SequenceCollectionHash.h
