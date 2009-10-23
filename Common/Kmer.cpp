@@ -2,6 +2,7 @@
 #include "Kmer.h"
 #include "Common/Options.h"
 #include "HashFunction.h"
+#include <cstring>
 
 using namespace std;
 
