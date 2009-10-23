@@ -6,8 +6,6 @@
 #include "Histogram.h"
 #include "ISequenceCollection.h"
 #include "Log.h"
-#include "PackedSeqReader.h"
-#include "PackedSeqWriter.h"
 #include "Timer.h"
 #include <cctype>
 #include <cstdio>
@@ -42,35 +40,6 @@ void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, 
 	}
 }
 
-/** Load packed k-mer into the collection. */
-static void loadPackedSequences(ISequenceCollection* seqCollection,
-		string inFile)
-{
-	PackedSeqReader reader(inFile.c_str());
-
-	unsigned count = 0;
-	for (PSequenceVector seqs;
-			reader.ReadSequences(seqs); seqs.clear()) {
-		for (PSequenceVector::iterator iter = seqs.begin();
-				iter != seqs.end(); iter++) {
-			seqCollection->add(*iter);
-
-			// Output the progress
-			if (++count % 100000 == 0) {
-				PrintDebug(1, "Read %u reads. ", count);
-				seqCollection->printLoad();
-			}
-		}
-		seqCollection->pumpNetwork();
-	}
-	PrintDebug(1, "Read %u reads. ", count);
-	seqCollection->printLoad();
-
-	if (count == 0)
-		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
-				inFile.c_str());
-}
-
 /** Load sequence data into the collection. */
 void loadSequences(ISequenceCollection* seqCollection, string inFile)
 {
@@ -78,11 +47,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
 
-	// Determine the input file type
-	if (inFile.find(".psq") != string::npos) {
-		loadPackedSequences(seqCollection, inFile);
-		return;
-	} else if(inFile.find(".kmer") != string::npos) {
+	if (inFile.find(".kmer") != string::npos) {
 		seqCollection->load(inFile.c_str());
 		return;
 	}
