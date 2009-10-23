@@ -1,6 +1,7 @@
 #ifndef Kmer_H
 #define Kmer_H 1
 
+#include "config.h"
 #include "Sense.h"
 #include "Sequence.h"
 #include <stdint.h>
