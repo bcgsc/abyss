@@ -6,6 +6,13 @@
 
 using namespace std;
 
+/** Return the number of bytes needed for the specified number of
+ * bases. */
+static unsigned getNumCodingBytes(unsigned seqLength)
+{
+	return (seqLength + 3) / 4;
+}
+
 /** Construct a k-mer from a string. */
 Kmer::Kmer(const Sequence& seq)
 	: m_length(seq.length())
@@ -25,22 +32,6 @@ int Kmer::compare(const Kmer& other) const
 	assert(m_length == other.m_length);
 	unsigned nbytes = getNumCodingBytes(m_length);
 	return memcmp(m_seq, other.m_seq, nbytes);
-}
-
-//
-// Get the length of the sequence
-//
-unsigned Kmer::getSequenceLength() const
-{
-	return m_length;
-}
-
-//
-// Get the number of coding bytes
-// 
-unsigned Kmer::getNumCodingBytes(unsigned seqLength)
-{
-	return (seqLength + 3) / 4;
 }
 
 /** Compute a hash-like value of the packed sequence over the first 16

@@ -35,7 +35,7 @@ class Kmer
 
 	Kmer subseq(unsigned start, unsigned len) const;
 
-	unsigned getSequenceLength() const;
+	unsigned getSequenceLength() const { return m_length; }
 
 	void reverseComplement();
 
@@ -57,7 +57,6 @@ class Kmer
 			unsigned byteNum, unsigned index);
 	uint8_t getBaseCode(unsigned seqIndex) const;
 
-	static inline unsigned getNumCodingBytes(unsigned seqLength);
 	static inline unsigned seqIndexToByteNumber(unsigned seqIndex);
 	static inline unsigned seqIndexToBaseIndex(unsigned seqIndex);
 
