@@ -39,8 +39,7 @@ static void popBubbles(ISequenceCollection* pSC)
 	unsigned totalPopped = 0;
 	int i;
 	for (i = 0; i < opt::bubbles; i++) {
-		unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC,
-				opt::kmerSize);
+		unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC);
 		if (numPopped == 0)
 			break;
 		totalPopped += numPopped;

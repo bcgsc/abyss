@@ -73,7 +73,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 // Polymorphism removal
 
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
-int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
+int popBubbles(ISequenceCollection* seqCollection);
 
 // Populate the branch group with the initial extensions to this sequence
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
