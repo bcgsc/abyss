@@ -67,7 +67,8 @@ SeqContiguity checkSeqContiguity(const PackedSeq& seq,
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
 
 // Process the extensions of the current sequence for trimming
-bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions, int multiplicity);
+bool processLinearExtensionForBranch(BranchRecord& branch,
+		Kmer& currSeq, ExtensionRecord extensions, int multiplicity);
 
 // Polymorphism removal
 
@@ -75,10 +76,13 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 int popBubbles(ISequenceCollection* seqCollection, int kmerSize);
 
 // Populate the branch group with the initial extensions to this sequence
-void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, int multiplicity, size_t maxBubbleSize);
+void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
+		const SeqExt& extension, size_t maxBubbleSize);
 
 // process an a branch group extension
-bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions, int multiplicity);
+bool processBranchGroupExtension(BranchGroup& group,
+		size_t branchIndex, const Kmer& seq,
+		ExtensionRecord extensions, int multiplicity);
 
 void openBubbleFile(std::ofstream& out);
 void writeBubble(std::ostream& out, BranchGroup& group, unsigned id);
@@ -101,14 +105,14 @@ unsigned assembleContig(ISequenceCollection* seqCollection,
 unsigned assemble(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter = NULL);
 
-// remove the specified sequence from the collection and destroy its extensions
-void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq);
-void removeExtensionsToSequence(ISequenceCollection* seqCollection, const PackedSeq& seq, extDirection dir);
+void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
+		const PackedSeq& seq);
+void removeExtensionsToSequence(ISequenceCollection* seqCollection,
+		const PackedSeq& seq, extDirection dir);
 
-// Generate all the sequences for the extension record
-void generateSequencesFromExtension(const PackedSeq& currSeq,
+void generateSequencesFromExtension(const Kmer& currSeq,
 		extDirection dir, SeqExt extension,
-		std::vector<PackedSeq>& outseqs);
+		std::vector<Kmer>& outseqs);
 
 };
 

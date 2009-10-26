@@ -1,5 +1,5 @@
-#ifndef SEQUENCECOLLECTIONHASH_H
-#define SEQUENCECOLLECTIONHASH_H 1
+#ifndef SEQUENCECOLLECTION_H
+#define SEQUENCECOLLECTION_H 1
 
 #include "ISequenceCollection.h"
 #include "PackedSeq.h"
@@ -9,18 +9,13 @@
 class SequenceCollectionHash : public ISequenceCollection
 {
 	public:
-	
-		//Allocates phase space
 		SequenceCollectionHash();
-		
-		//Deallocates phase space
 		~SequenceCollectionHash();
 
-		// add a single sequence to the collection
-		void add(const PackedSeq& seq);
+		void add(const Kmer& seq);
 
 		/** Remove the specified sequence if it exists. */
-		void remove(const PackedSeq& seq)
+		void remove(const Kmer& seq)
 		{
 			setFlag(seq, SF_DELETE);
 		}
@@ -32,21 +27,21 @@ class SequenceCollectionHash : public ISequenceCollection
 		void printLoad() const;
 
 		// Set flag for sequence seq
-		void setFlag(const PackedSeq& seq, SeqFlag flag);
+		void setFlag(const Kmer& seq, SeqFlag flag);
 
 		// Clear the specified flag from every sequence in the collection
 		void wipeFlag(SeqFlag flag);
 
-		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
+		bool setBaseExtension(const Kmer& seq, extDirection dir,
 				uint8_t base);
-		void removeExtension(const PackedSeq& seq,
+		void removeExtension(const Kmer& seq,
 				extDirection dir, SeqExt ext);
 
 		// get the extensions of a sequence
-		bool getSeqData(const PackedSeq& seq,
+		bool getSeqData(const Kmer& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
 
-		const PackedSeq& getSeqAndData(const PackedSeq& key) const;
+		const PackedSeq& getSeqAndData(const Kmer& key) const;
 
 		iterator begin() { return m_pSequences->begin(); }
 		const_iterator begin() const { return m_pSequences->begin(); }
@@ -79,9 +74,11 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		SequenceHashIterPair GetSequenceIterators(const PackedSeq& seq) const;
-		iterator find(const PackedSeq& key, bool& rc);
-		const_iterator find(const PackedSeq& key, bool& rc) const;
+		SequenceHashIterPair GetSequenceIterators(const Kmer& seq) const;
+		iterator find(const Kmer& key);
+		const_iterator find(const Kmer& key) const;
+		iterator find(const Kmer& key, bool& rc);
+		const_iterator find(const Kmer& key, bool& rc) const;
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 

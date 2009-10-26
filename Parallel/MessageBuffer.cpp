@@ -11,39 +11,46 @@ MessageBuffer::MessageBuffer()
 		m_msgQueues[i].reserve(MAX_MESSAGES);
 }
 
-void MessageBuffer::sendSeqOpMessage(int nodeID, const PackedSeq& seq, MessageOp op)
+void MessageBuffer::sendSeqOpMessage(int nodeID,
+		const Kmer& seq, MessageOp op)
 {
 	// add the message to the buffer
 	queueMessage(nodeID, new SeqOpMessage(seq, op), SM_BUFFERED);
 }
 
 // Send a set flag message
-void MessageBuffer::sendSetFlagMessage(int nodeID, const PackedSeq& seq, SeqFlag flag)
+void MessageBuffer::sendSetFlagMessage(int nodeID,
+		const Kmer& seq, SeqFlag flag)
 {
 	queueMessage(nodeID, new SetFlagMessage(seq, flag), SM_BUFFERED);
 }
 
 // Send a remove extension message
-void MessageBuffer::sendRemoveExtension(int nodeID, const PackedSeq& seq, extDirection dir, SeqExt ext)
+void MessageBuffer::sendRemoveExtension(int nodeID,
+		const Kmer& seq, extDirection dir, SeqExt ext)
 {
 	queueMessage(nodeID, new RemoveExtensionMessage(seq, dir, ext),
 			SM_BUFFERED);
 }
 
 // Send a sequence data request
-void MessageBuffer::sendSeqDataRequest(int nodeID, IDType group, IDType id, const PackedSeq& seq)
+void MessageBuffer::sendSeqDataRequest(int nodeID,
+		IDType group, IDType id, const Kmer& seq)
 {
 	queueMessage(nodeID, new SeqDataRequest(seq, group, id), SM_IMMEDIATE);
 }
 
 // Send a sequence data response
-void MessageBuffer::sendSeqDataResponse(int nodeID, IDType group, IDType id, const PackedSeq& seq, ExtensionRecord extRec, int multiplicity)
+void MessageBuffer::sendSeqDataResponse(int nodeID,
+		IDType group, IDType id, const Kmer& seq,
+		ExtensionRecord extRec, int multiplicity)
 {
 	queueMessage(nodeID, new SeqDataResponse(seq, group, id, extRec, multiplicity), SM_IMMEDIATE);
 }
 
 // Send a set base message
-void MessageBuffer::sendSetBaseExtension(int nodeID, const PackedSeq& seq, extDirection dir, uint8_t base)
+void MessageBuffer::sendSetBaseExtension(int nodeID,
+		const Kmer& seq, extDirection dir, uint8_t base)
 {
 	queueMessage(nodeID, new SetBaseMessage(seq, dir, base), SM_BUFFERED);
 }

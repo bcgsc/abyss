@@ -12,21 +12,19 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
 namespace AssemblyAlgorithms
 {
 
-typedef vector<PackedSeq> PSequenceVector;
-
 /** Return the kmer which are adjacent to this kmer. */
-void generateSequencesFromExtension(const PackedSeq& currSeq, extDirection dir, SeqExt extension, PSequenceVector& outseqs)
+void generateSequencesFromExtension(const Kmer& currSeq,
+		extDirection dir, SeqExt extension, vector<Kmer>& outseqs)
 {
-	
-	// Create the return structure
-	PSequenceVector extensions;
-	PackedSeq extSeq(currSeq);
+	vector<Kmer> extensions;
+	Kmer extSeq(currSeq);
 	extSeq.shift(dir);
 
 	// Check for the existance of the 4 possible extensions
@@ -86,7 +84,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 			Sequence kmer(seq, i, opt::kmerSize);
 			if (good || kmer.find_first_not_of("ACGT0123")
 					== string::npos) {
-				seqCollection->add(PackedSeq(kmer));
+				seqCollection->add(Kmer(kmer));
 				discarded = false;
 			}
 		}
@@ -140,7 +138,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 			PrintDebug(1, "Generating adjacency: %u k-mer\n", count);
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			PackedSeq testSeq(*iter);
+			Kmer testSeq(*iter);
 			uint8_t adjBase = testSeq.shift(dir);
 			for (int i = 0; i < NUM_BASES; i++) {
 				testSeq.setLastBase(dir, i);
@@ -261,7 +259,6 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 			continue;
 
 		ExtensionRecord extRec = iter->extension();
-		unsigned multiplicity = iter->getMultiplicity();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
@@ -270,7 +267,8 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 				// Create the branch group
 				BranchGroup branchGroup(0, dir, maxNumBranches,
 						*iter);
-				initiateBranchGroup(branchGroup, *iter, extRec.dir[dir], multiplicity, expectedBubbleSize);
+				initiateBranchGroup(branchGroup, *iter,
+						extRec.dir[dir], expectedBubbleSize);
 
 				// Disallow any further branching.
 				unsigned numInitialBranches
@@ -333,38 +331,30 @@ int popBubbles(ISequenceCollection* seqCollection, int kmerSize)
 	return numPopped;
 }
 
-//
 // Populate a branch group with the inital branches from a sequence
-//
-void initiateBranchGroup(BranchGroup& group, const PackedSeq& seq, const SeqExt& extension, int /*multiplicity*/, size_t maxBubbleSize)
+void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
+		const SeqExt& extension, size_t maxBubbleSize)
 {
-	// As the root sequence is not added to the branch, its multiplicity information is ignored.
-	// Generate the vector of k-mer that make up this branch
-	PSequenceVector extSeqs;
+	vector<Kmer> extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(), extension, extSeqs);
 	assert(extSeqs.size() > 1);
 	uint64_t id = 0;
-	
-	for(PSequenceVector::iterator seqIter = extSeqs.begin(); seqIter != extSeqs.end(); ++seqIter)
-	{
-		// Create a new branch and add it to the group
+
+	for (vector<Kmer>::iterator seqIter = extSeqs.begin();
+			seqIter != extSeqs.end(); ++seqIter) {
 		BranchRecord newBranch(group.getDirection(), maxBubbleSize);
 		BranchRecord& addedBranch = group.addBranch(id, newBranch);
-		
-		// Add the sequence to the branch
 		addedBranch.addSequence(*seqIter);
-		
 		id++;
-	}	
+	}
 }
 
-//
-// process an a branch group extension
-//
-bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const PackedSeq& seq, ExtensionRecord extensions, int multiplicity)
+/** Process an a branch group extension. */
+bool processBranchGroupExtension(BranchGroup& group,
+		size_t branchIndex, const Kmer& seq,
+		ExtensionRecord extensions, int multiplicity)
 {
-	// Generate the extensions of the branch
-	PSequenceVector branchExtSeqs;
+	vector<Kmer> branchExtSeqs;
 	extDirection dir = group.getDirection();
 	generateSequencesFromExtension(seq, dir, extensions.dir[dir], branchExtSeqs);
 
@@ -381,7 +371,7 @@ bool processBranchGroupExtension(BranchGroup& group, size_t branchIndex, const P
 	else if(branchExtSeqs.size() > 1)
 	{
 		// Start a new branch for the k-mer [1..n]
-		PSequenceVector::iterator seqIter = branchExtSeqs.begin() + 1;
+		vector<Kmer>::iterator seqIter = branchExtSeqs.begin() + 1;
 		for(; seqIter != branchExtSeqs.end(); ++seqIter)
 		{
 			uint64_t newID = group.getNumBranches();
@@ -476,7 +466,8 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
  * Remove a k-mer and update the extension records of the k-mer that
  * extend to it.
  */
-void removeSequenceAndExtensions(ISequenceCollection* seqCollection, const PackedSeq& seq)
+void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
+		const PackedSeq& seq)
 {
 	// This removes the reverse complement as well
 	seqCollection->remove(seq);
@@ -490,7 +481,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 {
 	SeqExt extension(seq.getExtension(dir));
 	extDirection oppDir = oppositeDirection(dir);
-	PackedSeq testSeq(seq);
+	Kmer testSeq(seq);
 	uint8_t extBase = testSeq.shift(dir);
 	for (int i = 0; i < NUM_BASES; i++) {
 		if (extension.checkBase(i)) {
@@ -674,8 +665,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 // CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence and
 // multiplicity is the number of times that kmer appears in the data set
 // After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
-//
-bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, ExtensionRecord extensions, int multiplicity)
+bool processLinearExtensionForBranch(BranchRecord& branch,
+		Kmer& currSeq, ExtensionRecord extensions, int multiplicity)
 {
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
@@ -712,7 +703,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch, PackedSeq& currSeq, E
 		return false;
 	} else {
 		// generate the new current sequence from the extension
-		PSequenceVector newSeqs;
+		vector<Kmer> newSeqs;
 		generateSequencesFromExtension(currSeq, dir, extensions.dir[dir], newSeqs);
 		assert(newSeqs.size() == 1);
 		currSeq = newSeqs.front();

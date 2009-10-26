@@ -120,7 +120,8 @@ class PackedSeq : public Kmer, public KmerData
 {
   public:
 	PackedSeq() { }
-	PackedSeq(const Sequence& seq) : Kmer(seq) { }
+	explicit PackedSeq(const Kmer& kmer) : Kmer(kmer) { }
+	explicit PackedSeq(const Sequence& seq) : Kmer(seq) { }
 
 	/** Create a PackedSeq of the specified key and data. */
 	PackedSeq(const Kmer& key,
@@ -131,14 +132,6 @@ class PackedSeq : public Kmer, public KmerData
 
 	size_t serialize(char* buffer) const;
 	size_t unserialize(const char* buffer);
-
-	/** The size of the serialized structure. */
-	static size_t serialSize() {
-		PackedSeq *p = NULL;
-		return sizeof p->m_seq + sizeof p->m_length
-			+ sizeof p->m_flags + sizeof p->m_multiplicity
-			+ sizeof p->m_ext;
-	}
 };
 
 /** Return the reverse complement of the specified sequence. */

@@ -11,5 +11,5 @@ libassembly_a_SOURCES = \
 	DotWriter.cpp DotWriter.h \
 	ISequenceCollection.h \
 	Options.cpp Options.h \
-	PackedSeq.cpp PackedSeq.h \
+	PackedSeq.h \
 	SequenceCollection.cpp SequenceCollection.h

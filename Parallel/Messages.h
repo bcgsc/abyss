@@ -39,26 +39,21 @@ class Message
 {
 	public:
 		Message(MessageType m_type) : m_type(m_type) { }
-		Message(const PackedSeq& seq, MessageType m_type) : m_type(m_type), m_seq(seq) { }
+		Message(const Kmer& seq, MessageType m_type)
+			: m_type(m_type), m_seq(seq) { }
 		virtual ~Message() {}
-		
+
 		// handle this message
 		virtual void handle(int senderID, NetworkSequenceCollection& handler) = 0;
-		
+
 		virtual size_t getNetworkSize() const
 		{
-			return sizeof m_type + PackedSeq::serialSize();
+			return sizeof m_type + Kmer::serialSize();
 		}
-		
-		// read the message type from a stream
+
 		static MessageType readMessageType(char* buffer);
-		
-		// Write the message into a buffer
 		virtual size_t serialize(char* buffer);
-		
-		// Read the message back from a buffer
 		virtual size_t unserialize(const char* buffer);
-		
 		virtual void print() const { }
 
 		friend std::ostream& operator <<(std::ostream& o,
@@ -69,7 +64,7 @@ class Message
 		}
 
 		MessageType m_type;
-		PackedSeq m_seq;
+		Kmer m_seq;
 };
 
 //
@@ -80,10 +75,10 @@ class SeqOpMessage : public Message
 {
 	public:
 		SeqOpMessage() : Message(MT_SEQ_OP) { }
-		SeqOpMessage(const PackedSeq& seq, MessageOp operation) : Message(seq, MT_SEQ_OP), m_operation(operation) { }
-		
+		SeqOpMessage(const Kmer& seq, MessageOp operation)
+			: Message(seq, MT_SEQ_OP), m_operation(operation) { }
 		virtual ~SeqOpMessage() { }
-		
+
 		virtual size_t getNetworkSize() const { return (Message::getNetworkSize() + sizeof(m_operation)); }
 		
 		// Handle the message by calling the appropriate function in the network sequence collection
@@ -104,10 +99,10 @@ class SetFlagMessage : public Message
 {
 	public:
 		SetFlagMessage() : Message(MT_SET_FLAG) { }
-		SetFlagMessage(const PackedSeq& seq, SeqFlag flag) : Message(seq, MT_SET_FLAG), m_flag(flag) { }
-		
+		SetFlagMessage(const Kmer& seq, SeqFlag flag)
+			: Message(seq, MT_SET_FLAG), m_flag(flag) { }
 		virtual ~SetFlagMessage() { }
-		
+
 		// Get the size that will be transmitted
 		virtual size_t getNetworkSize() const { return (Message::getNetworkSize() + sizeof(m_flag)); }
 		
@@ -129,11 +124,9 @@ class RemoveExtensionMessage : public Message
 {
 	public:
 		RemoveExtensionMessage() : Message(MT_REMOVE_EXT) { }
-		RemoveExtensionMessage(const PackedSeq& seq, extDirection dir,
-				SeqExt ext)
-			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_ext(ext)
-		{
-		}
+		RemoveExtensionMessage(const Kmer& seq,
+				extDirection dir, SeqExt ext)
+			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_ext(ext) { }
 		virtual ~RemoveExtensionMessage() { }
 
 		virtual size_t getNetworkSize() const
@@ -155,8 +148,9 @@ class SeqDataRequest : public Message
 {
 	public:
 		SeqDataRequest() : Message(MT_SEQ_DATA_REQUEST) { }
-		SeqDataRequest(const PackedSeq& seq, IDType group, IDType id) : Message(seq, MT_SEQ_DATA_REQUEST), m_group(group), m_id(id) { }
-		
+		SeqDataRequest(const Kmer& seq, IDType group, IDType id)
+			: Message(seq, MT_SEQ_DATA_REQUEST),
+				m_group(group), m_id(id) { }
 		virtual ~SeqDataRequest() { }
 
 		// Get the size that will be transmitted
@@ -183,16 +177,13 @@ class SeqDataResponse : public Message
 {
 	public:
 		SeqDataResponse() : Message(MT_SEQ_DATA_RESPONSE) { }
-		
-		SeqDataResponse(const PackedSeq& seq, IDType group, IDType id, ExtensionRecord& extRecord, int multiplicity) : 
-											  Message(seq, MT_SEQ_DATA_RESPONSE),
-											  m_group(group),
-											  m_id(id),
-											  m_extRecord(extRecord), 
-											  m_multiplicity(multiplicity) { }
-		
+		SeqDataResponse(const Kmer& seq, IDType group, IDType id,
+				ExtensionRecord& extRecord, int multiplicity) :
+			Message(seq, MT_SEQ_DATA_RESPONSE),
+			m_group(group), m_id(id),
+			m_extRecord(extRecord), m_multiplicity(multiplicity) { }
 		virtual ~SeqDataResponse() { }
-		
+
 		// Get the size that will be transmitted
 		virtual size_t getNetworkSize() const { return (Message::getNetworkSize() + sizeof(m_group) + sizeof(m_id) + sizeof(m_extRecord) + sizeof(m_multiplicity)); }
 				
@@ -217,14 +208,11 @@ class SetBaseMessage : public Message
 {
 	public:
 		SetBaseMessage() : Message(MT_SET_BASE) { }
-		SetBaseMessage(const PackedSeq& seq, extDirection dir,
-				uint8_t base)
-			: Message(seq, MT_SET_BASE), m_dir(dir), m_base(base)
-		{
-		}
-
+		SetBaseMessage(const Kmer& seq,
+				extDirection dir, uint8_t base)
+			: Message(seq, MT_SET_BASE), m_dir(dir), m_base(base) { }
 		virtual ~SetBaseMessage() { }
-		
+
 		// Get the size that will be transmitted
 		virtual size_t getNetworkSize() const { return (Message::getNetworkSize() + sizeof(m_dir) + sizeof(m_base)); }
 		

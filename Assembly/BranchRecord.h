@@ -32,8 +32,13 @@ class BranchRecord
 			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
 			m_loopDetected(false), m_multiplicity(-1) { }
 
-		// Add a single sequence to the branch
 		void addSequence(const PackedSeq& seq);
+
+		/** Add a k-mer to the branch without data. */
+		void addSequence(const Kmer& kmer)
+		{
+			addSequence(PackedSeq(kmer));
+		}
 
 		// Remove all the sequences including and following the
 		// specified iterator.

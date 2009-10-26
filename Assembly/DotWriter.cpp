@@ -7,24 +7,23 @@
 using namespace std;
 
 /** Return the kmer which are adjacent to this kmer. */
-static vector<PackedSeq> getExtensions(
+static vector<Kmer> getExtensions(
 		const PackedSeq& seq, extDirection dir)
 {
-	vector<PackedSeq> v;
+	vector<Kmer> v;
 	AssemblyAlgorithms::generateSequencesFromExtension(seq, dir,
 			seq.getExtension(dir), v);
 	return v;
 }
 
 /** Return the kmer which are adjacent to this kmer. */
-static vector<PackedSeq> getExtensions(
-		const ISequenceCollection& c,
-		const PackedSeq& key, extDirection dir)
+static vector<Kmer> getExtensions(const ISequenceCollection& c,
+		const Kmer& key, extDirection dir)
 {
 	ExtensionRecord ext;
 	int multiplicity = -1;
 	c.getSeqData(key, ext, multiplicity);
-	vector<PackedSeq> v;
+	vector<Kmer> v;
 	AssemblyAlgorithms::generateSequencesFromExtension(key, dir,
 			ext.dir[dir], v);
 	return v;
@@ -32,19 +31,19 @@ static vector<PackedSeq> getExtensions(
 
 /** Return true if the specified sequence has a single extension in
  * the forward direction, and that extension has a single extension in
- * the reverse direction. If so, return the extension in pSeq.
+ * the reverse direction. If so, return the extension in pKmer.
  */
 static bool isContiguous(const ISequenceCollection& c,
-		PackedSeq* pSeq, extDirection dir)
+		Kmer* pKmer, extDirection dir)
 {
-	vector<PackedSeq> exts = getExtensions(c, *pSeq, dir);
+	vector<Kmer> exts = getExtensions(c, *pKmer, dir);
 	if (exts.size() != 1)
 		return false;
-	const PackedSeq& ext = exts[0];
-	vector<PackedSeq> rexts = getExtensions(c, ext, !dir);
+	const Kmer& ext = exts[0];
+	vector<Kmer> rexts = getExtensions(c, ext, !dir);
 	if (rexts.size() != 1)
 		return false;
-	*pSeq = ext;
+	*pKmer = ext;
 	return true;
 }
 
@@ -85,7 +84,7 @@ static void write_contig(ostream& out,
 /** Write out the contigs that split at the specified sequence. */
 static void write_split(ostream& out, const PackedSeq& seq)
 {
-	vector<PackedSeq> exts = getExtensions(seq, SENSE);
+	vector<Kmer> exts = getExtensions(seq, SENSE);
 	if (exts.size() <= 1)
 		return;
 	out << seq.decode() << "->{ ";
@@ -97,7 +96,7 @@ static void write_split(ostream& out, const PackedSeq& seq)
 /** Write out the contigs that join at the specified sequence. */
 static void write_join(ostream& out, const PackedSeq& seq)
 {
-	vector<PackedSeq> exts = getExtensions(seq, ANTISENSE);
+	vector<Kmer> exts = getExtensions(seq, ANTISENSE);
 	if (exts.size() <= 1)
 		return;
 	out << "{ ";

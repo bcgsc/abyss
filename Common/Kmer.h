@@ -4,6 +4,7 @@
 #include "config.h"
 #include "Sense.h"
 #include "Sequence.h"
+#include <cstring> // for memcpy
 #include <stdint.h>
 
 class Kmer
@@ -48,6 +49,32 @@ class Kmer
 	uint8_t shift(extDirection dir, uint8_t base = 0)
 	{
 		return dir == SENSE ? shiftAppend(base) : shiftPrepend(base);
+	}
+
+	static unsigned serialSize()
+	{
+		Kmer* p;
+		return sizeof p->m_seq + sizeof p->m_length;
+	}
+
+	size_t serialize(void* dest) const
+	{
+		uint8_t *p = (uint8_t*)dest;
+		memcpy(p, m_seq, sizeof m_seq);
+		p += sizeof m_seq;
+		memcpy(p, &m_length, sizeof m_length);
+		p += sizeof m_length;
+		return p - (uint8_t*)dest;
+	}
+
+	size_t unserialize(const void* src)
+	{
+		const uint8_t *p = (const uint8_t*)src;
+		memcpy(m_seq, p, sizeof m_seq);
+		p += sizeof m_seq;
+		memcpy(&m_length, p, sizeof m_length);
+		p += sizeof m_length;
+		return p - (const uint8_t*)src;
 	}
 
   private:

@@ -52,12 +52,12 @@ SequenceCollectionHash::~SequenceCollectionHash()
 }
 
 /** Add the specified k-mer to this collection. */
-void SequenceCollectionHash::add(const PackedSeq& seq)
+void SequenceCollectionHash::add(const Kmer& seq)
 {
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_pSequences->end())
-		m_pSequences->insert(seq);
+		m_pSequences->insert(PackedSeq(seq));
 	else
 		const_cast<PackedSeq&>(*it).addMultiplicity(
 				rc ? ANTISENSE : SENSE);
@@ -91,7 +91,7 @@ static inline uint8_t complementBaseCode(uint8_t base)
 
 /** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
-		const PackedSeq& seq, extDirection dir, uint8_t base)
+		const Kmer& seq, extDirection dir, uint8_t base)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
 	return setBaseExtensionByIter(iters.first, dir, base)
@@ -113,7 +113,7 @@ bool SequenceCollectionHash::setBaseExtensionByIter(
 }
 
 /** Remove the specified extensions from this k-mer. */
-void SequenceCollectionHash::removeExtension(const PackedSeq& seq,
+void SequenceCollectionHash::removeExtension(const Kmer& seq,
 		extDirection dir, SeqExt ext)
 {
 	SequenceHashIterPair iters = GetSequenceIterators(seq);
@@ -134,7 +134,7 @@ bool SequenceCollectionHash::removeExtensionByIter(
 		return false;
 }
 
-void SequenceCollectionHash::setFlag(const PackedSeq& key,
+void SequenceCollectionHash::setFlag(const Kmer& key,
 		SeqFlag flag)
 {
 	bool rc;
@@ -163,14 +163,14 @@ void SequenceCollectionHash::printLoad() const
  * reverse complement.
  */
 SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(
-		const PackedSeq& seq) const
+		const Kmer& seq) const
 {
 	SequenceHashIterPair iters;
-	iters.first = m_pSequences->find(seq);
+	iters.first = find(seq);
 	if (iters.first != m_pSequences->end())
 		iters.second = m_pSequences->end();
 	else
-		iters.second = m_pSequences->find(reverseComplement(seq));
+		iters.second = find(reverseComplement(seq));
 	return iters;
 }
 
@@ -186,19 +186,33 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 	exit(EXIT_FAILURE);
 }
 
+/** Return an iterator pointing to the specified k-mer. */
+SequenceCollectionHash::iterator SequenceCollectionHash::find(
+		const Kmer& key)
+{
+	return m_pSequences->find(PackedSeq(key));
+}
+
+/** Return an iterator pointing to the specified k-mer. */
+SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
+		const Kmer& key) const
+{
+	return m_pSequences->find(PackedSeq(key));
+}
+
 /** Return an iterator pointing to the specified k-mer or its
  * reverse complement. Return in rc whether the sequence is reversed.
  */
 SequenceCollectionHash::iterator SequenceCollectionHash::find(
-		const PackedSeq& key, bool& rc)
+		const Kmer& key, bool& rc)
 {
-	SequenceCollectionHash::iterator it = m_pSequences->find(key);
+	SequenceCollectionHash::iterator it = find(key);
 	if (it != m_pSequences->end()) {
 		rc = false;
 		return it;
 	} else {
 		rc = true;
-		return m_pSequences->find(reverseComplement(key));
+		return find(reverseComplement(key));
 	}
 }
 
@@ -206,15 +220,15 @@ SequenceCollectionHash::iterator SequenceCollectionHash::find(
  * reverse complement. Return in rc whether the sequence is reversed.
  */
 SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
-		const PackedSeq& key, bool& rc) const
+		const Kmer& key, bool& rc) const
 {
-	SequenceCollectionHash::const_iterator it = m_pSequences->find(key);
+	SequenceCollectionHash::const_iterator it = find(key);
 	if (it != m_pSequences->end()) {
 		rc = false;
 		return it;
 	} else {
 		rc = true;
-		return m_pSequences->find(reverseComplement(key));
+		return find(reverseComplement(key));
 	}
 }
 
@@ -223,7 +237,7 @@ SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
  * contain data.
  */
 const PackedSeq& SequenceCollectionHash::getSeqAndData(
-		const PackedSeq& key) const
+		const Kmer& key) const
 {
 	bool rc;
 	SequenceCollectionHash::const_iterator it = find(key, rc);
@@ -234,7 +248,7 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 }
 
 /** Return the data of the specified key. */
-bool SequenceCollectionHash::getSeqData(const PackedSeq& key,
+bool SequenceCollectionHash::getSeqData(const Kmer& key,
 		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	bool rc;

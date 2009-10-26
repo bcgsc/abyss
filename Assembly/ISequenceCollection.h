@@ -35,18 +35,14 @@ class ISequenceCollection
 		typedef SequenceDataHash::const_iterator const_iterator;
 
 		virtual ~ISequenceCollection() {};
-				
-		// add a sequence to the collection
-		virtual void add(const PackedSeq& seq) = 0;
-		
-		// remove a sequence from the collection
-		virtual void remove(const PackedSeq& seq) = 0;
 
-		// Set flag for sequence seq
-		virtual void setFlag(const PackedSeq& seq, SeqFlag flag) = 0;
+		virtual void add(const Kmer& seq) = 0;
+		virtual void remove(const Kmer& seq) = 0;
+
+		virtual void setFlag(const Kmer& seq, SeqFlag flag) = 0;
 
 		/** Mark the specified sequence. */
-		void mark(const PackedSeq& seq, extDirection sense = SENSE)
+		void mark(const Kmer& seq, extDirection sense = SENSE)
 		{
 			setFlag(seq, sense == SENSE
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
@@ -60,28 +56,29 @@ class ISequenceCollection
 		// Clear the specified flag from every sequence in the collection
 		virtual void wipeFlag(SeqFlag flag) = 0;
 
-		virtual void removeExtension(const PackedSeq& seq,
+		virtual void removeExtension(const Kmer& seq,
 				extDirection dir, SeqExt ext) = 0;
 
 		/** Remove the specified edge of this k-mer. */
-		void removeExtension(const PackedSeq& seq,
+		void removeExtension(const Kmer& seq,
 				extDirection dir, uint8_t base)
 		{
 			removeExtension(seq, dir, SeqExt(base));
 		}
+
 		/** Remove all the edges of this k-mer. */
-		void clearExtensions(const PackedSeq& seq, extDirection dir)
+		void clearExtensions(const Kmer& seq, extDirection dir)
 		{
 			removeExtension(seq, dir, SeqExt::mask(0xf));
 		}
 
-		// set a single base extension
-		virtual bool setBaseExtension(const PackedSeq& seq, extDirection dir, uint8_t base) = 0;
+		virtual bool setBaseExtension(const Kmer& seq,
+				extDirection dir, uint8_t base) = 0;
 
-		// get the extension for a sequence
-		virtual bool getSeqData(const PackedSeq& seq, ExtensionRecord& extRecord, int& multiplicity) const = 0;
+		virtual bool getSeqData(const Kmer& seq, ExtensionRecord& ext,
+				int& multiplicity) const = 0;
 		virtual const PackedSeq& getSeqAndData(
-				const PackedSeq& key) const = 0;
+				const Kmer& key) const = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;

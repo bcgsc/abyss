@@ -65,31 +65,24 @@ class NetworkSequenceCollection : public ISequenceCollection
 				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter = NULL);
 
-		// add a sequence to the collection
-		void add(const PackedSeq& seq);
-		
-		// remove a sequence from the collection
-		void remove(const PackedSeq& seq);
-
-		// Set flag for sequence seq
-		void setFlag(const PackedSeq& seq, SeqFlag flag);
-
-		// Clear the specified flag from every sequence in the collection
+		void add(const Kmer& seq);
+		void remove(const Kmer& seq);
+		void setFlag(const Kmer& seq, SeqFlag flag);
 		void wipeFlag(SeqFlag flag);
-		
+
 		// Return the number of sequences in the collection
 		size_t count() const;
 
 		void printLoad() const { m_pLocalSpace->printLoad(); }
 
-		void removeExtension(const PackedSeq& seq, extDirection dir,
+		void removeExtension(const Kmer& seq, extDirection dir,
 				SeqExt ext);
-		bool setBaseExtension(const PackedSeq& seq, extDirection dir,
+		bool setBaseExtension(const Kmer& seq, extDirection dir,
 				uint8_t base);
 
-		bool getSeqData(const PackedSeq& seq,
+		bool getSeqData(const Kmer& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
-		const PackedSeq& getSeqAndData(const PackedSeq& key) const
+		const PackedSeq& getSeqAndData(const Kmer& key) const
 		{
 			assert(isLocal(key));
 			return m_pLocalSpace->getSeqAndData(key);
@@ -140,10 +133,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		const_iterator begin() const { return m_pLocalSpace->begin(); }
 		iterator end() { return m_pLocalSpace->end(); }
 		const_iterator end() const { return m_pLocalSpace->end(); }
-		
+
 	private:
 		// Observer pattern
-		void notify(const PackedSeq& seq);
+		void notify(const Kmer& seq);
 
 		void loadSequences();
 
@@ -153,10 +146,17 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int processBranchesTrim();
 		bool processBranchesDiscoverBubbles();
 
-		void generateExtensionRequest(uint64_t groupID, uint64_t branchID, const PackedSeq& seq);
-		void processSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
-		void processLinearSequenceExtension(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
-		void processSequenceExtensionPop(uint64_t groupID, uint64_t branchID, const PackedSeq& seq, const ExtensionRecord& extRec, int multiplicity);
+		void generateExtensionRequest(
+				uint64_t groupID, uint64_t branchID, const Kmer& seq);
+		void processSequenceExtension(
+				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				const ExtensionRecord& extRec, int multiplicity);
+		void processLinearSequenceExtension(
+				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				const ExtensionRecord& extRec, int multiplicity);
+		void processSequenceExtensionPop(
+				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				const ExtensionRecord& extRec, int multiplicity);
 
 		void assembleContig(ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter,
@@ -167,13 +167,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void parseControlMessage(int source);
 
-		// Check if this sequence belongs in the local phase space
-		bool isLocal(const PackedSeq& seq) const;
-		
-		// Get the node id that this sequence should reside in
-		int computeNodeID(const PackedSeq& seq) const;
-		
-		// Clean up the state
+		bool isLocal(const Kmer& seq) const;
+		int computeNodeID(const Kmer& seq) const;
+
 		void EndState();
 		
 		// Set the state of the network assembly
