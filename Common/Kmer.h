@@ -4,6 +4,7 @@
 #include "config.h"
 #include "Sense.h"
 #include "Sequence.h"
+#include <cassert>
 #include <cstring> // for memcpy
 #include <stdint.h>
 
@@ -40,7 +41,12 @@ class Kmer
 	/** Set the length of a k-mer.
 	 * This value is shared by all instances.
 	 */
-	static void setLength(unsigned length) { m_length = length; }
+	static void setLength(unsigned length)
+	{
+		assert(length <= MAX_KMER);
+		assert(m_length == 0);
+		m_length = length;
+	}
 
 	void reverseComplement();
 

@@ -22,7 +22,6 @@ Kmer::Kmer(const Sequence& seq)
 {
 	assert(seq.length() == m_length);
 	memset(m_seq, 0, NUM_BYTES);
-	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();
 	for (unsigned i = 0; i < m_length; i++)
 		setBaseCode(m_seq, i, baseToCode(*p++));
@@ -31,9 +30,6 @@ Kmer::Kmer(const Sequence& seq)
 /** Compare two k-mer. */
 int Kmer::compare(const Kmer& other) const
 {
-	if (m_length == 0 || other.m_length == 0)
-		return (int)m_length - other.m_length;
-	assert(m_length == other.m_length);
 	unsigned nbytes = getNumCodingBytes(m_length);
 	return memcmp(m_seq, other.m_seq, nbytes);
 }
