@@ -5,6 +5,9 @@
 #include "PackedSeq.h"
 #include <cassert>
 
+typedef std::pair<SequenceDataHash::iterator,
+		SequenceDataHash::iterator> SequenceHashIterPair;
+
 /** A k-mer graph. A map of k-mer to edges. */
 class SequenceCollectionHash : public ISequenceCollection
 {
@@ -74,6 +77,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
+		typedef SequenceDataHash::iterator SequenceCollectionHashIter;
+
 		SequenceHashIterPair GetSequenceIterators(const Kmer& seq);
 		iterator find(const Kmer& key);
 		const_iterator find(const Kmer& key) const;

@@ -21,11 +21,6 @@ typedef google::sparse_hash_set<PackedSeq,
 typedef hash_set<PackedSeq, PackedSeqHasher> SequenceDataHash;
 #endif
 
-typedef SequenceDataHash::iterator SequenceCollectionHashIter;
-typedef SequenceDataHash::const_iterator ConstSequenceCollectionHashIter;
-
-typedef std::pair<SequenceCollectionHashIter, SequenceCollectionHashIter> SequenceHashIterPair;
-
 // Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
 // This pure virtual class defines the minimum set of functions a sequence collection must provide
 class ISequenceCollection
