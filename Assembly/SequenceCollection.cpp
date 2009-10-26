@@ -93,7 +93,7 @@ static inline uint8_t complementBaseCode(uint8_t base)
 bool SequenceCollectionHash::setBaseExtension(
 		const Kmer& seq, extDirection dir, uint8_t base)
 {
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	iteratorPair iters = findBoth(seq);
 	return setBaseExtensionByIter(iters.first, dir, base)
 		|| setBaseExtensionByIter(iters.second,
 				oppositeDirection(dir), complementBaseCode(base));
@@ -115,7 +115,7 @@ bool SequenceCollectionHash::setBaseExtensionByIter(
 void SequenceCollectionHash::removeExtension(const Kmer& seq,
 		extDirection dir, SeqExt ext)
 {
-	SequenceHashIterPair iters = GetSequenceIterators(seq);
+	iteratorPair iters = findBoth(seq);
 	bool found = removeExtensionByIter(iters.first, dir, ext)
 		|| removeExtensionByIter(iters.second, !dir, ~ext);
 	assert(found);
@@ -160,10 +160,10 @@ void SequenceCollectionHash::printLoad() const
 /** Return the iterators pointing to the specified k-mer and its
  * reverse complement.
  */
-SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(
+SequenceCollectionHash::iteratorPair SequenceCollectionHash::findBoth(
 		const Kmer& seq)
 {
-	SequenceHashIterPair iters;
+	iteratorPair iters;
 	iters.first = find(seq);
 	if (iters.first != m_pSequences->end())
 		iters.second = m_pSequences->end();
@@ -174,7 +174,7 @@ SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(
 
 /** Return the sequence and data of the specified iterator pair. */
 const PackedSeq& SequenceCollectionHash::getSeqAndData(
-		const SequenceHashIterPair& iters) const
+		const iteratorPair& iters) const
 {
 	if (iters.first != m_pSequences->end())
 		return *iters.first;
