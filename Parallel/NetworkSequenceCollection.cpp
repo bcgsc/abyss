@@ -70,6 +70,9 @@ void NetworkSequenceCollection::run()
 	/** The number of contigs and k-mer assembled. */
 	pair<unsigned, unsigned> numAssembled;
 
+	ofstream bubbleFile;
+	AssemblyAlgorithms::openBubbleFile(bubbleFile);
+
 	SetState(NAS_LOADING);
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
@@ -197,7 +200,7 @@ void NetworkSequenceCollection::run()
 			case NAS_POPBUBBLE:
 			{
 				unsigned numPopped
-					= performNetworkPopBubbles(this);
+					= performNetworkPopBubbles(bubbleFile);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numPopped);
@@ -492,16 +495,21 @@ void NetworkSequenceCollection::runControl()
 
 			case NAS_POPBUBBLE:
 			{
+				ofstream out;
+				AssemblyAlgorithms::openBubbleFile(out);
+
 				puts("Popping bubbles");
 				unsigned totalPopped = 0;
 				int i;
 				for (i = 0; i < opt::bubbles; i++) {
-					unsigned numPopped = controlPopBubbles();
+					unsigned numPopped = controlPopBubbles(out);
 					if (numPopped == 0)
 						break;
 					totalPopped += numPopped;
 				}
 				assert(totalPopped == m_numPopped);
+				assert(out.good());
+				out.close();
 				printf("Removed %u bubbles in %u rounds\n",
 						totalPopped, i);
 
@@ -957,7 +965,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 }
 
 /** Pop bubbles discovered previously. */
-int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*seqCollection*/)
+int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 {
 	Timer timer("NetworkPopBubbles");
 
@@ -966,9 +974,6 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ISequenceCollection* /*s
 	// delivered, but we may not have dealt with them yet.
 	pumpNetwork();
 	assert(m_comm.receiveEmpty());
-
-	ofstream out;
-	AssemblyAlgorithms::openBubbleFile(out);
 
 	unsigned numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
@@ -1062,12 +1067,12 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 }
 
 /** Pop the bubbles discovered previously. */
-int NetworkSequenceCollection::controlPopBubbles()
+int NetworkSequenceCollection::controlPopBubbles(ostream& out)
 {
 	controlDiscoverBubbles();
 
 	// Perform a round-robin bubble pop to avoid concurrency issues
-	m_checkpointSum = performNetworkPopBubbles(this);
+	m_checkpointSum = performNetworkPopBubbles(out);
 	EndState();
 
 	// Now tell all the slave nodes to perform the pop one by one

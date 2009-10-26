@@ -9,6 +9,7 @@
 #include "FastaWriter.h"
 #include "MessageBuffer.h"
 #include "Timer.h"
+#include <ostream>
 #include <set>
 #include <utility>
 
@@ -47,7 +48,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// This function is similar to AssemblyAlgorithms::popBubbles but is optimized to hide latency
 		int performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize);
-		int performNetworkPopBubbles(ISequenceCollection* seqCollection);
+		int performNetworkPopBubbles(std::ostream& out);
 
 		unsigned controlErode();
 		unsigned controlTrimRound(unsigned trimLen);
@@ -55,7 +56,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		unsigned controlRemoveMarked();
 		void controlCoverage();
 		unsigned controlDiscoverBubbles();
-		int controlPopBubbles();
+		int controlPopBubbles(std::ostream& out);
 		unsigned controlMarkAmbiguous();
 		unsigned controlSplitAmbiguous();
 		unsigned controlSplit();

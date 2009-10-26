@@ -5,6 +5,7 @@
 #include "BranchRecord.h"
 #include "FastaWriter.h"
 #include "ISequenceCollection.h"
+#include <ostream>
 #include <vector>
 
 class Histogram;
@@ -73,7 +74,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 // Polymorphism removal
 
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
-int popBubbles(ISequenceCollection* seqCollection);
+int popBubbles(ISequenceCollection* pSC, std::ostream& out);
 
 // Populate the branch group with the initial extensions to this sequence
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,

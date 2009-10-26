@@ -36,14 +36,17 @@ static void removeLowCoverageContigs(ISequenceCollection* pSC)
 static void popBubbles(ISequenceCollection* pSC)
 {
 	puts("Popping bubbles");
+	ofstream out;
+	AssemblyAlgorithms::openBubbleFile(out);
 	unsigned totalPopped = 0;
 	int i;
 	for (i = 0; i < opt::bubbles; i++) {
-		unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC);
+		unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC, out);
 		if (numPopped == 0)
 			break;
 		totalPopped += numPopped;
 	}
+	assert(out.good());
 	printf("Removed %d bubbles in %d rounds\n",
 			totalPopped, i);
 }

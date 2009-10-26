@@ -241,7 +241,7 @@ void openBubbleFile(ofstream& out)
 	}
 }
 
-int popBubbles(ISequenceCollection* seqCollection)
+int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 {
 	Timer timer("PopBubbles");
 	int numPopped = 0;
@@ -249,9 +249,6 @@ int popBubbles(ISequenceCollection* seqCollection)
 	// Set the cutoffs
 	const unsigned int expectedBubbleSize = 2*(opt::kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
-
-	ofstream out;
-	openBubbleFile(out);
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
