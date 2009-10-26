@@ -504,6 +504,13 @@ bool Kmer::isPalindrome(extDirection dir) const
 		seq.shiftAppend(0);
 	else
 		seq.setLastBase(SENSE, 0);
-	seq.m_length--;
-	return seq.isPalindrome();
+
+	Kmer rc(*this);
+	rc.reverseComplement();
+	if (dir == SENSE)
+		rc.setLastBase(SENSE, 0);
+	else
+		rc.shiftAppend(0);
+
+	return seq == rc;
 }
