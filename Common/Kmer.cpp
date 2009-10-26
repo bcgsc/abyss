@@ -151,31 +151,6 @@ static Seq load(const uint8_t *src)
 	return seq;
 }
 
-static void store(uint8_t *dest, Seq seq)
-{
-	const uint64_t *px = seq.x;
-	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
-		dest[0] = *px >> 56;
-		dest[1] = *px >> 48;
-		dest[2] = *px >> 40;
-		dest[3] = *px >> 32;
-		dest[4] = *px >> 24;
-		dest[5] = *px >> 16;
-		dest[6] = *px >> 8;
-		dest[7] = *px >> 0;
-		dest += 8;
-		px++;
-	}
-	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 56;
-	if (SEQ_ODD_BYTES > 1) dest[1] = *px >> 48;
-	if (SEQ_ODD_BYTES > 2) dest[2] = *px >> 40;
-	if (SEQ_ODD_BYTES > 3) dest[3] = *px >> 32;
-	if (SEQ_ODD_BYTES > 4) dest[4] = *px >> 24;
-	if (SEQ_ODD_BYTES > 5) dest[5] = *px >> 16;
-	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 8;
-	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 0;
-}
-
 /**
  * Reverse the bytes by storing them in the reverse order of
  * loading, and reverse the words in the same fashion.
@@ -250,70 +225,6 @@ static void shiftRight(Seq *pseq, uint8_t n)
 		pseq->x[2] = x0 >> n;
 	}
 #endif
-}
-
-/** Shift left by the specified number of bits. */
-static void shiftLeft(Seq *pseq, uint8_t n)
-{
-	if (n == 0)
-		return;
-#if MAX_KMER <= 32
-	pseq->x[0] <<= n;
-#elif MAX_KMER <= 64
-	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
-	if (n < 64) {
-		pseq->x[0] = x0 << n | x1 >> (64 - n);
-		pseq->x[1] = x1 << n;
-	} else {
-		pseq->x[0] = x1 << (n - 64);
-		pseq->x[1] = 0;
-	}
-#elif MAX_KMER <= 96
-	uint64_t x0 = pseq->x[0], x1 = pseq->x[1], x2 = pseq->x[2];
-	if (n < 64) {
-		pseq->x[0] = x0 << n | x1 >> (64 - n);
-		pseq->x[1] = x1 << n | x2 >> (64 - n);
-		pseq->x[2] = x2 << n;
-	} else if (n == 64) {
-		pseq->x[0] = x1;
-		pseq->x[1] = x2;
-		pseq->x[2] = 0;
-	} else if (n < 128) {
-		n -= 64;
-		pseq->x[0] = x1 << n | x2 >> (64 - n);
-		pseq->x[1] = x2 << n;
-		pseq->x[2] = 0;
-	} else {
-		n -= 128;
-		pseq->x[0] = x2 << n;
-		pseq->x[1] = 0;
-		pseq->x[2] = 0;
-	}
-#endif
-}
-
-//
-// Return a subsequence of this sequence.
-//
-Kmer Kmer::subseq(unsigned start, unsigned len) const
-{
-	assert(start + len <= m_length);
-	Seq seq = load((uint8_t*)m_seq);
-#if 0
-	// A simple left shift would suffice if it weren't necessary to
-	// zero the bases beyond the end of the sequence. compare requires
-	// that they are zeroed.
-	shiftLeft(&seq, 2*start);
-#else
-	// Zero the bases beyond the end of the sequence. A mask would
-	// probably be faster.
-	shiftRight(&seq, SEQ_BITS - 2*(len + start));
-	shiftLeft(&seq, SEQ_BITS - 2*len);
-#endif
-	Kmer sub;
-	sub.m_length = len;
-	store((uint8_t*)sub.m_seq, seq);
-	return sub;
 }
 
 //

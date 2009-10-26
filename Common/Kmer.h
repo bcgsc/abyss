@@ -35,8 +35,6 @@ class Kmer
 	unsigned getCode() const;
 	size_t getHashCode() const;
 
-	Kmer subseq(unsigned start, unsigned len) const;
-
 	unsigned length() const { return m_length; }
 
 	void reverseComplement();
