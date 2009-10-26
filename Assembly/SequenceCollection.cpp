@@ -163,7 +163,7 @@ void SequenceCollectionHash::printLoad() const
  * reverse complement.
  */
 SequenceHashIterPair SequenceCollectionHash::GetSequenceIterators(
-		const Kmer& seq) const
+		const Kmer& seq)
 {
 	SequenceHashIterPair iters;
 	iters.first = find(seq);

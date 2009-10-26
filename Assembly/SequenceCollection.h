@@ -74,7 +74,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		SequenceHashIterPair GetSequenceIterators(const Kmer& seq) const;
+		SequenceHashIterPair GetSequenceIterators(const Kmer& seq);
 		iterator find(const Kmer& key);
 		const_iterator find(const Kmer& key) const;
 		iterator find(const Kmer& key, bool& rc);
