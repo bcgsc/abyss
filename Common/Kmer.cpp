@@ -16,7 +16,6 @@ static uint8_t getBaseCode(const char* pSeq,
 		unsigned byteNum, unsigned index);
 static void setBaseCode(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base);
-static void setBaseCode(char* pSeq, unsigned seqIndex, uint8_t base);
 
 /** Return the number of bytes needed for the specified number of
  * bases. */
@@ -32,7 +31,7 @@ Kmer::Kmer(const Sequence& seq)
 	memset(m_seq, 0, NUM_BYTES);
 	const char* p = seq.data();
 	for (unsigned i = 0; i < m_length; i++)
-		setBaseCode(m_seq, i, baseToCode(*p++));
+		set(i, baseToCode(*p++));
 }
 
 /** Compare two k-mer. */
@@ -260,7 +259,7 @@ void Kmer::reverseComplement()
 
 void Kmer::setLastBase(extDirection dir, uint8_t base)
 {
-	setBaseCode(m_seq, dir == SENSE ? m_length - 1 : 0, base);
+	set(dir == SENSE ? m_length - 1 : 0, base);
 }
 
 uint8_t Kmer::shiftAppend(uint8_t base)
@@ -338,16 +337,6 @@ uint8_t Kmer::rightShiftByte(char* pSeq,
 	return outBase;
 }
 
-// set a base by the index [0, length)
-// beware, this does not check for out of bounds access
-static void setBaseCode(char* pSeq, unsigned seqIndex, uint8_t base)
-{
-	return setBaseCode(pSeq,
-			seqIndexToByteNumber(seqIndex),
-			seqIndexToBaseIndex(seqIndex),
-			base);
-}
-
 //Set a base by byte number/ sub index
 // beware, this does not check for out of bounds access
 static void setBaseCode(char* pSeq,
@@ -373,6 +362,13 @@ uint8_t Kmer::at(unsigned i) const
 	assert(i < m_length);
 	return getBaseCode(m_seq,
 			seqIndexToByteNumber(i), seqIndexToBaseIndex(i));
+}
+
+/** Set the base at the specified index. */
+void Kmer::set(unsigned i, uint8_t base)
+{
+	setBaseCode(m_seq,
+			seqIndexToByteNumber(i), seqIndexToBaseIndex(i), base);
 }
 
 uint8_t Kmer::getLastBaseChar() const
