@@ -78,7 +78,7 @@ class Kmer
 	uint8_t shiftAppend(uint8_t base);
 	uint8_t shiftPrepend(uint8_t base);
 
-	uint8_t getBaseCode(unsigned seqIndex) const;
+	uint8_t at(unsigned i) const;
 
 	static uint8_t leftShiftByte(char* pSeq,
 			unsigned byteNum, unsigned index, uint8_t base);

@@ -78,7 +78,7 @@ Sequence Kmer::decode() const
 	Sequence s;
 	s.reserve(m_length);
 	for (unsigned i = 0; i < m_length; i++)
-		s.push_back(codeToBase(getBaseCode(i)));
+		s.push_back(codeToBase(at(i)));
 	return s;
 }
 
@@ -291,7 +291,7 @@ uint8_t Kmer::shiftPrepend(uint8_t base)
 	unsigned lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
 
 	// save the last base (which gets shifted out)
-	uint8_t lastBase = ::getBaseCode(m_seq,
+	uint8_t lastBase = getBaseCode(m_seq,
 			lastBaseByte, lastBaseIndex);
 	// Zero the last base, which is required by compare.
 	setBaseCode(m_seq, lastBaseByte, lastBaseIndex, 0);
@@ -367,18 +367,17 @@ static void setBaseCode(char* pSeq,
 	pSeq[byteNum] |= base;
 }
 
-// get a base code by the index [0, length)
-uint8_t Kmer::getBaseCode(unsigned seqIndex) const
+/** Return the base at the specified index. */
+uint8_t Kmer::at(unsigned i) const
 {
-	assert(seqIndex < m_length);
-	return ::getBaseCode(m_seq,
-			seqIndexToByteNumber(seqIndex),
-			seqIndexToBaseIndex(seqIndex));
+	assert(i < m_length);
+	return getBaseCode(m_seq,
+			seqIndexToByteNumber(i), seqIndexToBaseIndex(i));
 }
 
 uint8_t Kmer::getLastBaseChar() const
 {
-	return codeToBase(getBaseCode(m_length - 1));
+	return codeToBase(at(m_length - 1));
 }
 
 // get a base code by the byte number and sub index
