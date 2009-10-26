@@ -71,7 +71,6 @@ void NetworkSequenceCollection::run()
 	pair<unsigned, unsigned> numAssembled;
 
 	ofstream bubbleFile;
-	AssemblyAlgorithms::openBubbleFile(bubbleFile);
 
 	SetState(NAS_LOADING);
 	while (m_state != NAS_DONE) {
@@ -199,6 +198,8 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_POPBUBBLE:
 			{
+				if (!bubbleFile.is_open())
+					AssemblyAlgorithms::openBubbleFile(bubbleFile);
 				unsigned numPopped
 					= performNetworkPopBubbles(bubbleFile);
 				EndState();
@@ -1000,6 +1001,8 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 		assert(m_comm.receiveEmpty());
 	}
 	m_bubbles.clear();
+	out.flush();
+	assert(out.good());
 
 	PrintDebug(0, "Removed %u bubbles\n", numPopped);
 	return numPopped;
