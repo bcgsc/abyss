@@ -36,7 +36,6 @@ class Message
 		Message(MessageType m_type) : m_type(m_type) { }
 		Message(const Kmer& seq, MessageType m_type)
 			: m_type(m_type), m_seq(seq) { }
-		virtual ~Message() {}
 
 		virtual void handle(int senderID, NetworkSequenceCollection& handler) = 0;
 
@@ -67,7 +66,6 @@ class SeqOpMessage : public Message
 		SeqOpMessage() : Message(MT_SEQ_OP) { }
 		SeqOpMessage(const Kmer& seq, MessageOp operation)
 			: Message(seq, MT_SEQ_OP), m_operation(operation) { }
-		~SeqOpMessage() { }
 
 		size_t getNetworkSize() const
 		{
@@ -88,7 +86,6 @@ class SetFlagMessage : public Message
 		SetFlagMessage() : Message(MT_SET_FLAG) { }
 		SetFlagMessage(const Kmer& seq, SeqFlag flag)
 			: Message(seq, MT_SET_FLAG), m_flag(flag) { }
-		~SetFlagMessage() { }
 
 		size_t getNetworkSize() const
 		{
@@ -110,7 +107,6 @@ class RemoveExtensionMessage : public Message
 		RemoveExtensionMessage(const Kmer& seq,
 				extDirection dir, SeqExt ext)
 			: Message(seq, MT_REMOVE_EXT), m_dir(dir), m_ext(ext) { }
-		~RemoveExtensionMessage() { }
 
 		size_t getNetworkSize() const
 		{
@@ -134,7 +130,6 @@ class SeqDataRequest : public Message
 		SeqDataRequest(const Kmer& seq, IDType group, IDType id)
 			: Message(seq, MT_SEQ_DATA_REQUEST),
 				m_group(group), m_id(id) { }
-		~SeqDataRequest() { }
 
 		size_t getNetworkSize() const
 		{
@@ -160,7 +155,6 @@ class SeqDataResponse : public Message
 			Message(seq, MT_SEQ_DATA_RESPONSE),
 			m_group(group), m_id(id),
 			m_extRecord(extRecord), m_multiplicity(multiplicity) { }
-		~SeqDataResponse() { }
 
 		size_t getNetworkSize() const
 		{
@@ -187,7 +181,6 @@ class SetBaseMessage : public Message
 		SetBaseMessage(const Kmer& seq,
 				extDirection dir, uint8_t base)
 			: Message(seq, MT_SET_BASE), m_dir(dir), m_base(base) { }
-		~SetBaseMessage() { }
 
 		size_t getNetworkSize() const
 		{
