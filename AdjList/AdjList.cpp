@@ -133,6 +133,7 @@ int main(int argc, char** argv)
 	}
 
 	opt::overlap = opt::k - 1;
+	Kmer::setLength(opt::overlap);
 
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {

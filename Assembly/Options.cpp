@@ -3,6 +3,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
+#include "Kmer.h"
 #include <algorithm>
 #include <climits> // for INT_MAX
 #include <getopt.h>
@@ -213,6 +214,8 @@ void parse(int argc, char* const* argv)
 	}
 	if (trimLen < 0)
 		trimLen = kmerSize;
+
+	Kmer::setLength(kmerSize);
 
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());

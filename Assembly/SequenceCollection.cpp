@@ -35,7 +35,7 @@ SequenceCollectionHash::SequenceCollectionHash()
 	* /svn/trunk/doc/sparse_hash_set.html#4
 	*/
 	PackedSeq deleted_key;
-	memset(&deleted_key, 0, sizeof deleted_key);
+	memset(&deleted_key, 0xff, sizeof deleted_key);
 	m_pSequences->set_deleted_key(deleted_key);
 #else
 	m_pSequences = new SequenceDataHash();

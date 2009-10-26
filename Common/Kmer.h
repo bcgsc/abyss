@@ -10,7 +10,7 @@
 class Kmer
 {
   public:
-	Kmer() : m_length(0) { }
+	Kmer() { }
 	explicit Kmer(const Sequence& seq);
 
 	int compare(const Kmer& other) const;
@@ -35,7 +35,12 @@ class Kmer
 	unsigned getCode() const;
 	size_t getHashCode() const;
 
-	unsigned length() const { return m_length; }
+	static unsigned length() { return m_length; }
+
+	/** Set the length of a k-mer.
+	 * This value is shared by all instances.
+	 */
+	static void setLength(unsigned length) { m_length = length; }
 
 	void reverseComplement();
 
@@ -49,30 +54,18 @@ class Kmer
 		return dir == SENSE ? shiftAppend(base) : shiftPrepend(base);
 	}
 
-	static unsigned serialSize()
-	{
-		Kmer* p;
-		return sizeof p->m_seq + sizeof p->m_length;
-	}
+	static unsigned serialSize() { return NUM_BYTES; }
 
 	size_t serialize(void* dest) const
 	{
-		uint8_t *p = (uint8_t*)dest;
-		memcpy(p, m_seq, sizeof m_seq);
-		p += sizeof m_seq;
-		memcpy(p, &m_length, sizeof m_length);
-		p += sizeof m_length;
-		return p - (uint8_t*)dest;
+		memcpy(dest, m_seq, sizeof m_seq);
+		return sizeof m_seq;
 	}
 
 	size_t unserialize(const void* src)
 	{
-		const uint8_t *p = (const uint8_t*)src;
-		memcpy(m_seq, p, sizeof m_seq);
-		p += sizeof m_seq;
-		memcpy(&m_length, p, sizeof m_length);
-		p += sizeof m_length;
-		return p - (const uint8_t*)src;
+		memcpy(m_seq, src, sizeof m_seq);
+		return sizeof m_seq;
 	}
 
   private:
@@ -105,8 +98,9 @@ class Kmer
 	static const unsigned NUM_BYTES = MAX_KMER / 4;
 
   protected:
+	static unsigned m_length;
+
 	char m_seq[NUM_BYTES];
-	uint8_t m_length;
 };
 
 /** Return the reverse complement of the specified sequence. */

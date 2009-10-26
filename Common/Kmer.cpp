@@ -6,6 +6,10 @@
 
 using namespace std;
 
+/** The size of a k-mer. This variable is static and is shared by all
+ * instances. */
+unsigned Kmer::m_length;
+
 /** Return the number of bytes needed for the specified number of
  * bases. */
 static unsigned getNumCodingBytes(unsigned seqLength)
@@ -15,8 +19,8 @@ static unsigned getNumCodingBytes(unsigned seqLength)
 
 /** Construct a k-mer from a string. */
 Kmer::Kmer(const Sequence& seq)
-	: m_length(seq.length())
 {
+	assert(seq.length() == m_length);
 	memset(m_seq, 0, NUM_BYTES);
 	assert(m_length <= MAX_KMER);
 	const char* p = seq.data();

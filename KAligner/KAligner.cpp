@@ -134,6 +134,7 @@ int main(int argc, char** argv)
 		cerr << PROGRAM ": missing -k,--kmer option\n";
 		die = true;
 	}
+	Kmer::setLength(opt::k);
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
