@@ -37,7 +37,7 @@ class Kmer
 
 	Kmer subseq(unsigned start, unsigned len) const;
 
-	unsigned getSequenceLength() const { return m_length; }
+	unsigned length() const { return m_length; }
 
 	void reverseComplement();
 

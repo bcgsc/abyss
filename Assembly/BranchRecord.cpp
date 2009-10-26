@@ -151,8 +151,7 @@ void BranchRecord::buildContig(Sequence& outseq) const
 {
 	assert(!m_data.empty());
 	outseq.clear();
-	outseq.reserve(m_data.front().getSequenceLength()
-			+ m_data.size() - 1);
+	outseq.reserve(m_data.front().length() + m_data.size() - 1);
 
 	if (m_dir == SENSE) {
 		BranchData::const_iterator iter = m_data.begin();
