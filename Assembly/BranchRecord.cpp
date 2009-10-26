@@ -147,10 +147,10 @@ int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 }
 
 /** Build a contig from a branch. */
-void BranchRecord::buildContig(Sequence& outseq) const
+BranchRecord::operator Sequence() const
 {
 	assert(!m_data.empty());
-	outseq.clear();
+	Sequence outseq;
 	outseq.reserve(m_data.front().length() + m_data.size() - 1);
 
 	if (m_dir == SENSE) {
@@ -166,6 +166,7 @@ void BranchRecord::buildContig(Sequence& outseq) const
 		for (; iter != m_data.rend(); ++iter)
 			outseq.append(1, iter->getLastBaseChar());
 	}
+	return outseq;
 }
 
 /**

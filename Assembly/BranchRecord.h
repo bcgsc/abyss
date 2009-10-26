@@ -32,6 +32,8 @@ class BranchRecord
 			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
 			m_loopDetected(false), m_multiplicity(-1) { }
 
+		operator Sequence() const;
+
 		void addSequence(const PackedSeq& seq);
 
 		/** Add a k-mer to the branch without data. */
@@ -76,10 +78,7 @@ class BranchRecord
 		
 		// Return the maximum branch length
 		size_t getMaxLength() const { return m_maxLength; }
-		
-		// build a contig from the branch
-		void buildContig(Sequence& outseq) const;
-		
+
 		// check if a sequence exists in the branch record
 		bool exists(const PackedSeq& seq) const;
 

@@ -403,8 +403,7 @@ void writeBubble(ostream& out, BranchGroup& group, unsigned id)
 	char allele = 'A';
 
 	BranchRecord& refBranch = group.getBranch(selectedIndex);
-	Sequence refContig;
-	refBranch.buildContig(refContig);
+	Sequence refContig(refBranch);
 	out << '>' << id << allele++ << ' '
 		<< refContig.length() << ' '
 		<< refBranch.getBranchMultiplicity() << '\n'
@@ -415,8 +414,7 @@ void writeBubble(ostream& out, BranchGroup& group, unsigned id)
 		if (i == selectedIndex)
 			continue;
 		BranchRecord& currBranch = group.getBranch(i);
-		Sequence contig;
-		currBranch.buildContig(contig);
+		Sequence contig(currBranch);
 		out << '>' << id << allele++ << ' '
 			<< contig.length() << ' '
 			<< currBranch.getBranchMultiplicity() << '\n'
@@ -748,15 +746,15 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	return count;
 }
 
-static void processTerminatedBranchAssemble(
-		const BranchRecord& branch, Sequence& outseq)
+static Sequence processTerminatedBranchAssemble(
+		const BranchRecord& branch)
 {
 	assert(!branch.isActive());
 	// The only acceptable condition for the termination of an
 	// assembly is a noext or a loop.
 	assert(branch.getState() == BS_NOEXT
 			|| branch.getState() == BS_LOOP);
-	branch.buildContig(outseq);
+	return branch;
 }
 
 /** Assemble a contig.
@@ -767,8 +765,7 @@ unsigned assembleContig(
 		BranchRecord& branch, unsigned id)
 {
 	// Assemble the contig.
-	Sequence contig;
-	processTerminatedBranchAssemble(branch, contig);
+	Sequence contig(processTerminatedBranchAssemble(branch));
 
 	unsigned kmerCount = branch.calculateBranchMultiplicity();
 	if (writer != NULL)
