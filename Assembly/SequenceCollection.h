@@ -77,8 +77,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		typedef SequenceDataHash::iterator SequenceCollectionHashIter;
-
 		SequenceHashIterPair GetSequenceIterators(const Kmer& seq);
 		iterator find(const Kmer& key);
 		const_iterator find(const Kmer& key) const;
@@ -87,8 +85,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		const PackedSeq& getSeqAndData(
 				const SequenceHashIterPair& iters) const;
 
-		bool setBaseExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, uint8_t base);
-		bool removeExtensionByIter(SequenceCollectionHashIter& seqIter, extDirection dir, SeqExt ext);
+		bool setBaseExtensionByIter(iterator seqIter,
+				extDirection dir, uint8_t base);
+		bool removeExtensionByIter(iterator seqIter,
+				extDirection dir, SeqExt ext);
 
 		/** Call the observers of the specified sequence. */
 		void notify(const PackedSeq& seq)

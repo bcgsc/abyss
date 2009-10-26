@@ -70,7 +70,7 @@ unsigned SequenceCollectionHash::cleanup()
 {
 	Timer(__func__);
 	unsigned count = 0;
-	for (SequenceCollectionHashIter it = m_pSequences->begin();
+	for (iterator it = m_pSequences->begin();
 			it != m_pSequences->end();) {
 		if (it->deleted()) {
 			m_pSequences->erase(it++);
@@ -100,8 +100,7 @@ bool SequenceCollectionHash::setBaseExtension(
 }
 
 bool SequenceCollectionHash::setBaseExtensionByIter(
-		SequenceCollectionHashIter& seqIter, extDirection dir,
-		uint8_t base)
+		iterator seqIter, extDirection dir, uint8_t base)
 {
 	if(seqIter != m_pSequences->end())
 	{
@@ -124,8 +123,7 @@ void SequenceCollectionHash::removeExtension(const Kmer& seq,
 }
 
 bool SequenceCollectionHash::removeExtensionByIter(
-		SequenceCollectionHashIter& seqIter, extDirection dir,
-		SeqExt ext)
+		iterator seqIter, extDirection dir, SeqExt ext)
 {
 	if (seqIter != m_pSequences->end()) {
 		const_cast<PackedSeq&>(*seqIter).removeExtension(dir, ext);
