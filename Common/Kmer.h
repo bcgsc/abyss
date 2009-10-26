@@ -78,16 +78,7 @@ class Kmer
 	uint8_t shiftAppend(uint8_t base);
 	uint8_t shiftPrepend(uint8_t base);
 
-	static inline void setBaseCode(char* pSeq,
-			unsigned seqIndex, uint8_t code);
-	static inline void setBaseCode(char* pSeq,
-			unsigned byteNum, unsigned index, uint8_t code);
-	static inline uint8_t getBaseCode(const char* pSeq,
-			unsigned byteNum, unsigned index);
 	uint8_t getBaseCode(unsigned seqIndex) const;
-
-	static inline unsigned seqIndexToByteNumber(unsigned seqIndex);
-	static inline unsigned seqIndexToBaseIndex(unsigned seqIndex);
 
 	static uint8_t leftShiftByte(char* pSeq,
 			unsigned byteNum, unsigned index, uint8_t base);

@@ -10,6 +10,14 @@ using namespace std;
  * instances. */
 unsigned Kmer::m_length;
 
+static unsigned seqIndexToByteNumber(unsigned seqIndex);
+static unsigned seqIndexToBaseIndex(unsigned seqIndex);
+static uint8_t getBaseCode(const char* pSeq,
+		unsigned byteNum, unsigned index);
+static void setBaseCode(char* pSeq,
+		unsigned byteNum, unsigned index, uint8_t base);
+static void setBaseCode(char* pSeq, unsigned seqIndex, uint8_t base);
+
 /** Return the number of bytes needed for the specified number of
  * bases. */
 static unsigned getNumCodingBytes(unsigned seqLength)
@@ -283,7 +291,7 @@ uint8_t Kmer::shiftPrepend(uint8_t base)
 	unsigned lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
 
 	// save the last base (which gets shifted out)
-	uint8_t lastBase = getBaseCode(m_seq,
+	uint8_t lastBase = ::getBaseCode(m_seq,
 			lastBaseByte, lastBaseIndex);
 	// Zero the last base, which is required by compare.
 	setBaseCode(m_seq, lastBaseByte, lastBaseIndex, 0);
@@ -332,8 +340,7 @@ uint8_t Kmer::rightShiftByte(char* pSeq,
 
 // set a base by the index [0, length)
 // beware, this does not check for out of bounds access
-void Kmer::setBaseCode(char* pSeq,
-		unsigned seqIndex, uint8_t base)
+static void setBaseCode(char* pSeq, unsigned seqIndex, uint8_t base)
 {
 	return setBaseCode(pSeq,
 			seqIndexToByteNumber(seqIndex),
@@ -341,11 +348,9 @@ void Kmer::setBaseCode(char* pSeq,
 			base);
 }
 
-//
 //Set a base by byte number/ sub index
 // beware, this does not check for out of bounds access
-//
-void Kmer::setBaseCode(char* pSeq,
+static void setBaseCode(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base)
 {
 	// shift the value into position
@@ -362,13 +367,11 @@ void Kmer::setBaseCode(char* pSeq,
 	pSeq[byteNum] |= base;
 }
 
-//
 // get a base code by the index [0, length)
-//
 uint8_t Kmer::getBaseCode(unsigned seqIndex) const
 {
 	assert(seqIndex < m_length);
-	return getBaseCode(m_seq,
+	return ::getBaseCode(m_seq,
 			seqIndexToByteNumber(seqIndex),
 			seqIndexToBaseIndex(seqIndex));
 }
@@ -378,22 +381,20 @@ uint8_t Kmer::getLastBaseChar() const
 	return codeToBase(getBaseCode(m_length - 1));
 }
 
-//
 // get a base code by the byte number and sub index
-//
-uint8_t Kmer::getBaseCode(const char* pSeq,
+static uint8_t getBaseCode(const char* pSeq,
 		unsigned byteNum, unsigned index)
 {
 	unsigned shiftLen = 2 * (3 - index);
 	return (pSeq[byteNum] >> shiftLen) & 0x3;
 }
 
-unsigned Kmer::seqIndexToByteNumber(unsigned seqIndex)
+static unsigned seqIndexToByteNumber(unsigned seqIndex)
 {
 	return seqIndex / 4;
 }
 
-unsigned Kmer::seqIndexToBaseIndex(unsigned seqIndex)
+static unsigned seqIndexToBaseIndex(unsigned seqIndex)
 {
 	return seqIndex % 4; 
 }
