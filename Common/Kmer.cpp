@@ -367,6 +367,7 @@ uint8_t Kmer::at(unsigned i) const
 /** Set the base at the specified index. */
 void Kmer::set(unsigned i, uint8_t base)
 {
+	assert(i < m_length);
 	setBaseCode(m_seq,
 			seqIndexToByteNumber(i), seqIndexToBaseIndex(i), base);
 }
