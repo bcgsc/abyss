@@ -149,9 +149,6 @@ int main(int argc, char** argv)
 
 	string refFastaFile(argv[argc - 1]);
 
-	if (opt::verbose > 0)
-		cerr << "Target: " << refFastaFile << endl;
-
 	if (opt::multimap == opt::MULTIMAP) {
 		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k, 1<<26);
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
@@ -209,6 +206,9 @@ template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
 		Aligner<SeqPosHashMap>& aligner)
 {
+	if (opt::verbose > 0)
+		cerr << "Reading target `" << refFastaFile << "'..." << endl;
+
 	unsigned count = 0;
 	FastaReader in(refFastaFile.c_str());
 	for (FastaRecord rec; in >> rec;) {
