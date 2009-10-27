@@ -71,7 +71,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-#if HAVE_GOOGLE_SPARSE_HASH_SET
 /** Return the number of k-mer in the specified file. */
 static size_t countKmer(const string& path)
 {
@@ -119,7 +118,6 @@ static size_t countKmer(const string& path)
 	assert(bases > overlaps);
 	return kmer;
 }
-#endif
 
 template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
@@ -200,16 +198,18 @@ int main(int argc, char** argv)
 
 	string refFastaFile(argv[argc - 1]);
 
+	size_t numKmer = countKmer(refFastaFile);
 	if (opt::multimap == opt::MULTIMAP) {
-		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k, 1<<26);
+		g_aligner_m = new Aligner<SeqPosHashMultiMap>(opt::k,
+				numKmer);
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
 	} else {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-		size_t numKmer = countKmer(refFastaFile);
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
 				numKmer, 0.2);
 #else
-		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<26);
+		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
+				numKmer);
 #endif
 		readContigsIntoDB(refFastaFile, *g_aligner_u);
 	}
