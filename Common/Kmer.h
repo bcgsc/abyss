@@ -36,7 +36,7 @@ class Kmer
 	unsigned getCode() const;
 	size_t getHashCode() const;
 
-	static unsigned length() { return m_length; }
+	static unsigned length() { return s_length; }
 
 	/** Set the length of a k-mer.
 	 * This value is shared by all instances.
@@ -44,8 +44,8 @@ class Kmer
 	static void setLength(unsigned length)
 	{
 		assert(length <= MAX_KMER);
-		assert(m_length == 0);
-		m_length = length;
+		assert(s_length == 0);
+		s_length = length;
 	}
 
 	void reverseComplement();
@@ -96,7 +96,7 @@ class Kmer
 	static const unsigned NUM_BYTES = MAX_KMER / 4;
 
   protected:
-	static unsigned m_length;
+	static unsigned s_length;
 
 	char m_seq[NUM_BYTES];
 };

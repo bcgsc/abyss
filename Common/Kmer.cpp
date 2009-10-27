@@ -8,7 +8,7 @@ using namespace std;
 
 /** The size of a k-mer. This variable is static and is shared by all
  * instances. */
-unsigned Kmer::m_length;
+unsigned Kmer::s_length;
 
 static unsigned seqIndexToByteNumber(unsigned seqIndex);
 static unsigned seqIndexToBaseIndex(unsigned seqIndex);
@@ -27,17 +27,17 @@ static unsigned getNumCodingBytes(unsigned seqLength)
 /** Construct a k-mer from a string. */
 Kmer::Kmer(const Sequence& seq)
 {
-	assert(seq.length() == m_length);
+	assert(seq.length() == s_length);
 	memset(m_seq, 0, NUM_BYTES);
 	const char* p = seq.data();
-	for (unsigned i = 0; i < m_length; i++)
+	for (unsigned i = 0; i < s_length; i++)
 		set(i, baseToCode(*p++));
 }
 
 /** Compare two k-mer. */
 int Kmer::compare(const Kmer& other) const
 {
-	unsigned nbytes = getNumCodingBytes(m_length);
+	unsigned nbytes = getNumCodingBytes(s_length);
 	return memcmp(m_seq, other.m_seq, nbytes);
 }
 
@@ -52,7 +52,7 @@ unsigned Kmer::getCode() const
 	/* At k=19, this hash function always returns a positive number
 	 * due to the sequence and its reverse complement overlapping when
 	 * the xor is calculated. A more general solution is needed. */
-	const unsigned NUM_BYTES = m_length < 20 ? m_length/8 : 4;
+	const unsigned NUM_BYTES = s_length < 20 ? s_length/8 : 4;
 	Kmer rc = *this;
 	rc.reverseComplement();
 
@@ -66,7 +66,7 @@ unsigned Kmer::getCode() const
 size_t Kmer::getHashCode() const
 {
 	// Hash on the numbytes - 1. This is to avoid getting different hash values for the same sequence for n % 4 != 0 sequences
-	int code = hashlittle(m_seq, getNumCodingBytes(m_length) - 1, 131);
+	int code = hashlittle(m_seq, getNumCodingBytes(s_length) - 1, 131);
 
 	return code;
 }
@@ -75,8 +75,8 @@ size_t Kmer::getHashCode() const
 Sequence Kmer::decode() const
 {
 	Sequence s;
-	s.reserve(m_length);
-	for (unsigned i = 0; i < m_length; i++)
+	s.reserve(s_length);
+	for (unsigned i = 0; i < s_length; i++)
 		s.push_back(codeToBase(at(i)));
 	return s;
 }
@@ -247,25 +247,25 @@ void Kmer::reverseComplement()
 			seq.x[i] = ~seq.x[i];
 
 	// Shift the bits flush to the right of the double word.
-	shiftRight(&seq, SEQ_BITS - 2*m_length);
+	shiftRight(&seq, SEQ_BITS - 2*s_length);
 
 	storeReverse((uint8_t*)m_seq, seq);
 
 	// Reverse the pairs of bits withing a byte.
-	unsigned numBytes = getNumCodingBytes(m_length);
+	unsigned numBytes = getNumCodingBytes(s_length);
 	for (unsigned i = 0; i < numBytes; i++)
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
 
 void Kmer::setLastBase(extDirection dir, uint8_t base)
 {
-	set(dir == SENSE ? m_length - 1 : 0, base);
+	set(dir == SENSE ? s_length - 1 : 0, base);
 }
 
 uint8_t Kmer::shiftAppend(uint8_t base)
 {
 	// shift the sequence left and append a new base to the end
-	unsigned numBytes = getNumCodingBytes(m_length);
+	unsigned numBytes = getNumCodingBytes(s_length);
 	uint8_t shiftIn = base;
 	// starting from the last byte, shift the new base in and get the captured base
 	for(int i = numBytes - 1; i >= 0; i--)
@@ -273,7 +273,7 @@ uint8_t Kmer::shiftAppend(uint8_t base)
 		// calculate the index
 		// if this is the last byte, use 
 		unsigned index = (unsigned)i == numBytes - 1
-			? seqIndexToBaseIndex(m_length - 1) : 3;
+			? seqIndexToBaseIndex(s_length - 1) : 3;
 		shiftIn = leftShiftByte(m_seq, i, index, shiftIn);
 	}
 	
@@ -284,10 +284,10 @@ uint8_t Kmer::shiftAppend(uint8_t base)
 uint8_t Kmer::shiftPrepend(uint8_t base)
 {
 	// shift the sequence right and append a new base to the end
-	unsigned numBytes = getNumCodingBytes(m_length);
+	unsigned numBytes = getNumCodingBytes(s_length);
 
-	unsigned lastBaseByte = seqIndexToByteNumber(m_length - 1);
-	unsigned lastBaseIndex = seqIndexToBaseIndex(m_length - 1);
+	unsigned lastBaseByte = seqIndexToByteNumber(s_length - 1);
+	unsigned lastBaseIndex = seqIndexToBaseIndex(s_length - 1);
 
 	// save the last base (which gets shifted out)
 	uint8_t lastBase = getBaseCode(m_seq,
@@ -359,7 +359,7 @@ static void setBaseCode(char* pSeq,
 /** Return the base at the specified index. */
 uint8_t Kmer::at(unsigned i) const
 {
-	assert(i < m_length);
+	assert(i < s_length);
 	return getBaseCode(m_seq,
 			seqIndexToByteNumber(i), seqIndexToBaseIndex(i));
 }
@@ -367,14 +367,14 @@ uint8_t Kmer::at(unsigned i) const
 /** Set the base at the specified index. */
 void Kmer::set(unsigned i, uint8_t base)
 {
-	assert(i < m_length);
+	assert(i < s_length);
 	setBaseCode(m_seq,
 			seqIndexToByteNumber(i), seqIndexToBaseIndex(i), base);
 }
 
 uint8_t Kmer::getLastBaseChar() const
 {
-	return codeToBase(at(m_length - 1));
+	return codeToBase(at(s_length - 1));
 }
 
 // get a base code by the byte number and sub index
@@ -398,14 +398,14 @@ static unsigned seqIndexToBaseIndex(unsigned seqIndex)
 /** Return true if this sequence is a palindrome. */
 bool Kmer::isPalindrome() const
 {
-	return m_length % 2 == 1 ? false
+	return s_length % 2 == 1 ? false
 		: *this == ::reverseComplement(*this);
 }
 
 /** Return true if the length k-1 subsequence is a palindrome. */
 bool Kmer::isPalindrome(extDirection dir) const
 {
-	if (m_length % 2 == 0)
+	if (s_length % 2 == 0)
 		return false;
 	Kmer seq(*this);
 	if (dir == SENSE)
