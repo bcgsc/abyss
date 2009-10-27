@@ -82,8 +82,8 @@ static size_t countKmer(const string& path)
 	}
 
 	if (!S_ISREG(st.st_mode)) {
-		cerr << "Cannot calculate number of k-mer in `"
-			<< path << "', because it is not a regular file.\n";
+		cerr << "Not calculating k-mer in `" << path
+			<< "', because it is not a regular file.\n";
 		return 500000000;
 	}
 
