@@ -6,7 +6,6 @@
 //
 
 #include "config.h"
-#include "Dictionary.h"
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
@@ -196,16 +195,17 @@ class Aligner
 		SeqPosHashMap m_target;
 
 		/** A dictionary of contig IDs. */
-		Dictionary m_contigDict;
+		std::vector<ContigID> m_contigDict;
 
 		unsigned contigIDToIndex(const ContigID& id)
 		{
-			return m_contigDict.serial(id);
+			m_contigDict.push_back(id);
+			return m_contigDict.size() - 1;
 		}
 
 		const ContigID& contigIndexToID(unsigned index)
 		{
-			return m_contigDict.key(index);
+			return m_contigDict.at(index);
 		}
 };
 
