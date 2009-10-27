@@ -50,17 +50,17 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 
 /** Create an index of the target sequence. */
 template <class SeqPosHashMap>
-void Aligner<SeqPosHashMap>::addReferenceSequence(const ContigID& id, const Sequence& seq)
+void Aligner<SeqPosHashMap>::addReferenceSequence(
+		const ContigID& idString, const Sequence& seq)
 {
-	// Break the ref sequence into kmers of the hash size
+	unsigned id = contigIDToIndex(idString);
 	int size = seq.length();
 	for(int i = 0; i < (size - m_hashSize + 1); ++i)
 	{
 		Sequence subseq(seq, i, m_hashSize);
 		if (subseq.find("N") != string::npos)
 			continue;
-		addReferenceSequence(Kmer(subseq),
-				Position(contigIDToIndex(id), i));
+		addReferenceSequence(Kmer(subseq), Position(id, i));
 	}
 }
 
