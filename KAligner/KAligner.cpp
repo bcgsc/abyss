@@ -18,6 +18,7 @@
 #include <semaphore.h>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -69,6 +70,56 @@ static const struct option longopts[] = {
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+/** Return the number of k-mer in the specified file. */
+static size_t countKmer(const string& path)
+{
+	struct stat st;
+	if (stat(path.c_str(), &st) == -1) {
+		perror(path.c_str());
+		exit(EXIT_FAILURE);
+	}
+
+	if (!S_ISREG(st.st_mode)) {
+		cerr << "Cannot calculate number of k-mer in `"
+			<< path << "', because it is not a regular file.\n";
+		return 500000000;
+	}
+
+	if (opt::verbose > 0)
+		cerr << "Reading target `" << path << "'..." << endl;
+
+	ifstream in(path.c_str());
+	assert(in.is_open());
+	size_t contigs = 0, bases = 0;
+	enum { ID, SEQUENCE } state = SEQUENCE;
+	for (char c; in.get(c);) {
+		switch (state) {
+			case ID:
+				if (c == '\n')
+					state = SEQUENCE;
+				break;
+			case SEQUENCE:
+				if (c == '>') {
+					state = ID;
+					contigs++;
+				} else if (!isspace(c))
+					bases++;
+				break;
+		}
+	}
+
+	size_t overlaps = contigs * (opt::k-1);
+	size_t kmer = bases - overlaps;
+	if (opt::verbose > 0)
+		cerr << "Read " << bases << " bases in "
+			<< contigs << " sequences from `" << path << "'. "
+			"Expecting " << kmer << " k-mer.\n";
+	assert(bases > overlaps);
+	return kmer;
+}
+#endif
 
 template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
@@ -154,8 +205,9 @@ int main(int argc, char** argv)
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
 	} else {
 #if HAVE_GOOGLE_SPARSE_HASH_SET
+		size_t numKmer = countKmer(refFastaFile);
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
-				500000000, 0.2);
+				numKmer, 0.2);
 #else
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k, 1<<26);
 #endif
