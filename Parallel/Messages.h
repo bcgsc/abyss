@@ -36,6 +36,7 @@ class Message
 		Message(MessageType m_type) : m_type(m_type) { }
 		Message(const Kmer& seq, MessageType m_type)
 			: m_type(m_type), m_seq(seq) { }
+		virtual ~Message() { }
 
 		virtual void handle(int senderID, NetworkSequenceCollection& handler) = 0;
 
