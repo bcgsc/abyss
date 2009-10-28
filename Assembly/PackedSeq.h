@@ -129,9 +129,6 @@ class PackedSeq : public Kmer, public KmerData
 		: Kmer(key), KmerData(multiplicity, ext)
 	{
 	}
-
-	size_t serialize(char* buffer) const;
-	size_t unserialize(const char* buffer);
 };
 
 /** Return the reverse complement of the specified sequence. */
