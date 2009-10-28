@@ -79,6 +79,9 @@ struct ContigEndSeq {
 
 static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 {
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
+
 	unsigned count = 0;
 	FastaReader in(path.c_str(), FastaReader::KEEP_N);
 	for (FastaRecord rec; in >> rec;) {
