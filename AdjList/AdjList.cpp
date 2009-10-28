@@ -145,6 +145,9 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
+	if (opt::verbose > 0)
+		cerr << "Read " << contigs.size() << " contigs\n";
+
 	typedef hash_map<Kmer, vector<SimpleEdgeDesc>, hashKmer> KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
