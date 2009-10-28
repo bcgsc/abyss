@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 		cerr << "Read " << contigs.size() << " contigs\n";
 
 	typedef hash_map<Kmer, vector<SimpleEdgeDesc>, hashKmer> KmerMap;
-	KmerMap ends[2];
+	vector<KmerMap> ends(2, KmerMap(contigs.size()));
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
 		ends[0][i->l].push_back(
