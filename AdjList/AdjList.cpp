@@ -1,5 +1,6 @@
 #include "Common/Options.h"
 #include "FastaReader.h"
+#include "HashMap.h"
 #include "Kmer.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
@@ -13,7 +14,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
-#include <map>
 #include <sstream>
 #include <vector>
 
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 	} else
 		readContigs("-", &contigs);
 
-	typedef map<Kmer, vector<SimpleEdgeDesc> > KmerMap;
+	typedef hash_map<Kmer, vector<SimpleEdgeDesc>, hashKmer> KmerMap;
 	KmerMap ends[2];
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
