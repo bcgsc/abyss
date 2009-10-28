@@ -29,7 +29,7 @@ class ISequenceCollection
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
 
-		virtual ~ISequenceCollection() {};
+		virtual ~ISequenceCollection() { }
 
 		virtual void add(const Kmer& seq) = 0;
 		virtual void remove(const Kmer& seq) = 0;
