@@ -126,19 +126,14 @@ struct Position
 	bool isDuplicate() const {return contig == std::numeric_limits<uint32_t>::max();}
 };
 
-struct KmerHasher
-{
-	size_t operator()(const Kmer& o) const { return o.getHashCode(); }
-};
-
-typedef hash_multimap<Kmer, Position, KmerHasher> SeqPosHashMultiMap;
+typedef hash_multimap<Kmer, Position, hashKmer> SeqPosHashMultiMap;
 
 #if HAVE_GOOGLE_SPARSE_HASH_SET
 # include <google/sparse_hash_map>
 typedef google::sparse_hash_map<Kmer, Position,
-		KmerHasher> SeqPosHashUniqueMap;
+		hashKmer> SeqPosHashUniqueMap;
 #else
-typedef hash_map<Kmer, Position, KmerHasher> SeqPosHashUniqueMap;
+typedef hash_map<Kmer, Position, hashKmer> SeqPosHashUniqueMap;
 #endif
 
 

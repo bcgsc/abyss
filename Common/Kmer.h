@@ -109,4 +109,9 @@ static inline Kmer reverseComplement(const Kmer& seq)
 	return rc;
 }
 
+struct hashKmer
+{
+	size_t operator()(const Kmer& o) const { return o.getHashCode(); }
+};
+
 #endif
