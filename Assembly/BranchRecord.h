@@ -21,7 +21,7 @@ class BranchRecord
 {
 	public:
 		typedef std::vector<PackedSeq> BranchData;
-		typedef std::set<PackedSeq> BranchMultMap;
+		typedef std::set<Kmer> BranchSet;
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 
@@ -105,7 +105,7 @@ class BranchRecord
 		// BranchData is used for the ordering/length of the branch, BranchSet is used for the existance of sequences in the branch.
 		// They are populate simulataneously
 		BranchData m_data;
-		BranchMultMap m_seqMap;
+		BranchSet m_seqMap;
 		extDirection m_dir;
 		BranchState m_state;
 		int m_maxLength;
