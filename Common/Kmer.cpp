@@ -17,13 +17,6 @@ static uint8_t getBaseCode(const char* pSeq,
 static void setBaseCode(char* pSeq,
 		unsigned byteNum, unsigned index, uint8_t base);
 
-/** Return the number of bytes needed for the specified number of
- * bases. */
-static unsigned getNumCodingBytes(unsigned seqLength)
-{
-	return (seqLength + 3) / 4;
-}
-
 /** Construct a k-mer from a string. */
 Kmer::Kmer(const Sequence& seq)
 {
@@ -37,8 +30,7 @@ Kmer::Kmer(const Sequence& seq)
 /** Compare two k-mer. */
 int Kmer::compare(const Kmer& other) const
 {
-	unsigned nbytes = getNumCodingBytes(s_length);
-	return memcmp(m_seq, other.m_seq, nbytes);
+	return memcmp(m_seq, other.m_seq, bytes());
 }
 
 /** Compute a hash-like value of the packed sequence over the first 16
@@ -66,7 +58,7 @@ unsigned Kmer::getCode() const
 size_t Kmer::getHashCode() const
 {
 	// Hash on the numbytes - 1. This is to avoid getting different hash values for the same sequence for n % 4 != 0 sequences
-	int code = hashlittle(m_seq, getNumCodingBytes(s_length) - 1, 131);
+	int code = hashlittle(m_seq, bytes() - 1, 131);
 
 	return code;
 }
@@ -252,7 +244,7 @@ void Kmer::reverseComplement()
 	storeReverse((uint8_t*)m_seq, seq);
 
 	// Reverse the pairs of bits withing a byte.
-	unsigned numBytes = getNumCodingBytes(s_length);
+	unsigned numBytes = bytes();
 	for (unsigned i = 0; i < numBytes; i++)
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
@@ -265,7 +257,7 @@ void Kmer::setLastBase(extDirection dir, uint8_t base)
 uint8_t Kmer::shiftAppend(uint8_t base)
 {
 	// shift the sequence left and append a new base to the end
-	unsigned numBytes = getNumCodingBytes(s_length);
+	unsigned numBytes = bytes();
 	uint8_t shiftIn = base;
 	// starting from the last byte, shift the new base in and get the captured base
 	for(int i = numBytes - 1; i >= 0; i--)
@@ -284,7 +276,7 @@ uint8_t Kmer::shiftAppend(uint8_t base)
 uint8_t Kmer::shiftPrepend(uint8_t base)
 {
 	// shift the sequence right and append a new base to the end
-	unsigned numBytes = getNumCodingBytes(s_length);
+	unsigned numBytes = bytes();
 
 	unsigned lastBaseByte = seqIndexToByteNumber(s_length - 1);
 	unsigned lastBaseIndex = seqIndexToBaseIndex(s_length - 1);

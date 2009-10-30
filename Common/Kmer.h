@@ -60,6 +60,8 @@ class Kmer
 		return dir == SENSE ? shiftAppend(base) : shiftPrepend(base);
 	}
 
+	/** Return the number of bytes needed. */
+	static unsigned bytes() { return (s_length + 3) / 4; }
 	static unsigned serialSize() { return NUM_BYTES; }
 
 	size_t serialize(void* dest) const
