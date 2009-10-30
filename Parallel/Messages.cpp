@@ -1,6 +1,5 @@
 #include "Messages.h"
 #include "NetworkSequenceCollection.h"
-#include <cstdio>
 #include <cstring>
 
 static size_t serializeData(const void* ptr, char* buffer,
@@ -44,12 +43,6 @@ void SeqAddMessage::handle(int senderID,
 	handler.handleSeqAddMessage(senderID, *this);
 }
 
-void SeqAddMessage::print() const
-{
-	printf("Message type: %d Sequence: %s\n",
-			TYPE, m_seq.decode().c_str());
-}
-
 size_t SeqRemoveMessage::serialize(char* buffer)
 {
 	size_t offset = 0;
@@ -62,12 +55,6 @@ void SeqRemoveMessage::handle(int senderID,
 		NetworkSequenceCollection& handler)
 {
 	handler.handleSeqRemoveMessage(senderID, *this);
-}
-
-void SeqRemoveMessage::print() const
-{
-	printf("Message type: %d Sequence: %s\n",
-			TYPE, m_seq.decode().c_str());
 }
 
 size_t SetFlagMessage::serialize(char* buffer)
@@ -90,12 +77,6 @@ size_t SetFlagMessage::unserialize(const char* buffer)
 void SetFlagMessage::handle(int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handleSetFlagMessage(senderID, *this);
-}
-
-void SetFlagMessage::print() const
-{
-	printf("Message type: %d Sequence: %s Flag: %d\n",
-			TYPE, m_seq.decode().c_str(), (int)m_flag);
 }
 
 size_t RemoveExtensionMessage::serialize(char* buffer)
@@ -122,13 +103,6 @@ void RemoveExtensionMessage::handle(int senderID, NetworkSequenceCollection& han
 	handler.handleRemoveExtensionMessage(senderID, *this);
 }
 
-void RemoveExtensionMessage::print() const
-{
-	printf("Message type: %d Sequence: %s Dir: %d ",
-			TYPE, m_seq.decode().c_str(), (int)m_dir);
-	m_ext.print();
-}
-
 size_t SetBaseMessage::serialize(char* buffer)
 {
 	size_t offset = 0;
@@ -153,12 +127,6 @@ void SetBaseMessage::handle(int senderID, NetworkSequenceCollection& handler)
 	handler.handleSetBaseMessage(senderID, *this);
 }
 
-void SetBaseMessage::print() const
-{
-	printf("Message type: %d Sequence: %s Dir: %d Base: %c\n",
-			TYPE, m_seq.decode().c_str(), (int)m_dir, m_base);
-}
-
 size_t SeqDataRequest::serialize(char* buffer)
 {
 	size_t offset = 0;
@@ -181,12 +149,6 @@ size_t SeqDataRequest::unserialize(const char* buffer)
 void SeqDataRequest::handle(int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handleSequenceDataRequest(senderID, *this);
-}
-
-void SeqDataRequest::print() const
-{
-	printf("Message type: %d Sequence: %s group: %d id: %d\n",
-			TYPE, m_seq.decode().c_str(), m_group, m_id);
 }
 
 size_t SeqDataResponse::serialize(char* buffer)
@@ -215,13 +177,4 @@ size_t SeqDataResponse::unserialize(const char* buffer)
 void SeqDataResponse::handle(int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handleSequenceDataResponse(senderID, *this);
-}
-
-void SeqDataResponse::print() const
-{
-	printf("Message type: %d Sequence: %s Multiplicity: %d group: %d id: %d\n",
-			TYPE, m_seq.decode().c_str(),
-			m_multiplicity, m_group, m_id);
-	m_extRecord.dir[SENSE].print();
-	m_extRecord.dir[ANTISENSE].print();
 }

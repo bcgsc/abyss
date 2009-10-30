@@ -47,13 +47,11 @@ class Message
 		static MessageType readMessageType(char* buffer);
 		virtual size_t serialize(char* buffer) = 0;
 		virtual size_t unserialize(const char* buffer);
-		virtual void print() const { }
 
-		friend std::ostream& operator <<(std::ostream& o,
-				const Message& m)
+		friend std::ostream& operator <<(std::ostream& out,
+				const Message& message)
 		{
-			m.print();
-			return o;
+			return out << message.m_seq.decode() << '\n';
 		}
 
 		Kmer m_seq;
@@ -67,7 +65,6 @@ class SeqAddMessage : public Message
 
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_ADD;
 };
@@ -80,7 +77,6 @@ class SeqRemoveMessage : public Message
 
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_REMOVE;
 };
@@ -100,7 +96,6 @@ class SetFlagMessage : public Message
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
 		size_t unserialize(const char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_SET_FLAG;
 		uint8_t m_flag; // SeqFlag
@@ -123,7 +118,6 @@ class RemoveExtensionMessage : public Message
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
 		size_t unserialize(const char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_REMOVE_EXT;
 		uint8_t m_dir; // extDirection
@@ -146,7 +140,6 @@ class SeqDataRequest : public Message
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
 		size_t unserialize(const char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_SEQ_DATA_REQUEST;
 		IDType m_group;
@@ -172,7 +165,6 @@ class SeqDataResponse : public Message
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
 		size_t unserialize(const char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_SEQ_DATA_RESPONSE;
 		IDType m_group;
@@ -198,7 +190,6 @@ class SetBaseMessage : public Message
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
 		size_t unserialize(const char* buffer);
-		void print() const;
 
 		static const MessageType TYPE = MT_SET_BASE;
 		uint8_t m_dir; // extDirection
