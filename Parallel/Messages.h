@@ -1,8 +1,9 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
+#include "Kmer.h"
+#include "KmerData.h"
 #include "NetworkDefs.h"
-#include "PackedSeq.h"
 #include <ostream>
 
 class NetworkSequenceCollection;

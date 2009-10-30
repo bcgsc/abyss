@@ -1,7 +1,6 @@
 #ifndef NETWORKSEQUENCECOLLECTION_H
 #define NETWORKSEQUENCECOLLECTION_H 1
 
-#include "PackedSeq.h"
 #include "SequenceCollection.h"
 #include "BranchGroup.h"
 #include "BranchRecord.h"
