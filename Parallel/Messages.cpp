@@ -40,7 +40,7 @@ size_t SeqAddMessage::serialize(char* buffer)
 void SeqAddMessage::handle(int senderID,
 		NetworkSequenceCollection& handler)
 {
-	handler.handleSeqAddMessage(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t SeqRemoveMessage::serialize(char* buffer)
@@ -54,7 +54,7 @@ size_t SeqRemoveMessage::serialize(char* buffer)
 void SeqRemoveMessage::handle(int senderID,
 		NetworkSequenceCollection& handler)
 {
-	handler.handleSeqRemoveMessage(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t SetFlagMessage::serialize(char* buffer)
@@ -76,7 +76,7 @@ size_t SetFlagMessage::unserialize(const char* buffer)
 
 void SetFlagMessage::handle(int senderID, NetworkSequenceCollection& handler)
 {
-	handler.handleSetFlagMessage(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t RemoveExtensionMessage::serialize(char* buffer)
@@ -100,7 +100,7 @@ size_t RemoveExtensionMessage::unserialize(const char* buffer)
 
 void RemoveExtensionMessage::handle(int senderID, NetworkSequenceCollection& handler)
 {
-	handler.handleRemoveExtensionMessage(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t SetBaseMessage::serialize(char* buffer)
@@ -124,7 +124,7 @@ size_t SetBaseMessage::unserialize(const char* buffer)
 
 void SetBaseMessage::handle(int senderID, NetworkSequenceCollection& handler)
 {
-	handler.handleSetBaseMessage(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t SeqDataRequest::serialize(char* buffer)
@@ -148,7 +148,7 @@ size_t SeqDataRequest::unserialize(const char* buffer)
 
 void SeqDataRequest::handle(int senderID, NetworkSequenceCollection& handler)
 {
-	handler.handleSequenceDataRequest(senderID, *this);
+	handler.handle(senderID, *this);
 }
 
 size_t SeqDataResponse::serialize(char* buffer)
@@ -176,5 +176,5 @@ size_t SeqDataResponse::unserialize(const char* buffer)
 
 void SeqDataResponse::handle(int senderID, NetworkSequenceCollection& handler)
 {
-	handler.handleSequenceDataResponse(senderID, *this);
+	handler.handle(senderID, *this);
 }

@@ -103,17 +103,14 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// test if the checkpoint has been reached
 		bool checkpointReached() const;
 		bool checkpointReached(int numRequired) const;
-		
-		// Message handlers, polymorphically called by the message types
-		void handleSeqAddMessage(int senderID,
-				const SeqAddMessage& message);
-		void handleSeqRemoveMessage(int senderID,
-				const SeqRemoveMessage& message);
-		void handleSetBaseMessage(int senderID, const SetBaseMessage& message);
-		void handleSetFlagMessage(int senderID, const SetFlagMessage& message);
-		void handleRemoveExtensionMessage(int senderID, const RemoveExtensionMessage& message);
-		void handleSequenceDataRequest(int senderID, SeqDataRequest& message);
-		void handleSequenceDataResponse(int senderID, SeqDataResponse& message);		
+
+		void handle(int senderID, const SeqAddMessage& message);
+		void handle(int senderID, const SeqRemoveMessage& message);
+		void handle(int senderID, const SetBaseMessage& message);
+		void handle(int senderID, const SetFlagMessage& message);
+		void handle(int senderID, const RemoveExtensionMessage& message);
+		void handle(int senderID, const SeqDataRequest& message);
+		void handle(int senderID, const SeqDataResponse& message);
 
 		// Observer pattern, not implemented.
 		void attach(SeqObserver f) { (void)f; }

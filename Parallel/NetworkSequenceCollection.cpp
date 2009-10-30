@@ -637,37 +637,37 @@ void NetworkSequenceCollection::notify(const Kmer& key)
 	}
 }
 
-void NetworkSequenceCollection::handleSeqAddMessage(
+void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SeqAddMessage& message)
 {
 	assert(isLocal(message.m_seq));
 	m_pLocalSpace->add(message.m_seq);
 }
 
-void NetworkSequenceCollection::handleSeqRemoveMessage(
+void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SeqRemoveMessage& message)
 {
 	assert(isLocal(message.m_seq));
 	m_pLocalSpace->remove(message.m_seq);
 }
 
-void NetworkSequenceCollection::handleSetFlagMessage(int /*senderID*/, const SetFlagMessage& message)
+void NetworkSequenceCollection::handle(
+		int /*senderID*/, const SetFlagMessage& message)
 {
 	assert(isLocal(message.m_seq));
 	m_pLocalSpace->setFlag(message.m_seq, (SeqFlag)message.m_flag);
 }
 
-void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const SetBaseMessage& message)
+void NetworkSequenceCollection::handle(
+		int /*senderID*/, const SetBaseMessage& message)
 {
 	assert(isLocal(message.m_seq));
 	setBaseExtension(message.m_seq, (extDirection)message.m_dir,
 			message.m_base);
 }
 
-//
-// Parse a sequence extension message
-//
-void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, const RemoveExtensionMessage& message)
+void NetworkSequenceCollection::handle(
+		int /*senderID*/, const RemoveExtensionMessage& message)
 {
 	assert(isLocal(message.m_seq));
 	m_pLocalSpace->removeExtension(message.m_seq,
@@ -747,14 +747,11 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 	}
 }
 
-//
-// Parse an extension request
-//
-void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataRequest& message)
-{	
-	// Get the extension for this sequence
+void NetworkSequenceCollection::handle(
+		int senderID, const SeqDataRequest& message)
+{
 	assert(isLocal(message.m_seq));
-	
+
 	ExtensionRecord extRec;
 	int multiplicity = -1;
 	bool found = m_pLocalSpace->getSeqData(message.m_seq, extRec, multiplicity);
@@ -767,10 +764,8 @@ void NetworkSequenceCollection::handleSequenceDataRequest(int senderID, SeqDataR
 	m_comm.sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, multiplicity);
 }
 
-//
-// Parse an extension request
-//
-void NetworkSequenceCollection::handleSequenceDataResponse(int /*senderID*/, SeqDataResponse& message)
+void NetworkSequenceCollection::handle(
+		int /*senderID*/, const SeqDataResponse& message)
 {
 	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord, message.m_multiplicity);
 }
