@@ -212,40 +212,26 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 		switch(type)
 		{
 			case MT_SEQ_OP:
-			{
 				pNewMessage = new SeqOpMessage();
 				break;
-			}
 			case MT_SET_FLAG:
-			{
 				pNewMessage = new SetFlagMessage();
 				break;
-			}	
 			case MT_REMOVE_EXT:
-			{
 				pNewMessage = new RemoveExtensionMessage();
 				break;
-			}					
 			case MT_SEQ_DATA_REQUEST:
-			{
 				pNewMessage = new SeqDataRequest();
 				break;
-			}	
 			case MT_SEQ_DATA_RESPONSE:
-			{
 				pNewMessage = new SeqDataResponse();
 				break;
-			}	
 			case MT_SET_BASE:
-			{
 				pNewMessage = new SetBaseMessage();
 				break;
-			}									
 			default:
-			{
 				assert(false);
 				break;
-			}
 		}
 		
 		// Unserialize the new message from the buffer
