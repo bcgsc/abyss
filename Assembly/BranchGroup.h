@@ -28,7 +28,7 @@ class BranchGroup
 			{ }
 
 		BranchGroup(uint64_t id, extDirection dir, size_t
-				maxNumBranches, const PackedSeq &origin)
+				maxNumBranches, const Kmer &origin)
 			: m_id(id), m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
@@ -90,7 +90,7 @@ class BranchGroup
 		BranchGroupData m_branches;
 		uint64_t m_id;
 		extDirection m_dir;
- 		PackedSeq m_origin;
+ 		Kmer m_origin;
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;

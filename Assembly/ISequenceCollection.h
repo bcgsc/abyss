@@ -4,21 +4,13 @@
 #include "config.h"
 #include "PackedSeq.h"
 
-struct PackedSeqHasher
-{
-	size_t operator()(const PackedSeq& o) const
-	{
-		return o.getHashCode();
-	}
-};
-
 #if HAVE_GOOGLE_SPARSE_HASH_SET
-# include <google/sparse_hash_set>
-typedef google::sparse_hash_set<PackedSeq,
-		PackedSeqHasher> SequenceDataHash;
+# include <google/sparse_hash_map>
+typedef google::sparse_hash_map<Kmer, KmerData,
+		hashKmer> SequenceDataHash;
 #else
-# include "HashSet.h"
-typedef hash_set<PackedSeq, PackedSeqHasher> SequenceDataHash;
+# include "HashMap.h"
+typedef hash_map<Kmer, KmerData, hashKmer> SequenceDataHash;
 #endif
 
 // Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
@@ -26,6 +18,7 @@ typedef hash_set<PackedSeq, PackedSeqHasher> SequenceDataHash;
 class ISequenceCollection
 {
 	public:
+		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
 
@@ -72,7 +65,7 @@ class ISequenceCollection
 
 		virtual bool getSeqData(const Kmer& seq, ExtensionRecord& ext,
 				int& multiplicity) const = 0;
-		virtual const PackedSeq& getSeqAndData(
+		virtual const value_type& getSeqAndData(
 				const Kmer& key) const = 0;
 
 		// Receive and dispatch packets if necessary.

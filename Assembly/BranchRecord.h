@@ -39,7 +39,7 @@ class BranchRecord
 		/** Add a k-mer to the branch without data. */
 		void addSequence(const Kmer& kmer)
 		{
-			addSequence(PackedSeq(kmer));
+			addSequence(std::make_pair(kmer, KmerData()));
 		}
 
 		// Remove all the sequences including and following the
@@ -65,10 +65,10 @@ class BranchRecord
 		void clearMultiplicity();
 
 		// Get the first sequence added to the branch
-		const PackedSeq& getFirstSeq() const;
-		
+		const Kmer& getFirstSeq() const;
+
 		// Get the last sequence added to this branch
-		const PackedSeq& getLastSeq() const;
+		const Kmer& getLastSeq() const;
 
 		iterator begin() { return m_data.begin(); }
 		iterator end() { return m_data.end(); }
@@ -80,7 +80,7 @@ class BranchRecord
 		size_t getMaxLength() const { return m_maxLength; }
 
 		// check if a sequence exists in the branch record
-		bool exists(const PackedSeq& seq) const;
+		bool exists(const Kmer& seq) const;
 
 		/** Return whether the branch is too long. */
 		bool isTooLong() const;

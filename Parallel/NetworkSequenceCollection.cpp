@@ -624,12 +624,12 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 /** Call the observers of the specified sequence. */
 void NetworkSequenceCollection::notify(const Kmer& key)
 {
-	const PackedSeq& seq = m_pLocalSpace->getSeqAndData(key);
 	switch (m_state) {
 		case NAS_ERODE:
 		case NAS_ERODE_WAITING:
 		case NAS_ERODE_COMPLETE:
-			AssemblyAlgorithms::erode(this, seq);
+			AssemblyAlgorithms::erode(this,
+					m_pLocalSpace->getSeqAndData(key));
 			break;
 		default:
 			// Nothing to do.
@@ -808,15 +808,15 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 			numBranchesRemoved++;
 			continue;
 		}
-		
+
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1, *iter);
+		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
 		BranchRecord newBranch(dir, maxBranchCull);
 		newGroup.addBranch(0, newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
 
 		// Generate the first extension request
-		generateExtensionRequest(branchGroupID, 0, *iter);
+		generateExtensionRequest(branchGroupID, 0, iter->first);
 		branchGroupID++;
 		
 		// Process the active branches
@@ -904,23 +904,24 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
-		if (iter->deleted())
+		if (iter->second.deleted())
 			continue;
 
 		if (++count % 100000 == 0)
 			PrintDebug(1, "Popping bubbles: %u k-mer\n", count);
 
-		ExtensionRecord extRec = iter->extension();
+		ExtensionRecord extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
-				BranchGroup branchGroup(branchGroupID, dir, maxNumBranches, *iter);
+				BranchGroup branchGroup(branchGroupID, dir,
+						maxNumBranches, iter->first);
 
 				// insert the new group into the active group map
 				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
 
 				AssemblyAlgorithms::initiateBranchGroup(
-						groupIter->second, *iter, extRec.dir[dir],
-						expectedBubbleSize);
+						groupIter->second, iter->first,
+						extRec.dir[dir], expectedBubbleSize);
 
 				// Disallow any further branching.
 				unsigned numInitialBranches
@@ -1195,13 +1196,13 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		}
 		
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1, *iter);
+		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
 		BranchRecord newBranch(dir, -1);
 		newGroup.addBranch(0, newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
 
 		// Generate the first extension request
-		generateExtensionRequest(branchGroupID, 0, *iter);
+		generateExtensionRequest(branchGroupID, 0, iter->first);
 		branchGroupID++;
 
 		numAssembled += processBranchesAssembly(seqCollection,
@@ -1374,7 +1375,8 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 			size_t numBranches = iter->second.getNumBranches();
 			for(size_t i = 0; i < numBranches; ++i)
 			{
-				generateExtensionRequest(groupID, i, iter->second.getBranch(i).getLastSeq());
+				generateExtensionRequest(groupID, i,
+						iter->second.getBranch(i).getLastSeq());
 			}
 		}
 	}

@@ -34,7 +34,7 @@ SequenceCollectionHash::SequenceCollectionHash()
 	* See http://google-sparsehash.googlecode.com
 	* /svn/trunk/doc/sparse_hash_set.html#4
 	*/
-	PackedSeq deleted_key;
+	Kmer deleted_key;
 	memset(&deleted_key, 0xff, sizeof deleted_key);
 	m_pSequences->set_deleted_key(deleted_key);
 #else
@@ -57,10 +57,9 @@ void SequenceCollectionHash::add(const Kmer& seq)
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_pSequences->end())
-		m_pSequences->insert(PackedSeq(seq));
+		m_pSequences->insert(make_pair(seq, KmerData()));
 	else
-		const_cast<PackedSeq&>(*it).addMultiplicity(
-				rc ? ANTISENSE : SENSE);
+		it->second.addMultiplicity(rc ? ANTISENSE : SENSE);
 }
 
 /** Clean up by erasing sequences flagged as deleted.
@@ -72,7 +71,7 @@ unsigned SequenceCollectionHash::cleanup()
 	unsigned count = 0;
 	for (iterator it = m_pSequences->begin();
 			it != m_pSequences->end();) {
-		if (it->deleted()) {
+		if (it->second.deleted()) {
 			m_pSequences->erase(it++);
 			count++;
 		} else
@@ -104,7 +103,7 @@ bool SequenceCollectionHash::setBaseExtensionByIter(
 {
 	if(seqIter != m_pSequences->end())
 	{
-		const_cast<PackedSeq&>(*seqIter).setBaseExtension(dir, base);
+		seqIter->second.setBaseExtension(dir, base);
 		return true;
 		//seqIter->printExtension();
 	}	
@@ -126,7 +125,7 @@ bool SequenceCollectionHash::removeExtensionByIter(
 		iterator seqIter, extDirection dir, SeqExt ext)
 {
 	if (seqIter != m_pSequences->end()) {
-		const_cast<PackedSeq&>(*seqIter).removeExtension(dir, ext);
+		seqIter->second.removeExtension(dir, ext);
 		return true;
 	} else
 		return false;
@@ -138,14 +137,14 @@ void SequenceCollectionHash::setFlag(const Kmer& key,
 	bool rc;
 	SequenceCollectionHash::iterator it = find(key, rc);
 	assert(it != m_pSequences->end());
-	const_cast<PackedSeq&>(*it).setFlag(flag);
+	it->second.setFlag(flag);
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 {
 	for (SequenceCollectionHash::iterator it = m_pSequences->begin();
 			it != m_pSequences->end(); ++it)
-		const_cast<PackedSeq&>(*it).clearFlag(flag);
+		it->second.clearFlag(flag);
 }
 
 /** Print the load of the hash table. */
@@ -173,8 +172,8 @@ SequenceCollectionHash::iteratorPair SequenceCollectionHash::findBoth(
 }
 
 /** Return the sequence and data of the specified iterator pair. */
-const PackedSeq& SequenceCollectionHash::getSeqAndData(
-		const iteratorPair& iters) const
+const SequenceCollectionHash::value_type& SequenceCollectionHash::
+getSeqAndData(const iteratorPair& iters) const
 {
 	if (iters.first != m_pSequences->end())
 		return *iters.first;
@@ -188,14 +187,14 @@ const PackedSeq& SequenceCollectionHash::getSeqAndData(
 SequenceCollectionHash::iterator SequenceCollectionHash::find(
 		const Kmer& key)
 {
-	return m_pSequences->find(PackedSeq(key));
+	return m_pSequences->find(key);
 }
 
 /** Return an iterator pointing to the specified k-mer. */
 SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
 		const Kmer& key) const
 {
-	return m_pSequences->find(PackedSeq(key));
+	return m_pSequences->find(key);
 }
 
 /** Return an iterator pointing to the specified k-mer or its
@@ -234,8 +233,8 @@ SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
  * The key sequence may not contain data. The returned sequence will
  * contain data.
  */
-const PackedSeq& SequenceCollectionHash::getSeqAndData(
-		const Kmer& key) const
+const SequenceCollectionHash::value_type& SequenceCollectionHash::
+getSeqAndData(const Kmer& key) const
 {
 	bool rc;
 	SequenceCollectionHash::const_iterator it = find(key, rc);
@@ -253,8 +252,9 @@ bool SequenceCollectionHash::getSeqData(const Kmer& key,
 	SequenceCollectionHash::const_iterator it = find(key, rc);
 	if (it == m_pSequences->end())
 		return false;
-	extRecord = rc ? ~it->extension() : it->extension();
-	multiplicity = it->getMultiplicity();
+	const KmerData data = it->second;
+	extRecord = rc ? ~data.extension() : data.extension();
+	multiplicity = data.getMultiplicity();
 	return true;
 }
 

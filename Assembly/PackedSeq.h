@@ -7,6 +7,7 @@
 #include "Sequence.h"
 #include <cassert>
 #include <stdint.h>
+#include <utility>
 
 enum SeqFlag
 {
@@ -116,26 +117,6 @@ class KmerData
 	ExtensionRecord m_ext;
 };
 
-class PackedSeq : public Kmer, public KmerData
-{
-  public:
-	PackedSeq() { }
-	explicit PackedSeq(const Kmer& kmer) : Kmer(kmer) { }
-
-	/** Create a PackedSeq of the specified key and data. */
-	PackedSeq(const Kmer& key,
-			unsigned multiplicity, ExtensionRecord ext)
-		: Kmer(key), KmerData(multiplicity, ext)
-	{
-	}
-};
-
-/** Return the reverse complement of the specified sequence. */
-static inline PackedSeq reverseComplement(const PackedSeq& seq)
-{
-	PackedSeq rc(seq);
-	rc.reverseComplement();
-	return rc;
-}
+typedef std::pair<Kmer, KmerData> PackedSeq;
 
 #endif

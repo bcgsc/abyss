@@ -83,7 +83,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		bool getSeqData(const Kmer& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
-		const PackedSeq& getSeqAndData(const Kmer& key) const
+		const value_type& getSeqAndData(const Kmer& key) const
 		{
 			assert(isLocal(key));
 			return m_pLocalSpace->getSeqAndData(key);

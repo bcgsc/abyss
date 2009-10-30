@@ -18,28 +18,28 @@ namespace opt {
 
 static void print(const PackedSeq& seq)
 {
+	const KmerData& data = seq.second;
 	if (opt::sequence)
-		cout << seq.decode() << '\t';
+		cout << seq.first.decode() << '\t';
 	if (opt::adj)
-		cout << seq.getExtension(SENSE) << '\t'
-			<< seq.getExtension(ANTISENSE) << '\t';
-	cout << seq.getMultiplicity() << '\n';
+		cout << data.getExtension(SENSE) << '\t'
+			<< data.getExtension(ANTISENSE) << '\t';
+	cout << data.getMultiplicity() << '\n';
 }
 
 static void print(const PackedSeq& seq, extDirection sense)
 {
+	const KmerData& data = seq.second;
 	if (opt::sequence) {
-		if (sense) {
-			PackedSeq rc(seq);
-			rc.reverseComplement();
-			cout << rc.decode();
-		} else
-			cout << seq.decode();
+		if (sense)
+			cout << reverseComplement(seq.first).decode();
+		else
+			cout << seq.first.decode();
 		cout << '\t';
 	}
 	if (opt::adj)
-		cout << seq.getExtension(sense) << '\t';
-	cout << seq.getMultiplicity(sense) << '\n';
+		cout << data.getExtension(sense) << '\t';
+	cout << data.getMultiplicity(sense) << '\n';
 }
 
 static void printFile(const char* path)
@@ -48,7 +48,7 @@ static void printFile(const char* path)
 	c.load(path);
 	for (SequenceCollectionHash::const_iterator it = c.begin();
 			it != c.end(); ++it) {
-		if (it->deleted())
+		if (it->second.deleted())
 			continue;
 		if (opt::strands) {
 			print(*it, SENSE);

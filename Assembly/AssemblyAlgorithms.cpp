@@ -131,14 +131,14 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	unsigned numBasesSet = 0;
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
-		if (iter->deleted())
+		if (iter->second.deleted())
 			continue;
 
 		if (++count % 1000000 == 0)
 			PrintDebug(1, "Generating adjacency: %u k-mer\n", count);
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			Kmer testSeq(*iter);
+			Kmer testSeq(iter->first);
 			uint8_t adjBase = testSeq.shift(dir);
 			for (int i = 0; i < NUM_BASES; i++) {
 				testSeq.setLastBase(dir, i);
@@ -159,7 +159,7 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 		const PackedSeq& seq, extDirection dir)
 {
 	removeExtensionsToSequence(seqCollection, seq, dir);
-	seqCollection->clearExtensions(seq, dir);
+	seqCollection->clearExtensions(seq.first, dir);
 }
 
 /** Mark ambiguous branches and branches from palindromes for removal.
@@ -172,23 +172,23 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 	unsigned count = 0;
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
-		if (iter->deleted())
+		if (iter->second.deleted())
 			continue;
 
 		if (++progress % 1000000 == 0)
 			PrintDebug(1, "Splitting: %u k-mer\n", progress);
 
-		if (iter->isPalindrome()) {
-			seqCollection->mark(*iter, SENSE);
-			seqCollection->mark(*iter, ANTISENSE);
+		if (iter->first.isPalindrome()) {
+			seqCollection->mark(iter->first, SENSE);
+			seqCollection->mark(iter->first, ANTISENSE);
 			count += 2;
 			continue;
 		}
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			if (iter->getExtension(dir).isAmbiguous()
-					|| iter->isPalindrome(dir)) {
-				seqCollection->mark(*iter, dir);
+			if (iter->second.getExtension(dir).isAmbiguous()
+					|| iter->first.isPalindrome(dir)) {
+				seqCollection->mark(iter->first, dir);
 				count++;
 			}
 		}
@@ -206,11 +206,11 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	unsigned count = 0;
 	for (ISequenceCollection::iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
-		if (it->deleted())
+		if (it->second.deleted())
 			continue;
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
-			if (it->marked(sense)) {
+			if (it->second.marked(sense)) {
 				removeExtensions(pSC, *it, sense);
 				count++;
 			}
@@ -252,10 +252,10 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
-		if (iter->deleted())
+		if (iter->second.deleted())
 			continue;
 
-		ExtensionRecord extRec = iter->extension();
+		ExtensionRecord extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
@@ -263,8 +263,8 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 				
 				// Create the branch group
 				BranchGroup branchGroup(0, dir, maxNumBranches,
-						*iter);
-				initiateBranchGroup(branchGroup, *iter,
+						iter->first);
+				initiateBranchGroup(branchGroup, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
 
 				// Disallow any further branching.
@@ -285,11 +285,15 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						// Get the extensions of this branch
 						ExtensionRecord extRec;
 						int multiplicity = -1;
-						bool success = seqCollection->getSeqData(branchGroup.getBranch(j).getLastSeq(), extRec, multiplicity);
+
+						const Kmer& lastKmer
+							= branchGroup.getBranch(j).getLastSeq();
+						bool success = seqCollection->getSeqData(
+								lastKmer, extRec, multiplicity);
 						assert(success);
 						(void)success;
-						
-						processBranchGroupExtension(branchGroup, j, branchGroup.getBranch(j).getLastSeq(), extRec, multiplicity);
+						processBranchGroupExtension(branchGroup, j,
+								lastKmer, extRec, multiplicity);
 					}
 					
 					// At this point all branches should have the same length or one will be a noext
@@ -357,7 +361,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 
 	// Set the multiplicity and extensions of the request sequence.
 	group.getBranch(branchIndex).setData(
-			PackedSeq(seq, multiplicity, extensions));
+			make_pair(seq, KmerData(multiplicity, extensions)));
 
 	if(branchExtSeqs.size() == 1)
 	{
@@ -465,7 +469,7 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 		const PackedSeq& seq)
 {
 	// This removes the reverse complement as well
-	seqCollection->remove(seq);
+	seqCollection->remove(seq.first);
 	removeExtensionsToSequence(seqCollection, seq, SENSE);
 	removeExtensionsToSequence(seqCollection, seq, ANTISENSE);
 }
@@ -474,9 +478,9 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 		const PackedSeq& seq, extDirection dir)
 {
-	SeqExt extension(seq.getExtension(dir));
+	SeqExt extension(seq.second.getExtension(dir));
 	extDirection oppDir = oppositeDirection(dir);
-	Kmer testSeq(seq);
+	Kmer testSeq(seq.first);
 	uint8_t extBase = testSeq.shift(dir);
 	for (int i = 0; i < NUM_BASES; i++) {
 		if (extension.checkBase(i)) {
@@ -508,9 +512,10 @@ unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 	if (contiguity == SC_INVALID || contiguity == SC_CONTIGUOUS)
 		return 0;
 
-	if (seq.getMultiplicity() < opt::erode
-			|| seq.getMultiplicity(SENSE) < opt::erodeStrand
-			|| seq.getMultiplicity(ANTISENSE) < opt::erodeStrand) {
+	const KmerData& data = seq.second;
+	if (data.getMultiplicity() < opt::erode
+			|| data.getMultiplicity(SENSE) < opt::erodeStrand
+			|| data.getMultiplicity(ANTISENSE) < opt::erodeStrand) {
 		removeSequenceAndExtensions(c, seq);
 		g_numEroded++;
 		return 1;
@@ -566,11 +571,11 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 SeqContiguity checkSeqContiguity(const PackedSeq& seq,
 		extDirection& outDir)
 {
-	if (seq.deleted())
+	if (seq.second.deleted())
 		return SC_INVALID;
 
-	bool child = seq.hasExtension(SENSE);
-	bool parent = seq.hasExtension(ANTISENSE);
+	bool child = seq.second.hasExtension(SENSE);
+	bool parent = seq.second.hasExtension(ANTISENSE);
 	if(!child && !parent)
 	{
 		//this sequence is completely isolated
@@ -615,7 +620,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
-			seqCollection->mark(*iter);
+			seqCollection->mark(iter->first);
 			numBranchesRemoved++;
 			continue;
 		}
@@ -623,9 +628,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 
 		// This is a dead-end branch, check it for removal
 		BranchRecord currBranch(dir, maxBranchCull);
-					
-		PackedSeq currSeq = *iter;
-		
+
+		Kmer currSeq = iter->first;
 		while(currBranch.isActive())
 		{		
 			// Get the extensions for this sequence, this function populates the extRecord structure
@@ -682,7 +686,8 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		return false;
 	}
 
-	branch.addSequence(PackedSeq(currSeq, multiplicity, extensions));
+	branch.addSequence(make_pair(currSeq,
+				KmerData(multiplicity, extensions)));
 	if (branch.isTooLong()) {
 		branch.terminate(BS_TOO_LONG);
 		return false;
@@ -715,7 +720,7 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 					branch.getFirstSeq().decode().c_str());
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
-			seqCollection->mark(*it);
+			seqCollection->mark(it->first);
 		return true;
 	}	
 	else
@@ -733,9 +738,9 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	unsigned count = 0;
 	for (ISequenceCollection::iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
-		if (it->deleted())
+		if (it->second.deleted())
 			continue;
-		if (it->marked()) {
+		if (it->second.marked()) {
 			removeSequenceAndExtensions(pSC, *it);
 			count++;
 		}
@@ -776,7 +781,7 @@ unsigned assembleContig(
 	if (opt::coverage > 0 && coverage < opt::coverage) {
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
-			seqCollection->remove(*it);
+			seqCollection->remove(it->first);
 		return branch.getLength();
 	}
 	return 0;
@@ -798,7 +803,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
-		if (iter->deleted())
+		if (iter->second.deleted())
 			continue;
 		kmerCount++;
 
@@ -829,9 +834,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		// The sequence is an endpoint, begin extending it
 		// Passing -1 into the branch will disable the length check
 		BranchRecord currBranch(dir, -1);
-					
-		PackedSeq currSeq = *iter;
-		
+
+		Kmer currSeq = iter->first;
 		while(currBranch.isActive())
 		{		
 			// Get the extensions for this sequence, this function populates the extRecord structure
@@ -882,9 +886,9 @@ Histogram coverageHistogram(const ISequenceCollection& c)
 	Histogram h;
 	for (ISequenceCollection::const_iterator it = c.begin();
 			it != c.end(); ++it) {
-		if (it->deleted())
+		if (it->second.deleted())
 			continue;
-		h.insert(it->getMultiplicity());
+		h.insert(it->second.getMultiplicity());
 	}
 	return h;
 }

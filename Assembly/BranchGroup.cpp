@@ -57,7 +57,7 @@ BranchGroupStatus BranchGroup::updateStatus()
 	}
 	
 	BranchGroupData::const_iterator it = m_branches.begin();
-	const PackedSeq& lastSeq = it->second.getLastSeq();
+	const Kmer& lastSeq = it->second.getLastSeq();
 	while (++it != m_branches.end())
 		if (it->second.getLastSeq() != lastSeq)
 			return m_status = BGS_ACTIVE;
@@ -137,6 +137,6 @@ bool BranchGroup::isAmbiguous(const ISequenceCollection* c) const
 {
 	// Get fresh data from the collection to check that this bubble
 	// does in fact still exist.
-	const PackedSeq& seq = c->getSeqAndData(m_origin);
-	return seq.deleted() ? false : seq.isAmbiguous(m_dir);
+	const KmerData& data = c->getSeqAndData(m_origin).second;
+	return data.deleted() ? false : data.isAmbiguous(m_dir);
 }

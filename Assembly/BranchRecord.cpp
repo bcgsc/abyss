@@ -9,7 +9,7 @@ void BranchRecord::addSequence(const PackedSeq& seq)
 	m_data.push_back(seq);
 
 	// Detect a loop by checking that the sequence is not already in the branch
-	bool unique = m_seqMap.insert(seq).second;
+	bool unique = m_seqMap.insert(seq.first).second;
 	if(!unique)
 		m_loopDetected = true;
 }
@@ -38,8 +38,8 @@ void BranchRecord::terminate(BranchState reason)
 /** Set the extensions and multiplicity of a sequence. */
 void BranchRecord::setData(const PackedSeq& seqData)
 {
-	assert(m_data.back() == seqData);
-	m_data.back() = seqData;
+	assert(m_data.back().first == seqData.first);
+	m_data.back().second = seqData.second;
 }
 
 /** Forget the multiplicity information. */
@@ -80,25 +80,25 @@ extDirection BranchRecord::getDirection() const
 	return m_dir;	
 }
 
-const PackedSeq& BranchRecord::getFirstSeq() const
+const Kmer& BranchRecord::getFirstSeq() const
 {
 	assert(!m_data.empty());
-	return m_data.front();	
+	return m_data.front().first;
 }
 
 //
 // Get the last sequence in the data structure
 // 
-const PackedSeq& BranchRecord::getLastSeq() const
+const Kmer& BranchRecord::getLastSeq() const
 {
 	assert(!m_data.empty());
-	return m_data.back();
+	return m_data.back().first;
 }
 
 //
 // Check if a sequence exists in the branch record
 //
-bool BranchRecord::exists(const PackedSeq& seq) const
+bool BranchRecord::exists(const Kmer& seq) const
 {
 	assert(!m_seqMap.empty());
 	return m_seqMap.find(seq) != m_seqMap.end();
@@ -133,7 +133,7 @@ int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 	int total = 0;
 	for(BranchData::const_iterator iter = m_data.begin(); iter != endSeq; ++iter)
 	{
-		int m = iter->getMultiplicity();
+		int m = iter->second.getMultiplicity();
 		assert(m > 0);
 		total += m;
 	}
@@ -146,20 +146,20 @@ BranchRecord::operator Sequence() const
 {
 	assert(!m_data.empty());
 	Sequence outseq;
-	outseq.reserve(m_data.front().length() + m_data.size() - 1);
+	outseq.reserve(m_data.front().first.length() + m_data.size() - 1);
 
 	if (m_dir == SENSE) {
 		BranchData::const_iterator iter = m_data.begin();
-		outseq = iter->decode();
+		outseq = iter->first.decode();
 		++iter;
 		for (; iter != m_data.end(); ++iter)
-			outseq.append(1, iter->getLastBaseChar());
+			outseq.append(1, iter->first.getLastBaseChar());
 	} else {
 		BranchData::const_reverse_iterator iter = m_data.rbegin();
-		outseq = iter->decode();
+		outseq = iter->first.decode();
 		++iter;
 		for (; iter != m_data.rend(); ++iter)
-			outseq.append(1, iter->getLastBaseChar());
+			outseq.append(1, iter->first.getLastBaseChar());
 	}
 	return outseq;
 }
@@ -173,8 +173,8 @@ bool BranchRecord::isCanonical() const
 {
 	assert(getState() == BS_NOEXT || getState() == BS_LOOP);
 	assert(getLength() > 1);
-	PackedSeq first = getFirstSeq();
-	PackedSeq last = getLastSeq();
+	Kmer first = getFirstSeq();
+	Kmer last = getLastSeq();
 	if (getDirection() == SENSE)
 		last.reverseComplement();
 	else

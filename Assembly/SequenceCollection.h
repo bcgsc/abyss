@@ -41,7 +41,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool getSeqData(const Kmer& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
 
-		const PackedSeq& getSeqAndData(const Kmer& key) const;
+		const value_type& getSeqAndData(const Kmer& key) const;
 
 		iterator begin() { return m_pSequences->begin(); }
 		const_iterator begin() const { return m_pSequences->begin(); }
@@ -82,7 +82,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		const_iterator find(const Kmer& key) const;
 		iterator find(const Kmer& key, bool& rc);
 		const_iterator find(const Kmer& key, bool& rc) const;
-		const PackedSeq& getSeqAndData(
+		const value_type& getSeqAndData(
 				const iteratorPair& iters) const;
 
 		bool setBaseExtensionByIter(iterator seqIter,
