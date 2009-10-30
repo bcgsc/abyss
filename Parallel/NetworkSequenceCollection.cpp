@@ -660,13 +660,14 @@ void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOp
 void NetworkSequenceCollection::handleSetFlagMessage(int /*senderID*/, const SetFlagMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->setFlag(message.m_seq, message.m_flag);
+	m_pLocalSpace->setFlag(message.m_seq, (SeqFlag)message.m_flag);
 }
 
 void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const SetBaseMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	setBaseExtension(message.m_seq, message.m_dir, message.m_base);
+	setBaseExtension(message.m_seq, (extDirection)message.m_dir,
+			message.m_base);
 }
 
 //
@@ -675,8 +676,8 @@ void NetworkSequenceCollection::handleSetBaseMessage(int /*senderID*/, const Set
 void NetworkSequenceCollection::handleRemoveExtensionMessage(int /*senderID*/, const RemoveExtensionMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->removeExtension(
-			message.m_seq, message.m_dir, message.m_ext);
+	m_pLocalSpace->removeExtension(message.m_seq,
+			(extDirection)message.m_dir, message.m_ext);
 	notify(message.m_seq);
 }
 

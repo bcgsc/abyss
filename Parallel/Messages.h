@@ -79,7 +79,7 @@ class SeqOpMessage : public Message
 		size_t unserialize(const char* buffer);
 		void print() const;
 
-		MessageOp m_operation;
+		uint8_t m_operation; // MessageOp
 };
 
 class SetFlagMessage : public Message
@@ -99,7 +99,7 @@ class SetFlagMessage : public Message
 		size_t unserialize(const char* buffer);
 		void print() const;
 
-		SeqFlag m_flag;
+		uint8_t m_flag; // SeqFlag
 };
 
 class RemoveExtensionMessage : public Message
@@ -121,7 +121,7 @@ class RemoveExtensionMessage : public Message
 		size_t unserialize(const char* buffer);
 		void print() const;
 
-		extDirection m_dir;
+		uint8_t m_dir; // extDirection
 		SeqExt m_ext;
 };
 
@@ -173,7 +173,7 @@ class SeqDataResponse : public Message
 		IDType m_group;
 		IDType m_id;
 		ExtensionRecord m_extRecord;
-		int m_multiplicity;
+		uint16_t m_multiplicity;
 };
 
 class SetBaseMessage : public Message
@@ -195,7 +195,7 @@ class SetBaseMessage : public Message
 		size_t unserialize(const char* buffer);
 		void print() const;
 
-		extDirection m_dir;
+		uint8_t m_dir; // extDirection
 		uint8_t m_base;
 };
 
