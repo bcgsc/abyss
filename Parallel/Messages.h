@@ -11,7 +11,8 @@ class NetworkSequenceCollection;
 enum MessageType
 {
 	MT_VOID,
-	MT_SEQ_OP,
+	MT_ADD,
+	MT_REMOVE,
 	MT_SET_FLAG,
 	MT_REMOVE_EXT,
 	MT_SEQ_DATA_REQUEST,
@@ -58,25 +59,30 @@ class Message
 		Kmer m_seq;
 };
 
-class SeqOpMessage : public Message
+class SeqAddMessage : public Message
 {
 	public:
-		SeqOpMessage() { }
-		SeqOpMessage(const Kmer& seq, MessageOp operation)
-			: Message(seq), m_operation(operation) { }
-
-		size_t getNetworkSize() const
-		{
-			return Message::getNetworkSize() + sizeof m_operation;
-		}
+		SeqAddMessage() { }
+		SeqAddMessage(const Kmer& seq) : Message(seq) { }
 
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
-		size_t unserialize(const char* buffer);
 		void print() const;
 
-		static const MessageType TYPE = MT_SEQ_OP;
-		uint8_t m_operation; // MessageOp
+		static const MessageType TYPE = MT_ADD;
+};
+
+class SeqRemoveMessage : public Message
+{
+	public:
+		SeqRemoveMessage() { }
+		SeqRemoveMessage(const Kmer& seq) : Message(seq) { }
+
+		void handle(int senderID, NetworkSequenceCollection& handler);
+		size_t serialize(char* buffer);
+		void print() const;
+
+		static const MessageType TYPE = MT_REMOVE;
 };
 
 class SetFlagMessage : public Message

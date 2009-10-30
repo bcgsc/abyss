@@ -11,11 +11,14 @@ MessageBuffer::MessageBuffer()
 		m_msgQueues[i].reserve(MAX_MESSAGES);
 }
 
-void MessageBuffer::sendSeqOpMessage(int nodeID,
-		const Kmer& seq, MessageOp op)
+void MessageBuffer::sendSeqAddMessage(int nodeID, const Kmer& seq)
 {
-	// add the message to the buffer
-	queueMessage(nodeID, new SeqOpMessage(seq, op), SM_BUFFERED);
+	queueMessage(nodeID, new SeqAddMessage(seq), SM_BUFFERED);
+}
+
+void MessageBuffer::sendSeqRemoveMessage(int nodeID, const Kmer& seq)
+{
+	queueMessage(nodeID, new SeqRemoveMessage(seq), SM_BUFFERED);
 }
 
 // Send a set flag message

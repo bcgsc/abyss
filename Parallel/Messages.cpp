@@ -30,33 +30,44 @@ size_t Message::unserialize(const char* buffer)
 	return offset;
 }
 
-size_t SeqOpMessage::serialize(char* buffer)
+size_t SeqAddMessage::serialize(char* buffer)
 {
 	size_t offset = 0;
 	buffer[offset++] = TYPE;
 	offset += m_seq.serialize(buffer + offset);
-	offset += serializeData(&m_operation, buffer + offset, sizeof(m_operation));
 	return offset;
 }
 
-size_t SeqOpMessage::unserialize(const char* buffer)
+void SeqAddMessage::handle(int senderID,
+		NetworkSequenceCollection& handler)
+{
+	handler.handleSeqAddMessage(senderID, *this);
+}
+
+void SeqAddMessage::print() const
+{
+	printf("Message type: %d Sequence: %s\n",
+			TYPE, m_seq.decode().c_str());
+}
+
+size_t SeqRemoveMessage::serialize(char* buffer)
 {
 	size_t offset = 0;
-	offset += Message::unserialize(buffer);
-	offset += unserializeData(&m_operation, buffer + offset, sizeof(m_operation));
+	buffer[offset++] = TYPE;
+	offset += m_seq.serialize(buffer + offset);
 	return offset;
 }
 
-void SeqOpMessage::handle(int senderID, NetworkSequenceCollection& handler)
+void SeqRemoveMessage::handle(int senderID,
+		NetworkSequenceCollection& handler)
 {
-	handler.handleSeqOpMessage(senderID, *this);
+	handler.handleSeqRemoveMessage(senderID, *this);
 }
 
-void SeqOpMessage::print() const
+void SeqRemoveMessage::print() const
 {
-	printf("Message type: %d Sequence: %s Operation: %d size: %d\n",
-			TYPE, m_seq.decode().c_str(),
-			(int)m_operation, (int)getNetworkSize());
+	printf("Message type: %d Sequence: %s\n",
+			TYPE, m_seq.decode().c_str());
 }
 
 size_t SetFlagMessage::serialize(char* buffer)

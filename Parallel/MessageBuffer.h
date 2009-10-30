@@ -42,8 +42,8 @@ class MessageBuffer : public CommLayer
 					command, argument);
 		}
 
-		void sendSeqOpMessage(int nodeID,
-				const Kmer& seq, MessageOp op);
+		void sendSeqAddMessage(int nodeID, const Kmer& seq);
+		void sendSeqRemoveMessage(int nodeID, const Kmer& seq);
 		void sendSetFlagMessage(int nodeID,
 				const Kmer& seq, SeqFlag flag);
 		void sendRemoveExtension(int nodeID,

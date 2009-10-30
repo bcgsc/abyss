@@ -105,7 +105,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool checkpointReached(int numRequired) const;
 		
 		// Message handlers, polymorphically called by the message types
-		void handleSeqOpMessage(int senderID, const SeqOpMessage& seqMsg);
+		void handleSeqAddMessage(int senderID,
+				const SeqAddMessage& message);
+		void handleSeqRemoveMessage(int senderID,
+				const SeqRemoveMessage& message);
 		void handleSetBaseMessage(int senderID, const SetBaseMessage& message);
 		void handleSetFlagMessage(int senderID, const SetFlagMessage& message);
 		void handleRemoveExtensionMessage(int senderID, const RemoveExtensionMessage& message);

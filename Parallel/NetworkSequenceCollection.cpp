@@ -637,26 +637,20 @@ void NetworkSequenceCollection::notify(const Kmer& key)
 	}
 }
 
-void NetworkSequenceCollection::handleSeqOpMessage(int /*senderID*/, const SeqOpMessage& seqMsg)
+void NetworkSequenceCollection::handleSeqAddMessage(
+		int /*senderID*/, const SeqAddMessage& message)
 {
-	assert(isLocal(seqMsg.m_seq));
-	switch(seqMsg.m_operation)
-	{
-		case MO_ADD:
-			m_pLocalSpace->add(seqMsg.m_seq);
-			break;
-		case MO_REMOVE:
-			m_pLocalSpace->remove(seqMsg.m_seq);
-			break;
-		default:
-			assert(false);
-			break;
-	}
+	assert(isLocal(message.m_seq));
+	m_pLocalSpace->add(message.m_seq);
 }
 
-//
-//
-//
+void NetworkSequenceCollection::handleSeqRemoveMessage(
+		int /*senderID*/, const SeqRemoveMessage& message)
+{
+	assert(isLocal(message.m_seq));
+	m_pLocalSpace->remove(message.m_seq);
+}
+
 void NetworkSequenceCollection::handleSetFlagMessage(int /*senderID*/, const SetFlagMessage& message)
 {
 	assert(isLocal(message.m_seq));
@@ -1388,30 +1382,18 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 void NetworkSequenceCollection::add(const Kmer& seq)
 {
 	if(isLocal(seq))
-	{
-		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
 		m_pLocalSpace->add(seq);
-		//PrintDebug(3, "done add\n");
-	}
 	else
-	{
-		int nodeID = computeNodeID(seq);
-		m_comm.sendSeqOpMessage(nodeID, seq, MO_ADD);
-	}
+		m_comm.sendSeqAddMessage(computeNodeID(seq), seq);
 }
 
 /** Remove a k-mer from this collection. */
 void NetworkSequenceCollection::remove(const Kmer& seq)
 {
 	if(isLocal(seq))
-	{
 		m_pLocalSpace->remove(seq);
-	}
 	else
-	{
-		int nodeID = computeNodeID(seq);	
-		m_comm.sendSeqOpMessage(nodeID, seq, MO_REMOVE);
-	}
+		m_comm.sendSeqRemoveMessage(computeNodeID(seq), seq);
 }
 
 bool NetworkSequenceCollection::checkpointReached() const

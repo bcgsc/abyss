@@ -211,8 +211,11 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 		Message* pNewMessage;
 		switch(type)
 		{
-			case MT_SEQ_OP:
-				pNewMessage = new SeqOpMessage();
+			case MT_ADD:
+				pNewMessage = new SeqAddMessage();
+				break;
+			case MT_REMOVE:
+				pNewMessage = new SeqRemoveMessage();
 				break;
 			case MT_SET_FLAG:
 				pNewMessage = new SetFlagMessage();
