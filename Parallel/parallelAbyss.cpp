@@ -65,6 +65,8 @@ int main(int argc, char** argv)
 	else
 		networkSeqs.run();
 
+	MPI_Finalize();
+
 	if (opt::rank == 0) {
 		concatenateFiles(opt::contigsPath, "contigs-", ".fa",
 				"awk '/^>/ { $1=\">\" i++ } { print }'");
@@ -72,8 +74,6 @@ int main(int argc, char** argv)
 			concatenateFiles(opt::snpPath, "snp-", ".fa");
 		puts("Done.");
 	}
-	
-	MPI_Finalize();
 
 	return 0;
 }
