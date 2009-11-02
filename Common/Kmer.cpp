@@ -10,6 +10,9 @@ using namespace std;
  * instances. */
 unsigned Kmer::s_length;
 
+/** The size of a k-mer in bytes. */
+unsigned Kmer::s_bytes;
+
 static unsigned seqIndexToByteNumber(unsigned seqIndex);
 static unsigned seqIndexToBaseIndex(unsigned seqIndex);
 static uint8_t getBaseCode(const char* pSeq,

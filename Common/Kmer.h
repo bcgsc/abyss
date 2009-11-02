@@ -45,7 +45,9 @@ class Kmer
 	{
 		assert(length <= MAX_KMER);
 		assert(s_length == 0);
+		assert(s_bytes == 0);
 		s_length = length;
+		s_bytes = (length + 3) / 4;
 	}
 
 	void reverseComplement();
@@ -61,7 +63,7 @@ class Kmer
 	}
 
 	/** Return the number of bytes needed. */
-	static unsigned bytes() { return (s_length + 3) / 4; }
+	static unsigned bytes() { return s_bytes; }
 	static unsigned serialSize() { return NUM_BYTES; }
 
 	size_t serialize(void* dest) const
@@ -99,6 +101,7 @@ class Kmer
 
   protected:
 	static unsigned s_length;
+	static unsigned s_bytes;
 
 	char m_seq[NUM_BYTES];
 };
