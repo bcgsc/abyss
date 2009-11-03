@@ -361,11 +361,18 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 
 static void printStatus(const ReadAlignMap& map)
 {
-	size_t size = map.size();
+	if (opt::verbose == 0)
+		return;
+
+	static size_t prevBuckets;
 	size_t buckets = map.bucket_count();
-	cerr << "Read " << stats.alignments << " alignments. "
-		<< "Hash load: " << size <<
-		" / " << buckets << " = " << (float)size / buckets << endl;
+	if (stats.alignments % 1000000 == 0 || buckets != prevBuckets) {
+		prevBuckets = buckets;
+		size_t size = map.size();
+		cerr << "Read " << stats.alignments << " alignments. "
+			<< "Hash load: " << size << " / " << buckets
+			<< " = " << (float)size / buckets << endl;
+	}
 }
 
 static void handleAlignment(
@@ -388,8 +395,7 @@ static void handleAlignment(
 	if (!opt::distPath.empty() && alignments.second.size() >= 2)
 		doReadIntegrity(alignments);
 
-	if (opt::verbose > 0 && stats.alignments % 1000000 == 0)
-		printStatus(out);
+	printStatus(out);
 }
 
 // Read in the alignments file into the table
