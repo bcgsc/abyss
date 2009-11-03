@@ -535,16 +535,17 @@ int main(int argc, char* const* argv)
 	}
 }
 
+/** Return whether any k-mer in the query is aligned more than once.
+ */
 static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 {
-	// Ensure that no read start position hit to more than 1 contig
 	assert(!alignVec.empty());
 
 	const int num_starts = alignVec.front().read_length - opt::k + 1;
 	vector<unsigned> coverage(num_starts);
 
-	for(AlignmentVector::const_iterator iter = alignVec.begin(); iter != alignVec.end(); ++iter)
-	{
+	for (AlignmentVector::const_iterator iter
+			= alignVec.begin(); iter != alignVec.end(); ++iter) {
 		int length = iter->align_length;
 		int start = iter->read_start_pos;
 		for (int i = 0; i < length - opt::k + 1; i++) {
@@ -555,9 +556,8 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 	}
 
 	bool unique = true;
-	for(int i = 0; i < num_starts; ++i)
-	{
-		if(coverage[i] > 1)
+	for (int i = 0; i < num_starts; ++i) {
+		if (coverage[i] > 1)
 			unique = false;
 	}
 	return unique;
