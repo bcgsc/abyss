@@ -555,12 +555,10 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 		}
 	}
 
-	bool unique = true;
-	for (int i = 0; i < num_starts; ++i) {
+	for (int i = 0; i < num_starts; ++i)
 		if (coverage[i] > 1)
-			unique = false;
-	}
-	return unique;
+			return false;
+	return true;
 }
 
 static bool endsWith(const string& s, const string& suffix)
