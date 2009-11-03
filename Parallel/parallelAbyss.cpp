@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include <mpi.h>
 #include <sstream>
-#include <unistd.h> // for gethostname
+#include <unistd.h> // for gethostname and sync
 #include <vector>
 
 using namespace std;
@@ -64,6 +64,9 @@ int main(int argc, char** argv)
 		networkSeqs.runControl();
 	else
 		networkSeqs.run();
+
+	sync();
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	MPI_Finalize();
 
