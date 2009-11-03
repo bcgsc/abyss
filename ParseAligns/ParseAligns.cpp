@@ -97,7 +97,7 @@ typedef hash_map<ContigID, EstimateRecord> EstimateMap;
 
 static EstimateMap estMap;
 
-bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec);
+static bool checkUniqueAlignments(const AlignmentVector& alignVec);
 string makePairID(string id);
 
 /**
@@ -290,8 +290,8 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	const unsigned MAX_SPAN = 2;
 	if (curr.second.empty() || pair.second.empty()) {
 		stats.numMissed++;
-	} else if (!checkUniqueAlignments(opt::k, curr.second)
-			|| !checkUniqueAlignments(opt::k, pair.second)) {
+	} else if (!checkUniqueAlignments(curr.second)
+			|| !checkUniqueAlignments(pair.second)) {
 		stats.numMulti++;
 	} else if (curr.second.size() > MAX_SPAN
 			&& pair.second.size() > MAX_SPAN) {
@@ -534,14 +534,14 @@ int main(int argc, char* const* argv)
 	}
 }
 
-bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
+static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 {
 	// Ensure that no read start position hit to more than 1 contig
 	assert(!alignVec.empty());
-	
-	const int num_starts = alignVec.front().read_length - kmer + 1;
+
+	const int num_starts = alignVec.front().read_length - opt::k + 1;
 	int* coverage = new int[num_starts];
-	
+
 	for(int i = 0; i < num_starts; ++i)
 	{
 		coverage[i] = 0;
@@ -551,8 +551,7 @@ bool checkUniqueAlignments(int kmer, const AlignmentVector& alignVec)
 	{
 		int length = iter->align_length;
 		int start = iter->read_start_pos;
-		for(int i = 0; i < (length - kmer + 1); ++i)
-		{
+		for (int i = 0; i < length - opt::k + 1; i++) {
 			int start_idx = start + i;
 			assert(start_idx >= 0 && start_idx < num_starts);
 			coverage[start_idx]++;
