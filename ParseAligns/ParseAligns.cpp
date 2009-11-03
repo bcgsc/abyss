@@ -541,21 +541,20 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 {
 	assert(!alignVec.empty());
 
-	const int num_starts = alignVec.front().read_length - opt::k + 1;
-	vector<unsigned> coverage(num_starts);
+	unsigned nKmer = alignVec.front().read_length - opt::k + 1;
+	vector<unsigned> coverage(nKmer);
 
-	for (AlignmentVector::const_iterator iter
-			= alignVec.begin(); iter != alignVec.end(); ++iter) {
-		int length = iter->align_length;
-		int start = iter->read_start_pos;
-		for (int i = 0; i < length - opt::k + 1; i++) {
-			int start_idx = start + i;
-			assert(start_idx >= 0 && start_idx < num_starts);
-			coverage[start_idx]++;
-		}
+	for (AlignmentVector::const_iterator iter = alignVec.begin();
+			iter != alignVec.end(); ++iter) {
+		assert(iter->align_length >= opt::k);
+		unsigned end = iter->read_start_pos
+			+ iter->align_length - opt::k + 1;
+		assert(end <= nKmer);
+		for (unsigned i = iter->read_start_pos; i < end; i++)
+			coverage[i]++;
 	}
 
-	for (int i = 0; i < num_starts; ++i)
+	for (unsigned i = 0; i < nKmer; ++i)
 		if (coverage[i] > 1)
 			return false;
 	return true;
