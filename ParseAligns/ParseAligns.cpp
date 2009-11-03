@@ -16,6 +16,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -540,13 +541,8 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 	assert(!alignVec.empty());
 
 	const int num_starts = alignVec.front().read_length - opt::k + 1;
-	int* coverage = new int[num_starts];
+	vector<unsigned> coverage(num_starts);
 
-	for(int i = 0; i < num_starts; ++i)
-	{
-		coverage[i] = 0;
-	}
-	
 	for(AlignmentVector::const_iterator iter = alignVec.begin(); iter != alignVec.end(); ++iter)
 	{
 		int length = iter->align_length;
@@ -564,7 +560,6 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 		if(coverage[i] > 1)
 			unique = false;
 	}
-	delete [] coverage;
 	return unique;
 }
 
