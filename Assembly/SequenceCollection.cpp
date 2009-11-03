@@ -118,6 +118,7 @@ void SequenceCollectionHash::removeExtension(const Kmer& seq,
 	bool found = removeExtensionByIter(iters.first, dir, ext)
 		|| removeExtensionByIter(iters.second, !dir, ~ext);
 	assert(found);
+	(void)found;
 	notify(getSeqAndData(iters));
 }
 

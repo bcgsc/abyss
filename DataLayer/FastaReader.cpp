@@ -106,6 +106,7 @@ next_record:
 			// Discard the quality values.
 			char c = m_fileHandle.get();
 			assert(c == '+');
+			(void)c;
 			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
 		}

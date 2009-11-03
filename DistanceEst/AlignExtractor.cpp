@@ -9,6 +9,7 @@ AlignExtractor::AlignExtractor(istream& in)
 	// Prime the read by reading in the first contig.
 	bool good = m_in >> m_currPair;
 	assert(good);
+	(void)good;
 }
 
 /** Read alignment pairs and store them in the specified vector.

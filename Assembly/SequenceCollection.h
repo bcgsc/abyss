@@ -65,6 +65,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void detach(SeqObserver f)
 		{
 			assert(m_seqObserver == f);
+			(void)f;
 			m_seqObserver = NULL;
 		}
 

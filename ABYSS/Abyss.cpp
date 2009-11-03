@@ -18,6 +18,8 @@ static void splitAmbiguousEdges(ISequenceCollection* pSC)
 	unsigned marked = AssemblyAlgorithms::markAmbiguous(pSC);
 	unsigned split = AssemblyAlgorithms::splitAmbiguous(pSC);
 	assert(marked == split);
+	(void)marked;
+	(void)split;
 }
 
 static void removeLowCoverageContigs(ISequenceCollection* pSC)

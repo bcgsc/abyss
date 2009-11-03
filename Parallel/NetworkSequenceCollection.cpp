@@ -285,6 +285,7 @@ unsigned NetworkSequenceCollection::controlErode()
 	m_pLocalSpace->printLoad();
 	m_comm.barrier();
 	assert(removed == numEroded);
+	(void)removed;
 
 	SetState(NAS_WAITING);
 	return numEroded;
@@ -1124,6 +1125,7 @@ unsigned NetworkSequenceCollection::controlSplit()
 	unsigned marked = controlMarkAmbiguous();
 	unsigned split = controlSplitAmbiguous();
 	assert(marked == split);
+	(void)marked;
 	return split;
 }
 

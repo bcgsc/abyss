@@ -236,6 +236,7 @@ int main(int argc, char** argv)
 			ss >> length >> coverage;
 			unsigned serial = g_dict.serial(rec.id);
 			assert(contigs.size() == serial);
+			(void)serial;
 			contigs.push_back(Contig(rec.id, rec.seq, coverage));
 		}
 		assert(in.eof());

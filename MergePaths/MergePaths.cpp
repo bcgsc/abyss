@@ -188,6 +188,7 @@ int main(int argc, char** argv)
 			ss >> length >> coverage;
 			LinearNumKey id = g_contigIDs.serial(rec.id);
 			assert(id == contigVec.size());
+			(void)id;
 			contigVec.push_back(Contig(rec.id, rec.seq, coverage));
 		}
 		g_contigIDs.lock();
