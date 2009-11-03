@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
