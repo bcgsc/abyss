@@ -127,16 +127,12 @@ int main(int argc, char** argv)
 	string estFile(argv[optind++]);
 	const string& lenFile = adjFile;
 
-	cout << "Adj file: " << adjFile
-		<< " Estimate File: " << estFile
-		<< " len file: " << lenFile
-		<< " kmer " << opt::k
-		<< " max cost " << opt::maxCost
-		<< endl;
-
 	// Load the graph from the adjacency file
 	SimpleContigGraph contigGraph;
 	loadGraphFromAdjFile(&contigGraph, lenFile, adjFile);
+	if (opt::verbose > 0)
+		cerr << "Vertices: " << contigGraph.getNumVertices()
+			<< " Edges: " << contigGraph.countEdges() << endl;
 
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(&contigGraph, estFile,
@@ -146,20 +142,19 @@ int main(int argc, char** argv)
 template<typename K, typename D>
 ostream& printMap(const map<K,D>& s)
 {
-	cout << "{ ";
 	for (typename map<K,D>::const_iterator iter = s.begin();
 			iter != s.end(); ++iter)
-		cout << iter->first << ',' << iter->second << ' ';
-	return cout << '}';
+		cout << ' ' << iter->first << iter->second;
+	return cout;
 }
 
 template<typename K>
 ostream& printPath(const vector<K>& s)
 {
-	cout << "[ ";
-	copy(s.begin(), s.end(),
+	assert(!s.empty());
+	copy(s.begin(), s.end()-1,
 			ostream_iterator<K>(cout, " "));
-	return cout << ']';
+	return cout << s.back();
 }
 
 static void generatePathsThroughEstimates(
@@ -187,7 +182,9 @@ static void generatePathsThroughEstimates(
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 			bool gDebugPrint = opt::verbose > 0;
-		  if(gDebugPrint) cout << "****Processing " << er.refID << " dir: " << dirIdx << "****\n";
+			if (gDebugPrint)
+				cout << "\n"
+					"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
 			// generate the reachable set
 			SimpleContigGraph::KeyConstraintMap constraintMap;
 			
@@ -201,16 +198,13 @@ static void generatePathsThroughEstimates(
 				Constraint nc;
 				nc.distance = translatedDistance  + distanceBuffer;
 				nc.isRC = iter->isRC;
-
-				if(gDebugPrint) cout << "Adding Constraint " << iter->nID << ' ' << nc << '\n';
-
 				constraintMap[iter->nID] = nc;
 
 				minNumPairs = min(minNumPairs, iter->numPairs);
 			}
 
 			if (gDebugPrint) {
-				cout << "Constraints: ";
+				cout << "Constraints:";
 				printMap(constraintMap);
 				cout << '\n';
 			}
@@ -224,10 +218,9 @@ static void generatePathsThroughEstimates(
 			
 			// The number of nodes to explore before bailing out
 			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, maxCost, numVisited);
-			
+
 			if (gDebugPrint)
-				cout << "Possible solutions: "
-					<< solutions.size() << '\n';
+				cout << "Paths: " << solutions.size() << '\n';
 
 			totalAttempted++;
 			if (solutions.empty()) {
@@ -255,7 +248,7 @@ static void generatePathsThroughEstimates(
 						iter = er.estimates[dirIdx].begin();
 						iter != er.estimates[dirIdx].end(); ++iter) {
 					if (gDebugPrint)
-						cout << "Estimate " << *iter << '\n';
+						cout << *iter << '\t';
 
 					map<LinearNumKey, int>::iterator
 						dmIter = distanceMap.find(iter->nID);
@@ -270,7 +263,7 @@ static void generatePathsThroughEstimates(
 					if (invalid)
 						validPath = false;
 					if (gDebugPrint)
-						cout << "Actual dist: " << actualDistance
+						cout << "dist: " << actualDistance
 							<< " diff: " << diff
 							<< " buffer: " << buffer
 							<< " n: " << iter->numPairs
@@ -359,7 +352,8 @@ static void generatePathsThroughEstimates(
 	inStream.close();
 	outStream.close();
 
-	cout << "The minimum number of pairs in a distance estimate is "
+	cout << "\n"
+		"The minimum number of pairs in a distance estimate is "
 		<< minNumPairs << ".\n"
 		"The minimum number of pairs used in a path is "
 		<< minNumPairsUsed << ".\n";

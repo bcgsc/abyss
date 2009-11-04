@@ -60,11 +60,6 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 			printf("added edges for %d verts\n", numAdded);
 	}
 	assert(inStream.eof());
-
-	size_t numVert = pGraph->getNumVertices();
-	size_t numEdges = pGraph->countEdges(); // SLOW
-	printf("Initial graph stats: num vert: %zu num edges: %zu\n",
-			numVert, numEdges);
 }
 
 void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,

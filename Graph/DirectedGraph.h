@@ -35,11 +35,12 @@ struct Constraint
 		return !violated;
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const Constraint& object)
+	friend std::ostream& operator <<(std::ostream& out,
+			const Constraint& object)
 	{
-		out << "(" << object.distance << "," << object.isRC << ")";
-		return out;
-	}	
+		return out << (object.isRC ? '-' : '+') << ','
+			<< object.distance;
+	}
 };
 
 struct EdgeDescription
@@ -163,10 +164,11 @@ class DirectedGraph
 		{
 			LinearNumKey key;
 			bool isRC;
-			
-			friend std::ostream& operator<<(std::ostream& out, const PathNode& object)
+
+			friend std::ostream& operator <<(std::ostream& out,
+					const PathNode& object)
 			{
-				out << "(" << object.key << "," << object.isRC << ")";
+				out << object.key << (object.isRC ? '-' : '+');
 				return out;
 			}
 		};
