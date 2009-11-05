@@ -402,39 +402,43 @@ static void handleAlignment(
 	printStatus(out);
 }
 
+static void readAlignment(const string& line, ReadAlignMap& out)
+{
+	istringstream s(line);
+	switch (opt::inputFormat) {
+	  case opt::SAM:
+	  {
+		SAMRecord sam;
+		s >> sam;
+		assert(s);
+		ReadAlignMap::value_type alignments(
+				sam.qname, AlignmentVector());
+		if (!(sam.flag & SAMRecord::FUNMAP))
+			alignments.second.push_back(sam);
+		handleAlignment(alignments, out);
+		break;
+	  }
+	  case opt::KALIGNER:
+	  {
+		string readID;
+		s >> readID;
+		ReadAlignMap::value_type alignments(
+				readID, AlignmentVector());
+		copy(istream_iterator<Alignment>(s),
+				istream_iterator<Alignment>(),
+				back_inserter(alignments.second));
+		handleAlignment(alignments, out);
+		break;
+	  }
+	}
+}
+
 // Read in the alignments file into the table
 static void readAlignments(istream& in, ReadAlignMap* pout)
 {
 	string line;
-	for (string line; getline(in, line);) {
-		istringstream s(line);
-		switch (opt::inputFormat) {
-		  case opt::SAM:
-		  {
-			SAMRecord sam;
-			s >> sam;
-			assert(s);
-			ReadAlignMap::value_type alignments(
-					sam.qname, AlignmentVector());
-			if (!(sam.flag & SAMRecord::FUNMAP))
-				alignments.second.push_back(sam);
-			handleAlignment(alignments, *pout);
-			break;
-		  }
-		  case opt::KALIGNER:
-		  {
-			string readID;
-			s >> readID;
-			ReadAlignMap::value_type alignments(
-					readID, AlignmentVector());
-			copy(istream_iterator<Alignment>(s),
-					istream_iterator<Alignment>(),
-					back_inserter(alignments.second));
-			handleAlignment(alignments, *pout);
-			break;
-		  }
-		}
-	}
+	for (string line; getline(in, line);)
+		readAlignment(line, *pout);
 	assert(in.eof());
 }
 
