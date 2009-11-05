@@ -411,11 +411,12 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 		SAMRecord sam;
 		s >> sam;
 		assert(s);
-		ReadAlignMap::value_type alignments(
-				sam.qname, AlignmentVector());
-		if (!(sam.flag & SAMRecord::FUNMAP))
-			alignments.second.push_back(sam);
-		handleAlignment(alignments, out);
+		handleAlignment(
+				ReadAlignMap::value_type(
+					sam.qname, sam.flag & SAMRecord::FUNMAP
+					? AlignmentVector()
+					: AlignmentVector(1, sam)),
+				out);
 		break;
 	  }
 	  case opt::KALIGNER:
