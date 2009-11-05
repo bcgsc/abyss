@@ -148,10 +148,10 @@ class Aligner
 		typedef typename SeqPosHashMap::const_iterator
 			map_const_iterator;
 
-		Aligner(int hashSize, int buckets)
+		Aligner(int hashSize, size_t buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
 
-		Aligner(int hashSize, int buckets, float factor)
+		Aligner(int hashSize, size_t buckets, float factor)
 			: m_hashSize(hashSize)
 		{
 			m_target.max_load_factor(factor);
