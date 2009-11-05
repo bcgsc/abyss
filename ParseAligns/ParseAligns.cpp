@@ -366,6 +366,9 @@ static void printStatus(const ReadAlignMap& map)
 		return;
 
 	static size_t prevBuckets;
+	if (prevBuckets == 0)
+		prevBuckets = map.bucket_count();
+
 	size_t buckets = map.bucket_count();
 	if (stats.alignments % 1000000 == 0 || buckets != prevBuckets) {
 		prevBuckets = buckets;
