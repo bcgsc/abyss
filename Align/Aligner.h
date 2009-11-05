@@ -138,7 +138,6 @@ typedef hash_map<Kmer, Position, hashKmer> SeqPosHashUniqueMap;
 
 
 typedef std::vector<Alignment> AlignmentVector;
-typedef std::map<unsigned, AlignmentVector> AlignmentSet;
 
 template <class SeqPosHashMap>
 class Aligner
@@ -178,9 +177,10 @@ class Aligner
 		void getAlignmentsInternal(const Sequence& seq, bool isRC,
 				oiterator& dest);
 
-		// Coalesce all the hash hits into contiguous alignments
+		typedef std::map<unsigned, AlignmentVector> AlignmentSet;
+
 		template <class oiterator>
-		void coalesceAlignments(const AlignmentSet& alignSet,
+		static void coalesceAlignments(const AlignmentSet& alignSet,
 				oiterator& dest);
 
 		// The number of bases to hash on
