@@ -411,9 +411,8 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 		SAMRecord sam;
 		s >> sam;
 		assert(s);
-		handleAlignment(
-				ReadAlignMap::value_type(
-					sam.qname, sam.flag & SAMRecord::FUNMAP
+		handleAlignment(ReadAlignMap::value_type(sam.qname,
+					sam.flag & SAMRecord::FUNMAP
 					? AlignmentVector()
 					: AlignmentVector(1, sam)),
 				out);
