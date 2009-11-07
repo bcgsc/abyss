@@ -590,6 +590,9 @@ static bool replaceSuffix(string& s,
 /** Return the mate ID of the specified read ID. */
 string makePairID(string id)
 {
+	if (equal(id.begin(), id.begin() + 3, "SRR"))
+		return id;
+
 	assert(!id.empty());
 	char& c = id[id.length() - 1];
 	switch (c) {
