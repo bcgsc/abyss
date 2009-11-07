@@ -1,5 +1,6 @@
 #include "DirectedGraph.h"
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib> // for exit
 #include <iostream>
 
