@@ -2,7 +2,6 @@
 #include "FastaReader.h"
 #include "HashMap.h"
 #include "Kmer.h"
-#include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -66,6 +65,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+typedef string ContigID;
+
 /** A contig ID and its end sequences. */
 struct ContigEndSeq {
 	ContigID id;
@@ -105,6 +106,23 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 	assert(in.eof());
 }
 
+/** The relevant information of our contigs.
+ * This variable is global so that ContigNode may use the mapping of
+ * contig numbers to contig names. */
+static vector<ContigEndSeq> contigs;
+
+struct ContigNode {
+	unsigned id;
+	bool sense;
+
+	ContigNode(unsigned id, bool sense) : id(id), sense(sense) { }
+
+	friend ostream& operator <<(ostream& out, const ContigNode& o)
+	{
+		return out << contigs[o.id].id << ',' << o.sense;
+	}
+};
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -138,7 +156,6 @@ int main(int argc, char** argv)
 	opt::overlap = opt::k - 1;
 	Kmer::setLength(opt::overlap);
 
-	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
 				bind2nd(ptr_fun(readContigs), &contigs));
@@ -148,18 +165,17 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << contigs.size() << " contigs\n";
 
-	typedef hash_map<Kmer, vector<SimpleEdgeDesc>, hashKmer> KmerMap;
+	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
 	vector<KmerMap> ends(2, KmerMap(contigs.size()));
-	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
-			i != contigs.end(); ++i) {
-		ends[0][i->l].push_back(
-				SimpleEdgeDesc(i->id, false));
-		ends[1][reverseComplement(i->l)].push_back(
-				SimpleEdgeDesc(i->id, true));
-		ends[1][i->r].push_back(
-				SimpleEdgeDesc(i->id, false));
-		ends[0][reverseComplement(i->r)].push_back(
-					SimpleEdgeDesc(i->id, true));
+	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
+			it != contigs.end(); ++it) {
+		unsigned i = it - contigs.begin();
+		ends[0][it->l].push_back(ContigNode(i, false));
+		ends[1][reverseComplement(it->l)].push_back(
+				ContigNode(i, true));
+		ends[1][it->r].push_back(ContigNode(i, false));
+		ends[0][reverseComplement(it->r)].push_back(
+				ContigNode(i, true));
 	}
 
 	ostream& out = cout;
@@ -183,7 +199,7 @@ int main(int argc, char** argv)
 			  case ADJ:
 				out << " [ ";
 				copy(edges.begin(), edges.end(),
-						ostream_iterator<SimpleEdgeDesc>(out, " "));
+						ostream_iterator<ContigNode>(out, " "));
 				out << ']';
 				break;
 			  case DOT:
@@ -194,8 +210,8 @@ int main(int argc, char** argv)
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << it->contig
-							<< (idx != it->isRC ? '-' : '+') << '"';
+						out << " \"" << contigs[it->id].id
+							<< (idx != it->sense ? '-' : '+') << '"';
 					out << " }";
 				}
 				out << ";\n";
