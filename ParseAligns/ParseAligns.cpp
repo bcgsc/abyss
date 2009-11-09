@@ -79,13 +79,13 @@ static const struct option longopts[] = {
 };
 
 static struct {
-	int alignments;
-	int numDifferent;
-	int numSame;
-	int numMisoriented;
-	int numMissed;
-	int numMulti;
-	int numSplit;
+	size_t alignments;
+	size_t numDifferent;
+	size_t numSame;
+	size_t numMisoriented;
+	size_t numMissed;
+	size_t numMulti;
+	size_t numSplit;
 } stats;
 
 static ostream& pairedAlignFile = cout;
