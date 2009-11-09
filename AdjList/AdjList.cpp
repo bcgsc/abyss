@@ -112,17 +112,20 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 static vector<ContigEndSeq> contigs;
 
 struct ContigNode {
-	unsigned id;
-	bool sense;
+	ContigNode(unsigned id, bool sense) : m_node(id << 1 | sense) { };
 
-	ContigNode(unsigned id, bool sense) : id(id), sense(sense) { }
+	unsigned id() const { return m_node >> 1; }
+	bool sense() const { return m_node & 1; }
 
-	const string& idString() const { return contigs[id].id; }
+	const string& idString() const { return contigs[id()].id; }
 
 	friend ostream& operator <<(ostream& out, const ContigNode& o)
 	{
-		return out << o.idString() << ',' << o.sense;
+		return out << o.idString() << ',' << o.sense();
 	}
+
+  private:
+	unsigned m_node;
 };
 
 int main(int argc, char** argv)
@@ -213,7 +216,8 @@ int main(int argc, char** argv)
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
 						out << " \"" << it->idString()
-							<< (idx != it->sense ? '-' : '+') << '"';
+							<< (idx != it->sense() ? '-' : '+')
+							<< '"';
 					out << " }";
 				}
 				out << ";\n";
