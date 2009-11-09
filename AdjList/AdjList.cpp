@@ -117,9 +117,11 @@ struct ContigNode {
 
 	ContigNode(unsigned id, bool sense) : id(id), sense(sense) { }
 
+	const string& idString() const { return contigs[id].id; }
+
 	friend ostream& operator <<(ostream& out, const ContigNode& o)
 	{
-		return out << contigs[o.id].id << ',' << o.sense;
+		return out << o.idString() << ',' << o.sense;
 	}
 };
 
@@ -210,7 +212,7 @@ int main(int argc, char** argv)
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << contigs[it->id].id
+						out << " \"" << it->idString()
 							<< (idx != it->sense ? '-' : '+') << '"';
 					out << " }";
 				}
