@@ -422,11 +422,12 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 	  {
 		string readID;
 		s >> readID;
-		handleAlignment(ReadAlignMap::value_type(readID,
-					AlignmentVector(
-						istream_iterator<Alignment>(s),
-						istream_iterator<Alignment>())),
-				out);
+		ReadAlignMap::value_type v(readID, AlignmentVector());
+		v.second.reserve(count(line.begin(), line.end(), '\t'));
+		v.second.assign(
+					istream_iterator<Alignment>(s),
+					istream_iterator<Alignment>());
+		handleAlignment(v, out);
 		break;
 	  }
 	}
