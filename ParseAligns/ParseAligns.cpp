@@ -432,10 +432,8 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 	}
 }
 
-// Read in the alignments file into the table
 static void readAlignments(istream& in, ReadAlignMap* pout)
 {
-	string line;
 	for (string line; getline(in, line);)
 		readAlignment(line, *pout);
 	assert(in.eof());
