@@ -405,31 +405,29 @@ static void handleAlignment(
 static void readAlignment(const string& line, ReadAlignMap& out)
 {
 	istringstream s(line);
+	pair<string, AlignmentVector> v;
 	switch (opt::inputFormat) {
 	  case opt::SAM:
 	  {
 		SAMRecord sam;
 		s >> sam;
 		assert(s);
-		ReadAlignMap::value_type v(sam.qname, AlignmentVector());
+		v.first = sam.qname;
 		if (!sam.flag & SAMRecord::FUNMAP)
 			v.second.push_back(sam);
-		handleAlignment(v, out);
 		break;
 	  }
 	  case opt::KALIGNER:
 	  {
-		string readID;
-		s >> readID;
-		ReadAlignMap::value_type v(readID, AlignmentVector());
+		s >> v.first;
 		v.second.reserve(count(line.begin(), line.end(), '\t'));
 		v.second.assign(
 					istream_iterator<Alignment>(s),
 					istream_iterator<Alignment>());
-		handleAlignment(v, out);
 		break;
 	  }
 	}
+	handleAlignment(v, out);
 }
 
 static void readAlignments(istream& in, ReadAlignMap* pout)
