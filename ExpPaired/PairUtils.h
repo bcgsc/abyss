@@ -1,16 +1,20 @@
 #ifndef PAIRUTILS_H
 #define PAIRUTILS_H 1
 
+#include "Dictionary.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdint.h>
 #include <vector>
 
 typedef std::vector<int> ContigLengthVec;
 
 typedef uint32_t LinearNumKey;
+
+extern Dictionary g_contigIDs;
 
 /** Distance estimate between two contigs. */
 struct Estimate
@@ -24,7 +28,7 @@ struct Estimate
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
-		return out << o.nID << ","
+		return out << g_contigIDs.key(o.nID) << ","
 			<< o.distance << ","
 			<< o.numPairs << ","
 			<< std::fixed << std::setprecision(1) << o.stdDev << ","
@@ -34,14 +38,17 @@ struct Estimate
 	friend std::istream& operator>> (std::istream& in,
 			Estimate& o)
 	{
-		char commas[5] = {};
-		in >> o.nID >> commas[0]
-			>> o.distance >> commas[1]
-			>> o.numPairs >> commas[2]
-			>> o.stdDev >> commas[3]
+		in >> std::ws;
+		std::string sID;
+		getline(in, sID, ',');
+		char commas[4] = {};
+		in >> o.distance >> commas[0]
+			>> o.numPairs >> commas[1]
+			>> o.stdDev >> commas[2]
 			>> o.isRC;
+		o.nID = g_contigIDs.serial(sID);
 		if (in.good())
-			assert(std::string(commas) == ",,,,");
+			assert(std::string(commas) == ",,,");
 		return in;
 	}
 };
@@ -101,9 +108,6 @@ struct EstimateRecord
 
 void loadContigLengths(const std::string& path,
 		ContigLengthVec& lengths);
-
-class Dictionary;
-extern Dictionary g_contigIDs;
 
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id);
 

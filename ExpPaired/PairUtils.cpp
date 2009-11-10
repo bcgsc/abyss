@@ -51,7 +51,6 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 	assert(in.eof());
 }
 
-#include "Dictionary.h"
 Dictionary g_contigIDs;
 
 LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
