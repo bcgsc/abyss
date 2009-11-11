@@ -38,7 +38,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "      --no-multimap     disallow duplicate k-mer in the target [default]\n"
 "  -m, --multimap        allow duplicate k-mer in the target\n"
-"  -d, --duplicates      ignore duplicate k-mer in the target\n"
+"  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
 "  -v, --verbose         display verbose output\n"
@@ -62,7 +62,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
 	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
-	{ "duplicates",  no_argument,     &opt::multimap, opt::IGNORE },
+	{ "ignore-multimap", no_argument, &opt::multimap, opt::IGNORE },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "seq",		 no_argument,		NULL, OPT_SEQ },
