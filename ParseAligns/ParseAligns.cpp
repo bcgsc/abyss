@@ -360,7 +360,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	}
 }
 
-static void printStatus(const ReadAlignMap& map)
+static void printProgress(const ReadAlignMap& map)
 {
 	if (opt::verbose == 0)
 		return;
@@ -399,7 +399,7 @@ static void handleAlignment(
 	if (!opt::distPath.empty() && alignments.second.size() >= 2)
 		doReadIntegrity(alignments);
 
-	printStatus(out);
+	printProgress(out);
 }
 
 static void readAlignment(const string& line, ReadAlignMap& out)
