@@ -360,12 +360,15 @@ static void generatePathsThroughEstimates(
 
 	cout << "\n"
 		"The minimum number of pairs in a distance estimate is "
-		<< minNumPairs << ".\n"
-		"The minimum number of pairs used in a path is "
-		<< minNumPairsUsed << ".\n";
-	if (minNumPairs < minNumPairsUsed)
-		cout << "Consider increasing the number of pairs threshold "
-			"paramter, n, to " << minNumPairsUsed << ".\n";
+		<< minNumPairs << ".\n";
+	if (minNumPairsUsed != UINT_MAX) {
+		cout << "The minimum number of pairs used in a path is "
+			<< minNumPairsUsed << ".\n";
+		if (minNumPairs < minNumPairsUsed)
+			cout << "Consider increasing the number of pairs "
+				"threshold paramter, n, to " << minNumPairsUsed
+				<< ".\n";
+	}
 }
 
 //
