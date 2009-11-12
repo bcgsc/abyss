@@ -168,12 +168,6 @@ static struct {
 	unsigned multiEnd;
 } stats;
 
-/** The fewest number of pairs in a distance estimate. */
-static unsigned g_minNumPairs = UINT_MAX;
-
-/** The fewest number of pairs used in a path. */
-static unsigned g_minNumPairsUsed = UINT_MAX;
- 
 /** Find a path for the specified distance estimates.
  * @return a pointer to the statistic to increment.
  */
@@ -203,8 +197,6 @@ static unsigned* handleEstimate(
 		nc.distance = translatedDistance  + distanceBuffer;
 		nc.isRC = iter->isRC;
 		constraintMap[iter->nID] = nc;
-
-		g_minNumPairs = min(g_minNumPairs, iter->numPairs);
 	}
 
 	if (gDebugPrint) {
@@ -339,12 +331,6 @@ static unsigned* handleEstimate(
 			<< dirIdx << " -> " << cPath << '\n';
 		assert(outStream.good());
 		pthread_mutex_unlock(&outMutex);
-
-		const EstimateVector& v = er.estimates[dirIdx];
-		for (EstimateVector::const_iterator it = v.begin();
-				it != v.end(); ++it)
-			g_minNumPairsUsed = min(g_minNumPairsUsed, it->numPairs);
-
 		return &stats.uniqueEnd;
 	}
 }
@@ -356,6 +342,12 @@ struct WorkerArg {
 	WorkerArg(istream* in, ostream* out, const SimpleContigGraph* g)
 		: in(in), out(out), graph(g) { }
 };
+
+/** The fewest number of pairs in a distance estimate. */
+static unsigned g_minNumPairs = UINT_MAX;
+
+/** The fewest number of pairs used in a path. */
+static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static void* worker(void* pArg)
 {
@@ -374,12 +366,24 @@ static void* worker(void* pArg)
 			unsigned* pStat = handleEstimate(er, dirIdx,
 					arg.graph, *arg.out);
 
-			/** Lock the global variable stats. */
+			unsigned minNumPairs = UINT_MAX;
+			const EstimateVector& v = er.estimates[dirIdx];
+			for (EstimateVector::const_iterator it = v.begin();
+					it != v.end(); ++it)
+				minNumPairs = min(minNumPairs, it->minNumPairs);
+
+			/** Lock the global variables stats,
+			 * g_minNumPairs and g_minNumPairsUsed. */
 			static pthread_mutex_t statsMutex
 				= PTHREAD_MUTEX_INITIALIZER;
 			pthread_mutex_lock(&statsMutex);
 			stats.totalAttempted++;
 			(*pStat)++;
+
+			g_minNumPairs = min(g_minNumPairs, minNumPairs);
+			if (pStat == &stats.uniqueEnd)
+				g_minNumPairsUsed
+					= min(g_minNumPairsUsed, minNumPairs);
 			pthread_mutex_unlock(&statsMutex);
 		}
 	}
