@@ -72,8 +72,7 @@ struct SimpleDataCost
 };
 
 static void generatePathsThroughEstimates(
-		SimpleContigGraph* pContigGraph, string estFileName,
-		int kmer, int maxCost);
+		SimpleContigGraph* pContigGraph, string estFileName);
 static void constructContigPath(
 		const SimpleContigGraph::VertexPath& vertexPath,
 		ContigPath& contigPath);
@@ -135,8 +134,7 @@ int main(int argc, char** argv)
 			<< " Edges: " << contigGraph.countEdges() << endl;
 
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(&contigGraph, estFile,
-			opt::k, opt::maxCost);
+	generatePathsThroughEstimates(&contigGraph, estFile);
 }
 
 template<typename K, typename D>
@@ -157,198 +155,206 @@ ostream& printPath(const vector<K>& s)
 	return cout << s.back();
 }
 
-static void generatePathsThroughEstimates(
-		SimpleContigGraph* pContigGraph, string estFileName,
-		int kmer, int maxCost)
+static struct {
+	unsigned totalAttempted;
+	unsigned noPossiblePaths;
+	unsigned nopathEnd;
+	unsigned uniqueEnd;
+	unsigned multiEnd;
+} stats;
+
+/** The fewest number of pairs in a distance estimate. */
+static unsigned minNumPairs = UINT_MAX;
+
+/** The fewest number of pairs used in a path. */
+static unsigned minNumPairsUsed = UINT_MAX;
+
+static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
+		SimpleContigGraph* pContigGraph, ostream& outStream)
 {
-	int totalAttempted = 0;
-	int noPossiblePaths = 0;
-	int nopathEnd = 0;
-	int uniqueEnd = 0;
-	int multiEnd = 0;
+	bool gDebugPrint = opt::verbose > 0;
+	if (gDebugPrint)
+		cout << "\n"
+			"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
 
-	/** The fewest number of pairs in a distance estimate. */
-	unsigned minNumPairs = UINT_MAX;
-	/** The fewest number of pairs used in a path. */
-	unsigned minNumPairsUsed = UINT_MAX;
+	SimpleDataCost costFunctor(opt::k);
+	// generate the reachable set
+	SimpleContigGraph::KeyConstraintMap constraintMap;
+	for (EstimateVector::const_iterator iter
+				= er.estimates[dirIdx].begin();
+			iter != er.estimates[dirIdx].end(); ++iter) {
+		// Translate the distances produced by the esimator into the
+		// coordinate space used by the graph (a translation of
+		// m_overlap)
+		int translatedDistance = iter->distance
+			+ costFunctor.m_overlap;
+		unsigned distanceBuffer = allowedError(iter->stdDev);
 
-	(void)pContigGraph;
+		Constraint nc;
+		nc.distance = translatedDistance  + distanceBuffer;
+		nc.isRC = iter->isRC;
+		constraintMap[iter->nID] = nc;
+
+		minNumPairs = min(minNumPairs, iter->numPairs);
+	}
+
+	if (gDebugPrint) {
+		cout << "Constraints:";
+		printMap(constraintMap);
+		cout << '\n';
+	}
+
+	// Generate the paths
+	SimpleContigGraph::FeasiblePaths solutions;
+
+	// The value at which to abort trying to find a path
+	const int maxNumPaths = 200;
+	int numVisited = 0;
+
+	// The number of nodes to explore before bailing out
+	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
+			constraintMap, solutions, costFunctor, maxNumPaths,
+			opt::maxCost, numVisited);
+
+	if (gDebugPrint)
+		cout << "Paths: " << solutions.size() << '\n';
+
+	stats.totalAttempted++;
+	if (solutions.empty()) {
+		stats.noPossiblePaths++;
+		return;
+	}
+
+	for (SimpleContigGraph::FeasiblePaths::iterator solIter
+				= solutions.begin(); solIter != solutions.end();) {
+		if (gDebugPrint) {
+			printPath(*solIter);
+			cout << '\n';
+		}
+
+		// Calculate the path distance to each node and see if
+		// it is within the estimated distance.
+		map<LinearNumKey, int> distanceMap;
+		pContigGraph->makeDistanceMap(*solIter,
+				costFunctor, distanceMap);
+
+		// Filter out potentially bad hits
+		bool validPath = true;
+		for (EstimateVector::const_iterator iter
+					= er.estimates[dirIdx].begin();
+				iter != er.estimates[dirIdx].end(); ++iter) {
+			if (gDebugPrint)
+				cout << *iter << '\t';
+
+			map<LinearNumKey, int>::iterator dmIter
+				= distanceMap.find(iter->nID);
+			assert(dmIter != distanceMap.end());
+			// translate distance by -overlap to match
+			// coordinate space used by the estimate
+			int actualDistance
+				= dmIter->second - costFunctor.m_overlap;
+			int diff = actualDistance - iter->distance;
+			unsigned buffer = allowedError(iter->stdDev);
+			bool invalid = (unsigned)abs(diff) > buffer;
+			if (invalid)
+				validPath = false;
+			if (gDebugPrint)
+				cout << "dist: " << actualDistance
+					<< " diff: " << diff
+					<< " buffer: " << buffer
+					<< " n: " << iter->numPairs
+					<< (invalid ? " invalid" : "")
+					<< '\n';
+		}
+
+		if (validPath)
+			++solIter;
+		else
+			solIter = solutions.erase(solIter);
+	}
+
+	if (gDebugPrint)
+		cout << "Solutions: " << solutions.size() << '\n';
+
+	SimpleContigGraph::FeasiblePaths::iterator bestSol
+		= solutions.end();
+	int minDiff = 999999;
+	for (SimpleContigGraph::FeasiblePaths::iterator solIter
+				= solutions.begin();
+			solIter != solutions.end(); ++solIter) {
+		size_t len = pContigGraph->calculatePathLength(
+				*solIter, costFunctor);
+
+		if (gDebugPrint) {
+			printPath(*solIter);
+			cout << " length: " << len;
+		}
+
+		map<LinearNumKey, int> distanceMap;
+		pContigGraph->makeDistanceMap(*solIter,
+				costFunctor, distanceMap);
+		int sumDiff = 0;
+		for (EstimateVector::const_iterator iter
+					= er.estimates[dirIdx].begin();
+				iter != er.estimates[dirIdx].end(); ++iter) {
+			map<LinearNumKey, int>::iterator dmIter
+				= distanceMap.find(iter->nID);
+			if (dmIter != distanceMap.end()) {
+				int actualDistance = dmIter->second
+					- costFunctor.m_overlap;
+				int diff = actualDistance - iter->distance;
+				sumDiff += abs(diff);
+			}
+		}
+
+		if (sumDiff < minDiff) {
+			minDiff = sumDiff;
+			bestSol = solIter;
+		}
+
+		if (gDebugPrint)
+			cout << " sumdiff: " << sumDiff << '\n';
+	}
+
+	if (solutions.empty()) {
+		stats.nopathEnd++;
+	} else if (solutions.size() > 1) {
+		stats.multiEnd++;
+	} else {
+		assert(solutions.size() == 1);
+		assert(bestSol != solutions.end());
+		stats.uniqueEnd++;
+		ContigPath cPath;
+		constructContigPath(*bestSol, cPath);
+		outStream << "@ " << g_contigIDs.key(er.refID) << ','
+			<< dirIdx << " -> " << cPath << '\n';
+		assert(outStream.good());
+	}
+
+	const EstimateVector& v = er.estimates[dirIdx];
+	for (EstimateVector::const_iterator it = v.begin();
+			it != v.end(); ++it)
+		minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
+}
+
+static void generatePathsThroughEstimates(
+		SimpleContigGraph* pContigGraph, string estFileName)
+{
 	ifstream inStream(estFileName.c_str());
 	ofstream outStream(opt::out.c_str());
 	assert(outStream.is_open());
-	SimpleDataCost costFunctor(kmer);
 
-	for (EstimateRecord er; inStream >> er;) {
-		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-		{
-			bool gDebugPrint = opt::verbose > 0;
-			if (gDebugPrint)
-				cout << "\n"
-					"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
-			// generate the reachable set
-			SimpleContigGraph::KeyConstraintMap constraintMap;
-			
-			for(EstimateVector::iterator iter = er.estimates[dirIdx].begin(); iter != er.estimates[dirIdx].end(); ++iter)
-			{
-				// Translate the distances produced by the esimator into the coordinate space
-				// used by the graph (a translation of m_overlap)
-				int translatedDistance = iter->distance + costFunctor.m_overlap;
-				unsigned distanceBuffer = allowedError(iter->stdDev);
-				
-				Constraint nc;
-				nc.distance = translatedDistance  + distanceBuffer;
-				nc.isRC = iter->isRC;
-				constraintMap[iter->nID] = nc;
+	for (EstimateRecord er; inStream >> er;)
+		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
+			handleEstimate(er, dirIdx, pContigGraph, outStream);
 
-				minNumPairs = min(minNumPairs, iter->numPairs);
-			}
-
-			if (gDebugPrint) {
-				cout << "Constraints:";
-				printMap(constraintMap);
-				cout << '\n';
-			}
-
-			// Generate the paths
-			SimpleContigGraph::FeasiblePaths solutions;
-			
-			// The value at which to abort trying to find a path
-			const int maxNumPaths = 200;
-			int numVisited = 0;
-			
-			// The number of nodes to explore before bailing out
-			pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx, constraintMap, solutions, costFunctor, maxNumPaths, maxCost, numVisited);
-
-			if (gDebugPrint)
-				cout << "Paths: " << solutions.size() << '\n';
-
-			totalAttempted++;
-			if (solutions.empty()) {
-				noPossiblePaths++;
-				continue;
-			}
-
-			for (SimpleContigGraph::FeasiblePaths::iterator
-					solIter = solutions.begin();
-					solIter != solutions.end();) {
-				if (gDebugPrint) {
-					printPath(*solIter);
-					cout << '\n';
-				}
-
-				// Calculate the path distance to each node and see if
-				// it is within the estimated distance.
-				map<LinearNumKey, int> distanceMap;
-				pContigGraph->makeDistanceMap(*solIter,
-						costFunctor, distanceMap);
-
-				// Filter out potentially bad hits
-				bool validPath = true;
-				for (EstimateVector::iterator
-						iter = er.estimates[dirIdx].begin();
-						iter != er.estimates[dirIdx].end(); ++iter) {
-					if (gDebugPrint)
-						cout << *iter << '\t';
-
-					map<LinearNumKey, int>::iterator
-						dmIter = distanceMap.find(iter->nID);
-					assert(dmIter != distanceMap.end());
-					// translate distance by -overlap to match
-					// coordinate space used by the estimate
-					int actualDistance
-						= dmIter->second - costFunctor.m_overlap;
-					int diff = actualDistance - iter->distance;
-					unsigned buffer = allowedError(iter->stdDev);
-					bool invalid = (unsigned)abs(diff) > buffer;
-					if (invalid)
-						validPath = false;
-					if (gDebugPrint)
-						cout << "dist: " << actualDistance
-							<< " diff: " << diff
-							<< " buffer: " << buffer
-							<< " n: " << iter->numPairs
-							<< (invalid ? " invalid" : "")
-							<< '\n';
-				}
-
-				if (validPath)
-					++solIter;
-				else
-					solIter = solutions.erase(solIter);
-			}
-
-			if (gDebugPrint)
-				cout << "Solutions: " << solutions.size() << '\n';
-
-			SimpleContigGraph::FeasiblePaths::iterator bestSol
-				= solutions.end();
-			int minDiff = 999999;
-			for (SimpleContigGraph::FeasiblePaths::iterator
-					solIter = solutions.begin();
-					solIter != solutions.end(); ++solIter) {
-				size_t len = pContigGraph->calculatePathLength(
-						*solIter, costFunctor);
-
-				if (gDebugPrint) {
-					printPath(*solIter);
-					cout << " length: " << len;
-				}
-
-				map<LinearNumKey, int> distanceMap;
-				pContigGraph->makeDistanceMap(*solIter,
-						costFunctor, distanceMap);
-				int sumDiff = 0;
-				for (EstimateVector::iterator iter
-						= er.estimates[dirIdx].begin();
-						iter != er.estimates[dirIdx].end(); ++iter) {
-					map<LinearNumKey, int>::iterator dmIter
-						= distanceMap.find(iter->nID);
-					if (dmIter != distanceMap.end()) {
-						int actualDistance = dmIter->second
-							- costFunctor.m_overlap;
-						int diff = actualDistance - iter->distance;
-						sumDiff += abs(diff);
-					}
-				}
-
-				if (sumDiff < minDiff) {
-					minDiff = sumDiff;
-					bestSol = solIter;
-				}
-
-				if (gDebugPrint)
-					cout << " sumdiff: " << sumDiff << '\n';
-			}
-
-			if (solutions.empty()) {
-				nopathEnd++;
-			} else if (solutions.size() > 1) {
-				multiEnd++;
-			} else {
-				assert(solutions.size() == 1);
-				assert(bestSol != solutions.end());
-				uniqueEnd++;
-				ContigPath cPath;
-				constructContigPath(*bestSol, cPath);
-				outStream << "@ " << g_contigIDs.key(er.refID) << ','
-					<< dirIdx << " -> " << cPath << '\n';
-				assert(outStream.good());
-			}
-
-			const EstimateVector& v = er.estimates[dirIdx];
-			for (EstimateVector::const_iterator it = v.begin();
-					it != v.end(); ++it)
-				minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
-		}
-	}
-	
 	cout <<
-		"Total paths attempted: " << totalAttempted << "\n"
-		"No possible paths: " << noPossiblePaths << "\n"
-		"No valid paths: " << nopathEnd << "\n"
-		"Multiple valid paths: " << multiEnd << "\n"
-		"Unique path: " << uniqueEnd << "\n";
-	
+		"Total paths attempted: " << stats.totalAttempted << "\n"
+		"No possible paths: " << stats.noPossiblePaths << "\n"
+		"No valid paths: " << stats.nopathEnd << "\n"
+		"Multiple valid paths: " << stats.multiEnd << "\n"
+		"Unique path: " << stats.uniqueEnd << "\n";
+
 	inStream.close();
 	outStream.close();
 
