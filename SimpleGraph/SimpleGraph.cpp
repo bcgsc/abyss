@@ -170,7 +170,7 @@ static unsigned minNumPairs = UINT_MAX;
 static unsigned minNumPairsUsed = UINT_MAX;
 
 static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
-		SimpleContigGraph* pContigGraph, ostream& outStream)
+		const SimpleContigGraph* pContigGraph, ostream& outStream)
 {
 	bool gDebugPrint = opt::verbose > 0;
 	if (gDebugPrint)

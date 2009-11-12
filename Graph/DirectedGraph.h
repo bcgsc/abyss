@@ -232,11 +232,15 @@ class DirectedGraph
 
 		template<class DataCostFunctor>
 		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
-		
+
 		template<class DataCostFunctor>
-		bool findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyConstraintMap& keyConstraints, FeasiblePaths& superPaths, 
-				DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost);
-		
+		bool findSuperpaths(const LinearNumKey& sourceKey,
+				extDirection dir,
+				const KeyConstraintMap& keyConstraints,
+				FeasiblePaths& superPaths,
+				DataCostFunctor& costFunctor, int maxNumPaths,
+				int maxCompCost, int& compCost) const;
+
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
 		// This function will fail if the edge is not unique
 		EdgeDescription getUniqueEdgeDesc(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir);
@@ -275,12 +279,15 @@ class DirectedGraph
 		
 		// Calculate the length of this path
 		template<typename DataCostFunctor>
-		size_t calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor);
-		
+		size_t calculatePathLength(const VertexPath& path,
+				DataCostFunctor costFunctor) const;
+
 		// Make a map of the distances to each node
 		template<typename DataCostFunctor>
-		void makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<LinearNumKey, int>& distanceMap);
-		
+		void makeDistanceMap(const VertexPath& path,
+				DataCostFunctor costFunctor,
+				std::map<LinearNumKey, int>& distanceMap) const;
+
 		// Iteratively visit each node
 		template<class Functor>
 		void iterativeVisit(Functor visitor);
@@ -300,14 +307,14 @@ class DirectedGraph
 		//
 		template<class DataCostFunctor>
 		void greedyDirectedPath(const LinearNumKey& sourceKey, extDirection dir, KeySet& terminals, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
-		
-		//
+
 		template<class DataCostFunctor>		
-		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, bool rcFlip, const KeyConstraintMap keyConstraints, 
-										VertexPath currentPath, FeasiblePaths& solutions,
-										size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost);	
-				
-		//
+		void ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
+				bool rcFlip, const KeyConstraintMap keyConstraints,
+				VertexPath currentPath, FeasiblePaths& solutions,
+				size_t currLen, DataCostFunctor& costFunctor,
+				int maxNumPaths, int maxCompCost) const;
+
 		template<class DataCostFunctor>
 		size_t getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor);											
 		

@@ -769,8 +769,10 @@ static int gExaminedCount;
 
 template<typename D>
 template<class DataCostFunctor>
-bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirection dir, const KeyConstraintMap& keyConstraints, FeasiblePaths& superPaths, 
-										DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost, int& compCost)
+bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
+		extDirection dir, const KeyConstraintMap& keyConstraints,
+		FeasiblePaths& superPaths, DataCostFunctor& costFunctor,
+		int maxNumPaths, int maxCompCost, int& compCost) const
 {
     VertexType* pSourceVertex = findVertex(sourceKey);
 
@@ -803,9 +805,12 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey, extDirectio
 
 template<typename D>
 template<class DataCostFunctor>
-void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex, extDirection dir, bool rcFlip, const KeyConstraintMap keyConstraints,
-                                                                                VertexPath currentPath, FeasiblePaths& solutions,
-                                                                                size_t currLen, DataCostFunctor& costFunctor, int maxNumPaths, int maxCompCost)
+void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
+		extDirection dir, bool rcFlip,
+		const KeyConstraintMap keyConstraints,
+		VertexPath currentPath, FeasiblePaths& solutions,
+		size_t currLen, DataCostFunctor& costFunctor,
+		int maxNumPaths, int maxCompCost) const
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
     if ((maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
@@ -938,7 +943,8 @@ void DirectedGraph<D>::extractShortestPath(VertexType* pSource, VertexType* pTar
 
 template<typename D>
 template<typename DataCostFunctor>
-size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path, DataCostFunctor costFunctor)
+size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path,
+		DataCostFunctor costFunctor) const
 {
 	size_t len = 0;
 	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
@@ -950,7 +956,9 @@ size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path, DataCostFun
 
 template<typename D>
 template<typename DataCostFunctor>
-void DirectedGraph<D>::makeDistanceMap(const VertexPath& path, DataCostFunctor costFunctor, std::map<LinearNumKey, int>& distanceMap)
+void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
+		DataCostFunctor costFunctor,
+		std::map<LinearNumKey, int>& distanceMap) const
 {
 	// the path distance to a node is the distance that walks through all the nodes leading to it
 	// the first node in a path therefore has a distance of 0 by def
