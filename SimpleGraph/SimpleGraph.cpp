@@ -34,6 +34,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "      --max-cost=COST   maximum computational cost\n"
 "  -o, --out=FILE        write result to FILE\n"
+"  -j, --threads=THREADS use THREADS parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -48,7 +49,7 @@ namespace opt {
 	static string out;
 }
 
-static const char shortopts[] = "k:o:v";
+static const char shortopts[] = "j:k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
 
@@ -56,6 +57,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -87,6 +89,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case OPT_MAX_COST: arg >> opt::maxCost; break;
 			case 'o': arg >> opt::out; break;
