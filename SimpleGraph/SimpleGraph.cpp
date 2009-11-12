@@ -11,6 +11,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <pthread.h>
 #include <sstream>
 #include <vector>
 
@@ -42,6 +43,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static unsigned k;
 	static unsigned maxCost = 100000;
+	static unsigned threads = 1;
 	static int verbose;
 	static string out;
 }
@@ -219,9 +221,17 @@ static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
 	if (gDebugPrint)
 		cout << "Paths: " << solutions.size() << '\n';
 
+	/** Lock the global variable stats. */
+	static pthread_mutex_t statsMutex = PTHREAD_MUTEX_INITIALIZER;
+
+	pthread_mutex_lock(&statsMutex);
 	stats.totalAttempted++;
+	pthread_mutex_unlock(&statsMutex);
+
 	if (solutions.empty()) {
+		pthread_mutex_lock(&statsMutex);
 		stats.noPossiblePaths++;
+		pthread_mutex_unlock(&statsMutex);
 		return;
 	}
 
@@ -317,24 +327,61 @@ static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
 	}
 
 	if (solutions.empty()) {
+		pthread_mutex_lock(&statsMutex);
 		stats.nopathEnd++;
+		pthread_mutex_unlock(&statsMutex);
 	} else if (solutions.size() > 1) {
+		pthread_mutex_lock(&statsMutex);
 		stats.multiEnd++;
+		pthread_mutex_unlock(&statsMutex);
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
+		pthread_mutex_lock(&statsMutex);
 		stats.uniqueEnd++;
+		pthread_mutex_unlock(&statsMutex);
 		ContigPath cPath;
 		constructContigPath(*bestSol, cPath);
+
+		/** Lock the output stream. */
+		static pthread_mutex_t outMutex = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_lock(&outMutex);
 		outStream << "@ " << g_contigIDs.key(er.refID) << ','
 			<< dirIdx << " -> " << cPath << '\n';
 		assert(outStream.good());
+		pthread_mutex_unlock(&outMutex);
 	}
 
 	const EstimateVector& v = er.estimates[dirIdx];
 	for (EstimateVector::const_iterator it = v.begin();
 			it != v.end(); ++it)
 		minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
+}
+
+struct WorkerArg {
+	istream* in;
+	ostream* out;
+	const SimpleContigGraph* graph;
+	WorkerArg(istream* in, ostream* out, const SimpleContigGraph* g)
+		: in(in), out(out), graph(g) { }
+};
+
+static void* worker(void* pArg)
+{
+	WorkerArg& arg = *static_cast<WorkerArg*>(pArg);
+	for (;;) {
+		/** Lock the input stream. */
+		static pthread_mutex_t inMutex = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_lock(&inMutex);
+		EstimateRecord er;
+		bool good = (*arg.in) >> er;
+		pthread_mutex_unlock(&inMutex);
+		if (!good)
+			break;
+		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
+			handleEstimate(er, dirIdx, arg.graph, *arg.out);
+	}
+	return NULL;
 }
 
 static void generatePathsThroughEstimates(
@@ -344,9 +391,22 @@ static void generatePathsThroughEstimates(
 	ofstream outStream(opt::out.c_str());
 	assert(outStream.is_open());
 
-	for (EstimateRecord er; inStream >> er;)
-		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
-			handleEstimate(er, dirIdx, pContigGraph, outStream);
+	// Create the worker threads.
+	vector<pthread_t> threads;
+	threads.reserve(opt::threads);
+	WorkerArg arg(&inStream, &outStream, pContigGraph);
+	for (unsigned i = 0; i < opt::threads; i++) {
+		pthread_t thread;
+		pthread_create(&thread, NULL, worker, &arg);
+		threads.push_back(thread);
+	}
+
+	// Wait for the worker threads to finish.
+	for (vector<pthread_t>::const_iterator it = threads.begin();
+			it != threads.end(); ++it) {
+		void* status;
+		pthread_join(*it, &status);
+	}
 
 	cout <<
 		"Total paths attempted: " << stats.totalAttempted << "\n"
