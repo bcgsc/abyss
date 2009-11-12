@@ -173,8 +173,12 @@ static unsigned minNumPairs = UINT_MAX;
 
 /** The fewest number of pairs used in a path. */
 static unsigned minNumPairsUsed = UINT_MAX;
-
-static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
+ 
+/** Find a path for the specified distance estimates.
+ * @return a pointer to the statistic to increment.
+ */
+static unsigned* handleEstimate(
+		const EstimateRecord& er, unsigned dirIdx,
 		const SimpleContigGraph* pContigGraph, ostream& outStream)
 {
 	bool gDebugPrint = opt::verbose > 0;
@@ -224,19 +228,8 @@ static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
 	if (gDebugPrint)
 		cout << "Paths: " << solutions.size() << '\n';
 
-	/** Lock the global variable stats. */
-	static pthread_mutex_t statsMutex = PTHREAD_MUTEX_INITIALIZER;
-
-	pthread_mutex_lock(&statsMutex);
-	stats.totalAttempted++;
-	pthread_mutex_unlock(&statsMutex);
-
-	if (solutions.empty()) {
-		pthread_mutex_lock(&statsMutex);
-		stats.noPossiblePaths++;
-		pthread_mutex_unlock(&statsMutex);
-		return;
-	}
+	if (solutions.empty())
+		return &stats.noPossiblePaths;
 
 	for (SimpleContigGraph::FeasiblePaths::iterator solIter
 				= solutions.begin(); solIter != solutions.end();) {
@@ -330,19 +323,12 @@ static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
 	}
 
 	if (solutions.empty()) {
-		pthread_mutex_lock(&statsMutex);
-		stats.nopathEnd++;
-		pthread_mutex_unlock(&statsMutex);
+		return &stats.nopathEnd;
 	} else if (solutions.size() > 1) {
-		pthread_mutex_lock(&statsMutex);
-		stats.multiEnd++;
-		pthread_mutex_unlock(&statsMutex);
+		return &stats.multiEnd;
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
-		pthread_mutex_lock(&statsMutex);
-		stats.uniqueEnd++;
-		pthread_mutex_unlock(&statsMutex);
 		ContigPath cPath;
 		constructContigPath(*bestSol, cPath);
 
@@ -353,12 +339,14 @@ static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
 			<< dirIdx << " -> " << cPath << '\n';
 		assert(outStream.good());
 		pthread_mutex_unlock(&outMutex);
-	}
 
-	const EstimateVector& v = er.estimates[dirIdx];
-	for (EstimateVector::const_iterator it = v.begin();
-			it != v.end(); ++it)
-		minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
+		const EstimateVector& v = er.estimates[dirIdx];
+		for (EstimateVector::const_iterator it = v.begin();
+				it != v.end(); ++it)
+			minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
+
+		return &stats.uniqueEnd;
+	}
 }
 
 struct WorkerArg {
@@ -381,8 +369,19 @@ static void* worker(void* pArg)
 		pthread_mutex_unlock(&inMutex);
 		if (!good)
 			break;
-		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
-			handleEstimate(er, dirIdx, arg.graph, *arg.out);
+
+		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx) {
+			unsigned* pStat = handleEstimate(er, dirIdx,
+					arg.graph, *arg.out);
+
+			/** Lock the global variable stats. */
+			static pthread_mutex_t statsMutex
+				= PTHREAD_MUTEX_INITIALIZER;
+			pthread_mutex_lock(&statsMutex);
+			stats.totalAttempted++;
+			(*pStat)++;
+			pthread_mutex_unlock(&statsMutex);
+		}
 	}
 	return NULL;
 }
