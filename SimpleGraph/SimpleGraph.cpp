@@ -169,10 +169,10 @@ static struct {
 } stats;
 
 /** The fewest number of pairs in a distance estimate. */
-static unsigned minNumPairs = UINT_MAX;
+static unsigned g_minNumPairs = UINT_MAX;
 
 /** The fewest number of pairs used in a path. */
-static unsigned minNumPairsUsed = UINT_MAX;
+static unsigned g_minNumPairsUsed = UINT_MAX;
  
 /** Find a path for the specified distance estimates.
  * @return a pointer to the statistic to increment.
@@ -204,7 +204,7 @@ static unsigned* handleEstimate(
 		nc.isRC = iter->isRC;
 		constraintMap[iter->nID] = nc;
 
-		minNumPairs = min(minNumPairs, iter->numPairs);
+		g_minNumPairs = min(g_minNumPairs, iter->numPairs);
 	}
 
 	if (gDebugPrint) {
@@ -343,7 +343,7 @@ static unsigned* handleEstimate(
 		const EstimateVector& v = er.estimates[dirIdx];
 		for (EstimateVector::const_iterator it = v.begin();
 				it != v.end(); ++it)
-			minNumPairsUsed = min(minNumPairsUsed, it->numPairs);
+			g_minNumPairsUsed = min(g_minNumPairsUsed, it->numPairs);
 
 		return &stats.uniqueEnd;
 	}
@@ -422,13 +422,13 @@ static void generatePathsThroughEstimates(
 
 	cout << "\n"
 		"The minimum number of pairs in a distance estimate is "
-		<< minNumPairs << ".\n";
-	if (minNumPairsUsed != UINT_MAX) {
+		<< g_minNumPairs << ".\n";
+	if (g_minNumPairsUsed != UINT_MAX) {
 		cout << "The minimum number of pairs used in a path is "
-			<< minNumPairsUsed << ".\n";
-		if (minNumPairs < minNumPairsUsed)
+			<< g_minNumPairsUsed << ".\n";
+		if (g_minNumPairs < g_minNumPairsUsed)
 			cout << "Consider increasing the number of pairs "
-				"threshold paramter, n, to " << minNumPairsUsed
+				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
 }
