@@ -10,6 +10,7 @@ libassembly_a_SOURCES = \
 	BranchRecord.cpp BranchRecord.h \
 	DotWriter.cpp DotWriter.h \
 	ISequenceCollection.h \
+	KmerData.h \
 	Options.cpp Options.h \
 	PackedSeq.h \
 	SequenceCollection.cpp SequenceCollection.h
