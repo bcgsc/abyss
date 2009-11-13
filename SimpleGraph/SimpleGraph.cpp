@@ -370,7 +370,7 @@ static void* worker(void* pArg)
 			const EstimateVector& v = er.estimates[dirIdx];
 			for (EstimateVector::const_iterator it = v.begin();
 					it != v.end(); ++it)
-				minNumPairs = min(minNumPairs, it->minNumPairs);
+				minNumPairs = min(minNumPairs, it->numPairs);
 
 			/** Lock the global variables stats,
 			 * g_minNumPairs and g_minNumPairsUsed. */
