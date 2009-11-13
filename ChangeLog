@@ -1,3 +1,23 @@
+2009-11-13  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.0.16.
+	* Improve the performance and memory usage of KAligner and
+	AdjList, particularly for very large data sets.
+
+	KAligner:
+	* Improve memory usage when maxk is 32 or 96. No change when maxk
+	is the default 64.
+	* New option, -i, --ignore-multimap. Ignore any duplicate k-mer in
+	the target sequence. Thanks to Tony Raymond.
+
+	AdjList:
+	* Improve performance for very large data sets.
+
+	ParseAligns:
+	* For reads whose ID begins with `SRR', expect that the forward
+	and reverse read have identical ID and no suffix, such as
+	/1 and /2.
+
 2009-10-19  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.15.
