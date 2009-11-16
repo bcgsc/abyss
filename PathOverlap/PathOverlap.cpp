@@ -7,6 +7,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <map>
+#include <set>
 
 using namespace std;
 
@@ -21,7 +22,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... PATH\n"
 "\n"
-"  -o, --out=FILE        write result to FILE\n"
+"  -d, --duplicates=FILE write duplicate contigs to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -30,18 +31,18 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	static int verbose;
-	static string out;
+	static string duplicateContigs;
 }
 
-static const char* shortopts = "o:v";
+static const char* shortopts = "d:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "out",         required_argument, NULL, 'o' },
-	{ "verbose",     no_argument,       NULL, 'v' },
-	{ "help",        no_argument,       NULL, OPT_HELP },
-	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ "duplicates",   required_argument, NULL, 'd' },
+	{ "verbose",      no_argument,       NULL, 'v' },
+	{ "help",         no_argument,       NULL, OPT_HELP },
+	{ "version",      no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -66,6 +67,8 @@ typedef multimap<LinearNumKey, PathStruct> PathMap;
 typedef pair<PathMap::iterator, PathMap::iterator> PathMapPair;
 typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
 typedef vector<OverlapStruct> OverlapVec;
+
+static set<LinearNumKey> s_trimmedContigs;
 
 static PathMap loadPaths(istream& pathStream)
 {
@@ -135,14 +138,21 @@ static void addOverlap(const PathStruct& refPathStruct,
 		refIndex = refPath.getNumNodes() - refIndex - 1;
 	}
 
+//	bool isRepeat = currIndex == 0 && refIndex == 0;
+
 	while (currIndex < currPath.getNumNodes() &&
 			refIndex < refPath.getNumNodes()) {
 		if (refPath.getNode(refIndex) == currPath.getNode(currIndex)) {
 			currIndex++;
 			refIndex++;
-		} else
-			return;
+		} else {
+//			if (isRepeat)
+//				break;
+//			else
+				return;
+		}
 	}
+	//overlap.firstID = overlap.firstID != isRepeat;
 	overlap.overlap = currIndex;
 	overlap.firstID = refPathStruct.pathID;
 	overlap.secondID = currPathStruct.pathID;
@@ -176,10 +186,20 @@ static OverlapVec findOverlaps(PathMap& pathMap)
 	return overlaps;
 }
 
+static void addContigsToSet(ContigPath& contigs, int min, int max)
+{
+	for (int x = 0; x < min; x++)
+		s_trimmedContigs.insert(contigs.getNode(x).id);
+
+	for (int x = max; (unsigned)x < contigs.getNumNodes(); x++)
+		s_trimmedContigs.insert(contigs.getNode(x).id);
+}
+
 static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
 		unsigned overlap)
 {
-	if (pathStruct.numRemoved[fromBack] >= overlap)
+	if (pathStruct.numRemoved[fromBack] >= overlap ||
+			pathStruct.path.getNumNodes() == 0)
 		return;
 	ContigPath newPath;
 	int max, min;
@@ -188,26 +208,29 @@ static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
 		max = pathStruct.path.getNumNodes() - overlap +
 			pathStruct.numRemoved[fromBack];
 		min = 0;
+		//assert(max > 0);
 	} else {
 		max = pathStruct.path.getNumNodes();
 		min = overlap - pathStruct.numRemoved[fromBack];
 	}
 	assert(min >= 0 && max <= (int)pathStruct.path.getNumNodes());
 
+	if (min > max) return;
+	addContigsToSet(pathStruct.path, min, max);
 	pathStruct.path = pathStruct.path.extractNodes(min, max);
 	pathStruct.numRemoved[fromBack] = overlap;
 }
 
 static void trimOverlaps(TrimPathMap& pathMap, OverlapVec& overlaps)
 {
-	 for (OverlapVec::const_iterator overlapIt = overlaps.begin();
-			 overlapIt != overlaps.end(); overlapIt++) {
-		 TrimPathStruct& firstPath =
-			 pathMap.find(overlapIt->firstID)->second;
-		 removeContigs(firstPath, !overlapIt->firstIsRC, overlapIt->overlap);
-		 TrimPathStruct& secondPath =
-			 pathMap.find(overlapIt->secondID)->second;
-		 removeContigs(secondPath, overlapIt->secondIsRC, overlapIt->overlap);
+	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
+			overlapIt != overlaps.end(); overlapIt++) {
+		TrimPathStruct& firstPath =
+			pathMap.find(overlapIt->firstID)->second;
+		removeContigs(firstPath, !overlapIt->firstIsRC, overlapIt->overlap);
+		TrimPathStruct& secondPath =
+			pathMap.find(overlapIt->secondID)->second;
+		removeContigs(secondPath, overlapIt->secondIsRC, overlapIt->overlap);
 	}
 }
 
@@ -251,6 +274,8 @@ static PathMap makePathMap(const TrimPathMap& trimPathMap)
 		path.path = trimIt->second.path;
 		path.pathID = trimIt->first;
 		path.isKeyFirst = true;
+		if (path.path.getNumNodes() < 1)
+			continue;
 		key = path.path.getNode(0).id;
 		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
 		path.isKeyFirst = false;
@@ -268,7 +293,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'o': arg >> opt::out; break;
+			case 'd': arg >> opt::duplicateContigs; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -299,7 +324,7 @@ int main(int argc, char** argv)
 
 	overlaps = findOverlaps(pathMap);
 	while (overlaps.size() > 0) {
-		cerr << "There were  " << overlaps.size() / 2 << " overlaps found.\n";
+		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
 		trimPaths = makeTrimPathMap(pathMap);
 		trimOverlaps(trimPaths, overlaps);
 		pathMap = makePathMap(trimPaths);
@@ -313,6 +338,15 @@ int main(int argc, char** argv)
 		string pathString = toString(trimPathsIt->second.path, ' ');
 		cout << pathString << '\n';
 	}
+
+	if (!opt::duplicateContigs.empty()) {
+		ofstream dupsOut(opt::duplicateContigs.c_str());
+		for (set<LinearNumKey>::const_iterator dupsIt =
+				s_trimmedContigs.begin();
+				dupsIt != s_trimmedContigs.end(); ++dupsIt)
+			dupsOut << *dupsIt << '\n';
+	}
+
 	cerr << PROGRAM " completed after " << trimIterations
 		<< " trim iterations.\n";
 }
