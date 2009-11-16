@@ -5,10 +5,12 @@
 // Aligner - Simple class to do an approximate alignment of reads to the input reference sequence
 //
 
+#include "Options.h"
 #include "config.h"
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
+#include <iostream>
 #include <istream>
 #include <map>
 #include <ostream>
@@ -120,9 +122,25 @@ struct Position
 {
 	uint32_t contig;
 	uint32_t pos; // 0 indexed
+	Position()
+		: contig(std::numeric_limits<uint32_t>::max()),
+		pos(std::numeric_limits<uint32_t>::max()) { }
 	Position(uint32_t contig, uint32_t pos)
 		: contig(contig), pos(pos) { }
-	void setDuplicate() {contig = std::numeric_limits<uint32_t>::max ();}
+	void setDuplicate(const ContigID& thisContig, const ContigID& otherContig,
+			const Sequence& kmer)
+	{
+		if (opt::multimap == opt::IGNORE)
+			contig = std::numeric_limits<uint32_t>::max ();
+		else {
+			std::cerr << "error: duplicate k-mer in "
+				<< thisContig
+				<< " also in "
+				<< otherContig
+				<< ": " << kmer << '\n';
+			exit(EXIT_FAILURE);
+		}
+	}
 	bool isDuplicate() const {return contig == std::numeric_limits<uint32_t>::max();}
 };
 

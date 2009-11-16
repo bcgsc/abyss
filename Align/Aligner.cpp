@@ -1,11 +1,9 @@
 #include "Aligner.h"
-#include "Align/Options.h"
 #include "PrefixIterator.h"
 #include "Sequence.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <iostream>
 #include <utility>
 
 using namespace std;
@@ -32,20 +30,25 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 		const Kmer& kmer, Position pos)
 {
 	assert(opt::multimap != opt::MULTIMAP);
+	Kmer rc_kmer = reverseComplement(kmer);
+	map_iterator findIt = m_target.find(rc_kmer);
+
+	if (findIt != m_target.end()) {
+		if (!findIt->second.isDuplicate())
+			findIt->second.setDuplicate(
+					contigIndexToID(findIt->second.contig),
+					contigIndexToID(pos.contig), kmer.decode());
+		return;
+	}
+
 	pair<map_iterator, bool> inserted
 		= m_target.insert(make_pair(kmer, pos));
-	if (inserted.second)
-		return;
-	if (opt::multimap == opt::IGNORE) {
-		inserted.first->second.setDuplicate();
-	} else {
-		cerr << "error: duplicate k-mer in "
-			<< contigIndexToID(inserted.first->second.contig)
-			<< " also in "
-			<< contigIndexToID(pos.contig)
-			<< ": " << kmer.decode() << '\n';
-		exit(EXIT_FAILURE);
-	}
+
+	if (!inserted.second)
+		if (!inserted.first->second.isDuplicate())
+			inserted.first->second.setDuplicate(
+					contigIndexToID(inserted.first->second.contig),
+					contigIndexToID(pos.contig), kmer.decode());
 }
 
 /** Create an index of the target sequence. */
