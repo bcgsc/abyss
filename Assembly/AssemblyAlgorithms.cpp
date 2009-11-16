@@ -55,7 +55,6 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	FastaReader reader(inFile.c_str(), FastaReader::KEEP_N);
 	for (Sequence seq; reader >> seq;) {
 		int len = seq.length();
-		assert(len > 0);
 		if (opt::kmerSize > len) {
 			count_small++;
 			continue;

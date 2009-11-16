@@ -84,6 +84,7 @@ next_record:
 		getline(headerStream, comment);
 
 		getline(m_fileHandle, s);
+		assert(s.length() > 0);
 
 		if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
