@@ -122,10 +122,8 @@ struct Position
 {
 	uint32_t contig;
 	uint32_t pos; // 0 indexed
-	Position()
-		: contig(std::numeric_limits<uint32_t>::max()),
-		pos(std::numeric_limits<uint32_t>::max()) { }
-	Position(uint32_t contig, uint32_t pos)
+	Position(uint32_t contig = std::numeric_limits<uint32_t>::max(),
+			uint32_t pos = std::numeric_limits<uint32_t>::max())
 		: contig(contig), pos(pos) { }
 	void setDuplicate(const ContigID& thisContig, const ContigID& otherContig,
 			const Sequence& kmer)
