@@ -34,9 +34,8 @@ SequenceCollectionHash::SequenceCollectionHash()
 	* See http://google-sparsehash.googlecode.com
 	* /svn/trunk/doc/sparse_hash_set.html#4
 	*/
-	Kmer deleted_key;
-	memset(&deleted_key, 0xff, sizeof deleted_key);
-	m_pSequences->set_deleted_key(deleted_key);
+	memset(&m_deleted_key, 0xff, sizeof m_deleted_key);
+	m_pSequences->set_deleted_key(m_deleted_key);
 #else
 	m_pSequences = new SequenceDataHash();
 #endif
@@ -56,9 +55,15 @@ void SequenceCollectionHash::add(const Kmer& seq)
 {
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
-	if (it == m_pSequences->end())
-		m_pSequences->insert(make_pair(seq, KmerData()));
-	else
+	if (it == m_pSequences->end()) {
+		Kmer new_seq(seq);
+#if HAVE_GOOGLE_SPARSE_HASH_SET
+		// Convert polyT Kmers to polyA Kmers.
+		if (seq == m_deleted_key)
+			new_seq.reverseComplement();
+#endif
+		m_pSequences->insert(make_pair(new_seq, KmerData()));
+	} else
 		it->second.addMultiplicity(rc ? ANTISENSE : SENSE);
 }
 
