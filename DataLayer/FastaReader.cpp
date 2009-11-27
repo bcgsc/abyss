@@ -22,6 +22,9 @@ namespace opt {
 	 * sequences.
 	 */
 	int trimMasked = 1;
+
+	/** trim bases with a quality not present in trimQuals. */
+	string trimQuals;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -71,6 +74,8 @@ next_record:
 
 	signed char recordType = m_fileHandle.peek();
 	Sequence s;
+	string q;
+	size_t trimFront = 0, trimBack = 0;
 
 	if (recordType == EOF) {
 		m_fileHandle.get();
@@ -89,8 +94,10 @@ next_record:
 		if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
-			s.erase(s.find_last_not_of("acgtn") + 1);
-			s.erase(0, s.find_first_not_of("acgtn"));
+			trimFront = s.find_first_not_of("acgtn");
+			trimBack = s.find_last_not_of("acgtn") + 1;
+			s.erase(trimBack);
+			s.erase(0, trimFront);
 		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
@@ -104,12 +111,19 @@ next_record:
 		}
 
 		if (recordType == '@') {
-			// Discard the quality values.
-			char c = m_fileHandle.get();
-			assert(c == '+');
-			(void)c;
-			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
-			m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+			string qualHeader, qualID, qualComment;
+			getline(m_fileHandle, qualHeader);
+			stringstream qualHeaderStream(qualHeader);
+			qualHeaderStream >> recordType >> qualID >> ws;
+			getline(qualHeaderStream, qualComment);
+			assert(recordType == '+');
+			assert(id == qualID);
+			assert(comment == qualComment);
+
+			getline(m_fileHandle, q);
+			assert(q.length() > 0);
+			q.erase(trimBack);
+			q.erase(0, trimFront);
 		}
 	} else {
 		string line;
@@ -134,12 +148,23 @@ next_record:
 			o << '/' << fields[7];
 			id = o.str();
 			s = fields[8];
+			q = fields[9];
 		} else {
 			fprintf(stderr, "error: `%s' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
 					"and saw `%c' and %zu fields\n",
 					m_inPath, recordType, fields.size());
 			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!opt::trimQuals.empty()) {
+		trimFront = q.find_first_of(opt::trimQuals);
+		trimBack = q.find_last_of(opt::trimQuals) + 1;
+
+		if (trimFront > 0 || trimBack < q.length()) {
+			s.erase(trimBack);
+			s.erase(0, trimFront);
 		}
 	}
 
