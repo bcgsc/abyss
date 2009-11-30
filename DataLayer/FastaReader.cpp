@@ -117,8 +117,6 @@ next_record:
 			qualHeaderStream >> recordType >> qualID >> ws;
 			getline(qualHeaderStream, qualComment);
 			assert(recordType == '+');
-			assert(id == qualID);
-			assert(comment == qualComment);
 
 			getline(m_fileHandle, q);
 			assert(q.length() > 0);
