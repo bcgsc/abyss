@@ -97,7 +97,8 @@ struct Contig {
 typedef vector<Contig> ContigVec;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
-void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap);
+void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
+		ContigPathMap& resultPathMap, MergeNodeList errorNodes, bool deleteSubsumed);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
@@ -198,22 +199,35 @@ int main(int argc, char** argv)
 	}
 
 	// Read the paths file
-	ContigPathMap contigPathMap;
-	readPathsFromFile(pathFile, contigPathMap);
+	ContigPathMap originalPathMap, resultsPathMap;
+	readPathsFromFile(pathFile, originalPathMap);
 
 	// link the paths together
-	for (ContigPathMap::const_iterator iter = contigPathMap.begin();
-			iter != contigPathMap.end(); ++iter) {
-		linkPaths(iter->first, contigPathMap);
+	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
+			iter != originalPathMap.end(); ++iter) {
+		linkPaths(iter->first, originalPathMap, resultsPathMap,
+				MergeNodeList(), false);
 
 		if (gDebugPrint)
 			cout << "Pseudo final path from " << iter->first << ' '
 				<< iter->second << " is " << *iter->second << '\n';
 	}
 
+	MergeNodeList errorNodes;
+	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
+			iter != resultsPathMap.end(); ++iter) {
+		linkPaths(iter->first, originalPathMap, resultsPathMap,
+				errorNodes, true);
+	}
+
+	for (MergeNodeList::const_iterator iter = errorNodes.begin();
+			iter != errorNodes.end(); ++iter) {
+		resultsPathMap[iter->id] = originalPathMap[iter->id];
+	}
+
 	set<ContigPath*> uniquePtr;
-	for (ContigPathMap::const_iterator it = contigPathMap.begin();
-			it != contigPathMap.end(); ++it)
+	for (ContigPathMap::const_iterator it = resultsPathMap.begin();
+			it != resultsPathMap.end(); ++it)
 		uniquePtr.insert(it->second);
 
 	// Sort the set of unique paths by the path itself rather than by
@@ -326,11 +340,24 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	pathStream.close();
 }
 
-void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
+void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
+		ContigPathMap& resultPathMap, MergeNodeList errorNodes,
+		bool deleteSubsumed)
 {
-	ContigPath* refCanonical = contigPathMap[id];
+	ContigPath* refCanonical;
+	ContigPathMap* usedPathMap;
+	if (deleteSubsumed) {
+		refCanonical = resultPathMap[id];
+		usedPathMap = &resultPathMap;
+	} else {
+		refCanonical = new ContigPath;
+		refCanonical->appendPath(*contigPathMap[id]);
+		usedPathMap = &contigPathMap;
+	}
 
-	if(gDebugPrint) cout << "Initial canonical path (" << id << ") " << *refCanonical << '\n';
+	if(gDebugPrint)
+		cout << "Initial canonical path (" << id << ") " 
+			<< *refCanonical << '\n';
 
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
@@ -342,24 +369,39 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 			if(gDebugPrint) cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
 
 			// Check if the current node to merge has any paths to/from it
-			ContigPathMap::iterator findIter = contigPathMap.find(iter->id);
-			if (findIter != contigPathMap.end() && refCanonical != findIter->second) {
+			ContigPathMap::iterator findIter = usedPathMap->find(iter->id);
+			if (findIter != usedPathMap->end()) {
 				// Make the full path of the child node
-				ContigPath* childCanonPath = findIter->second;
+				ContigPath childCanonPath = *findIter->second;
 
-				if(gDebugPrint) cout << " ref: " << refCanonical
-					<< ' ' << *refCanonical << '\n';
-				if(gDebugPrint) cout << "  in: " <<
-					childCanonPath << ' ' << *childCanonPath << '\n';
+				if(gDebugPrint) cout << " ref: " << *refCanonical << '\n';
+				if(gDebugPrint) cout << "  in: " << childCanonPath << '\n';
 
 				size_t s1, s2, e1, e2;
 				bool validMerge = checkPathConsistency(id, iter->id,
-					*refCanonical, *childCanonPath, s1, e1, s2, e2);
+					*refCanonical, childCanonPath, s1, e1, s2, e2);
 
-				if(validMerge) {
+				if(validMerge && deleteSubsumed) {
+					// If additional merges could be made at this
+					// point, something is wrong. We need to delete
+					// all merged paths that exist for these paths and
+					// print the originals.
+					if (s2 != 0 || e2+1 != childCanonPath.getNumNodes()) {
+						addPathNodesToList(errorNodes, *refCanonical);
+						addPathNodesToList(errorNodes, childCanonPath);
+					} else {
+						if(gDebugPrint)
+							cout << " removing: " << childCanonPath << '\n';
+						resultPathMap.erase(findIter);
+						delete findIter->second;
+					}
+				} else if (validMerge) {
 					// Extract the extra nodes from the child path that can be added in
-					ContigPath prependNodes = childCanonPath->extractNodes(0, s2);
-					ContigPath appendNodes = childCanonPath->extractNodes(e2+1, childCanonPath->getNumNodes());
+					ContigPath prependNodes =
+						childCanonPath.extractNodes(0, s2);
+					ContigPath appendNodes =
+						childCanonPath.extractNodes(e2+1,
+								childCanonPath.getNumNodes());
 
 					// Add the nodes to the list of contigs to try to merge in
 					addPathNodesToList(mergeInList, prependNodes);
@@ -369,29 +411,15 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap)
 					refCanonical->prependPath(prependNodes);
 					refCanonical->appendPath(appendNodes);
 
-					if(gDebugPrint) cout << " new: " <<
-						refCanonical << ' ' << *refCanonical << '\n';
-
-					// Alias all pointers to the child to the reference
-					MergeNodeList::iterator mergeIt = mergeInList.begin();
-					while (mergeIt != mergeInList.end()) {
-						ContigPathMap::iterator delIt = contigPathMap.find(mergeIt->id);
-						if (delIt->second == childCanonPath) {
-							delIt->second = refCanonical;
-							if (mergeIt != iter) {
-								mergeInList.erase(mergeIt++);
-							} else
-								++mergeIt;
-						} else
-							++mergeIt;
-					}
+					if(gDebugPrint) cout << " new: " << *refCanonical << '\n';
 				}
 			}
 		}
-
 		// Erase the iterator and move forward
 		mergeInList.erase(iter++);
 	}
+	if (!deleteSubsumed)
+		resultPathMap[id] = refCanonical;
 }
 
 //
