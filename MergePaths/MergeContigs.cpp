@@ -31,8 +31,10 @@ static const char USAGE_MESSAGE[] =
 "  CONTIG  contigs in FASTA format\n"
 "  PATH    paths of these contigs\n"
 "\n"
+"  -f, --finish          removes contigs used in previous paths\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
+"  -p, --path=PATH_FILE  paths output by SimpleGraph\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -42,15 +44,19 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static unsigned k;
 	static string out;
+	static string path;
+	static bool finish;
 }
 
-static const char shortopts[] = "k:o:v";
+static const char shortopts[] = "fk:o:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "finish",      no_argument,       NULL, 'f' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "path",        required_argument, NULL, 'p' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -191,8 +197,10 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'f': opt::finish = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
+			case 'p': arg >> opt::path; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -213,6 +221,11 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (opt::path.empty()) {
+		cerr << PROGRAM ": " << "missing -p,--path option\n";
+		die = true;
+	}
+
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
@@ -225,7 +238,7 @@ int main(int argc, char** argv)
 	}
 
 	const char* contigFile = argv[optind++];
-	string pathFile(argv[optind++]);
+	string mergedPathFile(argv[optind++]);
 
 	vector<Contig> contigs;
 	{
@@ -247,10 +260,12 @@ int main(int argc, char** argv)
 
 	vector<Path> paths;
 	{
-		ifstream fin(pathFile.c_str());
-		if (pathFile != "-")
-			assert_open(fin, pathFile);
-		istream& in = pathFile == "-" ? cin : fin;
+		if (opt::verbose > 0)
+			cerr << "reading " << mergedPathFile << "...\n";
+		ifstream fin(mergedPathFile.c_str());
+		if (mergedPathFile != "-")
+			assert_open(fin, mergedPathFile);
+		istream& in = mergedPathFile == "-" ? cin : fin;
 		for (string s; getline(in, s);) {
 			line_num++;
 			istringstream ss(s);
@@ -260,11 +275,15 @@ int main(int argc, char** argv)
 					back_inserter(path));
 			paths.push_back(path);
 		}
+		if (opt::verbose > 0)
+			cerr << "Total number of paths: " << paths.size() << '\n';
 		assert(in.eof());
 	}
 
 	vector<Path> prevPaths;
-	for (;optind < argc; optind++){
+	for (;optind < argc; optind++) {
+		if (opt::verbose > 0)
+			cerr << "reading " << argv[optind] << "...\n";
 		string filename(argv[optind]);
 		ifstream fin(filename.c_str());
 		if (filename != "-")
@@ -281,6 +300,8 @@ int main(int argc, char** argv)
 		}
 		assert(in.eof());
 	}
+	if (opt::verbose > 0)
+		cerr << "Total number of old paths: " << prevPaths.size() << '\n';
 
 	ofstream out(opt::out.c_str());
 	assert(out.good());
@@ -289,19 +310,10 @@ int main(int argc, char** argv)
 	vector<bool> seen(contigs.size());
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->at(0).id > contigs.size() - 1 ||
-				it->at(it->size() - 1).id > contigs.size() - 1)
-			continue;
-		if (prevPaths.size() == 0) {
-			if (it->at(0).id < contigs.size() - 1)
-				seen[it->at(0).id] = true;
-			if (it->at(it->size() - 1).id < contigs.size() - 1)
-				seen[it->at(it->size() - 1).id] = true;
-		} else
-			for (Path::const_iterator itc = it->begin();
-					itc != it->end(); ++itc)
-				if (itc->id < contigs.size())
-					seen[itc->id] = true;
+		for (Path::const_iterator itc = it->begin();
+				itc != it->end(); ++itc)
+			if (itc->id < contigs.size())
+				seen[itc->id] = true;
 	}
 
 	for (vector<Path>::const_iterator it = prevPaths.begin();
@@ -312,10 +324,31 @@ int main(int argc, char** argv)
 				seen[itc->id] = true;
 	}
 
+	vector<bool> seenPivots(contigs.size());
+	{
+		ifstream fin(opt::path.c_str());
+		for (string s; getline(fin, s);) {
+			char at = 0;
+			line_num++;
+			istringstream ss(s);
+			string pivot;
+			ss >> at >> pivot;
+			char sense = chop(pivot);
+			assert(sense == '0' || sense == '1');
+			assert(chop(pivot) == ',');
+			unsigned pivotNum = g_dict.serial(pivot);
+			assert(pivotNum < contigs.size());
+			// Only count a pivot as seen if it was seen in a final path
+			if (seen[pivotNum]) seenPivots[pivotNum] = true;
+		}
+		assert(fin.eof());
+	}
+
 	// Output those contigs that were not seen in a path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if (!seen[g_dict.serial(it->id)])
+		if ((opt::finish && !seen[g_dict.serial(it->id)]) ||
+				(!opt::finish && !seenPivots[g_dict.serial(it->id)]))
 			out << *it;
 
 	int id;
