@@ -189,6 +189,40 @@ template<typename T> static string toString(T x)
 	return s.str();
 }
 
+/** Loads all paths from the file named inPath into paths. */
+void loadPaths(string& inPath, vector<Path> paths)
+{
+	ifstream fin(inPath.c_str());
+	if (opt::verbose > 0)
+		cerr << "reading " << inPath << "...\n";
+	if (inPath != "-")
+		assert_open(fin, inPath);
+	istream& in = inPath == "-" ? cin : fin;
+
+	for (string s; getline(in, s);) {
+		line_num++;
+		istringstream ss(s);
+		Path path;
+		copy(istream_iterator<ContigNode>(ss),
+				istream_iterator<ContigNode>(),
+				back_inserter(path));
+		paths.push_back(path);
+	}
+	assert(in.eof());
+}
+
+/** Finds all contigs used in each path in paths, and
+ * marks them as seen in the vector seen. */
+void seenContigs(vector<bool>& seen, const vector<Path>& paths)
+{
+	for (vector<Path>::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		for (Path::const_iterator itc = it->begin();
+				itc != it->end(); ++itc)
+			if (itc->id < seen.size())
+				seen[itc->id] = true;
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -259,46 +293,14 @@ int main(int argc, char** argv)
 	}
 
 	vector<Path> paths;
-	{
-		if (opt::verbose > 0)
-			cerr << "reading " << mergedPathFile << "...\n";
-		ifstream fin(mergedPathFile.c_str());
-		if (mergedPathFile != "-")
-			assert_open(fin, mergedPathFile);
-		istream& in = mergedPathFile == "-" ? cin : fin;
-		for (string s; getline(in, s);) {
-			line_num++;
-			istringstream ss(s);
-			Path path;
-			copy(istream_iterator<ContigNode>(ss),
-					istream_iterator<ContigNode>(),
-					back_inserter(path));
-			paths.push_back(path);
-		}
-		if (opt::verbose > 0)
-			cerr << "Total number of paths: " << paths.size() << '\n';
-		assert(in.eof());
-	}
+	loadPaths(mergedPathFile, paths); 
+	if (opt::verbose > 0)
+		cerr << "Total number of paths: " << paths.size() << '\n';
 
 	vector<Path> prevPaths;
 	for (;optind < argc; optind++) {
-		if (opt::verbose > 0)
-			cerr << "reading " << argv[optind] << "...\n";
 		string filename(argv[optind]);
-		ifstream fin(filename.c_str());
-		if (filename != "-")
-			assert_open(fin, filename);
-		istream& in = filename == "-" ? cin : fin;
-		for (string s; getline(in, s);) {
-			line_num++;
-			istringstream ss(s);
-			Path path;
-			copy(istream_iterator<ContigNode>(ss),
-					istream_iterator<ContigNode>(),
-					back_inserter(path));
-			prevPaths.push_back(path);
-		}
-		assert(in.eof());
+		loadPaths(filename, prevPaths);
 	}
 	if (opt::verbose > 0)
 		cerr << "Total number of old paths: " << prevPaths.size() << '\n';
@@ -308,21 +310,8 @@ int main(int argc, char** argv)
 
 	// Record all the contigs that were seen in a path.
 	vector<bool> seen(contigs.size());
-	for (vector<Path>::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
-		for (Path::const_iterator itc = it->begin();
-				itc != it->end(); ++itc)
-			if (itc->id < contigs.size())
-				seen[itc->id] = true;
-	}
-
-	for (vector<Path>::const_iterator it = prevPaths.begin();
-			it != prevPaths.end(); ++it) {
-		for (Path::const_iterator itc = it->begin();
-				itc != it->end(); ++itc)
-			if (itc->id < contigs.size())
-				seen[itc->id] = true;
-	}
+	seenContigs(seen, paths);
+	seenContigs(seen, prevPaths);
 
 	vector<bool> seenPivots(contigs.size());
 	{
