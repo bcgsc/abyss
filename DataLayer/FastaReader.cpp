@@ -75,7 +75,6 @@ next_record:
 	signed char recordType = m_fileHandle.peek();
 	Sequence s;
 	string q;
-	size_t trimFront = 0, trimBack = 0;
 
 	if (recordType == EOF) {
 		m_fileHandle.get();
@@ -91,13 +90,25 @@ next_record:
 		getline(m_fileHandle, s);
 		assert(s.length() > 0);
 
+		if (recordType == '@') {
+			char c = m_fileHandle.get();
+			assert(c == '+');
+			(void)c;
+			m_fileHandle.ignore(numeric_limits<streamsize>::max(),
+					'\n');
+			getline(m_fileHandle, q);
+			assert(s.length() == q.length());
+		}
+
 		if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
-			trimFront = s.find_first_not_of("acgtn");
-			trimBack = s.find_last_not_of("acgtn") + 1;
+			size_t trimFront = s.find_first_not_of("acgtn");
+			size_t trimBack = s.find_last_not_of("acgtn") + 1;
 			s.erase(trimBack);
 			s.erase(0, trimFront);
+			q.erase(trimBack);
+			q.erase(0, trimFront);
 		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
@@ -108,18 +119,6 @@ next_record:
 			// assembly.
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
-		}
-
-		if (recordType == '@') {
-			char c = m_fileHandle.get();
-			assert(c == '+');
-			(void)c;
-			m_fileHandle.ignore(numeric_limits<streamsize>::max(),
-					'\n');
-			getline(m_fileHandle, q);
-			assert(q.length() > 0);
-			q.erase(trimBack);
-			q.erase(0, trimFront);
 		}
 	} else {
 		string line;
@@ -155,8 +154,8 @@ next_record:
 	}
 
 	if (!opt::trimQuals.empty()) {
-		trimFront = q.find_first_of(opt::trimQuals);
-		trimBack = q.find_last_of(opt::trimQuals) + 1;
+		size_t trimFront = q.find_first_of(opt::trimQuals);
+		size_t trimBack = q.find_last_of(opt::trimQuals) + 1;
 
 		if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);
