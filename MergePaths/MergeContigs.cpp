@@ -194,7 +194,7 @@ void loadPaths(string& inPath, vector<Path> paths)
 {
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
-		cerr << "reading " << inPath << "...\n";
+		cerr << "Reading `" << inPath << "'..." << endl;
 	if (inPath != "-")
 		assert_open(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
@@ -322,9 +322,13 @@ int main(int argc, char** argv)
 			istringstream ss(s);
 			string pivot;
 			ss >> at >> pivot;
+			assert(at == '@');
 			char sense = chop(pivot);
 			assert(sense == '0' || sense == '1');
-			assert(chop(pivot) == ',');
+			(void)sense;
+			char comma = chop(pivot);
+			assert(comma == ',');
+			(void)comma;
 			unsigned pivotNum = g_dict.serial(pivot);
 			assert(pivotNum < contigs.size());
 			// Only count a pivot as seen if it was seen in a final path
