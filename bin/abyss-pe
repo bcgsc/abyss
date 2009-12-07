@@ -17,6 +17,12 @@ endif
 
 mpirun=$(shell which mpirun)
 
+path?=$(shell if ! which ABYSS >/dev/null 2>/dev/null; then \
+	dirname $(MAKEFILE_LIST); fi)
+ifdef path
+PATH:=$(path):$(PATH)
+endif
+
 ifdef name
 out?=$(name)-contigs.fa
 endif
