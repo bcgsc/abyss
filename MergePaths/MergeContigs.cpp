@@ -190,7 +190,7 @@ template<typename T> static string toString(T x)
 }
 
 /** Loads all paths from the file named inPath into paths. */
-void loadPaths(string& inPath, vector<Path> paths)
+static void loadPaths(string& inPath, vector<Path> paths)
 {
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
@@ -213,7 +213,7 @@ void loadPaths(string& inPath, vector<Path> paths)
 
 /** Finds all contigs used in each path in paths, and
  * marks them as seen in the vector seen. */
-void seenContigs(vector<bool>& seen, const vector<Path>& paths)
+static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
 {
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it)
