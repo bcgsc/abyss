@@ -111,13 +111,11 @@ next_record:
 		}
 
 		if (recordType == '@') {
-			string qualHeader, qualID, qualComment;
-			getline(m_fileHandle, qualHeader);
-			stringstream qualHeaderStream(qualHeader);
-			qualHeaderStream >> recordType >> qualID >> ws;
-			getline(qualHeaderStream, qualComment);
-			assert(recordType == '+');
-
+			char c = m_fileHandle.get();
+			assert(c == '+');
+			(void)c;
+			m_fileHandle.ignore(numeric_limits<streamsize>::max(),
+					'\n');
 			getline(m_fileHandle, q);
 			assert(q.length() > 0);
 			q.erase(trimBack);
