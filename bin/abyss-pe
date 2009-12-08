@@ -140,7 +140,7 @@ $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
 # Paired-end assembly
 
 %-4.path: %-4.adj %-3.dist
-	SimpleGraph $v -k$k -o $@ $^
+	SimpleGraph $v -j$j -k$k -o $@ $^
 
 ifndef cs
 
