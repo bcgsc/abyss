@@ -107,8 +107,10 @@ next_record:
 			size_t trimBack = s.find_last_not_of("acgtn") + 1;
 			s.erase(trimBack);
 			s.erase(0, trimFront);
-			q.erase(trimBack);
-			q.erase(0, trimFront);
+			if (!q.empty()) {
+				q.erase(trimBack);
+				q.erase(0, trimFront);
+			}
 		}
 		transform(s.begin(), s.end(), s.begin(), ::toupper);
 
