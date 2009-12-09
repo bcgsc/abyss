@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <getopt.h>
 #include <map>
@@ -22,7 +23,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... PATH\n"
 "\n"
-"  -d, --duplicates=FILE write duplicate contigs to FILE\n"
+"  -r, --repeats=FILE write repeat contigs to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -31,15 +32,15 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	static int verbose;
-	static string duplicateContigs;
+	static string repeatContigs;
 }
 
-static const char* shortopts = "d:t:v";
+static const char* shortopts = "r:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "duplicates",   required_argument, NULL, 'd' },
+	{ "repeats",      required_argument, NULL, 'r' },
 	{ "verbose",      no_argument,       NULL, 'v' },
 	{ "help",         no_argument,       NULL, OPT_HELP },
 	{ "version",      no_argument,       NULL, OPT_VERSION },
@@ -293,7 +294,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'd': arg >> opt::duplicateContigs; break;
+			case 'd': arg >> opt::repeatContigs; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -339,12 +340,10 @@ int main(int argc, char** argv)
 		cout << pathString << '\n';
 	}
 
-	if (!opt::duplicateContigs.empty()) {
-		ofstream dupsOut(opt::duplicateContigs.c_str());
-		for (set<LinearNumKey>::const_iterator dupsIt =
-				s_trimmedContigs.begin();
-				dupsIt != s_trimmedContigs.end(); ++dupsIt)
-			dupsOut << *dupsIt << '\n';
+	if (!opt::repeatContigs.empty()) {
+		ofstream out(opt::repeatContigs.c_str());
+		copy(s_trimmedContigs.begin(), s_trimmedContigs.end(),
+				ostream_iterator<LinearNumKey>(out, "\n"));
 	}
 
 	cerr << PROGRAM " completed after " << trimIterations
