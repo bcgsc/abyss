@@ -35,10 +35,10 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked              trim masked bases from the ends of reads\n"
 "                                 [default]\n"
 "      --no-trim-masked           do not trim masked bases from the ends of reads\n"
-"  -Q, --quality=QUALITY_THRESH   trim low quality bases from ends of reads\n"
-"                                 based on threshold\n"
-"      --STDFQ                    quality offset of '!' [default]\n"
-"      --ILMFQ                    quality offset of '@'\n"
+"  -q, --trim-quality=THRESHOLD   trim bases from the ends of reads whose quality\n"
+"                                 is less than the threshold\n"
+"      --standard-fastq           zero quality is `!' (33) [default]\n"
+"      --illumina-fastq           zero quality is `@' (64)\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
 "                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
@@ -99,13 +99,13 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-/** quality threshold */
-int qualThresh = 0;
+/** minimum quality threshold */
+static int qualityThreshold;
 
-/** quality offset type */
-int qualType = 0;
+/** quality offset */
+static int qualityOffset = 33;
 
-static const char shortopts[] = "b:c:e:E:g:k:l:o:Q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:l:o:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
@@ -118,9 +118,9 @@ static const struct option longopts[] = {
 	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
 	{ "trim-masked",    no_argument,    &opt::trimMasked, 1 },
 	{ "no-trim-masked", no_argument,    &opt::trimMasked, 0 },
-	{ "quality",     required_argument, NULL, 'Q' },
-	{ "STDFQ",       no_argument, &qualType, 0 },
-	{ "ILMFQ",       no_argument, &qualType, 1 },
+	{ "trim-quality",   required_argument, NULL, 'q' },
+	{ "standard-fastq", no_argument, &qualityOffset, 33 },
+	{ "illumina-fastq", no_argument, &qualityOffset, 64 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubbles",     required_argument, NULL, 'b' },
@@ -188,8 +188,8 @@ void parse(int argc, char* const* argv)
 			case 'g':
 				graphPath = optarg;
 				break;
-			case 'Q':
-				arg >> qualThresh;
+			case 'q':
+				arg >> qualityThreshold;
 				break;
 			case 's':
 				snpPath = optarg;
@@ -229,21 +229,12 @@ void parse(int argc, char* const* argv)
 			trimLen = 6 * (readLen - kmerSize + 1);
 	}
 
-	if (qualThresh > 0) {
-		if (qualThresh < 0) {
-			cerr << PROGRAM ": The quality threshold must be set to "
-				"at least 0.\n";
-			exit(EXIT_FAILURE);
-		}
-		char offset = qualType == 0 ? '!' : '@';
-		char min = qualThresh + offset;
-		char max = offset + 40;
-		for (char i = min; i <= max; i++)
-			opt::trimQuals.append(1, i);
-
-		if (verbose > 0)
-			cerr << "Allowing bases with Q '" << opt::trimQuals <<
-				"` to be used.\n";
+	if (qualityThreshold > 0) {
+		assert(qualityThreshold <= 40);
+		char min = qualityOffset + qualityThreshold;
+		char max = qualityOffset + 40;
+		for (char c = min; c <= max; c++)
+			opt::trimQuals.append(1, c);
 	}
 
 	if (trimLen < 0)
@@ -262,6 +253,10 @@ void parse(int argc, char* const* argv)
 
 	if (opt::rank <= 0)
 		cout << PACKAGE_STRING "\n" << sargv.str() << endl;
+
+	if (opt::verbose > 0 && !opt::trimQuals.empty())
+		cerr << "Using bases with quality `"
+			<< opt::trimQuals << "'\n";
 }
 
 } // namespace opt
