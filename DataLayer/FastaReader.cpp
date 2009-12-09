@@ -27,7 +27,7 @@ namespace opt {
 	int qualityThreshold;
 
 	/** quality offset */
-	int qualityOffset = 33;
+	int qualityOffset;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -79,6 +79,7 @@ next_record:
 	Sequence s;
 	string q;
 
+	unsigned qualityOffset;
 	if (recordType == EOF) {
 		m_fileHandle.get();
 		return s;
@@ -125,6 +126,8 @@ next_record:
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
 		}
+
+		qualityOffset = 33;
 	} else {
 		string line;
 		vector<string> fields;
@@ -156,17 +159,21 @@ next_record:
 					m_inPath, recordType, fields.size());
 			exit(EXIT_FAILURE);
 		}
+
+		qualityOffset = 64;
 	}
 
 	if (opt::qualityThreshold > 0) {
+		if (opt::qualityOffset > 0)
+			qualityOffset = opt::qualityOffset;
 		static const char ASCII[] =" !\"#$%&'()*+,-./0123456789"
 			":;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefgh";
-		assert(opt::qualityOffset > ASCII[0]);
-		const char* trimQuals = ASCII
-			+ (opt::qualityOffset - ASCII[0]) + opt::qualityThreshold;
-		size_t trimFront = q.find_first_of(trimQuals);
-		size_t trimBack = q.find_last_of(trimQuals) + 1;
+		assert(qualityOffset > (unsigned)ASCII[0]);
+		const char* goodQual = ASCII + (qualityOffset - ASCII[0])
+			+ opt::qualityThreshold;
 
+		size_t trimFront = q.find_first_of(goodQual);
+		size_t trimBack = q.find_last_of(goodQual) + 1;
 		if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);
 			s.erase(0, trimFront);

@@ -10,7 +10,7 @@ FASTQ format (.fastq) and may be compressed with gz, bz2 or xz.
 .TP
 \fB--chastity\fR
 discard unchaste reads [default]
-for qseq- and export-formatted files only
+for qseq and export files only
 .TP
 \fB--no-chastity\fR
 do not discard unchaste reads
@@ -25,11 +25,13 @@ do not trim masked bases from the ends of reads
 trim bases from the ends of reads whose quality is less than the
 threshold
 .TP
-\fB--standard-fastq\fR
-zero quality is `!' (33) [default]
+\fB--standard-quality\fR
+zero quality is `!' (33)
+default for FASTQ files
 .TP
-\fB--illumina-fastq\fR
+\fB--illumina-quality\fR
 zero quality is `@' (64)
+default for qseq and export files
 .TP
 \fB\-o\fR, \fB\-\-out\fR=\fIFILE\fR
 write the contigs to FILE

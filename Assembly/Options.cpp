@@ -30,15 +30,17 @@ static const char USAGE_MESSAGE[] =
 "qseq or export format and compressed with gz, bz2 or xz.\n"
 "\n"
 "      --chastity                 discard unchaste reads [default]\n"
-"                                 for qseq- and export-formatted files only\n"
+"                                 for qseq and export files only\n"
 "      --no-chastity              do not discard unchaste reads\n"
 "      --trim-masked              trim masked bases from the ends of reads\n"
 "                                 [default]\n"
 "      --no-trim-masked           do not trim masked bases from the ends of reads\n"
 "  -q, --trim-quality=THRESHOLD   trim bases from the ends of reads whose quality\n"
 "                                 is less than the threshold\n"
-"      --standard-fastq           zero quality is `!' (33) [default]\n"
-"      --illumina-fastq           zero quality is `@' (64)\n"
+"      --standard-quality         zero quality is `!' (33)\n"
+"                                 default for FASTQ files\n"
+"      --illumina-quality         zero quality is `@' (64)\n"
+"                                 default for qseq and export files\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
 "                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
@@ -113,8 +115,8 @@ static const struct option longopts[] = {
 	{ "trim-masked",    no_argument,    &opt::trimMasked, 1 },
 	{ "no-trim-masked", no_argument,    &opt::trimMasked, 0 },
 	{ "trim-quality",   required_argument, NULL, 'q' },
-	{ "standard-fastq", no_argument, &opt::qualityOffset, 33 },
-	{ "illumina-fastq", no_argument, &opt::qualityOffset, 64 },
+	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
+	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubbles",     required_argument, NULL, 'b' },
@@ -223,8 +225,6 @@ void parse(int argc, char* const* argv)
 			trimLen = 6 * (readLen - kmerSize + 1);
 	}
 
-	assert(opt::qualityOffset >= 33);
-	assert(opt::qualityOffset < 100);
 	assert(opt::qualityThreshold <= 40);
 
 	if (trimLen < 0)
