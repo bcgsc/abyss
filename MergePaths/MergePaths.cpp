@@ -98,7 +98,7 @@ typedef vector<Contig> ContigVec;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
-		ContigPathMap& resultPathMap, MergeNodeList errorNodes, bool deleteSubsumed);
+		ContigPathMap& resultPathMap, bool deleteSubsumed);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
@@ -205,24 +205,16 @@ int main(int argc, char** argv)
 	// link the paths together
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter) {
-		linkPaths(iter->first, originalPathMap, resultsPathMap,
-				MergeNodeList(), false);
+		linkPaths(iter->first, originalPathMap, resultsPathMap, false);
 
 		if (gDebugPrint)
 			cout << "Pseudo final path from " << iter->first << ' '
 				<< iter->second << " is " << *iter->second << '\n';
 	}
 
-	MergeNodeList errorNodes;
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
 			iter != resultsPathMap.end(); ++iter) {
-		linkPaths(iter->first, originalPathMap, resultsPathMap,
-				errorNodes, true);
-	}
-
-	for (MergeNodeList::const_iterator iter = errorNodes.begin();
-			iter != errorNodes.end(); ++iter) {
-		resultsPathMap[iter->id] = originalPathMap[iter->id];
+		linkPaths(iter->first, originalPathMap, resultsPathMap, true);
 	}
 
 	set<ContigPath*> uniquePtr;
@@ -341,8 +333,7 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 }
 
 void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
-		ContigPathMap& resultPathMap, MergeNodeList errorNodes,
-		bool deleteSubsumed)
+		ContigPathMap& resultPathMap, bool deleteSubsumed)
 {
 	ContigPath* refCanonical;
 	ContigPathMap* usedPathMap;
@@ -383,12 +374,15 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 
 				if(validMerge && deleteSubsumed) {
 					// If additional merges could be made at this
-					// point, something is wrong. We need to delete
+					// point, something is wrong. We may need to delete
 					// all merged paths that exist for these paths and
-					// print the originals.
+					// print the originals, but for now we keep both
+					// and print a warning.
 					if (s2 != 0 || e2+1 != childCanonPath.getNumNodes()) {
-						addPathNodesToList(errorNodes, *refCanonical);
-						addPathNodesToList(errorNodes, childCanonPath);
+						if (gDebugPrint)
+							cout << " warning: possible circular path found in paths:\n"
+								<< childCanonPath << '\n'
+								<< *refCanonical << '\n';
 					} else {
 						if(gDebugPrint)
 							cout << " removing: " << childCanonPath << '\n';
