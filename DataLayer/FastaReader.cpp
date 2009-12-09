@@ -23,8 +23,11 @@ namespace opt {
 	 */
 	int trimMasked = 1;
 
-	/** trim bases with a quality not present in trimQuals. */
-	string trimQuals;
+	/** minimum quality threshold */
+	int qualityThreshold;
+
+	/** quality offset */
+	int qualityOffset = 33;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -155,9 +158,14 @@ next_record:
 		}
 	}
 
-	if (!opt::trimQuals.empty()) {
-		size_t trimFront = q.find_first_of(opt::trimQuals);
-		size_t trimBack = q.find_last_of(opt::trimQuals) + 1;
+	if (opt::qualityThreshold > 0) {
+		static const char ASCII[] =" !\"#$%&'()*+,-./0123456789"
+			":;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefgh";
+		assert(opt::qualityOffset > ASCII[0]);
+		const char* trimQuals = ASCII
+			+ (opt::qualityOffset - ASCII[0]) + opt::qualityThreshold;
+		size_t trimFront = q.find_first_of(trimQuals);
+		size_t trimBack = q.find_last_of(trimQuals) + 1;
 
 		if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);

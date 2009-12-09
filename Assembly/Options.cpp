@@ -99,12 +99,6 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-/** minimum quality threshold */
-static int qualityThreshold;
-
-/** quality offset */
-static int qualityOffset = 33;
-
 static const char shortopts[] = "b:c:e:E:g:k:l:o:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
@@ -119,8 +113,8 @@ static const struct option longopts[] = {
 	{ "trim-masked",    no_argument,    &opt::trimMasked, 1 },
 	{ "no-trim-masked", no_argument,    &opt::trimMasked, 0 },
 	{ "trim-quality",   required_argument, NULL, 'q' },
-	{ "standard-fastq", no_argument, &qualityOffset, 33 },
-	{ "illumina-fastq", no_argument, &qualityOffset, 64 },
+	{ "standard-fastq", no_argument, &opt::qualityOffset, 33 },
+	{ "illumina-fastq", no_argument, &opt::qualityOffset, 64 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubbles",     required_argument, NULL, 'b' },
@@ -189,7 +183,7 @@ void parse(int argc, char* const* argv)
 				graphPath = optarg;
 				break;
 			case 'q':
-				arg >> qualityThreshold;
+				arg >> opt::qualityThreshold;
 				break;
 			case 's':
 				snpPath = optarg;
@@ -229,13 +223,9 @@ void parse(int argc, char* const* argv)
 			trimLen = 6 * (readLen - kmerSize + 1);
 	}
 
-	if (qualityThreshold > 0) {
-		assert(qualityThreshold <= 40);
-		char min = qualityOffset + qualityThreshold;
-		char max = qualityOffset + 40;
-		for (char c = min; c <= max; c++)
-			opt::trimQuals.append(1, c);
-	}
+	assert(opt::qualityOffset >= 33);
+	assert(opt::qualityOffset < 100);
+	assert(opt::qualityThreshold <= 40);
 
 	if (trimLen < 0)
 		trimLen = kmerSize;
@@ -253,10 +243,6 @@ void parse(int argc, char* const* argv)
 
 	if (opt::rank <= 0)
 		cout << PACKAGE_STRING "\n" << sargv.str() << endl;
-
-	if (opt::verbose > 0 && !opt::trimQuals.empty())
-		cerr << "Using bases with quality `"
-			<< opt::trimQuals << "'\n";
 }
 
 } // namespace opt
