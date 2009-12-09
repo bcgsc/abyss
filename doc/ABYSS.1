@@ -21,6 +21,16 @@ trim masked bases from the ends of reads [default]
 \fB--no-trim-masked\fR
 do not trim masked bases from the ends of reads
 .TP
+\fB-q\fR, \fB--trim-quality\fR=\fITHRESHOLD\fR
+trim bases from the ends of reads whose quality is less than the
+threshold
+.TP
+\fB--standard-fastq\fR
+zero quality is `!' (33) [default]
+.TP
+\fB--illumina-fastq\fR
+zero quality is `@' (64)
+.TP
 \fB\-o\fR, \fB\-\-out\fR=\fIFILE\fR
 write the contigs to FILE
 .TP
