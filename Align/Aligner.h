@@ -10,13 +10,14 @@
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <istream>
+#include <limits>
 #include <map>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <limits> //for uint32_t.max
 
 typedef std::string ContigID;
 
