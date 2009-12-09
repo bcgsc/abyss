@@ -33,6 +33,10 @@ files containing single-end reads
 \fBk\fR, \fBSGE_TASK_ID\fR
 k-mer size. k should be no less than half the read length.
 .TP
+\fBq\fR
+quality threshold. Trim bases from the ends of reads whose quality is
+less than the threshold.
+.TP
 \fBl\fR
 read length. The read length is used only to calculate the trim-length
 parameter using the heuristic t=6*(l-k+1). If multiple read lengths

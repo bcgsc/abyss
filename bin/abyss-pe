@@ -62,6 +62,9 @@ endif
 
 # ABYSS parameters
 abyssopt += -k$k
+ifdef q
+abyssopt += -q$q
+endif
 ifdef l
 abyssopt += -l$l
 endif
