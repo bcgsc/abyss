@@ -227,6 +227,11 @@ void parse(int argc, char* const* argv)
 
 	assert(opt::qualityThreshold <= 40);
 
+	if (opt::coverage >= 0 && opt::erode == (unsigned)-1)
+		cerr << "warning: -c,--coverage was specified, "
+			"but -e,--erode was not specified\n"
+			"Previously, the default was -e2 (or --erode=2)." << endl;
+
 	if (trimLen < 0)
 		trimLen = kmerSize;
 
