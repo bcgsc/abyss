@@ -143,22 +143,28 @@ int main(int argc, char** argv)
 }
 
 template<typename K, typename D>
-ostream& printMap(const map<K,D>& s)
+ostream& printMap(ostream& out, const map<K,D>& s)
 {
 	for (typename map<K,D>::const_iterator iter = s.begin();
 			iter != s.end(); ++iter)
-		cout << ' ' << iter->first << iter->second;
-	return cout;
+		out << ' ' << iter->first << iter->second;
+	return out;
 }
 
 template<typename K>
-ostream& printPath(const vector<K>& s)
+ostream& printPath(ostream& out, const vector<K>& s)
 {
 	assert(!s.empty());
 	copy(s.begin(), s.end()-1,
-			ostream_iterator<K>(cout, " "));
-	return cout << s.back();
+			ostream_iterator<K>(out, " "));
+	return out << s.back();
 }
+
+/** The fewest number of pairs in a distance estimate. */
+static unsigned g_minNumPairs = UINT_MAX;
+
+/** The fewest number of pairs used in a path. */
+static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static struct {
 	unsigned totalAttempted;
@@ -171,21 +177,28 @@ static struct {
 /** Find a path for the specified distance estimates.
  * @return a pointer to the statistic to increment.
  */
-static unsigned* handleEstimate(
+static void handleEstimate(
 		const EstimateRecord& er, unsigned dirIdx,
 		const SimpleContigGraph* pContigGraph, ostream& outStream)
 {
-	bool gDebugPrint = opt::verbose > 0;
-	if (gDebugPrint)
-		cout << "\n"
-			"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
+	if (er.estimates[dirIdx].empty())
+		return;
 
+	ostringstream vout_ss;
+	ostream bitBucket(NULL);
+	ostream& vout = opt::verbose > 0 ? vout_ss : bitBucket;
+	vout << "\n"
+		"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
+
+	unsigned minNumPairs = UINT_MAX;
 	SimpleDataCost costFunctor(opt::k);
 	// generate the reachable set
 	SimpleContigGraph::KeyConstraintMap constraintMap;
 	for (EstimateVector::const_iterator iter
 				= er.estimates[dirIdx].begin();
 			iter != er.estimates[dirIdx].end(); ++iter) {
+		minNumPairs = min(minNumPairs, iter->numPairs);
+
 		// Translate the distances produced by the esimator into the
 		// coordinate space used by the graph (a translation of
 		// m_overlap)
@@ -199,11 +212,8 @@ static unsigned* handleEstimate(
 		constraintMap[iter->nID] = nc;
 	}
 
-	if (gDebugPrint) {
-		cout << "Constraints:";
-		printMap(constraintMap);
-		cout << '\n';
-	}
+	vout << "Constraints:";
+	printMap(vout, constraintMap) << '\n';
 
 	// Generate the paths
 	SimpleContigGraph::FeasiblePaths solutions;
@@ -217,18 +227,13 @@ static unsigned* handleEstimate(
 			constraintMap, solutions, costFunctor, maxNumPaths,
 			opt::maxCost, numVisited);
 
-	if (gDebugPrint)
-		cout << "Paths: " << solutions.size() << '\n';
-
-	if (solutions.empty())
-		return &stats.noPossiblePaths;
+	unsigned numPossiblePaths = solutions.size();
+	if (numPossiblePaths > 0)
+		vout << "Paths: " << numPossiblePaths << '\n';
 
 	for (SimpleContigGraph::FeasiblePaths::iterator solIter
 				= solutions.begin(); solIter != solutions.end();) {
-		if (gDebugPrint) {
-			printPath(*solIter);
-			cout << '\n';
-		}
+		printPath(vout, *solIter) << '\n';
 
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
@@ -241,8 +246,7 @@ static unsigned* handleEstimate(
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
-			if (gDebugPrint)
-				cout << *iter << '\t';
+			vout << *iter << '\t';
 
 			map<LinearNumKey, int>::iterator dmIter
 				= distanceMap.find(iter->nID);
@@ -256,13 +260,12 @@ static unsigned* handleEstimate(
 			bool invalid = (unsigned)abs(diff) > buffer;
 			if (invalid)
 				validPath = false;
-			if (gDebugPrint)
-				cout << "dist: " << actualDistance
-					<< " diff: " << diff
-					<< " buffer: " << buffer
-					<< " n: " << iter->numPairs
-					<< (invalid ? " invalid" : "")
-					<< '\n';
+			vout << "dist: " << actualDistance
+				<< " diff: " << diff
+				<< " buffer: " << buffer
+				<< " n: " << iter->numPairs
+				<< (invalid ? " invalid" : "")
+				<< '\n';
 		}
 
 		if (validPath)
@@ -271,8 +274,7 @@ static unsigned* handleEstimate(
 			solIter = solutions.erase(solIter);
 	}
 
-	if (gDebugPrint)
-		cout << "Solutions: " << solutions.size() << '\n';
+	vout << "Solutions: " << solutions.size() << '\n';
 
 	SimpleContigGraph::FeasiblePaths::iterator bestSol
 		= solutions.end();
@@ -280,14 +282,6 @@ static unsigned* handleEstimate(
 	for (SimpleContigGraph::FeasiblePaths::iterator solIter
 				= solutions.begin();
 			solIter != solutions.end(); ++solIter) {
-		size_t len = pContigGraph->calculatePathLength(
-				*solIter, costFunctor);
-
-		if (gDebugPrint) {
-			printPath(*solIter);
-			cout << " length: " << len;
-		}
-
 		map<LinearNumKey, int> distanceMap;
 		pContigGraph->makeDistanceMap(*solIter,
 				costFunctor, distanceMap);
@@ -310,29 +304,39 @@ static unsigned* handleEstimate(
 			bestSol = solIter;
 		}
 
-		if (gDebugPrint)
-			cout << " sumdiff: " << sumDiff << '\n';
+		size_t len = pContigGraph->calculatePathLength(
+				*solIter, costFunctor);
+		printPath(vout, *solIter)
+			<< " length: " << len
+			<< " sumdiff: " << sumDiff << '\n';
 	}
 
-	if (solutions.empty()) {
-		return &stats.nopathEnd;
+	/** Lock the output stream. */
+	static pthread_mutex_t outMutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&outMutex);
+	stats.totalAttempted++;
+	g_minNumPairs = min(g_minNumPairs, minNumPairs);
+	cout << vout_ss.str();
+
+	if (numPossiblePaths == 0) {
+		stats.noPossiblePaths++;
+	} else if (solutions.empty()) {
+		stats.nopathEnd++;
 	} else if (solutions.size() > 1) {
-		return &stats.multiEnd;
+		stats.multiEnd++;
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
 		ContigPath cPath;
 		constructContigPath(*bestSol, cPath);
 
-		/** Lock the output stream. */
-		static pthread_mutex_t outMutex = PTHREAD_MUTEX_INITIALIZER;
-		pthread_mutex_lock(&outMutex);
 		outStream << "@ " << g_contigIDs.key(er.refID) << ','
 			<< dirIdx << " -> " << cPath << '\n';
 		assert(outStream.good());
-		pthread_mutex_unlock(&outMutex);
-		return &stats.uniqueEnd;
+		stats.uniqueEnd++;
+		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}
+	pthread_mutex_unlock(&outMutex);
 }
 
 struct WorkerArg {
@@ -342,12 +346,6 @@ struct WorkerArg {
 	WorkerArg(istream* in, ostream* out, const SimpleContigGraph* g)
 		: in(in), out(out), graph(g) { }
 };
-
-/** The fewest number of pairs in a distance estimate. */
-static unsigned g_minNumPairs = UINT_MAX;
-
-/** The fewest number of pairs used in a path. */
-static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static void* worker(void* pArg)
 {
@@ -362,30 +360,8 @@ static void* worker(void* pArg)
 		if (!good)
 			break;
 
-		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx) {
-			unsigned* pStat = handleEstimate(er, dirIdx,
-					arg.graph, *arg.out);
-
-			unsigned minNumPairs = UINT_MAX;
-			const EstimateVector& v = er.estimates[dirIdx];
-			for (EstimateVector::const_iterator it = v.begin();
-					it != v.end(); ++it)
-				minNumPairs = min(minNumPairs, it->numPairs);
-
-			/** Lock the global variables stats,
-			 * g_minNumPairs and g_minNumPairsUsed. */
-			static pthread_mutex_t statsMutex
-				= PTHREAD_MUTEX_INITIALIZER;
-			pthread_mutex_lock(&statsMutex);
-			stats.totalAttempted++;
-			(*pStat)++;
-
-			g_minNumPairs = min(g_minNumPairs, minNumPairs);
-			if (pStat == &stats.uniqueEnd)
-				g_minNumPairsUsed
-					= min(g_minNumPairsUsed, minNumPairs);
-			pthread_mutex_unlock(&statsMutex);
-		}
+		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
+			handleEstimate(er, dirIdx, arg.graph, *arg.out);
 	}
 	return NULL;
 }
