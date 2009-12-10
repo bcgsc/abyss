@@ -9,20 +9,19 @@ using namespace std;
 /** Reverse the path and flip every node. */
 void ContigPath::reverse(bool flipNodes)
 {
-	std::reverse(m_path.begin(), m_path.end());
+	std::reverse(begin(), end());
 	if (flipNodes) {
 		size_t maxIdx = size();
 		for (size_t idx = 0; idx < maxIdx; ++idx)
-			m_path[idx].flip();
+			(*this)[idx].flip();
 	}
 }
 
 /** Write a path. */
 ostream& operator<<(ostream& out, const ContigPath& object)
 {
-	vector<MergeNode>::const_iterator last = object.m_path.end() - 1;
-	copy(object.m_path.begin(), last,
-			ostream_iterator<MergeNode>(out, " "));
+	vector<MergeNode>::const_iterator last = object.end() - 1;
+	copy(object.begin(), last, ostream_iterator<MergeNode>(out, " "));
 	return out << *last;
 }
 
@@ -31,6 +30,6 @@ istream& operator>>(istream& in, ContigPath& object)
 {
 	copy(istream_iterator<MergeNode>(in),
 			istream_iterator<MergeNode>(),
-			back_inserter(object.m_path));
+			back_inserter(object));
 	return in;
 }

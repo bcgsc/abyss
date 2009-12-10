@@ -46,62 +46,40 @@ struct MergeNode
 	}
 };
 
-class ContigPath
+class ContigPath : public std::vector<MergeNode>
 {
 	public:
-		ContigPath() { }
-
-		/** Append a single node to this path. */
-		void push_back(const MergeNode& mn) { m_path.push_back(mn); }
+		ContigPath::ContigPath() { }
 
 		/** Prepend the specified path to this path. */
 		void prependPath(const ContigPath& o)
 		{
-			m_path.insert(m_path.begin(),
-					o.m_path.begin(), o.m_path.end());
+			insert(begin(), o.begin(), o.end());
 		}
 
 		/** Append the specified path to this path. */
 		void appendPath(const ContigPath& o)
 		{
-			m_path.insert(m_path.end(),
-					o.m_path.begin(), o.m_path.end());
+			insert(end(), o.begin(), o.end());
 		}
 
-		size_t size() const { return m_path.size(); }
-
-		MergeNode& operator[](size_t n) { return m_path[n]; }
-		const MergeNode& operator[](size_t n) const
-		{
-			return m_path[n];
-		}
-
-		const MergeNode& front() const { return m_path.front(); }
-
-		// reverse the path
 		void reverse(bool flipNodes);
 
 		/** Return a subsequence of this path. */
 		ContigPath extractNodes(size_t start, size_t end)
 		{
-			std::vector<MergeNode> v(&m_path[start], &m_path[end]);
+			std::vector<MergeNode> v(&(*this)[start], &(*this)[end]);
 			return ContigPath(v);
 		}
 
-		bool operator <(const ContigPath& o) const
-		{
-			return m_path < o.m_path;
-		}
-
-		// Insertion/Extraction operators
-		friend std::ostream& operator<<(std::ostream& out, const ContigPath& object);
-		friend std::istream& operator>>(std::istream& in, ContigPath& object);
+		friend std::ostream& operator<<(std::ostream& out,
+				const ContigPath& object);
+		friend std::istream& operator>>(std::istream& in,
+				ContigPath& object);
 
 	private:
 		explicit ContigPath(const std::vector<MergeNode>& v)
-			: m_path(v) { }
-
-		std::vector<MergeNode> m_path;
+			: std::vector<MergeNode>(v) { }
 };
 
 #endif
