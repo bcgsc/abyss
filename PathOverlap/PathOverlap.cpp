@@ -93,7 +93,7 @@ static PathMap loadPaths(istream& pathStream)
 			MergeNode node;
 			node.id = contig;
 			node.isRC = isRC;
-			contigPath.appendNode(node);
+			contigPath.push_back(node);
 			if (first < 0)
 				first = contig;
 			last = contig;

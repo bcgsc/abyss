@@ -427,6 +427,6 @@ static void constructContigPath(
 	{
 		flip = flip ^ iter->isRC;
 		MergeNode mn = {iter->key, flip};
-		contigPath.appendNode(mn);
+		contigPath.push_back(mn);
 	}
 }

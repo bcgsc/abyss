@@ -52,7 +52,7 @@ class ContigPath
 		ContigPath() { }
 
 		/** Append a single node to this path. */
-		void appendNode(const MergeNode& mn) { m_path.push_back(mn); }
+		void push_back(const MergeNode& mn) { m_path.push_back(mn); }
 
 		/** Prepend the specified path to this path. */
 		void prependPath(const ContigPath& o)

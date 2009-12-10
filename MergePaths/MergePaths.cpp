@@ -314,8 +314,7 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 
 		MergeNode rootNode = {id, 0};
 		if (contigPathMap.find(id) == contigPathMap.end())
-			(contigPathMap[id] = new ContigPath)
-				->appendNode(rootNode);
+			(contigPathMap[id] = new ContigPath)->push_back(rootNode);
 		ContigPath* p = contigPathMap[id];
 		if (!dir) {
 			assert(p->size() == 1);
