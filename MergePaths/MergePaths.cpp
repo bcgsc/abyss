@@ -380,10 +380,29 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 					// print the originals, but for now we keep both
 					// and print a warning.
 					if (s2 != 0 || e2+1 != childCanonPath.size()) {
-						if (gDebugPrint)
-							cout << " warning: possible circular path found in paths:\n"
-								<< childCanonPath << '\n'
-								<< *refCanonical << '\n';
+						set<LinearNumKey> refKeys, childKeys;
+						for (ContigPath::const_iterator it = refCanonical->begin();
+								it != refCanonical->end(); it++)
+							refKeys.insert(it->id);
+						for (ContigPath::const_iterator it = childCanonPath.begin();
+								it != childCanonPath.end(); it++)
+							childKeys.insert(it->id);
+						bool refIncludesChild =
+							includes(refKeys.begin(), refKeys.end(),
+									childKeys.begin(), childKeys.end());
+						bool childIncludesRef =
+							includes(childKeys.begin(), childKeys.end(),
+									refKeys.begin(), refKeys.end());
+
+						assert(refIncludesChild || childIncludesRef);
+
+						if (refIncludesChild && !childIncludesRef ) {
+							if(gDebugPrint)
+								cout << " removing circular: " << childCanonPath << '\n';
+							resultPathMap.erase(findIter);
+							delete findIter->second;
+						} else if (gDebugPrint)
+							cout << " warning: possible circular paths\n";
 					} else {
 						if(gDebugPrint)
 							cout << " removing: " << childCanonPath << '\n';
