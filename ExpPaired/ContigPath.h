@@ -67,24 +67,20 @@ class ContigPath : public std::vector<MergeNode>
 			std::for_each(begin(), end(),
 					std::mem_fun_ref(&MergeNode::flip));
 		}
-
-	private:
-		explicit ContigPath(const Vector& v) : Vector(v) { }
 };
 
-std::ostream& operator<<(std::ostream& out, const ContigPath& object)
+std::ostream& operator<<(std::ostream& out, const ContigPath& o)
 {
-	ContigPath::const_iterator last = object.end() - 1;
-	copy(object.begin(), last,
-			std::ostream_iterator<MergeNode>(out, " "));
+	ContigPath::const_iterator last = o.end() - 1;
+	copy(o.begin(), last, std::ostream_iterator<MergeNode>(out, " "));
 	return out << *last;
 }
 
-std::istream& operator>>(std::istream& in, ContigPath& object)
+std::istream& operator>>(std::istream& in, ContigPath& o)
 {
 	copy(std::istream_iterator<MergeNode>(in),
 			std::istream_iterator<MergeNode>(),
-			back_inserter(object));
+			back_inserter(o));
 	return in;
 }
 
