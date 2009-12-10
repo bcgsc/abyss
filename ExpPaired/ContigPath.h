@@ -7,6 +7,7 @@
 #include <cassert>
 #include <functional>
 #include <istream>
+#include <iterator>
 #include <ostream>
 #include <sstream>
 #include <vector>
@@ -67,13 +68,24 @@ class ContigPath : public std::vector<MergeNode>
 					std::mem_fun_ref(&MergeNode::flip));
 		}
 
-		friend std::ostream& operator<<(std::ostream& out,
-				const ContigPath& object);
-		friend std::istream& operator>>(std::istream& in,
-				ContigPath& object);
-
 	private:
 		explicit ContigPath(const Vector& v) : Vector(v) { }
 };
+
+std::ostream& operator<<(std::ostream& out, const ContigPath& object)
+{
+	ContigPath::const_iterator last = object.end() - 1;
+	copy(object.begin(), last,
+			std::ostream_iterator<MergeNode>(out, " "));
+	return out << *last;
+}
+
+std::istream& operator>>(std::istream& in, ContigPath& object)
+{
+	copy(std::istream_iterator<MergeNode>(in),
+			std::istream_iterator<MergeNode>(),
+			back_inserter(object));
+	return in;
+}
 
 #endif
