@@ -322,7 +322,7 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 			p->insert(p->end(), path.begin(), path.end());
 		} else {
 			assert(p->front() == rootNode);
-			path.reverse(false);
+			reverse(path.begin(), path.end());
 			p->insert(p->begin(), path.begin(), path.end());
 		}
 	}
@@ -462,8 +462,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			}
 
 			if(path1[startP1].isRC != path2[startP2].isRC) {
-				// Flip the path if node direction is different
-				path2.reverse(true);
+				path2.reverseComplement();
 				flipped = !flipped;
 				startP2 = max2 - startP2;
 				endP2 = max2 - endP2;
@@ -549,9 +548,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	endP1 = biggestIt->second.endP1;
 	startP2 = biggestIt->second.startP2;
 	endP2 = biggestIt->second.endP2;
-	if (biggestIt->second.flipped != flipped) {
-		path2.reverse(true);
-	}
+	if (biggestIt->second.flipped != flipped)
+		path2.reverseComplement();
 
 	for(size_t c = 0; c < count; ++c) {
 		if(path1[startP1 + c].id != path2[startP2 + c].id) {

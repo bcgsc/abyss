@@ -127,7 +127,7 @@ static void addOverlap(const PathStruct& refPathStruct,
 		overlap.secondIsRC = false;
 	else {
 		overlap.secondIsRC = true;
-		currPath.reverse(true);
+		currPath.reverseComplement();
 	}
 
 	currNode = currPath[currIndex];
@@ -135,7 +135,7 @@ static void addOverlap(const PathStruct& refPathStruct,
 	overlap.firstIsRC = refNode.isRC != currNode.isRC;
 
 	if (overlap.firstIsRC) {
-		refPath.reverse(true);
+		refPath.reverseComplement();
 		refIndex = refPath.size() - refIndex - 1;
 	}
 

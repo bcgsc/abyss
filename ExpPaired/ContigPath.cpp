@@ -6,17 +6,6 @@
 
 using namespace std;
 
-/** Reverse the path and flip every node. */
-void ContigPath::reverse(bool flipNodes)
-{
-	std::reverse(begin(), end());
-	if (flipNodes) {
-		size_t maxIdx = size();
-		for (size_t idx = 0; idx < maxIdx; ++idx)
-			(*this)[idx].flip();
-	}
-}
-
 /** Write a path. */
 ostream& operator<<(ostream& out, const ContigPath& object)
 {

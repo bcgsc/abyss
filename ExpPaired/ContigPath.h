@@ -3,7 +3,9 @@
 
 #include "Dictionary.h"
 #include "PairUtils.h" // for LinearNumKey
+#include <algorithm>
 #include <cassert>
+#include <functional>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -51,13 +53,19 @@ class ContigPath : public std::vector<MergeNode>
 	typedef std::vector<MergeNode> Vector;
 
 	public:
-		ContigPath::ContigPath() { }
+		ContigPath() { }
 
 		template <class InputIterator>
 		ContigPath(InputIterator first, InputIterator last)
 			: Vector(first, last) { }
 
-		void reverse(bool flipNodes);
+		/** Reverse the path and flip every node. */
+		void reverseComplement()
+		{
+			std::reverse(begin(), end());
+			std::for_each(begin(), end(),
+					std::mem_fun_ref(&MergeNode::flip));
+		}
 
 		friend std::ostream& operator<<(std::ostream& out,
 				const ContigPath& object);
