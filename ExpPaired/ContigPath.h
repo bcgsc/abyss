@@ -51,18 +51,6 @@ class ContigPath : public std::vector<MergeNode>
 	public:
 		ContigPath::ContigPath() { }
 
-		/** Prepend the specified path to this path. */
-		void prependPath(const ContigPath& o)
-		{
-			insert(begin(), o.begin(), o.end());
-		}
-
-		/** Append the specified path to this path. */
-		void appendPath(const ContigPath& o)
-		{
-			insert(end(), o.begin(), o.end());
-		}
-
 		void reverse(bool flipNodes);
 
 		/** Return a subsequence of this path. */

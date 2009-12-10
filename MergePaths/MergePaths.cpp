@@ -319,11 +319,11 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 		if (!dir) {
 			assert(p->size() == 1);
 			assert(p->front() == rootNode);
-			p->appendPath(path);
+			p->insert(p->end(), path.begin(), path.end());
 		} else {
 			assert(p->front() == rootNode);
 			path.reverse(false);
-			p->prependPath(path);
+			p->insert(p->begin(), path.begin(), path.end());
 		}
 	}
 	assert(pathStream.eof());
@@ -341,7 +341,9 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 		usedPathMap = &resultPathMap;
 	} else {
 		refCanonical = new ContigPath;
-		refCanonical->appendPath(*contigPathMap[id]);
+		const ContigPath& path = *contigPathMap[id];
+		refCanonical->insert(refCanonical->end(),
+				path.begin(), path.end());
 		usedPathMap = &contigPathMap;
 	}
 
@@ -401,8 +403,10 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 					addPathNodesToList(mergeInList, appendNodes);
 
 					// Add the nodes to the ref contig
-					refCanonical->prependPath(prependNodes);
-					refCanonical->appendPath(appendNodes);
+					refCanonical->insert(refCanonical->begin(),
+							prependNodes.begin(), prependNodes.end());
+					refCanonical->insert(refCanonical->end(),
+							appendNodes.begin(), appendNodes.end());
 
 					if(gDebugPrint) cout << " new: " << *refCanonical << '\n';
 				}
