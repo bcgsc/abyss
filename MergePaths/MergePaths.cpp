@@ -114,9 +114,9 @@ static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 	set<size_t> seen;
 	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); it++) {
-		size_t nodes = it->getNumNodes();
+		size_t nodes = it->size();
 		for (size_t i = 0; i < nodes; i++)
-			seen.insert(it->getNode(i).id);
+			seen.insert((*it)[i].id);
 	}
 	return seen;
 }
@@ -276,7 +276,7 @@ int main(int argc, char** argv)
 	s >> id;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
-		mergePath(it->getNode(0).id, contigVec, *it, id++,
+		mergePath(it->front().id, contigVec, *it, id++,
 				opt::k, out);
 	assert(out.good());
 
@@ -318,11 +318,11 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 				->appendNode(rootNode);
 		ContigPath* p = contigPathMap[id];
 		if (!dir) {
-			assert(p->getNumNodes() == 1);
-			assert(p->getNode(0) == rootNode);
+			assert(p->size() == 1);
+			assert(p->front() == rootNode);
 			p->appendPath(path);
 		} else {
-			assert(p->getNode(0) == rootNode);
+			assert(p->front() == rootNode);
 			path.reverse(false);
 			p->prependPath(path);
 		}
@@ -378,7 +378,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 					// all merged paths that exist for these paths and
 					// print the originals, but for now we keep both
 					// and print a warning.
-					if (s2 != 0 || e2+1 != childCanonPath.getNumNodes()) {
+					if (s2 != 0 || e2+1 != childCanonPath.size()) {
 						if (gDebugPrint)
 							cout << " warning: possible circular path found in paths:\n"
 								<< childCanonPath << '\n'
@@ -395,7 +395,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 						childCanonPath.extractNodes(0, s2);
 					ContigPath appendNodes =
 						childCanonPath.extractNodes(e2+1,
-								childCanonPath.getNumNodes());
+								childCanonPath.size());
 
 					// Add the nodes to the list of contigs to try to merge in
 					addPathNodesToList(mergeInList, prependNodes);
@@ -427,7 +427,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	// Since each path must contain each root node, if the range of these indices are different
 	// the paths must be different
 
-	assert(path1.getNumNodes() != 0 && path2.getNumNodes() != 1);
+	assert(path1.size() != 0 && path2.size() != 1);
 
 	// Extract the minimal coordinates of the root nodes in the paths
 	// These coordinates should have the same size
@@ -443,8 +443,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	bool lowValid = true;
 	bool highValid = true;
 	bool flipped = false;
-	size_t max1 = path1.getNumNodes() - 1;
-	size_t max2 = path2.getNumNodes() - 1;
+	size_t max1 = path1.size() - 1;
+	size_t max2 = path2.size() - 1;
 	map<size_t, PathConsistencyStats> pathAlignments;
 
 	for (unsigned i = 0; i < coords1.size(); i++) {
@@ -459,7 +459,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 				endP2 = coords2[j];
 			}
 
-			if(path1.getNode(startP1).isRC != path2.getNode(startP2).isRC) {
+			if(path1[startP1].isRC != path2[startP2].isRC) {
 				// Flip the path if node direction is different
 				path2.reverse(true);
 				flipped = !flipped;
@@ -469,7 +469,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 			lowValid = true;
 			while(1) {
-				if(path1.getNode(startP1).id != path2.getNode(startP2).id) {
+				if(path1[startP1].id != path2[startP2].id) {
 					// The nodes no longer match, this path is not valid
 					lowValid = false;
 					break;
@@ -486,7 +486,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			// high coordinates
 			highValid = true;
 			while(1) {
-				if(path1.getNode(endP1).id != path2.getNode(endP2).id) {
+				if(path1[endP1].id != path2[endP2].id) {
 					// The nodes no longer match, this path is not valid
 					highValid = false;
 					break;
@@ -552,8 +552,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	}
 
 	for(size_t c = 0; c < count; ++c) {
-		if(path1.getNode(startP1 + c).id !=
-				path2.getNode(startP2 + c).id) {
+		if(path1[startP1 + c].id != path2[startP2 + c].id) {
 			if(gDebugPrint) printf("Internal path mismatch\n");
 			return false;
 		}
@@ -568,10 +567,10 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
 		vector<size_t>& coords)
 {
-	size_t maxIdx = path.getNumNodes();
+	size_t maxIdx = path.size();
 	for(size_t idx = 0; idx < maxIdx; ++idx) {
 		size_t tIdx = maxIdx - idx - 1;
-		if(path.getNode(tIdx).id == anchor)
+		if(path[tIdx].id == anchor)
 			coords.push_back(tIdx);
 	}
 
@@ -584,17 +583,17 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
 	printf("	found %zu %zu %zu %zu\n", coords1[0], coords1[1], coords2[0], coords2[1]);
 
 	// Were coordinates found for each contig?
-	if(coords1[0] == (int)path.getNumNodes() || coords2[0] == (int)path.getNumNodes())
-	{
-		start = path.getNumNodes();
-		end = path.getNumNodes();
+	if (coords1[0] == (int)path.size()
+			|| coords2[0] == (int)path.size()) {
+		start = path.size();
+		end = path.size();
 		// one cood missed
 		return false;
 	}
-	
+
 	size_t bestI = 0;
 	size_t bestJ = 0;
-	int best = path.getNumNodes();
+	int best = path.size();
 	for(size_t i = 0; i <= 1; ++i)
 		for(size_t j = 0; j <= 1; ++j)
 		{
@@ -633,13 +632,13 @@ template<typename T> static string toString(T x)
 /** Return a string representation of the specified path. */
 static string toString(const ContigPath& path, char sep)
 {
-	size_t numNodes = path.getNumNodes();
+	size_t numNodes = path.size();
 	assert(numNodes > 0);
-	MergeNode root = path.getNode(0);
+	MergeNode root = path[0];
 	ostringstream s;
 	s << g_contigIDs.key(root.id) << (root.isRC ? '-' : '+');
 	for (size_t i = 1; i < numNodes; ++i) {
-		MergeNode mn = path.getNode(i);
+		MergeNode mn = path[i];
 		s << sep << g_contigIDs.key(mn.id) << (mn.isRC ? '-' : '+');
 	}
 	return s.str();
@@ -655,9 +654,9 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 	if (opt::verbose > 0)
 		cout << comment << '\n';
 
-	size_t numNodes = currPath.getNumNodes();
+	size_t numNodes = currPath.size();
 
-	MergeNode firstNode = currPath.getNode(0);
+	MergeNode firstNode = currPath[0];
 	const Contig& firstContig = sourceContigs[firstNode.id];
 	Sequence merged = firstContig.seq;
 	unsigned coverage = firstContig.coverage;
@@ -666,7 +665,7 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 	assert(!merged.empty());
 
 	for(size_t i = 1; i < numNodes; ++i) {
-		MergeNode mn = currPath.getNode(i);
+		MergeNode mn = currPath[i];
 		if(gDebugPrint) cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
 
 		const Contig& contig = sourceContigs[mn.id];
@@ -723,9 +722,7 @@ void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirect
 
 void addPathNodesToList(MergeNodeList& list, ContigPath& path)
 {
-	size_t numNodes = path.getNumNodes();
+	size_t numNodes = path.size();
 	for(size_t idx = 0; idx < numNodes; idx++)
-	{
-		list.push_back(path.getNode(idx));
-	}	
+		list.push_back(path[idx]);
 }

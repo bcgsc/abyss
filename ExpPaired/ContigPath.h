@@ -68,22 +68,15 @@ class ContigPath
 					o.m_path.begin(), o.m_path.end());
 		}
 
-		// Get the number of nodes in the path
-		size_t getNumNodes() const { return m_path.size(); }
-		
-		// Get the node with a specified index
-		MergeNode& getNode(size_t idx)
+		size_t size() const { return m_path.size(); }
+
+		MergeNode& operator[](size_t n) { return m_path[n]; }
+		const MergeNode& operator[](size_t n) const
 		{
-			assert(idx < m_path.size());
-			return m_path[idx];
+			return m_path[n];
 		}
-		
-		// Get the node with a specified index
-		const MergeNode& getNode(size_t idx) const
-		{
-			assert(idx < m_path.size());
-			return m_path[idx];
-		}
+
+		const MergeNode& front() const { return m_path.front(); }
 
 		// reverse the path
 		void reverse(bool flipNodes);

@@ -11,9 +11,9 @@ void ContigPath::reverse(bool flipNodes)
 {
 	std::reverse(m_path.begin(), m_path.end());
 	if (flipNodes) {
-		size_t maxIdx = getNumNodes();
+		size_t maxIdx = size();
 		for (size_t idx = 0; idx < maxIdx; ++idx)
-			getNode(idx).flip();
+			m_path[idx].flip();
 	}
 }
 
