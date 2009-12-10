@@ -392,11 +392,10 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 					}
 				} else if (validMerge) {
 					// Extract the extra nodes from the child path that can be added in
-					ContigPath prependNodes =
-						childCanonPath.extractNodes(0, s2);
-					ContigPath appendNodes =
-						childCanonPath.extractNodes(e2+1,
-								childCanonPath.size());
+					ContigPath prependNodes(&childCanonPath[0],
+							&childCanonPath[s2]);
+					ContigPath appendNodes(&childCanonPath[e2+1],
+							&childCanonPath[childCanonPath.size()]);
 
 					// Add the nodes to the list of contigs to try to merge in
 					addPathNodesToList(mergeInList, prependNodes);

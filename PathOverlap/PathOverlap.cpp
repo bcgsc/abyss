@@ -218,7 +218,8 @@ static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
 
 	if (min > max) return;
 	addContigsToSet(pathStruct.path, min, max);
-	pathStruct.path = pathStruct.path.extractNodes(min, max);
+	pathStruct.path = ContigPath(&pathStruct.path[min],
+			&pathStruct.path[max]);
 	pathStruct.numRemoved[fromBack] = overlap;
 }
 

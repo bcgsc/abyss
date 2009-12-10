@@ -48,17 +48,16 @@ struct MergeNode
 
 class ContigPath : public std::vector<MergeNode>
 {
+	typedef std::vector<MergeNode> Vector;
+
 	public:
 		ContigPath::ContigPath() { }
 
-		void reverse(bool flipNodes);
+		template <class InputIterator>
+		ContigPath(InputIterator first, InputIterator last)
+			: Vector(first, last) { }
 
-		/** Return a subsequence of this path. */
-		ContigPath extractNodes(size_t start, size_t end)
-		{
-			std::vector<MergeNode> v(&(*this)[start], &(*this)[end]);
-			return ContigPath(v);
-		}
+		void reverse(bool flipNodes);
 
 		friend std::ostream& operator<<(std::ostream& out,
 				const ContigPath& object);
@@ -66,8 +65,7 @@ class ContigPath : public std::vector<MergeNode>
 				ContigPath& object);
 
 	private:
-		explicit ContigPath(const std::vector<MergeNode>& v)
-			: std::vector<MergeNode>(v) { }
+		explicit ContigPath(const Vector& v) : Vector(v) { }
 };
 
 #endif
