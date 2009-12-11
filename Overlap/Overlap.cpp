@@ -227,7 +227,7 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 		stats.scaffold++;
 		if (opt::verbose > 0)
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
-		string gap = est.distance <= 0 ? string("-")
+		string gap = est.distance <= 0 ? string("n")
 			: string(est.distance, 'N');
 		const string& ts = t.sequence();
 		const string& hs = h.sequence();
