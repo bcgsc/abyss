@@ -54,7 +54,7 @@ namespace opt {
 	static bool printSeq = false;
 }
 
-static const char shortopts[] = "dk:mo:j:v";
+static const char shortopts[] = "ik:mo:j:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
 
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'm': opt::multimap = opt::MULTIMAP; break;
-			case 'd': opt::multimap = opt::IGNORE; break;
+			case 'i': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_SEQ: opt::printSeq = true; break;
