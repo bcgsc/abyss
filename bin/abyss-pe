@@ -84,14 +84,19 @@ ifdef b
 abyssopt += -b$b
 endif
 abyssopt += $v
-s?=100
 
-# KAligner parameters
+# Common paired-end parameters
+ifdef PE_HOSTFILE
+hostname?=$(shell hostname -f)
+j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
+endif
 ifdef np
 j?=$(np)
-else
-j?=1
 endif
+j?=1
+
+# DistanceEst parameters
+s?=100
 
 all: $(out)
 
