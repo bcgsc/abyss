@@ -89,11 +89,11 @@ abyssopt += $v
 ifdef PE_HOSTFILE
 hostname?=$(shell hostname -f)
 j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
-endif
-ifdef np
+else ifdef np
 j?=$(np)
-endif
+else
 j?=1
+endif
 
 # DistanceEst parameters
 s?=100
