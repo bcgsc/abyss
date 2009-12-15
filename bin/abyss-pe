@@ -25,11 +25,9 @@ endif
 
 ifdef name
 out?=$(name)-contigs.fa
-endif
-ifdef out
+else ifdef out
 name?=$(out:-contigs.fa=)
-endif
-ifndef name
+else
 $(error missing argument name)
 endif
 
