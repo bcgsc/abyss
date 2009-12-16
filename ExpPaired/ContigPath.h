@@ -40,11 +40,12 @@ struct MergeNode
 		char c;
 		unsigned cid;
 		in >> cid >> c >> o.isRC;
-		std::stringstream s;
-		s << cid;
-		o.id = g_contigIDs.serial(s.str());
-		if (in.good())
+		if (in.good()) {
 			assert(c == ',');
+			std::stringstream s;
+			s << cid;
+			o.id = g_contigIDs.serial(s.str());
+		}
 		return in;
 	}
 };
