@@ -2,6 +2,7 @@
 #include "Common/Options.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
+#include "StringUtil.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cerrno>
@@ -62,16 +63,6 @@ static const struct option longopts[] = {
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-/** Return the last character of s and remove it. */
-static char chop(string& s)
-{
-	assert(s.length() > 1);
-	unsigned back = s.length() - 1;
-	char c = s[back];
-	s.erase(back);
-	return c;
-}
 
 static unsigned line_num;
 
