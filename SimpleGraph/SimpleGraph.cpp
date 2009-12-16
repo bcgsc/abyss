@@ -3,6 +3,7 @@
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"
+#include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <climits> // for UINT_MAX
@@ -160,6 +161,28 @@ ostream& printPath(ostream& out, const vector<K>& s)
 	return out << s.back();
 }
 
+/** Return the set of contigs that appear more than once in a single
+ * solution.
+ */
+static set<LinearNumKey> findRepeats(
+	const SimpleContigGraph::FeasiblePaths& solutions)
+{
+	set<LinearNumKey> repeats;
+	for (SimpleContigGraph::FeasiblePaths::const_iterator
+			solIt = solutions.begin();
+			solIt != solutions.end(); ++solIt) {
+		map<LinearNumKey, unsigned> count;
+		for (SimpleContigGraph::VertexPath::const_iterator
+				it = solIt->begin(); it != solIt->end(); ++it)
+			count[it->key]++;
+		for (map<LinearNumKey, unsigned>::const_iterator
+				it = count.begin(); it != count.end(); ++it)
+			if (it->second > 1)
+				repeats.insert(it->first);
+	}
+	return repeats;
+}
+
 /** The fewest number of pairs in a distance estimate. */
 static unsigned g_minNumPairs = UINT_MAX;
 
@@ -227,6 +250,14 @@ static void handleEstimate(
 			constraintMap, solutions, costFunctor, maxNumPaths,
 			opt::maxCost, numVisited);
 
+	set<LinearNumKey> repeats = findRepeats(solutions);
+	if (!repeats.empty()) {
+		vout << "Repeats:";
+		copy(repeats.begin(), repeats.end(),
+				prefix_ostream_iterator<LinearNumKey>(vout, " "));
+		vout << '\n';
+	}
+
 	unsigned numPossiblePaths = solutions.size();
 	if (numPossiblePaths > 0)
 		vout << "Paths: " << numPossiblePaths << '\n';
@@ -241,8 +272,8 @@ static void handleEstimate(
 		pContigGraph->makeDistanceMap(*solIter,
 				costFunctor, distanceMap);
 
-		// Filter out potentially bad hits
-		bool validPath = true;
+		// Remove solutions whose distance estimates are not correct.
+		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
@@ -258,17 +289,23 @@ static void handleEstimate(
 			int diff = actualDistance - iter->distance;
 			unsigned buffer = allowedError(iter->stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
-			if (invalid)
-				validPath = false;
+			bool repeat = repeats.count(iter->nID) > 0;
+			bool ignored = invalid && repeat;
+			if (ignored)
+				ignoredCount++;
+			else if (invalid)
+				invalidCount++;
+			else
+				validCount++;
 			vout << "dist: " << actualDistance
 				<< " diff: " << diff
 				<< " buffer: " << buffer
 				<< " n: " << iter->numPairs
-				<< (invalid ? " invalid" : "")
+				<< (ignored ? " ignored" : invalid ? " invalid" : "")
 				<< '\n';
 		}
 
-		if (validPath)
+		if (invalidCount == 0 && validCount > 0)
 			++solIter;
 		else
 			solIter = solutions.erase(solIter);
@@ -289,6 +326,8 @@ static void handleEstimate(
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
+			if (repeats.count(iter->nID) > 0)
+				continue;
 			map<LinearNumKey, int>::iterator dmIter
 				= distanceMap.find(iter->nID);
 			if (dmIter != distanceMap.end()) {
