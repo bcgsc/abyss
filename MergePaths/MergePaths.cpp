@@ -298,19 +298,17 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 
 	string line;
 	while (getline(pathStream, line)) {
-		char at = 0;
-		LinearNumKey id;
-		bool dir;
+		char at;
+		MergeNode pivot;
 		string sep;
 		ContigPath path;
-		MergeNode pivot;
 		istringstream s(line);
 		s >> at >> pivot >> sep >> path;
-		id = pivot.id;
-		dir = pivot.isRC;
 		assert(s.eof());
 		assert(at == '@');
 		assert(sep == "->");
+		const LinearNumKey& id = pivot.id;
+		const bool& dir = pivot.isRC;
 
 		MergeNode rootNode = {id, 0};
 		if (contigPathMap.find(id) == contigPathMap.end())
