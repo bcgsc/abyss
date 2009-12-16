@@ -3,6 +3,7 @@
 
 #include "Dictionary.h"
 #include "PairUtils.h" // for LinearNumKey
+#include "StringUtil.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -10,6 +11,7 @@
 #include <iterator>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 struct MergeNode
@@ -37,14 +39,12 @@ struct MergeNode
 
 	friend std::istream& operator>>(std::istream& in, MergeNode& o)
 	{
-		char c;
-		unsigned cid;
-		in >> cid >> c >> o.isRC;
-		if (in.good()) {
-			assert(c == ',');
-			std::stringstream s;
-			s << cid;
-			o.id = g_contigIDs.serial(s.str());
+		std::string s;
+		if (in >> s) {
+			o.isRC = chop(s) == '1';
+			char comma = chop(s);
+			assert(comma = ',');
+			o.id = g_contigIDs.serial(s);
 		}
 		return in;
 	}
