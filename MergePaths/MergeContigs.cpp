@@ -290,22 +290,21 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Total number of paths: " << paths.size() << '\n';
 
-	vector<Path> prevPaths;
-	for (;optind < argc; optind++) {
-		string filename(argv[optind]);
-		loadPaths(filename, prevPaths);
-	}
-	if (opt::verbose > 0 && prevPaths.size() > 0)
-		cerr << "Total number of old paths: "
-			<< prevPaths.size() << '\n';
-
-	ofstream out(opt::out.c_str());
-	assert(out.good());
-
 	// Record all the contigs that were seen in a path.
 	vector<bool> seen(contigs.size());
 	seenContigs(seen, paths);
-	seenContigs(seen, prevPaths);
+	
+	if (argc - optind > 0) {
+		vector<Path> prevPaths;
+		for (; optind < argc; optind++) {
+			string filename(argv[optind]);
+			loadPaths(filename, prevPaths);
+		}
+		if (opt::verbose > 0)
+			cerr << "Total number of old paths: "
+				<< prevPaths.size() << '\n';
+		seenContigs(seen, prevPaths);
+	}
 
 	vector<bool> seenPivots(contigs.size());
 	if (!opt::path.empty()) {
@@ -333,6 +332,8 @@ int main(int argc, char** argv)
 	}
 
 	// Output those contigs that were not seen in a path.
+	ofstream out(opt::out.c_str());
+	assert(out.good());
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
 		if ((opt::finish && !seen[g_dict.serial(it->id)]) ||
