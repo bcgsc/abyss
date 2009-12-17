@@ -306,20 +306,12 @@ int main(int argc, char** argv)
 		vector<bool> seenPivots(contigs.size());
 		ifstream fin(opt::path.c_str());
 		assert_open(fin, opt::path);
-		for (string s; getline(fin, s);) {
-			char at = 0;
-			line_num++;
-			istringstream ss(s);
-			string pivot;
-			ss >> at >> pivot;
+		char at;
+		string s;
+		while (getline(fin >> at >> ws, s, ',')) {
+			fin.ignore(numeric_limits<streamsize>::max(), '\n');
 			assert(at == '@');
-			char sense = chop(pivot);
-			assert(sense == '0' || sense == '1');
-			(void)sense;
-			char comma = chop(pivot);
-			assert(comma == ',');
-			(void)comma;
-			unsigned pivotNum = g_dict.serial(pivot);
+			unsigned pivotNum = g_dict.serial(s);
 			assert(pivotNum < contigs.size());
 			// Only count a pivot as seen if it was in a final path.
 			if (seen[pivotNum])
