@@ -25,9 +25,11 @@ endif
 
 ifdef name
 out?=$(name)-contigs.fa
-else ifdef out
+endif
+ifdef out
 name?=$(out:-contigs.fa=)
-else
+endif
+ifndef name
 $(error missing argument name)
 endif
 
@@ -87,11 +89,11 @@ abyssopt += $v
 ifdef PE_HOSTFILE
 hostname?=$(shell hostname -f)
 j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
-else ifdef np
-j?=$(np)
-else
-j?=1
 endif
+ifdef np
+j?=$(np)
+endif
+j?=1
 
 # DistanceEst parameters
 s?=100
