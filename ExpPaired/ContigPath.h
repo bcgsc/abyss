@@ -44,6 +44,7 @@ struct MergeNode
 			o.isRC = chop(s) == '1';
 			char comma = chop(s);
 			assert(comma = ',');
+			(void)comma;
 			o.id = g_contigIDs.serial(s);
 		}
 		return in;
