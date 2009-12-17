@@ -369,8 +369,8 @@ static void handleEstimate(
 		ContigPath cPath;
 		constructContigPath(*bestSol, cPath);
 
-		outStream << "@ " << g_contigIDs.key(er.refID) << ','
-			<< dirIdx << " -> " << cPath << '\n';
+		outStream << g_contigIDs.key(er.refID) << ',' << dirIdx
+			<< '\t' << cPath << '\n';
 		assert(outStream.good());
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);

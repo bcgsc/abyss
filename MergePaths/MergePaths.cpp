@@ -351,15 +351,11 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 
 	string line;
 	while (getline(pathStream, line)) {
-		char at;
 		string sID;
-		string sep;
 		ContigPath path;
 		istringstream s(line);
-		s >> at >> sID >> sep >> path;
+		s >> sID >> path;
 		assert(s.eof());
-		assert(at == '@');
-		assert(sep == "->");
 
 		char c = chop(sID);
 		char comma = chop(sID);
