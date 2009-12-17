@@ -11,6 +11,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <set>
 #include <sstream>
 #include <string>
