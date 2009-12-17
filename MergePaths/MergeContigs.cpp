@@ -32,7 +32,6 @@ static const char USAGE_MESSAGE[] =
 "  CONTIG  contigs in FASTA format\n"
 "  PATH    paths of these contigs\n"
 "\n"
-"  -f, --finish          removes contigs used in previous paths\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -p, --path=PATH_FILE  paths output by SimpleGraph\n"
@@ -46,15 +45,13 @@ namespace opt {
 	static unsigned k;
 	static string out;
 	static string path;
-	static bool finish;
 }
 
-static const char shortopts[] = "fk:o:p:v";
+static const char shortopts[] = "k:o:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "finish",      no_argument,       NULL, 'f' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "path",        required_argument, NULL, 'p' },
@@ -226,7 +223,6 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'f': opt::finish = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
 			case 'p': arg >> opt::path; break;
@@ -249,9 +245,6 @@ int main(int argc, char** argv)
 		cerr << PROGRAM ": " << "missing -o,--out option\n";
 		die = true;
 	}
-
-	if (opt::path.empty())
-		opt::finish = true;
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
@@ -290,10 +283,11 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Total number of paths: " << paths.size() << '\n';
 
-	// Record all the contigs that were seen in a path.
+	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
 	seenContigs(seen, paths);
-	
+
+	// Record all the contigs that were in a previous path.
 	if (argc - optind > 0) {
 		vector<Path> prevPaths;
 		for (; optind < argc; optind++) {
@@ -306,8 +300,9 @@ int main(int argc, char** argv)
 		seenContigs(seen, prevPaths);
 	}
 
-	vector<bool> seenPivots(contigs.size());
+	// Record all the contigs that are seeds.
 	if (!opt::path.empty()) {
+		vector<bool> seenPivots(contigs.size());
 		ifstream fin(opt::path.c_str());
 		assert_open(fin, opt::path);
 		for (string s; getline(fin, s);) {
@@ -325,10 +320,12 @@ int main(int argc, char** argv)
 			(void)comma;
 			unsigned pivotNum = g_dict.serial(pivot);
 			assert(pivotNum < contigs.size());
-			// Only count a pivot as seen if it was seen in a final path
-			if (seen[pivotNum]) seenPivots[pivotNum] = true;
+			// Only count a pivot as seen if it was in a final path.
+			if (seen[pivotNum])
+				seenPivots[pivotNum] = true;
 		}
 		assert(fin.eof());
+		seen = seenPivots;
 	}
 
 	// Output those contigs that were not seen in a path.
@@ -336,8 +333,7 @@ int main(int argc, char** argv)
 	assert(out.good());
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if ((opt::finish && !seen[g_dict.serial(it->id)]) ||
-				(!opt::finish && !seenPivots[g_dict.serial(it->id)]))
+		if (!seen[g_dict.serial(it->id)])
 			out << *it;
 
 	int id;
