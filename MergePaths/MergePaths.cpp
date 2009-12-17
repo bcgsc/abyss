@@ -6,6 +6,7 @@
 #include "PrefixIterator.h"
 #include "Sense.h"
 #include "Sequence.h"
+#include "StringUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -351,16 +352,22 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	string line;
 	while (getline(pathStream, line)) {
 		char at;
-		MergeNode pivot = { 0, 0 };
+		string sID;
 		string sep;
 		ContigPath path;
 		istringstream s(line);
-		s >> at >> pivot >> sep >> path;
+		s >> at >> sID >> sep >> path;
 		assert(s.eof());
 		assert(at == '@');
 		assert(sep == "->");
-		const LinearNumKey& id = pivot.id;
-		const bool& dir = pivot.isRC;
+
+		char c = chop(sID);
+		char comma = chop(sID);
+		assert(comma == ',');
+		(void)comma;
+		LinearNumKey id = g_contigIDs.serial(sID);
+		assert(c == '0' || c == '1');
+		bool dir = c == '1';
 
 		MergeNode rootNode = {id, 0};
 		if (contigPathMap.find(id) == contigPathMap.end())

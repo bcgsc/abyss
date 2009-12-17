@@ -121,7 +121,7 @@ struct ContigNode {
 
 	friend ostream& operator <<(ostream& out, const ContigNode& o)
 	{
-		return out << o.idString() << ',' << o.sense();
+		return out << o.idString() << (o.sense() ? '-' : '+');
 	}
 
   private:

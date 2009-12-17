@@ -2,6 +2,7 @@
 #define PAIRUTILS_H 1
 
 #include "Dictionary.h"
+#include "StringUtil.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
@@ -27,27 +28,29 @@ struct Estimate
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
-		return out << g_contigIDs.key(o.nID) << ","
+		return out << g_contigIDs.key(o.nID)
+			<< (o.isRC ? '-' : '+') << ","
 			<< o.distance << ","
 			<< o.numPairs << ","
-			<< std::fixed << std::setprecision(1) << o.stdDev << ","
-			<< o.isRC;
+			<< std::fixed << std::setprecision(1) << o.stdDev;
 	}
 
-	friend std::istream& operator>> (std::istream& in,
-			Estimate& o)
+	friend std::istream& operator>>(std::istream& in, Estimate& o)
 	{
 		in >> std::ws;
 		std::string sID;
-		getline(in, sID, ',');
-		char commas[4] = {};
-		in >> o.distance >> commas[0]
-			>> o.numPairs >> commas[1]
-			>> o.stdDev >> commas[2]
-			>> o.isRC;
-		o.nID = g_contigIDs.serial(sID);
-		if (in.good())
-			assert(std::string(commas) == ",,,");
+		char comma0, comma1;
+		getline(in, sID, ',')
+			>> o.distance >> comma0
+			>> o.numPairs >> comma1
+			>> o.stdDev;
+		if (in) {
+			assert(comma0 == ',' && comma1 == ',');
+			char c = chop(sID);
+			assert(c == '+' || c == '-');
+			o.isRC = c == '-';
+			o.nID = g_contigIDs.serial(sID);
+		}
 		return in;
 	}
 };
@@ -82,14 +85,18 @@ struct SimpleEdgeDesc
 	friend std::ostream& operator<<(std::ostream& out,
 			const SimpleEdgeDesc& o)
 	{
-		return out << o.contig << "," << o.isRC;
+		return out << o.contig << (o.isRC ? '-' : '+');
 	}
 
 	friend std::istream& operator>>(std::istream& in,
 			SimpleEdgeDesc& o)
 	{
-		getline(in, o.contig, ',');
-		return in >> o.isRC;
+		if (in >> o.contig) {
+			char c = chop(o.contig);
+			assert(c == '+' || c == '-');
+			o.isRC = c == '-';
+		}
+		return in;
 	}
 };
 

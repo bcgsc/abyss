@@ -34,17 +34,17 @@ struct MergeNode
 	friend std::ostream& operator<<(std::ostream& out,
 			const MergeNode& o)
 	{
-		return out << g_contigIDs.key(o.id) << ',' << o.isRC;
+		return out << g_contigIDs.key(o.id)
+			<< (o.isRC ? '-' : '+');
 	}
 
 	friend std::istream& operator>>(std::istream& in, MergeNode& o)
 	{
 		std::string s;
 		if (in >> s) {
-			o.isRC = chop(s) == '1';
-			char comma = chop(s);
-			assert(comma = ',');
-			(void)comma;
+			char c = chop(s);
+			assert(c == '+' || c == '-');
+			o.isRC = c == '-';
 			o.id = g_contigIDs.serial(s);
 		}
 		return in;
