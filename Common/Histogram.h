@@ -17,6 +17,7 @@ class Histogram : std::map<int, unsigned>
   public:
 	typedef int T;
 	typedef std::map<T, unsigned> Map;
+	typedef long long unsigned accumulator;
 
 	Histogram() { }
 
@@ -63,23 +64,24 @@ class Histogram : std::map<int, unsigned>
 
 	double mean() const
 	{
-		long unsigned n = 0, total = 0;
+		accumulator n = 0, total = 0;
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
-			total += (long unsigned)it->first * it->second;
+			total += (accumulator)it->first * it->second;
 		}
 		return (double)total / n;
 	}
 
 	double variance() const
 	{
-		long unsigned n = 0, total = 0, squares = 0;
+		accumulator n = 0, total = 0, squares = 0;
 		for (Histogram::Map::const_iterator it = begin();
 				it != end(); it++) {
 			n += it->second;
-			total += (long unsigned)it->first * it->second;
-			squares += (long unsigned)it->first * it->first * it->second;
+			total += (accumulator)it->first * it->second;
+			squares += (accumulator)it->first * it->first
+				* it->second;
 		}
 		return (squares - (double)total * total / n) / n;
 	}
