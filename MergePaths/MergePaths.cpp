@@ -325,6 +325,7 @@ int main(int argc, char** argv)
 	stringstream s(g_contigIDs.key(contigVec.size() - 1));
 	int id;
 	s >> id;
+	id++;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
 		mergePath(it->front().id, contigVec, *it, id++,
