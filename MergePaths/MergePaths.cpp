@@ -350,7 +350,7 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	string line;
 	while (getline(pathStream, line)) {
 		char at;
-		MergeNode pivot;
+		MergeNode pivot = { 0, 0 };
 		string sep;
 		ContigPath path;
 		istringstream s(line);
