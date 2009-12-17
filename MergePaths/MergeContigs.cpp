@@ -181,7 +181,7 @@ template<typename T> static string toString(T x)
 }
 
 /** Loads all paths from the file named inPath into paths. */
-static void loadPaths(string& inPath, vector<Path> paths)
+static void loadPaths(string& inPath, vector<Path>& paths)
 {
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
