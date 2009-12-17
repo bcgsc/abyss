@@ -289,15 +289,16 @@ int main(int argc, char** argv)
 
 	// Record all the contigs that were in a previous path.
 	if (argc - optind > 0) {
-		vector<Path> prevPaths;
+		unsigned count = 0;
 		for (; optind < argc; optind++) {
+			vector<Path> prevPaths;
 			string filename(argv[optind]);
 			loadPaths(filename, prevPaths);
+			seenContigs(seen, prevPaths);
+			count += prevPaths.size();
 		}
 		if (opt::verbose > 0)
-			cerr << "Total number of old paths: "
-				<< prevPaths.size() << '\n';
-		seenContigs(seen, prevPaths);
+			cerr << "Total number of previous paths: " << count << '\n';
 	}
 
 	// Record all the contigs that are seeds.
