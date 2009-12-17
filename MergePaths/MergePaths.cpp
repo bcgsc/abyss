@@ -3,6 +3,7 @@
 #include "ContigPath.h"
 #include "FastaReader.h"
 #include "PairUtils.h"
+#include "PrefixIterator.h"
 #include "Sense.h"
 #include "Sequence.h"
 #include "Uncompress.h"
@@ -109,6 +110,54 @@ void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
 
+/** Return all contigs that are tandem repeats, identified as those
+ * contigs that appear more than once in a single path.
+ */
+static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
+{
+	set<LinearNumKey> repeats;
+	for (ContigPathMap::const_iterator pathIt = paths.begin();
+			pathIt != paths.end(); ++pathIt) {
+		const ContigPath& path = *pathIt->second;
+		map<LinearNumKey, unsigned> count;
+		for (ContigPath::const_iterator it = path.begin();
+				it != path.end(); ++it)
+			count[it->id]++;
+		for (map<LinearNumKey, unsigned>::const_iterator
+				it = count.begin(); it != count.end(); ++it)
+			if (it->second > 1)
+				repeats.insert(it->first);
+	}
+	return repeats;
+}
+
+/** Remove tandem repeats from the set of paths. */
+static void removeRepeats(ContigPathMap& paths)
+{
+	set<LinearNumKey> repeats = findRepeats(paths);
+	if (gDebugPrint) {
+		cout << "Repeats:";
+		if (!repeats.empty())
+			copy(repeats.begin(), repeats.end(),
+					prefix_ostream_iterator<LinearNumKey>(cout, " "));
+		else
+			cout << " none";
+		cout << '\n';
+	}
+	cout << "Removing paths in repeats:";
+	unsigned removed = 0;
+	for (set<LinearNumKey>::const_iterator it = repeats.begin();
+			it != repeats.end(); ++it) {
+		if (paths.erase(*it) > 0) {
+			cout << ' ' << *it;
+			removed++;
+		}
+	}
+	if (removed == 0)
+		cout << " none";
+	cout << '\n';
+}
+
 static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 {
 	set<size_t> seen;
@@ -201,6 +250,8 @@ int main(int argc, char** argv)
 	// Read the paths file
 	ContigPathMap originalPathMap, resultsPathMap;
 	readPathsFromFile(pathFile, originalPathMap);
+
+	removeRepeats(originalPathMap);
 
 	// link the paths together
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
