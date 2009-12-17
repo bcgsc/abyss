@@ -193,6 +193,10 @@ static void loadPaths(string& inPath, vector<Path>& paths)
 	for (string s; getline(in, s);) {
 		line_num++;
 		istringstream ss(s);
+
+		string sID;
+		ss >> sID;
+
 		Path path;
 		copy(istream_iterator<ContigNode>(ss),
 				istream_iterator<ContigNode>(),
@@ -246,10 +250,8 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (opt::path.empty()) {
-		cerr << PROGRAM ": " << "missing -p,--path option\n";
-		die = true;
-	}
+	if (opt::path.empty())
+		opt::finish = true;
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
@@ -293,8 +295,9 @@ int main(int argc, char** argv)
 		string filename(argv[optind]);
 		loadPaths(filename, prevPaths);
 	}
-	if (opt::verbose > 0)
-		cerr << "Total number of old paths: " << prevPaths.size() << '\n';
+	if (opt::verbose > 0 && prevPaths.size() > 0)
+		cerr << "Total number of old paths: "
+			<< prevPaths.size() << '\n';
 
 	ofstream out(opt::out.c_str());
 	assert(out.good());
@@ -305,8 +308,9 @@ int main(int argc, char** argv)
 	seenContigs(seen, prevPaths);
 
 	vector<bool> seenPivots(contigs.size());
-	{
+	if (!opt::path.empty()) {
 		ifstream fin(opt::path.c_str());
+		assert_open(fin, opt::path);
 		for (string s; getline(fin, s);) {
 			char at = 0;
 			line_num++;
