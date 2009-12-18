@@ -452,15 +452,17 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 						if (refIncludesChild && !childIncludesRef ) {
 							if(gDebugPrint)
 								cout << " removing circular: " << childCanonPath << '\n';
-							resultPathMap.erase(findIter);
 							delete findIter->second;
+							findIter->second = NULL;
+							resultPathMap.erase(findIter);
 						} else if (gDebugPrint)
 							cout << " warning: possible circular paths\n";
 					} else {
 						if(gDebugPrint)
 							cout << " removing: " << childCanonPath << '\n';
-						resultPathMap.erase(findIter);
 						delete findIter->second;
+						findIter->second = NULL;
+						resultPathMap.erase(findIter);
 					}
 				} else if (validMerge) {
 					// Extract the extra nodes from the child path that can be added in
