@@ -278,6 +278,7 @@ static void generateDistFile()
 	distFile.close();
 }
 
+static bool isSingleEnd(const string& id);
 static bool needsFlipping(const string& id);
 
 /**
@@ -398,22 +399,23 @@ static void handleAlignment(
 		const ReadAlignMap::value_type& alignments,
 		ReadAlignMap& out)
 {
-	stats.alignments++;
-
-	string pairID = makePairID(alignments.first);
-	ReadAlignMap::iterator pairIter = out.find(pairID);
-	if (pairIter != out.end()) {
-		handleAlignmentPair(*pairIter, alignments);
-		out.erase(pairIter);
-	} else if (!out.insert(alignments).second) {
-		cerr << "error: duplicate read ID `" << alignments.first
-			<< "'\n";
-		exit(EXIT_FAILURE);
+	if (!isSingleEnd(alignments.first)) {
+		string pairID = makePairID(alignments.first);
+		ReadAlignMap::iterator pairIter = out.find(pairID);
+		if (pairIter != out.end()) {
+			handleAlignmentPair(*pairIter, alignments);
+			out.erase(pairIter);
+		} else if (!out.insert(alignments).second) {
+			cerr << "error: duplicate read ID `" << alignments.first
+				<< "'\n";
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (!opt::distPath.empty() && alignments.second.size() >= 2)
 		doReadIntegrity(alignments);
 
+	stats.alignments++;
 	printProgress(out);
 }
 
@@ -596,6 +598,12 @@ static bool replaceSuffix(string& s,
 		return true;
 	} else
 		return false;
+}
+
+/** Return true if the specified read ID is of a single-end read. */
+static bool isSingleEnd(const string& id)
+{
+	return endsWith(id, ".fn");
 }
 
 /** Return the mate ID of the specified read ID. */
