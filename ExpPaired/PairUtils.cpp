@@ -18,11 +18,10 @@ istream& operator >>(istream& in, EstimateRecord& o)
 	string id;
 	in >> id;
 	o.refID = convertContigIDToLinearNumKey(id);
-	in.ignore(numeric_limits<streamsize>::max(), ':');
 
 	for (extDirection sense = SENSE; sense <= ANTISENSE; ++sense) {
 		string s;
-		getline(in, s, sense == SENSE ? '|' : '\n');
+		getline(in, s, sense == SENSE ? ';' : '\n');
 		istringstream ss(s);
 		copy(istream_iterator<Estimate>(ss),
 				istream_iterator<Estimate>(),

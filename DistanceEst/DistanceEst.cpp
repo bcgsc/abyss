@@ -221,7 +221,7 @@ void processContigs(string alignFile,
 		if (refLength < opt::seedLen)
 			continue;
 
-		out << refContigID << " :";
+		out << refContigID;
 
 		// Seperate the pairings by direction (pairs aligning in the
 		// same comp as the contig are sense pairs) and by the contig
@@ -230,7 +230,7 @@ void processContigs(string alignFile,
 		{
 			// If this is the second direction, write a seperator
 			if (dirIdx == 1)
-				out << " |";
+				out << " ;";
 
 			PairDataMap dataMap;
 			for (AlignPairVec::const_iterator iter = currPairs.begin();
