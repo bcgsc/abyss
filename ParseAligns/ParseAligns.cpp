@@ -172,7 +172,7 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 
 	if (largest.contig != last.contig) {
 		Estimate est;
-		unsigned largest_end = 
+		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
 		est.nID = convertContigIDToLinearNumKey(last.contig);
@@ -185,11 +185,27 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		addEstimate(estMap, largest, est, false);
 	}
 
+	if (largest.contig != first.contig &&
+			largest.contig != last.contig) {
+		Estimate est;
+		unsigned first_end =
+			first.read_start_pos + first.align_length - opt::k;
+		int distance = last.read_start_pos - first_end;
+		est.nID = convertContigIDToLinearNumKey(last.contig);
+		est.distance = distance - opt::k;
+		est.numPairs = 1;
+		est.stdDev = 0;
+		//weird file format...
+		est.isRC = first.isRC != last.isRC;
+
+		addEstimate(estMap, first, est, false);
+	}
+
 	if (largest.contig != first.contig) {
 		largest.flipQuery();
 		first.flipQuery();
 		Estimate est;
-		unsigned largest_end = 
+		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = first.read_start_pos - largest_end;
 		est.nID = convertContigIDToLinearNumKey(first.contig);
@@ -201,7 +217,6 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 
 		addEstimate(estMap, largest, est, false);
 	}
-
 
 #if 0
 	//for each alignment in the vector a.second
