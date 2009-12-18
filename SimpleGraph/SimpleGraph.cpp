@@ -130,11 +130,10 @@ int main(int argc, char** argv)
 
 	string adjFile(argv[optind++]);
 	string estFile(argv[optind++]);
-	const string& lenFile = adjFile;
 
 	// Load the graph from the adjacency file
 	SimpleContigGraph contigGraph;
-	loadGraphFromAdjFile(&contigGraph, lenFile, adjFile);
+	loadGraphFromAdjFile(&contigGraph, adjFile);
 	if (opt::verbose > 0)
 		cerr << "Vertices: " << contigGraph.getNumVertices()
 			<< " Edges: " << contigGraph.countEdges() << endl;

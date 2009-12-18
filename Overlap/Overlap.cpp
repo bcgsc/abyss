@@ -365,11 +365,9 @@ int main(int argc, char *const argv[])
 	const char* contigPath(argv[optind++]);
 	string adjPath(argv[optind++]);
 	string estPath(argv[optind++]);
-	const string& lenPath = adjPath;
 
 	readContigs(contigPath);
-
-	loadGraphFromAdjFile(&contigGraph, lenPath, adjPath);
+	loadGraphFromAdjFile(&contigGraph, adjPath);
 
 	ofstream out(opt::out.c_str());
 	assert(out.is_open());

@@ -2,6 +2,7 @@
 #include "FastaReader.h"
 #include "HashMap.h"
 #include "Kmer.h"
+#include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -202,10 +203,10 @@ int main(int argc, char** argv)
 
 			switch (opt::format) {
 			  case ADJ:
-				out << " [ ";
 				copy(edges.begin(), edges.end(),
-						ostream_iterator<ContigNode>(out, " "));
-				out << ']';
+						prefix_ostream_iterator<ContigNode>(
+							out, " "));
+				out << (idx == 0 ? " ;" : "\n");
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" [len="
@@ -225,8 +226,6 @@ int main(int argc, char** argv)
 			}
 			numEdges += edges.size();
 		}
-		if (opt::format == ADJ)
-			out << '\n';
 		numVerts++;
 	}
 

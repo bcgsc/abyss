@@ -2,8 +2,8 @@
 #include "DirectedGraphImpl.h"
 #include "PairUtils.h"
 #include <cassert>
-#include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
@@ -13,84 +13,50 @@ using namespace std;
 // Explicit instantiation.
 template class DirectedGraph<SimpleContigData>;
 
-void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,
-		SimpleContigGraph* pGraph);
+static void readEdges(istream& in, LinearNumKey id,
+		SimpleContigGraph& graph)
+{
+	for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
+		string s;
+		getline(in, s, dir == SENSE ? ';' : '\n');
+		cout << s << endl;
+		assert(in.good());
+		istringstream ss(s);
+		for (SimpleEdgeDesc edge; ss >> edge;)
+			graph.addEdge(id,
+					convertContigIDToLinearNumKey(edge.contig),
+					dir, edge.isRC);
+		assert(ss.eof());
+	}
+}
 
 /** Load an adjacency graph. */
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
-		const string& lengthFile, const string& adjFile)
+		const string& adjFile)
 {
-	// Load the lengths temporarily
-	ContigLengthVec* pLengthVec = new ContigLengthVec();
-	loadContigLengths(lengthFile, *pLengthVec);
+	// Load the vertices.
+	ifstream in(adjFile.c_str());
+	assert(in.is_open());
 
-	// First, load the vertices
-	ifstream inStream(adjFile.c_str());
-	assert(inStream.is_open());
-
-	int numAdded = 0;
-	string idString;
-	string adjRecord;
-	while (inStream >> idString && getline(inStream, adjRecord)) {
-		LinearNumKey id = convertContigIDToLinearNumKey(idString);
-		SimpleContigData data;
-		data.length = pLengthVec->at(id);
-		pGraph->addVertex(id, data);
-
-		numAdded++;
-		if (numAdded % 1000000 == 0)
-			printf("added %d verts\n", numAdded);
+	unsigned count = 0;
+	string id;
+	unsigned length;
+	while (in >> id >> length) {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		pGraph->addVertex(convertContigIDToLinearNumKey(id), length);
+		if (++count % 1000000 == 0)
+			cout << "Read " << count << " vertices" << endl;
 	}
-	assert(inStream.eof());
+	assert(in.eof());
 
-	// Delete the lengths to free up space
-	delete pLengthVec;
-	pLengthVec = NULL;
-
-	// Now, load the edges
-	inStream.clear();
-	inStream.seekg(ios_base::beg);
-	numAdded = 0;
-	while (inStream >> idString && getline(inStream, adjRecord)) {
-		LinearNumKey id = convertContigIDToLinearNumKey(idString);
-		parseAdjacencyLine(adjRecord, id, pGraph);
-
-		numAdded++;
-		if (numAdded % 1000000 == 0)
-			printf("added edges for %d verts\n", numAdded);
+	// Load the edges.
+	in.clear();
+	in.seekg(ios_base::beg);
+	count = 0;
+	while (in >> id >> length) {
+		readEdges(in, convertContigIDToLinearNumKey(id), *pGraph);
+		if (++count % 1000000 == 0)
+			cout << "Read edges for " << count << " vertices" << endl;
 	}
-	assert(inStream.eof());
-}
-
-void parseAdjacencyLine(const string& adjLine, LinearNumKey currVert,
-		SimpleContigGraph* pGraph)
-{
-	// convert to string stream
-	stringstream ss(adjLine);
-	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-	{
-		ss.ignore(numeric_limits<streamsize>::max(), '[');
-		assert(ss.gcount() > 0);
-
-		bool done = false;
-		while(!done)
-		{
-			// extract the record
-			string record;
-			ss >> record;
-
-			// check if the record is valid or we've hit the end
-			if(record == "]")
-			{
-				done = true;
-			} else {
-				stringstream recSS(record);
-				SimpleEdgeDesc sed;
-				recSS >> sed;
-				pGraph->addEdge(currVert,
-						convertContigIDToLinearNumKey(sed.contig),
-						(extDirection)dirIdx, sed.isRC);
-			}
-		}
-	}
+	assert(in.eof());
 }

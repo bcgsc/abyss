@@ -6,11 +6,12 @@
 struct SimpleContigData
 {
 	int length;
+	SimpleContigData(int length) : length(length) { }
 };
 
 typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
 
 void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
-		const std::string& lengthFile, const std::string& adjFile);
+		const std::string& adjFile);
 
 #endif
