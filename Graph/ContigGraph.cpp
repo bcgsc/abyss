@@ -19,7 +19,6 @@ static void readEdges(istream& in, LinearNumKey id,
 	for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 		string s;
 		getline(in, s, dir == SENSE ? ';' : '\n');
-		cout << s << endl;
 		assert(in.good());
 		istringstream ss(s);
 		for (SimpleEdgeDesc edge; ss >> edge;)
