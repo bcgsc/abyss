@@ -308,7 +308,7 @@ int main(int argc, char** argv)
 		ifstream fin(opt::path.c_str());
 		assert_open(fin, opt::path);
 		string s;
-		while (getline(fin, s, ',')) {
+		while (fin >> s) {
 			fin.ignore(numeric_limits<streamsize>::max(), '\n');
 			unsigned pivotNum = g_dict.serial(s);
 			assert(pivotNum < contigs.size());

@@ -291,7 +291,7 @@ int main(int argc, char** argv)
 		for (vector<ContigPath>::const_iterator it
 					= uniquePaths.begin();
 				it != uniquePaths.end(); ++it)
-			out << pathID++ << ' ' << toString(*it, ' ') << '\n';
+			out << pathID++ << ' ' << *it << '\n';
 		assert(out.good());
 		return 0;
 	}
@@ -351,33 +351,17 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 
 	string line;
 	while (getline(pathStream, line)) {
+		istringstream s(line);
 		string sID;
 		ContigPath path;
-		istringstream s(line);
 		s >> sID >> path;
 		assert(s.eof());
 
-		char c = chop(sID);
-		char comma = chop(sID);
-		assert(comma == ',');
-		(void)comma;
 		LinearNumKey id = g_contigIDs.serial(sID);
-		assert(c == '0' || c == '1');
-		bool dir = c == '1';
-
-		MergeNode rootNode = {id, 0};
-		if (contigPathMap.find(id) == contigPathMap.end())
-			(contigPathMap[id] = new ContigPath)->push_back(rootNode);
-		ContigPath* p = contigPathMap[id];
-		if (!dir) {
-			assert(p->size() == 1);
-			assert(p->front() == rootNode);
-			p->insert(p->end(), path.begin(), path.end());
-		} else {
-			assert(p->front() == rootNode);
-			reverse(path.begin(), path.end());
-			p->insert(p->begin(), path.begin(), path.end());
-		}
+		bool inserted = contigPathMap.insert(make_pair(id,
+			new ContigPath(path))).second;
+		assert(inserted);
+		(void)inserted;
 	}
 	assert(pathStream.eof());
 

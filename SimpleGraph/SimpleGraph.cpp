@@ -202,7 +202,8 @@ static struct {
  */
 static void handleEstimate(
 		const EstimateRecord& er, unsigned dirIdx,
-		const SimpleContigGraph* pContigGraph, ostream& outStream)
+		const SimpleContigGraph* pContigGraph,
+		ContigPath& out)
 {
 	if (er.estimates[dirIdx].empty())
 		return;
@@ -350,9 +351,9 @@ static void handleEstimate(
 			<< " sumdiff: " << sumDiff << '\n';
 	}
 
-	/** Lock the output stream. */
-	static pthread_mutex_t outMutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&outMutex);
+	/** Lock the debugging stream. */
+	static pthread_mutex_t coutMutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&coutMutex);
 	stats.totalAttempted++;
 	g_minNumPairs = min(g_minNumPairs, minNumPairs);
 	cout << vout_ss.str();
@@ -366,16 +367,11 @@ static void handleEstimate(
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
-		ContigPath cPath;
-		constructContigPath(*bestSol, cPath);
-
-		outStream << g_contigIDs.key(er.refID) << ',' << dirIdx
-			<< '\t' << cPath << '\n';
-		assert(outStream.good());
+		constructContigPath(*bestSol, out);
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}
-	pthread_mutex_unlock(&outMutex);
+	pthread_mutex_unlock(&coutMutex);
 }
 
 struct WorkerArg {
@@ -399,8 +395,21 @@ static void* worker(void* pArg)
 		if (!good)
 			break;
 
-		for (unsigned dirIdx = 0; dirIdx <= 1; ++dirIdx)
-			handleEstimate(er, dirIdx, arg.graph, *arg.out);
+		ContigPath path;
+		handleEstimate(er, ANTISENSE, arg.graph, path);
+		reverse(path.begin(), path.end());
+		path.push_back(MergeNode(er.refID, false));
+		handleEstimate(er, SENSE, arg.graph, path);
+		if (path.size() > 1) {
+			/** Lock the output stream. */
+			static pthread_mutex_t outMutex
+				= PTHREAD_MUTEX_INITIALIZER;
+			pthread_mutex_lock(&outMutex);
+			*arg.out << g_contigIDs.key(er.refID) << '\t'
+				<< path << '\n';
+			assert(arg.out->good());
+			pthread_mutex_unlock(&outMutex);
+		}
 	}
 	return NULL;
 }
@@ -465,7 +474,6 @@ static void constructContigPath(
 	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
 	{
 		flip = flip ^ iter->isRC;
-		MergeNode mn = {iter->key, flip};
-		contigPath.push_back(mn);
+		contigPath.push_back(MergeNode(iter->key, flip));
 	}
 }

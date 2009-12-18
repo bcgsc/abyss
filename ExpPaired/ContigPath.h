@@ -18,7 +18,10 @@ struct MergeNode
 {
 	LinearNumKey id;
 	bool isRC;
-	
+
+	MergeNode() { }
+	MergeNode(LinearNumKey id, bool isRC) : id(id), isRC(isRC) { }
+
 	void flip() { isRC = (isRC) ? 0 : 1; }
 
 	bool operator ==(const MergeNode& o) const
