@@ -603,7 +603,9 @@ static bool replaceSuffix(string& s,
 /** Return true if the specified read ID is of a single-end read. */
 static bool isSingleEnd(const string& id)
 {
-	return endsWith(id, ".fn");
+	unsigned l = id.length();
+	return endsWith(id, ".fn")
+		|| (l > 6 && id.substr(l-6, 5) == ".part");
 }
 
 /** Return the mate ID of the specified read ID. */
