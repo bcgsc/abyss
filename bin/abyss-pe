@@ -83,7 +83,7 @@ endif
 ifdef b
 abyssopt += -b$b
 endif
-abyssopt += $v
+abyssopt += $v --coverage-hist=coverage.hist -s bubbles.fa
 
 # Common paired-end parameters
 ifdef PE_HOSTFILE
@@ -111,10 +111,9 @@ clean:
 
 %-3.fa: $(in) $(se)
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) \
-		-s bubbles.fa -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $^
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -s bubbles.fa -o $@ $^
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $^
 endif
 
 %.adj: %.fa
