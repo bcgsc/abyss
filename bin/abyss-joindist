@@ -13,36 +13,36 @@ pod2usage(-verbose => 2) if $opt{man};
 my (%id, %a, %b);
 
 while (<>) {
-	my ($id, $a, $b) = /([0-9]*) *: *([-0-9., ]*) *\| *([-0-9., ]*)/;
+	my ($id, $a, $b) = /([0-9]*) *([-+0-9., ]*) *; *([-+0-9., ]*)/;
 	my @a = split ' ', $a;
 	my @b = split ' ', $b;
 	$id{$id} = 1;
-	
+
 	for (@a) {
-		my ($to, $d, $n, $sd, $s) = split ',';
+		my ($to, $d, $n, $sd) = split ',';
 		if (!exists $a{$id}{$to} || $sd < $a{$id}{$to}) {
-			$a{$id}{$to} = "$sd $d $n $s";
+			$a{$id}{$to} = "$sd $d $n";
 		}
 	}
 
 	for (@b) {
-		my ($to, $d, $n, $sd, $s) = split ',';
+		my ($to, $d, $n, $sd) = split ',';
 		if (!exists $b{$id}{$to} || $sd < $b{$id}{$to}) {
-			$b{$id}{$to} = "$sd $d $n $s";
+			$b{$id}{$to} = "$sd $d $n";
 		}
 	}
 }
 
 for my $id (sort {$a<=>$b} keys %id) {
-	print "$id :";
+	print $id;
 	for my $to (sort {$a<=>$b} keys %{$a{$id}}) {
-		my ($sd, $d, $n, $s) = split ' ', $a{$id}{$to};
-		print " $to,$d,$n,$sd,$s";
+		my ($sd, $d, $n) = split ' ', $a{$id}{$to};
+		print " $to,$d,$n,$sd";
 	}
-	print ' |';
+	print ' ;';
 	for my $to (sort {$a<=>$b} keys %{$b{$id}}) {
-		my ($sd, $d, $n, $s) = split ' ', $b{$id}{$to};
-		print " $to,$d,$n,$sd,$s";
+		my ($sd, $d, $n) = split ' ', $b{$id}{$to};
+		print " $to,$d,$n,$sd";
 	}
 	print "\n";
 }
