@@ -1,3 +1,33 @@
+2009-12-18  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.1.0.
+	* The output format of AdjList, DistanceEst and SimpleGraph has
+	changed.
+
+	ABYSS:
+	* New options, -q, --trim-quality. Trim bases from the ends of
+	reads whose quality is less than the specified threshold.
+	--standard-quality: zero quality is `!' (33)
+	default for FASTQ files
+	--illumina-quality: zero quality is `@' (64)
+	default for qseq and export files
+	Thanks to Tony Raymond.
+
+	SimpleGraph:
+	* Multithreaded. The -j, --threads option specifies the number of
+	threads to use.
+	* Expand tandem repeats when it is possible to determine the exact
+	number of the repeat.
+
+	MergePaths:
+	* Bug fix. A repeat that is larger than the fragment size could
+	be misassembled. Thanks to Tony Raymond.
+
+	abyss-pe:
+	* Determine the parameter j (number of threads) by finding the
+	number of slots allocated on the head node in the PE_HOSTFILE.
+	* Store the k-mer coverage histogram in coverage.hist.
+
 2009-11-13  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.0.16.
