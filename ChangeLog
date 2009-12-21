@@ -2,7 +2,7 @@
 
 	* Release version 1.1.0.
 	* The output format of AdjList, DistanceEst and SimpleGraph has
-	changed.
+	changed to be more humanly readable.
 
 	ABYSS:
 	* New options, -q, --trim-quality. Trim bases from the ends of
