@@ -102,7 +102,8 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 		Kmer seql(seq.substr(seq.length() - opt::overlap,
 				opt::overlap));
 		Kmer seqr(seq.substr(0, opt::overlap));
-		pContigs->push_back(ContigEndSeq(rec.id, seq.length(),
+		pContigs->push_back(ContigEndSeq(g_contigIDs.intern(rec.id),
+					seq.length(),
 					seql, seqr));
 	}
 	assert(in.eof());
@@ -116,12 +117,6 @@ static vector<ContigEndSeq> contigs;
 static const string& idString(const ContigNode& o)
 {
 	return contigs[o.id()].id;
-}
-
-static std::ostream& operator <<(std::ostream& out,
-		const ContigNode& o)
-{
-	return out << idString(o) << (o.sense() ? '-' : '+');
 }
 
 int main(int argc, char** argv)
@@ -162,6 +157,7 @@ int main(int argc, char** argv)
 				bind2nd(ptr_fun(readContigs), &contigs));
 	} else
 		readContigs("-", &contigs);
+	g_contigIDs.lock();
 
 	if (opt::verbose > 0)
 		cerr << "Read " << contigs.size() << " contigs\n";

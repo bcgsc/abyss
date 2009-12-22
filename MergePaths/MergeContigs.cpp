@@ -63,35 +63,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static unsigned line_num;
-
-static void assert_plus_minus(char c)
-{
-	if (c != '+' && c != '-') {
-		cerr << "error: " << line_num
-			<< ": expected `+' or `-' and saw `" << c << '\''
-			<< endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
-static Dictionary g_dict;
-
-static istream& operator >>(istream& in, ContigNode& o)
-{
-	string s;
-	if (in >> s) {
-		char c = chop(s);
-		assert_plus_minus(c);
-		o = ContigNode(g_dict.serial(s), c == '-');
-	}
-	return in;
-}
-
-static ostream& operator <<(ostream& out, const ContigNode& o)
-{
-	return out << g_dict.key(o.id()) << (o.sense() ? '-' : '+');
-}
+static Dictionary& g_dict = g_contigIDs;
 
 struct Path : vector<ContigNode>
 {
@@ -184,7 +156,6 @@ static void loadPaths(string& inPath, vector<Path>& paths)
 	istream& in = inPath == "-" ? cin : fin;
 
 	for (string s; getline(in, s);) {
-		line_num++;
 		istringstream ss(s);
 
 		string sID;

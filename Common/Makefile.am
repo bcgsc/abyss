@@ -3,7 +3,7 @@ noinst_LIBRARIES = libcommon.a
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
 libcommon_a_SOURCES = \
-	ContigNode.h \
+	ContigNode.h ContigNode.cpp \
 	Dictionary.h \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h HashSet.h \
