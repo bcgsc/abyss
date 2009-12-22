@@ -109,16 +109,6 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 	assert(in.eof());
 }
 
-/** The relevant information of our contigs.
- * This variable is global so that ContigNode may use the mapping of
- * contig numbers to contig names. */
-static vector<ContigEndSeq> contigs;
-
-static const string& idString(const ContigNode& o)
-{
-	return contigs[o.id()].id;
-}
-
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -152,6 +142,7 @@ int main(int argc, char** argv)
 	opt::overlap = opt::k - 1;
 	Kmer::setLength(opt::overlap);
 
+	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
 				bind2nd(ptr_fun(readContigs), &contigs));
@@ -207,7 +198,7 @@ int main(int argc, char** argv)
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << idString(*it)
+						out << " \"" << g_contigIDs.key(it->id())
 							<< (idx != it->sense() ? '-' : '+')
 							<< '"';
 					out << " }";
