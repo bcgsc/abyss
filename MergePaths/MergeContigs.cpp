@@ -1,5 +1,6 @@
 #include "config.h"
 #include "Common/Options.h"
+#include "ContigNode.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
@@ -76,27 +77,21 @@ static void assert_plus_minus(char c)
 
 static Dictionary g_dict;
 
-struct ContigNode {
-	unsigned id;
-	bool sense;
-
-	friend istream& operator >>(istream& in, ContigNode& o)
-	{
-		string s;
-		if (in >> s) {
-			char c = chop(s);
-			o.id = g_dict.serial(s);
-			assert_plus_minus(c);
-			o.sense = c == '-';
-		}
-		return in;
+static istream& operator >>(istream& in, ContigNode& o)
+{
+	string s;
+	if (in >> s) {
+		char c = chop(s);
+		assert_plus_minus(c);
+		o = ContigNode(g_dict.serial(s), c == '-');
 	}
+	return in;
+}
 
-	friend ostream& operator <<(ostream& out, const ContigNode& o)
-	{
-		return out << g_dict.key(o.id) << (o.sense ? '-' : '+');
-	}
-};
+static ostream& operator <<(ostream& out, const ContigNode& o)
+{
+	return out << g_dict.key(o.id()) << (o.sense() ? '-' : '+');
+}
 
 struct Path : vector<ContigNode>
 {
@@ -145,10 +140,10 @@ static Contig mergePath(const Path& path,
 	unsigned coverage = 0;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		const Contig& contig = contigs[it->id];
+		const Contig& contig = contigs[it->id()];
 		coverage += contig.coverage;
 
-		Sequence h = it->sense ? reverseComplement(contig.seq)
+		Sequence h = it->sense() ? reverseComplement(contig.seq)
 			: contig.seq;
 		if (seq.empty()) {
 			seq = h;
@@ -212,8 +207,8 @@ static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
 			it != paths.end(); ++it)
 		for (Path::const_iterator itc = it->begin();
 				itc != it->end(); ++itc)
-			if (itc->id < seen.size())
-				seen[itc->id] = true;
+			if (itc->id() < seen.size())
+				seen[itc->id()] = true;
 }
 
 int main(int argc, char** argv)

@@ -1,4 +1,5 @@
 #include "Common/Options.h"
+#include "ContigNode.h"
 #include "FastaReader.h"
 #include "HashMap.h"
 #include "Kmer.h"
@@ -112,22 +113,16 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
  * contig numbers to contig names. */
 static vector<ContigEndSeq> contigs;
 
-struct ContigNode {
-	ContigNode(unsigned id, bool sense) : m_node(id << 1 | sense) { };
+static const string& idString(const ContigNode& o)
+{
+	return contigs[o.id()].id;
+}
 
-	unsigned id() const { return m_node >> 1; }
-	bool sense() const { return m_node & 1; }
-
-	const string& idString() const { return contigs[id()].id; }
-
-	friend ostream& operator <<(ostream& out, const ContigNode& o)
-	{
-		return out << o.idString() << (o.sense() ? '-' : '+');
-	}
-
-  private:
-	unsigned m_node;
-};
+static std::ostream& operator <<(std::ostream& out,
+		const ContigNode& o)
+{
+	return out << idString(o) << (o.sense() ? '-' : '+');
+}
 
 int main(int argc, char** argv)
 {
@@ -216,7 +211,7 @@ int main(int argc, char** argv)
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << it->idString()
+						out << " \"" << idString(*it)
 							<< (idx != it->sense() ? '-' : '+')
 							<< '"';
 					out << " }";
