@@ -71,13 +71,11 @@ typedef string ContigID;
 
 /** A contig ID and its end sequences. */
 struct ContigEndSeq {
-	ContigID id;
 	unsigned length;
 	Kmer l;
 	Kmer r;
-	ContigEndSeq(const ContigID& id, unsigned length,
-			const Kmer& l, const Kmer& r)
-		: id(id), length(length), l(l), r(r) { }
+	ContigEndSeq(unsigned length, const Kmer& l, const Kmer& r)
+		: length(length), l(l), r(r) { }
 };
 
 static void readContigs(string path, vector<ContigEndSeq>* pContigs)
@@ -99,12 +97,14 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 				assert(isalpha(seq[0]));
 		}
 
+		unsigned id = g_contigIDs.serial(rec.id);
+		assert(id == pContigs->size());
+		(void)id;
+
 		Kmer seql(seq.substr(seq.length() - opt::overlap,
 				opt::overlap));
 		Kmer seqr(seq.substr(0, opt::overlap));
-		pContigs->push_back(ContigEndSeq(g_contigIDs.intern(rec.id),
-					seq.length(),
-					seql, seqr));
+		pContigs->push_back(ContigEndSeq(seq.length(), seql, seqr));
 	}
 	assert(in.eof());
 }
@@ -174,7 +174,8 @@ int main(int argc, char** argv)
 	int numEdges = 0;
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
-		const ContigID& id = i->id;
+		unsigned nID = i - contigs.begin();
+		const ContigID& id = g_contigIDs.key(nID);
 
 		if (opt::format == ADJ)
 			out << id << ' ' << i->length;
