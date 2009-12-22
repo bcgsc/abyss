@@ -171,8 +171,6 @@ static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 	return seen;
 }
 
-static string toString(const ContigPath& path, char sep = ',');
-
 template <typename T> static const T& deref(const T* x)
 {
 	return *x;
@@ -705,12 +703,10 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 {
 	if(gDebugPrint) cout << "Attempting to merge " << cID << '\n';
 	if(gDebugPrint) cout << "Canonical path is: " << currPath << '\n';
-	string comment = toString(currPath);
 	if (opt::verbose > 0)
-		cout << comment << '\n';
+		cout << currPath << '\n';
 
 	size_t numNodes = currPath.size();
-
 	MergeNode firstNode = currPath[0];
 	const Contig& firstContig = sourceContigs[firstNode.id()];
 	Sequence merged = firstContig.seq;
@@ -731,7 +727,8 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 	}
 
 	ostringstream s;
-	s << merged.length() << ' ' << coverage << ' ' << comment;
+	s << merged.length() << ' ' << coverage << ' '
+		<< toString(currPath, ',');
 	out << FastaRecord(toString(count), s.str(), merged);
 }
 
