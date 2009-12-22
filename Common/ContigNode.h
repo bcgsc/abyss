@@ -20,6 +20,13 @@ class ContigNode {
 	unsigned id() const { return m_node >> 1; }
 	bool sense() const { return m_node & 1; }
 
+	const ContigNode operator~() const
+	{
+		ContigNode o;
+		o.m_node = this->m_node ^ 1;
+		return o;
+	}
+
 	friend std::istream& operator >>(std::istream& in,
 			ContigNode& o)
 	{

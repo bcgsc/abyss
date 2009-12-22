@@ -199,9 +199,8 @@ int main(int argc, char** argv)
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
-						out << " \"" << g_contigIDs.key(it->id())
-							<< (idx != it->sense() ? '-' : '+')
-							<< '"';
+						out << " \""
+							<< (idx == 0 ? *it : ~*it) << '"';
 					out << " }";
 				}
 				out << ";\n";
