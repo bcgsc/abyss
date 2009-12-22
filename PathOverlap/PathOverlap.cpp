@@ -1,5 +1,6 @@
-#include "ContigPath.h"
 #include "config.h"
+#include "ContigPath.h"
+#include "PairUtils.h"
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -90,10 +91,7 @@ static PathMap loadPaths(istream& pathStream)
 		while (s >> contig >> dir) {
 			assert(dir == '-' || dir == '+');
 			bool isRC = dir == '-';
-			MergeNode node;
-			node.id = contig;
-			node.isRC = isRC;
-			contigPath.push_back(node);
+			contigPath.push_back(MergeNode(contig, isRC));
 			if (first < 0)
 				first = contig;
 			last = contig;
@@ -131,8 +129,8 @@ static void addOverlap(const PathStruct& refPathStruct,
 	}
 
 	currNode = currPath[currIndex];
-	assert(refNode.id == currNode.id);
-	overlap.firstIsRC = refNode.isRC != currNode.isRC;
+	assert(refNode.id() == currNode.id());
+	overlap.firstIsRC = refNode.sense() != currNode.sense();
 
 	if (overlap.firstIsRC) {
 		refPath.reverseComplement();
@@ -170,7 +168,8 @@ static OverlapVec findOverlaps(PathMap& pathMap)
 			continue;
 
 		for (unsigned i = 0; i < path.path.size(); i++) {
-			PathMapPair result = pathMap.equal_range(path.path[i].id);
+			PathMapPair result = pathMap.equal_range(
+					path.path[i].id());
 			unsigned dist = distance(result.first, result.second);
 
 			//the first and last element of the path is guarenteed to
@@ -190,10 +189,10 @@ static OverlapVec findOverlaps(PathMap& pathMap)
 static void addContigsToSet(ContigPath& contigs, int min, int max)
 {
 	for (int x = 0; x < min; x++)
-		s_trimmedContigs.insert(contigs[x].id);
+		s_trimmedContigs.insert(contigs[x].id());
 
 	for (int x = max; (unsigned)x < contigs.size(); x++)
-		s_trimmedContigs.insert(contigs[x].id);
+		s_trimmedContigs.insert(contigs[x].id());
 }
 
 static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
@@ -240,13 +239,10 @@ static string toString(const ContigPath& path, char sep)
 {
 	size_t numNodes = path.size();
 	assert(numNodes > 0);
-	MergeNode root = path[0];
 	ostringstream s;
-	s << root.id << (root.isRC ? '-' : '+');
-	for (size_t i = 1; i < numNodes; ++i) {
-		MergeNode mn = path[i];
-		s << sep << mn.id << (mn.isRC ? '-' : '+');
-	}
+	s << path[0];
+	for (size_t i = 1; i < numNodes; ++i)
+		s << sep << path[i];
 	return s.str();
 }
 
@@ -278,10 +274,10 @@ static PathMap makePathMap(const TrimPathMap& trimPathMap)
 		path.isKeyFirst = true;
 		if (path.path.size() < 1)
 			continue;
-		key = path.path[0].id;
+		key = path.path[0].id();
 		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
 		path.isKeyFirst = false;
-		key = path.path[path.path.size() - 1].id;
+		key = path.path[path.path.size() - 1].id();
 		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
 	}
 	return pathMap;

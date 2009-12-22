@@ -1,8 +1,7 @@
 #ifndef CONTIGPATH_H
 #define CONTIGPATH_H 1
 
-#include "Dictionary.h"
-#include "PairUtils.h" // for LinearNumKey
+#include "ContigNode.h"
 #include "StringUtil.h"
 #include <algorithm>
 #include <cassert>
@@ -14,45 +13,7 @@
 #include <string>
 #include <vector>
 
-struct MergeNode
-{
-	LinearNumKey id;
-	bool isRC;
-
-	MergeNode() { }
-	MergeNode(LinearNumKey id, bool isRC) : id(id), isRC(isRC) { }
-
-	void flip() { isRC = (isRC) ? 0 : 1; }
-
-	bool operator ==(const MergeNode& o) const
-	{
-		return id == o.id && isRC == o.isRC;
-	}
-
-	bool operator <(const MergeNode& o) const
-	{
-		return id != o.id ? id < o.id : isRC < o.isRC;
-	}
-
-	friend std::ostream& operator<<(std::ostream& out,
-			const MergeNode& o)
-	{
-		return out << g_contigIDs.key(o.id)
-			<< (o.isRC ? '-' : '+');
-	}
-
-	friend std::istream& operator>>(std::istream& in, MergeNode& o)
-	{
-		std::string s;
-		if (in >> s) {
-			char c = chop(s);
-			assert(c == '+' || c == '-');
-			o.isRC = c == '-';
-			o.id = g_contigIDs.serial(s);
-		}
-		return in;
-	}
-};
+typedef ContigNode MergeNode;
 
 class ContigPath : public std::vector<MergeNode>
 {

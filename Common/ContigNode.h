@@ -20,6 +20,18 @@ class ContigNode {
 	unsigned id() const { return m_node >> 1; }
 	bool sense() const { return m_node & 1; }
 
+	void flip() { m_node ^= 1; }
+
+	bool operator ==(const ContigNode& o) const
+	{
+		return m_node == o.m_node;
+	}
+
+	bool operator <(const ContigNode& o) const
+	{
+		return m_node < o.m_node;
+	}
+
 	const ContigNode operator~() const
 	{
 		ContigNode o;

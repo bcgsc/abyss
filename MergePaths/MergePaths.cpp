@@ -123,7 +123,7 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 		map<LinearNumKey, unsigned> count;
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
-			count[it->id]++;
+			count[it->id()]++;
 		for (map<LinearNumKey, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
@@ -166,7 +166,7 @@ static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 			it != paths.end(); it++) {
 		size_t nodes = it->size();
 		for (size_t i = 0; i < nodes; i++)
-			seen.insert((*it)[i].id);
+			seen.insert((*it)[i].id());
 	}
 	return seen;
 }
@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 	id++;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
-		mergePath(it->front().id, contigVec, *it, id++,
+		mergePath(it->front().id(), contigVec, *it, id++,
 				opt::k, out);
 	assert(out.good());
 
@@ -394,11 +394,11 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 
 	MergeNodeList::iterator iter = mergeInList.begin();
 	while(!mergeInList.empty()) {
-		if(iter->id != id) {
-			if(gDebugPrint) cout << "CHECKING NODE " << iter->id << "(" << iter->isRC << ")\n";
+		if(iter->id() != id) {
+			if(gDebugPrint) cout << "CHECKING NODE " << iter->id() << "(" << iter->sense() << ")\n";
 
 			// Check if the current node to merge has any paths to/from it
-			ContigPathMap::iterator findIter = usedPathMap->find(iter->id);
+			ContigPathMap::iterator findIter = usedPathMap->find(iter->id());
 			if (findIter != usedPathMap->end()) {
 				// Make the full path of the child node
 				ContigPath childCanonPath = *findIter->second;
@@ -407,7 +407,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 				if(gDebugPrint) cout << "  in: " << childCanonPath << '\n';
 
 				size_t s1, s2, e1, e2;
-				bool validMerge = checkPathConsistency(id, iter->id,
+				bool validMerge = checkPathConsistency(id, iter->id(),
 					*refCanonical, childCanonPath, s1, e1, s2, e2);
 
 				if(validMerge && deleteSubsumed) {
@@ -420,10 +420,10 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 						set<LinearNumKey> refKeys, childKeys;
 						for (ContigPath::const_iterator it = refCanonical->begin();
 								it != refCanonical->end(); it++)
-							refKeys.insert(it->id);
+							refKeys.insert(it->id());
 						for (ContigPath::const_iterator it = childCanonPath.begin();
 								it != childCanonPath.end(); it++)
-							childKeys.insert(it->id);
+							childKeys.insert(it->id());
 						bool refIncludesChild =
 							includes(refKeys.begin(), refKeys.end(),
 									childKeys.begin(), childKeys.end());
@@ -519,7 +519,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 				endP2 = coords2[j];
 			}
 
-			if(path1[startP1].isRC != path2[startP2].isRC) {
+			if(path1[startP1].sense() != path2[startP2].sense()) {
 				path2.reverseComplement();
 				flipped = !flipped;
 				startP2 = max2 - startP2;
@@ -528,7 +528,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 			lowValid = true;
 			while(1) {
-				if(path1[startP1].id != path2[startP2].id) {
+				if(path1[startP1].id() != path2[startP2].id()) {
 					// The nodes no longer match, this path is not valid
 					lowValid = false;
 					break;
@@ -545,7 +545,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			// high coordinates
 			highValid = true;
 			while(1) {
-				if(path1[endP1].id != path2[endP2].id) {
+				if(path1[endP1].id() != path2[endP2].id()) {
 					// The nodes no longer match, this path is not valid
 					highValid = false;
 					break;
@@ -610,7 +610,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 		path2.reverseComplement();
 
 	for(size_t c = 0; c < count; ++c) {
-		if(path1[startP1 + c].id != path2[startP2 + c].id) {
+		if(path1[startP1 + c].id() != path2[startP2 + c].id()) {
 			if(gDebugPrint) printf("Internal path mismatch\n");
 			return false;
 		}
@@ -628,7 +628,7 @@ bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
 	size_t maxIdx = path.size();
 	for(size_t idx = 0; idx < maxIdx; ++idx) {
 		size_t tIdx = maxIdx - idx - 1;
-		if(path[tIdx].id == anchor)
+		if(path[tIdx].id() == anchor)
 			coords.push_back(tIdx);
 	}
 
@@ -694,10 +694,10 @@ static string toString(const ContigPath& path, char sep)
 	assert(numNodes > 0);
 	MergeNode root = path[0];
 	ostringstream s;
-	s << g_contigIDs.key(root.id) << (root.isRC ? '-' : '+');
+	s << g_contigIDs.key(root.id()) << (root.sense() ? '-' : '+');
 	for (size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = path[i];
-		s << sep << g_contigIDs.key(mn.id) << (mn.isRC ? '-' : '+');
+		s << sep << g_contigIDs.key(mn.id()) << (mn.sense() ? '-' : '+');
 	}
 	return s.str();
 }
@@ -715,20 +715,20 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 	size_t numNodes = currPath.size();
 
 	MergeNode firstNode = currPath[0];
-	const Contig& firstContig = sourceContigs[firstNode.id];
+	const Contig& firstContig = sourceContigs[firstNode.id()];
 	Sequence merged = firstContig.seq;
 	unsigned coverage = firstContig.coverage;
-	if (firstNode.isRC)
+	if (firstNode.sense())
 		merged = reverseComplement(merged);
 	assert(!merged.empty());
 
 	for(size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = currPath[i];
-		if(gDebugPrint) cout << "	merging in " << mn.id << "(" << mn.isRC << ")\n";
+		if(gDebugPrint) cout << "	merging in " << mn.id() << "(" << mn.sense() << ")\n";
 
-		const Contig& contig = sourceContigs[mn.id];
+		const Contig& contig = sourceContigs[mn.id()];
 		assert(!contig.seq.empty());
-		mergeSequences(merged, contig.seq, (extDirection)0, mn.isRC,
+		mergeSequences(merged, contig.seq, (extDirection)0, mn.sense(),
 				kmer);
 		coverage += contig.coverage;
 	}
