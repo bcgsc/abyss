@@ -690,15 +690,12 @@ template<typename T> static string toString(T x)
 /** Return a string representation of the specified path. */
 static string toString(const ContigPath& path, char sep)
 {
-	size_t numNodes = path.size();
-	assert(numNodes > 0);
-	MergeNode root = path[0];
+	assert(!path.empty());
 	ostringstream s;
-	s << g_contigIDs.key(root.id()) << (root.sense() ? '-' : '+');
-	for (size_t i = 1; i < numNodes; ++i) {
-		MergeNode mn = path[i];
-		s << sep << g_contigIDs.key(mn.id()) << (mn.sense() ? '-' : '+');
-	}
+	ContigPath::const_iterator it = path.begin();
+	s << *it++;
+	for (; it != path.end(); ++it)
+		s << sep << *it;
 	return s.str();
 }
 
