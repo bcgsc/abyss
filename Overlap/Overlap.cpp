@@ -184,13 +184,21 @@ static unsigned findOverlap(const ContigNode& t_id,
 	return overlaps[0];
 }
 
+static LinearNumKey nextContigID(void)
+{
+	LinearNumKey id;
+	istringstream s(g_contigIDs.key(contigs.size() - 1));
+	s >> id;
+	assert(s.eof());
+	return ++id;
+}
+
 static string newContig(const ContigNode& t, const ContigNode& h,
 		int dist, const string& seq)
 {
-	static unsigned n;
-	unsigned id = contigs.size() + n++;
+	static unsigned id = nextContigID();
 	ostringstream s;
-	s << '>' << id << ' ' << seq.length() << " 0 "
+	s << '>' << id++ << ' ' << seq.length() << " 0 "
 		<< t << ' ' << h << ' ' << dist << '\n'
 		<< seq << '\n';
 	return s.str();
