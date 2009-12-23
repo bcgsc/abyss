@@ -325,8 +325,11 @@ int main(int argc, char** argv)
 
 	if (!opt::repeatContigs.empty()) {
 		ofstream out(opt::repeatContigs.c_str());
-		copy(s_trimmedContigs.begin(), s_trimmedContigs.end(),
-				ostream_iterator<LinearNumKey>(out, "\n"));
+		for (set<LinearNumKey>::const_iterator it
+				= s_trimmedContigs.begin();
+				it != s_trimmedContigs.end(); ++it)
+			out << g_contigIDs.key(*it) << '\n';
+		assert(out.good());
 	}
 
 	cerr << PROGRAM " completed after " << trimIterations
