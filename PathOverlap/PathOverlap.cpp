@@ -1,6 +1,8 @@
 #include "config.h"
 #include "ContigPath.h"
 #include "PairUtils.h"
+#include <algorithm>
+#include <cassert>
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -79,24 +81,19 @@ static PathMap loadPaths(istream& pathStream)
 	PathMap pathMap;
 
 	while (getline(pathStream, line)) {
-		LinearNumKey pathID;
-		LinearNumKey contig;
-		char dir;
-		ContigPath contigPath;
-		PathStruct path;
 		istringstream s(line);
-
-		int first = -1, last = -1;
+		LinearNumKey pathID;
 		s >> pathID;
-		while (s >> contig >> dir) {
-			assert(dir == '-' || dir == '+');
-			bool isRC = dir == '-';
-			contigPath.push_back(MergeNode(contig, isRC));
-			if (first < 0)
-				first = contig;
-			last = contig;
-		}
 
+		ContigPath contigPath;
+		copy(istream_iterator<MergeNode>(s),
+				istream_iterator<MergeNode>(),
+				back_inserter(contigPath));
+		assert(s.eof());
+		LinearNumKey first = contigPath.front().id();
+		LinearNumKey last = contigPath.back().id();
+
+		PathStruct path;
 		path.path = contigPath;
 		path.pathID = pathID;
 		path.isKeyFirst = true;
@@ -235,17 +232,6 @@ static void trimOverlaps(TrimPathMap& pathMap, OverlapVec& overlaps)
 	}
 }
 
-static string toString(const ContigPath& path, char sep)
-{
-	size_t numNodes = path.size();
-	assert(numNodes > 0);
-	ostringstream s;
-	s << path[0];
-	for (size_t i = 1; i < numNodes; ++i)
-		s << sep << path[i];
-	return s.str();
-}
-
 static TrimPathMap makeTrimPathMap(const PathMap& pathMap)
 {
 	TrimPathMap trimMap;
@@ -333,8 +319,8 @@ int main(int argc, char** argv)
 	for (TrimPathMap::const_iterator trimPathsIt = trimPaths.begin();
 			trimPathsIt != trimPaths.end(); trimPathsIt++) {
 		if (trimPathsIt->second.path.size() < 2) continue;
-		string pathString = toString(trimPathsIt->second.path, ' ');
-		cout << pathString << '\n';
+		cout << trimPathsIt->first << '\t'
+			<< trimPathsIt->second.path << '\n';
 	}
 
 	if (!opt::repeatContigs.empty()) {
