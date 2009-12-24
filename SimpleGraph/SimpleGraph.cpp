@@ -2,6 +2,7 @@
 #include "ContigGraph.h"
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
+#include "Estimate.h"
 #include "PairUtils.h"
 #include "PrefixIterator.h"
 #include "Uncompress.h"

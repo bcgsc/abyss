@@ -6,6 +6,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigGraph.h"
+#include "Estimate.h"
 #include "FastaReader.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
@@ -17,6 +18,7 @@
 #include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
+#include <iostream>
 #include <map>
 #include <set>
 #include <sstream>

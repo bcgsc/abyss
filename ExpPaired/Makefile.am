@@ -4,5 +4,6 @@ libexppaired_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libexppaired_a_SOURCES = \
 	ContigPath.h \
+	Estimate.h \
 	PairUtils.cpp PairUtils.h \
 	Stats.cpp Stats.h

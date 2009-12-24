@@ -1,4 +1,5 @@
 #include "Aligner.h"
+#include "Estimate.h"
 #include "Histogram.h"
 #include "PairUtils.h"
 #include "SAM.h"

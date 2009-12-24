@@ -2,35 +2,9 @@
 #include "Sense.h"
 #include <cassert>
 #include <fstream>
-#include <iostream>
-#include <iterator>
 #include <limits> // for numeric_limits
-#include <sstream>
 
 using namespace std;
-
-/** Read the distance estimates for one contig. */
-istream& operator >>(istream& in, EstimateRecord& o)
-{
-	o.estimates[SENSE].clear();
-	o.estimates[ANTISENSE].clear();
-
-	string id;
-	in >> id;
-	o.refID = convertContigIDToLinearNumKey(id);
-
-	for (extDirection sense = SENSE; sense <= ANTISENSE; ++sense) {
-		string s;
-		getline(in, s, sense == SENSE ? ';' : '\n');
-		istringstream ss(s);
-		copy(istream_iterator<Estimate>(ss),
-				istream_iterator<Estimate>(),
-				back_inserter(o.estimates[sense]));
-		assert(ss.eof());
-	}
-
-	return in;
-}
 
 /** Load contig lengths. */
 void loadContigLengths(const string& path, ContigLengthVec& lengths)

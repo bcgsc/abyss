@@ -1,4 +1,5 @@
 #include "AlignExtractor.h"
+#include "Estimate.h"
 #include "Histogram.h"
 #include "PairUtils.h"
 #include "Stats.h"
