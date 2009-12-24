@@ -95,13 +95,19 @@ struct Vertex
 	// Compare operators (needed?)
 	inline bool operator==(const Vertex& other) const { return m_data == other.m_data; }
 	inline bool operator<(const Vertex& other) const { return m_data < other.m_data; }
-	
-	// count the edges the vertex contains
-	size_t countEdges() const { return (numEdges(SENSE) + numEdges(ANTISENSE)); }
-	
-	// get the number of edges in a certain direction
-	size_t numEdges(extDirection dir ) const { return m_edges[dir].size(); }
-		
+
+	/** Return the total number of edges in both directions. */
+	size_t countEdges() const
+	{
+		return (numEdges(false) + numEdges(true));
+	}
+
+	/** Return the number of edges in the specified direction. */
+	size_t numEdges(bool sense) const
+	{
+		return m_edges[sense].size();
+	}
+
 	// add an edge to the vertex in the specified direction
 	void addEdge(VertexType* pNode, extDirection dir, bool reverse);
 	

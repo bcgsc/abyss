@@ -58,6 +58,11 @@ class ContigNode {
 			<< (o.sense() ? '-' : '+');
 	}
 
+	// These functions are implemented in Overlap.
+	unsigned outDegree() const;
+	unsigned inDegree() const;
+	const std::string sequence() const;
+
   private:
 	unsigned m_node;
 };

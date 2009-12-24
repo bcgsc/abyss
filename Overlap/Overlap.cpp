@@ -91,51 +91,23 @@ static struct {
 	unsigned ambiguous;
 } stats;
 
-class ContigNode
+
+inline unsigned ContigNode::outDegree() const
 {
-	public:
-		ContigNode(LinearNumKey id, extDirection sense)
-			: m_id(id), m_sense(sense) { }
+	return contigGraph[id()].numEdges(sense());
+}
 
-		bool operator==(const ContigNode& b) const
-		{
-			return m_id == b.m_id && m_sense == b.m_sense;
-		}
-		bool operator<(const ContigNode& b) const
-		{
-			return m_id != b.m_id ? m_id < b.m_id
-				: m_sense < b.m_sense;
-		}
+inline unsigned ContigNode::inDegree() const
+{
+	return contigGraph[id()].numEdges(!sense());
+}
 
-		const ContigNode operator~() const
-		{
-			return ContigNode(m_id, !m_sense);
-		}
+inline const Sequence ContigNode::sequence() const
+{
+	const Sequence& seq = contigs[id()];
+	return sense() == SENSE ? seq : reverseComplement(seq);
+}
 
-		unsigned outDegree() const
-		{
-			return contigGraph[m_id].numEdges(m_sense);
-		}
-		unsigned inDegree() const
-		{
-			return contigGraph[m_id].numEdges(!m_sense);
-		}
-
-		const Sequence sequence() const
-		{
-			const Sequence& seq = contigs[m_id];
-			return m_sense == SENSE ? seq : reverseComplement(seq);
-		}
-
-		friend ostream& operator <<(ostream& o, const ContigNode& a)
-		{
-			return o << a.m_id << (a.m_sense == SENSE ? '+' : '-');
-		}
-
-	private:
-		const LinearNumKey m_id;
-		const extDirection m_sense;
-};
 
 static unsigned findOverlap(const ContigNode& t_id,
 		const ContigNode& h_id,
