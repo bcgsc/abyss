@@ -4,6 +4,7 @@
 #include "FastaWriter.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
+#include <cmath>
 #include <cstdlib>
 #include <cstring> // for memset
 #include <getopt.h>
