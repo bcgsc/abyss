@@ -914,15 +914,6 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 						groupIter->second, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
 
-				// Disallow any further branching.
-				unsigned numInitialBranches
-					= groupIter->second.getNumBranches();
-				if (numInitialBranches <= maxNumBranches)
-					groupIter->second.setMaxNumBranches(
-							numInitialBranches);
-
-				// generate a sequence extension request for each sequence in the group
-				// this will be handled in process sequence extension
 				size_t maxID = groupIter->second.getNumBranches();
 				for(size_t id = 0; id < maxID; ++id)
 				{
