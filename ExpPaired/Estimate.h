@@ -1,8 +1,8 @@
 #ifndef ESTIMATE_H
 #define ESTIMATE_H 1
 
+#include "ContigNode.h"
 #include "PairUtils.h"
-#include "StringUtil.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
@@ -15,19 +15,17 @@
 /** Distance estimate between two contigs. */
 struct Estimate
 {
-	LinearNumKey nID;
+	ContigNode contig;
 	int distance;
 	unsigned numPairs;
 	float stdDev;
-	bool isRC;
 
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
-		return out << g_contigIDs.key(o.nID)
-			<< (o.isRC ? '-' : '+') << ","
-			<< o.distance << ","
-			<< o.numPairs << ","
+		return out << o.contig << ','
+			<< o.distance << ','
+			<< o.numPairs << ','
 			<< std::fixed << std::setprecision(1) << o.stdDev;
 	}
 
@@ -40,13 +38,8 @@ struct Estimate
 			>> o.distance >> comma0
 			>> o.numPairs >> comma1
 			>> o.stdDev;
-		if (in) {
-			assert(comma0 == ',' && comma1 == ',');
-			char c = chop(sID);
-			assert(c == '+' || c == '-');
-			o.isRC = c == '-';
-			o.nID = g_contigIDs.serial(sID);
-		}
+		if (in)
+			o.contig = ContigNode(sID);
 		return in;
 	}
 };

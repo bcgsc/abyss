@@ -278,13 +278,12 @@ void processContigs(string alignFile,
 					bool sameOrientation = dirIdx != pairDirIdx;
 
 					Estimate est;
-					est.nID = convertContigIDToLinearNumKey(pairID);
+					est.contig = ContigNode(pairID, !sameOrientation);
 					est.distance = estimateDistance(
-							refLength, lengthVec.at(est.nID),
+							refLength, lengthVec.at(est.contig.id()),
 							dirIdx, pairVec, sameOrientation, pdf,
 							est.numPairs);
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
-					est.isRC = !sameOrientation;
 
 					if (est.numPairs >= opt::npairs) {
 						out << ' ' << est;
@@ -292,7 +291,7 @@ void processContigs(string alignFile,
 						cerr << "warning: "
 							<< refContigID << (dirIdx ? '-' : '+')
 							<< ','
-							<< pairID << (est.isRC ? '-' : '+') << ' '
+							<< est.contig << ' '
 							<< est.numPairs << " of "
 							<< numPairs << " pairs"
 							" fit the expected distribution\n";

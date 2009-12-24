@@ -128,7 +128,7 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, boo
 			estimatesIt->second.estimates[a_isRC];
 		for (EstimateVector::iterator estIt = estimates.begin();
 				estIt != estimates.end(); ++estIt) {
-			if (estIt->nID == est.nID) {
+			if (estIt->contig.id() == est.contig.id()) {
 				estIt->numPairs++;
 				estIt->distance += est.distance;
 				placed = true;
@@ -176,13 +176,11 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
-		est.nID = convertContigIDToLinearNumKey(last.contig);
+		est.contig = ContigNode(last.contig,
+				largest.isRC != last.isRC);
 		est.distance = distance - opt::k;
 		est.numPairs = 1;
 		est.stdDev = 0;
-		//weird file format...
-		est.isRC = largest.isRC != last.isRC;
-
 		addEstimate(estMap, largest, est, false);
 	}
 
@@ -192,13 +190,10 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned first_end =
 			first.read_start_pos + first.align_length - opt::k;
 		int distance = last.read_start_pos - first_end;
-		est.nID = convertContigIDToLinearNumKey(last.contig);
+		est.contig = ContigNode(last.contig, first.isRC != last.isRC);
 		est.distance = distance - opt::k;
 		est.numPairs = 1;
 		est.stdDev = 0;
-		//weird file format...
-		est.isRC = first.isRC != last.isRC;
-
 		addEstimate(estMap, first, est, false);
 	}
 
@@ -209,13 +204,11 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = first.read_start_pos - largest_end;
-		est.nID = convertContigIDToLinearNumKey(first.contig);
+		est.contig = ContigNode(first.contig,
+				largest.isRC != first.isRC);
 		est.distance = distance - opt::k;
 		est.numPairs = 1;
 		est.stdDev = 0;
-		//weird file format...
-		est.isRC = largest.isRC != first.isRC;
-
 		addEstimate(estMap, largest, est, false);
 	}
 

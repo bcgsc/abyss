@@ -16,6 +16,14 @@ class ContigNode {
   public:
 	ContigNode() { }
 	ContigNode(unsigned id, bool sense) : m_node(id << 1 | sense) { };
+	ContigNode(std::string id, bool sense)
+		: m_node(g_contigIDs.serial(id) << 1 | sense) { };
+	ContigNode(std::string id)
+	{
+		char c = chop(id);
+		assert(c == '+' || c == '-');
+		m_node = ContigNode(id, c == '-').m_node;
+	}
 
 	unsigned id() const { return m_node >> 1; }
 	bool sense() const { return m_node & 1; }
@@ -43,11 +51,8 @@ class ContigNode {
 			ContigNode& o)
 	{
 		std::string s;
-		if (in >> s) {
-			char c = chop(s);
-			assert(c == '+' || c == '-');
-			o = ContigNode(g_contigIDs.serial(s), c == '-');
-		}
+		if (in >> s)
+			o = ContigNode(s);
 		return in;
 	}
 

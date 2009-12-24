@@ -232,8 +232,8 @@ static void handleEstimate(
 
 		Constraint nc;
 		nc.distance = translatedDistance  + distanceBuffer;
-		nc.isRC = iter->isRC;
-		constraintMap[iter->nID] = nc;
+		nc.isRC = iter->contig.sense();
+		constraintMap[iter->contig.id()] = nc;
 	}
 
 	vout << "Constraints:";
@@ -281,7 +281,7 @@ static void handleEstimate(
 			vout << *iter << '\t';
 
 			map<LinearNumKey, int>::iterator dmIter
-				= distanceMap.find(iter->nID);
+				= distanceMap.find(iter->contig.id());
 			assert(dmIter != distanceMap.end());
 			// translate distance by -overlap to match
 			// coordinate space used by the estimate
@@ -290,7 +290,7 @@ static void handleEstimate(
 			int diff = actualDistance - iter->distance;
 			unsigned buffer = allowedError(iter->stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
-			bool repeat = repeats.count(iter->nID) > 0;
+			bool repeat = repeats.count(iter->contig.id()) > 0;
 			bool ignored = invalid && repeat;
 			if (ignored)
 				ignoredCount++;
@@ -327,10 +327,10 @@ static void handleEstimate(
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
-			if (repeats.count(iter->nID) > 0)
+			if (repeats.count(iter->contig.id()) > 0)
 				continue;
 			map<LinearNumKey, int>::iterator dmIter
-				= distanceMap.find(iter->nID);
+				= distanceMap.find(iter->contig.id());
 			if (dmIter != distanceMap.end()) {
 				int actualDistance = dmIter->second
 					- costFunctor.m_overlap;
