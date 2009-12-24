@@ -354,13 +354,13 @@ void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
 /** Process an a branch group extension. */
 bool processBranchGroupExtension(BranchGroup& group,
 		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord extensions, int multiplicity)
+		ExtensionRecord ext, int multiplicity)
 {
 	BranchRecord& branch = group.getBranch(branchIndex);
-	branch.truncate(branch.end()-1);
+	branch.setData(make_pair(seq, KmerData(multiplicity, ext)));
 	Kmer nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
-			nextKmer, extensions, multiplicity))
+			nextKmer, ext, multiplicity, false))
 		branch.addSequence(nextKmer);
 	else
 		group.setNoExtension();
@@ -634,8 +634,10 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 // CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence and
 // multiplicity is the number of times that kmer appears in the data set
 // After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
+// If the parameter addKmer is true, add the k-mer to the branch.
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		Kmer& currSeq, ExtensionRecord extensions, int multiplicity)
+		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
+		bool addKmer)
 {
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
@@ -656,8 +658,9 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		return false;
 	}
 
-	branch.addSequence(make_pair(currSeq,
-				KmerData(multiplicity, extensions)));
+	if (addKmer)
+		branch.addSequence(make_pair(currSeq,
+					KmerData(multiplicity, extensions)));
 	if (branch.isTooLong()) {
 		branch.terminate(BS_TOO_LONG);
 		return false;

@@ -69,9 +69,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecor
 
 // Process the extensions of the current sequence for trimming
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		Kmer& currSeq, ExtensionRecord extensions, int multiplicity);
-
-// Polymorphism removal
+		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
+		bool addKmer = true);
 
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
 int popBubbles(ISequenceCollection* pSC, std::ostream& out);
