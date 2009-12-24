@@ -49,8 +49,3 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 	}
 	assert(in.eof());
 }
-
-LinearNumKey convertContigIDToLinearNumKey(const ContigID& id)
-{
-	return g_contigIDs.serial(id);
-}

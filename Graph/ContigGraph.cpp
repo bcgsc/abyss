@@ -21,10 +21,8 @@ static void readEdges(istream& in, LinearNumKey id,
 		getline(in, s, dir == SENSE ? ';' : '\n');
 		assert(in.good());
 		istringstream ss(s);
-		for (SimpleEdgeDesc edge; ss >> edge;)
-			graph.addEdge(id,
-					convertContigIDToLinearNumKey(edge.contig),
-					dir, edge.isRC);
+		for (ContigNode edge; ss >> edge;)
+			graph.addEdge(id, dir, edge);
 		assert(ss.eof());
 	}
 }

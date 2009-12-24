@@ -1,4 +1,5 @@
 #include "DirectedGraph.h"
+#include "ContigNode.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib> // for exit
@@ -181,18 +182,15 @@ DirectedGraph<D>::~DirectedGraph()
 }
 
 template<typename D>
-void DirectedGraph<D>::addEdge(const LinearNumKey& parent, const LinearNumKey& child, extDirection dir, bool reverse)
-{	
-	// Get iterators to the nodes
-	// If they do not exist, get will add them
+void DirectedGraph<D>::addEdge(
+		const LinearNumKey& parent, extDirection dir,
+		const ContigNode& child)
+{
 	VertexType* pParentVertex = findVertex(parent);
 	assert(pParentVertex != NULL);
-	
-	VertexType* pChildVertex = findVertex(child);
+	VertexType* pChildVertex = findVertex(child.id());
 	assert(pChildVertex != NULL);
-	
-	// Add the link
-	pParentVertex->addEdge(pChildVertex, dir, reverse);
+	pParentVertex->addEdge(pChildVertex, dir, child.sense());
 }
 
 template<typename D>

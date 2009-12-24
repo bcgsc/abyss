@@ -1,6 +1,7 @@
 #ifndef DIRECTEDGRAPH_H
 #define DIRECTEDGRAPH_H 1
 
+#include "ContigNode.h"
 #include "Sense.h"
 #include <ostream>
 #include <map>
@@ -216,13 +217,9 @@ class DirectedGraph
 			return (*this)[key].m_data;
 		}
 
-		// add edge
-		void addEdge(const LinearNumKey& parent, const LinearNumKey& child, extDirection dir, bool reverse);
-		
-		// add vertex
+		void addEdge(const LinearNumKey& parent, extDirection dir,
+				const ContigNode& child);
 		VertexType* addVertex(const LinearNumKey& key, const D& data);
-		
-		// remove vertex
 		void removeVertex(VertexType* pVertex);
 		
 		// reduce the graph with paired data		
