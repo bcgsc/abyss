@@ -21,9 +21,13 @@ void BranchRecord::addSequence(const PackedSeq& seq)
 void BranchRecord::truncate(BranchRecord::iterator position)
 {
 	ssize_t size = position - m_data.begin();
-	assert(size > 0);
+	assert(size >= 0);
 	assert((size_t)size < m_data.size());
-	m_data.resize(size);
+	(void)size;
+	for (BranchData::const_iterator it = m_data.begin();
+			it != m_data.end(); ++it)
+		m_seqMap.erase(it->first);
+	m_data.erase(position);
 }
 
 //
@@ -124,8 +128,7 @@ bool BranchRecord::isTooLong() const
 //
 int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
 {
-	assert(!m_seqMap.empty());
-
+	assert(!m_data.empty());
 	BranchData::const_iterator endSeq = m_data.end();
 	if(ignoreLast)
 		endSeq--;

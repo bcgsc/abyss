@@ -354,45 +354,14 @@ bool processBranchGroupExtension(BranchGroup& group,
 		size_t branchIndex, const Kmer& seq,
 		ExtensionRecord extensions, int multiplicity)
 {
-	vector<Kmer> branchExtSeqs;
-	extDirection dir = group.getDirection();
-	generateSequencesFromExtension(seq, dir, extensions.dir[dir], branchExtSeqs);
-
-	// Set the multiplicity and extensions of the request sequence.
-	group.getBranch(branchIndex).setData(
-			make_pair(seq, KmerData(multiplicity, extensions)));
-
-	if(branchExtSeqs.size() == 1)
-	{
-		// single extension
-		group.getBranch(branchIndex).addSequence(branchExtSeqs.front());
-							
-	}
-	else if(branchExtSeqs.size() > 1)
-	{
-		// Start a new branch for the k-mer [1..n]
-		vector<Kmer>::iterator seqIter = branchExtSeqs.begin() + 1;
-		for(; seqIter != branchExtSeqs.end(); ++seqIter)
-		{
-			uint64_t newID = group.getNumBranches();
-			
-			// Start a new branch which is a duplicate of the current branch up to this point
-			BranchRecord newBranch(group.getBranch(branchIndex));
-			BranchRecord& addedBranch = group.addBranch(newID, newBranch);
-			addedBranch.addSequence(*seqIter);
-		}
-		
-		// Add the first sequence (index 0) to the current branch
-		group.getBranch(branchIndex).addSequence(branchExtSeqs.front());
-	}
+	BranchRecord& branch = group.getBranch(branchIndex);
+	branch.truncate(branch.end()-1);
+	Kmer nextKmer = seq;
+	if (processLinearExtensionForBranch(branch,
+			nextKmer, extensions, multiplicity))
+		branch.addSequence(nextKmer);
 	else
-	{
-	
-		// this branch could not be extended, set a flag
 		group.setNoExtension();
-	}
-	
-	// Return whether the group is extendable
 	return group.isExtendable();
 }
 
