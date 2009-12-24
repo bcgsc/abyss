@@ -267,14 +267,6 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						iter->first);
 				initiateBranchGroup(branchGroup, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
-
-				// Disallow any further branching.
-				unsigned numInitialBranches
-					= branchGroup.getNumBranches();
-				if (numInitialBranches <= maxNumBranches)
-					branchGroup.setMaxNumBranches(numInitialBranches);
-				else
-					stop = true;
 				
 				// Iterate over the branches
 				while(!stop)
