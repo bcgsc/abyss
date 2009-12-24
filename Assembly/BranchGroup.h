@@ -33,9 +33,9 @@ class BranchGroup
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
 
-		// Add a branch to the group
-		BranchRecord& addBranch(uint64_t id, BranchRecord& branch);
-		
+		BranchRecord& addBranch(uint64_t id,
+				const BranchRecord& branch);
+
 		// Get the branch corresponding to an id
 		BranchRecord& getBranch(uint64_t id);
 		
