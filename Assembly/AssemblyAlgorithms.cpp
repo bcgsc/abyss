@@ -46,6 +46,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
 
 	if (inFile.find(".kmer") != string::npos) {
+		if (opt::rank <= 0)
+			seqCollection->setColourSpace(false);
 		seqCollection->load(inFile.c_str());
 		return;
 	}
