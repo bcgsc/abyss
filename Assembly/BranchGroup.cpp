@@ -2,10 +2,10 @@
 
 using namespace std;
 
-// Add a branch to the group
-BranchRecord& BranchGroup::addBranch(uint64_t id,
-		const BranchRecord& branch)
+/** Add a branch to this group. */
+BranchRecord& BranchGroup::addBranch(const BranchRecord& branch)
 {
+	uint64_t id = m_branches.size();
 	BranchGroupData::iterator newBranch = m_branches.insert(
 			pair<uint64_t, BranchRecord>(id, branch)).first;
 	return newBranch->second;

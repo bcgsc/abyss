@@ -803,7 +803,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		// Sequence is trimmable, create a new branch for it
 		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
 		BranchRecord newBranch(dir, maxBranchCull);
-		newGroup.addBranch(0, newBranch);
+		newGroup.addBranch(newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
 
 		// Generate the first extension request
@@ -1181,7 +1181,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		// Sequence is trimmable, create a new branch for it
 		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
 		BranchRecord newBranch(dir, -1);
-		newGroup.addBranch(0, newBranch);
+		newGroup.addBranch(newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
 
 		// Generate the first extension request

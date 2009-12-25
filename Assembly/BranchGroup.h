@@ -33,13 +33,8 @@ class BranchGroup
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
 
-		BranchRecord& addBranch(uint64_t id,
-				const BranchRecord& branch);
-
-		// Get the branch corresponding to an id
+		BranchRecord& addBranch(const BranchRecord& branch);
 		BranchRecord& getBranch(uint64_t id);
-		
-		// Get the number of groups
 		size_t getNumBranches() const { return m_branches.size(); }
 
 		/** Return whether a branch contains the specified k-mer. */
