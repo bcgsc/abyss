@@ -350,6 +350,40 @@ bool processBranchGroupExtension(BranchGroup& group,
 {
 	BranchRecord& branch = group.getBranch(branchIndex);
 	branch.setData(make_pair(seq, KmerData(multiplicity, ext)));
+
+	extDirection dir = group.getDirection();
+	if (ext.dir[!dir].isAmbiguous()) {
+		// Check that this fork is due to branches of our bubble
+		// merging back together. If not, stop this bubble.
+		vector<Kmer> extKmer;
+		generateSequencesFromExtension(seq, !dir,
+				ext.dir[!dir], extKmer);
+		assert(extKmer.size() > 1);
+		for (vector<Kmer>::iterator it = extKmer.begin();
+				it != extKmer.end(); ++it) {
+			if (!group.exists(*it)) {
+				group.setNoExtension();
+				return false;
+			}
+		}
+		// Ignore the ambiguity.
+		ext.dir[!dir].clear();
+	}
+
+	if (ext.dir[dir].isAmbiguous()) {
+		// Create a new branch to follow the fork.
+		vector<Kmer> extKmer;
+		generateSequencesFromExtension(seq, dir,
+				ext.dir[dir], extKmer);
+		assert(extKmer.size() > 1);
+		for (vector<Kmer>::iterator it = extKmer.begin() + 1;
+				it != extKmer.end(); ++it)
+			group.addBranch(group.getNumBranches(),
+					branch).addSequence(*it);
+		branch.addSequence(extKmer.front());
+		return group.isExtendable();
+	}
+
 	Kmer nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
 			nextKmer, ext, multiplicity, false))
@@ -389,38 +423,39 @@ void writeBubble(ostream& out, BranchGroup& group, unsigned id)
 	assert(out.good());
 }
 
-//
-// Collapse joined paths into a single path
-//
-void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group)
+/** Collapse a bubble to a single path. */
+void collapseJoinedBranches(ISequenceCollection* collection,
+		BranchGroup& group)
 {
-	assert(group.isAmbiguous(seqCollection));
-	// a join was found, select a branch to keep and remove the rest
-	size_t selectedIndex = group.getBranchToKeep();
-	
-	size_t numBranches = group.getNumBranches();
-	BranchRecord& refRecord = group.getBranch(selectedIndex);
-	PrintDebug(5, "Popping %zu %s\n", refRecord.getLength(),
-				refRecord.getFirstSeq().decode().c_str());
+	assert(group.isAmbiguous(collection));
 
-	for(size_t i = 0; i < numBranches; ++i)
-	{
-		// Skip the branch that was selected to keep
-		if(i == selectedIndex)
+	const BranchRecord& best = group.getBranch(
+			group.getBranchToKeep());
+	PrintDebug(5, "Popping %zu %s\n", best.getLength(),
+				best.getFirstSeq().decode().c_str());
+
+	// Add the k-mer from the dead branches.
+	map<Kmer, KmerData> doomed;
+	for (BranchGroup::const_iterator branchIt = group.begin();
+			branchIt != group.end(); ++branchIt) {
+		const BranchRecord& branch = branchIt->second;
+		if (&branch == &best)
 			continue;
-
-		BranchRecord& branch = group.getBranch(i);
-		for (BranchRecord::iterator it = branch.begin();
-				it != branch.end(); ++it) {
-			/* As long as we're only popping simple bubbles, the
-			 * sequence being removed cannot be in the reference
-			 * sequence. By now, we've forgotten the multiplicity map
-			 * used by BranchRecord::exists to save memory. */
-			//assert(!refRecord.exists(*branchIter));
-			removeSequenceAndExtensions(seqCollection, *it);
-		}
+		for (BranchRecord::const_iterator it = branch.begin();
+				it != branch.end(); ++it)
+			doomed.insert(*it);
 	}
-	assert(!group.isAmbiguous(seqCollection));
+
+	// Remove the k-mer that are in the good branch.
+	for (BranchRecord::const_iterator it = best.begin();
+			it != best.end(); ++it)
+		doomed.erase(it->first);
+
+	// Remove the dead k-mer from the assembly.
+	for (map<Kmer, KmerData>::const_iterator it = doomed.begin();
+			it != doomed.end(); ++it)
+		removeSequenceAndExtensions(collection, *it);
+	assert(!group.isAmbiguous(collection));
 }
 
 /**

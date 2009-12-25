@@ -72,6 +72,8 @@ class BranchRecord
 
 		iterator begin() { return m_data.begin(); }
 		iterator end() { return m_data.end(); }
+		const_iterator begin() const { return m_data.begin(); }
+		const_iterator end() const { return m_data.end(); }
 
 		// Get the direction of extension
 		extDirection getDirection() const;

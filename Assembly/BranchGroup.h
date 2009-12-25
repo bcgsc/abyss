@@ -42,6 +42,17 @@ class BranchGroup
 		// Get the number of groups
 		size_t getNumBranches() const { return m_branches.size(); }
 
+		/** Return whether a branch contains the specified k-mer. */
+		bool exists(const Kmer& kmer)
+		{
+			for (BranchGroupData::const_iterator it
+					= m_branches.begin();
+					it != m_branches.end(); ++it)
+				if (it->second.exists(kmer))
+					return true;
+			return false;
+		}
+
 		// Check the stop conditions for the branch growth
 		BranchGroupStatus updateStatus();
 		
