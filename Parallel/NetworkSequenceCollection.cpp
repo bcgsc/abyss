@@ -906,21 +906,16 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 			if (extRec.dir[dir].isAmbiguous()) {
 				BranchGroup branchGroup(branchGroupID, dir,
 						maxNumBranches, iter->first);
-
-				// insert the new group into the active group map
 				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
-
+				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
-						groupIter->second, iter->first,
+						group, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
-
-				size_t maxID = groupIter->second.getNumBranches();
-				for(size_t id = 0; id < maxID; ++id)
-				{
-					generateExtensionRequest(groupIter->first, id, groupIter->second.getBranch(id).getLastSeq());
-				}
-				
-				// increment the group id
+				unsigned id = 0;
+				for (BranchGroup::const_iterator it = group.begin();
+						it != group.end(); ++it)
+					generateExtensionRequest(branchGroupID, id++,
+							it->getLastSeq());
 				branchGroupID++;
 			}
 		}
