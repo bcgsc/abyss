@@ -434,7 +434,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 	map<Kmer, KmerData> doomed;
 	for (BranchGroup::const_iterator branchIt = group.begin();
 			branchIt != group.end(); ++branchIt) {
-		const BranchRecord& branch = branchIt->second;
+		const BranchRecord& branch = *branchIt;
 		if (&branch == &best)
 			continue;
 		for (BranchRecord::const_iterator it = branch.begin();

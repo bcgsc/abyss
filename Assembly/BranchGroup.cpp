@@ -5,21 +5,13 @@ using namespace std;
 /** Add a branch to this group. */
 BranchRecord& BranchGroup::addBranch(const BranchRecord& branch)
 {
-	uint64_t id = m_branches.size();
-	BranchGroupData::iterator newBranch = m_branches.insert(
-			pair<uint64_t, BranchRecord>(id, branch)).first;
-	return newBranch->second;
+	m_branches.push_back(branch);
+	return m_branches.back();
 }
 
-//
-// Get a branch by ID
-//
-BranchRecord& BranchGroup::getBranch(uint64_t id)
+BranchRecord& BranchGroup::getBranch(unsigned id)
 {
-	BranchGroup::iterator branch = m_branches.find(id);
-	// should never fail
-	assert(branch != m_branches.end());
-	return branch->second;
+	return m_branches[id];
 }
 
 //		
@@ -44,23 +36,21 @@ BranchGroupStatus BranchGroup::updateStatus()
 	// Check if any branches are too long or any sequence has a loop
 	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
 	{
-		if(iter->second.getLength() > iter->second.getMaxLength())
-		{
+		if (iter->getLength() > iter->getMaxLength()) {
 			m_status = BGS_TOOLONG;
 			return m_status;
 		}
-		
-		if(iter->second.hasLoop())
-		{
+
+		if (iter->hasLoop()) {
 			m_status = BGS_LOOPFOUND;
 			return m_status;
 		}
 	}
-	
+
 	BranchGroupData::const_iterator it = m_branches.begin();
-	const Kmer& lastSeq = it->second.getLastSeq();
+	const Kmer& lastSeq = it->getLastSeq();
 	while (++it != m_branches.end())
-		if (it->second.getLastSeq() != lastSeq)
+		if (it->getLastSeq() != lastSeq)
 			return m_status = BGS_ACTIVE;
 	// All the branches of the bubble have joined.
 	selectBranchToKeep();
@@ -98,18 +88,14 @@ void BranchGroup::selectBranchToKeep()
 	m_branchToKeep = bestIndex;
 }
 
-//
-// Is the branch group active
-//
+/** Return whether any branches of this group are active. */
 bool BranchGroup::isActive() const
 {
-	// Are any of the branches active?
-	bool active = false;	
-	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
-	{
-		active = (active || iter->second.isActive());	
-	}
-	return active;
+	for (BranchGroupData::const_iterator it = m_branches.begin();
+			it != m_branches.end(); ++it)
+		if (it->isActive())
+			return true;
+	return false;
 }
 
 //

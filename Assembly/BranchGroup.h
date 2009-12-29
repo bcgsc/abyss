@@ -18,7 +18,7 @@ enum BranchGroupStatus
 class BranchGroup
 {
 	public:
-		typedef std::map<uint64_t, BranchRecord> BranchGroupData;
+		typedef std::vector<BranchRecord> BranchGroupData;
 		typedef BranchGroupData::iterator iterator;
 		typedef BranchGroupData::const_iterator const_iterator;
 
@@ -34,7 +34,7 @@ class BranchGroup
 			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
 
 		BranchRecord& addBranch(const BranchRecord& branch);
-		BranchRecord& getBranch(uint64_t id);
+		BranchRecord& getBranch(unsigned id);
 		size_t getNumBranches() const { return m_branches.size(); }
 
 		/** Return whether a branch contains the specified k-mer. */
@@ -43,7 +43,7 @@ class BranchGroup
 			for (BranchGroupData::const_iterator it
 					= m_branches.begin();
 					it != m_branches.end(); ++it)
-				if (it->second.exists(kmer))
+				if (it->exists(kmer))
 					return true;
 			return false;
 		}
