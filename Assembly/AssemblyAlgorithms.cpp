@@ -391,15 +391,15 @@ bool processBranchGroupExtension(BranchGroup& group,
 }
 
 /** Write a bubble to the specified file. */
-void writeBubble(ostream& out, BranchGroup& group, unsigned id)
+void writeBubble(ostream& out, const BranchGroup& group, unsigned id)
 {
 	if (opt::snpPath.empty())
 		return;
 
 	char allele = 'A';
-	unsigned numBranches = group.getNumBranches();
-	for (unsigned i = 0; i < numBranches; ++i) {
-		BranchRecord& currBranch = group.getBranch(i);
+	for (BranchGroup::const_iterator it = group.begin();
+			it != group.end(); ++it) {
+		const BranchRecord& currBranch = *it;
 		Sequence contig(currBranch);
 		out << '>' << id << allele++ << ' '
 			<< contig.length() << ' '

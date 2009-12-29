@@ -95,6 +95,8 @@ class BranchGroup
 
 		iterator begin() { return m_branches.begin(); }
 		iterator end() { return m_branches.end(); }
+		const_iterator begin() const { return m_branches.begin(); }
+		const_iterator end() const { return m_branches.end(); }
 
 		bool isAmbiguous(const ISequenceCollection* c) const;
 

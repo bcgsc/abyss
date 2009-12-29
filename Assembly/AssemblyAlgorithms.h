@@ -85,9 +85,8 @@ bool processBranchGroupExtension(BranchGroup& group,
 		ExtensionRecord extensions, int multiplicity);
 
 void openBubbleFile(std::ofstream& out);
-void writeBubble(std::ostream& out, BranchGroup& group, unsigned id);
-
-// collapse bubbles that are joined together
+void writeBubble(std::ostream& out, const BranchGroup& group,
+		unsigned id);
 void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);
 
 //
