@@ -2,21 +2,7 @@
 
 using namespace std;
 
-/** Add a branch to this group. */
-BranchRecord& BranchGroup::addBranch(const BranchRecord& branch)
-{
-	m_branches.push_back(branch);
-	return m_branches.back();
-}
-
-BranchRecord& BranchGroup::getBranch(unsigned id)
-{
-	return m_branches[id];
-}
-
-//		
 // Check the stop conditions for the bubble growth
-//
 BranchGroupStatus BranchGroup::updateStatus()
 {
 	// Check if the no extension flag is set
