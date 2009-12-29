@@ -67,9 +67,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef string ContigID;
-
-/** A contig ID and its end sequences. */
+/** The two terminal k-mer of a contig and its length. */
 struct ContigEndSeq {
 	unsigned length;
 	Kmer l;
@@ -175,7 +173,7 @@ int main(int argc, char** argv)
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
 		unsigned nID = i - contigs.begin();
-		const ContigID& id = g_contigIDs.key(nID);
+		const string& id = g_contigIDs.key(nID);
 
 		if (opt::format == ADJ)
 			out << id << ' ' << i->length;
