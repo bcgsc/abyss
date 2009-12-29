@@ -336,7 +336,7 @@ void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
 	for (vector<Kmer>::iterator seqIter = extSeqs.begin();
 			seqIter != extSeqs.end(); ++seqIter) {
 		BranchRecord newBranch(group.getDirection(), maxBubbleSize);
-		group.addBranch(newBranch).addSequence(*seqIter);
+		group.addBranch(newBranch, *seqIter);
 	}
 }
 
@@ -377,7 +377,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 		vector<Kmer>::iterator it = extKmer.begin();
 		branch.addSequence(*it++);
 		for (; it != extKmer.end(); ++it)
-			group.addBranch(original).addSequence(*it);
+			group.addBranch(original, *it);
 		return group.isExtendable();
 	}
 

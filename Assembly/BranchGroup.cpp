@@ -5,20 +5,18 @@ using namespace std;
 // Check the stop conditions for the bubble growth
 BranchGroupStatus BranchGroup::updateStatus()
 {
+	assert(m_branches.size() <= m_maxNumBranches);
+
+	if (m_status != BGS_ACTIVE)
+		return m_status;
+
 	// Check if the no extension flag is set
 	if(m_noExt)
 	{
 		m_status = BGS_NOEXT;
 		return m_status;
 	}
-	
-	// Check if there are too many branches
-	if(m_branches.size() > m_maxNumBranches)
-	{
-		m_status = BGS_TOOMANYBRANCHES;
-		return m_status;
-	}
-	
+
 	// Check if any branches are too long or any sequence has a loop
 	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
 	{

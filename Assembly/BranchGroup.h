@@ -36,8 +36,20 @@ class BranchGroup
 		/** Add a branch to this group. */
 		BranchRecord& addBranch(const BranchRecord& branch)
 		{
+			assert(m_branches.size() < m_maxNumBranches);
 			m_branches.push_back(branch);
 			return m_branches.back();
+		}
+
+		/** Add a branch to this group and extend the new branch with
+		 * the given k-mer. */
+		void addBranch(const BranchRecord& branch,
+				const Kmer& kmer)
+		{
+			if (m_branches.size() < m_maxNumBranches)
+				addBranch(branch).addSequence(kmer);
+			else
+				m_status = BGS_TOOMANYBRANCHES;
 		}
 
 		/** Return the specified branch. */
