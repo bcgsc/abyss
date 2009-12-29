@@ -205,7 +205,8 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 				<< '\t' << t << ',' << h << ' '
 				<< dist << ' ' << est << endl;
 		return overlapContigs(t, h, overlap, mask);
-	} else if (opt::scaffold) {
+	} else {
+		assert(opt::scaffold);
 		stats.scaffold++;
 		if (opt::verbose > 0)
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
@@ -217,8 +218,7 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 		return newContig(t, h, est.distance,
 				ts.substr(ts.length() - overlap) + gap
 				+ hs.substr(0, overlap));
-	} else
-		assert(false);
+	}
 }
 
 struct Overlap {
