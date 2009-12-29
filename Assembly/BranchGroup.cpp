@@ -78,23 +78,20 @@ bool BranchGroup::isActive() const
 	return false;
 }
 
-//
-// Is the branch extendable?
-//
+/** Return whether this branch is extendable. */
 bool BranchGroup::isExtendable()
 {
-	// A group is extendable when all the branches are the same length (they are lockstepped for growth) and the noextension flag is not set
-	bool sameLength = true;
-	size_t numBranches = getNumBranches();
-	for(size_t index = 0; index < numBranches - 1; index++)
-	{
-		sameLength = (sameLength && (getBranch(index).getLength() == getBranch(index+1).getLength()));
-	}
-	
-	// If the branches are all the same length and the noext flag is not set, return true
-	bool ret = sameLength && !isNoExt();
-	
-	return ret;
+	if (m_noExt)
+		return false;
+
+	// A group is extendable when all the branches are the same
+	// length. All the branches are lockstepped for growth.
+	BranchGroupData::iterator it = m_branches.begin();
+	unsigned length = it++->getLength();
+	for (; it != m_branches.end(); ++it)
+		if (it->getLength() != length)
+			return false;
+	return true;
 }
 
 /** Return whether this branch is ambiguous at its origin. Also
