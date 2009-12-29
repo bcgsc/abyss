@@ -24,14 +24,14 @@ class BranchGroup
 
 		BranchGroup()
 			: m_id(0), m_dir(SENSE), m_maxNumBranches(0),
-			m_noExt(false), m_status(BGS_ACTIVE), m_branchToKeep(-1)
+			m_noExt(false), m_status(BGS_ACTIVE)
 			{ }
 
 		BranchGroup(uint64_t id, extDirection dir, size_t
 				maxNumBranches, const Kmer &origin)
 			: m_id(id), m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
-			m_status(BGS_ACTIVE), m_branchToKeep(-1) { }
+			m_status(BGS_ACTIVE) { }
 
 		/** Add a branch to this group. */
 		BranchRecord& addBranch(const BranchRecord& branch)
@@ -78,13 +78,6 @@ class BranchGroup
 		// return the current status of the branch
 		BranchGroupStatus getStatus() const { return m_status; }
 		
-		/** Return the branch to keep for bubble popping. */
-		int getBranchToKeep()
-		{
-			assert(m_branchToKeep >= 0);
-			return m_branchToKeep;
-		}
-
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }
 		
@@ -106,9 +99,7 @@ class BranchGroup
 		bool isAmbiguous(const ISequenceCollection* c) const;
 
 	private:
-		// Select a branch to keep for bubble removal and return
-		// its index.
-		void selectBranchToKeep();
+		void sortByCoverage();
 		
 		BranchGroupData m_branches;
 		uint64_t m_id;
@@ -117,7 +108,6 @@ class BranchGroup
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;
-		int m_branchToKeep;
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "BranchGroup.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -36,8 +37,9 @@ BranchGroupStatus BranchGroup::updateStatus()
 	while (++it != m_branches.end())
 		if (it->getLastSeq() != lastSeq)
 			return m_status = BGS_ACTIVE;
+
 	// All the branches of the bubble have joined.
-	selectBranchToKeep();
+	sortByCoverage();
 	return m_status = BGS_JOINED;
 }
 
@@ -49,10 +51,8 @@ static bool compareCoverage(
 }
 
 /** Sort the branches by coverage. */
-void BranchGroup::selectBranchToKeep()
+void BranchGroup::sortByCoverage()
 {
-	assert(m_branchToKeep == -1);
-
 	// Sum up the coverage for each branch.
 	for (BranchGroupData::iterator it = m_branches.begin();
 			it != m_branches.end(); ++it) {
@@ -66,8 +66,6 @@ void BranchGroup::selectBranchToKeep()
 
 	// Sort by coverage.
 	sort(m_branches.begin(), m_branches.end(), compareCoverage);
-
-	m_branchToKeep = 0;
 }
 
 /** Return whether any branches of this group are active. */

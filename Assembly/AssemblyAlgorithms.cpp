@@ -396,20 +396,9 @@ void writeBubble(ostream& out, BranchGroup& group, unsigned id)
 	if (opt::snpPath.empty())
 		return;
 
-	unsigned selectedIndex = group.getBranchToKeep();
 	char allele = 'A';
-
-	BranchRecord& refBranch = group.getBranch(selectedIndex);
-	Sequence refContig(refBranch);
-	out << '>' << id << allele++ << ' '
-		<< refContig.length() << ' '
-		<< refBranch.getBranchMultiplicity() << '\n'
-		<< refContig.c_str() << '\n';
-
 	unsigned numBranches = group.getNumBranches();
 	for (unsigned i = 0; i < numBranches; ++i) {
-		if (i == selectedIndex)
-			continue;
 		BranchRecord& currBranch = group.getBranch(i);
 		Sequence contig(currBranch);
 		out << '>' << id << allele++ << ' '
@@ -426,18 +415,15 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 {
 	assert(group.isAmbiguous(collection));
 
-	const BranchRecord& best = group.getBranch(
-			group.getBranchToKeep());
+	const BranchRecord& best = group.getBranch(0);
 	PrintDebug(5, "Popping %zu %s\n", best.getLength(),
 				best.getFirstSeq().decode().c_str());
 
 	// Add the k-mer from the dead branches.
 	map<Kmer, KmerData> doomed;
-	for (BranchGroup::const_iterator branchIt = group.begin();
+	for (BranchGroup::const_iterator branchIt = group.begin() + 1;
 			branchIt != group.end(); ++branchIt) {
 		const BranchRecord& branch = *branchIt;
-		if (&branch == &best)
-			continue;
 		for (BranchRecord::const_iterator it = branch.begin();
 				it != branch.end(); ++it)
 			doomed.insert(*it);
