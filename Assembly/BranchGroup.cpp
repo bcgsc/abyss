@@ -41,35 +41,33 @@ BranchGroupStatus BranchGroup::updateStatus()
 	return m_status = BGS_JOINED;
 }
 
-// 
-// Select a branch that survives the bubble removal
-//
+/** Return whether branch a has higher coverage than branch b. */
+static bool compareCoverage(
+		const BranchRecord& a, const BranchRecord& b)
+{
+	return a.getBranchMultiplicity() > b.getBranchMultiplicity();
+}
+
+/** Sort the branches by coverage. */
 void BranchGroup::selectBranchToKeep()
 {
 	assert(m_branchToKeep == -1);
-	// Choose the branch with the highest total multiplicity
-	// arbitrarily return 0 for now
-	int bestMult = 0;
-	int bestIndex = -1;
-	size_t numBranches = getNumBranches();
-	
-	for(size_t index = 0; index < numBranches; ++index)
-	{
-		BranchRecord& branch = getBranch(index);
-		int currMult = branch.calculateBranchMultiplicity(true);
+
+	// Sum up the coverage for each branch.
+	for (BranchGroupData::iterator it = m_branches.begin();
+			it != m_branches.end(); ++it) {
+		BranchRecord& branch = *it;
+		branch.calculateBranchMultiplicity(true);
 		branch.clearMultiplicity();
-		if(currMult > bestMult)
-		{
-			bestMult = currMult;
-			bestIndex = index;
-		}
 
 		// Remove the last base, which is identical for every branch.
 		branch.truncate(branch.end() - 1);
 	}
 
-	assert(bestIndex >= 0);
-	m_branchToKeep = bestIndex;
+	// Sort by coverage.
+	sort(m_branches.begin(), m_branches.end(), compareCoverage);
+
+	m_branchToKeep = 0;
 }
 
 /** Return whether any branches of this group are active. */
