@@ -1334,37 +1334,28 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
 		const ExtensionRecord& extRec, int multiplicity)
 {
-	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
-	// If the iterator was not found we finished with that branch already, ensure this is so
-	if(iter == m_activeBranchGroups.end())
-	{
-		assert(m_finishedGroups.find(groupID) != m_finishedGroups.end());
-		// do nothing
+	BranchGroupMap::iterator groupIt
+		= m_activeBranchGroups.find(groupID);
+	if (groupIt == m_activeBranchGroups.end()) {
+		// This branch is already complete. Double check that that is
+		// the case.
+		assert(m_finishedGroups.count(groupID) > 0);
 		return;
 	}
 
-	Kmer currSeq = seq;
-	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(iter->second, branchID, currSeq, extRec, multiplicity);
-
-	// The extendable flag indicates that one round of extension has happened and each branch is equal length
-	if(extendable)
-	{
-		// Update the status of the branch
-		BranchGroupStatus status = iter->second.updateStatus();
-			
-		// if the group is still active, generate new requests for all the branches in the group
-		if(status == BGS_ACTIVE)
-		{
-			size_t numBranches = iter->second.getNumBranches();
-			for(size_t i = 0; i < numBranches; ++i)
-			{
-				generateExtensionRequest(groupID, i,
-						iter->second.getBranch(i).getLastSeq());
-			}
-		}
+	BranchGroup& group = groupIt->second;
+	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(
+			group, branchID, seq, extRec, multiplicity);
+	if (extendable && group.updateStatus() == BGS_ACTIVE) {
+		// One round of extension is complete, and all the branches
+		// are the same length. Generate the extension requests for
+		// each branch.
+		unsigned id = 0;
+		for (BranchGroup::const_iterator it = group.begin();
+				it != group.end(); ++it)
+			generateExtensionRequest(groupID, id++, it->getLastSeq());
 	}
 }
-
 
 /** Add a k-mer to this collection. */
 void NetworkSequenceCollection::add(const Kmer& seq)
