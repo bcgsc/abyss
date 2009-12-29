@@ -373,10 +373,11 @@ bool processBranchGroupExtension(BranchGroup& group,
 		generateSequencesFromExtension(seq, dir,
 				ext.dir[dir], extKmer);
 		assert(extKmer.size() > 1);
-		for (vector<Kmer>::iterator it = extKmer.begin() + 1;
-				it != extKmer.end(); ++it)
-			group.addBranch(branch).addSequence(*it);
-		branch.addSequence(extKmer.front());
+		BranchRecord original = branch;
+		vector<Kmer>::iterator it = extKmer.begin();
+		branch.addSequence(*it++);
+		for (; it != extKmer.end(); ++it)
+			group.addBranch(original).addSequence(*it);
 		return group.isExtendable();
 	}
 
