@@ -800,12 +800,11 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 			continue;
 		}
 
-		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(dir, 1, iter->first);
-		BranchRecord newBranch(dir, maxBranchCull);
-		newGroup.addBranch(newBranch);
+		BranchGroup group(dir, 1, iter->first);
+		group.addBranch(BranchRecord(dir, maxBranchCull));
 		bool inserted = m_activeBranchGroups.insert(
-				make_pair(branchGroupID, newGroup)).second;
+				BranchGroupMap::value_type(branchGroupID, group))
+			.second;
 		assert(inserted);
 		(void)inserted;
 
@@ -1166,12 +1165,11 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			continue;
 		}
 
-		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(dir, 1, iter->first);
-		BranchRecord newBranch(dir, -1);
-		newGroup.addBranch(newBranch);
+		BranchGroup group(dir, 1, iter->first);
+		group.addBranch(BranchRecord(dir, -1));
 		bool inserted = m_activeBranchGroups.insert(
-				make_pair(branchGroupID, newGroup)).second;
+				BranchGroupMap::value_type(branchGroupID, group))
+			.second;
 		assert(inserted);
 		(void)inserted;
 
