@@ -946,16 +946,6 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
-
-		if (!m_comm.receiveEmpty()) {
-			int sendID;
-			cerr << " COMM NOT EMPTY MESSAGE WAITING ID: "
-				<< (int)m_comm.checkMessage(sendID)
-				<< " sender " << sendID << endl;
-			cerr << " Attempting pump " << endl;
-			pumpNetwork();
-			cerr << " Pump returned ok " << endl;
-		}
 		assert(m_comm.receiveEmpty());
 	}
 	m_bubbles.clear();
