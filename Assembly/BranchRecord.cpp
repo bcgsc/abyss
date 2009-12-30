@@ -30,15 +30,6 @@ void BranchRecord::truncate(BranchRecord::iterator position)
 	m_data.erase(position);
 }
 
-//
-// Terminate the branch and indicate why
-//
-void BranchRecord::terminate(BranchState reason)
-{
-	assert(reason != BS_ACTIVE);
-	m_state = reason;
-}
-
 /** Set the extensions and multiplicity of a sequence. */
 void BranchRecord::setData(const PackedSeq& seqData)
 {
@@ -50,53 +41,6 @@ void BranchRecord::setData(const PackedSeq& seqData)
 void BranchRecord::clearMultiplicity()
 {
 	m_seqMap.clear();
-}
-
-//
-// Get the branch length
-//
-size_t BranchRecord::getLength() const
-{
-	return m_data.size();
-}
-
-//
-// Is the branch active?
-//
-bool BranchRecord::isActive() const
-{
-	return m_state == BS_ACTIVE;
-}
-
-//
-// Get the state of the branch
-//
-BranchState BranchRecord::getState() const
-{
-	return m_state;	
-}
-
-//
-// Get the direction of extension
-//
-extDirection BranchRecord::getDirection() const
-{
-	return m_dir;	
-}
-
-const Kmer& BranchRecord::getFirstSeq() const
-{
-	assert(!m_data.empty());
-	return m_data.front().first;
-}
-
-//
-// Get the last sequence in the data structure
-// 
-const Kmer& BranchRecord::getLastSeq() const
-{
-	assert(!m_data.empty());
-	return m_data.back().first;
 }
 
 //

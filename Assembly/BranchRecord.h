@@ -46,17 +46,38 @@ class BranchRecord
 		// specified iterator.
 		void truncate(iterator position);
 
-		// Terminate the branch and indicate why
-		void terminate(BranchState reason);
-		
-		// Get the branch length
-		size_t getLength() const;
-		
-		// Is the branch active?
-		bool isActive() const;
-		
-		// Get the state of the branch
-		BranchState getState() const;
+		/** Terminate this branch with the specified reason. */
+		void terminate(BranchState reason)
+		{
+			assert(reason != BS_ACTIVE);
+			m_state = reason;
+		}
+
+		/** Return whether this branch is active. */
+		bool isActive() const { return m_state == BS_ACTIVE; }
+
+		/** Return the state of this branch. */
+		BranchState getState() const { return m_state;	}
+
+		/** Return the direction of this branch. */
+		extDirection getDirection() const { return m_dir; }
+
+		/** Return the length of this branch. */
+		size_t getLength() const { return m_data.size(); }
+
+		/** Return the first k-mer of this branch. */
+		const Kmer& getFirstSeq() const
+		{
+			assert(!m_data.empty());
+			return m_data.front().first;
+		}
+
+		/** Return the last k-mer of this branch. */
+		const Kmer& getLastSeq() const
+		{
+			assert(!m_data.empty());
+			return m_data.back().first;
+		}
 
 		// Set the data of a sequence in the branch.
 		void setData(const PackedSeq& seq);
@@ -64,20 +85,11 @@ class BranchRecord
 		/** Forget the multiplicity information. */
 		void clearMultiplicity();
 
-		// Get the first sequence added to the branch
-		const Kmer& getFirstSeq() const;
-
-		// Get the last sequence added to this branch
-		const Kmer& getLastSeq() const;
-
 		iterator begin() { return m_data.begin(); }
 		iterator end() { return m_data.end(); }
 		const_iterator begin() const { return m_data.begin(); }
 		const_iterator end() const { return m_data.end(); }
 
-		// Get the direction of extension
-		extDirection getDirection() const;
-		
 		// Return the maximum branch length
 		size_t getMaxLength() const { return m_maxLength; }
 
