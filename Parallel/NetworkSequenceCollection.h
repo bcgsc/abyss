@@ -148,6 +148,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void generateExtensionRequest(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq);
+		void generateExtensionRequests(uint64_t groupID,
+				BranchGroup::const_iterator first,
+				BranchGroup::const_iterator last);
 		void processSequenceExtension(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
 				const ExtensionRecord& extRec, int multiplicity);

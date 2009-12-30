@@ -804,7 +804,10 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		BranchGroup newGroup(dir, 1, iter->first);
 		BranchRecord newBranch(dir, maxBranchCull);
 		newGroup.addBranch(newBranch);
-		m_activeBranchGroups[branchGroupID] = newGroup;
+		bool inserted = m_activeBranchGroups.insert(
+				make_pair(branchGroupID, newGroup)).second;
+		assert(inserted);
+		(void)inserted;
 
 		// Generate the first extension request
 		generateExtensionRequest(branchGroupID, 0, iter->first);
@@ -905,15 +908,11 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				AssemblyAlgorithms::initiateBranchGroup(
 						group, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
-				unsigned id = 0;
-				for (BranchGroup::const_iterator it = group.begin();
-						it != group.end(); ++it)
-					generateExtensionRequest(branchGroupID, id++,
-							it->getLastSeq());
-				branchGroupID++;
+				generateExtensionRequests(branchGroupID++,
+						group.begin(), group.end());
 			}
 		}
-		
+
 		// Primitive load balancing
 		if (m_activeBranchGroups.size() > MAX_ACTIVE) {
 			while (m_activeBranchGroups.size() > LOW_ACTIVE) {
@@ -1171,7 +1170,10 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		BranchGroup newGroup(dir, 1, iter->first);
 		BranchRecord newBranch(dir, -1);
 		newGroup.addBranch(newBranch);
-		m_activeBranchGroups[branchGroupID] = newGroup;
+		bool inserted = m_activeBranchGroups.insert(
+				make_pair(branchGroupID, newGroup)).second;
+		assert(inserted);
+		(void)inserted;
 
 		// Generate the first extension request
 		generateExtensionRequest(branchGroupID, 0, iter->first);
@@ -1277,6 +1279,24 @@ void NetworkSequenceCollection::generateExtensionRequest(
 	}
 }
 
+/** Generate an extension request for each branch of this group. */
+void NetworkSequenceCollection::generateExtensionRequests(
+		uint64_t groupID,
+		BranchGroup::const_iterator first,
+		BranchGroup::const_iterator last)
+{
+	assert(first != last);
+#if !NDEBUG
+	unsigned length = first->getLength();
+#endif
+	unsigned branchID = 0;
+	for (BranchGroup::const_iterator it = first; it != last; ++it) {
+		assert(it->getLength() == length);
+		generateExtensionRequest(groupID, branchID++,
+				it->getLastSeq());
+	}
+}
+
 void NetworkSequenceCollection::processSequenceExtension(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
 		const ExtensionRecord& extRec, int multiplicity)
@@ -1334,15 +1354,9 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 	BranchGroup& group = groupIt->second;
 	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(
 			group, branchID, seq, extRec, multiplicity);
-	if (extendable && group.updateStatus() == BGS_ACTIVE) {
-		// One round of extension is complete, and all the branches
-		// are the same length. Generate the extension requests for
-		// each branch.
-		unsigned id = 0;
-		for (BranchGroup::const_iterator it = group.begin();
-				it != group.end(); ++it)
-			generateExtensionRequest(groupID, id++, it->getLastSeq());
-	}
+	if (extendable && group.updateStatus() == BGS_ACTIVE)
+		generateExtensionRequests(groupID,
+				group.begin(), group.end());
 }
 
 /** Add a k-mer to this collection. */

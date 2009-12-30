@@ -31,7 +31,19 @@ class BranchGroup
 				const Kmer &origin)
 			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
-			m_status(BGS_ACTIVE) { }
+			m_status(BGS_ACTIVE)
+		{
+			m_branches.reserve(m_maxNumBranches);
+		}
+
+		BranchGroup(const BranchGroup& o)
+			: m_branches(o.m_branches), m_dir(o.m_dir),
+			m_origin(o.m_origin),
+			m_maxNumBranches(o.m_maxNumBranches),
+			m_noExt(o.m_noExt), m_status(o.m_status)
+		{
+			m_branches.reserve(m_maxNumBranches);
+		}
 
 		/** Add a branch to this group. */
 		BranchRecord& addBranch(const BranchRecord& branch)
@@ -102,6 +114,7 @@ class BranchGroup
 
 	private:
 		void sortByCoverage();
+		BranchGroup& operator =(const BranchGroup& o);
 
 		BranchGroupData m_branches;
 		extDirection m_dir;
