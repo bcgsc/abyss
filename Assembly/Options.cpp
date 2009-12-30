@@ -167,10 +167,10 @@ void parse(int argc, char* const* argv)
 				arg >> readLen;
 				break;
 			case COVERAGE_HIST:
-				coverageHistPath = optarg;
+				getline(arg, coverageHistPath);
 				break;
 			case 'o':
-				contigsPath = optarg;
+				getline(arg, contigsPath);
 				break;
 			case 'e':
 				arg >> erode;
@@ -182,13 +182,13 @@ void parse(int argc, char* const* argv)
 				arg >> trimLen;
 				break;
 			case 'g':
-				graphPath = optarg;
+				getline(arg, graphPath);
 				break;
 			case 'q':
 				arg >> opt::qualityThreshold;
 				break;
 			case 's':
-				snpPath = optarg;
+				getline(arg, snpPath);
 				break;
 			case 'v':
 				verbose++;
