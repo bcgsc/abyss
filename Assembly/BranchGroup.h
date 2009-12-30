@@ -23,13 +23,13 @@ class BranchGroup
 		typedef BranchGroupData::const_iterator const_iterator;
 
 		BranchGroup()
-			: m_id(0), m_dir(SENSE), m_maxNumBranches(0),
+			: m_dir(SENSE), m_maxNumBranches(0),
 			m_noExt(false), m_status(BGS_ACTIVE)
 			{ }
 
-		BranchGroup(uint64_t id, extDirection dir, size_t
-				maxNumBranches, const Kmer &origin)
-			: m_id(id), m_dir(dir), m_origin(origin),
+		BranchGroup(extDirection dir, size_t maxNumBranches,
+				const Kmer &origin)
+			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE) { }
 
@@ -102,9 +102,8 @@ class BranchGroup
 
 	private:
 		void sortByCoverage();
-		
+
 		BranchGroupData m_branches;
-		uint64_t m_id;
 		extDirection m_dir;
  		Kmer m_origin;
 		size_t m_maxNumBranches;

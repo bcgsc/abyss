@@ -261,13 +261,13 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
 				bool stop = false;
-				
+
 				// Create the branch group
-				BranchGroup branchGroup(0, dir, maxNumBranches,
+				BranchGroup branchGroup(dir, maxNumBranches,
 						iter->first);
 				initiateBranchGroup(branchGroup, iter->first,
 						extRec.dir[dir], expectedBubbleSize);
-				
+
 				// Iterate over the branches
 				while(!stop)
 				{

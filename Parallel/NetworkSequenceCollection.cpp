@@ -801,7 +801,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		}
 
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
+		BranchGroup newGroup(dir, 1, iter->first);
 		BranchRecord newBranch(dir, maxBranchCull);
 		newGroup.addBranch(newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
@@ -904,8 +904,8 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		ExtensionRecord extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
-				BranchGroup branchGroup(branchGroupID, dir,
-						maxNumBranches, iter->first);
+				BranchGroup branchGroup(dir, maxNumBranches,
+						iter->first);
 				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
 				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
@@ -1172,9 +1172,9 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			numAssembled.second += currBranch.getLength();
 			continue;
 		}
-		
+
 		// Sequence is trimmable, create a new branch for it
-		BranchGroup newGroup(branchGroupID, dir, 1, iter->first);
+		BranchGroup newGroup(dir, 1, iter->first);
 		BranchRecord newBranch(dir, -1);
 		newGroup.addBranch(newBranch);
 		m_activeBranchGroups[branchGroupID] = newGroup;
