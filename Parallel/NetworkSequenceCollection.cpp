@@ -497,23 +497,16 @@ void NetworkSequenceCollection::runControl()
 
 			case NAS_POPBUBBLE:
 			{
+				assert(opt::bubbles > 0);
 				ofstream out;
 				AssemblyAlgorithms::openBubbleFile(out);
 
 				puts("Popping bubbles");
-				unsigned totalPopped = 0;
-				int i;
-				for (i = 0; i < opt::bubbles; i++) {
-					unsigned numPopped = controlPopBubbles(out);
-					if (numPopped == 0)
-						break;
-					totalPopped += numPopped;
-				}
-				assert(totalPopped == m_numPopped);
+				unsigned numPopped = controlPopBubbles(out);
+				assert(numPopped == m_numPopped);
 				assert(out.good());
 				out.close();
-				printf("Removed %u bubbles in %u rounds\n",
-						totalPopped, i);
+				printf("Removed %u bubbles\n", numPopped);
 
 				SetState(NAS_SPLIT);
 				break;
