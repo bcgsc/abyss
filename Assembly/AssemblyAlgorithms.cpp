@@ -271,8 +271,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 				// Iterate over the branches
 				while(!stop)
 				{
-					size_t numBranches = branchGroup.getNumBranches();
-					
+					size_t numBranches = branchGroup.size();
 					for(unsigned int j = 0; j < numBranches; ++j)
 					{						
 						// Get the extensions of this branch
@@ -280,7 +279,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						int multiplicity = -1;
 
 						const Kmer& lastKmer
-							= branchGroup.getBranch(j).getLastSeq();
+							= branchGroup[j].getLastSeq();
 						bool success = seqCollection->getSeqData(
 								lastKmer, extRec, multiplicity);
 						assert(success);
@@ -345,7 +344,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 		size_t branchIndex, const Kmer& seq,
 		ExtensionRecord ext, int multiplicity)
 {
-	BranchRecord& branch = group.getBranch(branchIndex);
+	BranchRecord& branch = group[branchIndex];
 	branch.setData(make_pair(seq, KmerData(multiplicity, ext)));
 
 	extDirection dir = group.getDirection();
@@ -415,7 +414,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 {
 	assert(group.isAmbiguous(collection));
 
-	const BranchRecord& best = group.getBranch(0);
+	const BranchRecord& best = group[0];
 	PrintDebug(5, "Popping %zu %s\n", best.getLength(),
 				best.getFirstSeq().decode().c_str());
 

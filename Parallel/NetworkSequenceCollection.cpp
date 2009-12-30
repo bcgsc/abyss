@@ -851,17 +851,11 @@ int NetworkSequenceCollection::processBranchesTrim()
 	{
 		if(!iter->second.isActive())
 		{
-			// In the trimming context, the group should have 1 and only 1 branch
-			assert(iter->second.getNumBranches() == 1);
-			
-			// Trim the branch if possible
-			
-			// Get lastBranch returns the only branch in the group (see assert above)
-			if(AssemblyAlgorithms::processTerminatedBranchTrim(this, iter->second.getBranch(0)))
-			{
+			assert(iter->second.size() == 1);
+			if (AssemblyAlgorithms::processTerminatedBranchTrim(
+						this, iter->second[0]))
 				numBranchesRemoved++;
-			}
-			
+
 			// Mark the group for removal
 			removeBranches.push_back(iter);
 		}	
@@ -1233,11 +1227,9 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 	{
 		if(!iter->second.isActive())
 		{
-			// In this context, the group should have 1 and only 1 branch
-			assert(iter->second.getNumBranches() == 1);
-			
+			assert(iter->second.size() == 1);
 			// check if the branch is redundant, assemble if so, else it will simply be removed
-			BranchRecord& currBranch = iter->second.getBranch(0);
+			BranchRecord& currBranch = iter->second[0];
 			assert(currBranch.getState() == BS_NOEXT);
 			if (currBranch.isCanonical()) {
 				assembledContigs++;
@@ -1319,7 +1311,8 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
 	assert(iter != m_activeBranchGroups.end());
 	Kmer currSeq = seq;
-	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(iter->second.getBranch(branchID), currSeq, extRec, multiplicity);
+	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
+			iter->second[branchID], currSeq, extRec, multiplicity);
 	if (active)
 		generateExtensionRequest(groupID, branchID, currSeq);
 }

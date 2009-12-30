@@ -53,13 +53,13 @@ class BranchGroup
 		}
 
 		/** Return the specified branch. */
-		BranchRecord& getBranch(unsigned id)
+		BranchRecord& operator [](unsigned id)
 		{
 			return m_branches[id];
 		}
 
 		/** Return the number of branches in this group. */
-		size_t getNumBranches() const { return m_branches.size(); }
+		size_t size() const { return m_branches.size(); }
 
 		/** Return whether a branch contains the specified k-mer. */
 		bool exists(const Kmer& kmer)
