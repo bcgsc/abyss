@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 	if (opt::rank == 0) {
 		concatenateFiles(opt::contigsPath, "contigs-", ".fa",
 				"awk '/^>/ { $1=\">\" i++ } { print }'");
-		if (opt::snpPath.length() > 0)
+		if (!opt::snpPath.empty())
 			concatenateFiles(opt::snpPath, "snp-", ".fa");
 		puts("Done.");
 	}

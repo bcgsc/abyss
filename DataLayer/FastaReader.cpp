@@ -92,7 +92,7 @@ next_record:
 		getline(headerStream, comment);
 
 		getline(m_fileHandle, s);
-		assert(s.length() > 0);
+		assert(!s.empty());
 
 		if (recordType == '@') {
 			char c = m_fileHandle.get();
