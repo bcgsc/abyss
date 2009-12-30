@@ -102,18 +102,8 @@ generate_adjacency:
 		goto generate_adjacency;
 	}
 
-	if (opt::bubbles > 0) {
+	if (opt::bubbles > 0)
 		popBubbles(pSC);
-
-		// Perform an additional trim at the max trim length to get
-		// rid of any new dead ends that formed during the bubble
-		// popping. These dead ends can happen when there are two
-		// overlapping bubbles and the second one is trimmed first
-		// (the bubble with only 2 branches). There may be a better
-		// way to deal with this situation, but this will suffice for
-		// the moment.
-		AssemblyAlgorithms::performTrim(pSC, opt::trimLen);
-	}
 
 	write_graph(opt::graphPath, *pSC);
 

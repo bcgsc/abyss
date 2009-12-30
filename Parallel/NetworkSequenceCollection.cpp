@@ -515,11 +515,6 @@ void NetworkSequenceCollection::runControl()
 				printf("Removed %u bubbles in %u rounds\n",
 						totalPopped, i);
 
-				// Another round of trimming to remove tips created by
-				// popping complex bubbles.
-				if (totalPopped > 0)
-					controlTrim(opt::trimLen);
-
 				SetState(NAS_SPLIT);
 				break;
 			}
