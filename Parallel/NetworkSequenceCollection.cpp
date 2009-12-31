@@ -1199,33 +1199,22 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter, int currContigID)
 {
 	unsigned assembledContigs = 0, assembledKmer = 0;
-	vector<BranchGroupMap::iterator> removeBranches;
-	// Check if any of the current branches have gone inactive
-	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
-	{
-		if(!iter->second.isActive())
-		{
-			assert(iter->second.size() == 1);
-			// check if the branch is redundant, assemble if so, else it will simply be removed
-			BranchRecord& currBranch = iter->second[0];
-			assert(currBranch.getState() == BS_NOEXT);
-			if (currBranch.isCanonical()) {
+	for (BranchGroupMap::iterator it = m_activeBranchGroups.begin();
+			it != m_activeBranchGroups.end();) {
+		if (!it->second.isActive()) {
+			assert(it->second.size() == 1);
+			BranchRecord& branch = it->second[0];
+			assert(branch.getState() == BS_NOEXT);
+			if (branch.isCanonical()) {
 				assembledContigs++;
-				assembledKmer += currBranch.getLength();
-				assembleContig(seqCollection, fileWriter, currBranch,
+				assembledKmer += branch.getLength();
+				assembleContig(seqCollection, fileWriter, branch,
 						m_numAssembled + currContigID++);
 			}
-
-			// Mark the group for removal
-			removeBranches.push_back(iter);
-		}	
+			m_activeBranchGroups.erase(it++);
+		} else
+			++it;
 	}
-
-	// Remove all the finished branches
-	for (vector<BranchGroupMap::iterator>::iterator rmIter
-				= removeBranches.begin();
-			rmIter != removeBranches.end(); rmIter++)
-		m_activeBranchGroups.erase(*rmIter);	
 	return make_pair(assembledContigs, assembledKmer);
 }
 
