@@ -11,13 +11,13 @@ Histogram Histogram::trimLow(T threshold) const
 	return h;
 }
 
-/** Trim off the bottom percent/2 and top percent/2 data points.
- * At least (1 - percent) of the data will remain.
+/** Trim off the bottom fraction/2 and top fraction/2 data points.
+ * At least (1 - fraction) of the data will remain.
  */
-Histogram Histogram::trim(double percent) const
+Histogram Histogram::trimFraction(double fraction) const
 {
-	double low_cutoff = percent/2;
-	double high_cutoff = 1.0f - percent/2;
+	double low_cutoff = fraction/2;
+	double high_cutoff = 1.0f - fraction/2;
 	unsigned n = size();
 
 	double cumulative = 0;

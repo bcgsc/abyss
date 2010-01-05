@@ -169,10 +169,9 @@ int main(int argc, char** argv)
 
 	// Trim off the outliers of the histogram (the bottom 0.01%)
 	// These cases result from misalignments
-	double trimAmount = 0.0001f;
-	Histogram trimmedHist = distanceHist.trim(trimAmount);
+	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
 	PDF empiricalPDF(trimmedHist);
-	
+
 	// Load the length map
 	ContigLengthVec contigLens;	
 	loadContigLengths(contigLengthFile, contigLens);
