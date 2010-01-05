@@ -894,14 +894,14 @@ static float calculateCoverageThreshold(const Histogram& h)
 			logger(1) << "Coverage: " << cov << "\t"
 				"Reconstruction: " << trimmed.size() << endl;
 
-		double mean = trimmed.mean();
-		float cov1 = sqrt(mean);
+		unsigned median = trimmed.median();
+		float cov1 = sqrt(median);
 		if (cov1 == cov) {
 			// The coverage threshold has converged.
 			if (opt::rank <= 0)
 				cout << "Using a coverage threshold of "
 					<< (unsigned)roundf(cov) << "...\n"
-					"The mean k-mer coverage is " << mean << "\n"
+					"The median k-mer coverage is " << median << "\n"
 					"The reconstruction is " << trimmed.size()
 					<< endl;
 			return cov;

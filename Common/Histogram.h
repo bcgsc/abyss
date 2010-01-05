@@ -91,6 +91,19 @@ class Histogram : std::map<int, unsigned>
 		return sqrt(variance());
 	}
 
+	T median() const
+	{
+		unsigned half = (size() + 1) / 2;
+		unsigned n = 0;
+		for (Histogram::Map::const_iterator it = begin();
+				it != end(); it++) {
+			n += it->second;
+			if (n >= half)
+				return it->first;
+		}
+		return maximum();
+	}
+
 	/** Return the first local minimum or zero if a minimum is not
 	 * found. */
 	T firstLocalMinimum() const
