@@ -162,6 +162,15 @@ class Histogram : std::map<int, unsigned>
 			o << it->first << '\t' << it->second << '\n';
 		return o;
 	}
+
+	friend std::istream& operator>>(std::istream& in, Histogram& h)
+	{
+		unsigned c, n;
+		while (in >> c >> n)
+			h.insert(c, n);
+		assert(in.eof());
+		return in;
+	}
 };
 
 #endif
