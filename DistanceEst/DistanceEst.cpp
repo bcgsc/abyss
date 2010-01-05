@@ -88,16 +88,13 @@ static void assert_open(ifstream& f, const string& p)
 }
 
 /** Load a histogram from the specified file. */
-Histogram loadHist(string path)
+static Histogram loadHist(const string& path)
 {
 	ifstream in(path.c_str());
 	assert_open(in, path);
 
 	Histogram hist;
-	Histogram::T value;
-	unsigned count;
-	while (in >> value >> count)
-		hist.insert(value, count);
+	in >> hist;
 	assert(in.eof());
 
 	if (hist.empty()) {
