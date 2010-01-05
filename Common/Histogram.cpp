@@ -4,8 +4,8 @@
 Histogram Histogram::trimLow(T threshold) const
 {
 	Histogram h;
-	for (Histogram::Map::const_iterator it = begin();
-			it != end(); it++)
+	for (Histogram::Map::const_iterator it = m_map.begin();
+			it != m_map.end(); it++)
 		if (it->first >= threshold)
 			h.insert(it->first, it->second);
 	return h;
@@ -22,8 +22,8 @@ Histogram Histogram::trimFraction(double fraction) const
 
 	double cumulative = 0;
 	Histogram newHist;
-	for (Histogram::Map::const_iterator it = begin();
-			it != end(); it++) {
+	for (Histogram::Map::const_iterator it = m_map.begin();
+			it != m_map.end(); it++) {
 		double temp_total = cumulative + (double)it->second / n;
 		if (temp_total > low_cutoff && cumulative < high_cutoff)
 			newHist.insert(it->first, it->second);
