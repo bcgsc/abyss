@@ -8,6 +8,7 @@
 #include "Log.h"
 #include "Timer.h"
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -875,6 +876,42 @@ Histogram coverageHistogram(const ISequenceCollection& c)
 	return h;
 }
 
+static float calculateCoverageThreshold(const Histogram& h)
+{
+	float cov = h.firstLocalMinimum();
+	if (opt::rank <= 0) {
+		if (cov == 0)
+			cout << "Unable to determine minimum k-mer coverage\n";
+		else
+			cout << "Minimum k-mer coverage is " << cov << endl;
+	}
+
+	for (unsigned iteration = 0; iteration < 100; iteration++) {
+		Histogram trimmed = h.trimLow((unsigned)roundf(cov));
+		if (opt::rank <= 0)
+			logger(1) << "Coverage: " << cov << "\t"
+				"Reconstruction: " << trimmed.size() << endl;
+
+		double mean = trimmed.mean();
+		float cov1 = sqrt(mean);
+		if (cov1 == cov) {
+			// The coverage threshold has converged.
+			if (opt::rank <= 0)
+				cout << "Using a coverage threshold of "
+					<< (unsigned)roundf(cov) << "...\n"
+					"The mean k-mer coverage is " << mean << "\n"
+					"The reconstruction is " << trimmed.size()
+					<< endl;
+			return cov;
+		}
+		cov = cov1;
+	}
+	if (opt::rank <= 0)
+		cerr << "warning: coverage threshold did not converge"
+			<< endl;
+	return 0;
+}
+
 void determineMinimumCoverage(const Histogram& h)
 {
 	if (!opt::coverageHistPath.empty() && opt::rank <= 0) {
@@ -884,26 +921,29 @@ void determineMinimumCoverage(const Histogram& h)
 		assert(histFile.good());
 	}
 
-	unsigned minCov = h.firstLocalMinimum();
+	float minCov = calculateCoverageThreshold(h);
 	if (opt::rank <= 0) {
 		if (minCov == 0)
-			puts("Unable to determine minimum k-mer coverage");
+			cout << "Unable to determine the "
+				"k-mer coverage threshold" << endl;
 		else
-			printf("Minimum k-mer coverage is %u\n", minCov);
+			cout << "The k-mer coverage threshold is " << minCov
+				<< endl;
 	}
 	if (minCov < 2)
 		minCov = 2;
 
 	if ((int)opt::erode < 0) {
-		opt::erode = minCov;
+		opt::erode = (unsigned)roundf(minCov);
 		if (opt::rank <= 0)
-			printf("Setting parameter e (erode) to %u\n", opt::erode);
+			cout << "Setting parameter e (erode) to "
+				<< opt::erode << endl;
 	}
 	if (opt::coverage < 0) {
 		opt::coverage = minCov;
 		if (opt::rank <= 0)
-			printf("Setting parameter c (coverage) to %f\n",
-					opt::coverage);
+			cout << "Setting parameter c (coverage) to "
+				<< opt::coverage << endl;
 	}
 }
 

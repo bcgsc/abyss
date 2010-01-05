@@ -123,6 +123,7 @@ class Histogram : std::map<int, unsigned>
 	}
 
 	Histogram trim(double percent) const;
+	Histogram trimLow(T threshold) const;
 
 	/** Return a vector representing this histogram. */
 	operator std::vector<unsigned>() const

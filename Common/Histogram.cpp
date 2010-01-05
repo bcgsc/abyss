@@ -1,5 +1,16 @@
 #include "Histogram.h"
 
+/** Remove samples less than the specified threshold. */
+Histogram Histogram::trimLow(T threshold) const
+{
+	Histogram h;
+	for (Histogram::Map::const_iterator it = begin();
+			it != end(); it++)
+		if (it->first >= threshold)
+			h.insert(it->first, it->second);
+	return h;
+}
+
 /** Trim off the bottom percent/2 and top percent/2 data points.
  * At least (1 - percent) of the data will remain.
  */
