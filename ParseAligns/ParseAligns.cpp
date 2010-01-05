@@ -252,10 +252,10 @@ static void generateDistFile()
 			mapIt != estMap.end(); ++mapIt) {
 		//Skip empty iterators
 		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
-		distFile << mapIt->first << " :";
+		distFile << mapIt->first;
 		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
 			if (refIsRC)
-				distFile << " |";
+				distFile << " ;";
 
 			for (EstimateVector::iterator vecIt = mapIt->second.estimates[refIsRC].begin();
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
