@@ -46,7 +46,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 void generateAdjacency(ISequenceCollection* seqCollection);
 
 Histogram coverageHistogram(const ISequenceCollection& c);
-void determineMinimumCoverage(const Histogram& h);
+void setCoverageParameters(const Histogram& h);
 
 /* Erosion. Remove k-mer from the ends of blunt contigs. */
 unsigned erodeEnds(ISequenceCollection* seqCollection);

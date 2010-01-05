@@ -72,7 +72,7 @@ int main(int argc, char* const* argv)
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
-	AssemblyAlgorithms::determineMinimumCoverage(
+	AssemblyAlgorithms::setCoverageParameters(
 			AssemblyAlgorithms::coverageHistogram(*pSC));
 
 generate_adjacency:

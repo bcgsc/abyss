@@ -876,6 +876,8 @@ Histogram coverageHistogram(const ISequenceCollection& c)
 	return h;
 }
 
+/** Calculate a k-mer coverage threshold from the given k-mer coverage
+ * histogram. */
 static float calculateCoverageThreshold(const Histogram& h)
 {
 	float cov = h.firstLocalMinimum();
@@ -912,7 +914,9 @@ static float calculateCoverageThreshold(const Histogram& h)
 	return 0;
 }
 
-void determineMinimumCoverage(const Histogram& h)
+/** Set the coverage-related parameters e and c from the given k-mer
+ * coverage histogram. */
+void setCoverageParameters(const Histogram& h)
 {
 	if (!opt::coverageHistPath.empty() && opt::rank <= 0) {
 		ofstream histFile(opt::coverageHistPath.c_str());

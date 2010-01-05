@@ -95,7 +95,7 @@ void NetworkSequenceCollection::run()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
-				AssemblyAlgorithms::determineMinimumCoverage(h);
+				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 				SetState(NAS_WAITING);
 				break;
@@ -431,7 +431,7 @@ void NetworkSequenceCollection::runControl()
 				Histogram h = m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
 							*m_pLocalSpace));
-				AssemblyAlgorithms::determineMinimumCoverage(h);
+				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 
 				SetState(m_pLocalSpace->isAdjacencyLoaded()
