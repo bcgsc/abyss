@@ -212,9 +212,10 @@ static void processContigs(string alignFile,
 		// They must be strictly > 0 and contiguous
 		LinearNumKey refNumericID
 			= convertContigIDToLinearNumKey(refContigID);
+		assert(refNumericID < lengthVec.size());
 
 		// Only process contigs that are a reasonable length
-		unsigned refLength = lengthVec.at(refNumericID);
+		unsigned refLength = lengthVec[refNumericID];
 		if (refLength < opt::seedLen)
 			continue;
 
