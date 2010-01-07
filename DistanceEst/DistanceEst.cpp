@@ -11,8 +11,10 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -76,6 +78,8 @@ int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
 
+typedef vector<unsigned> ContigLengthVec;
+
 static void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf);
 
@@ -102,6 +106,27 @@ static Histogram loadHist(const string& path)
 		exit(EXIT_FAILURE);
 	}
 	return hist;
+}
+
+/** Load contig lengths. */
+static void loadContigLengths(const string& path,
+		ContigLengthVec& lengths)
+{
+	assert(lengths.empty());
+	ifstream in(path.c_str());
+	assert(in.is_open());
+
+	string id;
+	unsigned len;
+	while (in >> id >> len) {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		unsigned serial = g_contigIDs.serial(id);
+		assert(serial == lengths.size());
+		(void)serial;
+		lengths.push_back(len);
+	}
+	assert(in.eof());
+	assert(!lengths.empty());
 }
 
 int main(int argc, char** argv)
@@ -172,6 +197,7 @@ int main(int argc, char** argv)
 	// Load the length map
 	ContigLengthVec contigLens;	
 	loadContigLengths(contigLengthFile, contigLens);
+	g_contigIDs.lock();
 
 	// Estimate the distances between contigs, one at a time
 	processContigs(alignFile, contigLens, empiricalPDF);

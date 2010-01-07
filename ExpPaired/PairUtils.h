@@ -17,9 +17,4 @@ static inline LinearNumKey convertContigIDToLinearNumKey(
 	return g_contigIDs.serial(id);
 }
 
-typedef std::vector<int> ContigLengthVec;
-
-void loadContigLengths(const std::string& path,
-		ContigLengthVec& lengths);
-
 #endif
