@@ -9,6 +9,7 @@ using namespace std;
 /** Load contig lengths. */
 void loadContigLengths(const string& path, ContigLengthVec& lengths)
 {
+	assert(lengths.empty());
 	ifstream in(path.c_str());
 	assert(in.is_open());
 
@@ -22,4 +23,5 @@ void loadContigLengths(const string& path, ContigLengthVec& lengths)
 		lengths.push_back(len);
 	}
 	assert(in.eof());
+	assert(!lengths.empty());
 }
