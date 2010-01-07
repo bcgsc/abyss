@@ -76,7 +76,7 @@ int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
 
-void processContigs(string alignFile,
+static void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf);
 
 static void assert_open(ifstream& f, const string& p)
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void processContigs(string alignFile,
+static void processContigs(string alignFile,
 		const ContigLengthVec& lengthVec, const PDF& pdf)
 {
 	ifstream inFile(alignFile.c_str());
