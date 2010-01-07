@@ -78,10 +78,8 @@ int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairData,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
 
-typedef vector<unsigned> ContigLengthVec;
-
-static void processContigs(string alignFile,
-		const ContigLengthVec& lengthVec, const PDF& pdf);
+static void processContigs(const string& alignFile,
+		const vector<unsigned>& lengthVec, const PDF& pdf);
 
 static void assert_open(ifstream& f, const string& p)
 {
@@ -109,8 +107,8 @@ static Histogram loadHist(const string& path)
 }
 
 /** Load contig lengths. */
-static void loadContigLengths(const string& path,
-		ContigLengthVec& lengths)
+static void readContigLengths(const string& path,
+		vector<unsigned>& lengths)
 {
 	assert(lengths.empty());
 	ifstream in(path.c_str());
@@ -195,8 +193,8 @@ int main(int argc, char** argv)
 	PDF empiricalPDF(trimmedHist);
 
 	// Load the length map
-	ContigLengthVec contigLens;	
-	loadContigLengths(contigLengthFile, contigLens);
+	vector<unsigned> contigLens;
+	readContigLengths(contigLengthFile, contigLens);
 	g_contigIDs.lock();
 
 	// Estimate the distances between contigs, one at a time
@@ -205,8 +203,8 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-static void processContigs(string alignFile,
-		const ContigLengthVec& lengthVec, const PDF& pdf)
+static void processContigs(const string& alignFile,
+		const vector<unsigned>& lengthVec, const PDF& pdf)
 {
 	ifstream inFile(alignFile.c_str());
 	istream& in(strcmp(alignFile.c_str(), "-") == 0 ? cin : inFile);
