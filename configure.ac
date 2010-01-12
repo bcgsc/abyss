@@ -128,6 +128,7 @@ AC_CONFIG_FILES([
 	AdjList/Makefile
 	DistanceEst/Makefile
 	Overlap/Makefile
+	PopBubbles/Makefile
 	SimpleGraph/Makefile
 	MergePaths/Makefile
 	KAligner/Makefile

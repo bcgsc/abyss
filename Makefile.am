@@ -9,5 +9,5 @@ dist_pkgdoc_DATA = ChangeLog LICENSE README
 SUBDIRS = Align Assembly Common DataLayer ExpPaired Graph \
 	ABYSS $(Parallel) \
 	bin doc kmerprint \
-	AdjList DistanceEst KAligner MergePaths Overlap ParseAligns \
-	SimpleGraph Consensus PathOverlap
+	AdjList DistanceEst KAligner MergePaths Overlap \
+	ParseAligns PopBubbles SimpleGraph Consensus PathOverlap
