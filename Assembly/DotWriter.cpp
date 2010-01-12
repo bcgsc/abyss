@@ -2,6 +2,7 @@
 
 #include "DotWriter.h"
 #include "AssemblyAlgorithms.h"
+#include <cassert>
 #include <ostream>
 
 using namespace std;
@@ -12,7 +13,9 @@ static vector<Kmer> getExtensions(const ISequenceCollection& c,
 {
 	ExtensionRecord ext;
 	int multiplicity = -1;
-	c.getSeqData(key, ext, multiplicity);
+	bool found = c.getSeqData(key, ext, multiplicity);
+	assert(found);
+	(void)found;
 	vector<Kmer> v;
 	AssemblyAlgorithms::generateSequencesFromExtension(key, dir,
 			ext.dir[dir], v);
