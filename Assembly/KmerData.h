@@ -50,9 +50,11 @@ class KmerData
 		return m_multiplicity[SENSE] + m_multiplicity[ANTISENSE];
 	}
 
+	static const unsigned COVERAGE_MAX = 65535;
+
 	void addMultiplicity(extDirection dir)
 	{
-		if (m_multiplicity[dir] < 65535)
+		if (m_multiplicity[dir] < COVERAGE_MAX)
 			++m_multiplicity[dir];
 		assert(m_multiplicity[dir] > 0);
 	}
@@ -60,7 +62,7 @@ class KmerData
 	/** Set the multiplicity (not strand specific). */
 	void setMultiplicity(unsigned multiplicity)
 	{
-		assert(multiplicity <= 2*65535);
+		assert(multiplicity <= 2*COVERAGE_MAX);
 		// Split the multiplicity over both senses.
 		m_multiplicity[SENSE] = (multiplicity + 1) / 2;
 		m_multiplicity[ANTISENSE] = multiplicity / 2;
