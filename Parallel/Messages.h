@@ -170,7 +170,7 @@ class SeqDataResponse : public Message
 		IDType m_group;
 		IDType m_id;
 		ExtensionRecord m_extRecord;
-		uint32_t m_multiplicity;
+		uint16_t m_multiplicity;
 };
 
 class SetBaseMessage : public Message
