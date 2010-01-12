@@ -50,7 +50,7 @@ class KmerData
 		return m_multiplicity[SENSE] + m_multiplicity[ANTISENSE];
 	}
 
-	static const unsigned COVERAGE_MAX = 65535;
+	static const unsigned COVERAGE_MAX = 32767;
 
 	void addMultiplicity(extDirection dir)
 	{

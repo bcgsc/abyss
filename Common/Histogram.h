@@ -142,7 +142,7 @@ class Histogram
 		std::vector<unsigned> v(maximum()+1);
 #else
 		// CommLayer::reduce requires the arrays have the same size.
-		std::vector<unsigned> v(2*65536);
+		std::vector<unsigned> v(65536);
 		assert(maximum() < (T)v.size());
 #endif
 		for (Map::const_iterator it = m_map.begin();
