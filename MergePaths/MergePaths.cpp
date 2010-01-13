@@ -132,6 +132,12 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 	return repeats;
 }
 
+/** Convert a numeric contig ID to a string. */
+static const string& idToString(unsigned id)
+{
+	return g_contigIDs.key(id);
+}
+
 /** Remove tandem repeats from the set of paths. */
 static void removeRepeats(ContigPathMap& paths)
 {
@@ -150,7 +156,7 @@ static void removeRepeats(ContigPathMap& paths)
 	for (set<LinearNumKey>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		if (paths.erase(*it) > 0) {
-			cout << ' ' << *it;
+			cout << ' ' << idToString(*it);
 			removed++;
 		}
 	}
@@ -256,11 +262,13 @@ int main(int argc, char** argv)
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter) {
 		linkPaths(iter->first, originalPathMap, resultsPathMap, false);
-
 		if (gDebugPrint)
-			cout << "Pseudo final path from " << iter->first << ' '
-				<< iter->second << " is " << *iter->second << '\n';
+			cout << "Merged path: "
+				<< *resultsPathMap[iter->first] << '\n';
 	}
+
+	if (opt::verbose > 0)
+		cout << "\nRemoving redundant contigs\n";
 
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
 			iter != resultsPathMap.end(); ++iter) {
@@ -293,6 +301,9 @@ int main(int argc, char** argv)
 		assert(out.good());
 		return 0;
 	}
+
+	if (opt::verbose > 0)
+		cout << "\nMerging contigs\n";
 
 	ofstream out(opt::out.c_str());
 	set<size_t> seen = getContigIDs(uniquePaths);
@@ -382,8 +393,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 		usedPathMap = &contigPathMap;
 	}
 
-	if(gDebugPrint)
-		cout << "Initial canonical path (" << id << ") " 
+	if (gDebugPrint)
+		cout << "\n* " << idToString(id) << ": "
 			<< *refCanonical << '\n';
 
 	// Build the initial list of nodes to attempt to merge in
@@ -393,7 +404,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 	MergeNodeList::iterator iter = mergeInList.begin();
 	while(!mergeInList.empty()) {
 		if(iter->id() != id) {
-			if(gDebugPrint) cout << "CHECKING NODE " << iter->id() << "(" << iter->sense() << ")\n";
+			if (gDebugPrint) cout << ' ' << *iter << '\n';
 
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = usedPathMap->find(iter->id());
@@ -440,8 +451,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 						} else if (gDebugPrint)
 							cout << " warning: possible circular paths\n";
 					} else {
-						if(gDebugPrint)
-							cout << " removing: " << childCanonPath << '\n';
+						if (gDebugPrint)
+							cout << " del: " << childCanonPath << '\n';
 						delete findIter->second;
 						findIter->second = NULL;
 						resultPathMap.erase(findIter);
@@ -701,8 +712,9 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& currPath, int count, int kmer,
 		ostream& out)
 {
-	if(gDebugPrint) cout << "Attempting to merge " << cID << '\n';
-	if(gDebugPrint) cout << "Canonical path is: " << currPath << '\n';
+	if (gDebugPrint)
+		cout << "Merging " << idToString(cID) << ": "
+			<< currPath << '\n';
 	if (opt::verbose > 0)
 		cout << currPath << '\n';
 
@@ -717,8 +729,6 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 
 	for(size_t i = 1; i < numNodes; ++i) {
 		MergeNode mn = currPath[i];
-		if(gDebugPrint) cout << "	merging in " << mn.id() << "(" << mn.sense() << ")\n";
-
 		const Contig& contig = sourceContigs[mn.id()];
 		assert(!contig.seq.empty());
 		mergeSequences(merged, contig.seq, (extDirection)0, mn.sense(),
