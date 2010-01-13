@@ -110,6 +110,9 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 	return g_contigs[a.id()].coverage > g_contigs[b.id()].coverage;
 }
 
+/** Popped branches. */
+static set<unsigned> g_popped;
+
 static void popBubble(const ContigNode& head,
 		const ContigNodes& branches,
 		const ContigNode& tail)
@@ -124,9 +127,9 @@ static void popBubble(const ContigNode& head,
 				ostream_iterator<ContigNode>(cerr, " "));
 		cerr << "} -> " << tail << '\n';
 	}
-	copy(sorted.begin(), sorted.end() - 1,
-			ostream_iterator<ContigNode>(cout, " "));
-	cout << sorted.back() << '\n';
+	transform(sorted.begin() + 1, sorted.end(),
+			inserter(g_popped, g_popped.begin()),
+			mem_fun_ref(&ContigNode::id));
 }
 
 static void consider(const ContigNode& head,
@@ -212,6 +215,11 @@ static void readContigs(vector<Contig>& contigs, const string& path)
 		g_contigIDs.lock();
 }
 
+static const string& idToString(unsigned id)
+{
+	return g_contigIDs.key(id);
+}
+
 int main(int argc, char *const argv[])
 {
 	bool die = false;
@@ -266,6 +274,10 @@ int main(int argc, char *const argv[])
 		if (node.second.size() > 1)
 			consider(node.first, node.second);
 	}
+
+	transform(g_popped.begin(), g_popped.end(),
+			ostream_iterator<string>(cout, "\n"),
+			idToString);
 
 	return 0;
 }
