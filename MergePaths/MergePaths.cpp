@@ -440,9 +440,17 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 							includes(childKeys.begin(), childKeys.end(),
 									refKeys.begin(), refKeys.end());
 
-						assert(refIncludesChild || childIncludesRef);
-
-						if (refIncludesChild && !childIncludesRef ) {
+						if (!refIncludesChild && !childIncludesRef) {
+							/* A merge is now possible that wasn't
+							 * made in the first pass. Ideally, this
+							 * shouldn't happen, but can when a path
+							 * is not extended due to its being an
+							 * inverted repeat. Perhaps this
+							 * restriction should be relaxed.
+							 */
+							if (gDebugPrint)
+								cout << " not merging: " << childCanonPath << '\n';
+						} else if (refIncludesChild && !childIncludesRef ) {
 							if(gDebugPrint)
 								cout << " removing circular: " << childCanonPath << '\n';
 							delete findIter->second;
