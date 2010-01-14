@@ -99,8 +99,8 @@ struct Contig {
 typedef vector<Contig> ContigVec;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
-void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
-		ContigPathMap& resultPathMap, bool deleteSubsumed);
+ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
+		bool deleteSubsumed);
 void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
@@ -182,6 +182,24 @@ template <typename T> static const T& deref(const T* x)
 	return *x;
 }
 
+/** Extend the specified path as long as is unambiguously possible and
+ * add the result to the specified container. */
+static void extendPaths(LinearNumKey id,
+		ContigPathMap& paths, ContigPathMap& out)
+{
+	bool inserted = out.insert(make_pair(id,
+				linkPaths(id, paths, false))).second;
+	assert(inserted);
+	(void)inserted;
+}
+
+/** Remove paths subsumed by the specified path. */
+static void removeSubsumedPaths(LinearNumKey id,
+		ContigPathMap& paths)
+{
+	linkPaths(id, paths, true);
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -261,7 +279,7 @@ int main(int argc, char** argv)
 	// link the paths together
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter) {
-		linkPaths(iter->first, originalPathMap, resultsPathMap, false);
+		extendPaths(iter->first, originalPathMap, resultsPathMap);
 		if (gDebugPrint)
 			cout << "Merged path: "
 				<< *resultsPathMap[iter->first] << '\n';
@@ -271,9 +289,8 @@ int main(int argc, char** argv)
 		cout << "\nRemoving redundant contigs\n";
 
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
-			iter != resultsPathMap.end(); ++iter) {
-		linkPaths(iter->first, originalPathMap, resultsPathMap, true);
-	}
+			iter != resultsPathMap.end(); ++iter)
+		removeSubsumedPaths(iter->first, resultsPathMap);
 
 	set<ContigPath*> uniquePtr;
 	for (ContigPathMap::const_iterator it = resultsPathMap.begin();
@@ -377,22 +394,16 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	pathStream.close();
 }
 
-void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
-		ContigPathMap& resultPathMap, bool deleteSubsumed)
+/** Merge the specified path.
+ * @param deleteSubsumed when true, remove paths that are entirely
+ * subsumed by this path
+ * Return a pointer to the merged path.
+ */
+ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
+		bool deleteSubsumed)
 {
-	ContigPath* refCanonical;
-	ContigPathMap* usedPathMap;
-	if (deleteSubsumed) {
-		refCanonical = resultPathMap[id];
-		usedPathMap = &resultPathMap;
-	} else {
-		refCanonical = new ContigPath;
-		const ContigPath& path = *contigPathMap[id];
-		refCanonical->insert(refCanonical->end(),
-				path.begin(), path.end());
-		usedPathMap = &contigPathMap;
-	}
-
+	ContigPath* refCanonical = deleteSubsumed
+		? paths[id] : new ContigPath(*paths[id]);
 	if (gDebugPrint)
 		cout << "\n* " << idToString(id) << ": "
 			<< *refCanonical << '\n';
@@ -407,8 +418,8 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 			if (gDebugPrint) cout << ' ' << *iter << '\n';
 
 			// Check if the current node to merge has any paths to/from it
-			ContigPathMap::iterator findIter = usedPathMap->find(iter->id());
-			if (findIter != usedPathMap->end()) {
+			ContigPathMap::iterator findIter = paths.find(iter->id());
+			if (findIter != paths.end()) {
 				// Make the full path of the child node
 				ContigPath childCanonPath = *findIter->second;
 
@@ -455,7 +466,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 								cout << " removing circular: " << childCanonPath << '\n';
 							delete findIter->second;
 							findIter->second = NULL;
-							resultPathMap.erase(findIter);
+							paths.erase(findIter);
 						} else if (gDebugPrint)
 							cout << " warning: possible circular paths\n";
 					} else {
@@ -463,7 +474,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 							cout << " del: " << childCanonPath << '\n';
 						delete findIter->second;
 						findIter->second = NULL;
-						resultPathMap.erase(findIter);
+						paths.erase(findIter);
 					}
 				} else if (validMerge) {
 					// Extract the extra nodes from the child path that can be added in
@@ -489,8 +500,7 @@ void linkPaths(LinearNumKey id, ContigPathMap& contigPathMap,
 		// Erase the iterator and move forward
 		mergeInList.erase(iter++);
 	}
-	if (!deleteSubsumed)
-		resultPathMap[id] = refCanonical;
+	return refCanonical;
 }
 
 //
