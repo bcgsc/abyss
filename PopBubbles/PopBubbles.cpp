@@ -11,6 +11,7 @@
 #include "Sense.h"
 #include <algorithm>
 #include <cerrno>
+#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
