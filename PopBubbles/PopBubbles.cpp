@@ -30,7 +30,7 @@ static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Shaun Jackman.\n"
 "\n"
-"Copyright 2009 Canada's Michael Smith Genome Science Centre\n";
+"Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIGS ADJ\n"
