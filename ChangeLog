@@ -1,3 +1,14 @@
+2010-01-19  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.1.1.
+
+	ABYSS:
+	* Pop complex bubbles either completely or not at all. Bubble
+	popping now completes in a single round.
+	* Choose better (typically lower) default values for the
+	parameters -e,--erode and -c,--coverage. The default threshold is
+	the square root of the median k-mer coverage.
+
 2009-12-18  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.1.0.
