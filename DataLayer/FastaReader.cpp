@@ -79,7 +79,7 @@ next_record:
 	Sequence s;
 	string q;
 
-	unsigned qualityOffset;
+	unsigned qualityOffset = 0;
 	if (recordType == EOF) {
 		m_fileHandle.get();
 		return s;
