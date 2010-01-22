@@ -28,6 +28,7 @@ static bool endsWith(const string& s, const string& suffix)
 static const char* zcatExec(const string& path)
 {
 	return
+		endsWith(path, ".tar") ? "tar -xOf " :
 		endsWith(path, ".tar.Z") ? "tar -zxOf " :
 		endsWith(path, ".tar.gz") ? "tar -zxOf " :
 		endsWith(path, ".tar.bz2") ? "tar -jxOf " :
