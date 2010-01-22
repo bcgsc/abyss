@@ -10,6 +10,7 @@
 #include "config.h"
 #if HAVE_LIBDL
 
+#include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>
 #include <dlfcn.h>
@@ -32,6 +33,8 @@ static const char* zcatExec(const string& path)
 		endsWith(path, ".tar.Z") ? "tar -zxOf " :
 		endsWith(path, ".tar.gz") ? "tar -zxOf " :
 		endsWith(path, ".tar.bz2") ? "tar -jxOf " :
+		endsWith(path, ".tar.xz") ?
+			"tar --use-compress-program=xzdec -xOf " :
 		endsWith(path, ".Z") ? "gunzip -c" :
 		endsWith(path, ".gz") ? "gunzip -c" :
 		endsWith(path, ".bz2") ? "bunzip2 -c" :
@@ -116,11 +119,15 @@ int open(const char *path, int flags, mode_t mode)
 		close(fd[1]);
 		return fd[0];
 	} else {
-		char arg0[16], arg1[16];
-		sscanf(zcat, "%s %s", arg0, arg1);
+		char arg0[16], arg1[16], arg2[16];
+		int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
+		assert(n == 2 || n == 3);
 		close(fd[0]);
 		dup2(fd[1], STDOUT_FILENO);
-		execlp(zcat, arg0, arg1, path, NULL);
+		if (n == 2)
+			execlp(zcat, arg0, arg1, path, NULL);
+		else
+			execlp(zcat, arg0, arg1, arg2, path, NULL);
 		perror(zcat);
 		exit(EXIT_FAILURE);
 	}
