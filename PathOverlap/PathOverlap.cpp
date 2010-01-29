@@ -26,7 +26,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... PATH\n"
 "\n"
-"  -r, --repeats=FILE write repeat contigs to FILE\n"
+"  -r, --repeats=FILE    write repeat contigs to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
