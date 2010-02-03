@@ -53,6 +53,40 @@ static string zcatCommand(const string& path)
 
 extern "C" {
 
+/** Open a pipe to uncompress the specified file.
+ * @return a file descriptor
+ */
+static int uncompress(const char *path)
+{
+	const char *zcat = zcatExec(path);
+	assert(zcat != NULL);
+
+	int fd[2];
+	if (pipe(fd) == -1)
+		return -1;
+
+	pid_t pid = fork();
+	if (pid == -1)
+		return -1;
+
+	if (pid == 0) {
+		char arg0[16], arg1[16], arg2[16];
+		int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
+		assert(n == 2 || n == 3);
+		close(fd[0]);
+		dup2(fd[1], STDOUT_FILENO);
+		if (n == 2)
+			execlp(arg0, arg0, arg1, path, NULL);
+		else
+			execlp(arg0, arg0, arg1, arg2, path, NULL);
+		perror(zcat);
+		exit(EXIT_FAILURE);
+	} else {
+		close(fd[1]);
+		return fd[0];
+	}
+}
+
 typedef FILE* (*fopen_t)(const char *path, const char *mode);
 
 /** If the specified file is compressed, return a pipe that
@@ -105,35 +139,8 @@ int open(const char *path, int flags, mode_t mode)
 		fprintf(stderr, "error: dlsym open: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-
-	const char *zcat = zcatExec(path);
-	if (zcat == NULL)
-		return real_open(path, flags, mode);
-
-	int fd[2];
-	if (pipe(fd) == -1)
-		return -1;
-
-	pid_t pid = fork();
-	if (pid == -1)
-		return -1;
-
-	if (pid == 0) {
-		char arg0[16], arg1[16], arg2[16];
-		int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
-		assert(n == 2 || n == 3);
-		close(fd[0]);
-		dup2(fd[1], STDOUT_FILENO);
-		if (n == 2)
-			execlp(arg0, arg0, arg1, path, NULL);
-		else
-			execlp(arg0, arg0, arg1, arg2, path, NULL);
-		perror(zcat);
-		exit(EXIT_FAILURE);
-	} else {
-		close(fd[1]);
-		return fd[0];
-	}
+	return zcatExec(path) == NULL ? real_open(path, flags, mode)
+		: uncompress(path);
 }
 
 } // extern "C"
