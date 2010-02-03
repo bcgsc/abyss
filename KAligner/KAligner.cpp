@@ -2,6 +2,7 @@
 #include "Align/Options.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
+#include "Barrier.h"
 #include "FastaReader.h"
 #include "PrefixIterator.h"
 #include "Uncompress.h"
@@ -41,6 +42,7 @@ static const char USAGE_MESSAGE[] =
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
+"      --sync            synchronize the threads\n"
 "  -v, --verbose         display verbose output\n"
 "      --seq             print the sequence with the alignments\n"
 "      --help            display this help and exit\n"
@@ -52,6 +54,9 @@ namespace opt {
 	static unsigned k;
 	static int threads = 1;
 	static bool printSeq = false;
+
+	/** Synchronize the threads with a barrier. */
+	static int sync;
 }
 
 static const char shortopts[] = "ik:mo:j:v";
@@ -63,6 +68,8 @@ static const struct option longopts[] = {
 	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
 	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
 	{ "ignore-multimap", no_argument, &opt::multimap, opt::IGNORE },
+	{ "sync",        no_argument,     &opt::sync, 1 },
+	{ "no-sync",     no_argument,     &opt::sync, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "seq",		 no_argument,		NULL, OPT_SEQ },
@@ -155,6 +162,9 @@ static pthread_t getReadFiles(const char *readsFile)
 	return thread;
 }
 
+/** A barrier used to synchronize the worker threads. */
+static Barrier g_barrier;
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -221,11 +231,28 @@ int main(int argc, char** argv)
 	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
 	sem_init(&g_activeThreads, 0, opt::threads);
+	if (opt::sync) {
+		// Initialize the barrier for the initial number of threads,
+		// then set the thread count to 0. Each thread increments the
+		// barrier upon its creation and decrements the barrier upon
+		// its completion.
+		g_barrier.init(opt::threads);
+		g_barrier = 0;
+	}
 
 	g_readCount = 0;
 	vector<pthread_t> threads;
 	transform(argv + optind, argv + argc, back_inserter(threads),
 			getReadFiles);
+
+	if (opt::sync) {
+		for (int i = 0; i < opt::threads; i++) {
+			sem_wait(&g_activeThreads);
+			// Signal the barrier to indicate that the worker thread
+			// has completed and there won't be another to replace it.
+			g_barrier.signal();
+		}
+	}
 
 	void *status;
 	// Wait for all threads to finish.
@@ -289,6 +316,9 @@ static void readContigsIntoDB(string refFastaFile,
 
 void *alignReadsToDB(void* readsFile)
 {
+	if (opt::sync)
+		++g_barrier;
+
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 	FastaReader fileHandle((const char *)readsFile,
@@ -333,8 +363,13 @@ void *alignReadsToDB(void* readsFile)
 				cerr << "Aligned " << g_readCount << " reads\n";
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
+
+		if (opt::sync)
+			g_barrier.wait();
 	}
 	assert(fileHandle.eof());
+	if (opt::sync)
+		--g_barrier;
 	sem_post(&g_activeThreads);
 	return NULL;
 }
