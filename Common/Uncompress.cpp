@@ -45,12 +45,6 @@ static const char* zcatExec(const string& path)
 		NULL;
 }
 
-static string zcatCommand(const string& path)
-{
-	const char *zcat = zcatExec(path);
-	return zcat == NULL ? "" : string(zcat) + ' ' + path;
-}
-
 extern "C" {
 
 /** Open a pipe to uncompress the specified file.
@@ -87,6 +81,19 @@ static int uncompress(const char *path)
 	}
 }
 
+/** Open a pipe to uncompress the specified file.
+ * @return a FILE pointer
+ */
+static FILE* funcompress(const char* path)
+{
+	int fd = uncompress(path);
+	if (fd == -1) {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}
+	return fdopen(fd, "r");
+}
+
 typedef FILE* (*fopen_t)(const char *path, const char *mode);
 
 /** If the specified file is compressed, return a pipe that
@@ -101,10 +108,8 @@ FILE *fopen(const char *path, const char *mode)
 		fprintf(stderr, "error: dlsym fopen: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-
-	string command = zcatCommand(string(path));
-	return command.empty() ? real_fopen(path, mode)
-		: popen(command.c_str(), mode);
+	return zcatExec(path) == NULL ? real_fopen(path, mode)
+		: funcompress(path);
 }
 
 /** If the specified file is compressed, return a pipe that
@@ -119,10 +124,8 @@ FILE *fopen64(const char *path, const char *mode)
 		fprintf(stderr, "error: dlsym fopen64: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-
-	string command = zcatCommand(string(path));
-	return command.empty() ? real_fopen64(path, mode)
-		: popen(command.c_str(), mode);
+	return zcatExec(path) == NULL ? real_fopen64(path, mode)
+		: funcompress(path);
 }
 
 typedef int (*open_t)(const char *path, int flags, mode_t mode);
