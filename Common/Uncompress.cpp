@@ -172,7 +172,6 @@ static void sigchldHandler(int sig)
 bool uncompress_init()
 {
 #if HAVE_LIBDL
-	cerr << "SIGCHLD handler installed" << endl;
 	signal(SIGCHLD, sigchldHandler);
 	return true;
 #else
