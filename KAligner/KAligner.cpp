@@ -142,8 +142,7 @@ static sem_t g_activeThreads;
 static pthread_t getReadFiles(const char *readsFile)
 {
 	// Ensure we don't create more than opt::threads threads at a time.
-	if (opt::threads > 0)
-		sem_wait(&g_activeThreads);
+	sem_wait(&g_activeThreads);
 
 	if (opt::verbose > 0) {
 		pthread_mutex_lock(&g_mutexCerr);
@@ -196,7 +195,11 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	string refFastaFile(argv[argc - 1]);
+	string refFastaFile(argv[--argc]);
+
+	int numQuery = argc - optind;
+	if (opt::threads <= 0 || opt::threads > numQuery)
+		opt::threads = numQuery;
 
 	size_t numKmer = countKmer(refFastaFile);
 	if (opt::multimap == opt::MULTIMAP) {
@@ -217,12 +220,11 @@ int main(int argc, char** argv)
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
-	if (opt::threads > 0)
-		sem_init(&g_activeThreads, 0, opt::threads);
+	sem_init(&g_activeThreads, 0, opt::threads);
 
 	g_readCount = 0;
 	vector<pthread_t> threads;
-	transform(argv + optind, argv + argc - 1, back_inserter(threads),
+	transform(argv + optind, argv + argc, back_inserter(threads),
 			getReadFiles);
 
 	void *status;
@@ -333,7 +335,6 @@ void *alignReadsToDB(void* readsFile)
 		}
 	}
 	assert(fileHandle.eof());
-	if (opt::threads > 0)
-		sem_post(&g_activeThreads);
+	sem_post(&g_activeThreads);
 	return NULL;
 }
