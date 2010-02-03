@@ -116,20 +116,20 @@ int open(const char *path, int flags, mode_t mode)
 		return -1;
 
 	if (pid == 0) {
-		close(fd[1]);
-		return fd[0];
-	} else {
 		char arg0[16], arg1[16], arg2[16];
 		int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
 		assert(n == 2 || n == 3);
 		close(fd[0]);
 		dup2(fd[1], STDOUT_FILENO);
 		if (n == 2)
-			execlp(zcat, arg0, arg1, path, NULL);
+			execlp(arg0, arg0, arg1, path, NULL);
 		else
-			execlp(zcat, arg0, arg1, arg2, path, NULL);
+			execlp(arg0, arg0, arg1, arg2, path, NULL);
 		perror(zcat);
 		exit(EXIT_FAILURE);
+	} else {
+		close(fd[1]);
+		return fd[0];
 	}
 }
 
