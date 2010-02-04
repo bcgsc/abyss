@@ -15,6 +15,7 @@ libcommon_a_SOURCES = \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \
+	Signal.cpp Signal.h \
 	StringUtil.h \
 	Timer.cpp Timer.h \
 	Uncompress.cpp Uncompress.h

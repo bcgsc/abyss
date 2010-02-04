@@ -14,10 +14,7 @@
 #include <cstdio> // for perror
 #include <cstdlib>
 #include <dlfcn.h>
-#include <iostream>
-#include <signal.h>
 #include <string>
-#include <sys/wait.h>
 #include <unistd.h>
 
 using namespace std;
@@ -148,43 +145,10 @@ int open(const char *path, int flags, mode_t mode)
 
 } // extern "C"
 
-/** SIGCHLD handler. Reap child processes and report an error if any
- * fail. */
-static void sigchldHandler(int sig)
-{
-	assert(sig == SIGCHLD);
-	(void)sig;
-	int status;
-	pid_t pid = wait(&status);
-	if (pid == -1) {
-		perror("waitpid");
-		exit(EXIT_FAILURE);
-	}
-	// Writing to cerr in a signal handler is not allowed, but we're
-	// about to exit and an error message would be really helpful.
-	if (status != 0) {
-		if (WIFEXITED(status))
-			cerr << "PID " << pid << " exited with status "
-				<< WEXITSTATUS(status) << endl;
-		else if (WIFSIGNALED(status))
-			cerr << "PID " << pid << " killed by signal "
-				<< WTERMSIG(status) << endl;
-		else
-			cerr << "PID " << pid << " exited with code "
-				<< status << endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
 #endif // HAVE_LIBDL
 
-/** Initialize the uncompress module. Install a SIGCHLD handler. */
+/** Initialize the uncompress module. */
 bool uncompress_init()
 {
-#if HAVE_LIBDL
-	signal(SIGCHLD, sigchldHandler);
-	return true;
-#else
-	return false;
-#endif
+	return HAVE_LIBDL;
 }
