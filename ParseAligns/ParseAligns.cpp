@@ -511,7 +511,7 @@ int main(int argc, char* const* argv)
 		assert(fragFile.is_open());
 	}
 
-	ReadAlignMap alignTable;
+	ReadAlignMap alignTable(1);
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
 				bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
