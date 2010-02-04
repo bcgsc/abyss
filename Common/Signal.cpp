@@ -11,6 +11,20 @@
 
 using namespace std;
 
+/** Print the specified exit status. */
+static void printStatus(pid_t pid, int status)
+{
+	if (WIFEXITED(status))
+		cerr << "PID " << pid << " exited with status "
+			<< WEXITSTATUS(status) << endl;
+	else if (WIFSIGNALED(status))
+		cerr << "PID " << pid << " killed by signal "
+			<< WTERMSIG(status) << endl;
+	else
+		cerr << "PID " << pid << " exited with code "
+			<< status << endl;
+}
+
 /** SIGCHLD handler. Reap child processes and report an error if any
  * fail. */
 static void sigchldHandler(int sig)
@@ -26,15 +40,7 @@ static void sigchldHandler(int sig)
 	// Writing to cerr in a signal handler is not allowed, but we're
 	// about to exit and an error message would be really helpful.
 	if (status != 0) {
-		if (WIFEXITED(status))
-			cerr << "PID " << pid << " exited with status "
-				<< WEXITSTATUS(status) << endl;
-		else if (WIFSIGNALED(status))
-			cerr << "PID " << pid << " killed by signal "
-				<< WTERMSIG(status) << endl;
-		else
-			cerr << "PID " << pid << " exited with code "
-				<< status << endl;
+		printStatus(pid, status);
 		exit(EXIT_FAILURE);
 	}
 }
