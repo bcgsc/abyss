@@ -4,6 +4,7 @@
 
 #include "Signal.h"
 #include <cassert>
+#include <cerrno>
 #include <iostream>
 #include <pthread.h>
 #include <signal.h>
@@ -31,16 +32,20 @@ static void sigchldHandler(int sig)
 {
 	assert(sig == SIGCHLD);
 	(void)sig;
+
+	pid_t pid;
 	int status;
-	pid_t pid = wait(&status);
-	if (pid == -1) {
-		perror("waitpid");
-		exit(EXIT_FAILURE);
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+		// Writing to cerr in a signal handler is not allowed, but
+		// we're about to exit and an error message would be really
+		// helpful.
+		if (status != 0) {
+			printStatus(pid, status);
+			exit(EXIT_FAILURE);
+		}
 	}
-	// Writing to cerr in a signal handler is not allowed, but we're
-	// about to exit and an error message would be really helpful.
-	if (status != 0) {
-		printStatus(pid, status);
+	if (pid == -1 && errno != ECHILD) {
+		perror("waitpid");
 		exit(EXIT_FAILURE);
 	}
 }
