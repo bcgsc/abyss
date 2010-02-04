@@ -5,6 +5,7 @@
 #include "Signal.h"
 #include <cassert>
 #include <iostream>
+#include <pthread.h>
 #include <signal.h>
 #include <sys/wait.h>
 
@@ -38,12 +39,30 @@ static void sigchldHandler(int sig)
 	}
 }
 
-/** Install a handler for SIGCHLD. */
+/** Wait for SIGCHLD signals and call sigchldHandler. */
+static void* sigchldThread(void* arg)
+{
+	sigset_t* sigset = static_cast<sigset_t*>(arg);
+	for (;;) {
+		int sig;
+		int err = sigwait(sigset, &sig);
+		assert(err == 0);
+		(void)err;
+		assert(sig == SIGCHLD);
+		sigchldHandler(sig);
+	}
+	return NULL;
+}
+
+/** Start a thread to handle SIGCHLD. */
 void signalInit()
 {
-	struct sigaction action;
-	action.sa_handler = sigchldHandler;
-	sigemptyset(&action.sa_mask);
-	action.sa_flags = SA_RESTART;
-	sigaction(SIGCHLD, &action, NULL);
+	static sigset_t sigset;
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGCHLD);
+	pthread_sigmask(SIG_BLOCK, &sigset, NULL);
+
+	pthread_t thread;
+	pthread_create(&thread, NULL, sigchldThread, &sigset);
+	pthread_detach(thread);
 }
