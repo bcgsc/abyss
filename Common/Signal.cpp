@@ -41,5 +41,9 @@ static void sigchldHandler(int sig)
 /** Install a handler for SIGCHLD. */
 void signalInit()
 {
-	signal(SIGCHLD, sigchldHandler);
+	struct sigaction action;
+	action.sa_handler = sigchldHandler;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = SA_RESTART;
+	sigaction(SIGCHLD, &action, NULL);
 }
