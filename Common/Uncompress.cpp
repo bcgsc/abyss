@@ -46,6 +46,7 @@ static const char* zcatExec(const string& path)
 extern "C" {
 
 /** Open a pipe to uncompress the specified file.
+ * Not thread safe.
  * @return a file descriptor
  */
 static int uncompress(const char *path)

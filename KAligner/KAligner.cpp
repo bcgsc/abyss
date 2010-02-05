@@ -324,8 +324,14 @@ void *alignReadsToDB(void* readsFile)
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
+
+	// Protect `uncompress', which is not thread safe.
+	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&mutex);
 	FastaReader fileHandle((const char *)readsFile,
 			FastaReader::KEEP_N);
+	pthread_mutex_unlock(&mutex);
+
 	for (FastaRecord rec; fileHandle >> rec;) {
 		const Sequence& seq = rec.seq;
 		ostringstream output;
