@@ -214,6 +214,8 @@ int main(int argc, char** argv)
 	int numQuery = argc - optind;
 	if (opt::threads <= 0 || opt::threads > numQuery)
 		opt::threads = numQuery;
+	if (opt::threads == 1)
+		opt::sync = 0;
 
 	size_t numKmer = countKmer(refFastaFile);
 	if (opt::multimap == opt::MULTIMAP) {
