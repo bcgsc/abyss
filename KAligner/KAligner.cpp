@@ -55,7 +55,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static unsigned k;
 	static int threads = 1;
-	static bool printSeq = false;
+	static int printSeq;
 
 	/** Synchronize the threads with a barrier. */
 	static int sync = 10000;
@@ -63,7 +63,7 @@ namespace opt {
 
 static const char shortopts[] = "ik:mo:j:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ, OPT_SYNC };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_SYNC };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
@@ -74,7 +74,7 @@ static const struct option longopts[] = {
 	{ "no-sync",     no_argument,       &opt::sync, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
-	{ "seq",		 no_argument,		NULL, OPT_SEQ },
+	{ "seq",		 no_argument,		&opt::printSeq, 1 },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -182,7 +182,6 @@ int main(int argc, char** argv)
 			case 'i': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
-			case OPT_SEQ: opt::printSeq = true; break;
 			case OPT_SYNC: arg >> opt::sync; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
