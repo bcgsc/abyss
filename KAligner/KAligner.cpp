@@ -41,8 +41,8 @@ static const char USAGE_MESSAGE[] =
 "      --no-multimap     disallow duplicate k-mer in the target [default]\n"
 "  -m, --multimap        allow duplicate k-mer in the target\n"
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
-"  -j, --threads=THREADS the max number of threads created\n"
-"                        set to 0 for one thread per reads file\n"
+"  -j, --threads=N       use N threads [2] up to one per query file\n"
+"                        or if N is 0 use one thread per query file\n"
 "      --sync=COUNT      synchronize threads every COUNT alignments [10000]\n"
 "      --no-sync         do not synchronize threads\n"
 "  -v, --verbose         display verbose output\n"
@@ -54,7 +54,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned k;
-	static int threads = 1;
+	static int threads = 2;
 	static int printSeq;
 
 	/** Synchronize the threads with a barrier. */
