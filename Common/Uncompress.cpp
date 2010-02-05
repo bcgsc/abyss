@@ -11,6 +11,7 @@
 #if HAVE_LIBDL
 
 #include "Fcntl.h"
+#include "Signal.h"
 #include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>
@@ -155,5 +156,8 @@ int open(const char *path, int flags, mode_t mode)
 /** Initialize the uncompress module. */
 bool uncompress_init()
 {
+#if HAVE_LIBDL
+	signalInit();
+#endif
 	return HAVE_LIBDL;
 }

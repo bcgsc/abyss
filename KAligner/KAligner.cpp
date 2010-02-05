@@ -5,7 +5,6 @@
 #include "Barrier.h"
 #include "FastaReader.h"
 #include "PrefixIterator.h"
-#include "Signal.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -169,8 +168,6 @@ static Barrier g_barrier;
 
 int main(int argc, char** argv)
 {
-	signalInit();
-
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
