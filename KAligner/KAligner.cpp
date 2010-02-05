@@ -319,6 +319,7 @@ static void readContigsIntoDB(string refFastaFile,
 
 void *alignReadsToDB(void* readsFile)
 {
+	unsigned barrierCount = 0;
 	if (opt::sync)
 		++g_barrier;
 
@@ -373,8 +374,11 @@ void *alignReadsToDB(void* readsFile)
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
 
-		if (opt::sync)
+		// Synchronize the threads periodically.
+		if (opt::sync && ++barrierCount == 10000) {
+			barrierCount = 0;
 			g_barrier.wait();
+		}
 	}
 	assert(fileHandle.eof());
 	if (opt::sync)
