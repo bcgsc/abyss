@@ -43,7 +43,8 @@ static const char USAGE_MESSAGE[] =
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
 "  -j, --threads=THREADS the max number of threads created\n"
 "                        set to 0 for one thread per reads file\n"
-"      --sync            synchronize the threads\n"
+"      --sync=COUNT      synchronize threads every COUNT alignments [10000]\n"
+"      --no-sync         do not synchronize threads\n"
 "  -v, --verbose         display verbose output\n"
 "      --seq             print the sequence with the alignments\n"
 "      --help            display this help and exit\n"
@@ -57,20 +58,20 @@ namespace opt {
 	static bool printSeq = false;
 
 	/** Synchronize the threads with a barrier. */
-	static int sync;
+	static int sync = 10000;
 }
 
 static const char shortopts[] = "ik:mo:j:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_SEQ, OPT_SYNC };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
 	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
 	{ "ignore-multimap", no_argument, &opt::multimap, opt::IGNORE },
-	{ "sync",        no_argument,     &opt::sync, 1 },
-	{ "no-sync",     no_argument,     &opt::sync, 0 },
+	{ "sync",        required_argument, NULL, OPT_SYNC },
+	{ "no-sync",     no_argument,       &opt::sync, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "seq",		 no_argument,		NULL, OPT_SEQ },
@@ -182,6 +183,7 @@ int main(int argc, char** argv)
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
 			case OPT_SEQ: opt::printSeq = true; break;
+			case OPT_SYNC: arg >> opt::sync; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -319,7 +321,7 @@ static void readContigsIntoDB(string refFastaFile,
 
 void *alignReadsToDB(void* readsFile)
 {
-	unsigned barrierCount = 0;
+	int barrierCount = 0;
 	if (opt::sync)
 		++g_barrier;
 
@@ -375,7 +377,7 @@ void *alignReadsToDB(void* readsFile)
 		}
 
 		// Synchronize the threads periodically.
-		if (opt::sync && ++barrierCount == 10000) {
+		if (opt::sync && ++barrierCount == opt::sync) {
 			barrierCount = 0;
 			g_barrier.wait();
 		}
