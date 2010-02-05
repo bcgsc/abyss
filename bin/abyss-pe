@@ -122,7 +122,7 @@ endif
 # Estimate distances between contigs
 
 %-3.pair.gz %-3.hist: $(name)-3.fa
-	KAligner $v -j$j -k$k $(strip $($*)) $< \
+	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -nk2,2 \
 		|gzip >$*-3.pair.gz
