@@ -489,7 +489,7 @@ int main(int argc, char* const* argv)
 		}
 	}
 
-	if (opt::k <= 0) {
+	if (opt::k <= 0 && opt::inputFormat == opt::KALIGNER) {
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
 		die = true;
 	}
