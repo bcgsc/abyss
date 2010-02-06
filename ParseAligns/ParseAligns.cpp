@@ -424,7 +424,7 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 		s >> sam;
 		assert(s);
 		v.first = sam.qname;
-		if (!sam.flag & SAMRecord::FUNMAP)
+		if (~sam.flag & SAMRecord::FUNMAP)
 			v.second.push_back(sam);
 		break;
 	  }
