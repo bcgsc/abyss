@@ -553,6 +553,8 @@ int main(int argc, char* const* argv)
 static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 {
 	assert(!alignVec.empty());
+	if (alignVec.size() == 1)
+		return true;
 
 	unsigned nKmer = alignVec.front().read_length - opt::k + 1;
 	vector<unsigned> coverage(nKmer);
