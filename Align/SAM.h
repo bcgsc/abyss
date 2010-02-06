@@ -52,7 +52,7 @@ struct SAMRecord {
 		qname("*"),
 		flag(a.isRC ? FREVERSE : 0),
 		rname(a.contig),
-		pos(a.contig_start_pos),
+		pos(1 + a.contig_start_pos),
 		mapq(255),
 		// cigar
 		mrnm("*"),
@@ -102,7 +102,8 @@ struct SAMRecord {
 			return a;
 
 		a.contig = rname;
-		a.contig_start_pos = pos;
+		assert(pos > 0);
+		a.contig_start_pos = pos - 1;
 		a.read_length = seq.length();
 		a.isRC = flag & FREVERSE; // strand of the query
 		return a;
