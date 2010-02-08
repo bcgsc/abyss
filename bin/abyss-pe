@@ -109,7 +109,7 @@ clean:
 
 # Single-end assembly
 
-%-3.fa: $(in) $(se)
+%-1.fa: $(in) $(se)
 ifdef np
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $^
 else
@@ -118,6 +118,15 @@ endif
 
 %.adj: %.fa
 	AdjList $v -k$k $< >$@
+
+# Pop bubbles.
+
+%-1.indel: %-1.fa %-1.adj
+	PopBubbles $v -k$k $^ >$@
+
+%-3.fa: %-1.indel %-1.fa
+	awk '{if (ARGIND==1) x[">" $$1]=1; else \
+		if (!x[$$1]) { print; getline; print } else getline }' $^ >$@
 
 # Estimate distances between contigs
 
