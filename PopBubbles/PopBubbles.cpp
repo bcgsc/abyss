@@ -36,7 +36,8 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIGS ADJ\n"
 "Identify and pop simple bubbles.\n"
 "\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -l, --length=L        pop bubbles shorter than L bp\n"
+"  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -45,14 +46,16 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static int k;
+	static unsigned maxLength;
 }
 
-static const char shortopts[] = "k:m:v";
+static const char shortopts[] = "k:l:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "length",  required_argument, NULL, 'l' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -61,24 +64,10 @@ static const struct option longopts[] = {
 
 struct Contig {
 	string id;
-    Sequence seq;
-    unsigned coverage;
-    Contig(const string& id, const Sequence& seq, unsigned coverage)
-        : id(id), seq(seq), coverage(coverage) { }
-
-	operator FastaRecord()
-	{
-		ostringstream s;
-		s << seq.length() << ' ' << coverage;
-		return FastaRecord(id, s.str(), seq);
-	}
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		return out << '>' << o.id << ' '
-			<< o.seq.length() << ' ' << o.coverage << '\n'
-			<< o.seq << '\n';
-	}
+	unsigned length;
+	unsigned coverage;
+	Contig(const string& id, unsigned length, unsigned coverage)
+		: id(id), length(length), coverage(coverage) { }
 };
 
 static vector<Contig> g_contigs;
@@ -97,13 +86,10 @@ inline unsigned ContigNode::inDegree() const
 	return g_graph[~*this].size();
 }
 
-#if 0
-inline const Sequence ContigNode::sequence() const
+inline unsigned ContigNode::length() const
 {
-	const Sequence& seq = g_contigs[id()];
-	return sense() == SENSE ? seq : reverseComplement(seq);
+	return g_contigs[id()].length;
 }
-#endif
 
 /** Return whether contig a has higher coverage than contig b. */
 static bool compareCoverage(const ContigNode& a, const ContigNode& b)
@@ -122,7 +108,7 @@ static void popBubble(const ContigNode& head,
 	assert(head.outDegree() == tail.inDegree());
 	vector<ContigNode> sorted(branches.begin(), branches.end());
 	sort(sorted.begin(), sorted.end(), compareCoverage);
-	if (opt::verbose > 0) {
+	if (opt::verbose > 2) {
 		cerr << head << " -> { ";
 		copy(sorted.begin(), sorted.end(),
 				ostream_iterator<ContigNode>(cerr, " "));
@@ -152,12 +138,27 @@ static void consider(const ContigNode& head,
 		// The branches do not merge back to the same node.
 		return;
 	}
+
 	const ContigNode& tail = *tails.begin();
-	if (tail.inDegree() == branches.size()) {
-		popBubble(head, branches, tail);
-	} else {
+	if (tail.inDegree() != branches.size()) {
 		// This branch is not simple.
+		return;
 	}
+
+	set<unsigned> lengths;
+	transform(branches.begin(), branches.end(),
+			inserter(lengths, lengths.begin()),
+			mem_fun_ref(&ContigNode::length));
+	unsigned minLength = *lengths.begin();
+	unsigned maxLength = *lengths.rbegin();
+	if (opt::verbose > 1)
+		cerr << minLength << '\t' << maxLength << '\n';
+	if (maxLength > opt::maxLength) {
+		// This branch is too long.
+		return;
+	}
+
+	popBubble(head, branches, tail);
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -208,11 +209,11 @@ static void readContigs(vector<Contig>& contigs, const string& path)
 			unsigned serial = g_contigIDs.serial(rec.id);
 			assert(contigs.size() == serial);
 			(void)serial;
-			contigs.push_back(Contig(rec.id, rec.seq, coverage));
+			contigs.push_back(Contig(rec.id,
+						rec.seq.length(), coverage));
 		}
 		assert(in.eof());
 		assert(!contigs.empty());
-		opt::colourSpace = isdigit(contigs[0].seq[0]);
 		g_contigIDs.lock();
 }
 
@@ -230,6 +231,7 @@ int main(int argc, char *const argv[])
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'l': arg >> opt::maxLength; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -240,12 +242,13 @@ int main(int argc, char *const argv[])
 		}
 	}
 
-#if 0
-	if (opt::k <= 0) {
-		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+	if (opt::maxLength <= 0 && opt::k > 0)
+		opt::maxLength = 3 * opt::k;
+
+	if (opt::maxLength <= 0) {
+		cerr << PROGRAM ": " << "missing -l,--length option\n";
 		die = true;
 	}
-#endif
 
 	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";

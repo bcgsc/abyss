@@ -66,6 +66,7 @@ class ContigNode {
 	// These functions are implemented in Overlap.
 	unsigned outDegree() const;
 	unsigned inDegree() const;
+	unsigned length() const;
 	const std::string sequence() const;
 
   private:
