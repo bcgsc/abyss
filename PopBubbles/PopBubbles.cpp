@@ -119,6 +119,12 @@ static void popBubble(const ContigNode& head,
 			mem_fun_ref(&ContigNode::id));
 }
 
+static struct {
+	unsigned bubbles;
+	unsigned popped;
+	unsigned tooLong;
+} g_count;
+
 static void consider(const ContigNode& head,
 		const ContigNodes& branches)
 {
@@ -145,6 +151,7 @@ static void consider(const ContigNode& head,
 		return;
 	}
 
+	g_count.bubbles++;
 	set<unsigned> lengths;
 	transform(branches.begin(), branches.end(),
 			inserter(lengths, lengths.begin()),
@@ -155,9 +162,11 @@ static void consider(const ContigNode& head,
 		cerr << minLength << '\t' << maxLength << '\n';
 	if (maxLength > opt::maxLength) {
 		// This branch is too long.
+		g_count.tooLong++;
 		return;
 	}
 
+	g_count.popped++;
 	popBubble(head, branches, tail);
 }
 
@@ -283,5 +292,10 @@ int main(int argc, char *const argv[])
 			ostream_iterator<string>(cout, "\n"),
 			idToString);
 
+	if (opt::verbose > 0)
+		cerr << "Bubbles: " << g_count.bubbles/2
+			<< " Popped: " << g_popped.size()
+			<< " Too long: " << g_count.tooLong/2
+			<< '\n';
 	return 0;
 }
