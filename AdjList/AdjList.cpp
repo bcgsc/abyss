@@ -202,9 +202,10 @@ int main(int argc, char** argv)
 				out << (idx == 0 ? "\t;" : "\n");
 				break;
 			  case DOT:
-				out << '"' << id << (idx ? '-' : '+') << "\" [len="
-					<< i->length << "];\n"
-					<< '"' << id << (idx ? '-' : '+') << '"';
+				out << '"' << id << (idx ? '-' : '+') << "\" "
+					"[len=" << i->length << " "
+					"cov=" << i->coverage << "];\n"
+					"\"" << id << (idx ? '-' : '+') << '"';
 				if (!edges.empty()) {
 					out << " -> {";
 					for (KmerMap::mapped_type::const_iterator it
