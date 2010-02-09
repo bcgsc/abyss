@@ -70,11 +70,21 @@ static const struct option longopts[] = {
 /** The two terminal k-mer of a contig and its length. */
 struct ContigEndSeq {
 	unsigned length;
+	unsigned coverage;
 	Kmer l;
 	Kmer r;
-	ContigEndSeq(unsigned length, const Kmer& l, const Kmer& r)
-		: length(length), l(l), r(r) { }
+	ContigEndSeq(unsigned length, unsigned coverage,
+			const Kmer& l, const Kmer& r)
+		: length(length), coverage(coverage), l(l), r(r) { }
 };
+
+static unsigned getCoverage(const string& comment)
+{
+	istringstream ss(comment);
+	unsigned length, coverage = 0;
+	ss >> length >> coverage;
+	return coverage;
+}
 
 static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 {
@@ -102,7 +112,9 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 		Kmer seql(seq.substr(seq.length() - opt::overlap,
 				opt::overlap));
 		Kmer seqr(seq.substr(0, opt::overlap));
-		pContigs->push_back(ContigEndSeq(seq.length(), seql, seqr));
+		pContigs->push_back(ContigEndSeq(seq.length(),
+					getCoverage(rec.comment),
+					seql, seqr));
 	}
 	assert(in.eof());
 }
@@ -176,7 +188,8 @@ int main(int argc, char** argv)
 		const string& id = g_contigIDs.key(nID);
 
 		if (opt::format == ADJ)
-			out << id << ' ' << i->length << "\t;";
+			out << id << ' ' << i->length << ' ' << i->coverage
+				<< "\t;";
 
 		for (unsigned idx = 0; idx < 2; idx++) {
 			const Kmer& seq = idx == 0 ? i->l : i->r;
