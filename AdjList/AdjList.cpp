@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 		const string& id = g_contigIDs.key(nID);
 
 		if (opt::format == ADJ)
-			out << id << ' ' << i->length;
+			out << id << ' ' << i->length << "\t;";
 
 		for (unsigned idx = 0; idx < 2; idx++) {
 			const Kmer& seq = idx == 0 ? i->l : i->r;
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 			  case ADJ:
 				copy(edges.begin(), edges.end(),
 						affix_ostream_iterator<ContigNode>(out, " "));
-				out << (idx == 0 ? " ;" : "\n");
+				out << (idx == 0 ? "\t;" : "\n");
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" [len="
