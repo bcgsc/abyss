@@ -17,6 +17,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <limits> // for numeric_limits
 #include <map>
 #include <set>
 #include <sstream>
@@ -190,8 +191,8 @@ static void readContigGraph(ContigGraph& graph,
 	assert(in.good());
 
 	string id;
-	unsigned length;
-	while (in >> id >> length) {
+	while (in >> id) {
+		in.ignore(numeric_limits<streamsize>::max(), ';');
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			ContigNode head(id, dir);
 			string s;

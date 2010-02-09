@@ -50,7 +50,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	in.clear();
 	in.seekg(ios_base::beg);
 	count = 0;
-	while (in >> id >> length) {
+	while (in >> id) {
+		in.ignore(numeric_limits<streamsize>::max(), ';');
 		readEdges(in, convertContigIDToLinearNumKey(id), *pGraph);
 		if (++count % 1000000 == 0)
 			cout << "Read edges for " << count << " vertices" << endl;
