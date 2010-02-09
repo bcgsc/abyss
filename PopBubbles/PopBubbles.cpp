@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "Common/Options.h"
+#include "AffixIterator.h"
 #include "ContigNode.h"
 #include "FastaReader.h"
 #include "Sequence.h"
@@ -109,10 +110,11 @@ static void popBubble(const ContigNode& head,
 	vector<ContigNode> sorted(branches.begin(), branches.end());
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::verbose > 2) {
-		cerr << head << " -> { ";
+		cerr << '"' << head << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
-				ostream_iterator<ContigNode>(cerr, " "));
-		cerr << "} -> " << tail << '\n';
+				affix_ostream_iterator<ContigNode>(cerr,
+					" \"", "\""));
+		cerr << " } -> \"" << tail << "\";\n";
 	}
 	transform(sorted.begin() + 1, sorted.end(),
 			inserter(g_popped, g_popped.begin()),
