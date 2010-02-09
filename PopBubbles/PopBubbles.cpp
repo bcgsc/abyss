@@ -7,7 +7,6 @@
 #include "Common/Options.h"
 #include "AffixIterator.h"
 #include "ContigNode.h"
-#include "FastaReader.h"
 #include "Sequence.h"
 #include "Sense.h"
 #include <algorithm>
@@ -35,7 +34,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ\n"
+"Usage: " PROGRAM " [OPTION]... ADJ\n"
 "Identify and pop simple bubbles.\n"
 "\n"
 "  -l, --length=L        pop bubbles shorter than L bp\n"
@@ -213,20 +212,22 @@ static void readContigGraph(ContigGraph& graph,
 
 static void readContigs(vector<Contig>& contigs, const string& path)
 {
-		FastaReader in(path.c_str(), FastaReader::KEEP_N);
-		for (FastaRecord rec; in >> rec;) {
-			istringstream ss(rec.comment);
-			unsigned length, coverage = 0;
-			ss >> length >> coverage;
-			unsigned serial = g_contigIDs.serial(rec.id);
-			assert(contigs.size() == serial);
-			(void)serial;
-			contigs.push_back(Contig(rec.id,
-						rec.seq.length(), coverage));
-		}
-		assert(in.eof());
-		assert(!contigs.empty());
-		g_contigIDs.lock();
+	ifstream in(path.c_str());
+	assert_open(in, path);
+	assert(in.good());
+
+	string id;
+	unsigned length, coverage;
+	while (in >> id >> length >> coverage) {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		unsigned serial = g_contigIDs.serial(id);
+		assert(contigs.size() == serial);
+		(void)serial;
+		contigs.push_back(Contig(id, length, coverage));
+	}
+	assert(in.eof());
+	assert(!contigs.empty());
+	g_contigIDs.lock();
 }
 
 static const string& idToString(unsigned id)
@@ -262,12 +263,12 @@ int main(int argc, char *const argv[])
 		die = true;
 	}
 
-	if (argc - optind < 1) {
+	if (argc - optind < 0) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
 
-	if (argc - optind > 2) {
+	if (argc - optind > 1) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -278,10 +279,8 @@ int main(int argc, char *const argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	string contigPath(argv[optind++]);
 	string adjPath(optind < argc ? argv[optind++] : "-");
-
-	readContigs(g_contigs, contigPath);
+	readContigs(g_contigs, adjPath);
 	readContigGraph(g_graph, adjPath);
 
 	for (ContigGraph::const_iterator it = g_graph.begin();

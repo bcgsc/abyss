@@ -121,8 +121,8 @@ endif
 
 # Pop bubbles.
 
-%-1.indel: %-1.fa %-1.adj
-	PopBubbles $v -k$k $^ >$@
+%-1.indel: %-1.adj
+	PopBubbles $v -k$k $< >$@
 
 %-3.fa: %-1.indel %-1.fa
 	awk '{if (ARGIND==1) x[">" $$1]=1; else \
