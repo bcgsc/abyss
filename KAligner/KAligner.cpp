@@ -2,9 +2,9 @@
 #include "Align/Options.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
+#include "AffixIterator.h"
 #include "Barrier.h"
 #include "FastaReader.h"
-#include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -344,11 +344,11 @@ void *alignReadsToDB(void* readsFile)
 
 			if (opt::multimap == opt::MULTIMAP)
 				g_aligner_m->alignRead(seq,
-						prefix_ostream_iterator<Alignment>(
+						affix_ostream_iterator<Alignment>(
 							output, "\t"));
 			else
 				g_aligner_u->alignRead(seq,
-						prefix_ostream_iterator<Alignment>(
+						affix_ostream_iterator<Alignment>(
 							output, "\t"));
 		}
 

@@ -1,9 +1,9 @@
 #include "config.h"
 #include "Common/Options.h"
+#include "AffixIterator.h"
 #include "ContigPath.h"
 #include "FastaReader.h"
 #include "PairUtils.h"
-#include "PrefixIterator.h"
 #include "Sense.h"
 #include "Sequence.h"
 #include "StringUtil.h"
@@ -146,7 +146,7 @@ static void removeRepeats(ContigPathMap& paths)
 		cout << "Repeats:";
 		if (!repeats.empty())
 			copy(repeats.begin(), repeats.end(),
-					prefix_ostream_iterator<LinearNumKey>(cout, " "));
+					affix_ostream_iterator<LinearNumKey>(cout, " "));
 		else
 			cout << " none";
 		cout << '\n';

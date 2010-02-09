@@ -1,10 +1,10 @@
 #include "config.h"
+#include "AffixIterator.h"
 #include "ContigGraph.h"
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "Estimate.h"
 #include "PairUtils.h"
-#include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <climits> // for UINT_MAX
@@ -255,7 +255,7 @@ static void handleEstimate(
 	if (!repeats.empty()) {
 		vout << "Repeats:";
 		copy(repeats.begin(), repeats.end(),
-				prefix_ostream_iterator<LinearNumKey>(vout, " "));
+				affix_ostream_iterator<LinearNumKey>(vout, " "));
 		vout << '\n';
 	}
 

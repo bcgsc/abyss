@@ -1,5 +1,5 @@
 #include "Aligner.h"
-#include "PrefixIterator.h"
+#include "AffixIterator.h"
 #include "Sequence.h"
 #include <algorithm>
 #include <cassert>
@@ -162,9 +162,9 @@ template void Aligner<SeqPosHashUniqueMap>::addReferenceSequence(
 		const ContigID& id, const Sequence& seq);
 
 template void Aligner<SeqPosHashMultiMap>::
-alignRead<prefix_ostream_iterator<Alignment> >(
-		const Sequence& seq, prefix_ostream_iterator<Alignment> dest);
+alignRead<affix_ostream_iterator<Alignment> >(
+		const Sequence& seq, affix_ostream_iterator<Alignment> dest);
 
 template void Aligner<SeqPosHashUniqueMap>::
-alignRead<prefix_ostream_iterator<Alignment> >(
-		const Sequence& seq, prefix_ostream_iterator<Alignment> dest);
+alignRead<affix_ostream_iterator<Alignment> >(
+		const Sequence& seq, affix_ostream_iterator<Alignment> dest);

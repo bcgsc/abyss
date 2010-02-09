@@ -1,9 +1,9 @@
 #include "Common/Options.h"
+#include "AffixIterator.h"
 #include "ContigNode.h"
 #include "FastaReader.h"
 #include "HashMap.h"
 #include "Kmer.h"
-#include "PrefixIterator.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -185,8 +185,7 @@ int main(int argc, char** argv)
 			switch (opt::format) {
 			  case ADJ:
 				copy(edges.begin(), edges.end(),
-						prefix_ostream_iterator<ContigNode>(
-							out, " "));
+						affix_ostream_iterator<ContigNode>(out, " "));
 				out << (idx == 0 ? " ;" : "\n");
 				break;
 			  case DOT:

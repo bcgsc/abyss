@@ -3,6 +3,7 @@ noinst_LIBRARIES = libcommon.a
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
 libcommon_a_SOURCES = \
+	AffixIterator.h \
 	ContigNode.h ContigNode.cpp \
 	Dictionary.h \
 	Fcntl.cpp Fcntl.h \
@@ -12,7 +13,6 @@ libcommon_a_SOURCES = \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
-	PrefixIterator.h \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \
