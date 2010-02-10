@@ -93,7 +93,7 @@ endif
 ifdef np
 j?=$(np)
 endif
-j?=1
+j?=2
 
 # DistanceEst parameters
 s?=100
