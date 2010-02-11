@@ -82,6 +82,7 @@ abyssopt += -c$c
 endif
 ifdef b
 abyssopt += -b$b
+popbubblesopt += -b$b
 endif
 abyssopt += $v --coverage-hist=coverage.hist -s bubbles.fa
 
@@ -122,7 +123,7 @@ endif
 # Pop bubbles.
 
 %-1.indel: %-1.adj
-	PopBubbles $v -k$k $< >$@
+	PopBubbles $v -k$k $(popbubblesopt) $(POPBUBBLES_OPTIONS) $< >$@
 
 %-3.fa: %-1.indel %-1.fa
 	awk '{if (ARGIND==1) x[">" $$1]=1; else \
