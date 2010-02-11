@@ -47,6 +47,7 @@ static const char USAGE_MESSAGE[] =
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
 "                                 less than this threshold\n"
+"  -b, --bubbles=N                pop bubbles shorter than N k-mer\n"
 "  -b0, --no-bubbles              do not pop bubbles\n"
 "  -e, --erode=COVERAGE           erode bases at the ends of blunt contigs with\n"
 "                                 coverage less than this threshold\n"
@@ -77,8 +78,8 @@ int trimLen = -1;
 /** Coverage cutoff. */
 float coverage = -1;
 
-/** Whether bubbles should be popped. */
-int bubbles = 1;
+/** Pop bubbles shorter than N k-mer. */
+int bubbles = -1;
 
 /** coverage histogram path */
 string coverageHistPath;
@@ -117,7 +118,7 @@ static const struct option longopts[] = {
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
-	{ "bubbles",     required_argument, NULL, 'b' },
+	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "no-bubbles",  no_argument,       &opt::bubbles, 0 },
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "erode-strand", required_argument, NULL, 'E' },
@@ -214,7 +215,6 @@ void parse(int argc, char* const* argv)
 	}
 
 	assert(opt::qualityThreshold <= 40);
-	assert(opt::bubbles == 0 || opt::bubbles == 1);
 
 	if (opt::coverage >= 0 && opt::erode == (unsigned)-1)
 		cerr << "warning: -c,--coverage was specified, "
@@ -223,6 +223,8 @@ void parse(int argc, char* const* argv)
 
 	if (trimLen < 0)
 		trimLen = kmerSize;
+	if (bubbles < 0)
+		bubbles = 2*(kmerSize + 1);
 
 	Kmer::setLength(kmerSize);
 

@@ -249,7 +249,6 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 	int numPopped = 0;
 
 	// Set the cutoffs
-	const unsigned int expectedBubbleSize = 2*(opt::kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
@@ -267,7 +266,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 				BranchGroup branchGroup(dir, maxNumBranches,
 						iter->first);
 				initiateBranchGroup(branchGroup, iter->first,
-						extRec.dir[dir], expectedBubbleSize);
+						extRec.dir[dir], opt::bubbles);
 
 				// Iterate over the branches
 				while(!stop)

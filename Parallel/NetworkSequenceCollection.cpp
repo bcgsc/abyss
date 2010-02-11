@@ -189,8 +189,7 @@ void NetworkSequenceCollection::run()
 			case NAS_DISCOVER_BUBBLES:
 			{
 				unsigned numDiscovered
-					= performNetworkDiscoverBubbles(this,
-							opt::kmerSize);
+					= performNetworkDiscoverBubbles(this);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numDiscovered);
@@ -860,7 +859,7 @@ int NetworkSequenceCollection::processBranchesTrim()
 }
 
 /** Discover bubbles to pop. */
-int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection, int kmerSize)
+int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
 {
 	Timer timer("NetworkDiscoverBubbles");
 	
@@ -874,7 +873,6 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 	int count = 0;
 
 	// Set the cutoffs
-	const unsigned int expectedBubbleSize = 2*(kmerSize + 1);
 	const unsigned int maxNumBranches = 3;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
@@ -894,7 +892,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
 						group, iter->first,
-						extRec.dir[dir], expectedBubbleSize);
+						extRec.dir[dir], opt::bubbles);
 				generateExtensionRequests(branchGroupID++,
 						group.begin(), group.end());
 			}
@@ -1003,8 +1001,7 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 	SetState(NAS_DISCOVER_BUBBLES);
 	m_comm.sendControlMessage(APC_DISCOVER_BUBBLES);
 
-	unsigned numDiscovered = performNetworkDiscoverBubbles(this,
-			opt::kmerSize);
+	unsigned numDiscovered = performNetworkDiscoverBubbles(this);
 	EndState();
 
 	m_numReachedCheckpoint++;
