@@ -47,7 +47,7 @@ static const char USAGE_MESSAGE[] =
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
 "                                 less than this threshold\n"
-"  -b, --bubbles=N                pop bubbles shorter than N bp\n"
+"  -b, --bubbles=N                pop bubbles shorter than N bp [3*k]\n"
 "  -b0, --no-bubbles              do not pop bubbles\n"
 "  -e, --erode=COVERAGE           erode bases at the ends of blunt contigs with\n"
 "                                 coverage less than this threshold\n"
@@ -224,7 +224,7 @@ void parse(int argc, char* const* argv)
 	if (trimLen < 0)
 		trimLen = kmerSize;
 	if (bubbles < 0)
-		bubbles = 3*kmerSize + 1;
+		bubbles = 3*kmerSize;
 	assert(bubbles == 0 || bubbles > kmerSize);
 
 	Kmer::setLength(kmerSize);
