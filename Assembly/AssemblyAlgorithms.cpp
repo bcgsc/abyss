@@ -266,7 +266,8 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 				BranchGroup branchGroup(dir, maxNumBranches,
 						iter->first);
 				initiateBranchGroup(branchGroup, iter->first,
-						extRec.dir[dir], opt::bubbles);
+						extRec.dir[dir],
+						opt::bubbles - opt::kmerSize + 1);
 
 				// Iterate over the branches
 				while(!stop)

@@ -892,7 +892,8 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
 						group, iter->first,
-						extRec.dir[dir], opt::bubbles);
+						extRec.dir[dir],
+						opt::bubbles - opt::kmerSize + 1);
 				generateExtensionRequests(branchGroupID++,
 						group.begin(), group.end());
 			}
