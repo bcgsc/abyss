@@ -5,6 +5,7 @@
 #include "Signal.h"
 #include <cassert>
 #include <cerrno>
+#include <cstdio> // for perror
 #include <cstdlib>
 #include <iostream>
 #include <signal.h>
