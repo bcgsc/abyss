@@ -79,7 +79,7 @@ int trimLen = -1;
 float coverage = -1;
 
 /** Pop bubbles shorter than N bp. */
-int bubbles = -1;
+int bubbleLen = -1;
 
 /** coverage histogram path */
 string coverageHistPath;
@@ -119,7 +119,7 @@ static const struct option longopts[] = {
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubble-length", required_argument, NULL, 'b' },
-	{ "no-bubbles",  no_argument,       &opt::bubbles, 0 },
+	{ "no-bubbles",  no_argument,       &opt::bubbleLen, 0 },
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "erode-strand", required_argument, NULL, 'E' },
 	{ "no-erode",    no_argument,       (int*)&erode, 0 },
@@ -152,7 +152,7 @@ void parse(int argc, char* const* argv)
 				die = true;
 				break;
 			case 'b':
-				arg >> bubbles;
+				arg >> bubbleLen;
 				break;
 			case 'c':
 				arg >> coverage;
@@ -223,9 +223,9 @@ void parse(int argc, char* const* argv)
 
 	if (trimLen < 0)
 		trimLen = kmerSize;
-	if (bubbles < 0)
-		bubbles = 3*kmerSize;
-	assert(bubbles == 0 || bubbles > kmerSize);
+	if (bubbleLen < 0)
+		bubbleLen = 3*kmerSize;
+	assert(bubbleLen == 0 || bubbleLen > kmerSize);
 
 	Kmer::setLength(kmerSize);
 

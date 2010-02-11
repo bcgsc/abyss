@@ -485,7 +485,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_TRIM:
 				controlTrim();
 				SetState(opt::coverage > 0 ? NAS_COVERAGE
-						: opt::bubbles > 0 ? NAS_POPBUBBLE
+						: opt::bubbleLen > 0 ? NAS_POPBUBBLE
 						: NAS_SPLIT);
 				break;
 
@@ -496,7 +496,7 @@ void NetworkSequenceCollection::runControl()
 
 			case NAS_POPBUBBLE:
 			{
-				assert(opt::bubbles > 0);
+				assert(opt::bubbleLen > 0);
 				ofstream out;
 				AssemblyAlgorithms::openBubbleFile(out);
 
@@ -893,7 +893,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 				AssemblyAlgorithms::initiateBranchGroup(
 						group, iter->first,
 						extRec.dir[dir],
-						opt::bubbles - opt::kmerSize + 1);
+						opt::bubbleLen - opt::kmerSize + 1);
 				generateExtensionRequests(branchGroupID++,
 						group.begin(), group.end());
 			}

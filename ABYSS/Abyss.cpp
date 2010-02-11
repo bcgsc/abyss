@@ -94,7 +94,7 @@ generate_adjacency:
 		goto generate_adjacency;
 	}
 
-	if (opt::bubbles > 0)
+	if (opt::bubbleLen > 0)
 		popBubbles(pSC);
 
 	write_graph(opt::graphPath, *pSC);

@@ -10,7 +10,7 @@ namespace opt {
 	extern unsigned erodeStrand;
 	extern int trimLen;
 	extern float coverage;
-	extern int bubbles;
+	extern int bubbleLen;
 	extern std::string coverageHistPath;
 	extern std::string contigsPath;
 	extern std::string contigsTempPath;
