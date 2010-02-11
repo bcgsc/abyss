@@ -162,7 +162,7 @@ static void consider(const ContigNode& head,
 	unsigned maxLength = *lengths.rbegin();
 	if (opt::verbose > 1)
 		cerr << minLength << '\t' << maxLength << '\n';
-	if (maxLength > opt::maxLength) {
+	if (maxLength >= opt::maxLength) {
 		// This branch is too long.
 		g_count.tooLong++;
 		return;
