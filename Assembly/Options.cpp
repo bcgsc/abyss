@@ -44,7 +44,6 @@ static const char USAGE_MESSAGE[] =
 "  -o, --out=FILE                 write the contigs to FILE\n"
 "                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
-"  -l, --read-length=READ_LENGTH  read length\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
 "                                 less than this threshold\n"
@@ -101,14 +100,13 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-static const char shortopts[] = "b:c:e:E:g:k:l:o:q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:o:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
 	{ "kmer",        required_argument, NULL, 'k' },
-	{ "read-length", required_argument, NULL, 'l' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "chastity",    no_argument,       &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
@@ -142,9 +140,6 @@ void parse(int argc, char* const* argv)
 		sargv << *last;
 	}
 
-	/** read length */
-	int readLen = -1;
-
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -163,9 +158,6 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'k':
 				arg >> kmerSize;
-				break;
-			case 'l':
-				arg >> readLen;
 				break;
 			case COVERAGE_HIST:
 				getline(arg, coverageHistPath);
@@ -219,16 +211,6 @@ void parse(int argc, char* const* argv)
 	if (die) {
 		cerr << "Try `" PROGRAM " --help' for more information.\n";
 		exit(EXIT_FAILURE);
-	}
-
-	if (readLen > 0) {
-		if (kmerSize > readLen) {
-			cerr << PROGRAM ": k-mer size must not be larger than "
-				"the read length\n";
-			exit(EXIT_FAILURE);
-		}
-		if (trimLen < 0)
-			trimLen = 6 * (readLen - kmerSize + 1);
 	}
 
 	assert(opt::qualityThreshold <= 40);

@@ -31,17 +31,11 @@ the same name must specify the files containing those reads.
 files containing single-end reads
 .TP
 \fBk\fR, \fBSGE_TASK_ID\fR
-k-mer size. k should be no less than half the read length.
+k-mer size
 .TP
 \fBq\fR
 quality threshold. Trim bases from the ends of reads whose quality is
 less than the threshold.
-.TP
-\fBl\fR
-read length. The read length is used only to calculate the trim-length
-parameter using the heuristic t=6*(l-k+1). If multiple read lengths
-are being assembled, a reasonable value for l is the longest read
-length.
 .TP
 \fBc\fR
 mean k-mer coverage threshold. This parameter depends on coverage, but
