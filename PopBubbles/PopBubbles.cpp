@@ -37,7 +37,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... ADJ\n"
 "Identify and pop simple bubbles.\n"
 "\n"
-"  -l, --length=L        pop bubbles shorter than L bp\n"
+"  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -50,13 +50,13 @@ namespace opt {
 	static unsigned maxLength;
 }
 
-static const char shortopts[] = "k:l:v";
+static const char shortopts[] = "b:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "kmer",    required_argument, NULL, 'k' },
-	{ "length",  required_argument, NULL, 'l' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -243,8 +243,8 @@ int main(int argc, char *const argv[])
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'b': arg >> opt::maxLength; break;
 			case 'k': arg >> opt::k; break;
-			case 'l': arg >> opt::maxLength; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
