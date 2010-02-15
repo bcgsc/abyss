@@ -144,11 +144,11 @@ int main(int argc, char** argv)
 }
 
 template<typename K, typename D>
-ostream& printMap(ostream& out, const map<K,D>& s)
+ostream& printConstraints(ostream& out, const map<K,D>& s)
 {
 	for (typename map<K,D>::const_iterator iter = s.begin();
 			iter != s.end(); ++iter)
-		out << ' ' << iter->first << iter->second;
+		out << ' ' << g_contigIDs.key(iter->first) << iter->second;
 	return out;
 }
 
@@ -211,8 +211,8 @@ static void handleEstimate(
 	ostringstream vout_ss;
 	ostream bitBucket(NULL);
 	ostream& vout = opt::verbose > 0 ? vout_ss : bitBucket;
-	vout << "\n"
-		"* " << er.refID << (dirIdx ? '-' : '+') << '\n';
+	vout << "\n* " << g_contigIDs.key(er.refID)
+		<< (dirIdx ? '-' : '+') << '\n';
 
 	unsigned minNumPairs = UINT_MAX;
 	SimpleDataCost costFunctor(opt::k);
@@ -237,7 +237,7 @@ static void handleEstimate(
 	}
 
 	vout << "Constraints:";
-	printMap(vout, constraintMap) << '\n';
+	printConstraints(vout, constraintMap) << '\n';
 
 	// Generate the paths
 	SimpleContigGraph::FeasiblePaths solutions;

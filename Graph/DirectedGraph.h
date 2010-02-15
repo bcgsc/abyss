@@ -175,8 +175,8 @@ class DirectedGraph
 			friend std::ostream& operator <<(std::ostream& out,
 					const PathNode& object)
 			{
-				out << object.key << (object.isRC ? '-' : '+');
-				return out;
+				return out << g_contigIDs.key(object.key)
+					<< (object.isRC ? '-' : '+');
 			}
 		};
 		
