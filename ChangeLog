@@ -1,3 +1,33 @@
+2010-02-15  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.1.2.
+
+	ABYSS:
+	* Read tar files including compressed tar files.
+	* New parameter -b, --bubble-length=N. Pop bubbles shorter than
+	N bp. The default is b=3*k.
+
+	AdjList:
+	* Include the contig coverage in the output.
+	* The script abyss-adjtodot converts an ABySS adjacency file to
+	GraphViz dot format.
+
+	PopBubbles:
+	* Pop bubbles resulting from indels.
+
+	KAligner:
+	* Synchronize the threads periodically (every ten thousand
+	alignments by default) to ease the computational burden on
+	ParseAligns. This synchronization can be disabled using --sync=0.
+	* Use two threads by default.
+
+	abyss-pe:
+	* New parameter, b.
+	* Use two threads by default.
+	* The read length argument, l, is deprecated. To emulate the
+	behaviour of ABySS 1.0.14 and older, set t=6*(l-k+1). The default
+	is t=k.
+
 2010-01-19  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.1.1.
