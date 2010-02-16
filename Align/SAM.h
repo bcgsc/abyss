@@ -73,38 +73,50 @@ struct SAMRecord {
 		cigar = s.str();
 	}
 
-	operator Alignment() const {
+	/** Parse the specified CIGAR string.
+	 * @return an alignment setting the fields read_start_pos,
+	 * align_length, and read_length. The other fields will be
+	 * uninitialized.
+	 */
+	static Alignment parseCigar(const std::string& cigar) {
 		Alignment a;
-		if (flag & FUNMAP)
-			return a;
-
-		// Parse the CIGAR string. This could be much improved.
 		std::istringstream in(cigar);
 		unsigned len;
 		char type;
+		in >> len >> type;
+		assert(in.good());
+		switch (type) {
+			case 'S':
+				a.read_start_pos = len;
+				in >> len >> type;
+				assert(in.good());
+				assert(type == 'M');
+				a.align_length = len;
+				break;
+			case 'M':
+				a.read_start_pos = 0;
+				a.align_length = len;
+				break;
+			default:
+				assert(false);
+		}
 		if (in >> len >> type) {
-			switch (type) {
-				case 'S':
-					a.read_start_pos = len;
-					if (in >> len >> type && type == 'M')
-						a.align_length = len;
-					else
-						return a;
-					break;
-				case 'M':
-					a.read_start_pos = 0;
-					a.align_length = len;
-					break;
-				default:
-					return a;
-			}
+			assert(type == 'S');
+			(void)in.peek(); // to set the EOF flag
 		} else
-			return a;
+			len = 0;
+		a.read_length = a.read_start_pos + a.align_length + len;
+		assert(in.eof());
+		return a;
+	}
 
+	operator Alignment() const {
+		assert(~flag & FUNMAP);
+		Alignment a = parseCigar(cigar);
+		assert((unsigned)a.read_length == seq.length());
 		a.contig = rname;
 		assert(pos > 0);
 		a.contig_start_pos = pos - 1;
-		a.read_length = seq.length();
 		a.isRC = flag & FREVERSE; // strand of the query
 		return a;
 	}
