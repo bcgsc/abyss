@@ -197,6 +197,12 @@ static struct {
 	unsigned multiEnd;
 } stats;
 
+/** Return the contig ID of the specified contig serial number. */
+static const string& contigNumberToID(LinearNumKey serial)
+{
+	return g_contigIDs.key(serial);
+}
+
 /** Find a path for the specified distance estimates.
  * @return a pointer to the statistic to increment.
  */
@@ -254,8 +260,9 @@ static void handleEstimate(
 	set<LinearNumKey> repeats = findRepeats(solutions);
 	if (!repeats.empty()) {
 		vout << "Repeats:";
-		copy(repeats.begin(), repeats.end(),
-				affix_ostream_iterator<LinearNumKey>(vout, " "));
+		transform(repeats.begin(), repeats.end(),
+				affix_ostream_iterator<string>(vout, " "),
+				contigNumberToID);
 		vout << '\n';
 	}
 
