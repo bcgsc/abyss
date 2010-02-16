@@ -694,22 +694,23 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 	}
 }
 
-bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch)
+/** Trim the specified branch if it meets trimming criteria.
+ * @return true if the specified branch was trimmed
+ */
+bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
+		BranchRecord& branch)
 {
 	assert(!branch.isActive());
-	if(branch.getLength() > 0 && branch.getState() != BS_TOO_LONG)
-	{
+	assert(branch.getLength() > 0);
+	if (branch.getState() != BS_TOO_LONG) {
 		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
-					branch.getFirstSeq().decode().c_str());
+				branch.getFirstSeq().decode().c_str());
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
 			seqCollection->mark(it->first);
 		return true;
-	}	
-	else
-	{
+	} else
 		return false;
-	}
 }
 
 /** Remove all marked k-mer.
