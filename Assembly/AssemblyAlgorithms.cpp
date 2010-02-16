@@ -702,7 +702,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
 {
 	assert(!branch.isActive());
 	assert(branch.getLength() > 0);
-	if (branch.getState() != BS_TOO_LONG) {
+	if (branch.getState() == BS_NOEXT
+			|| branch.getState() == BS_AMBI_OPP) {
 		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
 				branch.getFirstSeq().decode().c_str());
 		for (BranchRecord::iterator it = branch.begin();
