@@ -15,36 +15,34 @@ extern Dictionary g_contigIDs;
 class ContigNode {
   public:
 	ContigNode() { }
-	ContigNode(unsigned id, bool sense) : m_node(id << 1 | sense) { };
+	ContigNode(unsigned id, bool sense) : m_id(id), m_sense(sense) { };
 	ContigNode(std::string id, bool sense)
-		: m_node(g_contigIDs.serial(id) << 1 | sense) { };
+		: m_id(g_contigIDs.serial(id)), m_sense(sense) { };
 	ContigNode(std::string id)
 	{
 		char c = chop(id);
 		assert(c == '+' || c == '-');
-		m_node = ContigNode(id, c == '-').m_node;
+		*this = ContigNode(id, c == '-');
 	}
 
-	unsigned id() const { return m_node >> 1; }
-	bool sense() const { return m_node & 1; }
+	unsigned id() const { return m_id; }
+	bool sense() const { return m_sense; }
 
-	void flip() { m_node ^= 1; }
+	void flip() { m_sense = !m_sense; }
 
 	bool operator ==(const ContigNode& o) const
 	{
-		return m_node == o.m_node;
+		return m_id == o.m_id && m_sense == o.m_sense;
 	}
 
 	bool operator <(const ContigNode& o) const
 	{
-		return m_node < o.m_node;
+		return hash() < o.hash();
 	}
 
 	const ContigNode operator~() const
 	{
-		ContigNode o;
-		o.m_node = this->m_node ^ 1;
-		return o;
+		return ContigNode(m_id, !m_sense);
 	}
 
 	friend std::istream& operator >>(std::istream& in,
@@ -70,7 +68,9 @@ class ContigNode {
 	const std::string sequence() const;
 
   private:
-	unsigned m_node;
+	unsigned hash() const { return m_id << 1 | m_sense; }
+	unsigned m_id:31;
+	unsigned m_sense:1;
 };
 
 #endif
