@@ -197,10 +197,10 @@ static struct {
 	unsigned multiEnd;
 } stats;
 
-/** Return the contig ID of the specified contig serial number. */
-static const string& contigNumberToID(LinearNumKey serial)
+/** Convert a numeric contig ID to a string. */
+static const string& idToString(unsigned id)
 {
-	return g_contigIDs.key(serial);
+	return g_contigIDs.key(id);
 }
 
 /** Find a path for the specified distance estimates.
@@ -262,7 +262,7 @@ static void handleEstimate(
 		vout << "Repeats:";
 		transform(repeats.begin(), repeats.end(),
 				affix_ostream_iterator<string>(vout, " "),
-				contigNumberToID);
+				idToString);
 		vout << '\n';
 	}
 
