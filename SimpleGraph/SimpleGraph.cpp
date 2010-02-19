@@ -152,13 +152,13 @@ ostream& printConstraints(ostream& out, const map<K,D>& s)
 	return out;
 }
 
-template<typename K>
-ostream& printPath(ostream& out, const vector<K>& s)
+static ostream& printPath(ostream& out, 
+		const SimpleContigGraph::VertexPath& v)
 {
-	assert(!s.empty());
-	copy(s.begin(), s.end()-1,
-			ostream_iterator<K>(out, " "));
-	return out << s.back();
+	assert(!v.empty());
+	ContigPath path;
+	constructContigPath(v, path);
+	return out << path;
 }
 
 /** Return the set of contigs that appear more than once in a single

@@ -166,20 +166,13 @@ class DirectedGraph
 		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;
-		
+
 		struct PathNode
 		{
 			LinearNumKey key;
 			bool isRC;
-
-			friend std::ostream& operator <<(std::ostream& out,
-					const PathNode& object)
-			{
-				return out << g_contigIDs.key(object.key)
-					<< (object.isRC ? '-' : '+');
-			}
 		};
-		
+
 		typedef std::vector<PathNode> VertexPath;
 		typedef std::vector<VertexPath> FeasiblePaths;
 		
