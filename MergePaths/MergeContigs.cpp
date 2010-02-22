@@ -149,10 +149,8 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	unsigned overlap = opt::k - 1;
 	assert(seq.length() > overlap);
 	assert(s.length() > overlap);
-	Sequence a(seq, 0, seq.length() - overlap);
 	Sequence ao(seq, seq.length() - overlap);
 	Sequence bo(s, 0, overlap);
-	Sequence b(s, overlap);
 	Sequence o = createConsensus(ao, bo);
 	if (o.empty()) {
 		cerr << "error: the head of `" << node << "' "
@@ -162,7 +160,7 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 	seq.resize(seq.length() - overlap);
 	seq += o;
-	seq += b;
+	seq += Sequence(s, overlap);
 }
 
 static Contig mergePath(const Path& path,
