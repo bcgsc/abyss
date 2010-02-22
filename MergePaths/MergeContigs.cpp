@@ -103,50 +103,58 @@ struct Contig {
 	}
 };
 
+static vector<Contig> g_contigs;
+
+/** Return the sequence of the specified contig node. The sequence
+ * may be ambiguous or reverse complemented.
+ */
+const Sequence ContigNode::sequence() const
+{
+	if (ambiguous()) {
+		return string(opt::k - 1, 'N') + ambiguousSequence();
+	} else {
+		const Sequence& seq = g_contigs[id()].seq;
+		return sense() ? reverseComplement(seq) : seq;
+	}
+}
+
+/** Merge the specified two contigs, which must overlap by k-1 bp, and
+ * generate a consensus sequence of the overlapping region. The result
+ * is stored in the first argument.
+ */
+static void mergeContigs(Sequence& seq, const Sequence& s,
+		const ContigNode& node, const Path& path)
+{
+	unsigned overlap = opt::k - 1;
+	assert(seq.length() > overlap);
+	assert(s.length() > overlap);
+	Sequence a(seq, 0, seq.length() - overlap);
+	Sequence ao(seq, seq.length() - overlap);
+	Sequence bo(s, 0, overlap);
+	Sequence b(s, overlap);
+	if (ao != bo) {
+		cerr << "error: the head of `" << node << "' "
+			"does not match the tail of the previous contig\n"
+			<< ao << '\n' << bo << '\n' << path << endl;
+		exit(EXIT_FAILURE);
+	}
+	seq += b;
+}
+
 static Contig mergePath(const Path& path,
 		const vector<Contig>& contigs)
 {
 	Sequence seq;
 	unsigned coverage = 0;
-	bool ambiguous = false;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		if (it->ambiguous()) {
-			assert(!seq.empty());
-			assert(!ambiguous);
-			seq += it->ambiguousSequence();
-			ambiguous = true;
-			continue;
-		}
-
 		const Contig& contig = contigs[it->id()];
 		coverage += contig.coverage;
-
-		Sequence h = it->sense() ? reverseComplement(contig.seq)
-			: contig.seq;
-		if (seq.empty()) {
-			seq = h;
-			continue;
-		} else if (ambiguous) {
-			seq += h;
-			ambiguous = false;
-			continue;
-		}
-
-		unsigned overlap = opt::k - 1;
-		Sequence a(seq, 0, seq.length() - overlap);
-		Sequence ao(seq, seq.length() - overlap);
-		Sequence bo(h, 0, overlap);
-		Sequence b(h, overlap);
-		if (ao != bo) {
-			cerr << "error: the head of `" << contig.id << "' "
-				"does not match the tail of the previous contig\n"
-				<< ao << '\n' << bo << '\n' << path << endl;
-			exit(EXIT_FAILURE);
-		}
-		seq += b;
+		if (seq.empty())
+			seq = it->sequence();
+		else
+			mergeContigs(seq, it->sequence(), *it, path);
 	}
-	assert(!ambiguous);
 	return Contig("", seq, coverage);
 }
 
@@ -239,7 +247,7 @@ int main(int argc, char** argv)
 	const char* contigFile = argv[optind++];
 	string mergedPathFile(argv[optind++]);
 
-	vector<Contig> contigs;
+	vector<Contig>& contigs = g_contigs;
 	{
 		FastaReader in(contigFile, FastaReader::KEEP_N);
 		for (FastaRecord rec; in >> rec;) {
