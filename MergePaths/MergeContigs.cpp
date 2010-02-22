@@ -170,8 +170,8 @@ static Contig mergePath(const Path& path,
 	unsigned coverage = 0;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		const Contig& contig = contigs[it->id()];
-		coverage += contig.coverage;
+		if (!it->ambiguous())
+			coverage += contigs[it->id()].coverage;
 		if (seq.empty())
 			seq = it->sequence();
 		else
