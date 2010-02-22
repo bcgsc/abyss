@@ -19,7 +19,8 @@ class ContigNode {
 	ContigNode(unsigned id, bool sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(std::string id, bool sense)
-		: m_ambig(false), m_id(g_contigIDs.serial(id)), m_sense(sense) { }
+		: m_ambig(false),
+		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
 
 	/** Create an ambiguous contig. */
 	ContigNode(unsigned n)
@@ -77,7 +78,8 @@ class ContigNode {
 		if (o.ambiguous())
 			return out << o.m_id << 'N';
 		else
-			return out << g_contigIDs.key(o.id()) << (o.sense() ? '-' : '+');
+			return out << g_contigIDs.key(o.id())
+				<< (o.sense() ? '-' : '+');
 	}
 
 	// These functions are implemented elsewhere.
