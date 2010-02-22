@@ -87,6 +87,7 @@ class ContigNode {
 	unsigned inDegree() const;
 	unsigned length() const;
 	const std::string sequence() const;
+	unsigned coverage() const;
 
   private:
 	unsigned hash() const

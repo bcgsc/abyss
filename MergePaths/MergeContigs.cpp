@@ -118,6 +118,13 @@ const Sequence ContigNode::sequence() const
 	}
 }
 
+/** Return the coverage of this contig or zero if this contig is
+ * ambiguous. */
+unsigned ContigNode::coverage() const
+{
+	return ambiguous() ? 0 : g_contigs[id()].coverage;
+}
+
 /** Return a consensus sequence of a and b.
  * @return an empty string if a consensus could not be found
  */
@@ -163,15 +170,13 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	seq += Sequence(s, overlap);
 }
 
-static Contig mergePath(const Path& path,
-		const vector<Contig>& contigs)
+static Contig mergePath(const Path& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		if (!it->ambiguous())
-			coverage += contigs[it->id()].coverage;
+		coverage += it->coverage();
 		if (seq.empty())
 			seq = it->sequence();
 		else
@@ -343,7 +348,7 @@ int main(int argc, char** argv)
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const Path& path = *it;
-		Contig contig = mergePath(path, contigs);
+		Contig contig = mergePath(path);
 		contig.id = toString(id++);
 		FastaRecord rec(contig);
 		rec.comment += ' ' + toString(path);
