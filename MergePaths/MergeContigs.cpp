@@ -118,6 +118,27 @@ const Sequence ContigNode::sequence() const
 	}
 }
 
+/** Return a consensus sequence of a and b.
+ * @return an empty string if a consensus could not be found
+ */
+static string createConsensus(const Sequence& a, const Sequence& b)
+{
+	assert(a.length() == b.length());
+	string s;
+	s.reserve(a.length());
+	for (string::const_iterator ita = a.begin(), itb = b.begin();
+			ita != a.end(); ++ita, ++itb) {
+		char c = *ita == *itb ? *ita
+			: *ita == 'N' ? *itb
+			: *itb == 'N' ? *ita
+			: 'x';
+		if (c == 'x')
+			return string("");
+		s += c;
+	}
+	return s;
+}
+
 /** Merge the specified two contigs, which must overlap by k-1 bp, and
  * generate a consensus sequence of the overlapping region. The result
  * is stored in the first argument.
@@ -132,12 +153,15 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	Sequence ao(seq, seq.length() - overlap);
 	Sequence bo(s, 0, overlap);
 	Sequence b(s, overlap);
-	if (ao != bo) {
+	Sequence o = createConsensus(ao, bo);
+	if (o.empty()) {
 		cerr << "error: the head of `" << node << "' "
 			"does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
 		exit(EXIT_FAILURE);
 	}
+	seq.resize(seq.length() - overlap);
+	seq += o;
 	seq += b;
 }
 
