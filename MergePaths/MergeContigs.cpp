@@ -63,8 +63,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static Dictionary& g_dict = g_contigIDs;
-
 struct Path : vector<ContigNode>
 {
 	friend ostream& operator <<(ostream& out, const Path& o)
@@ -248,7 +246,7 @@ int main(int argc, char** argv)
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
 			ss >> length >> coverage;
-			unsigned serial = g_dict.serial(rec.id);
+			unsigned serial = g_contigIDs.serial(rec.id);
 			assert(contigs.size() == serial);
 			(void)serial;
 			contigs.push_back(Contig(rec.id, rec.seq, coverage));
@@ -256,7 +254,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		if (argc - optind == 0) g_dict.lock();
+		if (argc - optind == 0) g_contigIDs.lock();
 	}
 
 	vector<Path> paths;
@@ -290,7 +288,7 @@ int main(int argc, char** argv)
 		string s;
 		while (fin >> s) {
 			fin.ignore(numeric_limits<streamsize>::max(), '\n');
-			unsigned pivotNum = g_dict.serial(s);
+			unsigned pivotNum = g_contigIDs.serial(s);
 			assert(pivotNum < contigs.size());
 			// Only count a pivot as seen if it was in a final path.
 			if (seen[pivotNum])
@@ -305,11 +303,11 @@ int main(int argc, char** argv)
 	assert(out.good());
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if (!seen[g_dict.serial(it->id)])
+		if (!seen[g_contigIDs.serial(it->id)])
 			out << *it;
 
 	int id;
-	stringstream s(g_dict.key(contigs.size() - 1));
+	stringstream s(g_contigIDs.key(contigs.size() - 1));
 	s >> id;
 	id++;
 	for (vector<Path>::const_iterator it = paths.begin();
