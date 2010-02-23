@@ -134,6 +134,8 @@ unsigned ContigNode::coverage() const
 static string createConsensus(const Sequence& a, const Sequence& b)
 {
 	assert(a.length() == b.length());
+	if (a == b)
+		return a;
 	string s;
 	s.reserve(a.length());
 	for (string::const_iterator ita = a.begin(), itb = b.begin();
