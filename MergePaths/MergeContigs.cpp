@@ -111,7 +111,10 @@ static vector<Contig> g_contigs;
 const Sequence ContigNode::sequence() const
 {
 	if (ambiguous()) {
-		return string(opt::k - 1, 'N') + ambiguousSequence();
+		string s(ambiguousSequence());
+		if (s.length() < opt::k)
+			transform(s.begin(), s.end(), s.begin(), ::tolower);
+		return string(opt::k - 1, 'N') + s;
 	} else {
 		const Sequence& seq = g_contigs[id()].seq;
 		return sense() ? reverseComplement(seq) : seq;
@@ -135,13 +138,15 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	s.reserve(a.length());
 	for (string::const_iterator ita = a.begin(), itb = b.begin();
 			ita != a.end(); ++ita, ++itb) {
-		char c = *ita == *itb ? *ita
-			: *ita == 'N' ? *itb
-			: *itb == 'N' ? *ita
+		bool mask = islower(*ita) || islower(*itb);
+		char ca = toupper(*ita), cb = toupper(*itb);
+		char c = ca == cb ? ca
+			: ca == 'N' ? cb
+			: cb == 'N' ? ca
 			: 'x';
 		if (c == 'x')
 			return string("");
-		s += c;
+		s += mask ? tolower(c) : c;
 	}
 	return s;
 }
