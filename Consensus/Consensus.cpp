@@ -4,6 +4,7 @@
 #include "FastaWriter.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring> // for memset
@@ -89,7 +90,7 @@ static ContigMap g_contigs;
 static void readContigs(const string& contigsPath)
 {
 	FastaReader contigsFile(contigsPath.c_str(),
-			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
+			FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
 	int count = 0;
 	for (FastaRecord rec; contigsFile >> rec;) {
 		const Sequence& seq = rec.seq;
@@ -314,7 +315,9 @@ static void consensus(const char* outPath)
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
-			outSeq[x] = selectBase(it->second.counts[x], sumBest, sumSecond);
+			char c = selectBase(it->second.counts[x],
+					sumBest, sumSecond);
+			outSeq[x] = islower(contig.seq[x]) ? tolower(c) : c;
 		}
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
