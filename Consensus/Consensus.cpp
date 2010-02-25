@@ -36,6 +36,7 @@ static const char USAGE_MESSAGE[] =
 "  -p, --pileup=PATH     write the pileup to PATH\n"
 "      --nt              output nucleotide contigs [default]\n"
 "      --cs              output colour-space contigs\n"
+"  -V, --variants        print only variants in the pileup\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -47,9 +48,10 @@ namespace opt {
 	static string pileupPath;
 	static bool csToNt;
 	static int outputCS;
+	static int onlyVariants;
 }
 
-static const char shortopts[] = "o:p:v";
+static const char shortopts[] = "o:p:vV";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -57,6 +59,7 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "out",		 required_argument, NULL, 'o' },
 	{ "pileup",      required_argument, NULL, 'p' },
+	{ "variants",    no_argument,		&opt::onlyVariants, 1 },
 	{ "nt",			 no_argument,		&opt::outputCS, 0 },
 	{ "cs",			 no_argument,		&opt::outputCS, 1 },
 	{ "help",        no_argument,       NULL, OPT_HELP },
@@ -310,6 +313,9 @@ static void writePileup(ostream& out,
 		char refc, char genotype,
 		const BaseCount& counts)
 {
+	char foldrefc = toupper(refc);
+	if (opt::onlyVariants && foldrefc == genotype)
+		return;
 	out << id << '\t' // reference sequence name
 		<< 1 + pos << '\t' // reference coordinate
 		<< refc << '\t' // reference base
@@ -318,10 +324,9 @@ static void writePileup(ostream& out,
 		<< "*\t" // P(genotype is the same as the reference)
 		<< "*\t" // RMS mapping quality
 		<< counts.sum() << '\t'; // number of reads
-	char c = toupper(refc);
-	switch (c) {
+	switch (foldrefc) {
 	  case 'A': case 'C': case 'G': case 'T': {
-		uint8_t ref = baseToCode(c);
+		uint8_t ref = baseToCode(foldrefc);
 		for (int i = 0; i < 4; i++)
 			if (i != ref)
 				out << string(counts.count[i], codeToBase(i));
@@ -420,6 +425,7 @@ int main(int argc, char** argv)
 			case 'v': opt::verbose++; break;
 			case 'o': arg >> opt::outPath; break;
 			case 'p': arg >> opt::pileupPath; break;
+			case 'V': opt::onlyVariants = true; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
