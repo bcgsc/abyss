@@ -325,7 +325,8 @@ static void writePileup(ostream& out,
 		<< "25\t" // RMS mapping quality
 		<< counts.sum() << '\t'; // number of reads
 	switch (foldrefc) {
-	  case 'A': case 'C': case 'G': case 'T': {
+	  case 'A': case 'C': case 'G': case 'T':
+	  case '0': case '1': case '2': case '3': {
 		uint8_t ref = baseToCode(foldrefc);
 		for (int i = 0; i < 4; i++)
 			if (i != ref)
@@ -404,10 +405,18 @@ static void consensus(const string& outPath, const string& pileupPath)
 			}
 
 			if (!pileupPath.empty())
-				for (unsigned i = 0; i < seqLength; i++)
-					writePileup(pileupOut, it->first, i,
-							contig.seq[i], outSeq[i],
-							contig.counts[i]);
+				if (opt::csToNt)
+					for (unsigned i = 0; i < seqLength-1; i++)
+						writePileup(pileupOut, it->first, i,
+								contig.seq[i],
+								nucleotideToColourSpace(
+									outSeq[i], outSeq[i+1]),
+								contig.counts[i]);
+				else
+					for (unsigned i = 0; i < seqLength; i++)
+						writePileup(pileupOut, it->first, i,
+								contig.seq[i], outSeq[i],
+								contig.counts[i]);
 		} else if (opt::verbose > 0) {
 			cerr << "warning: Contig " << it->first
 				<< " was not supported by a complete read "
