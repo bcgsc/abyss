@@ -99,29 +99,43 @@ static size_t countKmer(const string& path)
 
 	ifstream in(path.c_str());
 	assert(in.is_open());
-	size_t contigs = 0, bases = 0;
-	enum { ID, SEQUENCE } state = SEQUENCE;
+	size_t scaffolds = 0, contigs = 0, bases = 0;
+	enum { ID, SEQUENCE, GAP } state = SEQUENCE;
 	for (char c; in.get(c);) {
+		c = toupper(c);
 		switch (state) {
-			case ID:
-				if (c == '\n')
-					state = SEQUENCE;
+		  case ID:
+			if (c == '\n')
+				state = SEQUENCE;
+			break;
+		  case SEQUENCE:
+		  case GAP:
+			switch (c) {
+			  case '>':
+				scaffolds++;
+				contigs++;
+				state = ID;
 				break;
-			case SEQUENCE:
-				if (c == '>') {
-					state = ID;
+			  case 'N':
+				if (state != GAP)
 					contigs++;
-				} else if (!isspace(c))
-					bases++;
+				state = GAP;
 				break;
+			  case 'A': case 'C': case 'G': case 'T':
+				bases++;
+				state = SEQUENCE;
+				break;
+			}
+			break;
 		}
 	}
 
 	size_t overlaps = contigs * (opt::k-1);
 	size_t kmer = bases - overlaps;
 	if (opt::verbose > 0)
-		cerr << "Read " << bases << " bases in "
-			<< contigs << " sequences from `" << path << "'. "
+		cerr << "Read " << bases << " bases, "
+			<< contigs << " contigs, " << scaffolds << " scaffolds"
+			" from `" << path << "'. "
 			"Expecting " << kmer << " k-mer.\n";
 	assert(bases > overlaps);
 	return kmer;
