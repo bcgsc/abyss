@@ -359,12 +359,8 @@ static void consensus(const string& outPath, const string& pileupPath)
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
-			const BaseCount& counts = it->second.counts[x];
-			char c = selectBase(counts, sumBest, sumSecond);
+			char c = selectBase(it->second.counts[x], sumBest, sumSecond);
 			outSeq[x] = islower(contig.seq[x]) ? tolower(c) : c;
-			if (!pileupPath.empty())
-				writePileup(pileupOut, it->first, x,
-						contig.seq[x], c, counts);
 		}
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
@@ -406,6 +402,12 @@ static void consensus(const string& outPath, const string& pileupPath)
 							<< '\t' << contig.counts[i].sum()
 							<< '\t' << contig.counts[i] << '\n';
 			}
+
+			if (!pileupPath.empty())
+				for (unsigned i = 0; i < seqLength - 1; i++)
+					writePileup(pileupOut, it->first, i,
+							contig.seq[i], outSeq[i],
+							contig.counts[i]);
 		} else if (opt::verbose > 0) {
 			cerr << "warning: Contig " << it->first
 				<< " was not supported by a complete read "
