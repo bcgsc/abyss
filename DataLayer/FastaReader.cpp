@@ -38,10 +38,10 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-FastaReader::FastaReader(const char* path, bool discardN)
+FastaReader::FastaReader(const char* path, int flags)
 	: m_inPath(path), m_inFile(path),
 	m_fileHandle(strcmp(path, "-") == 0 ? cin : m_inFile),
-	m_discardN(discardN),
+	m_flags(flags),
 	m_unchaste(0), m_nonacgt(0)
 {
 	if (strcmp(path, "-") != 0)
@@ -116,7 +116,8 @@ next_record:
 				q.erase(0, trimFront);
 			}
 		}
-		transform(s.begin(), s.end(), s.begin(), ::toupper);
+		if (flagFoldCase())
+			transform(s.begin(), s.end(), s.begin(), ::toupper);
 
 		if (s.length() > 2 && isalpha(s[0]) && isdigit(s[1])) {
 			// The first character is the primer base. The second
@@ -180,7 +181,7 @@ next_record:
 		}
 	}
 
-	if (m_discardN) {
+	if (flagDiscardN()) {
 		size_t pos = s.find_first_not_of("ACGT0123");
 		if (pos != string::npos) {
 			logger(5) << "warning: discarded sequence containing `"

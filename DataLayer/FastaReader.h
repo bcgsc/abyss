@@ -8,9 +8,16 @@
 
 class FastaReader {
 	public:
-		FastaReader(const char* path, bool discardN = true);
-		enum { KEEP_N = false, DISCARD_N = true };
+		enum {
+			/** Discard any sequence containing an N. */
+			DISCARD_N = 0, KEEP_N = 1,
+			/** Fold lower-case characters to upper-case. */
+			FOLD_CASE = 0, NO_FOLD_CASE = 2,
+		};
+		bool flagDiscardN() { return ~m_flags & KEEP_N; }
+		bool flagFoldCase() { return ~m_flags & NO_FOLD_CASE; }
 
+		FastaReader(const char* path, int flags = 0);
 		~FastaReader();
 
 		Sequence read(std::string& id, std::string& comment,
@@ -42,8 +49,14 @@ class FastaReader {
 		const char* m_inPath;
 		std::ifstream m_inFile;
 		std::istream& m_fileHandle;
-		bool m_discardN;
+
+		/** Flags indicating parsing options. */
+		int m_flags;
+
+		/** Count of unchaste reads. */
 		unsigned m_unchaste;
+
+		/** Count of non-ACGT reads. */
 		unsigned m_nonacgt;
 };
 

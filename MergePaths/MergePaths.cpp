@@ -254,7 +254,8 @@ int main(int argc, char** argv)
 
 	ContigVec contigVec;
 	if (contigFile != NULL) {
-		FastaReader in(contigFile, FastaReader::KEEP_N);
+		FastaReader in(contigFile,
+				FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
