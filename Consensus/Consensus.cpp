@@ -355,9 +355,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 		ContigCount& contig = g_contigs[it->first];
 		unsigned seqLength = it->second.counts.size();
 
-		char outSeq[seqLength];
-		memset(outSeq, 'N', seqLength);
-
+		Sequence outSeq(seqLength, 'N');
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
@@ -370,9 +368,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 		}
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
-		Sequence outString = Sequence(outSeq, seqLength);
-
-		if (outString.find_first_of("ACGT") != string::npos) {
+		if (outSeq.find_first_of("ACGT") != string::npos) {
 			// Check that the average percent agreement was enough to
 			// write the contig to file.
 			float percentAgreement = sumBest / (float)(sumBest + sumSecond);
@@ -387,8 +383,8 @@ static void consensus(const string& outPath, const string& pileupPath)
 					continue;
 			} else {
 				if (opt::csToNt)
-					fixUnknown(outString, contig.seq);
-				outFile.WriteSequence(outString, idKey,
+					fixUnknown(outSeq, contig.seq);
+				outFile.WriteSequence(outSeq, idKey,
 						contig.coverage, contig.comment);
 			}
 
