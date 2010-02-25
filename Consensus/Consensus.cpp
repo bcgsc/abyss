@@ -404,7 +404,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 			}
 
 			if (!pileupPath.empty())
-				for (unsigned i = 0; i < seqLength - 1; i++)
+				for (unsigned i = 0; i < seqLength; i++)
 					writePileup(pileupOut, it->first, i,
 							contig.seq[i], outSeq[i],
 							contig.counts[i]);
