@@ -10,6 +10,7 @@
 #include <cstring> // for memset
 #include <getopt.h>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 #include <string>
 
@@ -32,6 +33,7 @@ static const char USAGE_MESSAGE[] =
 "at each position of each contig and write the result to standard output.\n"
 "\n"
 "  -o, --out=OUTPUT      write converted sequences in fasta format to this file\n"
+"  -p, --pileup=PATH     write the pileup to PATH\n"
 "      --nt              output nucleotide contigs [default]\n"
 "      --cs              output colour-space contigs\n"
 "  -v, --verbose         display verbose output\n"
@@ -42,17 +44,19 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static string outPath;
+	static string pileupPath;
 	static bool csToNt;
 	static int outputCS;
 }
 
-static const char shortopts[] = "o:v";
+static const char shortopts[] = "o:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "out",		 required_argument, NULL, 'o' },
+	{ "pileup",      required_argument, NULL, 'p' },
 	{ "nt",			 no_argument,		&opt::outputCS, 0 },
 	{ "cs",			 no_argument,		&opt::outputCS, 1 },
 	{ "help",        no_argument,       NULL, OPT_HELP },
@@ -63,6 +67,10 @@ static const struct option longopts[] = {
 struct BaseCount {
 	unsigned count[4];
 	BaseCount() { fill(count, count + 4, 0); }
+
+	/** Return the number of reads at this position. */
+	unsigned sum() const { return accumulate(count, count+4, 0); }
+
 	friend ostream& operator <<(ostream& o, const BaseCount& base)
 	{
 		cout << base.count[0];
@@ -297,11 +305,43 @@ static void fixUnknown(Sequence& ntSeq, const Sequence& csSeq )
 	}
 }
 
+static void writePileup(ostream& out,
+		const string &id, unsigned pos,
+		char refc, char genotype,
+		const BaseCount& counts)
+{
+	out << id << '\t' // reference sequence name
+		<< 1 + pos << '\t' // reference coordinate
+		<< refc << '\t' // reference base
+		<< genotype << '\t' // genotype
+		<< "*\t" // P(genotype is wrong)
+		<< "*\t" // P(genotype is the same as the reference)
+		<< "*\t" // RMS mapping quality
+		<< counts.sum() << '\t'; // number of reads
+	char c = toupper(refc);
+	switch (c) {
+	  case 'A': case 'C': case 'G': case 'T': {
+		uint8_t ref = baseToCode(c);
+		for (int i = 0; i < 4; i++)
+			if (i != ref)
+				out << string(counts.count[i], codeToBase(i));
+		out << string(counts.count[ref], '.');
+		break;
+	  }
+	  default:
+		for (int i = 0; i < 4; i++)
+				out << string(counts.count[i], codeToBase(i));
+	}
+	out << '\n';
+	assert(out.good());
+}
+
 /** Forms contigs based on the consensus of each base and outputs them
  * to the file specified by the -o option. */
-static void consensus(const char* outPath)
+static void consensus(const string& outPath, const string& pileupPath)
 {
-	FastaWriter outFile(outPath);
+	FastaWriter outFile(outPath.c_str());
+	ofstream pileupOut(pileupPath.c_str());
 
 	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();
@@ -315,9 +355,12 @@ static void consensus(const char* outPath)
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
-			char c = selectBase(it->second.counts[x],
-					sumBest, sumSecond);
+			const BaseCount& counts = it->second.counts[x];
+			char c = selectBase(counts, sumBest, sumSecond);
 			outSeq[x] = islower(contig.seq[x]) ? tolower(c) : c;
+			if (!pileupPath.empty())
+				writePileup(pileupOut, it->first, x,
+						contig.seq[x], c, counts);
 		}
 
 		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
@@ -376,6 +419,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'v': opt::verbose++; break;
 			case 'o': arg >> opt::outPath; break;
+			case 'p': arg >> opt::pileupPath; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -385,7 +429,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (opt::outPath.empty()) {
+	if (opt::outPath.empty() && opt::pileupPath.empty()) {
 		cerr << PROGRAM ": " << "missing -o,--out option\n";
 		die = true;
 	}
@@ -408,5 +452,5 @@ int main(int argc, char** argv)
 
 	readContigs(contigsPath);
 	buildBaseQuality();
-	consensus(opt::outPath.c_str());
+	consensus(opt::outPath, opt::pileupPath);
 }
