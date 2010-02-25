@@ -74,12 +74,12 @@ struct BaseCount {
 	/** Return the number of reads at this position. */
 	unsigned sum() const { return accumulate(count, count+4, 0); }
 
-	friend ostream& operator <<(ostream& o, const BaseCount& base)
+	friend ostream& operator <<(ostream& out, const BaseCount& base)
 	{
-		cout << base.count[0];
+		out << base.count[0];
 		for (int x = 1; x < 4; x++)
-			cout << ' ' << base.count[x];
-		return o;
+			out << '\t' << base.count[x];
+		return out;
 	}
 };
 
@@ -389,19 +389,22 @@ static void consensus(const string& outPath, const string& pileupPath)
 			}
 
 			if (opt::verbose > 1) {
-				// <contig id> <length> <consensus result> <expected> <A> <C> <G> <T>
+				// ID pos reference genotype A C G T
 				if (opt::csToNt)
 					for (unsigned i = 0; i < seqLength - 1; i++)
-						cout << idKey << ' ' << seqLength << ' ' << i << ' '
-							<< nucleotideToColourSpace(outSeq[i], outSeq[i + 1])
-							<< ' ' << contig.seq.at(i)
-							<< ' ' << contig.counts[i] << '\n';
+						cout << it->first << '\t' << 1+i
+							<< '\t' << contig.seq[i]
+							<< '\t' << nucleotideToColourSpace(
+									outSeq[i], outSeq[i + 1])
+							<< '\t' << contig.counts[i].sum()
+							<< '\t' << contig.counts[i] << '\n';
 				else
 					for (unsigned i = 0; i < seqLength; i++)
-						cout << idKey << ' ' << seqLength << ' ' << i
-							<< ' ' << outSeq[i]
-							<< ' ' << contig.seq.at(i)
-							<< ' ' << contig.counts[i] << '\n';
+						cout << it->first << '\t' << 1+i
+							<< '\t' << contig.seq[i]
+							<< '\t' << outSeq[i]
+							<< '\t' << contig.counts[i].sum()
+							<< '\t' << contig.counts[i] << '\n';
 			}
 		} else if (opt::verbose > 0) {
 			cerr << "warning: Contig " << it->first
