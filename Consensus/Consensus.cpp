@@ -320,9 +320,9 @@ static void writePileup(ostream& out,
 		<< 1 + pos << '\t' // reference coordinate
 		<< refc << '\t' // reference base
 		<< genotype << '\t' // genotype
-		<< "*\t" // P(genotype is wrong)
-		<< "*\t" // P(genotype is the same as the reference)
-		<< "*\t" // RMS mapping quality
+		<< "25\t" // P(genotype is wrong)
+		<< "25\t" // P(genotype is the same as the reference)
+		<< "25\t" // RMS mapping quality
 		<< counts.sum() << '\t'; // number of reads
 	switch (foldrefc) {
 	  case 'A': case 'C': case 'G': case 'T': {
