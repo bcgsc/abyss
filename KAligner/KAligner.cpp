@@ -295,7 +295,7 @@ static void readContigsIntoDB(string refFastaFile,
 
 	unsigned count = 0;
 	FastaReader in(refFastaFile.c_str(),
-			FastaReader::DISCARD_N | FastaReader::FOLD_CASE);
+			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;) {
 		if (count == 0) {
 			// Detect colour-space contigs.
