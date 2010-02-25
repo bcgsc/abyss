@@ -17,7 +17,7 @@ class FastaReader {
 		bool flagDiscardN() { return ~m_flags & KEEP_N; }
 		bool flagFoldCase() { return ~m_flags & NO_FOLD_CASE; }
 
-		FastaReader(const char* path, int flags = 0);
+		FastaReader(const char* path, int flags);
 		~FastaReader();
 
 		Sequence read(std::string& id, std::string& comment,

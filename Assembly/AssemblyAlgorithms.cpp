@@ -55,7 +55,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 	unsigned count = 0, count_good = 0,
 			 count_small = 0, count_nonACGT = 0;
-	FastaReader reader(inFile.c_str(), FastaReader::KEEP_N);
+	FastaReader reader(inFile.c_str(),
+			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
 	for (Sequence seq; reader >> seq;) {
 		int len = seq.length();
 		if (opt::kmerSize > len) {

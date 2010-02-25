@@ -88,7 +88,8 @@ static ContigMap g_contigs;
  * g_baseCounts, to store pile-up for each base. */
 static void readContigs(const string& contigsPath)
 {
-	FastaReader contigsFile(contigsPath.c_str());
+	FastaReader contigsFile(contigsPath.c_str(),
+			FastaReader::DISCARD_N | FastaReader::FOLD_CASE);
 	int count = 0;
 	for (FastaRecord rec; contigsFile >> rec;) {
 		const Sequence& seq = rec.seq;

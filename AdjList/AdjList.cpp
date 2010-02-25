@@ -92,7 +92,8 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 		cerr << "Reading `" << path << "'...\n";
 
 	unsigned count = 0;
-	FastaReader in(path.c_str(), FastaReader::KEEP_N);
+	FastaReader in(path.c_str(),
+			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;) {
 		const Sequence& seq = rec.seq;
 		if (count++ == 0) {
