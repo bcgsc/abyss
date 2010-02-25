@@ -346,7 +346,8 @@ static void writePileup(ostream& out,
 static void consensus(const string& outPath, const string& pileupPath)
 {
 	FastaWriter outFile(outPath.c_str());
-	ofstream pileupOut(pileupPath.c_str());
+	ofstream pileupFile(pileupPath.c_str());
+	ostream& pileupOut = pileupPath == "-" ? cout : pileupFile;
 
 	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();
