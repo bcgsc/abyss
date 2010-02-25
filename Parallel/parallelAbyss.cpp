@@ -1,5 +1,4 @@
 #include "config.h"
-#include "FastaReader.h"
 #include "Log.h"
 #include "NetworkSequenceCollection.h"
 #include "Assembly/Options.h"
