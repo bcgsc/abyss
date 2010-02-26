@@ -404,7 +404,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 							<< '\t' << contig.counts[i] << '\n';
 			}
 
-			if (!pileupPath.empty())
+			if (!pileupPath.empty()) {
 				if (opt::csToNt)
 					for (unsigned i = 0; i < seqLength-1; i++)
 						writePileup(pileupOut, it->first, i,
@@ -417,6 +417,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 						writePileup(pileupOut, it->first, i,
 								contig.seq[i], outSeq[i],
 								contig.counts[i]);
+			}
 		} else if (opt::verbose > 0) {
 			cerr << "warning: Contig " << it->first
 				<< " was not supported by a complete read "
