@@ -151,18 +151,18 @@ static void removeRepeats(ContigPathMap& paths)
 			cout << " none";
 		cout << '\n';
 	}
-	cout << "Removing paths in repeats:";
+	
+	ostringstream ss;
 	unsigned removed = 0;
 	for (set<LinearNumKey>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		if (paths.erase(*it) > 0) {
-			cout << ' ' << idToString(*it);
+			ss << ' ' << idToString(*it);
 			removed++;
 		}
 	}
-	if (removed == 0)
-		cout << " none";
-	cout << '\n';
+	if (opt::verbose > 0 && removed > 0)
+		cout << "Removing paths in repeats:" << ss.str() << '\n';
 }
 
 static set<size_t> getContigIDs(const vector<ContigPath>& paths)
