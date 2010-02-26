@@ -6,6 +6,9 @@
 
 namespace opt {
 	extern int kmerSize;
+	extern int kMin;
+	extern int kMax;
+	extern int kStep;
 	extern unsigned erode;
 	extern unsigned erodeStrand;
 	extern int trimLen;

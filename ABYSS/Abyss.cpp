@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -55,17 +56,13 @@ static void write_graph(const string& path,
 	DotWriter::write(out, c);
 }
 
-int main(int argc, char* const* argv)
+static void assemble(const string& pathIn, const string& pathOut)
 {
-	Timer timer("Total");
-
-	// Set stdout to be line buffered.
-	setvbuf(stdout, NULL, _IOLBF, 0);
-
-	opt::parse(argc, argv);
-
+	Timer timer(__func__);
 	SequenceCollectionHash* pSC = new SequenceCollectionHash();
 
+	if (!pathIn.empty())
+		AssemblyAlgorithms::loadSequences(pSC, pathIn.c_str());
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
 	printf("Loaded %zu k-mer\n", pSC->count());
@@ -101,8 +98,7 @@ generate_adjacency:
 
 	splitAmbiguousEdges(pSC);
 
-	FastaWriter writer(opt::contigsPath.c_str());
-
+	FastaWriter writer(pathOut.c_str());
 	unsigned nContigs = AssemblyAlgorithms::assemble(pSC, &writer);
 	if (nContigs == 0) {
 		fputs("error: no contigs assembled\n", stderr);
@@ -110,6 +106,44 @@ generate_adjacency:
 	}
 
 	delete pSC;
+}
 
+int main(int argc, char* const* argv)
+{
+	Timer timer("Total");
+
+	// Set stdout to be line buffered.
+	setvbuf(stdout, NULL, _IOLBF, 0);
+
+	opt::parse(argc, argv);
+
+	bool krange = opt::kMin != opt::kMax;
+	if (krange)
+		printf("Assembling k=%u-%u:%u\n",
+				opt::kMin, opt::kMax, opt::kStep);
+
+	for (int k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
+		if (krange)
+			printf("Assembling k=%u\n", k);
+		opt::kmerSize = k;
+		Kmer::setLength(k);
+
+		if (k > opt::kMin) {
+			// Reset the assembly options to defaults.
+			opt::erode = -1;
+			opt::coverage = -1;
+			opt::trimLen = k;
+			opt::bubbleLen = 3*k;
+		}
+
+		ostringstream k0, k1;
+		if (k > opt::kMin)
+			k0 << "contigs-k" << k-1 << ".fa";
+		if (k < opt::kMax)
+			k1 << "contigs-k" << k << ".fa";
+		else
+			k1 << opt::contigsPath.c_str();
+		assemble(k0.str(), k1.str());
+	}
 	return 0;
 }

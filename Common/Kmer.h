@@ -44,8 +44,6 @@ class Kmer
 	static void setLength(unsigned length)
 	{
 		assert(length <= MAX_KMER);
-		assert(s_length == 0);
-		assert(s_bytes == 0);
 		s_length = length;
 		s_bytes = (length + 3) / 4;
 	}

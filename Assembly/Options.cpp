@@ -66,6 +66,11 @@ static const char USAGE_MESSAGE[] =
 /** k-mer length */
 int kmerSize = -1;
 
+/** k-mer range */
+int kMin = -1;
+int kMax = -1;
+int kStep = 1;
+
 /** erosion coverage */
 unsigned erode = (unsigned)-1;
 
@@ -159,6 +164,21 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'k':
 				arg >> kmerSize;
+				kMin = kmerSize;
+				switch (arg.get()) {
+				  case ',':
+					arg >> kMax;
+					kStep = kMax - kMin;
+					break;
+				  case '-':
+					arg >> kMax;
+					if (arg.get() == ':')
+						arg >> kStep;
+					break;
+				  default:
+					kMax = kmerSize;
+				}
+				assert(kMin <= kMax);
 				break;
 			case COVERAGE_HIST:
 				getline(arg, coverageHistPath);
