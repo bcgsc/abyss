@@ -637,12 +637,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	if (biggestIt->second.flipped != flipped)
 		path2.reverseComplement();
 
-	for(size_t c = 0; c < count; ++c) {
-		if(path1[startP1 + c].id() != path2[startP2 + c].id()) {
-			if(gDebugPrint) printf("Internal path mismatch\n");
-			return false;
-		}
-	}
+	assert(equal(&path1[startP1], &path1[startP1 + count],
+				&path2[startP2]));
 
 	// If we got to this point there is a legal subpath that describes both nodes and they can be merged
 	return true;
