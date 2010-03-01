@@ -1,6 +1,9 @@
 #ifndef BARRIER_H
 #define BARRIER_H 1
 
+#include <unistd.h>
+#if _POSIX_BARRIERS > 0
+
 #include <cassert>
 #include <cstring> // for memset
 #include <pthread.h>
@@ -156,5 +159,19 @@ class Barrier {
 	/** The underlying barrier. */
 	pthread_barrier_t m_barrier;
 };
+
+#else /* _POSIX_BARRIERS */
+
+class Barrier {
+  public:
+	void init(unsigned count) { (void)count; }
+	void wait() { }
+	void signal(void) { }
+	unsigned operator =(unsigned threads) { return threads; }
+	unsigned operator ++() { return 0; }
+	unsigned operator --() { return 0; }
+};
+
+#endif /* _POSIX_BARRIERS */
 
 #endif

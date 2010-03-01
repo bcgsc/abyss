@@ -42,8 +42,10 @@ static const char USAGE_MESSAGE[] =
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
 "  -j, --threads=N       use N threads [2] up to one per query file\n"
 "                        or if N is 0 use one thread per query file\n"
+#if _POSIX_BARRIERS > 0
 "      --sync=COUNT      synchronize threads every COUNT alignments [10000]\n"
 "      --no-sync         do not synchronize threads\n"
+#endif
 "  -v, --verbose         display verbose output\n"
 "      --seq             print the sequence with the alignments\n"
 "      --help            display this help and exit\n"
@@ -227,6 +229,9 @@ int main(int argc, char** argv)
 		opt::threads = numQuery;
 	if (opt::threads == 1)
 		opt::sync = 0;
+#if !_POSIX_BARRIERS
+	opt::sync = 0;
+#endif
 
 	size_t numKmer = countKmer(refFastaFile);
 	if (opt::multimap == opt::MULTIMAP) {
