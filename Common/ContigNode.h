@@ -52,6 +52,11 @@ class ContigNode {
 		return hash() == o.hash();
 	}
 
+	bool operator !=(const ContigNode& o) const
+	{
+		return !(*this == o);
+	}
+
 	bool operator <(const ContigNode& o) const
 	{
 		return hash() < o.hash();

@@ -504,6 +504,21 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 	return refCanonical;
 }
 
+template <class iterator>
+static void skipAmbiguous(iterator& it1, iterator last1,
+		iterator& it2, iterator last2)
+{
+	assert(it1 != last1);
+	assert(it1->ambiguous());
+	++it1;
+	assert(it1 != last1);
+	assert(!it1->ambiguous());
+
+	assert(it2 != last2);
+	iterator it = find(it2, last2, *it1);
+	it2 = it == last2 ? last2-1 : it;
+}
+
 //
 // Check if the two paths are consistent
 // They are consistent if there is an identical subpath thats belongs to both nodes and that subpath is terminal wrt to its super path
@@ -556,7 +571,23 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 			lowValid = true;
 			while(1) {
-				if(path1[startP1].id() != path2[startP2].id()) {
+				// Skip ambiguous sequence.
+				if (path1[startP1].ambiguous()
+						|| path2[startP2].ambiguous()) {
+					ContigPath::const_reverse_iterator
+						it1 = path1.rbegin() + (max1 - startP1),
+						it2 = path2.rbegin() + (max2 - startP2);
+					if (path1[startP1].ambiguous())
+						skipAmbiguous<ContigPath::const_reverse_iterator>(
+								it1, path1.rend(), it2, path2.rend());
+					else
+						skipAmbiguous<ContigPath::const_reverse_iterator>(
+								it2, path2.rend(), it1, path1.rend());
+					startP1 = max1 - (it1 - path1.rbegin());
+					startP2 = max2 - (it2 - path2.rbegin());
+				}
+
+				if (path1[startP1] != path2[startP2]) {
 					// The nodes no longer match, this path is not valid
 					lowValid = false;
 					break;
@@ -573,7 +604,23 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			// high coordinates
 			highValid = true;
 			while(1) {
-				if(path1[endP1].id() != path2[endP2].id()) {
+				// Skip ambiguous sequence.
+				if (path1[endP1].ambiguous()
+						|| path2[endP2].ambiguous()) {
+					ContigPath::const_iterator
+						it1 = path1.begin() + endP1,
+						it2 = path2.begin() + endP2;
+					if (path1[endP1].ambiguous())
+						skipAmbiguous<ContigPath::const_iterator>(
+								it1, path1.end(), it2, path2.end());
+					else
+						skipAmbiguous<ContigPath::const_iterator>(
+								it2, path2.end(), it1, path1.end());
+					endP1 = it1 - path1.begin();
+					endP2 = it2 - path2.begin();
+				}
+
+				if(path1[endP1] != path2[endP2]) {
 					// The nodes no longer match, this path is not valid
 					highValid = false;
 					break;
@@ -587,8 +634,9 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 				endP2++;
 			}
 			if (lowValid && highValid) {
-				size_t count = endP1 - startP1;
-				assert(endP2 - startP2 == count);
+				size_t count1 = endP1 - startP1;
+				size_t count2 = endP2 - startP2;
+				size_t count = max(count1, count2);
 				if (pathAlignments.find(count) == pathAlignments.end()) {
 					PathConsistencyStats& pathAlignment = pathAlignments[count];
 					pathAlignment.startP1 = startP1;
@@ -623,7 +671,6 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 	// If either path aligns to the front and back of the other, it is
 	// not a valid path.
-	size_t count = biggestIt->first;
 	if (biggestIt->second.duplicateSize
 			&& biggestIt->first != min(max1, max2)) {
 		if (gDebugPrint) printf("Duplicate path match found\n");
@@ -637,8 +684,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	if (biggestIt->second.flipped != flipped)
 		path2.reverseComplement();
 
-	assert(equal(&path1[startP1], &path1[startP1 + count],
-				&path2[startP2]));
+	assert(path1[startP1] == path2[startP2]);
+	assert(path1[endP1] == path2[endP2]);
 
 	// If we got to this point there is a legal subpath that describes both nodes and they can be merged
 	return true;
