@@ -568,10 +568,11 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			}
 
 			bool lowValid = true;
-			ContigPath::const_reverse_iterator
-				rit1 = path1.rbegin() + (max1 - startP1),
-				rit2 = path2.rbegin() + (max2 - startP2);
-			while(1) {
+			ContigPath::const_reverse_iterator rit1, rit2;
+			for (rit1 = path1.rbegin() + (max1 - startP1),
+					rit2 = path2.rbegin() + (max2 - startP2);
+					rit1 != path1.rend() && rit2 != path2.rend();
+					++rit1, ++rit2) {
 				// Skip ambiguous sequence.
 				if (rit1->ambiguous() || rit2->ambiguous()) {
 					if (rit1->ambiguous())
@@ -585,23 +586,20 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 								rit2, path2.rend(),
 								rit1, path1.rend());
 				}
-
 				if (*rit1 != *rit2) {
 					lowValid = false;
 					break;
 				}
-
-				if (rit1 == path1.rend()-1 || rit2 == path2.rend()-1)
-					break;
-				++rit1;
-				++rit2;
 			}
+			--rit1;
+			--rit2;
 
 			bool highValid = true;
-			ContigPath::const_iterator
-				it1 = path1.begin() + endP1,
-				it2 = path2.begin() + endP2;
-			while(1) {
+			ContigPath::const_iterator it1, it2;
+			for (it1 = path1.begin() + endP1,
+					it2 = path2.begin() + endP2;
+					it1 != path1.end() && it2 != path2.end();
+					++it1, ++it2) {
 				// Skip ambiguous sequence.
 				if (it1->ambiguous() || it2->ambiguous()) {
 					if (it1->ambiguous())
@@ -612,16 +610,13 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 								it2, path2.end(), it1, path1.end());
 				}
 
-				if(*it1 != *it2) {
+				if (*it1 != *it2) {
 					highValid = false;
 					break;
 				}
-
-				if (it1 == path1.end()-1 || it2 == path2.end()-1)
-					break;
-				++it1;
-				++it2;
 			}
+			--it1;
+			--it2;
 
 			if (lowValid && highValid) {
 				startP1 = max1 - (rit1 - path1.rbegin());
