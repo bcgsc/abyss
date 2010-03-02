@@ -543,8 +543,6 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 		return false;
 
 	//printf("Init  coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
-	bool lowValid = true;
-	bool highValid = true;
 	bool flipped = false;
 	size_t max1 = path1.size() - 1;
 	size_t max2 = path2.size() - 1;
@@ -569,71 +567,67 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 				endP2 = max2 - endP2;
 			}
 
-			lowValid = true;
+			bool lowValid = true;
+			ContigPath::const_reverse_iterator
+				rit1 = path1.rbegin() + (max1 - startP1),
+				rit2 = path2.rbegin() + (max2 - startP2);
 			while(1) {
 				// Skip ambiguous sequence.
-				if (path1[startP1].ambiguous()
-						|| path2[startP2].ambiguous()) {
-					ContigPath::const_reverse_iterator
-						it1 = path1.rbegin() + (max1 - startP1),
-						it2 = path2.rbegin() + (max2 - startP2);
-					if (path1[startP1].ambiguous())
-						skipAmbiguous<ContigPath::const_reverse_iterator>(
-								it1, path1.rend(), it2, path2.rend());
+				if (rit1->ambiguous() || rit2->ambiguous()) {
+					if (rit1->ambiguous())
+						skipAmbiguous<
+							ContigPath::const_reverse_iterator>(
+								rit1, path1.rend(),
+								rit2, path2.rend());
 					else
-						skipAmbiguous<ContigPath::const_reverse_iterator>(
-								it2, path2.rend(), it1, path1.rend());
-					startP1 = max1 - (it1 - path1.rbegin());
-					startP2 = max2 - (it2 - path2.rbegin());
+						skipAmbiguous<
+							ContigPath::const_reverse_iterator>(
+								rit2, path2.rend(),
+								rit1, path1.rend());
 				}
 
-				if (path1[startP1] != path2[startP2]) {
-					// The nodes no longer match, this path is not valid
+				if (*rit1 != *rit2) {
 					lowValid = false;
 					break;
 				}
 
-				// Can we expand any further?
-				if(startP1 == 0 || startP2 == 0)
+				if (rit1 == path1.rend()-1 || rit2 == path2.rend()-1)
 					break;
-
-				startP1--;
-				startP2--;
+				++rit1;
+				++rit2;
 			}
 
-			// high coordinates
-			highValid = true;
+			bool highValid = true;
+			ContigPath::const_iterator
+				it1 = path1.begin() + endP1,
+				it2 = path2.begin() + endP2;
 			while(1) {
 				// Skip ambiguous sequence.
-				if (path1[endP1].ambiguous()
-						|| path2[endP2].ambiguous()) {
-					ContigPath::const_iterator
-						it1 = path1.begin() + endP1,
-						it2 = path2.begin() + endP2;
-					if (path1[endP1].ambiguous())
+				if (it1->ambiguous() || it2->ambiguous()) {
+					if (it1->ambiguous())
 						skipAmbiguous<ContigPath::const_iterator>(
 								it1, path1.end(), it2, path2.end());
 					else
 						skipAmbiguous<ContigPath::const_iterator>(
 								it2, path2.end(), it1, path1.end());
-					endP1 = it1 - path1.begin();
-					endP2 = it2 - path2.begin();
 				}
 
-				if(path1[endP1] != path2[endP2]) {
-					// The nodes no longer match, this path is not valid
+				if(*it1 != *it2) {
 					highValid = false;
 					break;
 				}
 
-				// Can we expand any further?
-				if(endP1 == max1 || endP2 == max2)
+				if (it1 == path1.end()-1 || it2 == path2.end()-1)
 					break;
-
-				endP1++;
-				endP2++;
+				++it1;
+				++it2;
 			}
+
 			if (lowValid && highValid) {
+				startP1 = max1 - (rit1 - path1.rbegin());
+				startP2 = max2 - (rit2 - path2.rbegin());
+				endP1 = it1 - path1.begin();
+				endP2 = it2 - path2.begin();
 				size_t count1 = endP1 - startP1;
 				size_t count2 = endP2 - startP2;
 				size_t count = max(count1, count2);
