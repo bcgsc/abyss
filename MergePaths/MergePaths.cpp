@@ -105,8 +105,13 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
-bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path, vector<size_t>& coords);
-bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2);
+bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
+		vector<size_t>& coords);
+bool checkPathConsistency(LinearNumKey path1Root,
+		LinearNumKey path2Root,
+		const ContigPath& path1, ContigPath& path2,
+		size_t& startP1, size_t& endP1,
+		size_t& startP2, size_t& endP2);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
@@ -520,11 +525,15 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 		it1 = last1;
 }
 
-//
-// Check if the two paths are consistent
-// They are consistent if there is an identical subpath thats belongs to both nodes and that subpath is terminal wrt to its super path
-//
-bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, ContigPath& path1, ContigPath& path2, size_t& startP1, size_t& endP1, size_t& startP2, size_t& endP2)
+/** Find an equivalent region of the two specified paths.
+ * @param path2 is oriented to agree with path1
+ * @return true if an equivalent region is found
+ */
+bool checkPathConsistency(LinearNumKey path1Root,
+		LinearNumKey path2Root,
+		const ContigPath& path1, ContigPath& path2,
+		size_t& startP1, size_t& endP1,
+		size_t& startP2, size_t& endP2)
 {
 	(void)path1Root;
 	// Find the provisional minimal index set by choosing the closest index pair of the root nodes from each path
@@ -675,7 +684,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 // Extract the minimal coordinate set of the indices of (c1, c2) from path.
 // Returns true if a valid coordinate set is found, false otherwise
-bool extractMinCoordSet(LinearNumKey anchor, ContigPath& path,
+bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
 		vector<size_t>& coords)
 {
 	size_t maxIdx = path.size();
