@@ -416,11 +416,11 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 	MergeNodeList::iterator iter = mergeInList.begin();
 	while(!mergeInList.empty()) {
 		if(iter->id() != id) {
-			if (gDebugPrint) cout << ' ' << *iter << '\n';
-
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = paths.find(iter->id());
 			if (findIter != paths.end()) {
+				if (gDebugPrint)
+					cout << ' ' << *iter << '\n';
 				// Make the full path of the child node
 				ContigPath childCanonPath = *findIter->second;
 
