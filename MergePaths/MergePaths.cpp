@@ -562,7 +562,6 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			const ContigPath& p1 = path1;
 			const ContigPath& p2 = flipped ? rpath2 : path2;
 
-			bool lowValid = true;
 			ContigPath::const_reverse_iterator rit1, rit2;
 			for (rit1 = p1.rbegin() + (max1 - s1),
 					rit2 = p2.rbegin() + (max2 - s2);
@@ -579,15 +578,10 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 							ContigPath::const_reverse_iterator>(
 								rit2, p2.rend(), rit1, p1.rend());
 				}
-				if (*rit1 != *rit2) {
-					lowValid = false;
+				if (*rit1 != *rit2)
 					break;
-				}
 			}
-			--rit1;
-			--rit2;
 
-			bool highValid = true;
 			ContigPath::const_iterator it1, it2;
 			for (it1 = p1.begin() + e1, it2 = p2.begin() + e2;
 					it1 != p1.end() && it2 != p2.end();
@@ -601,20 +595,16 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 						skipAmbiguous<ContigPath::const_iterator>(
 								it2, p2.end(), it1, p1.end());
 				}
-
-				if (*it1 != *it2) {
-					highValid = false;
+				if (*it1 != *it2)
 					break;
-				}
 			}
-			--it1;
-			--it2;
 
-			if (lowValid && highValid) {
-				s1 = max1 - (rit1 - p1.rbegin());
-				s2 = max2 - (rit2 - p2.rbegin());
-				e1 = it1 - p1.begin();
-				e2 = it2 - p2.begin();
+			if ((rit1 == p1.rend() || rit2 == p2.rend())
+					&& (it1 == p1.end() || it2 == p2.end())) {
+				s1 = p1.size() - (rit1 - p1.rbegin());
+				s2 = p2.size() - (rit2 - p2.rbegin());
+				e1 = it1 - p1.begin() - 1;
+				e2 = it2 - p2.begin() - 1;
 				size_t count1 = e1 - s1;
 				size_t count2 = e2 - s2;
 				size_t count = max(count1, count2);
