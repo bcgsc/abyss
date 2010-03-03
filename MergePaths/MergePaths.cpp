@@ -632,11 +632,10 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 		}
 	}
 
-	// Check if there was an actual mismatch in the nodes
-	if(pathAlignments.empty()) {
-		if(gDebugPrint) printf("Invalid path match!\n");
-		if(gDebugPrint) cout << "Path1 (" << path1Root << ") " << path1 << '\n';
-		if(gDebugPrint) cout << "Path2 (" << path2Root << ") " << path2 << '\n';
+	if (pathAlignments.empty()) {
+		if (gDebugPrint)
+			cout << " invalid " << idToString(path1Root) << ' '
+				<< idToString(path2Root) << '\n';
 		return false;
 	}
 
