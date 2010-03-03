@@ -515,8 +515,9 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 	assert(!it1->ambiguous());
 
 	assert(it2 != last2);
-	iterator it = find(it2, last2, *it1);
-	it2 = it == last2 ? last2-1 : it;
+	it2 = find(it2, last2, *it1);
+	if (it2 == last2)
+		it1 = last1;
 }
 
 //
@@ -577,6 +578,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 						skipAmbiguous<
 							ContigPath::const_reverse_iterator>(
 								rit2, p2.rend(), rit1, p1.rend());
+					if (rit1 == p1.rend() || rit2 == p2.rend())
+						break;
 				}
 				if (*rit1 != *rit2)
 					break;
@@ -594,6 +597,8 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 					else
 						skipAmbiguous<ContigPath::const_iterator>(
 								it2, p2.end(), it1, p1.end());
+					if (it1 == p1.end() || it2 == p2.end())
+						break;
 				}
 				if (*it1 != *it2)
 					break;
@@ -618,6 +623,11 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 					pathAlignment.duplicateSize = false;
 				} else
 					pathAlignments[count].duplicateSize = true;
+
+				assert((rit1 == p1.rend() && it2 == p2.end())
+						|| (it1 == p1.end() && rit2 == p2.rend())
+						|| (rit1 == p1.rend() && it1 == p1.end())
+						|| (rit2 == p2.rend() && it2 == p2.end()));
 			}
 		}
 	}
@@ -654,8 +664,10 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 	if (biggestIt->second.flipped)
 		path2.reverseComplement();
 
-	assert(path1[startP1] == path2[startP2]);
-	assert(path1[endP1] == path2[endP2]);
+	assert(path1[startP1] == path2[startP2]
+			|| (startP1 == 0 && startP2 == 0));
+	assert(path1[endP1] == path2[endP2]
+			|| (endP1 == max1 && endP2 == max2));
 
 	// If we got to this point there is a legal subpath that describes both nodes and they can be merged
 	return true;
