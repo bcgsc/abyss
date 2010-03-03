@@ -550,27 +550,25 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 	for (unsigned i = 0; i < coords1.size(); i++) {
 		for (unsigned j = 0; j < coords2.size(); j++) {
-			startP1 = coords1[i];
-			endP1 = coords1[i];
+			size_t
+				s1 = coords1[i], e1 = coords1[i],
+				s2 = coords2[j], e2 = coords2[j];
 			if (flipped) {
-				startP2 = max2 - coords2[j];
-				endP2 = max2 - coords2[j];
-			} else {
-				startP2 = coords2[j];
-				endP2 = coords2[j];
+				s2 = max2 - s2;
+				e2 = max2 - e2;
 			}
 
-			if(path1[startP1].sense() != path2[startP2].sense()) {
+			if (path1[s1].sense() != path2[s2].sense()) {
 				path2.reverseComplement();
 				flipped = !flipped;
-				startP2 = max2 - startP2;
-				endP2 = max2 - endP2;
+				s2 = max2 - s2;
+				e2 = max2 - e2;
 			}
 
 			bool lowValid = true;
 			ContigPath::const_reverse_iterator rit1, rit2;
-			for (rit1 = path1.rbegin() + (max1 - startP1),
-					rit2 = path2.rbegin() + (max2 - startP2);
+			for (rit1 = path1.rbegin() + (max1 - s1),
+					rit2 = path2.rbegin() + (max2 - s2);
 					rit1 != path1.rend() && rit2 != path2.rend();
 					++rit1, ++rit2) {
 				// Skip ambiguous sequence.
@@ -596,8 +594,7 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 
 			bool highValid = true;
 			ContigPath::const_iterator it1, it2;
-			for (it1 = path1.begin() + endP1,
-					it2 = path2.begin() + endP2;
+			for (it1 = path1.begin() + e1, it2 = path2.begin() + e2;
 					it1 != path1.end() && it2 != path2.end();
 					++it1, ++it2) {
 				// Skip ambiguous sequence.
@@ -619,19 +616,19 @@ bool checkPathConsistency(LinearNumKey path1Root, LinearNumKey path2Root, Contig
 			--it2;
 
 			if (lowValid && highValid) {
-				startP1 = max1 - (rit1 - path1.rbegin());
-				startP2 = max2 - (rit2 - path2.rbegin());
-				endP1 = it1 - path1.begin();
-				endP2 = it2 - path2.begin();
-				size_t count1 = endP1 - startP1;
-				size_t count2 = endP2 - startP2;
+				s1 = max1 - (rit1 - path1.rbegin());
+				s2 = max2 - (rit2 - path2.rbegin());
+				e1 = it1 - path1.begin();
+				e2 = it2 - path2.begin();
+				size_t count1 = e1 - s1;
+				size_t count2 = e2 - s2;
 				size_t count = max(count1, count2);
 				if (pathAlignments.find(count) == pathAlignments.end()) {
 					PathConsistencyStats& pathAlignment = pathAlignments[count];
-					pathAlignment.startP1 = startP1;
-					pathAlignment.endP1 = endP1;
-					pathAlignment.startP2 = startP2;
-					pathAlignment.endP2 = endP2;
+					pathAlignment.startP1 = s1;
+					pathAlignment.endP1 = e1;
+					pathAlignment.startP2 = s2;
+					pathAlignment.endP2 = e2;
 					pathAlignment.flipped = flipped;
 					pathAlignment.duplicateSize = false;
 				} else
