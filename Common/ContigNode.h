@@ -23,7 +23,7 @@ class ContigNode {
 		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
 
 	/** Create an ambiguous contig. */
-	ContigNode(unsigned n)
+	explicit ContigNode(unsigned n)
 		: m_ambig(true), m_id(n), m_sense(false) { assert(n > 0); }
 
 	ContigNode(std::string id)
