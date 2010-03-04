@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
@@ -600,15 +601,10 @@ static PathAlignment align(
 		return PathAlignment();
 }
 
-/** Find the occurences of id in path. */
-static vector<size_t> find(const ContigPath& path, LinearNumKey id)
+/** Return true if the IDs of the two ContigNodes are equal. */
+static bool equalID(ContigNode a, ContigNode b)
 {
-	vector<size_t> coords;
-	for (ContigPath::const_reverse_iterator it = path.rbegin();
-			it != path.rend(); ++it)
-		if (it->id() == id)
-			coords.push_back(path.size()-1 - (it - path.rbegin()));
-	return coords;
+	return a.id() == b.id();
 }
 
 /** Find an equivalent region of the two specified paths.
@@ -618,6 +614,7 @@ static vector<size_t> find(const ContigPath& path, LinearNumKey id)
 static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		const ContigNode& pivot)
 {
+	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
 	ContigPath::iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
 	if (it2 == path2.end())
@@ -625,14 +622,15 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 	assert(it2 != path2.end());
 	assert(count(it2+1, path2.end(), pivot) == 0);
 
-	vector<size_t> coords1 = find(path1, pivot.id());
-	assert(!coords1.empty());
-
 	map<size_t, PathConsistencyStats> pathAlignments;
-	for (vector<size_t>::const_iterator it1 = coords1.begin();
-			it1 != coords1.end(); ++it1) {
+	for (ContigPath::const_iterator it1 = find_if(
+				path1.begin(), path1.end(),
+				bind2nd(ptr_fun(equalID), pivot));
+			it1 != path1.end();
+			it1 = find_if(it1+1, path1.end(),
+				bind2nd(ptr_fun(equalID), pivot))) {
 		PathAlignment alignment = align(path1, path2,
-				*it1, it2 - path2.begin());
+				it1 - path1.begin(), it2 - path2.begin());
 		if (alignment.first == 0)
 			continue;
 		bool inserted = pathAlignments.insert(alignment).second;
