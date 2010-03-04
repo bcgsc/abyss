@@ -149,7 +149,9 @@ next_record:
 			o << fields[0];
 			for (int i = 1; i < 6; i++)
 				o << '_' << fields[i];
-			o << '/' << fields[7];
+			// The reverse read is typically the second read, but is
+			// the third read of an indexed run.
+			o << '/' << (fields[7] == "3" ? "2" : fields[7]);
 			id = o.str();
 			s = fields[8];
 			q = fields[9];
