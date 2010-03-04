@@ -525,6 +525,87 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 		it1 = last1;
 }
 
+typedef pair<size_t, PathConsistencyStats> PathAlignment;
+
+/** Find an equivalent region of the two specified paths, starting the
+ * alignment at pos1 of path1 and pos2 of path2.
+ * @return the alignment
+ */
+static PathAlignment align(
+		const ContigPath& path1, const ContigPath& path2,
+		size_t pos1, size_t pos2)
+{
+	size_t max1 = path1.size() - 1;
+	size_t max2 = path2.size() - 1;
+
+	ContigPath rpath2;
+	bool flipped = path1[pos1].sense() != path2[pos2].sense();
+	if (flipped) {
+		rpath2 = path2;
+		rpath2.reverseComplement();
+		pos2 = max2 - pos2;
+	}
+	const ContigPath& p1 = path1;
+	const ContigPath& p2 = flipped ? rpath2 : path2;
+
+	ContigPath::const_reverse_iterator rit1, rit2;
+	for (rit1 = p1.rbegin() + (max1 - pos1),
+			rit2 = p2.rbegin() + (max2 - pos2);
+			rit1 != p1.rend() && rit2 != p2.rend();
+			++rit1, ++rit2) {
+		if (rit1->ambiguous() || rit2->ambiguous()) {
+			if (rit1->ambiguous())
+				skipAmbiguous<ContigPath::const_reverse_iterator>(
+							rit1, p1.rend(), rit2, p2.rend());
+			else
+				skipAmbiguous<ContigPath::const_reverse_iterator>(
+							rit2, p2.rend(), rit1, p1.rend());
+			if (rit1 == p1.rend() || rit2 == p2.rend())
+				break;
+		}
+		if (*rit1 != *rit2)
+			break;
+	}
+
+	ContigPath::const_iterator it1, it2;
+	for (it1 = p1.begin() + pos1, it2 = p2.begin() + pos2;
+			it1 != p1.end() && it2 != p2.end();
+			++it1, ++it2) {
+		if (it1->ambiguous() || it2->ambiguous()) {
+			if (it1->ambiguous())
+				skipAmbiguous<ContigPath::const_iterator>(
+						it1, p1.end(), it2, p2.end());
+			else
+				skipAmbiguous<ContigPath::const_iterator>(
+						it2, p2.end(), it1, p1.end());
+			if (it1 == p1.end() || it2 == p2.end())
+				break;
+		}
+		if (*it1 != *it2)
+			break;
+	}
+
+	if ((rit1 == p1.rend() || rit2 == p2.rend())
+			&& (it1 == p1.end() || it2 == p2.end())) {
+		// Found an alignment.
+		assert((rit1 == p1.rend() && it2 == p2.end())
+				|| (it1 == p1.end() && rit2 == p2.rend())
+				|| (rit1 == p1.rend() && it1 == p1.end())
+				|| (rit2 == p2.rend() && it2 == p2.end()));
+		PathConsistencyStats a;
+		a.startP1 = p1.size() - (rit1 - p1.rbegin());
+		a.endP1 = it1 - p1.begin() - 1;
+		a.startP2 = p2.size() - (rit2 - p2.rbegin());
+		a.endP2 = it2 - p2.begin() - 1;
+		a.flipped = flipped;
+		a.duplicateSize = false;
+		size_t count = max(a.endP1 - a.startP1 + 1,
+				a.endP2 - a.startP2 + 1);
+		return make_pair(count, a);
+	} else
+		return PathAlignment();
+}
+
 /** Find an equivalent region of the two specified paths.
  * @param path2 is oriented to agree with path1
  * @return true if an equivalent region is found
@@ -559,85 +640,13 @@ bool checkPathConsistency(LinearNumKey path1Root,
 
 	for (unsigned i = 0; i < coords1.size(); i++) {
 		for (unsigned j = 0; j < coords2.size(); j++) {
-			size_t s1 = coords1[i], e1 = coords1[i],
-				s2 = coords2[j], e2 = coords2[j];
-			ContigPath rpath2;
-			bool flipped = path1[s1].sense() != path2[s2].sense();
-			if (flipped) {
-				rpath2 = path2;
-				rpath2.reverseComplement();
-				s2 = max2 - s2;
-				e2 = max2 - e2;
-			}
-			const ContigPath& p1 = path1;
-			const ContigPath& p2 = flipped ? rpath2 : path2;
-
-			ContigPath::const_reverse_iterator rit1, rit2;
-			for (rit1 = p1.rbegin() + (max1 - s1),
-					rit2 = p2.rbegin() + (max2 - s2);
-					rit1 != p1.rend() && rit2 != p2.rend();
-					++rit1, ++rit2) {
-				// Skip ambiguous sequence.
-				if (rit1->ambiguous() || rit2->ambiguous()) {
-					if (rit1->ambiguous())
-						skipAmbiguous<
-							ContigPath::const_reverse_iterator>(
-								rit1, p1.rend(), rit2, p2.rend());
-					else
-						skipAmbiguous<
-							ContigPath::const_reverse_iterator>(
-								rit2, p2.rend(), rit1, p1.rend());
-					if (rit1 == p1.rend() || rit2 == p2.rend())
-						break;
-				}
-				if (*rit1 != *rit2)
-					break;
-			}
-
-			ContigPath::const_iterator it1, it2;
-			for (it1 = p1.begin() + e1, it2 = p2.begin() + e2;
-					it1 != p1.end() && it2 != p2.end();
-					++it1, ++it2) {
-				// Skip ambiguous sequence.
-				if (it1->ambiguous() || it2->ambiguous()) {
-					if (it1->ambiguous())
-						skipAmbiguous<ContigPath::const_iterator>(
-								it1, p1.end(), it2, p2.end());
-					else
-						skipAmbiguous<ContigPath::const_iterator>(
-								it2, p2.end(), it1, p1.end());
-					if (it1 == p1.end() || it2 == p2.end())
-						break;
-				}
-				if (*it1 != *it2)
-					break;
-			}
-
-			if ((rit1 == p1.rend() || rit2 == p2.rend())
-					&& (it1 == p1.end() || it2 == p2.end())) {
-				s1 = p1.size() - (rit1 - p1.rbegin());
-				s2 = p2.size() - (rit2 - p2.rbegin());
-				e1 = it1 - p1.begin() - 1;
-				e2 = it2 - p2.begin() - 1;
-				size_t count1 = e1 - s1;
-				size_t count2 = e2 - s2;
-				size_t count = max(count1, count2);
-				if (pathAlignments.find(count) == pathAlignments.end()) {
-					PathConsistencyStats& pathAlignment = pathAlignments[count];
-					pathAlignment.startP1 = s1;
-					pathAlignment.endP1 = e1;
-					pathAlignment.startP2 = s2;
-					pathAlignment.endP2 = e2;
-					pathAlignment.flipped = flipped;
-					pathAlignment.duplicateSize = false;
-				} else
-					pathAlignments[count].duplicateSize = true;
-
-				assert((rit1 == p1.rend() && it2 == p2.end())
-						|| (it1 == p1.end() && rit2 == p2.rend())
-						|| (rit1 == p1.rend() && it1 == p1.end())
-						|| (rit2 == p2.rend() && it2 == p2.end()));
-			}
+			PathAlignment alignment = align(path1, path2,
+					coords1[i], coords2[j]);
+			if (alignment.first == 0)
+				continue;
+			bool inserted = pathAlignments.insert(alignment).second;
+			if (!inserted)
+				pathAlignments[alignment.first].duplicateSize = true;
 		}
 	}
 
@@ -661,7 +670,7 @@ bool checkPathConsistency(LinearNumKey path1Root,
 	// If either path aligns to the front and back of the other, it is
 	// not a valid path.
 	if (biggestIt->second.duplicateSize
-			&& biggestIt->first != min(max1, max2)) {
+			&& biggestIt->first != min(max1+1, max2+1)) {
 		if (gDebugPrint) printf("Duplicate path match found\n");
 		return false;
 	}
