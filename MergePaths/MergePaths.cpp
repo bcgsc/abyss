@@ -106,8 +106,6 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
-bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
-		vector<size_t>& coords);
 static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		const ContigNode& pivot);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
@@ -602,6 +600,17 @@ static PathAlignment align(
 		return PathAlignment();
 }
 
+/** Find the occurences of id in path. */
+static vector<size_t> find(const ContigPath& path, LinearNumKey id)
+{
+	vector<size_t> coords;
+	for (ContigPath::const_reverse_iterator it = path.rbegin();
+			it != path.rend(); ++it)
+		if (it->id() == id)
+			coords.push_back(path.size()-1 - (it - path.rbegin()));
+	return coords;
+}
+
 /** Find an equivalent region of the two specified paths.
  * @param path2 is oriented to agree with path1
  * @return the alignment
@@ -609,12 +618,9 @@ static PathAlignment align(
 static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		const ContigNode& pivot)
 {
-	vector<size_t> coords1, coords2;
-	bool valid1 = extractMinCoordSet(pivot.id(), path1, coords1);
-	bool valid2 = extractMinCoordSet(pivot.id(), path2, coords2);
-	assert(valid1 && valid2);
-	(void)valid1;
-	(void)valid2;
+	vector<size_t> coords1 = find(path1, pivot.id()),
+		coords2 = find(path2, pivot.id());
+	assert(!coords1.empty() && !coords2.empty());
 
 	map<size_t, PathConsistencyStats> pathAlignments;
 	for (unsigned i = 0; i < coords1.size(); i++) {
@@ -660,65 +666,6 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 	assert(path1[a.second.endP1] == path2[a.second.endP2]
 			|| (a.second.endP1 == max1 && a.second.endP2 == max2));
 	return a;
-}
-
-// Extract the minimal coordinate set of the indices of (c1, c2) from path.
-// Returns true if a valid coordinate set is found, false otherwise
-bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
-		vector<size_t>& coords)
-{
-	size_t maxIdx = path.size();
-	for(size_t idx = 0; idx < maxIdx; ++idx) {
-		size_t tIdx = maxIdx - idx - 1;
-		if(path[tIdx].id() == anchor)
-			coords.push_back(tIdx);
-	}
-
-	if(coords.empty()) // anchor coord not found
-		return false;
-
-	return true;
-
-	/*
-	printf("	found %zu %zu %zu %zu\n", coords1[0], coords1[1], coords2[0], coords2[1]);
-
-	// Were coordinates found for each contig?
-	if (coords1[0] == (int)path.size()
-			|| coords2[0] == (int)path.size()) {
-		start = path.size();
-		end = path.size();
-		// one cood missed
-		return false;
-	}
-
-	size_t bestI = 0;
-	size_t bestJ = 0;
-	int best = path.size();
-	for(size_t i = 0; i <= 1; ++i)
-		for(size_t j = 0; j <= 1; ++j)
-		{
-			int dist = abs(coords1[i] - coords2[j]);
-			if(dist < best)
-			{
-				best = dist;
-				bestI = i;
-				bestJ = j;
-			}
-		}
-
-	if(coords1[bestI] < coords2[bestJ])
-	{
-		start = coords1[bestI];
-		end = coords2[bestJ];
-	}
-	else
-	{
-		start = coords2[bestJ];
-		end = coords1[bestI];
-	}
-	
-	return true;
-	*/
 }
 
 /** Return a string representation of the specified object. */
