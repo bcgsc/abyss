@@ -97,6 +97,7 @@ struct Contig {
 };
 
 typedef vector<Contig> ContigVec;
+typedef pair<size_t, PathConsistencyStats> PathAlignment;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
@@ -107,10 +108,8 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
 bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
 		vector<size_t>& coords);
-bool checkPathConsistency(const ContigNode& pivot,
-		const ContigPath& path1, ContigPath& path2,
-		size_t& startP1, size_t& endP1,
-		size_t& startP2, size_t& endP2);
+static PathAlignment align(const ContigPath& path1, ContigPath& path2,
+		const ContigNode& pivot);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
@@ -431,10 +430,10 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				if(gDebugPrint) cout << " ref: " << *refCanonical << '\n';
 				if(gDebugPrint) cout << "  in: " << childCanonPath << '\n';
 
-				size_t s1, s2, e1, e2;
-				bool validMerge = checkPathConsistency(*iter,
-					*refCanonical, childCanonPath, s1, e1, s2, e2);
-
+				PathAlignment a = align(*refCanonical, childCanonPath,
+					*iter);
+				bool validMerge = a.first > 0;
+				size_t s2 = a.second.startP2, e2 = a.second.endP2;
 				if(validMerge && deleteSubsumed) {
 					// If additional merges could be made at this
 					// point, something is wrong. We may need to delete
@@ -524,8 +523,6 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 		it1 = last1;
 }
 
-typedef pair<size_t, PathConsistencyStats> PathAlignment;
-
 /** Find an equivalent region of the two specified paths, starting the
  * alignment at pos1 of path1 and pos2 of path2.
  * @return the alignment
@@ -607,12 +604,10 @@ static PathAlignment align(
 
 /** Find an equivalent region of the two specified paths.
  * @param path2 is oriented to agree with path1
- * @return true if an equivalent region is found
+ * @return the alignment
  */
-bool checkPathConsistency(const ContigNode& pivot,
-		const ContigPath& path1, ContigPath& path2,
-		size_t& startP1, size_t& endP1,
-		size_t& startP2, size_t& endP2)
+static PathAlignment align(const ContigPath& path1, ContigPath& path2,
+		const ContigNode& pivot)
 {
 	vector<size_t> coords1, coords2;
 	bool valid1 = extractMinCoordSet(pivot.id(), path1, coords1);
@@ -637,7 +632,7 @@ bool checkPathConsistency(const ContigNode& pivot,
 	if (pathAlignments.empty()) {
 		if (gDebugPrint)
 			cout << " invalid " << pivot << '\n';
-		return false;
+		return PathAlignment();
 	}
 
 	const PathAlignment& a = *pathAlignments.rbegin();
@@ -654,21 +649,17 @@ bool checkPathConsistency(const ContigNode& pivot,
 	if (a.second.duplicateSize && a.first != min(max1+1, max2+1)) {
 		if (gDebugPrint)
 			cout << "Duplicate path match found\n";
-		return false;
+		return PathAlignment();
 	}
 
-	startP1 = a.second.startP1;
-	endP1 = a.second.endP1;
-	startP2 = a.second.startP2;
-	endP2 = a.second.endP2;
 	if (a.second.flipped)
 		path2.reverseComplement();
 
-	assert(path1[startP1] == path2[startP2]
-			|| (startP1 == 0 && startP2 == 0));
-	assert(path1[endP1] == path2[endP2]
-			|| (endP1 == max1 && endP2 == max2));
-	return true;
+	assert(path1[a.second.startP1] == path2[a.second.startP2]
+			|| (a.second.startP1 == 0 && a.second.startP2 == 0));
+	assert(path1[a.second.endP1] == path2[a.second.endP2]
+			|| (a.second.endP1 == max1 && a.second.endP2 == max2));
+	return a;
 }
 
 // Extract the minimal coordinate set of the indices of (c1, c2) from path.
