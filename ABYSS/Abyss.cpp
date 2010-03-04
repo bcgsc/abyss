@@ -130,7 +130,7 @@ int main(int argc, char* const* argv)
 
 		if (k > opt::kMin) {
 			// Reset the assembly options to defaults.
-			opt::erode = -1;
+			opt::erode = (unsigned)-1;
 			opt::coverage = -1;
 			opt::trimLen = k;
 			opt::bubbleLen = 3*k;
