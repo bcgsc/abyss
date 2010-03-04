@@ -528,24 +528,22 @@ static void skipAmbiguous(iterator& it1, iterator last1,
  */
 static PathAlignment align(
 		const ContigPath& path1, const ContigPath& path2,
-		size_t pos1, size_t pos2)
+		ContigPath::const_iterator pivot1,
+		ContigPath::const_iterator pivot2)
 {
-	size_t max1 = path1.size() - 1;
-	size_t max2 = path2.size() - 1;
-
 	ContigPath rpath2;
-	bool flipped = path1[pos1].sense() != path2[pos2].sense();
+	bool flipped = pivot1->sense() != pivot2->sense();
 	if (flipped) {
 		rpath2 = path2;
 		rpath2.reverseComplement();
-		pos2 = max2 - pos2;
+		pivot2 = rpath2.begin() + (path2.end()-1 - pivot2);
 	}
 	const ContigPath& p1 = path1;
 	const ContigPath& p2 = flipped ? rpath2 : path2;
 
 	ContigPath::const_reverse_iterator rit1, rit2;
-	for (rit1 = p1.rbegin() + (max1 - pos1),
-			rit2 = p2.rbegin() + (max2 - pos2);
+	for (rit1 = ContigPath::const_reverse_iterator(pivot1+1),
+			rit2 = ContigPath::const_reverse_iterator(pivot2+1);
 			rit1 != p1.rend() && rit2 != p2.rend();
 			++rit1, ++rit2) {
 		if (rit1->ambiguous() || rit2->ambiguous()) {
@@ -563,7 +561,7 @@ static PathAlignment align(
 	}
 
 	ContigPath::const_iterator it1, it2;
-	for (it1 = p1.begin() + pos1, it2 = p2.begin() + pos2;
+	for (it1 = pivot1, it2 = pivot2;
 			it1 != p1.end() && it2 != p2.end();
 			++it1, ++it2) {
 		if (it1->ambiguous() || it2->ambiguous()) {
@@ -588,9 +586,9 @@ static PathAlignment align(
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
 		PathConsistencyStats a;
-		a.startP1 = p1.size() - (rit1 - p1.rbegin());
+		a.startP1 = p1.rend() - rit1;
 		a.endP1 = it1 - p1.begin() - 1;
-		a.startP2 = p2.size() - (rit2 - p2.rbegin());
+		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
 		a.flipped = flipped;
 		a.duplicateSize = false;
@@ -629,8 +627,7 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 			it1 != path1.end();
 			it1 = find_if(it1+1, path1.end(),
 				bind2nd(ptr_fun(equalID), pivot))) {
-		PathAlignment alignment = align(path1, path2,
-				it1 - path1.begin(), it2 - path2.begin());
+		PathAlignment alignment = align(path1, path2, it1, it2);
 		if (alignment.first == 0)
 			continue;
 		bool inserted = pathAlignments.insert(alignment).second;
