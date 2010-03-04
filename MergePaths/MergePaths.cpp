@@ -74,7 +74,6 @@ struct PathConsistencyStats {
 	size_t endP1;
 	size_t startP2;
 	size_t endP2;
-	bool duplicateSize;
 };
 
 typedef list<MergeNode> MergeNodeList;
@@ -578,7 +577,6 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		a.endP1 = it1 - p1.begin() - 1;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
-		a.duplicateSize = false;
 		size_t count = max(a.endP1 - a.startP1 + 1,
 				a.endP2 - a.startP2 + 1);
 		return make_pair(count, a);
@@ -612,8 +610,8 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		if (alignment.first == 0)
 			continue;
 		bool inserted = pathAlignments.insert(alignment).second;
-		if (!inserted)
-			pathAlignments[alignment.first].duplicateSize = true;
+		assert(inserted);
+		(void)inserted;
 	}
 
 	if (pathAlignments.empty()) {
@@ -630,14 +628,6 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 	size_t max2 = path2.size() - 1;
 	assert(a.second.startP1 == 0 || a.second.startP2 == 0);
 	assert(a.second.endP1 == max1 || a.second.endP2 == max2);
-
-	// If either path aligns to the front and back of the other, it is
-	// not a valid path.
-	if (a.second.duplicateSize && a.first != min(max1+1, max2+1)) {
-		if (gDebugPrint)
-			cout << "Duplicate path match found\n";
-		return PathAlignment();
-	}
 
 	assert(path1[a.second.startP1] == path2[a.second.startP2]
 			|| (a.second.startP1 == 0 && a.second.startP2 == 0));
