@@ -620,19 +620,19 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 {
 	vector<size_t> coords1 = find(path1, pivot.id()),
 		coords2 = find(path2, pivot.id());
-	assert(!coords1.empty() && !coords2.empty());
+	assert(!coords1.empty());
+	assert(coords2.size() == 1);
 
 	map<size_t, PathConsistencyStats> pathAlignments;
-	for (unsigned i = 0; i < coords1.size(); i++) {
-		for (unsigned j = 0; j < coords2.size(); j++) {
-			PathAlignment alignment = align(path1, path2,
-					coords1[i], coords2[j]);
-			if (alignment.first == 0)
-				continue;
-			bool inserted = pathAlignments.insert(alignment).second;
-			if (!inserted)
-				pathAlignments[alignment.first].duplicateSize = true;
-		}
+	for (vector<size_t>::const_iterator it = coords1.begin();
+			it != coords1.end(); ++it) {
+		PathAlignment alignment = align(path1, path2,
+				*it, coords2[0]);
+		if (alignment.first == 0)
+			continue;
+		bool inserted = pathAlignments.insert(alignment).second;
+		if (!inserted)
+			pathAlignments[alignment.first].duplicateSize = true;
 	}
 
 	if (pathAlignments.empty()) {
