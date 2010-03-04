@@ -618,16 +618,21 @@ static vector<size_t> find(const ContigPath& path, LinearNumKey id)
 static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		const ContigNode& pivot)
 {
-	vector<size_t> coords1 = find(path1, pivot.id()),
-		coords2 = find(path2, pivot.id());
+	ContigPath::iterator it2 = find(path2.begin(), path2.end(),
+			pivot);
+	if (it2 == path2.end())
+		it2 = find(path2.begin(), path2.end(), ~pivot);
+	assert(it2 != path2.end());
+	assert(count(it2+1, path2.end(), pivot) == 0);
+
+	vector<size_t> coords1 = find(path1, pivot.id());
 	assert(!coords1.empty());
-	assert(coords2.size() == 1);
 
 	map<size_t, PathConsistencyStats> pathAlignments;
-	for (vector<size_t>::const_iterator it = coords1.begin();
-			it != coords1.end(); ++it) {
+	for (vector<size_t>::const_iterator it1 = coords1.begin();
+			it1 != coords1.end(); ++it1) {
 		PathAlignment alignment = align(path1, path2,
-				*it, coords2[0]);
+				*it1, it2 - path2.begin());
 		if (alignment.first == 0)
 			continue;
 		bool inserted = pathAlignments.insert(alignment).second;
