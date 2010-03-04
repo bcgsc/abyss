@@ -74,7 +74,6 @@ struct PathConsistencyStats {
 	size_t endP1;
 	size_t startP2;
 	size_t endP2;
-	bool flipped;
 	bool duplicateSize;
 };
 
@@ -526,21 +525,10 @@ static void skipAmbiguous(iterator& it1, iterator last1,
  * alignment at pos1 of path1 and pos2 of path2.
  * @return the alignment
  */
-static PathAlignment align(
-		const ContigPath& path1, const ContigPath& path2,
+static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		ContigPath::const_iterator pivot1,
 		ContigPath::const_iterator pivot2)
 {
-	ContigPath rpath2;
-	bool flipped = pivot1->sense() != pivot2->sense();
-	if (flipped) {
-		rpath2 = path2;
-		rpath2.reverseComplement();
-		pivot2 = rpath2.begin() + (path2.end()-1 - pivot2);
-	}
-	const ContigPath& p1 = path1;
-	const ContigPath& p2 = flipped ? rpath2 : path2;
-
 	ContigPath::const_reverse_iterator rit1, rit2;
 	for (rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 			rit2 = ContigPath::const_reverse_iterator(pivot2+1);
@@ -590,19 +578,12 @@ static PathAlignment align(
 		a.endP1 = it1 - p1.begin() - 1;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
-		a.flipped = flipped;
 		a.duplicateSize = false;
 		size_t count = max(a.endP1 - a.startP1 + 1,
 				a.endP2 - a.startP2 + 1);
 		return make_pair(count, a);
 	} else
 		return PathAlignment();
-}
-
-/** Return true if the IDs of the two ContigNodes are equal. */
-static bool equalID(ContigNode a, ContigNode b)
-{
-	return a.id() == b.id();
 }
 
 /** Find an equivalent region of the two specified paths.
@@ -613,20 +594,20 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 		const ContigNode& pivot)
 {
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
+	if (pivot.sense())
+		path2.reverseComplement();
 	ContigPath::iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
-	if (it2 == path2.end())
-		it2 = find(path2.begin(), path2.end(), ~pivot);
 	assert(it2 != path2.end());
 	assert(count(it2+1, path2.end(), pivot) == 0);
 
 	map<size_t, PathConsistencyStats> pathAlignments;
 	for (ContigPath::const_iterator it1 = find_if(
 				path1.begin(), path1.end(),
-				bind2nd(ptr_fun(equalID), pivot));
+				bind2nd(equal_to<ContigNode>(), pivot));
 			it1 != path1.end();
 			it1 = find_if(it1+1, path1.end(),
-				bind2nd(ptr_fun(equalID), pivot))) {
+				bind2nd(equal_to<ContigNode>(), pivot))) {
 		PathAlignment alignment = align(path1, path2, it1, it2);
 		if (alignment.first == 0)
 			continue;
@@ -657,9 +638,6 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 			cout << "Duplicate path match found\n";
 		return PathAlignment();
 	}
-
-	if (a.second.flipped)
-		path2.reverseComplement();
 
 	assert(path1[a.second.startP1] == path2[a.second.startP2]
 			|| (a.second.startP1 == 0 && a.second.startP2 == 0));
