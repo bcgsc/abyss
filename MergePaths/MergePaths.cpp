@@ -616,28 +616,14 @@ bool checkPathConsistency(LinearNumKey path1Root,
 		size_t& startP1, size_t& endP1,
 		size_t& startP2, size_t& endP2)
 {
-	(void)path1Root;
-	// Find the provisional minimal index set by choosing the closest index pair of the root nodes from each path
-	// Since each path must contain each root node, if the range of these indices are different
-	// the paths must be different
-
-	assert(path1.size() != 0 && path2.size() != 1);
-
-	// Extract the minimal coordinates of the root nodes in the paths
-	// These coordinates should have the same size
 	vector<size_t> coords1, coords2;
 	bool valid1 = extractMinCoordSet(path2Root, path1, coords1);
 	bool valid2 = extractMinCoordSet(path2Root, path2, coords2);
+	assert(valid1 && valid2);
+	(void)valid1;
+	(void)valid2;
 
-	// Check that the nodes are both found and the range is the same size
-	if(!valid1 || !valid2) //trivially inconsistent
-		return false;
-
-	//printf("Init  coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
-	size_t max1 = path1.size() - 1;
-	size_t max2 = path2.size() - 1;
 	map<size_t, PathConsistencyStats> pathAlignments;
-
 	for (unsigned i = 0; i < coords1.size(); i++) {
 		for (unsigned j = 0; j < coords2.size(); j++) {
 			PathAlignment alignment = align(path1, path2,
@@ -657,37 +643,34 @@ bool checkPathConsistency(LinearNumKey path1Root,
 		return false;
 	}
 
-	//printf("Final coords: [%zu-%zu] [%zu-%zu]\n", startP1, endP1, startP2, endP2);
+	const PathAlignment& a = *pathAlignments.rbegin();
 
-	map<size_t, PathConsistencyStats>::const_iterator biggestIt =
-		pathAlignments.end();
-	--biggestIt;
-
-	// Sanity assert, at this point one of the low coordniates should be zero and one of the high coordinates should be (size -1)
-	assert(biggestIt->second.startP1 == 0 || biggestIt->second.startP2 == 0);
-	assert(biggestIt->second.endP1 == max1 || biggestIt->second.endP2 == max2);
+	// Sanity assert, at this point one of the low coordniates should
+	// be zero and one of the high coordinates should be (size -1).
+	size_t max1 = path1.size() - 1;
+	size_t max2 = path2.size() - 1;
+	assert(a.second.startP1 == 0 || a.second.startP2 == 0);
+	assert(a.second.endP1 == max1 || a.second.endP2 == max2);
 
 	// If either path aligns to the front and back of the other, it is
 	// not a valid path.
-	if (biggestIt->second.duplicateSize
-			&& biggestIt->first != min(max1+1, max2+1)) {
-		if (gDebugPrint) printf("Duplicate path match found\n");
+	if (a.second.duplicateSize && a.first != min(max1+1, max2+1)) {
+		if (gDebugPrint)
+			cout << "Duplicate path match found\n";
 		return false;
 	}
 
-	startP1 = biggestIt->second.startP1;
-	endP1 = biggestIt->second.endP1;
-	startP2 = biggestIt->second.startP2;
-	endP2 = biggestIt->second.endP2;
-	if (biggestIt->second.flipped)
+	startP1 = a.second.startP1;
+	endP1 = a.second.endP1;
+	startP2 = a.second.startP2;
+	endP2 = a.second.endP2;
+	if (a.second.flipped)
 		path2.reverseComplement();
 
 	assert(path1[startP1] == path2[startP2]
 			|| (startP1 == 0 && startP2 == 0));
 	assert(path1[endP1] == path2[endP2]
 			|| (endP1 == max1 && endP2 == max2));
-
-	// If we got to this point there is a legal subpath that describes both nodes and they can be merged
 	return true;
 }
 
