@@ -107,8 +107,7 @@ void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
 bool extractMinCoordSet(LinearNumKey anchor, const ContigPath& path,
 		vector<size_t>& coords);
-bool checkPathConsistency(LinearNumKey path1Root,
-		LinearNumKey path2Root,
+bool checkPathConsistency(const ContigNode& pivot,
 		const ContigPath& path1, ContigPath& path2,
 		size_t& startP1, size_t& endP1,
 		size_t& startP2, size_t& endP2);
@@ -433,7 +432,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				if(gDebugPrint) cout << "  in: " << childCanonPath << '\n';
 
 				size_t s1, s2, e1, e2;
-				bool validMerge = checkPathConsistency(id, iter->id(),
+				bool validMerge = checkPathConsistency(*iter,
 					*refCanonical, childCanonPath, s1, e1, s2, e2);
 
 				if(validMerge && deleteSubsumed) {
@@ -610,15 +609,14 @@ static PathAlignment align(
  * @param path2 is oriented to agree with path1
  * @return true if an equivalent region is found
  */
-bool checkPathConsistency(LinearNumKey path1Root,
-		LinearNumKey path2Root,
+bool checkPathConsistency(const ContigNode& pivot,
 		const ContigPath& path1, ContigPath& path2,
 		size_t& startP1, size_t& endP1,
 		size_t& startP2, size_t& endP2)
 {
 	vector<size_t> coords1, coords2;
-	bool valid1 = extractMinCoordSet(path2Root, path1, coords1);
-	bool valid2 = extractMinCoordSet(path2Root, path2, coords2);
+	bool valid1 = extractMinCoordSet(pivot.id(), path1, coords1);
+	bool valid2 = extractMinCoordSet(pivot.id(), path2, coords2);
 	assert(valid1 && valid2);
 	(void)valid1;
 	(void)valid2;
@@ -638,8 +636,7 @@ bool checkPathConsistency(LinearNumKey path1Root,
 
 	if (pathAlignments.empty()) {
 		if (gDebugPrint)
-			cout << " invalid " << idToString(path1Root) << ' '
-				<< idToString(path2Root) << '\n';
+			cout << " invalid " << pivot << '\n';
 		return false;
 	}
 
