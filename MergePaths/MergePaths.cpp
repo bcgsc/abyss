@@ -419,14 +419,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			// Check if the current node to merge has any paths to/from it
 			ContigPathMap::iterator findIter = paths.find(iter->id());
 			if (findIter != paths.end()) {
-				if (gDebugPrint)
-					cout << ' ' << *iter << '\n';
-				// Make the full path of the child node
 				ContigPath childCanonPath = *findIter->second;
-
-				if(gDebugPrint) cout << " ref: " << *refCanonical << '\n';
-				if(gDebugPrint) cout << "  in: " << childCanonPath << '\n';
-
 				PathAlignment a = align(*refCanonical, childCanonPath,
 					*iter);
 				bool validMerge = a.first > 0;
@@ -594,6 +587,12 @@ static PathAlignment align(const ContigPath& path1, ContigPath& path2,
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
 	if (pivot.sense())
 		path2.reverseComplement();
+
+	if (gDebugPrint)
+		cout << ' ' << pivot << '\n'
+			<< " ref: " << path1 << '\n'
+			<< "  in: " << path2 << '\n';
+
 	ContigPath::iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
 	assert(it2 != path2.end());
