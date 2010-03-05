@@ -511,6 +511,16 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 		it1 = last1;
 }
 
+template <class iterator>
+static void alignAmbiguous(iterator& it1, iterator last1,
+		iterator& it2, iterator last2)
+{
+	if (it1->ambiguous())
+		skipAmbiguous(it1, last1, it2, last2);
+	else if (it2->ambiguous())
+		skipAmbiguous(it2, last2, it1, last1);
+}
+
 /** Find an equivalent region of the two specified paths, starting the
  * alignment at pos1 of path1 and pos2 of path2.
  * @return the alignment
@@ -524,17 +534,10 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 			rit2 = ContigPath::const_reverse_iterator(pivot2+1);
 			rit1 != p1.rend() && rit2 != p2.rend();
 			++rit1, ++rit2) {
-		if (rit1->ambiguous() || rit2->ambiguous()) {
-			if (rit1->ambiguous())
-				skipAmbiguous<ContigPath::const_reverse_iterator>(
-							rit1, p1.rend(), rit2, p2.rend());
-			else
-				skipAmbiguous<ContigPath::const_reverse_iterator>(
-							rit2, p2.rend(), rit1, p1.rend());
-			if (rit1 == p1.rend() || rit2 == p2.rend())
-				break;
-		}
-		if (*rit1 != *rit2)
+		alignAmbiguous<ContigPath::const_reverse_iterator>(
+				rit1, p1.rend(), rit2, p2.rend());
+		if (rit1 == p1.rend() || rit2 == p2.rend()
+				|| *rit1 != *rit2)
 			break;
 	}
 
@@ -542,17 +545,10 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 	for (it1 = pivot1, it2 = pivot2;
 			it1 != p1.end() && it2 != p2.end();
 			++it1, ++it2) {
-		if (it1->ambiguous() || it2->ambiguous()) {
-			if (it1->ambiguous())
-				skipAmbiguous<ContigPath::const_iterator>(
-						it1, p1.end(), it2, p2.end());
-			else
-				skipAmbiguous<ContigPath::const_iterator>(
-						it2, p2.end(), it1, p1.end());
-			if (it1 == p1.end() || it2 == p2.end())
-				break;
-		}
-		if (*it1 != *it2)
+		alignAmbiguous<ContigPath::const_iterator>(
+				it1, p1.end(), it2, p2.end());
+		if (it1 == p1.end() || it2 == p2.end()
+				|| *it1 != *it2)
 			break;
 	}
 
