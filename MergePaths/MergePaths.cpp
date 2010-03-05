@@ -69,6 +69,13 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Return the length of this contig. */
+unsigned ContigNode::length() const
+{
+	assert(ambiguous());
+	return m_id;
+}
+
 struct PathConsistencyStats {
 	size_t startP1;
 	size_t endP1;
@@ -515,7 +522,12 @@ template <class iterator>
 static void alignAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2)
 {
-	if (it1->ambiguous())
+	if (it1->ambiguous() && it2->ambiguous()) {
+		if (it1->length() > it2->length())
+			skipAmbiguous(it1, last1, it2, last2);
+		else
+			skipAmbiguous(it2, last2, it1, last1);
+	} else if (it1->ambiguous())
 		skipAmbiguous(it1, last1, it2, last2);
 	else if (it2->ambiguous())
 		skipAmbiguous(it2, last2, it1, last1);
