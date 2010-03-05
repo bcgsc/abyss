@@ -101,7 +101,7 @@ typedef pair<size_t, PathConsistencyStats> PathAlignment;
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		bool deleteSubsumed);
-void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
+static void mergePath(const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
 void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
@@ -352,8 +352,7 @@ int main(int argc, char** argv)
 	id++;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
-		mergePath(it->front().id(), contigVec, *it, id++,
-				opt::k, out);
+		mergePath(contigVec, *it, id++, opt::k, out);
 	assert(out.good());
 
 	return 0;
@@ -646,16 +645,10 @@ static string toString(const ContigPath& path, char sep)
 	return s.str();
 }
 
-void mergePath(LinearNumKey cID, const ContigVec& sourceContigs,
+static void mergePath(const ContigVec& sourceContigs,
 		const ContigPath& currPath, int count, int kmer,
 		ostream& out)
 {
-	if (gDebugPrint)
-		cout << "Merging " << idToString(cID) << ": "
-			<< currPath << '\n';
-	if (opt::verbose > 0)
-		cout << currPath << '\n';
-
 	size_t numNodes = currPath.size();
 	MergeNode firstNode = currPath[0];
 	const Contig& firstContig = sourceContigs[firstNode.id()];
