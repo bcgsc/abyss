@@ -279,12 +279,8 @@ int main(int argc, char** argv)
 
 	// link the paths together
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
-			iter != originalPathMap.end(); ++iter) {
+			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
-		if (gDebugPrint)
-			cout << "Merged path: "
-				<< *resultsPathMap[iter->first] << '\n';
-	}
 
 	if (opt::verbose > 0)
 		cout << "\nRemoving redundant contigs\n";
@@ -406,8 +402,8 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 	ContigPath* refCanonical = deleteSubsumed
 		? paths[id] : new ContigPath(*paths[id]);
 	if (gDebugPrint)
-		cout << "\n* " << idToString(id) << ": "
-			<< *refCanonical << '\n';
+		cout << "\n* " << ContigNode(id, false) << '\n'
+			<< '\t' << *refCanonical << '\n';
 
 	// Build the initial list of nodes to attempt to merge in
 	MergeNodeList mergeInList;
@@ -422,6 +418,8 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				ContigPath childCanonPath = *findIter->second;
 				if (iter->sense())
 					childCanonPath.reverseComplement();
+				if (gDebugPrint)
+					cout << *iter << '\t' << childCanonPath << '\n';
 				PathAlignment a = align(*refCanonical, childCanonPath,
 					*iter);
 				bool validMerge = a.first > 0;
@@ -456,18 +454,16 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 							 * restriction should be relaxed.
 							 */
 							if (gDebugPrint)
-								cout << " not merging: " << childCanonPath << '\n';
+								cout << "\tnot merged\n";
 						} else if (refIncludesChild && !childIncludesRef ) {
 							if(gDebugPrint)
-								cout << " removing circular: " << childCanonPath << '\n';
+								cout << "\tremoved circular path\n";
 							delete findIter->second;
 							findIter->second = NULL;
 							paths.erase(findIter);
 						} else if (gDebugPrint)
-							cout << " warning: possible circular paths\n";
+							cout << "\twarning: possible circular path\n";
 					} else {
-						if (gDebugPrint)
-							cout << " del: " << childCanonPath << '\n';
 						delete findIter->second;
 						findIter->second = NULL;
 						paths.erase(findIter);
@@ -489,7 +485,8 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 					refCanonical->insert(refCanonical->end(),
 							appendNodes.begin(), appendNodes.end());
 
-					if(gDebugPrint) cout << " new: " << *refCanonical << '\n';
+					if (gDebugPrint)
+						cout << '\t' << *refCanonical << '\n';
 				}
 			}
 		}
@@ -587,11 +584,6 @@ static PathAlignment align(
 		const ContigNode& pivot)
 {
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
-	if (gDebugPrint)
-		cout << ' ' << pivot << '\n'
-			<< " ref: " << path1 << '\n'
-			<< "  in: " << path2 << '\n';
-
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
 	assert(it2 != path2.end());
@@ -614,7 +606,7 @@ static PathAlignment align(
 
 	if (pathAlignments.empty()) {
 		if (gDebugPrint)
-			cout << " invalid " << pivot << '\n';
+			cout << "\tinvalid\n";
 		return PathAlignment();
 	}
 
