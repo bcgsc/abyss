@@ -392,6 +392,8 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cout << "\nRemoving redundant contigs\n";
 
+	removeRepeats(resultsPathMap);
+
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
 			iter != resultsPathMap.end(); ++iter)
 		removeSubsumedPaths(iter->first, resultsPathMap);
