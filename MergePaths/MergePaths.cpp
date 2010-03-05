@@ -107,9 +107,10 @@ typedef pair<size_t, PathConsistencyStats> PathAlignment;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 static void mergePath(const ContigVec& sourceContigs,
-		const ContigPath& mergeRecord, int count, int kmer,
-		ostream& out);
-void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer);
+		const ContigPath& mergeRecord, int count, ostream& out);
+static void mergeSequences(Sequence& rootContig,
+		const Sequence& otherContig,
+		extDirection dir, bool isReversed);
 static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
 void addPathNodesToList(MergeNodeList& list, ContigPath& path);
@@ -216,8 +217,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			childCanonPath.reverseComplement();
 		if (gDebugPrint)
 			cout << *iter << '\t' << childCanonPath << '\n';
-		PathAlignment a = align(*refCanonical, childCanonPath,
-			*iter);
+		PathAlignment a = align(*refCanonical, childCanonPath, *iter);
 		if (a.first == 0)
 			continue;
 		size_t s2 = a.second.startP2, e2 = a.second.endP2;
@@ -458,7 +458,7 @@ int main(int argc, char** argv)
 	id++;
 	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
-		mergePath(contigVec, *it, id++, opt::k, out);
+		mergePath(contigVec, *it, id++, out);
 	assert(out.good());
 
 	return 0;
@@ -647,8 +647,7 @@ static string toString(const ContigPath& path, char sep)
 }
 
 static void mergePath(const ContigVec& sourceContigs,
-		const ContigPath& currPath, int count, int kmer,
-		ostream& out)
+		const ContigPath& currPath, int count, ostream& out)
 {
 	size_t numNodes = currPath.size();
 	MergeNode firstNode = currPath[0];
@@ -663,8 +662,7 @@ static void mergePath(const ContigVec& sourceContigs,
 		MergeNode mn = currPath[i];
 		const Contig& contig = sourceContigs[mn.id()];
 		assert(!contig.seq.empty());
-		mergeSequences(merged, contig.seq, (extDirection)0, mn.sense(),
-				kmer);
+		mergeSequences(merged, contig.seq, SENSE, mn.sense());
 		coverage += contig.coverage;
 	}
 
@@ -674,10 +672,12 @@ static void mergePath(const ContigVec& sourceContigs,
 	out << FastaRecord(toString(count), s.str(), merged);
 }
 
-void mergeSequences(Sequence& rootContig, const Sequence& otherContig, extDirection dir, bool isReversed, size_t kmer)
+static void mergeSequences(Sequence& rootContig,
+		const Sequence& otherContig,
+		extDirection dir, bool isReversed)
 {
-	size_t overlap = kmer - 1;
-	
+	size_t overlap = opt::k - 1;
+
 	// should the slave be reversed?
 	Sequence slaveSeq = otherContig;
 	if(isReversed)
