@@ -606,9 +606,8 @@ static PathAlignment align(
 		PathAlignment alignment = align(path1, path2, it1, it2);
 		if (alignment.first == 0)
 			continue;
-		bool inserted = pathAlignments.insert(alignment).second;
-		assert(inserted);
-		(void)inserted;
+		if (!pathAlignments.insert(alignment).second)
+			assert(alignment.first == path2.size());
 	}
 
 	if (pathAlignments.empty()) {
