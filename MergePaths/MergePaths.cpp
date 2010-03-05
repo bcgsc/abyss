@@ -106,8 +106,6 @@ typedef vector<Contig> ContigVec;
 typedef pair<size_t, PathConsistencyStats> PathAlignment;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
-ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
-		bool deleteSubsumed);
 static void mergePath(const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, int kmer,
 		ostream& out);
@@ -187,6 +185,107 @@ static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 template <typename T> static const T& deref(const T* x)
 {
 	return *x;
+}
+
+/** Merge the specified path.
+ * @param deleteSubsumed when true, remove paths that are entirely
+ * subsumed by this path
+ * Return a pointer to the merged path.
+ */
+ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
+		bool deleteSubsumed)
+{
+	ContigPath* refCanonical = deleteSubsumed
+		? paths[id] : new ContigPath(*paths[id]);
+	if (gDebugPrint)
+		cout << "\n* " << ContigNode(id, false) << '\n'
+			<< '\t' << *refCanonical << '\n';
+
+	MergeNodeList mergeInList;
+	addPathNodesToList(mergeInList, *refCanonical);
+
+	for (MergeNodeList::iterator iter = mergeInList.begin();
+			!mergeInList.empty(); mergeInList.erase(iter++)) {
+		if (iter->id() == id)
+			continue;
+		ContigPathMap::iterator findIter = paths.find(iter->id());
+		if (findIter == paths.end())
+			continue;
+		ContigPath childCanonPath = *findIter->second;
+		if (iter->sense())
+			childCanonPath.reverseComplement();
+		if (gDebugPrint)
+			cout << *iter << '\t' << childCanonPath << '\n';
+		PathAlignment a = align(*refCanonical, childCanonPath,
+			*iter);
+		if (a.first == 0)
+			continue;
+		size_t s2 = a.second.startP2, e2 = a.second.endP2;
+		if (deleteSubsumed) {
+			/* If additional merges could be made at this point,
+			 * something is wrong. We may need to delete all merged
+			 * paths that exist for these paths and print the
+			 * originals, but for now we keep both and print a
+			 * warning.
+			 */
+			if (s2 != 0 || e2+1 != childCanonPath.size()) {
+				set<LinearNumKey> refKeys, childKeys;
+				for (ContigPath::const_iterator
+						it = refCanonical->begin();
+						it != refCanonical->end(); it++)
+					refKeys.insert(it->id());
+				for (ContigPath::const_iterator
+						it = childCanonPath.begin();
+						it != childCanonPath.end(); it++)
+					childKeys.insert(it->id());
+				bool refIncludesChild
+					= includes(refKeys.begin(), refKeys.end(),
+							childKeys.begin(), childKeys.end());
+				bool childIncludesRef
+					= includes(childKeys.begin(), childKeys.end(),
+							refKeys.begin(), refKeys.end());
+
+				if (!refIncludesChild && !childIncludesRef) {
+					/* A merge is now possible that wasn't made in the
+					 * first pass. Ideally, this shouldn't happen, but
+					 * can when a path is not extended due to its
+					 * being an inverted repeat. Perhaps this
+					 * restriction should be relaxed.
+					 */
+					if (gDebugPrint)
+						cout << "\tnot merged\n";
+				} else if (refIncludesChild && !childIncludesRef ) {
+					if (gDebugPrint)
+						cout << "\tremoved circular path\n";
+					delete findIter->second;
+					findIter->second = NULL;
+					paths.erase(findIter);
+				} else if (gDebugPrint)
+					cout << "\twarning: possible circular path\n";
+			} else {
+				delete findIter->second;
+				findIter->second = NULL;
+				paths.erase(findIter);
+			}
+		} else {
+			ContigPath prependNodes(&childCanonPath[0],
+					&childCanonPath[s2]);
+			ContigPath appendNodes(&childCanonPath[e2+1],
+					&childCanonPath[childCanonPath.size()]);
+
+			addPathNodesToList(mergeInList, prependNodes);
+			addPathNodesToList(mergeInList, appendNodes);
+
+			refCanonical->insert(refCanonical->begin(),
+					prependNodes.begin(), prependNodes.end());
+			refCanonical->insert(refCanonical->end(),
+					appendNodes.begin(), appendNodes.end());
+
+			if (gDebugPrint)
+				cout << '\t' << *refCanonical << '\n';
+		}
+	}
+	return refCanonical;
 }
 
 /** Extend the specified path as long as is unambiguously possible and
@@ -395,111 +494,6 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	assert(pathStream.eof());
 
 	pathStream.close();
-}
-
-/** Merge the specified path.
- * @param deleteSubsumed when true, remove paths that are entirely
- * subsumed by this path
- * Return a pointer to the merged path.
- */
-ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
-		bool deleteSubsumed)
-{
-	ContigPath* refCanonical = deleteSubsumed
-		? paths[id] : new ContigPath(*paths[id]);
-	if (gDebugPrint)
-		cout << "\n* " << ContigNode(id, false) << '\n'
-			<< '\t' << *refCanonical << '\n';
-
-	// Build the initial list of nodes to attempt to merge in
-	MergeNodeList mergeInList;
-	addPathNodesToList(mergeInList, *refCanonical);
-
-	MergeNodeList::iterator iter = mergeInList.begin();
-	while(!mergeInList.empty()) {
-		if(iter->id() != id) {
-			// Check if the current node to merge has any paths to/from it
-			ContigPathMap::iterator findIter = paths.find(iter->id());
-			if (findIter != paths.end()) {
-				ContigPath childCanonPath = *findIter->second;
-				if (iter->sense())
-					childCanonPath.reverseComplement();
-				if (gDebugPrint)
-					cout << *iter << '\t' << childCanonPath << '\n';
-				PathAlignment a = align(*refCanonical, childCanonPath,
-					*iter);
-				bool validMerge = a.first > 0;
-				size_t s2 = a.second.startP2, e2 = a.second.endP2;
-				if(validMerge && deleteSubsumed) {
-					// If additional merges could be made at this
-					// point, something is wrong. We may need to delete
-					// all merged paths that exist for these paths and
-					// print the originals, but for now we keep both
-					// and print a warning.
-					if (s2 != 0 || e2+1 != childCanonPath.size()) {
-						set<LinearNumKey> refKeys, childKeys;
-						for (ContigPath::const_iterator it = refCanonical->begin();
-								it != refCanonical->end(); it++)
-							refKeys.insert(it->id());
-						for (ContigPath::const_iterator it = childCanonPath.begin();
-								it != childCanonPath.end(); it++)
-							childKeys.insert(it->id());
-						bool refIncludesChild =
-							includes(refKeys.begin(), refKeys.end(),
-									childKeys.begin(), childKeys.end());
-						bool childIncludesRef =
-							includes(childKeys.begin(), childKeys.end(),
-									refKeys.begin(), refKeys.end());
-
-						if (!refIncludesChild && !childIncludesRef) {
-							/* A merge is now possible that wasn't
-							 * made in the first pass. Ideally, this
-							 * shouldn't happen, but can when a path
-							 * is not extended due to its being an
-							 * inverted repeat. Perhaps this
-							 * restriction should be relaxed.
-							 */
-							if (gDebugPrint)
-								cout << "\tnot merged\n";
-						} else if (refIncludesChild && !childIncludesRef ) {
-							if(gDebugPrint)
-								cout << "\tremoved circular path\n";
-							delete findIter->second;
-							findIter->second = NULL;
-							paths.erase(findIter);
-						} else if (gDebugPrint)
-							cout << "\twarning: possible circular path\n";
-					} else {
-						delete findIter->second;
-						findIter->second = NULL;
-						paths.erase(findIter);
-					}
-				} else if (validMerge) {
-					// Extract the extra nodes from the child path that can be added in
-					ContigPath prependNodes(&childCanonPath[0],
-							&childCanonPath[s2]);
-					ContigPath appendNodes(&childCanonPath[e2+1],
-							&childCanonPath[childCanonPath.size()]);
-
-					// Add the nodes to the list of contigs to try to merge in
-					addPathNodesToList(mergeInList, prependNodes);
-					addPathNodesToList(mergeInList, appendNodes);
-
-					// Add the nodes to the ref contig
-					refCanonical->insert(refCanonical->begin(),
-							prependNodes.begin(), prependNodes.end());
-					refCanonical->insert(refCanonical->end(),
-							appendNodes.begin(), appendNodes.end());
-
-					if (gDebugPrint)
-						cout << '\t' << *refCanonical << '\n';
-				}
-			}
-		}
-		// Erase the iterator and move forward
-		mergeInList.erase(iter++);
-	}
-	return refCanonical;
 }
 
 template <class iterator>
