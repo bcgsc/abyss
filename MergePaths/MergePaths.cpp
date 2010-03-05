@@ -530,6 +530,19 @@ static void alignAmbiguous(iterator& it1, iterator last1,
 		skipAmbiguous(it2, last2, it1, last1);
 }
 
+template <class iterator>
+static void align(iterator& it1, iterator last1,
+		iterator& it2, iterator last2)
+{
+	for (; it1 != last1 && it2 != last2;
+			++it1, ++it2) {
+		alignAmbiguous(it1, last1, it2, last2);
+		if (it1 == last1 || it2 == last2
+				|| *it1 != *it2)
+			break;
+	}
+}
+
 /** Find an equivalent region of the two specified paths, starting the
  * alignment at pos1 of path1 and pos2 of path2.
  * @return the alignment
@@ -538,28 +551,14 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		ContigPath::const_iterator pivot1,
 		ContigPath::const_iterator pivot2)
 {
-	ContigPath::const_reverse_iterator rit1, rit2;
-	for (rit1 = ContigPath::const_reverse_iterator(pivot1+1),
-			rit2 = ContigPath::const_reverse_iterator(pivot2+1);
-			rit1 != p1.rend() && rit2 != p2.rend();
-			++rit1, ++rit2) {
-		alignAmbiguous<ContigPath::const_reverse_iterator>(
-				rit1, p1.rend(), rit2, p2.rend());
-		if (rit1 == p1.rend() || rit2 == p2.rend()
-				|| *rit1 != *rit2)
-			break;
-	}
+	ContigPath::const_reverse_iterator
+		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
+		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
+	align(rit1, p1.rend(), rit2, p2.rend());
 
-	ContigPath::const_iterator it1, it2;
-	for (it1 = pivot1, it2 = pivot2;
-			it1 != p1.end() && it2 != p2.end();
-			++it1, ++it2) {
-		alignAmbiguous<ContigPath::const_iterator>(
-				it1, p1.end(), it2, p2.end());
-		if (it1 == p1.end() || it2 == p2.end()
-				|| *it1 != *it2)
-			break;
-	}
+	ContigPath::const_iterator it1 = pivot1,
+		it2 = pivot2;
+	align(it1, p1.end(), it2, p2.end());
 
 	if ((rit1 == p1.rend() || rit2 == p2.rend())
 			&& (it1 == p1.end() || it2 == p2.end())) {
