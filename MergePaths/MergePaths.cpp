@@ -151,8 +151,9 @@ static void removeRepeats(ContigPathMap& paths)
 	if (gDebugPrint) {
 		cout << "Repeats:";
 		if (!repeats.empty())
-			copy(repeats.begin(), repeats.end(),
-					affix_ostream_iterator<LinearNumKey>(cout, " "));
+			transform(repeats.begin(), repeats.end(),
+					affix_ostream_iterator<string>(cout, " "),
+					idToString);
 		else
 			cout << " none";
 		cout << '\n';
