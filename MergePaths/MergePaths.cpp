@@ -499,6 +499,8 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 	pathStream.close();
 }
 
+/** Align the ambiguous region [it1, last1) to [it2, last2).
+ */
 template <class iterator>
 static void skipAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2)
@@ -510,37 +512,46 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 	assert(!it1->ambiguous());
 
 	assert(it2 != last2);
-	it2 = find(it2, last2, *it1);
-	if (it2 == last2)
+	unsigned nmatches = count(it2, last2, *it1);
+	switch (nmatches) {
+	  case 0:
 		it1 = last1;
+		it2 = last2;
+		break;
+	  default:
+		it2 = find(it2, last2, *it1);
+		break;
+	}
 }
 
 template <class iterator>
 static void alignAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2)
+		iterator& it2, iterator last2, int& which)
 {
-	if (it1->ambiguous() && it2->ambiguous()) {
-		if (it1->length() > it2->length())
-			skipAmbiguous(it1, last1, it2, last2);
-		else
-			skipAmbiguous(it2, last2, it1, last1);
-	} else if (it1->ambiguous())
-		skipAmbiguous(it1, last1, it2, last2);
-	else if (it2->ambiguous())
-		skipAmbiguous(it2, last2, it1, last1);
+	which = it1->ambiguous() && it2->ambiguous()
+		? (it1->length() > it2->length() ? 0 : 1)
+		: it1->ambiguous() ? 0
+		: it2->ambiguous() ? 1
+		: -1;
+	return which == -1 ? (void)0
+		: which == 0 ? skipAmbiguous(it1, last1, it2, last2)
+		: skipAmbiguous(it2, last2, it1, last1);
 }
 
 template <class iterator>
-static void align(iterator& it1, iterator last1,
+static bool align(iterator& it1, iterator last1,
 		iterator& it2, iterator last2)
 {
-	for (; it1 != last1 && it2 != last2;
-			++it1, ++it2) {
-		alignAmbiguous(it1, last1, it2, last2);
-		if (it1 == last1 || it2 == last2
-				|| *it1 != *it2)
-			break;
+	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
+		int which;
+		alignAmbiguous(it1, last1, it2, last2, which);
+		if (it1 == last1 || it2 == last2)
+			return true;
+
+		if (*it1 != *it2)
+			return false;
 	}
+	return true;
 }
 
 /** Find an equivalent region of the two specified paths, starting the
@@ -554,14 +565,16 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 	ContigPath::const_reverse_iterator
 		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
-	align(rit1, p1.rend(), rit2, p2.rend());
+	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend());
 
 	ContigPath::const_iterator it1 = pivot1,
 		it2 = pivot2;
-	align(it1, p1.end(), it2, p2.end());
+	bool alignedf = align(it1, p1.end(), it2, p2.end());
 
 	if ((rit1 == p1.rend() || rit2 == p2.rend())
 			&& (it1 == p1.end() || it2 == p2.end())) {
+		assert(alignedr);
+		assert(alignedf);
 		// Found an alignment.
 		assert((rit1 == p1.rend() && it2 == p2.end())
 				|| (it1 == p1.end() && rit2 == p2.rend())
@@ -575,8 +588,10 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		size_t count = max(a.endP1 - a.startP1 + 1,
 				a.endP2 - a.startP2 + 1);
 		return make_pair(count, a);
-	} else
+	} else {
+		assert(!alignedr || !alignedf);
 		return PathAlignment();
+	}
 }
 
 /** Find an equivalent region of the two specified paths.
