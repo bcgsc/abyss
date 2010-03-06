@@ -500,9 +500,13 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2).
+ * The end of the alignment is returned in it1 and it2 if there is
+ * exactly one alignment. If there is more than one possible
+ * alignment, the alignment is returned in it1 and the returned vector
+ * of iterators.
  */
 template <class iterator>
-static void skipAmbiguous(iterator& it1, iterator last1,
+static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2)
 {
 	assert(it1 != last1);
@@ -513,19 +517,30 @@ static void skipAmbiguous(iterator& it1, iterator last1,
 
 	assert(it2 != last2);
 	unsigned nmatches = count(it2, last2, *it1);
+	vector<iterator> matches;
 	switch (nmatches) {
 	  case 0:
 		it1 = last1;
 		it2 = last2;
 		break;
-	  default:
+	  case 1:
 		it2 = find(it2, last2, *it1);
 		break;
+	  default:
+		matches.reserve(nmatches);
+		for (iterator it = find_if(it2, last2,
+					bind2nd(equal_to<ContigNode>(), *it1));
+				it != last2;
+				it = find_if(it+1, last2,
+					bind2nd(equal_to<ContigNode>(), *it1)))
+			matches.push_back(it);
+		assert(matches.size() == nmatches);
 	}
+	return matches;
 }
 
 template <class iterator>
-static void alignAmbiguous(iterator& it1, iterator last1,
+static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, int& which)
 {
 	which = it1->ambiguous() && it2->ambiguous()
@@ -533,7 +548,7 @@ static void alignAmbiguous(iterator& it1, iterator last1,
 		: it1->ambiguous() ? 0
 		: it2->ambiguous() ? 1
 		: -1;
-	return which == -1 ? (void)0
+	return which == -1 ? vector<iterator>()
 		: which == 0 ? skipAmbiguous(it1, last1, it2, last2)
 		: skipAmbiguous(it2, last2, it1, last1);
 }
@@ -544,7 +559,31 @@ static bool align(iterator& it1, iterator last1,
 {
 	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
 		int which;
-		alignAmbiguous(it1, last1, it2, last2, which);
+		vector<iterator> its = alignAmbiguous(it1, last1, it2, last2,
+				which);
+		if (!its.empty()) {
+			// More than one match. Recurse on each option.
+			for (typename vector<iterator>::iterator
+					it = its.begin(); it != its.end(); ++it) {
+				assert(which == 0 || which == 1);
+				if (which == 0) {
+					iterator local_it1 = it1;
+					if (align(local_it1, last1, *it, last2)) {
+						it1 = local_it1;
+						it2 = *it;
+						return true;
+					}
+				} else {
+					iterator local_it2 = it2;
+					if (align(*it, last1, local_it2, last2)) {
+						it1 = *it;
+						it2 = local_it2;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 		if (it1 == last1 || it2 == last2)
 			return true;
 
