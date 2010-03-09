@@ -37,6 +37,7 @@ class ContigPath : public std::vector<MergeNode>
 
 std::ostream& operator<<(std::ostream& out, const ContigPath& o)
 {
+	assert(!o.empty());
 	ContigPath::const_iterator last = o.end() - 1;
 	copy(o.begin(), last, std::ostream_iterator<MergeNode>(out, " "));
 	return out << *last;
