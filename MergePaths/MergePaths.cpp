@@ -113,7 +113,6 @@ static void mergeSequences(Sequence& rootContig,
 		extDirection dir, bool isReversed);
 static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
-void addPathNodesToList(MergeNodeList& list, ContigPath& path);
 
 static bool gDebugPrint;
 
@@ -203,9 +202,8 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		cout << "\n* " << ContigNode(id, false) << '\n'
 			<< '\t' << *refCanonical << '\n';
 
-	MergeNodeList mergeInList;
-	addPathNodesToList(mergeInList, *refCanonical);
-
+	MergeNodeList mergeInList(
+			refCanonical->begin(), refCanonical->end());
 	for (MergeNodeList::iterator iter = mergeInList.begin();
 			!mergeInList.empty(); mergeInList.erase(iter++)) {
 		if (iter->id() == id)
@@ -275,11 +273,10 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				s2 = childCanonPath.begin() + a.second.startP2,
 				e2 = childCanonPath.begin() + a.second.endP2;
 
-			ContigPath prependNodes(childCanonPath.begin(), s2);
-			ContigPath appendNodes(e2+1, childCanonPath.end());
-
-			addPathNodesToList(mergeInList, prependNodes);
-			addPathNodesToList(mergeInList, appendNodes);
+			mergeInList.insert(mergeInList.end(),
+					childCanonPath.begin(), s2);
+			mergeInList.insert(mergeInList.end(),
+					e2+1, childCanonPath.end());
 
 			unsigned ambig1 = count_if(s1, e1,
 					mem_fun_ref(&ContigNode::ambiguous));
@@ -288,9 +285,9 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 
 			if (ambig1 == 0 || ambig2 > 0) {
 				refCanonical->insert(refCanonical->begin(),
-						prependNodes.begin(), prependNodes.end());
+						childCanonPath.begin(), s2);
 				refCanonical->insert(refCanonical->end(),
-						appendNodes.begin(), appendNodes.end());
+						e2+1, childCanonPath.end());
 			} else {
 				ContigPath merged(childCanonPath);
 				merged.insert(merged.begin(),
@@ -786,11 +783,4 @@ static void mergeSequences(Sequence& rootContig,
 	}
 
 	rootContig = *leftSeq + rightSeq->substr(overlap);
-}
-
-void addPathNodesToList(MergeNodeList& list, ContigPath& path)
-{
-	size_t numNodes = path.size();
-	for(size_t idx = 0; idx < numNodes; idx++)
-		list.push_back(path[idx]);
 }
