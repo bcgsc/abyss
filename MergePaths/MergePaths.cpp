@@ -277,10 +277,28 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			addPathNodesToList(mergeInList, prependNodes);
 			addPathNodesToList(mergeInList, appendNodes);
 
-			refCanonical->insert(refCanonical->begin(),
-					prependNodes.begin(), prependNodes.end());
-			refCanonical->insert(refCanonical->end(),
-					appendNodes.begin(), appendNodes.end());
+			ContigPath::iterator
+				s1 = refCanonical->begin() + a.second.startP1,
+				e1 = refCanonical->begin() + a.second.endP1;
+			unsigned ambig1 = count_if(s1, e1,
+					mem_fun_ref(&ContigNode::ambiguous));
+			unsigned ambig2 = count_if(
+					&childCanonPath[s2], &childCanonPath[e2],
+					mem_fun_ref(&ContigNode::ambiguous));
+
+			if (ambig1 == 0 || ambig2 > 0) {
+				refCanonical->insert(refCanonical->begin(),
+						prependNodes.begin(), prependNodes.end());
+				refCanonical->insert(refCanonical->end(),
+						appendNodes.begin(), appendNodes.end());
+			} else {
+				ContigPath merged(childCanonPath);
+				merged.insert(merged.begin(),
+						refCanonical->begin(), s1);
+				merged.insert(merged.end(),
+						e1+1, refCanonical->end());
+				refCanonical->swap(merged);
+			}
 
 			if (gDebugPrint)
 				cout << '\t' << *refCanonical << '\n';
