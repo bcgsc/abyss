@@ -221,7 +221,6 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		PathAlignment a = align(*refCanonical, childCanonPath, *iter);
 		if (a.first == 0)
 			continue;
-		size_t s2 = a.second.startP2, e2 = a.second.endP2;
 		if (deleteSubsumed) {
 			/* If additional merges could be made at this point,
 			 * something is wrong. We may need to delete all merged
@@ -229,6 +228,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * originals, but for now we keep both and print a
 			 * warning.
 			 */
+			unsigned s2 = a.second.startP2, e2 = a.second.endP2;
 			if (s2 != 0 || e2+1 != childCanonPath.size()) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator
@@ -269,21 +269,21 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				paths.erase(findIter);
 			}
 		} else {
-			ContigPath prependNodes(&childCanonPath[0],
-					&childCanonPath[s2]);
-			ContigPath appendNodes(&childCanonPath[e2+1],
-					&childCanonPath[childCanonPath.size()]);
+			ContigPath::iterator
+				s1 = refCanonical->begin() + a.second.startP1,
+				e1 = refCanonical->begin() + a.second.endP1,
+				s2 = childCanonPath.begin() + a.second.startP2,
+				e2 = childCanonPath.begin() + a.second.endP2;
+
+			ContigPath prependNodes(childCanonPath.begin(), s2);
+			ContigPath appendNodes(e2+1, childCanonPath.end());
 
 			addPathNodesToList(mergeInList, prependNodes);
 			addPathNodesToList(mergeInList, appendNodes);
 
-			ContigPath::iterator
-				s1 = refCanonical->begin() + a.second.startP1,
-				e1 = refCanonical->begin() + a.second.endP1;
 			unsigned ambig1 = count_if(s1, e1,
 					mem_fun_ref(&ContigNode::ambiguous));
-			unsigned ambig2 = count_if(
-					&childCanonPath[s2], &childCanonPath[e2],
+			unsigned ambig2 = count_if(s2, e2,
 					mem_fun_ref(&ContigNode::ambiguous));
 
 			if (ambig1 == 0 || ambig2 > 0) {
