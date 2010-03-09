@@ -269,14 +269,14 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		} else {
 			ContigPath::iterator
 				s1 = refCanonical->begin() + a.second.startP1,
-				e1 = refCanonical->begin() + a.second.endP1,
+				e1 = refCanonical->begin() + a.second.endP1 + 1,
 				s2 = childCanonPath.begin() + a.second.startP2,
-				e2 = childCanonPath.begin() + a.second.endP2;
+				e2 = childCanonPath.begin() + a.second.endP2 + 1;
 
 			mergeInList.insert(mergeInList.end(),
 					childCanonPath.begin(), s2);
 			mergeInList.insert(mergeInList.end(),
-					e2+1, childCanonPath.end());
+					e2, childCanonPath.end());
 
 			unsigned ambig1 = count_if(s1, e1,
 					mem_fun_ref(&ContigNode::ambiguous));
@@ -287,13 +287,13 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				refCanonical->insert(refCanonical->begin(),
 						childCanonPath.begin(), s2);
 				refCanonical->insert(refCanonical->end(),
-						e2+1, childCanonPath.end());
+						e2, childCanonPath.end());
 			} else {
 				ContigPath merged(childCanonPath);
 				merged.insert(merged.begin(),
 						refCanonical->begin(), s1);
 				merged.insert(merged.end(),
-						e1+1, refCanonical->end());
+						e1, refCanonical->end());
 				refCanonical->swap(merged);
 			}
 
