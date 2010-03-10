@@ -283,6 +283,15 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			unsigned ambig2 = count_if(s2, e2,
 					mem_fun_ref(&ContigNode::ambiguous));
 
+			if (s1->ambiguous())
+				++s1;
+			if ((e1-1)->ambiguous())
+				--e1;
+			if (s2->ambiguous())
+				++s2;
+			if ((e2-1)->ambiguous())
+				--e2;
+
 			if (ambig1 == 0 || ambig2 > 0) {
 				refCanonical->insert(refCanonical->begin(),
 						childCanonPath.begin(), s2);
@@ -535,7 +544,6 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	vector<iterator> matches;
 	switch (nmatches) {
 	  case 0:
-		it1 = last1;
 		it2 = last2;
 		break;
 	  case 1:
@@ -689,11 +697,12 @@ static PathAlignment align(
 	size_t max2 = path2.size() - 1;
 	assert(a.second.startP1 == 0 || a.second.startP2 == 0);
 	assert(a.second.endP1 == max1 || a.second.endP2 == max2);
-
 	assert(path1[a.second.startP1] == path2[a.second.startP2]
-			|| (a.second.startP1 == 0 && a.second.startP2 == 0));
+			|| path1[a.second.startP1].ambiguous()
+			|| path2[a.second.startP2].ambiguous());
 	assert(path1[a.second.endP1] == path2[a.second.endP2]
-			|| (a.second.endP1 == max1 && a.second.endP2 == max2));
+			|| path1[a.second.endP1].ambiguous()
+			|| path2[a.second.endP2].ambiguous());
 	return a;
 }
 
