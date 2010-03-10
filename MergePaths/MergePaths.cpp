@@ -632,10 +632,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		it2 = pivot2;
 	bool alignedf = align(it1, p1.end(), it2, p2.end());
 
-	if ((rit1 == p1.rend() || rit2 == p2.rend())
-			&& (it1 == p1.end() || it2 == p2.end())) {
-		assert(alignedr);
-		assert(alignedf);
+	if (alignedr && alignedf) {
 		// Found an alignment.
 		assert((rit1 == p1.rend() && it2 == p2.end())
 				|| (it1 == p1.end() && rit2 == p2.rend())
@@ -650,7 +647,6 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				a.endP2 - a.startP2 + 1);
 		return make_pair(count, a);
 	} else {
-		assert(!alignedr || !alignedf);
 		return PathAlignment();
 	}
 }
