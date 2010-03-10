@@ -83,7 +83,6 @@ struct PathConsistencyStats {
 	size_t endP2;
 };
 
-typedef list<MergeNode> MergeNodeList;
 typedef map<LinearNumKey, ContigPath*> ContigPathMap;
 
 struct Contig {
@@ -201,9 +200,9 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		cout << "\n* " << ContigNode(id, false) << '\n'
 			<< '\t' << *refCanonical << '\n';
 
-	MergeNodeList mergeInList(
+	list<ContigNode> mergeInList(
 			refCanonical->begin(), refCanonical->end());
-	for (MergeNodeList::iterator iter = mergeInList.begin();
+	for (list<ContigNode>::iterator iter = mergeInList.begin();
 			!mergeInList.empty(); mergeInList.erase(iter++)) {
 		if (iter->id() == id)
 			continue;
