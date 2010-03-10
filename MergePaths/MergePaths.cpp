@@ -688,10 +688,9 @@ static PathAlignment align(
 
 	// Sanity assert, at this point one of the low coordniates should
 	// be zero and one of the high coordinates should be (size -1).
-	size_t max1 = path1.size() - 1;
-	size_t max2 = path2.size() - 1;
 	assert(a.second.startP1 == 0 || a.second.startP2 == 0);
-	assert(a.second.endP1 == max1 || a.second.endP2 == max2);
+	assert(a.second.endP1 == path1.size() - 1
+			|| a.second.endP2 == path2.size() - 1);
 	assert(path1[a.second.startP1] == path2[a.second.startP2]
 			|| path1[a.second.startP1].ambiguous()
 			|| path2[a.second.startP2].ambiguous());
