@@ -175,11 +175,10 @@ static set<size_t> getContigIDs(const vector<ContigPath>& paths)
 {
 	set<size_t> seen;
 	for (vector<ContigPath>::const_iterator it = paths.begin();
-			it != paths.end(); it++) {
-		size_t nodes = it->size();
-		for (size_t i = 0; i < nodes; i++)
-			seen.insert((*it)[i].id());
-	}
+			it != paths.end(); it++)
+		transform(it->begin(), it->end(),
+				inserter(seen, seen.begin()),
+				mem_fun_ref(&ContigNode::id));
 	return seen;
 }
 
