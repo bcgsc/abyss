@@ -532,6 +532,7 @@ template <class iterator>
 static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2)
 {
+	(void)last1;
 	assert(it1 != last1);
 	assert(it1->ambiguous());
 	++it1;
