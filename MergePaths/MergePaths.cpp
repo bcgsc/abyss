@@ -292,7 +292,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			if ((e2-1)->ambiguous())
 				--e2;
 
-			if (ambig1 == 0 || ambig2 > 0) {
+			if (ambig1 <= ambig2) {
 				refCanonical->insert(refCanonical->begin(),
 						childCanonPath.begin(), s2);
 				refCanonical->insert(refCanonical->end(),
