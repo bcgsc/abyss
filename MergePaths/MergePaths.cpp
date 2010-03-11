@@ -81,6 +81,7 @@ struct PathConsistencyStats {
 	size_t endP1;
 	size_t startP2;
 	size_t endP2;
+	ContigPath consensus;
 };
 
 typedef map<LinearNumKey, ContigPath*> ContigPathMap;
@@ -276,11 +277,6 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			mergeInList.insert(mergeInList.end(),
 					e2, childCanonPath.end());
 
-			unsigned ambig1 = count_if(s1, e1,
-					mem_fun_ref(&ContigNode::ambiguous));
-			unsigned ambig2 = count_if(s2, e2,
-					mem_fun_ref(&ContigNode::ambiguous));
-
 			if (s1->ambiguous())
 				++s1;
 			if ((e1-1)->ambiguous())
@@ -290,19 +286,18 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			if ((e2-1)->ambiguous())
 				--e2;
 
-			if (ambig1 <= ambig2) {
-				refCanonical->insert(refCanonical->begin(),
-						childCanonPath.begin(), s2);
-				refCanonical->insert(refCanonical->end(),
-						e2, childCanonPath.end());
-			} else {
-				ContigPath merged(childCanonPath);
-				merged.insert(merged.begin(),
-						refCanonical->begin(), s1);
-				merged.insert(merged.end(),
-						e1, refCanonical->end());
-				refCanonical->swap(merged);
-			}
+			ContigPath merged;
+			merged.reserve(max(refCanonical->size(),
+						childCanonPath.size()));
+			merged.insert(merged.end(), refCanonical->begin(), s1);
+			merged.insert(merged.end(),
+					childCanonPath.begin(), s2);
+			const ContigPath& consensus = a.second.consensus;
+			merged.insert(merged.end(),
+					consensus.begin(), consensus.end());
+			merged.insert(merged.end(), e1, refCanonical->end());
+			merged.insert(merged.end(), e2, childCanonPath.end());
+			refCanonical->swap(merged);
 
 			if (gDebugPrint)
 				cout << '\t' << *refCanonical << '\n';
@@ -527,9 +522,10 @@ void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
  * alignment, the alignment is returned in it1 and the returned vector
  * of iterators.
  */
-template <class iterator>
+template <class iterator, class oiterator>
 static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2)
+		iterator& it2, iterator last2,
+		oiterator out)
 {
 	(void)last1;
 	assert(it1 != last1);
@@ -543,11 +539,16 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	vector<iterator> matches;
 	switch (nmatches) {
 	  case 0:
+		copy(it2, last2, out);
 		it2 = last2;
 		break;
-	  case 1:
-		it2 = find(it2, last2, *it1);
+	  case 1: {
+		iterator it = find(it2, last2, *it1);
+		assert(it != last2);
+		copy(it2, it, out);
+		it2 = it;
 		break;
+	  }
 	  default:
 		matches.reserve(nmatches);
 		for (iterator it = find_if(it2, last2,
@@ -561,9 +562,10 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	return matches;
 }
 
-template <class iterator>
+template <class iterator, class oiterator>
 static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2, int& which)
+		iterator& it2, iterator last2, int& which,
+		oiterator out)
 {
 	which = it1->ambiguous() && it2->ambiguous()
 		? (it1->length() > it2->length() ? 0 : 1)
@@ -571,33 +573,41 @@ static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 		: it2->ambiguous() ? 1
 		: -1;
 	return which == -1 ? vector<iterator>()
-		: which == 0 ? skipAmbiguous(it1, last1, it2, last2)
-		: skipAmbiguous(it2, last2, it1, last1);
+		: which == 0 ? skipAmbiguous(it1, last1, it2, last2, out)
+		: skipAmbiguous(it2, last2, it1, last1, out);
 }
 
-template <class iterator>
+template <class iterator, class oiterator>
 static bool align(iterator& it1, iterator last1,
-		iterator& it2, iterator last2)
+		iterator& it2, iterator last2,
+		oiterator out)
 {
 	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
 		int which;
 		vector<iterator> its = alignAmbiguous(it1, last1, it2, last2,
-				which);
+				which, out);
 		if (!its.empty()) {
 			// More than one match. Recurse on each option.
 			for (typename vector<iterator>::iterator
 					it = its.begin(); it != its.end(); ++it) {
 				assert(which == 0 || which == 1);
+				ContigPath consensus;
 				if (which == 0) {
-					iterator local_it1 = it1;
-					if (align(local_it1, last1, *it, last2)) {
+					iterator local_it1 = it1, local_it2 = *it;
+					if (align(local_it1, last1, *it, last2,
+								back_inserter(consensus))) {
+						copy(it2, local_it2, out);
+						copy(consensus.begin(), consensus.end(), out);
 						it1 = local_it1;
 						it2 = *it;
 						return true;
 					}
 				} else {
-					iterator local_it2 = it2;
-					if (align(*it, last1, local_it2, last2)) {
+					iterator local_it1 = *it, local_it2 = it2;
+					if (align(*it, last1, local_it2, last2,
+								back_inserter(consensus))) {
+						copy(it1, local_it1, out);
+						copy(consensus.begin(), consensus.end(), out);
 						it1 = *it;
 						it2 = local_it2;
 						return true;
@@ -611,6 +621,7 @@ static bool align(iterator& it1, iterator last1,
 
 		if (*it1 != *it2)
 			return false;
+		*out++ = *it1;
 	}
 	return true;
 }
@@ -626,11 +637,15 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 	ContigPath::const_reverse_iterator
 		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
-	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend());
+	ContigPath alignmentr;
+	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(),
+			back_inserter(alignmentr));
 
 	ContigPath::const_iterator it1 = pivot1,
 		it2 = pivot2;
-	bool alignedf = align(it1, p1.end(), it2, p2.end());
+	ContigPath alignmentf;
+	bool alignedf = align(it1, p1.end(), it2, p2.end(),
+			back_inserter(alignmentf));
 
 	if (alignedr && alignedf) {
 		// Found an alignment.
@@ -643,6 +658,12 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		a.endP1 = it1 - p1.begin() - 1;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
+		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
+		if (!alignmentr.empty())
+			a.consensus.assign(
+					alignmentr.rbegin(), alignmentr.rend()-1);
+		a.consensus.insert(a.consensus.end(),
+				alignmentf.begin(), alignmentf.end());
 		size_t count = max(a.endP1 - a.startP1 + 1,
 				a.endP2 - a.startP2 + 1);
 		return make_pair(count, a);
