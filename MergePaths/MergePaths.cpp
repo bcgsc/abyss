@@ -535,7 +535,6 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	assert(!it1->ambiguous());
 
 	assert(it2 != last2);
-
 	iterator it = find(it2, last2, *it1);
 	unsigned nmatches = count(it, last2, *it1);
 	vector<iterator> matches;
