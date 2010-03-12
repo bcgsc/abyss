@@ -76,7 +76,7 @@ unsigned ContigNode::length() const
 	return m_id;
 }
 
-struct PathConsistencyStats {
+struct PathAlignment {
 	size_t startP2;
 	size_t endP2;
 	ContigPath consensus;
@@ -101,7 +101,6 @@ struct Contig {
 };
 
 typedef vector<Contig> ContigVec;
-typedef pair<size_t, PathConsistencyStats> PathAlignment;
 
 void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
 static void mergePath(const ContigVec& sourceContigs,
@@ -214,7 +213,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		if (gDebugPrint)
 			cout << *iter << '\t' << childCanonPath << '\n';
 		PathAlignment a = align(*refCanonical, childCanonPath, *iter);
-		if (a.first == 0)
+		if (a.consensus.empty())
 			continue;
 		if (deleteSubsumed) {
 			/* If additional merges could be made at this point,
@@ -223,7 +222,7 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * originals, but for now we keep both and print a
 			 * warning.
 			 */
-			unsigned s2 = a.second.startP2, e2 = a.second.endP2;
+			unsigned s2 = a.startP2, e2 = a.endP2;
 			if (s2 != 0 || e2+1 != childCanonPath.size()) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator
@@ -266,12 +265,12 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		} else {
 			mergeInList.insert(mergeInList.end(),
 					childCanonPath.begin(), 
-					childCanonPath.begin() + a.second.startP2);
+					childCanonPath.begin() + a.startP2);
 			mergeInList.insert(mergeInList.end(),
-					childCanonPath.begin() + a.second.endP2 + 1,
+					childCanonPath.begin() + a.endP2 + 1,
 					childCanonPath.end());
 
-			refCanonical->swap(a.second.consensus);
+			refCanonical->swap(a.consensus);
 			if (gDebugPrint)
 				cout << '\t' << *refCanonical << '\n';
 		}
@@ -618,14 +617,14 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				|| (it1 == p1.end() && rit2 == p2.rend())
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
-		PathConsistencyStats a;
+		PathAlignment a;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
 		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
 		a.consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
-		return make_pair(a.endP2 - a.startP2 + 1, a);
+		return a;
 	} else {
 		return PathAlignment();
 	}
@@ -644,7 +643,6 @@ static PathAlignment align(
 	assert(it2 != path2.end());
 	assert(count(it2+1, path2.end(), pivot) == 0);
 
-	map<size_t, PathConsistencyStats> pathAlignments;
 	for (ContigPath::const_iterator it1 = find_if(
 				path1.begin(), path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot));
@@ -652,18 +650,13 @@ static PathAlignment align(
 			it1 = find_if(it1+1, path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot))) {
 		PathAlignment alignment = align(path1, path2, it1, it2);
-		if (alignment.first == 0)
-			continue;
-		if (!pathAlignments.insert(alignment).second)
-			assert(alignment.first == path2.size());
+		if (!alignment.consensus.empty())
+			return alignment;
 	}
 
-	if (pathAlignments.empty()) {
-		if (gDebugPrint)
-			cout << "\tinvalid\n";
-		return PathAlignment();
-	}
-	return *pathAlignments.rbegin();
+	if (gDebugPrint)
+		cout << "\tinvalid\n";
+	return PathAlignment();
 }
 
 /** Return a string representation of the specified object. */
