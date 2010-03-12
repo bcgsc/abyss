@@ -625,7 +625,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 					alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
-		return make_pair(a.consensus.size(), a);
+		return make_pair(a.endP2 - a.startP2 + 1, a);
 	} else {
 		return PathAlignment();
 	}
