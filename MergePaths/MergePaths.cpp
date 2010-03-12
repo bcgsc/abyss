@@ -535,23 +535,16 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	assert(!it1->ambiguous());
 
 	assert(it2 != last2);
-	unsigned nmatches = count(it2, last2, *it1);
+
+	iterator it = find(it2, last2, *it1);
+	unsigned nmatches = count(it, last2, *it1);
 	vector<iterator> matches;
-	switch (nmatches) {
-	  case 0:
-		copy(it2, last2, out);
-		it2 = last2;
-		break;
-	  case 1: {
-		iterator it = find(it2, last2, *it1);
-		assert(it != last2);
+	if (nmatches < 2) {
 		copy(it2, it, out);
 		it2 = it;
-		break;
-	  }
-	  default:
+	} else {
 		matches.reserve(nmatches);
-		for (iterator it = find_if(it2, last2,
+		for (it = find_if(it, last2,
 					bind2nd(equal_to<ContigNode>(), *it1));
 				it != last2;
 				it = find_if(it+1, last2,
