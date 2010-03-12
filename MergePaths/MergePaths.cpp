@@ -584,26 +584,15 @@ static bool align(iterator& it1, iterator last1,
 					it = its.begin(); it != its.end(); ++it) {
 				assert(which == 0 || which == 1);
 				ContigPath consensus;
-				if (which == 0) {
-					iterator local_it1 = it1, local_it2 = *it;
-					if (align(local_it1, last1, *it, last2,
-								back_inserter(consensus))) {
-						copy(it2, local_it2, out);
-						copy(consensus.begin(), consensus.end(), out);
-						it1 = local_it1;
-						it2 = *it;
-						return true;
-					}
-				} else {
-					iterator local_it1 = *it, local_it2 = it2;
-					if (align(*it, last1, local_it2, last2,
-								back_inserter(consensus))) {
-						copy(it1, local_it1, out);
-						copy(consensus.begin(), consensus.end(), out);
-						it1 = *it;
-						it2 = local_it2;
-						return true;
-					}
+				iterator local_it1 = which == 0 ? it1 : *it,
+						local_it2 = which == 1 ? it2 : *it;
+				if (align(local_it1, last1, local_it2, last2,
+							back_inserter(consensus))) {
+					copy(which == 0 ? it2 : it1, *it, out);
+					copy(consensus.begin(), consensus.end(), out);
+					it1 = local_it1;
+					it2 = local_it2;
+					return true;
 				}
 			}
 			return false;
