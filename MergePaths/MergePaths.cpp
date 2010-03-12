@@ -266,39 +266,14 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				paths.erase(findIter);
 			}
 		} else {
-			ContigPath::iterator
-				s1 = refCanonical->begin() + a.second.startP1,
-				e1 = refCanonical->begin() + a.second.endP1 + 1,
-				s2 = childCanonPath.begin() + a.second.startP2,
-				e2 = childCanonPath.begin() + a.second.endP2 + 1;
-
 			mergeInList.insert(mergeInList.end(),
-					childCanonPath.begin(), s2);
+					childCanonPath.begin(), 
+					childCanonPath.begin() + a.second.startP2);
 			mergeInList.insert(mergeInList.end(),
-					e2, childCanonPath.end());
+					childCanonPath.begin() + a.second.endP2 + 1,
+					childCanonPath.end());
 
-			if (s1->ambiguous())
-				++s1;
-			if ((e1-1)->ambiguous())
-				--e1;
-			if (s2->ambiguous())
-				++s2;
-			if ((e2-1)->ambiguous())
-				--e2;
-
-			ContigPath merged;
-			merged.reserve(max(refCanonical->size(),
-						childCanonPath.size()));
-			merged.insert(merged.end(), refCanonical->begin(), s1);
-			merged.insert(merged.end(),
-					childCanonPath.begin(), s2);
-			const ContigPath& consensus = a.second.consensus;
-			merged.insert(merged.end(),
-					consensus.begin(), consensus.end());
-			merged.insert(merged.end(), e1, refCanonical->end());
-			merged.insert(merged.end(), e2, childCanonPath.end());
-			refCanonical->swap(merged);
-
+			refCanonical->swap(a.second.consensus);
 			if (gDebugPrint)
 				cout << '\t' << *refCanonical << '\n';
 		}
@@ -574,6 +549,8 @@ static bool align(iterator& it1, iterator last1,
 		iterator& it2, iterator last2,
 		oiterator out)
 {
+	assert(it1 != last1);
+	assert(it2 != last2);
 	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
 		int which;
 		vector<iterator> its = alignAmbiguous(it1, last1, it2, last2,
@@ -598,12 +575,19 @@ static bool align(iterator& it1, iterator last1,
 			return false;
 		}
 		if (it1 == last1 || it2 == last2)
-			return true;
+			break;
 
 		if (*it1 != *it2)
 			return false;
 		*out++ = *it1;
 	}
+
+	if ((it1-1)->ambiguous())
+		*out++ = *(it1-1);
+	copy(it1, last1, out);
+	if ((it2-1)->ambiguous())
+		*out++ = *(it2-1);
+	copy(it2, last2, out);
 	return true;
 }
 
