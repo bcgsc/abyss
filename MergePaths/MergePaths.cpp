@@ -612,6 +612,8 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 
 	if (alignedr && alignedf) {
 		// Found an alignment.
+		assert(!alignmentf.empty());
+		assert(!alignmentr.empty());
 		assert((rit1 == p1.rend() && it2 == p2.end())
 				|| (it1 == p1.end() && rit2 == p2.rend())
 				|| (rit1 == p1.rend() && it1 == p1.end())
@@ -620,9 +622,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
 		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
-		if (!alignmentr.empty())
-			a.consensus.assign(
-					alignmentr.rbegin(), alignmentr.rend()-1);
+		a.consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
 		return make_pair(a.endP2 - a.startP2 + 1, a);
