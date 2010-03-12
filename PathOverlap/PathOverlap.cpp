@@ -86,8 +86,8 @@ static PathMap loadPaths(istream& pathStream)
 		s >> pathID;
 
 		ContigPath contigPath;
-		copy(istream_iterator<MergeNode>(s),
-				istream_iterator<MergeNode>(),
+		copy(istream_iterator<ContigNode>(s),
+				istream_iterator<ContigNode>(),
 				back_inserter(contigPath));
 		assert(s.eof());
 		LinearNumKey first = contigPath.front().id();
@@ -113,7 +113,7 @@ static void addOverlap(const PathStruct& refPathStruct,
 	OverlapStruct overlap;
 	ContigPath refPath = refPathStruct.path;
 	ContigPath currPath = currPathStruct.path;
-	MergeNode refNode, currNode;
+	ContigNode refNode, currNode;
 	unsigned currIndex = 0;
 
 	refNode = refPath[refIndex];

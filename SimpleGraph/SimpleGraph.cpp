@@ -405,7 +405,7 @@ static void* worker(void* pArg)
 		ContigPath path;
 		handleEstimate(er, ANTISENSE, arg.graph, path);
 		reverse(path.begin(), path.end());
-		path.push_back(MergeNode(er.refID, false));
+		path.push_back(ContigNode(er.refID, false));
 		handleEstimate(er, SENSE, arg.graph, path);
 		if (path.size() > 1) {
 			/** Lock the output stream. */
@@ -481,6 +481,6 @@ static void constructContigPath(
 	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
 	{
 		flip = flip ^ iter->isRC;
-		contigPath.push_back(MergeNode(iter->key, flip));
+		contigPath.push_back(ContigNode(iter->key, flip));
 	}
 }

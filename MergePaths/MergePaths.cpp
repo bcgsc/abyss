@@ -745,7 +745,7 @@ static void mergePath(const ContigVec& sourceContigs,
 		const ContigPath& currPath, int count, ostream& out)
 {
 	size_t numNodes = currPath.size();
-	MergeNode firstNode = currPath[0];
+	ContigNode firstNode = currPath.front();
 	const Contig& firstContig = sourceContigs[firstNode.id()];
 	Sequence merged = firstContig.seq;
 	unsigned coverage = firstContig.coverage;
@@ -754,7 +754,7 @@ static void mergePath(const ContigVec& sourceContigs,
 	assert(!merged.empty());
 
 	for(size_t i = 1; i < numNodes; ++i) {
-		MergeNode mn = currPath[i];
+		ContigNode mn = currPath[i];
 		const Contig& contig = sourceContigs[mn.id()];
 		assert(!contig.seq.empty());
 		mergeSequences(merged, contig.seq, SENSE, mn.sense());
