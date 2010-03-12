@@ -77,8 +77,6 @@ unsigned ContigNode::length() const
 }
 
 struct PathConsistencyStats {
-	size_t startP1;
-	size_t endP1;
 	size_t startP2;
 	size_t endP2;
 	ContigPath consensus;
@@ -619,8 +617,6 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
 		PathConsistencyStats a;
-		a.startP1 = p1.rend() - rit1;
-		a.endP1 = it1 - p1.begin() - 1;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
 		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
@@ -629,9 +625,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 					alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
-		size_t count = max(a.endP1 - a.startP1 + 1,
-				a.endP2 - a.startP2 + 1);
-		return make_pair(count, a);
+		return make_pair(a.consensus.size(), a);
 	} else {
 		return PathAlignment();
 	}
@@ -669,21 +663,7 @@ static PathAlignment align(
 			cout << "\tinvalid\n";
 		return PathAlignment();
 	}
-
-	const PathAlignment& a = *pathAlignments.rbegin();
-
-	// Sanity assert, at this point one of the low coordniates should
-	// be zero and one of the high coordinates should be (size -1).
-	assert(a.second.startP1 == 0 || a.second.startP2 == 0);
-	assert(a.second.endP1 == path1.size() - 1
-			|| a.second.endP2 == path2.size() - 1);
-	assert(path1[a.second.startP1] == path2[a.second.startP2]
-			|| path1[a.second.startP1].ambiguous()
-			|| path2[a.second.startP2].ambiguous());
-	assert(path1[a.second.endP1] == path2[a.second.endP2]
-			|| path1[a.second.endP1].ambiguous()
-			|| path2[a.second.endP2].ambiguous());
-	return a;
+	return *pathAlignments.rbegin();
 }
 
 /** Return a string representation of the specified object. */
