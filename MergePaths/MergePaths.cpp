@@ -194,9 +194,13 @@ ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 {
 	ContigPath* refCanonical = deleteSubsumed
 		? paths[id] : new ContigPath(*paths[id]);
-	if (gDebugPrint)
-		cout << "\n* " << ContigNode(id, false) << '\n'
-			<< '\t' << *refCanonical << '\n';
+	if (gDebugPrint) {
+		if (!deleteSubsumed)
+			cout << "\n* " << ContigNode(id, false) << '\n';
+		else
+			cout << '\n' << ContigNode(id, false);
+		cout << '\t' << *refCanonical << '\n';
+	}
 
 	list<ContigNode> mergeInList(
 			refCanonical->begin(), refCanonical->end());
