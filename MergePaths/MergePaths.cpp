@@ -509,13 +509,16 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	(void)last1;
 	assert(it1 != last1);
 	assert(it1->ambiguous());
-	++it1;
-	assert(it1 != last1);
-	assert(!it1->ambiguous());
-
 	assert(it2 != last2);
-	iterator it = find(it2, last2, *it1);
-	unsigned nmatches = count(it, last2, *it1);
+
+	assert(it1 + 1 != last1);
+	ContigNode needle = *(it1 + 1);
+	assert(!needle.ambiguous());
+	iterator it = find(it2, last2, needle);
+	unsigned nmatches = count(it, last2, needle);
+	if (nmatches > 0)
+		++it1;
+
 	vector<iterator> matches;
 	if (nmatches < 2) {
 		copy(it2, it, out);
@@ -523,10 +526,10 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	} else {
 		matches.reserve(nmatches);
 		for (it = find_if(it, last2,
-					bind2nd(equal_to<ContigNode>(), *it1));
+					bind2nd(equal_to<ContigNode>(), needle));
 				it != last2;
 				it = find_if(it+1, last2,
-					bind2nd(equal_to<ContigNode>(), *it1)))
+					bind2nd(equal_to<ContigNode>(), needle)))
 			matches.push_back(it);
 		assert(matches.size() == nmatches);
 	}
@@ -586,11 +589,7 @@ static bool align(iterator& it1, iterator last1,
 		*out++ = *it1;
 	}
 
-	if ((it1-1)->ambiguous())
-		*out++ = *(it1-1);
 	copy(it1, last1, out);
-	if ((it2-1)->ambiguous())
-		*out++ = *(it2-1);
 	copy(it2, last2, out);
 	return true;
 }
