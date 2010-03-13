@@ -378,6 +378,7 @@ int main(int argc, char** argv)
 			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
 
+	cout << '\n';
 	removeRepeats(resultsPathMap);
 
 	if (opt::verbose > 0)
