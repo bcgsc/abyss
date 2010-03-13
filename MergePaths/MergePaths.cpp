@@ -102,7 +102,8 @@ struct Contig {
 
 typedef vector<Contig> ContigVec;
 
-void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap);
+static void readPathsFromFile(string pathFile,
+		ContigPathMap& contigPathMap);
 static void mergePath(const ContigVec& sourceContigs,
 		const ContigPath& mergeRecord, int count, ostream& out);
 static void mergeSequences(Sequence& rootContig,
@@ -189,7 +190,7 @@ template <typename T> static const T& deref(const T* x)
  * subsumed by this path
  * Return a pointer to the merged path.
  */
-ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
+static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		bool deleteSubsumed)
 {
 	ContigPath* refCanonical = deleteSubsumed
@@ -469,7 +470,8 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-void readPathsFromFile(string pathFile, ContigPathMap& contigPathMap)
+static void readPathsFromFile(string pathFile,
+		ContigPathMap& contigPathMap)
 {
 	ifstream pathStream(pathFile.c_str());
 	assert_open(pathStream, pathFile);
