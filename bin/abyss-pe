@@ -156,18 +156,21 @@ $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
 
 # Paired-end assembly
 
-%-4.path: %-4.adj %-3.dist
+%-4.path1: %-4.adj %-3.dist
 	SimpleGraph $v -j$j -k$k -o $@ $^
+
+%-4.path2: %-4.path1
+	MergePaths $v -o $@ $<
 
 ifndef cs
 
-%-contigs.fa: %-4.fa %-4.path
-	MergePaths $v -k$k -o $@ $^
+%-contigs.fa: %-4.fa %-4.path2
+	MergeContigs $v -k$k -o $@ $^
 
 else
 
-%-cs.fa: %-4.fa %-4.path
-	MergePaths $v -k$k -o $@ $^
+%-cs.fa: %-4.fa %-4.path2
+	MergeContigs $v -k$k -o $@ $^
 
 %-contigs.fa: %-cs.fa
 	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \

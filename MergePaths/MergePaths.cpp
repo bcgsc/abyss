@@ -2,16 +2,11 @@
 #include "Common/Options.h"
 #include "AffixIterator.h"
 #include "ContigPath.h"
-#include "FastaReader.h"
 #include "PairUtils.h"
-#include "Sense.h"
-#include "Sequence.h"
-#include "StringUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
@@ -19,7 +14,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
-#include <limits>
 #include <list>
 #include <map>
 #include <numeric>
@@ -38,11 +32,9 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [CONTIG] PATH\n"
-"Merge paths and contigs. If CONTIG is specified, the output is\n"
-"FASTA and merged paths otherwise.\n"
-"  CONTIG  contigs in FASTA format\n"
-"  PATH    paths through these contigs\n"
+"Usage: " PROGRAM " [OPTION]... PATH\n"
+"Merge sequences of contigs IDs.\n"
+"  PATH  sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
@@ -78,40 +70,17 @@ struct PathAlignment {
 
 typedef map<LinearNumKey, ContigPath*> ContigPathMap;
 
-struct Contig {
-	string id;
-	Sequence seq;
-	unsigned coverage;
-
-	Contig(const string& id, const Sequence& seq, unsigned coverage)
-		: id(id), seq(seq), coverage(coverage) { }
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		return out << '>' << o.id << ' '
-			<< o.seq.length() << ' ' << o.coverage << '\n'
-			<< o.seq << '\n';
-	}
-};
-
-typedef vector<Contig> ContigVec;
-
-/** Contigs and their sequences. */
-static ContigVec g_contigs;
+/** Lengths of contigs. */
+static vector<unsigned> g_contigLengths;
 
 /** Return the length of this contig. */
 unsigned ContigNode::length() const
 {
-	return ambiguous() ? m_id : g_contigs.at(id()).seq.length();
+	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
 static void readPathsFromFile(string pathFile,
 		ContigPathMap& contigPathMap);
-static void mergePath(const ContigVec& sourceContigs,
-		const ContigPath& mergeRecord, int count, ostream& out);
-static void mergeSequences(Sequence& rootContig,
-		const Sequence& otherContig,
-		extDirection dir, bool isReversed);
 static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
 
@@ -170,17 +139,6 @@ static void removeRepeats(ContigPathMap& paths)
 	}
 	if (opt::verbose > 0 && removed > 0)
 		cout << "Removing paths in repeats:" << ss.str() << '\n';
-}
-
-static set<size_t> getContigIDs(const vector<ContigPath>& paths)
-{
-	set<size_t> seen;
-	for (vector<ContigPath>::const_iterator it = paths.begin();
-			it != paths.end(); it++)
-		transform(it->begin(), it->end(),
-				inserter(seen, seen.begin()),
-				mem_fun_ref(&ContigNode::id));
-	return seen;
 }
 
 template <typename T> static const T& deref(const T* x)
@@ -324,22 +282,15 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (argc - optind > 1) {
-		if (opt::k <= 0) {
-			cerr << PROGRAM ": missing -k,--kmer option\n";
-			die = true;
-		}
-
-		if (opt::out.empty()) {
-			cerr << PROGRAM ": " << "missing -o,--out option\n";
-			die = true;
-		}
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
 	}
 
 	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 2) {
+	} else if (argc - optind > 1) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -352,28 +303,7 @@ int main(int argc, char** argv)
 
 	gDebugPrint = opt::verbose > 1;
 
-	const char* contigFile = argc - optind == 1 ? NULL
-		: argv[optind++];
 	string pathFile(argv[optind++]);
-
-	ContigVec& contigVec = g_contigs;
-	if (contigFile != NULL) {
-		FastaReader in(contigFile,
-				FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
-		for (FastaRecord rec; in >> rec;) {
-			istringstream ss(rec.comment);
-			unsigned length, coverage = 0;
-			ss >> length >> coverage;
-			LinearNumKey id = g_contigIDs.serial(rec.id);
-			assert(id == contigVec.size());
-			(void)id;
-			contigVec.push_back(Contig(rec.id, rec.seq, coverage));
-		}
-		g_contigIDs.lock();
-		assert(in.eof());
-		assert(!contigVec.empty());
-		opt::colourSpace = isdigit(contigVec[0].seq[0]);
-	}
 
 	// Read the paths file
 	ContigPathMap originalPathMap, resultsPathMap;
@@ -410,58 +340,15 @@ int main(int argc, char** argv)
 			back_inserter(uniquePaths), deref<ContigPath>);
 	sort(uniquePaths.begin(), uniquePaths.end());
 
-	if (contigVec.empty()) {
-		ofstream fout(opt::out.c_str());
-		ostream& out = opt::out.empty() ? cout : fout;
-		assert(out.good());
-		unsigned pathID = 0;
-		for (vector<ContigPath>::const_iterator it
-					= uniquePaths.begin();
-				it != uniquePaths.end(); ++it)
-			out << pathID++ << '\t' << *it << '\n';
-		assert(out.good());
-		return 0;
-	}
-
-	if (opt::verbose > 0)
-		cout << "\nMerging contigs\n";
-
-	ofstream out(opt::out.c_str());
-	set<size_t> seen = getContigIDs(uniquePaths);
-	float minCov = numeric_limits<float>::infinity(),
-		  minCovUsed = numeric_limits<float>::infinity();
-	for (size_t i = 0; i < contigVec.size(); i++) {
-		const Contig& contig = contigVec[i];
-		bool used = seen.count(i) > 0;
-		if (!used)
-			out << contig;
-		if (contig.coverage > 0) {
-			assert((int)contig.seq.length() - opt::k + 1 > 0);
-			float cov = (float)contig.coverage
-				/ (contig.seq.length() - opt::k + 1);
-			minCov = min(minCov, cov);
-			if (used)
-				minCovUsed = min(minCovUsed, cov);
-		}
-	}
-
-	cout << "The minimum coverage of single-end contigs is "
-		<< minCov << ".\n"
-		<< "The minimum coverage of merged contigs is "
-		<< minCovUsed << ".\n";
-	if (minCov < minCovUsed)
-		cout << "Consider increasing the coverage threshold "
-			"parameter, c, to " << minCovUsed << ".\n";
-
-	stringstream s(g_contigIDs.key(contigVec.size() - 1));
-	int id;
-	s >> id;
-	id++;
-	for (vector<ContigPath>::const_iterator it = uniquePaths.begin();
-			it != uniquePaths.end(); ++it)
-		mergePath(contigVec, *it, id++, out);
+	ofstream fout(opt::out.c_str());
+	ostream& out = opt::out.empty() ? cout : fout;
 	assert(out.good());
-
+	unsigned pathID = 0;
+	for (vector<ContigPath>::const_iterator it
+				= uniquePaths.begin();
+			it != uniquePaths.end(); ++it)
+		out << pathID++ << '\t' << *it << '\n';
+	assert(out.good());
 	return 0;
 }
 
@@ -682,92 +569,4 @@ static PathAlignment align(
 	if (gDebugPrint)
 		cout << "\tinvalid\n";
 	return PathAlignment();
-}
-
-/** Return a string representation of the specified object. */
-template<typename T> static string toString(T x)
-{
-	ostringstream s;
-	s << x;
-	return s.str();
-}
-
-/** Return a string representation of the specified path. */
-static string toString(const ContigPath& path, char sep)
-{
-	assert(!path.empty());
-	ostringstream s;
-	ContigPath::const_iterator it = path.begin();
-	s << *it++;
-	for (; it != path.end(); ++it)
-		s << sep << *it;
-	return s.str();
-}
-
-static void mergePath(const ContigVec& sourceContigs,
-		const ContigPath& currPath, int count, ostream& out)
-{
-	size_t numNodes = currPath.size();
-	ContigNode firstNode = currPath.front();
-	const Contig& firstContig = sourceContigs[firstNode.id()];
-	Sequence merged = firstContig.seq;
-	unsigned coverage = firstContig.coverage;
-	if (firstNode.sense())
-		merged = reverseComplement(merged);
-	assert(!merged.empty());
-
-	for(size_t i = 1; i < numNodes; ++i) {
-		ContigNode mn = currPath[i];
-		const Contig& contig = sourceContigs[mn.id()];
-		assert(!contig.seq.empty());
-		mergeSequences(merged, contig.seq, SENSE, mn.sense());
-		coverage += contig.coverage;
-	}
-
-	ostringstream s;
-	s << merged.length() << ' ' << coverage << ' '
-		<< toString(currPath, ',');
-	out << FastaRecord(toString(count), s.str(), merged);
-}
-
-static void mergeSequences(Sequence& rootContig,
-		const Sequence& otherContig,
-		extDirection dir, bool isReversed)
-{
-	size_t overlap = opt::k - 1;
-
-	// should the slave be reversed?
-	Sequence slaveSeq = otherContig;
-	if(isReversed)
-	{
-		slaveSeq = reverseComplement(slaveSeq);
-	}
-	
-	const Sequence* leftSeq;
-	const Sequence* rightSeq;
-	// Order the contigs
-	if(dir == SENSE)
-	{
-		leftSeq = &rootContig;
-		rightSeq = &slaveSeq;
-	}
-	else
-	{
-		leftSeq = &slaveSeq;
-		rightSeq = &rootContig;
-	}
-
-	Sequence leftEnd(leftSeq->substr(leftSeq->length() - overlap,
-				overlap));
-	Sequence rightBegin(rightSeq->substr(0, overlap));
-	if (leftEnd != rightBegin) {
-		printf("merge called data1: %s %s (%d, %d)\n",
-				rootContig.c_str(), otherContig.c_str(),
-				dir, isReversed);
-		printf("left end %s, right begin %s\n",
-				leftEnd.c_str(), rightBegin.c_str());
-		assert(leftEnd == rightBegin);
-	}
-
-	rootContig = *leftSeq + rightSeq->substr(overlap);
 }
