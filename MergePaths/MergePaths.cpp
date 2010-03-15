@@ -498,6 +498,12 @@ static void readPathsFromFile(string pathFile,
 	pathStream.close();
 }
 
+/** Add the number of k-mer in two contigs. */
+static unsigned addLength(unsigned addend, const ContigNode& contig)
+{
+	return addend + contig.length() - opt::k + 1;
+}
+
 /** Align the ambiguous region [it1, last1) to [it2, last2).
  * The end of the alignment is returned in it1 and it2 if there is
  * exactly one alignment. If there is more than one possible
@@ -512,21 +518,31 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	(void)last1;
 	assert(it1 != last1);
 	assert(it1->ambiguous());
+	assert(it1 + 1 != last1);
 	assert(it2 != last2);
 
-	assert(it1 + 1 != last1);
-	ContigNode needle = *(it1 + 1);
+	unsigned ambiguous = it1->length();
+	ContigNode needle = *++it1;
 	assert(!needle.ambiguous());
 	iterator it = find(it2, last2, needle);
 	unsigned nmatches = count(it, last2, needle);
-	if (nmatches > 0)
-		++it1;
 
 	vector<iterator> matches;
-	if (nmatches == 1) {
+	switch (nmatches) {
+	  case 0: {
+		copy(it2, last2, out);
+		unsigned unambiguous = accumulate(it2, last2, 0, addLength);
+		it2 = last2;
+		assert(ambiguous >= unambiguous);
+		if (ambiguous > unambiguous)
+			*out++ = ContigNode(ambiguous - unambiguous);
+		break;
+	  }
+	  case 1:
 		copy(it2, it, out);
 		it2 = it;
-	} else {
+		break;
+	  default:
 		matches.reserve(nmatches);
 		for (it = find_if(it, last2,
 					bind2nd(equal_to<ContigNode>(), needle));
@@ -552,12 +568,6 @@ static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 	return which == -1 ? vector<iterator>()
 		: which == 0 ? skipAmbiguous(it1, last1, it2, last2, out)
 		: skipAmbiguous(it2, last2, it1, last1, out);
-}
-
-/** Add the number of k-mer in two contigs. */
-static unsigned addLength(unsigned addend, const ContigNode& contig)
-{
-	return addend + contig.length() - opt::k + 1;
 }
 
 template <class iterator, class oiterator>
@@ -590,34 +600,12 @@ static bool align(iterator& it1, iterator last1,
 			}
 			return false;
 		}
-		assert(it1 != last1);
-		assert(it2 != last2);
-		if (it1->ambiguous() || it2->ambiguous())
+		if (it1 == last1 || it2 == last2)
 			break;
 
 		if (*it1 != *it2)
 			return false;
 		*out++ = *it1;
-	}
-
-	if (it1 != last1 && it1->ambiguous()) {
-		copy(it2, last2, out);
-		unsigned ambiguous = (*it1++).length();
-		unsigned unambiguous = accumulate(it2, last2, 0, addLength);
-		it2 = last2;
-		assert(ambiguous >= unambiguous);
-		if (ambiguous > unambiguous)
-			*out++ = ContigNode(ambiguous - unambiguous);
-	}
-
-	if (it2 != last2 && it2->ambiguous()) {
-		copy(it1, last1, out);
-		unsigned ambiguous = (*it2++).length();
-		unsigned unambiguous = accumulate(it1, last1, 0, addLength);
-		it1 = last1;
-		assert(ambiguous >= unambiguous);
-		if (ambiguous > unambiguous)
-			*out++ = ContigNode(ambiguous - unambiguous);
 	}
 
 	copy(it1, last1, out);
