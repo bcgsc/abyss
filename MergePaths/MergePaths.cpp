@@ -22,6 +22,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <string>
@@ -69,13 +70,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Return the length of this contig. */
-unsigned ContigNode::length() const
-{
-	assert(ambiguous());
-	return m_id;
-}
-
 struct PathAlignment {
 	size_t startP2;
 	size_t endP2;
@@ -101,6 +95,15 @@ struct Contig {
 };
 
 typedef vector<Contig> ContigVec;
+
+/** Contigs and their sequences. */
+static ContigVec g_contigs;
+
+/** Return the length of this contig. */
+unsigned ContigNode::length() const
+{
+	return ambiguous() ? m_id : g_contigs.at(id()).seq.length();
+}
 
 static void readPathsFromFile(string pathFile,
 		ContigPathMap& contigPathMap);
@@ -353,7 +356,7 @@ int main(int argc, char** argv)
 		: argv[optind++];
 	string pathFile(argv[optind++]);
 
-	ContigVec contigVec;
+	ContigVec& contigVec = g_contigs;
 	if (contigFile != NULL) {
 		FastaReader in(contigFile,
 				FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
@@ -520,7 +523,7 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 		++it1;
 
 	vector<iterator> matches;
-	if (nmatches < 2) {
+	if (nmatches == 1) {
 		copy(it2, it, out);
 		it2 = it;
 	} else {
@@ -549,6 +552,12 @@ static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 	return which == -1 ? vector<iterator>()
 		: which == 0 ? skipAmbiguous(it1, last1, it2, last2, out)
 		: skipAmbiguous(it2, last2, it1, last1, out);
+}
+
+/** Add the number of k-mer in two contigs. */
+static unsigned addLength(unsigned addend, const ContigNode& contig)
+{
+	return addend + contig.length() - opt::k + 1;
 }
 
 template <class iterator, class oiterator>
@@ -581,12 +590,34 @@ static bool align(iterator& it1, iterator last1,
 			}
 			return false;
 		}
-		if (it1 == last1 || it2 == last2)
+		assert(it1 != last1);
+		assert(it2 != last2);
+		if (it1->ambiguous() || it2->ambiguous())
 			break;
 
 		if (*it1 != *it2)
 			return false;
 		*out++ = *it1;
+	}
+
+	if (it1 != last1 && it1->ambiguous()) {
+		copy(it2, last2, out);
+		unsigned ambiguous = (*it1++).length();
+		unsigned unambiguous = accumulate(it2, last2, 0, addLength);
+		it2 = last2;
+		assert(ambiguous >= unambiguous);
+		if (ambiguous > unambiguous)
+			*out++ = ContigNode(ambiguous - unambiguous);
+	}
+
+	if (it2 != last2 && it2->ambiguous()) {
+		copy(it1, last1, out);
+		unsigned ambiguous = (*it2++).length();
+		unsigned unambiguous = accumulate(it1, last1, 0, addLength);
+		it1 = last1;
+		assert(ambiguous >= unambiguous);
+		if (ambiguous > unambiguous)
+			*out++ = ContigNode(ambiguous - unambiguous);
 	}
 
 	copy(it1, last1, out);
