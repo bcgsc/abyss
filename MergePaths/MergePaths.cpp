@@ -64,11 +64,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-struct PathAlignment {
-	ContigPath consensus;
-	bool subsumed;
-};
-
 typedef map<LinearNumKey, ContigPath*> ContigPathMap;
 
 /** Lengths of contigs. */
@@ -80,7 +75,7 @@ unsigned ContigNode::length() const
 	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
-static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
+static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
 
 static bool gDebugPrint;
@@ -181,8 +176,8 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			path2.reverseComplement();
 		if (gDebugPrint)
 			cout << pivot << '\t' << path2 << '\n';
-		PathAlignment a = align(*path, path2, pivot);
-		if (a.consensus.empty())
+		ContigPath consensus = align(*path, path2, pivot);
+		if (consensus.empty())
 			continue;
 		if (deleteSubsumed) {
 			/* If additional merges could be made at this point,
@@ -191,7 +186,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * originals, but for now we keep both and print a
 			 * warning.
 			 */
-			if (a.consensus != *path) {
+			if (consensus != *path) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator it = path->begin();
 						it != path->end(); it++)
@@ -234,7 +229,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				if (seen.insert(it->id()).second)
 					mergeQ.push_back(*it);
 
-			path->swap(a.consensus);
+			path->swap(consensus);
 			if (gDebugPrint)
 				cout << '\t' << *path << '\n';
 		}
@@ -514,10 +509,10 @@ static bool align(iterator& it1, iterator last1,
 }
 
 /** Find an equivalent region of the two specified paths, starting the
- * alignment at pos1 of path1 and pos2 of path2.
- * @return the alignment
+ * alignment at pivot1 of path1 and pivot2 of path2.
+ * @return the consensus sequence
  */
-static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
+static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		ContigPath::const_iterator pivot1,
 		ContigPath::const_iterator pivot2)
 {
@@ -534,7 +529,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 	bool alignedf = align(it1, p1.end(), it2, p2.end(),
 			back_inserter(alignmentf));
 
-	PathAlignment a;
+	ContigPath consensus;
 	if (alignedr && alignedf) {
 		// Found an alignment.
 		assert(!alignmentf.empty());
@@ -543,19 +538,18 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				|| (it1 == p1.end() && rit2 == p2.rend())
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
-		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
-		a.consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
-		a.consensus.insert(a.consensus.end(),
+		consensus.reserve(alignmentr.size()-1 + alignmentf.size());
+		consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
+		consensus.insert(consensus.end(),
 				alignmentf.begin(), alignmentf.end());
-		a.subsumed = rit2 == p2.rend() && it2 == p2.end();
 	}
-	return a;
+	return consensus;
 }
 
 /** Find an equivalent region of the two specified paths.
- * @return the alignment
+ * @return the consensus sequence
  */
-static PathAlignment align(
+static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		const ContigNode& pivot)
 {
@@ -571,12 +565,12 @@ static PathAlignment align(
 			it1 != path1.end();
 			it1 = find_if(it1+1, path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot))) {
-		PathAlignment alignment = align(path1, path2, it1, it2);
-		if (!alignment.consensus.empty())
-			return alignment;
+		ContigPath consensus = align(path1, path2, it1, it2);
+		if (!consensus.empty())
+			return consensus;
 	}
 
 	if (gDebugPrint)
 		cout << "\tinvalid\n";
-	return PathAlignment();
+	return ContigPath();
 }
