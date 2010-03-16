@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <list>
 #include <map>
 #include <numeric>
@@ -32,8 +33,9 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... PATH\n"
+"Usage: " PROGRAM " [OPTION]... LEN PATH\n"
 "Merge sequences of contigs IDs.\n"
+"  LEN   lengths of the contigs\n"
 "  PATH  sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
@@ -262,6 +264,35 @@ static void removeSubsumedPaths(LinearNumKey id,
 	linkPaths(id, paths, true);
 }
 
+static void assert_open(ifstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
+/** Read contig lengths. */
+static vector<unsigned> readContigLengths(const string& path)
+{
+	vector<unsigned> lengths;
+	ifstream in(path.c_str());
+	assert_open(in, path);
+
+	string idString;
+	unsigned len;
+	while (in >> idString >> len) {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		unsigned id = g_contigIDs.serial(idString);
+		assert(id == lengths.size());
+		(void)id;
+		lengths.push_back(len);
+	}
+	assert(in.eof());
+	assert(!lengths.empty());
+	return lengths;
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -287,10 +318,10 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 1) {
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 1) {
+	} else if (argc - optind > 2) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -303,11 +334,11 @@ int main(int argc, char** argv)
 
 	gDebugPrint = opt::verbose > 1;
 
-	string pathFile(argv[optind++]);
+	g_contigLengths = readContigLengths(argv[optind++]);
 
 	// Read the paths file
 	ContigPathMap originalPathMap, resultsPathMap;
-	readPathsFromFile(pathFile, originalPathMap);
+	readPathsFromFile(argv[optind++], originalPathMap);
 
 	removeRepeats(originalPathMap);
 
@@ -350,14 +381,6 @@ int main(int argc, char** argv)
 		out << pathID++ << '\t' << *it << '\n';
 	assert(out.good());
 	return 0;
-}
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
 }
 
 static void readPathsFromFile(string pathFile,
