@@ -65,9 +65,8 @@ static const struct option longopts[] = {
 };
 
 struct PathAlignment {
-	size_t startP2;
-	size_t endP2;
 	ContigPath consensus;
+	bool subsumed;
 };
 
 typedef map<LinearNumKey, ContigPath*> ContigPathMap;
@@ -192,8 +191,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * originals, but for now we keep both and print a
 			 * warning.
 			 */
-			unsigned s2 = a.startP2, e2 = a.endP2;
-			if (s2 != 0 || e2+1 != path2.size()) {
+			if (!a.subsumed) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator it = path->begin();
 						it != path->end(); it++)
@@ -545,12 +543,11 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				|| (it1 == p1.end() && rit2 == p2.rend())
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
-		a.startP2 = p2.rend() - rit2;
-		a.endP2 = it2 - p2.begin() - 1;
 		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
 		a.consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
+		a.subsumed = rit2 == p2.rend() && it2 == p2.end();
 	}
 	return a;
 }
