@@ -129,7 +129,7 @@ static void removeRepeats(ContigPathMap& paths)
 			cout << " none";
 		cout << '\n';
 	}
-	
+
 	ostringstream ss;
 	unsigned removed = 0;
 	for (set<LinearNumKey>::const_iterator it = repeats.begin();
@@ -232,7 +232,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			}
 		} else {
 			mergeInList.insert(mergeInList.end(),
-					childCanonPath.begin(), 
+					childCanonPath.begin(),
 					childCanonPath.begin() + a.startP2);
 			mergeInList.insert(mergeInList.end(),
 					childCanonPath.begin() + a.endP2 + 1,
