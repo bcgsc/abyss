@@ -174,8 +174,6 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		ContigPath path2 = *findIter->second;
 		if (pivot.sense())
 			path2.reverseComplement();
-		if (gDebugPrint)
-			cout << pivot << '\t' << path2 << '\n';
 		ContigPath consensus = align(*path, path2, pivot);
 		if (consensus.empty())
 			continue;
@@ -213,7 +211,30 @@ static void extendPaths(LinearNumKey id,
 static void removeSubsumedPaths(LinearNumKey id,
 		ContigPathMap& paths)
 {
-	linkPaths(id, paths, true);
+	const ContigPath& path = *paths[id];
+	if (gDebugPrint)
+		cout << '\n' << ContigNode(id, false)
+			<< '\t' << path << '\n';
+
+	for (ContigPath::const_iterator it = path.begin();
+			it != path.end(); ++it) {
+		ContigNode pivot = *it;
+		if (pivot.id() == id)
+			continue;
+		ContigPathMap::iterator path2It = paths.find(pivot.id());
+		if (path2It == paths.end())
+			continue;
+		ContigPath path2 = *path2It->second;
+		if (pivot.sense())
+			path2.reverseComplement();
+		ContigPath consensus = align(path, path2, pivot);
+		if (consensus.empty())
+			continue;
+		assert(consensus == path);
+		delete path2It->second;
+		path2It->second = NULL;
+		paths.erase(path2It);
+	}
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -506,6 +527,9 @@ static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		const ContigNode& pivot)
 {
+	if (gDebugPrint)
+		cout << pivot << '\t' << path2 << '\n';
+
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
