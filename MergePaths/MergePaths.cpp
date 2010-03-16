@@ -143,7 +143,11 @@ static void extendPaths(LinearNumKey id,
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
-	ContigPath path = pathIt->second;
+	pair<ContigPathMap::iterator, bool> inserted
+		= out.insert(*pathIt);
+	assert(inserted.second);
+	ContigPath& path = inserted.first->second;
+
 	if (gDebugPrint)
 		cout << "\n* " << ContigNode(id, false) << '\n'
 			<< '\t' << path << '\n';
@@ -178,9 +182,6 @@ static void extendPaths(LinearNumKey id,
 		if (gDebugPrint)
 			cout << '\t' << path << '\n';
 	}
-	bool inserted = out.insert(make_pair(id, path)).second;
-	assert(inserted);
-	(void)inserted;
 }
 
 /** Remove paths subsumed by the specified path. */
