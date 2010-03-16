@@ -64,7 +64,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef map<LinearNumKey, ContigPath*> ContigPathMap;
+typedef map<LinearNumKey, ContigPath> ContigPathMap;
 
 /** Lengths of contigs. */
 static vector<unsigned> g_contigLengths;
@@ -88,7 +88,7 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 	set<LinearNumKey> repeats;
 	for (ContigPathMap::const_iterator pathIt = paths.begin();
 			pathIt != paths.end(); ++pathIt) {
-		const ContigPath& path = *pathIt->second;
+		const ContigPath& path = pathIt->second;
 		map<LinearNumKey, unsigned> count;
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
@@ -135,11 +135,6 @@ static void removeRepeats(ContigPathMap& paths)
 		cout << "Removing paths in repeats:" << ss.str() << '\n';
 }
 
-template <typename T> static const T& deref(const T* x)
-{
-	return *x;
-}
-
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
@@ -148,16 +143,16 @@ static void extendPaths(LinearNumKey id,
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
-	ContigPath* path = new ContigPath(*pathIt->second);
+	ContigPath path = pathIt->second;
 	if (gDebugPrint)
 		cout << "\n* " << ContigNode(id, false) << '\n'
-			<< '\t' << *path << '\n';
+			<< '\t' << path << '\n';
 
 	set<ContigNode> seen;
 	seen.insert(ContigNode(id, false));
 	deque<ContigNode> mergeQ;
-	for (ContigPath::const_iterator it = path->begin();
-			it != path->end(); ++it)
+	for (ContigPath::const_iterator it = path.begin();
+			it != path.end(); ++it)
 		if (seen.insert(*it).second)
 			mergeQ.push_back(*it);
 
@@ -167,10 +162,10 @@ static void extendPaths(LinearNumKey id,
 			= paths.find(pivot.id());
 		if (path2It == paths.end())
 			continue;
-		ContigPath path2 = *path2It->second;
+		ContigPath path2 = path2It->second;
 		if (pivot.sense())
 			path2.reverseComplement();
-		ContigPath consensus = align(*path, path2, pivot);
+		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
 
@@ -179,9 +174,9 @@ static void extendPaths(LinearNumKey id,
 			if (seen.insert(*it).second)
 				mergeQ.push_back(*it);
 
-		path->swap(consensus);
+		path.swap(consensus);
 		if (gDebugPrint)
-			cout << '\t' << *path << '\n';
+			cout << '\t' << path << '\n';
 	}
 	bool inserted = out.insert(make_pair(id, path)).second;
 	assert(inserted);
@@ -192,7 +187,7 @@ static void extendPaths(LinearNumKey id,
 static void removeSubsumedPaths(LinearNumKey id,
 		ContigPathMap& paths)
 {
-	const ContigPath& path = *paths[id];
+	const ContigPath& path = paths[id];
 	if (gDebugPrint)
 		cout << '\n' << ContigNode(id, false)
 			<< '\t' << path << '\n';
@@ -205,15 +200,13 @@ static void removeSubsumedPaths(LinearNumKey id,
 		ContigPathMap::iterator path2It = paths.find(pivot.id());
 		if (path2It == paths.end())
 			continue;
-		ContigPath path2 = *path2It->second;
+		ContigPath path2 = path2It->second;
 		if (pivot.sense())
 			path2.reverseComplement();
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
 		assert(consensus == path);
-		delete path2It->second;
-		path2It->second = NULL;
 		paths.erase(path2It);
 	}
 }
@@ -258,7 +251,7 @@ static ContigPathMap readPaths(const string& filePath)
 	while (in >> idString >> path) {
 		LinearNumKey id = g_contigIDs.serial(idString);
 		bool inserted = paths.insert(
-				make_pair(id, new ContigPath(path))).second;
+				make_pair(id, path)).second;
 		assert(inserted);
 		(void)inserted;
 	}
@@ -330,18 +323,11 @@ int main(int argc, char** argv)
 			iter != resultsPathMap.end(); ++iter)
 		removeSubsumedPaths(iter->first, resultsPathMap);
 
-	set<ContigPath*> uniquePtr;
+	vector<ContigPath> uniquePaths;
+	uniquePaths.reserve(resultsPathMap.size());
 	for (ContigPathMap::const_iterator it = resultsPathMap.begin();
 			it != resultsPathMap.end(); ++it)
-		uniquePtr.insert(it->second);
-
-	// Sort the set of unique paths by the path itself rather than by
-	// pointer. This ensures that the order of the contig IDs does not
-	// depend on arbitrary pointer values.
-	vector<ContigPath> uniquePaths;
-	uniquePaths.reserve(uniquePtr.size());
-	transform(uniquePtr.begin(), uniquePtr.end(),
-			back_inserter(uniquePaths), deref<ContigPath>);
+		uniquePaths.push_back(it->second);
 	sort(uniquePaths.begin(), uniquePaths.end());
 
 	ofstream fout(opt::out.c_str());
