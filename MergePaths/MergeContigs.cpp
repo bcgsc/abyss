@@ -364,5 +364,27 @@ int main(int argc, char** argv)
 		assert(out.good());
 	}
 
+	float minCov = numeric_limits<float>::infinity(),
+		minCovUsed = numeric_limits<float>::infinity();
+	for (vector<Contig>::const_iterator it = contigs.begin();
+			it != contigs.end(); ++it) {
+		if (it->coverage == 0)
+			continue;
+		assert((int)it->seq.length() - opt::k + 1 > 0);
+		float cov = (float)it->coverage
+			/ (it->seq.length() - opt::k + 1);
+		minCov = min(minCov, cov);
+		if (seen[it - contigs.begin()])
+			minCovUsed = min(minCovUsed, cov);
+	}
+
+	cerr << "The minimum coverage of single-end contigs is "
+		<< minCov << ".\n"
+		<< "The minimum coverage of merged contigs is "
+		<< minCovUsed << ".\n";
+	if (minCov < minCovUsed)
+		cerr << "Consider increasing the coverage threshold "
+			"parameter, c, to " << minCovUsed << ".\n";
+
 	return 0;
 }
