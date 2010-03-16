@@ -558,18 +558,19 @@ static ContigPath align(
 	assert(it2 != path2.end());
 	assert(count(it2+1, path2.end(), pivot) == 0);
 
+	ContigPath consensus;
 	for (ContigPath::const_iterator it1 = find_if(
 				path1.begin(), path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot));
 			it1 != path1.end();
 			it1 = find_if(it1+1, path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot))) {
-		ContigPath consensus = align(path1, path2, it1, it2);
+		consensus = align(path1, path2, it1, it2);
 		if (!consensus.empty())
 			return consensus;
 	}
 
 	if (gDebugPrint)
 		cout << "\tinvalid\n";
-	return ContigPath();
+	return consensus;
 }
