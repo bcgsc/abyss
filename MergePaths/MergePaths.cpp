@@ -81,8 +81,6 @@ unsigned ContigNode::length() const
 	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
-static void readPathsFromFile(string pathFile,
-		ContigPathMap& contigPathMap);
 static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
 
@@ -292,6 +290,30 @@ static vector<unsigned> readContigLengths(const string& path)
 	return lengths;
 }
 
+/** Read a set of paths from the specified file. */
+static ContigPathMap readPaths(const string& path)
+{
+	ContigPathMap paths;
+	ifstream in(path.c_str());
+	assert_open(in, path);
+
+	for (string s; getline(in, s);) {
+		istringstream ss(s);
+		string idString;
+		ContigPath path;
+		ss >> idString >> path;
+		assert(ss.eof());
+
+		LinearNumKey id = g_contigIDs.serial(idString);
+		bool inserted = paths.insert(
+				make_pair(id, new ContigPath(path))).second;
+		assert(inserted);
+		(void)inserted;
+	}
+	assert(in.eof());
+	return paths;
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -336,13 +358,11 @@ int main(int argc, char** argv)
 	g_contigLengths = readContigLengths(argv[optind++]);
 	g_contigIDs.lock();
 
-	// Read the paths file
-	ContigPathMap originalPathMap, resultsPathMap;
-	readPathsFromFile(argv[optind++], originalPathMap);
+	ContigPathMap originalPathMap = readPaths(argv[optind++]);
 
 	removeRepeats(originalPathMap);
 
-	// link the paths together
+	ContigPathMap resultsPathMap;
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
@@ -382,31 +402,6 @@ int main(int argc, char** argv)
 		out << pathID++ << '\t' << *it << '\n';
 	assert(out.good());
 	return 0;
-}
-
-static void readPathsFromFile(string pathFile,
-		ContigPathMap& contigPathMap)
-{
-	ifstream pathStream(pathFile.c_str());
-	assert_open(pathStream, pathFile);
-
-	string line;
-	while (getline(pathStream, line)) {
-		istringstream s(line);
-		string sID;
-		ContigPath path;
-		s >> sID >> path;
-		assert(s.eof());
-
-		LinearNumKey id = g_contigIDs.serial(sID);
-		bool inserted = contigPathMap.insert(make_pair(id,
-			new ContigPath(path))).second;
-		assert(inserted);
-		(void)inserted;
-	}
-	assert(pathStream.eof());
-
-	pathStream.close();
 }
 
 /** Add the number of k-mer in two contigs. */
