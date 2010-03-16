@@ -71,6 +71,14 @@ struct Path : vector<ContigNode>
 				ostream_iterator<ContigNode>(out, ","));
 		return out << o.back();
 	}
+
+	friend istream& operator>>(istream& in, Path& o)
+	{
+		copy(istream_iterator<ContigNode>(in),
+				istream_iterator<ContigNode>(),
+				back_inserter(o));
+		return in;
+	}
 };
 
 static void assert_open(ifstream& f, const string& p)
@@ -199,8 +207,8 @@ template<typename T> static string toString(T x)
 	return s.str();
 }
 
-/** Loads all paths from the file named inPath into paths. */
-static void loadPaths(string& inPath, vector<Path>& paths)
+/** Read contig paths from the specified file. */
+static vector<Path> readPaths(const string& inPath)
 {
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
@@ -209,19 +217,17 @@ static void loadPaths(string& inPath, vector<Path>& paths)
 		assert_open(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
 
+	vector<Path> paths;
 	for (string s; getline(in, s);) {
 		istringstream ss(s);
-
-		string sID;
-		ss >> sID;
-
+		string idString;
 		Path path;
-		copy(istream_iterator<ContigNode>(ss),
-				istream_iterator<ContigNode>(),
-				back_inserter(path));
+		ss >> idString >> path;
+		assert(ss.eof());
 		paths.push_back(path);
 	}
 	assert(in.eof());
+	return paths;
 }
 
 /** Finds all contigs used in each path in paths, and
@@ -300,8 +306,7 @@ int main(int argc, char** argv)
 		if (argc - optind == 0) g_contigIDs.lock();
 	}
 
-	vector<Path> paths;
-	loadPaths(mergedPathFile, paths); 
+	vector<Path> paths = readPaths(mergedPathFile);
 	if (opt::verbose > 0)
 		cerr << "Total number of paths: " << paths.size() << '\n';
 
@@ -313,9 +318,7 @@ int main(int argc, char** argv)
 	if (argc - optind > 0) {
 		unsigned count = 0;
 		for (; optind < argc; optind++) {
-			vector<Path> prevPaths;
-			string filename(argv[optind]);
-			loadPaths(filename, prevPaths);
+			vector<Path> prevPaths = readPaths(argv[optind]);
 			seenContigs(seen, prevPaths);
 			count += prevPaths.size();
 		}
