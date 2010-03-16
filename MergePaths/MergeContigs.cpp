@@ -1,6 +1,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigNode.h"
+#include "ContigPath.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
@@ -61,24 +62,6 @@ static const struct option longopts[] = {
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
-};
-
-struct Path : vector<ContigNode>
-{
-	friend ostream& operator <<(ostream& out, const Path& o)
-	{
-		copy(o.begin(), o.end()-1,
-				ostream_iterator<ContigNode>(out, ","));
-		return out << o.back();
-	}
-
-	friend istream& operator>>(istream& in, Path& o)
-	{
-		copy(istream_iterator<ContigNode>(in),
-				istream_iterator<ContigNode>(),
-				back_inserter(o));
-		return in;
-	}
 };
 
 static void assert_open(ifstream& f, const string& p)
@@ -160,6 +143,8 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	}
 	return s;
 }
+
+typedef ContigPath Path;
 
 /** Merge the specified two contigs, which must overlap by k-1 bp, and
  * generate a consensus sequence of the overlapping region. The result
@@ -244,6 +229,8 @@ static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
 
 int main(int argc, char** argv)
 {
+	ContigPath::separator = ",";
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {

@@ -28,14 +28,19 @@ class ContigPath : public std::vector<ContigNode>
 			std::for_each(begin(), end(),
 					std::mem_fun_ref(&ContigNode::flip));
 		}
+
+		/** The separator to print between ContigNode. */
+		static const char* separator;
 };
+const char* ContigPath::separator;
 
 std::ostream& operator<<(std::ostream& out, const ContigPath& o)
 {
+	const char* separator = o.separator == NULL ? " " : o.separator;
 	assert(!o.empty());
 	ContigPath::const_iterator last = o.end() - 1;
 	copy(o.begin(), last,
-			std::ostream_iterator<ContigNode>(out, " "));
+			std::ostream_iterator<ContigNode>(out, separator));
 	return out << *last;
 }
 
