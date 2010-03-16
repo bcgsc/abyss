@@ -164,12 +164,16 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		cout << '\t' << *path << '\n';
 	}
 
-	set<LinearNumKey> merged;
-	deque<ContigNode> mergeQ(path->begin(), path->end());
+	set<LinearNumKey> seen;
+	seen.insert(id);
+	deque<ContigNode> mergeQ;
+	for (ContigPath::const_iterator it = path->begin();
+			it != path->end(); ++it)
+		if (seen.insert(it->id()).second)
+			mergeQ.push_back(*it);
+
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
-		if (pivot.id() == id)
-			continue;
 		ContigPathMap::iterator findIter = paths.find(pivot.id());
 		if (findIter == paths.end())
 			continue;
@@ -228,13 +232,8 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			}
 		} else {
 			for (ContigPath::const_iterator it = path2.begin();
-					it != path2.begin() + a.startP2; ++it)
-				if (merged.insert(it->id()).second)
-					mergeQ.push_back(*it);
-			for (ContigPath::const_iterator it
-						= path2.begin() + a.endP2 + 1;
 					it != path2.end(); ++it)
-				if (merged.insert(it->id()).second)
+				if (seen.insert(it->id()).second)
 					mergeQ.push_back(*it);
 
 			path->swap(a.consensus);
