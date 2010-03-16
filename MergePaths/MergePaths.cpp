@@ -140,23 +140,18 @@ template <typename T> static const T& deref(const T* x)
 	return *x;
 }
 
-/** Merge the specified path.
- * @param deleteSubsumed when true, remove paths that are entirely
- * subsumed by this path
- * Return a pointer to the merged path.
+/** Extend the specified path as long as is unambiguously possible and
+ * add the result to the specified container.
  */
-static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
-		bool deleteSubsumed)
+static void extendPaths(LinearNumKey id,
+		const ContigPathMap& paths, ContigPathMap& out)
 {
-	ContigPath* path = deleteSubsumed ? paths[id]
-		: new ContigPath(*paths[id]);
-	if (gDebugPrint) {
-		if (!deleteSubsumed)
-			cout << "\n* " << ContigNode(id, false) << '\n';
-		else
-			cout << '\n' << ContigNode(id, false);
-		cout << '\t' << *path << '\n';
-	}
+	ContigPathMap::const_iterator pathIt = paths.find(id);
+	assert(pathIt != paths.end());
+	ContigPath* path = new ContigPath(*pathIt->second);
+	if (gDebugPrint)
+		cout << "\n* " << ContigNode(id, false) << '\n'
+			<< '\t' << *path << '\n';
 
 	set<ContigNode> seen;
 	seen.insert(ContigNode(id, false));
@@ -168,41 +163,27 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
-		ContigPathMap::iterator findIter = paths.find(pivot.id());
-		if (findIter == paths.end())
+		ContigPathMap::const_iterator path2It
+			= paths.find(pivot.id());
+		if (path2It == paths.end())
 			continue;
-		ContigPath path2 = *findIter->second;
+		ContigPath path2 = *path2It->second;
 		if (pivot.sense())
 			path2.reverseComplement();
 		ContigPath consensus = align(*path, path2, pivot);
 		if (consensus.empty())
 			continue;
-		if (deleteSubsumed) {
-			assert(consensus == *path);
-			delete findIter->second;
-			findIter->second = NULL;
-			paths.erase(findIter);
-		} else {
-			for (ContigPath::const_iterator it = path2.begin();
-					it != path2.end(); ++it)
-				if (seen.insert(*it).second)
-					mergeQ.push_back(*it);
 
-			path->swap(consensus);
-			if (gDebugPrint)
-				cout << '\t' << *path << '\n';
-		}
+		for (ContigPath::const_iterator it = path2.begin();
+				it != path2.end(); ++it)
+			if (seen.insert(*it).second)
+				mergeQ.push_back(*it);
+
+		path->swap(consensus);
+		if (gDebugPrint)
+			cout << '\t' << *path << '\n';
 	}
-	return path;
-}
-
-/** Extend the specified path as long as is unambiguously possible and
- * add the result to the specified container. */
-static void extendPaths(LinearNumKey id,
-		ContigPathMap& paths, ContigPathMap& out)
-{
-	bool inserted = out.insert(make_pair(id,
-				linkPaths(id, paths, false))).second;
+	bool inserted = out.insert(make_pair(id, path)).second;
 	assert(inserted);
 	(void)inserted;
 }
