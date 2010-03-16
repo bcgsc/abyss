@@ -154,18 +154,17 @@ template <typename T> static const T& deref(const T* x)
 static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		bool deleteSubsumed)
 {
-	ContigPath* refCanonical = deleteSubsumed
-		? paths[id] : new ContigPath(*paths[id]);
+	ContigPath* path = deleteSubsumed ? paths[id]
+		: new ContigPath(*paths[id]);
 	if (gDebugPrint) {
 		if (!deleteSubsumed)
 			cout << "\n* " << ContigNode(id, false) << '\n';
 		else
 			cout << '\n' << ContigNode(id, false);
-		cout << '\t' << *refCanonical << '\n';
+		cout << '\t' << *path << '\n';
 	}
 
-	list<ContigNode> mergeInList(
-			refCanonical->begin(), refCanonical->end());
+	list<ContigNode> mergeInList(path->begin(), path->end());
 	for (list<ContigNode>::iterator iter = mergeInList.begin();
 			!mergeInList.empty(); mergeInList.erase(iter++)) {
 		if (iter->id() == id)
@@ -178,7 +177,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			path2.reverseComplement();
 		if (gDebugPrint)
 			cout << *iter << '\t' << path2 << '\n';
-		PathAlignment a = align(*refCanonical, path2, *iter);
+		PathAlignment a = align(*path, path2, *iter);
 		if (a.consensus.empty())
 			continue;
 		if (deleteSubsumed) {
@@ -191,9 +190,8 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			unsigned s2 = a.startP2, e2 = a.endP2;
 			if (s2 != 0 || e2+1 != path2.size()) {
 				set<LinearNumKey> refKeys, childKeys;
-				for (ContigPath::const_iterator
-						it = refCanonical->begin();
-						it != refCanonical->end(); it++)
+				for (ContigPath::const_iterator it = path->begin();
+						it != path->end(); it++)
 					refKeys.insert(it->id());
 				for (ContigPath::const_iterator it = path2.begin();
 						it != path2.end(); it++)
@@ -233,12 +231,12 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			mergeInList.insert(mergeInList.end(),
 					path2.begin() + a.endP2 + 1, path2.end());
 
-			refCanonical->swap(a.consensus);
+			path->swap(a.consensus);
 			if (gDebugPrint)
-				cout << '\t' << *refCanonical << '\n';
+				cout << '\t' << *path << '\n';
 		}
 	}
-	return refCanonical;
+	return path;
 }
 
 /** Extend the specified path as long as is unambiguously possible and
