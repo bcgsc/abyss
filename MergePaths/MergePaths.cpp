@@ -9,13 +9,13 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring> // for strerror
+#include <deque>
 #include <fstream>
 #include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
 #include <limits>
-#include <list>
 #include <map>
 #include <numeric>
 #include <set>
@@ -164,20 +164,20 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		cout << '\t' << *path << '\n';
 	}
 
-	list<ContigNode> mergeInList(path->begin(), path->end());
-	for (list<ContigNode>::iterator iter = mergeInList.begin();
-			!mergeInList.empty(); mergeInList.erase(iter++)) {
-		if (iter->id() == id)
+	deque<ContigNode> mergeQ(path->begin(), path->end());
+	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
+		pivot = mergeQ.front();
+		if (pivot.id() == id)
 			continue;
-		ContigPathMap::iterator findIter = paths.find(iter->id());
+		ContigPathMap::iterator findIter = paths.find(pivot.id());
 		if (findIter == paths.end())
 			continue;
 		ContigPath path2 = *findIter->second;
-		if (iter->sense())
+		if (pivot.sense())
 			path2.reverseComplement();
 		if (gDebugPrint)
-			cout << *iter << '\t' << path2 << '\n';
-		PathAlignment a = align(*path, path2, *iter);
+			cout << pivot << '\t' << path2 << '\n';
+		PathAlignment a = align(*path, path2, pivot);
 		if (a.consensus.empty())
 			continue;
 		if (deleteSubsumed) {
@@ -226,9 +226,9 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 				paths.erase(findIter);
 			}
 		} else {
-			mergeInList.insert(mergeInList.end(),
+			mergeQ.insert(mergeQ.end(),
 					path2.begin(), path2.begin() + a.startP2);
-			mergeInList.insert(mergeInList.end(),
+			mergeQ.insert(mergeQ.end(),
 					path2.begin() + a.endP2 + 1, path2.end());
 
 			path->swap(a.consensus);
