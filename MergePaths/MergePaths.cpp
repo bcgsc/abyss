@@ -478,13 +478,12 @@ static bool align(iterator it1, iterator last1,
 				which, out);
 		if (!its.empty()) {
 			// More than one match. Recurse on each option.
+			assert(which == 0 || which == 1);
 			for (typename vector<iterator>::iterator
 					it = its.begin(); it != its.end(); ++it) {
-				assert(which == 0 || which == 1);
 				ContigPath consensus;
-				iterator local_it1 = which == 0 ? it1 : *it,
-						local_it2 = which == 1 ? it2 : *it;
-				if (align(local_it1, last1, local_it2, last2,
+				if (align(which == 0 ? it1 : *it, last1,
+							which == 1 ? it2 : *it, last2,
 							back_inserter(consensus))) {
 					copy(which == 0 ? it2 : it1, *it, out);
 					copy(consensus.begin(), consensus.end(), out);
