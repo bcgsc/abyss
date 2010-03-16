@@ -312,6 +312,7 @@ int main(int argc, char** argv)
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
+	originalPathMap.clear();
 	if (gDebugPrint)
 		cout << '\n';
 
