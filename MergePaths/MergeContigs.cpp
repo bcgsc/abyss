@@ -346,7 +346,7 @@ int main(int argc, char** argv)
 	assert(out.good());
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if (!seen[g_contigIDs.serial(it->id)])
+		if (!seen[it - contigs.begin()])
 			out << *it;
 
 	int id;
