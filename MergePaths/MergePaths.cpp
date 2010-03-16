@@ -173,12 +173,12 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		ContigPathMap::iterator findIter = paths.find(iter->id());
 		if (findIter == paths.end())
 			continue;
-		ContigPath childCanonPath = *findIter->second;
+		ContigPath path2 = *findIter->second;
 		if (iter->sense())
-			childCanonPath.reverseComplement();
+			path2.reverseComplement();
 		if (gDebugPrint)
-			cout << *iter << '\t' << childCanonPath << '\n';
-		PathAlignment a = align(*refCanonical, childCanonPath, *iter);
+			cout << *iter << '\t' << path2 << '\n';
+		PathAlignment a = align(*refCanonical, path2, *iter);
 		if (a.consensus.empty())
 			continue;
 		if (deleteSubsumed) {
@@ -189,15 +189,14 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * warning.
 			 */
 			unsigned s2 = a.startP2, e2 = a.endP2;
-			if (s2 != 0 || e2+1 != childCanonPath.size()) {
+			if (s2 != 0 || e2+1 != path2.size()) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator
 						it = refCanonical->begin();
 						it != refCanonical->end(); it++)
 					refKeys.insert(it->id());
-				for (ContigPath::const_iterator
-						it = childCanonPath.begin();
-						it != childCanonPath.end(); it++)
+				for (ContigPath::const_iterator it = path2.begin();
+						it != path2.end(); it++)
 					childKeys.insert(it->id());
 				bool refIncludesChild
 					= includes(refKeys.begin(), refKeys.end(),
@@ -230,11 +229,9 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			}
 		} else {
 			mergeInList.insert(mergeInList.end(),
-					childCanonPath.begin(),
-					childCanonPath.begin() + a.startP2);
+					path2.begin(), path2.begin() + a.startP2);
 			mergeInList.insert(mergeInList.end(),
-					childCanonPath.begin() + a.endP2 + 1,
-					childCanonPath.end());
+					path2.begin() + a.endP2 + 1, path2.end());
 
 			refCanonical->swap(a.consensus);
 			if (gDebugPrint)
