@@ -180,49 +180,10 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 		if (consensus.empty())
 			continue;
 		if (deleteSubsumed) {
-			/* If additional merges could be made at this point,
-			 * something is wrong. We may need to delete all merged
-			 * paths that exist for these paths and print the
-			 * originals, but for now we keep both and print a
-			 * warning.
-			 */
-			if (consensus != *path) {
-				set<LinearNumKey> refKeys, childKeys;
-				for (ContigPath::const_iterator it = path->begin();
-						it != path->end(); it++)
-					refKeys.insert(it->id());
-				for (ContigPath::const_iterator it = path2.begin();
-						it != path2.end(); it++)
-					childKeys.insert(it->id());
-				bool refIncludesChild
-					= includes(refKeys.begin(), refKeys.end(),
-							childKeys.begin(), childKeys.end());
-				bool childIncludesRef
-					= includes(childKeys.begin(), childKeys.end(),
-							refKeys.begin(), refKeys.end());
-
-				if (!refIncludesChild && !childIncludesRef) {
-					/* A merge is now possible that wasn't made in the
-					 * first pass. Ideally, this shouldn't happen, but
-					 * can when a path is not extended due to its
-					 * being an inverted repeat. Perhaps this
-					 * restriction should be relaxed.
-					 */
-					if (gDebugPrint)
-						cout << "\tnot merged\n";
-				} else if (refIncludesChild && !childIncludesRef ) {
-					if (gDebugPrint)
-						cout << "\tremoved circular path\n";
-					delete findIter->second;
-					findIter->second = NULL;
-					paths.erase(findIter);
-				} else if (gDebugPrint)
-					cout << "\twarning: possible circular path\n";
-			} else {
-				delete findIter->second;
-				findIter->second = NULL;
-				paths.erase(findIter);
-			}
+			assert(consensus == *path);
+			delete findIter->second;
+			findIter->second = NULL;
+			paths.erase(findIter);
 		} else {
 			for (ContigPath::const_iterator it = path2.begin();
 					it != path2.end(); ++it)
