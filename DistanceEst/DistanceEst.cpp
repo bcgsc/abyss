@@ -114,13 +114,12 @@ static void readContigLengths(const string& path,
 	ifstream in(path.c_str());
 	assert(in.is_open());
 
+	assert(g_contigIDs.empty());
 	string id;
 	unsigned len;
 	while (in >> id >> len) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		unsigned serial = g_contigIDs.serial(id);
-		assert(serial == lengths.size());
-		(void)serial;
+		(void)g_contigIDs.serial(id);
 		lengths.push_back(len);
 	}
 	assert(in.eof());

@@ -45,6 +45,9 @@ class Dictionary {
 		/** Lock this dictionary. No further keys may be added. */
 		void lock() { m_locked = true; }
 
+		/** Return true if this dictionary is empty. */
+		bool empty() { return m_vec.empty(); }
+
 	private:
 		Map m_map;
 		std::vector<Key> m_vec;

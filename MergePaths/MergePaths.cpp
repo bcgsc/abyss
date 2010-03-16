@@ -279,13 +279,12 @@ static vector<unsigned> readContigLengths(const string& path)
 	ifstream in(path.c_str());
 	assert_open(in, path);
 
-	string idString;
+	assert(g_contigIDs.empty());
+	string id;
 	unsigned len;
-	while (in >> idString >> len) {
+	while (in >> id >> len) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		unsigned id = g_contigIDs.serial(idString);
-		assert(id == lengths.size());
-		(void)id;
+		(void)g_contigIDs.serial(id);
 		lengths.push_back(len);
 	}
 	assert(in.eof());
