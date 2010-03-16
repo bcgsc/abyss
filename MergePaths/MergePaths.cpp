@@ -346,8 +346,9 @@ int main(int argc, char** argv)
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
+	if (gDebugPrint)
+		cout << '\n';
 
-	cout << '\n';
 	removeRepeats(resultsPathMap);
 
 	if (opt::verbose > 0)
