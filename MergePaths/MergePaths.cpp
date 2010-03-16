@@ -351,7 +351,7 @@ int main(int argc, char** argv)
 
 	removeRepeats(resultsPathMap);
 
-	if (opt::verbose > 0)
+	if (gDebugPrint)
 		cout << "\nRemoving redundant contigs\n";
 
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
