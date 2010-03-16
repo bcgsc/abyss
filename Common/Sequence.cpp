@@ -74,7 +74,7 @@ Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
 {
 	int seed = baseToCode(anchor);
 
-	stringstream s;
+	ostringstream s;
 	s << anchor;
 	for (string::const_iterator it = seq.begin();
 			it != seq.end(); ++it) {

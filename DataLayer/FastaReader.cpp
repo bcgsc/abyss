@@ -87,7 +87,7 @@ next_record:
 		// Read the header.
 		string header;
 		getline(m_fileHandle, header);
-		stringstream headerStream(header);
+		istringstream headerStream(header);
 		headerStream >> recordType >> id >> ws;
 		getline(headerStream, comment);
 

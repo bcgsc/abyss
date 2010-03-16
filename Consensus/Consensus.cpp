@@ -144,7 +144,7 @@ static void readAlignment(string& line, string& readID,
 		Sequence& seq, AlignmentVector& alignments)
 {
 	char anchor;
-	stringstream s(line);
+	istringstream s(line);
 
 	if (opt::colourSpace || opt::csToNt)
 		s >> readID >> anchor >> seq;

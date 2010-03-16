@@ -350,8 +350,8 @@ int main(int argc, char** argv)
 			out << *it;
 
 	int id;
-	stringstream s(g_contigIDs.key(contigs.size() - 1));
-	s >> id;
+	istringstream ss(g_contigIDs.key(contigs.size() - 1));
+	ss >> id;
 	id++;
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
