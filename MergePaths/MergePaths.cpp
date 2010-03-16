@@ -466,8 +466,8 @@ static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 }
 
 template <class iterator, class oiterator>
-static bool align(iterator& it1, iterator last1,
-		iterator& it2, iterator last2,
+static bool align(iterator it1, iterator last1,
+		iterator it2, iterator last2,
 		oiterator out)
 {
 	assert(it1 != last1);
@@ -488,8 +488,6 @@ static bool align(iterator& it1, iterator last1,
 							back_inserter(consensus))) {
 					copy(which == 0 ? it2 : it1, *it, out);
 					copy(consensus.begin(), consensus.end(), out);
-					it1 = local_it1;
-					it2 = local_it2;
 					return true;
 				}
 			}
@@ -524,10 +522,8 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(),
 			back_inserter(alignmentr));
 
-	ContigPath::const_iterator it1 = pivot1,
-		it2 = pivot2;
 	ContigPath alignmentf;
-	bool alignedf = align(it1, p1.end(), it2, p2.end(),
+	bool alignedf = align(pivot1, p1.end(), pivot2, p2.end(),
 			back_inserter(alignmentf));
 
 	ContigPath consensus;
@@ -535,8 +531,6 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		// Found an alignment.
 		assert(!alignmentf.empty());
 		assert(!alignmentr.empty());
-		assert(rit1 == p1.rend() || rit2 == p2.rend());
-		assert(it1 == p1.end() || it2 == p2.end());
 		consensus.reserve(alignmentr.size()-1 + alignmentf.size());
 		consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		consensus.insert(consensus.end(),
