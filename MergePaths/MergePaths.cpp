@@ -334,6 +334,7 @@ int main(int argc, char** argv)
 	gDebugPrint = opt::verbose > 1;
 
 	g_contigLengths = readContigLengths(argv[optind++]);
+	g_contigIDs.lock();
 
 	// Read the paths file
 	ContigPathMap originalPathMap, resultsPathMap;
