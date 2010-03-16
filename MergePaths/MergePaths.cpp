@@ -191,7 +191,7 @@ static ContigPath* linkPaths(LinearNumKey id, ContigPathMap& paths,
 			 * originals, but for now we keep both and print a
 			 * warning.
 			 */
-			if (!a.subsumed) {
+			if (a.consensus != *path) {
 				set<LinearNumKey> refKeys, childKeys;
 				for (ContigPath::const_iterator it = path->begin();
 						it != path->end(); it++)
