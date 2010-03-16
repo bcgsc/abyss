@@ -503,6 +503,7 @@ static bool align(iterator& it1, iterator last1,
 		*out++ = *it1;
 	}
 
+	assert(it1 == last1 || it2 == last2);
 	copy(it1, last1, out);
 	copy(it2, last2, out);
 	return true;
@@ -534,10 +535,8 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		// Found an alignment.
 		assert(!alignmentf.empty());
 		assert(!alignmentr.empty());
-		assert((rit1 == p1.rend() && it2 == p2.end())
-				|| (it1 == p1.end() && rit2 == p2.rend())
-				|| (rit1 == p1.rend() && it1 == p1.end())
-				|| (rit2 == p2.rend() && it2 == p2.end()));
+		assert(rit1 == p1.rend() || rit2 == p2.rend());
+		assert(it1 == p1.end() || it2 == p2.end());
 		consensus.reserve(alignmentr.size()-1 + alignmentf.size());
 		consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		consensus.insert(consensus.end(),
