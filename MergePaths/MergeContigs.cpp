@@ -203,14 +203,10 @@ static vector<Path> readPaths(const string& inPath)
 	istream& in = inPath == "-" ? cin : fin;
 
 	vector<Path> paths;
-	for (string s; getline(in, s);) {
-		istringstream ss(s);
-		string idString;
-		Path path;
-		ss >> idString >> path;
-		assert(ss.eof());
+	string id;
+	Path path;
+	while (in >> id >> path)
 		paths.push_back(path);
-	}
 	assert(in.eof());
 	return paths;
 }

@@ -7,6 +7,8 @@
 #include <functional>
 #include <istream>
 #include <iterator>
+#include <sstream>
+#include <string>
 #include <ostream>
 #include <vector>
 
@@ -46,9 +48,15 @@ std::ostream& operator<<(std::ostream& out, const ContigPath& o)
 
 std::istream& operator>>(std::istream& in, ContigPath& o)
 {
-	copy(std::istream_iterator<ContigNode>(in),
-			std::istream_iterator<ContigNode>(),
-			back_inserter(o));
+	o.clear();
+	std::string s;
+	if (getline(in, s)) {
+		std::istringstream ss(s);
+		copy(std::istream_iterator<ContigNode>(ss),
+				std::istream_iterator<ContigNode>(),
+				back_inserter(o));
+		assert(ss.eof());
+	}
 	return in;
 }
 

@@ -291,19 +291,15 @@ static vector<unsigned> readContigLengths(const string& path)
 }
 
 /** Read a set of paths from the specified file. */
-static ContigPathMap readPaths(const string& path)
+static ContigPathMap readPaths(const string& filePath)
 {
+	ifstream in(filePath.c_str());
+	assert_open(in, filePath);
+
 	ContigPathMap paths;
-	ifstream in(path.c_str());
-	assert_open(in, path);
-
-	for (string s; getline(in, s);) {
-		istringstream ss(s);
-		string idString;
-		ContigPath path;
-		ss >> idString >> path;
-		assert(ss.eof());
-
+	string idString;
+	ContigPath path;
+	while (in >> idString >> path) {
 		LinearNumKey id = g_contigIDs.serial(idString);
 		bool inserted = paths.insert(
 				make_pair(id, new ContigPath(path))).second;
