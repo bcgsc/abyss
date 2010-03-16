@@ -536,6 +536,7 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 	bool alignedf = align(it1, p1.end(), it2, p2.end(),
 			back_inserter(alignmentf));
 
+	PathAlignment a;
 	if (alignedr && alignedf) {
 		// Found an alignment.
 		assert(!alignmentf.empty());
@@ -544,17 +545,14 @@ static PathAlignment align(const ContigPath& p1, const ContigPath& p2,
 				|| (it1 == p1.end() && rit2 == p2.rend())
 				|| (rit1 == p1.rend() && it1 == p1.end())
 				|| (rit2 == p2.rend() && it2 == p2.end()));
-		PathAlignment a;
 		a.startP2 = p2.rend() - rit2;
 		a.endP2 = it2 - p2.begin() - 1;
 		a.consensus.reserve(alignmentr.size()-1 + alignmentf.size());
 		a.consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		a.consensus.insert(a.consensus.end(),
 				alignmentf.begin(), alignmentf.end());
-		return a;
-	} else {
-		return PathAlignment();
 	}
+	return a;
 }
 
 /** Find an equivalent region of the two specified paths.
