@@ -126,8 +126,8 @@ endif
 	PopBubbles $v -k$k $(popbubblesopt) $(POPBUBBLES_OPTIONS) $< >$@
 
 %-3.fa: %-1.indel %-1.fa
-	awk '{if (ARGIND==1) x[">" $$1]=1; else \
-		if (!x[$$1]) { print; getline; print } else getline }' $^ >$@
+	awk 'ARGIND==1 {x[">" $$1]=1; next} \
+		{getline s} !x[$$1] {print $$0 "\n" s}' $^ >$@
 
 # Estimate distances between contigs
 
