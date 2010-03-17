@@ -99,6 +99,9 @@ j?=2
 # DistanceEst parameters
 s?=100
 
+# Remove environment variables.
+unexport in se $(lib)
+
 all: $(out)
 
 clean:
