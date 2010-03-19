@@ -5,6 +5,8 @@
 use strict;
 use Getopt::Std qw'getopts';
 
+$| = 1;
+
 my %opt;
 getopts 'hHjt:', \%opt;
 my $opt_threshold = defined $opt{'t'} ? $opt{'t'} : 100;
