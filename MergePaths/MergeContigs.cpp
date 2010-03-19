@@ -306,7 +306,8 @@ int main(int argc, char** argv)
 			count += prevPaths.size();
 		}
 		if (opt::verbose > 0)
-			cerr << "Total number of previous paths: " << count << '\n';
+			cerr << "Total number of previous paths: "
+				<< count << '\n';
 	}
 
 	// Record all the contigs that are seeds.
