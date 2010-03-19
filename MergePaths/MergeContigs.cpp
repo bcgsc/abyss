@@ -192,9 +192,14 @@ template<typename T> static string toString(T x)
 	return s.str();
 }
 
-/** Read contig paths from the specified file. */
-static vector<Path> readPaths(const string& inPath)
+/** Read contig paths from the specified file.
+ * @param ids [out] the string ID of the paths
+ */
+static vector<Path> readPaths(const string& inPath,
+		vector<string>* ids = NULL)
 {
+	if (ids != NULL)
+		assert(ids->empty());
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
 		cerr << "Reading `" << inPath << "'..." << endl;
@@ -205,8 +210,11 @@ static vector<Path> readPaths(const string& inPath)
 	vector<Path> paths;
 	string id;
 	Path path;
-	while (in >> id >> path)
+	while (in >> id >> path) {
 		paths.push_back(path);
+		if (ids != NULL)
+			ids->push_back(id);
+	}
 	assert(in.eof());
 	return paths;
 }
@@ -289,7 +297,8 @@ int main(int argc, char** argv)
 		if (argc - optind == 0) g_contigIDs.lock();
 	}
 
-	vector<Path> paths = readPaths(mergedPathFile);
+	vector<string> pathIDs;
+	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
 	if (opt::verbose > 0)
 		cerr << "Total number of paths: " << paths.size() << '\n';
 
@@ -336,15 +345,12 @@ int main(int argc, char** argv)
 		if (!seen[it - contigs.begin()])
 			out << *it;
 
-	int id;
-	istringstream ss(g_contigIDs.key(contigs.size() - 1));
-	ss >> id;
-	id++;
+	unsigned i = 0;
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const Path& path = *it;
 		Contig contig = mergePath(path);
-		contig.id = toString(id++);
+		contig.id = pathIDs[i++];
 		FastaRecord rec(contig);
 		rec.comment += ' ' + toString(path);
 		out << rec;

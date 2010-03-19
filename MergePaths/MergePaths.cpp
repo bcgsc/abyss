@@ -332,14 +332,18 @@ int main(int argc, char** argv)
 		uniquePaths.push_back(it->second);
 	sort(uniquePaths.begin(), uniquePaths.end());
 
+	int id;
+	istringstream ss(g_contigIDs.key(g_contigLengths.size() - 1));
+	ss >> id;
+	id++;
+
 	ofstream fout(opt::out.c_str());
 	ostream& out = opt::out.empty() ? cout : fout;
 	assert(out.good());
-	unsigned pathID = 0;
 	for (vector<ContigPath>::const_iterator it
 				= uniquePaths.begin();
 			it != uniquePaths.end(); ++it)
-		out << pathID++ << '\t' << *it << '\n';
+		out << id++ << '\t' << *it << '\n';
 	assert(out.good());
 	return 0;
 }
