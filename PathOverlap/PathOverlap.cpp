@@ -27,6 +27,7 @@ static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... PATH\n"
 "\n"
 "  -r, --repeats=FILE    write repeat contigs to FILE\n"
+"      --dot             output overlaps in dot format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -34,8 +35,13 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static int verbose;
+	/** Output overlaps in dot format. Do not perform trimming. */
+	static int dot;
+
+	/** Output the IDs of contigs in overlaps to this file. */
 	static string repeatContigs;
+
+	static int verbose;
 }
 
 static const char* shortopts = "r:v";
@@ -43,6 +49,7 @@ static const char* shortopts = "r:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "dot",          no_argument,       &opt::dot, 1, },
 	{ "repeats",      required_argument, NULL, 'r' },
 	{ "verbose",      no_argument,       NULL, 'v' },
 	{ "help",         no_argument,       NULL, OPT_HELP },
@@ -60,6 +67,14 @@ struct OverlapStruct {
 	LinearNumKey firstID, secondID;
 	bool firstIsRC, secondIsRC;
 	unsigned overlap;
+
+	friend ostream& operator <<(ostream& out, OverlapStruct o)
+	{
+		return out <<
+			'"' << o.firstID << (o.firstIsRC ? '-' : '+') << "\" -> "
+			"\"" << o.secondID << (o.secondIsRC ? '-' : '+') << "\""
+			" [label = " << o.overlap << "];";
+	}
 };
 
 struct TrimPathStruct {
@@ -303,10 +318,17 @@ int main(int argc, char** argv)
 	}
 
 	int trimIterations = 0;
-	OverlapVec overlaps;
-	TrimPathMap trimPaths;
 
-	overlaps = findOverlaps(pathMap);
+	OverlapVec overlaps = findOverlaps(pathMap);
+	if (opt::dot) {
+		cout << "digraph path_overlap {\n";
+		copy(overlaps.begin(), overlaps.end(),
+				ostream_iterator<OverlapStruct>(cout, "\n"));
+		cout << "}\n";
+		return 0;
+	}
+
+	TrimPathMap trimPaths;
 	while (overlaps.size() > 0) {
 		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
 		trimPaths = makeTrimPathMap(pathMap);
