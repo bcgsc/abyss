@@ -165,6 +165,9 @@ $(dist): %.dist: %.pair.gz $(name)-3.adj %.hist
 %-4.path2: %-4.adj %-4.path1
 	MergePaths $v -k$k -o $@ $^
 
+%-4.path3: %-4.adj %-4.path2
+	PathOverlap $v $^ >$@
+
 ifndef cs
 
 %-contigs.fa: %-4.fa %-4.path2
