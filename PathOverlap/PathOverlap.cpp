@@ -317,8 +317,6 @@ int main(int argc, char** argv)
 		pathMap = loadPaths(cin);
 	}
 
-	int trimIterations = 0;
-
 	OverlapVec overlaps = findOverlaps(pathMap);
 	if (opt::dot) {
 		cout << "digraph path_overlap {\n";
@@ -328,6 +326,7 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
+	unsigned trimIterations = 0;
 	TrimPathMap trimPaths;
 	while (overlaps.size() > 0) {
 		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
