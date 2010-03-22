@@ -193,8 +193,18 @@ static OverlapVec findOverlaps(PathMap& pathMap)
 	return overlaps;
 }
 
+/** Find the largest overlap for each contig. */
+static void determineMaxOverlap(TrimPathStruct& pathStruct,
+		bool fromBack, unsigned overlap)
+{
+	unsigned& curOverlap = pathStruct.numRemoved[fromBack];
+	curOverlap = max(curOverlap, overlap);
+}
+
+/** Add the specified contigs to the set of removed contigs. */
 static void addContigsToSet(ContigPath& contigs, int min, int max)
 {
+	assert(min <= (int)contigs.size());
 	for (int x = 0; x < min; x++)
 		s_trimmedContigs.insert(contigs[x].id());
 
@@ -202,44 +212,38 @@ static void addContigsToSet(ContigPath& contigs, int min, int max)
 		s_trimmedContigs.insert(contigs[x].id());
 }
 
-static void removeContigs(TrimPathStruct& pathStruct, bool fromBack,
-		unsigned overlap)
+/** Remove the overlapping portion of the specified contig. */
+static void removeContigs(TrimPathStruct& o)
 {
-	if (pathStruct.numRemoved[fromBack] >= overlap ||
-			pathStruct.path.size() == 0)
-		return;
-	ContigPath newPath;
-	int max, min;
-	if (fromBack) {
-		//subtract the found overlap from the original length
-		max = pathStruct.path.size() - overlap +
-			pathStruct.numRemoved[fromBack];
-		min = 0;
-		//assert(max > 0);
-	} else {
-		max = pathStruct.path.size();
-		min = overlap - pathStruct.numRemoved[fromBack];
-	}
-	assert(min >= 0 && max <= (int)pathStruct.path.size());
-
-	if (min > max) return;
-	addContigsToSet(pathStruct.path, min, max);
-	pathStruct.path = ContigPath(&pathStruct.path[min],
-			&pathStruct.path[max]);
-	pathStruct.numRemoved[fromBack] = overlap;
+	assert(o.numRemoved[0] <= o.path.size());
+	assert(o.numRemoved[1] <= o.path.size());
+	unsigned first = o.numRemoved[0];
+	unsigned last = o.path.size() - o.numRemoved[1];
+	if (first > last)
+		first = last = 0;
+	addContigsToSet(o.path, first, last);
+	o.path.erase(o.path.begin() + last, o.path.end());
+	o.path.erase(o.path.begin(), o.path.begin() + first);
 }
 
+/** Find the largest overlap for each contig and remove it. */
 static void trimOverlaps(TrimPathMap& pathMap, OverlapVec& overlaps)
 {
 	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
 			overlapIt != overlaps.end(); overlapIt++) {
 		TrimPathStruct& firstPath =
 			pathMap.find(overlapIt->firstID)->second;
-		removeContigs(firstPath, !overlapIt->firstIsRC, overlapIt->overlap);
+		determineMaxOverlap(firstPath,
+				!overlapIt->firstIsRC, overlapIt->overlap);
 		TrimPathStruct& secondPath =
 			pathMap.find(overlapIt->secondID)->second;
-		removeContigs(secondPath, overlapIt->secondIsRC, overlapIt->overlap);
+		determineMaxOverlap(secondPath,
+				overlapIt->secondIsRC, overlapIt->overlap);
 	}
+
+	for (TrimPathMap::iterator it = pathMap.begin();
+			it != pathMap.end(); it++)
+		removeContigs(it->second);
 }
 
 static TrimPathMap makeTrimPathMap(const PathMap& pathMap)
