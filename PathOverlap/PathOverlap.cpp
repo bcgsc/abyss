@@ -89,7 +89,6 @@ struct TrimPathStruct {
 };
 
 typedef multimap<LinearNumKey, PathStruct> PathMap;
-typedef pair<PathMap::iterator, PathMap::iterator> PathMapPair;
 typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
 typedef vector<OverlapStruct> OverlapVec;
 
@@ -172,7 +171,8 @@ static PathMap makePathMap(const TrimPathMap& trimPathMap)
 	return pathMap;
 }
 
-static OverlapVec findOverlaps(TrimPathMap& paths)
+/** Find every pair of overlapping paths. */
+static OverlapVec findOverlaps(const TrimPathMap& paths)
 {
 	PathMap pathMap = makePathMap(paths);
 
@@ -184,8 +184,8 @@ static OverlapVec findOverlaps(TrimPathMap& paths)
 			continue;
 
 		for (unsigned i = 0; i < path.path.size(); i++) {
-			PathMapPair result = pathMap.equal_range(
-					path.path[i].id());
+			pair<PathMap::const_iterator, PathMap::const_iterator>
+				result = pathMap.equal_range(path.path[i].id());
 			unsigned dist = distance(result.first, result.second);
 
 			//the first and last element of the path is guarenteed to
