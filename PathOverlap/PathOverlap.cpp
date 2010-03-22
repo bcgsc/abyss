@@ -315,12 +315,10 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	unsigned trimIterations = 0;
 	for (OverlapVec overlaps = findOverlaps(paths);
 			!overlaps.empty(); overlaps = findOverlaps(paths)) {
 		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
 		trimOverlaps(paths, overlaps);
-		trimIterations++;
 	}
 
 	for (TrimPathMap::const_iterator it = paths.begin();
@@ -338,7 +336,6 @@ int main(int argc, char** argv)
 			out << g_contigIDs.key(*it) << '\n';
 		assert(out.good());
 	}
-
-	cerr << PROGRAM " completed after " << trimIterations
-		<< " trim iterations.\n";
+	
+	return 0;
 }
