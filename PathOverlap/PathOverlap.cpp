@@ -132,20 +132,16 @@ static void addOverlap(const PathStruct& refPathStruct,
 	if (refPathStruct.pathID == currPathStruct.pathID) return;
 
 	OverlapStruct overlap;
-	ContigPath refPath = refPathStruct.path;
+	overlap.secondIsRC = !currPathStruct.isKeyFirst;
 	ContigPath currPath = currPathStruct.path;
-	if (currPathStruct.isKeyFirst)
-		overlap.secondIsRC = false;
-	else {
-		overlap.secondIsRC = true;
+	if (overlap.secondIsRC)
 		currPath.reverseComplement();
-	}
 
+	ContigPath refPath = refPathStruct.path;
 	ContigNode currNode = currPath.front();
 	ContigNode refNode = refPath[refIndex];
 	assert(refNode.id() == currNode.id());
 	overlap.firstIsRC = refNode.sense() != currNode.sense();
-
 	if (overlap.firstIsRC) {
 		refPath.reverseComplement();
 		refIndex = refPath.size() - refIndex - 1;
