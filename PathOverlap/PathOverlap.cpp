@@ -306,8 +306,8 @@ int main(int argc, char** argv)
 
 	TrimPathMap paths = readPaths(argv[optind++]);
 
-	OverlapVec overlaps = findOverlaps(paths);
 	if (opt::dot) {
+		OverlapVec overlaps = findOverlaps(paths);
 		cout << "digraph path_overlap {\n";
 		copy(overlaps.begin(), overlaps.end(),
 				ostream_iterator<OverlapStruct>(cout, "\n"));
@@ -316,10 +316,10 @@ int main(int argc, char** argv)
 	}
 
 	unsigned trimIterations = 0;
-	while (!overlaps.empty()) {
+	for (OverlapVec overlaps = findOverlaps(paths);
+			!overlaps.empty(); overlaps = findOverlaps(paths)) {
 		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
 		trimOverlaps(paths, overlaps);
-		overlaps = findOverlaps(paths);
 		trimIterations++;
 	}
 
