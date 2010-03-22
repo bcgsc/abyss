@@ -3,6 +3,8 @@
 #include "PairUtils.h"
 #include <algorithm>
 #include <cassert>
+#include <cerrno>
+#include <cstring> // for strerror
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -95,20 +97,33 @@ typedef vector<OverlapStruct> OverlapVec;
 /** The contig IDs that have been removed from paths. */
 static set<LinearNumKey> s_trimmedContigs;
 
-/** Read contig paths from the specified stream. */
-static TrimPathMap loadPaths(istream& in)
+static void assert_open(ifstream& f, const string& p)
 {
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
+/** Read contig paths from the specified stream. */
+static TrimPathMap readPaths(const string& inPath)
+{
+	ifstream fin(inPath.c_str());
+	if (inPath != "-")
+		assert_open(fin, inPath);
+	istream& in = inPath == "-" ? cin : fin;
+
 	assert(in.good());
-	TrimPathMap pathMap;
+	TrimPathMap paths;
 	LinearNumKey id;
 	ContigPath path;
 	while (in >> id >> path) {
-		bool inserted = pathMap.insert(make_pair(id, path)).second;
+		bool inserted = paths.insert(make_pair(id, path)).second;
 		assert(inserted);
 		(void)inserted;
 	}
 	assert(in.eof());
-	return pathMap;
+	return paths;
 }
 
 static void addOverlap(const PathStruct& refPathStruct,
@@ -278,19 +293,18 @@ int main(int argc, char** argv)
 		}
 	}
 
+	if (argc - optind < 1) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	}
+
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
-	TrimPathMap paths;
-	if (optind < argc) {
-		ifstream fin(argv[argc - 1]);
-		paths = loadPaths(fin);
-	} else {
-		paths = loadPaths(cin);
-	}
+	TrimPathMap paths = readPaths(argv[optind++]);
 
 	OverlapVec overlaps = findOverlaps(paths);
 	if (opt::dot) {
