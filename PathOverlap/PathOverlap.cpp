@@ -200,18 +200,10 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 
 		for (unsigned i = 0; i < path.path.size(); i++) {
 			pair<PathMap::const_iterator, PathMap::const_iterator>
-				result = pathMap.equal_range(path.path[i].id());
-			unsigned dist = distance(result.first, result.second);
-
-			//the first and last element of the path is guarenteed to
-			//have at least one entry in the PathMap.
-			dist = i == 0 || i == path.path.size() - 1 ?
-					dist - 1 : dist;
-
-			if (dist > 0)
-				for (PathMap::const_iterator currIt = result.first;
-						currIt != result.second; ++currIt)
-					addOverlap(path, currIt->second, i, overlaps);
+				range = pathMap.equal_range(path.path[i].id());
+			for (PathMap::const_iterator mapIt = range.first;
+					mapIt != range.second; ++mapIt)
+				addOverlap(path, mapIt->second, i, overlaps);
 		}
 	}
 	return overlaps;
