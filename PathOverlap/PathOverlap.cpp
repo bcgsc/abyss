@@ -178,7 +178,7 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 
 	OverlapVec overlaps;
 	for (PathMap::const_iterator pathIt = pathMap.begin();
-			pathIt != pathMap.end(); pathIt++) {
+			pathIt != pathMap.end(); ++pathIt) {
 		const PathStruct& path = pathIt->second;
 		if (!path.isKeyFirst)
 			continue;
@@ -195,7 +195,7 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 
 			if (dist > 0)
 				for (PathMap::const_iterator currIt = result.first;
-						currIt != result.second; currIt++)
+						currIt != result.second; ++currIt)
 					addOverlap(path, currIt->second, i, overlaps);
 		}
 	}
@@ -316,7 +316,7 @@ int main(int argc, char** argv)
 	}
 
 	for (TrimPathMap::const_iterator trimPathsIt = trimPaths.begin();
-			trimPathsIt != trimPaths.end(); trimPathsIt++) {
+			trimPathsIt != trimPaths.end(); ++trimPathsIt) {
 		if (trimPathsIt->second.path.size() < 2) continue;
 		cout << trimPathsIt->first << '\t'
 			<< trimPathsIt->second.path << '\n';
