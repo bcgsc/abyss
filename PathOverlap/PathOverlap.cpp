@@ -128,11 +128,6 @@ static void addOverlap(const PathStruct& refPathStruct,
 	OverlapStruct overlap;
 	ContigPath refPath = refPathStruct.path;
 	ContigPath currPath = currPathStruct.path;
-	ContigNode refNode, currNode;
-	unsigned currIndex = 0;
-
-	refNode = refPath[refIndex];
-
 	if (currPathStruct.isKeyFirst)
 		overlap.secondIsRC = false;
 	else {
@@ -140,7 +135,8 @@ static void addOverlap(const PathStruct& refPathStruct,
 		currPath.reverseComplement();
 	}
 
-	currNode = currPath[currIndex];
+	ContigNode currNode = currPath.front();
+	ContigNode refNode = refPath[refIndex];
 	assert(refNode.id() == currNode.id());
 	overlap.firstIsRC = refNode.sense() != currNode.sense();
 
@@ -149,22 +145,17 @@ static void addOverlap(const PathStruct& refPathStruct,
 		refIndex = refPath.size() - refIndex - 1;
 	}
 
-//	bool isRepeat = currIndex == 0 && refIndex == 0;
-
-	while (currIndex < currPath.size() &&
-			refIndex < refPath.size()) {
-		if (refPath[refIndex] == currPath[currIndex]) {
-			currIndex++;
-			refIndex++;
-		} else {
-//			if (isRepeat)
-//				break;
-//			else
-				return;
-		}
+	ContigPath::iterator refBegin = refPath.begin() + refIndex;
+	unsigned refSize = refPath.size() - refIndex;
+	if (refSize < currPath.size()) {
+		if (!equal(refBegin, refPath.end(), currPath.begin()))
+			return;
+	} else {
+		if (!equal(currPath.begin(), currPath.end(), refBegin))
+			return;
 	}
-	//overlap.firstID = overlap.firstID != isRepeat;
-	overlap.overlap = currIndex;
+
+	overlap.overlap = min(refSize, currPath.size());
 	overlap.firstID = refPathStruct.pathID;
 	overlap.secondID = currPathStruct.pathID;
 	overlaps.push_back(overlap);
