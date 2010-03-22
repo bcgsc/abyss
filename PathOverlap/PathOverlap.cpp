@@ -59,8 +59,10 @@ static const struct option longopts[] = {
 
 struct PathStruct {
 	LinearNumKey pathID;
-	ContigPath path;
+	const ContigPath& path;
 	bool isKeyFirst;
+	PathStruct(LinearNumKey id, const ContigPath& path, bool front)
+		: pathID(id), path(path), isKeyFirst(front) { }
 };
 
 struct OverlapStruct {
@@ -91,35 +93,22 @@ typedef pair<PathMap::iterator, PathMap::iterator> PathMapPair;
 typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
 typedef vector<OverlapStruct> OverlapVec;
 
+/** The contig IDs that have been removed from paths. */
 static set<LinearNumKey> s_trimmedContigs;
 
-static PathMap loadPaths(istream& pathStream)
+/** Read contig paths from the specified stream. */
+static TrimPathMap loadPaths(istream& in)
 {
-	assert(pathStream.good());
-	string line;
-	PathMap pathMap;
-
-	while (getline(pathStream, line)) {
-		istringstream s(line);
-		LinearNumKey pathID;
-		s >> pathID;
-
-		ContigPath contigPath;
-		copy(istream_iterator<ContigNode>(s),
-				istream_iterator<ContigNode>(),
-				back_inserter(contigPath));
-		assert(s.eof());
-		LinearNumKey first = contigPath.front().id();
-		LinearNumKey last = contigPath.back().id();
-
-		PathStruct path;
-		path.path = contigPath;
-		path.pathID = pathID;
-		path.isKeyFirst = true;
-		pathMap.insert(pair<LinearNumKey, PathStruct>(first, path));
-		path.isKeyFirst = false;
-		pathMap.insert(pair<LinearNumKey, PathStruct>(last, path));
+	assert(in.good());
+	TrimPathMap pathMap;
+	LinearNumKey id;
+	ContigPath path;
+	while (in >> id >> path) {
+		bool inserted = pathMap.insert(make_pair(id, path)).second;
+		assert(inserted);
+		(void)inserted;
 	}
+	assert(in.eof());
 	return pathMap;
 }
 
@@ -263,18 +252,13 @@ static PathMap makePathMap(const TrimPathMap& trimPathMap)
 	PathMap pathMap;
 	for (TrimPathMap::const_iterator trimIt = trimPathMap.begin();
 			trimIt != trimPathMap.end(); trimIt++) {
-		PathStruct path;
-		LinearNumKey key;
-		path.path = trimIt->second.path;
-		path.pathID = trimIt->first;
-		path.isKeyFirst = true;
-		if (path.path.size() < 1)
+		const ContigPath& path = trimIt->second.path;
+		if (path.empty())
 			continue;
-		key = path.path[0].id();
-		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
-		path.isKeyFirst = false;
-		key = path.path[path.path.size() - 1].id();
-		pathMap.insert(pair<LinearNumKey, PathStruct>(key, path));
+		pathMap.insert(make_pair(path.front().id(),
+					PathStruct(trimIt->first, path, true)));
+		pathMap.insert(make_pair(path.back().id(),
+					PathStruct(trimIt->first, path, false)));
 	}
 	return pathMap;
 }
@@ -304,14 +288,15 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	PathMap pathMap;
+	TrimPathMap trimPaths;
 	if (optind < argc) {
 		ifstream fin(argv[argc - 1]);
-		pathMap = loadPaths(fin);
+		trimPaths = loadPaths(fin);
 	} else {
-		pathMap = loadPaths(cin);
+		trimPaths = loadPaths(cin);
 	}
 
+	PathMap pathMap = makePathMap(trimPaths);
 	OverlapVec overlaps = findOverlaps(pathMap);
 	if (opt::dot) {
 		cout << "digraph path_overlap {\n";
@@ -322,8 +307,7 @@ int main(int argc, char** argv)
 	}
 
 	unsigned trimIterations = 0;
-	TrimPathMap trimPaths;
-	while (overlaps.size() > 0) {
+	while (!overlaps.empty()) {
 		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
 		trimPaths = trimOverlaps(pathMap, overlaps);
 		pathMap = makePathMap(trimPaths);
