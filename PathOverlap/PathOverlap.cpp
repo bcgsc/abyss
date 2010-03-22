@@ -201,17 +201,6 @@ static void determineMaxOverlap(TrimPathStruct& pathStruct,
 	curOverlap = max(curOverlap, overlap);
 }
 
-/** Add the specified contigs to the set of removed contigs. */
-static void addContigsToSet(ContigPath& contigs, int min, int max)
-{
-	assert(min <= (int)contigs.size());
-	for (int x = 0; x < min; x++)
-		s_trimmedContigs.insert(contigs[x].id());
-
-	for (int x = max; (unsigned)x < contigs.size(); x++)
-		s_trimmedContigs.insert(contigs[x].id());
-}
-
 /** Remove the overlapping portion of the specified contig. */
 static void removeContigs(TrimPathStruct& o)
 {
@@ -219,11 +208,21 @@ static void removeContigs(TrimPathStruct& o)
 	assert(o.numRemoved[1] <= o.path.size());
 	unsigned first = o.numRemoved[0];
 	unsigned last = o.path.size() - o.numRemoved[1];
-	if (first > last)
-		first = last = 0;
-	addContigsToSet(o.path, first, last);
-	o.path.erase(o.path.begin() + last, o.path.end());
-	o.path.erase(o.path.begin(), o.path.begin() + first);
+	if (first < last) {
+		transform(o.path.begin(), o.path.begin() + first,
+				inserter(s_trimmedContigs, s_trimmedContigs.begin()),
+				mem_fun_ref(&ContigNode::id));
+		transform(o.path.begin() + last, o.path.end(),
+				inserter(s_trimmedContigs, s_trimmedContigs.begin()),
+				mem_fun_ref(&ContigNode::id));
+		o.path.erase(o.path.begin() + last, o.path.end());
+		o.path.erase(o.path.begin(), o.path.begin() + first);
+	} else {
+		transform(o.path.begin(), o.path.end(),
+				inserter(s_trimmedContigs, s_trimmedContigs.begin()),
+				mem_fun_ref(&ContigNode::id));
+		o.path.clear();
+	}
 }
 
 /** Find the largest overlap for each contig and remove it. */
