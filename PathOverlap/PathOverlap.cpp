@@ -235,34 +235,28 @@ static void removeContigs(TrimPathStruct& o)
 }
 
 /** Find the largest overlap for each contig and remove it. */
-static TrimPathMap trimOverlaps(const TrimPathMap& paths,
+static void trimOverlaps(TrimPathMap& paths,
 		const OverlapVec& overlaps)
 {
-	TrimPathMap pathMap;
-	for (TrimPathMap::const_iterator pathIt = paths.begin();
-			pathIt != paths.end(); ++pathIt) {
-		bool inserted = pathMap.insert(make_pair(pathIt->first,
-					pathIt->second.path)).second;
-		assert(inserted);
-		(void)inserted;
-	}
+	for (TrimPathMap::iterator it = paths.begin();
+			it != paths.end(); ++it)
+		it->second.numRemoved[0] = it->second.numRemoved[1] = 0;
 
 	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
 			overlapIt != overlaps.end(); ++overlapIt) {
 		TrimPathStruct& firstPath =
-			pathMap.find(overlapIt->firstID)->second;
+			paths.find(overlapIt->firstID)->second;
 		determineMaxOverlap(firstPath,
 				!overlapIt->firstIsRC, overlapIt->overlap);
 		TrimPathStruct& secondPath =
-			pathMap.find(overlapIt->secondID)->second;
+			paths.find(overlapIt->secondID)->second;
 		determineMaxOverlap(secondPath,
 				overlapIt->secondIsRC, overlapIt->overlap);
 	}
 
-	for (TrimPathMap::iterator it = pathMap.begin();
-			it != pathMap.end(); ++it)
+	for (TrimPathMap::iterator it = paths.begin();
+			it != paths.end(); ++it)
 		removeContigs(it->second);
-	return pathMap;
 }
 
 int main(int argc, char** argv)
@@ -310,7 +304,7 @@ int main(int argc, char** argv)
 	unsigned trimIterations = 0;
 	while (!overlaps.empty()) {
 		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
-		trimPaths = trimOverlaps(trimPaths, overlaps);
+		trimOverlaps(trimPaths, overlaps);
 		overlaps = findOverlaps(trimPaths);
 		trimIterations++;
 	}
