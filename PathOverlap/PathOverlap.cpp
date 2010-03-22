@@ -79,7 +79,11 @@ struct OverlapStruct {
 
 struct TrimPathStruct {
 	ContigPath path;
-	vector<unsigned> numRemoved;
+	unsigned numRemoved[2];
+	TrimPathStruct(const ContigPath& path) : path(path)
+	{
+		numRemoved[0] = numRemoved[1] = 0;
+	}
 };
 
 typedef multimap<LinearNumKey, PathStruct> PathMap;
@@ -242,15 +246,14 @@ static TrimPathMap makeTrimPathMap(const PathMap& pathMap)
 {
 	TrimPathMap trimMap;
 	for (PathMap::const_iterator pathIt = pathMap.begin();
-			pathIt != pathMap.end(); pathIt++) {
+			pathIt != pathMap.end(); pathIt++)
 		if (pathIt->second.isKeyFirst) {
-			TrimPathStruct path;
-			path.path = pathIt->second.path;
-			vector<unsigned> numRemoved(2);
-			path.numRemoved = numRemoved;
-			trimMap[pathIt->second.pathID] = path;
+			bool inserted = trimMap.insert(make_pair(
+						pathIt->second.pathID,
+						pathIt->second.path)).second;
+			assert(inserted);
+			(void)inserted;
 		}
-	}
 	return trimMap;
 }
 
