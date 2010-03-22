@@ -154,8 +154,28 @@ static void addOverlap(const PathStruct& refPathStruct,
 	overlaps.push_back(overlap);
 }
 
-static OverlapVec findOverlaps(PathMap& pathMap)
+/** Index the first and last contig of each path to facilitate finding
+ * overlaps between paths. */
+static PathMap makePathMap(const TrimPathMap& trimPathMap)
 {
+	PathMap pathMap;
+	for (TrimPathMap::const_iterator it = trimPathMap.begin();
+			it != trimPathMap.end(); ++it) {
+		const ContigPath& path = it->second.path;
+		if (path.empty())
+			continue;
+		pathMap.insert(make_pair(path.front().id(),
+					PathStruct(it->first, path, true)));
+		pathMap.insert(make_pair(path.back().id(),
+					PathStruct(it->first, path, false)));
+	}
+	return pathMap;
+}
+
+static OverlapVec findOverlaps(TrimPathMap& paths)
+{
+	PathMap pathMap = makePathMap(paths);
+
 	OverlapVec overlaps;
 	for (PathMap::const_iterator pathIt = pathMap.begin();
 			pathIt != pathMap.end(); pathIt++) {
@@ -215,22 +235,20 @@ static void removeContigs(TrimPathStruct& o)
 }
 
 /** Find the largest overlap for each contig and remove it. */
-static TrimPathMap trimOverlaps(const PathMap& paths,
+static TrimPathMap trimOverlaps(const TrimPathMap& paths,
 		const OverlapVec& overlaps)
 {
 	TrimPathMap pathMap;
-	for (PathMap::const_iterator pathIt = paths.begin();
-			pathIt != paths.end(); pathIt++)
-		if (pathIt->second.isKeyFirst) {
-			bool inserted = pathMap.insert(make_pair(
-						pathIt->second.pathID,
-						pathIt->second.path)).second;
-			assert(inserted);
-			(void)inserted;
-		}
+	for (TrimPathMap::const_iterator pathIt = paths.begin();
+			pathIt != paths.end(); ++pathIt) {
+		bool inserted = pathMap.insert(make_pair(pathIt->first,
+					pathIt->second.path)).second;
+		assert(inserted);
+		(void)inserted;
+	}
 
 	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
-			overlapIt != overlaps.end(); overlapIt++) {
+			overlapIt != overlaps.end(); ++overlapIt) {
 		TrimPathStruct& firstPath =
 			pathMap.find(overlapIt->firstID)->second;
 		determineMaxOverlap(firstPath,
@@ -242,24 +260,8 @@ static TrimPathMap trimOverlaps(const PathMap& paths,
 	}
 
 	for (TrimPathMap::iterator it = pathMap.begin();
-			it != pathMap.end(); it++)
+			it != pathMap.end(); ++it)
 		removeContigs(it->second);
-	return pathMap;
-}
-
-static PathMap makePathMap(const TrimPathMap& trimPathMap)
-{
-	PathMap pathMap;
-	for (TrimPathMap::const_iterator trimIt = trimPathMap.begin();
-			trimIt != trimPathMap.end(); trimIt++) {
-		const ContigPath& path = trimIt->second.path;
-		if (path.empty())
-			continue;
-		pathMap.insert(make_pair(path.front().id(),
-					PathStruct(trimIt->first, path, true)));
-		pathMap.insert(make_pair(path.back().id(),
-					PathStruct(trimIt->first, path, false)));
-	}
 	return pathMap;
 }
 
@@ -296,8 +298,7 @@ int main(int argc, char** argv)
 		trimPaths = loadPaths(cin);
 	}
 
-	PathMap pathMap = makePathMap(trimPaths);
-	OverlapVec overlaps = findOverlaps(pathMap);
+	OverlapVec overlaps = findOverlaps(trimPaths);
 	if (opt::dot) {
 		cout << "digraph path_overlap {\n";
 		copy(overlaps.begin(), overlaps.end(),
@@ -309,9 +310,8 @@ int main(int argc, char** argv)
 	unsigned trimIterations = 0;
 	while (!overlaps.empty()) {
 		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
-		trimPaths = trimOverlaps(pathMap, overlaps);
-		pathMap = makePathMap(trimPaths);
-		overlaps = findOverlaps(pathMap);
+		trimPaths = trimOverlaps(trimPaths, overlaps);
+		overlaps = findOverlaps(trimPaths);
 		trimIterations++;
 	}
 
