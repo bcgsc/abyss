@@ -303,7 +303,7 @@ int main(int argc, char** argv)
 
 	unsigned trimIterations = 0;
 	while (!overlaps.empty()) {
-		cerr << "There were " << overlaps.size() / 2 << " overlaps found.\n";
+		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
 		trimOverlaps(trimPaths, overlaps);
 		overlaps = findOverlaps(trimPaths);
 		trimIterations++;
