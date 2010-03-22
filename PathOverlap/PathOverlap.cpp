@@ -90,7 +90,6 @@ struct TrimPathStruct {
 	}
 };
 
-typedef multimap<LinearNumKey, PathStruct> PathMap;
 typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
 typedef vector<OverlapStruct> OverlapVec;
 
@@ -168,6 +167,8 @@ static void addOverlap(const PathStruct& refPathStruct,
 	overlaps.push_back(overlap);
 }
 
+typedef multimap<ContigNode, PathStruct> PathMap;
+
 /** Index the first and last contig of each path to facilitate finding
  * overlaps between paths. */
 static PathMap makePathMap(const TrimPathMap& paths)
@@ -178,9 +179,9 @@ static PathMap makePathMap(const TrimPathMap& paths)
 		const ContigPath& path = it->second.path;
 		if (path.empty())
 			continue;
-		pathMap.insert(make_pair(path.front().id(),
+		pathMap.insert(make_pair(path.front(),
 					PathStruct(it->first, path, true)));
-		pathMap.insert(make_pair(path.back().id(),
+		pathMap.insert(make_pair(path.back(),
 					PathStruct(it->first, path, false)));
 	}
 	return pathMap;
@@ -199,8 +200,17 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 			continue;
 
 		for (unsigned i = 0; i < path.path.size(); i++) {
+			ContigNode seed = path.path[i];
+			if (seed.ambiguous())
+				continue;
+
 			pair<PathMap::const_iterator, PathMap::const_iterator>
-				range = pathMap.equal_range(path.path[i].id());
+				range = pathMap.equal_range(seed);
+			for (PathMap::const_iterator mapIt = range.first;
+					mapIt != range.second; ++mapIt)
+				addOverlap(path, mapIt->second, i, overlaps);
+
+			range = pathMap.equal_range(~seed);
 			for (PathMap::const_iterator mapIt = range.first;
 					mapIt != range.second; ++mapIt)
 				addOverlap(path, mapIt->second, i, overlaps);
