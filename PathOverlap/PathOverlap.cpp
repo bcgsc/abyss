@@ -206,18 +206,14 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 	PathMap pathMap = makePathMap(paths);
 
 	OverlapVec overlaps;
-	for (PathMap::const_iterator pathIt = pathMap.begin();
-			pathIt != pathMap.end(); ++pathIt) {
-		const PathStruct& path = pathIt->second;
-		if (!path.isKeyFirst)
-			continue;
+	for (TrimPathMap::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		const ContigPath& path = it->second.path;
+		findOverlaps(pathMap, it->first, false, path, overlaps);
 
-		findOverlaps(pathMap, path.pathID, false, path.path,
-				overlaps);
-
-		ContigPath rc = path.path;
+		ContigPath rc = path;
 		rc.reverseComplement();
-		findOverlaps(pathMap, path.pathID, true, rc, overlaps);
+		findOverlaps(pathMap, it->first, true, rc, overlaps);
 	}
 	return overlaps;
 }
