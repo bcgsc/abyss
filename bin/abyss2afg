@@ -68,7 +68,7 @@ sub new_read($$)
 {
 	my ($id, $seq) = @_;
 	die "error: duplicate sequence ID `$id'" if exists $seq{$id};
-	$seq{$id} = $seq unless /[Nn]/;
+	$seq{$id} = $seq;
 
 	my $mate_id = find_mate($id);
 	return unless defined $mate_id;
@@ -97,7 +97,7 @@ while (<>) {
 		($id) = split ' ', substr $_, 1;
 		next;
 	}
-	if (/^[acgtACGTN]/) {
+	if (/^[acgtnACGTN]/) {
 		new_read($id, $_);
 		undef $id;
 		next;

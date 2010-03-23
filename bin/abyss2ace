@@ -31,9 +31,9 @@ while (<>) {
 		($id) = split ' ', substr $_, 1;
 		next;
 	}
-	if (/^[acgtnACGTN]+$/) {
+	if (/^[acgtnACGTN]$/) {
 		die "error: duplicate sequence ID `$id'" if exists $seq{$id};
-		$seq{$id} = $_ unless /[Nn]/;
+		$seq{$id} = $_;
 		undef $id;
 		next;
 	}
