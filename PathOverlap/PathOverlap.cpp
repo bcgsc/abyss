@@ -147,7 +147,7 @@ static SeedMap makeSeedMap(const Paths& paths)
 	return seedMap;
 }
 
-/** Check whether these two paths overlaps. */
+/** Check whether path2 starts with the sequence [first, last). */
 static unsigned findOverlap(ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
 		ContigPath path2, bool rc)
@@ -156,10 +156,9 @@ static unsigned findOverlap(ContigPath::const_iterator first,
 		path2.reverseComplement();
 	assert(*first == path2.front());
 	unsigned size1 = last - first;
-	bool overlap = size1 < path2.size()
-		? equal(first, last, path2.begin())
-		: equal(path2.begin(), path2.end(), first);
-	return overlap ? min(size1, path2.size()) : 0;
+	if (size1 > path2.size())
+		return 0;
+	return equal(first, last, path2.begin()) ? size1 : 0;
 }
 
 typedef vector<Overlap> Overlaps;
