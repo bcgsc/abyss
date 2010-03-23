@@ -125,43 +125,6 @@ static TrimPathMap readPaths(const string& inPath)
 	return paths;
 }
 
-/** If the two paths are found to overlap, add the amount of overlap
- * to overlaps.*/
-static void addOverlap(LinearNumKey refID, bool firstIsRC,
-		const ContigPath& refPath,
-		const PathStruct& currPathStruct, unsigned refIndex,
-		OverlapVec& overlaps)
-{
-	if (refID == currPathStruct.pathID)
-		return;
-
-	OverlapStruct overlap;
-	overlap.secondIsRC = !currPathStruct.isKeyFirst;
-	ContigPath currPath = currPathStruct.path;
-	if (overlap.secondIsRC)
-		currPath.reverseComplement();
-
-	ContigNode currNode = currPath.front();
-	ContigNode refNode = refPath[refIndex];
-	assert(refNode == currNode);
-	overlap.firstIsRC = firstIsRC;
-
-	ContigPath::const_iterator refBegin = refPath.begin() + refIndex;
-	unsigned refSize = refPath.size() - refIndex;
-	if (refSize < currPath.size()) {
-		if (!equal(refBegin, refPath.end(), currPath.begin()))
-			return;
-	} else {
-		if (!equal(currPath.begin(), currPath.end(), refBegin))
-			return;
-	}
-
-	overlap.overlap = min(refSize, currPath.size());
-	overlap.firstID = refID;
-	overlap.secondID = currPathStruct.pathID;
-	overlaps.push_back(overlap);
-}
-
 typedef multimap<ContigNode, PathStruct> PathMap;
 
 /** Index the first and last contig of each path to facilitate finding
@@ -182,6 +145,23 @@ static PathMap makePathMap(const TrimPathMap& paths)
 	return pathMap;
 }
 
+/** Check whether these two paths overlaps. */
+static unsigned findOverlap(const ContigPath& refPath,
+		ContigPath currPath, bool rc,
+		unsigned refIndex)
+{
+	if (rc)
+		currPath.reverseComplement();
+	assert(refPath[refIndex] == currPath.front());
+
+	ContigPath::const_iterator refBegin = refPath.begin() + refIndex;
+	unsigned refSize = refPath.size() - refIndex;
+	bool overlap = refSize < currPath.size()
+		? equal(refBegin, refPath.end(), currPath.begin())
+		: equal(currPath.begin(), currPath.end(), refBegin);
+	return overlap ? min(refSize, currPath.size()) : 0;
+}
+
 /** Find every path that overlaps with the specified path. */
 static void findOverlaps(const PathMap& pathMap,
 		LinearNumKey id, bool rc, const ContigPath& path,
@@ -195,8 +175,20 @@ static void findOverlaps(const PathMap& pathMap,
 		pair<PathMap::const_iterator, PathMap::const_iterator>
 			range = pathMap.equal_range(seed);
 		for (PathMap::const_iterator mapIt = range.first;
-				mapIt != range.second; ++mapIt)
-			addOverlap(id, rc, path, mapIt->second, i, overlaps);
+				mapIt != range.second; ++mapIt) {
+			if (id == mapIt->second.pathID)
+				continue;
+			OverlapStruct o;
+			o.secondIsRC = !mapIt->second.isKeyFirst;
+			o.overlap = findOverlap(path,
+					   mapIt->second.path, o.secondIsRC, i);
+			if (o.overlap > 0) {
+				o.firstID = id;
+				o.firstIsRC = rc;
+				o.secondID = mapIt->second.pathID;
+				overlaps.push_back(o);
+			}
+		}
 	}
 }
 
