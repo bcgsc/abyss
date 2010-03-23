@@ -148,7 +148,7 @@ static SeedMap makeSeedMap(const Paths& paths)
 }
 
 /** Check whether path starts with the sequence [first, last). */
-static bool beginsWith(ContigPath path, bool rc,
+static bool startsWith(ContigPath path, bool rc,
 		ContigPath::const_iterator first,
 		ContigPath::const_iterator last)
 {
@@ -165,7 +165,7 @@ static unsigned findOverlap(ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
 		ContigPath path, bool rc)
 {
-	return beginsWith(path, rc, first, last) ? last - first : 0;
+	return startsWith(path, rc, first, last) ? last - first : 0;
 }
 
 typedef vector<Overlap> Overlaps;
