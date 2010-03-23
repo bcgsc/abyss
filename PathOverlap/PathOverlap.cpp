@@ -250,13 +250,9 @@ static void trimOverlaps(TrimPathMap& paths,
 
 	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
 			overlapIt != overlaps.end(); ++overlapIt) {
-		TrimPathStruct& firstPath =
-			paths.find(overlapIt->firstID)->second;
-		determineMaxOverlap(firstPath,
+		determineMaxOverlap(paths.find(overlapIt->firstID)->second,
 				!overlapIt->firstIsRC, overlapIt->overlap);
-		TrimPathStruct& secondPath =
-			paths.find(overlapIt->secondID)->second;
-		determineMaxOverlap(secondPath,
+		determineMaxOverlap(paths.find(overlapIt->secondID)->second,
 				overlapIt->secondIsRC, overlapIt->overlap);
 	}
 
