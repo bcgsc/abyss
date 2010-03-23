@@ -7,8 +7,10 @@
 #include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
+#include <cerrno>
 #include <climits> // for UINT_MAX
 #include <cmath>
+#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -421,10 +423,20 @@ static void* worker(void* pArg)
 	return NULL;
 }
 
+static void assert_open(ifstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
 static void generatePathsThroughEstimates(
 		SimpleContigGraph* pContigGraph, string estFileName)
 {
 	ifstream inStream(estFileName.c_str());
+	assert_open(inStream, estFileName);
+
 	ofstream outStream(opt::out.c_str());
 	assert(outStream.is_open());
 
