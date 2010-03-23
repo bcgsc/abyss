@@ -125,11 +125,15 @@ static TrimPathMap readPaths(const string& inPath)
 	return paths;
 }
 
-static void addOverlap(const PathStruct& refPathStruct,
+/** If the two paths are found to overlap, add the amount of overlap
+ * to overlaps.*/
+static void addOverlap(LinearNumKey refID, bool firstIsRC,
+		const ContigPath& refPath,
 		const PathStruct& currPathStruct, unsigned refIndex,
 		OverlapVec& overlaps)
 {
-	if (refPathStruct.pathID == currPathStruct.pathID) return;
+	if (refID == currPathStruct.pathID)
+		return;
 
 	OverlapStruct overlap;
 	overlap.secondIsRC = !currPathStruct.isKeyFirst;
@@ -137,17 +141,12 @@ static void addOverlap(const PathStruct& refPathStruct,
 	if (overlap.secondIsRC)
 		currPath.reverseComplement();
 
-	ContigPath refPath = refPathStruct.path;
 	ContigNode currNode = currPath.front();
 	ContigNode refNode = refPath[refIndex];
-	assert(refNode.id() == currNode.id());
-	overlap.firstIsRC = refNode.sense() != currNode.sense();
-	if (overlap.firstIsRC) {
-		refPath.reverseComplement();
-		refIndex = refPath.size() - refIndex - 1;
-	}
+	assert(refNode == currNode);
+	overlap.firstIsRC = firstIsRC;
 
-	ContigPath::iterator refBegin = refPath.begin() + refIndex;
+	ContigPath::const_iterator refBegin = refPath.begin() + refIndex;
 	unsigned refSize = refPath.size() - refIndex;
 	if (refSize < currPath.size()) {
 		if (!equal(refBegin, refPath.end(), currPath.begin()))
@@ -158,7 +157,7 @@ static void addOverlap(const PathStruct& refPathStruct,
 	}
 
 	overlap.overlap = min(refSize, currPath.size());
-	overlap.firstID = refPathStruct.pathID;
+	overlap.firstID = refID;
 	overlap.secondID = currPathStruct.pathID;
 	overlaps.push_back(overlap);
 }
@@ -177,10 +176,28 @@ static PathMap makePathMap(const TrimPathMap& paths)
 			continue;
 		pathMap.insert(make_pair(path.front(),
 					PathStruct(it->first, path, true)));
-		pathMap.insert(make_pair(path.back(),
+		pathMap.insert(make_pair(~path.back(),
 					PathStruct(it->first, path, false)));
 	}
 	return pathMap;
+}
+
+/** Find every path that overlaps with the specified path. */
+static void findOverlaps(const PathMap& pathMap,
+		LinearNumKey id, bool rc, const ContigPath& path,
+		OverlapVec& overlaps)
+{
+	for (unsigned i = 0; i < path.size(); i++) {
+		ContigNode seed = path[i];
+		if (seed.ambiguous())
+			continue;
+
+		pair<PathMap::const_iterator, PathMap::const_iterator>
+			range = pathMap.equal_range(seed);
+		for (PathMap::const_iterator mapIt = range.first;
+				mapIt != range.second; ++mapIt)
+			addOverlap(id, rc, path, mapIt->second, i, overlaps);
+	}
 }
 
 /** Find every pair of overlapping paths. */
@@ -195,22 +212,12 @@ static OverlapVec findOverlaps(const TrimPathMap& paths)
 		if (!path.isKeyFirst)
 			continue;
 
-		for (unsigned i = 0; i < path.path.size(); i++) {
-			ContigNode seed = path.path[i];
-			if (seed.ambiguous())
-				continue;
+		findOverlaps(pathMap, path.pathID, false, path.path,
+				overlaps);
 
-			pair<PathMap::const_iterator, PathMap::const_iterator>
-				range = pathMap.equal_range(seed);
-			for (PathMap::const_iterator mapIt = range.first;
-					mapIt != range.second; ++mapIt)
-				addOverlap(path, mapIt->second, i, overlaps);
-
-			range = pathMap.equal_range(~seed);
-			for (PathMap::const_iterator mapIt = range.first;
-					mapIt != range.second; ++mapIt)
-				addOverlap(path, mapIt->second, i, overlaps);
-		}
+		ContigPath rc = path.path;
+		rc.reverseComplement();
+		findOverlaps(pathMap, path.pathID, true, rc, overlaps);
 	}
 	return overlaps;
 }
