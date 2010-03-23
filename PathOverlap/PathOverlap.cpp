@@ -225,9 +225,9 @@ static void recordTrimmedContigs(
 		ContigPath::const_iterator first,
 		ContigPath::const_iterator last)
 {
-	transform(first, last,
-			inserter(s_trimmedContigs, s_trimmedContigs.begin()),
-			mem_fun_ref(&ContigNode::id));
+	for (ContigPath::const_iterator it = first; it != last; ++it)
+		if (!it->ambiguous())
+			s_trimmedContigs.insert(it->id());
 }
 
 /** Remove the overlapping portion of the specified contig. */
