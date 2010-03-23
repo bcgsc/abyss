@@ -59,20 +59,22 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-struct PathStruct {
+/** An alignment seed. */
+struct Seed {
 	LinearNumKey pathID;
 	const ContigPath& path;
 	bool isKeyFirst;
-	PathStruct(LinearNumKey id, const ContigPath& path, bool front)
+	Seed(LinearNumKey id, const ContigPath& path, bool front)
 		: pathID(id), path(path), isKeyFirst(front) { }
 };
 
-struct OverlapStruct {
+/** An alignment result. */
+struct Overlap {
 	LinearNumKey firstID, secondID;
 	bool firstIsRC, secondIsRC;
 	unsigned overlap;
 
-	friend ostream& operator <<(ostream& out, OverlapStruct o)
+	friend ostream& operator <<(ostream& out, Overlap o)
 	{
 		return out <<
 			'"' << o.firstID << (o.firstIsRC ? '-' : '+') << "\" -> "
@@ -81,17 +83,15 @@ struct OverlapStruct {
 	}
 };
 
-struct TrimPathStruct {
+/** A path and its maximum overlap with other paths. */
+struct Path {
 	ContigPath path;
 	unsigned numRemoved[2];
-	TrimPathStruct(const ContigPath& path) : path(path)
+	Path(const ContigPath& path) : path(path)
 	{
 		numRemoved[0] = numRemoved[1] = 0;
 	}
 };
-
-typedef map<LinearNumKey, TrimPathStruct> TrimPathMap;
-typedef vector<OverlapStruct> OverlapVec;
 
 /** The contig IDs that have been removed from paths. */
 static set<LinearNumKey> s_trimmedContigs;
@@ -104,8 +104,10 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
+typedef map<LinearNumKey, Path> Paths;
+
 /** Read contig paths from the specified stream. */
-static TrimPathMap readPaths(const string& inPath)
+static Paths readPaths(const string& inPath)
 {
 	ifstream fin(inPath.c_str());
 	if (inPath != "-")
@@ -113,7 +115,7 @@ static TrimPathMap readPaths(const string& inPath)
 	istream& in = inPath == "-" ? cin : fin;
 
 	assert(in.good());
-	TrimPathMap paths;
+	Paths paths;
 	LinearNumKey id;
 	ContigPath path;
 	while (in >> id >> path) {
@@ -125,24 +127,24 @@ static TrimPathMap readPaths(const string& inPath)
 	return paths;
 }
 
-typedef multimap<ContigNode, PathStruct> PathMap;
+typedef multimap<ContigNode, Seed> SeedMap;
 
 /** Index the first and last contig of each path to facilitate finding
  * overlaps between paths. */
-static PathMap makePathMap(const TrimPathMap& paths)
+static SeedMap makeSeedMap(const Paths& paths)
 {
-	PathMap pathMap;
-	for (TrimPathMap::const_iterator it = paths.begin();
+	SeedMap seedMap;
+	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const ContigPath& path = it->second.path;
 		if (path.empty())
 			continue;
-		pathMap.insert(make_pair(path.front(),
-					PathStruct(it->first, path, true)));
-		pathMap.insert(make_pair(~path.back(),
-					PathStruct(it->first, path, false)));
+		seedMap.insert(make_pair(path.front(),
+					Seed(it->first, path, true)));
+		seedMap.insert(make_pair(~path.back(),
+					Seed(it->first, path, false)));
 	}
-	return pathMap;
+	return seedMap;
 }
 
 /** Check whether these two paths overlaps. */
@@ -160,30 +162,32 @@ static unsigned findOverlap(ContigPath::const_iterator first,
 	return overlap ? min(size1, path2.size()) : 0;
 }
 
+typedef vector<Overlap> Overlaps;
+
 /** Find every path that overlaps with the specified path. */
-static void findOverlaps(const PathMap& pathMap,
+static void findOverlaps(const SeedMap& seedMap,
 		LinearNumKey id, bool rc, const ContigPath& path,
-		OverlapVec& overlaps)
+		Overlaps& overlaps)
 {
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		if (it->ambiguous())
 			continue;
 
-		pair<PathMap::const_iterator, PathMap::const_iterator>
-			range = pathMap.equal_range(*it);
-		for (PathMap::const_iterator mapIt = range.first;
-				mapIt != range.second; ++mapIt) {
-			if (id == mapIt->second.pathID)
+		pair<SeedMap::const_iterator, SeedMap::const_iterator>
+			range = seedMap.equal_range(*it);
+		for (SeedMap::const_iterator seed = range.first;
+				seed != range.second; ++seed) {
+			if (id == seed->second.pathID)
 				continue;
-			OverlapStruct o;
-			o.secondIsRC = !mapIt->second.isKeyFirst;
+			Overlap o;
+			o.secondIsRC = !seed->second.isKeyFirst;
 			o.overlap = findOverlap(it, path.end(),
-					   mapIt->second.path, o.secondIsRC);
+					   seed->second.path, o.secondIsRC);
 			if (o.overlap > 0) {
 				o.firstID = id;
 				o.firstIsRC = rc;
-				o.secondID = mapIt->second.pathID;
+				o.secondID = seed->second.pathID;
 				overlaps.push_back(o);
 			}
 		}
@@ -191,25 +195,25 @@ static void findOverlaps(const PathMap& pathMap,
 }
 
 /** Find every pair of overlapping paths. */
-static OverlapVec findOverlaps(const TrimPathMap& paths)
+static Overlaps findOverlaps(const Paths& paths)
 {
-	PathMap pathMap = makePathMap(paths);
+	SeedMap seedMap = makeSeedMap(paths);
 
-	OverlapVec overlaps;
-	for (TrimPathMap::const_iterator it = paths.begin();
+	Overlaps overlaps;
+	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const ContigPath& path = it->second.path;
-		findOverlaps(pathMap, it->first, false, path, overlaps);
+		findOverlaps(seedMap, it->first, false, path, overlaps);
 
 		ContigPath rc = path;
 		rc.reverseComplement();
-		findOverlaps(pathMap, it->first, true, rc, overlaps);
+		findOverlaps(seedMap, it->first, true, rc, overlaps);
 	}
 	return overlaps;
 }
 
 /** Find the largest overlap for each contig. */
-static void determineMaxOverlap(TrimPathStruct& pathStruct,
+static void determineMaxOverlap(Path& pathStruct,
 		bool fromBack, unsigned overlap)
 {
 	unsigned& curOverlap = pathStruct.numRemoved[fromBack];
@@ -217,7 +221,7 @@ static void determineMaxOverlap(TrimPathStruct& pathStruct,
 }
 
 /** Remove the overlapping portion of the specified contig. */
-static void removeContigs(TrimPathStruct& o)
+static void removeContigs(Path& o)
 {
 	assert(o.numRemoved[0] <= o.path.size());
 	assert(o.numRemoved[1] <= o.path.size());
@@ -241,23 +245,20 @@ static void removeContigs(TrimPathStruct& o)
 }
 
 /** Find the largest overlap for each contig and remove it. */
-static void trimOverlaps(TrimPathMap& paths,
-		const OverlapVec& overlaps)
+static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 {
-	for (TrimPathMap::iterator it = paths.begin();
-			it != paths.end(); ++it)
+	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
 		it->second.numRemoved[0] = it->second.numRemoved[1] = 0;
 
-	for (OverlapVec::const_iterator overlapIt = overlaps.begin();
-			overlapIt != overlaps.end(); ++overlapIt) {
-		determineMaxOverlap(paths.find(overlapIt->firstID)->second,
-				!overlapIt->firstIsRC, overlapIt->overlap);
-		determineMaxOverlap(paths.find(overlapIt->secondID)->second,
-				overlapIt->secondIsRC, overlapIt->overlap);
+	for (Overlaps::const_iterator it = overlaps.begin();
+			it != overlaps.end(); ++it) {
+		determineMaxOverlap(paths.find(it->firstID)->second,
+				!it->firstIsRC, it->overlap);
+		determineMaxOverlap(paths.find(it->secondID)->second,
+				it->secondIsRC, it->overlap);
 	}
 
-	for (TrimPathMap::iterator it = paths.begin();
-			it != paths.end(); ++it)
+	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
 		removeContigs(it->second);
 }
 
@@ -291,24 +292,24 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	TrimPathMap paths = readPaths(argv[optind++]);
+	Paths paths = readPaths(argv[optind++]);
 
 	if (opt::dot) {
-		OverlapVec overlaps = findOverlaps(paths);
+		Overlaps overlaps = findOverlaps(paths);
 		cout << "digraph path_overlap {\n";
 		copy(overlaps.begin(), overlaps.end(),
-				ostream_iterator<OverlapStruct>(cout, "\n"));
+				ostream_iterator<Overlap>(cout, "\n"));
 		cout << "}\n";
 		return 0;
 	}
 
-	for (OverlapVec overlaps = findOverlaps(paths);
+	for (Overlaps overlaps = findOverlaps(paths);
 			!overlaps.empty(); overlaps = findOverlaps(paths)) {
 		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
 		trimOverlaps(paths, overlaps);
 	}
 
-	for (TrimPathMap::const_iterator it = paths.begin();
+	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		if (it->second.path.size() < 2)
 			continue;
