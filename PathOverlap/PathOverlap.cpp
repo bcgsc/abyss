@@ -146,20 +146,18 @@ static PathMap makePathMap(const TrimPathMap& paths)
 }
 
 /** Check whether these two paths overlaps. */
-static unsigned findOverlap(const ContigPath& refPath,
-		ContigPath currPath, bool rc,
-		unsigned refIndex)
+static unsigned findOverlap(ContigPath::const_iterator first,
+		ContigPath::const_iterator last,
+		ContigPath path2, bool rc)
 {
 	if (rc)
-		currPath.reverseComplement();
-	assert(refPath[refIndex] == currPath.front());
-
-	ContigPath::const_iterator refBegin = refPath.begin() + refIndex;
-	unsigned refSize = refPath.size() - refIndex;
-	bool overlap = refSize < currPath.size()
-		? equal(refBegin, refPath.end(), currPath.begin())
-		: equal(currPath.begin(), currPath.end(), refBegin);
-	return overlap ? min(refSize, currPath.size()) : 0;
+		path2.reverseComplement();
+	assert(*first == path2.front());
+	unsigned size1 = last - first;
+	bool overlap = size1 < path2.size()
+		? equal(first, last, path2.begin())
+		: equal(path2.begin(), path2.end(), first);
+	return overlap ? min(size1, path2.size()) : 0;
 }
 
 /** Find every path that overlaps with the specified path. */
@@ -167,21 +165,21 @@ static void findOverlaps(const PathMap& pathMap,
 		LinearNumKey id, bool rc, const ContigPath& path,
 		OverlapVec& overlaps)
 {
-	for (unsigned i = 0; i < path.size(); i++) {
-		ContigNode seed = path[i];
-		if (seed.ambiguous())
+	for (ContigPath::const_iterator it = path.begin();
+			it != path.end(); ++it) {
+		if (it->ambiguous())
 			continue;
 
 		pair<PathMap::const_iterator, PathMap::const_iterator>
-			range = pathMap.equal_range(seed);
+			range = pathMap.equal_range(*it);
 		for (PathMap::const_iterator mapIt = range.first;
 				mapIt != range.second; ++mapIt) {
 			if (id == mapIt->second.pathID)
 				continue;
 			OverlapStruct o;
 			o.secondIsRC = !mapIt->second.isKeyFirst;
-			o.overlap = findOverlap(path,
-					   mapIt->second.path, o.secondIsRC, i);
+			o.overlap = findOverlap(it, path.end(),
+					   mapIt->second.path, o.secondIsRC);
 			if (o.overlap > 0) {
 				o.firstID = id;
 				o.firstIsRC = rc;
