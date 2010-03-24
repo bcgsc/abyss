@@ -39,6 +39,8 @@ static const char USAGE_MESSAGE[] =
 "      --max-cost=COST   maximum computational cost\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -j, --threads=THREADS use THREADS parallel threads [1]\n"
+"      --scaffold        join contigs with Ns [default]\n"
+"      --no-scaffold     do not scaffold\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -49,6 +51,7 @@ namespace opt {
 	static unsigned k;
 	static unsigned maxCost = 100000;
 	static unsigned threads = 1;
+	static int scaffold = 1;
 	static int verbose;
 	static string out;
 }
@@ -61,6 +64,8 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "scaffold",    no_argument,       &opt::scaffold, 1 },
+	{ "no-scaffold", no_argument,       &opt::scaffold, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
@@ -494,9 +499,11 @@ static void handleEstimate(
 		ContigPath path
 			= constructAmbiguousPath(pContigGraph, solutions);
 		vout << path << '\n';
-		out.insert(out.end(), path.begin(), path.end());
+		if (opt::scaffold) {
+			out.insert(out.end(), path.begin(), path.end());
+			g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
+		}
 		stats.multiEnd++;
-		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
