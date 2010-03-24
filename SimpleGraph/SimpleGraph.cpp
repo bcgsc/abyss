@@ -268,8 +268,7 @@ static ContigPath constructAmbiguousPath(
 			// If not matched: longestPrefix is the length of the
 			// longest prefix, must break out of the outer and inner
 			// loop.
-			if (pathnode.id() != common_path_node.id()
-					|| pathnode.sense() != common_path_node.sense()) {
+			if (pathnode != common_path_node) {
 				commonPrefix = false;
 				break;
 			}
@@ -297,8 +296,7 @@ static ContigPath constructAmbiguousPath(
 			// If not matched: longestSuffix is the length of the
 			// longest suffix, must break out of the outer and inner
 			// loop.
-			if (pathnode.id() != common_path_node.id()
-					|| pathnode.sense() != common_path_node.sense()) {
+			if (pathnode != common_path_node) {
 				commonSuffix = false;
 				break; // must break out of the outer and inner loop
 			}
