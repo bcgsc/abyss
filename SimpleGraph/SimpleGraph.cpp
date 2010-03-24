@@ -239,19 +239,20 @@ static ContigPath constructAmbiguousPath(
 		const SimpleContigGraph* pContigGraph,
 		const SimpleContigGraph::FeasiblePaths& solutions)
 {
+	// Convert VertexPath to ContigPath.
 	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
 	paths.reserve(solutions.size());
 	transform(solutions.begin(), solutions.end(),
 			back_inserter(paths),
 			createContigPath);
-	ContigPaths::iterator solIter = paths.begin();
-	ContigPath& firstSol = *solIter;
+
+	// Find the size of the smallest path.
+	const ContigPath& firstSol = paths.front();
 	size_t min_len = firstSol.size();
-	while (++solIter != paths.end()) {
-		if (solIter->size()<min_len)
-			min_len = solIter->size();
-	}
+	for (ContigPaths::const_iterator it = paths.begin() + 1;
+			it != paths.end(); ++it)
+		min_len = min(min_len, it->size());
 
 	// Find the longest prefix.
 	ContigPath vppath;
@@ -280,7 +281,7 @@ static ContigPath constructAmbiguousPath(
 	bool commonSuffix = true;
 	for (longestSuffix = 0;
 			longestSuffix < min_len-longestPrefix; longestSuffix++) {
-		ContigNode& common_path_node
+		const ContigNode& common_path_node
 			= firstSol[firstSol.size()-longestSuffix-1];
 		for (ContigPaths::iterator solIter = paths.begin();
 				solIter != paths.end(); ++solIter) {
