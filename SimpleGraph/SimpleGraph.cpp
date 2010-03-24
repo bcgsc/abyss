@@ -234,8 +234,7 @@ static size_t calculatePathLength(const SimpleContigGraph& graph,
 /** Return an ambiguous path that agrees with all the given paths. */
 static ContigPath constructAmbiguousPath(
 		const SimpleContigGraph* pContigGraph,
-		const SimpleContigGraph::FeasiblePaths& solutions,
-		ostream& vout)
+		const SimpleContigGraph::FeasiblePaths& solutions)
 {
 	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
@@ -343,16 +342,6 @@ static ContigPath constructAmbiguousPath(
 	out.insert(out.end(), vppath.begin(), vppath.end());
 	out.push_back(ContigNode(numN));
 	out.insert(out.end(), vspath.begin(), vspath.end());
-
-	vout << "Longest prefix: ";
-	if (!vppath.empty())
-		vout << vppath;
-	vout << "\nLongest suffix: ";
-	if (!vspath.empty())
-		vout << vspath;
-	vout << '\n';
-
-	vout << out << '\n';
 	return out;
 }
 
@@ -523,7 +512,8 @@ static void handleEstimate(
 		stats.nopathEnd++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
-			= constructAmbiguousPath(pContigGraph, solutions, vout);
+			= constructAmbiguousPath(pContigGraph, solutions);
+		vout << path << '\n';
 		out.insert(out.end(), path.begin(), path.end());
 		stats.multiEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
