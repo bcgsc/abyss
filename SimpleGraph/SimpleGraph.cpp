@@ -205,6 +205,157 @@ static const string& idToString(unsigned id)
 	return g_contigIDs.key(id);
 }
 
+/** Create a ContigPath from a VertexPath. */
+static ContigPath createContigPath(
+		const SimpleContigGraph::VertexPath& v)
+{
+	ContigPath path;
+	constructContigPath(v, path);
+	return path;
+}
+
+/** Return the length of the specified path. */
+template<typename DataCostFunctor>
+static size_t calculatePathLength(const SimpleContigGraph& graph,
+		const ContigPath& path, DataCostFunctor costFunctor,
+		size_t first = 0, size_t last = 0)
+{
+	size_t len = 0;
+	if (first + last < path.size()) {
+		for (ContigPath::const_iterator iter = path.begin() + first;
+				iter != path.end() - last; ++iter)
+			len += costFunctor.cost(
+					graph.getDataForVertex(iter->id()));
+	}
+	assert(len > 0);
+	return len;
+}
+
+/** Return an ambiguous path that agrees with all the given paths. */
+static ContigPath constructAmbiguousPath(
+		const SimpleContigGraph* pContigGraph,
+		const SimpleContigGraph::FeasiblePaths& solutions,
+		ostream& vout)
+{
+	typedef vector<ContigPath> ContigPaths;
+	ContigPaths paths;
+	paths.reserve(solutions.size());
+	transform(solutions.begin(), solutions.end(),
+			back_inserter(paths),
+			createContigPath);
+	// vout << "Scaffolding here... " << '\n';
+	// Scaffolding code here.
+	ContigPaths::iterator solIter = paths.begin();
+	ContigPath& firstSol = *solIter;
+	size_t min_len = firstSol.size();
+	while (++solIter != paths.end()) {
+		if (solIter->size()<min_len)
+			min_len = solIter->size();
+	}
+	// get the index for longestPrefix
+	ContigPath vppath;
+	size_t longestPrefix;
+	bool commonPrefix = true;
+	for (longestPrefix = 0; longestPrefix < min_len; longestPrefix++) {
+		// Get element in ith position in first solution:  firstSol[longestPrefix]
+		const ContigNode& common_path_node = firstSol[longestPrefix];
+		// Iterate over all solutions.
+		for (ContigPaths::iterator solIter = paths.begin(); solIter != paths.end();++solIter) {
+			// Get element in ith position in next solution:  (*solIter)[longestPrefix]
+			const ContigNode& pathnode = (*solIter)[longestPrefix];
+			// If not matched: longestPrefix is the length of the longest prefix, must break out of the outer and inner loop
+			if (pathnode.id() != common_path_node.id() || pathnode.sense() != common_path_node.sense()) {
+				commonPrefix = false;
+				break;
+			}
+		}
+		if (!commonPrefix)
+			break;
+		vppath.push_back(common_path_node);
+
+	}
+
+	// get the index for longestSuffix
+	ContigPath vspath;
+	size_t longestSuffix;
+	bool commonSuffix = true;
+	for (longestSuffix = 0; longestSuffix < min_len-longestPrefix; longestSuffix++) {
+		// Get element in ith position in first solution:  firstSol[firstSol.size()-longestSuffix-1]
+		ContigNode& common_path_node = firstSol[firstSol.size()-longestSuffix-1];
+		// Iterate over all solutions.
+		for (ContigPaths::iterator solIter = paths.begin(); solIter != paths.end();++solIter) {
+			// Compare with element in ith position in next solution:  (*solIter)[solIter->size()-longestSuffix-1]
+			ContigNode& pathnode = (*solIter)[solIter->size()-longestSuffix-1];
+			// If not matched: longestSuffix is the length of the longest suffix, must break out of the outer and inner loop
+			if (pathnode.id() != common_path_node.id() || pathnode.sense() != common_path_node.sense()) {
+				commonSuffix = false;
+				break; // must break out of the outer and inner loop
+			}
+		}
+		if (!commonSuffix) {
+			break;
+		}
+		vspath.push_back(common_path_node);
+	}
+	reverse(vspath.begin(), vspath.end());
+
+	// find the longest path
+	SimpleDataCost costFunctor(opt::k);
+	ContigPaths::iterator best = paths.end();
+	size_t max_len = 0;
+	for (ContigPaths::iterator solIter
+			= paths.begin(); solIter != paths.end();) {
+		// add only paths whose length is maximal
+		size_t len = calculatePathLength(*pContigGraph,
+				*solIter, costFunctor);
+		// vout << "Solutions: " << '\n';
+		// for (SimpleContigGraph::FeasiblePaths::iterator prtIter
+		//        = solutions.begin(); prtIter != solutions.end();prtIter++)
+		//	printPath(vout, *prtIter) << '\n';
+		// vout << "Path length: " << len << '\n';
+		if (len >= max_len) {
+			if (len > max_len) {
+				// erase previous non-maximal paths
+				solIter = paths.erase(paths.begin(), solIter);
+				best = solIter;
+				max_len = len;
+			}
+			++solIter;
+		}
+		else {
+			// vout << "Erasing Solution: " << '\n';
+			// printPath(vout, *solIter) << '\n';
+			solIter = paths.erase(solIter);
+		}
+	}
+	// vout << "Solutions: " << '\n';
+	// for (SimpleContigGraph::FeasiblePaths::iterator prtIter
+	//        = solutions.begin(); prtIter != solutions.end();prtIter++)
+	//	printPath(vout, *prtIter) << '\n';
+	// assert(solutions.size() == 1);
+	// ContigPaths::iterator bestSol = paths.begin();
+
+	//constructContigPath(*bestSol, out);
+	unsigned numN = calculatePathLength(*pContigGraph, *best,
+			costFunctor, longestPrefix, longestSuffix);
+	ContigPath out;
+	out.reserve(vppath.size() + 1 + vspath.size());
+	out.insert(out.end(), vppath.begin(), vppath.end());
+	out.push_back(ContigNode(numN));
+	out.insert(out.end(), vspath.begin(), vspath.end());
+
+	vout << "Longest prefix: ";
+	if (!vppath.empty())
+		vout << vppath;
+	vout << "\nLongest suffix: ";
+	if (!vspath.empty())
+		vout << vspath;
+	vout << '\n';
+
+	vout << out << '\n';
+	return out;
+}
+
 /** Find a path for the specified distance estimates.
  * @return a pointer to the statistic to increment.
  */
@@ -365,14 +516,17 @@ static void handleEstimate(
 	pthread_mutex_lock(&coutMutex);
 	stats.totalAttempted++;
 	g_minNumPairs = min(g_minNumPairs, minNumPairs);
-	cout << vout_ss.str();
 
 	if (numPossiblePaths == 0) {
 		stats.noPossiblePaths++;
 	} else if (solutions.empty()) {
 		stats.nopathEnd++;
 	} else if (solutions.size() > 1) {
+		ContigPath path
+			= constructAmbiguousPath(pContigGraph, solutions, vout);
+		out.insert(out.end(), path.begin(), path.end());
 		stats.multiEnd++;
+		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
@@ -380,6 +534,7 @@ static void handleEstimate(
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}
+	cout << vout_ss.str();
 	pthread_mutex_unlock(&coutMutex);
 }
 
