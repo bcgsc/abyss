@@ -252,23 +252,19 @@ static ContigPath constructAmbiguousPath(
 		if (solIter->size()<min_len)
 			min_len = solIter->size();
 	}
-	// get the index for longestPrefix
+
+	// Find the longest prefix.
 	ContigPath vppath;
 	size_t longestPrefix;
 	bool commonPrefix = true;
 	for (longestPrefix = 0;
 			longestPrefix < min_len; longestPrefix++) {
-		// Get element in ith position in first solution
 		const ContigNode& common_path_node = firstSol[longestPrefix];
-		// Iterate over all solutions.
 		for (ContigPaths::iterator solIter = paths.begin();
 				solIter != paths.end(); ++solIter) {
-			// Get element in ith position in next solution
 			const ContigNode& pathnode = (*solIter)[longestPrefix];
-			// If not matched: longestPrefix is the length of the
-			// longest prefix, must break out of the outer and inner
-			// loop.
 			if (pathnode != common_path_node) {
+				// Found the longest prefix.
 				commonPrefix = false;
 				break;
 			}
@@ -278,27 +274,22 @@ static ContigPath constructAmbiguousPath(
 		vppath.push_back(common_path_node);
 	}
 
-	// get the index for longestSuffix
+	// Find the longest suffix.
 	ContigPath vspath;
 	size_t longestSuffix;
 	bool commonSuffix = true;
 	for (longestSuffix = 0;
 			longestSuffix < min_len-longestPrefix; longestSuffix++) {
-		// Get element in ith position in first solution
 		ContigNode& common_path_node
 			= firstSol[firstSol.size()-longestSuffix-1];
-		// Iterate over all solutions.
 		for (ContigPaths::iterator solIter = paths.begin();
 				solIter != paths.end(); ++solIter) {
-			// Compare with element in ith position in next solution
 			ContigNode& pathnode
 				= (*solIter)[solIter->size()-longestSuffix-1];
-			// If not matched: longestSuffix is the length of the
-			// longest suffix, must break out of the outer and inner
-			// loop.
 			if (pathnode != common_path_node) {
+				// Found the longest suffix.
 				commonSuffix = false;
-				break; // must break out of the outer and inner loop
+				break;
 			}
 		}
 		if (!commonSuffix)
@@ -307,7 +298,7 @@ static ContigPath constructAmbiguousPath(
 	}
 	reverse(vspath.begin(), vspath.end());
 
-	// find the longest path
+	// Calculate the length of the longest path.
 	SimpleDataCost costFunctor(opt::k);
 	ContigPaths::iterator best = paths.end();
 	size_t max_len = 0;
