@@ -242,8 +242,6 @@ static ContigPath constructAmbiguousPath(
 	transform(solutions.begin(), solutions.end(),
 			back_inserter(paths),
 			createContigPath);
-	// vout << "Scaffolding here... " << '\n';
-	// Scaffolding code here.
 	ContigPaths::iterator solIter = paths.begin();
 	ContigPath& firstSol = *solIter;
 	size_t min_len = firstSol.size();
@@ -307,11 +305,6 @@ static ContigPath constructAmbiguousPath(
 		// add only paths whose length is maximal
 		size_t len = calculatePathLength(*pContigGraph,
 				*solIter, costFunctor);
-		// vout << "Solutions: " << '\n';
-		// for (SimpleContigGraph::FeasiblePaths::iterator prtIter
-		//        = solutions.begin(); prtIter != solutions.end();prtIter++)
-		//	printPath(vout, *prtIter) << '\n';
-		// vout << "Path length: " << len << '\n';
 		if (len >= max_len) {
 			if (len > max_len) {
 				// erase previous non-maximal paths
@@ -322,19 +315,10 @@ static ContigPath constructAmbiguousPath(
 			++solIter;
 		}
 		else {
-			// vout << "Erasing Solution: " << '\n';
-			// printPath(vout, *solIter) << '\n';
 			solIter = paths.erase(solIter);
 		}
 	}
-	// vout << "Solutions: " << '\n';
-	// for (SimpleContigGraph::FeasiblePaths::iterator prtIter
-	//        = solutions.begin(); prtIter != solutions.end();prtIter++)
-	//	printPath(vout, *prtIter) << '\n';
-	// assert(solutions.size() == 1);
-	// ContigPaths::iterator bestSol = paths.begin();
 
-	//constructContigPath(*bestSol, out);
 	unsigned numN = calculatePathLength(*pContigGraph, *best,
 			costFunctor, longestPrefix, longestSuffix);
 	ContigPath out;
