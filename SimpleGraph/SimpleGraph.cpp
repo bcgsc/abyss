@@ -74,8 +74,11 @@ typedef vector<LinearNumVector > LinearNumKeyVector;
 struct SimpleDataCost
 {
 	SimpleDataCost(size_t kmer) : m_overlap(kmer - 1) { }
-	
-	size_t cost(const SimpleContigData& data) { return data.length - m_overlap; } 
+
+	size_t cost(const SimpleContigData& data)
+	{
+		return data.length - m_overlap;
+	}
 	size_t m_overlap;
 };
 
@@ -154,7 +157,7 @@ ostream& printConstraints(ostream& out, const map<K,D>& s)
 	return out;
 }
 
-static ostream& printPath(ostream& out, 
+static ostream& printPath(ostream& out,
 		const SimpleContigGraph::VertexPath& v)
 {
 	assert(!v.empty());
@@ -253,15 +256,20 @@ static ContigPath constructAmbiguousPath(
 	ContigPath vppath;
 	size_t longestPrefix;
 	bool commonPrefix = true;
-	for (longestPrefix = 0; longestPrefix < min_len; longestPrefix++) {
-		// Get element in ith position in first solution:  firstSol[longestPrefix]
+	for (longestPrefix = 0;
+			longestPrefix < min_len; longestPrefix++) {
+		// Get element in ith position in first solution
 		const ContigNode& common_path_node = firstSol[longestPrefix];
 		// Iterate over all solutions.
-		for (ContigPaths::iterator solIter = paths.begin(); solIter != paths.end();++solIter) {
-			// Get element in ith position in next solution:  (*solIter)[longestPrefix]
+		for (ContigPaths::iterator solIter = paths.begin();
+				solIter != paths.end(); ++solIter) {
+			// Get element in ith position in next solution
 			const ContigNode& pathnode = (*solIter)[longestPrefix];
-			// If not matched: longestPrefix is the length of the longest prefix, must break out of the outer and inner loop
-			if (pathnode.id() != common_path_node.id() || pathnode.sense() != common_path_node.sense()) {
+			// If not matched: longestPrefix is the length of the
+			// longest prefix, must break out of the outer and inner
+			// loop.
+			if (pathnode.id() != common_path_node.id()
+					|| pathnode.sense() != common_path_node.sense()) {
 				commonPrefix = false;
 				break;
 			}
@@ -269,29 +277,34 @@ static ContigPath constructAmbiguousPath(
 		if (!commonPrefix)
 			break;
 		vppath.push_back(common_path_node);
-
 	}
 
 	// get the index for longestSuffix
 	ContigPath vspath;
 	size_t longestSuffix;
 	bool commonSuffix = true;
-	for (longestSuffix = 0; longestSuffix < min_len-longestPrefix; longestSuffix++) {
-		// Get element in ith position in first solution:  firstSol[firstSol.size()-longestSuffix-1]
-		ContigNode& common_path_node = firstSol[firstSol.size()-longestSuffix-1];
+	for (longestSuffix = 0;
+			longestSuffix < min_len-longestPrefix; longestSuffix++) {
+		// Get element in ith position in first solution
+		ContigNode& common_path_node
+			= firstSol[firstSol.size()-longestSuffix-1];
 		// Iterate over all solutions.
-		for (ContigPaths::iterator solIter = paths.begin(); solIter != paths.end();++solIter) {
-			// Compare with element in ith position in next solution:  (*solIter)[solIter->size()-longestSuffix-1]
-			ContigNode& pathnode = (*solIter)[solIter->size()-longestSuffix-1];
-			// If not matched: longestSuffix is the length of the longest suffix, must break out of the outer and inner loop
-			if (pathnode.id() != common_path_node.id() || pathnode.sense() != common_path_node.sense()) {
+		for (ContigPaths::iterator solIter = paths.begin();
+				solIter != paths.end(); ++solIter) {
+			// Compare with element in ith position in next solution
+			ContigNode& pathnode
+				= (*solIter)[solIter->size()-longestSuffix-1];
+			// If not matched: longestSuffix is the length of the
+			// longest suffix, must break out of the outer and inner
+			// loop.
+			if (pathnode.id() != common_path_node.id()
+					|| pathnode.sense() != common_path_node.sense()) {
 				commonSuffix = false;
 				break; // must break out of the outer and inner loop
 			}
 		}
-		if (!commonSuffix) {
+		if (!commonSuffix)
 			break;
-		}
 		vspath.push_back(common_path_node);
 	}
 	reverse(vspath.begin(), vspath.end());
@@ -609,17 +622,18 @@ static void generatePathsThroughEstimates(
 	}
 }
 
-//
-// Convert the vertext path to a contig path
-// The difference between the two is that the complementness of a vertex path is with respect to the previous node in the path
-// but with a contig path it is with respect to the root contig. Also the contigPath uses true contig ids
-//
+/* Convert the vertext path to a contig path. The difference between
+ * the two is that the complementness of a vertex path is with respect
+ * to the previous node in the path but with a contig path it is with
+ * respect to the root contig.
+ */
 static void constructContigPath(
 		const SimpleContigGraph::VertexPath& vertexPath,
 		ContigPath& contigPath)
 {
 	bool flip = false;
-	for(SimpleContigGraph::VertexPath::const_iterator iter = vertexPath.begin(); iter != vertexPath.end(); ++iter)
+	for(SimpleContigGraph::VertexPath::const_iterator iter
+			= vertexPath.begin(); iter != vertexPath.end(); ++iter)
 	{
 		flip = flip ^ iter->isRC;
 		contigPath.push_back(ContigNode(iter->key, flip));
