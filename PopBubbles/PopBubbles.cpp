@@ -259,7 +259,7 @@ int main(int argc, char *const argv[])
 		opt::maxLength = 3 * opt::k;
 
 	if (opt::maxLength <= 0) {
-		cerr << PROGRAM ": " << "missing -l,--length option\n";
+		cerr << PROGRAM ": " << "missing -b,--bubble-length option\n";
 		die = true;
 	}
 
