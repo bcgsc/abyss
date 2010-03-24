@@ -300,28 +300,21 @@ static ContigPath constructAmbiguousPath(
 
 	// Calculate the length of the longest path.
 	SimpleDataCost costFunctor(opt::k);
-	ContigPaths::iterator best = paths.end();
-	size_t max_len = 0;
-	for (ContigPaths::iterator solIter
-			= paths.begin(); solIter != paths.end();) {
-		// add only paths whose length is maximal
-		size_t len = calculatePathLength(*pContigGraph,
-				*solIter, costFunctor);
-		if (len >= max_len) {
-			if (len > max_len) {
-				// erase previous non-maximal paths
-				solIter = paths.erase(paths.begin(), solIter);
-				best = solIter;
-				max_len = len;
-			}
-			++solIter;
-		}
-		else {
-			solIter = paths.erase(solIter);
+	unsigned maxLen = 0;
+	ContigPaths::const_iterator longest = paths.end();
+	for (ContigPaths::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		unsigned len = calculatePathLength(*pContigGraph,
+				*it, costFunctor);
+		if (len > maxLen) {
+			maxLen = len;
+			longest = it;
 		}
 	}
+	assert(maxLen > 0);
+	assert(longest != paths.end());
 
-	unsigned numN = calculatePathLength(*pContigGraph, *best,
+	unsigned numN = calculatePathLength(*pContigGraph, *longest,
 			costFunctor, longestPrefix, longestSuffix);
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
