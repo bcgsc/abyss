@@ -39,6 +39,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
+"      --dot             output bubbles in dot format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -48,6 +49,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static int k;
 	static unsigned maxLength;
+
+	/** Output bubbles in dot format. */
+	static int dot;
 }
 
 static const char shortopts[] = "b:k:v";
@@ -56,6 +60,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bubble-length", required_argument, NULL, 'b' },
+	{ "dot",           no_argument,       &opt::dot, 1, },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -109,12 +114,12 @@ static void popBubble(const ContigNode& head,
 	assert(head.outDegree() == tail.inDegree());
 	vector<ContigNode> sorted(branches.begin(), branches.end());
 	sort(sorted.begin(), sorted.end(), compareCoverage);
-	if (opt::verbose > 2) {
-		cerr << '"' << head << "\" -> {";
+	if (opt::dot) {
+		cout << '"' << head << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
-				affix_ostream_iterator<ContigNode>(cerr,
+				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
-		cerr << " } -> \"" << tail << "\";\n";
+		cout << " } -> \"" << tail << "\";\n";
 	}
 	transform(sorted.begin() + 1, sorted.end(),
 			inserter(g_popped, g_popped.begin()),
@@ -283,16 +288,20 @@ int main(int argc, char *const argv[])
 	readContigs(g_contigs, adjPath);
 	readContigGraph(g_graph, adjPath);
 
+	if (opt::dot)
+		cout << "digraph bubbles {\n";
 	for (ContigGraph::const_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it) {
 		const ContigGraph::value_type& node = *it;
 		if (node.second.size() > 1)
 			consider(node.first, node.second);
 	}
-
-	transform(g_popped.begin(), g_popped.end(),
-			ostream_iterator<string>(cout, "\n"),
-			idToString);
+	if (opt::dot)
+		cout << "}\n";
+	else
+		transform(g_popped.begin(), g_popped.end(),
+				ostream_iterator<string>(cout, "\n"),
+				idToString);
 
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << g_count.bubbles/2
