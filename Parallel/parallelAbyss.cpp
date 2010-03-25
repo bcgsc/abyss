@@ -15,6 +15,21 @@
 
 using namespace std;
 
+/** Execute a shell command and check its return status. */
+static void systemx(const string& command)
+{
+	if (opt::verbose > 0)
+		puts(command.c_str());
+	int ret = system(command.c_str());
+	if (ret == 0)
+		return;
+	fprintf(stderr, "error: command failed: `%s'\n", command.c_str());
+	if (ret == -1)
+		perror("system");
+	exit(ret == -1 ? EXIT_FAILURE : ret);
+}
+
+/** Concatenate files using the specified command and remove them. */
 static void concatenateFiles(const string& dest,
 		const string& prefix, const string& suffix,
 		const string& command = "cat")
@@ -25,16 +40,13 @@ static void concatenateFiles(const string& dest,
 	for (int i = 0; i < opt::numProc; i++)
 		s << ' ' << prefix << i << suffix;
 	s << " >'" << dest << '\'';
-	if (opt::verbose > 0)
-		puts(s.str().c_str());
-	int ret = system(s.str().c_str());
-	if (ret != 0) {
-		fprintf(stderr, "error: command failed: %s\n",
-				s.str().c_str());
-		if (ret == -1)
-			perror("system");
-		exit(ret == -1 ? EXIT_FAILURE : ret);
-	}
+	systemx(s.str());
+
+	s.str("");
+	s << "rm";
+	for (int i = 0; i < opt::numProc; i++)
+		s << ' ' << prefix << i << suffix;
+	systemx(s.str());
 }
 
 int main(int argc, char** argv)
