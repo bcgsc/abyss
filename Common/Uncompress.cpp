@@ -11,7 +11,7 @@
 #if HAVE_LIBDL
 
 #include "Fcontrol.h"
-#include "Signal.h"
+#include "SignalHandler.h"
 #include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>

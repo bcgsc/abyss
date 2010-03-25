@@ -2,7 +2,7 @@
  * Signal handling code, particularly SIGCHLD.
  */
 
-#include "Signal.h"
+#include "SignalHandler.h"
 #include <cassert>
 #include <cerrno>
 #include <cstdio> // for perror
