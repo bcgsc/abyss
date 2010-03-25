@@ -10,7 +10,7 @@
 #include "config.h"
 #if HAVE_LIBDL
 
-#include "Fcntl.h"
+#include "Fcontrol.h"
 #include "Signal.h"
 #include <cassert>
 #include <cstdio> // for perror

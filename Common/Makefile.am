@@ -6,7 +6,7 @@ libcommon_a_SOURCES = \
 	AffixIterator.h \
 	ContigNode.h ContigNode.cpp \
 	Dictionary.h \
-	Fcntl.cpp Fcntl.h \
+	Fcontrol.cpp Fcontrol.h \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h HashSet.h \
 	Histogram.cpp Histogram.h \
