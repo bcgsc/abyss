@@ -43,8 +43,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
 "                        default is 5 bases\n"
-"      --scaffold        join contigs with Ns\n"
-"      --no-scaffold     do not scaffold [default]\n"
+"      --scaffold        join contigs with Ns [default]\n"
+"      --no-scaffold     do not scaffold\n"
 "      --mask-repeat     join contigs at a simple repeat and mask the repeat\n"
 "      --no-mask-repeat  don't join contigs at a repeat\n"
 "  -o, --out=FILE        write result to FILE\n"
@@ -58,7 +58,7 @@ namespace opt {
 	static int k;
 	static unsigned minimum_overlap = 5;
 	static int mask;
-	static int scaffold;
+	static int scaffold = 1;
 	static string out;
 }
 
