@@ -760,11 +760,6 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData&
 	}
 }
 
-//
-// Find a superpath that includes all the nodes in the reachable set
-//
-static int gExaminedCount;
-
 template<typename D>
 template<class DataCostFunctor>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
@@ -783,17 +778,15 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
     // Create the initial (empty) path
     VertexPath path;
 
-    gExaminedCount = 0;
-    ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path, superPaths, 0, costFunctor, maxNumPaths, maxCompCost);
-    compCost = gExaminedCount;
+	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
+			superPaths, 0, costFunctor, maxNumPaths, maxCompCost,
+			compCost);
     // was the limit hit?
-    if(gExaminedCount >= maxCompCost)
-    {
+    if (compCost >= maxCompCost) {
     	// Remove paths, the search did not complete
 		static bool warned
-			= std::cout << "Computational limit ("
-			<< gExaminedCount << ") exceeded for "
-			<< ContigNode(sourceKey, dir) << '\n';
+			= std::cout << "Computational limit (" << compCost << ")"
+			" exceeded for " << ContigNode(sourceKey, dir) << '\n';
 		(void)warned;
     	superPaths.clear();
     }
@@ -807,14 +800,13 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 		const KeyConstraintMap keyConstraints,
 		VertexPath currentPath, FeasiblePaths& solutions,
 		size_t currLen, DataCostFunctor& costFunctor,
-		int maxNumPaths, int maxCompCost) const
+		int maxNumPaths, int maxCompCost, int& visitedCount) const
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
     if ((maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
-			|| gExaminedCount >= maxCompCost)
+			|| visitedCount >= maxCompCost)
 		return;
-    
-    gExaminedCount++;
+	visitedCount++;
 
     // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
     typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
@@ -887,7 +879,10 @@ void DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
                 //printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
 
                 // recurse
-                ConstrainedDFS(pNextVertex, relativeDir, relativeRC, newConstraints, newPath, solutions, newLength, costFunctor, maxNumPaths, maxCompCost);
+				ConstrainedDFS(pNextVertex, relativeDir, relativeRC,
+						newConstraints, newPath, solutions,
+						newLength, costFunctor, maxNumPaths,
+						maxCompCost, visitedCount);
         }
     }
 }

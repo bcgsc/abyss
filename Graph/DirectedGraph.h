@@ -309,7 +309,8 @@ class DirectedGraph
 				bool rcFlip, const KeyConstraintMap keyConstraints,
 				VertexPath currentPath, FeasiblePaths& solutions,
 				size_t currLen, DataCostFunctor& costFunctor,
-				int maxNumPaths, int maxCompCost) const;
+				int maxNumPaths,
+				int maxCompCost, int& visitedCount) const;
 
 		template<class DataCostFunctor>
 		size_t getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor);											
