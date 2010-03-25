@@ -790,14 +790,13 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
     if(gExaminedCount >= maxCompCost)
     {
     	// Remove paths, the search did not complete
-		static bool warned;
-		if (!warned) {
-			warned = true;
-			std::cout << "Computational limit exceeded\n";
-		}
+		static bool warned
+			= std::cout << "Computational limit ("
+			<< gExaminedCount << ") exceeded for "
+			<< ContigNode(sourceKey, dir) << '\n';
+		(void)warned;
     	superPaths.clear();
     }
-    
     return !superPaths.empty();
 }
 
