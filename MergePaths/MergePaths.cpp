@@ -92,7 +92,8 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 		map<LinearNumKey, unsigned> count;
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
-			count[it->id()]++;
+			if (!it->ambiguous())
+				count[it->id()]++;
 		for (map<LinearNumKey, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
