@@ -48,7 +48,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by ContigGraph
 	static unsigned maxCost = 100000;
 	static unsigned threads = 1;
 	static int scaffold = 1;
@@ -71,20 +71,6 @@ static const struct option longopts[] = {
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
-};
-
-typedef vector<LinearNumKey> LinearNumVector;
-typedef vector<LinearNumVector > LinearNumKeyVector;
-
-struct SimpleDataCost
-{
-	SimpleDataCost(size_t kmer) : m_overlap(kmer - 1) { }
-
-	size_t cost(const SimpleContigData& data)
-	{
-		return data.length - m_overlap;
-	}
-	size_t m_overlap;
 };
 
 static void generatePathsThroughEstimates(
@@ -223,10 +209,8 @@ static ContigPath createContigPath(
 }
 
 /** Return the length of the specified path. */
-template<typename DataCostFunctor>
 static size_t calculatePathLength(const SimpleContigGraph& graph,
-		const ContigPath& path, DataCostFunctor costFunctor,
-		size_t first = 0, size_t last = 0)
+		const ContigPath& path, size_t first = 0, size_t last = 0)
 {
 	size_t len = 0;
 	if (first + last < path.size()) {
@@ -305,13 +289,11 @@ static ContigPath constructAmbiguousPath(
 	reverse(vspath.begin(), vspath.end());
 
 	// Calculate the length of the longest path.
-	SimpleDataCost costFunctor(opt::k);
 	unsigned maxLen = 0;
 	ContigPaths::const_iterator longest = paths.end();
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		unsigned len = calculatePathLength(*pContigGraph,
-				*it, costFunctor);
+		unsigned len = calculatePathLength(*pContigGraph, *it);
 		if (len > maxLen) {
 			maxLen = len;
 			longest = it;
@@ -321,7 +303,7 @@ static ContigPath constructAmbiguousPath(
 	assert(longest != paths.end());
 
 	unsigned numN = calculatePathLength(*pContigGraph, *longest,
-			costFunctor, longestPrefix, longestSuffix);
+			longestPrefix, longestSuffix);
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
@@ -348,7 +330,6 @@ static void handleEstimate(
 		<< (dirIdx ? '-' : '+') << '\n';
 
 	unsigned minNumPairs = UINT_MAX;
-	SimpleDataCost costFunctor(opt::k);
 	// generate the reachable set
 	SimpleContigGraph::KeyConstraintMap constraintMap;
 	for (EstimateVector::const_iterator iter
@@ -357,10 +338,8 @@ static void handleEstimate(
 		minNumPairs = min(minNumPairs, iter->numPairs);
 
 		// Translate the distances produced by the esimator into the
-		// coordinate space used by the graph (a translation of
-		// m_overlap)
-		int translatedDistance = iter->distance
-			+ costFunctor.m_overlap;
+		// coordinate space used by the graph (a translation of k-1).
+		int translatedDistance = iter->distance + opt::k - 1;
 		unsigned distanceBuffer = allowedError(iter->stdDev);
 
 		Constraint nc;
@@ -381,7 +360,7 @@ static void handleEstimate(
 
 	// The number of nodes to explore before bailing out
 	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
-			constraintMap, solutions, costFunctor, maxNumPaths,
+			constraintMap, solutions, maxNumPaths,
 			opt::maxCost, numVisited);
 
 	set<LinearNumKey> repeats = findRepeats(solutions);
@@ -404,8 +383,7 @@ static void handleEstimate(
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
 		map<LinearNumKey, int> distanceMap;
-		pContigGraph->makeDistanceMap(*solIter,
-				costFunctor, distanceMap);
+		pContigGraph->makeDistanceMap(*solIter, distanceMap);
 
 		// Remove solutions whose distance estimates are not correct.
 		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
@@ -419,8 +397,7 @@ static void handleEstimate(
 			assert(dmIter != distanceMap.end());
 			// translate distance by -overlap to match
 			// coordinate space used by the estimate
-			int actualDistance
-				= dmIter->second - costFunctor.m_overlap;
+			int actualDistance = dmIter->second - opt::k + 1;
 			int diff = actualDistance - iter->distance;
 			unsigned buffer = allowedError(iter->stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
@@ -455,8 +432,7 @@ static void handleEstimate(
 				= solutions.begin();
 			solIter != solutions.end(); ++solIter) {
 		map<LinearNumKey, int> distanceMap;
-		pContigGraph->makeDistanceMap(*solIter,
-				costFunctor, distanceMap);
+		pContigGraph->makeDistanceMap(*solIter, distanceMap);
 		int sumDiff = 0;
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
@@ -466,8 +442,7 @@ static void handleEstimate(
 			map<LinearNumKey, int>::iterator dmIter
 				= distanceMap.find(iter->contig.id());
 			if (dmIter != distanceMap.end()) {
-				int actualDistance = dmIter->second
-					- costFunctor.m_overlap;
+				int actualDistance = dmIter->second - opt::k + 1;
 				int diff = actualDistance - iter->distance;
 				sumDiff += abs(diff);
 			}
@@ -478,8 +453,7 @@ static void handleEstimate(
 			bestSol = solIter;
 		}
 
-		size_t len = pContigGraph->calculatePathLength(
-				*solIter, costFunctor);
+		size_t len = pContigGraph->calculatePathLength(*solIter);
 		printPath(vout, *solIter)
 			<< " length: " << len
 			<< " sumdiff: " << sumDiff << '\n';

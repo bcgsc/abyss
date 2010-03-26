@@ -55,7 +55,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static int k;
+	int k; // used by ContigGraph
 	static unsigned minimum_overlap = 5;
 	static int mask;
 	static int scaffold = 1;

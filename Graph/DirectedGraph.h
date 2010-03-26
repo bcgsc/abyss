@@ -218,23 +218,23 @@ class DirectedGraph
 		// reduce the graph with paired data		
 		template<class ResolveFunctor>
 		size_t reducePaired(ResolveFunctor& resolver);
-		
-		// attempt to resolve 
-		template<class DataCostFunctor, class ResolveFunctor, class DataMerger>
-		bool attemptResolve(const LinearNumKey& key, extDirection dir, size_t maxCost, DataCostFunctor& dataCost, ResolveFunctor& resolver, DataMerger& merger);
-		
-		template<class DataCostFunctor>
-		void generateComponents(VertexType* pVertex, extDirection dir, size_t maxCost, VertexComponentVector& outComponents, DataCostFunctor& dataCost);
 
-		template<class DataCostFunctor>
-		void accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost);
+		template<class ResolveFunctor, class DataMerger>
+		bool attemptResolve(const LinearNumKey& key, extDirection dir,
+				size_t maxCost, ResolveFunctor& resolver,
+				DataMerger& merger);
 
-		template<class DataCostFunctor>
+		void generateComponents(VertexType* pVertex, extDirection dir,
+				size_t maxCost, VertexComponentVector& outComponents);
+
+		void accumulateVertices(VertexType* pVertex, extDirection dir,
+				size_t currCost, size_t maxCost,
+				VertexCollection& accumulator);
+
 		bool findSuperpaths(const LinearNumKey& sourceKey,
 				extDirection dir,
 				const KeyConstraintMap& keyConstraints,
-				FeasiblePaths& superPaths,
-				DataCostFunctor& costFunctor, int maxNumPaths,
+				FeasiblePaths& superPaths, int maxNumPaths,
 				int maxCompCost, int& compCost) const;
 
 		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
@@ -266,22 +266,19 @@ class DirectedGraph
 		bool mergePath(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger);
 		
 		// attempt to merge two vertices along their shortest path with no guarentee they are linked
-		template<class DataCostFunctor, class MergerFunctor>
-		bool mergeShortestPath(const LinearNumKey& key1, const LinearNumKey& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger);
-		
+		template<class MergerFunctor>
+		bool mergeShortestPath(const LinearNumKey& key1,
+				const LinearNumKey& key2, MergerFunctor dataMerger);
+
 		// debug function to merge two vertices together
 		template<class Functor>
 		bool mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger);
-		
+
 		// Calculate the length of this path
-		template<typename DataCostFunctor>
-		size_t calculatePathLength(const VertexPath& path,
-				DataCostFunctor costFunctor) const;
+		size_t calculatePathLength(const VertexPath& path) const;
 
 		// Make a map of the distances to each node
-		template<typename DataCostFunctor>
 		void makeDistanceMap(const VertexPath& path,
-				DataCostFunctor costFunctor,
 				std::map<LinearNumKey, int>& distanceMap) const;
 
 		// Iteratively visit each node
@@ -295,31 +292,26 @@ class DirectedGraph
 	
 		// Extract the shortest path between two vertices
 		void extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path);
-		
-		// Run dijkstra's algorithm to find the shortest path between source and target using the cost functor specified
-		template<class DataCostFunctor>
-		void dijkstra(const LinearNumKey& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
-		
-		//
-		template<class DataCostFunctor>
-		void greedyDirectedPath(const LinearNumKey& sourceKey, extDirection dir, KeySet& terminals, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor);
 
-		template<class DataCostFunctor>
+		// Run dijkstra's algorithm to find the shortest path between source and target using the cost functor specified
+		void dijkstra(const LinearNumKey& sourceKey,
+				ShortestPathData& shortestPathData);
+
+		void greedyDirectedPath(const LinearNumKey& sourceKey,
+				extDirection dir, KeySet& terminals,
+				ShortestPathData& shortestPathData);
+
 		bool ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
 				bool rcFlip, const KeyConstraintMap keyConstraints,
 				VertexPath currentPath, FeasiblePaths& solutions,
-				size_t currLen, DataCostFunctor& costFunctor,
-				int maxNumPaths,
+				size_t currLen, int maxNumPaths,
 				int maxCompCost, int& visitedCount) const;
 
-		template<class DataCostFunctor>
-		size_t getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor);											
-		
-		// Merge two vertices
+		size_t getMinPathLength(const VertexPtrSet& vertexSet);
+
 		template<class Functor>
 		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger);
-		
-			
+
 		VertexType* findVertex(const LinearNumKey& key) const;
 		VertexTable m_vertexTable;
 };

@@ -5,15 +5,20 @@
 #include <cstdlib> // for exit
 #include <iostream>
 
-//
-//
-// Vertex Implemenation
-//
-//
+namespace opt {
+	extern unsigned k;
+};
 
-//
-//
-//
+struct SimpleDataCost
+{
+	/** Return the length of the specified node in k-mer. */
+	size_t cost(const SimpleContigData& data)
+	{
+		return data.length - opt::k + 1;
+	}
+};
+static SimpleDataCost costFunctor;
+
 template<typename K, typename D>
 void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse) 
 {
@@ -574,8 +579,9 @@ void DirectedGraph<D>::validate(Functor dataChecker)
 
 
 template<typename D>
-template<class DataCostFunctor>
-void DirectedGraph<D>::generateComponents(VertexType* pVertex, extDirection dir, size_t maxCost, VertexComponentVector& outComponents, DataCostFunctor& dataCost)
+void DirectedGraph<D>::generateComponents(VertexType* pVertex,
+		extDirection dir, size_t maxCost,
+		VertexComponentVector& outComponents)
 {
 	// Create a vertex collection for every sequence directly adjacent to this vertex
 	typename VertexType::EdgeCollection& edgeCollection = pVertex->m_edges[dir];
@@ -591,20 +597,22 @@ void DirectedGraph<D>::generateComponents(VertexType* pVertex, extDirection dir,
 		outComponents.push_back(newComp);
 		
 		extDirection newDir = (iter->reverse) ? !dir : dir;
-		accumulateVertices(iter->pVertex, newDir, 0, maxCost, outComponents.back().second, dataCost);
+		accumulateVertices(iter->pVertex, newDir, 0, maxCost,
+				outComponents.back().second);
 	}
 }
 
 template<typename D>
-template<class DataCostFunctor>
-void DirectedGraph<D>::accumulateVertices(VertexType* pVertex, extDirection dir, size_t currCost, size_t maxCost, VertexCollection& accumulator, DataCostFunctor& dataCost)
+void DirectedGraph<D>::accumulateVertices(VertexType* pVertex,
+		extDirection dir, size_t currCost, size_t maxCost,
+		VertexCollection& accumulator)
 {	
 	// Add this vertex
 	accumulator.insert(pVertex);
-	
+
 	// add the cost
-	currCost += dataCost.cost(pVertex->m_data);
-	
+	currCost += costFunctor.cost(pVertex->m_data);
+
 	if(currCost > maxCost)
 	{
 		return;
@@ -616,7 +624,8 @@ void DirectedGraph<D>::accumulateVertices(VertexType* pVertex, extDirection dir,
 		{	
 			// recursively call for each subbranch
 			extDirection newDir = (iter->reverse) ? !dir : dir;
-			accumulateVertices(iter->pVertex, newDir, currCost, maxCost, accumulator, dataCost);
+			accumulateVertices(iter->pVertex, newDir, currCost,
+					maxCost, accumulator);
 		}
 	}
 }
@@ -667,13 +676,14 @@ bool DirectedGraph<D>::mergePath(const LinearNumKey& key1, const LinearNumKey& k
 }
 
 template<typename D>
-template<class DataCostFunctor, class MergerFunctor>
-bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1, const LinearNumKey& key2, DataCostFunctor costFunctor, MergerFunctor dataMerger)
+template<class MergerFunctor>
+bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1,
+		const LinearNumKey& key2, MergerFunctor dataMerger)
 {
 	// Get the shortest path between the nodes
 	KeyVec path;
 	ShortestPathData spd;
-	dijkstra(key1, spd, costFunctor);
+	dijkstra(key1, spd);
 	extractShortestPath(findVertex(key1), findVertex(key2), spd, path);
 	mergePath(key1, path, dataMerger);
 	return false;
@@ -685,8 +695,8 @@ bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1, const LinearN
 // are travelling in a particular direction at all times
 //
 template<typename D>
-template<class DataCostFunctor>
-void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData& shortestPathData, DataCostFunctor& costFunctor)
+void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
+		ShortestPathData& shortestPathData)
 {
 	//Timer dTimer("dijkstra");
 
@@ -696,9 +706,9 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData&
 	// initialize the data
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		shortestPathData.distanceMap[iter->second] = INF;
-		shortestPathData.visitedMap[iter->second] = VC_WHITE;
-		shortestPathData.previousMap[iter->second] = NULL;
+		shortestPathData.distanceMap[*iter] = INF;
+		shortestPathData.visitedMap[*iter] = VC_WHITE;
+		shortestPathData.previousMap[*iter] = NULL;
 	}
 	
 	VertexType* pSourceVertex = findVertex(sourceKey);
@@ -761,10 +771,9 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey, ShortestPathData&
 }
 
 template<typename D>
-template<class DataCostFunctor>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 		extDirection dir, const KeyConstraintMap& keyConstraints,
-		FeasiblePaths& superPaths, DataCostFunctor& costFunctor,
+		FeasiblePaths& superPaths,
 		int maxNumPaths, int maxCompCost, int& compCost) const
 {
     VertexType* pSourceVertex = findVertex(sourceKey);
@@ -779,7 +788,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
     VertexPath path;
 
 	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
-			superPaths, 0, costFunctor, maxNumPaths, maxCompCost,
+			superPaths, 0, maxNumPaths, maxCompCost,
 			compCost);
     // was the limit hit?
     if (compCost >= maxCompCost) {
@@ -798,13 +807,12 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
  * @return false if the search exited early
  */
 template<typename D>
-template<class DataCostFunctor>
 bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 		extDirection dir, bool rcFlip,
 		const KeyConstraintMap keyConstraints,
 		VertexPath currentPath, FeasiblePaths& solutions,
-		size_t currLen, DataCostFunctor& costFunctor,
-		int maxNumPaths, int maxCompCost, int& visitedCount) const
+		size_t currLen, int maxNumPaths,
+		int maxCompCost, int& visitedCount) const
 {
     // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
     if ((maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
@@ -885,7 +893,7 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 				if (!ConstrainedDFS(pNextVertex, relativeDir,
 						relativeRC,
 						newConstraints, newPath, solutions,
-						newLength, costFunctor, maxNumPaths,
+						newLength, maxNumPaths,
 						maxCompCost, visitedCount))
 					return false;
         }
@@ -897,8 +905,8 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 // Return the minimum possible path length that will contain every vertex in the set
 //
 template<typename D>
-template<class DataCostFunctor>
-size_t  DirectedGraph<D>::getMinPathLength(const VertexPtrSet& vertexSet, DataCostFunctor costFunctor)
+size_t  DirectedGraph<D>::getMinPathLength(
+		const VertexPtrSet& vertexSet)
 {
 	// The minimum possible path length has the longest node as the terminal
 	
@@ -940,9 +948,8 @@ void DirectedGraph<D>::extractShortestPath(VertexType* pSource, VertexType* pTar
 }
 
 template<typename D>
-template<typename DataCostFunctor>
-size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path,
-		DataCostFunctor costFunctor) const
+size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path)
+	const
 {
 	size_t len = 0;
 	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
@@ -953,9 +960,7 @@ size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path,
 }
 
 template<typename D>
-template<typename DataCostFunctor>
 void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
-		DataCostFunctor costFunctor,
 		std::map<LinearNumKey, int>& distanceMap) const
 {
 	// the path distance to a node is the distance that walks through all the nodes leading to it
