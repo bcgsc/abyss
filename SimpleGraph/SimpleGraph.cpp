@@ -187,10 +187,12 @@ static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static struct {
 	unsigned totalAttempted;
-	unsigned noPossiblePaths;
-	unsigned nopathEnd;
 	unsigned uniqueEnd;
+	unsigned noPossiblePaths;
+	unsigned noValidPaths;
 	unsigned multiEnd;
+	unsigned tooManySolutions;
+	unsigned tooComplex;
 } stats;
 
 /** Convert a numeric contig ID to a string. */
@@ -362,6 +364,8 @@ static void handleEstimate(
 	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
 			constraintMap, solutions, maxNumPaths,
 			opt::maxCost, numVisited);
+	bool tooComplex = (unsigned)numVisited >= opt::maxCost;
+	bool tooManySolutions = solutions.size() > (unsigned)maxNumPaths;
 
 	set<LinearNumKey> repeats = findRepeats(solutions);
 	if (!repeats.empty()) {
@@ -424,9 +428,9 @@ static void handleEstimate(
 	}
 
 	vout << "Solutions: " << solutions.size();
-	if ((unsigned)numVisited >= opt::maxCost)
+	if (tooComplex)
 		vout << " (too complex)";
-	if (numPossiblePaths >= (unsigned)maxNumPaths)
+	if (tooManySolutions)
 		vout << " (too many solutions)";
 	vout << '\n';
 
@@ -470,10 +474,14 @@ static void handleEstimate(
 	stats.totalAttempted++;
 	g_minNumPairs = min(g_minNumPairs, minNumPairs);
 
-	if (numPossiblePaths == 0) {
+	if (tooComplex) {
+		stats.tooComplex++;
+	} else if (tooManySolutions) {
+		stats.tooManySolutions++;
+	} else if (numPossiblePaths == 0) {
 		stats.noPossiblePaths++;
 	} else if (solutions.empty()) {
-		stats.nopathEnd++;
+		stats.noValidPaths++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
 			= constructAmbiguousPath(pContigGraph, solutions);
@@ -570,10 +578,12 @@ static void generatePathsThroughEstimates(
 
 	cout <<
 		"Total paths attempted: " << stats.totalAttempted << "\n"
+		"Unique path: " << stats.uniqueEnd << "\n"
 		"No possible paths: " << stats.noPossiblePaths << "\n"
-		"No valid paths: " << stats.nopathEnd << "\n"
+		"No valid paths: " << stats.noValidPaths << "\n"
 		"Multiple valid paths: " << stats.multiEnd << "\n"
-		"Unique path: " << stats.uniqueEnd << "\n";
+		"Too many solutions: " << stats.tooManySolutions << "\n"
+		"Too complex: " << stats.tooComplex << "\n";
 
 	inStream.close();
 	outStream.close();
