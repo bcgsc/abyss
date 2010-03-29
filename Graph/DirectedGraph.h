@@ -133,16 +133,9 @@ struct Vertex
 	// detect simple cycle
 	bool detectSimpleCycle();
 
-	// Print the links of the graph
-	void printLinks(const EdgeCollection& collection) const;
-	
-	// Print the edges of this node
-	void printEdges() const;
-		
 	K m_key;
 	D m_data;	
 	EdgeCollection m_edges[NUM_DIRECTIONS];
-	
 };
 
 template<typename D>
@@ -250,9 +243,6 @@ class DirectedGraph
 		// count the number of edges (SLOW)
 		size_t countEdges() const;
 		
-		// print a node using ostream
-		void printVertex(const LinearNumKey& key) const;
-		
 		// validate the graph, looking for inconsistent links
 		template<class Functor>
 		void validate(Functor dataChecker);
@@ -281,15 +271,7 @@ class DirectedGraph
 		void makeDistanceMap(const VertexPath& path,
 				std::map<LinearNumKey, int>& distanceMap) const;
 
-		// Iteratively visit each node
-		template<class Functor>
-		void iterativeVisit(Functor visitor);
-		
-		template<class Functor>
-		void outputVertexConnectivity(Functor visitor) const;
-		
 	private:
-	
 		// Extract the shortest path between two vertices
 		void extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path);
 

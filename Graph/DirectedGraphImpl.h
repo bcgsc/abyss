@@ -1,9 +1,6 @@
 #include "DirectedGraph.h"
 #include "ContigNode.h"
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib> // for exit
-#include <iostream>
 
 namespace opt {
 	extern unsigned k;
@@ -28,13 +25,7 @@ void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse)
 	
 	// Check if this edge already exists
 	for(typename EdgeCollection::const_iterator edgeIter = m_edges[dir].begin(); edgeIter != m_edges[dir].end(); ++edgeIter)
-	{
-		if(*edgeIter == data)
-		{
-			std::cout << "Warning, attempted to add duplicate edge (" << m_key << ") -> " << pNode->m_key << "," << dir << "," << reverse << "\n";
-			return;
-		}
-	}
+		assert(!(*edgeIter == data));
 	m_edges[dir].push_back(data);
 }
 
@@ -152,26 +143,6 @@ bool Vertex<K,D>::detectSimpleCycle()
 	return false;
 }
 	
-template<typename K, typename D>
-void Vertex<K,D>::printLinks(const EdgeCollection& collection) const
-{
-	for(EdgeCollectionConstIter iter = collection.begin(); iter != collection.end(); ++iter)
-	{
-		std::cout << iter->pVertex->m_key << "(" << iter->reverse << ") ";
-	}
-}
-
-template<typename K, typename D>
-void Vertex<K,D>::printEdges() const
-{
-	for(size_t idx = 0; idx <= 1; ++idx)
-	{
-		printf("Dir(%zu): ",  idx);
-		printLinks(m_edges[idx]);
-		printf("\n");
-	}
-}
-
 //
 // Graph Implementation
 //
@@ -218,13 +189,7 @@ typename DirectedGraph<D>::VertexType* DirectedGraph<D>::addVertex(const LinearN
 template<typename D>
 typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key) const
 {
-	// Look up the key in the vertex table
-	if(key >= m_vertexTable.size())
-	{
-		std::cerr << "Vertex key is invalid in find! (" << key << ")\n";
-		assert(false);
-	}
-	
+	assert(key < m_vertexTable.size());
 	return m_vertexTable[key];
 }
 
@@ -238,21 +203,6 @@ size_t DirectedGraph<D>::countEdges() const
 		sum += (*iter)->countEdges();
 	}
 	return sum;
-}
-
-// Print out a node
-template<typename D>
-void DirectedGraph<D>::printVertex(const LinearNumKey& key) const
-{
-	// find the vertex
-	VertexType* pVertex = findVertex(key);
-	
-	// should not be null
-	assert(pVertex != NULL);
-	
-	// Print the vertex's key
-	std::cout << "Vertex key: " << pVertex->m_key << std::endl;
-	pVertex->printEdges();
 }
 
 //
@@ -282,11 +232,7 @@ size_t DirectedGraph<D>::reducePaired(ResolveFunctor& resolver)
 					stop = true;
 				}
 			}
-			
-			if(!merged)
-			{
-				printf("***** COULD NOT MERGE %s *****\n", iter->first.c_str());
-			}
+			assert(merged);
 		}
 	}
 
@@ -315,9 +261,6 @@ size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
 			// Check if this direction can be merged
 			if(currEdges.size() == 1)
 			{
-				//printf("attempting merge for %s\n", pVertex->m_key.c_str());
-				//pVertex->printEdges();
-				
 				// Get the vertex to merge with
 				
 				// This statement is only valid because size == 1
@@ -390,13 +333,6 @@ bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extD
 	// ---SENSE---> <---SENSE = FLIP
 	// ----SENSE---> <---ANTISENSE = OK
 	
-	/*
-	printf("trying to append %s to %s (%d %d)\n", pParent->m_key.c_str(), pChild->m_key.c_str(), parentsDir, parentsReverse);
-	printf("pre merge\n");
-	printVertex(pParent->m_key);
-	printVertex(pChild->m_key);
-	*/
-	
 	LinearNumKey parentKey = pParent->m_key;
 	LinearNumKey childKey = pChild->m_key;
 	
@@ -454,8 +390,6 @@ bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extD
 	{
 		// If the child is opposite complement of the parent, flip the reverse flag for the add
 		bool newEdgeReversed =  parentsReverse != ceIter->reverse;
-		//printf("Parent rev: %d Child rev: %d\n", parentEdge->second.reverse, ceIter->second.reverse);
-		//printf("adding edge from %s to %s in dir %d with comp %d\n", pParent->m_key.c_str(), ceIter->first->m_key.c_str(), parentsDir, newEdgeReversed);
 		pParent->addEdge(ceIter->pVertex, parentsDir, newEdgeReversed);
 		
 		// compute the directionality of the return edge
@@ -474,14 +408,6 @@ bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extD
 		// remove the vertex and update all the links to point to the merged node
 		removeVertex(pChild);
 	}
-	
-	/*
-	printf("post merge\n");
-	printVertex(pParent->m_key);
-	//printVertex(pPartner->m_key);	
-	*/
-	
-	// merged, return true
 	return true;
 }
 
@@ -489,7 +415,6 @@ template<typename D>
 void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 {
 	const LinearNumKey& key = pVertex->m_key;
-	std::cout << "Removing " << key << "\n";
 
 	// Update the links of this vertex to point to the merged vertex
 	for(size_t dirIdx = 0; dirIdx < NUM_DIRECTIONS; ++dirIdx)
@@ -501,9 +426,6 @@ void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 			extDirection vertexToChildDir = (extDirection)dirIdx;
 			extDirection expectedRemoveDir = (vertexIter->reverse) ? vertexToChildDir : !vertexToChildDir;
 			bool expectedRemoveReverse = vertexIter->reverse;
-			
-			//printVertex(vertexIter->pVertex->m_key);
-			//printf("Removing %s from %s in dir %d reverseness (%d)\n", key.c_str(), vertexIter->pVertex->m_key.c_str(), expectedRemoveDir, vertexIter->reverse);
 			vertexIter->pVertex->removeEdge(pVertex, expectedRemoveDir, expectedRemoveReverse);
 		}
 	}
@@ -550,31 +472,13 @@ void DirectedGraph<D>::validate(Functor dataChecker)
 				bool found;
 				typename VertexType::EdgeCollectionIter partnerEdge = pPartner->getEdge(pVertex, expectedPartnersDir, expectedParentsReverse, found);
 				
-				if(!found)
-				{
-					printf("FAILED CONSISTENCY CHECK BETWEEN %s and %s (partner edge not found)\n", pVertex->m_key.c_str(), pPartner->m_key.c_str());
-					exit(1);
-				}
-				
-				
-				// ensure the reverse flags are the same
-				if(edgeIter->reverse != partnerEdge->reverse)
-				{
-					printf("FAILED CONSISTENCY CHECK BETWEEN %s and %s (reverse flags not the same)\n", pVertex->m_key.c_str(), pPartner->m_key.c_str());
-					exit(1);	
-				}
-				
+				assert(found);
+				assert(edgeIter->reverse == partnerEdge->reverse)
 				// check that the sequences have the correct overlap
-				if(!dataChecker.check(pVertex->m_data, pPartner->m_data, currDir, edgeIter->reverse))
-				{
-					printf("FAILED CONSISTENCY CHECK BETWEEN %s and %s (data not consistent)\n", pVertex->m_key.c_str(), pPartner->m_key.c_str());
-					exit(1);	
-				}
+				assert(dataChecker.check(pVertex->m_data, pPartner->m_data, currDir, edgeIter->reverse));
 			}
 		}
 	}
-	
-	printf("Graph validated\n");
 }
 
 
@@ -588,10 +492,7 @@ void DirectedGraph<D>::generateComponents(VertexType* pVertex,
 	
 	for(typename VertexType::EdgeCollectionConstIter iter = edgeCollection.begin(); iter != edgeCollection.end(); ++iter)
 	{
-		printf("Generating component: \n");
 		// explore down this branch until maxCost is hit, accumulating all the vertices
-			
-		// start the branch
 		VertexComponent newComp;
 		newComp.first = iter->pVertex->m_key;
 		outComponents.push_back(newComp);
@@ -630,29 +531,6 @@ void DirectedGraph<D>::accumulateVertices(VertexType* pVertex,
 	}
 }
 
-template<typename D>
-template<class Functor>
-void DirectedGraph<D>::iterativeVisit(Functor visitor)
-{
-	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
-	{
-		visitor.visit((*iter)->m_key, (*iter)->m_data);
-	}
-}
-
-template<typename D>
-template<class Functor>
-void DirectedGraph<D>::outputVertexConnectivity(Functor visitor) const
-{
-	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
-	{
-		printf("Vertex %s\n", iter->first.c_str());
-		iter->second->printEdges();
-		printf("Paired contigs: ");
-		visitor.visit(iter->first, iter->second->m_data);
-	}
-}
-
 //
 // TODO: Move this logic out of this class, its way too specific
 //
@@ -662,16 +540,8 @@ bool DirectedGraph<D>::mergePath(const LinearNumKey& key1, const LinearNumKey& k
 {
 	VertexType* pParent = findVertex(key1);
 	VertexType* pChild = findVertex(key2);
-
-	std::cout << "Path merging " << key1 << " into " << key2 << std::endl;
-
-	//printVertex(key1);
-	//printVertex(key2);
-	
 	EdgeDescription parentEdgeDesc = pParent->findUniqueEdgeInDir(key2, parentDir);
 	assert(merge(pParent, pChild, parentEdgeDesc.dir, parentEdgeDesc.reverse, removeChild, usableChild, dataMerger));
-	
-	//printVertex(key1);
 	return true;
 }
 
@@ -737,7 +607,6 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 				{
 					shortestPathData.distanceMap[pAdjVertex] = shortestPathData.distanceMap[pCurrVertex] + cost;
 					shortestPathData.previousMap[pAdjVertex] = pCurrVertex;
-					//printf("Setting prev map %s -> %s\n", pAdjVertex->m_key.c_str(), pCurrVertex->m_key.c_str());
 				}
 			}
 		}
@@ -862,8 +731,6 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
                 bool constraintViolated = false;
                 for(typename KeyConstraintMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
                 {
-                        //std::cout << "a " << cIter->second << " , " << (int)newLength << " result " << (cIter->second < (int)newLength) << "\n";
-                	 	//if(cIter->second.distance < (int)newLength)
                 		if(!cIter->second.isConstraintPossible(newLength))
                         {
                                 //this constraint is violated, the branch will be explored no further
@@ -876,8 +743,6 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
                 {
                        continue;
                 }
-
-                //printf("path length: %zu, num contraints: %zu\n", newLength, newConstraints.size());
 
                 // recurse
 				if (!ConstrainedDFS(pNextVertex, relativeDir,
