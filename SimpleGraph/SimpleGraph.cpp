@@ -423,7 +423,12 @@ static void handleEstimate(
 			solIter = solutions.erase(solIter);
 	}
 
-	vout << "Solutions: " << solutions.size() << '\n';
+	vout << "Solutions: " << solutions.size();
+	if ((unsigned)numVisited >= opt::maxCost)
+		vout << " (too complex)";
+	if (numPossiblePaths >= (unsigned)maxNumPaths)
+		vout << " (too many solutions)";
+	vout << '\n';
 
 	SimpleContigGraph::FeasiblePaths::iterator bestSol
 		= solutions.end();

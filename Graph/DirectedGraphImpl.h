@@ -790,16 +790,8 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
 			superPaths, 0, maxNumPaths, maxCompCost,
 			compCost);
-    // was the limit hit?
-    if (compCost >= maxCompCost) {
-    	// Remove paths, the search did not complete
-		// @todo Not thread safe. cerr should be locked.
-		static bool warned
-			= std::cerr << "Computational limit (" << compCost << ")"
-			" exceeded for " << ContigNode(sourceKey, dir) << '\n';
-		(void)warned;
+    if (compCost >= maxCompCost)
     	superPaths.clear();
-    }
     return !superPaths.empty();
 }
 
