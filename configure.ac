@@ -111,6 +111,12 @@ AC_CHECK_HEADERS([ \
 	unordered_set tr1/unordered_set ext/hash_set \
 ])
 
+# Check for OpenMP.
+AC_OPENMP
+if test -z $OPENMP_CXXFLAGS; then
+	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
+fi
+
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 

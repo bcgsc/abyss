@@ -144,12 +144,14 @@ static void extendPaths(LinearNumKey id,
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
-	pair<ContigPathMap::iterator, bool> inserted
-		= out.insert(*pathIt);
+	pair<ContigPathMap::iterator, bool> inserted;
+	#pragma omp critical(out)
+	inserted = out.insert(*pathIt);
 	assert(inserted.second);
 	ContigPath& path = inserted.first->second;
 
 	if (gDebugPrint)
+		#pragma omp critical(cout)
 		cout << "\n* " << ContigNode(id, false) << '\n'
 			<< '\t' << path << '\n';
 
@@ -181,6 +183,7 @@ static void extendPaths(LinearNumKey id,
 
 		path.swap(consensus);
 		if (gDebugPrint)
+			#pragma omp critical(cout)
 			cout << '\t' << path << '\n';
 	}
 }
@@ -261,6 +264,19 @@ static ContigPathMap readPaths(const string& filePath)
 	return paths;
 }
 
+#if _OPENMP
+/** Store it in out and increment it.
+ * @return true if out != last
+ */
+template<class T>
+bool atomicInc(T& it, T last, T& out)
+{
+	#pragma omp critical(atomicInc)
+	out = it == last ? it : it++;
+	return out != last;
+}
+#endif
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -310,9 +326,17 @@ int main(int argc, char** argv)
 	removeRepeats(originalPathMap);
 
 	ContigPathMap resultsPathMap;
+#if _OPENMP
+	ContigPathMap::iterator sharedIt = originalPathMap.begin();
+	#pragma omp parallel
+	for (ContigPathMap::iterator it;
+			atomicInc(sharedIt, originalPathMap.end(), it);)
+		extendPaths(it->first, originalPathMap, resultsPathMap);
+#else
 	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
 			iter != originalPathMap.end(); ++iter)
 		extendPaths(iter->first, originalPathMap, resultsPathMap);
+#endif
 	originalPathMap.clear();
 	if (gDebugPrint)
 		cout << '\n';
@@ -502,6 +526,7 @@ static ContigPath align(
 		const ContigNode& pivot)
 {
 	if (gDebugPrint)
+		#pragma omp critical(cout)
 		cout << pivot << '\t' << path2 << '\n';
 
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
@@ -523,6 +548,7 @@ static ContigPath align(
 	}
 
 	if (gDebugPrint)
+		#pragma omp critical(cout)
 		cout << "\tinvalid\n";
 	return consensus;
 }
