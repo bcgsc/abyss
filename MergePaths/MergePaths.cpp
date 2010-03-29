@@ -21,6 +21,9 @@
 #include <set>
 #include <sstream>
 #include <string>
+#if _OPENMP
+# include <omp.h>
+#endif
 
 using namespace std;
 
@@ -40,6 +43,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
+"  -j, --threads=N       use N parallel threads\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -49,15 +53,17 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static unsigned k;
 	static string out;
+	static int threads;
 }
 
-static const char shortopts[] = "k:o:v";
+static const char shortopts[] = "j:k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -285,6 +291,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
 			case 'v': opt::verbose++; break;
@@ -317,6 +324,11 @@ int main(int argc, char** argv)
 	}
 
 	gDebugPrint = opt::verbose > 1;
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	g_contigLengths = readContigLengths(argv[optind++]);
 	g_contigIDs.lock();
