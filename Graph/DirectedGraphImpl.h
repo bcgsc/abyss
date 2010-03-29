@@ -29,9 +29,6 @@ void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse)
 	m_edges[dir].push_back(data);
 }
 
-//
-//
-//
 template<typename K, typename D>
 void Vertex<K,D>::removeEdge(VertexType* pNode, extDirection dir, bool reverse)
 {
@@ -44,9 +41,6 @@ void Vertex<K,D>::removeEdge(VertexType* pNode, extDirection dir, bool reverse)
 	 m_edges[dir].erase(edgeIter); // slow, resizes vector but memory efficiency is most important
 }
  
-//
-//
-//
 template<typename K, typename D>
 typename Vertex<K,D>::EdgeCollectionIter Vertex<K,D>::getEdge(VertexType* pNode, extDirection dir, bool reverse, bool& found)
 {
@@ -71,9 +65,7 @@ typename Vertex<K,D>::EdgeCollectionIter Vertex<K,D>::getEdge(VertexType* pNode,
 	return edgeIter;
 }
 
-//
 // Returns true if the described edge is the only edge in the direction
-//
 template<typename K, typename D>
 bool Vertex<K,D>::isEdgeUnique(VertexType* pNode, extDirection dir, bool reverse)
 {
@@ -86,9 +78,6 @@ bool Vertex<K,D>::isEdgeUnique(VertexType* pNode, extDirection dir, bool reverse
 	return (numEdges(dir) == 1);
 }
 
-//
-//
-//
 template<typename K, typename D>
 EdgeDescription Vertex<K,D>::findUniqueEdge(const K& key)
 {
@@ -126,9 +115,6 @@ bool Vertex<K,D>::edgeExists(const K& key, extDirection dir, bool reverse)
 	return false;
 }
 
-//
-//
-//
 template<typename K, typename D>
 bool Vertex<K,D>::detectSimpleCycle()
 {
@@ -143,9 +129,7 @@ bool Vertex<K,D>::detectSimpleCycle()
 	return false;
 }
 	
-//
 // Graph Implementation
-//
 template<typename D>
 DirectedGraph<D>::~DirectedGraph()
 {
@@ -205,9 +189,7 @@ size_t DirectedGraph<D>::countEdges() const
 	return sum;
 }
 
-//
 // Attempt to reduce the data set using paired reads
-//
 template<typename D>
 template<class ResolveFunctor>
 size_t DirectedGraph<D>::reducePaired(ResolveFunctor& resolver)
@@ -240,9 +222,7 @@ size_t DirectedGraph<D>::reducePaired(ResolveFunctor& resolver)
 		
 }
 
-//
 // Remove transitivity in the data set by merging and 
-//
 template<typename D>
 template<class Functor>
 size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
@@ -295,9 +275,6 @@ size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
 	return numMerged;
 }
 
-//
-//
-//
 template<typename D>
 template<class Functor>
 bool DirectedGraph<D>::mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger)
@@ -321,9 +298,7 @@ bool DirectedGraph<D>::mergeWrapper(const LinearNumKey& key1, const LinearNumKey
 	return merge(pParent, pChild, edgeDesc.dir, edgeDesc.reverse, removeChild, dataMerger);
 }
 
-//
 // Append a copy of the child vertex into the parent and update all the links accordingly
-//
 template<typename D>
 template<class Functor>
 bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger)
@@ -438,9 +413,6 @@ void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 	m_vertexTable[key] = NULL;
 }
 
-//
-//
-//
 template<typename D>
 size_t DirectedGraph<D>::getDegree(const LinearNumKey& key, extDirection dir)
 {
@@ -531,9 +503,7 @@ void DirectedGraph<D>::accumulateVertices(VertexType* pVertex,
 	}
 }
 
-//
 // TODO: Move this logic out of this class, its way too specific
-//
 template<typename D>
 template<class MergerFunctor>
 bool DirectedGraph<D>::mergePath(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger)
@@ -559,11 +529,9 @@ bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1,
 	return false;
 }
 
-//
 // Compute the single-source shortest path distance to all nodes using dijkstra's algorithm
 // Note that this does not consider direction so it is unsuitable to compute the djikstra shortest path if you
 // are travelling in a particular direction at all times
-//
 template<typename D>
 void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 		ShortestPathData& shortestPathData)
@@ -756,9 +724,7 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 	return true;
 }
 
-//
 // Return the minimum possible path length that will contain every vertex in the set
-//
 template<typename D>
 size_t  DirectedGraph<D>::getMinPathLength(
 		const VertexPtrSet& vertexSet)
@@ -785,9 +751,6 @@ size_t  DirectedGraph<D>::getMinPathLength(
 	return pathLength;
 }
 
-//
-//
-//
 template<typename D>
 void DirectedGraph<D>::extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path)
 {
