@@ -790,9 +790,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
 			superPaths, 0, maxNumPaths, maxCompCost,
 			compCost);
-    if (compCost >= maxCompCost)
-    	superPaths.clear();
-    return !superPaths.empty();
+	return compCost >= maxCompCost ? false : !superPaths.empty();
 }
 
 /** Find paths through the graph that satisfy the constraints.
