@@ -110,6 +110,7 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 		assert(id == pContigs->size());
 		(void)id;
 
+		assert(seq.length() > (unsigned)opt::overlap);
 		Kmer seql(seq.substr(seq.length() - opt::overlap,
 				opt::overlap));
 		Kmer seqr(seq.substr(0, opt::overlap));
