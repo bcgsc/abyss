@@ -79,7 +79,7 @@ struct Overlap {
 		return out <<
 			'"' << o.firstID << (o.firstIsRC ? '-' : '+') << "\" -> "
 			"\"" << o.secondID << (o.secondIsRC ? '-' : '+') << "\""
-			" [label = " << o.overlap << "];";
+			" [label=" << o.overlap << "];";
 	}
 };
 
