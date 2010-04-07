@@ -402,40 +402,73 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2,
 		oiterator out)
 {
-	(void)last1;
 	assert(it1 != last1);
 	assert(it1->ambiguous());
 	assert(it1 + 1 != last1);
 	assert(it2 != last2);
 
-	unsigned ambiguous = it1->length();
-	ContigNode needle = *++it1;
-	assert(!needle.ambiguous());
-	iterator it = find(it2, last2, needle);
-	unsigned nmatches = count(it, last2, needle);
+	unsigned ambiguous1 = it1->length();
+	iterator it1e = ++it1;
+	for (iterator it = it1; it != last1; ++it) {
+		iterator it2e = find(it2, last2, *it);
+		if (it2e != last2) {
+			it1e = it;
+			break;
+		}
+	}
+	assert(!it1e->ambiguous());
+	iterator it2e = find(it2, last2, *it1e);
+	unsigned nmatches = count(it2e, last2, *it1e);
 
 	vector<iterator> matches;
 	switch (nmatches) {
 	  case 0: {
 		copy(it2, last2, out);
-		unsigned unambiguous = accumulate(it2, last2, 0, addLength);
+		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
+		it1 = it1e;
 		it2 = last2;
-		assert(ambiguous >= unambiguous);
-		if (ambiguous > unambiguous)
-			*out++ = ContigNode(ambiguous - unambiguous);
+		assert(ambiguous1 >= unambiguous2);
+		if (ambiguous1 > unambiguous2)
+			*out++ = ContigNode(ambiguous1 - unambiguous2);
 		break;
 	  }
 	  case 1:
-		copy(it2, it, out);
-		it2 = it;
+		if (it1 == it1e) {
+			copy(it2, it2e, out);
+			it2 = it2e;
+		} else {
+			assert(it2e != it2);
+			iterator it2a = it2e - 1;
+			assert(it2a->ambiguous());
+
+			unsigned ambiguous2 = it2a->length();
+			unsigned unambiguous1 = accumulate(it1, it1e,
+					0, addLength);
+			assert(ambiguous2 >= unambiguous1);
+
+			unsigned unambiguous2 = accumulate(it2, it2a,
+					0, addLength);
+			assert(ambiguous1 >= unambiguous2);
+
+			unsigned n = min(ambiguous2 - unambiguous1,
+					ambiguous1 - unambiguous2);
+
+			out = copy(it2, it2a, out);
+			if (n > 0)
+				*out++ = ContigNode(n);
+			out = copy(it1, it1e, out);
+			it1 = it1e;
+			it2 = it2e;
+		}
 		break;
 	  default:
+		assert(it1 == it1e);
 		matches.reserve(nmatches);
-		for (it = find_if(it, last2,
-					bind2nd(equal_to<ContigNode>(), needle));
+		for (iterator it = find_if(it2e, last2,
+					bind2nd(equal_to<ContigNode>(), *it1e));
 				it != last2;
 				it = find_if(it+1, last2,
-					bind2nd(equal_to<ContigNode>(), needle)))
+					bind2nd(equal_to<ContigNode>(), *it1e)))
 			matches.push_back(it);
 		assert(matches.size() == nmatches);
 	}
