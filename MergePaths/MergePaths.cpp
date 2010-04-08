@@ -407,9 +407,12 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	assert(it1 + 1 != last1);
 	assert(it2 != last2);
 
+	// Find a seed for the alignment.
 	unsigned ambiguous1 = it1->length();
 	iterator it1e = ++it1;
 	for (iterator it = it1; it != last1; ++it) {
+		if (it->ambiguous())
+			continue;
 		iterator it2e = find(it2, last2, *it);
 		if (it2e != last2) {
 			it1e = it;
@@ -423,23 +426,34 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	vector<iterator> matches;
 	switch (nmatches) {
 	  case 0: {
-		copy(it2, last2, out);
+		// Unable to find the seed in path2. Check whether the
+		// remainder of path2 fits entirely within the gap of path1.
 		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
+		if (ambiguous1 < unambiguous2) {
+			// The size of the seqeuence in path2 is larger than the
+			// gap in path1. No alignment.
+			return matches;
+		}
+		copy(it2, last2, out);
 		it1 = it1e;
 		it2 = last2;
-		assert(ambiguous1 >= unambiguous2);
 		if (ambiguous1 > unambiguous2)
 			*out++ = ContigNode(ambiguous1 - unambiguous2);
 		break;
 	  }
 	  case 1:
+		// The seed occurs exactly once in path2.
 		if (it1 == it1e) {
+			// path2 completely fills the gap in path1.
 			copy(it2, it2e, out);
 			it2 = it2e;
 		} else {
-			assert(it2e != it2);
+			// The gaps of path1 and path2 overlap.
 			iterator it2a = it2e - 1;
-			assert(it2a->ambiguous());
+			if (it2e == it2 || !it2a->ambiguous()) {
+				// The two paths do not agree. No alignment.
+				return matches;
+			}
 
 			unsigned ambiguous2 = it2a->length();
 			unsigned unambiguous1 = accumulate(it1, it1e,
@@ -462,6 +476,8 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 		}
 		break;
 	  default:
+		// The seed occurs more than once in path2. Return all the
+		// matches so that our caller may iterate over them.
 		assert(it1 == it1e);
 		matches.reserve(nmatches);
 		for (iterator it = find_if(it2e, last2,
