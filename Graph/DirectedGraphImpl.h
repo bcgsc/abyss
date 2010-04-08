@@ -1,6 +1,7 @@
 #include "DirectedGraph.h"
 #include "ContigNode.h"
 #include <algorithm>
+#include <climits> // for INT_MIN
 
 namespace opt {
 	extern unsigned k;
@@ -777,6 +778,10 @@ size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path)
 	return len;
 }
 
+/** Return a map of contig IDs to their distance along this path.
+ * Repeat contigs, which would have more than one position, are not
+ * represented in this map.
+ */
 template<typename D>
 void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
 		std::map<LinearNumKey, int>& distanceMap) const
@@ -784,11 +789,23 @@ void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
 	// the path distance to a node is the distance that walks through all the nodes leading to it
 	// the first node in a path therefore has a distance of 0 by def
 	size_t distance = 0;
-	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end(); ++iter)
-	{
-		distanceMap[iter->key] = distance;
+	for (typename VertexPath::const_iterator iter = path.begin();
+			iter != path.end(); ++iter) {
+		bool inserted = distanceMap.insert(
+				make_pair(iter->key, distance)).second;
+		if (!inserted) {
+			// Mark this contig as a repeat.
+			distanceMap[iter->key] = INT_MIN;
+		}
 		int currCost = costFunctor.cost(getDataForVertex(iter->key));
 		distance += currCost;		
 	}
-	return;	
+
+	// Remove the repeats.
+	for (std::map<LinearNumKey, int>::iterator it
+			= distanceMap.begin(); it != distanceMap.end();)
+		if (it->second == INT_MIN)
+			distanceMap.erase(it++);
+		else
+			++it;
 }

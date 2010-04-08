@@ -398,7 +398,13 @@ static void handleEstimate(
 
 			map<LinearNumKey, int>::iterator dmIter
 				= distanceMap.find(iter->contig.id());
-			assert(dmIter != distanceMap.end());
+			if (dmIter == distanceMap.end()) {
+				// This contig is a repeat.
+				ignoredCount++;
+				vout << "ignored\n";
+				continue;
+			}
+
 			// translate distance by -overlap to match
 			// coordinate space used by the estimate
 			int actualDistance = dmIter->second - opt::k + 1;
@@ -450,11 +456,10 @@ static void handleEstimate(
 				continue;
 			map<LinearNumKey, int>::iterator dmIter
 				= distanceMap.find(iter->contig.id());
-			if (dmIter != distanceMap.end()) {
-				int actualDistance = dmIter->second - opt::k + 1;
-				int diff = actualDistance - iter->distance;
-				sumDiff += abs(diff);
-			}
+			assert(dmIter != distanceMap.end());
+			int actualDistance = dmIter->second - opt::k + 1;
+			int diff = actualDistance - iter->distance;
+			sumDiff += abs(diff);
 		}
 
 		if (sumDiff < minDiff) {
