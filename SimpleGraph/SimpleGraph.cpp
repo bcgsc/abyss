@@ -289,7 +289,6 @@ static ContigPath constructAmbiguousPath(
 		vspath.push_back(common_path_node);
 	}
 	assert(longestSuffix > 0);
-	reverse(vspath.begin(), vspath.end());
 
 	// Calculate the length of the longest path.
 	unsigned maxLen = 0;
@@ -311,7 +310,7 @@ static ContigPath constructAmbiguousPath(
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
 	out.push_back(ContigNode(numN));
-	out.insert(out.end(), vspath.begin(), vspath.end());
+	out.insert(out.end(), vspath.rbegin(), vspath.rend());
 	return out;
 }
 
