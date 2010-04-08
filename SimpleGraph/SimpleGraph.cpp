@@ -288,7 +288,6 @@ static ContigPath constructAmbiguousPath(
 			break;
 		vspath.push_back(common_path_node);
 	}
-	assert(longestSuffix > 0);
 
 	// Calculate the length of the longest path.
 	unsigned maxLen = 0;
@@ -309,8 +308,10 @@ static ContigPath constructAmbiguousPath(
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
-	out.push_back(ContigNode(numN));
-	out.insert(out.end(), vspath.rbegin(), vspath.rend());
+	if (longestSuffix > 0) {
+		out.push_back(ContigNode(numN));
+		out.insert(out.end(), vspath.rbegin(), vspath.rend());
+	}
 	return out;
 }
 
@@ -490,10 +491,13 @@ static void handleEstimate(
 	} else if (solutions.size() > 1) {
 		ContigPath path
 			= constructAmbiguousPath(pContigGraph, solutions);
-		vout << path << '\n';
-		if (opt::scaffold) {
-			out.insert(out.end(), path.begin(), path.end());
-			g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
+		if (!path.empty()) {
+			vout << path << '\n';
+			if (opt::scaffold) {
+				out.insert(out.end(), path.begin(), path.end());
+				g_minNumPairsUsed
+					= min(g_minNumPairsUsed, minNumPairs);
+			}
 		}
 		stats.multiEnd++;
 	} else {
@@ -504,6 +508,8 @@ static void handleEstimate(
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}
 	cout << vout_ss.str();
+	if (!out.empty())
+		assert(!out.back().ambiguous());
 	pthread_mutex_unlock(&coutMutex);
 }
 
