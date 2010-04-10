@@ -458,11 +458,15 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 			unsigned ambiguous2 = it2a->length();
 			unsigned unambiguous1 = accumulate(it1, it1e,
 					0, addLength);
-			assert(ambiguous2 >= unambiguous1);
-
 			unsigned unambiguous2 = accumulate(it2, it2a,
 					0, addLength);
-			assert(ambiguous1 >= unambiguous2);
+			if (ambiguous1 < unambiguous2
+					|| ambiguous2 < unambiguous1) {
+				// Two gaps overlap and either of the gaps is smaller
+				// than the unambiguous sequence that overlaps the
+				// gap. No alignment.
+				return matches;
+			}
 
 			unsigned n = min(ambiguous2 - unambiguous1,
 					ambiguous1 - unambiguous2);
@@ -478,7 +482,12 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	  default:
 		// The seed occurs more than once in path2. Return all the
 		// matches so that our caller may iterate over them.
-		assert(it1 == it1e);
+		if (it1 != it1e) {
+			// The gaps overlap and the seed is found multiple times
+			// in path2. Give up. This case could be handled better.
+			return matches;
+		}
+
 		matches.reserve(nmatches);
 		for (iterator it = find_if(it2e, last2,
 					bind2nd(equal_to<ContigNode>(), *it1e));
