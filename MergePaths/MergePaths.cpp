@@ -194,6 +194,13 @@ static void extendPaths(LinearNumKey id,
 	}
 }
 
+/** Return true if the contigs are equal or both are ambiguous. */
+static bool equalOrBothAmbiguos(const ContigNode& a,
+		const ContigNode& b)
+{
+	return a == b || (a.ambiguous() && b.ambiguous());
+}
+
 /** Remove paths subsumed by the specified path. */
 static void removeSubsumedPaths(LinearNumKey id,
 		ContigPathMap& paths)
@@ -217,7 +224,9 @@ static void removeSubsumedPaths(LinearNumKey id,
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
-		assert(consensus == path);
+		assert(consensus.size() == path.size());
+		assert(equal(consensus.begin(), consensus.end(),
+					path.begin(), equalOrBothAmbiguos));
 		paths.erase(path2It);
 	}
 }
