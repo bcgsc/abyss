@@ -400,6 +400,114 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
 	return addend + contig.length() - opt::k + 1;
 }
 
+/** Align the ambiguous region [it1, last1) to [it2, last2) using it1e
+ * as the seed of the alignment.
+ * The end of the alignment is returned in it1 and it2 if there is
+ * exactly one alignment. If there is more than one possible
+ * alignment, the alignment is returned in it1 and it2s.
+ * @return true if an alignment is found
+ */
+template <class iterator, class oiterator>
+static bool alignAtSeed(
+		iterator& it1, iterator it1e, iterator last1,
+		iterator& it2, iterator last2,
+		vector<iterator>& it2s,
+		oiterator out)
+{
+	assert(it1 != last1);
+	assert(it1->ambiguous());
+	assert(!it1e->ambiguous());
+	assert(it2 != last2);
+	assert(it2s.empty());
+
+	iterator it1b = it1 + 1;
+	assert(it1b != last1);
+	assert(!it1b->ambiguous());
+
+	// Find a seed for the alignment.
+	iterator it2e = find(it2, last2, *it1e);
+	unsigned nmatches = count(it2e, last2, *it1e);
+
+	switch (nmatches) {
+	  case 0: {
+		// Unable to find the seed in path2. Check whether the
+		// remainder of path2 fits entirely within the gap of path1.
+		unsigned ambiguous1 = it1->length();
+		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
+		if (ambiguous1 < unambiguous2) {
+			// The size of the seqeuence in path2 is larger than the
+			// gap in path1. No alignment.
+			return false;
+		}
+		copy(it2, last2, out);
+		it1 = it1e;
+		it2 = last2;
+		if (ambiguous1 > unambiguous2)
+			*out++ = ContigNode(ambiguous1 - unambiguous2);
+		break;
+	  }
+	  case 1:
+		// The seed occurs exactly once in path2.
+		if (it1b == it1e) {
+			// path2 completely fills the gap in path1.
+			copy(it2, it2e, out);
+			it1 = it1e;
+			it2 = it2e;
+		} else {
+			// The gaps of path1 and path2 overlap.
+			iterator it2a = it2e - 1;
+			if (it2e == it2 || !it2a->ambiguous()) {
+				// The two paths do not agree. No alignment.
+				return false;
+			}
+
+			unsigned ambiguous1 = it1->length();
+			unsigned ambiguous2 = it2a->length();
+			unsigned unambiguous1 = accumulate(it1b, it1e,
+					0, addLength);
+			unsigned unambiguous2 = accumulate(it2, it2a,
+					0, addLength);
+			if (ambiguous1 < unambiguous2
+					|| ambiguous2 < unambiguous1) {
+				// Two gaps overlap and either of the gaps is smaller
+				// than the unambiguous sequence that overlaps the
+				// gap. No alignment.
+				return false;
+			}
+
+			unsigned n = min(ambiguous2 - unambiguous1,
+					ambiguous1 - unambiguous2);
+
+			out = copy(it2, it2a, out);
+			if (n > 0)
+				*out++ = ContigNode(n);
+			out = copy(it1b, it1e, out);
+			it1 = it1e;
+			it2 = it2e;
+		}
+		break;
+	  default:
+		// The seed occurs more than once in path2. Return all the
+		// matches so that our caller may iterate over them.
+		if (it1b != it1e) {
+			// The gaps overlap and the seed is found multiple times
+			// in path2. Give up. This case could be handled better.
+			return false;
+		}
+
+		it1 = it1e;
+		it2s.reserve(nmatches);
+		for (iterator it = find_if(it2e, last2,
+					bind2nd(equal_to<ContigNode>(), *it1e));
+				it != last2;
+				it = find_if(it+1, last2,
+					bind2nd(equal_to<ContigNode>(), *it1e)))
+			it2s.push_back(it);
+		assert(it2s.size() == nmatches);
+	}
+	return true;
+}
+
 /** Align the ambiguous region [it1, last1) to [it2, last2).
  * The end of the alignment is returned in it1 and it2 if there is
  * exactly one alignment. If there is more than one possible
@@ -416,97 +524,22 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	assert(it1 + 1 != last1);
 	assert(it2 != last2);
 
+	vector<iterator> it2s;
 	// Find a seed for the alignment.
-	unsigned ambiguous1 = it1->length();
-	iterator it1e = ++it1;
-	for (iterator it = it1; it != last1; ++it) {
-		if (it->ambiguous())
+	for (iterator it1e = it1; it1e != last1; ++it1e) {
+		if (it1e->ambiguous())
 			continue;
-		iterator it2e = find(it2, last2, *it);
-		if (it2e != last2) {
-			it1e = it;
-			break;
-		}
+		iterator it2e = find(it2, last2, *it1e);
+		if (it2e == last2)
+			continue;
+		if (alignAtSeed(it1, it1e, last1, it2, last2, it2s, out))
+			return it2s;
 	}
-	assert(!it1e->ambiguous());
-	iterator it2e = find(it2, last2, *it1e);
-	unsigned nmatches = count(it2e, last2, *it1e);
 
-	vector<iterator> matches;
-	switch (nmatches) {
-	  case 0: {
-		// Unable to find the seed in path2. Check whether the
-		// remainder of path2 fits entirely within the gap of path1.
-		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
-		if (ambiguous1 < unambiguous2) {
-			// The size of the seqeuence in path2 is larger than the
-			// gap in path1. No alignment.
-			return matches;
-		}
-		copy(it2, last2, out);
-		it1 = it1e;
-		it2 = last2;
-		if (ambiguous1 > unambiguous2)
-			*out++ = ContigNode(ambiguous1 - unambiguous2);
-		break;
-	  }
-	  case 1:
-		// The seed occurs exactly once in path2.
-		if (it1 == it1e) {
-			// path2 completely fills the gap in path1.
-			copy(it2, it2e, out);
-			it2 = it2e;
-		} else {
-			// The gaps of path1 and path2 overlap.
-			iterator it2a = it2e - 1;
-			if (it2e == it2 || !it2a->ambiguous()) {
-				// The two paths do not agree. No alignment.
-				return matches;
-			}
-
-			unsigned ambiguous2 = it2a->length();
-			unsigned unambiguous1 = accumulate(it1, it1e,
-					0, addLength);
-			unsigned unambiguous2 = accumulate(it2, it2a,
-					0, addLength);
-			if (ambiguous1 < unambiguous2
-					|| ambiguous2 < unambiguous1) {
-				// Two gaps overlap and either of the gaps is smaller
-				// than the unambiguous sequence that overlaps the
-				// gap. No alignment.
-				return matches;
-			}
-
-			unsigned n = min(ambiguous2 - unambiguous1,
-					ambiguous1 - unambiguous2);
-
-			out = copy(it2, it2a, out);
-			if (n > 0)
-				*out++ = ContigNode(n);
-			out = copy(it1, it1e, out);
-			it1 = it1e;
-			it2 = it2e;
-		}
-		break;
-	  default:
-		// The seed occurs more than once in path2. Return all the
-		// matches so that our caller may iterate over them.
-		if (it1 != it1e) {
-			// The gaps overlap and the seed is found multiple times
-			// in path2. Give up. This case could be handled better.
-			return matches;
-		}
-
-		matches.reserve(nmatches);
-		for (iterator it = find_if(it2e, last2,
-					bind2nd(equal_to<ContigNode>(), *it1e));
-				it != last2;
-				it = find_if(it+1, last2,
-					bind2nd(equal_to<ContigNode>(), *it1e)))
-			matches.push_back(it);
-		assert(matches.size() == nmatches);
-	}
-	return matches;
+	// No valid seeded alignment. Check whether path2 fits entirely
+	// within the gap of path1.
+	alignAtSeed(it1, it1+1, last1, it2, last2, it2s, out);
+	return it2s;
 }
 
 template <class iterator, class oiterator>
