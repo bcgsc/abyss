@@ -72,13 +72,13 @@ static const struct option longopts[] = {
 
 typedef map<LinearNumKey, ContigPath> ContigPathMap;
 
-/** Lengths of contigs. */
+/** Lengths of contigs in k-mer. */
 static vector<unsigned> g_contigLengths;
 
 /** Return the length of this contig in k-mer. */
 unsigned ContigNode::length() const
 {
-	return ambiguous() ? m_id : g_contigLengths.at(id()) - opt::k + 1;
+	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
@@ -252,7 +252,8 @@ static vector<unsigned> readContigLengths(const string& path)
 	while (in >> id >> len) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		(void)g_contigIDs.serial(id);
-		lengths.push_back(len);
+		assert(len >= opt::k);
+		lengths.push_back(len - opt::k + 1);
 	}
 	assert(in.eof());
 	assert(!lengths.empty());
