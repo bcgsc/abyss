@@ -440,8 +440,6 @@ static bool alignAtSeed(
 			return false;
 		}
 		copy(it2, last2, out);
-		it1 = it1e;
-		it2 = last2;
 		if (ambiguous1 > unambiguous2)
 			*out++ = ContigNode(ambiguous1 - unambiguous2);
 		break;
@@ -451,8 +449,6 @@ static bool alignAtSeed(
 		if (it1b == it1e) {
 			// path2 completely fills the gap in path1.
 			copy(it2, it2e, out);
-			it1 = it1e;
-			it2 = it2e;
 		} else {
 			// The gaps of path1 and path2 overlap.
 			iterator it2a = it2e - 1;
@@ -482,8 +478,6 @@ static bool alignAtSeed(
 			if (n > 0)
 				*out++ = ContigNode(n);
 			out = copy(it1b, it1e, out);
-			it1 = it1e;
-			it2 = it2e;
 		}
 		break;
 	  default:
@@ -495,7 +489,6 @@ static bool alignAtSeed(
 			return false;
 		}
 
-		it1 = it1e;
 		it2s.reserve(nmatches);
 		for (iterator it = find_if(it2e, last2,
 					bind2nd(equal_to<ContigNode>(), *it1e));
@@ -505,6 +498,9 @@ static bool alignAtSeed(
 			it2s.push_back(it);
 		assert(it2s.size() == nmatches);
 	}
+	it1 = it1e;
+	if (it2s.empty())
+		it2 = it2e;
 	return true;
 }
 
