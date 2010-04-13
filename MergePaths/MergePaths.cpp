@@ -75,10 +75,10 @@ typedef map<LinearNumKey, ContigPath> ContigPathMap;
 /** Lengths of contigs. */
 static vector<unsigned> g_contigLengths;
 
-/** Return the length of this contig. */
+/** Return the length of this contig in bp. */
 unsigned ContigNode::length() const
 {
-	return ambiguous() ? m_id : g_contigLengths.at(id());
+	return ambiguous() ? m_id + opt::k - 1 : g_contigLengths.at(id());
 }
 
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
@@ -432,7 +432,7 @@ static bool alignAtSeed(
 	  case 0: {
 		// Unable to find the seed in path2. Check whether the
 		// remainder of path2 fits entirely within the gap of path1.
-		unsigned ambiguous1 = it1->length();
+		unsigned ambiguous1 = it1->length() - opt::k + 1;
 		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
 		if (ambiguous1 < unambiguous2) {
 			// The size of the seqeuence in path2 is larger than the
@@ -457,8 +457,8 @@ static bool alignAtSeed(
 				return false;
 			}
 
-			unsigned ambiguous1 = it1->length();
-			unsigned ambiguous2 = it2a->length();
+			unsigned ambiguous1 = it1->length() - opt::k + 1;
+			unsigned ambiguous2 = it2a->length() - opt::k + 1;
 			unsigned unambiguous1 = accumulate(it1b, it1e,
 					0, addLength);
 			unsigned unambiguous2 = accumulate(it2, it2a,
@@ -535,6 +535,7 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	// No valid seeded alignment. Check whether path2 fits entirely
 	// within the gap of path1.
 	alignAtSeed(it1, it1+1, last1, it2, last2, it2s, out);
+	assert(it2s.empty());
 	return it2s;
 }
 
