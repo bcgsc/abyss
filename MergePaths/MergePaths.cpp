@@ -401,6 +401,54 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
 	return addend + contig.length();
 }
 
+/** Align the ambiguous region [it1, it1e) to [it2, it2e) and store
+ * the consensus at out if an alignment is found.
+ * @return true if an alignment is found
+ */
+template <class iterator, class oiterator>
+static bool buildConsensus(iterator it1, iterator it1e,
+		iterator it2, iterator it2e, oiterator out)
+{
+	iterator it1b = it1 + 1;
+	assert(!it1b->ambiguous());
+
+	if (it1b == it1e) {
+		// path2 completely fills the gap in path1.
+		out = copy(it2, it2e, out);
+		return true;
+	}
+
+	// The gaps of path1 and path2 overlap.
+	iterator it2a = it2e - 1;
+	if (it2e == it2 || !it2a->ambiguous()) {
+		// The two paths do not agree. No alignment.
+		return false;
+	}
+
+	unsigned ambiguous1 = it1->length();
+	unsigned ambiguous2 = it2a->length();
+	unsigned unambiguous1 = accumulate(it1b, it1e,
+			0, addLength);
+	unsigned unambiguous2 = accumulate(it2, it2a,
+			0, addLength);
+	if (ambiguous1 < unambiguous2
+			|| ambiguous2 < unambiguous1) {
+		// Two gaps overlap and either of the gaps is smaller
+		// than the unambiguous sequence that overlaps the
+		// gap. No alignment.
+		return false;
+	}
+
+	unsigned n = min(ambiguous2 - unambiguous1,
+			ambiguous1 - unambiguous2);
+
+	out = copy(it2, it2a, out);
+	if (n > 0)
+		*out++ = ContigNode(n);
+	out = copy(it1b, it1e, out);
+	return true;
+}
+
 /** Align the ambiguous region [it1, last1) to [it2, last2) using it1e
  * as the seed of the alignment.
  * The end of the alignment is returned in it1 and it2 if there is
@@ -447,39 +495,8 @@ static bool alignAtSeed(
 	  }
 	  case 1:
 		// The seed occurs exactly once in path2.
-		if (it1b == it1e) {
-			// path2 completely fills the gap in path1.
-			copy(it2, it2e, out);
-		} else {
-			// The gaps of path1 and path2 overlap.
-			iterator it2a = it2e - 1;
-			if (it2e == it2 || !it2a->ambiguous()) {
-				// The two paths do not agree. No alignment.
-				return false;
-			}
-
-			unsigned ambiguous1 = it1->length();
-			unsigned ambiguous2 = it2a->length();
-			unsigned unambiguous1 = accumulate(it1b, it1e,
-					0, addLength);
-			unsigned unambiguous2 = accumulate(it2, it2a,
-					0, addLength);
-			if (ambiguous1 < unambiguous2
-					|| ambiguous2 < unambiguous1) {
-				// Two gaps overlap and either of the gaps is smaller
-				// than the unambiguous sequence that overlaps the
-				// gap. No alignment.
-				return false;
-			}
-
-			unsigned n = min(ambiguous2 - unambiguous1,
-					ambiguous1 - unambiguous2);
-
-			out = copy(it2, it2a, out);
-			if (n > 0)
-				*out++ = ContigNode(n);
-			out = copy(it1b, it1e, out);
-		}
+		if (!buildConsensus(it1, it1e, it2, it2e, out))
+			return false;
 		break;
 	  default:
 		// The seed occurs more than once in path2. Return all the
