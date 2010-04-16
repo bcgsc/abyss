@@ -401,6 +401,34 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
 	return addend + contig.length();
 }
 
+/** Attempt to fill in a gap using the other path and store the
+ * consensus at result if an alignment is found.
+ * @return true if an alignment is found
+ */
+template <class iterator, class oiterator>
+static bool alignCoordinates(iterator& first1, iterator last1,
+		iterator& first2, iterator last2, oiterator result)
+{
+	// Unable to find the seed in path2. Check whether the
+	// remainder of path2 fits entirely within the gap of path1.
+	unsigned ambiguous1 = first1->length();
+	unsigned unambiguous2 = accumulate(first2, last2, 0, addLength);
+	if (ambiguous1 < unambiguous2) {
+		// The size of the seqeuence in path2 is larger than the
+		// gap in path1. No alignment.
+		return false;
+	}
+	result = copy(first2, last2, result);
+	if (ambiguous1 > unambiguous2)
+		*result++ = ContigNode(ambiguous1 - unambiguous2);
+
+	++first1;
+	assert(first1 != last1);
+	assert(!first1->ambiguous());
+	first2 = last2;
+	return true;
+}
+
 /** Align the ambiguous region [it1, it1e) to [it2, it2e) and store
  * the consensus at out if an alignment is found.
  * @return true if an alignment is found
@@ -478,21 +506,8 @@ static bool alignAtSeed(
 	unsigned nmatches = count(it2e, last2, *it1e);
 
 	switch (nmatches) {
-	  case 0: {
-		// Unable to find the seed in path2. Check whether the
-		// remainder of path2 fits entirely within the gap of path1.
-		unsigned ambiguous1 = it1->length();
-		unsigned unambiguous2 = accumulate(it2, last2, 0, addLength);
-		if (ambiguous1 < unambiguous2) {
-			// The size of the seqeuence in path2 is larger than the
-			// gap in path1. No alignment.
-			return false;
-		}
-		copy(it2, last2, out);
-		if (ambiguous1 > unambiguous2)
-			*out++ = ContigNode(ambiguous1 - unambiguous2);
-		break;
-	  }
+	  case 0:
+		return alignCoordinates(it1, last1, it2, last2, out);
 	  case 1:
 		// The seed occurs exactly once in path2.
 		if (!buildConsensus(it1, it1e, it2, it2e, out))
