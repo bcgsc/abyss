@@ -401,31 +401,64 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
 	return addend + contig.length();
 }
 
-/** Attempt to fill in a gap using the other path and store the
- * consensus at result if an alignment is found.
+/** Attempt to fill in gaps in one path with the sequence from the
+ * other path and store the consensus at result if an alignment is
+ * found.
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
 static bool alignCoordinates(iterator& first1, iterator last1,
 		iterator& first2, iterator last2, oiterator result)
 {
-	// Unable to find the seed in path2. Check whether the
-	// remainder of path2 fits entirely within the gap of path1.
-	unsigned ambiguous1 = first1->length();
-	unsigned unambiguous2 = accumulate(first2, last2, 0, addLength);
-	if (ambiguous1 < unambiguous2) {
-		// The size of the seqeuence in path2 is larger than the
-		// gap in path1. No alignment.
-		return false;
-	}
-	result = copy(first2, last2, result);
-	if (ambiguous1 > unambiguous2)
-		*result++ = ContigNode(ambiguous1 - unambiguous2);
+	ContigPath consensus;
+	consensus.reserve(last1-first1 + last2-first2);
+	oiterator out = back_inserter(consensus);
 
-	++first1;
-	assert(first1 != last1);
-	assert(!first1->ambiguous());
-	first2 = last2;
+	int ambiguous1 = 0, ambiguous2 = 0;
+	iterator it1 = first1, it2 = first2;
+	while (it1 != last1 && it2 != last2) {
+		if (it1->ambiguous()) {
+			ambiguous1 += it1->length();
+			++it1;
+			assert(it1 != last1);
+			assert(!it1->ambiguous());
+		}
+		if (it2->ambiguous()) {
+			ambiguous2 += it2->length();
+			++it2;
+			assert(it2 != last2);
+			assert(!it2->ambiguous());
+		}
+
+		if (ambiguous1 > 0 && ambiguous2 > 0) {
+			if (ambiguous1 > ambiguous2) {
+				*out++ = ContigNode(ambiguous2);
+				ambiguous1 -= ambiguous2;
+				ambiguous2 = 0;
+			} else {
+				*out++ = ContigNode(ambiguous1);
+				ambiguous2 -= ambiguous1;
+				ambiguous1 = 0;
+			}
+		} else if (ambiguous1 > 0) {
+			ambiguous1 -= it2->length();
+			*out++ = *it2++;
+		} else if (ambiguous2 > 0) {
+			ambiguous2 -= it1->length();
+			*out++ = *it1++;
+		} else
+			break;
+		if (ambiguous1 < 0 || ambiguous2 < 0)
+			return false;
+	}
+
+	assert(ambiguous1 == 0 || ambiguous2 == 0);
+	unsigned ambiguous = ambiguous1 + ambiguous2;
+	if (ambiguous > 0)
+		*out++ = ContigNode(ambiguous);
+	first1 = it1;
+	first2 = it2;
+	result = copy(consensus.begin(), consensus.end(), result);
 	return true;
 }
 
@@ -507,6 +540,7 @@ static bool alignAtSeed(
 
 	switch (nmatches) {
 	  case 0:
+		// Unable to find the seed in path2.
 		return alignCoordinates(it1, last1, it2, last2, out);
 	  case 1:
 		// The seed occurs exactly once in path2.
