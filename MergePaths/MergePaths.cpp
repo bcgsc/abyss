@@ -590,9 +590,6 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	for (iterator it1e = it1; it1e != last1; ++it1e) {
 		if (it1e->ambiguous())
 			continue;
-		iterator it2e = find(it2, last2, *it1e);
-		if (it2e == last2)
-			continue;
 		if (alignAtSeed(it1, it1e, last1, it2, last2, it2s, out))
 			return it2s;
 	}
