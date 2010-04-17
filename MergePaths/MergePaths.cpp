@@ -541,7 +541,7 @@ static bool alignAtSeed(
 	switch (nmatches) {
 	  case 0:
 		// Unable to find the seed in path2.
-		return alignCoordinates(it1, last1, it2, last2, out);
+		return false;
 	  case 1:
 		// The seed occurs exactly once in path2.
 		if (!buildConsensus(it1, it1e, it2, it2e, out))
@@ -601,7 +601,7 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 
 	// No valid seeded alignment. Check whether path2 fits entirely
 	// within the gap of path1.
-	alignAtSeed(it1, it1+1, last1, it2, last2, it2s, out);
+	alignCoordinates(it1, last1, it2, last2, out);
 	assert(it2s.empty());
 	return it2s;
 }
