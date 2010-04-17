@@ -536,18 +536,18 @@ static bool alignAtSeed(
 
 	// Find a seed for the alignment.
 	iterator it2e = find(it2, last2, *it1e);
-	unsigned nmatches = count(it2e, last2, *it1e);
-
-	switch (nmatches) {
-	  case 0:
-		// Unable to find the seed in path2.
+	if (it2e == last2)
 		return false;
-	  case 1:
+
+	unsigned nmatches = count(it2e, last2, *it1e);
+	assert(nmatches > 0);
+	if (nmatches == 1) {
 		// The seed occurs exactly once in path2.
 		if (!buildConsensus(it1, it1e, it2, it2e, out))
 			return false;
-		break;
-	  default:
+		it1 = it1e;
+		it2 = it2e;
+	} else {
 		// The seed occurs more than once in path2. Return all the
 		// matches so that our caller may iterate over them.
 		if (it1b != it1e) {
@@ -564,10 +564,8 @@ static bool alignAtSeed(
 					bind2nd(equal_to<ContigNode>(), *it1e)))
 			it2s.push_back(it);
 		assert(it2s.size() == nmatches);
+		it1 = it1e;
 	}
-	it1 = it1e;
-	if (it2s.empty())
-		it2 = it2e;
 	return true;
 }
 
