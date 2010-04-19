@@ -410,9 +410,7 @@ template <class iterator, class oiterator>
 static bool alignCoordinates(iterator& first1, iterator last1,
 		iterator& first2, iterator last2, oiterator& result)
 {
-	ContigPath consensus;
-	consensus.reserve(last1-first1 + last2-first2);
-	back_insert_iterator<ContigPath> out = back_inserter(consensus);
+	oiterator out = result;
 
 	int ambiguous1 = 0, ambiguous2 = 0;
 	iterator it1 = first1, it2 = first2;
@@ -458,7 +456,7 @@ static bool alignCoordinates(iterator& first1, iterator last1,
 		*out++ = ContigNode(ambiguous);
 	first1 = it1;
 	first2 = it2;
-	result = copy(consensus.begin(), consensus.end(), result);
+	result = out;
 	return true;
 }
 
@@ -628,15 +626,13 @@ static bool align(iterator it1, iterator last1,
 			assert(which == 0 || which == 1);
 			for (typename vector<iterator>::iterator
 					it = its.begin(); it != its.end(); ++it) {
-				ContigPath consensus;
-				back_insert_iterator<ContigPath> consensusOut
-					= back_inserter(consensus);
+				ContigPath consensus(last1-it1 + last2-it2);
+				ContigPath::iterator consensusOut = consensus.begin();
 				if (align(which == 0 ? it1 : *it, last1,
 							which == 1 ? it2 : *it, last2,
 							consensusOut)) {
 					out = copy(which == 0 ? it2 : it1, *it, out);
-					out = copy(consensus.begin(), consensus.end(),
-							out);
+					out = copy(consensus.begin(), consensusOut, out);
 					return true;
 				}
 			}
@@ -667,13 +663,15 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 	ContigPath::const_reverse_iterator
 		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
-	ContigPath alignmentr;
-	back_insert_iterator<ContigPath> rout = back_inserter(alignmentr);
+	ContigPath alignmentr(p1.rend() - rit1 + p2.rend() - rit2);
+	ContigPath::iterator rout = alignmentr.begin();
 	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(), rout);
+	alignmentr.erase(rout, alignmentr.end());
 
-	ContigPath alignmentf;
-	back_insert_iterator<ContigPath> fout = back_inserter(alignmentf);
+	ContigPath alignmentf(p1.end() - pivot1 + p2.end() - pivot2);
+	ContigPath::iterator fout = alignmentf.begin();
 	bool alignedf = align(pivot1, p1.end(), pivot2, p2.end(), fout);
+	alignmentf.erase(fout, alignmentf.end());
 
 	ContigPath consensus;
 	if (alignedr && alignedf) {

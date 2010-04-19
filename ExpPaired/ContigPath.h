@@ -18,6 +18,7 @@ class ContigPath : public std::vector<ContigNode>
 
 	public:
 		ContigPath() { }
+		ContigPath(size_t n) : std::vector<ContigNode>(n) { }
 
 		template <class InputIterator>
 		ContigPath(InputIterator first, InputIterator last)
@@ -30,6 +31,8 @@ class ContigPath : public std::vector<ContigNode>
 			std::for_each(begin(), end(),
 					std::mem_fun_ref(&ContigNode::flip));
 		}
+
+		using std::vector<ContigNode>::erase;
 
 		/** The separator to print between ContigNode. */
 		static const char* separator;
