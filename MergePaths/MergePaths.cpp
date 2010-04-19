@@ -571,7 +571,7 @@ static bool alignAtSeed(
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool skipAmbiguous(iterator& it1, iterator last1,
+static bool alignAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
@@ -592,39 +592,39 @@ static bool skipAmbiguous(iterator& it1, iterator last1,
 	return alignCoordinates(it1, last1, it2, last2, out);
 }
 
+/** Align the next pair of contigs.
+ * The end of the alignment is returned in it1 and it2.
+ * @return true if an alignment is found
+ */
 template <class iterator, class oiterator>
-static bool alignAmbiguous(iterator& it1, iterator last1,
+static bool alignOne(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
-	assert(it1->ambiguous() || it2->ambiguous());
-	int which = it1->ambiguous() && it2->ambiguous()
-		? (it1->length() > it2->length() ? 0 : 1)
-		: it1->ambiguous() ? 0
-		: it2->ambiguous() ? 1
-		: -1;
-	assert(which != -1);
-	return which == 0
-		? skipAmbiguous(it1, last1, it2, last2, out)
-		: skipAmbiguous(it2, last2, it1, last1, out);
+	return
+		it1->ambiguous() && it2->ambiguous()
+			? (it1->length() > it2->length()
+				? alignAmbiguous(it1, last1, it2, last2, out)
+				: alignAmbiguous(it2, last2, it1, last1, out))
+		: it1->ambiguous()
+			? alignAmbiguous(it1, last1, it2, last2, out)
+		: it2->ambiguous()
+			? alignAmbiguous(it2, last2, it1, last1, out)
+			: (*out++ = *it1, *it1++ == *it2++);
 }
 
+/** Align the ambiguous region [it1, last1) to [it2, last2)
+ * and store the consensus at out if an alignment is found.
+ * @return true if an alignment is found
+ */
 template <class iterator, class oiterator>
 static bool align(iterator it1, iterator last1,
 		iterator it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it2 != last2);
-	while (it1 != last1 && it2 != last2) {
-		if (it1->ambiguous() || it2->ambiguous()) {
-			if (!alignAmbiguous(it1, last1, it2, last2, out))
-				return false;
-		} else {
-			*out++ = *it1;
-			if (*it1++ != *it2++)
-				return false;
-		}
-	}
-
+	while (it1 != last1 && it2 != last2)
+		if (!alignOne(it1, last1, it2, last2, out))
+			return false;
 	assert(it1 == last1 || it2 == last2);
 	out = copy(it1, last1, out);
 	out = copy(it2, last2, out);
