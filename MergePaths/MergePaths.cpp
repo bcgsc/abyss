@@ -626,13 +626,12 @@ static bool align(iterator it1, iterator last1,
 			assert(which == 0 || which == 1);
 			for (typename vector<iterator>::iterator
 					it = its.begin(); it != its.end(); ++it) {
-				ContigPath consensus(last1-it1 + last2-it2);
-				ContigPath::iterator consensusOut = consensus.begin();
+				ContigPath::iterator consensusOut
+					= copy(which == 0 ? it2 : it1, *it, out);
 				if (align(which == 0 ? it1 : *it, last1,
 							which == 1 ? it2 : *it, last2,
 							consensusOut)) {
-					out = copy(which == 0 ? it2 : it1, *it, out);
-					out = copy(consensus.begin(), consensusOut, out);
+					out = consensusOut;
 					return true;
 				}
 			}
