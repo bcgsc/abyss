@@ -554,12 +554,9 @@ static bool alignAtSeed(
 		}
 
 		it2s.reserve(nmatches);
-		for (iterator it = find_if(it2e, last2,
-					bind2nd(equal_to<ContigNode>(), *it1e));
-				it != last2;
-				it = find_if(it+1, last2,
+		for (; it2e != last2; it2e = find_if(it2e+1, last2,
 					bind2nd(equal_to<ContigNode>(), *it1e)))
-			it2s.push_back(it);
+			it2s.push_back(it2e);
 		assert(it2s.size() == nmatches);
 		it1 = it1e;
 	}
