@@ -542,14 +542,7 @@ static bool alignAtSeed(
 		// The seed occurs exactly once in path2.
 		return buildConsensus(it1, it1e, it2, it2e, out);
 	} else {
-		// The seed occurs more than once in path2. Return all the
-		// matches so that our caller may iterate over them.
-		if (it1b != it1e) {
-			// The gaps overlap and the seed is found multiple times
-			// in path2. Give up. This case could be handled better.
-			return false;
-		}
-
+		// The seed occurs more than once in path2.
 		for (; it2e != last2; it2e = find_if(it2e+1, last2,
 					bind2nd(equal_to<ContigNode>(), *it1e))) {
 			iterator myIt1 = it1, myIt2 = it2;
