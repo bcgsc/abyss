@@ -465,8 +465,8 @@ static bool alignCoordinates(iterator& first1, iterator last1,
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool buildConsensus(iterator it1, iterator it1e,
-		iterator it2, iterator it2e, oiterator& out)
+static bool buildConsensus(iterator& it1, iterator it1e,
+		iterator& it2, iterator it2e, oiterator& out)
 {
 	iterator it1b = it1 + 1;
 	assert(!it1b->ambiguous());
@@ -474,6 +474,8 @@ static bool buildConsensus(iterator it1, iterator it1e,
 	if (it1b == it1e) {
 		// path2 completely fills the gap in path1.
 		out = copy(it2, it2e, out);
+		it1 = it1e;
+		it2 = it2e;
 		return true;
 	}
 
@@ -505,6 +507,8 @@ static bool buildConsensus(iterator it1, iterator it1e,
 	if (n > 0)
 		*out++ = ContigNode(n);
 	out = copy(it1b, it1e, out);
+	it1 = it1e;
+	it2 = it2e;
 	return true;
 }
 
@@ -540,10 +544,7 @@ static bool alignAtSeed(
 	assert(nmatches > 0);
 	if (nmatches == 1) {
 		// The seed occurs exactly once in path2.
-		if (!buildConsensus(it1, it1e, it2, it2e, out))
-			return false;
-		it1 = it1e;
-		it2 = it2e;
+		return buildConsensus(it1, it1e, it2, it2e, out);
 	} else {
 		// The seed occurs more than once in path2. Return all the
 		// matches so that our caller may iterate over them.
@@ -559,8 +560,8 @@ static bool alignAtSeed(
 			it2s.push_back(it2e);
 		assert(it2s.size() == nmatches);
 		it1 = it1e;
+		return true;
 	}
-	return true;
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2).
