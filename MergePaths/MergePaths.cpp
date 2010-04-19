@@ -524,39 +524,24 @@ static bool alignAtSeed(
 {
 	assert(it1 != last1);
 	assert(it1->ambiguous());
+	assert(it1 + 1 != last1);
 	assert(!it1e->ambiguous());
 	assert(it2 != last2);
 
-	iterator it1b = it1 + 1;
-	assert(it1b != last1);
-	assert(!it1b->ambiguous());
-
 	// Find a seed for the alignment.
-	iterator it2e = find(it2, last2, *it1e);
-	if (it2e == last2)
-		return false;
-
-	unsigned nmatches = count(it2e, last2, *it1e);
-	assert(nmatches > 0);
-	if (nmatches == 1) {
-		// The seed occurs exactly once in path2.
-		return buildConsensus(it1, it1e, it2, it2e, out);
-	} else {
-		// The seed occurs more than once in path2.
-		for (; it2e != last2; it2e = find_if(it2e+1, last2,
-					bind2nd(equal_to<ContigNode>(), *it1e))) {
-			iterator myIt1 = it1, myIt2 = it2;
-			oiterator myOut = out;
-			if (buildConsensus(myIt1, it1e, myIt2, it2e, myOut)
-					&& align(myIt1, last1, myIt2, last2, myOut)) {
-				it1 = last1;
-				it2 = last2;
-				out = myOut;
-				return true;
-			}
+	for (iterator it2e = it2;
+			(it2e = find(it2e, last2, *it1e)) != last2; ++it2e) {
+		iterator myIt1 = it1, myIt2 = it2;
+		oiterator myOut = out;
+		if (buildConsensus(myIt1, it1e, myIt2, it2e, myOut)
+				&& align(myIt1, last1, myIt2, last2, myOut)) {
+			it1 = last1;
+			it2 = last2;
+			out = myOut;
+			return true;
 		}
-		return false;
 	}
+	return false;
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2).
