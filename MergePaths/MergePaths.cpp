@@ -408,11 +408,11 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
  */
 template <class iterator, class oiterator>
 static bool alignCoordinates(iterator& first1, iterator last1,
-		iterator& first2, iterator last2, oiterator result)
+		iterator& first2, iterator last2, oiterator& result)
 {
 	ContigPath consensus;
 	consensus.reserve(last1-first1 + last2-first2);
-	oiterator out = back_inserter(consensus);
+	back_insert_iterator<ContigPath> out = back_inserter(consensus);
 
 	int ambiguous1 = 0, ambiguous2 = 0;
 	iterator it1 = first1, it2 = first2;
@@ -468,7 +468,7 @@ static bool alignCoordinates(iterator& first1, iterator last1,
  */
 template <class iterator, class oiterator>
 static bool buildConsensus(iterator it1, iterator it1e,
-		iterator it2, iterator it2e, oiterator out)
+		iterator it2, iterator it2e, oiterator& out)
 {
 	iterator it1b = it1 + 1;
 	assert(!it1b->ambiguous());
@@ -521,8 +521,7 @@ template <class iterator, class oiterator>
 static bool alignAtSeed(
 		iterator& it1, iterator it1e, iterator last1,
 		iterator& it2, iterator last2,
-		vector<iterator>& it2s,
-		oiterator out)
+		vector<iterator>& it2s, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it1->ambiguous());
@@ -577,8 +576,7 @@ static bool alignAtSeed(
  */
 template <class iterator, class oiterator>
 static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2,
-		oiterator out)
+		iterator& it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it1->ambiguous());
@@ -603,8 +601,7 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 
 template <class iterator, class oiterator>
 static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2, int& which,
-		oiterator out)
+		iterator& it2, iterator last2, int& which, oiterator& out)
 {
 	which = it1->ambiguous() && it2->ambiguous()
 		? (it1->length() > it2->length() ? 0 : 1)
@@ -618,8 +615,7 @@ static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
 
 template <class iterator, class oiterator>
 static bool align(iterator it1, iterator last1,
-		iterator it2, iterator last2,
-		oiterator out)
+		iterator it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it2 != last2);
@@ -633,11 +629,14 @@ static bool align(iterator it1, iterator last1,
 			for (typename vector<iterator>::iterator
 					it = its.begin(); it != its.end(); ++it) {
 				ContigPath consensus;
+				back_insert_iterator<ContigPath> consensusOut
+					= back_inserter(consensus);
 				if (align(which == 0 ? it1 : *it, last1,
 							which == 1 ? it2 : *it, last2,
-							back_inserter(consensus))) {
-					copy(which == 0 ? it2 : it1, *it, out);
-					copy(consensus.begin(), consensus.end(), out);
+							consensusOut)) {
+					out = copy(which == 0 ? it2 : it1, *it, out);
+					out = copy(consensus.begin(), consensus.end(),
+							out);
 					return true;
 				}
 			}
@@ -652,8 +651,8 @@ static bool align(iterator it1, iterator last1,
 	}
 
 	assert(it1 == last1 || it2 == last2);
-	copy(it1, last1, out);
-	copy(it2, last2, out);
+	out = copy(it1, last1, out);
+	out = copy(it2, last2, out);
 	return true;
 }
 
@@ -669,12 +668,12 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
 	ContigPath alignmentr;
-	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(),
-			back_inserter(alignmentr));
+	back_insert_iterator<ContigPath> rout = back_inserter(alignmentr);
+	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(), rout);
 
 	ContigPath alignmentf;
-	bool alignedf = align(pivot1, p1.end(), pivot2, p2.end(),
-			back_inserter(alignmentf));
+	back_insert_iterator<ContigPath> fout = back_inserter(alignmentf);
+	bool alignedf = align(pivot1, p1.end(), pivot2, p2.end(), fout);
 
 	ContigPath consensus;
 	if (alignedr && alignedf) {
