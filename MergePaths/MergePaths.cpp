@@ -513,23 +513,19 @@ static bool buildConsensus(iterator& it1, iterator it1e,
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2) using it1e
- * as the seed of the alignment.
- * The end of the alignment is returned in it1 and it2 if there is
- * exactly one alignment. If there is more than one possible
- * alignment, the alignment is returned in it1 and it2s.
+ * as the seed of the alignment. The end of the alignment is returned
+ * in it1 and it2.
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
 static bool alignAtSeed(
 		iterator& it1, iterator it1e, iterator last1,
-		iterator& it2, iterator last2,
-		vector<iterator>& it2s, oiterator& out)
+		iterator& it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it1->ambiguous());
 	assert(!it1e->ambiguous());
 	assert(it2 != last2);
-	assert(it2s.empty());
 
 	iterator it1b = it1 + 1;
 	assert(it1b != last1);
@@ -554,24 +550,28 @@ static bool alignAtSeed(
 			return false;
 		}
 
-		it2s.reserve(nmatches);
 		for (; it2e != last2; it2e = find_if(it2e+1, last2,
-					bind2nd(equal_to<ContigNode>(), *it1e)))
-			it2s.push_back(it2e);
-		assert(it2s.size() == nmatches);
-		it1 = it1e;
-		return true;
+					bind2nd(equal_to<ContigNode>(), *it1e))) {
+			iterator myIt1 = it1, myIt2 = it2;
+			oiterator myOut = out;
+			if (buildConsensus(myIt1, it1e, myIt2, it2e, myOut)
+					&& align(myIt1, last1, myIt2, last2, myOut)) {
+				it1 = last1;
+				it2 = last2;
+				out = myOut;
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2).
- * The end of the alignment is returned in it1 and it2 if there is
- * exactly one alignment. If there is more than one possible
- * alignment, the alignment is returned in it1 and the returned vector
- * of iterators.
+ * The end of the alignment is returned in it1 and it2.
+ * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
+static bool skipAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
@@ -579,32 +579,29 @@ static vector<iterator> skipAmbiguous(iterator& it1, iterator last1,
 	assert(it1 + 1 != last1);
 	assert(it2 != last2);
 
-	vector<iterator> it2s;
 	// Find a seed for the alignment.
 	for (iterator it1e = it1; it1e != last1; ++it1e) {
 		if (it1e->ambiguous())
 			continue;
-		if (alignAtSeed(it1, it1e, last1, it2, last2, it2s, out))
-			return it2s;
+		if (alignAtSeed(it1, it1e, last1, it2, last2, out))
+			return true;
 	}
 
 	// No valid seeded alignment. Check whether path2 fits entirely
 	// within the gap of path1.
-	alignCoordinates(it1, last1, it2, last2, out);
-	assert(it2s.empty());
-	return it2s;
+	return alignCoordinates(it1, last1, it2, last2, out);
 }
 
 template <class iterator, class oiterator>
-static vector<iterator> alignAmbiguous(iterator& it1, iterator last1,
-		iterator& it2, iterator last2, int& which, oiterator& out)
+static bool alignAmbiguous(iterator& it1, iterator last1,
+		iterator& it2, iterator last2, oiterator& out)
 {
-	which = it1->ambiguous() && it2->ambiguous()
+	int which = it1->ambiguous() && it2->ambiguous()
 		? (it1->length() > it2->length() ? 0 : 1)
 		: it1->ambiguous() ? 0
 		: it2->ambiguous() ? 1
 		: -1;
-	return which == -1 ? vector<iterator>()
+	return which == -1 ? true
 		: which == 0 ? skipAmbiguous(it1, last1, it2, last2, out)
 		: skipAmbiguous(it2, last2, it1, last1, out);
 }
@@ -616,28 +613,10 @@ static bool align(iterator it1, iterator last1,
 	assert(it1 != last1);
 	assert(it2 != last2);
 	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
-		int which;
-		vector<iterator> its = alignAmbiguous(it1, last1, it2, last2,
-				which, out);
-		if (!its.empty()) {
-			// More than one match. Recurse on each option.
-			assert(which == 0 || which == 1);
-			for (typename vector<iterator>::iterator
-					it = its.begin(); it != its.end(); ++it) {
-				ContigPath::iterator consensusOut
-					= copy(which == 0 ? it2 : it1, *it, out);
-				if (align(which == 0 ? it1 : *it, last1,
-							which == 1 ? it2 : *it, last2,
-							consensusOut)) {
-					out = consensusOut;
-					return true;
-				}
-			}
+		if (!alignAmbiguous(it1, last1, it2, last2, out))
 			return false;
-		}
 		if (it1 == last1 || it2 == last2)
 			break;
-
 		if (*it1 != *it2)
 			return false;
 		*out++ = *it1;
