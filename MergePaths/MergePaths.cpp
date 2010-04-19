@@ -596,13 +596,15 @@ template <class iterator, class oiterator>
 static bool alignAmbiguous(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
+	assert(it1->ambiguous() || it2->ambiguous());
 	int which = it1->ambiguous() && it2->ambiguous()
 		? (it1->length() > it2->length() ? 0 : 1)
 		: it1->ambiguous() ? 0
 		: it2->ambiguous() ? 1
 		: -1;
-	return which == -1 ? true
-		: which == 0 ? skipAmbiguous(it1, last1, it2, last2, out)
+	assert(which != -1);
+	return which == 0
+		? skipAmbiguous(it1, last1, it2, last2, out)
 		: skipAmbiguous(it2, last2, it1, last1, out);
 }
 
@@ -612,14 +614,15 @@ static bool align(iterator it1, iterator last1,
 {
 	assert(it1 != last1);
 	assert(it2 != last2);
-	for (; it1 != last1 && it2 != last2; ++it1, ++it2) {
-		if (!alignAmbiguous(it1, last1, it2, last2, out))
-			return false;
-		if (it1 == last1 || it2 == last2)
-			break;
-		if (*it1 != *it2)
-			return false;
-		*out++ = *it1;
+	while (it1 != last1 && it2 != last2) {
+		if (it1->ambiguous() || it2->ambiguous()) {
+			if (!alignAmbiguous(it1, last1, it2, last2, out))
+				return false;
+		} else {
+			*out++ = *it1;
+			if (*it1++ != *it2++)
+				return false;
+		}
 	}
 
 	assert(it1 == last1 || it2 == last2);
