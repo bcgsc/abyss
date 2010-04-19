@@ -465,8 +465,8 @@ static bool alignCoordinates(iterator& first1, iterator last1,
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool buildConsensus(iterator& it1, iterator it1e,
-		iterator& it2, iterator it2e, oiterator& out)
+static bool buildConsensus(iterator it1, iterator it1e,
+		iterator it2, iterator it2e, oiterator& out)
 {
 	iterator it1b = it1 + 1;
 	assert(!it1b->ambiguous());
@@ -474,8 +474,6 @@ static bool buildConsensus(iterator& it1, iterator it1e,
 	if (it1b == it1e) {
 		// path2 completely fills the gap in path1.
 		out = copy(it2, it2e, out);
-		it1 = it1e;
-		it2 = it2e;
 		return true;
 	}
 
@@ -507,8 +505,6 @@ static bool buildConsensus(iterator& it1, iterator it1e,
 	if (n > 0)
 		*out++ = ContigNode(n);
 	out = copy(it1b, it1e, out);
-	it1 = it1e;
-	it2 = it2e;
 	return true;
 }
 
@@ -531,10 +527,9 @@ static bool alignAtSeed(
 	// Find a seed for the alignment.
 	for (iterator it2e = it2;
 			(it2e = find(it2e, last2, *it1e)) != last2; ++it2e) {
-		iterator myIt1 = it1, myIt2 = it2;
 		oiterator myOut = out;
-		if (buildConsensus(myIt1, it1e, myIt2, it2e, myOut)
-				&& align(myIt1, last1, myIt2, last2, myOut)) {
+		if (buildConsensus(it1, it1e, it2, it2e, myOut)
+				&& align(it1e, last1, it2e, last2, myOut)) {
 			it1 = last1;
 			it2 = last2;
 			out = myOut;
