@@ -446,7 +446,7 @@ void DirectedGraph<D>::validate(Functor dataChecker)
 				typename VertexType::EdgeCollectionIter partnerEdge = pPartner->getEdge(pVertex, expectedPartnersDir, expectedParentsReverse, found);
 				
 				assert(found);
-				assert(edgeIter->reverse == partnerEdge->reverse)
+				assert(edgeIter->reverse == partnerEdge->reverse);
 				// check that the sequences have the correct overlap
 				assert(dataChecker.check(pVertex->m_data, pPartner->m_data, currDir, edgeIter->reverse));
 			}
