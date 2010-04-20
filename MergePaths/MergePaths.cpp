@@ -321,8 +321,6 @@ int main(int argc, char** argv)
 #endif
 
 	g_contigLengths = readContigLengths(argv[optind++]);
-	g_contigIDs.lock();
-
 	ContigPathMap originalPathMap = readPaths(argv[optind++]);
 
 	removeRepeats(originalPathMap);

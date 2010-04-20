@@ -41,5 +41,6 @@ vector<unsigned> readContigLengths(const string& path)
 	}
 	assert(in.eof());
 	assert(!lengths.empty());
+	g_contigIDs.lock();
 	return lengths;
 }

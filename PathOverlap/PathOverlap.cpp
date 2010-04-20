@@ -341,8 +341,6 @@ int main(int argc, char** argv)
 	}
 
 	g_contigLengths = readContigLengths(argv[optind++]);
-	g_contigIDs.lock();
-
 	Paths paths = readPaths(argv[optind++]);
 
 	if (opt::dot) {
