@@ -1,6 +1,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "AffixIterator.h"
+#include "ContigLength.h"
 #include "ContigPath.h"
 #include "PairUtils.h"
 #include "Uncompress.h"
@@ -51,7 +52,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by readContigLengths
 	static string out;
 	static int threads;
 }
@@ -237,27 +238,6 @@ static void assert_open(ifstream& f, const string& p)
 		return;
 	cerr << p << ": " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
-}
-
-/** Read contig lengths. */
-static vector<unsigned> readContigLengths(const string& path)
-{
-	vector<unsigned> lengths;
-	ifstream in(path.c_str());
-	assert_open(in, path);
-
-	assert(g_contigIDs.empty());
-	string id;
-	unsigned len;
-	while (in >> id >> len) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		(void)g_contigIDs.serial(id);
-		assert(len >= opt::k);
-		lengths.push_back(len - opt::k + 1);
-	}
-	assert(in.eof());
-	assert(!lengths.empty());
-	return lengths;
 }
 
 /** Read a set of paths from the specified file. */

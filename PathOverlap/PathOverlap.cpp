@@ -1,4 +1,5 @@
 #include "config.h"
+#include "ContigLength.h"
 #include "ContigPath.h"
 #include "PairUtils.h"
 #include <algorithm>
@@ -6,6 +7,7 @@
 #include <cerrno>
 #include <cstring> // for strerror
 #include <cstdlib>
+#include <numeric>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -26,8 +28,12 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... PATH\n"
+"Usage: " PROGRAM " [OPTION]... LEN PATH\n"
+"Find paths that overlap\n"
+"  LEN   lengths of the contigs\n"
+"  PATH  sequences of contig IDs\n"
 "\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -r, --repeats=FILE    write repeat contigs to FILE\n"
 "      --dot             output overlaps in dot format\n"
 "  -v, --verbose         display verbose output\n"
@@ -37,6 +43,8 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	unsigned k; // used by readContigLengths
+	
 	/** Output overlaps in dot format. Do not perform trimming. */
 	static int dot;
 
@@ -46,11 +54,12 @@ namespace opt {
 	static int verbose;
 }
 
-static const char* shortopts = "r:v";
+static const char* shortopts = "k:r:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "kmer",         required_argument, NULL, 'k' },
 	{ "dot",          no_argument,       &opt::dot, 1, },
 	{ "repeats",      required_argument, NULL, 'r' },
 	{ "verbose",      no_argument,       NULL, 'v' },
@@ -58,6 +67,15 @@ static const struct option longopts[] = {
 	{ "version",      no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+/** Lengths of contigs in k-mer. */
+static vector<unsigned> g_contigLengths;
+
+/** Return the length of this contig in k-mer. */
+unsigned ContigNode::length() const
+{
+	return ambiguous() ? m_id : g_contigLengths.at(id());
+}
 
 /** An alignment seed. */
 struct Seed {
@@ -72,14 +90,19 @@ struct Seed {
 struct Overlap {
 	LinearNumKey firstID, secondID;
 	bool firstIsRC, secondIsRC;
-	unsigned overlap;
+
+	/** Overlap measured in number of contigs. */
+	unsigned short overlap;
+
+	/** Overlap measured in bp. */
+	int distance;
 
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
 		return out <<
 			'"' << o.firstID << (o.firstIsRC ? '-' : '+') << "\" -> "
 			"\"" << o.secondID << (o.secondIsRC ? '-' : '+') << "\""
-			" [label=" << o.overlap << "];";
+			" [d=" << o.distance << "];";
 	}
 };
 
@@ -147,6 +170,12 @@ static SeedMap makeSeedMap(const Paths& paths)
 	return seedMap;
 }
 
+/** Add the number of k-mer in two contigs. */
+static unsigned addLength(unsigned addend, const ContigNode& contig)
+{
+	return addend + contig.length();
+}
+
 /** Check whether path starts with the sequence [first, last). */
 static bool startsWith(ContigPath path, bool rc,
 		ContigPath::const_iterator first,
@@ -163,9 +192,12 @@ static bool startsWith(ContigPath path, bool rc,
 /** Check whether path starts with the sequence [first, last). */
 static unsigned findOverlap(ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
-		ContigPath path, bool rc)
+		ContigPath path, bool rc, int &distance)
 {
-	return startsWith(path, rc, first, last) ? last - first : 0;
+	if (!startsWith(path, rc, first, last))
+		return 0;
+	distance = -accumulate(first, last, opt::k-1, addLength);
+	return last - first;
 }
 
 typedef vector<Overlap> Overlaps;
@@ -189,7 +221,7 @@ static void findOverlaps(const SeedMap& seedMap,
 			Overlap o;
 			o.secondIsRC = !seed->second.isKeyFirst;
 			o.overlap = findOverlap(it, path.end(),
-					   seed->second.path, o.secondIsRC);
+					   seed->second.path, o.secondIsRC, o.distance);
 			if (o.overlap > 0) {
 				o.firstID = id;
 				o.firstIsRC = rc;
@@ -280,6 +312,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
 			case 'r': arg >> opt::repeatContigs; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -291,7 +324,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (argc - optind < 1) {
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
@@ -301,6 +339,9 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	g_contigLengths = readContigLengths(argv[optind++]);
+	g_contigIDs.lock();
 
 	Paths paths = readPaths(argv[optind++]);
 

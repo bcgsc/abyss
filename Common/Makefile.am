@@ -4,6 +4,7 @@ libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
 libcommon_a_SOURCES = \
 	AffixIterator.h \
+	ContigLength.h ContigLength.cpp \
 	ContigNode.h ContigNode.cpp \
 	Dictionary.h \
 	Fcontrol.cpp Fcontrol.h \
