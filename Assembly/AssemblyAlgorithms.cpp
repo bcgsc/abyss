@@ -8,9 +8,11 @@
 #include "Log.h"
 #include "Timer.h"
 #include <cctype>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring> // for strerror
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -224,6 +226,14 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	return count;
 }
 
+static void assert_open(const ofstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
 /** Open the bubble file. */
 void openBubbleFile(ofstream& out)
 {
@@ -238,10 +248,7 @@ void openBubbleFile(ofstream& out)
 		path = s.str();
 	}
 	out.open(path.c_str());
-	if (!out.is_open()) {
-		perror(path.c_str());
-		exit(EXIT_FAILURE);
-	}
+	assert_open(out, path);
 }
 
 int popBubbles(ISequenceCollection* seqCollection, ostream& out)
@@ -923,7 +930,7 @@ void setCoverageParameters(const Histogram& h)
 {
 	if (!opt::coverageHistPath.empty() && opt::rank <= 0) {
 		ofstream histFile(opt::coverageHistPath.c_str());
-		assert(histFile.is_open());
+		assert_open(histFile, opt::coverageHistPath);
 		histFile << h;
 		assert(histFile.good());
 	}
