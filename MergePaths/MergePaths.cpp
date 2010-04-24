@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <climits> // for UINT_MAX
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <deque>
@@ -502,19 +503,31 @@ static bool alignAtSeed(
 	assert(!it1e->ambiguous());
 	assert(it2 != last2);
 
-	// Find a seed for the alignment.
+	// Find the best seeded alignment. The best alignment has the
+	// fewest number of contigs in the consensus sequence.
+	unsigned bestLen = UINT_MAX;
+	iterator bestIt2e;
 	for (iterator it2e = it2;
 			(it2e = find(it2e, last2, *it1e)) != last2; ++it2e) {
 		oiterator myOut = out;
 		if (buildConsensus(it1, it1e, it2, it2e, myOut)
 				&& align(it1e, last1, it2e, last2, myOut)) {
-			it1 = last1;
-			it2 = last2;
-			out = myOut;
-			return true;
+			unsigned len = myOut - out;
+			if (len < bestLen) {
+				bestLen = len;
+				bestIt2e = it2e;
+			}
 		}
 	}
-	return false;
+	if (bestLen != UINT_MAX) {
+		bool good = buildConsensus(it1, it1e, it2, bestIt2e, out)
+				&& align(it1e, last1, bestIt2e, last2, out);
+		assert(good);
+		it1 = last1;
+		it2 = last2;
+		return good;
+	} else
+		return false;
 }
 
 /** Align the ambiguous region [it1, last1) to [it2, last2).
