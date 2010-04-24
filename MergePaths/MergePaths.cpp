@@ -513,7 +513,7 @@ static bool alignAtSeed(
 		if (buildConsensus(it1, it1e, it2, it2e, myOut)
 				&& align(it1e, last1, it2e, last2, myOut)) {
 			unsigned len = myOut - out;
-			if (len < bestLen) {
+			if (len <= bestLen) {
 				bestLen = len;
 				bestIt2e = it2e;
 			}
