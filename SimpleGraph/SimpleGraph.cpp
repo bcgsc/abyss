@@ -49,7 +49,10 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigGraph
+
+	/** Abort the search after visiting maxCost vertices. */
 	static unsigned maxCost = 100000;
+
 	static unsigned threads = 1;
 	static int scaffold = 1;
 	static int verbose;
@@ -354,14 +357,10 @@ static void handleEstimate(
 	vout << "Constraints:";
 	printConstraints(vout, constraintMap) << '\n';
 
-	// Generate the paths
 	SimpleContigGraph::FeasiblePaths solutions;
-
-	// The value at which to abort trying to find a path
+	// Abort the search after finding maxNumPaths solutions.
 	const int maxNumPaths = 200;
 	int numVisited = 0;
-
-	// The number of nodes to explore before bailing out
 	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
 			constraintMap, solutions, maxNumPaths,
 			opt::maxCost, numVisited);
