@@ -45,7 +45,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
-"  -j, --threads=N       use N parallel threads\n"
+"  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -55,7 +55,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by readContigLengths
 	static string out;
-	static int threads;
+	static int threads = 1;
 }
 
 static const char shortopts[] = "j:k:o:v";
