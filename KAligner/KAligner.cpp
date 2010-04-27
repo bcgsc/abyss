@@ -1,9 +1,9 @@
 #include "Aligner.h"
+#include "AffixIterator.h"
 #include "Align/Options.h"
+#include "Barrier.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
-#include "AffixIterator.h"
-#include "Barrier.h"
 #include "FastaReader.h"
 #include "Uncompress.h"
 #include <algorithm>
