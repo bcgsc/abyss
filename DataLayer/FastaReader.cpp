@@ -6,6 +6,7 @@
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <limits> // for numeric_limits
@@ -139,7 +140,30 @@ next_record:
 		while (getline(in, field, '\t'))
 			fields.push_back(field);
 
-		if (fields.size() == 11 || fields.size() == 22) {
+		if (fields.size() >= 11
+				&& fields[9].length() == fields[10].length()) {
+			// SAM
+			unsigned flags = strtoul(fields[1].c_str(), NULL, 0);
+			if (flags & 0x100) // FSECONDARY
+				goto next_record;
+			if (opt::chastityFilter && (flags & 0x200)) { // FQCFAIL
+				m_unchaste++;
+				goto next_record;
+			}
+			switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
+			  case 0: break;
+			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
+			  case 0x81: id += "/2"; break; // FPAIRED|FREAD2
+			  default: assert(false); exit(EXIT_FAILURE);
+			}
+			s = fields[9];
+			q = fields[10];
+			if (flags & 0x10) { // FREVERSE
+				s = reverseComplement(s);
+				reverse(q.begin(), q.end());
+			}
+		} else if (fields.size() == 11 || fields.size() == 22) {
+			// qseq or export
 			if (opt::chastityFilter && !isChaste(fields.back())) {
 				m_unchaste++;
 				goto next_record;
