@@ -92,6 +92,11 @@ next_record:
 		headerStream >> recordType >> id >> ws;
 		getline(headerStream, comment);
 
+		// Ignore SAM headers.
+		if (id.length() == 2 && isupper(id[0]) && isupper(id[1])
+				&& comment.length() > 2 && comment[2] == ':')
+			goto next_record;
+
 		getline(m_fileHandle, s);
 		assert(!s.empty());
 
