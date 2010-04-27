@@ -163,7 +163,7 @@ static ostream& printPath(ostream& out,
 /** Return the set of contigs that appear more than once in a single
  * solution.
  */
-static set<LinearNumKey> findRepeats(
+static set<LinearNumKey> findRepeats(LinearNumKey seed,
 	const SimpleContigGraph::FeasiblePaths& solutions)
 {
 	set<LinearNumKey> repeats;
@@ -171,6 +171,7 @@ static set<LinearNumKey> findRepeats(
 			solIt = solutions.begin();
 			solIt != solutions.end(); ++solIt) {
 		map<LinearNumKey, unsigned> count;
+		count[seed]++;
 		for (SimpleContigGraph::VertexPath::const_iterator
 				it = solIt->begin(); it != solIt->end(); ++it)
 			count[it->key]++;
@@ -193,6 +194,7 @@ static struct {
 	unsigned uniqueEnd;
 	unsigned noPossiblePaths;
 	unsigned noValidPaths;
+	unsigned repeat;
 	unsigned multiEnd;
 	unsigned tooManySolutions;
 	unsigned tooComplex;
@@ -367,7 +369,7 @@ static void handleEstimate(
 	bool tooComplex = (unsigned)numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > (unsigned)maxNumPaths;
 
-	set<LinearNumKey> repeats = findRepeats(solutions);
+	set<LinearNumKey> repeats = findRepeats(er.refID, solutions);
 	if (!repeats.empty()) {
 		vout << "Repeats:";
 		transform(repeats.begin(), repeats.end(),
@@ -487,6 +489,9 @@ static void handleEstimate(
 		stats.noPossiblePaths++;
 	} else if (solutions.empty()) {
 		stats.noValidPaths++;
+	} else if (repeats.count(er.refID) > 0) {
+		vout << "Repeat: " << g_contigIDs.key(er.refID) << '\n';
+		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
 			= constructAmbiguousPath(pContigGraph, solutions);
@@ -591,6 +596,7 @@ static void generatePathsThroughEstimates(
 		"Unique path: " << stats.uniqueEnd << "\n"
 		"No possible paths: " << stats.noPossiblePaths << "\n"
 		"No valid paths: " << stats.noValidPaths << "\n"
+		"Repetitive: " << stats.repeat << "\n"
 		"Multiple valid paths: " << stats.multiEnd << "\n"
 		"Too many solutions: " << stats.tooManySolutions << "\n"
 		"Too complex: " << stats.tooComplex << "\n";
