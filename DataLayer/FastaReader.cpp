@@ -166,6 +166,9 @@ next_record:
 		qualityOffset = 64;
 	}
 
+	if (!q.empty())
+		assert(s.length() == q.length());
+
 	if (opt::qualityThreshold > 0) {
 		if (opt::qualityOffset > 0)
 			qualityOffset = opt::qualityOffset;
