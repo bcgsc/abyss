@@ -203,6 +203,14 @@ static bool equalOrBothAmbiguos(const ContigNode& a,
 	return a == b || (a.ambiguous() && b.ambiguous());
 }
 
+/** Return true if both paths are equal, ignoring ambiguous nodes. */
+static bool equalIgnoreAmbiguos(const ContigPath& a,
+		const ContigPath& b)
+{
+	return a.size() == b.size()
+		&& equal(a.begin(), a.end(), b.begin(), equalOrBothAmbiguos);
+}
+
 /** Remove paths subsumed by the specified path. */
 static void removeSubsumedPaths(LinearNumKey id,
 		ContigPathMap& paths)
@@ -226,12 +234,10 @@ static void removeSubsumedPaths(LinearNumKey id,
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
-		if (consensus.size() != path.size()
-				|| !equal(consensus.begin(), consensus.end(),
-					path.begin(), equalOrBothAmbiguos)) {
-			cout << "ignored\t" << consensus << '\n';
-		} else
+		if (equalIgnoreAmbiguos(consensus, path))
 			paths.erase(path2It);
+		else
+			cout << "ignored\t" << consensus << '\n';
 	}
 }
 
