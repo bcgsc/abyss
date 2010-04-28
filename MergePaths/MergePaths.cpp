@@ -153,6 +153,44 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 			mergeQ.push_back(*it);
 }
 
+/** Attempt to merge the paths specified in mergeQ with path.
+ * @return the number of paths merged
+ */
+static unsigned mergePaths(ContigPath& path,
+		deque<ContigNode>& mergeQ, set<ContigNode>& seen,
+		const ContigPathMap& paths)
+{
+	unsigned merged = 0;
+	vector<ContigNode> invalid;
+	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
+		pivot = mergeQ.front();
+		ContigPathMap::const_iterator path2It
+			= paths.find(pivot.id());
+		if (path2It == paths.end())
+			continue;
+
+		ContigPath path2 = path2It->second;
+		if (pivot.sense())
+			path2.reverseComplement();
+		ContigPath consensus = align(path, path2, pivot);
+		if (consensus.empty()) {
+			invalid.push_back(pivot);
+			continue;
+		}
+
+		appendToMergeQ(mergeQ, seen, path2);
+		path.swap(consensus);
+		if (gDebugPrint)
+#pragma omp critical(cout)
+			cout << '\t' << path << '\n';
+		merged++;
+	}
+	assert(mergeQ.empty());
+	mergeQ.resize(invalid.size());
+	copy(invalid.begin(), invalid.end(), mergeQ.begin());
+	return merged;
+}
+
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
@@ -176,37 +214,8 @@ static void extendPaths(LinearNumKey id,
 	seen.insert(ContigNode(id, false));
 	deque<ContigNode> mergeQ;
 	appendToMergeQ(mergeQ, seen, path);
-
-	unsigned unchanged = 0;
-	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
-		pivot = mergeQ.front();
-		ContigPathMap::const_iterator path2It
-			= paths.find(pivot.id());
-		if (path2It == paths.end())
-			continue;
-
-		if (++unchanged > mergeQ.size()) {
-			// We've checked every item in the list, and no further
-			// merges can be made.
-			break;
-		}
-
-		ContigPath path2 = path2It->second;
-		if (pivot.sense())
-			path2.reverseComplement();
-		ContigPath consensus = align(path, path2, pivot);
-		if (consensus.empty()) {
-			mergeQ.push_back(pivot);
-			continue;
-		}
-
-		appendToMergeQ(mergeQ, seen, path2);
-		path.swap(consensus);
-		if (gDebugPrint)
-			#pragma omp critical(cout)
-			cout << '\t' << path << '\n';
-		unchanged = 0;
-	}
+	while (mergePaths(path, mergeQ, seen, paths) > 0)
+		;
 }
 
 /** Return true if the contigs are equal or both are ambiguous. */
