@@ -236,7 +236,9 @@ static void removeSubsumedPaths(LinearNumKey id,
 			continue;
 		if (equalIgnoreAmbiguos(consensus, path))
 			paths.erase(path2It);
-		else
+		else if (equalIgnoreAmbiguos(consensus, path2))
+			; // Do nothing. This path will be removed later.
+		else if (gDebugPrint)
 			cout << "ignored\t" << consensus << '\n';
 	}
 }
