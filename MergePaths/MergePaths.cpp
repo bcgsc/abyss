@@ -171,18 +171,28 @@ static void extendPaths(LinearNumKey id,
 		if (seen.insert(*it).second)
 			mergeQ.push_back(*it);
 
+	unsigned unchanged = 0;
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
 		ContigPathMap::const_iterator path2It
 			= paths.find(pivot.id());
 		if (path2It == paths.end())
 			continue;
+
+		if (++unchanged > mergeQ.size()) {
+			// We've checked every item in the list, and no further
+			// merges can be made.
+			break;
+		}
+
 		ContigPath path2 = path2It->second;
 		if (pivot.sense())
 			path2.reverseComplement();
 		ContigPath consensus = align(path, path2, pivot);
-		if (consensus.empty())
+		if (consensus.empty()) {
+			mergeQ.push_back(pivot);
 			continue;
+		}
 
 		for (ContigPath::const_iterator it = path2.begin();
 				it != path2.end(); ++it)
@@ -193,6 +203,7 @@ static void extendPaths(LinearNumKey id,
 		if (gDebugPrint)
 			#pragma omp critical(cout)
 			cout << '\t' << path << '\n';
+		unchanged = 0;
 	}
 }
 
