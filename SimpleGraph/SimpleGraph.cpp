@@ -490,7 +490,7 @@ static void handleEstimate(
 	} else if (solutions.empty()) {
 		stats.noValidPaths++;
 	} else if (repeats.count(er.refID) > 0) {
-		vout << "Repeat: " << g_contigIDs.key(er.refID) << '\n';
+		vout << "Repeat: " << ContigNode(er.refID, dirIdx) << '\n';
 		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
