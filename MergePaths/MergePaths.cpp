@@ -226,10 +226,12 @@ static void removeSubsumedPaths(LinearNumKey id,
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
-		assert(consensus.size() == path.size());
-		assert(equal(consensus.begin(), consensus.end(),
-					path.begin(), equalOrBothAmbiguos));
-		paths.erase(path2It);
+		if (consensus.size() != path.size()
+				|| !equal(consensus.begin(), consensus.end(),
+					path.begin(), equalOrBothAmbiguos)) {
+			cout << "ignored\t" << consensus << '\n';
+		} else
+			paths.erase(path2It);
 	}
 }
 
