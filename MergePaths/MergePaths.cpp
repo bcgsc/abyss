@@ -144,6 +144,15 @@ static void removeRepeats(ContigPathMap& paths)
 		cout << "Removing paths in repeats:" << ss.str() << '\n';
 }
 
+static void appendToMergeQ(deque<ContigNode>& mergeQ,
+	set<ContigNode>& seen, const ContigPath& path)
+{
+	for (ContigPath::const_iterator it = path.begin();
+			it != path.end(); ++it)
+		if (seen.insert(*it).second)
+			mergeQ.push_back(*it);
+}
+
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
@@ -166,10 +175,7 @@ static void extendPaths(LinearNumKey id,
 	set<ContigNode> seen;
 	seen.insert(ContigNode(id, false));
 	deque<ContigNode> mergeQ;
-	for (ContigPath::const_iterator it = path.begin();
-			it != path.end(); ++it)
-		if (seen.insert(*it).second)
-			mergeQ.push_back(*it);
+	appendToMergeQ(mergeQ, seen, path);
 
 	unsigned unchanged = 0;
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
@@ -194,11 +200,7 @@ static void extendPaths(LinearNumKey id,
 			continue;
 		}
 
-		for (ContigPath::const_iterator it = path2.begin();
-				it != path2.end(); ++it)
-			if (seen.insert(*it).second)
-				mergeQ.push_back(*it);
-
+		appendToMergeQ(mergeQ, seen, path2);
 		path.swap(consensus);
 		if (gDebugPrint)
 			#pragma omp critical(cout)
