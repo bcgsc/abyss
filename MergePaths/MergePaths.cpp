@@ -161,7 +161,7 @@ static unsigned mergePaths(ContigPath& path,
 		const ContigPathMap& paths)
 {
 	unsigned merged = 0;
-	vector<ContigNode> invalid;
+	deque<ContigNode> invalid;
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
 		ContigPathMap::const_iterator path2It
@@ -185,9 +185,7 @@ static unsigned mergePaths(ContigPath& path,
 			cout << '\t' << path << '\n';
 		merged++;
 	}
-	assert(mergeQ.empty());
-	mergeQ.resize(invalid.size());
-	copy(invalid.begin(), invalid.end(), mergeQ.begin());
+	mergeQ.swap(invalid);
 	return merged;
 }
 
