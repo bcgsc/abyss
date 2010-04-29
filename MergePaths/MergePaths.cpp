@@ -182,7 +182,8 @@ static unsigned mergePaths(ContigPath& path,
 		path.swap(consensus);
 		if (gDebugPrint)
 #pragma omp critical(cout)
-			cout << '\t' << path << '\n';
+			cout << pivot << '\t' << path2 << '\n'
+				<< '\t' << path << '\n';
 		merged++;
 	}
 	mergeQ.swap(invalid);
@@ -214,6 +215,17 @@ static void extendPaths(LinearNumKey id,
 	appendToMergeQ(mergeQ, seen, path);
 	while (mergePaths(path, mergeQ, seen, paths) > 0)
 		;
+
+	if (!mergeQ.empty() && gDebugPrint) {
+		#pragma omp critical(cout)
+		{
+			cout << "invalid\n";
+			for (deque<ContigNode>::const_iterator it
+					= mergeQ.begin(); it != mergeQ.end(); ++it)
+				cout << *it << '\t'
+					<< paths.find(it->id())->second << '\n';
+		}
+	}
 }
 
 /** Return true if the contigs are equal or both are ambiguous. */
@@ -666,10 +678,6 @@ static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		const ContigNode& pivot)
 {
-	if (gDebugPrint)
-		#pragma omp critical(cout)
-		cout << pivot << '\t' << path2 << '\n';
-
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
@@ -687,9 +695,5 @@ static ContigPath align(
 		if (!consensus.empty())
 			return consensus;
 	}
-
-	if (gDebugPrint)
-		#pragma omp critical(cout)
-		cout << "\tinvalid\n";
 	return consensus;
 }
