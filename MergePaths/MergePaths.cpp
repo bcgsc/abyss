@@ -243,8 +243,10 @@ static bool equalIgnoreAmbiguos(const ContigPath& a,
 		&& equal(a.begin(), a.end(), b.begin(), equalOrBothAmbiguos);
 }
 
-/** Identify paths subsumed by the specified path. */
-static void identifySubsumedPaths(
+/** Identify paths subsumed by the specified path.
+ * @return the ID of the subsuming path
+ */
+static LinearNumKey identifySubsumedPaths(
 		ContigPathMap::const_iterator path1It,
 		ContigPathMap& paths,
 		vector<ContigPathMap::iterator>& out)
@@ -282,15 +284,20 @@ static void identifySubsumedPaths(
 				<< "ignored\t" << consensus << '\n';
 	}
 	cout << vout.str();
+	return id;
 }
 
-/** Remove paths subsumed by the specified path. */
+/** Remove paths subsumed by the specified path.
+ * @param seed [out] the ID of the subsuming path
+ * @return the next iterator after path1it
+ */
 static ContigPathMap::const_iterator removeSubsumedPaths(
-		ContigPathMap::const_iterator path1It, ContigPathMap& paths)
+		ContigPathMap::const_iterator path1It, ContigPathMap& paths,
+		LinearNumKey& seed)
 {
 	cout << '\n';
 	vector<ContigPathMap::iterator> eq;
-	identifySubsumedPaths(path1It, paths, eq);
+	seed = identifySubsumedPaths(path1It, paths, eq);
 	++path1It;
 	for (vector<ContigPathMap::iterator>::const_iterator
 			it = eq.begin(); it != eq.end(); ++it) {
@@ -415,9 +422,16 @@ int main(int argc, char** argv)
 	if (gDebugPrint)
 		cout << "\nRemoving redundant contigs\n";
 
+	set<LinearNumKey> seen;
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
-			iter != resultsPathMap.end();)
-		iter = removeSubsumedPaths(iter, resultsPathMap);
+			iter != resultsPathMap.end();) {
+		if (seen.count(iter->first) == 0) {
+			LinearNumKey seed;
+			iter = removeSubsumedPaths(iter, resultsPathMap, seed);
+			seen.insert(seed);
+		} else
+			++iter;
+	}
 
 	vector<ContigPath> uniquePaths;
 	uniquePaths.reserve(resultsPathMap.size());
