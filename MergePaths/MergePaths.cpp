@@ -471,8 +471,12 @@ int main(int argc, char** argv)
 			ContigPath old = oldIt->second;
 			resultsPathMap.erase(oldIt);
 			extendPaths(*it, originalPathMap, resultsPathMap);
-			if (gDebugPrint)
-				cout << "was\t" << old << '\n';
+			if (gDebugPrint) {
+				if (resultsPathMap[*it] == old)
+					cout << "no change\n";
+				else
+					cout << "was\t" << old << '\n';
+			}
 		}
 		if (gDebugPrint)
 			cout << '\n';
