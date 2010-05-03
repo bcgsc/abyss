@@ -243,14 +243,18 @@ static bool equalIgnoreAmbiguos(const ContigPath& a,
 		&& equal(a.begin(), a.end(), b.begin(), equalOrBothAmbiguos);
 }
 
-/** Remove paths subsumed by the specified path. */
-static void removeSubsumedPaths(LinearNumKey id,
-		ContigPathMap& paths)
+/** Identify paths subsumed by the specified path. */
+static void identifySubsumedPaths(
+		ContigPathMap::const_iterator path1It,
+		ContigPathMap& paths,
+		vector<ContigPathMap::iterator>& out)
 {
-	const ContigPath& path = paths[id];
+	ostringstream vout;
+	out.clear();
+	LinearNumKey id = path1It->first;
+	const ContigPath& path = path1It->second;
 	if (gDebugPrint)
-		cout << '\n' << ContigNode(id, false)
-			<< '\t' << path << '\n';
+		vout << ContigNode(id, false) << '\t' << path << '\n';
 
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
@@ -268,14 +272,33 @@ static void removeSubsumedPaths(LinearNumKey id,
 			continue;
 		if (equalIgnoreAmbiguos(consensus, path)) {
 			if (gDebugPrint)
-				cout << pivot << '\t' << path2 << '\n';
-			paths.erase(path2It);
+				vout << pivot << '\t' << path2 << '\n';
+			out.push_back(path2It);
 		} else if (equalIgnoreAmbiguos(consensus, path2)) {
-			// Do nothing. This path will be removed later.
+			// This path is larger. Use it as the seed.
+			return identifySubsumedPaths(path2It, paths, out);
 		} else if (gDebugPrint)
-			cout << pivot << '\t' << path2 << '\n'
+			vout << pivot << '\t' << path2 << '\n'
 				<< "ignored\t" << consensus << '\n';
 	}
+	cout << vout.str();
+}
+
+/** Remove paths subsumed by the specified path. */
+static ContigPathMap::const_iterator removeSubsumedPaths(
+		ContigPathMap::const_iterator path1It, ContigPathMap& paths)
+{
+	cout << '\n';
+	vector<ContigPathMap::iterator> eq;
+	identifySubsumedPaths(path1It, paths, eq);
+	++path1It;
+	for (vector<ContigPathMap::iterator>::const_iterator
+			it = eq.begin(); it != eq.end(); ++it) {
+		if (*it == path1It)
+			++path1It;
+		paths.erase(*it);
+	}
+	return path1It;
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -393,8 +416,8 @@ int main(int argc, char** argv)
 		cout << "\nRemoving redundant contigs\n";
 
 	for (ContigPathMap::const_iterator iter = resultsPathMap.begin();
-			iter != resultsPathMap.end(); ++iter)
-		removeSubsumedPaths(iter->first, resultsPathMap);
+			iter != resultsPathMap.end();)
+		iter = removeSubsumedPaths(iter, resultsPathMap);
 
 	vector<ContigPath> uniquePaths;
 	uniquePaths.reserve(resultsPathMap.size());
