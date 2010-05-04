@@ -124,6 +124,7 @@ static size_t countKmer(const string& path)
 				state = GAP;
 				break;
 			  case 'A': case 'C': case 'G': case 'T':
+			  case '0': case '1': case '2': case '3':
 				bases++;
 				state = SEQUENCE;
 				break;
