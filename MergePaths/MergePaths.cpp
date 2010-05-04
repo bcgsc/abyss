@@ -459,8 +459,14 @@ int main(int argc, char** argv)
 			originalPathMap.erase(*it);
 
 		// Reassemble the paths that were found to overlap.
-		if (gDebugPrint)
-			cout << "\nReassembling overlapping contigs\n";
+		if (gDebugPrint) {
+			cout << "\nReassembling overlapping contigs:";
+			transform(overlaps.begin(), overlaps.end(),
+					affix_ostream_iterator<string>(cout, " "),
+					idToString);
+			cout << '\n';
+		}
+
 		for (set<LinearNumKey>::const_iterator it = overlaps.begin();
 				it != overlaps.end(); ++it) {
 			if (originalPathMap.count(*it) == 0)
@@ -482,7 +488,14 @@ int main(int argc, char** argv)
 			cout << '\n';
 
 		removeRepeats(resultsPathMap);
-		removeSubsumedPaths(resultsPathMap);
+		overlaps = removeSubsumedPaths(resultsPathMap);
+		if (!overlaps.empty() && gDebugPrint) {
+			cout << "\nOverlapping contigs:";
+			transform(overlaps.begin(), overlaps.end(),
+					affix_ostream_iterator<string>(cout, " "),
+					idToString);
+			cout << '\n';
+		}
 	}
 	originalPathMap.clear();
 
