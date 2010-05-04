@@ -226,7 +226,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	return count;
 }
 
-static void assert_open(const ofstream& f, const string& p)
+static void assert_open(/*const*/ ofstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
