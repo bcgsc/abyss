@@ -180,7 +180,9 @@ int main(int argc, char** argv)
 
 	ostream& out = cout;
 	if (opt::format == DOT)
-		out << "digraph adj {\n";
+		out << "digraph adj {\n"
+			"k=" << opt::k << "\n"
+			"edge[d=" << -(opt::k-1) << "]\n";
 
 	int numVerts = 0;
 	int numEdges = 0;
