@@ -197,6 +197,7 @@ int main(int argc, char** argv)
 			const Kmer& seq = idx == 0 ? i->l : i->r;
 			const KmerMap::mapped_type& edges = ends[!idx][seq];
 
+			float c = i->coverage / (float)(i->length - opt::k + 1);
 			switch (opt::format) {
 			  case ADJ:
 				copy(edges.begin(), edges.end(),
@@ -205,8 +206,7 @@ int main(int argc, char** argv)
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" "
-					"[len=" << i->length << " "
-					"cov=" << i->coverage << "];\n"
+					"[l=" << i->length << " c=" << c << "];\n"
 					"\"" << id << (idx ? '-' : '+') << '"';
 				if (!edges.empty()) {
 					out << " -> {";
