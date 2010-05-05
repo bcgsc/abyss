@@ -119,7 +119,7 @@ static void popBubble(const ContigNode& head,
 		copy(sorted.begin(), sorted.end(),
 				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
-		cout << " } -> \"" << tail << "\";\n";
+		cout << " } -> \"" << tail << "\"\n";
 	}
 	transform(sorted.begin() + 1, sorted.end(),
 			inserter(g_popped, g_popped.begin()),

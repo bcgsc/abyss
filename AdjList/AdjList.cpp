@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 				break;
 			  case DOT:
 				out << '"' << id << (idx ? '-' : '+') << "\" "
-					"[l=" << i->length << " c=" << c << "];\n";
+					"[l=" << i->length << " c=" << c << "]\n";
 				if (!edges.empty()) {
 					out << "\"" << id << (idx ? '-' : '+')
 						<< "\" -> {";
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
 							= edges.begin(); it != edges.end(); ++it)
 						out << " \""
 							<< (idx == 0 ? *it : ~*it) << '"';
-					out << " };\n";
+					out << " }\n";
 				}
 				break;
 			}
