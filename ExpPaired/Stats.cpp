@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <cstdio>
+#include <iomanip>
 #include <iostream>
 
 using namespace std;
@@ -70,8 +70,10 @@ PDF::PDF(const Histogram& h) :
 		m_dist[i] = v > 0 ? (double)v / count : m_minp;
 	}
 
-	printf("Stats mean: %.2lf sd: %.2lf n: %u min: %u max: %u\n",
-			m_mean, m_stdDev, count, h.minimum(), h.maximum());
+	cerr << "Stats mean: " << setprecision(4) << m_mean << " "
+	   "sd: " << setprecision(4) << m_stdDev << " "
+	   "n: " << count << " "
+	   "min: " << h.minimum() << " max: " << h.maximum() << '\n';
 }
 
 double PDF::getP(size_t idx) const
