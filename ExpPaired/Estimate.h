@@ -30,9 +30,9 @@ struct Estimate
 		if (opt::dot)
 			return out << '"' << o.contig << "\" ["
 				"d=" << o.distance << " "
-				"n=" << o.numPairs << " "
 				"e=" << std::fixed << std::setprecision(1)
-					<< o.stdDev << ']';
+					<< o.stdDev << " "
+				"n=" << o.numPairs << ']';
 		else
 			return out << o.contig << ','
 				<< o.distance << ','
