@@ -37,6 +37,7 @@ static const char USAGE_MESSAGE[] =
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs [100]\n"
 "  -o, --out=FILE        write result to FILE\n"
+"      --dot             output overlaps in dot format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -45,6 +46,10 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned k;
+
+	/** Output in dot format. */
+	int dot; // used by Estimate
+
 	static unsigned npairs;
 	static unsigned seedLen = 100;
 	static int verbose;
@@ -56,6 +61,7 @@ static const char shortopts[] = "k:n:o:s:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "dot",         no_argument,       &opt::dot, 1, },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
@@ -220,9 +226,14 @@ static void processContigs(const string& alignFile,
 	}
 	ostream& out = opt::out.empty() ? cout : outFile;
 
+	if (opt::dot)
+		out << "digraph dist {\n"
+			"k=" << opt::k << "\t"
+			"n=" << opt::npairs << "\t"
+			"s=" << opt::seedLen << "\n";
+
 	//Extract the align records from the file, one contig's worth at a time
 	bool stop = false;
-	
 	while(!stop)
 	{
 		AlignPairVec currPairs;
@@ -242,7 +253,8 @@ static void processContigs(const string& alignFile,
 		if (refLength < opt::seedLen)
 			continue;
 
-		out << refContigID;
+		if (!opt::dot)
+			out << refContigID;
 
 		// Seperate the pairings by direction (pairs aligning in the
 		// same comp as the contig are sense pairs) and by the contig
@@ -250,8 +262,9 @@ static void processContigs(const string& alignFile,
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 			// If this is the second direction, write a seperator
-			if (dirIdx == 1)
+			if (!opt::dot && dirIdx == 1)
 				out << " ;";
+			ContigNode refContig(refContigID, dirIdx);
 
 			PairDataMap dataMap;
 			for (AlignPairVec::const_iterator iter = currPairs.begin();
@@ -274,7 +287,7 @@ static void processContigs(const string& alignFile,
 						&& pdIter->second.pairVec[1].size()
 							>= opt::npairs) {
 					cerr << "warning: inconsistent pairing between "
-						<< refContigID << (dirIdx ? '-' : '+') << ' '
+						<< refContig << ' '
 						<< pairID << '+' << ' '
 						<< pdIter->second.pairVec[1].size()
 						<< ' '
@@ -306,7 +319,13 @@ static void processContigs(const string& alignFile,
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
 
 					if (est.numPairs >= opt::npairs) {
-						out << ' ' << est;
+						if (opt::dot) {
+							if (dirIdx)
+								est.contig.flip();
+							out << '"' << refContig << "\" -> "
+								<< est << '\n';
+						} else
+							out << ' ' << est;
 					} else {
 						cerr << "warning: "
 							<< refContigID << (dirIdx ? '-' : '+')
@@ -319,9 +338,13 @@ static void processContigs(const string& alignFile,
 				}
 			}
 		}
-		out << "\n";
+		if (!opt::dot)
+			out << "\n";
 		assert(out.good());
 	}
+
+	if (opt::dot)
+		out << "}\n";
 
 	inFile.close();
 	if (!opt::out.empty())

@@ -59,6 +59,8 @@ namespace opt {
 	/** Input alignment format. */
 	static int inputFormat;
 	enum { KALIGNER, SAM };
+
+	int dot; // used by Estimate
 }
 
 static const char shortopts[] = "d:k:f:h:c:v";

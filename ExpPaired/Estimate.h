@@ -12,6 +12,10 @@
 #include <sstream>
 #include <string>
 
+namespace opt {
+	extern int dot;
+}
+
 /** Distance estimate between two contigs. */
 struct Estimate
 {
@@ -23,10 +27,17 @@ struct Estimate
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
-		return out << o.contig << ','
-			<< o.distance << ','
-			<< o.numPairs << ','
-			<< std::fixed << std::setprecision(1) << o.stdDev;
+		if (opt::dot)
+			return out << '"' << o.contig << "\" ["
+				"d=" << o.distance << " "
+				"n=" << o.numPairs << " "
+				"e=" << std::fixed << std::setprecision(1)
+					<< o.stdDev << ']';
+		else
+			return out << o.contig << ','
+				<< o.distance << ','
+				<< o.numPairs << ','
+				<< std::fixed << std::setprecision(1) << o.stdDev;
 	}
 
 	friend std::istream& operator>>(std::istream& in, Estimate& o)

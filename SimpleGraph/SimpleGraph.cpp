@@ -57,6 +57,7 @@ namespace opt {
 	static int scaffold = 1;
 	static int verbose;
 	static string out;
+	int dot; // used by Estimate
 }
 
 static const char shortopts[] = "j:k:o:v";
