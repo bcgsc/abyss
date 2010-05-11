@@ -15,11 +15,7 @@ extern Dictionary g_contigIDs;
 /** A tuple of a contig ID and an orientation. */
 class ContigNode {
   public:
-	ContigNode()
-#if __GNUC__ == 4 && __GNUC_MINOR__ == 1
-		: m_ambig(true), m_id(1<<29), m_sense(true)
-#endif
-		{ }
+	ContigNode() { }
 	ContigNode(unsigned id, bool sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(std::string id, bool sense)
