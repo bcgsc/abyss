@@ -164,14 +164,16 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 		o = createConsensus(ao, bo);
 	} while (o.empty() && chomp(seq, 'n'));
 	if (o.empty()) {
-		cerr << "error: the head of `" << node << "' "
+		cerr << "warning: the head of `" << node << "' "
 			"does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
-		exit(EXIT_FAILURE);
+		seq += 'n';
+		seq += s;
+	} else {
+		seq.resize(seq.length() - overlap);
+		seq += o;
+		seq += Sequence(s, overlap);
 	}
-	seq.resize(seq.length() - overlap);
-	seq += o;
-	seq += Sequence(s, overlap);
 }
 
 static Contig mergePath(const Path& path)
