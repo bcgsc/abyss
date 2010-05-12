@@ -145,18 +145,7 @@ next_record:
 		while (getline(in, field, '\t'))
 			fields.push_back(field);
 
-		if (fields.size() > 1 || fields.size() <= 5) {
-			// ID sequence quality chastity comment
-			if (fields.size() > 3 && opt::chastityFilter
-					&& !isChaste(fields[3])) {
-				m_unchaste++;
-				goto next_record;
-			}
-			id = fields[0];
-			s = fields[1];
-			if (fields.size() > 2)
-				q = fields[2];
-		} else if (fields.size() >= 11
+		if (fields.size() >= 11
 				&& fields[9].length() == fields[10].length()) {
 			// SAM
 			unsigned flags = strtoul(fields[1].c_str(), NULL, 0);
