@@ -155,18 +155,19 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 {
 	unsigned overlap = opt::k - 1;
 	assert(s.length() > overlap);
+	Sequence ao;
 	Sequence bo(s, 0, overlap);
 	Sequence o;
-	while (o.empty()) {
+	do {
 		assert(seq.length() > overlap);
-		Sequence ao(seq, seq.length() - overlap);
+		ao = seq.substr(seq.length() - overlap);
 		o = createConsensus(ao, bo);
-		if (o.empty() && chop(seq) != 'n') {
-			cerr << "error: the head of `" << node << "' "
-				"does not match the tail of the previous contig\n"
-				<< ao << '\n' << bo << '\n' << path << endl;
-			exit(EXIT_FAILURE);
-		}
+	} while (o.empty() && chomp(seq, 'n'));
+	if (o.empty()) {
+		cerr << "error: the head of `" << node << "' "
+			"does not match the tail of the previous contig\n"
+			<< ao << '\n' << bo << '\n' << path << endl;
+		exit(EXIT_FAILURE);
 	}
 	seq.resize(seq.length() - overlap);
 	seq += o;
