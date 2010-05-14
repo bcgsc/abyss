@@ -84,7 +84,7 @@ ifdef b
 abyssopt += -b$b
 popbubblesopt += -b$b
 endif
-abyssopt += $v --coverage-hist=coverage.hist -s bubbles.fa
+abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Common paired-end parameters
 ifdef PE_HOSTFILE
