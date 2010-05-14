@@ -362,16 +362,14 @@ void *alignReadsToDB(void* readsFile)
 				assert(isdigit(seq[0]));
 			else
 				assert(isalpha(seq[0]));
-
-			if (opt::multimap == opt::MULTIMAP)
-				g_aligner_m->alignRead(seq,
-						affix_ostream_iterator<Alignment>(
-							output, "\t"));
-			else
-				g_aligner_u->alignRead(seq,
-						affix_ostream_iterator<Alignment>(
-							output, "\t"));
 		}
+
+		if (opt::multimap == opt::MULTIMAP)
+			g_aligner_m->alignRead(seq,
+					affix_ostream_iterator<Alignment>(output, "\t"));
+		else
+			g_aligner_u->alignRead(seq,
+					affix_ostream_iterator<Alignment>(output, "\t"));
 
 		pthread_mutex_lock(&g_mutexCout);
 		cout << rec.id;
