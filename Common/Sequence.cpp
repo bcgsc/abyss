@@ -87,7 +87,7 @@ Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
 
 char nucleotideToColourSpace(char a, char b)
 {
-	if (a == 'N' || b == 'N')
-		return 'N';
+	if (toupper(a) == 'N' || toupper(b) == 'N')
+		return islower(a) || islower(b) ? 'n' : 'N';
 	return "0123"[cstont[baseToCode(a)][baseToCode(b)]];
 }
