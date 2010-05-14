@@ -85,11 +85,18 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 	// The results
 	AlignmentSet aligns;
 
+	bool good = seq.find_first_not_of("ACGT0123") == string::npos;
+	bool discarded = true;
 	int seqLen = seq.length();
 	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
 	{
+		Sequence kmer(seq, i, m_hashSize);
+		if (!good && kmer.find_first_not_of("ACGT0123")
+				!= string::npos)
+			continue;
+		discarded = false;
 		pair<map_const_iterator, map_const_iterator> range
-			= m_target.equal_range(Kmer(seq.substr(i, m_hashSize)));
+			= m_target.equal_range(Kmer(kmer));
 		for (map_const_iterator resultIter = range.first;
 				resultIter != range.second; ++resultIter) {
 			if (opt::multimap == opt::IGNORE
