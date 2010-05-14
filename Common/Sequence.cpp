@@ -30,10 +30,9 @@ char complementBaseChar(char base)
 		case 't': return 'a';
 		case 'n': return 'n';
 		case '.': return '.';
-		default:
-			assert(false);
-			return 0;
 	}
+	cerr << "error: unexpected character: `" << base << "'\n";
+	exit(EXIT_FAILURE);
 }
 
 /** Return the reverse complement of the specified sequence. */
