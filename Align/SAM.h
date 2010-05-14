@@ -73,6 +73,16 @@ struct SAMRecord {
 		cigar = s.str();
 	}
 
+	SAMRecord(const Alignment& a0, const Alignment& a1)
+	{
+		*this = SAMRecord(a0);
+		mrnm = a1.contig;
+		mpos = 1 + a1.contig_start_pos;
+		flag |= FPAIRED;
+		if (a1.isRC)
+			flag |= FMREVERSE;
+	}
+
 	/** Parse the specified CIGAR string.
 	 * @return an alignment setting the fields read_start_pos,
 	 * align_length, and read_length. The other fields will be
