@@ -91,7 +91,6 @@ static struct {
 	size_t numSplit;
 } stats;
 
-static ostream& pairedAlignFile = cout;
 static ofstream fragFile;
 static Histogram histogram;
 
@@ -347,16 +346,16 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						 * repeat, two distance esimates are expected
 						 * (both to and from the repeat to itself) so
 						 * print both alignments. */
-						pairedAlignFile << SAMRecord(a0, a1) << '\n';
+						cout << SAMRecord(a0, a1) << '\n';
 						if (a0.isRC != a1.isRC)
-							pairedAlignFile << SAMRecord(a1, a0) << '\n';
-						assert(pairedAlignFile.good());
+							cout << SAMRecord(a1, a0) << '\n';
+						assert(cout.good());
 					}
 				} else {
 					// Print the alignment and the swapped alignment
-					pairedAlignFile << SAMRecord(a0, a1) << '\n'
+					cout << SAMRecord(a0, a1) << '\n'
 						<< SAMRecord(a1, a0) << '\n';
-					assert(pairedAlignFile.good());
+					assert(cout.good());
 				}
 			}
 		}
