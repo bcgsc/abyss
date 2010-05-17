@@ -347,22 +347,15 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						 * repeat, two distance esimates are expected
 						 * (both to and from the repeat to itself) so
 						 * print both alignments. */
-						pairedAlignFile
-							<< currID << ' ' << a0 << ' '
-							<< pairID << ' ' << a1 << '\n';
+						pairedAlignFile << SAMRecord(a0, a1) << '\n';
 						if (a0.isRC != a1.isRC)
-							pairedAlignFile
-								<< pairID << ' ' << a1 << ' '
-								<< currID << ' ' << a0 << '\n';
+							pairedAlignFile << SAMRecord(a1, a0) << '\n';
 						assert(pairedAlignFile.good());
 					}
 				} else {
 					// Print the alignment and the swapped alignment
-					pairedAlignFile
-						<< currID << ' ' << a0 << ' '
-						<< pairID << ' ' << a1 << '\n'
-						<< pairID << ' ' << a1 << ' '
-						<< currID << ' ' << a0 << '\n';
+					pairedAlignFile << SAMRecord(a0, a1) << '\n'
+						<< SAMRecord(a1, a0) << '\n';
 					assert(pairedAlignFile.good());
 				}
 			}

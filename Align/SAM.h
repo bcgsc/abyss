@@ -15,7 +15,7 @@ struct SAMRecord {
 	unsigned mapq;
 	std::string cigar;
 	std::string mrnm;
-	unsigned mpos;
+	int mpos;
 	int isize;
 	std::string seq;
 	std::string qual;
@@ -48,6 +48,7 @@ struct SAMRecord {
 
 	SAMRecord() { }
 
+	/** Consturct a single-end alignment. */
 	SAMRecord(const Alignment& a) :
 		qname("*"),
 		flag(a.isRC ? FREVERSE : 0),
@@ -73,11 +74,16 @@ struct SAMRecord {
 		cigar = s.str();
 	}
 
+	/** Construct a paired-end alignment. */
 	SAMRecord(const Alignment& a0, const Alignment& a1)
 	{
 		*this = SAMRecord(a0);
 		mrnm = a1.contig;
-		mpos = 1 + a1.contig_start_pos;
+		/* The mate position should be the leftmost alignment
+		 * coordiante. We use the outside fragment coordinate instead
+		 * so that we can make an accurate distance estimate.
+		 */
+		mpos = 1 + a1.targetAtQueryStart();
 		flag |= FPAIRED;
 		if (a1.isRC)
 			flag |= FMREVERSE;
@@ -123,7 +129,7 @@ struct SAMRecord {
 	operator Alignment() const {
 		assert(~flag & FUNMAP);
 		Alignment a = parseCigar(cigar);
-		assert((unsigned)a.read_length == seq.length());
+		assert(seq == "*" || (unsigned)a.read_length == seq.length());
 		a.contig = rname;
 		assert(pos > 0);
 		a.contig_start_pos = pos - 1;
@@ -160,6 +166,9 @@ struct SAMRecord {
 			"";
 		return in;
 	}
+
+	bool isReverse() const { return flag & FREVERSE; }
+	bool isMateReverse() const { return flag & FMREVERSE; }
 };
 
 #endif

@@ -240,8 +240,8 @@ static void processContigs(const string& alignFile,
 		stop = extractor.extractContigAlignments(currPairs);
 
 		assert(currPairs.size() > 0);
-		ContigID refContigID = currPairs.front().refRec.contig;
-		
+		ContigID refContigID = currPairs.front().rname;
+
 		// From this point all ids will be interpreted as integers
 		// They must be strictly > 0 and contiguous
 		LinearNumKey refNumericID
@@ -269,10 +269,9 @@ static void processContigs(const string& alignFile,
 			PairDataMap dataMap;
 			for (AlignPairVec::const_iterator iter = currPairs.begin();
 					iter != currPairs.end(); ++iter) {
-				if(iter->refRec.isRC == (bool)dirIdx)
-				{
-					PairedData& pd = dataMap[iter->pairRec.contig];
-					size_t compIdx = (size_t)iter->pairRec.isRC;
+				if (iter->isReverse() == (bool)dirIdx) {
+					PairedData& pd = dataMap[iter->mrnm];
+					size_t compIdx = (size_t)iter->isMateReverse();
 					assert(compIdx < 2);
 					pd.pairVec[compIdx].push_back(*iter);
 				}
@@ -356,17 +355,18 @@ int estimateDistance(int refLen, int pairLen,
 		size_t dirIdx, const AlignPairVec& pairVec,
 		bool sameOrientation, const PDF& pdf, unsigned& numPairs)
 {
+	(void)dirIdx; (void)sameOrientation;
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
 	vector<int> distanceList;
 	for (AlignPairVec::const_iterator it = pairVec.begin();
 			it != pairVec.end(); ++it) {
-		const Alignment& ref = it->refRec;
-		Alignment pair = sameOrientation ? it->pairRec
-			: it->pairRec.flipTarget(pairLen);
-		int distance = dirIdx == 0
-			? refLen + (pair - ref)
-			: pairLen + (ref - pair);
+		Alignment a0 = *it;
+		if (a0.isRC)
+			a0 = a0.flipTarget(refLen);
+		int mpos = it->mpos - 1;
+		int a1 = it->isMateReverse() ? mpos : pairLen - mpos;
+		int distance = refLen + a1 - a0.targetAtQueryStart();
 		assert(distance > 0);
 		distanceList.push_back(distance);
 	}
