@@ -3,12 +3,8 @@
 
 #include "SAM.h"
 #include <istream>
-#include <ostream>
-#include <string>
 
-typedef SAMRecord AlignPair;
-
-typedef std::vector<AlignPair> AlignPairVec;
+typedef std::vector<SAMRecord> AlignPairVec;
 
 class AlignExtractor
 {
@@ -20,7 +16,7 @@ class AlignExtractor
 
 	private:
 		std::istream& m_in;
-		AlignPair m_currPair;
+		SAMRecord m_currPair;
 };
 
 #endif

@@ -20,8 +20,7 @@ bool AlignExtractor::extractContigAlignments(AlignPairVec& outPairs)
 	assert(m_in.good());
 	outPairs.push_back(m_currPair);
 	ContigID id = m_currPair.rname;
-	AlignPair pair;
-	while (m_in >> pair) {
+	for (SAMRecord pair; m_in >> pair;) {
 		if (pair.rname == id) {
 			outPairs.push_back(pair);
 		} else {
