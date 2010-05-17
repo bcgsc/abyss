@@ -155,6 +155,7 @@ next_record:
 				m_unchaste++;
 				goto next_record;
 			}
+			id = fields[0];
 			switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
 			  case 0: break;
 			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
