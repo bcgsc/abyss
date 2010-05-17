@@ -80,9 +80,9 @@ struct PairedData
 
 typedef map<ContigID, PairedData> PairDataMap;
 
-int estimateDistance(int refLen, int pairLen,
-		size_t dirIdx, const AlignPairVec& pairData,
-		bool sameOrientation, const PDF& pdf, unsigned& numPairs);
+static int estimateDistance(unsigned refLen, unsigned pairLen,
+		const AlignPairVec& pairData, const PDF& pdf,
+		unsigned& numPairs);
 
 static void processContigs(const string& alignFile,
 		const vector<unsigned>& lengthVec, const PDF& pdf);
@@ -302,19 +302,12 @@ static void processContigs(const string& alignFile,
 					= pdIter->second.pairVec[pairDirIdx];
 				unsigned numPairs = pairVec.size();
 				if (numPairs >= opt::npairs) {
-					// Determine the relative orientation of the
-					// contigs. As pairs are orientated in opposite
-					// (reverse comp) direction, the alignments are in
-					// the same orientation if the pairs aligned in
-					// the opposite orientation.
-					bool sameOrientation = dirIdx != pairDirIdx;
-
 					Estimate est;
-					est.contig = ContigNode(pairID, !sameOrientation);
+					est.contig = ContigNode(
+							pairID, dirIdx == pairDirIdx);
 					est.distance = estimateDistance(
 							refLength, lengthVec.at(est.contig.id()),
-							dirIdx, pairVec, sameOrientation, pdf,
-							est.numPairs);
+							pairVec, pdf, est.numPairs);
 					est.stdDev = pdf.getSampleStdDev(est.numPairs);
 
 					if (est.numPairs >= opt::npairs) {
@@ -351,11 +344,10 @@ static void processContigs(const string& alignFile,
 }
 
 // Estimate the distances between the contigs
-int estimateDistance(int refLen, int pairLen,
-		size_t dirIdx, const AlignPairVec& pairVec,
-		bool sameOrientation, const PDF& pdf, unsigned& numPairs)
+static int estimateDistance(unsigned refLen, unsigned pairLen,
+		const AlignPairVec& pairVec, const PDF& pdf,
+		unsigned& numPairs)
 {
-	(void)dirIdx; (void)sameOrientation;
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
 	vector<int> distanceList;
