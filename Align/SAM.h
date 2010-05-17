@@ -22,11 +22,13 @@ struct SAMRecord {
 
 	/** Flag */
 	enum {
-		/** the read is paired in sequencing, no matter whether it is mapped in a pair */
+		/** the read is paired in sequencing, no matter whether it is
+		 * mapped in a pair */
 		FPAIRED = 1,
 		/** the read is mapped in a proper pair */
 		FPROPER_PAIR = 2,
-		/** the read itself is unmapped; conflictive with FPROPER_PAIR */
+		/** the read itself is unmapped; conflictive with FPROPER_PAIR
+		 */
 		FUNMAP = 4,
 		/** the mate is unmapped */
 		FMUNMAP = 8,
