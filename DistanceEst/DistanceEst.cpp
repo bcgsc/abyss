@@ -356,8 +356,7 @@ static int estimateDistance(unsigned refLen, unsigned pairLen,
 		Alignment a0 = *it;
 		if (a0.isRC)
 			a0 = a0.flipTarget(refLen);
-		int mpos = it->mpos - 1;
-		int a1 = it->isMateReverse() ? mpos : pairLen - mpos;
+		int a1 = it->isMateReverse() ? it->mpos : pairLen - it->mpos;
 		int distance = refLen + a1 - a0.targetAtQueryStart();
 		assert(distance > 0);
 		distanceList.push_back(distance);

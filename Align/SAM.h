@@ -11,7 +11,7 @@ struct SAMRecord {
 	std::string qname;
 	unsigned flag;
 	std::string rname;
-	unsigned pos;
+	int pos;
 	unsigned mapq;
 	std::string cigar;
 	std::string mrnm;
@@ -55,7 +55,7 @@ struct SAMRecord {
 		qname("*"),
 		flag(a.isRC ? FREVERSE : 0),
 		rname(a.contig),
-		pos(1 + a.contig_start_pos),
+		pos(a.contig_start_pos),
 		mapq(255),
 		// cigar
 		mrnm("*"),
@@ -85,7 +85,7 @@ struct SAMRecord {
 		 * coordiante. We use the outside fragment coordinate instead
 		 * so that we can make an accurate distance estimate.
 		 */
-		mpos = 1 + a1.targetAtQueryStart();
+		mpos = a1.targetAtQueryStart();
 		flag |= FPAIRED;
 		if (a1.isRC)
 			flag |= FMREVERSE;
@@ -134,7 +134,7 @@ struct SAMRecord {
 		assert(seq == "*" || (unsigned)a.read_length == seq.length());
 		a.contig = rname;
 		assert(pos > 0);
-		a.contig_start_pos = pos - 1;
+		a.contig_start_pos = pos;
 		a.isRC = flag & FREVERSE; // strand of the query
 		return a;
 	}
@@ -145,11 +145,11 @@ struct SAMRecord {
 		return out << o.qname
 			<< '\t' << o.flag
 			<< '\t' << o.rname
-			<< '\t' << o.pos
+			<< '\t' << (1 + o.pos)
 			<< '\t' << o.mapq
 			<< '\t' << o.cigar
 			<< '\t' << o.mrnm
-			<< '\t' << o.mpos
+			<< '\t' << (1 + o.mpos)
 			<< '\t' << o.isize
 			<< '\t' << o.seq
 			<< '\t' << o.qual;
@@ -163,6 +163,8 @@ struct SAMRecord {
 			>> o.seq >> o.qual;
 		if (!in)
 			return in;
+		o.pos--;
+		o.mpos--;
 		o.qname += o.flag & FREAD1 ? "/1" :
 			o.flag & FREAD2 ? "/2" :
 			"";
