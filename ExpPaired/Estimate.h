@@ -3,6 +3,7 @@
 
 #include "ContigNode.h"
 #include "PairUtils.h"
+#include "Sense.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
