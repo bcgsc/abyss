@@ -438,7 +438,10 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 static void readAlignments(istream& in, ReadAlignMap* pout)
 {
 	for (string line; getline(in, line);)
-		readAlignment(line, *pout);
+		if (line.empty() || line[0] == '@')
+			cout << line << '\n';
+		else
+			readAlignment(line, *pout);
 	assert(in.eof());
 }
 

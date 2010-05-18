@@ -327,6 +327,7 @@ static void readContigsIntoDB(string refFastaFile,
 				assert(isalpha(rec.seq[0]));
 		}
 
+		cout << "@SQ\tSN:" << rec.id << "\tLN:" << rec.seq.length() << '\n';
 		aligner.addReferenceSequence(rec.id, rec.seq);
 
 		count++;

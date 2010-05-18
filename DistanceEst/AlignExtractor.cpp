@@ -6,6 +6,12 @@ using namespace std;
 AlignExtractor::AlignExtractor(istream& in)
 	: m_in(in)
 {
+	// Ignore SAM headers.
+	while (m_in.peek() == '@') {
+		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
+		assert(m_in.good());
+	}
+
 	// Prime the read by reading in the first contig.
 	bool good = m_in >> m_currPair;
 	assert(good);
