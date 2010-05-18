@@ -133,7 +133,6 @@ struct SAMRecord {
 		Alignment a = parseCigar(cigar);
 		assert(seq == "*" || (unsigned)a.read_length == seq.length());
 		a.contig = rname;
-		assert(pos > 0);
 		a.contig_start_pos = pos;
 		a.isRC = flag & FREVERSE; // strand of the query
 		return a;
