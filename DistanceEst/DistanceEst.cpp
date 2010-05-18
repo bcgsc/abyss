@@ -80,6 +80,110 @@ struct PairedData
 
 typedef map<ContigID, PairedData> PairDataMap;
 
+static int estimateDistance(unsigned len0, unsigned len1,
+		const AlignPairVec& pairs, const PDF& pdf,
+		unsigned& numPairs);
+
+static void writeEstimates(ostream& out,
+		const vector<SAMRecord>& currPairs,
+		const vector<unsigned>& lengthVec, const PDF& pdf)
+{
+	assert(!currPairs.empty());
+	ContigID refContigID = currPairs.front().rname;
+
+	// From this point all ids will be interpreted as integers
+	// They must be strictly > 0 and contiguous
+	LinearNumKey refNumericID
+		= convertContigIDToLinearNumKey(refContigID);
+	assert(refNumericID < lengthVec.size());
+
+	// Only process contigs that are a reasonable length
+	unsigned refLength = lengthVec[refNumericID];
+	if (refLength < opt::seedLen)
+		return;
+
+	if (!opt::dot)
+		out << refContigID;
+
+	// Seperate the pairings by direction (pairs aligning in the
+	// same comp as the contig are sense pairs) and by the contig
+	// they align to
+	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
+	{
+		// If this is the second direction, write a seperator
+		if (!opt::dot && dirIdx == 1)
+			out << " ;";
+		ContigNode refContig(refContigID, dirIdx);
+
+		PairDataMap dataMap;
+		for (AlignPairVec::const_iterator iter = currPairs.begin();
+				iter != currPairs.end(); ++iter) {
+			if (iter->isReverse() == (bool)dirIdx) {
+				PairedData& pd = dataMap[iter->mrnm];
+				size_t compIdx = (size_t)iter->isMateReverse();
+				assert(compIdx < 2);
+				pd.pairVec[compIdx].push_back(*iter);
+			}
+		}
+
+		// For each contig that is paired, compute the distance
+		for (PairDataMap::const_iterator pdIter = dataMap.begin();
+				pdIter != dataMap.end(); ++pdIter) {
+			const ContigID& pairID = pdIter->first;
+			// Check if the pairs are in a valid orientation
+			if (pdIter->second.pairVec[0].size() >= opt::npairs
+					&& pdIter->second.pairVec[1].size()
+					>= opt::npairs) {
+				cerr << "warning: inconsistent pairing between "
+					<< refContig << ' '
+					<< pairID << '+' << ' '
+					<< pdIter->second.pairVec[1].size()
+					<< ' '
+					<< pairID << '-' << ' '
+					<< pdIter->second.pairVec[0].size()
+					<< '\n';
+				continue;
+			}
+
+			unsigned pairDirIdx = pdIter->second.pairVec[0].size()
+				>= opt::npairs ? 0 : 1;
+			const AlignPairVec& pairVec
+				= pdIter->second.pairVec[pairDirIdx];
+			unsigned numPairs = pairVec.size();
+			if (numPairs >= opt::npairs) {
+				Estimate est;
+				est.contig = ContigNode(
+						pairID, dirIdx == pairDirIdx);
+				est.distance = estimateDistance(
+						refLength, lengthVec.at(est.contig.id()),
+						pairVec, pdf, est.numPairs);
+				est.stdDev = pdf.getSampleStdDev(est.numPairs);
+
+				if (est.numPairs >= opt::npairs) {
+					if (opt::dot) {
+						if (dirIdx)
+							est.contig.flip();
+						out << '"' << refContig << "\" -> "
+							<< est << '\n';
+					} else
+						out << ' ' << est;
+				} else {
+					cerr << "warning: "
+						<< refContigID << (dirIdx ? '-' : '+')
+						<< ','
+						<< est.contig << ' '
+						<< est.numPairs << " of "
+						<< numPairs << " pairs"
+						" fit the expected distribution\n";
+				}
+			}
+		}
+	}
+	if (!opt::dot)
+		out << "\n";
+	assert(out.good());
+}
+
 static void processContigs(const string& alignFile,
 		const vector<unsigned>& lengthVec, const PDF& pdf);
 
@@ -253,102 +357,8 @@ static void processContigs(const string& alignFile,
 			"s=" << opt::seedLen << "\n";
 
 	AlignExtractor extractor(in);
-	for (AlignPairVec currPairs; extractor >> currPairs;) {
-		assert(!currPairs.empty());
-		ContigID refContigID = currPairs.front().rname;
-
-		// From this point all ids will be interpreted as integers
-		// They must be strictly > 0 and contiguous
-		LinearNumKey refNumericID
-			= convertContigIDToLinearNumKey(refContigID);
-		assert(refNumericID < lengthVec.size());
-
-		// Only process contigs that are a reasonable length
-		unsigned refLength = lengthVec[refNumericID];
-		if (refLength < opt::seedLen)
-			continue;
-
-		if (!opt::dot)
-			out << refContigID;
-
-		// Seperate the pairings by direction (pairs aligning in the
-		// same comp as the contig are sense pairs) and by the contig
-		// they align to
-		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-		{
-			// If this is the second direction, write a seperator
-			if (!opt::dot && dirIdx == 1)
-				out << " ;";
-			ContigNode refContig(refContigID, dirIdx);
-
-			PairDataMap dataMap;
-			for (AlignPairVec::const_iterator iter = currPairs.begin();
-					iter != currPairs.end(); ++iter) {
-				if (iter->isReverse() == (bool)dirIdx) {
-					PairedData& pd = dataMap[iter->mrnm];
-					size_t compIdx = (size_t)iter->isMateReverse();
-					assert(compIdx < 2);
-					pd.pairVec[compIdx].push_back(*iter);
-				}
-			}
-
-			// For each contig that is paired, compute the distance
-			for (PairDataMap::const_iterator pdIter = dataMap.begin();
-					pdIter != dataMap.end(); ++pdIter) {
-				const ContigID& pairID = pdIter->first;
-				// Check if the pairs are in a valid orientation
-				if (pdIter->second.pairVec[0].size() >= opt::npairs
-						&& pdIter->second.pairVec[1].size()
-							>= opt::npairs) {
-					cerr << "warning: inconsistent pairing between "
-						<< refContig << ' '
-						<< pairID << '+' << ' '
-						<< pdIter->second.pairVec[1].size()
-						<< ' '
-						<< pairID << '-' << ' '
-						<< pdIter->second.pairVec[0].size()
-						<< '\n';
-					continue;
-				}
-
-				unsigned pairDirIdx = pdIter->second.pairVec[0].size()
-					>= opt::npairs ? 0 : 1;
-				const AlignPairVec& pairVec
-					= pdIter->second.pairVec[pairDirIdx];
-				unsigned numPairs = pairVec.size();
-				if (numPairs >= opt::npairs) {
-					Estimate est;
-					est.contig = ContigNode(
-							pairID, dirIdx == pairDirIdx);
-					est.distance = estimateDistance(
-							refLength, lengthVec.at(est.contig.id()),
-							pairVec, pdf, est.numPairs);
-					est.stdDev = pdf.getSampleStdDev(est.numPairs);
-
-					if (est.numPairs >= opt::npairs) {
-						if (opt::dot) {
-							if (dirIdx)
-								est.contig.flip();
-							out << '"' << refContig << "\" -> "
-								<< est << '\n';
-						} else
-							out << ' ' << est;
-					} else {
-						cerr << "warning: "
-							<< refContigID << (dirIdx ? '-' : '+')
-							<< ','
-							<< est.contig << ' '
-							<< est.numPairs << " of "
-							<< numPairs << " pairs"
-							" fit the expected distribution\n";
-					}
-				}
-			}
-		}
-		if (!opt::dot)
-			out << "\n";
-		assert(out.good());
-	}
+	for (AlignPairVec currPairs; extractor >> currPairs;)
+		writeEstimates(out, currPairs, lengthVec, pdf);
 
 	if (opt::dot)
 		out << "}\n";
