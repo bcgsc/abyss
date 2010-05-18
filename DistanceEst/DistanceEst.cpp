@@ -239,8 +239,6 @@ static void processContigs(const string& alignFile,
 	if (strcmp(alignFile.c_str(), "-") != 0)
 		assert_open(inFile, alignFile);
 
-	AlignExtractor extractor(in);
-
 	ofstream outFile;
 	if (!opt::out.empty()) {
 		outFile.open(opt::out.c_str());
@@ -254,14 +252,9 @@ static void processContigs(const string& alignFile,
 			"n=" << opt::npairs << "\t"
 			"s=" << opt::seedLen << "\n";
 
-	//Extract the align records from the file, one contig's worth at a time
-	bool stop = false;
-	while(!stop)
-	{
-		AlignPairVec currPairs;
-		stop = extractor.extractContigAlignments(currPairs);
-
-		assert(currPairs.size() > 0);
+	AlignExtractor extractor(in);
+	for (AlignPairVec currPairs; extractor >> currPairs;) {
+		assert(!currPairs.empty());
 		ContigID refContigID = currPairs.front().rname;
 
 		// From this point all ids will be interpreted as integers

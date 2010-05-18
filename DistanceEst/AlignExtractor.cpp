@@ -23,7 +23,11 @@ AlignExtractor::AlignExtractor(istream& in)
  */
 bool AlignExtractor::extractContigAlignments(AlignPairVec& outPairs)
 {
-	assert(m_in.good());
+	if (m_in.eof())
+		m_in.setstate(ios_base::failbit);
+	if (!m_in)
+		return true;
+	outPairs.clear();
 	outPairs.push_back(m_currPair);
 	ContigID id = m_currPair.rname;
 	for (SAMRecord pair; m_in >> pair;) {
@@ -35,5 +39,6 @@ bool AlignExtractor::extractContigAlignments(AlignPairVec& outPairs)
 		}
 	}
 	assert(m_in.eof());
+	m_in.clear(ios_base::eofbit);
 	return true;
 }
