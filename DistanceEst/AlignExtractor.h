@@ -11,14 +11,14 @@ class AlignExtractor
 	public:
 		AlignExtractor(std::istream& in);
 
-		bool extractContigAlignments(AlignPairVec& outPairs);
+		void read(AlignPairVec& outPairs);
 
 		operator void*() { return m_in; }
 
 		friend AlignExtractor& operator >>(
 				AlignExtractor& in, AlignPairVec& outPairs)
 		{
-			in.extractContigAlignments(outPairs);
+			in.read(outPairs);
 			return in;
 		}
 
