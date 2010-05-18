@@ -80,9 +80,31 @@ struct PairedData
 
 typedef map<ContigID, PairedData> PairDataMap;
 
+/** Estimate the distance between two contigs.
+ * @param numPairs [out] the number of pairs that agree with the
+ * expected distribution
+ * @return the estimated distance
+ */
 static int estimateDistance(unsigned len0, unsigned len1,
 		const AlignPairVec& pairs, const PDF& pdf,
-		unsigned& numPairs);
+		unsigned& numPairs)
+{
+	// The provisional fragment sizes are calculated as if the contigs
+	// were perfectly adjacent with no overlap or gap.
+	vector<int> distanceList;
+	for (AlignPairVec::const_iterator it = pairs.begin();
+			it != pairs.end(); ++it) {
+		Alignment a0 = *it;
+		if (a0.isRC)
+			a0 = a0.flipTarget(len0);
+		int a1 = it->isMateReverse() ? it->mpos : len1 - it->mpos;
+		int distance = len0 + a1 - a0.targetAtQueryStart();
+		assert(distance > 0);
+		distanceList.push_back(distance);
+	}
+	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
+			distanceList, pdf, numPairs);
+}
 
 static void writeEstimates(ostream& out,
 		const vector<SAMRecord>& currPairs,
@@ -183,9 +205,6 @@ static void writeEstimates(ostream& out,
 		out << "\n";
 	assert(out.good());
 }
-
-static void processContigs(const string& alignFile,
-		const vector<unsigned>& lengthVec, const PDF& pdf);
 
 static void assert_open(ifstream& f, const string& p)
 {
@@ -302,41 +321,7 @@ int main(int argc, char** argv)
 	readContigLengths(contigLengthFile, contigLens);
 	g_contigIDs.lock();
 
-	// Estimate the distances between contigs, one at a time
-	processContigs(alignFile, contigLens, empiricalPDF);
-
-	return 0;
-}
-
-/** Estimate the distance between two contigs.
- * @param numPairs [out] the number of pairs that agree with the
- * expected distribution
- * @return the estimated distance
- */
-static int estimateDistance(unsigned len0, unsigned len1,
-		const AlignPairVec& pairs, const PDF& pdf,
-		unsigned& numPairs)
-{
-	// The provisional fragment sizes are calculated as if the contigs
-	// were perfectly adjacent with no overlap or gap.
-	vector<int> distanceList;
-	for (AlignPairVec::const_iterator it = pairs.begin();
-			it != pairs.end(); ++it) {
-		Alignment a0 = *it;
-		if (a0.isRC)
-			a0 = a0.flipTarget(len0);
-		int a1 = it->isMateReverse() ? it->mpos : len1 - it->mpos;
-		int distance = len0 + a1 - a0.targetAtQueryStart();
-		assert(distance > 0);
-		distanceList.push_back(distance);
-	}
-	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
-			distanceList, pdf, numPairs);
-}
-
-static void processContigs(const string& alignFile,
-		const vector<unsigned>& lengthVec, const PDF& pdf)
-{
+	// Estimate the distances between contigs.
 	ifstream inFile(alignFile.c_str());
 	istream& in(strcmp(alignFile.c_str(), "-") == 0 ? cin : inFile);
 
@@ -358,7 +343,7 @@ static void processContigs(const string& alignFile,
 
 	AlignExtractor extractor(in);
 	for (AlignPairVec currPairs; extractor >> currPairs;)
-		writeEstimates(out, currPairs, lengthVec, pdf);
+		writeEstimates(out, currPairs, contigLens, empiricalPDF);
 
 	if (opt::dot)
 		out << "}\n";
@@ -366,4 +351,6 @@ static void processContigs(const string& alignFile,
 	inFile.close();
 	if (!opt::out.empty())
 		outFile.close();
+
+	return 0;
 }
