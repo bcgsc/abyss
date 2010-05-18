@@ -1,7 +1,7 @@
-#include "AlignExtractor.h"
 #include "Estimate.h"
 #include "Histogram.h"
 #include "PairUtils.h"
+#include "SAM.h"
 #include "Stats.h"
 #include "Uncompress.h"
 #include <cassert>
@@ -72,6 +72,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+typedef vector<SAMRecord> AlignPairVec;
 
 struct PairedData
 {
@@ -341,9 +342,22 @@ int main(int argc, char** argv)
 			"n=" << opt::npairs << "\t"
 			"s=" << opt::seedLen << "\n";
 
-	AlignExtractor extractor(in);
-	for (AlignPairVec currPairs; extractor >> currPairs;)
-		writeEstimates(out, currPairs, contigLens, empiricalPDF);
+	// Ignore SAM headers.
+	while (in.peek() == '@') {
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		assert(in.good());
+	}
+
+	vector<SAMRecord> alignments(1);
+	in >> alignments.front();
+	assert(in);
+	for (SAMRecord sam; in >> sam; alignments.push_back(sam)) {
+		if (sam.rname != alignments.front().rname) {
+			writeEstimates(out, alignments, contigLens, empiricalPDF);
+			alignments.clear();
+		}
+	}
+	writeEstimates(out, alignments, contigLens, empiricalPDF);
 
 	if (opt::dot)
 		out << "}\n";
