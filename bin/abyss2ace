@@ -25,7 +25,7 @@ my ($nreads, $id, %seq, %af, %rd);
 
 while (<>) {
 	chomp;
-	next if /^#/;
+	next if /^#/ || /^@/;
 
 	if (/^>/) {
 		($id) = split ' ', substr $_, 1;

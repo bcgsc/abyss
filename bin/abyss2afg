@@ -91,7 +91,7 @@ sub new_read($$)
 
 while (<>) {
 	chomp;
-	next if /^#/;
+	next if /^#/ || /^@/;
 
 	if (/^>/) {
 		($id) = split ' ', substr $_, 1;
