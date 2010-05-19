@@ -357,6 +357,7 @@ int main(int argc, char** argv)
 			alignments.clear();
 		}
 	}
+	assert(in.eof());
 	writeEstimates(out, alignments, contigLens, empiricalPDF);
 
 	if (opt::dot)
