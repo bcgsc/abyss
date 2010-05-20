@@ -333,6 +333,10 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							if (!opt::fragPath.empty()) {
 								fragFile << size << "\n";
 								assert(fragFile.good());
+							} else if (opt::histPath.empty()) {
+								cout << SAMRecord(a0, a1) << '\n'
+									<< SAMRecord(a1, a0) << '\n';
+								assert(cout.good());
 							}
 							stats.numSame++;
 						} else
@@ -488,12 +492,6 @@ int main(int argc, char* const* argv)
 
 	if (opt::k <= 0 && opt::inputFormat == opt::KALIGNER) {
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
-		die = true;
-	}
-
-	if (opt::fragPath.empty() && opt::histPath.empty()) {
-		cerr << PROGRAM ": " << "missing either -f,--frag or "
-			"-h,--hist option\n";
 		die = true;
 	}
 
