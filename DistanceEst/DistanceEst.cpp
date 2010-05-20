@@ -27,7 +27,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... HIST PAIR\n"
+"Usage: " PROGRAM " [OPTION]... HIST [PAIR]\n"
 "Estimate distances between contigs using paired-end alignments.\n"
 "  HIST  distribution of fragments size\n"
 "  PAIR  alignments between contigs\n"
@@ -294,7 +294,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
+	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	} else if (argc - optind > 2) {
@@ -313,7 +313,7 @@ int main(int argc, char** argv)
 			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
 
 	string distanceCountFile(argv[optind++]);
-	string alignFile(argv[optind++]);
+	string alignFile(argv[optind] == NULL ? "-" : argv[optind++]);
 
 	// Load the pdf
 	Histogram distanceHist = loadHist(distanceCountFile);
