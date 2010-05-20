@@ -540,6 +540,16 @@ int main(int argc, char* const* argv)
 		assert(histFile.good());
 		histFile.close();
 	}
+
+	Histogram h = histogram.trimFraction(0.0001);
+	int median = h.median();
+	if (opt::verbose > 0)
+		cerr << "Stats median: " << median << " "
+			"sd: " << setprecision(3) << h.sd() << " "
+			"n: " << h.size() << " "
+			"min: " << h.minimum() << " max: " << h.maximum() << '\n';
+	cout << "@RG\tID:*\tSM:*\tPI:" << median << '\n';
+	return 0;
 }
 
 /** Return whether any k-mer in the query is aligned more than once.
