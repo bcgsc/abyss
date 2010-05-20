@@ -138,7 +138,7 @@ int main(int argc, char* const* argv)
 
 		ostringstream k0, k1;
 		if (k > opt::kMin)
-			k0 << "contigs-k" << k-1 << ".fa";
+			k0 << "contigs-k" << k - opt::kStep << ".fa";
 		if (k < opt::kMax)
 			k1 << "contigs-k" << k << ".fa";
 		else
