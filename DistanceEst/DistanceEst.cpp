@@ -315,18 +315,6 @@ int main(int argc, char** argv)
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind] == NULL ? "-" : argv[optind++]);
 
-	// Load the pdf
-	Histogram distanceHist = loadHist(distanceCountFile);
-
-	// Remove the negative samples.
-	distanceHist.eraseNegative();
-
-	// Trim off the outliers of the histogram (the bottom 0.01%)
-	// These cases result from misalignments
-	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
-	PDF empiricalPDF(trimmedHist);
-
-	// Estimate the distances between contigs.
 	ifstream inFile(alignFile.c_str());
 	istream& in(strcmp(alignFile.c_str(), "-") == 0 ? cin : inFile);
 
@@ -346,10 +334,18 @@ int main(int argc, char** argv)
 			"n=" << opt::npairs << "\t"
 			"s=" << opt::seedLen << "\n";
 
+	// Read the contig lengths.
 	vector<unsigned> contigLens;
 	readContigLengths(in, contigLens);
 	g_contigIDs.lock();
 
+	// Read the fragment size distribution.
+	Histogram distanceHist = loadHist(distanceCountFile);
+	distanceHist.eraseNegative();
+	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
+	PDF empiricalPDF(trimmedHist);
+
+	// Estimate the distances between contigs.
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
 	assert(in);
