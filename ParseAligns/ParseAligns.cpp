@@ -333,10 +333,6 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							if (!opt::fragPath.empty()) {
 								fragFile << size << "\n";
 								assert(fragFile.good());
-							} else if (opt::histPath.empty()) {
-								cout << SAMRecord(a0, a1) << '\n'
-									<< SAMRecord(a1, a0) << '\n';
-								assert(cout.good());
 							}
 							stats.numSame++;
 						} else
@@ -354,7 +350,10 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						if (a0.isRC != a1.isRC)
 							cout << SAMRecord(a1, a0) << '\n';
 						assert(cout.good());
-					}
+					} else if (opt::fragPath.empty()
+							&& opt::histPath.empty())
+						cout << SAMRecord(a0, a1) << '\n'
+							<< SAMRecord(a1, a0) << '\n';
 				} else {
 					// Print the alignment and the swapped alignment
 					cout << SAMRecord(a0, a1) << '\n'
