@@ -189,7 +189,7 @@ static void writeEstimates(ostream& out,
 							<< est << '\n';
 					} else
 						out << ' ' << est;
-				} else {
+				} else if (opt::verbose > 1) {
 					cerr << "warning: "
 						<< refContigID << (dirIdx ? '-' : '+')
 						<< ','
