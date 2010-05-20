@@ -185,6 +185,15 @@ static Barrier g_barrier;
 
 int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -233,6 +242,11 @@ int main(int argc, char** argv)
 #if !_POSIX_BARRIERS
 	opt::sync = 0;
 #endif
+
+	// SAM headers.
+	cout << "@HD\tVN:1.0\n"
+		"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
+		"CL:" << commandLine << '\n';
 
 	size_t numKmer = countKmer(refFastaFile);
 	if (opt::multimap == opt::MULTIMAP) {
