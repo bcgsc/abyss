@@ -89,6 +89,8 @@ struct SAMRecord {
 		flag |= FPAIRED;
 		if (a1.isRC)
 			flag |= FMREVERSE;
+		if (a0.contig == a1.contig && a0.isRC != a1.isRC)
+			isize = a1.isRC ? a1 - a0 : a0 - a1;
 	}
 
 	/** Parse the specified CIGAR string.
