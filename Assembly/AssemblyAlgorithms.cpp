@@ -953,6 +953,12 @@ void setCoverageParameters(const Histogram& h)
 			cout << "Setting parameter e (erode) to "
 				<< opt::erode << endl;
 	}
+	if ((int)opt::erodeStrand < 0) {
+		opt::erodeStrand = minCov <= 2 ? 0 : 1;
+		if (opt::rank <= 0)
+			cout << "Setting parameter E (erodeStrand) to "
+				<< opt::erodeStrand << endl;
+	}
 	if (opt::coverage < 0) {
 		opt::coverage = minCov;
 		if (opt::rank <= 0)

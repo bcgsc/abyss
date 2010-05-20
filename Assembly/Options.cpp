@@ -53,7 +53,7 @@ static const char USAGE_MESSAGE[] =
 "                                 coverage less than this threshold\n"
 "  -E, --erode-strand=COVERAGE    erode bases at the ends of blunt contigs with\n"
 "                                 coverage less than this threshold on either\n"
-"                                 strand. default=1\n"
+"                                 strand\n"
 "      --coverage-hist=FILE       record the k-mer coverage histogram in FILE\n"
 "  -g, --graph=FILE               generate a graph in dot format\n"
 "  -s, --snp=FILE                 record popped bubbles in FILE\n"
@@ -75,7 +75,7 @@ int kStep = 1;
 unsigned erode = (unsigned)-1;
 
 /** erosion strand coverage */
-unsigned erodeStrand = 1;
+unsigned erodeStrand = (unsigned)-1;
 
 /** trim length */
 int trimLen = -1;
