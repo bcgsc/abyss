@@ -306,7 +306,8 @@ static ContigPathMap::const_iterator removeSubsumedPaths(
 		ContigPathMap::const_iterator path1It, ContigPathMap& paths,
 		LinearNumKey& seed, set<LinearNumKey>& overlaps)
 {
-	cout << '\n';
+	if (gDebugPrint)
+		cout << '\n';
 	vector<ContigPathMap::iterator> eq;
 	seed = identifySubsumedPaths(path1It, paths, eq, overlaps);
 	++path1It;
