@@ -27,9 +27,8 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... LEN HIST PAIR\n"
+"Usage: " PROGRAM " [OPTION]... HIST PAIR\n"
 "Estimate distances between contigs using paired-end alignments.\n"
-"  LEN   lengths of the contigs\n"
 "  HIST  distribution of fragments size\n"
 "  PAIR  alignments between contigs\n"
 "\n"
@@ -232,23 +231,34 @@ static Histogram loadHist(const string& path)
 	return hist;
 }
 
-/** Load contig lengths. */
-static void readContigLengths(const string& path,
-		vector<unsigned>& lengths)
+/** Read contig lengths from SAM headers. */
+static void readContigLengths(istream& in, vector<unsigned>& lengths)
 {
+	assert(in);
 	assert(lengths.empty());
-	ifstream in(path.c_str());
-	assert(in.is_open());
-
 	assert(g_contigIDs.empty());
-	string id;
-	unsigned len;
-	while (in >> id >> len) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
+	for (string line; in.peek() == '@' && getline(in, line);) {
+		istringstream ss(line);
+		string type, tag;
+		ss >> type;
+		if (type != "@SQ")
+			continue;
+		ss >> ws;
+
+		getline(ss, tag, ':');
+		assert(tag == "SN");
+		string id;
+		ss >> id >> ws;
+
+		getline(ss, tag, ':');
+		assert(tag == "LN");
+		unsigned len;
+		ss >> len;
+
+		assert(ss);
 		(void)g_contigIDs.serial(id);
 		lengths.push_back(len);
 	}
-	assert(in.eof());
 	assert(!lengths.empty());
 }
 
@@ -284,10 +294,10 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 3) {
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 3) {
+	} else if (argc - optind > 2) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -302,7 +312,6 @@ int main(int argc, char** argv)
 		cerr << "warning: the seed-length should be at least twice k:"
 			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
 
-	string contigLengthFile(argv[optind++]);
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind++]);
 
@@ -316,11 +325,6 @@ int main(int argc, char** argv)
 	// These cases result from misalignments
 	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
 	PDF empiricalPDF(trimmedHist);
-
-	// Load the length map
-	vector<unsigned> contigLens;
-	readContigLengths(contigLengthFile, contigLens);
-	g_contigIDs.lock();
 
 	// Estimate the distances between contigs.
 	ifstream inFile(alignFile.c_str());
@@ -342,11 +346,9 @@ int main(int argc, char** argv)
 			"n=" << opt::npairs << "\t"
 			"s=" << opt::seedLen << "\n";
 
-	// Ignore SAM headers.
-	while (in.peek() == '@') {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		assert(in.good());
-	}
+	vector<unsigned> contigLens;
+	readContigLengths(in, contigLens);
+	g_contigIDs.lock();
 
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
