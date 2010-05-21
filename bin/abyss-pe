@@ -139,13 +139,13 @@ dist=$(addsuffix -3.dist, $(lib))
 $(dist): %-3.dist: $(name)-3.fa
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
-		|sort -snk3,3 -k4,4 \
+		|sort -snk3 -k4 \
 		|DistanceEst $v -k$k -s$s -n$n -o $@ $*-3.hist
 
 %-3.bam: $(name)-3.fa
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h /dev/null \
-		|sort -snk3,3 -k4,4 \
+		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $@
 
 %.bam.bai: %.bam
