@@ -46,6 +46,7 @@ static const char USAGE_MESSAGE[] =
 "      --scaffold        join contigs with Ns [default]\n"
 "      --no-scaffold     do not scaffold\n"
 "      --mask-repeat     join contigs at a simple repeat and mask the repeat\n"
+"                        [default]\n"
 "      --no-mask-repeat  don't join contigs at a repeat\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -57,7 +58,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	int k; // used by ContigGraph
 	static unsigned minimum_overlap = 5;
-	static int mask;
+	static int mask = 1;
 	static int scaffold = 1;
 	static string out;
 	int dot; // used by Estimate
