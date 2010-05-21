@@ -186,3 +186,9 @@ else
 		|Consensus $v -o $@ $<
 
 endif
+
+%-contigs.dot: %-contigs.fa %-4.adj %-4.path2
+	(echo "digraph $* {"; \
+	AdjList --dot -k$k $< |grep '[>=]'; \
+	PathOverlap --dot -k$k $(wordlist 2, 3, $^) |grep '[>=]'; \
+	echo "}") >$@
