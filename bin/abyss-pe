@@ -168,7 +168,7 @@ $(dist): %-3.dist: $(name)-3.fa
 	SimpleGraph $v $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.adj %-4.path1
-	MergePaths $v -k$k -o $@ $^
+	MergePaths $v -j$j -k$k -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
 	PathOverlap $v -k$k $^ >$@
