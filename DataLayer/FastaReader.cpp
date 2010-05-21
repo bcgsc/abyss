@@ -196,10 +196,8 @@ next_record:
 		qualityOffset = 64;
 	}
 
-	if (!q.empty())
+	if (opt::qualityThreshold > 0 && !q.empty()) {
 		assert(s.length() == q.length());
-
-	if (opt::qualityThreshold > 0) {
 		if (opt::qualityOffset > 0)
 			qualityOffset = opt::qualityOffset;
 		static const char ASCII[] =" !\"#$%&'()*+,-./0123456789"
