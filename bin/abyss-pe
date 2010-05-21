@@ -171,7 +171,7 @@ $(dist): %-3.dist: $(name)-3.fa
 	MergePaths $v -k$k -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
-	PathOverlap $v $^ >$@
+	PathOverlap $v -k$k $^ >$@
 
 ifndef cs
 
