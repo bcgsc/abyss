@@ -61,10 +61,8 @@ $(error missing argument n)
 endif
 
 # ABYSS parameters
-abyssopt += -k$k
-ifdef q
-abyssopt += -q$q
-endif
+q ?= 3
+abyssopt += -k$k -q$q
 ifdef l
 $(error argument l is deprecated)
 endif
