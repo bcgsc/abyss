@@ -47,7 +47,7 @@ static const char USAGE_MESSAGE[] =
 "      --no-scaffold     do not scaffold\n"
 "      --mask-repeat     join contigs at a simple repeat and mask the repeat\n"
 "                        [default]\n"
-"      --no-mask-repeat  don't join contigs at a repeat\n"
+"      --no-merge-repeat don't join contigs at a repeat\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -74,7 +74,7 @@ static const struct option longopts[] = {
 	{ "scaffold", no_argument,      &opt::scaffold, 1 },
 	{ "no-scaffold", no_argument,   &opt::scaffold, 0 },
 	{ "mask-repeat",    no_argument, &opt::mask, 1 },
-	{ "no-mask-repeat", no_argument, &opt::mask, 0 },
+	{ "no-merge-repeat", no_argument, &opt::mask, 0 },
 	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
