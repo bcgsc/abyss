@@ -539,8 +539,6 @@ int main(int argc, char* const* argv)
 		histFile << histogram;
 		assert(histFile.good());
 		histFile.close();
-		// Write the histogram to disk before closing stdout.
-		sync();
 	}
 
 	Histogram h = histogram.trimFraction(0.0001);
