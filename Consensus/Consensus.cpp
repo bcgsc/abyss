@@ -195,15 +195,16 @@ static void buildBaseQuality()
 		// For each alignment for the read.
 		for (AlignmentVector::const_iterator alignIter = alignments.begin();
 				alignIter != alignments.end(); ++alignIter) {
-			const char* s;
+			string seqrc;
 			Alignment a;
 			if (alignIter->isRC) {
-				s = reverseComplement(seq).c_str();
+				seqrc = reverseComplement(seq);
 				a = alignIter->flipQuery();
 			} else {
-				s = seq.c_str();
+				seqrc = seq;
 				a = *alignIter;
 			}
+			const char* s = seqrc.c_str();
 
 			ContigMap::iterator contigIt = g_contigs.find(a.contig);
 			if (contigIt == g_contigs.end())
