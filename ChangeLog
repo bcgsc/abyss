@@ -1,3 +1,66 @@
+2010-05-25  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.0.
+	* Scaffold over gaps in coverage and unresolved repetitive
+	sequence using Ns.
+	* Read sequence from SAM and BAM files.
+
+	abyss-pe:
+	* Set q=3 by default. Trim bases from the ends of reads whose
+	quality is less than 3.
+	* Do not store the .pair.gz file.
+	* Generate a BAM file of the mate pairs that align to
+	different contigs of the single-end assembly. Disabled by default.
+	* Output a Graphviz dot file of the paired-end assembly.
+	Disabled by default.
+	* Store the bubbles in ${name}-bubbles.fa rather than bubbles.fa.
+	* Store the indel bubbles in ${name}-indel.fa.
+	* Bug fix for mawk.
+
+	ABYSS:
+	* Set -E0 when coverage is low (<2).
+
+	ABYSS-P:
+	* Remove the temporary files contigs-*.fa and snp-*.fa.
+
+	PopBubbles:
+	* Output in Graphviz dot format using --dot.
+
+	KAligner:
+	* Do not ignore sequences (reads or contigs) containing N.
+	* Output SAM headers (but not SAM alignments).
+
+	ParseAligns:
+	* Output in SAM format.
+
+	DistanceEst:
+	* Input in SAM format.
+	* Output in Graphviz dot format using --dot.
+
+	Overlap:
+	* Scaffold over gaps in coverage. Scaffolding can be disabled
+	using the option --no-scaffold.
+	* Merge contigs that overlap at simple repeats. These merges can
+	be prevented using the option --no-merge-repeat.
+
+	SimpleGraph:
+	* Scaffold over repeats. Scaffolding can be disabled using the
+	option --no-scaffold.
+
+	MergePaths:
+	* Merge paths containing ambiguous sequence.
+	* Multithreaded using OpenMP. The -j, --threads option specifies
+	the number of threads to use.
+
+	MergeContigs:
+	* Merge paths and contigs containing ambiguous sequence.
+
+	PathOverlap:
+	* Output in Graphviz dot format using --dot.
+
+	Consensus:
+	* Output the pileup in samtools format.
+
 2010-02-15  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.1.2.
