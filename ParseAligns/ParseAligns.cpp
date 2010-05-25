@@ -37,7 +37,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
-"  -a, --adj=ADJ         read contig lengths from the adj file\n"
 "  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
 "      --sam             alignments are in SAM format\n"
@@ -56,7 +55,6 @@ namespace opt {
 	static string distPath;
 	static string fragPath;
 	static string histPath;
-	static string adjPath; //added by RS
 
 	/** Input alignment format. */
 	static int inputFormat;
@@ -65,7 +63,7 @@ namespace opt {
 	int dot; // used by Estimate
 }
 
-static const char shortopts[] = "d:a:k:f:h:c:v";
+static const char shortopts[] = "d:k:f:h:c:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -80,7 +78,6 @@ static const struct option longopts[] = {
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
-	{ "adj",     required_argument, NULL, 'a' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -102,7 +99,6 @@ typedef hash_map<string, AlignmentVector> ReadAlignMap;
 typedef hash_map<ContigID, EstimateRecord> EstimateMap;
 
 static EstimateMap estMap;
-static vector<unsigned> contigLens; //added by RS
 
 static bool checkUniqueAlignments(const AlignmentVector& alignVec);
 string makePairID(string id);
@@ -122,12 +118,11 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	return r - f;
 }
 
-static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est) //, bool reverse)
+static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
 {
 	//count up the number of estimates that agree
 	bool placed = false;
-	//bool a_isRC = a.isRC != reverse; <===why? if addEstimate() is always called with reverse=false
-	bool a_isRC = a.isRC;
+	bool a_isRC = a.isRC != reverse;
 	EstimateMap::iterator estimatesIt = map.find(a.contig);
 	if (estimatesIt != map.end()) {
 		EstimateVector& estimates =
@@ -137,7 +132,6 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est) //,
 			if (estIt->contig.id() == est.contig.id()) {
 				estIt->numPairs++;
 				estIt->distance += est.distance;
-				estIt->stdDev += est.distance * est.distance; //added by RS
 				placed = true;
 				break;
 			}
@@ -148,96 +142,20 @@ static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est) //,
 
 }
 
-//added by RS: check whether the pair of alignments is proper: (the logic is specific to doReadIntegrity implementation)
-//1st alignment must be either:
-//(1) on contig end for positive alignment (!isRC), or 
-//(2) on contig start for negative alignment (isRC).
-//2nd alignment must be exactly the opposite.
-static bool properAlignmentPair(Alignment& first, Alignment& second)
+static void doReadIntegrity(const ReadAlignMap::value_type& a)
 {
-	LinearNumKey firstKey = convertContigIDToLinearNumKey(first.contig);
-	LinearNumKey secondKey = convertContigIDToLinearNumKey(second.contig);
-	unsigned firstLen = contigLens[firstKey];
-	unsigned secondLen = contigLens[secondKey];
-	return ( ((unsigned)first.contig_start_pos > 0 
-			|| (unsigned)first.contig_start_pos + first.align_length == firstLen) 
-				!= first.isRC
-		&& ((unsigned)second.contig_start_pos > 0
-			|| (unsigned)second.contig_start_pos + second.align_length == secondLen) 
-				== second.isRC);
-}
-
-static int doReadIntegrity(const ReadAlignMap::value_type& a) //changed by RS
-{
+	AlignmentVector::const_iterator refAlignIter = a.second.begin();
 	unsigned firstStart, lastEnd, largestSize;
 	Alignment first, last, largest;
-
-	//skip alignments that are not mapped to beginning or end of contigs, added by RS
-	//first alignment must be mapped to end region, last alignment must be mapped to start region, 
-	//rest must be mapped to entire contig!
-	if (opt::verbose > 0) {
-		cerr << "current read:" << a.first << "; alignment vec:\n";
-		for (size_t i = 0; i< a.second.size(); i++)
-			cerr << a.second[i] << endl;
-	}
-	int count=0;
-	AlignmentVector::const_iterator refAlignIter = a.second.begin();
-	LinearNumKey refNumericID = convertContigIDToLinearNumKey(refAlignIter->contig);
-	assert(refNumericID < contigLens.size());
-	unsigned refLength = contigLens[refNumericID];
-	while (refAlignIter != a.second.end() 
-		&& (unsigned)refAlignIter->contig_start_pos > 0 //not the beginning of contig 
-		&& (unsigned)(refAlignIter->contig_start_pos + refAlignIter->align_length) < refLength) { //not end of contig
-		++refAlignIter;
-		count++;
-	}
-	if (refAlignIter == a.second.end())
-		return count;
-	/*firstStart = refAlignIter->read_start_pos;
-	largestSize = refAlignIter->align_length;
-	first = largest = *refAlignIter;
-	if (opt::verbose > 0)
-		cerr << "first:" << first << endl;
-	//get last alignment
-	AlignmentVector::const_iterator refAlignRevIter = a.second.end(); 
-	refAlignRevIter--;
-	refNumericID = convertContigIDToLinearNumKey(refAlignRevIter->contig);
-	assert(refNumericID < contigLens.size());
-	refLength = contigLens[refNumericID];
-	while (refAlignRevIter->contig_start_pos > 0 && refAlignRevIter != refAlignIter) { //not beginning of contig
-		refAlignRevIter--;
-		count++;
-	}
-	if (refAlignRevIter == refAlignIter) //first is last, quit
-		return count;
-	lastEnd = refAlignRevIter->read_start_pos + refAlignRevIter->align_length;
-	if (largestSize < unsigned(refAlignRevIter->align_length)) {
-		largestSize = refAlignRevIter->align_length;
-		largest = *refAlignRevIter;
-	}
-	last = *refAlignRevIter;
-	if (opt::verbose > 0)
-		cerr << "last:" << last << endl;
-	*/
 
 	firstStart = refAlignIter->read_start_pos;
 	lastEnd = firstStart + refAlignIter->align_length;
 	largestSize = refAlignIter->align_length;
-	first = last = largest = *refAlignIter; 
+	first = last = largest = *refAlignIter;
 	++refAlignIter;
 
 	//for each alignment in the vector a.second
 	for (; refAlignIter != a.second.end(); ++refAlignIter) {
-	//for (; refAlignIter != refAlignRevIter; ++refAlignIter) {
-		//skip alignments that are not mapped to beginning or end of contigs, added by RS
-		refNumericID = convertContigIDToLinearNumKey(refAlignIter->contig);
-		assert(refNumericID < contigLens.size());
-		refLength = contigLens[refNumericID];
-		if ((unsigned)refAlignIter->contig_start_pos > 0 //not the beginning of contig
-			&& (unsigned)(refAlignIter->contig_start_pos + refAlignIter->align_length) < refLength) { //not end
-			count++;
-			continue;
-		}
 		if ((unsigned)refAlignIter->read_start_pos < firstStart) {
 			firstStart = refAlignIter->read_start_pos;
 			first = *refAlignIter;
@@ -254,49 +172,35 @@ static int doReadIntegrity(const ReadAlignMap::value_type& a) //changed by RS
 		}
 	}
 
-	if (opt::verbose > 0) {
-		cerr << "first:" << first << endl;
-		cerr << "largest:" << largest << endl;
-		cerr << "last:" << last << endl;
-	}
-
-	//if (largest.contig != last.contig) {
-	if (largest.contig != last.contig && properAlignmentPair(largest, last)) {
+	if (largest.contig != last.contig) {
 		Estimate est;
 		unsigned largest_end =
-			largest.read_start_pos + largest.align_length;// - opt::k;
+			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
-		est.contig = ContigNode(last.contig, 
+		est.contig = ContigNode(last.contig,
 				largest.isRC != last.isRC);
-		est.distance = distance;// - opt::k;
+		est.distance = distance - opt::k;
 		est.numPairs = 1;
-		est.stdDev = est.distance * est.distance; //est.stdDev = 0; changed by RS
-		addEstimate(estMap, largest, est);//, false);
-		if (opt::verbose > 0)
-			cerr << "dist from " << largest.contig << "(" << largest.isRC << ") to " 
-				<< last.contig << "(" << last.isRC << "):" << est << endl;
+		est.stdDev = 0;
+		addEstimate(estMap, largest, est, false);
 	}
 
 	if (largest.contig != first.contig &&
-			largest.contig != last.contig
-			&& properAlignmentPair(first, last)) {
+			largest.contig != last.contig) {
 		Estimate est;
 		unsigned first_end =
-			first.read_start_pos + first.align_length;// - opt::k;
+			first.read_start_pos + first.align_length - opt::k;
 		int distance = last.read_start_pos - first_end;
 		est.contig = ContigNode(last.contig, first.isRC != last.isRC);
-		est.distance = distance;// - opt::k;
+		est.distance = distance - opt::k;
 		est.numPairs = 1;
-		est.stdDev = est.distance * est.distance; //est.stdDev = 0; changed by RS
-		addEstimate(estMap, first, est);//, false);
-		if (opt::verbose > 0)
-			cerr << "dist from " << first.contig << "(" << first.isRC << ") to "
-				<< last.contig << "(" << last.isRC << "):" << est << endl;
+		est.stdDev = 0;
+		addEstimate(estMap, first, est, false);
 	}
 
-	if (largest.contig != first.contig && properAlignmentPair(first, largest)) {
-		/*largest.flipQuery(); <=== why?
-		first.flipQuery(); <=== why?
+	if (largest.contig != first.contig) {
+		largest.flipQuery();
+		first.flipQuery();
 		Estimate est;
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
@@ -305,21 +209,9 @@ static int doReadIntegrity(const ReadAlignMap::value_type& a) //changed by RS
 				largest.isRC != first.isRC);
 		est.distance = distance - opt::k;
 		est.numPairs = 1;
-		est.stdDev = est.distance * est.distance; //est.stdDev = 0; changed by RS
-		addEstimate(estMap, largest, est, false); */
-		Estimate est;
-		unsigned first_end = first.read_start_pos + first.align_length;
-		est.contig = ContigNode(largest.contig, first.isRC != largest.isRC);
-		est.distance = largest.read_start_pos - first_end;
-		est.numPairs = 1;
-		est.stdDev = est.distance * est.distance;
-		addEstimate(estMap, first, est);
-		if (opt::verbose > 0)
-			cerr << "dist from " << first.contig << "(" << first.isRC << ") to " 
-				<< largest.contig << "(" << largest.isRC << "):" << est << endl;
+		est.stdDev = 0;
+		addEstimate(estMap, largest, est, false);
 	}
-
-	return count;
 
 #if 0
 	//for each alignment in the vector a.second
@@ -353,7 +245,7 @@ static int doReadIntegrity(const ReadAlignMap::value_type& a) //changed by RS
 #endif
 }
 
-static void generateDistFile() //changed by RS
+static void generateDistFile()
 {
 	ofstream distFile(opt::distPath.c_str());
 	assert(distFile.is_open());
@@ -361,33 +253,21 @@ static void generateDistFile() //changed by RS
 			mapIt != estMap.end(); ++mapIt) {
 		//Skip empty iterators
 		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
-		//hold on output until we see an estimate that has at least opt::c support
-		//distFile << mapIt->first;
-		bool valid = false;
-		ostringstream distStr;
-		distStr << mapIt->first;
+		distFile << mapIt->first;
 		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
 			if (refIsRC)
-				//distFile << " ;";
-				distStr << " ;";
+				distFile << " ;";
 
 			for (EstimateVector::iterator vecIt = mapIt->second.estimates[refIsRC].begin();
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				double dist_avg = (double)vecIt->distance / (double)vecIt->numPairs;
-				vecIt->stdDev = sqrt((vecIt->stdDev - 2 * dist_avg * vecIt->distance) / vecIt->numPairs 
-					+ dist_avg * dist_avg); //stdDev computation, changed by RS
-				vecIt->distance = (int)round(dist_avg);
-				if (vecIt->numPairs >= opt::c) {// && vecIt->numPairs != 0
-				//		/*&& vecIt->distance > 1 - opt::k*/)
-					//distFile << ' ' << *vecIt;
-					valid = true;
-					distStr << ' ' << *vecIt;
-				}
+				vecIt->distance = (int)round((double)vecIt->distance /
+						(double)vecIt->numPairs);
+				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0
+						/*&& vecIt->distance > 1 - opt::k*/)
+					distFile << ' ' << *vecIt;
 			}
 		}
-		//distFile << '\n';
-		if (valid)
-			distFile << distStr.str() << '\n';
+		distFile << '\n';
 		assert(distFile.good());
 	}
 	distFile.close();
@@ -506,9 +386,9 @@ static void printProgress(const ReadAlignMap& map)
 	}
 }
 
-static int handleAlignment(
+static void handleAlignment(
 		const ReadAlignMap::value_type& alignments,
-		ReadAlignMap& out) //return a count, changed by RS
+		ReadAlignMap& out)
 {
 	if (!isSingleEnd(alignments.first)) {
 		string pairID = makePairID(alignments.first);
@@ -523,17 +403,14 @@ static int handleAlignment(
 		}
 	}
 
-	int count = 0;
 	if (!opt::distPath.empty() && alignments.second.size() >= 2)
-		count += doReadIntegrity(alignments);
+		doReadIntegrity(alignments);
 
 	stats.alignments++;
 	printProgress(out);
-
-	return count;
 }
 
-static int readAlignment(const string& line, ReadAlignMap& out) //return a count, changed by RS
+static void readAlignment(const string& line, ReadAlignMap& out)
 {
 	istringstream s(line);
 	pair<string, AlignmentVector> v;
@@ -558,7 +435,7 @@ static int readAlignment(const string& line, ReadAlignMap& out) //return a count
 		break;
 	  }
 	}
-	return handleAlignment(v, out);
+	handleAlignment(v, out);
 }
 
 static void readAlignments(istream& in, ReadAlignMap* pout)
@@ -589,28 +466,6 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 	fin.close();
 }
 
-//added by RS: The following function actually is a copy from "DistanceEst.cpp",
-//we should probably put it in "ContigLength.h" and get rid of it from both "ParseAligns" and "DistanceEst"
-/** Load contig lengths. */
-static void readContigLengths(const string& path,
-		vector<unsigned>& lengths)
-{
-	assert(lengths.empty());
-	ifstream in(path.c_str());
-	assert(in.is_open());
-
-	assert(g_contigIDs.empty());
-	string id;
-	unsigned len;
-	while (in >> id >> len) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		(void)g_contigIDs.serial(id);
-		lengths.push_back(len);
-	}
-	assert(in.eof());
-	assert(!lengths.empty());
-}
-
 int main(int argc, char* const* argv)
 {
 	bool die = false;
@@ -625,7 +480,6 @@ int main(int argc, char* const* argv)
 			case 'f': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
 			case 'v': opt::verbose++; break;
-			case 'a': arg >> opt::adjPath; break; //added by RS, need adj for read integrity (get contig lengths)
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -650,16 +504,6 @@ int main(int argc, char* const* argv)
 		fragFile.open(opt::fragPath.c_str());
 		assert(fragFile.is_open());
 	}
-
-	//added by RS: load contig lengths for read integrity computation
-	opt::c = opt::c > 1 ? opt::c : 1; //c must be at least 1
-	if (!opt::distPath.empty()) // Load the length map
-		if (!opt::adjPath.empty())
-			readContigLengths(opt::adjPath, contigLens);
-		else {
-			cerr << "adjacency file is needed to generate dist file (use -d and -a options together)" << endl;
-			exit(EXIT_FAILURE);
-		}
 
 	ReadAlignMap alignTable(1);
 	if (optind < argc) {

@@ -7,7 +7,6 @@ MergePaths_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Graph
 
 MergePaths_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
-MergePaths_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 
 MergePaths_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
