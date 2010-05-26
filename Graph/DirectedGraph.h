@@ -18,29 +18,6 @@ enum VisitColor
 	VC_BLACK
 };
 
-// Constraint structure
-struct Constraint
-{
-	int distance;
-	
-	bool isConstraintMet(int d)
-	{
-		return d < distance;
-	}
-	
-	bool isConstraintPossible(int d)
-	{
-		bool violated = (d > distance);
-		return !violated;
-	}
-
-	friend std::ostream& operator <<(std::ostream& out,
-			const Constraint& object)
-	{
-		return out << object.distance;
-	}
-};
-
 template<typename K, typename D>
 struct Vertex
 {
@@ -120,7 +97,7 @@ class DirectedGraph
 		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
 
-		typedef std::map<ContigNode, Constraint> KeyConstraintMap;
+		typedef std::map<ContigNode, unsigned> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;

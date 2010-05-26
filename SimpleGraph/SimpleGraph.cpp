@@ -348,12 +348,8 @@ static void handleEstimate(
 
 		// Translate the distances produced by the esimator into the
 		// coordinate space used by the graph (a translation of k-1).
-		int translatedDistance = iter->distance + opt::k - 1;
-		unsigned distanceBuffer = allowedError(iter->stdDev);
-
-		Constraint nc;
-		nc.distance = translatedDistance  + distanceBuffer;
-		constraintMap[iter->contig] = nc;
+		constraintMap[iter->contig] = iter->distance + opt::k - 1
+			+ allowedError(iter->stdDev);
 	}
 
 	vout << "Constraints:";

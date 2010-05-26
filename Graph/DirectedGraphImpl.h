@@ -584,7 +584,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			= newConstraints.find(
 					ContigNode(pNextVertex->m_key, relativeRC));
 		if (constraintIter != newConstraints.end()
-				&& constraintIter->second.isConstraintMet(currLen))
+				&& currLen < constraintIter->second)
 			newConstraints.erase(constraintIter);
 
         // Have all the constraints been satisfied?
@@ -603,14 +603,13 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
                 // Check if this path can possibly support all the constraints
                 bool constraintViolated = false;
                 for(typename KeyConstraintMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
-                {
-                		if(!cIter->second.isConstraintPossible(newLength))
-                        {
-                                //this constraint is violated, the branch will be explored no further
-                                constraintViolated = true;
-                                break;
-                        }
-                }
+				{
+					if (newLength > cIter->second) {
+						//this constraint is violated, the branch will be explored no further
+						constraintViolated = true;
+						break;
+					}
+				}
 
                 if(constraintViolated)
                 {
