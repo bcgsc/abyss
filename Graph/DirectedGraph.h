@@ -142,19 +142,15 @@ template<typename D>
 class DirectedGraph 
 {
 	public:
-		// Lots of typedefs
 		typedef typename std::vector<Vertex<LinearNumKey, D>* > VertexTable;
-		//typedef typename std::map<K, Vertex<K, D>* > VertexTable;
 		typedef typename VertexTable::iterator VertexTableIter;
 		typedef typename VertexTable::const_iterator VertexTableConstIter;
 		typedef Vertex<LinearNumKey, D> VertexType;
-		
+
 		typedef std::set<VertexType*> VertexCollection;
 		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
-		
-		typedef std::set<LinearNumKey> KeySet;
-		typedef std::map<LinearNumKey, int> KeyIntMap;
+
 		typedef std::map<LinearNumKey, Constraint> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
@@ -168,15 +164,12 @@ class DirectedGraph
 
 		typedef std::vector<PathNode> VertexPath;
 		typedef std::vector<VertexPath> FeasiblePaths;
-		
-		typedef std::vector<D*> DataCollection;
-		typedef std::vector<DataCollection> DataComponents;
-		
+
 		typedef std::map<VertexType*, size_t> DistanceMap;
 		typedef std::map<VertexType*, VisitColor> VisitedMap;
 		typedef std::map<VertexType*, VertexType*> PreviousMap;
 		typedef std::map<VertexType*, extDirection> DirectionMap;
-		
+
 		struct ShortestPathData
 		{
 			DistanceMap distanceMap;
@@ -277,10 +270,6 @@ class DirectedGraph
 
 		// Run dijkstra's algorithm to find the shortest path between source and target using the cost functor specified
 		void dijkstra(const LinearNumKey& sourceKey,
-				ShortestPathData& shortestPathData);
-
-		void greedyDirectedPath(const LinearNumKey& sourceKey,
-				extDirection dir, KeySet& terminals,
 				ShortestPathData& shortestPathData);
 
 		bool ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
