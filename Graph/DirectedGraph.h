@@ -114,7 +114,7 @@ template<typename D>
 class DirectedGraph 
 {
 	public:
-		typedef typename std::vector<Vertex<LinearNumKey, D>* > VertexTable;
+		typedef typename std::vector<Vertex<LinearNumKey, D> > VertexTable;
 		typedef typename VertexTable::iterator VertexTableIter;
 		typedef typename VertexTable::const_iterator VertexTableConstIter;
 		typedef Vertex<LinearNumKey, D> VertexType;
@@ -131,10 +131,10 @@ class DirectedGraph
 		typedef std::vector<ContigNode> VertexPath;
 		typedef std::vector<VertexPath> FeasiblePaths;
 
-		typedef std::map<VertexType*, size_t> DistanceMap;
-		typedef std::map<VertexType*, VisitColor> VisitedMap;
-		typedef std::map<VertexType*, VertexType*> PreviousMap;
-		typedef std::map<VertexType*, extDirection> DirectionMap;
+		typedef std::map<const VertexType*, size_t> DistanceMap;
+		typedef std::map<const VertexType*, VisitColor> VisitedMap;
+		typedef std::map<const VertexType*, const VertexType*> PreviousMap;
+		typedef std::map<const VertexType*, extDirection> DirectionMap;
 
 		struct ShortestPathData
 		{
@@ -146,10 +146,17 @@ class DirectedGraph
 	
 		DirectedGraph() { };
 		DirectedGraph(const size_t sizeHint) { m_vertexTable.reserve(sizeHint); }
-		~DirectedGraph();
 
 		/** Return the vertex specified by the given key. */
 		const VertexType& operator[](const LinearNumKey& key) const
+		{
+			const VertexType* pVertex = findVertex(key);
+			assert(pVertex != NULL);
+			return *pVertex;
+		}
+
+		/** Return the vertex specified by the given key. */
+		VertexType& operator[](const LinearNumKey& key)
 		{
 			VertexType* pVertex = findVertex(key);
 			assert(pVertex != NULL);
@@ -164,7 +171,7 @@ class DirectedGraph
 
 		void addEdge(const LinearNumKey& parent, extDirection dir,
 				const ContigNode& child);
-		VertexType* addVertex(const LinearNumKey& key, const D& data);
+		void addVertex(const LinearNumKey& key, const D& data);
 		void removeVertex(VertexType* pVertex);
 		
 		// reduce the graph with paired data		
@@ -228,13 +235,16 @@ class DirectedGraph
 
 	private:
 		// Extract the shortest path between two vertices
-		void extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path);
+		void extractShortestPath(const VertexType* pSource,
+				const VertexType* pTarget,
+				ShortestPathData& shortestPathData, KeyVec& path);
 
 		// Run dijkstra's algorithm to find the shortest path between source and target using the cost functor specified
 		void dijkstra(const LinearNumKey& sourceKey,
 				ShortestPathData& shortestPathData);
 
-		bool ConstrainedDFS(VertexType* pCurrVertex, extDirection dir,
+		bool ConstrainedDFS(const VertexType* pCurrVertex,
+				extDirection dir,
 				bool rcFlip, const KeyConstraintMap keyConstraints,
 				VertexPath currentPath, FeasiblePaths& solutions,
 				size_t currLen, int maxNumPaths,
@@ -245,7 +255,8 @@ class DirectedGraph
 		template<class Functor>
 		bool merge(VertexType* parent, VertexType* child,  const extDirection parentsDir, const bool parentsReverse, bool removeChild, bool usableChild, Functor dataMerger);
 
-		VertexType* findVertex(const LinearNumKey& key) const;
+		VertexType* findVertex(const LinearNumKey& key);
+		const VertexType* findVertex(const LinearNumKey& key) const;
 		VertexTable m_vertexTable;
 };
 

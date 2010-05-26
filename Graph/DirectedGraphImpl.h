@@ -107,18 +107,6 @@ bool Vertex<K,D>::detectSimpleCycle()
 	}
 	return false;
 }
-	
-// Graph Implementation
-template<typename D>
-DirectedGraph<D>::~DirectedGraph()
-{
-	// delete all the vertices in the table
-	for(VertexTableIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
-	{
-		delete *iter;
-		*iter = NULL;
-	}
-}
 
 template<typename D>
 void DirectedGraph<D>::addEdge(
@@ -133,27 +121,24 @@ void DirectedGraph<D>::addEdge(
 }
 
 template<typename D>
-typename DirectedGraph<D>::VertexType* DirectedGraph<D>::addVertex(const LinearNumKey& key, const D& data)
+void DirectedGraph<D>::addVertex(const LinearNumKey& key, const D& data)
 {
-	//assert(findVertex(key) == NULL);
-	
-	// Create new vertex
-	VertexType* ptr = new VertexType(key, data);
-	
-	// Insert into the table
-	
-	// ensure contiguitiy of the keys
 	assert(m_vertexTable.size() == key);
-	m_vertexTable.push_back(ptr);
-	
-	return ptr;
+	m_vertexTable.push_back(VertexType(key, data));
 }
 
 template<typename D>
-typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key) const
+typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key)
 {
 	assert(key < m_vertexTable.size());
-	return m_vertexTable[key];
+	return &m_vertexTable[key];
+}
+
+template<typename D>
+const typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key) const
+{
+	assert(key < m_vertexTable.size());
+	return &m_vertexTable[key];
 }
 
 // Count all the edges in all the nodes
@@ -163,7 +148,7 @@ size_t DirectedGraph<D>::countEdges() const
 	size_t sum = 0;
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		sum += (*iter)->countEdges();
+		sum += iter->countEdges();
 	}
 	return sum;
 }
@@ -352,8 +337,6 @@ bool DirectedGraph<D>::merge(VertexType* pParent, VertexType* pChild, const extD
 template<typename D>
 void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 {
-	const LinearNumKey& key = pVertex->m_key;
-
 	// Update the links of this vertex to point to the merged vertex
 	for(size_t dirIdx = 0; dirIdx < NUM_DIRECTIONS; ++dirIdx)
 	{
@@ -367,13 +350,6 @@ void DirectedGraph<D>::removeVertex(VertexType* pVertex)
 			vertexIter->pVertex->removeEdge(pVertex, expectedRemoveDir, expectedRemoveReverse);
 		}
 	}
-	
-	// Delete this vertex from the table
-
-	// Ensure it exists
-	delete pVertex;
-	pVertex = NULL;
-	m_vertexTable[key] = NULL;
 }
 
 template<typename D>
@@ -481,14 +457,13 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 	// initialize the data
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
 	{
-		shortestPathData.distanceMap[*iter] = INF;
-		shortestPathData.visitedMap[*iter] = VC_WHITE;
-		shortestPathData.previousMap[*iter] = NULL;
+		shortestPathData.distanceMap[&*iter] = INF;
+		shortestPathData.visitedMap[&*iter] = VC_WHITE;
+		shortestPathData.previousMap[&*iter] = NULL;
 	}
-	
-	VertexType* pSourceVertex = findVertex(sourceKey);
-	
-	VertexType* pCurrVertex = pSourceVertex;
+
+	const VertexType* pSourceVertex = findVertex(sourceKey);
+	const VertexType* pCurrVertex = pSourceVertex;
 	shortestPathData.distanceMap[pCurrVertex] = 0;
 	
 	bool stop = false;
@@ -500,10 +475,10 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 		for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
 		{
 			extDirection dir = (extDirection)dirIdx;
-			for(typename VertexType::EdgeCollection::iterator eIter = pCurrVertex->m_edges[dir].begin(); eIter != pCurrVertex->m_edges[dir].end(); ++eIter)
+			for(typename VertexType::EdgeCollection::const_iterator eIter = pCurrVertex->m_edges[dir].begin(); eIter != pCurrVertex->m_edges[dir].end(); ++eIter)
 			{
 				// Get the vertex to the edge points to
-				VertexType* pAdjVertex = eIter->pVertex;
+				const VertexType* pAdjVertex = eIter->pVertex;
 				
 				// Get the cost to the node
 				int cost = costFunctor.cost(pCurrVertex->m_data);
@@ -518,9 +493,9 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 		
 		// select the new node
 		size_t minCost = INF;
-		typename std::map<VertexType*, size_t>::iterator bestIter = shortestPathData.distanceMap.end();
+		typename std::map<const VertexType*, size_t>::iterator bestIter = shortestPathData.distanceMap.end();
 		
-		for(typename std::map<VertexType*, size_t>::iterator dIter = shortestPathData.distanceMap.begin(); dIter != shortestPathData.distanceMap.end(); ++dIter)
+		for(typename std::map<const VertexType*, size_t>::iterator dIter = shortestPathData.distanceMap.begin(); dIter != shortestPathData.distanceMap.end(); ++dIter)
 		{
 			if(shortestPathData.visitedMap[dIter->first] != VC_BLACK)
 			{
@@ -550,7 +525,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 		FeasiblePaths& superPaths,
 		int maxNumPaths, int maxCompCost, int& compCost) const
 {
-    VertexType* pSourceVertex = findVertex(sourceKey);
+    const VertexType* pSourceVertex = findVertex(sourceKey);
 
     // Early exit if there are no reachable vertices
     if(keyConstraints.empty())
@@ -578,7 +553,7 @@ static inline extDirection getRelativeDir(extDirection refDir, bool reverse)
  * @return false if the search exited early
  */
 template<typename D>
-bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
+bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool rcFlip,
 		const KeyConstraintMap keyConstraints,
 		VertexPath currentPath, FeasiblePaths& solutions,
@@ -591,9 +566,9 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
 		return false;
 
     // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
-    typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
-    for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
-    {
+    const typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
+    for (typename VertexType::EdgeCollection::const_iterator eIter
+			= currEdges.begin(); eIter != currEdges.end(); ++eIter) {
         VertexType* pNextVertex = eIter->pVertex;
         extDirection relativeDir = getRelativeDir(dir, eIter->reverse);
         bool relativeRC = rcFlip ^ eIter->reverse;
@@ -689,9 +664,11 @@ size_t  DirectedGraph<D>::getMinPathLength(
 }
 
 template<typename D>
-void DirectedGraph<D>::extractShortestPath(VertexType* pSource, VertexType* pTarget, ShortestPathData& shortestPathData, KeyVec& path)
+void DirectedGraph<D>::extractShortestPath(const VertexType* pSource,
+		const VertexType* pTarget, ShortestPathData& shortestPathData,
+		KeyVec& path)
 {
-	VertexType* pCurrVertex = pTarget;
+	const VertexType* pCurrVertex = pTarget;
 	while(pCurrVertex != pSource)
 	{
 		path.push_back(pCurrVertex->m_key);
