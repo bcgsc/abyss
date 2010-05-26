@@ -185,14 +185,13 @@ static void writeEstimates(ostream& out,
 			if (pdIter->second.pairVec[0].size() >= opt::npairs
 					&& pdIter->second.pairVec[1].size()
 					>= opt::npairs) {
-				cerr << "warning: inconsistent pairing between "
-					<< refContig << ' '
-					<< pairID << '+' << ' '
-					<< pdIter->second.pairVec[1].size()
-					<< ' '
-					<< pairID << '-' << ' '
-					<< pdIter->second.pairVec[0].size()
-					<< '\n';
+				if (opt::verbose > 0)
+					cerr << "warning: inconsistent pairing between "
+						<< refContig << ' ' << pairID << '+' << ' '
+						<< pdIter->second.pairVec[1].size() << ' '
+						<< pairID << '-' << ' '
+						<< pdIter->second.pairVec[0].size()
+						<< '\n';
 				continue;
 			}
 
