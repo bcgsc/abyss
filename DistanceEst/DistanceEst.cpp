@@ -108,7 +108,6 @@ static int estimateDistance(unsigned len0, unsigned len1,
 
 static void writeEstimate(ostream& out,
 		const ContigNode& id0, const ContigNode& id1,
-		bool dirIdx,
 		unsigned len0, unsigned len1,
 		const AlignPairVec& pairs, const PDF& pdf)
 {
@@ -123,7 +122,7 @@ static void writeEstimate(ostream& out,
 
 	if (est.numPairs >= opt::npairs) {
 		if (opt::dot) {
-			if (dirIdx)
+			if (id0.sense())
 				est.contig.flip();
 			out << '"' << id0 << "\" -> " << est << '\n';
 		} else
@@ -198,7 +197,7 @@ static void writeEstimates(ostream& out,
 			unsigned pairDirIdx = pdIter->second.pairVec[0].size()
 				>= opt::npairs ? 0 : 1;
 			ContigNode pairContig(pairID, dirIdx == pairDirIdx);
-			writeEstimate(out, refContig, pairContig, dirIdx,
+			writeEstimate(out, refContig, pairContig,
 				refLength, lengthVec.at(pairContig.id()),
 				pdIter->second.pairVec[pairDirIdx], pdf);
 		}
