@@ -175,7 +175,7 @@ static set<LinearNumKey> findRepeats(LinearNumKey seed,
 		count[seed]++;
 		for (SimpleContigGraph::VertexPath::const_iterator
 				it = solIt->begin(); it != solIt->end(); ++it)
-			count[it->key]++;
+			count[it->id()]++;
 		for (map<LinearNumKey, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
@@ -631,7 +631,7 @@ static void constructContigPath(
 	for(SimpleContigGraph::VertexPath::const_iterator iter
 			= vertexPath.begin(); iter != vertexPath.end(); ++iter)
 	{
-		flip = flip ^ iter->isRC;
-		contigPath.push_back(ContigNode(iter->key, flip));
+		flip = flip ^ iter->sense();
+		contigPath.push_back(ContigNode(iter->id(), flip));
 	}
 }

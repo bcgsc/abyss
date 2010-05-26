@@ -2,6 +2,7 @@
 #include "ContigNode.h"
 #include <algorithm>
 #include <climits> // for INT_MIN
+#include <utility>
 
 namespace opt {
 	extern unsigned k;
@@ -652,18 +653,11 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
     for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
     {
         VertexType* pNextVertex = eIter->pVertex;
-
-        // add the node to the path
-        PathNode node;
-        node.key = pNextVertex->m_key;
-        node.isRC = eIter->reverse;
-                
-        // Get the relative direction and comp for the new node
         extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
         bool relativeRC = rcFlip ^ eIter->reverse;
 
         VertexPath newPath = currentPath;
-        newPath.push_back(node);
+        newPath.push_back(ContigNode(pNextVertex->m_key, eIter->reverse));
 
         // Update the constraints set
         KeyConstraintMap newConstraints = keyConstraints;
@@ -773,7 +767,7 @@ size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path)
 	size_t len = 0;
 	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
 	{
-		len += costFunctor.cost(getDataForVertex(iter->key));
+		len += costFunctor.cost(getDataForVertex(iter->id()));
 	}
 	return len;
 }
@@ -792,12 +786,12 @@ void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
 	for (typename VertexPath::const_iterator iter = path.begin();
 			iter != path.end(); ++iter) {
 		bool inserted = distanceMap.insert(
-				make_pair(iter->key, distance)).second;
+				std::make_pair(iter->id(), distance)).second;
 		if (!inserted) {
 			// Mark this contig as a repeat.
-			distanceMap[iter->key] = INT_MIN;
+			distanceMap[iter->id()] = INT_MIN;
 		}
-		int currCost = costFunctor.cost(getDataForVertex(iter->key));
+		int currCost = costFunctor.cost(getDataForVertex(iter->id()));
 		distance += currCost;		
 	}
 

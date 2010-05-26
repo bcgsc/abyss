@@ -156,13 +156,7 @@ class DirectedGraph
 
 		typedef std::set<VertexType*> VertexPtrSet;
 
-		struct PathNode
-		{
-			LinearNumKey key;
-			bool isRC;
-		};
-
-		typedef std::vector<PathNode> VertexPath;
+		typedef std::vector<ContigNode> VertexPath;
 		typedef std::vector<VertexPath> FeasiblePaths;
 
 		typedef std::map<VertexType*, size_t> DistanceMap;
