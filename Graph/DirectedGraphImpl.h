@@ -580,19 +580,12 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
         KeyConstraintMap newConstraints = keyConstraints;
 
         // Make a copy of the constraints
-        typename KeyConstraintMap::iterator constraintIter = newConstraints.find(pNextVertex->m_key);
-        if(constraintIter != newConstraints.end())
-        {
-        		if(constraintIter->second.isConstraintMet(currLen, relativeRC))
-        		{
-	                // This vertex is a valid constraint, remove it from the set
-	                newConstraints.erase(constraintIter);
-        		}
-        		/*else
-        		{
-        			constraintIter->second.printStatus(currLen, relativeRC);
-        		}*/
-        }
+		typename KeyConstraintMap::iterator constraintIter
+			= newConstraints.find(
+					ContigNode(pNextVertex->m_key, relativeRC));
+		if (constraintIter != newConstraints.end()
+				&& constraintIter->second.isConstraintMet(currLen))
+			newConstraints.erase(constraintIter);
 
         // Have all the constraints been satisfied?
         if(newConstraints.empty())

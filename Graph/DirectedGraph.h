@@ -22,12 +22,10 @@ enum VisitColor
 struct Constraint
 {
 	int distance;
-	bool isRC;
 	
-	bool isConstraintMet(int d, bool rc)
+	bool isConstraintMet(int d)
 	{
-		(void)rc;
-		return (d < distance) && (rc == isRC); 
+		return d < distance;
 	}
 	
 	bool isConstraintPossible(int d)
@@ -39,8 +37,7 @@ struct Constraint
 	friend std::ostream& operator <<(std::ostream& out,
 			const Constraint& object)
 	{
-		return out << (object.isRC ? '-' : '+') << ','
-			<< object.distance;
+		return out << object.distance;
 	}
 };
 
@@ -123,7 +120,7 @@ class DirectedGraph
 		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
 
-		typedef std::map<LinearNumKey, Constraint> KeyConstraintMap;
+		typedef std::map<ContigNode, Constraint> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;

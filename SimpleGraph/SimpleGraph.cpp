@@ -148,7 +148,7 @@ ostream& printConstraints(ostream& out, const map<K,D>& s)
 {
 	for (typename map<K,D>::const_iterator iter = s.begin();
 			iter != s.end(); ++iter)
-		out << ' ' << g_contigIDs.key(iter->first) << iter->second;
+		out << ' ' << iter->first << ',' << iter->second;
 	return out;
 }
 
@@ -353,8 +353,7 @@ static void handleEstimate(
 
 		Constraint nc;
 		nc.distance = translatedDistance  + distanceBuffer;
-		nc.isRC = iter->contig.sense();
-		constraintMap[iter->contig.id()] = nc;
+		constraintMap[iter->contig] = nc;
 	}
 
 	vout << "Constraints:";
