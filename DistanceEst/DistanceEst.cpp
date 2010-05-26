@@ -176,30 +176,15 @@ static void writeEstimates(ostream& out,
 			}
 		}
 
-		// For each contig that is paired, compute the distance
 		for (PairDataMap::const_iterator pdIter = dataMap.begin();
 				pdIter != dataMap.end(); ++pdIter) {
-			const ContigID& pairID = pdIter->first;
-			// Check if the pairs are in a valid orientation
-			if (pdIter->second.pairVec[0].size() >= opt::npairs
-					&& pdIter->second.pairVec[1].size()
-					>= opt::npairs) {
-				if (opt::verbose > 0)
-					cerr << "warning: inconsistent pairing between "
-						<< refContig << ' ' << pairID << '+' << ' '
-						<< pdIter->second.pairVec[1].size() << ' '
-						<< pairID << '-' << ' '
-						<< pdIter->second.pairVec[0].size()
-						<< '\n';
-				continue;
+			for (unsigned pairSense = 0; pairSense < 2; pairSense++) {
+				ContigNode pairContig(pdIter->first,
+						dirIdx == pairSense);
+				writeEstimate(out, refContig, pairContig,
+						refLength, lengthVec.at(pairContig.id()),
+						pdIter->second.pairVec[pairSense], pdf);
 			}
-
-			unsigned pairDirIdx = pdIter->second.pairVec[0].size()
-				>= opt::npairs ? 0 : 1;
-			ContigNode pairContig(pairID, dirIdx == pairDirIdx);
-			writeEstimate(out, refContig, pairContig,
-				refLength, lengthVec.at(pairContig.id()),
-				pdIter->second.pairVec[pairDirIdx], pdf);
 		}
 	}
 	if (!opt::dot)
