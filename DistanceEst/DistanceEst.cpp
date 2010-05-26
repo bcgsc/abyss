@@ -134,57 +134,41 @@ static void writeEstimate(ostream& out,
 	}
 }
 
+/** Generate distance estimates for the specified alignments. */
 static void writeEstimates(ostream& out,
-		const vector<SAMRecord>& currPairs,
+		const vector<SAMRecord>& pairs,
 		const vector<unsigned>& lengthVec, const PDF& pdf)
 {
-	assert(!currPairs.empty());
-	ContigID refContigID = currPairs.front().rname;
-
-	// From this point all ids will be interpreted as integers
-	// They must be strictly > 0 and contiguous
-	LinearNumKey refNumericID
-		= convertContigIDToLinearNumKey(refContigID);
-	assert(refNumericID < lengthVec.size());
-
-	// Only process contigs that are a reasonable length
-	unsigned refLength = lengthVec[refNumericID];
-	if (refLength < opt::seedLen)
-		return;
+	assert(!pairs.empty());
+	LinearNumKey id0 = g_contigIDs.serial(pairs.front().rname);
+	assert(id0 < lengthVec.size());
+	unsigned len0 = lengthVec[id0];
+	if (len0 < opt::seedLen)
+		return; // Skip contigs shorter than the seed length.
 
 	if (!opt::dot)
-		out << refContigID;
+		out << pairs.front().rname;
 
-	// Seperate the pairings by direction (pairs aligning in the
-	// same comp as the contig are sense pairs) and by the contig
-	// they align to
-	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-	{
-		// If this is the second direction, write a seperator
-		if (!opt::dot && dirIdx == 1)
+	for (unsigned sense0 = 0; sense0 < 2; sense0++) {
+		if (!opt::dot && sense0 == 1)
 			out << " ;";
-		ContigNode refContig(refContigID, dirIdx);
-
 		PairDataMap dataMap;
-		for (AlignPairVec::const_iterator iter = currPairs.begin();
-				iter != currPairs.end(); ++iter) {
-			if (iter->isReverse() == (bool)dirIdx) {
-				PairedData& pd = dataMap[iter->mrnm];
-				size_t compIdx = (size_t)iter->isMateReverse();
-				assert(compIdx < 2);
-				pd.pairVec[compIdx].push_back(*iter);
-			}
-		}
+		for (AlignPairVec::const_iterator it = pairs.begin();
+				it != pairs.end(); ++it)
+			if (it->isReverse() == sense0)
+				dataMap[it->mrnm].pairVec[it->isMateReverse()]
+					.push_back(*it);
 
-		for (PairDataMap::const_iterator pdIter = dataMap.begin();
-				pdIter != dataMap.end(); ++pdIter) {
-			for (unsigned pairSense = 0; pairSense < 2; pairSense++) {
-				ContigNode pairContig(pdIter->first,
-						dirIdx == pairSense);
-				writeEstimate(out, refContig, pairContig,
-						refLength, lengthVec.at(pairContig.id()),
-						pdIter->second.pairVec[pairSense], pdf);
-			}
+		for (PairDataMap::const_iterator it = dataMap.begin();
+				it != dataMap.end(); ++it) {
+			LinearNumKey id1 = g_contigIDs.serial(it->first);
+			unsigned len1 = lengthVec[id1];
+			for (unsigned sense1 = 0; sense1 < 2; sense1++)
+				writeEstimate(out,
+						ContigNode(id0, sense0),
+						ContigNode(id1, sense0 == sense1),
+						len0, len1,
+						it->second.pairVec[sense1], pdf);
 		}
 	}
 	if (!opt::dot)
