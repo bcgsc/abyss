@@ -584,7 +584,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			= newConstraints.find(
 					ContigNode(pNextVertex->m_key, relativeRC));
 		if (constraintIter != newConstraints.end()
-				&& currLen < constraintIter->second)
+				&& currLen <= constraintIter->second)
 			newConstraints.erase(constraintIter);
 
         // Have all the constraints been satisfied?
