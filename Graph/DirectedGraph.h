@@ -44,28 +44,6 @@ struct Constraint
 	}
 };
 
-struct EdgeDescription
-{
-	extDirection dir;
-	bool reverse;
-	
-	// Get the twin direction of the specified edge
-	// If the nodes are the same comp (reverse == false) then it is the opposite of dir, otherwise it is die
-	static extDirection getTwinDir(extDirection refDir, bool reverse) { return ((reverse) ? refDir : !refDir); }
-	
-	// Get the relative direction of the specified edge
-	// If the node has the same comp, it is in the same dir
-	static extDirection getRelativeDir(extDirection refDir, bool reverse) { return ((!reverse) ? refDir : !refDir); }
-	
-	EdgeDescription makeRelativeDesc() 
-	{ 
-		EdgeDescription ret;
-		ret.reverse = this->reverse;
-		ret.dir = getRelativeDir(this->dir, this->reverse); 
-		return ret;
-	}  
-};
-
 template<typename K, typename D>
 struct Vertex
 {
@@ -114,16 +92,10 @@ struct Vertex
 	
 	// remove an edge
 	void removeEdge(VertexType* pNode, extDirection dir, bool reverse);
-	
-	// find an edge, will assert if the vertex has more than one edge pointing to the key
-	EdgeDescription findUniqueEdge(const K& key);
-	
-	// find an edge, will assert if the vertex has more than one edge pointing to the key
-	EdgeDescription findUniqueEdgeInDir(const K& key, extDirection dir);	
-	
+
 	// check if the edge with the specified directionality exists
 	bool edgeExists(const K& key, extDirection dir, bool reverse);
-	
+
 	// check if the described edge is unique
 	bool isEdgeUnique(VertexType* pNode, extDirection dir, bool reverse);
 	
@@ -217,10 +189,6 @@ class DirectedGraph
 				FeasiblePaths& superPaths, int maxNumPaths,
 				int maxCompCost, int& compCost) const;
 
-		// Get the unique edge description from key1 to key2 (essentially setting the reverse flag)
-		// This function will fail if the edge is not unique
-		EdgeDescription getUniqueEdgeDesc(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir);
-		
 		// return the number of edges a particular node has in the specified direction
 		size_t getDegree(const LinearNumKey& key, extDirection dir);
 		

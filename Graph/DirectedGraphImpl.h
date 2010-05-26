@@ -81,29 +81,6 @@ bool Vertex<K,D>::isEdgeUnique(VertexType* pNode, extDirection dir, bool reverse
 }
 
 template<typename K, typename D>
-EdgeDescription Vertex<K,D>::findUniqueEdge(const K& key)
-{
-	bool found = false;
-	EdgeDescription ret;
-	for(size_t dirIdx = 0; dirIdx <= 1; ++dirIdx)
-	{
-		const EdgeCollection& currEdgeSet = m_edges[dirIdx];
-		for(EdgeCollectionConstIter edgeIter = currEdgeSet.begin(); edgeIter != currEdgeSet.end(); ++edgeIter)
-		{
-			if(edgeIter->pVertex->m_key == key)
-			{
-				assert(!found);
-				found = true;
-				ret.dir = (extDirection)dirIdx;
-				ret.reverse = edgeIter->reverse;
-			}
-		}
-	}
-	assert(found);
-	return ret;
-}
-
-template<typename K, typename D>
 bool Vertex<K,D>::edgeExists(const K& key, extDirection dir, bool reverse)
 {
 	const EdgeCollection& currEdgeSet = m_edges[dir];
@@ -224,6 +201,13 @@ size_t DirectedGraph<D>::reducePaired(ResolveFunctor& resolver)
 		
 }
 
+// Get the twin direction of the specified edge
+// If the nodes are the same comp (reverse == false) then it is the opposite of dir, otherwise it is die
+static inline extDirection getTwinDir(extDirection refDir, bool reverse)
+{
+	return reverse ? refDir : !refDir;
+}
+
 // Remove transitivity in the data set by merging and 
 template<typename D>
 template<class Functor>
@@ -250,10 +234,10 @@ size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
 				bool parentRev = currEdges.begin()->reverse;
 				
 				extDirection parentDir = (extDirection)idx;
-				
+
 				// Get the direction from the child back to the parent
-				extDirection childDir = EdgeDescription::getTwinDir(parentDir, parentRev);
-				
+				extDirection childDir = getTwinDir(parentDir, parentRev);
+
 				// remove the child if the edge back to the parent is unique
 				// This implies that the parent has a single extension to the child and the child
 				// has a single extension to the parent so after the append the child will be redundant
@@ -275,29 +259,6 @@ size_t DirectedGraph<D>::removeTransitivity(Functor dataMerger)
 	}
 	
 	return numMerged;
-}
-
-template<typename D>
-template<class Functor>
-bool DirectedGraph<D>::mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger)
-{
-	VertexType* pParent = findVertex(key1);
-	VertexType* pChild = findVertex(key2);
-
-	EdgeDescription edgeDesc = pParent->findUniqueEdge(key2);
-	
-	extDirection childDir = EdgeDescription::getTwinDir(edgeDesc.dir, edgeDesc.reverse);
-	
-	// Should the child be removed?
-	bool removeChild = false;
-	
-	// is there only one edge between the parent and child?
-	if(pChild->numEdges(childDir) == 1 || forceRemove)
-	{
-		removeChild = true;
-	}
-	
-	return merge(pParent, pChild, edgeDesc.dir, edgeDesc.reverse, removeChild, dataMerger);
 }
 
 // Append a copy of the child vertex into the parent and update all the links accordingly
@@ -505,32 +466,6 @@ void DirectedGraph<D>::accumulateVertices(VertexType* pVertex,
 	}
 }
 
-// TODO: Move this logic out of this class, its way too specific
-template<typename D>
-template<class MergerFunctor>
-bool DirectedGraph<D>::mergePath(const LinearNumKey& key1, const LinearNumKey& key2, extDirection parentDir, bool removeChild, bool usableChild, MergerFunctor dataMerger)
-{
-	VertexType* pParent = findVertex(key1);
-	VertexType* pChild = findVertex(key2);
-	EdgeDescription parentEdgeDesc = pParent->findUniqueEdgeInDir(key2, parentDir);
-	assert(merge(pParent, pChild, parentEdgeDesc.dir, parentEdgeDesc.reverse, removeChild, usableChild, dataMerger));
-	return true;
-}
-
-template<typename D>
-template<class MergerFunctor>
-bool DirectedGraph<D>::mergeShortestPath(const LinearNumKey& key1,
-		const LinearNumKey& key2, MergerFunctor dataMerger)
-{
-	// Get the shortest path between the nodes
-	KeyVec path;
-	ShortestPathData spd;
-	dijkstra(key1, spd);
-	extractShortestPath(findVertex(key1), findVertex(key2), spd, path);
-	mergePath(key1, path, dataMerger);
-	return false;
-}
-
 // Compute the single-source shortest path distance to all nodes using dijkstra's algorithm
 // Note that this does not consider direction so it is unsuitable to compute the djikstra shortest path if you
 // are travelling in a particular direction at all times
@@ -632,6 +567,13 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 	return compCost >= maxCompCost ? false : !superPaths.empty();
 }
 
+// Get the relative direction of the specified edge
+// If the node has the same comp, it is in the same dir
+static inline extDirection getRelativeDir(extDirection refDir, bool reverse)
+{
+	return !reverse ? refDir : !refDir;
+}
+
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
@@ -653,7 +595,7 @@ bool DirectedGraph<D>::ConstrainedDFS(VertexType* pCurrVertex,
     for(typename VertexType::EdgeCollection::iterator eIter = currEdges.begin(); eIter != currEdges.end(); ++eIter)
     {
         VertexType* pNextVertex = eIter->pVertex;
-        extDirection relativeDir = EdgeDescription::getRelativeDir(dir, eIter->reverse);
+        extDirection relativeDir = getRelativeDir(dir, eIter->reverse);
         bool relativeRC = rcFlip ^ eIter->reverse;
 
         VertexPath newPath = currentPath;
