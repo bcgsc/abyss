@@ -106,6 +106,35 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			distanceList, pdf, numPairs);
 }
 
+static void writeEstimate(ostream& out,
+		const ContigNode& id0, const ContigNode& id1,
+		bool dirIdx,
+		unsigned len0, unsigned len1,
+		const AlignPairVec& pairs, const PDF& pdf)
+{
+	if (pairs.size() < opt::npairs)
+		return;
+
+	Estimate est;
+	est.contig = id1;
+	est.distance = estimateDistance(len0, len1,
+			pairs, pdf, est.numPairs);
+	est.stdDev = pdf.getSampleStdDev(est.numPairs);
+
+	if (est.numPairs >= opt::npairs) {
+		if (opt::dot) {
+			if (dirIdx)
+				est.contig.flip();
+			out << '"' << id0 << "\" -> " << est << '\n';
+		} else
+			out << ' ' << est;
+	} else if (opt::verbose > 1) {
+		cerr << "warning: " << id0 << ',' << id1 << ' '
+			<< est.numPairs << " of " << pairs.size()
+			<< " pairs fit the expected distribution\n";
+	}
+}
+
 static void writeEstimates(ostream& out,
 		const vector<SAMRecord>& currPairs,
 		const vector<unsigned>& lengthVec, const PDF& pdf)
@@ -169,36 +198,10 @@ static void writeEstimates(ostream& out,
 
 			unsigned pairDirIdx = pdIter->second.pairVec[0].size()
 				>= opt::npairs ? 0 : 1;
-			const AlignPairVec& pairVec
-				= pdIter->second.pairVec[pairDirIdx];
-			unsigned numPairs = pairVec.size();
-			if (numPairs >= opt::npairs) {
-				Estimate est;
-				est.contig = ContigNode(
-						pairID, dirIdx == pairDirIdx);
-				est.distance = estimateDistance(
-						refLength, lengthVec.at(est.contig.id()),
-						pairVec, pdf, est.numPairs);
-				est.stdDev = pdf.getSampleStdDev(est.numPairs);
-
-				if (est.numPairs >= opt::npairs) {
-					if (opt::dot) {
-						if (dirIdx)
-							est.contig.flip();
-						out << '"' << refContig << "\" -> "
-							<< est << '\n';
-					} else
-						out << ' ' << est;
-				} else if (opt::verbose > 1) {
-					cerr << "warning: "
-						<< refContigID << (dirIdx ? '-' : '+')
-						<< ','
-						<< est.contig << ' '
-						<< est.numPairs << " of "
-						<< numPairs << " pairs"
-						" fit the expected distribution\n";
-				}
-			}
+			ContigNode pairContig(pairID, dirIdx == pairDirIdx);
+			writeEstimate(out, refContig, pairContig, dirIdx,
+				refLength, lengthVec.at(pairContig.id()),
+				pdIter->second.pairVec[pairDirIdx], pdf);
 		}
 	}
 	if (!opt::dot)
