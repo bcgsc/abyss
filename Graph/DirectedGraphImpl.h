@@ -6,6 +6,8 @@
 
 namespace opt {
 	extern unsigned k;
+	extern unsigned maxCost;
+	static const unsigned maxPaths = 200;
 };
 
 struct SimpleDataCost
@@ -520,17 +522,14 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 		extDirection dir, const KeyConstraintMap& constraints,
-		ContigPaths& superPaths,
-		int maxNumPaths, int maxCompCost, int& compCost) const
+		ContigPaths& superPaths, unsigned& compCost) const
 {
     if (constraints.empty())
             return false;
 	ContigPath path;
 	ConstrainedDFS(findVertex(sourceKey), dir, false,
-			constraints, path,
-			superPaths, 0, maxNumPaths, maxCompCost,
-			compCost);
-	return compCost >= maxCompCost ? false : !superPaths.empty();
+			constraints, path, superPaths, 0, compCost);
+	return compCost >= opt::maxCost ? false : !superPaths.empty();
 }
 
 /** Find paths through the graph that satisfy the constraints.
@@ -541,12 +540,11 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool isRC,
 		const KeyConstraintMap& constraints,
 		const ContigPath& path, ContigPaths& solutions,
-		size_t currLen, int maxNumPaths,
-		int maxCompCost, int& visitedCount) const
+		size_t currLen, unsigned& visitedCount) const
 {
 	assert(!constraints.empty());
-	if ((int)solutions.size() > maxNumPaths
-			|| ++visitedCount >= maxCompCost)
+	if (solutions.size() > opt::maxPaths
+			|| ++visitedCount >= opt::maxCost)
 		return false; // Too complex.
 
 	const typename VertexType::EdgeCollection& currEdges
@@ -589,8 +587,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		if (!ConstrainedDFS(pNextVertex, dir,
 					nextNode.sense(),
 					newConstraints, newPath, solutions,
-					newLength, maxNumPaths,
-					maxCompCost, visitedCount))
+					newLength, visitedCount))
 			return false;
 	}
 	return true;

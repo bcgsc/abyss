@@ -10,6 +10,11 @@
 
 using namespace std;
 
+namespace opt {
+	/** Abort the search after visiting maxCost vertices. */
+	unsigned maxCost = 100000;
+};
+
 // Explicit instantiation.
 template class DirectedGraph<SimpleContigData>;
 

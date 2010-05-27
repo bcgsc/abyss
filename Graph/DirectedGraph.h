@@ -158,8 +158,7 @@ class DirectedGraph
 		bool findSuperpaths(const LinearNumKey& sourceKey,
 				extDirection dir,
 				const KeyConstraintMap& constraints,
-				ContigPaths& superPaths, int maxNumPaths,
-				int maxCompCost, int& compCost) const;
+				ContigPaths& superPaths, unsigned& compCost) const;
 
 		// return the number of edges a particular node has in the specified direction
 		size_t getDegree(const LinearNumKey& key, extDirection dir);
@@ -212,8 +211,7 @@ class DirectedGraph
 				extDirection dir,
 				bool rcFlip, const KeyConstraintMap& constraints,
 				const ContigPath& currentPath, ContigPaths& solutions,
-				size_t currLen, int maxNumPaths,
-				int maxCompCost, int& visitedCount) const;
+				size_t currLen, unsigned& visitedCount) const;
 
 		size_t getMinPathLength(const VertexPtrSet& vertexSet);
 

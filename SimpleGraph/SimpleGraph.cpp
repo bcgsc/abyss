@@ -48,10 +48,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigGraph
-
-	/** Abort the search after visiting maxCost vertices. */
-	static unsigned maxCost = 100000;
-
 	static unsigned threads = 1;
 	static int scaffold = 1;
 	static int verbose;
@@ -322,14 +318,11 @@ static void handleEstimate(
 	printConstraints(vout, constraintMap) << '\n';
 
 	ContigPaths solutions;
-	// Abort the search after finding maxNumPaths solutions.
-	const int maxNumPaths = 200;
-	int numVisited = 0;
+	unsigned numVisited = 0;
 	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
-			constraintMap, solutions, maxNumPaths,
-			opt::maxCost, numVisited);
-	bool tooComplex = (unsigned)numVisited >= opt::maxCost;
-	bool tooManySolutions = solutions.size() > (unsigned)maxNumPaths;
+			constraintMap, solutions, numVisited);
+	bool tooComplex = numVisited >= opt::maxCost;
+	bool tooManySolutions = solutions.size() > opt::maxPaths;
 
 	set<LinearNumKey> repeats = findRepeats(er.refID, solutions);
 	if (!repeats.empty()) {
