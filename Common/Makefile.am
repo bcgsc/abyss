@@ -6,6 +6,7 @@ libcommon_a_SOURCES = \
 	AffixIterator.h \
 	ContigLength.h ContigLength.cpp \
 	ContigNode.h ContigNode.cpp \
+	ContigPath.h ContigPath.cpp \
 	Dictionary.h \
 	Fcontrol.cpp Fcontrol.h \
 	HashFunction.cpp HashFunction.h \
