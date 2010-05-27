@@ -37,16 +37,14 @@ class ContigPath : public std::vector<ContigNode>
 		/** The separator to print between ContigNode. */
 		static const char* separator;
 };
-const char* ContigPath::separator;
 
 static inline std::ostream& operator<<(std::ostream& out,
 		const ContigPath& o)
 {
-	const char* separator = o.separator == NULL ? " " : o.separator;
 	assert(!o.empty());
 	ContigPath::const_iterator last = o.end() - 1;
 	copy(o.begin(), last,
-			std::ostream_iterator<ContigNode>(out, separator));
+			std::ostream_iterator<ContigNode>(out, o.separator));
 	return out << *last;
 }
 

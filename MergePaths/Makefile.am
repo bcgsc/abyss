@@ -24,6 +24,7 @@ MergeContigs_CPPFLAGS = -I$(top_srcdir) \
 
 MergeContigs_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/ExpPaired/libexppaired.a \
 	$(top_builddir)/Common/libcommon.a
 
 MergeContigs_SOURCES = MergeContigs.cpp
