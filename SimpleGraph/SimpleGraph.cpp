@@ -187,12 +187,6 @@ static struct {
 	unsigned tooComplex;
 } stats;
 
-/** Convert a numeric contig ID to a string. */
-static const string& idToString(unsigned id)
-{
-	return g_contigIDs.key(id);
-}
-
 /** Return the length of the specified path. */
 static size_t calculatePathLength(const SimpleContigGraph& graph,
 		const ContigPath& path, size_t first = 0, size_t last = 0)

@@ -110,12 +110,6 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 	return repeats;
 }
 
-/** Convert a numeric contig ID to a string. */
-static const string& idToString(unsigned id)
-{
-	return g_contigIDs.key(id);
-}
-
 /** Remove tandem repeats from the set of paths.
  * @return the removed paths
  */
