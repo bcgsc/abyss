@@ -147,9 +147,7 @@ size_t DirectedGraph<D>::countEdges() const
 {
 	size_t sum = 0;
 	for(VertexTableConstIter iter = m_vertexTable.begin(); iter != m_vertexTable.end(); ++iter)
-	{
-		sum += iter->countEdges();
-	}
+		sum += iter->numEdges(false) + iter->numEdges(true);
 	return sum;
 }
 

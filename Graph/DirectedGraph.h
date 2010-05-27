@@ -49,12 +49,6 @@ struct Vertex
 	inline bool operator==(const Vertex& other) const { return m_data == other.m_data; }
 	inline bool operator<(const Vertex& other) const { return m_data < other.m_data; }
 
-	/** Return the total number of edges in both directions. */
-	size_t countEdges() const
-	{
-		return (numEdges(false) + numEdges(true));
-	}
-
 	/** Return the number of edges in the specified direction. */
 	size_t numEdges(bool sense) const
 	{
