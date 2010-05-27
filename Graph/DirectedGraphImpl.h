@@ -520,7 +520,7 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 		extDirection dir, const KeyConstraintMap& keyConstraints,
-		FeasiblePaths& superPaths,
+		ContigPaths& superPaths,
 		int maxNumPaths, int maxCompCost, int& compCost) const
 {
     const VertexType* pSourceVertex = findVertex(sourceKey);
@@ -543,7 +543,7 @@ template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool rcFlip,
 		const KeyConstraintMap keyConstraints,
-		ContigPath currentPath, FeasiblePaths& solutions,
+		ContigPath currentPath, ContigPaths& solutions,
 		size_t currLen, int maxNumPaths,
 		int maxCompCost, int& visitedCount) const
 {

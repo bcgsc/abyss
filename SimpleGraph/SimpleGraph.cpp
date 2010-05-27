@@ -153,11 +153,10 @@ ostream& printConstraints(ostream& out, const map<K,D>& s)
  * solution.
  */
 static set<LinearNumKey> findRepeats(LinearNumKey seed,
-	const SimpleContigGraph::FeasiblePaths& solutions)
+	const ContigPaths& solutions)
 {
 	set<LinearNumKey> repeats;
-	for (SimpleContigGraph::FeasiblePaths::const_iterator
-			solIt = solutions.begin();
+	for (ContigPaths::const_iterator solIt = solutions.begin();
 			solIt != solutions.end(); ++solIt) {
 		map<LinearNumKey, unsigned> count;
 		count[seed]++;
@@ -213,7 +212,7 @@ static size_t calculatePathLength(const SimpleContigGraph& graph,
 /** Return an ambiguous path that agrees with all the given paths. */
 static ContigPath constructAmbiguousPath(
 		const SimpleContigGraph* pContigGraph,
-		const SimpleContigGraph::FeasiblePaths& solutions)
+		const ContigPaths& solutions)
 {
 	typedef vector<ContigPath> ContigPaths;
 	const ContigPaths& paths = solutions;
@@ -329,7 +328,7 @@ static void handleEstimate(
 	vout << "Constraints:";
 	printConstraints(vout, constraintMap) << '\n';
 
-	SimpleContigGraph::FeasiblePaths solutions;
+	ContigPaths solutions;
 	// Abort the search after finding maxNumPaths solutions.
 	const int maxNumPaths = 200;
 	int numVisited = 0;
@@ -352,8 +351,8 @@ static void handleEstimate(
 	if (numPossiblePaths > 0)
 		vout << "Paths: " << numPossiblePaths << '\n';
 
-	for (SimpleContigGraph::FeasiblePaths::iterator solIter
-				= solutions.begin(); solIter != solutions.end();) {
+	for (ContigPaths::iterator solIter = solutions.begin();
+			solIter != solutions.end();) {
 		vout << *solIter << '\n';
 
 		// Calculate the path distance to each node and see if
@@ -412,11 +411,9 @@ static void handleEstimate(
 		vout << " (too many solutions)";
 	vout << '\n';
 
-	SimpleContigGraph::FeasiblePaths::iterator bestSol
-		= solutions.end();
+	ContigPaths::iterator bestSol = solutions.end();
 	int minDiff = 999999;
-	for (SimpleContigGraph::FeasiblePaths::iterator solIter
-				= solutions.begin();
+	for (ContigPaths::iterator solIter = solutions.begin();
 			solIter != solutions.end(); ++solIter) {
 		map<LinearNumKey, int> distanceMap;
 		pContigGraph->makeDistanceMap(*solIter, distanceMap);

@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+typedef std::vector<ContigPath> ContigPaths;
+
 typedef uint32_t LinearNumKey;
 
 enum VisitColor
@@ -97,8 +99,6 @@ class DirectedGraph
 
 		typedef std::set<VertexType*> VertexPtrSet;
 
-		typedef std::vector<ContigPath> FeasiblePaths;
-
 		typedef std::map<const VertexType*, size_t> DistanceMap;
 		typedef std::map<const VertexType*, VisitColor> VisitedMap;
 		typedef std::map<const VertexType*, const VertexType*> PreviousMap;
@@ -161,7 +161,7 @@ class DirectedGraph
 		bool findSuperpaths(const LinearNumKey& sourceKey,
 				extDirection dir,
 				const KeyConstraintMap& keyConstraints,
-				FeasiblePaths& superPaths, int maxNumPaths,
+				ContigPaths& superPaths, int maxNumPaths,
 				int maxCompCost, int& compCost) const;
 
 		// return the number of edges a particular node has in the specified direction
@@ -214,7 +214,7 @@ class DirectedGraph
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir,
 				bool rcFlip, const KeyConstraintMap keyConstraints,
-				ContigPath currentPath, FeasiblePaths& solutions,
+				ContigPath currentPath, ContigPaths& solutions,
 				size_t currLen, int maxNumPaths,
 				int maxCompCost, int& visitedCount) const;
 
