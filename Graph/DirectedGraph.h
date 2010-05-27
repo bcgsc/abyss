@@ -112,9 +112,6 @@ class DirectedGraph
 			DirectionMap directionMap;
 		};
 	
-		DirectedGraph() { };
-		DirectedGraph(const size_t sizeHint) { m_vertexTable.reserve(sizeHint); }
-
 		/** Return the vertex specified by the given key. */
 		const VertexType& operator[](const LinearNumKey& key) const
 		{
