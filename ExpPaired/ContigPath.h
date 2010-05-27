@@ -39,7 +39,8 @@ class ContigPath : public std::vector<ContigNode>
 };
 const char* ContigPath::separator;
 
-std::ostream& operator<<(std::ostream& out, const ContigPath& o)
+static inline std::ostream& operator<<(std::ostream& out,
+		const ContigPath& o)
 {
 	const char* separator = o.separator == NULL ? " " : o.separator;
 	assert(!o.empty());
@@ -49,7 +50,8 @@ std::ostream& operator<<(std::ostream& out, const ContigPath& o)
 	return out << *last;
 }
 
-std::istream& operator>>(std::istream& in, ContigPath& o)
+static inline std::istream& operator>>(std::istream& in,
+		ContigPath& o)
 {
 	o.clear();
 	std::string s;
