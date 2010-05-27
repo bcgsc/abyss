@@ -54,7 +54,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 /** Create an index of the target sequence. */
 template <class SeqPosHashMap>
 void Aligner<SeqPosHashMap>::addReferenceSequence(
-		const ContigID& idString, const Sequence& seq)
+		const StringID& idString, const Sequence& seq)
 {
 	unsigned id = contigIDToIndex(idString);
 	int size = seq.length();
@@ -163,10 +163,10 @@ coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
 
 // Explicit instantiation.
 template void Aligner<SeqPosHashMultiMap>::addReferenceSequence(
-		const ContigID& id, const Sequence& seq);
+		const StringID& id, const Sequence& seq);
 
 template void Aligner<SeqPosHashUniqueMap>::addReferenceSequence(
-		const ContigID& id, const Sequence& seq);
+		const StringID& id, const Sequence& seq);
 
 template void Aligner<SeqPosHashMultiMap>::
 alignRead<affix_ostream_iterator<Alignment> >(

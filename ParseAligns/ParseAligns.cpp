@@ -95,7 +95,7 @@ static Histogram histogram;
 
 // TYPEDEFS
 typedef hash_map<string, AlignmentVector> ReadAlignMap;
-typedef hash_map<ContigID, EstimateRecord> EstimateMap;
+typedef hash_map<StringID, EstimateRecord> EstimateMap;
 
 static EstimateMap estMap;
 

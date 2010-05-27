@@ -19,12 +19,12 @@
 #include <string>
 #include <vector>
 
-typedef std::string ContigID;
+typedef std::string StringID;
 
 // Alignment information
 struct Alignment
 {
-	ContigID contig;
+	StringID contig;
 	int contig_start_pos;
 	int read_start_pos;
 	int align_length;
@@ -33,7 +33,7 @@ struct Alignment
 
 	Alignment() { }
 
-	Alignment(ContigID contig, int contig_start, int read_start,
+	Alignment(StringID contig, int contig_start, int read_start,
 			int align_length, int read_length, bool isRC) :
 		contig(contig),
 		contig_start_pos(contig_start),
@@ -126,7 +126,7 @@ struct Position
 	Position(uint32_t contig = std::numeric_limits<uint32_t>::max(),
 			uint32_t pos = std::numeric_limits<uint32_t>::max())
 		: contig(contig), pos(pos) { }
-	void setDuplicate(const ContigID& thisContig, const ContigID& otherContig,
+	void setDuplicate(const StringID& thisContig, const StringID& otherContig,
 			const Sequence& kmer)
 	{
 		if (opt::multimap == opt::IGNORE)
@@ -174,7 +174,7 @@ class Aligner
 			m_target.rehash(buckets);
 		}
 
-		void addReferenceSequence(const ContigID& id,
+		void addReferenceSequence(const StringID& id,
 				const Sequence& seq);
 		void addReferenceSequence(const Kmer& kmer, Position pos);
 
@@ -207,15 +207,15 @@ class Aligner
 		SeqPosHashMap m_target;
 
 		/** A dictionary of contig IDs. */
-		std::vector<ContigID> m_contigDict;
+		std::vector<StringID> m_contigDict;
 
-		unsigned contigIDToIndex(const ContigID& id)
+		unsigned contigIDToIndex(const StringID& id)
 		{
 			m_contigDict.push_back(id);
 			return m_contigDict.size() - 1;
 		}
 
-		const ContigID& contigIndexToID(unsigned index)
+		const StringID& contigIndexToID(unsigned index)
 		{
 			return m_contigDict.at(index);
 		}

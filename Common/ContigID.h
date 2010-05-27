@@ -3,7 +3,7 @@
 
 #include "Dictionary.h"
 
-typedef std::string ContigID;
+typedef std::string StringID;
 typedef unsigned LinearNumKey;
 
 extern Dictionary g_contigIDs;

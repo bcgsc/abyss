@@ -92,8 +92,7 @@ struct ContigCount {
 	BaseCounts counts;
 };
 
-typedef hash_map<ContigID, ContigCount> ContigMap;
-
+typedef hash_map<StringID, ContigCount> ContigMap;
 static ContigMap g_contigs;
 
 /** Read all contigs in and store the contigs in g_contigs and make a

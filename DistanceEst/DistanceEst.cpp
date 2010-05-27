@@ -78,8 +78,6 @@ struct PairedData
 	AlignPairVec pairVec[2];
 };
 
-typedef map<ContigID, PairedData> PairDataMap;
-
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
  * expected distribution
@@ -152,6 +150,7 @@ static void writeEstimates(ostream& out,
 	for (unsigned sense0 = 0; sense0 < 2; sense0++) {
 		if (!opt::dot && sense0 == 1)
 			out << " ;";
+		typedef map<StringID, PairedData> PairDataMap;
 		PairDataMap dataMap;
 		for (AlignPairVec::const_iterator it = pairs.begin();
 				it != pairs.end(); ++it)
