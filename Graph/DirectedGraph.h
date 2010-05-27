@@ -157,7 +157,7 @@ class DirectedGraph
 
 		bool findSuperpaths(const LinearNumKey& sourceKey,
 				extDirection dir,
-				const KeyConstraintMap& keyConstraints,
+				const KeyConstraintMap& constraints,
 				ContigPaths& superPaths, int maxNumPaths,
 				int maxCompCost, int& compCost) const;
 
@@ -210,7 +210,7 @@ class DirectedGraph
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir,
-				bool rcFlip, const KeyConstraintMap keyConstraints,
+				bool rcFlip, const KeyConstraintMap& constraints,
 				const ContigPath& currentPath, ContigPaths& solutions,
 				size_t currLen, int maxNumPaths,
 				int maxCompCost, int& visitedCount) const;

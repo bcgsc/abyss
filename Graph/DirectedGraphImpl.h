@@ -539,7 +539,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool isRC,
-		const KeyConstraintMap constraints,
+		const KeyConstraintMap& constraints,
 		const ContigPath& path, ContigPaths& solutions,
 		size_t currLen, int maxNumPaths,
 		int maxCompCost, int& visitedCount) const
