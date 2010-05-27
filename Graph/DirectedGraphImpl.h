@@ -519,18 +519,15 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
-		extDirection dir, const KeyConstraintMap& keyConstraints,
+		extDirection dir, const KeyConstraintMap& constraints,
 		ContigPaths& superPaths,
 		int maxNumPaths, int maxCompCost, int& compCost) const
 {
-    const VertexType* pSourceVertex = findVertex(sourceKey);
-
-    // Early exit if there are no reachable vertices
-    if(keyConstraints.empty())
+    if (constraints.empty())
             return false;
-
 	ContigPath path;
-	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
+	ConstrainedDFS(findVertex(sourceKey), dir, false,
+			constraints, path,
 			superPaths, 0, maxNumPaths, maxCompCost,
 			compCost);
 	return compCost >= maxCompCost ? false : !superPaths.empty();
@@ -541,76 +538,61 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
  */
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
-		extDirection dir, bool rcFlip,
-		const KeyConstraintMap keyConstraints,
-		const ContigPath& currentPath, ContigPaths& solutions,
+		extDirection dir, bool isRC,
+		const KeyConstraintMap constraints,
+		const ContigPath& path, ContigPaths& solutions,
 		size_t currLen, int maxNumPaths,
 		int maxCompCost, int& visitedCount) const
 {
-    // Early exit if the path limit has been reached, in this case the output is invalid and should be tossed
-    if ((maxNumPaths != -1 && (int)solutions.size() > maxNumPaths)
+	assert(!constraints.empty());
+	if ((int)solutions.size() > maxNumPaths
 			|| ++visitedCount >= maxCompCost)
-		return false;
+		return false; // Too complex.
 
-    // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
 	const typename VertexType::EdgeCollection& currEdges
-		= pCurrVertex->m_edges[rcFlip ^ dir];
-    for (typename VertexType::EdgeCollection::const_iterator eIter
-			= currEdges.begin(); eIter != currEdges.end(); ++eIter) {
-        VertexType* pNextVertex = eIter->pVertex;
-		ContigPath newPath(currentPath);
-		ContigNode nextNode(pNextVertex->m_key,
-				eIter->reverse ^ rcFlip);
+		= pCurrVertex->m_edges[isRC ^ dir];
+	for (typename VertexType::EdgeCollection::const_iterator it
+			= currEdges.begin(); it != currEdges.end(); ++it) {
+		VertexType* pNextVertex = it->pVertex;
+		ContigNode nextNode(pNextVertex->m_key, it->reverse ^ isRC);
+		ContigPath newPath(path);
 		newPath.push_back(nextNode);
 
-        // Update the constraints set
-        KeyConstraintMap newConstraints = keyConstraints;
-
-        // Make a copy of the constraints
+		KeyConstraintMap newConstraints = constraints;
 		typename KeyConstraintMap::iterator constraintIter
 			= newConstraints.find(nextNode);
 		if (constraintIter != newConstraints.end()
 				&& currLen <= constraintIter->second)
 			newConstraints.erase(constraintIter);
 
-        // Have all the constraints been satisfied?
-        if(newConstraints.empty())
-        {
-                // this path is valid
-                solutions.push_back(newPath);
-                continue;
-        }
-        else
-        {
-        	
-	            // update the path length
-	            size_t newLength = currLen + costFunctor.cost(pNextVertex->m_data);    
-	            
-                // Check if this path can possibly support all the constraints
-                bool constraintViolated = false;
-                for(typename KeyConstraintMap::iterator cIter = newConstraints.begin(); cIter != newConstraints.end(); ++cIter)
-				{
-					if (newLength > cIter->second) {
-						//this constraint is violated, the branch will be explored no further
-						constraintViolated = true;
-						break;
-					}
-				}
+		if (newConstraints.empty()) {
+			// All the constraints have been satisfied.
+			solutions.push_back(newPath);
+			continue;
+		}
 
-                if(constraintViolated)
-                {
-                       continue;
-                }
+		size_t newLength = currLen +
+			costFunctor.cost(pNextVertex->m_data);
+		bool constraintViolated = false;
+		for (typename KeyConstraintMap::const_iterator
+				cIt = newConstraints.begin();
+				cIt != newConstraints.end(); ++cIt) {
+			if (newLength > cIt->second) {
+				// This constraint cannot be met.
+				constraintViolated = true;
+				break;
+			}
+		}
+		if (constraintViolated)
+			continue;
 
-                // recurse
-				if (!ConstrainedDFS(pNextVertex, dir,
-						nextNode.sense(),
-						newConstraints, newPath, solutions,
-						newLength, maxNumPaths,
-						maxCompCost, visitedCount))
-					return false;
-        }
-    }
+		if (!ConstrainedDFS(pNextVertex, dir,
+					nextNode.sense(),
+					newConstraints, newPath, solutions,
+					newLength, maxNumPaths,
+					maxCompCost, visitedCount))
+			return false;
+	}
 	return true;
 }
 
