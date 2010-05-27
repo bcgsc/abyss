@@ -41,7 +41,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	while (in >> id >> length) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(length >= opt::k);
-		pGraph->addVertex(convertContigIDToLinearNumKey(id), length);
+		pGraph->addVertex(stringToID(id), length);
 		if (++count % 1000000 == 0)
 			cout << "Read " << count << " vertices" << endl;
 	}
@@ -53,7 +53,7 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	count = 0;
 	while (in >> id) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');
-		readEdges(in, convertContigIDToLinearNumKey(id), *pGraph);
+		readEdges(in, stringToID(id), *pGraph);
 		if (++count % 1000000 == 0)
 			cout << "Read edges for " << count << " vertices" << endl;
 	}

@@ -365,7 +365,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 			outSeq[x] = islower(contig.seq[x]) ? tolower(c) : c;
 		}
 
-		LinearNumKey idKey = convertContigIDToLinearNumKey(it->first);
+		LinearNumKey idKey = stringToID(it->first);
 		if (outSeq.find_first_of("ACGT") != string::npos) {
 			// Check that the average percent agreement was enough to
 			// write the contig to file.

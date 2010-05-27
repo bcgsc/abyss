@@ -87,7 +87,7 @@ struct EstimateRecord
 
 		std::string id;
 		in >> id;
-		o.refID = convertContigIDToLinearNumKey(id);
+		o.refID = stringToID(id);
 
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {

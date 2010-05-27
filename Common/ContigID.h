@@ -9,8 +9,7 @@ typedef unsigned LinearNumKey;
 extern Dictionary g_contigIDs;
 
 /** Convert a string to a numeric contig ID. */
-static inline LinearNumKey convertContigIDToLinearNumKey(
-		const ContigID& id)
+static inline unsigned stringToID(const std::string& id)
 {
 	return g_contigIDs.serial(id);
 }
