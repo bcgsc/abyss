@@ -1,5 +1,5 @@
-#ifndef PAIRUTILS_H
-#define PAIRUTILS_H 1
+#ifndef CONTIGID_H
+#define CONTIGID_H 1
 
 #include "Dictionary.h"
 

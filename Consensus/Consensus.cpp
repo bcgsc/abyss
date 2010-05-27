@@ -1,8 +1,8 @@
 #include "Aligner.h"
 #include "Common/Options.h"
+#include "ContigID.h"
 #include "FastaReader.h"
 #include "FastaWriter.h"
-#include "PairUtils.h"
 #include "Uncompress.h"
 #include <cctype>
 #include <cmath>

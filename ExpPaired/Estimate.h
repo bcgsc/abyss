@@ -1,8 +1,8 @@
 #ifndef ESTIMATE_H
 #define ESTIMATE_H 1
 
+#include "ContigID.h"
 #include "ContigNode.h"
-#include "PairUtils.h"
 #include "Sense.h"
 #include <cassert>
 #include <cmath> // for ceilf

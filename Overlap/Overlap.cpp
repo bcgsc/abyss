@@ -8,7 +8,6 @@
 #include "ContigGraph.h"
 #include "Estimate.h"
 #include "FastaReader.h"
-#include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>

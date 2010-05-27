@@ -1,6 +1,6 @@
 #include "ContigGraph.h"
+#include "ContigID.h"
 #include "DirectedGraphImpl.h"
-#include "PairUtils.h"
 #include <cassert>
 #include <fstream>
 #include <iostream>

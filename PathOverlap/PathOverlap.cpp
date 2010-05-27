@@ -1,7 +1,7 @@
 #include "config.h"
+#include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
-#include "PairUtils.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>

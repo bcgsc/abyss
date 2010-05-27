@@ -4,7 +4,6 @@
 #include "ContigPath.h"
 #include "DirectedGraphImpl.h"
 #include "Estimate.h"
-#include "PairUtils.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <cerrno>
