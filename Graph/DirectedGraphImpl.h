@@ -674,7 +674,7 @@ size_t DirectedGraph<D>::calculatePathLength(const ContigPath& path)
  */
 template<typename D>
 void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
-		std::map<LinearNumKey, int>& distanceMap) const
+		std::map<ContigNode, int>& distanceMap) const
 {
 	// the path distance to a node is the distance that walks through all the nodes leading to it
 	// the first node in a path therefore has a distance of 0 by def
@@ -682,17 +682,17 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 	for (typename ContigPath::const_iterator iter = path.begin();
 			iter != path.end(); ++iter) {
 		bool inserted = distanceMap.insert(
-				std::make_pair(iter->id(), distance)).second;
+				std::make_pair(*iter, distance)).second;
 		if (!inserted) {
 			// Mark this contig as a repeat.
-			distanceMap[iter->id()] = INT_MIN;
+			distanceMap[*iter] = INT_MIN;
 		}
 		int currCost = costFunctor.cost(getDataForVertex(iter->id()));
 		distance += currCost;		
 	}
 
 	// Remove the repeats.
-	for (std::map<LinearNumKey, int>::iterator it
+	for (std::map<ContigNode, int>::iterator it
 			= distanceMap.begin(); it != distanceMap.end();)
 		if (it->second == INT_MIN)
 			distanceMap.erase(it++);

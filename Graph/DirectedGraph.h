@@ -196,7 +196,7 @@ class DirectedGraph
 
 		// Make a map of the distances to each node
 		void makeDistanceMap(const ContigPath& path,
-				std::map<LinearNumKey, int>& distanceMap) const;
+				std::map<ContigNode, int>& distanceMap) const;
 
 	private:
 		// Extract the shortest path between two vertices

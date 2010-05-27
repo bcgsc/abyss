@@ -350,7 +350,7 @@ static void handleEstimate(
 
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
-		map<LinearNumKey, int> distanceMap;
+		map<ContigNode, int> distanceMap;
 		pContigGraph->makeDistanceMap(*solIter, distanceMap);
 
 		// Remove solutions whose distance estimates are not correct.
@@ -360,8 +360,8 @@ static void handleEstimate(
 				iter != er.estimates[dirIdx].end(); ++iter) {
 			vout << *iter << '\t';
 
-			map<LinearNumKey, int>::iterator dmIter
-				= distanceMap.find(iter->contig.id());
+			map<ContigNode, int>::iterator dmIter
+				= distanceMap.find(iter->contig);
 			if (dmIter == distanceMap.end()) {
 				// This contig is a repeat.
 				ignoredCount++;
@@ -408,7 +408,7 @@ static void handleEstimate(
 	int minDiff = 999999;
 	for (ContigPaths::iterator solIter = solutions.begin();
 			solIter != solutions.end(); ++solIter) {
-		map<LinearNumKey, int> distanceMap;
+		map<ContigNode, int> distanceMap;
 		pContigGraph->makeDistanceMap(*solIter, distanceMap);
 		int sumDiff = 0;
 		for (EstimateVector::const_iterator iter
@@ -416,8 +416,8 @@ static void handleEstimate(
 				iter != er.estimates[dirIdx].end(); ++iter) {
 			if (repeats.count(iter->contig.id()) > 0)
 				continue;
-			map<LinearNumKey, int>::iterator dmIter
-				= distanceMap.find(iter->contig.id());
+			map<ContigNode, int>::iterator dmIter
+				= distanceMap.find(iter->contig);
 			assert(dmIter != distanceMap.end());
 			int actualDistance = dmIter->second - opt::k + 1;
 			int diff = actualDistance - iter->distance;
