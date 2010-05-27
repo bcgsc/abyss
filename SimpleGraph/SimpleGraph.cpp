@@ -622,11 +622,7 @@ static void constructContigPath(
 		const SimpleContigGraph::VertexPath& vertexPath,
 		ContigPath& contigPath)
 {
-	bool flip = false;
 	for(SimpleContigGraph::VertexPath::const_iterator iter
 			= vertexPath.begin(); iter != vertexPath.end(); ++iter)
-	{
-		flip = flip ^ iter->sense();
-		contigPath.push_back(ContigNode(iter->id(), flip));
-	}
+		contigPath.push_back(*iter);
 }

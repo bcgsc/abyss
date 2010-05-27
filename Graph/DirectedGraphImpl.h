@@ -540,13 +540,6 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 	return compCost >= maxCompCost ? false : !superPaths.empty();
 }
 
-// Get the relative direction of the specified edge
-// If the node has the same comp, it is in the same dir
-static inline extDirection getRelativeDir(extDirection refDir, bool reverse)
-{
-	return !reverse ? refDir : !refDir;
-}
-
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
@@ -564,23 +557,22 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		return false;
 
     // Recursively explore the subbranches until either the contraints have been violated or all the constrains have been satisfied
-    const typename VertexType::EdgeCollection& currEdges = pCurrVertex->m_edges[dir];
+	const typename VertexType::EdgeCollection& currEdges
+		= pCurrVertex->m_edges[rcFlip ^ dir];
     for (typename VertexType::EdgeCollection::const_iterator eIter
 			= currEdges.begin(); eIter != currEdges.end(); ++eIter) {
         VertexType* pNextVertex = eIter->pVertex;
-        extDirection relativeDir = getRelativeDir(dir, eIter->reverse);
-        bool relativeRC = rcFlip ^ eIter->reverse;
-
         VertexPath newPath = currentPath;
-        newPath.push_back(ContigNode(pNextVertex->m_key, eIter->reverse));
+		ContigNode nextNode(pNextVertex->m_key,
+				eIter->reverse ^ rcFlip);
+		newPath.push_back(nextNode);
 
         // Update the constraints set
         KeyConstraintMap newConstraints = keyConstraints;
 
         // Make a copy of the constraints
 		typename KeyConstraintMap::iterator constraintIter
-			= newConstraints.find(
-					ContigNode(pNextVertex->m_key, relativeRC));
+			= newConstraints.find(nextNode);
 		if (constraintIter != newConstraints.end()
 				&& currLen <= constraintIter->second)
 			newConstraints.erase(constraintIter);
@@ -615,8 +607,8 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
                 }
 
                 // recurse
-				if (!ConstrainedDFS(pNextVertex, relativeDir,
-						relativeRC,
+				if (!ConstrainedDFS(pNextVertex, dir,
+						nextNode.sense(),
 						newConstraints, newPath, solutions,
 						newLength, maxNumPaths,
 						maxCompCost, visitedCount))
