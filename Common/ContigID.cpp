@@ -1,3 +1,3 @@
-#include "ContigNode.h"
+#include "ContigID.h"
 
 Dictionary g_contigIDs;

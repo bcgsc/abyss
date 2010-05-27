@@ -235,11 +235,6 @@ static void readContigs(vector<Contig>& contigs, const string& path)
 	g_contigIDs.lock();
 }
 
-static const string& idToString(unsigned id)
-{
-	return g_contigIDs.key(id);
-}
-
 int main(int argc, char *const argv[])
 {
 	bool die = false;

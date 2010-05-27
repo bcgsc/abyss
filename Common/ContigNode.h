@@ -1,16 +1,13 @@
 #ifndef CONTIGNODE_H
 #define CONTIGNODE_H 1
 
-#include "Dictionary.h"
+#include "ContigID.h"
 #include "StringUtil.h"
 #include <cassert>
 #include <cstdlib> // for strtoul
 #include <string>
 #include <istream>
 #include <ostream>
-
-/** A dictionary of contig IDs. */
-extern Dictionary g_contigIDs;
 
 /** A tuple of a contig ID and an orientation. */
 class ContigNode {
