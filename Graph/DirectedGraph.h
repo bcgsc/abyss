@@ -97,8 +97,7 @@ class DirectedGraph
 
 		typedef std::set<VertexType*> VertexPtrSet;
 
-		typedef ContigPath VertexPath;
-		typedef std::vector<VertexPath> FeasiblePaths;
+		typedef std::vector<ContigPath> FeasiblePaths;
 
 		typedef std::map<const VertexType*, size_t> DistanceMap;
 		typedef std::map<const VertexType*, VisitColor> VisitedMap;
@@ -196,10 +195,10 @@ class DirectedGraph
 		bool mergeWrapper(const LinearNumKey& key1, const LinearNumKey& key2, bool forceRemove, Functor dataMerger);
 
 		// Calculate the length of this path
-		size_t calculatePathLength(const VertexPath& path) const;
+		size_t calculatePathLength(const ContigPath& path) const;
 
 		// Make a map of the distances to each node
-		void makeDistanceMap(const VertexPath& path,
+		void makeDistanceMap(const ContigPath& path,
 				std::map<LinearNumKey, int>& distanceMap) const;
 
 	private:
@@ -215,7 +214,7 @@ class DirectedGraph
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir,
 				bool rcFlip, const KeyConstraintMap keyConstraints,
-				VertexPath currentPath, FeasiblePaths& solutions,
+				ContigPath currentPath, FeasiblePaths& solutions,
 				size_t currLen, int maxNumPaths,
 				int maxCompCost, int& visitedCount) const;
 

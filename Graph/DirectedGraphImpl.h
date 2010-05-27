@@ -527,13 +527,9 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 
     // Early exit if there are no reachable vertices
     if(keyConstraints.empty())
-    {
             return false;
-    }
 
-    // Create the initial (empty) path
-    VertexPath path;
-
+	ContigPath path;
 	ConstrainedDFS(pSourceVertex, dir, false, keyConstraints, path,
 			superPaths, 0, maxNumPaths, maxCompCost,
 			compCost);
@@ -547,7 +543,7 @@ template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool rcFlip,
 		const KeyConstraintMap keyConstraints,
-		VertexPath currentPath, FeasiblePaths& solutions,
+		ContigPath currentPath, FeasiblePaths& solutions,
 		size_t currLen, int maxNumPaths,
 		int maxCompCost, int& visitedCount) const
 {
@@ -562,7 +558,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
     for (typename VertexType::EdgeCollection::const_iterator eIter
 			= currEdges.begin(); eIter != currEdges.end(); ++eIter) {
         VertexType* pNextVertex = eIter->pVertex;
-        VertexPath newPath = currentPath;
+		ContigPath newPath = currentPath;
 		ContigNode nextNode(pNextVertex->m_key,
 				eIter->reverse ^ rcFlip);
 		newPath.push_back(nextNode);
@@ -662,14 +658,13 @@ void DirectedGraph<D>::extractShortestPath(const VertexType* pSource,
 }
 
 template<typename D>
-size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path)
+size_t DirectedGraph<D>::calculatePathLength(const ContigPath& path)
 	const
 {
 	size_t len = 0;
-	for(typename VertexPath::const_iterator iter = path.begin(); iter != path.end() - 1; ++iter)
-	{
+	for (typename ContigPath::const_iterator iter = path.begin();
+			iter != path.end() - 1; ++iter)
 		len += costFunctor.cost(getDataForVertex(iter->id()));
-	}
 	return len;
 }
 
@@ -678,13 +673,13 @@ size_t DirectedGraph<D>::calculatePathLength(const VertexPath& path)
  * represented in this map.
  */
 template<typename D>
-void DirectedGraph<D>::makeDistanceMap(const VertexPath& path,
+void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 		std::map<LinearNumKey, int>& distanceMap) const
 {
 	// the path distance to a node is the distance that walks through all the nodes leading to it
 	// the first node in a path therefore has a distance of 0 by def
 	size_t distance = 0;
-	for (typename VertexPath::const_iterator iter = path.begin();
+	for (typename ContigPath::const_iterator iter = path.begin();
 			iter != path.end(); ++iter) {
 		bool inserted = distanceMap.insert(
 				std::make_pair(iter->id(), distance)).second;
