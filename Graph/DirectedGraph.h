@@ -2,6 +2,7 @@
 #define DIRECTEDGRAPH_H 1
 
 #include "ContigNode.h"
+#include "ContigPath.h"
 #include "Sense.h"
 #include <ostream>
 #include <map>
@@ -96,7 +97,7 @@ class DirectedGraph
 
 		typedef std::set<VertexType*> VertexPtrSet;
 
-		typedef std::vector<ContigNode> VertexPath;
+		typedef ContigPath VertexPath;
 		typedef std::vector<VertexPath> FeasiblePaths;
 
 		typedef std::map<const VertexType*, size_t> DistanceMap;

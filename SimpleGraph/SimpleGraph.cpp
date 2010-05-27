@@ -79,9 +79,6 @@ static const struct option longopts[] = {
 
 static void generatePathsThroughEstimates(
 		SimpleContigGraph* pContigGraph, string estFileName);
-static void constructContigPath(
-		const SimpleContigGraph::VertexPath& vertexPath,
-		ContigPath& contigPath);
 
 int main(int argc, char** argv)
 {
@@ -152,15 +149,6 @@ ostream& printConstraints(ostream& out, const map<K,D>& s)
 	return out;
 }
 
-static ostream& printPath(ostream& out,
-		const SimpleContigGraph::VertexPath& v)
-{
-	assert(!v.empty());
-	ContigPath path;
-	constructContigPath(v, path);
-	return out << path;
-}
-
 /** Return the set of contigs that appear more than once in a single
  * solution.
  */
@@ -173,8 +161,8 @@ static set<LinearNumKey> findRepeats(LinearNumKey seed,
 			solIt != solutions.end(); ++solIt) {
 		map<LinearNumKey, unsigned> count;
 		count[seed]++;
-		for (SimpleContigGraph::VertexPath::const_iterator
-				it = solIt->begin(); it != solIt->end(); ++it)
+		for (ContigPath::const_iterator it = solIt->begin();
+				it != solIt->end(); ++it)
 			count[it->id()]++;
 		for (map<LinearNumKey, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
@@ -207,15 +195,6 @@ static const string& idToString(unsigned id)
 	return g_contigIDs.key(id);
 }
 
-/** Create a ContigPath from a VertexPath. */
-static ContigPath createContigPath(
-		const SimpleContigGraph::VertexPath& v)
-{
-	ContigPath path;
-	constructContigPath(v, path);
-	return path;
-}
-
 /** Return the length of the specified path. */
 static size_t calculatePathLength(const SimpleContigGraph& graph,
 		const ContigPath& path, size_t first = 0, size_t last = 0)
@@ -236,13 +215,8 @@ static ContigPath constructAmbiguousPath(
 		const SimpleContigGraph* pContigGraph,
 		const SimpleContigGraph::FeasiblePaths& solutions)
 {
-	// Convert VertexPath to ContigPath.
 	typedef vector<ContigPath> ContigPaths;
-	ContigPaths paths;
-	paths.reserve(solutions.size());
-	transform(solutions.begin(), solutions.end(),
-			back_inserter(paths),
-			createContigPath);
+	const ContigPaths& paths = solutions;
 
 	// Find the size of the smallest path.
 	const ContigPath& firstSol = paths.front();
@@ -258,7 +232,7 @@ static ContigPath constructAmbiguousPath(
 	for (longestPrefix = 0;
 			longestPrefix < min_len; longestPrefix++) {
 		const ContigNode& common_path_node = firstSol[longestPrefix];
-		for (ContigPaths::iterator solIter = paths.begin();
+		for (ContigPaths::const_iterator solIter = paths.begin();
 				solIter != paths.end(); ++solIter) {
 			const ContigNode& pathnode = (*solIter)[longestPrefix];
 			if (pathnode != common_path_node) {
@@ -280,9 +254,9 @@ static ContigPath constructAmbiguousPath(
 			longestSuffix < min_len-longestPrefix; longestSuffix++) {
 		const ContigNode& common_path_node
 			= firstSol[firstSol.size()-longestSuffix-1];
-		for (ContigPaths::iterator solIter = paths.begin();
+		for (ContigPaths::const_iterator solIter = paths.begin();
 				solIter != paths.end(); ++solIter) {
-			ContigNode& pathnode
+			const ContigNode& pathnode
 				= (*solIter)[solIter->size()-longestSuffix-1];
 			if (pathnode != common_path_node) {
 				// Found the longest suffix.
@@ -380,7 +354,7 @@ static void handleEstimate(
 
 	for (SimpleContigGraph::FeasiblePaths::iterator solIter
 				= solutions.begin(); solIter != solutions.end();) {
-		printPath(vout, *solIter) << '\n';
+		vout << *solIter << '\n';
 
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
@@ -466,7 +440,7 @@ static void handleEstimate(
 		}
 
 		size_t len = pContigGraph->calculatePathLength(*solIter);
-		printPath(vout, *solIter)
+		vout << *solIter
 			<< " length: " << len
 			<< " sumdiff: " << sumDiff << '\n';
 	}
@@ -503,7 +477,7 @@ static void handleEstimate(
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
-		constructContigPath(*bestSol, out);
+		out.insert(out.end(), bestSol->begin(), bestSol->end());
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}
@@ -611,18 +585,4 @@ static void generatePathsThroughEstimates(
 				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
-}
-
-/* Convert the vertext path to a contig path. The difference between
- * the two is that the complementness of a vertex path is with respect
- * to the previous node in the path but with a contig path it is with
- * respect to the root contig.
- */
-static void constructContigPath(
-		const SimpleContigGraph::VertexPath& vertexPath,
-		ContigPath& contigPath)
-{
-	for(SimpleContigGraph::VertexPath::const_iterator iter
-			= vertexPath.begin(); iter != vertexPath.end(); ++iter)
-		contigPath.push_back(*iter);
 }
