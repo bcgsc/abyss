@@ -211,7 +211,7 @@ class DirectedGraph
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir,
 				bool rcFlip, const KeyConstraintMap keyConstraints,
-				ContigPath currentPath, ContigPaths& solutions,
+				const ContigPath& currentPath, ContigPaths& solutions,
 				size_t currLen, int maxNumPaths,
 				int maxCompCost, int& visitedCount) const;
 

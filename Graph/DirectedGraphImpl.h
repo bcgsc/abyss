@@ -543,7 +543,7 @@ template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, bool rcFlip,
 		const KeyConstraintMap keyConstraints,
-		ContigPath currentPath, ContigPaths& solutions,
+		const ContigPath& currentPath, ContigPaths& solutions,
 		size_t currLen, int maxNumPaths,
 		int maxCompCost, int& visitedCount) const
 {
@@ -558,7 +558,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
     for (typename VertexType::EdgeCollection::const_iterator eIter
 			= currEdges.begin(); eIter != currEdges.end(); ++eIter) {
         VertexType* pNextVertex = eIter->pVertex;
-		ContigPath newPath = currentPath;
+		ContigPath newPath(currentPath);
 		ContigNode nextNode(pNextVertex->m_key,
 				eIter->reverse ^ rcFlip);
 		newPath.push_back(nextNode);
