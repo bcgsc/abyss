@@ -549,11 +549,10 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 
 	KeyConstraintMap newConstraints(constraints);
 	if (!path.empty()) {
-		typename KeyConstraintMap::iterator constraintIter
+		KeyConstraintMap::iterator it
 			= newConstraints.find(path.back());
-		if (constraintIter != newConstraints.end()
-				&& currLen <= constraintIter->second)
-			newConstraints.erase(constraintIter);
+		if (it != newConstraints.end() && currLen <= it->second)
+			newConstraints.erase(it);
 		if (newConstraints.empty()) {
 			// All the constraints have been satisfied.
 			solutions.push_back(path);
@@ -562,8 +561,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		currLen += costFunctor.cost(pCurrVertex->m_data);
 	}
 
-	for (typename KeyConstraintMap::const_iterator
-			it = newConstraints.begin();
+	for (KeyConstraintMap::const_iterator it = newConstraints.begin();
 			it != newConstraints.end(); ++it)
 		if (currLen > it->second)
 			return true; // This constraint cannot be met.
