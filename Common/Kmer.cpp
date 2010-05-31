@@ -393,14 +393,14 @@ static unsigned seqIndexToBaseIndex(unsigned seqIndex)
 /** Return true if this sequence is a palindrome. */
 bool Kmer::isPalindrome() const
 {
-	return s_length % 2 == 1 ? false
+	return s_length % 2 == 1 && !opt::colourSpace ? false
 		: *this == ::reverseComplement(*this);
 }
 
 /** Return true if the length k-1 subsequence is a palindrome. */
 bool Kmer::isPalindrome(extDirection dir) const
 {
-	if (s_length % 2 == 0)
+	if (s_length % 2 == 0 && !opt::colourSpace)
 		return false;
 	Kmer seq(*this);
 	if (dir == SENSE)
