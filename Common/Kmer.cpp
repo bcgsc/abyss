@@ -60,10 +60,9 @@ unsigned Kmer::getCode() const
 
 size_t Kmer::getHashCode() const
 {
-	// Hash on the numbytes - 1. This is to avoid getting different hash values for the same sequence for n % 4 != 0 sequences
-	int code = hashlittle(m_seq, bytes() - 1, 131);
-
-	return code;
+	// Hash numbytes - 1 to avoid getting different hash values for
+	// the same sequence for n % 4 != 0 sequences.
+	return hashlittle(m_seq, bytes() - 1, 131);
 }
 
 /** Return the string representation of this sequence. */
@@ -257,28 +256,27 @@ void Kmer::setLastBase(extDirection dir, uint8_t base)
 	set(dir == SENSE ? s_length - 1 : 0, base);
 }
 
+/** Shift the sequence left and append a new base to the end.
+ * @return the base shifted out
+ */
 uint8_t Kmer::shiftAppend(uint8_t base)
 {
-	// shift the sequence left and append a new base to the end
 	unsigned numBytes = bytes();
 	uint8_t shiftIn = base;
-	// starting from the last byte, shift the new base in and get the captured base
 	for(int i = numBytes - 1; i >= 0; i--)
 	{
-		// calculate the index
-		// if this is the last byte, use 
 		unsigned index = (unsigned)i == numBytes - 1
 			? seqIndexToBaseIndex(s_length - 1) : 3;
 		shiftIn = leftShiftByte(m_seq, i, index, shiftIn);
 	}
-	
-	// return the base shifted out of the first byte
 	return shiftIn;
 }
 
+/** Shift the sequence right and prepend a new base at the front.
+ * @return the base shifted out
+ */
 uint8_t Kmer::shiftPrepend(uint8_t base)
 {
-	// shift the sequence right and append a new base to the end
 	unsigned numBytes = bytes();
 
 	unsigned lastBaseByte = seqIndexToByteNumber(s_length - 1);
@@ -291,14 +289,12 @@ uint8_t Kmer::shiftPrepend(uint8_t base)
 	setBaseCode(m_seq, lastBaseByte, lastBaseIndex, 0);
 
 	uint8_t shiftIn = base;
-	// starting from the last byte, shift the new base in and get the captured base
 	for(unsigned i = 0; i <= numBytes - 1; i++)
 	{
 		// index is always zero
 		unsigned index = 0;
 		shiftIn = rightShiftByte(m_seq, i, index, shiftIn);
 	}
-		
 	return lastBase;	
 }
 
