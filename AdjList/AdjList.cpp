@@ -211,12 +211,16 @@ int main(int argc, char** argv)
 					"[l=" << i->length << " c=" << c << "]\n";
 				if (!edges.empty()) {
 					out << "\"" << id << (idx ? '-' : '+')
-						<< "\" -> {";
+						<< "\" ->";
+					if (edges.size() > 1)
+						out << " {";
 					for (KmerMap::mapped_type::const_iterator it
 							= edges.begin(); it != edges.end(); ++it)
 						out << " \""
 							<< (idx == 0 ? *it : ~*it) << '"';
-					out << " }\n";
+					if (edges.size() > 1)
+						out << " }";
+					out << '\n';
 				}
 				break;
 			}
