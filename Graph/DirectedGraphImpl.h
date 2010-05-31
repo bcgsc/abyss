@@ -547,47 +547,37 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			|| ++visitedCount >= opt::maxCost)
 		return false; // Too complex.
 
+	KeyConstraintMap newConstraints(constraints);
+	if (!path.empty()) {
+		typename KeyConstraintMap::iterator constraintIter
+			= newConstraints.find(path.back());
+		if (constraintIter != newConstraints.end()
+				&& currLen <= constraintIter->second)
+			newConstraints.erase(constraintIter);
+		if (newConstraints.empty()) {
+			// All the constraints have been satisfied.
+			solutions.push_back(path);
+			return true;
+		}
+		currLen += costFunctor.cost(pCurrVertex->m_data);
+	}
+
+	for (typename KeyConstraintMap::const_iterator
+			it = newConstraints.begin();
+			it != newConstraints.end(); ++it)
+		if (currLen > it->second)
+			return true; // This constraint cannot be met.
+
 	const typename VertexType::EdgeCollection& currEdges
 		= pCurrVertex->m_edges[isRC ^ dir];
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		VertexType* pNextVertex = it->pVertex;
-		ContigNode nextNode(pNextVertex->m_key, it->reverse ^ isRC);
 		ContigPath newPath(path);
-		newPath.push_back(nextNode);
-
-		KeyConstraintMap newConstraints = constraints;
-		typename KeyConstraintMap::iterator constraintIter
-			= newConstraints.find(nextNode);
-		if (constraintIter != newConstraints.end()
-				&& currLen <= constraintIter->second)
-			newConstraints.erase(constraintIter);
-
-		if (newConstraints.empty()) {
-			// All the constraints have been satisfied.
-			solutions.push_back(newPath);
-			continue;
-		}
-
-		size_t newLength = currLen +
-			costFunctor.cost(pNextVertex->m_data);
-		bool constraintViolated = false;
-		for (typename KeyConstraintMap::const_iterator
-				cIt = newConstraints.begin();
-				cIt != newConstraints.end(); ++cIt) {
-			if (newLength > cIt->second) {
-				// This constraint cannot be met.
-				constraintViolated = true;
-				break;
-			}
-		}
-		if (constraintViolated)
-			continue;
-
-		if (!ConstrainedDFS(pNextVertex, dir,
-					nextNode.sense(),
+		newPath.push_back(
+				ContigNode(it->pVertex->m_key, it->reverse ^ isRC));
+		if (!ConstrainedDFS(it->pVertex, dir, newPath.back().sense(),
 					newConstraints, newPath, solutions,
-					newLength, visitedCount))
+					currLen, visitedCount))
 			return false;
 	}
 	return true;
