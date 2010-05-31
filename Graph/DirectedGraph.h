@@ -208,8 +208,7 @@ class DirectedGraph
 				ShortestPathData& shortestPathData);
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
-				extDirection dir,
-				bool rcFlip, const KeyConstraintMap& constraints,
+				extDirection dir, const KeyConstraintMap& constraints,
 				const ContigPath& currentPath, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 
