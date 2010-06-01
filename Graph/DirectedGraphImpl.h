@@ -519,6 +519,17 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 	}
 }
 
+/** Compare the distance of two constraints. */
+static inline bool compareDistance(
+		const std::pair<ContigNode, unsigned>& a,
+		const std::pair<ContigNode, unsigned>& b)
+{
+	return a.second < b.second;
+}
+
+/** Find paths through the graph that satisfy the constraints.
+ * @return false if the search exited early
+ */
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 		extDirection dir, KeyConstraintMap& constraints,
@@ -526,9 +537,16 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 {
     if (constraints.empty())
             return false;
+
+	// Sort the constraints by distance.
+	Constraints queue(constraints.size());
+	copy(constraints.begin(), constraints.end(), queue.begin());
+	std::sort(queue.begin(), queue.end(), compareDistance);
+
 	ContigPath path;
 	ConstrainedDFS(findVertex(sourceKey), dir,
-			constraints, path, superPaths, 0, compCost);
+			constraints, queue.begin(),
+			path, superPaths, 0, compCost);
 	return compCost >= opt::maxCost ? false : !superPaths.empty();
 }
 
@@ -538,6 +556,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, KeyConstraintMap& constraints,
+		Constraints::const_iterator nextConstraint,
 		ContigPath& path, ContigPaths& solutions,
 		size_t currLen, unsigned& visitedCount) const
 {
@@ -555,7 +574,8 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			// This constraint has been satisfied.
 			KeyConstraintMap::value_type constraint = *it;
 			constraints.erase(it);
-			if (!ConstrainedDFS(pCurrVertex, dir, constraints,
+			if (!ConstrainedDFS(pCurrVertex, dir,
+						constraints, nextConstraint,
 						path, solutions, currLen, visitedCount))
 				return false;
 			constraints.insert(constraint);
@@ -567,10 +587,10 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	if (++visitedCount >= opt::maxCost)
 		return false; // Too complex.
 
-	for (KeyConstraintMap::const_iterator it = constraints.begin();
-			it != constraints.end(); ++it)
-		if (currLen > it->second)
-			return true; // This constraint cannot be met.
+	while (constraints.count(nextConstraint->first) == 0)
+		++nextConstraint; // This constraint is satisfied.
+	if (currLen > nextConstraint->second)
+		return true; // This constraint cannot be met.
 
 	bool isRC = path.empty() ? false : path.back().sense();
 	const typename VertexType::EdgeCollection& currEdges
@@ -580,7 +600,8 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			= currEdges.begin(); it != currEdges.end(); ++it) {
 		path.back() = ContigNode(
 				it->pVertex->m_key, it->reverse ^ isRC);
-		if (!ConstrainedDFS(it->pVertex, dir, constraints,
+		if (!ConstrainedDFS(it->pVertex, dir,
+					constraints, nextConstraint,
 					path, solutions, currLen, visitedCount))
 			return false;
 	}

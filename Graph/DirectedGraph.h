@@ -94,6 +94,8 @@ class DirectedGraph
 		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
 
+		typedef std::pair<ContigNode, unsigned> Constraint;
+		typedef std::vector<Constraint> Constraints;
 		typedef std::map<ContigNode, unsigned> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
@@ -209,6 +211,7 @@ class DirectedGraph
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir, KeyConstraintMap& constraints,
+				Constraints::const_iterator nextConstraint,
 				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 
