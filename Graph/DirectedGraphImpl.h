@@ -609,8 +609,9 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	if (++visitedCount >= opt::maxCost)
 		return false; // Too complex.
 
-	
-	while (findConstraint(constraints,
+	// Check that the next constraint has not been violated.
+	while (currLen > nextConstraint->second
+			&& findConstraint(constraints,
 				nextConstraint->first)->second == SATISFIED)
 		++nextConstraint; // This constraint is satisfied.
 	if (currLen > nextConstraint->second)
