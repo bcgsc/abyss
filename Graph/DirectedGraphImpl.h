@@ -545,7 +545,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 
 	ContigPath path;
 	ConstrainedDFS(findVertex(sourceKey), dir,
-			constraints, queue.begin(),
+			constraints, queue.begin(), 0,
 			path, superPaths, 0, compCost);
 	return compCost >= opt::maxCost ? false : !superPaths.empty();
 }
@@ -557,28 +557,30 @@ template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, KeyConstraintMap& constraints,
 		Constraints::const_iterator nextConstraint,
+		unsigned satisfied,
 		ContigPath& path, ContigPaths& solutions,
 		size_t currLen, unsigned& visitedCount) const
 {
-	assert(!constraints.empty());
+	assert(satisfied < constraints.size());
+	static const unsigned SATISFIED = UINT_MAX;
 	if (!path.empty()) {
 		KeyConstraintMap::iterator it = constraints.find(path.back());
-		if (it != constraints.end()) {
+		if (it != constraints.end() && it->second != SATISFIED) {
 			if (currLen > it->second)
 				return true; // This constraint cannot be met.
-			if (constraints.size() == 1) {
+			if (++satisfied == constraints.size()) {
 				// All the constraints have been satisfied.
 				solutions.push_back(path);
 				return solutions.size() <= opt::maxPaths;
 			}
 			// This constraint has been satisfied.
-			KeyConstraintMap::value_type constraint = *it;
-			constraints.erase(it);
+			unsigned constraint = it->second;
+			it->second = SATISFIED;
 			if (!ConstrainedDFS(pCurrVertex, dir,
-						constraints, nextConstraint,
+						constraints, nextConstraint, satisfied,
 						path, solutions, currLen, visitedCount))
 				return false;
-			constraints.insert(constraint);
+			it->second = constraint;
 			return true;
 		}
 		currLen += costFunctor.cost(pCurrVertex->m_data);
@@ -587,7 +589,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	if (++visitedCount >= opt::maxCost)
 		return false; // Too complex.
 
-	while (constraints.count(nextConstraint->first) == 0)
+	while (constraints[nextConstraint->first] == SATISFIED)
 		++nextConstraint; // This constraint is satisfied.
 	if (currLen > nextConstraint->second)
 		return true; // This constraint cannot be met.
@@ -601,7 +603,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		path.back() = ContigNode(
 				it->pVertex->m_key, it->reverse ^ isRC);
 		if (!ConstrainedDFS(it->pVertex, dir,
-					constraints, nextConstraint,
+					constraints, nextConstraint, satisfied,
 					path, solutions, currLen, visitedCount))
 			return false;
 	}
