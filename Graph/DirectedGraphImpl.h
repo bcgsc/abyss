@@ -542,26 +542,30 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		size_t currLen, unsigned& visitedCount) const
 {
 	assert(!constraints.empty());
-	if (solutions.size() > opt::maxPaths
-			|| ++visitedCount >= opt::maxCost)
-		return false; // Too complex.
-
-	KeyConstraintMap newConstraints(constraints);
 	if (!path.empty()) {
-		KeyConstraintMap::iterator it
-			= newConstraints.find(path.back());
-		if (it != newConstraints.end() && currLen <= it->second)
-			newConstraints.erase(it);
-		if (newConstraints.empty()) {
-			// All the constraints have been satisfied.
-			solutions.push_back(path);
-			return true;
+		KeyConstraintMap::const_iterator it
+			= constraints.find(path.back());
+		if (it != constraints.end()) {
+			if (currLen > it->second)
+				return true; // This constraint cannot be met.
+			if (constraints.size() == 1) {
+				// All the constraints have been satisfied.
+				solutions.push_back(path);
+				return solutions.size() <= opt::maxPaths;
+			}
+			KeyConstraintMap newConstraints(constraints);
+			newConstraints.erase(path.back());
+			return ConstrainedDFS(pCurrVertex, dir, newConstraints,
+						path, solutions, currLen, visitedCount);
 		}
 		currLen += costFunctor.cost(pCurrVertex->m_data);
 	}
 
-	for (KeyConstraintMap::const_iterator it = newConstraints.begin();
-			it != newConstraints.end(); ++it)
+	if (++visitedCount >= opt::maxCost)
+		return false; // Too complex.
+
+	for (KeyConstraintMap::const_iterator it = constraints.begin();
+			it != constraints.end(); ++it)
 		if (currLen > it->second)
 			return true; // This constraint cannot be met.
 
@@ -573,7 +577,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			= currEdges.begin(); it != currEdges.end(); ++it) {
 		path.back() = ContigNode(
 				it->pVertex->m_key, it->reverse ^ isRC);
-		if (!ConstrainedDFS(it->pVertex, dir, newConstraints,
+		if (!ConstrainedDFS(it->pVertex, dir, constraints,
 					path, solutions, currLen, visitedCount))
 			return false;
 	}
