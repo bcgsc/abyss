@@ -135,12 +135,11 @@ int main(int argc, char** argv)
 	generatePathsThroughEstimates(&contigGraph, estFile);
 }
 
-template<typename K, typename D>
-ostream& printConstraints(ostream& out, const map<K,D>& s)
+static ostream& printConstraints(ostream& out, Constraints s)
 {
-	for (typename map<K,D>::const_iterator iter = s.begin();
-			iter != s.end(); ++iter)
-		out << ' ' << iter->first << ',' << iter->second;
+	for (Constraints::const_iterator it = s.begin();
+			it != s.end(); ++it)
+		out << ' ' << it->first << ',' << it->second;
 	return out;
 }
 
@@ -302,7 +301,7 @@ static void handleEstimate(
 
 	unsigned minNumPairs = UINT_MAX;
 	// generate the reachable set
-	SimpleContigGraph::KeyConstraintMap constraintMap;
+	Constraints constraints;
 	for (EstimateVector::const_iterator iter
 				= er.estimates[dirIdx].begin();
 			iter != er.estimates[dirIdx].end(); ++iter) {
@@ -310,17 +309,18 @@ static void handleEstimate(
 
 		// Translate the distances produced by the esimator into the
 		// coordinate space used by the graph (a translation of k-1).
-		constraintMap[iter->contig] = iter->distance + opt::k - 1
-			+ allowedError(iter->stdDev);
+		constraints.push_back(Constraint(iter->contig,
+					iter->distance + opt::k - 1
+					+ allowedError(iter->stdDev)));
 	}
 
 	vout << "Constraints:";
-	printConstraints(vout, constraintMap) << '\n';
+	printConstraints(vout, constraints) << '\n';
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
 	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
-			constraintMap, solutions, numVisited);
+			constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
 

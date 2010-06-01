@@ -81,6 +81,9 @@ struct Vertex
 	EdgeCollection m_edges[NUM_DIRECTIONS];
 };
 
+typedef std::pair<ContigNode, unsigned> Constraint;
+typedef std::vector<Constraint> Constraints;
+
 template<typename D>
 class DirectedGraph 
 {
@@ -94,9 +97,6 @@ class DirectedGraph
 		typedef std::pair<LinearNumKey, VertexCollection> VertexComponent;
 		typedef std::vector<VertexComponent> VertexComponentVector;
 
-		typedef std::pair<ContigNode, unsigned> Constraint;
-		typedef std::vector<Constraint> Constraints;
-		typedef std::map<ContigNode, unsigned> KeyConstraintMap;
 		typedef std::vector<LinearNumKey> KeyVec;
 
 		typedef std::set<VertexType*> VertexPtrSet;
@@ -158,8 +158,7 @@ class DirectedGraph
 				VertexCollection& accumulator);
 
 		bool findSuperpaths(const LinearNumKey& sourceKey,
-				extDirection dir,
-				KeyConstraintMap& constraints,
+				extDirection dir, Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
 		// return the number of edges a particular node has in the specified direction
@@ -210,7 +209,7 @@ class DirectedGraph
 				ShortestPathData& shortestPathData);
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
-				extDirection dir, KeyConstraintMap& constraints,
+				extDirection dir, Constraints& constraints,
 				Constraints::const_iterator nextConstraint,
 				unsigned satisfied,
 				ContigPath& path, ContigPaths& solutions,
