@@ -209,7 +209,7 @@ class DirectedGraph
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
 				extDirection dir, const KeyConstraintMap& constraints,
-				const ContigPath& currentPath, ContigPaths& solutions,
+				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 
 		size_t getMinPathLength(const VertexPtrSet& vertexSet);

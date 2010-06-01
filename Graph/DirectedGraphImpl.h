@@ -538,7 +538,7 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		extDirection dir, const KeyConstraintMap& constraints,
-		const ContigPath& path, ContigPaths& solutions,
+		ContigPath& path, ContigPaths& solutions,
 		size_t currLen, unsigned& visitedCount) const
 {
 	assert(!constraints.empty());
@@ -568,15 +568,17 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	bool isRC = path.empty() ? false : path.back().sense();
 	const typename VertexType::EdgeCollection& currEdges
 		= pCurrVertex->m_edges[isRC ^ dir];
+	path.push_back(ContigNode());
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		ContigPath newPath(path);
-		newPath.push_back(
-				ContigNode(it->pVertex->m_key, it->reverse ^ isRC));
+		path.back() = ContigNode(
+				it->pVertex->m_key, it->reverse ^ isRC);
 		if (!ConstrainedDFS(it->pVertex, dir, newConstraints,
-					newPath, solutions, currLen, visitedCount))
+					path, solutions, currLen, visitedCount))
 			return false;
 	}
+	assert(!path.empty());
+	path.pop_back();
 	return true;
 }
 
