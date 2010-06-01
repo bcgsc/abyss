@@ -157,7 +157,7 @@ class DirectedGraph
 
 		bool findSuperpaths(const LinearNumKey& sourceKey,
 				extDirection dir,
-				const KeyConstraintMap& constraints,
+				KeyConstraintMap& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
 		// return the number of edges a particular node has in the specified direction
@@ -208,7 +208,7 @@ class DirectedGraph
 				ShortestPathData& shortestPathData);
 
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
-				extDirection dir, const KeyConstraintMap& constraints,
+				extDirection dir, KeyConstraintMap& constraints,
 				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 

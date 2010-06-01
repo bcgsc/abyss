@@ -521,7 +521,7 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
-		extDirection dir, const KeyConstraintMap& constraints,
+		extDirection dir, KeyConstraintMap& constraints,
 		ContigPaths& superPaths, unsigned& compCost) const
 {
     if (constraints.empty())
@@ -537,14 +537,13 @@ bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
  */
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
-		extDirection dir, const KeyConstraintMap& constraints,
+		extDirection dir, KeyConstraintMap& constraints,
 		ContigPath& path, ContigPaths& solutions,
 		size_t currLen, unsigned& visitedCount) const
 {
 	assert(!constraints.empty());
 	if (!path.empty()) {
-		KeyConstraintMap::const_iterator it
-			= constraints.find(path.back());
+		KeyConstraintMap::iterator it = constraints.find(path.back());
 		if (it != constraints.end()) {
 			if (currLen > it->second)
 				return true; // This constraint cannot be met.
@@ -553,10 +552,14 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 				solutions.push_back(path);
 				return solutions.size() <= opt::maxPaths;
 			}
-			KeyConstraintMap newConstraints(constraints);
-			newConstraints.erase(path.back());
-			return ConstrainedDFS(pCurrVertex, dir, newConstraints,
-						path, solutions, currLen, visitedCount);
+			// This constraint has been satisfied.
+			KeyConstraintMap::value_type constraint = *it;
+			constraints.erase(it);
+			if (!ConstrainedDFS(pCurrVertex, dir, constraints,
+						path, solutions, currLen, visitedCount))
+				return false;
+			constraints.insert(constraint);
+			return true;
 		}
 		currLen += costFunctor.cost(pCurrVertex->m_data);
 	}
