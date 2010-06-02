@@ -91,6 +91,12 @@ class ContigNode {
 	const std::string sequence() const;
 	unsigned coverage() const;
 
+	unsigned index() const
+	{
+		assert(!m_ambig);
+		return hash();
+	}
+
   private:
 	unsigned hash() const
 	{

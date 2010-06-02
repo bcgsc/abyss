@@ -1,5 +1,4 @@
 #include "DirectedGraph.h"
-#include "ContigNode.h"
 #include <algorithm>
 #include <climits> // for INT_MIN
 #include <utility>
@@ -11,61 +10,42 @@ namespace opt {
 };
 
 template<typename K, typename D>
-void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir,
-		bool reverse)
+void Vertex<K,D>::addEdge(VertexType* pNode)
 {
-	EdgeData edge(pNode, reverse);
+	EdgeData edge(pNode);
 	for (typename EdgeCollection::const_iterator edgeIter
-			= m_edges[dir].begin();
-			edgeIter != m_edges[dir].end(); ++edgeIter)
+			= m_edges.begin();
+			edgeIter != m_edges.end(); ++edgeIter)
 		assert(!(*edgeIter == edge));
-	m_edges[dir].push_back(edge);
+	m_edges.push_back(edge);
 }
 
 template<typename D>
-void DirectedGraph<D>::addEdge(
-		const Node& parent, extDirection dir,
-		const ContigNode& child)
+void DirectedGraph<D>::addEdge(const Node& parent, const Node& child)
 {
 	VertexType* pParentVertex = findVertex(parent);
 	assert(pParentVertex != NULL);
-	VertexType* pChildVertex = findVertex(child.id());
+	VertexType* pChildVertex = findVertex(child);
 	assert(pChildVertex != NULL);
-	pParentVertex->addEdge(pChildVertex, dir, child.sense());
+	pParentVertex->addEdge(pChildVertex);
 }
 
 template<typename D>
 void DirectedGraph<D>::addVertex(const Node& key,
 		const D& data)
 {
-	assert(m_vertexTable.size() == key);
+	assert(m_vertexTable.size() == key.index());
 	m_vertexTable.push_back(VertexType(key, data));
 }
 
-template<typename D>
-typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(
-		const Node& key)
-{
-	assert(key < m_vertexTable.size());
-	return &m_vertexTable[key];
-}
-
-template<typename D>
-const typename DirectedGraph<D>::VertexType* DirectedGraph<D>::
-findVertex(const Node& key) const
-{
-	assert(key < m_vertexTable.size());
-	return &m_vertexTable[key];
-}
-
-// Count all the edges in all the nodes
+/** Return the number of edges. */
 template<typename D>
 size_t DirectedGraph<D>::countEdges() const
 {
 	size_t sum = 0;
 	for (typename VertexTable::const_iterator it
 			= m_vertexTable.begin(); it != m_vertexTable.end(); ++it)
-		sum += it->numEdges(false) + it->numEdges(true);
+		sum += it->numEdges();
 	return sum;
 }
 
@@ -99,7 +79,7 @@ static inline Constraints::iterator findConstraint(
  */
 template<typename D>
 bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
-		extDirection dir, Constraints& constraints,
+		Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost) const
 {
     if (constraints.empty())
@@ -113,7 +93,7 @@ bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
 	std::sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
-	ConstrainedDFS(findVertex(sourceKey), dir,
+	ConstrainedDFS(findVertex(sourceKey),
 			constraints, queue.begin(), 0,
 			path, superPaths, 0, compCost);
 	return compCost >= opt::maxCost ? false : !superPaths.empty();
@@ -124,7 +104,7 @@ bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
  */
 template<typename D>
 bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
-		extDirection dir, Constraints& constraints,
+		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
 		ContigPath& path, ContigPaths& solutions,
@@ -146,7 +126,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			// This constraint has been satisfied.
 			unsigned constraint = it->second;
 			it->second = SATISFIED;
-			if (!ConstrainedDFS(pCurrVertex, dir,
+			if (!ConstrainedDFS(pCurrVertex,
 						constraints, nextConstraint, satisfied,
 						path, solutions, currLen, visitedCount))
 				return false;
@@ -167,15 +147,13 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	if (currLen > nextConstraint->second)
 		return true; // This constraint cannot be met.
 
-	bool isRC = path.empty() ? false : path.back().sense();
 	const typename VertexType::EdgeCollection& currEdges
-		= pCurrVertex->m_edges[isRC ^ dir];
-	path.push_back(ContigNode());
+		= pCurrVertex->m_edges;
+	path.push_back(Node());
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		path.back() = ContigNode(
-				it->pVertex->m_key, it->reverse ^ isRC);
-		if (!ConstrainedDFS(it->pVertex, dir,
+		path.back() = it->pVertex->m_key;
+		if (!ConstrainedDFS(it->pVertex,
 					constraints, nextConstraint, satisfied,
 					path, solutions, currLen, visitedCount))
 			return false;
@@ -191,7 +169,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
  */
 template<typename D>
 void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
-		std::map<ContigNode, int>& distanceMap) const
+		std::map<Node, int>& distanceMap) const
 {
 	size_t distance = 0;
 	for (typename ContigPath::const_iterator iter = path.begin();
@@ -202,11 +180,11 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distanceMap[*iter] = INT_MIN;
 		}
-		distance += (*this)[iter->id()].m_data;
+		distance += (*this)[*iter].m_data;
 	}
 
 	// Remove the repeats.
-	for (std::map<ContigNode, int>::iterator it
+	for (std::map<Node, int>::iterator it
 			= distanceMap.begin(); it != distanceMap.end();)
 		if (it->second == INT_MIN)
 			distanceMap.erase(it++);

@@ -3,7 +3,6 @@
 
 #include "ContigNode.h"
 #include "ContigPath.h"
-#include "Sense.h"
 #include <map>
 #include <stdint.h>
 #include <vector>
@@ -19,32 +18,30 @@ struct Vertex
 
 	struct EdgeData
 	{
-		EdgeData(VertexType* node, bool rc)
-			: pVertex(node), reverse(rc) { }
+		EdgeData(VertexType* node) : pVertex(node) { }
 
 		VertexType* pVertex;
-		bool reverse;
 
 		bool operator==(const EdgeData& o) const
 		{
-			return pVertex == o.pVertex && reverse == o.reverse;
+			return pVertex == o.pVertex;
 		}
 	};
 
-	/** Return the number of edges in the specified direction. */
-	size_t numEdges(bool sense) const
+	/** Return the number of outgoing edges. */
+	size_t numEdges() const
 	{
-		return m_edges[sense].size();
+		return m_edges.size();
 	}
 
-	// add an edge to the vertex in the specified direction
-	void addEdge(VertexType* pNode, extDirection dir, bool reverse);
+	/** Add an edge to this vertex. */
+	void addEdge(VertexType* pNode);
 
 	K m_key;
 	D m_data;
 
 	typedef typename std::vector<EdgeData> EdgeCollection;
-	EdgeCollection m_edges[NUM_DIRECTIONS];
+	EdgeCollection m_edges;
 };
 
 typedef std::pair<ContigNode, unsigned> Constraint;
@@ -54,7 +51,7 @@ template<typename D>
 class DirectedGraph
 {
 	public:
-		typedef uint32_t Node;
+		typedef ContigNode Node;
 		typedef Vertex<Node, D> VertexType;
 
 		/** Return the vertex specified by the given key. */
@@ -73,29 +70,35 @@ class DirectedGraph
 			return *pVertex;
 		}
 
-		void addEdge(const Node& parent, extDirection dir,
-				const ContigNode& child);
+		void addEdge(const Node& parent, const Node& child);
 		void addVertex(const Node& key, const D& data);
 
 		bool findSuperpaths(const Node& sourceKey,
-				extDirection dir, Constraints& constraints,
+				Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
 		size_t getNumVertices() const { return m_vertexTable.size(); }
 		size_t countEdges() const;
 		void makeDistanceMap(const ContigPath& path,
-				std::map<ContigNode, int>& distanceMap) const;
+				std::map<Node, int>& distanceMap) const;
 
 	private:
 		bool ConstrainedDFS(const VertexType* pCurrVertex,
-				extDirection dir, Constraints& constraints,
+				Constraints& constraints,
 				Constraints::const_iterator nextConstraint,
 				unsigned satisfied,
 				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 
-		VertexType* findVertex(const Node& key);
-		const VertexType* findVertex(const Node& key) const;
+		VertexType* findVertex(const Node& key)
+		{
+			return &m_vertexTable[key.index()];
+		}
+
+		const VertexType* findVertex(const Node& key) const
+		{
+			return &m_vertexTable[key.index()];
+		}
 
 		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertexTable;

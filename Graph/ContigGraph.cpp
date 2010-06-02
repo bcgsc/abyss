@@ -1,6 +1,7 @@
 #include "ContigGraph.h"
 #include "ContigID.h"
 #include "DirectedGraphImpl.h"
+#include "Sense.h"
 #include <cassert>
 #include <fstream>
 #include <iostream>
@@ -27,7 +28,8 @@ static void readEdges(istream& in, LinearNumKey id,
 		assert(in.good());
 		istringstream ss(s);
 		for (ContigNode edge; ss >> edge;)
-			graph.addEdge(id, dir, edge);
+			graph.addEdge(ContigNode(id, dir),
+					dir == SENSE ? edge : ~edge);
 		assert(ss.eof());
 	}
 }
@@ -46,7 +48,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	while (in >> id >> length) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(length >= opt::k);
-		pGraph->addVertex(stringToID(id), length - opt::k + 1);
+		pGraph->addVertex(ContigNode(id, false), length - opt::k + 1);
+		pGraph->addVertex(ContigNode(id, true), length - opt::k + 1);
 		if (++count % 1000000 == 0)
 			cout << "Read " << count << " vertices" << endl;
 	}

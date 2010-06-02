@@ -192,7 +192,7 @@ static size_t calculatePathLength(const SimpleContigGraph& graph,
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += graph[iter->id()].m_data;
+			len += graph[*iter].m_data;
 	}
 	assert(len > 0);
 	return len;
@@ -320,7 +320,7 @@ static void handleEstimate(
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
-	pContigGraph->findSuperpaths(er.refID, (extDirection)dirIdx,
+	pContigGraph->findSuperpaths(ContigNode(er.refID, dirIdx),
 			constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
@@ -492,9 +492,14 @@ static void* worker(void* pArg)
 		if (!good)
 			break;
 
+		// Flip the anterior distance estimates.
+		for (EstimateVector::iterator it = er.estimates[1].begin();
+				it != er.estimates[1].end(); ++it)
+			it->contig.flip();
+
 		ContigPath path;
 		handleEstimate(er, ANTISENSE, arg.graph, path);
-		reverse(path.begin(), path.end());
+		path.reverseComplement();
 		path.push_back(ContigNode(er.refID, false));
 		handleEstimate(er, SENSE, arg.graph, path);
 		if (path.size() > 1) {
