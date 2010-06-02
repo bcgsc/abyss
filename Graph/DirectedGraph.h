@@ -18,13 +18,11 @@ struct Vertex
 
 	struct EdgeData
 	{
-		EdgeData(VertexType* node) : pVertex(node) { }
-
-		VertexType* pVertex;
-
+		EdgeData(VertexType* node) : node(node) { }
+		VertexType* node;
 		bool operator==(const EdgeData& o) const
 		{
-			return pVertex == o.pVertex;
+			return node == o.node;
 		}
 	};
 

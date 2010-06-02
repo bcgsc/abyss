@@ -147,8 +147,8 @@ bool DirectedGraph<D>::depthFirstSearch(const VertexType& node,
 	path.push_back(Node());
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		path.back() = it->pVertex->m_key;
-		if (!depthFirstSearch(*it->pVertex, constraints,
+		path.back() = it->node->m_key;
+		if (!depthFirstSearch(*it->node, constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))
 			return false;
