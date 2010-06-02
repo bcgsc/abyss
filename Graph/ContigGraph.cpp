@@ -66,6 +66,7 @@ istream& operator>>(istream& in, SimpleContigGraph& o)
 	// Load the edges.
 	in.clear();
 	in.seekg(ios_base::beg);
+	assert(in);
 	count = 0;
 	while (in >> id) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');

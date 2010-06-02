@@ -11,6 +11,6 @@ libgraph_a_SOURCES = \
 
 adjtodot_CPPFLAGS = -I$(top_srcdir)/Common
 adjtodot_LDFLAGS = -L.
-adjtodot_LDADD = -lgraph \
+adjtodot_LDADD = libgraph.a \
 	$(top_builddir)/Common/libcommon.a
 adjtodot_SOURCES = adjtodot.cc

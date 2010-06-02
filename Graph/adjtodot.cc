@@ -13,11 +13,14 @@ namespace opt {
 
 int main(int argc, const char** argv)
 {
-	assert(argc == 2);
-	const char *path = argv[1];
+	assert(argc <= 2);
+	string path = argc > 1 ? argv[1] : "-";
 
-	ifstream in(path);
-	assert(in.is_open());
+	ifstream fin(path.c_str());
+	if (path != "-")
+		assert(fin.is_open());
+	istream& in = path == "-" ? cin : fin;
+
 	SimpleContigGraph g;
 	in >> g;
 	assert(in.eof());
