@@ -10,16 +10,6 @@ namespace opt {
 	static const unsigned maxPaths = 200;
 };
 
-struct SimpleDataCost
-{
-	/** Return the length of the specified node in k-mer. */
-	size_t cost(const SimpleContigData& data)
-	{
-		return data.length - opt::k + 1;
-	}
-};
-static SimpleDataCost costFunctor;
-
 template<typename K, typename D>
 void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse) 
 {
@@ -419,12 +409,8 @@ void DirectedGraph<D>::accumulateVertices(VertexType* pVertex,
 		extDirection dir, size_t currCost, size_t maxCost,
 		VertexCollection& accumulator)
 {	
-	// Add this vertex
 	accumulator.insert(pVertex);
-
-	// add the cost
-	currCost += costFunctor.cost(pVertex->m_data);
-
+	currCost += pVertex->m_data;
 	if(currCost > maxCost)
 	{
 		return;
@@ -480,9 +466,7 @@ void DirectedGraph<D>::dijkstra(const LinearNumKey& sourceKey,
 				// Get the vertex to the edge points to
 				const VertexType* pAdjVertex = eIter->pVertex;
 				
-				// Get the cost to the node
-				int cost = costFunctor.cost(pCurrVertex->m_data);
-				
+				int cost = pCurrVertex->m_data;
 				if(shortestPathData.distanceMap[pAdjVertex] >  shortestPathData.distanceMap[pCurrVertex] + cost)
 				{
 					shortestPathData.distanceMap[pAdjVertex] = shortestPathData.distanceMap[pCurrVertex] + cost;
@@ -603,7 +587,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			it->second = constraint;
 			return true;
 		}
-		currLen += costFunctor.cost(pCurrVertex->m_data);
+		currLen += pCurrVertex->m_data;
 	}
 
 	if (++visitedCount >= opt::maxCost)
@@ -647,10 +631,8 @@ size_t  DirectedGraph<D>::getMinPathLength(
 	size_t maxCost = 0;
 	for(typename VertexPtrSet::iterator iter = vertexSet.begin(); iter != vertexSet.end(); ++iter)
 	{
-		// add the cost of going through this vertex
-		size_t vertexCost = costFunctor.cost((*iter)->m_data);
+		size_t vertexCost = (*iter)->m_data;
 		pathLength += vertexCost;
-		
 		if(vertexCost > maxCost)
 		{
 			maxCost = vertexCost;
@@ -685,7 +667,7 @@ size_t DirectedGraph<D>::calculatePathLength(const ContigPath& path)
 	size_t len = 0;
 	for (typename ContigPath::const_iterator iter = path.begin();
 			iter != path.end() - 1; ++iter)
-		len += costFunctor.cost(getDataForVertex(iter->id()));
+		len += getDataForVertex(iter->id());
 	return len;
 }
 
@@ -708,8 +690,7 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distanceMap[*iter] = INT_MIN;
 		}
-		int currCost = costFunctor.cost(getDataForVertex(iter->id()));
-		distance += currCost;		
+		distance += getDataForVertex(iter->id());
 	}
 
 	// Remove the repeats.

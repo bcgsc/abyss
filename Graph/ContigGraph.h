@@ -5,8 +5,9 @@
 
 struct SimpleContigData
 {
-	int length;
-	SimpleContigData(int length) : length(length) { }
+	unsigned length;
+	SimpleContigData(unsigned length) : length(length) { }
+	operator unsigned() const { return length; }
 };
 
 typedef DirectedGraph<SimpleContigData> SimpleContigGraph;

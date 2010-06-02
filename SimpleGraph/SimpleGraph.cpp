@@ -190,8 +190,7 @@ static size_t calculatePathLength(const SimpleContigGraph& graph,
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += costFunctor.cost(
-					graph.getDataForVertex(iter->id()));
+			len += graph.getDataForVertex(iter->id());
 	}
 	assert(len > 0);
 	return len;
