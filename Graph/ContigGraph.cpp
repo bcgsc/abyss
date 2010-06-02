@@ -43,14 +43,12 @@ static void readEdges(istream& in, LinearNumKey id,
 	}
 }
 
-/** Load an adjacency graph. */
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
-		const string& adjFile)
+/** Read an adjacency graph. */
+istream& operator>>(istream& in, SimpleContigGraph& o)
 {
-	// Load the vertices.
-	ifstream in(adjFile.c_str());
-	assert(in.is_open());
+	o.clear();
 
+	// Load the vertices.
 	unsigned count = 0;
 	string id;
 	unsigned length;
@@ -58,8 +56,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(length >= opt::k);
 		g_contigLengths.push_back(length - opt::k + 1);
-		pGraph->add_vertex(ContigNode(id, false));
-		pGraph->add_vertex(ContigNode(id, true));
+		o.add_vertex(ContigNode(id, false));
+		o.add_vertex(ContigNode(id, true));
 		if (++count % 1000000 == 0)
 			cout << "Read " << count << " vertices" << endl;
 	}
@@ -71,9 +69,20 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	count = 0;
 	while (in >> id) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');
-		readEdges(in, stringToID(id), *pGraph);
+		readEdges(in, stringToID(id), o);
 		if (++count % 1000000 == 0)
 			cout << "Read edges for " << count << " vertices" << endl;
 	}
+	assert(in.eof());
+	return in;
+}
+
+/** Read an adjacency graph. */
+void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
+		const string& adjFile)
+{
+	ifstream in(adjFile.c_str());
+	assert(in.is_open());
+	in >> *pGraph;
 	assert(in.eof());
 }

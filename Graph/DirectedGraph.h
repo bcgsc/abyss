@@ -88,6 +88,9 @@ class DirectedGraph
 			return m_vertices[key.index()];
 		}
 
+		/** Remove all of the edges and vertices from the graph. */
+		void clear() { m_vertices.clear(); }
+
 		void add_edge(const Node& parent, const Node& child);
 		void add_vertex(const Node& key, const D& data = D());
 
