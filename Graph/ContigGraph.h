@@ -3,12 +3,7 @@
 
 #include "DirectedGraph.h"
 
-struct SimpleContigData
-{
-	unsigned length;
-	SimpleContigData(unsigned length) : length(length) { }
-	operator unsigned() const { return length; }
-};
+struct SimpleContigData { };
 
 typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
 

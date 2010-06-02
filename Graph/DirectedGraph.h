@@ -71,7 +71,7 @@ class DirectedGraph
 		}
 
 		void addEdge(const Node& parent, const Node& child);
-		void addVertex(const Node& key, const D& data);
+		void addVertex(const Node& key, const D& data = D());
 
 		bool findSuperpaths(const Node& sourceKey,
 				Constraints& constraints,

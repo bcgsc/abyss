@@ -16,6 +16,16 @@ namespace opt {
 	unsigned maxCost = 100000;
 };
 
+/** The length of each contig. */
+static vector<unsigned> g_contigLengths;
+
+/** Return the length of this contig in k-mer. */
+unsigned ContigNode::length() const
+{
+	assert(!ambiguous());
+	return g_contigLengths[id()];
+}
+
 // Explicit instantiation.
 template class DirectedGraph<SimpleContigData>;
 
@@ -48,8 +58,9 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 	while (in >> id >> length) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(length >= opt::k);
-		pGraph->addVertex(ContigNode(id, false), length - opt::k + 1);
-		pGraph->addVertex(ContigNode(id, true), length - opt::k + 1);
+		g_contigLengths.push_back(length - opt::k + 1);
+		pGraph->addVertex(ContigNode(id, false));
+		pGraph->addVertex(ContigNode(id, true));
 		if (++count % 1000000 == 0)
 			cout << "Read " << count << " vertices" << endl;
 	}

@@ -185,23 +185,21 @@ static struct {
 } stats;
 
 /** Return the length of the specified path. */
-static size_t calculatePathLength(const SimpleContigGraph& graph,
-		const ContigPath& path, size_t first = 0, size_t last = 0)
+static size_t calculatePathLength(const ContigPath& path,
+		size_t first = 0, size_t last = 0)
 {
 	size_t len = 0;
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += graph[*iter].m_data;
+			len += iter->length();
 	}
 	assert(len > 0);
 	return len;
 }
 
 /** Return an ambiguous path that agrees with all the given paths. */
-static ContigPath constructAmbiguousPath(
-		const SimpleContigGraph* pContigGraph,
-		const ContigPaths& solutions)
+static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 {
 	typedef vector<ContigPath> ContigPaths;
 	const ContigPaths& paths = solutions;
@@ -262,7 +260,7 @@ static ContigPath constructAmbiguousPath(
 	ContigPaths::const_iterator longest = paths.end();
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		unsigned len = calculatePathLength(*pContigGraph, *it);
+		unsigned len = calculatePathLength(*it);
 		if (len > maxLen) {
 			maxLen = len;
 			longest = it;
@@ -271,7 +269,7 @@ static ContigPath constructAmbiguousPath(
 	assert(maxLen > 0);
 	assert(longest != paths.end());
 
-	unsigned numN = calculatePathLength(*pContigGraph, *longest,
+	unsigned numN = calculatePathLength(*longest,
 			longestPrefix, longestSuffix);
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
@@ -284,12 +282,10 @@ static ContigPath constructAmbiguousPath(
 }
 
 /** Find a path for the specified distance estimates.
- * @return a pointer to the statistic to increment.
+ * @param out [out] the solution path
  */
-static void handleEstimate(
-		const EstimateRecord& er, unsigned dirIdx,
-		const SimpleContigGraph* pContigGraph,
-		ContigPath& out)
+static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
+		const SimpleContigGraph* pContigGraph, ContigPath& out)
 {
 	if (er.estimates[dirIdx].empty())
 		return;
@@ -423,7 +419,7 @@ static void handleEstimate(
 			bestSol = solIter;
 		}
 
-		size_t len = calculatePathLength(*pContigGraph, *solIter);
+		size_t len = calculatePathLength(*solIter);
 		vout << *solIter
 			<< " length: " << len
 			<< " sumdiff: " << sumDiff << '\n';
@@ -448,7 +444,7 @@ static void handleEstimate(
 		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
-			= constructAmbiguousPath(pContigGraph, solutions);
+			= constructAmbiguousPath(solutions);
 		if (!path.empty()) {
 			vout << path << '\n';
 			if (opt::scaffold) {

@@ -133,7 +133,7 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			it->second = constraint;
 			return true;
 		}
-		currLen += pCurrVertex->m_data;
+		currLen += pCurrVertex->m_key.length();
 	}
 
 	if (++visitedCount >= opt::maxCost)
@@ -180,7 +180,7 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distanceMap[*iter] = INT_MIN;
 		}
-		distance += (*this)[*iter].m_data;
+		distance += iter->length();
 	}
 
 	// Remove the repeats.
