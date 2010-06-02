@@ -147,7 +147,7 @@ static void writeEstimates(ostream& out,
 	if (!opt::dot)
 		out << pairs.front().rname;
 
-	for (unsigned sense0 = 0; sense0 < 2; sense0++) {
+	for (int sense0 = false; sense0 <= true; sense0++) {
 		if (!opt::dot && sense0 == 1)
 			out << " ;";
 		typedef map<StringID, PairedData> PairDataMap;
@@ -162,7 +162,7 @@ static void writeEstimates(ostream& out,
 				it != dataMap.end(); ++it) {
 			LinearNumKey id1 = g_contigIDs.serial(it->first);
 			unsigned len1 = lengthVec[id1];
-			for (unsigned sense1 = 0; sense1 < 2; sense1++)
+			for (int sense1 = false; sense1 <= true; sense1++)
 				writeEstimate(out,
 						ContigNode(id0, sense0),
 						ContigNode(id1, sense0 == sense1),
