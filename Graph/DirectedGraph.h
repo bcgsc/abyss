@@ -84,7 +84,6 @@ class DirectedGraph
 
 		size_t getNumVertices() const { return m_vertexTable.size(); }
 		size_t countEdges() const;
-		size_t calculatePathLength(const ContigPath& path) const;
 		void makeDistanceMap(const ContigPath& path,
 				std::map<ContigNode, int>& distanceMap) const;
 

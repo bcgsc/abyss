@@ -423,7 +423,7 @@ static void handleEstimate(
 			bestSol = solIter;
 		}
 
-		size_t len = pContigGraph->calculatePathLength(*solIter);
+		size_t len = calculatePathLength(*pContigGraph, *solIter);
 		vout << *solIter
 			<< " length: " << len
 			<< " sumdiff: " << sumDiff << '\n';

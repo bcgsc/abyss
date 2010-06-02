@@ -185,17 +185,6 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 	return true;
 }
 
-template<typename D>
-size_t DirectedGraph<D>::calculatePathLength(const ContigPath& path)
-	const
-{
-	size_t len = 0;
-	for (typename ContigPath::const_iterator it = path.begin();
-			it != path.end() - 1; ++it)
-		len += (*this)[it->id()].m_data;
-	return len;
-}
-
 /** Return a map of contig IDs to their distance along this path.
  * Repeat contigs, which would have more than one position, are not
  * represented in this map.
