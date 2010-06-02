@@ -1,9 +1,12 @@
 #ifndef DIRECTEDGRAPH_H
 #define DIRECTEDGRAPH_H 1
 
+#include "AffixIterator.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
+#include <iterator>
 #include <map>
+#include <ostream>
 #include <stdint.h>
 #include <vector>
 
@@ -24,6 +27,12 @@ struct Vertex
 		{
 			return node == o.node;
 		}
+
+		friend std::ostream& operator <<(std::ostream& out,
+				const EdgeData& o)
+		{
+			return out << o.node->m_key;
+		}
 	};
 
 	/** Return the number of outgoing edges. */
@@ -34,6 +43,21 @@ struct Vertex
 
 	/** Add an edge to this vertex. */
 	void add_edge(VertexType* pNode);
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const VertexType& o)
+	{
+		if (o.m_edges.empty())
+			return out;
+		out << '"' << o.m_key << "\" ->";
+		if (o.m_edges.size() > 1)
+			out << " {";
+		std::copy(o.m_edges.begin(), o.m_edges.end(),
+				affix_ostream_iterator<EdgeData>(out, " \"", "\""));
+		if (o.m_edges.size() > 1)
+			out << " }";
+		return out;
+	}
 
 	K m_key;
 	D m_data;
@@ -76,6 +100,14 @@ class DirectedGraph
 
 		void makeDistanceMap(const ContigPath& path,
 				std::map<Node, int>& distanceMap) const;
+
+		friend std::ostream& operator <<(std::ostream& out,
+				const DirectedGraph<D>& o)
+		{
+			std::copy(o.m_vertices.begin(), o.m_vertices.end(),
+					std::ostream_iterator<VertexType>(out, "\n"));
+			return out;
+		}
 
 	private:
 		bool depthFirstSearch(const VertexType& currVertex,
