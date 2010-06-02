@@ -15,19 +15,26 @@ class ContigNode {
 	ContigNode() { }
 	ContigNode(unsigned id, bool sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
+	ContigNode(unsigned id, int sense)
+		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(std::string id, bool sense)
 		: m_ambig(false),
 		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
 
 	/** Create an ambiguous contig. */
-	explicit ContigNode(unsigned n)
-		: m_ambig(true), m_id(n), m_sense(false) { assert(n > 0); }
+	ContigNode(unsigned n, char c)
+		: m_ambig(true), m_id(n), m_sense(false)
+	{
+		assert(c == 'N');
+		assert(n > 0);
+	}
 
 	ContigNode(std::string id)
 	{
 		char c = chop(id);
 		assert(c == '+' || c == '-' || c == 'N');
-		*this = c == 'N' ? ContigNode(strtoul(id.c_str(), NULL, 0))
+		*this = c == 'N'
+			? ContigNode(strtoul(id.c_str(), NULL, 0), 'N')
 			: ContigNode(id, c == '-');
 	}
 

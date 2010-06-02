@@ -275,7 +275,7 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
 	if (longestSuffix > 0) {
-		out.push_back(ContigNode(numN));
+		out.push_back(ContigNode(numN, 'N'));
 		out.insert(out.end(), vspath.rbegin(), vspath.rend());
 	}
 	return out;
@@ -284,7 +284,7 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 /** Find a path for the specified distance estimates.
  * @param out [out] the solution path
  */
-static void handleEstimate(const EstimateRecord& er, unsigned dirIdx,
+static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 		const SimpleContigGraph* pContigGraph, ContigPath& out)
 {
 	if (er.estimates[dirIdx].empty())
