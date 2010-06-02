@@ -11,16 +11,15 @@ namespace opt {
 };
 
 template<typename K, typename D>
-void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir, bool reverse) 
+void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir,
+		bool reverse)
 {
-	EdgeData data;
-	data.pVertex = pNode;
-	data.reverse = reverse;
-	
-	// Check if this edge already exists
-	for(typename EdgeCollection::const_iterator edgeIter = m_edges[dir].begin(); edgeIter != m_edges[dir].end(); ++edgeIter)
-		assert(!(*edgeIter == data));
-	m_edges[dir].push_back(data);
+	EdgeData edge(pNode, reverse);
+	for (typename EdgeCollection::const_iterator edgeIter
+			= m_edges[dir].begin();
+			edgeIter != m_edges[dir].end(); ++edgeIter)
+		assert(!(*edgeIter == edge));
+	m_edges[dir].push_back(edge);
 }
 
 template<typename D>
@@ -36,21 +35,24 @@ void DirectedGraph<D>::addEdge(
 }
 
 template<typename D>
-void DirectedGraph<D>::addVertex(const LinearNumKey& key, const D& data)
+void DirectedGraph<D>::addVertex(const LinearNumKey& key,
+		const D& data)
 {
 	assert(m_vertexTable.size() == key);
 	m_vertexTable.push_back(VertexType(key, data));
 }
 
 template<typename D>
-typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key)
+typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(
+		const LinearNumKey& key)
 {
 	assert(key < m_vertexTable.size());
 	return &m_vertexTable[key];
 }
 
 template<typename D>
-const typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(const LinearNumKey& key) const
+const typename DirectedGraph<D>::VertexType* DirectedGraph<D>::
+findVertex(const LinearNumKey& key) const
 {
 	assert(key < m_vertexTable.size());
 	return &m_vertexTable[key];
@@ -202,8 +204,6 @@ template<typename D>
 void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 		std::map<ContigNode, int>& distanceMap) const
 {
-	// the path distance to a node is the distance that walks through all the nodes leading to it
-	// the first node in a path therefore has a distance of 0 by def
 	size_t distance = 0;
 	for (typename ContigPath::const_iterator iter = path.begin();
 			iter != path.end(); ++iter) {

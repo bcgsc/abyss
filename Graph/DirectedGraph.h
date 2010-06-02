@@ -21,12 +21,15 @@ struct Vertex
 
 	struct EdgeData
 	{
+		EdgeData(VertexType* node, bool rc)
+			: pVertex(node), reverse(rc) { }
+
 		VertexType* pVertex;
 		bool reverse;
 
-		bool operator==(const EdgeData& e2) const
+		bool operator==(const EdgeData& o) const
 		{
-			return (this->pVertex == e2.pVertex && this->reverse == e2.reverse);
+			return pVertex == o.pVertex && reverse == o.reverse;
 		}
 	};
 
@@ -96,7 +99,7 @@ class DirectedGraph
 		VertexType* findVertex(const LinearNumKey& key);
 		const VertexType* findVertex(const LinearNumKey& key) const;
 
-		typedef typename std::vector<Vertex<LinearNumKey, D> > VertexTable;
+		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertexTable;
 };
 
