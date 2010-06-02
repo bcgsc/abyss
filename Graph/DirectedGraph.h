@@ -97,6 +97,12 @@ class DirectedGraph
 		size_t num_vertices() const { return m_vertices.size(); }
 		size_t num_edges() const;
 
+		/** Returns the target vertex of edge e. */
+		Node target(const typename VertexType::EdgeData& e) const
+		{
+			return e.node->m_key;
+		}
+
 		bool findSuperpaths(const Node& sourceKey,
 				Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;

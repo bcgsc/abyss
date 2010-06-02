@@ -128,7 +128,7 @@ bool DirectedGraph<D>::depthFirstSearch(const VertexType& node,
 			it->second = constraint;
 			return true;
 		}
-		currLen += node.m_key.length();
+		currLen += path.back().length();
 	}
 
 	if (++visitedCount >= opt::maxCost)
@@ -147,7 +147,7 @@ bool DirectedGraph<D>::depthFirstSearch(const VertexType& node,
 	path.push_back(Node());
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		path.back() = it->node->m_key;
+		path.back() = target(*it);
 		if (!depthFirstSearch(*it->node, constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))
