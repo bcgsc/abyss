@@ -57,17 +57,13 @@ class DirectedGraph
 		/** Return the vertex specified by the given key. */
 		const VertexType& operator[](const Node& key) const
 		{
-			const VertexType* pVertex = findVertex(key);
-			assert(pVertex != NULL);
-			return *pVertex;
+			return m_vertexTable[key.index()];
 		}
 
 		/** Return the vertex specified by the given key. */
 		VertexType& operator[](const Node& key)
 		{
-			VertexType* pVertex = findVertex(key);
-			assert(pVertex != NULL);
-			return *pVertex;
+			return m_vertexTable[key.index()];
 		}
 
 		void addEdge(const Node& parent, const Node& child);
@@ -89,16 +85,6 @@ class DirectedGraph
 				unsigned satisfied,
 				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
-
-		VertexType* findVertex(const Node& key)
-		{
-			return &m_vertexTable[key.index()];
-		}
-
-		const VertexType* findVertex(const Node& key) const
-		{
-			return &m_vertexTable[key.index()];
-		}
 
 		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertexTable;

@@ -23,11 +23,7 @@ void Vertex<K,D>::addEdge(VertexType* pNode)
 template<typename D>
 void DirectedGraph<D>::addEdge(const Node& parent, const Node& child)
 {
-	VertexType* pParentVertex = findVertex(parent);
-	assert(pParentVertex != NULL);
-	VertexType* pChildVertex = findVertex(child);
-	assert(pChildVertex != NULL);
-	pParentVertex->addEdge(pChildVertex);
+	(*this)[parent].addEdge(&(*this)[child]);
 }
 
 template<typename D>
@@ -93,7 +89,7 @@ bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
 	std::sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
-	ConstrainedDFS(findVertex(sourceKey),
+	ConstrainedDFS(&(*this)[sourceKey],
 			constraints, queue.begin(), 0,
 			path, superPaths, 0, compCost);
 	return compCost >= opt::maxCost ? false : !superPaths.empty();
