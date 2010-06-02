@@ -3,7 +3,6 @@
 #include "DirectedGraphImpl.h"
 #include <cassert>
 #include <fstream>
-#include <iostream>
 #include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
@@ -49,7 +48,6 @@ istream& operator>>(istream& in, SimpleContigGraph& o)
 	o.clear();
 
 	// Load the vertices.
-	unsigned count = 0;
 	string id;
 	unsigned length;
 	while (in >> id >> length) {
@@ -58,8 +56,6 @@ istream& operator>>(istream& in, SimpleContigGraph& o)
 		g_contigLengths.push_back(length - opt::k + 1);
 		o.add_vertex(ContigNode(id, false));
 		o.add_vertex(ContigNode(id, true));
-		if (++count % 1000000 == 0)
-			cout << "Read " << count << " vertices" << endl;
 	}
 	assert(in.eof());
 
@@ -67,12 +63,9 @@ istream& operator>>(istream& in, SimpleContigGraph& o)
 	in.clear();
 	in.seekg(ios_base::beg);
 	assert(in);
-	count = 0;
 	while (in >> id) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');
 		readEdges(in, stringToID(id), o);
-		if (++count % 1000000 == 0)
-			cout << "Read edges for " << count << " vertices" << endl;
 	}
 	assert(in.eof());
 	return in;
