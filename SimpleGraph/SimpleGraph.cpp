@@ -15,7 +15,9 @@
 #include <iostream>
 #include <iterator>
 #include <pthread.h>
+#include <set>
 #include <sstream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -190,7 +192,7 @@ static size_t calculatePathLength(const SimpleContigGraph& graph,
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += graph.getDataForVertex(iter->id());
+			len += graph[iter->id()].m_data;
 	}
 	assert(len > 0);
 	return len;

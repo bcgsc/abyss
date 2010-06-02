@@ -188,9 +188,9 @@ size_t DirectedGraph<D>::calculatePathLength(const ContigPath& path)
 	const
 {
 	size_t len = 0;
-	for (typename ContigPath::const_iterator iter = path.begin();
-			iter != path.end() - 1; ++iter)
-		len += getDataForVertex(iter->id());
+	for (typename ContigPath::const_iterator it = path.begin();
+			it != path.end() - 1; ++it)
+		len += (*this)[it->id()].m_data;
 	return len;
 }
 
@@ -213,7 +213,7 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distanceMap[*iter] = INT_MIN;
 		}
-		distance += getDataForVertex(iter->id());
+		distance += (*this)[iter->id()].m_data;
 	}
 
 	// Remove the repeats.

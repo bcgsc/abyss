@@ -4,11 +4,8 @@
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "Sense.h"
-#include <ostream>
 #include <map>
-#include <set>
 #include <stdint.h>
-#include <string>
 #include <vector>
 
 typedef std::vector<ContigPath> ContigPaths;
@@ -33,10 +30,6 @@ struct Vertex
 		}
 	};
 
-	// Compare operators (needed?)
-	inline bool operator==(const Vertex& other) const { return m_data == other.m_data; }
-	inline bool operator<(const Vertex& other) const { return m_data < other.m_data; }
-
 	/** Return the number of edges in the specified direction. */
 	size_t numEdges(bool sense) const
 	{
@@ -60,7 +53,6 @@ template<typename D>
 class DirectedGraph
 {
 	public:
-		typedef typename std::vector<Vertex<LinearNumKey, D> > VertexTable;
 		typedef Vertex<LinearNumKey, D> VertexType;
 
 		/** Return the vertex specified by the given key. */
@@ -79,12 +71,6 @@ class DirectedGraph
 			return *pVertex;
 		}
 
-		/** Return the vertex data specified by the given key. */
-		const D& getDataForVertex(const LinearNumKey& key) const
-		{
-			return (*this)[key].m_data;
-		}
-
 		void addEdge(const LinearNumKey& parent, extDirection dir,
 				const ContigNode& child);
 		void addVertex(const LinearNumKey& key, const D& data);
@@ -93,16 +79,9 @@ class DirectedGraph
 				extDirection dir, Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
-		// return the number of vertices
 		size_t getNumVertices() const { return m_vertexTable.size(); }
-
-		// count the number of edges (SLOW)
 		size_t countEdges() const;
-
-		// Calculate the length of this path
 		size_t calculatePathLength(const ContigPath& path) const;
-
-		// Make a map of the distances to each node
 		void makeDistanceMap(const ContigPath& path,
 				std::map<ContigNode, int>& distanceMap) const;
 
@@ -116,6 +95,8 @@ class DirectedGraph
 
 		VertexType* findVertex(const LinearNumKey& key);
 		const VertexType* findVertex(const LinearNumKey& key) const;
+
+		typedef typename std::vector<Vertex<LinearNumKey, D> > VertexTable;
 		VertexTable m_vertexTable;
 };
 
