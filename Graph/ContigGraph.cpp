@@ -1,7 +1,6 @@
 #include "ContigGraph.h"
 #include "ContigID.h"
 #include "DirectedGraphImpl.h"
-#include "Sense.h"
 #include <cassert>
 #include <fstream>
 #include <iostream>
@@ -32,14 +31,14 @@ template class DirectedGraph<SimpleContigData>;
 static void readEdges(istream& in, LinearNumKey id,
 		SimpleContigGraph& graph)
 {
-	for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
+	for (int sense = false; sense <= true; ++sense) {
 		string s;
-		getline(in, s, dir == SENSE ? ';' : '\n');
+		getline(in, s, !sense ? ';' : '\n');
 		assert(in.good());
 		istringstream ss(s);
 		for (ContigNode edge; ss >> edge;)
-			graph.add_edge(ContigNode(id, dir),
-					dir == SENSE ? edge : ~edge);
+			graph.add_edge(ContigNode(id, sense),
+					sense ? ~edge : edge);
 		assert(ss.eof());
 	}
 }
