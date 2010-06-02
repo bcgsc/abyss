@@ -30,8 +30,8 @@ template<typename D>
 void DirectedGraph<D>::add_vertex(const Node& key,
 		const D& data)
 {
-	assert(m_vertexTable.size() == key.index());
-	m_vertexTable.push_back(VertexType(key, data));
+	assert(m_vertices.size() == key.index());
+	m_vertices.push_back(VertexType(key, data));
 }
 
 /** Return the number of edges. */
@@ -40,7 +40,7 @@ size_t DirectedGraph<D>::num_edges() const
 {
 	size_t sum = 0;
 	for (typename VertexTable::const_iterator it
-			= m_vertexTable.begin(); it != m_vertexTable.end(); ++it)
+			= m_vertices.begin(); it != m_vertices.end(); ++it)
 		sum += it->out_degree();
 	return sum;
 }

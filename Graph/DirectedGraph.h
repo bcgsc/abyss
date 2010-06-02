@@ -55,19 +55,19 @@ class DirectedGraph
 		/** Return the vertex specified by the given key. */
 		const VertexType& operator[](const Node& key) const
 		{
-			return m_vertexTable[key.index()];
+			return m_vertices[key.index()];
 		}
 
 		/** Return the vertex specified by the given key. */
 		VertexType& operator[](const Node& key)
 		{
-			return m_vertexTable[key.index()];
+			return m_vertices[key.index()];
 		}
 
 		void add_edge(const Node& parent, const Node& child);
 		void add_vertex(const Node& key, const D& data = D());
 
-		size_t num_vertices() const { return m_vertexTable.size(); }
+		size_t num_vertices() const { return m_vertices.size(); }
 		size_t num_edges() const;
 
 		bool findSuperpaths(const Node& sourceKey,
@@ -86,7 +86,7 @@ class DirectedGraph
 				size_t currLen, unsigned& visitedCount) const;
 
 		typedef typename std::vector<VertexType> VertexTable;
-		VertexTable m_vertexTable;
+		VertexTable m_vertices;
 };
 
 #endif
