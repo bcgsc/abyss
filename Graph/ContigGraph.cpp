@@ -38,7 +38,7 @@ static void readEdges(istream& in, LinearNumKey id,
 		assert(in.good());
 		istringstream ss(s);
 		for (ContigNode edge; ss >> edge;)
-			graph.addEdge(ContigNode(id, dir),
+			graph.add_edge(ContigNode(id, dir),
 					dir == SENSE ? edge : ~edge);
 		assert(ss.eof());
 	}
@@ -59,8 +59,8 @@ void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(length >= opt::k);
 		g_contigLengths.push_back(length - opt::k + 1);
-		pGraph->addVertex(ContigNode(id, false));
-		pGraph->addVertex(ContigNode(id, true));
+		pGraph->add_vertex(ContigNode(id, false));
+		pGraph->add_vertex(ContigNode(id, true));
 		if (++count % 1000000 == 0)
 			cout << "Read " << count << " vertices" << endl;
 	}

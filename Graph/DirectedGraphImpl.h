@@ -10,7 +10,7 @@ namespace opt {
 };
 
 template<typename K, typename D>
-void Vertex<K,D>::addEdge(VertexType* pNode)
+void Vertex<K,D>::add_edge(VertexType* pNode)
 {
 	EdgeData edge(pNode);
 	for (typename EdgeCollection::const_iterator edgeIter
@@ -21,13 +21,13 @@ void Vertex<K,D>::addEdge(VertexType* pNode)
 }
 
 template<typename D>
-void DirectedGraph<D>::addEdge(const Node& parent, const Node& child)
+void DirectedGraph<D>::add_edge(const Node& parent, const Node& child)
 {
-	(*this)[parent].addEdge(&(*this)[child]);
+	(*this)[parent].add_edge(&(*this)[child]);
 }
 
 template<typename D>
-void DirectedGraph<D>::addVertex(const Node& key,
+void DirectedGraph<D>::add_vertex(const Node& key,
 		const D& data)
 {
 	assert(m_vertexTable.size() == key.index());
@@ -36,12 +36,12 @@ void DirectedGraph<D>::addVertex(const Node& key,
 
 /** Return the number of edges. */
 template<typename D>
-size_t DirectedGraph<D>::countEdges() const
+size_t DirectedGraph<D>::num_edges() const
 {
 	size_t sum = 0;
 	for (typename VertexTable::const_iterator it
 			= m_vertexTable.begin(); it != m_vertexTable.end(); ++it)
-		sum += it->numEdges();
+		sum += it->out_degree();
 	return sum;
 }
 

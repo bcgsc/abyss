@@ -130,8 +130,8 @@ int main(int argc, char** argv)
 	SimpleContigGraph contigGraph;
 	loadGraphFromAdjFile(&contigGraph, adjFile);
 	if (opt::verbose > 0)
-		cerr << "Vertices: " << contigGraph.getNumVertices()
-			<< " Edges: " << contigGraph.countEdges() << endl;
+		cerr << "Vertices: " << contigGraph.num_vertices()
+			<< " Edges: " << contigGraph.num_edges() << endl;
 
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(&contigGraph, estFile);

@@ -27,13 +27,13 @@ struct Vertex
 	};
 
 	/** Return the number of outgoing edges. */
-	size_t numEdges() const
+	size_t out_degree() const
 	{
 		return m_edges.size();
 	}
 
 	/** Add an edge to this vertex. */
-	void addEdge(VertexType* pNode);
+	void add_edge(VertexType* pNode);
 
 	K m_key;
 	D m_data;
@@ -64,15 +64,16 @@ class DirectedGraph
 			return m_vertexTable[key.index()];
 		}
 
-		void addEdge(const Node& parent, const Node& child);
-		void addVertex(const Node& key, const D& data = D());
+		void add_edge(const Node& parent, const Node& child);
+		void add_vertex(const Node& key, const D& data = D());
+
+		size_t num_vertices() const { return m_vertexTable.size(); }
+		size_t num_edges() const;
 
 		bool findSuperpaths(const Node& sourceKey,
 				Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
-		size_t getNumVertices() const { return m_vertexTable.size(); }
-		size_t countEdges() const;
 		void makeDistanceMap(const ContigPath& path,
 				std::map<Node, int>& distanceMap) const;
 

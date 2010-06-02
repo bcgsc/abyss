@@ -97,12 +97,12 @@ static struct {
 
 inline unsigned ContigNode::outDegree() const
 {
-	return contigGraph[*this].numEdges();
+	return contigGraph[*this].out_degree();
 }
 
 inline unsigned ContigNode::inDegree() const
 {
-	return contigGraph[~*this].numEdges();
+	return contigGraph[~*this].out_degree();
 }
 
 inline const Sequence ContigNode::sequence() const
