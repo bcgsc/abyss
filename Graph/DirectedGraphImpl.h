@@ -24,7 +24,7 @@ void Vertex<K,D>::addEdge(VertexType* pNode, extDirection dir,
 
 template<typename D>
 void DirectedGraph<D>::addEdge(
-		const LinearNumKey& parent, extDirection dir,
+		const Node& parent, extDirection dir,
 		const ContigNode& child)
 {
 	VertexType* pParentVertex = findVertex(parent);
@@ -35,7 +35,7 @@ void DirectedGraph<D>::addEdge(
 }
 
 template<typename D>
-void DirectedGraph<D>::addVertex(const LinearNumKey& key,
+void DirectedGraph<D>::addVertex(const Node& key,
 		const D& data)
 {
 	assert(m_vertexTable.size() == key);
@@ -44,7 +44,7 @@ void DirectedGraph<D>::addVertex(const LinearNumKey& key,
 
 template<typename D>
 typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(
-		const LinearNumKey& key)
+		const Node& key)
 {
 	assert(key < m_vertexTable.size());
 	return &m_vertexTable[key];
@@ -52,7 +52,7 @@ typename DirectedGraph<D>::VertexType* DirectedGraph<D>::findVertex(
 
 template<typename D>
 const typename DirectedGraph<D>::VertexType* DirectedGraph<D>::
-findVertex(const LinearNumKey& key) const
+findVertex(const Node& key) const
 {
 	assert(key < m_vertexTable.size());
 	return &m_vertexTable[key];
@@ -98,7 +98,7 @@ static inline Constraints::iterator findConstraint(
  * @return false if the search exited early
  */
 template<typename D>
-bool DirectedGraph<D>::findSuperpaths(const LinearNumKey& sourceKey,
+bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
 		extDirection dir, Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost) const
 {

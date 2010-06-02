@@ -10,8 +10,6 @@
 
 typedef std::vector<ContigPath> ContigPaths;
 
-typedef uint32_t LinearNumKey;
-
 template<typename K, typename D>
 struct Vertex
 {
@@ -56,10 +54,11 @@ template<typename D>
 class DirectedGraph
 {
 	public:
-		typedef Vertex<LinearNumKey, D> VertexType;
+		typedef uint32_t Node;
+		typedef Vertex<Node, D> VertexType;
 
 		/** Return the vertex specified by the given key. */
-		const VertexType& operator[](const LinearNumKey& key) const
+		const VertexType& operator[](const Node& key) const
 		{
 			const VertexType* pVertex = findVertex(key);
 			assert(pVertex != NULL);
@@ -67,18 +66,18 @@ class DirectedGraph
 		}
 
 		/** Return the vertex specified by the given key. */
-		VertexType& operator[](const LinearNumKey& key)
+		VertexType& operator[](const Node& key)
 		{
 			VertexType* pVertex = findVertex(key);
 			assert(pVertex != NULL);
 			return *pVertex;
 		}
 
-		void addEdge(const LinearNumKey& parent, extDirection dir,
+		void addEdge(const Node& parent, extDirection dir,
 				const ContigNode& child);
-		void addVertex(const LinearNumKey& key, const D& data);
+		void addVertex(const Node& key, const D& data);
 
-		bool findSuperpaths(const LinearNumKey& sourceKey,
+		bool findSuperpaths(const Node& sourceKey,
 				extDirection dir, Constraints& constraints,
 				ContigPaths& superPaths, unsigned& compCost) const;
 
@@ -95,8 +94,8 @@ class DirectedGraph
 				ContigPath& path, ContigPaths& solutions,
 				size_t currLen, unsigned& visitedCount) const;
 
-		VertexType* findVertex(const LinearNumKey& key);
-		const VertexType* findVertex(const LinearNumKey& key) const;
+		VertexType* findVertex(const Node& key);
+		const VertexType* findVertex(const Node& key) const;
 
 		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertexTable;
