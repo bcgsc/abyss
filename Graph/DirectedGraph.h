@@ -79,7 +79,7 @@ class DirectedGraph
 				std::map<Node, int>& distanceMap) const;
 
 	private:
-		bool ConstrainedDFS(const VertexType* pCurrVertex,
+		bool depthFirstSearch(const VertexType& currVertex,
 				Constraints& constraints,
 				Constraints::const_iterator nextConstraint,
 				unsigned satisfied,

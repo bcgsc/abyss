@@ -89,9 +89,8 @@ bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
 	std::sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
-	ConstrainedDFS(&(*this)[sourceKey],
-			constraints, queue.begin(), 0,
-			path, superPaths, 0, compCost);
+	depthFirstSearch((*this)[sourceKey], constraints,
+			queue.begin(), 0, path, superPaths, 0, compCost);
 	return compCost >= opt::maxCost ? false : !superPaths.empty();
 }
 
@@ -99,7 +98,7 @@ bool DirectedGraph<D>::findSuperpaths(const Node& sourceKey,
  * @return false if the search exited early
  */
 template<typename D>
-bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
+bool DirectedGraph<D>::depthFirstSearch(const VertexType& node,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
@@ -122,14 +121,14 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 			// This constraint has been satisfied.
 			unsigned constraint = it->second;
 			it->second = SATISFIED;
-			if (!ConstrainedDFS(pCurrVertex,
-						constraints, nextConstraint, satisfied,
-						path, solutions, currLen, visitedCount))
+			if (!depthFirstSearch(node, constraints,
+						nextConstraint, satisfied, path, solutions,
+						currLen, visitedCount))
 				return false;
 			it->second = constraint;
 			return true;
 		}
-		currLen += pCurrVertex->m_key.length();
+		currLen += node.m_key.length();
 	}
 
 	if (++visitedCount >= opt::maxCost)
@@ -144,14 +143,14 @@ bool DirectedGraph<D>::ConstrainedDFS(const VertexType* pCurrVertex,
 		return true; // This constraint cannot be met.
 
 	const typename VertexType::EdgeCollection& currEdges
-		= pCurrVertex->m_edges;
+		= node.m_edges;
 	path.push_back(Node());
 	for (typename VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
 		path.back() = it->pVertex->m_key;
-		if (!ConstrainedDFS(it->pVertex,
-					constraints, nextConstraint, satisfied,
-					path, solutions, currLen, visitedCount))
+		if (!depthFirstSearch(*it->pVertex, constraints,
+					nextConstraint, satisfied, path, solutions,
+					currLen, visitedCount))
 			return false;
 	}
 	assert(!path.empty());
