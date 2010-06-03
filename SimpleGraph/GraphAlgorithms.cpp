@@ -5,6 +5,8 @@
 #include <climits> // for INT_MIN
 #include <utility>
 
+using namespace std;
+
 namespace opt {
 	/** Abort the search after visiting maxCost vertices. */
 	unsigned maxCost = 100000;
@@ -29,7 +31,7 @@ static inline Constraints::iterator findConstraint(
 		Constraints& constraints,
 		const ContigNode& key)
 {
-	Constraints::iterator it = std::lower_bound(
+	Constraints::iterator it = lower_bound(
 			constraints.begin(), constraints.end(),
 			key, compareID);
 	return it->first == key ? it : constraints.end();
@@ -112,11 +114,11 @@ bool depthFirstSearch(const ContigGraph& g, const Node& v,
             return false;
 
 	// Sort the constraints by ID.
-	std::sort(constraints.begin(), constraints.end());
+	sort(constraints.begin(), constraints.end());
 
 	// Sort the constraints by distance.
 	Constraints queue(constraints);
-	std::sort(queue.begin(), queue.end(), compareDistance);
+	sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
 	depthFirstSearch(g, g[v], constraints, queue.begin(), 0,
