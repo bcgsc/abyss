@@ -122,7 +122,7 @@ class DirectedGraph
 		}
 
 		/** Adds edge (u,v) to the graph. */
-		void add_edge(const Node& u, const Node& child)
+		void add_edge(const Node& u, const Node& v)
 		{
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
