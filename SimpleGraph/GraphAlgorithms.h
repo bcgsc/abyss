@@ -4,7 +4,6 @@
 #include "ContigGraph.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
-#include <map>
 #include <utility>
 #include <vector>
 
@@ -23,8 +22,5 @@ typedef std::vector<ContigPath> ContigPaths;
 bool depthFirstSearch(const ContigGraph& g,
 		const ContigNode& sourceKey, Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost);
-
-void makeDistanceMap(const ContigPath& path,
-		std::map<ContigNode, int>& distanceMap);
 
 #endif

@@ -6,8 +6,6 @@
 #include <utility>
 
 namespace opt {
-	extern unsigned k;
-
 	/** Abort the search after visiting maxCost vertices. */
 	unsigned maxCost = 100000;
 };
@@ -124,32 +122,4 @@ bool depthFirstSearch(const ContigGraph& g, const Node& v,
 	depthFirstSearch(g, g[v], constraints, queue.begin(), 0,
 			path, paths, 0, cost);
 	return cost >= opt::maxCost ? false : !paths.empty();
-}
-
-/** Return a map of contig IDs to their distance along this path.
- * Repeat contigs, which would have more than one position, are not
- * represented in this map.
- */
-void makeDistanceMap(const ContigPath& path,
-		std::map<Node, int>& distanceMap)
-{
-	size_t distance = 0;
-	for (ContigPath::const_iterator iter = path.begin();
-			iter != path.end(); ++iter) {
-		bool inserted = distanceMap.insert(
-				std::make_pair(*iter, distance)).second;
-		if (!inserted) {
-			// Mark this contig as a repeat.
-			distanceMap[*iter] = INT_MIN;
-		}
-		distance += iter->length();
-	}
-
-	// Remove the repeats.
-	for (std::map<Node, int>::iterator it
-			= distanceMap.begin(); it != distanceMap.end();)
-		if (it->second == INT_MIN)
-			distanceMap.erase(it++);
-		else
-			++it;
 }

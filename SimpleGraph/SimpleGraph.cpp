@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <pthread.h>
 #include <set>
 #include <sstream>
@@ -279,6 +280,34 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 		out.insert(out.end(), vspath.rbegin(), vspath.rend());
 	}
 	return out;
+}
+
+/** Return a map of contig IDs to their distance along this path.
+ * Repeat contigs, which would have more than one position, are not
+ * represented in this map.
+ */
+void makeDistanceMap(const ContigPath& path,
+		map<ContigNode, int>& distances)
+{
+	size_t distance = 0;
+	for (ContigPath::const_iterator it = path.begin();
+			it != path.end(); ++it) {
+		bool inserted = distances.insert(
+				make_pair(*it, distance)).second;
+		if (!inserted) {
+			// Mark this contig as a repeat.
+			distances[*it] = INT_MIN;
+		}
+		distance += it->length();
+	}
+
+	// Remove the repeats.
+	for (map<ContigNode, int>::iterator it = distances.begin();
+			it != distances.end();)
+		if (it->second == INT_MIN)
+			distances.erase(it++);
+		else
+			++it;
 }
 
 /** Find a path for the specified distance estimates.
