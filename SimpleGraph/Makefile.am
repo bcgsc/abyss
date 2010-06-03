@@ -2,11 +2,9 @@ bin_PROGRAMS = SimpleGraph
 
 SimpleGraph_CPPFLAGS = -pthread \
 	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/ExpPaired \
 	-I$(top_srcdir)/Graph
 
 SimpleGraph_LDADD = \
-	$(top_builddir)/ExpPaired/libexppaired.a \
 	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/Common/libcommon.a
 

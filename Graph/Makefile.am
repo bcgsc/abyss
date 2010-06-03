@@ -1,9 +1,7 @@
 noinst_LIBRARIES = libgraph.a
 noinst_PROGRAMS = adjtodot
 
-libgraph_a_CPPFLAGS = \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/ExpPaired
+libgraph_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libgraph_a_SOURCES = \
 	ContigGraph.cpp ContigGraph.h \

@@ -127,7 +127,6 @@ AC_CONFIG_FILES([
 	Assembly/Makefile
 	Common/Makefile
 	DataLayer/Makefile
-	ExpPaired/Makefile
 	Graph/Makefile
 	Parallel/Makefile
 	bin/Makefile
