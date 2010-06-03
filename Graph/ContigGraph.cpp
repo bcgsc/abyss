@@ -1,5 +1,5 @@
 #include "ContigGraph.h"
-#include "ContigID.h"
+#include "ContigLength.h"
 #include <cassert>
 #include <fstream>
 #include <limits> // for numeric_limits
@@ -40,21 +40,10 @@ static void readEdges(istream& in, LinearNumKey id,
 /** Read an adjacency graph. */
 istream& operator>>(istream& in, ContigGraph& o)
 {
-	assert(g_contigIDs.empty());
 	assert(g_contigLengths.empty());
+	g_contigLengths = readContigLengths(in);
 
-	// Load the vertices.
-	string id;
-	unsigned length;
-	while (in >> id >> length) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		(void)stringToID(id);
-		assert(length >= opt::k);
-		g_contigLengths.push_back(length - opt::k + 1);
-	}
-	assert(in.eof());
-	g_contigIDs.lock();
-
+	// Create the vertices.
 	o.clear();
 	ContigGraph(2 * g_contigLengths.size()).swap(o);
 
@@ -62,7 +51,7 @@ istream& operator>>(istream& in, ContigGraph& o)
 	in.clear();
 	in.seekg(ios_base::beg);
 	assert(in);
-	while (in >> id) {
+	for (string id; in >> id;) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');
 		readEdges(in, stringToID(id), o);
 	}

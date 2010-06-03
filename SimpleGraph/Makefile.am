@@ -6,9 +6,9 @@ SimpleGraph_CPPFLAGS = -pthread \
 	-I$(top_srcdir)/Graph
 
 SimpleGraph_LDADD = \
-	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/ExpPaired/libexppaired.a \
-	$(top_builddir)/Graph/libgraph.a
+	$(top_builddir)/Graph/libgraph.a \
+	$(top_builddir)/Common/libcommon.a
 
 SimpleGraph_LDFLAGS = -pthread
 

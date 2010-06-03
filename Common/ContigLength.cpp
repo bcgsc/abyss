@@ -24,13 +24,11 @@ static void assert_open(ifstream& f, const string& p)
 }
 
 /** Read contig lengths. */
-vector<unsigned> readContigLengths(const string& path)
+vector<unsigned> readContigLengths(istream& in)
 {
-	vector<unsigned> lengths;
-	ifstream in(path.c_str());
-	assert_open(in, path);
-
+	assert(in);
 	assert(g_contigIDs.empty());
+	vector<unsigned> lengths;
 	string id;
 	unsigned len;
 	while (in >> id >> len) {
@@ -43,4 +41,12 @@ vector<unsigned> readContigLengths(const string& path)
 	assert(!lengths.empty());
 	g_contigIDs.lock();
 	return lengths;
+}
+
+/** Read contig lengths. */
+vector<unsigned> readContigLengths(const string& path)
+{
+	ifstream in(path.c_str());
+	assert_open(in, path);
+	return readContigLengths(in);
 }
