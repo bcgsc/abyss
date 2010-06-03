@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 	ContigGraph contigGraph;
 	loadGraphFromAdjFile(&contigGraph, adjFile);
 	if (opt::verbose > 0)
-		cerr << "Vertices: " << contigGraph.num_vertices()
+		cout << "Vertices: " << contigGraph.num_vertices()
 			<< " Edges: " << contigGraph.num_edges() << endl;
 
 	// try to find paths that match the distance estimates
@@ -574,6 +574,8 @@ static void generatePathsThroughEstimates(
 		void* status;
 		pthread_join(*it, &status);
 	}
+	if (opt::verbose > 0)
+		cout << '\n';
 
 	cout <<
 		"Total paths attempted: " << stats.totalAttempted << "\n"
