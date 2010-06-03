@@ -8,7 +8,6 @@
 #include "AffixIterator.h"
 #include "ContigNode.h"
 #include "Sequence.h"
-#include "Sense.h"
 #include <algorithm>
 #include <cerrno>
 #include <cstring> // for strerror
@@ -197,17 +196,14 @@ static void readContigGraph(ContigGraph& graph,
 	string id;
 	while (in >> id) {
 		in.ignore(numeric_limits<streamsize>::max(), ';');
-		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			ContigNode head(id, dir);
+		for (int rc = false; rc <= true; ++rc) {
+			ContigNode head(id, rc);
 			string s;
-			getline(in, s, dir == SENSE ? ';' : '\n');
+			getline(in, s, !rc ? ';' : '\n');
 			assert(in.good());
 			istringstream ss(s);
-			for (ContigNode tail; ss >> tail;) {
-				if (dir == ANTISENSE)
-					tail = ~tail;
-				graph[head].insert(tail);
-			}
+			for (ContigNode tail; ss >> tail;)
+				graph[head].insert(rc ? ~tail: tail);
 			assert(ss.eof());
 		}
 	}

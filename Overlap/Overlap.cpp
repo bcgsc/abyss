@@ -108,7 +108,7 @@ inline unsigned ContigNode::inDegree() const
 inline const Sequence ContigNode::sequence() const
 {
 	const Sequence& seq = contigs[id()];
-	return sense() == SENSE ? seq : reverseComplement(seq);
+	return sense() ? reverseComplement(seq) : seq;
 }
 
 
@@ -243,15 +243,15 @@ static map<ContigNode, set<ContigNode> > g_edges;
 static map<ContigNode, Overlap> g_overlaps;
 
 static void findOverlap(
-		LinearNumKey refID, extDirection dir, const Estimate& est)
+		LinearNumKey refID, bool rc, const Estimate& est)
 {
 	if (refID == est.contig.id()
 			|| (est.distance >= 0 && !opt::scaffold))
 		return;
-	ContigNode ref(refID, SENSE);
+	ContigNode ref(refID, false);
 	const ContigNode& pair = est.contig;
-	const ContigNode& t = dir == SENSE ? ref : pair;
-	const ContigNode& h = dir == SENSE ? pair : ref;
+	const ContigNode& t = rc ? pair : ref;
+	const ContigNode& h = rc ? ref : pair;
 	if (t.outDegree() > 0 || h.inDegree() > 0)
 		return;
 	bool mask;
@@ -359,11 +359,11 @@ int main(int argc, char *const argv[])
 	assert_open(in, estPath);
 
 	for (EstimateRecord er; in >> er;) {
-		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			const vector<Estimate>& ests = er.estimates[dir];
+		for (int rc = false; rc <= true; ++rc) {
+			const vector<Estimate>& ests = er.estimates[rc];
 			for (EstimateVector::const_iterator iter = ests.begin();
 					iter != ests.end(); ++iter)
-				findOverlap(er.refID, dir, *iter);
+				findOverlap(er.refID, rc, *iter);
 		}
 	}
 	assert(in.eof());
