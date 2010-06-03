@@ -1,3 +1,5 @@
+#include "GraphAlgorithms.h"
+#include "ContigGraph.h"
 #include "DirectedGraph.h"
 #include <algorithm>
 #include <climits> // for INT_MIN
@@ -5,8 +7,9 @@
 
 namespace opt {
 	extern unsigned k;
-	extern unsigned maxCost;
-	static const unsigned maxPaths = 200;
+
+	/** Abort the search after visiting maxCost vertices. */
+	unsigned maxCost = 100000;
 };
 
 /** Compare the distance of two constraints. */
@@ -150,3 +153,6 @@ void DirectedGraph<D>::makeDistanceMap(const ContigPath& path,
 		else
 			++it;
 }
+
+// Explicit instantiation.
+template class DirectedGraph<SimpleContigData>;

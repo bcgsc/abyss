@@ -2,8 +2,8 @@
 #include "AffixIterator.h"
 #include "ContigGraph.h"
 #include "ContigPath.h"
-#include "DirectedGraphImpl.h"
 #include "Estimate.h"
+#include "GraphAlgorithms.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <cerrno>

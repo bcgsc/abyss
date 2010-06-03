@@ -1,6 +1,5 @@
 #include "ContigGraph.h"
 #include "ContigID.h"
-#include "DirectedGraphImpl.h"
 #include <cassert>
 #include <fstream>
 #include <limits> // for numeric_limits
@@ -10,8 +9,7 @@
 using namespace std;
 
 namespace opt {
-	/** Abort the search after visiting maxCost vertices. */
-	unsigned maxCost = 100000;
+	extern unsigned k;
 };
 
 /** The length of each contig. */
@@ -23,9 +21,6 @@ unsigned ContigNode::length() const
 	assert(!ambiguous());
 	return g_contigLengths[id()];
 }
-
-// Explicit instantiation.
-template class DirectedGraph<SimpleContigData>;
 
 static void readEdges(istream& in, LinearNumKey id,
 		SimpleContigGraph& graph)

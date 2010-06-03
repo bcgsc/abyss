@@ -7,7 +7,7 @@ libgraph_a_CPPFLAGS = \
 
 libgraph_a_SOURCES = \
 	ContigGraph.cpp ContigGraph.h \
-	DirectedGraph.cpp DirectedGraph.h DirectedGraphImpl.h
+	DirectedGraph.cpp DirectedGraph.h
 
 adjtodot_CPPFLAGS = -I$(top_srcdir)/Common
 adjtodot_LDFLAGS = -L.
