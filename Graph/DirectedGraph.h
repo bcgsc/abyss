@@ -4,6 +4,7 @@
 #include "AffixIterator.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
+#include <cassert>
 #include <iterator>
 #include <map>
 #include <ostream>
@@ -16,6 +17,8 @@ template<typename K, typename D>
 struct Vertex
 {
 	typedef Vertex<K,D> VertexType;
+	class EdgeData;
+	typedef typename std::vector<EdgeData> EdgeCollection;
 
 	Vertex(const K& k, const D& d) : m_key(k), m_data(d) { }
 
@@ -42,7 +45,14 @@ struct Vertex
 	}
 
 	/** Add an edge to this vertex. */
-	void add_edge(VertexType* pNode);
+	void add_edge(VertexType* v)
+	{
+		EdgeData edge(v);
+		for (typename EdgeCollection::const_iterator
+				it = m_edges.begin(); it != m_edges.end(); ++it)
+			assert(!(*it == edge));
+		m_edges.push_back(edge);
+	}
 
 	friend std::ostream& operator <<(std::ostream& out,
 			const VertexType& o)
@@ -61,8 +71,6 @@ struct Vertex
 
 	K m_key;
 	D m_data;
-
-	typedef typename std::vector<EdgeData> EdgeCollection;
 	EdgeCollection m_edges;
 };
 
@@ -106,11 +114,33 @@ class DirectedGraph
 		/** Remove all the edges and vertices from this graph. */
 		void clear() { m_vertices.clear(); }
 
-		void add_edge(const Node& parent, const Node& child);
-		void add_vertex(const Node& key, const D& data = D());
+		/** Adds vertex v to the graph. */
+		void add_vertex(const Node& v, const D& data = D())
+		{
+			assert(m_vertices.size() == v.index());
+			m_vertices.push_back(VertexType(v, data));
+		}
 
+		/** Adds edge (u,v) to the graph. */
+		void add_edge(const Node& u, const Node& child)
+		{
+			assert(u.index() < m_vertices.size());
+			assert(v.index() < m_vertices.size());
+			(*this)[u].add_edge(&(*this)[v]);
+		}
+
+		/** Return the number of vertices. */
 		size_t num_vertices() const { return m_vertices.size(); }
-		size_t num_edges() const;
+
+		/** Return the number of edges. */
+		size_t num_edges() const
+		{
+			size_t n = 0;
+			for (typename VertexTable::const_iterator it
+					= m_vertices.begin(); it != m_vertices.end(); ++it)
+				n += it->out_degree();
+			return n;
+		}
 
 		/** Returns the target vertex of edge e. */
 		Node target(const typename VertexType::EdgeData& e) const

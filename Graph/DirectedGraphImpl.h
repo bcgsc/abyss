@@ -9,44 +9,6 @@ namespace opt {
 	static const unsigned maxPaths = 200;
 };
 
-template<typename K, typename D>
-void Vertex<K,D>::add_edge(VertexType* pNode)
-{
-	EdgeData edge(pNode);
-	for (typename EdgeCollection::const_iterator edgeIter
-			= m_edges.begin();
-			edgeIter != m_edges.end(); ++edgeIter)
-		assert(!(*edgeIter == edge));
-	m_edges.push_back(edge);
-}
-
-template<typename D>
-void DirectedGraph<D>::add_edge(const Node& parent, const Node& child)
-{
-	assert(parent.index() < m_vertices.size());
-	assert(child.index() < m_vertices.size());
-	(*this)[parent].add_edge(&(*this)[child]);
-}
-
-template<typename D>
-void DirectedGraph<D>::add_vertex(const Node& key,
-		const D& data)
-{
-	assert(m_vertices.size() == key.index());
-	m_vertices.push_back(VertexType(key, data));
-}
-
-/** Return the number of edges. */
-template<typename D>
-size_t DirectedGraph<D>::num_edges() const
-{
-	size_t sum = 0;
-	for (typename VertexTable::const_iterator it
-			= m_vertices.begin(); it != m_vertices.end(); ++it)
-		sum += it->out_degree();
-	return sum;
-}
-
 /** Compare the distance of two constraints. */
 static inline bool compareDistance(
 		const Constraint& a, const Constraint& b)
