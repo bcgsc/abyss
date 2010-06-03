@@ -21,10 +21,6 @@ struct Vertex
 	{
 		EdgeData(VertexType* node) : node(node) { }
 		VertexType* node;
-		bool operator==(const EdgeData& o) const
-		{
-			return node == o.node;
-		}
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const EdgeData& o)
@@ -42,11 +38,10 @@ struct Vertex
 	/** Add an edge to this vertex. */
 	void add_edge(VertexType* v)
 	{
-		EdgeData edge(v);
 		for (typename EdgeCollection::const_iterator
 				it = m_edges.begin(); it != m_edges.end(); ++it)
-			assert(!(*it == edge));
-		m_edges.push_back(edge);
+			assert(v != it->node);
+		m_edges.push_back(v);
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
