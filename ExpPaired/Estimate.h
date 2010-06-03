@@ -87,6 +87,8 @@ struct EstimateRecord
 
 		std::string id;
 		in >> id;
+		if (!in)
+			return in;
 		o.refID = stringToID(id);
 
 		for (extDirection sense = SENSE;
