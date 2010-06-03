@@ -3,15 +3,10 @@
 
 #include "AffixIterator.h"
 #include "ContigNode.h"
-#include "ContigPath.h"
 #include <cassert>
 #include <iterator>
-#include <map>
 #include <ostream>
-#include <stdint.h>
 #include <vector>
-
-typedef std::vector<ContigPath> ContigPaths;
 
 template<typename K, typename D>
 struct Vertex
@@ -73,9 +68,6 @@ struct Vertex
 	D m_data;
 	EdgeCollection m_edges;
 };
-
-typedef std::pair<ContigNode, unsigned> Constraint;
-typedef std::vector<Constraint> Constraints;
 
 template<typename D>
 class DirectedGraph
@@ -148,13 +140,6 @@ class DirectedGraph
 			return e.node->m_key;
 		}
 
-		bool findSuperpaths(const Node& sourceKey,
-				Constraints& constraints,
-				ContigPaths& superPaths, unsigned& compCost) const;
-
-		void makeDistanceMap(const ContigPath& path,
-				std::map<Node, int>& distanceMap) const;
-
 		friend std::ostream& operator <<(std::ostream& out,
 				const DirectedGraph<D>& o)
 		{
@@ -166,13 +151,6 @@ class DirectedGraph
 	private:
 		DirectedGraph(const DirectedGraph& x);
 		DirectedGraph& operator =(const DirectedGraph& x);
-
-		bool depthFirstSearch(const VertexType& currVertex,
-				Constraints& constraints,
-				Constraints::const_iterator nextConstraint,
-				unsigned satisfied,
-				ContigPath& path, ContigPaths& solutions,
-				size_t currLen, unsigned& visitedCount) const;
 
 		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertices;

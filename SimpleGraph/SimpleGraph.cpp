@@ -316,7 +316,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
-	pContigGraph->findSuperpaths(ContigNode(er.refID, dirIdx),
+	depthFirstSearch(*pContigGraph, ContigNode(er.refID, dirIdx),
 			constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
@@ -341,7 +341,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
 		map<ContigNode, int> distanceMap;
-		pContigGraph->makeDistanceMap(*solIter, distanceMap);
+		makeDistanceMap(*solIter, distanceMap);
 
 		// Remove solutions whose distance estimates are not correct.
 		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
@@ -399,7 +399,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 	for (ContigPaths::iterator solIter = solutions.begin();
 			solIter != solutions.end(); ++solIter) {
 		map<ContigNode, int> distanceMap;
-		pContigGraph->makeDistanceMap(*solIter, distanceMap);
+		makeDistanceMap(*solIter, distanceMap);
 		int sumDiff = 0;
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();

@@ -7,6 +7,7 @@
 struct SimpleContigData { };
 
 typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
+typedef SimpleContigGraph ContigGraph;
 
 std::istream& operator>>(std::istream& in, SimpleContigGraph& o);
 
