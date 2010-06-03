@@ -523,10 +523,10 @@ static void* worker(void* pArg)
 			it->contig.flip();
 
 		ContigPath path;
-		handleEstimate(er, ANTISENSE, arg.graph, path);
+		handleEstimate(er, true, arg.graph, path);
 		path.reverseComplement();
 		path.push_back(ContigNode(er.refID, false));
-		handleEstimate(er, SENSE, arg.graph, path);
+		handleEstimate(er, false, arg.graph, path);
 		if (path.size() > 1) {
 			/** Lock the output stream. */
 			static pthread_mutex_t outMutex

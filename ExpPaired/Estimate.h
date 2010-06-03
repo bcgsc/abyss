@@ -3,7 +3,6 @@
 
 #include "ContigID.h"
 #include "ContigNode.h"
-#include "Sense.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
@@ -82,8 +81,8 @@ struct EstimateRecord
 	friend std::istream& operator >>(std::istream& in,
 			EstimateRecord& o)
 	{
-		o.estimates[SENSE].clear();
-		o.estimates[ANTISENSE].clear();
+		o.estimates[false].clear();
+		o.estimates[true].clear();
 
 		std::string id;
 		in >> id;
@@ -91,14 +90,13 @@ struct EstimateRecord
 			return in;
 		o.refID = stringToID(id);
 
-		for (extDirection sense = SENSE;
-				sense <= ANTISENSE; ++sense) {
+		for (int rc = false; rc <= true; ++rc) {
 			std::string s;
-			std::getline(in, s, sense == SENSE ? ';' : '\n');
+			std::getline(in, s, !rc ? ';' : '\n');
 			std::istringstream ss(s);
 			std::copy(std::istream_iterator<Estimate>(ss),
 					std::istream_iterator<Estimate>(),
-					std::back_inserter(o.estimates[sense]));
+					std::back_inserter(o.estimates[rc]));
 			assert(ss.eof());
 		}
 
