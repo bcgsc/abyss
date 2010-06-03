@@ -76,6 +76,21 @@ class DirectedGraph
 		typedef ContigNode Node;
 		typedef Vertex<Node, D> VertexType;
 
+		/** Create an empty graph. */
+		DirectedGraph() { }
+
+		/** Create a graph with n vertices and zero edges. */
+		DirectedGraph(unsigned n)
+		{
+			m_vertices.reserve(n);
+			for (unsigned i = 0; i < n; ++i)
+				add_vertex(Node(i));
+			assert(m_vertices.size() == n);
+		}
+
+		/** Swap this graph with graph x. */
+		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
+
 		/** Return the vertex specified by the given key. */
 		const VertexType& operator[](const Node& key) const
 		{
@@ -88,7 +103,7 @@ class DirectedGraph
 			return m_vertices[key.index()];
 		}
 
-		/** Remove all of the edges and vertices from the graph. */
+		/** Remove all the edges and vertices from this graph. */
 		void clear() { m_vertices.clear(); }
 
 		void add_edge(const Node& parent, const Node& child);
@@ -119,6 +134,9 @@ class DirectedGraph
 		}
 
 	private:
+		DirectedGraph(const DirectedGraph& x);
+		DirectedGraph& operator =(const DirectedGraph& x);
+
 		bool depthFirstSearch(const VertexType& currVertex,
 				Constraints& constraints,
 				Constraints::const_iterator nextConstraint,

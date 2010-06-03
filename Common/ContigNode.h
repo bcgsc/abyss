@@ -20,6 +20,8 @@ class ContigNode {
 	ContigNode(std::string id, bool sense)
 		: m_ambig(false),
 		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
+	explicit ContigNode(unsigned i)
+		: m_ambig(false), m_id(i >> 1), m_sense(i & 1) { }
 
 	/** Create an ambiguous contig. */
 	ContigNode(unsigned n, char c)

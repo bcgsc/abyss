@@ -45,19 +45,23 @@ static void readEdges(istream& in, LinearNumKey id,
 /** Read an adjacency graph. */
 istream& operator>>(istream& in, SimpleContigGraph& o)
 {
-	o.clear();
+	assert(g_contigIDs.empty());
+	assert(g_contigLengths.empty());
 
 	// Load the vertices.
 	string id;
 	unsigned length;
 	while (in >> id >> length) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		(void)stringToID(id);
 		assert(length >= opt::k);
 		g_contigLengths.push_back(length - opt::k + 1);
-		o.add_vertex(ContigNode(id, false));
-		o.add_vertex(ContigNode(id, true));
 	}
 	assert(in.eof());
+	g_contigIDs.lock();
+
+	o.clear();
+	SimpleContigGraph(2 * g_contigLengths.size()).swap(o);
 
 	// Load the edges.
 	in.clear();

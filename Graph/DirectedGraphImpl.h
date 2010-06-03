@@ -23,6 +23,8 @@ void Vertex<K,D>::add_edge(VertexType* pNode)
 template<typename D>
 void DirectedGraph<D>::add_edge(const Node& parent, const Node& child)
 {
+	assert(parent.index() < m_vertices.size());
+	assert(child.index() < m_vertices.size());
 	(*this)[parent].add_edge(&(*this)[child]);
 }
 
