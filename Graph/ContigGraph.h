@@ -4,14 +4,13 @@
 #include "DirectedGraph.h"
 #include <istream>
 
-struct SimpleContigData { };
+struct NoContigData { };
 
-typedef DirectedGraph<SimpleContigData> SimpleContigGraph;
-typedef SimpleContigGraph ContigGraph;
+typedef DirectedGraph<NoContigData> ContigGraph;
 
-std::istream& operator>>(std::istream& in, SimpleContigGraph& o);
+std::istream& operator>>(std::istream& in, ContigGraph& o);
 
-void loadGraphFromAdjFile(SimpleContigGraph* pGraph,
+void loadGraphFromAdjFile(ContigGraph* pGraph,
 		const std::string& adjFile);
 
 #endif

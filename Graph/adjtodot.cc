@@ -21,7 +21,7 @@ int main(int argc, const char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
-	SimpleContigGraph g;
+	ContigGraph g;
 	in >> g;
 	assert(in.eof());
 
