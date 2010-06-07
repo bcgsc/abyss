@@ -38,6 +38,18 @@ class Histogram
 		return iter == m_map.end() ? 0 : iter->second;
 	}
 
+	/** Return the number of elements in the range [lo,hi]. */
+	unsigned count(T lo, T hi) const
+	{
+		assert(lo <= hi);
+		unsigned n = 0;
+		Map::const_iterator last = m_map.upper_bound(hi);
+		for (Map::const_iterator it = m_map.lower_bound(lo);
+				it != last; ++it)
+			n += it->second;
+		return n;
+	}
+
 	T minimum() const
 	{
 		return empty() ? 0 : m_map.begin()->first;

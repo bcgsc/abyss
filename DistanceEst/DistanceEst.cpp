@@ -5,6 +5,7 @@
 #include "Uncompress.h"
 #include <cassert>
 #include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
@@ -50,6 +51,10 @@ namespace opt {
 
 	static unsigned npairs;
 	static unsigned seedLen = 100;
+
+	/** Reverse-forward mate pair orientation. */
+	static bool rf = false;
+
 	static int verbose;
 	static string out;
 }
@@ -298,6 +303,21 @@ int main(int argc, char** argv)
 
 	// Read the fragment size distribution.
 	Histogram distanceHist = loadHist(distanceCountFile);
+	unsigned numRF = distanceHist.count(INT_MIN, 0);
+	unsigned numFR = distanceHist.count(1, INT_MAX);
+	unsigned numTotal = distanceHist.size();
+	cout << "Mate orientation FR: " << numFR << setprecision(3)
+		<< " (" << (float)100*numFR/numTotal << "%)"
+		<< " RF: " << numRF << setprecision(3)
+		<< " (" << (float)100*numRF/numTotal << "%)"
+		<< endl;
+	if (numFR < numRF) {
+		cout << "The mate pairs of this library are oriented "
+			"reverse-forward (RF)." << endl;
+		opt::rf = true;
+	}
+	assert(!opt::rf);
+
 	distanceHist.eraseNegative();
 	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
 	PDF empiricalPDF(trimmedHist);
