@@ -1,4 +1,3 @@
-#include "ContigID.h"
 #include "Estimate.h"
 #include "Histogram.h"
 #include "SAM.h"
@@ -73,11 +72,6 @@ static const struct option longopts[] = {
 
 typedef vector<SAMRecord> AlignPairVec;
 
-struct PairedData
-{
-	AlignPairVec pairVec[2];
-};
-
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
  * expected distribution
@@ -147,28 +141,22 @@ static void writeEstimates(ostream& out,
 	if (!opt::dot)
 		out << pairs.front().rname;
 
+	typedef map<ContigNode, AlignPairVec> Pairs;
+	Pairs dataMap[2];
+	for (AlignPairVec::const_iterator it = pairs.begin();
+			it != pairs.end(); ++it)
+		dataMap[it->isReverse()][ContigNode(it->mrnm,
+				it->isReverse() == it->isMateReverse())]
+			.push_back(*it);
+
 	for (int sense0 = false; sense0 <= true; sense0++) {
 		if (!opt::dot && sense0 == 1)
 			out << " ;";
-		typedef map<StringID, PairedData> PairDataMap;
-		PairDataMap dataMap;
-		for (AlignPairVec::const_iterator it = pairs.begin();
-				it != pairs.end(); ++it)
-			if (it->isReverse() == sense0)
-				dataMap[it->mrnm].pairVec[it->isMateReverse()]
-					.push_back(*it);
-
-		for (PairDataMap::const_iterator it = dataMap.begin();
-				it != dataMap.end(); ++it) {
-			LinearNumKey id1 = g_contigIDs.serial(it->first);
-			unsigned len1 = lengthVec[id1];
-			for (int sense1 = false; sense1 <= true; sense1++)
-				writeEstimate(out,
-						ContigNode(id0, sense0),
-						ContigNode(id1, sense0 == sense1),
-						len0, len1,
-						it->second.pairVec[sense1], pdf);
-		}
+		for (Pairs::const_iterator it = dataMap[sense0].begin();
+				it != dataMap[sense0].end(); ++it)
+			writeEstimate(out, ContigNode(id0, sense0), it->first,
+					len0, lengthVec[it->first.id()],
+					it->second, pdf);
 	}
 	if (!opt::dot)
 		out << "\n";
