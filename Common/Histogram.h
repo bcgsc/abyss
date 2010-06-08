@@ -143,6 +143,16 @@ class Histogram
 				++it;
 	}
 
+	/** Negate each element of this histogram. */
+	Histogram negate() const
+	{
+		Histogram h;
+		for (Map::const_iterator it = m_map.begin();
+				it != m_map.end(); ++it)
+			h.m_map.insert(std::make_pair(-it->first, it->second));
+		return h;
+	}
+
 	Histogram trimFraction(double fraction) const;
 	Histogram trimLow(T threshold) const;
 

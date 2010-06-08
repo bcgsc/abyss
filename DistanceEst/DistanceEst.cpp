@@ -96,8 +96,8 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		if (a0.isRC)
 			a0 = a0.flipTarget(len0);
 		int a1 = it->isMateReverse() ? it->mpos : len1 - it->mpos;
-		int distance = len0 + a1 - a0.targetAtQueryStart();
-		assert(distance > 0);
+		int distance = opt::rf ? len1 + a0.targetAtQueryStart() - a1
+			: len0 + a1 - a0.targetAtQueryStart();
 		distanceList.push_back(distance);
 	}
 	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
@@ -316,8 +316,8 @@ int main(int argc, char** argv)
 		cout << "The mate pairs of this library are oriented "
 			"reverse-forward (RF)." << endl;
 		opt::rf = true;
+		distanceHist = distanceHist.negate();
 	}
-	assert(!opt::rf);
 
 	distanceHist.eraseNegative();
 	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
