@@ -89,6 +89,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
 	vector<int> distanceList;
+	distanceList.reserve(pairs.size());
 	for (AlignPairVec::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it) {
 		Alignment a0 = *it;
