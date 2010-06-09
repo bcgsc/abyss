@@ -156,10 +156,11 @@ static void writeEstimates(ostream& out,
 			.push_back(*it);
 
 	for (int sense0 = false; sense0 <= true; sense0++) {
-		if (!opt::dot && sense0 == 1)
+		if (!opt::dot && sense0)
 			out << " ;";
-		for (Pairs::const_iterator it = dataMap[sense0].begin();
-				it != dataMap[sense0].end(); ++it)
+		const Pairs& x = dataMap[sense0 ^ opt::rf];
+		for (Pairs::const_iterator it = x.begin();
+				it != x.end(); ++it)
 			writeEstimate(out, ContigNode(id0, sense0), it->first,
 					len0, lengthVec[it->first.id()],
 					it->second, pdf);
