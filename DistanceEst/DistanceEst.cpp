@@ -88,20 +88,36 @@ static int estimateDistance(unsigned len0, unsigned len1,
 {
 	// The provisional fragment sizes are calculated as if the contigs
 	// were perfectly adjacent with no overlap or gap.
-	vector<int> distanceList;
-	distanceList.reserve(pairs.size());
+	typedef vector<pair<int, int> > Fragments;
+	Fragments fragments;
+	fragments.reserve(pairs.size());
 	for (AlignPairVec::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it) {
 		Alignment a0 = *it;
 		if (a0.isRC)
 			a0 = a0.flipTarget(len0);
 		int a1 = it->isMateReverse() ? it->mpos : len1 - it->mpos;
-		int distance = opt::rf ? len1 + a0.targetAtQueryStart() - a1
-			: len0 + a1 - a0.targetAtQueryStart();
-		distanceList.push_back(distance);
+		fragments.push_back(opt::rf
+				? make_pair(a1, len1 + a0.targetAtQueryStart())
+				: make_pair(a0.targetAtQueryStart(), len0 + a1));
 	}
+
+	// Remove duplicate fragments.
+	sort(fragments.begin(), fragments.end());
+	fragments.erase(unique(fragments.begin(), fragments.end()),
+			fragments.end());
+	numPairs = fragments.size();
+	if (numPairs < opt::npairs)
+		return INT_MIN;
+
+	vector<int> fragmentSizes;
+	fragmentSizes.reserve(fragments.size());
+	for (Fragments::const_iterator it = fragments.begin();
+			it != fragments.end(); ++it)
+		fragmentSizes.push_back(it->second - it->first);
+
 	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
-			distanceList, pdf, numPairs);
+			fragmentSizes, pdf, numPairs);
 }
 
 static void writeEstimate(ostream& out,
