@@ -113,9 +113,6 @@ static void readContigs(const string& contigsPath)
 		ss >> length >> contig.coverage >> ws;
 		getline(ss, contig.comment);
 
-		unsigned numBases = opt::csToNt ? contig.seq.length() + 1 :
-			contig.seq.length();
-		contig.counts = BaseCounts(numBases);
 		if (count == 0) {
 			// Detect colour-space contigs.
 			opt::colourSpace = isdigit(seq[0]);
@@ -132,6 +129,10 @@ static void readContigs(const string& contigsPath)
 			else
 				assert(isalpha(seq[0]));
 		}
+
+		contig.counts = BaseCounts(contig.seq.length()
+				+ (opt::csToNt ? 1 : 0));
+
 		count++;
 	}
 	cerr << "Read " << count << " contigs\n";
