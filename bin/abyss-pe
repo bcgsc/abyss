@@ -162,14 +162,14 @@ endif
 		|sort -snk3 -k4 \
 		|DistanceEst $v -k$k -s$s -n$n -o $@ $*-3.hist
 
-# Find overlaps between contigs
-
 dist=$(addsuffix -3.dist, $(lib))
 
 ifneq ($(name)-3.dist, $(dist))
 $(name)-3.dist: $(dist)
 	abyss-joindist $^ >$@
 endif
+
+# Find overlaps between contigs
 
 %-overlap.fa: %.fa %.adj %.dist
 	Overlap $v $(OVERLAP_OPTIONS) -k$k -o $@ $^
