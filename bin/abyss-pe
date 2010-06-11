@@ -141,9 +141,7 @@ endif
 
 # Estimate distances between contigs
 
-dist=$(addsuffix -3.dist, $(lib))
-
-$(dist): %-3.dist: $(name)-3.fa
+%-3.dist: $(name)-3.fa
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
@@ -151,8 +149,12 @@ $(dist): %-3.dist: $(name)-3.fa
 
 # Find overlaps between contigs
 
-%.dist: $(dist)
+dist=$(addsuffix -3.dist, $(lib))
+
+ifneq ($(name)-3.dist, $(dist))
+$(name)-3.dist: $(dist)
 	abyss-joindist $^ >$@
+endif
 
 %-overlap.fa: %.fa %.adj %.dist
 	Overlap $v $(OVERLAP_OPTIONS) -k$k -o $@ $^
