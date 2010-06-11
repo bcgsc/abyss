@@ -48,7 +48,11 @@ double computeLikelihood(int param, const vector<int>& testDist,
 			iter != testDist.end(); ++iter) {
 		int val = *iter + param;
 		double p = pdf.getP(val);
-		sum += log(p);
+		/* When randomly selecting fragments that span a given point,
+		 * longer fragments are more likely to be selected than
+		 * shorter fragments.
+		 */
+		sum += log(val * p);
 		if (p > pdf.getMinP())
 			n++;
 	}
