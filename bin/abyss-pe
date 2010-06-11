@@ -103,7 +103,7 @@ unexport in se $(lib)
 all: $(out)
 
 clean:
-	rm -f *.adj *.pair.gz *.hist *.dist *.path
+	rm -f *.adj *.indel *.sam.gz *.hist *.dist *.path1 *.path2
 
 .PHONY: all clean
 .DELETE_ON_ERROR:
