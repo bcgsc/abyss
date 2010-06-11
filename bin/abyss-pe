@@ -100,7 +100,7 @@ s?=100
 # Remove environment variables.
 unexport in se $(lib)
 
-all: $(out)
+contigs: $(out)
 
 sam: $(addsuffix -3.sam.gz, $(lib))
 
@@ -108,10 +108,12 @@ bam: $(addsuffix -3.bam.bai, $(lib))
 
 dot: $(name)-contigs.dot
 
+all: bam dot
+
 clean:
 	rm -f *.adj *.indel *.sam.gz *.hist *.dist *.path1 *.path2
 
-.PHONY: all sam bam dot clean
+.PHONY: all bam clean contigs dot sam
 .DELETE_ON_ERROR:
 .SECONDARY:
 
