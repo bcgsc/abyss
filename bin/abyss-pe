@@ -165,6 +165,10 @@ endif
 %-3.dist: %-3.hist %-3.sam.gz
 	DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $^
 
+%-3.dist: %-3.bam %-3.hist
+	samtools view -h $< \
+	|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
+
 %-3.dist: $(name)-3.fa
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
