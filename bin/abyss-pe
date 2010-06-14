@@ -162,8 +162,9 @@ endif
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
-%-3.dist: %-3.hist %-3.sam.gz
-	DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $^
+%-3.dist: %-3.sam.gz %-3.hist
+	gunzip -c $< \
+	|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
