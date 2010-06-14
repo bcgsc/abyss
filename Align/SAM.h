@@ -153,7 +153,7 @@ struct SAMRecord {
 			<< '\t' << (1 + o.pos)
 			<< '\t' << o.mapq
 			<< '\t' << o.cigar
-			<< '\t' << o.mrnm
+			<< '\t' << (o.mrnm == o.rname ? "=" : o.mrnm)
 			<< '\t' << (1 + o.mpos)
 			<< '\t' << o.isize
 			<< '\t' << o.seq
