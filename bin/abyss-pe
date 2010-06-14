@@ -166,7 +166,7 @@ endif
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|samtools view -Sb $< -o $@
+		|samtools view -Sb - -o $@
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
