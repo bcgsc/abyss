@@ -41,7 +41,7 @@ static const char* zcatExec(const string& path)
 		endsWith(path, ".gz") ? "gunzip -c" :
 		endsWith(path, ".bz2") ? "bunzip2 -c" :
 		endsWith(path, ".xz") ? "xzdec -c" :
-		endsWith(path, ".bam") ? "samtools view" :
+		endsWith(path, ".bam") ? "samtools view -h" :
 		NULL;
 }
 
