@@ -162,6 +162,12 @@ endif
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
+%-3.bam %-3.hist: $(name)-3.fa
+	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|ParseAligns $v -k$k -h $*-3.hist \
+		|sort -snk3 -k4 \
+		|samtools view -Sb $< -o $@
+
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
 	|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
