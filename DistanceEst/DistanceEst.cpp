@@ -96,7 +96,9 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		Alignment a0 = *it;
 		if (a0.isRC)
 			a0 = a0.flipTarget(len0);
-		int a1 = it->isMateReverse() ? it->mpos : len1 - it->mpos;
+		int a1 = it->mateTargetAtQueryStart();
+		if (!it->isMateReverse())
+			a1 = len1 - a1;
 		fragments.push_back(opt::rf
 				? make_pair(a1, len1 + a0.targetAtQueryStart())
 				: make_pair(a0.targetAtQueryStart(), len0 + a1));

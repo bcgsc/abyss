@@ -140,6 +140,19 @@ struct SAMRecord {
 		return a;
 	}
 
+	/**
+	 * Return the position of the first base of the mate query on the
+	 * target extrapolated from the start of the alignment.
+	 */
+	int mateTargetAtQueryStart() const
+	{
+		/* The mate position should be the leftmost alignment
+		 * coordiante. We use the outside fragment coordinate instead
+		 * so that we can make an accurate distance estimate.
+		 */
+		return mpos;
+	}
+
 	friend std::ostream& operator <<(std::ostream& out,
 			const SAMRecord& o)
 	{
