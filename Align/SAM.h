@@ -173,6 +173,8 @@ struct SAMRecord {
 		o.qname += o.flag & FREAD1 ? "/1" :
 			o.flag & FREAD2 ? "/2" :
 			"";
+		if (o.mrnm == "=")
+			o.mrnm = o.rname;
 		return in;
 	}
 
