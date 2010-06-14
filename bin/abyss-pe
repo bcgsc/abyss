@@ -187,6 +187,9 @@ dist=$(addsuffix -3.dist, $(lib))
 ifneq ($(name)-3.dist, $(dist))
 $(name)-3.dist: $(dist)
 	abyss-joindist $^ >$@
+
+$(name)-3.bam: $(addsuffix -3.bam, $(lib))
+	samtools merge -r $@ $^
 endif
 
 # Find overlaps between contigs
