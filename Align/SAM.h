@@ -80,17 +80,12 @@ struct SAMRecord {
 	SAMRecord(const Alignment& a0, const Alignment& a1)
 	{
 		*this = SAMRecord(a0);
-		mrnm = a1.contig;
-		/* The mate position should be the leftmost alignment
-		 * coordiante. We use the outside fragment coordinate instead
-		 * so that we can make an accurate distance estimate.
-		 */
-		mpos = a1.targetAtQueryStart();
 		flag |= FPAIRED;
 		if (a1.isRC)
 			flag |= FMREVERSE;
-		if (a0.contig == a1.contig && a0.isRC != a1.isRC)
-			isize = a1.isRC ? a1 - a0 : a0 - a1;
+		mrnm = a1.contig;
+		mpos = a1.contig_start_pos;
+		isize = a1.targetAtQueryStart() - a0.targetAtQueryStart();
 	}
 
 	/** Parse the specified CIGAR string.
@@ -146,11 +141,7 @@ struct SAMRecord {
 	 */
 	int mateTargetAtQueryStart() const
 	{
-		/* The mate position should be the leftmost alignment
-		 * coordiante. We use the outside fragment coordinate instead
-		 * so that we can make an accurate distance estimate.
-		 */
-		return mpos;
+		return Alignment(*this).targetAtQueryStart() + isize;
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
