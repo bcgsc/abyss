@@ -324,9 +324,9 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 
 				// Are they on the same contig and the ONLY alignments?
 				if (a0.contig == a1.contig) {
-					int size = fragmentSize(a0, a1);
 					if (curr.second.size() == 1
 							&& pair.second.size() == 1) {
+						int size = fragmentSize(a0, a1);
 						if (size > INT_MIN) {
 							histogram.insert(size);
 							if (!opt::fragPath.empty()) {
@@ -338,18 +338,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							stats.numMisoriented++;
 						counted = true;
 					}
-					if (size < opt::k) {
-						/* For an inverted repeat, print only the
-						 * one alignment because only one distance
-						 * estimate is expected. For a non-inverted
-						 * repeat, two distance esimates are expected
-						 * (both to and from the repeat to itself) so
-						 * print both alignments. */
-						cout << SAMRecord(a0, a1) << '\n';
-						if (a0.isRC != a1.isRC)
-							cout << SAMRecord(a1, a0) << '\n';
-						assert(cout.good());
-					} else if (opt::fragPath.empty()
+					if (opt::fragPath.empty()
 							&& opt::histPath.empty())
 						cout << SAMRecord(a0, a1) << '\n'
 							<< SAMRecord(a1, a0) << '\n';
