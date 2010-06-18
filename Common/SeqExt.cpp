@@ -1,7 +1,6 @@
 #include "SeqExt.h"
 #include "Common/Options.h"
 #include <cassert>
-#include <cstdio>
 
 /** Return the complementary adjacency.
  * If the assembly is in colour space, this is a no-op.
@@ -14,14 +13,4 @@ SeqExt SeqExt::complement() const
 	};
 	assert(m_record < 1<<NUM_BASES);
 	return opt::colourSpace ? *this : mask(complements[m_record]);
-}
-
-void SeqExt::print() const
-{
-	assert(m_record < 1<<NUM_BASES);
-	printf("ext: %c%c%c%c\n",
-			 checkBase(3) ? 'T' : ' ',
-			 checkBase(2) ? 'G' : ' ',
-			 checkBase(1) ? 'C' : ' ',
-			 checkBase(0) ? 'A' : ' ');
 }

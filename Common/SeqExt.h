@@ -69,8 +69,6 @@ class SeqExt
 		SeqExt complement() const;
 		SeqExt operator ~() const { return complement(); }
 
-		void print() const;
-
 		friend std::ostream& operator <<(std::ostream& out,
 				const SeqExt& o)
 		{
