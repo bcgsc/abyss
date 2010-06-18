@@ -5,9 +5,12 @@
 #include "Common/Options.h"
 #include "Timer.h"
 #include "Uncompress.h"
+#include <cerrno>
 #include <climits> // for HOST_NAME_MAX
-#include <cstdio>
+#include <cstdio> // for setvbuf
 #include <cstdlib>
+#include <cstring> // for strerror
+#include <iostream>
 #include <mpi.h>
 #include <sstream>
 #include <unistd.h> // for gethostname and sync
@@ -19,13 +22,13 @@ using namespace std;
 static void systemx(const string& command)
 {
 	if (opt::verbose > 0)
-		puts(command.c_str());
+		cout << command << endl;
 	int ret = system(command.c_str());
 	if (ret == 0)
 		return;
-	fprintf(stderr, "error: command failed: `%s'\n", command.c_str());
+	cerr << "error: command failed: `" << command << "'\n";
 	if (ret == -1)
-		perror("system");
+		cerr << "system() failed: " << strerror(errno) << endl;
 	exit(ret == -1 ? EXIT_FAILURE : ret);
 }
 
@@ -34,7 +37,7 @@ static void concatenateFiles(const string& dest,
 		const string& prefix, const string& suffix,
 		const string& command = "cat")
 {
-	printf("Concatenating to %s\n", dest.c_str());
+	cout << "Concatenating to " << dest << endl;
 	ostringstream s;
 	s << command;
 	for (int i = 0; i < opt::numProc; i++)
@@ -62,7 +65,7 @@ int main(int argc, char** argv)
 
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
-		printf("Running on %d processors\n", opt::numProc);
+		cout << "Running on " << opt::numProc << " processors\n";
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	char hostname[HOST_NAME_MAX];
@@ -86,7 +89,7 @@ int main(int argc, char** argv)
 				"awk '/^>/ { $1=\">\" i++ } { print }'");
 		if (!opt::snpPath.empty())
 			concatenateFiles(opt::snpPath, "snp-", ".fa");
-		puts("Done.");
+		cout << "Done." << endl;
 	}
 
 	return 0;

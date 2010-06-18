@@ -8,8 +8,9 @@
 #include "Timer.h"
 #include "Uncompress.h"
 #include <algorithm>
-#include <cstdio>
+#include <cstdio> // for setvbuf
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 using namespace std;
@@ -27,8 +28,8 @@ static void removeLowCoverageContigs(ISequenceCollection* pSC)
 {
 	splitAmbiguousEdges(pSC);
 
-	printf("Removing low-coverage contigs "
-			"(mean k-mer coverage < %f)\n", opt::coverage);
+	cout << "Removing low-coverage contigs "
+			"(mean k-mer coverage < " << opt::coverage << ")\n";
 
 	AssemblyAlgorithms::assemble(pSC);
 
@@ -38,12 +39,12 @@ static void removeLowCoverageContigs(ISequenceCollection* pSC)
 
 static void popBubbles(ISequenceCollection* pSC)
 {
-	puts("Popping bubbles");
+	cout << "Popping bubbles" << endl;
 	ofstream out;
 	AssemblyAlgorithms::openBubbleFile(out);
 	unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC, out);
 	assert(out.good());
-	printf("Removed %d bubbles\n", numPopped);
+	cout << "Removed " << numPopped << " bubbles\n";
 }
 
 static void write_graph(const string& path,
@@ -51,7 +52,7 @@ static void write_graph(const string& path,
 {
 	if (path.empty())
 		return;
-	printf("Writing graph to %s\n", path.c_str());
+	cout << "Writing graph to `" << path << "'\n";
 	ofstream out(path.c_str());
 	DotWriter::write(out, c);
 }
@@ -65,7 +66,7 @@ static void assemble(const string& pathIn, const string& pathOut)
 		AssemblyAlgorithms::loadSequences(pSC, pathIn.c_str());
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
-	printf("Loaded %zu k-mer\n", pSC->count());
+	cout << "Loaded " << pSC->count() << " k-mer\n";
 	pSC->printLoad();
 	assert(pSC->count() > 0);
 
@@ -73,11 +74,11 @@ static void assemble(const string& pathIn, const string& pathOut)
 			AssemblyAlgorithms::coverageHistogram(*pSC));
 
 generate_adjacency:
-	puts("Generating adjacency");
+	cout << "Generating adjacency" << endl;
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
 	if (opt::erode > 0) {
-		puts("Eroding tips");
+		cout << "Eroding tips" << endl;
 		AssemblyAlgorithms::erodeEnds(pSC);
 		assert(AssemblyAlgorithms::erodeEnds(pSC) == 0);
 		pSC->cleanup();
@@ -101,7 +102,7 @@ generate_adjacency:
 	FastaWriter writer(pathOut.c_str());
 	unsigned nContigs = AssemblyAlgorithms::assemble(pSC, &writer);
 	if (nContigs == 0) {
-		fputs("error: no contigs assembled\n", stderr);
+		cerr << "error: no contigs assembled\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -119,12 +120,12 @@ int main(int argc, char* const* argv)
 
 	bool krange = opt::kMin != opt::kMax;
 	if (krange)
-		printf("Assembling k=%u-%u:%u\n",
-				opt::kMin, opt::kMax, opt::kStep);
+		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
+				<< ":" << opt::kStep << endl;
 
 	for (int k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
-			printf("Assembling k=%u\n", k);
+			cout << "Assembling k=" << k << endl;
 		opt::kmerSize = k;
 		Kmer::setLength(k);
 
