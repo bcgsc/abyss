@@ -1,5 +1,6 @@
 #include "Timer.h"
 #include "Log.h"
+#include <iomanip>
 
 using namespace std;
 
@@ -12,6 +13,6 @@ Timer::Timer(string funcString)
 // Destructor stops it and prints
 Timer::~Timer()
 {
-	PrintDebug(2, "%s: %.3f s\n", m_funcStr.c_str(),
-			(double)(clock() - m_start) / CLOCKS_PER_SEC);
+	logger(2) << m_funcStr << ": " << setprecision(3)
+		<< (double)(clock() - m_start) / CLOCKS_PER_SEC << " s\n";
 }

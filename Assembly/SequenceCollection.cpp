@@ -158,8 +158,8 @@ void SequenceCollectionHash::printLoad() const
 {
 	size_t size = m_pSequences->size();
 	size_t buckets = m_pSequences->bucket_count();
-	PrintDebug(1, "Hash load: %zu / %zu = %f\n",
-			size, buckets, (float)size / buckets);
+	logger(1) << "Hash load: " << size << " / " << buckets << " = "
+		<< (float)size / buckets << '\n';
 }
 
 /** Return the iterators pointing to the specified k-mer and its

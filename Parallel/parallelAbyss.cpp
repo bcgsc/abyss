@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 	MPI_Barrier(MPI_COMM_WORLD);
 	char hostname[HOST_NAME_MAX];
 	gethostname(hostname, sizeof hostname);
-	PrintDebug(0, "Running on host %s\n", hostname);
+	logger(0) << "Running on host " << hostname << endl;
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	NetworkSequenceCollection networkSeqs;

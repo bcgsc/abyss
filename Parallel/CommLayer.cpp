@@ -76,9 +76,9 @@ bool CommLayer::receiveEmpty()
 /** Block until all processes have reached this routine. */
 void CommLayer::barrier()
 {
-	PrintDebug(4, "entering barrier\n");
+	logger(4) << "entering barrier\n";
 	MPI_Barrier(MPI_COMM_WORLD);
-	PrintDebug(4, "left barrier\n");
+	logger(4) << "left barrier\n";
 }
 
 /** Broadcast a message. */
@@ -104,29 +104,29 @@ int CommLayer::receiveBroadcast()
  */
 long unsigned CommLayer::reduce(long unsigned count)
 {
-	PrintDebug(4, "entering reduce: %lu\n", count);
+	logger(4) << "entering reduce: " << count << '\n';
 	long unsigned sum;
 	MPI_Allreduce(&count, &sum, 1, MPI_UNSIGNED_LONG, MPI_SUM,
 			MPI_COMM_WORLD);
-	PrintDebug(4, "left reduce: %lu\n", sum);
+	logger(4) << "left reduce: " << sum << '\n';
 	return sum;
 }
 
 /** Reduce the specified vector. */
 vector<unsigned> CommLayer::reduce(const vector<unsigned>& v)
 {
-	PrintDebug(4, "entering reduce\n");
+	logger(4) << "entering reduce\n";
 	vector<unsigned> sum(v.size());
 	MPI_Allreduce(const_cast<unsigned*>(&v[0]),
 			&sum[0], v.size(), MPI_UNSIGNED, MPI_SUM,
 			MPI_COMM_WORLD);
-	PrintDebug(4, "left reduce\n");
+	logger(4) << "left reduce\n";
 	return sum;
 }
 
 uint64_t CommLayer::sendCheckPointMessage(int argument)
 {
-	PrintDebug(4, "checkpoint: %d\n", argument);
+	logger(4) << "checkpoint: " << argument << '\n';
 	assert(opt::rank != 0);
 	ControlMessage msg;
 	msg.id = m_msgID++;
