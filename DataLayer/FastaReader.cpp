@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cctype>
 #include <cerrno>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -48,7 +47,7 @@ FastaReader::FastaReader(const char* path, int flags)
 	if (strcmp(path, "-") != 0)
 		assert_open(m_inFile, path);
 	if (m_fileHandle.peek() == EOF)
-		fprintf(stderr, "warning: `%s' is empty\n", path);
+		cerr << "warning: `" << path << "' is empty\n";
 }
 
 FastaReader::~FastaReader()
@@ -186,10 +185,11 @@ next_record:
 			s = fields[8];
 			q = fields[9];
 		} else {
-			fprintf(stderr, "error: `%s' is an unknown format\n"
+			cerr << "error: `" << m_inPath
+				<< "' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
-					"and saw `%c' and %zu fields\n",
-					m_inPath, recordType, fields.size());
+					"and saw `" << recordType << "' and "
+					<< fields.size() << "u fields\n";
 			exit(EXIT_FAILURE);
 		}
 
