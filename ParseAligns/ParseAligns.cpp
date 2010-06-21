@@ -5,7 +5,6 @@
 #include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>
-#include <climits> // for INT_MIN
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -105,13 +104,11 @@ string makePairID(string id);
 /**
  * Return the size of the fragment demarcated by the specified
  * alignments.
- * @return INT_MIN if the pair is invalid
  */
 static int fragmentSize(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
-	if (a0.isRC == a1.isRC)
-		return INT_MIN;
+	assert(a0.isRC != a1.isRC);
 	const Alignment& f = a0.isRC ? a1 : a0;
 	const Alignment& r = a0.isRC ? a0 : a1;
 	return r - f;
@@ -322,23 +319,24 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 				const Alignment& a1 = flipAlignment(*pairAlignIter,
 						pairID);
 
-				// Are they on the same contig and the ONLY alignments?
 				bool sameTarget = a0.contig == a1.contig;
-				if (sameTarget) {
-					if (curr.second.size() == 1
-							&& pair.second.size() == 1) {
+				if (sameTarget
+						&& curr.second.size() == 1
+						&& pair.second.size() == 1) {
+					// Same target and the only alignment.
+					if (a0.isRC != a1.isRC) {
+						// Correctly oriented. Add this alignment to
+						// the distribution of fragment sizes.
 						int size = fragmentSize(a0, a1);
-						if (size > INT_MIN) {
-							histogram.insert(size);
-							if (!opt::fragPath.empty()) {
-								fragFile << size << "\n";
-								assert(fragFile.good());
-							}
-							stats.numSame++;
-						} else
-							stats.numMisoriented++;
-						counted = true;
-					}
+						histogram.insert(size);
+						if (!opt::fragPath.empty()) {
+							fragFile << size << "\n";
+							assert(fragFile.good());
+						}
+						stats.numSame++;
+					} else
+						stats.numMisoriented++;
+					counted = true;
 				}
 
 				bool outputSameTarget = opt::fragPath.empty()
