@@ -323,7 +323,8 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						pairID);
 
 				// Are they on the same contig and the ONLY alignments?
-				if (a0.contig == a1.contig) {
+				bool sameTarget = a0.contig == a1.contig;
+				if (sameTarget) {
 					if (curr.second.size() == 1
 							&& pair.second.size() == 1) {
 						int size = fragmentSize(a0, a1);
@@ -338,12 +339,11 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							stats.numMisoriented++;
 						counted = true;
 					}
-					if (opt::fragPath.empty()
-							&& opt::histPath.empty())
-						cout << SAMRecord(a0, a1) << '\n'
-							<< SAMRecord(a1, a0) << '\n';
-				} else {
-					// Print the alignment and the swapped alignment
+				}
+
+				bool outputSameTarget = opt::fragPath.empty()
+					&& opt::histPath.empty();
+				if (!sameTarget || outputSameTarget) {
 					cout << SAMRecord(a0, a1) << '\n'
 						<< SAMRecord(a1, a0) << '\n';
 					assert(cout.good());
