@@ -113,6 +113,8 @@ int maximumLikelihoodEstimate(int first, int last,
 	len1 -= opt::k - 1;
 	if (len0 > len1)
 		swap(len0, len1);
-	return maximumLikelihoodEstimate(first, last, samples,
+	int d0 = maximumLikelihoodEstimate(first, last, samples,
 			pdf, WindowFunction(len0, INT_MAX/2, 0), n);
+	return maximumLikelihoodEstimate(first, last, samples,
+			pdf, WindowFunction(len0, len1, d0), n);
 }
