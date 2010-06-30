@@ -98,5 +98,5 @@ int maximumLikelihoodEstimate(int first, int last,
 {
 	(void)len0; (void)len1;
 	return maximumLikelihoodEstimate(first, last, samples, pdf,
-				1, INT_MAX/2, 0, n);
+				INT_MAX/4, INT_MAX/4, 0, n);
 }
