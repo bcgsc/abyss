@@ -44,7 +44,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by MLE
 
 	/** Output in dot format. */
 	int dot; // used by Estimate

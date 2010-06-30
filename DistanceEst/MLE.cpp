@@ -7,6 +7,10 @@
 
 using namespace std;
 
+namespace opt {
+	extern unsigned k;
+}
+
 /** This window function is a triangle with a flat top, or a rectangle
  * with sloped sides.
  */
@@ -96,14 +100,17 @@ static int maximumLikelihoodEstimate(int first, int last,
 }
 
 /** Return the most likely distance between two contigs.
- * @param len0 the length of the first contig
- * @param len1 the length of the second contig
+ * @param len0 the length of the first contig in bp
+ * @param len1 the length of the second contig in bp
  */
 int maximumLikelihoodEstimate(int first, int last,
 		const vector<int>& samples, const PDF& pdf,
 		unsigned len0, unsigned len1,
 		unsigned& n)
 {
+	// Convert the lengths of the contigs from bp to k-mer.
+	len0 -= opt::k - 1;
+	len1 -= opt::k - 1;
 	if (len0 > len1)
 		swap(len0, len1);
 	return maximumLikelihoodEstimate(first, last, samples,
