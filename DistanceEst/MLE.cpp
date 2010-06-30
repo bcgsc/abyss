@@ -2,6 +2,7 @@
 #include "Stats.h"
 #include <cassert>
 #include <climits> // for INT_MAX
+#include <limits> // for numeric_limits
 
 using namespace std;
 
@@ -69,25 +70,21 @@ static int maximumLikelihoodEstimate(int first, int last,
 		unsigned len0, unsigned len1, int d,
 		unsigned& n)
 {
-	double maxL = -999999;
-	double nextBestL = maxL;
-	int bestDist = first;
+	double bestLikelihood = -numeric_limits<double>::max();
+	int bestTheta = first;
 	unsigned bestn = 0;
 	for (int theta = first; theta < last; theta++) {
 		unsigned trialn;
-		double v = computeLikelihood(theta, samples, pdf,
+		double likelihood = computeLikelihood(theta, samples, pdf,
 				len0, len1, d, trialn);
-		if(v > maxL)
-		{
-			nextBestL = maxL;
-			maxL = v;
-			bestDist = theta;
+		if (likelihood > bestLikelihood) {
+			bestLikelihood = likelihood;
+			bestTheta = theta;
 			bestn = trialn;
 		}
 	}
-
 	n = bestn;
-	return bestDist;
+	return bestTheta;
 }
 
 /** Return the most likely distance between two contigs.
