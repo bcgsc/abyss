@@ -30,13 +30,8 @@ struct PDF
 	void calculateMinimalRange(double p, size_t& low, size_t& high) const;
 };
 
-// Maximum Likelihood Estimator functions
-int maxLikelihoodEst(int min, int max,
-		const std::vector<int>& pairDistance, const PDF& pdf,
-		unsigned& n);
-
-// Compute the likelihood of the distribution
-double computeLikelihood(int param, const std::vector<int>& testDist,
-		const PDF& pdf, unsigned& n);
+int maximumLikelihoodEstimate(int first, int last,
+		const std::vector<int>& samples, const PDF& pdf,
+		unsigned len0, unsigned len1, unsigned& n);
 
 #endif

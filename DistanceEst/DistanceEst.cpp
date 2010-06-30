@@ -118,8 +118,8 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			it != fragments.end(); ++it)
 		fragmentSizes.push_back(it->second - it->first);
 
-	return maxLikelihoodEst(-opt::k+1, pdf.getMaxIdx(),
-			fragmentSizes, pdf, numPairs);
+	return maximumLikelihoodEstimate(-opt::k+1, pdf.getMaxIdx(),
+			fragmentSizes, pdf, len0, len1, numPairs);
 }
 
 static void writeEstimate(ostream& out,
