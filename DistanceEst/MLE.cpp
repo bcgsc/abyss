@@ -1,5 +1,6 @@
 #include "MLE.h"
 #include "Stats.h"
+#include <algorithm> // for swap
 #include <cassert>
 #include <climits> // for INT_MAX
 #include <limits> // for numeric_limits
@@ -103,7 +104,8 @@ int maximumLikelihoodEstimate(int first, int last,
 		unsigned len0, unsigned len1,
 		unsigned& n)
 {
-	(void)len0; (void)len1;
+	if (len0 > len1)
+		swap(len0, len1);
 	return maximumLikelihoodEstimate(first, last, samples,
-			pdf, WindowFunction(INT_MAX/4, INT_MAX/4, 0), n);
+			pdf, WindowFunction(len0, INT_MAX/2, 0), n);
 }
