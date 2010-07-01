@@ -290,8 +290,11 @@ static void findOverlap(
 	const ContigNode& h = rc ? ref : pair;
 	if (t.outDegree() > 0 || h.inDegree() > 0)
 		return;
-	bool mask;
-	unsigned overlap = findOverlap(t, h, mask);
+
+	bool mask = false;
+	unsigned overlap
+		= est.distance - (int)allowedError(est.stdDev) <= 0
+		? findOverlap(t, h, mask) : 0;
 	if (mask && !opt::mask)
 		return;
 	if (overlap > 0) {
