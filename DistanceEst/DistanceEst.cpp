@@ -1,8 +1,8 @@
 #include "Estimate.h"
 #include "Histogram.h"
 #include "MLE.h"
+#include "PDF.h"
 #include "SAM.h"
-#include "Stats.h"
 #include "Uncompress.h"
 #include <cassert>
 #include <cerrno>

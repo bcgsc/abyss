@@ -17,11 +17,11 @@ libcommon_a_SOURCES = \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \
+	PDF.h \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \
 	SignalHandler.cpp SignalHandler.h \
-	Stats.h \
 	StringUtil.h \
 	Timer.cpp Timer.h \
 	Uncompress.cpp Uncompress.h

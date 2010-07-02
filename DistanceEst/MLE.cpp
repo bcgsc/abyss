@@ -1,5 +1,5 @@
 #include "MLE.h"
-#include "Stats.h"
+#include "PDF.h"
 #include <algorithm> // for swap
 #include <cassert>
 #include <climits> // for INT_MAX
