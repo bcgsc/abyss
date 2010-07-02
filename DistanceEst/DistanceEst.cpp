@@ -11,6 +11,7 @@
 #include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
+#include <iomanip>
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <sstream>
@@ -340,8 +341,12 @@ int main(int argc, char** argv)
 	}
 
 	distanceHist.eraseNegative();
-	Histogram trimmedHist = distanceHist.trimFraction(0.0001);
-	PDF empiricalPDF(trimmedHist);
+	Histogram h = distanceHist.trimFraction(0.0001);
+	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
+		"sd: " << setprecision(4) << h.sd() << " "
+		"n: " << h.size() << " "
+		"min: " << h.minimum() << " max: " << h.maximum() << endl;
+	PDF empiricalPDF(h);
 
 	// Estimate the distances between contigs.
 	vector<SAMRecord> alignments(1);
