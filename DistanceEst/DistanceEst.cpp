@@ -343,6 +343,7 @@ int main(int argc, char** argv)
 	distanceHist.eraseNegative();
 	Histogram h = distanceHist.trimFraction(0.0001);
 	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
+		"median: " << setprecision(4) << h.median() << " "
 		"sd: " << setprecision(4) << h.sd() << " "
 		"n: " << h.size() << " "
 		"min: " << h.minimum() << " max: " << h.maximum() << endl;
