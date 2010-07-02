@@ -3,10 +3,10 @@
 
 #include <cassert>
 #include <cmath>
+#include <istream>
 #include <map>
 #include <ostream>
 #include <vector>
-#include <iostream>
 
 /** A histogram of type T, which is int be default.
  * A histogram may be implemented as a multiset. This class aims
