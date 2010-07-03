@@ -346,7 +346,8 @@ int main(int argc, char** argv)
 		"median: " << setprecision(4) << h.median() << " "
 		"sd: " << setprecision(4) << h.sd() << " "
 		"n: " << h.size() << " "
-		"min: " << h.minimum() << " max: " << h.maximum() << endl;
+		"min: " << h.minimum() << " max: " << h.maximum() << '\n'
+		<< h.barplot() << endl;
 	PDF empiricalPDF(h);
 
 	// Estimate the distances between contigs.

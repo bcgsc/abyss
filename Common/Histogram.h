@@ -6,6 +6,7 @@
 #include <istream>
 #include <map>
 #include <ostream>
+#include <string>
 #include <vector>
 
 /** A histogram of type T, which is int be default.
@@ -155,6 +156,10 @@ class Histogram
 
 	Histogram trimFraction(double fraction) const;
 	Histogram trimLow(T threshold) const;
+
+	typedef std::vector<accumulator> Bins;
+	Bins bin(unsigned n) const;
+	std::string barplot() const;
 
 	/** Return a vector representing this histogram. */
 	operator std::vector<unsigned>() const
