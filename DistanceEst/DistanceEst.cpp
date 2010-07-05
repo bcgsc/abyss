@@ -376,10 +376,5 @@ int main(int argc, char** argv)
 
 	if (opt::dot)
 		out << "}\n";
-
-	inFile.close();
-	if (!opt::out.empty())
-		outFile.close();
-
 	return 0;
 }
