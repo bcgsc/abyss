@@ -200,8 +200,7 @@ endif
 	Overlap $v $(OVERLAP_OPTIONS) -k$k -o $@ $^
 
 %-4.fa: %-3.fa %-3-overlap.fa
-	mv $< $@
-	cat $*-3-overlap.fa >>$@
+	cat $^ >$@
 
 # Paired-end assembly
 
