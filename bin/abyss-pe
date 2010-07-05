@@ -133,11 +133,11 @@ clean:
 
 # Single-end assembly
 
-%-1.fa: $(in) $(se)
+%-1.fa:
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $^
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $^
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 endif
 
 %.adj: %.fa
