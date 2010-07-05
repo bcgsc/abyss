@@ -46,7 +46,7 @@ Histogram::Bins Histogram::bin(unsigned n) const
 {
 	Histogram::Bins bins;
 	bins.reserve(n);
-	T nperbucket = ceilf((float)(maximum() - minimum()) / n);
+	T nperbucket = (T)ceilf((float)(maximum() - minimum()) / n);
 	T next = minimum() + nperbucket;
 	Histogram::Bins::value_type count = 0;
 	for (Histogram::Map::const_iterator it = m_map.begin();
