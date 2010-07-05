@@ -4,6 +4,7 @@
 #include "PDF.h"
 #include "SAM.h"
 #include "Uncompress.h"
+#include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <climits>
