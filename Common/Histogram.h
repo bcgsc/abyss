@@ -20,8 +20,22 @@ class Histogram
 	typedef long long unsigned accumulator;
 
   public:
+	typedef Map::const_iterator const_iterator;
+
 	Histogram() { }
 
+	/** Construct a histogram of the specified elements. */
+	template <class InputIterator>
+	Histogram(InputIterator first, InputIterator last)
+	{
+		for (InputIterator it = first; it != last; ++it)
+			insert(*it);
+	}
+
+	/** Construct a histogram from a vector, where the index into the
+	 * vector is the sample, and the value at that index is the number
+	 * of times that sample was observed.
+	 */
 	Histogram(std::vector<unsigned> v)
 	{
 		for (T i = 0; i < (T)v.size(); i++)
@@ -160,6 +174,9 @@ class Histogram
 	typedef std::vector<accumulator> Bins;
 	Bins bin(unsigned n) const;
 	std::string barplot() const;
+
+	const_iterator begin() const { return m_map.begin(); }
+	const_iterator end() const { return m_map.end(); }
 
 	/** Return a vector representing this histogram. */
 	operator std::vector<unsigned>() const
