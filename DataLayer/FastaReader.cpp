@@ -26,7 +26,7 @@ namespace opt {
 	/** minimum quality threshold */
 	int qualityThreshold;
 
-	/** quality offset */
+	/** quality offset, usually 33 or 64 */
 	int qualityOffset;
 }
 
@@ -167,6 +167,7 @@ next_record:
 				s = reverseComplement(s);
 				reverse(q.begin(), q.end());
 			}
+			qualityOffset = 33;
 		} else if (fields.size() == 11 || fields.size() == 22) {
 			// qseq or export
 			if (opt::chastityFilter && !isChaste(fields.back())) {
@@ -184,6 +185,7 @@ next_record:
 			id = o.str();
 			s = fields[8];
 			q = fields[9];
+			qualityOffset = 64;
 		} else {
 			cerr << "error: `" << m_inPath
 				<< "' is an unknown format\n"
@@ -192,8 +194,6 @@ next_record:
 					<< fields.size() << "u fields\n";
 			exit(EXIT_FAILURE);
 		}
-
-		qualityOffset = 64;
 	}
 
 	if (opt::qualityThreshold > 0 && !q.empty()) {
