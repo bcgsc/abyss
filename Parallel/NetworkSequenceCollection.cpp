@@ -92,9 +92,9 @@ void NetworkSequenceCollection::run()
 				m_pLocalSpace->printLoad();
 				m_comm.reduce(m_pLocalSpace->count());
 
-				Histogram h = m_comm.reduce(
+				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
-							*m_pLocalSpace));
+							*m_pLocalSpace)));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 				SetState(NAS_WAITING);
@@ -427,9 +427,9 @@ void NetworkSequenceCollection::runControl()
 				printf("Loaded %lu k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 
-				Histogram h = m_comm.reduce(
+				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
-							*m_pLocalSpace));
+							*m_pLocalSpace)));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 

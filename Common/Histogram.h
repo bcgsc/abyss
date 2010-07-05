@@ -36,7 +36,7 @@ class Histogram
 	 * vector is the sample, and the value at that index is the number
 	 * of times that sample was observed.
 	 */
-	Histogram(std::vector<unsigned> v)
+	explicit Histogram(std::vector<unsigned> v)
 	{
 		for (T i = 0; i < (T)v.size(); i++)
 			if (v[i] > 0)
