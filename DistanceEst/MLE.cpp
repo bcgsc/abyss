@@ -55,30 +55,30 @@ class WindowFunction {
  * @param n [out] the number of samples with a non-zero probability
  * @return the log likelihood
  */
-static double computeLikelihood(int theta, const vector<int>& samples,
+static double computeLikelihood(int theta, const Histogram& samples,
 		const PDF& pdf, const WindowFunction& window,
 		unsigned &n)
 {
 	n = 0;
 	double sum = 0.0f;
-	for (vector<int>::const_iterator iter = samples.begin();
-			iter != samples.end(); ++iter) {
-		int val = *iter + theta;
-		double p = pdf.getP(val);
+	for (Histogram::const_iterator it = samples.begin();
+			it != samples.end(); ++it) {
+		int x = it->first + theta;
+		double p = pdf.getP(x);
 		/* When randomly selecting fragments that span a given point,
 		 * longer fragments are more likely to be selected than
 		 * shorter fragments.
 		 */
-		sum += log(p * window(val));
+		sum += it->second * log(p * window(x));
 		if (p > pdf.getMinP())
-			n++;
+			n += it->second;
 	}
 	return sum;
 }
 
 /** Return the most likely distance between two contigs. */
 static int maximumLikelihoodEstimate(int first, int last,
-		const vector<int>& samples,
+		const Histogram& samples,
 		const PDF& pdf, const WindowFunction& window,
 		unsigned &n)
 {
@@ -113,8 +113,10 @@ int maximumLikelihoodEstimate(int first, int last,
 	len1 -= opt::k - 1;
 	if (len0 > len1)
 		swap(len0, len1);
-	int d0 = maximumLikelihoodEstimate(first, last, samples,
+
+	Histogram h(samples.begin(), samples.end());
+	int d0 = maximumLikelihoodEstimate(first, last, h,
 			pdf, WindowFunction(len0, INT_MAX/2, 0), n);
-	return maximumLikelihoodEstimate(first, last, samples,
+	return maximumLikelihoodEstimate(first, last, h,
 			pdf, WindowFunction(len0, len1, d0), n);
 }
