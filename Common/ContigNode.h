@@ -28,6 +28,7 @@ class ContigNode {
 		: m_ambig(true), m_id(n), m_sense(false)
 	{
 		assert(c == 'N');
+		(void)c;
 		assert(n > 0);
 	}
 
