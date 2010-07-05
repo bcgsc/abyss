@@ -96,6 +96,8 @@ j?=2
 
 # DistanceEst parameters
 s?=100
+$(foreach i,$(lib),$(eval $i_s?=$s))
+$(foreach i,$(lib),$(eval $i_n?=$n))
 
 # Remove environment variables.
 unexport in se $(lib)
@@ -170,17 +172,17 @@ endif
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
+	|DistanceEst $v -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
+	|DistanceEst $v -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
 	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|DistanceEst $v -k$k -s$s -n$n $($*_OPTIONS) -o $@ $*-3.hist
+		|DistanceEst $v -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(lib))
 
