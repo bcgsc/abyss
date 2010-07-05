@@ -17,6 +17,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#if _OPENMP
+# include <omp.h>
+#endif
 
 using namespace std;
 
@@ -142,10 +145,12 @@ static void writeEstimate(ostream& out,
 		if (opt::dot) {
 			if (id0.sense())
 				est.contig.flip();
+#pragma omp critical(out)
 			out << '"' << id0 << "\" -> " << est << '\n';
 		} else
 			out << ' ' << est;
 	} else if (opt::verbose > 1) {
+#pragma omp critical(cerr)
 		cerr << "warning: " << id0 << ',' << id1 << ' '
 			<< est.numPairs << " of " << pairs.size()
 			<< " pairs fit the expected distribution\n";
@@ -164,8 +169,9 @@ static void writeEstimates(ostream& out,
 	if (len0 < opt::seedLen)
 		return; // Skip contigs shorter than the seed length.
 
+	ostringstream ss;
 	if (!opt::dot)
-		out << pairs.front().rname;
+		ss << pairs.front().rname;
 
 	typedef map<ContigNode, AlignPairVec> Pairs;
 	Pairs dataMap[2];
@@ -177,16 +183,18 @@ static void writeEstimates(ostream& out,
 
 	for (int sense0 = false; sense0 <= true; sense0++) {
 		if (!opt::dot && sense0)
-			out << " ;";
+			ss << " ;";
 		const Pairs& x = dataMap[sense0 ^ opt::rf];
 		for (Pairs::const_iterator it = x.begin();
 				it != x.end(); ++it)
-			writeEstimate(out, ContigNode(id0, sense0), it->first,
+			writeEstimate(opt::dot ? out : ss,
+					ContigNode(id0, sense0), it->first,
 					len0, lengthVec[it->first.id()],
 					it->second, pdf);
 	}
 	if (!opt::dot)
-		out << "\n";
+#pragma omp critical(out)
+		out << ss.str() << '\n';
 	assert(out.good());
 }
 
@@ -354,8 +362,11 @@ int main(int argc, char** argv)
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
 	assert(in);
+#pragma omp parallel
+#pragma omp single
 	for (SAMRecord sam; in >> sam; alignments.push_back(sam)) {
 		if (sam.rname != alignments.front().rname) {
+#pragma omp task firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
 		}
