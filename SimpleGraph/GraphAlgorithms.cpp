@@ -10,7 +10,7 @@ using namespace std;
 namespace opt {
 	/** Abort the search after visiting maxCost vertices. */
 	unsigned maxCost = 100000;
-};
+}
 
 /** Compare the distance of two constraints. */
 static inline bool compareDistance(

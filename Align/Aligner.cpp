@@ -15,7 +15,7 @@ namespace opt {
 	 * IGNORE: do not report any alignments
 	 */
 	int multimap;
-};
+}
 
 template <>
 void Aligner<SeqPosHashMultiMap>::addReferenceSequence(

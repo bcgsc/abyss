@@ -13,7 +13,7 @@ using namespace std;
 
 namespace opt {
 	extern unsigned k;
-};
+}
 
 static void assert_open(ifstream& f, const string& p)
 {

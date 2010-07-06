@@ -13,7 +13,7 @@ namespace opt {
 
 	/** Abort the search after visiting maxPaths solutions. */
 	static const unsigned maxPaths = 200;
-};
+}
 
 typedef std::pair<ContigNode, unsigned> Constraint;
 typedef std::vector<Constraint> Constraints;

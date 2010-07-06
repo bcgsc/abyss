@@ -1104,7 +1104,7 @@ namespace std {
 		a.second += b.second;
 		return a;
 	}
-};
+}
 
 /** Assemble contigs.
  * @return the number of contigs and k-mer assembled

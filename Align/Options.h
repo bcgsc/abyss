@@ -4,6 +4,6 @@
 namespace opt {
 	enum { ERROR, MULTIMAP, IGNORE };
 	extern int multimap;
-};
+}
 
 #endif
