@@ -67,10 +67,14 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
 AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length]) 
 
 # Set compiler flags.
-AC_SUBST(CPPFLAGS, "$CPPFLAGS $mpi_cppflags")
-AC_SUBST(LDFLAGS, "$LDFLAGS $mpi_ldflags")
+AC_SUBST(CPPFLAGS, "$mpi_cppflags $CPPFLAGS")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
+AC_DEFINE(MPICH_SKIP_MPICXX, 1,
+		  [Define to disable MPICH C++ bindings])
+AC_DEFINE(OMPI_SKIP_MPICXX, 1,
+		  [Define to disable OpenMPI C++ bindings])
 AC_CHECK_HEADERS([mpi.h])
 if test "$enable_mpich"; then
 	AC_CHECK_LIB([pthread], [pthread_create])
@@ -86,8 +90,6 @@ elif test "$enable_lammpi"; then
 	AC_LANG_POP([C++])
 else
 	AC_CHECK_LIB([mpi], [MPI_Init])
-	AC_DEFINE(OMPI_SKIP_MPICXX, 1,
-			  [Define to disable OpenMPI C++ bindings])
 fi
 AM_CONDITIONAL([HAVE_LIBMPI],
 	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
