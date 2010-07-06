@@ -744,7 +744,7 @@ void NetworkSequenceCollection::handle(
 	int multiplicity = -1;
 	bool found = m_pLocalSpace->getSeqData(message.m_seq, extRec, multiplicity);
 	if (!found)
-		cout << "error: from " << senderID << ' ' << message << endl;
+		cerr << "error: from " << senderID << ' ' << message << endl;
 	assert(found);
 	(void)found;
 
