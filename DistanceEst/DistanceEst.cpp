@@ -43,6 +43,7 @@ static const char USAGE_MESSAGE[] =
 "  -s, --seed-length=L   minimum length of the seed contigs [100]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "      --dot             output overlaps in dot format\n"
+"  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -63,9 +64,10 @@ namespace opt {
 
 	static int verbose;
 	static string out;
+	static int threads = 1;
 }
 
-static const char shortopts[] = "k:n:o:s:v";
+static const char shortopts[] = "j:k:n:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -75,6 +77,7 @@ static const struct option longopts[] = {
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
+	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -263,6 +266,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'n': arg >> opt::npairs; break;
 			case 'o': arg >> opt::out; break;
@@ -304,6 +308,11 @@ int main(int argc, char** argv)
 	if (opt::seedLen < 2*opt::k)
 		cerr << "warning: the seed-length should be at least twice k:"
 			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind] == NULL ? "-" : argv[optind++]);
