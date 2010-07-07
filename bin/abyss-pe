@@ -103,23 +103,23 @@ $(foreach i,$(lib),$(eval $i_n?=$n))
 unexport in se $(lib)
 
 ifdef in
-contigs: $(out)
+pe-contigs: $(out)
 endif
 
-se: $(name)-se-contigs.fa
+se-contigs: $(name)-se-contigs.fa
 
-sam: $(addsuffix -3.sam.gz, $(lib))
+se-sam: $(addsuffix -3.sam.gz, $(lib))
 
-bam: $(addsuffix -3.bam.bai, $(lib))
+se-bam: $(addsuffix -3.bam.bai, $(lib))
 
-dot: $(name)-contigs.dot
+pe-dot: $(name)-contigs.dot
 
-all: bam dot
+all: se-bam pe-dot
 
 clean:
 	rm -f *.adj *.indel *.sam.gz *.hist *.dist *.path1 *.path2
 
-.PHONY: all bam clean contigs dot sam se
+.PHONY: all clean pe-contigs pe-dot se-bam se-sam se-contigs
 .DELETE_ON_ERROR:
 .SECONDARY:
 
