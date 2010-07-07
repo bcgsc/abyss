@@ -424,6 +424,7 @@ int main(int argc, char *const argv[])
 		if (it->second.overlap == 0) {
 			// This edge is scaffolded.
 		} else if (unambiguous(g_overlapGraph, t)) {
+			assert(h == *g_overlapGraph[t].begin());
 			out << mergeContigs(t, it->second);
 			assert(out.good());
 			// Remove the vertices incident to this edge from the
@@ -444,6 +445,7 @@ int main(int argc, char *const argv[])
 			// This edge involved a vertex that has already been used
 			// and removed.
 		} else if (unambiguous(g_scaffoldGraph, t)) {
+			assert(it->second.h == *g_scaffoldGraph[t].begin());
 			out << mergeContigs(t, it->second);
 			assert(out.good());
 		} else
