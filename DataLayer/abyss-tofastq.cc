@@ -2,6 +2,7 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  * Copyright 2010 Genome Sciences Centre
  */
+#include "DataLayer/Options.h"
 #include "FastaReader.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -29,6 +30,7 @@ static void toFASTQ(const char* path)
 
 int main(int argc, const char* argv[])
 {
+	opt::trimMasked = false;
 	void (*convert)(const char*)
 		= string(argv[0]).find("tofasta") != string::npos
 		? toFASTA : toFASTQ;
