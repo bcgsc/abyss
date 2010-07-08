@@ -119,6 +119,8 @@ struct FastqRecord : FastaRecord
 	friend std::ostream& operator <<(std::ostream& out,
 			const FastqRecord& o)
 	{
+		if (o.qual.empty())
+			return out << static_cast<FastaRecord>(o);
 		out << '@' << o.id;
 		if (!o.comment.empty())
 			out << ' ' << o.comment;
