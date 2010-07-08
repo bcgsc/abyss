@@ -194,7 +194,7 @@ next_record:
 				<< "' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
 					"and saw `" << recordType << "' and "
-					<< fields.size() << "u fields\n";
+					<< fields.size() << " fields\n";
 			exit(EXIT_FAILURE);
 		}
 	}
