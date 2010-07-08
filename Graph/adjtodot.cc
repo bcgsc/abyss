@@ -1,5 +1,6 @@
 /** Convert a graph from adj format to dot format.
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
+ * Copyright 2010 Genome Sciences Centre
  */
 #include "ContigGraph.h"
 #include <fstream>
