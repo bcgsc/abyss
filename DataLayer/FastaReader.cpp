@@ -199,10 +199,11 @@ next_record:
 		}
 	}
 
+	if (opt::qualityOffset > 0)
+		qualityOffset = opt::qualityOffset;
+
 	if (opt::qualityThreshold > 0 && !q.empty()) {
 		assert(s.length() == q.length());
-		if (opt::qualityOffset > 0)
-			qualityOffset = opt::qualityOffset;
 		static const char ASCII[] =" !\"#$%&'()*+,-./0123456789"
 			":;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefgh";
 		assert(qualityOffset > (unsigned)ASCII[0]);
@@ -224,6 +225,17 @@ next_record:
 				<< s[pos] << "'\n";
 			m_nonacgt++;
 			goto next_record;
+		}
+	}
+
+	assert(qualityOffset >= 33);
+	if (flagConvertQual() && qualityOffset != 33) {
+		// Convert to standard quality (ASCII 33).
+		for (string::iterator it = q.begin(); it != q.end(); ++it) {
+			int x = *it - qualityOffset;
+			assert(x >= -5);
+			assert(x <= 40);
+			*it = 33 + max(0, x);
 		}
 	}
 

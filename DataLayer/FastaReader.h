@@ -14,9 +14,12 @@ class FastaReader {
 			DISCARD_N = 0, KEEP_N = 1,
 			/** Fold lower-case characters to upper-case. */
 			FOLD_CASE = 0, NO_FOLD_CASE = 2,
+			/** Convert to standard quality. */
+			NO_CONVERT_QUALITY = 0, CONVERT_QUALITY = 4,
 		};
 		bool flagDiscardN() { return ~m_flags & KEEP_N; }
 		bool flagFoldCase() { return ~m_flags & NO_FOLD_CASE; }
+		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
 		FastaReader(const char* path, int flags);
 		~FastaReader();
