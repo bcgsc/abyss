@@ -57,8 +57,8 @@ where k is the k-mer length as before.
 n is the minimum number of pairs needed to consider joining two
 contigs. The optimal value for n must be found by trial.
 in specifies the input files to read, which may be in FASTA, FASTQ,
-qseq or export format and compressed with gz, bz2 or xz and may be
-tarred.
+qseq, export, SAM or BAM format and compressed with gz, bz2 or xz and
+may be tarred.
 The assembled contigs will be stored in ${name}-contigs.fa.
 
 The suffix of the read identifier for a pair of reads must be one of

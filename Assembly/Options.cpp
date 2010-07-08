@@ -27,7 +27,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE...\n"
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
-"qseq or export format and compressed with gz, bz2 or xz.\n"
+"qseq, export, SAM or BAM format and compressed with gz, bz2 or xz.\n"
 "\n"
 "      --chastity                 discard unchaste reads [default]\n"
 "                                 for qseq and export files only\n"
