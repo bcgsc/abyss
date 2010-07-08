@@ -11,7 +11,8 @@ may be tarred.
 .TP
 \fB--chastity\fR
 discard unchaste reads [default]
-for qseq and export files only
+.br
+for qseq, export and SAM files only
 .TP
 \fB--no-chastity\fR
 do not discard unchaste reads
@@ -28,10 +29,12 @@ threshold
 .TP
 \fB--standard-quality\fR
 zero quality is `!' (33)
+.br
 default for FASTQ and SAM files
 .TP
 \fB--illumina-quality\fR
 zero quality is `@' (64)
+.br
 default for qseq and export files
 .TP
 \fB\-o\fR, \fB\-\-out\fR=\fIFILE\fR
