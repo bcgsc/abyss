@@ -167,6 +167,7 @@ next_record:
 				s = reverseComplement(s);
 				reverse(q.begin(), q.end());
 			}
+			comment = fields[1];
 			qualityOffset = 33;
 		} else if (fields.size() == 11 || fields.size() == 22) {
 			// qseq or export
@@ -185,6 +186,7 @@ next_record:
 			id = o.str();
 			s = fields[8];
 			q = fields[9];
+			comment = fields.back();
 			qualityOffset = 64;
 		} else {
 			cerr << "error: `" << m_inPath
