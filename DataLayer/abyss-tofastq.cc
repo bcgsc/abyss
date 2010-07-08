@@ -9,7 +9,16 @@
 
 using namespace std;
 
-void convert(const char* path)
+static void toFASTA(const char* path)
+{
+	FastaReader in(path, FastaReader::KEEP_N
+			| FastaReader::NO_FOLD_CASE
+			| FastaReader::CONVERT_QUALITY);
+	for (FastaRecord fasta; in >> fasta;)
+		cout << fasta;
+}
+
+static void toFASTQ(const char* path)
 {
 	FastaReader in(path, FastaReader::KEEP_N
 			| FastaReader::NO_FOLD_CASE
@@ -20,6 +29,9 @@ void convert(const char* path)
 
 int main(int argc, const char* argv[])
 {
+	void (*convert)(const char*)
+		= string(argv[0]).find("tofasta") != string::npos
+		? toFASTA : toFASTQ;
 	if (argc <= 1)
 		convert("-");
 	else
