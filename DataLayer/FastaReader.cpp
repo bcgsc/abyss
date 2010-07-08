@@ -164,6 +164,10 @@ next_record:
 			}
 			s = fields[9];
 			q = fields[10];
+			if (s == "*")
+				s.clear();
+			if (q == "*")
+				q.clear();
 			if (flags & 0x10) { // FREVERSE
 				s = reverseComplement(s);
 				reverse(q.begin(), q.end());
