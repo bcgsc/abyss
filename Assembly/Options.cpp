@@ -38,7 +38,7 @@ static const char USAGE_MESSAGE[] =
 "  -q, --trim-quality=THRESHOLD   trim bases from the ends of reads whose quality\n"
 "                                 is less than the threshold\n"
 "      --standard-quality         zero quality is `!' (33)\n"
-"                                 default for FASTQ files\n"
+"                                 default for FASTQ and SAM files\n"
 "      --illumina-quality         zero quality is `@' (64)\n"
 "                                 default for qseq and export files\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
