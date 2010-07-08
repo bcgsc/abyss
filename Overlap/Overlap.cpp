@@ -223,19 +223,17 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 }
 
 struct Overlap {
-	const ContigNode h;
 	const Estimate est;
 	const unsigned overlap;
 	const bool mask;
-	Overlap(const ContigNode& h,
-			const Estimate& est, unsigned overlap, bool mask)
-		: h(h), est(est), overlap(overlap), mask(mask) { }
+	Overlap(const Estimate& est, unsigned overlap, bool mask)
+		: est(est), overlap(overlap), mask(mask) { }
 };
 
-static string mergeContigs(const ContigNode& t,
+static string mergeContigs(const ContigNode& t, const ContigNode& h,
 		const Overlap& overlap)
 {
-	return mergeContigs(t, overlap.h, overlap.est, overlap.overlap,
+	return mergeContigs(t, h, overlap.est, overlap.overlap,
 			overlap.mask);
 }
 
@@ -249,8 +247,20 @@ static OverlapGraph g_scaffoldGraph;
  * overlap (are not scaffolded). */
 static OverlapGraph g_overlapGraph;
 
+/** An edge (a pair of vertices). */
+struct Edge {
+	Edge(const ContigNode& t, const ContigNode& h) : t(t), h(h) { }
+
+	bool operator <(const Edge& o) const
+	{
+		return t != o.t ? t < o.t : h < o.h;
+	}
+
+	ContigNode t, h;
+};
+
 /** The amount of overlap (attributes of OverlapGraph). */
-typedef map<ContigNode, Overlap> OverlapGraphAttr;
+typedef map<Edge, Overlap> OverlapGraphAttr;
 static OverlapGraphAttr g_overlaps;
 
 static void removeVertex(OverlapGraph& g, const ContigNode& v)
@@ -265,17 +275,6 @@ static void removeVertex(OverlapGraph& g, const ContigNode& v)
 	unsigned n = g.erase(v);
 	assert(n == 1);
 	(void)n;
-}
-
-/** Remove the specified overlap if it is scaffolded. */
-static void eraseIfScaffolded(OverlapGraphAttr& g,
-		const ContigNode& v)
-{
-	OverlapGraphAttr::iterator it = g.find(v);
-	if (it == g.end())
-		return;
-	if (it->second.overlap == 0)
-		g.erase(it);
 }
 
 static void findOverlap(
@@ -300,17 +299,14 @@ static void findOverlap(
 	if (overlap > 0) {
 		g_overlapGraph[t].insert(h);
 		g_overlapGraph[~h].insert(~t);
-
-		// Overlap edges take priority over scaffold edges.
-		eraseIfScaffolded(g_overlaps, t);
-		eraseIfScaffolded(g_overlaps, ~h);
 	}
 	if (overlap > 0 || opt::scaffold) {
 		g_scaffoldGraph[t].insert(h);
 		g_scaffoldGraph[~h].insert(~t);
-		if (g_overlaps.count(t) == 0 && g_overlaps.count(~h) == 0)
-			g_overlaps.insert(make_pair(t,
-						Overlap(h, est, overlap, mask)));
+		// Store the edge attribute only once.
+		if (g_overlaps.count(Edge(~h, ~t)) == 0)
+			g_overlaps.insert(make_pair(Edge(t, h),
+						Overlap(est, overlap, mask)));
 	}
 }
 
@@ -420,12 +416,12 @@ int main(int argc, char *const argv[])
 	// First, give priority to overlapping edges (not scaffolded).
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
 			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = it->first, h = it->second.h;
+		const ContigNode& t = it->first.t, h = it->first.h;
 		if (it->second.overlap == 0) {
 			// This edge is scaffolded.
 		} else if (unambiguous(g_overlapGraph, t)) {
-			assert(h == *g_overlapGraph[t].begin());
-			out << mergeContigs(t, it->second);
+			assert(*g_overlapGraph[t].begin() == h);
+			out << mergeContigs(t, h, it->second);
 			assert(out.good());
 			// Remove the vertices incident to this edge from the
 			// scaffold graph.
@@ -438,15 +434,15 @@ int main(int argc, char *const argv[])
 	// Second, handle scaffolded edges.
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
 			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = it->first;
+		const ContigNode& t = it->first.t, h = it->first.h;
 		if (it->second.overlap > 0) {
 			// This edge is not scaffolded.
-		} else if (g_scaffoldGraph[t].empty()) {
+		} else if (g_scaffoldGraph[t].count(h) == 0) {
 			// This edge involved a vertex that has already been used
 			// and removed.
 		} else if (unambiguous(g_scaffoldGraph, t)) {
-			assert(it->second.h == *g_scaffoldGraph[t].begin());
-			out << mergeContigs(t, it->second);
+			assert(*g_scaffoldGraph[t].begin() == h);
+			out << mergeContigs(t, h, it->second);
 			assert(out.good());
 		} else
 			stats.ambiguous++;
