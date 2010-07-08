@@ -2,6 +2,7 @@
 #define FASTAREADER_H 1
 
 #include "Sequence.h"
+#include <cassert>
 #include <fstream>
 #include <istream>
 #include <ostream>
@@ -21,7 +22,7 @@ class FastaReader {
 		~FastaReader();
 
 		Sequence read(std::string& id, std::string& comment,
-				char& anchor);
+				char& anchor, std::string& qual);
 
 		/** Return whether this stream is at end-of-file. */
 		bool eof() const { return m_fileHandle.eof(); };
@@ -38,10 +39,9 @@ class FastaReader {
 
 		FastaReader& operator >>(Sequence& seq)
 		{
-			std::string id;
-			std::string comment;
+			std::string id, comment, qual;
 			char anchor;
-			seq = this->read(id, comment, anchor);
+			seq = this->read(id, comment, anchor, qual);
 			return *this;
 		}
 
@@ -78,7 +78,8 @@ struct FastaRecord
 
 	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
 	{
-		o.seq = in.read(o.id, o.comment, o.anchor);
+		std::string q;
+		o.seq = in.read(o.id, o.comment, o.anchor, q);
 		return in;
 	}
 
@@ -89,6 +90,37 @@ struct FastaRecord
 		if (!o.comment.empty())
 			out << ' ' << o.comment;
 		return out << '\n' << o.seq << '\n';
+	}
+};
+
+/** A FASTQ record. */
+struct FastqRecord : FastaRecord
+{
+	/** Quality */
+	std::string qual;
+
+	FastqRecord() { }
+	FastqRecord(const std::string& id, const std::string& comment,
+			const Sequence& seq, const std::string& qual)
+		: FastaRecord(id, comment, seq), qual(qual)
+	{
+		assert(seq.length() == qual.length());
+	}
+
+	friend FastaReader& operator >>(FastaReader& in, FastqRecord& o)
+	{
+		o.seq = in.read(o.id, o.comment, o.anchor, o.qual);
+		return in;
+	}
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const FastqRecord& o)
+	{
+		out << '@' << o.id;
+		if (!o.comment.empty())
+			out << ' ' << o.comment;
+		return out << '\n' << o.seq << "\n"
+			"+\n" << o.qual << '\n';
 	}
 };
 

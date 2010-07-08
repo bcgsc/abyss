@@ -13,8 +13,8 @@ void convert(const char* path)
 {
 	FastaReader in(path,
 			FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
-	for (FastaRecord fasta; in >> fasta;)
-		cout << fasta;
+	for (FastqRecord fastq; in >> fastq;)
+		cout << fastq;
 }
 
 int main(int argc, const char* argv[])

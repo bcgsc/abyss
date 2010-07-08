@@ -68,7 +68,8 @@ static bool isChaste(const string &s)
 	}
 }
 
-Sequence FastaReader::read(string& id, string& comment, char& anchor)
+Sequence FastaReader::read(string& id, string& comment,
+		char& anchor, string& q)
 {
 next_record:
 	// Discard comments.
@@ -77,7 +78,6 @@ next_record:
 
 	signed char recordType = m_fileHandle.peek();
 	Sequence s;
-	string q;
 
 	unsigned qualityOffset = 0;
 	if (recordType == EOF) {
@@ -107,7 +107,8 @@ next_record:
 					'\n');
 			getline(m_fileHandle, q);
 			assert(s.length() == q.length());
-		}
+		} else
+			q.clear();
 
 		if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
