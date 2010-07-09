@@ -285,11 +285,29 @@ static LinearNumKey identifySubsumedPaths(
 			// This path is larger. Use it as the seed.
 			return identifySubsumedPaths(path2It, paths, out,
 					overlaps);
-		} else if (isCycle(path) && isCycle(consensus)) {
-			if (gDebugPrint)
-				vout << pivot << '\t' << path2 << '\n'
-					<< "cycle\t" << consensus << '\n';
-			out.push_back(path2It);
+		} else if (isCycle(consensus)) {
+			// The consensus path is a cycle.
+			bool isCyclePath1 = isCycle(path);
+			bool isCyclePath2 = isCycle(path2);
+			if (!isCyclePath1 && !isCyclePath2) {
+				// Neither path is a cycle.
+				if (gDebugPrint)
+					vout << pivot << '\t' << path2 << '\n'
+						<< "ignored\t" << consensus << '\n';
+				overlaps.insert(id);
+				overlaps.insert(path2It->first);
+			} else {
+				// At least one path is a cycle.
+				if (gDebugPrint)
+					vout << pivot << '\t' << path2 << '\n'
+						<< "cycle\t" << consensus << '\n';
+				if (isCyclePath1 && isCyclePath2)
+					out.push_back(path2It);
+				else if (!isCyclePath1)
+					overlaps.insert(id);
+				else if (!isCyclePath2)
+					overlaps.insert(path2It->first);
+			}
 		} else {
 			if (gDebugPrint)
 				vout << pivot << '\t' << path2 << '\n'
