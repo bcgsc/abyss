@@ -3,6 +3,7 @@
 
 #include "Aligner.h"
 #include <istream>
+#include <limits> // for numeric_limits
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -166,6 +167,7 @@ struct SAMRecord {
 			>> o.flag >> o.rname >> o.pos >> o.mapq
 			>> o.cigar >> o.mrnm >> o.mpos >> o.isize
 			>> o.seq >> o.qual;
+		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		if (!in)
 			return in;
 		o.pos--;
