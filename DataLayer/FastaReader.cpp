@@ -184,7 +184,8 @@ next_record:
 			ostringstream o;
 			o << fields[0];
 			for (int i = 1; i < 6; i++)
-				o << '_' << fields[i];
+				if (!fields[i].empty())
+					o << ':' << fields[i];
 			// The reverse read is typically the second read, but is
 			// the third read of an indexed run.
 			o << '/' << (fields[7] == "3" ? "2" : fields[7]);
