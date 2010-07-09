@@ -2,7 +2,8 @@
 #define DICTIONARY_H 1
 
 #include "HashMap.h"
-#include <cassert>
+#include <cstdlib>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -24,7 +25,11 @@ class Dictionary {
 			std::pair<Map::const_iterator, bool> inserted
 				= m_map.insert(std::make_pair(key, m_map.size()));
 			if (inserted.second) {
-				assert(!m_locked);
+				if (m_locked) {
+					std::cerr << "error: unexpected ID: `"
+						<< key << "'\n";
+					exit(EXIT_FAILURE);
+				}
 				m_vec.push_back(key);
 			}
 			return inserted.first->second;
