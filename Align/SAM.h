@@ -10,10 +10,10 @@
 
 struct SAMRecord {
 	std::string qname;
-	unsigned flag;
 	std::string rname;
 	int pos;
-	unsigned mapq;
+	unsigned short flag;
+	unsigned short mapq;
 	std::string cigar;
 	std::string mrnm;
 	int mpos;
@@ -54,9 +54,9 @@ struct SAMRecord {
 	/** Consturct a single-end alignment. */
 	SAMRecord(const Alignment& a) :
 		qname("*"),
-		flag(a.isRC ? FREVERSE : 0),
 		rname(a.contig),
 		pos(a.contig_start_pos),
+		flag(a.isRC ? FREVERSE : 0),
 		mapq(255),
 		// cigar
 		mrnm("*"),
