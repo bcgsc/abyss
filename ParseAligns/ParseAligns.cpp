@@ -528,13 +528,18 @@ int main(int argc, char* const* argv)
 		histFile.close();
 	}
 
+	if (numFR < numRF)
+		histogram = histogram.negate();
+	histogram.eraseNegative();
 	Histogram h = histogram.trimFraction(0.0001);
 	int median = h.median();
 	if (opt::verbose > 0)
-		cerr << "Stats median: " << median << " "
-			"sd: " << setprecision(3) << h.sd() << " "
+		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
+			"median: " << setprecision(4) << h.median() << " "
+			"sd: " << setprecision(4) << h.sd() << " "
 			"n: " << h.size() << " "
-			"min: " << h.minimum() << " max: " << h.maximum() << '\n';
+			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
+			<< h.barplot() << endl;
 	cout << "@RG\tID:*\tSM:*\tPI:" << median << '\n';
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
