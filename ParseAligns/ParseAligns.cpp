@@ -82,9 +82,10 @@ static const struct option longopts[] = {
 
 static struct {
 	size_t alignments;
+	size_t bothUnaligned;
+	size_t oneUnaligned;
 	size_t numDifferent;
 	size_t numFF;
-	size_t numMissed;
 	size_t numMulti;
 	size_t numSplit;
 } stats;
@@ -296,8 +297,10 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	// at least one of the two reads must span no more than
 	// two contigs.
 	const unsigned MAX_SPAN = 2;
-	if (curr.second.empty() || pair.second.empty()) {
-		stats.numMissed++;
+	if (curr.second.empty() && pair.second.empty()) {
+		stats.bothUnaligned++;
+	} else if (curr.second.empty() || pair.second.empty()) {
+		stats.oneUnaligned++;
 	} else if (!checkUniqueAlignments(curr.second)
 			|| !checkUniqueAlignments(pair.second)) {
 		stats.numMulti++;
@@ -505,7 +508,8 @@ int main(int argc, char* const* argv)
 	unsigned numRF = histogram.count(INT_MIN, 0);
 	unsigned numFR = histogram.count(1, INT_MAX);
 	cerr << "Mateless: " << alignTable.size()
-		<< " Unaligned: " << stats.numMissed
+		<< " Neither-aligned: " << stats.bothUnaligned
+		<< " One-aligned: " << stats.oneUnaligned
 		<< " FR: " << numFR
 		<< " RF: " << numRF
 		<< " FF: " << stats.numFF
