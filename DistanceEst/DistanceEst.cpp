@@ -376,7 +376,7 @@ int main(int argc, char** argv)
 #pragma omp single
 	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
-				|| !sam.isPaired())
+				|| !sam.isPaired() || sam.rname == sam.mrnm)
 			continue;
 		if (sam.rname != alignments.front().rname) {
 #pragma omp task firstprivate(alignments)
