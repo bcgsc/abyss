@@ -8,6 +8,9 @@
 #include <sstream>
 #include <string>
 
+/** If undefined, do not use SAM sequence or quality. */
+#undef SAM_SEQ_QUAL
+
 struct SAMRecord {
 	std::string qname;
 	std::string rname;
@@ -18,8 +21,10 @@ struct SAMRecord {
 	std::string mrnm;
 	int mpos;
 	int isize;
+#if SAM_SEQ_QUAL
 	std::string seq;
 	std::string qual;
+#endif
 
 	/** Flag */
 	enum {
@@ -61,9 +66,12 @@ struct SAMRecord {
 		// cigar
 		mrnm("*"),
 		mpos(0),
-		isize(0),
+		isize(0)
+#if SAM_SEQ_QUAL
+		,
 		seq("*"),
 		qual("*")
+#endif
 	{
 		unsigned qend = a.read_start_pos + a.align_length;
 		int qendpad = a.read_length - qend;
@@ -129,8 +137,10 @@ struct SAMRecord {
 	operator Alignment() const {
 		assert(~flag & FUNMAP);
 		Alignment a = parseCigar(cigar);
+#if SAM_SEQ_QUAL
 		assert(seq.empty() || seq == "*"
 				|| (unsigned)a.read_length == seq.length());
+#endif
 		a.contig = rname;
 		a.contig_start_pos = pos;
 		a.isRC = flag & FREVERSE; // strand of the query
@@ -158,16 +168,22 @@ struct SAMRecord {
 			<< '\t' << (o.mrnm == o.rname ? "=" : o.mrnm)
 			<< '\t' << (1 + o.mpos)
 			<< '\t' << o.isize
+#if SAM_SEQ_QUAL
 			<< '\t' << o.seq
 			<< '\t' << o.qual;
+#else
+			<< "\t*\t*";
+#endif
 	}
 
 	friend std::istream& operator >>(std::istream& in, SAMRecord& o)
 	{
 		in >> o.qname
 			>> o.flag >> o.rname >> o.pos >> o.mapq
-			>> o.cigar >> o.mrnm >> o.mpos >> o.isize
-			>> o.seq >> o.qual;
+			>> o.cigar >> o.mrnm >> o.mpos >> o.isize;
+#if SAM_SEQ_QUAL
+		in >> o.seq >> o.qual;
+#endif
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		if (!in)
 			return in;

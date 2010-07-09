@@ -385,8 +385,10 @@ int main(int argc, char** argv)
 		}
 		// Clear unused fields.
 		sam.qname.clear();
+#if SAM_SEQ_QUAL
 		sam.seq.clear();
 		sam.qual.clear();
+#endif
 		alignments.push_back(sam);
 	}
 	assert(in.eof());
