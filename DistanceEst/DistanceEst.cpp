@@ -334,7 +334,7 @@ int main(int argc, char** argv)
 		out << "digraph dist {\n"
 			"k=" << opt::k << "\t"
 			"n=" << opt::npairs << "\t"
-			"s=" << opt::seedLen << "\n";
+			"s=" << opt::seedLen << '\n';
 
 	// Read the contig lengths.
 	vector<unsigned> contigLens;

@@ -330,7 +330,7 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 						int size = fragmentSize(a0, a1);
 						histogram.insert(size);
 						if (!opt::fragPath.empty()) {
-							fragFile << size << "\n";
+							fragFile << size << '\n';
 							assert(fragFile.good());
 						}
 					} else
