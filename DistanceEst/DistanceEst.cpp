@@ -383,6 +383,10 @@ int main(int argc, char** argv)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
 		}
+		// Clear unused fields.
+		sam.qname.clear();
+		sam.seq.clear();
+		sam.qual.clear();
 		alignments.push_back(sam);
 	}
 	assert(in.eof());
