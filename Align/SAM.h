@@ -180,6 +180,9 @@ struct SAMRecord {
 		return in;
 	}
 
+	bool isPaired() const { return flag & FPAIRED; }
+	bool isUnmapped() const { return flag & FUNMAP; }
+	bool isMateUnmapped() const { return flag & FMUNMAP; }
 	bool isReverse() const { return flag & FREVERSE; }
 	bool isMateReverse() const { return flag & FMREVERSE; }
 };

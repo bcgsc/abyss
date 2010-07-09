@@ -374,12 +374,16 @@ int main(int argc, char** argv)
 	assert(in);
 #pragma omp parallel
 #pragma omp single
-	for (SAMRecord sam; in >> sam; alignments.push_back(sam)) {
+	for (SAMRecord sam; in >> sam;) {
+		if (sam.isUnmapped() || sam.isMateUnmapped()
+				|| !sam.isPaired())
+			continue;
 		if (sam.rname != alignments.front().rname) {
 #pragma omp task firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
 		}
+		alignments.push_back(sam);
 	}
 	assert(in.eof());
 	writeEstimates(out, alignments, contigLens, empiricalPDF);
