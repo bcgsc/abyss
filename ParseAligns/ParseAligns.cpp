@@ -502,10 +502,12 @@ int main(int argc, char* const* argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 
+	unsigned numRF = histogram.count(INT_MIN, 0);
+	unsigned numFR = histogram.count(1, INT_MAX);
 	cerr << "Mateless: " << alignTable.size()
 		<< " Unaligned: " << stats.numMissed
-		<< " FR: " << histogram.count(1, INT_MAX)
-		<< " RF: " << histogram.count(INT_MIN, 0)
+		<< " FR: " << numFR
+		<< " RF: " << numRF
 		<< " FF: " << stats.numFF
 		<< " Diff: " << stats.numDifferent
 		<< " Multi: " << stats.numMulti
@@ -534,6 +536,14 @@ int main(int argc, char* const* argv)
 			"n: " << h.size() << " "
 			"min: " << h.minimum() << " max: " << h.maximum() << '\n';
 	cout << "@RG\tID:*\tSM:*\tPI:" << median << '\n';
+
+	if (stats.numFF > numFR && stats.numFF > numRF) {
+		cerr << "error: The mate pairs of this library are oriented "
+			"forward-forward (FF), which is not supported by ABySS."
+			<< endl;
+		exit(EXIT_FAILURE);
+	}
+
 	return 0;
 }
 
