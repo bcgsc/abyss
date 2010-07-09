@@ -240,6 +240,12 @@ static bool equalIgnoreAmbiguos(const ContigPath& a,
 		&& equal(a.begin(), a.end(), b.begin(), equalOrBothAmbiguos);
 }
 
+/** Return whether this path is a cycle. */
+static bool isCycle(const ContigPath& path)
+{
+	return !align(path, path, path.front()).empty();
+}
+
 /** Identify paths subsumed by the specified path.
  * @param overlaps [out] paths that are found to overlap
  * @return the ID of the subsuming path
@@ -279,6 +285,11 @@ static LinearNumKey identifySubsumedPaths(
 			// This path is larger. Use it as the seed.
 			return identifySubsumedPaths(path2It, paths, out,
 					overlaps);
+		} else if (isCycle(path) && isCycle(consensus)) {
+			if (gDebugPrint)
+				vout << pivot << '\t' << path2 << '\n'
+					<< "cycle\t" << consensus << '\n';
+			out.push_back(path2It);
 		} else {
 			if (gDebugPrint)
 				vout << pivot << '\t' << path2 << '\n'
@@ -783,7 +794,11 @@ static ContigPath align(
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
 	assert(it2 != path2.end());
-	assert(count(it2+1, path2.end(), pivot) == 0);
+	if (&path1 != &path2) {
+		// The seed must be unique in path2, unless we're aligning a
+		// path to itself.
+		assert(count(it2+1, path2.end(), pivot) == 0);
+	}
 
 	ContigPath consensus;
 	for (ContigPath::const_iterator it1 = find_if(
@@ -792,6 +807,11 @@ static ContigPath align(
 			it1 != path1.end();
 			it1 = find_if(it1+1, path1.end(),
 				bind2nd(equal_to<ContigNode>(), pivot))) {
+		if (&*it1 == &*it2) {
+			// We are aligning a path to itself, and this is the
+			// trivial alignment, which we'll ignore.
+			continue;
+		}
 		consensus = align(path1, path2, it1, it2);
 		if (!consensus.empty())
 			return consensus;
