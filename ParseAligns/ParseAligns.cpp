@@ -5,6 +5,7 @@
 #include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>
+#include <climits>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -82,8 +83,7 @@ static const struct option longopts[] = {
 static struct {
 	size_t alignments;
 	size_t numDifferent;
-	size_t numSame;
-	size_t numMisoriented;
+	size_t numFF;
 	size_t numMissed;
 	size_t numMulti;
 	size_t numSplit;
@@ -333,9 +333,8 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 							fragFile << size << "\n";
 							assert(fragFile.good());
 						}
-						stats.numSame++;
 					} else
-						stats.numMisoriented++;
+						stats.numFF++;
 					counted = true;
 				}
 
@@ -503,15 +502,15 @@ int main(int argc, char* const* argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 
-	if (opt::verbose > 0)
-		cerr << "Mateless: " << alignTable.size()
-			<< " Unaligned: " << stats.numMissed
-			<< " Same: " << stats.numSame
-			<< " Misoriented: " << stats.numMisoriented
-			<< " Diff: " << stats.numDifferent
-			<< " Multi: " << stats.numMulti
-			<< " Split: " << stats.numSplit
-			<< endl;
+	cerr << "Mateless: " << alignTable.size()
+		<< " Unaligned: " << stats.numMissed
+		<< " FR: " << histogram.count(1, INT_MAX)
+		<< " RF: " << histogram.count(INT_MIN, 0)
+		<< " FF: " << stats.numFF
+		<< " Diff: " << stats.numDifferent
+		<< " Multi: " << stats.numMulti
+		<< " Split: " << stats.numSplit
+		<< endl;
 
 	if (!opt::distPath.empty())
 		generateDistFile();
