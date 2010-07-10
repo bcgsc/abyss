@@ -454,6 +454,16 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 	fin.close();
 }
 
+/** Return the specified number formatted as a percent. */
+static string percent(size_t x, size_t n)
+{
+	ostringstream ss;
+	ss << setw(log10(n) + 1) << x;
+	if (x > 0)
+		ss << "  " << setprecision(3) << (float)100*x/n << '%';
+	return ss.str();
+}
+
 int main(int argc, char* const* argv)
 {
 	bool die = false;
@@ -507,16 +517,21 @@ int main(int argc, char* const* argv)
 
 	unsigned numRF = histogram.count(INT_MIN, 0);
 	unsigned numFR = histogram.count(1, INT_MAX);
-	cerr << "Mateless: " << alignTable.size()
-		<< " Neither-aligned: " << stats.bothUnaligned
-		<< " One-aligned: " << stats.oneUnaligned
-		<< " FR: " << numFR
-		<< " RF: " << numRF
-		<< " FF: " << stats.numFF
-		<< " Diff: " << stats.numDifferent
-		<< " Multi: " << stats.numMulti
-		<< " Split: " << stats.numSplit
-		<< endl;
+	size_t sum = alignTable.size()
+		+ stats.bothUnaligned + stats.oneUnaligned
+		+ numFR + numRF + stats.numFF
+		+ stats.numDifferent + stats.numMulti + stats.numSplit;
+	cerr <<
+		"Mateless   " << percent(alignTable.size(), sum) << "\n"
+		"Unaligned  " << percent(stats.bothUnaligned, sum) << "\n"
+		"Singleton  " << percent(stats.oneUnaligned, sum) << "\n"
+		"FR         " << percent(numFR, sum) << "\n"
+		"RF         " << percent(numRF, sum) << "\n"
+		"FF         " << percent(stats.numFF, sum) << "\n"
+		"Different  " << percent(stats.numDifferent, sum) << "\n"
+		"Multimap   " << percent(stats.numMulti, sum) << "\n"
+		"Split      " << percent(stats.numSplit, sum) << "\n"
+		"Total      " << sum << endl;
 
 	if (!opt::distPath.empty())
 		generateDistFile();
