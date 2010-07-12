@@ -12,6 +12,7 @@
 #include <fstream>
 #include <functional>
 #include <getopt.h>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -100,7 +101,7 @@ typedef hash_map<StringID, EstimateRecord> EstimateMap;
 static EstimateMap estMap;
 
 static bool checkUniqueAlignments(const AlignmentVector& alignVec);
-string makePairID(string id);
+static string makePairID(string id);
 
 /**
  * Return the size of the fragment demarcated by the specified
@@ -628,7 +629,7 @@ static bool isSingleEnd(const string& id)
 }
 
 /** Return the mate ID of the specified read ID. */
-string makePairID(string id)
+static string makePairID(string id)
 {
 	if (equal(id.begin(), id.begin() + 3, "SRR"))
 		return id;
