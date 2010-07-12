@@ -458,7 +458,7 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 static string percent(size_t x, size_t n)
 {
 	ostringstream ss;
-	ss << setw(log10(n) + 1) << x;
+	ss << setw((int)log10(n) + 1) << x;
 	if (x > 0)
 		ss << "  " << setprecision(3) << (float)100*x/n << '%';
 	return ss.str();
