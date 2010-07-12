@@ -24,8 +24,8 @@ library.
 .TP
 \fBlib\fR
 list of libraries. Use this varible when assembling data from multiple
-fragment libraries. For each library mention in lib, a variable with
-the same name must specify the files containing those reads.
+fragment libraries. For each library in lib, a variable with the same
+name must specify the files containing those reads.
 .TP
 \fBse\fR
 files containing single-end reads
@@ -79,7 +79,13 @@ parameter should be set to the number of libraries being assembled.
 Any parameter that may be specified on the command line may also be
 specified in an environment variable.
 
-PATH should contain the directory where ABYSS was installed.
+.TP
+PATH
+should contain the directory where ABYSS was installed.
+
+.TP
+TMPDIR
+specifies a directory to use for temporary files.
 .SS "SGE integration"
 The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
 used to specify the parameters name, k and np, respectively.
@@ -91,7 +97,9 @@ used to specify the parameters name, k and np, respectively.
 .br
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \\
 .br
-	se='se1.fa se2.fa'
+	se='se1.fa se2.fa' \\
+.br
+	lib2_n=25
 .SS MPI
  abyss-pe np=8 k=25 l=42 c=2 n=10 name=ecoli in='reads1.fa reads2.fa'
 .SS SGE
