@@ -1,3 +1,61 @@
+2010-07-12  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.1.
+	* Handle reverse-forward oriented mate pair libraries.
+	* Improved distance estimates, particularly with large fragment
+	libraries.
+
+	abyss-pe:
+	* New commands:
+	se-contigs: Assemble single-end contigs.
+	pe-contigs: Assemble paired-end contigs (default).
+	se-sam: Output a gzipped SAM file of the single-end assembly.
+	se-bam: Ouptut a BAM file of the single-end assembly.
+	pe-dot: Output a Graphviz dot file of the paired-end assembly.
+	all: Sam as se-bam pe-contigs pe-dot.
+	* Options for one particular library may be specified:
+	lib='lib1 lib2' lib2_s=1000 lib2_n=25
+	* Input sequence may come from an arbitrary command, which is
+	useful to assemble a region of an aligned BAM file:
+	in='<(samtools view genome.bam chr10)'
+
+	ABYSS:
+	* Bug fix. When reading SAM/BAM files, the quality format
+	incorrectly defaulted to ASCII-64, when it should be ASCII-33.
+
+	ABYSS-P:
+	* May use the Intel MPI library.
+
+	ParseAligns:
+	* Count the number of forward-reverse, reverse-forward and
+	forward-forward oriented alignments.
+
+	DistanceEst:
+	* Handle reverse-forward oriented mate pair libraries.
+	* Improved distance estimates, particularly with large fragment
+	libraries.
+	* Remove duplicate mate pairs.
+	* Print a pretty UTF-8 bar plot of the fragment-size distribution.
+	* Multithreaded using OpenMP. The -j, --threads option specifies
+	the number of threads to use.
+	* Performance improvment.
+
+	Overlap:
+	* Handle cases when more than one gap occurs within the mate pair
+	fragment size.
+
+	SimpleGraph:
+	* Performance improvment.
+
+	MergePaths:
+	* Handle the case when a circular sequence is assmembled into a
+	single contig.
+
+	abyss-tofastq:
+	* New program. Convert qseq, export, SAM and BAM files to FASTA or
+	FASTQ format. The files may be compressed with gz, bz2 or xz and
+	may be tarred.
+
 2010-05-25  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.0.
