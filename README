@@ -150,13 +150,13 @@ using the ./configure --with-sge option.
 
 * See also
 
-Try `abyss --help' for more information on command line options, or
-see the manual page in the file `ABYSS.1'.
+Try `ABYSS --help' for more information on command line options, or
+see the manual page in the files `ABYSS.1' and `abyss-pe.1'.
 Please refer to the mpirun manual page for information on configuring
 parallel jobs.
 
 Written by Jared Simpson and Shaun Jackman.
 Subscribe to the users' mailing list at
-http://www.bcgsc.ca/mailman/listinfo/abyss-users
-Contact the users' mailing list at <abyss-users@bcgsc.ca>
+http://groups.google.com/group/abyss-users
+Contact the users' mailing list at <abyss-users@googlegroups.com>
 or the authors directly at <abyss@bcgsc.ca>.
