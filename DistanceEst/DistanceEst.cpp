@@ -346,13 +346,13 @@ int main(int argc, char** argv)
 	unsigned numRF = distanceHist.count(INT_MIN, 0);
 	unsigned numFR = distanceHist.count(1, INT_MAX);
 	unsigned numTotal = distanceHist.size();
-	cout << "Mate orientation FR: " << numFR << setprecision(3)
+	cerr << "Mate orientation FR: " << numFR << setprecision(3)
 		<< " (" << (float)100*numFR/numTotal << "%)"
 		<< " RF: " << numRF << setprecision(3)
 		<< " (" << (float)100*numRF/numTotal << "%)"
 		<< endl;
 	if (numFR < numRF) {
-		cout << "The mate pairs of this library are oriented "
+		cerr << "The mate pairs of this library are oriented "
 			"reverse-forward (RF)." << endl;
 		opt::rf = true;
 		distanceHist = distanceHist.negate();
@@ -389,6 +389,7 @@ int main(int argc, char** argv)
 				exit(EXIT_FAILURE);
 			}
 			seen[id0] = true;
+
 #pragma omp task firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
