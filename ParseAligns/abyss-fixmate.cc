@@ -67,8 +67,9 @@ static struct {
 static ofstream g_fragFile;
 static Histogram g_histogram;
 
-static void handlePair(SAMRecord& a0, SAMRecord& a1)
+static void handlePair(SAMAlignment& sa0, SAMAlignment& sa1)
 {
+	SAMRecord a0(sa0), a1(sa1);
 	if (a0.isUnmapped() && a1.isUnmapped()) {
 		// Both reads are unaligned.
 		stats.bothUnaligned++;
@@ -97,7 +98,7 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 	}
 }
 
-typedef hash_map<string, SAMRecord> Alignments;
+typedef hash_map<string, SAMAlignment> Alignments;
 
 static void printProgress(const Alignments& map)
 {

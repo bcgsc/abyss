@@ -11,20 +11,12 @@
 /** If undefined, do not use SAM sequence or quality. */
 #undef SAM_SEQ_QUAL
 
-struct SAMRecord {
-	std::string qname;
+struct SAMAlignment {
 	std::string rname;
 	int pos;
 	unsigned short flag;
 	unsigned short mapq;
 	std::string cigar;
-	std::string mrnm;
-	int mpos;
-	int isize;
-#if SAM_SEQ_QUAL
-	std::string seq;
-	std::string qual;
-#endif
 
 	/** Flag */
 	enum {
@@ -54,24 +46,14 @@ struct SAMRecord {
 		FDUP = 1024,
 	};
 
-	SAMRecord() { }
+	SAMAlignment() { }
 
 	/** Consturct a single-end alignment. */
-	SAMRecord(const Alignment& a) :
-		qname("*"),
+	SAMAlignment(const Alignment& a) :
 		rname(a.contig),
 		pos(a.contig_start_pos),
 		flag(a.isRC ? FREVERSE : 0),
-		mapq(255),
-		// cigar
-		mrnm("*"),
-		mpos(0),
-		isize(0)
-#if SAM_SEQ_QUAL
-		,
-		seq("*"),
-		qual("*")
-#endif
+		mapq(255)
 	{
 		unsigned qend = a.read_start_pos + a.align_length;
 		int qendpad = a.read_length - qend;
@@ -85,36 +67,17 @@ struct SAMRecord {
 		cigar = s.str();
 	}
 
-	/** Construct a paired-end alignment. */
-	SAMRecord(const Alignment& a0, const Alignment& a1)
-	{
-		*this = SAMRecord(a0);
-		flag |= FPAIRED;
-		if (a1.isRC)
-			flag |= FMREVERSE;
-		mrnm = a1.contig;
-		mpos = a1.contig_start_pos;
-		isize = a1.targetAtQueryStart() - a0.targetAtQueryStart();
-	}
-
-	/** Set the mate mapping fields. */
-	void fixMate(const SAMRecord& o)
-	{
-		flag &= ~(FPROPER_PAIR | FMUNMAP | FMREVERSE);
-		flag |= FPAIRED;
-		if (o.isUnmapped())
-			flag |= FMUNMAP;
-		if (o.isReverse())
-			flag |= FMREVERSE;
-		mrnm = o.rname;
-		mpos = o.pos;
-		isize = isMateUnmapped() ? 0
-			: o.targetAtQueryStart() - targetAtQueryStart();
-	}
+	bool isPaired() const { return flag & FPAIRED; }
+	bool isUnmapped() const { return flag & FUNMAP; }
+	bool isMateUnmapped() const { return flag & FMUNMAP; }
+	bool isReverse() const { return flag & FREVERSE; }
+	bool isMateReverse() const { return flag & FMREVERSE; }
+	bool isRead1() const { return flag & FREAD1; }
+	bool isRead2() const { return flag & FREAD2; }
 
 	/**
-	 * Return the taret position at the query start.
-	 * Note: not alignment start, and may be negative
+	 * Return the position of the first base of the query on the
+	 * target extrapolated from the start of the alignment.
 	 */
 	int targetAtQueryStart() const
 	{
@@ -170,6 +133,61 @@ struct SAMRecord {
 		a.isRC = flag & FREVERSE; // strand of the query
 		return a;
 	}
+};
+
+struct SAMRecord : SAMAlignment {
+	std::string qname;
+	std::string mrnm;
+	int mpos;
+	int isize;
+#if SAM_SEQ_QUAL
+	std::string seq;
+	std::string qual;
+#endif
+
+	SAMRecord() { }
+
+	/** Consturct a single-end alignment. */
+	explicit SAMRecord(const SAMAlignment& a) :
+		SAMAlignment(a),
+		qname("*"),
+		mrnm("*"),
+		mpos(0),
+		isize(0)
+#if SAM_SEQ_QUAL
+		,
+		seq("*"),
+		qual("*")
+#endif
+	{
+	}
+
+	/** Construct a paired-end alignment. */
+	SAMRecord(const Alignment& a0, const Alignment& a1)
+	{
+		*this = SAMRecord(a0);
+		flag |= FPAIRED;
+		if (a1.isRC)
+			flag |= FMREVERSE;
+		mrnm = a1.contig;
+		mpos = a1.contig_start_pos;
+		isize = a1.targetAtQueryStart() - a0.targetAtQueryStart();
+	}
+
+	/** Set the mate mapping fields. */
+	void fixMate(const SAMAlignment& o)
+	{
+		flag &= ~(FPROPER_PAIR | FMUNMAP | FMREVERSE);
+		flag |= FPAIRED;
+		if (o.isUnmapped())
+			flag |= FMUNMAP;
+		if (o.isReverse())
+			flag |= FMREVERSE;
+		mrnm = o.rname;
+		mpos = o.pos;
+		isize = isMateUnmapped() ? 0
+			: o.targetAtQueryStart() - targetAtQueryStart();
+	}
 
 	/**
 	 * Return the position of the first base of the mate query on the
@@ -217,14 +235,6 @@ struct SAMRecord {
 			o.mrnm = o.rname;
 		return in;
 	}
-
-	bool isPaired() const { return flag & FPAIRED; }
-	bool isUnmapped() const { return flag & FUNMAP; }
-	bool isMateUnmapped() const { return flag & FMUNMAP; }
-	bool isReverse() const { return flag & FREVERSE; }
-	bool isMateReverse() const { return flag & FMREVERSE; }
-	bool isRead1() const { return flag & FREAD1; }
-	bool isRead2() const { return flag & FREAD2; }
 };
 
 /** Set the mate mapping fields of a0 and a1. */
