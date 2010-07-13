@@ -157,10 +157,12 @@ next_record:
 			}
 			id = fields[0];
 			switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
-			  case 0: break;
+			  case 0: case 1: break; // FPAIRED
 			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
 			  case 0x81: id += "/2"; break; // FPAIRED|FREAD2
-			  default: assert(false); exit(EXIT_FAILURE);
+			  default:
+				cerr << "error: invalid flags: `" << id << "'\n";
+				exit(EXIT_FAILURE);
 			}
 			s = fields[9];
 			q = fields[10];
