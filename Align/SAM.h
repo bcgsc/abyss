@@ -233,6 +233,19 @@ struct SAMRecord : SAMAlignment {
 		o.mpos--;
 		if (o.mrnm == "=")
 			o.mrnm = o.rname;
+
+		// Set the paired flags if qname ends in /1 or /2.
+		unsigned l = o.qname.length();
+		if (l >= 2 && o.qname[l-2] == '/') {
+			switch (o.qname[l-1]) {
+				case '1': o.flag |= FPAIRED | FREAD1; break;
+				case '2':
+				case '3': o.flag |= FPAIRED | FREAD2; break;
+				default: return in;
+			}
+			o.qname.resize(l - 2);
+			assert(!o.qname.empty());
+		}
 		return in;
 	}
 };
