@@ -124,10 +124,6 @@ struct SAMAlignment {
 	operator Alignment() const {
 		assert(~flag & FUNMAP);
 		Alignment a = parseCigar(cigar);
-#if SAM_SEQ_QUAL
-		assert(seq.empty() || seq == "*"
-				|| (unsigned)a.read_length == seq.length());
-#endif
 		a.contig = rname;
 		a.contig_start_pos = pos;
 		a.isRC = flag & FREVERSE; // strand of the query
