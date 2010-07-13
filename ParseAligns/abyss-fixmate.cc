@@ -69,9 +69,8 @@ static ofstream g_fragFile;
 static Histogram g_histogram;
 
 static void handlePair(const string &qname,
-		SAMAlignment& sa0, SAMAlignment& sa1)
+		SAMRecord& a0, SAMRecord& a1)
 {
-	SAMRecord a0(sa0), a1(sa1);
 	if ((a0.isRead1() && a1.isRead1())
 			|| (a0.isRead2() && a1.isRead2())) {
 		cerr << "error: duplicate read ID `" << qname << "'\n";
@@ -105,7 +104,11 @@ static void handlePair(const string &qname,
 	}
 }
 
+#if SAM_SEQ_QUAL
+typedef hash_map<string, SAMRecord> Alignments;
+#else
 typedef hash_map<string, SAMAlignment> Alignments;
+#endif
 
 static void printProgress(const Alignments& map)
 {
@@ -131,7 +134,8 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 	pair<Alignments::iterator, bool> it = map.insert(
 			make_pair(sam.qname, sam));
 	if (!it.second) {
-		handlePair(it.first->first, it.first->second, sam);
+		SAMRecord a0(it.first->second);
+		handlePair(it.first->first, a0, sam);
 		map.erase(it.first);
 	}
 	stats.alignments++;
