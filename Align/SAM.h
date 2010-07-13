@@ -97,6 +97,30 @@ struct SAMRecord {
 		isize = a1.targetAtQueryStart() - a0.targetAtQueryStart();
 	}
 
+	/** Set the mate mapping fields. */
+	void fixMate(const SAMRecord& o)
+	{
+		flag &= ~(FPROPER_PAIR | FMUNMAP | FMREVERSE);
+		flag |= FPAIRED;
+		if (o.isUnmapped())
+			flag |= FMUNMAP;
+		if (o.isReverse())
+			flag |= FMREVERSE;
+		mrnm = o.rname;
+		mpos = o.pos;
+		isize = isMateUnmapped() ? 0
+			: o.targetAtQueryStart() - targetAtQueryStart();
+	}
+
+	/**
+	 * Return the taret position at the query start.
+	 * Note: not alignment start, and may be negative
+	 */
+	int targetAtQueryStart() const
+	{
+		return Alignment(*this).targetAtQueryStart();
+	}
+
 	/** Parse the specified CIGAR string.
 	 * @return an alignment setting the fields read_start_pos,
 	 * align_length, and read_length. The other fields will be
@@ -189,9 +213,6 @@ struct SAMRecord {
 			return in;
 		o.pos--;
 		o.mpos--;
-		o.qname += o.flag & FREAD1 ? "/1" :
-			o.flag & FREAD2 ? "/2" :
-			"";
 		if (o.mrnm == "=")
 			o.mrnm = o.rname;
 		return in;
@@ -202,6 +223,15 @@ struct SAMRecord {
 	bool isMateUnmapped() const { return flag & FMUNMAP; }
 	bool isReverse() const { return flag & FREVERSE; }
 	bool isMateReverse() const { return flag & FMREVERSE; }
+	bool isRead1() const { return flag & FREAD1; }
+	bool isRead2() const { return flag & FREAD2; }
 };
+
+/** Set the mate mapping fields of a0 and a1. */
+static inline void fixMate(SAMRecord& a0, SAMRecord& a1)
+{
+	a0.fixMate(a1);
+	a1.fixMate(a0);
+}
 
 #endif

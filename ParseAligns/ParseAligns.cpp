@@ -410,6 +410,10 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 		s >> sam;
 		assert(s);
 		v.first = sam.qname;
+		if (sam.isRead1())
+			v.first += "/1";
+		else if (sam.isRead2())
+			v.first += "/2";
 		if (!sam.isUnmapped())
 			v.second.push_back(sam);
 		break;
