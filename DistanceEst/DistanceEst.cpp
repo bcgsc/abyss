@@ -368,6 +368,9 @@ int main(int argc, char** argv)
 		<< h.barplot() << endl;
 	PDF empiricalPDF(h);
 
+	// Check that the input is sorted.
+	vector<bool> seen(contigLens.size());
+
 	// Estimate the distances between contigs.
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
@@ -379,6 +382,13 @@ int main(int argc, char** argv)
 				|| !sam.isPaired() || sam.rname == sam.mrnm)
 			continue;
 		if (sam.rname != alignments.front().rname) {
+			unsigned id0 = g_contigIDs.serial(sam.rname);
+			if (seen[id0]) {
+				cerr << "error: input must be sorted: `"
+					<< sam.rname << "'\n";
+				exit(EXIT_FAILURE);
+			}
+			seen[id0] = true;
 #pragma omp task firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
