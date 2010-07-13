@@ -1,6 +1,7 @@
 #include "Histogram.h"
 #include "SAM.h"
 #include "Uncompress.h"
+#include <algorithm>
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
