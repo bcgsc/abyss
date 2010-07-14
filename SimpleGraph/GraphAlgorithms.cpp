@@ -88,11 +88,11 @@ bool depthFirstSearch(const ContigGraph& g,
 		return true; // This constraint cannot be met.
 
 	const ContigGraph::VertexType::EdgeCollection& currEdges
-		= node.m_edges;
+		= node.out_edges();
 	path.push_back(Node());
 	for (ContigGraph::VertexType::EdgeCollection::const_iterator it
 			= currEdges.begin(); it != currEdges.end(); ++it) {
-		path.back() = g.target(*it);
+		path.back() = it->target();
 		if (!depthFirstSearch(g, *it->node, constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))

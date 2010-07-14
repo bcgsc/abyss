@@ -9,8 +9,9 @@
 #include <vector>
 
 template<typename K, typename D>
-struct Vertex
+class Vertex
 {
+  public:
 	typedef Vertex<K,D> VertexType;
 	class EdgeData;
 	typedef typename std::vector<EdgeData> EdgeCollection;
@@ -31,7 +32,7 @@ struct Vertex
 		friend std::ostream& operator <<(std::ostream& out,
 				const EdgeData& o)
 		{
-			return out << o.node->m_key;
+			return out << o.node->vertex();
 		}
 	};
 
@@ -71,6 +72,7 @@ struct Vertex
 		return out;
 	}
 
+  private:
 	K m_key;
 	D m_data;
 	EdgeCollection m_edges;
@@ -145,12 +147,6 @@ class DirectedGraph
 					= m_vertices.begin(); it != m_vertices.end(); ++it)
 				n += it->out_degree();
 			return n;
-		}
-
-		/** Returns the target vertex of edge e. */
-		Node target(const typename VertexType::EdgeData& e) const
-		{
-			return e.node->m_key;
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
