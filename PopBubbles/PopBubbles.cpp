@@ -107,7 +107,7 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 }
 
 /** Popped branches. */
-static set<unsigned> g_popped;
+static vector<unsigned> g_popped;
 
 static void popBubble(const ContigNode& head, const Edges& branches,
 		const ContigNode& tail)
@@ -126,7 +126,7 @@ static void popBubble(const ContigNode& head, const Edges& branches,
 		cout << " } -> \"" << tail << "\"\n";
 	}
 	transform(sorted.begin() + 1, sorted.end(),
-			inserter(g_popped, g_popped.begin()),
+			back_inserter(g_popped),
 			mem_fun_ref(&ContigNode::id));
 }
 
@@ -272,6 +272,12 @@ int main(int argc, char *const argv[])
 		if (it->out_degree() > 1)
 			consider(it->vertex(), it->out_edges());
 	}
+
+	// Each bubble should be identified twice. Remove the duplicate.
+	sort(g_popped.begin(), g_popped.end());
+	g_popped.erase(unique(g_popped.begin(), g_popped.end()),
+			g_popped.end());
+
 	if (opt::dot)
 		cout << "}\n";
 	else
