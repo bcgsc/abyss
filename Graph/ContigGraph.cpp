@@ -1,6 +1,8 @@
 #include "ContigGraph.h"
 #include "ContigLength.h"
 #include <cassert>
+#include <cerrno>
+#include <cstring> // for strerror
 #include <fstream>
 #include <limits> // for numeric_limits
 #include <sstream>
@@ -55,11 +57,22 @@ istream& operator>>(istream& in, ContigGraph& o)
 	return in;
 }
 
-/** Read an adjacency graph. */
-void loadGraphFromAdjFile(ContigGraph* pGraph, const string& adjFile)
+static void assert_open(ifstream& f, const string& p)
 {
-	ifstream in(adjFile.c_str());
-	assert(in.is_open());
-	in >> *pGraph;
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
+/** Read a contig graph. */
+void readContigGraph(ContigGraph& graph, const std::string& path)
+{
+	ifstream fin(path.c_str());
+	istream& in = path.empty() || path == "-" ? cin : fin;
+	if (&in == &fin)
+		assert_open(fin, path);
+	assert(in.good());
+	in >> graph;
 	assert(in.eof());
 }

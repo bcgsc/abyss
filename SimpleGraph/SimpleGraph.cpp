@@ -129,7 +129,7 @@ int main(int argc, char** argv)
 
 	// Load the graph from the adjacency file
 	ContigGraph contigGraph;
-	loadGraphFromAdjFile(&contigGraph, adjFile);
+	readContigGraph(contigGraph, adjFile);
 	if (opt::verbose > 0)
 		cout << "Vertices: " << contigGraph.num_vertices()
 			<< " Edges: " << contigGraph.num_edges() << endl;

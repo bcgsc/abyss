@@ -195,18 +195,6 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-static void readContigGraph(ContigGraph& graph,
-		const std::string& path)
-{
-	ifstream fin(path.c_str());
-	istream& in = path.empty() || path == "-" ? cin : fin;
-	if (&in == &fin)
-		assert_open(fin, path);
-	assert(in.good());
-	in >> graph;
-	assert(in.eof());
-}
-
 /** Read the contig attributes. */
 static void readContigs(vector<Contig>& contigs, const string& path)
 {

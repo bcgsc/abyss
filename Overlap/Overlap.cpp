@@ -395,7 +395,7 @@ int main(int argc, char *const argv[])
 	string estPath(argv[optind++]);
 
 	readContigs(contigPath);
-	loadGraphFromAdjFile(&contigGraph, adjPath);
+	readContigGraph(contigGraph, adjPath);
 
 	ofstream out(opt::out.c_str());
 	assert(out.is_open());

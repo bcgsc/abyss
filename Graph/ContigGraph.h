@@ -10,7 +10,6 @@ typedef DirectedGraph<NoContigData> ContigGraph;
 
 std::istream& operator>>(std::istream& in, ContigGraph& o);
 
-void loadGraphFromAdjFile(ContigGraph* pGraph,
-		const std::string& adjFile);
+void readContigGraph(ContigGraph& graph, const std::string& path);
 
 #endif
