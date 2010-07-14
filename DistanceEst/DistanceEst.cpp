@@ -375,7 +375,7 @@ int main(int argc, char** argv)
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
 	assert(in);
-#pragma omp parallel
+#pragma omp parallel shared(out)
 #pragma omp single
 	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
@@ -390,7 +390,7 @@ int main(int argc, char** argv)
 			}
 			seen[id0] = true;
 
-#pragma omp task shared(out) firstprivate(alignments)
+#pragma omp task firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
 		}
