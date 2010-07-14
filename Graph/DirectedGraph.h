@@ -13,14 +13,14 @@ class Vertex
 {
   public:
 	typedef Vertex<K,D> VertexType;
-	class EdgeData;
-	typedef typename std::vector<EdgeData> EdgeCollection;
+	class Edge;
+	typedef typename std::vector<Edge> Edges;
 
 	Vertex(const K& k, const D& d) : m_key(k), m_data(d) { }
 
-	struct EdgeData
+	struct Edge
 	{
-		EdgeData(VertexType* node) : node(node) { }
+		Edge(VertexType* node) : node(node) { }
 		VertexType* node;
 
 		/** Returns the target vertex of this edge. */
@@ -30,9 +30,9 @@ class Vertex
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
-				const EdgeData& o)
+				const Edge& e)
 		{
-			return out << o.node->vertex();
+			return out << e.node->vertex();
 		}
 	};
 
@@ -40,7 +40,7 @@ class Vertex
 	const K& vertex() const { return m_key; }
 
 	/** Return a collection of outgoing edges. */
-	const EdgeCollection& out_edges() const { return m_edges; }
+	const Edges& out_edges() const { return m_edges; }
 
 	/** Return the number of outgoing edges. */
 	size_t out_degree() const
@@ -51,8 +51,8 @@ class Vertex
 	/** Add an edge to this vertex. */
 	void add_edge(VertexType* v)
 	{
-		for (typename EdgeCollection::const_iterator
-				it = m_edges.begin(); it != m_edges.end(); ++it)
+		for (typename Edges::const_iterator it = m_edges.begin();
+				it != m_edges.end(); ++it)
 			assert(v != it->node);
 		m_edges.push_back(v);
 	}
@@ -66,7 +66,7 @@ class Vertex
 		if (o.m_edges.size() > 1)
 			out << " {";
 		std::copy(o.m_edges.begin(), o.m_edges.end(),
-				affix_ostream_iterator<EdgeData>(out, " \"", "\""));
+				affix_ostream_iterator<Edge>(out, " \"", "\""));
 		if (o.m_edges.size() > 1)
 			out << " }";
 		return out;
@@ -75,7 +75,7 @@ class Vertex
   private:
 	K m_key;
 	D m_data;
-	EdgeCollection m_edges;
+	Edges m_edges;
 };
 
 template<typename D>
@@ -84,8 +84,9 @@ class DirectedGraph
 	public:
 		typedef ContigNode Node;
 		typedef Vertex<Node, D> VertexType;
-		typedef typename std::vector<VertexType> VertexTable;
-		typedef typename VertexTable::const_iterator const_iterator;
+		typedef typename std::vector<VertexType> Vertices;
+		typedef typename Vertices::const_iterator const_iterator;
+		typedef typename VertexType::Edges Edges;
 
 		/** Create an empty graph. */
 		DirectedGraph() { }
@@ -143,7 +144,7 @@ class DirectedGraph
 		size_t num_edges() const
 		{
 			size_t n = 0;
-			for (typename VertexTable::const_iterator it
+			for (typename Vertices::const_iterator it
 					= m_vertices.begin(); it != m_vertices.end(); ++it)
 				n += it->out_degree();
 			return n;
@@ -161,7 +162,7 @@ class DirectedGraph
 		DirectedGraph(const DirectedGraph& x);
 		DirectedGraph& operator =(const DirectedGraph& x);
 
-		VertexTable m_vertices;
+		Vertices m_vertices;
 };
 
 #endif

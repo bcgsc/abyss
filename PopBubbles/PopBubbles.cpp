@@ -83,7 +83,7 @@ static vector<Contig> g_contigs;
 static ContigGraph g_graph;
 
 /** Collection of edges. */
-typedef ContigGraph::VertexType::EdgeCollection Edges;
+typedef ContigGraph::Edges Edges;
 
 inline unsigned ContigNode::outDegree() const
 {
