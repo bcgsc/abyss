@@ -6,6 +6,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "AffixIterator.h"
+#include "ContigGraph.h"
 #include "ContigNode.h"
 #include "Sequence.h"
 #include <algorithm>
@@ -16,7 +17,6 @@
 #include <iostream>
 #include <iterator>
 #include <limits> // for numeric_limits
-#include <map>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -46,7 +46,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static int k;
+	int k; // used by ContigLength
 	static unsigned maxLength;
 
 	/** Output bubbles in dot format. */
@@ -67,6 +67,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Vertex attribute. */
 struct Contig {
 	string id;
 	unsigned length;
@@ -75,20 +76,23 @@ struct Contig {
 		: id(id), length(length), coverage(coverage) { }
 };
 
+/** Vertex attributes. */
 static vector<Contig> g_contigs;
 
-typedef set<ContigNode> ContigNodes;
-typedef map<ContigNode, ContigNodes> ContigGraph;
+/** Contig adjacency graph. */
 static ContigGraph g_graph;
+
+/** Collection of edges. */
+typedef ContigGraph::VertexType::EdgeCollection Edges;
 
 inline unsigned ContigNode::outDegree() const
 {
-	return g_graph[*this].size();
+	return g_graph[*this].out_degree();
 }
 
 inline unsigned ContigNode::inDegree() const
 {
-	return g_graph[~*this].size();
+	return g_graph[~*this].out_degree();
 }
 
 inline unsigned ContigNode::length() const
@@ -105,13 +109,14 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 /** Popped branches. */
 static set<unsigned> g_popped;
 
-static void popBubble(const ContigNode& head,
-		const ContigNodes& branches,
+static void popBubble(const ContigNode& head, const Edges& branches,
 		const ContigNode& tail)
 {
 	assert(!branches.empty());
 	assert(head.outDegree() == tail.inDegree());
-	vector<ContigNode> sorted(branches.begin(), branches.end());
+	vector<ContigNode> sorted(branches.size());
+	transform(branches.begin(), branches.end(), sorted.begin(),
+			mem_fun_ref(&Edges::value_type::target));
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << head << "\" -> {";
@@ -131,19 +136,25 @@ static struct {
 	unsigned tooLong;
 } g_count;
 
-static void consider(const ContigNode& head,
-		const ContigNodes& branches)
+/** Return the length of the target of the specified edge. */
+static unsigned targetLength(const Edges::value_type& e)
+{
+	return e.target().length();
+}
+
+static void consider(const ContigNode& head, const Edges& branches)
 {
 	assert(branches.size() > 1);
-	ContigNodes tails;
-	for (ContigNodes::const_iterator it = branches.begin();
+	set<ContigNode> tails;
+	for (Edges::const_iterator it = branches.begin();
 			it != branches.end(); ++it) {
-		const ContigNode& branch = *it;
+		const ContigNode& branch = it->target();
 		if (branch.outDegree() != 1 || branch.inDegree() != 1) {
 			// This branch is not simple.
 			return;
 		}
-		const ContigNode& tail = *g_graph[branch].begin();
+		const ContigNode& tail
+			= g_graph[branch].out_edges().begin()->target();
 		tails.insert(tail);
 	}
 	if (tails.size() != 1) {
@@ -161,7 +172,7 @@ static void consider(const ContigNode& head,
 	set<unsigned> lengths;
 	transform(branches.begin(), branches.end(),
 			inserter(lengths, lengths.begin()),
-			mem_fun_ref(&ContigNode::length));
+			targetLength);
 	unsigned minLength = *lengths.begin();
 	unsigned maxLength = *lengths.rbegin();
 	if (opt::verbose > 1)
@@ -192,25 +203,11 @@ static void readContigGraph(ContigGraph& graph,
 	if (&in == &fin)
 		assert_open(fin, path);
 	assert(in.good());
-
-	string id;
-	while (in >> id) {
-		in.ignore(numeric_limits<streamsize>::max(), ';');
-		for (int rc = false; rc <= true; ++rc) {
-			ContigNode head(id, rc);
-			string s;
-			getline(in, s, !rc ? ';' : '\n');
-			assert(in.good());
-			istringstream ss(s);
-			for (ContigNode tail; ss >> tail;)
-				graph[head].insert(rc ? ~tail: tail);
-			assert(ss.eof());
-		}
-	}
-
+	in >> graph;
 	assert(in.eof());
 }
 
+/** Read the contig attributes. */
 static void readContigs(vector<Contig>& contigs, const string& path)
 {
 	ifstream in(path.c_str());
@@ -228,7 +225,6 @@ static void readContigs(vector<Contig>& contigs, const string& path)
 	}
 	assert(in.eof());
 	assert(!contigs.empty());
-	g_contigIDs.lock();
 }
 
 int main(int argc, char *const argv[])
@@ -276,16 +272,17 @@ int main(int argc, char *const argv[])
 	}
 
 	string adjPath(optind < argc ? argv[optind++] : "-");
-	readContigs(g_contigs, adjPath);
 	readContigGraph(g_graph, adjPath);
+	g_contigIDs.lock();
+	g_contigs.reserve(g_contigIDs.size());
+	readContigs(g_contigs, adjPath);
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
 	for (ContigGraph::const_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it) {
-		const ContigGraph::value_type& node = *it;
-		if (node.second.size() > 1)
-			consider(node.first, node.second);
+		if (it->out_degree() > 1)
+			consider(it->vertex(), it->out_edges());
 	}
 	if (opt::dot)
 		cout << "}\n";

@@ -53,6 +53,9 @@ class Dictionary {
 		/** Return true if this dictionary is empty. */
 		bool empty() { return m_vec.empty(); }
 
+		/** Return the number of elements in this dictionary. */
+		size_t size() { return m_vec.size(); }
+
 	private:
 		Map m_map;
 		std::vector<Key> m_vec;

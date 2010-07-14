@@ -22,12 +22,24 @@ struct Vertex
 		EdgeData(VertexType* node) : node(node) { }
 		VertexType* node;
 
+		/** Returns the target vertex of this edge. */
+		K target() const
+		{
+			return node->m_key;
+		}
+
 		friend std::ostream& operator <<(std::ostream& out,
 				const EdgeData& o)
 		{
 			return out << o.node->m_key;
 		}
 	};
+
+	/** Return the key of this vertex. */
+	const K& vertex() const { return m_key; }
+
+	/** Return a collection of outgoing edges. */
+	const EdgeCollection& out_edges() const { return m_edges; }
 
 	/** Return the number of outgoing edges. */
 	size_t out_degree() const
@@ -70,6 +82,8 @@ class DirectedGraph
 	public:
 		typedef ContigNode Node;
 		typedef Vertex<Node, D> VertexType;
+		typedef typename std::vector<VertexType> VertexTable;
+		typedef typename VertexTable::const_iterator const_iterator;
 
 		/** Create an empty graph. */
 		DirectedGraph() { }
@@ -119,6 +133,10 @@ class DirectedGraph
 		/** Return the number of vertices. */
 		size_t num_vertices() const { return m_vertices.size(); }
 
+		/** Return an iterator to the vertex set of this graph. */
+		const_iterator begin() const { return m_vertices.begin(); }
+		const_iterator end() const { return m_vertices.end(); }
+
 		/** Return the number of edges. */
 		size_t num_edges() const
 		{
@@ -147,7 +165,6 @@ class DirectedGraph
 		DirectedGraph(const DirectedGraph& x);
 		DirectedGraph& operator =(const DirectedGraph& x);
 
-		typedef typename std::vector<VertexType> VertexTable;
 		VertexTable m_vertices;
 };
 
