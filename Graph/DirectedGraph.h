@@ -18,22 +18,26 @@ class Vertex
 
 	Vertex(const K& k, const D& d) : m_key(k), m_data(d) { }
 
-	struct Edge
+	class Edge
 	{
-		Edge(VertexType* node) : node(node) { }
-		VertexType* node;
+	  public:
+		Edge(VertexType* v) : m_target(v) { }
 
 		/** Returns the target vertex of this edge. */
-		K target() const
-		{
-			return node->m_key;
-		}
+		const VertexType& target() const { return *m_target; }
+
+		/** Returns the target vertex descriptor of this edge. */
+		const K& target_key() const { return m_target->vertex(); }
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const Edge& e)
 		{
-			return out << e.node->vertex();
+			return out << e.m_target->vertex();
 		}
+
+	  private:
+		/** The target vertex of this edge. */
+		VertexType* m_target;
 	};
 
 	/** Return the key of this vertex. */
@@ -53,7 +57,7 @@ class Vertex
 	{
 		for (typename Edges::const_iterator it = m_edges.begin();
 				it != m_edges.end(); ++it)
-			assert(v != it->node);
+			assert(v != &it->target());
 		m_edges.push_back(v);
 	}
 

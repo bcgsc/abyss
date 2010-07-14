@@ -116,7 +116,7 @@ static void popBubble(const ContigNode& head, const Edges& branches,
 	assert(head.outDegree() == tail.inDegree());
 	vector<ContigNode> sorted(branches.size());
 	transform(branches.begin(), branches.end(), sorted.begin(),
-			mem_fun_ref(&Edges::value_type::target));
+			mem_fun_ref(&Edges::value_type::target_key));
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << head << "\" -> {";
@@ -139,19 +139,19 @@ static struct {
 /** Return the length of the target of the specified edge. */
 static unsigned targetLength(const Edges::value_type& e)
 {
-	return e.target().length();
+	return e.target_key().length();
 }
 
 static void consider(const ContigNode& head, const Edges& branches)
 {
 	assert(branches.size() > 1);
 	set<ContigNode> tails;
-	if (branches.front().target().outDegree() != 1) {
+	if (branches.front().target().out_degree() != 1) {
 		// This branch is not simple.
 		return;
 	}
-	const ContigNode& tail = g_graph[branches.front().target()]
-		.out_edges().front().target();
+	const ContigNode& tail = branches.front().target()
+		.out_edges().front().target_key();
 	if (tail.inDegree() != branches.size()) {
 		// This branch is not simple.
 		return;
@@ -160,12 +160,12 @@ static void consider(const ContigNode& head, const Edges& branches)
 	// Check that every branch is simple and ends at the same node.
 	for (Edges::const_iterator it = branches.begin();
 			it != branches.end(); ++it) {
-		const ContigNode& branch = it->target();
-		if (branch.outDegree() != 1 || branch.inDegree() != 1) {
+		if (it->target().out_degree() != 1
+				|| it->target_key().inDegree() != 1) {
 			// This branch is not simple.
 			return;
 		}
-		if (g_graph[branch].out_edges().begin()->target() != tail) {
+		if (it->target().out_edges().begin()->target_key() != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
