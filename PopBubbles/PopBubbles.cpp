@@ -146,6 +146,18 @@ static void consider(const ContigNode& head, const Edges& branches)
 {
 	assert(branches.size() > 1);
 	set<ContigNode> tails;
+	if (branches.front().target().outDegree() != 1) {
+		// This branch is not simple.
+		return;
+	}
+	const ContigNode& tail = g_graph[branches.front().target()]
+		.out_edges().front().target();
+	if (tail.inDegree() != branches.size()) {
+		// This branch is not simple.
+		return;
+	}
+
+	// Check that every branch is simple and ends at the same node.
 	for (Edges::const_iterator it = branches.begin();
 			it != branches.end(); ++it) {
 		const ContigNode& branch = it->target();
@@ -153,19 +165,10 @@ static void consider(const ContigNode& head, const Edges& branches)
 			// This branch is not simple.
 			return;
 		}
-		const ContigNode& tail
-			= g_graph[branch].out_edges().begin()->target();
-		tails.insert(tail);
-	}
-	if (tails.size() != 1) {
-		// The branches do not merge back to the same node.
-		return;
-	}
-
-	const ContigNode& tail = *tails.begin();
-	if (tail.inDegree() != branches.size()) {
-		// This branch is not simple.
-		return;
+		if (g_graph[branch].out_edges().begin()->target() != tail) {
+			// The branches do not merge back to the same node.
+			return;
+		}
 	}
 
 	g_count.bubbles++;
