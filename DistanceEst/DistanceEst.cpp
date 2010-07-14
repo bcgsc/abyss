@@ -390,7 +390,7 @@ int main(int argc, char** argv)
 			}
 			seen[id0] = true;
 
-#pragma omp task firstprivate(alignments)
+#pragma omp task shared(out) firstprivate(alignments)
 			writeEstimates(out, alignments, contigLens, empiricalPDF);
 			alignments.clear();
 		}
