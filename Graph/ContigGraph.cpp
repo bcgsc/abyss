@@ -8,10 +8,6 @@
 
 using namespace std;
 
-namespace opt {
-	extern unsigned k;
-}
-
 /** The length of each contig. */
 static vector<unsigned> g_contigLengths;
 
