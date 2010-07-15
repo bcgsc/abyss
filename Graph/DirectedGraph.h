@@ -8,15 +8,15 @@
 #include <ostream>
 #include <vector>
 
-template<typename K, typename D>
+template<typename D>
 class Vertex
 {
   public:
-	typedef Vertex<K,D> VertexType;
+	typedef Vertex<D> VertexType;
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
 
-	Vertex(const K& k, const D& d) : m_key(k), m_data(d) { }
+	Vertex(const D& d) : m_data(d) { }
 
 	class Edge
 	{
@@ -63,7 +63,7 @@ class Vertex
 	{
 		if (o.m_edges.empty())
 			return out;
-		out << '"' << o.m_key << "\" ->";
+		out << '"' << &o << "\" ->";
 		if (o.m_edges.size() > 1)
 			out << " {";
 		std::copy(o.m_edges.begin(), o.m_edges.end(),
@@ -74,7 +74,6 @@ class Vertex
 	}
 
   private:
-	K m_key;
 	D m_data;
 	Edges m_edges;
 };
@@ -84,7 +83,7 @@ class DirectedGraph
 {
 	public:
 		typedef ContigNode Node;
-		typedef Vertex<Node, D> VertexType;
+		typedef Vertex<D> VertexType;
 		typedef typename std::vector<VertexType> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
 		typedef typename VertexType::Edge Edge;
@@ -124,7 +123,7 @@ class DirectedGraph
 		void add_vertex(const Node& v, const D& data = D())
 		{
 			assert(m_vertices.size() == v.index());
-			m_vertices.push_back(VertexType(v, data));
+			m_vertices.push_back(VertexType(data));
 		}
 
 		/** Adds edge (u,v) to the graph. */
@@ -191,10 +190,22 @@ class DirectedGraph
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
-				const DirectedGraph<D>& o)
+				const DirectedGraph<D>& g)
 		{
-			std::copy(o.m_vertices.begin(), o.m_vertices.end(),
-					std::ostream_iterator<VertexType>(out, "\n"));
+			for (const_iterator v = g.begin(); v != g.end(); ++v) {
+				if (v->out_degree() == 0)
+					continue;
+				out << '"' << g.vertex(*v) << "\" ->";
+				if (v->out_degree() > 1)
+					out << " {";
+				for (typename Edges::const_iterator e
+						= v->out_edges().begin();
+						e != v->out_edges().end(); ++e)
+					out << " \"" << g.target(*e) << '"';
+				if (v->out_degree() > 1)
+					out << " }";
+				out << '\n';
+			}
 			return out;
 		}
 
