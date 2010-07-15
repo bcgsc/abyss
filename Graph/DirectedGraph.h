@@ -27,12 +27,12 @@ class Vertex
 		const VertexType& target() const { return *m_target; }
 
 		/** Returns the target vertex descriptor of this edge. */
-		const K& target_key() const { return m_target->vertex(); }
+		const K& target_key() const { return *m_target; }
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const Edge& e)
 		{
-			return out << e.m_target->vertex();
+			return out << e.m_target;
 		}
 
 	  private:
@@ -40,8 +40,8 @@ class Vertex
 		VertexType* m_target;
 	};
 
-	/** Return the key of this vertex. */
-	const K& vertex() const { return m_key; }
+	/** Return the descriptor for this vertex. */
+	operator const K&() const { return m_key; }
 
 	/** Return a collection of outgoing edges. */
 	const Edges& out_edges() const { return m_edges; }

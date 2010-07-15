@@ -263,7 +263,7 @@ int main(int argc, char *const argv[])
 	for (ContigGraph::const_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it) {
 		if (it->out_degree() > 1)
-			consider(it->vertex(), it->out_edges());
+			consider(*it, it->out_edges());
 	}
 
 	// Each bubble should be identified twice. Remove the duplicate.
