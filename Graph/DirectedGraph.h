@@ -16,6 +16,7 @@ class Vertex
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
 
+	Vertex() { }
 	Vertex(const D& d) : m_data(d) { }
 
 	class Edge
@@ -93,13 +94,7 @@ class DirectedGraph
 		DirectedGraph() { }
 
 		/** Create a graph with n vertices and zero edges. */
-		DirectedGraph(unsigned n)
-		{
-			m_vertices.reserve(n);
-			for (unsigned i = 0; i < n; ++i)
-				add_vertex(Node(i));
-			assert(m_vertices.size() == n);
-		}
+		DirectedGraph(unsigned n) : m_vertices(n) { }
 
 		/** Swap this graph with graph x. */
 		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
