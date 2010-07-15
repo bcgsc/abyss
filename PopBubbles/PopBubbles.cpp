@@ -130,7 +130,6 @@ static unsigned targetLength(const Edges::value_type& e)
 static void consider(const ContigNode& head, const Edges& branches)
 {
 	assert(branches.size() > 1);
-	set<ContigNode> tails;
 	if (branches.front().target().out_degree() != 1) {
 		// This branch is not simple.
 		return;
