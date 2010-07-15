@@ -81,7 +81,9 @@ static vector<Contig> g_contigs;
 /** Contig adjacency graph. */
 static ContigGraph g_graph;
 
-/** Collection of edges. */
+/** Convenience typedefs. */
+typedef ContigGraph::VertexType VertexType;
+typedef ContigGraph::Edge Edge;
 typedef ContigGraph::Edges Edges;
 
 /** Return whether contig a has higher coverage than contig b. */
@@ -93,6 +95,12 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 /** Popped branches. */
 static vector<unsigned> g_popped;
 
+/** Return the target vertex of edge e. */
+static ContigNode target(const Edge& e)
+{
+	return g_graph.target(e);
+}
+
 static void popBubble(const ContigNode& head, const Edges& branches,
 		const ContigNode& tail)
 {
@@ -100,7 +108,7 @@ static void popBubble(const ContigNode& head, const Edges& branches,
 	assert(g_graph.out_degree(head) == g_graph.in_degree(tail));
 	vector<ContigNode> sorted(branches.size());
 	transform(branches.begin(), branches.end(), sorted.begin(),
-			mem_fun_ref(&Edges::value_type::target));
+			target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << head << "\" -> {";
@@ -120,10 +128,10 @@ static struct {
 	unsigned tooLong;
 } g_count;
 
-/** Return the length of the target of the specified edge. */
-static unsigned targetLength(const Edges::value_type& e)
+/** Return the length of the target vertex of the specified edge. */
+static unsigned targetLength(const Edge& e)
 {
-	return g_contigs[e.target_descriptor().id()].length;
+	return g_contigs[g_graph.target(e).id()].length;
 }
 
 static void consider(const ContigNode& head, const Edges& branches)
@@ -133,7 +141,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 		// This branch is not simple.
 		return;
 	}
-	const ContigNode& tail = branches.front().target()
+	const VertexType& tail = branches.front().target()
 		.out_edges().front().target();
 	if (g_graph.in_degree(tail) != branches.size()) {
 		// This branch is not simple.
@@ -148,8 +156,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 			// This branch is not simple.
 			return;
 		}
-		if (it->target().out_edges().front().target_descriptor()
-				!= tail) {
+		if (it->target().out_edges().front().target() != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
@@ -170,7 +177,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 	}
 
 	g_count.popped++;
-	popBubble(head, branches, tail);
+	popBubble(head, branches, g_graph.vertex(tail));
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -256,7 +263,7 @@ int main(int argc, char *const argv[])
 	for (ContigGraph::const_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it) {
 		if (it->out_degree() > 1)
-			consider(*it, it->out_edges());
+			consider(g_graph.vertex(*it), it->out_edges());
 	}
 
 	// Each bubble should be identified twice. Remove the duplicate.

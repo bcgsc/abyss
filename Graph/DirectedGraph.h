@@ -26,9 +26,6 @@ class Vertex
 		/** Returns the target vertex of this edge. */
 		const VertexType& target() const { return *m_target; }
 
-		/** Returns the target vertex descriptor of this edge. */
-		const K& target_descriptor() const { return *m_target; }
-
 		friend std::ostream& operator <<(std::ostream& out,
 				const Edge& e)
 		{
@@ -39,9 +36,6 @@ class Vertex
 		/** The target vertex of this edge. */
 		VertexType* m_target;
 	};
-
-	/** Return the descriptor for this vertex. */
-	operator const K&() const { return m_key; }
 
 	/** Return a collection of outgoing edges. */
 	const Edges& out_edges() const { return m_edges; }
@@ -60,6 +54,9 @@ class Vertex
 			assert(v != &it->target());
 		m_edges.push_back(v);
 	}
+
+	bool operator ==(const VertexType& v) const { return this == &v; }
+	bool operator !=(const VertexType& v) const { return this != &v; }
 
 	friend std::ostream& operator <<(std::ostream& out,
 			const VertexType& o)
@@ -90,6 +87,7 @@ class DirectedGraph
 		typedef Vertex<Node, D> VertexType;
 		typedef typename std::vector<VertexType> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
+		typedef typename VertexType::Edge Edge;
 		typedef typename VertexType::Edges Edges;
 
 		/** Create an empty graph. */
@@ -164,6 +162,32 @@ class DirectedGraph
 		unsigned in_degree(const Node& v) const
 		{
 			return (*this)[~v].out_degree();
+		}
+
+		/** Return the in degree of the specified vertex. */
+		unsigned in_degree(const VertexType& v) const
+		{
+			return in_degree(vertex(v));
+		}
+
+		/** Return the nth vertex. */
+		static Node vertex(unsigned n)
+		{
+			return Node(n);
+		}
+
+		/** Return the descriptor of the specified vertex. */
+		Node vertex(const VertexType& v) const
+		{
+			assert(&m_vertices[0] <= &v
+					&& &v <= &m_vertices[0] + m_vertices.size());
+			return vertex(&v - &m_vertices[0]);
+		}
+
+		/** Return the target vertex of the specified edge. */
+		Node target(const Edge& e) const
+		{
+			return vertex(e.target());
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
