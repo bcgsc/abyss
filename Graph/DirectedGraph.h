@@ -27,7 +27,7 @@ class Vertex
 		const VertexType& target() const { return *m_target; }
 
 		/** Returns the target vertex descriptor of this edge. */
-		const K& target_key() const { return *m_target; }
+		const K& target_descriptor() const { return *m_target; }
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const Edge& e)
