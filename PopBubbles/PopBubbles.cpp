@@ -85,9 +85,9 @@ static ContigGraph g_graph;
 /** Collection of edges. */
 typedef ContigGraph::Edges Edges;
 
-inline unsigned ContigNode::outDegree() const
+inline unsigned ContigNode::length() const
 {
-	return g_graph[*this].out_degree();
+	return g_contigs[id()].length;
 }
 
 /** Return whether contig a has higher coverage than contig b. */
