@@ -90,16 +90,6 @@ inline unsigned ContigNode::outDegree() const
 	return g_graph[*this].out_degree();
 }
 
-inline unsigned ContigNode::inDegree() const
-{
-	return g_graph[~*this].out_degree();
-}
-
-inline unsigned ContigNode::length() const
-{
-	return g_contigs[id()].length;
-}
-
 /** Return whether contig a has higher coverage than contig b. */
 static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 {
@@ -113,7 +103,7 @@ static void popBubble(const ContigNode& head, const Edges& branches,
 		const ContigNode& tail)
 {
 	assert(!branches.empty());
-	assert(head.outDegree() == tail.inDegree());
+	assert(g_graph.out_degree(head) == g_graph.in_degree(tail));
 	vector<ContigNode> sorted(branches.size());
 	transform(branches.begin(), branches.end(), sorted.begin(),
 			mem_fun_ref(&Edges::value_type::target_key));
@@ -152,7 +142,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 	}
 	const ContigNode& tail = branches.front().target()
 		.out_edges().front().target_key();
-	if (tail.inDegree() != branches.size()) {
+	if (g_graph.in_degree(tail) != branches.size()) {
 		// This branch is not simple.
 		return;
 	}
@@ -161,7 +151,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 	for (Edges::const_iterator it = branches.begin();
 			it != branches.end(); ++it) {
 		if (it->target().out_degree() != 1
-				|| it->target_key().inDegree() != 1) {
+				|| g_graph.in_degree(it->target_key()) != 1) {
 			// This branch is not simple.
 			return;
 		}

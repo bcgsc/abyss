@@ -154,6 +154,18 @@ class DirectedGraph
 			return n;
 		}
 
+		/** Return the out degree of the specified vertex. */
+		unsigned out_degree(const Node& v) const
+		{
+			return (*this)[v].out_degree();
+		}
+
+		/** Return the in degree of the specified vertex. */
+		unsigned in_degree(const Node& v) const
+		{
+			return (*this)[~v].out_degree();
+		}
+
 		friend std::ostream& operator <<(std::ostream& out,
 				const DirectedGraph<D>& o)
 		{
