@@ -17,7 +17,6 @@
 #include <iostream>
 #include <iterator>
 #include <limits> // for numeric_limits
-#include <set>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -157,12 +156,11 @@ static void consider(const ContigNode& head, const Edges& branches)
 	}
 
 	g_count.bubbles++;
-	set<unsigned> lengths;
+	vector<unsigned> lengths(branches.size());
 	transform(branches.begin(), branches.end(),
-			inserter(lengths, lengths.begin()),
-			targetLength);
-	unsigned minLength = *lengths.begin();
-	unsigned maxLength = *lengths.rbegin();
+			lengths.begin(), targetLength);
+	unsigned minLength = *min_element(lengths.begin(), lengths.end());
+	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (opt::verbose > 1)
 		cerr << minLength << '\t' << maxLength << '\n';
 	if (maxLength >= opt::maxLength) {
