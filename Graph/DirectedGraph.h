@@ -29,12 +29,16 @@ class Vertex
 	Vertex() { }
 	Vertex(const D& d) : m_data(d) { }
 
-	/** Return a collection of outgoing edges. */
-	const Edges& out_edges() const { return m_edges; }
-
 	/** Return an iterator to the edges of this vertex. */
 	out_edge_iterator begin() const { return m_edges.begin(); }
 	out_edge_iterator end() const { return m_edges.end(); }
+
+	/** Return the first out edge of this vertex. */
+	const Edge& front() const
+	{
+		assert(!m_edges.empty());
+		return m_edges.front();
+	}
 
 	/** Return the number of outgoing edges. */
 	size_t out_degree() const

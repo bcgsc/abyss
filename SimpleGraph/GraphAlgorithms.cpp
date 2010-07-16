@@ -87,10 +87,9 @@ bool depthFirstSearch(const ContigGraph& g,
 	if (currLen > nextConstraint->second)
 		return true; // This constraint cannot be met.
 
-	const ContigGraph::Edges& currEdges = node.out_edges();
 	path.push_back(Node());
-	for (ContigGraph::out_edge_iterator it = currEdges.begin();
-			it != currEdges.end(); ++it) {
+	for (ContigGraph::out_edge_iterator it = node.begin();
+			it != node.end(); ++it) {
 		path.back() = g.target(*it);
 		if (!depthFirstSearch(g, it->target(), constraints,
 					nextConstraint, satisfied, path, solutions,

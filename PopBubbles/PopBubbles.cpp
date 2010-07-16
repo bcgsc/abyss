@@ -96,18 +96,16 @@ static ContigNode target(const ContigGraph::Edge& e)
 	return g_graph.target(e);
 }
 
-static void popBubble(const ContigNode& head,
-		const ContigGraph::Edges& branches,
+static void popBubble(ContigGraph::vertex_iterator v,
 		const ContigNode& tail)
 {
-	assert(!branches.empty());
-	assert(g_graph.out_degree(head) == g_graph.in_degree(tail));
-	vector<ContigNode> sorted(branches.size());
-	transform(branches.begin(), branches.end(), sorted.begin(),
-			target);
+	assert(v->out_degree() > 0);
+	assert(v->out_degree() == g_graph.in_degree(tail));
+	vector<ContigNode> sorted(v->out_degree());
+	transform(v->begin(), v->end(), sorted.begin(), target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
-		cout << '"' << head << "\" -> {";
+		cout << '"' << g_graph.vertex(*v) << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
 				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
@@ -130,39 +128,38 @@ static unsigned targetLength(const ContigGraph::Edge& e)
 	return g_contigs[g_graph.target(e).id()].length;
 }
 
-static void consider(const ContigNode& head,
-		const ContigGraph::Edges& branches)
+/** Consider popping the bubble originating at the vertex v. */
+static void considerPopping(ContigGraph::vertex_iterator v)
 {
-	assert(branches.size() > 1);
-	if (branches.front().target().out_degree() != 1) {
+	assert(v->out_degree() > 1);
+	if (v->front().target().out_degree() != 1) {
 		// This branch is not simple.
 		return;
 	}
-	const ContigGraph::Vertex& tail = branches.front().target()
-		.out_edges().front().target();
-	if (g_graph.in_degree(tail) != branches.size()) {
+	const ContigGraph::Vertex& tail = v->front().target()
+		.front().target();
+	if (g_graph.in_degree(tail) != v->out_degree()) {
 		// This branch is not simple.
 		return;
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	for (ContigGraph::out_edge_iterator it = branches.begin();
-			it != branches.end(); ++it) {
+	for (ContigGraph::out_edge_iterator it = v->begin();
+			it != v->end(); ++it) {
 		if (it->target().out_degree() != 1
 				|| g_graph.in_degree(it->target()) != 1) {
 			// This branch is not simple.
 			return;
 		}
-		if (it->target().out_edges().front().target() != tail) {
+		if (it->target().front().target() != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
 	}
 
 	g_count.bubbles++;
-	vector<unsigned> lengths(branches.size());
-	transform(branches.begin(), branches.end(),
-			lengths.begin(), targetLength);
+	vector<unsigned> lengths(v->out_degree());
+	transform(v->begin(), v->end(), lengths.begin(), targetLength);
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (opt::verbose > 1)
@@ -174,7 +171,7 @@ static void consider(const ContigNode& head,
 	}
 
 	g_count.popped++;
-	popBubble(head, branches, g_graph.vertex(tail));
+	popBubble(v, g_graph.vertex(tail));
 }
 
 /** Remove the specified contig from the adjacency graph. */
@@ -264,10 +261,9 @@ int main(int argc, char *const argv[])
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
 	for (ContigGraph::vertex_iterator it = g_graph.begin();
-			it != g_graph.end(); ++it) {
+			it != g_graph.end(); ++it)
 		if (it->out_degree() > 1)
-			consider(g_graph.vertex(*it), it->out_edges());
-	}
+			considerPopping(it);
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
