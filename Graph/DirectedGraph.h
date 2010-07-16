@@ -88,6 +88,7 @@ class Edge
 		typedef unsigned vertices_size_type;
 		typedef unsigned degree_size_type;
 		typedef ContigNode Node;
+		typedef const Node& vertex_descriptor;
 		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
 
@@ -100,30 +101,30 @@ class Edge
 		/** Swap this graph with graph x. */
 		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
 
-		/** Return the vertex specified by the given key. */
-		const Vertex& operator[](const Node& key) const
+		/** Return the vertex specified by the given descriptor. */
+		const Vertex& operator[](vertex_descriptor v) const
 		{
-			return m_vertices[key.index()];
+			return m_vertices[v.index()];
 		}
 
-		/** Return the vertex specified by the given key. */
-		Vertex& operator[](const Node& key)
+		/** Return the vertex specified by the given descriptor. */
+		Vertex& operator[](vertex_descriptor v)
 		{
-			return m_vertices[key.index()];
+			return m_vertices[v.index()];
 		}
 
 		/** Remove all the edges and vertices from this graph. */
 		void clear() { m_vertices.clear(); }
 
 		/** Adds vertex v to the graph. */
-		void add_vertex(const Node& v, const D& data = D())
+		void add_vertex(vertex_descriptor v, const D& data = D())
 		{
 			assert(m_vertices.size() == v.index());
 			m_vertices.push_back(Vertex(data));
 		}
 
 		/** Adds edge (u,v) to the graph. */
-		void add_edge(const Node& u, const Node& v)
+		void add_edge(vertex_descriptor u, vertex_descriptor v)
 		{
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
@@ -148,13 +149,13 @@ class Edge
 		}
 
 		/** Return the out degree of the specified vertex. */
-		degree_size_type out_degree(const Node& v) const
+		degree_size_type out_degree(vertex_descriptor v) const
 		{
 			return (*this)[v].out_degree();
 		}
 
 		/** Return the in degree of the specified vertex. */
-		degree_size_type in_degree(const Node& v) const
+		degree_size_type in_degree(vertex_descriptor v) const
 		{
 			return (*this)[~v].out_degree();
 		}
