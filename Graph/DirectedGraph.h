@@ -116,10 +116,9 @@ class Edge
 		/** Remove all the edges and vertices from this graph. */
 		void clear() { m_vertices.clear(); }
 
-		/** Adds vertex v to the graph. */
-		void add_vertex(vertex_descriptor v, const D& data = D())
+		/** Add vertex v to the graph. */
+		void add_vertex(const D& data = D())
 		{
-			assert(m_vertices.size() == v.index());
 			m_vertices.push_back(Vertex(data));
 		}
 
@@ -152,18 +151,6 @@ class Edge
 		degree_size_type out_degree(vertex_descriptor v) const
 		{
 			return (*this)[v].out_degree();
-		}
-
-		/** Return the in degree of the specified vertex. */
-		degree_size_type in_degree(vertex_descriptor v) const
-		{
-			return (*this)[~v].out_degree();
-		}
-
-		/** Return the in degree of the specified vertex. */
-		degree_size_type in_degree(const Vertex& v) const
-		{
-			return in_degree(vertex(v));
 		}
 
 		/** Return the nth vertex. */

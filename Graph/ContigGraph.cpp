@@ -43,7 +43,7 @@ istream& operator>>(istream& in, ContigGraph& o)
 
 	// Create the vertices.
 	o.clear();
-	ContigGraph(2 * g_contigLengths.size()).swap(o);
+	ContigGraph(g_contigLengths.size()).swap(o);
 
 	// Load the edges.
 	in.clear();
