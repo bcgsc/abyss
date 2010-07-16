@@ -71,6 +71,7 @@ AC_SUBST(CPPFLAGS, "$mpi_cppflags $CPPFLAGS")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
+libs="$LIBS"
 AC_DEFINE(MPICH_SKIP_MPICXX, 1,
 		  [Define to disable MPICH C++ bindings])
 AC_DEFINE(OMPI_SKIP_MPICXX, 1,
@@ -94,9 +95,9 @@ fi
 AM_CONDITIONAL([HAVE_LIBMPI],
 	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
-unset LIBS
 
 # Check for the math library.
+LIBS="$libs"
 AC_CHECK_LIB([m], [sqrt])
 AC_CHECK_FUNCS([pow sqrt])
 AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
