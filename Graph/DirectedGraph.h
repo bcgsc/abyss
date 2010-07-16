@@ -8,38 +8,20 @@
 #include <ostream>
 #include <vector>
 
+/** A directed graph. */
 template<typename D>
 class DirectedGraph
-{
-  public:
-
-class Vertex
 {
   public:
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
 
+/** A vertex and its properties. */
+class Vertex
+{
+  public:
 	Vertex() { }
 	Vertex(const D& d) : m_data(d) { }
-
-	class Edge
-	{
-	  public:
-		Edge(Vertex* v) : m_target(v) { }
-
-		/** Returns the target vertex of this edge. */
-		const Vertex& target() const { return *m_target; }
-
-		friend std::ostream& operator <<(std::ostream& out,
-				const Edge& e)
-		{
-			return out << e.m_target;
-		}
-
-	  private:
-		/** The target vertex of this edge. */
-		Vertex* m_target;
-	};
 
 	/** Return a collection of outgoing edges. */
 	const Edges& out_edges() const { return m_edges; }
@@ -82,12 +64,30 @@ class Vertex
 	Edges m_edges;
 };
 
+/** A directed edge. */
+class Edge
+{
+  public:
+	Edge(Vertex* v) : m_target(v) { }
+
+	/** Returns the target vertex of this edge. */
+	const Vertex& target() const { return *m_target; }
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const Edge& e)
+	{
+		return out << e.m_target;
+	}
+
+  private:
+	/** The target vertex of this edge. */
+	Vertex* m_target;
+};
+
 	public:
 		typedef ContigNode Node;
 		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
-		typedef typename Vertex::Edge Edge;
-		typedef typename Vertex::Edges Edges;
 
 		/** Create an empty graph. */
 		DirectedGraph() { }
