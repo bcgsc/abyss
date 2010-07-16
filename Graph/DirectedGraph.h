@@ -73,8 +73,7 @@ class Edge
 	/** Returns the target vertex of this edge. */
 	const Vertex& target() const { return *m_target; }
 
-	friend std::ostream& operator <<(std::ostream& out,
-			const Edge& e)
+	friend std::ostream& operator <<(std::ostream& out, const Edge& e)
 	{
 		return out << e.m_target;
 	}
@@ -89,6 +88,7 @@ class Edge
 		typedef unsigned degree_size_type;
 		typedef ContigNode Node;
 		typedef const Node& vertex_descriptor;
+		typedef const Edge& edge_descriptor;
 		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
 
@@ -181,7 +181,7 @@ class Edge
 		}
 
 		/** Return the target vertex of the specified edge. */
-		Node target(const Edge& e) const
+		Node target(edge_descriptor e) const
 		{
 			return vertex(e.target());
 		}
