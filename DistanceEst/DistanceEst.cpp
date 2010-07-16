@@ -375,7 +375,7 @@ int main(int argc, char** argv)
 	vector<SAMRecord> alignments(1);
 	in >> alignments.front();
 	assert(in);
-#pragma omp parallel shared(out)
+#pragma omp parallel
 #pragma omp single
 	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
