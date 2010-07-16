@@ -85,6 +85,8 @@ class Edge
 };
 
 	public:
+		typedef unsigned vertices_size_type;
+		typedef unsigned degree_size_type;
 		typedef ContigNode Node;
 		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
@@ -93,7 +95,7 @@ class Edge
 		DirectedGraph() { }
 
 		/** Create a graph with n vertices and zero edges. */
-		DirectedGraph(unsigned n) : m_vertices(n) { }
+		DirectedGraph(vertices_size_type n) : m_vertices(n) { }
 
 		/** Swap this graph with graph x. */
 		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
@@ -146,25 +148,25 @@ class Edge
 		}
 
 		/** Return the out degree of the specified vertex. */
-		unsigned out_degree(const Node& v) const
+		degree_size_type out_degree(const Node& v) const
 		{
 			return (*this)[v].out_degree();
 		}
 
 		/** Return the in degree of the specified vertex. */
-		unsigned in_degree(const Node& v) const
+		degree_size_type in_degree(const Node& v) const
 		{
 			return (*this)[~v].out_degree();
 		}
 
 		/** Return the in degree of the specified vertex. */
-		unsigned in_degree(const Vertex& v) const
+		degree_size_type in_degree(const Vertex& v) const
 		{
 			return in_degree(vertex(v));
 		}
 
 		/** Return the nth vertex. */
-		static Node vertex(unsigned n)
+		static Node vertex(vertices_size_type n)
 		{
 			return Node(n);
 		}
