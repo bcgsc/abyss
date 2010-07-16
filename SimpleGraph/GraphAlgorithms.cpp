@@ -43,7 +43,7 @@ typedef ContigNode Node;
  * @return false if the search exited early
  */
 bool depthFirstSearch(const ContigGraph& g,
-		const ContigGraph::VertexType& node,
+		const ContigGraph::Vertex& node,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,

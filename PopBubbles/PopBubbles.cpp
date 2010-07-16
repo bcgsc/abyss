@@ -82,7 +82,7 @@ static vector<Contig> g_contigs;
 static ContigGraph g_graph;
 
 /** Convenience typedefs. */
-typedef ContigGraph::VertexType VertexType;
+typedef ContigGraph::Vertex Vertex;
 typedef ContigGraph::Edge Edge;
 typedef ContigGraph::Edges Edges;
 
@@ -141,7 +141,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 		// This branch is not simple.
 		return;
 	}
-	const VertexType& tail = branches.front().target()
+	const Vertex& tail = branches.front().target()
 		.out_edges().front().target();
 	if (g_graph.in_degree(tail) != branches.size()) {
 		// This branch is not simple.

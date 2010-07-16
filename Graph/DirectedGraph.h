@@ -9,10 +9,13 @@
 #include <vector>
 
 template<typename D>
+class DirectedGraph
+{
+  public:
+
 class Vertex
 {
   public:
-	typedef Vertex<D> VertexType;
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
 
@@ -22,10 +25,10 @@ class Vertex
 	class Edge
 	{
 	  public:
-		Edge(VertexType* v) : m_target(v) { }
+		Edge(Vertex* v) : m_target(v) { }
 
 		/** Returns the target vertex of this edge. */
-		const VertexType& target() const { return *m_target; }
+		const Vertex& target() const { return *m_target; }
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const Edge& e)
@@ -35,7 +38,7 @@ class Vertex
 
 	  private:
 		/** The target vertex of this edge. */
-		VertexType* m_target;
+		Vertex* m_target;
 	};
 
 	/** Return a collection of outgoing edges. */
@@ -48,7 +51,7 @@ class Vertex
 	}
 
 	/** Add an edge to this vertex. */
-	void add_edge(VertexType* v)
+	void add_edge(Vertex* v)
 	{
 		for (typename Edges::const_iterator it = m_edges.begin();
 				it != m_edges.end(); ++it)
@@ -56,11 +59,11 @@ class Vertex
 		m_edges.push_back(v);
 	}
 
-	bool operator ==(const VertexType& v) const { return this == &v; }
-	bool operator !=(const VertexType& v) const { return this != &v; }
+	bool operator ==(const Vertex& v) const { return this == &v; }
+	bool operator !=(const Vertex& v) const { return this != &v; }
 
 	friend std::ostream& operator <<(std::ostream& out,
-			const VertexType& o)
+			const Vertex& o)
 	{
 		if (o.m_edges.empty())
 			return out;
@@ -79,16 +82,12 @@ class Vertex
 	Edges m_edges;
 };
 
-template<typename D>
-class DirectedGraph
-{
 	public:
 		typedef ContigNode Node;
-		typedef Vertex<D> VertexType;
-		typedef typename std::vector<VertexType> Vertices;
+		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
-		typedef typename VertexType::Edge Edge;
-		typedef typename VertexType::Edges Edges;
+		typedef typename Vertex::Edge Edge;
+		typedef typename Vertex::Edges Edges;
 
 		/** Create an empty graph. */
 		DirectedGraph() { }
@@ -100,13 +99,13 @@ class DirectedGraph
 		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
 
 		/** Return the vertex specified by the given key. */
-		const VertexType& operator[](const Node& key) const
+		const Vertex& operator[](const Node& key) const
 		{
 			return m_vertices[key.index()];
 		}
 
 		/** Return the vertex specified by the given key. */
-		VertexType& operator[](const Node& key)
+		Vertex& operator[](const Node& key)
 		{
 			return m_vertices[key.index()];
 		}
@@ -118,7 +117,7 @@ class DirectedGraph
 		void add_vertex(const Node& v, const D& data = D())
 		{
 			assert(m_vertices.size() == v.index());
-			m_vertices.push_back(VertexType(data));
+			m_vertices.push_back(Vertex(data));
 		}
 
 		/** Adds edge (u,v) to the graph. */
@@ -159,7 +158,7 @@ class DirectedGraph
 		}
 
 		/** Return the in degree of the specified vertex. */
-		unsigned in_degree(const VertexType& v) const
+		unsigned in_degree(const Vertex& v) const
 		{
 			return in_degree(vertex(v));
 		}
@@ -171,7 +170,7 @@ class DirectedGraph
 		}
 
 		/** Return the descriptor of the specified vertex. */
-		Node vertex(const VertexType& v) const
+		Node vertex(const Vertex& v) const
 		{
 			assert(&m_vertices[0] <= &v
 					&& &v <= &m_vertices[0] + m_vertices.size());
