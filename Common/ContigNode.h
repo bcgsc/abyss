@@ -75,6 +75,11 @@ class ContigNode {
 		return ContigNode(m_id, !m_sense);
 	}
 
+	const ContigNode operator^(bool flip) const
+	{
+		return flip ? ~*this : *this;
+	}
+
 	friend std::istream& operator >>(std::istream& in,
 			ContigNode& o)
 	{

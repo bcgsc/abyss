@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
 	assert(in.eof());
 
 	cout << "digraph \"" << path << "\" {\n"
-		<< g
+		<< static_cast<const DirectedGraph<NoContigData>&>(g)
 		<< "}\n";
 	assert(cout.good());
 	return 0;

@@ -297,9 +297,7 @@ int main(int argc, char *const argv[])
 	for_each(g_popped.begin(), g_popped.end(), removeContig);
 
 	// Output the updated adjacency graph.
-	cerr << "digraph \"" << adjPath << "\" {\n"
-		<< g_graph
-		<< "}\n";
+	cerr << g_graph;
 	assert(cerr.good());
 
 	return 0;

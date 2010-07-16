@@ -14,8 +14,12 @@ template<typename D>
 class DirectedGraph
 {
   public:
+	class Vertex;
+	typedef typename std::vector<Vertex> Vertices;
+	typedef typename Vertices::const_iterator vertex_iterator;
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
+	typedef typename Edges::const_iterator out_edge_iterator;
 
 /** A vertex and its properties. */
 class Vertex
@@ -26,6 +30,10 @@ class Vertex
 
 	/** Return a collection of outgoing edges. */
 	const Edges& out_edges() const { return m_edges; }
+
+	/** Return an iterator to the edges of this vertex. */
+	out_edge_iterator begin() const { return m_edges.begin(); }
+	out_edge_iterator end() const { return m_edges.end(); }
 
 	/** Return the number of outgoing edges. */
 	size_t out_degree() const
@@ -104,7 +112,6 @@ class Edge
 		typedef ContigNode Node;
 		typedef const Node& vertex_descriptor;
 		typedef const Edge& edge_descriptor;
-		typedef typename std::vector<Vertex> Vertices;
 		typedef typename Vertices::const_iterator const_iterator;
 
 		/** Create an empty graph. */

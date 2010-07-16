@@ -3,12 +3,11 @@
 
 #include "DirectedGraph.h"
 #include <istream>
+#include <ostream>
 
 struct NoContigData { };
 
 class ContigGraph;
-
-std::istream& operator>>(std::istream& in, ContigGraph& o);
 
 void readContigGraph(ContigGraph& graph, const std::string& path);
 
@@ -61,8 +60,30 @@ class ContigGraph : public DirectedGraph<NoContigData> {
 		clear_in_edges(v);
 	}
 
+	friend std::istream& operator>>(std::istream& in, ContigGraph& g);
+	friend std::istream& operator<<(std::istream& in, ContigGraph& g);
+
   private:
 	ContigGraph(const ContigGraph&);
 };
+
+/** Output a contig adjacency graph. */
+static inline std::ostream& operator<<(std::ostream& out,
+		const ContigGraph& g)
+{
+	for (ContigGraph::vertex_iterator v = g.begin();
+			v != g.end(); ++v) {
+		const ContigNode& id = g.vertex(*v);
+		if (!id.sense())
+			out << g.vertex(*v).id();
+	   	out << "\t;";
+		for (ContigGraph::out_edge_iterator e = v->begin();
+				e != v->end(); ++e)
+			out << ' ' << (g.target(*e) ^ id.sense());
+		if (id.sense())
+			out << '\n';
+	}
+	return out;
+}
 
 #endif
