@@ -38,6 +38,29 @@ class ContigGraph : public DirectedGraph<NoContigData> {
 		return in_degree(vertex(v));
 	}
 
+	/** Remove all out edges from vertex v. */
+	void clear_out_edges(vertex_descriptor v)
+	{
+		const Edges& edges = (*this)[v].out_edges();
+		for (Edges::const_iterator it = edges.begin();
+				it != edges.end(); ++it)
+			remove_edge(~target(*it), ~v);
+		DG::clear_out_edges(v);
+	}
+
+	/** Remove all in edges from vertex v. */
+	void clear_in_edges(vertex_descriptor v)
+	{
+		clear_out_edges(~v);
+	}
+
+	/** Remove all edges to and from vertex v. */
+	void clear_vertex(vertex_descriptor v)
+	{
+		clear_out_edges(v);
+		clear_in_edges(v);
+	}
+
   private:
 	ContigGraph(const ContigGraph&);
 };

@@ -180,6 +180,12 @@ static void consider(const ContigNode& head, const Edges& branches)
 	popBubble(head, branches, g_graph.vertex(tail));
 }
 
+/** Remove the specified contig from the adjacency graph. */
+static void removeContig(unsigned id)
+{
+	g_graph.clear_vertex(ContigNode(id, false));
+}
+
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
@@ -283,5 +289,18 @@ int main(int argc, char *const argv[])
 			<< " Popped: " << g_popped.size()
 			<< " Too long: " << g_count.tooLong/2
 			<< '\n';
+
+	if (opt::verbose < 3)
+		return 0;
+
+	// Remove the popped contigs from the adjacency graph.
+	for_each(g_popped.begin(), g_popped.end(), removeContig);
+
+	// Output the updated adjacency graph.
+	cerr << "digraph \"" << adjPath << "\" {\n"
+		<< g_graph
+		<< "}\n";
+	assert(cerr.good());
+
 	return 0;
 }

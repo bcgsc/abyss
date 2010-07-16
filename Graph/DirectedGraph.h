@@ -3,6 +3,7 @@
 
 #include "AffixIterator.h"
 #include "ContigNode.h"
+#include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <ostream>
@@ -41,6 +42,18 @@ class Vertex
 		m_edges.push_back(v);
 	}
 
+	/** Remove the edge to v from this vertex. */
+	void remove_edge(const Vertex& v)
+	{
+		m_edges.erase(find(m_edges.begin(), m_edges.end(), v));
+	}
+
+	/** Remove all out edges from this vertex. */
+	void clear_out_edges()
+	{
+		m_edges.clear();
+	}
+
 	bool operator ==(const Vertex& v) const { return this == &v; }
 	bool operator !=(const Vertex& v) const { return this != &v; }
 
@@ -72,6 +85,8 @@ class Edge
 
 	/** Returns the target vertex of this edge. */
 	const Vertex& target() const { return *m_target; }
+
+	bool operator ==(const Vertex& v) { return m_target == &v; }
 
 	friend std::ostream& operator <<(std::ostream& out, const Edge& e)
 	{
@@ -128,6 +143,18 @@ class Edge
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
 			(*this)[u].add_edge(&(*this)[v]);
+		}
+
+		/** Remove the edge (u,v) from this graph. */
+		void remove_edge(vertex_descriptor u, vertex_descriptor v)
+		{
+			(*this)[u].remove_edge((*this)[v]);
+		}
+
+		/** Remove all out edges from vertex v. */
+		void clear_out_edges(vertex_descriptor v)
+		{
+			(*this)[v].clear_out_edges();
 		}
 
 		/** Return the number of vertices. */
