@@ -89,7 +89,7 @@ bool depthFirstSearch(const ContigGraph& g,
 
 	const ContigGraph::Edges& currEdges = node.out_edges();
 	path.push_back(Node());
-	for (ContigGraph::Edges::const_iterator it = currEdges.begin();
+	for (ContigGraph::out_edge_iterator it = currEdges.begin();
 			it != currEdges.end(); ++it) {
 		path.back() = g.target(*it);
 		if (!depthFirstSearch(g, it->target(), constraints,

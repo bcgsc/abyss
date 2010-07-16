@@ -81,11 +81,6 @@ static vector<Contig> g_contigs;
 /** Contig adjacency graph. */
 static ContigGraph g_graph;
 
-/** Convenience typedefs. */
-typedef ContigGraph::Vertex Vertex;
-typedef ContigGraph::Edge Edge;
-typedef ContigGraph::Edges Edges;
-
 /** Return whether contig a has higher coverage than contig b. */
 static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 {
@@ -96,12 +91,13 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 static vector<unsigned> g_popped;
 
 /** Return the target vertex of edge e. */
-static ContigNode target(const Edge& e)
+static ContigNode target(const ContigGraph::Edge& e)
 {
 	return g_graph.target(e);
 }
 
-static void popBubble(const ContigNode& head, const Edges& branches,
+static void popBubble(const ContigNode& head,
+		const ContigGraph::Edges& branches,
 		const ContigNode& tail)
 {
 	assert(!branches.empty());
@@ -129,19 +125,20 @@ static struct {
 } g_count;
 
 /** Return the length of the target vertex of the specified edge. */
-static unsigned targetLength(const Edge& e)
+static unsigned targetLength(const ContigGraph::Edge& e)
 {
 	return g_contigs[g_graph.target(e).id()].length;
 }
 
-static void consider(const ContigNode& head, const Edges& branches)
+static void consider(const ContigNode& head,
+		const ContigGraph::Edges& branches)
 {
 	assert(branches.size() > 1);
 	if (branches.front().target().out_degree() != 1) {
 		// This branch is not simple.
 		return;
 	}
-	const Vertex& tail = branches.front().target()
+	const ContigGraph::Vertex& tail = branches.front().target()
 		.out_edges().front().target();
 	if (g_graph.in_degree(tail) != branches.size()) {
 		// This branch is not simple.
@@ -149,7 +146,7 @@ static void consider(const ContigNode& head, const Edges& branches)
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	for (Edges::const_iterator it = branches.begin();
+	for (ContigGraph::out_edge_iterator it = branches.begin();
 			it != branches.end(); ++it) {
 		if (it->target().out_degree() != 1
 				|| g_graph.in_degree(it->target()) != 1) {
@@ -266,7 +263,7 @@ int main(int argc, char *const argv[])
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	for (ContigGraph::const_iterator it = g_graph.begin();
+	for (ContigGraph::vertex_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it) {
 		if (it->out_degree() > 1)
 			consider(g_graph.vertex(*it), it->out_edges());

@@ -17,6 +17,7 @@ class DirectedGraph
 	class Vertex;
 	typedef typename std::vector<Vertex> Vertices;
 	typedef typename Vertices::const_iterator vertex_iterator;
+
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
 	typedef typename Edges::const_iterator out_edge_iterator;
@@ -44,7 +45,7 @@ class Vertex
 	/** Add an edge to this vertex. */
 	void add_edge(Vertex* v)
 	{
-		for (typename Edges::const_iterator it = m_edges.begin();
+		for (out_edge_iterator it = m_edges.begin();
 				it != m_edges.end(); ++it)
 			assert(v != &it->target());
 		m_edges.push_back(v);
@@ -112,7 +113,6 @@ class Edge
 		typedef ContigNode Node;
 		typedef const Node& vertex_descriptor;
 		typedef const Edge& edge_descriptor;
-		typedef typename Vertices::const_iterator const_iterator;
 
 		/** Create an empty graph. */
 		DirectedGraph() { }
@@ -168,15 +168,15 @@ class Edge
 		size_t num_vertices() const { return m_vertices.size(); }
 
 		/** Return an iterator to the vertex set of this graph. */
-		const_iterator begin() const { return m_vertices.begin(); }
-		const_iterator end() const { return m_vertices.end(); }
+		vertex_iterator begin() const { return m_vertices.begin(); }
+		vertex_iterator end() const { return m_vertices.end(); }
 
 		/** Return the number of edges. */
 		size_t num_edges() const
 		{
 			size_t n = 0;
-			for (typename Vertices::const_iterator it
-					= m_vertices.begin(); it != m_vertices.end(); ++it)
+			for (vertex_iterator it = m_vertices.begin();
+					it != m_vertices.end(); ++it)
 				n += it->out_degree();
 			return n;
 		}
@@ -210,15 +210,14 @@ class Edge
 		friend std::ostream& operator <<(std::ostream& out,
 				const DirectedGraph<D>& g)
 		{
-			for (const_iterator v = g.begin(); v != g.end(); ++v) {
+			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
 				if (v->out_degree() == 0)
 					continue;
 				out << '"' << g.vertex(*v) << "\" ->";
 				if (v->out_degree() > 1)
 					out << " {";
-				for (typename Edges::const_iterator e
-						= v->out_edges().begin();
-						e != v->out_edges().end(); ++e)
+				for (out_edge_iterator e = v->begin();
+						e != v->end(); ++e)
 					out << " \"" << g.target(*e) << '"';
 				if (v->out_degree() > 1)
 					out << " }";

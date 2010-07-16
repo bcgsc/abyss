@@ -40,9 +40,9 @@ class ContigGraph : public DirectedGraph<NoContigData> {
 	/** Remove all out edges from vertex v. */
 	void clear_out_edges(vertex_descriptor v)
 	{
-		const Edges& edges = (*this)[v].out_edges();
-		for (Edges::const_iterator it = edges.begin();
-				it != edges.end(); ++it)
+		const Vertex& vertex = (*this)[v];
+		for (out_edge_iterator it = vertex.begin();
+				it != vertex.end(); ++it)
 			remove_edge(~target(*it), ~v);
 		DG::clear_out_edges(v);
 	}
