@@ -5,8 +5,6 @@
 #include <istream>
 #include <ostream>
 
-struct NoContigData { };
-
 class ContigGraph;
 
 void readContigGraph(ContigGraph& graph, const std::string& path);
@@ -14,8 +12,8 @@ void readContigGraph(ContigGraph& graph, const std::string& path);
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
  */
-class ContigGraph : public DirectedGraph<NoContigData> {
-	typedef DirectedGraph<NoContigData> DG;
+class ContigGraph : public DirectedGraph<> {
+	typedef DirectedGraph<> DG;
 
   public:
 	/** Construct an empty contig graph. */

@@ -9,8 +9,11 @@
 #include <ostream>
 #include <vector>
 
+/** No properties. */
+struct no_property { };
+
 /** A directed graph. */
-template<typename D>
+template <typename VertexProp = no_property>
 class DirectedGraph
 {
   public:
@@ -23,11 +26,11 @@ class DirectedGraph
 	typedef typename Edges::const_iterator out_edge_iterator;
 
 /** A vertex and its properties. */
-class Vertex
+class Vertex : public VertexProp
 {
   public:
 	Vertex() { }
-	Vertex(const D& d) : m_data(d) { }
+	Vertex(const VertexProp& p) : VertexProp(p) { }
 
 	/** Return an iterator to the edges of this vertex. */
 	out_edge_iterator begin() const { return m_edges.begin(); }
@@ -86,7 +89,6 @@ class Vertex
 	}
 
   private:
-	D m_data;
 	Edges m_edges;
 };
 
@@ -143,7 +145,7 @@ class Edge
 		void clear() { m_vertices.clear(); }
 
 		/** Add vertex v to the graph. */
-		void add_vertex(const D& data = D())
+		void add_vertex(const VertexProp& data = VertexProp())
 		{
 			m_vertices.push_back(Vertex(data));
 		}
@@ -212,7 +214,7 @@ class Edge
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
-				const DirectedGraph<D>& g)
+				const DirectedGraph<VertexProp>& g)
 		{
 			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
 				if (v->out_degree() == 0)
