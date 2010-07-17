@@ -79,7 +79,8 @@ struct Contig {
 static vector<Contig> g_contigs;
 
 /** Contig adjacency graph. */
-static ContigGraph g_graph;
+typedef ContigGraph<> Graph;
+static Graph g_graph;
 
 /** Return whether contig a has higher coverage than contig b. */
 static bool compareCoverage(const ContigNode& a, const ContigNode& b)
@@ -91,12 +92,12 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 static vector<unsigned> g_popped;
 
 /** Return the target vertex of edge e. */
-static ContigNode target(const ContigGraph::Edge& e)
+static ContigNode target(const Graph::Edge& e)
 {
 	return g_graph.target(e);
 }
 
-static void popBubble(ContigGraph::vertex_iterator v,
+static void popBubble(Graph::vertex_iterator v,
 		const ContigNode& tail)
 {
 	assert(v->out_degree() > 0);
@@ -123,28 +124,27 @@ static struct {
 } g_count;
 
 /** Return the length of the target vertex of the specified edge. */
-static unsigned targetLength(const ContigGraph::Edge& e)
+static unsigned targetLength(const Graph::Edge& e)
 {
 	return g_contigs[g_graph.target(e).id()].length;
 }
 
 /** Consider popping the bubble originating at the vertex v. */
-static void considerPopping(ContigGraph::vertex_iterator v)
+static void considerPopping(Graph::vertex_iterator v)
 {
 	assert(v->out_degree() > 1);
 	if (v->front().target().out_degree() != 1) {
 		// This branch is not simple.
 		return;
 	}
-	const ContigGraph::Vertex& tail = v->front().target()
-		.front().target();
+	const Graph::Vertex& tail = v->front().target().front().target();
 	if (g_graph.in_degree(tail) != v->out_degree()) {
 		// This branch is not simple.
 		return;
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	for (ContigGraph::out_edge_iterator it = v->begin();
+	for (Graph::out_edge_iterator it = v->begin();
 			it != v->end(); ++it) {
 		if (it->target().out_degree() != 1
 				|| g_graph.in_degree(it->target()) != 1) {
@@ -260,7 +260,7 @@ int main(int argc, char *const argv[])
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	for (ContigGraph::vertex_iterator it = g_graph.begin();
+	for (Graph::vertex_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it)
 		if (it->out_degree() > 1)
 			considerPopping(it);

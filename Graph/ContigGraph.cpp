@@ -21,7 +21,7 @@ unsigned ContigNode::length() const
 }
 
 static void readEdges(istream& in, LinearNumKey id,
-		ContigGraph& graph)
+		ContigGraph<>& graph)
 {
 	for (int sense = false; sense <= true; ++sense) {
 		string s;
@@ -36,14 +36,15 @@ static void readEdges(istream& in, LinearNumKey id,
 }
 
 /** Read an adjacency graph. */
-istream& operator>>(istream& in, ContigGraph& o)
+template <typename VertexProp>
+istream& operator>>(istream& in, ContigGraph<VertexProp>& o)
 {
 	assert(g_contigLengths.empty());
 	g_contigLengths = readContigLengths(in);
 
 	// Create the vertices.
 	o.clear();
-	ContigGraph(g_contigLengths.size()).swap(o);
+	ContigGraph<VertexProp>(g_contigLengths.size()).swap(o);
 
 	// Load the edges.
 	in.clear();
@@ -66,7 +67,7 @@ static void assert_open(ifstream& f, const string& p)
 }
 
 /** Read a contig graph. */
-void readContigGraph(ContigGraph& graph, const std::string& path)
+void readContigGraph(ContigGraph<>& graph, const std::string& path)
 {
 	ifstream fin(path.c_str());
 	istream& in = path.empty() || path == "-" ? cin : fin;

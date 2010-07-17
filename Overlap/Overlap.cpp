@@ -82,7 +82,7 @@ static const struct option longopts[] = {
 };
 
 static vector<Sequence> contigs;
-static ContigGraph contigGraph;
+static ContigGraph<> contigGraph;
 
 static struct {
 	unsigned overlap;

@@ -75,8 +75,10 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+typedef ContigGraph<> Graph;
+
 static void generatePathsThroughEstimates(
-		ContigGraph* pContigGraph, string estFileName);
+		Graph* pContigGraph, string estFileName);
 
 int main(int argc, char** argv)
 {
@@ -128,7 +130,7 @@ int main(int argc, char** argv)
 	string estFile(argv[optind++]);
 
 	// Load the graph from the adjacency file
-	ContigGraph contigGraph;
+	Graph contigGraph;
 	readContigGraph(contigGraph, adjFile);
 	if (opt::verbose > 0)
 		cout << "Vertices: " << contigGraph.num_vertices()
@@ -314,7 +316,7 @@ void makeDistanceMap(const ContigPath& path,
  * @param out [out] the solution path
  */
 static void handleEstimate(const EstimateRecord& er, bool dirIdx,
-		const ContigGraph* pContigGraph, ContigPath& out)
+		const Graph* pContigGraph, ContigPath& out)
 {
 	if (er.estimates[dirIdx].empty())
 		return;
@@ -499,8 +501,8 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 struct WorkerArg {
 	istream* in;
 	ostream* out;
-	const ContigGraph* graph;
-	WorkerArg(istream* in, ostream* out, const ContigGraph* g)
+	const Graph* graph;
+	WorkerArg(istream* in, ostream* out, const Graph* g)
 		: in(in), out(out), graph(g) { }
 };
 
@@ -550,7 +552,7 @@ static void assert_open(ifstream& f, const string& p)
 }
 
 static void generatePathsThroughEstimates(
-		ContigGraph* pContigGraph, string estFileName)
+		Graph* pContigGraph, string estFileName)
 {
 	ifstream inStream(estFileName.c_str());
 	assert_open(inStream, estFileName);

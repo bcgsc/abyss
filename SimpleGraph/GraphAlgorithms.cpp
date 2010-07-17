@@ -38,12 +38,13 @@ static inline Constraints::iterator findConstraint(
 }
 
 typedef ContigNode Node;
+typedef ContigGraph<> Graph;
 
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const ContigGraph& g,
-		const ContigGraph::Vertex& node,
+bool depthFirstSearch(const Graph& g,
+		const Graph::Vertex& node,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
@@ -88,7 +89,7 @@ bool depthFirstSearch(const ContigGraph& g,
 		return true; // This constraint cannot be met.
 
 	path.push_back(Node());
-	for (ContigGraph::out_edge_iterator it = node.begin();
+	for (Graph::out_edge_iterator it = node.begin();
 			it != node.end(); ++it) {
 		path.back() = g.target(*it);
 		if (!depthFirstSearch(g, it->target(), constraints,
@@ -104,7 +105,7 @@ bool depthFirstSearch(const ContigGraph& g,
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const ContigGraph& g, const Node& v,
+bool depthFirstSearch(const Graph& g, const Node& v,
 		Constraints& constraints, ContigPaths& paths,
 		unsigned& cost)
 {
