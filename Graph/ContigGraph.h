@@ -109,7 +109,7 @@ void readEdges(std::istream& in, LinearNumKey id,
 	}
 }
 
-/** Read an contig adjacency graph. */
+/** Read a contig adjacency graph. */
 template <typename VertexProp>
 std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& o)
 {
