@@ -111,19 +111,19 @@ void readEdges(std::istream& in, LinearNumKey id,
 
 /** Read a contig adjacency graph. */
 template <typename VertexProp>
-std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& o)
+std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 {
 	assert(!g_contigIDs.empty());
 
 	// Create the vertices.
-	o.clear();
-	ContigGraph<VertexProp>(g_contigIDs.size()).swap(o);
+	g.clear();
+	ContigGraph<VertexProp>(g_contigIDs.size()).swap(g);
 
 	// Load the edges.
 	assert(in);
 	for (std::string id; in >> id;) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
-		readEdges(in, stringToID(id), o);
+		readEdges(in, stringToID(id), g);
 	}
 	assert(in.eof());
 	return in;
