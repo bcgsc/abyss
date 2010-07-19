@@ -20,44 +20,6 @@ unsigned ContigNode::length() const
 	return g_contigLengths[id()];
 }
 
-static void readEdges(istream& in, LinearNumKey id,
-		ContigGraph<>& graph)
-{
-	for (int sense = false; sense <= true; ++sense) {
-		string s;
-		getline(in, s, !sense ? ';' : '\n');
-		assert(in.good());
-		istringstream ss(s);
-		for (ContigNode edge; ss >> edge;)
-			graph.add_edge(ContigNode(id, sense),
-					sense ? ~edge : edge);
-		assert(ss.eof());
-	}
-}
-
-/** Read an adjacency graph. */
-template <typename VertexProp>
-istream& operator>>(istream& in, ContigGraph<VertexProp>& o)
-{
-	assert(g_contigLengths.empty());
-	g_contigLengths = readContigLengths(in);
-
-	// Create the vertices.
-	o.clear();
-	ContigGraph<VertexProp>(g_contigLengths.size()).swap(o);
-
-	// Load the edges.
-	in.clear();
-	in.seekg(ios_base::beg);
-	assert(in);
-	for (string id; in >> id;) {
-		in.ignore(numeric_limits<streamsize>::max(), ';');
-		readEdges(in, stringToID(id), o);
-	}
-	assert(in.eof());
-	return in;
-}
-
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
@@ -74,6 +36,10 @@ void readContigGraph(ContigGraph<>& graph, const std::string& path)
 	if (&in == &fin)
 		assert_open(fin, path);
 	assert(in.good());
+
+	g_contigLengths = readContigLengths(in);
+	in.clear();
+	in.seekg(std::ios_base::beg);
 	in >> graph;
 	assert(in.eof());
 }

@@ -3,7 +3,9 @@
 
 #include "DirectedGraph.h"
 #include <istream>
+#include <limits> // for numeric_limits
 #include <ostream>
+#include <sstream>
 
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
@@ -70,10 +72,6 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	ContigGraph(const ContigGraph&);
 };
 
-template <typename VertexProp>
-std::istream& operator>>(std::istream& in,
-		ContigGraph<VertexProp>& g);
-
 /** Output a contig adjacency graph. */
 template <typename VertexProp>
 std::ostream& operator<<(std::ostream& out,
@@ -93,6 +91,42 @@ std::ostream& operator<<(std::ostream& out,
 			out << '\n';
 	}
 	return out;
+}
+
+/** Read the edges of a vertex. */
+template <typename VertexProp>
+void readEdges(std::istream& in, LinearNumKey id,
+		ContigGraph<VertexProp>& graph)
+{
+	for (int sense = false; sense <= true; ++sense) {
+		std::string s;
+		getline(in, s, !sense ? ';' : '\n');
+		assert(in.good());
+		std::istringstream ss(s);
+		for (ContigNode edge; ss >> edge;)
+			graph.add_edge(ContigNode(id, sense), edge ^ sense);
+		assert(ss.eof());
+	}
+}
+
+/** Read an contig adjacency graph. */
+template <typename VertexProp>
+std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& o)
+{
+	assert(!g_contigIDs.empty());
+
+	// Create the vertices.
+	o.clear();
+	ContigGraph<VertexProp>(g_contigIDs.size()).swap(o);
+
+	// Load the edges.
+	assert(in);
+	for (std::string id; in >> id;) {
+		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
+		readEdges(in, stringToID(id), o);
+	}
+	assert(in.eof());
+	return in;
 }
 
 void readContigGraph(ContigGraph<>& graph, const std::string& path);

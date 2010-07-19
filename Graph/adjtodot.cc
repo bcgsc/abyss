@@ -3,6 +3,7 @@
  * Copyright 2010 Genome Sciences Centre
  */
 #include "ContigGraph.h"
+#include "ContigLength.h"
 #include <fstream>
 #include <iostream>
 
@@ -22,6 +23,9 @@ int main(int argc, const char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
+	(void)readContigLengths(in);
+	in.clear();
+	in.seekg(std::ios_base::beg);
 	ContigGraph<> g;
 	in >> g;
 	assert(in.eof());
