@@ -395,7 +395,12 @@ int main(int argc, char *const argv[])
 	string estPath(argv[optind++]);
 
 	readContigs(contigPath);
-	readContigGraph(contigGraph, adjPath);
+
+	// Read the contig adjacency graph.
+	ifstream fin(adjPath.c_str());
+	assert_open(fin, adjPath);
+	fin >> contigGraph;
+	assert(fin.eof());
 
 	ofstream out(opt::out.c_str());
 	assert(out.is_open());
