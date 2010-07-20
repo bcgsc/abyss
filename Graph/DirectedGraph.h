@@ -157,9 +157,10 @@ class Edge
 		void clear() { m_vertices.clear(); }
 
 		/** Add vertex v to the graph. */
-		void add_vertex(const VertexProp& data = VertexProp())
+		Node add_vertex(const VertexProp& data = VertexProp())
 		{
 			m_vertices.push_back(Vertex(data));
+			return vertex(m_vertices.back());
 		}
 
 		/** Adds edge (u,v) to the graph. */
