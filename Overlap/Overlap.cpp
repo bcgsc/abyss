@@ -82,7 +82,7 @@ static const struct option longopts[] = {
 };
 
 static vector<Sequence> contigs;
-static ContigGraph<> contigGraph;
+static ContigGraph<> g_graph;
 
 static struct {
 	unsigned overlap;
@@ -93,17 +93,6 @@ static struct {
 	unsigned motif;
 	unsigned ambiguous;
 } stats;
-
-
-inline unsigned ContigNode::outDegree() const
-{
-	return contigGraph[*this].out_degree();
-}
-
-inline unsigned ContigNode::inDegree() const
-{
-	return contigGraph[~*this].out_degree();
-}
 
 inline const Sequence ContigNode::sequence() const
 {
@@ -287,7 +276,7 @@ static void findOverlap(
 	const ContigNode& pair = est.contig;
 	const ContigNode& t = rc ? pair : ref;
 	const ContigNode& h = rc ? ref : pair;
-	if (t.outDegree() > 0 || h.inDegree() > 0)
+	if (g_graph.out_degree(t) > 0 || g_graph.in_degree(h) > 0)
 		return;
 
 	bool mask = false;
@@ -399,7 +388,7 @@ int main(int argc, char *const argv[])
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
 	assert_open(fin, adjPath);
-	fin >> contigGraph;
+	fin >> g_graph;
 	assert(fin.eof());
 
 	ofstream out(opt::out.c_str());

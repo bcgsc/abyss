@@ -100,11 +100,9 @@ class ContigNode {
 	}
 
 	// These functions are implemented elsewhere.
-	unsigned outDegree() const;
-	unsigned inDegree() const;
 	unsigned length() const;
-	const std::string sequence() const;
 	unsigned coverage() const;
+	const std::string sequence() const;
 
 	unsigned index() const
 	{
