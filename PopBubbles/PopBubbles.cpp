@@ -66,15 +66,10 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Vertex attribute. */
+/** Contig properties. */
 struct Contig {
-	string id;
 	unsigned length;
 	unsigned coverage;
-
-	Contig() { }
-	Contig(const string& id, unsigned length, unsigned coverage)
-		: id(id), length(length), coverage(coverage) { }
 
 	friend ostream& operator <<(ostream& out, const Contig& o)
 	{
@@ -87,9 +82,6 @@ struct Contig {
 	}
 };
 
-/** Vertex attributes. */
-static vector<Contig> g_contigs;
-
 /** Contig adjacency graph. */
 typedef ContigGraph<Contig> Graph;
 static Graph g_graph;
@@ -97,7 +89,7 @@ static Graph g_graph;
 /** Return whether contig a has higher coverage than contig b. */
 static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 {
-	return g_contigs[a.id()].coverage > g_contigs[b.id()].coverage;
+	return g_graph[a].coverage > g_graph[b].coverage;
 }
 
 /** Popped branches. */
@@ -138,7 +130,7 @@ static struct {
 /** Return the length of the target vertex of the specified edge. */
 static unsigned targetLength(const Graph::Edge& e)
 {
-	return g_contigs[g_graph.target(e).id()].length;
+	return g_graph[g_graph.target(e)].length;
 }
 
 /** Consider popping the bubble originating at the vertex v. */
@@ -200,26 +192,6 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-/** Read the contig attributes. */
-static void readContigs(vector<Contig>& contigs, const string& path)
-{
-	ifstream in(path.c_str());
-	assert_open(in, path);
-	assert(in.good());
-
-	string id;
-	unsigned length, coverage;
-	while (in >> id >> length >> coverage) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		unsigned serial = g_contigIDs.serial(id);
-		assert(contigs.size() == serial);
-		(void)serial;
-		contigs.push_back(Contig(id, length, coverage));
-	}
-	assert(in.eof());
-	assert(!contigs.empty());
-}
-
 int main(int argc, char *const argv[])
 {
 	bool die = false;
@@ -269,10 +241,6 @@ int main(int argc, char *const argv[])
 	assert_open(fin, adjPath);
 	fin >> g_graph;
 	assert(fin.eof());
-
-	g_contigIDs.lock();
-	g_contigs.reserve(g_contigIDs.size());
-	readContigs(g_contigs, adjPath);
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
