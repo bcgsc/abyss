@@ -119,11 +119,15 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	g.clear();
 	ContigGraph<VertexProp>(g_contigIDs.size()).swap(g);
 
-	// Load the edges.
+	// Read the vertex properties and edges.
 	assert(in);
 	for (std::string id; in >> id;) {
+		ContigNode v(stringToID(id), false);
+		in >> static_cast<VertexProp&>(g[v]);
+		static_cast<VertexProp&>(g[~v])
+			= static_cast<VertexProp&>(g[v]);
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
-		readEdges(in, stringToID(id), g);
+		readEdges(in, v.id(), g);
 	}
 	assert(in.eof());
 	return in;

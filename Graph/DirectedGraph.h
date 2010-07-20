@@ -10,7 +10,19 @@
 #include <vector>
 
 /** No properties. */
-struct no_property { };
+struct no_property
+{
+	friend std::ostream& operator <<(std::ostream& out,
+			const no_property&)
+	{
+		return out;
+	}
+
+	friend std::istream& operator >>(std::istream& in, no_property&)
+	{
+		return in;
+	}
+};
 
 /** A directed graph. */
 template <typename VertexProp = no_property>
@@ -217,9 +229,13 @@ class Edge
 				const DirectedGraph<VertexProp>& g)
 		{
 			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
+				vertex_descriptor id = g.vertex(*v);
+				if (sizeof (VertexProp) > 0)
+					out << '"' << id << "\" ["
+						<< static_cast<VertexProp>(*v) << "]\n";
 				if (v->out_degree() == 0)
 					continue;
-				out << '"' << g.vertex(*v) << "\" ->";
+				out << '"' << id << "\" ->";
 				if (v->out_degree() > 1)
 					out << " {";
 				for (out_edge_iterator e = v->begin();
