@@ -82,8 +82,8 @@ std::ostream& operator<<(std::ostream& out,
 			v != g.end(); ++v) {
 		const ContigNode& id = g.vertex(*v);
 		if (!id.sense())
-			out << g.vertex(*v).id();
-	   	out << "\t;";
+			out << g.vertex(*v).id() << static_cast<VertexProp>(*v);
+		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)
 			out << ' ' << (g.target(*e) ^ id.sense());
