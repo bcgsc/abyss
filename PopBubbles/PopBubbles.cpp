@@ -71,15 +71,27 @@ struct Contig {
 	string id;
 	unsigned length;
 	unsigned coverage;
+
+	Contig() { }
 	Contig(const string& id, unsigned length, unsigned coverage)
 		: id(id), length(length), coverage(coverage) { }
+
+	friend ostream& operator <<(ostream& out, const Contig& o)
+	{
+		return out << ' ' << o.length << ' ' << o.coverage;
+	}
+
+	friend istream& operator >>(istream& in, Contig& o)
+	{
+		return in >> o.length >> o.coverage;
+	}
 };
 
 /** Vertex attributes. */
 static vector<Contig> g_contigs;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<> Graph;
+typedef ContigGraph<Contig> Graph;
 static Graph g_graph;
 
 /** Return whether contig a has higher coverage than contig b. */
@@ -236,7 +248,7 @@ int main(int argc, char *const argv[])
 		die = true;
 	}
 
-	if (argc - optind < 0) {
+	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
@@ -252,8 +264,12 @@ int main(int argc, char *const argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	string adjPath(optind < argc ? argv[optind++] : "-");
-	readContigGraph(g_graph, adjPath);
+	string adjPath(argv[optind++]);
+	ifstream fin(adjPath.c_str());
+	assert_open(fin, adjPath);
+	fin >> g_graph;
+	assert(fin.eof());
+
 	g_contigIDs.lock();
 	g_contigs.reserve(g_contigIDs.size());
 	readContigs(g_contigs, adjPath);
