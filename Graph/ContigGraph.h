@@ -145,6 +145,4 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	return in;
 }
 
-void readContigGraph(ContigGraph<>& graph, const std::string& path);
-
 #endif
