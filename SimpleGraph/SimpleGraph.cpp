@@ -75,10 +75,19 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef ContigGraph<> Graph;
+/** The contig adjacency graph. */
+static Graph g_graph;
 
 static void generatePathsThroughEstimates(
 		Graph* pContigGraph, string estFileName);
+
+static void assert_open(ifstream& f, const string& p)
+{
+	if (f.is_open())
+		return;
+	cerr << p << ": " << strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
 
 int main(int argc, char** argv)
 {
@@ -129,15 +138,18 @@ int main(int argc, char** argv)
 	string adjFile(argv[optind++]);
 	string estFile(argv[optind++]);
 
-	// Load the graph from the adjacency file
-	Graph contigGraph;
-	readContigGraph(contigGraph, adjFile);
+	// Read the contig adjacency graph.
+	ifstream fin(adjFile.c_str());
+	assert_open(fin, adjFile);
+	fin >> g_graph;
+	assert(fin.eof());
+
 	if (opt::verbose > 0)
-		cout << "Vertices: " << contigGraph.num_vertices()
-			<< " Edges: " << contigGraph.num_edges() << endl;
+		cout << "Vertices: " << g_graph.num_vertices()
+			<< " Edges: " << g_graph.num_edges() << endl;
 
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(&contigGraph, estFile);
+	generatePathsThroughEstimates(&g_graph, estFile);
 }
 
 static ostream& printConstraints(ostream& out, Constraints s)
@@ -195,7 +207,7 @@ static size_t calculatePathLength(const ContigPath& path,
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += iter->length();
+			len += g_graph[*iter].length;
 	}
 	assert(len > 0);
 	return len;
@@ -300,7 +312,7 @@ void makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distances[*it] = INT_MIN;
 		}
-		distance += it->length();
+		distance += g_graph[*it].length;
 	}
 
 	// Remove the repeats.
@@ -541,14 +553,6 @@ static void* worker(void* pArg)
 		}
 	}
 	return NULL;
-}
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
 }
 
 static void generatePathsThroughEstimates(

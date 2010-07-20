@@ -38,7 +38,6 @@ static inline Constraints::iterator findConstraint(
 }
 
 typedef ContigNode Node;
-typedef ContigGraph<> Graph;
 
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
@@ -74,7 +73,7 @@ bool depthFirstSearch(const Graph& g,
 			it->second = constraint;
 			return true;
 		}
-		currLen += path.back().length();
+		currLen += g[path.back()].length;
 	}
 
 	if (++visitedCount >= opt::maxCost)

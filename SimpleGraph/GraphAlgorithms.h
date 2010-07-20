@@ -4,6 +4,7 @@
 #include "ContigGraph.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
+#include <istream>
 #include <utility>
 #include <vector>
 
@@ -15,11 +16,26 @@ namespace opt {
 	static const unsigned maxPaths = 200;
 }
 
+/** Contig properties. */
+struct Contig {
+	unsigned length;
+
+	friend std::istream& operator >>(std::istream& in, Contig& o)
+	{
+		if (in >> o.length) {
+			assert(o.length >= opt::k);
+			o.length -= opt::k - 1;
+		}
+		return in;
+	}
+};
+
+typedef ContigGraph<Contig> Graph;
 typedef std::pair<ContigNode, unsigned> Constraint;
 typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;
 
-bool depthFirstSearch(const ContigGraph<>& g,
+bool depthFirstSearch(const Graph& g,
 		const ContigNode& sourceKey, Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost);
 
