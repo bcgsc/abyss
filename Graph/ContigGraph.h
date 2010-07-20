@@ -113,21 +113,28 @@ void readEdges(std::istream& in, LinearNumKey id,
 template <typename VertexProp>
 std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 {
-	assert(!g_contigIDs.empty());
-
-	// Create the vertices.
+	// Read the vertex properties.
 	g.clear();
-	ContigGraph<VertexProp>(g_contigIDs.size()).swap(g);
+	assert(in);
+	std::string id;
+	VertexProp prop;
+	while (in >> id >> prop) {
+		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		(void)g_contigIDs.serial(id);
+		g.add_vertex(prop);
+		g.add_vertex(prop);
+	}
+	assert(in.eof());
+	assert(g.num_vertices() > 0);
+	g_contigIDs.lock();
 
-	// Read the vertex properties and edges.
+	// Read the edges.
+	in.clear();
+	in.seekg(std::ios_base::beg);
 	assert(in);
 	for (std::string id; in >> id;) {
-		ContigNode v(stringToID(id), false);
-		in >> static_cast<VertexProp&>(g[v]);
-		static_cast<VertexProp&>(g[~v])
-			= static_cast<VertexProp&>(g[v]);
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
-		readEdges(in, v.id(), g);
+		readEdges(in, stringToID(id), g);
 	}
 	assert(in.eof());
 	return in;
