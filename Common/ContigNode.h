@@ -1,6 +1,7 @@
 #ifndef CONTIGNODE_H
 #define CONTIGNODE_H 1
 
+#include "config.h" // for WORDS_BIGENDIAN
 #include "ContigID.h"
 #include "StringUtil.h"
 #include <cassert>
@@ -13,6 +14,8 @@
 class ContigNode {
   public:
 	ContigNode() { }
+
+#if WORDS_BIGENDIAN
 	ContigNode(unsigned id, bool sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(unsigned id, int sense)
@@ -20,12 +23,25 @@ class ContigNode {
 	ContigNode(std::string id, bool sense)
 		: m_ambig(false),
 		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
-	explicit ContigNode(unsigned i)
-		: m_ambig(false), m_id(i >> 1), m_sense(i & 1) { }
+#else
+	ContigNode(unsigned id, bool sense)
+		: m_sense(sense), m_id(id), m_ambig(false) { }
+	ContigNode(unsigned id, int sense)
+		: m_sense(sense), m_id(id), m_ambig(false) { }
+	ContigNode(std::string id, bool sense)
+		: m_sense(sense), m_id(g_contigIDs.serial(id)),
+		m_ambig(false) { }
+#endif
+
+	explicit ContigNode(unsigned i) : m_int(i) { }
 
 	/** Create an ambiguous contig. */
 	ContigNode(unsigned n, char c)
+#if WORDS_BIGENDIAN
 		: m_ambig(true), m_id(n), m_sense(false)
+#else
+		: m_sense(false), m_id(n), m_ambig(true)
+#endif
 	{
 		assert(c == 'N');
 		(void)c;
@@ -104,6 +120,7 @@ class ContigNode {
 	unsigned coverage() const;
 	const std::string sequence() const;
 
+	/** Return a value that can be used as an index of an array. */
 	unsigned index() const
 	{
 		assert(!m_ambig);
@@ -111,14 +128,23 @@ class ContigNode {
 	}
 
   private:
-	unsigned hash() const
-	{
-		return m_ambig << 31 | m_id << 1 | m_sense;
-	}
+	/** Return the hash value of this contig. */
+	unsigned hash() const { return m_int; }
 
-	unsigned m_ambig:1;
-	unsigned m_id:30;
-	unsigned m_sense:1;
+	union {
+		unsigned m_int;
+		struct {
+#if WORDS_BIGENDIAN
+			unsigned m_ambig:1;
+			unsigned m_id:30;
+			unsigned m_sense:1;
+#else
+			unsigned m_sense:1;
+			unsigned m_id:30;
+			unsigned m_ambig:1;
+#endif
+		};
+	};
 };
 
 #endif
