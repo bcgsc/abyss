@@ -81,7 +81,10 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static vector<Sequence> contigs;
+/** Contig sequences. */
+static vector<Sequence> g_contigs;
+
+/** Contig adjacency graph. */
 static ContigGraph<> g_graph;
 
 static struct {
@@ -96,7 +99,7 @@ static struct {
 
 inline const Sequence ContigNode::sequence() const
 {
-	const Sequence& seq = contigs[id()];
+	const Sequence& seq = g_contigs[id()];
 	return sense() ? reverseComplement(seq) : seq;
 }
 
@@ -151,7 +154,7 @@ static unsigned findOverlap(const ContigNode& t_id,
 static LinearNumKey nextContigID(void)
 {
 	LinearNumKey id;
-	istringstream s(g_contigIDs.key(contigs.size() - 1));
+	istringstream s(g_contigIDs.key(g_contigs.size() - 1));
 	s >> id;
 	assert(s.eof());
 	return ++id;
@@ -326,10 +329,10 @@ static void readContigs(const char *contigPath)
 	FastaReader in(contigPath,
 			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;)
-		contigs.push_back(rec.seq);
+		g_contigs.push_back(rec.seq);
 	assert(in.eof());
-	assert(!contigs.empty());
-	opt::colourSpace = isdigit(contigs[0][0]);
+	assert(!g_contigs.empty());
+	opt::colourSpace = isdigit(g_contigs[0][0]);
 }
 
 int main(int argc, char *const argv[])
