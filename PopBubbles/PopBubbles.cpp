@@ -181,7 +181,9 @@ static void considerPopping(Graph::vertex_iterator v)
 /** Remove the specified contig from the adjacency graph. */
 static void removeContig(unsigned id)
 {
-	g_graph.clear_vertex(ContigNode(id, false));
+	ContigNode v(id, false);
+	g_graph.clear_vertex(v);
+	g_graph.remove_vertex(v);
 }
 
 static void assert_open(ifstream& f, const string& p)

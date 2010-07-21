@@ -7,10 +7,16 @@
 #include <ostream>
 #include <sstream>
 
+template <typename VertexProp = no_property> class ContigGraph;
+
+template <typename VertexProp>
+std::ostream& operator<<(std::ostream& out,
+		const ContigGraph<VertexProp>& g);
+
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
  */
-template <typename VertexProp = no_property>
+template <typename VertexProp>
 class ContigGraph : public DirectedGraph<VertexProp> {
   public:
 	typedef DirectedGraph<VertexProp> DG;
@@ -68,6 +74,19 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		clear_in_edges(v);
 	}
 
+	/** Remove vertex v from this graph. It is assumed that there
+	 * are no edges to or from vertex v. It is best to call
+	 * clear_vertex before remove_vertex.
+	 */
+	void remove_vertex(vertex_descriptor v)
+	{
+		DG::remove_vertex(v);
+		DG::remove_vertex(~v);
+	}
+
+	friend std::ostream& operator<< <>(std::ostream& out,
+			const ContigGraph& g);
+
   private:
 	ContigGraph(const ContigGraph&);
 };
@@ -81,6 +100,8 @@ std::ostream& operator<<(std::ostream& out,
 	for (typename G::vertex_iterator v = g.begin();
 			v != g.end(); ++v) {
 		const ContigNode& id = g.vertex(*v);
+		if (g.isRemoved(id))
+			continue;
 		if (!id.sense())
 			out << g.vertex(*v).id() << static_cast<VertexProp>(*v);
 		out << "\t;";

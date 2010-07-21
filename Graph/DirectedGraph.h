@@ -183,6 +183,18 @@ class Edge
 			(*this)[v].clear_out_edges();
 		}
 
+		/** Remove vertex v from this graph. It is assumed that there
+		 * are no edges to or from vertex v. It is best to call
+		 * clear_vertex before remove_vertex.
+		 */
+		void remove_vertex(vertex_descriptor v)
+		{
+			unsigned i = v.index();
+			if (i >= m_removed.size())
+				m_removed.resize(i + 1);
+			m_removed[i] = true;
+		}
+
 		/** Return the number of vertices. */
 		size_t num_vertices() const { return m_vertices.size(); }
 
@@ -231,6 +243,8 @@ class Edge
 		{
 			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
 				vertex_descriptor id = g.vertex(*v);
+				if (g.isRemoved(id))
+					continue;
 				if (sizeof (VertexProp) > 0)
 					out << '"' << id << "\" ["
 						<< static_cast<VertexProp>(*v) << "]\n";
@@ -249,11 +263,23 @@ class Edge
 			return out;
 		}
 
+	protected:
+		/** Return true if this vertex has been removed. */
+		bool isRemoved(vertex_descriptor v) const
+		{
+			unsigned i = v.index();
+			return i < m_removed.size() ? m_removed[i] : false;
+		}
+
 	private:
 		DirectedGraph(const DirectedGraph& x);
 		DirectedGraph& operator =(const DirectedGraph& x);
 
+		/** The set of vertices. */
 		Vertices m_vertices;
+
+		/** Flags indicating vertices that have been removed. */
+		std::vector<bool> m_removed;
 };
 
 #endif
