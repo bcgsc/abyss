@@ -82,7 +82,7 @@ static const struct option longopts[] = {
 };
 
 /** Contig sequences. */
-static vector<Sequence> g_contigs;
+static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
 static ContigGraph<> g_graph;
@@ -97,20 +97,20 @@ static struct {
 	unsigned ambiguous;
 } stats;
 
-inline const Sequence ContigNode::sequence() const
+/** Return the sequence of the specified contig. */
+static string sequence(const ContigNode& id)
 {
-	const Sequence& seq = g_contigs[id()];
-	return sense() ? reverseComplement(seq) : seq;
+	const string& seq = g_contigs[id.id()];
+	return id.sense() ? reverseComplement(seq) : seq;
 }
-
 
 static unsigned findOverlap(const ContigNode& t_id,
 		const ContigNode& h_id,
 		bool& mask)
 {
 	mask = false;
-	Sequence t = t_id.sequence();
-	Sequence h = h_id.sequence();
+	string t = sequence(t_id);
+	string h = sequence(h_id);
 	unsigned len = min(t.length(), h.length());
 	vector<unsigned> overlaps;
 	overlaps.reserve(len);
@@ -174,8 +174,8 @@ static string newContig(const ContigNode& t, const ContigNode& h,
 static string overlapContigs(const ContigNode& t_id,
 		const ContigNode& h_id, unsigned overlap, bool mask)
 {
-	Sequence t = t_id.sequence();
-	Sequence h = h_id.sequence();
+	string t = sequence(t_id);
+	string h = sequence(h_id);
 	assert(overlap < (unsigned)opt::k - 1);
 	unsigned gap = opt::k - 1 - overlap;
 	string a(t, t.length() - opt::k+1, gap);
@@ -205,8 +205,8 @@ static string mergeContigs(const ContigNode& t, const ContigNode& h,
 			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
 		string gap = est.distance <= 0 ? string("n")
 			: string(est.distance, 'N');
-		const string& ts = t.sequence();
-		const string& hs = h.sequence();
+		const string& ts = sequence(t);
+		const string& hs = sequence(h);
 		unsigned overlap = opt::k - 1;
 		return newContig(t, h, est.distance,
 				ts.substr(ts.length() - overlap) + gap
