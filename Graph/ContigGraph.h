@@ -103,7 +103,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << g.vertex(*v).id() << static_cast<VertexProp>(*v);
+			out << id.id() << static_cast<VertexProp>(*v);
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)
@@ -112,22 +112,6 @@ std::ostream& operator<<(std::ostream& out,
 			out << '\n';
 	}
 	return out;
-}
-
-/** Read the edges of a vertex. */
-template <typename VertexProp>
-void readEdges(std::istream& in, LinearNumKey id,
-		ContigGraph<VertexProp>& graph)
-{
-	for (int sense = false; sense <= true; ++sense) {
-		std::string s;
-		getline(in, s, !sense ? ';' : '\n');
-		assert(in.good());
-		std::istringstream ss(s);
-		for (ContigNode edge; ss >> edge;)
-			graph.add_edge(ContigNode(id, sense), edge ^ sense);
-		assert(ss.eof());
-	}
 }
 
 /** Read a contig adjacency graph. */
@@ -158,9 +142,18 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	in.clear();
 	in.seekg(std::ios_base::beg);
 	assert(in);
-	for (std::string id; in >> id;) {
+	for (std::string idString; in >> idString;) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
-		readEdges(in, stringToID(id), g);
+		for (int sense = false; sense <= true; ++sense) {
+			ContigNode id(idString, false);
+			std::string s;
+			getline(in, s, !sense ? ';' : '\n');
+			assert(in.good());
+			std::istringstream ss(s);
+			for (ContigNode edge; ss >> edge;)
+				g.add_edge(id ^ sense, edge ^ sense);
+			assert(ss.eof());
+		}
 	}
 	assert(in.eof());
 	return in;
