@@ -243,7 +243,7 @@ class Edge
 		{
 			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
 				vertex_descriptor id = g.vertex(*v);
-				if (g.isRemoved(id))
+				if (g.is_removed(id))
 					continue;
 				if (sizeof (VertexProp) > 0)
 					out << '"' << id << "\" ["
@@ -265,7 +265,7 @@ class Edge
 
 	protected:
 		/** Return true if this vertex has been removed. */
-		bool isRemoved(vertex_descriptor v) const
+		bool is_removed(vertex_descriptor v) const
 		{
 			unsigned i = v.index();
 			return i < m_removed.size() ? m_removed[i] : false;

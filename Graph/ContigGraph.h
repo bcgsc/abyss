@@ -100,7 +100,7 @@ std::ostream& operator<<(std::ostream& out,
 	for (typename G::vertex_iterator v = g.begin();
 			v != g.end(); ++v) {
 		const ContigNode& id = g.vertex(*v);
-		if (g.isRemoved(id))
+		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
 			out << g.vertex(*v).id() << static_cast<VertexProp>(*v);
