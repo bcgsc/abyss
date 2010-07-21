@@ -80,7 +80,7 @@ abyssopt += -c$c
 endif
 ifdef b
 abyssopt += -b$b
-popbubblesopt += -b$b
+pbopt += -b$b
 endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
@@ -145,8 +145,8 @@ endif
 
 # Pop bubbles.
 
-%-1.indel: %-1.adj
-	PopBubbles $v -k$k $(popbubblesopt) $(POPBUBBLES_OPTIONS) $< >$@
+%-1.indel %-3.adj: %-1.adj
+	PopBubbles $v -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $< >$@
 
 %-3.fa: %-1.indel %-1.fa
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} \
