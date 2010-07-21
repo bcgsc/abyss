@@ -103,7 +103,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << id.id() << static_cast<VertexProp>(*v);
+			out << id.id() << *v;
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)

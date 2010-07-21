@@ -85,21 +85,6 @@ class Vertex : public VertexProp
 	bool operator ==(const Vertex& v) const { return this == &v; }
 	bool operator !=(const Vertex& v) const { return this != &v; }
 
-	friend std::ostream& operator <<(std::ostream& out,
-			const Vertex& o)
-	{
-		if (o.m_edges.empty())
-			return out;
-		out << '"' << &o << "\" ->";
-		if (o.m_edges.size() > 1)
-			out << " {";
-		std::copy(o.m_edges.begin(), o.m_edges.end(),
-				affix_ostream_iterator<Edge>(out, " \"", "\""));
-		if (o.m_edges.size() > 1)
-			out << " }";
-		return out;
-	}
-
   private:
 	Edges m_edges;
 };
@@ -114,11 +99,6 @@ class Edge
 	const Vertex& target() const { return *m_target; }
 
 	bool operator ==(const Vertex& v) { return m_target == &v; }
-
-	friend std::ostream& operator <<(std::ostream& out, const Edge& e)
-	{
-		return out << e.m_target;
-	}
 
   private:
 	/** The target vertex of this edge. */
@@ -246,8 +226,7 @@ class Edge
 				if (g.is_removed(id))
 					continue;
 				if (sizeof (VertexProp) > 0)
-					out << '"' << id << "\" ["
-						<< static_cast<VertexProp>(*v) << "]\n";
+					out << '"' << id << "\" [" << *v << "]\n";
 				if (v->out_degree() == 0)
 					continue;
 				out << '"' << id << "\" ->";
