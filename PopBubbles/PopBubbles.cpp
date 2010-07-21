@@ -37,6 +37,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
+"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -48,17 +49,21 @@ namespace opt {
 	int k; // used by ContigLength
 	static unsigned maxLength;
 
+	/** Write the contig adjacency graph to this file. */
+	static string graphPath;
+
 	/** Output bubbles in dot format. */
 	static int dot;
 }
 
-static const char shortopts[] = "b:k:v";
+static const char shortopts[] = "b:g:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "dot",           no_argument,       &opt::dot, 1, },
+	{ "graph",         no_argument,       NULL, 'g' },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -203,6 +208,7 @@ int main(int argc, char *const argv[])
 		switch (c) {
 			case '?': die = true; break;
 			case 'b': arg >> opt::maxLength; break;
+			case 'g': arg >> opt::graphPath; break;
 			case 'k': arg >> opt::k; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -269,15 +275,17 @@ int main(int argc, char *const argv[])
 			<< " Too long: " << g_count.tooLong/2
 			<< '\n';
 
-	if (opt::verbose < 3)
-		return 0;
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		assert(fout.good());
 
-	// Remove the popped contigs from the adjacency graph.
-	for_each(g_popped.begin(), g_popped.end(), removeContig);
+		// Remove the popped contigs from the adjacency graph.
+		for_each(g_popped.begin(), g_popped.end(), removeContig);
 
-	// Output the updated adjacency graph.
-	cerr << g_graph;
-	assert(cerr.good());
+		// Output the updated adjacency graph.
+		fout << g_graph;
+		assert(fout.good());
+	}
 
 	return 0;
 }
