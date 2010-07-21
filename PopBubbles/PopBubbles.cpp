@@ -276,13 +276,12 @@ int main(int argc, char *const argv[])
 			<< '\n';
 
 	if (!opt::graphPath.empty()) {
-		ofstream fout(opt::graphPath.c_str());
-		assert(fout.good());
-
 		// Remove the popped contigs from the adjacency graph.
 		for_each(g_popped.begin(), g_popped.end(), removeContig);
 
 		// Output the updated adjacency graph.
+		ofstream fout(opt::graphPath.c_str());
+		assert(fout.good());
 		fout << g_graph;
 		assert(fout.good());
 	}
