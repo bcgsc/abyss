@@ -6,6 +6,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigGraph.h"
+#include "ContigProperties.h"
 #include "Estimate.h"
 #include "FastaReader.h"
 #include "Uncompress.h"
@@ -85,7 +86,7 @@ static const struct option longopts[] = {
 static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<> Graph;
+typedef ContigGraph<ContigProperties> Graph;
 static Graph g_graph;
 
 static struct {
@@ -161,21 +162,18 @@ static LinearNumKey nextContigID(void)
 	return ++id;
 }
 
-static string newContig(const ContigNode& t, const ContigNode& h,
+static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 		int dist, const string& seq)
 {
-	static unsigned id = nextContigID();
-	ostringstream s;
-	s << id;
-	g_contigIDs.serial(s.str());
-	s.str("");
-	s << '>' << id++ << ' ' << seq.length() << " 0 "
-		<< t << ' ' << h << ' ' << dist << '\n'
-		<< seq << '\n';
-	return s.str();
+	static unsigned nid = nextContigID();
+	ostringstream id, comment;
+	id << nid++;
+	g_contigIDs.serial(id.str());
+	comment << seq.length() << " 0 " << t << ' ' << h << ' ' << dist;
+	return FastaRecord(id.str(), comment.str(), seq);
 }
 
-static string overlapContigs(const ContigNode& t_id,
+static FastaRecord overlapContigs(const ContigNode& t_id,
 		const ContigNode& h_id, unsigned overlap, bool mask)
 {
 	string t = sequence(t_id);
@@ -190,7 +188,8 @@ static string overlapContigs(const ContigNode& t_id,
 	return newContig(t_id, h_id, -overlap, a + o + b);
 }
 
-static string mergeContigs(const ContigNode& t, const ContigNode& h,
+static FastaRecord mergeContigs(
+		const ContigNode& t, const ContigNode& h,
 		const Estimate& est, unsigned overlap, bool mask)
 {
 	if (overlap > 0) {
@@ -226,7 +225,8 @@ struct Overlap {
 		: est(est), overlap(overlap), mask(mask) { }
 };
 
-static string mergeContigs(const ContigNode& t, const ContigNode& h,
+static FastaRecord mergeContigs(
+		const ContigNode& t, const ContigNode& h,
 		const Overlap& overlap)
 {
 	return mergeContigs(t, h, overlap.est, overlap.overlap,
@@ -423,11 +423,13 @@ int main(int argc, char *const argv[])
 			// This edge is scaffolded.
 		} else if (unambiguous(g_overlapGraph, t)) {
 			assert(*g_overlapGraph[t].begin() == h);
-			out << mergeContigs(t, h, it->second);
+			FastaRecord contig = mergeContigs(t, h, it->second);
+			out << contig;
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = g_graph.add_vertex();
+			Graph::vertex_descriptor v = g_graph.add_vertex(
+					ContigProperties(contig.seq.length(), 0));
 			g_graph.add_edge(t, v);
 			g_graph.add_edge(v, h);
 
@@ -450,11 +452,13 @@ int main(int argc, char *const argv[])
 			// and removed.
 		} else if (unambiguous(g_scaffoldGraph, t)) {
 			assert(*g_scaffoldGraph[t].begin() == h);
-			out << mergeContigs(t, h, it->second);
+			FastaRecord contig = mergeContigs(t, h, it->second);
+			out << contig;
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = g_graph.add_vertex();
+			Graph::vertex_descriptor v = g_graph.add_vertex(
+					ContigProperties(contig.seq.length(), 0));
 			g_graph.add_edge(t, v);
 			g_graph.add_edge(v, h);
 		} else
