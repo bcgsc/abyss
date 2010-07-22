@@ -72,7 +72,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef map<LinearNumKey, ContigPath> ContigPathMap;
+typedef map<ContigID, ContigPath> ContigPathMap;
 
 /** Lengths of contigs in k-mer. */
 static vector<unsigned> g_contigLengths;
@@ -91,18 +91,18 @@ static bool gDebugPrint;
 /** Return all contigs that are tandem repeats, identified as those
  * contigs that appear more than once in a single path.
  */
-static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
+static set<ContigID> findRepeats(const ContigPathMap& paths)
 {
-	set<LinearNumKey> repeats;
+	set<ContigID> repeats;
 	for (ContigPathMap::const_iterator pathIt = paths.begin();
 			pathIt != paths.end(); ++pathIt) {
 		const ContigPath& path = pathIt->second;
-		map<LinearNumKey, unsigned> count;
+		map<ContigID, unsigned> count;
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
 			if (!it->ambiguous())
-				count[it->id()]++;
-		for (map<LinearNumKey, unsigned>::const_iterator
+				count[ContigID(*it)]++;
+		for (map<ContigID, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
 				repeats.insert(it->first);
@@ -113,15 +113,14 @@ static set<LinearNumKey> findRepeats(const ContigPathMap& paths)
 /** Remove tandem repeats from the set of paths.
  * @return the removed paths
  */
-static set<LinearNumKey> removeRepeats(ContigPathMap& paths)
+static set<ContigID> removeRepeats(ContigPathMap& paths)
 {
-	set<LinearNumKey> repeats = findRepeats(paths);
+	set<ContigID> repeats = findRepeats(paths);
 	if (gDebugPrint) {
 		cout << "Repeats:";
 		if (!repeats.empty())
-			transform(repeats.begin(), repeats.end(),
-					affix_ostream_iterator<string>(cout, " "),
-					idToString);
+			copy(repeats.begin(), repeats.end(),
+					affix_ostream_iterator<ContigID>(cout, " "));
 		else
 			cout << " none";
 		cout << '\n';
@@ -129,7 +128,7 @@ static set<LinearNumKey> removeRepeats(ContigPathMap& paths)
 
 	ostringstream ss;
 	unsigned removed = 0;
-	for (set<LinearNumKey>::const_iterator it = repeats.begin();
+	for (set<ContigID>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		if (paths.erase(*it) > 0) {
 			ss << ' ' << ContigID(*it);
@@ -146,7 +145,7 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 {
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it)
-		if (seen.insert(*it).second)
+		if (!it->ambiguous() && seen.insert(*it).second)
 			mergeQ.push_back(*it);
 }
 
@@ -162,7 +161,7 @@ static unsigned mergePaths(ContigPath& path,
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
 		ContigPathMap::const_iterator path2It
-			= paths.find(pivot.id());
+			= paths.find(ContigID(pivot));
 		if (path2It == paths.end())
 			continue;
 
@@ -190,7 +189,7 @@ static unsigned mergePaths(ContigPath& path,
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
-static void extendPaths(LinearNumKey id,
+static void extendPaths(ContigID id,
 		const ContigPathMap& paths, ContigPathMap& out)
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
@@ -220,7 +219,7 @@ static void extendPaths(LinearNumKey id,
 			for (deque<ContigNode>::const_iterator it
 					= mergeQ.begin(); it != mergeQ.end(); ++it)
 				cout << *it << '\t'
-					<< paths.find(it->id())->second << '\n';
+					<< paths.find(ContigID(*it))->second << '\n';
 		}
 	}
 }
@@ -250,15 +249,15 @@ static bool isCycle(const ContigPath& path)
  * @param overlaps [out] paths that are found to overlap
  * @return the ID of the subsuming path
  */
-static LinearNumKey identifySubsumedPaths(
+static ContigID identifySubsumedPaths(
 		ContigPathMap::const_iterator path1It,
 		ContigPathMap& paths,
 		vector<ContigPathMap::iterator>& out,
-		set<LinearNumKey>& overlaps)
+		set<ContigID>& overlaps)
 {
 	ostringstream vout;
 	out.clear();
-	LinearNumKey id = path1It->first;
+	ContigID id(path1It->first);
 	const ContigPath& path = path1It->second;
 	if (gDebugPrint)
 		vout << ContigNode(id, false) << '\t' << path << '\n';
@@ -266,9 +265,9 @@ static LinearNumKey identifySubsumedPaths(
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		ContigNode pivot = *it;
-		if (pivot.id() == id)
+		if (pivot.ambiguous() || pivot.id() == id)
 			continue;
-		ContigPathMap::iterator path2It = paths.find(pivot.id());
+		ContigPathMap::iterator path2It = paths.find(ContigID(pivot));
 		if (path2It == paths.end())
 			continue;
 		ContigPath path2 = path2It->second;
@@ -327,7 +326,7 @@ static LinearNumKey identifySubsumedPaths(
  */
 static ContigPathMap::const_iterator removeSubsumedPaths(
 		ContigPathMap::const_iterator path1It, ContigPathMap& paths,
-		LinearNumKey& seed, set<LinearNumKey>& overlaps)
+		ContigID& seed, set<ContigID>& overlaps)
 {
 	if (gDebugPrint)
 		cout << '\n';
@@ -346,13 +345,13 @@ static ContigPathMap::const_iterator removeSubsumedPaths(
 /** Remove paths subsumed by another path.
  * @return paths that are found to overlap
  */
-static set<LinearNumKey> removeSubsumedPaths(ContigPathMap& paths)
+static set<ContigID> removeSubsumedPaths(ContigPathMap& paths)
 {
-	set<LinearNumKey> overlaps, seen;
+	set<ContigID> overlaps, seen;
 	for (ContigPathMap::const_iterator iter = paths.begin();
 			iter != paths.end();) {
 		if (seen.count(iter->first) == 0) {
-			LinearNumKey seed;
+			ContigID seed;
 			iter = removeSubsumedPaths(iter, paths, seed, overlaps);
 			seen.insert(seed);
 		} else
@@ -468,29 +467,28 @@ int main(int argc, char** argv)
 	if (gDebugPrint)
 		cout << '\n';
 
-	set<LinearNumKey> repeats = removeRepeats(resultsPathMap);
+	set<ContigID> repeats = removeRepeats(resultsPathMap);
 
 	if (gDebugPrint)
 		cout << "\nRemoving redundant contigs\n";
-	set<LinearNumKey> overlaps = removeSubsumedPaths(resultsPathMap);
+	set<ContigID> overlaps = removeSubsumedPaths(resultsPathMap);
 
 	if (!overlaps.empty() && !repeats.empty()) {
 		// Remove the newly-discovered repeat contigs from the
 		// original paths.
-		for (set<LinearNumKey>::const_iterator it = repeats.begin();
+		for (set<ContigID>::const_iterator it = repeats.begin();
 				it != repeats.end(); ++it)
 			originalPathMap.erase(*it);
 
 		// Reassemble the paths that were found to overlap.
 		if (gDebugPrint) {
 			cout << "\nReassembling overlapping contigs:";
-			transform(overlaps.begin(), overlaps.end(),
-					affix_ostream_iterator<string>(cout, " "),
-					idToString);
+			copy(overlaps.begin(), overlaps.end(),
+					affix_ostream_iterator<ContigID>(cout, " "));
 			cout << '\n';
 		}
 
-		for (set<LinearNumKey>::const_iterator it = overlaps.begin();
+		for (set<ContigID>::const_iterator it = overlaps.begin();
 				it != overlaps.end(); ++it) {
 			if (originalPathMap.count(*it) == 0)
 				continue; // repeat
@@ -514,9 +512,8 @@ int main(int argc, char** argv)
 		overlaps = removeSubsumedPaths(resultsPathMap);
 		if (!overlaps.empty() && gDebugPrint) {
 			cout << "\nOverlapping contigs:";
-			transform(overlaps.begin(), overlaps.end(),
-					affix_ostream_iterator<string>(cout, " "),
-					idToString);
+			copy(overlaps.begin(), overlaps.end(),
+					affix_ostream_iterator<ContigID>(cout, " "));
 			cout << '\n';
 		}
 	}
