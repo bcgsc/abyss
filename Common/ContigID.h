@@ -22,7 +22,7 @@ static inline const std::string& idToString(unsigned id)
  */
 class ContigID {
   public:
-	ContigID() { }
+	ContigID() : m_id(0) { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(std::string id)
 		: m_id(g_contigIDs.serial(id)) { };
