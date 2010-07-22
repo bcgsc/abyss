@@ -2,6 +2,7 @@
 #define CONTIGGRAPH_H 1
 
 #include "DirectedGraph.h"
+#include <cassert>
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
@@ -119,7 +120,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << g_contigIDs.key(id.id()) << *v;
+			out << ContigID(id) << *v;
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)
@@ -141,13 +142,12 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	// Read the vertex properties.
 	g.clear();
 	assert(in);
-	std::string idString;
+	ContigID id(-1);
 	VertexProp prop;
-	while (in >> idString >> prop) {
+	while (in >> id >> prop) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		ContigNode id(idString, false);
 		vertex_descriptor v = g.add_vertex(prop);
-		assert(v == id);
+		assert(v == ContigNode(id, false));
 	}
 	assert(in.eof());
 	assert(g.num_vertices() > 0);
@@ -157,16 +157,15 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	in.clear();
 	in.seekg(std::ios_base::beg);
 	assert(in);
-	for (std::string idString; in >> idString;) {
+	while (in >> id) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
 		for (int sense = false; sense <= true; ++sense) {
-			ContigNode id(idString, false);
 			std::string s;
 			getline(in, s, !sense ? ';' : '\n');
 			assert(in.good());
 			std::istringstream ss(s);
 			for (ContigNode edge; ss >> edge;)
-				g.DG::add_edge(id ^ sense, edge ^ sense);
+				g.DG::add_edge(ContigNode(id, sense), edge ^ sense);
 			assert(ss.eof());
 		}
 	}

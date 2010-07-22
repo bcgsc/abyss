@@ -70,6 +70,13 @@ class ContigNode {
 
 	void flip() { if (!m_ambig) m_sense = !m_sense; }
 
+	/** Return the contig ID. */
+	operator ContigID() const
+	{
+		assert(!m_ambig);
+		return ContigID(m_id);
+	}
+
 	bool operator ==(const ContigNode& o) const
 	{
 		return hash() == o.hash();
