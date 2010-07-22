@@ -48,6 +48,7 @@ static const char USAGE_MESSAGE[] =
 "      --mask-repeat     join contigs at a simple repeat and mask the repeat\n"
 "                        [default]\n"
 "      --no-merge-repeat don't join contigs at a repeat\n"
+"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -60,11 +61,17 @@ namespace opt {
 	static unsigned minimum_overlap = 5;
 	static int mask = 1;
 	static int scaffold = 1;
+
+	/** Write the contig adjacency graph to this file. */
+	static string graphPath;
+
+	/** Write the new contigs to this file. */
 	static string out;
+
 	int dot; // used by Estimate
 }
 
-static const char shortopts[] = "k:m:o:v";
+static const char shortopts[] = "g:k:m:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -347,6 +354,7 @@ int main(int argc, char *const argv[])
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'g': arg >> opt::graphPath; break;
 			case 'k': arg >> opt::k; break;
 			case 'm': arg >> opt::minimum_overlap; break;
 			case 'o': arg >> opt::out; break;
@@ -466,9 +474,12 @@ int main(int argc, char *const argv[])
 	}
 	out.close();
 
-	if (opt::verbose > 1) {
+	if (!opt::graphPath.empty()) {
 		// Output the updated adjacency graph.
-		cerr << g_graph;
+		ofstream fout(opt::graphPath.c_str());
+		assert(fout.good());
+		fout << g_graph;
+		assert(fout.good());
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
