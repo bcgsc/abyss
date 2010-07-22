@@ -2,7 +2,6 @@
 #include "Common/Options.h"
 #include "ContigID.h"
 #include "FastaReader.h"
-#include "FastaWriter.h"
 #include "Uncompress.h"
 #include <cctype>
 #include <cmath>
@@ -347,7 +346,7 @@ static void writePileup(ostream& out,
  * to the file specified by the -o option. */
 static void consensus(const string& outPath, const string& pileupPath)
 {
-	FastaWriter outFile(outPath.c_str());
+	ofstream outFile(outPath.c_str());
 	ofstream pileupFile(pileupPath.c_str());
 	ostream& pileupOut = pileupPath == "-" ? cout : pileupFile;
 
@@ -381,8 +380,12 @@ static void consensus(const string& outPath, const string& pileupPath)
 			} else {
 				if (opt::csToNt)
 					fixUnknown(outSeq, contig.seq);
-				outFile.WriteSequence(outSeq, stringToID(it->first),
-						contig.coverage, contig.comment);
+				ostringstream comment;
+				comment << outSeq.length() << ' ' << contig.coverage;
+				if (!contig.comment.empty())
+					comment << ' ' << contig.comment;
+				outFile << FastaRecord(it->first, comment.str(), outSeq);
+				assert(outFile.good());
 			}
 
 			if (opt::verbose > 1) {

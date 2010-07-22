@@ -376,10 +376,9 @@ static ContigPathMap readPaths(const string& filePath)
 	assert_open(in, filePath);
 
 	ContigPathMap paths;
-	string idString;
+	ContigID id;
 	ContigPath path;
-	while (in >> idString >> path) {
-		LinearNumKey id = g_contigIDs.serial(idString);
+	while (in >> id >> path) {
 		bool inserted = paths.insert(
 				make_pair(id, path)).second;
 		assert(inserted);

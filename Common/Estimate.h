@@ -84,11 +84,11 @@ struct EstimateRecord
 		o.estimates[false].clear();
 		o.estimates[true].clear();
 
-		std::string id;
+		ContigID id;
 		in >> id;
 		if (!in)
 			return in;
-		o.refID = stringToID(id);
+		o.refID = id;
 
 		for (int rc = false; rc <= true; ++rc) {
 			std::string s;

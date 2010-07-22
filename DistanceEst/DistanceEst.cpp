@@ -167,7 +167,7 @@ static void writeEstimates(ostream& out,
 		const vector<unsigned>& lengthVec, const PDF& pdf)
 {
 	assert(!pairs.empty());
-	LinearNumKey id0 = g_contigIDs.serial(pairs.front().rname);
+	ContigID id0(pairs.front().rname);
 	assert(id0 < lengthVec.size());
 	unsigned len0 = lengthVec[id0];
 	if (len0 < opt::seedLen)
@@ -243,7 +243,7 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 
 		getline(ss, tag, ':');
 		assert(tag == "SN");
-		string id;
+		ContigID id;
 		ss >> id >> ws;
 
 		getline(ss, tag, ':');
@@ -252,7 +252,6 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 		ss >> len;
 
 		assert(ss);
-		(void)g_contigIDs.serial(id);
 		lengths.push_back(len);
 	}
 	assert(!lengths.empty());
@@ -382,7 +381,7 @@ int main(int argc, char** argv)
 				|| !sam.isPaired() || sam.rname == sam.mrnm)
 			continue;
 		if (sam.rname != alignments.front().rname) {
-			unsigned id0 = g_contigIDs.serial(sam.rname);
+			ContigID id0(sam.rname);
 			if (seen[id0]) {
 				cerr << "error: input must be sorted: `"
 					<< sam.rname << "'\n";

@@ -292,9 +292,8 @@ int main(int argc, char** argv)
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
 			ss >> length >> coverage;
-			unsigned serial = g_contigIDs.serial(rec.id);
-			assert(contigs.size() == serial);
-			(void)serial;
+			ContigID id(rec.id);
+			assert(id == contigs.size());
 			contigs.push_back(Contig(rec.id, rec.seq, coverage));
 		}
 		assert(in.eof());
@@ -330,14 +329,12 @@ int main(int argc, char** argv)
 		vector<bool> seenPivots(contigs.size());
 		ifstream fin(opt::path.c_str());
 		assert_open(fin, opt::path);
-		string s;
-		while (fin >> s) {
+		for (ContigID id; fin >> id;) {
 			fin.ignore(numeric_limits<streamsize>::max(), '\n');
-			unsigned pivotNum = g_contigIDs.serial(s);
-			assert(pivotNum < contigs.size());
+			assert(id < contigs.size());
 			// Only count a pivot as seen if it was in a final path.
-			if (seen[pivotNum])
-				seenPivots[pivotNum] = true;
+			if (seen[id])
+				seenPivots[id] = true;
 		}
 		assert(fin.eof());
 		seen = seenPivots;

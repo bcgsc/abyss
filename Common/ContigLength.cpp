@@ -29,12 +29,12 @@ vector<unsigned> readContigLengths(istream& in)
 	assert(in);
 	assert(g_contigIDs.empty());
 	vector<unsigned> lengths;
-	string id;
+	ContigID id;
 	unsigned len;
 	while (in >> id >> len) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		(void)g_contigIDs.serial(id);
 		assert(len >= opt::k);
+		assert(id == lengths.size());
 		lengths.push_back(len - opt::k + 1);
 	}
 	assert(in.eof());

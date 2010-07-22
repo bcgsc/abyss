@@ -175,9 +175,8 @@ static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 	static unsigned nid = nextContigID();
 	ostringstream id, comment;
 	id << nid++;
-	g_contigIDs.serial(id.str());
 	comment << seq.length() << " 0 " << t << ' ' << h << ' ' << dist;
-	return FastaRecord(id.str(), comment.str(), seq);
+	return FastaRecord(ContigID(id.str()).str(), comment.str(), seq);
 }
 
 static FastaRecord overlapContigs(const ContigNode& t_id,
