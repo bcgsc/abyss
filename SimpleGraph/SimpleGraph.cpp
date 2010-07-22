@@ -544,7 +544,7 @@ static void* worker(void* pArg)
 			static pthread_mutex_t outMutex
 				= PTHREAD_MUTEX_INITIALIZER;
 			pthread_mutex_lock(&outMutex);
-			*arg.out << ContigID(er.refID) << '\t' << path << '\n';
+			*arg.out << er.refID << '\t' << path << '\n';
 			assert(arg.out->good());
 			pthread_mutex_unlock(&outMutex);
 		}
