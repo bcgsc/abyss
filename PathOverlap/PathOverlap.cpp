@@ -79,16 +79,16 @@ unsigned ContigNode::length() const
 
 /** An alignment seed. */
 struct Seed {
-	LinearNumKey pathID;
+	string pathID;
 	const ContigPath& path;
 	bool isKeyFirst;
-	Seed(LinearNumKey id, const ContigPath& path, bool front)
+	Seed(string id, const ContigPath& path, bool front)
 		: pathID(id), path(path), isKeyFirst(front) { }
 };
 
 /** An alignment result. */
 struct Overlap {
-	LinearNumKey firstID, secondID;
+	string firstID, secondID;
 	bool firstIsRC, secondIsRC;
 
 	/** Overlap measured in number of contigs. */
@@ -117,7 +117,7 @@ struct Path {
 };
 
 /** The contig IDs that have been removed from paths. */
-static set<LinearNumKey> s_trimmedContigs;
+static set<ContigID> s_trimmedContigs;
 
 static void assert_open(ifstream& f, const string& p)
 {
@@ -127,7 +127,7 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-typedef map<LinearNumKey, Path> Paths;
+typedef map<string, Path> Paths;
 
 /** Read contig paths from the specified stream. */
 static Paths readPaths(const string& inPath)
@@ -139,7 +139,7 @@ static Paths readPaths(const string& inPath)
 
 	assert(in.good());
 	Paths paths;
-	LinearNumKey id;
+	string id;
 	ContigPath path;
 	while (in >> id >> path) {
 		bool inserted = paths.insert(make_pair(id, path)).second;
@@ -204,7 +204,7 @@ typedef vector<Overlap> Overlaps;
 
 /** Find every path that overlaps with the specified path. */
 static void findOverlaps(const SeedMap& seedMap,
-		LinearNumKey id, bool rc, const ContigPath& path,
+		string id, bool rc, const ContigPath& path,
 		Overlaps& overlaps)
 {
 	for (ContigPath::const_iterator it = path.begin();
@@ -265,7 +265,7 @@ static void recordTrimmedContigs(
 {
 	for (ContigPath::const_iterator it = first; it != last; ++it)
 		if (!it->ambiguous())
-			s_trimmedContigs.insert(it->id());
+			s_trimmedContigs.insert(ContigID(*it));
 }
 
 /** Remove the overlapping portion of the specified contig. */
@@ -367,7 +367,7 @@ int main(int argc, char** argv)
 
 	if (!opt::repeatContigs.empty()) {
 		ofstream out(opt::repeatContigs.c_str());
-		for (set<LinearNumKey>::const_iterator it
+		for (set<ContigID>::const_iterator it
 				= s_trimmedContigs.begin();
 				it != s_trimmedContigs.end(); ++it)
 			out << ContigID(*it) << '\n';
