@@ -11,12 +11,6 @@ typedef unsigned LinearNumKey;
 
 extern Dictionary g_contigIDs;
 
-/** Convert a numeric contig ID to a string. */
-static inline const std::string& idToString(unsigned id)
-{
-	return g_contigIDs.key(id);
-}
-
 /** A contig ID is represented by a numeric serial number, but is
  * formatted as a string.
  */
