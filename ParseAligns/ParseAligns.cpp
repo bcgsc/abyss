@@ -229,7 +229,7 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 				const Alignment& b = refAlignIter->read_start_pos > alignIter->read_start_pos ? *refAlignIter : *alignIter;
 				unsigned a_end = a.read_start_pos + a.align_length - opt::k;
 				int distance = b.read_start_pos - a_end;
-				est.nID = convertContigIDToLinearNumKey(b.contig);
+				est.nID = ContigID(b.contig);
 				est.distance = distance - opt::k;
 				est.numPairs = 1;
 				est.stdDev = 0;

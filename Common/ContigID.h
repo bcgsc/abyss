@@ -7,7 +7,6 @@
 #include <string>
 
 typedef std::string StringID;
-typedef unsigned LinearNumKey;
 
 extern Dictionary g_contigIDs;
 

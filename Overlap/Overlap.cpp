@@ -160,9 +160,9 @@ static unsigned findOverlap(const ContigNode& t_id,
 	return overlaps[0];
 }
 
-static LinearNumKey nextContigID(void)
+static unsigned nextContigID(void)
 {
-	LinearNumKey id;
+	unsigned id;
 	istringstream s(ContigID(g_contigs.size() - 1).str());
 	s >> id;
 	assert(s.eof());
@@ -280,7 +280,7 @@ static void removeVertex(OverlapGraph& g, const ContigNode& v)
 }
 
 static void findOverlap(
-		LinearNumKey refID, bool rc, const Estimate& est)
+		ContigID refID, bool rc, const Estimate& est)
 {
 	if (refID == est.contig.id()
 			|| (est.distance >= 0 && !opt::scaffold))
