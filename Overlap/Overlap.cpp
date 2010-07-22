@@ -85,7 +85,8 @@ static const struct option longopts[] = {
 static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
-static ContigGraph<> g_graph;
+typedef ContigGraph<> Graph;
+static Graph g_graph;
 
 static struct {
 	unsigned overlap;
@@ -165,6 +166,9 @@ static string newContig(const ContigNode& t, const ContigNode& h,
 {
 	static unsigned id = nextContigID();
 	ostringstream s;
+	s << id;
+	g_contigIDs.serial(s.str());
+	s.str("");
 	s << '>' << id++ << ' ' << seq.length() << " 0 "
 		<< t << ' ' << h << ' ' << dist << '\n'
 		<< seq << '\n';
@@ -409,6 +413,7 @@ int main(int argc, char *const argv[])
 	}
 	assert(in.eof());
 	in.close();
+	g_contigIDs.unlock();
 
 	// First, give priority to overlapping edges (not scaffolded).
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
@@ -420,6 +425,12 @@ int main(int argc, char *const argv[])
 			assert(*g_overlapGraph[t].begin() == h);
 			out << mergeContigs(t, h, it->second);
 			assert(out.good());
+
+			// Add the new contig to the adjacency graph.
+			Graph::vertex_descriptor v = g_graph.add_vertex();
+			g_graph.add_edge(t, v);
+			g_graph.add_edge(v, h);
+
 			// Remove the vertices incident to this edge from the
 			// scaffold graph.
 			removeVertex(g_scaffoldGraph, t);
@@ -441,10 +452,20 @@ int main(int argc, char *const argv[])
 			assert(*g_scaffoldGraph[t].begin() == h);
 			out << mergeContigs(t, h, it->second);
 			assert(out.good());
+
+			// Add the new contig to the adjacency graph.
+			Graph::vertex_descriptor v = g_graph.add_vertex();
+			g_graph.add_edge(t, v);
+			g_graph.add_edge(v, h);
 		} else
 			stats.ambiguous++;
 	}
 	out.close();
+
+	if (opt::verbose > 1) {
+		// Output the updated adjacency graph.
+		cerr << g_graph;
+	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
 		"Scaffold: " << stats.scaffold << "\n"

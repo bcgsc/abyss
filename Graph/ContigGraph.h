@@ -74,6 +74,15 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		clear_in_edges(v);
 	}
 
+	/** Add a vertex to this graph. */
+	vertex_descriptor add_vertex(
+				const VertexProp& data = VertexProp())
+	{
+		vertex_descriptor v = DG::add_vertex(data);
+		DG::add_vertex(data);
+		return v;
+	}
+
 	/** Remove vertex v from this graph. It is assumed that there
 	 * are no edges to or from vertex v. It is best to call
 	 * clear_vertex before remove_vertex.
@@ -82,6 +91,13 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	{
 		DG::remove_vertex(v);
 		DG::remove_vertex(~v);
+	}
+
+	/** Add edge (u,v) to this graph. */
+	void add_edge(vertex_descriptor u, vertex_descriptor v)
+	{
+		DG::add_edge(u, v);
+		DG::add_edge(~v, ~u);
 	}
 
 	friend std::ostream& operator<< <>(std::ostream& out,
@@ -103,7 +119,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << id.id() << *v;
+			out << g_contigIDs.key(id.id()) << *v;
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)
@@ -118,6 +134,7 @@ std::ostream& operator<<(std::ostream& out,
 template <typename VertexProp>
 std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 {
+	typedef typename ContigGraph<VertexProp>::DG DG;
 	typedef typename
 		ContigGraph<VertexProp>::vertex_descriptor vertex_descriptor;
 
@@ -129,10 +146,8 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	while (in >> idString >> prop) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		ContigNode id(idString, false);
-		vertex_descriptor v0 = g.add_vertex(prop);
-		vertex_descriptor v1 = g.add_vertex(prop);
-		assert(v0 == id);
-		assert(v1 == ~id);
+		vertex_descriptor v = g.add_vertex(prop);
+		assert(v == id);
 	}
 	assert(in.eof());
 	assert(g.num_vertices() > 0);
@@ -151,7 +166,7 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 			assert(in.good());
 			std::istringstream ss(s);
 			for (ContigNode edge; ss >> edge;)
-				g.add_edge(id ^ sense, edge ^ sense);
+				g.DG::add_edge(id ^ sense, edge ^ sense);
 			assert(ss.eof());
 		}
 	}

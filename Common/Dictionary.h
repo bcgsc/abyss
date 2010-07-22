@@ -50,6 +50,9 @@ class Dictionary {
 		/** Lock this dictionary. No further keys may be added. */
 		void lock() { m_locked = true; }
 
+		/** Unlock this dictionary. */
+		void unlock() { m_locked = false; }
+
 		/** Return true if this dictionary is empty. */
 		bool empty() { return m_vec.empty(); }
 
