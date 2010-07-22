@@ -99,16 +99,16 @@ static vector<Contig> g_contigs;
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
-const Sequence ContigNode::sequence() const
+static Sequence sequence(const ContigNode& id)
 {
-	if (ambiguous()) {
-		string s(ambiguousSequence());
+	if (id.ambiguous()) {
+		string s(id.ambiguousSequence());
 		if (s.length() < opt::k)
 			transform(s.begin(), s.end(), s.begin(), ::tolower);
 		return string(opt::k - 1, 'N') + s;
 	} else {
-		const Sequence& seq = g_contigs[id()].seq;
-		return sense() ? reverseComplement(seq) : seq;
+		const Sequence& seq = g_contigs[id.id()].seq;
+		return id.sense() ? reverseComplement(seq) : seq;
 	}
 }
 
@@ -184,9 +184,9 @@ static Contig mergePath(const Path& path)
 			it != path.end(); ++it) {
 		coverage += it->coverage();
 		if (seq.empty())
-			seq = it->sequence();
+			seq = sequence(*it);
 		else
-			mergeContigs(seq, it->sequence(), *it, path);
+			mergeContigs(seq, sequence(*it), *it, path);
 	}
 	return Contig("", seq, coverage);
 }
