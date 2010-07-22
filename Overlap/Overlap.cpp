@@ -163,7 +163,7 @@ static unsigned findOverlap(const ContigNode& t_id,
 static LinearNumKey nextContigID(void)
 {
 	LinearNumKey id;
-	istringstream s(g_contigIDs.key(g_contigs.size() - 1));
+	istringstream s(ContigID(g_contigs.size() - 1).str());
 	s >> id;
 	assert(s.eof());
 	return ++id;

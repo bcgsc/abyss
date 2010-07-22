@@ -187,8 +187,7 @@ int main(int argc, char** argv)
 	int numEdges = 0;
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
 			i != contigs.end(); ++i) {
-		unsigned nID = i - contigs.begin();
-		const string& id = g_contigIDs.key(nID);
+		ContigID id(i - contigs.begin());
 
 		if (opt::format == ADJ)
 			out << id << ' ' << i->length << ' ' << i->coverage

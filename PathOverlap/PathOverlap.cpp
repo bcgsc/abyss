@@ -370,9 +370,9 @@ int main(int argc, char** argv)
 		for (set<LinearNumKey>::const_iterator it
 				= s_trimmedContigs.begin();
 				it != s_trimmedContigs.end(); ++it)
-			out << g_contigIDs.key(*it) << '\n';
+			out << ContigID(*it) << '\n';
 		assert(out.good());
 	}
-	
+
 	return 0;
 }

@@ -132,7 +132,7 @@ static set<LinearNumKey> removeRepeats(ContigPathMap& paths)
 	for (set<LinearNumKey>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		if (paths.erase(*it) > 0) {
-			ss << ' ' << idToString(*it);
+			ss << ' ' << ContigID(*it);
 			removed++;
 		}
 	}
@@ -530,7 +530,7 @@ int main(int argc, char** argv)
 	sort(uniquePaths.begin(), uniquePaths.end());
 
 	int id;
-	istringstream ss(g_contigIDs.key(g_contigLengths.size() - 1));
+	istringstream ss(ContigID(g_contigLengths.size() - 1).str());
 	ss >> id;
 	id++;
 

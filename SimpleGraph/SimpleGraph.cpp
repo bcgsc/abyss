@@ -336,8 +336,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 	ostringstream vout_ss;
 	ostream bitBucket(NULL);
 	ostream& vout = opt::verbose > 0 ? vout_ss : bitBucket;
-	vout << "\n* " << g_contigIDs.key(er.refID)
-		<< (dirIdx ? '-' : '+') << '\n';
+	vout << "\n* " << ContigNode(er.refID, dirIdx) << '\n';
 
 	unsigned minNumPairs = UINT_MAX;
 	// generate the reachable set
@@ -546,8 +545,7 @@ static void* worker(void* pArg)
 			static pthread_mutex_t outMutex
 				= PTHREAD_MUTEX_INITIALIZER;
 			pthread_mutex_lock(&outMutex);
-			*arg.out << g_contigIDs.key(er.refID) << '\t'
-				<< path << '\n';
+			*arg.out << ContigID(er.refID) << '\t' << path << '\n';
 			assert(arg.out->good());
 			pthread_mutex_unlock(&outMutex);
 		}
