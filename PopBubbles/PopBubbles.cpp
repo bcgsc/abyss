@@ -82,7 +82,7 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 }
 
 /** Popped branches. */
-static vector<unsigned> g_popped;
+static vector<ContigID> g_popped;
 
 /** Return the target vertex of edge e. */
 static ContigNode target(const Graph::Edge& e)
@@ -107,7 +107,7 @@ static void popBubble(Graph::vertex_iterator v,
 	}
 	transform(sorted.begin() + 1, sorted.end(),
 			back_inserter(g_popped),
-			mem_fun_ref(&ContigNode::id));
+			mem_fun_ref(&ContigNode::operator ContigID));
 }
 
 static struct {
@@ -249,9 +249,8 @@ int main(int argc, char *const argv[])
 	if (opt::dot)
 		cout << "}\n";
 	else
-		transform(g_popped.begin(), g_popped.end(),
-				ostream_iterator<string>(cout, "\n"),
-				idToString);
+		copy(g_popped.begin(), g_popped.end(),
+				ostream_iterator<ContigID>(cout, "\n"));
 
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << g_count.bubbles/2

@@ -74,7 +74,7 @@ typedef std::vector<Estimate> EstimateVector;
 
 struct EstimateRecord
 {
-	LinearNumKey refID;
+	ContigID refID;
 	EstimateVector estimates[2];
 
 	/** Read the distance estimates for one contig. */

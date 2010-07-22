@@ -163,18 +163,18 @@ static ostream& printConstraints(ostream& out, Constraints s)
 /** Return the set of contigs that appear more than once in a single
  * solution.
  */
-static set<LinearNumKey> findRepeats(LinearNumKey seed,
+static set<ContigID> findRepeats(ContigID seed,
 	const ContigPaths& solutions)
 {
-	set<LinearNumKey> repeats;
+	set<ContigID> repeats;
 	for (ContigPaths::const_iterator solIt = solutions.begin();
 			solIt != solutions.end(); ++solIt) {
-		map<LinearNumKey, unsigned> count;
+		map<ContigID, unsigned> count;
 		count[seed]++;
 		for (ContigPath::const_iterator it = solIt->begin();
 				it != solIt->end(); ++it)
-			count[it->id()]++;
-		for (map<LinearNumKey, unsigned>::const_iterator
+			count[ContigID(*it)]++;
+		for (map<ContigID, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
 				repeats.insert(it->first);
@@ -363,12 +363,11 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
 
-	set<LinearNumKey> repeats = findRepeats(er.refID, solutions);
+	set<ContigID> repeats = findRepeats(er.refID, solutions);
 	if (!repeats.empty()) {
 		vout << "Repeats:";
-		transform(repeats.begin(), repeats.end(),
-				affix_ostream_iterator<string>(vout, " "),
-				idToString);
+		copy(repeats.begin(), repeats.end(),
+				affix_ostream_iterator<ContigID>(vout, " "));
 		vout << '\n';
 	}
 
@@ -407,7 +406,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 			int diff = actualDistance - iter->distance;
 			unsigned buffer = allowedError(iter->stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
-			bool repeat = repeats.count(iter->contig.id()) > 0;
+			bool repeat = repeats.count(ContigID(iter->contig)) > 0;
 			bool ignored = invalid && repeat;
 			if (ignored)
 				ignoredCount++;
@@ -446,7 +445,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
-			if (repeats.count(iter->contig.id()) > 0)
+			if (repeats.count(ContigID(iter->contig)) > 0)
 				continue;
 			map<ContigNode, int>::iterator dmIter
 				= distanceMap.find(iter->contig);
