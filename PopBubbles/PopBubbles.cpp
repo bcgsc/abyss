@@ -7,7 +7,7 @@
 #include "Common/Options.h"
 #include "AffixIterator.h"
 #include "ContigGraph.h"
-#include "ContigNode.h"
+#include "ContigProperties.h"
 #include "Sequence.h"
 #include <algorithm>
 #include <cerrno>
@@ -71,24 +71,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Contig properties. */
-struct Contig {
-	unsigned length;
-	unsigned coverage;
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		return out << ' ' << o.length << ' ' << o.coverage;
-	}
-
-	friend istream& operator >>(istream& in, Contig& o)
-	{
-		return in >> o.length >> o.coverage;
-	}
-};
-
 /** Contig adjacency graph. */
-typedef ContigGraph<Contig> Graph;
+typedef ContigGraph<ContigProperties> Graph;
 static Graph g_graph;
 
 /** Return whether contig a has higher coverage than contig b. */
