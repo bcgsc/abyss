@@ -44,7 +44,7 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
 	unsigned k; // used by readContigLengths
-	
+
 	/** Output overlaps in dot format. Do not perform trimming. */
 	static int dot;
 
@@ -77,18 +77,32 @@ unsigned ContigNode::length() const
 	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
+/** A path and its maximum overlap with other paths. */
+struct Path {
+	string id;
+	ContigPath path;
+	unsigned numRemoved[2];
+
+	Path(const string& id, const ContigPath& path)
+		: id(id), path(path)
+	{
+		numRemoved[0] = numRemoved[1] = 0;
+	}
+};
+
 /** An alignment seed. */
 struct Seed {
-	string pathID;
-	const ContigPath& path;
+	const Path& path;
 	bool isKeyFirst;
-	Seed(string id, const ContigPath& path, bool front)
-		: pathID(id), path(path), isKeyFirst(front) { }
+
+	Seed(const Path& path, bool front)
+		: path(path), isKeyFirst(front) { }
 };
 
 /** An alignment result. */
 struct Overlap {
-	string firstID, secondID;
+	const Path& first;
+	const Path& second;
 	bool firstIsRC, secondIsRC;
 
 	/** Overlap measured in number of contigs. */
@@ -97,22 +111,27 @@ struct Overlap {
 	/** Overlap measured in bp. */
 	int distance;
 
+	Overlap(const Path& first, bool firstIsRC,
+			const Path& second, bool secondIsRC,
+			unsigned overlap, int distance)
+		: first(first), second(second),
+		firstIsRC(firstIsRC), secondIsRC(secondIsRC),
+		overlap(overlap), distance(distance) { }
+
+	Overlap& operator =(const Overlap& o) {
+		if (this != &o) {
+			this->~Overlap();
+			new(this) Overlap(o);
+		}
+		return *this;
+	}
+
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
 		return out <<
-			'"' << o.firstID << (o.firstIsRC ? '-' : '+') << "\" -> "
-			"\"" << o.secondID << (o.secondIsRC ? '-' : '+') << "\""
+			'"' << o.first.id << (o.firstIsRC ? '-' : '+') << "\" -> "
+			"\"" << o.second.id << (o.secondIsRC ? '-' : '+') << "\""
 			" [d=" << o.distance << "]";
-	}
-};
-
-/** A path and its maximum overlap with other paths. */
-struct Path {
-	ContigPath path;
-	unsigned numRemoved[2];
-	Path(const ContigPath& path) : path(path)
-	{
-		numRemoved[0] = numRemoved[1] = 0;
 	}
 };
 
@@ -127,7 +146,7 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-typedef map<string, Path> Paths;
+typedef vector<Path> Paths;
 
 /** Read contig paths from the specified stream. */
 static Paths readPaths(const string& inPath)
@@ -141,11 +160,8 @@ static Paths readPaths(const string& inPath)
 	Paths paths;
 	string id;
 	ContigPath path;
-	while (in >> id >> path) {
-		bool inserted = paths.insert(make_pair(id, path)).second;
-		assert(inserted);
-		(void)inserted;
-	}
+	while (in >> id >> path)
+		paths.push_back(Path(id, path));
 	assert(in.eof());
 	return paths;
 }
@@ -159,13 +175,10 @@ static SeedMap makeSeedMap(const Paths& paths)
 	SeedMap seedMap;
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		const ContigPath& path = it->second.path;
-		if (path.empty())
+		if (it->path.empty())
 			continue;
-		seedMap.insert(make_pair(path.front(),
-					Seed(it->first, path, true)));
-		seedMap.insert(make_pair(~path.back(),
-					Seed(it->first, path, false)));
+		seedMap.insert(make_pair(it->path.front(), Seed(*it, true)));
+		seedMap.insert(make_pair(~it->path.back(), Seed(*it, false)));
 	}
 	return seedMap;
 }
@@ -204,7 +217,7 @@ typedef vector<Overlap> Overlaps;
 
 /** Find every path that overlaps with the specified path. */
 static void findOverlaps(const SeedMap& seedMap,
-		string id, bool rc, const ContigPath& path,
+		const Path& path0, bool rc, const ContigPath& path,
 		Overlaps& overlaps)
 {
 	for (ContigPath::const_iterator it = path.begin();
@@ -216,18 +229,18 @@ static void findOverlaps(const SeedMap& seedMap,
 			range = seedMap.equal_range(*it);
 		for (SeedMap::const_iterator seed = range.first;
 				seed != range.second; ++seed) {
-			if (id == seed->second.pathID)
+			if (&path0 == &seed->second.path)
 				continue;
-			Overlap o;
-			o.secondIsRC = !seed->second.isKeyFirst;
-			o.overlap = findOverlap(it, path.end(),
-					   seed->second.path, o.secondIsRC, o.distance);
-			if (o.overlap > 0) {
-				o.firstID = id;
-				o.firstIsRC = rc;
-				o.secondID = seed->second.pathID;
-				overlaps.push_back(o);
-			}
+			bool secondIsRC = !seed->second.isKeyFirst;
+			int distance = 0;
+			unsigned overlap = findOverlap(it, path.end(),
+					   seed->second.path.path, secondIsRC,
+					   distance);
+			if (overlap > 0)
+				overlaps.push_back(Overlap(path0, rc,
+					seed->second.path, secondIsRC,
+					overlap, distance));
+
 		}
 	}
 }
@@ -240,12 +253,12 @@ static Overlaps findOverlaps(const Paths& paths)
 	Overlaps overlaps;
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		const ContigPath& path = it->second.path;
-		findOverlaps(seedMap, it->first, false, path, overlaps);
+		const ContigPath& path = it->path;
+		findOverlaps(seedMap, *it, false, path, overlaps);
 
 		ContigPath rc = path;
 		rc.reverseComplement();
-		findOverlaps(seedMap, it->first, true, rc, overlaps);
+		findOverlaps(seedMap, *it, true, rc, overlaps);
 	}
 	return overlaps;
 }
@@ -290,18 +303,18 @@ static void removeContigs(Path& o)
 static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 {
 	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
-		it->second.numRemoved[0] = it->second.numRemoved[1] = 0;
+		it->numRemoved[0] = it->numRemoved[1] = 0;
 
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		determineMaxOverlap(paths.find(it->firstID)->second,
+		determineMaxOverlap(paths[&it->first - &paths[0]],
 				!it->firstIsRC, it->overlap);
-		determineMaxOverlap(paths.find(it->secondID)->second,
+		determineMaxOverlap(paths[&it->second - &paths[0]],
 				it->secondIsRC, it->overlap);
 	}
 
 	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
-		removeContigs(it->second);
+		removeContigs(*it);
 }
 
 int main(int argc, char** argv)
@@ -360,9 +373,9 @@ int main(int argc, char** argv)
 
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->second.path.size() < 2)
+		if (it->path.size() < 2)
 			continue;
-		cout << it->first << '\t' << it->second.path << '\n';
+		cout << it->id << '\t' << it->path << '\n';
 	}
 
 	if (!opt::repeatContigs.empty()) {
