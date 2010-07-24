@@ -90,32 +90,40 @@ struct Path {
 	}
 };
 
-/** An alignment seed. */
-struct Seed {
+/** A vertex of the overlap graph. */
+struct Vertex {
 	const Path& path;
-	bool isKeyFirst;
+	bool sense;
 
-	Seed(const Path& path, bool front)
-		: path(path), isKeyFirst(front) { }
+	Vertex(const Path& path, bool sense)
+		: path(path), sense(sense) { }
+
+	bool operator ==(const Vertex& v) const
+	{
+		return &path == &v.path && sense == v.sense;
+	}
+
+	friend ostream& operator <<(ostream& out, const Vertex& v)
+	{
+		return out << '"' << v.path.id
+			<< (v.sense ? '-' : '+') << '"';
+	}
 };
 
 /** An alignment result. */
 struct Overlap {
-	const Path& first;
-	const Path& second;
-	bool firstIsRC, secondIsRC;
+	const Vertex source;
+	const Vertex target;
 
 	/** Overlap measured in number of contigs. */
-	unsigned short overlap;
+	unsigned overlap;
 
 	/** Overlap measured in bp. */
 	int distance;
 
-	Overlap(const Path& first, bool firstIsRC,
-			const Path& second, bool secondIsRC,
+	Overlap(const Vertex& source, const Vertex& target,
 			unsigned overlap, int distance)
-		: first(first), second(second),
-		firstIsRC(firstIsRC), secondIsRC(secondIsRC),
+		: source(source), target(target),
 		overlap(overlap), distance(distance) { }
 
 	Overlap& operator =(const Overlap& o) {
@@ -128,10 +136,8 @@ struct Overlap {
 
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
-		return out <<
-			'"' << o.first.id << (o.firstIsRC ? '-' : '+') << "\" -> "
-			"\"" << o.second.id << (o.secondIsRC ? '-' : '+') << "\""
-			" [d=" << o.distance << "]";
+		return out << o.source << " -> " << o.target
+			<< " [d=" << o.distance << "]";
 	}
 };
 
@@ -166,7 +172,7 @@ static Paths readPaths(const string& inPath)
 	return paths;
 }
 
-typedef multimap<ContigNode, Seed> SeedMap;
+typedef multimap<ContigNode, Vertex> SeedMap;
 
 /** Index the first and last contig of each path to facilitate finding
  * overlaps between paths. */
@@ -177,8 +183,10 @@ static SeedMap makeSeedMap(const Paths& paths)
 			it != paths.end(); ++it) {
 		if (it->path.empty())
 			continue;
-		seedMap.insert(make_pair(it->path.front(), Seed(*it, true)));
-		seedMap.insert(make_pair(~it->path.back(), Seed(*it, false)));
+		seedMap.insert(make_pair(it->path.front(),
+					Vertex(*it, false)));
+		seedMap.insert(make_pair(~it->path.back(),
+					Vertex(*it, true)));
 	}
 	return seedMap;
 }
@@ -205,9 +213,9 @@ static bool startsWith(ContigPath path, bool rc,
 /** Check whether path starts with the sequence [first, last). */
 static unsigned findOverlap(ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
-		ContigPath path, bool rc, int &distance)
+		const Vertex& v, int &distance)
 {
-	if (!startsWith(path, rc, first, last))
+	if (!startsWith(v.path.path, v.sense, first, last))
 		return 0;
 	distance = -accumulate(first, last, opt::k-1, addLength);
 	return last - first;
@@ -217,9 +225,15 @@ typedef vector<Overlap> Overlaps;
 
 /** Find every path that overlaps with the specified path. */
 static void findOverlaps(const SeedMap& seedMap,
-		const Path& path0, bool rc, const ContigPath& path,
-		Overlaps& overlaps)
+		const Vertex& v, Overlaps& overlaps)
 {
+	ContigPath rc;
+	if (v.sense) {
+		rc = v.path.path;
+		rc.reverseComplement();
+	}
+	const ContigPath& path = v.sense ? rc : v.path.path;
+
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		if (it->ambiguous())
@@ -229,16 +243,13 @@ static void findOverlaps(const SeedMap& seedMap,
 			range = seedMap.equal_range(*it);
 		for (SeedMap::const_iterator seed = range.first;
 				seed != range.second; ++seed) {
-			if (&path0 == &seed->second.path)
+			if (v == seed->second)
 				continue;
-			bool secondIsRC = !seed->second.isKeyFirst;
 			int distance = 0;
 			unsigned overlap = findOverlap(it, path.end(),
-					   seed->second.path.path, secondIsRC,
-					   distance);
+					   seed->second, distance);
 			if (overlap > 0)
-				overlaps.push_back(Overlap(path0, rc,
-					seed->second.path, secondIsRC,
+				overlaps.push_back(Overlap(v, seed->second,
 					overlap, distance));
 
 		}
@@ -253,12 +264,8 @@ static Overlaps findOverlaps(const Paths& paths)
 	Overlaps overlaps;
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		const ContigPath& path = it->path;
-		findOverlaps(seedMap, *it, false, path, overlaps);
-
-		ContigPath rc = path;
-		rc.reverseComplement();
-		findOverlaps(seedMap, *it, true, rc, overlaps);
+		findOverlaps(seedMap, Vertex(*it, false), overlaps);
+		findOverlaps(seedMap, Vertex(*it, true), overlaps);
 	}
 	return overlaps;
 }
@@ -307,10 +314,10 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		determineMaxOverlap(paths[&it->first - &paths[0]],
-				!it->firstIsRC, it->overlap);
-		determineMaxOverlap(paths[&it->second - &paths[0]],
-				it->secondIsRC, it->overlap);
+		determineMaxOverlap(paths[&it->source.path - &paths[0]],
+				!it->source.sense, it->overlap);
+		determineMaxOverlap(paths[&it->target.path - &paths[0]],
+				it->target.sense, it->overlap);
 	}
 
 	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
