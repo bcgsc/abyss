@@ -81,13 +81,9 @@ unsigned ContigNode::length() const
 struct Path {
 	string id;
 	ContigPath path;
-	unsigned numRemoved[2];
 
 	Path(const string& id, const ContigPath& path)
-		: id(id), path(path)
-	{
-		numRemoved[0] = numRemoved[1] = 0;
-	}
+		: id(id), path(path) { }
 };
 
 /** A vertex of the overlap graph. */
@@ -317,24 +313,23 @@ static void removeContigs(Path& o, unsigned first, unsigned last)
 /** Find the largest overlap for each contig and remove it. */
 static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 {
-	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
-		it->numRemoved[0] = it->numRemoved[1] = 0;
+	vector<unsigned> removed[2];
+	removed[0].resize(paths.size());
+	removed[1].resize(paths.size());
 
+	const Path* p = &paths.front();
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		updateMax(
-				paths[&it->source.path - &paths[0]]
-				.numRemoved[!it->source.sense],
+		updateMax(removed[!it->source.sense][&it->source.path - p],
 				it->overlap);
-		updateMax(
-				paths[&it->target.path - &paths[0]]
-				.numRemoved[it->target.sense],
+		updateMax(removed[it->target.sense][&it->target.path - p],
 				it->overlap);
 	}
 
-	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
-		removeContigs(*it, it->numRemoved[0],
-				it->path.size() - it->numRemoved[1]); 
+	for (Paths::iterator it = paths.begin();
+			it != paths.end(); ++it)
+		removeContigs(*it, removed[0][&*it - p],
+				it->path.size() - removed[1][&*it - p]); 
 }
 
 int main(int argc, char** argv)
