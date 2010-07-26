@@ -273,11 +273,9 @@ static Overlaps findOverlaps(const Paths& paths)
 }
 
 /** Find the largest overlap for each contig. */
-static void determineMaxOverlap(Path& pathStruct,
-		bool fromBack, unsigned overlap)
+static void updateMax(unsigned& dest, unsigned x)
 {
-	unsigned& curOverlap = pathStruct.numRemoved[fromBack];
-	curOverlap = max(curOverlap, overlap);
+	dest = max(dest, x);
 }
 
 /** Record the trimmed contigs. */
@@ -300,12 +298,10 @@ static void removeAmbiguousContigs(ContigPath& path)
 }
 
 /** Remove the overlapping portion of the specified contig. */
-static void removeContigs(Path& o)
+static void removeContigs(Path& o, unsigned first, unsigned last)
 {
-	assert(o.numRemoved[0] <= o.path.size());
-	assert(o.numRemoved[1] <= o.path.size());
-	unsigned first = o.numRemoved[0];
-	unsigned last = o.path.size() - o.numRemoved[1];
+	assert(first <= o.path.size());
+	assert(last <= o.path.size());
 	if (first < last) {
 		recordTrimmedContigs(o.path.begin(), o.path.begin() + first);
 		recordTrimmedContigs(o.path.begin() + last, o.path.end());
@@ -326,14 +322,19 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		determineMaxOverlap(paths[&it->source.path - &paths[0]],
-				!it->source.sense, it->overlap);
-		determineMaxOverlap(paths[&it->target.path - &paths[0]],
-				it->target.sense, it->overlap);
+		updateMax(
+				paths[&it->source.path - &paths[0]]
+				.numRemoved[!it->source.sense],
+				it->overlap);
+		updateMax(
+				paths[&it->target.path - &paths[0]]
+				.numRemoved[it->target.sense],
+				it->overlap);
 	}
 
 	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
-		removeContigs(*it);
+		removeContigs(*it, it->numRemoved[0],
+				it->path.size() - it->numRemoved[1]); 
 }
 
 int main(int argc, char** argv)
