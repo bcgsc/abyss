@@ -353,7 +353,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();
 			it != g_contigs.end(); ++it) {
-		ContigCount& contig = g_contigs[it->first];
+		const ContigCount& contig = it->second;
 		unsigned seqLength = it->second.counts.size();
 
 		Sequence outSeq(seqLength, 'N');
