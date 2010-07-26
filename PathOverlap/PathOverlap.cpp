@@ -183,8 +183,10 @@ static SeedMap makeSeedMap(const Paths& paths)
 			it != paths.end(); ++it) {
 		if (it->path.empty())
 			continue;
+		assert(!it->path.front().ambiguous());
 		seedMap.insert(make_pair(it->path.front(),
 					Vertex(*it, false)));
+		assert(!it->path.back().ambiguous());
 		seedMap.insert(make_pair(~it->path.back(),
 					Vertex(*it, true)));
 	}
@@ -288,6 +290,15 @@ static void recordTrimmedContigs(
 			s_trimmedContigs.insert(ContigID(*it));
 }
 
+/** Remove ambiguous contigs from the ends of the path. */
+static void removeAmbiguousContigs(ContigPath& path)
+{
+	if (!path.empty() && path.back().ambiguous())
+		path.erase(path.end() - 1);
+	if (!path.empty() && path.front().ambiguous())
+		path.erase(path.begin());
+}
+
 /** Remove the overlapping portion of the specified contig. */
 static void removeContigs(Path& o)
 {
@@ -304,6 +315,7 @@ static void removeContigs(Path& o)
 		recordTrimmedContigs(o.path.begin(), o.path.end());
 		o.path.clear();
 	}
+	removeAmbiguousContigs(o.path);
 }
 
 /** Find the largest overlap for each contig and remove it. */
