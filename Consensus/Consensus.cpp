@@ -24,15 +24,16 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+"Usage: " PROGRAM " [OPTION]... CONTIG\n"
 "\n"
-"Alignments and read sequences from KAligner are read in from standard\n"
-"input. Ensure that the --seq option was used when running KAligner.\n"
-"Write the consensus results of all reads to OUTPUT. Call a consensus\n"
-"at each position of each contig and write the result to standard output.\n"
+"Read alignments from KAligner and read sequences from standard input.\n"
+"Ensure that the --seq option was used when running KAligner.\n"
+"Call a consensus at each position of each contig and write the\n"
+"consensus in FASTA format to OUTPUT and in pileup format to PILEUP.\n"
+"  CONTIG  contigs in FASTA format\n"
 "\n"
 "  -o, --out=OUTPUT      write converted sequences in fasta format to this file\n"
-"  -p, --pileup=PATH     write the pileup to PATH\n"
+"  -p, --pileup=PILEUP   write the pileup to PILEUP\n"
 "      --nt              output nucleotide contigs [default]\n"
 "      --cs              output colour-space contigs\n"
 "  -V, --variants        print only variants in the pileup\n"
@@ -206,8 +207,10 @@ static void buildBaseQuality()
 			const char* s = seqrc.c_str();
 
 			ContigMap::iterator contigIt = g_contigs.find(a.contig);
-			if (contigIt == g_contigs.end())
-				continue;
+			if (contigIt == g_contigs.end()) {
+				cerr << "error: unexpected contig ID: `" << a.contig << "'\n";
+				exit(EXIT_FAILURE);
+			}
 
 			BaseCounts& countsVec = contigIt->second.counts;
 
@@ -235,7 +238,7 @@ static void buildBaseQuality()
 			assert(read_max <= (int)seq.length());
 			assert(read_min >= 0);
 
-			// Pile-up every base in the read to the contig. 
+			// Pile-up every base in the read to the contig.
 			for (int x = read_min; x < read_max; x++) {
 				int base;
 				if (!opt::colourSpace)
@@ -462,16 +465,13 @@ int main(int argc, char** argv)
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
-
-	string contigsPath(argv[argc - 1]);
-
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
-	readContigs(contigsPath);
+	readContigs(argv[optind++]);
 	buildBaseQuality();
 	consensus(opt::outPath, opt::pileupPath);
 }
