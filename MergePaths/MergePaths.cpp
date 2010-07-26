@@ -77,12 +77,6 @@ typedef map<ContigID, ContigPath> ContigPathMap;
 /** Lengths of contigs in k-mer. */
 static vector<unsigned> g_contigLengths;
 
-/** Return the length of this contig in k-mer. */
-unsigned ContigNode::length() const
-{
-	return ambiguous() ? m_id : g_contigLengths.at(id());
-}
-
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		const ContigNode& pivot);
 
@@ -542,10 +536,17 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+/** Return the length of the specified contig in k-mer. */
+static unsigned length(const ContigNode& contig)
+{
+	return contig.ambiguous() ? contig.length()
+		: g_contigLengths.at(contig.id());
+}
+
 /** Add the number of k-mer in two contigs. */
 static unsigned addLength(unsigned addend, const ContigNode& contig)
 {
-	return addend + contig.length();
+	return addend + length(contig);
 }
 
 /** Attempt to fill in gaps in one path with the sequence from the
@@ -586,10 +587,10 @@ static bool alignCoordinates(iterator& first1, iterator last1,
 				ambiguous1 = 0;
 			}
 		} else if (ambiguous1 > 0) {
-			ambiguous1 -= it2->length();
+			ambiguous1 -= length(*it2);
 			*out++ = *it2++;
 		} else if (ambiguous2 > 0) {
-			ambiguous2 -= it1->length();
+			ambiguous2 -= length(*it1);
 			*out++ = *it1++;
 		} else
 			break;

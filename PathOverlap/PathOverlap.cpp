@@ -68,15 +68,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Lengths of contigs in k-mer. */
-static vector<unsigned> g_contigLengths;
-
-/** Return the length of this contig in k-mer. */
-unsigned ContigNode::length() const
-{
-	return ambiguous() ? m_id : g_contigLengths.at(id());
-}
-
 /** The identifiers of the paths. */
 static vector<string> g_pathIDs;
 
@@ -177,10 +168,20 @@ static SeedMap makeSeedMap(const Paths& paths)
 	return seedMap;
 }
 
+/** Lengths of contigs in k-mer. */
+static vector<unsigned> g_contigLengths;
+
+/** Return the length of the specified contig in k-mer. */
+static unsigned length(const ContigNode& contig)
+{
+	return contig.ambiguous() ? contig.length()
+		: g_contigLengths.at(contig.id());
+}
+
 /** Add the number of k-mer in two contigs. */
 static unsigned addLength(unsigned addend, const ContigNode& contig)
 {
-	return addend + contig.length();
+	return addend + length(contig);
 }
 
 /** Check whether path starts with the sequence [first, last). */

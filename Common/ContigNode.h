@@ -122,8 +122,8 @@ class ContigNode {
 				<< (o.sense() ? '-' : '+');
 	}
 
-	// These functions are implemented elsewhere.
-	unsigned length() const;
+	/** Return the length of this ambiguous contig in k-mer. */
+	unsigned length() const { assert(m_ambig); return m_id; }
 
 	/** Return a value that can be used as an index of an array. */
 	unsigned index() const
