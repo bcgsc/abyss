@@ -5,6 +5,7 @@
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
+#include "StringUtil.h" // for toSI
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -20,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <unistd.h> // for sbrk
 
 using namespace std;
 
@@ -309,15 +311,20 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+/** Start of the data segment. */
+static intptr_t sbrk0 = reinterpret_cast<intptr_t>(sbrk(0));
+
 template <class SeqPosHashMap>
 static void printProgress(const Aligner<SeqPosHashMap>& align,
 		unsigned count)
 {
+	ptrdiff_t bytes = reinterpret_cast<intptr_t>(sbrk(0)) - sbrk0;
 	size_t size = align.size();
 	size_t buckets = align.bucket_count();
 	cerr << "Read " << count << " contigs. "
-		<< "Hash load: " << size <<
-		" / " << buckets << " = " << (float)size / buckets << endl;
+		"Hash load: " << size << " / " << buckets
+		<< " = " << (float)size / buckets
+		<< " using " << toSI(bytes) << "B." << endl;
 }
 
 template <class SeqPosHashMap>
