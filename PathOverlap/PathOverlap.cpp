@@ -77,39 +77,33 @@ unsigned ContigNode::length() const
 	return ambiguous() ? m_id : g_contigLengths.at(id());
 }
 
-/** A path and its maximum overlap with other paths. */
-struct Path {
-	string id;
-	ContigPath path;
-
-	Path(const string& id, const ContigPath& path)
-		: id(id), path(path) { }
-};
+/** The identifiers of the paths. */
+static vector<string> g_pathIDs;
 
 /** A vertex of the overlap graph. */
 struct Vertex {
-	const Path& path;
+	unsigned id;
 	bool sense;
 
-	Vertex(const Path& path, bool sense)
-		: path(path), sense(sense) { }
+	Vertex(unsigned id, bool sense)
+		: id(id), sense(sense) { }
 
 	bool operator ==(const Vertex& v) const
 	{
-		return &path == &v.path && sense == v.sense;
+		return id == v.id && sense == v.sense;
 	}
 
 	friend ostream& operator <<(ostream& out, const Vertex& v)
 	{
-		return out << '"' << v.path.id
+		return out << '"' << g_pathIDs[v.id]
 			<< (v.sense ? '-' : '+') << '"';
 	}
 };
 
 /** An alignment result. */
 struct Overlap {
-	const Vertex source;
-	const Vertex target;
+	Vertex source;
+	Vertex target;
 
 	/** Overlap measured in number of contigs. */
 	unsigned overlap;
@@ -121,14 +115,6 @@ struct Overlap {
 			unsigned overlap, int distance)
 		: source(source), target(target),
 		overlap(overlap), distance(distance) { }
-
-	Overlap& operator =(const Overlap& o) {
-		if (this != &o) {
-			this->~Overlap();
-			new(this) Overlap(o);
-		}
-		return *this;
-	}
 
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
@@ -148,7 +134,7 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-typedef vector<Path> Paths;
+typedef vector<ContigPath> Paths;
 
 /** Read contig paths from the specified stream. */
 static Paths readPaths(const string& inPath)
@@ -162,8 +148,10 @@ static Paths readPaths(const string& inPath)
 	Paths paths;
 	string id;
 	ContigPath path;
-	while (in >> id >> path)
-		paths.push_back(Path(id, path));
+	while (in >> id >> path) {
+		g_pathIDs.push_back(id);
+		paths.push_back(path);
+	}
 	assert(in.eof());
 	return paths;
 }
@@ -177,14 +165,14 @@ static SeedMap makeSeedMap(const Paths& paths)
 	SeedMap seedMap;
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->path.empty())
+		if (it->empty())
 			continue;
-		assert(!it->path.front().ambiguous());
-		seedMap.insert(make_pair(it->path.front(),
-					Vertex(*it, false)));
-		assert(!it->path.back().ambiguous());
-		seedMap.insert(make_pair(~it->path.back(),
-					Vertex(*it, true)));
+		assert(!it->front().ambiguous());
+		seedMap.insert(make_pair(it->front(),
+					Vertex(it - paths.begin(), false)));
+		assert(!it->back().ambiguous());
+		seedMap.insert(make_pair(~it->back(),
+					Vertex(it - paths.begin(), true)));
 	}
 	return seedMap;
 }
@@ -209,11 +197,12 @@ static bool startsWith(ContigPath path, bool rc,
 }
 
 /** Check whether path starts with the sequence [first, last). */
-static unsigned findOverlap(ContigPath::const_iterator first,
+static unsigned findOverlap(const Paths& paths,
+		ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
 		const Vertex& v, int &distance)
 {
-	if (!startsWith(v.path.path, v.sense, first, last))
+	if (!startsWith(paths[v.id], v.sense, first, last))
 		return 0;
 	distance = -accumulate(first, last, opt::k-1, addLength);
 	return last - first;
@@ -222,15 +211,15 @@ static unsigned findOverlap(ContigPath::const_iterator first,
 typedef vector<Overlap> Overlaps;
 
 /** Find every path that overlaps with the specified path. */
-static void findOverlaps(const SeedMap& seedMap,
+static void findOverlaps(const Paths& paths, const SeedMap& seedMap,
 		const Vertex& v, Overlaps& overlaps)
 {
 	ContigPath rc;
 	if (v.sense) {
-		rc = v.path.path;
+		rc = paths[v.id];
 		rc.reverseComplement();
 	}
-	const ContigPath& path = v.sense ? rc : v.path.path;
+	const ContigPath& path = v.sense ? rc : paths[v.id];
 
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
@@ -244,7 +233,7 @@ static void findOverlaps(const SeedMap& seedMap,
 			if (v == seed->second)
 				continue;
 			int distance = 0;
-			unsigned overlap = findOverlap(it, path.end(),
+			unsigned overlap = findOverlap(paths, it, path.end(),
 					   seed->second, distance);
 			if (overlap > 0)
 				overlaps.push_back(Overlap(v, seed->second,
@@ -262,8 +251,9 @@ static Overlaps findOverlaps(const Paths& paths)
 	Overlaps overlaps;
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		findOverlaps(seedMap, Vertex(*it, false), overlaps);
-		findOverlaps(seedMap, Vertex(*it, true), overlaps);
+		unsigned i = it - paths.begin();
+		findOverlaps(paths, seedMap, Vertex(i, false), overlaps);
+		findOverlaps(paths, seedMap, Vertex(i, true), overlaps);
 	}
 	return overlaps;
 }
@@ -312,19 +302,17 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 	removed[0].resize(paths.size());
 	removed[1].resize(paths.size());
 
-	const Path* p = &paths.front();
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		unsigned& a = removed[!it->source.sense][&it->source.path-p];
-		unsigned& b = removed[it->target.sense][&it->target.path-p];
+		unsigned& a = removed[!it->source.sense][it->source.id];
+		unsigned& b = removed[it->target.sense][it->target.id];
 		a = max(a, it->overlap);
 		b = max(b, it->overlap);
 	}
 
-	for (Paths::iterator it = paths.begin();
-			it != paths.end(); ++it)
-		removeContigs(it->path, removed[0][&*it - p],
-				it->path.size() - removed[1][&*it - p]);
+	for (Paths::iterator it = paths.begin(); it != paths.end(); ++it)
+		removeContigs(*it, removed[0][it - paths.begin()],
+				it->size() - removed[1][it - paths.begin()]);
 }
 
 int main(int argc, char** argv)
@@ -384,9 +372,9 @@ int main(int argc, char** argv)
 
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->path.size() < 2)
+		if (it->size() < 2)
 			continue;
-		cout << it->id << '\t' << it->path << '\n';
+		cout << g_pathIDs[it - paths.begin()] << '\t' << *it << '\n';
 	}
 
 	if (!opt::repeatContigs.empty()) {
