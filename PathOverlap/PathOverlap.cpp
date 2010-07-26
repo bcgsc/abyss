@@ -268,12 +268,6 @@ static Overlaps findOverlaps(const Paths& paths)
 	return overlaps;
 }
 
-/** Find the largest overlap for each contig. */
-static void updateMax(unsigned& dest, unsigned x)
-{
-	dest = max(dest, x);
-}
-
 /** Record the trimmed contigs. */
 static void recordTrimmedContigs(
 		ContigPath::const_iterator first,
@@ -320,16 +314,16 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 	const Path* p = &paths.front();
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		updateMax(removed[!it->source.sense][&it->source.path - p],
-				it->overlap);
-		updateMax(removed[it->target.sense][&it->target.path - p],
-				it->overlap);
+		unsigned& a = removed[!it->source.sense][&it->source.path-p];
+		unsigned& b = removed[it->target.sense][&it->target.path-p];
+		a = max(a, it->overlap);
+		b = max(b, it->overlap);
 	}
 
 	for (Paths::iterator it = paths.begin();
 			it != paths.end(); ++it)
 		removeContigs(*it, removed[0][&*it - p],
-				it->path.size() - removed[1][&*it - p]); 
+				it->path.size() - removed[1][&*it - p]);
 }
 
 int main(int argc, char** argv)
