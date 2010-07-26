@@ -112,13 +112,6 @@ static Sequence sequence(const ContigNode& id)
 	}
 }
 
-/** Return the coverage of this contig or zero if this contig is
- * ambiguous. */
-unsigned ContigNode::coverage() const
-{
-	return ambiguous() ? 0 : g_contigs[id()].coverage;
-}
-
 /** Return a consensus sequence of a and b.
  * @return an empty string if a consensus could not be found
  */
@@ -182,7 +175,8 @@ static Contig mergePath(const Path& path)
 	unsigned coverage = 0;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		coverage += it->coverage();
+		if (!it->ambiguous())
+			coverage += g_contigs[it->id()].coverage;
 		if (seq.empty())
 			seq = sequence(*it);
 		else

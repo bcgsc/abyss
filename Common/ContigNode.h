@@ -124,7 +124,6 @@ class ContigNode {
 
 	// These functions are implemented elsewhere.
 	unsigned length() const;
-	unsigned coverage() const;
 
 	/** Return a value that can be used as an index of an array. */
 	unsigned index() const
