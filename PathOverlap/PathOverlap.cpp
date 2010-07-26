@@ -288,20 +288,21 @@ static void removeAmbiguousContigs(ContigPath& path)
 }
 
 /** Remove the overlapping portion of the specified contig. */
-static void removeContigs(Path& o, unsigned first, unsigned last)
+static void removeContigs(ContigPath& path,
+		unsigned first, unsigned last)
 {
-	assert(first <= o.path.size());
-	assert(last <= o.path.size());
+	assert(first <= path.size());
+	assert(last <= path.size());
 	if (first < last) {
-		recordTrimmedContigs(o.path.begin(), o.path.begin() + first);
-		recordTrimmedContigs(o.path.begin() + last, o.path.end());
-		o.path.erase(o.path.begin() + last, o.path.end());
-		o.path.erase(o.path.begin(), o.path.begin() + first);
+		recordTrimmedContigs(path.begin(), path.begin() + first);
+		recordTrimmedContigs(path.begin() + last, path.end());
+		path.erase(path.begin() + last, path.end());
+		path.erase(path.begin(), path.begin() + first);
 	} else {
-		recordTrimmedContigs(o.path.begin(), o.path.end());
-		o.path.clear();
+		recordTrimmedContigs(path.begin(), path.end());
+		path.clear();
 	}
-	removeAmbiguousContigs(o.path);
+	removeAmbiguousContigs(path);
 }
 
 /** Find the largest overlap for each contig and remove it. */
@@ -322,7 +323,7 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 
 	for (Paths::iterator it = paths.begin();
 			it != paths.end(); ++it)
-		removeContigs(*it, removed[0][&*it - p],
+		removeContigs(it->path, removed[0][&*it - p],
 				it->path.size() - removed[1][&*it - p]);
 }
 
