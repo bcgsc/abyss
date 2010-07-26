@@ -361,11 +361,12 @@ int main(int argc, char** argv)
 	}
 
 	g_contigLengths = readContigLengths(argv[optind++]);
-	Paths paths = readPaths(argv[optind++]);
+	string pathsFile(argv[optind++]);
+	Paths paths = readPaths(pathsFile);
 
 	if (opt::dot) {
 		Overlaps overlaps = findOverlaps(paths);
-		cout << "digraph path_overlap {\n";
+		cout << "digraph \"" << pathsFile << "\" {\n";
 		copy(overlaps.begin(), overlaps.end(),
 				ostream_iterator<Overlap>(cout, "\n"));
 		cout << "}\n";
