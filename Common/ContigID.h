@@ -6,8 +6,6 @@
 #include <ostream>
 #include <string>
 
-typedef std::string StringID;
-
 extern Dictionary g_contigIDs;
 
 /** A contig ID is represented by a numeric serial number, but is
