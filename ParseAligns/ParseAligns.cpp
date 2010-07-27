@@ -96,10 +96,11 @@ static struct {
 static ofstream fragFile;
 static Histogram histogram;
 
-// TYPEDEFS
+/** A map of read IDs to alignments. */
 typedef hash_map<string, AlignmentVector> ReadAlignMap;
-typedef hash_map<StringID, EstimateRecord> EstimateMap;
 
+/** A map of contig IDs to distance estimates. */
+typedef hash_map<string, EstimateRecord> EstimateMap;
 static EstimateMap estMap;
 
 static bool checkUniqueAlignments(const AlignmentVector& alignVec);
