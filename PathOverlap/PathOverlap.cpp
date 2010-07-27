@@ -36,17 +36,21 @@ static const char *USAGE_MESSAGE =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -r, --repeats=FILE    write repeat contigs to FILE\n"
 "      --dot             output overlaps in dot format\n"
+"      --sam             output overlaps in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
+/** Enumeration of output formats */
+enum format { PATH, DOT, SAM };
+
 namespace opt {
 	unsigned k; // used by readContigLengths
 
-	/** Output overlaps in dot format. Do not perform trimming. */
-	static int dot;
+	/** Output format. */
+	static int format;
 
 	/** Output the IDs of contigs in overlaps to this file. */
 	static string repeatContigs;
@@ -60,13 +64,17 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",         required_argument, NULL, 'k' },
-	{ "dot",          no_argument,       &opt::dot, 1, },
+	{ "dot",          no_argument,       &opt::format, DOT, },
+	{ "sam",          no_argument,       &opt::format, SAM, },
 	{ "repeats",      required_argument, NULL, 'r' },
 	{ "verbose",      no_argument,       NULL, 'v' },
 	{ "help",         no_argument,       NULL, OPT_HELP },
 	{ "version",      no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+/** Lengths of paths in bp. */
+static vector<unsigned> g_pathLengths;
 
 /** The identifiers of the paths. */
 static vector<string> g_pathIDs;
@@ -109,8 +117,35 @@ struct Overlap {
 
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
-		return out << o.source << " -> " << o.target
-			<< " [d=" << o.distance << "]";
+		switch (opt::format) {
+		  case DOT:
+			return out << o.source << " -> " << o.target
+				<< " [d=" << o.distance << "]";
+		  case SAM: {
+			unsigned sourceLen = g_pathLengths[o.source.id];
+			unsigned targetLen = g_pathLengths[o.target.id];
+			unsigned flag = o.source.sense == o.target.sense
+				? 0 : 0x10; // FREVERSE
+			unsigned alen = -o.distance;
+			unsigned pos = o.source.sense ? 0 : sourceLen - alen;
+			out << g_pathIDs[o.target.id] // QNAME
+				<< '\t' << flag // FLAG
+				<< '\t' << g_pathIDs[o.source.id] // RNAME
+				<< '\t' << 1 + pos // POS
+				<< "\t255\t"; // MAPQ
+			// CIGAR
+			unsigned clip = targetLen - alen;
+			if (o.source.sense)
+				out << clip << 'H' << alen << "M\t";
+			else
+				out << alen << 'M' << clip << "H\t";
+			// MRNM MPOS ISIZE SEQ QUAL
+			return out << "*\t0\t0\t*\t*";
+		  }
+		  default:
+			assert(false);
+			exit(EXIT_FAILURE);
+		}
 	}
 };
 
@@ -316,8 +351,29 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
+/** Calculate the lengths of the paths. */
+static vector<unsigned> calculatePathLengths(const Paths& paths)
+{
+	vector<unsigned> lengths;
+	lengths.reserve(paths.size());
+	for (Paths::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		lengths.push_back(accumulate(it->begin(), it->end(),
+					opt::k-1, addLength));
+	return lengths;
+}
+
 int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -356,13 +412,31 @@ int main(int argc, char** argv)
 	string pathsFile(argv[optind++]);
 	Paths paths = readPaths(pathsFile);
 
-	if (opt::dot) {
-		Overlaps overlaps = findOverlaps(paths);
+	switch (opt::format) {
+	  case DOT: {
 		cout << "digraph \"" << pathsFile << "\" {\n";
+		Overlaps overlaps = findOverlaps(paths);
 		copy(overlaps.begin(), overlaps.end(),
 				ostream_iterator<Overlap>(cout, "\n"));
 		cout << "}\n";
 		return 0;
+	  }
+	  case SAM: {
+		g_pathLengths = calculatePathLengths(paths);
+		// SAM headers.
+		cout << "@HD\tVN:1.0\n"
+			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
+			"CL:" << commandLine << '\n';
+		for (vector<string>::const_iterator it = g_pathIDs.begin();
+				it != g_pathIDs.end(); ++it)
+			cout << "@SQ\tSN:" << *it
+					<< "\tLN:" << g_pathLengths[it-g_pathIDs.begin()]
+					<< '\n';
+		Overlaps overlaps = findOverlaps(paths);
+		copy(overlaps.begin(), overlaps.end(),
+				ostream_iterator<Overlap>(cout, "\n"));
+		return 0;
+	  }
 	}
 
 	for (Overlaps overlaps = findOverlaps(paths);
