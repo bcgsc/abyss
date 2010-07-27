@@ -36,6 +36,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "      --adj             output the results in adj format [DEFAULT]\n"
 "      --dot             output the results in dot format\n"
+"      --sam             output the results in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -43,7 +44,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 /** Enumeration of output formats */
-enum format { ADJ, DOT };
+enum format { ADJ, DOT, SAM };
 
 namespace opt {
 	static int k;
@@ -61,6 +62,7 @@ static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "adj",     no_argument,       &opt::format, ADJ },
 	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -122,6 +124,15 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 
 int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -178,10 +189,24 @@ int main(int argc, char** argv)
 	}
 
 	ostream& out = cout;
-	if (opt::format == DOT)
+	switch (opt::format) {
+	  case DOT:
 		out << "digraph adj {\n"
 			"k=" << opt::k << "\n"
 			"edge[d=" << -(opt::k-1) << "]\n";
+		break;
+	  case SAM:
+		// SAM headers.
+		cout << "@HD\tVN:1.0\tSO:coordinate\n"
+			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
+			"CL:" << commandLine << '\n';
+		for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
+				it != contigs.end(); ++it)
+			out << "@SQ\tSN:" << ContigID(it - contigs.begin())
+					<< "\tLN:" << it->length
+					<< "\tXC:" << it->coverage << '\n';
+		break;
+	}
 
 	int numVerts = 0;
 	int numEdges = 0;
@@ -194,8 +219,9 @@ int main(int argc, char** argv)
 				<< "\t;";
 
 		for (unsigned idx = 0; idx < 2; idx++) {
-			const Kmer& seq = idx == 0 ? i->l : i->r;
-			const KmerMap::mapped_type& edges = ends[!idx][seq];
+			bool left = opt::format == SAM ? !idx : idx;
+			const Kmer& seq = !left ? i->l : i->r;
+			const KmerMap::mapped_type& edges = ends[!left][seq];
 
 			float c = i->coverage / (float)(i->length - opt::k + 1);
 			switch (opt::format) {
@@ -219,6 +245,27 @@ int main(int argc, char** argv)
 					if (edges.size() > 1)
 						out << " }";
 					out << '\n';
+				}
+				break;
+			  case SAM:
+				for (KmerMap::mapped_type::const_iterator it
+						= edges.begin(); it != edges.end(); ++it) {
+					unsigned flag = it->sense() ? 0x10 : 0; //FREVERSE
+					unsigned alen = opt::k - 1;
+					unsigned pos = 1 + (left ? 0 : i->length - alen);
+					out << ContigID(*it) // QNAME
+						<< '\t' << flag // FLAG
+						<< '\t' << id // RNAME
+						<< '\t' << pos // POS
+						<< "\t255\t"; // MAPQ
+					// CIGAR
+					unsigned clip = contigs[it->id()].length - alen;
+					if (left)
+						out << clip << 'H' << alen << "M\t";
+					else
+						out << alen << 'M' << clip << "H\t";
+					// MRNM MPOS ISIZE SEQ QUAL
+					out << "*\t0\t0\t*\t*\n";
 				}
 				break;
 			}
