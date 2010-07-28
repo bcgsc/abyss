@@ -148,7 +148,7 @@ struct SAMRecord : SAMAlignment {
 		SAMAlignment(a),
 		qname("*"),
 		mrnm("*"),
-		mpos(0),
+		mpos(-1),
 		isize(0)
 #if SAM_SEQ_QUAL
 		,
