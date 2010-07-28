@@ -188,7 +188,7 @@ next_record:
 			for (int i = 1; i < 6; i++)
 				if (!fields[i].empty())
 					o << ':' << fields[i];
-			if (fields[6] != "0")
+			if (!fields[6].empty() && fields[6] != "0")
 				o << '#' << fields[6];
 			// The reverse read is typically the second read, but is
 			// the third read of an indexed run.
