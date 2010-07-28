@@ -13,7 +13,7 @@ class ContigID {
   public:
 	ContigID() : m_id(0) { }
 	explicit ContigID(unsigned id) : m_id(id) { };
-	explicit ContigID(std::string id)
+	explicit ContigID(const std::string& id)
 		: m_id(s_dict.serial(id)) { };
 
 	/** Return the numeric serial number. */
