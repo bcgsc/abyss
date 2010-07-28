@@ -11,7 +11,7 @@
  */
 class ContigID {
   public:
-	ContigID() : m_id(0) { }
+	ContigID() { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(const std::string& id)
 		: m_id(s_dict.serial(id)) { };
@@ -38,6 +38,8 @@ class ContigID {
 		std::string s;
 		if (in >> s)
 			o = ContigID(s);
+		else
+			o.m_id = 1<<29; // invalid value
 		return in;
 	}
 
