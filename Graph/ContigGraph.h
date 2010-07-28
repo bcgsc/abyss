@@ -151,7 +151,7 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 	}
 	assert(in.eof());
 	assert(g.num_vertices() > 0);
-	g_contigIDs.lock();
+	ContigID::lock();
 
 	// Read the edges.
 	in.clear();
