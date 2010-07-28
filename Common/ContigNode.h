@@ -22,14 +22,14 @@ class ContigNode {
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(std::string id, bool sense)
 		: m_ambig(false),
-		m_id(g_contigIDs.serial(id)), m_sense(sense) { }
+		m_id(ContigID(id)), m_sense(sense) { }
 #else
 	ContigNode(unsigned id, bool sense)
 		: m_sense(sense), m_id(id), m_ambig(false) { }
 	ContigNode(unsigned id, int sense)
 		: m_sense(sense), m_id(id), m_ambig(false) { }
 	ContigNode(std::string id, bool sense)
-		: m_sense(sense), m_id(g_contigIDs.serial(id)),
+		: m_sense(sense), m_id(ContigID(id)),
 		m_ambig(false) { }
 #endif
 
@@ -118,8 +118,7 @@ class ContigNode {
 		if (o.ambiguous())
 			return out << o.m_id << 'N';
 		else
-			return out << g_contigIDs.key(o.id())
-				<< (o.sense() ? '-' : '+');
+			return out << ContigID(o.id()) << (o.sense() ? '-' : '+');
 	}
 
 	/** Return the length of this ambiguous contig in k-mer. */
