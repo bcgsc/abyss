@@ -49,6 +49,10 @@ class ContigID {
 		return out << o.str();
 	}
 
+	static bool empty() { return g_contigIDs.empty(); }
+	static void lock() { g_contigIDs.lock(); }
+	static void unlock() { g_contigIDs.unlock(); }
+
   private:
 	/** The numeric serial number. */
 	unsigned m_id;

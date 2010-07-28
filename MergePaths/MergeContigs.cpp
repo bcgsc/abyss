@@ -293,7 +293,8 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		if (argc - optind == 0) g_contigIDs.lock();
+		if (optind == argc)
+			ContigID::lock();
 	}
 
 	vector<string> pathIDs;

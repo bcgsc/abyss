@@ -1,5 +1,6 @@
 #include "ContigLength.h"
-#include "ContigNode.h" // for g_contigIDs
+#include "ContigID.h"
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring> // for strerror
@@ -27,7 +28,7 @@ static void assert_open(ifstream& f, const string& p)
 vector<unsigned> readContigLengths(istream& in)
 {
 	assert(in);
-	assert(g_contigIDs.empty());
+	assert(ContigID::empty());
 	vector<unsigned> lengths;
 	ContigID id;
 	unsigned len;
@@ -39,7 +40,7 @@ vector<unsigned> readContigLengths(istream& in)
 	}
 	assert(in.eof());
 	assert(!lengths.empty());
-	g_contigIDs.lock();
+	ContigID::lock();
 	return lengths;
 }
 

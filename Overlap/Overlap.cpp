@@ -420,7 +420,7 @@ int main(int argc, char *const argv[])
 	}
 	assert(in.eof());
 	in.close();
-	g_contigIDs.unlock();
+	ContigID::unlock();
 
 	// First, give priority to overlapping edges (not scaffolded).
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();

@@ -232,7 +232,7 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 {
 	assert(in);
 	assert(lengths.empty());
-	assert(g_contigIDs.empty());
+	assert(ContigID::empty());
 	for (string line; in.peek() == '@' && getline(in, line);) {
 		istringstream ss(line);
 		string type, tag;
@@ -338,7 +338,7 @@ int main(int argc, char** argv)
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
 	readContigLengths(in, contigLens);
-	g_contigIDs.lock();
+	ContigID::lock();
 
 	// Read the fragment size distribution.
 	Histogram distanceHist = loadHist(distanceCountFile);

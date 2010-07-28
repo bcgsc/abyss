@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 				bind2nd(ptr_fun(readContigs), &contigs));
 	} else
 		readContigs("-", &contigs);
-	g_contigIDs.lock();
+	ContigID::lock();
 
 	if (opt::verbose > 0)
 		cerr << "Read " << contigs.size() << " contigs\n";
