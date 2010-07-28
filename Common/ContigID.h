@@ -6,8 +6,6 @@
 #include <ostream>
 #include <string>
 
-extern Dictionary g_contigIDs;
-
 /** A contig ID is represented by a numeric serial number, but is
  * formatted as a string.
  */
@@ -16,13 +14,13 @@ class ContigID {
 	ContigID() : m_id(0) { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(std::string id)
-		: m_id(g_contigIDs.serial(id)) { };
+		: m_id(s_dict.serial(id)) { };
 
 	/** Return the numeric serial number. */
 	operator unsigned() const { return m_id; }
 
 	/** Return the string representation. */
-	const std::string& str() const { return g_contigIDs.key(m_id); }
+	const std::string& str() const { return s_dict.key(m_id); }
 
 	bool operator ==(const ContigID& o) const
 	{
@@ -49,13 +47,16 @@ class ContigID {
 		return out << o.str();
 	}
 
-	static bool empty() { return g_contigIDs.empty(); }
-	static void lock() { g_contigIDs.lock(); }
-	static void unlock() { g_contigIDs.unlock(); }
+	static bool empty() { return s_dict.empty(); }
+	static void lock() { s_dict.lock(); }
+	static void unlock() { s_dict.unlock(); }
 
   private:
 	/** The numeric serial number. */
 	unsigned m_id;
+
+	/** The contig ID dictionary. */
+	static Dictionary s_dict;
 };
 
 #endif

@@ -1,3 +1,3 @@
 #include "ContigID.h"
 
-Dictionary g_contigIDs;
+Dictionary ContigID::s_dict;
