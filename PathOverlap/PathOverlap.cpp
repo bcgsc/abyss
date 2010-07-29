@@ -23,7 +23,7 @@ using namespace std;
 
 static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
-"Written by Tony Raymond.\n"
+"Written by Shaun Jackman and Tony Raymond.\n"
 "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
