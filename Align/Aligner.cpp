@@ -1,9 +1,11 @@
 #include "Aligner.h"
 #include "AffixIterator.h"
+#include "SAM.h"
 #include "Sequence.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <iterator>
 #include <utility>
 
 using namespace std;
@@ -69,18 +71,19 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 
 template <class SeqPosHashMap>
 template <class oiterator>
-void Aligner<SeqPosHashMap>::alignRead(const Sequence& seq,
+void Aligner<SeqPosHashMap>::alignRead(
+		const string& qid, const Sequence& seq,
 		oiterator dest)
 {
-	getAlignmentsInternal(seq, false, dest);
-	getAlignmentsInternal(reverseComplement(seq), true, dest);
+	coalesceAlignments(qid, getAlignmentsInternal(seq, false), dest);
+	coalesceAlignments(qid, getAlignmentsInternal(
+				reverseComplement(seq), true), dest);
 }
 
 template <class SeqPosHashMap>
-template <class oiterator>
-void Aligner<SeqPosHashMap>::
-getAlignmentsInternal(const Sequence& seq, bool isRC,
-		oiterator& dest)
+typename Aligner<SeqPosHashMap>::AlignmentSet
+Aligner<SeqPosHashMap>::getAlignmentsInternal(
+		const Sequence& seq, bool isRC)
 {
 	// The results
 	AlignmentSet aligns;
@@ -113,8 +116,7 @@ getAlignmentsInternal(const Sequence& seq, bool isRC,
 			aligns[ctgIndex].push_back(align);
 		}
 	}
-
-	coalesceAlignments(aligns, dest);
+	return aligns;
 }
 
 static int compareQueryPos(const Alignment& a1, const Alignment& a2)
@@ -125,9 +127,11 @@ static int compareQueryPos(const Alignment& a1, const Alignment& a2)
 /** Coalesce the k-mer alignments into a read alignment. */
 template <class SeqPosHashMap>
 template <class oiterator>
-void Aligner<SeqPosHashMap>::
-coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
+void Aligner<SeqPosHashMap>::coalesceAlignments(
+		const string& qid, const AlignmentSet& alignSet,
+		oiterator& dest)
 {
+	typedef typename oiterator::value_type value_type;
 	for (AlignmentSet::const_iterator ctgIter = alignSet.begin();
 			ctgIter != alignSet.end(); ++ctgIter) {
 		AlignmentVector alignVec = ctgIter->second;
@@ -145,7 +149,7 @@ coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
 						!= prevIter->read_start_pos + qstep
 					|| currIter->contig_start_pos
 						!= prevIter->contig_start_pos + tstep) {
-				*dest++ = currAlign;
+				*dest++ = value_type(currAlign, qid);
 				currAlign = *currIter;
 			} else {
 				currAlign.align_length++;
@@ -157,7 +161,7 @@ coalesceAlignments(const AlignmentSet& alignSet, oiterator& dest)
 			currIter++;
 		}
 
-		*dest++ = currAlign;
+		*dest++ = value_type(currAlign, qid);
 	}
 }
 
@@ -170,8 +174,20 @@ template void Aligner<SeqPosHashUniqueMap>::addReferenceSequence(
 
 template void Aligner<SeqPosHashMultiMap>::
 alignRead<affix_ostream_iterator<Alignment> >(
-		const Sequence& seq, affix_ostream_iterator<Alignment> dest);
+		const string& qid, const Sequence& seq,
+		affix_ostream_iterator<Alignment> dest);
 
 template void Aligner<SeqPosHashUniqueMap>::
 alignRead<affix_ostream_iterator<Alignment> >(
-		const Sequence& seq, affix_ostream_iterator<Alignment> dest);
+		const string& qid, const Sequence& seq,
+		affix_ostream_iterator<Alignment> dest);
+
+template void Aligner<SeqPosHashMultiMap>::
+alignRead<affix_ostream_iterator<SAMRecord> >(
+		const string& qid, const Sequence& seq,
+		affix_ostream_iterator<SAMRecord> dest);
+
+template void Aligner<SeqPosHashUniqueMap>::
+alignRead<affix_ostream_iterator<SAMRecord> >(
+		const string& qid, const Sequence& seq,
+		affix_ostream_iterator<SAMRecord> dest);

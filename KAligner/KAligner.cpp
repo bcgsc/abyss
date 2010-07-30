@@ -5,6 +5,7 @@
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
+#include "SAM.h"
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"
 #include <algorithm>
@@ -49,11 +50,16 @@ static const char USAGE_MESSAGE[] =
 "      --no-sync         do not synchronize threads\n"
 #endif
 "  -v, --verbose         display verbose output\n"
+"      --no-sam          output the results in KAligner format\n"
+"      --sam             output the results in SAM format\n"
 "      --seq             print the sequence with the alignments\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+/** Enumeration of output formats */
+enum format { KALIGNER, SAM };
 
 namespace opt {
 	static unsigned k;
@@ -62,6 +68,9 @@ namespace opt {
 
 	/** Synchronize the threads with a barrier. */
 	static int sync = 10000;
+
+	/** Output formats */
+	static int format;
 }
 
 static const char shortopts[] = "ik:mo:j:v";
@@ -77,6 +86,9 @@ static const struct option longopts[] = {
 	{ "no-sync",     no_argument,       &opt::sync, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "no-sam",      no_argument,       &opt::format, KALIGNER },
+	{ "sam",         no_argument,       &opt::format, SAM },
+	{ "no-seq",		 no_argument,		&opt::printSeq, 0 },
 	{ "seq",		 no_argument,		&opt::printSeq, 1 },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -386,23 +398,46 @@ void *alignReadsToDB(void* readsFile)
 				assert(isalpha(seq[0]));
 		}
 
-		if (opt::multimap == opt::MULTIMAP)
-			g_aligner_m->alignRead(seq,
-					affix_ostream_iterator<Alignment>(output, "\t"));
-		else
-			g_aligner_u->alignRead(seq,
-					affix_ostream_iterator<Alignment>(output, "\t"));
-
-		pthread_mutex_lock(&g_mutexCout);
-		cout << rec.id;
-		if (opt::printSeq) {
-			cout << ' ';
-			if (opt::colourSpace)
-				cout << rec.anchor;
-			cout << seq;
+		switch (opt::format) {
+		  case KALIGNER:
+			if (opt::multimap == opt::MULTIMAP)
+				g_aligner_m->alignRead(rec.id, seq,
+						affix_ostream_iterator<Alignment>(
+							output, "\t"));
+			else
+				g_aligner_u->alignRead(rec.id, seq,
+						affix_ostream_iterator<Alignment>(
+							output, "\t"));
+			break;
+		  case SAM:
+			if (opt::multimap == opt::MULTIMAP)
+				g_aligner_m->alignRead(rec.id, seq,
+						affix_ostream_iterator<SAMRecord>(
+							output, "", "\n"));
+			else
+				g_aligner_u->alignRead(rec.id, seq,
+						affix_ostream_iterator<SAMRecord>(
+							output, "", "\n"));
+			break;
 		}
+
 		string s = output.str();
-		cout << s << '\n';
+		pthread_mutex_lock(&g_mutexCout);
+		switch (opt::format) {
+		  case KALIGNER:
+			cout << rec.id;
+			if (opt::printSeq) {
+				cout << ' ';
+				if (opt::colourSpace)
+					cout << rec.anchor;
+				cout << seq;
+			}
+			cout << s << '\n';
+			break;
+		  case SAM:
+			cout << s;
+			break;
+		}
 		assert(cout.good());
 		pthread_mutex_unlock(&g_mutexCout);
 

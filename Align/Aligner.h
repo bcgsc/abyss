@@ -33,6 +33,8 @@ struct Alignment
 
 	Alignment() { }
 
+	Alignment(const Alignment& o, std::string /*qid*/) { *this = o; }
+
 	Alignment(StringID contig, int contig_start, int read_start,
 			int align_length, int read_length, bool isRC) :
 		contig(contig),
@@ -179,7 +181,8 @@ class Aligner
 		void addReferenceSequence(const Kmer& kmer, Position pos);
 
 		template <class oiterator>
-		void alignRead(const Sequence& seq, oiterator dest);
+		void alignRead(const std::string& qid, const Sequence& seq,
+				oiterator dest);
 
 		size_t size() const { return m_target.size(); }
 		size_t bucket_count() const
@@ -188,16 +191,14 @@ class Aligner
 		}
 
 	private:
-
-		// Internal alignment function, perform the actual alignment
-		template <class oiterator>
-		void getAlignmentsInternal(const Sequence& seq, bool isRC,
-				oiterator& dest);
-
 		typedef std::map<unsigned, AlignmentVector> AlignmentSet;
 
+		AlignmentSet getAlignmentsInternal(
+				const Sequence& seq, bool isRC);
+
 		template <class oiterator>
-		static void coalesceAlignments(const AlignmentSet& alignSet,
+		static void coalesceAlignments(
+				const std::string& qid, const AlignmentSet& alignSet,
 				oiterator& dest);
 
 		// The number of bases to hash on

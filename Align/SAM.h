@@ -144,9 +144,10 @@ struct SAMRecord : SAMAlignment {
 	SAMRecord() { }
 
 	/** Consturct a single-end alignment. */
-	explicit SAMRecord(const SAMAlignment& a) :
+	explicit SAMRecord(const SAMAlignment& a,
+			const std::string& qname = "*") :
 		SAMAlignment(a),
-		qname("*"),
+		qname(qname),
 		mrnm("*"),
 		mpos(-1),
 		isize(0)
