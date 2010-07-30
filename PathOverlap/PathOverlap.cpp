@@ -15,7 +15,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <map>
-#include <set>
+#include <vector>
 
 using namespace std;
 
@@ -150,7 +150,7 @@ struct Overlap {
 };
 
 /** The contig IDs that have been removed from paths. */
-static set<ContigID> s_trimmedContigs;
+static vector<ContigID> s_trimmedContigs;
 
 static void assert_open(ifstream& f, const string& p)
 {
@@ -301,7 +301,7 @@ static void recordTrimmedContigs(
 {
 	for (ContigPath::const_iterator it = first; it != last; ++it)
 		if (!it->ambiguous())
-			s_trimmedContigs.insert(ContigID(*it));
+			s_trimmedContigs.push_back(ContigID(*it));
 }
 
 /** Remove ambiguous contigs from the ends of the path. */
@@ -453,8 +453,12 @@ int main(int argc, char** argv)
 	}
 
 	if (!opt::repeatContigs.empty()) {
+		sort(s_trimmedContigs.begin(), s_trimmedContigs.end());
+		s_trimmedContigs.erase(
+				unique(s_trimmedContigs.begin(),
+					s_trimmedContigs.end()), s_trimmedContigs.end());
 		ofstream out(opt::repeatContigs.c_str());
-		for (set<ContigID>::const_iterator it
+		for (vector<ContigID>::const_iterator it
 				= s_trimmedContigs.begin();
 				it != s_trimmedContigs.end(); ++it)
 			out << ContigID(*it) << '\n';
