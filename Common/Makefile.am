@@ -12,7 +12,7 @@ libcommon_a_SOURCES = \
 	Estimate.h \
 	Fcontrol.cpp Fcontrol.h \
 	HashFunction.cpp HashFunction.h \
-	HashMap.h HashSet.h \
+	HashMap.h \
 	Histogram.cpp Histogram.h \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
