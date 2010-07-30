@@ -230,6 +230,18 @@ static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
 				seen[itc->id()] = true;
 }
 
+/** Mark contigs for removal. An empty path indicates that a contig
+ * should be removed.
+ */
+static void markRemovedContigs(vector<bool>& marked,
+		const vector<string>& pathIDs, const vector<Path>& paths)
+{
+	for (vector<Path>::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		if (it->empty())
+			marked[ContigID(pathIDs[it - paths.begin()])] = true;
+}
+
 int main(int argc, char** argv)
 {
 	ContigPath::separator = ",";
@@ -304,6 +316,7 @@ int main(int argc, char** argv)
 	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
 	seenContigs(seen, paths);
+	markRemovedContigs(seen, pathIDs, paths);
 
 	// Record all the contigs that were in a previous path.
 	if (argc - optind > 0) {
@@ -342,17 +355,23 @@ int main(int argc, char** argv)
 		if (!seen[it - contigs.begin()])
 			out << *it;
 
-	unsigned i = 0;
+	unsigned npaths = 0;
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const Path& path = *it;
+		if (path.empty())
+			continue;
 		Contig contig = mergePath(path);
-		contig.id = pathIDs[i++];
+		contig.id = pathIDs[it - paths.begin()];
 		FastaRecord rec(contig);
 		rec.comment += ' ' + toString(path);
 		out << rec;
 		assert(out.good());
+		npaths++;
 	}
+
+	if (npaths == 0)
+		return 0;
 
 	float minCov = numeric_limits<float>::infinity(),
 		minCovUsed = numeric_limits<float>::infinity();
