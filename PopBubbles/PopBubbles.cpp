@@ -189,9 +189,7 @@ static ContigProperties calculateProperties(
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		assert(!it->ambiguous());
-		const ContigProperties& vp1 = g[*it];
-		vp.length += vp1.length - opt::k + 1;
-		vp.coverage += vp1.coverage;
+		vp += g[*it];
 	}
 	return vp;
 }

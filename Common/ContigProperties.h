@@ -4,6 +4,10 @@
 #include <istream>
 #include <ostream>
 
+namespace opt {
+	extern int k;
+}
+
 /** Contig properties. */
 struct ContigProperties {
 	unsigned length;
@@ -12,6 +16,19 @@ struct ContigProperties {
 	ContigProperties() { }
 	ContigProperties(unsigned length, unsigned coverage)
 		: length(length), coverage(coverage) { }
+
+	ContigProperties& operator +=(const ContigProperties& o)
+	{
+		length += o.length - opt::k + 1;
+		coverage += o.coverage;
+		return *this;
+	}
+
+	ContigProperties operator +(const ContigProperties& o) const
+	{
+		ContigProperties x = *this;
+		return x += o;
+	}
 
 	friend std::ostream& operator <<(std::ostream& out,
 			const ContigProperties& o)
