@@ -2,6 +2,7 @@
 #define DICTIONARY_H 1
 
 #include "HashMap.h"
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -19,6 +20,16 @@ class Dictionary {
 
 		Dictionary() : m_locked(false) { }
 
+		/** Insert the specified key. */
+		Serial insert(const Key& key)
+		{
+			std::pair<Map::const_iterator, bool> inserted
+				= m_map.insert(std::make_pair(key, m_map.size()));
+			assert(inserted.second);
+			m_vec.push_back(key);
+			return inserted.first->second;
+		}
+		
 		/** Convert the specified key to a serial number. */
 		Serial serial(const Key& key)
 		{
@@ -58,6 +69,13 @@ class Dictionary {
 
 		/** Return the number of elements in this dictionary. */
 		size_t size() { return m_vec.size(); }
+
+		/** Return the last key in this dictionary. */
+		const Key& back()
+		{
+			assert(!m_vec.empty());
+			return m_vec.back();
+		}
 
 	private:
 		Map m_map;

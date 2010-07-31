@@ -2,8 +2,10 @@
 #define CONTIGID_H 1
 
 #include "Dictionary.h"
+#include <cassert>
 #include <istream>
 #include <ostream>
+#include <sstream>
 #include <string>
 
 /** A contig ID is represented by a numeric serial number, but is
@@ -52,6 +54,18 @@ class ContigID {
 	static bool empty() { return s_dict.empty(); }
 	static void lock() { s_dict.lock(); }
 	static void unlock() { s_dict.unlock(); }
+
+	/** Return a unique contig ID. */
+	static ContigID create()
+	{
+		unsigned id;
+		std::istringstream iss(s_dict.back());
+		iss >> id;
+		assert(iss.eof());
+		std::ostringstream oss;
+		oss << ++id;
+		return ContigID(s_dict.insert(oss.str()));
+	}
 
   private:
 	/** The numeric serial number. */
