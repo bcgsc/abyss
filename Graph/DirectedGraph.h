@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iterator>
 #include <ostream>
+#include <utility>
 #include <vector>
 
 /** No properties. */
@@ -132,6 +133,12 @@ class Edge
 			return m_vertices[v.index()];
 		}
 
+		/** Returns an iterator-range to the vertices. */
+		std::pair<vertex_iterator, vertex_iterator> vertices()
+		{
+			return make_pair(m_vertices.begin(), m_vertices.end());
+		}
+
 		/** Remove all the edges and vertices from this graph. */
 		void clear() { m_vertices.clear(); }
 
@@ -141,6 +148,14 @@ class Edge
 		{
 			m_vertices.push_back(Vertex(data));
 			return vertex(m_vertices.back());
+		}
+
+		/** Returns an iterator-range to the out edges of vertex u. */
+		std::pair<out_edge_iterator, out_edge_iterator>
+		out_edges(vertex_descriptor u)
+		{
+			const Vertex& v = (*this)[u];
+			return make_pair(v.begin(), v.end());
 		}
 
 		/** Adds edge (u,v) to the graph. */
