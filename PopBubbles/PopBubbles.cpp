@@ -7,6 +7,8 @@
 #include "Common/Options.h"
 #include "AffixIterator.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
+#include "ContigPath.h"
 #include "ContigProperties.h"
 #include "Sequence.h"
 #include <algorithm>
@@ -18,8 +20,8 @@
 #include <iterator>
 #include <limits> // for numeric_limits
 #include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -90,8 +92,11 @@ static ContigNode target(const Graph::Edge& e)
 	return g_graph.target(e);
 }
 
-static void popBubble(Graph::vertex_iterator v,
-		const ContigNode& tail)
+typedef Graph::vertex_descriptor vertex_descriptor;
+typedef Graph::vertex_iterator vertex_iterator;
+typedef Graph::out_edge_iterator out_edge_iterator;
+
+static void popBubble(vertex_iterator v, const ContigNode& tail)
 {
 	assert(v->out_degree() > 0);
 	assert(v->out_degree() == g_graph.in_degree(tail));
@@ -123,7 +128,7 @@ static unsigned targetLength(const Graph::Edge& e)
 }
 
 /** Consider popping the bubble originating at the vertex v. */
-static void considerPopping(Graph::vertex_iterator v)
+static void considerPopping(vertex_iterator v)
 {
 	assert(v->out_degree() > 1);
 	if (v->front().target().out_degree() != 1) {
@@ -137,8 +142,7 @@ static void considerPopping(Graph::vertex_iterator v)
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	for (Graph::out_edge_iterator it = v->begin();
-			it != v->end(); ++it) {
+	for (out_edge_iterator it = v->begin(); it != v->end(); ++it) {
 		if (it->target().out_degree() != 1
 				|| g_graph.in_degree(it->target()) != 1) {
 			// This branch is not simple.
@@ -168,11 +172,68 @@ static void considerPopping(Graph::vertex_iterator v)
 }
 
 /** Remove the specified contig from the adjacency graph. */
-static void removeContig(unsigned id)
+static void removeContig(ContigID id)
 {
 	ContigNode v(id, false);
 	g_graph.clear_vertex(v);
 	g_graph.remove_vertex(v);
+}
+
+typedef vector<vertex_descriptor> Path;
+
+/** Return the contig properties of the specified path. */
+static ContigProperties calculateProperties(
+		const Graph& g, const Path& path)
+{
+	ContigProperties vp(opt::k - 1, 0);
+	for (Path::const_iterator it = path.begin();
+			it != path.end(); ++it) {
+		assert(!it->ambiguous());
+		const ContigProperties& vp1 = g[*it];
+		vp.length += vp1.length - opt::k + 1;
+		vp.coverage += vp1.coverage;
+	}
+	return vp;
+}
+
+/** Merge the specified path and update the graph g. */
+static void mergePath(Graph& g, const Path& path)
+{
+	ContigID id = ContigID::create();
+	cout << id << '\t' << ContigPath(path) << '\n';
+	vertex_descriptor v = g.add_vertex(calculateProperties(g, path));
+	assert(ContigID(v) == id);
+	g.copy_in_edges(path.front(), v);
+	g.copy_out_edges(path.back(), v);
+	for_each(path.begin(), path.end(), removeContig);
+}
+
+/** Assemble an unambiguous path.
+ * @return a path
+ * @todo v should be a vertex_descriptor
+ */
+static Path assemble(const Graph& g, const Graph::Vertex& v)
+{
+	Path path;
+	assemble(g, g.vertex(v), back_inserter(path));
+	return path;
+}
+
+/** Assemble unambiguous paths. */
+static void assemble(Graph& g)
+{
+	pair<vertex_iterator, vertex_iterator> vertices = g.vertices();
+	for (vertex_iterator it = vertices.first;
+			it != vertices.second; ++it) {
+		if (g.contiguous_out(*it) && !g.contiguous_in(*it)) {
+			Path path = assemble(g, *it);
+			assert(path.size() >= 3);
+			assert(path.front() != path.back());
+			// Output only the canonical path.
+			if (path.front() < path.back())
+				mergePath(g, path);
+		}
+	}
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -236,7 +297,7 @@ int main(int argc, char *const argv[])
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	for (Graph::vertex_iterator it = g_graph.begin();
+	for (vertex_iterator it = g_graph.begin();
 			it != g_graph.end(); ++it)
 		if (it->out_degree() > 1)
 			considerPopping(it);
@@ -261,6 +322,9 @@ int main(int argc, char *const argv[])
 	if (!opt::graphPath.empty()) {
 		// Remove the popped contigs from the adjacency graph.
 		for_each(g_popped.begin(), g_popped.end(), removeContig);
+
+		// Assemble unambiguous paths.
+		assemble(g_graph);
 
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());

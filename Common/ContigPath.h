@@ -18,7 +18,8 @@ class ContigPath : public std::vector<ContigNode>
 
 	public:
 		ContigPath() { }
-		ContigPath(size_t n) : std::vector<ContigNode>(n) { }
+		explicit ContigPath(size_t n) : Vector(n) { }
+		explicit ContigPath(const Vector& v) : Vector(v) { }
 
 		template <class InputIterator>
 		ContigPath(InputIterator first, InputIterator last)

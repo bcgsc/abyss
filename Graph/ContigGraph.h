@@ -7,6 +7,7 @@
 #include <limits> // for numeric_limits
 #include <ostream>
 #include <sstream>
+#include <utility>
 
 template <typename VertexProp = no_property> class ContigGraph;
 
@@ -103,6 +104,52 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 
 	friend std::ostream& operator<< <>(std::ostream& out,
 			const ContigGraph& g);
+
+	// The following functions are not standard.
+
+	/** Return whether the outgoing edge of the specified vertex is
+	 * contiguous. */
+	bool contiguous_out(vertex_descriptor v) const
+	{
+		return out_degree(v) == 1
+			&& in_degree((*this)[v].front().target()) == 1;
+	}
+
+	/** Return whether the incoming edge of the specified vertex is
+	 * contiguous. */
+	bool contiguous_in(vertex_descriptor v) const
+	{
+		return contiguous_out(~v);
+	}
+
+	/** @todo *it should be a vertex_descriptor not a Vertex */
+	bool contiguous_out(const Vertex& v) const
+	{
+		return contiguous_out(vertex(v));
+	}
+
+	/** @todo *it should be a vertex_descriptor not a Vertex */
+	bool contiguous_in(const Vertex& v) const
+	{
+		return contiguous_in(vertex(v));
+	}
+
+	/** Copy the outgoing edges of vertex u to vertex v. */
+	void copy_out_edges(vertex_descriptor u, vertex_descriptor v)
+	{
+		assert(u != v);
+		std::pair<out_edge_iterator, out_edge_iterator>
+			edges = out_edges(u);
+		for (out_edge_iterator it = edges.first;
+				it != edges.second; ++it)
+			add_edge(v, target(*it));
+	}
+
+	/** Add the incoming edges of vertex u to vertex v. */
+	void copy_in_edges(vertex_descriptor u, vertex_descriptor v)
+	{
+		copy_out_edges(~u, ~v);
+	}
 
   private:
 	ContigGraph(const ContigGraph&);
