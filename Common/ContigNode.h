@@ -103,6 +103,8 @@ class ContigNode {
 		return flip ? ~*this : *this;
 	}
 
+	ContigNode& operator++() { ++m_int; return *this; }
+
 	friend std::istream& operator >>(std::istream& in,
 			ContigNode& o)
 	{

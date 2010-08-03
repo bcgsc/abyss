@@ -104,7 +104,7 @@ static void popBubble(vertex_iterator v, const ContigNode& tail)
 	transform(v->begin(), v->end(), sorted.begin(), target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
-		cout << '"' << g_graph.vertex(*v) << "\" -> {";
+		cout << '"' << *v << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
 				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
@@ -206,17 +206,6 @@ static void mergePath(Graph& g, const Path& path)
 	for_each(path.begin(), path.end(), removeContig);
 }
 
-/** Assemble an unambiguous path.
- * @return a path
- * @todo v should be a vertex_descriptor
- */
-static Path assemble(const Graph& g, const Graph::Vertex& v)
-{
-	Path path;
-	assemble(g, g.vertex(v), back_inserter(path));
-	return path;
-}
-
 /** Assemble unambiguous paths. */
 static void assemble(Graph& g)
 {
@@ -224,7 +213,8 @@ static void assemble(Graph& g)
 	for (vertex_iterator it = vertices.first;
 			it != vertices.second; ++it) {
 		if (g.contiguous_out(*it) && !g.contiguous_in(*it)) {
-			Path path = assemble(g, *it);
+			Path path;
+			assemble(g, *it, back_inserter(path));
 			assert(path.size() >= 3);
 			assert(path.front() != path.back());
 			// Output only the canonical path.

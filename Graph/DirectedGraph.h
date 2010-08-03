@@ -30,6 +30,8 @@ template <typename VertexProp = no_property>
 class DirectedGraph
 {
   public:
+	typedef unsigned vertices_size_type;
+	typedef ContigNode vertex_descriptor;
 	class Vertex;
 	typedef typename std::vector<Vertex> Vertices;
 
@@ -38,8 +40,9 @@ class vertex_iterator {
 	typedef typename Vertices::const_iterator const_iterator;
 
   public:
-	vertex_iterator(const const_iterator& it) : m_it(it) { }
-	const Vertex& operator *() const { return *m_it; }
+	vertex_iterator(const const_iterator& it,
+			const vertex_descriptor& v) : m_it(it), m_v(v) { }
+	const vertex_descriptor& operator *() const { return m_v; }
 	const Vertex* operator ->() const { return &*m_it; }
 
 	bool operator !=(const vertex_iterator& it) const
@@ -47,10 +50,11 @@ class vertex_iterator {
 		return m_it != it.m_it;
 	}
 
-	vertex_iterator& operator ++() { ++m_it; return *this; }
+	vertex_iterator& operator ++() { ++m_it; ++m_v; return *this; }
 
   private:
 	const_iterator m_it;
+	vertex_descriptor m_v;
 };
 
 	class Edge;
@@ -126,9 +130,7 @@ class Edge
 };
 
 	public:
-		typedef unsigned vertices_size_type;
 		typedef unsigned degree_size_type;
-		typedef ContigNode vertex_descriptor;
 		typedef const Edge& edge_descriptor;
 
 		/** Create an empty graph. */
@@ -152,10 +154,23 @@ class Edge
 			return m_vertices[v.index()];
 		}
 
+		/** Return an iterator to the vertex set of this graph. */
+		vertex_iterator begin() const
+		{
+			return vertex_iterator(m_vertices.begin(),
+					vertex_descriptor(0));
+		}
+
+		vertex_iterator end() const
+		{
+			return vertex_iterator(m_vertices.end(),
+					vertex_descriptor(m_vertices.size()));
+		}
+
 		/** Returns an iterator-range to the vertices. */
 		std::pair<vertex_iterator, vertex_iterator> vertices()
 		{
-			return make_pair(m_vertices.begin(), m_vertices.end());
+			return make_pair(begin(), end());
 		}
 
 		/** Remove all the edges and vertices from this graph. */
@@ -212,16 +227,11 @@ class Edge
 		/** Return the number of vertices. */
 		size_t num_vertices() const { return m_vertices.size(); }
 
-		/** Return an iterator to the vertex set of this graph. */
-		vertex_iterator begin() const { return m_vertices.begin(); }
-		vertex_iterator end() const { return m_vertices.end(); }
-
 		/** Return the number of edges. */
 		size_t num_edges() const
 		{
 			size_t n = 0;
-			for (vertex_iterator it = m_vertices.begin();
-					it != m_vertices.end(); ++it)
+			for (vertex_iterator it = begin(); it != end(); ++it)
 				n += it->out_degree();
 			return n;
 		}
@@ -256,11 +266,12 @@ class Edge
 				const DirectedGraph<VertexProp>& g)
 		{
 			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
-				vertex_descriptor id = g.vertex(*v);
+				const vertex_descriptor& id = *v;
 				if (g.is_removed(id))
 					continue;
 				if (sizeof (VertexProp) > 0)
-					out << '"' << id << "\" [" << *v << "]\n";
+					out << '"' << id << "\" ["
+						<< *v.operator->() << "]\n";
 				if (v->out_degree() == 0)
 					continue;
 				out << '"' << id << "\" ->";

@@ -122,18 +122,6 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		return contiguous_out(~v);
 	}
 
-	/** @todo *it should be a vertex_descriptor not a Vertex */
-	bool contiguous_out(const Vertex& v) const
-	{
-		return contiguous_out(vertex(v));
-	}
-
-	/** @todo *it should be a vertex_descriptor not a Vertex */
-	bool contiguous_in(const Vertex& v) const
-	{
-		return contiguous_in(vertex(v));
-	}
-
 	/** Copy the outgoing edges of vertex u to vertex v. */
 	void copy_out_edges(vertex_descriptor u, vertex_descriptor v)
 	{
@@ -163,11 +151,11 @@ std::ostream& operator<<(std::ostream& out,
 	typedef ContigGraph<VertexProp> G;
 	for (typename G::vertex_iterator v = g.begin();
 			v != g.end(); ++v) {
-		const ContigNode& id = g.vertex(*v);
+		const ContigNode& id = *v;
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << ContigID(id) << *v;
+			out << ContigID(id) << *v.operator->();
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)
