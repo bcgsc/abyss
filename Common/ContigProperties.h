@@ -26,8 +26,7 @@ struct ContigProperties {
 
 	ContigProperties operator +(const ContigProperties& o) const
 	{
-		ContigProperties x = *this;
-		return x += o;
+		return ContigProperties(*this) += o;
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
