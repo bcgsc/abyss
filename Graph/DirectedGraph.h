@@ -188,6 +188,7 @@ class Edge
 		std::pair<out_edge_iterator, out_edge_iterator>
 		out_edges(vertex_descriptor u) const
 		{
+			assert(u.index() < m_vertices.size());
 			const Vertex& v = (*this)[u];
 			return make_pair(v.begin(), v.end());
 		}
