@@ -124,6 +124,20 @@ static int compareQueryPos(const Alignment& a1, const Alignment& a2)
 	return a1.read_start_pos < a2.read_start_pos;
 }
 
+/** Traits of an output iterator. */
+template<class OutIter>
+struct output_iterator_traits {
+	typedef typename OutIter::value_type value_type;
+};
+
+/** Traits of a ostream_iterator. */
+template<class T, class charT, class traits>
+struct output_iterator_traits
+	<std::ostream_iterator<T, charT, traits> >
+{
+	typedef T value_type;
+};
+
 /** Coalesce the k-mer alignments into a read alignment. */
 template <class SeqPosHashMap>
 template <class oiterator>
@@ -131,7 +145,8 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 		const string& qid, const AlignmentSet& alignSet,
 		oiterator& dest)
 {
-	typedef typename oiterator::value_type value_type;
+	typedef typename output_iterator_traits<oiterator>::value_type
+		value_type;
 	for (AlignmentSet::const_iterator ctgIter = alignSet.begin();
 			ctgIter != alignSet.end(); ++ctgIter) {
 		AlignmentVector alignVec = ctgIter->second;
@@ -183,11 +198,11 @@ alignRead<affix_ostream_iterator<Alignment> >(
 		affix_ostream_iterator<Alignment> dest);
 
 template void Aligner<SeqPosHashMultiMap>::
-alignRead<affix_ostream_iterator<SAMRecord> >(
+alignRead<ostream_iterator<SAMRecord> >(
 		const string& qid, const Sequence& seq,
-		affix_ostream_iterator<SAMRecord> dest);
+		ostream_iterator<SAMRecord> dest);
 
 template void Aligner<SeqPosHashUniqueMap>::
-alignRead<affix_ostream_iterator<SAMRecord> >(
+alignRead<ostream_iterator<SAMRecord> >(
 		const string& qid, const Sequence& seq,
-		affix_ostream_iterator<SAMRecord> dest);
+		ostream_iterator<SAMRecord> dest);

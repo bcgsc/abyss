@@ -412,12 +412,10 @@ void *alignReadsToDB(void* readsFile)
 		  case SAM:
 			if (opt::multimap == opt::MULTIMAP)
 				g_aligner_m->alignRead(rec.id, seq,
-						affix_ostream_iterator<SAMRecord>(
-							output, "", "\n"));
+						ostream_iterator<SAMRecord>(output, "\n"));
 			else
 				g_aligner_u->alignRead(rec.id, seq,
-						affix_ostream_iterator<SAMRecord>(
-							output, "", "\n"));
+						ostream_iterator<SAMRecord>(output, "\n"));
 			break;
 		}
 

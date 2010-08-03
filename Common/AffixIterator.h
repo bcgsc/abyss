@@ -15,13 +15,13 @@ class affix_ostream_iterator :
 		void, void, void, void>
 {
 public:
-	/** The type of element inserted into the stream. Note that the
-	 * standard ostream_iterator does not have this typedef. */
-	typedef T value_type;
-
 	typedef charT char_type;
 	typedef traits traits_type;
 	typedef std::basic_ostream<charT, traits> ostream_type;
+
+	/** The type of element inserted into the stream. Note that the
+	 * value_type of a general output iterator is void. */
+	typedef T value_type;
 
 	affix_ostream_iterator(ostream_type& s,
 			charT const *prefix, charT const *suffix = NULL)
