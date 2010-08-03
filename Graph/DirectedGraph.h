@@ -186,7 +186,7 @@ class Edge
 
 		/** Returns an iterator-range to the out edges of vertex u. */
 		std::pair<out_edge_iterator, out_edge_iterator>
-		out_edges(vertex_descriptor u)
+		out_edges(vertex_descriptor u) const
 		{
 			const Vertex& v = (*this)[u];
 			return make_pair(v.begin(), v.end());
