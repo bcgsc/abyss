@@ -135,7 +135,8 @@ static void considerPopping(vertex_iterator v)
 		// This branch is not simple.
 		return;
 	}
-	const Graph::Vertex& tail = v->front().target().front().target();
+	vertex_descriptor tail = g_graph.vertex(
+			v->front().target().front().target());
 	if (g_graph.in_degree(tail) != v->out_degree()) {
 		// This branch is not simple.
 		return;
@@ -148,7 +149,7 @@ static void considerPopping(vertex_iterator v)
 			// This branch is not simple.
 			return;
 		}
-		if (it->target().front().target() != tail) {
+		if (g_graph.vertex(it->target().front().target()) != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
@@ -168,7 +169,7 @@ static void considerPopping(vertex_iterator v)
 	}
 
 	g_count.popped++;
-	popBubble(v, g_graph.vertex(tail));
+	popBubble(v, tail);
 }
 
 /** Remove the specified contig from the adjacency graph. */
