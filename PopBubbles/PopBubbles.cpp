@@ -145,7 +145,7 @@ static void considerPopping(vertex_iterator v)
 	// Check that every branch is simple and ends at the same node.
 	for (out_edge_iterator it = v->begin(); it != v->end(); ++it) {
 		if (it->target().out_degree() != 1
-				|| g_graph.in_degree(it->target()) != 1) {
+				|| g_graph.in_degree(g_graph.target(*it)) != 1) {
 			// This branch is not simple.
 			return;
 		}

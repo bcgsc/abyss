@@ -27,7 +27,6 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	typedef typename DG::vertices_size_type vertices_size_type;
 	typedef typename DG::vertex_descriptor vertex_descriptor;
 	typedef typename DG::vertex_iterator vertex_iterator;
-	typedef typename DG::Vertex Vertex;
 
 	// Edge types.
 	typedef typename DG::degree_size_type degree_size_type;
@@ -47,18 +46,13 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		return (*this)[~v].out_degree();
 	}
 
-	/** Return the in degree of vertex v. */
-	degree_size_type in_degree(const Vertex& v) const
-	{
-		return in_degree(vertex(v));
-	}
-
 	/** Remove all out edges from vertex v. */
 	void clear_out_edges(vertex_descriptor v)
 	{
-		const Vertex& vertex = (*this)[v];
-		for (out_edge_iterator it = vertex.begin();
-				it != vertex.end(); ++it)
+		std::pair<out_edge_iterator, out_edge_iterator>
+			edges = out_edges(v);
+		for (out_edge_iterator it = edges.first;
+				it != edges.second; ++it)
 			remove_edge(~target(*it), ~v);
 		DG::clear_out_edges(v);
 	}
@@ -112,7 +106,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	bool contiguous_out(vertex_descriptor v) const
 	{
 		return out_degree(v) == 1
-			&& in_degree((*this)[v].front().target()) == 1;
+			&& in_degree(target(*out_edges(v).first)) == 1;
 	}
 
 	/** Return whether the incoming edge of the specified vertex is

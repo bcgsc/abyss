@@ -29,11 +29,11 @@ struct no_property
 template <typename VertexProp = no_property>
 class DirectedGraph
 {
+	class Vertex;
+	typedef typename std::vector<Vertex> Vertices;
   public:
 	typedef unsigned vertices_size_type;
 	typedef ContigNode vertex_descriptor;
-	class Vertex;
-	typedef typename std::vector<Vertex> Vertices;
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator {
@@ -61,6 +61,7 @@ class vertex_iterator {
 	typedef typename std::vector<Edge> Edges;
 	typedef typename Edges::const_iterator out_edge_iterator;
 
+  private:
 /** A vertex and its properties. */
 class Vertex : public VertexProp
 {
@@ -113,6 +114,7 @@ class Vertex : public VertexProp
 	Edges m_edges;
 };
 
+  public:
 /** A directed edge. */
 class Edge
 {
