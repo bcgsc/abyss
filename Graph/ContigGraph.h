@@ -149,7 +149,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << ContigID(id) << *v.operator->();
+			out << ContigID(id) << v->get_property();
 		out << "\t;";
 		for (typename G::out_edge_iterator e = v->begin();
 				e != v->end(); ++e)

@@ -68,6 +68,9 @@ class Vertex : public VertexProp
 	Vertex() { }
 	Vertex(const VertexProp& p) : VertexProp(p) { }
 
+	/** Return the properties of this vertex. */
+	const VertexProp& get_property() const { return *this; }
+
 	/** Return an iterator to the edges of this vertex. */
 	out_edge_iterator begin() const { return m_edges.begin(); }
 	out_edge_iterator end() const { return m_edges.end(); }
@@ -272,7 +275,7 @@ class Edge
 					continue;
 				if (sizeof (VertexProp) > 0)
 					out << '"' << id << "\" ["
-						<< *v.operator->() << "]\n";
+						<< v->get_property() << "]\n";
 				if (v->out_degree() == 0)
 					continue;
 				out << '"' << id << "\" ->";
