@@ -37,13 +37,14 @@ static inline Constraints::iterator findConstraint(
 	return it->first == key ? it : constraints.end();
 }
 
-typedef ContigNode Node;
+typedef Graph::vertex_descriptor vertex_descriptor;
+typedef Graph::out_edge_iterator out_edge_iterator;
 
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
 bool depthFirstSearch(const Graph& g,
-		const Graph::Vertex& node,
+		const vertex_descriptor& v,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
@@ -66,7 +67,7 @@ bool depthFirstSearch(const Graph& g,
 			// This constraint has been satisfied.
 			unsigned constraint = it->second;
 			it->second = SATISFIED;
-			if (!depthFirstSearch(g, node, constraints,
+			if (!depthFirstSearch(g, v, constraints,
 						nextConstraint, satisfied, path, solutions,
 						currLen, visitedCount))
 				return false;
@@ -87,11 +88,11 @@ bool depthFirstSearch(const Graph& g,
 	if (currLen > nextConstraint->second)
 		return true; // This constraint cannot be met.
 
-	path.push_back(Node());
-	for (Graph::out_edge_iterator it = node.begin();
-			it != node.end(); ++it) {
-		path.back() = g.target(*it);
-		if (!depthFirstSearch(g, it->target(), constraints,
+	path.push_back(vertex_descriptor());
+	pair<out_edge_iterator, out_edge_iterator> edges = g.out_edges(v);
+	for (out_edge_iterator e = edges.first; e != edges.second; ++e) {
+		path.back() = g.target(*e);
+		if (!depthFirstSearch(g, g.target(*e), constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))
 			return false;
@@ -104,7 +105,7 @@ bool depthFirstSearch(const Graph& g,
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const Graph& g, const Node& v,
+bool depthFirstSearch(const Graph& g, const vertex_descriptor& v,
 		Constraints& constraints, ContigPaths& paths,
 		unsigned& cost)
 {
@@ -119,7 +120,7 @@ bool depthFirstSearch(const Graph& g, const Node& v,
 	sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
-	depthFirstSearch(g, g[v], constraints, queue.begin(), 0,
+	depthFirstSearch(g, v, constraints, queue.begin(), 0,
 			path, paths, 0, cost);
 	return cost >= opt::maxCost ? false : !paths.empty();
 }
