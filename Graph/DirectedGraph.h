@@ -32,7 +32,26 @@ class DirectedGraph
   public:
 	class Vertex;
 	typedef typename std::vector<Vertex> Vertices;
-	typedef typename Vertices::const_iterator vertex_iterator;
+
+/** Iterate through the vertices of this graph. */
+class vertex_iterator {
+	typedef typename Vertices::const_iterator const_iterator;
+
+  public:
+	vertex_iterator(const const_iterator& it) : m_it(it) { }
+	const Vertex& operator *() const { return *m_it; }
+	const Vertex* operator ->() const { return &*m_it; }
+
+	bool operator !=(const vertex_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	vertex_iterator& operator ++() { ++m_it; return *this; }
+
+  private:
+	const_iterator m_it;
+};
 
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
