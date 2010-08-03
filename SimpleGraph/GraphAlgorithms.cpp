@@ -44,7 +44,7 @@ typedef Graph::out_edge_iterator out_edge_iterator;
  * @return false if the search exited early
  */
 bool depthFirstSearch(const Graph& g,
-		const vertex_descriptor& v,
+		vertex_descriptor v,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
@@ -92,7 +92,7 @@ bool depthFirstSearch(const Graph& g,
 	pair<out_edge_iterator, out_edge_iterator> edges = g.out_edges(v);
 	for (out_edge_iterator e = edges.first; e != edges.second; ++e) {
 		path.back() = g.target(*e);
-		if (!depthFirstSearch(g, g.target(*e), constraints,
+		if (!depthFirstSearch(g, path.back(), constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))
 			return false;
@@ -105,7 +105,7 @@ bool depthFirstSearch(const Graph& g,
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const Graph& g, const vertex_descriptor& v,
+bool depthFirstSearch(const Graph& g, vertex_descriptor v,
 		Constraints& constraints, ContigPaths& paths,
 		unsigned& cost)
 {

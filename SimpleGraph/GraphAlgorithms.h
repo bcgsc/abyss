@@ -36,7 +36,7 @@ typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;
 
 bool depthFirstSearch(const Graph& g,
-		const ContigNode& sourceKey, Constraints& constraints,
+		ContigNode origin, Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost);
 
 #endif
