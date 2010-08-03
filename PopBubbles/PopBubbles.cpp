@@ -86,15 +86,16 @@ static bool compareCoverage(const ContigNode& a, const ContigNode& b)
 /** Popped branches. */
 static vector<ContigID> g_popped;
 
+typedef Graph::vertex_descriptor vertex_descriptor;
+typedef Graph::vertex_iterator vertex_iterator;
+typedef Graph::edge_descriptor edge_descriptor;
+typedef Graph::out_edge_iterator out_edge_iterator;
+
 /** Return the target vertex of edge e. */
-static ContigNode target(const Graph::Edge& e)
+static vertex_descriptor target(edge_descriptor e)
 {
 	return g_graph.target(e);
 }
-
-typedef Graph::vertex_descriptor vertex_descriptor;
-typedef Graph::vertex_iterator vertex_iterator;
-typedef Graph::out_edge_iterator out_edge_iterator;
 
 static void popBubble(vertex_iterator v, const ContigNode& tail)
 {
@@ -122,7 +123,7 @@ static struct {
 } g_count;
 
 /** Return the length of the target vertex of the specified edge. */
-static unsigned targetLength(const Graph::Edge& e)
+static unsigned targetLength(edge_descriptor e)
 {
 	return g_graph[g_graph.target(e)].length;
 }
