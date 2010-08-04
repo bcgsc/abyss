@@ -8,10 +8,6 @@
 
 using namespace std;
 
-namespace opt {
-	unsigned k; // used by Graph
-}
-
 /** Contig properties. */
 struct Contig {
 	unsigned length;
@@ -23,7 +19,7 @@ struct Contig {
 
 	friend ostream& operator <<(ostream& out, const Contig& o)
 	{
-		return out << "l=" << o.length << " c=" << o.coverage;
+		return out << "l=" << o.length << " C=" << o.coverage;
 	}
 
 	friend istream& operator >>(istream& in, Contig& o)
