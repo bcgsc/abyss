@@ -91,9 +91,7 @@ class Vertex : public VertexProp
 	/** Add an edge to this vertex. */
 	void add_edge(vertex_descriptor v)
 	{
-		for (out_edge_iterator it = m_edges.begin();
-				it != m_edges.end(); ++it)
-			assert(v != it->target());
+		assert(count(m_edges.begin(), m_edges.end(), v) == 0);
 		m_edges.push_back(Edge(v));
 	}
 
@@ -125,6 +123,7 @@ class Edge
 	/** Returns the target vertex of this edge. */
 	const vertex_descriptor& target() const { return m_target; }
 
+	/** Return true if the target of this edge is v. */
 	bool operator ==(const vertex_descriptor& v) const
 	{
 		return m_target == v;
