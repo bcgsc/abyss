@@ -187,7 +187,7 @@ class Edge
 				const VertexProp& data = VertexProp())
 		{
 			m_vertices.push_back(Vertex(data));
-			return vertex(m_vertices.back());
+			return vertex_descriptor(m_vertices.size() - 1);
 		}
 
 		/** Returns an iterator-range to the out edges of vertex u. */
@@ -253,14 +253,6 @@ class Edge
 		static vertex_descriptor vertex(vertices_size_type n)
 		{
 			return vertex_descriptor(n);
-		}
-
-		/** Return the descriptor of the specified vertex. */
-		vertex_descriptor vertex(const Vertex& v) const
-		{
-			assert(&m_vertices[0] <= &v
-					&& &v <= &m_vertices[0] + m_vertices.size());
-			return vertex(&v - &m_vertices[0]);
 		}
 
 		/** Return the target vertex of the specified edge. */
