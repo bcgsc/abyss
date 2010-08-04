@@ -268,6 +268,15 @@ class Edge
 			return vertex_descriptor(n);
 		}
 
+		/** Return the source vertex of the specified edge.
+		 * Not implemented.
+		 */
+		static vertex_descriptor source(edge_descriptor e)
+		{
+			assert(false);
+			return vertex_descriptor(0);
+		}
+
 		/** Return the target vertex of the specified edge. */
 		static vertex_descriptor target(edge_descriptor e)
 		{
