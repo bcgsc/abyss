@@ -89,16 +89,16 @@ class Vertex : public VertexProp
 	}
 
 	/** Add an edge to this vertex. */
-	void add_edge(Vertex* v)
+	void add_edge(vertex_descriptor v)
 	{
 		for (out_edge_iterator it = m_edges.begin();
 				it != m_edges.end(); ++it)
-			assert(v != &it->target());
-		m_edges.push_back(v);
+			assert(v != it->target());
+		m_edges.push_back(Edge(v));
 	}
 
 	/** Remove the edge to v from this vertex. */
-	void remove_edge(const Vertex& v)
+	void remove_edge(vertex_descriptor v)
 	{
 		m_edges.erase(find(m_edges.begin(), m_edges.end(), v));
 	}
@@ -120,16 +120,19 @@ class Vertex : public VertexProp
 class Edge
 {
   public:
-	Edge(Vertex* v) : m_target(v) { }
+	explicit Edge(vertex_descriptor v) : m_target(v) { }
 
 	/** Returns the target vertex of this edge. */
-	const Vertex& target() const { return *m_target; }
+	const vertex_descriptor& target() const { return m_target; }
 
-	bool operator ==(const Vertex& v) { return m_target == &v; }
+	bool operator ==(const vertex_descriptor& v) const
+	{
+		return m_target == v;
+	}
 
   private:
 	/** The target vertex of this edge. */
-	Vertex* m_target;
+	vertex_descriptor m_target;
 };
 
 	public:
@@ -201,13 +204,13 @@ class Edge
 		{
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
-			(*this)[u].add_edge(&(*this)[v]);
+			(*this)[u].add_edge(v);
 		}
 
 		/** Remove the edge (u,v) from this graph. */
 		void remove_edge(vertex_descriptor u, vertex_descriptor v)
 		{
-			(*this)[u].remove_edge((*this)[v]);
+			(*this)[u].remove_edge(v);
 		}
 
 		/** Remove all out edges from vertex v. */
@@ -263,7 +266,7 @@ class Edge
 		/** Return the target vertex of the specified edge. */
 		vertex_descriptor target(edge_descriptor e) const
 		{
-			return vertex(e.target());
+			return e.target();
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,

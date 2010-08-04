@@ -131,26 +131,26 @@ static unsigned targetLength(edge_descriptor e)
 /** Consider popping the bubble originating at the vertex v. */
 static void considerPopping(vertex_iterator v)
 {
+	const Graph& g = g_graph;
 	assert(v->out_degree() > 1);
-	if (v->front().target().out_degree() != 1) {
+	if (g.out_degree(v->front().target()) != 1) {
 		// This branch is not simple.
 		return;
 	}
-	vertex_descriptor tail = g_graph.vertex(
-			v->front().target().front().target());
-	if (g_graph.in_degree(tail) != v->out_degree()) {
+	vertex_descriptor tail = g[v->front().target()].front().target();
+	if (g.in_degree(tail) != v->out_degree()) {
 		// This branch is not simple.
 		return;
 	}
 
 	// Check that every branch is simple and ends at the same node.
 	for (out_edge_iterator it = v->begin(); it != v->end(); ++it) {
-		if (it->target().out_degree() != 1
-				|| g_graph.in_degree(g_graph.target(*it)) != 1) {
+		if (g.out_degree(it->target()) != 1
+				|| g.in_degree(g.target(*it)) != 1) {
 			// This branch is not simple.
 			return;
 		}
-		if (g_graph.vertex(it->target().front().target()) != tail) {
+		if (g[it->target()].front().target() != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
