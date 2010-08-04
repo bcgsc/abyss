@@ -91,18 +91,12 @@ typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::edge_descriptor edge_descriptor;
 typedef Graph::out_edge_iterator out_edge_iterator;
 
-/** Return the target vertex of edge e. */
-static vertex_descriptor target(edge_descriptor e)
-{
-	return g_graph.target(e);
-}
-
 static void popBubble(vertex_iterator v, const ContigNode& tail)
 {
 	assert(v->out_degree() > 0);
 	assert(v->out_degree() == g_graph.in_degree(tail));
 	vector<ContigNode> sorted(v->out_degree());
-	transform(v->begin(), v->end(), sorted.begin(), target);
+	transform(v->begin(), v->end(), sorted.begin(), g_graph.target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << *v << "\" -> {";
