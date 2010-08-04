@@ -139,12 +139,12 @@ static void considerPopping(vertex_iterator v)
 
 	// Check that every branch is simple and ends at the same node.
 	for (out_edge_iterator it = v->begin(); it != v->end(); ++it) {
-		if (g.out_degree(it->target()) != 1
-				|| g.in_degree(g.target(*it)) != 1) {
+		vertex_descriptor t = g.target(*it);
+		if (g.out_degree(t) != 1 || g.in_degree(t) != 1) {
 			// This branch is not simple.
 			return;
 		}
-		if (g[it->target()].front().target() != tail) {
+		if (g[t].front().target() != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}

@@ -36,7 +36,9 @@ class DirectedGraph
   public:
 	typedef unsigned vertices_size_type;
 	typedef ContigNode vertex_descriptor;
-	typedef typename Edges::const_iterator out_edge_iterator;
+	typedef unsigned edges_size_type;
+	typedef unsigned degree_size_type;
+	typedef const Edge* edge_descriptor;
 
 	/** Not implemented. */
 	typedef void edge_iterator;
@@ -74,6 +76,38 @@ class vertex_iterator
   private:
 	const_iterator m_it;
 	vertex_descriptor m_v;
+};
+
+/** Iterate through the out-edges. */
+class out_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	typedef typename Edges::const_iterator const_iterator;
+
+  public:
+	out_edge_iterator(const const_iterator& it) : m_it(it) { }
+	edge_descriptor operator *() const { return &*m_it; }
+
+	bool operator ==(const out_edge_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	bool operator !=(const out_edge_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	out_edge_iterator& operator ++() { ++m_it; return *this; }
+	out_edge_iterator operator ++(int)
+	{
+		out_edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const_iterator m_it;
 };
 
   private:
@@ -148,10 +182,6 @@ class Edge
 };
 
 	public:
-		typedef unsigned edges_size_type;
-		typedef unsigned degree_size_type;
-		typedef const Edge& edge_descriptor;
-
 		/** Create an empty graph. */
 		DirectedGraph() { }
 
@@ -280,7 +310,7 @@ class Edge
 		/** Return the target vertex of the specified edge. */
 		static vertex_descriptor target(edge_descriptor e)
 		{
-			return e.target();
+			return e->target();
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
