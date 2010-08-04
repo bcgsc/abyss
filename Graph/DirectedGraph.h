@@ -252,7 +252,7 @@ class Edge
 		}
 
 		/** Return the target vertex of the specified edge. */
-		vertex_descriptor target(edge_descriptor e) const
+		static vertex_descriptor target(edge_descriptor e)
 		{
 			return e.target();
 		}
