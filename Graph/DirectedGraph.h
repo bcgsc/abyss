@@ -139,10 +139,13 @@ class Vertex : public VertexProp
 	}
 
 	/** Add an edge to this vertex. */
-	void add_edge(vertex_descriptor v)
+	std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
+		bool>
+	add_edge(vertex_descriptor v)
 	{
 		assert(count(m_edges.begin(), m_edges.end(), v) == 0);
 		m_edges.push_back(Edge(v));
+		return std::make_pair(&m_edges.back(), true);
 	}
 
 	/** Remove the edge to v from this vertex. */
@@ -243,11 +246,13 @@ class Edge
 		}
 
 		/** Adds edge (u,v) to the graph. */
-		void add_edge(vertex_descriptor u, vertex_descriptor v)
+		std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
+			bool>
+		add_edge(vertex_descriptor u, vertex_descriptor v)
 		{
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
-			(*this)[u].add_edge(v);
+			return (*this)[u].add_edge(v);
 		}
 
 		/** Remove the edge (u,v) from this graph. */
@@ -256,10 +261,24 @@ class Edge
 			(*this)[u].remove_edge(v);
 		}
 
+		/** Remove the edge e from this graph.
+		 * Not implemented. */
+		void remove_edge(edge_descriptor e)
+		{
+			assert(false);
+		}
+
 		/** Remove all out edges from vertex v. */
 		void clear_out_edges(vertex_descriptor v)
 		{
 			(*this)[v].clear_out_edges();
+		}
+
+		/** Remove all edges to and from vertex u from this graph.
+		 * Not implemented. */
+		void clear_vertex(vertex_descriptor u)
+		{
+			assert(false);
 		}
 
 		/** Remove vertex v from this graph. It is assumed that there
