@@ -36,6 +36,7 @@ class DirectedGraph
   public:
 	typedef unsigned vertices_size_type;
 	typedef ContigNode vertex_descriptor;
+	typedef VertexProp vertex_property_type;
 	typedef unsigned edges_size_type;
 	typedef unsigned degree_size_type;
 	typedef const Edge* edge_descriptor;
