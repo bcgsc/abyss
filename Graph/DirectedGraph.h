@@ -38,8 +38,13 @@ class DirectedGraph
 	typedef ContigNode vertex_descriptor;
 	typedef typename Edges::const_iterator out_edge_iterator;
 
+	/** Not implemented. */
+	typedef void edge_iterator;
+
 /** Iterate through the vertices of this graph. */
-class vertex_iterator {
+class vertex_iterator
+	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+{
 	typedef typename Vertices::const_iterator const_iterator;
 
   public:
@@ -48,12 +53,23 @@ class vertex_iterator {
 	const vertex_descriptor& operator *() const { return m_v; }
 	const Vertex* operator ->() const { return &*m_it; }
 
+	bool operator ==(const vertex_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
 	bool operator !=(const vertex_iterator& it) const
 	{
 		return m_it != it.m_it;
 	}
 
 	vertex_iterator& operator ++() { ++m_it; ++m_v; return *this; }
+	vertex_iterator operator ++(int)
+	{
+		vertex_iterator it = *this;
+		++*this;
+		return it;
+	}
 
   private:
 	const_iterator m_it;
@@ -132,6 +148,7 @@ class Edge
 };
 
 	public:
+		typedef unsigned edges_size_type;
 		typedef unsigned degree_size_type;
 		typedef const Edge& edge_descriptor;
 
@@ -170,7 +187,7 @@ class Edge
 		}
 
 		/** Returns an iterator-range to the vertices. */
-		std::pair<vertex_iterator, vertex_iterator> vertices()
+		std::pair<vertex_iterator, vertex_iterator> vertices() const
 		{
 			return make_pair(begin(), end());
 		}
