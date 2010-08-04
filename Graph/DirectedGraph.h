@@ -107,9 +107,6 @@ class Vertex : public VertexProp
 		m_edges.clear();
 	}
 
-	bool operator ==(const Vertex& v) const { return this == &v; }
-	bool operator !=(const Vertex& v) const { return this != &v; }
-
   private:
 	Edges m_edges;
 };
