@@ -5,7 +5,7 @@ libgraph_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libgraph_a_SOURCES = \
 	ContigGraph.h \
-	ContigGraphAlgorithms.h \
+	ContigGraphAlgorithms.cpp ContigGraphAlgorithms.h \
 	DirectedGraph.cpp DirectedGraph.h
 
 adjtodot_CPPFLAGS = -I$(top_srcdir)/Common

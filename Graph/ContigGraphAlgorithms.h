@@ -1,6 +1,9 @@
 #ifndef CONTIGGRAPHALGORITHMS_H
 #define CONTIGGRAPHALGORITHMS_H 1
 
+#include <cassert>
+#include <utility>
+
 /** Return whether the outgoing edge of vertex u is contiguous. */
 template<typename Graph>
 bool contiguous_out(const Graph& g,
@@ -51,5 +54,11 @@ OutIt assemble(const Graph& g,
 	*out++ = v;
 	return out;
 }
+
+#include "ContigGraph.h"
+#include "ContigProperties.h"
+#include <ostream>
+
+void assemble(ContigGraph<ContigProperties>& g, std::ostream& out);
 
 #endif

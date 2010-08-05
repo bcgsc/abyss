@@ -183,52 +183,6 @@ static void removeContig(ContigID id)
 	g_graph.remove_vertex(v);
 }
 
-typedef vector<vertex_descriptor> Path;
-
-/** Return the sum of vp and the properties of vertex v. */
-ContigProperties operator+(const ContigProperties& vp,
-		vertex_descriptor v)
-{
-	assert(!v.ambiguous());
-	return vp + g_graph[v]; 
-}
-
-/** Return the contig properties of the specified path. */
-static ContigProperties calculateProperties(const Path& path)
-{
-	return accumulate(path.begin(), path.end(),
-			ContigProperties(opt::k - 1, 0));
-}
-
-/** Merge the specified path and update the graph g. */
-static void mergePath(Graph& g, const Path& path)
-{
-	ContigID id = ContigID::create();
-	cout << id << '\t' << ContigPath(path) << '\n';
-	vertex_descriptor v = g.add_vertex(calculateProperties(path));
-	assert(ContigID(v) == id);
-	copy_in_edges(g, path.front(), v);
-	copy_out_edges(g, path.back(), v);
-	for_each(path.begin(), path.end(), removeContig);
-}
-
-/** Assemble unambiguous paths. */
-static void assemble(Graph& g)
-{
-	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
-	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-		if (contiguous_out(g, *v) && !contiguous_in(g, *v)) {
-			Path path;
-			assemble(g, *v, back_inserter(path));
-			assert(path.size() >= 3);
-			assert(path.front() != path.back());
-			// Output only the canonical path.
-			if (path.front() < path.back())
-				mergePath(g, path);
-		}
-	}
-}
-
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
@@ -315,7 +269,7 @@ int main(int argc, char *const argv[])
 		for_each(g_popped.begin(), g_popped.end(), removeContig);
 
 		// Assemble unambiguous paths.
-		assemble(g_graph);
+		assemble(g_graph, cout);
 
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
