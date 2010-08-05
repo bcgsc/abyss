@@ -39,9 +39,8 @@ class DirectedGraph
 	typedef VertexProp vertex_property_type;
 	typedef unsigned edges_size_type;
 	typedef unsigned degree_size_type;
-	typedef const Edge* edge_descriptor;
-
-	/** Not implemented. */
+	typedef std::pair<vertex_descriptor, vertex_descriptor>
+		edge_descriptor;
 	typedef void edge_iterator;
 
 /** Iterate through the vertices of this graph. */
@@ -86,8 +85,13 @@ class out_edge_iterator
 	typedef typename Edges::const_iterator const_iterator;
 
   public:
-	out_edge_iterator(const const_iterator& it) : m_it(it) { }
-	edge_descriptor operator *() const { return &*m_it; }
+	out_edge_iterator(const const_iterator& it,
+			vertex_descriptor src) : m_it(it), m_src(src) { }
+
+	edge_descriptor operator *() const
+	{
+		return edge_descriptor(m_src, m_it->target());
+	}
 
 	bool operator ==(const out_edge_iterator& it) const
 	{
@@ -109,6 +113,7 @@ class out_edge_iterator
 
   private:
 	const_iterator m_it;
+	vertex_descriptor m_src;
 };
 
   private:
@@ -122,9 +127,27 @@ class Vertex : public VertexProp
 	/** Return the properties of this vertex. */
 	const VertexProp& get_property() const { return *this; }
 
-	/** Return an iterator to the edges of this vertex. */
-	out_edge_iterator begin() const { return m_edges.begin(); }
-	out_edge_iterator end() const { return m_edges.end(); }
+	/** Return an iterator to the out-edges of this vertex. */
+	out_edge_iterator begin() const
+	{
+		return out_edge_iterator(m_edges.begin(),
+				vertex_descriptor(0));
+	}
+
+	/** Return an iterator past the last out-edge of this vertex. */
+	out_edge_iterator end() const
+	{
+		return out_edge_iterator(m_edges.end(),
+				vertex_descriptor(0));
+	}
+
+	/** Returns an iterator-range to the out edges of vertex u. */
+	std::pair<out_edge_iterator, out_edge_iterator>
+	out_edges(vertex_descriptor u) const
+	{
+		return make_pair(out_edge_iterator(m_edges.begin(), u),
+				out_edge_iterator(m_edges.end(), u));
+	}
 
 	/** Return the first out edge of this vertex. */
 	const Edge& front() const
@@ -140,13 +163,11 @@ class Vertex : public VertexProp
 	}
 
 	/** Add an edge to this vertex. */
-	std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
-		bool>
-	add_edge(vertex_descriptor v)
+	bool add_edge(vertex_descriptor v)
 	{
 		assert(count(m_edges.begin(), m_edges.end(), v) == 0);
 		m_edges.push_back(Edge(v));
-		return std::make_pair(&m_edges.back(), true);
+		return true;
 	}
 
 	/** Remove the edge to v from this vertex. */
@@ -242,8 +263,7 @@ class Edge
 		out_edges(vertex_descriptor u) const
 		{
 			assert(u.index() < m_vertices.size());
-			const Vertex& v = (*this)[u];
-			return make_pair(v.begin(), v.end());
+			return (*this)[u].out_edges(u);
 		}
 
 		/** Adds edge (u,v) to the graph. */
@@ -253,7 +273,8 @@ class Edge
 		{
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
-			return (*this)[u].add_edge(v);
+			return make_pair(edge_descriptor(u, v),
+					(*this)[u].add_edge(v));
 		}
 
 		/** Remove the edge (u,v) from this graph. */
@@ -262,11 +283,10 @@ class Edge
 			(*this)[u].remove_edge(v);
 		}
 
-		/** Remove the edge e from this graph.
-		 * Not implemented. */
+		/** Remove the edge e from this graph. */
 		void remove_edge(edge_descriptor e)
 		{
-			assert(false);
+			remove_edge(e.first, e.second);
 		}
 
 		/** Remove all out edges from vertex v. */
@@ -318,19 +338,16 @@ class Edge
 			return vertex_descriptor(n);
 		}
 
-		/** Return the source vertex of the specified edge.
-		 * Not implemented.
-		 */
+		/** Return the source vertex of the specified edge. */
 		static vertex_descriptor source(edge_descriptor e)
 		{
-			assert(false);
-			return vertex_descriptor(0);
+			return e.first;
 		}
 
 		/** Return the target vertex of the specified edge. */
 		static vertex_descriptor target(edge_descriptor e)
 		{
-			return e->target();
+			return e.second;
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
