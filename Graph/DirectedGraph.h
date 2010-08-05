@@ -181,180 +181,177 @@ class Edge
 	vertex_descriptor m_target;
 };
 
-	public:
-		/** Create an empty graph. */
-		DirectedGraph() { }
+  public:
+	/** Create an empty graph. */
+	DirectedGraph() { }
 
-		/** Create a graph with n vertices and zero edges. */
-		DirectedGraph(vertices_size_type n) : m_vertices(n) { }
+	/** Create a graph with n vertices and zero edges. */
+	DirectedGraph(vertices_size_type n) : m_vertices(n) { }
 
-		/** Swap this graph with graph x. */
-		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
+	/** Swap this graph with graph x. */
+	void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
 
-		/** Return the vertex specified by the given descriptor. */
-		const VertexProp& operator[](vertex_descriptor v) const
-		{
-			return m_vertices[v.index()].get_property();
+	/** Return properties of vertex u. */
+	const VertexProp& operator[](vertex_descriptor u) const
+	{
+		return m_vertices[u.index()].get_property();
+	}
+
+	/** Returns an iterator-range to the vertices. */
+	std::pair<vertex_iterator, vertex_iterator> vertices() const
+	{
+		return make_pair(vertex_iterator(0),
+			vertex_iterator(m_vertices.size()));
+	}
+
+	/** Remove all the edges and vertices from this graph. */
+	void clear() { m_vertices.clear(); }
+
+	/** Add a vertex to this graph. */
+	vertex_descriptor add_vertex(const VertexProp& vp = VertexProp())
+	{
+		m_vertices.push_back(Vertex(vp));
+		return vertex_descriptor(m_vertices.size() - 1);
+	}
+
+	/** Returns an iterator-range to the out edges of vertex u. */
+	std::pair<out_edge_iterator, out_edge_iterator>
+	out_edges(vertex_descriptor u) const
+	{
+		assert(u.index() < m_vertices.size());
+		return m_vertices[u.index()].out_edges(u);
+	}
+
+	/** Adds edge (u,v) to this graph. */
+	std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
+		bool>
+	add_edge(vertex_descriptor u, vertex_descriptor v)
+	{
+		assert(u.index() < m_vertices.size());
+		assert(v.index() < m_vertices.size());
+		return make_pair(edge_descriptor(u, v),
+				m_vertices[u.index()].add_edge(v));
+	}
+
+	/** Remove the edge (u,v) from this graph. */
+	void remove_edge(vertex_descriptor u, vertex_descriptor v)
+	{
+		m_vertices[u.index()].remove_edge(v);
+	}
+
+	/** Remove the edge e from this graph. */
+	void remove_edge(edge_descriptor e)
+	{
+		remove_edge(e.first, e.second);
+	}
+
+	/** Remove all out edges from vertex u. */
+	void clear_out_edges(vertex_descriptor u)
+	{
+		m_vertices[u.index()].clear_out_edges();
+	}
+
+	/** Remove all edges to and from vertex u from this graph.
+	 * Not implemented. */
+	void clear_vertex(vertex_descriptor u)
+	{
+		assert(false);
+	}
+
+	/** Remove vertex u from this graph. It is assumed that there
+	 * are no edges to or from vertex u. It is best to call
+	 * clear_vertex before remove_vertex.
+	 */
+	void remove_vertex(vertex_descriptor u)
+	{
+		unsigned i = u.index();
+		if (i >= m_removed.size())
+			m_removed.resize(i + 1);
+		m_removed[i] = true;
+	}
+
+	/** Return the number of vertices. */
+	size_t num_vertices() const { return m_vertices.size(); }
+
+	/** Return the number of edges. */
+	size_t num_edges() const
+	{
+		size_t n = 0;
+		std::pair<vertex_iterator, vertex_iterator> vit = vertices();
+		for (vertex_iterator v = vit.first; v != vit.second; ++v)
+			n += out_degree(*v);
+		return n;
+	}
+
+	/** Return the out degree of vertex u. */
+	degree_size_type out_degree(vertex_descriptor u) const
+	{
+		return m_vertices[u.index()].out_degree();
+	}
+
+	/** Return the nth vertex. */
+	static vertex_descriptor vertex(vertices_size_type n)
+	{
+		return vertex_descriptor(n);
+	}
+
+	/** Return the source vertex of the specified edge. */
+	static vertex_descriptor source(edge_descriptor e)
+	{
+		return e.first;
+	}
+
+	/** Return the target vertex of the specified edge. */
+	static vertex_descriptor target(edge_descriptor e)
+	{
+		return e.second;
+	}
+
+	friend std::ostream& operator <<(std::ostream& out,
+			const DirectedGraph<VertexProp>& g)
+	{
+		std::pair<vertex_iterator, vertex_iterator>
+			vit = g.vertices();
+		for (vertex_iterator v = vit.first; v != vit.second; ++v) {
+			if (g.is_removed(*v))
+				continue;
+			if (sizeof (VertexProp) > 0)
+				out << '"' << *v << "\" [" << g[*v] << "]\n";
+			unsigned outdeg = g.out_degree(*v);
+			if (outdeg == 0)
+				continue;
+			out << '"' << *v << "\" ->";
+			if (outdeg > 1)
+				out << " {";
+			std::pair<out_edge_iterator, out_edge_iterator>
+				eit = g.out_edges(*v);
+			for (out_edge_iterator e = eit.first;
+					e != eit.second; ++e)
+				out << " \"" << g.target(*e) << '"';
+			if (outdeg > 1)
+				out << " }";
+			out << '\n';
 		}
+		return out;
+	}
 
-		/** Returns an iterator-range to the vertices. */
-		std::pair<vertex_iterator, vertex_iterator> vertices() const
-		{
-			return make_pair(vertex_iterator(0),
-				vertex_iterator(m_vertices.size()));
-		}
+  protected:
+	/** Return true if this vertex has been removed. */
+	bool is_removed(vertex_descriptor u) const
+	{
+		unsigned i = u.index();
+		return i < m_removed.size() ? m_removed[i] : false;
+	}
 
-		/** Remove all the edges and vertices from this graph. */
-		void clear() { m_vertices.clear(); }
+  private:
+	DirectedGraph(const DirectedGraph& x);
+	DirectedGraph& operator =(const DirectedGraph& x);
 
-		/** Add vertex v to the graph. */
-		vertex_descriptor add_vertex(
-				const VertexProp& data = VertexProp())
-		{
-			m_vertices.push_back(Vertex(data));
-			return vertex_descriptor(m_vertices.size() - 1);
-		}
+	/** The set of vertices. */
+	Vertices m_vertices;
 
-		/** Returns an iterator-range to the out edges of vertex u. */
-		std::pair<out_edge_iterator, out_edge_iterator>
-		out_edges(vertex_descriptor u) const
-		{
-			assert(u.index() < m_vertices.size());
-			return m_vertices[u.index()].out_edges(u);
-		}
-
-		/** Adds edge (u,v) to the graph. */
-		std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
-			bool>
-		add_edge(vertex_descriptor u, vertex_descriptor v)
-		{
-			assert(u.index() < m_vertices.size());
-			assert(v.index() < m_vertices.size());
-			return make_pair(edge_descriptor(u, v),
-					m_vertices[u.index()].add_edge(v));
-		}
-
-		/** Remove the edge (u,v) from this graph. */
-		void remove_edge(vertex_descriptor u, vertex_descriptor v)
-		{
-			m_vertices[u.index()].remove_edge(v);
-		}
-
-		/** Remove the edge e from this graph. */
-		void remove_edge(edge_descriptor e)
-		{
-			remove_edge(e.first, e.second);
-		}
-
-		/** Remove all out edges from vertex u. */
-		void clear_out_edges(vertex_descriptor u)
-		{
-			m_vertices[u.index()].clear_out_edges();
-		}
-
-		/** Remove all edges to and from vertex u from this graph.
-		 * Not implemented. */
-		void clear_vertex(vertex_descriptor u)
-		{
-			assert(false);
-		}
-
-		/** Remove vertex v from this graph. It is assumed that there
-		 * are no edges to or from vertex v. It is best to call
-		 * clear_vertex before remove_vertex.
-		 */
-		void remove_vertex(vertex_descriptor v)
-		{
-			unsigned i = v.index();
-			if (i >= m_removed.size())
-				m_removed.resize(i + 1);
-			m_removed[i] = true;
-		}
-
-		/** Return the number of vertices. */
-		size_t num_vertices() const { return m_vertices.size(); }
-
-		/** Return the number of edges. */
-		size_t num_edges() const
-		{
-			size_t n = 0;
-			std::pair<vertex_iterator, vertex_iterator>
-				vit = vertices();
-			for (vertex_iterator v = vit.first; v != vit.second; ++v)
-				n += out_degree(*v);
-			return n;
-		}
-
-		/** Return the out degree of vertex u. */
-		degree_size_type out_degree(vertex_descriptor u) const
-		{
-			return m_vertices[u.index()].out_degree();
-		}
-
-		/** Return the nth vertex. */
-		static vertex_descriptor vertex(vertices_size_type n)
-		{
-			return vertex_descriptor(n);
-		}
-
-		/** Return the source vertex of the specified edge. */
-		static vertex_descriptor source(edge_descriptor e)
-		{
-			return e.first;
-		}
-
-		/** Return the target vertex of the specified edge. */
-		static vertex_descriptor target(edge_descriptor e)
-		{
-			return e.second;
-		}
-
-		friend std::ostream& operator <<(std::ostream& out,
-				const DirectedGraph<VertexProp>& g)
-		{
-			std::pair<vertex_iterator, vertex_iterator>
-				vx = g.vertices();
-			for (vertex_iterator v = vx.first; v != vx.second; ++v) {
-				if (g.is_removed(*v))
-					continue;
-				if (sizeof (VertexProp) > 0)
-					out << '"' << *v << "\" ["
-						<< g[*v] << "]\n";
-				unsigned outdeg = g.out_degree(*v);
-				if (outdeg == 0)
-					continue;
-				out << '"' << *v << "\" ->";
-				if (outdeg > 1)
-					out << " {";
-				std::pair<out_edge_iterator, out_edge_iterator>
-					eit = g.out_edges(*v);
-				for (out_edge_iterator e = eit.first;
-						e != eit.second; ++e)
-					out << " \"" << g.target(*e) << '"';
-				if (outdeg > 1)
-					out << " }";
-				out << '\n';
-			}
-			return out;
-		}
-
-	protected:
-		/** Return true if this vertex has been removed. */
-		bool is_removed(vertex_descriptor v) const
-		{
-			unsigned i = v.index();
-			return i < m_removed.size() ? m_removed[i] : false;
-		}
-
-	private:
-		DirectedGraph(const DirectedGraph& x);
-		DirectedGraph& operator =(const DirectedGraph& x);
-
-		/** The set of vertices. */
-		Vertices m_vertices;
-
-		/** Flags indicating vertices that have been removed. */
-		std::vector<bool> m_removed;
+	/** Flags indicating vertices that have been removed. */
+	std::vector<bool> m_removed;
 };
 
 #endif
