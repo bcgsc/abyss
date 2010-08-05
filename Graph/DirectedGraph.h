@@ -205,7 +205,7 @@ class Edge
 	std::pair<vertex_iterator, vertex_iterator> vertices() const
 	{
 		return make_pair(vertex_iterator(0),
-			vertex_iterator(m_vertices.size()));
+			vertex_iterator(num_vertices()));
 	}
 
 	/** Remove all the edges and vertices from this graph. */
@@ -215,14 +215,14 @@ class Edge
 	vertex_descriptor add_vertex(const VertexProp& vp = VertexProp())
 	{
 		m_vertices.push_back(Vertex(vp));
-		return vertex_descriptor(m_vertices.size() - 1);
+		return vertex_descriptor(num_vertices() - 1);
 	}
 
 	/** Returns an iterator-range to the out edges of vertex u. */
 	std::pair<out_edge_iterator, out_edge_iterator>
 	out_edges(vertex_descriptor u) const
 	{
-		assert(u.index() < m_vertices.size());
+		assert(u.index() < num_vertices());
 		return m_vertices[u.index()].out_edges(u);
 	}
 
@@ -231,8 +231,8 @@ class Edge
 		bool>
 	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
-		assert(u.index() < m_vertices.size());
-		assert(v.index() < m_vertices.size());
+		assert(u.index() < num_vertices());
+		assert(v.index() < num_vertices());
 		return make_pair(edge_descriptor(u, v),
 				m_vertices[u.index()].add_edge(v));
 	}
