@@ -19,7 +19,6 @@
 #include <iostream>
 #include <iterator>
 #include <limits> // for numeric_limits
-#include <numeric> // for accumulate
 #include <sstream>
 #include <string>
 #include <vector>
@@ -92,14 +91,15 @@ typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::adjacency_iterator adjacency_iterator;
 
 /** Pop the bubble between vertices v and tail. */
-static void popBubble(vertex_descriptor v, vertex_descriptor tail)
+static void popBubble(Graph& g,
+		vertex_descriptor v, vertex_descriptor tail)
 {
-	unsigned nbranches = g_graph.out_degree(v);
+	unsigned nbranches = g.out_degree(v);
 	assert(nbranches > 1);
-	assert(nbranches == g_graph.in_degree(tail));
+	assert(nbranches == g.in_degree(tail));
 	vector<vertex_descriptor> sorted(nbranches);
 	pair<adjacency_iterator, adjacency_iterator>
-		adj = g_graph.adjacent_vertices(v);
+		adj = g.adjacent_vertices(v);
 	copy(adj.first, adj.second, sorted.begin());
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
@@ -121,15 +121,15 @@ static struct {
 } g_count;
 
 /** Return the length of vertex v. */
-static unsigned getLength(vertex_descriptor v)
+static unsigned getLength(Graph* g, vertex_descriptor v)
 {
-	return g_graph[v].length;
+	return (*g)[v].length;
 }
 
 /** Consider popping the bubble originating at the vertex v. */
-static void considerPopping(vertex_descriptor v)
+static void considerPopping(Graph* pg, vertex_descriptor v)
 {
-	const Graph& g = g_graph;
+	Graph& g = *pg;
 	unsigned nbranches = g.out_degree(v);
 	if (nbranches < 2)
 		return;
@@ -146,7 +146,7 @@ static void considerPopping(vertex_descriptor v)
 
 	// Check that every branch is simple and ends at the same node.
 	pair<adjacency_iterator, adjacency_iterator>
-		adj = g_graph.adjacent_vertices(v);
+		adj = g.adjacent_vertices(v);
 	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
 		if (g.out_degree(*it) != 1 || g.in_degree(*it) != 1) {
 			// This branch is not simple.
@@ -160,7 +160,8 @@ static void considerPopping(vertex_descriptor v)
 
 	g_count.bubbles++;
 	vector<unsigned> lengths(nbranches);
-	transform(adj.first, adj.second, lengths.begin(), getLength);
+	transform(adj.first, adj.second, lengths.begin(),
+			bind1st(ptr_fun(getLength), &g));
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (opt::verbose > 1)
@@ -172,15 +173,15 @@ static void considerPopping(vertex_descriptor v)
 	}
 
 	g_count.popped++;
-	popBubble(v, tail);
+	popBubble(g, v, tail);
 }
 
 /** Remove the specified contig from the adjacency graph. */
-static void removeContig(ContigID id)
+static void removeContig(Graph* g, ContigID id)
 {
 	ContigNode v(id, false);
-	g_graph.clear_vertex(v);
-	g_graph.remove_vertex(v);
+	g->clear_vertex(v);
+	g->remove_vertex(v);
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -239,13 +240,15 @@ int main(int argc, char *const argv[])
 	string adjPath(argv[optind++]);
 	ifstream fin(adjPath.c_str());
 	assert_open(fin, adjPath);
-	fin >> g_graph;
+	Graph& g = g_graph;
+	fin >> g;
 	assert(fin.eof());
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	pair<vertex_iterator, vertex_iterator> vit = g_graph.vertices();
-	for_each(vit.first, vit.second, considerPopping);
+	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	for_each(vit.first, vit.second,
+			bind1st(ptr_fun(considerPopping), &g));
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
@@ -266,15 +269,16 @@ int main(int argc, char *const argv[])
 
 	if (!opt::graphPath.empty()) {
 		// Remove the popped contigs from the adjacency graph.
-		for_each(g_popped.begin(), g_popped.end(), removeContig);
+		for_each(g_popped.begin(), g_popped.end(),
+				bind1st(ptr_fun(removeContig), &g));
 
 		// Assemble unambiguous paths.
-		assemble(g_graph, cout);
+		assemble(g, cout);
 
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
 		assert(fout.good());
-		fout << g_graph;
+		fout << g;
 		assert(fout.good());
 	}
 
