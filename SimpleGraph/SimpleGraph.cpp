@@ -75,11 +75,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** The contig adjacency graph. */
-static Graph g_graph;
-
-static void generatePathsThroughEstimates(
-		Graph* pContigGraph, string estFileName);
+static void generatePathsThroughEstimates(const Graph& g,
+		const string& estPath);
 
 static void assert_open(ifstream& f, const string& p)
 {
@@ -141,15 +138,16 @@ int main(int argc, char** argv)
 	// Read the contig adjacency graph.
 	ifstream fin(adjFile.c_str());
 	assert_open(fin, adjFile);
-	fin >> g_graph;
+	Graph g;
+	fin >> g;
 	assert(fin.eof());
 
 	if (opt::verbose > 0)
-		cout << "Vertices: " << g_graph.num_vertices()
-			<< " Edges: " << g_graph.num_edges() << endl;
+		cout << "Vertices: " << g.num_vertices()
+			<< " Edges: " << g.num_edges() << endl;
 
 	// try to find paths that match the distance estimates
-	generatePathsThroughEstimates(&g_graph, estFile);
+	generatePathsThroughEstimates(g, estFile);
 }
 
 static ostream& printConstraints(ostream& out, Constraints s)
@@ -200,21 +198,23 @@ static struct {
 } stats;
 
 /** Return the length of the specified path. */
-static size_t calculatePathLength(const ContigPath& path,
+static size_t calculatePathLength(const Graph& g,
+		const ContigPath& path,
 		size_t first = 0, size_t last = 0)
 {
 	size_t len = 0;
 	if (first + last < path.size()) {
 		for (ContigPath::const_iterator iter = path.begin() + first;
 				iter != path.end() - last; ++iter)
-			len += g_graph[*iter].length;
+			len += g[*iter].length;
 	}
 	assert(len > 0);
 	return len;
 }
 
 /** Return an ambiguous path that agrees with all the given paths. */
-static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
+static ContigPath constructAmbiguousPath(const Graph &g,
+		const ContigPaths& solutions)
 {
 	typedef vector<ContigPath> ContigPaths;
 	const ContigPaths& paths = solutions;
@@ -275,7 +275,7 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 	ContigPaths::const_iterator longest = paths.end();
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		unsigned len = calculatePathLength(*it);
+		unsigned len = calculatePathLength(g, *it);
 		if (len > maxLen) {
 			maxLen = len;
 			longest = it;
@@ -284,7 +284,7 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
 	assert(maxLen > 0);
 	assert(longest != paths.end());
 
-	unsigned numN = calculatePathLength(*longest,
+	unsigned numN = calculatePathLength(g, *longest,
 			longestPrefix, longestSuffix);
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
@@ -300,7 +300,8 @@ static ContigPath constructAmbiguousPath(const ContigPaths& solutions)
  * Repeat contigs, which would have more than one position, are not
  * represented in this map.
  */
-void makeDistanceMap(const ContigPath& path,
+void makeDistanceMap(const Graph& g,
+		const ContigPath& path,
 		map<ContigNode, int>& distances)
 {
 	size_t distance = 0;
@@ -312,7 +313,7 @@ void makeDistanceMap(const ContigPath& path,
 			// Mark this contig as a repeat.
 			distances[*it] = INT_MIN;
 		}
-		distance += g_graph[*it].length;
+		distance += g[*it].length;
 	}
 
 	// Remove the repeats.
@@ -327,8 +328,9 @@ void makeDistanceMap(const ContigPath& path,
 /** Find a path for the specified distance estimates.
  * @param out [out] the solution path
  */
-static void handleEstimate(const EstimateRecord& er, bool dirIdx,
-		const Graph* pContigGraph, ContigPath& out)
+static void handleEstimate(const Graph& g,
+		const EstimateRecord& er, bool dirIdx,
+		ContigPath& out)
 {
 	if (er.estimates[dirIdx].empty())
 		return;
@@ -358,7 +360,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
-	depthFirstSearch(*pContigGraph, ContigNode(er.refID, dirIdx),
+	depthFirstSearch(g, ContigNode(er.refID, dirIdx),
 			constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
@@ -382,7 +384,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
 		map<ContigNode, int> distanceMap;
-		makeDistanceMap(*solIter, distanceMap);
+		makeDistanceMap(g, *solIter, distanceMap);
 
 		// Remove solutions whose distance estimates are not correct.
 		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
@@ -440,7 +442,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 	for (ContigPaths::iterator solIter = solutions.begin();
 			solIter != solutions.end(); ++solIter) {
 		map<ContigNode, int> distanceMap;
-		makeDistanceMap(*solIter, distanceMap);
+		makeDistanceMap(g, *solIter, distanceMap);
 		int sumDiff = 0;
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
@@ -460,7 +462,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 			bestSol = solIter;
 		}
 
-		size_t len = calculatePathLength(*solIter);
+		size_t len = calculatePathLength(g, *solIter);
 		vout << *solIter
 			<< " length: " << len
 			<< " sumdiff: " << sumDiff << '\n';
@@ -485,7 +487,7 @@ static void handleEstimate(const EstimateRecord& er, bool dirIdx,
 		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
-			= constructAmbiguousPath(solutions);
+			= constructAmbiguousPath(g, solutions);
 		if (!path.empty()) {
 			vout << path << '\n';
 			if (opt::scaffold) {
@@ -535,10 +537,10 @@ static void* worker(void* pArg)
 			it->contig.flip();
 
 		ContigPath path;
-		handleEstimate(er, true, arg.graph, path);
+		handleEstimate(*arg.graph, er, true, path);
 		path.reverseComplement();
 		path.push_back(ContigNode(er.refID, false));
-		handleEstimate(er, false, arg.graph, path);
+		handleEstimate(*arg.graph, er, false, path);
 		if (path.size() > 1) {
 			/** Lock the output stream. */
 			static pthread_mutex_t outMutex
@@ -552,11 +554,11 @@ static void* worker(void* pArg)
 	return NULL;
 }
 
-static void generatePathsThroughEstimates(
-		Graph* pContigGraph, string estFileName)
+static void generatePathsThroughEstimates(const Graph& g,
+		const string& estPath)
 {
-	ifstream inStream(estFileName.c_str());
-	assert_open(inStream, estFileName);
+	ifstream inStream(estPath.c_str());
+	assert_open(inStream, estPath);
 
 	ofstream outStream(opt::out.c_str());
 	assert(outStream.is_open());
@@ -564,7 +566,7 @@ static void generatePathsThroughEstimates(
 	// Create the worker threads.
 	vector<pthread_t> threads;
 	threads.reserve(opt::threads);
-	WorkerArg arg(&inStream, &outStream, pContigGraph);
+	WorkerArg arg(&inStream, &outStream, &g);
 	for (unsigned i = 0; i < opt::threads; i++) {
 		pthread_t thread;
 		pthread_create(&thread, NULL, worker, &arg);
