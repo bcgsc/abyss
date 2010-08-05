@@ -38,7 +38,7 @@ static inline Constraints::iterator findConstraint(
 }
 
 typedef Graph::vertex_descriptor vertex_descriptor;
-typedef Graph::out_edge_iterator out_edge_iterator;
+typedef Graph::adjacency_iterator adjacency_iterator;
 
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
@@ -89,9 +89,10 @@ bool depthFirstSearch(const Graph& g,
 		return true; // This constraint cannot be met.
 
 	path.push_back(vertex_descriptor());
-	pair<out_edge_iterator, out_edge_iterator> edges = g.out_edges(v);
-	for (out_edge_iterator e = edges.first; e != edges.second; ++e) {
-		path.back() = g.target(*e);
+	pair<adjacency_iterator, adjacency_iterator>
+		adj = g.adjacent_vertices(v);
+	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
+		path.back() = *it;
 		if (!depthFirstSearch(g, path.back(), constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))

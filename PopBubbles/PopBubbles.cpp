@@ -89,8 +89,7 @@ static vector<ContigID> g_popped;
 
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::vertex_iterator vertex_iterator;
-typedef Graph::edge_descriptor edge_descriptor;
-typedef Graph::out_edge_iterator out_edge_iterator;
+typedef Graph::adjacency_iterator adjacency_iterator;
 
 /** Pop the bubble between vertices v and tail. */
 static void popBubble(vertex_descriptor v, vertex_descriptor tail)
@@ -99,9 +98,9 @@ static void popBubble(vertex_descriptor v, vertex_descriptor tail)
 	assert(nbranches > 1);
 	assert(nbranches == g_graph.in_degree(tail));
 	vector<vertex_descriptor> sorted(nbranches);
-	pair<out_edge_iterator, out_edge_iterator>
-		eit = g_graph.out_edges(v);
-	transform(eit.first, eit.second, sorted.begin(), g_graph.target);
+	pair<adjacency_iterator, adjacency_iterator>
+		adj = g_graph.adjacent_vertices(v);
+	copy(adj.first, adj.second, sorted.begin());
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << v << "\" -> {";
@@ -121,10 +120,10 @@ static struct {
 	unsigned tooLong;
 } g_count;
 
-/** Return the length of the target vertex of the specified edge. */
-static unsigned targetLength(edge_descriptor e)
+/** Return the length of vertex v. */
+static unsigned getLength(vertex_descriptor v)
 {
-	return g_graph[g_graph.target(e)].length;
+	return g_graph[v].length;
 }
 
 /** Consider popping the bubble originating at the vertex v. */
@@ -134,27 +133,26 @@ static void considerPopping(vertex_descriptor v)
 	unsigned nbranches = g.out_degree(v);
 	if (nbranches < 2)
 		return;
-	vertex_descriptor v1 = g.target(*g.out_edges(v).first);
+	vertex_descriptor v1 = *g.adjacent_vertices(v).first;
 	if (g.out_degree(v1) != 1) {
 		// This branch is not simple.
 		return;
 	}
-	vertex_descriptor tail = g.target(*g.out_edges(v1).first);
+	vertex_descriptor tail = *g.adjacent_vertices(v1).first;
 	if (g.in_degree(tail) != nbranches) {
 		// This branch is not simple.
 		return;
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	pair<out_edge_iterator, out_edge_iterator>
-		eit = g_graph.out_edges(v);
-	for (out_edge_iterator e = eit.first; e != eit.second; ++e) {
-		vertex_descriptor t = g.target(*e);
-		if (g.out_degree(t) != 1 || g.in_degree(t) != 1) {
+	pair<adjacency_iterator, adjacency_iterator>
+		adj = g_graph.adjacent_vertices(v);
+	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
+		if (g.out_degree(*it) != 1 || g.in_degree(*it) != 1) {
 			// This branch is not simple.
 			return;
 		}
-		if (g.target(*g.out_edges(t).first) != tail) {
+		if (*g.adjacent_vertices(*it).first != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
@@ -162,7 +160,7 @@ static void considerPopping(vertex_descriptor v)
 
 	g_count.bubbles++;
 	vector<unsigned> lengths(nbranches);
-	transform(eit.first, eit.second, lengths.begin(), targetLength);
+	transform(adj.first, adj.second, lengths.begin(), getLength);
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (opt::verbose > 1)
