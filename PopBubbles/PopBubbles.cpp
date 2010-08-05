@@ -73,22 +73,23 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Contig adjacency graph. */
-typedef ContigGraph<ContigProperties> Graph;
-static Graph g_graph;
-
-/** Return whether contig a has higher coverage than contig b. */
-static bool compareCoverage(const ContigNode& a, const ContigNode& b)
-{
-	return g_graph[a].coverage > g_graph[b].coverage;
-}
-
 /** Popped branches. */
 static vector<ContigID> g_popped;
 
+/** Contig adjacency graph. */
+typedef ContigGraph<ContigProperties> Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::adjacency_iterator adjacency_iterator;
+
+struct CompareCoverage {
+	const Graph& g;
+	CompareCoverage(const Graph& g) : g(g) { }
+	bool operator()(vertex_descriptor u, vertex_descriptor v)
+	{
+		return g[u].coverage > g[v].coverage;
+	}
+};
 
 /** Pop the bubble between vertices v and tail. */
 static void popBubble(Graph& g,
@@ -101,7 +102,7 @@ static void popBubble(Graph& g,
 	pair<adjacency_iterator, adjacency_iterator>
 		adj = g.adjacent_vertices(v);
 	copy(adj.first, adj.second, sorted.begin());
-	sort(sorted.begin(), sorted.end(), compareCoverage);
+	sort(sorted.begin(), sorted.end(), CompareCoverage(g));
 	if (opt::dot) {
 		cout << '"' << v << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
@@ -240,7 +241,7 @@ int main(int argc, char *const argv[])
 	string adjPath(argv[optind++]);
 	ifstream fin(adjPath.c_str());
 	assert_open(fin, adjPath);
-	Graph& g = g_graph;
+	Graph g;
 	fin >> g;
 	assert(fin.eof());
 
