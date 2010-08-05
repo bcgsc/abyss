@@ -189,7 +189,11 @@ class Edge
 	DirectedGraph(vertices_size_type n) : m_vertices(n) { }
 
 	/** Swap this graph with graph x. */
-	void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
+	void swap(DirectedGraph& x)
+	{
+		m_vertices.swap(x.m_vertices);
+		m_removed.swap(x.m_removed);
+	}
 
 	/** Return properties of vertex u. */
 	const VertexProp& operator[](vertex_descriptor u) const
@@ -205,7 +209,7 @@ class Edge
 	}
 
 	/** Remove all the edges and vertices from this graph. */
-	void clear() { m_vertices.clear(); }
+	void clear() { m_vertices.clear(); m_removed.clear(); }
 
 	/** Add a vertex to this graph. */
 	vertex_descriptor add_vertex(const VertexProp& vp = VertexProp())
