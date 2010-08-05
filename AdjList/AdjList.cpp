@@ -269,9 +269,9 @@ int main(int argc, char** argv)
 				}
 				break;
 			}
+			numVerts++;
 			numEdges += edges.size();
 		}
-		numVerts++;
 	}
 
 	if (opt::format == DOT)
