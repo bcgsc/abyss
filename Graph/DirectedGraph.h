@@ -111,6 +111,42 @@ class out_edge_iterator
 	vertex_descriptor m_src;
 };
 
+/** Iterate through adjacent vertices. */
+class adjacency_iterator
+	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+{
+	typedef typename Edges::const_iterator const_iterator;
+
+  public:
+	adjacency_iterator(const const_iterator& it) : m_it(it) { }
+
+	vertex_descriptor operator *() const
+	{
+		return m_it->target();
+	}
+
+	bool operator ==(const adjacency_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	bool operator !=(const adjacency_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	adjacency_iterator& operator ++() { ++m_it; return *this; }
+	adjacency_iterator operator ++(int)
+	{
+		adjacency_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const_iterator m_it;
+};
+
   private:
 /** A vertex and its properties. */
 class Vertex
@@ -128,6 +164,13 @@ class Vertex
 	{
 		return make_pair(out_edge_iterator(m_edges.begin(), u),
 				out_edge_iterator(m_edges.end(), u));
+	}
+
+	/** Returns an iterator-range to the adjacent vertices. */
+	std::pair<adjacency_iterator, adjacency_iterator>
+	adjacent_vertices() const
+	{
+		return make_pair(m_edges.begin(), m_edges.end());
 	}
 
 	/** Return the number of outgoing edges. */
@@ -224,6 +267,15 @@ class Edge
 	{
 		assert(u.index() < num_vertices());
 		return m_vertices[u.index()].out_edges(u);
+	}
+
+	/** Returns an iterator-range to the adjacent vertices of
+	 * vertex u. */
+	std::pair<adjacency_iterator, adjacency_iterator>
+	adjacent_vertices(vertex_descriptor u) const
+	{
+		assert(u.index() < num_vertices());
+		return m_vertices[u.index()].adjacent_vertices();
 	}
 
 	/** Adds edge (u,v) to this graph. */
