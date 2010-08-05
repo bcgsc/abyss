@@ -47,24 +47,21 @@ class DirectedGraph
 class vertex_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
 {
-	typedef typename Vertices::const_iterator const_iterator;
-
   public:
-	vertex_iterator(const const_iterator& it,
-			const vertex_descriptor& v) : m_it(it), m_v(v) { }
+	explicit vertex_iterator(vertices_size_type v) : m_v(v) { }
 	const vertex_descriptor& operator *() const { return m_v; }
 
 	bool operator ==(const vertex_iterator& it) const
 	{
-		return m_it != it.m_it;
+		return m_v != it.m_v;
 	}
 
 	bool operator !=(const vertex_iterator& it) const
 	{
-		return m_it != it.m_it;
+		return m_v != it.m_v;
 	}
 
-	vertex_iterator& operator ++() { ++m_it; ++m_v; return *this; }
+	vertex_iterator& operator ++() { ++m_v; return *this; }
 	vertex_iterator operator ++(int)
 	{
 		vertex_iterator it = *this;
@@ -73,7 +70,6 @@ class vertex_iterator
 	}
 
   private:
-	const_iterator m_it;
 	vertex_descriptor m_v;
 };
 
@@ -216,11 +212,8 @@ class Edge
 		/** Returns an iterator-range to the vertices. */
 		std::pair<vertex_iterator, vertex_iterator> vertices() const
 		{
-			return make_pair(
-				vertex_iterator(m_vertices.begin(),
-					vertex_descriptor(0)),
-				vertex_iterator(m_vertices.end(),
-					vertex_descriptor(m_vertices.size())));
+			return make_pair(vertex_iterator(0),
+				vertex_iterator(m_vertices.size()));
 		}
 
 		/** Remove all the edges and vertices from this graph. */
