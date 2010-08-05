@@ -19,6 +19,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits> // for numeric_limits
+#include <numeric> // for accumulate
 #include <sstream>
 #include <string>
 #include <vector>
@@ -177,17 +178,19 @@ static void removeContig(ContigID id)
 
 typedef vector<vertex_descriptor> Path;
 
-/** Return the contig properties of the specified path. */
-static ContigProperties calculateProperties(
-		const Graph& g, const Path& path)
+/** Return the sum of vp and the properties of vertex v. */
+ContigProperties operator+(const ContigProperties& vp,
+		vertex_descriptor v)
 {
-	ContigProperties vp(opt::k - 1, 0);
-	for (Path::const_iterator it = path.begin();
-			it != path.end(); ++it) {
-		assert(!it->ambiguous());
-		vp += g[*it];
-	}
-	return vp;
+	assert(!v.ambiguous());
+	return vp + g_graph[v]; 
+}
+
+/** Return the contig properties of the specified path. */
+static ContigProperties calculateProperties(const Path& path)
+{
+	return accumulate(path.begin(), path.end(),
+			ContigProperties(opt::k - 1, 0));
 }
 
 /** Merge the specified path and update the graph g. */
@@ -195,7 +198,7 @@ static void mergePath(Graph& g, const Path& path)
 {
 	ContigID id = ContigID::create();
 	cout << id << '\t' << ContigPath(path) << '\n';
-	vertex_descriptor v = g.add_vertex(calculateProperties(g, path));
+	vertex_descriptor v = g.add_vertex(calculateProperties(path));
 	assert(ContigID(v) == id);
 	g.copy_in_edges(path.front(), v);
 	g.copy_out_edges(path.back(), v);
