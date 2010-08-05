@@ -400,6 +400,9 @@ int main(int argc, char** argv)
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
+	} else if (argc - optind > 2) {
+		cerr << PROGRAM ": too many arguments\n";
+		die = true;
 	}
 
 	if (die) {
