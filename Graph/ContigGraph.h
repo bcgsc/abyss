@@ -143,16 +143,18 @@ std::ostream& operator<<(std::ostream& out,
 		const ContigGraph<VertexProp>& g)
 {
 	typedef ContigGraph<VertexProp> G;
-	for (typename G::vertex_iterator v = g.begin();
-			v != g.end(); ++v) {
+	typedef typename G::vertex_iterator vertex_iterator;
+	typedef typename G::out_edge_iterator out_edge_iterator;
+	for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
 		const ContigNode& id = *v;
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
 			out << ContigID(id) << v->get_property();
 		out << "\t;";
-		for (typename G::out_edge_iterator e = v->begin();
-				e != v->end(); ++e)
+		std::pair<out_edge_iterator, out_edge_iterator>
+			eit = g.out_edges(*v);
+		for (out_edge_iterator e = eit.first; e != eit.second; ++e)
 			out << ' ' << (g.target(*e) ^ id.sense());
 		if (id.sense())
 			out << '\n';

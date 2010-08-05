@@ -127,20 +127,6 @@ class Vertex : public VertexProp
 	/** Return the properties of this vertex. */
 	const VertexProp& get_property() const { return *this; }
 
-	/** Return an iterator to the out-edges of this vertex. */
-	out_edge_iterator begin() const
-	{
-		return out_edge_iterator(m_edges.begin(),
-				vertex_descriptor(0));
-	}
-
-	/** Return an iterator past the last out-edge of this vertex. */
-	out_edge_iterator end() const
-	{
-		return out_edge_iterator(m_edges.end(),
-				vertex_descriptor(0));
-	}
-
 	/** Returns an iterator-range to the out edges of vertex u. */
 	std::pair<out_edge_iterator, out_edge_iterator>
 	out_edges(vertex_descriptor u) const
@@ -365,8 +351,10 @@ class Edge
 				out << '"' << id << "\" ->";
 				if (v->out_degree() > 1)
 					out << " {";
-				for (out_edge_iterator e = v->begin();
-						e != v->end(); ++e)
+				std::pair<out_edge_iterator, out_edge_iterator>
+					eit = g.out_edges(*v);
+				for (out_edge_iterator e = eit.first;
+						e != eit.second; ++e)
 					out << " \"" << g.target(*e) << '"';
 				if (v->out_degree() > 1)
 					out << " }";

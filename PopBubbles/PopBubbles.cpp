@@ -97,7 +97,9 @@ static void popBubble(vertex_iterator v, const ContigNode& tail)
 	assert(v->out_degree() > 0);
 	assert(v->out_degree() == g_graph.in_degree(tail));
 	vector<ContigNode> sorted(v->out_degree());
-	transform(v->begin(), v->end(), sorted.begin(), g_graph.target);
+	pair<out_edge_iterator, out_edge_iterator>
+		eit = g_graph.out_edges(*v);
+	transform(eit.first, eit.second, sorted.begin(), g_graph.target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
 		cout << '"' << *v << "\" -> {";
@@ -139,8 +141,10 @@ static void considerPopping(vertex_iterator v)
 	}
 
 	// Check that every branch is simple and ends at the same node.
-	for (out_edge_iterator it = v->begin(); it != v->end(); ++it) {
-		vertex_descriptor t = g.target(*it);
+	pair<out_edge_iterator, out_edge_iterator>
+		eit = g_graph.out_edges(*v);
+	for (out_edge_iterator e = eit.first; e != eit.second; ++e) {
+		vertex_descriptor t = g.target(*e);
 		if (g.out_degree(t) != 1 || g.in_degree(t) != 1) {
 			// This branch is not simple.
 			return;
@@ -153,7 +157,7 @@ static void considerPopping(vertex_iterator v)
 
 	g_count.bubbles++;
 	vector<unsigned> lengths(v->out_degree());
-	transform(v->begin(), v->end(), lengths.begin(), targetLength);
+	transform(eit.first, eit.second, lengths.begin(), targetLength);
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (opt::verbose > 1)
