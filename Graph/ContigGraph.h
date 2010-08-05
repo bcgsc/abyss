@@ -43,7 +43,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	/** Return the in degree of vertex v. */
 	degree_size_type in_degree(vertex_descriptor v) const
 	{
-		return (*this)[~v].out_degree();
+		return out_degree(~v);
 	}
 
 	/** Remove all out edges from vertex v. */

@@ -113,14 +113,14 @@ class out_edge_iterator
 
   private:
 /** A vertex and its properties. */
-class Vertex : public VertexProp
+class Vertex
 {
   public:
 	Vertex() { }
-	Vertex(const VertexProp& p) : VertexProp(p) { }
+	Vertex(const VertexProp& p) : m_prop(p) { }
 
 	/** Return the properties of this vertex. */
-	const VertexProp& get_property() const { return *this; }
+	const VertexProp& get_property() const { return m_prop; }
 
 	/** Returns an iterator-range to the out edges of vertex u. */
 	std::pair<out_edge_iterator, out_edge_iterator>
@@ -128,13 +128,6 @@ class Vertex : public VertexProp
 	{
 		return make_pair(out_edge_iterator(m_edges.begin(), u),
 				out_edge_iterator(m_edges.end(), u));
-	}
-
-	/** Return the first out edge of this vertex. */
-	const Edge& front() const
-	{
-		assert(!m_edges.empty());
-		return m_edges.front();
 	}
 
 	/** Return the number of outgoing edges. */
@@ -165,6 +158,7 @@ class Vertex : public VertexProp
 
   private:
 	Edges m_edges;
+	VertexProp m_prop;
 };
 
 /** A directed edge. */
@@ -198,15 +192,9 @@ class Edge
 		void swap(DirectedGraph& x) { m_vertices.swap(x.m_vertices); }
 
 		/** Return the vertex specified by the given descriptor. */
-		const Vertex& operator[](vertex_descriptor v) const
+		const VertexProp& operator[](vertex_descriptor v) const
 		{
-			return m_vertices[v.index()];
-		}
-
-		/** Return the vertex specified by the given descriptor. */
-		Vertex& operator[](vertex_descriptor v)
-		{
-			return m_vertices[v.index()];
+			return m_vertices[v.index()].get_property();
 		}
 
 		/** Returns an iterator-range to the vertices. */
@@ -232,7 +220,7 @@ class Edge
 		out_edges(vertex_descriptor u) const
 		{
 			assert(u.index() < m_vertices.size());
-			return (*this)[u].out_edges(u);
+			return m_vertices[u.index()].out_edges(u);
 		}
 
 		/** Adds edge (u,v) to the graph. */
@@ -243,13 +231,13 @@ class Edge
 			assert(u.index() < m_vertices.size());
 			assert(v.index() < m_vertices.size());
 			return make_pair(edge_descriptor(u, v),
-					(*this)[u].add_edge(v));
+					m_vertices[u.index()].add_edge(v));
 		}
 
 		/** Remove the edge (u,v) from this graph. */
 		void remove_edge(vertex_descriptor u, vertex_descriptor v)
 		{
-			(*this)[u].remove_edge(v);
+			m_vertices[u.index()].remove_edge(v);
 		}
 
 		/** Remove the edge e from this graph. */
@@ -258,10 +246,10 @@ class Edge
 			remove_edge(e.first, e.second);
 		}
 
-		/** Remove all out edges from vertex v. */
-		void clear_out_edges(vertex_descriptor v)
+		/** Remove all out edges from vertex u. */
+		void clear_out_edges(vertex_descriptor u)
 		{
-			(*this)[v].clear_out_edges();
+			m_vertices[u.index()].clear_out_edges();
 		}
 
 		/** Remove all edges to and from vertex u from this graph.
@@ -297,10 +285,10 @@ class Edge
 			return n;
 		}
 
-		/** Return the out degree of the specified vertex. */
-		degree_size_type out_degree(vertex_descriptor v) const
+		/** Return the out degree of vertex u. */
+		degree_size_type out_degree(vertex_descriptor u) const
 		{
-			return (*this)[v].out_degree();
+			return m_vertices[u.index()].out_degree();
 		}
 
 		/** Return the nth vertex. */

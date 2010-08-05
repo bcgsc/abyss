@@ -139,7 +139,7 @@ static void considerPopping(vertex_descriptor v)
 		// This branch is not simple.
 		return;
 	}
-	vertex_descriptor tail = g[v1].front().target();
+	vertex_descriptor tail = g.target(*g.out_edges(v1).first);
 	if (g.in_degree(tail) != nbranches) {
 		// This branch is not simple.
 		return;
@@ -154,7 +154,7 @@ static void considerPopping(vertex_descriptor v)
 			// This branch is not simple.
 			return;
 		}
-		if (g[t].front().target() != tail) {
+		if (g.target(*g.out_edges(t).first) != tail) {
 			// The branches do not merge back to the same node.
 			return;
 		}
@@ -217,12 +217,11 @@ static void mergePath(Graph& g, const Path& path)
 /** Assemble unambiguous paths. */
 static void assemble(Graph& g)
 {
-	pair<vertex_iterator, vertex_iterator> vertices = g.vertices();
-	for (vertex_iterator it = vertices.first;
-			it != vertices.second; ++it) {
-		if (g.contiguous_out(*it) && !g.contiguous_in(*it)) {
+	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
+		if (g.contiguous_out(*v) && !g.contiguous_in(*v)) {
 			Path path;
-			assemble(g, *it, back_inserter(path));
+			assemble(g, *v, back_inserter(path));
 			assert(path.size() >= 3);
 			assert(path.front() != path.back());
 			// Output only the canonical path.

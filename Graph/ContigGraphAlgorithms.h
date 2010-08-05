@@ -7,7 +7,7 @@ OutIt assemble(const Graph& g, typename Graph::vertex_descriptor v,
 		OutIt out)
 {
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
-	for (; g.contiguous_out(v); v = g[v].front().target())
+	for (; g.contiguous_out(v); v = g.target(*g.out_edges(v).first))
 		*out++ = v;
 	*out++ = v;
 	return out;
