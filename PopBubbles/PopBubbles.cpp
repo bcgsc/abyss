@@ -207,8 +207,8 @@ static void mergePath(Graph& g, const Path& path)
 	cout << id << '\t' << ContigPath(path) << '\n';
 	vertex_descriptor v = g.add_vertex(calculateProperties(path));
 	assert(ContigID(v) == id);
-	g.copy_in_edges(path.front(), v);
-	g.copy_out_edges(path.back(), v);
+	copy_in_edges(g, path.front(), v);
+	copy_out_edges(g, path.back(), v);
 	for_each(path.begin(), path.end(), removeContig);
 }
 
@@ -217,7 +217,7 @@ static void assemble(Graph& g)
 {
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-		if (g.contiguous_out(*v) && !g.contiguous_in(*v)) {
+		if (contiguous_out(g, *v) && !contiguous_in(g, *v)) {
 			Path path;
 			assemble(g, *v, back_inserter(path));
 			assert(path.size() >= 3);
