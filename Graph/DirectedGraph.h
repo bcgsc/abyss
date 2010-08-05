@@ -214,23 +214,14 @@ class Edge
 			return m_vertices[v.index()];
 		}
 
-		/** Return an iterator to the vertex set of this graph. */
-		vertex_iterator begin() const
-		{
-			return vertex_iterator(m_vertices.begin(),
-					vertex_descriptor(0));
-		}
-
-		vertex_iterator end() const
-		{
-			return vertex_iterator(m_vertices.end(),
-					vertex_descriptor(m_vertices.size()));
-		}
-
 		/** Returns an iterator-range to the vertices. */
 		std::pair<vertex_iterator, vertex_iterator> vertices() const
 		{
-			return make_pair(begin(), end());
+			return make_pair(
+				vertex_iterator(m_vertices.begin(),
+					vertex_descriptor(0)),
+				vertex_iterator(m_vertices.end(),
+					vertex_descriptor(m_vertices.size())));
 		}
 
 		/** Remove all the edges and vertices from this graph. */
@@ -307,8 +298,10 @@ class Edge
 		size_t num_edges() const
 		{
 			size_t n = 0;
-			for (vertex_iterator it = begin(); it != end(); ++it)
-				n += it->out_degree();
+			std::pair<vertex_iterator, vertex_iterator>
+				vit = vertices();
+			for (vertex_iterator v = vit.first; v != vit.second; ++v)
+				n += v->out_degree();
 			return n;
 		}
 
@@ -339,16 +332,17 @@ class Edge
 		friend std::ostream& operator <<(std::ostream& out,
 				const DirectedGraph<VertexProp>& g)
 		{
-			for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
-				const vertex_descriptor& id = *v;
-				if (g.is_removed(id))
+			std::pair<vertex_iterator, vertex_iterator>
+				vx = g.vertices();
+			for (vertex_iterator v = vx.first; v != vx.second; ++v) {
+				if (g.is_removed(*v))
 					continue;
 				if (sizeof (VertexProp) > 0)
-					out << '"' << id << "\" ["
+					out << '"' << *v << "\" ["
 						<< v->get_property() << "]\n";
 				if (v->out_degree() == 0)
 					continue;
-				out << '"' << id << "\" ->";
+				out << '"' << *v << "\" ->";
 				if (v->out_degree() > 1)
 					out << " {";
 				std::pair<out_edge_iterator, out_edge_iterator>

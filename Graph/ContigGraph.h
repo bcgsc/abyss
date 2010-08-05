@@ -145,7 +145,8 @@ std::ostream& operator<<(std::ostream& out,
 	typedef ContigGraph<VertexProp> G;
 	typedef typename G::vertex_iterator vertex_iterator;
 	typedef typename G::out_edge_iterator out_edge_iterator;
-	for (vertex_iterator v = g.begin(); v != g.end(); ++v) {
+	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
 		const ContigNode& id = *v;
 		if (g.is_removed(id))
 			continue;

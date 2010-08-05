@@ -288,10 +288,10 @@ int main(int argc, char *const argv[])
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	for (vertex_iterator it = g_graph.begin();
-			it != g_graph.end(); ++it)
-		if (it->out_degree() > 1)
-			considerPopping(it);
+	pair<vertex_iterator, vertex_iterator> vit = g_graph.vertices();
+	for (vertex_iterator v = vit.first; v != vit.second; ++v)
+		if (v->out_degree() > 1)
+			considerPopping(v);
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
