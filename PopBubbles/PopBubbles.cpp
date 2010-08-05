@@ -92,17 +92,19 @@ typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::edge_descriptor edge_descriptor;
 typedef Graph::out_edge_iterator out_edge_iterator;
 
-static void popBubble(vertex_iterator v, const ContigNode& tail)
+/** Pop the bubble between vertices v and tail. */
+static void popBubble(vertex_descriptor v, vertex_descriptor tail)
 {
-	assert(v->out_degree() > 0);
-	assert(v->out_degree() == g_graph.in_degree(tail));
-	vector<ContigNode> sorted(v->out_degree());
+	unsigned nbranches = g_graph.out_degree(v);
+	assert(nbranches > 1);
+	assert(nbranches == g_graph.in_degree(tail));
+	vector<vertex_descriptor> sorted(nbranches);
 	pair<out_edge_iterator, out_edge_iterator>
-		eit = g_graph.out_edges(*v);
+		eit = g_graph.out_edges(v);
 	transform(eit.first, eit.second, sorted.begin(), g_graph.target);
 	sort(sorted.begin(), sorted.end(), compareCoverage);
 	if (opt::dot) {
-		cout << '"' << *v << "\" -> {";
+		cout << '"' << v << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
 				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
@@ -126,23 +128,26 @@ static unsigned targetLength(edge_descriptor e)
 }
 
 /** Consider popping the bubble originating at the vertex v. */
-static void considerPopping(vertex_iterator v)
+static void considerPopping(vertex_descriptor v)
 {
 	const Graph& g = g_graph;
-	assert(v->out_degree() > 1);
-	if (g.out_degree(v->front().target()) != 1) {
+	unsigned nbranches = g.out_degree(v);
+	if (nbranches < 2)
+		return;
+	vertex_descriptor v1 = g.target(*g.out_edges(v).first);
+	if (g.out_degree(v1) != 1) {
 		// This branch is not simple.
 		return;
 	}
-	vertex_descriptor tail = g[v->front().target()].front().target();
-	if (g.in_degree(tail) != v->out_degree()) {
+	vertex_descriptor tail = g[v1].front().target();
+	if (g.in_degree(tail) != nbranches) {
 		// This branch is not simple.
 		return;
 	}
 
 	// Check that every branch is simple and ends at the same node.
 	pair<out_edge_iterator, out_edge_iterator>
-		eit = g_graph.out_edges(*v);
+		eit = g_graph.out_edges(v);
 	for (out_edge_iterator e = eit.first; e != eit.second; ++e) {
 		vertex_descriptor t = g.target(*e);
 		if (g.out_degree(t) != 1 || g.in_degree(t) != 1) {
@@ -156,7 +161,7 @@ static void considerPopping(vertex_iterator v)
 	}
 
 	g_count.bubbles++;
-	vector<unsigned> lengths(v->out_degree());
+	vector<unsigned> lengths(nbranches);
 	transform(eit.first, eit.second, lengths.begin(), targetLength);
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
@@ -289,9 +294,7 @@ int main(int argc, char *const argv[])
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
 	pair<vertex_iterator, vertex_iterator> vit = g_graph.vertices();
-	for (vertex_iterator v = vit.first; v != vit.second; ++v)
-		if (v->out_degree() > 1)
-			considerPopping(v);
+	for_each(vit.first, vit.second, considerPopping);
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());

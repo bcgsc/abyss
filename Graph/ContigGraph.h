@@ -151,7 +151,7 @@ std::ostream& operator<<(std::ostream& out,
 		if (g.is_removed(id))
 			continue;
 		if (!id.sense())
-			out << ContigID(id) << v->get_property();
+			out << ContigID(id) << g[*v];
 		out << "\t;";
 		std::pair<out_edge_iterator, out_edge_iterator>
 			eit = g.out_edges(*v);

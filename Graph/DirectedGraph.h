@@ -53,7 +53,6 @@ class vertex_iterator
 	vertex_iterator(const const_iterator& it,
 			const vertex_descriptor& v) : m_it(it), m_v(v) { }
 	const vertex_descriptor& operator *() const { return m_v; }
-	const Vertex* operator ->() const { return &*m_it; }
 
 	bool operator ==(const vertex_iterator& it) const
 	{
@@ -301,7 +300,7 @@ class Edge
 			std::pair<vertex_iterator, vertex_iterator>
 				vit = vertices();
 			for (vertex_iterator v = vit.first; v != vit.second; ++v)
-				n += v->out_degree();
+				n += out_degree(*v);
 			return n;
 		}
 
@@ -339,18 +338,19 @@ class Edge
 					continue;
 				if (sizeof (VertexProp) > 0)
 					out << '"' << *v << "\" ["
-						<< v->get_property() << "]\n";
-				if (v->out_degree() == 0)
+						<< g[*v] << "]\n";
+				unsigned outdeg = g.out_degree(*v);
+				if (outdeg == 0)
 					continue;
 				out << '"' << *v << "\" ->";
-				if (v->out_degree() > 1)
+				if (outdeg > 1)
 					out << " {";
 				std::pair<out_edge_iterator, out_edge_iterator>
 					eit = g.out_edges(*v);
 				for (out_edge_iterator e = eit.first;
 						e != eit.second; ++e)
 					out << " \"" << g.target(*e) << '"';
-				if (v->out_degree() > 1)
+				if (outdeg > 1)
 					out << " }";
 				out << '\n';
 			}
