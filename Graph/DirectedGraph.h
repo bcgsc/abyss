@@ -133,7 +133,8 @@ class edge_iterator
 
 	void nextVertex()
 	{
-		for (; m_vit != m_vlast; ++m_vit) {
+		Vit vlast = m_g->vertices().second;
+		for (; m_vit != vlast; ++m_vit) {
 			std::pair<Eit, Eit> adj = m_g->adjacent_vertices(*m_vit);
 			if (adj.first != adj.second) {
 				m_eit = adj.first;
@@ -145,21 +146,21 @@ class edge_iterator
   public:
 	edge_iterator() { }
 	edge_iterator(const DirectedGraph* g, const Vit& vit)
-		: m_g(g), m_vit(vit), m_vlast(g->vertices().second)
+		: m_g(g), m_vit(vit)
 	{
 		nextVertex();
 	}
 
 	edge_descriptor operator*() const
 	{
-		assert(m_vit != m_vlast);
 		return edge_descriptor(*m_vit, *m_eit);
 	}
 
 	bool operator==(const edge_iterator& it) const
 	{
+		Vit vlast = m_g->vertices().second;
 		return m_vit == it.m_vit
-			&& (m_vit == m_vlast || m_eit == it.m_eit);
+			&& (m_vit == vlast || m_eit == it.m_eit);
 	}
 
 	bool operator!=(const edge_iterator& it) const
@@ -169,7 +170,6 @@ class edge_iterator
 
 	edge_iterator& operator++()
 	{
-		assert(m_vit != m_vlast);
 		if (++m_eit == m_g->adjacent_vertices(*m_vit).second) {
 			++m_vit;
 			nextVertex();
@@ -186,7 +186,7 @@ class edge_iterator
 
   private:
 	const DirectedGraph* m_g;
-	Vit m_vit, m_vlast;
+	Vit m_vit;
 	Eit m_eit;
 };
 
