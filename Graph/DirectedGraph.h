@@ -48,6 +48,7 @@ class vertex_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
 {
   public:
+	vertex_iterator() { }
 	explicit vertex_iterator(vertices_size_type v) : m_v(v) { }
 	const vertex_descriptor& operator *() const { return m_v; }
 
