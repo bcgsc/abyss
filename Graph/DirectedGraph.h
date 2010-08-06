@@ -117,6 +117,7 @@ class adjacency_iterator : public Edges::const_iterator
 {
 	typedef typename Edges::const_iterator It;
   public:
+	adjacency_iterator() { }
 	adjacency_iterator(const It& it) : It(it) { }
 	vertex_descriptor operator*() const
 	{
