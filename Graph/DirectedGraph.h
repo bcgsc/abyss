@@ -128,13 +128,13 @@ class adjacency_iterator : public Edges::const_iterator
 class edge_iterator
 	: public std::iterator<std::input_iterator_tag, edge_descriptor>
 {
-	typedef typename Vertices::const_iterator Vit;
+	typedef vertex_iterator Vit;
 	typedef adjacency_iterator Eit;
 
 	void nextVertex()
 	{
-		for (; m_vit != m_vlast; ++m_vit, ++m_src) {
-			std::pair<Eit, Eit> adj = m_vit->adjacent_vertices();
+		for (; m_vit != m_vlast; ++m_vit) {
+			std::pair<Eit, Eit> adj = m_g->adjacent_vertices(*m_vit);
 			if (adj.first != adj.second) {
 				m_eit = adj.first;
 				break;
@@ -144,9 +144,8 @@ class edge_iterator
 
   public:
 	edge_iterator() { }
-	edge_iterator(const Vit& vit, const Vit& vlast,
-			vertex_descriptor u = vertex_descriptor(0))
-		: m_vit(vit), m_vlast(vlast), m_src(u)
+	edge_iterator(const DirectedGraph* g, const Vit& vit)
+		: m_g(g), m_vit(vit), m_vlast(g->vertices().second)
 	{
 		nextVertex();
 	}
@@ -154,12 +153,12 @@ class edge_iterator
 	edge_descriptor operator*() const
 	{
 		assert(m_vit != m_vlast);
-		return edge_descriptor(m_src, *m_eit);
+		return edge_descriptor(*m_vit, *m_eit);
 	}
 
 	bool operator==(const edge_iterator& it) const
 	{
-		return m_vit == it.m_vit
+		return = m_vit == it.m_vit
 			&& (m_vit == m_vlast || m_eit == it.m_eit);
 	}
 
@@ -170,10 +169,9 @@ class edge_iterator
 
 	edge_iterator& operator++()
 	{
-		Eit elast = m_vit->adjacent_vertices().second;
-		if (m_vit != m_vlast && ++m_eit == elast) {
+		assert(m_vit != m_vlast);
+		if (++m_eit == m_g->adjacent_vertices(*m_vit).second) {
 			++m_vit;
-			++m_src;
 			nextVertex();
 		}
 		return *this;
@@ -187,9 +185,9 @@ class edge_iterator
 	}
 
   private:
+	const DirectedGraph* m_g;
 	Vit m_vit, m_vlast;
 	Eit m_eit;
-	vertex_descriptor m_src;
 };
 
   private:
@@ -411,9 +409,9 @@ class Edge
 	/** Iterate through the edges of this graph. */
 	std::pair<edge_iterator, edge_iterator> edges() const
 	{
-		return make_pair(
-				edge_iterator(m_vertices.begin(), m_vertices.end()),
-				edge_iterator(m_vertices.end(), m_vertices.end()));
+		std::pair<vertex_iterator, vertex_iterator> vit = vertices();
+		return make_pair(edge_iterator(this, vit.first),
+				edge_iterator(this, vit.second));
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
