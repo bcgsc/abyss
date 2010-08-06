@@ -158,7 +158,7 @@ class edge_iterator
 
 	bool operator==(const edge_iterator& it) const
 	{
-		return = m_vit == it.m_vit
+		return m_vit == it.m_vit
 			&& (m_vit == m_vlast || m_eit == it.m_eit);
 	}
 
