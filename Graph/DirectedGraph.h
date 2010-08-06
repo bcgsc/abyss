@@ -134,11 +134,10 @@ class edge_iterator
 	void nextVertex()
 	{
 		for (; m_vit != m_vlast; ++m_vit, ++m_src) {
-			if (m_vit->out_degree() > 0) {
-				std::pair<Eit, Eit> adj = m_vit->adjacent_vertices();
+			std::pair<Eit, Eit> adj = m_vit->adjacent_vertices();
+			if (adj.first != adj.second) {
 				m_eit = adj.first;
-				m_elast = adj.second;
-				return;
+				break;
 			}
 		}
 	}
@@ -155,7 +154,6 @@ class edge_iterator
 	edge_descriptor operator*() const
 	{
 		assert(m_vit != m_vlast);
-		assert(m_eit != m_elast);
 		return edge_descriptor(m_src, *m_eit);
 	}
 
@@ -172,7 +170,8 @@ class edge_iterator
 
 	edge_iterator& operator++()
 	{
-		if (m_vit != m_vlast && ++m_eit == m_elast) {
+		Eit elast = m_vit->adjacent_vertices().second;
+		if (m_vit != m_vlast && ++m_eit == elast) {
 			++m_vit;
 			++m_src;
 			nextVertex();
@@ -189,7 +188,7 @@ class edge_iterator
 
   private:
 	Vit m_vit, m_vlast;
-	Eit m_eit, m_elast;
+	Eit m_eit;
 	vertex_descriptor m_src;
 };
 
