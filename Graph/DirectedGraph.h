@@ -41,7 +41,6 @@ class DirectedGraph
 	typedef unsigned degree_size_type;
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
-	typedef void edge_iterator;
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator
@@ -123,6 +122,75 @@ class adjacency_iterator : public Edges::const_iterator
 	{
 		return It::operator*().target();
 	}
+};
+
+/** Iterate through edges. */
+class edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	typedef typename Vertices::const_iterator Vit;
+	typedef adjacency_iterator Eit;
+
+	void nextVertex()
+	{
+		for (; m_vit != m_vlast; ++m_vit, ++m_src) {
+			if (m_vit->out_degree() > 0) {
+				std::pair<Eit, Eit> adj = m_vit->adjacent_vertices();
+				m_eit = adj.first;
+				m_elast = adj.second;
+				return;
+			}
+		}
+	}
+
+  public:
+	edge_iterator() { }
+	edge_iterator(const Vit& vit, const Vit& vlast,
+			vertex_descriptor u = vertex_descriptor(0))
+		: m_vit(vit), m_vlast(vlast), m_src(u)
+	{
+		nextVertex();
+	}
+
+	edge_descriptor operator*() const
+	{
+		assert(m_vit != m_vlast);
+		assert(m_eit != m_elast);
+		return edge_descriptor(m_src, *m_eit);
+	}
+
+	bool operator==(const edge_iterator& it) const
+	{
+		return m_vit == it.m_vit
+			&& (m_vit == m_vlast || m_eit == it.m_eit);
+	}
+
+	bool operator!=(const edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	edge_iterator& operator++()
+	{
+		if (m_vit != m_vlast && ++m_eit == m_elast) {
+			++m_vit;
+			++m_src;
+			nextVertex();
+		}
+		return *this;
+	}
+
+	edge_iterator operator++(int)
+	{
+		edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	Vit m_vit, m_vlast;
+	Eit m_eit, m_elast;
+	vertex_descriptor m_src;
 };
 
   private:
@@ -339,6 +407,14 @@ class Edge
 	static vertex_descriptor target(edge_descriptor e)
 	{
 		return e.second;
+	}
+
+	/** Iterate through the edges of this graph. */
+	std::pair<edge_iterator, edge_iterator> edges() const
+	{
+		return make_pair(
+				edge_iterator(m_vertices.begin(), m_vertices.end()),
+				edge_iterator(m_vertices.end(), m_vertices.end()));
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
