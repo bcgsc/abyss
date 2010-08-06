@@ -53,7 +53,7 @@ class vertex_iterator
 
 	bool operator ==(const vertex_iterator& it) const
 	{
-		return m_v != it.m_v;
+		return m_v == it.m_v;
 	}
 
 	bool operator !=(const vertex_iterator& it) const
