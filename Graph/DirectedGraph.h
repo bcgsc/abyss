@@ -128,26 +128,25 @@ class adjacency_iterator : public Edges::const_iterator
 class edge_iterator
 	: public std::iterator<std::input_iterator_tag, edge_descriptor>
 {
-	typedef vertex_iterator Vit;
-	typedef adjacency_iterator Eit;
-
 	void nextVertex()
 	{
-		Vit vlast = m_g->vertices().second;
+		vertex_iterator vlast = m_g->vertices().second;
 		for (; m_vit != vlast; ++m_vit) {
-			std::pair<Eit, Eit> adj = m_g->adjacent_vertices(*m_vit);
+			std::pair<adjacency_iterator, adjacency_iterator>
+				adj = m_g->adjacent_vertices(*m_vit);
 			if (adj.first != adj.second) {
 				m_eit = adj.first;
 				return;
 			}
 		}
-		static const Eit s_eitNULL;
+		// Set m_eit to a known value.
+		static const adjacency_iterator s_eitNULL;
 		m_eit = s_eitNULL;
 	}
 
   public:
 	edge_iterator() { }
-	edge_iterator(const DirectedGraph* g, const Vit& vit)
+	edge_iterator(const DirectedGraph* g, const vertex_iterator& vit)
 		: m_g(g), m_vit(vit)
 	{
 		nextVertex();
@@ -186,8 +185,8 @@ class edge_iterator
 
   private:
 	const DirectedGraph* m_g;
-	Vit m_vit;
-	Eit m_eit;
+	vertex_iterator m_vit;
+	adjacency_iterator m_eit;
 };
 
   private:
