@@ -138,9 +138,11 @@ class edge_iterator
 			std::pair<Eit, Eit> adj = m_g->adjacent_vertices(*m_vit);
 			if (adj.first != adj.second) {
 				m_eit = adj.first;
-				break;
+				return;
 			}
 		}
+		static const Eit s_eitNULL;
+		m_eit = s_eitNULL;
 	}
 
   public:
@@ -158,9 +160,7 @@ class edge_iterator
 
 	bool operator==(const edge_iterator& it) const
 	{
-		Vit vlast = m_g->vertices().second;
-		return m_vit == it.m_vit
-			&& (m_vit == vlast || m_eit == it.m_eit);
+		return m_vit == it.m_vit && m_eit == it.m_eit;
 	}
 
 	bool operator!=(const edge_iterator& it) const
