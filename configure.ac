@@ -112,7 +112,6 @@ AC_LANG([C++])
 AC_CHECK_HEADERS([ \
 	google/sparse_hash_set \
 	unordered_map tr1/unordered_map ext/hash_map \
-	unordered_set tr1/unordered_set ext/hash_set \
 ])
 
 # Check for OpenMP.
