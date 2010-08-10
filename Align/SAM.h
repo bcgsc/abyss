@@ -2,6 +2,7 @@
 #define SAM_H 1
 
 #include "Aligner.h"
+#include <algorithm> // for swap
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
@@ -56,14 +57,17 @@ struct SAMAlignment {
 		mapq(255)
 	{
 		unsigned qend = a.read_start_pos + a.align_length;
-		int qendpad = a.read_length - qend;
-		assert(qendpad >= 0);
+		int clip0 = a.read_start_pos;
+		int clip1 = a.read_length - qend;
+		assert(clip1 >= 0);
+		if (a.isRC)
+			std::swap(clip0, clip1);
 		std::ostringstream s;
-		if (a.read_start_pos > 0)
-			s << a.read_start_pos << 'S';
+		if (clip0 > 0)
+			s << clip0 << 'S';
 		s << a.align_length << 'M';
-		if (qendpad > 0)
-			s << qendpad << 'S';
+		if (clip1 > 0)
+			s << clip1 << 'S';
 		cigar = s.str();
 	}
 
@@ -89,44 +93,46 @@ struct SAMAlignment {
 	 * align_length, and read_length. The other fields will be
 	 * uninitialized.
 	 */
-	static Alignment parseCigar(const std::string& cigar) {
+	static Alignment parseCigar(const std::string& cigar, bool isRC) {
 		Alignment a;
 		std::istringstream in(cigar);
 		unsigned len;
 		char type;
 		in >> len >> type;
 		assert(in.good());
+		unsigned clip0 = 0;
 		switch (type) {
 			case 'S':
-				a.read_start_pos = len;
+				clip0 = len;
 				in >> len >> type;
 				assert(in.good());
 				assert(type == 'M');
 				a.align_length = len;
 				break;
 			case 'M':
-				a.read_start_pos = 0;
 				a.align_length = len;
 				break;
 			default:
 				assert(false);
 		}
-		if (in >> len >> type) {
+		unsigned clip1 = 0;
+		if (in >> clip1 >> type) {
 			assert(type == 'S');
 			(void)in.peek(); // to set the EOF flag
-		} else
-			len = 0;
-		a.read_length = a.read_start_pos + a.align_length + len;
+		}
+		a.read_start_pos = isRC ? clip1 : clip0;
+		a.read_length = clip0 + a.align_length + clip1;
 		assert(in.eof());
 		return a;
 	}
 
 	operator Alignment() const {
 		assert(~flag & FUNMAP);
-		Alignment a = parseCigar(cigar);
+		bool isRC = flag & FREVERSE; // strand of the query
+		Alignment a = parseCigar(cigar, isRC);
 		a.contig = rname;
 		a.contig_start_pos = pos;
-		a.isRC = flag & FREVERSE; // strand of the query
+		a.isRC = isRC;
 		return a;
 	}
 };
