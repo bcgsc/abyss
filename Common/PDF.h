@@ -8,8 +8,10 @@
 
 class Histogram;
 
-struct PDF
+/** Probability density function */
+class PDF
 {
+  public:
 	/** Construct a PDF from a histogram. */
 	PDF(const Histogram& h) : m_dist(h.maximum() + 1), m_stdDev(h.sd())
 	{
@@ -39,6 +41,7 @@ struct PDF
 		return m_stdDev / sqrt(n);
 	}
 
+  private:
 	std::vector<double> m_dist;
 	double m_stdDev;
 	double m_minp;
