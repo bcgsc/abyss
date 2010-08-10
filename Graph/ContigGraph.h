@@ -60,7 +60,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	/** Remove all in edges from vertex v. */
 	void clear_in_edges(vertex_descriptor v)
 	{
-		DG::clear_out_edges(~v);
+		clear_out_edges(~v);
 	}
 
 	/** Remove all edges to and from vertex v. */
