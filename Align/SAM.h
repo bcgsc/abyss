@@ -151,7 +151,15 @@ struct SAMRecord : SAMAlignment {
 
 	/** Consturct a single-end alignment. */
 	explicit SAMRecord(const SAMAlignment& a,
-			const std::string& qname = "*") :
+			const std::string& qname = "*",
+#if SAM_SEQ_QUAL
+			const std::string& seq = "*",
+			const std::string& qual = "*"
+#else
+			const std::string& /*seq*/,
+			const std::string& /*qual*/
+#endif
+			) :
 		SAMAlignment(a),
 		qname(qname),
 		mrnm("*"),
@@ -159,8 +167,8 @@ struct SAMRecord : SAMAlignment {
 		isize(0)
 #if SAM_SEQ_QUAL
 		,
-		seq("*"),
-		qual("*")
+		seq(seq),
+		qual(qual)
 #endif
 	{
 	}

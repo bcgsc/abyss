@@ -33,7 +33,8 @@ struct Alignment
 
 	Alignment() { }
 
-	Alignment(const Alignment& o, std::string /*qid*/) { *this = o; }
+	Alignment(const Alignment& o,
+			std::string /*qid*/, std::string /*seq*/) { *this = o; }
 
 	Alignment(StringID contig, int contig_start, int read_start,
 			int align_length, int read_length, bool isRC) :
@@ -198,7 +199,8 @@ class Aligner
 
 		template <class oiterator>
 		static void coalesceAlignments(
-				const std::string& qid, const AlignmentSet& alignSet,
+				const std::string& qid, const std::string& seq,
+				const AlignmentSet& alignSet,
 				oiterator& dest);
 
 		// The number of bases to hash on

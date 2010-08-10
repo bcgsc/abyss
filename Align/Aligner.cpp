@@ -75,9 +75,11 @@ void Aligner<SeqPosHashMap>::alignRead(
 		const string& qid, const Sequence& seq,
 		oiterator dest)
 {
-	coalesceAlignments(qid, getAlignmentsInternal(seq, false), dest);
-	coalesceAlignments(qid, getAlignmentsInternal(
-				reverseComplement(seq), true), dest);
+	coalesceAlignments(qid, seq,
+			getAlignmentsInternal(seq, false), dest);
+	Sequence seqrc = reverseComplement(seq);
+	coalesceAlignments(qid, seqrc,
+			getAlignmentsInternal(seqrc, true), dest);
 }
 
 template <class SeqPosHashMap>
@@ -142,7 +144,8 @@ struct output_iterator_traits
 template <class SeqPosHashMap>
 template <class oiterator>
 void Aligner<SeqPosHashMap>::coalesceAlignments(
-		const string& qid, const AlignmentSet& alignSet,
+		const string& qid, const string& seq,
+		const AlignmentSet& alignSet,
 		oiterator& dest)
 {
 	typedef typename output_iterator_traits<oiterator>::value_type
@@ -164,7 +167,7 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 						!= prevIter->read_start_pos + qstep
 					|| currIter->contig_start_pos
 						!= prevIter->contig_start_pos + tstep) {
-				*dest++ = value_type(currAlign, qid);
+				*dest++ = value_type(currAlign, qid, seq);
 				currAlign = *currIter;
 			} else {
 				currAlign.align_length++;
@@ -176,7 +179,7 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 			currIter++;
 		}
 
-		*dest++ = value_type(currAlign, qid);
+		*dest++ = value_type(currAlign, qid, seq);
 	}
 }
 
