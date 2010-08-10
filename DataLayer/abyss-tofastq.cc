@@ -6,35 +6,32 @@
 #include "FastaReader.h"
 #include "Uncompress.h"
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 
 using namespace std;
 
-static void toFASTA(const char* path)
+template <class Record>
+static void convert(const char* path)
 {
 	FastaReader in(path, FastaReader::NO_FOLD_CASE
 			| FastaReader::CONVERT_QUALITY);
-	for (FastaRecord fasta; in >> fasta;)
-		cout << fasta;
-}
-
-static void toFASTQ(const char* path)
-{
-	FastaReader in(path, FastaReader::NO_FOLD_CASE
-			| FastaReader::CONVERT_QUALITY);
-	for (FastqRecord fastq; in >> fastq;)
-		cout << fastq;
+	for (Record record; in >> record;)
+		cout << record;
+	assert(in.eof());
 }
 
 int main(int argc, const char* argv[])
 {
 	opt::trimMasked = false;
-	void (*convert)(const char*)
-		= string(argv[0]).find("tofasta") != string::npos
-		? toFASTA : toFASTQ;
+	typedef void (*F)(const char*);
+	F convertFasta = convert<FastaRecord>;
+	F convertFastq = convert<FastqRecord>;
+	F f = string(argv[0]).find("tofasta") != string::npos
+		? convertFasta : convertFastq;
 	if (argc <= 1)
-		convert("-");
+		f("-");
 	else
-		for_each(argv + 1, argv + argc, convert);
+		for_each(argv + 1, argv + argc, f);
 	return 0;
 }
