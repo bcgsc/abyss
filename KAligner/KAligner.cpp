@@ -347,8 +347,7 @@ static void readContigsIntoDB(string refFastaFile,
 		cerr << "Reading target `" << refFastaFile << "'..." << endl;
 
 	unsigned count = 0;
-	FastaReader in(refFastaFile.c_str(),
-			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
+	FastaReader in(refFastaFile.c_str(), FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;) {
 		if (count == 0) {
 			// Detect colour-space contigs.
@@ -385,7 +384,7 @@ void *alignReadsToDB(void* readsFile)
 	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_mutex_lock(&mutex);
 	FastaReader fileHandle((const char *)readsFile,
-			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
+			FastaReader::FOLD_CASE);
 	pthread_mutex_unlock(&mutex);
 
 	for (FastaRecord rec; fileHandle >> rec;) {

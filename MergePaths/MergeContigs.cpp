@@ -291,8 +291,7 @@ int main(int argc, char** argv)
 
 	vector<Contig>& contigs = g_contigs;
 	{
-		FastaReader in(contigFile,
-				FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
+		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;

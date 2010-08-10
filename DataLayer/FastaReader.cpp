@@ -1,6 +1,5 @@
 #include "FastaReader.h"
 #include "DataLayer/Options.h"
-#include "Log.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -42,7 +41,7 @@ FastaReader::FastaReader(const char* path, int flags)
 	: m_path(path), m_fin(path),
 	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
 	m_flags(flags),
-	m_unchaste(0), m_nonacgt(0)
+	m_unchaste(0)
 {
 	if (strcmp(path, "-") != 0)
 		assert_open(m_fin, path);
@@ -240,17 +239,6 @@ next_record:
 		if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);
 			s.erase(0, trimFront);
-		}
-	}
-
-	if (flagDiscardN()) {
-		size_t pos = s.find_first_not_of("ACGT0123");
-		if (pos != string::npos) {
-			logger(5) << m_path
-				<< ": warning: discarded sequence containing `"
-				<< s[pos] << "'\n";
-			m_nonacgt++;
-			goto next_record;
 		}
 	}
 

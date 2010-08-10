@@ -10,14 +10,11 @@
 class FastaReader {
 	public:
 		enum {
-			/** Discard any sequence containing an N. */
-			DISCARD_N = 0, KEEP_N = 1,
 			/** Fold lower-case characters to upper-case. */
-			FOLD_CASE = 0, NO_FOLD_CASE = 2,
+			FOLD_CASE = 0, NO_FOLD_CASE = 1,
 			/** Convert to standard quality. */
-			NO_CONVERT_QUALITY = 0, CONVERT_QUALITY = 4,
+			NO_CONVERT_QUALITY = 0, CONVERT_QUALITY = 2,
 		};
-		bool flagDiscardN() { return ~m_flags & KEEP_N; }
 		bool flagFoldCase() { return ~m_flags & NO_FOLD_CASE; }
 		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
@@ -35,10 +32,6 @@ class FastaReader {
 
 		/** Returns the number of unchaste reads. */
 		unsigned unchaste() const { return m_unchaste; }
-
-		/** Returns the number of reads containing non-ACGT
-		 * characters. */
-		unsigned nonACGT() const { return m_nonacgt; }
 
 		FastaReader& operator >>(Sequence& seq)
 		{
@@ -61,9 +54,6 @@ class FastaReader {
 
 		/** Count of unchaste reads. */
 		unsigned m_unchaste;
-
-		/** Count of non-ACGT reads. */
-		unsigned m_nonacgt;
 };
 
 struct FastaRecord

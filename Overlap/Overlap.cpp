@@ -336,8 +336,7 @@ static void assert_open(ifstream& f, const string& p)
 
 static void readContigs(const char *contigPath)
 {
-	FastaReader in(contigPath,
-			FastaReader::KEEP_N | FastaReader::FOLD_CASE);
+	FastaReader in(contigPath, FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;)
 		g_contigs.push_back(rec.seq);
 	assert(in.eof());

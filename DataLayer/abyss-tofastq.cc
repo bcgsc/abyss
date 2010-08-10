@@ -12,8 +12,7 @@ using namespace std;
 
 static void toFASTA(const char* path)
 {
-	FastaReader in(path, FastaReader::KEEP_N
-			| FastaReader::NO_FOLD_CASE
+	FastaReader in(path, FastaReader::NO_FOLD_CASE
 			| FastaReader::CONVERT_QUALITY);
 	for (FastaRecord fasta; in >> fasta;)
 		cout << fasta;
@@ -21,8 +20,7 @@ static void toFASTA(const char* path)
 
 static void toFASTQ(const char* path)
 {
-	FastaReader in(path, FastaReader::KEEP_N
-			| FastaReader::NO_FOLD_CASE
+	FastaReader in(path, FastaReader::NO_FOLD_CASE
 			| FastaReader::CONVERT_QUALITY);
 	for (FastqRecord fastq; in >> fastq;)
 		cout << fastq;

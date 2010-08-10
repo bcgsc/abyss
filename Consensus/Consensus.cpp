@@ -101,7 +101,7 @@ static ContigMap g_contigs;
 static void readContigs(const string& contigsPath)
 {
 	FastaReader contigsFile(contigsPath.c_str(),
-			FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
+			FastaReader::NO_FOLD_CASE);
 	int count = 0;
 	for (FastaRecord rec; contigsFile >> rec;) {
 		const Sequence& seq = rec.seq;
