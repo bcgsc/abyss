@@ -22,16 +22,16 @@ class FastaReader {
 		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
 		FastaReader(const char* path, int flags);
-		~FastaReader() { assert(m_fileHandle.eof()); }
+		~FastaReader() { assert(m_in.eof()); }
 
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor, std::string& qual);
 
 		/** Return whether this stream is at end-of-file. */
-		bool eof() const { return m_fileHandle.eof(); };
+		bool eof() const { return m_in.eof(); };
 
 		/** Return whether this stream is good. */
-		operator void*() const { return m_fileHandle; }
+		operator void*() const { return m_in; }
 
 		/** Returns the number of unchaste reads. */
 		unsigned unchaste() const { return m_unchaste; }
@@ -52,9 +52,9 @@ class FastaReader {
 		bool isChaste(const std::string& s, const std::string& line);
 		void checkSeqQual(const std::string& s, const std::string& q);
 
-		const char* m_inPath;
-		std::ifstream m_inFile;
-		std::istream& m_fileHandle;
+		const char* m_path;
+		std::ifstream m_fin;
+		std::istream& m_in;
 
 		/** Flags indicating parsing options. */
 		int m_flags;

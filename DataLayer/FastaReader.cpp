@@ -39,15 +39,15 @@ static void assert_open(ifstream& f, const string& p)
 }
 
 FastaReader::FastaReader(const char* path, int flags)
-	: m_inPath(path), m_inFile(path),
-	m_fileHandle(strcmp(path, "-") == 0 ? cin : m_inFile),
+	: m_path(path), m_fin(path),
+	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
 	m_flags(flags),
 	m_unchaste(0), m_nonacgt(0)
 {
 	if (strcmp(path, "-") != 0)
-		assert_open(m_inFile, path);
-	if (m_fileHandle.peek() == EOF)
-		cerr << m_inPath << ": warning: file is empty\n";
+		assert_open(m_fin, path);
+	if (m_in.peek() == EOF)
+		cerr << m_path << ": warning: file is empty\n";
 }
 
 /** Return whether this read passed the chastity filter. */
@@ -58,7 +58,7 @@ bool FastaReader::isChaste(const string& s, const string& line)
 	} else if (s == "0" || s == "N") {
 		return false;
 	} else {
-		cerr << m_inPath << ": error: chastity filter should be "
+		cerr << m_path << ": error: chastity filter should be "
 			"one of 0, 1, N or Y\nand saw `" << s << "' near\n"
 			<< line << endl;
 		exit(EXIT_FAILURE);
@@ -69,7 +69,7 @@ bool FastaReader::isChaste(const string& s, const string& line)
 void FastaReader::checkSeqQual(const string& s, const string& q)
 {
 	if (s.length() != q.length()) {
-		cerr << m_inPath << ": error: sequence and quality must be "
+		cerr << m_path << ": error: sequence and quality must be "
 			"the same length near\n" << s << '\n' << q << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -81,20 +81,20 @@ Sequence FastaReader::read(string& id, string& comment,
 {
 next_record:
 	// Discard comments.
-	while (m_fileHandle.peek() == '#')
-		m_fileHandle.ignore(numeric_limits<streamsize>::max(), '\n');
+	while (m_in.peek() == '#')
+		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	signed char recordType = m_fileHandle.peek();
+	signed char recordType = m_in.peek();
 	Sequence s;
 
 	unsigned qualityOffset = 0;
 	if (recordType == EOF) {
-		m_fileHandle.get();
+		m_in.get();
 		return s;
 	} else if (recordType == '>' || recordType == '@') {
 		// Read the header.
 		string header;
-		getline(m_fileHandle, header);
+		getline(m_in, header);
 		istringstream headerStream(header);
 		headerStream >> recordType >> id >> ws;
 		getline(headerStream, comment);
@@ -104,20 +104,19 @@ next_record:
 				&& comment.length() > 2 && comment[2] == ':')
 			goto next_record;
 
-		getline(m_fileHandle, s);
+		getline(m_in, s);
 
 		if (recordType == '@') {
-			char c = m_fileHandle.get();
+			char c = m_in.get();
 			if (c != '+') {
 				string line;
-				getline(m_fileHandle, line);
-				cerr << m_inPath << ": error: expected `+' and saw `"
+				getline(m_in, line);
+				cerr << m_path << ": error: expected `+' and saw `"
 					<< c << "' near\n" << c << line << "\n^\n";
 				exit(EXIT_FAILURE);
 			}
-			m_fileHandle.ignore(numeric_limits<streamsize>::max(),
-					'\n');
-			getline(m_fileHandle, q);
+			m_in.ignore(numeric_limits<streamsize>::max(), '\n');
+			getline(m_in, q);
 			checkSeqQual(s, q);
 		} else
 			q.clear();
@@ -151,7 +150,7 @@ next_record:
 		string line;
 		vector<string> fields;
 		fields.reserve(22);
-		getline(m_fileHandle, line);
+		getline(m_in, line);
 		istringstream in(line);
 		string field;
 		while (getline(in, field, '\t'))
@@ -173,7 +172,7 @@ next_record:
 			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
 			  case 0x81: id += "/2"; break; // FPAIRED|FREAD2
 			  default:
-				cerr << m_inPath << ": error: invalid flags: `"
+				cerr << m_path << ": error: invalid flags: `"
 					<< id << "' near" << line << endl;
 				exit(EXIT_FAILURE);
 			}
@@ -216,8 +215,7 @@ next_record:
 			qualityOffset = 64;
 			checkSeqQual(s, q);
 		} else {
-			cerr << "error: `" << m_inPath
-				<< "' is an unknown format\n"
+			cerr << "error: `" << m_path << "' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
 					"and saw `" << recordType << "' and "
 					<< fields.size() << " fields near\n"
@@ -248,7 +246,7 @@ next_record:
 	if (flagDiscardN()) {
 		size_t pos = s.find_first_not_of("ACGT0123");
 		if (pos != string::npos) {
-			logger(5) << m_inPath
+			logger(5) << m_path
 				<< ": warning: discarded sequence containing `"
 				<< s[pos] << "'\n";
 			m_nonacgt++;
@@ -262,7 +260,7 @@ next_record:
 		for (string::iterator it = q.begin(); it != q.end(); ++it) {
 			int x = *it - qualityOffset;
 			if (x < -5 || x > 40) {
-				cerr << m_inPath << ": error: quality " << x
+				cerr << m_path << ": error: quality " << x
 					<< " is out of range -5 <= q <= 40 near\n"
 					<< q << '\n'
 					<< string(it - q.begin(), ' ') << "^\n";
