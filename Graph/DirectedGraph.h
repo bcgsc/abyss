@@ -216,7 +216,7 @@ class Vertex
 	}
 
 	/** Return the number of outgoing edges. */
-	size_t out_degree() const
+	degree_size_type out_degree() const
 	{
 		return m_edges.size();
 	}
@@ -369,12 +369,12 @@ class Edge
 	}
 
 	/** Return the number of vertices. */
-	size_t num_vertices() const { return m_vertices.size(); }
+	vertices_size_type num_vertices() const { return m_vertices.size(); }
 
 	/** Return the number of edges. */
-	size_t num_edges() const
+	edges_size_type num_edges() const
 	{
-		size_t n = 0;
+		edges_size_type n = 0;
 		std::pair<vertex_iterator, vertex_iterator> vit = vertices();
 		for (vertex_iterator v = vit.first; v != vit.second; ++v)
 			n += out_degree(*v);
