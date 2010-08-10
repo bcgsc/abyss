@@ -109,6 +109,14 @@ next_record:
 			goto next_record;
 
 		getline(s);
+		if (recordType == '>') {
+			// Read a multi-line FASTA record.
+			string line;
+			while (m_in.peek() != '>' && getline(line))
+				s += line;
+			if (m_in.eof())
+				m_in.clear();
+		}
 
 		if (recordType == '@') {
 			char c = m_in.get();
