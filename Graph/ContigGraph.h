@@ -43,24 +43,24 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	/** Return the in degree of vertex v. */
 	degree_size_type in_degree(vertex_descriptor v) const
 	{
-		return out_degree(~v);
+		return DG::out_degree(~v);
 	}
 
 	/** Remove all out edges from vertex v. */
 	void clear_out_edges(vertex_descriptor v)
 	{
 		std::pair<out_edge_iterator, out_edge_iterator>
-			edges = out_edges(v);
+			edges = DG::out_edges(v);
 		for (out_edge_iterator it = edges.first;
 				it != edges.second; ++it)
-			remove_edge(~target(*it), ~v);
+			DG::remove_edge(~DG::target(*it), ~v);
 		DG::clear_out_edges(v);
 	}
 
 	/** Remove all in edges from vertex v. */
 	void clear_in_edges(vertex_descriptor v)
 	{
-		clear_out_edges(~v);
+		DG::clear_out_edges(~v);
 	}
 
 	/** Remove all edges to and from vertex v. */
