@@ -351,7 +351,7 @@ class Edge
 
 	/** Remove all edges to and from vertex u from this graph.
 	 * Not implemented. */
-	void clear_vertex(vertex_descriptor u)
+	void clear_vertex(vertex_descriptor)
 	{
 		assert(false);
 	}
