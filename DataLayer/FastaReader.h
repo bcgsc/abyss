@@ -22,7 +22,7 @@ class FastaReader {
 		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
 		FastaReader(const char* path, int flags);
-		~FastaReader();
+		~FastaReader() { assert(m_fileHandle.eof()); }
 
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor, std::string& qual);
@@ -49,6 +49,9 @@ class FastaReader {
 		}
 
 	private:
+		bool isChaste(const std::string& s, const std::string& line);
+		void checkSeqQual(const std::string& s, const std::string& q);
+
 		const char* m_inPath;
 		std::ifstream m_inFile;
 		std::istream& m_fileHandle;

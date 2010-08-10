@@ -47,27 +47,35 @@ FastaReader::FastaReader(const char* path, int flags)
 	if (strcmp(path, "-") != 0)
 		assert_open(m_inFile, path);
 	if (m_fileHandle.peek() == EOF)
-		cerr << "warning: `" << path << "' is empty\n";
+		cerr << m_inPath << ": warning: file is empty\n";
 }
 
-FastaReader::~FastaReader()
-{
-	m_inFile.close();
-}
-
-static bool isChaste(const string &s)
+/** Return whether this read passed the chastity filter. */
+bool FastaReader::isChaste(const string& s, const string& line)
 {
 	if (s == "1" || s == "Y") {
 		return true;
 	} else if (s == "0" || s == "N") {
 		return false;
 	} else {
-		cerr << "error: chastity filter should be either "
-			<< "0, 1, N or Y and saw `" << s << "'\n";
+		cerr << m_inPath << ": error: chastity filter should be "
+			"one of 0, 1, N or Y\nand saw `" << s << "' near\n"
+			<< line << endl;
 		exit(EXIT_FAILURE);
 	}
 }
 
+/** Check that the seqeuence and quality agree in length. */
+void FastaReader::checkSeqQual(const string& s, const string& q)
+{
+	if (s.length() != q.length()) {
+		cerr << m_inPath << ": error: sequence and quality must be "
+			"the same length near\n" << s << '\n' << q << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+/** Read a single record. */
 Sequence FastaReader::read(string& id, string& comment,
 		char& anchor, string& q)
 {
@@ -97,16 +105,20 @@ next_record:
 			goto next_record;
 
 		getline(m_fileHandle, s);
-		assert(!s.empty());
 
 		if (recordType == '@') {
 			char c = m_fileHandle.get();
-			assert(c == '+');
-			(void)c;
+			if (c != '+') {
+				string line;
+				getline(m_fileHandle, line);
+				cerr << m_inPath << ": error: expected `+' and saw `"
+					<< c << "' near\n" << c << line << "\n^\n";
+				exit(EXIT_FAILURE);
+			}
 			m_fileHandle.ignore(numeric_limits<streamsize>::max(),
 					'\n');
 			getline(m_fileHandle, q);
-			assert(s.length() == q.length());
+			checkSeqQual(s, q);
 		} else
 			q.clear();
 
@@ -161,7 +173,8 @@ next_record:
 			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
 			  case 0x81: id += "/2"; break; // FPAIRED|FREAD2
 			  default:
-				cerr << "error: invalid flags: `" << id << "'\n";
+				cerr << m_inPath << ": error: invalid flags: `"
+					<< id << "' near" << line << endl;
 				exit(EXIT_FAILURE);
 			}
 			s = fields[9];
@@ -176,9 +189,12 @@ next_record:
 			}
 			comment = fields[1];
 			qualityOffset = 33;
+			if (!q.empty())
+				checkSeqQual(s, q);
 		} else if (fields.size() == 11 || fields.size() == 22) {
 			// qseq or export
-			if (opt::chastityFilter && !isChaste(fields.back())) {
+			if (opt::chastityFilter
+					&& !isChaste(fields.back(), line)) {
 				m_unchaste++;
 				goto next_record;
 			}
@@ -198,12 +214,14 @@ next_record:
 			q = fields[9];
 			comment = fields.back();
 			qualityOffset = 64;
+			checkSeqQual(s, q);
 		} else {
 			cerr << "error: `" << m_inPath
 				<< "' is an unknown format\n"
 					"Expected either `>' or `@' or 11 fields\n"
 					"and saw `" << recordType << "' and "
-					<< fields.size() << " fields\n";
+					<< fields.size() << " fields near\n"
+					<< line << endl;
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -230,7 +248,8 @@ next_record:
 	if (flagDiscardN()) {
 		size_t pos = s.find_first_not_of("ACGT0123");
 		if (pos != string::npos) {
-			logger(5) << "warning: discarded sequence containing `"
+			logger(5) << m_inPath
+				<< ": warning: discarded sequence containing `"
 				<< s[pos] << "'\n";
 			m_nonacgt++;
 			goto next_record;
@@ -242,8 +261,13 @@ next_record:
 		// Convert to standard quality (ASCII 33).
 		for (string::iterator it = q.begin(); it != q.end(); ++it) {
 			int x = *it - qualityOffset;
-			assert(x >= -5);
-			assert(x <= 40);
+			if (x < -5 || x > 40) {
+				cerr << m_inPath << ": error: quality " << x
+					<< " is out of range -5 <= q <= 40 near\n"
+					<< q << '\n'
+					<< string(it - q.begin(), ' ') << "^\n";
+				exit(EXIT_FAILURE);
+			}
 			*it = 33 + max(0, x);
 		}
 	}
