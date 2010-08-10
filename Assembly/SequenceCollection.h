@@ -107,9 +107,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		/** Whether adjacency information has been loaded. */
 		bool m_adjacencyLoaded;
 
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 		/** deleted key needed for erase and to ensure a polyT Kmer
 		 * is not added to the hash map. */
-#if HAVE_GOOGLE_SPARSE_HASH_SET
 		Kmer m_deleted_key;
 #endif
 };

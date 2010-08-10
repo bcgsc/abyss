@@ -110,7 +110,7 @@ AC_CHECK_LIB([dl], [dlsym])
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
-	google/sparse_hash_set \
+	google/sparse_hash_map \
 	unordered_map tr1/unordered_map ext/hash_map \
 ])
 
@@ -148,7 +148,7 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-if test $ac_cv_header_google_sparse_hash_set != yes; then
+if test $ac_cv_header_google_sparse_hash_map != yes; then
 	echo 'warning: ABySS should be compiled with Google sparsehash to
 	reduce memory usage. It may be downloaded here:
 	http://code.google.com/p/google-sparsehash' >&2

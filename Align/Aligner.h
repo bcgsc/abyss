@@ -148,7 +148,7 @@ struct Position
 
 typedef hash_multimap<Kmer, Position, hashKmer> SeqPosHashMultiMap;
 
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
 typedef google::sparse_hash_map<Kmer, Position,
 		hashKmer> SeqPosHashUniqueMap;
