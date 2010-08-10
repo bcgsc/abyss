@@ -112,6 +112,8 @@ se-sam: $(addsuffix -3.sam.gz, $(lib))
 
 se-bam: $(addsuffix -3.bam.bai, $(lib))
 
+se-dot: $(name)-3.dot
+
 pe-dot: $(name)-contigs.dot
 
 all: se-bam pe-dot
@@ -227,6 +229,9 @@ else
 		|Consensus $v -o $@ $<
 
 endif
+
+%-3.dot: %-3.fa
+	AdjList $v --dot -k$k $< >$@
 
 %-contigs.dot: %-contigs.fa %-4.adj %-4.path2
 	(echo "digraph $* {"; \
