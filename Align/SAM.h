@@ -156,8 +156,8 @@ struct SAMRecord : SAMAlignment {
 			const std::string& seq = "*",
 			const std::string& qual = "*"
 #else
-			const std::string& /*seq*/,
-			const std::string& /*qual*/
+			const std::string& /*seq*/ = "*",
+			const std::string& /*qual*/ = "*"
 #endif
 			) :
 		SAMAlignment(a),
