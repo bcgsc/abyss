@@ -50,7 +50,7 @@ void assemble(Graph& g, ostream& out)
 {
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-		if (contiguous_in(g, *v) || !contiguous_out(g, *v))
+		if (!contiguous_out(g, *v) || contiguous_in(g, *v))
 			continue;
 		Path path;
 		assemble(g, *v, back_inserter(path));
