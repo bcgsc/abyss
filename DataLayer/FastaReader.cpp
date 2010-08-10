@@ -29,24 +29,30 @@ namespace opt {
 	int qualityOffset;
 }
 
+/** Output an error message. */
+ostream& FastaReader::die()
+{
+	return cerr << m_path << ':' << m_line << ": error: ";
+}
+
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
 		return;
-	cerr << p << ": " << strerror(errno) << endl;
+	cerr << p << ": error: " << strerror(errno) << endl;
 	exit(EXIT_FAILURE);
 }
 
 FastaReader::FastaReader(const char* path, int flags)
 	: m_path(path), m_fin(path),
 	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
-	m_flags(flags),
-	m_unchaste(0)
+	m_flags(flags), m_line(0), m_unchaste(0)
 {
 	if (strcmp(path, "-") != 0)
 		assert_open(m_fin, path);
 	if (m_in.peek() == EOF)
-		cerr << m_path << ": warning: file is empty\n";
+		cerr << m_path << ':' << m_line << ": warning: "
+			"file is empty\n";
 }
 
 /** Return whether this read passed the chastity filter. */
@@ -57,9 +63,8 @@ bool FastaReader::isChaste(const string& s, const string& line)
 	} else if (s == "0" || s == "N") {
 		return false;
 	} else {
-		cerr << m_path << ": error: chastity filter should be "
-			"one of 0, 1, N or Y\nand saw `" << s << "' near\n"
-			<< line << endl;
+		die() << "chastity filter should be one of 0, 1, N or Y\n"
+			"and saw `" << s << "' near\n" << line << endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -68,8 +73,8 @@ bool FastaReader::isChaste(const string& s, const string& line)
 void FastaReader::checkSeqQual(const string& s, const string& q)
 {
 	if (s.length() != q.length()) {
-		cerr << m_path << ": error: sequence and quality must be "
-			"the same length near\n" << s << '\n' << q << endl;
+		die() << "sequence and quality must be the same length near\n"
+			<< s << '\n' << q << endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -93,29 +98,29 @@ next_record:
 	} else if (recordType == '>' || recordType == '@') {
 		// Read the header.
 		string header;
-		getline(m_in, header);
+		getline(header);
 		istringstream headerStream(header);
 		headerStream >> recordType >> id >> ws;
-		getline(headerStream, comment);
+		std::getline(headerStream, comment);
 
 		// Ignore SAM headers.
 		if (id.length() == 2 && isupper(id[0]) && isupper(id[1])
 				&& comment.length() > 2 && comment[2] == ':')
 			goto next_record;
 
-		getline(m_in, s);
+		getline(s);
 
 		if (recordType == '@') {
 			char c = m_in.get();
 			if (c != '+') {
 				string line;
-				getline(m_in, line);
-				cerr << m_path << ": error: expected `+' and saw `"
-					<< c << "' near\n" << c << line << "\n^\n";
+				getline(line);
+				die() << "expected `+' and saw `" << c << "' near\n"
+					<< c << line << "\n^\n";
 				exit(EXIT_FAILURE);
 			}
 			m_in.ignore(numeric_limits<streamsize>::max(), '\n');
-			getline(m_in, q);
+			getline(q);
 			checkSeqQual(s, q);
 		} else
 			q.clear();
@@ -149,10 +154,10 @@ next_record:
 		string line;
 		vector<string> fields;
 		fields.reserve(22);
-		getline(m_in, line);
+		getline(line);
 		istringstream in(line);
 		string field;
-		while (getline(in, field, '\t'))
+		while (std::getline(in, field, '\t'))
 			fields.push_back(field);
 
 		if (fields.size() >= 11
@@ -171,8 +176,8 @@ next_record:
 			  case 0x41: id += "/1"; break; // FPAIRED|FREAD1
 			  case 0x81: id += "/2"; break; // FPAIRED|FREAD2
 			  default:
-				cerr << m_path << ": error: invalid flags: `"
-					<< id << "' near" << line << endl;
+				die() << "invalid flags: `" << id << "' near"
+					<< line << endl;
 				exit(EXIT_FAILURE);
 			}
 			s = fields[9];
@@ -214,8 +219,7 @@ next_record:
 			qualityOffset = 64;
 			checkSeqQual(s, q);
 		} else {
-			cerr << "error: `" << m_path << "' is an unknown format\n"
-					"Expected either `>' or `@' or 11 fields\n"
+			die() << "Expected either `>' or `@' or 11 fields\n"
 					"and saw `" << recordType << "' and "
 					<< fields.size() << " fields near\n"
 					<< line << endl;
@@ -248,7 +252,7 @@ next_record:
 		for (string::iterator it = q.begin(); it != q.end(); ++it) {
 			int x = *it - qualityOffset;
 			if (x < -5 || x > 40) {
-				cerr << m_path << ": error: quality " << x
+				die() << "quality " << x
 					<< " is out of range -5 <= q <= 40 near\n"
 					<< q << '\n'
 					<< string(it - q.begin(), ' ') << "^\n";

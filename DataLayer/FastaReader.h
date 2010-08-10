@@ -42,6 +42,14 @@ class FastaReader {
 		}
 
 	private:
+		/** Read a single line. */
+		std::istream& getline(std::string& s)
+		{
+			m_line++;
+			return std::getline(m_in, s);
+		}
+
+		std::ostream& die();
 		bool isChaste(const std::string& s, const std::string& line);
 		void checkSeqQual(const std::string& s, const std::string& q);
 
@@ -51,6 +59,9 @@ class FastaReader {
 
 		/** Flags indicating parsing options. */
 		int m_flags;
+
+		/** Number of lines read. */
+		unsigned m_line;
 
 		/** Count of unchaste reads. */
 		unsigned m_unchaste;
