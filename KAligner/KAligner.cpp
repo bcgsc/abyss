@@ -268,7 +268,7 @@ int main(int argc, char** argv)
 				numKmer);
 		readContigsIntoDB(refFastaFile, *g_aligner_m);
 	} else {
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
 				numKmer, 0.2);
 #else

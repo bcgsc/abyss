@@ -16,7 +16,7 @@ using namespace std;
 SequenceCollectionHash::SequenceCollectionHash()
 	: m_seqObserver(NULL), m_adjacencyLoaded(false)
 {
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 	// sparse_hash_set uses 2.67 bits per element on a 64-bit
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
@@ -51,7 +51,7 @@ void SequenceCollectionHash::add(const Kmer& seq)
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_pSequences->end()) {
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 		if (m_pSequences->size() == 0) {
 			/* sparse_hash_set requires that set_deleted_key()
 			 * is called before calling erase(). */
@@ -273,7 +273,7 @@ bool SequenceCollectionHash::getSeqData(const Kmer& key,
 void SequenceCollectionHash::store(const char* path) const
 {
 	assert(path != NULL);
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 	ostringstream s;
 	s << path;
 	if (opt::rank >= 0)
@@ -298,7 +298,7 @@ void SequenceCollectionHash::store(const char* path) const
 /** Load this collection from disk. */
 void SequenceCollectionHash::load(const char* path)
 {
-#if HAVE_GOOGLE_SPARSE_HASH_SET
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
 	FILE* f = fopen(path, "r");
 	if (f == NULL) {
 		perror(path);
