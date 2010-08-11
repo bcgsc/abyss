@@ -232,7 +232,8 @@ class Vertex
 	/** Remove the edge to v from this vertex. */
 	void remove_edge(vertex_descriptor v)
 	{
-		m_edges.erase(find(m_edges.begin(), m_edges.end(), v));
+		m_edges.erase(remove(m_edges.begin(), m_edges.end(), v),
+				m_edges.end());
 	}
 
 	/** Remove all out edges from this vertex. */
