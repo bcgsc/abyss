@@ -356,7 +356,7 @@ class Edge
 	{
 		clear_out_edges(u);
 		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = m_g->adjacent_vertices(*m_vit);
+			adj = adjacent_vertices(u);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
 			remove_edge(*v, u);
 	}
