@@ -351,10 +351,14 @@ class Edge
 	}
 
 	/** Remove all edges to and from vertex u from this graph.
-	 * Not implemented. */
-	void clear_vertex(vertex_descriptor)
+	 * O(V+E) */
+	void clear_vertex(vertex_descriptor u)
 	{
-		assert(false);
+		clear_out_edges(u);
+		std::pair<adjacency_iterator, adjacency_iterator>
+			adj = m_g->adjacent_vertices(*m_vit);
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+			remove_edge(*v, u);
 	}
 
 	/** Remove vertex u from this graph. It is assumed that there
