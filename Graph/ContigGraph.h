@@ -30,7 +30,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 
 	// Edge types.
 	typedef typename DG::degree_size_type degree_size_type;
-	typedef typename DG::out_edge_iterator out_edge_iterator;
+	typedef typename DG::adjacency_iterator adjacency_iterator;
 
   public:
 	/** Construct an empty contig graph. */
@@ -46,15 +46,14 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		return DG::out_degree(~v);
 	}
 
-	/** Remove all out edges from vertex v. */
-	void clear_out_edges(vertex_descriptor v)
+	/** Remove all out edges from vertex u. */
+	void clear_out_edges(vertex_descriptor u)
 	{
-		std::pair<out_edge_iterator, out_edge_iterator>
-			edges = DG::out_edges(v);
-		for (out_edge_iterator it = edges.first;
-				it != edges.second; ++it)
-			DG::remove_edge(~DG::target(*it), ~v);
-		DG::clear_out_edges(v);
+		std::pair<adjacency_iterator, adjacency_iterator>
+			adj = DG::adjacent_vertices(u);
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+			DG::remove_edge(~*v, ~u);
+		DG::clear_out_edges(u);
 	}
 
 	/** Remove all in edges from vertex v. */
@@ -110,20 +109,20 @@ std::ostream& operator<<(std::ostream& out,
 {
 	typedef ContigGraph<VertexProp> G;
 	typedef typename G::vertex_iterator vertex_iterator;
-	typedef typename G::out_edge_iterator out_edge_iterator;
+	typedef typename G::adjacency_iterator adjacency_iterator;
 	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
-	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-		const ContigNode& id = *v;
-		if (g.is_removed(id))
+	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
+		if (g.is_removed(*u))
 			continue;
-		if (!id.sense())
-			out << ContigID(id) << g[*v];
+		bool sense = ContigNode(*u).sense();
+		if (!sense)
+			out << ContigID(*u) << g[*u];
 		out << "\t;";
-		std::pair<out_edge_iterator, out_edge_iterator>
-			eit = g.out_edges(*v);
-		for (out_edge_iterator e = eit.first; e != eit.second; ++e)
-			out << ' ' << (g.target(*e) ^ id.sense());
-		if (id.sense())
+		std::pair<adjacency_iterator, adjacency_iterator>
+			adj = g.adjacent_vertices(*u);
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+			out << ' ' << (*v ^ sense);
+		if (sense)
 			out << '\n';
 	}
 	return out;
