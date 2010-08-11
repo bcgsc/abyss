@@ -42,7 +42,6 @@ static const char USAGE_MESSAGE[] =
 "      --illumina-quality         zero quality is `@' (64)\n"
 "                                 default for qseq and export files\n"
 "  -o, --out=FILE                 write the contigs to FILE\n"
-"                                 the default is contigs.fa\n"
 "  -k, --kmer=KMER_SIZE           k-mer size\n"
 "  -t, --trim-length=TRIM_LENGTH  maximum length of dangling edges to trim\n"
 "  -c, --coverage=COVERAGE        remove contigs with mean k-mer coverage\n"
@@ -90,7 +89,7 @@ int bubbleLen = -1;
 string coverageHistPath;
 
 /** output contigs path */
-string contigsPath = "contigs.fa";
+string contigsPath;
 
 /** temporary output contigs path
  * Each node stores its contigs in its own file temporarily.
@@ -223,6 +222,10 @@ void parse(int argc, char* const* argv)
 
 	if (kmerSize <= 0) {
 		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
+	if (contigsPath.empty()) {
+		cerr << PROGRAM ": missing -o,--out option\n";
 		die = true;
 	}
 	if (argv[optind] == NULL) {
