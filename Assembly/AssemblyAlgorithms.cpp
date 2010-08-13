@@ -169,50 +169,33 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 /** Mark ambiguous branches and branches from palindromes for removal.
  * @return the number of branches marked
  */
-static unsigned markAmbiguousVertices(
-		ISequenceCollection* seqCollection)
+unsigned markAmbiguous(ISequenceCollection* g)
 {
 	Timer timer(__func__);
 	unsigned progress = 0;
-	unsigned count = 0;
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
-			iter != seqCollection->end(); ++iter) {
-		if (iter->second.deleted())
-			continue;
-
-		if (++progress % 1000000 == 0)
-			PrintDebug(1, "Splitting: %u k-mer\n", progress);
-
-		if (iter->first.isPalindrome()) {
-			seqCollection->mark(iter->first, SENSE);
-			seqCollection->mark(iter->first, ANTISENSE);
-			count += 2;
-			continue;
-		}
-
-		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			if (iter->second.getExtension(dir).isAmbiguous()
-					|| iter->first.isPalindrome(dir)) {
-				seqCollection->mark(iter->first, dir);
-				count++;
-			}
-		}
-	}
-	PrintDebug(0, "Marked %u ambiguous branches\n", count);
-	return count;
-}
-
-/** Mark the neighbours of ambiguous vertices.
- * @return the number of branches marked
- */
-static unsigned markAmbiguousNeighbours(ISequenceCollection* g)
-{
-	Timer timer(__func__);
 	unsigned count = 0;
 	for (ISequenceCollection::iterator it = g->begin();
 			it != g->end(); ++it) {
 		if (it->second.deleted())
 			continue;
+
+		if (++progress % 1000000 == 0)
+			PrintDebug(1, "Splitting: %u k-mer\n", progress);
+
+		if (it->first.isPalindrome()) {
+			g->mark(it->first, SENSE);
+			g->mark(it->first, ANTISENSE);
+			count += 2;
+		} else {
+			for (extDirection sense = SENSE;
+					sense <= ANTISENSE; ++sense) {
+				if (it->second.getExtension(sense).isAmbiguous()
+						|| it->first.isPalindrome(sense)) {
+					g->mark(it->first, sense);
+					count++;
+				}
+			}
+		}
 
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
@@ -222,23 +205,14 @@ static unsigned markAmbiguousNeighbours(ISequenceCollection* g)
 						it->second.getExtension(sense), adj);
 				assert(!adj.empty());
 				for (vector<Kmer>::iterator v = adj.begin();
-						v != adj.end(); ++v) {
+						v != adj.end(); ++v)
 					g->mark(*v, !sense);
-					count++;
-				}
 			}
 		}
+
 		g->pumpNetwork();
 	}
-	logger(0) << "Marked " << count << " ambiguous neighbours\n";
-	return count;
-}
-
-/** Mark ambiguous vertices and their neighbours. */
-unsigned markAmbiguous(ISequenceCollection* g)
-{
-	unsigned count = markAmbiguousVertices(g);
-	markAmbiguousNeighbours(g);
+	PrintDebug(0, "Marked %u ambiguous branches\n", count);
 	return count;
 }
 
