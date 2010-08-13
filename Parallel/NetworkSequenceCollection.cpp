@@ -55,7 +55,6 @@ void NetworkSequenceCollection::completeOperation()
 {
 	Timer timer("completeOperation");
 
-	m_comm.flush();
 	while (pumpFlushReduce() > 0)
 		;
 
@@ -289,7 +288,7 @@ unsigned NetworkSequenceCollection::controlErode()
 	}
 
 	SetState(NAS_ERODE_COMPLETE);
-	m_comm.sendControlMessage(APC_SET_STATE, NAS_ERODE_COMPLETE);
+	m_comm.sendControlMessage(APC_ERODE_COMPLETE);
 	completeOperation();
 	numEroded += m_comm.reduce(
 			AssemblyAlgorithms::getNumEroded());
@@ -720,6 +719,11 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 		case APC_TRIM:
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
+			break;
+		case APC_ERODE_COMPLETE:
+			assert(m_state == NAS_ERODE_WAITING);
+			m_comm.flush();
+			SetState(NAS_ERODE_COMPLETE);
 			break;
 		case APC_POPBUBBLE:
 			m_numPopped = controlMsg.argument;			
