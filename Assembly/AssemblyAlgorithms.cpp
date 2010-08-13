@@ -764,17 +764,6 @@ unsigned removeMarked(ISequenceCollection* pSC)
 	return count;
 }
 
-static Sequence processTerminatedBranchAssemble(
-		const BranchRecord& branch)
-{
-	assert(!branch.isActive());
-	assert(branch.getState() != BS_LOOP);
-	assert(branch.getState() == BS_NOEXT
-			|| branch.getState() == BS_AMBI_SAME
-			|| branch.getState() == BS_AMBI_OPP);
-	return branch;
-}
-
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
@@ -782,8 +771,14 @@ unsigned assembleContig(
 		ISequenceCollection* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
+	assert(!branch.isActive());
+	assert(branch.getState() != BS_LOOP);
+	assert(branch.getState() == BS_NOEXT
+			|| branch.getState() == BS_AMBI_SAME
+			|| branch.getState() == BS_AMBI_OPP);
+
 	// Assemble the contig.
-	Sequence contig(processTerminatedBranchAssemble(branch));
+	Sequence contig(branch);
 
 	unsigned kmerCount = branch.calculateBranchMultiplicity();
 	if (writer != NULL)
