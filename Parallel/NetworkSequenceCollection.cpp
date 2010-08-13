@@ -805,14 +805,15 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
+		if (iter->second.deleted())
+			continue;
+
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
 				*iter, dir);
-		if(status == SC_INVALID || status == SC_CONTIGUOUS)
-		{
+		if (status == SC_CONTIGUOUS)
 			continue;
-		}
 		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
@@ -1148,14 +1149,15 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
+		if (iter->second.deleted())
+			continue;
+
 		extDirection dir;
 		// dir will be set to the assembly direction if the sequence can be assembled
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
 				*iter, dir, true);
-		if(status == SC_INVALID || status == SC_CONTIGUOUS)
-		{
+		if (status == SC_CONTIGUOUS)
 			continue;
-		}
 		else if(status == SC_ISLAND)
 		{
 			// Output the singleton contig.

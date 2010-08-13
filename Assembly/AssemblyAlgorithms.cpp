@@ -535,9 +535,11 @@ unsigned getNumEroded()
  */
 unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 {
+	if (seq.second.deleted())
+		return 0;
 	extDirection dir;
 	SeqContiguity contiguity = checkSeqContiguity(seq, dir);
-	if (contiguity == SC_INVALID || contiguity == SC_CONTIGUOUS)
+	if (contiguity == SC_CONTIGUOUS)
 		return 0;
 
 	const KmerData& data = seq.second;
@@ -602,9 +604,7 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 SeqContiguity checkSeqContiguity(const PackedSeq& seq,
 		extDirection& outDir, bool considerMarks)
 {
-	if (seq.second.deleted())
-		return SC_INVALID;
-
+	assert(!seq.second.deleted());
 	bool child = seq.second.hasExtension(SENSE)
 		&& !(considerMarks && seq.second.marked(SENSE));
 	bool parent = seq.second.hasExtension(ANTISENSE)
@@ -642,14 +642,15 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
+		if (iter->second.deleted())
+			continue;
+
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence can be trimmed
 		SeqContiguity status = checkSeqContiguity(*iter, dir);
 
-		if(status == SC_INVALID || status == SC_CONTIGUOUS)
-		{
+		if (status == SC_CONTIGUOUS)
 			continue;
-		}
 		else if(status == SC_ISLAND)
 		{
 			// remove this sequence, it has no extensions
@@ -850,7 +851,6 @@ unsigned assemble(ISequenceCollection* seqCollection,
 
 		extDirection dir;
 		SeqContiguity status = checkSeqContiguity(*iter, dir, true);
-		assert(status != SC_INVALID);
 		if (status == SC_CONTIGUOUS)
 			continue;
 		else if(status == SC_ISLAND)

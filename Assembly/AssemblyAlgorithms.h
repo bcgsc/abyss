@@ -22,7 +22,6 @@ class Histogram;
  **********************************************************/
 enum SeqContiguity
 {
-	SC_INVALID, // sequence has been deleted/seen
 	SC_ISLAND, // sequence is completely isolated
 	SC_ENDPOINT, // one end of the sequence is open 
 	SC_CONTIGUOUS // the sequence is closed on both ends
