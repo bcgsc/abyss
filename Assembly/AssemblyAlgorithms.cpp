@@ -166,6 +166,20 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 	seqCollection->clearExtensions(seq.first, dir);
 }
 
+/** Mark the specified vertex and its neighbours. */
+static void markVertexAndNeighbours(ISequenceCollection* g,
+		const PackedSeq& u, extDirection sense)
+{
+	g->mark(u.first, sense);
+	vector<Kmer> adj;
+	generateSequencesFromExtension(u.first, sense,
+			u.second.getExtension(sense), adj);
+	assert(!adj.empty());
+	for (vector<Kmer>::iterator v = adj.begin();
+			v != adj.end(); ++v)
+		g->mark(*v, !sense);
+}
+
 /** Mark ambiguous branches and branches from palindromes for removal.
  * @return the number of branches marked
  */
@@ -183,30 +197,17 @@ unsigned markAmbiguous(ISequenceCollection* g)
 			PrintDebug(1, "Splitting: %u k-mer\n", progress);
 
 		if (it->first.isPalindrome()) {
-			g->mark(it->first, SENSE);
-			g->mark(it->first, ANTISENSE);
+			markVertexAndNeighbours(g, *it, SENSE);
+			markVertexAndNeighbours(g, *it, ANTISENSE);
 			count += 2;
 		} else {
 			for (extDirection sense = SENSE;
 					sense <= ANTISENSE; ++sense) {
 				if (it->second.getExtension(sense).isAmbiguous()
 						|| it->first.isPalindrome(sense)) {
-					g->mark(it->first, sense);
+					markVertexAndNeighbours(g, *it, sense);
 					count++;
 				}
-			}
-		}
-
-		for (extDirection sense = SENSE;
-				sense <= ANTISENSE; ++sense) {
-			if (it->second.marked(sense)) {
-				vector<Kmer> adj;
-				generateSequencesFromExtension(it->first, sense,
-						it->second.getExtension(sense), adj);
-				assert(!adj.empty());
-				for (vector<Kmer>::iterator v = adj.begin();
-						v != adj.end(); ++v)
-					g->mark(*v, !sense);
 			}
 		}
 
