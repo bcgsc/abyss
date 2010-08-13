@@ -133,13 +133,12 @@ bool SequenceCollectionHash::removeExtensionByIter(
 		return false;
 }
 
-void SequenceCollectionHash::setFlag(const Kmer& key,
-		SeqFlag flag)
+void SequenceCollectionHash::setFlag(const Kmer& key, SeqFlag flag)
 {
 	bool rc;
 	SequenceCollectionHash::iterator it = find(key, rc);
 	assert(it != m_pSequences->end());
-	it->second.setFlag(flag);
+	it->second.setFlag(rc ? complement(flag) : flag);
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)

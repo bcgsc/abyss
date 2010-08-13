@@ -15,23 +15,14 @@
 
 using namespace std;
 
-static void splitAmbiguousEdges(ISequenceCollection* pSC)
-{
-	unsigned marked = AssemblyAlgorithms::markAmbiguous(pSC);
-	unsigned split = AssemblyAlgorithms::splitAmbiguous(pSC);
-	assert(marked == split);
-	(void)marked;
-	(void)split;
-}
-
 static void removeLowCoverageContigs(ISequenceCollection* pSC)
 {
-	splitAmbiguousEdges(pSC);
+	AssemblyAlgorithms::markAmbiguous(pSC);
 
 	cout << "Removing low-coverage contigs "
 			"(mean k-mer coverage < " << opt::coverage << ")\n";
-
 	AssemblyAlgorithms::assemble(pSC);
+	AssemblyAlgorithms::splitAmbiguous(pSC);
 
 	pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	opt::coverage = 0;
@@ -73,10 +64,10 @@ static void assemble(const string& pathIn, const string& pathOut)
 	AssemblyAlgorithms::setCoverageParameters(
 			AssemblyAlgorithms::coverageHistogram(*pSC));
 
-generate_adjacency:
 	cout << "Generating adjacency" << endl;
 	AssemblyAlgorithms::generateAdjacency(pSC);
 
+erode:
 	if (opt::erode > 0) {
 		cout << "Eroding tips" << endl;
 		AssemblyAlgorithms::erodeEnds(pSC);
@@ -86,10 +77,14 @@ generate_adjacency:
 	}
 
 	AssemblyAlgorithms::performTrim(pSC);
+	pSC->cleanup();
+	pSC->printLoad();
 
 	if (opt::coverage > 0) {
 		removeLowCoverageContigs(pSC);
-		goto generate_adjacency;
+		pSC->cleanup();
+		pSC->printLoad();
+		goto erode;
 	}
 
 	if (opt::bubbleLen > 0)
@@ -97,7 +92,7 @@ generate_adjacency:
 
 	write_graph(opt::graphPath, *pSC);
 
-	splitAmbiguousEdges(pSC);
+	AssemblyAlgorithms::markAmbiguous(pSC);
 
 	FastaWriter writer(pathOut.c_str());
 	unsigned nContigs = AssemblyAlgorithms::assemble(pSC, &writer);

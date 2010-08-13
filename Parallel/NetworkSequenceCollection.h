@@ -27,7 +27,9 @@ enum NetworkAssemblyState
 	NAS_COVERAGE_COMPLETE,
 	NAS_DISCOVER_BUBBLES, // discover read errors/SNPs
 	NAS_POPBUBBLE, // remove read errors/SNPs
-	NAS_SPLIT, // split ambiguous branches
+	NAS_MARK_AMBIGUOUS, // mark ambiguous branches
+	NAS_SPLIT_AMBIGUOUS, // split ambiguous branches
+	NAS_CLEAR_FLAGS, // clear the flags
 	NAS_ASSEMBLE, // assembling the data
 	NAS_ASSEMBLE_COMPLETE, // assembling is complete
 	NAS_WAITING, // non-control process is waiting, this just loops over the network function

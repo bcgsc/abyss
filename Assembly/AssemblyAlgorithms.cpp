@@ -169,7 +169,8 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 /** Mark ambiguous branches and branches from palindromes for removal.
  * @return the number of branches marked
  */
-unsigned markAmbiguous(ISequenceCollection* seqCollection)
+static unsigned markAmbiguousVertices(
+		ISequenceCollection* seqCollection)
 {
 	Timer timer(__func__);
 	unsigned progress = 0;
@@ -201,7 +202,47 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection)
 	return count;
 }
 
-/** Remove marked branches.
+/** Mark the neighbours of ambiguous vertices.
+ * @return the number of branches marked
+ */
+static unsigned markAmbiguousNeighbours(ISequenceCollection* g)
+{
+	Timer timer(__func__);
+	unsigned count = 0;
+	for (ISequenceCollection::iterator it = g->begin();
+			it != g->end(); ++it) {
+		if (it->second.deleted())
+			continue;
+
+		for (extDirection sense = SENSE;
+				sense <= ANTISENSE; ++sense) {
+			if (it->second.marked(sense)) {
+				vector<Kmer> adj;
+				generateSequencesFromExtension(it->first, sense,
+						it->second.getExtension(sense), adj);
+				assert(!adj.empty());
+				for (vector<Kmer>::iterator v = adj.begin();
+						v != adj.end(); ++v) {
+					g->mark(*v, !sense);
+					count++;
+				}
+			}
+		}
+		g->pumpNetwork();
+	}
+	logger(0) << "Marked " << count << " ambiguous neighbours\n";
+	return count;
+}
+
+/** Mark ambiguous vertices and their neighbours. */
+unsigned markAmbiguous(ISequenceCollection* g)
+{
+	unsigned count = markAmbiguousVertices(g);
+	markAmbiguousNeighbours(g);
+	return count;
+}
+
+/** Remove the edges of marked and deleted vertices.
  * @return the number of branches removed
  */
 unsigned splitAmbiguous(ISequenceCollection* pSC)
@@ -210,7 +251,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	unsigned count = 0;
 	for (ISequenceCollection::iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
-		if (it->second.deleted())
+		if (!it->second.deleted())
 			continue;
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
@@ -554,15 +595,20 @@ void performTrim(ISequenceCollection* seqCollection, int start)
 	printf("Trimmed %u branches in %u rounds\n", total, rounds);
 }
 
-/** Return the adjacency of this sequence. */
+/** Return the adjacency of this sequence.
+ * @param considerMarks when true, treat a marked vertex as having
+ * no edges
+ */
 SeqContiguity checkSeqContiguity(const PackedSeq& seq,
-		extDirection& outDir)
+		extDirection& outDir, bool considerMarks)
 {
 	if (seq.second.deleted())
 		return SC_INVALID;
 
-	bool child = seq.second.hasExtension(SENSE);
-	bool parent = seq.second.hasExtension(ANTISENSE);
+	bool child = seq.second.hasExtension(SENSE)
+		&& !(considerMarks && seq.second.marked(SENSE));
+	bool parent = seq.second.hasExtension(ANTISENSE)
+		&& !(considerMarks && seq.second.marked(ANTISENSE));
 	if(!child && !parent)
 	{
 		//this sequence is completely isolated
@@ -646,7 +692,25 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 	return numBranchesRemoved;
 }
 
-//
+/** Extend this branch. */
+bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
+{
+	if (!ext.hasExtension()) {
+		branch.terminate(BS_NOEXT);
+		return false;
+	} else if (ext.isAmbiguous()) {
+		branch.terminate(BS_AMBI_SAME);
+		return false;
+	} else {
+		vector<Kmer> adj;
+		generateSequencesFromExtension(kmer, branch.getDirection(),
+				ext, adj);
+		assert(adj.size() == 1);
+		kmer = adj.front();
+		return true;
+	}
+}
+
 // Process the extension for this branch for the trimming algorithm
 // CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence and
 // multiplicity is the number of times that kmer appears in the data set
@@ -683,22 +747,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		return false;
 	}
 
-	if (!extensions.dir[dir].hasExtension()) {
-		// no extenstion
-		branch.terminate(BS_NOEXT);
-		return false;
-	} else if (extensions.dir[dir].isAmbiguous()) {
-		// ambiguous extension
-		branch.terminate(BS_AMBI_SAME);
-		return false;
-	} else {
-		// generate the new current sequence from the extension
-		vector<Kmer> newSeqs;
-		generateSequencesFromExtension(currSeq, dir, extensions.dir[dir], newSeqs);
-		assert(newSeqs.size() == 1);
-		currSeq = newSeqs.front();
-		return true;
-	}
+	return extendBranch(branch, currSeq, extensions.dir[dir]);
 }
 
 /** Trim the specified branch if it meets trimming criteria.
@@ -747,10 +796,10 @@ static Sequence processTerminatedBranchAssemble(
 		const BranchRecord& branch)
 {
 	assert(!branch.isActive());
-	// The only acceptable condition for the termination of an
-	// assembly is a noext or a loop.
+	assert(branch.getState() != BS_LOOP);
 	assert(branch.getState() == BS_NOEXT
-			|| branch.getState() == BS_LOOP);
+			|| branch.getState() == BS_AMBI_SAME
+			|| branch.getState() == BS_AMBI_OPP);
 	return branch;
 }
 
@@ -800,9 +849,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		kmerCount++;
 
 		extDirection dir;
-		// dir will be set to the trimming direction if the sequence can be trimmed
-		SeqContiguity status = checkSeqContiguity(*iter, dir);
-
+		SeqContiguity status = checkSeqContiguity(*iter, dir, true);
 		assert(status != SC_INVALID);
 		if (status == SC_CONTIGUOUS)
 			continue;
@@ -823,11 +870,12 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		}
 		assert(status == SC_ENDPOINT);
 
-		// The sequence is an endpoint, begin extending it
-		// Passing -1 into the branch will disable the length check
 		BranchRecord currBranch(dir, -1);
-
+		currBranch.addSequence(*iter);
 		Kmer currSeq = iter->first;
+		extendBranch(currBranch, currSeq,
+				iter->second.getExtension(dir));
+		assert(currBranch.isActive());
 		while(currBranch.isActive())
 		{		
 			// Get the extensions for this sequence, this function populates the extRecord structure

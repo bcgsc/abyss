@@ -162,7 +162,8 @@ void NetworkSequenceCollection::run()
 
 			case NAS_COVERAGE:
 			{
-				m_comm.barrier();
+				m_comm.reduce(m_pLocalSpace->cleanup());
+				m_pLocalSpace->printLoad();
 				m_lowCoverageContigs = 0;
 				m_lowCoverageKmer = 0;
 				numAssembled = performNetworkAssembly(this);
@@ -174,13 +175,10 @@ void NetworkSequenceCollection::run()
 			case NAS_COVERAGE_COMPLETE:
 				m_comm.barrier();
 				pumpNetwork();
-				m_pLocalSpace->wipeFlag(
-						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 				m_comm.reduce(numAssembled.first);
 				m_comm.reduce(numAssembled.second);
 				m_comm.reduce(m_lowCoverageContigs);
 				m_comm.reduce(m_lowCoverageKmer);
-				m_comm.reduce(m_pLocalSpace->cleanup());
 				opt::coverage = 0;
 				EndState();
 				SetState(NAS_WAITING);
@@ -206,15 +204,21 @@ void NetworkSequenceCollection::run()
 				m_comm.sendCheckPointMessage(numPopped);
 				break;
 			}
-			case NAS_SPLIT:
+			case NAS_MARK_AMBIGUOUS:
 			{
 				m_comm.barrier();
 				assert(m_comm.receiveEmpty());
-				m_comm.reduce(
-						AssemblyAlgorithms::markAmbiguous(this));
-				assert(m_comm.transmitBufferEmpty());
-				assert(m_comm.receiveEmpty());
+				unsigned count
+					= AssemblyAlgorithms::markAmbiguous(this);
+				EndState();
+				SetState(NAS_WAITING);
+				m_comm.sendCheckPointMessage(count);
+				break;
+			}
+			case NAS_SPLIT_AMBIGUOUS:
+			{
 				m_comm.barrier();
+				assert(m_comm.receiveEmpty());
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
@@ -222,9 +226,19 @@ void NetworkSequenceCollection::run()
 				m_comm.sendCheckPointMessage(count);
 				break;
 			}
+			case NAS_CLEAR_FLAGS:
+				m_comm.barrier();
+				assert(m_comm.receiveEmpty());
+				m_pLocalSpace->wipeFlag(
+						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+				m_comm.reduce(m_pLocalSpace->cleanup());
+				EndState();
+				SetState(NAS_WAITING);
+				break;
 			case NAS_ASSEMBLE:
 			{
 				m_comm.barrier();
+				assert(m_comm.receiveEmpty());
 				FastaWriter writer(opt::contigsTempPath.c_str());
 				numAssembled = performNetworkAssembly(this, &writer);
 				EndState();
@@ -358,15 +372,16 @@ void NetworkSequenceCollection::controlCoverage()
 	assert(opt::coverage > 0);
 
 	// Split ambiguous branches.
-	SetState(NAS_SPLIT);
-	controlSplit();
+	SetState(NAS_MARK_AMBIGUOUS);
+	controlMarkAmbiguous();
 
 	// Remove low-coverage contigs.
 	printf("Removing low-coverage contigs "
 			"(mean k-mer coverage < %f)\n", opt::coverage);
 	SetState(NAS_COVERAGE);
 	m_comm.sendControlMessage(APC_COVERAGE);
-	m_comm.barrier();
+	m_comm.reduce(m_pLocalSpace->cleanup());
+	m_pLocalSpace->printLoad();
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
 	pair<unsigned, unsigned> numAssembled
@@ -382,8 +397,6 @@ void NetworkSequenceCollection::controlCoverage()
 	m_comm.sendControlMessage(APC_COVERAGE_COMPLETE);
 	m_comm.barrier();
 	pumpNetwork();
-	m_pLocalSpace->wipeFlag(
-			SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 
 	numAssembled.first = m_comm.reduce(numAssembled.first);
 	numAssembled.second = m_comm.reduce(numAssembled.second);
@@ -393,12 +406,24 @@ void NetworkSequenceCollection::controlCoverage()
 
 	unsigned lowCoverageContigs = m_comm.reduce(m_lowCoverageContigs);
 	unsigned lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
-	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
 	printf("Removed %u k-mer in %u low-coverage contigs\n",
 			lowCoverageKmer, lowCoverageContigs);
-	printf("Removed %u marked k-mer\n", removed);
-	opt::coverage = 0;
 	EndState();
+
+	SetState(NAS_SPLIT_AMBIGUOUS);
+	controlSplitAmbiguous();
+
+	SetState(NAS_CLEAR_FLAGS);
+	m_comm.sendControlMessage(APC_CLEAR_FLAGS);
+	m_comm.barrier();
+	assert(m_comm.receiveEmpty());
+	m_pLocalSpace->wipeFlag(
+			SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
+	printf("Removed %u marked k-mer\n", removed);
+	EndState();
+
+	opt::coverage = 0;
 }
 
 /** Run the assembly state machine for the controller (rank = 0). */
@@ -475,6 +500,8 @@ void NetworkSequenceCollection::runControl()
 			case NAS_ERODE_WAITING:
 			case NAS_ERODE_COMPLETE:
 			case NAS_COVERAGE_COMPLETE:
+			case NAS_SPLIT_AMBIGUOUS:
+			case NAS_CLEAR_FLAGS:
 			case NAS_DISCOVER_BUBBLES:
 			case NAS_ASSEMBLE_COMPLETE:
 			case NAS_WAITING:
@@ -486,12 +513,12 @@ void NetworkSequenceCollection::runControl()
 				controlTrim();
 				SetState(opt::coverage > 0 ? NAS_COVERAGE
 						: opt::bubbleLen > 0 ? NAS_POPBUBBLE
-						: NAS_SPLIT);
+						: NAS_MARK_AMBIGUOUS);
 				break;
 
 			case NAS_COVERAGE:
 				controlCoverage();
-				SetState(NAS_GEN_ADJ);
+				SetState(NAS_ERODE);
 				break;
 
 			case NAS_POPBUBBLE:
@@ -507,11 +534,11 @@ void NetworkSequenceCollection::runControl()
 				out.close();
 				printf("Removed %u bubbles\n", numPopped);
 
-				SetState(NAS_SPLIT);
+				SetState(NAS_MARK_AMBIGUOUS);
 				break;
 			}
-			case NAS_SPLIT:
-				controlSplit();
+			case NAS_MARK_AMBIGUOUS:
+				controlMarkAmbiguous();
 				SetState(NAS_ASSEMBLE);
 				break;
 			case NAS_ASSEMBLE:
@@ -519,6 +546,7 @@ void NetworkSequenceCollection::runControl()
 				puts("Assembling");
 				m_comm.sendControlMessage(APC_ASSEMBLE);
 				m_comm.barrier();
+				assert(m_comm.receiveEmpty());
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
 				pair<unsigned, unsigned> numAssembled
@@ -716,9 +744,15 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			m_numPopped = controlMsg.argument;			
 			SetState(NAS_POPBUBBLE);
 			break;	
-		case APC_SPLIT:
-			SetState(NAS_SPLIT);
-			break;	
+		case APC_MARK_AMBIGUOUS:
+			SetState(NAS_MARK_AMBIGUOUS);
+			break;
+		case APC_SPLIT_AMBIGUOUS:
+			SetState(NAS_SPLIT_AMBIGUOUS);
+			break;
+		case APC_CLEAR_FLAGS:
+			SetState(NAS_CLEAR_FLAGS);
+			break;
 		case APC_ASSEMBLE:
 			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
@@ -1046,20 +1080,26 @@ int NetworkSequenceCollection::controlPopBubbles(ostream& out)
 unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 {
 	puts("Marking ambiguous branches");
-	assert(m_comm.receiveEmpty());
-	unsigned count = m_comm.reduce(
-			AssemblyAlgorithms::markAmbiguous(this));
-	assert(m_comm.transmitBufferEmpty());
-	assert(m_comm.receiveEmpty());
+	m_comm.sendControlMessage(APC_MARK_AMBIGUOUS);
 	m_comm.barrier();
-	printf("Marked %u ambiguous branches\n", count);
-	return count;
+	assert(m_comm.receiveEmpty());
+	unsigned count = AssemblyAlgorithms::markAmbiguous(this);
+	m_checkpointSum += count;
+	EndState();
+	m_numReachedCheckpoint++;
+	while (!checkpointReached())
+		pumpNetwork();
+	printf("Marked %u ambiguous branches\n", m_checkpointSum);
+	return m_checkpointSum;
 }
 
 /** Remove ambiguous branches. */
 unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 {
 	puts("Splitting ambiguous branches");
+	m_comm.sendControlMessage(APC_SPLIT_AMBIGUOUS);
+	m_comm.barrier();
+	assert(m_comm.receiveEmpty());
 	unsigned count = AssemblyAlgorithms::splitAmbiguous(this);
 	m_checkpointSum += count;
 	EndState();
@@ -1069,18 +1109,6 @@ unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 	printf("Split %u ambiguous branches\n",
 			m_checkpointSum);
 	return m_checkpointSum;
-}
-
-/** Split ambiguous edges. */
-unsigned NetworkSequenceCollection::controlSplit()
-{
-	m_comm.sendControlMessage(APC_SPLIT);
-	m_comm.barrier();
-	unsigned marked = controlMarkAmbiguous();
-	unsigned split = controlSplitAmbiguous();
-	assert(marked == split);
-	(void)marked;
-	return split;
 }
 
 /** Assemble a contig. */
@@ -1123,7 +1151,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		extDirection dir;
 		// dir will be set to the assembly direction if the sequence can be assembled
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
-				*iter, dir);
+				*iter, dir, true);
 		if(status == SC_INVALID || status == SC_CONTIGUOUS)
 		{
 			continue;
@@ -1143,15 +1171,19 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 
 		BranchGroup group(dir, 1, iter->first);
 		group.addBranch(BranchRecord(dir, -1));
-		bool inserted = m_activeBranchGroups.insert(
-				BranchGroupMap::value_type(branchGroupID, group))
-			.second;
-		assert(inserted);
-		(void)inserted;
+		pair<BranchGroupMap::iterator, bool>
+			inserted = m_activeBranchGroups.insert(
+				BranchGroupMap::value_type(branchGroupID, group));
+		assert(inserted.second);
 
 		// Generate the first extension request
-		generateExtensionRequest(branchGroupID, 0, iter->first);
-		branchGroupID++;
+		BranchRecord& branch = inserted.first->second[0];
+		branch.addSequence(*iter);
+		Kmer kmer = iter->first;
+		AssemblyAlgorithms::extendBranch(branch,
+				kmer, iter->second.getExtension(dir));
+		assert(branch.isActive());
+		generateExtensionRequest(branchGroupID++, 0, kmer);
 
 		numAssembled += processBranchesAssembly(seqCollection,
 				fileWriter, numAssembled.first);
@@ -1202,7 +1234,9 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 		if (!it->second.isActive()) {
 			assert(it->second.size() == 1);
 			BranchRecord& branch = it->second[0];
-			assert(branch.getState() == BS_NOEXT);
+			assert(branch.getState() == BS_NOEXT
+					|| branch.getState() == BS_AMBI_SAME
+					|| branch.getState() == BS_AMBI_OPP);
 			if (branch.isCanonical()) {
 				assembledContigs++;
 				assembledKmer += branch.getLength();

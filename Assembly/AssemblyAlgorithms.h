@@ -62,10 +62,12 @@ unsigned removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
 SeqContiguity checkSeqContiguity(const PackedSeq& seq,
-		extDirection& outDir);
+		extDirection& outDir, bool considerMarks = false);
 
 // process a terminated branch for trimming
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
+
+bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
 
 // Process the extensions of the current sequence for trimming
 bool processLinearExtensionForBranch(BranchRecord& branch,

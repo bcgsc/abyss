@@ -118,7 +118,6 @@ BranchRecord::operator Sequence() const
  */
 bool BranchRecord::isCanonical() const
 {
-	assert(getState() == BS_NOEXT || getState() == BS_LOOP);
 	assert(getLength() > 1);
 	Kmer first = getFirstSeq();
 	Kmer last = getLastSeq();

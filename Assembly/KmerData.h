@@ -13,6 +13,18 @@ enum SeqFlag
 	SF_DELETE = 0x4,
 };
 
+static inline SeqFlag complement(SeqFlag flag)
+{
+	unsigned out = 0;
+	if (flag & SF_MARK_SENSE)
+		out |= SF_MARK_ANTISENSE;
+	if (flag & SF_MARK_ANTISENSE)
+		out |= SF_MARK_SENSE;
+	if (flag & SF_DELETE)
+		out |= SF_DELETE;
+	return SeqFlag(out);
+}
+
 struct ExtensionRecord
 {
 	SeqExt dir[2];
@@ -77,10 +89,16 @@ class KmerData
 	bool deleted() const { return isFlagSet(SF_DELETE); }
 
 	/** Return true if the specified sequence is marked. */
-	bool marked(extDirection sense = SENSE) const
+	bool marked(extDirection sense) const
 	{
 		return isFlagSet(sense == SENSE
 				? SF_MARK_SENSE : SF_MARK_ANTISENSE);
+	}
+
+	/** Return true if the specified sequence is marked. */
+	bool marked() const
+	{
+		return isFlagSet(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	}
 
 	ExtensionRecord extension() const { return m_ext; }
