@@ -166,8 +166,10 @@ static void removeExtensions(ISequenceCollection* seqCollection,
 	seqCollection->clearExtensions(seq.first, dir);
 }
 
-/** Mark the specified vertex and its neighbours. */
-static void markVertexAndNeighbours(ISequenceCollection* g,
+/** Mark the specified vertex and its neighbours.
+ * @return the number of marked edges
+ */
+static unsigned markVertexAndNeighbours(ISequenceCollection* g,
 		const PackedSeq& u, extDirection sense)
 {
 	g->mark(u.first, sense);
@@ -178,6 +180,7 @@ static void markVertexAndNeighbours(ISequenceCollection* g,
 	for (vector<Kmer>::iterator v = adj.begin();
 			v != adj.end(); ++v)
 		g->mark(*v, !sense);
+	return adj.size();
 }
 
 /** Mark ambiguous branches and branches from palindromes for removal.
@@ -187,7 +190,7 @@ unsigned markAmbiguous(ISequenceCollection* g)
 {
 	Timer timer(__func__);
 	unsigned progress = 0;
-	unsigned count = 0;
+	unsigned countv = 0, counte = 0;
 	for (ISequenceCollection::iterator it = g->begin();
 			it != g->end(); ++it) {
 		if (it->second.deleted())
@@ -197,24 +200,25 @@ unsigned markAmbiguous(ISequenceCollection* g)
 			PrintDebug(1, "Splitting: %u k-mer\n", progress);
 
 		if (it->first.isPalindrome()) {
-			markVertexAndNeighbours(g, *it, SENSE);
-			markVertexAndNeighbours(g, *it, ANTISENSE);
-			count += 2;
+			countv += 2;
+			counte += markVertexAndNeighbours(g, *it, SENSE);
+			counte += markVertexAndNeighbours(g, *it, ANTISENSE);
 		} else {
 			for (extDirection sense = SENSE;
 					sense <= ANTISENSE; ++sense) {
 				if (it->second.getExtension(sense).isAmbiguous()
 						|| it->first.isPalindrome(sense)) {
-					markVertexAndNeighbours(g, *it, sense);
-					count++;
+					countv++;
+					counte += markVertexAndNeighbours(g, *it, sense);
 				}
 			}
 		}
 
 		g->pumpNetwork();
 	}
-	PrintDebug(0, "Marked %u ambiguous branches\n", count);
-	return count;
+	logger(0) << "Marked " << counte << " edges of " << countv
+		<< " ambiguous vertices." << endl;
+	return countv;
 }
 
 /** Remove the edges of marked and deleted vertices.
