@@ -158,14 +158,6 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 		PrintDebug(0, "Generated %u edges\n", numBasesSet);
 }
 
-/** Remove all the extensions both from and to this sequence. */
-static void removeExtensions(ISequenceCollection* seqCollection,
-		const PackedSeq& seq, extDirection dir)
-{
-	removeExtensionsToSequence(seqCollection, seq, dir);
-	seqCollection->clearExtensions(seq.first, dir);
-}
-
 /** Mark the specified vertex and its neighbours.
  * @return the number of marked edges
  */
@@ -235,7 +227,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 		for (extDirection sense = SENSE;
 				sense <= ANTISENSE; ++sense) {
 			if (it->second.marked(sense)) {
-				removeExtensions(pSC, *it, sense);
+				removeExtensionsToSequence(pSC, *it, sense);
 				count++;
 			}
 		}
