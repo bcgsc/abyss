@@ -43,13 +43,13 @@ void BranchRecord::clearMultiplicity()
 	m_seqMap.clear();
 }
 
-//
-// Check if a sequence exists in the branch record
-//
-bool BranchRecord::exists(const Kmer& seq) const
+/** Return true if either of the last two k-mer of this branch is the
+ * specified kmer. */
+bool BranchRecord::exists(const Kmer& kmer) const
 {
-	assert(!m_seqMap.empty());
-	return m_seqMap.find(seq) != m_seqMap.end();
+	assert(!m_data.empty());
+	return m_data.back().first == kmer
+		|| (m_data.size() > 1 && (m_data.end()-1)->first == kmer);
 }
 
 /** Check if the branch is too long. */
