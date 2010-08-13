@@ -24,7 +24,6 @@ static void removeLowCoverageContigs(ISequenceCollection* pSC)
 	AssemblyAlgorithms::assemble(pSC);
 	AssemblyAlgorithms::splitAmbiguous(pSC);
 
-	pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	opt::coverage = 0;
 }
 
@@ -82,6 +81,7 @@ erode:
 
 	if (opt::coverage > 0) {
 		removeLowCoverageContigs(pSC);
+		pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 		pSC->cleanup();
 		pSC->printLoad();
 		goto erode;

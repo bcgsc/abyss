@@ -69,7 +69,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void add(const Kmer& seq);
 		void remove(const Kmer& seq);
 		void setFlag(const Kmer& seq, SeqFlag flag);
-		void wipeFlag(SeqFlag flag);
 
 		// Return the number of sequences in the collection
 		size_t count() const;

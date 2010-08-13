@@ -1439,11 +1439,6 @@ bool NetworkSequenceCollection::getSeqData(const Kmer& seq,
 	return m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
 }
 
-void NetworkSequenceCollection::wipeFlag(SeqFlag flag)
-{
-	m_pLocalSpace->wipeFlag(flag);
-}
-
 /** Return whether this sequence belongs to this process. */
 bool NetworkSequenceCollection::isLocal(const Kmer& seq) const
 {

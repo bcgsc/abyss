@@ -41,9 +41,6 @@ class ISequenceCollection
 
 		virtual void printLoad() const = 0;
 
-		// Clear the specified flag from every sequence in the collection
-		virtual void wipeFlag(SeqFlag flag) = 0;
-
 		virtual void removeExtension(const Kmer& seq,
 				extDirection dir, SeqExt ext) = 0;
 
