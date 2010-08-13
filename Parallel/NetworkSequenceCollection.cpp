@@ -264,7 +264,7 @@ void NetworkSequenceCollection::run()
 unsigned NetworkSequenceCollection::controlErode()
 {
 	SetState(NAS_ERODE);
-	m_comm.sendControlMessage(APC_ERODE);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_ERODE);
 	m_comm.barrier();
 	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
@@ -312,7 +312,7 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 	if (opt::verbose > 0)
 		puts("Sweeping");
 	SetState(NAS_REMOVE_MARKED);
-	m_comm.sendControlMessage(APC_REMOVE_MARKED);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_REMOVE_MARKED);
 	m_comm.barrier();
 	unsigned count = AssemblyAlgorithms::removeMarked(this);
 	m_checkpointSum += count;
@@ -379,7 +379,7 @@ void NetworkSequenceCollection::controlCoverage()
 	printf("Removing low-coverage contigs "
 			"(mean k-mer coverage < %f)\n", opt::coverage);
 	SetState(NAS_COVERAGE);
-	m_comm.sendControlMessage(APC_COVERAGE);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_COVERAGE);
 	m_comm.reduce(m_pLocalSpace->cleanup());
 	m_pLocalSpace->printLoad();
 	m_lowCoverageContigs = 0;
@@ -394,7 +394,7 @@ void NetworkSequenceCollection::controlCoverage()
 
 	// Count the number of low-coverage contigs.
 	SetState(NAS_COVERAGE_COMPLETE);
-	m_comm.sendControlMessage(APC_COVERAGE_COMPLETE);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_COVERAGE_COMPLETE);
 	m_comm.barrier();
 	pumpNetwork();
 
@@ -414,7 +414,7 @@ void NetworkSequenceCollection::controlCoverage()
 	controlSplitAmbiguous();
 
 	SetState(NAS_CLEAR_FLAGS);
-	m_comm.sendControlMessage(APC_CLEAR_FLAGS);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_CLEAR_FLAGS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
 	m_pLocalSpace->wipeFlag(
@@ -443,7 +443,8 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_LOAD_COMPLETE);
-				m_comm.sendControlMessage(APC_LOAD_COMPLETE);
+				m_comm.sendControlMessage(APC_SET_STATE,
+						NAS_LOAD_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n",
@@ -464,7 +465,7 @@ void NetworkSequenceCollection::runControl()
 			}
 			case NAS_GEN_ADJ:
 				puts("Generating adjacency");
-				m_comm.sendControlMessage(APC_GEN_ADJ);
+				m_comm.sendControlMessage(APC_SET_STATE, NAS_GEN_ADJ);
 				m_comm.barrier();
 				m_numBasesAdjSet = 0;
 				AssemblyAlgorithms::generateAdjacency(this);
@@ -475,7 +476,8 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_ADJ_COMPLETE);
-				m_comm.sendControlMessage(APC_ADJ_COMPLETE);
+				m_comm.sendControlMessage(APC_SET_STATE,
+						NAS_ADJ_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Generated %u edges\n",
@@ -559,7 +561,8 @@ void NetworkSequenceCollection::runControl()
 					pumpNetwork();
 
 				SetState(NAS_ASSEMBLE_COMPLETE);
-				m_comm.sendControlMessage(APC_ASSEMBLE_COMPLETE);
+				m_comm.sendControlMessage(APC_SET_STATE,
+						NAS_ASSEMBLE_COMPLETE);
 
 				numAssembled.first = m_comm.reduce(
 						numAssembled.first);
@@ -691,16 +694,13 @@ void NetworkSequenceCollection::handle(
 	notify(message.m_seq);
 }
 
-//
-//
-//
 void NetworkSequenceCollection::parseControlMessage(int source)
 {
 	ControlMessage controlMsg = m_comm.receiveControlMessage();
 	switch(controlMsg.msgType)
 	{
-		case APC_LOAD_COMPLETE:
-			SetState(NAS_LOAD_COMPLETE);
+		case APC_SET_STATE:
+			SetState(NetworkAssemblyState(controlMsg.argument));
 			break;
 		case APC_CHECKPOINT:
 			PrintDebug(4, "checkpoint from %u: %u\n",
@@ -720,51 +720,18 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			m_trimStep = controlMsg.argument;
 			SetState(NAS_TRIM);
 			break;
-		case APC_REMOVE_MARKED:
-			SetState(NAS_REMOVE_MARKED);
-			break;
-		case APC_ERODE:
-			SetState(NAS_ERODE);
-			break;
 		case APC_ERODE_COMPLETE:
 			assert(m_state == NAS_ERODE_WAITING);
 			EndState();
 			SetState(NAS_ERODE_COMPLETE);
 			break;
-		case APC_COVERAGE:
-			SetState(NAS_COVERAGE);
-			break;
-		case APC_COVERAGE_COMPLETE:
-			SetState(NAS_COVERAGE_COMPLETE);
-			break;
-		case APC_DISCOVER_BUBBLES:
-			SetState(NAS_DISCOVER_BUBBLES);
-			break;
 		case APC_POPBUBBLE:
 			m_numPopped = controlMsg.argument;			
 			SetState(NAS_POPBUBBLE);
 			break;	
-		case APC_MARK_AMBIGUOUS:
-			SetState(NAS_MARK_AMBIGUOUS);
-			break;
-		case APC_SPLIT_AMBIGUOUS:
-			SetState(NAS_SPLIT_AMBIGUOUS);
-			break;
-		case APC_CLEAR_FLAGS:
-			SetState(NAS_CLEAR_FLAGS);
-			break;
 		case APC_ASSEMBLE:
 			m_numAssembled = controlMsg.argument;			
 			SetState(NAS_ASSEMBLE);
-			break;
-		case APC_ASSEMBLE_COMPLETE:
-			SetState(NAS_ASSEMBLE_COMPLETE);
-			break;
-		case APC_GEN_ADJ:
-			SetState(NAS_GEN_ADJ);
-			break;	
-		case APC_ADJ_COMPLETE:
-			SetState(NAS_ADJ_COMPLETE);
 			break;
 	}
 }
@@ -1034,7 +1001,7 @@ bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 {
 	SetState(NAS_DISCOVER_BUBBLES);
-	m_comm.sendControlMessage(APC_DISCOVER_BUBBLES);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_DISCOVER_BUBBLES);
 
 	unsigned numDiscovered = performNetworkDiscoverBubbles(this);
 	EndState();
@@ -1080,7 +1047,7 @@ int NetworkSequenceCollection::controlPopBubbles(ostream& out)
 unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 {
 	puts("Marking ambiguous branches");
-	m_comm.sendControlMessage(APC_MARK_AMBIGUOUS);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_MARK_AMBIGUOUS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
 	unsigned count = AssemblyAlgorithms::markAmbiguous(this);
@@ -1097,7 +1064,7 @@ unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 {
 	puts("Splitting ambiguous branches");
-	m_comm.sendControlMessage(APC_SPLIT_AMBIGUOUS);
+	m_comm.sendControlMessage(APC_SET_STATE, NAS_SPLIT_AMBIGUOUS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
 	unsigned count = AssemblyAlgorithms::splitAmbiguous(this);
