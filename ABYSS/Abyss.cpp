@@ -72,18 +72,15 @@ erode:
 		AssemblyAlgorithms::erodeEnds(pSC);
 		assert(AssemblyAlgorithms::erodeEnds(pSC) == 0);
 		pSC->cleanup();
-		pSC->printLoad();
 	}
 
 	AssemblyAlgorithms::performTrim(pSC);
 	pSC->cleanup();
-	pSC->printLoad();
 
 	if (opt::coverage > 0) {
 		removeLowCoverageContigs(pSC);
 		pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 		pSC->cleanup();
-		pSC->printLoad();
 		goto erode;
 	}
 

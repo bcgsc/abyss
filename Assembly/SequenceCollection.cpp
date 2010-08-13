@@ -80,6 +80,7 @@ unsigned SequenceCollectionHash::cleanup()
 		} else
 			++it;
 	}
+	printLoad();
 	return count;
 }
 

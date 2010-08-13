@@ -135,7 +135,6 @@ void NetworkSequenceCollection::run()
 				m_comm.reduce(AssemblyAlgorithms::getNumEroded());
 
 				m_comm.reduce(m_pLocalSpace->cleanup());
-				m_pLocalSpace->printLoad();
 				m_comm.barrier();
 
 				SetState(NAS_WAITING);
@@ -163,7 +162,6 @@ void NetworkSequenceCollection::run()
 			case NAS_COVERAGE:
 			{
 				m_comm.reduce(m_pLocalSpace->cleanup());
-				m_pLocalSpace->printLoad();
 				m_lowCoverageContigs = 0;
 				m_lowCoverageKmer = 0;
 				numAssembled = performNetworkAssembly(this);
@@ -295,7 +293,6 @@ unsigned NetworkSequenceCollection::controlErode()
 	printf("Eroded %u tips\n", numEroded);
 
 	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
-	m_pLocalSpace->printLoad();
 	m_comm.barrier();
 	assert(removed == numEroded);
 	(void)removed;
@@ -381,7 +378,6 @@ void NetworkSequenceCollection::controlCoverage()
 	SetState(NAS_COVERAGE);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_COVERAGE);
 	m_comm.reduce(m_pLocalSpace->cleanup());
-	m_pLocalSpace->printLoad();
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
 	pair<unsigned, unsigned> numAssembled
