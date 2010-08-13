@@ -55,7 +55,9 @@ void SequenceCollectionHash::add(const Kmer& seq)
 		if (m_pSequences->size() == 0) {
 			/* sparse_hash_set requires that set_deleted_key()
 			 * is called before calling erase(). */
-			m_pSequences->set_deleted_key(reverseComplement(seq));
+			Kmer rc(reverseComplement(seq));
+			assert(rc != seq);
+			m_pSequences->set_deleted_key(rc);
 		}
 #endif
 		m_pSequences->insert(make_pair(seq, KmerData()));
