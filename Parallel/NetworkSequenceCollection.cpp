@@ -816,8 +816,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 			continue;
 		else if(status == SC_ISLAND)
 		{
-			// remove this sequence, it has no extensions
-			AssemblyAlgorithms::removeSequenceAndExtensions(seqCollection, *iter);
+			seqCollection->mark(iter->first);
 			numBranchesRemoved++;
 			continue;
 		}
