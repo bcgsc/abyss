@@ -1,7 +1,8 @@
 #ifndef BRANCHRECORD_H
 #define BRANCHRECORD_H 1
 
-#include "PackedSeq.h"
+#include "Kmer.h"
+#include "KmerData.h"
 #include <utility>
 #include <vector>
 
@@ -17,7 +18,8 @@ enum BranchState
 class BranchRecord
 {
 	public:
-		typedef std::vector<PackedSeq> BranchData;
+		typedef std::pair<Kmer, KmerData> value_type;
+		typedef std::vector<value_type> BranchData;
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 
@@ -31,7 +33,7 @@ class BranchRecord
 		operator Sequence() const;
 
 		/** Add a k-mer and its data to this branch. */
-		void addSequence(const PackedSeq& kmer)
+		void addSequence(const value_type& kmer)
 		{
 			m_data.push_back(kmer);
 		}
@@ -76,8 +78,12 @@ class BranchRecord
 			return m_data.back().first;
 		}
 
-		// Set the data of a sequence in the branch.
-		void setData(const PackedSeq& seq);
+		/** Set the properties of the last element. */
+		void setData(const value_type& o)
+		{
+			assert(m_data.back().first == o.first);
+			m_data.back().second = o.second;
+		}
 
 		iterator begin() { return m_data.begin(); }
 		iterator end() { return m_data.end(); }

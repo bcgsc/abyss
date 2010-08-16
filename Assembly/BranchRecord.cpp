@@ -3,13 +3,6 @@
 
 using namespace std;
 
-/** Set the extensions and multiplicity of a sequence. */
-void BranchRecord::setData(const PackedSeq& seqData)
-{
-	assert(m_data.back().first == seqData.first);
-	m_data.back().second = seqData.second;
-}
-
 /** Return true if any of the last three k-mer of this branch is the
  * specified kmer. */
 bool BranchRecord::exists(const Kmer& kmer) const
