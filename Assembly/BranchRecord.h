@@ -41,9 +41,12 @@ class BranchRecord
 			addSequence(std::make_pair(kmer, KmerData()));
 		}
 
-		// Remove all the sequences including and following the
-		// specified iterator.
-		void truncate(iterator position);
+		/** Remove the last k-mer. */
+		void pop_back()
+		{
+			assert(!m_data.empty());
+			m_data.pop_back();
+		}
 
 		/** Terminate this branch with the specified reason. */
 		void terminate(BranchState reason)

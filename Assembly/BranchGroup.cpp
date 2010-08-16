@@ -55,7 +55,7 @@ void BranchGroup::sortByCoverage()
 		branch.calculateBranchMultiplicity(true);
 
 		// Remove the last base, which is identical for every branch.
-		branch.truncate(branch.end() - 1);
+		branch.pop_back();
 	}
 
 	// Sort by coverage.

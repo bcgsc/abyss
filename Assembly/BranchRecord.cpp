@@ -3,19 +3,6 @@
 
 using namespace std;
 
-/**
- * Remove all the sequences including and following the specified
- * iterator.
- */
-void BranchRecord::truncate(BranchRecord::iterator position)
-{
-	ssize_t size = position - m_data.begin();
-	assert(size >= 0);
-	assert((size_t)size < m_data.size());
-	(void)size;
-	m_data.erase(position);
-}
-
 /** Set the extensions and multiplicity of a sequence. */
 void BranchRecord::setData(const PackedSeq& seqData)
 {
