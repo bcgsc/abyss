@@ -99,7 +99,7 @@ class BranchRecord
 		bool isTooLong() const;
 
 		// Calculate the total multiplicity for this branch.
-		int calculateBranchMultiplicity(bool ignorelast = false);
+		int calculateBranchMultiplicity();
 
 		// Return the precalculated multiplicity for this branch.
 		int getBranchMultiplicity() const

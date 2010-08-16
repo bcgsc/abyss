@@ -51,11 +51,9 @@ void BranchGroup::sortByCoverage()
 	// Sum up the coverage for each branch.
 	for (BranchGroupData::iterator it = m_branches.begin();
 			it != m_branches.end(); ++it) {
-		BranchRecord& branch = *it;
-		branch.calculateBranchMultiplicity(true);
-
 		// Remove the last base, which is identical for every branch.
-		branch.pop_back();
+		it->pop_back();
+		it->calculateBranchMultiplicity();
 	}
 
 	// Sort by coverage.

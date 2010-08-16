@@ -27,28 +27,15 @@ bool BranchRecord::isTooLong() const
 	return m_maxLength > -1 && getLength() > getMaxLength();
 }
 
-// Calculate the total multiplicity of this branch. The result is
-// saved so that it may be fetched using getBranchMultiplicity after
-// the multiplicity of each individual sequence has been forgotten.
-// ignoreLast - this flag will be set when determining the branch 
-// multiplicity for bubble removal. Since the multiplicity record
-// lags behind the extension in a branch group, the last sequence
-// will not have its multiplicity set when the branches join back together
-// since that sequence is in all branches by definition it will not
-// contribute any information to choosing a particular branch
-// so it can be safely ignored
-//
-int BranchRecord::calculateBranchMultiplicity(bool ignoreLast)
+/** Calculate the total multiplicity of this branch. The result is
+ * cached and may be fetched using getBranchMultiplicity. */
+int BranchRecord::calculateBranchMultiplicity()
 {
 	assert(!m_data.empty());
-	BranchData::const_iterator endSeq = m_data.end();
-	if(ignoreLast)
-		endSeq--;
-
 	int total = 0;
-	for(BranchData::const_iterator iter = m_data.begin(); iter != endSeq; ++iter)
-	{
-		int m = iter->second.getMultiplicity();
+	for (BranchData::const_iterator it = m_data.begin();
+			it != m_data.end(); ++it) {
+		int m = it->second.getMultiplicity();
 		assert(m > 0);
 		total += m;
 	}
