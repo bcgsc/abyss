@@ -17,7 +17,7 @@ bool BranchRecord::exists(const Kmer& kmer) const
 bool BranchRecord::isTooLong() const
 {
 	// If the maxLength == -1, no length check should be performed.
-	return m_maxLength > -1 && getLength() > getMaxLength();
+	return m_maxLength > -1 && size() > getMaxLength();
 }
 
 /** Calculate the total multiplicity of this branch. The result is
@@ -66,9 +66,9 @@ BranchRecord::operator Sequence() const
  */
 bool BranchRecord::isCanonical() const
 {
-	assert(getLength() > 1);
-	Kmer first = getFirstSeq();
-	Kmer last = getLastSeq();
+	assert(size() > 1);
+	Kmer first = front().first;
+	Kmer last = back().first;
 	if (getDirection() == SENSE)
 		last.reverseComplement();
 	else

@@ -59,7 +59,7 @@ class BranchGroup
 				const Kmer& kmer)
 		{
 			if (m_branches.size() < m_maxNumBranches)
-				addBranch(branch).addSequence(
+				addBranch(branch).push_back(
 						std::make_pair(kmer, KmerData()));
 			else
 				m_status = BGS_TOOMANYBRANCHES;

@@ -299,7 +299,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						int multiplicity = -1;
 
 						const Kmer& lastKmer
-							= branchGroup[j].getLastSeq();
+							= branchGroup[j].back().first;
 						bool success = seqCollection->getSeqData(
 								lastKmer, extRec, multiplicity);
 						assert(success);
@@ -391,7 +391,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 		assert(extKmer.size() > 1);
 		BranchRecord original = branch;
 		vector<Kmer>::iterator it = extKmer.begin();
-		branch.addSequence(make_pair(*it++, KmerData()));
+		branch.push_back(make_pair(*it++, KmerData()));
 		for (; it != extKmer.end(); ++it)
 			group.addBranch(original, *it);
 		return group.isExtendable();
@@ -400,7 +400,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 	Kmer nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
 			nextKmer, ext, multiplicity, false))
-		branch.addSequence(make_pair(nextKmer, KmerData()));
+		branch.push_back(make_pair(nextKmer, KmerData()));
 	else
 		group.setNoExtension();
 	return group.isExtendable();
@@ -432,8 +432,8 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 	assert(group.isAmbiguous(collection));
 
 	const BranchRecord& best = group[0];
-	PrintDebug(5, "Popping %zu %s\n", best.getLength(),
-				best.getFirstSeq().decode().c_str());
+	PrintDebug(5, "Popping %zu %s\n", best.size(),
+				best.front().first.decode().c_str());
 
 	// Add the k-mer from the dead branches.
 	map<Kmer, KmerData> doomed;
@@ -704,7 +704,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 	}
 
 	if (addKmer)
-		branch.addSequence(make_pair(currSeq,
+		branch.push_back(make_pair(currSeq,
 					KmerData(multiplicity, extensions)));
 	if (branch.isTooLong()) {
 		branch.terminate(BS_TOO_LONG);
@@ -721,11 +721,11 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
 		BranchRecord& branch)
 {
 	assert(!branch.isActive());
-	assert(branch.getLength() > 0);
+	assert(!branch.empty());
 	if (branch.getState() == BS_NOEXT
 			|| branch.getState() == BS_AMBI_OPP) {
-		PrintDebug(5, "Trimming %zu %s\n", branch.getLength(),
-				branch.getFirstSeq().decode().c_str());
+		PrintDebug(5, "Trimming %zu %s\n", branch.size(),
+				branch.front().first.decode().c_str());
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
 			seqCollection->mark(it->first);
@@ -776,12 +776,12 @@ unsigned assembleContig(
 		writer->WriteSequence(contig, id, kmerCount);
 
 	// Remove low-coverage contigs.
-	float coverage = (float)kmerCount / branch.getLength();
+	float coverage = (float)kmerCount / branch.size();
 	if (opt::coverage > 0 && coverage < opt::coverage) {
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
 			seqCollection->remove(it->first);
-		return branch.getLength();
+		return branch.size();
 	}
 	return 0;
 }
@@ -814,11 +814,11 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		{
 			// singleton, output
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter);
+			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
-			assembledKmer += currBranch.getLength();
+			assembledKmer += currBranch.size();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;
@@ -828,7 +828,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		assert(status == SC_ENDPOINT);
 
 		BranchRecord currBranch(dir, -1);
-		currBranch.addSequence(*iter);
+		currBranch.push_back(*iter);
 		Kmer currSeq = iter->first;
 		extendBranch(currBranch, currSeq,
 				iter->second.getExtension(dir));
@@ -850,7 +850,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		if (currBranch.isCanonical()) {
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
-			assembledKmer += currBranch.getLength();
+			assembledKmer += currBranch.size();
 			if (removed > 0) {
 				lowCoverageContigs++;
 				lowCoverageKmer += removed;

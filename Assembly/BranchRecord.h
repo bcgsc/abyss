@@ -32,17 +32,34 @@ class BranchRecord
 
 		operator Sequence() const;
 
-		/** Add a k-mer and its data to this branch. */
-		void addSequence(const value_type& kmer)
-		{
-			m_data.push_back(kmer);
-		}
+		/** Return true if this sequence has no elements. */
+		bool empty() const { return m_data.empty(); }
+
+		/** Return the number of elements. */
+		size_t size() const { return m_data.size(); }
+
+		/** Add the element x at the end. */
+		void push_back(const value_type& x) { m_data.push_back(x); }
 
 		/** Remove the last k-mer. */
 		void pop_back()
 		{
 			assert(!m_data.empty());
 			m_data.pop_back();
+		}
+
+		/** Return the first element. */
+		const value_type& front() const
+		{
+			assert(!m_data.empty());
+			return m_data.front();
+		}
+
+		/** Return the last element. */
+		const value_type& back() const
+		{
+			assert(!m_data.empty());
+			return m_data.back();
 		}
 
 		/** Terminate this branch with the specified reason. */
@@ -60,23 +77,6 @@ class BranchRecord
 
 		/** Return the direction of this branch. */
 		extDirection getDirection() const { return m_dir; }
-
-		/** Return the length of this branch. */
-		size_t getLength() const { return m_data.size(); }
-
-		/** Return the first k-mer of this branch. */
-		const Kmer& getFirstSeq() const
-		{
-			assert(!m_data.empty());
-			return m_data.front().first;
-		}
-
-		/** Return the last k-mer of this branch. */
-		const Kmer& getLastSeq() const
-		{
-			assert(!m_data.empty());
-			return m_data.back().first;
-		}
 
 		/** Set the properties of the last element. */
 		void setData(const value_type& o)

@@ -21,16 +21,16 @@ BranchGroupStatus BranchGroup::updateStatus()
 	// Check if any branches are too long or any sequence has a loop
 	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
 	{
-		if (iter->getLength() > iter->getMaxLength()) {
+		if (iter->size() > iter->getMaxLength()) {
 			m_status = BGS_TOOLONG;
 			return m_status;
 		}
 	}
 
 	BranchGroupData::const_iterator it = m_branches.begin();
-	const Kmer& lastSeq = it->getLastSeq();
+	const Kmer& lastSeq = it->back().first;
 	while (++it != m_branches.end())
-		if (it->getLastSeq() != lastSeq)
+		if (it->back().first != lastSeq)
 			return m_status = BGS_ACTIVE;
 
 	// All the branches of the bubble have joined.
@@ -79,9 +79,9 @@ bool BranchGroup::isExtendable()
 	// A group is extendable when all the branches are the same
 	// length. All the branches are lockstepped for growth.
 	BranchGroupData::iterator it = m_branches.begin();
-	unsigned length = it++->getLength();
+	unsigned length = it++->size();
 	for (; it != m_branches.end(); ++it)
-		if (it->getLength() != length)
+		if (it->size() != length)
 			return false;
 	return true;
 }

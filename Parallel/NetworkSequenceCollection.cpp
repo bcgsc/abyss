@@ -1123,12 +1123,12 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		{
 			// Output the singleton contig.
 			BranchRecord currBranch(SENSE, -1);
-			currBranch.addSequence(*iter);
+			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
 			assembleContig(seqCollection, fileWriter, currBranch,
 					m_numAssembled + numAssembled.first);
 			numAssembled.first++;
-			numAssembled.second += currBranch.getLength();
+			numAssembled.second += currBranch.size();
 			continue;
 		}
 
@@ -1141,7 +1141,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 
 		// Generate the first extension request
 		BranchRecord& branch = inserted.first->second[0];
-		branch.addSequence(*iter);
+		branch.push_back(*iter);
 		Kmer kmer = iter->first;
 		AssemblyAlgorithms::extendBranch(branch,
 				kmer, iter->second.getExtension(dir));
@@ -1202,7 +1202,7 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 					|| branch.getState() == BS_AMBI_OPP);
 			if (branch.isCanonical()) {
 				assembledContigs++;
-				assembledKmer += branch.getLength();
+				assembledKmer += branch.size();
 				assembleContig(seqCollection, fileWriter, branch,
 						m_numAssembled + currContigID++);
 			}
@@ -1247,13 +1247,13 @@ void NetworkSequenceCollection::generateExtensionRequests(
 {
 	assert(first != last);
 #if !NDEBUG
-	unsigned length = first->getLength();
+	unsigned length = first->size();
 #endif
 	unsigned branchID = 0;
 	for (BranchGroup::const_iterator it = first; it != last; ++it) {
-		assert(it->getLength() == length);
+		assert(it->size() == length);
 		generateExtensionRequest(groupID, branchID++,
-				it->getLastSeq());
+				it->back().first);
 	}
 }
 
