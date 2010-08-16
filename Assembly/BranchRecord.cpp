@@ -3,17 +3,6 @@
 
 using namespace std;
 
-/** Add a single sequence to the branch. */
-void BranchRecord::addSequence(const PackedSeq& seq)
-{
-	m_data.push_back(seq);
-
-	// Detect a loop by checking that the sequence is not already in the branch
-	bool unique = m_seqMap.insert(seq.first).second;
-	if(!unique)
-		m_loopDetected = true;
-}
-
 /**
  * Remove all the sequences including and following the specified
  * iterator.
@@ -24,9 +13,6 @@ void BranchRecord::truncate(BranchRecord::iterator position)
 	assert(size >= 0);
 	assert((size_t)size < m_data.size());
 	(void)size;
-	for (BranchData::const_iterator it = m_data.begin();
-			it != m_data.end(); ++it)
-		m_seqMap.erase(it->first);
 	m_data.erase(position);
 }
 
@@ -35,12 +21,6 @@ void BranchRecord::setData(const PackedSeq& seqData)
 {
 	assert(m_data.back().first == seqData.first);
 	m_data.back().second = seqData.second;
-}
-
-/** Forget the multiplicity information. */
-void BranchRecord::clearMultiplicity()
-{
-	m_seqMap.clear();
 }
 
 /** Return true if any of the last three k-mer of this branch is the

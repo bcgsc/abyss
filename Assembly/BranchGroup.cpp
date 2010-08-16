@@ -25,11 +25,6 @@ BranchGroupStatus BranchGroup::updateStatus()
 			m_status = BGS_TOOLONG;
 			return m_status;
 		}
-
-		if (iter->hasLoop()) {
-			m_status = BGS_LOOPFOUND;
-			return m_status;
-		}
 	}
 
 	BranchGroupData::const_iterator it = m_branches.begin();
@@ -58,7 +53,6 @@ void BranchGroup::sortByCoverage()
 			it != m_branches.end(); ++it) {
 		BranchRecord& branch = *it;
 		branch.calculateBranchMultiplicity(true);
-		branch.clearMultiplicity();
 
 		// Remove the last base, which is identical for every branch.
 		branch.truncate(branch.end() - 1);

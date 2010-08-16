@@ -969,7 +969,6 @@ bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 		bool finished = false;
 		switch (status) {
 			case BGS_TOOLONG:
-			case BGS_LOOPFOUND:
 			case BGS_TOOMANYBRANCHES:
 			case BGS_NOEXT:
 				finished = true;

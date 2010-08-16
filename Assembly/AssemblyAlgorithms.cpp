@@ -307,16 +307,13 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						processBranchGroupExtension(branchGroup, j,
 								lastKmer, extRec, multiplicity);
 					}
-					
+
 					// At this point all branches should have the same length or one will be a noext
 					branchGroup.updateStatus();
-					
-					// All branches have been extended one sequence, check the stop conditions
 					BranchGroupStatus status = branchGroup.getStatus();
-					
-					// Check if a stop condition was met
-					if(status == BGS_TOOLONG || status == BGS_LOOPFOUND || status == BGS_TOOMANYBRANCHES || status == BGS_NOEXT)
-					{
+					if (status == BGS_TOOLONG
+							|| status == BGS_TOOMANYBRANCHES
+							|| status == BGS_NOEXT) {
 						stop = true;
 					}
 					else if(status == BGS_JOINED)
@@ -700,11 +697,6 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		// Check if the branch has extended past the max trim length.
 		branch.terminate(BS_TOO_LONG);
 		return false;
-	}
-	else if(branch.hasLoop())
-	{
-		branch.terminate(BS_LOOP);
-		return false;
 	} else if (extensions.dir[oppDir].isAmbiguous()) {
 		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
 		branch.terminate(BS_AMBI_OPP);
@@ -772,7 +764,6 @@ unsigned assembleContig(
 		BranchRecord& branch, unsigned id)
 {
 	assert(!branch.isActive());
-	assert(branch.getState() != BS_LOOP);
 	assert(branch.getState() == BS_NOEXT
 			|| branch.getState() == BS_AMBI_SAME
 			|| branch.getState() == BS_AMBI_OPP);
