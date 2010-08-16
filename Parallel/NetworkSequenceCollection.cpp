@@ -236,7 +236,7 @@ void NetworkSequenceCollection::run()
 			case NAS_ASSEMBLE:
 			{
 				m_comm.barrier();
-				assert(m_comm.receiveEmpty());
+				pumpNetwork();
 				FastaWriter writer(opt::contigsTempPath.c_str());
 				numAssembled = performNetworkAssembly(this, &writer);
 				EndState();
@@ -544,7 +544,7 @@ void NetworkSequenceCollection::runControl()
 				puts("Assembling");
 				m_comm.sendControlMessage(APC_ASSEMBLE);
 				m_comm.barrier();
-				assert(m_comm.receiveEmpty());
+				pumpNetwork();
 				FastaWriter* writer = new FastaWriter(
 						opt::contigsTempPath.c_str());
 				pair<unsigned, unsigned> numAssembled
