@@ -2,6 +2,7 @@
 #define BRANCHRECORD_H 1
 
 #include "PackedSeq.h"
+#include <utility>
 #include <vector>
 
 enum BranchState
@@ -33,12 +34,6 @@ class BranchRecord
 		void addSequence(const PackedSeq& kmer)
 		{
 			m_data.push_back(kmer);
-		}
-
-		/** Add a k-mer to the branch without data. */
-		void addSequence(const Kmer& kmer)
-		{
-			addSequence(std::make_pair(kmer, KmerData()));
 		}
 
 		/** Remove the last k-mer. */

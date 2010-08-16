@@ -391,7 +391,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 		assert(extKmer.size() > 1);
 		BranchRecord original = branch;
 		vector<Kmer>::iterator it = extKmer.begin();
-		branch.addSequence(*it++);
+		branch.addSequence(make_pair(*it++, KmerData()));
 		for (; it != extKmer.end(); ++it)
 			group.addBranch(original, *it);
 		return group.isExtendable();
@@ -400,7 +400,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 	Kmer nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
 			nextKmer, ext, multiplicity, false))
-		branch.addSequence(nextKmer);
+		branch.addSequence(make_pair(nextKmer, KmerData()));
 	else
 		group.setNoExtension();
 	return group.isExtendable();

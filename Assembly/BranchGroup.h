@@ -4,6 +4,7 @@
 #include "BranchRecord.h"
 #include "ISequenceCollection.h"
 #include <map>
+#include <utility>
 
 enum BranchGroupStatus 
 {
@@ -58,7 +59,8 @@ class BranchGroup
 				const Kmer& kmer)
 		{
 			if (m_branches.size() < m_maxNumBranches)
-				addBranch(branch).addSequence(kmer);
+				addBranch(branch).addSequence(
+						std::make_pair(kmer, KmerData()));
 			else
 				m_status = BGS_TOOMANYBRANCHES;
 		}
