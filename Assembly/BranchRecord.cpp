@@ -49,7 +49,7 @@ bool BranchRecord::exists(const Kmer& kmer) const
 {
 	assert(!m_data.empty());
 	return m_data.back().first == kmer
-		|| (m_data.size() > 1 && (m_data.end()-1)->first == kmer);
+		|| (m_data.size() > 1 && (m_data.end()-2)->first == kmer);
 }
 
 /** Check if the branch is too long. */
