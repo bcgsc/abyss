@@ -114,7 +114,6 @@ class BranchGroup
 		bool isAmbiguous(const ISequenceCollection* c) const;
 
 	private:
-		void sortByCoverage();
 		BranchGroup& operator =(const BranchGroup& o);
 
 		BranchGroupData m_branches;

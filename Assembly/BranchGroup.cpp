@@ -1,5 +1,7 @@
 #include "BranchGroup.h"
+#include "Algorithms.h"
 #include <algorithm>
+#include <functional>
 
 using namespace std;
 
@@ -34,30 +36,16 @@ BranchGroupStatus BranchGroup::updateStatus()
 			return m_status = BGS_ACTIVE;
 
 	// All the branches of the bubble have joined.
-	sortByCoverage();
+	// Remove the last base, which is identical for every branch.
+	for_each(m_branches.begin(), m_branches.end(),
+			mem_fun_ref(&BranchRecord::pop_back));
+
+	// Sort the branches by coverage.
+	sort_by_transform(m_branches.begin(), m_branches.end(),
+			mem_fun_ref(&BranchRecord::calculateBranchMultiplicity));
+	reverse(m_branches.begin(), m_branches.end());
+
 	return m_status = BGS_JOINED;
-}
-
-/** Return whether branch a has higher coverage than branch b. */
-static bool compareCoverage(
-		const BranchRecord& a, const BranchRecord& b)
-{
-	return a.getBranchMultiplicity() > b.getBranchMultiplicity();
-}
-
-/** Sort the branches by coverage. */
-void BranchGroup::sortByCoverage()
-{
-	// Sum up the coverage for each branch.
-	for (BranchGroupData::iterator it = m_branches.begin();
-			it != m_branches.end(); ++it) {
-		// Remove the last base, which is identical for every branch.
-		it->pop_back();
-		it->calculateBranchMultiplicity();
-	}
-
-	// Sort by coverage.
-	sort(m_branches.begin(), m_branches.end(), compareCoverage);
 }
 
 /** Return whether any branches of this group are active. */
