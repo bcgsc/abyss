@@ -3,6 +3,7 @@
 
 #include "BranchRecord.h"
 #include "ISequenceCollection.h"
+#include <algorithm> // for swap
 #include <map>
 #include <utility>
 
@@ -36,13 +37,23 @@ class BranchGroup
 			m_branches.reserve(m_maxNumBranches);
 		}
 
-		BranchGroup(const BranchGroup& o)
+		explicit BranchGroup(const BranchGroup& o)
 			: m_branches(o.m_branches), m_dir(o.m_dir),
 			m_origin(o.m_origin),
 			m_maxNumBranches(o.m_maxNumBranches),
 			m_noExt(o.m_noExt), m_status(o.m_status)
 		{
 			m_branches.reserve(m_maxNumBranches);
+		}
+
+		void swap(BranchGroup& o)
+		{
+			std::swap(m_branches, o.m_branches);
+			std::swap(m_dir, o.m_dir);
+			std::swap(m_origin, o.m_origin);
+			std::swap(m_maxNumBranches, o.m_maxNumBranches);
+			std::swap(m_noExt, o.m_noExt);
+			std::swap(m_status, o.m_status);
 		}
 
 		/** Add a branch to this group. */
@@ -123,5 +134,13 @@ class BranchGroup
 		bool m_noExt;
 		BranchGroupStatus m_status;
 };
+
+namespace std {
+	template <>
+	inline void swap(BranchGroup& a, BranchGroup& b)
+	{
+		a.swap(b);
+	}
+}
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "Kmer.h"
 #include "KmerData.h"
+#include <algorithm> // for swap
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,14 @@ class BranchRecord
 		BranchRecord(extDirection dir, int maxLength)
 			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength)
 			{ }
+
+		void swap(BranchRecord& o)
+		{
+			std::swap(m_data, o.m_data);
+			std::swap(m_dir, o.m_dir);
+			std::swap(m_state, o.m_state);
+			std::swap(m_maxLength, o.m_maxLength);
+		}
 
 		operator Sequence() const;
 
@@ -108,5 +117,13 @@ class BranchRecord
 		BranchState m_state;
 		int m_maxLength;
 };
+
+namespace std {
+	template <>
+	inline void swap(BranchRecord& a, BranchRecord& b)
+	{
+		a.swap(b);
+	}
+}
 
 #endif
