@@ -8,7 +8,8 @@
 
 /** Sorts the elements in the range [first,last) ordered by the value
  * returned by the unary function op, which is called once for each
- * element in the range [first,last).
+ * element in the range [first,last). The copy constructor of the
+ * value_type of It is not used.
  * @author Shaun Jackman <sjackman@gmail.com>
  */
 template <class It, class Op>
@@ -25,11 +26,13 @@ void sort_by_transform(It first, It last, Op op)
 		keys.push_back(make_pair(op(*it), it - first));
 	sort(keys.begin(), keys.end());
 
-	// Initialize the matrix to the identity matrix.
+	// Initialize the permutation matrix P to the identity matrix.
 	std::vector<size_type> row(n), column(n);
 	for (size_type i = 0; i < n; i++)
 		row[i] = column[i] = i;
 
+	// Find the row-interchanging elementary matrices of P, and apply
+	// them to the vector [first,last).
 	for (size_type i = 0; i < n; i++) {
 		// The elements [0,i) are in their correct positions.
 		size_type j = column[keys[i].second];
