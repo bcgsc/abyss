@@ -784,10 +784,10 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 			continue;
 		}
 
-		BranchGroup group(dir, 1, iter->first);
-		group.addBranch(BranchRecord(dir, maxBranchCull));
 		bool inserted = m_activeBranchGroups.insert(
-				BranchGroupMap::value_type(branchGroupID, group))
+				BranchGroupMap::value_type(branchGroupID,
+					BranchGroup(dir, 1, iter->first,
+						BranchRecord(dir, maxBranchCull))))
 			.second;
 		assert(inserted);
 		(void)inserted;
@@ -883,9 +883,11 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		ExtensionRecord extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
-				BranchGroup branchGroup(dir, maxNumBranches,
-						iter->first);
-				BranchGroupMap::iterator groupIter = m_activeBranchGroups.insert(pair<uint64_t, BranchGroup>(branchGroupID,branchGroup)).first;
+				BranchGroupMap::iterator groupIter
+					= m_activeBranchGroups.insert(
+						BranchGroupMap::value_type(branchGroupID,
+							BranchGroup(dir, maxNumBranches,
+								iter->first))).first;
 				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
 						group, iter->first,

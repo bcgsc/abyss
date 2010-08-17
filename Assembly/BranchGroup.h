@@ -37,6 +37,16 @@ class BranchGroup
 			m_branches.reserve(m_maxNumBranches);
 		}
 
+		BranchGroup(extDirection dir, size_t maxNumBranches,
+				const Kmer &origin, const BranchRecord& branch)
+			: m_dir(dir), m_origin(origin),
+			m_maxNumBranches(maxNumBranches), m_noExt(false),
+			m_status(BGS_ACTIVE)
+		{
+			m_branches.reserve(m_maxNumBranches);
+			m_branches.push_back(branch);
+		}
+
 		explicit BranchGroup(const BranchGroup& o)
 			: m_branches(o.m_branches), m_dir(o.m_dir),
 			m_origin(o.m_origin),
