@@ -29,13 +29,13 @@ int BranchRecord::calculateBranchMultiplicity() const
 }
 
 /** Build a contig from a branch. */
-BranchRecord::operator Sequence() const
+Sequence BranchRecord::assemble(extDirection dir) const
 {
 	assert(!m_data.empty());
 	Sequence outseq;
 	outseq.reserve(m_data.front().first.length() + m_data.size() - 1);
 
-	if (m_dir == SENSE) {
+	if (dir == SENSE) {
 		BranchData::const_iterator iter = m_data.begin();
 		outseq = iter->first.decode();
 		++iter;
@@ -56,12 +56,12 @@ BranchRecord::operator Sequence() const
  * contig that it represents. A contig has two ends, and the contig
  * is output starting from the lexicographically smaller end.
  */
-bool BranchRecord::isCanonical() const
+bool BranchRecord::isCanonical(extDirection dir) const
 {
 	assert(size() > 1);
 	Kmer first = front().first;
 	Kmer last = back().first;
-	if (getDirection() == SENSE)
+	if (dir == SENSE)
 		last.reverseComplement();
 	else
 		first.reverseComplement();

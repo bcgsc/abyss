@@ -788,7 +788,7 @@ int NetworkSequenceCollection::performNetworkTrim(
 		bool inserted = m_activeBranchGroups.insert(
 				BranchGroupMap::value_type(branchGroupID,
 					BranchGroup(dir, 1, iter->first,
-						BranchRecord(dir))))
+						BranchRecord())))
 			.second;
 		assert(inserted);
 		(void)inserted;
@@ -1077,10 +1077,10 @@ unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 /** Assemble a contig. */
 void NetworkSequenceCollection::assembleContig(
 		ISequenceCollection* seqCollection, FastaWriter* writer,
-		BranchRecord& branch, unsigned id)
+		BranchRecord& branch, extDirection dir, unsigned id)
 {
 	unsigned removed = AssemblyAlgorithms::assembleContig(
-			seqCollection, writer, branch, id);
+			seqCollection, writer, branch, dir, id);
 	if (removed > 0) {
 		m_lowCoverageContigs++;
 		m_lowCoverageKmer += removed;
@@ -1123,10 +1123,11 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		else if(status == SC_ISLAND)
 		{
 			// Output the singleton contig.
-			BranchRecord currBranch(SENSE);
+			BranchRecord currBranch;
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
-			assembleContig(seqCollection, fileWriter, currBranch,
+			assembleContig(seqCollection, fileWriter,
+					currBranch, SENSE,
 					m_numAssembled + numAssembled.first);
 			numAssembled.first++;
 			numAssembled.second += currBranch.size();
@@ -1134,7 +1135,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		}
 
 		BranchGroup group(dir, 1, iter->first);
-		group.addBranch(BranchRecord(dir));
+		group.addBranch(BranchRecord());
 		pair<BranchGroupMap::iterator, bool>
 			inserted = m_activeBranchGroups.insert(
 				BranchGroupMap::value_type(branchGroupID, group));
@@ -1144,7 +1145,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		BranchRecord& branch = inserted.first->second[0];
 		branch.push_back(*iter);
 		Kmer kmer = iter->first;
-		AssemblyAlgorithms::extendBranch(branch,
+		AssemblyAlgorithms::extendBranch(branch, dir,
 				kmer, iter->second.getExtension(dir));
 		assert(branch.isActive());
 		generateExtensionRequest(branchGroupID++, 0, kmer);
@@ -1201,10 +1202,12 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 			assert(branch.getState() == BS_NOEXT
 					|| branch.getState() == BS_AMBI_SAME
 					|| branch.getState() == BS_AMBI_OPP);
-			if (branch.isCanonical()) {
+			extDirection dir = it->second.getDirection();
+			if (branch.isCanonical(dir)) {
 				assembledContigs++;
 				assembledKmer += branch.size();
-				assembleContig(seqCollection, fileWriter, branch,
+				assembleContig(seqCollection, fileWriter,
+						branch, dir,
 						m_numAssembled + currContigID++);
 			}
 			m_activeBranchGroups.erase(it++);
@@ -1299,7 +1302,8 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 	assert(iter != m_activeBranchGroups.end());
 	Kmer currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
-			iter->second[branchID], currSeq, extRec, multiplicity,
+			iter->second[branchID], iter->second.getDirection(),
+			currSeq, extRec, multiplicity,
 			maxLength);
 	if (active)
 		generateExtensionRequest(groupID, branchID, currSeq);

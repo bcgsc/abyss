@@ -24,19 +24,13 @@ class BranchRecord
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 
-		BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE) { }
-
-		explicit BranchRecord(extDirection dir)
-			: m_dir(dir), m_state(BS_ACTIVE) { }
+		BranchRecord() : m_state(BS_ACTIVE) { }
 
 		void swap(BranchRecord& o)
 		{
 			std::swap(m_data, o.m_data);
-			std::swap(m_dir, o.m_dir);
 			std::swap(m_state, o.m_state);
 		}
-
-		operator Sequence() const;
 
 		/** Return true if this sequence has no elements. */
 		bool empty() const { return m_data.empty(); }
@@ -81,9 +75,6 @@ class BranchRecord
 		/** Return the state of this branch. */
 		BranchState getState() const { return m_state;	}
 
-		/** Return the direction of this branch. */
-		extDirection getDirection() const { return m_dir; }
-
 		/** Set the properties of the last element. */
 		void setData(const value_type& o)
 		{
@@ -107,11 +98,12 @@ class BranchRecord
 
 		int calculateBranchMultiplicity() const;
 
-		bool isCanonical() const;
+		bool isCanonical(extDirection dir) const;
+
+		Sequence assemble(extDirection dir) const;
 
 	private:
 		BranchData m_data;
-		extDirection m_dir;
 		BranchState m_state;
 };
 
