@@ -5,7 +5,6 @@ class MessageBuffer;
 
 #include "CommLayer.h"
 #include "Messages.h"
-#include "NetworkDefs.h"
 #include <vector>
 
 typedef std::vector<Message*> MsgBuffer;

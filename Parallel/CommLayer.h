@@ -1,10 +1,28 @@
 #ifndef COMMLAYER_H
 #define COMMLAYER_H 1
 
-#include "NetworkDefs.h"
 #include "Messages.h"
 #include <mpi.h>
 #include <vector>
+
+enum APMessage
+{
+	APM_NONE,
+	APM_CONTROL,
+	APM_BUFFERED
+};
+
+enum APControl
+{
+	APC_SET_STATE,
+	APC_ERODE_COMPLETE,
+	APC_TRIM,
+	APC_POPBUBBLE,
+	APC_ASSEMBLE,
+	APC_CHECKPOINT,
+	APC_WAIT,
+	APC_BARRIER,
+};
 
 typedef std::vector<Message*> MessagePtrVector;
 

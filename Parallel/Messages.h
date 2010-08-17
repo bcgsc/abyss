@@ -3,7 +3,6 @@
 
 #include "Kmer.h"
 #include "KmerData.h"
-#include "NetworkDefs.h"
 #include <ostream>
 
 class NetworkSequenceCollection;
