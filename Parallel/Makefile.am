@@ -14,7 +14,6 @@ ABYSS_P_LDADD = \
 ABYSS_P_SOURCES = \
 	parallelAbyss.cpp \
 	CommLayer.cpp CommLayer.h \
-	NetworkDefs.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
 	Messages.cpp Messages.h 
