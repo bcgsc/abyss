@@ -95,13 +95,14 @@ class BranchGroup
 		/** Return the number of branches in this group. */
 		size_t size() const { return m_branches.size(); }
 
-		/** Return whether a branch contains the specified k-mer. */
-		bool exists(const Kmer& kmer)
+		/** Return whether a branch contains the specified k-mer at
+		 * the index i. */
+		bool exists(unsigned i, const Kmer& kmer) const
 		{
 			for (BranchGroupData::const_iterator it
 					= m_branches.begin();
 					it != m_branches.end(); ++it)
-				if (it->exists(kmer))
+				if (it->exists(i, kmer))
 					return true;
 			return false;
 		}

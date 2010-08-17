@@ -1,17 +1,6 @@
 #include "BranchRecord.h"
-#include <utility>
 
 using namespace std;
-
-/** Return true if any of the last three k-mer of this branch is the
- * specified kmer. */
-bool BranchRecord::exists(const Kmer& kmer) const
-{
-	assert(!m_data.empty());
-	return m_data.back().first == kmer
-		|| (m_data.size() > 1 && (m_data.rbegin()+1)->first == kmer)
-		|| (m_data.size() > 2 && (m_data.rbegin()+2)->first == kmer);
-}
 
 /** Calculate the total multiplicity of this branch. */
 int BranchRecord::calculateBranchMultiplicity() const

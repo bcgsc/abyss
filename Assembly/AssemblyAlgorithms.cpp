@@ -369,13 +369,19 @@ bool processBranchGroupExtension(BranchGroup& group,
 	if (ext.dir[!dir].isAmbiguous()) {
 		// Check that this fork is due to branches of our bubble
 		// merging back together. If not, stop this bubble.
+		if (branch.size() < 2) {
+			group.setNoExtension();
+			return false;
+		}
+
 		vector<Kmer> extKmer;
 		generateSequencesFromExtension(seq, !dir,
 				ext.dir[!dir], extKmer);
 		assert(extKmer.size() > 1);
 		for (vector<Kmer>::iterator it = extKmer.begin();
 				it != extKmer.end(); ++it) {
-			if (!group.exists(*it)) {
+			assert(branch.size() > 1);
+			if (!group.exists(branch.size() - 2, *it)) {
 				group.setNoExtension();
 				return false;
 			}

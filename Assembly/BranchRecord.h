@@ -4,6 +4,7 @@
 #include "Kmer.h"
 #include "KmerData.h"
 #include <algorithm> // for swap
+#include <cassert>
 #include <utility>
 #include <vector>
 
@@ -96,8 +97,13 @@ class BranchRecord
 		const_iterator begin() const { return m_data.begin(); }
 		const_iterator end() const { return m_data.end(); }
 
-		// check if a sequence exists in the branch record
-		bool exists(const Kmer& seq) const;
+		/** Return true if the k-mer at position i is the specified
+		 * k-mer. */
+		bool exists(unsigned i, const Kmer& kmer) const
+		{
+			assert(i < m_data.size());
+			return m_data[i].first == kmer;
+		}
 
 		/** Return true if this branch is longer than maxLength. */
 		bool isTooLong(unsigned maxLength) const
