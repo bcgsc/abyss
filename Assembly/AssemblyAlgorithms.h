@@ -66,12 +66,10 @@ SeqContiguity checkSeqContiguity(const PackedSeq& seq,
 // process a terminated branch for trimming
 bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
 
-bool extendBranch(BranchRecord& branch, extDirection dir,
-		Kmer& kmer, SeqExt ext);
+bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
 
 // Process the extensions of the current sequence for trimming
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		extDirection dir,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer = true);
 
@@ -104,8 +102,7 @@ unsigned markAmbiguous(ISequenceCollection* seqCollection);
 unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 
 unsigned assembleContig(ISequenceCollection* seqCollection,
-		FastaWriter* writer, BranchRecord& branch, extDirection dir,
-		unsigned id);
+		FastaWriter* writer, BranchRecord& branch, unsigned id);
 unsigned assemble(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter = NULL);
 

@@ -353,7 +353,7 @@ void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
 	assert(extSeqs.size() > 1);
 	for (vector<Kmer>::iterator seqIter = extSeqs.begin();
 			seqIter != extSeqs.end(); ++seqIter)
-		group.addBranch(BranchRecord(), *seqIter);
+		group.addBranch(BranchRecord(group.getDirection()), *seqIter);
 }
 
 /** Process an a branch group extension. */
@@ -399,7 +399,7 @@ bool processBranchGroupExtension(BranchGroup& group,
 	}
 
 	Kmer nextKmer = seq;
-	if (processLinearExtensionForBranch(branch, dir,
+	if (processLinearExtensionForBranch(branch,
 			nextKmer, ext, multiplicity,
 			maxLength, false))
 		branch.push_back(make_pair(nextKmer, KmerData()));
@@ -418,7 +418,7 @@ void writeBubble(ostream& out, const BranchGroup& group, unsigned id)
 	for (BranchGroup::const_iterator it = group.begin();
 			it != group.end(); ++it) {
 		const BranchRecord& currBranch = *it;
-		Sequence contig(currBranch.assemble(group.getDirection()));
+		Sequence contig(currBranch);
 		out << '>' << id << allele++ << ' '
 			<< contig.length() << ' '
 			<< currBranch.calculateBranchMultiplicity() << '\n'
@@ -629,7 +629,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			continue;
 		}
 
-		BranchRecord currBranch;
+		BranchRecord currBranch(dir);
 		Kmer currSeq = iter->first;
 		while(currBranch.isActive())
 		{		
@@ -641,7 +641,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, dir,
+			processLinearExtensionForBranch(currBranch,
 					currSeq, extRec, multiplicity, maxBranchCull);
 		}
 		
@@ -662,8 +662,7 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 }
 
 /** Extend this branch. */
-bool extendBranch(BranchRecord& branch, extDirection dir,
-		Kmer& kmer, SeqExt ext)
+bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
 {
 	if (!ext.hasExtension()) {
 		branch.terminate(BS_NOEXT);
@@ -673,7 +672,7 @@ bool extendBranch(BranchRecord& branch, extDirection dir,
 		return false;
 	} else {
 		vector<Kmer> adj;
-		generateSequencesFromExtension(kmer, dir,
+		generateSequencesFromExtension(kmer, branch.getDirection(),
 				ext, adj);
 		assert(adj.size() == 1);
 		kmer = adj.front();
@@ -687,10 +686,10 @@ bool extendBranch(BranchRecord& branch, extDirection dir,
 // After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
 // If the parameter addKmer is true, add the k-mer to the branch.
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		extDirection dir,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer)
 {
+	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
 
 	if (branch.isTooLong(maxLength)) {
@@ -711,7 +710,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		return false;
 	}
 
-	return extendBranch(branch, dir, currSeq, extensions.dir[dir]);
+	return extendBranch(branch, currSeq, extensions.dir[dir]);
 }
 
 /** Trim the specified branch if it meets trimming criteria.
@@ -761,7 +760,7 @@ unsigned removeMarked(ISequenceCollection* pSC)
  */
 unsigned assembleContig(
 		ISequenceCollection* seqCollection, FastaWriter* writer,
-		BranchRecord& branch, extDirection dir, unsigned id)
+		BranchRecord& branch, unsigned id)
 {
 	assert(!branch.isActive());
 	assert(branch.getState() == BS_NOEXT
@@ -769,7 +768,7 @@ unsigned assembleContig(
 			|| branch.getState() == BS_AMBI_OPP);
 
 	// Assemble the contig.
-	Sequence contig(branch.assemble(dir));
+	Sequence contig(branch);
 
 	unsigned kmerCount = branch.calculateBranchMultiplicity();
 	if (writer != NULL)
@@ -812,11 +811,11 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			continue;
 		else if(status == SC_ISLAND)
 		{
-			BranchRecord currBranch;
+			BranchRecord currBranch(SENSE);
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
-					fileWriter, currBranch, SENSE, contigID++);
+					fileWriter, currBranch, contigID++);
 			assembledKmer += currBranch.size();
 			if (removed > 0) {
 				lowCoverageContigs++;
@@ -826,10 +825,10 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		}
 		assert(status == SC_ENDPOINT);
 
-		BranchRecord currBranch;
+		BranchRecord currBranch(dir);
 		currBranch.push_back(*iter);
 		Kmer currSeq = iter->first;
-		extendBranch(currBranch, dir, currSeq,
+		extendBranch(currBranch, currSeq,
 				iter->second.getExtension(dir));
 		assert(currBranch.isActive());
 		while(currBranch.isActive())
@@ -843,13 +842,13 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, dir,
+			processLinearExtensionForBranch(currBranch,
 					currSeq, extRec, multiplicity, UINT_MAX);
 		}
 		
-		if (currBranch.isCanonical(dir)) {
+		if (currBranch.isCanonical()) {
 			unsigned removed = assembleContig(seqCollection,
-					fileWriter, currBranch, dir, contigID++);
+					fileWriter, currBranch, contigID++);
 			assembledKmer += currBranch.size();
 			if (removed > 0) {
 				lowCoverageContigs++;

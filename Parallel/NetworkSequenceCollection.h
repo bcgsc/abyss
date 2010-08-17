@@ -164,7 +164,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void assembleContig(ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter,
-				BranchRecord& branch, extDirection dir, unsigned id);
+				BranchRecord& branch, unsigned id);
 
 		// Check if a branch is redundant with a previously output branch
 		bool isBranchRedundant(const BranchRecord& branch);
