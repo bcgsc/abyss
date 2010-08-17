@@ -13,13 +13,6 @@ bool BranchRecord::exists(const Kmer& kmer) const
 		|| (m_data.size() > 2 && (m_data.rbegin()+2)->first == kmer);
 }
 
-/** Check if the branch is too long. */
-bool BranchRecord::isTooLong() const
-{
-	// If the maxLength == -1, no length check should be performed.
-	return m_maxLength > -1 && size() > getMaxLength();
-}
-
 /** Calculate the total multiplicity of this branch. */
 int BranchRecord::calculateBranchMultiplicity() const
 {

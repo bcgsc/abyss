@@ -107,8 +107,8 @@ class BranchGroup
 		}
 
 		// Check the stop conditions for the branch growth
-		BranchGroupStatus updateStatus();
-		
+		BranchGroupStatus updateStatus(unsigned maxLength);
+
 		// return the current status of the branch
 		BranchGroupStatus getStatus() const { return m_status; }
 		

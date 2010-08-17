@@ -9,6 +9,7 @@
 #include "Timer.h"
 #include <cctype>
 #include <cerrno>
+#include <climits> // for UINT_MAX
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -269,6 +270,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 
 	// Set the cutoffs
 	const unsigned int maxNumBranches = 3;
+	const unsigned maxLength = opt::bubbleLen - opt::kmerSize + 1;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
@@ -285,8 +287,7 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 				BranchGroup branchGroup(dir, maxNumBranches,
 						iter->first);
 				initiateBranchGroup(branchGroup, iter->first,
-						extRec.dir[dir],
-						opt::bubbleLen - opt::kmerSize + 1);
+						extRec.dir[dir]);
 
 				// Iterate over the branches
 				while(!stop)
@@ -305,11 +306,12 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 						assert(success);
 						(void)success;
 						processBranchGroupExtension(branchGroup, j,
-								lastKmer, extRec, multiplicity);
+								lastKmer, extRec, multiplicity,
+								maxLength);
 					}
 
 					// At this point all branches should have the same length or one will be a noext
-					branchGroup.updateStatus();
+					branchGroup.updateStatus(maxLength);
 					BranchGroupStatus status = branchGroup.getStatus();
 					if (status == BGS_TOOLONG
 							|| status == BGS_TOOMANYBRANCHES
@@ -343,23 +345,22 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 
 // Populate a branch group with the inital branches from a sequence
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
-		const SeqExt& extension, size_t maxBubbleSize)
+		const SeqExt& extension)
 {
 	vector<Kmer> extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(),
 			extension, extSeqs);
 	assert(extSeqs.size() > 1);
 	for (vector<Kmer>::iterator seqIter = extSeqs.begin();
-			seqIter != extSeqs.end(); ++seqIter) {
-		BranchRecord newBranch(group.getDirection(), maxBubbleSize);
-		group.addBranch(newBranch, *seqIter);
-	}
+			seqIter != extSeqs.end(); ++seqIter)
+		group.addBranch(BranchRecord(group.getDirection()), *seqIter);
 }
 
 /** Process an a branch group extension. */
 bool processBranchGroupExtension(BranchGroup& group,
 		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord ext, int multiplicity)
+		ExtensionRecord ext, int multiplicity,
+		unsigned maxLength)
 {
 	BranchRecord& branch = group[branchIndex];
 	branch.setData(make_pair(seq, KmerData(multiplicity, ext)));
@@ -399,7 +400,8 @@ bool processBranchGroupExtension(BranchGroup& group,
 
 	Kmer nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
-			nextKmer, ext, multiplicity, false))
+			nextKmer, ext, multiplicity,
+			maxLength, false))
 		branch.push_back(make_pair(nextKmer, KmerData()));
 	else
 		group.setNoExtension();
@@ -626,11 +628,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			numBranchesRemoved++;
 			continue;
 		}
-		// Sequence is trimmable, continue
 
-		// This is a dead-end branch, check it for removal
-		BranchRecord currBranch(dir, maxBranchCull);
-
+		BranchRecord currBranch(dir);
 		Kmer currSeq = iter->first;
 		while(currBranch.isActive())
 		{		
@@ -642,7 +641,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, currSeq, extRec, multiplicity);
+			processLinearExtensionForBranch(currBranch,
+					currSeq, extRec, multiplicity, maxBranchCull);
 		}
 		
 		// The branch has ended check it for removal, returns true if it was removed
@@ -687,13 +687,12 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
 // If the parameter addKmer is true, add the k-mer to the branch.
 bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
-		bool addKmer)
+		unsigned maxLength, bool addKmer)
 {
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
-	
-	if(branch.isTooLong())
-	{
+
+	if (branch.isTooLong(maxLength)) {
 		// Check if the branch has extended past the max trim length.
 		branch.terminate(BS_TOO_LONG);
 		return false;
@@ -706,7 +705,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 	if (addKmer)
 		branch.push_back(make_pair(currSeq,
 					KmerData(multiplicity, extensions)));
-	if (branch.isTooLong()) {
+	if (branch.isTooLong(maxLength)) {
 		branch.terminate(BS_TOO_LONG);
 		return false;
 	}
@@ -812,8 +811,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			continue;
 		else if(status == SC_ISLAND)
 		{
-			// singleton, output
-			BranchRecord currBranch(SENSE, -1);
+			BranchRecord currBranch(SENSE);
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
 			unsigned removed = assembleContig(seqCollection,
@@ -827,7 +825,7 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		}
 		assert(status == SC_ENDPOINT);
 
-		BranchRecord currBranch(dir, -1);
+		BranchRecord currBranch(dir);
 		currBranch.push_back(*iter);
 		Kmer currSeq = iter->first;
 		extendBranch(currBranch, currSeq,
@@ -844,7 +842,8 @@ unsigned assemble(ISequenceCollection* seqCollection,
 			(void)success;
 			
 			// process the extension record and extend the current branch, this function updates currSeq on successful extension
-			processLinearExtensionForBranch(currBranch, currSeq, extRec, multiplicity);
+			processLinearExtensionForBranch(currBranch,
+					currSeq, extRec, multiplicity, UINT_MAX);
 		}
 		
 		if (currBranch.isCanonical()) {

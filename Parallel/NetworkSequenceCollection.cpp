@@ -5,6 +5,7 @@
 #include "FastaWriter.h"
 #include "Histogram.h"
 #include "Log.h"
+#include <climits> // for UINT_MAX
 #include <cmath> // for roundf
 #include <cstdio>
 #include <cstdlib>
@@ -143,7 +144,7 @@ void NetworkSequenceCollection::run()
 			{
 				assert(m_trimStep != 0);
 				m_comm.barrier();
-				int numRemoved = performNetworkTrim(this, m_trimStep);
+				int numRemoved = performNetworkTrim(this);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numRemoved);
@@ -325,11 +326,12 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
 	assert(trimLen > 0);
+	m_trimStep = trimLen;
 	printf("Trimming short branches: %u\n", trimLen);
 	SetState(NAS_TRIM);
 	m_comm.sendControlMessage(APC_TRIM, trimLen);
 	m_comm.barrier();
-	unsigned numRemoved = performNetworkTrim(this, trimLen);
+	unsigned numRemoved = performNetworkTrim(this);
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -755,10 +757,9 @@ void NetworkSequenceCollection::handle(
 	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord, message.m_multiplicity);
 }
 
-//
-// Distributed trimming function
-// 
-int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull)
+/** Distributed trimming function. */
+int NetworkSequenceCollection::performNetworkTrim(
+		ISequenceCollection* seqCollection)
 {
 	Timer timer("NetworkTrim");
 	int numBranchesRemoved = 0;
@@ -787,7 +788,7 @@ int NetworkSequenceCollection::performNetworkTrim(ISequenceCollection* seqCollec
 		bool inserted = m_activeBranchGroups.insert(
 				BranchGroupMap::value_type(branchGroupID,
 					BranchGroup(dir, 1, iter->first,
-						BranchRecord(dir, maxBranchCull))))
+						BranchRecord(dir))))
 			.second;
 		assert(inserted);
 		(void)inserted;
@@ -890,9 +891,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 								iter->first))).first;
 				BranchGroup& group = groupIter->second;
 				AssemblyAlgorithms::initiateBranchGroup(
-						group, iter->first,
-						extRec.dir[dir],
-						opt::bubbleLen - opt::kmerSize + 1);
+						group, iter->first, extRec.dir[dir]);
 				generateExtensionRequests(branchGroupID++,
 						group.begin(), group.end());
 			}
@@ -1124,7 +1123,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		else if(status == SC_ISLAND)
 		{
 			// Output the singleton contig.
-			BranchRecord currBranch(SENSE, -1);
+			BranchRecord currBranch(SENSE);
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
 			assembleContig(seqCollection, fileWriter, currBranch,
@@ -1135,7 +1134,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		}
 
 		BranchGroup group(dir, 1, iter->first);
-		group.addBranch(BranchRecord(dir, -1));
+		group.addBranch(BranchRecord(dir));
 		pair<BranchGroupMap::iterator, bool>
 			inserted = m_activeBranchGroups.insert(
 				BranchGroupMap::value_type(branchGroupID, group));
@@ -1266,11 +1265,16 @@ void NetworkSequenceCollection::processSequenceExtension(
 	switch(m_state)
 	{
 		case NAS_TRIM:
+			return processLinearSequenceExtension(groupID, branchID,
+					seq, extRec, multiplicity, m_trimStep);
 		case NAS_ASSEMBLE:
 		case NAS_COVERAGE:
-			return processLinearSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
+			return processLinearSequenceExtension(groupID, branchID,
+					seq, extRec, multiplicity, UINT_MAX);
 		case NAS_DISCOVER_BUBBLES:
-			return processSequenceExtensionPop(groupID, branchID, seq, extRec, multiplicity);
+			return processSequenceExtensionPop(groupID, branchID,
+					seq, extRec, multiplicity,
+					opt::bubbleLen - opt::kmerSize + 1);
 		case NAS_WAITING:
 			if(m_finishedGroups.find(groupID) == m_finishedGroups.end())
 			{
@@ -1288,13 +1292,15 @@ void NetworkSequenceCollection::processSequenceExtension(
 /** Process a sequence extension for trimming. */
 void NetworkSequenceCollection::processLinearSequenceExtension(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity)
+		const ExtensionRecord& extRec, int multiplicity,
+		unsigned maxLength)
 {
 	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
 	assert(iter != m_activeBranchGroups.end());
 	Kmer currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
-			iter->second[branchID], currSeq, extRec, multiplicity);
+			iter->second[branchID], currSeq, extRec, multiplicity,
+			maxLength);
 	if (active)
 		generateExtensionRequest(groupID, branchID, currSeq);
 }
@@ -1302,7 +1308,8 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 /** Process a sequence extension for popping. */
 void NetworkSequenceCollection::processSequenceExtensionPop(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity)
+		const ExtensionRecord& extRec, int multiplicity,
+		unsigned maxLength)
 {
 	BranchGroupMap::iterator groupIt
 		= m_activeBranchGroups.find(groupID);
@@ -1315,8 +1322,8 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 
 	BranchGroup& group = groupIt->second;
 	bool extendable = AssemblyAlgorithms::processBranchGroupExtension(
-			group, branchID, seq, extRec, multiplicity);
-	if (extendable && group.updateStatus() == BGS_ACTIVE)
+			group, branchID, seq, extRec, multiplicity, maxLength);
+	if (extendable && group.updateStatus(maxLength) == BGS_ACTIVE)
 		generateExtensionRequests(groupID,
 				group.begin(), group.end());
 }

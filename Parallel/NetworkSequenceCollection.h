@@ -44,8 +44,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		NetworkSequenceCollection();
 		~NetworkSequenceCollection();
 
-		// This function is similar to AssemblyAlgorithms::performNetworkTrim but is optimized to hide latency
-		int performNetworkTrim(ISequenceCollection* seqCollection, int maxBranchCull);
+		int performNetworkTrim(ISequenceCollection* seqCollection);
 
 		int performNetworkDiscoverBubbles(ISequenceCollection* c);
 		int performNetworkPopBubbles(std::ostream& out);
@@ -156,10 +155,12 @@ class NetworkSequenceCollection : public ISequenceCollection
 				const ExtensionRecord& extRec, int multiplicity);
 		void processLinearSequenceExtension(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
-				const ExtensionRecord& extRec, int multiplicity);
+				const ExtensionRecord& extRec, int multiplicity,
+				unsigned maxLength);
 		void processSequenceExtensionPop(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
-				const ExtensionRecord& extRec, int multiplicity);
+				const ExtensionRecord& extRec, int multiplicity,
+				unsigned maxLength);
 
 		void assembleContig(ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter,

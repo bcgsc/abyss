@@ -71,19 +71,20 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
 // Process the extensions of the current sequence for trimming
 bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
-		bool addKmer = true);
+		unsigned maxLength, bool addKmer = true);
 
 // Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
 int popBubbles(ISequenceCollection* pSC, std::ostream& out);
 
 // Populate the branch group with the initial extensions to this sequence
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
-		const SeqExt& extension, size_t maxBubbleSize);
+		const SeqExt& extension);
 
 // process an a branch group extension
 bool processBranchGroupExtension(BranchGroup& group,
 		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord extensions, int multiplicity);
+		ExtensionRecord extensions, int multiplicity,
+		unsigned maxLength);
 
 void openBubbleFile(std::ofstream& out);
 void writeBubble(std::ostream& out, const BranchGroup& group,

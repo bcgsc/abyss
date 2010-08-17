@@ -6,7 +6,7 @@
 using namespace std;
 
 // Check the stop conditions for the bubble growth
-BranchGroupStatus BranchGroup::updateStatus()
+BranchGroupStatus BranchGroup::updateStatus(unsigned maxLength)
 {
 	assert(m_branches.size() <= m_maxNumBranches);
 
@@ -23,7 +23,7 @@ BranchGroupStatus BranchGroup::updateStatus()
 	// Check if any branches are too long or any sequence has a loop
 	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
 	{
-		if (iter->size() > iter->getMaxLength()) {
+		if (iter->isTooLong(maxLength)) {
 			m_status = BGS_TOOLONG;
 			return m_status;
 		}

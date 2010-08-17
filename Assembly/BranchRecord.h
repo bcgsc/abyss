@@ -24,18 +24,16 @@ class BranchRecord
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
 
-		BranchRecord()
-			: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1) { }
-		BranchRecord(extDirection dir, int maxLength)
-			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength)
-			{ }
+		BranchRecord() : m_dir(SENSE), m_state(BS_ACTIVE) { }
+
+		explicit BranchRecord(extDirection dir)
+			: m_dir(dir), m_state(BS_ACTIVE) { }
 
 		void swap(BranchRecord& o)
 		{
 			std::swap(m_data, o.m_data);
 			std::swap(m_dir, o.m_dir);
 			std::swap(m_state, o.m_state);
-			std::swap(m_maxLength, o.m_maxLength);
 		}
 
 		operator Sequence() const;
@@ -98,14 +96,14 @@ class BranchRecord
 		const_iterator begin() const { return m_data.begin(); }
 		const_iterator end() const { return m_data.end(); }
 
-		// Return the maximum branch length
-		size_t getMaxLength() const { return m_maxLength; }
-
 		// check if a sequence exists in the branch record
 		bool exists(const Kmer& seq) const;
 
-		/** Return whether the branch is too long. */
-		bool isTooLong() const;
+		/** Return true if this branch is longer than maxLength. */
+		bool isTooLong(unsigned maxLength) const
+		{
+			return size() > maxLength;
+		}
 
 		int calculateBranchMultiplicity() const;
 
@@ -115,7 +113,6 @@ class BranchRecord
 		BranchData m_data;
 		extDirection m_dir;
 		BranchState m_state;
-		int m_maxLength;
 };
 
 namespace std {
