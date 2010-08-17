@@ -16,7 +16,7 @@ namespace opt {
 	bool adj;
 }
 
-static void print(const PackedSeq& seq)
+static void print(const SequenceCollectionHash::value_type& seq)
 {
 	const KmerData& data = seq.second;
 	if (opt::sequence)
@@ -27,7 +27,8 @@ static void print(const PackedSeq& seq)
 	cout << data.getMultiplicity() << '\n';
 }
 
-static void print(const PackedSeq& seq, extDirection sense)
+static void print(const SequenceCollectionHash::value_type& seq,
+		extDirection sense)
 {
 	const KmerData& data = seq.second;
 	if (opt::sequence) {

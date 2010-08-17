@@ -2,7 +2,8 @@
 #define ISEQUENCECOLLECTION_H 1
 
 #include "config.h"
-#include "PackedSeq.h"
+#include "Kmer.h"
+#include "KmerData.h"
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
@@ -75,7 +76,7 @@ class ISequenceCollection
 
 		// Observer pattern
 		typedef void (*SeqObserver)(ISequenceCollection* c,
-				const PackedSeq& seq);
+				const value_type& seq);
 		virtual void attach(SeqObserver f) = 0;
 		virtual void detach(SeqObserver f) = 0;
 

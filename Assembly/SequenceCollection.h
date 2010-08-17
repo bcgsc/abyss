@@ -2,7 +2,6 @@
 #define SEQUENCECOLLECTION_H 1
 
 #include "ISequenceCollection.h"
-#include "PackedSeq.h"
 #include <cassert>
 
 /** A k-mer graph. A map of k-mer to edges. */
@@ -92,7 +91,7 @@ class SequenceCollectionHash : public ISequenceCollection
 				extDirection dir, SeqExt ext);
 
 		/** Call the observers of the specified sequence. */
-		void notify(const PackedSeq& seq)
+		void notify(const value_type& seq)
 		{
 			if (m_seqObserver != NULL)
 				m_seqObserver(this, seq);

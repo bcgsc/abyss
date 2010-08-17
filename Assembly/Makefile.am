@@ -12,5 +12,4 @@ libassembly_a_SOURCES = \
 	ISequenceCollection.h \
 	KmerData.h \
 	Options.cpp Options.h \
-	PackedSeq.h \
 	SequenceCollection.cpp SequenceCollection.h

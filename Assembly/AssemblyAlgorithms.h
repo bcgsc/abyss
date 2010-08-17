@@ -49,7 +49,8 @@ void setCoverageParameters(const Histogram& h);
 
 /* Erosion. Remove k-mer from the ends of blunt contigs. */
 unsigned erodeEnds(ISequenceCollection* seqCollection);
-unsigned erode(ISequenceCollection* c, const PackedSeq& seq);
+unsigned erode(ISequenceCollection* c,
+		const ISequenceCollection::value_type& seq);
 unsigned getNumEroded();
 
 // trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
@@ -60,7 +61,8 @@ int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
 unsigned removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
-SeqContiguity checkSeqContiguity(const PackedSeq& seq,
+SeqContiguity checkSeqContiguity(
+		const ISequenceCollection::value_type& seq,
 		extDirection& outDir, bool considerMarks = false);
 
 // process a terminated branch for trimming
@@ -107,9 +109,9 @@ unsigned assemble(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter = NULL);
 
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
-		const PackedSeq& seq);
+		const ISequenceCollection::value_type& seq);
 void removeExtensionsToSequence(ISequenceCollection* seqCollection,
-		const PackedSeq& seq, extDirection dir);
+		const ISequenceCollection::value_type& seq, extDirection dir);
 
 void generateSequencesFromExtension(const Kmer& currSeq,
 		extDirection dir, SeqExt extension,

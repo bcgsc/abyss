@@ -163,7 +163,7 @@ void generateAdjacency(ISequenceCollection* seqCollection)
  * @return the number of marked edges
  */
 static unsigned markVertexAndNeighbours(ISequenceCollection* g,
-		const PackedSeq& u, extDirection sense)
+		const ISequenceCollection::value_type& u, extDirection sense)
 {
 	g->mark(u.first, sense);
 	vector<Kmer> adj;
@@ -470,7 +470,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
  * extend to it.
  */
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
-		const PackedSeq& seq)
+		const ISequenceCollection::value_type& seq)
 {
 	// This removes the reverse complement as well
 	seqCollection->remove(seq.first);
@@ -480,7 +480,7 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 
 /** Remove all the extensions to this sequence. */
 void removeExtensionsToSequence(ISequenceCollection* seqCollection,
-		const PackedSeq& seq, extDirection dir)
+		const ISequenceCollection::value_type& seq, extDirection dir)
 {
 	SeqExt extension(seq.second.getExtension(dir));
 	extDirection oppDir = oppositeDirection(dir);
@@ -509,7 +509,8 @@ unsigned getNumEroded()
 /** Consider the specified k-mer for erosion.
  * @return the number of k-mer eroded, zero or one
  */
-unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
+unsigned erode(ISequenceCollection* c,
+		const ISequenceCollection::value_type& seq)
 {
 	if (seq.second.deleted())
 		return 0;
@@ -531,7 +532,7 @@ unsigned erode(ISequenceCollection* c, const PackedSeq& seq)
 
 /** The given sequence has changed. */
 static void erosionObserver(ISequenceCollection* c,
-		const PackedSeq& seq)
+		const ISequenceCollection::value_type& seq)
 {
 	erode(c, seq);
 }
@@ -577,7 +578,8 @@ void performTrim(ISequenceCollection* seqCollection, int start)
  * @param considerMarks when true, treat a marked vertex as having
  * no edges
  */
-SeqContiguity checkSeqContiguity(const PackedSeq& seq,
+SeqContiguity checkSeqContiguity(
+		const ISequenceCollection::value_type& seq,
 		extDirection& outDir, bool considerMarks)
 {
 	assert(!seq.second.deleted());
