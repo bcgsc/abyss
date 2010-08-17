@@ -33,12 +33,16 @@ void sort_by_transform(It first, It last, Op op)
 	for (size_type i = 0; i < n; i++) {
 		// The elements [0,i) are in their correct positions.
 		size_type j = column[keys[i].second];
+		if (i == j)
+			continue;
+		//assert(i < j);
 		swap(first[i], first[j]);
 		// The elements [0,i] are in their correct positions.
 
 		// Swap rows i and j of the matrix.
-		swap(row[i], row[j]);
 		swap(column[row[i]], column[row[j]]);
+		swap(row[i], row[j]);
+		//assert(row[i] == keys[i].second);
 		//assert(column[row[i]] == row[column[i]]);
 		//assert(column[row[j]] == row[column[j]]);
 	}
