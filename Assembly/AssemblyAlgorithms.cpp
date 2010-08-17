@@ -419,7 +419,7 @@ void writeBubble(ostream& out, const BranchGroup& group, unsigned id)
 		Sequence contig(currBranch);
 		out << '>' << id << allele++ << ' '
 			<< contig.length() << ' '
-			<< currBranch.getBranchMultiplicity() << '\n'
+			<< currBranch.calculateBranchMultiplicity() << '\n'
 			<< contig.c_str() << '\n';
 	}
 	assert(out.good());

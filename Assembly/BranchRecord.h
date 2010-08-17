@@ -24,11 +24,10 @@ class BranchRecord
 		typedef BranchData::const_iterator const_iterator;
 
 		BranchRecord()
-			: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1),
-			m_multiplicity(-1) { }
+			: m_dir(SENSE), m_state(BS_ACTIVE), m_maxLength(-1) { }
 		BranchRecord(extDirection dir, int maxLength)
-			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength),
-			m_multiplicity(-1) { }
+			: m_dir(dir), m_state(BS_ACTIVE), m_maxLength(maxLength)
+			{ }
 
 		operator Sequence() const;
 
@@ -99,15 +98,7 @@ class BranchRecord
 		/** Return whether the branch is too long. */
 		bool isTooLong() const;
 
-		// Calculate the total multiplicity for this branch.
-		int calculateBranchMultiplicity();
-
-		// Return the precalculated multiplicity for this branch.
-		int getBranchMultiplicity() const
-		{
-			assert(m_multiplicity > 0);
-			return m_multiplicity;
-		}
+		int calculateBranchMultiplicity() const;
 
 		bool isCanonical() const;
 
@@ -116,7 +107,6 @@ class BranchRecord
 		extDirection m_dir;
 		BranchState m_state;
 		int m_maxLength;
-		int m_multiplicity;
 };
 
 #endif

@@ -20,9 +20,8 @@ bool BranchRecord::isTooLong() const
 	return m_maxLength > -1 && size() > getMaxLength();
 }
 
-/** Calculate the total multiplicity of this branch. The result is
- * cached and may be fetched using getBranchMultiplicity. */
-int BranchRecord::calculateBranchMultiplicity()
+/** Calculate the total multiplicity of this branch. */
+int BranchRecord::calculateBranchMultiplicity() const
 {
 	assert(!m_data.empty());
 	int total = 0;
@@ -33,7 +32,7 @@ int BranchRecord::calculateBranchMultiplicity()
 		total += m;
 	}
 	assert(total > 0);
-	return m_multiplicity = total;
+	return total;
 }
 
 /** Build a contig from a branch. */
