@@ -30,6 +30,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 
 	// Edge types.
 	typedef typename DG::degree_size_type degree_size_type;
+	typedef typename DG::edge_descriptor edge_descriptor;
 	typedef typename DG::adjacency_iterator adjacency_iterator;
 
   public:
@@ -89,10 +90,12 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 	}
 
 	/** Add edge (u,v) to this graph. */
-	void add_edge(vertex_descriptor u, vertex_descriptor v)
+	std::pair<edge_descriptor, bool>
+	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
-		DG::add_edge(u, v);
+		std::pair<edge_descriptor, bool> e = DG::add_edge(u, v);
 		DG::add_edge(~v, ~u);
+		return e;
 	}
 
 	friend std::ostream& operator<< <>(std::ostream& out,
