@@ -30,7 +30,7 @@ void sort_by_transform(It first, It last, Op op)
 		while (j < i)
 			j = keys[j].second;
 		if (i != j)
-			swap(first[i], first[j]);
+			std::swap(first[i], first[j]);
 		keys[i].second = j;
 	}
 }
