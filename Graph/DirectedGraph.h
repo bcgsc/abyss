@@ -9,6 +9,9 @@
 #include <ostream>
 #include <utility>
 #include <vector>
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+# include <boost/graph/graph_traits.hpp>
+#endif
 
 /** No properties. */
 struct no_property
@@ -42,6 +45,20 @@ class DirectedGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
 	typedef void in_edge_iterator;
+
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+	typedef boost::directed_tag directed_category;
+	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+	struct traversal_category
+		: boost::incidence_graph_tag,
+		boost::adjacency_graph_tag,
+		boost::vertex_list_graph_tag,
+		boost::edge_list_graph_tag { };
+#else
+	typedef void directed_category;
+	typedef void edge_parallel_category;
+	typedef void traversal_category;
+#endif
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator

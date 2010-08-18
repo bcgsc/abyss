@@ -13,11 +13,9 @@ struct graph_traits {
 	typedef typename G::vertex_iterator vertex_iterator;
 	typedef typename G::edge_iterator edge_iterator;
 
-#if 0
 	typedef typename G::directed_category directed_category;
 	typedef typename G::edge_parallel_category edge_parallel_category;
 	typedef typename G::traversal_category traversal_category;
-#endif
 
 	typedef typename G::vertices_size_type vertices_size_type;
 	typedef typename G::edges_size_type edges_size_type;
