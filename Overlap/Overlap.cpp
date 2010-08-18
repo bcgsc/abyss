@@ -6,6 +6,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
 #include "ContigProperties.h"
 #include "Estimate.h"
 #include "FastaReader.h"
@@ -239,6 +240,8 @@ static FastaRecord mergeContigs(
 			overlap.mask);
 }
 
+typedef ContigNode vertex_descriptor;
+
 typedef map<ContigNode, set<ContigNode> > OverlapGraph;
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
@@ -260,6 +263,36 @@ struct Edge {
 
 	ContigNode t, h;
 };
+
+template <>
+struct graph_traits<OverlapGraph> {
+	typedef OverlapGraph Graph;
+	typedef ContigNode vertex_descriptor;
+	typedef Edge edge_descriptor;
+	typedef Graph::mapped_type::const_iterator
+		adjacency_iterator;
+};
+
+unsigned out_degree(vertex_descriptor u, const OverlapGraph& g)
+{
+	OverlapGraph::const_iterator it = g.find(u);
+	assert(it != g.end());
+	return it->second.size();
+}
+
+unsigned in_degree(vertex_descriptor u, const OverlapGraph& g)
+{
+	return out_degree(~u, g);
+}
+
+std::pair<graph_traits<OverlapGraph>::adjacency_iterator,
+	graph_traits<OverlapGraph>::adjacency_iterator>
+adjacent_vertices(vertex_descriptor u, const OverlapGraph& g)
+{
+	OverlapGraph::const_iterator it = g.find(u);
+	assert(it != g.end());
+	return make_pair(it->second.begin(), it->second.end());
+}
 
 /** The amount of overlap (attributes of OverlapGraph). */
 typedef map<Edge, Overlap> OverlapGraphAttr;
@@ -312,18 +345,9 @@ static void findOverlap(
 	}
 }
 
-static bool unambiguous(/*const*/ OverlapGraph& g,
-		const ContigNode &t)
+static bool unambiguous(const OverlapGraph& g, const ContigNode &u)
 {
-	const OverlapGraph::mapped_type& heads = g[t];
-	if (heads.size() > 1)
-		return false;
-	assert(heads.size() == 1);
-	ContigNode h = *heads.begin();
-	if (g[~h].size() > 1)
-		return false;
-	assert(g[~h].size() == 1);
-	return true;
+	return contiguous_out<OverlapGraph>(g, u);
 }
 
 static void assert_open(ifstream& f, const string& p)

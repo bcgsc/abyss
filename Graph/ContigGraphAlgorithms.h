@@ -1,16 +1,17 @@
 #ifndef CONTIGGRAPHALGORITHMS_H
 #define CONTIGGRAPHALGORITHMS_H 1
 
+#include "Graph.h"
 #include <cassert>
 #include <utility>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
 template<typename Graph>
 bool contiguous_out(const Graph& g,
-		typename Graph::vertex_descriptor u)
+		typename graph_traits<Graph>::vertex_descriptor u)
 {
-	return g.out_degree(u) == 1
-		&& g.in_degree(*g.adjacent_vertices(u).first) == 1;
+	return out_degree(u, g) == 1
+		&& in_degree(*adjacent_vertices(u, g).first, g) == 1;
 }
 
 /** Return whether the incoming edge of vertex u is contiguous. */
