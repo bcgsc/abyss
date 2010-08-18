@@ -345,11 +345,6 @@ static void findOverlap(
 	}
 }
 
-static bool unambiguous(const OverlapGraph& g, const ContigNode &u)
-{
-	return contiguous_out<OverlapGraph>(g, u);
-}
-
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
@@ -451,7 +446,7 @@ int main(int argc, char *const argv[])
 		const ContigNode& t = it->first.t, h = it->first.h;
 		if (it->second.overlap == 0) {
 			// This edge is scaffolded.
-		} else if (unambiguous(g_overlapGraph, t)) {
+		} else if (contiguous_out(g_overlapGraph, t)) {
 			assert(*g_overlapGraph[t].begin() == h);
 			FastaRecord contig = mergeContigs(t, h, it->second);
 			out << contig;
@@ -480,7 +475,7 @@ int main(int argc, char *const argv[])
 		} else if (g_scaffoldGraph[t].count(h) == 0) {
 			// This edge involved a vertex that has already been used
 			// and removed.
-		} else if (unambiguous(g_scaffoldGraph, t)) {
+		} else if (contiguous_out(g_scaffoldGraph, t)) {
 			assert(*g_scaffoldGraph[t].begin() == h);
 			FastaRecord contig = mergeContigs(t, h, it->second);
 			out << contig;
