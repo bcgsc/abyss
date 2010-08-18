@@ -41,6 +41,7 @@ class DirectedGraph
 	typedef unsigned degree_size_type;
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
+	typedef void in_edge_iterator;
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator
@@ -322,8 +323,7 @@ class Edge
 	}
 
 	/** Adds edge (u,v) to this graph. */
-	std::pair<typename DirectedGraph<VertexProp>::edge_descriptor,
-		bool>
+	std::pair<edge_descriptor, bool>
 	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
 		assert(u.index() < num_vertices());
