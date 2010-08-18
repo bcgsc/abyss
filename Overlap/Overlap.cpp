@@ -400,7 +400,7 @@ int main(int argc, char *const argv[])
 	// First, give priority to overlapping edges (not scaffolded).
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
 			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = it->first.t, h = it->first.h;
+		const ContigNode& t = source(it->first), h = target(it->first);
 		if (it->second.overlap == 0) {
 			// This edge is scaffolded.
 		} else if (contiguous_out(g_overlapGraph, t)) {
@@ -426,7 +426,7 @@ int main(int argc, char *const argv[])
 	// Second, handle scaffolded edges.
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
 			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = it->first.t, h = it->first.h;
+		const ContigNode& t = source(it->first), h = target(it->first);
 		if (it->second.overlap > 0) {
 			// This edge is not scaffolded.
 		} else if (g_scaffoldGraph[t].count(h) == 0) {

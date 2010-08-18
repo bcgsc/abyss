@@ -4,6 +4,7 @@
 #include "ContigNode.h"
 #include <map>
 #include <set>
+#include <utility> // for pair
 
 typedef std::map<ContigNode, std::set<ContigNode> > MapGraph;
 
@@ -11,19 +12,8 @@ template <>
 struct graph_traits<MapGraph> {
 	typedef ContigNode vertex_descriptor;
 	typedef MapGraph::mapped_type::const_iterator adjacency_iterator;
-
-	/** An edge (a pair of vertices). */
-	struct edge_descriptor {
-		edge_descriptor(const ContigNode& t, const ContigNode& h)
-			: t(t), h(h) { }
-
-		bool operator <(const edge_descriptor& o) const
-		{
-			return t != o.t ? t < o.t : h < o.h;
-		}
-
-		ContigNode t, h;
-	};
+	typedef std::pair<vertex_descriptor, vertex_descriptor>
+		edge_descriptor;
 };
 
 unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
@@ -48,6 +38,18 @@ adjacent_vertices(graph_traits<MapGraph>::vertex_descriptor u,
 	MapGraph::const_iterator it = g.find(u);
 	assert(it != g.end());
 	return make_pair(it->second.begin(), it->second.end());
+}
+
+static inline graph_traits<MapGraph>::vertex_descriptor
+source(graph_traits<MapGraph>::edge_descriptor u)
+{
+	return u.first;
+}
+
+static inline graph_traits<MapGraph>::vertex_descriptor
+target(graph_traits<MapGraph>::edge_descriptor u)
+{
+	return u.second;
 }
 
 #endif
