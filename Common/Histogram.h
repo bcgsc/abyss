@@ -218,4 +218,9 @@ class Histogram
 	Map m_map;
 };
 
+namespace std {
+	template<>
+	inline void swap(Histogram&, Histogram&) { assert(false); }
+}
+
 #endif

@@ -39,6 +39,11 @@ class ContigPath : public std::vector<ContigNode>
 		static const char* separator;
 };
 
+namespace std {
+	template<>
+	inline void swap(ContigPath& a, ContigPath& b) { a.swap(b); }
+}
+
 static inline std::ostream& operator<<(std::ostream& out,
 		const ContigPath& o)
 {

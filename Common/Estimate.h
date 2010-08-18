@@ -105,4 +105,12 @@ struct EstimateRecord
 
 };
 
+namespace std {
+	template<>
+	inline void swap(EstimateRecord&, EstimateRecord&)
+	{
+		assert(false);
+	}
+}
+
 #endif

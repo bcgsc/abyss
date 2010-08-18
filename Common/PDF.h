@@ -47,4 +47,9 @@ class PDF
 	double m_minp;
 };
 
+namespace std {
+	template<>
+	inline void swap(PDF&, PDF&) { assert(false); }
+}
+
 #endif
