@@ -10,6 +10,7 @@
 #include "ContigProperties.h"
 #include "Estimate.h"
 #include "FastaReader.h"
+#include "MapGraph.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -240,61 +241,17 @@ static FastaRecord mergeContigs(
 			overlap.mask);
 }
 
-typedef ContigNode vertex_descriptor;
-
-typedef map<ContigNode, set<ContigNode> > OverlapGraph;
-
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
+typedef MapGraph OverlapGraph;
 static OverlapGraph g_scaffoldGraph;
 
 /** A subgraph of g_scaffoldGraph containing only the edges that
  * overlap (are not scaffolded). */
 static OverlapGraph g_overlapGraph;
 
-/** An edge (a pair of vertices). */
-struct Edge {
-	Edge(const ContigNode& t, const ContigNode& h) : t(t), h(h) { }
-
-	bool operator <(const Edge& o) const
-	{
-		return t != o.t ? t < o.t : h < o.h;
-	}
-
-	ContigNode t, h;
-};
-
-template <>
-struct graph_traits<OverlapGraph> {
-	typedef OverlapGraph Graph;
-	typedef ContigNode vertex_descriptor;
-	typedef Edge edge_descriptor;
-	typedef Graph::mapped_type::const_iterator
-		adjacency_iterator;
-};
-
-unsigned out_degree(vertex_descriptor u, const OverlapGraph& g)
-{
-	OverlapGraph::const_iterator it = g.find(u);
-	assert(it != g.end());
-	return it->second.size();
-}
-
-unsigned in_degree(vertex_descriptor u, const OverlapGraph& g)
-{
-	return out_degree(~u, g);
-}
-
-std::pair<graph_traits<OverlapGraph>::adjacency_iterator,
-	graph_traits<OverlapGraph>::adjacency_iterator>
-adjacent_vertices(vertex_descriptor u, const OverlapGraph& g)
-{
-	OverlapGraph::const_iterator it = g.find(u);
-	assert(it != g.end());
-	return make_pair(it->second.begin(), it->second.end());
-}
-
 /** The amount of overlap (attributes of OverlapGraph). */
+typedef graph_traits<OverlapGraph>::edge_descriptor Edge;
 typedef map<Edge, Overlap> OverlapGraphAttr;
 static OverlapGraphAttr g_overlaps;
 
