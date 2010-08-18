@@ -56,16 +56,6 @@ class BranchGroup
 			m_branches.reserve(m_maxNumBranches);
 		}
 
-		void swap(BranchGroup& o)
-		{
-			std::swap(m_branches, o.m_branches);
-			std::swap(m_dir, o.m_dir);
-			std::swap(m_origin, o.m_origin);
-			std::swap(m_maxNumBranches, o.m_maxNumBranches);
-			std::swap(m_noExt, o.m_noExt);
-			std::swap(m_status, o.m_status);
-		}
-
 		/** Add a branch to this group. */
 		BranchRecord& addBranch(const BranchRecord& branch)
 		{
@@ -148,10 +138,7 @@ class BranchGroup
 
 namespace std {
 	template <>
-	inline void swap(BranchGroup& a, BranchGroup& b)
-	{
-		a.swap(b);
-	}
+	inline void swap(BranchGroup&, BranchGroup&) { assert(false); }
 }
 
 #endif
