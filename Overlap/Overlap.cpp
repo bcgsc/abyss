@@ -162,23 +162,12 @@ static unsigned findOverlap(const ContigNode& t_id,
 	return overlaps[0];
 }
 
-static unsigned nextContigID(void)
-{
-	unsigned id;
-	istringstream s(ContigID(g_contigs.size() - 1).str());
-	s >> id;
-	assert(s.eof());
-	return ++id;
-}
-
 static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 		int dist, const string& seq)
 {
-	static unsigned nid = nextContigID();
-	ostringstream id, comment;
-	id << nid++;
+	ostringstream comment;
 	comment << seq.length() << " 0 " << t << ' ' << h << ' ' << dist;
-	return FastaRecord(ContigID(id.str()).str(), comment.str(), seq);
+	return FastaRecord(ContigID::create().str(), comment.str(), seq);
 }
 
 static FastaRecord overlapContigs(const ContigNode& t_id,
