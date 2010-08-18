@@ -129,7 +129,7 @@ class KmerData
 	}
 
   protected:
-	char m_flags;
+	uint8_t m_flags;
 	uint16_t m_multiplicity[2];
 	ExtensionRecord m_ext;
 };
