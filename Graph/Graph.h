@@ -148,7 +148,7 @@ remove_edge(typename G::edge_descriptor e, G& g)
 
 template <class G>
 typename G::vertex_descriptor
-add_vertex(const G& vp, G& g)
+add_vertex(const typename G::vertex_property_type& vp, G& g)
 {
 	return g.add_vertex(vp);
 }
