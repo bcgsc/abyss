@@ -26,6 +26,7 @@ SequenceCollectionHash::SequenceCollectionHash()
 		// of 0.216, and approximately 116 million 32-mers, which
 		// results in a hash load of 0.432.
 		m_pSequences = new SequenceDataHash(200000000);
+		m_pSequences->min_load_factor(0.2);
 	} else {
 		// Allocate a big hash for a single processor.
 		m_pSequences = new SequenceDataHash(1<<29);
@@ -80,8 +81,7 @@ unsigned SequenceCollectionHash::cleanup()
 		} else
 			++it;
 	}
-	m_pSequences->resize(0);
-	printLoad();
+	shrink();
 	return count;
 }
 
@@ -287,7 +287,7 @@ void SequenceCollectionHash::store(const char* path) const
 		perror(s.str().c_str());
 		exit(EXIT_FAILURE);
 	}
-	m_pSequences->resize(0); // Shrink the hash table.
+	shrink();
 	m_pSequences->write_metadata(f);
 	m_pSequences->write_nopointer_data(f);
 	fclose(f);

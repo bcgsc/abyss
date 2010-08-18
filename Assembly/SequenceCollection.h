@@ -22,6 +22,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Clean up by erasing sequences flagged as deleted.
 		unsigned cleanup();
 
+		/** Shrink the hash table. */
+		void shrink() const { m_pSequences->resize(0); printLoad(); }
+
 		// Print the load of the hash table.
 		void printLoad() const;
 

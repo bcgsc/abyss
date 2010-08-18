@@ -90,7 +90,7 @@ void NetworkSequenceCollection::run()
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
-				m_pLocalSpace->printLoad();
+				m_pLocalSpace->shrink();
 				m_comm.reduce(m_pLocalSpace->count());
 
 				Histogram h(m_comm.reduce(
@@ -447,7 +447,7 @@ void NetworkSequenceCollection::runControl()
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n",
 					m_pLocalSpace->count());
-				m_pLocalSpace->printLoad();
+				m_pLocalSpace->shrink();
 				printf("Loaded %lu k-mer\n",
 						m_comm.reduce(m_pLocalSpace->count()));
 

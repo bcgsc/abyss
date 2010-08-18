@@ -57,7 +57,7 @@ static void assemble(const string& pathIn, const string& pathOut)
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
 	cout << "Loaded " << pSC->count() << " k-mer\n";
-	pSC->printLoad();
+	pSC->shrink();
 	assert(pSC->count() > 0);
 
 	AssemblyAlgorithms::setCoverageParameters(
