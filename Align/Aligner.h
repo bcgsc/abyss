@@ -192,6 +192,8 @@ class Aligner
 		}
 
 	private:
+		explicit Aligner(const Aligner&);
+
 		typedef std::map<unsigned, AlignmentVector> AlignmentSet;
 
 		AlignmentSet getAlignmentsInternal(
