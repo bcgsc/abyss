@@ -107,7 +107,8 @@ int main(int argc, char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
-	ContigGraph<Contig> g;
+	typedef ContigGraph<Contig> Graph;
+	Graph g;
 	in >> g;
 	assert(in.eof());
 
@@ -115,8 +116,7 @@ int main(int argc, char** argv)
 	if (opt::k > 0)
 		cout << "k=" << opt::k << "\n"
 			"edge[d=" << -(opt::k-1) << "]\n";
-	cout << static_cast<const DirectedGraph<Contig>&>(g)
-		<< "}\n";
+	cout << dot_writer<Graph>(g) << "}\n";
 	assert(cout.good());
 	return 0;
 }

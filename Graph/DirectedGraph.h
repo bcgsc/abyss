@@ -485,6 +485,19 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	return out;
 }
 
+/** Output a GraphViz dot graph. */
+template <typename Graph>
+struct dot_writer
+{
+	const Graph& g;
+	dot_writer(const Graph& g) : g(g) { }
+	friend std::ostream& operator<<(std::ostream& out,
+			const dot_writer& o)
+	{
+		return write_dot<Graph>(out, o.g);
+	}
+};
+
 template <typename VertexProp>
 std::ostream& operator<<(std::ostream& out,
 		const DirectedGraph<VertexProp>& g)
