@@ -1,7 +1,7 @@
 #ifndef CONTIGGRAPH_H
 #define CONTIGGRAPH_H 1
 
-#include "ContigNode.h"
+#include "ContigID.h"
 #include <cassert>
 #include <istream>
 #include <limits> // for numeric_limits
@@ -103,10 +103,11 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 	typedef typename Graph::adjacency_iterator adjacency_iterator;
 
 	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
-	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
+	bool sense = false;
+	for (vertex_iterator u = vit.first; u != vit.second; ++u,
+			sense = !sense) {
 		if (g.is_removed(*u))
 			continue;
-		bool sense = ContigNode(*u).sense();
 		if (!sense)
 			out << ContigID(*u) << g[*u];
 		out << "\t;";
@@ -143,7 +144,7 @@ std::istream& operator>>(std::istream& in,
 	while (in >> id >> prop) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		vertex_descriptor v = g.add_vertex(prop);
-		assert(v == ContigNode(id, false));
+		assert(v == vertex_descriptor(id, false));
 	}
 	assert(in.eof());
 	assert(g.num_vertices() > 0);
@@ -155,14 +156,14 @@ std::istream& operator>>(std::istream& in,
 	assert(in);
 	while (in >> id) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
+		vertex_descriptor u(id, false);
 		for (int sense = false; sense <= true; ++sense) {
 			std::string s;
 			getline(in, s, !sense ? ';' : '\n');
 			assert(in.good());
 			std::istringstream ss(s);
-			for (ContigNode edge; ss >> edge;)
-				g.Graph::add_edge(
-						ContigNode(id, sense), edge ^ sense);
+			for (vertex_descriptor v; ss >> v;)
+				g.Graph::add_edge(u ^ sense, v ^ sense);
 			assert(ss.eof());
 		}
 	}
