@@ -2,6 +2,7 @@
 #define CONTIGGRAPH_H 1
 
 #include "ContigID.h"
+#include "Graph.h"
 #include <cassert>
 #include <istream>
 #include <limits> // for numeric_limits
@@ -16,15 +17,15 @@ template <typename DG>
 class ContigGraph : public DG {
   public:
 	// Vertex types.
-	typedef typename DG::vertices_size_type vertices_size_type;
-	typedef typename DG::vertex_descriptor vertex_descriptor;
-	typedef typename DG::vertex_iterator vertex_iterator;
-	typedef typename DG::vertex_property_type vertex_property_type;
+	typedef typename graph_traits<DG>::vertices_size_type vertices_size_type;
+	typedef typename graph_traits<DG>::vertex_descriptor vertex_descriptor;
+	typedef typename graph_traits<DG>::vertex_iterator vertex_iterator;
+	typedef typename vertex_property<DG>::type vertex_property_type;
 
 	// Edge types.
-	typedef typename DG::degree_size_type degree_size_type;
-	typedef typename DG::edge_descriptor edge_descriptor;
-	typedef typename DG::adjacency_iterator adjacency_iterator;
+	typedef typename graph_traits<DG>::degree_size_type degree_size_type;
+	typedef typename graph_traits<DG>::edge_descriptor edge_descriptor;
+	typedef typename graph_traits<DG>::adjacency_iterator adjacency_iterator;
 
   public:
 	/** Construct an empty contig graph. */

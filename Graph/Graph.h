@@ -22,6 +22,12 @@ struct graph_traits {
 	typedef typename G::degree_size_type degree_size_type;
 };
 
+template <class Graph>
+class vertex_property {
+  public:
+	typedef typename Graph::vertex_property_type type;
+};
+
 // IncidenceGraph
 
 template <class G>
