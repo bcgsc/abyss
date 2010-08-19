@@ -391,7 +391,10 @@ class Edge
 	}
 
 	/** Return the number of vertices. */
-	vertices_size_type num_vertices() const { return m_vertices.size(); }
+	vertices_size_type num_vertices() const
+	{
+		return m_vertices.size();
+	}
 
 	/** Return the number of edges. */
 	edges_size_type num_edges() const
@@ -453,29 +456,59 @@ class Edge
 	std::vector<bool> m_removed;
 };
 
+template <typename Graph, typename VertexProp>
+struct vertex_property_writer {
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	const Graph& g;
+	vertex_descriptor u;
+	vertex_property_writer(const Graph& g, vertex_descriptor u)
+		: g(g), u(u) { }
+	friend std::ostream& operator<<(std::ostream& out,
+			const vertex_property_writer& o)
+	{
+		return out << '"' << o.u << "\" [" << o.g[o.u] << "]\n";
+	}
+};
+
+template <typename Graph>
+struct vertex_property_writer<Graph, no_property> {
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	vertex_property_writer(const Graph&, vertex_descriptor) { }
+	friend std::ostream& operator<<(std::ostream& out,
+			const vertex_property_writer&)
+	{
+		return out;
+	}
+};
+
 /** Output a GraphViz dot graph. */
 template <typename Graph>
 std::ostream& write_dot(std::ostream& out, const Graph& g)
 {
-	typedef typename Graph::vertex_iterator vertex_iterator;
-	typedef typename Graph::adjacency_iterator adjacency_iterator;
-	typedef typename Graph::vertex_property_type vertex_property_type;
+	typedef typename graph_traits<Graph>::vertex_iterator
+		vertex_iterator;
+	typedef typename graph_traits<Graph>::adjacency_iterator
+		adjacency_iterator;
+	typedef typename vertex_property<Graph>::type
+		vertex_property_type;
 
 	std::pair<vertex_iterator, vertex_iterator>
-		vit = g.vertices();
+		vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
-		if (g.is_removed(*u))
+		if (is_removed(*u, g))
 			continue;
-		if (sizeof (vertex_property_type) > 0)
-			out << '"' << *u << "\" [" << g[*u] << "]\n";
-		unsigned outdeg = g.out_degree(*u);
+		out << vertex_property_writer<Graph, vertex_property_type>(
+					g, *u);
+		unsigned outdeg = out_degree(*u, g);
 		if (outdeg == 0)
 			continue;
 		out << '"' << *u << "\" ->";
 		if (outdeg > 1)
 			out << " {";
 		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = g.adjacent_vertices(*u);
+			adj = adjacent_vertices(*u, g);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
 			out << " \"" << *v << '"';
 		if (outdeg > 1)

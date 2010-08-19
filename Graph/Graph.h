@@ -156,4 +156,13 @@ add_vertex(const typename G::vertex_property_type& vp, G& g)
 	return g.add_vertex(vp);
 }
 
+// non-standard
+
+template <class G>
+bool
+is_removed(typename G::vertex_descriptor u, const G& g)
+{
+	return g.is_removed(u);
+}
+
 #endif

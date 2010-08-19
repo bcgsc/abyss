@@ -2,6 +2,7 @@
 #define MAPGRAPH_H 1
 
 #include "ContigNode.h"
+#include "Graph.h"
 #include <map>
 #include <set>
 #include <utility> // for pair
@@ -14,7 +15,26 @@ struct graph_traits<MapGraph> {
 	typedef MapGraph::mapped_type::const_iterator adjacency_iterator;
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
+
+	/** Iterate through the vertices of this graph. */
+	struct vertex_iterator : MapGraph::const_iterator
+	{
+		vertex_iterator(const MapGraph::const_iterator& it)
+			: MapGraph::const_iterator(it) { }
+		const vertex_descriptor& operator*() const
+		{
+			return MapGraph::const_iterator::operator*().first;
+		}
+	};
+
 };
+
+template <>
+struct vertex_property<MapGraph> {
+	typedef no_property type;
+};
+
+// IncidenceGraph
 
 unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
 		const MapGraph& g)
@@ -24,11 +44,27 @@ unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
 	return it->second.size();
 }
 
+static inline graph_traits<MapGraph>::vertex_descriptor
+source(graph_traits<MapGraph>::edge_descriptor e)
+{
+	return e.first;
+}
+
+static inline graph_traits<MapGraph>::vertex_descriptor
+target(graph_traits<MapGraph>::edge_descriptor e)
+{
+	return e.second;
+}
+
+// BidirectionalGraph
+
 unsigned in_degree(graph_traits<MapGraph>::vertex_descriptor u,
 		const MapGraph& g)
 {
 	return out_degree(~u, g);
 }
+
+// AdjacencyGraph
 
 std::pair<graph_traits<MapGraph>::adjacency_iterator,
 	graph_traits<MapGraph>::adjacency_iterator>
@@ -40,16 +76,21 @@ adjacent_vertices(graph_traits<MapGraph>::vertex_descriptor u,
 	return make_pair(it->second.begin(), it->second.end());
 }
 
-static inline graph_traits<MapGraph>::vertex_descriptor
-source(graph_traits<MapGraph>::edge_descriptor u)
+// VertexListGraph
+
+std::pair<graph_traits<MapGraph>::vertex_iterator,
+	graph_traits<MapGraph>::vertex_iterator>
+vertices(const MapGraph& g)
 {
-	return u.first;
+	return make_pair(g.begin(), g.end());
 }
 
-static inline graph_traits<MapGraph>::vertex_descriptor
-target(graph_traits<MapGraph>::edge_descriptor u)
+// non-standard
+
+static inline bool
+is_removed(graph_traits<MapGraph>::vertex_descriptor, const MapGraph&)
 {
-	return u.second;
+	return false;
 }
 
 #endif
