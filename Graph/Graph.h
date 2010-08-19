@@ -23,8 +23,7 @@ struct graph_traits {
 };
 
 template <class Graph>
-class vertex_property {
-  public:
+struct vertex_property {
 	typedef typename Graph::vertex_property_type type;
 };
 
