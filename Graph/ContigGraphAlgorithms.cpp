@@ -11,7 +11,7 @@
 
 using namespace std;
 
-typedef ContigGraph<ContigProperties> Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::vertex_iterator vertex_iterator;
 typedef vector<vertex_descriptor> Path;

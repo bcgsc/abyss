@@ -1,7 +1,7 @@
 #ifndef CONTIGGRAPH_H
 #define CONTIGGRAPH_H 1
 
-#include "DirectedGraph.h"
+#include "ContigNode.h"
 #include <cassert>
 #include <istream>
 #include <limits> // for numeric_limits
@@ -12,15 +12,14 @@
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
  */
-template <typename VertexProp>
-class ContigGraph : public DirectedGraph<VertexProp> {
+template <typename DG>
+class ContigGraph : public DG {
   public:
-	typedef DirectedGraph<VertexProp> DG;
-
 	// Vertex types.
 	typedef typename DG::vertices_size_type vertices_size_type;
 	typedef typename DG::vertex_descriptor vertex_descriptor;
 	typedef typename DG::vertex_iterator vertex_iterator;
+	typedef typename DG::vertex_property_type vertex_property_type;
 
 	// Edge types.
 	typedef typename DG::degree_size_type degree_size_type;
@@ -66,7 +65,7 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 
 	/** Add a vertex to this graph. */
 	vertex_descriptor add_vertex(
-				const VertexProp& data = VertexProp())
+			const vertex_property_type& data = vertex_property_type())
 	{
 		vertex_descriptor v = DG::add_vertex(data);
 		DG::add_vertex(data);
@@ -121,26 +120,26 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 	return out;
 }
 
-template <typename VertexProp>
+template <typename Graph>
 std::ostream& operator<<(std::ostream& out,
-		const ContigGraph<VertexProp>& g)
+		const ContigGraph<Graph>& g)
 {
 	return write_adj(out, g);
 }
 
 /** Read a contig adjacency graph. */
-template <typename VertexProp>
-std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
+template <typename Graph>
+std::istream& operator>>(std::istream& in,
+		ContigGraph<Graph>& g)
 {
-	typedef typename ContigGraph<VertexProp>::DG DG;
-	typedef typename
-		ContigGraph<VertexProp>::vertex_descriptor vertex_descriptor;
+	typedef typename Graph::vertex_descriptor vertex_descriptor;
+	typedef typename Graph::vertex_property_type vertex_property_type;
 
 	// Read the vertex properties.
 	g.clear();
 	assert(in);
 	ContigID id(-1);
-	VertexProp prop;
+	vertex_property_type prop;
 	while (in >> id >> prop) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		vertex_descriptor v = g.add_vertex(prop);
@@ -162,7 +161,8 @@ std::istream& operator>>(std::istream& in, ContigGraph<VertexProp>& g)
 			assert(in.good());
 			std::istringstream ss(s);
 			for (ContigNode edge; ss >> edge;)
-				g.DG::add_edge(ContigNode(id, sense), edge ^ sense);
+				g.Graph::add_edge(
+						ContigNode(id, sense), edge ^ sense);
 			assert(ss.eof());
 		}
 	}

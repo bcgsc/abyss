@@ -95,7 +95,7 @@ static const struct option longopts[] = {
 static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<ContigProperties> Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
 static Graph g_graph;
 
 static struct {

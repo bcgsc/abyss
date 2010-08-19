@@ -3,6 +3,7 @@
  * Copyright 2010 Genome Sciences Centre
  */
 #include "ContigGraph.h"
+#include "DirectedGraph.h"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -107,7 +108,7 @@ int main(int argc, char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
-	typedef ContigGraph<Contig> Graph;
+	typedef ContigGraph<DirectedGraph<Contig> > Graph;
 	Graph g;
 	in >> g;
 	assert(in.eof());

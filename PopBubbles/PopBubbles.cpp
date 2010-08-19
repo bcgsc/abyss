@@ -77,7 +77,7 @@ static const struct option longopts[] = {
 static vector<ContigID> g_popped;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<ContigProperties> Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::adjacency_iterator adjacency_iterator;

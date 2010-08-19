@@ -2,8 +2,8 @@
 #define GRAPHALGORITHMS_H 1
 
 #include "ContigGraph.h"
-#include "ContigNode.h"
 #include "ContigPath.h"
+#include "DirectedGraph.h"
 #include <istream>
 #include <utility>
 #include <vector>
@@ -30,7 +30,7 @@ struct Contig {
 	}
 };
 
-typedef ContigGraph<Contig> Graph;
+typedef ContigGraph<DirectedGraph<Contig> > Graph;
 typedef std::pair<ContigNode, unsigned> Constraint;
 typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;

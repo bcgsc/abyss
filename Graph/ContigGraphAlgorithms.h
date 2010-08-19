@@ -58,8 +58,10 @@ OutIt assemble(const Graph& g,
 
 #include "ContigGraph.h"
 #include "ContigProperties.h"
+#include "DirectedGraph.h"
 #include <ostream>
 
-void assemble(ContigGraph<ContigProperties>& g, std::ostream& out);
+void assemble(ContigGraph<DirectedGraph<ContigProperties> >& g,
+		std::ostream& out);
 
 #endif
