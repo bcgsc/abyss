@@ -435,35 +435,6 @@ class Edge
 				edge_iterator(this, vit.second));
 	}
 
-	friend std::ostream& operator <<(std::ostream& out,
-			const DirectedGraph<VertexProp>& g)
-	{
-		std::pair<vertex_iterator, vertex_iterator>
-			vit = g.vertices();
-		for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-			if (g.is_removed(*v))
-				continue;
-			if (sizeof (VertexProp) > 0)
-				out << '"' << *v << "\" [" << g[*v] << "]\n";
-			unsigned outdeg = g.out_degree(*v);
-			if (outdeg == 0)
-				continue;
-			out << '"' << *v << "\" ->";
-			if (outdeg > 1)
-				out << " {";
-			std::pair<out_edge_iterator, out_edge_iterator>
-				eit = g.out_edges(*v);
-			for (out_edge_iterator e = eit.first;
-					e != eit.second; ++e)
-				out << " \"" << g.target(*e) << '"';
-			if (outdeg > 1)
-				out << " }";
-			out << '\n';
-		}
-		return out;
-	}
-
-  protected:
 	/** Return true if this vertex has been removed. */
 	bool is_removed(vertex_descriptor u) const
 	{
@@ -481,5 +452,44 @@ class Edge
 	/** Flags indicating vertices that have been removed. */
 	std::vector<bool> m_removed;
 };
+
+/** Output a GraphViz dot graph. */
+template <typename Graph>
+std::ostream& write_dot(std::ostream& out, const Graph& g)
+{
+	typedef typename Graph::vertex_iterator vertex_iterator;
+	typedef typename Graph::adjacency_iterator adjacency_iterator;
+	typedef typename Graph::vertex_property_type vertex_property_type;
+
+	std::pair<vertex_iterator, vertex_iterator>
+		vit = g.vertices();
+	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
+		if (g.is_removed(*u))
+			continue;
+		if (sizeof (vertex_property_type) > 0)
+			out << '"' << *u << "\" [" << g[*u] << "]\n";
+		unsigned outdeg = g.out_degree(*u);
+		if (outdeg == 0)
+			continue;
+		out << '"' << *u << "\" ->";
+		if (outdeg > 1)
+			out << " {";
+		std::pair<adjacency_iterator, adjacency_iterator>
+			adj = g.adjacent_vertices(*u);
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+			out << " \"" << *v << '"';
+		if (outdeg > 1)
+			out << " }";
+		out << '\n';
+	}
+	return out;
+}
+
+template <typename VertexProp>
+std::ostream& operator<<(std::ostream& out,
+		const DirectedGraph<VertexProp>& g)
+{
+	return write_dot(out, g);
+}
 
 #endif

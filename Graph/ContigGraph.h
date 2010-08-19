@@ -9,12 +9,6 @@
 #include <sstream>
 #include <utility>
 
-template <typename VertexProp = no_property> class ContigGraph;
-
-template <typename VertexProp>
-std::ostream& operator<<(std::ostream& out,
-		const ContigGraph<VertexProp>& g);
-
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
  */
@@ -98,21 +92,17 @@ class ContigGraph : public DirectedGraph<VertexProp> {
 		return e;
 	}
 
-	friend std::ostream& operator<< <>(std::ostream& out,
-			const ContigGraph& g);
-
   private:
 	ContigGraph(const ContigGraph&);
 };
 
 /** Output a contig adjacency graph. */
-template <typename VertexProp>
-std::ostream& operator<<(std::ostream& out,
-		const ContigGraph<VertexProp>& g)
+template <typename Graph>
+std::ostream& write_adj(std::ostream& out, const Graph& g)
 {
-	typedef ContigGraph<VertexProp> G;
-	typedef typename G::vertex_iterator vertex_iterator;
-	typedef typename G::adjacency_iterator adjacency_iterator;
+	typedef typename Graph::vertex_iterator vertex_iterator;
+	typedef typename Graph::adjacency_iterator adjacency_iterator;
+
 	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
 		if (g.is_removed(*u))
@@ -129,6 +119,13 @@ std::ostream& operator<<(std::ostream& out,
 			out << '\n';
 	}
 	return out;
+}
+
+template <typename VertexProp>
+std::ostream& operator<<(std::ostream& out,
+		const ContigGraph<VertexProp>& g)
+{
+	return write_adj(out, g);
 }
 
 /** Read a contig adjacency graph. */
