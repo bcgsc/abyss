@@ -12,6 +12,7 @@
 # define hash_map std::tr1::unordered_map
 # define hash_multimap std::tr1::unordered_multimap
 #elif HAVE_EXT_HASH_MAP
+# define USING_EXT_HASH_MAP 1
 # undef __DEPRECATED
 # include <ext/hash_map>
 using __gnu_cxx::hash_map;
@@ -20,8 +21,7 @@ using __gnu_cxx::hash_multimap;
 # error A hash map implementation is required.
 #endif
 
-#if HAVE_UNORDERED_MAP || HAVE_TR1_UNORDERED_MAP
-#elif HAVE_EXT_HASH_MAP
+#if USING_EXT_HASH_MAP
 # include <cstddef>
 # include <string>
 // Implement a string hash function so that a string can be used as

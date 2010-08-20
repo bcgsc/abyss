@@ -23,7 +23,14 @@ class SequenceCollectionHash : public ISequenceCollection
 		unsigned cleanup();
 
 		/** Shrink the hash table. */
-		void shrink() const { m_pSequences->resize(0); printLoad(); }
+		void shrink() const {
+#if USING_EXT_HASH_MAP
+			m_pSequences->resize(0);
+#else
+			m_pSequences->rehash(0);
+#endif
+			printLoad();
+		}
 
 		// Print the load of the hash table.
 		void printLoad() const;
