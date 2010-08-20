@@ -4,6 +4,7 @@
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "GraphAlgorithms.h"
+#include "Histogram.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <cerrno>
@@ -147,6 +148,17 @@ int main(int argc, char** argv)
 		unsigned e = g.num_edges();
 		cout << "V=" << v << " E=" << e
 			<< " E/V=" << (float)e / v << endl;
+
+		// Print a histogram of the degree.
+		Histogram h;
+		typedef Graph::vertex_iterator vertex_iterator;
+		std::pair<vertex_iterator, vertex_iterator>
+			vit = vertices(g);
+		for (vertex_iterator u = vit.first; u != vit.second; ++u)
+			h.insert(out_degree(*u, g));
+		cout <<
+			"Degree: " << h.barplot() << "\n"
+			"        01234" << endl;	
 	}
 
 	// try to find paths that match the distance estimates
