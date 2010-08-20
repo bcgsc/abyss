@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 			h.insert(out_degree(*u, g));
 		cout <<
 			"Degree: " << h.barplot() << "\n"
-			"        01234" << endl;	
+			"        01234" << endl;
 	}
 
 	// try to find paths that match the distance estimates
