@@ -9,6 +9,7 @@ libcommon_a_SOURCES = \
 	ContigLength.h ContigLength.cpp \
 	ContigNode.h \
 	ContigPath.h ContigPath.cpp \
+	ContigProperties.h \
 	Dictionary.h \
 	Estimate.h \
 	Fcontrol.cpp Fcontrol.h \
