@@ -277,6 +277,8 @@ int main(int argc, char** argv)
 		out << "}\n";
 
 	if (opt::verbose > 0)
-		cerr << "Vertices: " << numVerts
-			<< " Edges: " << numEdges << endl;
+		cerr << "V=" << numVerts
+			<< " E=" << numEdges
+			<< " E/V=" << (float)numEdges / numVerts
+			<< endl;
 }

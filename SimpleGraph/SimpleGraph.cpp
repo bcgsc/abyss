@@ -142,9 +142,12 @@ int main(int argc, char** argv)
 	fin >> g;
 	assert(fin.eof());
 
-	if (opt::verbose > 0)
-		cout << "Vertices: " << g.num_vertices()
-			<< " Edges: " << g.num_edges() << endl;
+	if (opt::verbose > 0) {
+		unsigned v = g.num_vertices();
+		unsigned e = g.num_edges();
+		cout << "V=" << v << " E=" << e
+			<< " E/V=" << (float)e / v << endl;
+	}
 
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(g, estFile);
