@@ -456,6 +456,12 @@ class Edge
 	std::vector<bool> m_removed;
 };
 
+namespace std {
+	template <typename VertexProp>
+	inline void swap(DirectedGraph<VertexProp>& a,
+			DirectedGraph<VertexProp>& b) { a.swap(b); }
+}
+
 template <typename Graph, typename VertexProp>
 struct vertex_property_writer {
 	typedef typename graph_traits<Graph>::vertex_descriptor
