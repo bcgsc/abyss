@@ -47,7 +47,7 @@ class BranchGroup
 			m_branches.push_back(branch);
 		}
 
-		explicit BranchGroup(const BranchGroup& o)
+		BranchGroup(const BranchGroup& o)
 			: m_branches(o.m_branches), m_dir(o.m_dir),
 			m_origin(o.m_origin),
 			m_maxNumBranches(o.m_maxNumBranches),
