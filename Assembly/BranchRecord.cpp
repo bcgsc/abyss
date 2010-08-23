@@ -54,5 +54,6 @@ bool BranchRecord::isCanonical() const
 		last.reverseComplement();
 	else
 		first.reverseComplement();
-	return first.compare(last) <= 0;
+	assert(first != last);
+	return first < last;
 }
