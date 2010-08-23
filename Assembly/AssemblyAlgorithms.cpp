@@ -697,6 +697,9 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer)
 {
+	/** Stop contig assembly at palindromes. */
+	const bool stopAtPalindromes = maxLength == UINT_MAX;
+
 	extDirection dir = branch.getDirection();
 	extDirection oppDir = oppositeDirection(dir);
 
@@ -708,13 +711,23 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
 		branch.terminate(BS_AMBI_OPP);
 		return false;
+	} else if (stopAtPalindromes && currSeq.isPalindrome()) {
+		// Palindrome.
+		branch.terminate(BS_AMBI_SAME);
+		return false;
 	}
 
 	if (addKmer)
 		branch.push_back(make_pair(currSeq,
 					KmerData(multiplicity, extensions)));
+
 	if (branch.isTooLong(maxLength)) {
+		// Too long.
 		branch.terminate(BS_TOO_LONG);
+		return false;
+	} else if (stopAtPalindromes && currSeq.isPalindrome(dir)) {
+		// Palindrome.
+		branch.terminate(BS_AMBI_SAME);
 		return false;
 	}
 
