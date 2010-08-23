@@ -151,20 +151,6 @@ void SequenceCollectionHash::printLoad() const
 		<< " using " << toSI(bytes) << "B" << endl;
 }
 
-/** Return an iterator pointing to the specified k-mer. */
-SequenceCollectionHash::iterator SequenceCollectionHash::find(
-		const Kmer& key)
-{
-	return m_pSequences->find(key);
-}
-
-/** Return an iterator pointing to the specified k-mer. */
-SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
-		const Kmer& key) const
-{
-	return m_pSequences->find(key);
-}
-
 /** Return an iterator pointing to the specified k-mer or its
  * reverse complement. Return in rc whether the sequence is reversed.
  */

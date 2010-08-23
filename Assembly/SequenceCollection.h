@@ -84,8 +84,16 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		iterator find(const Kmer& key);
-		const_iterator find(const Kmer& key) const;
+		iterator find(const Kmer& key)
+		{
+			return m_pSequences->find(key);
+		}
+
+		const_iterator find(const Kmer& key) const
+		{
+			return m_pSequences->find(key);
+		}
+
 		iterator find(const Kmer& key, bool& rc);
 		const_iterator find(const Kmer& key, bool& rc) const;
 
