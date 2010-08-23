@@ -101,10 +101,11 @@ bool SequenceCollectionHash::setBaseExtension(
 	SequenceCollectionHash::iterator it = find(kmer, rc);
 	if (it == m_pSequences->end())
 		return false;
-	if (rc)
-		it->second.setBaseExtension(!dir, complementBaseCode(base));
-	else
+	bool palindrome = kmer.isPalindrome();
+	if (!rc || palindrome)
 		it->second.setBaseExtension(dir, base);
+	if (rc || palindrome)
+		it->second.setBaseExtension(!dir, complementBaseCode(base));
 	return true;
 }
 
@@ -115,10 +116,11 @@ void SequenceCollectionHash::removeExtension(const Kmer& kmer,
 	bool rc;
 	SequenceCollectionHash::iterator it = find(kmer, rc);
 	assert(it != m_pSequences->end());
-	if (rc)
-		it->second.removeExtension(!dir, ~ext);
-	else
+	bool palindrome = kmer.isPalindrome();
+	if (!rc || palindrome)
 		it->second.removeExtension(dir, ext);
+	if (rc || palindrome)
+		it->second.removeExtension(!dir, ~ext);
 	notify(*it);
 }
 
