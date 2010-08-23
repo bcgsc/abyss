@@ -95,46 +95,31 @@ static inline uint8_t complementBaseCode(uint8_t base)
 
 /** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
-		const Kmer& seq, extDirection dir, uint8_t base)
+		const Kmer& kmer, extDirection dir, uint8_t base)
 {
-	iteratorPair iters = findBoth(seq);
-	return setBaseExtensionByIter(iters.first, dir, base)
-		|| setBaseExtensionByIter(iters.second,
-				oppositeDirection(dir), complementBaseCode(base));
-}
-
-bool SequenceCollectionHash::setBaseExtensionByIter(
-		iterator seqIter, extDirection dir, uint8_t base)
-{
-	if(seqIter != m_pSequences->end())
-	{
-		seqIter->second.setBaseExtension(dir, base);
-		return true;
-		//seqIter->printExtension();
-	}	
-	return false;
+	bool rc;
+	SequenceCollectionHash::iterator it = find(kmer, rc);
+	if (it == m_pSequences->end())
+		return false;
+	if (rc)
+		it->second.setBaseExtension(!dir, complementBaseCode(base));
+	else
+		it->second.setBaseExtension(dir, base);
+	return true;
 }
 
 /** Remove the specified extensions from this k-mer. */
-void SequenceCollectionHash::removeExtension(const Kmer& seq,
+void SequenceCollectionHash::removeExtension(const Kmer& kmer,
 		extDirection dir, SeqExt ext)
 {
-	iteratorPair iters = findBoth(seq);
-	bool found = removeExtensionByIter(iters.first, dir, ext)
-		|| removeExtensionByIter(iters.second, !dir, ~ext);
-	assert(found);
-	(void)found;
-	notify(getSeqAndData(iters));
-}
-
-bool SequenceCollectionHash::removeExtensionByIter(
-		iterator seqIter, extDirection dir, SeqExt ext)
-{
-	if (seqIter != m_pSequences->end()) {
-		seqIter->second.removeExtension(dir, ext);
-		return true;
-	} else
-		return false;
+	bool rc;
+	SequenceCollectionHash::iterator it = find(kmer, rc);
+	assert(it != m_pSequences->end());
+	if (rc)
+		it->second.removeExtension(!dir, ~ext);
+	else
+		it->second.removeExtension(dir, ext);
+	notify(*it);
 }
 
 void SequenceCollectionHash::setFlag(const Kmer& key, SeqFlag flag)
@@ -164,33 +149,6 @@ void SequenceCollectionHash::printLoad() const
 	logger(1) << "Hash load: " << size << " / " << buckets << " = "
 		<< setprecision(3) << (float)size / buckets
 		<< " using " << toSI(bytes) << "B" << endl;
-}
-
-/** Return the iterators pointing to the specified k-mer and its
- * reverse complement.
- */
-SequenceCollectionHash::iteratorPair SequenceCollectionHash::findBoth(
-		const Kmer& seq)
-{
-	iteratorPair iters;
-	iters.first = find(seq);
-	if (iters.first != m_pSequences->end())
-		iters.second = m_pSequences->end();
-	else
-		iters.second = find(reverseComplement(seq));
-	return iters;
-}
-
-/** Return the sequence and data of the specified iterator pair. */
-const SequenceCollectionHash::value_type& SequenceCollectionHash::
-getSeqAndData(const iteratorPair& iters) const
-{
-	if (iters.first != m_pSequences->end())
-		return *iters.first;
-	if (iters.second != m_pSequences->end())
-		return *iters.second;
-	assert(false);
-	exit(EXIT_FAILURE);
 }
 
 /** Return an iterator pointing to the specified k-mer. */

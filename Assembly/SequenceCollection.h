@@ -84,21 +84,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 
 	private:
-		typedef std::pair<SequenceDataHash::iterator,
-				SequenceDataHash::iterator> iteratorPair;
-
-		iteratorPair findBoth(const Kmer& seq);
 		iterator find(const Kmer& key);
 		const_iterator find(const Kmer& key) const;
 		iterator find(const Kmer& key, bool& rc);
 		const_iterator find(const Kmer& key, bool& rc) const;
-		const value_type& getSeqAndData(
-				const iteratorPair& iters) const;
-
-		bool setBaseExtensionByIter(iterator seqIter,
-				extDirection dir, uint8_t base);
-		bool removeExtensionByIter(iterator seqIter,
-				extDirection dir, SeqExt ext);
 
 		/** Call the observers of the specified sequence. */
 		void notify(const value_type& seq)
