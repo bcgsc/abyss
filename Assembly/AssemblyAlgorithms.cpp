@@ -483,13 +483,12 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 		const ISequenceCollection::value_type& seq, extDirection dir)
 {
 	SeqExt extension(seq.second.getExtension(dir));
-	extDirection oppDir = oppositeDirection(dir);
 	Kmer testSeq(seq.first);
 	uint8_t extBase = testSeq.shift(dir);
 	for (int i = 0; i < NUM_BASES; i++) {
 		if (extension.checkBase(i)) {
 			testSeq.setLastBase(dir, i);
-			seqCollection->removeExtension(testSeq, oppDir, extBase);
+			seqCollection->removeExtension(testSeq, !dir, extBase);
 		}
 	}
 }
@@ -701,14 +700,12 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 	const bool stopAtPalindromes = maxLength == UINT_MAX;
 
 	extDirection dir = branch.getDirection();
-	extDirection oppDir = oppositeDirection(dir);
-
 	if (branch.isTooLong(maxLength)) {
-		// Check if the branch has extended past the max trim length.
+		// Too long.
 		branch.terminate(BS_TOO_LONG);
 		return false;
-	} else if (extensions.dir[oppDir].isAmbiguous()) {
-		// There is a reverse ambiguity to this branch, stop the branch without adding the current sequence to it
+	} else if (extensions.dir[!dir].isAmbiguous()) {
+		// Ambiguous.
 		branch.terminate(BS_AMBI_OPP);
 		return false;
 	} else if (stopAtPalindromes && currSeq.isPalindrome()) {
