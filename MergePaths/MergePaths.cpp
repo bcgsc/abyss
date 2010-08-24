@@ -120,15 +120,24 @@ static set<ContigID> removeRepeats(ContigPathMap& paths)
 		cout << '\n';
 	}
 
-	ostringstream ss;
 	unsigned removed = 0;
 	for (set<ContigID>::const_iterator it = repeats.begin();
-			it != repeats.end(); ++it) {
-		if (paths.erase(*it) > 0) {
-			ss << ' ' << ContigID(*it);
+			it != repeats.end(); ++it)
+		if (paths.count(*it) > 0)
 			removed++;
-		}
+	if (removed == paths.size()) {
+		// Every path was identified as a repeat. It's most likely a
+		// cyclic sequence. Don't remove anything.
+		repeats.clear();
+		return repeats;
 	}
+
+	ostringstream ss;
+	for (set<ContigID>::const_iterator it = repeats.begin();
+			it != repeats.end(); ++it)
+		if (paths.erase(*it) > 0)
+			ss << ' ' << ContigID(*it);
+
 	if (opt::verbose > 0 && removed > 0)
 		cout << "Removing paths in repeats:" << ss.str() << '\n';
 	return repeats;
