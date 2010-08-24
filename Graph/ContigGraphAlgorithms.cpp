@@ -56,8 +56,6 @@ void assemble(Graph& g, ostream& out)
 		assemble(g, *v, back_inserter(path));
 		assert(path.size() >= 3);
 		assert(path.front() != path.back());
-		// Output only the canonical path.
-		if (path.front() < path.back())
-			mergePath(g, path, out);
+		mergePath(g, path, out);
 	}
 }
