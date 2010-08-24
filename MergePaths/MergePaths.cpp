@@ -246,7 +246,7 @@ static bool isCycle(const ContigPath& path)
 static ContigID identifySubsumedPaths(
 		ContigPathMap::const_iterator path1It,
 		ContigPathMap& paths,
-		vector<ContigPathMap::iterator>& out,
+		set<ContigID>& out,
 		set<ContigID>& overlaps)
 {
 	ostringstream vout;
@@ -273,7 +273,7 @@ static ContigID identifySubsumedPaths(
 		if (equalIgnoreAmbiguos(consensus, path)) {
 			if (gDebugPrint)
 				vout << pivot << '\t' << path2 << '\n';
-			out.push_back(path2It);
+			out.insert(path2It->first);
 		} else if (equalIgnoreAmbiguos(consensus, path2)) {
 			// This path is larger. Use it as the seed.
 			return identifySubsumedPaths(path2It, paths, out,
@@ -295,7 +295,7 @@ static ContigID identifySubsumedPaths(
 					vout << pivot << '\t' << path2 << '\n'
 						<< "cycle\t" << consensus << '\n';
 				if (isCyclePath1 && isCyclePath2)
-					out.push_back(path2It);
+					out.insert(path2It->first);
 				else if (!isCyclePath1)
 					overlaps.insert(id);
 				else if (!isCyclePath2)
@@ -324,12 +324,12 @@ static ContigPathMap::const_iterator removeSubsumedPaths(
 {
 	if (gDebugPrint)
 		cout << '\n';
-	vector<ContigPathMap::iterator> eq;
+	set<ContigID> eq;
 	seed = identifySubsumedPaths(path1It, paths, eq, overlaps);
 	++path1It;
-	for (vector<ContigPathMap::iterator>::const_iterator
-			it = eq.begin(); it != eq.end(); ++it) {
-		if (*it == path1It)
+	for (set<ContigID>::const_iterator it = eq.begin();
+			it != eq.end(); ++it) {
+		if (*it == path1It->first)
 			++path1It;
 		paths.erase(*it);
 	}
