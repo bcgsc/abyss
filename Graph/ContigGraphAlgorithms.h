@@ -45,12 +45,21 @@ void copy_in_edges(Graph& g,
 	copy_out_edges(g, ~u, ~v);
 }
 
+/** Return true if the edge e is palindromic. */
+template<typename Graph>
+bool is_palindrome(const Graph& g, typename Graph::edge_descriptor e)
+{
+	return source(e, g) == ~target(e, g);
+}
+
 /** Assemble an unambiguous path starting at vertex v. */
 template<typename Graph, typename OutIt>
 OutIt assemble(const Graph& g,
 		typename Graph::vertex_descriptor v, OutIt out)
 {
-	for (; contiguous_out(g, v); v = *g.adjacent_vertices(v).first)
+	for (; contiguous_out(g, v)
+			&& !is_palindrome(g, *out_edges(v, g).first);
+			v = *g.adjacent_vertices(v).first)
 		*out++ = v;
 	*out++ = v;
 	return out;
