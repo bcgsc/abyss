@@ -39,6 +39,22 @@ out_edges(typename G::vertex_descriptor u, const G& g)
 }
 
 template <class G>
+typename G::vertex_descriptor
+source(std::pair<typename G::vertex_descriptor,
+		typename G::vertex_descriptor> e, const G&)
+{
+	return e.first;
+}
+
+template <class G>
+typename G::vertex_descriptor
+target(std::pair<typename G::vertex_descriptor,
+		typename G::vertex_descriptor> e, const G&)
+{
+	return e.second;
+}
+
+template <class G>
 typename G::degree_size_type
 out_degree(typename G::vertex_descriptor u, const G& g)
 {
