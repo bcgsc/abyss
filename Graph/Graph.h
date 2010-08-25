@@ -39,17 +39,17 @@ out_edges(typename G::vertex_descriptor u, const G& g)
 }
 
 template <class G>
-typename G::vertex_descriptor
-source(std::pair<typename G::vertex_descriptor,
-		typename G::vertex_descriptor> e, const G&)
+typename graph_traits<G>::vertex_descriptor
+source(std::pair<typename graph_traits<G>::vertex_descriptor,
+		typename graph_traits<G>::vertex_descriptor> e, const G&)
 {
 	return e.first;
 }
 
 template <class G>
-typename G::vertex_descriptor
-target(std::pair<typename G::vertex_descriptor,
-		typename G::vertex_descriptor> e, const G&)
+typename graph_traits<G>::vertex_descriptor
+target(std::pair<typename graph_traits<G>::vertex_descriptor,
+		typename graph_traits<G>::vertex_descriptor> e, const G&)
 {
 	return e.second;
 }

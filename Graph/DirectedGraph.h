@@ -272,7 +272,7 @@ class Edge
 	explicit Edge(vertex_descriptor v) : m_target(v) { }
 
 	/** Returns the target vertex of this edge. */
-	const vertex_descriptor& target() const { return m_target; }
+	vertex_descriptor target() const { return m_target; }
 
 	/** Return true if the target of this edge is v. */
 	bool operator ==(const vertex_descriptor& v) const
@@ -416,18 +416,6 @@ class Edge
 	static vertex_descriptor vertex(vertices_size_type n)
 	{
 		return vertex_descriptor(n);
-	}
-
-	/** Return the source vertex of the specified edge. */
-	static vertex_descriptor source(edge_descriptor e)
-	{
-		return e.first;
-	}
-
-	/** Return the target vertex of the specified edge. */
-	static vertex_descriptor target(edge_descriptor e)
-	{
-		return e.second;
 	}
 
 	/** Iterate through the edges of this graph. */

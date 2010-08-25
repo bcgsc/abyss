@@ -44,18 +44,6 @@ unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
 	return it->second.size();
 }
 
-static inline graph_traits<MapGraph>::vertex_descriptor
-source(graph_traits<MapGraph>::edge_descriptor e)
-{
-	return e.first;
-}
-
-static inline graph_traits<MapGraph>::vertex_descriptor
-target(graph_traits<MapGraph>::edge_descriptor e)
-{
-	return e.second;
-}
-
 // BidirectionalGraph
 
 unsigned in_degree(graph_traits<MapGraph>::vertex_descriptor u,
