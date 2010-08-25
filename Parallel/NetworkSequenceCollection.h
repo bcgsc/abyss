@@ -70,8 +70,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void remove(const Kmer& seq);
 		void setFlag(const Kmer& seq, SeqFlag flag);
 
-		/** Return the number of elements in this container. */
-		size_t count() const { return m_data.count(); }
+		/** Return true if this container is empty. */
+		bool empty() const { return m_data.empty(); }
 
 		void printLoad() const { m_data.printLoad(); }
 

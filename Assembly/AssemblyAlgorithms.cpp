@@ -67,7 +67,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		}
 
 		if (opt::rank <= 0
-				&& count == 0 && seqCollection->count() == 0) {
+				&& count == 0 && seqCollection->empty()) {
 			// Detect colour-space reads.
 			bool colourSpace
 				= seq.find_first_of("0123") != string::npos;

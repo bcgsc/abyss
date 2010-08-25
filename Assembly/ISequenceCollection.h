@@ -37,8 +37,7 @@ class ISequenceCollection
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 		}
 
-		// Return the number of sequences in the collection
-		virtual size_t count() const = 0;
+		virtual bool empty() const = 0;
 
 		virtual void printLoad() const = 0;
 

@@ -56,8 +56,11 @@ class SequenceCollectionHash : public ISequenceCollection
 		iterator end() { return m_data.end(); }
 		const_iterator end() const { return m_data.end(); }
 
+		/** Return true if this collection is empty. */
+		bool empty() const { return m_data.empty(); }
+
 		/** Return the number of sequences in this collection. */
-		size_t count() const { return m_data.size(); }
+		size_t size() const { return m_data.size(); }
 
 		// Not a network sequence collection. Nothing to do.
 		unsigned pumpNetwork() { return 0; }

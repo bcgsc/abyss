@@ -72,9 +72,9 @@ void NetworkSequenceCollection::run()
 			{
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n", m_data.count());
+				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
 				m_data.shrink();
-				m_comm.reduce(m_data.count());
+				m_comm.reduce(m_data.size());
 
 				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
@@ -415,7 +415,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_LOADING:
 			{
 				loadSequences();
-				assert(m_data.count() > 0);
+				assert(m_data.size() > 0);
 				EndState();
 
 				m_numReachedCheckpoint++;
@@ -427,10 +427,10 @@ void NetworkSequenceCollection::runControl()
 						NAS_LOAD_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n", m_data.count());
+				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
 				m_data.shrink();
 				printf("Loaded %lu k-mer\n",
-						m_comm.reduce(m_data.count()));
+						m_comm.reduce(m_data.size()));
 
 				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
