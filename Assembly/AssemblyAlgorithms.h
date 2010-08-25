@@ -10,31 +10,15 @@
 
 class Histogram;
 
-/*********************************************************
- * 
- * AssemblyAlgorithms.h
- * 
- * A collection of functions to operate on sequence data
- * sets. These functions are designed to work with network
- * (parallel) or local (single cpu) data
- * 
- * 
- **********************************************************/
 enum SeqContiguity
 {
 	SC_ISLAND, // sequence is completely isolated
-	SC_ENDPOINT, // one end of the sequence is open 
+	SC_ENDPOINT, // one end of the sequence is open
 	SC_CONTIGUOUS // the sequence is closed on both ends
 };
 
 namespace AssemblyAlgorithms
 {
-
-//
-//
-// Data preperation functions
-//
-//
 
 // Read a sequence file and load them into the collection
 void loadSequences(ISequenceCollection* seqCollection,

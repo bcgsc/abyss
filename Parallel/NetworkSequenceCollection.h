@@ -88,10 +88,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// run the assembly
 		void run();
-		
+
 		// run the assembly from the controller's point of view (rank 0 node)
 		void runControl();
-		
+
 		// test if the checkpoint has been reached
 		bool checkpointReached() const;
 		bool checkpointReached(int numRequired) const;
@@ -168,7 +168,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		int computeNodeID(const Kmer& seq) const;
 
 		void EndState();
-		
+
 		// Set the state of the network assembly
 		void SetState(NetworkAssemblyState newState);
 
@@ -179,10 +179,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// The number of nodes in the network
 		unsigned int m_numDataNodes;
-		
+
 		// the state of the assembly
 		NetworkAssemblyState m_state;
-		
+
 		// The number of processes that have sent a checkpoint reached message, this is used by the control process to determine the state flow
 		int m_numReachedCheckpoint;
 
@@ -190,7 +190,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		 * checkpoint messages.
 		 */
 		int m_checkpointSum;
-		
+
 		// the number of bases of adjacency set
 		int m_numBasesAdjSet;
 
@@ -208,18 +208,18 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// the number of sequences assembled so far
 		int m_numAssembled;
-		
+
 		// The current branches that are active
 		BranchGroupMap m_activeBranchGroups;
 
 		/** Bubbles, which are branch groups that have joined. */
 		BranchGroupMap m_bubbles;
-		
+
 		// List of IDs of finished groups, used for sanity checking during bubble popping
 		std::set<uint64_t> m_finishedGroups;
 
 		static const size_t MAX_ACTIVE = 50;
-		static const size_t LOW_ACTIVE = 10;		
+		static const size_t LOW_ACTIVE = 10;
 };
 
 #endif

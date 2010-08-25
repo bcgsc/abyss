@@ -294,8 +294,7 @@ int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 				while(!stop)
 				{
 					size_t numBranches = branchGroup.size();
-					for(unsigned int j = 0; j < numBranches; ++j)
-					{						
+					for (unsigned int j = 0; j < numBranches; ++j) {
 						// Get the extensions of this branch
 						ExtensionRecord extRec;
 						int multiplicity = -1;
@@ -331,12 +330,8 @@ int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 									*seqCollection));
 						numPopped++;
 						stop = true;
-					}
-					else
-					{										
-						// the branch is still active, continue
+					} else
 						assert(status == BGS_ACTIVE);
-					}
 				}
 			}
 		}
@@ -643,19 +638,16 @@ static int trimSequences(SequenceCollectionHash* seqCollection,
 		BranchRecord currBranch(dir);
 		Kmer currSeq = iter->first;
 		while(currBranch.isActive())
-		{		
-			// Get the extensions for this sequence, this function populates the extRecord structure
+		{
 			ExtensionRecord extRec;
 			int multiplicity = -1;
 			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
 			assert(success);
 			(void)success;
-			
-			// process the extension record and extend the current branch, this function updates currSeq on successful extension
 			processLinearExtensionForBranch(currBranch,
 					currSeq, extRec, multiplicity, maxBranchCull);
 		}
-		
+
 		// The branch has ended check it for removal, returns true if it was removed
 		if(processTerminatedBranchTrim(seqCollection, currBranch))
 		{
@@ -854,20 +846,16 @@ unsigned assemble(SequenceCollectionHash* seqCollection,
 				iter->second.getExtension(dir));
 		assert(currBranch.isActive());
 		while(currBranch.isActive())
-		{		
-			// Get the extensions for this sequence, this function populates the extRecord structure
+		{
 			ExtensionRecord extRec;
 			int multiplicity = -1;
 			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
-
 			assert(success);
 			(void)success;
-			
-			// process the extension record and extend the current branch, this function updates currSeq on successful extension
 			processLinearExtensionForBranch(currBranch,
 					currSeq, extRec, multiplicity, UINT_MAX);
 		}
-		
+
 		if (currBranch.isCanonical()) {
 			unsigned removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);

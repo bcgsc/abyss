@@ -603,13 +603,11 @@ unsigned NetworkSequenceCollection::pumpNetwork()
 					{
 						// Handle each message based on its type
 						(*iter)->handle(senderID, *this);
-						
 						// Delete the message
 						delete (*iter);
 						*iter = 0;
 					}
-								
-					break;	
+					break;
 				}
 			case APM_NONE:
 				return count;
@@ -684,7 +682,7 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 					source, controlMsg.argument);
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
-			break;	
+			break;
 		case APC_WAIT:
 			SetState(NAS_WAITING);
 			m_comm.barrier();
@@ -703,11 +701,11 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			SetState(NAS_ERODE_COMPLETE);
 			break;
 		case APC_POPBUBBLE:
-			m_numPopped = controlMsg.argument;			
+			m_numPopped = controlMsg.argument;
 			SetState(NAS_POPBUBBLE);
-			break;	
+			break;
 		case APC_ASSEMBLE:
-			m_numAssembled = controlMsg.argument;			
+			m_numAssembled = controlMsg.argument;
 			SetState(NAS_ASSEMBLE);
 			break;
 	}
@@ -769,16 +767,11 @@ int NetworkSequenceCollection::performNetworkTrim(
 		assert(inserted);
 		(void)inserted;
 
-		// Generate the first extension request
 		generateExtensionRequest(branchGroupID, 0, iter->first);
 		branchGroupID++;
-		
-		// Process the active branches
 		numBranchesRemoved += processBranchesTrim();
-		
-		// Service any waiting network events
 		seqCollection->pumpNetwork();
-		
+
 		// Primitive load balancing
 		if(m_activeBranchGroups.size() > MAX_ACTIVE)
 		{
@@ -798,7 +791,7 @@ int NetworkSequenceCollection::performNetworkTrim(
 	}
 
 	PrintDebug(0, "Trimmed %u branches\n", numBranchesRemoved);
-	return numBranchesRemoved;	
+	return numBranchesRemoved;
 }
 
 //
@@ -821,14 +814,14 @@ int NetworkSequenceCollection::processBranchesTrim()
 
 			// Mark the group for removal
 			removeBranches.push_back(iter);
-		}	
+		}
 	}
 
 	// Remove all the finished branches
 	for (vector<BranchGroupMap::iterator>::iterator rmIter
 				= removeBranches.begin();
 			rmIter != removeBranches.end(); rmIter++)
-		m_activeBranchGroups.erase(*rmIter);	
+		m_activeBranchGroups.erase(*rmIter);
 	return numBranchesRemoved;
 }
 
@@ -881,7 +874,6 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 			}
 		}
 
-		// Process groups that may be finished	
 		processBranchesDiscoverBubbles();
 		seqCollection->pumpNetwork();
 	}
@@ -1254,7 +1246,7 @@ void NetworkSequenceCollection::processSequenceExtension(
 			cerr << "Unexpected sequence extension message! State: " << m_state << " gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
 			assert(false);
 			break;
-	}	
+	}
 }
 
 /** Process a sequence extension for trimming. */

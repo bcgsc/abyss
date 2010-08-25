@@ -7,7 +7,7 @@
 #include <map>
 #include <utility>
 
-enum BranchGroupStatus 
+enum BranchGroupStatus
 {
 	BGS_ACTIVE,
 	BGS_NOEXT,
@@ -97,24 +97,21 @@ class BranchGroup
 			return false;
 		}
 
-		// Check the stop conditions for the branch growth
 		BranchGroupStatus updateStatus(unsigned maxLength);
 
 		// return the current status of the branch
 		BranchGroupStatus getStatus() const { return m_status; }
-		
+
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }
-		
-		// check if the group is active
+
 		bool isActive() const;
-		
+
 		// is the no extension flag set?
 		bool isNoExt() const { return m_noExt; }
-		
-		// check if the group is ready for another round of extension (all the branches are the same length)
+
 		bool isExtendable();
-		
+
 		// return the direction of growth
 		extDirection getDirection() const { return m_dir; }
 
