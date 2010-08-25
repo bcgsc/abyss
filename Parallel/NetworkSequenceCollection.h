@@ -41,8 +41,9 @@ typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:
-		NetworkSequenceCollection();
-		~NetworkSequenceCollection();
+		NetworkSequenceCollection()
+			: m_state(NAS_WAITING), m_trimStep(0),
+			m_numPopped(0), m_numAssembled(0) { }
 
 		int performNetworkTrim(ISequenceCollection* seqCollection);
 
@@ -69,10 +70,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void remove(const Kmer& seq);
 		void setFlag(const Kmer& seq, SeqFlag flag);
 
-		// Return the number of sequences in the collection
-		size_t count() const;
+		/** Return the number of elements in this container. */
+		size_t count() const { return m_data.count(); }
 
-		void printLoad() const { m_pLocalSpace->printLoad(); }
+		void printLoad() const { m_data.printLoad(); }
 
 		void removeExtension(const Kmer& seq, extDirection dir,
 				SeqExt ext);
@@ -84,7 +85,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		const value_type& getSeqAndData(const Kmer& key) const
 		{
 			assert(isLocal(key));
-			return m_pLocalSpace->getSeqAndData(key);
+			return m_data.getSeqAndData(key);
 		}
 
 		// Receive and dispatch packets.
@@ -118,20 +119,20 @@ class NetworkSequenceCollection : public ISequenceCollection
 		/** Load this collection from disk. */
 		void load(const char *path)
 		{
-			m_pLocalSpace->load(path);
+			m_data.load(path);
 		}
 
 		/** Indicate that this is a colour-space collection. */
 		void setColourSpace(bool flag)
 		{
-			m_pLocalSpace->setColourSpace(flag);
+			m_data.setColourSpace(flag);
 			m_comm.broadcast(flag);
 		}
 
-		iterator begin() { return m_pLocalSpace->begin(); }
-		const_iterator begin() const { return m_pLocalSpace->begin(); }
-		iterator end() { return m_pLocalSpace->end(); }
-		const_iterator end() const { return m_pLocalSpace->end(); }
+		iterator begin() { return m_data.begin(); }
+		const_iterator begin() const { return m_data.begin(); }
+		iterator end() { return m_data.end(); }
+		const_iterator end() const { return m_data.end(); }
 
 	private:
 		// Observer pattern
@@ -178,10 +179,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 		
 		// Set the state of the network assembly
 		void SetState(NetworkAssemblyState newState);
-		
-		// Pointer to the local sequence space
-		// These sequences are held in memory on this process
-		SequenceCollectionHash* m_pLocalSpace;
+
+		SequenceCollectionHash m_data;
 
 		// The communications layer implements the functions over the network
 		MessageBuffer m_comm;

@@ -9,7 +9,6 @@ class SequenceCollectionHash : public ISequenceCollection
 {
 	public:
 		SequenceCollectionHash();
-		~SequenceCollectionHash();
 
 		void add(const Kmer& seq);
 
@@ -23,11 +22,11 @@ class SequenceCollectionHash : public ISequenceCollection
 		unsigned cleanup();
 
 		/** Shrink the hash table. */
-		void shrink() const {
+		void shrink() {
 #if USING_EXT_HASH_MAP
-			m_pSequences->resize(0);
+			m_data.resize(0);
 #else
-			m_pSequences->rehash(0);
+			m_data.rehash(0);
 #endif
 			printLoad();
 		}
@@ -52,13 +51,13 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		const value_type& getSeqAndData(const Kmer& key) const;
 
-		iterator begin() { return m_pSequences->begin(); }
-		const_iterator begin() const { return m_pSequences->begin(); }
-		iterator end() { return m_pSequences->end(); }
-		const_iterator end() const { return m_pSequences->end(); }
+		iterator begin() { return m_data.begin(); }
+		const_iterator begin() const { return m_data.begin(); }
+		iterator end() { return m_data.end(); }
+		const_iterator end() const { return m_data.end(); }
 
 		/** Return the number of sequences in this collection. */
-		size_t count() const { return m_pSequences->size(); }
+		size_t count() const { return m_data.size(); }
 
 		// Not a network sequence collection. Nothing to do.
 		unsigned pumpNetwork() { return 0; }
@@ -79,19 +78,15 @@ class SequenceCollectionHash : public ISequenceCollection
 		}
 
 		void load(const char *path);
-		void store(const char* path) const;
+		void store(const char* path);
 		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
 		void setColourSpace(bool flag);
 
 	private:
-		iterator find(const Kmer& key)
-		{
-			return m_pSequences->find(key);
-		}
-
+		iterator find(const Kmer& key) { return m_data.find(key); }
 		const_iterator find(const Kmer& key) const
 		{
-			return m_pSequences->find(key);
+			return m_data.find(key);
 		}
 
 		iterator find(const Kmer& key, bool& rc);
@@ -105,7 +100,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		}
 
 		/** The underlying collection. */
-		SequenceDataHash* m_pSequences;
+		SequenceDataHash m_data;
 
 		/** The observers. Only a single observer is implemented.*/
 		SeqObserver m_seqObserver;

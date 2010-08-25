@@ -15,24 +15,24 @@
 
 using namespace std;
 
-static void removeLowCoverageContigs(ISequenceCollection* pSC)
+static void removeLowCoverageContigs(ISequenceCollection& g)
 {
-	AssemblyAlgorithms::markAmbiguous(pSC);
+	AssemblyAlgorithms::markAmbiguous(&g);
 
 	cout << "Removing low-coverage contigs "
 			"(mean k-mer coverage < " << opt::coverage << ")\n";
-	AssemblyAlgorithms::assemble(pSC);
-	AssemblyAlgorithms::splitAmbiguous(pSC);
+	AssemblyAlgorithms::assemble(&g);
+	AssemblyAlgorithms::splitAmbiguous(&g);
 
 	opt::coverage = 0;
 }
 
-static void popBubbles(ISequenceCollection* pSC)
+static void popBubbles(ISequenceCollection& g)
 {
 	cout << "Popping bubbles" << endl;
 	ofstream out;
 	AssemblyAlgorithms::openBubbleFile(out);
-	unsigned numPopped = AssemblyAlgorithms::popBubbles(pSC, out);
+	unsigned numPopped = AssemblyAlgorithms::popBubbles(&g, out);
 	assert(out.good());
 	cout << "Removed " << numPopped << " bubbles\n";
 }
@@ -50,55 +50,53 @@ static void write_graph(const string& path,
 static void assemble(const string& pathIn, const string& pathOut)
 {
 	Timer timer(__func__);
-	SequenceCollectionHash* pSC = new SequenceCollectionHash();
+	SequenceCollectionHash g;
 
 	if (!pathIn.empty())
-		AssemblyAlgorithms::loadSequences(pSC, pathIn.c_str());
+		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
-			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), pSC));
-	cout << "Loaded " << pSC->count() << " k-mer\n";
-	pSC->shrink();
-	assert(pSC->count() > 0);
+			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
+	cout << "Loaded " << g.count() << " k-mer\n";
+	g.shrink();
+	assert(g.count() > 0);
 
 	AssemblyAlgorithms::setCoverageParameters(
-			AssemblyAlgorithms::coverageHistogram(*pSC));
+			AssemblyAlgorithms::coverageHistogram(g));
 
 	cout << "Generating adjacency" << endl;
-	AssemblyAlgorithms::generateAdjacency(pSC);
+	AssemblyAlgorithms::generateAdjacency(&g);
 
 erode:
 	if (opt::erode > 0) {
 		cout << "Eroding tips" << endl;
-		AssemblyAlgorithms::erodeEnds(pSC);
-		assert(AssemblyAlgorithms::erodeEnds(pSC) == 0);
-		pSC->cleanup();
+		AssemblyAlgorithms::erodeEnds(&g);
+		assert(AssemblyAlgorithms::erodeEnds(&g) == 0);
+		g.cleanup();
 	}
 
-	AssemblyAlgorithms::performTrim(pSC);
-	pSC->cleanup();
+	AssemblyAlgorithms::performTrim(&g);
+	g.cleanup();
 
 	if (opt::coverage > 0) {
-		removeLowCoverageContigs(pSC);
-		pSC->wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
-		pSC->cleanup();
+		removeLowCoverageContigs(g);
+		g.wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+		g.cleanup();
 		goto erode;
 	}
 
 	if (opt::bubbleLen > 0)
-		popBubbles(pSC);
+		popBubbles(g);
 
-	write_graph(opt::graphPath, *pSC);
+	write_graph(opt::graphPath, g);
 
-	AssemblyAlgorithms::markAmbiguous(pSC);
+	AssemblyAlgorithms::markAmbiguous(&g);
 
 	FastaWriter writer(pathOut.c_str());
-	unsigned nContigs = AssemblyAlgorithms::assemble(pSC, &writer);
+	unsigned nContigs = AssemblyAlgorithms::assemble(&g, &writer);
 	if (nContigs == 0) {
 		cerr << "error: no contigs assembled\n";
 		exit(EXIT_FAILURE);
 	}
-
-	delete pSC;
 }
 
 int main(int argc, char* const* argv)

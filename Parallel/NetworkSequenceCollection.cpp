@@ -15,22 +15,6 @@
 
 using namespace std;
 
-NetworkSequenceCollection::NetworkSequenceCollection()
-	: m_pLocalSpace(new SequenceCollectionHash()),
-	m_state(NAS_WAITING),
-	m_trimStep(0),
-	m_numPopped(0),
-	m_numAssembled(0)
-{
-}
-
-NetworkSequenceCollection::~NetworkSequenceCollection()
-{
-	// Delete the objects created in the constructor
-	delete m_pLocalSpace;
-	m_pLocalSpace = 0;
-}
-
 void NetworkSequenceCollection::loadSequences()
 {
 	Timer timer("LoadSequences");
@@ -77,7 +61,7 @@ void NetworkSequenceCollection::run()
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
 			case NAS_LOADING:
-				m_pLocalSpace->setColourSpace(
+				m_data.setColourSpace(
 						m_comm.receiveBroadcast());
 				loadSequences();
 				EndState();
@@ -88,14 +72,13 @@ void NetworkSequenceCollection::run()
 			{
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n",
-					m_pLocalSpace->count());
-				m_pLocalSpace->shrink();
-				m_comm.reduce(m_pLocalSpace->count());
+				PrintDebug(0, "Loaded %zu k-mer\n", m_data.count());
+				m_data.shrink();
+				m_comm.reduce(m_data.count());
 
 				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
-							*m_pLocalSpace)));
+							m_data)));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 				SetState(NAS_WAITING);
@@ -135,7 +118,7 @@ void NetworkSequenceCollection::run()
 				completeOperation();
 				m_comm.reduce(AssemblyAlgorithms::getNumEroded());
 
-				m_comm.reduce(m_pLocalSpace->cleanup());
+				m_comm.reduce(m_data.cleanup());
 				m_comm.barrier();
 
 				SetState(NAS_WAITING);
@@ -162,7 +145,7 @@ void NetworkSequenceCollection::run()
 
 			case NAS_COVERAGE:
 			{
-				m_comm.reduce(m_pLocalSpace->cleanup());
+				m_comm.reduce(m_data.cleanup());
 				m_lowCoverageContigs = 0;
 				m_lowCoverageKmer = 0;
 				numAssembled = performNetworkAssembly(this);
@@ -228,9 +211,9 @@ void NetworkSequenceCollection::run()
 			case NAS_CLEAR_FLAGS:
 				m_comm.barrier();
 				assert(m_comm.receiveEmpty());
-				m_pLocalSpace->wipeFlag(
+				m_data.wipeFlag(
 						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
-				m_comm.reduce(m_pLocalSpace->cleanup());
+				m_comm.reduce(m_data.cleanup());
 				EndState();
 				SetState(NAS_WAITING);
 				break;
@@ -293,7 +276,7 @@ unsigned NetworkSequenceCollection::controlErode()
 			AssemblyAlgorithms::getNumEroded());
 	printf("Eroded %u tips\n", numEroded);
 
-	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
+	unsigned removed = m_comm.reduce(m_data.cleanup());
 	m_comm.barrier();
 	assert(removed == numEroded);
 	(void)removed;
@@ -379,7 +362,7 @@ void NetworkSequenceCollection::controlCoverage()
 			"(mean k-mer coverage < %f)\n", opt::coverage);
 	SetState(NAS_COVERAGE);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_COVERAGE);
-	m_comm.reduce(m_pLocalSpace->cleanup());
+	m_comm.reduce(m_data.cleanup());
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
 	pair<unsigned, unsigned> numAssembled
@@ -415,9 +398,8 @@ void NetworkSequenceCollection::controlCoverage()
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_CLEAR_FLAGS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
-	m_pLocalSpace->wipeFlag(
-			SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
-	unsigned removed = m_comm.reduce(m_pLocalSpace->cleanup());
+	m_data.wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+	unsigned removed = m_comm.reduce(m_data.cleanup());
 	printf("Removed %u marked k-mer\n", removed);
 	EndState();
 
@@ -433,7 +415,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_LOADING:
 			{
 				loadSequences();
-				assert(m_pLocalSpace->count() > 0);
+				assert(m_data.count() > 0);
 				EndState();
 
 				m_numReachedCheckpoint++;
@@ -445,19 +427,18 @@ void NetworkSequenceCollection::runControl()
 						NAS_LOAD_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n",
-					m_pLocalSpace->count());
-				m_pLocalSpace->shrink();
+				PrintDebug(0, "Loaded %zu k-mer\n", m_data.count());
+				m_data.shrink();
 				printf("Loaded %lu k-mer\n",
-						m_comm.reduce(m_pLocalSpace->count()));
+						m_comm.reduce(m_data.count()));
 
 				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
-							*m_pLocalSpace)));
+							m_data)));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 
-				SetState(m_pLocalSpace->isAdjacencyLoaded()
+				SetState(m_data.isAdjacencyLoaded()
 						? NAS_ERODE : NAS_GEN_ADJ);
 				break;
 			}
@@ -547,11 +528,9 @@ void NetworkSequenceCollection::runControl()
 				m_comm.sendControlMessage(APC_ASSEMBLE);
 				m_comm.barrier();
 				pumpNetwork();
-				FastaWriter* writer = new FastaWriter(
-						opt::contigsTempPath.c_str());
+				FastaWriter writer(opt::contigsTempPath.c_str());
 				pair<unsigned, unsigned> numAssembled
-					= performNetworkAssembly(this, writer);
-				delete writer;
+					= performNetworkAssembly(this, &writer);
 				EndState();
 
 				m_numReachedCheckpoint++;
@@ -646,7 +625,7 @@ void NetworkSequenceCollection::notify(const Kmer& key)
 		case NAS_ERODE_WAITING:
 		case NAS_ERODE_COMPLETE:
 			AssemblyAlgorithms::erode(this,
-					m_pLocalSpace->getSeqAndData(key));
+					m_data.getSeqAndData(key));
 			break;
 		default:
 			// Nothing to do.
@@ -658,21 +637,21 @@ void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SeqAddMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->add(message.m_seq);
+	m_data.add(message.m_seq);
 }
 
 void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SeqRemoveMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->remove(message.m_seq);
+	m_data.remove(message.m_seq);
 }
 
 void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SetFlagMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->setFlag(message.m_seq, (SeqFlag)message.m_flag);
+	m_data.setFlag(message.m_seq, (SeqFlag)message.m_flag);
 }
 
 void NetworkSequenceCollection::handle(
@@ -687,7 +666,7 @@ void NetworkSequenceCollection::handle(
 		int /*senderID*/, const RemoveExtensionMessage& message)
 {
 	assert(isLocal(message.m_seq));
-	m_pLocalSpace->removeExtension(message.m_seq,
+	m_data.removeExtension(message.m_seq,
 			(extDirection)message.m_dir, message.m_ext);
 	notify(message.m_seq);
 }
@@ -737,18 +716,15 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 void NetworkSequenceCollection::handle(
 		int senderID, const SeqDataRequest& message)
 {
-	assert(isLocal(message.m_seq));
-
+	const Kmer& kmer = message.m_seq;
+	assert(isLocal(kmer));
 	ExtensionRecord extRec;
 	int multiplicity = -1;
-	bool found = m_pLocalSpace->getSeqData(message.m_seq, extRec, multiplicity);
-	if (!found)
-		cerr << "error: from " << senderID << ' ' << message << endl;
+	bool found = m_data.getSeqData(kmer, extRec, multiplicity);
 	assert(found);
 	(void)found;
-
-	// Return the extension to the sender
-	m_comm.sendSeqDataResponse(senderID, message.m_group, message.m_id, message.m_seq, extRec, multiplicity);
+	m_comm.sendSeqDataResponse(senderID, message.m_group, message.m_id,
+			kmer, extRec, multiplicity);
 }
 
 void NetworkSequenceCollection::handle(
@@ -1214,30 +1190,21 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 	return make_pair(assembledContigs, assembledKmer);
 }
 
-//
-// Generate a request for a sequence's extension, it will be handled in parseSequenceExtensionResponse
-//
+/** Send a request for the edges of vertex kmer. */
 void NetworkSequenceCollection::generateExtensionRequest(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq)
+		uint64_t groupID, uint64_t branchID, const Kmer& kmer)
 {
-	// Check if the test sequence is local
-	if(isLocal(seq))
-	{
-		// simply look up the sequence in the local space
+	if (isLocal(kmer)) {
 		ExtensionRecord extRec;
 		int multiplicity = -1;
-		bool success = m_pLocalSpace->getSeqData(seq, extRec, multiplicity);
+		bool success = m_data.getSeqData(kmer, extRec, multiplicity);
 		assert(success);
 		(void)success;
-		
-		// process the message
-		processSequenceExtension(groupID, branchID, seq, extRec, multiplicity);
-	}
-	else
-	{
-		int nodeID = computeNodeID(seq);
-		m_comm.sendSeqDataRequest(nodeID, groupID, branchID, seq);
-	}
+		processSequenceExtension(groupID, branchID,
+				kmer, extRec, multiplicity);
+	} else
+		m_comm.sendSeqDataRequest(computeNodeID(kmer),
+				groupID, branchID, kmer);
 }
 
 /** Generate an extension request for each branch of this group. */
@@ -1331,8 +1298,8 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 /** Add a k-mer to this collection. */
 void NetworkSequenceCollection::add(const Kmer& seq)
 {
-	if(isLocal(seq))
-		m_pLocalSpace->add(seq);
+	if (isLocal(seq))
+		m_data.add(seq);
 	else
 		m_comm.sendSeqAddMessage(computeNodeID(seq), seq);
 }
@@ -1340,8 +1307,8 @@ void NetworkSequenceCollection::add(const Kmer& seq)
 /** Remove a k-mer from this collection. */
 void NetworkSequenceCollection::remove(const Kmer& seq)
 {
-	if(isLocal(seq))
-		m_pLocalSpace->remove(seq);
+	if (isLocal(seq))
+		m_data.remove(seq);
 	else
 		m_comm.sendSeqRemoveMessage(computeNodeID(seq), seq);
 }
@@ -1358,23 +1325,17 @@ bool NetworkSequenceCollection::checkpointReached(int numRequired) const
 
 void NetworkSequenceCollection::setFlag(const Kmer& seq, SeqFlag flag)
 {
-	if(isLocal(seq))
-	{
-		//PrintDebug(3, "received local seq: %s\n", seq.decode().c_str());
-		m_pLocalSpace->setFlag(seq, flag);
-	}
+	if (isLocal(seq))
+		m_data.setFlag(seq, flag);
 	else
-	{
-		int nodeID = computeNodeID(seq);
-		m_comm.sendSetFlagMessage(nodeID, seq, flag);
-	}
+		m_comm.sendSetFlagMessage(computeNodeID(seq), seq, flag);
 }
 
 bool NetworkSequenceCollection::setBaseExtension(
 		const Kmer& seq, extDirection dir, uint8_t base)
 {
 	if (isLocal(seq)) {
-		if (m_pLocalSpace->setBaseExtension(seq, dir, base))
+		if (m_data.setBaseExtension(seq, dir, base))
 			m_numBasesAdjSet++;
 	} else {
 		int nodeID = computeNodeID(seq);
@@ -1385,17 +1346,12 @@ bool NetworkSequenceCollection::setBaseExtension(
 	return false;
 }
 
-size_t NetworkSequenceCollection::count() const
-{
-	return m_pLocalSpace->count();
-}
-
 /** Remove the specified extensions from this k-mer. */
 void NetworkSequenceCollection::removeExtension(
 		const Kmer& seq, extDirection dir, SeqExt ext)
 {
 	if (isLocal(seq)) {
-		m_pLocalSpace->removeExtension(seq, dir, ext);
+		m_data.removeExtension(seq, dir, ext);
 		notify(seq);
 	} else {
 		int nodeID = computeNodeID(seq);
@@ -1408,7 +1364,7 @@ bool NetworkSequenceCollection::getSeqData(const Kmer& seq,
 		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	assert(isLocal(seq));
-	return m_pLocalSpace->getSeqData(seq, extRecord, multiplicity);
+	return m_data.getSeqData(seq, extRecord, multiplicity);
 }
 
 /** Return whether this sequence belongs to this process. */
