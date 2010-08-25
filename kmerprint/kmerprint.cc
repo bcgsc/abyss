@@ -6,15 +6,26 @@
 #include "SequenceCollection.h"
 #include <algorithm>
 #include <cassert>
+#include <getopt.h>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
+#define PROGRAM "kmerprint"
+
 namespace opt {
-	bool strands;
-	bool sequence;
-	bool adj;
+	static unsigned k;
+	static bool strands;
+	static bool sequence;
+	static bool adj;
 }
+
+static const struct option longopts[] = {
+	{ "kmer",    required_argument, NULL, 'k' },
+};
+
+static const char shortopts[] = "k:";
 
 static void print(const SequenceCollectionHash::value_type& seq)
 {
@@ -59,9 +70,26 @@ static void printFile(const char* path)
 	}
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
 	assert(argc > 1);
+
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+			case '?': exit(EXIT_FAILURE);
+			case 'k': arg >> opt::k; break;
+		}
+	}
+
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		exit(EXIT_FAILURE);
+	}
+
+	Kmer::setLength(opt::k);
+
 	for_each(argv + 1, argv + argc, printFile);
 	return 0;
 }
