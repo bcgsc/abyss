@@ -206,7 +206,7 @@ void NetworkSequenceCollection::run()
 			case NAS_MARK_AMBIGUOUS:
 			{
 				m_comm.barrier();
-				assert(m_comm.receiveEmpty());
+				pumpNetwork();
 				unsigned count
 					= AssemblyAlgorithms::markAmbiguous(this);
 				EndState();
@@ -1045,7 +1045,7 @@ unsigned NetworkSequenceCollection::controlMarkAmbiguous()
 	puts("Marking ambiguous branches");
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_MARK_AMBIGUOUS);
 	m_comm.barrier();
-	assert(m_comm.receiveEmpty());
+	pumpNetwork();
 	unsigned count = AssemblyAlgorithms::markAmbiguous(this);
 	m_checkpointSum += count;
 	EndState();
