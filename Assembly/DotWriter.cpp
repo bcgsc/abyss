@@ -8,7 +8,7 @@
 using namespace std;
 
 /** Return the kmer which are adjacent to this kmer. */
-static vector<Kmer> getExtensions(const ISequenceCollection& c,
+static vector<Kmer> getExtensions(const SequenceCollectionHash& c,
 		const Kmer& key, extDirection dir)
 {
 	ExtensionRecord ext;
@@ -26,7 +26,7 @@ static vector<Kmer> getExtensions(const ISequenceCollection& c,
  * the forward direction, and that extension has a single extension in
  * the reverse direction. If so, return the extension in pKmer.
  */
-static bool isContiguous(const ISequenceCollection& c,
+static bool isContiguous(const SequenceCollectionHash& c,
 		Kmer* pKmer, extDirection dir)
 {
 	vector<Kmer> exts = getExtensions(c, *pKmer, dir);
@@ -40,7 +40,7 @@ static bool isContiguous(const ISequenceCollection& c,
 	return true;
 }
 
-static bool isContiguous(const ISequenceCollection& c,
+static bool isContiguous(const SequenceCollectionHash& c,
 		const Kmer& seq, extDirection dir)
 {
 	Kmer ext = seq;
@@ -50,7 +50,7 @@ static bool isContiguous(const ISequenceCollection& c,
 /** Find and return the end of the specified contig. Return the length
  * of the contig (counted in kmers) in pLength.
  */
-static const Kmer findContigEnd(const ISequenceCollection& c,
+static const Kmer findContigEnd(const SequenceCollectionHash& c,
 		const Kmer& seq, unsigned* pLength = NULL)
 {
 	unsigned n = 1;
@@ -64,7 +64,7 @@ static const Kmer findContigEnd(const ISequenceCollection& c,
 
 /** Write out the specified contig. */
 static void write_contig(ostream& out,
-		const ISequenceCollection& c, const Kmer& seq)
+		const SequenceCollectionHash& c, const Kmer& seq)
 {
 	unsigned n;
 	const Kmer& end = findContigEnd(c, seq, &n);
@@ -76,7 +76,7 @@ static void write_contig(ostream& out,
 
 /** Write out the contigs that split at the specified sequence. */
 static void write_split(ostream& out,
-		const ISequenceCollection& c, const Kmer& seq)
+		const SequenceCollectionHash& c, const Kmer& seq)
 {
 	vector<Kmer> exts = getExtensions(c, seq, SENSE);
 	if (exts.size() <= 1)
@@ -89,7 +89,7 @@ static void write_split(ostream& out,
 
 /** Write out the contigs that join at the specified sequence. */
 static void write_join(ostream& out,
-		const ISequenceCollection& c, const Kmer& seq)
+		const SequenceCollectionHash& c, const Kmer& seq)
 {
 	vector<Kmer> exts = getExtensions(c, seq, ANTISENSE);
 	if (exts.size() <= 1)
@@ -102,7 +102,7 @@ static void write_join(ostream& out,
 
 /** Write out a dot graph around the specified sequence. */
 static void write_node(ostream& out,
-		const ISequenceCollection& c, const Kmer& seq)
+		const SequenceCollectionHash& c, const Kmer& seq)
 {
 	write_split(out, c, seq);
 	write_join(out, c, seq);
@@ -111,10 +111,10 @@ static void write_node(ostream& out,
 }
 
 /** Write out a dot graph for the specified collection. */
-void DotWriter::write(ostream& out, const ISequenceCollection& c)
+void DotWriter::write(ostream& out, const SequenceCollectionHash& c)
 {
 	out << "digraph g {\n";
-	for (ISequenceCollection::const_iterator i = c.begin();
+	for (SequenceCollectionHash::const_iterator i = c.begin();
 			i != c.end(); ++i) {
 		if (i->second.deleted())
 			continue;

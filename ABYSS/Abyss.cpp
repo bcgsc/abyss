@@ -15,7 +15,7 @@
 
 using namespace std;
 
-static void removeLowCoverageContigs(ISequenceCollection& g)
+static void removeLowCoverageContigs(SequenceCollectionHash& g)
 {
 	AssemblyAlgorithms::markAmbiguous(&g);
 
@@ -27,7 +27,7 @@ static void removeLowCoverageContigs(ISequenceCollection& g)
 	opt::coverage = 0;
 }
 
-static void popBubbles(ISequenceCollection& g)
+static void popBubbles(SequenceCollectionHash& g)
 {
 	cout << "Popping bubbles" << endl;
 	ofstream out;
@@ -38,7 +38,7 @@ static void popBubbles(ISequenceCollection& g)
 }
 
 static void write_graph(const string& path,
-		const ISequenceCollection& c)
+		const SequenceCollectionHash& c)
 {
 	if (path.empty())
 		return;

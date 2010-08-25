@@ -912,13 +912,14 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 			iter != m_bubbles.end(); iter++) {
 		assert(iter->second.getStatus() == BGS_JOINED);
 		// Check whether this bubble has already been popped.
-		if (!iter->second.isAmbiguous(this))
+		if (!iter->second.isAmbiguous(m_data))
 			continue;
 		numPopped++;
 		AssemblyAlgorithms::writeBubble(out,
 				iter->second, m_numPopped + numPopped);
 		AssemblyAlgorithms::collapseJoinedBranches(
 				this, iter->second);
+		assert(!iter->second.isAmbiguous(m_data));
 		assert(m_comm.receiveEmpty());
 	}
 	m_bubbles.clear();
@@ -1357,14 +1358,6 @@ void NetworkSequenceCollection::removeExtension(
 		int nodeID = computeNodeID(seq);
 		m_comm.sendRemoveExtension(nodeID, seq, dir, ext);
 	}
-}
-
-/** Return the data associated with the specified k-mer. */
-bool NetworkSequenceCollection::getSeqData(const Kmer& seq,
-		ExtensionRecord& extRecord, int& multiplicity) const
-{
-	assert(isLocal(seq));
-	return m_data.getSeqData(seq, extRecord, multiplicity);
 }
 
 /** Return whether this sequence belongs to this process. */

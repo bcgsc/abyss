@@ -77,10 +77,10 @@ bool BranchGroup::isExtendable()
 /** Return whether this branch is ambiguous at its origin. Also
  * returns false if the origin of the branch has since been deleted.
  */
-bool BranchGroup::isAmbiguous(const ISequenceCollection* c) const
+bool BranchGroup::isAmbiguous(const SequenceCollectionHash& g) const
 {
 	// Get fresh data from the collection to check that this bubble
 	// does in fact still exist.
-	const KmerData& data = c->getSeqAndData(m_origin).second;
+	const KmerData& data = g.getSeqAndData(m_origin).second;
 	return data.deleted() ? false : data.isAmbiguous(m_dir);
 }

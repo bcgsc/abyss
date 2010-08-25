@@ -4,8 +4,8 @@
 #include "FastaReader.h"
 #include "FastaWriter.h"
 #include "Histogram.h"
-#include "ISequenceCollection.h"
 #include "Log.h"
+#include "SequenceCollection.h"
 #include "Timer.h"
 #include <cctype>
 #include <cerrno>
@@ -263,7 +263,8 @@ void openBubbleFile(ofstream& out)
 	assert_open(out, path);
 }
 
-int popBubbles(ISequenceCollection* seqCollection, ostream& out)
+/** Pop bubbles. */
+int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 {
 	Timer timer("PopBubbles");
 	int numPopped = 0;
@@ -322,8 +323,12 @@ int popBubbles(ISequenceCollection* seqCollection, ostream& out)
 					{
 						static unsigned snpID;
 						writeBubble(out, branchGroup, ++snpID);
+						assert(branchGroup.isAmbiguous(
+									*seqCollection));
 						collapseJoinedBranches(seqCollection,
 								branchGroup);
+						assert(!branchGroup.isAmbiguous(
+									*seqCollection));
 						numPopped++;
 						stop = true;
 					}
@@ -437,8 +442,6 @@ void writeBubble(ostream& out, const BranchGroup& group, unsigned id)
 void collapseJoinedBranches(ISequenceCollection* collection,
 		BranchGroup& group)
 {
-	assert(group.isAmbiguous(collection));
-
 	const BranchRecord& best = group[0];
 	PrintDebug(5, "Popping %zu %s\n", best.size(),
 				best.front().first.decode().c_str());
@@ -462,7 +465,6 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 	for (map<Kmer, KmerData>::const_iterator it = doomed.begin();
 			it != doomed.end(); ++it)
 		removeSequenceAndExtensions(collection, *it);
-	assert(!group.isAmbiguous(collection));
 }
 
 /**
@@ -555,13 +557,16 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 	return getNumEroded();
 }
 
+static int trimSequences(SequenceCollectionHash* seqCollection,
+		int maxBranchCull);
+
 /** Trimming driver function */
-void performTrim(ISequenceCollection* seqCollection, int start)
+void performTrim(SequenceCollectionHash* seqCollection)
 {
 	if (opt::trimLen == 0)
 		return;
 	unsigned rounds = 0, total = 0;
-	for (int trim = start; trim < opt::trimLen; trim *= 2) {
+	for (int trim = 1; trim < opt::trimLen; trim *= 2) {
 		rounds++;
 		total += trimSequences(seqCollection, trim);
 	}
@@ -608,10 +613,9 @@ SeqContiguity checkSeqContiguity(
 	}
 }
 
-//
-// Trimming (error removal) function
-//
-int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull)
+/** Prune tips shorter than maxBranchCull. */
+static int trimSequences(SequenceCollectionHash* seqCollection,
+		int maxBranchCull)
 {
 	Timer timer("TrimSequences");
 	printf("Trimming short branches: %u\n", maxBranchCull);
@@ -806,7 +810,7 @@ unsigned assembleContig(
 /** Assemble contigs.
  * @return the number of contigs assembled
  */
-unsigned assemble(ISequenceCollection* seqCollection,
+unsigned assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter)
 {
 	Timer timer("Assemble");

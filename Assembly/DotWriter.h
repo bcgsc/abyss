@@ -1,13 +1,13 @@
 #ifndef DOTWRITER_H
 #define DOTWRITER_H 1
 
-#include "ISequenceCollection.h"
+#include "SequenceCollection.h"
 #include <ostream>
 
 class DotWriter {
-	public:
-		static void write(std::ostream& out,
-				const ISequenceCollection& c);
+  public:
+	static void write(std::ostream& out,
+			const SequenceCollectionHash& c);
 };
 
 #endif

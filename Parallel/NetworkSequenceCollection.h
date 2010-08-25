@@ -80,14 +80,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		bool setBaseExtension(const Kmer& seq, extDirection dir,
 				uint8_t base);
 
-		bool getSeqData(const Kmer& seq,
-				ExtensionRecord& extRecord, int& multiplicity) const;
-		const value_type& getSeqAndData(const Kmer& key) const
-		{
-			assert(isLocal(key));
-			return m_data.getSeqAndData(key);
-		}
-
 		// Receive and dispatch packets.
 		unsigned pumpNetwork();
 		unsigned pumpFlushReduce();

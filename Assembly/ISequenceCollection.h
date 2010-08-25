@@ -60,11 +60,6 @@ class ISequenceCollection
 		virtual bool setBaseExtension(const Kmer& seq,
 				extDirection dir, uint8_t base) = 0;
 
-		virtual bool getSeqData(const Kmer& seq, ExtensionRecord& ext,
-				int& multiplicity) const = 0;
-		virtual const value_type& getSeqAndData(
-				const Kmer& key) const = 0;
-
 		// Receive and dispatch packets if necessary.
 		virtual unsigned pumpNetwork() = 0;
 

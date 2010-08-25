@@ -2,7 +2,7 @@
 #define BRANCHGROUP_H 1
 
 #include "BranchRecord.h"
-#include "ISequenceCollection.h"
+#include "SequenceCollection.h"
 #include <algorithm> // for swap
 #include <map>
 #include <utility>
@@ -123,7 +123,7 @@ class BranchGroup
 		const_iterator begin() const { return m_branches.begin(); }
 		const_iterator end() const { return m_branches.end(); }
 
-		bool isAmbiguous(const ISequenceCollection* c) const;
+		bool isAmbiguous(const SequenceCollectionHash& c) const;
 
 	private:
 		BranchGroup& operator =(const BranchGroup& o);

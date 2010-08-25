@@ -4,7 +4,7 @@
 #include "BranchGroup.h"
 #include "BranchRecord.h"
 #include "FastaWriter.h"
-#include "ISequenceCollection.h"
+#include "SequenceCollection.h"
 #include <ostream>
 #include <vector>
 
@@ -53,11 +53,6 @@ unsigned erode(ISequenceCollection* c,
 		const ISequenceCollection::value_type& seq);
 unsigned getNumEroded();
 
-// trimming driver function, iteratively calls trimSequences to get rid of sequences that likely contain errors
-void performTrim(ISequenceCollection* seqCollection, int start = 1);
-
-// Function to perform the actual trimming. Walks the sequence space 
-int trimSequences(ISequenceCollection* seqCollection, int maxBranchCull);
 unsigned removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
@@ -74,9 +69,6 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
 bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer = true);
-
-// Pop bubbles (loops of sequence that diverge a single base, caused by SNPs or consistent sequence errors
-int popBubbles(ISequenceCollection* pSC, std::ostream& out);
 
 // Populate the branch group with the initial extensions to this sequence
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
@@ -105,8 +97,6 @@ unsigned splitAmbiguous(ISequenceCollection* seqCollection);
 
 unsigned assembleContig(ISequenceCollection* seqCollection,
 		FastaWriter* writer, BranchRecord& branch, unsigned id);
-unsigned assemble(ISequenceCollection* seqCollection,
-		FastaWriter* fileWriter = NULL);
 
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 		const ISequenceCollection::value_type& seq);
@@ -116,6 +106,13 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 void generateSequencesFromExtension(const Kmer& currSeq,
 		extDirection dir, SeqExt extension,
 		std::vector<Kmer>& outseqs);
+
+/* Non-distributed graph algorithms. */
+
+void performTrim(SequenceCollectionHash* seqCollection);
+int popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
+unsigned assemble(SequenceCollectionHash* seqCollection,
+		FastaWriter* fileWriter = NULL);
 
 };
 
