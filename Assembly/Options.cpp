@@ -249,6 +249,8 @@ void parse(int argc, char* const* argv)
 	if (bubbleLen < 0)
 		bubbleLen = 3*kmerSize;
 	assert(bubbleLen == 0 || bubbleLen > kmerSize);
+	if (bubbleLen == 0)
+		snpPath.clear();
 
 	Kmer::setLength(kmerSize);
 
