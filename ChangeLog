@@ -1,3 +1,42 @@
+2010-08-25  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.2.
+	* Merge contigs after popping bubbles.
+	* Handle multi-line FASTA sequences.
+	* Report the amount of memory used.
+	* Most tools can output their results in SAM format, including
+	AdjList, KAligner, ParseAligns and PathOverlap.
+
+	abyss-pe:
+	* New command, se-dot. Output a Graphviz dot file of the
+	single-end assembly.
+
+	ABYSS:
+	* Handle multi-line FASTA sequences.
+	* Report the amount of memory used.
+	* Improve error messages for incorrectly-formatted FASTA files.
+	* Bug fix. Improved handling of palindromes.
+
+	PopBubbles:
+	* Merge contigs after popping bubbles.
+	* Bug fix. Do not pop bubbles resulting from palindromes.
+
+	KAligner:
+	* Report the amount of memory used.
+	* New option, --sam. Output the alignments in SAM format.
+
+	ParseAligns, DistanceEst:
+	* Bug fix. The CIGAR string was oriented with respect to the
+	query rather than with respect to the target, which is standard.
+
+	AdjList, PathOverlap:
+	* New option, --sam. Output the adjacency graph in SAM format.
+
+	abyss-fixmate:
+	* New program. Similar to samtools fixmate, but does not require
+	that the input be sorted by query ID, although it is faster if it
+	is sorted.
+
 2010-07-12  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.1.
