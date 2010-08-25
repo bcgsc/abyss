@@ -140,7 +140,8 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		return;
 	}
 	vertex_descriptor tail = *g.adjacent_vertices(v1).first;
-	if (g.in_degree(tail) != nbranches) {
+	if (v == ~tail // Palindrome
+			|| g.in_degree(tail) != nbranches) {
 		// This branch is not simple.
 		return;
 	}
