@@ -3,6 +3,7 @@
 
 #include "Graph.h"
 #include <map>
+#include <utility> // for make_pair
 
 /**
  * A std::map is a model of a directed graph.
@@ -12,6 +13,10 @@ template <typename V, typename T>
 struct graph_traits<std::map<V, T> > {
 	// Graph
 	typedef V vertex_descriptor;
+
+	// IncidenceGraph
+	typedef std::pair<vertex_descriptor, vertex_descriptor>
+		edge_descriptor;
 
 	// AdjacencyGraph
 	typedef typename std::map<V, T>::mapped_type::const_iterator
@@ -104,6 +109,17 @@ void clear_vertex(
 	typename std::map<V, T>::iterator it = g.find(u);
 	assert(it != g.end());
 	it->second.clear();
+}
+
+template <typename V, typename T>
+std::pair<
+	typename graph_traits<std::map<V, T> >::edge_descriptor, bool>
+add_edge(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
+		std::map<V, T>& g)
+{
+	return make_pair(std::make_pair(u, v), g[u].insert(v).second);
 }
 
 template <typename V, typename T>

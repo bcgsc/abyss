@@ -276,12 +276,12 @@ static void findOverlap(
 	if (mask && !opt::mask)
 		return;
 	if (overlap > 0) {
-		g_overlapGraph[t].insert(h);
-		g_overlapGraph[~h].insert(~t);
+		add_edge(t, h, g_overlapGraph);
+		add_edge(~h, ~t, g_overlapGraph);
 	}
 	if (overlap > 0 || opt::scaffold) {
-		g_scaffoldGraph[t].insert(h);
-		g_scaffoldGraph[~h].insert(~t);
+		add_edge(t, h, g_scaffoldGraph);
+		add_edge(~h, ~t, g_scaffoldGraph);
 		// Store the edge attribute only once.
 		if (g_overlaps.count(Edge(~h, ~t)) == 0)
 			g_overlaps.insert(make_pair(Edge(t, h),
