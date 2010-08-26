@@ -19,8 +19,19 @@ struct graph_traits<std::map<V, T> > {
 		edge_descriptor;
 
 	// AdjacencyGraph
-	typedef typename std::map<V, T>::mapped_type::const_iterator
-		adjacency_iterator;
+
+	/** Iterate through the adjacent vertices of a vertex. */
+	struct adjacency_iterator
+		: std::map<V, typename T::mapped_type>::const_iterator
+	{
+		typedef typename std::map<V,
+				typename T::mapped_type>::const_iterator It;
+		adjacency_iterator(const It& it) : It(it) { }
+		const vertex_descriptor& operator*() const
+		{
+			return It::operator*().first;
+		}
+	};
 
 	// VertexListGraph
 
@@ -34,11 +45,6 @@ struct graph_traits<std::map<V, T> > {
 			return It::operator*().first;
 		}
 	};
-};
-
-template <typename V, typename T>
-struct vertex_property<std::map<V, T> > {
-	typedef no_property type;
 };
 
 // IncidenceGraph
@@ -119,7 +125,9 @@ add_edge(
 		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
 		std::map<V, T>& g)
 {
-	return make_pair(std::make_pair(u, v), g[u].insert(v).second);
+	typename edge_property<std::map<V, T> >::type ep;
+	return make_pair(std::make_pair(u, v),
+			g[u].insert(make_pair(v, ep)).second);
 }
 
 template <typename V, typename T>
@@ -140,6 +148,33 @@ bool get(vertex_removed_t, const std::map<V, T>&,
 		typename graph_traits<std::map<V, T> >::vertex_descriptor)
 {
 	return false;
+}
+
+// VertexMutablePropertyGraph
+
+template <typename V, typename T>
+struct vertex_property<std::map<V, T> > {
+	typedef no_property type;
+};
+
+// EdgeMutablePropertyGraph
+
+template <typename V, typename T>
+struct edge_property<std::map<V, T> > {
+	typedef typename T::mapped_type type;
+};
+
+template <typename V, typename T>
+std::pair<
+	typename graph_traits<std::map<V, T> >::edge_descriptor, bool>
+add_edge(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
+		typename edge_property<std::map<V, T> >::type ep,
+		std::map<V, T>& g)
+{
+	return make_pair(std::make_pair(u, v),
+			g[u].insert(make_pair(v, ep)).second);
 }
 
 #endif

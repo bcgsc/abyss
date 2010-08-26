@@ -22,7 +22,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <map>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -232,7 +231,7 @@ static FastaRecord mergeContigs(
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
-typedef map<ContigNode, set<ContigNode> > OverlapGraph;
+typedef map<ContigNode, map<ContigNode, Overlap> > OverlapGraph;
 static OverlapGraph g_scaffoldGraph;
 
 /** A subgraph of g_scaffoldGraph containing only the edges that
@@ -275,17 +274,17 @@ static void findOverlap(
 		? findOverlap(t, h, mask) : 0;
 	if (mask && !opt::mask)
 		return;
+	Overlap ep(est, overlap, mask);
 	if (overlap > 0) {
-		add_edge(t, h, g_overlapGraph);
-		add_edge(~h, ~t, g_overlapGraph);
+		add_edge(t, h, ep, g_overlapGraph);
+		add_edge(~h, ~t, ep, g_overlapGraph);
 	}
 	if (overlap > 0 || opt::scaffold) {
-		add_edge(t, h, g_scaffoldGraph);
-		add_edge(~h, ~t, g_scaffoldGraph);
+		add_edge(t, h, ep, g_scaffoldGraph);
+		add_edge(~h, ~t, ep, g_scaffoldGraph);
 		// Store the edge attribute only once.
 		if (g_overlaps.count(Edge(~h, ~t)) == 0)
-			g_overlaps.insert(make_pair(Edge(t, h),
-						Overlap(est, overlap, mask)));
+			g_overlaps.insert(make_pair(Edge(t, h), ep));
 	}
 }
 

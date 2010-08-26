@@ -3,6 +3,8 @@
 
 #include <utility> // for pair
 
+// Graph
+
 template <typename G>
 struct graph_traits {
 	typedef typename G::vertex_descriptor vertex_descriptor;
@@ -22,9 +24,18 @@ struct graph_traits {
 	typedef typename G::degree_size_type degree_size_type;
 };
 
+// VertexMutablePropertyGraph
+
 template <class Graph>
 struct vertex_property {
 	typedef typename Graph::vertex_property_type type;
+};
+
+// EdgeMutablePropertyGraph
+
+template <class Graph>
+struct edge_property {
+	typedef typename Graph::edge_property_type type;
 };
 
 // IncidenceGraph
