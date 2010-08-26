@@ -385,7 +385,7 @@ int main(int argc, char *const argv[])
 
 	if (opt::verbose > 1)
 		cout << "digraph overlap {\n"
-			<< dot_writer<OverlapGraph>(g_scaffoldGraph)
+			<< dot_writer(g_scaffoldGraph)
 			<< "}\n";
 
 	// First, give priority to overlapping edges (not scaffolded).

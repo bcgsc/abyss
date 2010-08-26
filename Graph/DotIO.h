@@ -41,15 +41,22 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 
 /** Output a GraphViz dot graph. */
 template <typename Graph>
-struct dot_writer
+struct DotWriter
 {
 	const Graph& g;
-	dot_writer(const Graph& g) : g(g) { }
+	DotWriter(const Graph& g) : g(g) { }
 	friend std::ostream& operator<<(std::ostream& out,
-			const dot_writer& o)
+			const DotWriter& o)
 	{
 		return write_dot<Graph>(out, o.g);
 	}
 };
+
+/** Output a GraphViz dot graph. */
+template <typename Graph>
+DotWriter<Graph> dot_writer(const Graph& g)
+{
+	return DotWriter<Graph>(g);
+}
 
 #endif
