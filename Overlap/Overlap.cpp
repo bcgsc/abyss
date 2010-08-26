@@ -244,13 +244,15 @@ typedef pair<ContigNode, ContigNode> Edge;
 typedef map<Edge, Overlap> OverlapGraphAttr;
 static OverlapGraphAttr g_overlaps;
 
-static void removeVertex(OverlapGraph& g, const ContigNode& v)
+static void removeVertex(OverlapGraph& g, const ContigNode& u)
 {
-	OverlapGraph::mapped_type& edges = g[v];
-	for (OverlapGraph::mapped_type::const_iterator it = edges.begin();
-			it != edges.end(); ++it)
-		remove_edge(~*it, ~v, g);
-	remove_vertex(v, g);
+	typedef graph_traits<OverlapGraph>::adjacency_iterator
+		adjacency_iterator;
+	pair<adjacency_iterator, adjacency_iterator>
+		adj = adjacent_vertices(u, g);
+	for (adjacency_iterator it = adj.first; it != adj.second; ++it)
+		remove_edge(~*it, ~u, g);
+	remove_vertex(u, g);
 }
 
 static void findOverlap(
