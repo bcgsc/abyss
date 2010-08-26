@@ -97,6 +97,16 @@ void remove_vertex(
 // EdgeMutableGraph
 
 template <typename V, typename T>
+void clear_vertex(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		std::map<V, T>& g)
+{
+	typename std::map<V, T>::iterator it = g.find(u);
+	assert(it != g.end());
+	it->second.clear();
+}
+
+template <typename V, typename T>
 void remove_edge(
 		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
 		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
