@@ -8,6 +8,7 @@ libgraph_a_SOURCES = \
 	ContigGraph.h \
 	ContigGraphAlgorithms.cpp ContigGraphAlgorithms.h \
 	DirectedGraph.cpp DirectedGraph.h \
+	DotIO.h \
 	Graph.h \
 	MapGraph.h
 
