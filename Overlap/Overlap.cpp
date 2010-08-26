@@ -248,14 +248,9 @@ static void removeVertex(OverlapGraph& g, const ContigNode& v)
 {
 	OverlapGraph::mapped_type& edges = g[v];
 	for (OverlapGraph::mapped_type::const_iterator it = edges.begin();
-			it != edges.end(); ++it) {
-		unsigned n = g[~*it].erase(~v);
-		assert(n == 1);
-		(void)n;
-	}
-	unsigned n = g.erase(v);
-	assert(n == 1);
-	(void)n;
+			it != edges.end(); ++it)
+		remove_edge(~*it, ~v, g);
+	remove_vertex(v, g);
 }
 
 static void findOverlap(

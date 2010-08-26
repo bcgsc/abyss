@@ -82,6 +82,31 @@ vertices(const std::map<V, T>& g)
 	return make_pair(g.begin(), g.end());
 }
 
+// VertexMutableGraph
+
+template <typename V, typename T>
+void remove_vertex(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		std::map<V, T>& g)
+{
+	unsigned n = g.erase(u);
+	assert(n == 1);
+	(void)n;
+}
+
+// EdgeMutableGraph
+
+template <typename V, typename T>
+void remove_edge(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
+		std::map<V, T>& g)
+{
+	unsigned n = g[u].erase(v);
+	assert(n == 1);
+	(void)n;
+}
+
 // PropertyGraph
 
 template <typename V, typename T>
