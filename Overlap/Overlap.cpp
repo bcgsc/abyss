@@ -397,7 +397,7 @@ int main(int argc, char *const argv[])
 		if (it->second.overlap == 0) {
 			// This edge is scaffolded.
 		} else if (contiguous_out(g_overlapGraph, t)) {
-			assert(*g_overlapGraph[t].begin() == h);
+			assert(*adjacent_vertices(t, g_overlapGraph).first == h);
 			FastaRecord contig = mergeContigs(t, h, it->second);
 			out << contig;
 			assert(out.good());
@@ -427,7 +427,7 @@ int main(int argc, char *const argv[])
 			// This edge involved a vertex that has already been used
 			// and removed.
 		} else if (contiguous_out(g_scaffoldGraph, t)) {
-			assert(*g_scaffoldGraph[t].begin() == h);
+			assert(*adjacent_vertices(t, g_scaffoldGraph).first == h);
 			FastaRecord contig = mergeContigs(t, h, it->second);
 			out << contig;
 			assert(out.good());
