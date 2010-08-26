@@ -36,6 +36,7 @@ struct vertex_property<MapGraph> {
 
 // IncidenceGraph
 
+static inline
 unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
 		const MapGraph& g)
 {
@@ -46,6 +47,7 @@ unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
 
 // BidirectionalGraph
 
+static inline
 unsigned in_degree(graph_traits<MapGraph>::vertex_descriptor u,
 		const MapGraph& g)
 {
@@ -54,6 +56,7 @@ unsigned in_degree(graph_traits<MapGraph>::vertex_descriptor u,
 
 // AdjacencyGraph
 
+static inline
 std::pair<graph_traits<MapGraph>::adjacency_iterator,
 	graph_traits<MapGraph>::adjacency_iterator>
 adjacent_vertices(graph_traits<MapGraph>::vertex_descriptor u,
@@ -66,6 +69,7 @@ adjacent_vertices(graph_traits<MapGraph>::vertex_descriptor u,
 
 // VertexListGraph
 
+static inline
 std::pair<graph_traits<MapGraph>::vertex_iterator,
 	graph_traits<MapGraph>::vertex_iterator>
 vertices(const MapGraph& g)
@@ -75,6 +79,7 @@ vertices(const MapGraph& g)
 
 // PropertyGraph
 
+static inline
 bool get(vertex_removed_t, const MapGraph&,
 		graph_traits<MapGraph>::vertex_descriptor)
 {
