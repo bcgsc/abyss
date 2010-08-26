@@ -38,6 +38,7 @@ out_edges(typename G::vertex_descriptor u, const G& g)
 	return g.out_edges(u);
 }
 
+#if !HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 template <class G>
 typename graph_traits<G>::vertex_descriptor
 source(std::pair<typename graph_traits<G>::vertex_descriptor,
@@ -53,6 +54,7 @@ target(std::pair<typename graph_traits<G>::vertex_descriptor,
 {
 	return e.second;
 }
+#endif
 
 template <class G>
 typename G::degree_size_type
