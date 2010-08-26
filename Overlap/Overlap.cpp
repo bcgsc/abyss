@@ -386,6 +386,11 @@ int main(int argc, char *const argv[])
 	in.close();
 	ContigID::unlock();
 
+	if (opt::verbose > 1)
+		cout << "digraph overlap {\n"
+			<< dot_writer<OverlapGraph>(g_scaffoldGraph)
+			<< "}\n";
+
 	// First, give priority to overlapping edges (not scaffolded).
 	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
 			it != g_overlaps.end(); ++it) {
