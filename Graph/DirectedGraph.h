@@ -461,33 +461,6 @@ bool get(vertex_removed_t tag,
 	return g.get(tag, u);
 }
 
-template <typename Graph, typename VertexProp>
-struct vertex_property_writer {
-	typedef typename graph_traits<Graph>::vertex_descriptor
-		vertex_descriptor;
-	const Graph& g;
-	vertex_descriptor u;
-	vertex_property_writer(const Graph& g, vertex_descriptor u)
-		: g(g), u(u) { }
-	friend std::ostream& operator<<(std::ostream& out,
-			const vertex_property_writer& o)
-	{
-		return out << '"' << o.u << "\" [" << o.g[o.u] << "]\n";
-	}
-};
-
-template <typename Graph>
-struct vertex_property_writer<Graph, no_property> {
-	typedef typename graph_traits<Graph>::vertex_descriptor
-		vertex_descriptor;
-	vertex_property_writer(const Graph&, vertex_descriptor) { }
-	friend std::ostream& operator<<(std::ostream& out,
-			const vertex_property_writer&)
-	{
-		return out;
-	}
-};
-
 #include "DotIO.h"
 
 template <typename VertexProp>
