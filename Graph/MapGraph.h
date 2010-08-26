@@ -1,87 +1,92 @@
 #ifndef MAPGRAPH_H
 #define MAPGRAPH_H 1
 
-#include "ContigNode.h"
 #include "Graph.h"
 #include <map>
-#include <set>
-#include <utility> // for pair
 
-typedef std::map<ContigNode, std::set<ContigNode> > MapGraph;
+/**
+ * A std::map is a model of a directed graph.
+ * @author Shaun Jackman <sjackman@bcgsc.ca>
+ */
+template <typename V, typename T>
+struct graph_traits<std::map<V, T> > {
+	// Graph
+	typedef V vertex_descriptor;
 
-template <>
-struct graph_traits<MapGraph> {
-	typedef ContigNode vertex_descriptor;
-	typedef MapGraph::mapped_type::const_iterator adjacency_iterator;
-	typedef std::pair<vertex_descriptor, vertex_descriptor>
-		edge_descriptor;
+	// AdjacencyGraph
+	typedef typename std::map<V, T>::mapped_type::const_iterator
+		adjacency_iterator;
+
+	// VertexListGraph
 
 	/** Iterate through the vertices of this graph. */
-	struct vertex_iterator : MapGraph::const_iterator
+	struct vertex_iterator : std::map<V, T>::const_iterator
 	{
-		vertex_iterator(const MapGraph::const_iterator& it)
-			: MapGraph::const_iterator(it) { }
+		typedef typename std::map<V, T>::const_iterator It;
+		vertex_iterator(const It& it) : It(it) { }
 		const vertex_descriptor& operator*() const
 		{
-			return MapGraph::const_iterator::operator*().first;
+			return It::operator*().first;
 		}
 	};
-
 };
 
-template <>
-struct vertex_property<MapGraph> {
+template <typename V, typename T>
+struct vertex_property<std::map<V, T> > {
 	typedef no_property type;
 };
 
 // IncidenceGraph
 
-static inline
-unsigned out_degree(graph_traits<MapGraph>::vertex_descriptor u,
-		const MapGraph& g)
+template <typename V, typename T>
+unsigned out_degree(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		const std::map<V, T>& g)
 {
-	MapGraph::const_iterator it = g.find(u);
+	typename std::map<V, T>::const_iterator it = g.find(u);
 	assert(it != g.end());
 	return it->second.size();
 }
 
 // BidirectionalGraph
 
-static inline
-unsigned in_degree(graph_traits<MapGraph>::vertex_descriptor u,
-		const MapGraph& g)
+template <typename V, typename T>
+unsigned in_degree(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		const std::map<V, T>& g)
 {
 	return out_degree(~u, g);
 }
 
 // AdjacencyGraph
 
-static inline
-std::pair<graph_traits<MapGraph>::adjacency_iterator,
-	graph_traits<MapGraph>::adjacency_iterator>
-adjacent_vertices(graph_traits<MapGraph>::vertex_descriptor u,
-		const MapGraph& g)
+template <typename V, typename T>
+std::pair<typename graph_traits<std::map<V, T> >::adjacency_iterator,
+	typename graph_traits<std::map<V, T> >::adjacency_iterator>
+adjacent_vertices(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		const std::map<V, T>& g)
 {
-	MapGraph::const_iterator it = g.find(u);
+	typename std::map<V, T>::const_iterator it = g.find(u);
 	assert(it != g.end());
 	return make_pair(it->second.begin(), it->second.end());
 }
 
 // VertexListGraph
 
-static inline
-std::pair<graph_traits<MapGraph>::vertex_iterator,
-	graph_traits<MapGraph>::vertex_iterator>
-vertices(const MapGraph& g)
+template <typename V, typename T>
+std::pair<typename graph_traits<std::map<V, T> >::vertex_iterator,
+	typename graph_traits<std::map<V, T> >::vertex_iterator>
+vertices(const std::map<V, T>& g)
 {
 	return make_pair(g.begin(), g.end());
 }
 
 // PropertyGraph
 
-static inline
-bool get(vertex_removed_t, const MapGraph&,
-		graph_traits<MapGraph>::vertex_descriptor)
+template <typename V, typename T>
+bool get(vertex_removed_t, const std::map<V, T>&,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor)
 {
 	return false;
 }

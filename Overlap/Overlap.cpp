@@ -232,7 +232,7 @@ static FastaRecord mergeContigs(
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
-typedef MapGraph OverlapGraph;
+typedef map<ContigNode, set<ContigNode> > OverlapGraph;
 static OverlapGraph g_scaffoldGraph;
 
 /** A subgraph of g_scaffoldGraph containing only the edges that
@@ -240,7 +240,7 @@ static OverlapGraph g_scaffoldGraph;
 static OverlapGraph g_overlapGraph;
 
 /** The amount of overlap (attributes of OverlapGraph). */
-typedef graph_traits<OverlapGraph>::edge_descriptor Edge;
+typedef pair<ContigNode, ContigNode> Edge;
 typedef map<Edge, Overlap> OverlapGraphAttr;
 static OverlapGraphAttr g_overlaps;
 
