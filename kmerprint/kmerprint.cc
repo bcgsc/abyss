@@ -90,6 +90,6 @@ int main(int argc, char* argv[])
 
 	Kmer::setLength(opt::k);
 
-	for_each(argv + 1, argv + argc, printFile);
+	for_each(argv + optind, argv + argc, printFile);
 	return 0;
 }
