@@ -174,13 +174,9 @@ add_vertex(const typename G::vertex_property_type& vp, G& g)
 	return g.add_vertex(vp);
 }
 
-// non-standard
+// Properties
 
-template <class G>
-bool
-is_removed(typename G::vertex_descriptor u, const G& g)
-{
-	return g.is_removed(u);
-}
+/** A property indicating that this vertex has been removed. */
+enum vertex_removed_t { vertex_removed };
 
 #endif

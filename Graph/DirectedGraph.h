@@ -424,13 +424,19 @@ class Edge
 	}
 
 	/** Return true if this vertex has been removed. */
+	bool get(vertex_removed_t, vertex_descriptor u) const
+	{
+		return is_removed(u);
+	}
+
+  private:
+	/** Return true if this vertex has been removed. */
 	bool is_removed(vertex_descriptor u) const
 	{
 		unsigned i = u.index();
 		return i < m_removed.size() ? m_removed[i] : false;
 	}
 
-  private:
 	DirectedGraph(const DirectedGraph& x);
 	DirectedGraph& operator =(const DirectedGraph& x);
 
@@ -445,6 +451,14 @@ namespace std {
 	template <typename VertexProp>
 	inline void swap(DirectedGraph<VertexProp>& a,
 			DirectedGraph<VertexProp>& b) { a.swap(b); }
+}
+
+/** Return true if this vertex has been removed. */
+template <class G>
+bool get(vertex_removed_t tag,
+		const G& g, typename G::vertex_descriptor u)
+{
+	return g.get(tag, u);
 }
 
 template <typename Graph, typename VertexProp>

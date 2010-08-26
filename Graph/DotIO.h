@@ -18,7 +18,7 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	std::pair<vertex_iterator, vertex_iterator>
 		vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
-		if (is_removed(*u, g))
+ 		if (get(vertex_removed, g, *u))
 			continue;
 		out << vertex_property_writer<Graph, vertex_property_type>(
 					g, *u);

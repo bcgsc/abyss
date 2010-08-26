@@ -19,7 +19,7 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 	bool sense = false;
 	for (vertex_iterator u = vit.first; u != vit.second; ++u,
 			sense = !sense) {
-		if (g.is_removed(*u))
+ 		if (get(vertex_removed, g, *u))
 			continue;
 		if (!sense)
 			out << ContigID(*u) << g[*u];

@@ -73,10 +73,10 @@ vertices(const MapGraph& g)
 	return make_pair(g.begin(), g.end());
 }
 
-// non-standard
+// PropertyGraph
 
-static inline bool
-is_removed(graph_traits<MapGraph>::vertex_descriptor, const MapGraph&)
+bool get(vertex_removed_t, const MapGraph&,
+		graph_traits<MapGraph>::vertex_descriptor)
 {
 	return false;
 }
