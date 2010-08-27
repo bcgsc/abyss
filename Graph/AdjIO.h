@@ -8,6 +8,16 @@
 #include <limits> // for numeric_limits
 #include <ostream>
 
+template <typename EdgeProp>
+void write_edge_prop(std::ostream& out, const EdgeProp& ep)
+{
+	out << '[' << ep << ']';
+}
+
+static inline void write_edge_prop(std::ostream&, const no_property&)
+{
+}
+
 /** Output a contig adjacency graph. */
 template <typename Graph>
 std::ostream& write_adj(std::ostream& out, const Graph& g)
@@ -16,6 +26,8 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 		vertex_iterator;
 	typedef typename graph_traits<Graph>::adjacency_iterator
 		adjacency_iterator;
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
 
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	bool sense = false;
@@ -28,8 +40,11 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 		out << "\t;";
 		std::pair<adjacency_iterator, adjacency_iterator>
 			adj = adjacent_vertices(*u, g);
-		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
 			out << ' ' << (*v ^ sense);
+			write_edge_prop(out,
+					get(edge_bundle, g, edge_descriptor(*u, *v)));
+		}
 		if (sense)
 			out << '\n';
 	}
