@@ -7,49 +7,49 @@
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).
  */
-template <typename DG>
-class ContigGraph : public DG {
+template <typename G>
+class ContigGraph : public G {
   public:
 	// Graph
-	typedef typename graph_traits<DG>::vertex_descriptor
+	typedef typename graph_traits<G>::vertex_descriptor
 		vertex_descriptor;
-	typedef typename graph_traits<DG>::directed_category
+	typedef typename graph_traits<G>::directed_category
 		directed_category;
-	typedef typename graph_traits<DG>::traversal_category
+	typedef typename graph_traits<G>::traversal_category
 		traversal_category;
-	typedef typename graph_traits<DG>::edge_parallel_category
+	typedef typename graph_traits<G>::edge_parallel_category
 		edge_parallel_category;
 
 	// IncidenceGraph
-	typedef typename graph_traits<DG>::edge_descriptor
+	typedef typename graph_traits<G>::edge_descriptor
 		edge_descriptor;
-	typedef typename graph_traits<DG>::out_edge_iterator
+	typedef typename graph_traits<G>::out_edge_iterator
 		out_edge_iterator;
-	typedef typename graph_traits<DG>::degree_size_type
+	typedef typename graph_traits<G>::degree_size_type
 		degree_size_type;
 
 	// BidirectionalGraph
-	typedef typename graph_traits<DG>::in_edge_iterator
+	typedef typename graph_traits<G>::in_edge_iterator
 		in_edge_iterator;
 
 	// AdjacencyGraph
-	typedef typename graph_traits<DG>::adjacency_iterator
+	typedef typename graph_traits<G>::adjacency_iterator
 		adjacency_iterator;
 
 	// VertexListGraph
-	typedef typename graph_traits<DG>::vertex_iterator
+	typedef typename graph_traits<G>::vertex_iterator
 		vertex_iterator;
-	typedef typename graph_traits<DG>::vertices_size_type
+	typedef typename graph_traits<G>::vertices_size_type
 		vertices_size_type;
 
 	// EdgeListGraph
-	typedef typename graph_traits<DG>::edge_iterator
+	typedef typename graph_traits<G>::edge_iterator
 		edge_iterator;
-	typedef typename graph_traits<DG>::edges_size_type
+	typedef typename graph_traits<G>::edges_size_type
 		edges_size_type;
 
 	// VertexMutablePropertyGraph
-	typedef typename vertex_property<DG>::type vertex_property_type;
+	typedef typename vertex_property<G>::type vertex_property_type;
 
   public:
 	/** Construct an empty contig graph. */
@@ -57,22 +57,22 @@ class ContigGraph : public DG {
 
 	/** Construct a contig graph with n vertices. The underlying
 	 * directed graph has two vertices for each contig. */
-	ContigGraph(vertices_size_type n) : DG(2 * n) { }
+	ContigGraph(vertices_size_type n) : G(2 * n) { }
 
 	/** Return the in degree of vertex v. */
 	degree_size_type in_degree(vertex_descriptor v) const
 	{
-		return DG::out_degree(~v);
+		return G::out_degree(~v);
 	}
 
 	/** Remove all out edges from vertex u. */
 	void clear_out_edges(vertex_descriptor u)
 	{
 		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = DG::adjacent_vertices(u);
+			adj = G::adjacent_vertices(u);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-			DG::remove_edge(~*v, ~u);
-		DG::clear_out_edges(u);
+			G::remove_edge(~*v, ~u);
+		G::clear_out_edges(u);
 	}
 
 	/** Remove all in edges from vertex v. */
@@ -92,8 +92,8 @@ class ContigGraph : public DG {
 	vertex_descriptor add_vertex(
 			const vertex_property_type& data = vertex_property_type())
 	{
-		vertex_descriptor v = DG::add_vertex(data);
-		DG::add_vertex(data);
+		vertex_descriptor v = G::add_vertex(data);
+		G::add_vertex(data);
 		return v;
 	}
 
@@ -103,16 +103,16 @@ class ContigGraph : public DG {
 	 */
 	void remove_vertex(vertex_descriptor v)
 	{
-		DG::remove_vertex(v);
-		DG::remove_vertex(~v);
+		G::remove_vertex(v);
+		G::remove_vertex(~v);
 	}
 
 	/** Add edge (u,v) to this graph. */
 	std::pair<edge_descriptor, bool>
 	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
-		std::pair<edge_descriptor, bool> e = DG::add_edge(u, v);
-		DG::add_edge(~v, ~u);
+		std::pair<edge_descriptor, bool> e = G::add_edge(u, v);
+		G::add_edge(~v, ~u);
 		return e;
 	}
 
