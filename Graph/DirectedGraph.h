@@ -11,7 +11,8 @@
 #endif
 
 /** A directed graph. */
-template <typename VertexProp = no_property>
+template <typename VertexProp = no_property,
+		 typename EdgeProp = no_property>
 class DirectedGraph
 {
 	class Vertex;
@@ -39,7 +40,7 @@ class DirectedGraph
 
 	// PropertyGraph
 	typedef VertexProp vertex_property_type;
-	typedef no_property edge_property_type;
+	typedef EdgeProp edge_property_type;
 
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 	typedef boost::directed_tag directed_category;
@@ -235,10 +236,10 @@ class Vertex
 	}
 
 	/** Add an edge to this vertex. */
-	bool add_edge(vertex_descriptor v)
+	bool add_edge(vertex_descriptor v, const edge_property_type& ep)
 	{
 		assert(count(m_edges.begin(), m_edges.end(), v) == 0);
-		m_edges.push_back(Edge(v));
+		m_edges.push_back(Edge(v, ep));
 		return true;
 	}
 
@@ -255,6 +256,15 @@ class Vertex
 		m_edges.clear();
 	}
 
+	/** Return the properties of the edge with target v. */
+	const edge_property_type& operator[](vertex_descriptor v) const
+	{
+		typename Edges::const_iterator it
+			= find(m_edges.begin(), m_edges.end(), v);
+		assert(it != m_edges.end());
+		return it->get_property();
+	}
+
   private:
 	Edges m_edges;
 	VertexProp m_prop;
@@ -264,7 +274,8 @@ class Vertex
 class Edge
 {
   public:
-	explicit Edge(vertex_descriptor v) : m_target(v) { }
+	explicit Edge(vertex_descriptor v, const edge_property_type& ep)
+		: m_target(v), m_ep(ep) { }
 
 	/** Returns the target vertex of this edge. */
 	vertex_descriptor target() const { return m_target; }
@@ -275,9 +286,12 @@ class Edge
 		return m_target == v;
 	}
 
+	const edge_property_type& get_property() const { return m_ep; }
+
   private:
 	/** The target vertex of this edge. */
 	vertex_descriptor m_target;
+	edge_property_type m_ep;
 };
 
   public:
@@ -336,12 +350,13 @@ class Edge
 
 	/** Adds edge (u,v) to this graph. */
 	std::pair<edge_descriptor, bool>
-	add_edge(vertex_descriptor u, vertex_descriptor v)
+	add_edge(vertex_descriptor u, vertex_descriptor v,
+			const edge_property_type& ep = edge_property_type())
 	{
 		assert(u.index() < num_vertices());
 		assert(v.index() < num_vertices());
 		return make_pair(edge_descriptor(u, v),
-				m_vertices[u.index()].add_edge(v));
+				m_vertices[u.index()].add_edge(v, ep));
 	}
 
 	/** Remove the edge (u,v) from this graph. */
@@ -427,6 +442,12 @@ class Edge
 		return is_removed(u);
 	}
 
+	/** Return properties of edge e. */
+	const edge_property_type& operator[](edge_descriptor e) const
+	{
+		return m_vertices[e.first.index()][e.second];
+	}
+
   private:
 	/** Return true if this vertex has been removed. */
 	bool is_removed(vertex_descriptor u) const
@@ -459,13 +480,6 @@ bool get(vertex_removed_t tag,
 		const G& g, typename G::vertex_descriptor u)
 {
 	return g.get(tag, u);
-}
-
-template <typename VP>
-no_property get(edge_bundle_t, const DirectedGraph<VP>&,
-		typename graph_traits<DirectedGraph<VP> >::edge_descriptor)
-{
-	return no_property();
 }
 
 #include "DotIO.h"

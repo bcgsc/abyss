@@ -225,6 +225,13 @@ get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
 	return g[u];
 }
 
+template <class G>
+typename edge_property<G>::type
+get(edge_bundle_t, const G& g, typename G::edge_descriptor e)
+{
+	return g[e];
+}
+
 #include <istream>
 #include <ostream>
 
