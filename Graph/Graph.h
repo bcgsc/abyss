@@ -225,11 +225,22 @@ get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
 	return g[u];
 }
 
-template <class G>
-typename edge_property<G>::type
-get(edge_bundle_t, const G& g, typename G::edge_descriptor e)
+#include <istream>
+#include <ostream>
+
+/** No properties. */
+struct no_property
 {
-	return g[e];
-}
+	friend std::ostream& operator <<(std::ostream& out,
+			const no_property&)
+	{
+		return out;
+	}
+
+	friend std::istream& operator >>(std::istream& in, no_property&)
+	{
+		return in;
+	}
+};
 
 #endif

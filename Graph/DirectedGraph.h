@@ -10,21 +10,6 @@
 # include <boost/graph/graph_traits.hpp>
 #endif
 
-/** No properties. */
-struct no_property
-{
-	friend std::ostream& operator <<(std::ostream& out,
-			const no_property&)
-	{
-		return out;
-	}
-
-	friend std::istream& operator >>(std::istream& in, no_property&)
-	{
-		return in;
-	}
-};
-
 /** A directed graph. */
 template <typename VertexProp = no_property>
 class DirectedGraph
@@ -476,9 +461,9 @@ bool get(vertex_removed_t tag,
 	return g.get(tag, u);
 }
 
-template <typename Graph>
-no_property get(edge_bundle_t, const Graph&,
-		typename graph_traits<Graph>::edge_descriptor)
+template <typename VP>
+no_property get(edge_bundle_t, const DirectedGraph<VP>&,
+		typename graph_traits<DirectedGraph<VP> >::edge_descriptor)
 {
 	return no_property();
 }
