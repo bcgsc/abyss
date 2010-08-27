@@ -219,6 +219,12 @@ struct Overlap {
 	const bool mask;
 	Overlap(const Estimate& est, unsigned overlap, bool mask)
 		: est(est), overlap(overlap), mask(mask) { }
+
+	friend ostream& operator<<(ostream& out, const Overlap& o)
+	{
+		return out << "d="
+			<< (o.overlap > 0 ? -(int)o.overlap : o.est.distance);
+	}
 };
 
 static FastaRecord mergeContigs(

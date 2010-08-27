@@ -39,6 +39,7 @@ class DirectedGraph
 	typedef VertexProp vertex_property_type;
 	typedef unsigned edges_size_type;
 	typedef unsigned degree_size_type;
+	typedef no_property edge_property_type;
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
 	typedef void in_edge_iterator;
@@ -453,12 +454,21 @@ namespace std {
 			DirectedGraph<VertexProp>& b) { a.swap(b); }
 }
 
+// PropertyGraph
+
 /** Return true if this vertex has been removed. */
 template <class G>
 bool get(vertex_removed_t tag,
 		const G& g, typename G::vertex_descriptor u)
 {
 	return g.get(tag, u);
+}
+
+template <typename Graph>
+no_property get(edge_bundle_t, const Graph&,
+		typename graph_traits<Graph>::edge_descriptor)
+{
+	return no_property();
 }
 
 #include "DotIO.h"

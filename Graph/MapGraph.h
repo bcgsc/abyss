@@ -157,6 +157,18 @@ bool get(vertex_removed_t, const std::map<V, T>&,
 	return false;
 }
 
+template <typename V, typename T>
+const typename T::mapped_type&
+get(edge_bundle_t, const std::map<V, T>& g,
+		typename graph_traits<std::map<V, T> >::edge_descriptor e)
+{
+	typename std::map<V, T>::const_iterator u = g.find(source(e, g));
+	assert(u != g.end());
+	typename T::const_iterator v = u->second.find(target(e, g));
+	assert(v != u->second.end());
+	return v->second;
+}
+
 // VertexMutablePropertyGraph
 
 template <typename V, typename T>

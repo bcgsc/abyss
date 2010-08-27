@@ -16,9 +16,26 @@ void write_vertex(std::ostream&, V, no_property)
 {
 }
 
+template <typename Graph, typename EdgeProp>
+void write_edges(std::ostream& out, const Graph& g,
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const EdgeProp*)
+{
+	typedef typename graph_traits<Graph>::adjacency_iterator
+		adjacency_iterator;
+	std::pair<adjacency_iterator, adjacency_iterator>
+		adj = adjacent_vertices(u, g);
+	for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
+		typename graph_traits<Graph>::edge_descriptor e(u, *v);
+		out << '"' << u << "\" -> \"" << *v << "\" ["
+			<< get(edge_bundle, g, e) << "]\n";
+	}
+}
+
 template <typename Graph>
 void write_edges(std::ostream& out, const Graph& g,
-		typename graph_traits<Graph>::vertex_descriptor u)
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const no_property*)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator
 		adjacency_iterator;
@@ -43,12 +60,13 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 {
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
+	typedef typename edge_property<Graph>::type edge_property_type;
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
  		if (get(vertex_removed, g, *u))
 			continue;
 		write_vertex(out, *u, get(vertex_bundle, g, *u));
-		write_edges(out, g, *u);
+		write_edges(out, g, *u, (edge_property_type*)NULL);
 	}
 	return out;
 }

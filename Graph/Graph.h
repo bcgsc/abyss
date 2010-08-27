@@ -184,6 +184,9 @@ enum vertex_bundle_t { vertex_bundle };
 /** A property indicating that this vertex has been removed. */
 enum vertex_removed_t { vertex_removed };
 
+/** An edge bundle property. */
+enum edge_bundle_t { edge_bundle };
+
 // PropertyGraph
 
 /** Return true if this vertex has been removed. */
