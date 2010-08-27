@@ -5,16 +5,36 @@
 #include <ostream>
 
 template <typename V, typename VertexProp>
-std::ostream& write_vertex(std::ostream& out,
+void write_vertex(std::ostream& out,
 		V u, const VertexProp& vp)
 {
-	return out << '"' << u << "\" [" << vp << "]\n";
+	out << '"' << u << "\" [" << vp << "]\n";
 }
 
 template <typename V>
-std::ostream& write_vertex(std::ostream& out, V, no_property)
+void write_vertex(std::ostream&, V, no_property)
 {
-	return out;
+}
+
+template <typename Graph>
+void write_edges(std::ostream& out, const Graph& g,
+		typename graph_traits<Graph>::vertex_descriptor u)
+{
+	typedef typename graph_traits<Graph>::adjacency_iterator
+		adjacency_iterator;
+	unsigned outdeg = out_degree(u, g);
+	if (outdeg == 0)
+		return;
+	out << '"' << u << "\" ->";
+	if (outdeg > 1)
+		out << " {";
+	std::pair<adjacency_iterator, adjacency_iterator>
+		adj = adjacent_vertices(u, g);
+	for (adjacency_iterator v = adj.first; v != adj.second; ++v)
+		out << " \"" << *v << '"';
+	if (outdeg > 1)
+		out << " }";
+	out << '\n';
 }
 
 /** Output a GraphViz dot graph. */
@@ -23,30 +43,12 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 {
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
-	typedef typename graph_traits<Graph>::adjacency_iterator
-		adjacency_iterator;
-	typedef typename vertex_property<Graph>::type
-		vertex_property_type;
-
-	std::pair<vertex_iterator, vertex_iterator>
-		vit = vertices(g);
+	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
  		if (get(vertex_removed, g, *u))
 			continue;
 		write_vertex(out, *u, get(vertex_bundle, g, *u));
-		unsigned outdeg = out_degree(*u, g);
-		if (outdeg == 0)
-			continue;
-		out << '"' << *u << "\" ->";
-		if (outdeg > 1)
-			out << " {";
-		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = adjacent_vertices(*u, g);
-		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-			out << " \"" << *v << '"';
-		if (outdeg > 1)
-			out << " }";
-		out << '\n';
+		write_edges(out, g, *u);
 	}
 	return out;
 }
