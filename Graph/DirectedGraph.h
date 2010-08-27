@@ -33,16 +33,28 @@ class DirectedGraph
 	typedef typename std::vector<Vertex> Vertices;
 	class Edge;
 	typedef typename std::vector<Edge> Edges;
+
   public:
-	typedef unsigned vertices_size_type;
+	// Graph
 	typedef ContigNode vertex_descriptor;
-	typedef VertexProp vertex_property_type;
-	typedef unsigned edges_size_type;
-	typedef unsigned degree_size_type;
-	typedef no_property edge_property_type;
+
+	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
+	typedef unsigned degree_size_type;
+
+	// BidirectionalGraph
 	typedef void in_edge_iterator;
+
+	// VertexListGraph
+	typedef unsigned vertices_size_type;
+
+	// EdgeListGraph
+	typedef unsigned edges_size_type;
+
+	// PropertyGraph
+	typedef VertexProp vertex_property_type;
+	typedef no_property edge_property_type;
 
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 	typedef boost::directed_tag directed_category;

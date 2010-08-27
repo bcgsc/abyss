@@ -10,16 +10,22 @@
 template <typename DG>
 class ContigGraph : public DG {
   public:
-	// Vertex types.
-	typedef typename graph_traits<DG>::vertices_size_type vertices_size_type;
+	// Graph
 	typedef typename graph_traits<DG>::vertex_descriptor vertex_descriptor;
-	typedef typename graph_traits<DG>::vertex_iterator vertex_iterator;
-	typedef typename vertex_property<DG>::type vertex_property_type;
 
-	// Edge types.
-	typedef typename graph_traits<DG>::degree_size_type degree_size_type;
+	// IncidenceGraph
 	typedef typename graph_traits<DG>::edge_descriptor edge_descriptor;
+	typedef typename graph_traits<DG>::degree_size_type degree_size_type;
+
+	// AdjacencyGraph
 	typedef typename graph_traits<DG>::adjacency_iterator adjacency_iterator;
+
+	// VertexListGraph
+	typedef typename graph_traits<DG>::vertex_iterator vertex_iterator;
+	typedef typename graph_traits<DG>::vertices_size_type vertices_size_type;
+
+	// VertexMutablePropertyGraph
+	typedef typename vertex_property<DG>::type vertex_property_type;
 
   public:
 	/** Construct an empty contig graph. */

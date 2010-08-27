@@ -7,35 +7,30 @@
 
 template <typename G>
 struct graph_traits {
+	// Graph
 	typedef typename G::vertex_descriptor vertex_descriptor;
-	typedef typename G::edge_descriptor edge_descriptor;
-	typedef typename G::adjacency_iterator adjacency_iterator;
-	typedef typename G::out_edge_iterator out_edge_iterator;
-	typedef typename G::in_edge_iterator in_edge_iterator;
-	typedef typename G::vertex_iterator vertex_iterator;
-	typedef typename G::edge_iterator edge_iterator;
-
 	typedef typename G::directed_category directed_category;
-	typedef typename G::edge_parallel_category edge_parallel_category;
 	typedef typename G::traversal_category traversal_category;
+	typedef typename G::edge_parallel_category edge_parallel_category;
 
-	typedef typename G::vertices_size_type vertices_size_type;
-	typedef typename G::edges_size_type edges_size_type;
+	// IncidenceGraph
+	typedef typename G::edge_descriptor edge_descriptor;
+	typedef typename G::out_edge_iterator out_edge_iterator;
 	typedef typename G::degree_size_type degree_size_type;
-};
 
-// VertexMutablePropertyGraph
+	// BidirectionalGraph
+	typedef typename G::in_edge_iterator in_edge_iterator;
 
-template <class Graph>
-struct vertex_property {
-	typedef typename Graph::vertex_property_type type;
-};
+	// AdjacencyGraph
+	typedef typename G::adjacency_iterator adjacency_iterator;
 
-// EdgeMutablePropertyGraph
+	// VertexListGraph
+	typedef typename G::vertex_iterator vertex_iterator;
+	typedef typename G::vertices_size_type vertices_size_type;
 
-template <class Graph>
-struct edge_property {
-	typedef typename Graph::edge_property_type type;
+	// EdgeListGraph
+	typedef typename G::edge_iterator edge_iterator;
+	typedef typename G::edges_size_type edges_size_type;
 };
 
 // IncidenceGraph
@@ -126,7 +121,7 @@ edges(const G& g)
 	return g.edges();
 }
 
-// MutableGraph
+// VertexMutableGraph
 
 template <class G>
 typename G::vertex_descriptor
@@ -148,6 +143,8 @@ remove_vertex(typename G::vertex_descriptor u, G& g)
 {
 	g.remove_vertex(u);
 }
+
+// EdgeMutableGraph
 
 template <class G>
 std::pair<typename G::edge_descriptor, bool>
@@ -187,9 +184,40 @@ enum vertex_removed_t { vertex_removed };
 /** An edge bundle property. */
 enum edge_bundle_t { edge_bundle };
 
+// VertexMutablePropertyGraph
+
+template <class Graph>
+struct vertex_property {
+	typedef typename Graph::vertex_property_type type;
+};
+
+template <class G>
+typename G::vertex_descriptor
+add_vertex(const typename G::vertex_property_type& vp, G& g)
+{
+	return g.add_vertex(vp);
+}
+
+// EdgeMutablePropertyGraph
+
+template <class Graph>
+struct edge_property {
+	typedef typename Graph::edge_property_type type;
+};
+
+template <class G>
+std::pair<typename G::edge_descriptor, bool>
+add_edge(
+	typename G::vertex_descriptor u,
+	typename G::vertex_descriptor v,
+	const typename G::edge_property_type& ep,
+	G& g)
+{
+	return g.add_edge(u, v, ep);
+}
+
 // PropertyGraph
 
-/** Return true if this vertex has been removed. */
 template <class G>
 typename vertex_property<G>::type
 get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
@@ -197,13 +225,11 @@ get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
 	return g[u];
 }
 
-// VertexMutablePropertyGraph
-
 template <class G>
-typename G::vertex_descriptor
-add_vertex(const typename G::vertex_property_type& vp, G& g)
+typename edge_property<G>::type
+get(edge_bundle_t, const G& g, typename G::edge_descriptor e)
 {
-	return g.add_vertex(vp);
+	return g[e];
 }
 
 #endif
