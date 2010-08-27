@@ -4,32 +4,18 @@
 #include "Graph.h"
 #include <ostream>
 
-template <typename Graph, typename VertexProp>
-struct vertex_property_writer {
-	typedef typename graph_traits<Graph>::vertex_descriptor
-		vertex_descriptor;
-	const Graph& g;
-	vertex_descriptor u;
-	vertex_property_writer(const Graph& g, vertex_descriptor u)
-		: g(g), u(u) { }
-	friend std::ostream& operator<<(std::ostream& out,
-			const vertex_property_writer& o)
-	{
-		return out << '"' << o.u << "\" [" << o.g[o.u] << "]\n";
-	}
-};
+template <typename V, typename VertexProp>
+std::ostream& write_vertex(std::ostream& out,
+		V u, const VertexProp& vp)
+{
+	return out << '"' << u << "\" [" << vp << "]\n";
+}
 
-template <typename Graph>
-struct vertex_property_writer<Graph, no_property> {
-	typedef typename graph_traits<Graph>::vertex_descriptor
-		vertex_descriptor;
-	vertex_property_writer(const Graph&, vertex_descriptor) { }
-	friend std::ostream& operator<<(std::ostream& out,
-			const vertex_property_writer&)
-	{
-		return out;
-	}
-};
+template <typename V>
+std::ostream& write_vertex(std::ostream& out, V, no_property)
+{
+	return out;
+}
 
 /** Output a GraphViz dot graph. */
 template <typename Graph>
@@ -47,8 +33,7 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
  		if (get(vertex_removed, g, *u))
 			continue;
-		out << vertex_property_writer<Graph, vertex_property_type>(
-					g, *u);
+		write_vertex(out, *u, get(vertex_bundle, g, *u));
 		unsigned outdeg = out_degree(*u, g);
 		if (outdeg == 0)
 			continue;

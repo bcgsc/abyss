@@ -144,6 +144,13 @@ void remove_edge(
 // PropertyGraph
 
 template <typename V, typename T>
+no_property get(vertex_bundle_t, const std::map<V, T>&,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor)
+{
+	return no_property();
+}
+
+template <typename V, typename T>
 bool get(vertex_removed_t, const std::map<V, T>&,
 		typename graph_traits<std::map<V, T> >::vertex_descriptor)
 {

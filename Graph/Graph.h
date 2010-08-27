@@ -176,7 +176,25 @@ remove_edge(typename G::edge_descriptor e, G& g)
 	g.remove_edge(e);
 }
 
-// MutablePropertyGraph
+// Properties
+
+/** A vertex bundle property. */
+enum vertex_bundle_t { vertex_bundle };
+
+/** A property indicating that this vertex has been removed. */
+enum vertex_removed_t { vertex_removed };
+
+// PropertyGraph
+
+/** Return true if this vertex has been removed. */
+template <class G>
+typename vertex_property<G>::type
+get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
+{
+	return g[u];
+}
+
+// VertexMutablePropertyGraph
 
 template <class G>
 typename G::vertex_descriptor
@@ -184,10 +202,5 @@ add_vertex(const typename G::vertex_property_type& vp, G& g)
 {
 	return g.add_vertex(vp);
 }
-
-// Properties
-
-/** A property indicating that this vertex has been removed. */
-enum vertex_removed_t { vertex_removed };
 
 #endif
