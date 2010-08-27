@@ -12,20 +12,22 @@
 template <typename Graph>
 std::ostream& write_adj(std::ostream& out, const Graph& g)
 {
-	typedef typename Graph::vertex_iterator vertex_iterator;
-	typedef typename Graph::adjacency_iterator adjacency_iterator;
+	typedef typename graph_traits<Graph>::vertex_iterator
+		vertex_iterator;
+	typedef typename graph_traits<Graph>::adjacency_iterator
+		adjacency_iterator;
 
-	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	bool sense = false;
 	for (vertex_iterator u = vit.first; u != vit.second; ++u,
 			sense = !sense) {
  		if (get(vertex_removed, g, *u))
 			continue;
 		if (!sense)
-			out << ContigID(*u) << g[*u];
+			out << ContigID(*u) << get(vertex_bundle, g, *u);
 		out << "\t;";
 		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = g.adjacent_vertices(*u);
+			adj = adjacent_vertices(*u, g);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
 			out << ' ' << (*v ^ sense);
 		if (sense)
@@ -48,11 +50,11 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 	vertex_property_type prop;
 	while (in >> id >> prop) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		vertex_descriptor v = g.add_vertex(prop);
+		vertex_descriptor v = add_vertex(prop, g);
 		assert(v == vertex_descriptor(id, false));
 	}
 	assert(in.eof());
-	assert(g.num_vertices() > 0);
+	assert(num_vertices(g) > 0);
 	ContigID::lock();
 
 	// Read the edges.
