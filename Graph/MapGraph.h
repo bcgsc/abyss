@@ -218,7 +218,7 @@ add_edge(
 		std::map<V, T>& g)
 {
 	return make_pair(std::make_pair(u, v),
-			g[u].insert(make_pair(v, ep)).second);
+			g[u].insert(std::make_pair(v, ep)).second);
 }
 
 #endif
