@@ -13,10 +13,27 @@ template <typename V, typename T>
 struct graph_traits<std::map<V, T> > {
 	// Graph
 	typedef V vertex_descriptor;
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+	typedef boost::directed_tag directed_category;
+	struct traversal_category
+		: boost::adjacency_graph_tag,
+		boost::vertex_list_graph_tag
+		{ };
+	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+#else
+	typedef void directed_category;
+	typedef void traversal_category;
+	typedef void edge_parallel_category;
+#endif
 
 	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
+	typedef void out_edge_iterator;
+	typedef unsigned degree_size_type;
+
+	// BidirectionalGraph
+	typedef void in_edge_iterator;
 
 	// AdjacencyGraph
 
@@ -45,12 +62,19 @@ struct graph_traits<std::map<V, T> > {
 			return It::operator*().first;
 		}
 	};
+
+	typedef unsigned vertices_size_type;
+
+	// EdgeListGraph
+	typedef void edge_iterator;
+	typedef void edges_size_type;
 };
 
 // IncidenceGraph
 
 template <typename V, typename T>
-unsigned out_degree(
+typename graph_traits<std::map<V, T> >::degree_size_type
+out_degree(
 		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
 		const std::map<V, T>& g)
 {
@@ -62,7 +86,8 @@ unsigned out_degree(
 // BidirectionalGraph
 
 template <typename V, typename T>
-unsigned in_degree(
+typename graph_traits<std::map<V, T> >::degree_size_type
+in_degree(
 		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
 		const std::map<V, T>& g)
 {

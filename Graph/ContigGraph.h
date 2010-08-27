@@ -13,12 +13,24 @@ class ContigGraph : public DG {
 	// Graph
 	typedef typename graph_traits<DG>::vertex_descriptor
 		vertex_descriptor;
+	typedef typename graph_traits<DG>::directed_category
+		directed_category;
+	typedef typename graph_traits<DG>::traversal_category
+		traversal_category;
+	typedef typename graph_traits<DG>::edge_parallel_category
+		edge_parallel_category;
 
 	// IncidenceGraph
 	typedef typename graph_traits<DG>::edge_descriptor
 		edge_descriptor;
+	typedef typename graph_traits<DG>::out_edge_iterator
+		out_edge_iterator;
 	typedef typename graph_traits<DG>::degree_size_type
 		degree_size_type;
+
+	// BidirectionalGraph
+	typedef typename graph_traits<DG>::in_edge_iterator
+		in_edge_iterator;
 
 	// AdjacencyGraph
 	typedef typename graph_traits<DG>::adjacency_iterator
@@ -29,6 +41,12 @@ class ContigGraph : public DG {
 		vertex_iterator;
 	typedef typename graph_traits<DG>::vertices_size_type
 		vertices_size_type;
+
+	// EdgeListGraph
+	typedef typename graph_traits<DG>::edge_iterator
+		edge_iterator;
+	typedef typename graph_traits<DG>::edges_size_type
+		edges_size_type;
 
 	// VertexMutablePropertyGraph
 	typedef typename vertex_property<DG>::type vertex_property_type;
