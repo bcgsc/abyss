@@ -4,9 +4,11 @@
  */
 #include "ContigGraph.h"
 #include "DirectedGraph.h"
+#include "SAMIO.h"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <iterator> // for ostream_iterator
 
 using namespace std;
 
@@ -24,15 +26,24 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=N   report the mean k-mer coverage, otherwise\n"
 "                 the sum k-mer coverage is reported\n"
+"      --adj             output the results in adj format\n"
+"      --dot             output the results in dot format [default]\n"
+"      --sam             output the results in SAM format\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
+/** Enumeration of output formats */
+enum format { ADJ, DOT, SAM };
+
 namespace opt {
-	static int k;
+ 	int k; // used by sam_writer
 	static int verbose;
+
+	/** Output format */
+	static int format = DOT;
 }
 
 static const char shortopts[] = "k:v";
@@ -40,6 +51,9 @@ static const char shortopts[] = "k:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "adj",     no_argument,       &opt::format, ADJ },
+	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -58,12 +72,23 @@ struct Contig {
 
 	friend ostream& operator <<(ostream& out, const Contig& o)
 	{
-		out << "l=" << o.length;
-		if (opt::k > 0)
-			return out << " c="
-				<< (float)o.coverage / (o.length - opt::k + 1);
-		else
-			return out << " C=" << o.coverage;
+		float coverage = opt::k <= 0 ? 0
+			: (float)o.coverage / (o.length - opt::k + 1);
+		switch (opt::format) {
+		  case ADJ:
+			return out << ' ' << o.length << ' ' << o.coverage;
+		  case DOT:
+			out << "l=" << o.length;
+			return opt::k > 0
+				? (out << " c=" << coverage)
+				: (out << " C=" << o.coverage);
+		  case SAM:
+			out << "\tLN:" << o.length;
+			return opt::k > 0
+				? (out << "\tXc:" << coverage)
+				: (out << "\tXC:" << o.coverage);
+		}
+		return out;
 	}
 
 	friend istream& operator >>(istream& in, Contig& o)
@@ -74,6 +99,15 @@ struct Contig {
 
 int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -126,11 +160,24 @@ int main(int argc, char** argv)
 			<< endl;
 	}
 
-	cout << "digraph \"" << path << "\" {\n";
-	if (opt::k > 0)
-		cout << "k=" << opt::k << "\n"
-			"edge[d=" << -(opt::k-1) << "]\n";
-	cout << dot_writer<Graph>(g) << "}\n";
+	switch (opt::format) {
+	  case ADJ:
+		cout << adj_writer<Graph>(g);
+		break;
+	  case DOT:
+		cout << "digraph \"" << path << "\" {\n";
+		if (opt::k > 0)
+			cout << "k=" << opt::k << "\n"
+				"edge[d=" << -(opt::k-1) << "]\n";
+		cout << dot_writer<Graph>(g) << "}\n";
+		break;
+	  case SAM:
+		cout << "@HD\tVN:1.0\tSO:coordinate\n"
+			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
+			"CL:" << commandLine << '\n';
+		cout << sam_writer<Graph>(g);
+		break;
+	}
 	assert(cout.good());
 	return 0;
 }
