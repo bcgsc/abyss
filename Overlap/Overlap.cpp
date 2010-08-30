@@ -245,11 +245,6 @@ static OverlapGraph g_scaffoldGraph;
  * overlap (are not scaffolded). */
 static OverlapGraph g_overlapGraph;
 
-/** The amount of overlap (attributes of OverlapGraph). */
-typedef graph_traits<OverlapGraph>::edge_descriptor edge_descriptor;
-typedef set<edge_descriptor> Seen;
-static Seen g_seen;
-
 static void removeVertex(OverlapGraph& g, const ContigNode& u)
 {
 	typedef graph_traits<OverlapGraph>::adjacency_iterator
@@ -289,9 +284,6 @@ static void findOverlap(
 	if (overlap > 0 || opt::scaffold) {
 		add_edge(t, h, ep, g_scaffoldGraph);
 		add_edge(~h, ~t, ep, g_scaffoldGraph);
-		// Mark the edge as seen.
-		if (g_seen.count(edge_descriptor(~h, ~t)) == 0)
-			g_seen.insert(edge_descriptor(t, h));
 	}
 }
 
@@ -395,9 +387,29 @@ int main(int argc, char *const argv[])
 			<< dot_writer(g_scaffoldGraph)
 			<< "}\n";
 
+	typedef graph_traits<OverlapGraph>::edge_descriptor
+		edge_descriptor;
+	typedef graph_traits<OverlapGraph>::vertex_iterator
+		vertex_iterator;
+	typedef graph_traits<OverlapGraph>::adjacency_iterator
+		adjacency_iterator;
+
+	// Create the set of canonical edges.
+	typedef set<edge_descriptor> Edges;
+	Edges edges;
+	std::pair<vertex_iterator, vertex_iterator>
+		uit = vertices(g_scaffoldGraph);
+	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
+		std::pair<adjacency_iterator, adjacency_iterator>
+			vit = adjacent_vertices(*u, g_scaffoldGraph);
+		for (adjacency_iterator v = vit.first; v != vit.second; ++v)
+			if (edges.count(edge_descriptor(~*v, ~*u)) == 0)
+				edges.insert(edge_descriptor(*u, *v));
+	}
+
 	// First, give priority to overlapping edges (not scaffolded).
-	for (Seen::const_iterator it = g_seen.begin();
-			it != g_seen.end(); ++it) {
+	for (Edges::const_iterator it = edges.begin();
+			it != edges.end(); ++it) {
 		const ContigNode& t = source(*it, g_overlapGraph),
 			  h = target(*it, g_overlapGraph);
 		if (g_overlapGraph[t].count(h) == 0) {
@@ -428,8 +440,8 @@ int main(int argc, char *const argv[])
 	}
 
 	// Second, handle scaffolded edges.
-	for (Seen::const_iterator it = g_seen.begin();
-			it != g_seen.end(); ++it) {
+	for (Edges::const_iterator it = edges.begin();
+			it != edges.end(); ++it) {
 		const ContigNode& t = source(*it, g_scaffoldGraph),
 			  h = target(*it, g_scaffoldGraph);
 		if (g_scaffoldGraph[t].count(h) == 0) {
