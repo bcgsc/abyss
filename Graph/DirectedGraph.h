@@ -471,9 +471,9 @@ class Edge
 };
 
 namespace std {
-	template <typename VertexProp>
-	inline void swap(DirectedGraph<VertexProp>& a,
-			DirectedGraph<VertexProp>& b) { a.swap(b); }
+	template <typename VertexProp, typename EdgeProp>
+	inline void swap(DirectedGraph<VertexProp, EdgeProp>& a,
+			DirectedGraph<VertexProp, EdgeProp>& b) { a.swap(b); }
 }
 
 // PropertyGraph
@@ -488,9 +488,9 @@ bool get(vertex_removed_t tag,
 
 #include "DotIO.h"
 
-template <typename VertexProp>
+template <typename VertexProp, typename EdgeProp>
 std::ostream& operator<<(std::ostream& out,
-		const DirectedGraph<VertexProp>& g)
+		const DirectedGraph<VertexProp, EdgeProp>& g)
 {
 	return write_dot(out, g);
 }
