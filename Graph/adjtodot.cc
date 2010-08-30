@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define PROGRAM "adjtodot"
+#define PROGRAM "abyss-adjtodot"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
