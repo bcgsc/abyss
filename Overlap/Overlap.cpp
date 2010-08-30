@@ -96,7 +96,6 @@ static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
 typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
-static Graph g_graph;
 
 static struct {
 	unsigned overlap;
@@ -239,7 +238,6 @@ static FastaRecord mergeContigs(
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
 typedef map<ContigNode, map<ContigNode, Overlap> > OverlapGraph;
-static OverlapGraph g_scaffoldGraph;
 
 static void removeVertex(OverlapGraph& g, const ContigNode& u)
 {
@@ -253,8 +251,9 @@ static void removeVertex(OverlapGraph& g, const ContigNode& u)
 	remove_vertex(u, g);
 }
 
-static void findOverlap(
-		ContigID refID, bool rc, const Estimate& est)
+static void findOverlap(const Graph& g,
+		ContigID refID, bool rc, const Estimate& est,
+		OverlapGraph& out)
 {
 	if (refID == est.contig.id()
 			|| (est.distance >= 0 && !opt::scaffold))
@@ -263,7 +262,7 @@ static void findOverlap(
 	const ContigNode& pair = est.contig;
 	const ContigNode& t = rc ? pair : ref;
 	const ContigNode& h = rc ? ref : pair;
-	if (g_graph.out_degree(t) > 0 || g_graph.in_degree(h) > 0)
+	if (g.out_degree(t) > 0 || g.in_degree(h) > 0)
 		return;
 
 	bool mask = false;
@@ -274,8 +273,8 @@ static void findOverlap(
 		return;
 	Overlap ep(est, overlap, mask);
 	if (overlap > 0 || opt::scaffold) {
-		add_edge(t, h, ep, g_scaffoldGraph);
-		add_edge(~h, ~t, ep, g_scaffoldGraph);
+		add_edge(t, h, ep, out);
+		add_edge(~h, ~t, ep, out);
 	}
 }
 
@@ -354,7 +353,8 @@ int main(int argc, char *const argv[])
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
 	assert_open(fin, adjPath);
-	fin >> g_graph;
+	Graph graph;
+	fin >> graph;
 	assert(fin.eof());
 
 	ofstream out(opt::out.c_str());
@@ -362,12 +362,15 @@ int main(int argc, char *const argv[])
 	ifstream in(estPath.c_str());
 	assert_open(in, estPath);
 
+	// Find overlapping contigs.
+	OverlapGraph scaffoldGraph;
 	for (EstimateRecord er; in >> er;) {
 		for (int rc = false; rc <= true; ++rc) {
 			const vector<Estimate>& ests = er.estimates[rc];
 			for (EstimateVector::const_iterator iter = ests.begin();
 					iter != ests.end(); ++iter)
-				findOverlap(er.refID, rc, *iter);
+				findOverlap(graph, er.refID, rc, *iter,
+						scaffoldGraph);
 		}
 	}
 	assert(in.eof());
@@ -376,7 +379,7 @@ int main(int argc, char *const argv[])
 
 	if (opt::verbose > 1)
 		cout << "digraph overlap {\n"
-			<< dot_writer(g_scaffoldGraph)
+			<< dot_writer(scaffoldGraph)
 			<< "}\n";
 
 	typedef graph_traits<OverlapGraph>::edge_descriptor
@@ -386,23 +389,23 @@ int main(int argc, char *const argv[])
 	typedef graph_traits<OverlapGraph>::adjacency_iterator
 		adjacency_iterator;
 
-	/** The overlapping edges (d<0) of g_scaffoldGraph. */
+	/** The overlapping edges (d<0) of scaffoldGraph. */
 	OverlapGraph overlapGraph;
 
-	/** The canonical edges of g_scaffoldGraph. */
+	/** The canonical edges of scaffoldGraph. */
 	typedef set<edge_descriptor> Edges;
 	Edges edges;
 
 	// Create the set of canonical edges and the overlap subgraph.
 	std::pair<vertex_iterator, vertex_iterator>
-		uit = vertices(g_scaffoldGraph);
+		uit = vertices(scaffoldGraph);
 	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
 		std::pair<adjacency_iterator, adjacency_iterator>
-			vit = adjacent_vertices(*u, g_scaffoldGraph);
+			vit = adjacent_vertices(*u, scaffoldGraph);
 		for (adjacency_iterator v = vit.first; v != vit.second; ++v) {
 			if (edges.count(edge_descriptor(~*v, ~*u)) == 0)
 				edges.insert(edge_descriptor(*u, *v));
-			const Overlap& ep = get(edge_bundle, g_scaffoldGraph,
+			const Overlap& ep = get(edge_bundle, scaffoldGraph,
 					edge_descriptor(*u, *v));
 			if (ep.overlap > 0) {
 				add_edge(*u, *v, ep, overlapGraph);
@@ -429,15 +432,15 @@ int main(int argc, char *const argv[])
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = g_graph.add_vertex(
+			Graph::vertex_descriptor v = graph.add_vertex(
 					ContigProperties(contig.seq.length(), 0));
-			g_graph.add_edge(t, v);
-			g_graph.add_edge(v, h);
+			graph.add_edge(t, v);
+			graph.add_edge(v, h);
 
 			// Remove the vertices incident to this edge from the
 			// scaffold graph.
-			removeVertex(g_scaffoldGraph, t);
-			removeVertex(g_scaffoldGraph, ~h);
+			removeVertex(scaffoldGraph, t);
+			removeVertex(scaffoldGraph, ~h);
 		} else
 			stats.ambiguous++;
 	}
@@ -446,28 +449,28 @@ int main(int argc, char *const argv[])
 	// Second, handle scaffolded edges.
 	for (Edges::const_iterator it = edges.begin();
 			it != edges.end(); ++it) {
-		const ContigNode& t = source(*it, g_scaffoldGraph),
-			  h = target(*it, g_scaffoldGraph);
-		if (g_scaffoldGraph[t].count(h) == 0) {
+		const ContigNode& t = source(*it, scaffoldGraph),
+			  h = target(*it, scaffoldGraph);
+		if (scaffoldGraph[t].count(h) == 0) {
 			// This edge involved a vertex that has already been used
 			// and removed.
 			continue;
 		}
 		const Overlap& overlap = get(edge_bundle,
-				g_scaffoldGraph, *it);
+				scaffoldGraph, *it);
 		if (overlap.overlap > 0) {
 			// This edge is not scaffolded.
-		} else if (contiguous_out(g_scaffoldGraph, t)) {
-			assert(*adjacent_vertices(t, g_scaffoldGraph).first == h);
+		} else if (contiguous_out(scaffoldGraph, t)) {
+			assert(*adjacent_vertices(t, scaffoldGraph).first == h);
 			FastaRecord contig = mergeContigs(t, h, overlap);
 			out << contig;
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = g_graph.add_vertex(
+			Graph::vertex_descriptor v = graph.add_vertex(
 					ContigProperties(contig.seq.length(), 0));
-			g_graph.add_edge(t, v);
-			g_graph.add_edge(v, h);
+			graph.add_edge(t, v);
+			graph.add_edge(v, h);
 		} else
 			stats.ambiguous++;
 	}
@@ -477,7 +480,7 @@ int main(int argc, char *const argv[])
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
 		assert(fout.good());
-		fout << g_graph;
+		fout << graph;
 		assert(fout.good());
 	}
 
