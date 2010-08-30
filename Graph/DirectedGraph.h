@@ -209,10 +209,13 @@ class Vertex
 {
   public:
 	Vertex() { }
-	Vertex(const VertexProp& p) : m_prop(p) { }
+	Vertex(const vertex_property_type& p) : m_prop(p) { }
 
 	/** Return the properties of this vertex. */
-	const VertexProp& get_property() const { return m_prop; }
+	const vertex_property_type& get_property() const
+	{
+		return m_prop;
+	}
 
 	/** Returns an iterator-range to the out edges of vertex u. */
 	std::pair<out_edge_iterator, out_edge_iterator>
@@ -267,7 +270,7 @@ class Vertex
 
   private:
 	Edges m_edges;
-	VertexProp m_prop;
+	vertex_property_type m_prop;
 };
 
 /** A directed edge. */
@@ -309,7 +312,7 @@ class Edge
 	}
 
 	/** Return properties of vertex u. */
-	const VertexProp& operator[](vertex_descriptor u) const
+	const vertex_property_type& operator[](vertex_descriptor u) const
 	{
 		return m_vertices[u.index()].get_property();
 	}
@@ -325,7 +328,8 @@ class Edge
 	void clear() { m_vertices.clear(); m_removed.clear(); }
 
 	/** Add a vertex to this graph. */
-	vertex_descriptor add_vertex(const VertexProp& vp = VertexProp())
+	vertex_descriptor add_vertex(
+			const vertex_property_type& vp = vertex_property_type())
 	{
 		m_vertices.push_back(Vertex(vp));
 		return vertex_descriptor(num_vertices() - 1);
