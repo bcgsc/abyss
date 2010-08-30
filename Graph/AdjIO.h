@@ -11,7 +11,8 @@
 template <typename EdgeProp>
 void write_edge_prop(std::ostream& out, const EdgeProp& ep)
 {
-	out << '[' << ep << ']';
+	if (ep != EdgeProp())
+		out << " [" << ep << ']';
 }
 
 static inline void write_edge_prop(std::ostream&, const no_property&)
@@ -57,6 +58,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 {
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_property_type vertex_property_type;
+	typedef typename Graph::edge_property_type edge_property_type;
 
 	// Read the vertex properties.
 	g.clear();
@@ -84,8 +86,17 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 			getline(in, s, !sense ? ';' : '\n');
 			assert(in.good());
 			std::istringstream ss(s);
-			for (vertex_descriptor v; ss >> v;)
-				g.Graph::add_edge(u ^ sense, v ^ sense);
+			for (vertex_descriptor v; ss >> v >> std::ws;) {
+				if (ss.peek() == '[') {
+					ss.get();
+					edge_property_type ep;
+					ss >> ep;
+					ss.ignore(std::numeric_limits<
+							std::streamsize>::max(), ']');
+					g.Graph::add_edge(u ^ sense, v ^ sense, ep);
+				} else
+					g.Graph::add_edge(u ^ sense, v ^ sense);
+			}
 			assert(ss.eof());
 		}
 	}

@@ -51,6 +51,9 @@ class ContigGraph : public G {
 	// VertexMutablePropertyGraph
 	typedef typename vertex_property<G>::type vertex_property_type;
 
+	// EdgeMutablePropertyGraph
+	typedef typename edge_property<G>::type edge_property_type;
+
   public:
 	/** Construct an empty contig graph. */
 	ContigGraph() { }
@@ -113,6 +116,16 @@ class ContigGraph : public G {
 	{
 		std::pair<edge_descriptor, bool> e = G::add_edge(u, v);
 		G::add_edge(~v, ~u);
+		return e;
+	}
+
+	/** Add edge (u,v) to this graph. */
+	std::pair<edge_descriptor, bool>
+	add_edge(vertex_descriptor u, vertex_descriptor v,
+			const edge_property_type& ep)
+	{
+		std::pair<edge_descriptor, bool> e = G::add_edge(u, v, ep);
+		G::add_edge(~v, ~u, ep);
 		return e;
 	}
 
