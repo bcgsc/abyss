@@ -3,6 +3,7 @@
  * Copyright 2010 Genome Sciences Centre
  */
 #include "ContigGraph.h"
+#include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "SAMIO.h"
 #include <fstream>
@@ -39,7 +40,7 @@ static const char USAGE_MESSAGE[] =
 enum format { ADJ, DOT, SAM };
 
 namespace opt {
- 	static int k;
+ 	int k; // used by Distance
 	static int verbose;
 
 	/** Output format */
@@ -62,10 +63,10 @@ static const struct option longopts[] = {
 };
 
 template<typename Graph>
-int get(edge_distance_t, const Graph&,
-		typename graph_traits<Graph>::edge_descriptor)
+int get(edge_distance_t, const Graph& g,
+		typename graph_traits<Graph>::edge_descriptor e)
 {
-	return -opt::k + 1;
+	return g[e].distance;
 }
 
 /** Contig properties. */
@@ -153,7 +154,7 @@ int main(int argc, char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
-	typedef ContigGraph<DirectedGraph<Contig> > Graph;
+	typedef ContigGraph<DirectedGraph<Contig, Distance> > Graph;
 	Graph g;
 	in >> g;
 	assert(in.eof());
