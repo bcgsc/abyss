@@ -39,7 +39,7 @@ static const char USAGE_MESSAGE[] =
 enum format { ADJ, DOT, SAM };
 
 namespace opt {
- 	int k; // used by sam_writer
+ 	static int k;
 	static int verbose;
 
 	/** Output format */
@@ -60,6 +60,13 @@ static const struct option longopts[] = {
 	{ "version", no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+template<typename Graph>
+int get(edge_distance_t, const Graph&,
+		typename graph_traits<Graph>::edge_descriptor)
+{
+	return -opt::k + 1;
+}
 
 /** Contig properties. */
 struct Contig {

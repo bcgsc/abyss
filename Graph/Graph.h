@@ -184,6 +184,9 @@ enum vertex_removed_t { vertex_removed };
 /** An edge bundle property. */
 enum edge_bundle_t { edge_bundle };
 
+/** The distance between two vertices. */
+enum edge_distance_t { edge_distance };
+
 // VertexMutablePropertyGraph
 
 template <class Graph>

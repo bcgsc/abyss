@@ -5,11 +5,6 @@
 #include "Graph.h"
 #include <ostream>
 
-namespace opt
-{
-	extern int k;
-}
-
 /** Output a graph in SAM alignment format.
  * vertex_descriptor must be convertible to a ContigNode
  * vertex_property_type must have members length and coverage
@@ -36,9 +31,12 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 
 	std::pair<edge_iterator, edge_iterator> eit = edges(g);
 	for (edge_iterator e = eit.first; e != eit.second; ++e) {
+		int distance = get(edge_distance, g, *e);
+		if (distance >= 0)
+			continue;
 		ContigNode u = source(*e, g), v = target(*e, g);
 		unsigned flag = u.sense() == v.sense() ? 0 : 0x10; //FREVERSE
-		unsigned alen = opt::k - 1;
+		unsigned alen = -distance;
 		unsigned pos = 1 + (u.sense() ? 0 : g[u].length - alen);
 		out << ContigID(v) // QNAME
 			<< '\t' << flag // FLAG
