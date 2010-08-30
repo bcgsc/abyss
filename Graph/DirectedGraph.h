@@ -314,7 +314,7 @@ class Edge
 	/** Return properties of vertex u. */
 	const vertex_property_type& operator[](vertex_descriptor u) const
 	{
-		return m_vertices[u.index()].get_property();
+		return m_vertices[index(u)].get_property();
 	}
 
 	/** Returns an iterator-range to the vertices. */
@@ -339,8 +339,8 @@ class Edge
 	std::pair<out_edge_iterator, out_edge_iterator>
 	out_edges(vertex_descriptor u) const
 	{
-		assert(u.index() < num_vertices());
-		return m_vertices[u.index()].out_edges(u);
+		assert(index(u) < num_vertices());
+		return m_vertices[index(u)].out_edges(u);
 	}
 
 	/** Returns an iterator-range to the adjacent vertices of
@@ -348,8 +348,8 @@ class Edge
 	std::pair<adjacency_iterator, adjacency_iterator>
 	adjacent_vertices(vertex_descriptor u) const
 	{
-		assert(u.index() < num_vertices());
-		return m_vertices[u.index()].adjacent_vertices();
+		assert(index(u) < num_vertices());
+		return m_vertices[index(u)].adjacent_vertices();
 	}
 
 	/** Adds edge (u,v) to this graph. */
@@ -357,16 +357,16 @@ class Edge
 	add_edge(vertex_descriptor u, vertex_descriptor v,
 			const edge_property_type& ep = edge_property_type())
 	{
-		assert(u.index() < num_vertices());
-		assert(v.index() < num_vertices());
+		assert(index(u) < num_vertices());
+		assert(index(v) < num_vertices());
 		return make_pair(edge_descriptor(u, v),
-				m_vertices[u.index()].add_edge(v, ep));
+				m_vertices[index(u)].add_edge(v, ep));
 	}
 
 	/** Remove the edge (u,v) from this graph. */
 	void remove_edge(vertex_descriptor u, vertex_descriptor v)
 	{
-		m_vertices[u.index()].remove_edge(v);
+		m_vertices[index(u)].remove_edge(v);
 	}
 
 	/** Remove the edge e from this graph. */
@@ -378,7 +378,7 @@ class Edge
 	/** Remove all out edges from vertex u. */
 	void clear_out_edges(vertex_descriptor u)
 	{
-		m_vertices[u.index()].clear_out_edges();
+		m_vertices[index(u)].clear_out_edges();
 	}
 
 	/** Remove all edges to and from vertex u from this graph.
@@ -398,7 +398,7 @@ class Edge
 	 */
 	void remove_vertex(vertex_descriptor u)
 	{
-		unsigned i = u.index();
+		unsigned i = index(u);
 		if (i >= m_removed.size())
 			m_removed.resize(i + 1);
 		m_removed[i] = true;
@@ -423,7 +423,7 @@ class Edge
 	/** Return the out degree of vertex u. */
 	degree_size_type out_degree(vertex_descriptor u) const
 	{
-		return m_vertices[u.index()].out_degree();
+		return m_vertices[index(u)].out_degree();
 	}
 
 	/** Return the nth vertex. */
@@ -449,14 +449,14 @@ class Edge
 	/** Return properties of edge e. */
 	const edge_property_type& operator[](edge_descriptor e) const
 	{
-		return m_vertices[e.first.index()][e.second];
+		return m_vertices[index(e.first)][e.second];
 	}
 
   private:
 	/** Return true if this vertex has been removed. */
 	bool is_removed(vertex_descriptor u) const
 	{
-		unsigned i = u.index();
+		unsigned i = index(u);
 		return i < m_removed.size() ? m_removed[i] : false;
 	}
 

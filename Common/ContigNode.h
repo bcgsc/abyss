@@ -153,4 +153,10 @@ class ContigNode {
 	};
 };
 
+/** Return a numeric index of the specified node. */
+static inline unsigned index(const ContigNode& o)
+{
+	return o.index();
+}
+
 #endif
