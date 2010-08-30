@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -245,9 +246,9 @@ static OverlapGraph g_scaffoldGraph;
 static OverlapGraph g_overlapGraph;
 
 /** The amount of overlap (attributes of OverlapGraph). */
-typedef pair<ContigNode, ContigNode> Edge;
-typedef map<Edge, Overlap> OverlapGraphAttr;
-static OverlapGraphAttr g_overlaps;
+typedef graph_traits<OverlapGraph>::edge_descriptor edge_descriptor;
+typedef set<edge_descriptor> Seen;
+static Seen g_seen;
 
 static void removeVertex(OverlapGraph& g, const ContigNode& u)
 {
@@ -288,9 +289,9 @@ static void findOverlap(
 	if (overlap > 0 || opt::scaffold) {
 		add_edge(t, h, ep, g_scaffoldGraph);
 		add_edge(~h, ~t, ep, g_scaffoldGraph);
-		// Store the edge attribute only once.
-		if (g_overlaps.count(Edge(~h, ~t)) == 0)
-			g_overlaps.insert(make_pair(Edge(t, h), ep));
+		// Mark the edge as seen.
+		if (g_seen.count(edge_descriptor(~h, ~t)) == 0)
+			g_seen.insert(edge_descriptor(t, h));
 	}
 }
 
@@ -395,15 +396,20 @@ int main(int argc, char *const argv[])
 			<< "}\n";
 
 	// First, give priority to overlapping edges (not scaffolded).
-	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
-			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = source(it->first, g_overlapGraph),
-			  h = target(it->first, g_overlapGraph);
-		if (it->second.overlap == 0) {
+	for (Seen::const_iterator it = g_seen.begin();
+			it != g_seen.end(); ++it) {
+		const ContigNode& t = source(*it, g_overlapGraph),
+			  h = target(*it, g_overlapGraph);
+		if (g_overlapGraph[t].count(h) == 0) {
 			// This edge is scaffolded.
-		} else if (contiguous_out(g_overlapGraph, t)) {
+			continue;
+		}
+		const Overlap& overlap = get(edge_bundle,
+				g_overlapGraph, *it);
+		assert(overlap.overlap > 0);
+		if (contiguous_out(g_overlapGraph, t)) {
 			assert(*adjacent_vertices(t, g_overlapGraph).first == h);
-			FastaRecord contig = mergeContigs(t, h, it->second);
+			FastaRecord contig = mergeContigs(t, h, overlap);
 			out << contig;
 			assert(out.good());
 
@@ -422,18 +428,22 @@ int main(int argc, char *const argv[])
 	}
 
 	// Second, handle scaffolded edges.
-	for (OverlapGraphAttr::const_iterator it = g_overlaps.begin();
-			it != g_overlaps.end(); ++it) {
-		const ContigNode& t = source(it->first, g_scaffoldGraph),
-			  h = target(it->first, g_scaffoldGraph);
-		if (it->second.overlap > 0) {
-			// This edge is not scaffolded.
-		} else if (g_scaffoldGraph[t].count(h) == 0) {
+	for (Seen::const_iterator it = g_seen.begin();
+			it != g_seen.end(); ++it) {
+		const ContigNode& t = source(*it, g_scaffoldGraph),
+			  h = target(*it, g_scaffoldGraph);
+		if (g_scaffoldGraph[t].count(h) == 0) {
 			// This edge involved a vertex that has already been used
 			// and removed.
+			continue;
+		}
+		const Overlap& overlap = get(edge_bundle,
+				g_scaffoldGraph, *it);
+		if (overlap.overlap > 0) {
+			// This edge is not scaffolded.
 		} else if (contiguous_out(g_scaffoldGraph, t)) {
 			assert(*adjacent_vertices(t, g_scaffoldGraph).first == h);
-			FastaRecord contig = mergeContigs(t, h, it->second);
+			FastaRecord contig = mergeContigs(t, h, overlap);
 			out << contig;
 			assert(out.good());
 
