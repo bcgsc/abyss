@@ -104,4 +104,23 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 	return in;
 }
 
+template <typename Graph>
+class AdjWriter
+{
+	const Graph& m_g;
+  public:
+	AdjWriter(const Graph& g) : m_g(g) { }
+	friend std::ostream& operator<<(std::ostream& out,
+			const AdjWriter& o)
+	{
+		return write_adj<Graph>(out, o.m_g);
+	}
+};
+
+template <typename Graph>
+AdjWriter<Graph> adj_writer(const Graph& g)
+{
+	return AdjWriter<Graph>(g);
+}
+
 #endif
