@@ -177,7 +177,6 @@ static SeedMap makeSeedMap(const Paths& paths)
 /** The contig graph. */
 typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
-static Graph g_graph;
 
 /** Check whether path starts with the sequence [first, last). */
 static bool startsWith(ContigPath path, bool rc,
@@ -193,7 +192,8 @@ static bool startsWith(ContigPath path, bool rc,
 }
 
 /** Check whether path starts with the sequence [first, last). */
-static unsigned findOverlap(const Paths& paths,
+static unsigned findOverlap(const Graph& g,
+		const Paths& paths,
 		ContigPath::const_iterator first,
 		ContigPath::const_iterator last,
 		const Vertex& v, int &distance)
@@ -202,14 +202,15 @@ static unsigned findOverlap(const Paths& paths,
 		return 0;
 	distance = -accumulate(first, last,
 			ContigProperties(opt::k-1, 0),
-			AddVertexProp<Graph>(g_graph)).length;
+			AddVertexProp<Graph>(g)).length;
 	return last - first;
 }
 
 typedef vector<Overlap> Overlaps;
 
 /** Find every path that overlaps with the specified path. */
-static void findOverlaps(const Paths& paths, const SeedMap& seedMap,
+static void findOverlaps(const Graph& g,
+		const Paths& paths, const SeedMap& seedMap,
 		const Vertex& v, Overlaps& overlaps)
 {
 	ContigPath rc;
@@ -231,7 +232,7 @@ static void findOverlaps(const Paths& paths, const SeedMap& seedMap,
 			if (v == seed->second)
 				continue;
 			int distance = 0;
-			unsigned overlap = findOverlap(paths, it, path.end(),
+			unsigned overlap = findOverlap(g, paths, it, path.end(),
 					   seed->second, distance);
 			if (overlap > 0)
 				overlaps.push_back(Overlap(v, seed->second,
@@ -242,7 +243,7 @@ static void findOverlaps(const Paths& paths, const SeedMap& seedMap,
 }
 
 /** Find every pair of overlapping paths. */
-static Overlaps findOverlaps(const Paths& paths)
+static Overlaps findOverlaps(const Graph& g, const Paths& paths)
 {
 	SeedMap seedMap = makeSeedMap(paths);
 
@@ -250,8 +251,8 @@ static Overlaps findOverlaps(const Paths& paths)
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		unsigned i = it - paths.begin();
-		findOverlaps(paths, seedMap, Vertex(i, false), overlaps);
-		findOverlaps(paths, seedMap, Vertex(i, true), overlaps);
+		findOverlaps(g, paths, seedMap, Vertex(i, false), overlaps);
+		findOverlaps(g, paths, seedMap, Vertex(i, true), overlaps);
 	}
 	return overlaps;
 }
@@ -346,7 +347,7 @@ void printGraph(Graph& g,
 	ContigID::lock();
 
 	// Add the path edges.
-	Overlaps overlaps = findOverlaps(paths);
+	Overlaps overlaps = findOverlaps(g, paths);
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it)
 		g.DG::add_edge(it->source, it->target, it->distance);
@@ -421,20 +422,21 @@ int main(int argc, char** argv)
 	const char *adjPath = argv[optind++];
 	ifstream fin(adjPath);
 	assert_open(fin, adjPath);
-	fin >> g_graph;
-	Vertex::s_offset = g_graph.num_vertices() / 2;
+	Graph g;
+	fin >> g;
+	Vertex::s_offset = g.num_vertices() / 2;
 
 	string pathsFile(argv[optind++]);
 	vector<string> pathIDs;
 	Paths paths = readPaths(pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
-		printGraph(g_graph, paths, pathIDs, pathsFile, commandLine);
+		printGraph(g, paths, pathIDs, pathsFile, commandLine);
 		return 0;
 	}
 
-	for (Overlaps overlaps = findOverlaps(paths);
-			!overlaps.empty(); overlaps = findOverlaps(paths)) {
+	for (Overlaps overlaps = findOverlaps(g, paths);
+			!overlaps.empty(); overlaps = findOverlaps(g, paths)) {
 		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
 		trimOverlaps(paths, overlaps);
 	}
