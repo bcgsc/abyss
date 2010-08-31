@@ -376,6 +376,67 @@ static vector<unsigned> calculatePathLengths(const Paths& paths)
 	return lengths;
 }
 
+/** Print the graph of path overlaps. */
+void printGraph(const Paths& paths,
+		const string& graphName, const string& commandLine)
+{
+	Overlaps overlaps = findOverlaps(paths);
+	switch (opt::format) {
+	  case ADJ: {
+		typedef DirectedGraph<ContigProperties, Distance> Graph;
+		typedef Graph::vertex_iterator vertex_iterator;
+
+		// Add placeholder vertices for the single-end contigs.
+		Graph g(2 * g_contigLengths.size());
+		std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
+		for (vertex_iterator u = uit.first; u != uit.second; ++u)
+			put(vertex_removed, g, *u, true);
+
+		// Add the path vertices.
+		g_pathLengths = calculatePathLengths(paths);
+		ContigID::unlock();
+		for (vector<string>::const_iterator it = g_pathIDs.begin();
+				it != g_pathIDs.end(); ++it) {
+			(void)ContigID(*it);
+			ContigProperties vp(
+					g_pathLengths[it - g_pathIDs.begin()], 0);
+			g.add_vertex(vp);
+			g.add_vertex(vp);
+		}
+		ContigID::lock();
+
+		// Add the path edges.
+		for (Overlaps::const_iterator it = overlaps.begin();
+				it != overlaps.end(); ++it)
+			g.add_edge(it->source, it->target, it->distance);
+		cout << adj_writer(g);
+		break;
+	  }
+	  case DOT: {
+		cout << "digraph \"" << graphName << "\" {\n";
+		copy(overlaps.begin(), overlaps.end(),
+				ostream_iterator<Overlap>(cout, "\n"));
+		cout << "}\n";
+		break;
+	  }
+	  case SAM: {
+		g_pathLengths = calculatePathLengths(paths);
+		// SAM headers.
+		cout << "@HD\tVN:1.0\n"
+			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
+			"CL:" << commandLine << '\n';
+		for (vector<string>::const_iterator it = g_pathIDs.begin();
+				it != g_pathIDs.end(); ++it)
+			cout << "@SQ\tSN:" << *it
+					<< "\tLN:" << g_pathLengths[it-g_pathIDs.begin()]
+					<< '\n';
+		copy(overlaps.begin(), overlaps.end(),
+				ostream_iterator<Overlap>(cout, "\n"));
+		break;
+	  }
+	}
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -428,62 +489,9 @@ int main(int argc, char** argv)
 	string pathsFile(argv[optind++]);
 	Paths paths = readPaths(pathsFile);
 
-	switch (opt::format) {
-	  case ADJ: {
-		typedef DirectedGraph<ContigProperties, Distance> Graph;
-		typedef Graph::vertex_iterator vertex_iterator;
-
-		// Add placeholder vertices for the single-end contigs.
-		Graph g(2 * g_contigLengths.size());
-		std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
-		for (vertex_iterator u = uit.first; u != uit.second; ++u)
-			put(vertex_removed, g, *u, true);
-
-		// Add the path vertices.
-		g_pathLengths = calculatePathLengths(paths);
-		ContigID::unlock();
-		for (vector<string>::const_iterator it = g_pathIDs.begin();
-				it != g_pathIDs.end(); ++it) {
-			(void)ContigID(*it);
-			ContigProperties vp(
-					g_pathLengths[it - g_pathIDs.begin()], 0);
-			g.add_vertex(vp);
-			g.add_vertex(vp);
-		}
-		ContigID::lock();
-
-		// Add the path edges.
-		Overlaps overlaps = findOverlaps(paths);
-		for (Overlaps::const_iterator it = overlaps.begin();
-				it != overlaps.end(); ++it)
-			g.add_edge(it->source, it->target, it->distance);
-		cout << adj_writer(g);
+	if (opt::format != PATH) {
+		printGraph(paths, pathsFile, commandLine);
 		return 0;
-	  }
-	  case DOT: {
-		cout << "digraph \"" << pathsFile << "\" {\n";
-		Overlaps overlaps = findOverlaps(paths);
-		copy(overlaps.begin(), overlaps.end(),
-				ostream_iterator<Overlap>(cout, "\n"));
-		cout << "}\n";
-		return 0;
-	  }
-	  case SAM: {
-		g_pathLengths = calculatePathLengths(paths);
-		// SAM headers.
-		cout << "@HD\tVN:1.0\n"
-			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n';
-		for (vector<string>::const_iterator it = g_pathIDs.begin();
-				it != g_pathIDs.end(); ++it)
-			cout << "@SQ\tSN:" << *it
-					<< "\tLN:" << g_pathLengths[it-g_pathIDs.begin()]
-					<< '\n';
-		Overlaps overlaps = findOverlaps(paths);
-		copy(overlaps.begin(), overlaps.end(),
-				ostream_iterator<Overlap>(cout, "\n"));
-		return 0;
-	  }
 	}
 
 	for (Overlaps overlaps = findOverlaps(paths);
