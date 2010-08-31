@@ -80,9 +80,6 @@ static const struct option longopts[] = {
 typedef vector<ContigProperties> ContigPropertiesMap;
 static ContigPropertiesMap g_contigs;
 
-/** The identifiers of the paths. */
-static vector<string> g_pathIDs;
-
 /** A vertex of the overlap graph. */
 struct Vertex {
 	unsigned id;
@@ -133,8 +130,9 @@ static void assert_open(ifstream& f, const string& p)
 typedef vector<ContigPath> Paths;
 
 /** Read contig paths from the specified stream. */
-static Paths readPaths(const string& inPath)
+static Paths readPaths(const string& inPath, vector<string>& pathIDs)
 {
+	assert(pathIDs.empty());
 	ifstream fin(inPath.c_str());
 	if (inPath != "-")
 		assert_open(fin, inPath);
@@ -145,7 +143,7 @@ static Paths readPaths(const string& inPath)
 	string id;
 	ContigPath path;
 	while (in >> id >> path) {
-		g_pathIDs.push_back(id);
+		pathIDs.push_back(id);
 		paths.push_back(path);
 	}
 	assert(in.eof());
@@ -334,7 +332,7 @@ int get(edge_distance_t, const Graph& g,
 }
 
 /** Print the graph of path overlaps. */
-void printGraph(const Paths& paths,
+void printGraph(const Paths& paths, const vector<string>& pathIDs,
 		const string& graphName, const string& commandLine)
 {
 	typedef DirectedGraph<ContigProperties, Distance> Graph;
@@ -350,7 +348,7 @@ void printGraph(const Paths& paths,
 	ContigID::unlock();
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		(void)ContigID(g_pathIDs[it - paths.begin()]);
+		(void)ContigID(pathIDs[it - paths.begin()]);
 		ContigProperties vp = accumulate(it->begin(), it->end(),
 				ContigProperties(opt::k-1, 0));
 		g.add_vertex(vp);
@@ -454,10 +452,11 @@ int main(int argc, char** argv)
 
 	g_contigs = readContigProperties(argv[optind++]);
 	string pathsFile(argv[optind++]);
-	Paths paths = readPaths(pathsFile);
+	vector<string> pathIDs;
+	Paths paths = readPaths(pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
-		printGraph(paths, pathsFile, commandLine);
+		printGraph(paths, pathIDs,pathsFile, commandLine);
 		return 0;
 	}
 
@@ -471,7 +470,7 @@ int main(int argc, char** argv)
 			it != paths.end(); ++it) {
 		if (it->size() < 2)
 			continue;
-		cout << g_pathIDs[it - paths.begin()] << '\t' << *it << '\n';
+		cout << pathIDs[it - paths.begin()] << '\t' << *it << '\n';
 	}
 
 	if (!opt::repeatContigs.empty()) {
