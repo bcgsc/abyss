@@ -179,19 +179,6 @@ typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
 static Graph g_graph;
 
-/** Return the length of the specified contig in k-mer. */
-static unsigned length(const ContigNode& contig)
-{
-	return contig.ambiguous() ? contig.length()
-		: g_graph[contig].length - opt::k + 1;
-}
-
-/** Add the number of k-mer in two contigs. */
-static unsigned addLength(unsigned addend, const ContigNode& contig)
-{
-	return addend + length(contig);
-}
-
 /** Check whether path starts with the sequence [first, last). */
 static bool startsWith(ContigPath path, bool rc,
 		ContigPath::const_iterator first,
@@ -213,7 +200,9 @@ static unsigned findOverlap(const Paths& paths,
 {
 	if (!startsWith(paths[v.id], v.sense, first, last))
 		return 0;
-	distance = -accumulate(first, last, opt::k-1, addLength);
+	distance = -accumulate(first, last,
+			ContigProperties(opt::k-1, 0),
+			AddVertexProp<Graph>(g_graph)).length;
 	return last - first;
 }
 
