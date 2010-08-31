@@ -329,13 +329,6 @@ static ContigProperties operator+(const ContigProperties& a,
 			: a + g_graph[b];
 }
 
-template<typename Graph>
-int get(edge_distance_t, const Graph& g,
-		typename graph_traits<Graph>::edge_descriptor e)
-{
-	return g[e].distance;
-}
-
 /** Print the graph of path overlaps. */
 void printGraph(Graph& g,
 		const Paths& paths, const vector<string>& pathIDs,

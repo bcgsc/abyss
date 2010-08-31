@@ -59,13 +59,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-template<typename Graph>
-int get(edge_distance_t, const Graph& g,
-		typename graph_traits<Graph>::edge_descriptor e)
-{
-	return g[e].distance;
-}
-
 /** Contig properties. */
 struct Contig {
 	unsigned length;

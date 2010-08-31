@@ -8,6 +8,7 @@
 /** Output a graph in SAM alignment format.
  * vertex_descriptor must be convertible to a ContigNode
  * vertex_property_type must have members length and coverage
+ * edge_property_type must have a member distance
  */
 template <typename Graph>
 std::ostream& write_sam(std::ostream& out, const Graph& g)
@@ -18,6 +19,8 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 		vertex_property_type;
 	typedef typename graph_traits<Graph>::edge_iterator
 		edge_iterator;
+	typedef typename edge_property<Graph>::type
+		edge_property_type;
 
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u, ++u) {
@@ -31,7 +34,7 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 
 	std::pair<edge_iterator, edge_iterator> eit = edges(g);
 	for (edge_iterator e = eit.first; e != eit.second; ++e) {
-		int distance = get(edge_distance, g, *e);
+		int distance = g[*e].distance;
 		if (distance >= 0)
 			continue;
 		ContigNode u = source(*e, g), v = target(*e, g);
