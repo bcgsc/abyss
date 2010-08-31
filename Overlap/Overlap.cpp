@@ -16,6 +16,7 @@
 #include <cassert>
 #include <cctype>
 #include <cerrno>
+#include <climits> // for UINT_MAX
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <fstream>
@@ -217,8 +218,14 @@ struct Overlap {
 	const Estimate est;
 	const unsigned overlap;
 	const bool mask;
+	Overlap() : est(), overlap(UINT_MAX), mask(false) { }
 	Overlap(const Estimate& est, unsigned overlap, bool mask)
 		: est(est), overlap(overlap), mask(mask) { }
+
+	bool operator==(const Overlap& o) const
+	{
+		return overlap == o.overlap;
+	}
 
 	friend ostream& operator<<(ostream& out, const Overlap& o)
 	{
