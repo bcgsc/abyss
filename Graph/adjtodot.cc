@@ -59,42 +59,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Contig properties. */
-struct Contig {
-	unsigned length;
-	unsigned coverage;
-
-	Contig() { }
-	Contig(unsigned length, unsigned coverage)
-		: length(length), coverage(coverage) { }
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		float coverage = opt::k <= 0 ? 0
-			: (float)o.coverage / (o.length - opt::k + 1);
-		switch (opt::format) {
-		  case ADJ:
-			return out << ' ' << o.length << ' ' << o.coverage;
-		  case DOT:
-			out << "l=" << o.length;
-			return opt::k > 0
-				? (out << " c=" << coverage)
-				: (out << " C=" << o.coverage);
-		  case SAM:
-			out << "\tLN:" << o.length;
-			return opt::k > 0
-				? (out << "\tXc:" << coverage)
-				: (out << "\tXC:" << o.coverage);
-		}
-		return out;
-	}
-
-	friend istream& operator >>(istream& in, Contig& o)
-	{
-		return in >> o.length >> o.coverage;
-	}
-};
-
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -144,7 +108,8 @@ int main(int argc, char** argv)
 		assert(fin.is_open());
 	istream& in = path == "-" ? cin : fin;
 
-	typedef ContigGraph<DirectedGraph<Contig, Distance> > Graph;
+	typedef ContigGraph<DirectedGraph<
+		ContigProperties, Distance> > Graph;
 	Graph g;
 	in >> g;
 	assert(in.eof());
