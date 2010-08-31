@@ -34,10 +34,10 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 
 	std::pair<edge_iterator, edge_iterator> eit = edges(g);
 	for (edge_iterator e = eit.first; e != eit.second; ++e) {
-		int distance = g[*e].distance;
-		if (distance >= 0)
-			continue;
 		ContigNode u = source(*e, g), v = target(*e, g);
+		int distance = g[*e].distance;
+		if (get(vertex_removed, g, u) || distance >= 0)
+			continue;
 		unsigned flag = u.sense() == v.sense() ? 0 : 0x10; //FREVERSE
 		unsigned alen = -distance;
 		unsigned pos = 1 + (u.sense() ? 0 : g[u].length - alen);

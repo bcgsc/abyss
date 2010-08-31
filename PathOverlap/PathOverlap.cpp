@@ -1,5 +1,6 @@
 #include "config.h"
 #include "AdjIO.h"
+#include "ContigGraph.h"
 #include "ContigID.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
@@ -32,9 +33,9 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... LEN PATH\n"
+"Usage: " PROGRAM " [OPTION]... ADJ PATH\n"
 "Find paths that overlap\n"
-"  LEN   lengths of the contigs\n"
+"  ADJ   contig adjacency graph\n"
 "  PATH  sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
@@ -49,7 +50,7 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	int k; // used by readContigLengths
+	int k;
 
 	/** Output format. */
 	int format = -1; // used by ContigProperties
@@ -173,7 +174,8 @@ static SeedMap makeSeedMap(const Paths& paths)
 }
 
 /** The contig graph. */
-typedef DirectedGraph<ContigProperties, Distance> Graph;
+typedef DirectedGraph<ContigProperties, Distance> DG;
+typedef ContigGraph<DG> Graph;
 static Graph g_graph;
 
 /** Return the length of the specified contig in k-mer. */
@@ -349,7 +351,6 @@ void printGraph(Graph& g,
 		ContigProperties vp = accumulate(it->begin(), it->end(),
 				ContigProperties(opt::k-1, 0));
 		g.add_vertex(vp);
-		g.add_vertex(vp);
 	}
 	ContigID::lock();
 
@@ -357,7 +358,7 @@ void printGraph(Graph& g,
 	Overlaps overlaps = findOverlaps(paths);
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it)
-		g.add_edge(it->source, it->target, it->distance);
+		g.DG::add_edge(it->source, it->target, it->distance);
 
 	switch (opt::format) {
 	  case ADJ:
@@ -376,24 +377,6 @@ void printGraph(Graph& g,
 			<< sam_writer(g);
 		break;
 	}
-}
-
-/** Read contig properties. */
-static void readContigProperties(Graph &g, const string& path)
-{
-	ifstream in(path.c_str());
-	assert_open(in, path);
-	assert(ContigID::empty());
-	ContigID id;
-	ContigProperties vp;
-	while (in >> id >> vp) {
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		assert(vp.length >= (unsigned)opt::k);
-		g.add_vertex(vp);
-		g.add_vertex(vp);
-	}
-	assert(in.eof());
-	ContigID::lock();
 }
 
 int main(int argc, char** argv)
@@ -444,7 +427,10 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	readContigProperties(g_graph, argv[optind++]);
+	const char *adjPath = argv[optind++];
+	ifstream fin(adjPath);
+	assert_open(fin, adjPath);
+	fin >> g_graph;
 	Vertex::s_offset = g_graph.num_vertices() / 2;
 
 	string pathsFile(argv[optind++]);
