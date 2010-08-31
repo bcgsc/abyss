@@ -76,14 +76,13 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Contig properties. */
-typedef vector<ContigProperties> ContigPropertiesMap;
-static ContigPropertiesMap g_contigs;
-
 /** A vertex of the overlap graph. */
 struct Vertex {
 	unsigned id;
 	bool sense;
+
+	/** The number of single-end contigs. */
+	static unsigned s_offset;
 
 	Vertex(unsigned id, bool sense)
 		: id(id), sense(sense) { }
@@ -95,9 +94,11 @@ struct Vertex {
 
 	operator ContigNode() const
 	{
-		return ContigNode(g_contigs.size() + id, sense);
+		return ContigNode(s_offset + id, sense);
 	}
 };
+
+unsigned Vertex::s_offset;
 
 /** An alignment result. */
 struct Overlap {
@@ -171,11 +172,15 @@ static SeedMap makeSeedMap(const Paths& paths)
 	return seedMap;
 }
 
+/** The contig graph. */
+typedef DirectedGraph<ContigProperties, Distance> Graph;
+static Graph g_graph;
+
 /** Return the length of the specified contig in k-mer. */
 static unsigned length(const ContigNode& contig)
 {
 	return contig.ambiguous() ? contig.length()
-		: g_contigs.at(contig.id()).length - opt::k + 1;
+		: g_graph[contig].length - opt::k + 1;
 }
 
 /** Add the number of k-mer in two contigs. */
@@ -321,7 +326,7 @@ static ContigProperties operator+(const ContigProperties& a,
 {
 	return b.ambiguous()
 			? a + ContigProperties(b.length() + opt::k - 1, 0)
-			: a + g_contigs[b.id()];
+			: a + g_graph[b];
 }
 
 template<typename Graph>
@@ -332,14 +337,13 @@ int get(edge_distance_t, const Graph& g,
 }
 
 /** Print the graph of path overlaps. */
-void printGraph(const Paths& paths, const vector<string>& pathIDs,
+void printGraph(Graph& g,
+		const Paths& paths, const vector<string>& pathIDs,
 		const string& graphName, const string& commandLine)
 {
-	typedef DirectedGraph<ContigProperties, Distance> Graph;
 	typedef Graph::vertex_iterator vertex_iterator;
 
-	// Add placeholder vertices for the single-end contigs.
-	Graph g(2 * g_contigs.size());
+	// Mark the single-end contigs as removed.
 	std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
 	for (vertex_iterator u = uit.first; u != uit.second; ++u)
 		put(vertex_removed, g, *u, true);
@@ -382,24 +386,21 @@ void printGraph(const Paths& paths, const vector<string>& pathIDs,
 }
 
 /** Read contig properties. */
-static ContigPropertiesMap readContigProperties(const string& path)
+static void readContigProperties(Graph &g, const string& path)
 {
 	ifstream in(path.c_str());
 	assert_open(in, path);
 	assert(ContigID::empty());
-	ContigPropertiesMap vpmap;
 	ContigID id;
 	ContigProperties vp;
 	while (in >> id >> vp) {
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
-		assert(id == vpmap.size());
 		assert(vp.length >= (unsigned)opt::k);
-		vpmap.push_back(vp);
+		g.add_vertex(vp);
+		g.add_vertex(vp);
 	}
 	assert(in.eof());
-	assert(!vpmap.empty());
 	ContigID::lock();
-	return vpmap;
 }
 
 int main(int argc, char** argv)
@@ -450,13 +451,15 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	g_contigs = readContigProperties(argv[optind++]);
+	readContigProperties(g_graph, argv[optind++]);
+	Vertex::s_offset = g_graph.num_vertices() / 2;
+
 	string pathsFile(argv[optind++]);
 	vector<string> pathIDs;
 	Paths paths = readPaths(pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
-		printGraph(paths, pathIDs,pathsFile, commandLine);
+		printGraph(g_graph, paths, pathIDs, pathsFile, commandLine);
 		return 0;
 	}
 
