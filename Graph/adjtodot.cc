@@ -36,15 +36,12 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** Enumeration of output formats */
-enum format { ADJ, DOT, SAM };
-
 namespace opt {
  	int k; // used by Distance
 	static int verbose;
 
 	/** Output format */
-	static int format = DOT;
+	int format = DOT; // used by ContigProperties
 }
 
 static const char shortopts[] = "k:v";

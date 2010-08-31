@@ -4,6 +4,8 @@
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
+#include "DotIO.h"
+#include "SAMIO.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
@@ -46,14 +48,11 @@ static const char *USAGE_MESSAGE =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** Enumeration of output formats */
-enum format { PATH, ADJ, DOT, SAM };
-
 namespace opt {
 	int k; // used by readContigLengths
 
 	/** Output format. */
-	static int format;
+	int format = -1; // used by ContigProperties
 
 	/** Output the IDs of contigs in overlaps to this file. */
 	static string repeatContigs;
@@ -81,9 +80,6 @@ static const struct option longopts[] = {
 typedef vector<ContigProperties> ContigPropertiesMap;
 static ContigPropertiesMap g_contigs;
 
-/** Lengths of paths in bp. */
-static vector<unsigned> g_pathLengths;
-
 /** The identifiers of the paths. */
 static vector<string> g_pathIDs;
 
@@ -104,12 +100,6 @@ struct Vertex {
 	{
 		return ContigNode(g_contigs.size() + id, sense);
 	}
-
-	friend ostream& operator <<(ostream& out, const Vertex& v)
-	{
-		return out << '"' << g_pathIDs[v.id]
-			<< (v.sense ? '-' : '+') << '"';
-	}
 };
 
 /** An alignment result. */
@@ -127,42 +117,6 @@ struct Overlap {
 			unsigned overlap, int distance)
 		: source(source), target(target),
 		overlap(overlap), distance(distance) { }
-
-	friend ostream& operator <<(ostream& out, Overlap o)
-	{
-		switch (opt::format) {
-		  case ADJ:
-			assert(false);
-			return out;
-		  case DOT:
-			return out << o.source << " -> " << o.target
-				<< " [d=" << o.distance << "]";
-		  case SAM: {
-			unsigned sourceLen = g_pathLengths[o.source.id];
-			unsigned targetLen = g_pathLengths[o.target.id];
-			unsigned flag = o.source.sense == o.target.sense
-				? 0 : 0x10; // FREVERSE
-			unsigned alen = -o.distance;
-			unsigned pos = o.source.sense ? 0 : sourceLen - alen;
-			out << g_pathIDs[o.target.id] // QNAME
-				<< '\t' << flag // FLAG
-				<< '\t' << g_pathIDs[o.source.id] // RNAME
-				<< '\t' << 1 + pos // POS
-				<< "\t255\t"; // MAPQ
-			// CIGAR
-			unsigned clip = targetLen - alen;
-			if (o.source.sense)
-				out << clip << 'H' << alen << "M\t";
-			else
-				out << alen << 'M' << clip << "H\t";
-			// MRNM MPOS ISIZE SEQ QUAL
-			return out << "*\t0\t0\t*\t*";
-		  }
-		  default:
-			assert(false);
-			exit(EXIT_FAILURE);
-		}
-	}
 };
 
 /** The contig IDs that have been removed from paths. */
@@ -364,18 +318,6 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
-/** Calculate the lengths of the paths. */
-static vector<unsigned> calculatePathLengths(const Paths& paths)
-{
-	vector<unsigned> lengths;
-	lengths.reserve(paths.size());
-	for (Paths::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		lengths.push_back(accumulate(it->begin(), it->end(),
-					opt::k-1, addLength));
-	return lengths;
-}
-
 static ContigProperties operator+(const ContigProperties& a,
 		const ContigNode& b)
 {
@@ -384,63 +326,60 @@ static ContigProperties operator+(const ContigProperties& a,
 			: a + g_contigs[b.id()];
 }
 
+template<typename Graph>
+int get(edge_distance_t, const Graph& g,
+		typename graph_traits<Graph>::edge_descriptor e)
+{
+	return g[e].distance;
+}
+
 /** Print the graph of path overlaps. */
 void printGraph(const Paths& paths,
 		const string& graphName, const string& commandLine)
 {
+	typedef DirectedGraph<ContigProperties, Distance> Graph;
+	typedef Graph::vertex_iterator vertex_iterator;
+
+	// Add placeholder vertices for the single-end contigs.
+	Graph g(2 * g_contigs.size());
+	std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
+	for (vertex_iterator u = uit.first; u != uit.second; ++u)
+		put(vertex_removed, g, *u, true);
+
+	// Add the path vertices.
+	ContigID::unlock();
+	for (Paths::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		(void)ContigID(g_pathIDs[it - paths.begin()]);
+		ContigProperties vp = accumulate(it->begin(), it->end(),
+				ContigProperties(opt::k-1, 0));
+		g.add_vertex(vp);
+		g.add_vertex(vp);
+	}
+	ContigID::lock();
+
+	// Add the path edges.
 	Overlaps overlaps = findOverlaps(paths);
+	for (Overlaps::const_iterator it = overlaps.begin();
+			it != overlaps.end(); ++it)
+		g.add_edge(it->source, it->target, it->distance);
+
 	switch (opt::format) {
-	  case ADJ: {
-		typedef DirectedGraph<ContigProperties, Distance> Graph;
-		typedef Graph::vertex_iterator vertex_iterator;
-
-		// Add placeholder vertices for the single-end contigs.
-		Graph g(2 * g_contigs.size());
-		std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
-		for (vertex_iterator u = uit.first; u != uit.second; ++u)
-			put(vertex_removed, g, *u, true);
-
-		// Add the path vertices.
-		ContigID::unlock();
-		for (Paths::const_iterator it = paths.begin();
-				it != paths.end(); ++it) {
-			(void)ContigID(g_pathIDs[it - paths.begin()]);
-			ContigProperties vp = accumulate(it->begin(), it->end(),
-					ContigProperties(opt::k-1, 0));
-			g.add_vertex(vp);
-			g.add_vertex(vp);
-		}
-		ContigID::lock();
-
-		// Add the path edges.
-		for (Overlaps::const_iterator it = overlaps.begin();
-				it != overlaps.end(); ++it)
-			g.add_edge(it->source, it->target, it->distance);
+	  case ADJ:
 		cout << adj_writer(g);
 		break;
-	  }
-	  case DOT: {
-		cout << "digraph \"" << graphName << "\" {\n";
-		copy(overlaps.begin(), overlaps.end(),
-				ostream_iterator<Overlap>(cout, "\n"));
-		cout << "}\n";
+	  case DOT:
+		cout << "digraph \"" << graphName << "\" {\n"
+			<< dot_writer(g)
+			<< "}\n";
 		break;
-	  }
-	  case SAM: {
-		g_pathLengths = calculatePathLengths(paths);
+	  case SAM:
 		// SAM headers.
 		cout << "@HD\tVN:1.0\n"
 			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n';
-		for (vector<string>::const_iterator it = g_pathIDs.begin();
-				it != g_pathIDs.end(); ++it)
-			cout << "@SQ\tSN:" << *it
-					<< "\tLN:" << g_pathLengths[it-g_pathIDs.begin()]
-					<< '\n';
-		copy(overlaps.begin(), overlaps.end(),
-				ostream_iterator<Overlap>(cout, "\n"));
+			"CL:" << commandLine << '\n'
+			<< sam_writer(g);
 		break;
-	  }
 	}
 }
 
@@ -517,7 +456,7 @@ int main(int argc, char** argv)
 	string pathsFile(argv[optind++]);
 	Paths paths = readPaths(pathsFile);
 
-	if (opt::format != PATH) {
+	if (opt::format >= 0) {
 		printGraph(paths, pathsFile, commandLine);
 		return 0;
 	}

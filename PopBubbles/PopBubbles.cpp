@@ -56,6 +56,8 @@ namespace opt {
 
 	/** Output bubbles in dot format. */
 	static int dot;
+
+	int format; // used by ContigProperties
 }
 
 static const char shortopts[] = "b:g:k:v";

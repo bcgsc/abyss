@@ -72,6 +72,7 @@ namespace opt {
 	static string out;
 
 	int dot; // used by Estimate
+	int format; // used by ContigProperties
 }
 
 static const char shortopts[] = "g:k:m:o:v";
