@@ -80,7 +80,7 @@ struct AddVertexProp {
 			const vertex_property_type& vp,
 			const vertex_descriptor& u) const
 	{
-		return vp + g[u];
+		return vp + get(vertex_bundle, g, u);
 	}
 };
 

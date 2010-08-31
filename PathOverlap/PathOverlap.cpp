@@ -1,6 +1,7 @@
 #include "config.h"
 #include "AdjIO.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
 #include "ContigID.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
@@ -323,12 +324,12 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
-static ContigProperties operator+(const ContigProperties& a,
-		const ContigNode& b)
+static inline
+ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 {
-	return b.ambiguous()
-			? a + ContigProperties(b.length() + opt::k - 1, 0)
-			: a + g_graph[b];
+	return u.ambiguous()
+		? ContigProperties(u.length() + opt::k - 1, 0)
+		: g[u];
 }
 
 /** Print the graph of path overlaps. */
@@ -349,7 +350,8 @@ void printGraph(Graph& g,
 			it != paths.end(); ++it) {
 		(void)ContigID(pathIDs[it - paths.begin()]);
 		ContigProperties vp = accumulate(it->begin(), it->end(),
-				ContigProperties(opt::k-1, 0));
+				ContigProperties(opt::k-1, 0),
+				AddVertexProp<Graph>(g));
 		g.add_vertex(vp);
 	}
 	ContigID::lock();
