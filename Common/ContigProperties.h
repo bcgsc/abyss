@@ -20,7 +20,7 @@ struct ContigProperties {
 	unsigned length;
 	unsigned coverage;
 
-	ContigProperties() { }
+	ContigProperties() : length(0), coverage(0) { }
 	ContigProperties(unsigned length, unsigned coverage)
 		: length(length), coverage(coverage) { }
 
