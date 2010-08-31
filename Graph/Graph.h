@@ -235,6 +235,13 @@ get(edge_bundle_t, const G& g, typename G::edge_descriptor e)
 	return g[e];
 }
 
+template<typename Graph, typename Descriptor,
+	typename Bundle, typename T>
+T get(T Bundle::* tag, const Graph& g, Descriptor x)
+{
+	return g[x].*tag;
+}
+
 #include <istream>
 #include <ostream>
 
