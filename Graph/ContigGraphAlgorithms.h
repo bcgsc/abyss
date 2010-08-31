@@ -96,8 +96,9 @@ void merge(Graph& g, It first, It last)
 	typedef typename vertex_property<Graph>::type
 		vertex_property_type;
 
-	vertex_property_type vp = std::accumulate(first, last,
-			vertex_property_type(), AddVertexProp<Graph>(g));
+	assert(first != last);
+	vertex_property_type vp = std::accumulate(first + 1, last,
+			get(vertex_bundle, g, *first), AddVertexProp<Graph>(g));
 	vertex_descriptor u = add_vertex(vp, g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
