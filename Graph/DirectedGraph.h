@@ -2,6 +2,7 @@
 #define DIRECTEDGRAPH_H 1
 
 #include "ContigNode.h"
+#include "Graph.h"
 #include <algorithm>
 #include <cassert>
 #include <utility>
@@ -484,6 +485,14 @@ bool get(vertex_removed_t tag,
 		const G& g, typename G::vertex_descriptor u)
 {
 	return g.get(tag, u);
+}
+
+template <class G>
+void put(vertex_removed_t,
+		G& g, typename G::vertex_descriptor u, bool removed)
+{
+	assert(removed);
+	return g.remove_vertex(u);
 }
 
 #include "DotIO.h"

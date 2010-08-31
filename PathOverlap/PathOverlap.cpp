@@ -1,7 +1,10 @@
 #include "config.h"
+#include "AdjIO.h"
 #include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
+#include "ContigProperties.h"
+#include "DirectedGraph.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
@@ -35,6 +38,7 @@ static const char *USAGE_MESSAGE =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -r, --repeats=FILE    write repeat contigs to FILE\n"
+"      --adj             output overlaps in adj format\n"
 "      --dot             output overlaps in dot format\n"
 "      --sam             output overlaps in SAM format\n"
 "  -v, --verbose         display verbose output\n"
@@ -44,10 +48,10 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 /** Enumeration of output formats */
-enum format { PATH, DOT, SAM };
+enum format { PATH, ADJ, DOT, SAM };
 
 namespace opt {
-	unsigned k; // used by readContigLengths
+	int k; // used by readContigLengths
 
 	/** Output format. */
 	static int format;
@@ -64,6 +68,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",         required_argument, NULL, 'k' },
+	{ "adj",          no_argument,       &opt::format, ADJ, },
 	{ "dot",          no_argument,       &opt::format, DOT, },
 	{ "sam",          no_argument,       &opt::format, SAM, },
 	{ "repeats",      required_argument, NULL, 'r' },
@@ -72,6 +77,9 @@ static const struct option longopts[] = {
 	{ "version",      no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+/** Lengths of contigs in k-mer. */
+static vector<unsigned> g_contigLengths;
 
 /** Lengths of paths in bp. */
 static vector<unsigned> g_pathLengths;
@@ -90,6 +98,11 @@ struct Vertex {
 	bool operator ==(const Vertex& v) const
 	{
 		return id == v.id && sense == v.sense;
+	}
+
+	operator ContigNode() const
+	{
+		return ContigNode(g_contigLengths.size() + id, sense);
 	}
 
 	friend ostream& operator <<(ostream& out, const Vertex& v)
@@ -118,6 +131,9 @@ struct Overlap {
 	friend ostream& operator <<(ostream& out, Overlap o)
 	{
 		switch (opt::format) {
+		  case ADJ:
+			assert(false);
+			return out;
 		  case DOT:
 			return out << o.source << " -> " << o.target
 				<< " [d=" << o.distance << "]";
@@ -202,9 +218,6 @@ static SeedMap makeSeedMap(const Paths& paths)
 	}
 	return seedMap;
 }
-
-/** Lengths of contigs in k-mer. */
-static vector<unsigned> g_contigLengths;
 
 /** Return the length of the specified contig in k-mer. */
 static unsigned length(const ContigNode& contig)
@@ -416,6 +429,37 @@ int main(int argc, char** argv)
 	Paths paths = readPaths(pathsFile);
 
 	switch (opt::format) {
+	  case ADJ: {
+		typedef DirectedGraph<ContigProperties, Distance> Graph;
+		typedef Graph::vertex_iterator vertex_iterator;
+
+		// Add placeholder vertices for the single-end contigs.
+		Graph g(2 * g_contigLengths.size());
+		std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
+		for (vertex_iterator u = uit.first; u != uit.second; ++u)
+			put(vertex_removed, g, *u, true);
+
+		// Add the path vertices.
+		g_pathLengths = calculatePathLengths(paths);
+		ContigID::unlock();
+		for (vector<string>::const_iterator it = g_pathIDs.begin();
+				it != g_pathIDs.end(); ++it) {
+			(void)ContigID(*it);
+			ContigProperties vp(
+					g_pathLengths[it - g_pathIDs.begin()], 0);
+			g.add_vertex(vp);
+			g.add_vertex(vp);
+		}
+		ContigID::lock();
+
+		// Add the path edges.
+		Overlaps overlaps = findOverlaps(paths);
+		for (Overlaps::const_iterator it = overlaps.begin();
+				it != overlaps.end(); ++it)
+			g.add_edge(it->source, it->target, it->distance);
+		cout << adj_writer(g);
+		return 0;
+	  }
 	  case DOT: {
 		cout << "digraph \"" << pathsFile << "\" {\n";
 		Overlaps overlaps = findOverlaps(paths);
