@@ -2,7 +2,10 @@
 #define CONTIGGRAPHALGORITHMS_H 1
 
 #include "Graph.h"
+#include <algorithm>
 #include <cassert>
+#include <functional>
+#include <numeric>
 #include <utility>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
@@ -63,6 +66,45 @@ OutIt assemble(const Graph& g,
 		*out++ = v;
 	*out++ = v;
 	return out;
+}
+
+template<typename Graph>
+struct AddVertexProp {
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	typedef typename vertex_property<Graph>::type
+		vertex_property_type;
+	const Graph& g;
+	AddVertexProp(const Graph& g) : g(g) { }
+	vertex_property_type operator()(
+			const vertex_property_type& vp,
+			const vertex_descriptor& u) const
+	{
+		return vp + g[u];
+	}
+};
+
+/** Merge the vertices in the sequence [first, last).
+ * Create a new vertex whose property is the sum of [first, last).
+ * Remove the vertices [first, last).
+ */
+template<typename Graph, typename It>
+void merge(Graph& g, It first, It last)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	typedef typename vertex_property<Graph>::type
+		vertex_property_type;
+
+	vertex_property_type vp = std::accumulate(first, last,
+			vertex_property_type(), AddVertexProp<Graph>(g));
+	vertex_descriptor u = add_vertex(vp, g);
+	copy_in_edges(g, *first, u);
+	copy_out_edges(g, *(last - 1), u);
+	for_each(first, last,
+			bind1st(std::mem_fun(&Graph::clear_vertex), &g));
+	for_each(first, last,
+			bind1st(std::mem_fun(&Graph::remove_vertex), &g));
 }
 
 #include "ContigGraph.h"
