@@ -6,6 +6,8 @@ docdir = $(datadir)/doc
 pkgdocdir = $(docdir)/$(PACKAGE)
 dist_pkgdoc_DATA = ChangeLog LICENSE README
 
+EXTRA_DIST=doxygen.conf
+
 SUBDIRS = Align Assembly Common DataLayer Graph \
 	ABYSS $(Parallel) \
 	bin doc kmerprint \
