@@ -1,6 +1,6 @@
 noinst_PROGRAMS = kmerprint
 
-kmerprint_CPPFLAGS = \
+kmerprint_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Assembly \
 	-I$(top_srcdir)/Common
 
