@@ -471,7 +471,6 @@ void NetworkSequenceCollection::runControl()
 				assert(opt::erode > 0);
 				puts("Eroding tips");
 				controlErode();
-				assert(controlErode() == 0);
 				SetState(NAS_TRIM);
 				break;
 
