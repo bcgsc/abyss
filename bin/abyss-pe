@@ -103,7 +103,7 @@ $(foreach i,$(lib),$(eval $i_n?=$n))
 unexport in se $(lib)
 
 ifdef in
-pe-contigs: $(out)
+pe-dot:
 endif
 
 se-contigs: $(name)-se-contigs.fa
@@ -113,6 +113,8 @@ se-sam: $(addsuffix -3.sam.gz, $(lib))
 se-bam: $(addsuffix -3.bam.bai, $(lib))
 
 se-dot: $(name)-3.dot
+
+pe-contigs: $(out)
 
 pe-dot: $(name)-contigs.dot
 
