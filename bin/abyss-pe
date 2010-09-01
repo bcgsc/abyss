@@ -233,8 +233,5 @@ endif
 %-3.dot: %-3.fa
 	AdjList $v --dot -k$k $< >$@
 
-%-contigs.dot: %-contigs.fa %-4.adj %-4.path2
-	(echo "digraph $* {"; \
-	AdjList --dot -k$k $< |grep '[>=]'; \
-	PathOverlap --dot -k$k $(wordlist 2, 3, $^) |grep '[>=]'; \
-	echo "}") >$@
+%-contigs.dot: %-4.adj %-4.path2
+	PathOverlap $v --dot -k$k $^ >$@
