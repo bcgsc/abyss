@@ -25,7 +25,7 @@ void assemble(Graph& g, ostream& out)
 			continue;
 		vector<vertex_descriptor> path;
 		assemble(g, *v, back_inserter(path));
-		assert(path.size() >= 3);
+		assert(path.size() >= 2);
 		assert(path.front() != path.back());
 		out << ContigID::create() << '\t' << ContigPath(path) << '\n';
 		merge(g, path.begin(), path.end());
