@@ -10,6 +10,7 @@
 
 class Histogram;
 
+/** A summary of the in- and out-degree of a vertex. */
 enum SeqContiguity
 {
 	SC_ISLAND, // sequence is completely isolated
@@ -17,6 +18,7 @@ enum SeqContiguity
 	SC_CONTIGUOUS // the sequence is closed on both ends
 };
 
+/** De Bruijn graph assembly algorithms. */
 namespace AssemblyAlgorithms
 {
 

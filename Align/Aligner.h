@@ -21,7 +21,7 @@
 
 typedef std::string StringID;
 
-// Alignment information
+/** An ungapped alignment of a query to a target. */
 struct Alignment
 {
 	StringID contig;
@@ -122,6 +122,7 @@ struct Alignment
 	}
 };
 
+/** A tuple of a target ID and position. */
 struct Position
 {
 	uint32_t contig;
@@ -159,6 +160,10 @@ typedef hash_map<Kmer, Position, hashKmer> SeqPosHashUniqueMap;
 
 typedef std::vector<Alignment> AlignmentVector;
 
+/**
+ * Index a target sequence and align query sequences to that indexed
+ * target.
+ */
 template <class SeqPosHashMap>
 class Aligner
 {

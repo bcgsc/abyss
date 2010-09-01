@@ -16,6 +16,7 @@ enum SendMode
 	SM_IMMEDIATE
 };
 
+/** A buffer of Message. */
 class MessageBuffer : public CommLayer
 {
 	public:

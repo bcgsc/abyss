@@ -103,7 +103,7 @@ struct Vertex {
 
 unsigned Vertex::s_offset;
 
-/** An alignment result. */
+/** An alignment of two overlapping contigs. */
 struct Overlap {
 	Vertex source;
 	Vertex target;

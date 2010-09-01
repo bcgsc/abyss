@@ -37,6 +37,10 @@ struct ExtensionRecord
 	}
 };
 
+/**
+ * The data associated with a Kmer, including its coverage, flags
+ * and adjacent Kmer.
+ */
 class KmerData
 {
   public:

@@ -69,7 +69,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** The two terminal k-mer of a contig and its length. */
+/** The two terminal Kmer of a contig and its length and coverage. */
 struct ContigEndSeq {
 	unsigned length;
 	unsigned coverage;

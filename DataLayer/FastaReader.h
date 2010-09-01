@@ -7,6 +7,7 @@
 #include <istream>
 #include <ostream>
 
+/** Read a FASTA, FASTQ, export, qseq or SAM file. */
 class FastaReader {
 	public:
 		enum {
@@ -67,6 +68,7 @@ class FastaReader {
 		unsigned m_unchaste;
 };
 
+/** A FASTA record. */
 struct FastaRecord
 {
 	/** Identifier */

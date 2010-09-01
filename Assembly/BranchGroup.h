@@ -16,6 +16,7 @@ enum BranchGroupStatus
 	BGS_TOOMANYBRANCHES
 };
 
+/** A container of BranchRecord. */
 class BranchGroup
 {
 	public:

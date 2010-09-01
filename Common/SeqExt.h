@@ -7,6 +7,7 @@
 
 static const int NUM_BASES = 4;
 
+/** The adjacent vertices of a Kmer. */
 class SeqExt
 {
 	public:

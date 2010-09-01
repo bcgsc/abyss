@@ -14,8 +14,7 @@ typedef google::sparse_hash_map<Kmer, KmerData,
 typedef hash_map<Kmer, KmerData, hashKmer> SequenceDataHash;
 #endif
 
-// Interface class for a sequence collection (the lowest level of storage of a large number of sequences)
-// This pure virtual class defines the minimum set of functions a sequence collection must provide
+/** The interface of a map of Kmer to KmerData. */
 class ISequenceCollection
 {
 	public:

@@ -3,8 +3,10 @@
 
 #include <string>
 
-// Simple class to automatically time how long a function takes
-
+/**
+ * Time the duration between the construction and destruction of this
+ * timer object and log that duration.
+ */
 class Timer
 {
 	public:

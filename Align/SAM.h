@@ -12,6 +12,7 @@
 /** If undefined, do not use SAM sequence or quality. */
 #undef SAM_SEQ_QUAL
 
+/** A SAM alignment of a single query. */
 struct SAMAlignment {
 	std::string rname;
 	int pos;
@@ -137,6 +138,7 @@ struct SAMAlignment {
 	}
 };
 
+/** A SAM alignment of a query and its mate. */
 struct SAMRecord : SAMAlignment {
 	std::string qname;
 	std::string mrnm;

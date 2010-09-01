@@ -38,6 +38,7 @@ enum NetworkAssemblyState
 
 typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 
+/** A distributed map of Kmer to KmerData. */
 class NetworkSequenceCollection : public ISequenceCollection
 {
 	public:

@@ -4,6 +4,7 @@
 #include "Sequence.h"
 #include <cstdio>
 
+/** Output a FASTA file. */
 class FastaWriter {
 	public:
 		// Constructor opens file

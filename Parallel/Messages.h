@@ -28,6 +28,7 @@ enum MessageOp
 
 typedef uint32_t IDType;
 
+/** The base class of all interprocess messages. */
 class Message
 {
 	public:
@@ -56,6 +57,7 @@ class Message
 		Kmer m_seq;
 };
 
+/** Add a Kmer. */
 class SeqAddMessage : public Message
 {
 	public:
@@ -68,6 +70,7 @@ class SeqAddMessage : public Message
 		static const MessageType TYPE = MT_ADD;
 };
 
+/** Remove a Kmer. */
 class SeqRemoveMessage : public Message
 {
 	public:
@@ -80,6 +83,7 @@ class SeqRemoveMessage : public Message
 		static const MessageType TYPE = MT_REMOVE;
 };
 
+/** Set a flag. */
 class SetFlagMessage : public Message
 {
 	public:
@@ -100,6 +104,7 @@ class SetFlagMessage : public Message
 		uint8_t m_flag; // SeqFlag
 };
 
+/** Remove an edge. */
 class RemoveExtensionMessage : public Message
 {
 	public:
@@ -123,6 +128,7 @@ class RemoveExtensionMessage : public Message
 		SeqExt m_ext;
 };
 
+/** Request vertex properties. */
 class SeqDataRequest : public Message
 {
 	public:
@@ -145,6 +151,7 @@ class SeqDataRequest : public Message
 		IDType m_id;
 };
 
+/** The response to a request for vertex properties. */
 class SeqDataResponse : public Message
 {
 	public:
@@ -172,6 +179,7 @@ class SeqDataResponse : public Message
 		uint16_t m_multiplicity;
 };
 
+/** Add an edge. */
 class SetBaseMessage : public Message
 {
 	public:

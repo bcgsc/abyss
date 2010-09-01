@@ -33,7 +33,7 @@ struct ControlMessage
 	int argument;
 };
 
-// The comm layer wraps inter-process communication operations
+/** Interprocess communication and synchronization primitives. */
 class CommLayer
 {
 	public:

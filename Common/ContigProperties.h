@@ -15,7 +15,7 @@ namespace opt {
 /** Enumeration of output formats */
 enum { ADJ, DOT, SAM };
 
-/** Contig properties. */
+/** The length and coverage of a contig. */
 struct ContigProperties {
 	unsigned length;
 	unsigned coverage;

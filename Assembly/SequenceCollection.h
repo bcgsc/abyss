@@ -4,7 +4,7 @@
 #include "ISequenceCollection.h"
 #include <cassert>
 
-/** A k-mer graph. A map of k-mer to edges. */
+/** A map of Kmer to KmerData. */
 class SequenceCollectionHash : public ISequenceCollection
 {
 	public:

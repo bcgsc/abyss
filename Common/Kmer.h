@@ -8,6 +8,7 @@
 #include <cstring> // for memcpy
 #include <stdint.h>
 
+/** A k-mer. */
 class Kmer
 {
   public:

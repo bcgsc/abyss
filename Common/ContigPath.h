@@ -12,6 +12,7 @@
 #include <ostream>
 #include <vector>
 
+/** A sequence of ContigNode. */
 class ContigPath : public std::vector<ContigNode>
 {
 	typedef std::vector<ContigNode> Vector;

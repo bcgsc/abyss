@@ -17,6 +17,7 @@ enum BranchState
 	BS_TOO_LONG, // the branch is too long
 };
 
+/** A sequence of Kmer. */
 class BranchRecord
 {
 	public:
