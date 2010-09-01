@@ -6,6 +6,7 @@
 #include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include <cassert>
+#include <functional>
 #include <vector>
 
 using namespace std;
@@ -28,5 +29,7 @@ void assemble(Graph& g, ostream& out)
 		assert(path.front() != path.back());
 		out << ContigID::create() << '\t' << ContigPath(path) << '\n';
 		merge(g, path.begin(), path.end());
+		remove_vertex_if(g, path.begin(), path.end(),
+				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 	}
 }

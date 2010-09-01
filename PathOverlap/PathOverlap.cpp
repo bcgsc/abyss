@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <cstring> // for strerror
 #include <cstdlib>
+#include <functional>
 #include <numeric>
 #include <string>
 #include <sstream>
@@ -329,22 +330,20 @@ void printGraph(Graph& g,
 {
 	typedef Graph::vertex_iterator vertex_iterator;
 
-	// Mark the single-end contigs as removed.
-	std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
-	for (vertex_iterator u = uit.first; u != uit.second; ++u)
-		put(vertex_removed, g, *u, true);
-
 	// Add the path vertices.
 	ContigID::unlock();
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		(void)ContigID(pathIDs[it - paths.begin()]);
-		ContigProperties vp = accumulate(it->begin(), it->end(),
-				ContigProperties(opt::k-1, 0),
-				AddVertexProp<Graph>(g));
-		g.add_vertex(vp);
+		merge(g, it->begin(), it->end());
 	}
 	ContigID::lock();
+
+	// Remove the single-end contigs that are in paths.
+	for (Paths::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		remove_vertex_if(g, it->begin(), it->end(),
+				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 
 	// Add the path edges.
 	Overlaps overlaps = findOverlaps(g, paths);
@@ -352,6 +351,7 @@ void printGraph(Graph& g,
 			it != overlaps.end(); ++it)
 		g.DG::add_edge(it->source, it->target, it->distance);
 
+	// Output the graph.
 	switch (opt::format) {
 	  case ADJ:
 		cout << adj_writer(g);

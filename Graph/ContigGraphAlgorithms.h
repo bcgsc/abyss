@@ -2,7 +2,6 @@
 #define CONTIGGRAPHALGORITHMS_H 1
 
 #include "Algorithms.h"
-#include "ContigNode.h"
 #include "Graph.h"
 #include <algorithm>
 #include <cassert>
@@ -70,6 +69,19 @@ OutIt assemble(const Graph& g,
 	return out;
 }
 
+/** Remove vertices in the sequence [first, last) from the graph
+ * for which the predicate p is true. Edges incident to those vertices
+ * are removed as well.
+ */
+template<typename Graph, typename It, typename Predicate>
+void remove_vertex_if(Graph& g, It first, It last, Predicate p)
+{
+	for_each_if(first, last,
+			bind1st(std::mem_fun(&Graph::clear_vertex), &g), p);
+	for_each_if(first, last,
+			bind1st(std::mem_fun(&Graph::remove_vertex), &g), p);
+}
+
 template<typename Graph>
 struct AddVertexProp {
 	typedef typename graph_traits<Graph>::vertex_descriptor
@@ -104,12 +116,6 @@ void merge(Graph& g, It first, It last)
 	vertex_descriptor u = add_vertex(vp, g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
-	for_each_if(first, last,
-			bind1st(std::mem_fun(&Graph::clear_vertex), &g),
-			not1(std::mem_fun_ref(&ContigNode::ambiguous)));
-	for_each_if(first, last,
-			bind1st(std::mem_fun(&Graph::remove_vertex), &g),
-			not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 }
 
 #include "ContigGraph.h"
