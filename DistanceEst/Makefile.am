@@ -1,6 +1,6 @@
 bin_PROGRAMS = DistanceEst
 
-DistanceEst_CPPFLAGS = \
+DistanceEst_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/Graph

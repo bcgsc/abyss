@@ -1,6 +1,6 @@
 bin_PROGRAMS = abyss-fixmate ParseAligns
 
-abyss_fixmate_CPPFLAGS= \
+abyss_fixmate_CPPFLAGS= -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common
 
@@ -10,7 +10,7 @@ abyss_fixmate_LDADD= \
 
 abyss_fixmate_SOURCES=abyss-fixmate.cc
 
-ParseAligns_CPPFLAGS = \
+ParseAligns_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common
 
