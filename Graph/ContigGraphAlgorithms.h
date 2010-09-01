@@ -1,6 +1,8 @@
 #ifndef CONTIGGRAPHALGORITHMS_H
 #define CONTIGGRAPHALGORITHMS_H 1
 
+#include "Algorithms.h"
+#include "ContigNode.h"
 #include "Graph.h"
 #include <algorithm>
 #include <cassert>
@@ -102,10 +104,12 @@ void merge(Graph& g, It first, It last)
 	vertex_descriptor u = add_vertex(vp, g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
-	for_each(first, last,
-			bind1st(std::mem_fun(&Graph::clear_vertex), &g));
-	for_each(first, last,
-			bind1st(std::mem_fun(&Graph::remove_vertex), &g));
+	for_each_if(first, last,
+			bind1st(std::mem_fun(&Graph::clear_vertex), &g),
+			not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+	for_each_if(first, last,
+			bind1st(std::mem_fun(&Graph::remove_vertex), &g),
+			not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 }
 
 #include "ContigGraph.h"

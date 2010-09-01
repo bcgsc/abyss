@@ -6,6 +6,18 @@
 #include <utility>
 #include <vector>
 
+/** Apply function f to each element in the range [first, last) for
+ * which the predicate p is true.
+ */
+template<class It, class Function, class Pred>
+Function for_each_if(It first, It last, Function f, Pred p)
+{
+	for (; first != last; ++first)
+		if (p(*first))
+			f(*first);
+	return f;
+}
+
 /** Sorts the elements in the range [first,last) ordered by the value
  * returned by the unary function op, which is called once for each
  * element in the range [first,last). The copy constructor of the
