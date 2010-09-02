@@ -25,6 +25,7 @@ static inline SeqFlag complement(SeqFlag flag)
 	return SeqFlag(out);
 }
 
+/** A pair of SeqExt; one for out edges and one for in edges. */
 struct ExtensionRecord
 {
 	SeqExt dir[2];
