@@ -1,10 +1,10 @@
 #include "Aligner.h"
-#include "AffixIterator.h"
 #include "Align/Options.h"
 #include "Barrier.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
+#include "Iterator.h"
 #include "SAM.h"
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"

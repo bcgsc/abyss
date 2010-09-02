@@ -1,9 +1,9 @@
 #include "config.h"
 #include "Common/Options.h"
-#include "AffixIterator.h"
 #include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
+#include "Iterator.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>

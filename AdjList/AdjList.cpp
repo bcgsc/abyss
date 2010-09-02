@@ -1,8 +1,8 @@
 #include "Common/Options.h"
-#include "AffixIterator.h"
 #include "ContigNode.h"
 #include "FastaReader.h"
 #include "HashMap.h"
+#include "Iterator.h"
 #include "Kmer.h"
 #include "Uncompress.h"
 #include <algorithm>

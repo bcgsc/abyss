@@ -3,7 +3,6 @@ noinst_LIBRARIES = libcommon.a
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
 libcommon_a_SOURCES = \
-	AffixIterator.h \
 	Algorithms.h \
 	ContigID.h ContigID.cpp \
 	ContigLength.h ContigLength.cpp \
@@ -16,6 +15,7 @@ libcommon_a_SOURCES = \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h \
 	Histogram.cpp Histogram.h \
+	Iterator.h \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
 	Options.cpp Options.h \

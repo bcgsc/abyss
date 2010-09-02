@@ -5,12 +5,12 @@
 
 #include "config.h"
 #include "Common/Options.h"
-#include "AffixIterator.h"
 #include "ContigGraph.h"
 #include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
+#include "Iterator.h"
 #include "Sequence.h"
 #include <algorithm>
 #include <cerrno>

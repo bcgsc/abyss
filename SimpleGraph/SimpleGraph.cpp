@@ -1,10 +1,10 @@
 #include "config.h"
-#include "AffixIterator.h"
 #include "ContigGraph.h"
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "GraphAlgorithms.h"
 #include "Histogram.h"
+#include "Iterator.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <cerrno>

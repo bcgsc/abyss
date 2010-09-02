@@ -1,5 +1,5 @@
-#ifndef AFFIXITERATOR_H
-#define AFFIXITERATOR_H 1
+#ifndef ITERATOR_H
+#define ITERATOR_H 1
 
 #include <iterator>
 

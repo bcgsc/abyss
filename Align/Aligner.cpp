@@ -1,5 +1,5 @@
 #include "Aligner.h"
-#include "AffixIterator.h"
+#include "Iterator.h"
 #include "SAM.h"
 #include "Sequence.h"
 #include <algorithm>
