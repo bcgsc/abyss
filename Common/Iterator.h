@@ -18,10 +18,7 @@ public:
 	typedef charT char_type;
 	typedef traits traits_type;
 	typedef std::basic_ostream<charT, traits> ostream_type;
-
-	/** The type of element inserted into the stream. Note that the
-	 * value_type of a general output iterator is void. */
-	typedef T value_type;
+	typedef void value_type;
 
 	affix_ostream_iterator(ostream_type& s,
 			charT const *prefix, charT const *suffix = NULL)
@@ -53,6 +50,28 @@ private:
 	std::basic_ostream<charT, traits> *os;
 	charT const* prefix;
 	charT const* suffix;
+};
+
+/** Traits of an output iterator. */
+template<class OutputIterator>
+struct output_iterator_traits {
+	typedef typename OutputIterator::value_type value_type;
+};
+
+/** Traits of an ostream_iterator. */
+template<class T, class charT, class traits>
+struct output_iterator_traits<
+	std::ostream_iterator<T, charT, traits> >
+{
+	typedef T value_type;
+};
+
+/** Traits of an affix_ostream_iterator. */
+template<class T, class charT, class traits>
+struct output_iterator_traits<
+	affix_ostream_iterator<T, charT, traits> >
+{
+	typedef T value_type;
 };
 
 #endif

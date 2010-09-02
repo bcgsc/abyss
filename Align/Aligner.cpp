@@ -126,20 +126,6 @@ static int compareQueryPos(const Alignment& a1, const Alignment& a2)
 	return a1.read_start_pos < a2.read_start_pos;
 }
 
-/** Traits of an output iterator. */
-template<class OutIter>
-struct output_iterator_traits {
-	typedef typename OutIter::value_type value_type;
-};
-
-/** Traits of a ostream_iterator. */
-template<class T, class charT, class traits>
-struct output_iterator_traits
-	<std::ostream_iterator<T, charT, traits> >
-{
-	typedef T value_type;
-};
-
 /** Coalesce the k-mer alignments into a read alignment. */
 template <class SeqPosHashMap>
 template <class oiterator>
