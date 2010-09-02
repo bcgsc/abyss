@@ -2,12 +2,14 @@
 #define CONTIGGRAPHALGORITHMS_H 1
 
 #include "Algorithms.h"
+#include "ContigNode.h"
 #include "Graph.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
 #include <numeric>
 #include <utility>
+#include <vector>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
 template<typename Graph>
@@ -118,12 +120,27 @@ void merge(Graph& g, It first, It last)
 	copy_out_edges(g, *(last - 1), u);
 }
 
-#include "ContigGraph.h"
-#include "ContigProperties.h"
-#include "DirectedGraph.h"
-#include <ostream>
-
-void assemble(ContigGraph<DirectedGraph<ContigProperties> >& g,
-		std::ostream& out);
+/** Assemble unambiguous paths. Write the paths to out. */
+template<typename Graph, typename OutIt>
+OutIt assemble(Graph& g, OutIt out)
+{
+	typedef typename Graph::vertex_descriptor vertex_descriptor;
+	typedef typename Graph::vertex_iterator vertex_iterator;
+	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
+		if (!contiguous_out(g, *v) || contiguous_in(g, *v)
+				|| is_palindrome(g, *out_edges(*v, g).first))
+			continue;
+		std::vector<vertex_descriptor> path;
+		assemble(g, *v, back_inserter(path));
+		assert(path.size() >= 2);
+		assert(path.front() != path.back());
+		merge(g, path.begin(), path.end());
+		remove_vertex_if(g, path.begin(), path.end(),
+				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		*out++ = path;
+	}
+	return out;
+}
 
 #endif

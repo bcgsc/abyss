@@ -8,6 +8,7 @@
 #include "ContigGraph.h"
 #include "ContigGraphAlgorithms.h"
 #include "ContigProperties.h"
+#include "DirectedGraph.h"
 #include "Estimate.h"
 #include "FastaReader.h"
 #include "MapGraph.h"
