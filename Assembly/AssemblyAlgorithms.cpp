@@ -162,10 +162,9 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 /** Mark the specified vertex and its neighbours.
  * @return the number of marked edges
  */
-static unsigned markVertexAndNeighbours(ISequenceCollection* g,
+static unsigned markNeighbours(ISequenceCollection* g,
 		const ISequenceCollection::value_type& u, extDirection sense)
 {
-	g->mark(u.first, sense);
 	vector<Kmer> adj;
 	generateSequencesFromExtension(u.first, sense,
 			u.second.getExtension(sense), adj);
@@ -194,15 +193,18 @@ unsigned markAmbiguous(ISequenceCollection* g)
 
 		if (it->first.isPalindrome()) {
 			countv += 2;
-			counte += markVertexAndNeighbours(g, *it, SENSE);
-			counte += markVertexAndNeighbours(g, *it, ANTISENSE);
+			g->mark(it->first);
+			counte += markNeighbours(g, *it, SENSE);
 		} else {
 			for (extDirection sense = SENSE;
 					sense <= ANTISENSE; ++sense) {
-				if (it->second.getExtension(sense).isAmbiguous()
+				SeqExt ext = it->second.getExtension(sense);
+				if (ext.isAmbiguous()
 						|| it->first.isPalindrome(sense)) {
 					countv++;
-					counte += markVertexAndNeighbours(g, *it, sense);
+					g->mark(it->first, sense);
+					if (ext.hasExtension())
+						counte += markNeighbours(g, *it, sense);
 				}
 			}
 		}

@@ -29,8 +29,14 @@ class ISequenceCollection
 
 		virtual void setFlag(const Kmer& seq, SeqFlag flag) = 0;
 
+		/** Mark the specified sequence in both directions. */
+		void mark(const Kmer& seq)
+		{
+			setFlag(seq, SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+		}
+
 		/** Mark the specified sequence. */
-		void mark(const Kmer& seq, extDirection sense = SENSE)
+		void mark(const Kmer& seq, extDirection sense)
 		{
 			setFlag(seq, sense == SENSE
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
