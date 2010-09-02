@@ -168,9 +168,7 @@ static unsigned markNeighbours(ISequenceCollection* g,
 	vector<Kmer> adj;
 	generateSequencesFromExtension(u.first, sense,
 			u.second.getExtension(sense), adj);
-	assert(!adj.empty());
-	for (vector<Kmer>::iterator v = adj.begin();
-			v != adj.end(); ++v)
+	for (vector<Kmer>::iterator v = adj.begin(); v != adj.end(); ++v)
 		g->mark(*v, !sense);
 	return adj.size();
 }
@@ -198,13 +196,11 @@ unsigned markAmbiguous(ISequenceCollection* g)
 		} else {
 			for (extDirection sense = SENSE;
 					sense <= ANTISENSE; ++sense) {
-				SeqExt ext = it->second.getExtension(sense);
-				if (ext.isAmbiguous()
+				if (it->second.getExtension(sense).isAmbiguous()
 						|| it->first.isPalindrome(sense)) {
 					countv++;
 					g->mark(it->first, sense);
-					if (ext.hasExtension())
-						counte += markNeighbours(g, *it, sense);
+					counte += markNeighbours(g, *it, sense);
 				}
 			}
 		}
