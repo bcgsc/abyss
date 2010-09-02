@@ -58,6 +58,14 @@ struct output_iterator_traits {
 	typedef typename OutputIterator::value_type value_type;
 };
 
+/** Traits of a back_insert_iterator. */
+template<class Container>
+struct output_iterator_traits<
+	std::back_insert_iterator<Container> >
+{
+	typedef typename Container::value_type value_type;
+};
+
 /** Traits of an ostream_iterator. */
 template<class T, class charT, class traits>
 struct output_iterator_traits<

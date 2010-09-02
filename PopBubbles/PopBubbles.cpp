@@ -278,14 +278,12 @@ int main(int argc, char *const argv[])
 				bind1st(ptr_fun(removeContig), &g));
 
 		// Assemble unambiguous paths.
-		typedef vector<vector<ContigNode> > ContigPaths;
+		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
 		assemble(g, back_inserter(paths));
 		for (ContigPaths::const_iterator it = paths.begin();
-				it != paths.end(); ++it) {
-			cout << ContigID::create() << '\t'
-				<< ContigPath(*it) << '\n';
-		}
+				it != paths.end(); ++it)
+			cout << ContigID::create() << '\t' << *it << '\n';
 		paths.clear();
 
 		// Output the updated adjacency graph.

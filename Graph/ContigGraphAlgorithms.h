@@ -4,12 +4,12 @@
 #include "Algorithms.h"
 #include "ContigNode.h"
 #include "Graph.h"
+#include "Iterator.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
 #include <numeric>
 #include <utility>
-#include <vector>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
 template<typename Graph>
@@ -131,7 +131,7 @@ OutIt assemble(Graph& g, OutIt out)
 		if (!contiguous_out(g, *v) || contiguous_in(g, *v)
 				|| is_palindrome(g, *out_edges(*v, g).first))
 			continue;
-		std::vector<vertex_descriptor> path;
+		typename output_iterator_traits<OutIt>::value_type path;
 		assemble(g, *v, back_inserter(path));
 		assert(path.size() >= 2);
 		assert(path.front() != path.back());
