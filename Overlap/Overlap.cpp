@@ -254,8 +254,10 @@ static void removeVertex(OverlapGraph& g, const ContigNode& u)
 		adjacency_iterator;
 	pair<adjacency_iterator, adjacency_iterator>
 		adj = adjacent_vertices(u, g);
-	for (adjacency_iterator it = adj.first; it != adj.second; ++it)
+	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
+		assert(~*it != u);
 		remove_edge(~*it, ~u, g);
+	}
 	clear_vertex(u, g);
 	remove_vertex(u, g);
 }
