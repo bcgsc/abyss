@@ -22,8 +22,8 @@ while (<>) {
 	my @a = split ' ', $a;
 	my @b = split ' ', $b;
 
-	my $attr = "len=$length";
-	$attr .= " cov=$coverage" if defined $coverage;
+	my $attr = "l=$length";
+	$attr .= " C=$coverage" if defined $coverage;
 	print qq{"$id+" \[$attr];\n};
 
 	print qq{"$id+"};
