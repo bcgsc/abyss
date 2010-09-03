@@ -42,6 +42,7 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 		std::pair<adjacency_iterator, adjacency_iterator>
 			adj = adjacent_vertices(*u, g);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
+			assert(!get(vertex_removed, g, *v));
 			out << ' ' << (*v ^ sense);
 			write_edge_prop(out,
 					get(edge_bundle, g, edge_descriptor(*u, *v)));

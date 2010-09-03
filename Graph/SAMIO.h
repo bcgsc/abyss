@@ -35,6 +35,7 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 	std::pair<edge_iterator, edge_iterator> eit = edges(g);
 	for (edge_iterator e = eit.first; e != eit.second; ++e) {
 		ContigNode u = source(*e, g), v = target(*e, g);
+		assert(!get(vertex_removed, g, v));
 		int distance = g[*e].distance;
 		if (get(vertex_removed, g, u) || distance >= 0)
 			continue;
