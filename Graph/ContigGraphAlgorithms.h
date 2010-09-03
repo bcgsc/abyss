@@ -28,31 +28,29 @@ bool contiguous_in(const Graph& g,
 	return contiguous_out(g, ~u);
 }
 
-/** Add the outgoing edges of vertex u to vertex v. */
+/** Add the outgoing edges of vertex u to vertex uout. */
 template<typename Graph>
 void copy_out_edges(Graph &g,
 		typename Graph::vertex_descriptor u,
-		typename Graph::vertex_descriptor v)
+		typename Graph::vertex_descriptor uout)
 {
 	typedef typename Graph::adjacency_iterator adjacency_iterator;
-	assert(u != v);
+	assert(u != uout);
 	std::pair<adjacency_iterator, adjacency_iterator>
 		adj = g.adjacent_vertices(u);
 	bool palindrome = false;
-	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
-		if (~*it == u) {
-			// When ~v == u, adding the edge (~v,~u) which is (u,~u)
-			// would invalidate out iterator. Add the edge after this
+	for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
+		if (~*v == u) {
+			// When ~v == u, adding the edge (~v,~u), which is (u,~u),
+			// would invalidate our iterator. Add the edge after this
 			// loop.
 			palindrome = true;
-		} else {
-			assert(v != u);
-			g.add_edge(v, *it);
-		}
+		} else
+			g.add_edge(uout, *v);
 	}
 	if (palindrome) {
-		g.add_edge(v, ~u);
-		g.add_edge(v, ~v);
+		g.add_edge(uout, ~u);
+		g.add_edge(uout, ~uout);
 	}
 }
 
