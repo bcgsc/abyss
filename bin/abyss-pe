@@ -232,8 +232,8 @@ else
 
 endif
 
-%-3.dot: %-3.fa
-	AdjList $v --dot -k$k $< >$@
+%-3.dot: %-3.adj
+	abyss-adjtodot $v -k$k $< >$@
 
 %-contigs.dot: %-4.adj %-4.path2
 	PathOverlap $v --dot -k$k $^ >$@

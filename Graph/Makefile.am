@@ -1,5 +1,5 @@
 noinst_LIBRARIES = libgraph.a
-noinst_PROGRAMS = abyss-adjtodot
+bin_PROGRAMS = abyss-adjtodot
 
 libgraph_a_CPPFLAGS = -I$(top_srcdir)/Common
 
