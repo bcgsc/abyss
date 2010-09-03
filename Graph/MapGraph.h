@@ -133,7 +133,7 @@ void remove_vertex(
 // EdgeMutableGraph
 
 template <typename V, typename T>
-void clear_vertex(
+void clear_out_edges(
 		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
 		std::map<V, T>& g)
 {

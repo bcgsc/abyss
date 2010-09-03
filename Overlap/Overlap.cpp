@@ -248,6 +248,7 @@ static FastaRecord mergeContigs(
  * by a distance estimate. */
 typedef map<ContigNode, map<ContigNode, Overlap> > OverlapGraph;
 
+/** Remove vertex u and its out-edges. */
 static void removeVertex(OverlapGraph& g, const ContigNode& u)
 {
 	typedef graph_traits<OverlapGraph>::adjacency_iterator
@@ -258,7 +259,7 @@ static void removeVertex(OverlapGraph& g, const ContigNode& u)
 		assert(~*it != u);
 		remove_edge(~*it, ~u, g);
 	}
-	clear_vertex(u, g);
+	clear_out_edges(u, g);
 	remove_vertex(u, g);
 }
 
