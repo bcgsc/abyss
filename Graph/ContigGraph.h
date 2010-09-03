@@ -73,8 +73,14 @@ class ContigGraph : public G {
 	{
 		std::pair<adjacency_iterator, adjacency_iterator>
 			adj = G::adjacent_vertices(u);
-		for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-			G::remove_edge(~*v, ~u);
+		for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
+			if (~*v == u) {
+				// When ~v == u, removing (~v,~u), which is (u,~u),
+				// would invalidate our iterator. This edge will be
+				// removed by clear_out_edges.
+			} else
+				G::remove_edge(~*v, ~u);
+		}
 		G::clear_out_edges(u);
 	}
 
@@ -115,7 +121,8 @@ class ContigGraph : public G {
 	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
 		std::pair<edge_descriptor, bool> e = G::add_edge(u, v);
-		G::add_edge(~v, ~u);
+		if (u != ~v)
+			G::add_edge(~v, ~u);
 		return e;
 	}
 
@@ -125,8 +132,23 @@ class ContigGraph : public G {
 			const edge_property_type& ep)
 	{
 		std::pair<edge_descriptor, bool> e = G::add_edge(u, v, ep);
-		G::add_edge(~v, ~u, ep);
+		if (u != ~v)
+			G::add_edge(~v, ~u, ep);
 		return e;
+	}
+
+	/** Remove the edge (u,v) from this graph. */
+	void remove_edge(vertex_descriptor u, vertex_descriptor v)
+	{
+		G::remove_edge(u, v);
+		if (u != ~v)
+			G::remove_edge(~v, ~u);
+	}
+
+	/** Remove the edge e from this graph. */
+	void remove_edge(edge_descriptor e)
+	{
+		remove_edge(source(e), target(e));
 	}
 
   private:

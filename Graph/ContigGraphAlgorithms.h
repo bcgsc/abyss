@@ -38,8 +38,22 @@ void copy_out_edges(Graph &g,
 	assert(u != v);
 	std::pair<adjacency_iterator, adjacency_iterator>
 		adj = g.adjacent_vertices(u);
-	for (adjacency_iterator it = adj.first; it != adj.second; ++it)
-		g.add_edge(v, *it);
+	bool palindrome = false;
+	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
+		if (~*it == u) {
+			// When ~v == u, adding the edge (~v,~u) which is (u,~u)
+			// would invalidate out iterator. Add the edge after this
+			// loop.
+			palindrome = true;
+		} else {
+			assert(v != u);
+			g.add_edge(v, *it);
+		}
+	}
+	if (palindrome) {
+		g.add_edge(v, ~u);
+		g.add_edge(v, ~v);
+	}
 }
 
 /** Add the incoming edges of vertex u to vertex v. */
