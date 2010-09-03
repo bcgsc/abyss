@@ -121,6 +121,18 @@ edges(const G& g)
 	return g.edges();
 }
 
+// AdjacencyMatrix
+
+template <class G>
+std::pair<typename G::edge_descriptor, bool>
+edge(
+	typename G::vertex_descriptor u,
+	typename G::vertex_descriptor v,
+	const G& g)
+{
+	return g.edge(u, v);
+}
+
 // VertexMutableGraph
 
 template <class G>

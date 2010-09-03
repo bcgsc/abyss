@@ -269,6 +269,12 @@ class Vertex
 		return it->get_property();
 	}
 
+	/** Return true if edge (u,v) exists. */
+	bool edge(vertex_descriptor v) const
+	{
+		return count(m_edges.begin(), m_edges.end(), v) > 0;
+	}
+
   private:
 	Edges m_edges;
 	vertex_property_type m_prop;
@@ -439,6 +445,18 @@ class Edge
 		std::pair<vertex_iterator, vertex_iterator> vit = vertices();
 		return make_pair(edge_iterator(this, vit.first),
 				edge_iterator(this, vit.second));
+	}
+
+	/** Return the edge (u,v) if it exists and a flag indicating
+	 * whether the edge exists.
+	 */
+	std::pair<edge_descriptor, bool> edge(
+			vertex_descriptor u, vertex_descriptor v) const
+	{
+		unsigned i = index(u);
+		assert(i < m_vertices.size());
+		return make_pair(edge_descriptor(u, v),
+				m_vertices[i].edge(v));
 	}
 
 	/** Return true if this vertex has been removed. */
