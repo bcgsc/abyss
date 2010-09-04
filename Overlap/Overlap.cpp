@@ -248,8 +248,8 @@ static FastaRecord mergeContigs(
  * by a distance estimate. */
 typedef map<ContigNode, map<ContigNode, Overlap> > OverlapGraph;
 
-/** Remove vertex u and its out-edges. */
-static void removeVertex(OverlapGraph& g, const ContigNode& u)
+/** Remove the out-edges of vertex u. */
+static void clearOutEdges(ContigNode u, OverlapGraph& g)
 {
 	typedef graph_traits<OverlapGraph>::adjacency_iterator
 		adjacency_iterator;
@@ -260,7 +260,12 @@ static void removeVertex(OverlapGraph& g, const ContigNode& u)
 		remove_edge(~*it, ~u, g);
 	}
 	clear_out_edges(u, g);
-	remove_vertex(u, g);
+}
+
+/** Remove the in-edges of vertex u. */
+static void clearInEdges(ContigNode u, OverlapGraph& g)
+{
+	clearOutEdges(~u, g);
 }
 
 static void findOverlap(const Graph& g,
@@ -449,10 +454,9 @@ int main(int argc, char *const argv[])
 			graph.add_edge(t, v);
 			graph.add_edge(v, h);
 
-			// Remove the vertices incident to this edge from the
-			// scaffold graph.
-			removeVertex(scaffoldGraph, t);
-			removeVertex(scaffoldGraph, ~h);
+			// Clear the out-edges of t and the in-edges of h.
+			clearOutEdges(t, scaffoldGraph);
+			clearInEdges(h, scaffoldGraph);
 		} else
 			stats.ambiguous++;
 	}
