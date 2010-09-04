@@ -210,7 +210,7 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_CLEAR_FLAGS:
 				m_comm.barrier();
-				assert(m_comm.receiveEmpty());
+				pumpNetwork();
 				m_data.wipeFlag(
 						SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 				m_comm.reduce(m_data.cleanup());
@@ -397,7 +397,7 @@ void NetworkSequenceCollection::controlCoverage()
 	SetState(NAS_CLEAR_FLAGS);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_CLEAR_FLAGS);
 	m_comm.barrier();
-	assert(m_comm.receiveEmpty());
+	pumpNetwork();
 	m_data.wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	unsigned removed = m_comm.reduce(m_data.cleanup());
 	printf("Removed %u marked k-mer\n", removed);
