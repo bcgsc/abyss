@@ -202,9 +202,6 @@ endif
 %-3-overlap.fa %-4.adj: %-3.fa %-3.adj %-3.dist
 	Overlap $v $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-3-overlap.fa $^
 
-%-4.fa: %-3.fa %-3-overlap.fa
-	cat $^ >$@
-
 # Paired-end assembly
 
 %-4.path1: %-4.adj %-3.dist
@@ -218,13 +215,13 @@ endif
 
 ifndef cs
 
-%-contigs.fa: %-4.fa %-4.path2
-	MergeContigs $v -k$k -o $@ $^
+%-contigs.fa: %-4.path2 %-3.fa %-3-overlap.fa
+	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
 
 else
 
-%-cs.fa: %-4.fa %-4.path2
-	MergeContigs $v -k$k -o $@ $^
+%-cs.fa: %-4.path2 %-3.fa %-3-overlap.fa
+	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
 
 %-contigs.fa: %-cs.fa
 	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \
