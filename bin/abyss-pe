@@ -103,7 +103,9 @@ $(foreach i,$(lib),$(eval $i_n?=$n))
 unexport in se $(lib)
 
 ifdef in
-pe-dot:
+default: pe-contigs pe-dot
+else
+default: se-contigs se-dot
 endif
 
 se-contigs: $(name)-se-contigs.fa
@@ -118,12 +120,12 @@ pe-contigs: $(out)
 
 pe-dot: $(name)-contigs.dot
 
-all: se-bam pe-dot
+all: se-bam default
 
 clean:
 	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2
 
-.PHONY: all clean pe-contigs pe-dot se-bam se-sam se-contigs
+.PHONY: all clean default pe-contigs pe-dot se-bam se-sam se-contigs se-dot
 .DELETE_ON_ERROR:
 .SECONDARY:
 
