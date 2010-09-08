@@ -315,6 +315,7 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
+#if !NDEBUG
 /** Return the first element of the path paths[u]. */
 static ContigNode front(const Paths& paths, const Vertex& u)
 {
@@ -326,6 +327,7 @@ static ContigNode back(const Paths& paths, const Vertex& u)
 {
 	return u.sense ? ~paths[u.id].front() : paths[u.id].back();
 }
+#endif
 
 static inline
 ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
