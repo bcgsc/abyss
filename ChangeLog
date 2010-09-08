@@ -1,3 +1,27 @@
+2010-09-08  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.3.
+
+	ABYSS-P:
+	* Bug fix. Fix the bug causing the error
+	Assertion `m_comm.receiveEmpty()' failed.
+
+	PopBubbles:
+	* Bug fix. Fix the bug causing the error
+	error: unexpected ID
+
+	PathOverlap:
+	* Include the single-end contigs in the overlap graph.
+
+	abyss-pe:
+	* Output an overlap graph of the paired-end assembly in the file
+	${name}-contigs.dot.
+	* Do not create the intermediate file ${name}-4.fa.
+
+	abyss-adjtodot:
+	* Convert an overlap graph in adj format to Graphviz dot format or
+	SAM alignment format.
+
 2010-08-25  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.2.
