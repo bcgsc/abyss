@@ -63,22 +63,34 @@ static int uncompress(const char *path)
 	assert(err == 0);
 	(void)err;
 
+	char arg0[16], arg1[16], arg2[16];
+	int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
+	assert(n == 2 || n == 3);
+
+	/* It would be more portable to use fork than vfork, but fork can
+	 * fail with ENOMEM when the process calling fork is using a lot
+	 * of memory. A workaround for this problem is to set
+	 * sysctl vm.overcommit_memory=1
+	 */
+#if HAVE_WORKING_VFORK
+	pid_t pid = vfork();
+#else
 	pid_t pid = fork();
+#endif
 	if (pid == -1)
 		return -1;
 
 	if (pid == 0) {
-		char arg0[16], arg1[16], arg2[16];
-		int n = sscanf(zcat, "%s %s %s", arg0, arg1, arg2);
-		assert(n == 2 || n == 3);
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
 		if (n == 2)
 			execlp(arg0, arg0, arg1, path, NULL);
 		else
 			execlp(arg0, arg0, arg1, arg2, path, NULL);
+		// Calling perror after vfork is not allowed, but we're about
+		// to exit and an error message would be really helpful.
 		perror(zcat);
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	} else {
 		close(fd[1]);
 		return fd[0];
