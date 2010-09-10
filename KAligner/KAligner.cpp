@@ -270,7 +270,7 @@ int main(int argc, char** argv)
 	} else {
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
-				numKmer, 0.2);
+				numKmer, 0.3);
 #else
 		g_aligner_u = new Aligner<SeqPosHashUniqueMap>(opt::k,
 				numKmer);
