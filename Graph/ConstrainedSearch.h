@@ -1,5 +1,5 @@
-#ifndef GRAPHALGORITHMS_H
-#define GRAPHALGORITHMS_H 1
+#ifndef CONSTRAINEDSEARCH_H
+#define CONSTRAINEDSEARCH_H 1
 
 #include "ContigGraph.h"
 #include "ContigPath.h"

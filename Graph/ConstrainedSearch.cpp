@@ -1,4 +1,4 @@
-#include "GraphAlgorithms.h"
+#include "ConstrainedSearch.h"
 #include "ContigGraph.h"
 #include "DirectedGraph.h"
 #include <algorithm>

@@ -5,6 +5,7 @@ libgraph_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libgraph_a_SOURCES = \
 	AdjIO.h \
+	ConstrainedSearch.cpp ConstrainedSearch.h \
 	ContigGraph.h \
 	ContigGraphAlgorithms.h \
 	DirectedGraph.cpp DirectedGraph.h \

@@ -12,5 +12,4 @@ SimpleGraph_LDADD = \
 
 SimpleGraph_LDFLAGS = -pthread
 
-SimpleGraph_SOURCES = SimpleGraph.cpp \
-	GraphAlgorithms.cpp GraphAlgorithms.h
+SimpleGraph_SOURCES = SimpleGraph.cpp
