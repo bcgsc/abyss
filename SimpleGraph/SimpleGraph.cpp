@@ -375,7 +375,7 @@ static void handleEstimate(const Graph& g,
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
-	depthFirstSearch(g, ContigNode(er.refID, dirIdx),
+	constrainedSearch(g, ContigNode(er.refID, dirIdx),
 			constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;

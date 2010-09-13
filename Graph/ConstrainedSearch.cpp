@@ -43,7 +43,7 @@ typedef Graph::adjacency_iterator adjacency_iterator;
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const Graph& g,
+bool constrainedSearch(const Graph& g,
 		vertex_descriptor v,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
@@ -67,7 +67,7 @@ bool depthFirstSearch(const Graph& g,
 			// This constraint has been satisfied.
 			unsigned constraint = it->second;
 			it->second = SATISFIED;
-			if (!depthFirstSearch(g, v, constraints,
+			if (!constrainedSearch(g, v, constraints,
 						nextConstraint, satisfied, path, solutions,
 						currLen, visitedCount))
 				return false;
@@ -93,7 +93,7 @@ bool depthFirstSearch(const Graph& g,
 		adj = g.adjacent_vertices(v);
 	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
 		path.back() = *it;
-		if (!depthFirstSearch(g, path.back(), constraints,
+		if (!constrainedSearch(g, path.back(), constraints,
 					nextConstraint, satisfied, path, solutions,
 					currLen, visitedCount))
 			return false;
@@ -106,7 +106,7 @@ bool depthFirstSearch(const Graph& g,
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
-bool depthFirstSearch(const Graph& g, vertex_descriptor v,
+bool constrainedSearch(const Graph& g, vertex_descriptor v,
 		Constraints& constraints, ContigPaths& paths,
 		unsigned& cost)
 {
@@ -121,7 +121,7 @@ bool depthFirstSearch(const Graph& g, vertex_descriptor v,
 	sort(queue.begin(), queue.end(), compareDistance);
 
 	ContigPath path;
-	depthFirstSearch(g, v, constraints, queue.begin(), 0,
+	constrainedSearch(g, v, constraints, queue.begin(), 0,
 			path, paths, 0, cost);
 	return cost >= opt::maxCost ? false : !paths.empty();
 }
