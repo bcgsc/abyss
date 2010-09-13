@@ -11,6 +11,7 @@
 #include "Kmer.h"
 #include <cassert>
 #include <cstdlib>
+#include <cstring> // for strcpy
 #include <iostream>
 #include <istream>
 #include <limits>
@@ -171,6 +172,7 @@ class Aligner
 		typedef typename SeqPosHashMap::iterator map_iterator;
 		typedef typename SeqPosHashMap::const_iterator
 			map_const_iterator;
+		typedef std::vector<const char*> ContigDict;
 
 		Aligner(int hashSize, size_t buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
@@ -180,6 +182,13 @@ class Aligner
 		{
 			m_target.max_load_factor(factor);
 			m_target.rehash(buckets);
+		}
+
+		~Aligner()
+		{
+			for (ContigDict::const_iterator it = m_dict.begin();
+					it != m_dict.end(); ++it)
+				delete[] *it;
 		}
 
 		void addReferenceSequence(const StringID& id,
@@ -217,17 +226,20 @@ class Aligner
 		SeqPosHashMap m_target;
 
 		/** A dictionary of contig IDs. */
-		std::vector<StringID> m_contigDict;
+		ContigDict m_dict;
 
-		unsigned contigIDToIndex(const StringID& id)
+		unsigned contigIDToIndex(const std::string& id)
 		{
-			m_contigDict.push_back(id);
-			return m_contigDict.size() - 1;
+			char *p = new char[id.length() + 1];
+			strcpy(p, id.c_str());
+			m_dict.push_back(p);
+			return m_dict.size() - 1;
 		}
 
-		const StringID& contigIndexToID(unsigned index)
+		ContigDict::value_type contigIndexToID(unsigned index)
 		{
-			return m_contigDict.at(index);
+			assert(index < m_dict.size());
+			return m_dict[index];
 		}
 };
 
