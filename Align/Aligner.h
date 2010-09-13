@@ -1,10 +1,6 @@
 #ifndef ALIGNER_H
 #define ALIGNER_H 1
 
-//
-// Aligner - Simple class to do an approximate alignment of reads to the input reference sequence
-//
-
 #include "Options.h"
 #include "config.h"
 #include "HashMap.h"
