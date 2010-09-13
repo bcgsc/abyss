@@ -9,10 +9,10 @@
 class const_string
 {
   public:
-	const_string(const char *p) : m_p(p) { }
+	const_string(const char* p) : m_p(p) { }
 
 	/** Make a copy of this string. Use free to release it. */
-	const_string clone()
+	const_string clone() const
 	{
 		return strcpy(new char[strlen(m_p) + 1], m_p);
 	}
