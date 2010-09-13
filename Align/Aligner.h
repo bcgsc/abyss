@@ -218,7 +218,7 @@ class Aligner
 				const Sequence& seq, bool isRC);
 
 		template <class oiterator>
-		static void coalesceAlignments(
+		void coalesceAlignments(
 				const std::string& qid, const std::string& seq,
 				const AlignmentSet& alignSet,
 				oiterator& dest);

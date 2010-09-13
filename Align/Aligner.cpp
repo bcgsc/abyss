@@ -112,7 +112,7 @@ Aligner<SeqPosHashMap>::getAlignmentsInternal(
 				: Alignment::calculateReverseReadStart(
 						i, seqLen, m_hashSize);
 			unsigned ctgIndex = resultIter->second.contig;
-			Alignment align(contigIndexToID(ctgIndex).c_str(),
+			Alignment align(string(),
 					resultIter->second.pos, read_pos, m_hashSize,
 					seqLen, isRC);
 			aligns[ctgIndex].push_back(align);
@@ -165,6 +165,7 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 			currIter++;
 		}
 
+		currAlign.contig = contigIndexToID(ctgIter->first).c_str();
 		*dest++ = value_type(currAlign, qid, seq);
 	}
 }
