@@ -131,11 +131,13 @@ struct Position
 	Position(uint32_t contig = std::numeric_limits<uint32_t>::max(),
 			uint32_t pos = std::numeric_limits<uint32_t>::max())
 		: contig(contig), pos(pos) { }
-	void setDuplicate(const StringID& thisContig, const StringID& otherContig,
+
+	/** Mark this seed as a duplicate. */
+	void setDuplicate(const char* thisContig, const char* otherContig,
 			const Sequence& kmer)
 	{
 		if (opt::multimap == opt::IGNORE)
-			contig = std::numeric_limits<uint32_t>::max ();
+			contig = std::numeric_limits<uint32_t>::max();
 		else {
 			std::cerr << "error: duplicate k-mer in "
 				<< thisContig
@@ -145,7 +147,12 @@ struct Position
 			exit(EXIT_FAILURE);
 		}
 	}
-	bool isDuplicate() const {return contig == std::numeric_limits<uint32_t>::max();}
+
+	/** Return whether this seed is a duplciate. */
+	bool isDuplicate() const
+	{
+		return contig == std::numeric_limits<uint32_t>::max();
+	}
 };
 
 typedef hash_multimap<Kmer, Position, hashKmer> SeqPosHashMultiMap;
