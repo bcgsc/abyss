@@ -1,8 +1,8 @@
 #ifndef ALIGNER_H
 #define ALIGNER_H 1
 
-#include "Options.h"
 #include "config.h"
+#include "Align/Options.h"
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
