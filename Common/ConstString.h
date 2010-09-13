@@ -4,12 +4,14 @@
 #include <cassert>
 #include <cstring>
 #include <ostream>
+#include <string>
 
 /** An immutable string. */
 class const_string
 {
   public:
 	const_string(const char* p) : m_p(p) { }
+	const_string(const std::string& s) : m_p(s.c_str()) { }
 
 	/** Make a copy of this string. Use free to release it. */
 	const_string clone() const
@@ -29,6 +31,11 @@ class const_string
 	const char* c_str() const { return m_p; }
 
 	operator const char*() const { return m_p; }
+
+	bool operator<(const const_string& o) const
+	{
+		return strcmp(m_p, o.m_p) < 0;
+	}
 
 	friend std::ostream& operator<<(std::ostream& out,
 			const const_string& o)
