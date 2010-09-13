@@ -49,7 +49,8 @@ class Dictionary {
 		/** Convert the specified serial number to a key. */
 		const Key& key(Serial serial)
 		{
-			return m_vec.at(serial);
+			assert(serial < m_vec.size());
+			return m_vec[serial];
 		}
 
 		/** Return a canonical representation for the key. */
