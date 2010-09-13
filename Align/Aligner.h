@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "Align/Options.h"
+#include "ConstString.h"
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
@@ -175,7 +176,7 @@ class Aligner
 		typedef typename SeqPosHashMap::iterator map_iterator;
 		typedef typename SeqPosHashMap::const_iterator
 			map_const_iterator;
-		typedef std::vector<const char*> ContigDict;
+		typedef std::vector<const_string> ContigDict;
 
 		Aligner(int hashSize, size_t buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
@@ -189,9 +190,9 @@ class Aligner
 
 		~Aligner()
 		{
-			for (ContigDict::const_iterator it = m_dict.begin();
+			for (ContigDict::iterator it = m_dict.begin();
 					it != m_dict.end(); ++it)
-				delete[] *it;
+				it->free();
 		}
 
 		void addReferenceSequence(const StringID& id,
@@ -233,9 +234,7 @@ class Aligner
 
 		unsigned contigIDToIndex(const std::string& id)
 		{
-			char *p = new char[id.length() + 1];
-			strcpy(p, id.c_str());
-			m_dict.push_back(p);
+			m_dict.push_back(const_string(id.c_str()).clone());
 			return m_dict.size() - 1;
 		}
 

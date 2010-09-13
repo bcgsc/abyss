@@ -4,6 +4,7 @@ libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
 libcommon_a_SOURCES = \
 	Algorithms.h \
+	ConstString.h \
 	ContigID.h ContigID.cpp \
 	ContigLength.h ContigLength.cpp \
 	ContigNode.h \
