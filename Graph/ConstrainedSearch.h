@@ -4,6 +4,7 @@
 #include "ContigGraph.h"
 #include "ContigPath.h"
 #include "DirectedGraph.h"
+#include <cassert>
 #include <istream>
 #include <utility>
 #include <vector>
