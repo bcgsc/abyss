@@ -6,25 +6,14 @@
 #include <ostream>
 #include <string>
 
-/** An immutable string. */
+/** An immutable string that does not allocate resources. */
 class cstring {
   public:
 	cstring(const char* p) : m_p(p) { }
 	cstring(const std::string& s) : m_p(s.c_str()) { }
 
-	/** Make a copy of this string. Use free to release it. */
-	cstring clone() const
-	{
-		return strcpy(new char[strlen(m_p) + 1], m_p);
-	}
-
-	/** Release the resources allocated using clone. */
-	void free()
-	{
-		assert(m_p != NULL);
-		delete[] m_p;
-		m_p = NULL;
-	}
+	/** Return the size of this string. */
+	size_t size() const { return strlen(m_p); }
 
 	/** Return a null-terminated sequence of characters. */
 	const char* c_str() const { return m_p; }
@@ -42,8 +31,41 @@ class cstring {
 		return out << o.m_p;
 	}
 
-  private:
+  protected:
 	const char* m_p;
 };
+
+/** An immutable string. */
+class const_string : public cstring {
+  public:
+	const_string(const std::string& s)
+		: cstring(strcpy(new char[s.size() + 1], s.c_str())) { }
+	const_string(const const_string& s)
+		: cstring(strcpy(new char[s.size() + 1], s.c_str())) { }
+
+	~const_string() { delete[] m_p; }
+
+	const_string& operator=(const const_string& s)
+	{
+		assert(false);
+		delete[] m_p;
+		m_p = strcpy(new char[s.size() + 1], s.c_str());
+	}
+
+	void swap(const_string& s) { std::swap(m_p, s.m_p); }
+
+  private:
+	const_string();
+	const_string(const char* s);
+	const_string(const cstring&);
+};
+
+namespace std {
+	template <>
+	inline void swap(const_string& a, const_string& b)
+	{
+		a.swap(b);
+	}
+}
 
 #endif
