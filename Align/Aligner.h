@@ -176,7 +176,7 @@ class Aligner
 		typedef typename SeqPosHashMap::iterator map_iterator;
 		typedef typename SeqPosHashMap::const_iterator
 			map_const_iterator;
-		typedef std::vector<const_string> ContigDict;
+		typedef std::vector<cstring> ContigDict;
 
 		Aligner(int hashSize, size_t buckets)
 			: m_hashSize(hashSize), m_target(buckets) { }
@@ -234,7 +234,7 @@ class Aligner
 
 		unsigned contigIDToIndex(const std::string& id)
 		{
-			m_dict.push_back(const_string(id.c_str()).clone());
+			m_dict.push_back(cstring(id).clone());
 			return m_dict.size() - 1;
 		}
 
