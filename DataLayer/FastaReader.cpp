@@ -79,10 +79,12 @@ void FastaReader::checkSeqQual(const string& s, const string& q)
 	}
 }
 
-/** Return whether the read s is in colour space. */
-static bool isColourSpace(const string& s)
+/** Return whether the read seq is in colour space. */
+static bool isColourSpace(const string& seq)
 {
-	return s.length() > 2 && isalpha(s[0]) && isdigit(s[1]);
+	assert(!seq.empty());
+	size_t i = seq.find_first_of("ACGTacgt0123", 1);
+	return i != string::npos && isdigit(seq[i]);
 }
 
 /** Read a single record. */
@@ -159,6 +161,7 @@ next_record:
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
 			// assembly.
+			assert(s.length() > 2);
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
 		}
