@@ -18,10 +18,11 @@ namespace opt {
 }
 
 /** Contig properties. */
-struct Contig {
+struct ContigLength {
 	unsigned length;
 
-	friend std::istream& operator >>(std::istream& in, Contig& o)
+	friend std::istream& operator >>(std::istream& in,
+			ContigLength& o)
 	{
 		if (in >> o.length) {
 			assert(o.length >= opt::k);
@@ -31,7 +32,7 @@ struct Contig {
 	}
 };
 
-typedef ContigGraph<DirectedGraph<Contig> > Graph;
+typedef ContigGraph<DirectedGraph<ContigLength> > Graph;
 typedef std::pair<ContigNode, unsigned> Constraint;
 typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;
