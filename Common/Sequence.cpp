@@ -67,7 +67,8 @@ char codeToBase(uint8_t code)
 
 char colourToNucleotideSpace(char anchor, char cs)
 {
-	return "ACGT"[cstont[baseToCode(anchor)][baseToCode(cs)]];
+	return cs == '.' ? 'N'
+		: "ACGT"[cstont[baseToCode(anchor)][baseToCode(cs)]];
 }
 
 Sequence colourToNucleotideSpace(char anchor, const Sequence& seq)
