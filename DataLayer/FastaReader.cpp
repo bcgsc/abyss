@@ -79,6 +79,12 @@ void FastaReader::checkSeqQual(const string& s, const string& q)
 	}
 }
 
+/** Return whether the read s is in colour space. */
+static bool isColourSpace(const string& s)
+{
+	return s.length() > 2 && isalpha(s[0]) && isdigit(s[1]);
+}
+
 /** Read a single record. */
 Sequence FastaReader::read(string& id, string& comment,
 		char& anchor, string& q)
@@ -148,7 +154,7 @@ next_record:
 		if (flagFoldCase())
 			transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-		if (s.length() > 2 && isalpha(s[0]) && isdigit(s[1])) {
+		if (isColourSpace(s)) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
