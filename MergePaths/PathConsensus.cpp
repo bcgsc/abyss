@@ -1040,14 +1040,14 @@ int main(int argc, char **argv)
 	//unmark contigs that are used in unambiguous paths
 	markSeen(seen, paths, false);
 
+	ofstream out(opt::out.c_str());
+	assert(out.good());
+
 	// Output those contigs that were not seen in ambiguous path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
-		if (!seen[it - contigs.begin()])
-			fa << *it;
-
-	ofstream out(opt::out.c_str());
-	assert(out.good());
+		if (seen[it - contigs.begin()])
+			out << it->id << '\n';
 
 	for (unsigned i=0; i<paths.size(); i++) {
 		if (!isAmbPath[i]) {
