@@ -275,7 +275,7 @@ static ContigPaths readPath2(const string& inPath,
 	return paths;
 }
 
-
+#if 0
 /** Read ambiguous path info from SimpleGraph verbose output.
  * format:
  * 275+ 1181+ 1287- 614+
@@ -283,7 +283,7 @@ static ContigPaths readPath2(const string& inPath,
  * 275+ 73N 1287- 614+
  *
  * Store path info in "g_amb_paths"
- */ /*
+ */
 static void readAmbPaths(const string& ambPath)
 {
 	ifstream fin(ambPath.c_str());
@@ -315,7 +315,7 @@ static void readAmbPaths(const string& ambPath)
 	}
 	assert(in.eof());
 }
-*/
+#endif
 
 /** Finds all contigs used in each path in paths, and
  * marks them as seen in the vector seen. */
@@ -342,9 +342,10 @@ static void unseenContigs(vector<bool>& seen,
 				seen[itc->id()] = false;
 }
 
+#if 0
 /* read in adj file, store which contigs have irregular overlaps
  * (>=k-1 or non-exact match)
- */ /*
+ */
 void ReadAdj(const string& irregularAdj)
 {
 	ifstream in_adj(irregularAdj.c_str());
@@ -435,7 +436,7 @@ void ReadAdj(const string& irregularAdj)
 				<< it->second << endl;
 	}
 }
-*/
+#endif
 
 static LinearNumKey createNewContig(std::string& contigKey,
 	const Sequence& seq, const unsigned coverage)
@@ -807,7 +808,8 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 	LinearNumKey new_contig_id = outputNewContig(fa, solutions,
 		longestPrefix, longestSuffix, consensus, coverage);
 
-	/*ContigNode new_contig_node(new_contig_id, false);
+#if 0
+	ContigNode new_contig_node(new_contig_id, false);
 	if (opt::verbose > 0)
 		cerr << "new node:" << new_contig_node << endl;
 	vppath.push_back(new_contig_node);
@@ -821,7 +823,8 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 			cerr << *solIter << endl;
 		cerr << "output path:" << vppath << endl;
 	}
-	return vppath;*/
+	return vppath;
+#endif
 
 	return new_contig_id;
 }
@@ -1049,7 +1052,6 @@ int main(int argc, char **argv)
 			cerr << "too many solutions: "
 				<< numPossiblePaths << endl;
 		} else if (numPossiblePaths == 2) { //2 solutions
-			//assert(numPossiblePaths == 2);
 			new_contig_id = ResolvePairAmbPath(solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
 			new_contig_id = ResolveAmbPath(solutions, fa);
@@ -1077,7 +1079,6 @@ int main(int argc, char **argv)
 
 	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
-	//seenContigs(seen, paths);
 
 	//collect contigs on paths used in ambiguous path resolving
 	for (map<LinearNumKey, ContigPaths>::iterator mapIt
@@ -1094,9 +1095,6 @@ int main(int argc, char **argv)
 			it != contigs.end(); ++it)
 		if (!seen[it - contigs.begin()])
 			fa << *it;
-
-	// read in adj file
-	//ReadAdj(irregularAdj);
 
 	ofstream out(opt::out.c_str());
 	assert(out.good());
