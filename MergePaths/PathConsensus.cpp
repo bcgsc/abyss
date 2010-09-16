@@ -397,7 +397,7 @@ void ReadAdj(const string& irregularAdj)
 		if (!strs[2].empty()) {
 			start_pos = 0;
 			while (start_pos < strs[2].length()
-				&& (delimit_pos = strs[2].find_first_of(" ", start_pos))
+				&& (delimit_pos = strs[2].find_first_of(' ', start_pos))
 				!= string::npos) {
 				if (delimit_pos > start_pos) {
 					string h_id =
@@ -424,8 +424,7 @@ void ReadAdj(const string& irregularAdj)
 		set< pair<ContigNode, ContigNode> >::const_iterator it =
 			g_edges_irregular.begin();
 		for (; it != g_edges_irregular.end(); it++)
-			cerr << it->first << " to "
-				<< it->second << endl;
+			cerr << it->first << " to " << it->second << '\n';
 	}
 }
 #endif
@@ -984,11 +983,10 @@ int main(int argc, char **argv)
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
-		if (opt::verbose > 1) {
+		if (opt::verbose > 1)
 			cerr << "constraint: source:" << apConstraint.source
 				<< ";dest:" << apConstraint.dest
-				<< ";dist:" << apConstraint.dist << endl;
-		}
+				<< ";dist:" << apConstraint.dist << '\n';
 		ContigPaths solutions;
 		unsigned numVisited = 0;
 		Constraints constraints; //only 1 constraint here
@@ -1000,17 +998,17 @@ int main(int argc, char **argv)
 					= constraints.begin();
 					it != constraints.end(); ++it)
 				cerr << ' ' << it->first << ',' << it->second;
-			cerr << endl;
+			cerr << '\n';
 		}
 		constrainedSearch(contigGraph, apConstraint.source,
 			constraints, solutions, numVisited);
 		if (opt::verbose > 1)
-			cerr << "solutions:" << endl;
+			cerr << "Paths:\n";
 		for (ContigPaths::iterator solIt = solutions.begin();
 				solIt != solutions.end(); solIt++) {
 			solIt->insert(solIt->begin(), apConstraint.source);
 			if (opt::verbose > 1)
-				cerr << *solIt << endl;
+				cerr << *solIt << '\n';
 		}
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::num_paths;
@@ -1019,7 +1017,7 @@ int main(int argc, char **argv)
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
 				cerr << apConstraint.source << " -> " << apConstraint.dest
-					<< ": " << numPossiblePaths << " solutions\n";
+					<< ": " << numPossiblePaths << " paths\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
 			new_contig_id = ResolvePairAmbPath(solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
@@ -1031,7 +1029,9 @@ int main(int argc, char **argv)
 			/* TODO: call shortest-path algorithm
 			to check whether there IS path */
 			stats.numNoSolutions++;
-			cerr << "ERROR? found 0 path" << endl;
+			if (opt::verbose > 0)
+				cerr << apConstraint.source << " -> "
+					<< apConstraint.dest << ": no paths\n";
 		}
 		if (new_contig_id > 0) {
 			stats.numMerged++;
@@ -1068,7 +1068,7 @@ int main(int argc, char **argv)
 
 	for (unsigned i=0; i<paths.size(); i++) {
 		if (!isAmbPath[i]) {
-			out << pathIDs[i] << "\t" << paths[i] << endl;
+			out << pathIDs[i] << '\t' << paths[i] << '\n';
 			continue;
 		}
 
@@ -1110,8 +1110,7 @@ int main(int argc, char **argv)
 				cur_path.push_back(*it);
 			}
 		}
-		//use same pathID as before
-		out << pathIDs[i] << "\t" << cur_path << endl;
+		out << pathIDs[i] << '\t' << cur_path << '\n';
 	}
 
 	free_prob_dist(pdist);
