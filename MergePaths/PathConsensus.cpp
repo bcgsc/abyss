@@ -122,7 +122,6 @@ static struct {
 } stats;
 
 /* some global data for dialign */
-struct parameters *dialign_para;
 map<string, char> IUPAC_codes;
 struct scr_matrix *smatrix;
 struct prob_dist *pdist;
@@ -832,15 +831,14 @@ void InitIUPAC()
 void LoadProbDist()
 {
 	// read similarity matrix
-	smatrix = read_scr_matrix(dialign_para->SCR_MATRIX_FILE_NAME);
+	smatrix = read_scr_matrix(para->SCR_MATRIX_FILE_NAME);
 
 	// print the score matrix
-	if( dialign_para->DEBUG >5)
+	if (para->DEBUG >5)
 		print_scr_matrix(smatrix);
 
 	// read the probability distribution for diagonals
-	pdist = read_diag_prob_dist(smatrix,
-		dialign_para->DIAG_PROB_FILE_NAME);
+	pdist = read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME);
 }
 
 void CompCoverageStatistics()
@@ -976,12 +974,9 @@ int main(int argc, char **argv)
 	assert(fa.good());
 
 	init_parameters();
-	dialign_para = para;
-	dialign_para->DEBUG = opt::dialign_debug;
-	dialign_para->SCR_MATRIX_FILE_NAME
-		= (char*)opt::dialign_score.c_str();
-	dialign_para->DIAG_PROB_FILE_NAME
-		= (char*)opt::dialign_prob.c_str();
+	para->DEBUG = opt::dialign_debug;
+	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
+	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
 	InitIUPAC();
 	LoadProbDist();
 
@@ -1144,6 +1139,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	in_seq_col = read_seqs(amb_seqs);
 
 	// fast mode has higher threshold weights
+	struct parameters *dialign_para = para;
 	if(dialign_para->FAST_MODE)
 		dialign_para->PROT_SIM_SCORE_THRESHOLD += 0.25;
 
