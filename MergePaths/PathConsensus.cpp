@@ -311,27 +311,15 @@ static void readAmbPaths(const string& ambPath)
 
 /** Finds all contigs used in each path in paths, and
  * marks them as seen in the vector seen. */
-static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
+static void markSeen(vector<bool>& seen, const vector<Path>& paths,
+		bool flag)
 {
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it)
 		for (Path::const_iterator itc = it->begin();
 				itc != it->end(); ++itc)
 			if (itc->id() < seen.size())
-				seen[itc->id()] = true;
-}
-
-/* Reset the seen-mark on contigs that are in unambiguous paths */
-static void unseenContigs(vector<bool>& seen,
-	const vector<Path>& paths)
-{
-	for (vector<Path>::const_iterator it = paths.begin();
-			it != paths.end(); it++)
-		for (Path::const_iterator itc = it->begin();
-				itc != it->end(); itc++)
-			if (itc->id() < seen.size()
-					&& seen[itc->id()])
-				seen[itc->id()] = false;
+				seen[itc->id()] = flag;
 }
 
 #if 0
@@ -1052,10 +1040,10 @@ int main(int argc, char **argv)
 			= g_amb_paths.begin(); mapIt != g_amb_paths.end();
 			mapIt++)
 		if ((mapIt->second).size() > 1)
-			seenContigs(seen, mapIt->second);
+			markSeen(seen, mapIt->second, true);
 
 	//unmark contigs that are used in unambiguous paths
-	unseenContigs(seen, paths);
+	markSeen(seen, paths, false);
 
 	// Output those contigs that were not seen in ambiguous path.
 	for (vector<Contig>::const_iterator it = contigs.begin();
