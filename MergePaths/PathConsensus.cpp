@@ -87,8 +87,8 @@ namespace opt {
 	unsigned k;
 	static string out;
 	static string fa;
-	static double pid;
-	static unsigned num_paths;
+	static double pid = 0.9;
+	static unsigned num_paths = 2;
 	static int dialign_debug;
 	static string dialign_score;
 	static string dialign_prob;
@@ -849,11 +849,6 @@ void CompCoverageStatistics()
  */
 int main(int argc, char **argv)
 {
-	ContigPath::separator = ",";
-	opt::dialign_debug = 0;
-	opt::pid = 0.9;
-	opt::num_paths = 2;
-
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 			shortopts, longopts, NULL)) != -1;) {
