@@ -1120,7 +1120,7 @@ int main(int argc, char **argv)
 	}
 
 	free_prob_dist(pdist);
-	delete dialign_para;
+	free(para);
 
 	out.close();
 	fa.close();
