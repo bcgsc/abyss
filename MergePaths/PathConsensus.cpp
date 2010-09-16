@@ -132,21 +132,18 @@ struct Contig {
 	string id;
 	Sequence seq;
 	unsigned coverage;
-	Contig(const string& id, const Sequence& seq, unsigned coverage)
-		: id(id), seq(seq), coverage(coverage) { }
-
-	operator FastaRecord()
-	{
-		ostringstream s;
-		s << seq.length() << ' ' << coverage;
-		return FastaRecord(id, s.str(), seq);
-	}
+	string comment;
+	Contig(const string& id, const Sequence& seq, unsigned coverage,
+			const string& comment = "")
+		: id(id), seq(seq), coverage(coverage), comment(comment) { }
 
 	friend ostream& operator <<(ostream& out, const Contig& o)
 	{
-		return out << '>' << o.id << ' '
-			<< o.seq.length() << ' ' << o.coverage << '\n'
-			<< o.seq << '\n';
+		out << '>' << o.id << ' '
+			<< o.seq.length() << ' ' << o.coverage;
+		if (!o.comment.empty())
+			out << ' ' << o.comment;
+	   	return out << '\n' << o.seq << '\n';
 	}
 };
 
@@ -438,49 +435,31 @@ void ReadAdj(const string& irregularAdj)
 }
 #endif
 
-static LinearNumKey createNewContig(std::string& contigKey,
-	const Sequence& seq, const unsigned coverage)
+/** Create a new contig. */
+static LinearNumKey createNewContig(const Sequence& seq,
+		unsigned coverage, const string& comment = "")
 {
-	ostringstream oss;
-	oss << ++g_max_contigID;
-	contigKey = oss.str();
-	ContigID id(contigKey);
-	g_contigs.push_back(Contig(contigKey, seq, coverage));
+	ContigID id = ContigID::create();
+	g_contigs.push_back(Contig(id.str(), seq, coverage, comment));
 	return id;
 }
 
-
-static LinearNumKey outputNewContig(ofstream& fa,
+static LinearNumKey outputNewContig(
 	const vector<Path>& solutions,
 	size_t longestPrefix, size_t longestSuffix,
 	const Sequence& seq, const unsigned coverage)
 {
-	/* update g_contigs and g_contigIDs, get id/contigKey */
-	std::string contigKey;
-	LinearNumKey id = createNewContig(contigKey, seq, coverage);
-
-	fa << '>' << contigKey << ' ' << seq.length()
-		<< " " << coverage << " ";
+	ostringstream comment;
 	for (vector<Path>::const_iterator it = solutions.begin();
 			it != solutions.end(); it++) {
+		if (it != solutions.begin())
+			comment << ';';
 		size_t i=longestPrefix-1;
 		for (; i<(*it).size()-longestSuffix; i++)
-			fa << (*it)[i] << ',';
-		fa << (*it)[i] << ";";
+			comment << (*it)[i] << ',';
+		comment << (*it)[i];
 	}
-	fa << '\n' << seq << '\n';
-#if 0
-	if (opt::verbose > 0) {
-		cerr << "g_contigIDs.size():"
-			<< g_contigIDs.map_size()
-			<< ";" << g_contigIDs.keys()
-			<< "; g_contigs.size():" << g_contigs.size()
-			<< "; g_contigIDs.key(" << id << "):"
-			<< contigKey << "; seq:" << seq
-			<< "; coverage:" << coverage << endl;
-	}
-#endif
-	return id;
+	return createNewContig(seq, coverage, comment.str());
 }
 
 /** Return a consensus sequence of a and b.
@@ -621,8 +600,7 @@ bool ValidCoverage(unsigned pathLen, unsigned pathCover)
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
-	ofstream& fa)
+static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions)
 {
 	assert(solutions.size() == 2
 		&& solutions[0].front() == solutions[1].front()
@@ -658,16 +636,13 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 	const Sequence& next_seq = getSequence(solutions[0].back());
 	consensus += next_seq.substr(0, opt::k-1);
 
-	LinearNumKey new_contig_id = outputNewContig(fa, solutions,
-		1, 1, consensus, coverage);
-	return new_contig_id;
+	return outputNewContig(solutions, 1, 1, consensus, coverage);
 }
 
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
-	ofstream& fa)
+static LinearNumKey ResolveAmbPath(const vector<Path>& solutions)
 {
 	if (opt::verbose > 0) {
 		cerr << "input paths:" << endl;
@@ -805,7 +780,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 		cerr << "prefix path:" << vppath << endl
 			<< "suffix path:" << vspath << endl
 			<< "consensus:" << consensus << endl;
-	LinearNumKey new_contig_id = outputNewContig(fa, solutions,
+	return outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage);
 
 #if 0
@@ -825,8 +800,6 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 	}
 	return vppath;
 #endif
-
-	return new_contig_id;
 }
 
 void InitIUPAC()
@@ -1052,14 +1025,12 @@ int main(int argc, char **argv)
 			cerr << "too many solutions: "
 				<< numPossiblePaths << endl;
 		} else if (numPossiblePaths == 2) { //2 solutions
-			new_contig_id = ResolvePairAmbPath(solutions, fa);
+			new_contig_id = ResolvePairAmbPath(solutions);
 		} else if (numPossiblePaths > 2) {//3 paths or more
-			new_contig_id = ResolveAmbPath(solutions, fa);
+			new_contig_id = ResolveAmbPath(solutions);
 		} else if (numPossiblePaths == 1) { //1 path, use it
 			//create a fake contigID to be replaced later
-			std::string contigKey;
-			Sequence seq = "";
-			new_contig_id = createNewContig(contigKey, seq, 0);
+			new_contig_id = createNewContig("", 0);
 		} else { //no path
 			/* TODO: call shortest-path algorithm
 			to check whether there IS path */
