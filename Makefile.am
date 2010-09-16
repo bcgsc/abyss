@@ -4,7 +4,7 @@ endif
 
 docdir = $(datadir)/doc
 pkgdocdir = $(docdir)/$(PACKAGE)
-dist_pkgdoc_DATA = ChangeLog LICENSE README
+dist_pkgdoc_DATA = ChangeLog COPYRIGHT LICENSE README
 
 EXTRA_DIST=doxygen.conf
 
