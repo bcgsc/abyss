@@ -134,6 +134,7 @@ AC_CONFIG_FILES([
 	Parallel/Makefile
 	bin/Makefile
 	doc/Makefile
+	dialign/Makefile
 	kmerprint/Makefile
 	AdjList/Makefile
 	DistanceEst/Makefile
