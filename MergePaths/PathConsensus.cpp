@@ -16,23 +16,21 @@
 #include <math.h>
 #include <ctype.h>
 
-#include "dialign_para.h"
-#include "dialign_struct.h"
-#include "dialign_io.h"
-
-#include "Common/smith_waterman.h"
-#include "Common/needleman_wunsch.h"
+#include "dialign.h"
 #include "config.h"
+#include "needleman_wunsch.h"
+#include "smith_waterman.h"
 #include "Common/Options.h"
+#include "ConstrainedSearch.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "ContigGraph.h"
 #include "Estimate.h"
-#include "GraphAlgorithms.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
 #include <cerrno>
+#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -43,24 +41,6 @@
 #include <vector>
 
 using namespace std;
-
-/* external functions for dialign */
-extern struct alignment *create_empty_alignment(struct seq_col *scol,
-	parameters *para);
-extern struct diag_col *find_all_diags(struct scr_matrix *smatrix,
-	struct prob_dist *pdist,
-	struct seq_col *in_seq_col, struct alignment *algn,
-	int round, parameters *para);
-extern struct alignment *guided_aligner(struct alignment *palgn,
-	struct seq_col *scol, struct diag_col *dcol,
-	struct scr_matrix *smatrix, struct prob_dist *pdist,
-	struct gt_node *gtn, int round, parameters *para);
-extern char simple_aligner(struct seq_col *scol,
-	struct diag_col *dcol,
-	struct scr_matrix *smatrix, struct prob_dist *pdist,
-	struct alignment *algn, int round, parameters *para);
-extern void free_diag_col(struct diag_col *dcol);
-extern void free_alignment(struct alignment *algn, parameters *para);
 
 /* dialign */
 void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus);
@@ -195,6 +175,7 @@ struct AmbPathConstraint {
 
 typedef ContigPath Path;
 typedef vector<Path> ContigPaths;
+typedef unsigned LinearNumKey;
 typedef map<AmbPathConstraint, LinearNumKey> AmbPath2Contig;
 
 /* global variables */
@@ -219,25 +200,24 @@ static void assert_open(ifstream& f, const string& p)
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
-const Sequence ContigNode::sequence() const
+const Sequence getSequence(ContigNode id)
 {
-	if (ambiguous()) {
-		string s(ambiguousSequence());
+	if (id.ambiguous()) {
+		string s(id.ambiguousSequence());
 		if (s.length() < opt::k)
-			transform(s.begin(), s.end(), s.begin(),
-				::tolower);
+			transform(s.begin(), s.end(), s.begin(), ::tolower);
 		return string(opt::k - 1, 'N') + s;
 	} else {
-		const Sequence& seq = g_contigs[id()].seq;
-		return sense() ? reverseComplement(seq) : seq;
+		const Sequence& seq = g_contigs[id.id()].seq;
+		return id.sense() ? reverseComplement(seq) : seq;
 	}
 }
 
 /** Return the coverage of this contig or zero if this contig is
  * ambiguous. */
-unsigned ContigNode::coverage() const
+unsigned getCoverage(ContigNode id)
 {
-	return ambiguous() ? 0 : g_contigs[id()].coverage;
+	return id.ambiguous() ? 0 : g_contigs[id.id()].coverage;
 }
 
 /** Read contig paths from the specified file.
@@ -463,7 +443,7 @@ static LinearNumKey createNewContig(std::string& contigKey,
 	ostringstream oss;
 	oss << ++g_max_contigID;
 	contigKey = oss.str();
-	LinearNumKey id = g_contigIDs.serial(contigKey);
+	ContigID id(contigKey);
 	g_contigs.push_back(Contig(contigKey, seq, coverage));
 	return id;
 }
@@ -488,6 +468,7 @@ static LinearNumKey outputNewContig(ofstream& fa,
 		fa << (*it)[i] << ";";
 	}
 	fa << '\n' << seq << '\n';
+#if 0
 	if (opt::verbose > 0) {
 		cerr << "g_contigIDs.size():"
 			<< g_contigIDs.map_size()
@@ -497,6 +478,7 @@ static LinearNumKey outputNewContig(ofstream& fa,
 			<< contigKey << "; seq:" << seq
 			<< "; coverage:" << coverage << endl;
 	}
+#endif
 	return id;
 }
 
@@ -596,18 +578,18 @@ static Contig mergePath(const Path& path)
 	Path::const_iterator prev_it;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		coverage += it->coverage();
+		coverage += getCoverage(*it);
 		if (seq.empty()) {
-			seq = it->sequence();
+			seq = getSequence(*it);
 		} else {
 			if (g_edges_irregular.find(
 					pair<ContigNode, ContigNode>(
 					*prev_it, *it))
 					== g_edges_irregular.end())
-				mergeContigs(seq, it->sequence(),
+				mergeContigs(seq, getSequence(*it),
 					*it, path);
 			else
-				mergeContigs_SW(seq, it->sequence(),
+				mergeContigs_SW(seq, getSequence(*it),
 					*it, path);
 		}
 		prev_it = it;
@@ -669,10 +651,10 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 
 	// add k-1 extensions at both ends of consensus sequence
 	Sequence consensus = align.consensus();
-	const Sequence& prev_seq = solutions[0].front().sequence();
+	const Sequence& prev_seq = getSequence(solutions[0].front());
 	consensus.insert(0,
 		prev_seq.substr(prev_seq.length()-opt::k+1));
-	const Sequence& next_seq = solutions[0].back().sequence();
+	const Sequence& next_seq = getSequence(solutions[0].back());
 	consensus += next_seq.substr(0, opt::k-1);
 
 	LinearNumKey new_contig_id = outputNewContig(fa, solutions,
@@ -774,9 +756,9 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 			newseq.erase(newseq.length()-opt::k+1);
 		} else {
 			Sequence lastSeq
-				= (*solIter)[(*solIter).size()-longestSuffix-1].sequence();
+				= getSequence((*solIter)[(*solIter).size()-longestSuffix-1]);
 			Sequence suffixSeq
-				= (*solIter)[(*solIter).size()-longestSuffix].sequence();
+				= getSequence((*solIter)[(*solIter).size()-longestSuffix]);
 			overlap_align ol = mergeContigs_SW(lastSeq,
 				suffixSeq,
 				(*solIter)[(*solIter).size()-longestSuffix],
@@ -791,9 +773,9 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 			newseq.erase(0, opt::k-1);
 		} else {
 			Sequence prefixSeq
-				= (*solIter)[longestPrefix-1].sequence();
+				= getSequence((*solIter)[longestPrefix-1]);
 			Sequence firstSeq
-				= (*solIter)[longestPrefix].sequence();
+				= getSequence((*solIter)[longestPrefix]);
 			overlap_align ol = mergeContigs_SW(prefixSeq,
 				firstSeq, (*solIter)[longestPrefix], *solIter);
 			newseq.erase(0, ol.overlap_h_pos+1);
@@ -812,10 +794,10 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 	// add k-1 extensions at both ends
 	const Path& fstPath = solutions.front();
 	const Sequence& prev_seq
-		= fstPath[longestPrefix-1].sequence();
+		= getSequence(fstPath[longestPrefix-1]);
 	consensus.insert(0, prev_seq.substr(prev_seq.length()-opt::k+1));
 	const Sequence& next_seq
-		= fstPath[fstPath.size()-longestSuffix].sequence();
+		= getSequence(fstPath[fstPath.size()-longestSuffix]);
 	consensus += next_seq.substr(0, opt::k-1);
 	// output consensus as new contig
 	if (opt::verbose > 0)
@@ -869,8 +851,7 @@ void InitIUPAC()
 void LoadProbDist()
 {
 	// read similarity matrix
-	smatrix = read_scr_matrix(dialign_para->SCR_MATRIX_FILE_NAME,
-		dialign_para);
+	smatrix = read_scr_matrix(dialign_para->SCR_MATRIX_FILE_NAME);
 
 	// print the score matrix
 	if( dialign_para->DEBUG >5)
@@ -878,7 +859,7 @@ void LoadProbDist()
 
 	// read the probability distribution for diagonals
 	pdist = read_diag_prob_dist(smatrix,
-		dialign_para->DIAG_PROB_FILE_NAME, dialign_para);
+		dialign_para->DIAG_PROB_FILE_NAME);
 }
 
 void CompCoverageStatistics()
@@ -972,8 +953,11 @@ int main(int argc, char **argv)
 	string adjFile(argv[optind++]);
 
 	// Load the graph from the adjacency file
-	ContigGraph contigGraph;
-	loadGraphFromAdjFile(&contigGraph, adjFile);
+	Graph contigGraph;
+	ifstream fin(adjFile.c_str());
+	fin >> contigGraph;
+	assert(fin.eof());
+
 	if (opt::verbose > 0)
 		cout << "Vertices: " << contigGraph.num_vertices()
 			<< " Edges: " << contigGraph.num_edges() << endl;
@@ -981,15 +965,13 @@ int main(int argc, char **argv)
 	// Read contigs
 	vector<Contig>& contigs = g_contigs;
 	{
-		FastaReader in(contigFile,
-			FastaReader::KEEP_N | FastaReader::NO_FOLD_CASE);
+		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			istringstream ss(rec.comment);
 			unsigned length, coverage = 0;
 			ss >> length >> coverage;
-			unsigned serial = g_contigIDs.serial(rec.id);
-			assert(contigs.size() == serial);
-			(void)serial;
+			ContigID id(rec.id);
+			assert(contigs.size() == id);
 			contigs.push_back(Contig(rec.id, rec.seq, coverage));
 		}
 		assert(in.eof());
@@ -998,7 +980,7 @@ int main(int argc, char **argv)
 		//if (argc - optind == 0) g_contigIDs.lock();
 	}
 	g_max_contigID = g_contigs.size()-1;
-	g_contigIDs.unlock();
+	ContigID::unlock();
 
 	// Get contig k-mer-coverage statistics
 	CompCoverageStatistics();
@@ -1017,7 +999,8 @@ int main(int argc, char **argv)
 	ofstream fa(opt::fa.c_str());
 	assert(fa.good());
 
-	dialign_para = new parameters();
+	init_parameters();
+	dialign_para = para;
 	dialign_para->DEBUG = opt::dialign_debug;
 	dialign_para->SCR_MATRIX_FILE_NAME
 		= (char*)opt::dialign_score.c_str();
@@ -1048,7 +1031,7 @@ int main(int argc, char **argv)
 				cerr << ' ' << it->first << ',' << it->second;
 			cerr << endl;
 		}
-		depthFirstSearch(contigGraph, apConstraint.source,
+		constrainedSearch(contigGraph, apConstraint.source,
 			constraints, solutions, numVisited);
 		if (opt::verbose > 0)
 			cerr << "solutions:" << endl;
@@ -1188,7 +1171,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	struct seq_col *in_seq_col=NULL;
 	double tim = clock();
 
-	in_seq_col = read_seqs(amb_seqs, dialign_para);
+	in_seq_col = read_seqs(amb_seqs);
 
 	// fast mode has higher threshold weights
 	if(dialign_para->FAST_MODE)
@@ -1197,15 +1180,14 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	// Consider Anchors -> default for DNA: DO_ANCHOR = 0;
 	struct alignment *algn= NULL;
 	if (!dialign_para->FAST_MODE)
-		algn = create_empty_alignment(in_seq_col, dialign_para);
-	struct alignment *salgn = create_empty_alignment(in_seq_col,
-		dialign_para);
+		algn = create_empty_alignment(in_seq_col);
+	struct alignment *salgn = create_empty_alignment(in_seq_col);
 	if (dialign_para->DEBUG >1)
 		printf("empty alignments created\n");
 
 	// Compute pairwise diagonals
 	struct diag_col *all_diags = find_all_diags(smatrix, pdist,
-		in_seq_col,salgn,1, dialign_para);
+		in_seq_col, salgn, 1);
 	double duration = (clock()-tim)/CLOCKS_PER_SEC;
 	if (dialign_para->DEBUG >1)
 		printf("Found %i diags in %f secs\n",
@@ -1221,7 +1203,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 			*(cp_diags[i]) = *(all_diags->diags[i]);
 		}
 		guided_aligner(algn, in_seq_col, all_diags, smatrix,
-			pdist, all_diags->gt_root, 1, dialign_para);
+			pdist, all_diags->gt_root, 1);
 
 		for(i=0;i<diag_amount;i++)
 			all_diags->diags[i] = cp_diags[i];
@@ -1229,7 +1211,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 		all_diags->diag_amount = diag_amount;
 	}
 	simple_aligner(in_seq_col, all_diags, smatrix, pdist,
-		salgn, 1, dialign_para);
+		salgn, 1);
 	duration = (clock()-tim2)/CLOCKS_PER_SEC;
 
 	if (!dialign_para->FAST_MODE) {
@@ -1269,8 +1251,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 		for (round=2; round<=20; round++) {
 			tim2=clock();
 			all_diags = find_all_diags(smatrix, pdist,
-				in_seq_col, (type ? salgn : algn),
-				round, dialign_para);
+				in_seq_col, (type ? salgn : algn), round);
 			duration = (clock()-tim2)/CLOCKS_PER_SEC;
 			if (dialign_para->DEBUG >1)
 				printf("Found %i diags after %f secs\n",
@@ -1282,8 +1263,7 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 			// round 2 and further we use the simple aligner
 				newFound = simple_aligner(in_seq_col,
 					all_diags, smatrix, pdist,
-					(type ? salgn : algn), round,
-					dialign_para);
+					(type ? salgn : algn), round);
 				free_diag_col(all_diags);
 				if (!newFound)
 					break;
@@ -1306,18 +1286,18 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	if (dialign_para->FAST_MODE
 			|| (salgn->total_weight > algn->total_weight)) {
 		if (!dialign_para->FAST_MODE)
-			free_alignment(algn, dialign_para);
+			free_alignment(algn);
 		algn = salgn;
 	} else {
-		free_alignment(salgn, dialign_para);
+		free_alignment(salgn);
 	}
 
-	get_alignment_consensus(algn, consensus, dialign_para);
+	get_alignment_consensus(algn, consensus);
 
 	duration = (clock()-tim)/CLOCKS_PER_SEC;
 	printf("Total time:   %f secs\n", duration);
 	printf("Total weight: %f \n", algn->total_weight);
 
-	free_alignment(algn, dialign_para);
+	free_alignment(algn);
 	free_seq_col(in_seq_col);
 }
