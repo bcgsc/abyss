@@ -420,7 +420,7 @@ void ReadAdj(const string& irregularAdj)
 		}
 	}
 	in_adj.close();
-	if (opt::verbose > 0) {
+	if (opt::verbose > 1) {
 		cerr << "g_edges_irregular:\n";
 		set< pair<ContigNode, ContigNode> >::const_iterator it =
 			g_edges_irregular.begin();
@@ -504,7 +504,7 @@ static overlap_align mergeContigs_SW(Sequence& seq, const Sequence& s,
 		GetLocalAlignment(seq.substr(seq.length()-len),
 			s.substr(0, len),
 			seq.length()-len, overlaps, false,
-			opt::verbose > 0);
+			opt::verbose > 1);
 	} while (overlaps.empty() && chomp(seq, 'n'));
 
 	if (overlaps.empty()) {
@@ -623,7 +623,7 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(fstseq, sndseq, align,
-		opt::verbose>0);
+		opt::verbose > 1);
 	unsigned coverage = fstPathContig.coverage
 		+ sndPathContig.coverage;
 	if ((double)match / align.size() < opt::pid
@@ -647,7 +647,7 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 		ofstream& out)
 {
-	if (opt::verbose > 0) {
+	if (opt::verbose > 1) {
 		cerr << "input paths:" << endl;
 		for (vector<Path>::const_iterator solIter =
 				solutions.begin();
@@ -705,7 +705,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 		vspath.push_back(common_path_node);
 	}
 
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << "prefix path:" << vppath << endl
 			<< "suffix path:" << vspath << endl;
 
@@ -779,7 +779,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 		= getSequence(fstPath[fstPath.size()-longestSuffix]);
 	consensus += next_seq.substr(0, opt::k-1);
 	// output consensus as new contig
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << "prefix path:" << vppath << endl
 			<< "suffix path:" << vspath << endl
 			<< "consensus:" << consensus << endl;
@@ -788,13 +788,13 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 
 #if 0
 	ContigNode new_contig_node(new_contig_id, false);
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << "new node:" << new_contig_node << endl;
 	vppath.push_back(new_contig_node);
 	for (int i=vspath.size()-1; i>=0; i--)
 		vppath.push_back(vspath[i]);
 
-	if (opt::verbose > 0) {
+	if (opt::verbose > 1) {
 		cerr << "input paths:" << endl;
 		for (vector<Path>::const_iterator solIter = solutions.begin();
 			solIter != solutions.end(); solIter++)
@@ -939,10 +939,6 @@ int main(int argc, char **argv)
 	fin >> contigGraph;
 	assert(fin.eof());
 
-	if (opt::verbose > 0)
-		cout << "Vertices: " << contigGraph.num_vertices()
-			<< " Edges: " << contigGraph.num_edges() << endl;
-
 	// Read contigs
 	vector<Contig>& contigs = g_contigs;
 	{
@@ -971,10 +967,9 @@ int main(int argc, char **argv)
 	ContigPaths paths = readPath2(allPaths, &pathIDs, &isAmbPath);
 	stats.numPaths = paths.size();
 	stats.numAmbPaths = g_ambpath_contig.size();
-	if (opt::verbose > 0) {
-		cerr << "Total number of paths: " << stats.numPaths << endl;
-		cerr << "ambiguous paths: " << stats.numAmbPaths << endl;
-	}
+	if (opt::verbose > 0)
+		cerr << "Total number of paths: " << stats.numPaths << "\n"
+			"Ambiguous paths: " << stats.numAmbPaths << '\n';
 
 	// Prepare output fasta file
 	ofstream fa(opt::fa.c_str());
@@ -994,7 +989,7 @@ int main(int argc, char **argv)
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
-		if (opt::verbose > 0) {
+		if (opt::verbose > 1) {
 			cerr << "constraint: source:" << apConstraint.source
 				<< ";dest:" << apConstraint.dest
 				<< ";dist:" << apConstraint.dist << endl;
@@ -1004,7 +999,7 @@ int main(int argc, char **argv)
 		Constraints constraints; //only 1 constraint here
 		constraints.push_back(Constraint(apConstraint.dest,
 			apConstraint.dist + opt::k - 1 + allowedError(0)));
-		if (opt::verbose > 0) {
+		if (opt::verbose > 1) {
 			cerr << "constraint:";
 			for (Constraints::const_iterator it
 					= constraints.begin();
@@ -1014,12 +1009,12 @@ int main(int argc, char **argv)
 		}
 		constrainedSearch(contigGraph, apConstraint.source,
 			constraints, solutions, numVisited);
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << "solutions:" << endl;
 		for (ContigPaths::iterator solIt = solutions.begin();
 				solIt != solutions.end(); solIt++) {
 			solIt->insert(solIt->begin(), apConstraint.source);
-			if (opt::verbose > 0)
+			if (opt::verbose > 1)
 				cerr << *solIt << endl;
 		}
 		unsigned numPossiblePaths = solutions.size();
@@ -1027,8 +1022,9 @@ int main(int argc, char **argv)
 		LinearNumKey new_contig_id = 0;
 		if (tooManySolutions) {
 			stats.numTooManySolutions++;
-			cerr << "too many solutions: "
-				<< numPossiblePaths << endl;
+			if (opt::verbose > 0)
+				cerr << apConstraint.source << " -> " << apConstraint.dest
+					<< ": " << numPossiblePaths << " solutions\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
 			new_contig_id = ResolvePairAmbPath(solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
@@ -1129,13 +1125,13 @@ int main(int argc, char **argv)
 	out.close();
 	fa.close();
 
-	cerr << "Total ambiguous paths attempted: " << stats.numAmbPaths
-		<< "\n No valid solutions: " << stats.numNoSolutions
-		<< "\n Too many solutions: " << stats.numTooManySolutions
-		<< "\n Failed PID or coverage: "
-		<< stats.numAmbPaths - stats.numMerged
-			- stats.numNoSolutions - stats.numTooManySolutions
-		<< "\n Merged: " << stats.numMerged << "\n";
+	cerr << "Ambiguous paths: " << stats.numAmbPaths << "\n"
+		"No paths: " << stats.numNoSolutions << "\n"
+		"Too many paths: " << stats.numTooManySolutions << "\n"
+		"Failed PID or coverage: " << stats.numAmbPaths
+			- stats.numMerged - stats.numNoSolutions
+			- stats.numTooManySolutions << "\n"
+		"Merged: " << stats.numMerged << "\n";
 }
 
 /* DIALIGN-TX v1.0.2: multiple sequence alignment algorithm */
@@ -1268,9 +1264,11 @@ void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 
 	get_alignment_consensus(algn, consensus);
 
-	duration = (clock()-tim)/CLOCKS_PER_SEC;
-	printf("Total time:   %f secs\n", duration);
-	printf("Total weight: %f \n", algn->total_weight);
+	if (opt::verbose > 1) {
+		duration = (clock()-tim)/CLOCKS_PER_SEC;
+		cerr << "Total time: " << duration << " s\n"
+			"Total weight: " << algn->total_weight << '\n';
+	}
 
 	free_alignment(algn);
 	free_seq_col(in_seq_col);
