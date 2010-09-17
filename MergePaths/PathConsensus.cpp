@@ -806,13 +806,11 @@ static void LoadProbDist()
 
 static void CompCoverageStatistics(const Graph& g)
 {
-	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
-	int num = g_contigs.size();
 	double coverage = 0, variance = 0;
-	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
-	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
-		double c = (double)g[*u].coverage
-			/ (g[*u].length - opt::k + 1);
+	unsigned num = g.num_vertices() / 2;
+	for (unsigned i = 0; i < num; ++i) {
+		ContigNode u(i, false);
+		double c = (double)g[u].coverage / (g[u].length - opt::k + 1);
 		coverage += c;
 		variance += c * c;
 	}
