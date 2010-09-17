@@ -21,6 +21,7 @@
 #include "needleman_wunsch.h"
 #include "smith_waterman.h"
 #include "Common/Options.h"
+#include "ConstString.h"
 #include "ConstrainedSearch.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
@@ -162,8 +163,8 @@ typedef ContigPath Path;
 typedef vector<Path> ContigPaths;
 typedef map<AmbPathConstraint, ContigID> AmbPath2Contig;
 
-/* global variables */
-static vector<Contig> g_contigs;
+typedef vector<const_string> Contigs;
+static Contigs g_contigs;
 AmbPath2Contig g_ambpath_contig;
 map<ContigID, ContigPaths> g_amb_paths;
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
@@ -191,7 +192,7 @@ static const Sequence getSequence(ContigNode id)
 			transform(s.begin(), s.end(), s.begin(), ::tolower);
 		return string(opt::k - 1, 'N') + s;
 	} else {
-		const Sequence& seq = g_contigs[id.id()].seq;
+		string seq(g_contigs[id.id()]);
 		return id.sense() ? reverseComplement(seq) : seq;
 	}
 }
@@ -803,14 +804,15 @@ static void LoadProbDist()
 	pdist = read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME);
 }
 
-static void CompCoverageStatistics()
+static void CompCoverageStatistics(const Graph& g)
 {
+	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
 	int num = g_contigs.size();
 	double coverage = 0, variance = 0;
-	for (vector<Contig>::const_iterator it = g_contigs.begin();
-			it != g_contigs.end(); it++) {
-		double c = (double)(it->coverage)
-			/ (it->seq.length() - opt::k + 1);
+	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
+	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
+		double c = (double)g[*u].coverage
+			/ (g[*u].length - opt::k + 1);
 		coverage += c;
 		variance += c * c;
 	}
@@ -895,7 +897,7 @@ int main(int argc, char **argv)
 	assert(fin.eof());
 
 	// Read contigs
-	vector<Contig>& contigs = g_contigs;
+	Contigs& contigs = g_contigs;
 	{
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
@@ -904,16 +906,16 @@ int main(int argc, char **argv)
 			ss >> length >> coverage;
 			ContigID id(rec.id);
 			assert(contigs.size() == id);
-			contigs.push_back(Contig(rec.seq, coverage));
+			contigs.push_back(rec.seq);
 		}
 		assert(in.eof());
 		assert(!contigs.empty());
-		opt::colourSpace = isdigit(contigs[0].seq[0]);
+		opt::colourSpace = isdigit(contigs[0][0]);
 	}
 	ContigID::lock();
 
 	// Get contig k-mer-coverage statistics
-	CompCoverageStatistics();
+	CompCoverageStatistics(g);
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
