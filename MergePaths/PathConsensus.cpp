@@ -129,12 +129,6 @@ map<string, char> IUPAC_codes;
 struct scr_matrix *smatrix;
 struct prob_dist *pdist;
 
-/* ABySS global constructs */
-struct Contig {
-	Sequence seq;
-	Contig(const Sequence& seq) : seq(seq) { }
-};
-
 struct AmbPathConstraint {
 	ContigNode	source;
 	ContigNode	dest;
@@ -511,7 +505,7 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 }
 
-static Contig mergePath(const Path& path)
+static Sequence mergePath(const Path& path)
 {
 	Sequence seq;
 	Path::const_iterator prev_it;
@@ -586,16 +580,15 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 	sndSol.pop_back();
 	sndSol.erase(sndSol.begin());
 
-	Contig fstPathContig = mergePath(fstSol);
-	trimOverlap(fstPathContig.seq);
+	Sequence fstPathContig(mergePath(fstSol));
+	trimOverlap(fstPathContig);
 
-	Contig sndPathContig = mergePath(sndSol);
-	trimOverlap(sndPathContig.seq);
+	Sequence sndPathContig(mergePath(sndSol));
+	trimOverlap(sndPathContig);
 
 	NWAlignment align;
-	unsigned match = GetGlobalAlignment(
-			fstPathContig.seq, sndPathContig.seq, align,
-			opt::verbose > 1);
+	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
+		   	align, opt::verbose > 1);
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
@@ -695,11 +688,10 @@ static ContigID ResolveAmbPath(const Graph& g,
 		//skip if the ambiguous region is empty
 		if (cur_path.empty())
 			continue;
-		Contig newContig = mergePath(cur_path);
-		Sequence& newseq = newContig.seq;
+		Sequence newseq = mergePath(cur_path);
 		coverage += calculatePathProperties(g, cur_path).coverage;
-		//find overlap between newContig and Suffix,
-		//remove it from newContig sequence
+		//find overlap between newseq and Suffix,
+		//remove it from newseq
 		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
 				(*solIter)[(*solIter).size()-longestSuffix-1],
 				(*solIter)[(*solIter).size()-longestSuffix]))
@@ -716,8 +708,8 @@ static ContigID ResolveAmbPath(const Graph& g,
 				*solIter);
 			newseq.erase(ol.overlap_t_pos);
 		}
-		//find overlap between Prefix and newContig,
-		//remove it from newContig sequence
+		//find overlap between Prefix and newseq,
+		//remove it from newseq
 		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
 				(*solIter)[longestPrefix-1], (*solIter)[longestPrefix]))
 				== g_edges_irregular.end()) {
