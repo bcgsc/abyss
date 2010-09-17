@@ -128,18 +128,10 @@ struct prob_dist *pdist;
 
 /* ABySS global constructs */
 struct Contig {
-	string id;
 	Sequence seq;
 	unsigned coverage;
-	Contig(const string& id, const Sequence& seq, unsigned coverage)
-		: id(id), seq(seq), coverage(coverage) { }
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		return out << '>' << o.id << ' '
-			<< o.seq.length() << ' ' << o.coverage << '\n'
-			<< o.seq << '\n';
-	}
+	Contig(const Sequence& seq, unsigned coverage)
+		: seq(seq), coverage(coverage) { }
 };
 
 struct AmbPathConstraint {
@@ -541,7 +533,7 @@ static Contig mergePath(const Graph &g, const Path& path)
 		}
 		prev_it = it;
 	}
-	return Contig("", seq, coverage);
+	return Contig(seq, coverage);
 }
 
 static Sequence pathSequence_no_overlap(Contig& pathContig)
@@ -912,7 +904,7 @@ int main(int argc, char **argv)
 			ss >> length >> coverage;
 			ContigID id(rec.id);
 			assert(contigs.size() == id);
-			contigs.push_back(Contig(rec.id, rec.seq, coverage));
+			contigs.push_back(Contig(rec.seq, coverage));
 		}
 		assert(in.eof());
 		assert(!contigs.empty());
@@ -1025,10 +1017,9 @@ int main(int argc, char **argv)
 	assert(out.good());
 
 	// Output those contigs that were not seen in ambiguous path.
-	for (vector<Contig>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it)
-		if (seen[it - contigs.begin()])
-			out << it->id << '\n';
+	for (unsigned id = 0; id < contigs.size(); ++id)
+		if (seen[id])
+			out << ContigID(id) << '\n';
 
 	for (ContigPaths::const_iterator path = paths.begin();
 			path != paths.end(); ++path) {
