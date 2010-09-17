@@ -43,7 +43,7 @@
 using namespace std;
 
 /* dialign */
-void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus);
+static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus);
 
 /* ABySS options and messages */
 #define PROGRAM "ResolveAmbPaths"
@@ -193,7 +193,7 @@ static void assert_open(ifstream& f, const string& p)
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
-const Sequence getSequence(ContigNode id)
+static const Sequence getSequence(ContigNode id)
 {
 	if (id.ambiguous()) {
 		string s(id.ambiguousSequence());
@@ -208,19 +208,20 @@ const Sequence getSequence(ContigNode id)
 
 /** Return the coverage of this contig or zero if this contig is
  * ambiguous. */
-unsigned getCoverage(ContigNode id)
+static unsigned getCoverage(ContigNode id)
 {
 	return id.ambiguous() ? 0 : g_contigs[id.id()].coverage;
 }
 
 /** Read contig paths from the specified file.
  * @param ids [out] the string ID of the paths
+ * @param isAmb [out] whether the path contains a gap
  */
-static ContigPaths readPath2(const string& inPath,
-	vector<string> *seeds, vector<bool> *isAmb)
+static ContigPaths readPath(const string& inPath,
+	vector<string>& ids, vector<bool>& isAmb)
 {
-	assert(seeds->empty()); //this seed is contigID of the path
-	assert(isAmb->empty());
+	assert(ids.empty()); //this seed is contigID of the path
+	assert(isAmb.empty());
 	assert(g_ambpath_contig.empty());
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
@@ -235,7 +236,7 @@ static ContigPaths readPath2(const string& inPath,
 	Path::iterator prev, next;
 	while (in >> id >> path) {
 		paths.push_back(path);
-		seeds->push_back(id);
+		ids.push_back(id);
 		unsigned path_id = strtoul(id.c_str(), NULL, 0);
 
 		/* update g_max_contigID */
@@ -243,7 +244,7 @@ static ContigPaths readPath2(const string& inPath,
 			g_max_contigID = path_id;
 
 		if (path.size() <= 2) {
-			isAmb->push_back(false);
+			isAmb.push_back(false);
 			continue;
 		}
 
@@ -262,7 +263,7 @@ static ContigPaths readPath2(const string& inPath,
 					AmbPathConstraint(*prev, *next, -it->id()), 0));
 			}
 		}
-		isAmb->push_back(cur_is_amb);
+		isAmb.push_back(cur_is_amb);
 	}
 	assert(in.eof());
 	return paths;
@@ -327,7 +328,7 @@ static void markSeen(vector<bool>& seen, const vector<Path>& paths,
 /* read in adj file, store which contigs have irregular overlaps
  * (>=k-1 or non-exact match)
  */
-void ReadAdj(const string& irregularAdj)
+static void ReadAdj(const string& irregularAdj)
 {
 	ifstream in_adj(irregularAdj.c_str());
 	assert_open(in_adj, irregularAdj);
@@ -574,7 +575,7 @@ static Sequence pathSequence_no_overlap(Contig& pathContig)
 }
 
 /* validate path coverage, at 95% confidence interval */
-bool ValidCoverage(unsigned pathLen, unsigned pathCover)
+static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
 {
 	double cover_mean
 		= (double)pathCover / (pathLen + opt::k - 1);
@@ -794,7 +795,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 	return new_contig_id;
 }
 
-void InitIUPAC()
+static void InitIUPAC()
 {
 	IUPAC_codes.insert(map<string, char>::value_type(string("AG"), 'R'));
 	IUPAC_codes.insert(map<string, char>::value_type(string("CT"), 'Y'));
@@ -816,7 +817,7 @@ void InitIUPAC()
 	IUPAC_codes.insert(map<string, char>::value_type(string("TA"), 'W'));
 }
 
-void LoadProbDist()
+static void LoadProbDist()
 {
 	// read similarity matrix
 	smatrix = read_scr_matrix(para->SCR_MATRIX_FILE_NAME);
@@ -829,7 +830,7 @@ void LoadProbDist()
 	pdist = read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME);
 }
 
-void CompCoverageStatistics()
+static void CompCoverageStatistics()
 {
 	int num = g_contigs.size();
 	double coverage = 0, variance = 0;
@@ -945,7 +946,7 @@ int main(int argc, char **argv)
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
-	ContigPaths paths = readPath2(allPaths, &pathIDs, &isAmbPath);
+	ContigPaths paths = readPath(allPaths, pathIDs, isAmbPath);
 	stats.numPaths = paths.size();
 	stats.numAmbPaths = g_ambpath_contig.size();
 	if (opt::verbose > 0)
@@ -1111,7 +1112,7 @@ int main(int argc, char **argv)
 }
 
 /* DIALIGN-TX v1.0.2: multiple sequence alignment algorithm */
-void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
+static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 {
 	int i;
 	struct seq_col *in_seq_col=NULL;
