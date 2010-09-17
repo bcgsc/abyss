@@ -84,7 +84,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k;
+	unsigned k; // used by ContigProperties
 	static string out;
 	static string fa;
 	static double pid = 0.9;
@@ -202,13 +202,6 @@ static const Sequence getSequence(ContigNode id)
 		const Sequence& seq = g_contigs[id.id()].seq;
 		return id.sense() ? reverseComplement(seq) : seq;
 	}
-}
-
-/** Return the coverage of this contig or zero if this contig is
- * ambiguous. */
-static unsigned getCoverage(ContigNode id)
-{
-	return id.ambiguous() ? 0 : g_contigs[id.id()].coverage;
 }
 
 /** Read contig paths from the specified file.
@@ -525,14 +518,14 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 }
 
-static Contig mergePath(const Path& path)
+static Contig mergePath(const Graph &g, const Path& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
 	Path::const_iterator prev_it;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		coverage += getCoverage(*it);
+		coverage += g[*it].coverage;
 		if (seq.empty()) {
 			seq = getSequence(*it);
 		} else {
@@ -579,8 +572,8 @@ static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static ContigID ResolvePairAmbPath(const ContigPaths& solutions,
-		ofstream& out)
+static ContigID ResolvePairAmbPath(const Graph& g,
+		const ContigPaths& solutions, ofstream& out)
 {
 	assert(solutions.size() == 2
 		&& solutions[0].front() == solutions[1].front()
@@ -593,10 +586,10 @@ static ContigID ResolvePairAmbPath(const ContigPaths& solutions,
 	sndSol.pop_back();
 	sndSol.erase(sndSol.begin());
 
-	Contig fstPathContig = mergePath(fstSol);
+	Contig fstPathContig = mergePath(g, fstSol);
 	Sequence fstseq = pathSequence_no_overlap(fstPathContig);
 
-	Contig sndPathContig = mergePath(sndSol);
+	Contig sndPathContig = mergePath(g, sndSol);
 	Sequence sndseq = pathSequence_no_overlap(sndPathContig);
 
 	NWAlignment align;
@@ -622,8 +615,8 @@ static ContigID ResolvePairAmbPath(const ContigPaths& solutions,
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static ContigID ResolveAmbPath(const vector<Path>& solutions,
-		ofstream& out)
+static ContigID ResolveAmbPath(const Graph& g,
+		const vector<Path>& solutions, ofstream& out)
 {
 	if (opt::verbose > 1) {
 		cerr << "input paths:" << endl;
@@ -701,7 +694,7 @@ static ContigID ResolveAmbPath(const vector<Path>& solutions,
 		//skip if the ambiguous region is empty
 		if (cur_path.empty())
 			continue;
-		Contig newContig = mergePath(cur_path);
+		Contig newContig = mergePath(g, cur_path);
 		Sequence& newseq = newContig.seq;
 		coverage += newContig.coverage;
 		//find overlap between newContig and Suffix,
@@ -904,9 +897,9 @@ int main(int argc, char **argv)
 	string adjFile(argv[optind++]);
 
 	// Load the graph from the adjacency file
-	Graph contigGraph;
+	Graph g;
 	ifstream fin(adjFile.c_str());
-	fin >> contigGraph;
+	fin >> g;
 	assert(fin.eof());
 
 	// Read contigs
@@ -971,7 +964,7 @@ int main(int argc, char **argv)
 				cerr << ' ' << it->first << ',' << it->second;
 			cerr << '\n';
 		}
-		constrainedSearch(contigGraph, apConstraint.source,
+		constrainedSearch(g, apConstraint.source,
 			constraints, solutions, numVisited);
 		if (opt::verbose > 1)
 			cerr << "Paths:\n";
@@ -990,9 +983,9 @@ int main(int argc, char **argv)
 				cerr << apConstraint.source << " -> " << apConstraint.dest
 					<< ": " << numPossiblePaths << " paths\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
-			new_contig_id = ResolvePairAmbPath(solutions, fa);
+			new_contig_id = ResolvePairAmbPath(g, solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
-			new_contig_id = ResolveAmbPath(solutions, fa);
+			new_contig_id = ResolveAmbPath(g, solutions, fa);
 		} else if (numPossiblePaths == 1) { //1 path, use it
 			//create a fake contigID to be replaced later
 			new_contig_id = ContigID::create();
