@@ -1,6 +1,7 @@
 #include "config.h"
 #include "ConstrainedSearch.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "Histogram.h"
@@ -16,6 +17,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <numeric>
 #include <pthread.h>
 #include <set>
 #include <sstream>
@@ -212,19 +214,13 @@ static struct {
 	unsigned tooComplex;
 } stats;
 
-/** Return the length of the specified path. */
+/** Return the length of the specified path in k-mer. */
 static size_t calculatePathLength(const Graph& g,
-		const ContigPath& path,
-		size_t first = 0, size_t last = 0)
+		const ContigPath& path, size_t first = 0, size_t last = 0)
 {
-	size_t len = 0;
-	if (first + last < path.size()) {
-		for (ContigPath::const_iterator iter = path.begin() + first;
-				iter != path.end() - last; ++iter)
-			len += g[*iter].length;
-	}
-	assert(len > 0);
-	return len;
+	assert(first + last < path.size());
+	return accumulate(path.begin() + first, path.end() - last,
+			ContigProperties(0, 0), AddVertexProp<Graph>(g)).length;
 }
 
 /** Return an ambiguous path that agrees with all the given paths. */
@@ -319,16 +315,16 @@ void makeDistanceMap(const Graph& g,
 		const ContigPath& path,
 		map<ContigNode, int>& distances)
 {
-	size_t distance = 0;
+	vertex_property<Graph>::type vp;
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		bool inserted = distances.insert(
-				make_pair(*it, distance)).second;
+				make_pair(*it, vp.length)).second;
 		if (!inserted) {
 			// Mark this contig as a repeat.
 			distances[*it] = INT_MIN;
 		}
-		distance += g[*it].length;
+		vp += g[*it];
 	}
 
 	// Remove the repeats.

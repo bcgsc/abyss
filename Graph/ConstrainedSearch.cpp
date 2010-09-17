@@ -74,7 +74,7 @@ bool constrainedSearch(const Graph& g,
 			it->second = constraint;
 			return true;
 		}
-		currLen += g[path.back()].length;
+		currLen += g[path.back()].length - opt::k + 1;
 	}
 
 	if (++visitedCount >= opt::maxCost)
