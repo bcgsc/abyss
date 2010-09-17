@@ -168,13 +168,12 @@ struct AmbPathConstraint {
 
 typedef ContigPath Path;
 typedef vector<Path> ContigPaths;
-typedef unsigned LinearNumKey;
-typedef map<AmbPathConstraint, LinearNumKey> AmbPath2Contig;
+typedef map<AmbPathConstraint, ContigID> AmbPath2Contig;
 
 /* global variables */
 static vector<Contig> g_contigs;
 AmbPath2Contig g_ambpath_contig;
-map<LinearNumKey, ContigPaths> g_amb_paths;
+map<ContigID, ContigPaths> g_amb_paths;
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 
 static double g_coverage_mean;
@@ -254,7 +253,8 @@ static ContigPaths readPath(const string& inPath,
 				/* add the entry to g_ambpath_contig
 				(value 0: unprocessed/no proper paths) */
 				g_ambpath_contig.insert(AmbPath2Contig::value_type(
-					AmbPathConstraint(*prev, *next, -it->id()), 0));
+					AmbPathConstraint(*prev, *next, -it->id()),
+					ContigID(0)));
 			}
 		}
 		isAmb.push_back(cur_is_amb);
@@ -414,7 +414,7 @@ static void ReadAdj(const string& irregularAdj)
 #endif
 
 /** Create a new contig. */
-static LinearNumKey createNewContig(const Sequence& seq,
+static ContigID createNewContig(const Sequence& seq,
 		unsigned coverage)
 {
 	ContigID id = ContigID::create();
@@ -423,7 +423,7 @@ static LinearNumKey createNewContig(const Sequence& seq,
 }
 
 /** Output a new contig. */
-static LinearNumKey outputNewContig(
+static ContigID outputNewContig(
 	const vector<Path>& solutions,
 	size_t longestPrefix, size_t longestSuffix,
 	const Sequence& seq, const unsigned coverage,
@@ -583,7 +583,7 @@ static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
+static ContigID ResolvePairAmbPath(const ContigPaths& solutions,
 		ofstream& out)
 {
 	assert(solutions.size() == 2
@@ -610,7 +610,7 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 		+ sndPathContig.coverage;
 	if ((double)match / align.size() < opt::pid
 		|| !ValidCoverage(align.size(), coverage))
-		return 0;
+		return ContigID(0);
 
 	// add k-1 extensions at both ends of consensus sequence
 	Sequence consensus = align.consensus();
@@ -626,7 +626,7 @@ static LinearNumKey ResolvePairAmbPath(const ContigPaths& solutions,
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
+static ContigID ResolveAmbPath(const vector<Path>& solutions,
 		ofstream& out)
 {
 	if (opt::verbose > 1) {
@@ -750,7 +750,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 
 	// check coverage
 	if (!ValidCoverage(consensus.length(), coverage))
-		return 0;
+		return ContigID(0);
 
 	// add k-1 extensions at both ends
 	const Path& fstPath = solutions.front();
@@ -765,7 +765,7 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 		cerr << "prefix path:" << vppath << endl
 			<< "suffix path:" << vspath << endl
 			<< "consensus:" << consensus << endl;
-	LinearNumKey new_contig_id = outputNewContig(solutions,
+	return outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
 
 #if 0
@@ -785,8 +785,6 @@ static LinearNumKey ResolveAmbPath(const vector<Path>& solutions,
 	}
 	return vppath;
 #endif
-
-	return new_contig_id;
 }
 
 static void InitIUPAC()
@@ -990,7 +988,7 @@ int main(int argc, char **argv)
 		}
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::num_paths;
-		LinearNumKey new_contig_id = 0;
+		ContigID new_contig_id(0);
 		if (tooManySolutions) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
@@ -1017,7 +1015,7 @@ int main(int argc, char **argv)
 			ambIt->second = new_contig_id;
 			//collect the used paths in g_amb_paths
 			g_amb_paths.insert(
-				map<LinearNumKey, ContigPaths>::value_type(
+				map<ContigID, ContigPaths>::value_type(
 					new_contig_id, solutions));
 		}
 	}
@@ -1026,7 +1024,7 @@ int main(int argc, char **argv)
 	vector<bool> seen(contigs.size());
 
 	//collect contigs on paths used in ambiguous path resolving
-	for (map<LinearNumKey, ContigPaths>::iterator mapIt
+	for (map<ContigID, ContigPaths>::iterator mapIt
 			= g_amb_paths.begin(); mapIt != g_amb_paths.end();
 			mapIt++)
 		if ((mapIt->second).size() > 1)
@@ -1068,7 +1066,7 @@ int main(int argc, char **argv)
 			AmbPath2Contig::iterator ambIt = g_ambpath_contig.find(
 				AmbPathConstraint(*prev, *next, -it->id()));
 			assert(ambIt != g_ambpath_contig.end());
-			LinearNumKey cid = ambIt->second;
+			ContigID cid = ambIt->second;
 			if (cid > 0) {
 				ContigPaths& solutions
 					= (g_amb_paths.find(cid))->second;
