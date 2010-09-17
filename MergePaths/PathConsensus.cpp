@@ -147,7 +147,8 @@ struct AmbPathConstraint {
 	ContigNode	dest;
 	int		dist;
 
-	AmbPathConstraint(ContigNode& src, ContigNode& dst, int d)
+	AmbPathConstraint(const ContigNode& src, const ContigNode& dst,
+			int d)
 		: source(src), dest(dst), dist(d) {}
 
 	bool operator ==(const AmbPathConstraint& a) const
@@ -1049,29 +1050,27 @@ int main(int argc, char **argv)
 		if (seen[it - contigs.begin()])
 			out << it->id << '\n';
 
-	for (unsigned i=0; i<paths.size(); i++) {
+	for (ContigPaths::const_iterator path = paths.begin();
+			path != paths.end(); ++path) {
+		unsigned i = path - paths.begin();
 		if (!isAmbPath[i]) {
-			out << pathIDs[i] << '\t' << paths[i] << '\n';
+			out << pathIDs[i] << '\t' << *path << '\n';
 			continue;
 		}
 
-		//ambiguous path, must have at least 3 nodes
-		Path::iterator prev = paths[i].begin();
-		Path::iterator next = paths[i].begin();
-		Path::iterator it = paths[i].begin();
-		Path cur_path; //used to collect updated path
-		cur_path.push_back(*it);
-		it++;
-		next++;
-		next++;
-		for (; it != paths[i].end(); it++, prev++, next++) {
+		assert(path->size() > 2);
+		Path cur_path;
+		cur_path.push_back(path->front());
+		for (Path::const_iterator prev = path->begin(),
+				it = path->begin() + 1, next = path->begin() + 2;
+				it != path->end(); ++prev, ++it, ++next) {
 			if (!it->ambiguous()) {
 				cur_path.push_back(*it);
 				continue;
 			}
 
 			//replace Ns by resolved new contig
-			assert(next != paths[i].end());
+			assert(next != path->end());
 			AmbPath2Contig::iterator ambIt = g_ambpath_contig.find(
 				AmbPathConstraint(*prev, *next, -it->id()));
 			assert(ambIt != g_ambpath_contig.end());
