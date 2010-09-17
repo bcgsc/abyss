@@ -537,12 +537,11 @@ static Contig mergePath(const Graph &g, const Path& path)
 	return Contig(seq, coverage);
 }
 
-static Sequence pathSequence_no_overlap(Contig& pathContig)
+/** Trim the left and right k-1 bases. */
+static void trimOverlap(string& s)
 {
-	Sequence& pathseq = pathContig.seq;
-	pathseq.erase(pathseq.length()-opt::k+1);
-	pathseq.erase(0, opt::k-1);
-	return pathseq;
+	s.erase(s.length() - opt::k + 1);
+	s.erase(0, opt::k-1);
 }
 
 /* validate path coverage, at 95% confidence interval */
@@ -580,14 +579,15 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 	sndSol.erase(sndSol.begin());
 
 	Contig fstPathContig = mergePath(g, fstSol);
-	Sequence fstseq = pathSequence_no_overlap(fstPathContig);
+	trimOverlap(fstPathContig.seq);
 
 	Contig sndPathContig = mergePath(g, sndSol);
-	Sequence sndseq = pathSequence_no_overlap(sndPathContig);
+	trimOverlap(sndPathContig.seq);
 
 	NWAlignment align;
-	unsigned match = GetGlobalAlignment(fstseq, sndseq, align,
-		opt::verbose > 1);
+	unsigned match = GetGlobalAlignment(
+			fstPathContig.seq, sndPathContig.seq, align,
+			opt::verbose > 1);
 	unsigned coverage = fstPathContig.coverage
 		+ sndPathContig.coverage;
 	if ((double)match / align.size() < opt::pid
