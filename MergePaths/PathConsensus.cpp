@@ -929,6 +929,7 @@ int main(int argc, char **argv)
 	assert(fa.good());
 
 	init_parameters();
+	set_parameters_dna();
 	para->DEBUG = opt::dialign_debug;
 	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
 	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
