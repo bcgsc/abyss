@@ -52,7 +52,7 @@ static const char *USAGE_MESSAGE =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	int k;
+	unsigned k;
 
 	/** Output format. */
 	int format = -1; // used by ContigProperties

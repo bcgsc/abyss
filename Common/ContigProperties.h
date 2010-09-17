@@ -6,7 +6,7 @@
 #include <ostream>
 
 namespace opt {
-	extern int k;
+	extern unsigned k;
 
 	/** Output format. */
 	extern int format;

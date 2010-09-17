@@ -49,7 +49,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	int k; // used by ContigLength
+	unsigned k; // used by ContigProperties
 	static unsigned maxLength;
 
 	/** Write the contig adjacency graph to this file. */

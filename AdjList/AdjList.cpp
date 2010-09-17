@@ -47,7 +47,7 @@ static const char USAGE_MESSAGE[] =
 enum format { ADJ, DOT, SAM };
 
 namespace opt {
-	static int k;
+	static unsigned k;
 	static int overlap;
 
 	/** Output formats */

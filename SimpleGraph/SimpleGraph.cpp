@@ -51,7 +51,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k; // used by ContigGraph
+	unsigned k; // used by ContigProperties
 	static unsigned threads = 1;
 	static int scaffold = 1;
 	static int verbose;

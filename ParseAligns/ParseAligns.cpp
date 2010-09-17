@@ -51,7 +51,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static int k;
+	static unsigned k;
 	static unsigned c;
 	static int verbose;
 	static string distPath;
@@ -597,7 +597,7 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 
 	for (AlignmentVector::const_iterator iter = alignVec.begin();
 			iter != alignVec.end(); ++iter) {
-		assert(iter->align_length >= opt::k);
+		assert((unsigned)iter->align_length >= opt::k);
 		unsigned end = iter->read_start_pos
 			+ iter->align_length - opt::k + 1;
 		assert(end <= nKmer);

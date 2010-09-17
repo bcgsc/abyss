@@ -61,7 +61,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	int k; // used by ContigGraph
+	unsigned k; // used by ContigGraph
 	static unsigned minimum_overlap = 5;
 	static int mask = 1;
 	static int scaffold = 1;
@@ -177,7 +177,7 @@ static FastaRecord overlapContigs(const ContigNode& t_id,
 {
 	string t = sequence(t_id);
 	string h = sequence(h_id);
-	assert(overlap < (unsigned)opt::k - 1);
+	assert(overlap < opt::k - 1);
 	unsigned gap = opt::k - 1 - overlap;
 	string a(t, t.length() - opt::k+1, gap);
 	string o(h, 0, overlap);
