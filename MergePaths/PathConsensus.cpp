@@ -562,12 +562,17 @@ static Sequence pathSequence_no_overlap(Contig& pathContig)
 /* validate path coverage, at 95% confidence interval */
 static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
 {
+#if 0
 	double cover_mean
 		= (double)pathCover / (pathLen + opt::k - 1);
 	double cover_deviation
 		= sqrt(g_coverage_variance / (pathLen + opt::k - 1));
 	return cover_mean <= g_coverage_mean + 1.96*cover_deviation
 		&& cover_mean >= g_coverage_mean - 1.96*cover_deviation;
+#else
+	(void)pathLen, (void)pathCover;
+	return true;
+#endif
 }
 
 /* Resolve ambiguous region using pairwise alignment (needleman-wunsch)
