@@ -919,9 +919,8 @@ int main(int argc, char **argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		//if (argc - optind == 0) g_contigIDs.lock();
 	}
-	ContigID::unlock();
+	ContigID::lock();
 
 	// Get contig k-mer-coverage statistics
 	CompCoverageStatistics();
