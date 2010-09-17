@@ -413,15 +413,6 @@ static void ReadAdj(const string& irregularAdj)
 }
 #endif
 
-/** Create a new contig. */
-static ContigID createNewContig(const Sequence& seq,
-		unsigned coverage)
-{
-	ContigID id = ContigID::create();
-	g_contigs.push_back(Contig(id.str(), seq, coverage));
-	return id;
-}
-
 /** Output a new contig. */
 static ContigID outputNewContig(
 	const vector<Path>& solutions,
@@ -429,7 +420,7 @@ static ContigID outputNewContig(
 	const Sequence& seq, const unsigned coverage,
 	ofstream& out)
 {
-	ContigID id(createNewContig(seq, coverage));
+	ContigID id(ContigID::create());
 	out << '>' << id.str() << ' ' << seq.length()
 		<< ' ' << coverage << ' ';
 	for (vector<Path>::const_iterator it = solutions.begin();
@@ -1000,7 +991,7 @@ int main(int argc, char **argv)
 			new_contig_id = ResolveAmbPath(solutions, fa);
 		} else if (numPossiblePaths == 1) { //1 path, use it
 			//create a fake contigID to be replaced later
-			new_contig_id = createNewContig("", 0);
+			new_contig_id = ContigID::create();
 		} else { //no path
 			/* TODO: call shortest-path algorithm
 			to check whether there IS path */
