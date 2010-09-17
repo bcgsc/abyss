@@ -173,7 +173,6 @@ typedef map<AmbPathConstraint, LinearNumKey> AmbPath2Contig;
 
 /* global variables */
 static vector<Contig> g_contigs;
-LinearNumKey g_max_contigID;
 AmbPath2Contig g_ambpath_contig;
 map<LinearNumKey, ContigPaths> g_amb_paths;
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
@@ -237,11 +236,6 @@ static ContigPaths readPath(const string& inPath,
 	while (in >> id >> path) {
 		paths.push_back(path);
 		ids.push_back(id);
-		unsigned path_id = strtoul(id.c_str(), NULL, 0);
-
-		/* update g_max_contigID */
-		if (path_id > g_max_contigID)
-			g_max_contigID = path_id;
 
 		if (path.size() <= 2) {
 			isAmb.push_back(false);
@@ -938,7 +932,6 @@ int main(int argc, char **argv)
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
 		//if (argc - optind == 0) g_contigIDs.lock();
 	}
-	g_max_contigID = g_contigs.size()-1;
 	ContigID::unlock();
 
 	// Get contig k-mer-coverage statistics
