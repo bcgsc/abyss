@@ -26,6 +26,7 @@
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
 #include "Estimate.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
@@ -36,6 +37,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <set>
 #include <map>
 #include <string>
@@ -130,9 +132,7 @@ struct prob_dist *pdist;
 /* ABySS global constructs */
 struct Contig {
 	Sequence seq;
-	unsigned coverage;
-	Contig(const Sequence& seq, unsigned coverage)
-		: seq(seq), coverage(coverage) { }
+	Contig(const Sequence& seq) : seq(seq) { }
 };
 
 struct AmbPathConstraint {
@@ -511,14 +511,12 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 }
 
-static Contig mergePath(const Graph &g, const Path& path)
+static Contig mergePath(const Path& path)
 {
 	Sequence seq;
-	unsigned coverage = 0;
 	Path::const_iterator prev_it;
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
-		coverage += g[*it].coverage;
 		if (seq.empty()) {
 			seq = getSequence(*it);
 		} else {
@@ -534,7 +532,7 @@ static Contig mergePath(const Graph &g, const Path& path)
 		}
 		prev_it = it;
 	}
-	return Contig(seq, coverage);
+	return seq;
 }
 
 /** Trim the left and right k-1 bases. */
@@ -560,6 +558,16 @@ static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
 #endif
 }
 
+/** Calculate the ContigProperties of a path. */
+static ContigProperties calculatePathProperties(const Graph& g,
+		const ContigPath& path)
+{
+	assert(!path.empty());
+	ContigPath::const_iterator first = path.begin();
+	return std::accumulate(first + 1, path.end(),
+			get(vertex_bundle, g, *first), AddVertexProp<Graph>(g));
+}
+
 /* Resolve ambiguous region using pairwise alignment (needleman-wunsch)
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
@@ -578,18 +586,18 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 	sndSol.pop_back();
 	sndSol.erase(sndSol.begin());
 
-	Contig fstPathContig = mergePath(g, fstSol);
+	Contig fstPathContig = mergePath(fstSol);
 	trimOverlap(fstPathContig.seq);
 
-	Contig sndPathContig = mergePath(g, sndSol);
+	Contig sndPathContig = mergePath(sndSol);
 	trimOverlap(sndPathContig.seq);
 
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(
 			fstPathContig.seq, sndPathContig.seq, align,
 			opt::verbose > 1);
-	unsigned coverage = fstPathContig.coverage
-		+ sndPathContig.coverage;
+	unsigned coverage = calculatePathProperties(g, fstSol).coverage
+		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
 		|| !ValidCoverage(align.size(), coverage))
 		return ContigID(0);
@@ -687,9 +695,9 @@ static ContigID ResolveAmbPath(const Graph& g,
 		//skip if the ambiguous region is empty
 		if (cur_path.empty())
 			continue;
-		Contig newContig = mergePath(g, cur_path);
+		Contig newContig = mergePath(cur_path);
 		Sequence& newseq = newContig.seq;
-		coverage += newContig.coverage;
+		coverage += calculatePathProperties(g, cur_path).coverage;
 		//find overlap between newContig and Suffix,
 		//remove it from newContig sequence
 		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
