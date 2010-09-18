@@ -7,11 +7,6 @@
 
 using namespace std;
 
-extern "C" {
-void prepare_alignment(struct alignment *algn);
-struct algn_pos *find_eqc(struct algn_pos **ap, int seqnum, int pos);
-}
-
 static void free_scr_matrix(struct scr_matrix* smatrix)
 {
 	free(smatrix->dist);

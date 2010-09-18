@@ -20,6 +20,8 @@ char simple_aligner(struct seq_col *scol, struct diag_col *dcol,
 	struct scr_matrix* smatrix,
 	struct prob_dist *pdist,
 	struct alignment *algn, int round);
+void prepare_alignment(struct alignment *algn);
+struct algn_pos *find_eqc(struct algn_pos **ap, int seqnum, int pos);
 void free_alignment(struct alignment* algn);
 void free_diag_col(struct diag_col* dcol);
 }
