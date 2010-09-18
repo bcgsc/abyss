@@ -166,6 +166,33 @@ static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 static double g_coverage_mean;
 static double g_coverage_variance;
 
+/** Print a dialign alignment. */
+static ostream& operator<<(ostream& out, const alignment& o)
+{
+	const seq_col& scol = *o.scol;
+	vector<int> proc(scol.length);
+	algn_pos **ap = o.algn;
+	for (int s = 0; s < scol.length; s++) {
+		const seq& sq = scol.seqs[s];
+		for (int j = 0; j < o.max_pos; j++) {
+			if (proc[s] < sq.length) {
+				const algn_pos& ap1 = *find_eqc(ap, s, proc[s]);
+				assert(j <= *ap1.eqcAlgnPos);
+				if (*ap1.eqcAlgnPos == j) {
+					out << char(ap1.state & para->STATE_ORPHANE
+							? toupper(sq.data[proc[s]])
+							: tolower(sq.data[proc[s]]));
+					proc[s]++;
+				} else
+					out << '*';
+			} else
+				out << '*';
+		}
+		out << '\n';
+	}
+	return out;
+}
+
 /* commonly-used utility function */
 static void assert_open(ifstream& f, const string& p)
 {
@@ -1211,7 +1238,11 @@ static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 		free_alignment(salgn);
 	}
 
+	if (opt::verbose > 2)
+		simple_print_alignment_default(algn);
 	get_alignment_consensus(algn, consensus);
+	if (opt::verbose > 0)
+		cerr << '\n' << *algn << consensus << '\n';
 
 	if (opt::verbose > 1) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;
