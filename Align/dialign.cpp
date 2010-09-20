@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
-#include <map>
 #include <iostream>
 
 using namespace std;
@@ -76,78 +75,37 @@ struct seq_col* read_seqs(const vector<string>& amb_seqs)
 	return scol;
 }
 
-static map<string, char> initIUPAC()
-{
-	typedef map<string, char> Map;
-	Map iupac;
-	iupac.insert(Map::value_type("AG", 'R'));
-	iupac.insert(Map::value_type("CT", 'Y'));
-	iupac.insert(Map::value_type("AC", 'M'));
-	iupac.insert(Map::value_type("GT", 'K'));
-	iupac.insert(Map::value_type("CG", 'S'));
-	iupac.insert(Map::value_type("AT", 'W'));
-	iupac.insert(Map::value_type("ACT", 'H'));
-	iupac.insert(Map::value_type("CGT", 'B'));
-	iupac.insert(Map::value_type("ACG", 'V'));
-	iupac.insert(Map::value_type("AGT", 'D'));
-	//also reverse order for pairwise consensus
-	iupac.insert(Map::value_type("GA", 'R'));
-	iupac.insert(Map::value_type("TC", 'Y'));
-	iupac.insert(Map::value_type("CA", 'M'));
-	iupac.insert(Map::value_type("TG", 'K'));
-	iupac.insert(Map::value_type("GC", 'S'));
-	iupac.insert(Map::value_type("TA", 'W'));
-	return iupac;
-}
-
-static char IUPAC(char* amb_chars, unsigned int size)
-{
-	static map<string, char> IUPAC_codes = initIUPAC();
-	if (size == 1)
-		return amb_chars[0];
-	if (size == 0 || size == 4)
-		return 'N';
-	string amb_seq = amb_chars;
-	map<string, char>::iterator it = IUPAC_codes.find(amb_seq);
-	assert(it != IUPAC_codes.end());
-	return it->second;
-}
-
-static char ind2char(unsigned int index)
-{
-	char c = 0;
-	switch (index) {
-	case 0:
-		c = '-'; break;
-	case 1:
-		c = 'A'; break;
-	case 2:
-		c = 'C'; break;
-	case 3:
-		c = 'G'; break;
-	case 4:
-		c = 'T'; break;
-	case 5:
-		c = 'N'; break;
-	default:
-		cerr << "ind2char index out of range!\n";
-		exit(EXIT_FAILURE);
-	}
-
-	return c;
-}
-
 /** Return the consensus base.
  * @param counts a count of the characters "-ACGTN"
  */
 static char make_consensus(unsigned counts[6])
 {
-	char bases[5], *p = bases;
-	for (unsigned i = 1; i < 5; i++)
+	static const char IUPAC[16] = {
+		'N', //----
+		'A', //---A
+		'C', //--C-
+		'M', //--CA
+		'G', //-G--
+		'R', //-G-A
+		'S', //-GC-
+		'V', //-GCA
+		'T', //T---
+		'W', //T--A
+		'Y', //T-C-
+		'H', //T-CA
+		'K', //TG--
+		'D', //TG-A
+		'B', //TGC-
+		'N', //TGCA
+	};
+	unsigned bases = 0;
+	for (unsigned i = 1, mask = 1; i < 5; i++, mask <<= 1)
 		if (counts[i] > 0)
-			*p++ = ind2char(i);
-	*p = '\0';
-	char c = IUPAC(bases, p - bases);
+			bases |= mask;
+	if (bases == 0)
+		assert(counts[5] > 0);
+	assert(bases < 16);
+	char c = IUPAC[bases];
 	return counts[0] > 0 ? tolower(c) : c;
 }
 
