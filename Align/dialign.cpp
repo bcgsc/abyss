@@ -152,7 +152,6 @@ static char make_consensus(unsigned int* chars, unsigned int count)
 				min = chars[i]; min_index=i;
 			}
 			if (chars[i] >= max) { //last encounter is recorded in max_index
-				max = chars[i]; max_index=i;
 				if (i > 0) { //a,c,g,t only
 					if (chars[i] > max) {
 						max_chars[0] = ind2char(i); //chars[i];
@@ -163,6 +162,7 @@ static char make_consensus(unsigned int* chars, unsigned int count)
 						max_chars[exist] = '\0';
 					}
 				}
+				max = chars[i]; max_index=i;
 			}
 			total += chars[i];
 		}
