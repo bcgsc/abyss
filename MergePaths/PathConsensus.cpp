@@ -180,8 +180,8 @@ static ostream& operator<<(ostream& out, const alignment& o)
 				assert(j <= *ap1.eqcAlgnPos);
 				if (*ap1.eqcAlgnPos == j) {
 					out << char(ap1.state & para->STATE_ORPHANE
-							? toupper(sq.data[proc[s]])
-							: tolower(sq.data[proc[s]]));
+							? tolower(sq.data[proc[s]])
+							: toupper(sq.data[proc[s]]));
 					proc[s]++;
 				} else
 					out << '*';
