@@ -192,8 +192,11 @@ void get_alignment_consensus(struct alignment *algn, string& consensus)
 						chars[4]++; break;
 					case 'N':
 						chars[5]++; break;
-					default: //anything else is regarded as 'n'
-						chars[5]++; break;
+					default:
+						cerr << "error: unexpected character: `"
+							<< cur_char << "'\n";
+						assert(false);
+						exit(EXIT_FAILURE);
 					}
 					proc[s]++;
 				} else {
