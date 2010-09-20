@@ -1,4 +1,5 @@
 #include "dialign.h"
+#include <cassert>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -108,10 +109,8 @@ static char IUPAC(char* amb_chars, unsigned int size)
 		return 'N';
 	string amb_seq = amb_chars;
 	map<string, char>::iterator it = IUPAC_codes.find(amb_seq);
-	if (it != IUPAC_codes.end())
-		return it->second;
-	else
-		return 'x';
+	assert(it != IUPAC_codes.end());
+	return it->second;
 }
 
 static char ind2char(unsigned int index)
@@ -169,8 +168,7 @@ static char make_consensus(unsigned int* chars, unsigned int count)
 	}
 	unsigned int countN = chars[5];
 	total += countN;
-	if (total != count) //something in input sequence is non-acgtn?
-		return 'x';//use 'x' to indicate no consensus
+	assert(total == count);
 	if (max_index == min_index) {
 		if (exist) //unanimous
 			return ind2char(max_index); //chars[max_index];
@@ -186,7 +184,7 @@ static char make_consensus(unsigned int* chars, unsigned int count)
 	if (max > major) //majority
 		return tolower(ind2char(max_index)); //chars[max_index]);
 	if (countGap) //no majority, one of them is gap
-		return 'x';
+		return tolower(IUPAC(max_chars, exist));
 	return IUPAC(max_chars, exist);
 }
 
