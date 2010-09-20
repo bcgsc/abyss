@@ -104,8 +104,8 @@ static char IUPAC(char* amb_chars, unsigned int size)
 {
 	static map<string, char> IUPAC_codes = initIUPAC();
 	if (size == 1)
-		return tolower(amb_chars[0]);
-	if (size == 4)
+		return amb_chars[0];
+	if (size == 0 || size == 4)
 		return 'N';
 	string amb_seq = amb_chars;
 	map<string, char>::iterator it = IUPAC_codes.find(amb_seq);
@@ -137,55 +137,18 @@ static char ind2char(unsigned int index)
 	return c;
 }
 
-static char make_consensus(unsigned int* chars, unsigned int count)
+/** Return the consensus base.
+ * @param counts a count of the characters "-ACGTN"
+ */
+static char make_consensus(unsigned counts[6])
 {
-	//chars store the count for "-,A,C,G,T,N"
-	unsigned int min=count+1, max=0, total=0;
-	unsigned int min_index=0, max_index=0, exist=0;
-	char max_chars[5] = ""; //a,c,g,t,null terminator
-	unsigned int countGap = chars[0];
-	int i;
-	for (i=0; i<5; i++) {
-		if (chars[i]) {
-			if (chars[i] < min) { //first encounter is what is recorded in min_index
-				min = chars[i]; min_index=i;
-			}
-			if (chars[i] >= max) { //last encounter is recorded in max_index
-				if (i > 0) { //a,c,g,t only
-					if (chars[i] > max) {
-						max_chars[0] = ind2char(i); //chars[i];
-						max_chars[1] = '\0'; //reset
-						exist = 1;
-					} else { //chars[i] == max, add the current char to max_chars
-						max_chars[exist++] = ind2char(i); //chars[i];
-						max_chars[exist] = '\0';
-					}
-				}
-				max = chars[i]; max_index=i;
-			}
-			total += chars[i];
-		}
-	}
-	unsigned int countN = chars[5];
-	total += countN;
-	assert(total == count);
-	if (max_index == min_index) {
-		if (exist) //unanimous
-			return ind2char(max_index); //chars[max_index];
-		else { //'-' or 'N'
-			if (countN > max)
-				return 'n';
-			else
-				return '-';
-		}
-	}
-
-	unsigned int major = total / 2;
-	if (max > major) //majority
-		return tolower(ind2char(max_index)); //chars[max_index]);
-	if (countGap) //no majority, one of them is gap
-		return tolower(IUPAC(max_chars, exist));
-	return IUPAC(max_chars, exist);
+	char bases[5], *p = bases;
+	for (unsigned i = 1; i < 5; i++)
+		if (counts[i] > 0)
+			*p++ = ind2char(i);
+	*p = '\0';
+	char c = IUPAC(bases, p - bases);
+	return counts[0] > 0 ? tolower(c) : c;
 }
 
 // assume initial sequences contain only a/c/g/t/n
@@ -240,7 +203,7 @@ void get_alignment_consensus(struct alignment *algn, string& consensus)
 				chars[0]++;
 			}
 		}
-		char c = make_consensus(chars, slen);
+		char c = make_consensus(chars);
 		consensus += c;
 		if (para->DEBUG > 5) {
 			for (s=0; s<6; s++) printf("chars[%u]:%u; ", s, chars[s]);
