@@ -576,6 +576,7 @@ static Sequence mergePath(const Path& path)
 /** Trim the left and right k-1 bases. */
 static void trimOverlap(string& s)
 {
+	assert(s.length() > 2*(opt::k - 1));
 	s.erase(s.length() - opt::k + 1);
 	s.erase(0, opt::k-1);
 }
@@ -622,23 +623,23 @@ static ContigPath ResolvePairAmbPath(const Graph& g,
 	ContigPath sndSol(solutions[1].begin()+1, solutions[1].end()-1);
 
 	Sequence fstPathContig(mergePath(fstSol));
-	trimOverlap(fstPathContig);
-
 	Sequence sndPathContig(mergePath(sndSol));
+	if (fstPathContig == sndPathContig) {
+		// A perfect match must be caused by palindrome.
+		assert(fstSol.size() == 1);
+		assert(sndSol.size() == 1);
+		assert(fstSol.front() == ~sndSol.front());
+		if (opt::verbose > 0)
+			cerr << "Palindrome: " << fstSol.front().id() << '\n';
+		return solutions[0];
+	}
+
+	trimOverlap(fstPathContig);
 	trimOverlap(sndPathContig);
 
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
 		   	align, opt::verbose > 1);
-
-	if (match == align.size()) {
-		// A perfect match must be caused by palindrome.
-		assert(fstSol.size() == 1);
-		assert(sndSol.size() == 1);
-		assert(fstSol.front() == ~sndSol.front());
-		return solutions[0];
-	}
-
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
