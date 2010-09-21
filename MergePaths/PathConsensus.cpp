@@ -31,6 +31,7 @@
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
+#include <algorithm>
 #include <cerrno>
 #include <cstring> // for strerror
 #include <fstream>
@@ -438,10 +439,17 @@ static ContigID outputNewContig(
 			it != solutions.end(); it++) {
 		if (it != solutions.begin())
 			out << ';';
-		size_t i=longestPrefix-1;
-		for (; i<(*it).size()-longestSuffix; i++)
-			out << (*it)[i] << ',';
-		out << (*it)[i];
+		const ContigPath& path = *it;
+		ContigPath::const_iterator
+			first = path.begin() + longestPrefix,
+			last = path.end() - longestSuffix;
+		assert(first <= last);
+		if (first < last) {
+			copy(first, last - 1,
+					ostream_iterator<ContigNode>(out, ","));
+			out << *(last - 1);
+		} else
+			out << '*';
 	}
 	out << '\n' << seq << '\n';
 	return id;
