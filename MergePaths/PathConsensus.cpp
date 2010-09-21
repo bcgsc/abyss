@@ -167,7 +167,8 @@ static double g_coverage_mean;
 static double g_coverage_variance;
 
 /** Print a dialign alignment. */
-static ostream& operator<<(ostream& out, const alignment& o)
+static ostream& print(ostream& out, const alignment& o,
+		const string& consensus)
 {
 	const seq_col& scol = *o.scol;
 	vector<int> proc(scol.length);
@@ -179,9 +180,12 @@ static ostream& operator<<(ostream& out, const alignment& o)
 				const algn_pos& ap1 = *find_eqc(ap, s, proc[s]);
 				assert(j <= *ap1.eqcAlgnPos);
 				if (*ap1.eqcAlgnPos == j) {
-					out << char(ap1.state & para->STATE_ORPHANE
-							? tolower(sq.data[proc[s]])
-							: toupper(sq.data[proc[s]]));
+					char c = sq.data[proc[s]];
+					if (c == consensus[j])
+						c = '.';
+					else if (ap1.state & para->STATE_ORPHANE)
+						c = tolower(c);
+					out << c;
 					proc[s]++;
 				} else
 					out << '*';
@@ -1241,8 +1245,11 @@ static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	if (opt::verbose > 2)
 		simple_print_alignment_default(algn);
 	get_alignment_consensus(algn, consensus);
-	if (opt::verbose > 0)
-		cerr << '\n' << *algn << consensus << '\n';
+	if (opt::verbose > 0) {
+		cerr << '\n';
+		print(cerr, *algn, consensus);
+	   	cerr << consensus << '\n';
+	}
 
 	if (opt::verbose > 1) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;
