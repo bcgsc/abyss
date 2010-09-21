@@ -643,14 +643,6 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 static ContigID ResolveAmbPath(const Graph& g,
 		const vector<Path>& solutions, ofstream& out)
 {
-	if (opt::verbose > 1) {
-		cerr << "input paths:" << endl;
-		for (vector<Path>::const_iterator solIter =
-				solutions.begin();
-				solIter != solutions.end(); solIter++)
-			cerr << *solIter << endl;
-	}
-
 	// Find the size of the smallest path.
 	const Path& firstSol = solutions.front();
 	size_t min_len = firstSol.size();
