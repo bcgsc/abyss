@@ -182,10 +182,11 @@ static ostream& print(ostream& out, const alignment& o,
 				if (*ap1.eqcAlgnPos == j) {
 					char c = sq.data[proc[s]];
 					if (c == consensus[j])
-						c = '.';
+						out << '.';
 					else if (ap1.state & para->STATE_ORPHANE)
-						c = tolower(c);
-					out << c;
+						out << (char)tolower(c);
+					else
+						out << c;
 					proc[s]++;
 				} else
 					out << '*';
