@@ -900,9 +900,6 @@ int main(int argc, char **argv)
 	{
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			istringstream ss(rec.comment);
-			unsigned length, coverage = 0;
-			ss >> length >> coverage;
 			ContigID id(rec.id);
 			assert(contigs.size() == id);
 			contigs.push_back(rec.seq);
