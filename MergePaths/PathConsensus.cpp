@@ -316,17 +316,23 @@ static void readAmbPaths(const string& ambPath)
 }
 #endif
 
-/** Finds all contigs used in each path in paths, and
- * marks them as seen in the vector seen. */
+/** Mark every contig in path as seen. */
+static void markSeen(vector<bool>& seen, const ContigPath& path,
+		bool flag)
+{
+	for (Path::const_iterator it = path.begin();
+			it != path.end(); ++it)
+		if (!it->ambiguous() && it->id() < seen.size())
+			seen[it->id()] = flag;
+}
+
+/** Mark every contig in paths as seen. */
 static void markSeen(vector<bool>& seen, const vector<Path>& paths,
 		bool flag)
 {
 	for (vector<Path>::const_iterator it = paths.begin();
 			it != paths.end(); ++it)
-		for (Path::const_iterator itc = it->begin();
-				itc != it->end(); ++itc)
-			if (itc->id() < seen.size())
-				seen[itc->id()] = flag;
+		markSeen(seen, *it, flag);
 }
 
 #if 0
@@ -1000,12 +1006,17 @@ int main(int argc, char **argv)
 		if (!path.empty()) {
 			stats.numMerged++;
 			ambIt->second = path;
-			if (solutions.size() > 1)
+			if (solutions.size() > 1) {
+				// Mark contigs that are used in a consensus.
 				markSeen(seen, solutions, true);
+			}
 		}
 	}
 
-	//unmark contigs that are used in unambiguous paths
+	// Unmark contigs that are used in a path.
+	for (AmbPath2Contig::iterator it = g_ambpath_contig.begin();
+			it != g_ambpath_contig.end(); it++)
+		markSeen(seen, it->second, false);
 	markSeen(seen, paths, false);
 
 	ofstream out(opt::out.c_str());
