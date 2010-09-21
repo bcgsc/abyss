@@ -630,6 +630,15 @@ static ContigPath ResolvePairAmbPath(const Graph& g,
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
 		   	align, opt::verbose > 1);
+
+	if (match == align.size()) {
+		// A perfect match must be caused by palindrome.
+		assert(fstSol.size() == 1);
+		assert(sndSol.size() == 1);
+		assert(fstSol.front() == ~sndSol.front());
+		return solutions[0];
+	}
+
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
