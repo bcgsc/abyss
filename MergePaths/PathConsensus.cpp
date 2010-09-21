@@ -941,8 +941,10 @@ int main(int argc, char **argv)
 	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
 	LoadProbDist();
 
+	// Contigs that were seen in a consensus.
+	vector<bool> seen(contigs.size());
+
 	// resolve ambiguous paths recorded in g_ambpath_contig
-	vector<ContigPaths> ambPaths;
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
@@ -998,18 +1000,10 @@ int main(int argc, char **argv)
 		if (!path.empty()) {
 			stats.numMerged++;
 			ambIt->second = path;
-			ambPaths.push_back(solutions);
+			if (solutions.size() > 1)
+				markSeen(seen, solutions, true);
 		}
 	}
-
-	// Record all the contigs that are in a path.
-	vector<bool> seen(contigs.size());
-
-	//collect contigs on paths used in ambiguous path resolving
-	for (vector<ContigPaths>::iterator it = ambPaths.begin();
-			it != ambPaths.end(); it++)
-		if (it->size() > 1)
-			markSeen(seen, *it, true);
 
 	//unmark contigs that are used in unambiguous paths
 	markSeen(seen, paths, false);
