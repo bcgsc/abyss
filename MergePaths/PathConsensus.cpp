@@ -700,10 +700,10 @@ static ContigID ResolveAmbPath(const Graph& g,
 			break;
 		vspath.push_back(common_path_node);
 	}
+	reverse(vspath.begin(), vspath.end());
 
 	if (opt::verbose > 1)
-		cerr << "prefix path:" << vppath << endl
-			<< "suffix path:" << vspath << endl;
+		cerr << "Common: " << vppath << " * " << vspath << '\n';
 
 	// Get sequence of ambiguous region in paths
 	assert(longestPrefix > 0 && longestSuffix > 0);
@@ -781,31 +781,8 @@ static ContigID ResolveAmbPath(const Graph& g,
 		transform(first, consensus.end(), first, ::tolower);
 	}
 
-	// output consensus as new contig
-	if (opt::verbose > 1)
-		cerr << "prefix path:" << vppath << endl
-			<< "suffix path:" << vspath << endl
-			<< "consensus:" << consensus << endl;
 	return outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
-
-#if 0
-	ContigNode new_contig_node(new_contig_id, false);
-	if (opt::verbose > 1)
-		cerr << "new node:" << new_contig_node << endl;
-	vppath.push_back(new_contig_node);
-	for (int i=vspath.size()-1; i>=0; i--)
-		vppath.push_back(vspath[i]);
-
-	if (opt::verbose > 1) {
-		cerr << "input paths:" << endl;
-		for (vector<Path>::const_iterator solIter = solutions.begin();
-			solIter != solutions.end(); solIter++)
-			cerr << *solIter << endl;
-		cerr << "output path:" << vppath << endl;
-	}
-	return vppath;
-#endif
 }
 
 static void LoadProbDist()
