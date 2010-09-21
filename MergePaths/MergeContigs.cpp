@@ -2,6 +2,7 @@
 #include "Common/Options.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
+#include "DataLayer/Options.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
@@ -244,6 +245,7 @@ static void markRemovedContigs(vector<bool>& marked,
 
 int main(int argc, char** argv)
 {
+	opt::trimMasked = false;
 	ContigPath::separator = ",";
 
 	bool die = false;
