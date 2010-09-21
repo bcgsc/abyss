@@ -23,8 +23,6 @@ using namespace std;
 #endif
 #endif
 
-extern map<string, char> IUPAC_codes;
-
 static bool Match(const char& a, const char& b, char& consensus);
 
 template <class T>

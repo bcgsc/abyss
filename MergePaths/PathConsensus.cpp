@@ -125,7 +125,6 @@ static struct {
 } stats;
 
 /* some global data for dialign */
-map<string, char> IUPAC_codes;
 struct scr_matrix *smatrix;
 struct prob_dist *pdist;
 
@@ -801,28 +800,6 @@ static ContigID ResolveAmbPath(const Graph& g,
 #endif
 }
 
-static void InitIUPAC()
-{
-	IUPAC_codes.insert(map<string, char>::value_type(string("AG"), 'R'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("CT"), 'Y'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("AC"), 'M'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("GT"), 'K'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("CG"), 'S'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("AT"), 'W'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("ACT"), 'H'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("CGT"), 'B'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("ACG"), 'V'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("AGT"), 'D'));
-
-	//also reverse order for pairwise consensus
-	IUPAC_codes.insert(map<string, char>::value_type(string("GA"), 'R'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("TC"), 'Y'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("CA"), 'M'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("TG"), 'K'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("GC"), 'S'));
-	IUPAC_codes.insert(map<string, char>::value_type(string("TA"), 'W'));
-}
-
 static void LoadProbDist()
 {
 	// read similarity matrix
@@ -965,7 +942,6 @@ int main(int argc, char **argv)
 	para->DEBUG = opt::dialign_debug;
 	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
 	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
-	InitIUPAC();
 	LoadProbDist();
 
 	// resolve ambiguous paths recorded in g_ambpath_contig
