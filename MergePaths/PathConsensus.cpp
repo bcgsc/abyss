@@ -1044,21 +1044,20 @@ int main(int argc, char **argv)
 			assert(ambIt != g_ambpath_contig.end());
 			ContigID cid = ambIt->second;
 			if (cid > 0) {
-				ContigPaths& solutions
-					= (g_amb_paths.find(cid))->second;
+				map<ContigID, ContigPaths>::const_iterator findIt
+					= g_amb_paths.find(cid);
+				assert(findIt != g_amb_paths.end());
+				const ContigPaths& solutions = findIt->second;
 				if (solutions.size() > 1) {
-					cur_path.push_back(
-						ContigNode(cid, false));
+					cur_path.push_back(ContigNode(cid, false));
 				} else {
-					ContigPath& sol = solutions[0];
+					const ContigPath& sol = solutions.front();
 					assert(sol.size() > 1);
-					for (unsigned j = 1; j < sol.size()-1;
-							j++)
-						cur_path.push_back(sol[j]);
+					cur_path.insert(cur_path.end(),
+							sol.begin() + 1, sol.end() - 1);
 				}
-			} else {
+			} else
 				cur_path.push_back(*it);
-			}
 		}
 		out << pathIDs[i] << '\t' << cur_path << '\n';
 	}
