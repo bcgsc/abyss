@@ -155,12 +155,11 @@ struct AmbPathConstraint {
 
 typedef ContigPath Path;
 typedef vector<Path> ContigPaths;
-typedef map<AmbPathConstraint, ContigID> AmbPath2Contig;
+typedef map<AmbPathConstraint, ContigPath> AmbPath2Contig;
 
 typedef vector<const_string> Contigs;
 static Contigs g_contigs;
 AmbPath2Contig g_ambpath_contig;
-map<ContigID, ContigPaths> g_amb_paths;
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 
 static double g_coverage_mean;
@@ -266,7 +265,7 @@ static ContigPaths readPath(const string& inPath,
 				(value 0: unprocessed/no proper paths) */
 				g_ambpath_contig.insert(AmbPath2Contig::value_type(
 					AmbPathConstraint(*prev, *next, -it->id()),
-					ContigID(0)));
+					ContigPath()));
 			}
 		}
 		isAmb.push_back(cur_is_amb);
@@ -605,7 +604,7 @@ static ContigProperties calculatePathProperties(const Graph& g,
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static ContigID ResolvePairAmbPath(const Graph& g,
+static ContigPath ResolvePairAmbPath(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
 {
 	assert(solutions.size() == 2
@@ -632,7 +631,7 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
 		|| !ValidCoverage(align.size(), coverage))
-		return ContigID(0);
+		return ContigPath();
 
 	// add k-1 extensions at both ends of consensus sequence
 	Sequence consensus = align.consensus();
@@ -642,13 +641,19 @@ static ContigID ResolvePairAmbPath(const Graph& g,
 	const Sequence& next_seq = getSequence(solutions[0].back());
 	consensus += next_seq.substr(0, opt::k-1);
 
-	return outputNewContig(solutions, 1, 1, consensus, coverage, out);
+	ContigID id
+		= outputNewContig(solutions, 1, 1, consensus, coverage, out);
+	ContigPath path;
+	path.push_back(solutions.front().front());
+	path.push_back(ContigNode(id, false));
+	path.push_back(solutions.front().back());
+	return path;
 }
 
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static ContigID ResolveAmbPath(const Graph& g,
+static ContigPath ResolveAmbPath(const Graph& g,
 		const vector<Path>& solutions, ofstream& out)
 {
 	// Find the size of the smallest path.
@@ -764,7 +769,7 @@ static ContigID ResolveAmbPath(const Graph& g,
 
 	// check coverage
 	if (!ValidCoverage(consensus.length(), coverage))
-		return ContigID(0);
+		return ContigPath();
 
 	// add k-1 extensions at both ends
 	const Path& fstPath = solutions.front();
@@ -781,8 +786,12 @@ static ContigID ResolveAmbPath(const Graph& g,
 		transform(first, consensus.end(), first, ::tolower);
 	}
 
-	return outputNewContig(solutions,
+	ContigID id = outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
+	ContigPath path(vppath);
+	path.push_back(ContigNode(id, false));
+	path.insert(path.end(), vspath.begin(), vspath.end());
+	return path;
 }
 
 static void LoadProbDist()
@@ -933,6 +942,7 @@ int main(int argc, char **argv)
 	LoadProbDist();
 
 	// resolve ambiguous paths recorded in g_ambpath_contig
+	vector<ContigPaths> ambPaths;
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
@@ -965,19 +975,18 @@ int main(int argc, char **argv)
 		}
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::num_paths;
-		ContigID new_contig_id(0);
+		ContigPath path;
 		if (tooManySolutions) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
 				cerr << apConstraint.source << " -> " << apConstraint.dest
 					<< ": " << numPossiblePaths << " paths\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
-			new_contig_id = ResolvePairAmbPath(g, solutions, fa);
+			path = ResolvePairAmbPath(g, solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
-			new_contig_id = ResolveAmbPath(g, solutions, fa);
+			path = ResolveAmbPath(g, solutions, fa);
 		} else if (numPossiblePaths == 1) { //1 path, use it
-			//create a fake contigID to be replaced later
-			new_contig_id = ContigID::create();
+			path = solutions.front();
 		} else { //no path
 			/* TODO: call shortest-path algorithm
 			to check whether there IS path */
@@ -986,14 +995,10 @@ int main(int argc, char **argv)
 				cerr << apConstraint.source << " -> "
 					<< apConstraint.dest << ": no paths\n";
 		}
-		if (new_contig_id > 0) {
+		if (!path.empty()) {
 			stats.numMerged++;
-			//update ambIt->second to the new contig ID
-			ambIt->second = new_contig_id;
-			//collect the used paths in g_amb_paths
-			g_amb_paths.insert(
-				map<ContigID, ContigPaths>::value_type(
-					new_contig_id, solutions));
+			ambIt->second = path;
+			ambPaths.push_back(solutions);
 		}
 	}
 
@@ -1001,11 +1006,10 @@ int main(int argc, char **argv)
 	vector<bool> seen(contigs.size());
 
 	//collect contigs on paths used in ambiguous path resolving
-	for (map<ContigID, ContigPaths>::iterator mapIt
-			= g_amb_paths.begin(); mapIt != g_amb_paths.end();
-			mapIt++)
-		if ((mapIt->second).size() > 1)
-			markSeen(seen, mapIt->second, true);
+	for (vector<ContigPaths>::iterator it = ambPaths.begin();
+			it != ambPaths.end(); it++)
+		if (it->size() > 1)
+			markSeen(seen, *it, true);
 
 	//unmark contigs that are used in unambiguous paths
 	markSeen(seen, paths, false);
@@ -1042,20 +1046,11 @@ int main(int argc, char **argv)
 			AmbPath2Contig::iterator ambIt = g_ambpath_contig.find(
 				AmbPathConstraint(*prev, *next, -it->id()));
 			assert(ambIt != g_ambpath_contig.end());
-			ContigID cid = ambIt->second;
-			if (cid > 0) {
-				map<ContigID, ContigPaths>::const_iterator findIt
-					= g_amb_paths.find(cid);
-				assert(findIt != g_amb_paths.end());
-				const ContigPaths& solutions = findIt->second;
-				if (solutions.size() > 1) {
-					cur_path.push_back(ContigNode(cid, false));
-				} else {
-					const ContigPath& sol = solutions.front();
-					assert(sol.size() > 1);
-					cur_path.insert(cur_path.end(),
-							sol.begin() + 1, sol.end() - 1);
-				}
+			const ContigPath& solution = ambIt->second;
+			if (!solution.empty()) {
+				assert(solution.size() > 1);
+				cur_path.insert(cur_path.end(),
+						solution.begin() + 1, solution.end() - 1);
 			} else
 				cur_path.push_back(*it);
 		}
