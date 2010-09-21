@@ -708,19 +708,20 @@ static ContigID ResolveAmbPath(const Graph& g,
 	// Get sequence of ambiguous region in paths
 	assert(longestPrefix > 0 && longestSuffix > 0);
 	vector<Sequence> amb_seqs;
+	bool deleted = false;
 	unsigned coverage = 0;
 	for (vector<Path>::const_iterator solIter = solutions.begin();
 			solIter != solutions.end(); solIter++) {
-		Path cur_path;
-		for (size_t index = longestPrefix;
-				index < (*solIter).size() - longestSuffix;
-				index++)
-			cur_path.push_back( (*solIter)[index] );
-		//skip if the ambiguous region is empty
-		if (cur_path.empty())
+		assert(longestPrefix + longestSuffix <= solIter->size());
+		Path path(solIter->begin() + longestPrefix,
+				solIter->end() - longestSuffix);
+		if (path.empty()) {
+			assert(!deleted);
+			deleted = true;
 			continue;
-		Sequence newseq = mergePath(cur_path);
-		coverage += calculatePathProperties(g, cur_path).coverage;
+		}
+		Sequence newseq = mergePath(path);
+		coverage += calculatePathProperties(g, path).coverage;
 		//find overlap between newseq and Suffix,
 		//remove it from newseq
 		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
@@ -773,6 +774,13 @@ static ContigID ResolveAmbPath(const Graph& g,
 	const Sequence& next_seq
 		= getSequence(fstPath[fstPath.size()-longestSuffix]);
 	consensus += next_seq.substr(0, opt::k-1);
+
+	if (deleted) {
+		// This entire sequence may be deleted.
+		string::iterator first = consensus.begin() + opt::k-1;
+		transform(first, consensus.end(), first, ::tolower);
+	}
+
 	// output consensus as new contig
 	if (opt::verbose > 1)
 		cerr << "prefix path:" << vppath << endl
