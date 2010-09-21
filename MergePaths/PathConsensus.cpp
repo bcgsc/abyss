@@ -613,16 +613,13 @@ static ContigProperties calculatePathProperties(const Graph& g,
 static ContigPath ResolvePairAmbPath(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
 {
-	assert(solutions.size() == 2
-		&& solutions[0].front() == solutions[1].front()
-		&& solutions[0].back() == solutions[1].back());
-	ContigPath fstSol = solutions[0];
-	ContigPath sndSol = solutions[1];
-	assert(fstSol.size()>2 && sndSol.size()>2);
-	fstSol.pop_back();
-	fstSol.erase(fstSol.begin());
-	sndSol.pop_back();
-	sndSol.erase(sndSol.begin());
+	assert(solutions.size() == 2);
+	assert(solutions[0].size() > 2);
+	assert(solutions[1].size() > 2);
+	assert(solutions[0].front() == solutions[1].front());
+	assert(solutions[0].back() == solutions[1].back());
+	ContigPath fstSol(solutions[0].begin()+1, solutions[0].end()-1);
+	ContigPath sndSol(solutions[1].begin()+1, solutions[1].end()-1);
 
 	Sequence fstPathContig(mergePath(fstSol));
 	trimOverlap(fstPathContig);
