@@ -55,6 +55,12 @@ class ContigID {
 	static void lock() { s_dict.lock(); }
 	static void unlock() { s_dict.unlock(); }
 
+	/** Create a new contig ID from s, which must be unique. */
+	static ContigID insert(const std::string& s)
+	{
+		return ContigID(s_dict.insert(s));
+	}
+
 	/** Return a unique contig ID. */
 	static ContigID create()
 	{
@@ -64,7 +70,7 @@ class ContigID {
 		assert(iss.eof());
 		std::ostringstream oss;
 		oss << ++id;
-		return ContigID(s_dict.insert(oss.str()));
+		return insert(oss.str());
 	}
 
   private:

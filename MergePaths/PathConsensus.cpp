@@ -915,6 +915,12 @@ int main(int argc, char **argv)
 		cerr << "Total number of paths: " << stats.numPaths << "\n"
 			"Ambiguous paths: " << stats.numAmbPaths << '\n';
 
+	// Add the path IDs to the list of contig IDs to prevent
+	// ContigID::create from reusing them.
+	for (vector<string>::const_iterator it = pathIDs.begin();
+			it != pathIDs.end(); ++it)
+		ContigID::insert(*it);
+
 	// Prepare output fasta file
 	ofstream fa(opt::fa.c_str());
 	assert(fa.good());
