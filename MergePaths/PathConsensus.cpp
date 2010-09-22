@@ -20,7 +20,6 @@
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "Dictionary.h"
-#include "Estimate.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
 #include "needleman_wunsch.h"
@@ -95,6 +94,7 @@ namespace opt {
 	static int dialign_debug;
 	static string dialign_score;
 	static string dialign_prob;
+	static const unsigned allowedError = 6;
 }
 
 static const char shortopts[] = "k:o:f:a:n:d:s:p:v";
@@ -970,17 +970,9 @@ int main(int argc, char **argv)
 				<< apConstraint.dist << "N "
 				<< apConstraint.dest << '\n';
 
-		Constraints constraints; //only 1 constraint here
+		Constraints constraints;
 		constraints.push_back(Constraint(apConstraint.dest,
-			apConstraint.dist + opt::k - 1 + allowedError(0)));
-		if (opt::verbose > 1) {
-			cerr << "constraint:";
-			for (Constraints::const_iterator it
-					= constraints.begin();
-					it != constraints.end(); ++it)
-				cerr << ' ' << it->first << ',' << it->second;
-			cerr << '\n';
-		}
+			apConstraint.dist + opt::allowedError));
 
 		ContigPaths solutions;
 		unsigned numVisited = 0;
