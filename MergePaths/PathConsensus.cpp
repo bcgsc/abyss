@@ -1223,7 +1223,7 @@ static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	if (opt::verbose > 0)
 		print(cerr, *algn, consensus);
 
-	if (opt::verbose > 1) {
+	if (dialign_para->DEBUG > 0) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;
 		cerr << "Total time: " << duration << " s\n"
 			"Total weight: " << algn->total_weight << '\n';
