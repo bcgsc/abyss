@@ -970,8 +970,6 @@ int main(int argc, char **argv)
 				<< " -> " << apConstraint.dest
 				<< " [d=" << apConstraint.dist << "]\n";
 
-		ContigPaths solutions;
-		unsigned numVisited = 0;
 		Constraints constraints; //only 1 constraint here
 		constraints.push_back(Constraint(apConstraint.dest,
 			apConstraint.dist + opt::k - 1 + allowedError(0)));
@@ -983,8 +981,13 @@ int main(int argc, char **argv)
 				cerr << ' ' << it->first << ',' << it->second;
 			cerr << '\n';
 		}
+
+		ContigPaths solutions;
+		unsigned numVisited = 0;
 		constrainedSearch(g, apConstraint.source,
 			constraints, solutions, numVisited);
+		bool tooComplex = numVisited >= opt::maxCost;
+
 		if (opt::verbose > 1)
 			cerr << "Paths:\n";
 		for (ContigPaths::iterator solIt = solutions.begin();
@@ -996,7 +999,11 @@ int main(int argc, char **argv)
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::num_paths;
 		ContigPath path;
-		if (tooManySolutions) {
+		if (tooComplex) {
+			stats.numTooManySolutions++;
+			if (opt::verbose > 0)
+				cerr << numPossiblePaths << " paths: too complex\n";
+		} else if (tooManySolutions) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
 				cerr << numPossiblePaths << " paths: too many\n";
