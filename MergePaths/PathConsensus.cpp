@@ -960,10 +960,11 @@ int main(int argc, char **argv)
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
-		if (opt::verbose > 1)
-			cerr << "constraint: source:" << apConstraint.source
-				<< ";dest:" << apConstraint.dest
-				<< ";dist:" << apConstraint.dist << '\n';
+		if (opt::verbose > 0)
+			cerr << "\n* " << apConstraint.source
+				<< " -> " << apConstraint.dest
+				<< " [d=" << apConstraint.dist << "]\n";
+
 		ContigPaths solutions;
 		unsigned numVisited = 0;
 		Constraints constraints; //only 1 constraint here
@@ -993,8 +994,7 @@ int main(int argc, char **argv)
 		if (tooManySolutions) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
-				cerr << apConstraint.source << " -> " << apConstraint.dest
-					<< ": " << numPossiblePaths << " paths\n";
+				cerr << numPossiblePaths << " paths: too many\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
 			path = ResolvePairAmbPath(g, solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
@@ -1216,7 +1216,6 @@ static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 		simple_print_alignment_default(algn);
 	get_alignment_consensus(algn, consensus);
 	if (opt::verbose > 0) {
-		cerr << '\n';
 		print(cerr, *algn, consensus);
 	   	cerr << consensus << '\n';
 	}
