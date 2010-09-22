@@ -778,6 +778,11 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	// Do multiple sequence alignment
 	Sequence consensus;
 	Dialign(amb_seqs, consensus);
+	if (opt::verbose > 0) {
+		if (deleted)
+			cerr << string(consensus.size(), '*') << '\n';
+	   	cerr << consensus << '\n';
+	}
 
 	// check coverage
 	if (!ValidCoverage(consensus.length(), coverage))
@@ -1215,10 +1220,8 @@ static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
 	if (opt::verbose > 2)
 		simple_print_alignment_default(algn);
 	get_alignment_consensus(algn, consensus);
-	if (opt::verbose > 0) {
+	if (opt::verbose > 0)
 		print(cerr, *algn, consensus);
-	   	cerr << consensus << '\n';
-	}
 
 	if (opt::verbose > 1) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;
