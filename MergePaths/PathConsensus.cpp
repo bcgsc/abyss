@@ -10,37 +10,36 @@
  * Last Modified: July 2010
  */
 
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <ctype.h>
-
 #include "dialign.h"
 #include "config.h"
-#include "needleman_wunsch.h"
-#include "smith_waterman.h"
 #include "Common/Options.h"
 #include "ConstString.h"
 #include "ConstrainedSearch.h"
-#include "ContigNode.h"
-#include "ContigPath.h"
 #include "ContigGraph.h"
 #include "ContigGraphAlgorithms.h"
-#include "Estimate.h"
+#include "ContigNode.h"
+#include "ContigPath.h"
 #include "Dictionary.h"
+#include "Estimate.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
+#include "needleman_wunsch.h"
+#include "smith_waterman.h"
 #include <algorithm>
+#include <cctype>
 #include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring> // for strerror
+#include <ctime> // for clock
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <numeric>
 #include <set>
-#include <map>
 #include <string>
 #include <vector>
 
