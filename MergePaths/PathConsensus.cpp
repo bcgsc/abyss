@@ -966,9 +966,9 @@ int main(int argc, char **argv)
 			ambIt != g_ambpath_contig.end(); ambIt++) {
 		AmbPathConstraint apConstraint = ambIt->first;
 		if (opt::verbose > 0)
-			cerr << "\n* " << apConstraint.source
-				<< " -> " << apConstraint.dest
-				<< " [d=" << apConstraint.dist << "]\n";
+			cerr << "\n* " << apConstraint.source << ' '
+				<< apConstraint.dist << "N "
+				<< apConstraint.dest << '\n';
 
 		Constraints constraints; //only 1 constraint here
 		constraints.push_back(Constraint(apConstraint.dest,
