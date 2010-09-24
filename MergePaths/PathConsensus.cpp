@@ -755,8 +755,32 @@ static ContigPath align(const Graph& g, const vector<Path>& sequences,
 /** Initialize dialign. */
 static void initDialign()
 {
-	// read similarity matrix
-	smatrix = read_scr_matrix(para->SCR_MATRIX_FILE_NAME);
+	if (strlen(para->SCR_MATRIX_FILE_NAME) > 0) {
+		smatrix = read_scr_matrix(para->SCR_MATRIX_FILE_NAME);
+	} else {
+		string s("ACGT?#$");
+		smatrix = (scr_matrix*)calloc(1, sizeof *smatrix);
+		smatrix->length = s.size();
+		smatrix->num2char = (int*)calloc(256, sizeof(int));
+		smatrix->char2num = (int*)calloc(256, sizeof(int));
+		for (unsigned i = 0; i < s.size(); ++i) {
+			unsigned c = s[i];
+			smatrix->num2char[i] = c;
+			smatrix->char2num[c] = i;
+		}
+
+		smatrix->data = (int*)calloc(
+				s.size() * s.size(), sizeof(int));
+		unsigned n = s.size() - 3; // ignore ?#$
+		// Set the diagonal to 1.
+		for (unsigned i = 0; i < n; i++)
+			smatrix->data[s.size() * i + i] = 1;
+		smatrix->max_score = 1;
+		smatrix->avg_sim_score = para->PROT_SIM_SCORE_THRESHOLD;
+		smatrix->dist = (int*)calloc(2, sizeof(int));
+		smatrix->dist[0] = n * n - n;
+		smatrix->dist[1] = n;
+	}
 
 	// print the score matrix
 	if (para->DEBUG >5)
@@ -824,11 +848,6 @@ int main(int argc, char **argv)
 
 	if (opt::fa.empty()) {
 		cerr << PROGRAM ": " << "missing -f,--fa option\n";
-		die = true;
-	}
-
-	if (opt::dialign_score.empty()) {
-		cerr << PROGRAM ": " << "missing -s,--dialign-score option\n";
 		die = true;
 	}
 
