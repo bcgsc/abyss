@@ -53,6 +53,7 @@ struct seq_col* read_seqs(const vector<string>& amb_seqs)
 
 	seq* seq;
 	for (size_t i=0; i<amb_seqs.size(); i++) {
+		assert(!amb_seqs[i].empty());
 		seq = &(scol->seqs[i]);
 		seq->max_seen = 0;
 		//seq->name = calloc(rlen, sizeof(char)); //do I need this?

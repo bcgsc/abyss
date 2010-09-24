@@ -750,12 +750,13 @@ static ContigPath ResolveAmbPath(const Graph& g,
 		assert(longestPrefix + longestSuffix <= solIter->size());
 		Path path(solIter->begin() + longestPrefix,
 				solIter->end() - longestSuffix);
-		if (path.empty()) {
+		Sequence newseq = path.empty() ? "" : mergePath(path);
+		if (newseq.size() <= 2*(opt::k-1)) {
 			assert(!deleted);
 			deleted = true;
 			continue;
 		}
-		Sequence newseq = mergePath(path);
+
 		coverage += calculatePathProperties(g, path).coverage;
 		//find overlap between newseq and Suffix,
 		//remove it from newseq
@@ -763,6 +764,7 @@ static ContigPath ResolveAmbPath(const Graph& g,
 				(*solIter)[(*solIter).size()-longestSuffix-1],
 				(*solIter)[(*solIter).size()-longestSuffix]))
 				== g_edges_irregular.end()) {
+			assert(newseq.length() > opt::k-1);
 			newseq.erase(newseq.length()-opt::k+1);
 		} else {
 			Sequence lastSeq
@@ -780,6 +782,7 @@ static ContigPath ResolveAmbPath(const Graph& g,
 		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
 				(*solIter)[longestPrefix-1], (*solIter)[longestPrefix]))
 				== g_edges_irregular.end()) {
+			assert(newseq.length() > opt::k-1);
 			newseq.erase(0, opt::k-1);
 		} else {
 			Sequence prefixSeq
