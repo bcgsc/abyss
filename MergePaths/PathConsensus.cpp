@@ -743,30 +743,27 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	// Get sequence of ambiguous region in paths
 	assert(longestPrefix > 0 && longestSuffix > 0);
 	vector<Sequence> amb_seqs;
-	bool deleted = false;
 	unsigned coverage = 0;
 	for (vector<Path>::const_iterator solIter = solutions.begin();
 			solIter != solutions.end(); solIter++) {
 		assert(longestPrefix + longestSuffix <= solIter->size());
 		Path path(solIter->begin() + longestPrefix,
 				solIter->end() - longestSuffix);
-		if (path.empty()) {
-			assert(!deleted);
-			deleted = true;
-			continue;
+		if (!path.empty()) {
+			amb_seqs.push_back(mergePath(path));
+			coverage += calculatePathProperties(g, path).coverage;
+		} else {
+			// The prefix and suffix paths overlap by k-1 bp.
+			Sequence s = getSequence(solutions[0][longestPrefix-1]);
+			amb_seqs.push_back(s.substr(s.length() - opt::k + 1));
 		}
-		amb_seqs.push_back(mergePath(path));
-		coverage += calculatePathProperties(g, path).coverage;
 	}
 
 	// Do multiple sequence alignment
 	Sequence consensus;
 	Dialign(amb_seqs, consensus);
-	if (opt::verbose > 0) {
-		if (deleted)
-			cerr << string(consensus.size(), '*') << '\n';
+	if (opt::verbose > 0)
 	   	cerr << consensus << '\n';
-	}
 
 	// check coverage
 	if (!ValidCoverage(consensus.length(), coverage))
@@ -780,12 +777,6 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	const Sequence& next_seq
 		= getSequence(fstPath[fstPath.size()-longestSuffix]);
 	consensus += next_seq.substr(0, opt::k-1);
-
-	if (deleted) {
-		// This entire sequence may be deleted.
-		string::iterator first = consensus.begin() + opt::k-1;
-		transform(first, consensus.end(), first, ::tolower);
-	}
 
 	ContigID id = outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
