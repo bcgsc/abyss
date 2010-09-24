@@ -725,15 +725,6 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	if (!ValidCoverage(consensus.length(), coverage))
 		return ContigPath();
 
-	// add k-1 extensions at both ends
-	const Path& fstPath = solutions.front();
-	const Sequence& prev_seq
-		= getSequence(fstPath[longestPrefix-1]);
-	consensus.insert(0, prev_seq.substr(prev_seq.length()-opt::k+1));
-	const Sequence& next_seq
-		= getSequence(fstPath[fstPath.size()-longestSuffix]);
-	consensus += next_seq.substr(0, opt::k-1);
-
 	ContigID id = outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
 	ContigPath path(vppath);
