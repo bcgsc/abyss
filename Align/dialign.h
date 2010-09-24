@@ -6,6 +6,9 @@ extern "C" {
 #include "dialign/parameters.h"
 #include "dialign/struct.h"
 
+extern struct scr_matrix *smatrix;
+extern struct prob_dist *pdist;
+
 struct alignment* create_empty_alignment(struct seq_col *scol);
 struct diag_col *find_all_diags(struct scr_matrix *smatrix,
 	struct prob_dist *pdist,
@@ -30,8 +33,6 @@ void free_diag_col(struct diag_col* dcol);
 #include <vector>
 
 void free_prob_dist(struct prob_dist* pdist);
-void free_seq_col(struct seq_col* scol);
-void get_alignment_consensus(struct alignment* algn, std::string& consensus);
-struct seq_col* read_seqs(const std::vector<std::string>& amb_seqs);
+std::string dialign(const std::vector<std::string>& amb_seqs);
 
 #endif

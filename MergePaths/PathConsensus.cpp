@@ -27,11 +27,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
-#include <cmath>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring> // for strerror
-#include <ctime> // for clock
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -43,9 +40,6 @@
 #include <vector>
 
 using namespace std;
-
-/* dialign */
-static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus);
 
 /* ABySS options and messages */
 #define PROGRAM "ResolveAmbPaths"
@@ -124,10 +118,6 @@ static struct {
 	unsigned numMerged;
 } stats;
 
-/* some global data for dialign */
-struct scr_matrix *smatrix;
-struct prob_dist *pdist;
-
 struct AmbPathConstraint {
 	ContigNode	source;
 	ContigNode	dest;
@@ -163,38 +153,6 @@ static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 
 static double g_coverage_mean;
 static double g_coverage_variance;
-
-/** Print a dialign alignment. */
-static ostream& print(ostream& out, const alignment& o,
-		const string& consensus)
-{
-	const seq_col& scol = *o.scol;
-	vector<int> proc(scol.length);
-	algn_pos **ap = o.algn;
-	for (int s = 0; s < scol.length; s++) {
-		const seq& sq = scol.seqs[s];
-		for (int j = 0; j < o.max_pos; j++) {
-			if (proc[s] < sq.length) {
-				const algn_pos& ap1 = *find_eqc(ap, s, proc[s]);
-				assert(j <= *ap1.eqcAlgnPos);
-				if (*ap1.eqcAlgnPos == j) {
-					char c = sq.data[proc[s]];
-					if (toupper(c) == toupper(consensus[j]))
-						out << '.';
-					else if (ap1.state & para->STATE_ORPHANE)
-						out << (char)tolower(c);
-					else
-						out << c;
-					proc[s]++;
-				} else
-					out << '*';
-			} else
-				out << '*';
-		}
-		out << '\n';
-	}
-	return out;
-}
 
 /* commonly-used utility function */
 static void assert_open(ifstream& f, const string& p)
@@ -759,9 +717,7 @@ static ContigPath ResolveAmbPath(const Graph& g,
 		}
 	}
 
-	// Do multiple sequence alignment
-	Sequence consensus;
-	Dialign(amb_seqs, consensus);
+	Sequence consensus = dialign(amb_seqs);
 	if (opt::verbose > 0)
 	   	cerr << consensus << '\n';
 
@@ -1060,149 +1016,4 @@ int main(int argc, char **argv)
 			- stats.numMerged - stats.numNoSolutions
 			- stats.numTooManySolutions << "\n"
 		"Merged: " << stats.numMerged << "\n";
-}
-
-/* DIALIGN-TX v1.0.2: multiple sequence alignment algorithm */
-static void Dialign(vector<Sequence>& amb_seqs, Sequence& consensus)
-{
-	int i;
-	struct seq_col *in_seq_col=NULL;
-	double tim = clock();
-
-	in_seq_col = read_seqs(amb_seqs);
-
-	// fast mode has higher threshold weights
-	struct parameters *dialign_para = para;
-	if(dialign_para->FAST_MODE)
-		dialign_para->PROT_SIM_SCORE_THRESHOLD += 0.25;
-
-	// Consider Anchors -> default for DNA: DO_ANCHOR = 0;
-	struct alignment *algn= NULL;
-	if (!dialign_para->FAST_MODE)
-		algn = create_empty_alignment(in_seq_col);
-	struct alignment *salgn = create_empty_alignment(in_seq_col);
-	if (dialign_para->DEBUG >1)
-		printf("empty alignments created\n");
-
-	// Compute pairwise diagonals
-	struct diag_col *all_diags = find_all_diags(smatrix, pdist,
-		in_seq_col, salgn, 1);
-	double duration = (clock()-tim)/CLOCKS_PER_SEC;
-	if (dialign_para->DEBUG >1)
-		printf("Found %i diags in %f secs\n",
-			all_diags->diag_amount, duration);
-	int diag_amount = all_diags->diag_amount;
-
-	// Compute alignment
-	double tim2=clock();
-	if (!dialign_para->FAST_MODE) {
-		struct diag *cp_diags[all_diags->diag_amount];
-		for(i=0;i<diag_amount;i++) {
-			cp_diags[i] = (diag*)malloc(sizeof(struct diag));
-			*(cp_diags[i]) = *(all_diags->diags[i]);
-		}
-		guided_aligner(algn, in_seq_col, all_diags, smatrix,
-			pdist, all_diags->gt_root, 1);
-
-		for(i=0;i<diag_amount;i++)
-			all_diags->diags[i] = cp_diags[i];
-
-		all_diags->diag_amount = diag_amount;
-	}
-	simple_aligner(in_seq_col, all_diags, smatrix, pdist,
-		salgn, 1);
-	duration = (clock()-tim2)/CLOCKS_PER_SEC;
-
-	if (!dialign_para->FAST_MODE) {
-		if (dialign_para->DEBUG >1)
-			printf("First alignment after %f secs. simple: %f guided: %f\n",
-				duration, salgn->total_weight, algn->total_weight);
-		else
-			if (dialign_para->DEBUG > 1)
-				printf("First alignment after %f secs. simple: %f \n",
-					duration, salgn->total_weight);
-	}
-
-	free_diag_col(all_diags);
-
-	dialign_para->DO_ANCHOR = 0; // anchors done
-
-	// round 2+
-	int round;
-	char newFound = 0;
-	int type;
-
-	// consider sensitivity level
-	if (!dialign_para->FAST_MODE) {
-		if (dialign_para->SENS_MODE==0) {
-			dialign_para->DIAG_THRESHOLD_WEIGHT = 0.0;
-		} else if (dialign_para->SENS_MODE==1) {
-			dialign_para->DIAG_THRESHOLD_WEIGHT
-				= -log(0.75);//-log(.875+0.125/2.0);
-		} else if (dialign_para->SENS_MODE==2) {
-			dialign_para->DIAG_THRESHOLD_WEIGHT
-				= -log(0.5);//-log(0.875);
-		}
-	}
-
-	int stype = (dialign_para->FAST_MODE ? 1 : 0);
-	for (type=stype; type<2; type++) {
-		for (round=2; round<=20; round++) {
-			tim2=clock();
-			all_diags = find_all_diags(smatrix, pdist,
-				in_seq_col, (type ? salgn : algn), round);
-			duration = (clock()-tim2)/CLOCKS_PER_SEC;
-			if (dialign_para->DEBUG >1)
-				printf("Found %i diags after %f secs\n",
-					all_diags->diag_amount, duration);
-			if (all_diags->diag_amount ==0) {
-				free_diag_col(all_diags);
-				break;
-			} else {
-			// round 2 and further we use the simple aligner
-				newFound = simple_aligner(in_seq_col,
-					all_diags, smatrix, pdist,
-					(type ? salgn : algn), round);
-				free_diag_col(all_diags);
-				if (!newFound)
-					break;
-			}
-		}
-	}
-	if (dialign_para->DEBUG >1)
-		printf("Alignment ready!\n");
-
-	if (!dialign_para->FAST_MODE) {
-		if (dialign_para->DEBUG >1)
-			printf("Final alignment simple: %f guided: %f\n",
-				salgn->total_weight, algn->total_weight);
-	} else {
-		if (dialign_para->DEBUG >1)
-			printf("Final alignment simple: %f \n",
-				salgn->total_weight);
-	}
-
-	if (dialign_para->FAST_MODE
-			|| (salgn->total_weight > algn->total_weight)) {
-		if (!dialign_para->FAST_MODE)
-			free_alignment(algn);
-		algn = salgn;
-	} else {
-		free_alignment(salgn);
-	}
-
-	if (opt::verbose > 2)
-		simple_print_alignment_default(algn);
-	get_alignment_consensus(algn, consensus);
-	if (opt::verbose > 0)
-		print(cerr, *algn, consensus);
-
-	if (dialign_para->DEBUG > 0) {
-		duration = (clock()-tim)/CLOCKS_PER_SEC;
-		cerr << "Total time: " << duration << " s\n"
-			"Total weight: " << algn->total_weight << '\n';
-	}
-
-	free_alignment(algn);
-	free_seq_col(in_seq_col);
 }
