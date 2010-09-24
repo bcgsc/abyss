@@ -17,7 +17,8 @@ sub eng($)
 {
 	my $x = shift;
 	return $x if $x < 10000000;
-	return substr($x / 1000000, 0, 5) . 'e6';
+	return substr($x / 1000000, 0, 5) . 'e6' if $x < 1000000000;
+	return substr($x / 1000000000, 0, 5) . 'e9';
 }
 
 my ($short, $sum, $ambiguous, $any, $other);
