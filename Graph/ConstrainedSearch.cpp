@@ -34,7 +34,8 @@ static inline Constraints::iterator findConstraint(
 	Constraints::iterator it = lower_bound(
 			constraints.begin(), constraints.end(),
 			key, compareID);
-	return it->first == key ? it : constraints.end();
+	return it != constraints.end()
+		&& it->first == key ? it : constraints.end();
 }
 
 typedef Graph::vertex_descriptor vertex_descriptor;
