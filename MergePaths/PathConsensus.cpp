@@ -614,12 +614,30 @@ static ContigPath ResolvePairAmbPath(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
 {
 	assert(solutions.size() == 2);
-	assert(solutions[0].size() > 2);
-	assert(solutions[1].size() > 2);
+	assert(solutions[0].size() > 1);
+	assert(solutions[1].size() > 1);
 	assert(solutions[0].front() == solutions[1].front());
 	assert(solutions[0].back() == solutions[1].back());
 	ContigPath fstSol(solutions[0].begin()+1, solutions[0].end()-1);
 	ContigPath sndSol(solutions[1].begin()+1, solutions[1].end()-1);
+
+	if (fstSol.empty() || sndSol.empty()) {
+		// This entire sequence may be deleted.
+		const ContigPath& sol(fstSol.empty() ? sndSol : fstSol);
+		assert(!sol.empty());
+		Sequence consensus(mergePath(sol));
+		assert(consensus.size() > opt::k - 1);
+		string::iterator first = consensus.begin() + opt::k - 1;
+		transform(first, consensus.end(), first, ::tolower);
+		unsigned coverage = calculatePathProperties(g, sol).coverage;
+		ContigID id
+			= outputNewContig(solutions, 1, 1, consensus, coverage, out);
+		ContigPath path;
+		path.push_back(solutions.front().front());
+		path.push_back(ContigNode(id, false));
+		path.push_back(solutions.front().back());
+		return path;
+	}
 
 	Sequence fstPathContig(mergePath(fstSol));
 	Sequence sndPathContig(mergePath(sndSol));
