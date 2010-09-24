@@ -735,6 +735,23 @@ static ContigPath alignMulti(const Graph& g,
 	return path;
 }
 
+/** Align the sequences of the specified paths.
+ * @return the consensus sequence
+ */
+static ContigPath align(const Graph& g, const vector<Path>& sequences,
+		ofstream& out)
+{
+	assert(!sequences.empty());
+	switch (sequences.size()) {
+	  case 1:
+		return sequences.front();
+	  case 2:
+		return alignPair(g, sequences, out);
+	  default:
+		return alignMulti(g, sequences, out);
+	}
+}
+
 /** Initialize dialign. */
 static void initDialign()
 {
@@ -919,7 +936,6 @@ int main(int argc, char **argv)
 		}
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::num_paths;
-		ContigPath path;
 		if (tooComplex) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
@@ -928,21 +944,16 @@ int main(int argc, char **argv)
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
 				cerr << numPossiblePaths << " paths: too many\n";
-		} else if (numPossiblePaths == 2) { //2 solutions
-			path = alignPair(g, solutions, fa);
-		} else if (numPossiblePaths > 2) {//3 paths or more
-			path = alignMulti(g, solutions, fa);
-		} else if (numPossiblePaths == 1) { //1 path, use it
-			path = solutions.front();
-		} else { //no path
+		} else if (solutions.empty()) {
 			/* TODO: call shortest-path algorithm
 			to check whether there IS path */
 			stats.numNoSolutions++;
 			if (opt::verbose > 0)
 				cerr << apConstraint.source << " -> "
 					<< apConstraint.dest << ": no paths\n";
-		}
-		if (!path.empty()) {
+		} else {
+			ContigPath path = align(g, solutions, fa);
+			assert(!path.empty());
 			stats.numMerged++;
 			ambIt->second = path;
 			if (solutions.size() > 1) {
