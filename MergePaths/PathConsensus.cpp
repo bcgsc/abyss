@@ -151,8 +151,10 @@ static Contigs g_contigs;
 AmbPath2Contig g_ambpath_contig;
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 
+#if 0
 static double g_coverage_mean;
 static double g_coverage_variance;
+#endif
 
 /* commonly-used utility function */
 static void assert_open(ifstream& f, const string& p)
@@ -538,8 +540,8 @@ static void trimOverlap(string& s)
 	s.erase(0, opt::k-1);
 }
 
-/* validate path coverage, at 95% confidence interval */
-static bool ValidCoverage(unsigned pathLen, unsigned pathCover)
+/** Validate path coverage, at 95% confidence interval. */
+static bool validCoverage(unsigned pathLen, unsigned pathCover)
 {
 #if 0
 	double cover_mean
@@ -568,7 +570,7 @@ static ContigProperties calculatePathProperties(const Graph& g,
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static ContigPath ResolvePairAmbPath(const Graph& g,
+static ContigPath alignMulti(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
 {
 	assert(solutions.size() == 2);
@@ -618,7 +620,7 @@ static ContigPath ResolvePairAmbPath(const Graph& g,
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
 	if ((double)match / align.size() < opt::pid
-		|| !ValidCoverage(align.size(), coverage))
+		|| !validCoverage(align.size(), coverage))
 		return ContigPath();
 
 	// add k-1 extensions at both ends of consensus sequence
@@ -641,7 +643,7 @@ static ContigPath ResolvePairAmbPath(const Graph& g,
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static ContigPath ResolveAmbPath(const Graph& g,
+static ContigPath alignPair(const Graph& g,
 		const vector<Path>& solutions, ofstream& out)
 {
 	// Find the size of the smallest path.
@@ -722,7 +724,7 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	   	cerr << consensus << '\n';
 
 	// check coverage
-	if (!ValidCoverage(consensus.length(), coverage))
+	if (!validCoverage(consensus.length(), coverage))
 		return ContigPath();
 
 	ContigID id = outputNewContig(solutions,
@@ -733,7 +735,8 @@ static ContigPath ResolveAmbPath(const Graph& g,
 	return path;
 }
 
-static void LoadProbDist()
+/** Initialize dialign. */
+static void initDialign()
 {
 	// read similarity matrix
 	smatrix = read_scr_matrix(para->SCR_MATRIX_FILE_NAME);
@@ -746,7 +749,8 @@ static void LoadProbDist()
 	pdist = read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME);
 }
 
-static void CompCoverageStatistics(const Graph& g)
+#if 0
+static void calculateCoverageStatistics(const Graph& g)
 {
 	double coverage = 0, variance = 0;
 	unsigned num = g.num_vertices() / 2;
@@ -760,6 +764,7 @@ static void CompCoverageStatistics(const Graph& g)
 	g_coverage_variance = (variance - 2 * g_coverage_mean * coverage)
 		/ num + g_coverage_mean * g_coverage_mean;
 }
+#endif
 
 /**
  * main program routine
@@ -851,8 +856,10 @@ int main(int argc, char **argv)
 	}
 	ContigID::lock();
 
-	// Get contig k-mer-coverage statistics
-	CompCoverageStatistics(g);
+#if 0
+	// Get contig k-mer-coverage statistics.
+	calculateCoverageStatistics(g);
+#endif
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
@@ -878,7 +885,7 @@ int main(int argc, char **argv)
 	para->DEBUG = opt::dialign_debug;
 	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
 	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
-	LoadProbDist();
+	initDialign();
 
 	// Contigs that were seen in a consensus.
 	vector<bool> seen(contigs.size());
@@ -922,9 +929,9 @@ int main(int argc, char **argv)
 			if (opt::verbose > 0)
 				cerr << numPossiblePaths << " paths: too many\n";
 		} else if (numPossiblePaths == 2) { //2 solutions
-			path = ResolvePairAmbPath(g, solutions, fa);
+			path = alignPair(g, solutions, fa);
 		} else if (numPossiblePaths > 2) {//3 paths or more
-			path = ResolveAmbPath(g, solutions, fa);
+			path = alignMulti(g, solutions, fa);
 		} else if (numPossiblePaths == 1) { //1 path, use it
 			path = solutions.front();
 		} else { //no path
