@@ -32,6 +32,7 @@ void free_diag_col(struct diag_col* dcol);
 #include <string>
 #include <vector>
 
+void initDialign();
 void free_prob_dist(struct prob_dist* pdist);
 std::string dialign(const std::vector<std::string>& amb_seqs);
 
