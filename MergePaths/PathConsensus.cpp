@@ -750,50 +750,13 @@ static ContigPath ResolveAmbPath(const Graph& g,
 		assert(longestPrefix + longestSuffix <= solIter->size());
 		Path path(solIter->begin() + longestPrefix,
 				solIter->end() - longestSuffix);
-		Sequence newseq = path.empty() ? "" : mergePath(path);
-		if (newseq.size() <= 2*(opt::k-1)) {
+		if (path.empty()) {
 			assert(!deleted);
 			deleted = true;
 			continue;
 		}
-
+		amb_seqs.push_back(mergePath(path));
 		coverage += calculatePathProperties(g, path).coverage;
-		//find overlap between newseq and Suffix,
-		//remove it from newseq
-		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
-				(*solIter)[(*solIter).size()-longestSuffix-1],
-				(*solIter)[(*solIter).size()-longestSuffix]))
-				== g_edges_irregular.end()) {
-			assert(newseq.length() > opt::k-1);
-			newseq.erase(newseq.length()-opt::k+1);
-		} else {
-			Sequence lastSeq
-				= getSequence((*solIter)[(*solIter).size()-longestSuffix-1]);
-			Sequence suffixSeq
-				= getSequence((*solIter)[(*solIter).size()-longestSuffix]);
-			overlap_align ol = mergeContigs_SW(lastSeq,
-				suffixSeq,
-				(*solIter)[(*solIter).size()-longestSuffix],
-				*solIter);
-			newseq.erase(ol.overlap_t_pos);
-		}
-		//find overlap between Prefix and newseq,
-		//remove it from newseq
-		if (g_edges_irregular.find(pair<ContigNode, ContigNode>(
-				(*solIter)[longestPrefix-1], (*solIter)[longestPrefix]))
-				== g_edges_irregular.end()) {
-			assert(newseq.length() > opt::k-1);
-			newseq.erase(0, opt::k-1);
-		} else {
-			Sequence prefixSeq
-				= getSequence((*solIter)[longestPrefix-1]);
-			Sequence firstSeq
-				= getSequence((*solIter)[longestPrefix]);
-			overlap_align ol = mergeContigs_SW(prefixSeq,
-				firstSeq, (*solIter)[longestPrefix], *solIter);
-			newseq.erase(0, ol.overlap_h_pos+1);
-		}
-		amb_seqs.push_back(newseq);
 	}
 
 	// Do multiple sequence alignment
