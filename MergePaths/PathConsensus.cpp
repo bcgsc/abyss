@@ -179,7 +179,7 @@ static ostream& print(ostream& out, const alignment& o,
 				assert(j <= *ap1.eqcAlgnPos);
 				if (*ap1.eqcAlgnPos == j) {
 					char c = sq.data[proc[s]];
-					if (c == consensus[j])
+					if (toupper(c) == toupper(consensus[j]))
 						out << '.';
 					else if (ap1.state & para->STATE_ORPHANE)
 						out << (char)tolower(c);
