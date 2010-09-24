@@ -570,7 +570,7 @@ static ContigProperties calculatePathProperties(const Graph& g,
  * ('solutions' contain exactly two paths, from a source contig
  * to a dest contig)
  */
-static ContigPath alignMulti(const Graph& g,
+static ContigPath alignPair(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
 {
 	assert(solutions.size() == 2);
@@ -643,7 +643,7 @@ static ContigPath alignMulti(const Graph& g,
 /* Resolve ambiguous region using multiple alignment of all paths in
  * `solutions'.
  */
-static ContigPath alignPair(const Graph& g,
+static ContigPath alignMulti(const Graph& g,
 		const vector<Path>& solutions, ofstream& out)
 {
 	// Find the size of the smallest path.
