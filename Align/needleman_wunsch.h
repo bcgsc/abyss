@@ -1,10 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////
-// Needleman-Wunsch header
-//
-// Written by Rong She (rshe@bcgsc.ca)
-// Last modified: Jul 30, 2010
-//////////////////////////////////////////////////////////////////////////////
-
 #ifndef NEEDLEMAN_WUNSCH_H
 #define NEEDLEMAN_WUNSCH_H
 
@@ -13,24 +6,23 @@
 #include <ostream>
 #include <string>
 
-using namespace std;
-
-/* a simple data structure to store alignment sequences */
+/** The result of a Needleman-Wunsch alignment. */
 struct NWAlignment {
-	string	query_align;
-	string	target_align;
-	string	match_align; //consensus sequence
+	std::string query_align;
+	std::string target_align;
+	std::string match_align; //consensus sequence
 
 	NWAlignment() {}
 
 	unsigned size() { return match_align.length(); }
-	string consensus() { return match_align; }
+	std::string consensus() { return match_align; }
 
-	friend ostream& operator<<(ostream& out, const NWAlignment& o)
+	friend std::ostream& operator<<(std::ostream& out,
+			const NWAlignment& o)
 	{
-		const string& a = o.query_align;
-		const string& b = o.target_align;
-		const string& c = o.match_align;
+		const std::string& a = o.query_align;
+		const std::string& b = o.target_align;
+		const std::string& c = o.match_align;
 		assert(a.size() == c.size());
 		assert(b.size() == c.size());
 		for (unsigned i = 0; i < c.size(); ++i)
@@ -43,7 +35,8 @@ struct NWAlignment {
 	}
 };
 
-unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
-	NWAlignment& align, bool verbose = false);
+unsigned GetGlobalAlignment(
+		const std::string& a, const std::string& b,
+		NWAlignment& align, bool verbose = false);
 
 #endif /* NEEDLEMAN_WUNSCH_H */
