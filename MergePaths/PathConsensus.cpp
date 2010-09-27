@@ -605,11 +605,16 @@ static ContigPath alignPair(const Graph& g,
 
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
-		   	align, opt::verbose > 1);
+		   	align);
+	float identity = (float)match / align.size();
+	if (opt::verbose > 1)
+		cerr << fstPathContig << '\n' << sndPathContig << '\n'
+			<< align.consensus() << '\n' << identity << '\n';
+
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
-	if ((double)match / align.size() < opt::pid
-		|| !validCoverage(align.size(), coverage))
+	if (identity < opt::pid
+			|| !validCoverage(align.size(), coverage))
 		return ContigPath();
 
 	ContigID id = outputNewContig(solutions, 1, 1,

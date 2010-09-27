@@ -34,6 +34,6 @@ struct NWAlignment {
 };
 
 unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
-	NWAlignment& align, bool verbose);
+	NWAlignment& align, bool verbose = false);
 
 #endif /* NEEDLEMAN_WUNSCH_H */
