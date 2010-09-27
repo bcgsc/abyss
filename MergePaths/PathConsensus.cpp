@@ -928,13 +928,13 @@ int main(int argc, char **argv)
 				cerr << apConstraint.source << " -> "
 					<< apConstraint.dest << ": no paths\n";
 		} else {
-			ContigPath path = align(g, solutions, fa);
-			assert(!path.empty());
-			stats.numMerged++;
-			ambIt->second = path;
-			if (solutions.size() > 1) {
-				// Mark contigs that are used in a consensus.
-				markSeen(seen, solutions, true);
+			ambIt->second = align(g, solutions, fa);
+			if (!ambIt->second.empty()) {
+				stats.numMerged++;
+				if (solutions.size() > 1) {
+					// Mark contigs that are used in a consensus.
+					markSeen(seen, solutions, true);
+				}
 			}
 		}
 	}
