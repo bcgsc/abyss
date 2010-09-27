@@ -6,14 +6,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "needleman_wunsch.h"
-
-#include <algorithm>
+#include "Sequence.h" // for baseToCode
+#include <algorithm> // for reverse
 #include <cassert>
 #include <cctype>
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <map>
 
 using namespace std;
 
@@ -211,34 +208,6 @@ unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
 	//delete [] opengap;
 
 	return num_of_match;
-} // END of needleman-wunsch
-
-/////////////////////////////////////////////////////////////////////////////
-// auxiliary functions:
-/////////////////////////////////////////////////////////////////////////////
-
-static map<string, char> initIUPAC()
-{
-	typedef map<string, char> Map;
-	Map iupac;
-	iupac.insert(Map::value_type("AG", 'R'));
-	iupac.insert(Map::value_type("CT", 'Y'));
-	iupac.insert(Map::value_type("AC", 'M'));
-	iupac.insert(Map::value_type("GT", 'K'));
-	iupac.insert(Map::value_type("CG", 'S'));
-	iupac.insert(Map::value_type("AT", 'W'));
-	iupac.insert(Map::value_type("ACT", 'H'));
-	iupac.insert(Map::value_type("CGT", 'B'));
-	iupac.insert(Map::value_type("ACG", 'V'));
-	iupac.insert(Map::value_type("AGT", 'D'));
-	//also reverse order for pairwise consensus
-	iupac.insert(Map::value_type("GA", 'R'));
-	iupac.insert(Map::value_type("TC", 'Y'));
-	iupac.insert(Map::value_type("CA", 'M'));
-	iupac.insert(Map::value_type("TG", 'K'));
-	iupac.insert(Map::value_type("GC", 'S'));
-	iupac.insert(Map::value_type("TA", 'W'));
-	return iupac;
 }
 
 /** Return whether a and b match.
@@ -265,11 +234,16 @@ static bool Match(char a, char b, char& consensus)
 	} else if (b == 'N' || b == 'n') {
 		consensus = a;
 		return true;
-	} else { //mismatch
-		static map<string, char> IUPAC_codes = initIUPAC();
-		string str(1, a);
-		str += b;
-		char c = IUPAC_codes.find(str)->second;
+	} else {
+		static const char IUPAC[4][4] = {
+			// A    C    G    T
+			{ 'A', 'M', 'R', 'W' }, // A
+			{ 'M', 'C', 'S', 'Y' }, // C
+			{ 'R', 'S', 'G', 'K' }, // G
+			{ 'W', 'Y', 'K', 'T' }, // T
+		};
+		char c = IUPAC[baseToCode(toupper(a))]
+			[baseToCode(toupper(b))];
 		consensus = islower(a) || islower(b) ? tolower(c) : c;
 		return false;
 	}
