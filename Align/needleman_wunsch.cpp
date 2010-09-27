@@ -14,13 +14,6 @@
 
 using namespace std;
 
-#ifndef __GNUC__
-#ifndef NGNUC_INDEX
-#define NGNUC_INDEX
-#define INDEX_ONE_DIM(num_rows, row, col) (row * num_rows + col)
-#endif
-#endif
-
 static bool Match(char a, char b, char& consensus);
 
 template <class T>
@@ -34,23 +27,13 @@ static void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1,
 static const char GAP = '*';
 
 //the backtrack step
-#ifdef __GNUC__
 static unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
 		const string& seq_a, const string& seq_b, NWAlignment& align)
-#else
-static unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const int I_i_rows, const int I_j_rows,
-		const string& seq_a, const string& seq_b, NWAlignment& align)
-#endif
 {
 	// Backtracking from H_max
 	int current_i=i_max,current_j=j_max;
-#ifdef __GNUC__
 	int next_i=I_i[current_i][current_j];
 	int next_j=I_j[current_i][current_j];
-#else
-	int next_i=I_i[INDEX_ONE_DIM(I_i_rows, current_i, current_j)];
-	int next_j=I_j[INDEX_ONE_DIM(I_j_rows, current_i, current_j)];
-#endif
 	string consensus_a(""), consensus_b(""), match("");
 	unsigned num_of_match = 0;
 	//while(((current_i!=next_i) || (current_j!=next_j)) && (next_j!=0) && (next_i!=0)){
@@ -73,13 +56,8 @@ static unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, 
 
 		current_i = next_i;
 		current_j = next_j;
-#ifdef __GNUC__
 		next_i=I_i[current_i][current_j];
 		next_j=I_j[current_i][current_j];
-#else
-		next_i = I_i[INDEX_ONE_DIM(I_i_rows, current_i, current_j)];
-		next_j = I_j[INDEX_ONE_DIM(I_j_rows, current_i, current_j)];
-#endif
 	}
 
 	//fill the rest
@@ -182,12 +160,7 @@ unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
 	unsigned num_of_match = 0;
 	int i_max=N_a, j_max=N_b;
 	//double H_max = H[i_max][j_max];
-#ifdef __GNUC__
 	num_of_match = Backtrack(i_max, j_max, I_i, I_j, seq_a, seq_b, align);
-#else
-	num_of_match = Backtrack(i_max, j_max, I_i, I_j, N_a+1, N_a+1,
-					seq_a, seq_b, align);
-#endif
 	if (verbose)
 		cerr <<"The alignment of the sequences\n" << seq_a << endl << seq_b << endl
 			<< align << (double)num_of_match/align.size() << endl;
