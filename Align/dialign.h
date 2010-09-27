@@ -8,6 +8,7 @@ extern "C" {
 
 extern struct scr_matrix *smatrix;
 extern struct prob_dist *pdist;
+extern const double dna_diag_prob_100_exp_550000[5151];
 
 struct alignment* create_empty_alignment(struct seq_col *scol);
 struct diag_col *find_all_diags(struct scr_matrix *smatrix,
