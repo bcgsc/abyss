@@ -259,17 +259,18 @@ static bool Match(char a, char b, char& consensus)
 	} else if (b == GAP) {
 		consensus = tolower(a);
 		return false;
-	} else if (a == 'N') {
+	} else if (a == 'N' || a == 'n') {
 		consensus = b;
 		return true;
-	} else if (b == 'N') {
+	} else if (b == 'N' || b == 'n') {
 		consensus = a;
 		return true;
 	} else { //mismatch
 		static map<string, char> IUPAC_codes = initIUPAC();
 		string str(1, a);
 		str += b;
-		consensus = (IUPAC_codes.find(str))->second;
+		char c = IUPAC_codes.find(str)->second;
+		consensus = islower(a) || islower(b) ? tolower(c) : c;
 		return false;
 	}
 }
