@@ -813,11 +813,6 @@ int main(int argc, char **argv)
 		die = true;
 	}
 
-	if (opt::dialign_prob.empty()) {
-		cerr << PROGRAM ": " << "missing -p,--dialign-prob option\n";
-		die = true;
-	}
-
 	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;

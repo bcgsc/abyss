@@ -16,6 +16,7 @@ scr_matrix* smatrix;
 /** Diagonal length probability distribution. */
 prob_dist* pdist;
 
+/** Return a DNA score matrix. */
 static scr_matrix* newDefaultScoreMatrix()
 {
 	string s("ACGT?#$");
@@ -42,19 +43,51 @@ static scr_matrix* newDefaultScoreMatrix()
 	return p;
 }
 
+/** Return a probability distribution for diagonal lengths
+ * for a DNA score matrix.
+ */
+static prob_dist* newDefaultDiagProbDist()
+{
+	prob_dist *o = (prob_dist*)calloc(1, sizeof *o);
+	o->smatrix = smatrix;
+	unsigned length = 100;
+	o->max_dlen = length;
+	o->data = (long double**)calloc(
+			length + 1, sizeof(long double *));
+	o->log_data = (double**)calloc(length + 1, sizeof(double *));
+
+	long double **dist = o->data;
+	double **log_dist = o->log_data;
+	const double* p = dna_diag_prob_100_exp_550000;
+	for (unsigned i = 1; i <= length; i++) {
+		unsigned mxscr = i * smatrix->max_score;
+		dist[i] = (long double*)calloc(
+				mxscr + 1, sizeof(long double));
+		log_dist[i] = (double*)calloc(mxscr + 1, sizeof(double));
+		for (unsigned scr = 0; scr <= mxscr; scr++) {
+			double weight = *p++;
+			assert(weight > 0);
+			dist[i][scr] = weight;
+			log_dist[i][scr] = -log(weight);
+		}
+	}
+	return o;
+}
+
 /** Initialize dialign. */
 void initDialign()
 {
+	// Score matrix
 	smatrix = strlen(para->SCR_MATRIX_FILE_NAME) > 0
 		? read_scr_matrix(para->SCR_MATRIX_FILE_NAME)
 		: newDefaultScoreMatrix();
-
-	// print the score matrix
-	if (para->DEBUG >5)
+	if (para->DEBUG > 5)
 		print_scr_matrix(smatrix);
 
-	// read the probability distribution for diagonals
-	pdist = read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME);
+	// Probability distribution for diagonal lengths
+	pdist = strlen(para->DIAG_PROB_FILE_NAME) > 0
+		? read_diag_prob_dist(smatrix, para->DIAG_PROB_FILE_NAME)
+		: newDefaultDiagProbDist();
 }
 
 static void free_scr_matrix(struct scr_matrix* smatrix)
