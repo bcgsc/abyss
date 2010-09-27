@@ -258,52 +258,6 @@ static int sim_score(char a, char b)
 		: 1; // match
 }
 
-/*
-// find the index of 'a' in the amino-acid substitution matrix, a is (a-z)|(A-Z)|-|*
-int score_index(char a)
-{
-  if (a <= 'Z' && a >= 'A')
-	  return a - 'A';
-  else
-	  if (a <= 'z' && a >= 'a')
-		return a - 'a';
-	  else
-		if (a == '-')
-			return 26;
-		else
-		{
-			if (a == '*')
-				return 27;
-			else
-			{
-				cout << "cannot find score when running SW local alignment: " << "char:" << a << endl;
-				exit(-1);
-			}
-		}
-}
-
-// find the score of (a,b) using amino acid substitution matrix, also update opengap status
-int similarity_score(char a,char b, bool opengap, bool& opengap_cur)
-{
-  //ALIGN_SCORE_MATRIX[28][28] stores the align scores, 26 Uppercase letters (a.a.), '-', '*'
-  int ai = score_index(a);
-  int bi = score_index(b);
-  if (ai != 26 && bi != 26)
-  {
-	  opengap_cur = false;
-	  return ALIGN_SCORE_MATRIX[ai][bi];
-  }
-  else
-  {
-	  opengap_cur = true;
-	  if (opengap) //previous is gap
-		  return ALIGN_SCORE_MATRIX[26][1]; //gap extension
-	  else
-		  return ALIGN_SCORE_MATRIX[26][0]; //gap opening
-  }
-}
-*/
-
 // Find the max value in array[], use 'ind' to hold the index of max
 template <class T>
 static T find_array_max(T array[],int length, int& ind)
@@ -329,19 +283,3 @@ static void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const c
   temp[1] = H_im1_j+sim_score(seq_b_jm1, GAP);
   temp[2] = H_i_jm1+sim_score(seq_a_im1, GAP);
 }
-
-/*
-//compute alignment score based on a substitution score matrix
-template <class T>
-void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, char seq_a_im1, char seq_b_jm1,
-	bool& opengap_im1_jm1, bool& opengap_im1_j, bool& opengap_i_jm1, bool* temp_opengap)
-{
-	temp[0] = H_im1_jm1+similarity_score(seq_a_im1,seq_b_jm1, opengap_im1_jm1, temp_opengap[0]);
-	temp[1] = H_im1_j+similarity_score(seq_a_im1, GAP, opengap_im1_j, temp_opengap[1]);
-	temp[2] = H_i_jm1+similarity_score(seq_b_jm1, GAP, opengap_i_jm1, temp_opengap[2]);
-	//temp[3] = 0.;
-}
-*/
-
-//////////////////////////////////////////////////////////////////////////////
-
