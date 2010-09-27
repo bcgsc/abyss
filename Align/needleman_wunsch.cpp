@@ -7,12 +7,13 @@
 
 #include "needleman_wunsch.h"
 
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
 #include <algorithm>
+#include <cassert>
+#include <cctype>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <map>
-#include <assert.h>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ using namespace std;
 #endif
 #endif
 
-static bool Match(const char& a, const char& b, char& consensus);
+static bool Match(char a, char b, char& consensus);
 
 template <class T>
 static T find_array_max(T array[],int length, int& ind);
@@ -216,14 +217,6 @@ unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
 // auxiliary functions:
 /////////////////////////////////////////////////////////////////////////////
 
-static int convert_to_index(char a)
-{
-	if (a <= 'Z' && a >= 'A')
-		return a - 'A';
-	else
-		return a - 'a';
-}
-
 static map<string, char> initIUPAC()
 {
 	typedef map<string, char> Map;
@@ -248,13 +241,23 @@ static map<string, char> initIUPAC()
 	return iupac;
 }
 
-static bool Match(const char& a, const char& b, char& consensus)
+/** Return whether a and b match.
+ * @param [out] consensus the consensus of a and b
+ */
+static bool Match(char a, char b, char& consensus)
 {
-	if (a == b || convert_to_index(a)==convert_to_index(b)) {
+	assert(a != GAP || b != GAP);
+	if (a == b) {
 		consensus = a;
 		return true;
-	} else if (a == GAP || b == GAP) { //one is gap, the other is something else
-		consensus = 'x'; //indicate a gap
+	} else if (toupper(a) == toupper(b)) {
+		consensus = islower(a) || islower(b) ? tolower(a) : a;
+		return true;
+	} else if (a == GAP) {
+		consensus = tolower(b);
+		return false;
+	} else if (b == GAP) {
+		consensus = tolower(a);
 		return false;
 	} else if (a == 'N') {
 		consensus = b;
