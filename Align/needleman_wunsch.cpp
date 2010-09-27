@@ -35,6 +35,8 @@ template <class T>
 static void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, char seq_a_im1, char seq_b_jm1,
 	bool& opengap_im1_jm1, bool& opengap_im1_j, bool& opengap_i_jm1, bool* temp_opengap);
 
+/** A character representing a gap. */
+static const char GAP = '*';
 
 //the backtrack step
 #ifdef __GNUC__
@@ -59,13 +61,13 @@ static unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, 
 	//while(((current_i!=next_i) || (current_j!=next_j)) && (next_j!=0) && (next_i!=0)){
 	while (current_i > 0 && current_j > 0) {
 		if(next_i==current_i) {
-			consensus_a += '-'; //deletion in A
-			consensus_b += seq_b[current_j-1]; //b must be some actual char, cannot be '-' aligns with '-'!
+			consensus_a += GAP; //deletion in A
+			consensus_b += seq_b[current_j-1]; //b must be some actual char, cannot be GAP aligns with GAP!
 		}
 		else {
 			consensus_a += seq_a[current_i-1]; // match/mismatch in A
 			if(next_j==current_j)
-				consensus_b += '-'; // deletion in B
+				consensus_b += GAP; // deletion in B
 			else
 				consensus_b += seq_b[current_j-1]; // match/mismatch in B
 		}
@@ -88,18 +90,18 @@ static unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, 
 	//fill the rest
 	while (current_i > 0) {
 		consensus_a += seq_a[current_i-1];
-		consensus_b += '-';
+		consensus_b += GAP;
 		char consensus_char;
-		Match(seq_a[current_i-1], '-', consensus_char);
+		Match(seq_a[current_i-1], GAP, consensus_char);
 		match += consensus_char;
 		current_i--;
 	}
 
 	while (current_j > 0) {
-		consensus_a += '-';
+		consensus_a += GAP;
 		consensus_b += seq_b[current_j-1];
 		char consensus_char;
-		Match('-', seq_b[current_j-1], consensus_char);
+		Match(GAP, seq_b[current_j-1], consensus_char);
 		match += consensus_char;
 		current_j--;
 	}
@@ -251,7 +253,7 @@ static bool Match(const char& a, const char& b, char& consensus)
 	if (a == b || convert_to_index(a)==convert_to_index(b)) {
 		consensus = a;
 		return true;
-	} else if (a == '-' || b == '-') { //one is gap, the other is something else
+	} else if (a == GAP || b == GAP) { //one is gap, the other is something else
 		consensus = 'x'; //indicate a gap
 		return false;
 	} else if (a == 'N') {
@@ -276,7 +278,7 @@ static int sim_score(const char a, const char b)
 	if (Match(a, b, consensus))
 		return 1;
 	else
-		if (consensus == '-')
+		if (consensus == GAP)
 			return -2; //gap penalty
 		else
 			return -1; //mismatch penalty
@@ -350,8 +352,8 @@ template <class T>
 static void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1)
 {
   temp[0] = H_im1_jm1+sim_score(seq_a_im1,seq_b_jm1);
-  temp[1] = H_im1_j+sim_score(seq_b_jm1, '-');
-  temp[2] = H_i_jm1+sim_score(seq_a_im1, '-');
+  temp[1] = H_im1_j+sim_score(seq_b_jm1, GAP);
+  temp[2] = H_i_jm1+sim_score(seq_a_im1, GAP);
 }
 
 /*
@@ -361,8 +363,8 @@ void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, char s
 	bool& opengap_im1_jm1, bool& opengap_im1_j, bool& opengap_i_jm1, bool* temp_opengap)
 {
 	temp[0] = H_im1_jm1+similarity_score(seq_a_im1,seq_b_jm1, opengap_im1_jm1, temp_opengap[0]);
-	temp[1] = H_im1_j+similarity_score(seq_a_im1, '-', opengap_im1_j, temp_opengap[1]);
-	temp[2] = H_i_jm1+similarity_score(seq_b_jm1, '-', opengap_i_jm1, temp_opengap[2]);
+	temp[1] = H_im1_j+similarity_score(seq_a_im1, GAP, opengap_im1_j, temp_opengap[1]);
+	temp[2] = H_i_jm1+similarity_score(seq_b_jm1, GAP, opengap_i_jm1, temp_opengap[2]);
 	//temp[3] = 0.;
 }
 */
