@@ -249,17 +249,13 @@ static bool Match(char a, char b, char& consensus)
 	}
 }
 
-// The simple score matrix, match:1, mismatch/gap:-1
-static int sim_score(const char a, const char b)
+/** Return the score or penalty of the alignment of a and b. */
+static int sim_score(char a, char b)
 {
 	char consensus;
-	if (Match(a, b, consensus))
-		return 1;
-	else
-		if (consensus == GAP)
-			return -2; //gap penalty
-		else
-			return -1; //mismatch penalty
+	return a == GAP || b == GAP ? -2 // gap penalty
+		: !Match(a, b, consensus) ? -1 // mismatch penalty
+		: 1; // match
 }
 
 /*
