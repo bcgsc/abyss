@@ -201,6 +201,7 @@ void NetworkSequenceCollection::run()
 			{
 				m_comm.barrier();
 				assert(m_comm.receiveEmpty());
+				m_comm.barrier();
 				unsigned count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
@@ -1031,6 +1032,7 @@ unsigned NetworkSequenceCollection::controlSplitAmbiguous()
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_SPLIT_AMBIGUOUS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
+	m_comm.barrier();
 	unsigned count = AssemblyAlgorithms::splitAmbiguous(this);
 	m_checkpointSum += count;
 	EndState();
