@@ -532,14 +532,6 @@ static Sequence mergePath(const Path& path)
 	return seq;
 }
 
-/** Trim the left and right k-1 bases. */
-static void trimOverlap(string& s)
-{
-	assert(s.length() > 2*(opt::k - 1));
-	s.erase(s.length() - opt::k + 1);
-	s.erase(0, opt::k-1);
-}
-
 /** Validate path coverage, at 95% confidence interval. */
 static bool validCoverage(unsigned pathLen, unsigned pathCover)
 {
@@ -611,9 +603,6 @@ static ContigPath alignPair(const Graph& g,
 		return solutions[0];
 	}
 
-	trimOverlap(fstPathContig);
-	trimOverlap(sndPathContig);
-
 	NWAlignment align;
 	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
 		   	align, opt::verbose > 1);
@@ -623,16 +612,8 @@ static ContigPath alignPair(const Graph& g,
 		|| !validCoverage(align.size(), coverage))
 		return ContigPath();
 
-	// add k-1 extensions at both ends of consensus sequence
-	Sequence consensus = align.consensus();
-	const Sequence& prev_seq = getSequence(solutions[0].front());
-	consensus.insert(0,
-		prev_seq.substr(prev_seq.length()-opt::k+1));
-	const Sequence& next_seq = getSequence(solutions[0].back());
-	consensus += next_seq.substr(0, opt::k-1);
-
-	ContigID id
-		= outputNewContig(solutions, 1, 1, consensus, coverage, out);
+	ContigID id = outputNewContig(solutions, 1, 1,
+			align.consensus(), coverage, out);
 	ContigPath path;
 	path.push_back(solutions.front().front());
 	path.push_back(ContigNode(id, false));
