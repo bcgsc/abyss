@@ -608,8 +608,7 @@ static ContigPath alignPair(const Graph& g,
 		   	align);
 	float identity = (float)match / align.size();
 	if (opt::verbose > 1)
-		cerr << fstPathContig << '\n' << sndPathContig << '\n'
-			<< align.consensus() << '\n' << identity << '\n';
+		cerr << align << identity << '\n';
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
