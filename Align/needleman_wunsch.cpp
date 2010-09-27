@@ -7,7 +7,7 @@
 
 #include "needleman_wunsch.h"
 #include "Sequence.h" // for baseToCode
-#include <algorithm> // for reverse
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <iostream>
@@ -22,9 +22,6 @@ using namespace std;
 #endif
 
 static bool Match(char a, char b, char& consensus);
-
-template <class T>
-static T find_array_max(T array[],int length, int& ind);
 
 template <class T>
 static void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1);
@@ -149,19 +146,19 @@ unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
 		//opengap[0][j] = false;
 	}
 
-	double temp[3];
 	//bool temp_opengap[3];
-	int ind;
 
 	// here comes the actual algorithm
 	for(i=1;i<=N_a;i++){
 		for(j=1;j<=N_b;j++){
+			double temp[3];
 			AssignScores_std<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1]);
 			/*AssignScores_scorematrix<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1],
 				opengap[i-1][j-1], opengap[i-1][j], opengap[i][j-1], temp_opengap);*/
 
-			H[i][j] = find_array_max<double>(temp, 3, ind);
-			switch(ind){
+			double* pmax = max_element(temp, temp + 3);
+			H[i][j] = *pmax;
+			switch (pmax - temp) {
 			case 0: // score in (i,j) stems from a match/mismatch
 				I_i[i][j] = i-1;
 				I_j[i][j] = j-1;
@@ -256,23 +253,6 @@ static int sim_score(char a, char b)
 	return a == GAP || b == GAP ? -2 // gap penalty
 		: !Match(a, b, consensus) ? -1 // mismatch penalty
 		: 1; // match
-}
-
-// Find the max value in array[], use 'ind' to hold the index of max
-template <class T>
-static T find_array_max(T array[],int length, int& ind)
-{
-
-  T max = array[0];            // start with max = first element
-  ind = 0;
-
-  for(int i = 1; i<length; i++){
-      if(array[i] > max){
-		max = array[i];
-		ind = i;
-      }
-  }
-  return max;                    // return highest value in array
 }
 
 //compute alignment score based on simple score matrix: match is 1, mismatch/deletion/insertion is -1
