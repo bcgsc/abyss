@@ -988,10 +988,11 @@ int main(int argc, char **argv)
 	out.close();
 	fa.close();
 
-	cerr << "Ambiguous paths: " << stats.numAmbPaths << "\n"
-		"Merged:         " << stats.numMerged << "\n"
-		"No paths:       " << stats.numNoSolutions << "\n"
-		"Too many paths: " << stats.numTooManySolutions << "\n"
-		"Too complex:    " << stats.tooComplex << "\n"
-		"Dissimilar:     " << stats.notMerged << "\n";
+	cerr <<
+		"Ambiguous paths: " << stats.numAmbPaths << "\n"
+		"Merged:          " << stats.numMerged << "\n"
+		"No paths:        " << stats.numNoSolutions << "\n"
+		"Too many paths:  " << stats.numTooManySolutions << "\n"
+		"Too complex:     " << stats.tooComplex << "\n"
+		"Dissimilar:      " << stats.notMerged << "\n";
 }
