@@ -1411,6 +1411,7 @@ struct alignment* guided_aligner(struct alignment *palgn,
   for(i=0;i<tdcol.diag_amount;i++) {
     free(sall_diags[i]);
   }
+  free(sall_diags);
   //diag_p -= thres_pos;
   //  dcol->diag_amount = diag_p;
   return palgn;
