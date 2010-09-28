@@ -41,8 +41,7 @@
 
 using namespace std;
 
-/* ABySS options and messages */
-#define PROGRAM "ResolveAmbPaths"
+#define PROGRAM "PathConsensus"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
