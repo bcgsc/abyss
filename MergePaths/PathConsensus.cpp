@@ -534,21 +534,18 @@ static Sequence mergePath(const Path& path)
 	return seq;
 }
 
+#if 0
 /** Validate path coverage, at 95% confidence interval. */
 static bool validCoverage(unsigned pathLen, unsigned pathCover)
 {
-#if 0
 	double cover_mean
 		= (double)pathCover / (pathLen + opt::k - 1);
 	double cover_deviation
 		= sqrt(g_coverage_variance / (pathLen + opt::k - 1));
 	return cover_mean <= g_coverage_mean + 1.96*cover_deviation
 		&& cover_mean >= g_coverage_mean - 1.96*cover_deviation;
-#else
-	(void)pathLen, (void)pathCover;
-	return true;
-#endif
 }
+#endif
 
 /** Calculate the ContigProperties of a path. */
 static ContigProperties calculatePathProperties(const Graph& g,
@@ -614,13 +611,11 @@ static ContigPath alignPair(const Graph& g,
 	if (opt::verbose > 0)
 		cerr << identity
 			<< (identity < opt::identity ? " (too low)\n" : "\n");
+	if (identity < opt::identity)
+		return ContigPath();
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
-	if (identity < opt::identity
-			|| !validCoverage(align.size(), coverage))
-		return ContigPath();
-
 	ContigID id = outputNewContig(solutions, 1, 1,
 			align.consensus(), coverage, out);
 	ContigPath path;
@@ -717,9 +712,7 @@ static ContigPath alignMulti(const Graph& g,
 	if (opt::verbose > 0)
 		cerr << identity
 			<< (identity < opt::identity ? " (too low)\n" : "\n");
-
-	if (identity < opt::identity
-			|| !validCoverage(consensus.length(), coverage))
+	if (identity < opt::identity)
 		return ContigPath();
 
 	ContigID id = outputNewContig(solutions,
