@@ -425,7 +425,7 @@ string dialign(const vector<string>& amb_seqs)
 	if (opt::verbose > 2)
 		simple_print_alignment_default(algn);
 	string consensus = get_alignment_consensus(algn);
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		print(cerr, *algn, consensus);
 
 	if (dialign_para->DEBUG > 0) {

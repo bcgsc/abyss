@@ -688,8 +688,8 @@ static ContigPath alignMulti(const Graph& g,
 	}
 	reverse(vspath.begin(), vspath.end());
 
-	if (opt::verbose > 1)
-		cerr << "Common: " << vppath << " * " << vspath << '\n';
+	if (opt::verbose > 0 && vppath.size() + vspath.size() > 2)
+		cerr << vppath << " * " << vspath << '\n';
 
 	// Get sequence of ambiguous region in paths
 	assert(longestPrefix > 0 && longestSuffix > 0);
@@ -711,7 +711,7 @@ static ContigPath alignMulti(const Graph& g,
 	}
 
 	Sequence consensus = dialign(amb_seqs);
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 	   	cerr << consensus << '\n';
 
 	// check coverage
@@ -892,29 +892,26 @@ int main(int argc, char **argv)
 		bool tooComplex = numVisited >= opt::maxCost;
 
 		for (ContigPaths::iterator solIt = solutions.begin();
-				solIt != solutions.end(); solIt++) {
+				solIt != solutions.end(); solIt++)
 			solIt->insert(solIt->begin(), apConstraint.source);
-			if (opt::verbose > 1)
-				cerr << *solIt << '\n';
-		}
-		unsigned numPossiblePaths = solutions.size();
-		bool tooManySolutions = numPossiblePaths > opt::numBranches;
+
+		bool tooManySolutions = solutions.size() > opt::numBranches;
 		if (tooComplex) {
 			stats.tooComplex++;
 			if (opt::verbose > 0)
-				cerr << numPossiblePaths << " paths: too complex\n";
+				cerr << solutions.size() << " paths (too complex)\n";
 		} else if (tooManySolutions) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
-				cerr << numPossiblePaths << " paths: too many\n";
+				cerr << solutions.size() << " paths (too many)\n";
 		} else if (solutions.empty()) {
-			/* TODO: call shortest-path algorithm
-			to check whether there IS path */
 			stats.numNoSolutions++;
 			if (opt::verbose > 0)
-				cerr << apConstraint.source << " -> "
-					<< apConstraint.dest << ": no paths\n";
+				cerr << "no paths\n";
 		} else {
+			if (opt::verbose > 1)
+				copy(solutions.begin(), solutions.end(),
+						ostream_iterator<ContigPath>(cerr, "\n"));
 			ambIt->second = align(g, solutions, fa);
 			if (!ambIt->second.empty()) {
 				stats.numMerged++;
@@ -922,10 +919,17 @@ int main(int argc, char **argv)
 					// Mark contigs that are used in a consensus.
 					markSeen(seen, solutions, true);
 				}
-			} else
+				if (opt::verbose > 0)
+					cerr << ambIt->second << '\n';
+			} else {
 				stats.notMerged++;
+				if (opt::verbose > 0)
+					cerr << "not merged\n";
+			}
 		}
 	}
+	if (opt::verbose > 0)
+		cerr << '\n';
 
 	// Unmark contigs that are used in a path.
 	for (AmbPath2Contig::iterator it = g_ambpath_contig.begin();
