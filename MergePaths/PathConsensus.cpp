@@ -46,67 +46,69 @@ using namespace std;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Rong She.\n"
+"Written by Rong She and Shaun Jackman.\n"
 "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA PATH ADJ\n"
-"Resolve ambiguity (\"N\"s) in paths after MergePaths.\n"
-"  FASTA    input fasta file that contains all contig sequences\n"
-"  PATH     input \".path2\" file from MergePaths\n"
-"  ADJ      input adj file (the entire adj graph)\n"
+"Usage: " PROGRAM " [OPTION]... FASTA ADJ PATH\n"
+"Align sequences of ambiguous paths and output a consensus\n"
+"sequence.\n"
+"  FASTA  contigs in FASTA format\n"
+"  ADJ    contig adjacency graph\n"
+"  PATH   paths of these contigs\n"
 "\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
-"  -o, --out=FILE        write updated paths to FILE\n"
-"  -f, --fa=FA_FILE      write updated contig sequences to FA_FILE\n"
-"  -n, --align-num-paths=NUMPATHS  max number of paths to be\n"
-"                                  aligned, default: 2\n"
-"  -a, --align-identity=PID        min alignment identity\n"
-"                                  default: 0.9\n"
-"                                  (for pairwise alignment)\n"
-"  -d, --dialign-debug=DEBUG       dialign debug level, default 0\n"
-"                                  (for multi align)\n"
-"  -s, --dialign-score=SCORE_MATRIX_FILE  score matrix file used\n"
-"                                         by dialign\n"
-"                                         (for multi align)\n"
-"  -p, --dialign-prob=PROB_DIST_FILE      probability distribution\n"
-"                                         file used by dialign\n"
-"                                         (for multi align)\n"
+" Options:\n"
+"  -k, --kmer=N          k-mer size\n"
+"  -o, --out=FILE        output contig paths to FILE\n"
+"  -s, --consensus=FILE  output consensus sequences to FILE\n"
+"  -a, --branches=N      maximum number of sequences to align\n"
+"                        default: 4\n"
+"  -p, --identity=REAL   minimum identity, default: 0.9\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+"\n"
+" DIALIGN-TX options:\n"
+"  -D, --dialign-d=N     dialign debug level, default: 0\n"
+"  -M, --dialign-m=FILE  score matrix, default: dna_matrix.scr\n"
+"  -P, --dialign-p=FILE  diagonal length probability distribution\n"
+"                        default: dna_diag_prob_100_exp_550000\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
 	unsigned k; // used by ContigProperties
 	static string out;
-	static string fa;
-	static double pid = 0.9;
-	static unsigned num_paths = 2;
+	static string consensusPath;
+	static float identity = 0.9;
+	static unsigned numBranches = 4;
 	static int dialign_debug;
 	static string dialign_score;
 	static string dialign_prob;
+
+	/** The the number of bases to continue the constrained search of
+	 * the graph beyond the size of the ambiguous gap in the path.
+	 */
 	static const unsigned allowedError = 6;
 }
 
-static const char shortopts[] = "k:o:f:a:n:d:s:p:v";
+static const char shortopts[] = "k:o:s:a:p:vD:M:P:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
-	{ "fa",          required_argument, NULL, 'f' },
-	{ "align-identity", required_argument, NULL, 'a' },
-	{ "align-num-paths", required_argument, NULL, 'n' },
-	{ "dialign-debug", required_argument, NULL, 'd' },
-	{ "dialign-score", required_argument, NULL, 's' },
-	{ "dialign-prob",  required_argument, NULL, 'p' },
+	{ "consensus",   required_argument, NULL, 's' },
+	{ "branches",    required_argument, NULL, 'a' },
+	{ "identity",    required_argument, NULL, 'p' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
+	{ "dialign-d",   required_argument, NULL, 'D' },
+	{ "dialign-m",   required_argument, NULL, 'M' },
+	{ "dialign-p",   required_argument, NULL, 'P' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -609,12 +611,13 @@ static ContigPath alignPair(const Graph& g,
 	float identity = (float)match / align.size();
 	if (opt::verbose > 1)
 		cerr << align
-			<< identity << (identity < opt::pid ? " (too low)" : "")
+			<< identity
+			<< (identity < opt::identity ? " (too low)" : "")
 			<< '\n';
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
-	if (identity < opt::pid
+	if (identity < opt::identity
 			|| !validCoverage(align.size(), coverage))
 		return ContigPath();
 
@@ -769,12 +772,12 @@ int main(int argc, char **argv)
 		case '?': die = true; break;
 		case 'k': arg >> opt::k; break;
 		case 'o': arg >> opt::out; break;
-		case 'a': arg >> opt::pid; break;
-		case 'n': arg >> opt::num_paths; break;
-		case 'f': arg >> opt::fa; break;
-		case 'd': arg >> opt::dialign_debug; break;
-		case 's': arg >> opt::dialign_score; break;
-		case 'p': arg >> opt::dialign_prob; break;
+		case 'p': arg >> opt::identity; break;
+		case 'a': arg >> opt::numBranches; break;
+		case 's': arg >> opt::consensusPath; break;
+		case 'D': arg >> opt::dialign_debug; break;
+		case 'M': arg >> opt::dialign_score; break;
+		case 'P': arg >> opt::dialign_prob; break;
 		case 'v': opt::verbose++; break;
 		case OPT_HELP:
 			cout << USAGE_MESSAGE;
@@ -795,8 +798,8 @@ int main(int argc, char **argv)
 		die = true;
 	}
 
-	if (opt::fa.empty()) {
-		cerr << PROGRAM ": " << "missing -f,--fa option\n";
+	if (opt::consensusPath.empty()) {
+		cerr << PROGRAM ": " << "missing -s,--consensus option\n";
 		die = true;
 	}
 
@@ -812,8 +815,8 @@ int main(int argc, char **argv)
 	}
 
 	const char *contigFile = argv[optind++];
-	string allPaths(argv[optind++]);
 	string adjFile(argv[optind++]);
+	string allPaths(argv[optind++]);
 
 	// Load the graph from the adjacency file
 	Graph g;
@@ -857,7 +860,7 @@ int main(int argc, char **argv)
 		ContigID::insert(*it);
 
 	// Prepare output fasta file
-	ofstream fa(opt::fa.c_str());
+	ofstream fa(opt::consensusPath.c_str());
 	assert(fa.good());
 
 	init_parameters();
@@ -898,7 +901,7 @@ int main(int argc, char **argv)
 				cerr << *solIt << '\n';
 		}
 		unsigned numPossiblePaths = solutions.size();
-		bool tooManySolutions = numPossiblePaths > opt::num_paths;
+		bool tooManySolutions = numPossiblePaths > opt::numBranches;
 		if (tooComplex) {
 			stats.numTooManySolutions++;
 			if (opt::verbose > 0)
