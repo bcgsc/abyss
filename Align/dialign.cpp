@@ -1,5 +1,6 @@
 #include "dialign.h"
 #include "Common/Options.h"
+#include <algorithm> // for min
 #include <cassert>
 #include <cmath> // for log
 #include <cstdlib>
@@ -128,7 +129,7 @@ static ostream& print(ostream& out, const alignment& o,
 		const string& consensus)
 {
 	const seq_col& scol = *o.scol;
-	vector<int> proc(scol.length);
+	vector<int> proc(scol.length, 0);
 	algn_pos **ap = o.algn;
 	for (int s = 0; s < scol.length; s++) {
 		const seq& sq = scol.seqs[s];
@@ -153,6 +154,34 @@ static ostream& print(ostream& out, const alignment& o,
 		out << '\n';
 	}
 	return out;
+}
+
+/** Return the minimum number of matches. */
+static unsigned countMatches(const alignment& o,
+		const string& consensus)
+{
+	unsigned minMatches = consensus.size();
+	const seq_col& scol = *o.scol;
+	vector<int> proc(scol.length, 0);
+	algn_pos **ap = o.algn;
+	for (int s = 0; s < scol.length; s++) {
+		unsigned matches = 0;
+		const seq& sq = scol.seqs[s];
+		for (int j = 0; j < o.max_pos; j++) {
+			if (proc[s] < sq.length) {
+				const algn_pos& ap1 = *find_eqc(ap, s, proc[s]);
+				assert(j <= *ap1.eqcAlgnPos);
+				if (*ap1.eqcAlgnPos == j) {
+					char c = sq.data[proc[s]];
+					if (toupper(c) == toupper(consensus[j]))
+						matches++;
+					proc[s]++;
+				}
+			}
+		}
+		minMatches = min(minMatches, matches);
+	}
+	return minMatches;
 }
 
 static struct seq_col* read_seqs(const vector<string>& amb_seqs)
@@ -292,8 +321,11 @@ static string get_alignment_consensus(struct alignment *algn)
 	return consensus;
 }
 
-/** Align multiple sequences using DIALIGN-TX. */
-string dialign(const vector<string>& amb_seqs)
+/** Align multiple sequences using DIALIGN-TX.
+ * @param [out] matches the minimum number of matches
+ * @return the consensus sequence
+ */
+string dialign(const vector<string>& amb_seqs, unsigned& matches)
 {
 	int i;
 	struct seq_col *in_seq_col = NULL;
@@ -427,6 +459,7 @@ string dialign(const vector<string>& amb_seqs)
 	string consensus = get_alignment_consensus(algn);
 	if (opt::verbose > 1)
 		print(cerr, *algn, consensus);
+	matches = countMatches(*algn, consensus);
 
 	if (dialign_para->DEBUG > 0) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;

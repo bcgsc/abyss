@@ -611,10 +611,10 @@ static ContigPath alignPair(const Graph& g,
 		   	align);
 	float identity = (float)match / align.size();
 	if (opt::verbose > 1)
-		cerr << align
-			<< identity
-			<< (identity < opt::identity ? " (too low)" : "")
-			<< '\n';
+		cerr << align;
+	if (opt::verbose > 0)
+		cerr << identity
+			<< (identity < opt::identity ? " (too low)\n" : "\n");
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
@@ -710,12 +710,17 @@ static ContigPath alignMulti(const Graph& g,
 		}
 	}
 
-	Sequence consensus = dialign(amb_seqs);
+	unsigned matches;
+	Sequence consensus = dialign(amb_seqs, matches);
 	if (opt::verbose > 1)
 	   	cerr << consensus << '\n';
+	float identity = (float)matches / consensus.size();
+	if (opt::verbose > 0)
+		cerr << identity
+			<< (identity < opt::identity ? " (too low)\n" : "\n");
 
-	// check coverage
-	if (!validCoverage(consensus.length(), coverage))
+	if (identity < opt::identity
+			|| !validCoverage(consensus.length(), coverage))
 		return ContigPath();
 
 	ContigID id = outputNewContig(solutions,
@@ -921,11 +926,8 @@ int main(int argc, char **argv)
 				}
 				if (opt::verbose > 0)
 					cerr << ambIt->second << '\n';
-			} else {
+			} else
 				stats.notMerged++;
-				if (opt::verbose > 0)
-					cerr << "not merged\n";
-			}
 		}
 	}
 	if (opt::verbose > 0)
