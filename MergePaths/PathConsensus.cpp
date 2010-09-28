@@ -113,11 +113,12 @@ static const struct option longopts[] = {
 };
 
 static struct {
-	unsigned numPaths;
 	unsigned numAmbPaths;
-	unsigned numTooManySolutions;
-	unsigned numNoSolutions;
 	unsigned numMerged;
+	unsigned numNoSolutions;
+	unsigned numTooManySolutions;
+	unsigned tooComplex;
+	unsigned notMerged;
 } stats;
 
 struct AmbPathConstraint {
@@ -847,11 +848,9 @@ int main(int argc, char **argv)
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
 	ContigPaths paths = readPath(allPaths, pathIDs, isAmbPath);
-	stats.numPaths = paths.size();
 	stats.numAmbPaths = g_ambpath_contig.size();
 	if (opt::verbose > 0)
-		cerr << "Total number of paths: " << stats.numPaths << "\n"
-			"Ambiguous paths: " << stats.numAmbPaths << '\n';
+		cerr << "Read " << paths.size() << " paths\n";
 
 	// Add the path IDs to the list of contig IDs to prevent
 	// ContigID::create from reusing them.
@@ -892,8 +891,6 @@ int main(int argc, char **argv)
 			constraints, solutions, numVisited);
 		bool tooComplex = numVisited >= opt::maxCost;
 
-		if (opt::verbose > 1)
-			cerr << "Paths:\n";
 		for (ContigPaths::iterator solIt = solutions.begin();
 				solIt != solutions.end(); solIt++) {
 			solIt->insert(solIt->begin(), apConstraint.source);
@@ -903,7 +900,7 @@ int main(int argc, char **argv)
 		unsigned numPossiblePaths = solutions.size();
 		bool tooManySolutions = numPossiblePaths > opt::numBranches;
 		if (tooComplex) {
-			stats.numTooManySolutions++;
+			stats.tooComplex++;
 			if (opt::verbose > 0)
 				cerr << numPossiblePaths << " paths: too complex\n";
 		} else if (tooManySolutions) {
@@ -925,7 +922,8 @@ int main(int argc, char **argv)
 					// Mark contigs that are used in a consensus.
 					markSeen(seen, solutions, true);
 				}
-			}
+			} else
+				stats.notMerged++;
 		}
 	}
 
@@ -985,10 +983,9 @@ int main(int argc, char **argv)
 	fa.close();
 
 	cerr << "Ambiguous paths: " << stats.numAmbPaths << "\n"
-		"No paths: " << stats.numNoSolutions << "\n"
+		"Merged:         " << stats.numMerged << "\n"
+		"No paths:       " << stats.numNoSolutions << "\n"
 		"Too many paths: " << stats.numTooManySolutions << "\n"
-		"Failed PID or coverage: " << stats.numAmbPaths
-			- stats.numMerged - stats.numNoSolutions
-			- stats.numTooManySolutions << "\n"
-		"Merged: " << stats.numMerged << "\n";
+		"Too complex:    " << stats.tooComplex << "\n"
+		"Dissimilar:     " << stats.notMerged << "\n";
 }
