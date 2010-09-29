@@ -381,7 +381,7 @@ void printGraph(Graph& g,
 	  case DOT:
 		cout << "digraph \"" << graphName << "\" {\n"
 			"k=" << opt::k << "\n"
-			"edge[d=" << -(opt::k-1) << "]\n"
+			"edge[d=" << -int(opt::k-1) << "]\n"
 			<< dot_writer(g)
 			<< "}\n";
 		break;

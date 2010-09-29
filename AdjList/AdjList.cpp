@@ -192,7 +192,7 @@ int main(int argc, char** argv)
 	  case DOT:
 		out << "digraph adj {\n"
 			"k=" << opt::k << "\n"
-			"edge[d=" << -(opt::k-1) << "]\n";
+			"edge[d=" << -int(opt::k-1) << "]\n";
 		break;
 	  case SAM:
 		// SAM headers.
