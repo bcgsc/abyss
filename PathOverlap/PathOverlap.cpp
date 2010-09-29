@@ -131,10 +131,20 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
+/** The contig graph. */
+typedef DirectedGraph<ContigProperties, Distance> DG;
+typedef ContigGraph<DG> Graph;
+
 typedef vector<ContigPath> Paths;
 
-/** Read contig paths from the specified stream. */
-static Paths readPaths(const string& inPath, vector<string>& pathIDs)
+/** Read contig paths from the specified file.
+ * @param g the contig adjacency graph
+ * @param inPath the file of contig paths
+ * @param[out] pathIDs the path IDs
+ * @return the paths
+ */
+static Paths readPaths(Graph& g,
+		const string& inPath, vector<string>& pathIDs)
 {
 	assert(pathIDs.empty());
 	ifstream fin(inPath.c_str());
@@ -147,8 +157,15 @@ static Paths readPaths(const string& inPath, vector<string>& pathIDs)
 	string id;
 	ContigPath path;
 	while (in >> id >> path) {
-		pathIDs.push_back(id);
-		paths.push_back(path);
+		if (path.empty()) {
+			// Remove this contig from the graph.
+			ContigNode u(id, false);
+			clear_vertex(u, g);
+			remove_vertex(u, g);
+		} else {
+			pathIDs.push_back(id);
+			paths.push_back(path);
+		}
 	}
 	assert(in.eof());
 	return paths;
@@ -174,10 +191,6 @@ static SeedMap makeSeedMap(const Paths& paths)
 	}
 	return seedMap;
 }
-
-/** The contig graph. */
-typedef DirectedGraph<ContigProperties, Distance> DG;
-typedef ContigGraph<DG> Graph;
 
 /** Check whether path starts with the sequence [first, last). */
 static bool startsWith(ContigPath path, bool rc,
@@ -452,7 +465,7 @@ int main(int argc, char** argv)
 
 	string pathsFile(argv[optind++]);
 	vector<string> pathIDs;
-	Paths paths = readPaths(pathsFile, pathIDs);
+	Paths paths = readPaths(g, pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
 		printGraph(g, paths, pathIDs, pathsFile, commandLine);
