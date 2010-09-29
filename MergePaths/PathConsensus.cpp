@@ -849,11 +849,8 @@ int main(int argc, char **argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << paths.size() << " paths\n";
 
-	// Add the path IDs to the list of contig IDs to prevent
-	// ContigID::create from reusing them.
-	for (vector<string>::const_iterator it = pathIDs.begin();
-			it != pathIDs.end(); ++it)
-		ContigID::insert(*it);
+	// Start numbering new contigs from the last
+	ContigID::setNextContigID(pathIDs.back());
 
 	// Prepare output fasta file
 	ofstream fa(opt::consensusPath.c_str());

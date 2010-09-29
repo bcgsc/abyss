@@ -61,15 +61,23 @@ class ContigID {
 		return ContigID(s_dict.insert(s));
 	}
 
+	/** Set the next contig ID returned by ContigID::create. */
+	static void setNextContigID(const std::string& s)
+	{
+		std::istringstream iss(s);
+		iss >> s_nextID;
+		assert(iss.eof());
+	}
+
 	/** Return a unique contig ID. */
 	static ContigID create()
 	{
-		unsigned id;
-		std::istringstream iss(s_dict.back());
-		iss >> id;
-		assert(iss.eof());
+		if (s_nextID == 0) {
+			assert(!s_dict.empty());
+			setNextContigID(s_dict.back());
+		}
 		std::ostringstream oss;
-		oss << ++id;
+		oss << ++s_nextID;
 		return insert(oss.str());
 	}
 
@@ -79,6 +87,9 @@ class ContigID {
 
 	/** The contig ID dictionary. */
 	static Dictionary s_dict;
+
+	/** The next unique contig ID. */
+	static unsigned s_nextID;
 };
 
 #endif
