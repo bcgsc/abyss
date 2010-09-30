@@ -164,13 +164,13 @@ static double g_coverage_mean;
 static double g_coverage_variance;
 #endif
 
-/* commonly-used utility function */
-static void assert_open(ifstream& f, const string& p)
+/** Print an error message and exit if stream is not good. */
+static void assert_good(const ios& stream, const string& path)
 {
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
+	if (!stream.good()) {
+		cerr << path << ": " << strerror(errno) << endl;
+		exit(EXIT_FAILURE);
+	}
 }
 
 /** Return the sequence of the specified contig node. The sequence
@@ -203,7 +203,7 @@ static ContigPaths readPath(const string& inPath,
 	if (opt::verbose > 0)
 		cerr << "Reading `" << inPath << "'..." << endl;
 	if (inPath != "-")
-		assert_open(fin, inPath);
+		assert_good(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
 
 	ContigPaths paths;
@@ -256,7 +256,7 @@ static void readAmbPaths(const string& ambPath)
 	if (opt::verbose > 0)
 		cerr << "Reading `" << ambPath << "'..." << endl;
 	if (ambPath != "-")
-		assert_open(fin, ambPath);
+		assert_good(fin, ambPath);
 	istream& in = ambPath == "-" ? cin : fin;
 
 	vector<Path> paths;
@@ -309,7 +309,7 @@ static void markSeen(vector<bool>& seen, const vector<Path>& paths,
 static void ReadAdj(const string& irregularAdj)
 {
 	ifstream in_adj(irregularAdj.c_str());
-	assert_open(in_adj, irregularAdj);
+	assert_good(in_adj, irregularAdj);
 	while (!in_adj.eof()) {
 		char line[65536];
 		in_adj.getline(line, 65536);
@@ -887,7 +887,7 @@ int main(int argc, char **argv)
 
 	// Prepare output fasta file
 	ofstream fa(opt::consensusPath.c_str());
-	assert(fa.good());
+	assert_good(fa, opt::consensusPath);
 
 	init_parameters();
 	set_parameters_dna();
@@ -952,6 +952,8 @@ int main(int argc, char **argv)
 				stats.notMerged++;
 		}
 	}
+	assert_good(fa, opt::consensusPath);
+	fa.close();
 	if (opt::verbose > 0)
 		cerr << '\n';
 
@@ -962,7 +964,7 @@ int main(int argc, char **argv)
 	markSeen(seen, paths, false);
 
 	ofstream out(opt::out.c_str());
-	assert(out.good());
+	assert_good(out, opt::out);
 
 	// Output those contigs that were not seen in ambiguous path.
 	for (unsigned id = 0; id < contigs.size(); ++id)
@@ -1003,12 +1005,11 @@ int main(int argc, char **argv)
 		}
 		out << pathIDs[i] << '\t' << cur_path << '\n';
 	}
+	assert_good(out, opt::out);
+	out.close();
 
 	free_prob_dist(pdist);
 	free(para);
-
-	out.close();
-	fa.close();
 
 	cerr <<
 		"Ambiguous paths: " << stats.numAmbPaths << "\n"
@@ -1020,7 +1021,7 @@ int main(int argc, char **argv)
 
 	if (!opt::graphPath.empty()) {
 		ofstream fout(opt::graphPath.c_str());
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 
 		// Add the newly-created consensus contigs to the graph.
 		for (NewVertices::const_iterator it = g_newVertices.begin();
@@ -1031,7 +1032,7 @@ int main(int argc, char **argv)
 			add_edge(it->u, it->v, g);
 		}
 		fout << adj_writer(g);
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 	}
 
 	return 0;
