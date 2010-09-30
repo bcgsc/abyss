@@ -61,6 +61,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N          k-mer size\n"
 "  -o, --out=FILE        output contig paths to FILE\n"
 "  -s, --consensus=FILE  output consensus sequences to FILE\n"
+"  -g, --graph=FILE      output the contig adjacency graph to FILE\n"
 "  -a, --branches=N      maximum number of sequences to align\n"
 "                        default: 4\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
@@ -80,11 +81,15 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 	static string out;
 	static string consensusPath;
+	static string graphPath;
 	static float identity = 0.9;
 	static unsigned numBranches = 4;
 	static int dialign_debug;
 	static string dialign_score;
 	static string dialign_prob;
+
+	/** Output format. */
+	int format = ADJ; // used by ContigProperties
 
 	/** The the number of bases to continue the constrained search of
 	 * the graph beyond the size of the ambiguous gap in the path.
@@ -92,7 +97,7 @@ namespace opt {
 	static const unsigned allowedError = 6;
 }
 
-static const char shortopts[] = "k:o:s:a:p:vD:M:P:";
+static const char shortopts[] = "k:o:s:g:a:p:vD:M:P:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -100,6 +105,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "consensus",   required_argument, NULL, 's' },
+	{ "graph",       required_argument, NULL, 'g' },
 	{ "branches",    required_argument, NULL, 'a' },
 	{ "identity",    required_argument, NULL, 'p' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -391,6 +397,21 @@ static void ReadAdj(const string& irregularAdj)
 }
 #endif
 
+struct NewVertex {
+	Graph::vertex_descriptor t, u, v;
+	Graph::vertex_property_type vp;
+	NewVertex(
+			Graph::vertex_descriptor t,
+			Graph::vertex_descriptor u,
+			Graph::vertex_descriptor v,
+			const Graph::vertex_property_type& vp)
+		: t(t), u(u), v(v), vp(vp) { }
+};
+typedef vector<NewVertex> NewVertices;
+
+/** The new vertices that will be added to the graph. */
+static NewVertices g_newVertices;
+
 /** Output a new contig. */
 static ContigID outputNewContig(
 	const vector<Path>& solutions,
@@ -398,7 +419,18 @@ static ContigID outputNewContig(
 	const Sequence& seq, const unsigned coverage,
 	ofstream& out)
 {
+	assert(!solutions.empty());
+	assert(longestPrefix > 0);
+	assert(longestSuffix > 0);
 	ContigID id(ContigID::create());
+
+	// Record the newly-created contig to be added to the graph later.
+	g_newVertices.push_back(NewVertex(
+				*(solutions[0].begin() + longestPrefix - 1),
+				ContigNode(id, false),
+				*(solutions[0].rbegin() + longestSuffix - 1),
+				ContigProperties(seq.length(), coverage)));
+
 	out << '>' << id.str() << ' ' << seq.length()
 		<< ' ' << coverage << ' ';
 	for (vector<Path>::const_iterator it = solutions.begin();
@@ -773,6 +805,7 @@ int main(int argc, char **argv)
 		case 'p': arg >> opt::identity; break;
 		case 'a': arg >> opt::numBranches; break;
 		case 's': arg >> opt::consensusPath; break;
+		case 'g': arg >> opt::graphPath; break;
 		case 'D': arg >> opt::dialign_debug; break;
 		case 'M': arg >> opt::dialign_score; break;
 		case 'P': arg >> opt::dialign_prob; break;
@@ -984,4 +1017,22 @@ int main(int argc, char **argv)
 		"Too many paths:  " << stats.numTooManySolutions << "\n"
 		"Too complex:     " << stats.tooComplex << "\n"
 		"Dissimilar:      " << stats.notMerged << "\n";
+
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		assert(fout.good());
+
+		// Add the newly-created consensus contigs to the graph.
+		for (NewVertices::const_iterator it = g_newVertices.begin();
+				it != g_newVertices.end(); ++it) {
+			Graph::vertex_descriptor u = add_vertex(it->vp, g);
+			assert(u == it->u);
+			add_edge(it->t, it->u, g);
+			add_edge(it->u, it->v, g);
+		}
+		fout << adj_writer(g);
+		assert(fout.good());
+	}
+
+	return 0;
 }
