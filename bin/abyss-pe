@@ -201,8 +201,8 @@ endif
 
 # Find overlaps between contigs
 
-%-3-overlap.fa %-4.adj: %-3.fa %-3.adj %-3.dist
-	Overlap $v $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-3-overlap.fa $^
+%-4.fa %-4.adj: %-3.fa %-3.adj %-3.dist
+	Overlap $v $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-4.fa $^
 
 # Paired-end assembly
 
@@ -217,12 +217,12 @@ endif
 
 ifndef cs
 
-%-contigs.fa: %-4.path2 %-3.fa %-3-overlap.fa
+%-contigs.fa: %-4.path2 %-3.fa %-4.fa
 	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
 
 else
 
-%-cs.fa: %-4.path2 %-3.fa %-3-overlap.fa
+%-cs.fa: %-4.path2 %-3.fa %-4.fa
 	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
 
 %-contigs.fa: %-cs.fa
