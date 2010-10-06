@@ -328,20 +328,6 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
-#if !NDEBUG
-/** Return the first element of the path paths[u]. */
-static ContigNode front(const Paths& paths, const Vertex& u)
-{
-	return u.sense ? ~paths[u.id].back() : paths[u.id].front();
-}
-
-/** Return the last element of the path paths[u]. */
-static ContigNode back(const Paths& paths, const Vertex& u)
-{
-	return u.sense ? ~paths[u.id].front() : paths[u.id].back();
-}
-#endif
-
 static inline
 ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 {
@@ -377,12 +363,7 @@ void printGraph(Graph& g,
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
 		Vertex u = it->source, v = it->target;
-		if (edge(u, v, g).second) {
-			// If an edge (u,v) already exists, the last vertex of
-			// path u and and first vertex of path v must be equal and
-			// have a self-loop.
-			assert(back(paths, u) == front(paths, v));
-		} else
+		if (!edge(u, v, g).second)
 			g.DG::add_edge(u, v, it->distance);
 	}
 
