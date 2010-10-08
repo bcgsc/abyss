@@ -975,7 +975,6 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 	while (!checkpointReached())
 		pumpNetwork();
 	numDiscovered += m_checkpointSum;
-	SetState(NAS_POPBUBBLE);
 	if (numDiscovered > 0 && opt::verbose > 0)
 		printf("Discovered %u bubbles\n", numDiscovered);
 	return numDiscovered;
@@ -985,8 +984,12 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 int NetworkSequenceCollection::controlPopBubbles(ostream& out)
 {
 	controlDiscoverBubbles();
+	m_comm.sendControlMessage(APC_BARRIER);
+	m_comm.barrier();
+	pumpNetwork();
 
 	// Perform a round-robin bubble pop to avoid concurrency issues
+	SetState(NAS_POPBUBBLE);
 	m_checkpointSum = performNetworkPopBubbles(out);
 	EndState();
 
