@@ -1237,14 +1237,19 @@ void NetworkSequenceCollection::processSequenceExtension(
 					seq, extRec, multiplicity,
 					opt::bubbleLen - opt::kmerSize + 1);
 		case NAS_WAITING:
-			if(m_finishedGroups.find(groupID) == m_finishedGroups.end())
-			{
-				cerr << "Unexpected sequence extension message! gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
+			if (m_finishedGroups.count(groupID) == 0) {
+				logger(0) << "error: unexpected seqext message: "
+					"state: " << m_state << " "
+					"gid: " << groupID << " bid: " << branchID << " "
+					"seq: " << seq.decode() << '\n';
 				assert(false);
 			}
 			break;
 		default:
-			cerr << "Unexpected sequence extension message! State: " << m_state << " gid: " << groupID << " bid: " << branchID << " seq: " << seq.decode() << " Aborting...\n";
+			logger(0) << "error: unexpected seqext message: "
+				"state: " << m_state << " "
+				"gid: " << groupID << " bid: " << branchID << " "
+				"seq: " << seq.decode() << '\n';
 			assert(false);
 			break;
 	}
