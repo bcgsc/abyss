@@ -82,6 +82,12 @@ ifdef b
 abyssopt += -b$b
 pbopt += -b$b
 endif
+ifdef a
+pcopt += -a$a
+endif
+ifdef p
+pcopt += -p$p
+endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Common paired-end parameters
@@ -212,15 +218,20 @@ endif
 %-4.path2: %-4.adj %-4.path1
 	MergePaths $v -j$j -k$k -o $@ $^
 
-%-4.path3: %-4.adj %-4.path2
-	PathOverlap $v -k$k $^ >$@
-
 ifndef cs
 
-%-contigs.fa: %-4.path2 %-3.fa %-4.fa
-	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
+%-5.path %-5.fa %-5.adj: %-3.fa %-4.fa %-4.adj %-4.path2
+	cat $(wordlist 1, 2, $^) \
+		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
+
+%-contigs.fa: %-5.path %-3.fa %-4.fa %-5.fa
+	cat $(wordlist 2, 4, $^) |MergeContigs $v -k$k -o $@ - $<
 
 else
+
+%-5.adj %-5.path: %-4.adj %-4.path2
+	ln -sf $*-4.adj $*-5.adj
+	ln -sf $*-4.path2 $*-5.path
 
 %-cs.fa: %-4.path2 %-3.fa %-4.fa
 	cat $(wordlist 2, 3, $^) |MergeContigs $v -k$k -o $@ - $<
@@ -234,5 +245,5 @@ endif
 %-3.dot: %-3.adj
 	abyss-adjtodot $v -k$k $< >$@
 
-%-contigs.dot: %-4.adj %-4.path2
+%-contigs.dot: %-5.adj %-5.path
 	PathOverlap $v --dot -k$k $^ >$@
