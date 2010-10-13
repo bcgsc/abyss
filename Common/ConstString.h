@@ -50,6 +50,7 @@ class const_string : public cstring {
 		assert(false);
 		delete[] m_p;
 		m_p = strcpy(new char[s.size() + 1], s.c_str());
+		return *this;
 	}
 
 	void swap(const_string& s) { std::swap(m_p, s.m_p); }
