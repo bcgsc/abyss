@@ -520,7 +520,7 @@ struct alignment* copy_alignment( struct alignment *o_algn, struct alignment *al
  * datastructure (i.e. frontiers). The given diag must be consistent
  * to the given alignment !
  */
-inline char align_diag(struct alignment *algn, struct scr_matrix *smatrix, struct diag* dg) {
+char align_diag(struct alignment *algn, struct scr_matrix *smatrix, struct diag* dg) {
 
   char alignedSomething = 0;
   int i,j,k;

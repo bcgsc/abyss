@@ -183,7 +183,7 @@ void fill_tmp_pdist(struct prob_dist *pdist, long double **tmp_dist, int slen1, 
  * omitScore = 0:  normal 
  * omitScore = 1:  no score calculation 
  */ 
-inline void real_calc_weight(struct diag* dg, struct scr_matrix* smatrix,  
+static void real_calc_weight(struct diag* dg, struct scr_matrix* smatrix,  
 		 struct prob_dist *pdist, char omitScore, long double **tmp_dist, struct alignment *algn ) { 
    
   if(dg->multi_dg) {
@@ -302,7 +302,7 @@ inline void real_calc_weight(struct diag* dg, struct scr_matrix* smatrix,
   } 
 } 
  
-inline void calc_weight(struct diag* dg, struct scr_matrix* smatrix,  
+void calc_weight(struct diag* dg, struct scr_matrix* smatrix,  
 		 struct prob_dist *pdist) { 
   real_calc_weight(dg, smatrix, pdist, 0,NULL,NULL); 
 } 
@@ -312,7 +312,7 @@ inline void calc_weight(struct diag* dg, struct scr_matrix* smatrix,
 /** 
  * calculates the overlap weight for the given diag 
  */ 
-inline void calc_ov_weight(struct diag* dg, struct diag_col *dcol, struct scr_matrix* smatrix,  
+void calc_ov_weight(struct diag* dg, struct diag_col *dcol, struct scr_matrix* smatrix,  
 		    struct prob_dist *pdist) { 
   int sn1 = dg->seq_p1.num; 
   int sn2 = dg->seq_p2.num; 
@@ -958,7 +958,7 @@ inline struct simple_diag_col* find_diags_guided(struct scr_matrix *smatrix,
  * The pointer returned (and the ones included in the struct)  
  * has to be deallocted explicitely from memory. 
  */ 
-inline struct simple_diag_col* find_diags_dialign(struct scr_matrix *smatrix,  
+struct simple_diag_col* find_diags_dialign(struct scr_matrix *smatrix,  
 				struct prob_dist *pdist, struct seq* seq1,  
 				struct seq* seq2, struct alignment *algn, 
 				 long double **tmp_dist, int round) { 

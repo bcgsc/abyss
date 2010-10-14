@@ -574,7 +574,7 @@ char simple_aligner(struct seq_col *scol, struct diag_col *dcol,
  * returns a value <0 if there is an non-conflicting overlap
  * returns 0 in all other non-conflicting cases
  */
-inline char confl_diag(struct alignment *algn, char *layer, struct diag *dg1, struct diag *dg2) {
+static char confl_diag(struct alignment *algn, char *layer, struct diag *dg1, struct diag *dg2) {
   //  if(dg1->multi_dg || dg2->multi_dg) error(" confl_diag(): cannot accept multi dgs!");
   int s1_1 = dg1->seq_p1.num;
   int s1_2 = dg1->seq_p2.num;
