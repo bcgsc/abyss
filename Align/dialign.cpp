@@ -8,6 +8,7 @@
 #include <cstring>
 #include <ctime> // for clock
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -358,7 +359,7 @@ string dialign(const vector<string>& amb_seqs, unsigned& matches)
 	// Compute alignment
 	double tim2 = clock();
 	if (!dialign_para->FAST_MODE) {
-		struct diag *cp_diags[all_diags->diag_amount];
+		vector<diag*> cp_diags(all_diags->diag_amount);
 		for(i = 0; i < diag_amount; i++) {
 			cp_diags[i] = (diag*)malloc(sizeof(struct diag));
 			*(cp_diags[i]) = *(all_diags->diags[i]);
