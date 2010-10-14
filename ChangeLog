@@ -1,3 +1,26 @@
+2010-10-13  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.4.
+
+	ABYSS-P:
+	* Fix the bug causing the error
+	Unexpected sequence extension message.
+
+	KAligner:
+	* Reduce the amount of memory used by KAligner.
+
+	PathConsensus:
+	* New program. Replace gaps of Ns that span a region of ambiguous
+	sequence with a consensus sequence of the possible sequences that
+	fill the gap. By default a minimum 90% identity is required. This
+	default can be changed with the parameter, p. The consensus
+	sequence uses IUPAC-IUB ambiguity codes. DIALIGN-TX is used for
+	the multiple sequence alignment.
+
+	PathOverlap:
+	* Fix the bug causing the error
+	Assertion `back(paths, u) == front(paths, v)' failed.
+
 2010-09-08  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.3.
