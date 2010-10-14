@@ -153,6 +153,7 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 						!= prevIter->read_start_pos + qstep
 					|| currIter->contig_start_pos
 						!= prevIter->contig_start_pos + tstep) {
+				currAlign.contig = contigIndexToID(ctgIter->first);
 				*dest++ = value_type(currAlign, qid, seq);
 				currAlign = *currIter;
 			} else {
@@ -165,7 +166,7 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 			currIter++;
 		}
 
-		currAlign.contig = contigIndexToID(ctgIter->first).c_str();
+		currAlign.contig = contigIndexToID(ctgIter->first);
 		*dest++ = value_type(currAlign, qid, seq);
 	}
 }
