@@ -939,6 +939,8 @@ int main(int argc, char **argv)
 			if (opt::verbose > 1)
 				copy(solutions.begin(), solutions.end(),
 						ostream_iterator<ContigPath>(cerr, "\n"));
+			else if (opt::verbose > 0)
+				cerr << solutions.size() << " paths\n";
 			ambIt->second = align(g, solutions, fa);
 			if (!ambIt->second.empty()) {
 				stats.numMerged++;
