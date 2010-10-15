@@ -97,13 +97,12 @@ namespace std {
 	}
 }
 
+#include "HashFunction.h"
+
 /** Return the hash of the null-terminated string s. */
 static inline size_t hash(const char* s)
 {
-    unsigned long h = 0;
-    for (; *s != '\0'; ++s)
-      h = 5 * h + *s;
-    return h;
+	return hashlittle(s, strlen(s), 0);
 }
 
 namespace std {
