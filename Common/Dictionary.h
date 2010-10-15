@@ -14,14 +14,16 @@
  */
 class Dictionary {
 	public:
-		typedef std::string Key;
-		typedef unsigned Serial;
-		typedef hash_map<Key, Serial> Map;
+		typedef std::string key_type;
+		typedef const key_type& key_reference;
+		typedef std::vector<key_type> Vector;
+		typedef unsigned serial_type;
+		typedef hash_map<key_type, serial_type> Map;
 
 		Dictionary() : m_locked(false) { }
 
 		/** Insert the specified key. */
-		Serial insert(const Key& key)
+		serial_type insert(const key_type& key)
 		{
 			std::pair<Map::const_iterator, bool> inserted
 				= m_map.insert(std::make_pair(key, m_map.size()));
@@ -29,9 +31,9 @@ class Dictionary {
 			m_vec.push_back(key);
 			return inserted.first->second;
 		}
-		
+
 		/** Convert the specified key to a serial number. */
-		Serial serial(const Key& key)
+		serial_type serial(const key_type& key)
 		{
 			std::pair<Map::const_iterator, bool> inserted
 				= m_map.insert(std::make_pair(key, m_map.size()));
@@ -47,14 +49,14 @@ class Dictionary {
 		}
 
 		/** Convert the specified serial number to a key. */
-		const Key& key(Serial serial)
+		key_reference key(serial_type serial)
 		{
 			assert(serial < m_vec.size());
 			return m_vec[serial];
 		}
 
 		/** Return a canonical representation for the key. */
-		const Key& intern(const Key& k)
+		key_reference intern(const key_type& k)
 		{
 			return key(serial(k));
 		}
@@ -72,7 +74,7 @@ class Dictionary {
 		size_t size() { return m_vec.size(); }
 
 		/** Return the last key in this dictionary. */
-		const Key& back()
+		key_reference back()
 		{
 			assert(!m_vec.empty());
 			return m_vec.back();
@@ -80,7 +82,7 @@ class Dictionary {
 
 	private:
 		Map m_map;
-		std::vector<Key> m_vec;
+		Vector m_vec;
 		bool m_locked;
 };
 
