@@ -78,4 +78,35 @@ namespace std {
 	}
 }
 
+/** Return the hash of the null-terminated string s. */
+static inline size_t hash(const char* s)
+{
+    unsigned long h = 0;
+    for (; *s != '\0'; ++s)
+      h = 5 * h + *s;
+    return h;
+}
+
+namespace std {
+	template <typename T> struct hash;
+	template <> struct hash<cstring> {
+		size_t operator()(const cstring& s) const
+		{
+			return ::hash(s);
+		}
+	};
+} // namespace std
+
+namespace std {
+	namespace tr1 {
+		template <typename T> struct hash;
+		template <> struct hash<cstring> {
+			size_t operator()(const cstring& s) const
+			{
+				return ::hash(s);
+			}
+		};
+	} // namespace tr1
+} // namespace std
+
 #endif
