@@ -1,6 +1,7 @@
 #ifndef DICTIONARY_H
 #define DICTIONARY_H 1
 
+#include "ConstString.h"
 #include "HashMap.h"
 #include <cassert>
 #include <cstdlib>
@@ -15,10 +16,10 @@
 class Dictionary {
 	public:
 		typedef std::string key_type;
-		typedef const key_type& key_reference;
-		typedef std::vector<key_type> Vector;
+		typedef cstring key_reference;
+		typedef std::vector<const_string> Vector;
 		typedef unsigned serial_type;
-		typedef hash_map<key_type, serial_type> Map;
+		typedef hash_map<key_reference, serial_type> Map;
 
 		Dictionary() : m_locked(false) { }
 

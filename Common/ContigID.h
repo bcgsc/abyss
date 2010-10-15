@@ -1,6 +1,7 @@
 #ifndef CONTIGID_H
 #define CONTIGID_H 1
 
+#include "ConstString.h"
 #include "Dictionary.h"
 #include <cassert>
 #include <istream>
@@ -22,7 +23,7 @@ class ContigID {
 	operator unsigned() const { return m_id; }
 
 	/** Return the string representation. */
-	const std::string& str() const { return s_dict.key(m_id); }
+	Dictionary::key_reference str() const { return s_dict.key(m_id); }
 
 	bool operator ==(const ContigID& o) const
 	{
@@ -62,9 +63,9 @@ class ContigID {
 	}
 
 	/** Set the next contig ID returned by ContigID::create. */
-	static void setNextContigID(const std::string& s)
+	static void setNextContigID(cstring s)
 	{
-		std::istringstream iss(s);
+		std::istringstream iss((std::string)s);
 		iss >> s_nextID;
 		assert(iss.eof());
 	}
