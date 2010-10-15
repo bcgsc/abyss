@@ -20,9 +20,14 @@ class cstring {
 
 	operator const char*() const { return m_p; }
 
+	bool operator==(const cstring& o) const
+	{
+		return m_p == o.m_p || strcmp(m_p, o.m_p) == 0;
+	}
+
 	bool operator<(const cstring& o) const
 	{
-		return strcmp(m_p, o.m_p) < 0;
+		return m_p != o.m_p && strcmp(m_p, o.m_p) < 0;
 	}
 
 	friend std::ostream& operator<<(std::ostream& out,
@@ -48,6 +53,9 @@ class const_string : public cstring {
 	const_string& operator=(const const_string& s)
 	{
 		assert(false);
+		if (this == &s)
+			return *this;
+		assert(m_p != s.m_p);
 		delete[] m_p;
 		m_p = strcpy(new char[s.size() + 1], s.c_str());
 		return *this;
@@ -59,6 +67,7 @@ class const_string : public cstring {
 	const_string();
 	const_string(const char* s);
 	const_string(const cstring&);
+	bool operator==(const const_string& s);
 };
 
 namespace std {
