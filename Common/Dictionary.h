@@ -25,27 +25,26 @@ class Dictionary {
 		/** Insert the specified key. */
 		serial_type insert(const key_type& key)
 		{
-			std::pair<Map::const_iterator, bool> inserted
-				= m_map.insert(std::make_pair(key, m_map.size()));
-			assert(inserted.second);
 			m_vec.push_back(key);
+			std::pair<Map::const_iterator, bool> inserted
+				= m_map.insert(Map::value_type(
+							m_vec.back(), m_map.size()));
+			assert(inserted.second);
 			return inserted.first->second;
 		}
 
 		/** Convert the specified key to a serial number. */
 		serial_type serial(const key_type& key)
 		{
-			std::pair<Map::const_iterator, bool> inserted
-				= m_map.insert(std::make_pair(key, m_map.size()));
-			if (inserted.second) {
-				if (m_locked) {
-					std::cerr << "error: unexpected ID: `"
-						<< key << "'\n";
-					exit(EXIT_FAILURE);
-				}
-				m_vec.push_back(key);
+			Map::const_iterator it = m_map.find(key);
+			if (it != m_map.end())
+				return it->second;
+			if (m_locked) {
+				std::cerr << "error: unexpected ID: `"
+					<< key << "'\n";
+				exit(EXIT_FAILURE);
 			}
-			return inserted.first->second;
+			return insert(key);
 		}
 
 		/** Convert the specified serial number to a key. */
