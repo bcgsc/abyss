@@ -45,8 +45,26 @@ class const_string : public cstring {
   public:
 	const_string(const std::string& s)
 		: cstring(strcpy(new char[s.size() + 1], s.c_str())) { }
+
+#if 0
+	/* Should be like this, but... */
 	const_string(const const_string& s)
 		: cstring(strcpy(new char[s.size() + 1], s.c_str())) { }
+#else
+	/** Copy constructor.
+	 * When a vector grows, libstdc++ calls the copy constructor for
+	 * each element of the vector, which would invalidate any cstring
+	 * that point to this const_string. So, the new const_string gets
+	 * the original data, and the old const_string gets the copy,
+	 * which will probably be destructed soon. Making the copy is
+	 * wasteful, but the C++ standard does not help us out here.
+	 */
+	const_string(const const_string& s) : cstring(s.c_str())
+	{
+		const_cast<const_string&>(s).m_p
+			= strcpy(new char[s.size() + 1], s.c_str());
+	}
+#endif
 
 	~const_string() { delete[] m_p; }
 
