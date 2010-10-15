@@ -46,6 +46,10 @@ class const_string : public cstring {
 	const_string(const std::string& s)
 		: cstring(strcpy(new char[s.size() + 1], s.c_str())) { }
 
+#if __GXX_EXPERIMENTAL_CXX0X__
+	const_string(const_string&& s) : cstring(s.m_p) { s.m_p = NULL; }
+#endif
+
 #if 0
 	/* Should be like this, but... */
 	const_string(const const_string& s)
