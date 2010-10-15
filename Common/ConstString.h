@@ -54,10 +54,11 @@ class const_string : public cstring {
 	/** Copy constructor.
 	 * When a vector grows, libstdc++ calls the copy constructor for
 	 * each element of the vector, which would invalidate any cstring
-	 * that point to this const_string. So, the new const_string gets
-	 * the original data, and the old const_string gets the copy,
-	 * which will probably be destructed soon. Making the copy is
-	 * wasteful, but the C++ standard does not help us out here.
+	 * that point to this const_string. To work around this issue, the
+	 * new const_string gets the original data, and the old
+	 * const_string gets the copy, which will probably be destructed
+	 * soon. Making the copy is wasteful, but the C++ standard does
+	 * not help us out here.
 	 */
 	const_string(const const_string& s) : cstring(s.c_str())
 	{
