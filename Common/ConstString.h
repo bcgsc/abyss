@@ -131,4 +131,14 @@ namespace std {
 	} // namespace tr1
 } // namespace std
 
+namespace __gnu_cxx {
+	template <typename T> struct hash;
+	template <> struct hash<cstring> {
+		size_t operator()(const cstring& s) const
+		{
+			return ::hash(s);
+		}
+	};
+} // namespace __gnu_cxx
+
 #endif
