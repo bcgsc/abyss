@@ -109,6 +109,8 @@ int maximumLikelihoodEstimate(int first, int last,
 		unsigned& n)
 {
 	// Convert the lengths of the contigs from bp to k-mer.
+	assert(len0 >= opt::k);
+	assert(len1 >= opt::k);
 	len0 -= opt::k - 1;
 	len1 -= opt::k - 1;
 	if (len0 > len1)
