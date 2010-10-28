@@ -499,7 +499,7 @@ void NetworkSequenceCollection::runControl()
 
 			case NAS_COVERAGE:
 				controlCoverage();
-				SetState(NAS_ERODE);
+				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 
 			case NAS_POPBUBBLE:
