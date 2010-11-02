@@ -156,7 +156,7 @@ next_record:
 		if (flagFoldCase())
 			transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-		if (isColourSpace(s)) {
+		if (isColourSpace(s) && !isdigit(s[0])) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
