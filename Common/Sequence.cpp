@@ -2,6 +2,7 @@
 #include "Common/Options.h"
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 
@@ -15,24 +16,32 @@ static const int cstont[4][4] = {
 	{ T, G, C, A }
 };
 
-/** Return the complement of the specified base. */
-char complementBaseChar(char base)
+/** Return the complement of the specified nucleotide. */
+char complementBaseChar(char c)
 {
-	switch (base) {
-		case 'A': return 'T';
-		case 'C': return 'G';
-		case 'G': return 'C';
-		case 'T': return 'A';
-		case 'N': return 'N';
-		case 'a': return 't';
-		case 'c': return 'g';
-		case 'g': return 'c';
-		case 't': return 'a';
-		case 'n': return 'n';
-		case '.': return '.';
+	char rc;
+	switch (toupper(c)) {
+	  case 'A': rc = 'T'; break;
+	  case 'C': rc = 'G'; break;
+	  case 'G': rc = 'C'; break;
+	  case 'T': rc = 'A'; break;
+	  case 'N': rc = 'N'; break;
+	  case '.': rc = '.'; break;
+	  case 'M': rc = 'K'; break; // A or C
+	  case 'R': rc = 'Y'; break; // A or G
+	  case 'W': rc = 'W'; break; // A or T
+	  case 'S': rc = 'S'; break; // C or G
+	  case 'Y': rc = 'R'; break; // C or T
+	  case 'K': rc = 'M'; break; // G or T
+	  case 'V': rc = 'B'; break; // A or C or G
+	  case 'H': rc = 'D'; break; // A or C or T
+	  case 'D': rc = 'H'; break; // A or G or T
+	  case 'B': rc = 'V'; break; // C or G or T
+	  default:
+		cerr << "error: unexpected character: `" << c << "'\n";
+		exit(EXIT_FAILURE);
 	}
-	cerr << "error: unexpected character: `" << base << "'\n";
-	exit(EXIT_FAILURE);
+	return islower(c) ? tolower(rc) : rc;
 }
 
 /** Return the reverse complement of the specified sequence. */
