@@ -626,11 +626,16 @@ static ContigPath alignPair(const Graph& g,
 	Sequence sndPathContig(mergePath(sndSol));
 	if (fstPathContig == sndPathContig) {
 		// A perfect match must be caused by palindrome.
-		assert(fstSol.size() == 1);
-		assert(sndSol.size() == 1);
-		assert(fstSol.front() == ~sndSol.front());
+		assert(fstSol.size() == sndSol.size());
+		typedef ContigPath::const_iterator It;
+		pair<It, It> it = mismatch(
+				fstSol.begin(), fstSol.end(), sndSol.begin());
+		assert(it.first != fstSol.end());
+		assert(it.second != sndSol.end());
+		assert(*it.first == ~*it.second);
+		assert(std::equal(it.first+1, It(fstSol.end()), it.second+1));
 		if (opt::verbose > 0)
-			cerr << "Palindrome: " << fstSol.front().id() << '\n';
+			cerr << "Palindrome: " << ContigID(*it.first) << '\n';
 		return solutions[0];
 	}
 
