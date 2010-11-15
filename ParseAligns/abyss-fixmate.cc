@@ -30,7 +30,7 @@ static const char USAGE_MESSAGE[] =
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
-"      --no-qname        set the qname to \"*\"\n"
+"      --no-qname        set the qname to *\n"
 "      --qname           do not alter the qname [default]\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
