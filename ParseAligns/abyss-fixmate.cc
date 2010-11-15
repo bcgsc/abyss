@@ -68,12 +68,11 @@ static struct {
 static ofstream g_fragFile;
 static Histogram g_histogram;
 
-static void handlePair(const string &qname,
-		SAMRecord& a0, SAMRecord& a1)
+static void handlePair(SAMRecord& a0, SAMRecord& a1)
 {
 	if ((a0.isRead1() && a1.isRead1())
 			|| (a0.isRead2() && a1.isRead2())) {
-		cerr << "error: duplicate read ID `" << qname << "'\n";
+		cerr << "error: duplicate read ID `" << a0.qname << "'\n";
 		exit(EXIT_FAILURE);
 	}
 	if (a0.isUnmapped() && a1.isUnmapped()) {
@@ -134,8 +133,8 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 	pair<Alignments::iterator, bool> it = map.insert(
 			make_pair(sam.qname, sam));
 	if (!it.second) {
-		SAMRecord a0(it.first->second);
-		handlePair(it.first->first, a0, sam);
+		SAMRecord a0(it.first->second, it.first->first);
+		handlePair(a0, sam);
 		map.erase(it.first);
 	}
 	stats.alignments++;
