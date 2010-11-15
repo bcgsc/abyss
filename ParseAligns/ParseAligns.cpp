@@ -564,7 +564,6 @@ int main(int argc, char* const* argv)
 		histogram = histogram.negate();
 	histogram.eraseNegative();
 	Histogram h = histogram.trimFraction(0.0001);
-	int median = h.median();
 	if (opt::verbose > 0)
 		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
 			"median: " << setprecision(4) << h.median() << " "
@@ -572,7 +571,6 @@ int main(int argc, char* const* argv)
 			"n: " << h.size() << " "
 			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
 			<< h.barplot() << endl;
-	cout << "@RG\tID:*\tSM:*\tPI:" << median << '\n';
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
 		cerr << "error: The mate pairs of this library are oriented "
