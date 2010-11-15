@@ -30,6 +30,8 @@ static const char USAGE_MESSAGE[] =
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
+"      --no-qname        set the qname to \"*\"\n"
+"      --qname           do not alter the qname [default]\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
 "  -v, --verbose         display verbose output\n"
@@ -41,6 +43,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static string fragPath;
 	static string histPath;
+	static int qname = 1;
 	static int verbose;
 }
 
@@ -49,6 +52,8 @@ static const char shortopts[] = "h:s:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "qname",    no_argument,      &opt::qname, 1 },
+	{ "no-qname", no_argument,      &opt::qname, 0 },
 	{ "hist",    required_argument, NULL, 'h' },
 	{ "same",    required_argument, NULL, 's' },
 	{ "verbose", no_argument,       NULL, 'v' },
@@ -75,6 +80,10 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		cerr << "error: duplicate read ID `" << a0.qname << "'\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (!opt::qname)
+		a0.qname = a1.qname = "*";
+
 	if (a0.isUnmapped() && a1.isUnmapped()) {
 		// Both reads are unaligned.
 		stats.bothUnaligned++;
