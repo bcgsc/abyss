@@ -2,6 +2,9 @@
 #define DOTIO_H 1
 
 #include "Graph.h"
+#include <cstdlib> // for exit
+#include <limits> // for numeric_limits
+#include <istream>
 #include <ostream>
 
 template <typename V, typename VertexProp>
@@ -70,9 +73,13 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	typedef typename edge_property<Graph>::type edge_property_type;
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
- 		if (get(vertex_removed, g, *u))
+		if (get(vertex_removed, g, *u))
 			continue;
 		write_vertex(out, *u, get(vertex_bundle, g, *u));
+	}
+	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
+		if (get(vertex_removed, g, *u))
+			continue;
 		write_edges(out, g, *u, (edge_property_type*)NULL);
 	}
 	return out;
@@ -96,6 +103,103 @@ template <typename Graph>
 DotWriter<Graph> dot_writer(const Graph& g)
 {
 	return DotWriter<Graph>(g);
+}
+
+/** Read an id delimited by double quotes. */
+template <typename VertexDescriptor>
+std::istream& read_dot_id(std::istream& in, VertexDescriptor& u)
+{
+	if (in >> std::ws && in.peek() == '"') {
+		in.get();
+		std::string s;
+		getline(in, s, '"');
+		std::istringstream ss(s);
+		ss >> u;
+		assert(ss.eof());
+	} else
+		in.clear(std::ios::failbit);
+	return in;
+}
+
+template <typename Graph>
+std::istream& read_dot(std::istream& in, Graph& g)
+{
+	assert(in);
+	assert(num_vertices(g) == 0);
+
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	typedef typename vertex_property<Graph>::type
+		vertex_property_type;
+	typedef typename edge_property<Graph>::type edge_property_type;
+
+	// Graph properties
+	std::string s;
+	in >> s;
+	assert(in);
+	if (s != "digraph") {
+		std::cerr << "error: Expected `digraph' and saw `"
+			<< s << "'.\n";
+		exit(EXIT_FAILURE);
+	}
+	in.ignore(std::numeric_limits<std::streamsize>::max(), '{');
+
+	vertex_descriptor u;
+	while (read_dot_id(in, u)) {
+		char c;
+		in >> c;
+		assert(in);
+		if (c == '[') {
+			// Vertex properties
+			vertex_property_type vp;
+			in >> vp;
+			assert(in);
+			vertex_descriptor x = add_vertex(vp, g);
+			assert(x == u);
+			in.ignore(std::numeric_limits<std::streamsize>::max(),
+					']');
+		} else if (c == '-') {
+			// Edge
+			in >> c;
+			assert(in);
+			if (c != '>') {
+				std::cerr << "error: Expected `->' and saw `-"
+					<< c << "'.\n";
+				exit(EXIT_FAILURE);
+			}
+			ContigID::lock();
+
+			vertex_descriptor v;
+			read_dot_id(in, v);
+			assert(in);
+			if (in >> std::ws && in.peek() == '[') {
+				// Edge properties
+				in.get();
+				edge_property_type ep;
+				in >> ep;
+				assert(in);
+				add_edge(u, v, ep, g);
+				in.ignore(std::numeric_limits<std::streamsize>::max(),
+						']');
+			} else
+				add_edge(u, v, g);
+		} else {
+			std::cerr << "error: Expected `[' or `->' and saw `"
+				<< c << "'.\n";
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// Check for the closing brace.
+	if (in.fail())
+		in.clear();
+	assert(in.peek() == '}');
+	in.get();
+	in >> std::ws;
+	assert(in.eof());
+
+	assert(num_vertices(g) > 0);
+	return in;
 }
 
 #endif

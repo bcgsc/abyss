@@ -57,7 +57,22 @@ struct ContigProperties {
 	friend std::istream& operator >>(std::istream& in,
 			ContigProperties& o)
 	{
-		return in >> o.length >> o.coverage;
+		if (in.peek() == 'l') {
+			char c0, c1;
+			in >> c0 >> c1;
+			assert(in);
+			assert(c0 == 'l');
+			assert(c1 == '=');
+			in >> o.length;
+
+		   	in >> c0 >> c1;
+			assert(in);
+			assert(c0 == 'C');
+			assert(c1 == '=');
+			in >> o.coverage;
+			return in;
+		} else
+			return in >> o.length >> o.coverage;
 	}
 };
 

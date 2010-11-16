@@ -156,6 +156,7 @@ class ContigGraph : public G {
 };
 
 #include "AdjIO.h"
+#include "DotIO.h"
 
 template <typename Graph>
 std::ostream& operator<<(std::ostream& out,
@@ -168,7 +169,14 @@ template <typename Graph>
 std::istream& operator>>(std::istream& in,
 		ContigGraph<Graph>& g)
 {
-	return read_adj(in, g);
+	in >> std::ws;
+	assert(in);
+	switch (in.peek()) {
+	  case 'd': // digraph: GraphViz dot format
+		return read_dot<Graph>(in, g);
+	  default: // adj format
+		return read_adj(in, g);
+	}
 }
 
 #endif
