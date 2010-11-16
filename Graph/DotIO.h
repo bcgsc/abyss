@@ -2,6 +2,7 @@
 #define DOTIO_H 1
 
 #include "Graph.h"
+#include <cassert>
 #include <cstdlib> // for exit
 #include <limits> // for numeric_limits
 #include <istream>
