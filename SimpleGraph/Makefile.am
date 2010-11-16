@@ -1,6 +1,6 @@
 bin_PROGRAMS = SimpleGraph
 
-SimpleGraph_CPPFLAGS = -pthread \
+SimpleGraph_CPPFLAGS = -pthread -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/Graph
 

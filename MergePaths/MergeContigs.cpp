@@ -8,6 +8,7 @@
 #include "Dictionary.h"
 #include "DirectedGraph.h"
 #include "FastaReader.h"
+#include "GraphIO.h"
 #include "StringUtil.h"
 #include <algorithm>
 #include <cstdlib>

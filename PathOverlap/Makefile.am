@@ -1,6 +1,6 @@
 bin_PROGRAMS = PathOverlap
 
-PathOverlap_CPPFLAGS = \
+PathOverlap_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \

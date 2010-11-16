@@ -1,13 +1,11 @@
 #include "config.h"
-#include "AdjIO.h"
 #include "ContigGraph.h"
 #include "ContigGraphAlgorithms.h"
 #include "ContigID.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
-#include "DotIO.h"
-#include "SAMIO.h"
+#include "GraphIO.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
@@ -336,7 +334,7 @@ ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 /** Print the graph of path overlaps. */
 void printGraph(Graph& g,
 		const Paths& paths, const vector<string>& pathIDs,
-		const string& graphName, const string& commandLine)
+		const string& commandLine)
 {
 	// Find the overlapping paths.
 	Overlaps overlaps = findOverlaps(g, paths);
@@ -365,25 +363,8 @@ void printGraph(Graph& g,
 	}
 
 	// Output the graph.
-	switch (opt::format) {
-	  case ADJ:
-		cout << adj_writer(g);
-		break;
-	  case DOT:
-		cout << "digraph \"" << graphName << "\" {\n"
-			"k=" << opt::k << "\n"
-			"edge[d=" << -int(opt::k-1) << "]\n"
-			<< dot_writer(g)
-			<< "}\n";
-		break;
-	  case SAM:
-		// SAM headers.
-		cout << "@HD\tVN:1.0\n"
-			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n'
-			<< sam_writer(g);
-		break;
-	}
+	write_graph(cout, g, PROGRAM, commandLine);
+	assert(cout.good());
 }
 
 int main(int argc, char** argv)
@@ -446,7 +427,7 @@ int main(int argc, char** argv)
 	Paths paths = readPaths(g, pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
-		printGraph(g, paths, pathIDs, pathsFile, commandLine);
+		printGraph(g, paths, pathIDs, commandLine);
 		return 0;
 	}
 

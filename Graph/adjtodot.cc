@@ -5,7 +5,7 @@
 #include "ContigGraph.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
-#include "SAMIO.h"
+#include "GraphIO.h"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -123,24 +123,7 @@ int main(int argc, char** argv)
 			<< endl;
 	}
 
-	switch (opt::format) {
-	  case ADJ:
-		cout << adj_writer<Graph>(g);
-		break;
-	  case DOT:
-		cout << "digraph \"" << path << "\" {\n";
-		if (opt::k > 0)
-			cout << "k=" << opt::k << "\n"
-				"edge[d=" << -(opt::k-1) << "]\n";
-		cout << dot_writer<Graph>(g) << "}\n";
-		break;
-	  case SAM:
-		cout << "@HD\tVN:1.0\tSO:coordinate\n"
-			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n';
-		cout << sam_writer<Graph>(g);
-		break;
-	}
+	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
 	return 0;
 }

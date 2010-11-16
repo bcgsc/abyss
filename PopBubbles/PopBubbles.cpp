@@ -10,6 +10,7 @@
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
+#include "GraphIO.h"
 #include "Iterator.h"
 #include "Sequence.h"
 #include <algorithm>
@@ -197,8 +198,17 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, char *const argv[])
+int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -289,7 +299,7 @@ int main(int argc, char *const argv[])
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
 		assert(fout.good());
-		fout << g;
+		write_graph(fout, g, PROGRAM, commandLine);
 		assert(fout.good());
 	}
 

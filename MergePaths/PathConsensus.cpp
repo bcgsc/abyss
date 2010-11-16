@@ -21,6 +21,7 @@
 #include "ContigPath.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
+#include "GraphIO.h"
 #include "StringUtil.h"
 #include "needleman_wunsch.h"
 #include "smith_waterman.h"
@@ -88,7 +89,7 @@ namespace opt {
 	static string dialign_prob;
 
 	/** Output format. */
-	int format = ADJ; // used by ContigProperties
+	int format; // used by ContigProperties
 
 	/** The the number of bases to continue the constrained search of
 	 * the graph beyond the size of the ambiguous gap in the path.
@@ -790,11 +791,17 @@ static void calculateCoverageStatistics(const Graph& g)
 }
 #endif
 
-/**
- * main program routine
- */
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 			shortopts, longopts, NULL)) != -1;) {
@@ -1035,7 +1042,7 @@ int main(int argc, char **argv)
 			add_edge(it->t, it->u, g);
 			add_edge(it->u, it->v, g);
 		}
-		fout << adj_writer(g);
+		write_graph(fout, g, PROGRAM, commandLine);
 		assert_good(fout, opt::graphPath);
 	}
 

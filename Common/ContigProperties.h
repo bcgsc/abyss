@@ -2,19 +2,10 @@
 #define CONTIGPROPERTIES_H 1
 
 #include "ContigNode.h"
+#include "Graph/Options.h"
 #include <cassert>
 #include <istream>
 #include <ostream>
-
-namespace opt {
-	extern unsigned k;
-
-	/** Output format. */
-	extern int format;
-}
-
-/** Enumeration of output formats */
-enum { ADJ, DOT, SAM };
 
 /** The length and coverage of a contig. */
 struct ContigProperties {

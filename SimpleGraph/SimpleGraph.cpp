@@ -6,6 +6,7 @@
 #include "Estimate.h"
 #include "Histogram.h"
 #include "Iterator.h"
+#include "GraphIO.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
 #include <cerrno>

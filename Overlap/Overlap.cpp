@@ -11,6 +11,7 @@
 #include "DirectedGraph.h"
 #include "Estimate.h"
 #include "FastaReader.h"
+#include "GraphIO.h"
 #include "MapGraph.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -290,8 +291,17 @@ static void readContigs(const char *contigPath)
 	opt::colourSpace = isdigit(g_contigs[0][0]);
 }
 
-int main(int argc, char *const argv[])
+int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -465,7 +475,7 @@ int main(int argc, char *const argv[])
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
 		assert(fout.good());
-		fout << graph;
+		write_graph(fout, graph, PROGRAM, commandLine);
 		assert(fout.good());
 	}
 

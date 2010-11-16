@@ -513,13 +513,4 @@ void put(vertex_removed_t,
 	return g.remove_vertex(u);
 }
 
-#include "DotIO.h"
-
-template <typename VertexProp, typename EdgeProp>
-std::ostream& operator<<(std::ostream& out,
-		const DirectedGraph<VertexProp, EdgeProp>& g)
-{
-	return write_dot(out, g);
-}
-
 #endif
