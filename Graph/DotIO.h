@@ -189,12 +189,18 @@ std::istream& read_dot(std::istream& in, Graph& g)
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	// Check for the closing brace.
 	if (in.fail())
 		in.clear();
-	assert(in.peek() == '}');
-	in.get();
+
+	// Check for the closing brace.
+	char c;
+	in >> c;
+	assert(in);
+	if (c != '}') {
+		std::cerr << "error: Expected `\"' or `}' and saw `"
+			<< c << "'.\n";
+		exit(EXIT_FAILURE);
+	}
 	in >> std::ws;
 	assert(in.eof());
 
