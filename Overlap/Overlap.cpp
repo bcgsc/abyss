@@ -173,50 +173,6 @@ static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 			comment.str(), seq);
 }
 
-static FastaRecord overlapContigs(const ContigNode& t_id,
-		const ContigNode& h_id, unsigned overlap, bool mask)
-{
-	string t = sequence(t_id);
-	string h = sequence(h_id);
-	assert(overlap < opt::k - 1);
-	unsigned gap = opt::k - 1 - overlap;
-	string a(t, t.length() - opt::k+1, gap);
-	string o(h, 0, overlap);
-	string b(h, overlap, gap);
-	if (mask)
-		transform(o.begin(), o.end(), o.begin(), ptr_fun(::tolower));
-	return newContig(t_id, h_id, -overlap, a + o + b);
-}
-
-static FastaRecord mergeContigs(
-		const ContigNode& t, const ContigNode& h,
-		const Estimate& est, unsigned overlap, bool mask)
-{
-	if (overlap > 0) {
-		stats.overlap++;
-		int dist = -overlap;
-		int diff = dist - est.distance;
-		if ((unsigned)abs(diff) > allowedError(est.stdDev))
-			cerr << "warning: overlap does not agree with estimate\n"
-				<< '\t' << t << ',' << h << ' '
-				<< dist << ' ' << est << endl;
-		return overlapContigs(t, h, overlap, mask);
-	} else {
-		assert(opt::scaffold);
-		stats.scaffold++;
-		if (opt::verbose > 0)
-			cout << t << '\t' << h << "\t(" << est.distance << ")\n";
-		string gap = est.distance <= 0 ? string("n")
-			: string(est.distance, 'N');
-		const string& ts = sequence(t);
-		const string& hs = sequence(h);
-		unsigned overlap = opt::k - 1;
-		return newContig(t, h, est.distance,
-				ts.substr(ts.length() - overlap) + gap
-				+ hs.substr(0, overlap));
-	}
-}
-
 struct Overlap {
 	const Estimate est;
 	const unsigned overlap;
@@ -230,6 +186,12 @@ struct Overlap {
 		return overlap == o.overlap;
 	}
 
+	operator Distance() const
+	{
+		assert(overlap > 0);
+		return -overlap;
+	}
+
 	friend ostream& operator<<(ostream& out, const Overlap& o)
 	{
 		return out << "d="
@@ -237,12 +199,26 @@ struct Overlap {
 	}
 };
 
-static FastaRecord mergeContigs(
-		const ContigNode& t, const ContigNode& h,
-		const Overlap& overlap)
+/** Create a contig representing the gap between contigs u and v. */
+static FastaRecord createGapContig(
+		const ContigNode& u, const ContigNode& v,
+		const Overlap& o)
 {
-	return mergeContigs(t, h, overlap.est, overlap.overlap,
-			overlap.mask);
+	assert(opt::scaffold);
+	assert(o.overlap == 0);
+	stats.scaffold++;
+	int distance = o.est.distance;
+	if (opt::verbose > 0)
+		cout << u << '\t' << v << "\t(" << distance << ")\n";
+	assert(distance < 100000);
+	string gap = distance <= 0 ? string("n")
+		: string(distance, 'N');
+	const string& useq = sequence(u);
+	const string& vseq = sequence(v);
+	unsigned overlap = opt::k - 1; // by convention
+	return newContig(u, v, distance,
+			useq.substr(useq.length() - overlap) + gap
+			+ vseq.substr(0, overlap));
 }
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
@@ -289,8 +265,8 @@ static void findOverlap(const Graph& g,
 		? findOverlap(t, h, mask) : 0;
 	if (mask && !opt::mask)
 		return;
-	Overlap ep(est, overlap, mask);
 	if (overlap > 0 || opt::scaffold) {
+		Overlap ep(est, overlap, mask);
 		add_edge(t, h, ep, out);
 		add_edge(~h, ~t, ep, out);
 	}
@@ -445,15 +421,7 @@ int main(int argc, char *const argv[])
 		assert(overlap.overlap > 0);
 		if (contiguous_out(overlapGraph, t)) {
 			assert(*adjacent_vertices(t, overlapGraph).first == h);
-			FastaRecord contig = mergeContigs(t, h, overlap);
-			out << contig;
-			assert(out.good());
-
-			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = graph.add_vertex(
-					ContigProperties(contig.seq.length(), 0));
-			graph.add_edge(t, v);
-			graph.add_edge(v, h);
+			graph.add_edge(t, h, overlap);
 
 			// Clear the out-edges of t and the in-edges of h.
 			clearOutEdges(t, scaffoldGraph);
@@ -479,7 +447,7 @@ int main(int argc, char *const argv[])
 			// This edge is not scaffolded.
 		} else if (contiguous_out(scaffoldGraph, t)) {
 			assert(*adjacent_vertices(t, scaffoldGraph).first == h);
-			FastaRecord contig = mergeContigs(t, h, overlap);
+			FastaRecord contig = createGapContig(t, h, overlap);
 			out << contig;
 			assert(out.good());
 
