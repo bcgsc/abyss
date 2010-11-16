@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
-#include <numeric>
 #include <utility>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
@@ -103,21 +102,25 @@ void remove_vertex_if(Graph& g, It first, It last, Predicate p)
 			bind1st(std::mem_fun(&Graph::remove_vertex), &g), p);
 }
 
-template<typename Graph>
-struct AddVertexProp {
+/** Add the vertex and edge propeties of the path [first, last). */
+template<typename Graph, typename It>
+typename vertex_property<Graph>::type addProp(const Graph& g,
+		It first, It last)
+{
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
 	typedef typename vertex_property<Graph>::type
 		vertex_property_type;
-	const Graph& g;
-	AddVertexProp(const Graph& g) : g(g) { }
-	vertex_property_type operator()(
-			const vertex_property_type& vp,
-			const vertex_descriptor& u) const
-	{
-		return vp + get(vertex_bundle, g, u);
+	assert(first != last);
+	vertex_property_type vp = get(vertex_bundle, g, *first);
+	for (It it = first + 1; it != last; ++it) {
+		vertex_descriptor u = *(it - 1);
+		vertex_descriptor v = *it;
+		vp += get(edge_bundle, g, u, v);
+		vp += get(vertex_bundle, g, v);
 	}
-};
+	return vp;
+}
 
 /** Merge the vertices in the sequence [first, last).
  * Create a new vertex whose property is the sum of [first, last).
@@ -128,13 +131,7 @@ void merge(Graph& g, It first, It last)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
-	typedef typename vertex_property<Graph>::type
-		vertex_property_type;
-
-	assert(first != last);
-	vertex_property_type vp = std::accumulate(first + 1, last,
-			get(vertex_bundle, g, *first), AddVertexProp<Graph>(g));
-	vertex_descriptor u = add_vertex(vp, g);
+	vertex_descriptor u = add_vertex(addProp(g, first, last), g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
 }

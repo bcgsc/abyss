@@ -1,9 +1,12 @@
 #include "config.h"
 #include "Common/Options.h"
+#include "ContigGraph.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
+#include "ContigProperties.h"
 #include "DataLayer/Options.h"
 #include "Dictionary.h"
+#include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "StringUtil.h"
 #include <algorithm>
@@ -30,10 +33,11 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... CONTIG PATH\n"
+"Usage: " PROGRAM " [OPTION]... FASTA ADJ PATH\n"
 "Merge paths of contigs to create larger contigs.\n"
-"  CONTIG  contigs in FASTA format\n"
-"  PATH    paths of these contigs\n"
+"  FASTA  contigs in FASTA format\n"
+"  ADJ    contig adjacency graph\n"
+"  PATH   sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
@@ -45,7 +49,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by ContigProperties
 	static string out;
 	static string path;
 }
@@ -137,16 +141,19 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	return s;
 }
 
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
+typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 typedef ContigPath Path;
 
-/** Merge the specified two contigs, which must overlap by k-1 bp, and
- * generate a consensus sequence of the overlapping region. The result
- * is stored in the first argument.
- */
-static void mergeContigs(Sequence& seq, const Sequence& s,
-		const ContigNode& node, const Path& path)
+/** Append the sequence of contig v to seq. */
+static void mergeContigs(const Graph& g,
+		vertex_descriptor u, vertex_descriptor v,
+		Sequence& seq, const Path& path)
 {
-	unsigned overlap = opt::k - 1;
+	int d = get(edge_bundle, g, u, v).distance;
+	assert(d < 0);
+	unsigned overlap = -d;
+	const Sequence& s = sequence(v);
 	assert(s.length() > overlap);
 	Sequence ao;
 	Sequence bo(s, 0, overlap);
@@ -157,7 +164,7 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 		o = createConsensus(ao, bo);
 	} while (o.empty() && chomp(seq, 'n'));
 	if (o.empty()) {
-		cerr << "warning: the head of `" << node << "' "
+		cerr << "warning: the head of `" << v << "' "
 			"does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
 		seq += 'n';
@@ -169,7 +176,7 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 }
 
-static Contig mergePath(const Path& path)
+static Contig mergePath(const Graph& g, const Path& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
@@ -177,10 +184,12 @@ static Contig mergePath(const Path& path)
 			it != path.end(); ++it) {
 		if (!it->ambiguous())
 			coverage += g_contigs[it->id()].coverage;
-		if (seq.empty())
+		if (seq.empty()) {
 			seq = sequence(*it);
-		else
-			mergeContigs(seq, sequence(*it), *it, path);
+		} else {
+			assert(it != path.begin());
+			mergeContigs(g, *(it-1), *it, seq, path);
+		}
 	}
 	return Contig("", seq, coverage);
 }
@@ -277,7 +286,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
+	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
@@ -289,6 +298,7 @@ int main(int argc, char** argv)
 	}
 
 	const char* contigFile = argv[optind++];
+	string adjPath(argv[optind++]);
 	string mergedPathFile(argv[optind++]);
 
 	vector<Contig>& contigs = g_contigs;
@@ -308,6 +318,13 @@ int main(int argc, char** argv)
 		if (optind == argc)
 			ContigID::lock();
 	}
+
+	// Read the contig adjacency graph.
+	ifstream fin(adjPath.c_str());
+	assert_open(fin, adjPath);
+	Graph g;
+	fin >> g;
+	assert(fin.eof());
 
 	vector<string> pathIDs;
 	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
@@ -362,7 +379,7 @@ int main(int argc, char** argv)
 		const Path& path = *it;
 		if (path.empty())
 			continue;
-		Contig contig = mergePath(path);
+		Contig contig = mergePath(g, path);
 		contig.id = pathIDs[it - paths.begin()];
 		FastaRecord rec(contig);
 		rec.comment += ' ' + toString(path);

@@ -1,6 +1,7 @@
 #ifndef CONTIGPROPERTIES_H
 #define CONTIGPROPERTIES_H 1
 
+#include "ContigNode.h"
 #include <cassert>
 #include <istream>
 #include <ostream>
@@ -26,14 +27,9 @@ struct ContigProperties {
 
 	ContigProperties& operator +=(const ContigProperties& o)
 	{
-		length += o.length - opt::k + 1;
+		length += o.length;
 		coverage += o.coverage;
 		return *this;
-	}
-
-	ContigProperties operator +(const ContigProperties& o) const
-	{
-		return ContigProperties(*this) += o;
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
@@ -96,5 +92,35 @@ struct Distance {
 		return in >> o.distance;
 	}
 };
+
+/** Add the specified distance (overlap) to the specified contig
+ * length.
+ */
+static inline ContigProperties operator+=(
+		ContigProperties& a, const Distance& b)
+{
+	assert((int)a.length + (int)b.distance > 0);
+	a.length += b.distance;
+	return a;
+}
+
+/** Return the edge properties of (u,v) unless either u or v is
+ * ambiguous, in which case return a default-constructed instance of
+ * the edge properties.
+ */
+template <typename Graph>
+Distance get(edge_bundle_t, const Graph& g,
+		ContigNode u, ContigNode v)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	if (u.ambiguous() || v.ambiguous()) {
+		return Distance();
+	} else {
+		std::pair<edge_descriptor, bool> e = edge(u, v, g);
+		assert(e.second);
+		return g[e.first];
+	}
+}
 
 #endif

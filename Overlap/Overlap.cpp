@@ -98,7 +98,7 @@ static const struct option longopts[] = {
 static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 
 static struct {
 	unsigned overlap;

@@ -38,65 +38,67 @@ static inline Constraints::iterator findConstraint(
 		&& it->first == key ? it : constraints.end();
 }
 
-typedef Graph::vertex_descriptor vertex_descriptor;
-typedef Graph::adjacency_iterator adjacency_iterator;
+typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
+typedef graph_traits<Graph>::out_edge_iterator out_edge_iterator;
 
 /** Find paths through the graph that satisfy the constraints.
  * @return false if the search exited early
  */
 bool constrainedSearch(const Graph& g,
-		vertex_descriptor v,
+		vertex_descriptor u,
 		Constraints& constraints,
 		Constraints::const_iterator nextConstraint,
 		unsigned satisfied,
 		ContigPath& path, ContigPaths& solutions,
-		size_t currLen, unsigned& visitedCount)
+		int distance, unsigned& visitedCount)
 {
 	assert(satisfied < constraints.size());
-	static const unsigned SATISFIED = UINT_MAX;
+	static const int SATISFIED = INT_MAX;
 	if (!path.empty()) {
-		Constraints::iterator it = findConstraint(
-				constraints, path.back());
+		vertex_descriptor v = path.back();
+		Constraints::iterator it = findConstraint(constraints, v);
 		if (it != constraints.end() && it->second != SATISFIED) {
-			if (currLen > it->second)
+			if (distance > it->second)
 				return true; // This constraint cannot be met.
+
 			if (++satisfied == constraints.size()) {
 				// All the constraints have been satisfied.
 				solutions.push_back(path);
 				return solutions.size() <= opt::maxPaths;
 			}
 			// This constraint has been satisfied.
-			unsigned constraint = it->second;
+			int constraint = it->second;
 			it->second = SATISFIED;
-			if (!constrainedSearch(g, v, constraints,
+			if (!constrainedSearch(g, u, constraints,
 						nextConstraint, satisfied, path, solutions,
-						currLen, visitedCount))
+						distance, visitedCount))
 				return false;
 			it->second = constraint;
 			return true;
 		}
-		currLen += g[path.back()].length - opt::k + 1;
+
+		if (++visitedCount >= opt::maxCost)
+			return false; // Too complex.
+
+		// Check that the next constraint has not been violated.
+		while (distance > nextConstraint->second
+				&& findConstraint(constraints,
+					nextConstraint->first)->second == SATISFIED)
+			++nextConstraint; // This constraint is satisfied.
+		if (distance > nextConstraint->second)
+			return true; // This constraint cannot be met.
+
+		distance += g[v].length;
+		u = v;
 	}
 
-	if (++visitedCount >= opt::maxCost)
-		return false; // Too complex.
-
-	// Check that the next constraint has not been violated.
-	while (currLen > nextConstraint->second
-			&& findConstraint(constraints,
-				nextConstraint->first)->second == SATISFIED)
-		++nextConstraint; // This constraint is satisfied.
-	if (currLen > nextConstraint->second)
-		return true; // This constraint cannot be met.
-
 	path.push_back(vertex_descriptor());
-	pair<adjacency_iterator, adjacency_iterator>
-		adj = g.adjacent_vertices(v);
-	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
-		path.back() = *it;
-		if (!constrainedSearch(g, path.back(), constraints,
+	pair<out_edge_iterator, out_edge_iterator> adj = g.out_edges(u);
+	for (out_edge_iterator it = adj.first; it != adj.second; ++it) {
+		path.back() = target(*it, g);
+		if (!constrainedSearch(g, u, constraints,
 					nextConstraint, satisfied, path, solutions,
-					currLen, visitedCount))
+					distance + g[*it].distance, visitedCount))
 			return false;
 	}
 	assert(!path.empty());

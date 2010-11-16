@@ -14,7 +14,6 @@
 #include <cstring> // for strerror
 #include <cstdlib>
 #include <functional>
-#include <numeric>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -214,9 +213,7 @@ static unsigned findOverlap(const Graph& g,
 {
 	if (!startsWith(paths[v.id], v.sense, first, last))
 		return 0;
-	distance = -accumulate(first, last,
-			ContigProperties(opt::k-1, 0),
-			AddVertexProp<Graph>(g)).length;
+	distance = -addProp(g, first, last).length;
 	return last - first;
 }
 
@@ -341,7 +338,8 @@ void printGraph(Graph& g,
 		const Paths& paths, const vector<string>& pathIDs,
 		const string& graphName, const string& commandLine)
 {
-	typedef Graph::vertex_iterator vertex_iterator;
+	// Find the overlapping paths.
+	Overlaps overlaps = findOverlaps(g, paths);
 
 	// Add the path vertices.
 	ContigID::unlock();
@@ -359,7 +357,6 @@ void printGraph(Graph& g,
 				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 
 	// Add the path edges.
-	Overlaps overlaps = findOverlaps(g, paths);
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
 		Vertex u = it->source, v = it->target;

@@ -17,8 +17,8 @@ namespace opt {
 	static const unsigned maxPaths = 200;
 }
 
-typedef ContigGraph<DirectedGraph<ContigProperties> > Graph;
-typedef std::pair<ContigNode, unsigned> Constraint;
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
+typedef std::pair<ContigNode, int> Constraint;
 typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;
 

@@ -34,7 +34,6 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <numeric>
 #include <set>
 #include <string>
 #include <vector>
@@ -583,10 +582,7 @@ static bool validCoverage(unsigned pathLen, unsigned pathCover)
 static ContigProperties calculatePathProperties(const Graph& g,
 		const ContigPath& path)
 {
-	assert(!path.empty());
-	ContigPath::const_iterator first = path.begin();
-	return std::accumulate(first + 1, path.end(),
-			get(vertex_bundle, g, *first), AddVertexProp<Graph>(g));
+	return addProp(g, path.begin(), path.end());
 }
 
 /* Resolve ambiguous region using pairwise alignment (needleman-wunsch)

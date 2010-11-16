@@ -17,7 +17,6 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <numeric>
 #include <pthread.h>
 #include <set>
 #include <sstream>
@@ -214,20 +213,38 @@ static struct {
 	unsigned tooComplex;
 } stats;
 
-/** Return the length of the specified path in k-mer. */
-static size_t calculatePathLength(const Graph& g,
-		const ContigPath& path, size_t first = 0, size_t last = 0)
+typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
+
+/** Return the distance from vertex u to v. */
+static int getDistance(const Graph& g,
+		vertex_descriptor u, vertex_descriptor v)
 {
-	assert(first + last < path.size());
-	return accumulate(path.begin() + first, path.end() - last,
-			ContigProperties(0, 0), AddVertexProp<Graph>(g)).length;
+	typedef graph_traits<Graph>::edge_descriptor edge_descriptor;
+	pair<edge_descriptor, bool> e = edge(u, v, g);
+	assert(e.second);
+	return g[e.first].distance;
+}
+
+/** Return the length of the specified path in k-mer. */
+static unsigned calculatePathLength(const Graph& g,
+		const ContigNode& origin,
+		const ContigPath& path, size_t prefix = 0, size_t suffix = 0)
+{
+	assert(prefix + suffix < path.size());
+	int length = addProp(g, path.begin() + prefix,
+			path.end() - suffix).length;
+
+	// Account for the overlap on the left.
+	vertex_descriptor u = prefix == 0 ? origin : path[prefix - 1];
+	length += getDistance(g, u, path[prefix]);
+	assert(length > 0);
+	return length;
 }
 
 /** Return an ambiguous path that agrees with all the given paths. */
 static ContigPath constructAmbiguousPath(const Graph &g,
-		const ContigPaths& solutions)
+		const ContigNode& origin, const ContigPaths& solutions)
 {
-	typedef vector<ContigPath> ContigPaths;
 	const ContigPaths& paths = solutions;
 
 	// Find the size of the smallest path.
@@ -286,7 +303,7 @@ static ContigPath constructAmbiguousPath(const Graph &g,
 	ContigPaths::const_iterator longest = paths.end();
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		unsigned len = calculatePathLength(g, *it);
+		unsigned len = calculatePathLength(g, origin, *it);
 		if (len > maxLen) {
 			maxLen = len;
 			longest = it;
@@ -295,12 +312,23 @@ static ContigPath constructAmbiguousPath(const Graph &g,
 	assert(maxLen > 0);
 	assert(longest != paths.end());
 
-	unsigned numN = calculatePathLength(g, *longest,
-			longestPrefix, longestSuffix);
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
 	if (longestSuffix > 0) {
+		ContigPath longestPath(*longest);
+		unsigned length = calculatePathLength(g, origin, longestPath,
+				longestPrefix, longestSuffix);
+
+		// Account for the overlap on the right.
+		int dist = length + getDistance(g,
+				*(longestPath.rbegin() + longestSuffix),
+				*(longestPath.rbegin() + longestSuffix - 1));
+
+		// Add k-1 because it is the convention.
+		int numN = dist + opt::k - 1;
+		assert(numN > 0);
+
 		out.push_back(ContigNode(numN, 'N'));
 		out.insert(out.end(), vspath.rbegin(), vspath.rend());
 	}
@@ -311,20 +339,25 @@ static ContigPath constructAmbiguousPath(const Graph &g,
  * Repeat contigs, which would have more than one position, are not
  * represented in this map.
  */
-void makeDistanceMap(const Graph& g,
-		const ContigPath& path,
-		map<ContigNode, int>& distances)
+map<ContigNode, int> makeDistanceMap(const Graph& g,
+		const ContigNode& origin, const ContigPath& path)
 {
-	vertex_property<Graph>::type vp;
+	map<ContigNode, int> distances;
+	int distance = 0;
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
+		vertex_descriptor u = it == path.begin() ? origin : *(it - 1);
+		vertex_descriptor v = *it;
+		distance += getDistance(g, u, v);
+
 		bool inserted = distances.insert(
-				make_pair(*it, vp.length)).second;
+				make_pair(v, distance)).second;
 		if (!inserted) {
 			// Mark this contig as a repeat.
-			distances[*it] = INT_MIN;
+			distances[v] = INT_MIN;
 		}
-		vp += g[*it];
+
+		distance += g[v].length;
 	}
 
 	// Remove the repeats.
@@ -334,6 +367,7 @@ void makeDistanceMap(const Graph& g,
 			distances.erase(it++);
 		else
 			++it;
+	return distances;
 }
 
 /** Find a path for the specified distance estimates.
@@ -346,10 +380,11 @@ static void handleEstimate(const Graph& g,
 	if (er.estimates[dirIdx].empty())
 		return;
 
+	ContigNode origin(er.refID, dirIdx);
 	ostringstream vout_ss;
 	ostream bitBucket(NULL);
 	ostream& vout = opt::verbose > 0 ? vout_ss : bitBucket;
-	vout << "\n* " << ContigNode(er.refID, dirIdx) << '\n';
+	vout << "\n* " << origin << '\n';
 
 	unsigned minNumPairs = UINT_MAX;
 	// generate the reachable set
@@ -358,12 +393,8 @@ static void handleEstimate(const Graph& g,
 				= er.estimates[dirIdx].begin();
 			iter != er.estimates[dirIdx].end(); ++iter) {
 		minNumPairs = min(minNumPairs, iter->numPairs);
-
-		// Translate the distances produced by the esimator into the
-		// coordinate space used by the graph (a translation of k-1).
 		constraints.push_back(Constraint(iter->contig,
-					iter->distance + opt::k - 1
-					+ allowedError(iter->stdDev)));
+					iter->distance + allowedError(iter->stdDev)));
 	}
 
 	vout << "Constraints:";
@@ -371,8 +402,7 @@ static void handleEstimate(const Graph& g,
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
-	constrainedSearch(g, ContigNode(er.refID, dirIdx),
-			constraints, solutions, numVisited);
+	constrainedSearch(g, origin, constraints, solutions, numVisited);
 	bool tooComplex = numVisited >= opt::maxCost;
 	bool tooManySolutions = solutions.size() > opt::maxPaths;
 
@@ -394,8 +424,8 @@ static void handleEstimate(const Graph& g,
 
 		// Calculate the path distance to each node and see if
 		// it is within the estimated distance.
-		map<ContigNode, int> distanceMap;
-		makeDistanceMap(g, *solIter, distanceMap);
+		map<ContigNode, int> distanceMap
+			= makeDistanceMap(g, origin, *solIter);
 
 		// Remove solutions whose distance estimates are not correct.
 		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
@@ -415,7 +445,7 @@ static void handleEstimate(const Graph& g,
 
 			// translate distance by -overlap to match
 			// coordinate space used by the estimate
-			int actualDistance = dmIter->second - opt::k + 1;
+			int actualDistance = dmIter->second;
 			int diff = actualDistance - iter->distance;
 			unsigned buffer = allowedError(iter->stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
@@ -452,8 +482,8 @@ static void handleEstimate(const Graph& g,
 	int minDiff = 999999;
 	for (ContigPaths::iterator solIter = solutions.begin();
 			solIter != solutions.end(); ++solIter) {
-		map<ContigNode, int> distanceMap;
-		makeDistanceMap(g, *solIter, distanceMap);
+		map<ContigNode, int> distanceMap
+			= makeDistanceMap(g, origin, *solIter);
 		int sumDiff = 0;
 		for (EstimateVector::const_iterator iter
 					= er.estimates[dirIdx].begin();
@@ -463,7 +493,7 @@ static void handleEstimate(const Graph& g,
 			map<ContigNode, int>::iterator dmIter
 				= distanceMap.find(iter->contig);
 			assert(dmIter != distanceMap.end());
-			int actualDistance = dmIter->second - opt::k + 1;
+			int actualDistance = dmIter->second;
 			int diff = actualDistance - iter->distance;
 			sumDiff += abs(diff);
 		}
@@ -473,9 +503,8 @@ static void handleEstimate(const Graph& g,
 			bestSol = solIter;
 		}
 
-		size_t len = calculatePathLength(g, *solIter);
 		vout << *solIter
-			<< " length: " << len
+			<< " length: " << calculatePathLength(g, origin, *solIter)
 			<< " sumdiff: " << sumDiff << '\n';
 	}
 
@@ -498,7 +527,7 @@ static void handleEstimate(const Graph& g,
 		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path
-			= constructAmbiguousPath(g, solutions);
+			= constructAmbiguousPath(g, origin, solutions);
 		if (!path.empty()) {
 			vout << path << '\n';
 			if (opt::scaffold) {
