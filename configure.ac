@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(ABySS, 1.2.4, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 1.2.5, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 AM_INIT_AUTOMAKE(foreign)
 AC_CONFIG_SRCDIR([ABYSS/Abyss.cpp])

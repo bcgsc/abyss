@@ -1,3 +1,20 @@
+2010-11-15  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.5.
+
+	AdjList:
+	* Fix the colour-space-specific bug causing the error
+	Assertion `seq.length() > (unsigned)opt::overlap' failed.
+
+	PathConsensus:
+	* Fix the bug causing the error
+	Assertion `fstSol.size() == 1' failed.
+
+	abyss-fixmate:
+	* Do not output the @RG header record at the end of the output
+	that gives the median fragment size. It breaks `samtools view -S`.
+	* --no-qname: New option. Set the qname to *.
+
 2010-10-13  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.4.
