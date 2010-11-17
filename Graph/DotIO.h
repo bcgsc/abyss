@@ -188,26 +188,37 @@ std::istream& read_dot(std::istream& in, Graph& g)
 			assert(in);
 			ContigID::lock();
 
-			vertex_descriptor v;
-			read_dot_id(in, v);
-			if (in.fail()) {
-				in.clear();
-				std::cerr << "error: Expected `\"' and saw `"
-					<< (char)in.peek() << "'.\n";
-				exit(EXIT_FAILURE);
-			}
-			assert(in);
-			if (in >> std::ws && in.peek() == '[') {
-				// Edge properties
-				in.get();
-				edge_property_type ep;
-				in >> ep;
+			if (in >> std::ws && in.peek() == '{') {
+				// Subgraph
+				in >> expect("{");
+				for (vertex_descriptor v; read_dot_id(in, v);)
+					add_edge(u, v, defaultEdgeProp, g);
+				if (in.fail())
+					in.clear();
+				in >> expect(" }");
 				assert(in);
-				add_edge(u, v, ep, g);
-				in.ignore(std::numeric_limits<std::streamsize>::max(),
-						']');
-			} else
-				add_edge(u, v, defaultEdgeProp, g);
+			} else {
+				vertex_descriptor v;
+				read_dot_id(in, v);
+				if (in.fail()) {
+					in.clear();
+					std::cerr << "error: Expected `\"' and saw `"
+						<< (char)in.peek() << "'.\n";
+					exit(EXIT_FAILURE);
+				}
+				assert(in);
+				if (in >> std::ws && in.peek() == '[') {
+					// Edge properties
+					in.get();
+					edge_property_type ep;
+					in >> ep;
+					assert(in);
+					add_edge(u, v, ep, g);
+					in.ignore(std::numeric_limits<std::streamsize>
+							::max(), ']');
+				} else
+					add_edge(u, v, defaultEdgeProp, g);
+			}
 		} else {
 			std::cerr << "error: Expected `[' or `->' and saw `"
 				<< c << "'.\n";
