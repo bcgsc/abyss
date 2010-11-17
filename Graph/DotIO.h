@@ -136,14 +136,8 @@ std::istream& read_dot(std::istream& in, Graph& g)
 	typedef typename edge_property<Graph>::type edge_property_type;
 
 	// Graph properties
-	std::string s;
-	in >> s;
+	in >> expect("digraph");
 	assert(in);
-	if (s != "digraph") {
-		std::cerr << "error: Expected `digraph' and saw `"
-			<< s << "'.\n";
-		exit(EXIT_FAILURE);
-	}
 	in.ignore(std::numeric_limits<std::streamsize>::max(), '{');
 
 	edge_property_type defaultEdgeProp;
@@ -188,13 +182,8 @@ std::istream& read_dot(std::istream& in, Graph& g)
 					']');
 		} else if (c == '-') {
 			// Edge
-			in >> c;
+			in >> expect(">");
 			assert(in);
-			if (c != '>') {
-				std::cerr << "error: Expected `->' and saw `-"
-					<< c << "'.\n";
-				exit(EXIT_FAILURE);
-			}
 			ContigID::lock();
 
 			vertex_descriptor v;
@@ -227,15 +216,7 @@ std::istream& read_dot(std::istream& in, Graph& g)
 		in.clear();
 
 	// Check for the closing brace.
-	char c;
-	in >> c;
-	assert(in);
-	if (c != '}') {
-		std::cerr << "error: Expected `\"' or `}' and saw `"
-			<< c << "'.\n";
-		exit(EXIT_FAILURE);
-	}
-	in >> std::ws;
+	in >> expect("}") >> std::ws;
 	assert(in.eof());
 
 	assert(num_vertices(g) > 0);
