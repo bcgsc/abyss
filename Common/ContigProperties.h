@@ -3,6 +3,7 @@
 
 #include "ContigNode.h"
 #include "Graph/Options.h"
+#include "IOUtil.h"
 #include <cassert>
 #include <istream>
 #include <ostream>
@@ -48,21 +49,10 @@ struct ContigProperties {
 	friend std::istream& operator >>(std::istream& in,
 			ContigProperties& o)
 	{
-		if (in.peek() == 'l') {
-			char c0, c1;
-			in >> c0 >> c1;
-			assert(in);
-			assert(c0 == 'l');
-			assert(c1 == '=');
-			in >> o.length;
-
-		   	in >> c0 >> c1;
-			assert(in);
-			assert(c0 == 'C');
-			assert(c1 == '=');
-			in >> o.coverage;
-			return in;
-		} else
+		if (in >> std::ws && in.peek() == 'l')
+			return in >> expect("l =") >> o.length
+				>> expect(" C =") >> o.coverage;
+		else
 			return in >> o.length >> o.coverage;
 	}
 };
@@ -91,11 +81,7 @@ struct Distance {
 
 	friend std::istream& operator>>(std::istream& in, Distance& o)
 	{
-		char c0, c1;
-		in >> c0 >> c1;
-		assert(c0 == 'd');
-		assert(c1 == '=');
-		return in >> o.distance;
+		return in >> expect(" d =") >> o.distance;
 	}
 };
 
