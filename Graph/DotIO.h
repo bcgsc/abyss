@@ -199,6 +199,12 @@ std::istream& read_dot(std::istream& in, Graph& g)
 
 			vertex_descriptor v;
 			read_dot_id(in, v);
+			if (in.fail()) {
+				in.clear();
+				std::cerr << "error: Expected `\"' and saw `"
+					<< (char)in.peek() << "'.\n";
+				exit(EXIT_FAILURE);
+			}
 			assert(in);
 			if (in >> std::ws && in.peek() == '[') {
 				// Edge properties
