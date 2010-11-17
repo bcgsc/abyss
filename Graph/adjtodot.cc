@@ -6,6 +6,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "GraphIO.h"
+#include "Uncompress.h"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>

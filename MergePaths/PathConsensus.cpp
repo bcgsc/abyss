@@ -23,6 +23,7 @@
 #include "FastaReader.h"
 #include "GraphIO.h"
 #include "StringUtil.h"
+#include "Uncompress.h"
 #include "needleman_wunsch.h"
 #include "smith_waterman.h"
 #include <algorithm>

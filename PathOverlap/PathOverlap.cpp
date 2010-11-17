@@ -6,6 +6,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "GraphIO.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cerrno>

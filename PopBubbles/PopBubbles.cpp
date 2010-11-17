@@ -13,6 +13,7 @@
 #include "GraphIO.h"
 #include "Iterator.h"
 #include "Sequence.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cerrno>
 #include <cstring> // for strerror
