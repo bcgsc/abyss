@@ -2,6 +2,7 @@
 #define DOTIO_H 1
 
 #include "Graph.h"
+#include "IOUtil.h"
 #include <cassert>
 #include <cstdlib> // for exit
 #include <limits> // for numeric_limits
@@ -145,6 +146,32 @@ std::istream& read_dot(std::istream& in, Graph& g)
 	}
 	in.ignore(std::numeric_limits<std::streamsize>::max(), '{');
 
+	edge_property_type defaultEdgeProp;
+	for (bool done = false; !done && in >> std::ws;) {
+		switch (in.peek()) {
+		  case 'k': {
+			// Graph Properties
+			unsigned k;
+			in >> expect("k =") >> k;
+			assert(in);
+			if (opt::k > 0)
+				assert(k == opt::k);
+			opt::k = k;
+			break;
+		  }
+		  case 'e': // edge
+			// Default edge properties
+			in >> expect("edge [") >> defaultEdgeProp;
+			assert(in);
+			in.ignore(std::numeric_limits<std::streamsize>::max(),
+					']');
+			break;
+		  default:
+			done = true;
+			break;
+		}
+	}
+
 	vertex_descriptor u;
 	while (read_dot_id(in, u)) {
 		char c;
@@ -183,7 +210,7 @@ std::istream& read_dot(std::istream& in, Graph& g)
 				in.ignore(std::numeric_limits<std::streamsize>::max(),
 						']');
 			} else
-				add_edge(u, v, g);
+				add_edge(u, v, defaultEdgeProp, g);
 		} else {
 			std::cerr << "error: Expected `[' or `->' and saw `"
 				<< c << "'.\n";
