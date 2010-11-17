@@ -188,25 +188,42 @@ int main(int argc, char** argv)
 	}
 
 	ostream& out = cout;
+
+	// Graph
 	switch (opt::format) {
 	  case DOT:
 		out << "digraph adj {\n"
-			"k=" << opt::k << "\n"
-			"edge[d=" << -int(opt::k-1) << "]\n";
+			"graph [k=" << opt::k << "]\n"
+			"edge [d=" << -int(opt::k-1) << "]\n";
 		break;
 	  case SAM:
 		// SAM headers.
 		cout << "@HD\tVN:1.0\tSO:coordinate\n"
 			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
 			"CL:" << commandLine << '\n';
-		for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
-				it != contigs.end(); ++it)
-			out << "@SQ\tSN:" << ContigID(it - contigs.begin())
-					<< "\tLN:" << it->length
-					<< "\tXC:" << it->coverage << '\n';
 		break;
 	}
 
+	// Vertices
+	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
+			it != contigs.end(); ++it) {
+		ContigID id(it - contigs.begin());
+		switch (opt::format) {
+		  case DOT:
+			out << '"' << id << "+\" "
+				"[l=" << it->length << " C=" << it->coverage << "]\n"
+				<< '"' << id << "-\" "
+				"[l=" << it->length << " C=" << it->coverage << "]\n";
+			break;
+		  case SAM:
+			out << "@SQ\tSN:" << id
+				<< "\tLN:" << it->length
+				<< "\tXC:" << it->coverage << '\n';
+			break;
+		}
+	}
+
+	// Edges
 	int numVerts = 0;
 	int numEdges = 0;
 	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
@@ -222,7 +239,6 @@ int main(int argc, char** argv)
 			const Kmer& seq = !left ? i->l : i->r;
 			const KmerMap::mapped_type& edges = ends[!left][seq];
 
-			float c = i->coverage / (float)(i->length - opt::k + 1);
 			switch (opt::format) {
 			  case ADJ:
 				copy(edges.begin(), edges.end(),
@@ -230,8 +246,6 @@ int main(int argc, char** argv)
 				out << (idx == 0 ? "\t;" : "\n");
 				break;
 			  case DOT:
-				out << '"' << id << (idx ? '-' : '+') << "\" "
-					"[l=" << i->length << " c=" << c << "]\n";
 				if (!edges.empty()) {
 					out << "\"" << id << (idx ? '-' : '+')
 						<< "\" ->";
