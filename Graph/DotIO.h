@@ -5,7 +5,6 @@
 #include "IOUtil.h"
 #include <cassert>
 #include <cstdlib> // for exit
-#include <limits> // for numeric_limits
 #include <istream>
 #include <ostream>
 
@@ -136,9 +135,8 @@ std::istream& read_dot(std::istream& in, Graph& g)
 	typedef typename edge_property<Graph>::type edge_property_type;
 
 	// Graph properties
-	in >> expect("digraph");
+	in >> expect("digraph") >> ignore('{');
 	assert(in);
-	in.ignore(std::numeric_limits<std::streamsize>::max(), '{');
 
 	edge_property_type defaultEdgeProp;
 	for (bool done = false; !done && in >> std::ws;) {
@@ -146,21 +144,17 @@ std::istream& read_dot(std::istream& in, Graph& g)
 		  case 'g': {
 			// Graph Properties
 			unsigned k;
-			in >> expect("graph [ k =") >> k;
+			in >> expect("graph [ k =") >> k >> ignore(']');
 			assert(in);
 			if (opt::k > 0)
 				assert(k == opt::k);
 			opt::k = k;
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					']');
 			break;
 		  }
 		  case 'e': // edge
 			// Default edge properties
-			in >> expect("edge [") >> defaultEdgeProp;
+			in >> expect("edge [") >> defaultEdgeProp >> ignore(']');
 			assert(in);
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					']');
 			break;
 		  default:
 			done = true;
@@ -176,12 +170,10 @@ std::istream& read_dot(std::istream& in, Graph& g)
 		if (c == '[') {
 			// Vertex properties
 			vertex_property_type vp;
-			in >> vp;
+			in >> vp >> ignore(']');
 			assert(in);
 			vertex_descriptor x = add_vertex(vp, g);
 			assert(x == u);
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					']');
 		} else if (c == '-') {
 			// Edge
 			in >> expect(">");
@@ -209,13 +201,10 @@ std::istream& read_dot(std::istream& in, Graph& g)
 				assert(in);
 				if (in >> std::ws && in.peek() == '[') {
 					// Edge properties
-					in.get();
 					edge_property_type ep;
-					in >> ep;
+					in >> expect("[") >> ep >> ignore(']');
 					assert(in);
 					add_edge(u, v, ep, g);
-					in.ignore(std::numeric_limits<std::streamsize>
-							::max(), ']');
 				} else
 					add_edge(u, v, defaultEdgeProp, g);
 			}

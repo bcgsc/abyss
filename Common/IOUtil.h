@@ -2,6 +2,7 @@
 #define IOUTIL_H 1
 
 #include <iostream>
+#include <limits> // for numeric_limits
 
 /** This input stream manipulator skips the specified string. */
 struct expect {
@@ -30,6 +31,21 @@ static inline std::istream& operator>>(std::istream& in, expect o)
 		}
 	}
 	return in;
+}
+
+/** This input stream manipulator discards characters until reaching
+ * the delimeter. */
+struct ignore {
+	const char delim;
+	size_t n;
+	ignore(const char delim,
+			size_t n = std::numeric_limits<std::streamsize>::max())
+		: delim(delim), n(n) { }
+};
+
+static inline std::istream& operator>>(std::istream& in, ignore o)
+{
+	return in.ignore(o.n, o.delim);
 }
 
 #endif
