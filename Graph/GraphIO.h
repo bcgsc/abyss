@@ -23,7 +23,7 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	  case DOT:
 		out << "digraph adj {\n";
 		if (opt::k > 0)
-			out << "k=" << opt::k << "\n"
+			out << "graph [k=" << opt::k << "]\n"
 				"edge [d=" << -int(opt::k - 1) << "]\n";
 		return out << dot_writer<Graph>(g) << "}\n";
 	  case SAM:

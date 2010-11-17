@@ -143,14 +143,16 @@ std::istream& read_dot(std::istream& in, Graph& g)
 	edge_property_type defaultEdgeProp;
 	for (bool done = false; !done && in >> std::ws;) {
 		switch (in.peek()) {
-		  case 'k': {
+		  case 'g': {
 			// Graph Properties
 			unsigned k;
-			in >> expect("k =") >> k;
+			in >> expect("graph [ k =") >> k;
 			assert(in);
 			if (opt::k > 0)
 				assert(k == opt::k);
 			opt::k = k;
+			in.ignore(std::numeric_limits<std::streamsize>::max(),
+					']');
 			break;
 		  }
 		  case 'e': // edge
