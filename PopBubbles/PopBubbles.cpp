@@ -70,7 +70,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 static const struct option longopts[] = {
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "dot",           no_argument,       &opt::dot, 1, },
-	{ "graph",         no_argument,       NULL, 'g' },
+	{ "graph",         required_argument, NULL, 'g' },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
