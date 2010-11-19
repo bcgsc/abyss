@@ -1,8 +1,14 @@
 #include "config.h"
 #include "Common/Options.h"
+#include "ContigGraph.h"
 #include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
+#include "DirectedGraph.h"
+#include "GraphIO.h"
+#include "GraphUtil.h"
+#include "Histogram.h"
+#include "IOUtil.h"
 #include "Iterator.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -45,6 +51,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
+"  -g, --graph=FILE      write the path overlap graph to FILE\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -56,13 +63,17 @@ namespace opt {
 	unsigned k; // used by readContigLengths
 	static string out;
 	static int threads = 1;
+
+	/** Write the path overlap graph to this file. */
+	static string graphPath;
 }
 
-static const char shortopts[] = "j:k:o:v";
+static const char shortopts[] = "g:j:k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "graph",       no_argument,       NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "threads",     required_argument,	NULL, 'j' },
@@ -152,6 +163,42 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 			mergeQ.push_back(*it);
 }
 
+/** A path overlap graph. */
+typedef ContigGraph<DirectedGraph<> > PathGraph;
+
+/** Find the overlaps between paths and add edges to the graph. */
+static void findPathOverlaps(const ContigPathMap& paths,
+		const ContigNode& seed1, const ContigPath& path1,
+		PathGraph& gout)
+{
+	bool dir = false;
+	for (ContigPath::const_iterator it = path1.begin();
+			it != path1.end(); ++it) {
+		ContigNode seed2 = *it;
+		if (seed1 == seed2) {
+			dir = true;
+			continue;
+		}
+		if (seed2.ambiguous())
+			continue;
+		ContigPathMap::const_iterator path2It
+			= paths.find(ContigID(seed2));
+		if (path2It == paths.end())
+			continue;
+
+		ContigNode u = dir ? seed1 : seed2;
+		ContigNode v = dir ? seed2 : seed1;
+		ContigPath path2 = path2It->second;
+		if (seed2.sense())
+			path2.reverseComplement();
+		ContigPath consensus = align(path1, path2, seed2);
+#pragma omp critical(gout)
+		if (!consensus.empty()
+				&& !edge(u, v, gout).second)
+			add_edge(u, v, gout);
+	}
+}
+
 /** Attempt to merge the paths specified in mergeQ with path.
  * @return the number of paths merged
  */
@@ -192,11 +239,17 @@ static unsigned mergePaths(ContigPath& path,
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
-static void extendPaths(ContigID id,
-		const ContigPathMap& paths, ContigPathMap& out)
+static void extendPaths(ContigID id, const ContigPathMap& paths,
+		ContigPathMap& out, PathGraph& gout)
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
+
+	if (!opt::graphPath.empty())
+		findPathOverlaps(paths,
+				ContigNode(pathIt->first, false), pathIt->second,
+				gout);
+
 	pair<ContigPathMap::iterator, bool> inserted;
 	#pragma omp critical(out)
 	inserted = out.insert(*pathIt);
@@ -411,6 +464,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'g': arg >> opt::graphPath; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
@@ -455,20 +509,44 @@ int main(int argc, char** argv)
 
 	removeRepeats(originalPathMap);
 
+	PathGraph gout;
+	if (!opt::graphPath.empty()) {
+		// Create the vertices of the path overlap graph.
+		PathGraph(g_contigLengths.size()).swap(gout);
+		// Remove the non-seed contigs.
+		typedef graph_traits<PathGraph>::vertex_iterator
+			vertex_iterator;
+		pair<vertex_iterator, vertex_iterator> vit = gout.vertices();
+		for (vertex_iterator u = vit.first; u != vit.second; ++u)
+			if (originalPathMap.count(ContigID(*u)) == 0)
+				remove_vertex(*u, gout);
+	}
+
 	ContigPathMap resultsPathMap;
 #if _OPENMP
 	ContigPathMap::iterator sharedIt = originalPathMap.begin();
 	#pragma omp parallel
 	for (ContigPathMap::iterator it;
 			atomicInc(sharedIt, originalPathMap.end(), it);)
-		extendPaths(it->first, originalPathMap, resultsPathMap);
+		extendPaths(it->first, originalPathMap, resultsPathMap, gout);
 #else
-	for (ContigPathMap::const_iterator iter = originalPathMap.begin();
-			iter != originalPathMap.end(); ++iter)
-		extendPaths(iter->first, originalPathMap, resultsPathMap);
+	for (ContigPathMap::const_iterator it = originalPathMap.begin();
+			it != originalPathMap.end(); ++it)
+		extendPaths(it->first, originalPathMap, resultsPathMap, gout);
 #endif
 	if (gDebugPrint)
 		cout << '\n';
+
+	if (!opt::graphPath.empty()) {
+		ofstream out(opt::graphPath.c_str());
+		assert_good(out, opt::graphPath);
+		write_dot(out, gout);
+		assert_good(out, opt::graphPath);
+		if (opt::out.empty()) {
+			out.close(); // flush fout before exiting
+			exit(EXIT_SUCCESS);
+		}
+	}
 
 	set<ContigID> repeats = removeRepeats(resultsPathMap);
 
@@ -500,7 +578,7 @@ int main(int argc, char** argv)
 				continue; // subsumed
 			ContigPath old = oldIt->second;
 			resultsPathMap.erase(oldIt);
-			extendPaths(*it, originalPathMap, resultsPathMap);
+			extendPaths(*it, originalPathMap, resultsPathMap, gout);
 			if (gDebugPrint) {
 				if (resultsPathMap[*it] == old)
 					cout << "no change\n";
