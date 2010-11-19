@@ -1,8 +1,22 @@
 #ifndef IOUTIL_H
 #define IOUTIL_H 1
 
+#include <cerrno>
+#include <cstdlib>
+#include <cstring> // for strerror
 #include <iostream>
 #include <limits> // for numeric_limits
+#include <string>
+
+/** Print an error message and exit if stream is not good. */
+static inline void assert_good(const std::ios& stream,
+		const std::string& path)
+{
+	if (!stream.good()) {
+		std::cerr << path << ": " << strerror(errno) << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
 
 /** This input stream manipulator skips the specified string. */
 struct expect {

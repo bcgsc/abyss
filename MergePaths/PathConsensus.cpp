@@ -22,15 +22,14 @@
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "IOUtil.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "needleman_wunsch.h"
 #include "smith_waterman.h"
 #include <algorithm>
 #include <cctype>
-#include <cerrno>
 #include <cstdlib>
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -164,15 +163,6 @@ static set< pair<ContigNode, ContigNode> > g_edges_irregular;
 static double g_coverage_mean;
 static double g_coverage_variance;
 #endif
-
-/** Print an error message and exit if stream is not good. */
-static void assert_good(const ios& stream, const string& path)
-{
-	if (!stream.good()) {
-		cerr << path << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
-}
 
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
