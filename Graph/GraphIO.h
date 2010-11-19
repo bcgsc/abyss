@@ -23,10 +23,7 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	  case DOT:
 		return out << dot_writer(g);
 	  case SAM:
-		out << "@HD\tVN:1.0\n"
-			"@PG\tID:" << program << "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n';
-		return out << sam_writer<Graph>(g);
+		return write_sam(out, g, program, commandLine);
 	  default:
 		assert(false);
 	}

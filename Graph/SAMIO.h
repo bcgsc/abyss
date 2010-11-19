@@ -11,7 +11,8 @@
  * edge_property_type must have a member distance
  */
 template <typename Graph>
-std::ostream& write_sam(std::ostream& out, const Graph& g)
+std::ostream& write_sam(std::ostream& out, const Graph& g,
+		const std::string& program, const std::string& commandLine)
 {
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
@@ -21,6 +22,10 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 		edge_iterator;
 	typedef typename edge_property<Graph>::type
 		edge_property_type;
+
+	out << "@HD\tVN:1.0\n"
+		"@PG\tID:" << program << "\tVN:" VERSION "\t"
+		"CL:" << commandLine << '\n';
 
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u, ++u) {
@@ -57,24 +62,6 @@ std::ostream& write_sam(std::ostream& out, const Graph& g)
 		out << "*\t0\t0\t*\t*\n";
 	}
 	return out;
-}
-
-template <typename Graph>
-struct SAMWriter
-{
-	const Graph& g;
-	SAMWriter(const Graph& g) : g(g) { }
-	friend std::ostream& operator<<(std::ostream& out,
-			const SAMWriter& o)
-	{
-		return write_sam<Graph>(out, o.g);
-	}
-};
-
-template <typename Graph>
-SAMWriter<Graph> sam_writer(const Graph& g)
-{
-	return SAMWriter<Graph>(g);
 }
 
 #endif
