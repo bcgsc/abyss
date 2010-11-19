@@ -32,7 +32,7 @@ static inline std::istream& operator>>(std::istream& in, expect o)
 		} else {
 			char c = in.get();
 			if (!in || c != *p) {
-				std::cerr << "error: Expected `" << *p
+				std::cerr << "error: Expected `" << p
 					<< "' and saw ";
 				if (in)
 					std::cerr << '`' << c << "'\n";
