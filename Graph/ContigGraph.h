@@ -155,4 +155,12 @@ class ContigGraph : public G {
 	ContigGraph(const ContigGraph&);
 };
 
+namespace std {
+	template <typename G>
+	inline void swap(ContigGraph<G>& a, ContigGraph<G>& b)
+	{
+		a.swap(b);
+	}
+}
+
 #endif
