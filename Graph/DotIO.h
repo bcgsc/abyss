@@ -72,18 +72,30 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
 	typedef typename edge_property<Graph>::type edge_property_type;
+
+	out << "digraph adj {\n";
+
+	// Graph properties
+	if (opt::k > 0)
+		out << "graph [k=" << opt::k << "]\n"
+			"edge [d=" << -int(opt::k - 1) << "]\n";
+
+	// Vertices
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
 		if (get(vertex_removed, g, *u))
 			continue;
 		write_vertex(out, *u, get(vertex_bundle, g, *u));
 	}
+
+	// Edges
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
 		if (get(vertex_removed, g, *u))
 			continue;
 		write_edges(out, g, *u, (edge_property_type*)NULL);
 	}
-	return out;
+
+	return out << "}\n";
 }
 
 /** Output a GraphViz dot graph. */

@@ -21,11 +21,7 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	  case ADJ:
 		return out << adj_writer<Graph>(g);
 	  case DOT:
-		out << "digraph adj {\n";
-		if (opt::k > 0)
-			out << "graph [k=" << opt::k << "]\n"
-				"edge [d=" << -int(opt::k - 1) << "]\n";
-		return out << dot_writer<Graph>(g) << "}\n";
+		return out << dot_writer(g);
 	  case SAM:
 		out << "@HD\tVN:1.0\n"
 			"@PG\tID:" << program << "\tVN:" VERSION "\t"
