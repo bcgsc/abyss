@@ -1,4 +1,5 @@
 #include "Common/Options.h"
+#include "DataLayer/Options.h"
 #include "ContigNode.h"
 #include "FastaReader.h"
 #include "HashMap.h"
@@ -163,6 +164,7 @@ int main(int argc, char** argv)
 	opt::overlap = opt::k - 1;
 	Kmer::setLength(opt::overlap);
 
+	opt::trimMasked = false;
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
