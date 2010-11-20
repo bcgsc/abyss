@@ -172,6 +172,8 @@ std::istream& read_dot(std::istream& in, Graph& g)
 			done = true;
 			break;
 		}
+		if (in >> std::ws && in.peek() == ';')
+			in.get();
 	}
 
 	vertex_descriptor u;
@@ -225,6 +227,8 @@ std::istream& read_dot(std::istream& in, Graph& g)
 				<< c << "'.\n";
 			exit(EXIT_FAILURE);
 		}
+		if (in >> std::ws && in.peek() == ';')
+			in.get();
 	}
 	if (in.fail())
 		in.clear();
