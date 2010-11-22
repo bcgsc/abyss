@@ -10,6 +10,7 @@
 #include "FastaReader.h"
 #include "GraphIO.h"
 #include "StringUtil.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cerrno>
