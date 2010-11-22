@@ -482,7 +482,7 @@ static overlap_align mergeContigs_SW(Sequence& seq, const Sequence& s,
 	do {
 		unsigned len = min(seq.length(), s.length());
 		assert(len > opt::k - 1);
-		GetLocalAlignment(seq.substr(seq.length()-len),
+		alignOverlap(seq.substr(seq.length()-len),
 			s.substr(0, len),
 			seq.length()-len, overlaps, false,
 			opt::verbose > 1);
@@ -628,7 +628,7 @@ static ContigPath alignPair(const Graph& g,
 	}
 
 	NWAlignment align;
-	unsigned match = GetGlobalAlignment(fstPathContig, sndPathContig,
+	unsigned match = alignGlobal(fstPathContig, sndPathContig,
 		   	align);
 	float identity = (float)match / align.size();
 	if (opt::verbose > 1)

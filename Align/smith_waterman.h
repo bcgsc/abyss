@@ -53,7 +53,7 @@ struct overlap_align {
 	}
 };
 
-void GetLocalAlignment(const string& seq_a, const string& seq_b,
+void alignOverlap(const string& seq_a, const string& seq_b,
 	unsigned seq_a_start_pos, vector<overlap_align>& overlaps, bool multi_align, bool verbose);
 
 #endif /* SMITH_WATERMAN_H */

@@ -35,7 +35,7 @@ struct NWAlignment {
 	}
 };
 
-unsigned GetGlobalAlignment(
+unsigned alignGlobal(
 		const std::string& a, const std::string& b,
 		NWAlignment& align, bool verbose = false);
 

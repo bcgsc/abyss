@@ -92,7 +92,7 @@ static unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j
 //This is the Needleman-Wunsch algirthm, returns one (first) optimal global alignment
 //the alignment is stored in "align" (match_align is the consensus)
 //return the number of matches in alignment (for calcing PID)
-unsigned GetGlobalAlignment(const string& seq_a, const string& seq_b,
+unsigned alignGlobal(const string& seq_a, const string& seq_b,
 	NWAlignment& align, bool verbose)
 {
 	// get the actual lengths of the sequences

@@ -134,7 +134,7 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 //This is the Smith-Waterman algirthm (a variation of Needleman-Wunsch algorithm), finds one optimal local alignment
 //Modified to find overlap of seq_a and seq_b (alignment that is pinned at the end of seq_a and beginning of seq_b)
 //mismatch or gap positions are filled with 'N's in match_align string
-void GetLocalAlignment(const string& seq_a, const string& seq_b, unsigned seq_a_start_pos,
+void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start_pos,
 	vector<overlap_align>& overlaps, bool multi_align, bool verbose)
 {
 	// get the actual lengths of the sequences
