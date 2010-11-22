@@ -181,7 +181,11 @@ std::istream& read_dot(std::istream& in, Graph& g)
 		char c;
 		in >> c;
 		assert(in);
-		if (c == '[') {
+		if (c == ';') {
+			// Vertex
+			vertex_descriptor x = add_vertex(g);
+			assert(x == u);
+		} else if (c == '[') {
 			// Vertex properties
 			vertex_property_type vp;
 			in >> vp >> ignore(']');
