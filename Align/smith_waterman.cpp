@@ -14,6 +14,15 @@
 
 using namespace std;
 
+/** The score of a match. */
+static const int MATCH_SCORE = 1;
+
+/** The score of a mismatch. */
+static const int MISMATCH_SCORE = -1;
+
+/** The score of a gap. */
+static const int GAP_SCORE = -2;
+
 /** Print the specified alignment. */
 static ostream& printAlignment(ostream& out,
 		const string& aseq, const string& bseq,
@@ -46,9 +55,6 @@ static ostream& printAlignment(ostream& out,
 #endif
 #endif
 
-template <class T>
-void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1);
-
 //index comparison functor
 template<class T>
 struct index_cmp {
@@ -76,6 +82,13 @@ static bool isMatch(char a, char b, char& c)
 		return ambiguityIsSubset(a, b);
 	}
 	return true;
+}
+
+/** Return the score of the alignment of a and b. */
+static int matchScore(const char a, const char b)
+{
+	char consensus;
+	return isMatch(a, b, consensus) ? MATCH_SCORE : MISMATCH_SCORE;
 }
 
 //the backtrack step in smith_waterman
@@ -197,12 +210,16 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 
 	for(i=1;i<=N_a;i++){
 		for(j=1;j<=N_b;j++){
-			double temp[4];
-			AssignScores_std<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1]);
-			temp[3] = 0.;
-			double* pMax = max_element(temp, temp + 4);
+			char a = seq_a[i-1], b = seq_b[j-1];
+			double scores[4] = {
+				H[i-1][j-1] + matchScore(a, b), // match or mismatch
+				H[i-1][j] + GAP_SCORE, // deletion in sequence A
+				H[i][j-1] + GAP_SCORE, // deletion in sequence B
+				0 // start of a new subsequence
+			};
+			double* pMax = max_element(scores, scores + 4);
 			H[i][j] = *pMax;
-			switch (pMax - temp) {
+			switch (pMax - scores) {
 			case 0: // score in (i,j) stems from a match/mismatch
 				I_i[i][j] = i-1;
 				I_j[i][j] = j-1;
@@ -284,22 +301,4 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 	delete [] H;
 	delete [] I_i;
 	delete [] I_j;
-}
-
-/** Return the score of the alignment of a and b. */
-static int sim_score(const char a, const char b)
-{
-	char consensus;
-	return a == '-' || b == '-' ? -2 // gap penalty
-		: !isMatch(a, b, consensus) ? -1 // mismatch penalty
-		: 1; // match score
-}
-
-/** Return the alignment score. */
-template <class T>
-void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1)
-{
-  temp[0] = H_im1_jm1+sim_score(seq_a_im1,seq_b_jm1);
-  temp[1] = H_im1_j+sim_score(seq_b_jm1, '-');
-  temp[2] = H_i_jm1+sim_score(seq_a_im1, '-');
 }
