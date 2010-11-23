@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "smith_waterman.h"
-
+#include "Sequence.h"
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -95,24 +95,25 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 	while(((current_i!=next_i) || (current_j!=next_j)) && (next_j!=0) && (next_i!=0)){
 		if(next_i==current_i) {
 			consensus_a += '-'; //deletion in A
-			match += 'N';
+			match += tolower(seq_b[current_j-1]);
 			consensus_b += seq_b[current_j-1]; //b must be some actual char, cannot be '-' aligns with '-'!
 		}
 		else {
 			consensus_a += seq_a[current_i-1]; // match/mismatch in A
 			if(next_j==current_j) {
 				consensus_b += '-'; // deletion in B
-				match += 'N';
+				match += tolower(seq_a[current_i-1]);
 			}
 			else {
 				consensus_b += seq_b[current_j-1]; // match/mismatch in B
 				char consensus_char;
 				if (Match(seq_a[current_i-1], seq_b[current_j-1], consensus_char)) {
-					match += consensus_char; //seq_a[current_i-1];
+					match += consensus_char;
 					num_of_match++;
 				}
 				else {
-					match += 'N';
+					match += ambiguityOr(
+							seq_a[current_i-1], seq_b[current_j-1]);
 				}
 			}
 		}
@@ -137,11 +138,11 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 	consensus_b += seq_b[current_j-1];
 	char consensus_char;
 	if (Match(seq_a[current_i-1], seq_b[current_j-1], consensus_char)) {
-		match += consensus_char; //seq_a[current_i-1];
+		match += consensus_char;
 		num_of_match++;
 	}
 	else {
-		match += 'N';
+		match += ambiguityOr(seq_a[current_i-1], seq_b[current_j-1]);
 	}
 	align_pos[0] = current_i-1;
 	align_pos[2] = current_j-1;
