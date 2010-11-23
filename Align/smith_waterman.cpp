@@ -49,8 +49,6 @@ static inline ostream& printAlignment(ostream& out,
 #endif
 #endif
 
-bool Match(const char& a, const char& b, char& consensus);
-
 template <class T>
 T find_array_max(T array[],int length, int& ind);
 
@@ -70,6 +68,34 @@ struct index_cmp {
 	index_cmp(const T arr) : arr(arr) {}
 	bool operator()(const int a, const int b) const { return arr[a] > arr[b]; }
 };
+
+static inline int convert_to_index(char c)
+{
+	if ('A' <= c && c <= 'Z')
+		return c - 'A';
+	else
+		return c - 'a';
+}
+
+static inline bool isMatch(char a, char b, char& consensus)
+{
+	if (a == b || convert_to_index(a) == convert_to_index(b)) {
+		consensus = a;
+		return true;
+	} else if (a == '-' || b == '-') {
+		consensus = '-';
+		return false;
+	} else if (a == 'N') {
+		consensus = b;
+		return true;
+	} else if (b == 'N') {
+		consensus = a;
+		return true;
+	} else {
+		consensus = 'x';
+		return false;
+	}
+}
 
 //the backtrack step in smith_waterman
 #ifdef __GNUC__
@@ -106,7 +132,8 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 			else {
 				consensus_b += seq_b[current_j-1]; // match/mismatch in B
 				char consensus_char;
-				if (Match(seq_a[current_i-1], seq_b[current_j-1], consensus_char)) {
+				if (isMatch(seq_a[current_i-1], seq_b[current_j-1],
+							consensus_char)) {
 					match += consensus_char;
 					num_of_match++;
 				}
@@ -136,7 +163,8 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 	consensus_a += seq_a[current_i-1];
 	consensus_b += seq_b[current_j-1];
 	char consensus_char;
-	if (Match(seq_a[current_i-1], seq_b[current_j-1], consensus_char)) {
+	if (isMatch(seq_a[current_i-1], seq_b[current_j-1],
+				consensus_char)) {
 		match += consensus_char;
 		num_of_match++;
 	}
@@ -298,41 +326,11 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 
 } // END of smith_waterman
 
-/////////////////////////////////////////////////////////////////////////////
-// auxiliary functions:
-/////////////////////////////////////////////////////////////////////////////
-
-int convert_to_index(char a)
-{
-	if (a <= 'Z' && a >= 'A')
-		return a - 'A';
-	else
-		return a - 'a';
-}
-
-bool Match(const char& a, const char& b, char& consensus)
-{
-	if (a == b || convert_to_index(a)==convert_to_index(b)) {
-		consensus = a;
-		return true;
-	} else if (a == '-' || b == '-') {
-		consensus = '-'; //indicate a gap
-		return false;
-	} else if (a == 'N') {
-		consensus = b;
-		return true;
-	} else if (b == 'N') {
-		consensus = a;
-		return true;
-	} else
-		return false;
-}
-
 // The simple score matrix, match:1, mismatch/gap:-1
 int sim_score(const char a, const char b)
 {
 	char consensus;
-	if (Match(a, b, consensus))
+	if (isMatch(a, b, consensus))
 		return 1;
 	else
 		if (consensus == '-')
