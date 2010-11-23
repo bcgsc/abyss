@@ -15,6 +15,34 @@
 
 using namespace std;
 
+static inline ostream& printAlignment(ostream& out,
+		const string& aseq, const string& bseq,
+		unsigned alignPos[], SMAlignment align, unsigned matches)
+{
+	unsigned astart = alignPos[0], aend = alignPos[1];
+	unsigned bstart = alignPos[2], bend = alignPos[3];
+	assert(aend == aseq.size()-1);
+	assert(bstart == 0);
+	const string& consensus = align.match_align;
+	out << aseq.substr(0, astart) << align.query_align << '\n'
+		<< string(astart, ' ');
+	for (string::const_iterator it = align.match_align.begin();
+			it != align.match_align.end(); ++it) {
+		switch (*it) {
+		  case 'A': case 'C': case 'G': case 'T':
+			out << '.';
+			break;
+		  default:
+			out << *it;
+		}
+	}
+	return out << '\n'
+		<< string(astart, ' ')
+			<< align.target_align << bseq.substr(bend) << '\n'
+		<< matches << " / " << consensus.size() << " = "
+			<< (float)matches / consensus.size() << '\n';
+}
+
 #ifndef __GNUC__
 #ifndef NGNUC_INDEX
 #define NGNUC_INDEX
@@ -242,9 +270,8 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 			overlaps.push_back(overlap_align(seq_a_start_pos+align_pos[0], align_pos[3], align.match_align, num_of_match));
 			if (!found) {
 				if (verbose)
-					cout <<"The alignment of the sequences\n" << seq_a << endl << seq_b << endl
-						<< align << align_pos[0] << "-" << align_pos[1] << " : "
-						<< align_pos[2] << "-" << align_pos[3] << endl;
+					printAlignment(cout, seq_a, seq_b,
+							align_pos, align, num_of_match) << '\n';
 				found = true;
 				if (!multi_align)
 					break;
