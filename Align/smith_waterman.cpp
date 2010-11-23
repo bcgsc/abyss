@@ -14,7 +14,8 @@
 
 using namespace std;
 
-static inline ostream& printAlignment(ostream& out,
+/** Print the specified alignment. */
+static ostream& printAlignment(ostream& out,
 		const string& aseq, const string& bseq,
 		unsigned alignPos[], SMAlignment align, unsigned matches)
 {
