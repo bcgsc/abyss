@@ -69,24 +69,24 @@ struct index_cmp {
 	bool operator()(const int a, const int b) const { return arr[a] > arr[b]; }
 };
 
-static inline bool isMatch(char a, char b, char& consensus)
+/** Return whether the characters a and b match.
+ * @param c [out] the consensus character
+ */
+static bool isMatch(char a, char b, char& c)
 {
-	if (toupper(a) == toupper(b)) {
-		consensus = a;
-		return true;
-	} else if (a == '-' || b == '-') {
-		consensus = '-';
-		return false;
-	} else if (a == 'N') {
-		consensus = b;
-		return true;
-	} else if (b == 'N') {
-		consensus = a;
-		return true;
+	if (a == b) {
+		c = a;
+	} else if (toupper(a) == toupper(b)) {
+		c = islower(a) || islower(b) ? tolower(a) : a;
+	} else if (a == 'N' || a == 'n') {
+		c = b;
+	} else if (b == 'N' || b == 'n') {
+		c = a;
 	} else {
-		consensus = 'x';
-		return false;
+		c = ambiguityOr(a, b);
+		return ambiguityIsSubset(a, b);
 	}
+	return true;
 }
 
 //the backtrack step in smith_waterman
@@ -318,17 +318,13 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 
 } // END of smith_waterman
 
-// The simple score matrix, match:1, mismatch/gap:-1
-int sim_score(const char a, const char b)
+/** Return the score of the alignment of a and b. */
+static int sim_score(const char a, const char b)
 {
 	char consensus;
-	if (isMatch(a, b, consensus))
-		return 1;
-	else
-		if (consensus == '-')
-			return -2; //gap penalty
-		else
-			return -1; //mismatch penalty
+	return a == '-' || b == '-' ? -2 // gap penalty
+		: !isMatch(a, b, consensus) ? -1 // mismatch penalty
+		: 1; // match score
 }
 
 /*
