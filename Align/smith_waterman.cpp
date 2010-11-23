@@ -18,9 +18,9 @@ static inline ostream& printAlignment(ostream& out,
 		const string& aseq, const string& bseq,
 		unsigned alignPos[], SMAlignment align, unsigned matches)
 {
-	unsigned astart = alignPos[0], aend = alignPos[1];
-	unsigned bstart = alignPos[2], bend = alignPos[3];
-	assert(aend == aseq.size()-1);
+	unsigned astart = alignPos[0], aend = alignPos[1] + 1;
+	unsigned bstart = alignPos[2], bend = alignPos[3] + 1;
+	assert(aend == aseq.size());
 	assert(bstart == 0);
 	const string& consensus = align.match_align;
 	out << aseq.substr(0, astart) << align.query_align << '\n'
