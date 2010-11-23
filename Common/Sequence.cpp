@@ -100,3 +100,66 @@ char nucleotideToColourSpace(char a, char b)
 		return islower(a) || islower(b) ? 'n' : 'N';
 	return "0123"[cstont[baseToCode(a)][baseToCode(b)]];
 }
+
+/** Convert the specified ambiguity code to a bitmask. */
+unsigned ambiguityToBitmask(char c)
+{
+	static const unsigned ambiguityToBitmaskTable[26] = {
+		0x1, // 'A' ---A
+		0xe, // 'B' TGC-
+		0x2, // 'C' --C-
+		0xd, // 'D' TG-A
+		0x0, // 'E'
+		0x0, // 'F'
+		0x4, // 'G' -G--
+		0xb, // 'H' T-CA
+		0x0, // 'I'
+		0x0, // 'J'
+		0xc, // 'K' TG--
+		0x0, // 'L'
+		0x3, // 'M' --CA
+		0xf, // 'N' ACGT
+		0x0, // 'O'
+		0x0, // 'P'
+		0x0, // 'Q'
+		0x5, // 'R' -G-A
+		0x6, // 'S' -GC-
+		0x8, // 'T' T---
+		0x0, // 'U'
+		0x7, // 'V' -GCA
+		0x9, // 'W' T--A
+		0x0, // 'X'
+		0xa, // 'Y' T-C-
+		0x0, // 'Z'
+	};
+	unsigned i = toupper(c) - 'A';
+	assert(i < 26);
+	unsigned x = ambiguityToBitmaskTable[i];
+	assert(x > 0);
+	return x;
+}
+
+/** Convert the specified bitmask to an ambiguity code. */
+unsigned bitmaskToAmbiguity(unsigned x)
+{
+	static const char bitmaskToAmbiguityTable[16] = {
+		'N', //----
+		'A', //---A
+		'C', //--C-
+		'M', //--CA
+		'G', //-G--
+		'R', //-G-A
+		'S', //-GC-
+		'V', //-GCA
+		'T', //T---
+		'W', //T--A
+		'Y', //T-C-
+		'H', //T-CA
+		'K', //TG--
+		'D', //TG-A
+		'B', //TGC-
+		'N', //TGCA
+	};
+	assert(x < 16);
+	return bitmaskToAmbiguityTable[x];
+}
