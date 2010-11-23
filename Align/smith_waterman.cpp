@@ -48,18 +48,10 @@ static ostream& printAlignment(ostream& out,
 			<< (float)matches / consensus.size() << '\n';
 }
 
-#ifndef __GNUC__
-#ifndef NGNUC_INDEX
-#define NGNUC_INDEX
-#define INDEX_ONE_DIM(num_rows, row, col) (row * num_rows + col)
-#endif
-#endif
-
-//index comparison functor
+/** Index comparison functor. */
 template<class T>
 struct index_cmp {
 	const T arr;
-
 	index_cmp(const T arr) : arr(arr) {}
 	bool operator()(const int a, const int b) const { return arr[a] > arr[b]; }
 };
@@ -92,23 +84,13 @@ static int matchScore(const char a, const char b)
 }
 
 //the backtrack step in smith_waterman
-#ifdef __GNUC__
 unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
 		const string& seq_a, const string& seq_b, SMAlignment& align, unsigned* align_pos)
-#else
-unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const int I_i_rows, const int I_j_rows,
-		const string& seq_a, const string& seq_b, SMAlignment& align, unsigned* align_pos)
-#endif
 {
 	// Backtracking from H_max
 	int current_i=i_max,current_j=j_max;
-#ifdef __GNUC__
 	int next_i=I_i[current_i][current_j];
 	int next_j=I_j[current_i][current_j];
-#else
-	int next_i=I_i[INDEX_ONE_DIM(I_i_rows, current_i, current_j)];
-	int next_j=I_j[INDEX_ONE_DIM(I_j_rows, current_i, current_j)];
-#endif
 	string consensus_a(""), consensus_b(""), match("");
 	unsigned num_of_match = 0;
 	while(((current_i!=next_i) || (current_j!=next_j)) && (next_j!=0) && (next_i!=0)){
@@ -140,13 +122,8 @@ unsigned Backtrack(const int i_max, const int j_max, int* I_i, int* I_j, const i
 
 		current_i = next_i;
 		current_j = next_j;
-#ifdef __GNUC__
 		next_i=I_i[current_i][current_j];
 		next_j=I_j[current_i][current_j];
-#else
-		next_i = I_i[INDEX_ONE_DIM(I_i_rows, current_i, current_j)];
-		next_j = I_j[INDEX_ONE_DIM(I_j_rows, current_i, current_j)];
-#endif
 	}
 
 	//check whether the alignment is what we want (pinned at the ends), modified version of SW (i_max is already fixed)
@@ -268,12 +245,7 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 
 		SMAlignment align;
 		unsigned align_pos[4];
-#ifdef __GNUC__
 		num_of_match = Backtrack(i_max, j_max, I_i, I_j, seq_a, seq_b, align, align_pos);
-#else
-		num_of_match = Backtrack(i_max, j_max, I_i, I_j, N_a+1, N_a+1,
-					seq_a, seq_b, align, align_pos);
-#endif
 		if (num_of_match) {
 			overlaps.push_back(overlap_align(seq_a_start_pos+align_pos[0], align_pos[3], align.match_align, num_of_match));
 			if (!found) {
