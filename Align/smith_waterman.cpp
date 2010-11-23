@@ -23,19 +23,15 @@ static ostream& printAlignment(ostream& out,
 	unsigned bstart = alignPos[2], bend = alignPos[3] + 1;
 	assert(aend == aseq.size());
 	assert(bstart == 0);
-	const string& consensus = align.match_align;
 	out << aseq.substr(0, astart) << align.query_align << '\n'
 		<< string(astart, ' ');
-	for (string::const_iterator it = align.match_align.begin();
-			it != align.match_align.end(); ++it) {
-		switch (*it) {
-		  case 'A': case 'C': case 'G': case 'T':
-			out << '.';
-			break;
-		  default:
-			out << *it;
-		}
+	for (unsigned i = 0; i < align.match_align.size(); i++) {
+		char a = align.query_align[i],
+			b = align.target_align[i],
+			c = align.match_align[i];
+		out << (c == a || c == b ? '.' : c);
 	}
+	const string& consensus = align.match_align;
 	return out << '\n'
 		<< string(astart, ' ')
 			<< align.target_align << bseq.substr(bend) << '\n'
