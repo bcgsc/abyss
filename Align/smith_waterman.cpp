@@ -69,17 +69,9 @@ struct index_cmp {
 	bool operator()(const int a, const int b) const { return arr[a] > arr[b]; }
 };
 
-static inline int convert_to_index(char c)
-{
-	if ('A' <= c && c <= 'Z')
-		return c - 'A';
-	else
-		return c - 'a';
-}
-
 static inline bool isMatch(char a, char b, char& consensus)
 {
-	if (a == b || convert_to_index(a) == convert_to_index(b)) {
+	if (toupper(a) == toupper(b)) {
 		consensus = a;
 		return true;
 	} else if (a == '-' || b == '-') {
