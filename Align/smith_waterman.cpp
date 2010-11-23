@@ -7,11 +7,10 @@
 
 #include "smith_waterman.h"
 #include "Sequence.h"
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
+#include <cctype>
+#include <iostream>
 
 using namespace std;
 
