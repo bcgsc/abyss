@@ -135,6 +135,7 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 		char c = ca == cb ? ca
 			: ca == 'N' ? cb
 			: cb == 'N' ? ca
+			: ambiguityIsSubset(ca, cb) ? ambiguityOr(ca, cb)
 			: 'x';
 		if (c == 'x')
 			return string("");
