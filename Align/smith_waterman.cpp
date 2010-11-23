@@ -47,9 +47,6 @@ static ostream& printAlignment(ostream& out,
 #endif
 
 template <class T>
-T find_array_max(T array[],int length, int& ind);
-
-template <class T>
 void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1);
 
 //index comparison functor
@@ -198,14 +195,14 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 	for (j=0;j<=N_b;j++)
 		H[0][j]=0; //initialize first column
 
-	double temp[4];
-	int ind;
 	for(i=1;i<=N_a;i++){
 		for(j=1;j<=N_b;j++){
+			double temp[4];
 			AssignScores_std<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1]);
 			temp[3] = 0.;
-			H[i][j] = find_array_max<double>(temp,4, ind);
-			switch(ind){
+			double* pMax = max_element(temp, temp + 4);
+			H[i][j] = *pMax;
+			switch (pMax - temp) {
 			case 0: // score in (i,j) stems from a match/mismatch
 				I_i[i][j] = i-1;
 				I_j[i][j] = j-1;
@@ -296,23 +293,6 @@ static int sim_score(const char a, const char b)
 	return a == '-' || b == '-' ? -2 // gap penalty
 		: !isMatch(a, b, consensus) ? -1 // mismatch penalty
 		: 1; // match score
-}
-
-// Find the max value in array[], use 'ind' to hold the index of max
-template <class T>
-T find_array_max(T array[],int length, int& ind)
-{
-
-  T max = array[0];            // start with max = first element
-  ind = 0;
-
-  for(int i = 1; i<length; i++){
-      if(array[i] > max){
-		max = array[i];
-		ind = i;
-      }
-  }
-  return max;                    // return highest value in array
 }
 
 /** Return the alignment score. */
