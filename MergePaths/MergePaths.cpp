@@ -681,9 +681,8 @@ static bool alignCoordinates(iterator& first1, iterator last1,
 	}
 
 	assert(ambiguous1 == 0 || ambiguous2 == 0);
-	unsigned ambiguous = ambiguous1 + ambiguous2;
-	if (ambiguous > 0)
-		*out++ = ContigNode(ambiguous, 'N');
+	int ambiguous = ambiguous1 + ambiguous2;
+	*out++ = ContigNode(max(1, ambiguous), 'N');
 	first1 = it1;
 	first2 = it2;
 	result = out;
