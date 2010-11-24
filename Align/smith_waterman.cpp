@@ -234,14 +234,8 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 	while (j < N_b) {
 		j_max = j_max_indexes[j];
 		H_max = H[N_a][j_max];
-
-		//if H_max is 0, report failure
-		if (H_max == 0) {
-			if (verbose)
-				cout //<< seq_a << endl << seq_b << endl
-					<< "H_max is 0, no more alignment!" << endl;
+		if (H_max == 0)
 			break;
-		}
 
 		SMAlignment align;
 		unsigned align_pos[4];
@@ -250,7 +244,7 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 			overlaps.push_back(overlap_align(seq_a_start_pos+align_pos[0], align_pos[3], align.match_align, num_of_match));
 			if (!found) {
 				if (verbose)
-					printAlignment(cout, seq_a, seq_b,
+					printAlignment(cerr, seq_a, seq_b,
 							align_pos, align, num_of_match) << '\n';
 				found = true;
 				if (!multi_align)
@@ -260,11 +254,6 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 		j++;
 	}
 	delete [] j_max_indexes;
-
-	if (verbose && !found)
-		cout <<"no alignment found" << endl;
-
-	//clean up memory
 	for(i=0;i<=N_a;i++){
 		delete [] H[i];
 		delete [] I_i[i];
