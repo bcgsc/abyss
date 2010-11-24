@@ -9,6 +9,7 @@
 #include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "smith_waterman.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -54,6 +55,12 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 	static string out;
 	static string path;
+
+	/** Minimum overlap. */
+	static unsigned minOverlap = 20;
+
+	/** Minimum alignment identity. */
+	static float minIdentity = 0.9;
 }
 
 static const char shortopts[] = "k:o:p:v";
@@ -165,17 +172,47 @@ static void mergeContigs(const Graph& g,
 		assert(seq.length() > overlap);
 		ao = seq.substr(seq.length() - overlap);
 		o = createConsensus(ao, bo);
-	} while (o.empty() && chomp(seq, 'n'));
-	if (o.empty()) {
+		if (!o.empty()) {
+			seq.resize(seq.length() - overlap);
+			seq += o;
+			seq += Sequence(s, overlap);
+			return;
+		}
+	} while (chomp(seq, 'n'));
+
+	// Try an overlap alignment.
+	if (opt::verbose > 1)
+		cerr << '\n';
+	vector<overlap_align> overlaps;
+	alignOverlap(ao, bo, 0, overlaps, false, opt::verbose > 1);
+	bool good = false;
+	if (!overlaps.empty()) {
+		assert(overlaps.size() == 1);
+		const overlap_align& o = overlaps.front();
+		unsigned matches = o.overlap_match;
+		const string& consensus = o.overlap_str;
+		float identity = (float)matches / consensus.size();
+		good = matches >= opt::minOverlap
+			&& identity >= opt::minIdentity;
+		if (opt::verbose > 1)
+			cerr << matches << " / " << consensus.size()
+				<< " = " << identity
+				<< (matches < opt::minOverlap ? " (too few)"
+						: identity < opt::minIdentity ? " (too low)"
+						: " (good)") << '\n';
+	}
+	if (good) {
+		assert(overlaps.size() == 1);
+		const overlap_align& o = overlaps.front();
+		seq.erase(seq.length() - overlap + o.overlap_t_pos);
+		seq += o.overlap_str;
+		seq += Sequence(s, o.overlap_h_pos + 1);
+	} else {
 		cerr << "warning: the head of `" << v << "' "
 			"does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
 		seq += 'n';
 		seq += s;
-	} else {
-		seq.resize(seq.length() - overlap);
-		seq += o;
-		seq += Sequence(s, overlap);
 	}
 }
 
