@@ -5,8 +5,7 @@
 #include "Graph/Options.h"
 #include "IOUtil.h"
 #include <cassert>
-#include <istream>
-#include <ostream>
+#include <iostream>
 
 /** The length and coverage of a contig. */
 struct ContigProperties {
@@ -110,6 +109,9 @@ Distance get(edge_bundle_t, const Graph& g,
 		return Distance();
 	} else {
 		std::pair<edge_descriptor, bool> e = edge(u, v, g);
+		if (!e.second)
+			std::cerr << "error: no edge "
+				<< u << " -> " << v << '\n';
 		assert(e.second);
 		return g[e.first];
 	}
