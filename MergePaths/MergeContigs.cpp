@@ -85,28 +85,10 @@ static void assert_open(ifstream& f, const string& p)
 	exit(EXIT_FAILURE);
 }
 
-struct Contig {
-	string id;
-    Sequence seq;
-    unsigned coverage;
-    Contig(const string& id, const Sequence& seq, unsigned coverage)
-        : id(id), seq(seq), coverage(coverage) { }
+/* A contig sequence. */
+typedef FastaRecord Contig;
 
-	operator FastaRecord()
-	{
-		ostringstream s;
-		s << seq.length() << ' ' << coverage;
-		return FastaRecord(id, s.str(), seq);
-	}
-
-	friend ostream& operator <<(ostream& out, const Contig& o)
-	{
-		return out << '>' << o.id << ' '
-			<< o.seq.length() << ' ' << o.coverage << '\n'
-			<< o.seq << '\n';
-	}
-};
-
+/** The contig sequences. */
 static vector<Contig> g_contigs;
 
 /** Return the sequence of the specified contig node. The sequence
@@ -223,7 +205,7 @@ static Contig mergePath(const Graph& g, const Path& path)
 	for (Path::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		if (!it->ambiguous())
-			coverage += g_contigs[it->id()].coverage;
+			coverage += g[*it].coverage;
 		if (seq.empty()) {
 			seq = sequence(*it);
 		} else {
@@ -231,7 +213,9 @@ static Contig mergePath(const Graph& g, const Path& path)
 			mergeContigs(g, *(it-1), *it, seq, path);
 		}
 	}
-	return Contig("", seq, coverage);
+	ostringstream ss;
+	ss << seq.size() << ' ' << coverage;
+	return Contig("", ss.str(), seq);
 }
 
 template<typename T> static string toString(T x)
@@ -341,16 +325,13 @@ int main(int argc, char** argv)
 	string adjPath(argv[optind++]);
 	string mergedPathFile(argv[optind++]);
 
+	// Read the contig sequence.
 	vector<Contig>& contigs = g_contigs;
 	{
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			istringstream ss(rec.comment);
-			unsigned length, coverage = 0;
-			ss >> length >> coverage;
-			ContigID id(rec.id);
-			assert(id == contigs.size());
-			contigs.push_back(Contig(rec.id, rec.seq, coverage));
+			ContigID::insert(rec.id);
+			contigs.push_back(rec);
 		}
 		assert(in.eof());
 		assert(!contigs.empty());
@@ -433,15 +414,14 @@ int main(int argc, char** argv)
 
 	float minCov = numeric_limits<float>::infinity(),
 		minCovUsed = numeric_limits<float>::infinity();
-	for (vector<Contig>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it) {
-		if (it->coverage == 0)
+	for (unsigned i = 0; i < contigs.size(); i++) {
+		ContigProperties vp = g[ContigNode(i, false)];
+		if (vp.coverage == 0)
 			continue;
-		assert((int)it->seq.length() - opt::k + 1 > 0);
-		float cov = (float)it->coverage
-			/ (it->seq.length() - opt::k + 1);
+		assert((int)vp.length - opt::k + 1 > 0);
+		float cov = (float)vp.coverage / (vp.length - opt::k + 1);
 		minCov = min(minCov, cov);
-		if (seen[it - contigs.begin()])
+		if (seen[i])
 			minCovUsed = min(minCovUsed, cov);
 	}
 
