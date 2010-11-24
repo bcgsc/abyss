@@ -218,10 +218,17 @@ static Contig mergePath(const Graph& g, const Path& path)
 	return Contig("", ss.str(), seq);
 }
 
-template<typename T> static string toString(T x)
+/** Return a FASTA comment for the specified path. */
+static inline string pathToComment(const ContigPath& path)
 {
+	assert(path.size() > 1);
 	ostringstream s;
-	s << x;
+	s << path.front();
+	if (path.size() == 3)
+		s << ',' << path[1];
+	else if (path.size() > 3)
+		s << ",...";
+	s << ',' << path.back();
 	return s.str();
 }
 
@@ -279,7 +286,6 @@ static void markRemovedContigs(vector<bool>& marked,
 int main(int argc, char** argv)
 {
 	opt::trimMasked = false;
-	ContigPath::separator = ",";
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -403,7 +409,7 @@ int main(int argc, char** argv)
 		Contig contig = mergePath(g, path);
 		contig.id = pathIDs[it - paths.begin()];
 		FastaRecord rec(contig);
-		rec.comment += ' ' + toString(path);
+		rec.comment += ' ' + pathToComment(path);
 		out << rec;
 		assert(out.good());
 		npaths++;
