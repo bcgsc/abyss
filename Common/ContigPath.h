@@ -35,9 +35,6 @@ class ContigPath : public std::vector<ContigNode>
 		}
 
 		using std::vector<ContigNode>::erase;
-
-		/** The separator to print between ContigNode. */
-		static const char* separator;
 };
 
 namespace std {
@@ -51,7 +48,7 @@ static inline std::ostream& operator<<(std::ostream& out,
 	assert(!o.empty());
 	ContigPath::const_iterator last = o.end() - 1;
 	copy(o.begin(), last,
-			std::ostream_iterator<ContigNode>(out, o.separator));
+			std::ostream_iterator<ContigNode>(out, " "));
 	return out << *last;
 }
 

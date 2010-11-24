@@ -8,7 +8,7 @@ libcommon_a_SOURCES = \
 	ContigID.h ContigID.cpp \
 	ContigLength.h ContigLength.cpp \
 	ContigNode.h \
-	ContigPath.h ContigPath.cpp \
+	ContigPath.h \
 	ContigProperties.h \
 	Dictionary.h \
 	Estimate.h \
