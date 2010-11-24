@@ -26,7 +26,7 @@ static const int GAP_SCORE = -2;
 /** Print the specified alignment. */
 static ostream& printAlignment(ostream& out,
 		const string& aseq, const string& bseq,
-		unsigned alignPos[], SMAlignment align, unsigned matches)
+		unsigned alignPos[], SMAlignment align)
 {
 	unsigned astart = alignPos[0], aend = alignPos[1] + 1;
 	unsigned bstart = alignPos[2], bend = alignPos[3] + 1;
@@ -40,12 +40,8 @@ static ostream& printAlignment(ostream& out,
 			c = align.match_align[i];
 		out << (c == a || c == b ? '.' : c);
 	}
-	const string& consensus = align.match_align;
-	return out << '\n'
-		<< string(astart, ' ')
-			<< align.target_align << bseq.substr(bend) << '\n'
-		<< matches << " / " << consensus.size() << " = "
-			<< (float)matches / consensus.size() << '\n';
+	return out << '\n' << string(astart, ' ')
+		<< align.target_align << bseq.substr(bend) << '\n';
 }
 
 /** Index comparison functor. */
@@ -245,7 +241,7 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 			if (!found) {
 				if (verbose)
 					printAlignment(cerr, seq_a, seq_b,
-							align_pos, align, num_of_match) << '\n';
+							align_pos, align);
 				found = true;
 				if (!multi_align)
 					break;
