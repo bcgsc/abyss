@@ -105,6 +105,9 @@ int main(int argc, char** argv)
 {
 	opt::trimMasked = false;
 
+	if (string(argv[0]).find("tofasta") != string::npos)
+		opt::toFASTQ = false;
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
