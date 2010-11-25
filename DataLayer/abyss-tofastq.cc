@@ -73,14 +73,32 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Total count. */
+static struct {
+	unsigned records;
+	unsigned characters;
+} g_total;
+
 template <class Record>
 static void convert(const char* path)
 {
 	FastaReader in(path, FastaReader::NO_FOLD_CASE
 			| FastaReader::CONVERT_QUALITY);
-	for (Record record; in >> record;)
+	unsigned records = 0, characters = 0;
+	for (Record record; in >> record;) {
 		cout << record;
+		assert(cout.good());
+		records++;
+		characters += record.seq.size();
+	}
 	assert(in.eof());
+
+	g_total.records += records;
+	g_total.characters += characters;
+	if (opt::verbose)
+		cerr << records << '\t'
+			<< characters << '\t'
+			<< path << '\n';
 }
 
 int main(int argc, char** argv)
@@ -130,5 +148,9 @@ int main(int argc, char** argv)
 		for_each(argv + optind, argv + argc, f);
 	else
 		f("-");
+	if (opt::verbose && argc - optind > 1)
+		cerr << g_total.records << '\t'
+			<< g_total.characters << '\t'
+			<< "total\n";
 	return 0;
 }
