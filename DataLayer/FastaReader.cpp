@@ -232,7 +232,7 @@ next_record:
 			id = o.str();
 			s = fields[8];
 			q = fields[9];
-			comment = fields.back();
+			comment.clear();
 			qualityOffset = 64;
 			checkSeqQual(s, q);
 		} else {
