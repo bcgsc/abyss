@@ -29,6 +29,8 @@ static const char USAGE_MESSAGE[] =
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz\n"
 "and may be tarred.\n"
 "\n"
+"      --fastq             ouput FASTQ format [default]\n"
+"      --fasta             ouput FASTA format\n"
 "      --chastity          discard unchaste reads [default]\n"
 "                          for qseq, export and SAM files only\n"
 "      --no-chastity       do not discard unchaste reads\n"
@@ -48,6 +50,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	static int toFASTQ = 1;
 	static int verbose;
 }
 
@@ -56,6 +59,8 @@ static const char shortopts[] = "q:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "fasta",            no_argument, &opt::toFASTQ, 0 },
+	{ "fastq",            no_argument, &opt::toFASTQ, 1 },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -120,8 +125,7 @@ int main(int argc, char** argv)
 	typedef void (*F)(const char*);
 	F convertFasta = convert<FastaRecord>;
 	F convertFastq = convert<FastqRecord>;
-	F f = string(argv[0]).find("tofasta") != string::npos
-		? convertFasta : convertFastq;
+	F f = opt::toFASTQ ? convertFastq : convertFasta;
 	if (optind < argc)
 		for_each(argv + optind, argv + argc, f);
 	else
