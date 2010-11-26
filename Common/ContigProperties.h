@@ -95,6 +95,17 @@ static inline ContigProperties operator+=(
 	return a;
 }
 
+/** The distance between two vertices. */
+enum edge_distance_t { edge_distance };
+
+/** Return the distance between two vertices. */
+template <typename Graph>
+int get(edge_distance_t, const Graph& g,
+		typename graph_traits<Graph>::edge_descriptor e)
+{
+	return g[e].distance;
+}
+
 /** Return the edge properties of (u,v) unless either u or v is
  * ambiguous, in which case return a default-constructed instance of
  * the edge properties.

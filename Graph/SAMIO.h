@@ -41,7 +41,7 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 	for (edge_iterator e = eit.first; e != eit.second; ++e) {
 		ContigNode u = source(*e, g), v = target(*e, g);
 		assert(!get(vertex_removed, g, v));
-		int distance = g[*e].distance;
+		int distance = get(edge_distance, g, *e);
 		if (get(vertex_removed, g, u) || distance >= 0)
 			continue;
 		unsigned flag = u.sense() == v.sense() ? 0 : 0x10; //FREVERSE

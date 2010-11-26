@@ -5,7 +5,7 @@
 #include "ContigLength.h"
 #include "ContigPath.h"
 #include "DirectedGraph.h"
-#include "GraphIO.h"
+#include "DotIO.h"
 #include "GraphUtil.h"
 #include "Histogram.h"
 #include "IOUtil.h"

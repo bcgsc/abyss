@@ -1,6 +1,7 @@
 #ifndef DOTIO_H
 #define DOTIO_H 1
 
+#include "Graph/Options.h"
 #include "Graph.h"
 #include "IOUtil.h"
 #include <cassert>
