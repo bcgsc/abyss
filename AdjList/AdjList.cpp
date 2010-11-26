@@ -182,27 +182,26 @@ int main(int argc, char** argv)
 
 	// Index the end sequences using a hash table.
 	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
-	vector<KmerMap> ends(2, KmerMap(2 * contigs.size()));
+	KmerMap suffixes(KmerMap(2 * contigs.size()));
 	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it) {
 		ContigNode u(it - contigs.begin(), false);
-		ends[0][it->r].push_back(u);
-		ends[1][it->l].push_back(u);
-		ends[0][reverseComplement(it->l)].push_back(~u);
-		ends[1][reverseComplement(it->r)].push_back(~u);
+		suffixes[it->r].push_back(u);
+		suffixes[reverseComplement(it->l)].push_back(~u);
 	}
 
 	// Add the edges.
 	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
-	for (vertex_iterator itu = vit.first; itu != vit.second; ++itu) {
-		ContigNode u(*itu);
-		const ContigEndSeq& contig = contigs[ContigID(u)];
-		const Kmer& kmer = u.sense() ? contig.l : contig.r;
-		const KmerMap::mapped_type& edges = ends[!u.sense()][kmer];
+	for (vertex_iterator itv = vit.first; itv != vit.second; ++itv) {
+		ContigNode v(*itv);
+		const ContigEndSeq& contig = contigs[ContigID(v)];
+		const Kmer& prefix = v.sense()
+			? reverseComplement(contig.r) : contig.l;
+		const KmerMap::mapped_type& edges = suffixes[prefix];
 		for (KmerMap::mapped_type::const_iterator
-				itv = edges.begin(); itv != edges.end(); ++itv)
-			add_edge<DG>(u, *itv ^ u.sense(), g);
+				itu = edges.begin(); itu != edges.end(); ++itu)
+			add_edge<DG>(~v, ~*itu, g);
 	}
 
 	if (opt::verbose > 0)
