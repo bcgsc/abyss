@@ -1,7 +1,12 @@
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
+#include "ContigGraph.h"
 #include "ContigNode.h"
+#include "ContigProperties.h"
+#include "DirectedGraph.h"
 #include "FastaReader.h"
+#include "GraphIO.h"
+#include "GraphUtil.h"
 #include "HashMap.h"
 #include "Iterator.h"
 #include "Kmer.h"
@@ -10,8 +15,6 @@
 #include <cassert>
 #include <cctype>
 #include <cstdlib>
-#include <cstring> // for strerror
-#include <fstream>
 #include <functional>
 #include <getopt.h>
 #include <iostream>
@@ -25,7 +28,7 @@ using namespace std;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Jared Simpson and Shaun Jackman.\n"
+"Written by Shaun Jackman.\n"
 "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
@@ -44,15 +47,12 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** Enumeration of output formats */
-enum format { ADJ, DOT, SAM };
-
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by GraphIO
 	static int overlap;
 
 	/** Output formats */
-	static int format;
+	int format; // used by GraphIO
 }
 
 static const char shortopts[] = "k:v";
@@ -69,6 +69,17 @@ static const struct option longopts[] = {
 	{ "version", no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+/** A contig adjacency graph. */
+typedef DirectedGraph<ContigProperties> DG;
+typedef ContigGraph<DG> Graph;
+
+/** Return the distance between two vertices. */
+static inline int get(edge_distance_t, const Graph&,
+		graph_traits<Graph>::edge_descriptor)
+{
+	return -opt::k + 1;
+}
 
 /** The two terminal Kmer of a contig and its length and coverage. */
 struct ContigEndSeq {
@@ -189,112 +200,30 @@ int main(int argc, char** argv)
 				ContigNode(i, true));
 	}
 
-	ostream& out = cout;
-
-	// Graph
-	switch (opt::format) {
-	  case DOT:
-		out << "digraph adj {\n"
-			"graph [k=" << opt::k << "]\n"
-			"edge [d=" << -int(opt::k-1) << "]\n";
-		break;
-	  case SAM:
-		// SAM headers.
-		cout << "@HD\tVN:1.0\tSO:coordinate\n"
-			"@PG\tID:" PROGRAM "\tVN:" VERSION "\t"
-			"CL:" << commandLine << '\n';
-		break;
-	}
-
-	// Vertices
+	// Add the vertices.
+	Graph g;
 	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it) {
-		ContigID id(it - contigs.begin());
-		switch (opt::format) {
-		  case DOT:
-			out << '"' << id << "+\" "
-				"[l=" << it->length << " C=" << it->coverage << "]\n"
-				<< '"' << id << "-\" "
-				"[l=" << it->length << " C=" << it->coverage << "]\n";
-			break;
-		  case SAM:
-			out << "@SQ\tSN:" << id
-				<< "\tLN:" << it->length
-				<< "\tXC:" << it->coverage << '\n';
-			break;
-		}
+			it != contigs.end(); ++it)
+		add_vertex(ContigProperties(it->length, it->coverage), g);
+	
+	// Add the edges.
+	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
+	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
+	for (vertex_iterator itu = vit.first; itu != vit.second; ++itu) {
+		ContigNode u(*itu);
+		const ContigEndSeq& contig = contigs[ContigID(u)];
+		const Kmer& kmer = !u.sense() ? contig.l : contig.r;
+		const KmerMap::mapped_type& edges = ends[!u.sense()][kmer];
+		for (KmerMap::mapped_type::const_iterator
+				itv = edges.begin(); itv != edges.end(); ++itv)
+			g.DG::add_edge(u, *itv ^ u.sense());
 	}
-
-	// Edges
-	int numVerts = 0;
-	int numEdges = 0;
-	for (vector<ContigEndSeq>::const_iterator i = contigs.begin();
-			i != contigs.end(); ++i) {
-		ContigID id(i - contigs.begin());
-
-		if (opt::format == ADJ)
-			out << id << ' ' << i->length << ' ' << i->coverage
-				<< "\t;";
-
-		for (unsigned idx = 0; idx < 2; idx++) {
-			bool left = opt::format == SAM ? !idx : idx;
-			const Kmer& seq = !left ? i->l : i->r;
-			const KmerMap::mapped_type& edges = ends[!left][seq];
-
-			switch (opt::format) {
-			  case ADJ:
-				copy(edges.begin(), edges.end(),
-						affix_ostream_iterator<ContigNode>(out, " "));
-				out << (idx == 0 ? "\t;" : "\n");
-				break;
-			  case DOT:
-				if (!edges.empty()) {
-					out << "\"" << id << (idx ? '-' : '+')
-						<< "\" ->";
-					if (edges.size() > 1)
-						out << " {";
-					for (KmerMap::mapped_type::const_iterator it
-							= edges.begin(); it != edges.end(); ++it)
-						out << " \""
-							<< (idx == 0 ? *it : ~*it) << '"';
-					if (edges.size() > 1)
-						out << " }";
-					out << '\n';
-				}
-				break;
-			  case SAM:
-				for (KmerMap::mapped_type::const_iterator it
-						= edges.begin(); it != edges.end(); ++it) {
-					unsigned flag = it->sense() ? 0x10 : 0; //FREVERSE
-					unsigned alen = opt::k - 1;
-					unsigned pos = 1 + (left ? 0 : i->length - alen);
-					out << ContigID(*it) // QNAME
-						<< '\t' << flag // FLAG
-						<< '\t' << id // RNAME
-						<< '\t' << pos // POS
-						<< "\t255\t"; // MAPQ
-					// CIGAR
-					unsigned clip = contigs[it->id()].length - alen;
-					if (left)
-						out << clip << 'H' << alen << "M\t";
-					else
-						out << alen << 'M' << clip << "H\t";
-					// MRNM MPOS ISIZE SEQ QUAL
-					out << "*\t0\t0\t*\t*\n";
-				}
-				break;
-			}
-			numVerts++;
-			numEdges += edges.size();
-		}
-	}
-
-	if (opt::format == DOT)
-		out << "}\n";
 
 	if (opt::verbose > 0)
-		cerr << "V=" << numVerts
-			<< " E=" << numEdges
-			<< " E/V=" << (float)numEdges / numVerts
-			<< endl;
+		printGraphStats(cerr, g);
+
+	write_graph(cout, g, PROGRAM, commandLine);
+	assert(cout.good());
+
+	return 0;
 }
