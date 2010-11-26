@@ -34,8 +34,8 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Find all contigs that overlap by exactly k-1 bases. Contigs may be read\n"
-"from FILE(s) or standard input. Output is written to standard output.\n"
+"Find overlaps of exactly k-1 bases. Contigs may be read from\n"
+"FILE(s) or standard input. Output is written to standard output.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "      --adj             output the results in adj format [DEFAULT]\n"
