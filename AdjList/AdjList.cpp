@@ -49,9 +49,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by GraphIO
-	static int overlap;
-
-	/** Output formats */
 	int format; // used by GraphIO
 }
 
@@ -122,10 +119,10 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 		ContigID id(rec.id);
 		assert(id == pContigs->size());
 
-		assert(seq.length() > (unsigned)opt::overlap);
-		Kmer seql(seq.substr(seq.length() - opt::overlap,
-				opt::overlap));
-		Kmer seqr(seq.substr(0, opt::overlap));
+		unsigned overlap = opt::k - 1;
+		assert(seq.length() > overlap);
+		Kmer seql(seq.substr(seq.length() - overlap, overlap));
+		Kmer seqr(seq.substr(0, overlap));
 		pContigs->push_back(ContigEndSeq(seq.length(),
 					getCoverage(rec.comment),
 					seql, seqr));
@@ -172,10 +169,8 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	opt::overlap = opt::k - 1;
-	Kmer::setLength(opt::overlap);
-
 	opt::trimMasked = false;
+	Kmer::setLength(opt::k - 1);
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
