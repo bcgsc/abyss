@@ -11,11 +11,9 @@
 #include "Iterator.h"
 #include "Kmer.h"
 #include "Uncompress.h"
-#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstdlib>
-#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
@@ -80,13 +78,9 @@ static inline int get(edge_distance_t, const Graph&,
 
 /** The two terminal Kmer of a contig and its length and coverage. */
 struct ContigEndSeq {
-	unsigned length;
-	unsigned coverage;
 	Kmer l;
 	Kmer r;
-	ContigEndSeq(unsigned length, unsigned coverage,
-			const Kmer& l, const Kmer& r)
-		: length(length), coverage(coverage), l(l), r(r) { }
+	ContigEndSeq(const Kmer& l, const Kmer& r) : l(l), r(r) { }
 };
 
 static unsigned getCoverage(const string& comment)
@@ -97,7 +91,11 @@ static unsigned getCoverage(const string& comment)
 	return coverage;
 }
 
-static void readContigs(string path, vector<ContigEndSeq>* pContigs)
+/** Read contigs. Add contig properties to the graph. Add end
+ * sequences to the collection.
+ */
+static void readContigs(const string& path,
+		Graph& g, vector<ContigEndSeq>& contigs)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
@@ -116,16 +114,15 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 				assert(isalpha(seq[0]));
 		}
 
-		ContigID id(rec.id);
-		assert(id == pContigs->size());
+		ContigID::insert(rec.id);
+		ContigProperties vp(seq.length(), getCoverage(rec.comment));
+		add_vertex(vp, g);
 
 		unsigned overlap = opt::k - 1;
 		assert(seq.length() > overlap);
-		Kmer seql(seq.substr(0, overlap));
-		Kmer seqr(seq.substr(seq.length() - overlap));
-		pContigs->push_back(ContigEndSeq(seq.length(),
-					getCoverage(rec.comment),
-					seql, seqr));
+		contigs.push_back(ContigEndSeq(
+					Kmer(seq.substr(0, overlap)),
+					Kmer(seq.substr(seq.length() - overlap))));
 	}
 	assert(in.eof());
 }
@@ -171,17 +168,19 @@ int main(int argc, char** argv)
 
 	opt::trimMasked = false;
 	Kmer::setLength(opt::k - 1);
+	Graph g;
 	vector<ContigEndSeq> contigs;
 	if (optind < argc) {
-		for_each(argv + optind, argv + argc,
-				bind2nd(ptr_fun(readContigs), &contigs));
+		for (; optind < argc; optind++)
+			readContigs(argv[optind], g, contigs);
 	} else
-		readContigs("-", &contigs);
+		readContigs("-", g, contigs);
 	ContigID::lock();
 
 	if (opt::verbose > 0)
 		cerr << "Read " << contigs.size() << " contigs\n";
 
+	// Index the end sequences using a hash table.
 	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
 	vector<KmerMap> ends(2, KmerMap(2 * contigs.size()));
 	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
@@ -193,12 +192,6 @@ int main(int argc, char** argv)
 		ends[1][reverseComplement(it->r)].push_back(~u);
 	}
 
-	// Add the vertices.
-	Graph g;
-	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it)
-		add_vertex(ContigProperties(it->length, it->coverage), g);
-	
 	// Add the edges.
 	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
@@ -215,6 +208,7 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
+	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
 
