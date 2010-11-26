@@ -121,8 +121,8 @@ static void readContigs(string path, vector<ContigEndSeq>* pContigs)
 
 		unsigned overlap = opt::k - 1;
 		assert(seq.length() > overlap);
-		Kmer seql(seq.substr(seq.length() - overlap, overlap));
-		Kmer seqr(seq.substr(0, overlap));
+		Kmer seql(seq.substr(0, overlap));
+		Kmer seqr(seq.substr(seq.length() - overlap));
 		pContigs->push_back(ContigEndSeq(seq.length(),
 					getCoverage(rec.comment),
 					seql, seqr));
@@ -183,16 +183,14 @@ int main(int argc, char** argv)
 		cerr << "Read " << contigs.size() << " contigs\n";
 
 	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
-	vector<KmerMap> ends(2, KmerMap(contigs.size()));
+	vector<KmerMap> ends(2, KmerMap(2 * contigs.size()));
 	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it) {
-		unsigned i = it - contigs.begin();
-		ends[0][it->l].push_back(ContigNode(i, false));
-		ends[1][reverseComplement(it->l)].push_back(
-				ContigNode(i, true));
-		ends[1][it->r].push_back(ContigNode(i, false));
-		ends[0][reverseComplement(it->r)].push_back(
-				ContigNode(i, true));
+		ContigNode u(it - contigs.begin(), false);
+		ends[0][it->r].push_back(u);
+		ends[1][it->l].push_back(u);
+		ends[0][reverseComplement(it->l)].push_back(~u);
+		ends[1][reverseComplement(it->r)].push_back(~u);
 	}
 
 	// Add the vertices.
@@ -207,7 +205,7 @@ int main(int argc, char** argv)
 	for (vertex_iterator itu = vit.first; itu != vit.second; ++itu) {
 		ContigNode u(*itu);
 		const ContigEndSeq& contig = contigs[ContigID(u)];
-		const Kmer& kmer = !u.sense() ? contig.l : contig.r;
+		const Kmer& kmer = u.sense() ? contig.l : contig.r;
 		const KmerMap::mapped_type& edges = ends[!u.sense()][kmer];
 		for (KmerMap::mapped_type::const_iterator
 				itv = edges.begin(); itv != edges.end(); ++itv)
