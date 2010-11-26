@@ -66,7 +66,7 @@ size_t Kmer::getHashCode() const
 }
 
 /** Return the string representation of this sequence. */
-Sequence Kmer::decode() const
+Sequence Kmer::str() const
 {
 	Sequence s;
 	s.reserve(s_length);

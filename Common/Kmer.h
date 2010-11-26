@@ -32,7 +32,7 @@ class Kmer
 		return compare(other) < 0;
 	}
 
-	Sequence decode() const;
+	Sequence str() const;
 
 	unsigned getCode() const;
 	size_t getHashCode() const;

@@ -1244,7 +1244,7 @@ void NetworkSequenceCollection::processSequenceExtension(
 				logger(0) << "error: unexpected seqext message: "
 					"state: " << m_state << " "
 					"gid: " << groupID << " bid: " << branchID << " "
-					"seq: " << seq.decode() << '\n';
+					"seq: " << seq.str() << '\n';
 				assert(false);
 			}
 			break;
@@ -1252,7 +1252,7 @@ void NetworkSequenceCollection::processSequenceExtension(
 			logger(0) << "error: unexpected seqext message: "
 				"state: " << m_state << " "
 				"gid: " << groupID << " bid: " << branchID << " "
-				"seq: " << seq.decode() << '\n';
+				"seq: " << seq.str() << '\n';
 			assert(false);
 			break;
 	}

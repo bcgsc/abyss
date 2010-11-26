@@ -31,7 +31,7 @@ static void print(const SequenceCollectionHash::value_type& seq)
 {
 	const KmerData& data = seq.second;
 	if (opt::sequence)
-		cout << seq.first.decode() << '\t';
+		cout << seq.first.str() << '\t';
 	if (opt::adj)
 		cout << data.getExtension(SENSE) << '\t'
 			<< data.getExtension(ANTISENSE) << '\t';
@@ -44,9 +44,9 @@ static void print(const SequenceCollectionHash::value_type& seq,
 	const KmerData& data = seq.second;
 	if (opt::sequence) {
 		if (sense)
-			cout << reverseComplement(seq.first).decode();
+			cout << reverseComplement(seq.first).str();
 		else
-			cout << seq.first.decode();
+			cout << seq.first.str();
 		cout << '\t';
 	}
 	if (opt::adj)

@@ -51,7 +51,7 @@ class Message
 		friend std::ostream& operator <<(std::ostream& out,
 				const Message& message)
 		{
-			return out << message.m_seq.decode() << '\n';
+			return out << message.m_seq.str() << '\n';
 		}
 
 		Kmer m_seq;

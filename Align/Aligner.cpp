@@ -39,7 +39,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 		if (!findIt->second.isDuplicate())
 			findIt->second.setDuplicate(
 					contigIndexToID(findIt->second.contig),
-					contigIndexToID(pos.contig), kmer.decode());
+					contigIndexToID(pos.contig), kmer.str());
 		return;
 	}
 
@@ -50,7 +50,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 		if (!inserted.first->second.isDuplicate())
 			inserted.first->second.setDuplicate(
 					contigIndexToID(inserted.first->second.contig),
-					contigIndexToID(pos.contig), kmer.decode());
+					contigIndexToID(pos.contig), kmer.str());
 }
 
 /** Create an index of the target sequence. */

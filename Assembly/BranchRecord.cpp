@@ -26,13 +26,13 @@ BranchRecord::operator Sequence() const
 
 	if (m_dir == SENSE) {
 		BranchData::const_iterator iter = m_data.begin();
-		outseq = iter->first.decode();
+		outseq = iter->first.str();
 		++iter;
 		for (; iter != m_data.end(); ++iter)
 			outseq.append(1, iter->first.getLastBaseChar());
 	} else {
 		BranchData::const_reverse_iterator iter = m_data.rbegin();
-		outseq = iter->first.decode();
+		outseq = iter->first.str();
 		++iter;
 		for (; iter != m_data.rend(); ++iter)
 			outseq.append(1, iter->first.getLastBaseChar());

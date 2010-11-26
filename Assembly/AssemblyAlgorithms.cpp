@@ -437,7 +437,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 {
 	const BranchRecord& best = group[0];
 	PrintDebug(5, "Popping %zu %s\n", best.size(),
-				best.front().first.decode().c_str());
+				best.front().first.str().c_str());
 
 	// Add the k-mer from the dead branches.
 	map<Kmer, KmerData> doomed;
@@ -736,7 +736,7 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
 	if (branch.getState() == BS_NOEXT
 			|| branch.getState() == BS_AMBI_OPP) {
 		PrintDebug(5, "Trimming %zu %s\n", branch.size(),
-				branch.front().first.decode().c_str());
+				branch.front().first.str().c_str());
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
 			seqCollection->mark(it->first);

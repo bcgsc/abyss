@@ -70,7 +70,7 @@ static void write_contig(ostream& out,
 	const Kmer& end = findContigEnd(c, seq, &n);
 	if (n == 1)
 		return;
-	out << seq.decode() << "->" << end.decode()
+	out << seq.str() << "->" << end.str()
 		<< "[label=\"" << n << "\"];\n";
 }
 
@@ -81,9 +81,9 @@ static void write_split(ostream& out,
 	vector<Kmer> exts = getExtensions(c, seq, SENSE);
 	if (exts.size() <= 1)
 		return;
-	out << seq.decode() << "->{ ";
+	out << seq.str() << "->{ ";
 	for (unsigned i = 0; i < exts.size(); i++)
-		out << exts[i].decode() << ' ';
+		out << exts[i].str() << ' ';
 	out << "};\n";
 }
 
@@ -96,8 +96,8 @@ static void write_join(ostream& out,
 		return;
 	out << "{ ";
 	for (unsigned i = 0; i < exts.size(); i++)
-		out << exts[i].decode() << ' ';
-	out << "}->" << seq.decode() << ";\n";
+		out << exts[i].str() << ' ';
+	out << "}->" << seq.str() << ";\n";
 }
 
 /** Write out a dot graph around the specified sequence. */
