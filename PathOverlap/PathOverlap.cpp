@@ -360,7 +360,7 @@ void printGraph(Graph& g,
 			it != overlaps.end(); ++it) {
 		Vertex u = it->source, v = it->target;
 		if (!edge(u, v, g).second)
-			g.DG::add_edge(u, v, it->distance);
+			add_edge<DG>(u, v, it->distance, g);
 	}
 
 	// Output the graph.

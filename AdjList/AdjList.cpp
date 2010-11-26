@@ -216,7 +216,7 @@ int main(int argc, char** argv)
 		const KmerMap::mapped_type& edges = ends[!u.sense()][kmer];
 		for (KmerMap::mapped_type::const_iterator
 				itv = edges.begin(); itv != edges.end(); ++itv)
-			g.DG::add_edge(u, *itv ^ u.sense());
+			add_edge<DG>(u, *itv ^ u.sense(), g);
 	}
 
 	if (opt::verbose > 0)
