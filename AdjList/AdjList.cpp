@@ -84,11 +84,14 @@ static unsigned getCoverage(const string& comment)
 	return coverage;
 }
 
+/** An index of suffixes. */
+typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
+
 /** Read contigs. Add contig properties to the graph. Add prefixes to
- * the collection.
+ * the collection and add suffixes to their index.
  */
 static void readContigs(const string& path,
-		Graph& g, vector<Kmer>& prefixes)
+		Graph& g, vector<Kmer>& prefixes, KmerMap& suffixes)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
@@ -107,15 +110,20 @@ static void readContigs(const string& path,
 				assert(isalpha(seq[0]));
 		}
 
-		ContigID::insert(rec.id);
-		ContigProperties vp(seq.length(), getCoverage(rec.comment));
-		add_vertex(vp, g);
-
+		// Add the prefix to the collection.
 		unsigned overlap = opt::k - 1;
 		assert(seq.length() > overlap);
-		prefixes.push_back(Kmer(seq.substr(0, overlap)));
-		prefixes.push_back(reverseComplement(
-					Kmer(seq.substr(seq.length() - overlap))));
+		Kmer prefix(seq.substr(0, overlap));
+		Kmer suffix(seq.substr(seq.length() - overlap));
+		prefixes.push_back(prefix);
+		prefixes.push_back(reverseComplement(suffix));
+
+		// Add the suffix to the index.
+		ContigID::insert(rec.id);
+		ContigProperties vp(seq.length(), getCoverage(rec.comment));
+		ContigNode u = add_vertex(vp, g);
+		suffixes[suffix].push_back(u);
+		suffixes[reverseComplement(prefix)].push_back(~u);
 	}
 	assert(in.eof());
 }
@@ -163,21 +171,13 @@ int main(int argc, char** argv)
 	Kmer::setLength(opt::k - 1);
 	Graph g;
 	vector<Kmer> prefixes;
+	KmerMap suffixes(prefixes.size());
 	if (optind < argc) {
 		for (; optind < argc; optind++)
-			readContigs(argv[optind], g, prefixes);
+			readContigs(argv[optind], g, prefixes, suffixes);
 	} else
-		readContigs("-", g, prefixes);
+		readContigs("-", g, prefixes, suffixes);
 	ContigID::lock();
-
-	// Index the suffixes using a hash table.
-	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
-	KmerMap suffixes(KmerMap(prefixes.size()));
-	for (vector<Kmer>::const_iterator it = prefixes.begin();
-			it != prefixes.end(); ++it) {
-		ContigNode u(it - prefixes.begin());
-		suffixes[reverseComplement(*it)].push_back(~u);
-	}
 
 	// Add the edges.
 	for (vector<Kmer>::const_iterator it = prefixes.begin();
