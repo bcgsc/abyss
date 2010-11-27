@@ -76,13 +76,6 @@ static inline int get(edge_distance_t, const Graph&,
 	return -opt::k + 1;
 }
 
-/** The two terminal Kmer of a contig and its length and coverage. */
-struct ContigEndSeq {
-	Kmer l;
-	Kmer r;
-	ContigEndSeq(const Kmer& l, const Kmer& r) : l(l), r(r) { }
-};
-
 static unsigned getCoverage(const string& comment)
 {
 	istringstream ss(comment);
@@ -91,11 +84,11 @@ static unsigned getCoverage(const string& comment)
 	return coverage;
 }
 
-/** Read contigs. Add contig properties to the graph. Add end
- * sequences to the collection.
+/** Read contigs. Add contig properties to the graph. Add prefixes to
+ * the collection.
  */
 static void readContigs(const string& path,
-		Graph& g, vector<ContigEndSeq>& contigs)
+		Graph& g, vector<Kmer>& prefixes)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
@@ -120,8 +113,8 @@ static void readContigs(const string& path,
 
 		unsigned overlap = opt::k - 1;
 		assert(seq.length() > overlap);
-		contigs.push_back(ContigEndSeq(
-					Kmer(seq.substr(0, overlap)),
+		prefixes.push_back(Kmer(seq.substr(0, overlap)));
+		prefixes.push_back(reverseComplement(
 					Kmer(seq.substr(seq.length() - overlap))));
 	}
 	assert(in.eof());
@@ -169,36 +162,28 @@ int main(int argc, char** argv)
 	opt::trimMasked = false;
 	Kmer::setLength(opt::k - 1);
 	Graph g;
-	vector<ContigEndSeq> contigs;
+	vector<Kmer> prefixes;
 	if (optind < argc) {
 		for (; optind < argc; optind++)
-			readContigs(argv[optind], g, contigs);
+			readContigs(argv[optind], g, prefixes);
 	} else
-		readContigs("-", g, contigs);
+		readContigs("-", g, prefixes);
 	ContigID::lock();
 
-	if (opt::verbose > 0)
-		cerr << "Read " << contigs.size() << " contigs\n";
-
-	// Index the end sequences using a hash table.
+	// Index the suffixes using a hash table.
 	typedef hash_map<Kmer, vector<ContigNode>, hashKmer> KmerMap;
-	KmerMap suffixes(KmerMap(2 * contigs.size()));
-	for (vector<ContigEndSeq>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it) {
-		ContigNode u(it - contigs.begin(), false);
-		suffixes[it->r].push_back(u);
-		suffixes[reverseComplement(it->l)].push_back(~u);
+	KmerMap suffixes(KmerMap(prefixes.size()));
+	for (vector<Kmer>::const_iterator it = prefixes.begin();
+			it != prefixes.end(); ++it) {
+		ContigNode u(it - prefixes.begin());
+		suffixes[reverseComplement(*it)].push_back(~u);
 	}
 
 	// Add the edges.
-	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
-	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
-	for (vertex_iterator itv = vit.first; itv != vit.second; ++itv) {
-		ContigNode v(*itv);
-		const ContigEndSeq& contig = contigs[ContigID(v)];
-		const Kmer& prefix = v.sense()
-			? reverseComplement(contig.r) : contig.l;
-		const KmerMap::mapped_type& edges = suffixes[prefix];
+	for (vector<Kmer>::const_iterator it = prefixes.begin();
+			it != prefixes.end(); ++it) {
+		ContigNode v(it - prefixes.begin());
+		const KmerMap::mapped_type& edges = suffixes[*it];
 		for (KmerMap::mapped_type::const_iterator
 				itu = edges.begin(); itu != edges.end(); ++itu)
 			add_edge<DG>(~v, ~*itu, g);
