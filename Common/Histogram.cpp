@@ -82,13 +82,16 @@ string Histogram::barplot(unsigned nbins) const
 	};
 
 	Histogram::Bins bins = bin(nbins);
-	ostringstream s;
+	ostringstream ss;
 	Histogram::Bins::value_type max
 		= 1 + *max_element(bins.begin(), bins.end());
 	for (Histogram::Bins::const_iterator it = bins.begin();
 			it != bins.end(); ++it)
-		s << bars[10 * *it / max];
-	return s.str();
+		ss << bars[10 * *it / max];
+	string s(ss.str());
+	while (!s.empty() && *s.rbegin() == ' ')
+		s.erase(s.size() - 1);
+	return s;
 }
 
 /** Return a unicode bar plot. */
