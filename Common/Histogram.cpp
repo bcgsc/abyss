@@ -63,8 +63,10 @@ Histogram::Bins Histogram::bin(unsigned n) const
 	return bins;
 }
 
-/** Return a unicode bar plot. */
-string Histogram::barplot() const
+/** Return a unicode bar plot.
+ * @param n number of buckets
+ */
+string Histogram::barplot(unsigned nbins) const
 {
 	/** Unicode bar characters. */
 	static const char* bars[10] = {
@@ -79,9 +81,7 @@ string Histogram::barplot() const
 		"\342\226\210", // 9608
 	};
 
-	const char *columns = getenv("COLUMNS");
-	Histogram::Bins bins = bin(columns == NULL ? 80
-			: strtoul(columns, NULL, 0));
+	Histogram::Bins bins = bin(nbins);
 	ostringstream s;
 	Histogram::Bins::value_type max
 		= 1 + *max_element(bins.begin(), bins.end());
@@ -89,4 +89,11 @@ string Histogram::barplot() const
 			it != bins.end(); ++it)
 		s << bars[10 * *it / max];
 	return s.str();
+}
+
+/** Return a unicode bar plot. */
+string Histogram::barplot() const
+{
+	const char *columns = getenv("COLUMNS");
+	return barplot(columns == NULL ? 80 : strtoul(columns, NULL, 0));
 }

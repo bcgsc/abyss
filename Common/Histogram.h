@@ -174,6 +174,7 @@ class Histogram
 	typedef std::vector<accumulator> Bins;
 	Bins bin(unsigned n) const;
 	std::string barplot() const;
+	std::string barplot(unsigned nbins) const;
 
 	const_iterator begin() const { return m_map.begin(); }
 	const_iterator end() const { return m_map.end(); }
