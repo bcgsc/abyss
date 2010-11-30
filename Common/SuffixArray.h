@@ -8,20 +8,6 @@
 #include <utility>
 #include <vector>
 
-/** Comparison function used with lower_bound. */
-template <typename T>
-bool compareLB(const T& a, const typename T::first_type& b)
-{
-	return a.first < b;
-}
-
-/** Comparison function used with upper_bound. */
-template <typename T>
-bool compareUB(const typename T::first_type& a, const T& b)
-{
-	return a < b.first;
-}
-
 /** A suffix array augmented with a mapped value type. */
 class SuffixArray {
   public:
@@ -69,16 +55,24 @@ class SuffixArray {
 			const T& seq) const
 	{
 		assert(!m_dirty);
-		return std::pair<const_iterator, const_iterator>(
-			lower_bound(
-				m_data.begin(), m_data.end(), key_type(&seq[0]),
-				compareLB<value_type>),
-			upper_bound(
-				m_data.begin(), m_data.end(), key_type(&seq[0]),
-				compareUB<value_type>));
+		return std::equal_range(m_data.begin(), m_data.end(),
+				key_type(&seq[0]), Compare());
 	}
 
   private:
+	/** Comparison functor. */
+	struct Compare {
+		bool operator()(const value_type& a, const key_type& b) const
+		{
+			return a.first < b;
+		}
+
+		bool operator()(const key_type& a, const value_type& b) const
+		{
+			return a < b.first;
+		}
+	};
+
 	unsigned m_minOverlap;
 	bool m_dirty;
 	std::vector<value_type> m_data;
