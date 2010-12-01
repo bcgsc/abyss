@@ -141,7 +141,15 @@ next_record:
 		} else
 			q.clear();
 
-		if (opt::trimMasked) {
+		if (isColourSpace(s) && !isdigit(s[0])) {
+			// The first character is the primer base. The second
+			// character is the dibase read of the primer and the
+			// first base of the sample, which is not part of the
+			// assembly.
+			assert(s.length() > 2);
+			anchor = colourToNucleotideSpace(s[0], s[1]);
+			s.erase(0, 2);
+		} else if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
 			size_t trimFront = s.find_first_not_of("acgtn");
@@ -155,16 +163,6 @@ next_record:
 		}
 		if (flagFoldCase())
 			transform(s.begin(), s.end(), s.begin(), ::toupper);
-
-		if (isColourSpace(s) && !isdigit(s[0])) {
-			// The first character is the primer base. The second
-			// character is the dibase read of the primer and the
-			// first base of the sample, which is not part of the
-			// assembly.
-			assert(s.length() > 2);
-			anchor = colourToNucleotideSpace(s[0], s[1]);
-			s.erase(0, 2);
-		}
 
 		qualityOffset = 33;
 	} else {
