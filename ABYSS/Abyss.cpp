@@ -56,7 +56,8 @@ static void assemble(const string& pathIn, const string& pathOut)
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
-	cout << "Loaded " << g.size() << " k-mer\n";
+	size_t numLoaded = g.size();
+	cout << "Loaded " << numLoaded << " k-mer\n";
 	g.shrink();
 	assert(!g.empty());
 
@@ -97,6 +98,13 @@ erode:
 		cerr << "error: no contigs assembled\n";
 		exit(EXIT_FAILURE);
 	}
+
+	size_t numAssembled = g.size();
+	size_t numRemoved = numLoaded - numAssembled;
+	cerr << "Removed " << numRemoved << " k-mer.\n"
+		"The signal-to-noise ratio (SNR) is "
+		<< 10 * log10((double)numAssembled / numRemoved)
+		<< " dB.\n";
 }
 
 int main(int argc, char* const* argv)
