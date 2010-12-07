@@ -332,10 +332,9 @@ ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 		: g[u];
 }
 
-/** Print the graph of path overlaps. */
-void printGraph(Graph& g,
-		const Paths& paths, const vector<string>& pathIDs,
-		const string& commandLine)
+/** Add the path overlap edges to the specified graph. */
+void addPathOverlapEdges(Graph& g,
+		const Paths& paths, const vector<string>& pathIDs)
 {
 	// Find the overlapping paths.
 	Overlaps overlaps = findOverlaps(g, paths);
@@ -362,10 +361,6 @@ void printGraph(Graph& g,
 		if (!edge(u, v, g).second)
 			add_edge<DG>(u, v, it->distance, g);
 	}
-
-	// Output the graph.
-	write_graph(cout, g, PROGRAM, commandLine);
-	assert(cout.good());
 }
 
 int main(int argc, char** argv)
@@ -428,7 +423,9 @@ int main(int argc, char** argv)
 	Paths paths = readPaths(g, pathsFile, pathIDs);
 
 	if (opt::format >= 0) {
-		printGraph(g, paths, pathIDs, commandLine);
+		addPathOverlapEdges(g, paths, pathIDs);
+		write_graph(cout, g, PROGRAM, commandLine);
+		assert(cout.good());
 		return 0;
 	}
 
