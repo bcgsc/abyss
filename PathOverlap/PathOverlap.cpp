@@ -6,6 +6,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "GraphIO.h"
+#include "IOUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -121,14 +122,6 @@ struct Overlap {
 /** The contig IDs that have been removed from paths. */
 static vector<ContigID> s_trimmedContigs;
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 /** The contig graph. */
 typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
@@ -147,10 +140,10 @@ static Paths readPaths(Graph& g,
 	assert(pathIDs.empty());
 	ifstream fin(inPath.c_str());
 	if (inPath != "-")
-		assert_open(fin, inPath);
+		assert_good(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
 
-	assert(in.good());
+	assert_good(in, inPath);
 	Paths paths;
 	string id;
 	ContigPath path;
@@ -413,7 +406,7 @@ int main(int argc, char** argv)
 
 	const char *adjPath = argv[optind++];
 	ifstream fin(adjPath);
-	assert_open(fin, adjPath);
+	assert_good(fin, adjPath);
 	Graph g;
 	fin >> g;
 	Vertex::s_offset = g.num_vertices() / 2;
@@ -441,6 +434,7 @@ int main(int argc, char** argv)
 			continue;
 		cout << pathIDs[it - paths.begin()] << '\t' << *it << '\n';
 	}
+	assert(cout.good());
 
 	if (!opt::repeatContigs.empty()) {
 		sort(s_trimmedContigs.begin(), s_trimmedContigs.end());
@@ -448,11 +442,12 @@ int main(int argc, char** argv)
 				unique(s_trimmedContigs.begin(),
 					s_trimmedContigs.end()), s_trimmedContigs.end());
 		ofstream out(opt::repeatContigs.c_str());
+		assert_good(out, opt::repeatContigs);
 		for (vector<ContigID>::const_iterator it
 				= s_trimmedContigs.begin();
 				it != s_trimmedContigs.end(); ++it)
 			out << ContigID(*it) << '\n';
-		assert(out.good());
+		assert_good(out, opt::repeatContigs);
 	}
 
 	return 0;
