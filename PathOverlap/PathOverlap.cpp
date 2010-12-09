@@ -5,6 +5,7 @@
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
+#include "Functional.h"
 #include "GraphIO.h"
 #include "IOUtil.h"
 #include "Uncompress.h"
@@ -35,15 +36,21 @@ PROGRAM " (ABySS) " VERSION "\n"
 
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... ADJ PATH\n"
-"Find paths that overlap\n"
+"Find paths that overlap. Either output the graph of overlapping\n"
+"paths, assemble overlapping paths into larger paths, or trim the\n"
+"overlapping paths.\n"
 "  ADJ   contig adjacency graph\n"
 "  PATH  sequences of contig IDs\n"
 "\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -k, --kmer=N          k-mer size\n"
+"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -r, --repeats=FILE    write repeat contigs to FILE\n"
-"      --adj             output overlaps in adj format\n"
-"      --dot             output overlaps in dot format\n"
-"      --sam             output overlaps in SAM format\n"
+"      --overlap         find overlapping paths [default]\n"
+"      --assemble        assemble overlapping paths\n"
+"      --trim            trim overlapping paths\n"
+"      --adj             output the graph in adj format [default]\n"
+"      --dot             output the graph in dot format\n"
+"      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -54,20 +61,38 @@ namespace opt {
 	unsigned k;
 
 	/** Output format. */
-	int format = -1; // used by ContigProperties
+	int format; // used by ContigProperties
+
+	/** Write the contig adjacency graph to this file. */
+	static string graphPath;
 
 	/** Output the IDs of contigs in overlaps to this file. */
 	static string repeatContigs;
 
+	/** Mode of operation. */
+	enum {
+		/** Find overlapping paths, do not assemble. */
+		OVERLAP,
+		/** Assemble overlapping paths. */
+		ASSEMBLE,
+		/** Trim overlapping paths. */
+		TRIM,
+	};
+	static int mode;
+
 	static int verbose;
 }
 
-static const char* shortopts = "k:r:v";
+static const char* shortopts = "g:k:r:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "graph",        required_argument, NULL, 'g' },
 	{ "kmer",         required_argument, NULL, 'k' },
+	{ "assemble",     no_argument,       &opt::mode, opt::ASSEMBLE },
+	{ "overlap",      no_argument,       &opt::mode, opt::OVERLAP },
+	{ "trim",         no_argument,       &opt::mode, opt::TRIM },
 	{ "adj",          no_argument,       &opt::format, ADJ, },
 	{ "dot",          no_argument,       &opt::format, DOT, },
 	{ "sam",          no_argument,       &opt::format, SAM, },
@@ -127,6 +152,22 @@ typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
 
 typedef vector<ContigPath> Paths;
+
+/** Return whether this vertex is a path or a contig. */
+static bool isPath(const ContigNode& u)
+{
+	return u.id() >= Vertex::s_offset;
+}
+
+/** Return a path, complemented if necessary. */
+static ContigPath getPath(const Paths& paths, const ContigNode& u)
+{
+	if (isPath(u)) {
+		unsigned i = u.id() - Vertex::s_offset;
+		return u.sense() ? reverseComplement(paths[i]) : paths[i];
+	} else
+		return ContigPath(1, u);
+}
 
 /** Read contig paths from the specified file.
  * @param g the contig adjacency graph
@@ -317,6 +358,17 @@ static void trimOverlaps(Paths& paths, const Overlaps& overlaps)
 				it->size() - removed[1][it - paths.begin()]);
 }
 
+/** Trim the ends of paths that overlap another path. */
+static void trimOverlaps(const Graph& g, Paths& paths)
+{
+	for (Overlaps overlaps = findOverlaps(g, paths);
+			!overlaps.empty();
+			overlaps = findOverlaps(g, paths)) {
+		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
+		trimOverlaps(paths, overlaps);
+	}
+}
+
 static inline
 ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 {
@@ -326,17 +378,17 @@ ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 }
 
 /** Add the path overlap edges to the specified graph. */
-void addPathOverlapEdges(Graph& g,
-		const Paths& paths, const vector<string>& pathIDs)
+static void addPathOverlapEdges(Graph& g,
+		const Paths& paths, const vector<string>& pathIDs,
+		const Overlaps& overlaps)
 {
-	// Find the overlapping paths.
-	Overlaps overlaps = findOverlaps(g, paths);
-
 	// Add the path vertices.
 	ContigID::unlock();
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		(void)ContigID(pathIDs[it - paths.begin()]);
+		if (it->empty())
+			continue;
+		ContigID::insert(pathIDs[it - paths.begin()]);
 		merge(g, it->begin(), it->end());
 	}
 	ContigID::lock();
@@ -353,6 +405,92 @@ void addPathOverlapEdges(Graph& g,
 		Vertex u = it->source, v = it->target;
 		if (!edge(u, v, g).second)
 			add_edge<DG>(u, v, it->distance, g);
+	}
+}
+
+typedef graph_traits<Graph>::edge_descriptor edge_descriptor;
+
+/** A property map giving the number of contigs by which two paths
+ * overlap. */
+typedef map<edge_descriptor, unsigned> OverlapMap;
+
+/** Return the number of contigs by which the two paths overlap. */
+static unsigned getOverlap(const OverlapMap& pmap,
+		const ContigNode& u, const ContigNode& v)
+{
+	if (isPath(u) && isPath(v)) {
+		// Both vertices are paths.
+		OverlapMap::const_iterator it = pmap.find(
+				edge_descriptor(u, v));
+		assert(it != pmap.end());
+		return it->second;
+	} else {
+		// One of the two vertices is a contig.
+		return 0;
+	}
+}
+
+/** Merge a sequence of overlapping paths. */
+static ContigPath mergePaths(const Paths& paths,
+		const OverlapMap& overlaps, const ContigPath& merge)
+{
+	assert(!merge.empty());
+	ContigNode u = merge.front();
+	ContigPath path(getPath(paths, u));
+	for (ContigPath::const_iterator it = merge.begin() + 1;
+			it != merge.end(); ++it) {
+		ContigNode v = *it;
+		ContigPath vpath(getPath(paths, v));
+		unsigned overlap = getOverlap(overlaps, u, v);
+		assert(path.size() > overlap);
+		assert(vpath.size() > overlap);
+		assert(equal(path.end() - overlap, path.end(),
+					vpath.begin()));
+		path.insert(path.end(), vpath.begin() + overlap, vpath.end());
+		u = v;
+	}
+	return path;
+}
+
+/** Assemble overlapping paths. */
+static void assembleOverlappingPaths(Graph& g,
+		Paths& paths, vector<string>& pathIDs)
+{
+	// Find overlapping paths.
+	Overlaps overlaps = findOverlaps(g, paths);
+	addPathOverlapEdges(g, paths, pathIDs, overlaps);
+
+	// Assemble unambiguous edges.
+	Paths merges;
+	assemble(g, back_inserter(merges));
+
+	// Create a property map of path overlaps.
+	OverlapMap overlapMap;
+	for (Overlaps::const_iterator it = overlaps.begin();
+			it != overlaps.end(); ++it) {
+		bool inserted = overlapMap.insert(OverlapMap::value_type(
+				OverlapMap::key_type(it->source, it->target),
+				it->overlap)).second;
+		assert(inserted);
+		(void)inserted;
+	}
+
+	// Merge overlapping paths.
+	ContigID::setNextContigID(pathIDs.back());
+	for (Paths::const_iterator it = merges.begin();
+			it != merges.end(); ++it) {
+		ContigID id = ContigID::create();
+		if (opt::verbose > 0)
+			cerr << id << '\t' << *it << '\n';
+		pathIDs.push_back((string)id.str());
+		paths.push_back(mergePaths(paths, overlapMap, *it));
+
+		// Remove the merged paths.
+		for (ContigPath::const_iterator it2 = it->begin();
+				it2 != it->end(); ++it2) {
+			if (isPath(*it2))
+				paths[it2->id() - Vertex::s_offset].clear();
+		}
 	}
 }
 
@@ -373,6 +511,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'g': arg >> opt::graphPath; break;
 			case 'k': arg >> opt::k; break;
 			case 'r': arg >> opt::repeatContigs; break;
 			case 'v': opt::verbose++; break;
@@ -415,27 +554,55 @@ int main(int argc, char** argv)
 	vector<string> pathIDs;
 	Paths paths = readPaths(g, pathsFile, pathIDs);
 
-	if (opt::format >= 0) {
-		addPathOverlapEdges(g, paths, pathIDs);
-		write_graph(cout, g, PROGRAM, commandLine);
-		assert(cout.good());
-		return 0;
+	switch (opt::mode) {
+	  case opt::OVERLAP:
+		// Find overlapping paths, do not assemble.
+		addPathOverlapEdges(g, paths, pathIDs,
+				findOverlaps(g, paths));
+		paths.clear();
+		if (opt::graphPath.empty())
+			opt::graphPath = "-";
+		break;
+
+	  case opt::ASSEMBLE:
+		// Assemble overlapping paths.
+		assembleOverlappingPaths(g, paths, pathIDs);
+		break;
+
+	  case opt::TRIM:
+		// Trim overlapping paths.
+		trimOverlaps(g, paths);
+		// Remove paths consisting of a single contig.
+		for_each_if(paths.begin(), paths.end(),
+				mem_fun_ref(&ContigPath::clear),
+				compose1(
+					bind2nd(equal_to<ContigPath::size_type>(), 1),
+					mem_fun_ref(&ContigPath::size)));
+		// Add the paths to the graph.
+		addPathOverlapEdges(g, paths, pathIDs, Overlaps());
+		break;
 	}
 
-	for (Overlaps overlaps = findOverlaps(g, paths);
-			!overlaps.empty(); overlaps = findOverlaps(g, paths)) {
-		cerr << "Found " << overlaps.size() / 2 << " overlaps.\n";
-		trimOverlaps(paths, overlaps);
-	}
-
+	// Output the paths.
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->size() < 2)
+		if (it->empty())
 			continue;
+		assert(it->size() != 1);
 		cout << pathIDs[it - paths.begin()] << '\t' << *it << '\n';
 	}
 	assert(cout.good());
 
+	// Output the graph.
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		ostream& out = opt::graphPath == "-" ? cout : fout;
+		assert_good(out, opt::graphPath);
+		write_graph(out, g, PROGRAM, commandLine);
+		assert_good(out, opt::graphPath);
+	}
+
+	// Output the repeat contigs.
 	if (!opt::repeatContigs.empty()) {
 		sort(s_trimmedContigs.begin(), s_trimmedContigs.end());
 		s_trimmedContigs.erase(
