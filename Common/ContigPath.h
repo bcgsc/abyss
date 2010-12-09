@@ -15,11 +15,13 @@
 /** A sequence of ContigNode. */
 class ContigPath : public std::vector<ContigNode>
 {
-	typedef std::vector<ContigNode> Vector;
+	typedef ContigNode T;
+	typedef std::vector<T> Vector;
 
 	public:
 		ContigPath() { }
-		explicit ContigPath(size_t n) : Vector(n) { }
+		explicit ContigPath(size_t n, const T& x = T())
+			: Vector(n, x) { }
 		explicit ContigPath(const Vector& v) : Vector(v) { }
 
 		template <class InputIterator>
@@ -34,8 +36,17 @@ class ContigPath : public std::vector<ContigNode>
 					std::mem_fun_ref(&ContigNode::flip));
 		}
 
-		using std::vector<ContigNode>::erase;
+		using Vector::erase;
 };
+
+/** Return the reverse complement of the specified path. */
+static inline ContigPath reverseComplement(const ContigPath& path)
+{
+	ContigPath rc(path.rbegin(), path.rend());
+	std::for_each(rc.begin(), rc.end(),
+			std::mem_fun_ref(&ContigNode::flip));
+	return rc;
+}
 
 namespace std {
 	template<>
