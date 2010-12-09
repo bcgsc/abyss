@@ -13,6 +13,7 @@ libcommon_a_SOURCES = \
 	Dictionary.h \
 	Estimate.h \
 	Fcontrol.cpp Fcontrol.h \
+	Functional.h \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h \
 	Histogram.cpp Histogram.h \
