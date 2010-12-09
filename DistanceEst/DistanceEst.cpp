@@ -330,10 +330,10 @@ int main(int argc, char** argv)
 	ostream& out = opt::out.empty() ? cout : outFile;
 
 	if (opt::dot)
-		out << "digraph dist {\n"
-			"k=" << opt::k << "\t"
-			"n=" << opt::npairs << "\t"
-			"s=" << opt::seedLen << '\n';
+		out << "digraph dist {\ngraph ["
+			"k=" << opt::k << " "
+			"s=" << opt::seedLen << " "
+			"n=" << opt::npairs << "]\n";
 
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
