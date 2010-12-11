@@ -350,9 +350,10 @@ static void writePileup(ostream& out,
  * to the file specified by the -o option. */
 static void consensus(const string& outPath, const string& pileupPath)
 {
-	ofstream outFile(outPath.c_str());
+	ofstream outFile;
 	ofstream pileupFile(pileupPath.c_str());
-	ostream& pileupOut = pileupPath == "-" ? cout : pileupFile;
+	ostream& pileupOut = pileupPath == "-" ? cout
+		: (pileupFile.open(outPath.c_str()), pileupFile);
 
 	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();

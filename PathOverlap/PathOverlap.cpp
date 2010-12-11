@@ -595,8 +595,9 @@ int main(int argc, char** argv)
 
 	// Output the graph.
 	if (!opt::graphPath.empty()) {
-		ofstream fout(opt::graphPath.c_str());
-		ostream& out = opt::graphPath == "-" ? cout : fout;
+		ofstream fout;
+		ostream& out = opt::graphPath == "-" ? cout
+		   	: (fout.open(opt::graphPath.c_str()), fout);
 		assert_good(out, opt::graphPath);
 		write_graph(out, g, PROGRAM, commandLine);
 		assert_good(out, opt::graphPath);
