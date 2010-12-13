@@ -123,6 +123,13 @@ typedef bitset<SEQ_BITS> Seq;
 #else
 struct Seq {
 	uint64_t x[SEQ_WORDS];
+
+	/** Flip all the bits. */
+	void flip()
+	{
+		for (unsigned i = 0; i < SEQ_WORDS; i++)
+			x[i] = ~x[i];
+	}
 };
 #endif
 
@@ -268,14 +275,8 @@ void Kmer::reverseComplement()
 	Seq seq = load((uint8_t*)m_seq);
 
 	// Complement the bits.
-	if (!opt::colourSpace) {
-#if MAX_KMER > 96
+	if (!opt::colourSpace)
 		seq.flip();
-#else
-		for (unsigned i = 0; i < SEQ_WORDS; i++)
-			seq.x[i] = ~seq.x[i];
-#endif
-	}
 
 	// Shift the bits flush to the right of the double word.
 	shiftRight(&seq, SEQ_BITS - 2*s_length);
