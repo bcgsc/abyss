@@ -121,6 +121,7 @@ static const uint8_t swapBases[256] = {
 # include <bitset>
 typedef bitset<SEQ_BITS> Seq;
 #else
+/** A sequence of bits of length SEQ_BITS. */
 struct Seq {
 	uint64_t x[SEQ_WORDS];
 
@@ -129,6 +130,48 @@ struct Seq {
 	{
 		for (unsigned i = 0; i < SEQ_WORDS; i++)
 			x[i] = ~x[i];
+	}
+
+	/** Shift right by the specified number of bits. */
+	void operator>>=(uint8_t n)
+	{
+		if (n == 0)
+			return;
+#if MAX_KMER <= 32
+		x[0] >>= n;
+#elif MAX_KMER <= 64
+		uint64_t x0 = x[0], x1 = x[1];
+		if (n < 64) {
+			x[0] = x0 >> n;
+			x[1] = x1 >> n | x0 << (64 - n);
+		} else {
+			x[0] = 0;
+			x[1] = x0 >> (n - 64);
+		}
+#elif MAX_KMER <= 96
+		uint64_t x0 = x[0], x1 = x[1], x2 = x[2];
+		if (n < 64) {
+			x[0] = x0 >> n;
+			x[1] = x1 >> n | x0 << (64 - n);
+			x[2] = x2 >> n | x1 << (64 - n);
+		} else if (n == 64) {
+			x[0] = 0;
+			x[1] = x0;
+			x[2] = x1;
+		} else if (n < 128) {
+			n -= 64;
+			x[0] = 0;
+			x[1] = x0 >> n;
+			x[2] = x1 >> n | x0 << (64 - n);
+		} else {
+			n -= 128;
+			x[0] = 0;
+			x[1] = 0;
+			x[2] = x0 >> n;
+		}
+#else
+# error
+#endif
 	}
 };
 #endif
@@ -225,51 +268,7 @@ static void storeReverse(uint8_t *dest, const Seq seq)
 #endif
 }
 
-/** Shift right by the specified number of bits. */
-static void shiftRight(Seq *pseq, uint8_t n)
-{
-	if (n == 0)
-		return;
-#if MAX_KMER > 96
-	*pseq >>= n;
-#elif MAX_KMER <= 32
-	pseq->x[0] >>= n;
-#elif MAX_KMER <= 64
-	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
-	if (n < 64) {
-		pseq->x[0] = x0 >> n;
-		pseq->x[1] = x1 >> n | x0 << (64 - n);
-	} else {
-		pseq->x[0] = 0;
-		pseq->x[1] = x0 >> (n - 64);
-	}
-#elif MAX_KMER <= 96
-	uint64_t x0 = pseq->x[0], x1 = pseq->x[1], x2 = pseq->x[2];
-	if (n < 64) {
-		pseq->x[0] = x0 >> n;
-		pseq->x[1] = x1 >> n | x0 << (64 - n);
-		pseq->x[2] = x2 >> n | x1 << (64 - n);
-	} else if (n == 64) {
-		pseq->x[0] = 0;
-		pseq->x[1] = x0;
-		pseq->x[2] = x1;
-	} else if (n < 128) {
-		n -= 64;
-		pseq->x[0] = 0;
-		pseq->x[1] = x0 >> n;
-		pseq->x[2] = x1 >> n | x0 << (64 - n);
-	} else {
-		n -= 128;
-		pseq->x[0] = 0;
-		pseq->x[1] = 0;
-		pseq->x[2] = x0 >> n;
-	}
-#endif
-}
-
-//
-// Change this sequence into its reverse complement
-//
+/** Reverse-complement this sequence. */
 void Kmer::reverseComplement()
 {
 	Seq seq = load((uint8_t*)m_seq);
@@ -279,7 +278,7 @@ void Kmer::reverseComplement()
 		seq.flip();
 
 	// Shift the bits flush to the right of the double word.
-	shiftRight(&seq, SEQ_BITS - 2*s_length);
+	seq >>= SEQ_BITS - 2*s_length;
 
 	storeReverse((uint8_t*)m_seq, seq);
 
