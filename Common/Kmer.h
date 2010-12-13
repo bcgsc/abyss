@@ -91,10 +91,13 @@ class Kmer
 
   public:
 #if MAX_KMER > 96
-# error MAX_KMER must be no larger than 96.
-#endif
-#if MAX_KMER % 4 != 0
-# error MAX_KMER must be a multiple of 4.
+# if MAX_KMER % 32 != 0
+#  error MAX_KMER must be a multiple of 32.
+# endif
+#else
+# if MAX_KMER % 4 != 0
+#  error MAX_KMER must be a multiple of 4.
+# endif
 #endif
 	static const unsigned NUM_BYTES = MAX_KMER / 4;
 

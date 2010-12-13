@@ -2,6 +2,7 @@
 #include "Kmer.h"
 #include "Common/Options.h"
 #include "HashFunction.h"
+#include <algorithm>
 #include <cstring>
 
 using namespace std;
@@ -116,14 +117,30 @@ static const uint8_t swapBases[256] = {
 #define SEQ_FULL_WORDS ((int)Kmer::NUM_BYTES/8)
 #define SEQ_ODD_BYTES (Kmer::NUM_BYTES - 8*SEQ_FULL_WORDS)
 
+#if MAX_KMER > 96
+# include <bitset>
+typedef bitset<SEQ_BITS> Seq;
+#else
 struct Seq {
 	uint64_t x[SEQ_WORDS];
 };
+#endif
 
 /** Load with appropriate endianness for shifting. */
 static Seq load(const uint8_t *src)
 {
 	Seq seq;
+#if MAX_KMER > 96
+# if WORDS_BIGENDIAN
+	const uint64_t *s = reinterpret_cast<const uint64_t*>(src);
+	uint64_t *d = reinterpret_cast<uint64_t*>(&seq + 1);
+	copy(s, s + SEQ_WORDS, reverse_iterator<uint64_t*>(d));
+# else
+	uint8_t *d = reinterpret_cast<uint8_t*>(&seq);
+	memcpy(d, src, sizeof seq);
+	reverse(d, d + sizeof seq);
+# endif
+#else
 	uint64_t *px = seq.x;
 	const uint8_t *p = src;
 	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
@@ -149,6 +166,7 @@ static Seq load(const uint8_t *src)
 		if (SEQ_ODD_BYTES > 7) x |= (uint64_t)p[7] << 0;
 		*px = x;
 	}
+#endif
 	return seq;
 }
 
@@ -156,10 +174,21 @@ static Seq load(const uint8_t *src)
  * Reverse the bytes by storing them in the reverse order of
  * loading, and reverse the words in the same fashion.
  */
-static void storeReverse(uint8_t *dest, Seq seq)
+static void storeReverse(uint8_t *dest, const Seq seq)
 {
-	uint64_t *px = &seq.x[SEQ_WORDS-1];
-#if WORDS_BIGENDIAN
+#if MAX_KMER > 96
+# if WORDS_BIGENDIAN
+	const uint64_t *s = reinterpret_cast<const uint64_t*>(&seq);
+	uint64_t *d = reinterpret_cast<uint64_t*>(dest);
+	copy(s, s + SEQ_WORDS,
+			reverse_iterator<uint64_t*>(d + SEQ_WORDS));
+	reverse(dest, dest + Kmer::NUM_BYTES);
+# else
+	memcpy(dest, &seq, Kmer::NUM_BYTES);
+# endif
+#else
+	const uint64_t *px = &seq.x[SEQ_WORDS-1];
+# if WORDS_BIGENDIAN
 	for (int i = 0; i < SEQ_FULL_WORDS; i++) {
 		dest[0] = *px >> 0;
 		dest[1] = *px >> 8;
@@ -172,12 +201,12 @@ static void storeReverse(uint8_t *dest, Seq seq)
 		dest += 8;
 		px--;
 	}
-#else
+# else
 	uint64_t *d = (uint64_t*)dest;
 	for (int i = 0; i < SEQ_FULL_WORDS; i++)
 		*d++ = *px--;
 	dest = (uint8_t*)d;
-#endif
+# endif
 	if (SEQ_ODD_BYTES > 0) dest[0] = *px >> 0;
 	if (SEQ_ODD_BYTES > 1) dest[1] = *px >> 8;
 	if (SEQ_ODD_BYTES > 2) dest[2] = *px >> 16;
@@ -186,6 +215,7 @@ static void storeReverse(uint8_t *dest, Seq seq)
 	if (SEQ_ODD_BYTES > 5) dest[5] = *px >> 40;
 	if (SEQ_ODD_BYTES > 6) dest[6] = *px >> 48;
 	if (SEQ_ODD_BYTES > 7) dest[7] = *px >> 56;
+#endif
 }
 
 /** Shift right by the specified number of bits. */
@@ -193,7 +223,9 @@ static void shiftRight(Seq *pseq, uint8_t n)
 {
 	if (n == 0)
 		return;
-#if MAX_KMER <= 32
+#if MAX_KMER > 96
+	*pseq >>= n;
+#elif MAX_KMER <= 32
 	pseq->x[0] >>= n;
 #elif MAX_KMER <= 64
 	uint64_t x0 = pseq->x[0], x1 = pseq->x[1];
@@ -236,9 +268,14 @@ void Kmer::reverseComplement()
 	Seq seq = load((uint8_t*)m_seq);
 
 	// Complement the bits.
-	if (!opt::colourSpace)
+	if (!opt::colourSpace) {
+#if MAX_KMER > 96
+		seq.flip();
+#else
 		for (unsigned i = 0; i < SEQ_WORDS; i++)
 			seq.x[i] = ~seq.x[i];
+#endif
+	}
 
 	// Shift the bits flush to the right of the double word.
 	shiftRight(&seq, SEQ_BITS - 2*s_length);
