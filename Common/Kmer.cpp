@@ -112,18 +112,21 @@ static const uint8_t swapBases[256] = {
 	0x2f, 0x6f, 0xaf, 0xef, 0x3f, 0x7f, 0xbf, 0xff
 };
 
-#define SEQ_WORDS ((Kmer::NUM_BYTES + 7)/8)
-#define SEQ_BITS (64 * SEQ_WORDS)
-#define SEQ_FULL_WORDS ((int)Kmer::NUM_BYTES/8)
-#define SEQ_ODD_BYTES (Kmer::NUM_BYTES - 8*SEQ_FULL_WORDS)
-
 #if MAX_KMER > 96
 # include <bitset>
-typedef bitset<SEQ_BITS> Seq;
+typedef bitset<2 * MAX_KMER> Seq;
 #else
+# define SEQ_WORDS ((Kmer::NUM_BYTES + 7)/8)
+# define SEQ_BITS (64 * SEQ_WORDS)
+# define SEQ_FULL_WORDS ((int)Kmer::NUM_BYTES/8)
+# define SEQ_ODD_BYTES (Kmer::NUM_BYTES - 8*SEQ_FULL_WORDS)
+
 /** A sequence of bits of length SEQ_BITS. */
 struct Seq {
 	uint64_t x[SEQ_WORDS];
+
+	/** Return the number of bits in this sequence. */
+	static unsigned size() { return SEQ_BITS; }
 
 	/** Flip all the bits. */
 	void flip()
@@ -278,7 +281,7 @@ void Kmer::reverseComplement()
 		seq.flip();
 
 	// Shift the bits flush to the right of the double word.
-	seq >>= SEQ_BITS - 2*s_length;
+	seq >>= seq.size() - 2*s_length;
 
 	storeReverse((uint8_t*)m_seq, seq);
 
