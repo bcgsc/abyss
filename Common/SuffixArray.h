@@ -59,6 +59,10 @@ class SuffixArray {
 				key_type(&seq[0]), Compare());
 	}
 
+	size_t size() const { return m_data.size(); }
+	const_iterator begin() const { return m_data.begin(); }
+	const_iterator end() const { return m_data.end(); }
+
   private:
 	/** Comparison functor. */
 	struct Compare {
