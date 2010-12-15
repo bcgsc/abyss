@@ -9,6 +9,7 @@
 #include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "IOUtil.h"
 #include "smith_waterman.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
@@ -393,8 +394,10 @@ int main(int argc, char** argv)
 	}
 
 	// Output those contigs that were not seen in a path.
-	ofstream out(opt::out.c_str());
-	assert(out.good());
+	ofstream fout;
+	ostream& out = opt::out == "-" ? cout
+		: (fout.open(opt::out.c_str()), fout);
+	assert_good(out, opt::out);
 	for (vector<Contig>::const_iterator it = contigs.begin();
 			it != contigs.end(); ++it)
 		if (!seen[it - contigs.begin()])
@@ -411,7 +414,7 @@ int main(int argc, char** argv)
 		FastaRecord rec(contig);
 		rec.comment += ' ' + pathToComment(path);
 		out << rec;
-		assert(out.good());
+		assert_good(out, opt::out);
 		npaths++;
 	}
 
