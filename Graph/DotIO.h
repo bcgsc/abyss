@@ -26,18 +26,18 @@ void write_edges(std::ostream& out, const Graph& g,
 		typename graph_traits<Graph>::vertex_descriptor u,
 		const EdgeProp*)
 {
-	typedef typename graph_traits<Graph>::adjacency_iterator
-		adjacency_iterator;
-	typedef typename graph_traits<Graph>::edge_descriptor
-		edge_descriptor;
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	typedef typename graph_traits<Graph>::out_edge_iterator
+		out_edge_iterator;
 	typedef typename edge_property<Graph>::type edge_property_type;
-	std::pair<adjacency_iterator, adjacency_iterator>
-		adj = adjacent_vertices(u, g);
-	for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
-		assert(!get(vertex_removed, g, *v));
-		out << '"' << u << "\" -> \"" << *v << '"';
-		const edge_property_type& ep = get(edge_bundle, g,
-				edge_descriptor(u, *v));
+	std::pair<out_edge_iterator, out_edge_iterator>
+		adj = out_edges(u, g);
+	for (out_edge_iterator e = adj.first; e != adj.second; ++e) {
+		vertex_descriptor v = target(*e, g);
+		assert(!get(vertex_removed, g, v));
+		out << '"' << u << "\" -> \"" << v << '"';
+		const edge_property_type& ep = get(edge_bundle, g, *e);
 		if (!(ep == edge_property_type()))
 			out << " [" << ep << ']';
 		out << '\n';

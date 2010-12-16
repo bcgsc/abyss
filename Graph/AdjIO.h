@@ -23,12 +23,12 @@ static inline void write_edge_prop(std::ostream&, const no_property&)
 template <typename Graph>
 std::ostream& write_adj(std::ostream& out, const Graph& g)
 {
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
-	typedef typename graph_traits<Graph>::adjacency_iterator
-		adjacency_iterator;
-	typedef typename graph_traits<Graph>::edge_descriptor
-		edge_descriptor;
+	typedef typename graph_traits<Graph>::out_edge_iterator
+		out_edge_iterator;
 
 	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
 	bool sense = false;
@@ -39,13 +39,13 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 		if (!sense)
 			out << ContigID(*u) << get(vertex_bundle, g, *u);
 		out << "\t;";
-		std::pair<adjacency_iterator, adjacency_iterator>
-			adj = adjacent_vertices(*u, g);
-		for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
-			assert(!get(vertex_removed, g, *v));
-			out << ' ' << (*v ^ sense);
-			write_edge_prop(out,
-					get(edge_bundle, g, edge_descriptor(*u, *v)));
+		std::pair<out_edge_iterator, out_edge_iterator>
+			adj = out_edges(*u, g);
+		for (out_edge_iterator e = adj.first; e != adj.second; ++e) {
+			vertex_descriptor v = target(*e, g);
+			assert(!get(vertex_removed, g, v));
+			out << ' ' << (v ^ sense);
+			write_edge_prop(out, get(edge_bundle, g, *e));
 		}
 		if (sense)
 			out << '\n';
