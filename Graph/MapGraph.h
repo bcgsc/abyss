@@ -29,8 +29,23 @@ struct graph_traits<std::map<V, T> > {
 	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
-	typedef void out_edge_iterator;
 	typedef unsigned degree_size_type;
+
+	/** Iterate through the out edges of a vertex. */
+	struct out_edge_iterator
+		: std::map<V, typename T::mapped_type>::const_iterator
+	{
+		typedef typename std::map<V,
+				typename T::mapped_type>::const_iterator It;
+		out_edge_iterator(const It& it, vertex_descriptor src)
+			: It(it), m_src(src) { }
+		edge_descriptor operator*() const
+		{
+			return edge_descriptor(m_src, It::operator*().first);
+		}
+	  private:
+		vertex_descriptor m_src;
+	};
 
 	// BidirectionalGraph
 	typedef void in_edge_iterator;
@@ -71,6 +86,23 @@ struct graph_traits<std::map<V, T> > {
 };
 
 // IncidenceGraph
+
+template <typename V, typename T>
+std::pair<
+	typename graph_traits<std::map<V, T> >::out_edge_iterator,
+	typename graph_traits<std::map<V, T> >::out_edge_iterator>
+out_edges(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		const std::map<V, T>& g)
+{
+	typedef typename graph_traits<std::map<V, T> >::out_edge_iterator
+		out_edge_iterator;
+	typename std::map<V, T>::const_iterator it = g.find(u);
+	assert(it != g.end());
+	return make_pair(
+		out_edge_iterator(it->second.begin(), u),
+		out_edge_iterator(it->second.end(), u));
+}
 
 template <typename V, typename T>
 typename graph_traits<std::map<V, T> >::degree_size_type
