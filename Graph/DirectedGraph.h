@@ -121,6 +121,11 @@ class out_edge_iterator
 		return it;
 	}
 
+	const edge_property_type& get_property() const
+	{
+		return m_it->get_property();
+	}
+
   private:
 	const_iterator m_it;
 	vertex_descriptor m_src;
@@ -511,6 +516,14 @@ void put(vertex_removed_t,
 {
 	assert(removed);
 	return g.remove_vertex(u);
+}
+
+/** Return the properties of the edge of iterator eit. */
+template <class G>
+const typename G::edge_property_type&
+get(edge_bundle_t, const G&, typename G::out_edge_iterator eit)
+{
+	return eit.get_property();
 }
 
 #endif

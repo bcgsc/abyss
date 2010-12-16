@@ -226,6 +226,14 @@ get(edge_bundle_t, const std::map<V, T>& g,
 	return v->second;
 }
 
+template <typename V, typename T>
+const typename T::mapped_type&
+get(edge_bundle_t, const std::map<V, T>&,
+		typename graph_traits<std::map<V, T> >::out_edge_iterator eit)
+{
+	return eit->second;
+}
+
 // VertexMutablePropertyGraph
 
 template <typename V, typename T>

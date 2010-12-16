@@ -37,7 +37,7 @@ void write_edges(std::ostream& out, const Graph& g,
 		vertex_descriptor v = target(*e, g);
 		assert(!get(vertex_removed, g, v));
 		out << '"' << u << "\" -> \"" << v << '"';
-		const edge_property_type& ep = get(edge_bundle, g, *e);
+		const edge_property_type& ep = get(edge_bundle, g, e);
 		if (!(ep == edge_property_type()))
 			out << " [" << ep << ']';
 		out << '\n';
