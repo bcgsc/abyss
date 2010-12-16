@@ -386,12 +386,14 @@ int main(int argc, char** argv)
 			<< dot_writer(scaffoldGraph)
 			<< "}\n";
 
-	typedef graph_traits<OverlapGraph>::edge_descriptor
-		edge_descriptor;
+	typedef graph_traits<OverlapGraph>::vertex_descriptor
+		vertex_descriptor;
 	typedef graph_traits<OverlapGraph>::vertex_iterator
 		vertex_iterator;
-	typedef graph_traits<OverlapGraph>::adjacency_iterator
-		adjacency_iterator;
+	typedef graph_traits<OverlapGraph>::edge_descriptor
+		edge_descriptor;
+	typedef graph_traits<OverlapGraph>::out_edge_iterator
+		out_edge_iterator;
 
 	/** The overlapping edges (d<0) of scaffoldGraph. */
 	OverlapGraph overlapGraph;
@@ -404,16 +406,16 @@ int main(int argc, char** argv)
 	std::pair<vertex_iterator, vertex_iterator>
 		uit = vertices(scaffoldGraph);
 	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
-		std::pair<adjacency_iterator, adjacency_iterator>
-			vit = adjacent_vertices(*u, scaffoldGraph);
-		for (adjacency_iterator v = vit.first; v != vit.second; ++v) {
-			if (edges.count(edge_descriptor(~*v, ~*u)) == 0)
-				edges.insert(edge_descriptor(*u, *v));
-			const Overlap& ep = get(edge_bundle, scaffoldGraph,
-					edge_descriptor(*u, *v));
+		std::pair<out_edge_iterator, out_edge_iterator>
+			vit = out_edges(*u, scaffoldGraph);
+		for (out_edge_iterator e = vit.first; e != vit.second; ++e) {
+			vertex_descriptor v = target(*e, scaffoldGraph);
+			if (edges.count(edge_descriptor(~v, ~*u)) == 0)
+				edges.insert(*e);
+			const Overlap& ep = get(edge_bundle, scaffoldGraph, e);
 			if (ep.overlap > 0) {
-				add_edge(*u, *v, ep, overlapGraph);
-				add_edge(~*v, ~*u, ep, overlapGraph);
+				add_edge(*u, v, ep, overlapGraph);
+				add_edge(~v, ~*u, ep, overlapGraph);
 			}
 		}
 	}
