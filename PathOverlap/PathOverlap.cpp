@@ -408,7 +408,7 @@ static void addPathOverlapEdges(Graph& g,
 		if (allowParallelEdge || !edge(u, v, g).second)
 			add_edge<DG>(u, v, it->distance, g);
 		else if (opt::verbose > 0)
-			cerr << "warning: ambiguous overlap "
+			cerr << "ambiguous overlap: "
 				<< ContigNode(u) << " -> " << ContigNode(v) << '\n';
 	}
 }
