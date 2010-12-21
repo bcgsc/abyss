@@ -45,7 +45,7 @@ class DirectedGraph
 
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 	typedef boost::directed_tag directed_category;
-	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+	typedef boost::allow_parallel_edge_tag edge_parallel_category;
 	struct traversal_category
 		: boost::incidence_graph_tag,
 		boost::adjacency_graph_tag,
@@ -247,7 +247,6 @@ class Vertex
 	/** Add an edge to this vertex. */
 	bool add_edge(vertex_descriptor v, const edge_property_type& ep)
 	{
-		assert(count(m_edges.begin(), m_edges.end(), v) == 0);
 		m_edges.push_back(Edge(v, ep));
 		return true;
 	}

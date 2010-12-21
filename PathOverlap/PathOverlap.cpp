@@ -382,6 +382,8 @@ static void addPathOverlapEdges(Graph& g,
 		const Paths& paths, const vector<string>& pathIDs,
 		const Overlaps& overlaps)
 {
+	const bool allowParallelEdge = opt::mode == opt::ASSEMBLE;
+
 	// Add the path vertices.
 	ContigID::unlock();
 	for (Paths::const_iterator it = paths.begin();
@@ -403,8 +405,11 @@ static void addPathOverlapEdges(Graph& g,
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
 		Vertex u = it->source, v = it->target;
-		if (!edge(u, v, g).second)
+		if (allowParallelEdge || !edge(u, v, g).second)
 			add_edge<DG>(u, v, it->distance, g);
+		else if (opt::verbose > 0)
+			cerr << "warning: ambiguous overlap "
+				<< ContigNode(u) << " -> " << ContigNode(v) << '\n';
 	}
 }
 
@@ -467,13 +472,10 @@ static void assembleOverlappingPaths(Graph& g,
 	// Create a property map of path overlaps.
 	OverlapMap overlapMap;
 	for (Overlaps::const_iterator it = overlaps.begin();
-			it != overlaps.end(); ++it) {
-		bool inserted = overlapMap.insert(OverlapMap::value_type(
+			it != overlaps.end(); ++it)
+		overlapMap.insert(OverlapMap::value_type(
 				OverlapMap::key_type(it->source, it->target),
 				it->overlap)).second;
-		assert(inserted);
-		(void)inserted;
-	}
 
 	// Merge overlapping paths.
 	ContigID::setNextContigID(pathIDs.back());
