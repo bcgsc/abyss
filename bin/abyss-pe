@@ -129,7 +129,7 @@ pe-dot: $(name)-contigs.dot
 all: se-bam default
 
 clean:
-	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2
+	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2 *.path3
 
 .PHONY: all clean default pe-contigs pe-dot se-bam se-sam se-contigs se-dot
 .DELETE_ON_ERROR:
@@ -218,9 +218,12 @@ endif
 %-4.path2: %-4.adj %-4.path1
 	MergePaths $v -j$j -k$k -o $@ $^
 
+%-4.path3: %-4.adj %-4.path2
+	PathOverlap --assemble $v -k$k $^ >$@
+
 ifndef cs
 
-%-5.path %-5.fa %-5.adj: %-3.fa %-4.fa %-4.adj %-4.path2
+%-5.path %-5.fa %-5.adj: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) \
 		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
 
@@ -229,11 +232,11 @@ ifndef cs
 
 else
 
-%-5.adj %-5.path: %-4.adj %-4.path2
+%-5.adj %-5.path: %-4.adj %-4.path3
 	ln -sf $*-4.adj $*-5.adj
-	ln -sf $*-4.path2 $*-5.path
+	ln -sf $*-4.path3 $*-5.path
 
-%-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path2
+%-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-contigs.fa: %-cs.fa
@@ -246,4 +249,4 @@ endif
 	abyss-adjtodot $v -k$k $< >$@
 
 %-contigs.dot: %-5.adj %-5.path
-	PathOverlap $v --dot -k$k $^ >$@
+	PathOverlap --overlap $v --dot -k$k $^ >$@
