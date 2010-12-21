@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <set>
 #include <utility>
 
 /** Return whether the outgoing edge of vertex u is contiguous. */
@@ -83,7 +84,10 @@ template<typename Graph, typename OutIt>
 OutIt extend(const Graph& g,
 		typename Graph::vertex_descriptor u, OutIt out)
 {
-	while (out_degree(u, g) == 1) {
+	typedef typename graph_traits<Graph>::vertex_descriptor
+		vertex_descriptor;
+	std::set<vertex_descriptor> seen;
+	while (out_degree(u, g) == 1 && seen.insert(u).second) {
 		u = *adjacent_vertices(u, g).first;
 		*out++ = u;
 	}
