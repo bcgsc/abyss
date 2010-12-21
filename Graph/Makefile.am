@@ -11,8 +11,10 @@ libgraph_a_SOURCES = \
 	DirectedGraph.cpp DirectedGraph.h \
 	DotIO.h \
 	Graph.h \
+	GraphIO.h \
 	GraphUtil.h \
 	MapGraph.h \
+	Options.h \
 	SAMIO.h
 
 abyss_adjtodot_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common

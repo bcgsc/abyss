@@ -17,6 +17,7 @@ libcommon_a_SOURCES = \
 	HashFunction.cpp HashFunction.h \
 	HashMap.h \
 	Histogram.cpp Histogram.h \
+	IOUtil.h \
 	Iterator.h \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
