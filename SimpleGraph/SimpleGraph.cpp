@@ -530,6 +530,7 @@ static void handleEstimate(const Graph& g,
 		ContigPath path
 			= constructAmbiguousPath(g, origin, solutions);
 		if (!path.empty()) {
+			extend(g, path.back(), back_inserter(path));
 			vout << path << '\n';
 			if (opt::scaffold) {
 				out.insert(out.end(), path.begin(), path.end());
@@ -541,7 +542,9 @@ static void handleEstimate(const Graph& g,
 	} else {
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
-		out.insert(out.end(), bestSol->begin(), bestSol->end());
+		ContigPath& path = *bestSol;
+		extend(g, path.back(), back_inserter(path));
+		out.insert(out.end(), path.begin(), path.end());
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
 	}

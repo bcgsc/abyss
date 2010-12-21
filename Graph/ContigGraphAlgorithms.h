@@ -76,6 +76,20 @@ bool is_palindrome(const Graph& g, typename Graph::edge_descriptor e)
 	return source(e, g) == ~target(e, g);
 }
 
+/** Assemble a path of unambigous out edges starting at vertex u.
+ * u itself is not copied to out.
+ */
+template<typename Graph, typename OutIt>
+OutIt extend(const Graph& g,
+		typename Graph::vertex_descriptor u, OutIt out)
+{
+	while (out_degree(u, g) == 1) {
+		u = *adjacent_vertices(u, g).first;
+		*out++ = u;
+	}
+	return out;
+}
+
 /** Assemble an unambiguous path starting at vertex v. */
 template<typename Graph, typename OutIt>
 OutIt assemble(const Graph& g,
