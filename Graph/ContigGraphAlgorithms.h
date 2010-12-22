@@ -12,6 +12,21 @@
 #include <set>
 #include <utility>
 
+/** Return true if the edge e is a palindrome. */
+template<typename Graph>
+struct IsPalindrome : std::unary_function<
+		typename graph_traits<Graph>::edge_descriptor, bool>
+{
+	IsPalindrome(const Graph& g) : m_g(g) { }
+	bool operator()(
+			typename graph_traits<Graph>::edge_descriptor e) const
+	{
+		return source(e, m_g) == ~target(e, m_g);
+	}
+  private:
+	const Graph& m_g;
+};
+
 /** Return whether the outgoing edge of vertex u is contiguous. */
 template<typename Graph>
 bool contiguous_out(const Graph& g,
@@ -71,13 +86,6 @@ void copy_in_edges(Graph& g,
 	copy_out_edges(g, ~u, ~v);
 }
 
-/** Return true if the edge e is palindromic. */
-template<typename Graph>
-bool is_palindrome(const Graph& g, typename Graph::edge_descriptor e)
-{
-	return source(e, g) == ~target(e, g);
-}
-
 /** Assemble a path of unambigous out edges starting at vertex u.
  * u itself is not copied to out.
  */
@@ -106,7 +114,7 @@ OutIt assemble_if(const Graph& g,
 		edge_descriptor;
 	while (contiguous_out(g, u)) {
 		edge_descriptor e = *out_edges(u, g).first;
-		if (is_palindrome(g, e) || !pred(e))
+		if (!pred(e))
 			break;
 		*out++ = u;
 		u = target(e, g);
@@ -165,18 +173,16 @@ void merge(Graph& g, It first, It last)
 /** Assemble unambiguous paths. Write the paths to out.
  * Every edge must satisfy the predicate. */
 template<typename Graph, typename OutIt, typename Predicate>
-OutIt assemble_if(Graph& g, OutIt out, Predicate pred)
+OutIt assemble_if(Graph& g, OutIt out, Predicate pred0)
 {
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_iterator vertex_iterator;
-	typedef typename graph_traits<Graph>::edge_descriptor
-		edge_descriptor;
+	PredicateAnd<std::unary_negate<IsPalindrome<Graph> >, Predicate>
+		pred(std::not1(IsPalindrome<Graph>(g)), pred0);
 	std::pair<vertex_iterator, vertex_iterator> uit = g.vertices();
 	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
-		if (!contiguous_out(g, *u) || contiguous_in(g, *u))
-			continue;
-		edge_descriptor e = *out_edges(*u, g).first;
-		if (is_palindrome(g, e) || !pred(e))
+		if (!contiguous_out(g, *u) || contiguous_in(g, *u)
+				|| !pred(*out_edges(*u, g).first))
 			continue;
 		typename output_iterator_traits<OutIt>::value_type path;
 		assemble_if(g, *u, back_inserter(path), pred);
