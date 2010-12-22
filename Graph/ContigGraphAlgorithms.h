@@ -3,6 +3,7 @@
 
 #include "Algorithms.h"
 #include "ContigNode.h"
+#include "Functional.h"
 #include "Graph.h"
 #include "Iterator.h"
 #include <algorithm>
@@ -94,16 +95,23 @@ OutIt extend(const Graph& g,
 	return out;
 }
 
-/** Assemble an unambiguous path starting at vertex v. */
-template<typename Graph, typename OutIt>
-OutIt assemble(const Graph& g,
-		typename Graph::vertex_descriptor v, OutIt out)
+/** Assemble an unambiguous path starting at vertex u.
+ * Every edge must satisfy the predicate. */
+template<typename Graph, typename OutIt, typename Predicate>
+OutIt assemble_if(const Graph& g,
+		typename Graph::vertex_descriptor u, OutIt out,
+		Predicate pred)
 {
-	for (; contiguous_out(g, v)
-			&& !is_palindrome(g, *out_edges(v, g).first);
-			v = *g.adjacent_vertices(v).first)
-		*out++ = v;
-	*out++ = v;
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	while (contiguous_out(g, u)) {
+		edge_descriptor e = *out_edges(u, g).first;
+		if (is_palindrome(g, e) || !pred(e))
+			break;
+		*out++ = u;
+		u = target(e, g);
+	}
+	*out++ = u;
 	return out;
 }
 
@@ -154,19 +162,24 @@ void merge(Graph& g, It first, It last)
 	copy_out_edges(g, *(last - 1), u);
 }
 
-/** Assemble unambiguous paths. Write the paths to out. */
-template<typename Graph, typename OutIt>
-OutIt assemble(Graph& g, OutIt out)
+/** Assemble unambiguous paths. Write the paths to out.
+ * Every edge must satisfy the predicate. */
+template<typename Graph, typename OutIt, typename Predicate>
+OutIt assemble_if(Graph& g, OutIt out, Predicate pred)
 {
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_iterator vertex_iterator;
-	std::pair<vertex_iterator, vertex_iterator> vit = g.vertices();
-	for (vertex_iterator v = vit.first; v != vit.second; ++v) {
-		if (!contiguous_out(g, *v) || contiguous_in(g, *v)
-				|| is_palindrome(g, *out_edges(*v, g).first))
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	std::pair<vertex_iterator, vertex_iterator> uit = g.vertices();
+	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
+		if (!contiguous_out(g, *u) || contiguous_in(g, *u))
+			continue;
+		edge_descriptor e = *out_edges(*u, g).first;
+		if (is_palindrome(g, e) || !pred(e))
 			continue;
 		typename output_iterator_traits<OutIt>::value_type path;
-		assemble(g, *v, back_inserter(path));
+		assemble_if(g, *u, back_inserter(path), pred);
 		assert(path.size() >= 2);
 		assert(path.front() != path.back());
 		merge(g, path.begin(), path.end());
@@ -175,6 +188,15 @@ OutIt assemble(Graph& g, OutIt out)
 		*out++ = path;
 	}
 	return out;
+}
+
+/** Assemble unambiguous paths. Write the paths to out. */
+template<typename Graph, typename OutIt>
+OutIt assemble(Graph& g, OutIt out)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	return assemble_if(g, out, True<edge_descriptor>());
 }
 
 #endif

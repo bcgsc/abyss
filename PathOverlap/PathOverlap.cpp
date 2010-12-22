@@ -456,6 +456,19 @@ static ContigPath mergePaths(const Paths& paths,
 	return path;
 }
 
+/** Return true if the edge e is a path overlap. */
+struct IsPathOverlap : unary_function<edge_descriptor, bool> {
+	IsPathOverlap(const Graph& g, const OverlapMap& pmap)
+		: m_g(g), m_pmap(pmap) { }
+	bool operator()(edge_descriptor e) const
+	{
+		return getOverlap(m_pmap, source(e, m_g), target(e, m_g));
+	}
+  private:
+	const Graph& m_g;
+	const OverlapMap& m_pmap;
+};
+
 /** Assemble overlapping paths. */
 static void assembleOverlappingPaths(Graph& g,
 		Paths& paths, vector<string>& pathIDs)
@@ -464,10 +477,6 @@ static void assembleOverlappingPaths(Graph& g,
 	Overlaps overlaps = findOverlaps(g, paths);
 	addPathOverlapEdges(g, paths, pathIDs, overlaps);
 
-	// Assemble unambiguous edges.
-	Paths merges;
-	assemble(g, back_inserter(merges));
-
 	// Create a property map of path overlaps.
 	OverlapMap overlapMap;
 	for (Overlaps::const_iterator it = overlaps.begin();
@@ -475,6 +484,11 @@ static void assembleOverlappingPaths(Graph& g,
 		overlapMap.insert(OverlapMap::value_type(
 				OverlapMap::key_type(it->source, it->target),
 				it->overlap)).second;
+
+	// Assemble unambiguously overlapping paths.
+	Paths merges;
+	assemble_if(g, back_inserter(merges),
+			IsPathOverlap(g, overlapMap));
 
 	// Merge overlapping paths.
 	ContigID::setNextContigID(pathIDs.back());

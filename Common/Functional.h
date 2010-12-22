@@ -3,6 +3,12 @@
 
 #include <functional>
 
+/** Always return true. */
+template <typename Arg>
+struct True : std::unary_function<Arg, bool> {
+	bool operator()(Arg) { return true; }
+};
+
 /** Compose two unary functions. */
 template <typename F1, typename F2>
 struct unary_compose : std::unary_function <
