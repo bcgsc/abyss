@@ -427,8 +427,7 @@ static unsigned getOverlap(const OverlapMap& pmap,
 		// Both vertices are paths.
 		OverlapMap::const_iterator it = pmap.find(
 				edge_descriptor(u, v));
-		assert(it != pmap.end());
-		return it->second;
+		return it == pmap.end() ? 0 : it->second;
 	} else {
 		// One of the two vertices is a contig.
 		return 0;
