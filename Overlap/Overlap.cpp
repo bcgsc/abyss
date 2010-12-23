@@ -382,9 +382,7 @@ int main(int argc, char** argv)
 	ContigID::unlock();
 
 	if (opt::verbose > 1)
-		cout << "digraph overlap {\n"
-			<< dot_writer(scaffoldGraph)
-			<< "}\n";
+		cout << dot_writer(scaffoldGraph);
 
 	typedef graph_traits<OverlapGraph>::vertex_descriptor
 		vertex_descriptor;
