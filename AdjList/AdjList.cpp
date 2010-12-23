@@ -41,7 +41,7 @@ static const char USAGE_MESSAGE[] =
 "Overlaps of fewer than k-1 bases are found using a suffix array.\n"
 "\n"
 "  -k, --kmer=K          find overlaps of up to K-1 bases\n"
-"  -m, --min-overlap=M   require a minimum overlap of M bases [25]\n"
+"  -m, --min-overlap=M   require a minimum overlap of M bases [30]\n"
 "      --adj             output the results in adj format [default]\n"
 "      --dot             output the results in dot format\n"
 "      --sam             output the results in SAM format\n"
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::minOverlap == 0)
-		opt::minOverlap = min(25U, opt::k);
+		opt::minOverlap = min(30U, opt::k);
 
 	if (opt::minOverlap > opt::k) {
 		cerr << PROGRAM ": " << "minimum overlap -m "

@@ -100,6 +100,9 @@ j?=$(np)
 endif
 j?=2
 
+# AdjList parameters
+m?=30
+
 # DistanceEst parameters
 s?=100
 $(foreach i,$(lib),$(eval $i_s?=$s))
@@ -153,7 +156,7 @@ else
 endif
 
 %-1.adj: %-1.fa
-	AdjList $v -k$k $< >$@
+	AdjList $v -k$k -m$m $< >$@
 
 # Pop bubbles.
 
