@@ -177,8 +177,11 @@ OutIt assemble_if(Graph& g, OutIt out, Predicate pred0)
 {
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_iterator vertex_iterator;
-	PredicateAnd<std::unary_negate<IsPalindrome<Graph> >, Predicate>
-		pred(std::not1(IsPalindrome<Graph>(g)), pred0);
+	// pred(e) = !isPalindrome(e) && pred0(e)
+	binary_compose<std::logical_and<bool>,
+		std::unary_negate<IsPalindrome<Graph> >, Predicate>
+		pred(compose2(std::logical_and<bool>(),
+				std::not1(IsPalindrome<Graph>(g)), pred0));
 	std::pair<vertex_iterator, vertex_iterator> uit = g.vertices();
 	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
 		if (!contiguous_out(g, *u) || contiguous_in(g, *u)
