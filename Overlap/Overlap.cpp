@@ -432,6 +432,7 @@ int main(int argc, char** argv)
 		const Overlap& overlap = get(edge_bundle, overlapGraph, *it);
 		assert(overlap.overlap > 0);
 		if (contiguous_out(overlapGraph, t)) {
+			stats.overlap++;
 			assert(*adjacent_vertices(t, overlapGraph).first == h);
 			graph.add_edge(t, h, overlap);
 
