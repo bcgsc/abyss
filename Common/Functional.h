@@ -3,37 +3,36 @@
 
 #include <functional>
 
-/** Always return true. */
+/** A functor that always returns true. */
 template <typename Arg>
 struct True : std::unary_function<Arg, bool> {
 	bool operator()(const Arg&) const { return true; }
 };
 
-/** Compose two unary functions. */
+/** A functor, f1(f2(x)). */
 template <typename F1, typename F2>
 struct unary_compose : std::unary_function <
-        typename F2::argument_type, typename F1::result_type>
+		typename F2::argument_type, typename F1::result_type>
 {
-    unary_compose(F1 f1, F2 f2) : f1(f1), f2(f2) {}
-
-    typename F1::result_type operator()(typename F2::argument_type x)
-    {
+	unary_compose(const F1& f1, const F2& f2) : f1(f1), f2(f2) { }
+	typename F1::result_type operator()(
+			const typename F2::argument_type& x) const
+	{
 		return f1(f2(x));
 	}
-
-private:
-    F1 f1;
-    F2 f2;
+  private:
+	F1 f1;
+	F2 f2;
 };
 
-/** Compose two unary functions. */
+/** Return a functor, f1(f2(x)). */
 template <typename F1, typename F2>
-unary_compose<F1, F2> compose1(F1 f1, F2 f2)
+unary_compose<F1, F2> compose1(const F1& f1, const F2& f2)
 {
 	return unary_compose<F1, F2>(f1, f2);
 }
 
-/** Return a functor, f(g1(x), g2(x)). */
+/** A functor, f(g1(x), g2(x)). */
 template <typename F, typename G1, typename G2>
 struct binary_compose : std::unary_function <
 		typename G1::argument_type, typename F::result_type>
