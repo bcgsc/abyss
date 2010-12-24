@@ -369,6 +369,15 @@ static void readContigsIntoDB(string refFastaFile,
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printProgress(aligner, count);
+
+	if (opt::multimap == opt::IGNORE) {
+		// Count the number of duplicate k-mer in the target.
+		size_t duplicates = aligner.countDuplicates();
+		if (duplicates > 0)
+			cerr << "Found " << duplicates
+				<< " (" << (float)100 * duplicates / aligner.size()
+				<< "%) duplicate k-mer.\n";
+	}
 }
 
 void *alignReadsToDB(void* readsFile)

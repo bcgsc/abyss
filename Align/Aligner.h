@@ -4,11 +4,13 @@
 #include "config.h"
 #include "Align/Options.h"
 #include "ConstString.h"
+#include "Functional.h"
 #include "HashMap.h"
 #include "Kmer.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring> // for strcpy
+#include <functional>
 #include <iostream>
 #include <istream>
 #include <limits>
@@ -199,6 +201,15 @@ class Aligner
 		size_t bucket_count() const
 		{
 			return m_target.bucket_count();
+		}
+
+		/** Return the number of duplicate k-mer in the target. */
+		size_t countDuplicates() const
+		{
+			assert(opt::multimap == opt::IGNORE);
+			return count_if(m_target.begin(), m_target.end(),
+					compose1(std::mem_fun_ref(&Position::isDuplicate),
+						mem_var(&SeqPosHashMap::value_type::second)));
 		}
 
 	private:
