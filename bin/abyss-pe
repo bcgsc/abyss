@@ -103,6 +103,9 @@ j?=2
 # AdjList parameters
 m?=30
 
+# KAligner parameters.
+kaopt=-i
+
 # DistanceEst parameters
 s?=100
 $(foreach i,$(lib),$(eval $i_s?=$s))
@@ -173,13 +176,13 @@ endif
 # Estimate distances between contigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
@@ -193,7 +196,7 @@ endif
 	|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	KAligner $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
 		|ParseAligns $v -k$k -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
