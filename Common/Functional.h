@@ -9,6 +9,23 @@ struct True : std::unary_function<Arg, bool> {
 	bool operator()(const Arg&) const { return true; }
 };
 
+/** A functor to adapt a pointer to a member variable. */
+template <typename Arg, typename Result>
+struct MemVar : std::unary_function<Arg, Result>
+{
+	MemVar(Result Arg::* p) : m_p(p) { }
+	Result operator()(const Arg& arg) const { return arg.*m_p; }
+  private:
+	Result Arg::* m_p;
+};
+
+/** Return a functor to adapt a pointer to a member variable. */
+template <typename Arg, typename Result>
+MemVar<Arg, Result> mem_var(Result Arg::* p)
+{
+	return MemVar<Arg, Result>(p);
+}
+
 /** A functor, f1(f2(x)). */
 template <typename F1, typename F2>
 struct unary_compose : std::unary_function <
