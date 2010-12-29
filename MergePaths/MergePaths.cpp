@@ -50,6 +50,7 @@ static const char USAGE_MESSAGE[] =
 "  PATH  sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -s, --seed-length=L   minimum length of a seed contig [0]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -g, --graph=FILE      write the path overlap graph to FILE\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -64,11 +65,14 @@ namespace opt {
 	static string out;
 	static int threads = 1;
 
+	/** Minimum length of a seed contig. */
+	static unsigned seedLen;
+
 	/** Write the path overlap graph to this file. */
 	static string graphPath;
 }
 
-static const char shortopts[] = "g:j:k:o:v";
+static const char shortopts[] = "g:j:k:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -76,6 +80,7 @@ static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "seed-length", required_argument, NULL, 's' },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
@@ -430,16 +435,28 @@ static ContigPathMap readPaths(const string& filePath)
 	ifstream in(filePath.c_str());
 	assert_open(in, filePath);
 
+	unsigned tooSmall = 0;
 	ContigPathMap paths;
 	ContigID id;
 	ContigPath path;
 	while (in >> id >> path) {
+		// Ignore seed contigs shorter than the threshold length.
+		unsigned len = g_contigLengths[id] + opt::k - 1;
+		if (len < opt::seedLen) {
+			tooSmall++;
+			continue;
+		}
+
 		bool inserted = paths.insert(
 				make_pair(id, path)).second;
 		assert(inserted);
 		(void)inserted;
 	}
 	assert(in.eof());
+
+	if (opt::seedLen > 0)
+		cerr << "Ignored " << tooSmall << " paths shorter than "
+			<< opt::seedLen << " bp.\n";
 	return paths;
 }
 
@@ -468,6 +485,7 @@ int main(int argc, char** argv)
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
+			case 's': arg >> opt::seedLen; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
