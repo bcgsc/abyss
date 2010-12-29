@@ -56,7 +56,7 @@ namespace opt {
 	int format; // used by GraphIO
 
 	/** The minimum required amount of overlap. */
-	static unsigned minOverlap;
+	static unsigned minOverlap = 30;
 }
 
 static const char shortopts[] = "k:m:v";
@@ -215,20 +215,15 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (opt::minOverlap == 0)
-		opt::minOverlap = min(30U, opt::k);
-
-	if (opt::minOverlap > opt::k) {
-		cerr << PROGRAM ": " << "minimum overlap -m "
-		   "must be no more than k-mer size -k\n";
-		die = true;
-	}
-
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (opt::minOverlap == 0)
+		opt::minOverlap = opt::k - 1;
+	opt::minOverlap = min(opt::minOverlap, opt::k - 1);
 
 	opt::trimMasked = false;
 	Kmer::setLength(opt::k - 1);
@@ -258,7 +253,7 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
-	if (opt::minOverlap < opt::k) {
+	if (opt::minOverlap < opt::k - 1) {
 		// Add the overlap edges of fewer than k-1 bp.
 		if (opt::verbose > 0)
 			cerr << "Finding overlaps of fewer than k-1 bp...\n";
