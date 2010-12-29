@@ -305,7 +305,8 @@ static ContigPath constructAmbiguousPath(const Graph &g,
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		unsigned len = calculatePathLength(g, origin, *it);
-		if (len > maxLen) {
+		if (len > maxLen
+				|| len == maxLen && it->size() > longest->size()) {
 			maxLen = len;
 			longest = it;
 		}
