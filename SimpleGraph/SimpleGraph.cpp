@@ -242,11 +242,28 @@ static unsigned calculatePathLength(const Graph& g,
 	return length;
 }
 
+/** Compare the lengths of two paths. */
+struct ComparePathLength
+		: binary_function<ContigPath, ContigPath, bool>
+{
+	ComparePathLength(const Graph& g, const ContigNode& origin)
+		: m_g(g), m_origin(origin) { }
+	bool operator()(const ContigPath& a, const ContigPath& b) const {
+		unsigned lenA = calculatePathLength(m_g, m_origin, a);
+		unsigned lenB = calculatePathLength(m_g, m_origin, b);
+		return lenA < lenB
+			|| lenA == lenB && a.size() < b.size();
+	}
+  private:
+	const Graph& m_g;
+	const ContigNode& m_origin;
+};
+
 /** Return an ambiguous path that agrees with all the given paths. */
 static ContigPath constructAmbiguousPath(const Graph &g,
-		const ContigNode& origin, const ContigPaths& solutions)
+		const ContigNode& origin, const ContigPaths& paths)
 {
-	const ContigPaths& paths = solutions;
+	assert(!paths.empty());
 
 	// Find the size of the smallest path.
 	const ContigPath& firstSol = paths.front();
@@ -299,26 +316,13 @@ static ContigPath constructAmbiguousPath(const Graph &g,
 		vspath.push_back(common_path_node);
 	}
 
-	// Calculate the length of the longest path.
-	unsigned maxLen = 0;
-	ContigPaths::const_iterator longest = paths.end();
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
-		unsigned len = calculatePathLength(g, origin, *it);
-		if (len > maxLen
-				|| len == maxLen && it->size() > longest->size()) {
-			maxLen = len;
-			longest = it;
-		}
-	}
-	assert(maxLen > 0);
-	assert(longest != paths.end());
-
 	ContigPath out;
 	out.reserve(vppath.size() + 1 + vspath.size());
 	out.insert(out.end(), vppath.begin(), vppath.end());
 	if (longestSuffix > 0) {
-		ContigPath longestPath(*longest);
+		const ContigPath& longestPath(
+				*max_element(paths.begin(), paths.end(),
+					ComparePathLength(g, origin)));
 		unsigned length = calculatePathLength(g, origin, longestPath,
 				longestPrefix, longestSuffix);
 
