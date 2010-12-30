@@ -81,11 +81,11 @@ static const struct option longopts[] = {
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "dot",           no_argument,       &opt::dot, 1, },
 	{ "graph",         required_argument, NULL, 'g' },
-	{ "kmer",    required_argument, NULL, 'k' },
+	{ "kmer",          required_argument, NULL, 'k' },
 	{ "identity",      required_argument, NULL, 'p' },
-	{ "verbose", no_argument,       NULL, 'v' },
-	{ "help",    no_argument,       NULL, OPT_HELP },
-	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ "verbose",       no_argument,       NULL, 'v' },
+	{ "help",          no_argument,       NULL, OPT_HELP },
+	{ "version",       no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -153,9 +153,9 @@ static string getSequence(vertex_descriptor u)
 }
 
 /** Return the length of vertex v. */
-static unsigned getLength(Graph* g, vertex_descriptor v)
+static unsigned getLength(const Graph& g, vertex_descriptor v)
 {
-	return (*g)[v].length;
+	return g[v].length;
 }
 
 /** Align the sequences of [first,last).
@@ -228,7 +228,7 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 
 	vector<unsigned> lengths(nbranches);
 	transform(adj.first, adj.second, lengths.begin(),
-			bind1st(ptr_fun(getLength), &g));
+			bind1st(ptr_fun(getLength), g));
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (maxLength >= opt::maxLength) {
