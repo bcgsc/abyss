@@ -46,8 +46,9 @@ static const char USAGE_MESSAGE[] =
 "  FASTA  contigs in FASTA format\n"
 "  ADJ    contig adjacency graph\n"
 "\n"
+"  -k, --kmer=N          k-mer size\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
-"  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
+"                        default is unlimited\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
@@ -59,7 +60,9 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
-	static unsigned maxLength;
+
+	/** Pop bubbles shorter than this threshold. */
+	static unsigned maxLength = UINT_MAX;
 
 	/** Minimum identity. */
 	static float identity = 0.9;
@@ -307,9 +310,6 @@ int main(int argc, char** argv)
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
 		die = true;
 	}
-
-	if (opt::maxLength <= 0)
-		opt::maxLength = 3 * opt::k;
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
