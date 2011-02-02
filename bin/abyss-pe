@@ -85,10 +85,6 @@ endif
 ifdef a
 pcopt += -a$a
 endif
-ifdef p
-pbopt += -p$p
-pcopt += -p$p
-endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Common paired-end parameters
@@ -103,6 +99,12 @@ j?=2
 
 # AdjList parameters
 m?=30
+
+# PopBubbles parameters
+ifdef p
+pbopt += -p$p
+pcopt += -p$p
+endif
 
 # KAligner parameters.
 kaopt=-i
