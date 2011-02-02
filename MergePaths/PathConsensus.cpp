@@ -26,7 +26,6 @@
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "needleman_wunsch.h"
-#include "smith_waterman.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -157,7 +156,10 @@ typedef map<AmbPathConstraint, ContigPath> AmbPath2Contig;
 typedef vector<const_string> Contigs;
 static Contigs g_contigs;
 AmbPath2Contig g_ambpath_contig;
+
+#if 0
 static set< pair<ContigNode, ContigNode> > g_edges_irregular;
+#endif
 
 #if 0
 static double g_coverage_mean;
@@ -469,6 +471,7 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	return s;
 }
 
+#if 0
 /** Merge the specified two contigs,
  * With modified Overlap, we no longer assume overlap is k-1, instead,
  * do a smith-waterman alignment between contigs to determine their
@@ -502,6 +505,7 @@ static overlap_align mergeContigs_SW(Sequence& seq, const Sequence& s,
 		return overlaps[0];
 	}
 }
+#endif
 
 /** Merge the specified two contigs, default overlap is k-1,
  * generate a consensus sequence of the overlapping region. The result
@@ -542,6 +546,7 @@ static Sequence mergePath(const Path& path)
 		if (seq.empty()) {
 			seq = getSequence(*it);
 		} else {
+#if 0
 			if (g_edges_irregular.find(
 					pair<ContigNode, ContigNode>(
 					*prev_it, *it))
@@ -551,6 +556,9 @@ static Sequence mergePath(const Path& path)
 			else
 				mergeContigs_SW(seq, getSequence(*it),
 					*it, path);
+#else
+			mergeContigs(seq, getSequence(*it), *it, path);
+#endif
 		}
 		prev_it = it;
 	}
