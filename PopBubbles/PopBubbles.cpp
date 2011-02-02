@@ -48,7 +48,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "  -k, --kmer=K          pop bubbles shorter than 3*K bp\n"
-"  -p, --identity=REAL   minimum identity, default: 0\n"
+"  -p, --identity=REAL   minimum identity, default: 0.9\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
 "  -v, --verbose         display verbose output\n"
@@ -62,7 +62,7 @@ namespace opt {
 	static unsigned maxLength;
 
 	/** Minimum identity. */
-	static float identity;
+	static float identity = 0.9;
 
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
