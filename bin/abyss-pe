@@ -82,9 +82,6 @@ ifdef b
 abyssopt += -b$b
 pbopt += -b$b
 endif
-ifdef a
-pcopt += -a$a
-endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Common paired-end parameters
@@ -103,7 +100,6 @@ m?=30
 # PopBubbles parameters
 p?=0.9
 pbopt += -p$p
-pcopt += -p$p
 
 # KAligner parameters.
 kaopt=-i
@@ -112,6 +108,12 @@ kaopt=-i
 s?=100
 $(foreach i,$(lib),$(eval $i_s?=$s))
 $(foreach i,$(lib),$(eval $i_n?=$n))
+
+# PathConsensus parameters
+ifdef a
+pcopt += -a$a
+endif
+pcopt += -p$p
 
 # Remove environment variables.
 unexport in se $(lib)
