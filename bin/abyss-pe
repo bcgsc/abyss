@@ -101,10 +101,9 @@ j?=2
 m?=30
 
 # PopBubbles parameters
-ifdef p
+p?=0.9
 pbopt += -p$p
 pcopt += -p$p
-endif
 
 # KAligner parameters.
 kaopt=-i
