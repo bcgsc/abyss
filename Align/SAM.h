@@ -3,9 +3,9 @@
 
 #include "Aligner.h"
 #include <algorithm> // for swap
-#include <istream>
+#include <cstdlib> // for exit
+#include <iostream>
 #include <limits> // for numeric_limits
-#include <ostream>
 #include <sstream>
 #include <string>
 
@@ -103,7 +103,7 @@ struct SAMAlignment {
 		assert(in.good());
 		unsigned clip0 = 0;
 		switch (type) {
-			case 'S':
+			case 'H': case 'S':
 				clip0 = len;
 				in >> len >> type;
 				assert(in.good());
@@ -114,15 +114,33 @@ struct SAMAlignment {
 				a.align_length = len;
 				break;
 			default:
-				assert(false);
+				std::cerr << "error: invalid CIGAR: `"
+					<< cigar << "'\n";
+				exit(EXIT_FAILURE);
 		}
+
+		unsigned qlen = clip0 + a.align_length;
 		unsigned clip1 = 0;
-		if (in >> clip1 >> type) {
-			assert(type == 'S');
-			(void)in.peek(); // to set the EOF flag
+		while (in >> len >> type) {
+			assert(clip1 == 0);
+			switch (type) {
+			  case 'H': case 'S':
+				qlen += len;
+				clip1 = len;
+				break;
+			  case 'I': case 'M':
+				qlen += len;
+				break;
+			  case 'D': case 'N': case 'P':
+				break;
+			  default:
+				std::cerr << "error: invalid CIGAR: `"
+					<< cigar << "'\n";
+				exit(EXIT_FAILURE);
+			}
 		}
 		a.read_start_pos = isRC ? clip1 : clip0;
-		a.read_length = clip0 + a.align_length + clip1;
+		a.read_length = qlen;
 		assert(in.eof());
 		return a;
 	}
