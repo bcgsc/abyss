@@ -110,13 +110,13 @@ sub fac($)
 =cut
 
 		format Spaces =
-@<<<<<<<@<<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<< ^<<<<<<<<<<<<<
+@<<<<<<<@<<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<<@<<<<<< ^<<<<<<<<<<<<
 $ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
-                                                                  ^<<<<<<<<<<<<<~~
+                                                                   ^<<<<<<<<<<<<~~
 $path
 .
 		format Pipes =
-|@<<<<<<|@<<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<<|@*|
+|@<<<<<<|@<<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<<|@<<<<<<|@*|
 $ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
 .
 		$~ = $opt_jira ? 'Pipes' : 'Spaces';
@@ -136,11 +136,11 @@ $ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
 }
 
 format Spaces_TOP =
-n       n:@<<<< n:N50  min    median mean   N50    max    sum
+n       n:@<<<< n:N50  min    median mean   N50    max     sum
 $opt_threshold
 .
 format Pipes_TOP =
-||n    ||n:@<<<||n:N50||min  ||median||mean||N50  ||max  ||sum   ||
+||n    ||n:@<<<||n:N50||min  ||median||mean||N50  ||max   ||sum   ||
 $opt_threshold
 .
 
