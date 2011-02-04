@@ -455,7 +455,8 @@ static ContigPathMap readPaths(const string& filePath)
 	assert(in.eof());
 
 	if (opt::seedLen > 0)
-		cerr << "Ignored " << tooSmall << " paths shorter than "
+		cerr << "Ignored " << tooSmall
+			<< " paths whose seeds are shorter than "
 			<< opt::seedLen << " bp.\n";
 	return paths;
 }
