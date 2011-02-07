@@ -156,9 +156,9 @@ static string getSequence(vertex_descriptor u)
 }
 
 /** Return the length of vertex v. */
-static unsigned getLength(const Graph& g, vertex_descriptor v)
+static unsigned getLength(const Graph* g, vertex_descriptor v)
 {
-	return g[v].length;
+	return (*g)[v].length;
 }
 
 /** Align the sequences of [first,last).
@@ -231,7 +231,7 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 
 	vector<unsigned> lengths(nbranches);
 	transform(adj.first, adj.second, lengths.begin(),
-			bind1st(ptr_fun(getLength), g));
+			bind1st(ptr_fun(getLength), &g));
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (maxLength >= opt::maxLength) {
