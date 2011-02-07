@@ -32,6 +32,7 @@ static ostream& printAlignment(ostream& out,
 	unsigned bstart = alignPos[2], bend = alignPos[3] + 1;
 	assert(aend == aseq.size());
 	assert(bstart == 0);
+	(void)aend; (void)bstart;
 	out << aseq.substr(0, astart) << align.query_align << '\n'
 		<< string(astart, ' ');
 	for (unsigned i = 0; i < align.match_align.size(); i++) {

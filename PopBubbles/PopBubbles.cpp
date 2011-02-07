@@ -168,6 +168,7 @@ template <typename It>
 static float getAlignmentIdentity(It first, It last)
 {
 	assert(distance(first, last) == 2);
+	(void)last;
 	string seqa = getSequence(*first);
 	++first;
 	string seqb = getSequence(*first);
