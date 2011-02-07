@@ -6,6 +6,7 @@
 #include "DotIO.h"
 #include "SAMIO.h"
 #include <cassert>
+#include <cstdlib> // for abort
 #include <istream>
 #include <ostream>
 #include <string>
@@ -26,6 +27,7 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 		return write_sam(out, g, program, commandLine);
 	  default:
 		assert(false);
+		abort();
 	}
 }
 
