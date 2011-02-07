@@ -89,10 +89,12 @@ ifdef PE_HOSTFILE
 hostname?=$(shell hostname -f)
 j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
 endif
-ifdef np
-j?=$(np)
+ifeq ($j,)
+j:=$(np)
 endif
-j?=2
+ifeq ($j,)
+j:=2
+endif
 
 # AdjList parameters
 m?=30
