@@ -483,7 +483,7 @@ static void assembleOverlappingPaths(Graph& g,
 			it != overlaps.end(); ++it)
 		overlapMap.insert(OverlapMap::value_type(
 				OverlapMap::key_type(it->source, it->target),
-				it->overlap)).second;
+				it->overlap));
 
 	// Assemble unambiguously overlapping paths.
 	Paths merges;
