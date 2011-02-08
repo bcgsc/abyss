@@ -6,6 +6,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "GraphIO.h"
+#include "Histogram.h"
 #include "Uncompress.h"
 #include <fstream>
 #include <getopt.h>
@@ -122,6 +123,17 @@ int main(int argc, char** argv)
 			<< " E=" << e
 			<< " E/V=" << (float)e / v
 			<< endl;
+
+		// Print a histogram of the out degree of vertices.
+		Histogram h;
+		typedef Graph::vertex_iterator vertex_iterator;
+		std::pair<vertex_iterator, vertex_iterator>
+			vit = vertices(g);
+		for (vertex_iterator u = vit.first; u != vit.second; ++u)
+			h.insert(out_degree(*u, g));
+		cerr <<
+			"Degree: " << h.barplot() << "\n"
+			"        01234" << endl;
 	}
 
 	write_graph(cout, g, PROGRAM, commandLine);
