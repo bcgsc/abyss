@@ -1,3 +1,44 @@
+2011-02-07  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.6.
+	* Find contigs that overlap by fewer than k-1 bp.
+	* Pop bubbles with sufficient sequence identity.
+	* Merge paths that overlap unambiguously.
+
+	abyss-pe:
+	* New parameter, m, the minimum number of overlapping bases.
+	The default is 30.
+	* The minimum sequence identity parameter, p, applies to both
+	PopBubbles and PathConsensus.
+
+	ABYSS:
+	* Support values of k larger than 96. The maximum value of k is
+	set when compiling using `configure --enable-maxk´.
+
+	AdjList:
+	* Find sequences that overlap by fewer than k-1 bp. The parameter
+	m specifies the minimum number of overlapping bases.
+
+	PopBubbles:
+	* Align both branches of the bubble and pop bubbles whose sequence
+	identity is sufficient, at least 90% by default.
+	* New parameter, p, the minimum identity required.
+	* The maximum bubble size is unlimited by default. This limit can
+	be changed using the parameter b.
+
+	SimpleGraph:
+	* Extend each path as long as is unambiguously possible.
+
+	PathOverlap:
+	* Merge paths that overlap unambiguously.
+
+	MergeContigs:
+	* Perform an alignment of the two sequences when no simple overlap
+	is found.
+
+	abyss-fac:
+	* New option, -g. Specify the expected genome size.
+
 2010-11-15  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.5.
