@@ -109,15 +109,9 @@ Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
 Single-end reads are stored in two files se1.fa and se2.fa.
 
 The command line to assemble this example data set is...
-abyss-pe -j j=2 k=25 n=10 name=ecoli lib='lib1 lib2' \
+abyss-pe k=25 n=10 name=ecoli lib='lib1 lib2' \
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
 	se='se1.fa se2.fa'
-
-The paired-end assembly of lib1 and lib2 may be run in parallel by
-specifying the -j option of make to abyss-pe, which is implemented as
-a Makefile script. One instance of KAligner is run per library, and
-the parameter j=2 specifies that each instance of KAligner should use
-two threads.
 
 The empirical distribution of fragment sizes will be stored in two
 files named lib1-3.hist and lib2-3.hist. These files may be plotted to
@@ -133,10 +127,11 @@ this will allow you to make use of multiple cores on a single machine.
 To use multiple machines for assembly, you must create a hostfile for
 mpirun, which is describe in the mpirun man page.
 
-The paired-end assembly runs on a single machine. For very large
-jobs, a good portion of the paired-end assembly (KAligner,
-ParseAligns, DistanceEst) may be run in parallel separate processes,
-but this process is not automated by the driver script abyss-pe.
+The paired-end assembly stage is multithreaded but runs on a single
+machine. The number of threads to use may be specified with the
+parameter j. The default is the same as np. ABySS is multithreaded
+using pthread and OpenMP, which requires a modern compiler such as
+GCC 4.3 or greater.
 
 Open MPI integrates well with SGE (Sun Grid Engine). For example, to
 submit an array of jobs to assemble every odd value of k between 51
