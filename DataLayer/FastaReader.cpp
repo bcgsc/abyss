@@ -141,6 +141,11 @@ next_record:
 		} else
 			q.clear();
 
+		if (s.empty()) {
+			die() << "sequence with ID `" << id << "' is empty\n";
+			exit(EXIT_FAILURE);
+		}
+
 		if (isColourSpace(s) && !isdigit(s[0])) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
