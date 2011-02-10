@@ -10,18 +10,25 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cfloat> // for DBL_MAX
 #include <iostream>
 
 using namespace std;
 
 /** The score of a match. */
-static const int MATCH_SCORE = 1;
+static const int MATCH_SCORE = 5;
 
 /** The score of a mismatch. */
-static const int MISMATCH_SCORE = -1;
+static const int MISMATCH_SCORE = -4;
 
 /** The score of a gap. */
-static const int GAP_SCORE = -2;
+//static const int GAP_SCORE = -2;
+
+/** gap open penalty */
+static const int GAP_OPEN_SCORE = -12;
+
+/** gap extend penalty */
+static const int GAP_EXTEND_SCORE = -4;
 
 /** Print the specified alignment. */
 static ostream& printAlignment(ostream& out,
@@ -80,6 +87,14 @@ static int matchScore(const char a, const char b)
 	return isMatch(a, b, consensus) ? MATCH_SCORE : MISMATCH_SCORE;
 }
 
+static int gapScore(bool prev_is_gap)
+{
+	if (prev_is_gap)
+		return GAP_EXTEND_SCORE;
+	else
+		return GAP_OPEN_SCORE;
+}
+
 //the backtrack step in smith_waterman
 unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
 		const string& seq_a, const string& seq_b, SMAlignment& align, unsigned* align_pos)
@@ -123,6 +138,8 @@ unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
 		next_j=I_j[current_i][current_j];
 	}
 
+	//cerr << "consensus so far:" << endl << consensus_a << endl << consensus_b << endl;
+
 	//check whether the alignment is what we want (pinned at the ends), modified version of SW (i_max is already fixed)
 	if (current_j > 1)
 		return 0;
@@ -152,11 +169,15 @@ unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
 	align.match_align = match;
 	align.target_align = consensus_b;
 
+	//cerr << "overlap:" << endl << consensus_a << endl << consensus_b << endl;
+
 	return num_of_match;
 }
 
 //This is the Smith-Waterman algirthm (a variation of Needleman-Wunsch algorithm), finds one optimal local alignment
 //Modified to find overlap of seq_a and seq_b (alignment that is pinned at the end of seq_a and beginning of seq_b)
+//Actually, this should be a variation of needleman algorithm, that looks for `global` alignment, but
+//without penalizing overhangs... and make sure the alignment is end-to-end (end of seqA to beginning of seqB)
 void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start_pos,
 	vector<overlap_align>& overlaps, bool multi_align, bool verbose)
 {
@@ -171,27 +192,38 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 	H = new double*[N_a+1];
 	I_i = new int*[N_a+1];
 	I_j = new int*[N_a+1];
+	bool** V = new bool*[N_a+1];
 
 	for(i=0;i<=N_a;i++){
 		H[i] = new double[N_b+1];
 		I_i[i] = new int[N_b+1];
 		I_j[i] = new int[N_b+1];
 		H[i][0]=0; //only need to initialize first row and first column
+		I_i[i][0] = i-1;
+		V[i] = new bool[N_b+1];
+		V[i][0] = true; //valid start
 	}
 
-	for (j=0;j<=N_b;j++)
-		H[0][j]=0; //initialize first column
+	for (j = 0; j <= N_b; j++) {
+		H[0][j] = 0; //initialize first column
+		I_j[0][j] = j-1;
+		V[0][j] = false; //wrong start, not overlap
+	}
+	V[0][0] = true;
 
 	for(i=1;i<=N_a;i++){
 		for(j=1;j<=N_b;j++){
 			char a = seq_a[i-1], b = seq_b[j-1];
-			double scores[4] = {
-				H[i-1][j-1] + matchScore(a, b), // match or mismatch
-				H[i-1][j] + GAP_SCORE, // deletion in sequence A
-				H[i][j-1] + GAP_SCORE, // deletion in sequence B
-				0 // start of a new subsequence
+			double scores[3] = {//scores[4] = {
+				V[i-1][j-1] ? H[i-1][j-1] + matchScore(a, b)
+					: -DBL_MAX, // match or mismatch
+				V[i-1][j] ? H[i-1][j] + gapScore(I_j[i-1][j] == j)
+					: -DBL_MAX, // && I_i[i-1][j] != i-1), //GAP_SCORE, // deletion in sequence A
+				V[i][j-1] ? H[i][j-1] + gapScore(I_i[i][j-1] == i)
+					: -DBL_MAX // && I_j[i][j-1] != j-1), //GAP_SCORE, // deletion in sequence B
+				//0 // start of a new subsequence
 			};
-			double* pMax = max_element(scores, scores + 4);
+			double* pMax = max_element(scores, scores + 3); //4);
 			H[i][j] = *pMax;
 			switch (pMax - scores) {
 			case 0: // score in (i,j) stems from a match/mismatch
@@ -206,13 +238,39 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 				I_i[i][j] = i;
 				I_j[i][j] = j-1;
 				break;
-			case 3: // (i,j) is the beginning of a subsequence
+			/*case 3: // (i,j) is the beginning of a subsequence
 				I_i[i][j] = i;
 				I_j[i][j] = j;
-				break;
+				break;*/
 			}
+			if (H[i][j] == -DBL_MAX)
+				V[i][j] = false;
+			else
+				V[i][j] = true;
 		}
 	}
+
+	/*if (verbose) {
+	for (i=0; i<=N_a; i++) {
+		for (int j=0; j<=N_b; j++)
+			cerr << H[i][j] << ",";
+		cerr << endl;
+	}
+
+	cerr << "I_i:" << endl;
+	for (i=0; i<=N_a; i++) {
+		for (int j=0; j<=N_b; j++)
+			cerr << I_i[i][j] << ",";
+		cerr << endl;
+	}
+
+	cerr << "I_j:" << endl;
+	for (i=0; i<=N_a; i++) {
+		for (int j=0; j<=N_b; j++)
+			cerr << I_j[i][j] << ",";
+		cerr << endl;
+	}
+	}*/
 
 	// search H for the maximal score
 	unsigned num_of_match = 0;
@@ -224,6 +282,12 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 
 	//sort H[N_a], store the sorted index in j_max_indexes
 	sort(j_max_indexes, j_max_indexes+N_b, index_cmp<double*>(H[N_a]));
+
+	/*if (verbose) {
+		for (j=0; j<N_b; j++)
+			cerr << j_max_indexes[j] << ",";
+		cerr << endl;
+	}*/
 
 	//find ALL overlap alignments, starting from the highest score j_max
 	j = 0;
@@ -244,7 +308,9 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 					printAlignment(cerr, seq_a, seq_b,
 							align_pos, align);
 				found = true;
-				if (!multi_align)
+				if (!multi_align
+						|| (j+1 < N_b
+							&& H[N_a][j_max_indexes[j+1]] < H_max))
 					break;
 			}
 		}
@@ -255,8 +321,10 @@ void alignOverlap(const string& seq_a, const string& seq_b, unsigned seq_a_start
 		delete [] H[i];
 		delete [] I_i[i];
 		delete [] I_j[i];
+		delete [] V[i];
 	}
 	delete [] H;
 	delete [] I_i;
 	delete [] I_j;
+	delete [] V;
 }
