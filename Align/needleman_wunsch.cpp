@@ -122,26 +122,18 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 	I_i = new int*[N_a+1];
 	I_j = new int*[N_a+1];
 
-	//bool **opengap; //use this to keep track whether a gap is opengap
-	//opengap = new bool*[N_a+1];
-
 	for(i=0;i<=N_a;i++){
 		H[i] = new double[N_b+1];
 		I_i[i] = new int[N_b+1];
 		I_j[i] = new int[N_b+1];
-		//opengap[i] = new bool[N_b+1];
 		H[i][0]=0; //only need to initialize first row and first column
-		//opengap[i][0] = false;
 		I_i[i][0] = i-1;
 	}
 
 	for (j=0;j<=N_b;j++){
 		H[0][j]=0; //initialize first column
-		//opengap[0][j] = false;
 		I_j[0][j] = j-1;
 	}
-
-	//bool temp_opengap[3];
 
 	// here comes the actual algorithm
 	for(i=1;i<=N_a;i++){
@@ -152,57 +144,29 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 			AssignScores_std<double>(temp,
 					H[i-1][j-1], H[i-1][j], H[i][j-1],
 					seq_a[i-1], seq_b[j-1], prev_a_gap, prev_b_gap);
-			/*AssignScores_scorematrix<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1],
-				opengap[i-1][j-1], opengap[i-1][j], opengap[i][j-1], temp_opengap);*/
 
 			double* pmax = max_element(temp, temp + 3);
 			H[i][j] = *pmax;
 			switch (pmax - temp) {
-			case 0: // score in (i,j) stems from a match/mismatch
+			  case 0: // match or mismatch
 				I_i[i][j] = i-1;
 				I_j[i][j] = j-1;
-				//opengap[i][j] = temp_opengap[0];
 				break;
-			case 1: // score in (i,j) stems from a deletion in sequence A : should be deletion in B?
+			  case 1: // deletion in sequence B
 				I_i[i][j] = i-1;
 				I_j[i][j] = j;
-				//opengap[i][j] = temp_opengap[1];
 				break;
-			case 2: // score in (i,j) stems from a deletion in sequence B : should be deletion in A?
+			  case 2: // deletion in sequence A
 				I_i[i][j] = i;
 				I_j[i][j] = j-1;
-				//opengap[i][j] = temp_opengap[2];
 				break;
 			}
 		}
 	}
 
-        /*if (verbose) {
-        for (i=0; i<=N_a; i++) {
-                for (j=0; j<=N_b; j++)
-                        cerr << H[i][j] << ",";
-                cerr << endl;
-        }
-
-        cerr << "I_i:" << endl;
-        for (i=0; i<=N_a; i++) {
-                for (j=0; j<=N_b; j++)
-                        cerr << I_i[i][j] << ",";
-                cerr << endl;
-        }
-
-        cerr << "I_j:" << endl;
-        for (i=0; i<=N_a; i++) {
-                for (j=0; j<=N_b; j++)
-                        cerr << I_j[i][j] << ",";
-                cerr << endl;
-        }
-        }*/
-
 	// search H for the maximal score
 	unsigned num_of_match = 0;
 	int i_max=N_a, j_max=N_b;
-	//double H_max = H[i_max][j_max];
 	num_of_match = Backtrack(i_max, j_max, I_i, I_j, seq_a, seq_b, align);
 	if (verbose)
 		cerr <<"The alignment of the sequences\n" << seq_a << endl << seq_b << endl
@@ -213,12 +177,10 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 		delete [] H[i];
 		delete [] I_i[i];
 		delete [] I_j[i];
-		//delete [] opengap[i];
 	}
 	delete [] H;
 	delete [] I_i;
 	delete [] I_j;
-	//delete [] opengap;
 
 	return num_of_match;
 }
@@ -266,9 +228,9 @@ static bool Match(char a, char b, char& consensus)
 static int sim_score(char a, char b, bool prev_gap)
 {
 	char consensus;
-	return a == GAP || b == GAP ? //-2 // gap penalty
+	return a == GAP || b == GAP ? // gap
 		prev_gap ? GAP_EXTEND_SCORE : GAP_OPEN_SCORE
-		: !Match(a, b, consensus) ? MISMATCH_SCORE // mismatch penalty
+		: !Match(a, b, consensus) ? MISMATCH_SCORE // mismatch
 		: MATCH_SCORE; // match
 }
 
