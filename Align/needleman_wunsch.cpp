@@ -17,7 +17,10 @@ using namespace std;
 static bool Match(char a, char b, char& consensus);
 
 template <class T>
-static void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1);
+static void AssignScores_std(
+		T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1,
+		const char seq_a_im1, const char seq_b_jm1,
+		bool prev_a_gap, bool prev_b_gap);
 
 template <class T>
 static void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, char seq_a_im1, char seq_b_jm1,
@@ -25,6 +28,18 @@ static void AssignScores_scorematrix(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1,
 
 /** A character representing a gap. */
 static const char GAP = '*';
+
+/** The score of a match. */
+static const int MATCH_SCORE = 5;
+
+/** The score of a mismatch. */
+static const int MISMATCH_SCORE = -4;
+
+/** gap open penalty */
+static const int GAP_OPEN_SCORE = -12;
+
+/** gap extend penalty */
+static const int GAP_EXTEND_SCORE = -4;
 
 //the backtrack step
 static unsigned Backtrack(const int i_max, const int j_max, int** I_i, int** I_j,
@@ -117,11 +132,13 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 		//opengap[i] = new bool[N_b+1];
 		H[i][0]=0; //only need to initialize first row and first column
 		//opengap[i][0] = false;
+		I_i[i][0] = i-1;
 	}
 
 	for (j=0;j<=N_b;j++){
 		H[0][j]=0; //initialize first column
 		//opengap[0][j] = false;
+		I_j[0][j] = j-1;
 	}
 
 	//bool temp_opengap[3];
@@ -130,7 +147,11 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 	for(i=1;i<=N_a;i++){
 		for(j=1;j<=N_b;j++){
 			double temp[3];
-			AssignScores_std<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1]);
+			bool prev_a_gap = I_i[i][j-1] == i; //(I_j[i-1][j] == j);
+			bool prev_b_gap = I_j[i-1][j] == j; //(I_i[i][j-1] == i);
+			AssignScores_std<double>(temp,
+					H[i-1][j-1], H[i-1][j], H[i][j-1],
+					seq_a[i-1], seq_b[j-1], prev_a_gap, prev_b_gap);
 			/*AssignScores_scorematrix<double>(temp, H[i-1][j-1], H[i-1][j], H[i][j-1], seq_a[i-1], seq_b[j-1],
 				opengap[i-1][j-1], opengap[i-1][j], opengap[i][j-1], temp_opengap);*/
 
@@ -142,12 +163,12 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 				I_j[i][j] = j-1;
 				//opengap[i][j] = temp_opengap[0];
 				break;
-			case 1: // score in (i,j) stems from a deletion in sequence A
+			case 1: // score in (i,j) stems from a deletion in sequence A : should be deletion in B?
 				I_i[i][j] = i-1;
 				I_j[i][j] = j;
 				//opengap[i][j] = temp_opengap[1];
 				break;
-			case 2: // score in (i,j) stems from a deletion in sequence B
+			case 2: // score in (i,j) stems from a deletion in sequence B : should be deletion in A?
 				I_i[i][j] = i;
 				I_j[i][j] = j-1;
 				//opengap[i][j] = temp_opengap[2];
@@ -155,6 +176,28 @@ unsigned alignGlobal(const string& seq_a, const string& seq_b,
 			}
 		}
 	}
+
+        /*if (verbose) {
+        for (i=0; i<=N_a; i++) {
+                for (j=0; j<=N_b; j++)
+                        cerr << H[i][j] << ",";
+                cerr << endl;
+        }
+
+        cerr << "I_i:" << endl;
+        for (i=0; i<=N_a; i++) {
+                for (j=0; j<=N_b; j++)
+                        cerr << I_i[i][j] << ",";
+                cerr << endl;
+        }
+
+        cerr << "I_j:" << endl;
+        for (i=0; i<=N_a; i++) {
+                for (j=0; j<=N_b; j++)
+                        cerr << I_j[i][j] << ",";
+                cerr << endl;
+        }
+        }*/
 
 	// search H for the maximal score
 	unsigned num_of_match = 0;
@@ -220,19 +263,26 @@ static bool Match(char a, char b, char& consensus)
 }
 
 /** Return the score or penalty of the alignment of a and b. */
-static int sim_score(char a, char b)
+static int sim_score(char a, char b, bool prev_gap)
 {
 	char consensus;
-	return a == GAP || b == GAP ? -2 // gap penalty
-		: !Match(a, b, consensus) ? -1 // mismatch penalty
-		: 1; // match
+	return a == GAP || b == GAP ? //-2 // gap penalty
+		prev_gap ? GAP_EXTEND_SCORE : GAP_OPEN_SCORE
+		: !Match(a, b, consensus) ? MISMATCH_SCORE // mismatch penalty
+		: MATCH_SCORE; // match
 }
 
 //compute alignment score based on simple score matrix: match is 1, mismatch/deletion/insertion is -1
 template <class T>
-static void AssignScores_std(T* temp, T H_im1_jm1, T H_im1_j, T H_i_jm1, const char seq_a_im1, const char seq_b_jm1)
+static void AssignScores_std(T* temp,
+		T H_im1_jm1, T H_im1_j, T H_i_jm1,
+		const char seq_a_im1, const char seq_b_jm1,
+		bool prev_a_gap, bool prev_b_gap)
 {
-  temp[0] = H_im1_jm1+sim_score(seq_a_im1,seq_b_jm1);
-  temp[1] = H_im1_j+sim_score(seq_b_jm1, GAP);
-  temp[2] = H_i_jm1+sim_score(seq_a_im1, GAP);
+	// match or mismatch
+	temp[0] = H_im1_jm1+sim_score(seq_a_im1,seq_b_jm1, false);
+	// deletion in B
+	temp[1] = H_im1_j+sim_score(seq_a_im1, GAP, prev_b_gap);
+	// deletion in A
+	temp[2] = H_i_jm1+sim_score(GAP, seq_b_jm1, prev_a_gap);
 }
