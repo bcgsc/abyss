@@ -268,6 +268,16 @@ out_degree(
 	return g[u].getExtension(SENSE).outDegree();
 }
 
+// BidirectionalGraph
+
+static inline
+graph_traits<SequenceCollectionHash>::degree_size_type
+in_degree(graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+		const SequenceCollectionHash& g)
+{
+	return g[u].getExtension(ANTISENSE).outDegree();
+}
+
 // AdjacencyGraph
 
 static inline
