@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstring> // for memcpy
 #include <stdint.h>
+#include <ostream>
 
 /** A k-mer. */
 class Kmer
@@ -75,6 +76,11 @@ class Kmer
 	{
 		memcpy(m_seq, src, sizeof m_seq);
 		return sizeof m_seq;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const Kmer& o)
+	{
+		return out << o.str();
 	}
 
   private:

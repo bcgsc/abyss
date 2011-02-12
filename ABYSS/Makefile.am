@@ -3,7 +3,8 @@ bin_PROGRAMS = ABYSS
 ABYSS_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Assembly \
 	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Graph
 
 ABYSS_LDADD = \
 	$(top_builddir)/Assembly/libassembly.a \

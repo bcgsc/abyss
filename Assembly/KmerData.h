@@ -5,6 +5,7 @@
 #include "SeqExt.h"
 #include <cassert>
 #include <stdint.h>
+#include <ostream>
 
 enum SeqFlag
 {
@@ -29,7 +30,7 @@ static inline SeqFlag complement(SeqFlag flag)
 struct ExtensionRecord
 {
 	SeqExt dir[2];
-	ExtensionRecord operator ~()
+	ExtensionRecord operator ~() const
 	{
 		ExtensionRecord o;
 		o.dir[SENSE] = dir[ANTISENSE].complement();
@@ -131,6 +132,24 @@ class KmerData
 	bool isAmbiguous(extDirection dir) const
 	{
 		return m_ext.dir[dir].isAmbiguous();
+	}
+
+	/** Return the complement of this data. */
+	KmerData operator~() const
+	{
+		KmerData o;
+		o.m_flags = complement(SeqFlag(m_flags));
+		o.m_multiplicity[0] = m_multiplicity[1];
+		o.m_multiplicity[1] = m_multiplicity[0];
+		o.m_ext = ~m_ext;
+		return o;
+	}
+
+	friend std::ostream& operator<<(
+			std::ostream& out, const KmerData& o)
+	{
+		return out << "C="
+			<< o.m_multiplicity[0] + o.m_multiplicity[1];
 	}
 
   protected:

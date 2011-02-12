@@ -8,6 +8,10 @@
 class SequenceCollectionHash : public ISequenceCollection
 {
 	public:
+		typedef SequenceDataHash::key_type key_type;
+		typedef SequenceDataHash::mapped_type mapped_type;
+		typedef SequenceDataHash::value_type value_type;
+
 		SequenceCollectionHash();
 
 		void add(const Kmer& seq);
@@ -50,6 +54,15 @@ class SequenceCollectionHash : public ISequenceCollection
 				ExtensionRecord& extRecord, int& multiplicity) const;
 
 		const value_type& getSeqAndData(const Kmer& key) const;
+
+		/** Return the data associated with the specified key. */
+		const mapped_type operator[](const key_type& key) const
+		{
+			bool rc;
+			SequenceCollectionHash::const_iterator it = find(key, rc);
+			assert(it != m_data.end());
+			return rc ? ~it->second : it->second;
+		}
 
 		iterator begin() { return m_data.begin(); }
 		const_iterator begin() const { return m_data.begin(); }
@@ -110,6 +123,205 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		/** Whether adjacency information has been loaded. */
 		bool m_adjacencyLoaded;
+};
+
+#include "Graph.h"
+#include <utility>
+
+template <>
+struct graph_traits<SequenceCollectionHash> {
+	// Graph
+	typedef SequenceCollectionHash::key_type vertex_descriptor;
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+	typedef boost::directed_tag directed_category;
+	struct traversal_category
+		: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
+		{ };
+	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+#else
+	typedef void directed_category;
+	typedef void traversal_category;
+	typedef void edge_parallel_category;
+#endif
+
+	// IncidenceGraph
+	typedef std::pair<vertex_descriptor, vertex_descriptor>
+		edge_descriptor;
+	typedef unsigned degree_size_type;
+	typedef void out_edge_iterator;
+
+	// BidirectionalGraph
+	typedef void in_edge_iterator;
+
+	// VertexListGraph
+	typedef size_t vertices_size_type;
+
+	// EdgeListGraph
+	typedef void edge_iterator;
+	typedef void edges_size_type;
+
+// AdjacencyGraph
+/** Iterate through the adjacent vertices of a vertex. */
+struct adjacency_iterator
+	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+{
+	/** Skip to the next edge that is present. */
+	void next()
+	{
+		for (; m_i < NUM_BASES && !m_adj.checkBase(m_i); m_i++) {
+		}
+		if (m_i < NUM_BASES)
+			m_v.setLastBase(SENSE, m_i);
+	}
+
+  public:
+	adjacency_iterator() : m_i(NUM_BASES) { }
+
+	adjacency_iterator(
+			vertex_descriptor u, SeqExt adj)
+		: m_v(u), m_adj(adj), m_i(0)
+	{
+		m_v.shift(SENSE);
+		next();
+	}
+
+	const vertex_descriptor& operator*() const
+	{
+		assert(m_i < NUM_BASES);
+		return m_v;
+	}
+
+	bool operator==(const adjacency_iterator& it) const
+	{
+		return m_i == it.m_i;
+	}
+
+	bool operator!=(const adjacency_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	adjacency_iterator& operator++()
+	{
+		assert(m_i < NUM_BASES);
+		++m_i;
+		next();
+		return *this;
+	}
+
+  private:
+	vertex_descriptor m_v;
+	SeqExt m_adj;
+	short m_i;
+}; // adjacency_iterator
+
+// VertexListGraph
+/** Iterate through the vertices of this graph. */
+struct vertex_iterator
+	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+{
+	typedef SequenceCollectionHash::const_iterator It;
+
+  public:
+	vertex_iterator(const It& it) : m_it(it), m_sense(false) { }
+
+	const vertex_descriptor operator*() const
+	{
+		return m_sense ? reverseComplement(m_it->first) : m_it->first;
+	}
+
+	bool operator==(const vertex_iterator& it) const
+	{
+		return m_it == it.m_it && m_sense == it.m_sense;
+	}
+
+	bool operator!=(const vertex_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	vertex_iterator& operator++()
+	{
+		if (m_sense) {
+			++m_it;
+			m_sense = false;
+		} else
+			m_sense = true;
+		return *this;
+	}
+
+  private:
+	It m_it;
+	bool m_sense;
+}; // vertex_iterator
+
+}; // graph_traits<SequenceCollectionHash>
+
+// IncidenceGraph
+
+static inline
+graph_traits<SequenceCollectionHash>::degree_size_type
+out_degree(
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+		const SequenceCollectionHash& g)
+{
+	return g[u].getExtension(SENSE).outDegree();
+}
+
+// AdjacencyGraph
+
+static inline
+std::pair<graph_traits<SequenceCollectionHash>::adjacency_iterator,
+	graph_traits<SequenceCollectionHash>::adjacency_iterator>
+adjacent_vertices(
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+		const SequenceCollectionHash& g)
+{
+	typedef graph_traits<SequenceCollectionHash>::adjacency_iterator
+		adjacency_iterator;
+	SeqExt adj = g[u].getExtension(SENSE);
+	return std::make_pair(adjacency_iterator(u, adj),
+			adjacency_iterator());
+}
+
+// VertexListGraph
+
+static inline
+std::pair<graph_traits<SequenceCollectionHash>::vertex_iterator,
+	graph_traits<SequenceCollectionHash>::vertex_iterator>
+vertices(const SequenceCollectionHash& g)
+{
+	return std::make_pair(g.begin(), g.end());
+}
+
+// PropertyGraph
+
+static inline
+bool get(vertex_removed_t, const SequenceCollectionHash& g,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return g.getSeqAndData(u).second.deleted();
+}
+
+static inline
+no_property get(edge_bundle_t, const SequenceCollectionHash&,
+		graph_traits<SequenceCollectionHash>::edge_descriptor)
+{
+	return no_property();
+}
+
+// VertexMutablePropertyGraph
+
+template <>
+struct vertex_property<SequenceCollectionHash> {
+	typedef SequenceCollectionHash::mapped_type type;
+};
+
+// EdgeMutablePropertyGraph
+
+template <>
+struct edge_property<SequenceCollectionHash> {
+	typedef no_property type;
 };
 
 #endif

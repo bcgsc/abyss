@@ -64,6 +64,7 @@ static const char USAGE_MESSAGE[] =
 
 /** k-mer length */
 int kmerSize = -1;
+int k; // used by Graph
 
 /** k-mer range */
 int kMin = -1;
@@ -163,6 +164,7 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'k':
 				arg >> kmerSize;
+				k = kmerSize;
 				kMin = kmerSize;
 				switch (arg.get()) {
 				  case ',':
