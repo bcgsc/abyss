@@ -1,6 +1,7 @@
 #ifndef DOTIO_H
 #define DOTIO_H 1
 
+#include "ContigID.h" // for ContigID::lock
 #include "Graph/Options.h"
 #include "Graph.h"
 #include "IOUtil.h"
@@ -8,6 +9,7 @@
 #include <cstdlib> // for exit
 #include <istream>
 #include <ostream>
+#include <sstream>
 
 template <typename V, typename VertexProp>
 void write_vertex(std::ostream& out,

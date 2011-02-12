@@ -232,14 +232,16 @@ add_edge(
 
 template <class G>
 typename vertex_property<G>::type
-get(vertex_bundle_t, const G& g, typename G::vertex_descriptor u)
+get(vertex_bundle_t, const G& g,
+		typename graph_traits<G>::vertex_descriptor u)
 {
 	return g[u];
 }
 
 template <class G>
 typename edge_property<G>::type
-get(edge_bundle_t, const G& g, typename G::edge_descriptor e)
+get(edge_bundle_t, const G& g,
+		typename graph_traits<G>::edge_descriptor e)
 {
 	return g[e];
 }
