@@ -52,6 +52,14 @@ class Kmer
 
 	void reverseComplement();
 
+	/** Return the reverse complement of this k-mer. */
+	Kmer operator~() const
+	{
+		Kmer rc(*this);
+		rc.reverseComplement();
+		return rc;
+	}
+
 	bool isPalindrome() const;
 	bool isPalindrome(extDirection dir) const;
 	void setLastBase(extDirection dir, uint8_t base);
@@ -114,12 +122,10 @@ class Kmer
 	char m_seq[NUM_BYTES];
 };
 
-/** Return the reverse complement of the specified sequence. */
+/** Return the reverse complement of the specified k-mer. */
 static inline Kmer reverseComplement(const Kmer& seq)
 {
-	Kmer rc(seq);
-	rc.reverseComplement();
-	return rc;
+	return ~seq;
 }
 
 struct hashKmer
