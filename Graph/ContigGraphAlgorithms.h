@@ -39,7 +39,7 @@ bool contiguous_out(const Graph& g,
 /** Return whether the incoming edge of vertex u is contiguous. */
 template<typename Graph>
 bool contiguous_in(const Graph& g,
-		typename Graph::vertex_descriptor u)
+		typename graph_traits<Graph>::vertex_descriptor u)
 {
 	return contiguous_out(g, ~u);
 }
