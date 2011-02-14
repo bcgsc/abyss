@@ -24,7 +24,7 @@ static void writeContig(ostream& out, const Graph& g, const Kmer& u)
 		v = *adjacent_vertices(v, g).first;
 	}
 	out << u << " -> " << v;
-	if (n > 1)
+	if (n > 2)
 		out << " [label=" << n << ']';
 	out << '\n';
 }
