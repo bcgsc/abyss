@@ -24,7 +24,7 @@ static void write_contig(ostream& out, const Graph& g, const Kmer& u)
 		v = *adjacent_vertices(v, g).first;
 	}
 	if (n > 1)
-		out << u << "->" << v << "[label=\"" << n << "\"]\n";
+		out << u << "->" << v << "[label=" << n << "]\n";
 }
 
 /** Write out the contigs that split at the specified sequence. */
