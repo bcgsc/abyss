@@ -357,7 +357,7 @@ int main(int argc, char** argv)
 	vector<string> pathIDs;
 	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
 	if (opt::verbose > 0)
-		cerr << "Total number of paths: " << paths.size() << '\n';
+		cerr << "Number of paths: " << paths.size() << '\n';
 
 	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
@@ -373,8 +373,7 @@ int main(int argc, char** argv)
 			count += prevPaths.size();
 		}
 		if (opt::verbose > 0)
-			cerr << "Total number of previous paths: "
-				<< count << '\n';
+			cerr << "Number of previous paths: " << count << '\n';
 	}
 
 	// Record all the contigs that are seeds.
