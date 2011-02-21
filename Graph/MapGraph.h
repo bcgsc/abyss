@@ -2,6 +2,7 @@
 #define MAPGRAPH_H 1
 
 #include "Graph.h"
+#include <cassert>
 #include <map>
 #include <utility> // for make_pair
 
@@ -236,17 +237,31 @@ get(edge_bundle_t, const std::map<V, T>&,
 
 // VertexMutablePropertyGraph
 
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+namespace boost {
+#endif
 template <typename V, typename T>
-struct vertex_property<std::map<V, T> > {
+class vertex_property<std::map<V, T> > {
+  public:
 	typedef no_property type;
 };
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+} // namespace boost
+#endif
 
 // EdgeMutablePropertyGraph
 
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+namespace boost {
+#endif
 template <typename V, typename T>
-struct edge_property<std::map<V, T> > {
+class edge_property<std::map<V, T> > {
+  public:
 	typedef typename T::mapped_type type;
 };
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+} // namespace boost
+#endif
 
 template <typename V, typename T>
 std::pair<

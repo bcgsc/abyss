@@ -95,6 +95,7 @@ class out_edge_iterator
 	typedef typename Edges::const_iterator const_iterator;
 
   public:
+	out_edge_iterator() { }
 	out_edge_iterator(const const_iterator& it,
 			vertex_descriptor src) : m_it(it), m_src(src) { }
 
@@ -499,30 +500,211 @@ namespace std {
 			DirectedGraph<VertexProp, EdgeProp>& b) { a.swap(b); }
 }
 
+// IncidenceGraph
+
+template <typename VP, typename EP>
+std::pair<
+	typename DirectedGraph<VP, EP>::out_edge_iterator,
+	typename DirectedGraph<VP, EP>::out_edge_iterator>
+out_edges(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		const DirectedGraph<VP, EP>& g)
+{
+	return g.out_edges(u);
+}
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::degree_size_type
+out_degree(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		const DirectedGraph<VP, EP>& g)
+{
+	return g.out_degree(u);
+}
+
+// AdjacencyGraph
+
+template <typename VP, typename EP>
+std::pair<
+	typename DirectedGraph<VP, EP>::adjacency_iterator,
+	typename DirectedGraph<VP, EP>::adjacency_iterator>
+adjacent_vertices(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		const DirectedGraph<VP, EP>& g)
+{
+	return g.adjacent_vertices(u);
+}
+
+// VertexListGraph
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertices_size_type
+num_vertices(const DirectedGraph<VP, EP>& g)
+{
+	return g.num_vertices();
+}
+
+template <typename VP, typename EP>
+std::pair<typename DirectedGraph<VP, EP>::vertex_iterator,
+	typename DirectedGraph<VP, EP>::vertex_iterator>
+vertices(const DirectedGraph<VP, EP>& g)
+{
+	return g.vertices();
+}
+
+// EdgeListGraph
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::edges_size_type
+num_edges(const DirectedGraph<VP, EP>& g)
+{
+	return g.num_edges();
+}
+
+template <typename VP, typename EP>
+std::pair<typename DirectedGraph<VP, EP>::edge_iterator,
+	typename DirectedGraph<VP, EP>::edge_iterator>
+edges(const DirectedGraph<VP, EP>& g)
+{
+	return g.edges();
+}
+
+// AdjacencyMatrix
+
+template <typename VP, typename EP>
+std::pair<typename DirectedGraph<VP, EP>::edge_descriptor, bool>
+edge(
+	typename DirectedGraph<VP, EP>::vertex_descriptor u,
+	typename DirectedGraph<VP, EP>::vertex_descriptor v,
+	const DirectedGraph<VP, EP>& g)
+{
+	return g.edge(u, v);
+}
+
+// VertexMutableGraph
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertex_descriptor
+add_vertex(DirectedGraph<VP, EP>& g)
+{
+	return g.add_vertex();
+}
+
+template <typename VP, typename EP>
+void
+remove_vertex(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		DirectedGraph<VP, EP>& g)
+{
+	g.remove_vertex(u);
+}
+
+// EdgeMutableGraph
+
+template <typename VP, typename EP>
+void
+clear_vertex(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		DirectedGraph<VP, EP>& g)
+{
+	g.clear_vertex(u);
+}
+
+template <typename VP, typename EP>
+std::pair<typename DirectedGraph<VP, EP>::edge_descriptor, bool>
+add_edge(
+	typename DirectedGraph<VP, EP>::vertex_descriptor u,
+	typename DirectedGraph<VP, EP>::vertex_descriptor v,
+	DirectedGraph<VP, EP>& g)
+{
+	return g.add_edge(u, v);
+}
+
+template <typename VP, typename EP>
+void
+remove_edge(
+	typename DirectedGraph<VP, EP>::vertex_descriptor u,
+	typename DirectedGraph<VP, EP>::vertex_descriptor v,
+	DirectedGraph<VP, EP>& g)
+{
+	g.remove_edge(u, v);
+}
+
+template <typename VP, typename EP>
+void
+remove_edge(
+		typename DirectedGraph<VP, EP>::edge_descriptor e,
+		DirectedGraph<VP, EP>& g)
+{
+	g.remove_edge(e);
+}
+
 // PropertyGraph
 
 /** Return true if this vertex has been removed. */
-template <class G>
-bool get(vertex_removed_t tag,
-		const G& g, typename G::vertex_descriptor u)
+template <typename VP, typename EP>
+bool get(vertex_removed_t tag, const DirectedGraph<VP, EP>& g,
+		typename DirectedGraph<VP, EP>::vertex_descriptor u)
 {
 	return g.get(tag, u);
 }
 
-template <class G>
-void put(vertex_removed_t,
-		G& g, typename G::vertex_descriptor u, bool removed)
+template <typename VP, typename EP>
+void put(vertex_removed_t, DirectedGraph<VP, EP>& g,
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		bool removed)
 {
 	assert(removed);
 	return g.remove_vertex(u);
 }
 
 /** Return the properties of the edge of iterator eit. */
-template <class G>
-const typename G::edge_property_type&
-get(edge_bundle_t, const G&, typename G::out_edge_iterator eit)
+template <typename VP, typename EP>
+const typename DirectedGraph<VP, EP>::edge_property_type&
+get(edge_bundle_t, const DirectedGraph<VP, EP>&,
+		typename DirectedGraph<VP, EP>::out_edge_iterator eit)
 {
 	return eit.get_property();
+}
+
+// PropertyGraph
+
+template <typename VP, typename EP>
+const VP&
+get(vertex_bundle_t, const DirectedGraph<VP, EP>& g,
+		typename DirectedGraph<VP, EP>::vertex_descriptor u)
+{
+	return g[u];
+}
+
+template <typename VP, typename EP>
+const EP&
+get(edge_bundle_t, const DirectedGraph<VP, EP>& g,
+		typename DirectedGraph<VP, EP>::edge_descriptor e)
+{
+	return g[e];
+}
+
+// VertexMutablePropertyGraph
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertex_descriptor
+add_vertex(const VP& vp, DirectedGraph<VP, EP>& g)
+{
+	return g.add_vertex(vp);
+}
+
+// EdgeMutablePropertyGraph
+
+template <typename VP, typename EP>
+std::pair<typename DirectedGraph<VP, EP>::edge_descriptor, bool>
+add_edge(
+	typename DirectedGraph<VP, EP>::vertex_descriptor u,
+	typename DirectedGraph<VP, EP>::vertex_descriptor v,
+	const typename DirectedGraph<VP, EP>::edge_property_type& ep,
+	DirectedGraph<VP, EP>& g)
+{
+	return g.add_edge(u, v, ep);
 }
 
 #endif

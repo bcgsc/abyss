@@ -1,8 +1,10 @@
 #ifndef SEQUENCECOLLECTION_H
 #define SEQUENCECOLLECTION_H 1
 
+#include "Graph.h"
 #include "ISequenceCollection.h"
 #include <cassert>
+#include <utility>
 
 /** A map of Kmer to KmerData. */
 class SequenceCollectionHash : public ISequenceCollection
@@ -11,6 +13,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
+		typedef mapped_type vertex_property_type;
+		typedef no_property edge_property_type;
 
 		SequenceCollectionHash();
 
@@ -125,8 +129,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool m_adjacencyLoaded;
 };
 
-#include "Graph.h"
-#include <utility>
+// Graph
 
 template <>
 struct graph_traits<SequenceCollectionHash> {
@@ -319,19 +322,5 @@ no_property get(edge_bundle_t, const SequenceCollectionHash&,
 {
 	return no_property();
 }
-
-// VertexMutablePropertyGraph
-
-template <>
-struct vertex_property<SequenceCollectionHash> {
-	typedef SequenceCollectionHash::mapped_type type;
-};
-
-// EdgeMutablePropertyGraph
-
-template <>
-struct edge_property<SequenceCollectionHash> {
-	typedef no_property type;
-};
 
 #endif

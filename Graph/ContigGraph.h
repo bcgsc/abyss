@@ -2,6 +2,7 @@
 #define CONTIGGRAPH_H 1
 
 #include "Graph.h"
+#include <cassert>
 #include <utility>
 
 /** A contig graph is a directed graph with the property that
@@ -161,6 +162,226 @@ namespace std {
 	{
 		a.swap(b);
 	}
+}
+
+// IncidenceGraph
+
+template <typename G>
+std::pair<
+	typename ContigGraph<G>::out_edge_iterator,
+	typename ContigGraph<G>::out_edge_iterator>
+out_edges(
+		typename ContigGraph<G>::vertex_descriptor u,
+		const ContigGraph<G>& g)
+{
+	return g.out_edges(u);
+}
+
+template <typename G>
+typename ContigGraph<G>::degree_size_type
+out_degree(
+		typename ContigGraph<G>::vertex_descriptor u,
+		const ContigGraph<G>& g)
+{
+	return g.out_degree(u);
+}
+
+// BidirectionalGraph
+
+template <typename G>
+typename ContigGraph<G>::degree_size_type
+in_degree(
+		typename ContigGraph<G>::vertex_descriptor u,
+		const ContigGraph<G>& g)
+{
+	return g.in_degree(u);
+}
+
+// AdjacencyGraph
+
+template <typename G>
+std::pair<
+	typename ContigGraph<G>::adjacency_iterator,
+	typename ContigGraph<G>::adjacency_iterator>
+adjacent_vertices(
+		typename ContigGraph<G>::vertex_descriptor u,
+		const ContigGraph<G>& g)
+{
+	return g.adjacent_vertices(u);
+}
+
+// VertexListGraph
+
+template <typename G>
+typename ContigGraph<G>::vertices_size_type
+num_vertices(const ContigGraph<G>& g)
+{
+	return g.num_vertices();
+}
+
+template <typename G>
+std::pair<typename ContigGraph<G>::vertex_iterator,
+	typename ContigGraph<G>::vertex_iterator>
+vertices(const ContigGraph<G>& g)
+{
+	return g.vertices();
+}
+
+// EdgeListGraph
+
+template <typename G>
+typename ContigGraph<G>::edges_size_type
+num_edges(const ContigGraph<G>& g)
+{
+	return g.num_edges();
+}
+
+template <typename G>
+std::pair<typename ContigGraph<G>::edge_iterator,
+	typename ContigGraph<G>::edge_iterator>
+edges(const ContigGraph<G>& g)
+{
+	return g.edges();
+}
+
+// AdjacencyMatrix
+
+template <typename G>
+std::pair<typename ContigGraph<G>::edge_descriptor, bool>
+edge(
+	typename ContigGraph<G>::vertex_descriptor u,
+	typename ContigGraph<G>::vertex_descriptor v,
+	const ContigGraph<G>& g)
+{
+	return g.edge(u, v);
+}
+
+// VertexMutableGraph
+
+template <typename G>
+typename ContigGraph<G>::vertex_descriptor
+add_vertex(ContigGraph<G>& g)
+{
+	return g.add_vertex();
+}
+
+template <typename G>
+void
+clear_vertex(
+		typename ContigGraph<G>::vertex_descriptor u,
+		ContigGraph<G>& g)
+{
+	g.clear_vertex(u);
+}
+
+template <typename G>
+void
+remove_vertex(
+		typename ContigGraph<G>::vertex_descriptor u,
+		ContigGraph<G>& g)
+{
+	g.remove_vertex(u);
+}
+
+// EdgeMutableGraph
+
+template <typename G>
+std::pair<typename ContigGraph<G>::edge_descriptor, bool>
+add_edge(
+	typename ContigGraph<G>::vertex_descriptor u,
+	typename ContigGraph<G>::vertex_descriptor v,
+	ContigGraph<G>& g)
+{
+	return g.add_edge(u, v);
+}
+
+template <typename G>
+void
+remove_edge(
+	typename ContigGraph<G>::vertex_descriptor u,
+	typename ContigGraph<G>::vertex_descriptor v,
+	ContigGraph<G>& g)
+{
+	return g.remove_edge(u, v);
+}
+
+template <typename G>
+void
+remove_edge(
+		typename ContigGraph<G>::edge_descriptor e,
+		ContigGraph<G>& g)
+{
+	g.remove_edge(e);
+}
+
+// PropertyGraph
+
+/** Return true if this vertex has been removed. */
+template <typename G>
+bool get(vertex_removed_t tag, const ContigGraph<G>& g,
+		typename ContigGraph<G>::vertex_descriptor u)
+{
+	return g.get(tag, u);
+}
+
+template <typename G>
+void put(vertex_removed_t, ContigGraph<G>& g,
+		typename ContigGraph<G>::vertex_descriptor u,
+		bool removed)
+{
+	assert(removed);
+	return g.remove_vertex(u);
+}
+
+/** Return the properties of the edge of iterator eit. */
+template <typename G>
+const typename ContigGraph<G>::edge_property_type&
+get(edge_bundle_t, const ContigGraph<G>&,
+		typename ContigGraph<G>::out_edge_iterator eit)
+{
+	return eit.get_property();
+}
+
+// PropertyGraph
+
+template <typename G>
+typename vertex_property<G>::type
+get(vertex_bundle_t, const ContigGraph<G>& g,
+		typename ContigGraph<G>::vertex_descriptor u)
+{
+	return g[u];
+}
+
+template <typename G>
+typename edge_property<G>::type
+get(edge_bundle_t, const ContigGraph<G>& g,
+		typename ContigGraph<G>::edge_descriptor e)
+{
+	return g[e];
+}
+
+// VertexMutablePropertyGraph
+
+template <typename G>
+typename ContigGraph<G>::vertex_descriptor
+add_vertex(
+		const typename vertex_property<G>::type& vp,
+		ContigGraph<G>& g)
+{
+	return g.add_vertex(vp);
+}
+
+// EdgeMutablePropertyGraph
+
+template <typename G>
+std::pair<typename ContigGraph<G>::edge_descriptor, bool>
+add_edge(
+	typename ContigGraph<G>::vertex_descriptor u,
+	typename ContigGraph<G>::vertex_descriptor v,
+	const typename ContigGraph<G>::edge_property_type& ep,
+	ContigGraph<G>& g)
+{
+	return g.add_edge(u, v, ep);
 }
 
 #endif

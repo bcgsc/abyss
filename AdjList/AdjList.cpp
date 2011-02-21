@@ -103,7 +103,7 @@ static void addOverlapsSA(Graph& g, const SuffixArray& sa,
 			if (seen.insert(u).second) {
 				// Add the longest overlap between two vertices.
 				unsigned overlap = it->first.size();
-				add_edge<DG>(u, v, -overlap, g);
+				add_edge(u, v, -overlap, static_cast<DG&>(g));
 			}
 		}
 	}
@@ -246,7 +246,8 @@ int main(int argc, char** argv)
 		const SuffixMap::mapped_type& edges = suffixMap[*it];
 		for (SuffixMap::mapped_type::const_iterator
 				itu = edges.begin(); itu != edges.end(); ++itu)
-			add_edge<DG>(~v, ~*itu, -(int)opt::k + 1, g);
+			add_edge(~v, ~*itu, -(int)opt::k + 1,
+					static_cast<DG&>(g));
 	}
 	SuffixMap().swap(suffixMap);
 

@@ -1,6 +1,13 @@
 #ifndef GRAPH_H
 #define GRAPH_H 1
 
+#include "config.h"
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+# include <boost/graph/graph_traits.hpp>
+# include <boost/graph/properties.hpp>
+#endif
+#include <istream>
+#include <ostream>
 #include <utility> // for pair
 
 // Graph
@@ -33,18 +40,23 @@ struct graph_traits {
 	typedef typename G::edges_size_type edges_size_type;
 };
 
+// Properties
+
+/** A property indicating that this vertex has been removed. */
+enum vertex_removed_t { vertex_removed };
+
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+using boost::edge_bundle;
+using boost::edge_bundle_t;
+using boost::edge_property;
+using boost::no_property;
+using boost::vertex_bundle;
+using boost::vertex_bundle_t;
+using boost::vertex_property;
+#else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+
 // IncidenceGraph
 
-template <class G>
-std::pair<
-	typename G::out_edge_iterator,
-	typename G::out_edge_iterator>
-out_edges(typename G::vertex_descriptor u, const G& g)
-{
-	return g.out_edges(u);
-}
-
-#if !HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 template <class G>
 typename graph_traits<G>::vertex_descriptor
 source(std::pair<typename graph_traits<G>::vertex_descriptor,
@@ -60,191 +72,31 @@ target(std::pair<typename graph_traits<G>::vertex_descriptor,
 {
 	return e.second;
 }
-#endif
-
-template <class G>
-typename G::degree_size_type
-out_degree(typename G::vertex_descriptor u, const G& g)
-{
-	return g.out_degree(u);
-}
-
-// BidirectionalGraph
-
-template <class G>
-typename G::degree_size_type
-in_degree(typename G::vertex_descriptor u, const G& g)
-{
-	return g.in_degree(u);
-}
-
-// AdjacencyGraph
-
-template <class G>
-std::pair<
-	typename G::adjacency_iterator,
-	typename G::adjacency_iterator>
-adjacent_vertices(typename G::vertex_descriptor u, const G& g)
-{
-	return g.adjacent_vertices(u);
-}
-
-// VertexListGraph
-
-template <class G>
-typename G::vertices_size_type
-num_vertices(const G& g)
-{
-	return g.num_vertices();
-}
-
-template <class G>
-std::pair<typename G::vertex_iterator, typename G::vertex_iterator>
-vertices(const G& g)
-{
-	return g.vertices();
-}
-
-// EdgeListGraph
-
-template <class G>
-typename G::edges_size_type
-num_edges(const G& g)
-{
-	return g.num_edges();
-}
-
-template <class G>
-std::pair<typename G::edge_iterator, typename G::edge_iterator>
-edges(const G& g)
-{
-	return g.edges();
-}
-
-// AdjacencyMatrix
-
-template <class G>
-std::pair<typename G::edge_descriptor, bool>
-edge(
-	typename G::vertex_descriptor u,
-	typename G::vertex_descriptor v,
-	const G& g)
-{
-	return g.edge(u, v);
-}
-
-// VertexMutableGraph
-
-template <class G>
-typename G::vertex_descriptor
-add_vertex(G& g)
-{
-	return g.add_vertex();
-}
-
-template <class G>
-void
-clear_vertex(typename G::vertex_descriptor u, G& g)
-{
-	g.clear_vertex(u);
-}
-
-template <class G>
-void
-remove_vertex(typename G::vertex_descriptor u, G& g)
-{
-	g.remove_vertex(u);
-}
-
-// EdgeMutableGraph
-
-template <class G>
-std::pair<typename G::edge_descriptor, bool>
-add_edge(
-	typename G::vertex_descriptor u,
-	typename G::vertex_descriptor v,
-	G& g)
-{
-	return g.add_edge(u, v);
-}
-
-template <class G>
-void
-remove_edge(
-	typename G::vertex_descriptor u,
-	typename G::vertex_descriptor v,
-	G& g)
-{
-	return g.remove_edge(u, v);
-}
-
-template <class G>
-void
-remove_edge(typename G::edge_descriptor e, G& g)
-{
-	g.remove_edge(e);
-}
 
 // Properties
+
+/** No properties. */
+struct no_property
+{
+	friend std::ostream& operator<<(
+			std::ostream& out, const no_property&)
+	{
+		return out;
+	}
+
+	friend std::istream& operator>>(std::istream& in, no_property&)
+	{
+		return in;
+	}
+};
 
 /** A vertex bundle property. */
 enum vertex_bundle_t { vertex_bundle };
 
-/** A property indicating that this vertex has been removed. */
-enum vertex_removed_t { vertex_removed };
-
 /** An edge bundle property. */
 enum edge_bundle_t { edge_bundle };
 
-// VertexMutablePropertyGraph
-
-template <class Graph>
-struct vertex_property {
-	typedef typename Graph::vertex_property_type type;
-};
-
-template <class G>
-typename G::vertex_descriptor
-add_vertex(const typename G::vertex_property_type& vp, G& g)
-{
-	return g.add_vertex(vp);
-}
-
-// EdgeMutablePropertyGraph
-
-template <class Graph>
-struct edge_property {
-	typedef typename Graph::edge_property_type type;
-};
-
-template <class G>
-std::pair<typename G::edge_descriptor, bool>
-add_edge(
-	typename G::vertex_descriptor u,
-	typename G::vertex_descriptor v,
-	const typename G::edge_property_type& ep,
-	G& g)
-{
-	return g.add_edge(u, v, ep);
-}
-
 // PropertyGraph
-
-template <class G>
-typename vertex_property<G>::type
-get(vertex_bundle_t, const G& g,
-		typename graph_traits<G>::vertex_descriptor u)
-{
-	return g[u];
-}
-
-template <class G>
-typename edge_property<G>::type
-get(edge_bundle_t, const G& g,
-		typename graph_traits<G>::edge_descriptor e)
-{
-	return g[e];
-}
 
 template<typename Graph, typename Descriptor,
 	typename Bundle, typename T>
@@ -253,22 +105,22 @@ T get(T Bundle::* tag, const Graph& g, Descriptor x)
 	return g[x].*tag;
 }
 
-#include <istream>
-#include <ostream>
+// VertexMutablePropertyGraph
 
-/** No properties. */
-struct no_property
-{
-	friend std::ostream& operator <<(std::ostream& out,
-			const no_property&)
-	{
-		return out;
-	}
-
-	friend std::istream& operator >>(std::istream& in, no_property&)
-	{
-		return in;
-	}
+template <typename Graph>
+class vertex_property {
+  public:
+	typedef typename Graph::vertex_property_type type;
 };
+
+// EdgeMutablePropertyGraph
+
+template <typename Graph>
+class edge_property {
+  public:
+	typedef typename Graph::edge_property_type type;
+};
+
+#endif // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 #endif
