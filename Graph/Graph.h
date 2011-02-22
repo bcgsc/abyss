@@ -49,6 +49,13 @@ using boost::edge_bundle_t;
 using boost::no_property;
 using boost::vertex_bundle;
 using boost::vertex_bundle_t;
+
+// Properties
+
+namespace boost {
+	BOOST_INSTALL_PROPERTY(vertex, removed);
+}
+
 #else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 // IncidenceGraph
