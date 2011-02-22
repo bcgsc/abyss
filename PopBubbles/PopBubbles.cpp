@@ -48,7 +48,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=N          k-mer size\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
-"                        default is unlimited\n"
+"                        default is 10000\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
@@ -62,7 +62,7 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 
 	/** Pop bubbles shorter than this threshold. */
-	static unsigned maxLength = UINT_MAX;
+	static unsigned maxLength = 10000;
 
 	/** Minimum identity. */
 	static float identity = 0.9;
