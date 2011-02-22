@@ -7,9 +7,6 @@
 #include <cassert>
 #include <utility>
 #include <vector>
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
-# include <boost/graph/graph_traits.hpp>
-#endif
 
 /** A directed graph. */
 template <typename VertexProp = no_property,

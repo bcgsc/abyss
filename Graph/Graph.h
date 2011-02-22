@@ -48,11 +48,9 @@ enum vertex_removed_t { vertex_removed };
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 using boost::edge_bundle;
 using boost::edge_bundle_t;
-using boost::edge_property;
 using boost::no_property;
 using boost::vertex_bundle;
 using boost::vertex_bundle_t;
-using boost::vertex_property;
 #else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 // IncidenceGraph
@@ -105,6 +103,8 @@ T get(T Bundle::* tag, const Graph& g, Descriptor x)
 	return g[x].*tag;
 }
 
+#endif // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+
 // VertexMutablePropertyGraph
 
 template <typename Graph>
@@ -120,7 +120,5 @@ class edge_property {
   public:
 	typedef typename Graph::edge_property_type type;
 };
-
-#endif // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 #endif
