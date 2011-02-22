@@ -473,6 +473,9 @@ struct IsPathOverlap : unary_function<edge_descriptor, bool> {
 static void assembleOverlappingPaths(Graph& g,
 		Paths& paths, vector<string>& pathIDs)
 {
+	if (paths.empty())
+		return;
+
 	// Find overlapping paths.
 	Overlaps overlaps = findOverlaps(g, paths);
 	addPathOverlapEdges(g, paths, pathIDs, overlaps);
@@ -491,6 +494,7 @@ static void assembleOverlappingPaths(Graph& g,
 			IsPathOverlap(g, overlapMap));
 
 	// Merge overlapping paths.
+	assert(!pathIDs.empty());
 	ContigID::setNextContigID(pathIDs.back());
 	for (Paths::const_iterator it = merges.begin();
 			it != merges.end(); ++it) {
