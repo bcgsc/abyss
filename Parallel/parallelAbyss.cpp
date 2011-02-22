@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 	else
 		networkSeqs.run();
 
-	cout << "Synchronizing file system...\n";
+	logger(0) << "Synchronizing file system...\n";
 	sync();
 	MPI_Barrier(MPI_COMM_WORLD);
 
