@@ -6,8 +6,6 @@
 # include <boost/graph/graph_traits.hpp>
 # include <boost/graph/properties.hpp>
 #endif
-#include <istream>
-#include <ostream>
 #include <utility> // for pair
 
 // Graph
@@ -74,19 +72,7 @@ target(std::pair<typename graph_traits<G>::vertex_descriptor,
 // Properties
 
 /** No properties. */
-struct no_property
-{
-	friend std::ostream& operator<<(
-			std::ostream& out, const no_property&)
-	{
-		return out;
-	}
-
-	friend std::istream& operator>>(std::istream& in, no_property&)
-	{
-		return in;
-	}
-};
+struct no_property { };
 
 /** A vertex bundle property. */
 enum vertex_bundle_t { vertex_bundle };
