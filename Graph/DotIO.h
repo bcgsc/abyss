@@ -11,15 +11,18 @@
 #include <ostream>
 #include <sstream>
 
-template <typename V, typename VertexProp>
-void write_vertex(std::ostream& out,
-		V u, const VertexProp& vp)
+template <typename Graph, typename VertexProp>
+void write_vertex(std::ostream& out, const Graph& g,
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const VertexProp*)
 {
-	out << '"' << u << "\" [" << vp << "]\n";
+	out << '"' << u << "\" [" << get(vertex_bundle, g, u) << "]\n";
 }
 
-template <typename V>
-void write_vertex(std::ostream&, V, no_property)
+template <typename Graph>
+void write_vertex(std::ostream&, const Graph&,
+		typename graph_traits<Graph>::vertex_descriptor,
+		const no_property*)
 {
 }
 
@@ -74,6 +77,8 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 {
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
+	typedef typename vertex_property<Graph>::type
+		vertex_property_type;
 	typedef typename edge_property<Graph>::type edge_property_type;
 
 	out << "digraph adj {\n";
@@ -88,7 +93,7 @@ std::ostream& write_dot(std::ostream& out, const Graph& g)
 	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
 		if (get(vertex_removed, g, *u))
 			continue;
-		write_vertex(out, *u, get(vertex_bundle, g, *u));
+		write_vertex(out, g, *u, (vertex_property_type*)NULL);
 	}
 
 	// Edges
