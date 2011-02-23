@@ -59,7 +59,10 @@ static void assemble(const string& pathIn, const string& pathOut)
 	size_t numLoaded = g.size();
 	cout << "Loaded " << numLoaded << " k-mer\n";
 	g.shrink();
-	assert(!g.empty());
+	if (g.empty()) {
+		cerr << "error: no usable sequence\n";
+		exit(EXIT_FAILURE);
+	}
 
 	AssemblyAlgorithms::setCoverageParameters(
 			AssemblyAlgorithms::coverageHistogram(g));
