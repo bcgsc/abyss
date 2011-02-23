@@ -165,6 +165,7 @@ void merge(Graph& g, It first, It last)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
+	assert(first != last);
 	vertex_descriptor u = add_vertex(addProp(g, first, last), g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
