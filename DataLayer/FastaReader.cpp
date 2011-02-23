@@ -154,6 +154,7 @@ next_record:
 			assert(s.length() > 2);
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
+			q.erase(0, 2);
 		} else if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
