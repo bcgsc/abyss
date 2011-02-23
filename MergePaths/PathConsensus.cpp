@@ -890,8 +890,8 @@ int main(int argc, char** argv)
 		cerr << "Read " << paths.size() << " paths\n";
 
 	// Start numbering new contigs from the last
-	assert(!pathIDs.empty());
-	ContigID::setNextContigID(pathIDs.back());
+	if (!pathIDs.empty())
+		ContigID::setNextContigID(pathIDs.back());
 
 	// Prepare output fasta file
 	ofstream fa(opt::consensusPath.c_str());
