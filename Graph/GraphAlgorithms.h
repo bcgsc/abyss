@@ -16,16 +16,12 @@
 template <typename Graph, typename OutIt>
 void find_transitive_edges(const Graph& g, OutIt out)
 {
-	typedef typename graph_traits<Graph>::adjacency_iterator
-		adjacency_iterator;
-	typedef typename graph_traits<Graph>::edge_descriptor
-		edge_descriptor;
-	typedef typename graph_traits<Graph>::out_edge_iterator
-		out_edge_iterator;
-	typedef typename graph_traits<Graph>::vertex_descriptor
-		vertex_descriptor;
-	typedef typename graph_traits<Graph>::vertex_iterator
-		vertex_iterator;
+	typedef graph_traits<Graph> GTraits;
+	typedef typename GTraits::adjacency_iterator adjacency_iterator;
+	typedef typename GTraits::edge_descriptor edge_descriptor;
+	typedef typename GTraits::out_edge_iterator out_edge_iterator;
+	typedef typename GTraits::vertex_descriptor vertex_descriptor;
+	typedef typename GTraits::vertex_iterator vertex_iterator;
 
 	std::vector<bool> seen(num_vertices(g));
 	std::pair<vertex_iterator, vertex_iterator> urange = vertices(g);
