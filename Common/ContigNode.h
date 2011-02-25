@@ -159,4 +159,13 @@ static inline unsigned index(const ContigNode& o)
 	return o.index();
 }
 
+/** The vertex index property. */
+enum vertex_index_t { vertex_index } ;
+
+template <typename Graph>
+unsigned get(vertex_index_t, const Graph&, ContigNode u)
+{
+	return u.index();
+}
+
 #endif

@@ -3,7 +3,6 @@
 
 #include "Graph.h"
 #include <cassert>
-#include <set>
 #include <vector>
 
 /**
@@ -28,6 +27,7 @@ void find_transitive_edges(const Graph& g, OutIt out)
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
 
+	std::vector<bool> seen(num_vertices(g));
 	std::pair<vertex_iterator, vertex_iterator> urange = vertices(g);
 	for (vertex_iterator uit = urange.first;
 			uit != urange.second; ++uit) {
@@ -35,10 +35,14 @@ void find_transitive_edges(const Graph& g, OutIt out)
 		if (get(vertex_removed, g, u))
 			continue;
 
-		// Compute the set of vertices reachable in two hops.
-		std::set<vertex_descriptor> seen;
+		// Clear the colour of the adjacent vertices.
 		std::pair<adjacency_iterator, adjacency_iterator>
 			vrange = adjacent_vertices(u, g);
+		for (adjacency_iterator vit = vrange.first;
+				vit != vrange.second; ++vit)
+			seen[get(vertex_index, g, *vit)] = false;
+
+		// Set the colour of all vertices reachable in two hops.
 		for (adjacency_iterator vit = vrange.first;
 				vit != vrange.second; ++vit) {
 			vertex_descriptor v = *vit;
@@ -49,17 +53,18 @@ void find_transitive_edges(const Graph& g, OutIt out)
 					wit != wrange.second; ++wit) {
 				vertex_descriptor w = *wit;
 				assert(v != w); // no self loops
-				seen.insert(w);
+				seen[get(vertex_index, g, w)] = true;
 			}
 		}
 
+		// Find the transitive edges.
 		std::pair<out_edge_iterator, out_edge_iterator>
 			uvrange = out_edges(u, g);
 		for (out_edge_iterator uvit = uvrange.first;
 				uvit != uvrange.second; ++uvit) {
 			edge_descriptor uv = *uvit;
 			vertex_descriptor v = target(uv, g);
-			if (seen.count(v) > 0) {
+			if (seen[get(vertex_index, g, v)]) {
 				// The edge (u,v) is transitive. Mark it for removal.
 				*out++ = uv;
 			}
