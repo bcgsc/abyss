@@ -561,10 +561,12 @@ int main(int argc, char** argv)
 		unsigned nbefore = num_edges(gout);
 		unsigned nremoved = remove_transitive_edges(gout);
 		unsigned nafter = num_edges(gout);
-		if (opt::verbose > 0)
+		if (opt::verbose > 0) {
 			cerr << "Removed " << nremoved << " transitive edges of "
 				<< nbefore << " edges leaving "
 				<< nafter << " edges.\n";
+			printGraphStats(cerr, gout);
+		}
 		assert(nbefore - nremoved == nafter);
 
 		ofstream out(opt::graphPath.c_str());
