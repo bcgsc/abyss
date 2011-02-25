@@ -7,16 +7,15 @@
 #include <vector>
 
 /**
- * Remove transitive edges from the specified graph.
- * Find and remove the subset of edges (u,w) in E for which there
- * exists a vertex v such that the edges (u,v) and (v,w) exist in E.
+ * Return the transitive edges.
+ * Find the subset of edges (u,w) in E for which there exists a vertex
+ * v such that the edges (u,v) and (v,w) exist in E.
  * This algorithm is not a general-purpose transitive reduction
  * algorithm. It is able to find transitive edges with exactly one
  * intermediate vertex.
- * @return the number of transitive edges removed from g
  */
-template <typename Graph>
-unsigned remove_transitive_edges(Graph& g)
+template <typename Graph, typename OutIt>
+void find_transitive_edges(const Graph& g, OutIt out)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator
 		adjacency_iterator;
@@ -28,10 +27,6 @@ unsigned remove_transitive_edges(Graph& g)
 		vertex_descriptor;
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
-
-	// The set of transitive edges.
-	typedef std::vector<edge_descriptor> Edges;
-	Edges transitive;
 
 	std::pair<vertex_iterator, vertex_iterator> urange = vertices(g);
 	for (vertex_iterator uit = urange.first;
@@ -66,14 +61,39 @@ unsigned remove_transitive_edges(Graph& g)
 			vertex_descriptor v = target(uv, g);
 			if (seen.count(v) > 0) {
 				// The edge (u,v) is transitive. Mark it for removal.
-				transitive.push_back(uv);
+				*out++ = uv;
 			}
 		}
 	}
+}
 
-	for (typename Edges::const_iterator it = transitive.begin();
-			it != transitive.end(); ++it)
+/** Remove the edges [first,last) from g.
+ * @return the number of removed edges
+ */
+template <typename Graph, typename It>
+void remove_edges(Graph& g, It first, It last)
+{
+	for (It it = first; it != last; ++it)
 		remove_edge(*it, g);
+}
+
+/**
+ * Remove transitive edges from the specified graph.
+ * Find and remove the subset of edges (u,w) in E for which there
+ * exists a vertex v such that the edges (u,v) and (v,w) exist in E.
+ * This algorithm is not a general-purpose transitive reduction
+ * algorithm. It is able to find transitive edges with exactly one
+ * intermediate vertex.
+ * @return the number of transitive edges removed from g
+ */
+template <typename Graph>
+unsigned remove_transitive_edges(Graph& g)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	std::vector<edge_descriptor> transitive;
+	find_transitive_edges(g, back_inserter(transitive));
+	remove_edges(g, transitive.begin(), transitive.end());
 	return transitive.size();
 }
 
