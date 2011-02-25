@@ -6,6 +6,7 @@
 #include "ContigPath.h"
 #include "DirectedGraph.h"
 #include "DotIO.h"
+#include "GraphAlgorithms.h"
 #include "GraphUtil.h"
 #include "Histogram.h"
 #include "IOUtil.h"
@@ -557,6 +558,15 @@ int main(int argc, char** argv)
 		cout << '\n';
 
 	if (!opt::graphPath.empty()) {
+		unsigned nbefore = num_edges(gout);
+		unsigned nremoved = remove_transitive_edges(gout);
+		unsigned nafter = num_edges(gout);
+		if (opt::verbose > 0)
+			cerr << "Removed " << nremoved << " transitive edges of "
+				<< nbefore << " edges leaving "
+				<< nafter << " edges.\n";
+		assert(nbefore - nremoved == nafter);
+
 		ofstream out(opt::graphPath.c_str());
 		assert_good(out, opt::graphPath);
 		write_dot(out, gout);
