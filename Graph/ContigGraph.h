@@ -149,7 +149,7 @@ class ContigGraph : public G {
 	/** Remove the edge e from this graph. */
 	void remove_edge(edge_descriptor e)
 	{
-		remove_edge(source(e), target(e));
+		remove_edge(source(e, *this), target(e, *this));
 	}
 
   private:
