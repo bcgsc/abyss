@@ -429,10 +429,12 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 	  case opt::KALIGNER:
 	  {
 		s >> v.first;
+		assert(s);
 		v.second.reserve(count(line.begin(), line.end(), '\t'));
 		v.second.assign(
 					istream_iterator<Alignment>(s),
 					istream_iterator<Alignment>());
+		assert(s.eof());
 		break;
 	  }
 	}
