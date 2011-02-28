@@ -22,7 +22,7 @@ The default maximum k-mer size is 64 and may be decreased to reduce
 memory usage or increased at compile time:
 ./configure --enable-maxk=96 && make
 
-To run ABySS, its binaries should be found in your PATH.
+To run ABySS, its executables should be found in your PATH.
 
 * Single-end assembly
 
