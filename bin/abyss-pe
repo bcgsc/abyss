@@ -104,6 +104,9 @@ p?=0.9
 pbopt += -p$p
 
 # KAligner parameters
+ifdef aligner
+align?=abyss-${aligner}
+endif
 align?=KAligner
 kaopt=-i
 
