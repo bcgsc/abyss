@@ -103,8 +103,17 @@ m?=30
 p?=0.9
 pbopt += -p$p
 
-# KAligner parameters.
+# KAligner parameters
+align?=KAligner
 kaopt=-i
+
+# fixmate parameters
+ifeq (${align},KAligner)
+fixmate?=ParseAligns
+fmopt=-k$k
+else
+fixmate?=abyss-fixmate
+endif
 
 # DistanceEst parameters
 s?=100
@@ -183,14 +192,14 @@ endif
 # Estimate distances between contigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
-		|ParseAligns $v -k$k -h $*-3.hist \
+	${align} $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
-		|ParseAligns $v -k$k -h $*-3.hist \
+	${align} $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
 
@@ -203,8 +212,8 @@ endif
 	|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	KAligner $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
-		|ParseAligns $v -k$k -h $*-3.hist \
+	${align} $v $(kaopt) $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
