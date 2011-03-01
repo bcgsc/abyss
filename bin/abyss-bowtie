@@ -35,22 +35,21 @@ shift $((OPTIND-1))
 query=("$@")
 target=${query[${#query[@]}-1]}
 unset query[${#query[@]}-1]
-stem=${target%.fa}
-index=$stem.1.ebwt
+index=$target.1.ebwt
 
 # Build the index.
 if [ ! -r $index ]; then
 	echo >&2 "Building the index $index..."
-	echo >&2 bowtie-build $target $stem
-	bowtie-build $target $stem 1>&2
+	echo >&2 bowtie-build $target $target
+	bowtie-build $target $target 1>&2
 elif [ $index -ot $target ]; then
 	echo >&2 "The index $index is stale. Rebuilding the index..."
-	echo >&2 bowtie-build $target $stem
-	bowtie-build $target $stem 1>&2
+	echo >&2 bowtie-build $target $target
+	bowtie-build $target $target 1>&2
 else
 	echo >&2 "The index $index is up to date."
 fi
 
 # Map the reads.
-echo >&2 $bowtie $stem "${query[@]}"
-exec abyss-tofastq "${query[@]}" |$bowtie $stem -
+echo >&2 $bowtie $target "${query[@]}"
+exec abyss-tofastq "${query[@]}" |$bowtie $target -
