@@ -254,7 +254,10 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 		assert(ss);
 		lengths.push_back(len);
 	}
-	assert(!lengths.empty());
+	if (lengths.empty()) {
+		cerr << PROGRAM ": error: no @SQ records in the SAM header\n";
+		exit(EXIT_FAILURE);
+	}
 }
 
 int main(int argc, char** argv)
