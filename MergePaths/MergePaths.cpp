@@ -1,6 +1,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigGraph.h"
+#include "ContigGraphAlgorithms.h"
 #include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
@@ -283,6 +284,69 @@ static unsigned mergePaths(ContigPath& path,
 	return merged;
 }
 
+/** Merge the paths of the specified seed path.
+ * @return the merged contig path
+ */
+static ContigPath mergePath(
+		const ContigPathMap& paths, const ContigPath& seedPath)
+{
+	assert(!seedPath.empty());
+	ContigNode seed1 = seedPath.front();
+	ContigPathMap::const_iterator path1It
+		= paths.find(ContigID(seed1));
+	assert(path1It != paths.end());
+	ContigPath path(path1It->second);
+	if (seedPath.front().sense())
+		path.reverseComplement();
+	if (opt::verbose > 1)
+#pragma omp critical(cout)
+		cout << "\n* " << seedPath << '\n'
+			<< seedPath.front() << '\t' << path << '\n';
+	for (ContigPath::const_iterator it = seedPath.begin() + 1;
+			it != seedPath.end(); ++it) {
+		ContigNode seed2 = *it;
+		ContigPathMap::const_iterator path2It
+			= paths.find(ContigID(seed2));
+		assert(path2It != paths.end());
+		ContigPath path2 = path2It->second;
+		if (seed2.sense())
+			path2.reverseComplement();
+
+		ContigNode pivot
+			= find(path.begin(), path.end(), seed2) != path.end()
+			? seed2 : seed1;
+		ContigPath consensus = align(path, path2, pivot);
+		assert(!consensus.empty());
+		path.swap(consensus);
+		if (opt::verbose > 1)
+#pragma omp critical(cout)
+			cout << seed2 << '\t' << path2 << '\n'
+				<< '\t' << path << '\n';
+		seed1 = seed2;
+	}
+	return path;
+}
+
+/** A collection of contig paths. */
+typedef vector<ContigPath> ContigPaths;
+
+/** Merge the specified seed paths.
+ * @return the merged contig paths
+ */
+static ContigPaths mergeSeedPaths(
+		const ContigPathMap& paths, const ContigPaths& seedPaths)
+{
+	if (opt::verbose > 0)
+		cout << "Merging paths\n";
+
+	ContigPaths out;
+	out.reserve(seedPaths.size());
+	for (ContigPaths::const_iterator it = seedPaths.begin();
+			it != seedPaths.end(); ++it)
+		out.push_back(mergePath(paths, *it));
+	return out;
+}
+
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
@@ -463,6 +527,69 @@ static set<ContigID> removeSubsumedPaths(ContigPathMap& paths)
 	return overlaps;
 }
 
+/** Output the path overlap graph. */
+static void outputPathGraph(PathGraph& pathGraph)
+{
+	unsigned nbefore = num_edges(pathGraph);
+	unsigned nremoved = remove_transitive_edges(pathGraph);
+	unsigned nafter = num_edges(pathGraph);
+	if (opt::verbose > 0) {
+		cerr << "Removed " << nremoved << " transitive edges of "
+			<< nbefore << " edges leaving "
+			<< nafter << " edges.\n";
+		printGraphStats(cerr, pathGraph);
+	}
+	assert(nbefore - nremoved == nafter);
+
+	ofstream out(opt::graphPath.c_str());
+	assert_good(out, opt::graphPath);
+	write_dot(out, pathGraph);
+	assert_good(out, opt::graphPath);
+}
+
+/** Assemble the path overlap graph. */
+static void assemblePathGraph(
+		PathGraph& pathGraph, ContigPathMap& paths)
+{
+	ContigPaths seedPaths;
+	assemble(pathGraph, back_inserter(seedPaths));
+	ContigPaths mergedPaths = mergeSeedPaths(paths, seedPaths);
+	if (opt::verbose > 1)
+		cout << '\n';
+
+	// Replace each path with the merged path.
+	for (ContigPaths::const_iterator it1 = seedPaths.begin();
+			it1 != seedPaths.end(); ++it1) {
+		for (ContigPath::const_iterator it2 = it1->begin();
+				it2 != it1->end(); ++it2) {
+			ContigPath path(mergedPaths[it1 - seedPaths.begin()]);
+			if (it2->sense())
+				path.reverseComplement();
+			paths[ContigID(*it2)] = path;
+		}
+	}
+
+	// Remove the subsumed paths.
+	if (opt::verbose > 0)
+		cout << "Removing redundant contigs\n";
+	removeSubsumedPaths(paths);
+
+	// Sort the paths.
+	vector<ContigPath> sortedPaths(paths.size());
+	transform(paths.begin(), paths.end(), sortedPaths.begin(),
+			mem_var(&ContigPathMap::value_type::second));
+	sort(sortedPaths.begin(), sortedPaths.end());
+
+	// Output the paths.
+	ofstream fout(opt::out.c_str());
+	ostream& out = opt::out.empty() ? cout : fout;
+	assert_good(out, opt::out);
+	for (vector<ContigPath>::const_iterator it = sortedPaths.begin();
+			it != sortedPaths.end(); ++it)
+		out << ContigID::create() << '\t' << *it << '\n';
+	assert_good(out, opt::out);
+}
+
 static void assert_open(ifstream& f, const string& p)
 {
 	if (f.is_open())
@@ -599,25 +726,10 @@ int main(int argc, char** argv)
 		cout << '\n';
 
 	if (!opt::graphPath.empty()) {
-		unsigned nbefore = num_edges(gout);
-		unsigned nremoved = remove_transitive_edges(gout);
-		unsigned nafter = num_edges(gout);
-		if (opt::verbose > 0) {
-			cerr << "Removed " << nremoved << " transitive edges of "
-				<< nbefore << " edges leaving "
-				<< nafter << " edges.\n";
-			printGraphStats(cerr, gout);
-		}
-		assert(nbefore - nremoved == nafter);
-
-		ofstream out(opt::graphPath.c_str());
-		assert_good(out, opt::graphPath);
-		write_dot(out, gout);
-		assert_good(out, opt::graphPath);
-		if (opt::out.empty()) {
-			out.close(); // flush fout before exiting
-			exit(EXIT_SUCCESS);
-		}
+		outputPathGraph(gout);
+		if (!opt::out.empty())
+			assemblePathGraph(gout, originalPathMap);
+		exit(EXIT_SUCCESS);
 	}
 
 	set<ContigID> repeats = removeRepeats(resultsPathMap);
