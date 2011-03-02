@@ -137,9 +137,9 @@ void remove_vertex_if(Graph& g, It first, It last, Predicate p)
 }
 
 /** Add the vertex and edge propeties of the path [first, last). */
-template<typename Graph, typename It>
+template<typename Graph, typename It, typename VP>
 typename vertex_property<Graph>::type addProp(const Graph& g,
-		It first, It last)
+		It first, It last, const VP*)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
@@ -154,6 +154,21 @@ typename vertex_property<Graph>::type addProp(const Graph& g,
 		vp += get(vertex_bundle, g, v);
 	}
 	return vp;
+}
+
+template<typename Graph, typename It>
+typename vertex_property<Graph>::type addProp(const Graph&,
+		It, It, const no_property*)
+{
+	return no_property();
+}
+
+template<typename Graph, typename It>
+typename vertex_property<Graph>::type addProp(const Graph& g,
+		It first, It last)
+{
+	return addProp(g, first, last,
+			(typename vertex_property<Graph>::type*)NULL);
 }
 
 /** Merge the vertices in the sequence [first, last).
