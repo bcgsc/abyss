@@ -547,6 +547,25 @@ static void outputPathGraph(PathGraph& pathGraph)
 	assert_good(out, opt::graphPath);
 }
 
+/** Sort and output the specified paths. */
+static void outputSortedPaths(const ContigPathMap& paths)
+{
+	// Sort the paths.
+	vector<ContigPath> sortedPaths(paths.size());
+	transform(paths.begin(), paths.end(), sortedPaths.begin(),
+			mem_var(&ContigPathMap::value_type::second));
+	sort(sortedPaths.begin(), sortedPaths.end());
+
+	// Output the paths.
+	ofstream fout(opt::out.c_str());
+	ostream& out = opt::out.empty() ? cout : fout;
+	assert_good(out, opt::out);
+	for (vector<ContigPath>::const_iterator it = sortedPaths.begin();
+			it != sortedPaths.end(); ++it)
+		out << ContigID::create() << '\t' << *it << '\n';
+	assert_good(out, opt::out);
+}
+
 /** Assemble the path overlap graph. */
 static void assemblePathGraph(
 		PathGraph& pathGraph, ContigPathMap& paths)
@@ -574,20 +593,7 @@ static void assemblePathGraph(
 		cout << "Removing redundant contigs\n";
 	removeSubsumedPaths(paths);
 
-	// Sort the paths.
-	vector<ContigPath> sortedPaths(paths.size());
-	transform(paths.begin(), paths.end(), sortedPaths.begin(),
-			mem_var(&ContigPathMap::value_type::second));
-	sort(sortedPaths.begin(), sortedPaths.end());
-
-	// Output the paths.
-	ofstream fout(opt::out.c_str());
-	ostream& out = opt::out.empty() ? cout : fout;
-	assert_good(out, opt::out);
-	for (vector<ContigPath>::const_iterator it = sortedPaths.begin();
-			it != sortedPaths.end(); ++it)
-		out << ContigID::create() << '\t' << *it << '\n';
-	assert_good(out, opt::out);
+	outputSortedPaths(paths);
 }
 
 static void assert_open(ifstream& f, const string& p)
@@ -784,21 +790,7 @@ int main(int argc, char** argv)
 	}
 	originalPathMap.clear();
 
-	vector<ContigPath> uniquePaths;
-	uniquePaths.reserve(resultsPathMap.size());
-	for (ContigPathMap::const_iterator it = resultsPathMap.begin();
-			it != resultsPathMap.end(); ++it)
-		uniquePaths.push_back(it->second);
-	sort(uniquePaths.begin(), uniquePaths.end());
-
-	ofstream fout(opt::out.c_str());
-	ostream& out = opt::out.empty() ? cout : fout;
-	assert(out.good());
-	for (vector<ContigPath>::const_iterator it
-				= uniquePaths.begin();
-			it != uniquePaths.end(); ++it)
-		out << ContigID::create() << '\t' << *it << '\n';
-	assert(out.good());
+	outputSortedPaths(resultsPathMap);
 	return 0;
 }
 
