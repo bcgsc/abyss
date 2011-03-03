@@ -111,13 +111,13 @@ int get(edge_distance_t, const Graph& g,
  * the edge properties.
  */
 template <typename Graph>
-Distance get(edge_bundle_t, const Graph& g,
-		ContigNode u, ContigNode v)
+typename edge_property<Graph>::type
+get(edge_bundle_t, const Graph& g, ContigNode u, ContigNode v)
 {
 	typedef typename graph_traits<Graph>::edge_descriptor
 		edge_descriptor;
 	if (u.ambiguous() || v.ambiguous()) {
-		return Distance();
+		return typename edge_property<Graph>::type();
 	} else {
 		std::pair<edge_descriptor, bool> e = edge(u, v, g);
 		if (!e.second)
