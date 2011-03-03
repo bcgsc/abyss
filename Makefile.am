@@ -27,5 +27,6 @@ SUBDIRS = \
 	ParseAligns \
 	PathOverlap \
 	PopBubbles \
+	Scaffold \
 	SimpleGraph \
 	kmerprint

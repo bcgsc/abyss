@@ -140,6 +140,7 @@ AC_CONFIG_FILES([
 	DistanceEst/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
+	Scaffold/Makefile
 	SimpleGraph/Makefile
 	MergePaths/Makefile
 	KAligner/Makefile
