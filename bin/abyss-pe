@@ -15,6 +15,20 @@ np?=$(NSLOTS)
 endif
 endif
 
+# Integrate with IBM LoadLeveler
+ifdef LOADL_JOB_NAME
+name?=$(LOADL_JOB_NAME)
+endif
+ifdef LOADL_STEP_ID
+k?=$(LOADL_STEP_ID)
+endif
+ifdef LOADL_HOSTFILE
+NSLOTS=$(shell wc -l <$(LOADL_HOSTFILE))
+ifneq ($(NSLOTS), 1)
+np?=$(NSLOTS)
+endif
+endif
+
 mpirun?=$(shell which mpirun)
 
 path?=$(shell if ! which ABYSS >/dev/null 2>/dev/null; then \
