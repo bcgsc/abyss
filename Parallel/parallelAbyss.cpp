@@ -45,11 +45,19 @@ static void concatenateFiles(const string& dest,
 	s << " >'" << dest << '\'';
 	systemx(s.str());
 
-	s.str("");
-	s << "rm";
-	for (int i = 0; i < opt::numProc; i++)
-		s << ' ' << prefix << i << suffix;
-	systemx(s.str());
+	bool die = false;
+	for (int i = 0; i < opt::numProc; i++) {
+		s.str("");
+		s << prefix << i << suffix;
+		const char* path = s.str().c_str();
+		if (unlink(path) == -1) {
+			cerr << "error: removing `" << path << "': "
+				<< strerror(errno) << endl;
+			die = true;
+		}
+	}
+	if (die)
+		exit(EXIT_FAILURE);
 }
 
 int main(int argc, char** argv)
