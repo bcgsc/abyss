@@ -8,8 +8,24 @@ dist_pkgdoc_DATA = ChangeLog COPYRIGHT LICENSE README
 
 EXTRA_DIST=doxygen.conf
 
-SUBDIRS = dialign Align Assembly Common DataLayer Graph \
+SUBDIRS = \
+	bin \
+	doc \
+	Align \
+	Assembly \
+	Common \
+	DataLayer \
+	Graph \
+	dialign \
 	ABYSS $(Parallel) \
-	bin doc kmerprint \
-	AdjList DistanceEst KAligner MergePaths Overlap \
-	ParseAligns PopBubbles SimpleGraph Consensus PathOverlap
+	AdjList \
+	Consensus \
+	DistanceEst \
+	KAligner \
+	MergePaths \
+	Overlap \
+	ParseAligns \
+	PathOverlap \
+	PopBubbles \
+	SimpleGraph \
+	kmerprint
