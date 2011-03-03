@@ -87,7 +87,7 @@ struct Distance {
 /** Add the specified distance (overlap) to the specified contig
  * length.
  */
-static inline ContigProperties operator+=(
+static inline ContigProperties& operator+=(
 		ContigProperties& a, const Distance& b)
 {
 	assert((int)a.length + (int)b.distance > 0);
