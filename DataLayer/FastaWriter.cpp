@@ -9,22 +9,25 @@
 
 using namespace std;
 
+static inline void die(const string& s)
+{
+	cerr << "error: writing to `" << s << "': "
+		<< strerror(errno) << endl;
+	exit(EXIT_FAILURE);
+}
+
 FastaWriter::FastaWriter(const char* path, bool append)
 	: m_path(path), m_fileHandle(fopen(path, append ? "a" : "w"))
 {
-	if (m_fileHandle == NULL) {
-		cerr << m_path << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
+	if (m_fileHandle == NULL)
+		die(m_path);
 }
 
 FastaWriter::~FastaWriter()
 {
 	int n = fclose(m_fileHandle);
-	if (n < 0) {
-		cerr << m_path << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
+	if (n < 0)
+		die(m_path);
 	m_fileHandle = NULL;
 }
 
@@ -45,8 +48,6 @@ void FastaWriter::WriteSequence(const Sequence& seq, unsigned id,
 				seq.length(), multiplicity,
 				sep, comment.c_str(),
 				seq.c_str());
-	if (n < 0) {
-		cerr << m_path << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
+	if (n < 0)
+		die(m_path);
 }
