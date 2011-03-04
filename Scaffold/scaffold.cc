@@ -7,6 +7,7 @@
 #include "DirectedGraph.h"
 #include "DotIO.h"
 #include "Estimate.h"
+#include "GraphAlgorithms.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
 #include <cstdlib>
@@ -225,6 +226,7 @@ int main(int argc, char** argv)
 	// Filter the graph.
 	addComplementaryEdges(g);
 	filterGraph(g);
+	remove_transitive_edges(g);
 
 	// Output the graph.
 	if (!opt::graphPath.empty()) {
