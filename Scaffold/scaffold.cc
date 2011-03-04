@@ -44,7 +44,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
-	int dot; // used by Estimate
+	int dot = true; // used by Estimate
 
 	/** Minimum number of pairs. */
 	static unsigned minNumPairs;
