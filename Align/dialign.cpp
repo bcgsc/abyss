@@ -8,6 +8,7 @@
 #include <cstring>
 #include <ctime> // for clock
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 using namespace std;
@@ -323,10 +324,12 @@ static string get_alignment_consensus(struct alignment *algn)
 }
 
 /** Align multiple sequences using DIALIGN-TX.
+ * @param [out] alignment the alignment
  * @param [out] matches the minimum number of matches
  * @return the consensus sequence
  */
-string dialign(const vector<string>& amb_seqs, unsigned& matches)
+string dialign(const vector<string>& amb_seqs,
+		string& alignment, unsigned& matches)
 {
 	int i;
 	struct seq_col *in_seq_col = NULL;
@@ -458,9 +461,10 @@ string dialign(const vector<string>& amb_seqs, unsigned& matches)
 	if (opt::verbose > 2)
 		simple_print_alignment_default(algn);
 	string consensus = get_alignment_consensus(algn);
-	if (opt::verbose > 1)
-		print(cerr, *algn, consensus);
 	matches = countMatches(*algn, consensus);
+	ostringstream ss;
+	print(ss, *algn, consensus);
+	alignment = ss.str();
 
 	if (dialign_para->DEBUG > 0) {
 		duration = (clock()-tim)/CLOCKS_PER_SEC;

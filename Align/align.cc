@@ -70,20 +70,17 @@ static void alignPair(const string& seq0, const string& seq1,
 	NWAlignment align;
 	unsigned match = alignGlobal(seq0, seq1, align);
 	float identity = (float)match / align.size();
-	if (opt::verbose > 1)
-		cerr << align << '\n';
-	out << identity << '\n';
+	out << align << identity << "\n\n";
 }
 
 /** Align multiple sequences using DIALIGN-TX. */
 static void alignMulti(const vector<string>& seq, ostream& out)
 {
 	unsigned match;
-	string consensus = dialign(seq, match);
+	string alignment;
+	string consensus = dialign(seq, alignment, match);
 	float identity = (float)match / consensus.size();
-	if (opt::verbose > 1)
-		cerr << consensus << "\n\n";
-	out << identity << '\n';
+	out << alignment << consensus << '\n' << identity << "\n\n";
 }
 
 /** Align the specified sequences. */
@@ -93,9 +90,7 @@ static void align(const vector<string>& seq, ostream& out)
 	  case 0:
 		return;
 	  case 1:
-		if (opt::verbose > 1)
-			cerr << seq.front() << "\n\n";
-		out << 1 << '\n';
+		out << seq.front() << '\n' << 1 << "\n\n";
 		return;
 	  case 2:
 		return alignPair(seq[0], seq[1], out);

@@ -737,10 +737,11 @@ static ContigPath alignMulti(const Graph& g,
 		}
 	}
 
+	string alignment;
 	unsigned matches;
-	Sequence consensus = dialign(amb_seqs, matches);
+	Sequence consensus = dialign(amb_seqs, alignment, matches);
 	if (opt::verbose > 1)
-	   	cerr << consensus << '\n';
+	   	cerr << alignment << consensus << '\n';
 	float identity = (float)matches / consensus.size();
 	if (opt::verbose > 0)
 		cerr << identity
