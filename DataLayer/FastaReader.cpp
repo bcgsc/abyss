@@ -120,7 +120,8 @@ next_record:
 		if (recordType == '>') {
 			// Read a multi-line FASTA record.
 			string line;
-			while (m_in.peek() != '>' && getline(line))
+			while (m_in.peek() != '>' && m_in.peek() != '#'
+					&& getline(line))
 				s += line;
 			if (m_in.eof())
 				m_in.clear();

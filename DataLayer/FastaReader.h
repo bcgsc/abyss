@@ -31,6 +31,16 @@ class FastaReader {
 		/** Return whether this stream is good. */
 		operator void*() const { return m_in; }
 
+		/** Return the next character of this stream. */
+		int peek() { return m_in.peek(); }
+
+		/** Interface for manipulators. */
+		FastaReader& operator>>(std::istream& (*f)(std::istream&))
+		{
+			f(m_in);
+			return *this;
+		}
+
 		/** Returns the number of unchaste reads. */
 		unsigned unchaste() const { return m_unchaste; }
 
