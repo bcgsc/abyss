@@ -4,6 +4,7 @@
 #include "FastaReader.h"
 #include "IOUtil.h"
 #include "needleman_wunsch.h"
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <getopt.h>
@@ -23,7 +24,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FASTA]\n"
+"Usage: " PROGRAM " [OPTION]... [FASTA]...\n"
 "Align multiple sequences globally using either Needleman-Wunsch\n"
 "or DIALIGN-TX. Groups of sequences may be separated using `#.'\n"
 "  FASTA  sequences in FASTA format\n"
@@ -103,6 +104,24 @@ static void align(const vector<string>& seq, ostream& out)
 	}
 }
 
+
+/** Align multiple sequences. */
+static void alignFile(const char* path) {
+	if (opt::verbose > 0)
+		cerr << "Aligning `" << path << "'\n";
+	FastaReader in(path, FastaReader::NO_FOLD_CASE);
+	for (vector<string> seq; in;) {
+		seq.clear();
+		FastaRecord fa;
+		if (in >> fa)
+			seq.push_back(fa.seq);
+		while (in.peek() == '>' && in >> fa)
+			seq.push_back(fa.seq);
+		align(seq, cout);
+	}
+	assert(in.eof());
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -124,21 +143,11 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (argc - optind < 0) {
-		cerr << PROGRAM ": missing arguments\n";
-		die = true;
-	} else if (argc - optind > 1) {
-		cerr << PROGRAM ": too many arguments\n";
-		die = true;
-	}
-
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-
-	const char* faPath = optind < argc ? argv[optind++] : "-";
 
 	// Initialize dialign.
 	init_parameters();
@@ -148,17 +157,10 @@ int main(int argc, char** argv)
 	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
 	initDialign();
 
-	// Align input sequences.
-	FastaReader in(faPath, FastaReader::NO_FOLD_CASE);
-	for (vector<string> seq; in;) {
-		seq.clear();
-		FastaRecord fa;
-		if (in >> fa)
-			seq.push_back(fa.seq);
-		while (in.peek() == '>' && in >> fa)
-			seq.push_back(fa.seq);
-		align(seq, cout);
-	}
-	assert(in.eof());
+	if (optind < argc)
+		for_each(&argv[optind], &argv[argc], alignFile);
+	else
+		alignFile("-");
+
 	return 0;
 }
