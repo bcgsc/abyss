@@ -6,6 +6,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "DotIO.h"
+#include "Estimate.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
 #include <cstdlib>
@@ -86,7 +87,8 @@ struct Length {
 		return *this;
 	}
 
-	Length& operator+=(const Distance& o)
+	template <typename T>
+	Length& operator+=(const T& o)
 	{
 		assert((int)length + (int)o.distance > 0);
 		length += o.distance;
@@ -105,7 +107,7 @@ struct Length {
 };
 
 /** A distance estimate graph. */
-typedef DirectedGraph<Length, Distance> DG;
+typedef DirectedGraph<Length, DistanceEst> DG;
 typedef ContigGraph<DG> Graph;
 
 /** Add missing complementary edges. */
@@ -130,13 +132,26 @@ static void addComplementaryEdges(DG& g)
 		cerr << "Added " << numAdded << " complementary edges.\n";
 }
 
+/** Return whether the specified edges has sufficient support. */
+struct PoorSupport {
+	PoorSupport(Graph& g) : m_g(g) { }
+	bool operator()(graph_traits<Graph>::edge_descriptor e) const
+	{
+		return m_g[e].numPairs < opt::minNumPairs;
+	}
+	const Graph& m_g;
+};
+
 /** Remove short vertices and unsupported edges from the graph. */
 static void filterGraph(Graph& g)
 {
 	typedef graph_traits<Graph> GTraits;
+	typedef GTraits::edge_descriptor E;
+	typedef GTraits::edge_iterator Eit;
 	typedef GTraits::vertex_descriptor V;
 	typedef GTraits::vertex_iterator Vit;
 
+	// Remove short contigs.
 	unsigned numRemovedV = 0;
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
@@ -150,6 +165,13 @@ static void filterGraph(Graph& g)
 	}
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedV << " vertices.\n";
+
+	// Remove poorly-supported edges.
+	unsigned numBefore = num_edges(g);
+	remove_edge_if(PoorSupport(g), static_cast<DG&>(g));
+	unsigned numRemovedE = numBefore - num_edges(g);
+	if (opt::verbose > 0)
+		cerr << "Removed " << numRemovedE << " edges.\n";
 }
 
 int main(int argc, char** argv)

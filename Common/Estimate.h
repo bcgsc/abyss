@@ -3,6 +3,7 @@
 
 #include "ContigID.h"
 #include "ContigNode.h"
+#include "IOUtil.h"
 #include <cassert>
 #include <cmath> // for ceilf
 #include <iomanip>
@@ -16,7 +17,48 @@ namespace opt {
 	extern int dot;
 }
 
-/** Distance estimate between two contigs. */
+/** An estimate of the distance between two contigs. */
+struct DistanceEst
+{
+	int distance;
+	unsigned numPairs;
+	float stdDev;
+
+	bool operator==(const DistanceEst& o) const
+	{
+		return distance == o.distance
+			&& numPairs == o.numPairs
+			&& stdDev == o.stdDev;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out,
+			const DistanceEst& o)
+	{
+		if (opt::dot)
+			return out <<
+				"d=" << o.distance << " "
+				"e=" << std::fixed << std::setprecision(1)
+					<< o.stdDev << " "
+				"n=" << o.numPairs << ']';
+		else
+			return out << o.distance << ',' << o.numPairs << ','
+				<< std::fixed << std::setprecision(1) << o.stdDev;
+	}
+
+	friend std::istream& operator>>(std::istream& in, DistanceEst& o)
+	{
+		if (in >> std::ws && in.peek() == 'd')
+			return in >> expect("d =") >> o.distance
+				>> expect(" e =") >> o.stdDev
+				>> expect(" n =") >> o.numPairs;
+		else
+			return in >> o.distance >> expect(",")
+				>> o.numPairs >> expect(",")
+				>> o.stdDev;
+	}
+};
+
+/** An estimate of the distance between two contigs. */
 struct Estimate
 {
 	ContigNode contig;
@@ -72,6 +114,7 @@ static inline unsigned allowedError(float stddev)
 
 typedef std::vector<Estimate> EstimateVector;
 
+/** Distance estimates to and from a particular contig. */
 struct EstimateRecord
 {
 	ContigID refID;
