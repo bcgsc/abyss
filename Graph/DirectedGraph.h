@@ -507,7 +507,6 @@ class Edge
 		return i < m_removed.size() ? m_removed[i] : false;
 	}
 
-	DirectedGraph(const DirectedGraph& x);
 	DirectedGraph& operator =(const DirectedGraph& x);
 
 	/** The set of vertices. */

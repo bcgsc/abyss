@@ -10,6 +10,8 @@
 #include "GraphAlgorithms.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
+#include <cassert>
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -35,6 +37,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -n, --npairs=N        minimum number of pairs [0]\n"
 "  -s, --seed-length=N   minimum contig length [0]\n"
+"  -k, --kmer=N          length of a k-mer\n"
+"      --min-gap         minimum scaffold gap length to output\n"
 "  -o, --out=FILE        write the paths to FILE\n"
 "  -g, --graph=FILE      write the graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -53,6 +57,9 @@ namespace opt {
 	/** Minimum contig length. */
 	static unsigned minContigLength;
 
+	/** Minimum scaffold gap length to output. */
+	static int minGap = INT_MIN;
+
 	/** Write the paths to this file. */
 	static string out;
 
@@ -63,12 +70,14 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "g:n:o:s:v";
+static const char shortopts[] = "g:k:n:o:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP };
 
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
+	{ "kmer",        required_argument, NULL, 'k' },
+	{ "min-gap",     required_argument, NULL, OPT_MIN_GAP },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
@@ -175,6 +184,31 @@ static void filterGraph(Graph& g)
 		cerr << "Removed " << numRemovedE << " edges.\n";
 }
 
+/** Add distance estimates to a path. */
+static ContigPath addDistEst(const Graph& g, const ContigPath& path)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	ContigPath out;
+	out.reserve(2 * path.size());
+	ContigNode u = path.front();
+	out.push_back(u);
+	for (ContigPath::const_iterator it = path.begin() + 1;
+			it != path.end(); ++it) {
+		ContigNode v = *it;
+		assert(!v.ambiguous());
+		pair<E, bool> e = edge(u, v, g);
+		assert(e.second);
+		int distance = max(g[e.first].distance, (int)opt::minGap);
+		int numN = distance + opt::k - 1; // by convention
+		assert(numN >= 0);
+		numN = max(numN, 1);
+		out.push_back(ContigNode(numN, 'N'));
+		out.push_back(v);
+		u = v;
+	}
+	return out;
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -183,11 +217,13 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'k': arg >> opt::k; break;
 			case 'g': arg >> opt::graphPath; break;
 			case 'n': arg >> opt::minNumPairs; break;
 			case 'o': arg >> opt::out; break;
 			case 's': arg >> opt::minContigLength; break;
 			case 'v': opt::verbose++; break;
+			case OPT_MIN_GAP: arg >> opt::minGap; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -195,6 +231,11 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
 	}
 
 	if (argc - optind < 0) {
@@ -237,6 +278,7 @@ int main(int argc, char** argv)
 	}
 
 	// Assemble the paths.
+	Graph gorig(g); // the preassembly graph
 	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
 	assemble(g, back_inserter(paths));
@@ -247,8 +289,10 @@ int main(int argc, char** argv)
 	ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
 	assert_good(out, opt::out);
 	for (vector<ContigPath>::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		out << ContigID::create() << '\t' << *it << '\n';
+			it != paths.end(); ++it) {
+		out << ContigID::create() << '\t'
+			<< addDistEst(gorig, *it) << '\n';
+	}
 	assert_good(out, opt::out);
 
 	return 0;

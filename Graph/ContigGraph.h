@@ -151,9 +151,6 @@ class ContigGraph : public G {
 	{
 		remove_edge(source(e, *this), target(e, *this));
 	}
-
-  private:
-	ContigGraph(const ContigGraph&);
 };
 
 namespace std {
