@@ -39,7 +39,7 @@ struct DistanceEst
 				"d=" << o.distance << " "
 				"e=" << std::fixed << std::setprecision(1)
 					<< o.stdDev << " "
-				"n=" << o.numPairs << ']';
+				"n=" << o.numPairs;
 		else
 			return out << o.distance << ',' << o.numPairs << ','
 				<< std::fixed << std::setprecision(1) << o.stdDev;
