@@ -277,6 +277,22 @@ class Vertex
 		return count(m_edges.begin(), m_edges.end(), v) > 0;
 	}
 
+	/** Remove edges that satisfy the predicate. */
+	template <typename Predicate>
+	void remove_edge_if(vertex_descriptor u, Predicate predicate)
+	{
+		typename Edges::iterator out = m_edges.begin();
+		for (typename Edges::iterator it = m_edges.begin();
+				it != m_edges.end(); ++it) {
+			if (!predicate(edge_descriptor(u, it->target()))) {
+				if (out != it)
+					*out = *it;
+				++out;
+			}
+		}
+		m_edges.erase(out, m_edges.end());
+	}
+
   private:
 	Edges m_edges;
 	vertex_property_type m_prop;
@@ -473,6 +489,16 @@ class Edge
 		return m_vertices[index(e.first)][e.second];
 	}
 
+	/** Remove edges that satisfy the predicate. */
+	template <typename Predicate>
+	void remove_edge_if(Predicate predicate)
+	{
+		unsigned i = 0;
+		for (typename Vertices::iterator it = m_vertices.begin();
+				it != m_vertices.end(); ++it)
+			it->remove_edge_if(vertex(i++), predicate);
+	}
+
   private:
 	/** Return true if this vertex has been removed. */
 	bool is_removed(vertex_descriptor u) const
@@ -634,6 +660,15 @@ remove_edge(
 		DirectedGraph<VP, EP>& g)
 {
 	g.remove_edge(e);
+}
+
+// MutableEdgeListGraph
+
+template <typename VP, typename EP, class Predicate>
+void
+remove_edge_if(Predicate predicate, DirectedGraph<VP, EP>& g)
+{
+	g.remove_edge_if(predicate);
 }
 
 // PropertyGraph
