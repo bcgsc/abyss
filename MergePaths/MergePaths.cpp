@@ -96,7 +96,7 @@ typedef map<ContigID, ContigPath> ContigPathMap;
 static vector<unsigned> g_contigLengths;
 
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
-		const ContigNode& pivot);
+		ContigNode pivot);
 
 static bool gDebugPrint;
 
@@ -173,14 +173,16 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 /** A path overlap graph. */
 typedef ContigGraph<DirectedGraph<> > PathGraph;
 
-/** Add an edge if the two paths overlap. */
-static void addOverlapEdge(PathGraph& gout,
+/** Add an edge if the two paths overlap.
+ * @return whether an overlap was found
+ */
+static bool addOverlapEdge(PathGraph& gout, ContigNode pivot,
 		ContigNode seed1, const ContigPath& path1,
 		ContigNode seed2, const ContigPath& path2)
 {
-	ContigPath consensus = align(path1, path2, seed2);
+	ContigPath consensus = align(path1, path2, pivot);
 	if (consensus.empty())
-		return;
+		return false;
 
 	// Determine the orientation of the overlap edge.
 	// @todo This method does not handle gaps in the alignment.
@@ -226,9 +228,24 @@ static void addOverlapEdge(PathGraph& gout,
 	}
 
 	// Add the edge.
+	bool added = false;
 #pragma omp critical(gout)
-	if (!edge(u, v, gout).second)
+	if (!edge(u, v, gout).second) {
 		add_edge(u, v, gout);
+		added = true;
+	}
+	return added;
+}
+
+/** Return the specified path. */
+static ContigPath getPath(const ContigPathMap& paths, ContigNode u)
+{
+	ContigPathMap::const_iterator it = paths.find(ContigID(u));
+	assert(it != paths.end());
+	ContigPath path = it->second;
+	if (u.sense())
+		path.reverseComplement();
+	return path;
 }
 
 /** Find the overlaps between paths and add edges to the graph. */
@@ -251,7 +268,7 @@ static void findPathOverlaps(const ContigPathMap& paths,
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
 			path2.reverseComplement();
-		addOverlapEdge(gout, seed1, path1, seed2, path2);
+		addOverlapEdge(gout, seed2, seed1, path1, seed2, path2);
 	}
 }
 
@@ -535,6 +552,49 @@ static set<ContigID> removeSubsumedPaths(ContigPathMap& paths)
 	return overlaps;
 }
 
+/** Add missing overlap edges. For each vertex u with at least two
+ * outgoing edges, (u,v1) and (u,v2), add the edge (v1,v2) if v1 < v2,
+ * and add the edge (v2,v1) if v2 < v1.
+ */
+static void addMissingEdges(PathGraph& g, const ContigPathMap& paths)
+{
+	typedef graph_traits<PathGraph>::adjacency_iterator Vit;
+	typedef graph_traits<PathGraph>::vertex_iterator Uit;
+	typedef graph_traits<PathGraph>::vertex_descriptor V;
+
+	unsigned numAdded = 0;
+	pair<Uit, Uit> urange = vertices(g);
+	for (Uit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (out_degree(u, g) < 2)
+			continue;
+		pair<Vit, Vit> vrange = adjacent_vertices(u, g);
+		for (Vit vit1 = vrange.first; vit1 != vrange.second;) {
+			V v1 = *vit1;
+			++vit1;
+			assert(v1 != u);
+			ContigPath path1 = getPath(paths, v1);
+			if (find(path1.begin(), path1.end(), u) == path1.end())
+				continue;
+			for (Vit vit2 = vit1; vit2 != vrange.second; ++vit2) {
+				V v2 = *vit2;
+				assert(v2 != u);
+				assert(v1 != v2);
+				if (edge(v1, v2, g).second || edge(v2, v1, g).second)
+					continue;
+				ContigPath path2 = getPath(paths, v2);
+				if (find(path2.begin(), path2.end(), u)
+						== path2.end())
+					continue;
+				numAdded
+					+= addOverlapEdge(g, u, v1, path1, v2, path2);
+			}
+		}
+	}
+	if (opt::verbose > 0)
+		cerr << "Added " << numAdded << " missing edges.\n";
+}
+
 /** Output the path overlap graph. */
 static void outputPathGraph(PathGraph& pathGraph)
 {
@@ -740,6 +800,7 @@ int main(int argc, char** argv)
 		cout << '\n';
 
 	if (!opt::graphPath.empty()) {
+		addMissingEdges(gout, originalPathMap);
 		outputPathGraph(gout);
 		if (!opt::out.empty())
 			assemblePathGraph(gout, originalPathMap);
@@ -1063,13 +1124,35 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 	return consensus;
 }
 
+/** Return a pivot suitable for aligning the two paths. */
+static ContigNode findPivot(
+		const ContigPath& path1, const ContigPath& path2)
+{
+	for (ContigPath::const_iterator it = path2.begin();
+			it != path2.end(); ++it) {
+		if (it->ambiguous())
+			continue;
+		if (count(it, path2.end(), *it) == 1
+				&& count(path1.begin(), path1.end(), *it) == 1)
+			return *it;
+	}
+	// These two paths share not even one unique seed.
+	cerr << "error: no unique seed\n"
+		<< path1 << '\n' << path2 << '\n';
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
 /** Find an equivalent region of the two specified paths.
  * @return the consensus sequence
  */
 static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
-		const ContigNode& pivot)
+		ContigNode pivot)
 {
+	if (find(path1.begin(), path1.end(), pivot) == path1.end()
+			|| find(path2.begin(), path2.end(), pivot) == path2.end())
+		pivot = findPivot(path1, path2);
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
