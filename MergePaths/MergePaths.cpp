@@ -173,19 +173,74 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 /** A path overlap graph. */
 typedef ContigGraph<DirectedGraph<> > PathGraph;
 
+/** Add an edge if the two paths overlap. */
+static void addOverlapEdge(PathGraph& gout,
+		ContigNode seed1, const ContigPath& path1,
+		ContigNode seed2, const ContigPath& path2)
+{
+	ContigPath consensus = align(path1, path2, seed2);
+	if (consensus.empty())
+		return;
+
+	// Determine the orientation of the overlap edge.
+	// @todo This method does not handle gaps in the alignment.
+	assert(seed1 != seed2);
+	bool dir = find(consensus.begin(), consensus.end(), seed1)
+		< find(consensus.begin(), consensus.end(), seed2);
+	ContigNode u = dir ? seed1 : seed2;
+	ContigNode v = dir ? seed2 : seed1;
+	if (path1 == path2) {
+		// path1 and path2 are identical.
+	} else if (consensus == path2) {
+		// path1 is contained in path2.
+		assert(path1.size() <= path2.size());
+		if (equal(path1.begin(), path1.end(), path2.begin())) {
+			// path1 -> path2
+			u = seed1;
+			v = seed2;
+		} else if (equal(path1.rbegin(), path1.rend(),
+					path2.rbegin())) {
+			// path2 -> path1
+			u = seed2;
+			v = seed1;
+		} else {
+			// path1 is contained in path2
+		}
+	} else if (consensus == path1) {
+		// path2 is contained in path1.
+		assert(path2.size() <= path1.size());
+		if (equal(path2.begin(), path2.end(), path1.begin())) {
+			// path2 -> path1
+			u = seed2;
+			v = seed1;
+		} else if (equal(path2.rbegin(), path2.rend(),
+					path1.rbegin())) {
+			// path1 -> path2
+			u = seed1;
+			v = seed2;
+		} else {
+			// path2 is contained in path1
+		}
+	} else {
+		// path1 and path2 overlap.
+	}
+
+	// Add the edge.
+#pragma omp critical(gout)
+	if (!edge(u, v, gout).second)
+		add_edge(u, v, gout);
+}
+
 /** Find the overlaps between paths and add edges to the graph. */
 static void findPathOverlaps(const ContigPathMap& paths,
 		const ContigNode& seed1, const ContigPath& path1,
 		PathGraph& gout)
 {
-	bool dir = false;
 	for (ContigPath::const_iterator it = path1.begin();
 			it != path1.end(); ++it) {
 		ContigNode seed2 = *it;
-		if (seed1 == seed2) {
-			dir = true;
+		if (seed1 == seed2)
 			continue;
-		}
 		if (seed2.ambiguous())
 			continue;
 		ContigPathMap::const_iterator path2It
@@ -196,54 +251,7 @@ static void findPathOverlaps(const ContigPathMap& paths,
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
 			path2.reverseComplement();
-		ContigPath consensus = align(path1, path2, seed2);
-		if (consensus.empty())
-			continue;
-
-		// Determine the orientation of the overlap edge.
-		// @todo This method does not handle gaps in the alignment.
-		ContigNode u = dir ? seed1 : seed2;
-		ContigNode v = dir ? seed2 : seed1;
-		if (path1 == path2) {
-			// path1 and path2 are identical.
-		} else if (consensus == path2) {
-			// path1 is contained in path2.
-			assert(path1.size() <= path2.size());
-			if (equal(path1.begin(), path1.end(), path2.begin())) {
-				// path1 -> path2
-				u = seed1;
-				v = seed2;
-			} else if (equal(path1.rbegin(), path1.rend(),
-						path2.rbegin())) {
-				// path2 -> path1
-				u = seed2;
-				v = seed1;
-			} else {
-				// path1 is contained in path2
-			}
-		} else if (consensus == path1) {
-			// path2 is contained in path1.
-			assert(path2.size() <= path1.size());
-			if (equal(path2.begin(), path2.end(), path1.begin())) {
-				// path2 -> path1
-				u = seed2;
-				v = seed1;
-			} else if (equal(path2.rbegin(), path2.rend(),
-						path1.rbegin())) {
-				// path1 -> path2
-				u = seed1;
-				v = seed2;
-			} else {
-				// path2 is contained in path1
-			}
-		} else {
-			// path1 and path2 overlap.
-		}
-
-		// Add the edge.
-#pragma omp critical(gout)
-		if (!edge(u, v, gout).second)
-			add_edge(u, v, gout);
+		addOverlapEdge(gout, seed1, path1, seed2, path2);
 	}
 }
 
