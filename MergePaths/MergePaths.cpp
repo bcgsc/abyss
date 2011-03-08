@@ -592,7 +592,7 @@ static void addMissingEdges(PathGraph& g, const ContigPathMap& paths)
 		}
 	}
 	if (opt::verbose > 0)
-		cerr << "Added " << numAdded << " missing edges.\n";
+		cout << "Added " << numAdded << " missing edges.\n";
 }
 
 /** Remove transitive edges. */
@@ -602,10 +602,10 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 	unsigned nremoved = remove_transitive_edges(pathGraph);
 	unsigned nafter = num_edges(pathGraph);
 	if (opt::verbose > 0) {
-		cerr << "Removed " << nremoved << " transitive edges of "
+		cout << "Removed " << nremoved << " transitive edges of "
 			<< nbefore << " edges leaving "
 			<< nafter << " edges.\n";
-		printGraphStats(cerr, pathGraph);
+		printGraphStats(cout, pathGraph);
 	}
 	assert(nbefore - nremoved == nafter);
 }
@@ -646,7 +646,7 @@ static void removeSmallOverlaps(PathGraph& g,
 			it != edges.end(); ++it)
 		remove_edge(*it, g);
 	if (opt::verbose > 0)
-		cerr << "Removed " << edges.size()
+		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
 }
 
@@ -742,7 +742,7 @@ static ContigPathMap readPaths(const string& filePath)
 	assert(in.eof());
 
 	if (opt::seedLen > 0)
-		cerr << "Ignored " << tooSmall
+		cout << "Ignored " << tooSmall
 			<< " paths whose seeds are shorter than "
 			<< opt::seedLen << " bp.\n";
 	return paths;
