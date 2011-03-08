@@ -595,8 +595,8 @@ static void addMissingEdges(PathGraph& g, const ContigPathMap& paths)
 		cerr << "Added " << numAdded << " missing edges.\n";
 }
 
-/** Output the path overlap graph. */
-static void outputPathGraph(PathGraph& pathGraph)
+/** Remove transitive edges. */
+static void removeTransitiveEdges(PathGraph& pathGraph)
 {
 	unsigned nbefore = num_edges(pathGraph);
 	unsigned nremoved = remove_transitive_edges(pathGraph);
@@ -608,7 +608,51 @@ static void outputPathGraph(PathGraph& pathGraph)
 		printGraphStats(cerr, pathGraph);
 	}
 	assert(nbefore - nremoved == nafter);
+}
 
+/** Remove ambiguous edges that overlap by only a small amount.
+ * Remove the edge (u,v) if deg+(u) > 1 and deg-(v) > 1 and the
+ * overlap of (u,v) is small.
+ */
+static void removeSmallOverlaps(PathGraph& g,
+		const ContigPathMap& paths)
+{
+	typedef graph_traits<PathGraph>::edge_descriptor E;
+	typedef graph_traits<PathGraph>::out_edge_iterator Eit;
+	typedef graph_traits<PathGraph>::vertex_descriptor V;
+	typedef graph_traits<PathGraph>::vertex_iterator Vit;
+
+	vector<E> edges;
+	pair<Vit, Vit> urange = vertices(g);
+	for (Vit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (out_degree(u, g) < 2)
+			continue;
+		ContigPath pathu = getPath(paths, u);
+		pair<Eit, Eit> uvits = out_edges(u, g);
+		for (Eit uvit = uvits.first; uvit != uvits.second; ++uvit) {
+			E uv = *uvit;
+			V v = target(uv, g);
+			assert(v != u);
+			if (in_degree(v, g) < 2)
+				continue;
+			ContigPath pathv = getPath(paths, v);
+			if (pathu.back() == pathv.front()
+					&& paths.count(pathu.back()) > 0)
+				edges.push_back(uv);
+		}
+	}
+	for (vector<E>::const_iterator it = edges.begin();
+			it != edges.end(); ++it)
+		remove_edge(*it, g);
+	if (opt::verbose > 0)
+		cerr << "Removed " << edges.size()
+			<< " small overlap edges.\n";
+}
+
+/** Output the path overlap graph. */
+static void outputPathGraph(PathGraph& pathGraph)
+{
 	ofstream out(opt::graphPath.c_str());
 	assert_good(out, opt::graphPath);
 	write_dot(out, pathGraph);
@@ -801,6 +845,8 @@ int main(int argc, char** argv)
 
 	if (!opt::graphPath.empty()) {
 		addMissingEdges(gout, originalPathMap);
+		removeTransitiveEdges(gout);
+		removeSmallOverlaps(gout, originalPathMap);
 		outputPathGraph(gout);
 		if (!opt::out.empty())
 			assemblePathGraph(gout, originalPathMap);
