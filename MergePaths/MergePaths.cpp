@@ -601,12 +601,10 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 	unsigned nbefore = num_edges(pathGraph);
 	unsigned nremoved = remove_transitive_edges(pathGraph);
 	unsigned nafter = num_edges(pathGraph);
-	if (opt::verbose > 0) {
+	if (opt::verbose > 0)
 		cout << "Removed " << nremoved << " transitive edges of "
 			<< nbefore << " edges leaving "
 			<< nafter << " edges.\n";
-		printGraphStats(cout, pathGraph);
-	}
 	assert(nbefore - nremoved == nafter);
 }
 
@@ -847,6 +845,7 @@ int main(int argc, char** argv)
 		addMissingEdges(gout, originalPathMap);
 		removeTransitiveEdges(gout);
 		removeSmallOverlaps(gout, originalPathMap);
+		printGraphStats(cout, gout);
 		outputPathGraph(gout);
 		if (!opt::out.empty())
 			assemblePathGraph(gout, originalPathMap);
