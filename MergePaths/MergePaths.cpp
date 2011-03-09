@@ -95,8 +95,18 @@ typedef map<ContigID, ContigPath> ContigPathMap;
 /** Lengths of contigs in k-mer. */
 static vector<unsigned> g_contigLengths;
 
+/** Orientation of an edge. */
+enum dir_type {
+	DIR_X, // u--v none
+	DIR_F, // u->v forward
+	DIR_R, // u<-v reverse
+	DIR_B, // u<>v both
+};
+
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		ContigNode pivot);
+static ContigPath align(const ContigPath& p1, const ContigPath& p2,
+		ContigNode pivot, dir_type& orientation);
 
 static bool gDebugPrint;
 
@@ -174,60 +184,33 @@ static void appendToMergeQ(deque<ContigNode>& mergeQ,
 typedef ContigGraph<DirectedGraph<> > PathGraph;
 
 /** Add an edge if the two paths overlap.
+ * @param pivot the pivot at which to seed the alignment
  * @return whether an overlap was found
  */
 static bool addOverlapEdge(PathGraph& gout, ContigNode pivot,
 		ContigNode seed1, const ContigPath& path1,
 		ContigNode seed2, const ContigPath& path2)
 {
-	ContigPath consensus = align(path1, path2, pivot);
-	if (consensus.empty())
-		return false;
+	assert(seed1 != seed2);
 
 	// Determine the orientation of the overlap edge.
-	// @todo This method does not handle gaps in the alignment.
-	assert(seed1 != seed2);
-	bool dir = find(consensus.begin(), consensus.end(), seed1)
-		< find(consensus.begin(), consensus.end(), seed2);
-	ContigNode u = dir ? seed1 : seed2;
-	ContigNode v = dir ? seed2 : seed1;
-	if (path1 == path2) {
-		// path1 and path2 are identical.
-	} else if (consensus == path2) {
-		// path1 is contained in path2.
-		assert(path1.size() <= path2.size());
-		if (equal(path1.begin(), path1.end(), path2.begin())) {
-			// path1 -> path2
-			u = seed1;
-			v = seed2;
-		} else if (equal(path1.rbegin(), path1.rend(),
-					path2.rbegin())) {
-			// path2 -> path1
-			u = seed2;
-			v = seed1;
-		} else {
-			// path1 is contained in path2
-		}
-	} else if (consensus == path1) {
-		// path2 is contained in path1.
-		assert(path2.size() <= path1.size());
-		if (equal(path2.begin(), path2.end(), path1.begin())) {
-			// path2 -> path1
-			u = seed2;
-			v = seed1;
-		} else if (equal(path2.rbegin(), path2.rend(),
-					path1.rbegin())) {
-			// path1 -> path2
-			u = seed1;
-			v = seed2;
-		} else {
-			// path2 is contained in path1
-		}
-	} else {
-		// path1 and path2 overlap.
+	dir_type orientation = DIR_X;
+	ContigPath consensus = align(path1, path2, pivot, orientation);
+	if (consensus.empty())
+		return false;
+	assert(orientation != DIR_X);
+	if (orientation == DIR_B) {
+		// One of the paths subsumes the other. Use the order of the
+		// seeds to determine the orientation of the edge.
+		orientation = find(consensus.begin(), consensus.end(), seed1)
+			< find(consensus.begin(), consensus.end(), seed2)
+			? DIR_F : DIR_R;
 	}
+	assert(orientation == DIR_F || orientation == DIR_R);
 
 	// Add the edge.
+	ContigNode u = orientation == DIR_F ? seed1 : seed2;
+	ContigNode v = orientation == DIR_F ? seed2 : seed1;
 	bool added = false;
 #pragma omp critical(gout)
 	if (!edge(u, v, gout).second) {
@@ -1117,46 +1100,54 @@ static bool alignOne(iterator& it1, iterator last1,
 
 /** Align the ambiguous region [it1, last1) to [it2, last2)
  * and store the consensus at out if an alignment is found.
- * @return true if an alignment is found
+ * @return the orientation of the alignment if an alignments is found
+ * or zero otherwise
  */
 template <class iterator, class oiterator>
-static bool align(iterator it1, iterator last1,
+static dir_type align(iterator it1, iterator last1,
 		iterator it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it2 != last2);
 	while (it1 != last1 && it2 != last2)
 		if (!alignOne(it1, last1, it2, last2, out))
-			return false;
+			return DIR_X;
 	assert(it1 == last1 || it2 == last2);
 	out = copy(it1, last1, out);
 	out = copy(it2, last2, out);
-	return true;
+	return it1 == last1 && it2 == last2 ? DIR_B
+		: it1 == last1 ? DIR_F
+		: it2 == last2 ? DIR_R
+		: DIR_X;
 }
 
 /** Find an equivalent region of the two specified paths, starting the
  * alignment at pivot1 of path1 and pivot2 of path2.
+ * @param[out] orientation the orientation of the alignment
  * @return the consensus sequence
  */
 static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		ContigPath::const_iterator pivot1,
-		ContigPath::const_iterator pivot2)
+		ContigPath::const_iterator pivot2,
+		dir_type& orientation)
 {
+	assert(*pivot1 == *pivot2);
 	ContigPath::const_reverse_iterator
 		rit1 = ContigPath::const_reverse_iterator(pivot1+1),
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
 	ContigPath alignmentr(p1.rend() - rit1 + p2.rend() - rit2);
 	ContigPath::iterator rout = alignmentr.begin();
-	bool alignedr = align(rit1, p1.rend(), rit2, p2.rend(), rout);
+	dir_type alignedr = align(rit1, p1.rend(), rit2, p2.rend(), rout);
 	alignmentr.erase(rout, alignmentr.end());
 
-	ContigPath alignmentf(p1.end() - pivot1 + p2.end() - pivot2);
+	ContigPath::const_iterator it1 = pivot1, it2 = pivot2;
+	ContigPath alignmentf(p1.end() - it1 + p2.end() - it2);
 	ContigPath::iterator fout = alignmentf.begin();
-	bool alignedf = align(pivot1, p1.end(), pivot2, p2.end(), fout);
+	dir_type alignedf = align(it1, p1.end(), it2, p2.end(), fout);
 	alignmentf.erase(fout, alignmentf.end());
 
 	ContigPath consensus;
-	if (alignedr && alignedf) {
+	if (alignedr != DIR_X && alignedf != DIR_X) {
 		// Found an alignment.
 		assert(!alignmentf.empty());
 		assert(!alignmentr.empty());
@@ -1164,6 +1155,30 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		consensus.assign(alignmentr.rbegin(), alignmentr.rend()-1);
 		consensus.insert(consensus.end(),
 				alignmentf.begin(), alignmentf.end());
+
+		// Determine the orientation of the alignment.
+		unsigned dirs = alignedr << 2 | alignedf;
+		static const dir_type DIRS[16] = {
+			DIR_X, // 0000 XX impossible
+			DIR_X, // 0001 XF impossible
+			DIR_X, // 0010 XR impossible
+			DIR_X, // 0011 XB impossible
+			DIR_X, // 0100 FX impossible
+			DIR_B, // 0101 FF u is subsumed in v
+			DIR_R, // 0110 FR v->u
+			DIR_R, // 0111 FB v->u
+			DIR_X, // 1000 RX impossible
+			DIR_F, // 1001 RF u->v
+			DIR_B, // 1010 RR v is subsumed in u
+			DIR_F, // 1011 RB u->v
+			DIR_X, // 1100 BX impossible
+			DIR_F, // 1101 BF u->v
+			DIR_R, // 1110 BR v->u
+			DIR_B, // 1111 BB u and v are equal
+		};
+		assert(dirs < 16);
+		orientation = DIRS[dirs];
+		assert(orientation != DIR_X);
 	}
 	return consensus;
 }
@@ -1188,11 +1203,12 @@ static ContigNode findPivot(
 }
 
 /** Find an equivalent region of the two specified paths.
+ * @param[out] orientation the orientation of the alignment
  * @return the consensus sequence
  */
 static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
-		ContigNode pivot)
+		ContigNode pivot, dir_type& orientation)
 {
 	if (find(path1.begin(), path1.end(), pivot) == path1.end()
 			|| find(path2.begin(), path2.end(), pivot) == path2.end())
@@ -1219,9 +1235,20 @@ static ContigPath align(
 			// trivial alignment, which we'll ignore.
 			continue;
 		}
-		consensus = align(path1, path2, it1, it2);
+		consensus = align(path1, path2, it1, it2, orientation);
 		if (!consensus.empty())
 			return consensus;
 	}
 	return consensus;
+}
+
+/** Find an equivalent region of the two specified paths.
+ * @return the consensus sequence
+ */
+static ContigPath align(
+		const ContigPath& path1, const ContigPath& path2,
+		ContigNode pivot)
+{
+	dir_type orientation;
+	return align(path1, path2, pivot, orientation);
 }
