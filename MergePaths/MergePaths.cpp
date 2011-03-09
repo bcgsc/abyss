@@ -1060,11 +1060,10 @@ static bool alignAtSeed(
 		}
 	}
 	if (bestLen != UINT_MAX) {
-		bool good = buildConsensus(it1, it1e, it2, bestIt2e, out)
-				&& align(it1e, last1, bestIt2e, last2, out);
+		bool good = buildConsensus(it1, it1e, it2, bestIt2e, out);
 		assert(good);
-		it1 = last1;
-		it2 = last2;
+		it1 = it1e;
+		it2 = bestIt2e;
 		return good;
 	} else
 		return false;
