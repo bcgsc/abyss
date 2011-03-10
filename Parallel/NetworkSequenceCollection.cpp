@@ -73,6 +73,7 @@ void NetworkSequenceCollection::run()
 				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
+				assert(!m_data.empty());
 				m_data.shrink();
 				m_comm.reduce(m_data.size());
 
@@ -416,7 +417,6 @@ void NetworkSequenceCollection::runControl()
 			case NAS_LOADING:
 			{
 				loadSequences();
-				assert(m_data.size() > 0);
 				EndState();
 
 				m_numReachedCheckpoint++;
@@ -429,6 +429,7 @@ void NetworkSequenceCollection::runControl()
 				m_comm.barrier();
 				pumpNetwork();
 				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
+				assert(!m_data.empty());
 				m_data.shrink();
 				printf("Loaded %lu k-mer\n",
 						m_comm.reduce(m_data.size()));
