@@ -42,7 +42,7 @@ void SequenceCollectionHash::add(const Kmer& seq)
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_data.end()) {
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
-		if (m_data.size() == 0) {
+		if (m_data.empty()) {
 			/* sparse_hash_set requires that set_deleted_key()
 			 * is called before calling erase(). */
 			Kmer rc(reverseComplement(seq));
