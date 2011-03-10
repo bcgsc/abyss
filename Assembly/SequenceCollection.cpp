@@ -256,7 +256,7 @@ void SequenceCollectionHash::load(const char* path)
 /** Indicate that this is a colour-space collection. */
 void SequenceCollectionHash::setColourSpace(bool flag)
 {
-	if (m_data.size() > 0)
+	if (!m_data.empty())
 		assert(opt::colourSpace == flag);
 	opt::colourSpace = flag;
 }
