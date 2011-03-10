@@ -324,12 +324,19 @@ static ContigPath mergePath(
 			= find(path.begin(), path.end(), seed2) != path.end()
 			? seed2 : seed1;
 		ContigPath consensus = align(path, path2, pivot);
-		assert(!consensus.empty());
-		path.swap(consensus);
-		if (opt::verbose > 1)
+		if (consensus.empty()) {
+			// This seed could be removed from the seed path.
+			if (opt::verbose > 1)
 #pragma omp critical(cout)
-			cout << seed2 << '\t' << path2 << '\n'
-				<< '\t' << path << '\n';
+				cout << seed2 << '\t' << path2 << '\n'
+					<< "\tinvalid\n";
+		} else {
+			path.swap(consensus);
+			if (opt::verbose > 1)
+#pragma omp critical(cout)
+				cout << seed2 << '\t' << path2 << '\n'
+					<< '\t' << path << '\n';
+		}
 		seed1 = seed2;
 	}
 	return path;
