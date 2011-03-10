@@ -15,6 +15,9 @@
 
 namespace opt {
 	extern int dot;
+
+	/** The acceptable error of a distance estimate. */
+	extern unsigned distanceError;
 }
 
 /** An estimate of the distance between two contigs. */
@@ -102,14 +105,7 @@ static inline unsigned allowedError(float stddev)
 {
 	/** The number of standard deviations. */
 	const int NUM_SIGMA = 3;
-
-	/**
-	 * Additional constant error. The error expected that does not
-	 * vary with the number of samples.
-	 */
-	const unsigned CONSTANT_ERROR = 6;
-
-	return (unsigned)ceilf(NUM_SIGMA * stddev + CONSTANT_ERROR);
+	return (unsigned)ceilf(NUM_SIGMA * stddev + opt::distanceError);
 }
 
 typedef std::vector<Estimate> EstimateVector;

@@ -12,4 +12,7 @@ namespace opt {
 
 	/** Verbose output */
 	int verbose;
+
+	/** The acceptable error of a distance estimate. */
+	unsigned distanceError = 6;
 }

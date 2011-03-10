@@ -42,6 +42,8 @@ static const char USAGE_MESSAGE[] =
 "  DIST  distance estimates between the contigs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -d, --dist-error=N    acceptable error of a distance estimate\n"
+"                        default is 6 bp\n"
 "      --max-cost=COST   maximum computational cost\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -j, --threads=THREADS use THREADS parallel threads [1]\n"
@@ -62,12 +64,13 @@ namespace opt {
 	int dot; // used by Estimate
 }
 
-static const char shortopts[] = "j:k:o:v";
+static const char shortopts[] = "d:j:k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "dist-error",  required_argument, NULL, 'd' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "scaffold",    no_argument,       &opt::scaffold, 1 },
@@ -98,6 +101,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'd': arg >> opt::distanceError; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case OPT_MAX_COST: arg >> opt::maxCost; break;
