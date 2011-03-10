@@ -681,6 +681,8 @@ static void assemblePathGraph(
 		}
 	}
 
+	removeRepeats(paths);
+
 	// Remove the subsumed paths.
 	if (opt::verbose > 0)
 		cout << "Removing redundant contigs\n";
