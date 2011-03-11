@@ -122,13 +122,16 @@ static void popBubble(Graph& g,
 		adj = g.adjacent_vertices(v);
 	copy(adj.first, adj.second, sorted.begin());
 	sort(sorted.begin(), sorted.end(), CompareCoverage(g));
-	if (opt::dot) {
+	if (opt::dot)
+#pragma omp critical(cout)
+	{
 		cout << '"' << v << "\" -> {";
 		copy(sorted.begin(), sorted.end(),
 				affix_ostream_iterator<ContigNode>(cout,
 					" \"", "\""));
 		cout << " } -> \"" << tail << "\"\n";
 	}
+#pragma omp critical(g_popped)
 	transform(sorted.begin() + 1, sorted.end(),
 			back_inserter(g_popped),
 			mem_fun_ref(&ContigNode::operator ContigID));
@@ -176,6 +179,7 @@ static float getAlignmentIdentity(It first, It last)
 	NWAlignment alignment;
 	unsigned matches = alignGlobal(seqa, seqb, alignment);
 	if (opt::verbose > 2)
+#pragma omp critical(cerr)
 		cerr << alignment;
 	return (float)matches / alignment.size();
 }
@@ -213,19 +217,24 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		}
 	}
 
-	if (opt::verbose > 2) {
+	if (opt::verbose > 2)
+#pragma omp critical(cerr)
+	{
 		cerr << "\n* " << v << " -> ";
 		copy(adj.first, adj.second,
 				ostream_iterator<ContigNode>(cerr, " "));
 		cerr << "-> " << tail << '\n';
 	}
 
+#pragma omp atomic
 	g_count.bubbles++;
 	const unsigned MAX_BRANCHES = opt::identity > 0 ? 2 : UINT_MAX;
 	if (nbranches > MAX_BRANCHES) {
 		// Too many branches.
+#pragma omp atomic
 		g_count.tooMany++;
 		if (opt::verbose > 1)
+#pragma omp critical(cerr)
 			cerr << nbranches << " paths (too many)\n";
 		return;
 	}
@@ -237,8 +246,10 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (maxLength >= opt::maxLength) {
 		// This branch is too long.
+#pragma omp atomic
 		g_count.tooLong++;
 		if (opt::verbose > 1)
+#pragma omp critical(cerr)
 			cerr << minLength << '\t' << maxLength
 				<< "\t0\t(too long)\n";
 		return;
@@ -248,14 +259,17 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		: getAlignmentIdentity(adj.first, adj.second);
 	bool dissimilar = identity < opt::identity;
 	if (opt::verbose > 1)
+#pragma omp critical(cerr)
 		cerr << minLength << '\t' << maxLength << '\t' << identity
 			<< (dissimilar ? "\t(dissimilar)" : "") << '\n';
 	if (dissimilar) {
 		// Insufficient identity.
+#pragma omp atomic
 		g_count.dissimilar++;
 		return;
 	}
 
+#pragma omp atomic
 	g_count.popped++;
 	popBubble(g, v, tail);
 }
@@ -356,8 +370,16 @@ int main(int argc, char** argv)
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+#if _OPENMP
+#pragma omp parallel
+#pragma omp single
+	for (vertex_iterator it = vit.first; it != vit.second; ++it)
+#pragma omp task firstprivate(it)
+		considerPopping(&g, *it);
+#else
 	for_each(vit.first, vit.second,
 			bind1st(ptr_fun(considerPopping), &g));
+#endif
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
