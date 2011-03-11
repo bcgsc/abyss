@@ -11,12 +11,12 @@ EXTRA_DIST=doxygen.conf
 SUBDIRS = \
 	bin \
 	doc \
-	Align \
 	Assembly \
 	Common \
 	DataLayer \
 	Graph \
 	dialign \
+	Align \
 	ABYSS $(Parallel) \
 	AdjList \
 	Consensus \
