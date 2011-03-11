@@ -137,6 +137,11 @@ s?=100
 $(foreach i,$(lib),$(eval $i_s?=$s))
 $(foreach i,$(lib),$(eval $i_n?=$n))
 
+# SimpleGraph parameters
+ifdef d
+sgopt += -d$d
+endif
+
 # PathConsensus parameters
 ifdef a
 pcopt += -a$a
@@ -252,7 +257,7 @@ endif
 # Paired-end assembly
 
 %-4.path1: %-4.adj %-3.dist
-	SimpleGraph $v $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
+	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.adj %-4.path1
 	MergePaths $v $(MERGEPATHS_OPTIONS) -j$j -k$k -o $@ $^
