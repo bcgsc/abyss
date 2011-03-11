@@ -29,6 +29,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#if _OPENMP
+# include <omp.h>
+#endif
 
 using namespace std;
 
@@ -52,6 +55,7 @@ static const char USAGE_MESSAGE[] =
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
+"  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -74,9 +78,12 @@ namespace opt {
 	static int dot;
 
 	int format; // used by ContigProperties
+
+	/** Number of threads. */
+	static int threads = 1;
 }
 
-static const char shortopts[] = "b:g:k:p:v";
+static const char shortopts[] = "b:g:j:k:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -86,6 +93,7 @@ static const struct option longopts[] = {
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "identity",      required_argument, NULL, 'p' },
+	{ "threads",       required_argument, NULL, 'j' },
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -309,6 +317,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'b': arg >> opt::maxLength; break;
 			case 'g': arg >> opt::graphPath; break;
+			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'p': arg >> opt::identity; break;
 			case 'v': opt::verbose++; break;
@@ -371,6 +380,8 @@ int main(int argc, char** argv)
 		cout << "digraph bubbles {\n";
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 #if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
 #pragma omp parallel
 #pragma omp single
 	for (vertex_iterator it = vit.first; it != vit.second; ++it)

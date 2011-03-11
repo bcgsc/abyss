@@ -201,7 +201,7 @@ endif
 # Pop bubbles.
 
 %-1.path %-3.adj: %-1.fa %-1.adj
-	PopBubbles $v -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-1.path
+	PopBubbles $v -j$j -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-1.path
 
 %-3.fa: %-1.fa %-1.adj %-1.path
 	MergeContigs -k$k -o $@ $^
