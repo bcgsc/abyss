@@ -123,6 +123,18 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	if (count_good == 0)
 		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
 				inFile.c_str());
+
+	if (opt::rank <= 0 && count == 0 && seqCollection->empty()) {
+		/* The master process did not load any data, which means that
+		 * it hasn't told the slave processes whether this assembly is
+		 * in colour-space. Rather than fail right now, assume that
+		 * the assembly is not colour space. If the assumption is
+		 * incorrect, the assembly will fail pretty quickly as soon as
+		 * one of the slave processes sees a colour-space read.
+		 */
+		assert(!opt::colourSpace);
+		seqCollection->setColourSpace(false);
+	}
 }
 
 //
