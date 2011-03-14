@@ -417,6 +417,7 @@ void NetworkSequenceCollection::runControl()
 			case NAS_LOADING:
 			{
 				loadSequences();
+				assert(!m_data.empty());
 				EndState();
 
 				m_numReachedCheckpoint++;
