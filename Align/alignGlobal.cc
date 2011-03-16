@@ -4,7 +4,7 @@
  */
 
 #include "alignGlobal.h"
-#include "Sequence.h" // for baseToCode
+#include "Sequence.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -37,27 +37,9 @@ static int score(char a, char b, char& c)
 	if (a == b) {
 		c = a;
 		return MATCH;
-	} else if (toupper(a) == toupper(b)) {
-		c = tolower(a);
-		return MATCH;
-	} else if (a == 'N' || a == 'n') {
-		c = b;
-		return MATCH;
-	} else if (b == 'N' || b == 'n') {
-		c = a;
-		return MATCH;
 	} else {
-		static const char IUPAC[4][4] = {
-			// A    C    G    T
-			{ 'A', 'M', 'R', 'W' }, // A
-			{ 'M', 'C', 'S', 'Y' }, // C
-			{ 'R', 'S', 'G', 'K' }, // G
-			{ 'W', 'Y', 'K', 'T' }, // T
-		};
-		c = IUPAC[baseToCode(toupper(a))][baseToCode(toupper(b))];
-		if (islower(a) || islower(b))
-			c = tolower(c);
-		return MISMATCH;
+		c = ambiguityOr(a, b);
+		return c == a || c == b ? MATCH : MISMATCH;
 	}
 }
 
