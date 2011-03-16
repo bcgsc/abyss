@@ -3,7 +3,7 @@
 #include "Common/Options.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
-#include "needleman_wunsch.h"
+#include "alignGlobal.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>

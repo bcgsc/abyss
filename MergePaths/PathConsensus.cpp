@@ -25,7 +25,7 @@
 #include "IOUtil.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
-#include "needleman_wunsch.h"
+#include "alignGlobal.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>

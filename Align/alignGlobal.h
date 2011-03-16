@@ -1,5 +1,5 @@
-#ifndef NEEDLEMAN_WUNSCH_H
-#define NEEDLEMAN_WUNSCH_H
+#ifndef ALIGNGLOBAL_H
+#define ALIGNGLOBAL_H
 
 #include <cassert>
 #include <cctype>
@@ -37,6 +37,6 @@ struct NWAlignment {
 
 unsigned alignGlobal(
 		const std::string& a, const std::string& b,
-		NWAlignment& align, bool verbose = false);
+		NWAlignment& align);
 
-#endif /* NEEDLEMAN_WUNSCH_H */
+#endif

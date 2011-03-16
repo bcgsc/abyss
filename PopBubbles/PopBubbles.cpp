@@ -14,9 +14,9 @@
 #include "FastaReader.h"
 #include "GraphIO.h"
 #include "Iterator.h"
-#include "needleman_wunsch.h"
 #include "Sequence.h"
 #include "Uncompress.h"
+#include "alignGlobal.h"
 #include <algorithm>
 #include <cerrno>
 #include <climits> // for UINT_MAX
