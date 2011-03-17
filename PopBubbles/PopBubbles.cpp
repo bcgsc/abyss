@@ -331,7 +331,10 @@ static ContigPath addDistance(const Graph& g, const ContigPath& path)
 	return out;
 }
 
-/** Scaffold over the bubble between vertices u and w. */
+/** Scaffold over the bubble between vertices u and w.
+ * Add an edge (u,w) with the distance property set to the length of
+ * the largest branch of the bubble.
+ */
 static void scaffoldBubble(Graph* pg,
 		pair<vertex_descriptor, vertex_descriptor> uw)
 {
@@ -469,6 +472,11 @@ int main(int argc, char** argv)
 			bind1st(ptr_fun(considerPopping), &g));
 #endif
 
+	// Scaffold over unpopped bubbles.
+	if (opt::scaffold)
+		for_each(g_bubbles.begin(), g_bubbles.end(),
+				bind1st(ptr_fun(scaffoldBubble), &g));
+
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
 	g_popped.erase(unique(g_popped.begin(), g_popped.end()),
@@ -490,18 +498,6 @@ int main(int argc, char** argv)
 
 	if (!opt::graphPath.empty()) {
 		// Remove the popped contigs from the adjacency graph.
-		for_each(g_popped.begin(), g_popped.end(),
-				bind1st(ptr_fun(removeContig), &g));
-
-		// Scaffold over the remaining bubbles.
-		g_popped.clear();
-		for_each(g_bubbles.begin(), g_bubbles.end(),
-				bind1st(ptr_fun(scaffoldBubble), &g));
-		sort(g_popped.begin(), g_popped.end());
-		assert(unique(g_popped.begin(), g_popped.end())
-				== g_popped.end());
-		copy(g_popped.begin(), g_popped.end(),
-				ostream_iterator<ContigID>(cout, "\n"));
 		for_each(g_popped.begin(), g_popped.end(),
 				bind1st(ptr_fun(removeContig), &g));
 
