@@ -339,30 +339,23 @@ static void scaffoldBubble(Graph* pg,
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	Graph& g = *pg;
 	V u = uw.first, w = uw.second;
-	if (out_degree(u, g) == 1) {
-		// Already popped.
-		assert(in_degree(w, g) == 1);
+	if (edge(u, w, g).second) {
+		// Already scaffolded.
 		return;
 	}
+
 	pair<Ait, Ait> vrange = g.adjacent_vertices(u);
-	// Clearing the vertices v modifies the out edges of u.
-	vector<V> vs(vrange.first, vrange.second);
+	g_popped.insert(g_popped.end(), vrange.first, vrange.second);
 	int maxDistance = INT_MIN;
-	for (vector<V>::const_iterator vit = vs.begin();
-			vit != vs.end(); ++vit) {
+	for (Ait vit = vrange.first; vit != vrange.second; ++vit) {
 		V v = *vit;
 		int distance
 			= getDistance(g, u, v)
 			+ g[v].length
 			+ getDistance(g, v, w);
 		maxDistance = max(maxDistance, distance);
-		clear_vertex(v, g);
-		remove_vertex(v, g);
-		g_popped.push_back(v);
 	}
 	assert(maxDistance != INT_MIN);
-	assert(out_degree(u, g) == 0);
-	assert(in_degree(w, g) == 0);
 	add_edge(u, w, max(maxDistance, 1), g);
 }
 
@@ -509,6 +502,8 @@ int main(int argc, char** argv)
 				== g_popped.end());
 		copy(g_popped.begin(), g_popped.end(),
 				ostream_iterator<ContigID>(cout, "\n"));
+		for_each(g_popped.begin(), g_popped.end(),
+				bind1st(ptr_fun(removeContig), &g));
 
 		// Assemble unambiguous paths.
 		typedef vector<ContigPath> ContigPaths;
