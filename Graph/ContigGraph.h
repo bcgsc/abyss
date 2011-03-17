@@ -264,15 +264,6 @@ add_vertex(ContigGraph<G>& g)
 
 template <typename G>
 void
-clear_vertex(
-		typename ContigGraph<G>::vertex_descriptor u,
-		ContigGraph<G>& g)
-{
-	g.clear_vertex(u);
-}
-
-template <typename G>
-void
 remove_vertex(
 		typename ContigGraph<G>::vertex_descriptor u,
 		ContigGraph<G>& g)
@@ -281,6 +272,15 @@ remove_vertex(
 }
 
 // EdgeMutableGraph
+
+template <typename G>
+void
+clear_vertex(
+		typename ContigGraph<G>::vertex_descriptor u,
+		ContigGraph<G>& g)
+{
+	g.clear_vertex(u);
+}
 
 template <typename G>
 std::pair<typename ContigGraph<G>::edge_descriptor, bool>
