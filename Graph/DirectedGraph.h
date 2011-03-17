@@ -661,6 +661,17 @@ remove_edge(
 	g.remove_edge(e);
 }
 
+// MutableIncidenceGraph
+
+template <typename VP, typename EP>
+void
+clear_out_edges(
+		typename DirectedGraph<VP, EP>::vertex_descriptor u,
+		DirectedGraph<VP, EP>& g)
+{
+	g.clear_out_edges(u);
+}
+
 // MutableEdgeListGraph
 
 template <typename VP, typename EP, class Predicate>

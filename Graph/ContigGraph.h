@@ -311,6 +311,28 @@ remove_edge(
 	g.remove_edge(e);
 }
 
+// MutableIncidenceGraph
+
+template <typename G>
+void
+clear_out_edges(
+		typename ContigGraph<G>::vertex_descriptor u,
+		ContigGraph<G>& g)
+{
+	g.clear_out_edges(u);
+}
+
+// MutableBidirectionalGraph
+
+template <typename G>
+void
+clear_in_edges(
+		typename ContigGraph<G>::vertex_descriptor u,
+		ContigGraph<G>& g)
+{
+	g.clear_in_edges(u);
+}
+
 // PropertyGraph
 
 /** Return true if this vertex has been removed. */
