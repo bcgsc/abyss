@@ -28,6 +28,7 @@
 #include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 #if _OPENMP
 # include <omp.h>
@@ -53,6 +54,9 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "                        default is 10000\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
+"      --scaffold        scaffold over bubbles that have\n"
+"                        insufficient identity\n"
+"      --no-scaffold     disable scaffolding [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -70,6 +74,9 @@ namespace opt {
 
 	/** Minimum identity. */
 	static float identity = 0.9;
+
+	/** Scaffold over bubbles that have insufficient identity. */
+	static int scaffold;
 
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
@@ -93,6 +100,8 @@ static const struct option longopts[] = {
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "identity",      required_argument, NULL, 'p' },
+	{ "scaffold",      no_argument,       &opt::scaffold, 1},
+	{ "no-scaffold",   no_argument,       &opt::scaffold, 0},
 	{ "threads",       required_argument, NULL, 'j' },
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
@@ -103,11 +112,24 @@ static const struct option longopts[] = {
 /** Popped branches. */
 static vector<ContigID> g_popped;
 
+/** Bubbles that were not popped. */
+static vector<pair<ContigNode, ContigNode> > g_bubbles;
+
 /** Contig adjacency graph. */
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::adjacency_iterator adjacency_iterator;
+
+/** Return the distance from vertex u to v. */
+static int getDistance(const Graph& g,
+		vertex_descriptor u, vertex_descriptor v)
+{
+	typedef graph_traits<Graph>::edge_descriptor edge_descriptor;
+	pair<edge_descriptor, bool> e = edge(u, v, g);
+	assert(e.second);
+	return g[e.first].distance;
+}
 
 struct CompareCoverage {
 	const Graph& g;
@@ -274,12 +296,74 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		// Insufficient identity.
 #pragma omp atomic
 		g_count.dissimilar++;
+		if (opt::scaffold) {
+#pragma omp critical(g_bubbles)
+			g_bubbles.push_back(make_pair(v, tail));
+		}
 		return;
 	}
 
 #pragma omp atomic
 	g_count.popped++;
 	popBubble(g, v, tail);
+}
+
+/** Add distances to a path. */
+static ContigPath addDistance(const Graph& g, const ContigPath& path)
+{
+	ContigPath out;
+	out.reserve(path.size());
+	ContigNode u = path.front();
+	out.push_back(u);
+	for (ContigPath::const_iterator it = path.begin() + 1;
+			it != path.end(); ++it) {
+		ContigNode v = *it;
+		int distance = getDistance(g, u, v);
+		if (distance >= 0) {
+			int numN = distance + opt::k - 1; // by convention
+			assert(numN >= 0);
+			numN = max(numN, 1);
+			out.push_back(ContigNode(numN, 'N'));
+		}
+		out.push_back(v);
+		u = v;
+	}
+	return out;
+}
+
+/** Scaffold over the bubble between vertices u and w. */
+static void scaffoldBubble(Graph* pg,
+		pair<vertex_descriptor, vertex_descriptor> uw)
+{
+	typedef graph_traits<Graph>::adjacency_iterator Ait;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	Graph& g = *pg;
+	V u = uw.first, w = uw.second;
+	if (out_degree(u, g) == 1) {
+		// Already popped.
+		assert(in_degree(w, g) == 1);
+		return;
+	}
+	pair<Ait, Ait> vrange = g.adjacent_vertices(u);
+	// Clearing the vertices v modifies the out edges of u.
+	vector<V> vs(vrange.first, vrange.second);
+	int maxDistance = INT_MIN;
+	for (vector<V>::const_iterator vit = vs.begin();
+			vit != vs.end(); ++vit) {
+		V v = *vit;
+		int distance
+			= getDistance(g, u, v)
+			+ g[v].length
+			+ getDistance(g, v, w);
+		maxDistance = max(maxDistance, distance);
+		clear_vertex(v, g);
+		remove_vertex(v, g);
+		g_popped.push_back(v);
+	}
+	assert(maxDistance != INT_MIN);
+	assert(out_degree(u, g) == 0);
+	assert(in_degree(w, g) == 0);
+	add_edge(u, w, max(maxDistance, 1), g);
 }
 
 /** Remove the specified contig from the adjacency graph. */
@@ -416,13 +500,32 @@ int main(int argc, char** argv)
 		for_each(g_popped.begin(), g_popped.end(),
 				bind1st(ptr_fun(removeContig), &g));
 
+		// Scaffold over the remaining bubbles.
+		g_popped.clear();
+		for_each(g_bubbles.begin(), g_bubbles.end(),
+				bind1st(ptr_fun(scaffoldBubble), &g));
+		sort(g_popped.begin(), g_popped.end());
+		assert(unique(g_popped.begin(), g_popped.end())
+				== g_popped.end());
+		copy(g_popped.begin(), g_popped.end(),
+				ostream_iterator<ContigID>(cout, "\n"));
+
 		// Assemble unambiguous paths.
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
-		assemble(g, back_inserter(paths));
-		for (ContigPaths::const_iterator it = paths.begin();
-				it != paths.end(); ++it)
-			cout << ContigID::create() << '\t' << *it << '\n';
+		if (opt::scaffold) {
+			Graph gorig = g;
+			assemble(g, back_inserter(paths));
+			for (ContigPaths::const_iterator it = paths.begin();
+					it != paths.end(); ++it)
+				cout << ContigID::create() << '\t'
+					<< addDistance(gorig, *it) << '\n';
+		} else {
+			assemble(g, back_inserter(paths));
+			for (ContigPaths::const_iterator it = paths.begin();
+					it != paths.end(); ++it)
+				cout << ContigID::create() << '\t' << *it << '\n';
+		}
 		paths.clear();
 
 		// Output the updated adjacency graph.
