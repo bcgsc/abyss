@@ -482,7 +482,7 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << g_count.bubbles/2
-			<< " Popped: " << g_popped.size()
+			<< " Popped: " << g_count.popped/2
 			<< " Too long: " << g_count.tooLong/2
 			<< " Too many: " << g_count.tooMany/2
 			<< " Dissimilar: " << g_count.dissimilar/2
