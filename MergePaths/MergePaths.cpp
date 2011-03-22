@@ -1095,6 +1095,24 @@ template <class iterator, class oiterator>
 static bool alignOne(iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
+	// Check for a trivial alignment.
+	unsigned n1 = last1 - it1, n2 = last2 - it2;
+	if (n1 <= n2 && equal(it1, last1, it2)) {
+		// [it1,last1) is a prefix of [it2,last2).
+		out = copy(it1, last1, out);
+		it1 += n1;
+		it2 += n1;
+		assert(it1 == last1);
+		return true;
+	} else if (n2 < n1 && equal(it2, last2, it1)) {
+		// [it2,last2) is a prefix of [it1,last1).
+		out = copy(it2, last2, out);
+		it1 += n2;
+		it2 += n2;
+		assert(it2 == last2);
+		return true;
+	}
+
 	return
 		it1->ambiguous() && it2->ambiguous()
 			? (it1->length() > it2->length()
@@ -1219,6 +1237,11 @@ static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		ContigNode pivot, dir_type& orientation)
 {
+	if (path1 == path2) {
+		// The two paths are identical.
+		orientation = DIR_B;
+		return path1;
+	}
 	if (find(path1.begin(), path1.end(), pivot) == path1.end()
 			|| find(path2.begin(), path2.end(), pivot) == path2.end())
 		pivot = findPivot(path1, path2);
