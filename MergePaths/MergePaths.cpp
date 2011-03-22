@@ -957,6 +957,9 @@ static bool alignCoordinates(iterator& first1, iterator last1,
 			ambiguous2 -= length(*it1);
 			*out++ = *it1++;
 		} else
+			assert(false);
+
+		if (ambiguous1 == 0 && ambiguous2 == 0)
 			break;
 		if (ambiguous1 < 0 || ambiguous2 < 0)
 			return false;
