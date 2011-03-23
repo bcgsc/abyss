@@ -1240,8 +1240,9 @@ static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		ContigNode pivot, dir_type& orientation)
 {
-	if (path1 == path2) {
-		// The two paths are identical.
+	if (path1 == path2 && &path1 != &path2) {
+		// These two paths are identical. Ignore the trivial alignment
+		// when aligning a path to itself.
 		orientation = DIR_B;
 		return path1;
 	}
