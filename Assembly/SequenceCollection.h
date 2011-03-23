@@ -2,6 +2,7 @@
 #define SEQUENCECOLLECTION_H 1
 
 #include "Graph.h"
+#include "Graph/Properties.h"
 #include "ISequenceCollection.h"
 #include <cassert>
 #include <utility>

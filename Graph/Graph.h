@@ -4,7 +4,6 @@
 #include "config.h"
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 # include <boost/graph/graph_traits.hpp>
-# include <boost/graph/properties.hpp>
 #endif
 #include <utility> // for pair
 
@@ -38,25 +37,7 @@ struct graph_traits {
 	typedef typename G::edges_size_type edges_size_type;
 };
 
-// Properties
-
-/** A property indicating that this vertex has been removed. */
-enum vertex_removed_t { vertex_removed };
-
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
-using boost::edge_bundle;
-using boost::edge_bundle_t;
-using boost::no_property;
-using boost::vertex_bundle;
-using boost::vertex_bundle_t;
-
-// Properties
-
-namespace boost {
-	BOOST_INSTALL_PROPERTY(vertex, removed);
-}
-
-#else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+#if !HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 // IncidenceGraph
 
@@ -75,17 +56,6 @@ target(std::pair<typename graph_traits<G>::vertex_descriptor,
 {
 	return e.second;
 }
-
-// Properties
-
-/** No properties. */
-struct no_property { };
-
-/** A vertex bundle property. */
-enum vertex_bundle_t { vertex_bundle };
-
-/** An edge bundle property. */
-enum edge_bundle_t { edge_bundle };
 
 // PropertyGraph
 

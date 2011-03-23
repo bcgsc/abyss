@@ -2,6 +2,7 @@
 #define CONTIGGRAPH_H 1
 
 #include "Graph.h"
+#include "Graph/Properties.h"
 #include <cassert>
 #include <utility>
 

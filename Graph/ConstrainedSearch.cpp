@@ -1,6 +1,7 @@
 #include "ConstrainedSearch.h"
 #include "ContigGraph.h"
 #include "DirectedGraph.h"
+#include "Graph/Properties.h"
 #include <algorithm>
 #include <climits> // for INT_MIN
 #include <utility>

@@ -3,6 +3,7 @@
 
 #include "ContigNode.h"
 #include "Graph.h"
+#include "Graph/Properties.h"
 #include <algorithm>
 #include <cassert>
 #include <utility>
