@@ -30,6 +30,9 @@ struct no_property { };
 /** A vertex bundle property. */
 enum vertex_bundle_t { vertex_bundle };
 
+/** The vertex index property. */
+enum vertex_index_t { vertex_index } ;
+
 /** An edge bundle property. */
 enum edge_bundle_t { edge_bundle };
 

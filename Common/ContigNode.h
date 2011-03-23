@@ -3,6 +3,7 @@
 
 #include "config.h" // for WORDS_BIGENDIAN
 #include "ContigID.h"
+#include "Graph/Properties.h" // for vertex_index_t
 #include "StringUtil.h"
 #include <cassert>
 #include <cstdlib> // for strtoul
@@ -158,15 +159,6 @@ static inline unsigned index(const ContigNode& o)
 {
 	return o.index();
 }
-
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
-# include <boost/graph/properties.hpp>
-using boost::vertex_index;
-using boost::vertex_index_t;
-#else
-/** The vertex index property. */
-enum vertex_index_t { vertex_index } ;
-#endif
 
 template <typename Graph>
 unsigned get(vertex_index_t, const Graph&, ContigNode u)
