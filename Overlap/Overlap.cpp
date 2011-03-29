@@ -12,15 +12,14 @@
 #include "Estimate.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "IOUtil.h"
 #include "MapGraph.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <cerrno>
 #include <climits> // for UINT_MAX
 #include <cstdlib>
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -273,14 +272,6 @@ static void findOverlap(const Graph& g,
 	}
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 static void readContigs(const char *contigPath)
 {
 	FastaReader in(contigPath, FastaReader::FOLD_CASE);
@@ -356,7 +347,7 @@ int main(int argc, char** argv)
 
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
-	assert_open(fin, adjPath);
+	assert_good(fin, adjPath);
 	Graph graph;
 	fin >> graph;
 	assert(fin.eof());
@@ -364,7 +355,7 @@ int main(int argc, char** argv)
 	ofstream out(opt::out.c_str());
 	assert(out.is_open());
 	ifstream in(estPath.c_str());
-	assert_open(in, estPath);
+	assert_good(in, estPath);
 
 	// Find overlapping contigs.
 	OverlapGraph scaffoldGraph;

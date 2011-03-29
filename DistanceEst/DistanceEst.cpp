@@ -1,15 +1,14 @@
 #include "Estimate.h"
 #include "Histogram.h"
+#include "IOUtil.h"
 #include "MLE.h"
 #include "PDF.h"
 #include "SAM.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
-#include <cerrno>
 #include <climits>
 #include <cstdlib>
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iomanip>
@@ -202,19 +201,11 @@ static void writeEstimates(ostream& out,
 	assert(out.good());
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 /** Load a histogram from the specified file. */
 static Histogram loadHist(const string& path)
 {
 	ifstream in(path.c_str());
-	assert_open(in, path);
+	assert_good(in, path);
 
 	Histogram hist;
 	in >> hist;
@@ -323,7 +314,7 @@ int main(int argc, char** argv)
 	istream& in(strcmp(alignFile.c_str(), "-") == 0 ? cin : inFile);
 
 	if (strcmp(alignFile.c_str(), "-") != 0)
-		assert_open(inFile, alignFile);
+		assert_good(inFile, alignFile);
 
 	ofstream outFile;
 	if (!opt::out.empty()) {

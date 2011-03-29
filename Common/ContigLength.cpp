@@ -1,9 +1,7 @@
 #include "ContigLength.h"
 #include "ContigID.h"
+#include "IOUtil.h"
 #include <cassert>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring> // for strerror
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -14,14 +12,6 @@ using namespace std;
 
 namespace opt {
 	extern unsigned k;
-}
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
 }
 
 /** Read contig lengths. */
@@ -48,6 +38,6 @@ vector<unsigned> readContigLengths(istream& in)
 vector<unsigned> readContigLengths(const string& path)
 {
 	ifstream in(path.c_str());
-	assert_open(in, path);
+	assert_good(in, path);
 	return readContigLengths(in);
 }

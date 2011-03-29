@@ -5,15 +5,14 @@
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "Histogram.h"
+#include "IOUtil.h"
 #include "Iterator.h"
 #include "GraphIO.h"
 #include "GraphUtil.h"
 #include "Uncompress.h"
 #include <algorithm> // for min
-#include <cerrno>
 #include <climits> // for UINT_MAX
 #include <cmath>
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -85,14 +84,6 @@ static const struct option longopts[] = {
 static void generatePathsThroughEstimates(const Graph& g,
 		const string& estPath);
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -145,7 +136,7 @@ int main(int argc, char** argv)
 
 	// Read the contig adjacency graph.
 	ifstream fin(adjFile.c_str());
-	assert_open(fin, adjFile);
+	assert_good(fin, adjFile);
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
@@ -597,7 +588,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 		const string& estPath)
 {
 	ifstream inStream(estPath.c_str());
-	assert_open(inStream, estPath);
+	assert_good(inStream, estPath);
 
 	ofstream outStream(opt::out.c_str());
 	assert(outStream.is_open());

@@ -13,14 +13,13 @@
 #include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "IOUtil.h"
 #include "Iterator.h"
 #include "Sequence.h"
 #include "Uncompress.h"
 #include "alignGlobal.h"
 #include <algorithm>
-#include <cerrno>
 #include <climits> // for UINT_MAX
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -370,14 +369,6 @@ static void removeContig(Graph* g, ContigID id)
 	g->remove_vertex(v);
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -451,7 +442,7 @@ int main(int argc, char** argv)
 
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
-	assert_open(fin, adjPath);
+	assert_good(fin, adjPath);
 	Graph g;
 	fin >> g;
 	assert(fin.eof());

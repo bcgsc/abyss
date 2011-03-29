@@ -4,16 +4,14 @@
 #include "FastaReader.h"
 #include "FastaWriter.h"
 #include "Histogram.h"
+#include "IOUtil.h"
 #include "Log.h"
 #include "SequenceCollection.h"
 #include "Timer.h"
 #include <cctype>
-#include <cerrno>
 #include <climits> // for UINT_MAX
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring> // for strerror
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -248,14 +246,6 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 	return count;
 }
 
-static void assert_open(/*const*/ ofstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 /** Open the bubble file. */
 void openBubbleFile(ofstream& out)
 {
@@ -270,7 +260,7 @@ void openBubbleFile(ofstream& out)
 		path = s.str();
 	}
 	out.open(path.c_str());
-	assert_open(out, path);
+	assert_good(out, path);
 }
 
 /** Pop bubbles. */
@@ -953,7 +943,7 @@ void setCoverageParameters(const Histogram& h)
 {
 	if (!opt::coverageHistPath.empty() && opt::rank <= 0) {
 		ofstream histFile(opt::coverageHistPath.c_str());
-		assert_open(histFile, opt::coverageHistPath);
+		assert_good(histFile, opt::coverageHistPath);
 		histFile << h;
 		assert(histFile.good());
 	}

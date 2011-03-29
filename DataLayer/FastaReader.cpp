@@ -1,11 +1,10 @@
 #include "FastaReader.h"
 #include "DataLayer/Options.h"
+#include "IOUtil.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <cerrno>
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <sstream>
@@ -35,21 +34,13 @@ ostream& FastaReader::die()
 	return cerr << m_path << ':' << m_line << ": error: ";
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": error: " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 FastaReader::FastaReader(const char* path, int flags)
 	: m_path(path), m_fin(path),
 	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
 	m_flags(flags), m_line(0), m_unchaste(0)
 {
 	if (strcmp(path, "-") != 0)
-		assert_open(m_fin, path);
+		assert_good(m_fin, path);
 	if (m_in.peek() == EOF)
 		cerr << m_path << ':' << m_line << ": warning: "
 			"file is empty\n";

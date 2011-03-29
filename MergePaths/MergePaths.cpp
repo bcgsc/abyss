@@ -15,10 +15,8 @@
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
-#include <cerrno>
 #include <climits> // for UINT_MAX
 #include <cstdlib>
-#include <cstring> // for strerror
 #include <deque>
 #include <fstream>
 #include <functional>
@@ -698,19 +696,11 @@ static void assemblePathGraph(
 	outputSortedPaths(paths);
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
-
 /** Read a set of paths from the specified file. */
 static ContigPathMap readPaths(const string& filePath)
 {
 	ifstream in(filePath.c_str());
-	assert_open(in, filePath);
+	assert_good(in, filePath);
 
 	unsigned tooSmall = 0;
 	ContigPathMap paths;

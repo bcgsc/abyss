@@ -15,8 +15,6 @@
 #include "Uncompress.h"
 #include <algorithm>
 #include <cstdlib>
-#include <cerrno>
-#include <cstring> // for strerror
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -77,14 +75,6 @@ static const struct option longopts[] = {
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-static void assert_open(ifstream& f, const string& p)
-{
-	if (f.is_open())
-		return;
-	cerr << p << ": " << strerror(errno) << endl;
-	exit(EXIT_FAILURE);
-}
 
 /* A contig sequence. */
 typedef FastaRecord Contig;
@@ -245,7 +235,7 @@ static vector<Path> readPaths(const string& inPath,
 	if (opt::verbose > 0)
 		cerr << "Reading `" << inPath << "'..." << endl;
 	if (inPath != "-")
-		assert_open(fin, inPath);
+		assert_good(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
 
 	vector<Path> paths;
@@ -349,7 +339,7 @@ int main(int argc, char** argv)
 
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
-	assert_open(fin, adjPath);
+	assert_good(fin, adjPath);
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
@@ -380,7 +370,7 @@ int main(int argc, char** argv)
 	if (!opt::path.empty()) {
 		vector<bool> seenPivots(contigs.size());
 		ifstream fin(opt::path.c_str());
-		assert_open(fin, opt::path);
+		assert_good(fin, opt::path);
 		for (ContigID id; fin >> id;) {
 			fin.ignore(numeric_limits<streamsize>::max(), '\n');
 			assert(id < contigs.size());
