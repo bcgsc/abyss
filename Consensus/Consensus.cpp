@@ -2,6 +2,7 @@
 #include "Common/Options.h"
 #include "ContigID.h"
 #include "FastaReader.h"
+#include "IOUtil.h"
 #include "Uncompress.h"
 #include <cctype>
 #include <cmath>
@@ -351,8 +352,12 @@ static void writePileup(ostream& out,
 static void consensus(const string& outPath, const string& pileupPath)
 {
 	ofstream outFile(outPath.c_str());
-	ofstream pileupFile(pileupPath.c_str());
-	ostream& pileupOut = pileupPath == "-" ? cout : pileupFile;
+	assert_good(outFile, outPath);
+
+	ofstream pileupFile;
+	ostream& pileupOut = pileupPath == "-" ? cout
+		: (pileupFile.open(pileupPath.c_str()), pileupFile);
+	assert_good(pileupOut, pileupPath);
 
 	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();
