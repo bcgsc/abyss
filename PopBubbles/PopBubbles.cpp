@@ -512,9 +512,9 @@ int main(int argc, char** argv)
 
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 		write_graph(fout, g, PROGRAM, commandLine);
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 	}
 
 	return 0;

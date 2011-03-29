@@ -269,7 +269,7 @@ static void generateDistFile()
 			}
 		}
 		distFile << '\n';
-		assert(distFile.good());
+		assert_good(distFile, opt::distPath);
 	}
 	distFile.close();
 }

@@ -466,9 +466,9 @@ int main(int argc, char** argv)
 	if (!opt::graphPath.empty()) {
 		// Output the updated adjacency graph.
 		ofstream fout(opt::graphPath.c_str());
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 		write_graph(fout, graph, PROGRAM, commandLine);
-		assert(fout.good());
+		assert_good(fout, opt::graphPath);
 	}
 
 	cout << "Overlap: " << stats.overlap << "\n"
