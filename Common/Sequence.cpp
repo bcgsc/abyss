@@ -104,6 +104,9 @@ char nucleotideToColourSpace(char a, char b)
 /** Convert the specified ambiguity code to a bitmask. */
 unsigned ambiguityToBitmask(char c)
 {
+	if (isdigit(c)) // colour space
+		return 1 << baseToCode(c);
+
 	static const unsigned ambiguityToBitmaskTable[26] = {
 		0x1, // 'A' ---A
 		0xe, // 'B' TGC-
