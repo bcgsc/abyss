@@ -16,6 +16,7 @@ libgraph_a_SOURCES = \
 	GraphUtil.h \
 	MapGraph.h \
 	Options.h \
+	Properties.h \
 	SAMIO.h
 
 abyss_adjtodot_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
