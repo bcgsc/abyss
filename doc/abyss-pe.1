@@ -1,4 +1,4 @@
-.TH abyss-pe "1" "2011-Feb" "abyss-pe (ABySS) 1.2.6" "User Commands"
+.TH abyss-pe "1" "2011-Apr" "abyss-pe (ABySS) 1.2.7" "User Commands"
 .SH NAME
 abyss-pe - assemble reads into paired-end contigs
 .SH SYNOPSIS
@@ -37,12 +37,17 @@ k-mer size
 quality threshold. Trim bases from the ends of reads whose quality is
 less than the threshold. (default: 3)
 .TP
+\fBe\fR
+erosion k-mer coverage threshold
+.TP
 \fBc\fR
-mean k-mer coverage threshold. This parameter depends on coverage, but
-2 is a conservative default.
+mean k-mer coverage threshold
 .TP
 \fBb\fR
-pop bubbles shorter than N bp (default: 3*k).
+pop bubbles shorter than N bp (default: 10000).
+.TP
+\fBp\fR
+pop bubbles with identity at least p (default: 0.9)
 .TP
 \fBn\fR
 minimum number of pairs. This parameter depends on coverage, but 10 is
@@ -59,8 +64,7 @@ the number of processes of an MPI assembly
 the path to mpirun
 .TP
 \fBj\fR
-the number of threads to use for KAligner. Defaults to the value of
-np or 1.
+the number of threads to use. Defaults to the value of np or 1.
 .TP
 \fBABYSS_OPTIONS\fR
 additional options to the single-end assembler, ABYSS
@@ -91,9 +95,9 @@ The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
 used to specify the parameters name, k and np, respectively.
 .SH EXAMPLES
 .SS "Single library"
- abyss-pe k=25 l=42 c=2 n=10 name=ecoli in='reads1.fa reads2.fa'
+ abyss-pe k=25 n=10 name=ecoli in='reads1.fa reads2.fa'
 .SS "Multiple libraries"
- abyss-pe -j2 k=25 l=42 c=2 n=10 name=ecoli lib='lib1 lib2' \\
+ abyss-pe k=25 n=10 name=ecoli lib='lib1 lib2' \\
 .br
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \\
 .br
@@ -101,11 +105,11 @@ used to specify the parameters name, k and np, respectively.
 .br
 	lib2_n=25
 .SS MPI
- abyss-pe np=8 k=25 l=42 c=2 n=10 name=ecoli in='reads1.fa reads2.fa'
+ abyss-pe np=8 k=25 n=10 name=ecoli in='reads1.fa reads2.fa'
 .SS SGE
- qsub -N ecoli -t25 -pe openmpi 8 \\
+ qsub -N ecoli -t 25 -pe openmpi 8 \\
 .br
-	abyss-pe l=42 c=2 n=10 in='reads1.fa reads2.fa'
+	abyss-pe n=10 in='reads1.fa reads2.fa'
 .SH "SEE ALSO"
 make(1), ABYSS(1)
 .SH AUTHOR
