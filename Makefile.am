@@ -20,6 +20,7 @@ SUBDIRS = \
 	ABYSS $(Parallel) \
 	AdjList \
 	Consensus \
+	DAssembler \
 	DistanceEst \
 	KAligner \
 	MergePaths \

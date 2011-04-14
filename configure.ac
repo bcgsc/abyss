@@ -137,6 +137,7 @@ AC_CONFIG_FILES([
 	dialign/Makefile
 	kmerprint/Makefile
 	AdjList/Makefile
+	DAssembler/Makefile
 	DistanceEst/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
