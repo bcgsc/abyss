@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cstdlib> // for abort
 #include <iostream>
 #include <sstream>
 
@@ -39,7 +40,8 @@ char complementBaseChar(char c)
 	  case 'B': rc = 'V'; break; // C or G or T
 	  default:
 		cerr << "error: unexpected character: `" << c << "'\n";
-		exit(EXIT_FAILURE);
+		assert(false);
+		abort();
 	}
 	return islower(c) ? tolower(rc) : rc;
 }
@@ -65,7 +67,8 @@ uint8_t baseToCode(char base)
 		case 'T': case '3': return 3;
 	}
 	cerr << "error: unexpected character: `" << base << "'\n";
-	exit(EXIT_FAILURE);
+	assert(false);
+	abort();
 }
 
 char codeToBase(uint8_t code)
