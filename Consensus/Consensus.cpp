@@ -242,14 +242,15 @@ static void buildBaseQuality()
 
 			// Pile-up every base in the read to the contig.
 			for (int x = read_min; x < read_max; x++) {
-				int base;
-				if (!opt::colourSpace)
-					base = baseToCode(s[x]);
-				else
-					base = baseToCode(s[x]);
-				unsigned loc = a.contig_start_pos - a.read_start_pos + x;
-				assert(loc < countsVec.size());
-				countsVec[loc].count[base]++;
+				char c = s[x];
+				switch (toupper(c)) {
+				  case 'A': case 'C': case 'G': case 'T':
+				  case '0': case '1': case '2': case '3':
+					unsigned pos
+						= a.contig_start_pos - a.read_start_pos + x;
+					assert(pos < countsVec.size());
+					countsVec[pos].count[baseToCode(c)]++;
+				}
 			}
 		}
 	}
