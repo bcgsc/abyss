@@ -1,3 +1,30 @@
+2011-04-15  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.2.7.
+
+	abyss-pe:
+	* Support using bwa or bowtie to align reads to contigs.
+	Specify aligner=bwa or aligner=bowtie.
+	* Integrate with IBM LoadLeveler.
+
+	PopBubbles:
+	* Use an affine gap penalty.
+	* The default maximum bubble length is 10 kbp.
+	* New option, --scaffold. Scaffold over bubbles with insufficient
+	sequence identity to be popped.
+
+	SimpleGraph:
+	* New parameter d to specify the acceptable error of a distance
+	estimate. The default is 6 bp.
+
+	PathConsensus:
+	* Use an affine gap penalty.
+
+	MergePaths:
+	* Fix a bug that causes PathOverlap to die with the error:
+	Distance get(edge_bundle_t, const Graph&, ContigNode, ContigNode):
+	Assertion `e.second' failed.
+
 2011-02-07  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.6.
