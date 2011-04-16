@@ -356,7 +356,8 @@ static void consensus(const string& outPath, const string& pileupPath)
 	assert_good(outFile, outPath);
 
 	ofstream pileupFile;
-	ostream& pileupOut = pileupPath == "-" ? cout
+	ostream& pileupOut
+		= pileupPath.empty() || pileupPath == "-" ? cout
 		: (pileupFile.open(pileupPath.c_str()), pileupFile);
 	assert_good(pileupOut, pileupPath);
 
