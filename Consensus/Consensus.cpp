@@ -242,8 +242,8 @@ static void buildBaseQuality()
 
 			// Pile-up every base in the read to the contig.
 			for (int x = read_min; x < read_max; x++) {
-				char c = s[x];
-				switch (toupper(c)) {
+				char c = toupper(s[x]);
+				switch (c) {
 				  case 'A': case 'C': case 'G': case 'T':
 				  case '0': case '1': case '2': case '3':
 					unsigned pos
