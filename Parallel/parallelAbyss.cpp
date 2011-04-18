@@ -13,7 +13,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <sstream>
-#include <unistd.h> // for gethostname and sync
+#include <unistd.h> // for gethostname
 #include <vector>
 
 using namespace std;
@@ -87,10 +87,7 @@ int main(int argc, char** argv)
 	else
 		networkSeqs.run();
 
-	logger(0) << "Synchronizing file system...\n";
-	sync();
 	MPI_Barrier(MPI_COMM_WORLD);
-
 	MPI_Finalize();
 
 	if (opt::rank == 0) {

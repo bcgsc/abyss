@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring> // for strerror
 #include <iostream>
+#include <unistd.h> // for fsync
 
 using namespace std;
 
@@ -25,7 +26,10 @@ FastaWriter::FastaWriter(const char* path, bool append)
 
 FastaWriter::~FastaWriter()
 {
-	int n = fclose(m_fileHandle);
+	int n = fsync(fileno(m_fileHandle));
+	if (n < 0)
+		die(m_path);
+	n = fclose(m_fileHandle);
 	if (n < 0)
 		die(m_path);
 	m_fileHandle = NULL;
