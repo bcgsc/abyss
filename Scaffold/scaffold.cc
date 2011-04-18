@@ -129,7 +129,7 @@ static void addComplementaryEdges(DG& g)
 	typedef GTraits::vertex_descriptor V;
 
 	std::pair<Eit, Eit> erange = edges(g);
-	unsigned numAdded;
+	unsigned numAdded = 0;
 	for (Eit eit = erange.first; eit != erange.second; ++eit) {
 		E e = *eit;
 		V u = source(e, g), v = target(e, g);
