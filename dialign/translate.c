@@ -450,7 +450,7 @@ char translate(char first_base, char second_base, char third_base, char *dna_num
 							}
 				default: 	error("No regular aminoacid !");
 			}
-	return 'x';
+	abort();
 }
 
 char inverse(char base)
@@ -463,7 +463,7 @@ char inverse(char base)
 		case 'C':	return('G');
 		case 'G':	return('C');
 	}
-	return 'x';
+	abort();
 }
 
 void retranslate_sequence(struct seq *in_seq)
@@ -599,5 +599,5 @@ char* retranslate(char amino)
 		case 100:	return "CCC";
 		default: error("Sorry something wrong while retranslation !");
 	}
-	return "xxx";
+	abort();
 }
