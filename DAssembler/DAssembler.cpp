@@ -1,4 +1,5 @@
 #include "config.h"
+#include "HashMap.h"
 #include <algorithm>
 #include <getopt.h>
 #include <iostream>
@@ -6,7 +7,6 @@
 #include <numeric>
 #include <sstream>
 #include <string>
-#include <tr1/unordered_map>
 #include <vector>
 
 #include "FastaReader.h"
@@ -14,7 +14,6 @@
 #include "RotatedRead.h"
 
 using namespace std;
-using namespace std::tr1;
 
 #define PROGRAM "DAssembler"
 
@@ -393,7 +392,7 @@ int main(int argc, char** argv)
     // Assume the first read in the file is the seed for the assembly
     if(opt::verbose){cerr << "Reading `" << fasta_file << "'...  ";}
 
-    typedef unordered_map<string, unsigned> ReadMap;
+    typedef hash_map<string, unsigned> ReadMap;
     ReadMap read_map;
 
     bool first_read = true;
