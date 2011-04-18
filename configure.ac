@@ -14,8 +14,8 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Checks for header files.
-AC_CHECK_HEADERS([dlfcn.h fcntl.h stddef.h stdint.h stdlib.h \
-	sys/param.h])
+AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h
+	stddef.h stdint.h stdlib.h sys/param.h])
 AC_HEADER_STDBOOL
 AC_HEADER_STDC
 
@@ -38,7 +38,9 @@ AC_TYPE_UINT64_T
 AC_CHECK_FUNCS([dup2 gethostname getopt_long memset \
 	strdup strerror strtoul])
 AC_FUNC_FORK
+AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
+AC_FUNC_REALLOC
 AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
 
