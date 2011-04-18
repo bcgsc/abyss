@@ -25,10 +25,10 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
 
 namespace opt {
-    unsigned max_overlap = 10;
-    unsigned max_mismatch = 2;
-    unsigned min_coverage = 2;
-    unsigned read_length = 50;
+    static unsigned max_overlap = 10;
+    static unsigned max_mismatch = 2;
+    static unsigned min_coverage = 2;
+    static unsigned read_length = 50;
     static int verbose = 0;
 }
 
@@ -73,35 +73,25 @@ struct Overlap{
 };
 
 /* Additional sort of Overlap objects used for pretty-printing alignments*/
-bool offset_sort(const Overlap& x, const Overlap& y){
+static bool offset_sort(const Overlap& x, const Overlap& y)
+{
     return x.offset < y.offset;
 }
 
 /* Calculate the tier overlap between two rotated reads */
-int tier_overlap(const string& seq1, const string& seq2,
+static int tier_overlap(const string& seq1, const string& seq2,
     bool allow_mismatch = false);
 
 /* From a rotated read, return the original sequence */
-string original_read_from_rotated_read(const string& rotated_read){
-
+static string original_read_from_rotated_read(
+        const string& rotated_read)
+{
     size_t dollar_pos = rotated_read.find('$');
     string orig_seq = rotated_read.substr(
         dollar_pos+1,rotated_read.size()-dollar_pos) +
         rotated_read.substr(0,dollar_pos);
 
     return orig_seq;
-}
-
-/* Given a rotated read, its tier overlap, and an original contig,
-    extend the contig */
-string merge_contigs(
-    const string& orig_contig, const string& rotated_read, int tier){
-
-    string extension_read = original_read_from_rotated_read(rotated_read);
-    string new_contig = orig_contig +
-        extension_read.substr(extension_read.size()-tier, tier);
-
-    return new_contig;
 }
 
 /* Struct for holding base counts at a given position */
@@ -122,7 +112,7 @@ struct BaseCount {
 };
 
 /* Call a consensus base */
-char call_consensus_base(BaseCount counts, char orig_base)
+static char call_consensus_base(BaseCount counts, char orig_base)
 {
     unsigned coverage = accumulate(counts.x, counts.x+4, 0);
 
@@ -150,11 +140,10 @@ char call_consensus_base(BaseCount counts, char orig_base)
 typedef vector<Rotation> Rotations;
 
 // Find all overlaps with the given focal read and call a consensus sequence
-string find_complex_overlap(const RotatedRead& f,
+static string find_complex_overlap(const RotatedRead& f,
         const Rotations& r,
         vector<RotatedRead>& rl)
 {
-
     // A vector for tracking all the overlaps, seeded with the initial read
     vector<Overlap> o;
     o.push_back(Overlap(f.seq, 0));
@@ -264,8 +253,9 @@ string find_complex_overlap(const RotatedRead& f,
 }
 
 // Calculate the tier overlap between two reads
-int tier_overlap(const string& seq1, const string& seq2, bool allow_mismatch){
-
+static int tier_overlap(const string& seq1, const string& seq2,
+        bool allow_mismatch)
+{
     assert(seq1 != seq2);
 
     //Find the position of the '$' character in both reads
@@ -319,10 +309,9 @@ int tier_overlap(const string& seq1, const string& seq2, bool allow_mismatch){
 //  vector of Rotation objects
 // This function generates the main vector we traverse when looking
 //  for simple extensions
-Rotations generate_rotations_list(
+static Rotations generate_rotations_list(
     const vector<RotatedRead>& read_list)
 {
-
     // Each rotation has a sequence (string) and overlap (int)
     // The overlap refers to the overlap between the current sequence
     //  and the next sequence in the list
@@ -350,8 +339,8 @@ Rotations generate_rotations_list(
 }
 
 // Main control flow function
-int main(int argc, char** argv){
-
+int main(int argc, char** argv)
+{
     // Parse command-line options
     bool die = false;
     for (int c; (c = getopt_long(argc, argv,
@@ -512,8 +501,7 @@ int main(int argc, char** argv){
     }
 
     // Output the final contig
-    //cout << ">contig (" << contig.size() << "bp)" << endl << contig << endl;
     cerr << contig.size();
     cout << contig << endl;
-    //cout << contig.size();
+    return 0;
 }
