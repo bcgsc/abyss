@@ -154,12 +154,12 @@ struct prob_dist* calc_score_dist(struct scr_matrix *smatrix, int mxdlen) {
   }
   // EXPERIMENTS:
 
-  dg.seq_p1.sq = sq1;
-  dg.seq_p2.sq = sq2;
-  dg.length =2*maxdlen;
   srandom((int)time(NULL));
   sq1 = create_random_seq(smatrix, 2*maxdlen);
   sq2 = create_random_seq(smatrix, 2*maxdlen);
+  dg.seq_p1.sq = sq1;
+  dg.seq_p2.sq = sq2;
+  dg.length =2*maxdlen;
   //printf(" pre random\n");
   //	for(ex=0;(ex<max_experiment || found==0);ex++) {
   char seenmax=0;

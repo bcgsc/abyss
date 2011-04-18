@@ -525,7 +525,7 @@ struct simple_diag_col* read_anchors(char *filename, struct seq_col* scol) {
 
   //fscanf( fp, "%li %li %Le\n", &ti,&tscr,&weight );
 
-  int s1,s2,sp1,sp2,len;
+  long int s1,s2,sp1,sp2,len;
   double score;
   
   int alloc_size = 64;
