@@ -1,3 +1,4 @@
+#include "config.h"
 #include <algorithm>
 #include <getopt.h>
 #include <iostream>
@@ -17,6 +18,12 @@ using namespace std::tr1;
 
 #define PROGRAM "DAssembler"
 
+static const char VERSION_MESSAGE[] =
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+"Written by Rod Docking.\n"
+"\n"
+"Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
+
 namespace opt {
     unsigned max_overlap = 10;
     unsigned max_mismatch = 2;
@@ -27,7 +34,7 @@ namespace opt {
 
 static const char shortopts[] = "o:m:c:r:v";
 
-enum { OPT_HELP = 1 };
+enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
     { "max_overlap",            required_argument, NULL, 'o' },
@@ -36,6 +43,8 @@ static const struct option longopts[] = {
     { "read_length",            required_argument, NULL, 'r' },
     { "verbose",                no_argument,       NULL, 'v' },
     { "help",                   no_argument,       NULL, OPT_HELP },
+    { "version",                no_argument,       NULL, OPT_VERSION },
+    { NULL, 0, NULL, 0 }
 };
 
 static const char USAGE_MESSAGE[] =
@@ -357,7 +366,10 @@ int main(int argc, char** argv){
             case 'v': opt::verbose++; break;
             case OPT_HELP:
                 cout << USAGE_MESSAGE;
-                exit(0);
+                exit(EXIT_SUCCESS);
+            case OPT_VERSION:
+                cout << VERSION_MESSAGE;
+                exit(EXIT_SUCCESS);
         }
     }
 
