@@ -154,12 +154,33 @@ class ContigNode {
 	};
 };
 
-/** Return a numeric index of the specified node. */
+/** Return a numeric index of the specified vertex. */
 static inline unsigned index(const ContigNode& o)
 {
 	return o.index();
 }
 
+/** Vertex index property map of a ContigNode. */
+struct ContigNodeIndexMap {
+	typedef ContigNode key_type;
+	typedef unsigned value_type;
+	typedef value_type reference;
+	typedef readable_property_map_tag category;
+
+	reference operator[](const key_type& u) const
+	{
+		return u.index();
+	}
+};
+
+/** Return a numeric index of the specified vertex. */
+static inline
+unsigned get(ContigNodeIndexMap, ContigNode u)
+{
+	return u.index();
+}
+
+/** Return a numeric index of the specified vertex. */
 template <typename Graph>
 unsigned get(vertex_index_t, const Graph&, ContigNode u)
 {

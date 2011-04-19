@@ -128,4 +128,25 @@ get(edge_bundle_t, const Graph& g, ContigNode u, ContigNode v)
 	}
 }
 
+/** Edge weight property map. */
+template <typename Graph>
+struct EdgeWeightMap {
+	typedef typename Graph::edge_descriptor key_type;
+	typedef int value_type;
+	typedef value_type reference;
+	typedef readable_property_map_tag category;
+
+	EdgeWeightMap(const Graph& g) : m_g(g) { }
+
+	reference operator[](const key_type& e) const
+	{
+		int weight = m_g[e].distance + m_g[target(e, m_g)].length;
+		assert(weight > 0);
+		return weight;
+	}
+
+  private:
+	const Graph& m_g;
+};
+
 #endif

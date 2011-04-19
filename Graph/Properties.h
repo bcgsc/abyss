@@ -4,14 +4,19 @@
 #include "config.h"
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 # include <boost/graph/properties.hpp>
+# include <boost/property_map/property_map.hpp>
 #endif
 
 /** A property indicating that this vertex has been removed. */
 enum vertex_removed_t { vertex_removed };
 
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+using boost::readable_property_map_tag;
+
 using boost::edge_bundle;
 using boost::edge_bundle_t;
+using boost::edge_weight;
+using boost::edge_weight_t;
 using boost::no_property;
 using boost::vertex_bundle;
 using boost::vertex_bundle_t;

@@ -51,6 +51,13 @@ AC_CHECK_DECL(HOST_NAME_MAX, [],
 	[#include <limits.h>])
 
 # Options to configure.
+# Boost
+AC_ARG_WITH(boost, AS_HELP_STRING([--with-boost=PATH],
+			[specify directory for the boost header files]))
+if test "$with_boost" -a -d "$with_boost"; then
+	boost_cppflags="-I$with_boost"
+fi
+# MPI
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	[specify prefix directory for the installed MPI parallel
 	computing library]))
@@ -70,7 +77,8 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
 AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length]) 
 
 # Set compiler flags.
-AC_SUBST(CPPFLAGS, "$mpi_cppflags $CPPFLAGS")
+AC_SUBST(CPPFLAGS,
+		 "-I$srcdir $boost_cppflags $mpi_cppflags $CPPFLAGS")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
@@ -112,9 +120,22 @@ AC_CHECK_LIB([dl], [dlsym])
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
+	boost/graph/graph_traits.hpp \
 	google/sparse_hash_map \
 	unordered_map tr1/unordered_map ext/hash_map \
 ])
+
+# Check for Boost.
+if test $ac_cv_header_boost_graph_graph_traits_hpp != yes; then
+	AC_MSG_ERROR([ABySS requires the Boost C++ libraries, which may
+	be downloaded from here: http://www.boost.org/users/download/
+	It is not necessary to compile Boost before installing it. The
+	following commands will download and install Boost for ABySS:
+	wget http://downloads.sourceforge.net/project/boost/boost/1.46.1/boost_1_46_1.tar.bz2
+	tar jxf boost_1_46_1.tar.bz2
+	ln -s boost_1_46_1/boost boost
+	])
+fi
 
 # Check for OpenMP.
 AC_OPENMP
@@ -154,7 +175,7 @@ AC_CONFIG_FILES([
 AC_OUTPUT
 
 if test $ac_cv_header_google_sparse_hash_map != yes; then
-	echo 'warning: ABySS should be compiled with Google sparsehash to
+	AC_MSG_WARN([ABySS should be compiled with Google sparsehash to
 	reduce memory usage. It may be downloaded here:
-	http://code.google.com/p/google-sparsehash' >&2
+	http://code.google.com/p/google-sparsehash])
 fi

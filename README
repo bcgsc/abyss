@@ -8,6 +8,14 @@ Compiling ABySS should be as easy as
 To install ABySS in a specified directory
 ./configure --prefix=/opt/ABySS && make && sudo make install
 
+ABySS requires the Boost C++ libraries. Many systems come with Boost
+installed. If yours does not, you may download Boost here:
+http://www.boost.org/users/download/
+The Boost header file directory should be found at /usr/include/boost,
+in the ABySS source directory, or its location specified to configure:
+./configure --with-boost=/usr/local/include
+It is not necessary to compile Boost before installing it.
+
 If you wish to build the parallel assembler with MPI support,
 MPI should be found in /usr/include and /usr/lib or its location
 specified to configure:

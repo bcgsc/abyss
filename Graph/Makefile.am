@@ -8,6 +8,7 @@ libgraph_a_SOURCES = \
 	ConstrainedSearch.cpp ConstrainedSearch.h \
 	ContigGraph.h \
 	ContigGraphAlgorithms.h \
+	DepthFirstSearch.h \
 	DirectedGraph.cpp DirectedGraph.h \
 	DotIO.h \
 	Graph.h \

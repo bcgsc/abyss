@@ -10,6 +10,7 @@
 #include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
+#include "DepthFirstSearch.h"
 #include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
@@ -21,10 +22,12 @@
 #include <algorithm>
 #include <climits> // for UINT_MAX
 #include <fstream>
+#include <functional>
 #include <getopt.h>
+#include <map>
 #include <iostream>
 #include <iterator>
-#include <limits> // for numeric_limits
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -34,6 +37,7 @@
 #endif
 
 using namespace std;
+using boost::tie;
 
 #define PROGRAM "PopBubbles"
 
@@ -111,14 +115,35 @@ static const struct option longopts[] = {
 /** Popped branches. */
 static vector<ContigID> g_popped;
 
-/** Bubbles that were not popped. */
-static vector<pair<ContigNode, ContigNode> > g_bubbles;
-
 /** Contig adjacency graph. */
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
-typedef Graph::vertex_iterator vertex_iterator;
 typedef Graph::adjacency_iterator adjacency_iterator;
+
+/** Record a topological order of the vertices. */
+template <typename OutIt>
+struct TopoVisitor : public boost::default_dfs_visitor
+{
+	TopoVisitor(OutIt it) : m_it(it) { }
+
+	template <typename Vertex, typename Graph>
+	void finish_vertex(const Vertex& u, Graph&) { *m_it++ = u; }
+
+  private:
+	OutIt m_it;
+};
+
+/** Record a topological order of the vertices. */
+template <typename Graph, typename It>
+static void topologicalSort(const Graph& g, It it)
+{
+	using boost::default_color_type;
+	using boost::vector_property_map;
+	typedef vector_property_map<
+		default_color_type, ContigNodeIndexMap> ColorMap;
+	depthFirstSearch(g, TopoVisitor<It>(it),
+			ColorMap(num_vertices(g)));
+}
 
 /** Return the distance from vertex u to v. */
 static int getDistance(const Graph& g,
@@ -169,6 +194,8 @@ static void popBubble(Graph& g,
 static struct {
 	unsigned bubbles;
 	unsigned popped;
+	unsigned scaffold;
+	unsigned notSimple;
 	unsigned tooLong;
 	unsigned tooMany;
 	unsigned dissimilar;
@@ -213,23 +240,26 @@ static float getAlignmentIdentity(It first, It last)
 	return (float)matches / alignment.size();
 }
 
-/** Consider popping the bubble originating at the vertex v. */
-static void considerPopping(Graph* pg, vertex_descriptor v)
+/** Pop the specified bubble if it is a simple bubble.
+ * @return whether the bubble is popped
+ */
+static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 {
 	Graph& g = *pg;
 	unsigned nbranches = g.out_degree(v);
-	if (nbranches < 2)
-		return;
+	assert(nbranches >= 2);
 	vertex_descriptor v1 = *g.adjacent_vertices(v).first;
 	if (g.out_degree(v1) != 1) {
-		// This branch is not simple.
-		return;
+#pragma omp atomic
+		g_count.notSimple++;
+		return false;
 	}
 	vertex_descriptor tail = *g.adjacent_vertices(v1).first;
 	if (v == ~tail // Palindrome
 			|| g.in_degree(tail) != nbranches) {
-		// This branch is not simple.
-		return;
+#pragma omp atomic
+		g_count.notSimple++;
+		return false;
 	}
 
 	// Check that every branch is simple and ends at the same node.
@@ -237,12 +267,15 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		adj = g.adjacent_vertices(v);
 	for (adjacency_iterator it = adj.first; it != adj.second; ++it) {
 		if (g.out_degree(*it) != 1 || g.in_degree(*it) != 1) {
-			// This branch is not simple.
-			return;
+#pragma omp atomic
+			g_count.notSimple++;
+			return false;
 		}
 		if (*g.adjacent_vertices(*it).first != tail) {
 			// The branches do not merge back to the same node.
-			return;
+#pragma omp atomic
+			g_count.notSimple++;
+			return false;
 		}
 	}
 
@@ -255,8 +288,6 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		cerr << "-> " << tail << '\n';
 	}
 
-#pragma omp atomic
-	g_count.bubbles++;
 	const unsigned MAX_BRANCHES = opt::identity > 0 ? 2 : UINT_MAX;
 	if (nbranches > MAX_BRANCHES) {
 		// Too many branches.
@@ -265,7 +296,7 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		if (opt::verbose > 1)
 #pragma omp critical(cerr)
 			cerr << nbranches << " paths (too many)\n";
-		return;
+		return false;
 	}
 
 	vector<unsigned> lengths(nbranches);
@@ -281,7 +312,7 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 #pragma omp critical(cerr)
 			cerr << minLength << '\t' << maxLength
 				<< "\t0\t(too long)\n";
-		return;
+		return false;
 	}
 
 	float identity = opt::identity == 0 ? 0
@@ -295,16 +326,89 @@ static void considerPopping(Graph* pg, vertex_descriptor v)
 		// Insufficient identity.
 #pragma omp atomic
 		g_count.dissimilar++;
-		if (opt::scaffold) {
-#pragma omp critical(g_bubbles)
-			g_bubbles.push_back(make_pair(v, tail));
-		}
-		return;
+		return false;
 	}
 
 #pragma omp atomic
 	g_count.popped++;
 	popBubble(g, v, tail);
+	return true;
+}
+
+/** Return true if the specified sequence of vertices is a bubble. */
+template <typename Graph, typename It>
+static bool isBubble(const Graph& g, It first, It last)
+{
+	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	assert(last - first > 1);
+	if (last - first == 2)
+		return false; // unambiguous edge
+	if (*first == ~last[-1])
+		return false; // palindrome
+	set<V> targets(first, first + 1);
+	for (It it = first; it != last - 1; ++it) {
+		pair<Ait, Ait> adj = adjacent_vertices(*it, g);
+		targets.insert(adj.first, adj.second);
+	}
+	set<V> sources(last - 1, last);
+	for (It it = first + 1; it != last; ++it) {
+		pair<Ait, Ait> adj = adjacent_vertices(~*it, g);
+		transform(adj.first, adj.second,
+				inserter(sources, sources.end()),
+				mem_fun_ref(&V::operator~));
+	}
+	return sources == targets;
+}
+
+typedef vector<ContigNode> Bubble;
+typedef vector<Bubble> Bubbles;
+
+/** Discover bubbles. */
+static Bubbles discoverBubbles(const Graph& g)
+{
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	vector<V> topo(num_vertices(g));
+	topologicalSort(g, topo.rbegin());
+
+	Bubbles bubbles;
+	typedef vector<V>::const_iterator It;
+	for (It first = topo.begin(); first != topo.end(); ++first) {
+		int sum = out_degree(*first, g);
+		if (sum < 2)
+			continue;
+		if (opt::verbose > 3)
+			cerr << "* " << *first << '\n';
+		for (It it = first + 1; it != topo.end(); ++it) {
+			unsigned indeg = in_degree(*it, g);
+			unsigned outdeg = out_degree(*it, g);
+			sum -= indeg;
+
+			if (opt::verbose > 3)
+				cerr << *it << '\t' << indeg << '\t' << outdeg
+					<< '\t' << sum
+					<< '\t' << sum + (int)outdeg << '\n';
+
+			if (indeg == 0 || sum < 0)
+				break;
+			if (sum == 0) {
+				It last = it + 1;
+				if (isBubble(g, first, last)) {
+					if (opt::verbose > 3)
+						cerr << "good\n";
+					bubbles.push_back(Bubble(first, last));
+					first = it - 1;
+				}
+				break;
+			}
+
+			if (outdeg == 0)
+				break;
+			sum += outdeg;
+		}
+	}
+	return bubbles;
 }
 
 /** Add distances to a path. */
@@ -330,35 +434,64 @@ static ContigPath addDistance(const Graph& g, const ContigPath& path)
 	return out;
 }
 
+/** Return the length of the longest path through the bubble. */
+static int longestPath(const Graph& g, const Bubble& topo)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::out_edge_iterator Eit;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	EdgeWeightMap<Graph> weight(g);
+	map<ContigNode, int> distance;
+	distance[topo.front()] = 0;
+	for (Bubble::const_iterator it = topo.begin();
+			it != topo.end(); ++it) {
+		V u = *it;
+		Eit eit, elast;
+		for (tie(eit, elast) = out_edges(u, g); eit != elast; ++eit) {
+			E e = *eit;
+			V v = target(e, g);
+			distance[v] = max(distance[v], distance[u] + weight[e]);
+		}
+	}
+	V v = topo.back();
+	return distance[v] - g[v].length;
+}
+
 /** Scaffold over the bubble between vertices u and w.
  * Add an edge (u,w) with the distance property set to the length of
  * the largest branch of the bubble.
  */
-static void scaffoldBubble(Graph* pg,
-		pair<vertex_descriptor, vertex_descriptor> uw)
+static void scaffoldBubble(Graph& g, const Bubble& bubble)
 {
 	typedef graph_traits<Graph>::adjacency_iterator Ait;
 	typedef graph_traits<Graph>::vertex_descriptor V;
-	Graph& g = *pg;
-	V u = uw.first, w = uw.second;
+	assert(opt::scaffold);
+	assert(bubble.size() > 2);
+
+	V u = bubble.front(), w = bubble.back();
 	if (edge(u, w, g).second) {
 		// Already scaffolded.
 		return;
 	}
+	assert(isBubble(g, bubble.begin(), bubble.end()));
 
-	pair<Ait, Ait> vrange = g.adjacent_vertices(u);
-	g_popped.insert(g_popped.end(), vrange.first, vrange.second);
-	int maxDistance = INT_MIN;
-	for (Ait vit = vrange.first; vit != vrange.second; ++vit) {
-		V v = *vit;
-		int distance
-			= getDistance(g, u, v)
-			+ g[v].length
-			+ getDistance(g, v, w);
-		maxDistance = max(maxDistance, distance);
+	g_popped.insert(g_popped.end(),
+			bubble.begin() + 1, bubble.end() - 1);
+
+	add_edge(u, w, max(longestPath(g, bubble), 1), g);
+}
+
+/** Pop the specified bubble if it is simple, otherwise scaffold. */
+static void popOrScaffoldBubble(Graph& g, const Bubble& bubble)
+{
+#pragma omp atomic
+	g_count.bubbles++;
+	if (!popSimpleBubble(&g, bubble.front()) && opt::scaffold) {
+#pragma omp atomic
+		g_count.scaffold++;
+		scaffoldBubble(g, bubble);
 	}
-	assert(maxDistance != INT_MIN);
-	add_edge(u, w, max(maxDistance, 1), g);
 }
 
 /** Remove the specified contig from the adjacency graph. */
@@ -449,24 +582,11 @@ int main(int argc, char** argv)
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
-	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
-#if _OPENMP
-	if (opt::threads > 0)
-		omp_set_num_threads(opt::threads);
-#pragma omp parallel
-#pragma omp single
-	for (vertex_iterator it = vit.first; it != vit.second; ++it)
-#pragma omp task firstprivate(it)
-		considerPopping(&g, *it);
-#else
-	for_each(vit.first, vit.second,
-			bind1st(ptr_fun(considerPopping), &g));
-#endif
 
-	// Scaffold over unpopped bubbles.
-	if (opt::scaffold)
-		for_each(g_bubbles.begin(), g_bubbles.end(),
-				bind1st(ptr_fun(scaffoldBubble), &g));
+	Bubbles bubbles = discoverBubbles(g);
+	for (Bubbles::const_iterator it = bubbles.begin();
+			it != bubbles.end(); ++it)
+		popOrScaffoldBubble(g, *it);
 
 	// Each bubble should be identified twice. Remove the duplicate.
 	sort(g_popped.begin(), g_popped.end());
@@ -482,6 +602,8 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << g_count.bubbles/2
 			<< " Popped: " << g_count.popped/2
+			<< " Scaffolds: " << g_count.scaffold/2
+			<< " Complex: " << g_count.notSimple/2
 			<< " Too long: " << g_count.tooLong/2
 			<< " Too many: " << g_count.tooMany/2
 			<< " Dissimilar: " << g_count.dissimilar/2
