@@ -49,7 +49,8 @@ depthFirstSearch(
 		if (u_color == Color::white()
 				&& in_degree(u, g) == 0) {
 			vis.start_vertex(u, g);
-			boost::depth_first_visit(g, u, vis, color);
+			boost::detail::depth_first_visit_impl(g, u, vis, color,
+					boost::detail::nontruth2());
 		}
 	}
 
@@ -58,7 +59,8 @@ depthFirstSearch(
 		ColorValue u_color = get(color, u);
 		if (u_color == Color::white()) {
 			vis.start_vertex(u, g);
-			boost::depth_first_visit(g, u, vis, color);
+			boost::detail::depth_first_visit_impl(g, u, vis, color,
+					boost::detail::nontruth2());
 		}
 	}
 }
