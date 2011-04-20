@@ -358,7 +358,8 @@ static bool isBubble(const Graph& g, It first, It last)
 				inserter(sources, sources.end()),
 				mem_fun_ref(&V::operator~));
 	}
-	return sources == targets;
+	set<V> bubble(first, last);
+	return sources == bubble && targets == bubble;
 }
 
 typedef vector<ContigNode> Bubble;
