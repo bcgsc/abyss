@@ -1002,12 +1002,11 @@ static bool buildConsensus(iterator it1, iterator it1e,
 		return false;
 	}
 
-	unsigned n = min(ambiguous2 - unambiguous1,
-			ambiguous1 - unambiguous2);
-
+	unsigned n = max(1U,
+			max(ambiguous2 - unambiguous1,
+				ambiguous1 - unambiguous2));
 	out = copy(it2, it2a, out);
-	if (n > 0)
-		*out++ = ContigNode(n, 'N');
+	*out++ = ContigNode(n, 'N');
 	out = copy(it1b, it1e, out);
 	return true;
 }
