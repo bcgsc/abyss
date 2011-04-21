@@ -29,6 +29,9 @@ namespace boost {
 
 #else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
+/** Readable property map. */
+enum readable_property_map_tag { };
+
 /** No properties. */
 struct no_property { };
 
