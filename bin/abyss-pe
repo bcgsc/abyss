@@ -15,6 +15,20 @@ np?=$(NSLOTS)
 endif
 endif
 
+# Integrate with Portable Batch System (PBS).
+ifdef PBS_JOBNAME
+name?=$(PBS_JOBNAME)
+endif
+ifdef PBS_ARRAYID
+k?=$(PBS_ARRAYID)
+endif
+ifdef PBS_NODEFILE
+NSLOTS=$(shell wc -l <$(PBS_NODEFILE))
+ifneq ($(NSLOTS), 1)
+np?=$(NSLOTS)
+endif
+endif
+
 # Integrate with IBM LoadLeveler
 ifdef LOADL_JOB_NAME
 name?=$(LOADL_JOB_NAME)
