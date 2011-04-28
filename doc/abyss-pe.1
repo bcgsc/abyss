@@ -50,15 +50,16 @@ pop bubbles shorter than N bp (default: 10000).
 pop bubbles with identity at least p (default: 0.9)
 .TP
 \fBn\fR
-minimum number of pairs. This parameter depends on coverage, but 10 is
-a reasonable default.
+minimum number of pairs (default: 10). The optimal value for this
+parameter depends on coverage, but 10 is a reasonable default.
 .TP
 \fBs\fR
-minimum length of a seed contig (default: 100). The seed length should
-be at least twice the read length.
+minimum length of a seed contig in bp (default: 200). The seed length
+should be at least twice the value of k. If more sequence is assembled
+than the expected genome size, try increasing s.
 .TP
 \fBd\fR
-acceptable error of a distance estimate. The default is 6 bp.
+acceptable error in bp of a distance estimate (default: 6).
 .TP
 \fBnp\fR, \fBNSLOTS\fR
 the number of processes of an MPI assembly
@@ -67,7 +68,8 @@ the number of processes of an MPI assembly
 the path to mpirun
 .TP
 \fBj\fR
-the number of threads to use. Defaults to the value of np or 1.
+the number of threads to use (default: 2). If np is specified, the
+default is the value of np.
 .TP
 .B aligner
 specify the program to use to align reads to contigs. May be

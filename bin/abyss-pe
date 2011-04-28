@@ -84,9 +84,6 @@ endif
 ifndef k
 $(error missing argument k)
 endif
-ifndef n
-$(error missing argument n)
-endif
 
 # ABYSS parameters
 q ?= 3
@@ -147,7 +144,8 @@ fixmate?=abyss-fixmate
 endif
 
 # DistanceEst parameters
-s?=100
+s?=200
+n?=10
 $(foreach i,$(lib),$(eval $i_s?=$s))
 $(foreach i,$(lib),$(eval $i_n?=$n))
 

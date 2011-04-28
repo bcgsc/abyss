@@ -39,7 +39,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
-"  -s, --seed-length=L   minimum length of the seed contigs [100]\n"
+"  -s, --seed-length=L   minimum length of the seed contigs\n"
 "  -o, --out=FILE        write result to FILE\n"
 "      --dot             output overlaps in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -55,8 +55,8 @@ namespace opt {
 	/** Output in dot format. */
 	int dot; // used by Estimate
 
+	static unsigned seedLen;
 	static unsigned npairs;
-	static unsigned seedLen = 100;
 
 	/** Reverse-forward mate pair orientation. */
 	static bool rf = false;
@@ -276,6 +276,11 @@ int main(int argc, char** argv)
 
 	if (opt::k <= 0) {
 		cerr << PROGRAM ": missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (opt::seedLen <= 0) {
+		cerr << PROGRAM ": missing -s,--seed-length option\n";
 		die = true;
 	}
 
