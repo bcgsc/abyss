@@ -366,6 +366,20 @@ int main(int argc, char** argv)
 		<< h.barplot() << endl;
 	PDF empiricalPDF(h);
 
+	if (opt::dot) {
+		// Output the vertex properties.
+		for (vector<unsigned>::const_iterator it = contigLens.begin();
+				it != contigLens.end(); ++it) {
+			ContigID id(it - contigLens.begin());
+			unsigned length = contigLens[id];
+			if (length >= opt::seedLen)
+				out << '"' << ContigNode(id, false)
+					<< "\" [l=" << length << "]\n"
+					<< '"' << ContigNode(id, true)
+					<< "\" [l=" << length << "]\n";
+		}
+	}
+
 	// Check that the input is sorted.
 	vector<bool> seen(contigLens.size());
 
