@@ -372,11 +372,10 @@ int main(int argc, char** argv)
 				it != contigLens.end(); ++it) {
 			ContigID id(it - contigLens.begin());
 			unsigned length = contigLens[id];
-			if (length >= opt::seedLen)
-				out << '"' << ContigNode(id, false)
-					<< "\" [l=" << length << "]\n"
-					<< '"' << ContigNode(id, true)
-					<< "\" [l=" << length << "]\n";
+			out << '"' << ContigNode(id, false)
+				<< "\" [l=" << length << "]\n"
+				<< '"' << ContigNode(id, true)
+				<< "\" [l=" << length << "]\n";
 		}
 	}
 
