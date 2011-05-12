@@ -174,7 +174,8 @@ next_record:
 			fields.push_back(field);
 
 		if (fields.size() >= 11
-				&& fields[9].length() == fields[10].length()) {
+				&& (fields[9].length() == fields[10].length()
+					|| fields[10] == "*")) {
 			// SAM
 			unsigned flags = strtoul(fields[1].c_str(), NULL, 0);
 			if (flags & 0x100) // FSECONDARY
