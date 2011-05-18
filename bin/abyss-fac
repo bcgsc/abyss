@@ -9,7 +9,7 @@ $| = 1;
 
 my %opt;
 getopts 'g:hHjt:', \%opt;
-my $opt_threshold = defined $opt{'t'} ? $opt{'t'} : 100;
+my $opt_threshold = defined $opt{'t'} ? $opt{'t'} : 200;
 my $opt_filename = $opt{'H'} || (@ARGV > 1 && !$opt{'h'});
 my $opt_jira = $opt{'j'};
 my $opt_genome_size = $opt{'g'};
