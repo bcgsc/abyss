@@ -38,7 +38,7 @@ static const char USAGE_MESSAGE[] =
 "  -n, --npairs=N        minimum number of pairs [0]\n"
 "  -s, --seed-length=N   minimum contig length [0]\n"
 "  -k, --kmer=N          length of a k-mer\n"
-"      --min-gap         minimum scaffold gap length to output\n"
+"      --min-gap=N       minimum scaffold gap length to output\n"
 "  -o, --out=FILE        write the paths to FILE\n"
 "  -g, --graph=FILE      write the graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
