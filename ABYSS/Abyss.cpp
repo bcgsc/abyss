@@ -104,7 +104,7 @@ erode:
 
 	size_t numAssembled = g.size();
 	size_t numRemoved = numLoaded - numAssembled;
-	cerr << "Removed " << numRemoved << " k-mer.\n"
+	cout << "Removed " << numRemoved << " k-mer.\n"
 		"The signal-to-noise ratio (SNR) is "
 		<< 10 * log10((double)numAssembled / numRemoved)
 		<< " dB.\n";
