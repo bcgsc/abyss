@@ -608,6 +608,17 @@ static ContigPath alignPair(const Graph& g,
 		assert(consensus.size() > opt::k - 1);
 		string::iterator first = consensus.begin() + opt::k - 1;
 		transform(first, consensus.end(), first, ::tolower);
+
+		unsigned match = opt::k - 1;
+		float identity = (float)match / consensus.size();
+		if (opt::verbose > 1)
+			cerr << consensus << '\n';
+		if (opt::verbose > 0)
+			cerr << identity
+				<< (identity < opt::identity ? " (too low)\n" : "\n");
+		if (identity < opt::identity)
+			return ContigPath();
+
 		unsigned coverage = calculatePathProperties(g, sol).coverage;
 		ContigID id
 			= outputNewContig(solutions, 1, 1, consensus, coverage, out);
