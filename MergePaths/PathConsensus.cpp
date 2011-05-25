@@ -58,6 +58,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "  -k, --kmer=N          k-mer size\n"
+"  -d, --dist-error=N    acceptable error of a distance estimate\n"
+"                        default: 6 bp\n"
 "  -o, --out=FILE        output contig paths to FILE\n"
 "  -s, --consensus=FILE  output consensus sequences to FILE\n"
 "  -g, --graph=FILE      output the contig adjacency graph to FILE\n"
@@ -93,15 +95,16 @@ namespace opt {
 	/** The the number of bases to continue the constrained search of
 	 * the graph beyond the size of the ambiguous gap in the path.
 	 */
-	static const unsigned allowedError = 6;
+	static unsigned distanceError = 6;
 }
 
-static const char shortopts[] = "k:o:s:g:a:p:vD:M:P:";
+static const char shortopts[] = "d:k:o:s:g:a:p:vD:M:P:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "dist-error",  required_argument, NULL, 'd' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "consensus",   required_argument, NULL, 's' },
 	{ "graph",       required_argument, NULL, 'g' },
@@ -819,6 +822,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case '?': die = true; break;
+		case 'd': arg >> opt::distanceError; break;
 		case 'k': arg >> opt::k; break;
 		case 'o': arg >> opt::out; break;
 		case 'p': arg >> opt::identity; break;
@@ -930,7 +934,7 @@ int main(int argc, char** argv)
 
 		Constraints constraints;
 		constraints.push_back(Constraint(apConstraint.dest,
-			apConstraint.dist + opt::allowedError));
+			apConstraint.dist + opt::distanceError));
 
 		ContigPaths solutions;
 		unsigned numVisited = 0;
