@@ -14,6 +14,7 @@
 #include "DirectedGraph.h"
 #include "FastaReader.h"
 #include "GraphIO.h"
+#include "GraphUtil.h"
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "Sequence.h"
@@ -57,6 +58,8 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "                        default is 10000\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
+"  -c, --coverage=REAL   remove contigs with mean k-mer coverage\n"
+"                        less than this threshold [0]\n"
 "      --scaffold        scaffold over bubbles that have\n"
 "                        insufficient identity\n"
 "      --no-scaffold     disable scaffolding [default]\n"
@@ -78,6 +81,9 @@ namespace opt {
 	/** Minimum identity. */
 	static float identity = 0.9;
 
+	/** Minimum mean k-mer coverage. */
+	static float minCoverage;
+
 	/** Scaffold over bubbles that have insufficient identity. */
 	static int scaffold;
 
@@ -93,12 +99,13 @@ namespace opt {
 	static int threads = 1;
 }
 
-static const char shortopts[] = "b:g:j:k:p:v";
+static const char shortopts[] = "b:c:g:j:k:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bubble-length", required_argument, NULL, 'b' },
+	{ "coverage",      required_argument, NULL, 'c' },
 	{ "dot",           no_argument,       &opt::dot, 1, },
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "kmer",          required_argument, NULL, 'k' },
@@ -495,6 +502,49 @@ static void popOrScaffoldBubble(Graph& g, const Bubble& bubble)
 	}
 }
 
+/** Return the length of the specified vertex in k-mer. */
+static unsigned getKmerLength(const ContigProperties& vp)
+{
+	assert(vp.length >= opt::k);
+	return vp.length - opt::k + 1;
+}
+
+/** Return the mean k-mer coverage of the specified vertex. */
+static float getMeanCoverage(const ContigProperties& vp)
+{
+	return (float)vp.coverage / getKmerLength(vp);
+}
+
+/** Remove contigs with insufficient coverage. */
+static void filterGraph(Graph& g)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef GTraits::vertex_descriptor V;
+	typedef GTraits::vertex_iterator Vit;
+
+	unsigned removedContigs = 0, removedKmer = 0;
+	std::pair<Vit, Vit> urange = vertices(g);
+	for (Vit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		const ContigProperties& vp = g[u];
+		if (getMeanCoverage(vp) < opt::minCoverage) {
+			removedContigs++;
+			removedKmer += getKmerLength(vp);
+			clear_vertex(u, g);
+			remove_vertex(u, g);
+			g_popped.push_back(u);
+		}
+	}
+	if (opt::verbose > 0) {
+		cerr << "Removed " << removedKmer << " k-mer in "
+			<< removedContigs << " contigs with mean k-mer coverage "
+			"less than " << opt::minCoverage << ".\n";
+		printGraphStats(cerr, g);
+	}
+}
+
 /** Remove the specified contig from the adjacency graph. */
 static void removeContig(Graph* g, ContigID id)
 {
@@ -521,6 +571,7 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'b': arg >> opt::maxLength; break;
+			case 'c': arg >> opt::minCoverage; break;
 			case 'g': arg >> opt::graphPath; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
@@ -580,6 +631,10 @@ int main(int argc, char** argv)
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
+
+	// Remove contigs with insufficient coverage.
+	if (opt::minCoverage > 0)
+		filterGraph(g);
 
 	if (opt::dot)
 		cout << "digraph bubbles {\n";
