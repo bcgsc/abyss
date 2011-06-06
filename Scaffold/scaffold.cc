@@ -267,14 +267,14 @@ int main(int argc, char** argv)
 	// Filter the graph.
 	addComplementaryEdges(g);
 	filterGraph(g);
-	remove_transitive_edges(g);
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
 
-	// Output the graph.
-	if (!opt::graphPath.empty()) {
-		ofstream out(opt::graphPath.c_str());
-		assert_good(out, opt::graphPath);
-		write_dot(out, g);
-		assert_good(out, opt::graphPath);
+	// Remove transitive edges.
+	unsigned numTransitive = remove_transitive_edges(g);
+	if (opt::verbose > 0) {
+		cerr << "Removed " << numTransitive << " transitive edges.\n";
+		printGraphStats(cerr, g);
 	}
 
 	// Assemble the paths.
@@ -283,6 +283,15 @@ int main(int argc, char** argv)
 	ContigPaths paths;
 	assemble(g, back_inserter(paths));
 	sort(paths.begin(), paths.end());
+	if (opt::verbose > 0) {
+		unsigned n = 0;
+		for (ContigPaths::const_iterator it = paths.begin();
+				it != paths.end(); ++it)
+			n += it->size();
+		cerr << "Assembled " << n << " contigs in "
+			<< paths.size() << " scaffolds.\n";
+		printGraphStats(cerr, g);
+	}
 
 	// Output the paths.
 	ofstream fout(opt::out.c_str());
@@ -294,6 +303,14 @@ int main(int argc, char** argv)
 			<< addDistEst(gorig, *it) << '\n';
 	}
 	assert_good(out, opt::out);
+
+	// Output the graph.
+	if (!opt::graphPath.empty()) {
+		ofstream out(opt::graphPath.c_str());
+		assert_good(out, opt::graphPath);
+		write_dot(out, g);
+		assert_good(out, opt::graphPath);
+	}
 
 	return 0;
 }
