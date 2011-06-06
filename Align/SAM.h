@@ -107,6 +107,14 @@ struct SAMAlignment {
 				clip0 = len;
 				in >> len >> type;
 				assert(in.good());
+				if (type != 'M') {
+					// Ignore a malformatted CIGAR string whose first
+					// non-clipping operation is not M.
+					std::cerr << "warning: malformatted CIGAR: "
+						<< cigar << std::endl;
+					in >> len >> type;
+					assert(in.good());
+				}
 				assert(type == 'M');
 				a.align_length = len;
 				break;
