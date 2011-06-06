@@ -1,5 +1,6 @@
 #include "dialign.h"
 #include "Common/Options.h"
+#include "Sequence.h"
 #include <algorithm> // for min
 #include <cassert>
 #include <cmath> // for log
@@ -222,40 +223,6 @@ static struct seq_col* read_seqs(const vector<string>& amb_seqs)
 	return scol;
 }
 
-/** Return the consensus base.
- * @param counts a count of the characters "-ACGTN"
- */
-static char make_consensus(unsigned counts[6])
-{
-	static const char IUPAC[16] = {
-		'N', //----
-		'A', //---A
-		'C', //--C-
-		'M', //--CA
-		'G', //-G--
-		'R', //-G-A
-		'S', //-GC-
-		'V', //-GCA
-		'T', //T---
-		'W', //T--A
-		'Y', //T-C-
-		'H', //T-CA
-		'K', //TG--
-		'D', //TG-A
-		'B', //TGC-
-		'N', //TGCA
-	};
-	unsigned bases = 0;
-	for (unsigned i = 1, mask = 1; i < 5; i++, mask <<= 1)
-		if (counts[i] > 0)
-			bases |= mask;
-	if (bases == 0)
-		assert(counts[5] > 0);
-	assert(bases < 16);
-	char c = IUPAC[bases];
-	return counts[0] > 0 ? tolower(c) : c;
-}
-
 // assume initial sequences contain only a/c/g/t/n
 static string get_alignment_consensus(struct alignment *algn)
 {
@@ -278,46 +245,23 @@ static string get_alignment_consensus(struct alignment *algn)
 		proc[j] = 0;
 	string consensus;
 	for (j=0; j<(int)max; j++) {
-		unsigned int chars[6]; //store count for -,a,c,g,t,n
-		for (s=0; s<6; s++)
-			chars[s]=0;
+		char c = 'X';
+		bool gap = false;
 		for(s=0;s<slen;s++) {
 			sq = &(scol->seqs[s]);
 			if(proc[s] < sq->length) {
 				ap1 = find_eqc(ap,s,proc[s]);
 				if(*ap1->eqcAlgnPos==j) {
 					char cur_char = toupper(sq->data[proc[s]]);
-					switch (cur_char) {
-					case 'A':
-						chars[1]++; break;
-					case 'C':
-						chars[2]++; break;
-					case 'G':
-						chars[3]++; break;
-					case 'T':
-						chars[4]++; break;
-					case 'N':
-						chars[5]++; break;
-					default:
-						cerr << "error: unexpected character: `"
-							<< cur_char << "'\n";
-						assert(false);
-						exit(EXIT_FAILURE);
-					}
+					c = c == 'X' ? cur_char
+						: ambiguityOr(c, cur_char);
 					proc[s]++;
-				} else {
-					chars[0]++;
-				}
-			} else {
-				chars[0]++;
-			}
+				} else
+					gap = true;
+			} else
+				gap = true;
 		}
-		char c = make_consensus(chars);
-		consensus += c;
-		if (para->DEBUG > 5) {
-			for (s=0; s<6; s++) printf("chars[%u]:%u; ", s, chars[s]);
-			printf("\nconsensus: %c\n", c);
-		}
+		consensus += gap ? tolower(c) : c;
 	}
 	delete[] proc;
 	return consensus;
