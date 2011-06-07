@@ -8,6 +8,14 @@ Compiling ABySS should be as easy as
 To install ABySS in a specified directory
 ./configure --prefix=/opt/ABySS && make && sudo make install
 
+GCC uses OpenMP for parallelization, which requires a modern compiler
+such as GCC 4.4 or greater. If you have an older compiler it is best
+to upgrade your compiler if possible. If you have multiple versions of
+GCC installed, you can specify a different compiler:
+	./configure CC=gcc-4.4 CXX=g++-4.4
+If you cannot upgrade GCC, you can ignore the compiler warnings:
+	make AM_CXXFLAGS=-Wall
+
 ABySS requires the Boost C++ libraries. Many systems come with Boost
 installed. If yours does not, you may download Boost here:
 http://www.boost.org/users/download/
@@ -139,7 +147,7 @@ The paired-end assembly stage is multithreaded but runs on a single
 machine. The number of threads to use may be specified with the
 parameter j. The default is the same as np. ABySS is multithreaded
 using pthread and OpenMP, which requires a modern compiler such as
-GCC 4.3 or greater.
+GCC 4.4 or greater.
 
 Open MPI integrates well with SGE (Sun Grid Engine). For example, to
 submit an array of jobs to assemble every odd value of k between 51
