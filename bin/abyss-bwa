@@ -21,7 +21,7 @@ esac
 
 # Parse the command line.
 bwa_aln='bwa aln'
-bwa_index='bwa index'
+bwa_index='bwa index -a bwtsw'
 while getopts :ij:k:v opt; do
 	case $opt in
 		i) ;;
