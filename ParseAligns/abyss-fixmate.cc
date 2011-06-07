@@ -95,6 +95,8 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		// Different targets.
 		stats.numDifferent++;
 		fixMate(a0, a1);
+		// Set the mapping quality of both reads to their minimum.
+		a0.mapq = a1.mapq = min(a0.mapq, a1.mapq);
 		cout << a0 << '\n' << a1 << '\n';
 	} else if (a0.isReverse() == a1.isReverse()) {
 		// Same target, FF orientation.
