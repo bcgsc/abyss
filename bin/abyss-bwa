@@ -21,6 +21,7 @@ esac
 
 # Parse the command line.
 bwa_aln='bwa aln'
+bwa_index='bwa index'
 while getopts :ij:k:v opt; do
 	case $opt in
 		i) ;;
@@ -40,12 +41,12 @@ index=$target.bwt
 # Build the index.
 if [ ! -r $index ]; then
 	echo >&2 "Building the index $index..."
-	echo >&2 bwa index $target $target
-	bwa index $target $target 1>&2
+	echo >&2 $bwa_index $target $target
+	$bwa_index $target $target 1>&2
 elif [ $index -ot $target ]; then
 	echo >&2 "The index $index is stale. Rebuilding the index..."
-	echo >&2 bwa index $target $target
-	bwa index $target $target 1>&2
+	echo >&2 $bwa_index $target $target
+	$bwa_index $target $target 1>&2
 else
 	echo >&2 "The index $index is up to date."
 fi
