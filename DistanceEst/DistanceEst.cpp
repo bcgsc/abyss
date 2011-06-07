@@ -40,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
+"  -q, --min-mapq=N      ignore alignments with mapping quality\n"
+"                        less than this threshold [1]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "      --dot             output overlaps in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -57,6 +59,7 @@ namespace opt {
 
 	static unsigned seedLen;
 	static unsigned npairs;
+	static unsigned minMapQ = 1;
 
 	/** Reverse-forward mate pair orientation. */
 	static bool rf = false;
@@ -66,7 +69,7 @@ namespace opt {
 	static int threads = 1;
 }
 
-static const char shortopts[] = "j:k:n:o:s:v";
+static const char shortopts[] = "j:k:n:o:q:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -75,6 +78,7 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "min-mapq",    required_argument, NULL, 'q' },
 	{ "seed-length", required_argument, NULL, 's' },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -263,6 +267,7 @@ int main(int argc, char** argv)
 			case 'k': arg >> opt::k; break;
 			case 'n': arg >> opt::npairs; break;
 			case 'o': arg >> opt::out; break;
+			case 'q': arg >> opt::minMapQ; break;
 			case 's': arg >> opt::seedLen; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -390,7 +395,8 @@ int main(int argc, char** argv)
 #pragma omp single
 	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
-				|| !sam.isPaired() || sam.rname == sam.mrnm)
+				|| !sam.isPaired() || sam.rname == sam.mrnm
+				|| sam.mapq < opt::minMapQ)
 			continue;
 		if (sam.rname != alignments.front().rname) {
 			ContigID id0(sam.rname);
