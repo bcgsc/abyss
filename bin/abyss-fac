@@ -73,23 +73,37 @@ sub fac($)
 
 	my $n = @x;
 	if ($n > 0) {
-		my $mean = int $sum / $n;
+		#my $mean = int $sum / $n;
 
 		@x = sort { $a <=> $b } @x;
 		my $min = $x[0];
 		#my $q1 = $x[@x/4];
-		my $q2 = $x[@x/2];
+		#my $q2 = $x[@x/2];
 		#my $q3 = $x[@x*3/4];
 		my $max = $x[-1];
 
 		my $n50_target = defined $opt_genome_size
 				? $opt_genome_size : $sum;
-		my ($nn50, $n50);
-		my $n50sum = 0;
-		while (@x > 0 && $n50sum < 0.5 * $n50_target) {
-			$nn50++;
-			$n50 = pop @x;
-			$n50sum += $n50;
+		my ($nn20, $n20, $n20sum,
+			$nn50, $n50, $n50sum,
+			$nn80, $n80, $n80sum);
+		while (@x > 0 && $n80sum < 0.8 * $n50_target) {
+			my $x = pop @x;
+			if ($n20sum < 0.2 * $n50_target) {
+				$nn20++;
+				$n20 = $x;
+				$n20sum += $x;
+			}
+			if ($n50sum < 0.5 * $n50_target) {
+				$nn50++;
+				$n50 = $x;
+				$n50sum += $x;
+			}
+			if ($n80sum < 0.8 * $n50_target) {
+				$nn80++;
+				$n80 = $x;
+				$n80sum += $x;
+			}
 		}
 		#my $np = int 100 * $n50sum / $sum;
 
@@ -111,13 +125,13 @@ sub fac($)
 
 		format Spaces =
 @<<<<<<<@<<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<@<<<<<<<@<<<<<< ^<<<<<<<<<<<<
-$ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
+$ntotal, $neng, $nn50, $min, $n80, $n50, $n20, $max, $sumeng, $path
                                                                    ^<<<<<<<<<<<<~~
 $path
 .
 		format Pipes =
 |@<<<<<<|@<<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<|@<<<<<<|@<<<<<<|@*|
-$ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
+$ntotal, $neng, $nn50, $min, $n80, $n50, $n20, $max, $sumeng, $path
 .
 		$~ = $opt_jira ? 'Pipes' : 'Spaces';
 		$^ = $opt_jira ? 'Pipes_TOP' : 'Spaces_TOP';
@@ -136,11 +150,11 @@ $ntotal, $neng, $nn50, $min, $q2, $mean, $n50, $max, $sumeng, $path
 }
 
 format Spaces_TOP =
-n       n:@<<<< n:N50  min    median mean   N50    max     sum
+n       n:@<<<< n:N50  min    N80    N50    N20    max     sum
 $opt_threshold
 .
 format Pipes_TOP =
-||n    ||n:@<<<||n:N50||min  ||median||mean||N50  ||max   ||sum   ||
+||n    ||n:@<<<||n:N50||min  ||N80  ||N50  ||N20  ||max   ||sum   ||
 $opt_threshold
 .
 
