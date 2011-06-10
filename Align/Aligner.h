@@ -217,6 +217,10 @@ class Aligner
 
 		typedef std::map<unsigned, AlignmentVector> AlignmentSet;
 
+		void alignKmer(
+				AlignmentSet& aligns, const Sequence& kmer,
+				bool isRC, bool good, int read_ind, int seqLen);
+
 		AlignmentSet getAlignmentsInternal(
 				const Sequence& seq, bool isRC);
 

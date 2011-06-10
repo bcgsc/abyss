@@ -82,6 +82,42 @@ void Aligner<SeqPosHashMap>::alignRead(
 			getAlignmentsInternal(seqrc, true), dest);
 }
 
+/** Store all alignments for a given Kmer in the parameter aligns.
+ *  @param[out] aligns Map of contig IDs to alignment vectors.
+ */
+template <class SeqPosHashMap>
+void Aligner<SeqPosHashMap>::alignKmer(
+		AlignmentSet& aligns, const Sequence& seq,
+		bool isRC, bool good, int read_ind, int seqLen)
+{
+	Sequence kmer(seq, read_ind, m_hashSize);
+	if (!good && kmer.find_first_not_of("ACGT0123") != string::npos)
+		return;
+
+	pair<map_const_iterator, map_const_iterator> range
+		= m_target.equal_range(Kmer(kmer));
+
+	if (range.first != range.second
+				&& opt::multimap == opt::IGNORE
+				&& range.first->second.isDuplicate())
+		return;
+
+	for (map_const_iterator resultIter = range.first;
+			resultIter != range.second; ++resultIter) {
+		assert(opt::multimap != opt::IGNORE
+				|| !resultIter->second.isDuplicate());
+
+		int read_pos = !isRC ? read_ind
+			: Alignment::calculateReverseReadStart(
+					read_ind, seqLen, m_hashSize);
+		unsigned ctgIndex = resultIter->second.contig;
+		Alignment align(string(),
+				resultIter->second.pos, read_pos, m_hashSize,
+				seqLen, isRC);
+		aligns[ctgIndex].push_back(align);
+	}
+}
+
 template <class SeqPosHashMap>
 typename Aligner<SeqPosHashMap>::AlignmentSet
 Aligner<SeqPosHashMap>::getAlignmentsInternal(
@@ -91,33 +127,39 @@ Aligner<SeqPosHashMap>::getAlignmentsInternal(
 	AlignmentSet aligns;
 
 	bool good = seq.find_first_not_of("ACGT0123") == string::npos;
-	bool discarded = true;
 	int seqLen = seq.length();
-	for(int i = 0; i < (seqLen - m_hashSize) + 1; ++i)
-	{
-		Sequence kmer(seq, i, m_hashSize);
-		if (!good && kmer.find_first_not_of("ACGT0123")
-				!= string::npos)
-			continue;
-		discarded = false;
-		pair<map_const_iterator, map_const_iterator> range
-			= m_target.equal_range(Kmer(kmer));
-		for (map_const_iterator resultIter = range.first;
-				resultIter != range.second; ++resultIter) {
-			if (opt::multimap == opt::IGNORE
-					&& resultIter->second.isDuplicate())
-				break;
+	int last_kmer = seqLen - m_hashSize;
 
-			int read_pos = !isRC ? i
-				: Alignment::calculateReverseReadStart(
-						i, seqLen, m_hashSize);
-			unsigned ctgIndex = resultIter->second.contig;
-			Alignment align(string(),
-					resultIter->second.pos, read_pos, m_hashSize,
-					seqLen, isRC);
-			aligns[ctgIndex].push_back(align);
+	// Align the first kmer
+	alignKmer(aligns, seq, isRC, good, 0, seqLen);
+
+	// Align the last kmer
+	alignKmer(aligns, seq, isRC, good, last_kmer, seqLen);
+
+	// Short-cut logic ignoring the middle alignments if the first
+	// and last kmers overlap, and align to the same contig
+	if (good && seqLen <= 2 * m_hashSize && aligns.size() == 1) {
+		AlignmentSet::const_iterator ctgIter = aligns.begin();
+		const AlignmentVector& a = ctgIter->second;
+		if (ctgIter->second.size() == 2) {
+			int qstep = isRC
+					? a[0].read_start_pos - a[1].read_start_pos
+					: a[1].read_start_pos - a[0].read_start_pos;
+			assert(qstep >= 0);
+
+			// Verify this isn't a kmer aligning to two parts of a
+			// contig, and that the alignments are coalescable.
+			if (qstep == last_kmer &&
+					a[1].contig_start_pos
+						== a[0].contig_start_pos + qstep)
+				return aligns;
 		}
 	}
+
+	// Align middle kmers
+	for(int i = 1; i < last_kmer; ++i)
+		alignKmer(aligns, seq, isRC, good, i, seqLen);
+
 	return aligns;
 }
 
@@ -147,19 +189,20 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 		AlignmentVector::iterator currIter = alignVec.begin() + 1;
 		Alignment currAlign = *prevIter;
 		while (currIter != alignVec.end()) {
-			int qstep = 1;
-			int tstep = currIter->isRC ? -1 : 1;
-			if (currIter->read_start_pos
-						!= prevIter->read_start_pos + qstep
-					|| currIter->contig_start_pos
-						!= prevIter->contig_start_pos + tstep) {
+			int qstep = currIter->read_start_pos -
+						prevIter->read_start_pos;
+			assert(qstep >= 0 && qstep < m_hashSize);
+			int tstep = currIter->isRC ? -qstep : qstep;
+			if (currIter->contig_start_pos
+						== prevIter->contig_start_pos + tstep
+					&& qstep < m_hashSize) {
+				currAlign.align_length += qstep;
+				if (currAlign.isRC)
+					currAlign.contig_start_pos -= qstep;
+			} else {
 				currAlign.contig = contigIndexToID(ctgIter->first);
 				*dest++ = value_type(currAlign, qid, seq);
 				currAlign = *currIter;
-			} else {
-				currAlign.align_length++;
-				if (currAlign.isRC)
-					currAlign.contig_start_pos--;
 			}
 
 			prevIter = currIter;
