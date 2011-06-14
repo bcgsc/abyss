@@ -349,11 +349,12 @@ int main(int argc, char** argv)
 	unsigned numRF = distanceHist.count(INT_MIN, 0);
 	unsigned numFR = distanceHist.count(1, INT_MAX);
 	unsigned numTotal = distanceHist.size();
-	cerr << "Mate orientation FR: " << numFR << setprecision(3)
-		<< " (" << (float)100*numFR/numTotal << "%)"
-		<< " RF: " << numRF << setprecision(3)
-		<< " (" << (float)100*numRF/numTotal << "%)"
-		<< endl;
+	if (opt::verbose > 0)
+		cerr << "Mate orientation FR: " << numFR << setprecision(3)
+			<< " (" << (float)100*numFR/numTotal << "%)"
+			<< " RF: " << numRF << setprecision(3)
+			<< " (" << (float)100*numRF/numTotal << "%)"
+			<< endl;
 	if (numFR < numRF) {
 		cerr << "The mate pairs of this library are oriented "
 			"reverse-forward (RF)." << endl;
@@ -363,12 +364,13 @@ int main(int argc, char** argv)
 
 	distanceHist.eraseNegative();
 	Histogram h = distanceHist.trimFraction(0.0001);
-	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
-		"median: " << setprecision(4) << h.median() << " "
-		"sd: " << setprecision(4) << h.sd() << " "
-		"n: " << h.size() << " "
-		"min: " << h.minimum() << " max: " << h.maximum() << '\n'
-		<< h.barplot() << endl;
+	if (opt::verbose > 0)
+		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
+			"median: " << setprecision(4) << h.median() << " "
+			"sd: " << setprecision(4) << h.sd() << " "
+			"n: " << h.size() << " "
+			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
+			<< h.barplot() << endl;
 	PDF empiricalPDF(h);
 
 	if (opt::dot) {
