@@ -136,7 +136,7 @@ struct SAMAlignment {
 				qlen += len;
 				clip1 = len;
 				break;
-			  case 'I': case 'M':
+			  case 'I': case 'M': case 'X': case '=':
 				qlen += len;
 				break;
 			  case 'D': case 'N': case 'P':
