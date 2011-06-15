@@ -231,7 +231,7 @@ struct SAMRecord : SAMAlignment {
 	 */
 	int mateTargetAtQueryStart() const
 	{
-		return Alignment(*this).targetAtQueryStart() + isize;
+		return targetAtQueryStart() + isize;
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
