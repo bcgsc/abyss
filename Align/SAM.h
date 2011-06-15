@@ -130,14 +130,11 @@ struct SAMAlignment {
 		unsigned qlen = clip0 + a.align_length;
 		unsigned clip1 = 0;
 		while (in >> len >> type) {
-			assert(clip1 == 0);
 			switch (type) {
 			  case 'H': case 'S':
-				qlen += len;
-				clip1 = len;
-				break;
 			  case 'I': case 'M': case 'X': case '=':
 				qlen += len;
+				clip1 += len;
 				break;
 			  case 'D': case 'N': case 'P':
 				break;
