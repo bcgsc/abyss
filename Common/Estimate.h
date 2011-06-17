@@ -50,11 +50,16 @@ struct DistanceEst
 
 	friend std::istream& operator>>(std::istream& in, DistanceEst& o)
 	{
-		if (in >> std::ws && in.peek() == 'd')
-			return in >> expect("d =") >> o.distance
-				>> expect(" e =") >> o.stdDev
-				>> expect(" n =") >> o.numPairs;
-		else
+		if (in >> std::ws && in.peek() == 'd') {
+			if (!(in >> expect("d =") >> o.distance >> std::ws))
+				return in;
+			if (in.peek() == ']') {
+				o.stdDev = o.numPairs = 0;
+				return in;
+			} else
+				return in >> expect(" e =") >> o.stdDev
+					>> expect(" n =") >> o.numPairs;
+		} else
 			return in >> o.distance >> expect(",")
 				>> o.numPairs >> expect(",")
 				>> o.stdDev;
