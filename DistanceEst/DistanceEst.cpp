@@ -105,15 +105,15 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	fragments.reserve(pairs.size());
 	for (AlignPairVec::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it) {
-		Alignment a0 = *it;
-		if (a0.isRC)
-			a0 = a0.flipTarget(len0);
+		int a0 = it->targetAtQueryStart();
 		int a1 = it->mateTargetAtQueryStart();
+		if (it->isReverse())
+			a0 = len0 - a0;
 		if (!it->isMateReverse())
 			a1 = len1 - a1;
 		fragments.push_back(opt::rf
-				? make_pair(a1, len1 + a0.targetAtQueryStart())
-				: make_pair(a0.targetAtQueryStart(), len0 + a1));
+				? make_pair(a1, len1 + a0)
+				: make_pair(a0, len0 + a1));
 	}
 
 	// Remove duplicate fragments.

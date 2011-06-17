@@ -80,13 +80,66 @@ struct SAMAlignment {
 	bool isRead1() const { return flag & FREAD1; }
 	bool isRead2() const { return flag & FREAD2; }
 
+	/** The alignment coordinates of a gapped alignment. */
+	struct CigarCoord {
+		/** The length of the query sequence. */
+		unsigned qlen;
+		/** The start of the alignment on the query. */
+		unsigned qstart;
+		/** The length of the alignment on the query. */
+		unsigned qspan;
+		/** The length of the alignment on the target. */
+		unsigned tspan;
+
+		/** Parse the specified CIGAR string. */
+		CigarCoord(const std::string& cigar)
+			: qlen(0), qstart(0), qspan(0), tspan(0)
+		{
+			std::istringstream in(cigar);
+			bool first = true;
+			unsigned len;
+			char type;
+			while (in >> len >> type) {
+				switch (type) {
+				  case 'H': case 'S':
+					if (first)
+						qstart = len;
+					qlen += len;
+					break;
+				  case 'M': case 'X': case '=':
+					qlen += len;
+					qspan += len;
+					tspan += len;
+					break;
+				  case 'I':
+					qlen += len;
+					qspan += len;
+					break;
+				  case 'D': case 'N': case 'P':
+					tspan += len;
+					break;
+				  default:
+					std::cerr << "error: invalid CIGAR: `"
+						<< cigar << "'\n";
+					exit(EXIT_FAILURE);
+				}
+				first = false;
+			}
+			assert(in.eof());
+		}
+	};
+
 	/**
 	 * Return the position of the first base of the query on the
 	 * target extrapolated from the start of the alignment.
 	 */
 	int targetAtQueryStart() const
 	{
-		return Alignment(*this).targetAtQueryStart();
+		CigarCoord a(cigar);
+		assert(a.qstart + a.qspan <= a.qlen);
+		return isReverse()
+			? pos + a.tspan + (a.qlen - a.qspan - a.qstart)
+			: pos - a.qstart;
 	}
 
 	/** Parse the specified CIGAR string.
