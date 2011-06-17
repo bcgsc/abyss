@@ -184,7 +184,10 @@ static void filterGraph(Graph& g)
 		cerr << "Removed " << numRemovedE << " edges.\n";
 }
 
-/** Find edges in g0 that resolve forks in g. */
+/** Find edges in g0 that resolve forks in g.
+ * For a pair of edges (u,v1) and (u,v2) in g, if exactly one of the
+ * edges (v1,v2) or (v2,v1) exists in g0, add that edge to g.
+ */
 static void resolveForks(Graph& g, const Graph& g0)
 {
 	typedef graph_traits<Graph>::adjacency_iterator Vit;
