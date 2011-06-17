@@ -184,6 +184,53 @@ static void filterGraph(Graph& g)
 		cerr << "Removed " << numRemovedE << " edges.\n";
 }
 
+/** Find edges in g0 that resolve forks in g. */
+static void resolveForks(Graph& g, const Graph& g0)
+{
+	typedef graph_traits<Graph>::adjacency_iterator Vit;
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::vertex_iterator Uit;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	unsigned numEdges = 0;
+	pair<Uit, Uit> urange = vertices(g);
+	for (Uit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (out_degree(u, g) < 2)
+			continue;
+		pair<Vit, Vit> vrange = adjacent_vertices(u, g);
+		for (Vit vit1 = vrange.first; vit1 != vrange.second;) {
+			V v1 = *vit1;
+			++vit1;
+			assert(v1 != u);
+			for (Vit vit2 = vit1; vit2 != vrange.second; ++vit2) {
+				V v2 = *vit2;
+				assert(v2 != u);
+				assert(v1 != v2);
+				if (edge(v1, v2, g).second || edge(v2, v1, g).second)
+					continue;
+				pair<E, bool> e12 = edge(v1, v2, g0);
+				pair<E, bool> e21 = edge(v2, v1, g0);
+				if (e12.second && e21.second) {
+					if (opt::verbose > 1)
+						cerr << "cycle: " << v1 << ' ' << v2 << '\n';
+				} else if (e12.second || e21.second) {
+					E e = e12.second ? e12.first : e21.first;
+					V v = source(e, g0), w = target(e, g0);
+					add_edge(v, w, g0[e], g);
+					numEdges++;
+					if (opt::verbose > 1)
+						cerr << v << " -> " << w
+							<< " [" << g0[e] << "]\n";
+				}
+			}
+		}
+	}
+	if (opt::verbose > 0)
+		cerr << "Added " << numEdges
+			<< " edges to ambiguous vertices.\n";
+}
+
 /** Add distance estimates to a path. */
 static ContigPath addDistEst(const Graph& g, const ContigPath& path)
 {
@@ -264,11 +311,17 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
-	// Filter the graph.
+	// Add any missing complementary edges.
 	addComplementaryEdges(g);
+	Graph gorig(g);
+
+	// Filter the graph.
 	filterGraph(g);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
+
+	// Resolve forks.
+	resolveForks(g, gorig);
 
 	// Remove transitive edges.
 	unsigned numTransitive = remove_transitive_edges(g);
@@ -278,7 +331,6 @@ int main(int argc, char** argv)
 	}
 
 	// Assemble the paths.
-	Graph gorig(g); // the preassembly graph
 	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
 	assemble(g, back_inserter(paths));
