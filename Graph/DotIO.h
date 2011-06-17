@@ -225,6 +225,10 @@ std::istream& read_dot(std::istream& in, Graph& g)
 					exit(EXIT_FAILURE);
 				}
 				assert(in);
+				if (edge(u, v, g).second) {
+					// This edge already exists. Replace it.
+					remove_edge(u, v, g);
+				}
 				if (in >> std::ws && in.peek() == '[') {
 					// Edge properties
 					edge_property_type ep;
