@@ -38,7 +38,9 @@ class DirectedGraph
 	typedef unsigned edges_size_type;
 
 	// PropertyGraph
+	typedef VertexProp vertex_bundled;
 	typedef VertexProp vertex_property_type;
+	typedef EdgeProp edge_bundled;
 	typedef EdgeProp edge_property_type;
 
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP

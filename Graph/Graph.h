@@ -37,7 +37,12 @@ struct graph_traits {
 	typedef typename G::edges_size_type edges_size_type;
 };
 
-#if !HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
+
+using boost::vertex_bundle_type;
+using boost::edge_bundle_type;
+
+#else
 
 // IncidenceGraph
 
