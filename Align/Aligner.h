@@ -67,19 +67,6 @@ struct Alignment
 		return targetAtQueryStart() - o.targetAtQueryStart();
 	}
 
-	/** This alignment is converted to the corresponding alignment of
-	 * the same query to the reverse complement of the target.
-	 */
-	Alignment flipTarget(unsigned tlength) const
-	{
-		Alignment rc(*this);
-		unsigned tend = contig_start_pos + align_length;
-		assert(tend <= tlength);
-		rc.contig_start_pos = tlength - tend;
-		rc.isRC = !isRC;
-		return rc;
-	}
-
 	/** Return an alignment of the reverse complement of the query to
 	 * the same target.
 	 */
