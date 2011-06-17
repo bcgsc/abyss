@@ -274,10 +274,24 @@ static void pruneTips(Graph& g)
 	}
 }
 
+/** Return whether the specified distance estimate is an exact
+ * overlap.
+ */
+static bool isOverlap(const DistanceEst& d)
+{
+	if (d.stdDev == 0 && d.numPairs == 0) {
+		assert(d.distance < 0);
+		return true;
+	} else
+		return false;
+}
+
 /** Add distance estimates to a path. */
 static ContigPath addDistEst(const Graph& g, const ContigPath& path)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef edge_bundle_type<Graph>::type EP;
+
 	ContigPath out;
 	out.reserve(2 * path.size());
 	ContigNode u = path.front();
@@ -288,11 +302,14 @@ static ContigPath addDistEst(const Graph& g, const ContigPath& path)
 		assert(!v.ambiguous());
 		pair<E, bool> e = edge(u, v, g);
 		assert(e.second);
-		int distance = max(g[e.first].distance, (int)opt::minGap);
-		int numN = distance + opt::k - 1; // by convention
-		assert(numN >= 0);
-		numN = max(numN, 1);
-		out.push_back(ContigNode(numN, 'N'));
+		const EP& ep = g[e.first];
+		if (!isOverlap(ep)) {
+			int distance = max(ep.distance, (int)opt::minGap);
+			int numN = distance + opt::k - 1; // by convention
+			assert(numN >= 0);
+			numN = max(numN, 1);
+			out.push_back(ContigNode(numN, 'N'));
+		}
 		out.push_back(v);
 		u = v;
 	}
