@@ -50,7 +50,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
-	int dot = true; // used by Estimate
 
 	/** Minimum number of pairs. */
 	static unsigned minNumPairs;
@@ -69,6 +68,9 @@ namespace opt {
 
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
+
+ 	/** Output format */
+ 	int format = DOT; // used by DistanceEst
 }
 
 static const char shortopts[] = "g:k:n:o:s:v";

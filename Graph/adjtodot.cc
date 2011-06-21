@@ -48,7 +48,6 @@ namespace opt {
 
 	/** Output format */
 	int format = DOT; // used by ContigProperties
-	int dot; // used by DistanceEst
 }
 
 static const char shortopts[] = "k:v";
@@ -122,9 +121,6 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-
-	if (opt::format == DOT)
-		opt::dot = true;
 
 	Graph g;
 	if (optind < argc) {

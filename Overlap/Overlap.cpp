@@ -72,8 +72,8 @@ namespace opt {
 	/** Write the new contigs to this file. */
 	static string out;
 
-	int dot; // used by Estimate
-	int format; // used by ContigProperties
+ 	/** Output format */
+ 	int format = ADJ; // used by ContigProperties
 }
 
 static const char shortopts[] = "g:k:m:o:v";

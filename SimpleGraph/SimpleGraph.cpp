@@ -60,7 +60,9 @@ namespace opt {
 	static int scaffold = 1;
 	static int verbose;
 	static string out;
-	int dot; // used by Estimate
+
+ 	/** Output format */
+ 	int format = ADJ; // used by Estimate
 }
 
 static const char shortopts[] = "d:j:k:o:v";

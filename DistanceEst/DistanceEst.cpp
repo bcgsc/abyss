@@ -55,7 +55,8 @@ namespace opt {
 	unsigned k; // used by MLE
 
 	/** Output in dot format. */
-	int dot; // used by Estimate
+	static int dot;
+	int format = ADJ; // used by Estimate
 
 	static unsigned seedLen;
 	static unsigned npairs;
@@ -307,6 +308,9 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (opt::dot)
+		opt::format = DOT;
 
 	if (opt::seedLen < 2*opt::k)
 		cerr << "warning: the seed-length should be at least twice k:"

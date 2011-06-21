@@ -62,7 +62,8 @@ namespace opt {
 	static int inputFormat;
 	enum { KALIGNER, SAM };
 
-	int dot; // used by Estimate
+ 	/** Output format */
+ 	int format = ADJ; // used by Estimate
 }
 
 static const char shortopts[] = "d:k:f:h:c:v";
