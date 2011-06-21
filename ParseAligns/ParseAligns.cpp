@@ -51,7 +51,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned k;
+	unsigned k; // used by DistanceEst
 	static unsigned c;
 	static int verbose;
 	static string distPath;

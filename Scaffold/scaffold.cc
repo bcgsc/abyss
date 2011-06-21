@@ -10,6 +10,7 @@
 #include "GraphAlgorithms.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
+#include "PopBubbles.h"
 #include <cassert>
 #include <climits>
 #include <cstdlib>
@@ -67,7 +68,7 @@ namespace opt {
 	static string graphPath;
 
 	/** Verbose output. */
-	static int verbose;
+	int verbose; // used by PopBubbles
 }
 
 static const char shortopts[] = "g:k:n:o:s:v";
@@ -279,15 +280,19 @@ static void pruneTips(Graph& g)
  */
 static bool isOverlap(const DistanceEst& d)
 {
-	if (d.stdDev == 0 && d.numPairs == 0) {
+	if (d.stdDev == 0) {
 		assert(d.distance < 0);
 		return true;
 	} else
 		return false;
 }
 
-/** Add distance estimates to a path. */
-static ContigPath addDistEst(const Graph& g, const ContigPath& path)
+/** Add distance estimates to a path.
+ * @param g0 the original graph
+ * @param g1 the transformed graph
+ */
+static ContigPath addDistEst(const Graph& g0, const Graph& g1,
+		const ContigPath& path)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef edge_bundle_type<Graph>::type EP;
@@ -300,9 +305,10 @@ static ContigPath addDistEst(const Graph& g, const ContigPath& path)
 			it != path.end(); ++it) {
 		ContigNode v = *it;
 		assert(!v.ambiguous());
-		pair<E, bool> e = edge(u, v, g);
-		assert(e.second);
-		const EP& ep = g[e.first];
+		pair<E, bool> e0 = edge(u, v, g0);
+		pair<E, bool> e1 = edge(u, v, g1);
+		assert(e0.second || e1.second);
+		const EP& ep = e0.second ? g0[e0.first] : g1[e1.first];
 		if (!isOverlap(ep)) {
 			int distance = max(ep.distance, (int)opt::minGap);
 			int numN = distance + opt::k - 1; // by convention
@@ -373,7 +379,7 @@ int main(int argc, char** argv)
 
 	// Add any missing complementary edges.
 	addComplementaryEdges(g);
-	Graph gorig(g);
+	Graph g0(g);
 
 	// Filter the graph.
 	filterGraph(g);
@@ -381,7 +387,7 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 
 	// Resolve forks.
-	resolveForks(g, gorig);
+	resolveForks(g, g0);
 
 	// Prune tips.
 	pruneTips(g);
@@ -392,6 +398,21 @@ int main(int argc, char** argv)
 		cerr << "Removed " << numTransitive << " transitive edges.\n";
 		printGraphStats(cerr, g);
 	}
+
+	// Pop bubbles.
+	vector<ContigNode> popped = popBubbles(g);
+	if (opt::verbose > 0) {
+		cerr << "Removed " << popped.size()
+			<< " vertices in bubbles.\n";
+		printGraphStats(cerr, g);
+	}
+	if (opt::verbose > 1) {
+		cerr << "Popped: ";
+		copy(popped.begin(), popped.end(),
+				ostream_iterator<ContigNode>(cerr, " "));
+		cerr << '\n';
+	}
+	Graph g1(g);
 
 	// Assemble the paths.
 	typedef vector<ContigPath> ContigPaths;
@@ -415,7 +436,7 @@ int main(int argc, char** argv)
 	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		out << ContigID::create() << '\t'
-			<< addDistEst(gorig, *it) << '\n';
+			<< addDistEst(g0, g1, *it) << '\n';
 	}
 	assert_good(out, opt::out);
 

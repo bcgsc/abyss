@@ -17,6 +17,7 @@ libgraph_a_SOURCES = \
 	GraphUtil.h \
 	MapGraph.h \
 	Options.h \
+	PopBubbles.h \
 	Properties.h \
 	SAMIO.h
 

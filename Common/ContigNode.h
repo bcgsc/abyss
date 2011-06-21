@@ -154,6 +154,12 @@ class ContigNode {
 	};
 };
 
+/** Return the hash value of this ContigNode. */
+static inline unsigned hash_value(const ContigNode& o)
+{
+	return o.index();
+}
+
 /** Return a numeric index of the specified vertex. */
 static inline unsigned index(const ContigNode& o)
 {

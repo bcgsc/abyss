@@ -3,6 +3,7 @@
 
 #include "ContigID.h"
 #include "ContigNode.h"
+#include "Graph/Options.h" // for opt::k
 #include "IOUtil.h"
 #include <cassert>
 #include <cmath> // for ceilf
@@ -26,6 +27,14 @@ struct DistanceEst
 	int distance;
 	unsigned numPairs;
 	float stdDev;
+
+	DistanceEst() : distance(-opt::k + 1), numPairs(0), stdDev(0) { }
+
+	DistanceEst(int distance)
+		: distance(distance), numPairs(0), stdDev(distance) { }
+
+	DistanceEst(int distance, unsigned numPairs, float stdDev)
+		: distance(distance), numPairs(numPairs), stdDev(stdDev) { }
 
 	bool operator==(const DistanceEst& o) const
 	{
