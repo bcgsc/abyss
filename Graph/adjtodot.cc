@@ -6,7 +6,8 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "GraphIO.h"
-#include "Histogram.h"
+#include "GraphUtil.h"
+#include "IOUtil.h"
 #include "Uncompress.h"
 #include <fstream>
 #include <getopt.h>
@@ -24,7 +25,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2010 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " FILE\n"
+"Usage: " PROGRAM " [FILE]...\n"
 "Convert the specified graph from adj format to dot format.\n"
 "\n"
 "  -k, --kmer=N   report the mean k-mer coverage, otherwise\n"
@@ -61,6 +62,24 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+typedef ContigGraph<DirectedGraph<
+	ContigProperties, Distance> > Graph;
+
+/** Read a graph from the specified file. */
+static void readGraph(const string& path, Graph& g)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
+	ifstream fin(path.c_str());
+	istream& in = path == "-" ? cin : fin;
+	assert_good(in, path);
+	in >> g;
+	assert(in.eof());
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
+	ContigID::lock();
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -92,9 +111,6 @@ int main(int argc, char** argv)
 	if (argc - optind < 0) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 1) {
-		cerr << PROGRAM ": too many arguments\n";
-		die = true;
 	}
 
 	if (die) {
@@ -103,38 +119,12 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	string path = optind < argc ? argv[optind] : "-";
-
-	ifstream fin(path.c_str());
-	if (path != "-")
-		assert(fin.is_open());
-	istream& in = path == "-" ? cin : fin;
-
-	typedef ContigGraph<DirectedGraph<
-		ContigProperties, Distance> > Graph;
 	Graph g;
-	in >> g;
-	assert(in.eof());
-
-	if (opt::verbose > 0) {
-		unsigned v = num_vertices(g);
-		unsigned e = num_edges(g);
-		cerr << "V=" << v
-			<< " E=" << e
-			<< " E/V=" << (float)e / v
-			<< endl;
-
-		// Print a histogram of the out degree of vertices.
-		Histogram h;
-		typedef Graph::vertex_iterator vertex_iterator;
-		std::pair<vertex_iterator, vertex_iterator>
-			vit = vertices(g);
-		for (vertex_iterator u = vit.first; u != vit.second; ++u)
-			h.insert(out_degree(*u, g));
-		cerr <<
-			"Degree: " << h.barplot() << "\n"
-			"        01234" << endl;
-	}
+	if (optind < argc) {
+		for (; optind < argc; optind++)
+			readGraph(argv[optind], g);
+	} else
+		readGraph("-", g);
 
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());

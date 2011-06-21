@@ -16,6 +16,11 @@ struct ContigProperties {
 	ContigProperties(unsigned length, unsigned coverage)
 		: length(length), coverage(coverage) { }
 
+	bool operator==(const ContigProperties& o) const
+	{
+		return length == o.length && coverage == o.coverage;
+	}
+
 	ContigProperties& operator +=(const ContigProperties& o)
 	{
 		length += o.length;
