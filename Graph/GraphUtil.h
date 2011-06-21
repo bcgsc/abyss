@@ -25,13 +25,14 @@ num_vertices_removed(const Graph& g)
 template <typename Graph>
 std::ostream& printGraphStats(std::ostream& out, const Graph& g)
 {
+	using std::setprecision;
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
 
 	unsigned v = num_vertices(g) - num_vertices_removed(g);
 	unsigned e = num_edges(g);
 	out << "V=" << v << " E=" << e
-		<< " E/V=" << (float)e / v << std::endl;
+		<< " E/V=" << setprecision(3) << (float)e / v << std::endl;
 
 	// Print a histogram of the degree.
 	Histogram h;
@@ -44,7 +45,6 @@ std::ostream& printGraphStats(std::ostream& out, const Graph& g)
 	unsigned n = h.size();
 	unsigned n0 = h.count(0), n1 = h.count(1), n234 = h.count(2, 4);
 	unsigned n5 = n - (n0 + n1 + n234);
-	using std::setprecision;
 	return out <<
 		"Degree: " << h.barplot(h.maximum() + 1) << "\n"
 		"        01234\n"
