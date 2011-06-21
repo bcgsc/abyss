@@ -32,7 +32,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [DIST]\n"
+"Usage: " PROGRAM " [OPTION]... [DIST]...\n"
 "Scaffold contigs using the distance estimate graph.\n"
 "  DIST  estimates of the distance between contigs\n"
 "\n"
@@ -91,6 +91,11 @@ static const struct option longopts[] = {
 /** Contig length property. */
 struct Length {
 	unsigned length;
+
+	bool operator==(const Length& o) const
+	{
+		return length == o.length;
+	}
 
 	Length& operator+=(const Length& o)
 	{
@@ -322,6 +327,21 @@ static ContigPath addDistEst(const Graph& g0, const Graph& g1,
 	return out;
 }
 
+/** Read a graph from the specified file. */
+static void readGraph(const string& path, Graph& g)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
+	ifstream fin(path.c_str());
+	istream& in = path == "-" ? cin : fin;
+	assert_good(in, path);
+	read_dot<DG>(in, g);
+	assert(in.eof());
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
+	ContigID::lock();
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -354,9 +374,6 @@ int main(int argc, char** argv)
 	if (argc - optind < 0) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
-	} else if (argc - optind > 1) {
-		cerr << PROGRAM ": too many arguments\n";
-		die = true;
 	}
 
 	if (die) {
@@ -365,17 +382,12 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	string distFilePath(optind < argc ? argv[optind++] : "-");
-
-	// Read the distance estimate graph.
-	ifstream fin(distFilePath.c_str());
-	istream& in = distFilePath == "-" ? cin : fin;
-	assert_good(in, distFilePath);
 	Graph g;
-	read_dot<DG>(in, g);
-	assert(in.eof());
-	if (opt::verbose > 0)
-		printGraphStats(cerr, g);
+	if (optind < argc) {
+		for (; optind < argc; optind++)
+			readGraph(argv[optind], g);
+	} else
+		readGraph("-", g);
 
 	// Add any missing complementary edges.
 	addComplementaryEdges(g);
@@ -433,6 +445,7 @@ int main(int argc, char** argv)
 	ofstream fout(opt::out.c_str());
 	ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
 	assert_good(out, opt::out);
+	ContigID::unlock();
 	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		out << ContigID::create() << '\t'

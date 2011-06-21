@@ -146,8 +146,6 @@ template <typename Graph>
 std::istream& read_dot(std::istream& in, Graph& g)
 {
 	assert(in);
-	assert(num_vertices(g) == 0);
-
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
 	typedef typename vertex_property<Graph>::type
@@ -191,15 +189,24 @@ std::istream& read_dot(std::istream& in, Graph& g)
 		assert(in);
 		if (c == ';') {
 			// Vertex
-			vertex_descriptor x = add_vertex(g);
-			assert(x == u);
+			if (get(vertex_index, g, u) < num_vertices(g)) {
+				// This vertex already exists.
+			} else {
+				vertex_descriptor x = add_vertex(g);
+				assert(x == u);
+			}
 		} else if (c == '[') {
 			// Vertex properties
 			vertex_property_type vp;
 			in >> vp >> ignore(']');
 			assert(in);
-			vertex_descriptor x = add_vertex(vp, g);
-			assert(x == u);
+			if (get(vertex_index, g, u) < num_vertices(g)) {
+				// This vertex already exists.
+				assert(g[u] == vp);
+			} else {
+				vertex_descriptor x = add_vertex(vp, g);
+				assert(x == u);
+			}
 		} else if (c == '-') {
 			// Edge
 			in >> expect(">");
