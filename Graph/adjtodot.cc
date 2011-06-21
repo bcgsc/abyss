@@ -5,6 +5,7 @@
 #include "ContigGraph.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
+#include "Estimate.h"
 #include "GraphIO.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
@@ -13,8 +14,10 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator> // for ostream_iterator
+#include <utility>
 
 using namespace std;
+using namespace std::rel_ops;
 
 #define PROGRAM "abyss-adjtodot"
 
@@ -45,6 +48,7 @@ namespace opt {
 
 	/** Output format */
 	int format = DOT; // used by ContigProperties
+	int dot; // used by DistanceEst
 }
 
 static const char shortopts[] = "k:v";
@@ -118,6 +122,9 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	if (opt::format == DOT)
+		opt::dot = true;
 
 	Graph g;
 	if (optind < argc) {
