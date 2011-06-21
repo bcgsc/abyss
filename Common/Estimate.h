@@ -46,13 +46,14 @@ struct DistanceEst
 	friend std::ostream& operator<<(std::ostream& out,
 			const DistanceEst& o)
 	{
-		if (opt::dot)
-			return out <<
-				"d=" << o.distance << " "
-				"e=" << std::fixed << std::setprecision(1)
-					<< o.stdDev << " "
-				"n=" << o.numPairs;
-		else
+		if (opt::dot) {
+			out << "d=" << o.distance;
+			if (o.stdDev > 0 || o.numPairs > 0)
+				out << " e=" << std::fixed << std::setprecision(1)
+					<< o.stdDev
+					<< " n=" << o.numPairs;
+			return out;
+		} else
 			return out << o.distance << ',' << o.numPairs << ','
 				<< std::fixed << std::setprecision(1) << o.stdDev;
 	}
