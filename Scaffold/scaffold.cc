@@ -233,7 +233,7 @@ static void resolveForks(Graph& g, const Graph& g0)
 					add_edge(v, w, g0[e], g);
 					numEdges++;
 					if (opt::verbose > 1)
-						cerr << v << " -> " << w
+						cerr << u << " -> " << v << " -> " << w
 							<< " [" << g0[e] << "]\n";
 				}
 			}
