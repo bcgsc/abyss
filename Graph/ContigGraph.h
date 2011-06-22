@@ -30,10 +30,6 @@ class ContigGraph : public G {
 	typedef typename graph_traits<G>::degree_size_type
 		degree_size_type;
 
-	// BidirectionalGraph
-	typedef typename graph_traits<G>::in_edge_iterator
-		in_edge_iterator;
-
 	// AdjacencyGraph
 	typedef typename graph_traits<G>::adjacency_iterator
 		adjacency_iterator;
@@ -55,6 +51,47 @@ class ContigGraph : public G {
 
 	// EdgeMutablePropertyGraph
 	typedef typename edge_property<G>::type edge_property_type;
+
+	// BidirectionalGraph
+/** Iterate through the in-edges. */
+class in_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	/** Return the complement (~v, ~u) of the edge (u, v). */
+	static edge_descriptor complement(const edge_descriptor& e)
+	{
+		return std::pair<vertex_descriptor, vertex_descriptor>(
+				~e.second, ~e.first);
+	}
+
+  public:
+	in_edge_iterator() { }
+
+	in_edge_iterator(typename graph_traits<G>::out_edge_iterator it)
+		: m_it(it) { }
+
+	edge_descriptor operator*() const
+	{
+		return complement(*m_it);
+	}
+
+	bool operator==(const in_edge_iterator& it) const
+	{
+		return m_it == it.m_it;
+	}
+
+	in_edge_iterator& operator++() { ++m_it; return *this; }
+
+	in_edge_iterator operator++(int)
+	{
+		in_edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	out_edge_iterator m_it;
+};
 
   public:
 	/** Construct an empty contig graph. */
@@ -185,6 +222,24 @@ out_degree(
 }
 
 // BidirectionalGraph
+
+template <typename G>
+std::pair<
+	typename ContigGraph<G>::in_edge_iterator,
+	typename ContigGraph<G>::in_edge_iterator>
+in_edges(
+		typename ContigGraph<G>::vertex_descriptor u,
+		const ContigGraph<G>& g)
+{
+	typedef typename ContigGraph<G>::in_edge_iterator
+		in_edge_iterator;
+	typedef typename ContigGraph<G>::out_edge_iterator
+		out_edge_iterator;
+	std::pair<out_edge_iterator, out_edge_iterator> it
+		= out_edges(~u, g);
+	return std::pair<in_edge_iterator, in_edge_iterator>(
+			it.first, it.second);
+}
 
 template <typename G>
 typename ContigGraph<G>::degree_size_type
