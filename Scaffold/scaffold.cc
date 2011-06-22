@@ -22,6 +22,7 @@
 #include <utility>
 
 using namespace std;
+using boost::tie;
 
 #define PROGRAM "abyss-scaffold"
 
@@ -282,6 +283,83 @@ static void pruneTips(Graph& g)
 	}
 }
 
+/** Return true if the specified vertex is a repeat. */
+static bool isRepeat(const Graph& g,
+		graph_traits<Graph>::vertex_descriptor t1,
+		graph_traits<Graph>::vertex_descriptor t2,
+		graph_traits<Graph>::vertex_descriptor u,
+		graph_traits<Graph>::vertex_descriptor v1,
+		graph_traits<Graph>::vertex_descriptor v2)
+{
+	assert(in_degree(u, g) == 2 && out_degree(u, g) == 2);
+	return out_degree(t1, g) == 2 && out_degree(t2, g) == 2
+		&& in_degree(v1, g) == 2 && in_degree(v2, g) == 2
+		&& edge(t1, v1, g).second && edge(t2, v2, g).second
+		&& !edge(t1, v2, g).second && !edge(t2, v1, g).second;
+}
+
+/** Remove repeats from this graph.
+ * input: digraph g { t1->v1 t2->v2 t1->u t2->u u->v1 u->v2 }
+ * operation: remove vertex u
+ * output: digraph g { t1->v1 t2->v2 }
+ */
+static void removeRepeats(Graph& g)
+{
+	typedef graph_traits<Graph>::adjacency_iterator Ait;
+	typedef graph_traits<Graph>::vertex_iterator Vit;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	vector<V> repeats;
+	pair<Vit, Vit> urange = vertices(g);
+	for (Vit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (in_degree(u, g) != 2 || out_degree(u, g) != 2)
+			continue;
+
+		Ait vit, vlast;
+		tie(vit, vlast) = adjacent_vertices(u, g);
+		V v1 = *vit;
+		++vit;
+		V v2 = *vit;
+		++vit;
+		assert(vit == vlast);
+		assert(v1 != v2 && v1 != u && v2 != u);
+
+		Ait tit, tlast;
+		tie(tit, tlast) = adjacent_vertices(~u, g);
+		V t1 = ~*tit;
+		++tit;
+		V t2 = ~*tit;
+		++tit;
+		assert(tit == tlast);
+		assert(t1 != t2 && t1 != u && t2 != u);
+
+		if (isRepeat(g, t1, t2, u, v1, v2))
+			repeats.push_back(u);
+		else if (isRepeat(g, t1, t2, u, v2, v1))
+			repeats.push_back(u);
+	}
+
+	/** Remove the repetitive vertices. */
+	for (vector<V>::const_iterator it = repeats.begin();
+			it != repeats.end(); ++it) {
+		V u = *it;
+		clear_vertex(u, g);
+		remove_vertex(u, g);
+	}
+	if (opt::verbose > 0) {
+		cerr << "Removed "
+			<< repeats.size() << " repetitive vertices.\n";
+		printGraphStats(cerr, g);
+	}
+	if (opt::verbose > 1) {
+		cerr << "Repeats: ";
+		copy(repeats.begin(), repeats.end(),
+				ostream_iterator<ContigNode>(cerr, " "));
+		cerr << '\n';
+	}
+}
+
 /** Return whether the specified distance estimate is an exact
  * overlap.
  */
@@ -405,6 +483,9 @@ int main(int argc, char** argv)
 
 	// Prune tips.
 	pruneTips(g);
+
+	// Remove repeats.
+	removeRepeats(g);
 
 	// Remove transitive edges.
 	unsigned numTransitive = remove_transitive_edges(g);
