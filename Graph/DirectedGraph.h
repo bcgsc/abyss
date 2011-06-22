@@ -106,7 +106,7 @@ class out_edge_iterator
 
 	bool operator ==(const out_edge_iterator& it) const
 	{
-		return m_it != it.m_it;
+		return m_it == it.m_it;
 	}
 
 	bool operator !=(const out_edge_iterator& it) const
