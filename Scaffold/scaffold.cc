@@ -298,7 +298,7 @@ static bool isRepeat(const Graph& g,
 		&& !edge(t1, v2, g).second && !edge(t2, v1, g).second;
 }
 
-/** Remove repeats from this graph.
+/** Remove repetitive vertices from this graph.
  * input: digraph g { t1->v1 t2->v2 t1->u t2->u u->v1 u->v2 }
  * operation: remove vertex u
  * output: digraph g { t1->v1 t2->v2 }
