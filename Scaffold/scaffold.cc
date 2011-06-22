@@ -22,6 +22,7 @@
 #include <utility>
 
 using namespace std;
+using namespace std::rel_ops;
 using boost::tie;
 
 #define PROGRAM "abyss-scaffold"
@@ -360,6 +361,87 @@ static void removeRepeats(Graph& g)
 	}
 }
 
+/** Remove weak edges from this graph.
+ * input: digraph g { u1->v2 u1->v1 u2->v2 }
+ *        (u1,v2).n < (u1,v1).n and (u1,v2).n < (u2,v2).n
+ * operation: remove edge u1->v2
+ * output: digraph g {u1->v1 u2->v2 }
+ */
+static void removeWeakEdges(Graph& g)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::edge_iterator Eit;
+	typedef graph_traits<Graph>::in_edge_iterator Iit;
+	typedef graph_traits<Graph>::out_edge_iterator Oit;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	vector<E> weak;
+	Eit eit, elast;
+	for (tie(eit, elast) = edges(g); eit != elast; ++eit) {
+		E u1v2 = *eit;
+		V u1 = source(u1v2, g), v2 = target(u1v2, g);
+		if (out_degree(u1, g) != 2 || in_degree(v2, g) != 2)
+			continue;
+
+		Oit oit, olast;
+		tie(oit, olast) = out_edges(u1, g);
+		E u1v1;
+		if (target(*oit, g) == v2) {
+			++oit;
+			u1v1 = *oit;
+		} else {
+			u1v1 = *oit;
+			++oit;
+		}
+		assert(++oit == olast);
+		V v1 = target(u1v1, g);
+		assert(v1 != v2);
+		if (in_degree(v1, g) != 1)
+			continue;
+
+		Iit iit, ilast;
+		tie(iit, ilast) = in_edges(v2, g);
+		E u2v2;
+		if (source(*iit, g) == u1) {
+			++iit;
+			assert(iit != ilast);
+			u2v2 = *iit;
+		} else {
+			assert(iit != ilast);
+			u2v2 = *iit;
+			++iit;
+		}
+		assert(++iit == ilast);
+		V u2 = source(u2v2, g);
+		assert(u1 != u2);
+		if (out_degree(u2, g) != 1)
+			continue;
+
+		unsigned n = g[u1v2].numPairs;
+		if (n < g[u1v1].numPairs && n < g[u2v2].numPairs)
+			weak.push_back(u1v2);
+	}
+
+	if (opt::verbose > 1) {
+		cerr << "Weak edges:\n";
+		for (vector<E>::const_iterator it = weak.begin();
+				it != weak.end(); ++it) {
+			E e = *it;
+			cerr << "\t\"" << source(e, g) << "\"->\"" << target(e, g)
+				<< "\" [" << g[e] << "]\n";
+		}
+	}
+
+	/** Remove the weak edges. */
+	for (vector<E>::const_iterator it = weak.begin();
+			it != weak.end(); ++it)
+		remove_edge(*it, g);
+	if (opt::verbose > 0) {
+		cerr << "Removed " << weak.size() << " weak edges.\n";
+		printGraphStats(cerr, g);
+	}
+}
+
 /** Return whether the specified distance estimate is an exact
  * overlap.
  */
@@ -507,6 +589,9 @@ int main(int argc, char** argv)
 				ostream_iterator<ContigNode>(cerr, " "));
 		cerr << '\n';
 	}
+
+	// Remove weak edges.
+	removeWeakEdges(g);
 	Graph g1(g);
 
 	// Assemble the paths.
