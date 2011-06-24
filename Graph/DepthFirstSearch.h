@@ -1,63 +1,47 @@
-// Modifications to the original Boost source by Shaun Jackman 2010
-//====================================================================
-// Copyright 1997, 1998, 1999, 2000 University of Notre Dame.
-// Copyright 2003 Bruce Barr
-// Authors: Andrew Lumsdaine, Lie-Quan Lee, Jeremy G. Siek
-//
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
-//====================================================================
 #ifndef DEPTHFIRSTSEARCH_H
 #define DEPTHFIRSTSEARCH_H 1
 
 #include <boost/graph/depth_first_search.hpp>
 
-/** A depth-first search that originates at vertices with
- * in_degree == 0.
+/**
+ * Perform a depth-first search starting first with vertices with
+ * deg-(u) = 0 and then visiting any remaining vertices.
  */
-template <class VertexListGraph, class DFSVisitor, class ColorMap>
-void
-depthFirstSearch(
-		const VertexListGraph& g, DFSVisitor vis, ColorMap color)
+template <class Graph, class Visitor, class ColorMap>
+void depthFirstSearch(const Graph& g, Visitor vis, ColorMap color)
 {
-	using boost::DFSVisitorConcept;
 	using boost::color_traits;
-	using boost::function_requires;
-	using boost::implicit_cast;
 	using boost::property_traits;
 	using boost::tie;
 
-	typedef typename graph_traits<VertexListGraph>::vertex_descriptor
-		Vertex;
-	function_requires<DFSVisitorConcept<
-		DFSVisitor, VertexListGraph> >();
+	typedef graph_traits<Graph> GTraits;
+	typedef typename GTraits::vertex_descriptor V;
+	typedef typename GTraits::vertex_iterator Vit;
 	typedef typename property_traits<ColorMap>::value_type ColorValue;
-	typedef color_traits<ColorValue> Color;
+	const ColorValue white = color_traits<ColorValue>::white();
 
-	typename graph_traits<VertexListGraph>::vertex_iterator
-		ui, ui_end;
-	for (tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
-		Vertex u = implicit_cast<Vertex>(*ui);
-		put(color, u, Color::white());
+	// Initialize the vertices.
+	Vit uit, ulast;
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
+		V u = *uit;
+		put(color, u, white);
 		vis.initialize_vertex(u, g);
 	}
 
-	for (tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
-		Vertex u = implicit_cast<Vertex>(*ui);
-		ColorValue u_color = get(color, u);
-		if (u_color == Color::white()
-				&& in_degree(u, g) == 0) {
+	// Visit vertices with deg-(u) = 0.
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
+		V u = *uit;
+		if (get(color, u) == white && in_degree(u, g) == 0) {
 			vis.start_vertex(u, g);
 			boost::detail::depth_first_visit_impl(g, u, vis, color,
 					boost::detail::nontruth2());
 		}
 	}
 
-	for (tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
-		Vertex u = implicit_cast<Vertex>(*ui);
-		ColorValue u_color = get(color, u);
-		if (u_color == Color::white()) {
+	// Visit the remaining vertices.
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
+		V u = *uit;
+		if (get(color, u) == white) {
 			vis.start_vertex(u, g);
 			boost::detail::depth_first_visit_impl(g, u, vis, color,
 					boost::detail::nontruth2());
