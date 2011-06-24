@@ -1,12 +1,11 @@
-Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
-Name: ABySS
-Maintainer: Shaun Jackman <sjackman@bcgsc.ca>
+Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=174
+Upstream-Name: ABySS
+Upstream-Contact: Shaun Jackman <sjackman@bcgsc.ca>
 Source: http://www.bcgsc.ca/platform/bioinfo/software/abyss
 
-Copyright: 2011 Genome Sciences Centre
-License: other
- Copyright 2011 Genome Sciences Centre
- .
+Files: *
+Copyright: Copyright 2011 Genome Sciences Centre
+License:
  BC CANCER AGENCY SOFTWARE LICENSE AGREEMENT (ACADEMIC USE)
  CAREFULLY READ THE FOLLOWING TERMS AND CONDITIONS. This License
  Agreement (the "Agreement") is a legal contract between you, your
@@ -236,11 +235,12 @@ License: other
  its sole discretion may assign this Agreement without notice to You.
 
 Files: Common/HashFunction.cpp
-Copyright: public domain
+Copyright: public-domain
+License: public-domain
 
 Files: Graph/DepthFirstSearch.h
-Copyright: 2000 University of Notre Dame, 2003 Bruce Barr
-License: other
+Copyright: Copyright 2000 University of Notre Dame, 2003 Bruce Barr
+License:
  Boost Software License - Version 1.0 - August 17th, 2003
  .
  Permission is hereby granted, free of charge, to any person or organization
@@ -266,7 +266,7 @@ License: other
  DEALINGS IN THE SOFTWARE.
 
 Files: dialign/*
-Copyright: 2008 Amarendran R. Subramanian
+Copyright: Copyright 2008 Amarendran R. Subramanian
 License: LGPL-2.1+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -280,7 +280,7 @@ License: LGPL-2.1+
  .
  You should have received a copy of the GNU Lesser General Public
  License along with this library; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  .
  Amarendran R. Subramanian, hereby disclaims all copyright interest in the
  DIALIGN-TX (a multiple sequence alignment algorithm) written by Amarendran R. Subramanian.
