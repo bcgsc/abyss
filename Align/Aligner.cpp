@@ -90,6 +90,7 @@ void Aligner<SeqPosHashMap>::alignKmer(
 		AlignmentSet& aligns, const Sequence& seq,
 		bool isRC, bool good, int read_ind, int seqLen)
 {
+	assert(read_ind >= 0);
 	Sequence kmer(seq, read_ind, m_hashSize);
 	if (!good && kmer.find_first_not_of("ACGT0123") != string::npos)
 		return;
@@ -130,8 +131,14 @@ Aligner<SeqPosHashMap>::getAlignmentsInternal(
 	int seqLen = seq.length();
 	int last_kmer = seqLen - m_hashSize;
 
+	if (last_kmer < 0)
+		return aligns;
+
 	// Align the first kmer
 	alignKmer(aligns, seq, isRC, good, 0, seqLen);
+
+	if (last_kmer == 0)
+		return aligns;
 
 	// Align the last kmer
 	alignKmer(aligns, seq, isRC, good, last_kmer, seqLen);
