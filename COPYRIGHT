@@ -6,6 +6,8 @@ Source: http://www.bcgsc.ca/platform/bioinfo/software/abyss
 Files: *
 Copyright: Copyright 2011 Genome Sciences Centre
 License:
+ Debian may redistribute this software package.
+ .
  BC CANCER AGENCY SOFTWARE LICENSE AGREEMENT (ACADEMIC USE)
  CAREFULLY READ THE FOLLOWING TERMS AND CONDITIONS. This License
  Agreement (the "Agreement") is a legal contract between you, your
@@ -241,6 +243,8 @@ License: public-domain
 Files: dialign/*
 Copyright: Copyright 2008 Amarendran R. Subramanian
 License: LGPL-2.1+
+ On Debian systems, see `/usr/share/common-licenses/LGPL-2.1'.
+ .
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
