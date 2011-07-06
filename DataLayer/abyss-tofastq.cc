@@ -6,6 +6,7 @@
 #include "DataLayer/Options.h"
 #include "FastaInterleave.h"
 #include "FastaReader.h"
+#include "IOUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -99,7 +100,7 @@ static void convert(const char* path)
 	unsigned records = 0, characters = 0;
 	for (Record record; in >> record;) {
 		cout << record;
-		assert(cout.good());
+		assert_good(cout, "stdout");
 		records++;
 		characters += record.seq.size();
 	}
@@ -121,7 +122,7 @@ static void interleave(char** first, char** last)
 	unsigned records = 0, characters = 0;
 	for (Record record; in >> record;) {
 		cout << record;
-		assert(cout.good());
+		assert_good(cout, "stdout");
 		records++;
 		characters += record.seq.size();
 	}
@@ -195,5 +196,8 @@ int main(int argc, char** argv)
 		cerr << g_total.records << '\t'
 			<< g_total.characters << '\t'
 			<< "total\n";
+
+	cout.flush();
+	assert_good(cout, "stdout");
 	return 0;
 }
