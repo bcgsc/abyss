@@ -4,6 +4,7 @@
  */
 #include "config.h"
 #include "DataLayer/Options.h"
+#include "FastaInterleave.h"
 #include "FastaReader.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -29,6 +30,8 @@ static const char USAGE_MESSAGE[] =
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz\n"
 "and may be tarred.\n"
 "\n"
+"      --interleave        interleave the records\n"
+"      --cat               concatenate the records [default]\n"
 "      --fastq             ouput FASTQ format [default]\n"
 "      --fasta             ouput FASTA format\n"
 "      --chastity          discard unchaste reads [default]\n"
@@ -50,6 +53,9 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	/** Interleave the lines of each file. */
+	static int interleave;
+
 	static int toFASTQ = 1;
 	static int verbose;
 }
@@ -59,8 +65,11 @@ static const char shortopts[] = "q:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "interleave",       no_argument, &opt::interleave, 1 },
+	{ "no-interleave",    no_argument, &opt::interleave, 0 },
 	{ "fasta",            no_argument, &opt::toFASTQ, 0 },
 	{ "fastq",            no_argument, &opt::toFASTQ, 1 },
+	{ "cat",              no_argument, &opt::interleave, 0 },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -73,6 +82,10 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** FastaReader flags. */
+static const int FASTAREADER_FLAGS
+	= FastaReader::NO_FOLD_CASE | FastaReader::CONVERT_QUALITY;
+
 /** Total count. */
 static struct {
 	unsigned records;
@@ -82,8 +95,7 @@ static struct {
 template <class Record>
 static void convert(const char* path)
 {
-	FastaReader in(path, FastaReader::NO_FOLD_CASE
-			| FastaReader::CONVERT_QUALITY);
+	FastaReader in(path, FASTAREADER_FLAGS);
 	unsigned records = 0, characters = 0;
 	for (Record record; in >> record;) {
 		cout << record;
@@ -99,6 +111,24 @@ static void convert(const char* path)
 		cerr << records << '\t'
 			<< characters << '\t'
 			<< path << '\n';
+}
+
+/** Interleave the records. */
+template <typename Record>
+static void interleave(char** first, char** last)
+{
+	FastaInterleave in(first, last, FASTAREADER_FLAGS);
+	unsigned records = 0, characters = 0;
+	for (Record record; in >> record;) {
+		cout << record;
+		assert(cout.good());
+		records++;
+		characters += record.seq.size();
+	}
+	assert(in.eof());
+
+	g_total.records += records;
+	g_total.characters += characters;
 }
 
 int main(int argc, char** argv)
@@ -147,10 +177,20 @@ int main(int argc, char** argv)
 	F convertFasta = convert<FastaRecord>;
 	F convertFastq = convert<FastqRecord>;
 	F f = opt::toFASTQ ? convertFastq : convertFasta;
-	if (optind < argc)
-		for_each(argv + optind, argv + argc, f);
-	else
+
+	if (optind == argc) {
 		f("-");
+	} else if (!opt::interleave || argc - optind == 1) {
+		// Concatenate.
+		for_each(argv + optind, argv + argc, f);
+	} else {
+		// Interleave.
+		if (opt::toFASTQ)
+			interleave<FastqRecord>(argv + optind, argv + argc);
+		else
+			interleave<FastaRecord>(argv + optind, argv + argc);
+	}
+
 	if (opt::verbose && argc - optind > 1)
 		cerr << g_total.records << '\t'
 			<< g_total.characters << '\t'
