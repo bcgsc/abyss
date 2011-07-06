@@ -31,8 +31,8 @@ static const char USAGE_MESSAGE[] =
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz\n"
 "and may be tarred.\n"
 "\n"
-"      --interleave        interleave the records\n"
 "      --cat               concatenate the records [default]\n"
+"  -i, --interleave        interleave the records\n"
 "      --fastq             ouput FASTQ format [default]\n"
 "      --fasta             ouput FASTA format\n"
 "      --chastity          discard unchaste reads [default]\n"
@@ -61,16 +61,15 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "q:v";
+static const char shortopts[] = "iq:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "cat",              no_argument, &opt::interleave, 0 },
 	{ "interleave",       no_argument, &opt::interleave, 1 },
-	{ "no-interleave",    no_argument, &opt::interleave, 0 },
 	{ "fasta",            no_argument, &opt::toFASTQ, 0 },
 	{ "fastq",            no_argument, &opt::toFASTQ, 1 },
-	{ "cat",              no_argument, &opt::interleave, 0 },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -148,6 +147,9 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?':
 				die = true;
+				break;
+			case 'i':
+				opt::interleave = true;
 				break;
 			case 'q':
 				arg >> opt::qualityThreshold;
