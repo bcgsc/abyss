@@ -63,7 +63,7 @@ void Aligner<SeqPosHashMap>::addReferenceSequence(
 	for(int i = 0; i < (size - m_hashSize + 1); ++i)
 	{
 		Sequence subseq(seq, i, m_hashSize);
-		if (subseq.find("N") != string::npos)
+		if (subseq.find_first_not_of("ACGT0123") != string::npos)
 			continue;
 		addReferenceSequence(Kmer(subseq), Position(id, i));
 	}

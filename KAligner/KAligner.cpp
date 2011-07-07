@@ -133,6 +133,8 @@ static size_t countKmer(const string& path)
 				state = ID;
 				break;
 			  case 'N':
+			  case 'B': case 'D': case 'H': case 'K': case 'M':
+			  case 'R': case 'S': case 'V': case 'W': case 'Y':
 				if (state != GAP)
 					contigs++;
 				state = GAP;
@@ -142,6 +144,11 @@ static size_t countKmer(const string& path)
 				bases++;
 				state = SEQUENCE;
 				break;
+			  case '\n':
+				break;
+			  default:
+				cerr << "error: unexpected character: `" << c << "'\n";
+				exit(EXIT_FAILURE);
 			}
 			break;
 		}
