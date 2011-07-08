@@ -198,11 +198,11 @@ void Aligner<SeqPosHashMap>::coalesceAlignments(
 		while (currIter != alignVec.end()) {
 			int qstep = currIter->read_start_pos -
 						prevIter->read_start_pos;
-			assert(qstep >= 0 && qstep < m_hashSize);
+			assert(qstep >= 0 && qstep <= m_hashSize);
 			int tstep = currIter->isRC ? -qstep : qstep;
 			if (currIter->contig_start_pos
 						== prevIter->contig_start_pos + tstep
-					&& qstep < m_hashSize) {
+					&& qstep <= m_hashSize) {
 				currAlign.align_length += qstep;
 				if (currAlign.isRC)
 					currAlign.contig_start_pos -= qstep;
