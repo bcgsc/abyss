@@ -170,6 +170,7 @@ template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
 		Aligner<SeqPosHashMap>& aligner);
 static void *alignReadsToDB(void *arg);
+static void *readFiles(void*);
 
 /** Unique aligner using map */
 static Aligner<SeqPosHashUniqueMap> *g_aligner_u;
@@ -183,9 +184,10 @@ static unsigned g_readCount;
 /** Number of reads that aligned. */
 static unsigned g_alignedCount;
 
-static pthread_mutex_t g_mutexIn, g_mutexCout, g_mutexCerr;
+static pthread_mutex_t g_mutexCout, g_mutexCerr;
 static vector<const char *> g_files;
 static FastaReader* g_fileHandle;
+static Pipe<FastaRecord> g_pipe;
 
 static void getReadFiles(const char *readsFile)
 {
@@ -204,10 +206,6 @@ static void getReadFiles(const char *readsFile)
 
 	g_fileHandle = new FastaReader(readsFile,
 			FastaReader::FOLD_CASE);
-
-	//pthread_t thread;
-	//pthread_create(&thread, NULL, alignReadsToDB, (void*)readsFile);
-	//return p_fr;
 }
 
 int main(int argc, char** argv)
@@ -294,15 +292,14 @@ int main(int argc, char** argv)
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
-	pthread_mutex_init(&g_mutexIn, NULL);
 
 	g_readCount = 0;
 	for (int i=optind; i < argc; i++)
 		g_files.push_back(argv[i]);
 
-	getReadFiles(g_files[0]);
-	g_files.erase(g_files.begin());
-	
+	pthread_t producer;
+	pthread_create(&producer, NULL, readFiles, NULL);
+
 	vector<pthread_t> threads;
 	for (int i = 0; i < opt::threads; i++) {
 		pthread_t thread;
@@ -312,6 +309,7 @@ int main(int argc, char** argv)
 
 	void *status;
 	// Wait for all threads to finish.
+	pthread_join(producer, &status);
 	for (size_t i = 0; i < threads.size(); i++)
 		pthread_join(threads[i], &status);
 
@@ -326,7 +324,6 @@ int main(int argc, char** argv)
 		delete g_aligner_u;
 	delete g_fileHandle;
 
-	assert(g_files.empty());
 	return 0;
 }
 
@@ -387,22 +384,29 @@ static void readContigsIntoDB(string refFastaFile,
 	}
 }
 
+static void readFile()
+{
+	FastaReader& in = *g_fileHandle;
+	for (FastaRecord rec; in >> rec; )
+		g_pipe.push(rec);
+	assert(in.eof());
+}
+
+static void *readFiles(void*)
+{
+	for (unsigned i = 0; i < g_files.size(); i++) {
+		getReadFiles(g_files[i]);
+		readFile();
+	}
+	g_pipe.close();
+	return NULL;
+}
+
 static bool getNextRec(FastaRecord& rec)
 {
-	pthread_mutex_lock(&g_mutexIn);
-	FastaReader& fileHandle = *g_fileHandle;
-	while (!(fileHandle >> rec)) {
-		assert(fileHandle.eof());
-		if (g_files.empty()) {
-			pthread_mutex_unlock(&g_mutexIn);
-			return false;
-		}
-		getReadFiles(g_files[0]);
-		g_files.erase(g_files.begin());
-	}
-
-	pthread_mutex_unlock(&g_mutexIn);
-	return true;
+	pair<FastaRecord, size_t> recPair = g_pipe.pop();
+	rec = recPair.first;
+	return recPair.second > 0;
 }
 
 static void *alignReadsToDB(void*)
