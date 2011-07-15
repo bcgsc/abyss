@@ -8,6 +8,7 @@
 #include "SAM.h"
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"
+#include "Pipe.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -168,7 +169,7 @@ static size_t countKmer(const string& path)
 template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
 		Aligner<SeqPosHashMap>& aligner);
-void *alignReadsToDB(void *arg);
+static void *alignReadsToDB(void *arg);
 
 /** Unique aligner using map */
 static Aligner<SeqPosHashUniqueMap> *g_aligner_u;
