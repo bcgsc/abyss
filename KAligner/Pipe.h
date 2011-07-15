@@ -5,9 +5,6 @@
 #include <queue>
 #include <pthread.h>
 
-#include <iostream>
-#include <string>
-
 /** Abstract class for a producer/consumer relationship. A buffer
  * needs to be defined, and private accessor and modifier functions
  * must be overloaded to perform their appropriate actions. */
@@ -24,6 +21,7 @@ class APipe {
 		pthread_mutex_init(&m_mutex_queue, NULL);
 	}
 
+	/** Destoyr semaphores/mutexs. */
 	~APipe()
 	{
 		sem_destroy(&m_sem_in);
@@ -43,7 +41,7 @@ class APipe {
 		sem_post(&m_sem_out);
 	}
 
-	/** Get data and remove it from the buffer/queue. */
+	/** Get data and remove it from the buffer. */
 	std::pair<T, size_t> pop()
 	{
 		// block when pipe is empty and open, or in use.
@@ -65,6 +63,7 @@ class APipe {
 		return temp;
 	}
 
+	/** Get data from the buffer. */
 	T next()
 	{
 		sem_wait(&m_sem_out);
