@@ -182,27 +182,32 @@ static unsigned g_readCount;
 /** Number of reads that aligned. */
 static unsigned g_alignedCount;
 
-static pthread_mutex_t g_mutexCout, g_mutexCerr;
-static sem_t g_activeThreads;
+static pthread_mutex_t g_mutexIn, g_mutexCout, g_mutexCerr;
+static vector<const char *> g_files;
+static FastaReader* g_fileHandle;
 
-static pthread_t getReadFiles(const char *readsFile)
+static void getReadFiles(const char *readsFile)
 {
-	// Ensure we don't create more than opt::threads threads at a time.
-	sem_wait(&g_activeThreads);
-
 	if (opt::verbose > 0) {
 		pthread_mutex_lock(&g_mutexCerr);
 		cerr << "Reading `" << readsFile << "'...\n";
 		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
-	pthread_t thread;
-	pthread_create(&thread, NULL, alignReadsToDB, (void*)readsFile);
-	return thread;
-}
+	if (g_fileHandle != NULL) {
+		delete g_fileHandle;
+		g_fileHandle = NULL;
+	}
 
-/** A barrier used to synchronize the worker threads. */
-static Barrier g_barrier;
+	assert(g_fileHandle == NULL);
+
+	g_fileHandle = new FastaReader(readsFile,
+			FastaReader::FOLD_CASE);
+
+	//pthread_t thread;
+	//pthread_create(&thread, NULL, alignReadsToDB, (void*)readsFile);
+	//return p_fr;
+}
 
 int main(int argc, char** argv)
 {
@@ -256,7 +261,7 @@ int main(int argc, char** argv)
 	string refFastaFile(argv[--argc]);
 
 	int numQuery = argc - optind;
-	if (opt::threads <= 0 || opt::threads > numQuery)
+	if (opt::threads <= 0)
 		opt::threads = numQuery;
 	if (opt::threads == 1)
 		opt::sync = 0;
@@ -288,28 +293,20 @@ int main(int argc, char** argv)
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
-	sem_init(&g_activeThreads, 0, opt::threads);
-	if (opt::sync) {
-		// Initialize the barrier for the initial number of threads,
-		// then set the thread count to 0. Each thread increments the
-		// barrier upon its creation and decrements the barrier upon
-		// its completion.
-		g_barrier.init(opt::threads);
-		g_barrier = 0;
-	}
+	pthread_mutex_init(&g_mutexIn, NULL);
 
 	g_readCount = 0;
-	vector<pthread_t> threads;
-	transform(argv + optind, argv + argc, back_inserter(threads),
-			getReadFiles);
+	for (int i=optind; i < argc; i++)
+		g_files.push_back(argv[i]);
 
-	if (opt::sync) {
-		for (int i = 0; i < opt::threads; i++) {
-			sem_wait(&g_activeThreads);
-			// Signal the barrier to indicate that the worker thread
-			// has completed and there won't be another to replace it.
-			g_barrier.signal();
-		}
+	getReadFiles(g_files[0]);
+	g_files.erase(g_files.begin());
+	
+	vector<pthread_t> threads;
+	for (int i = 0; i < opt::threads; i++) {
+		pthread_t thread;
+		pthread_create(&thread, NULL, alignReadsToDB, NULL);
+		threads.push_back(thread);
 	}
 
 	void *status;
@@ -326,7 +323,9 @@ int main(int argc, char** argv)
 		delete g_aligner_m;
 	else
 		delete g_aligner_u;
+	delete g_fileHandle;
 
+	assert(g_files.empty());
 	return 0;
 }
 
@@ -387,23 +386,30 @@ static void readContigsIntoDB(string refFastaFile,
 	}
 }
 
-void *alignReadsToDB(void* readsFile)
+static bool getNextRec(FastaRecord& rec)
 {
-	int barrierCount = 0;
-	if (opt::sync)
-		++g_barrier;
+	pthread_mutex_lock(&g_mutexIn);
+	FastaReader& fileHandle = *g_fileHandle;
+	while (!(fileHandle >> rec)) {
+		assert(fileHandle.eof());
+		if (g_files.empty()) {
+			pthread_mutex_unlock(&g_mutexIn);
+			return false;
+		}
+		getReadFiles(g_files[0]);
+		g_files.erase(g_files.begin());
+	}
 
+	pthread_mutex_unlock(&g_mutexIn);
+	return true;
+}
+
+static void *alignReadsToDB(void*)
+{
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 
-	// Lock `uncompress', which is not thread safe.
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&mutex);
-	FastaReader fileHandle((const char *)readsFile,
-			FastaReader::FOLD_CASE);
-	pthread_mutex_unlock(&mutex);
-
-	for (FastaRecord rec; fileHandle >> rec;) {
+	for (FastaRecord rec; getNextRec(rec);) {
 		const Sequence& seq = rec.seq;
 		ostringstream output;
 		if (seq.find_first_not_of("ACGT0123") == string::npos) {
@@ -463,15 +469,6 @@ void *alignReadsToDB(void* readsFile)
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
 
-		// Synchronize the threads periodically.
-		if (opt::sync && ++barrierCount == opt::sync) {
-			barrierCount = 0;
-			g_barrier.wait();
-		}
 	}
-	assert(fileHandle.eof());
-	if (opt::sync)
-		--g_barrier;
-	sem_post(&g_activeThreads);
 	return NULL;
 }
