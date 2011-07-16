@@ -9,6 +9,7 @@
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"
 #include "Pipe.h"
+#include "PipeMux.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -170,7 +171,7 @@ template <class SeqPosHashMap>
 static void readContigsIntoDB(string refFastaFile,
 		Aligner<SeqPosHashMap>& aligner);
 static void *alignReadsToDB(void *arg);
-static void *readFiles(void*);
+static void *readFile(void *arg);
 
 /** Unique aligner using map */
 static Aligner<SeqPosHashUniqueMap> *g_aligner_u;
@@ -185,11 +186,10 @@ static unsigned g_readCount;
 static unsigned g_alignedCount;
 
 static pthread_mutex_t g_mutexCout, g_mutexCerr;
-static vector<const char *> g_files;
-static FastaReader* g_fileHandle;
-static Pipe<FastaRecord> g_pipe;
+static pthread_barrier_t g_barrier;
+static PipeMux<FastaRecord> g_pipeMux;
 
-static void getReadFiles(const char *readsFile)
+static pthread_t getReadFiles(const char *readsFile)
 {
 	if (opt::verbose > 0) {
 		pthread_mutex_lock(&g_mutexCerr);
@@ -197,15 +197,12 @@ static void getReadFiles(const char *readsFile)
 		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
-	if (g_fileHandle != NULL) {
-		delete g_fileHandle;
-		g_fileHandle = NULL;
-	}
+	pthread_t thread;
+	pthread_create(&thread, NULL, readFile, (void*)readsFile);
 
-	assert(g_fileHandle == NULL);
-
-	g_fileHandle = new FastaReader(readsFile,
-			FastaReader::FOLD_CASE);
+	// Barrier to make pipe creation order deterministic.
+	pthread_barrier_wait(&g_barrier);
+	return thread;	
 }
 
 int main(int argc, char** argv)
@@ -292,13 +289,13 @@ int main(int argc, char** argv)
 	// Need to initialize mutex's before threads are created.
 	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
+	pthread_barrier_init(&g_barrier, NULL, 2);
 
 	g_readCount = 0;
-	for (int i=optind; i < argc; i++)
-		g_files.push_back(argv[i]);
 
-	pthread_t producer;
-	pthread_create(&producer, NULL, readFiles, NULL);
+	vector<pthread_t> producer_threads;
+	transform(argv + optind, argv + argc, back_inserter(producer_threads),
+			getReadFiles);
 
 	vector<pthread_t> threads;
 	for (int i = 0; i < opt::threads; i++) {
@@ -309,7 +306,8 @@ int main(int argc, char** argv)
 
 	void *status;
 	// Wait for all threads to finish.
-	pthread_join(producer, &status);
+	for (size_t i = 0; i < producer_threads.size(); i++)
+		pthread_join(producer_threads[i], &status);
 	for (size_t i = 0; i < threads.size(); i++)
 		pthread_join(threads[i], &status);
 
@@ -322,7 +320,6 @@ int main(int argc, char** argv)
 		delete g_aligner_m;
 	else
 		delete g_aligner_u;
-	delete g_fileHandle;
 
 	return 0;
 }
@@ -384,27 +381,29 @@ static void readContigsIntoDB(string refFastaFile,
 	}
 }
 
-static void readFile()
+static void *readFile(void* readsFile)
 {
-	FastaReader& in = *g_fileHandle;
-	for (FastaRecord rec; in >> rec; )
-		g_pipe.push(rec);
-	assert(in.eof());
-}
+	// Lock `uncompress', which is not thread safe.
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&mutex);
+	FastaReader in((const char *)readsFile,
+			FastaReader::FOLD_CASE);
+	pthread_mutex_unlock(&mutex);
 
-static void *readFiles(void*)
-{
-	for (unsigned i = 0; i < g_files.size(); i++) {
-		getReadFiles(g_files[i]);
-		readFile();
-	}
-	g_pipe.close();
+	Pipe<FastaRecord>& pipe = *g_pipeMux.addPipe();
+	// Pipe created, let next producer start
+	pthread_barrier_wait(&g_barrier);
+
+	for (FastaRecord rec; in >> rec; )
+		pipe.push(rec);
+	assert(in.eof());
+	pipe.close();
 	return NULL;
 }
 
 static bool getNextRec(FastaRecord& rec)
 {
-	pair<FastaRecord, size_t> recPair = g_pipe.pop();
+	pair<FastaRecord, size_t> recPair = g_pipeMux.nextValue();
 	rec = recPair.first;
 	return recPair.second > 0;
 }
