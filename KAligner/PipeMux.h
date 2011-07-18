@@ -29,14 +29,14 @@ class PipeMux {
 	/** Instantiates a new pipe and adds it to this PipeMux. */
 	Pipe<T>* addPipe()
 	{
-		Pipe<T>* p = new Pipe<T>();
-		pthread_mutex_t m;
-		pthread_mutex_init(&m, NULL);
+		Pipe<T>* p = new Pipe<T>;
+		pthread_mutex_t* m = new pthread_mutex_t;
+		pthread_mutex_init(m, NULL);
 
 		pthread_rwlock_wrlock(&m_rwlock_vecs);
 		
 		m_pipes.push_back(p);
-		m_mutex_pipes.push_back(&m);
+		m_mutex_pipes.push_back(m);
 		
 		pthread_rwlock_unlock(&m_rwlock_vecs);
 		
@@ -132,6 +132,7 @@ class PipeMux {
 		m_pipes.erase(m_pipes.begin()+i);
 		assert(i < m_mutex_pipes.size());
 		pthread_mutex_destroy(m_mutex_pipes[i]);
+		delete m_mutex_pipes[i];
 		m_mutex_pipes.erase(m_mutex_pipes.begin()+i);
 		// Make sure the index points to the next element.
 		pthread_mutex_lock(&m_mutex_index);
