@@ -5,14 +5,13 @@
 #include <queue>
 #include <pthread.h>
 
-/** Abstract class for a producer/consumer relationship. A buffer
- * needs to be defined, and private accessor and modifier functions
- * must be overloaded to perform their appropriate actions. */
+/** An asynchronous queue for transmitting data from one thread to
+ *  another. */
 template <class T>
-class APipe {
+class Pipe {
   public:
 	/** Ready to use after constructed. */
-	APipe(unsigned size) : open(true)
+	Pipe(unsigned size = 1024) : open(true)
 	{
 		assert(size <= SEM_VALUE_MAX);
 		assert(size > 0);
@@ -22,7 +21,7 @@ class APipe {
 	}
 
 	/** Destoyr semaphores/mutexs. */
-	~APipe()
+	~Pipe()
 	{
 		sem_destroy(&m_sem_in);
 		sem_destroy(&m_sem_out);
@@ -63,17 +62,6 @@ class APipe {
 		return temp;
 	}
 
-	/** Get data from the buffer. */
-	T next()
-	{
-		sem_wait(&m_sem_out);
-		pthread_mutex_lock(&m_mutex_queue);
-		T temp = getNext();
-		pthread_mutex_unlock(&m_mutex_queue);
-		sem_post(&m_sem_out);
-		return temp;
-	}
-
 	/** Allows a pop when the pipe is empty to signal the pipe is
 	 * 	closed. */
 	void close()
@@ -86,33 +74,9 @@ class APipe {
 
   private:
   	/** Add an element to the buffer. */
-  	virtual void add(T&) = 0;
+  	void add(const T& t) { m_queue.push(t); }
 
   	/** Remove an element from the buffer. */
-	virtual std::pair<T, size_t> remove() = 0;
-
-  	/** Return a copy of the next item in the buffer. */
-	virtual T getNext() = 0;
-
-	/** Semaphores to block read on empty, or write on full. */
-	sem_t m_sem_in, m_sem_out;
-
-	/** Mutual exclusion for reading and writing */
-	pthread_mutex_t m_mutex_queue;
-
-	bool open;
-};
-
-/** An asynchronous queue for transmitting data from one thread to
- *  another. */
-template <class T>
-class Pipe : public APipe<T> {
-  public:
-  	Pipe(unsigned size = 256) : APipe<T>(size) {}
-
-  private:
-  	void add(T& t) { m_queue.push(t); }
-
 	std::pair<T, size_t> remove()
 	{
 		std::pair<T, size_t> temp;
@@ -126,13 +90,14 @@ class Pipe : public APipe<T> {
 		return temp;
 	}
 
-	T getNext()
-	{
-		if (!m_queue.empty())
-			return m_queue.front();
-		else
-			return T();
-	}
+	/** Semaphores to block read on empty, or write on full. */
+	sem_t m_sem_in, m_sem_out;
+
+	/** Mutual exclusion for reading and writing */
+	pthread_mutex_t m_mutex_queue;
+
+	/** True if close() has not been called. */
+	bool open;
 
 	/** Pipe's buffer */
 	std::queue<T> m_queue;
