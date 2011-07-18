@@ -10,7 +10,7 @@
 template <class T>
 class Pipe {
   public:
-	/** Ready to use after constructed. */
+	/** Ready to use after constructed. Not thread safe. */
 	Pipe(unsigned size = 1024) : m_open(true)
 	{
 		assert(size <= SEM_VALUE_MAX);
@@ -20,7 +20,7 @@ class Pipe {
 		pthread_mutex_init(&m_mutex_queue, NULL);
 	}
 
-	/** Destoyr semaphores/mutexs. */
+	/** Destoyr semaphores/mutexs. Not thread safe. */
 	~Pipe()
 	{
 		sem_destroy(&m_sem_in);
