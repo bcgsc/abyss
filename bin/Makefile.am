@@ -3,6 +3,7 @@ dist_bin_SCRIPTS = \
 	abyss-bwa \
 	abyss-fac \
 	abyss-joindist \
+	abyss-kaligner \
 	abyss-pe \
 	abyss2ace \
 	abyss2afg
