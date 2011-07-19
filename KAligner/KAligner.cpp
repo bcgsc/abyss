@@ -5,6 +5,7 @@
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
 #include "Iterator.h"
+#include "IOUtil.h"
 #include "SAM.h"
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"
@@ -185,9 +186,74 @@ static unsigned g_readCount;
 /** Number of reads that aligned. */
 static unsigned g_alignedCount;
 
-static pthread_mutex_t g_mutexCout, g_mutexCerr;
+/** Guard cerr. */
+static pthread_mutex_t g_mutexCerr;
+
+/** Controls producer thread creation. */
 static pthread_barrier_t g_barrier;
+
+/** Stores the output string and the read index number for an
+ * alignment. */
+struct OutData
+{
+	string s;
+	size_t index;
+
+	OutData(string s = string(), size_t index = 0)
+		: s(s), index(index) { }
+
+	/** Operator needed for sorting priority queue. */
+	bool operator<(const OutData& a) const
+	{
+		// Smaller index number has higher priority.
+		return index > a.index;
+	}
+};
+
+/** Shares data between workers and the output thread. */
+static Pipe<OutData> g_pipeOut(10000);
+
+/** Shares data between producer and worker threads. */
 static PipeMux<FastaRecord> g_pipeMux;
+
+static void* printAlignments(void*)
+{
+	size_t size_reached = 2;
+	priority_queue<OutData> pqueue;
+	size_t index = 1;
+	for (pair<OutData, size_t> p = g_pipeOut.pop();
+			p.second > 0; p = g_pipeOut.pop()) {
+		pqueue.push(p.first);
+		if (opt::verbose > 0 && pqueue.size() >= size_reached) {
+			pthread_mutex_lock(&g_mutexCerr);
+			cerr << "Priority queue stored " << size_reached
+				<< " alignments at a time.\n";
+			pthread_mutex_unlock(&g_mutexCerr);
+			size_reached *= 2;
+		}
+
+		while (!pqueue.empty()) {
+			const OutData& rec = pqueue.top();
+			if (index == rec.index) {
+				// Print the record at the current index.
+				index++;
+				assert(rec.index > 0);
+				cout << rec.s;
+				assert(cout.good());
+				assert_good(cout, "stdout");
+				pqueue.pop();
+			} else if (g_pipeMux.invalidEntry(index)) {
+				// Skip this index since it is invalid.
+				index++;
+			} else {
+				// The record for this index has not been added, get
+				// another record from the pipe.
+				break;
+			}
+		}
+	}
+	return NULL;
+}
 
 static pthread_t getReadFiles(const char *readsFile)
 {
@@ -287,7 +353,6 @@ int main(int argc, char** argv)
 	}
 
 	// Need to initialize mutex's before threads are created.
-	pthread_mutex_init(&g_mutexCout, NULL);
 	pthread_mutex_init(&g_mutexCerr, NULL);
 	pthread_barrier_init(&g_barrier, NULL, 2);
 
@@ -304,12 +369,17 @@ int main(int argc, char** argv)
 		threads.push_back(thread);
 	}
 
+	pthread_t out_thread;
+	pthread_create(&out_thread, NULL, printAlignments, NULL);
+
 	void *status;
 	// Wait for all threads to finish.
 	for (size_t i = 0; i < producer_threads.size(); i++)
 		pthread_join(producer_threads[i], &status);
 	for (size_t i = 0; i < threads.size(); i++)
 		pthread_join(threads[i], &status);
+	g_pipeOut.close();
+	pthread_join(out_thread, &status);
 
 	if (opt::verbose > 0)
 		cerr << "Aligned " << g_alignedCount
@@ -401,19 +471,14 @@ static void *readFile(void* readsFile)
 	return NULL;
 }
 
-static bool getNextRec(FastaRecord& rec)
-{
-	pair<FastaRecord, size_t> recPair = g_pipeMux.nextValue();
-	rec = recPair.first;
-	return recPair.second > 0;
-}
-
-static void *alignReadsToDB(void*)
+static void* alignReadsToDB(void*)
 {
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 
-	for (FastaRecord rec; getNextRec(rec);) {
+	for (pair<FastaRecord, size_t> recPair = g_pipeMux.nextValue();
+			recPair.second > 0; recPair = g_pipeMux.nextValue()) {
+		const FastaRecord& rec = recPair.first;
 		const Sequence& seq = rec.seq;
 		ostringstream output;
 		if (seq.find_first_not_of("ACGT0123") == string::npos) {
@@ -444,25 +509,24 @@ static void *alignReadsToDB(void*)
 			break;
 		}
 
+		ostringstream out;
 		string s = output.str();
-		pthread_mutex_lock(&g_mutexCout);
 		switch (opt::format) {
 		  case KALIGNER:
-			cout << rec.id;
+			out << rec.id;
 			if (opt::printSeq) {
-				cout << ' ';
+				out << ' ';
 				if (opt::colourSpace)
-					cout << rec.anchor;
-				cout << seq;
+					out << rec.anchor;
+				out << seq;
 			}
-			cout << s << '\n';
+			out << s << '\n';
 			break;
 		  case SAM:
-			cout << s;
+			out << s;
 			break;
 		}
-		assert(cout.good());
-		pthread_mutex_unlock(&g_mutexCout);
+		g_pipeOut.push(OutData(out.str(), recPair.second));
 
 		if (opt::verbose > 0) {
 			pthread_mutex_lock(&g_mutexCerr);
@@ -472,7 +536,6 @@ static void *alignReadsToDB(void*)
 				cerr << "Aligned " << g_readCount << " reads\n";
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
-
 	}
 	return NULL;
 }
