@@ -243,7 +243,6 @@ static void* printAlignments(void*)
 				index++;
 				assert(rec.index > 0);
 				cout << rec.s;
-				assert(cout.good());
 				assert_good(cout, "stdout");
 				pqueue.pop();
 			} else if (g_pipeMux.invalidEntry(index)) {
