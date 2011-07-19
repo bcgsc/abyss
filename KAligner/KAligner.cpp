@@ -159,11 +159,15 @@ static size_t countKmer(const string& path)
 
 	size_t overlaps = contigs * (opt::k-1);
 	size_t kmer = bases - overlaps;
-	if (opt::verbose > 0)
+	if (opt::verbose > 0) {
 		cerr << "Read " << bases << " bases, "
 			<< contigs << " contigs, " << scaffolds << " scaffolds"
 			" from `" << path << "'. "
 			"Expecting " << kmer << " k-mer.\n";
+		cerr << "Index will use at least "
+			<< toSI(kmer * sizeof(pair<Kmer, Position>))
+			<< "B.\n";
+	}
 	assert(bases > overlaps);
 	return kmer;
 }
