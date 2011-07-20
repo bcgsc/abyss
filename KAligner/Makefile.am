@@ -12,4 +12,4 @@ KAligner_LDADD = \
 
 KAligner_LDFLAGS = -pthread
 
-KAligner_SOURCES = KAligner.cpp Barrier.h Pipe.h PipeMux.h
+KAligner_SOURCES = KAligner.cpp Pipe.h PipeMux.h
