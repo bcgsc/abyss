@@ -805,6 +805,66 @@ static void calculateCoverageStatistics(const Graph& g)
 }
 #endif
 
+/** Return the consensus sequence of the specified gap. */
+static ContigPath fillGap(const Graph& g,
+		const AmbPathConstraint& apConstraint,
+		vector<bool>& seen,
+		ofstream& outFasta)
+{
+	if (opt::verbose > 0)
+		cerr << "\n* " << apConstraint.source << ' '
+			<< apConstraint.dist << "N "
+			<< apConstraint.dest << '\n';
+
+	Constraints constraints;
+	constraints.push_back(Constraint(apConstraint.dest,
+				apConstraint.dist + opt::distanceError));
+
+	ContigPaths solutions;
+	unsigned numVisited = 0;
+	constrainedSearch(g, apConstraint.source,
+			constraints, solutions, numVisited);
+	bool tooComplex = numVisited >= opt::maxCost;
+
+	for (ContigPaths::iterator solIt = solutions.begin();
+			solIt != solutions.end(); solIt++)
+		solIt->insert(solIt->begin(), apConstraint.source);
+
+	ContigPath consensus;
+	bool tooManySolutions = solutions.size() > opt::numBranches;
+	if (tooComplex) {
+		stats.tooComplex++;
+		if (opt::verbose > 0)
+			cerr << solutions.size() << " paths (too complex)\n";
+	} else if (tooManySolutions) {
+		stats.numTooManySolutions++;
+		if (opt::verbose > 0)
+			cerr << solutions.size() << " paths (too many)\n";
+	} else if (solutions.empty()) {
+		stats.numNoSolutions++;
+		if (opt::verbose > 0)
+			cerr << "no paths\n";
+	} else {
+		if (opt::verbose > 1)
+			copy(solutions.begin(), solutions.end(),
+					ostream_iterator<ContigPath>(cerr, "\n"));
+		else if (opt::verbose > 0)
+			cerr << solutions.size() << " paths\n";
+		consensus = align(g, solutions, outFasta);
+		if (!consensus.empty()) {
+			stats.numMerged++;
+			if (solutions.size() > 1) {
+				// Mark contigs that are used in a consensus.
+				markSeen(seen, solutions, true);
+			}
+			if (opt::verbose > 0)
+				cerr << consensus << '\n';
+		} else
+			stats.notMerged++;
+	}
+	return consensus;
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -925,59 +985,8 @@ int main(int argc, char** argv)
 
 	// resolve ambiguous paths recorded in g_ambpath_contig
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
-			ambIt != g_ambpath_contig.end(); ambIt++) {
-		AmbPathConstraint apConstraint = ambIt->first;
-		if (opt::verbose > 0)
-			cerr << "\n* " << apConstraint.source << ' '
-				<< apConstraint.dist << "N "
-				<< apConstraint.dest << '\n';
-
-		Constraints constraints;
-		constraints.push_back(Constraint(apConstraint.dest,
-			apConstraint.dist + opt::distanceError));
-
-		ContigPaths solutions;
-		unsigned numVisited = 0;
-		constrainedSearch(g, apConstraint.source,
-			constraints, solutions, numVisited);
-		bool tooComplex = numVisited >= opt::maxCost;
-
-		for (ContigPaths::iterator solIt = solutions.begin();
-				solIt != solutions.end(); solIt++)
-			solIt->insert(solIt->begin(), apConstraint.source);
-
-		bool tooManySolutions = solutions.size() > opt::numBranches;
-		if (tooComplex) {
-			stats.tooComplex++;
-			if (opt::verbose > 0)
-				cerr << solutions.size() << " paths (too complex)\n";
-		} else if (tooManySolutions) {
-			stats.numTooManySolutions++;
-			if (opt::verbose > 0)
-				cerr << solutions.size() << " paths (too many)\n";
-		} else if (solutions.empty()) {
-			stats.numNoSolutions++;
-			if (opt::verbose > 0)
-				cerr << "no paths\n";
-		} else {
-			if (opt::verbose > 1)
-				copy(solutions.begin(), solutions.end(),
-						ostream_iterator<ContigPath>(cerr, "\n"));
-			else if (opt::verbose > 0)
-				cerr << solutions.size() << " paths\n";
-			ambIt->second = align(g, solutions, fa);
-			if (!ambIt->second.empty()) {
-				stats.numMerged++;
-				if (solutions.size() > 1) {
-					// Mark contigs that are used in a consensus.
-					markSeen(seen, solutions, true);
-				}
-				if (opt::verbose > 0)
-					cerr << ambIt->second << '\n';
-			} else
-				stats.notMerged++;
-		}
-	}
+			ambIt != g_ambpath_contig.end(); ambIt++)
+		ambIt->second = fillGap(g, ambIt->first, seen, fa);
 	assert_good(fa, opt::consensusPath);
 	fa.close();
 	if (opt::verbose > 0)
