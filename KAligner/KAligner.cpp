@@ -1,6 +1,5 @@
 #include "Aligner.h"
 #include "Align/Options.h"
-#include "Barrier.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "FastaReader.h"
