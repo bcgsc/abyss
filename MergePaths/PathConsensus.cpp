@@ -649,6 +649,18 @@ static ContigPath alignPair(const Graph& g,
 		return solutions[0];
 	}
 
+	unsigned minLength = min(
+			fstPathContig.length(), sndPathContig.length());
+	unsigned maxLength = max(
+			fstPathContig.length(), sndPathContig.length());
+	float lengthRatio = (float)minLength / maxLength;
+	if (lengthRatio < opt::identity) {
+		if (opt::verbose > 0)
+			cerr << minLength << '\t' << maxLength
+				<< '\t' << lengthRatio << "\t(different length)\n";
+		return ContigPath();
+	}
+
 	NWAlignment align;
 	unsigned match = alignGlobal(fstPathContig, sndPathContig,
 		   	align);
@@ -749,6 +761,19 @@ static ContigPath alignMulti(const Graph& g,
 			Sequence s = getSequence(solutions[0][longestPrefix-1]);
 			amb_seqs.push_back(s.substr(s.length() - opt::k + 1));
 		}
+	}
+
+	vector<unsigned> lengths(amb_seqs.size());
+	transform(amb_seqs.begin(), amb_seqs.end(), lengths.begin(),
+			mem_fun_ref(&string::length));
+	unsigned minLength = *min_element(lengths.begin(), lengths.end());
+	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
+	float lengthRatio = (float)minLength / maxLength;
+	if (lengthRatio < opt::identity) {
+		if (opt::verbose > 0)
+			cerr << minLength << '\t' << maxLength
+				<< '\t' << lengthRatio << "\t(different length)\n";
+		return ContigPath();
 	}
 
 	string alignment;
