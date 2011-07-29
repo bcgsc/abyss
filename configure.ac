@@ -163,6 +163,7 @@ AC_CONFIG_FILES([
 	AdjList/Makefile
 	DAssembler/Makefile
 	DistanceEst/Makefile
+	Map/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
 	Scaffold/Makefile

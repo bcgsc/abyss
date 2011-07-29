@@ -24,6 +24,7 @@ SUBDIRS = \
 	DAssembler \
 	DistanceEst \
 	KAligner \
+	Map \
 	MergePaths \
 	Overlap \
 	ParseAligns \
