@@ -18,7 +18,6 @@
 */
 
 #include "FMIndex.h"
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -35,6 +34,19 @@ int dist = 0; // distance threshold
 static void usage();
 static void parse_parameters (int argc, char **argv);
 
+static int readQstring(const char *fname,
+	vector<vector<uint8_t> > &qs)
+{
+	ifstream ifs(fname);
+	string line;
+	while (getline(ifs, line)) {
+		if (line.empty())
+			continue;
+		qs.push_back(vector<uint8_t>(line.begin(), line.end()));
+	}
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	parse_parameters(argc, argv);
@@ -42,22 +54,20 @@ int main(int argc, char **argv)
 	ifstream is(argv[argc-2]);
 	f.load(is);
 	vector<vector<uint8_t> > qs;
-	f.readQstring(argv[argc-1], qs);
+	readQstring(argv[argc-1], qs);
 	double sTime = clock();
 	if (mode == 0) {
 		cerr << "exact search mode:" << endl;
-		pair<uint64_t, uint64_t> res;
 		for (size_t i = 0; i < qs.size(); i++) {
 			vector<uint8_t> &s = qs[i];
-			f.search(s, res);
+			pair<uint64_t, uint64_t> res = f.findExact(s.begin(), s.end());
 			cout << "query id: " << i << endl;
-			if (res.first != (size_t)-1 || res.first != (size_t)-1) {
-				for (size_t it = res.first; it <= res.second; it++)
-					cout << f.locate(it) << " ";
-				cout << endl;
-			}
+			for (size_t it = res.first; it < res.second; it++)
+				cout << ' ' << f.locate(it);
+			cout << endl;
 		}
 	}
+#if 0
 	else if (mode == 1) {
 		cerr << "Hamming distance mode:" << endl;
 		for (size_t i = 0; i < qs.size(); i++) {
@@ -86,6 +96,7 @@ int main(int argc, char **argv)
 			cout << endl;
 		}
 	}
+#endif
 
 	double eTime = clock();
 	fprintf(stderr, "cpu time: %f\n", (eTime - sTime)/CLOCKS_PER_SEC);
