@@ -14,6 +14,7 @@ SUBDIRS = \
 	Assembly \
 	Common \
 	DataLayer \
+	FMIndex \
 	Graph \
 	dialign \
 	Align \
