@@ -19,6 +19,8 @@
 
 #include "FMIndex.h"
 #include "sais.h"
+#include <climits>
+#include <fstream>
 
 using namespace std;
 
@@ -101,6 +103,7 @@ int FMIndex::buildSampledSA(const vector<uint8_t> &s, const vector<uint32_t> &sa
 }
 
 void FMIndex::calculateStatistics(const vector<uint8_t> &s) {
+  const unsigned UINT8_MAX = 255;
   size_t seqLen = s.size();
   vector<uint32_t> tmpCf(UINT8_MAX + 1);
   for (size_t i = 0; i < seqLen; i++) {
