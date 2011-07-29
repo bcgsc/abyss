@@ -1,8 +1,11 @@
-noinst_PROGRAMS = fmconstruct
+noinst_PROGRAMS = fmconstruct fmsearch
 lib_LIBRARIES = libfmindex.a
 
 fmconstruct_SOURCES = construct.cc
 fmconstruct_LDADD = libfmindex.a
+
+fmsearch_SOURCES = search.cc
+fmsearch_LDADD = libfmindex.a
 
 libfmindex_a_SOURCES = \
 	bit_array.cc bit_array.h \
