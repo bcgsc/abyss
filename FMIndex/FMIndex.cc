@@ -30,13 +30,16 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s) {
   while (getline(ifs, line)) {
     line.push_back('\n');
     for (size_t i = 0; i < line.size(); i++) {
-      if (mapping.find(line[i]) == mapping.end()) {
-	mapping[line[i]]    = alphaSize;
-	rmapping[alphaSize] = line[i];
+      unsigned c = line[i];
+      if (c >= mapping.size())
+	mapping.resize(c + 1, UCHAR_MAX);
+      if (mapping[c] == UCHAR_MAX) {
+	mapping[c] = alphaSize;
+	rmapping.push_back(c);
 	if (++alphaSize == 0)
 	  cerr << "warning: the variety of characters exceeds 255." << endl;
       }
-      s.push_back(mapping[line[i]]);
+      s.push_back(mapping[c]);
     }
   }
   return 0;
@@ -118,14 +121,15 @@ int FMIndex::save(ostream& os)  {
   os.write((const char*)(&cf[0]), sizeof(cf[0])*cf.size());
   os.write((const char*)(&sampledSA[0]), sizeof(sampledSA[0])*sampledSA.size());
 
-  uint32_t count = 0;
   vector<unsigned char> key;
   vector<uint8_t> val;
-  for (std::map<unsigned char, uint8_t>::iterator it = mapping.begin(); it != mapping.end(); it++) {
-    key.push_back(it->first);
-    val.push_back(it->second);
-    count++;
+  for (unsigned i = 0; i < mapping.size(); ++i) {
+    if (mapping[i] != UCHAR_MAX) {
+      key.push_back(i);
+      val.push_back(mapping[i]);
+    }
   }
+  uint32_t count = key.size();
   os.write((const char*)(&count), sizeof(uint32_t));
   os.write((const char*)(&key[0]), sizeof(key[0])*count);
   os.write((const char*)(&val[0]), sizeof(val[0])*count);
@@ -158,8 +162,14 @@ int FMIndex::load(istream& is) {
   mapping.clear();
   rmapping.clear();
   for (uint32_t i = 0; i < count; i++) {
-    mapping[key[i]]  = val[i];
-    rmapping[val[i]] = key[i];
+    unsigned k = key[i];
+    unsigned v = val[i];
+    if (k >= mapping.size())
+      mapping.resize(k + 1, UCHAR_MAX);
+    if (v >= rmapping.size())
+      rmapping.resize(v + 1, UCHAR_MAX);
+    mapping[k] = v;
+    rmapping[v] = k;
   }
   wa.Load(is);
 

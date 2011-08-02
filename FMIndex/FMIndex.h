@@ -4,9 +4,9 @@
 #include "wat_array.h"
 #include <algorithm>
 #include <cassert>
+#include <climits> // for UCHAR_MAX
 #include <fstream>
 #include <istream>
-#include <map>
 #include <ostream>
 #include <stdint.h>
 #include <vector>
@@ -111,10 +111,8 @@ class FMIndex
 		Translate(const FMIndex& fmIndex) : m_fmIndex(fmIndex) { }
 		uint8_t operator()(unsigned char c) const
 		{
-			std::map<unsigned char, uint8_t>::const_iterator
-				it = m_fmIndex.mapping.find(c);
-			return it == m_fmIndex.mapping.end() ? m_fmIndex.alphaSize
-				: it->second;
+			return c < m_fmIndex.mapping.size() ? m_fmIndex.mapping[c]
+				: UCHAR_MAX;
 		}
 	  private:
 		const FMIndex& m_fmIndex;
@@ -152,8 +150,8 @@ class FMIndex
 	int percent;
 	uint8_t alphaSize;
 	std::vector<uint32_t> cf;
-	std::map<unsigned char, uint8_t> mapping;
-	std::map<uint8_t, unsigned char> rmapping;
+	std::vector<uint8_t> mapping;
+	std::vector<uint8_t> rmapping;
 	std::vector<uint32_t> sampledSA;
 	std::vector<std::vector<int> > cols;
 	wat_array::WatArray wa;
