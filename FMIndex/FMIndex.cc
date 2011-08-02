@@ -35,7 +35,6 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s) {
 	mapping.resize(c + 1, UCHAR_MAX);
       if (mapping[c] == UCHAR_MAX) {
 	mapping[c] = alphaSize;
-	rmapping.push_back(c);
 	if (++alphaSize == 0)
 	  cerr << "warning: the variety of characters exceeds 255." << endl;
       }
@@ -160,16 +159,13 @@ int FMIndex::load(istream& is) {
   val.resize(count);
   is.read((char*)(&val[0]), sizeof(val[0])*count);
   mapping.clear();
-  rmapping.clear();
   for (uint32_t i = 0; i < count; i++) {
     unsigned k = key[i];
     unsigned v = val[i];
     if (k >= mapping.size())
       mapping.resize(k + 1, UCHAR_MAX);
-    if (v >= rmapping.size())
-      rmapping.resize(v + 1, UCHAR_MAX);
+    assert(mapping[k] == UCHAR_MAX);
     mapping[k] = v;
-    rmapping[v] = k;
   }
   wa.Load(is);
 
