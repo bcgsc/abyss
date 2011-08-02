@@ -2,6 +2,7 @@
 #define FMINDEX_H 1
 
 #include "wat_array.h"
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <istream>
@@ -41,26 +42,11 @@ class FMIndex
 	int buildFmIndex(const char *fnmae, int _percent);
 	size_t locate(uint64_t i) const;
 
-	/** Set the alphabet to [first, last). */
-	void setAlphabet(unsigned first = 0, unsigned last = 128)
-	{
-		assert(mapping.empty() && rmapping.empty() && alphaSize == 0);
-		assert(first <= last);
-		alphaSize = last - first;
-		for (unsigned i = first; i < last; ++i) {
-			mapping[i] = i;
-			rmapping[i] = i;
-		}
-		assert(mapping.size() == alphaSize);
-		assert(rmapping.size() == alphaSize);
-	}
-
-	FMIndex() : percent(0), alphaSize(0) { setAlphabet(); }
+	FMIndex() : percent(0), alphaSize(0) { }
 
 	/** Construct an FMIndex. */
 	FMIndex(const std::string& path) : percent(0), alphaSize(0)
 	{
-		setAlphabet();
 		std::ifstream in(path.c_str());
 		assert(in);
 		int status = load(in);
@@ -120,11 +106,29 @@ class FMIndex
 		return best;
 	}
 
+	/** Translate from ASCII to the indexed alphabet. */
+	struct Translate {
+		Translate(const FMIndex& fmIndex) : m_fmIndex(fmIndex) { }
+		uint8_t operator()(unsigned char c) const
+		{
+			std::map<unsigned char, uint8_t>::const_iterator
+				it = m_fmIndex.mapping.find(c);
+			return it == m_fmIndex.mapping.end() ? m_fmIndex.alphaSize
+				: it->second;
+		}
+	  private:
+		const FMIndex& m_fmIndex;
+	};
+
 	/** Search for a matching substring of the query at least k long.
 	 * @return the longest match and the number of matches
 	 */
-	Match find(const std::string& s, unsigned k) const
+	Match find(const std::string& q, unsigned k) const
 	{
+		std::string s = q;
+		std::transform(s.begin(), s.end(), s.begin(),
+				Translate(*this));
+
 		FMInterval interval = findSubstring(s.begin(), s.end(), k);
 		assert(interval.l <= interval.u);
 		size_t count = interval.u - interval.l;
