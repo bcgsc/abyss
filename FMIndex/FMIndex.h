@@ -2,6 +2,7 @@
 #define FMINDEX_H 1
 
 #include "wat_array.h"
+#include <cassert>
 #include <fstream>
 #include <istream>
 #include <map>
