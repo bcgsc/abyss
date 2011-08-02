@@ -98,7 +98,8 @@ size_t FMIndex::locate(uint64_t i) const {
   size_t j = i;
   size_t t = 0;
   while (j % divSeq != 0) {
-    j = cf[wa.Lookup(j)] + wa.Rank(wa.Lookup(j), j+1) - 1;
+    unsigned c = wa.Lookup(j);
+    j = cf[c] + wa.Rank(c, j+1) - 1;
     t++;
   }
   if (sampledSA[j/divSeq] + t >= bsize) {
