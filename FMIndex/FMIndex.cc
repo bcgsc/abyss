@@ -28,6 +28,7 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s) {
   ifstream ifs(fname);
   string line;
   while (getline(ifs, line)) {
+    line.push_back('\n');
     for (size_t i = 0; i < line.size(); i++) {
       if (mapping.find(line[i]) == mapping.end()) {
 	mapping[line[i]]    = alphaSize;
@@ -37,7 +38,6 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s) {
       }
       s.push_back(mapping[line[i]]);
     }
-    s.push_back(mapping['\n']);
   }
   return 0;
 }
