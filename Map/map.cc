@@ -31,6 +31,7 @@ static const char USAGE_MESSAGE[] =
 "The TARGET file must be indexed. The files TARGET.fai and\n"
 "TARGET.fm are required.\n"
 "\n"
+"  -k, --score=N           find matches at least N bp [1]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -38,16 +39,20 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	/** Find matches at least k bp. */
+	static unsigned k;
+
 	static int verbose;
 }
 
-static const char shortopts[] = "v";
+static const char shortopts[] = "k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "help",             no_argument, NULL, OPT_HELP },
-	{ "version",          no_argument, NULL, OPT_VERSION },
+	{ "score", required_argument, NULL, 'k' },
+	{ "help", no_argument, NULL, OPT_HELP },
+	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -87,7 +92,7 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
-	Match m = fmIndex.find(rec.seq);
+	Match m = fmIndex.find(rec.seq, opt::k);
 	assert(m.qstart <= m.qend);
 	assert(m.qend <= rec.seq.size());
 
@@ -95,7 +100,7 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	string rcqseq;
 	if (m.count == 0) {
 		rcqseq = reverseComplement(rec.seq);
-		m = fmIndex.find(rcqseq);
+		m = fmIndex.find(rcqseq, opt::k);
 		rc = m.count > 0;
 	}
 
@@ -128,6 +133,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'k': arg >> opt::k; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;

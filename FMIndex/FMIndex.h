@@ -100,12 +100,14 @@ class FMIndex
 		return FMInterval(l, u, it - first + 1, last - first);
 	}
 
-	/** Search for a matching substring of the query. */
+	/** Search for a matching substring of the query at least k long.
+	 * @return the longest match
+	 */
 	template <typename It>
-	FMInterval findSubstring(It first, It last) const
+	FMInterval findSubstring(It first, It last, unsigned k) const
 	{
 		assert(first < last);
-		FMInterval best(0, 0, 0, 0);
+		FMInterval best(0, 0, 0, k > 0 ? k - 1 : 0);
 		for (It it = last; it > first; --it) {
 			if (unsigned(it - first) < best.qend - best.qstart)
 				return best;
@@ -117,11 +119,12 @@ class FMIndex
 		return best;
 	}
 
-	/** Return the first occurence of s and the number of occurences.
+	/** Search for a matching substring of the query at least k long.
+	 * @return the longest match and the number of matches
 	 */
-	Match find(const std::string& s) const
+	Match find(const std::string& s, unsigned k) const
 	{
-		FMInterval interval = findSubstring(s.begin(), s.end());
+		FMInterval interval = findSubstring(s.begin(), s.end(), k);
 		assert(interval.l <= interval.u);
 		size_t count = interval.u - interval.l;
 		if (count == 0)
