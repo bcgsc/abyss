@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 		cerr << "exact search mode:" << endl;
 		for (size_t i = 0; i < qs.size(); i++) {
 			vector<uint8_t> &s = qs[i];
-			pair<uint64_t, uint64_t> res = f.findExact(s.begin(), s.end());
+			pair<uint64_t, uint64_t> res = f.findExact(s);
 			cout << "query id: " << i << endl;
 			for (size_t it = res.first; it < res.second; it++)
 				cout << ' ' << f.locate(it);

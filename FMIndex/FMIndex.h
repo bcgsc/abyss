@@ -53,7 +53,7 @@ class FMIndex
 		assert(status == 0);
 	}
 
-	/** Search for a matching suffix of the query. */
+	/** Search for an exact match. */
 	template <typename It>
 	std::pair<size_t, size_t> findExact(It first, It last) const
 	{
@@ -66,6 +66,16 @@ class FMIndex
 			u = cf[c] + wa.Rank(c, u);
 		}
 		return std::make_pair(l, u);
+	}
+
+	/** Search for an exact match. */
+	template <typename T>
+	std::pair<size_t, size_t> findExact(const T& q) const
+	{
+		T s(q.size());
+		std::transform(q.begin(), q.end(), s.begin(),
+				Translate(*this));
+		return findExact(s.begin(), s.end());
 	}
 
 	/** Search for a matching suffix of the query. */
