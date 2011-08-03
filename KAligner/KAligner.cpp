@@ -231,20 +231,11 @@ static pthread_mutex_t g_mutexPqSize = PTHREAD_MUTEX_INITIALIZER;
 
 static void* printAlignments(void*)
 {
-	size_t size_reached = 2;
 	priority_queue<OutData> pqueue;
 	size_t index = 1;
 	for (pair<OutData, size_t> p = g_pipeOut.pop();
 			p.second > 0; p = g_pipeOut.pop()) {
 		pqueue.push(p.first);
-		if (opt::verbose > 0 && pqueue.size() >= size_reached) {
-			pthread_mutex_lock(&g_mutexCerr);
-			cerr << "Priority queue stored " << size_reached
-				<< " alignments at a time.\n";
-			pthread_mutex_unlock(&g_mutexCerr);
-			size_reached *= 2;
-		}
-
 		while (!pqueue.empty()) {
 			const OutData& rec = pqueue.top();
 			if (index == rec.index) {
