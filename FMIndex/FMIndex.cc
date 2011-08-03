@@ -19,29 +19,37 @@
 
 #include "FMIndex.h"
 #include "sais.h"
+#include <cassert>
 #include <climits>
 #include <fstream>
 
 using namespace std;
 
-int FMIndex::read(const char *fname, vector<uint8_t> &s) {
-  ifstream ifs(fname);
-  string line;
-  while (getline(ifs, line)) {
-    line.push_back('\n');
-    for (size_t i = 0; i < line.size(); i++) {
-      unsigned c = line[i];
-      if (c >= mapping.size())
-	mapping.resize(c + 1, UCHAR_MAX);
-      if (mapping[c] == UCHAR_MAX) {
-	mapping[c] = alphaSize;
-	if (++alphaSize == 0)
-	  cerr << "warning: the variety of characters exceeds 255." << endl;
-      }
-      s.push_back(mapping[c]);
-    }
-  }
-  return 0;
+int FMIndex::read(const char *fname, vector<uint8_t> &s)
+{
+	// Read the file.
+	ifstream in(fname);
+	assert(in.good());
+	in.seekg(0, ios::end);
+	s.resize(in.tellg());
+	in.seekg(0, ios::beg);
+	assert(in.good());
+	in.read(reinterpret_cast<char*>(s.data()), s.size());
+	assert(in.good());
+	assert((size_t)in.gcount() == s.size());
+
+	// Translate the alphabet.
+	for (vector<uint8_t>::iterator it = s.begin();
+			it != s.end(); ++it) {
+		unsigned c = *it;
+		if (c >= mapping.size())
+			mapping.resize(c + 1, UCHAR_MAX);
+		if (mapping[c] == UCHAR_MAX)
+			mapping[c] = alphaSize++;
+		*it = mapping[c];
+	}
+
+	return 0;
 }
 
 int FMIndex::buildSA(const vector<uint8_t> &s, vector<uint32_t> &sa) {
