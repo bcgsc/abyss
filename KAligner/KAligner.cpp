@@ -48,10 +48,6 @@ static const char USAGE_MESSAGE[] =
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
 "  -j, --threads=N       use N threads [2] up to one per query file\n"
 "                        or if N is 0 use one thread per query file\n"
-#if _POSIX_BARRIERS > 0
-"      --sync=COUNT      synchronize threads every COUNT alignments [10000]\n"
-"      --no-sync         do not synchronize threads\n"
-#endif
 "  -v, --verbose         display verbose output\n"
 "      --no-sam          output the results in KAligner format\n"
 "      --sam             output the results in SAM format\n"
@@ -69,9 +65,6 @@ namespace opt {
 	static int threads = 2;
 	static int printSeq;
 
-	/** Synchronize the threads with a barrier. */
-	static int sync = 10000;
-
 	/** Output formats */
 	static int format;
 }
@@ -85,8 +78,6 @@ static const struct option longopts[] = {
 	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
 	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
 	{ "ignore-multimap", no_argument, &opt::multimap, opt::IGNORE },
-	{ "sync",        required_argument, NULL, OPT_SYNC },
-	{ "no-sync",     no_argument,       &opt::sync, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "no-sam",      no_argument,       &opt::format, KALIGNER },
@@ -303,7 +294,6 @@ int main(int argc, char** argv)
 			case 'i': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
-			case OPT_SYNC: arg >> opt::sync; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -335,11 +325,6 @@ int main(int argc, char** argv)
 	int numQuery = argc - optind;
 	if (opt::threads <= 0)
 		opt::threads = numQuery;
-	if (opt::threads == 1)
-		opt::sync = 0;
-#if !_POSIX_BARRIERS
-	opt::sync = 0;
-#endif
 
 	// SAM headers.
 	cout << "@HD\tVN:1.0\n"
