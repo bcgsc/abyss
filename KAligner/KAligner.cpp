@@ -191,7 +191,7 @@ static unsigned g_readCount;
 static unsigned g_alignedCount;
 
 /** Guard cerr. */
-static pthread_mutex_t g_mutexCerr;
+static pthread_mutex_t g_mutexCerr = PTHREAD_MUTEX_INITIALIZER;
 
 /** Controls producer thread creation. */
 static pthread_barrier_t g_barrier;
@@ -372,7 +372,6 @@ int main(int argc, char** argv)
 	}
 
 	// Need to initialize mutex's before threads are created.
-	pthread_mutex_init(&g_mutexCerr, NULL);
 	pthread_barrier_init(&g_barrier, NULL, 2);
 
 	g_readCount = 0;
