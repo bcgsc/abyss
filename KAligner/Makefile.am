@@ -8,7 +8,8 @@ KAligner_CPPFLAGS = -pthread -I$(top_srcdir) \
 KAligner_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a \
+	-lrt
 
 KAligner_LDFLAGS = -pthread
 
