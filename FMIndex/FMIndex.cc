@@ -19,6 +19,7 @@
 
 #include "FMIndex.h"
 #include "sais.h"
+#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <fstream>
@@ -39,15 +40,12 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s)
 	assert((size_t)in.gcount() == s.size());
 
 	// Translate the alphabet.
-	for (vector<uint8_t>::iterator it = s.begin();
-			it != s.end(); ++it) {
-		unsigned c = *it;
-		if (c >= mapping.size())
-			mapping.resize(c + 1, UCHAR_MAX);
-		if (mapping[c] == UCHAR_MAX)
-			mapping[c] = alphaSize++;
-		*it = mapping[c];
-	}
+	setAlphabet("\1\nACGT");
+	transform(s.begin(), s.end(), s.begin(), Translate(*this));
+	replace(s.begin(), s.end(), UCHAR_MAX, 1);
+
+	// Add the sentinel character.
+	s.push_back(0);
 
 	return 0;
 }

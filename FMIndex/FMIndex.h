@@ -147,6 +147,28 @@ class FMIndex
 	}
 
   private:
+	/** Set the alphabet to [first, last). */
+	template <typename It>
+	void setAlphabet(It first, It last)
+	{
+		assert(mapping.empty() && alphaSize == 0);
+		for (It it = first; it < last; ++it) {
+			unsigned c = *it;
+			if (c >= mapping.size())
+				mapping.resize(c + 1, UCHAR_MAX);
+			if (mapping[c] == UCHAR_MAX) {
+				mapping[c] = alphaSize++;
+				assert(alphaSize < UCHAR_MAX);
+			}
+		}
+	}
+
+	/** Set the alphabet to the characters of s. */
+	void setAlphabet(const std::string& s)
+	{
+		setAlphabet(s.begin(), s.end());
+	}
+
 	void calculateStatistics(const std::vector<uint8_t> &s);
 	int buildBWT(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa,
