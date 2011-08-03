@@ -10,8 +10,8 @@ template <class T>
 class PipeMux {
   public:
   	/** Default constructor. */
-  	PipeMux()
-		: m_index(0), m_entry_num(0)
+  	PipeMux(size_t pipe_size = 1)
+		: m_index(0), m_entry_num(0), m_pipe_size(pipe_size)
 	{
 		pthread_rwlock_init(&m_rwlock_vecs, NULL);
 		pthread_mutex_init(&m_mutex_index, NULL);
@@ -29,7 +29,7 @@ class PipeMux {
 	/** Instantiates a new pipe and adds it to this PipeMux. */
 	Pipe<T>* addPipe()
 	{
-		Pipe<T>* p = new Pipe<T>;
+		Pipe<T>* p = new Pipe<T>(m_pipe_size);
 		pthread_mutex_t* m = new pthread_mutex_t;
 		pthread_mutex_init(m, NULL);
 
@@ -111,6 +111,7 @@ class PipeMux {
 	pthread_mutex_t m_mutex_index;
 	unsigned m_index;
 	size_t m_entry_num;
+	size_t m_pipe_size;
 
 	/** Removes Pipe p if it is still present in m_pipes. */
 	void removePipe(Pipe<T>* p, size_t entry)
