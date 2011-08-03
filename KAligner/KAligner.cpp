@@ -215,10 +215,10 @@ struct OutData
 };
 
 /** Shares data between workers and the output thread. */
-static Pipe<OutData> g_pipeOut(10000);
+static Pipe<OutData> g_pipeOut(1<<7);
 
 /** Shares data between producer and worker threads. */
-static PipeMux<FastaRecord> g_pipeMux;
+static PipeMux<FastaRecord> g_pipeMux(1);
 
 static void* printAlignments(void*)
 {
