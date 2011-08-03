@@ -220,6 +220,15 @@ static Pipe<OutData> g_pipeOut(1<<7);
 /** Shares data between producer and worker threads. */
 static PipeMux<FastaRecord> g_pipeMux(1);
 
+/** Notification of the current size of the g_pqueue. */
+static size_t g_pqSize;
+static const size_t MAX_PQ_SIZE = 1000;
+
+/** Conditional variable used to block workers until the g_pqueue has
+ * become small enough. */
+static pthread_cond_t g_pqSize_cv = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t g_mutexPqSize = PTHREAD_MUTEX_INITIALIZER;
+
 static void* printAlignments(void*)
 {
 	size_t size_reached = 2;
@@ -254,6 +263,13 @@ static void* printAlignments(void*)
 				break;
 			}
 		}
+
+		// Let waiting workers continue if the pqueue is small enough.
+		pthread_mutex_lock(&g_mutexPqSize);
+		g_pqSize = pqueue.size();
+		if (g_pqSize < MAX_PQ_SIZE)
+			pthread_cond_broadcast(&g_pqSize_cv);
+		pthread_mutex_unlock(&g_mutexPqSize);
 	}
 	return NULL;
 }
