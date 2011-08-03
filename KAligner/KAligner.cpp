@@ -25,6 +25,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h> // for sbrk
+#include <time.h>
 
 using namespace std;
 
@@ -270,7 +271,7 @@ static pthread_t getReadFiles(const char *readsFile)
 
 	// Barrier to make pipe creation order deterministic.
 	pthread_barrier_wait(&g_barrier);
-	return thread;	
+	return thread;
 }
 
 int main(int argc, char** argv)
@@ -473,10 +474,24 @@ static void *readFile(void* readsFile)
 	return NULL;
 }
 
+static double timeDiff(const timespec& start, const timespec& end)
+{
+	double result = (double)end.tv_sec +
+		(double)end.tv_nsec/1000000000.0;
+	result -= (double)start.tv_sec +
+		(double)start.tv_nsec/1000000000.0;
+	return result;
+}
+
 static void* alignReadsToDB(void*)
 {
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
+	static timespec start, end;
+
+	pthread_mutex_lock(&g_mutexCerr);
+	clock_gettime(CLOCK_REALTIME, &start);
+	pthread_mutex_unlock(&g_mutexCerr);
 
 	for (pair<FastaRecord, size_t> recPair = g_pipeMux.nextValue();
 			recPair.second > 0; recPair = g_pipeMux.nextValue()) {
@@ -530,12 +545,24 @@ static void* alignReadsToDB(void*)
 		}
 		g_pipeOut.push(OutData(out.str(), recPair.second));
 
+		// Prevent the priority_queue from growing too large by
+		// waiting for threads going far too slow.
+		pthread_mutex_lock(&g_mutexPqSize);
+		if (g_pqSize >= MAX_PQ_SIZE)
+			pthread_cond_wait(&g_pqSize_cv, &g_mutexPqSize);
+		pthread_mutex_unlock(&g_mutexPqSize);
+
 		if (opt::verbose > 0) {
 			pthread_mutex_lock(&g_mutexCerr);
 			if (!s.empty())
 				g_alignedCount++;
-			if (++g_readCount % 1000000 == 0)
-				cerr << "Aligned " << g_readCount << " reads\n";
+			if (++g_readCount % 1000000 == 0) {
+				clock_gettime(CLOCK_REALTIME, &end);
+				double result = timeDiff(start, end);
+				cerr << "Aligned " << g_readCount << " reads at "
+					<< (int)(1000000 / result) << " reads/sec.\n";
+				start = end;
+			}
 			pthread_mutex_unlock(&g_mutexCerr);
 		}
 	}
