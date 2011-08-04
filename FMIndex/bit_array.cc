@@ -172,9 +172,13 @@ uint64_t BitArray::RankOne(uint64_t pos) const {
   return rank;
 }
 
-
-
-uint64_t BitArray::PopCount(uint64_t x) {
+/** Return the Hamming weight of x. */
+uint64_t BitArray::PopCount(uint64_t x)
+{
+#if __GNUC__ && __x86_64__
+  __asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
+  return x;
+#else
   x = (x & 0x5555555555555555ULL) +
     ((x >> 1) & 0x5555555555555555ULL);
   x = (x & 0x3333333333333333ULL) +
@@ -184,6 +188,7 @@ uint64_t BitArray::PopCount(uint64_t x) {
   x = x + (x >> 16);
   x = x + (x >> 32);
   return x & 0x7FLLU;
+#endif
 }
 
 uint64_t BitArray::PopCountMask(uint64_t x, uint64_t offset) {
