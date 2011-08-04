@@ -184,7 +184,6 @@ class FMIndex
 	std::vector<uint32_t> cf;
 	std::vector<uint8_t> mapping;
 	std::vector<uint32_t> sampledSA;
-	std::vector<std::vector<int> > cols;
 	wat_array::WatArray wa;
 };
 
