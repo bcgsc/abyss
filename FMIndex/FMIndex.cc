@@ -18,6 +18,7 @@
 */
 
 #include "FMIndex.h"
+#include "IOUtil.h"
 #include "sais.h"
 #include <algorithm>
 #include <cassert>
@@ -30,13 +31,13 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s)
 {
 	// Read the file.
 	ifstream in(fname);
-	assert(in.good());
+	assert_good(in, fname);
 	in.seekg(0, ios::end);
 	s.resize(in.tellg());
 	in.seekg(0, ios::beg);
-	assert(in.good());
+	assert_good(in, fname);
 	in.read(reinterpret_cast<char*>(s.data()), s.size());
-	assert(in.good());
+	assert_good(in, fname);
 	assert((size_t)in.gcount() == s.size());
 
 	// Translate the alphabet.
