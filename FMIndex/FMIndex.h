@@ -18,6 +18,12 @@ struct FMInterval
 		: l(l), u(u), qstart(qstart), qend(qend) { }
 	size_t l, u;
 	unsigned qstart, qend;
+
+	unsigned qspan() const
+	{
+		assert(qstart <= qend);
+		return qend - qstart;
+	}
 };
 
 /** A match of a substring of a query sequence to a target sequence.
@@ -30,6 +36,12 @@ struct Match
 	Match(unsigned qstart, unsigned qend,
 			size_t tstart, unsigned count)
 		: qstart(qstart), qend(qend), tstart(tstart), count(count) { }
+
+	unsigned qspan() const
+	{
+		assert(qstart <= qend);
+		return qend - qstart;
+	}
 };
 
 /** An FM index. */
@@ -106,11 +118,10 @@ class FMIndex
 		assert(first < last);
 		FMInterval best(0, 0, 0, k > 0 ? k - 1 : 0);
 		for (It it = last; it > first; --it) {
-			if (unsigned(it - first) < best.qend - best.qstart)
+			if (unsigned(it - first) < best.qspan())
 				return best;
 			FMInterval interval = findSuffix(first, it);
-			if (interval.qend - interval.qstart
-					> best.qend - best.qstart)
+			if (interval.qspan() > best.qspan())
 				best = interval;
 		}
 		return best;
