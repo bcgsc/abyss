@@ -41,7 +41,8 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s)
 	assert((size_t)in.gcount() == s.size());
 
 	// Translate the alphabet.
-	setAlphabet("\1\nACGT");
+	if (alphaSize == 0)
+		setAlphabet(s.begin(), s.end());
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	replace(s.begin(), s.end(), UCHAR_MAX, 1);
 

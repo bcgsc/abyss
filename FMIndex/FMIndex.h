@@ -157,7 +157,6 @@ class FMIndex
 				locate(interval.l), count);
 	}
 
-  private:
 	/** Set the alphabet to [first, last). */
 	template <typename It>
 	void setAlphabet(It first, It last)
@@ -172,6 +171,7 @@ class FMIndex
 				assert(alphaSize < UCHAR_MAX);
 			}
 		}
+		assert(alphaSize > 0);
 	}
 
 	/** Set the alphabet to the characters of s. */
@@ -180,6 +180,7 @@ class FMIndex
 		setAlphabet(s.begin(), s.end());
 	}
 
+  private:
 	void calculateStatistics(const std::vector<uint8_t> &s);
 	int buildBWT(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa,

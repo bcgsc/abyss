@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 	string fmPath = ss.str();
 
 	FMIndex f;
+	f.setAlphabet("\1\nACGT");
 	f.buildFmIndex(faPath, 25);
 
 	ofstream out(fmPath.c_str());
