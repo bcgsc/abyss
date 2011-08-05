@@ -32,14 +32,12 @@ int mode = 0; // exact:0 hamming:1 edit:2
 int dist = 0; // distance threshold
 
 static void usage();
-static void parse_parameters (int argc, char **argv);
+static unsigned parse_parameters (int argc, char **argv);
 
-static int readQstring(const char *fname,
-	vector<vector<uint8_t> > &qs)
+static int readQstring(istream& in, vector<vector<uint8_t> > &qs)
 {
-	ifstream ifs(fname);
-	string line;
-	while (getline(ifs, line)) {
+	assert(in.good());
+	for (string line; getline(in, line);) {
 		if (line.empty())
 			continue;
 		qs.push_back(vector<uint8_t>(line.begin(), line.end()));
@@ -47,14 +45,24 @@ static int readQstring(const char *fname,
 	return 0;
 }
 
+static int readQstring(string path, vector<vector<uint8_t> > &qs)
+{
+	ifstream fin;
+	if (path != "-")
+		fin.open(path.c_str());
+	return readQstring(path == "-" ? cin : fin, qs);
+}
+
 int main(int argc, char **argv)
 {
-	parse_parameters(argc, argv);
+	int optind = parse_parameters(argc, argv);
 	FMIndex f;
-	ifstream is(argv[argc-2]);
+	assert(optind < argc);
+	ifstream is(argv[optind++]);
 	f.load(is);
 	vector<vector<uint8_t> > qs;
-	readQstring(argv[argc-1], qs);
+	readQstring(optind < argc ? argv[optind++] : "-", qs);
+
 	double sTime = clock();
 	if (mode == 0) {
 		cerr << "exact search mode:" << endl;
@@ -120,7 +128,7 @@ static void usage()
 	exit(0);
 }
 
-static void parse_parameters (int argc, char **argv)
+static unsigned parse_parameters (int argc, char **argv)
 {
 	if (argc == 1) usage();
 	int argno;
@@ -141,4 +149,5 @@ static void parse_parameters (int argc, char **argv)
 			break;
 		}
 	}
+	return argno;
 }
