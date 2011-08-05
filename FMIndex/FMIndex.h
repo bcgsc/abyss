@@ -1,7 +1,7 @@
 #ifndef FMINDEX_H
 #define FMINDEX_H 1
 
-#include "wat_array.h"
+#include "BitArrays.h"
 #include <algorithm>
 #include <cassert>
 #include <climits> // for UCHAR_MAX
@@ -184,7 +184,7 @@ class FMIndex
 	std::vector<uint32_t> cf;
 	std::vector<uint8_t> mapping;
 	std::vector<uint32_t> sampledSA;
-	wat_array::WatArray wa;
+	BitArrays wa;
 };
 
 #endif

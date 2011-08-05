@@ -12,6 +12,7 @@ fmsearch_SOURCES = search.cc
 libfmindex_a_CPPFLAGS = -I$(top_srcdir)/Common
 
 libfmindex_a_SOURCES = \
+	BitArrays.h \
 	bit_array.cc bit_array.h \
 	FMIndex.cc FMIndex.h \
 	sais.h \
