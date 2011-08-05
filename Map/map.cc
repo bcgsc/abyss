@@ -93,18 +93,11 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
 	Match m = fmIndex.find(rec.seq, opt::k);
-	assert(m.qstart <= m.qend);
-	assert(m.qend <= rec.seq.size());
+	string rcqseq = reverseComplement(rec.seq);
+	Match rcm = fmIndex.find(rcqseq, opt::k);
+	bool rc = rcm.qspan() > m.qspan();
 
-	bool rc = false;
-	string rcqseq;
-	if (m.count == 0) {
-		rcqseq = reverseComplement(rec.seq);
-		m = fmIndex.find(rcqseq, opt::k);
-		rc = m.count > 0;
-	}
-
-	SAMRecord sam = toSAM(faIndex, m, rc, rec.seq.size());
+	SAMRecord sam = toSAM(faIndex, rc ? rcm : m, rc, rec.seq.size());
 	sam.qname = rec.id;
 #if SAM_SEQ_QUAL
 	sam.seq = rc ? rcqseq : rec.seq;
