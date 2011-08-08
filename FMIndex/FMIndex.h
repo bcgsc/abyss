@@ -48,8 +48,13 @@ struct Match
 /** An FM index. */
 class FMIndex
 {
-	// A symbol.
+	/** An index. */
+	typedef uint32_t size_type;
+
+	/** A symbol. */
 	typedef uint8_t T;
+
+	/** The sentinel symbol. */
 	static T SENTINEL() { return std::numeric_limits<T>::max(); }
 
   public:
@@ -57,7 +62,7 @@ class FMIndex
 	void save(std::ostream& os);
 	void read(const char *path, std::vector<T> &s);
 	void buildFmIndex(const char *path, unsigned sampleSA);
-	size_t locate(uint64_t i) const;
+	size_t locate(size_t i) const;
 
 	FMIndex() : m_sampleSA(0), m_alphaSize(0) { }
 
@@ -226,17 +231,17 @@ class FMIndex
   private:
 	void calculateStatistics(const std::vector<T> &s);
 	void buildBWT(const std::vector<T> &s,
-			const std::vector<uint32_t> &sa,
+			const std::vector<size_type> &sa,
 			std::vector<T> &bwt);
 	void buildSA(const std::vector<T> &s,
-			std::vector<uint32_t> &sa);
-	void buildSampledSA(const std::vector<uint32_t> &sa);
+			std::vector<size_type> &sa);
+	void buildSampledSA(const std::vector<size_type> &sa);
 
 	unsigned m_sampleSA;
 	unsigned m_alphaSize;
-	std::vector<uint32_t> m_cf;
+	std::vector<size_type> m_cf;
 	std::vector<T> m_mapping;
-	std::vector<uint32_t> m_sampledSA;
+	std::vector<size_type> m_sampledSA;
 	BitArrays m_occ;
 };
 

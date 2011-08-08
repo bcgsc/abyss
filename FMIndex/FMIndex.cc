@@ -46,6 +46,7 @@ void FMIndex::read(const char* path, vector<T>& s)
 	in.read((char*)s.data(), s.size());
 	assert_good(in, path);
 	assert((size_t)in.gcount() == s.size());
+	assert(s.size() < numeric_limits<size_type>::max());
 
 	// Translate the alphabet.
 	if (m_alphaSize == 0)
@@ -55,7 +56,7 @@ void FMIndex::read(const char* path, vector<T>& s)
 }
 
 /** Construct the suffix array. */
-void FMIndex::buildSA(const vector<T>& s, vector<uint32_t>& sa)
+void FMIndex::buildSA(const vector<T>& s, vector<size_type>& sa)
 {
 	sa.resize(s.size() + 1);
 	sa[0] = s.size();
@@ -68,7 +69,7 @@ void FMIndex::buildSA(const vector<T>& s, vector<uint32_t>& sa)
 
 /** Construct the Burrows–Wheeler transform. */
 void FMIndex::buildBWT(const vector<T>& s,
-		const vector<uint32_t>& sa, vector<T>& bwt)
+		const vector<size_type>& sa, vector<T>& bwt)
 {
 	bwt.resize(sa.size());
 	for (size_t i = 0; i < sa.size(); i++)
@@ -76,7 +77,7 @@ void FMIndex::buildBWT(const vector<T>& s,
 }
 
 /** Sample the suffix array. */
-void FMIndex::buildSampledSA(const vector<uint32_t>& sa)
+void FMIndex::buildSampledSA(const vector<size_type>& sa)
 {
 	for (size_t i = 0; i < sa.size(); i++)
 		if (i % m_sampleSA == 0)
@@ -87,7 +88,7 @@ void FMIndex::buildSampledSA(const vector<uint32_t>& sa)
 void FMIndex::calculateStatistics(const vector<T>& s)
 {
 	const unsigned UINT8_MAX = 255;
-	vector<uint32_t> tmpCf(UINT8_MAX + 1);
+	vector<size_type> tmpCf(UINT8_MAX + 1);
 	for (size_t i = 0; i < s.size(); i++)
 		tmpCf[s[i]]++;
 	m_cf.resize(UINT8_MAX + 1);
@@ -100,7 +101,7 @@ void FMIndex::calculateStatistics(const vector<T>& s)
 /** Return the position of the specified suffix in the original
  * string.
  */
-size_t FMIndex::locate(uint64_t i) const
+size_t FMIndex::locate(size_t i) const
 {
 	size_t bsize = m_occ.size();
 	size_t j = i;
@@ -171,7 +172,7 @@ void FMIndex::load(istream& in)
 	in.read((char*)&val[0], count * sizeof val[0]);
 
 	m_mapping.clear();
-	for (uint32_t i = 0; i < count; i++) {
+	for (unsigned i = 0; i < count; i++) {
 		unsigned k = key[i];
 		unsigned v = val[i];
 		if (k >= m_mapping.size())
@@ -196,7 +197,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	cerr << "alphabet size:" << m_alphaSize << '\n';
 
 	double sTime = clock();
-	vector<uint32_t> sa;
+	vector<size_type> sa;
 	cerr << "build SA\n";
 	buildSA(s, sa);
 
