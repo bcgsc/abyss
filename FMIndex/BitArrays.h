@@ -4,9 +4,9 @@
 #include "bit_array.h"
 #include <algorithm>
 #include <cassert>
-#include <climits> // for UCHAR_MAX
 #include <cstdlib> // for abort
 #include <istream>
+#include <limits> // for numeric_limits
 #include <ostream>
 #include <stdint.h>
 #include <vector>
@@ -26,7 +26,7 @@ void Init(const std::vector<T>& s)
 	m_data.clear();
 	unsigned n = *std::max_element(s.begin(), s.end()) + 1;
 	assert(n > 0);
-	assert(n < UCHAR_MAX);
+	assert(n < std::numeric_limits<T>::max());
 	m_data.resize(n, wat_array::BitArray(s.size()));
 
 	typedef typename std::vector<T>::const_iterator It;
@@ -71,12 +71,13 @@ uint8_t Lookup(size_t i) const
 /** Load this data structure. */
 void Load(std::istream& in)
 {
+	typedef uint8_t T;
 	m_data.clear();
 	uint32_t n = 0;
 	if (!in.read(reinterpret_cast<char*>(&n), sizeof n))
 		return;
 	assert(n > 0);
-	assert(n < UCHAR_MAX);
+	assert(n < std::numeric_limits<T>::max());
 	m_data.resize(n);
 	for (Data::iterator it = m_data.begin();
 			it != m_data.end(); ++it)
