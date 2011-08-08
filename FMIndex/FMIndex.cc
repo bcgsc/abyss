@@ -51,7 +51,7 @@ void FMIndex::read(const char* path, vector<uint8_t>& s)
 	if (m_alphaSize == 0)
 		setAlphabet(s.begin(), s.end());
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
-	replace(s.begin(), s.end(), UCHAR_MAX, 1);
+	replace(s.begin(), s.end(), UCHAR_MAX, 0);
 }
 
 /** Construct the suffix array. */
