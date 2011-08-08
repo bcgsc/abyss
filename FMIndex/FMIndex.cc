@@ -104,12 +104,14 @@ void FMIndex::calculateStatistics(const vector<uint8_t>& s)
  */
 size_t FMIndex::locate(uint64_t i) const
 {
+	typedef uint8_t T;
 	size_t bsize = m_occ.length();
 	size_t j = i;
 	size_t t = 0;
 	while (j % m_sampleSA != 0) {
-		unsigned c = m_occ.Lookup(j);
-		j = m_cf[c] + m_occ.Rank(c, j + 1) - 1;
+		T c = m_occ.Lookup(j);
+		j = c == numeric_limits<T>::max() ? 0
+			: m_cf[c] + m_occ.Rank(c, j + 1) - 1;
 		t++;
 	}
 	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
