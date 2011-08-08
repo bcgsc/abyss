@@ -34,7 +34,7 @@
 using namespace std;
 
 /** Read the sequence to be indexed. */
-void FMIndex::read(const char* path, vector<uint8_t>& s)
+void FMIndex::read(const char* path, vector<T>& s)
 {
 	// Read the file.
 	ifstream in(path);
@@ -55,7 +55,7 @@ void FMIndex::read(const char* path, vector<uint8_t>& s)
 }
 
 /** Construct the suffix array. */
-void FMIndex::buildSA(const vector<uint8_t>& s, vector<uint32_t>& sa)
+void FMIndex::buildSA(const vector<T>& s, vector<uint32_t>& sa)
 {
 	sa.resize(s.size() + 1);
 	sa[0] = s.size();
@@ -67,14 +67,12 @@ void FMIndex::buildSA(const vector<uint8_t>& s, vector<uint32_t>& sa)
 }
 
 /** Construct the Burrows–Wheeler transform. */
-void FMIndex::buildBWT(const vector<uint8_t>& s,
-		const vector<uint32_t>& sa, vector<uint8_t>& bwt)
+void FMIndex::buildBWT(const vector<T>& s,
+		const vector<uint32_t>& sa, vector<T>& bwt)
 {
-	typedef uint8_t T;
 	bwt.resize(sa.size());
 	for (size_t i = 0; i < sa.size(); i++)
-		bwt[i] = sa[i] == 0 ? numeric_limits<T>::max()
-			: s[sa[i] - 1];
+		bwt[i] = sa[i] == 0 ? SENTINEL() : s[sa[i] - 1];
 }
 
 /** Sample the suffix array. */
@@ -86,7 +84,7 @@ void FMIndex::buildSampledSA(const vector<uint32_t>& sa)
 }
 
 /** Count the character frequency statistics. */
-void FMIndex::calculateStatistics(const vector<uint8_t>& s)
+void FMIndex::calculateStatistics(const vector<T>& s)
 {
 	const unsigned UINT8_MAX = 255;
 	vector<uint32_t> tmpCf(UINT8_MAX + 1);
@@ -104,14 +102,12 @@ void FMIndex::calculateStatistics(const vector<uint8_t>& s)
  */
 size_t FMIndex::locate(uint64_t i) const
 {
-	typedef uint8_t T;
 	size_t bsize = m_occ.length();
 	size_t j = i;
 	size_t t = 0;
 	while (j % m_sampleSA != 0) {
 		T c = m_occ.Lookup(j);
-		j = c == numeric_limits<T>::max() ? 0
-			: m_cf[c] + m_occ.Rank(c, j + 1) - 1;
+		j = c == SENTINEL() ? 0 : m_cf[c] + m_occ.Rank(c, j + 1) - 1;
 		t++;
 	}
 	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
@@ -133,7 +129,7 @@ void FMIndex::save(ostream& out)
 			m_sampledSA.size() * sizeof m_sampledSA[0]);
 
 	vector<unsigned char> key;
-	vector<uint8_t> val;
+	vector<T> val;
 	for (unsigned i = 0; i < m_mapping.size(); ++i) {
 		if (m_mapping[i] != UCHAR_MAX) {
 			key.push_back(i);
@@ -170,7 +166,7 @@ void FMIndex::load(istream& in)
 	key.resize(count);
 	in.read((char*)&key[0], count * sizeof key[0]);
 
-	vector<uint8_t> val;
+	vector<T> val;
 	val.resize(count);
 	in.read((char*)&val[0], count * sizeof val[0]);
 
@@ -194,10 +190,10 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	m_sampleSA = sampleSA;
 
 	cerr << "start reading the input-file\n";
-	vector<uint8_t> s;
+	vector<T> s;
 	read(path, s);
 
-	cerr << "alphabet size:" << (int)m_alphaSize << '\n';
+	cerr << "alphabet size:" << m_alphaSize << '\n';
 
 	double sTime = clock();
 	vector<uint32_t> sa;
@@ -207,7 +203,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	cerr << "calculate statistics\n";
 	calculateStatistics(s);
 
-	vector<uint8_t> bwt;
+	vector<T> bwt;
 	cerr << "build BWT\n";
 	buildBWT(s, sa, bwt);
 

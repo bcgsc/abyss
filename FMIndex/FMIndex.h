@@ -48,10 +48,14 @@ struct Match
 /** An FM index. */
 class FMIndex
 {
+	// A symbol.
+	typedef uint8_t T;
+	static T SENTINEL() { return std::numeric_limits<T>::max(); }
+
   public:
 	void load(std::istream& is);
 	void save(std::ostream& os);
-	void read(const char *path, std::vector<uint8_t> &s);
+	void read(const char *path, std::vector<T> &s);
 	void buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(uint64_t i) const;
 
@@ -69,14 +73,12 @@ class FMIndex
 	template <typename It>
 	void decompress(It out)
 	{
-		typedef uint8_t T;
-
 		// Construct the original string.
 		std::vector<T> s;
 		for (size_t i = 0;;) {
 			assert(i < m_occ.size());
 			T c = m_occ.Lookup(i);
-			if (c == std::numeric_limits<T>::max())
+			if (c == SENTINEL())
 				break;
 			s.push_back(c);
 			i = m_cf[c] + m_occ.Rank(c, i);
@@ -84,11 +86,10 @@ class FMIndex
 		}
 
 		// Construct the reverse transformation of the alphabet.
-		std::vector<T> decode(m_alphaSize,
-				std::numeric_limits<T>::max());
+		std::vector<T> decode(m_alphaSize, SENTINEL());
 		for (unsigned i = 0; i < m_mapping.size(); ++i) {
 			T c = m_mapping[i];
-			if (c == std::numeric_limits<T>::max())
+			if (c == SENTINEL())
 				continue;
 			assert(c < decode.size());
 			decode[c] = i;
@@ -111,7 +112,7 @@ class FMIndex
 		size_t l = 1, u = m_occ.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
-			uint8_t c = *it;
+			T c = *it;
 			if (c == UCHAR_MAX)
 				return std::make_pair(0, 0);
 			l = m_cf[c] + m_occ.Rank(c, l);
@@ -138,7 +139,7 @@ class FMIndex
 		size_t l = 1, u = m_occ.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
-			uint8_t c = *it;
+			T c = *it;
 			if (c == UCHAR_MAX)
 				break;
 			size_t l1 = m_cf[c] + m_occ.Rank(c, l);
@@ -172,7 +173,7 @@ class FMIndex
 	/** Translate from ASCII to the indexed alphabet. */
 	struct Translate {
 		Translate(const FMIndex& fmIndex) : m_fmIndex(fmIndex) { }
-		uint8_t operator()(unsigned char c) const
+		T operator()(unsigned char c) const
 		{
 			return c < m_fmIndex.m_mapping.size()
 				? m_fmIndex.m_mapping[c] : UCHAR_MAX;
@@ -223,18 +224,18 @@ class FMIndex
 	}
 
   private:
-	void calculateStatistics(const std::vector<uint8_t> &s);
-	void buildBWT(const std::vector<uint8_t> &s,
+	void calculateStatistics(const std::vector<T> &s);
+	void buildBWT(const std::vector<T> &s,
 			const std::vector<uint32_t> &sa,
-			std::vector<uint8_t> &bwt);
-	void buildSA(const std::vector<uint8_t> &s,
+			std::vector<T> &bwt);
+	void buildSA(const std::vector<T> &s,
 			std::vector<uint32_t> &sa);
 	void buildSampledSA(const std::vector<uint32_t> &sa);
 
 	unsigned m_sampleSA;
-	uint8_t m_alphaSize;
+	unsigned m_alphaSize;
 	std::vector<uint32_t> m_cf;
-	std::vector<uint8_t> m_mapping;
+	std::vector<T> m_mapping;
 	std::vector<uint32_t> m_sampledSA;
 	BitArrays m_occ;
 };
