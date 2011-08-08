@@ -38,11 +38,17 @@ void Init(const std::vector<T>& s)
 	}
 }
 
-/** Return the length of the string. */
-size_t length() const
+/** Return the size of the string. */
+size_t size() const
 {
 	assert(!m_data.empty());
 	return m_data.front().length();
+}
+
+/** Return the size of the string. */
+size_t length() const
+{
+	return size();
 }
 
 /** Return the count of symbol c in s[0, i). */

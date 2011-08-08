@@ -1,10 +1,12 @@
 #include "config.h"
 #include "FMIndex.h"
 #include "IOUtil.h"
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -22,6 +24,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
+"      --decompress        decompress the INDEX\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -29,6 +32,9 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	/** Decompress the index. */
+	static int decompress;
+
 	/** Verbose output. */
 	static int verbose;
 }
@@ -38,6 +44,7 @@ static const char shortopts[] = "v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "decompress", no_argument, &opt::decompress, 1 },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -75,6 +82,21 @@ int main(int argc, char **argv)
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
+	}
+
+	if (opt::decompress) {
+		// Decompress the index.
+		string fmPath(argv[optind]);
+		if (fmPath.size() < 4
+				|| !equal(fmPath.end() - 3, fmPath.end(), ".fm"))
+			fmPath.append(".fm");
+		string faPath(fmPath, 0, fmPath.size() - 3);
+
+		FMIndex fmIndex(fmPath);
+		ofstream out(faPath.c_str());
+		fmIndex.decompress(ostream_iterator<uint8_t>(out, ""));
+		assert_good(out, faPath);
+		return 0;
 	}
 
 	const char* faPath(argv[optind]);

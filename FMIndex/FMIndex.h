@@ -7,6 +7,7 @@
 #include <climits> // for UCHAR_MAX
 #include <fstream>
 #include <istream>
+#include <limits> // for numeric_limits
 #include <ostream>
 #include <stdint.h>
 #include <vector>
@@ -62,6 +63,43 @@ class FMIndex
 		std::ifstream in(path.c_str());
 		assert(in);
 		load(in);
+	}
+
+	/** Decompress the index. */
+	template <typename It>
+	void decompress(It out)
+	{
+		typedef uint8_t T;
+
+		// Construct the original string.
+		std::vector<T> s;
+		for (size_t i = 0;;) {
+			assert(i < m_wa.size());
+			T c = m_wa.Lookup(i);
+			i = m_cf[c] + m_wa.Rank(c, i);
+			if (i == 0)
+				break;
+			s.push_back(c);
+		}
+
+		// Construct the reverse transformation of the alphabet.
+		std::vector<T> decode(m_alphaSize,
+				std::numeric_limits<T>::max());
+		for (unsigned i = 0; i < m_mapping.size(); ++i) {
+			T c = m_mapping[i];
+			if (c == std::numeric_limits<T>::max())
+				continue;
+			assert(c < decode.size());
+			decode[c] = i;
+		}
+
+		// Translate the character set and output the result.
+		for (std::vector<T>::const_reverse_iterator it = s.rbegin();
+				it != s.rend(); ++it) {
+			T c = *it;
+			assert(c < decode.size());
+			*out++ = decode[c];
+		}
 	}
 
 	/** Search for an exact match. */
