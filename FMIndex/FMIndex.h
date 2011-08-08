@@ -63,10 +63,10 @@ class FMIndex
 	void buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(size_t i) const;
 
-	FMIndex() : m_sampleSA(0), m_alphaSize(0) { }
+	FMIndex() : m_sampleSA(0) { }
 
 	/** Construct an FMIndex. */
-	FMIndex(const std::string& path) : m_sampleSA(0), m_alphaSize(0)
+	FMIndex(const std::string& path) : m_sampleSA(0)
 	{
 		std::ifstream in(path.c_str());
 		assert(in);
@@ -90,22 +90,12 @@ class FMIndex
 			assert(i > 0);
 		}
 
-		// Construct the reverse transformation of the alphabet.
-		std::vector<T> decode(m_alphaSize, SENTINEL());
-		for (unsigned i = 0; i < m_mapping.size(); ++i) {
-			T c = m_mapping[i];
-			if (c == SENTINEL())
-				continue;
-			assert(c < decode.size());
-			decode[c] = i;
-		}
-
 		// Translate the character set and output the result.
 		for (std::vector<T>::const_reverse_iterator it = s.rbegin();
 				it != s.rend(); ++it) {
 			T c = *it;
-			assert(c < decode.size());
-			*out++ = decode[c];
+			assert(c < m_alphabet.size());
+			*out++ = m_alphabet[c];
 		}
 	}
 
@@ -225,7 +215,6 @@ class FMIndex
 			m_alphabet.push_back(c);
 		}
 		assert(!m_alphabet.empty());
-		m_alphaSize = m_alphabet.size();
 	}
 
 	/** Set the alphabet to the characters of s. */
@@ -310,7 +299,6 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	void buildSampledSA(const std::vector<size_type> &sa);
 
 	unsigned m_sampleSA;
-	unsigned m_alphaSize;
 	std::vector<T> m_alphabet;
 	std::vector<T> m_mapping;
 	std::vector<size_type> m_cf;

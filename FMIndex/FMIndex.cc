@@ -49,7 +49,7 @@ void FMIndex::read(const char* path, vector<T>& s)
 	assert(s.size() < numeric_limits<size_type>::max());
 
 	// Translate the alphabet.
-	if (m_alphaSize == 0)
+	if (m_alphabet.empty())
 		setAlphabet(s.begin(), s.end());
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	replace(s.begin(), s.end(), UCHAR_MAX, 0);
@@ -126,7 +126,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	vector<T> s;
 	read(path, s);
 
-	cerr << "alphabet size:" << m_alphaSize << '\n';
+	cerr << "alphabet size:" << m_alphabet.size() << '\n';
 
 	double sTime = clock();
 	vector<size_type> sa;
