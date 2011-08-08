@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 	FMIndex f;
 	f.setAlphabet("\1\nACGT");
-	f.buildFmIndex(faPath, 25);
+	f.buildFmIndex(faPath, 4);
 
 	ofstream out(fmPath.c_str());
 	assert_good(out, fmPath);

@@ -74,12 +74,8 @@ int FMIndex::buildBWT(const vector<uint8_t> &s, const vector<uint32_t> &sa, vect
 }
 
 int FMIndex::buildSampledSA(const vector<uint8_t> &s, const vector<uint32_t> &sa) {
-  size_t seqLen = s.size();
-  size_t divSeq = seqLen*((float)m_percent/100.f);
-  divSeq = seqLen/divSeq;
-
-  for (size_t i = 0; i < seqLen; i++) {
-    if (i%divSeq == 0)
+  for (size_t i = 0; i < s.size(); i++) {
+    if (i % m_sampleSA == 0)
       m_sampledSA.push_back(sa[i]);
   }
   return 0;
@@ -102,24 +98,21 @@ void FMIndex::calculateStatistics(const vector<uint8_t> &s) {
 
 size_t FMIndex::locate(uint64_t i) const {
   size_t bsize = m_wa.length();
-  size_t divSeq = bsize*((float)m_percent/100.f);
-  divSeq = bsize/divSeq;
-
   size_t j = i;
   size_t t = 0;
-  while (j % divSeq != 0) {
+  while (j % m_sampleSA != 0) {
     unsigned c = m_wa.Lookup(j);
     j = m_cf[c] + m_wa.Rank(c, j+1) - 1;
     t++;
   }
-  if (m_sampledSA[j/divSeq] + t >= bsize) {
-    return (size_t)m_sampledSA[j/divSeq] + t - bsize;
+  if (m_sampledSA[j / m_sampleSA] + t >= bsize) {
+    return (size_t)m_sampledSA[j / m_sampleSA] + t - bsize;
   }
-  return (size_t)m_sampledSA[j/divSeq] + t;
+  return (size_t)m_sampledSA[j / m_sampleSA] + t;
 }
 
 int FMIndex::save(ostream& os)  {
-  os.write((const char*)(&m_percent), sizeof(m_percent));
+  os.write((const char*)&m_sampleSA, sizeof m_sampleSA);
   os.write((const char*)(&m_alphaSize), sizeof(m_alphaSize));
   size_t cfSize = m_cf.size();
   os.write((const char*)(&cfSize), sizeof(cfSize));
@@ -148,7 +141,7 @@ int FMIndex::save(ostream& os)  {
 }
 
 int FMIndex::load(istream& is) {
-  is.read((char*)(&m_percent), sizeof(m_percent));
+  is.read((char*)&m_sampleSA, sizeof m_sampleSA);
   is.read((char*)(&m_alphaSize), sizeof(m_alphaSize));
   size_t cfSize;
   is.read((char*)(&cfSize), sizeof(cfSize));
@@ -188,8 +181,10 @@ int FMIndex::buildWaveletTree(const vector<uint64_t> &bwt) {
   return 0;
 }
 
-int FMIndex::buildFmIndex(const char *fname, int percent) {
-  m_percent = percent;
+int FMIndex::buildFmIndex(const char *fname, unsigned sampleSA)
+{
+  assert(sampleSA > 0);
+  m_sampleSA = sampleSA;
 
   cerr << "start reading the input-file" << endl;
   vector<uint8_t> s;

@@ -51,13 +51,13 @@ class FMIndex
 	int load(std::istream& is);
 	int save(std::ostream& os);
 	int read(const char *fname, std::vector<uint8_t> &s);
-	int buildFmIndex(const char *fnmae, int percent);
+	int buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(uint64_t i) const;
 
-	FMIndex() : m_percent(0), m_alphaSize(0) { }
+	FMIndex() : m_sampleSA(0), m_alphaSize(0) { }
 
 	/** Construct an FMIndex. */
-	FMIndex(const std::string& path) : m_percent(0), m_alphaSize(0)
+	FMIndex(const std::string& path) : m_sampleSA(0), m_alphaSize(0)
 	{
 		std::ifstream in(path.c_str());
 		assert(in);
@@ -191,7 +191,7 @@ class FMIndex
 			const std::vector<uint32_t> &sa);
 	int buildWaveletTree(const std::vector<uint64_t> &bwt);
 
-	int m_percent;
+	unsigned m_sampleSA;
 	uint8_t m_alphaSize;
 	std::vector<uint32_t> m_cf;
 	std::vector<uint8_t> m_mapping;

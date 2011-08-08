@@ -28,16 +28,15 @@
 using namespace std;
 
 char *fname, *oname;
-int percent = 25;
+static unsigned g_sampleSA = 4;
 
-void usage();
 void parse_parameters (int argc, char **argv);
 
 int main(int argc, char **argv) {
   parse_parameters(argc, argv);
 
   FMIndex f;
-  f.buildFmIndex(fname, percent);
+  f.buildFmIndex(fname, g_sampleSA);
 
   ofstream os(oname);
   f.save(os);
@@ -45,17 +44,16 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-void usage(){
-  std::cerr << std::endl
-       << "Usage: fmconstruct [OPTION]... INFILE INDEXFILE" << std::endl << std::endl
-       << "       where [OPTION] is a list of zero or more optional arguments" << std::endl
-       << "             INFILE       is the name of an input file" << std::endl
-       << "             INDEXFILE    is the name of index-file" << std::endl
-       << "Additional arguments (input and output files may be specified):"  << std::endl
-       << "             -percent [val: 0<= val <= 100]: percentage of sampling suffix array positions" << std::endl
-       << "             (default: " <<  percent << ")" << std::endl
-       << std::endl;
-  exit(0);
+/** Print the usage message. */
+static void usage()
+{
+	cout <<
+		"Usage: fmconstruct [OPTION]... FILE INDEX\n"
+		"Index FILE and store the index in INDEX.\n"
+		"\n"
+		"  -sample N  period of sampling the suffix array"
+			" [" << g_sampleSA << "]\n";
+	exit(EXIT_SUCCESS);
 }
 
 void parse_parameters (int argc, char **argv){
@@ -63,12 +61,11 @@ void parse_parameters (int argc, char **argv){
   int argno;
   for (argno = 1; argno < argc; argno++){
     if (argv[argno][0] == '-'){
-      if (!strcmp (argv[argno], "-percent")) {
-	if (argno == argc - 1) std::cerr << "Must specify a float value after -percent" << std::endl;
-	percent = atof(argv[++argno]);
-	if (percent < 0 || percent > 100) {
+      if (!strcmp (argv[argno], "-sample")) {
+	if (argno == argc - 1) std::cerr << "Must specify an integer value after -sample" << std::endl;
+	g_sampleSA = atoi(argv[++argno]);
+	if (g_sampleSA == 0)
 	  usage();
-	}
       }
       else {
 	usage();
