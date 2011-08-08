@@ -112,6 +112,8 @@ class FMIndex
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
+			if (c == UCHAR_MAX)
+				return std::make_pair(0, 0);
 			l = m_cf[c] + m_occ.Rank(c, l);
 			u = m_cf[c] + m_occ.Rank(c, u);
 		}
@@ -137,6 +139,8 @@ class FMIndex
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
+			if (c == UCHAR_MAX)
+				break;
 			size_t l1 = m_cf[c] + m_occ.Rank(c, l);
 			size_t u1 = m_cf[c] + m_occ.Rank(c, u);
 			if (l1 >= u1)
