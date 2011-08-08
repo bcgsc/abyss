@@ -52,16 +52,15 @@ void FMIndex::read(const char* path, vector<uint8_t>& s)
 		setAlphabet(s.begin(), s.end());
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	replace(s.begin(), s.end(), UCHAR_MAX, 1);
-
-	// Add the sentinel character.
-	s.push_back(0);
 }
 
 /** Construct the suffix array. */
 void FMIndex::buildSA(const vector<uint8_t>& s, vector<uint32_t>& sa)
 {
-	sa.resize(s.size());
-	int status = saisxx(s.begin(), sa.begin(), (int)s.size(), 0x100);
+	sa.resize(s.size() + 1);
+	sa[0] = s.size();
+	int status = saisxx(s.begin(), sa.begin() + 1,
+			(int)s.size(), 0x100);
 	assert(status == 0);
 	if (status != 0)
 		abort();
@@ -69,18 +68,19 @@ void FMIndex::buildSA(const vector<uint8_t>& s, vector<uint32_t>& sa)
 
 /** Construct the Burrows–Wheeler transform. */
 void FMIndex::buildBWT(const vector<uint8_t>& s,
-		const vector<uint32_t>& sa, vector<uint64_t>& bwt)
+		const vector<uint32_t>& sa, vector<uint8_t>& bwt)
 {
-	bwt.resize(s.size());
-	for (size_t i = 0; i < s.size(); i++)
-		bwt[i] = sa[i] > 0 ? s[sa[i] - 1] : s[s.size() - 1];
+	typedef uint8_t T;
+	bwt.resize(sa.size());
+	for (size_t i = 0; i < sa.size(); i++)
+		bwt[i] = sa[i] == 0 ? numeric_limits<T>::max()
+			: s[sa[i] - 1];
 }
 
 /** Sample the suffix array. */
-void FMIndex::buildSampledSA(const vector<uint8_t>& s,
-		const vector<uint32_t>& sa)
+void FMIndex::buildSampledSA(const vector<uint32_t>& sa)
 {
-	for (size_t i = 0; i < s.size(); i++)
+	for (size_t i = 0; i < sa.size(); i++)
 		if (i % m_sampleSA == 0)
 			m_sampledSA.push_back(sa[i]);
 }
@@ -93,11 +93,10 @@ void FMIndex::calculateStatistics(const vector<uint8_t>& s)
 	for (size_t i = 0; i < s.size(); i++)
 		tmpCf[s[i]]++;
 	m_cf.resize(UINT8_MAX + 1);
-	m_cf[0] = 0;
-	for (size_t i = 1; i <= UINT8_MAX; i++) {
-		m_cf[i] = tmpCf[i-1];
-		tmpCf[i] += tmpCf[i-1];
-	}
+	// The sentinel character occurs once.
+	m_cf[0] = 1;
+	for (size_t i = 0; i < UINT8_MAX; i++)
+		m_cf[i + 1] = m_cf[i] + tmpCf[i];
 }
 
 /** Return the position of the specified suffix in the original
@@ -206,7 +205,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	cerr << "calculate statistics\n";
 	calculateStatistics(s);
 
-	vector<uint64_t> bwt;
+	vector<uint8_t> bwt;
 	cerr << "build BWT\n";
 	buildBWT(s, sa, bwt);
 
@@ -214,7 +213,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	m_occ.Init(bwt);
 
 	cerr << "build sampledSA\n";
-	buildSampledSA(s, sa);
+	buildSampledSA(sa);
 
 	double eTime = clock();
 	cerr << "cpu time: " << (eTime - sTime) / CLOCKS_PER_SEC << '\n';

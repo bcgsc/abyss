@@ -4,7 +4,6 @@
 #include "bit_array.h"
 #include <algorithm>
 #include <cassert>
-#include <cstdlib> // for abort
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
@@ -24,8 +23,18 @@ void Init(const std::vector<T>& s)
 {
 	assert(!s.empty());
 	m_data.clear();
-	unsigned n = *std::max_element(s.begin(), s.end()) + 1;
-	assert(n > 0);
+
+	// The sentinel symbol.
+	T sentinel = std::numeric_limits<T>::max();
+
+	// Determine the size of the alphabet ignoring the sentinel.
+	T n = 0;
+	for (typename std::vector<T>::const_iterator it = s.begin();
+			it != s.end(); ++it)
+		if (*it != sentinel)
+			n = std::max(n, *it);
+	n++;
+
 	assert(n < std::numeric_limits<T>::max());
 	m_data.resize(n, wat_array::BitArray(s.size()));
 
@@ -33,6 +42,8 @@ void Init(const std::vector<T>& s)
 	size_t i = 0;
 	for (It it = s.begin(); it != s.end(); ++it, ++i) {
 		T c = *it;
+		if (c == sentinel)
+			continue;
 		assert(c < m_data.size());
 		m_data[c].SetBit(1, i);
 	}
@@ -64,8 +75,7 @@ uint8_t Lookup(size_t i) const
 			it != m_data.end(); ++it)
 		if (it->Lookup(i))
 			return it - m_data.begin();
-	assert(false);
-	abort();
+	return std::numeric_limits<uint8_t>::max();
 }
 
 /** Load this data structure. */

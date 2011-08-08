@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 	string fmPath = opt::toStdout ? "-" : ss.str();
 
 	FMIndex f;
-	f.setAlphabet("\1\nACGT");
+	f.setAlphabet("\nACGT");
 	f.buildFmIndex(faPath, 4);
 
 	ofstream fout(fmPath.c_str());

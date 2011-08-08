@@ -76,10 +76,11 @@ class FMIndex
 		for (size_t i = 0;;) {
 			assert(i < m_occ.size());
 			T c = m_occ.Lookup(i);
-			i = m_cf[c] + m_occ.Rank(c, i);
-			if (i == 0)
+			if (c == std::numeric_limits<T>::max())
 				break;
 			s.push_back(c);
+			i = m_cf[c] + m_occ.Rank(c, i);
+			assert(i > 0);
 		}
 
 		// Construct the reverse transformation of the alphabet.
@@ -221,11 +222,10 @@ class FMIndex
 	void calculateStatistics(const std::vector<uint8_t> &s);
 	void buildBWT(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa,
-			std::vector<uint64_t> &bwt);
+			std::vector<uint8_t> &bwt);
 	void buildSA(const std::vector<uint8_t> &s,
 			std::vector<uint32_t> &sa);
-	void buildSampledSA(const std::vector<uint8_t> &s,
-			const std::vector<uint32_t> &sa);
+	void buildSampledSA(const std::vector<uint32_t> &sa);
 
 	unsigned m_sampleSA;
 	uint8_t m_alphaSize;
