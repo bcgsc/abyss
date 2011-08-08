@@ -24,7 +24,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
-"      --decompress        decompress the INDEX\n"
+"      --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
