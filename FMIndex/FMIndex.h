@@ -74,9 +74,9 @@ class FMIndex
 		// Construct the original string.
 		std::vector<T> s;
 		for (size_t i = 0;;) {
-			assert(i < m_wa.size());
-			T c = m_wa.Lookup(i);
-			i = m_cf[c] + m_wa.Rank(c, i);
+			assert(i < m_occ.size());
+			T c = m_occ.Lookup(i);
+			i = m_cf[c] + m_occ.Rank(c, i);
 			if (i == 0)
 				break;
 			s.push_back(c);
@@ -107,12 +107,12 @@ class FMIndex
 	std::pair<size_t, size_t> findExact(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = m_wa.length();
+		size_t l = 1, u = m_occ.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
-			l = m_cf[c] + m_wa.Rank(c, l);
-			u = m_cf[c] + m_wa.Rank(c, u);
+			l = m_cf[c] + m_occ.Rank(c, l);
+			u = m_cf[c] + m_occ.Rank(c, u);
 		}
 		return std::make_pair(l, u);
 	}
@@ -132,12 +132,12 @@ class FMIndex
 	FMInterval findSuffix(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = m_wa.length();
+		size_t l = 1, u = m_occ.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
-			size_t l1 = m_cf[c] + m_wa.Rank(c, l);
-			size_t u1 = m_cf[c] + m_wa.Rank(c, u);
+			size_t l1 = m_cf[c] + m_occ.Rank(c, l);
+			size_t u1 = m_cf[c] + m_occ.Rank(c, u);
 			if (l1 >= u1)
 				break;
 			l = l1;
@@ -226,14 +226,13 @@ class FMIndex
 			std::vector<uint32_t> &sa);
 	void buildSampledSA(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa);
-	void buildWaveletTree(const std::vector<uint64_t> &bwt);
 
 	unsigned m_sampleSA;
 	uint8_t m_alphaSize;
 	std::vector<uint32_t> m_cf;
 	std::vector<uint8_t> m_mapping;
 	std::vector<uint32_t> m_sampledSA;
-	BitArrays m_wa;
+	BitArrays m_occ;
 };
 
 #endif

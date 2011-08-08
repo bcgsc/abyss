@@ -105,12 +105,12 @@ void FMIndex::calculateStatistics(const vector<uint8_t>& s)
  */
 size_t FMIndex::locate(uint64_t i) const
 {
-	size_t bsize = m_wa.length();
+	size_t bsize = m_occ.length();
 	size_t j = i;
 	size_t t = 0;
 	while (j % m_sampleSA != 0) {
-		unsigned c = m_wa.Lookup(j);
-		j = m_cf[c] + m_wa.Rank(c, j + 1) - 1;
+		unsigned c = m_occ.Lookup(j);
+		j = m_cf[c] + m_occ.Rank(c, j + 1) - 1;
 		t++;
 	}
 	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
@@ -144,7 +144,7 @@ void FMIndex::save(ostream& out)
 	out.write((const char*)&key[0], count * sizeof key[0]);
 	out.write((const char*)&val[0], count * sizeof val[0]);
 
-	m_wa.Save(out);
+	m_occ.Save(out);
 }
 
 /** Load this index. */
@@ -183,13 +183,7 @@ void FMIndex::load(istream& in)
 		m_mapping[k] = v;
 	}
 
-	m_wa.Load(in);
-}
-
-/** Build the character occurence table. */
-void FMIndex::buildWaveletTree(const vector<uint64_t>& bwt)
-{
-	m_wa.Init(bwt);
+	m_occ.Load(in);
 }
 
 /** Build the FM index. */
@@ -216,8 +210,8 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	cerr << "build BWT\n";
 	buildBWT(s, sa, bwt);
 
-	cerr << "build WaveletTree\n";
-	buildWaveletTree(bwt);
+	cerr << "build the character occurence table\n";
+	m_occ.Init(bwt);
 
 	cerr << "build sampledSA\n";
 	buildSampledSA(s, sa);
