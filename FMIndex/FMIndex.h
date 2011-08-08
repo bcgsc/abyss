@@ -48,10 +48,10 @@ struct Match
 class FMIndex
 {
   public:
-	int load(std::istream& is);
-	int save(std::ostream& os);
-	int read(const char *fname, std::vector<uint8_t> &s);
-	int buildFmIndex(const char *path, unsigned sampleSA);
+	void load(std::istream& is);
+	void save(std::ostream& os);
+	void read(const char *path, std::vector<uint8_t> &s);
+	void buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(uint64_t i) const;
 
 	FMIndex() : m_sampleSA(0), m_alphaSize(0) { }
@@ -61,8 +61,7 @@ class FMIndex
 	{
 		std::ifstream in(path.c_str());
 		assert(in);
-		int status = load(in);
-		assert(status == 0);
+		load(in);
 	}
 
 	/** Search for an exact match. */
@@ -182,14 +181,14 @@ class FMIndex
 
   private:
 	void calculateStatistics(const std::vector<uint8_t> &s);
-	int buildBWT(const std::vector<uint8_t> &s,
+	void buildBWT(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa,
 			std::vector<uint64_t> &bwt);
-	int buildSA(const std::vector<uint8_t> &s,
+	void buildSA(const std::vector<uint8_t> &s,
 			std::vector<uint32_t> &sa);
-	int buildSampledSA(const std::vector<uint8_t> &s,
+	void buildSampledSA(const std::vector<uint8_t> &s,
 			const std::vector<uint32_t> &sa);
-	int buildWaveletTree(const std::vector<uint64_t> &bwt);
+	void buildWaveletTree(const std::vector<uint64_t> &bwt);
 
 	unsigned m_sampleSA;
 	uint8_t m_alphaSize;
