@@ -19,7 +19,7 @@ class BitArrays
 
 /** Count the occurences of the symbols of s. */
 template <typename T>
-void Init(const std::vector<T>& s)
+void assign(const std::vector<T>& s)
 {
 	assert(!s.empty());
 	m_data.clear();
@@ -56,21 +56,17 @@ size_t size() const
 	return m_data.front().length();
 }
 
-/** Return the size of the string. */
-size_t length() const
-{
-	return size();
-}
-
 /** Return the count of symbol c in s[0, i). */
-size_t Rank(uint8_t c, size_t i) const
+size_t rank(uint8_t c, size_t i) const
 {
 	return m_data[c].Rank(1, i);
 }
 
-/** Return s[i]. */
-uint8_t Lookup(size_t i) const
+/** Return the symbol at the specified position. */
+uint8_t at(size_t i) const
 {
+	assert(!m_data.empty());
+	assert(i < m_data.front().length());
 	for (Data::const_iterator it = m_data.begin();
 			it != m_data.end(); ++it)
 		if (it->Lookup(i))
@@ -79,7 +75,7 @@ uint8_t Lookup(size_t i) const
 }
 
 /** Load this data structure. */
-void Load(std::istream& in)
+void load(std::istream& in)
 {
 	typedef uint8_t T;
 	m_data.clear();
@@ -95,7 +91,7 @@ void Load(std::istream& in)
 }
 
 /** Store this data structure. */
-void Save(std::ostream& out) const
+void save(std::ostream& out) const
 {
 	uint32_t n = m_data.size();
 	out.write(reinterpret_cast<char*>(&n), sizeof n);

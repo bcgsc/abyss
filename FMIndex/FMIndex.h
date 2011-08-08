@@ -77,11 +77,11 @@ class FMIndex
 		std::vector<T> s;
 		for (size_t i = 0;;) {
 			assert(i < m_occ.size());
-			T c = m_occ.Lookup(i);
+			T c = m_occ.at(i);
 			if (c == SENTINEL())
 				break;
 			s.push_back(c);
-			i = m_cf[c] + m_occ.Rank(c, i);
+			i = m_cf[c] + m_occ.rank(c, i);
 			assert(i > 0);
 		}
 
@@ -109,14 +109,14 @@ class FMIndex
 	std::pair<size_t, size_t> findExact(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = m_occ.length();
+		size_t l = 1, u = m_occ.size();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			T c = *it;
 			if (c == UCHAR_MAX)
 				return std::make_pair(0, 0);
-			l = m_cf[c] + m_occ.Rank(c, l);
-			u = m_cf[c] + m_occ.Rank(c, u);
+			l = m_cf[c] + m_occ.rank(c, l);
+			u = m_cf[c] + m_occ.rank(c, u);
 		}
 		return std::make_pair(l, u);
 	}
@@ -136,14 +136,14 @@ class FMIndex
 	FMInterval findSuffix(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = m_occ.length();
+		size_t l = 1, u = m_occ.size();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			T c = *it;
 			if (c == UCHAR_MAX)
 				break;
-			size_t l1 = m_cf[c] + m_occ.Rank(c, l);
-			size_t u1 = m_cf[c] + m_occ.Rank(c, u);
+			size_t l1 = m_cf[c] + m_occ.rank(c, l);
+			size_t u1 = m_cf[c] + m_occ.rank(c, u);
 			if (l1 >= u1)
 				break;
 			l = l1;

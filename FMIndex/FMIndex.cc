@@ -102,12 +102,12 @@ void FMIndex::calculateStatistics(const vector<T>& s)
  */
 size_t FMIndex::locate(uint64_t i) const
 {
-	size_t bsize = m_occ.length();
+	size_t bsize = m_occ.size();
 	size_t j = i;
 	size_t t = 0;
 	while (j % m_sampleSA != 0) {
-		T c = m_occ.Lookup(j);
-		j = c == SENTINEL() ? 0 : m_cf[c] + m_occ.Rank(c, j + 1) - 1;
+		T c = m_occ.at(j);
+		j = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, j + 1) - 1;
 		t++;
 	}
 	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
@@ -141,7 +141,7 @@ void FMIndex::save(ostream& out)
 	out.write((const char*)&key[0], count * sizeof key[0]);
 	out.write((const char*)&val[0], count * sizeof val[0]);
 
-	m_occ.Save(out);
+	m_occ.save(out);
 }
 
 /** Load this index. */
@@ -180,7 +180,7 @@ void FMIndex::load(istream& in)
 		m_mapping[k] = v;
 	}
 
-	m_occ.Load(in);
+	m_occ.load(in);
 }
 
 /** Build the FM index. */
@@ -208,7 +208,7 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	buildBWT(s, sa, bwt);
 
 	cerr << "build the character occurence table\n";
-	m_occ.Init(bwt);
+	m_occ.assign(bwt);
 
 	cerr << "build sampledSA\n";
 	buildSampledSA(sa);
