@@ -76,29 +76,31 @@ T at(size_t i) const
 	return std::numeric_limits<T>::max();
 }
 
-/** Load this data structure. */
-void load(std::istream& in)
+/** Store this data structure. */
+friend std::ostream& operator<<(std::ostream& out, const BitArrays& o)
 {
-	m_data.clear();
-	uint32_t n = 0;
-	if (!in.read(reinterpret_cast<char*>(&n), sizeof n))
-		return;
-	assert(n > 0);
-	assert(n < std::numeric_limits<T>::max());
-	m_data.resize(n);
-	for (Data::iterator it = m_data.begin();
-			it != m_data.end(); ++it)
-		it->Load(in);
+	uint32_t n = o.m_data.size();
+	out.write(reinterpret_cast<char*>(&n), sizeof n);
+	for (Data::const_iterator it = o.m_data.begin();
+			it != o.m_data.end(); ++it)
+		it->Save(out);
+	return out;
 }
 
-/** Store this data structure. */
-void save(std::ostream& out) const
+/** Load this data structure. */
+friend std::istream& operator>>(std::istream& in, BitArrays& o)
 {
-	uint32_t n = m_data.size();
-	out.write(reinterpret_cast<char*>(&n), sizeof n);
-	for (Data::const_iterator it = m_data.begin();
-			it != m_data.end(); ++it)
-		it->Save(out);
+	o.m_data.clear();
+	uint32_t n = 0;
+	if (!in.read(reinterpret_cast<char*>(&n), sizeof n))
+		return in;
+	assert(n > 0);
+	assert(n < std::numeric_limits<T>::max());
+	o.m_data.resize(n);
+	for (Data::iterator it = o.m_data.begin();
+			it != o.m_data.end(); ++it)
+		it->Load(in);
+	return in;
 }
 
   private:

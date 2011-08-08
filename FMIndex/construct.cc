@@ -18,6 +18,7 @@
 */
 
 #include "FMIndex.h"
+#include "IOUtil.h"
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -38,8 +39,9 @@ int main(int argc, char **argv) {
   FMIndex f;
   f.buildFmIndex(fname, g_sampleSA);
 
-  ofstream os(oname);
-  f.save(os);
+  ofstream out(oname);
+  out << f;
+  assert_good(out, oname);
 
   return 0;
 }

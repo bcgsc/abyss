@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 	ofstream fout(fmPath.c_str());
 	ostream& out = opt::toStdout ? cout : fout;
 	assert_good(out, fmPath);
-	f.save(out);
+	out << f;
 	out.flush();
 	assert_good(out, fmPath);
 

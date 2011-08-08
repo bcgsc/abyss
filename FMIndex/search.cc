@@ -18,6 +18,7 @@
 */
 
 #include "FMIndex.h"
+#include "IOUtil.h"
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -58,8 +59,10 @@ int main(int argc, char **argv)
 	int optind = parse_parameters(argc, argv);
 	FMIndex f;
 	assert(optind < argc);
-	ifstream is(argv[optind++]);
-	f.load(is);
+	const char* path = argv[optind++];
+	ifstream in(path);
+	in >> f;
+	assert_good(in, path);
 	vector<vector<uint8_t> > qs;
 	readQstring(optind < argc ? argv[optind++] : "-", qs);
 

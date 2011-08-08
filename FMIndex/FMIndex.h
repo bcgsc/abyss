@@ -10,6 +10,7 @@
 #include <limits> // for numeric_limits
 #include <ostream>
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 /** A match of a substring of a query sequence to an FM index. */
@@ -58,8 +59,6 @@ class FMIndex
 	static T SENTINEL() { return std::numeric_limits<T>::max(); }
 
   public:
-	void load(std::istream& is);
-	void save(std::ostream& os);
 	void read(const char *path, std::vector<T> &s);
 	void buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(size_t i) const;
@@ -71,7 +70,8 @@ class FMIndex
 	{
 		std::ifstream in(path.c_str());
 		assert(in);
-		load(in);
+		in >> *this;
+		assert(in);
 	}
 
 	/** Decompress the index. */
@@ -209,17 +209,23 @@ class FMIndex
 	template <typename It>
 	void setAlphabet(It first, It last)
 	{
-		assert(m_mapping.empty() && m_alphaSize == 0);
+		std::vector<bool> mask(std::numeric_limits<T>::max());
 		for (It it = first; it < last; ++it) {
-			unsigned c = *it;
-			if (c >= m_mapping.size())
-				m_mapping.resize(c + 1, UCHAR_MAX);
-			if (m_mapping[c] == UCHAR_MAX) {
-				m_mapping[c] = m_alphaSize++;
-				assert(m_alphaSize < UCHAR_MAX);
-			}
+			assert((size_t)*it < mask.size());
+			mask[*it] = true;
 		}
-		assert(m_alphaSize > 0);
+
+		m_alphabet.clear();
+		m_mapping.clear();
+		for (unsigned c = 0; c < mask.size(); ++c) {
+			if (!mask[c])
+				continue;
+			m_mapping.resize(c + 1, std::numeric_limits<T>::max());
+			m_mapping[c] = m_alphabet.size();
+			m_alphabet.push_back(c);
+		}
+		assert(!m_alphabet.empty());
+		m_alphaSize = m_alphabet.size();
 	}
 
 	/** Set the alphabet to the characters of s. */
@@ -227,6 +233,72 @@ class FMIndex
 	{
 		setAlphabet(s.begin(), s.end());
 	}
+
+	/** The version number. */
+	static const char* FM_VERSION() { return "FM 1"; }
+
+/** Store an index. */
+friend std::ostream& operator<<(std::ostream& out, const FMIndex& o)
+{
+	out << FM_VERSION() << '\n'
+		<< o.m_sampleSA << '\n';
+
+	out << o.m_alphabet.size() << '\n';
+	out.write((char*)o.m_alphabet.data(),
+			o.m_alphabet.size() * sizeof o.m_alphabet[0]);
+
+	out << o.m_cf.size() << '\n';
+	out.write((char*)o.m_cf.data(), o.m_cf.size() * sizeof o.m_cf[0]);
+
+	out << o.m_sampledSA.size() << '\n';
+	out.write((char*)o.m_sampledSA.data(),
+		o.m_sampledSA.size() * sizeof o.m_sampledSA[0]);
+
+	return out << o.m_occ;
+}
+
+/** Load an index. */
+friend std::istream& operator>>(std::istream& in, FMIndex& o)
+{
+	std::string version;
+	std::getline(in, version);
+	assert(in);
+	assert(version == FM_VERSION());
+
+	in >> o.m_sampleSA;
+	assert(in);
+
+	size_t n;
+	char c;
+
+	in >> n;
+	assert(in);
+	c = in.get();
+	assert(c == '\n');
+	assert(n < std::numeric_limits<size_type>::max());
+	o.m_alphabet.resize(n);
+	in.read((char*)o.m_alphabet.data(), n * sizeof o.m_alphabet[0]);
+
+	in >> n;
+	assert(in);
+	c = in.get();
+	assert(c == '\n');
+	assert(n < std::numeric_limits<size_type>::max());
+	o.m_cf.resize(n);
+	in.read((char*)o.m_cf.data(), n * sizeof o.m_cf[0]);
+
+	in >> n;
+	assert(in);
+	c = in.get();
+	assert(c == '\n');
+	assert(n < std::numeric_limits<size_type>::max());
+	o.m_sampledSA.resize(n);
+	in.read((char*)o.m_sampledSA.data(), n * sizeof o.m_sampledSA[0]);
+
+	o.setAlphabet(o.m_alphabet.begin(), o.m_alphabet.end());
+
+	return in >> o.m_occ;
+}
 
   private:
 	void calculateStatistics(const std::vector<T> &s);
@@ -239,8 +311,9 @@ class FMIndex
 
 	unsigned m_sampleSA;
 	unsigned m_alphaSize;
-	std::vector<size_type> m_cf;
+	std::vector<T> m_alphabet;
 	std::vector<T> m_mapping;
+	std::vector<size_type> m_cf;
 	std::vector<size_type> m_sampledSA;
 	BitArrays m_occ;
 };
