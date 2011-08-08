@@ -25,6 +25,7 @@ static const char USAGE_MESSAGE[] =
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
 "      --decompress        decompress the INDEX\n"
+"  -c, --stdout            write output to standard output\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -35,16 +36,20 @@ namespace opt {
 	/** Decompress the index. */
 	static int decompress;
 
+	/** Write output to standard output. */
+	static bool toStdout;
+
 	/** Verbose output. */
 	static int verbose;
 }
 
-static const char shortopts[] = "v";
+static const char shortopts[] = "cv";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "decompress", no_argument, &opt::decompress, 1 },
+	{ "stdout", no_argument, NULL, 'c' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -58,6 +63,7 @@ int main(int argc, char **argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'c': opt::toStdout = true; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -91,10 +97,15 @@ int main(int argc, char **argv)
 				|| !equal(fmPath.end() - 3, fmPath.end(), ".fm"))
 			fmPath.append(".fm");
 		string faPath(fmPath, 0, fmPath.size() - 3);
+		if (opt::toStdout)
+			faPath = "-";
 
 		FMIndex fmIndex(fmPath);
-		ofstream out(faPath.c_str());
+		ofstream fout(faPath.c_str());
+		ostream& out = opt::toStdout ? cout : fout;
+		assert_good(out, faPath);
 		fmIndex.decompress(ostream_iterator<uint8_t>(out, ""));
+		out.flush();
 		assert_good(out, faPath);
 		return 0;
 	}
@@ -102,15 +113,17 @@ int main(int argc, char **argv)
 	const char* faPath(argv[optind]);
 	ostringstream ss;
 	ss << faPath << ".fm";
-	string fmPath = ss.str();
+	string fmPath = opt::toStdout ? "-" : ss.str();
 
 	FMIndex f;
 	f.setAlphabet("\1\nACGT");
 	f.buildFmIndex(faPath, 4);
 
-	ofstream out(fmPath.c_str());
+	ofstream fout(fmPath.c_str());
+	ostream& out = opt::toStdout ? cout : fout;
 	assert_good(out, fmPath);
 	f.save(out);
+	out.flush();
 	assert_good(out, fmPath);
 
 	return 0;
