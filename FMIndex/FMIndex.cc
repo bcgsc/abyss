@@ -41,7 +41,7 @@ int FMIndex::read(const char *fname, vector<uint8_t> &s)
 	assert((size_t)in.gcount() == s.size());
 
 	// Translate the alphabet.
-	if (alphaSize == 0)
+	if (m_alphaSize == 0)
 		setAlphabet(s.begin(), s.end());
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	replace(s.begin(), s.end(), UCHAR_MAX, 1);
@@ -75,12 +75,12 @@ int FMIndex::buildBWT(const vector<uint8_t> &s, const vector<uint32_t> &sa, vect
 
 int FMIndex::buildSampledSA(const vector<uint8_t> &s, const vector<uint32_t> &sa) {
   size_t seqLen = s.size();
-  size_t divSeq = seqLen*((float)percent/100.f);
+  size_t divSeq = seqLen*((float)m_percent/100.f);
   divSeq = seqLen/divSeq;
 
   for (size_t i = 0; i < seqLen; i++) {
     if (i%divSeq == 0)
-      sampledSA.push_back(sa[i]);
+      m_sampledSA.push_back(sa[i]);
   }
   return 0;
 }
@@ -92,48 +92,49 @@ void FMIndex::calculateStatistics(const vector<uint8_t> &s) {
   for (size_t i = 0; i < seqLen; i++) {
     tmpCf[s[i]]++;
   }
-  cf.resize(UINT8_MAX + 1);
-  cf[0] = 0;
+  m_cf.resize(UINT8_MAX + 1);
+  m_cf[0] = 0;
   for (size_t i = 1; i <= UINT8_MAX; i++) {
-    cf[i]     = tmpCf[i-1];
+    m_cf[i] = tmpCf[i-1];
     tmpCf[i] += tmpCf[i-1];
   }
 }
 
 size_t FMIndex::locate(uint64_t i) const {
-  size_t bsize = wa.length();
-  size_t divSeq = bsize*((float)percent/100.f);
+  size_t bsize = m_wa.length();
+  size_t divSeq = bsize*((float)m_percent/100.f);
   divSeq = bsize/divSeq;
 
   size_t j = i;
   size_t t = 0;
   while (j % divSeq != 0) {
-    unsigned c = wa.Lookup(j);
-    j = cf[c] + wa.Rank(c, j+1) - 1;
+    unsigned c = m_wa.Lookup(j);
+    j = m_cf[c] + m_wa.Rank(c, j+1) - 1;
     t++;
   }
-  if (sampledSA[j/divSeq] + t >= bsize) {
-    return (size_t)sampledSA[j/divSeq] + t - bsize;
+  if (m_sampledSA[j/divSeq] + t >= bsize) {
+    return (size_t)m_sampledSA[j/divSeq] + t - bsize;
   }
-  return (size_t)sampledSA[j/divSeq] + t;
+  return (size_t)m_sampledSA[j/divSeq] + t;
 }
 
 int FMIndex::save(ostream& os)  {
-  os.write((const char*)(&percent), sizeof(percent));
-  os.write((const char*)(&alphaSize), sizeof(alphaSize));
-  size_t cfSize = cf.size();
+  os.write((const char*)(&m_percent), sizeof(m_percent));
+  os.write((const char*)(&m_alphaSize), sizeof(m_alphaSize));
+  size_t cfSize = m_cf.size();
   os.write((const char*)(&cfSize), sizeof(cfSize));
-  size_t sampledSASize = sampledSA.size();
+  size_t sampledSASize = m_sampledSA.size();
   os.write((const char*)(&sampledSASize), sizeof(sampledSASize));
-  os.write((const char*)(&cf[0]), sizeof(cf[0])*cf.size());
-  os.write((const char*)(&sampledSA[0]), sizeof(sampledSA[0])*sampledSA.size());
+  os.write((const char*)(&m_cf[0]), sizeof(m_cf[0])*m_cf.size());
+  os.write((const char*)&m_sampledSA[0],
+		  sizeof m_sampledSA[0] * m_sampledSA.size());
 
   vector<unsigned char> key;
   vector<uint8_t> val;
-  for (unsigned i = 0; i < mapping.size(); ++i) {
-    if (mapping[i] != UCHAR_MAX) {
+  for (unsigned i = 0; i < m_mapping.size(); ++i) {
+    if (m_mapping[i] != UCHAR_MAX) {
       key.push_back(i);
-      val.push_back(mapping[i]);
+      val.push_back(m_mapping[i]);
     }
   }
   uint32_t count = key.size();
@@ -141,22 +142,23 @@ int FMIndex::save(ostream& os)  {
   os.write((const char*)(&key[0]), sizeof(key[0])*count);
   os.write((const char*)(&val[0]), sizeof(val[0])*count);
 
-  wa.Save(os);
+  m_wa.Save(os);
 
   return 0;
 }
 
 int FMIndex::load(istream& is) {
-  is.read((char*)(&percent), sizeof(percent));
-  is.read((char*)(&alphaSize), sizeof(alphaSize));
+  is.read((char*)(&m_percent), sizeof(m_percent));
+  is.read((char*)(&m_alphaSize), sizeof(m_alphaSize));
   size_t cfSize;
   is.read((char*)(&cfSize), sizeof(cfSize));
   size_t sampledSASize;
   is.read((char*)(&sampledSASize), sizeof(sampledSASize));
-  cf.resize(cfSize);
-  is.read((char*)(&cf[0]), sizeof(cf[0])*cfSize);
-  sampledSA.resize(sampledSASize);
-  is.read((char*)(&sampledSA[0]), sizeof(sampledSA[0])*sampledSASize);
+  m_cf.resize(cfSize);
+  is.read((char*)(&m_cf[0]), sizeof(m_cf[0])*cfSize);
+  m_sampledSA.resize(sampledSASize);
+  is.read((char*)&m_sampledSA[0],
+		  sizeof m_sampledSA[0] *sampledSASize);
 
   uint32_t              count;
   vector<unsigned char> key;
@@ -166,34 +168,34 @@ int FMIndex::load(istream& is) {
   is.read((char*)(&key[0]), sizeof(key[0])*count);
   val.resize(count);
   is.read((char*)(&val[0]), sizeof(val[0])*count);
-  mapping.clear();
+  m_mapping.clear();
   for (uint32_t i = 0; i < count; i++) {
     unsigned k = key[i];
     unsigned v = val[i];
-    if (k >= mapping.size())
-      mapping.resize(k + 1, UCHAR_MAX);
-    assert(mapping[k] == UCHAR_MAX);
-    mapping[k] = v;
+    if (k >= m_mapping.size())
+      m_mapping.resize(k + 1, UCHAR_MAX);
+    assert(m_mapping[k] == UCHAR_MAX);
+    m_mapping[k] = v;
   }
-  wa.Load(is);
+  m_wa.Load(is);
 
   return 0;
 }
 
 int FMIndex::buildWaveletTree(const vector<uint64_t> &bwt) {
-  wa.Init(bwt);
+  m_wa.Init(bwt);
 
   return 0;
 }
 
-int FMIndex::buildFmIndex(const char *fname, int _percent) {
-  percent = _percent;
+int FMIndex::buildFmIndex(const char *fname, int percent) {
+  m_percent = percent;
 
   cerr << "start reading the input-file" << endl;
   vector<uint8_t> s;
   read(fname, s);
 
-  cerr << "alphabet size:" << (int)alphaSize << endl;
+  cerr << "alphabet size:" << (int)m_alphaSize << endl;
 
   double sTime = clock();
   vector<uint32_t> sa;

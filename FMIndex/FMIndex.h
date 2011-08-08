@@ -51,13 +51,13 @@ class FMIndex
 	int load(std::istream& is);
 	int save(std::ostream& os);
 	int read(const char *fname, std::vector<uint8_t> &s);
-	int buildFmIndex(const char *fnmae, int _percent);
+	int buildFmIndex(const char *fnmae, int percent);
 	size_t locate(uint64_t i) const;
 
-	FMIndex() : percent(0), alphaSize(0) { }
+	FMIndex() : m_percent(0), m_alphaSize(0) { }
 
 	/** Construct an FMIndex. */
-	FMIndex(const std::string& path) : percent(0), alphaSize(0)
+	FMIndex(const std::string& path) : m_percent(0), m_alphaSize(0)
 	{
 		std::ifstream in(path.c_str());
 		assert(in);
@@ -70,12 +70,12 @@ class FMIndex
 	std::pair<size_t, size_t> findExact(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = wa.length();
+		size_t l = 1, u = m_wa.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
-			l = cf[c] + wa.Rank(c, l);
-			u = cf[c] + wa.Rank(c, u);
+			l = m_cf[c] + m_wa.Rank(c, l);
+			u = m_cf[c] + m_wa.Rank(c, u);
 		}
 		return std::make_pair(l, u);
 	}
@@ -95,12 +95,12 @@ class FMIndex
 	FMInterval findSuffix(It first, It last) const
 	{
 		assert(first < last);
-		size_t l = 1, u = wa.length();
+		size_t l = 1, u = m_wa.length();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			uint8_t c = *it;
-			size_t l1 = cf[c] + wa.Rank(c, l);
-			size_t u1 = cf[c] + wa.Rank(c, u);
+			size_t l1 = m_cf[c] + m_wa.Rank(c, l);
+			size_t u1 = m_cf[c] + m_wa.Rank(c, u);
 			if (l1 >= u1)
 				break;
 			l = l1;
@@ -132,8 +132,8 @@ class FMIndex
 		Translate(const FMIndex& fmIndex) : m_fmIndex(fmIndex) { }
 		uint8_t operator()(unsigned char c) const
 		{
-			return c < m_fmIndex.mapping.size() ? m_fmIndex.mapping[c]
-				: UCHAR_MAX;
+			return c < m_fmIndex.m_mapping.size()
+				? m_fmIndex.m_mapping[c] : UCHAR_MAX;
 		}
 	  private:
 		const FMIndex& m_fmIndex;
@@ -161,17 +161,17 @@ class FMIndex
 	template <typename It>
 	void setAlphabet(It first, It last)
 	{
-		assert(mapping.empty() && alphaSize == 0);
+		assert(m_mapping.empty() && m_alphaSize == 0);
 		for (It it = first; it < last; ++it) {
 			unsigned c = *it;
-			if (c >= mapping.size())
-				mapping.resize(c + 1, UCHAR_MAX);
-			if (mapping[c] == UCHAR_MAX) {
-				mapping[c] = alphaSize++;
-				assert(alphaSize < UCHAR_MAX);
+			if (c >= m_mapping.size())
+				m_mapping.resize(c + 1, UCHAR_MAX);
+			if (m_mapping[c] == UCHAR_MAX) {
+				m_mapping[c] = m_alphaSize++;
+				assert(m_alphaSize < UCHAR_MAX);
 			}
 		}
-		assert(alphaSize > 0);
+		assert(m_alphaSize > 0);
 	}
 
 	/** Set the alphabet to the characters of s. */
@@ -191,12 +191,12 @@ class FMIndex
 			const std::vector<uint32_t> &sa);
 	int buildWaveletTree(const std::vector<uint64_t> &bwt);
 
-	int percent;
-	uint8_t alphaSize;
-	std::vector<uint32_t> cf;
-	std::vector<uint8_t> mapping;
-	std::vector<uint32_t> sampledSA;
-	BitArrays wa;
+	int m_percent;
+	uint8_t m_alphaSize;
+	std::vector<uint32_t> m_cf;
+	std::vector<uint8_t> m_mapping;
+	std::vector<uint32_t> m_sampledSA;
+	BitArrays m_wa;
 };
 
 #endif
