@@ -60,13 +60,12 @@ class FMIndex
   public:
 	void read(const char *path, std::vector<T> &s);
 
-	FMIndex() : m_sampleSA(0) { }
+	FMIndex() : m_sampleSA(1) { }
 
 /** Build an FM-index of the specified file. */
-void buildIndex(const char *path, unsigned sampleSA)
+void buildIndex(const char *path)
 {
-	assert(sampleSA > 0);
-	m_sampleSA = sampleSA;
+	m_sampleSA = 1;
 
 	std::cerr << "Reading `" << path << "'...\n";
 	std::vector<T> s;
@@ -75,32 +74,41 @@ void buildIndex(const char *path, unsigned sampleSA)
 	std::cerr << "The alphabet has "
 		<< m_alphabet.size() << " symbols.\n";
 
-	std::vector<size_type> sa;
-	std::cerr << "Building the suffix array...\n";
-
 	// Construct the suffix array.
-	sa.resize(s.size() + 1);
-	sa[0] = s.size();
-	int status = saisxx(s.begin(), sa.begin() + 1,
+	std::cerr << "Building the suffix array...\n";
+	m_sa.resize(s.size() + 1);
+	m_sa[0] = s.size();
+	int status = saisxx(s.begin(), m_sa.begin() + 1,
 			(int)s.size(), 0x100);
 	assert(status == 0);
 	if (status != 0)
 		abort();
 
-	// Sample the suffix array.
-	for (size_t i = 0; i < sa.size(); i += m_sampleSA)
-		m_sa.push_back(sa[i]);
-
 	// Construct the Burrows-Wheeler transform.
 	std::vector<T> bwt;
 	std::cerr << "Building the Burrows–Wheeler transform...\n";
-	bwt.resize(sa.size());
-	for (size_t i = 0; i < sa.size(); i++)
-		bwt[i] = sa[i] == 0 ? SENTINEL() : s[sa[i] - 1];
+	bwt.resize(m_sa.size());
+	for (size_t i = 0; i < m_sa.size(); i++)
+		bwt[i] = m_sa[i] == 0 ? SENTINEL() : s[m_sa[i] - 1];
 
 	std::cerr << "Building the character occurence table...\n";
 	m_occ.assign(bwt);
 	countOccurences();
+}
+
+/** Sample the suffix array. */
+void sampleSA(unsigned period)
+{
+	assert(period > 0);
+	assert(m_sampleSA == 1);
+	m_sampleSA = period;
+	if (m_sampleSA == 1)
+		return;
+	std::vector<size_type>::iterator out = m_sa.begin();
+	for (size_t i = 0; i < m_sa.size(); i += m_sampleSA)
+		*out++ = m_sa[i];
+	m_sa.resize(m_sa.size() / m_sampleSA);
+	assert(!m_sa.empty());
 }
 
 /** Return the position of the specified suffix in the original
