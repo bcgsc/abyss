@@ -6,7 +6,6 @@
 #include "sais.h"
 #include <algorithm>
 #include <cassert>
-#include <climits> // for UCHAR_MAX
 #include <fstream>
 #include <iostream>
 #include <limits> // for numeric_limits
@@ -74,7 +73,7 @@ void assign(It first, It last)
 	if (m_alphabet.empty())
 		setAlphabet(first, last);
 	std::transform(first, last, first, Translate(*this));
-	std::replace(first, last, UCHAR_MAX, 0);
+	std::replace(first, last, SENTINEL(), T(0));
 
 	std::cerr << "The alphabet has "
 		<< m_alphabet.size() << " symbols.\n";
@@ -184,7 +183,7 @@ size_t locate(size_t i) const
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			T c = *it;
-			if (c == UCHAR_MAX)
+			if (c == SENTINEL())
 				return std::make_pair(0, 0);
 			l = m_cf[c] + m_occ.rank(c, l);
 			u = m_cf[c] + m_occ.rank(c, u);
@@ -211,7 +210,7 @@ size_t locate(size_t i) const
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
 			T c = *it;
-			if (c == UCHAR_MAX)
+			if (c == SENTINEL())
 				break;
 			size_t l1 = m_cf[c] + m_occ.rank(c, l);
 			size_t u1 = m_cf[c] + m_occ.rank(c, u);
@@ -247,7 +246,7 @@ size_t locate(size_t i) const
 		T operator()(unsigned char c) const
 		{
 			return c < m_fmIndex.m_mapping.size()
-				? m_fmIndex.m_mapping[c] : UCHAR_MAX;
+				? m_fmIndex.m_mapping[c] : SENTINEL();
 		}
 	  private:
 		const FMIndex& m_fmIndex;
