@@ -1,4 +1,5 @@
 #include "config.h"
+#include "FastaIndex.h"
 #include "FMIndex.h"
 #include "IOUtil.h"
 #include <algorithm>
@@ -59,6 +60,19 @@ static const struct option longopts[] = {
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+/** Index the specified FASTA file. */
+static void indexFasta(const string& faPath, const string& faiPath)
+{
+	FastaIndex fai;
+	fai.index(faPath);
+
+	ofstream out(faiPath.c_str());
+	assert_good(out, faiPath);
+	out << fai;
+	out.flush();
+	assert_good(out, faiPath);
+}
 
 int main(int argc, char **argv)
 {
@@ -125,6 +139,12 @@ int main(int argc, char **argv)
 	ostringstream ss;
 	ss << faPath << ".fm";
 	string fmPath = opt::toStdout ? "-" : ss.str();
+	ss.str("");
+	ss << faPath << ".fai";
+	string faiPath(ss.str());
+
+	if (!opt::toStdout)
+		indexFasta(faPath, faiPath);
 
 	FMIndex f;
 	f.setAlphabet("\nACGT");

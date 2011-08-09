@@ -25,6 +25,8 @@ class FastaIndex
 	};
 
   public:
+	FastaIndex() { }
+
 	FastaIndex(const std::string& path)
 	{
 		std::ifstream in(path.c_str());
@@ -43,6 +45,26 @@ class FastaIndex
 		assert(!m_data.empty());
 	}
 
+	/** Index the specified FASTA file. */
+	void index(const std::string& path)
+	{
+		m_data.clear();
+		std::ifstream in(path.c_str());
+		assert_good(in, path);
+		char c;
+		for (std::string id; in >> c && getline(in, id);) {
+			assert(c == '>');
+			size_t i = id.find(' ');
+			if (i != std::string::npos)
+				id.erase(i);
+			assert(!id.empty());
+			m_data.push_back(make_pair(in.tellg(), id));
+			in.ignore(std::numeric_limits<std::streamsize>::max(),
+					'\n');
+		}
+		assert(in.eof());
+	}
+
 	/** Translate a file offset to a sequence:position coordinate. */
 	std::pair<std::string, size_t> operator[](size_t pos) const
 	{
@@ -54,6 +76,22 @@ class FastaIndex
 		assert(it != m_data.end());
 		assert(it->first <= pos);
 		return std::make_pair(it->second, pos - it->first);
+	}
+
+	/** Write this index to a stream. */
+	friend std::ostream& operator<<(std::ostream& out,
+			const FastaIndex& o)
+	{
+		for (Index::const_iterator it = o.m_data.begin();
+				it != o.m_data.end(); ++it) {
+			unsigned len = 0;
+			out << it->second
+				<< '\t' << len
+				<< '\t' << it->first
+				<< '\t' << len
+				<< '\t' << len + 1 << '\n';
+		}
+		return out;
 	}
 
   private:
