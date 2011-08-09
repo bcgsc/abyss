@@ -83,7 +83,8 @@ void assign(It first, It last)
 	size_t n = last - first;
 	m_sa.resize(n + 1);
 	m_sa[0] = n;
-	int status = saisxx(first, &m_sa[1], (int)n, 0x100);
+	int status = saisxx(first, &m_sa[1], (int)n,
+			(int)m_alphabet.size());
 	assert(status == 0);
 	if (status != 0)
 		abort();
