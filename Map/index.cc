@@ -151,7 +151,9 @@ int main(int argc, char **argv)
 	f.buildIndex(faPath);
 	f.sampleSA(opt::sampleSA);
 
-	ofstream fout(fmPath.c_str());
+	ofstream fout;
+	if (!opt::toStdout)
+		fout.open(fmPath.c_str());
 	ostream& out = opt::toStdout ? cout : fout;
 	assert_good(out, fmPath);
 	out << f;
