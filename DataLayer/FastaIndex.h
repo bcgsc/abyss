@@ -5,22 +5,52 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <iterator> // for ostream_iterator
 #include <limits> // for numeric_limits
 #include <string>
 #include <utility>
 #include <vector>
 
+/** A record of an indexed FASTA file. */
+struct FAIRecord
+{
+	size_t offset;
+	size_t size;
+	std::string id;
+
+	FAIRecord() : offset(0), size(0) { }
+	FAIRecord(size_t offset, size_t size, const std::string& id)
+		: offset(offset), size(size), id(id) { }
+
+	friend std::ostream& operator<<(std::ostream& out,
+			const FAIRecord& o)
+	{
+		return out << o.id << '\t' << o.size << '\t' << o.offset
+			<< '\t' << o.size << '\t' << o.size + 1;
+	}
+
+	friend std::istream& operator>>(std::istream& in,
+			FAIRecord& o)
+	{
+		size_t lineLen, lineBinLen;
+		in >> o.id >> o.size >> o.offset >> lineLen >> lineBinLen;
+		if (!in)
+			return in;
+		assert(o.size == lineLen || lineLen == lineBinLen);
+		return in.ignore(std::numeric_limits<std::streamsize>::max(),
+				'\n');
+	}
+};
+
 /** An indexed FASTA (fai) file. */
 class FastaIndex
 {
-	typedef std::vector<std::pair<size_t, std::string> > Index;
-
-	struct CompareFirst
+	struct CompareOffset
 	{
 		/** Used with upper_bound. */
-		bool operator()(size_t a, const Index::value_type& b) const
+		bool operator()(size_t a, const FAIRecord& b) const
 		{
-			return a < b.first;
+			return a < b.offset;
 		}
 	};
 
@@ -38,39 +68,36 @@ class FastaIndex
 			if (i != std::string::npos)
 				id.erase(i);
 			assert(!id.empty());
-			m_data.push_back(make_pair(in.tellg(), id));
+			std::streampos offset = in.tellg();
 			in.ignore(std::numeric_limits<std::streamsize>::max(),
 					'\n');
+			size_t n = in.gcount();
+			assert(n > 0);
+			m_data.push_back(FAIRecord(offset, n - 1, id));
 		}
 		assert(in.eof());
 	}
 
 	/** Translate a file offset to a sequence:position coordinate. */
-	std::pair<std::string, size_t> operator[](size_t pos) const
+	std::pair<std::string, size_t> operator[](size_t offset) const
 	{
-		Index::const_iterator it = std::upper_bound(
+		Data::const_iterator it = std::upper_bound(
 				m_data.begin(), m_data.end(),
-				pos, CompareFirst());
+				offset, CompareOffset());
 		assert(it != m_data.begin());
 		--it;
 		assert(it != m_data.end());
-		assert(it->first <= pos);
-		return std::make_pair(it->second, pos - it->first);
+		assert(it->offset <= offset);
+		assert(offset < it->offset + it->size);
+		return std::make_pair(it->id, offset - it->offset);
 	}
 
 	/** Write this index to a stream. */
 	friend std::ostream& operator<<(std::ostream& out,
 			const FastaIndex& o)
 	{
-		for (Index::const_iterator it = o.m_data.begin();
-				it != o.m_data.end(); ++it) {
-			unsigned len = 0;
-			out << it->second
-				<< '\t' << len
-				<< '\t' << it->first
-				<< '\t' << len
-				<< '\t' << len + 1 << '\n';
-		}
+		std::copy(o.m_data.begin(), o.m_data.end(),
+				std::ostream_iterator<FAIRecord>(out, "\n"));
 		return out;
 	}
 
@@ -80,15 +107,10 @@ class FastaIndex
 	{
 		assert(in.good());
 		o.m_data.clear();
-		std::string id;
-		size_t len, pos, lineLen, lineBinLen;
-		while (in >> id >> len >> pos >> lineLen >> lineBinLen) {
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					'\n');
-			assert(len == lineLen || lineLen == lineBinLen);
+		for (FAIRecord rec; in >> rec;) {
 			if (!o.m_data.empty())
-				assert(pos > o.m_data.back().first);
-			o.m_data.push_back(Index::value_type(pos, id));
+				assert(rec.offset > o.m_data.back().offset);
+			o.m_data.push_back(rec);
 		}
 		assert(in.eof());
 		assert(!o.m_data.empty());
@@ -96,7 +118,8 @@ class FastaIndex
 	}
 
   private:
-	Index m_data;
+	typedef std::vector<FAIRecord> Data;
+	Data m_data;
 };
 
 #endif
