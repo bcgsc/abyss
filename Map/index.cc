@@ -64,9 +64,11 @@ static const struct option longopts[] = {
 /** Index the specified FASTA file. */
 static void indexFasta(const string& faPath, const string& faiPath)
 {
+	cerr << "Reading `" << faPath << "'...\n";
 	FastaIndex fai;
 	fai.index(faPath);
 
+	cerr << "Writing `" << faiPath << "'...\n";
 	ofstream out(faiPath.c_str());
 	assert_good(out, faiPath);
 	out << fai;
@@ -151,6 +153,7 @@ int main(int argc, char **argv)
 	f.buildIndex(faPath);
 	f.sampleSA(opt::sampleSA);
 
+	cerr << "Writing `" << fmPath << "'...\n";
 	ofstream fout;
 	if (!opt::toStdout)
 		fout.open(fmPath.c_str());
