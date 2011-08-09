@@ -58,6 +58,12 @@ size_t size() const
 	return m_data.front().length();
 }
 
+/** Return the number of occurences of the specified symbol. */
+size_t count(T c) const
+{
+	return m_data[c].one_num();
+}
+
 /** Return the count of symbol c in s[0, i). */
 size_t rank(T c, size_t i) const
 {

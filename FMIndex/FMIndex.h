@@ -236,9 +236,6 @@ friend std::ostream& operator<<(std::ostream& out, const FMIndex& o)
 	out.write((char*)o.m_alphabet.data(),
 			o.m_alphabet.size() * sizeof o.m_alphabet[0]);
 
-	out << o.m_cf.size() << '\n';
-	out.write((char*)o.m_cf.data(), o.m_cf.size() * sizeof o.m_cf[0]);
-
 	out << o.m_sampledSA.size() << '\n';
 	out.write((char*)o.m_sampledSA.data(),
 		o.m_sampledSA.size() * sizeof o.m_sampledSA[0]);
@@ -267,14 +264,7 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	assert(n < std::numeric_limits<size_type>::max());
 	o.m_alphabet.resize(n);
 	in.read((char*)o.m_alphabet.data(), n * sizeof o.m_alphabet[0]);
-
-	in >> n;
-	assert(in);
-	c = in.get();
-	assert(c == '\n');
-	assert(n < std::numeric_limits<size_type>::max());
-	o.m_cf.resize(n);
-	in.read((char*)o.m_cf.data(), n * sizeof o.m_cf[0]);
+	o.setAlphabet(o.m_alphabet.begin(), o.m_alphabet.end());
 
 	in >> n;
 	assert(in);
@@ -284,13 +274,26 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	o.m_sampledSA.resize(n);
 	in.read((char*)o.m_sampledSA.data(), n * sizeof o.m_sampledSA[0]);
 
-	o.setAlphabet(o.m_alphabet.begin(), o.m_alphabet.end());
+	in >> o.m_occ;
+	assert(in);
+	o.countOccurences();
 
-	return in >> o.m_occ;
+	return in;
 }
 
-  private:
-	void calculateStatistics(const std::vector<T> &s);
+private:
+
+/** Build the cumulative frequency table m_cf from m_occ. */
+void countOccurences()
+{
+	assert(!m_alphabet.empty());
+	m_cf.resize(m_alphabet.size());
+	// The sentinel character occurs once.
+	m_cf[0] = 1;
+	for (unsigned i = 0; i < m_cf.size() - 1; ++i)
+		m_cf[i + 1] = m_cf[i] + m_occ.count(i);
+}
+
 	void buildBWT(const std::vector<T> &s,
 			const std::vector<size_type> &sa,
 			std::vector<T> &bwt);

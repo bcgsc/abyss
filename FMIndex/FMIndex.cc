@@ -84,20 +84,6 @@ void FMIndex::buildSampledSA(const vector<size_type>& sa)
 			m_sampledSA.push_back(sa[i]);
 }
 
-/** Count the character frequency statistics. */
-void FMIndex::calculateStatistics(const vector<T>& s)
-{
-	const unsigned UINT8_MAX = 255;
-	vector<size_type> tmpCf(UINT8_MAX + 1);
-	for (size_t i = 0; i < s.size(); i++)
-		tmpCf[s[i]]++;
-	m_cf.resize(UINT8_MAX + 1);
-	// The sentinel character occurs once.
-	m_cf[0] = 1;
-	for (size_t i = 0; i < UINT8_MAX; i++)
-		m_cf[i + 1] = m_cf[i] + tmpCf[i];
-}
-
 /** Return the position of the specified suffix in the original
  * string.
  */
@@ -133,15 +119,13 @@ void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
 	cerr << "build SA\n";
 	buildSA(s, sa);
 
-	cerr << "calculate statistics\n";
-	calculateStatistics(s);
-
 	vector<T> bwt;
 	cerr << "build BWT\n";
 	buildBWT(s, sa, bwt);
 
 	cerr << "build the character occurence table\n";
 	m_occ.assign(bwt);
+	countOccurences();
 
 	cerr << "build sampledSA\n";
 	buildSampledSA(sa);
