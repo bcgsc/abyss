@@ -53,21 +53,3 @@ void FMIndex::read(const char* path, vector<T>& s)
 	transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	replace(s.begin(), s.end(), UCHAR_MAX, 0);
 }
-
-/** Return the position of the specified suffix in the original
- * string.
- */
-size_t FMIndex::locate(size_t i) const
-{
-	size_t bsize = m_occ.size();
-	size_t j = i;
-	size_t t = 0;
-	while (j % m_sampleSA != 0) {
-		T c = m_occ.at(j);
-		j = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, j + 1) - 1;
-		t++;
-	}
-	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
-		return (size_t)m_sampledSA[j / m_sampleSA] + t - bsize;
-	return (size_t)m_sampledSA[j / m_sampleSA] + t;
-}

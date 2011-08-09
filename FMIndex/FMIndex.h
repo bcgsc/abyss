@@ -59,7 +59,6 @@ class FMIndex
 
   public:
 	void read(const char *path, std::vector<T> &s);
-	size_t locate(size_t i) const;
 
 	FMIndex() : m_sampleSA(0) { }
 
@@ -102,6 +101,21 @@ void buildIndex(const char *path, unsigned sampleSA)
 	std::cerr << "Building the character occurence table...\n";
 	m_occ.assign(bwt);
 	countOccurences();
+}
+
+/** Return the position of the specified suffix in the original
+ * string.
+ */
+size_t locate(size_t i) const
+{
+	size_t n = 0;
+	while (i % m_sampleSA != 0) {
+		T c = m_occ.at(i);
+		i = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, i + 1) - 1;
+		n++;
+	}
+	size_t pos = m_sampledSA[i / m_sampleSA] + n;
+	return pos < m_occ.size() ? pos : pos - m_occ.size();
 }
 
 	/** Decompress the index. */
