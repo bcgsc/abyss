@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cassert>
 #include <climits> // for UCHAR_MAX
-#include <fstream>
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
@@ -64,15 +63,6 @@ class FMIndex
 	size_t locate(size_t i) const;
 
 	FMIndex() : m_sampleSA(0) { }
-
-	/** Construct an FMIndex. */
-	FMIndex(const std::string& path) : m_sampleSA(0)
-	{
-		std::ifstream in(path.c_str());
-		assert(in);
-		in >> *this;
-		assert(in);
-	}
 
 	/** Decompress the index. */
 	template <typename It>

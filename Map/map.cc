@@ -151,7 +151,13 @@ int main(int argc, char** argv)
 	const char* targetFile(argv[--argc]);
 	ostringstream ss;
 	ss << targetFile << ".fm";
-	FMIndex fmIndex(ss.str());
+	string fmPath(ss.str());
+
+	ifstream in(fmPath.c_str());
+	assert_good(in, fmPath);
+	FMIndex fmIndex;
+	in >> fmIndex;
+	assert_good(in, fmPath);
 
 	ss.str("");
 	ss << targetFile << ".fai";

@@ -100,7 +100,12 @@ int main(int argc, char **argv)
 		if (opt::toStdout)
 			faPath = "-";
 
-		FMIndex fmIndex(fmPath);
+		ifstream in(fmPath.c_str());
+		assert_good(in, fmPath);
+		FMIndex fmIndex;
+		in >> fmIndex;
+		assert_good(in, fmPath);
+
 		ofstream fout(faPath.c_str());
 		ostream& out = opt::toStdout ? cout : fout;
 		assert_good(out, faPath);
