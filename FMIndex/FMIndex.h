@@ -2,12 +2,12 @@
 #define FMINDEX_H 1
 
 #include "BitArrays.h"
+#include "sais.h"
 #include <algorithm>
 #include <cassert>
 #include <climits> // for UCHAR_MAX
-#include <istream>
+#include <iostream>
 #include <limits> // for numeric_limits
-#include <ostream>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -59,10 +59,50 @@ class FMIndex
 
   public:
 	void read(const char *path, std::vector<T> &s);
-	void buildFmIndex(const char *path, unsigned sampleSA);
 	size_t locate(size_t i) const;
 
 	FMIndex() : m_sampleSA(0) { }
+
+/** Build an FM-index of the specified file. */
+void buildIndex(const char *path, unsigned sampleSA)
+{
+	assert(sampleSA > 0);
+	m_sampleSA = sampleSA;
+
+	std::cerr << "Reading `" << path << "'...\n";
+	std::vector<T> s;
+	read(path, s);
+
+	std::cerr << "The alphabet has "
+		<< m_alphabet.size() << " symbols.\n";
+
+	std::vector<size_type> sa;
+	std::cerr << "Building the suffix array...\n";
+
+	// Construct the suffix array.
+	sa.resize(s.size() + 1);
+	sa[0] = s.size();
+	int status = saisxx(s.begin(), sa.begin() + 1,
+			(int)s.size(), 0x100);
+	assert(status == 0);
+	if (status != 0)
+		abort();
+
+	// Sample the suffix array.
+	for (size_t i = 0; i < sa.size(); i += m_sampleSA)
+		m_sampledSA.push_back(sa[i]);
+
+	// Construct the Burrows-Wheeler transform.
+	std::vector<T> bwt;
+	std::cerr << "Building the Burrows–Wheeler transform...\n";
+	bwt.resize(sa.size());
+	for (size_t i = 0; i < sa.size(); i++)
+		bwt[i] = sa[i] == 0 ? SENTINEL() : s[sa[i] - 1];
+
+	std::cerr << "Building the character occurence table...\n";
+	m_occ.assign(bwt);
+	countOccurences();
+}
 
 	/** Decompress the index. */
 	template <typename It>
@@ -283,13 +323,6 @@ void countOccurences()
 	for (unsigned i = 0; i < m_cf.size() - 1; ++i)
 		m_cf[i + 1] = m_cf[i] + m_occ.count(i);
 }
-
-	void buildBWT(const std::vector<T> &s,
-			const std::vector<size_type> &sa,
-			std::vector<T> &bwt);
-	void buildSA(const std::vector<T> &s,
-			std::vector<size_type> &sa);
-	void buildSampledSA(const std::vector<size_type> &sa);
 
 	unsigned m_sampleSA;
 	std::vector<T> m_alphabet;

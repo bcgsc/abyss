@@ -25,7 +25,6 @@
 #include <cassert>
 #include <climits>
 #include <cstdlib>
-#include <ctime> // for clock
 #include <fstream>
 #include <iostream>
 #include <stdint.h>
@@ -55,35 +54,6 @@ void FMIndex::read(const char* path, vector<T>& s)
 	replace(s.begin(), s.end(), UCHAR_MAX, 0);
 }
 
-/** Construct the suffix array. */
-void FMIndex::buildSA(const vector<T>& s, vector<size_type>& sa)
-{
-	sa.resize(s.size() + 1);
-	sa[0] = s.size();
-	int status = saisxx(s.begin(), sa.begin() + 1,
-			(int)s.size(), 0x100);
-	assert(status == 0);
-	if (status != 0)
-		abort();
-}
-
-/** Construct the Burrows–Wheeler transform. */
-void FMIndex::buildBWT(const vector<T>& s,
-		const vector<size_type>& sa, vector<T>& bwt)
-{
-	bwt.resize(sa.size());
-	for (size_t i = 0; i < sa.size(); i++)
-		bwt[i] = sa[i] == 0 ? SENTINEL() : s[sa[i] - 1];
-}
-
-/** Sample the suffix array. */
-void FMIndex::buildSampledSA(const vector<size_type>& sa)
-{
-	for (size_t i = 0; i < sa.size(); i++)
-		if (i % m_sampleSA == 0)
-			m_sampledSA.push_back(sa[i]);
-}
-
 /** Return the position of the specified suffix in the original
  * string.
  */
@@ -100,36 +70,4 @@ size_t FMIndex::locate(size_t i) const
 	if (m_sampledSA[j / m_sampleSA] + t >= bsize)
 		return (size_t)m_sampledSA[j / m_sampleSA] + t - bsize;
 	return (size_t)m_sampledSA[j / m_sampleSA] + t;
-}
-
-/** Build the FM index. */
-void FMIndex::buildFmIndex(const char* path, unsigned sampleSA)
-{
-	assert(sampleSA > 0);
-	m_sampleSA = sampleSA;
-
-	cerr << "start reading the input-file\n";
-	vector<T> s;
-	read(path, s);
-
-	cerr << "alphabet size:" << m_alphabet.size() << '\n';
-
-	double sTime = clock();
-	vector<size_type> sa;
-	cerr << "build SA\n";
-	buildSA(s, sa);
-
-	vector<T> bwt;
-	cerr << "build BWT\n";
-	buildBWT(s, sa, bwt);
-
-	cerr << "build the character occurence table\n";
-	m_occ.assign(bwt);
-	countOccurences();
-
-	cerr << "build sampledSA\n";
-	buildSampledSA(sa);
-
-	double eTime = clock();
-	cerr << "cpu time: " << (eTime - sTime) / CLOCKS_PER_SEC << '\n';
 }

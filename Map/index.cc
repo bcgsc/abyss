@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
 	FMIndex f;
 	f.setAlphabet("\nACGT");
-	f.buildFmIndex(faPath, 4);
+	f.buildIndex(faPath, 4);
 
 	ofstream fout(fmPath.c_str());
 	ostream& out = opt::toStdout ? cout : fout;

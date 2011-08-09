@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   parse_parameters(argc, argv);
 
   FMIndex f;
-  f.buildFmIndex(fname, g_sampleSA);
+  f.buildIndex(fname, g_sampleSA);
 
   ofstream out(oname);
   out << f;
