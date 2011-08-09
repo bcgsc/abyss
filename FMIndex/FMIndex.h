@@ -2,10 +2,12 @@
 #define FMINDEX_H 1
 
 #include "BitArrays.h"
+#include "IOUtil.h"
 #include "sais.h"
 #include <algorithm>
 #include <cassert>
 #include <climits> // for UCHAR_MAX
+#include <fstream>
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <stdint.h>
@@ -63,23 +65,26 @@ class FMIndex
 	FMIndex() : m_sampleSA(1) { }
 
 /** Build an FM-index of the specified file. */
-void buildIndex(const char *path)
+template<typename It>
+void assign(It first, It last)
 {
 	m_sampleSA = 1;
 
-	std::cerr << "Reading `" << path << "'...\n";
-	std::vector<T> s;
-	read(path, s);
+	// Translate the alphabet.
+	if (m_alphabet.empty())
+		setAlphabet(first, last);
+	std::transform(first, last, first, Translate(*this));
+	std::replace(first, last, UCHAR_MAX, 0);
 
 	std::cerr << "The alphabet has "
 		<< m_alphabet.size() << " symbols.\n";
 
 	// Construct the suffix array.
 	std::cerr << "Building the suffix array...\n";
-	m_sa.resize(s.size() + 1);
-	m_sa[0] = s.size();
-	int status = saisxx(s.begin(), m_sa.begin() + 1,
-			(int)s.size(), 0x100);
+	size_t n = last - first;
+	m_sa.resize(n + 1);
+	m_sa[0] = n;
+	int status = saisxx(first, &m_sa[1], (int)n, 0x100);
 	assert(status == 0);
 	if (status != 0)
 		abort();
@@ -89,11 +94,30 @@ void buildIndex(const char *path)
 	std::cerr << "Building the Burrows–Wheeler transform...\n";
 	bwt.resize(m_sa.size());
 	for (size_t i = 0; i < m_sa.size(); i++)
-		bwt[i] = m_sa[i] == 0 ? SENTINEL() : s[m_sa[i] - 1];
+		bwt[i] = m_sa[i] == 0 ? SENTINEL() : first[m_sa[i] - 1];
 
 	std::cerr << "Building the character occurence table...\n";
 	m_occ.assign(bwt);
 	countOccurences();
+}
+
+/** Build an FM-index of the specified file. */
+void buildIndex(const char *path)
+{
+	std::cerr << "Reading `" << path << "'...\n";
+	std::ifstream in(path);
+	assert_good(in, path);
+	in.seekg(0, std::ios::end);
+	std::vector<T> s;
+	s.resize(in.tellg());
+	in.seekg(0, std::ios::beg);
+	assert_good(in, path);
+	in.read((char*)s.data(), s.size());
+	assert_good(in, path);
+	assert((size_t)in.gcount() == s.size());
+	assert(s.size() < std::numeric_limits<size_type>::max());
+
+	assign(s.begin(), s.end());
 }
 
 /** Sample the suffix array. */
