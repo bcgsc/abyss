@@ -89,7 +89,7 @@ void buildIndex(const char *path, unsigned sampleSA)
 
 	// Sample the suffix array.
 	for (size_t i = 0; i < sa.size(); i += m_sampleSA)
-		m_sampledSA.push_back(sa[i]);
+		m_sa.push_back(sa[i]);
 
 	// Construct the Burrows-Wheeler transform.
 	std::vector<T> bwt;
@@ -114,7 +114,7 @@ size_t locate(size_t i) const
 		i = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, i + 1) - 1;
 		n++;
 	}
-	size_t pos = m_sampledSA[i / m_sampleSA] + n;
+	size_t pos = m_sa[i / m_sampleSA] + n;
 	return pos < m_occ.size() ? pos : pos - m_occ.size();
 }
 
@@ -280,9 +280,9 @@ friend std::ostream& operator<<(std::ostream& out, const FMIndex& o)
 	out.write((char*)o.m_alphabet.data(),
 			o.m_alphabet.size() * sizeof o.m_alphabet[0]);
 
-	out << o.m_sampledSA.size() << '\n';
-	out.write((char*)o.m_sampledSA.data(),
-		o.m_sampledSA.size() * sizeof o.m_sampledSA[0]);
+	out << o.m_sa.size() << '\n';
+	out.write((char*)o.m_sa.data(),
+		o.m_sa.size() * sizeof o.m_sa[0]);
 
 	return out << o.m_occ;
 }
@@ -315,8 +315,8 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	c = in.get();
 	assert(c == '\n');
 	assert(n < std::numeric_limits<size_type>::max());
-	o.m_sampledSA.resize(n);
-	in.read((char*)o.m_sampledSA.data(), n * sizeof o.m_sampledSA[0]);
+	o.m_sa.resize(n);
+	in.read((char*)o.m_sa.data(), n * sizeof o.m_sa[0]);
 
 	in >> o.m_occ;
 	assert(in);
@@ -342,7 +342,7 @@ void countOccurences()
 	std::vector<T> m_alphabet;
 	std::vector<T> m_mapping;
 	std::vector<size_type> m_cf;
-	std::vector<size_type> m_sampledSA;
+	std::vector<size_type> m_sa;
 	BitArrays m_occ;
 };
 
