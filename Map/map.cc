@@ -152,16 +152,22 @@ int main(int argc, char** argv)
 	ostringstream ss;
 	ss << targetFile << ".fm";
 	string fmPath(ss.str());
+	ss.str("");
+	ss << targetFile << ".fai";
+	string faiPath(ss.str());
 
 	ifstream in(fmPath.c_str());
 	assert_good(in, fmPath);
 	FMIndex fmIndex;
 	in >> fmIndex;
 	assert_good(in, fmPath);
+	in.close();
 
-	ss.str("");
-	ss << targetFile << ".fai";
-	FastaIndex faIndex(ss.str());
+	in.open(faiPath.c_str());
+	assert_good(in, faiPath);
+	FastaIndex faIndex;
+	in >> faIndex;
+	assert(in.eof());
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;

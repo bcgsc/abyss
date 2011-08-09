@@ -25,26 +25,6 @@ class FastaIndex
 	};
 
   public:
-	FastaIndex() { }
-
-	FastaIndex(const std::string& path)
-	{
-		std::ifstream in(path.c_str());
-		assert_good(in, path);
-		std::string id;
-		size_t len, pos, lineLen, lineBinLen;
-		while (in >> id >> len >> pos >> lineLen >> lineBinLen) {
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					'\n');
-			assert(len == lineLen || lineLen == lineBinLen);
-			if (!m_data.empty())
-				assert(pos > m_data.back().first);
-			m_data.push_back(Index::value_type(pos, id));
-		}
-		assert(in.eof());
-		assert(!m_data.empty());
-	}
-
 	/** Index the specified FASTA file. */
 	void index(const std::string& path)
 	{
@@ -92,6 +72,27 @@ class FastaIndex
 				<< '\t' << len + 1 << '\n';
 		}
 		return out;
+	}
+
+	/** Read a FASTA index from a stream. */
+	friend std::istream& operator>>(std::istream& in,
+			FastaIndex& o)
+	{
+		assert(in.good());
+		o.m_data.clear();
+		std::string id;
+		size_t len, pos, lineLen, lineBinLen;
+		while (in >> id >> len >> pos >> lineLen >> lineBinLen) {
+			in.ignore(std::numeric_limits<std::streamsize>::max(),
+					'\n');
+			assert(len == lineLen || lineLen == lineBinLen);
+			if (!o.m_data.empty())
+				assert(pos > o.m_data.back().first);
+			o.m_data.push_back(Index::value_type(pos, id));
+		}
+		assert(in.eof());
+		assert(!o.m_data.empty());
+		return in;
 	}
 
   private:
