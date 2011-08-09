@@ -24,6 +24,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
+"  -s, --sample=N          sample the suffix array [4]\n"
 "      --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
 "  -v, --verbose           display verbose output\n"
@@ -33,6 +34,9 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	/** Sample the suffix array. */
+	static unsigned sampleSA = 4;
+
 	/** Decompress the index. */
 	static int decompress;
 
@@ -43,12 +47,13 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "cv";
+static const char shortopts[] = "cs:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "decompress", no_argument, &opt::decompress, 1 },
+	{ "sample", required_argument, NULL, 's' },
 	{ "stdout", no_argument, NULL, 'c' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
@@ -64,6 +69,7 @@ int main(int argc, char **argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'c': opt::toStdout = true; break;
+			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -123,7 +129,7 @@ int main(int argc, char **argv)
 	FMIndex f;
 	f.setAlphabet("\nACGT");
 	f.buildIndex(faPath);
-	f.sampleSA(4);
+	f.sampleSA(opt::sampleSA);
 
 	ofstream fout(fmPath.c_str());
 	ostream& out = opt::toStdout ? cout : fout;
