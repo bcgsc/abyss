@@ -56,6 +56,13 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Counts. */
+static struct {
+	unsigned unique;
+	unsigned multimapped;
+	unsigned unmapped;
+} g_count;
+
 /** Return a SAM record of the specified match. */
 static SAMRecord toSAM(const FastaIndex& faIndex,
 		const Match& m, bool rc, unsigned qlength)
@@ -106,6 +113,13 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		reverse(sam.qual.begin(), sam.qual.end());
 #endif
 	cout << sam << '\n';
+
+	if (sam.isUnmapped())
+		g_count.unmapped++;
+	else if (sam.mapq == 0)
+		g_count.multimapped++;
+	else
+		g_count.unique++;
 }
 
 /** Map the sequences of the specified file. */
@@ -189,6 +203,17 @@ int main(int argc, char** argv)
 	opt::trimMasked = false;
 	for (char** p = argv + optind; p != argv + argc; ++p)
 		find(faIndex, fmIndex, *p);
+
+	if (opt::verbose > 0) {
+		size_t unique = g_count.unique;
+		size_t mapped = unique + g_count.multimapped;
+		size_t total = mapped + g_count.unmapped;
+		cerr << "Mapped " << mapped << " of " << total << " reads ("
+			<< (float)100 * mapped / total << "%)\n"
+			<< "Mapped " << unique << " of " << total
+			<< " reads uniquely (" << (float)100 * unique / total
+			<< "%)\n";
+	}
 
 	cout.flush();
 	assert_good(cout, "stdout");
