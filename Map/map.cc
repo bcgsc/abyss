@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include <string>
 #include <utility>
+#if _OPENMP
+# include <omp.h>
+#endif
 
 using namespace std;
 
@@ -32,6 +35,7 @@ static const char USAGE_MESSAGE[] =
 "TARGET.fm are required.\n"
 "\n"
 "  -k, --score=N           find matches at least N bp [1]\n"
+"  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -42,15 +46,21 @@ namespace opt {
 	/** Find matches at least k bp. */
 	static unsigned k;
 
+	/** The number of parallel threads. */
+	static unsigned threads = 1;
+
+	/** Verbose output. */
 	static int verbose;
 }
 
-static const char shortopts[] = "k:v";
+static const char shortopts[] = "j:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "score", required_argument, NULL, 'k' },
+	{ "threads", required_argument, NULL, 'j' },
+	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -112,13 +122,17 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	if (rc)
 		reverse(sam.qual.begin(), sam.qual.end());
 #endif
+#pragma omp critical(cout)
 	cout << sam << '\n';
 
 	if (sam.isUnmapped())
+#pragma omp atomic
 		g_count.unmapped++;
 	else if (sam.mapq == 0)
+#pragma omp atomic
 		g_count.multimapped++;
 	else
+#pragma omp atomic
 		g_count.unique++;
 }
 
@@ -127,7 +141,10 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const char* path)
 {
 	FastaReader in(path, FastaReader::FOLD_CASE);
+#pragma omp parallel
+#pragma omp single nowait
 	for (FastqRecord rec; in >> rec;)
+#pragma omp task firstprivate(rec)
 		find(faIndex, fmIndex, rec);
 	assert(in.eof());
 }
@@ -140,6 +157,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'j': arg >> opt::threads; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -161,6 +179,11 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	const char* targetFile(argv[--argc]);
 	ostringstream ss;
