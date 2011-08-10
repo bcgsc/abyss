@@ -142,10 +142,15 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 {
 	FastaReader in(path, FastaReader::FOLD_CASE);
 #pragma omp parallel
-#pragma omp single nowait
-	for (FastqRecord rec; in >> rec;)
-#pragma omp task firstprivate(rec)
-		find(faIndex, fmIndex, rec);
+	for (FastqRecord rec;;) {
+		bool good;
+#pragma omp critical(in)
+		good = in >> rec;
+		if (good)
+			find(faIndex, fmIndex, rec);
+		else
+			break;
+	}
 	assert(in.eof());
 }
 
