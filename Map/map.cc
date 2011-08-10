@@ -156,18 +156,34 @@ int main(int argc, char** argv)
 	ss << targetFile << ".fai";
 	string faiPath(ss.str());
 
-	ifstream in(fmPath.c_str());
-	assert_good(in, fmPath);
-	FMIndex fmIndex;
-	in >> fmIndex;
-	assert_good(in, fmPath);
-	in.close();
+	ifstream in;
 
-	in.open(faiPath.c_str());
-	assert_good(in, faiPath);
+	// Read the FASTA index.
 	FastaIndex faIndex;
-	in >> faIndex;
-	assert(in.eof());
+	in.open(faiPath.c_str());
+	if (in) {
+		cerr << "Reading `" << faiPath << "'...\n";
+		in >> faIndex;
+		assert(in.eof());
+		in.close();
+	} else {
+		cerr << "Reading `" << targetFile << "'...\n";
+		faIndex.index(targetFile);
+	}
+
+	// Read the FM index.
+	FMIndex fmIndex;
+	in.open(fmPath.c_str());
+	if (in) {
+		cerr << "Reading `" << fmPath << "'...\n";
+		assert_good(in, fmPath);
+		in >> fmIndex;
+		assert_good(in, fmPath);
+		in.close();
+	} else {
+		fmIndex.setAlphabet("\nACGT");
+		fmIndex.buildIndex(targetFile);
+	}
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;

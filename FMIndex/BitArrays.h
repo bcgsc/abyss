@@ -4,6 +4,7 @@
 #include "bit_array.h"
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
@@ -49,6 +50,9 @@ void assign(const std::vector<T>& s)
 		assert(c < m_data.size());
 		m_data[c].SetBit(1, i);
 	}
+
+	std::for_each(m_data.begin(), m_data.end(),
+			std::mem_fun_ref(&wat_array::BitArray::Build));
 }
 
 /** Return the size of the string. */
