@@ -13,7 +13,8 @@ static inline void assert_good(const std::ios& stream,
 		const std::string& path)
 {
 	if (!stream.good()) {
-		std::cerr << path << ": " << strerror(errno) << std::endl;
+		std::cerr << "error: `" << path << "': "
+			<< strerror(errno) << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
