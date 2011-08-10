@@ -36,7 +36,8 @@ static const char USAGE_MESSAGE[] =
 "TARGET.fm are required.\n"
 "\n"
 "  -k, --score=N           find matches at least N bp [1]\n"
-"  -j, --threads=N       use N parallel threads [1]\n"
+"  -j, --threads=N         use N parallel threads [1]\n"
+"  -s, --sample=N          sample the suffix array [4]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -46,6 +47,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	/** Find matches at least k bp. */
 	static unsigned k;
+
+	/** Sample the suffix array. */
+	static unsigned sampleSA = 1;
 
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
@@ -59,6 +63,7 @@ static const char shortopts[] = "j:k:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "sample", required_argument, NULL, 's' },
 	{ "score", required_argument, NULL, 'k' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "verbose", no_argument, NULL, 'v' },
@@ -164,6 +169,7 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'j': arg >> opt::threads; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
+			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -228,6 +234,7 @@ int main(int argc, char** argv)
 	} else {
 		fmIndex.setAlphabet("\nACGT");
 		fmIndex.buildIndex(targetFile);
+		fmIndex.sampleSA(opt::sampleSA);
 	}
 
 	opt::chastityFilter = false;
