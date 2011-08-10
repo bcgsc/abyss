@@ -140,6 +140,8 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const char* path)
 {
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
 	FastaReader in(path, FastaReader::FOLD_CASE);
 #pragma omp parallel
 	for (FastqRecord rec;;) {
