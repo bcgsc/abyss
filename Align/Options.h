@@ -2,7 +2,7 @@
 #define ALIGN_OPTIONS_H 1
 
 namespace opt {
-	enum { ERROR, MULTIMAP, IGNORE };
+	enum { IGNORE, MULTIMAP, ERROR };
 	extern int multimap;
 }
 

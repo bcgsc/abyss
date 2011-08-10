@@ -21,9 +21,8 @@ esac
 
 # Parse the command line.
 bowtie='bowtie -S'
-while getopts :ij:k:v opt; do
+while getopts :j:k:v opt; do
 	case $opt in
-		i) ;;
 		j) bowtie="$bowtie -p$OPTARG";;
 		k) ;;
 		v) ;;
