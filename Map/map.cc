@@ -176,12 +176,14 @@ int main(int argc, char** argv)
 	FastaIndex faIndex;
 	in.open(faiPath.c_str());
 	if (in) {
-		cerr << "Reading `" << faiPath << "'...\n";
+		if (opt::verbose > 0)
+			cerr << "Reading `" << faiPath << "'...\n";
 		in >> faIndex;
 		assert(in.eof());
 		in.close();
 	} else {
-		cerr << "Reading `" << targetFile << "'...\n";
+		if (opt::verbose > 0)
+			cerr << "Reading `" << targetFile << "'...\n";
 		faIndex.index(targetFile);
 	}
 
@@ -189,7 +191,8 @@ int main(int argc, char** argv)
 	FMIndex fmIndex;
 	in.open(fmPath.c_str());
 	if (in) {
-		cerr << "Reading `" << fmPath << "'...\n";
+		if (opt::verbose > 0)
+			cerr << "Reading `" << fmPath << "'...\n";
 		assert_good(in, fmPath);
 		in >> fmIndex;
 		assert_good(in, fmPath);
