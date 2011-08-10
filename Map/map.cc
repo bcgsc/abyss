@@ -1,6 +1,7 @@
 #include "DataLayer/Options.h"
 #include "FMIndex.h"
 #include "FastaIndex.h"
+#include "FastaInterleave.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
 #include "SAM.h"
@@ -138,11 +139,8 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 
 /** Map the sequences of the specified file. */
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
-		const char* path)
+		FastaInterleave& in)
 {
-	if (opt::verbose > 0)
-		cerr << "Reading `" << path << "'...\n";
-	FastaReader in(path, FastaReader::FOLD_CASE);
 #pragma omp parallel
 	for (FastqRecord rec;;) {
 		bool good;
@@ -234,8 +232,9 @@ int main(int argc, char** argv)
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
-	for (char** p = argv + optind; p != argv + argc; ++p)
-		find(faIndex, fmIndex, *p);
+	FastaInterleave fa(argv + optind, argv + argc,
+			FastaReader::FOLD_CASE);
+	find(faIndex, fmIndex, fa);
 
 	if (opt::verbose > 0) {
 		size_t unique = g_count.unique;
