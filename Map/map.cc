@@ -129,7 +129,10 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		reverse(sam.qual.begin(), sam.qual.end());
 #endif
 #pragma omp critical(cout)
-	cout << sam << '\n';
+	{
+		cout << sam << '\n';
+		assert_good(cout, "stdout");
+	}
 
 	if (sam.isUnmapped())
 #pragma omp atomic
