@@ -10,6 +10,7 @@
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
+#include <cctype> // for toupper
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
@@ -163,6 +164,19 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	assert(in.eof());
 }
 
+/** Build an FM index of the specified file. */
+static void buildFMIndex(FMIndex& fm, const char* path)
+{
+	if (opt::verbose > 0)
+		std::cerr << "Reading `" << path << "'...\n";
+	std::vector<FMIndex::value_type> s;
+	readFile(path, s);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
+	fm.setAlphabet("\nACGT");
+	fm.assign(s.begin(), s.end());
+	fm.sampleSA(opt::sampleSA);
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -244,11 +258,8 @@ int main(int argc, char** argv)
 		in >> fmIndex;
 		assert_good(in, fmPath);
 		in.close();
-	} else {
-		fmIndex.setAlphabet("\nACGT");
-		fmIndex.buildIndex(targetFile);
-		fmIndex.sampleSA(opt::sampleSA);
-	}
+	} else
+		buildFMIndex(fmIndex, targetFile);
 
 	if (opt::verbose > 0) {
 		size_t bp = fmIndex.size();

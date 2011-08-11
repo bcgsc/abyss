@@ -36,12 +36,17 @@ void parse_parameters (int argc, char **argv);
 int main(int argc, char **argv) {
   parse_parameters(argc, argv);
 
-  FMIndex f;
-  f.buildIndex(fname);
-  f.sampleSA(g_sampleSA);
+  FMIndex fm;
+  cerr << "Reading `" << fname << "'...\n";
+  {
+	  vector<FMIndex::value_type> s;
+	  readFile(fname, s);
+	  fm.assign(s.begin(), s.end());
+  }
+  fm.sampleSA(g_sampleSA);
 
   ofstream out(oname);
-  out << f;
+  out << fm;
   assert_good(out, oname);
 
   return 0;

@@ -1,9 +1,11 @@
 #ifndef IOUTIL_H
 #define IOUTIL_H 1
 
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring> // for strerror
+#include <fstream>
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <string>
@@ -61,6 +63,21 @@ struct ignore {
 static inline std::istream& operator>>(std::istream& in, ignore o)
 {
 	return in.ignore(o.n, o.delim);
+}
+
+/** Read a file and store it in the specified vector. */
+template <typename Vector>
+static inline void readFile(const char* path, Vector& s)
+{
+	std::ifstream in(path);
+	assert_good(in, path);
+	in.seekg(0, std::ios::end);
+	s.resize(in.tellg());
+	in.seekg(0, std::ios::beg);
+	assert_good(in, path);
+	in.read((char*)s.data(), s.size());
+	assert_good(in, path);
+	assert((size_t)in.gcount() == s.size());
 }
 
 #endif

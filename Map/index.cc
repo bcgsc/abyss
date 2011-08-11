@@ -3,6 +3,7 @@
 #include "FMIndex.h"
 #include "IOUtil.h"
 #include <algorithm>
+#include <cctype> // for toupper
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -76,6 +77,19 @@ static void indexFasta(const string& faPath, const string& faiPath)
 	assert_good(out, faiPath);
 }
 
+/** Build an FM index of the specified file. */
+static void buildFMIndex(FMIndex& fm, const char* path)
+{
+	if (opt::verbose > 0)
+		std::cerr << "Reading `" << path << "'...\n";
+	std::vector<FMIndex::value_type> s;
+	readFile(path, s);
+	transform(s.begin(), s.end(), s.begin(), ::toupper);
+	fm.setAlphabet("\nACGT");
+	fm.assign(s.begin(), s.end());
+	fm.sampleSA(opt::sampleSA);
+}
+
 int main(int argc, char **argv)
 {
 	bool die = false;
@@ -132,7 +146,8 @@ int main(int argc, char **argv)
 		ofstream fout(faPath.c_str());
 		ostream& out = opt::toStdout ? cout : fout;
 		assert_good(out, faPath);
-		fmIndex.decompress(ostream_iterator<uint8_t>(out, ""));
+		fmIndex.decompress(
+				ostream_iterator<FMIndex::value_type>(out, ""));
 		out.flush();
 		assert_good(out, faPath);
 		return 0;
@@ -149,10 +164,8 @@ int main(int argc, char **argv)
 	if (!opt::toStdout)
 		indexFasta(faPath, faiPath);
 
-	FMIndex f;
-	f.setAlphabet("\nACGT");
-	f.buildIndex(faPath);
-	f.sampleSA(opt::sampleSA);
+	FMIndex fm;
+	buildFMIndex(fm, faPath);
 
 	cerr << "Writing `" << fmPath << "'...\n";
 	ofstream fout;
@@ -160,7 +173,7 @@ int main(int argc, char **argv)
 		fout.open(fmPath.c_str());
 	ostream& out = opt::toStdout ? cout : fout;
 	assert_good(out, fmPath);
-	out << f;
+	out << fm;
 	out.flush();
 	assert_good(out, fmPath);
 

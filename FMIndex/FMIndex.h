@@ -6,7 +6,6 @@
 #include "sais.h"
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <stdint.h>
@@ -59,6 +58,9 @@ class FMIndex
 	static T SENTINEL() { return std::numeric_limits<T>::max(); }
 
   public:
+	/** The type of a symbol. */
+	typedef T value_type;
+
 	void read(const char *path, std::vector<T> &s);
 
 	FMIndex() : m_sampleSA(1) { }
@@ -70,6 +72,8 @@ size_t size() const { return m_occ.size() - 1; }
 template<typename It>
 void assign(It first, It last)
 {
+	assert(last - first < std::numeric_limits<size_type>::max());
+
 	m_sampleSA = 1;
 
 	// Translate the alphabet.
@@ -102,25 +106,6 @@ void assign(It first, It last)
 	std::cerr << "Building the character occurence table...\n";
 	m_occ.assign(bwt);
 	countOccurences();
-}
-
-/** Build an FM-index of the specified file. */
-void buildIndex(const char *path)
-{
-	std::cerr << "Reading `" << path << "'...\n";
-	std::ifstream in(path);
-	assert_good(in, path);
-	in.seekg(0, std::ios::end);
-	std::vector<T> s;
-	s.resize(in.tellg());
-	in.seekg(0, std::ios::beg);
-	assert_good(in, path);
-	in.read((char*)s.data(), s.size());
-	assert_good(in, path);
-	assert((size_t)in.gcount() == s.size());
-	assert(s.size() < std::numeric_limits<size_type>::max());
-
-	assign(s.begin(), s.end());
 }
 
 /** Sample the suffix array. */
