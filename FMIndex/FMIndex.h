@@ -63,6 +63,9 @@ class FMIndex
 
 	FMIndex() : m_sampleSA(1) { }
 
+/** Return the size of the string not counting the sentinel. */
+size_t size() const { return m_occ.size() - 1; }
+
 /** Build an FM-index of the specified file. */
 template<typename It>
 void assign(It first, It last)

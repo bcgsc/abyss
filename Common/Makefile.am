@@ -21,6 +21,7 @@ libcommon_a_SOURCES = \
 	Iterator.h \
 	Kmer.cpp Kmer.h \
 	Log.cpp Log.h \
+	MemoryUtil.h \
 	Options.cpp Options.h \
 	PDF.h \
 	SeqExt.cpp SeqExt.h \

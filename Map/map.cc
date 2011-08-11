@@ -4,7 +4,9 @@
 #include "FastaInterleave.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
+#include "MemoryUtil.h"
 #include "SAM.h"
+#include "StringUtil.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
@@ -247,6 +249,16 @@ int main(int argc, char** argv)
 		fmIndex.setAlphabet("\nACGT");
 		fmIndex.buildIndex(targetFile);
 		fmIndex.sampleSA(opt::sampleSA);
+	}
+
+	if (opt::verbose > 0) {
+		size_t bp = fmIndex.size();
+		cerr << "Read " << toSI(bp) << "B in "
+			<< faIndex.size() << " contigs.\n";
+		ssize_t bytes = getMemoryUsage();
+		if (bytes > 0)
+			cerr << "Using " << toSI(bytes) << "B of memory and "
+				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
 
 	// Write the SAM header.

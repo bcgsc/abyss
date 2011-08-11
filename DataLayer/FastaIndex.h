@@ -55,6 +55,9 @@ class FastaIndex
 	};
 
   public:
+	/** Return the number of contigs. */
+	size_t size() { return m_data.size(); }
+
 	/** Index the specified FASTA file. */
 	void index(const std::string& path)
 	{
