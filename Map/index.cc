@@ -26,7 +26,7 @@ static const char USAGE_MESSAGE[] =
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
 "  -s, --sample=N          sample the suffix array [4]\n"
-"      --decompress        decompress the index FILE\n"
+"  -d, --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
@@ -39,7 +39,7 @@ namespace opt {
 	static unsigned sampleSA = 4;
 
 	/** Decompress the index. */
-	static int decompress;
+	static bool decompress;
 
 	/** Write output to standard output. */
 	static bool toStdout;
@@ -48,12 +48,12 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "cs:v";
+static const char shortopts[] = "cds:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "decompress", no_argument, &opt::decompress, 1 },
+	{ "decompress", no_argument, NULL, 'd' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "stdout", no_argument, NULL, 'c' },
 	{ "help", no_argument, NULL, OPT_HELP },
@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'c': opt::toStdout = true; break;
+			case 'd': opt::decompress = true; break;
 			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
