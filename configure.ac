@@ -35,8 +35,8 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([dup2 gethostname getopt_long memset \
-	strdup strerror strtoul])
+AC_CHECK_FUNCS([dup2 gethostname getopt_long getpagesize \
+				memset strdup strerror strtoul])
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
