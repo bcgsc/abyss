@@ -92,6 +92,15 @@ class FastaIndex
 		return std::make_pair(it->id, offset - it->offset);
 	}
 
+	/** Write this index to a stream in SAM format. */
+	void writeSAMHeader(std::ostream& out) const
+	{
+		for (Data::const_iterator it = m_data.begin();
+				it != m_data.end(); ++it)
+			out << "@SQ\tSN:" << it->id
+				<< "\tLN:" << it->size << '\n';
+	}
+
 	/** Write this index to a stream. */
 	friend std::ostream& operator<<(std::ostream& out,
 			const FastaIndex& o)

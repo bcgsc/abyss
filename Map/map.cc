@@ -161,6 +161,15 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 
 int main(int argc, char** argv)
 {
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -236,6 +245,14 @@ int main(int argc, char** argv)
 		fmIndex.buildIndex(targetFile);
 		fmIndex.sampleSA(opt::sampleSA);
 	}
+
+	// Write the SAM header.
+	cout << "@HD\tVN:1.4\n"
+		"@PG\tID:" PROGRAM "\tPN:" PROGRAM "\tVN:" VERSION "\t"
+		"CL:" << commandLine << '\n';
+	faIndex.writeSAMHeader(cout);
+	cout.flush();
+	assert_good(cout, "stdout");
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
