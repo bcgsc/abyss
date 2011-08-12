@@ -85,7 +85,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	std::vector<FMIndex::value_type> s;
 	readFile(path, s);
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	fm.setAlphabet("\nACGT");
+	fm.setAlphabet("-ACGT");
 	fm.assign(s.begin(), s.end());
 	fm.sampleSA(opt::sampleSA);
 }
@@ -134,22 +134,33 @@ int main(int argc, char **argv)
 				|| !equal(fmPath.end() - 3, fmPath.end(), ".fm"))
 			fmPath.append(".fm");
 		string faPath(fmPath, 0, fmPath.size() - 3);
-		if (opt::toStdout)
-			faPath = "-";
 
 		ifstream in(fmPath.c_str());
 		assert_good(in, fmPath);
 		FMIndex fmIndex;
 		in >> fmIndex;
 		assert_good(in, fmPath);
+		in.close();
 
-		ofstream fout(faPath.c_str());
+		ofstream fout;
+		if (!opt::toStdout)
+			fout.open(faPath.c_str());
 		ostream& out = opt::toStdout ? cout : fout;
 		assert_good(out, faPath);
 		fmIndex.decompress(
 				ostream_iterator<FMIndex::value_type>(out, ""));
 		out.flush();
 		assert_good(out, faPath);
+
+		ostringstream ss;
+		ss << faPath << ".fai";
+		string faiPath(ss.str());
+		in.open(faiPath.c_str());
+		FastaIndex faIndex;
+		if (in) {
+			in >> faIndex;
+			faIndex.writeFASTAHeaders(out);
+		}
 		return 0;
 	}
 

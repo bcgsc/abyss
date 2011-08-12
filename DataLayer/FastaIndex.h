@@ -95,6 +95,25 @@ class FastaIndex
 		return std::make_pair(it->id, offset - it->offset);
 	}
 
+	/** Write FASTA headers to the specified seekable stream. */
+	void writeFASTAHeaders(std::ostream& out) const
+	{
+		assert(out);
+		if (!out.seekp(0))
+			return;
+		for (Data::const_iterator it = m_data.begin();
+				it != m_data.end(); ++it) {
+			out << '>' << it->id << ' ';
+			assert(it->offset > 0);
+			if (!out.seekp(it->offset - 1))
+				break;
+			out << '\n';
+			if (!out.seekp(it->offset + it->size))
+				break;
+			out << '\n';
+		}
+	}
+
 	/** Write this index to a stream in SAM format. */
 	void writeSAMHeader(std::ostream& out) const
 	{
