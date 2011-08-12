@@ -150,7 +150,11 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 	pair<Alignments::iterator, bool> it = map.insert(
 			make_pair(sam.qname, sam));
 	if (!it.second) {
+#if SAM_SEQ_QUAL
+		SAMRecord& a0 = it.first->second;
+#else
 		SAMRecord a0(it.first->second, it.first->first);
+#endif
 		handlePair(a0, sam);
 		map.erase(it.first);
 	}
