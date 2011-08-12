@@ -72,7 +72,9 @@ size_t size() const { return m_occ.size() - 1; }
 template<typename It>
 void assign(It first, It last)
 {
-	assert(last - first < std::numeric_limits<size_type>::max());
+	assert(first < last);
+	assert(size_t(last - first)
+			< std::numeric_limits<size_type>::max());
 
 	m_sampleSA = 1;
 
