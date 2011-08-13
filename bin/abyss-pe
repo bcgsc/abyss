@@ -51,12 +51,6 @@ ifdef path
 PATH:=$(path):$(PATH)
 endif
 
-ifdef name
-out?=$(name)-contigs.fa
-endif
-ifdef out
-name?=$(out:-contigs.fa=)
-endif
 ifndef name
 $(error missing argument name)
 endif
@@ -176,7 +170,7 @@ se-bam: $(addsuffix -3.bam.bai, $(lib))
 
 se-dot: $(name)-3.dot
 
-pe-contigs: $(out)
+pe-contigs: $(name)-contigs.fa
 
 pe-dot: $(name)-contigs.dot
 
