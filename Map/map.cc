@@ -39,7 +39,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --score=N           find matches at least N bp [1]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
-"  -s, --sample=N          sample the suffix array [4]\n"
+"  -s, --sample=N          sample the suffix array [1]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -51,7 +51,7 @@ namespace opt {
 	static unsigned k;
 
 	/** Sample the suffix array. */
-	static unsigned sampleSA = 1;
+	static unsigned sampleSA;
 
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
@@ -259,7 +259,8 @@ int main(int argc, char** argv)
 		in.close();
 	} else
 		buildFMIndex(fmIndex, targetFile);
-	fmIndex.sampleSA(opt::sampleSA);
+	if (opt::sampleSA > 1)
+		fmIndex.sampleSA(opt::sampleSA);
 
 	if (opt::verbose > 0) {
 		size_t bp = fmIndex.size();
