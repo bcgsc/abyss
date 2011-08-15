@@ -139,8 +139,9 @@ endif
 # DistanceEst parameters
 s?=200
 n?=10
-$(foreach i,$(lib),$(eval $i_s?=$s))
-$(foreach i,$(lib),$(eval $i_n?=$n))
+libs=$(lib) $(mp)
+$(foreach i,$(libs),$(eval $i_s?=$s))
+$(foreach i,$(libs),$(eval $i_n?=$n))
 
 # SimpleGraph parameters
 ifdef d
@@ -154,8 +155,11 @@ endif
 pcopt += -p$p
 
 # Remove environment variables.
-unexport in se $(lib)
+unexport in se $(libs)
 
+ifdef mp
+default: scaffolds
+endif
 ifdef in
 default: pe-contigs pe-dot
 else
@@ -174,12 +178,19 @@ pe-contigs: $(name)-contigs.fa
 
 pe-dot: $(name)-contigs.dot
 
+mp-sam: $(addsuffix -6.sam.gz, $(mp))
+
+mp-bam: $(addsuffix -6.bam.bai, $(mp))
+
+scaffolds: $(name)-scaffolds.fa
+
 all: se-bam default
 
 clean:
 	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2 *.path3
 
-.PHONY: all clean default pe-contigs pe-dot se-bam se-sam se-contigs se-dot
+.PHONY: all clean default mp-bam pe-contigs pe-dot scaffolds \
+	se-bam se-sam se-contigs se-dot
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -276,7 +287,7 @@ ifndef cs
 	cat $(wordlist 1, 2, $^) \
 		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
 
-%-contigs.fa: %-3.fa %-4.fa %-5.fa %-5.adj %-5.path
+%-6.fa: %-3.fa %-4.fa %-5.fa %-5.adj %-5.path
 	cat $(wordlist 1, 3, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 4, 5, $^)
 
 else
@@ -288,14 +299,59 @@ else
 %-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
-%-contigs.fa: %-cs.fa
+%-6.fa: %-cs.fa
 	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \
 		|Consensus $v -o $@ $<
 
 endif
 
+%-contigs.fa: %-6.fa
+	ln -sf $< $@
+
 %-3.dot: %-3.adj
 	abyss-adjtodot $v -k$k $< >$@
 
-%-contigs.dot: %-5.adj %-5.path
+%-6.dot: %-5.adj %-5.path
 	PathOverlap --overlap $v --dot -k$k $^ >$@
+
+%-contigs.dot: %-6.dot
+	ln -sf $< $@
+
+# Estimate distances between contigs
+
+%-6.sam.gz %-6.hist: $(name)-6.fa
+	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|sort -snk3 -k4 \
+		|gzip >$*-6.sam.gz
+
+%-6.bam %-6.hist: $(name)-6.fa
+	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|sort -snk3 -k4 \
+		|samtools view -Sb - -o $*-6.bam
+
+%-6.dist.dot: %-6.sam.gz %-6.hist
+	gunzip -c $< \
+	|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+
+%-6.dist.dot: %-6.bam %-6.hist
+	samtools view -h $< \
+	|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+
+%-6.dist.dot: $(name)-6.fa
+	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|sort -snk3 -k4 \
+		|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+
+# Scaffold
+
+%-6.path1: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
+	abyss-scaffold -vk$k -s$s -n$n -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+
+%-6.path2: %-6.fa %-6.dot %-6.path1
+	PathConsensus -vk$k -p1 -s /dev/null -o $@ $^
+
+%-scaffolds.fa: %-6.fa %-6.dot %-6.path2
+	MergeContigs -vk$k -o $@ $^
