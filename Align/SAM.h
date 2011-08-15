@@ -10,7 +10,7 @@
 #include <string>
 
 /** If undefined, do not use SAM sequence or quality. */
-#undef SAM_SEQ_QUAL
+/*#define SAM_SEQ_QUAL 1*/
 
 /** A SAM alignment of a single query. */
 struct SAMAlignment {
