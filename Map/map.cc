@@ -174,7 +174,6 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
 	fm.setAlphabet("\nACGT");
 	fm.assign(s.begin(), s.end());
-	fm.sampleSA(opt::sampleSA);
 }
 
 int main(int argc, char** argv)
@@ -260,6 +259,7 @@ int main(int argc, char** argv)
 		in.close();
 	} else
 		buildFMIndex(fmIndex, targetFile);
+	fmIndex.sampleSA(opt::sampleSA);
 
 	if (opt::verbose > 0) {
 		size_t bp = fmIndex.size();
