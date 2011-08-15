@@ -60,7 +60,7 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "j:k:v";
+static const char shortopts[] = "j:k:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
