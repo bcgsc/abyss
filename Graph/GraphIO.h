@@ -21,7 +21,7 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	switch (opt::format) {
 	  case ADJ:
 		return out << adj_writer<Graph>(g);
-	  case DOT:
+	  case DOT: case DOT_MEANCOV:
 		return out << dot_writer(g);
 	  case SAM:
 		return write_sam(out, g, program, commandLine);

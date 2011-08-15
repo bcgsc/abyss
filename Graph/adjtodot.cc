@@ -35,6 +35,7 @@ static const char USAGE_MESSAGE[] =
 "                 the sum k-mer coverage is reported\n"
 "      --adj             output the results in adj format\n"
 "      --dot             output the results in dot format [default]\n"
+"      --dot-meancov     same as above but give the mean coverage\n"
 "      --sam             output the results in SAM format\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
@@ -57,6 +58,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 static const struct option longopts[] = {
 	{ "adj",     no_argument,       &opt::format, ADJ },
 	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },

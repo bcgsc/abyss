@@ -37,10 +37,10 @@ struct ContigProperties {
 		  case ADJ:
 			return out << ' ' << o.length << ' ' << o.coverage;
 		  case DOT:
-			out << "l=" << o.length;
-			return opt::k > 0
-				? (out << " c=" << coverage)
-				: (out << " C=" << o.coverage);
+			return out << "l=" << o.length << " C=" << o.coverage;
+		  case DOT_MEANCOV:
+			assert(opt::k > 0);
+			return out << "l=" << o.length << " c=" << coverage;
 		  case SAM:
 			out << "\tLN:" << o.length;
 			return opt::k > 0
