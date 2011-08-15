@@ -168,11 +168,11 @@ endif
 
 se-contigs: $(name)-se-contigs.fa
 
-se-sam: $(addsuffix -3.sam.gz, $(lib))
-
-se-bam: $(addsuffix -3.bam.bai, $(lib))
-
 se-dot: $(name)-3.dot
+
+pe-sam: $(addsuffix -3.sam.gz, $(lib))
+
+pe-bam: $(addsuffix -3.bam.bai, $(lib))
 
 pe-contigs: $(name)-contigs.fa
 
@@ -184,13 +184,13 @@ mp-bam: $(addsuffix -6.bam.bai, $(mp))
 
 scaffolds: $(name)-scaffolds.fa
 
-all: se-bam default
+all: pe-bam default
 
 clean:
 	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2 *.path3
 
-.PHONY: all clean default mp-bam pe-contigs pe-dot scaffolds \
-	se-bam se-sam se-contigs se-dot
+.PHONY: default se-contigs se-dot pe-sam pe-bam pe-contigs pe-dot \
+	mp-sam mp-bam scaffolds all clean
 .DELETE_ON_ERROR:
 .SECONDARY:
 
