@@ -119,7 +119,7 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 {
 	Match m = fmIndex.find(rec.seq, opt::k);
 	string rcqseq = reverseComplement(rec.seq);
-	Match rcm = fmIndex.find(rcqseq, opt::k);
+	Match rcm = fmIndex.find(rcqseq, max(opt::k, m.qspan() + 1));
 	bool rc = rcm.qspan() > m.qspan();
 
 	SAMRecord sam = toSAM(faIndex, rc ? rcm : m, rc, rec.seq.size());
