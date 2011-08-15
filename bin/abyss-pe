@@ -187,7 +187,7 @@ scaffolds: $(name)-scaffolds.fa
 all: pe-bam default
 
 clean:
-	rm -f *.adj *.sam.gz *.hist *.dist *.path *.path1 *.path2 *.path3
+	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123]
 
 .PHONY: default se-contigs se-dot pe-sam pe-bam pe-contigs pe-dot \
 	mp-sam mp-bam scaffolds all clean
