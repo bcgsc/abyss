@@ -6,7 +6,6 @@
 #include <cassert>
 #include <fstream>
 #include <iterator> // for ostream_iterator
-#include <limits> // for numeric_limits
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,8 +36,7 @@ struct FAIRecord
 		if (!in)
 			return in;
 		assert(o.size == lineLen || lineLen == lineBinLen);
-		return in.ignore(std::numeric_limits<std::streamsize>::max(),
-				'\n');
+		return in >> ignore('\n');
 	}
 };
 
@@ -65,15 +63,12 @@ class FastaIndex
 		std::ifstream in(path.c_str());
 		assert_good(in, path);
 		char c;
-		for (std::string id; in >> c && getline(in, id);) {
+		for (std::string id;
+				in >> c && in >> id && in >> ignore('\n');) {
 			assert(c == '>');
-			size_t i = id.find(' ');
-			if (i != std::string::npos)
-				id.erase(i);
 			assert(!id.empty());
 			std::streampos offset = in.tellg();
-			in.ignore(std::numeric_limits<std::streamsize>::max(),
-					'\n');
+			in >> ignore('\n');
 			size_t n = in.gcount();
 			assert(n > 0);
 			m_data.push_back(FAIRecord(offset, n - 1, id));
