@@ -26,7 +26,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
-"  -s, --sample=N          sample the suffix array [4]\n"
+"  -s, --sample=N          sample the suffix array [16]\n"
 "  -d, --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
 "  -v, --verbose           display verbose output\n"
@@ -37,7 +37,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	/** Sample the suffix array. */
-	static unsigned sampleSA = 4;
+	static unsigned sampleSA = 16;
 
 	/** Decompress the index. */
 	static bool decompress;
