@@ -35,7 +35,7 @@
 #endif
 
 #include <iterator>
-#ifdef _OPENMP
+#if SAIS_OPENMP
 # include <omp.h>
 #endif
 
@@ -45,7 +45,7 @@ namespace saisxx_private {
 template<typename string_type, typename bucket_type, typename index_type>
 void
 getCounts(const string_type T, bucket_type C, index_type n, index_type k) {
-#ifdef _OPENMP
+#if SAIS_OPENMP
   bucket_type D;
   index_type i, j, p, sum, first, last;
   int thnum, maxthreads = omp_get_max_threads();
@@ -167,7 +167,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
   index_type i, j, m, p, q, plen, qlen, name, pidx = 0;
   bool diff;
   int c;
-#ifdef _OPENMP
+#if SAIS_OPENMP
   int maxthreads = omp_get_max_threads();
 #else
 # define maxthreads 1
@@ -181,7 +181,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
     if((C = new index_type[maxthreads * k]) == 0) { return -2; }
     B = (1 < maxthreads) ? C + k : C;
     getCounts(T, C, n, k); getBuckets(C, B, k, true); /* find ends of buckets */
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
     for(i = 0; i < n; ++i) { SA[i] = 0; }
@@ -196,7 +196,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
     C = SA + n;
     B = ((1 < maxthreads) || (k <= (fs - k))) ? C + k : C;
     getCounts(T, C, n, k); getBuckets(C, B, k, true); /* find ends of buckets */
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
     for(i = 0; i < n; ++i) { SA[i] = 0; }
@@ -209,7 +209,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
 
   /* compact all the sorted substrings into the first m items of SA
      2*m must be not larger than n (proveable) */
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i, j, p, c0, c1)
   for(i = 0; i < n; ++i) {
     p = SA[i];
@@ -229,7 +229,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
   }
 #endif
   j = m + (n >> 1);
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
   for(i = m; i < j; ++i) { SA[i] = 0; } /* init the name array buffer */
@@ -261,7 +261,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
       if((c0 = T[i]) < (c1 + c)) { c = 1; }
       else if(c != 0) { RA[j--] = i + 1, c = 0; } /* get p1 */
     }
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
     for(i = 0; i < m; ++i) { SA[i] = RA[SA[i]]; } /* get index in s */
@@ -274,7 +274,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
     B = (1 < maxthreads) ? C + k : C;
     /* put all left-most S characters into their buckets */
     getCounts(T, C, n, k); getBuckets(C, B, k, true); /* find ends of buckets */
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
     for(i = m; i < n; ++i) { SA[i] = 0; } /* init SA[m..n-1] */
@@ -291,7 +291,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
     B = ((1 < maxthreads) || (k <= (fs - k))) ? C + k : C;
     /* put all left-most S characters into their buckets */
     getCounts(T, C, n, k); getBuckets(C, B, k, true); /* find ends of buckets */
-#ifdef _OPENMP
+#if SAIS_OPENMP
 #pragma omp parallel for default(shared) private(i)
 #endif
     for(i = m; i < n; ++i) { SA[i] = 0; } /* init SA[m..n-1] */
@@ -304,7 +304,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
   }
 
   return pidx;
-#ifndef _OPENMP
+#if !SAIS_OPENMP
 # undef maxthreads
 #endif
 }
