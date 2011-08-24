@@ -264,8 +264,6 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 static istream& readPairs(istream& in,
 		vector<SAMRecord>& pairs, SAMRecord& nextPair)
 {
-	if (!in)
-		return in;
 	assert(pairs.size() == 1);
 	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
@@ -418,22 +416,20 @@ int main(int argc, char** argv)
 	PDF empiricalPDF(h);
 
 	// Estimate the distances between contigs.
-	vector<SAMRecord> pairs(1);
-	in >> pairs.front();
+	SAMRecord nextRecord;
+	in >> nextRecord;
 	assert(in);
 #pragma omp parallel
-	for (vector<SAMRecord> privatePairs;;) {
-		privatePairs.clear();
+	for (vector<SAMRecord> records;;) {
+		records.clear();
 #pragma omp critical(in)
-		{
-			pairs.swap(privatePairs);
-			SAMRecord nextPair;
-			if (readPairs(in, privatePairs, nextPair))
-				pairs.push_back(nextPair);
+		if (in) {
+			records.push_back(nextRecord);
+			readPairs(in, records, nextRecord);
 		}
-		if (privatePairs.empty())
+		if (records.empty())
 			break;
-		writeEstimates(out, privatePairs, contigLens, empiricalPDF);
+		writeEstimates(out, records, contigLens, empiricalPDF);
 	}
 	assert(in.eof());
 
