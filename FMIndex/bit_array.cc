@@ -176,7 +176,7 @@ uint64_t BitArray::RankOne(uint64_t pos) const {
 /** Return the Hamming weight of x. */
 uint64_t BitArray::PopCount(uint64_t x)
 {
-#if HAVE_POPCNT && __GNUC__ && __x86_64__
+#if ENABLE_POPCNT && __GNUC__ && __x86_64__
   __asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
   return x;
 #else
