@@ -377,9 +377,6 @@ int main(int argc, char** argv)
 			<< h.barplot() << endl;
 	PDF empiricalPDF(h);
 
-	// Check that the input is sorted.
-	vector<bool> seen(contigLens.size());
-
 	// Estimate the distances between contigs.
 	vector<SAMRecord> pairs(1);
 	in >> pairs.front();
@@ -410,13 +407,13 @@ int main(int argc, char** argv)
 			if (sam.rname == pairs.front().rname) {
 				pairs.push_back(sam);
 			} else {
-				ContigID id(sam.rname);
-				if (seen[id]) {
-					cerr << "error: input must be sorted: `"
+				if (ContigID(sam.rname)
+						< ContigID(pairs.front().rname)) {
+					cerr << "error: input must be sorted: saw `"
+						<< pairs.front().rname << "' before `"
 						<< sam.rname << "'\n";
 					exit(EXIT_FAILURE);
 				}
-				seen[id] = true;
 
 				privatePairs.swap(pairs);
 				assert(pairs.empty());
