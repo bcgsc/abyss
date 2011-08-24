@@ -76,6 +76,12 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
 	[max_kmer="$enableval"], [max_kmer=64])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length]) 
 
+AC_ARG_ENABLE(popcnt, AS_HELP_STRING([--disable-popcnt],
+	[do not use the popcnt instruction]))
+if test "$enable_popcnt" != no; then
+	AC_DEFINE(HAVE_POPCNT, 1, [Define to use the popcnt instruction])
+fi
+
 # Set compiler flags.
 AC_SUBST(CPPFLAGS,
 		 "-I$srcdir $boost_cppflags $mpi_cppflags $CPPFLAGS")
