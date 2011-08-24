@@ -265,16 +265,15 @@ template<typename It>
 static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 {
 	assert(out.empty());
-	while (it != last) {
+	for (; it != last; ++it) {
 		if (it->isUnmapped() || it->isMateUnmapped()
 				|| !it->isPaired() || it->rname == it->mrnm
-				|| it->mapq < opt::minMapQ) {
-			++it;
+				|| it->mapq < opt::minMapQ)
 			continue;
-		}
+		if (!out.empty() && out.back().rname != it->rname)
+			break;
 
 		out.push_back(*it);
-		++it;
 		SAMRecord& sam = out.back();
 		// Clear unused fields.
 		sam.qname.clear();
@@ -282,16 +281,15 @@ static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 		sam.seq.clear();
 		sam.qual.clear();
 #endif
+	}
 
-		if (it != last && sam.rname != it->rname) {
-			if (ContigID(it->rname) < ContigID(sam.rname)) {
-				cerr << "error: input must be sorted: saw `"
-					<< sam.rname << "' before `"
-					<< it->rname << "'\n";
-				exit(EXIT_FAILURE);
-			}
-			break;
-		}
+	// Check that the input is sorted.
+	if (it != last && !out.empty()
+			&& ContigID(it->rname) < ContigID(out.front().rname)) {
+		cerr << "error: input must be sorted: saw `"
+			<< out.front().rname << "' before `"
+			<< it->rname << "'\n";
+		exit(EXIT_FAILURE);
 	}
 }
 
