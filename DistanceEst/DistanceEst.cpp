@@ -13,6 +13,7 @@
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
+#include <iterator> // for istream_iterator
 #include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
@@ -256,20 +257,25 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 	}
 }
 
-/** Read a set of alignments to the same contig.
- * @param[in,out] pairs the set of alignments
- * @param[out] nextPair the first pair of the next set
- * @return true if nextPair contains a record
+/** Copy records from [it, last) to out and stop before alignments to
+ * the next target sequence.
+ * @param[in,out] it an input iterator
  */
-static istream& readPairs(istream& in,
-		vector<SAMRecord>& pairs, SAMRecord& nextPair)
+template<typename It>
+static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 {
-	assert(pairs.size() == 1);
-	for (SAMRecord sam; in >> sam;) {
-		if (sam.isUnmapped() || sam.isMateUnmapped()
-				|| !sam.isPaired() || sam.rname == sam.mrnm
-				|| sam.mapq < opt::minMapQ)
+	assert(out.empty());
+	while (it != last) {
+		if (it->isUnmapped() || it->isMateUnmapped()
+				|| !it->isPaired() || it->rname == it->mrnm
+				|| it->mapq < opt::minMapQ) {
+			++it;
 			continue;
+		}
+
+		out.push_back(*it);
+		++it;
+		SAMRecord& sam = out.back();
 		// Clear unused fields.
 		sam.qname.clear();
 #if SAM_SEQ_QUAL
@@ -277,21 +283,16 @@ static istream& readPairs(istream& in,
 		sam.qual.clear();
 #endif
 
-		if (sam.rname == pairs.front().rname) {
-			pairs.push_back(sam);
-		} else {
-			if (ContigID(sam.rname)
-					< ContigID(pairs.front().rname)) {
+		if (it != last && sam.rname != it->rname) {
+			if (ContigID(it->rname) < ContigID(sam.rname)) {
 				cerr << "error: input must be sorted: saw `"
-					<< pairs.front().rname << "' before `"
-					<< sam.rname << "'\n";
+					<< sam.rname << "' before `"
+					<< it->rname << "'\n";
 				exit(EXIT_FAILURE);
 			}
-			nextPair = sam;
 			break;
 		}
 	}
-	return in;
 }
 
 int main(int argc, char** argv)
@@ -416,17 +417,13 @@ int main(int argc, char** argv)
 	PDF empiricalPDF(h);
 
 	// Estimate the distances between contigs.
-	SAMRecord nextRecord;
-	in >> nextRecord;
+	istream_iterator<SAMRecord> it(in), last;
 	assert(in);
 #pragma omp parallel
 	for (vector<SAMRecord> records;;) {
 		records.clear();
 #pragma omp critical(in)
-		if (in) {
-			records.push_back(nextRecord);
-			readPairs(in, records, nextRecord);
-		}
+		readPairs(it, last, records);
 		if (records.empty())
 			break;
 		writeEstimates(out, records, contigLens, empiricalPDF);
