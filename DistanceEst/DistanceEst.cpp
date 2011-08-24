@@ -256,19 +256,19 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 	}
 }
 
-/** Read a set of alignments to the same contig. */
+/** Read a set of alignments to the same contig.
+ * @param[in,out] pairs the set of alignments
+ * @param[out] nextPair the first pair of the next set
+ */
 static void readPairs(istream& in,
 		vector<SAMRecord>& pairs,
-		vector<SAMRecord>& out)
+		vector<SAMRecord>& nextPair)
 {
-	assert(out.empty());
-	for (SAMRecord sam;;) {
-		if (in >> sam == false) {
-			out.swap(pairs);
-			assert(pairs.empty());
-			break;
-		}
-
+	if (!in)
+		return;
+	assert(pairs.size() == 1);
+	assert(nextPair.empty());
+	for (SAMRecord sam; in >> sam;) {
 		if (sam.isUnmapped() || sam.isMateUnmapped()
 				|| !sam.isPaired() || sam.rname == sam.mrnm
 				|| sam.mapq < opt::minMapQ)
@@ -280,7 +280,6 @@ static void readPairs(istream& in,
 		sam.qual.clear();
 #endif
 
-		assert(!pairs.empty());
 		if (sam.rname == pairs.front().rname) {
 			pairs.push_back(sam);
 		} else {
@@ -291,13 +290,12 @@ static void readPairs(istream& in,
 					<< sam.rname << "'\n";
 				exit(EXIT_FAILURE);
 			}
-
-			out.swap(pairs);
-			assert(pairs.empty());
-			pairs.push_back(sam);
+			nextPair.push_back(sam);
 			break;
 		}
 	}
+	assert(!pairs.empty());
+	assert(!in || nextPair.size() == 1);
 }
 
 int main(int argc, char** argv)
@@ -429,7 +427,10 @@ int main(int argc, char** argv)
 	for (vector<SAMRecord> privatePairs;;) {
 		privatePairs.clear();
 #pragma omp critical(in)
-		readPairs(in, pairs, privatePairs);
+		{
+			pairs.swap(privatePairs);
+			readPairs(in, privatePairs, pairs);
+		}
 		if (privatePairs.empty())
 			break;
 		writeEstimates(out, privatePairs, contigLens, empiricalPDF);
