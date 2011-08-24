@@ -256,6 +256,50 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 	}
 }
 
+/** Read a set of alignments to the same contig. */
+static void readPairs(istream& in,
+		vector<SAMRecord>& pairs,
+		vector<SAMRecord>& out)
+{
+	assert(out.empty());
+	for (SAMRecord sam;;) {
+		if (in >> sam == false) {
+			out.swap(pairs);
+			assert(pairs.empty());
+			break;
+		}
+
+		if (sam.isUnmapped() || sam.isMateUnmapped()
+				|| !sam.isPaired() || sam.rname == sam.mrnm
+				|| sam.mapq < opt::minMapQ)
+			continue;
+		// Clear unused fields.
+		sam.qname.clear();
+#if SAM_SEQ_QUAL
+		sam.seq.clear();
+		sam.qual.clear();
+#endif
+
+		assert(!pairs.empty());
+		if (sam.rname == pairs.front().rname) {
+			pairs.push_back(sam);
+		} else {
+			if (ContigID(sam.rname)
+					< ContigID(pairs.front().rname)) {
+				cerr << "error: input must be sorted: saw `"
+					<< pairs.front().rname << "' before `"
+					<< sam.rname << "'\n";
+				exit(EXIT_FAILURE);
+			}
+
+			out.swap(pairs);
+			assert(pairs.empty());
+			pairs.push_back(sam);
+			break;
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -385,43 +429,7 @@ int main(int argc, char** argv)
 	for (vector<SAMRecord> privatePairs;;) {
 		privatePairs.clear();
 #pragma omp critical(in)
-		for (SAMRecord sam;;) {
-			if (in >> sam == false) {
-				privatePairs.swap(pairs);
-				assert(pairs.empty());
-				break;
-			}
-
-			if (sam.isUnmapped() || sam.isMateUnmapped()
-					|| !sam.isPaired() || sam.rname == sam.mrnm
-					|| sam.mapq < opt::minMapQ)
-				continue;
-			// Clear unused fields.
-			sam.qname.clear();
-#if SAM_SEQ_QUAL
-			sam.seq.clear();
-			sam.qual.clear();
-#endif
-
-			assert(!pairs.empty());
-			if (sam.rname == pairs.front().rname) {
-				pairs.push_back(sam);
-			} else {
-				if (ContigID(sam.rname)
-						< ContigID(pairs.front().rname)) {
-					cerr << "error: input must be sorted: saw `"
-						<< pairs.front().rname << "' before `"
-						<< sam.rname << "'\n";
-					exit(EXIT_FAILURE);
-				}
-
-				privatePairs.swap(pairs);
-				assert(pairs.empty());
-				pairs.push_back(sam);
-				break;
-			}
-		}
-
+		readPairs(in, pairs, privatePairs);
 		if (privatePairs.empty())
 			break;
 		writeEstimates(out, privatePairs, contigLens, empiricalPDF);
