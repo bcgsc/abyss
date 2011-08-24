@@ -381,39 +381,55 @@ int main(int argc, char** argv)
 	vector<bool> seen(contigLens.size());
 
 	// Estimate the distances between contigs.
-	vector<SAMRecord> alignments(1);
-	in >> alignments.front();
+	vector<SAMRecord> pairs(1);
+	in >> pairs.front();
 	assert(in);
 #pragma omp parallel
-#pragma omp single
-	for (SAMRecord sam; in >> sam;) {
-		if (sam.isUnmapped() || sam.isMateUnmapped()
-				|| !sam.isPaired() || sam.rname == sam.mrnm
-				|| sam.mapq < opt::minMapQ)
-			continue;
-		if (sam.rname != alignments.front().rname) {
-			ContigID id0(sam.rname);
-			if (seen[id0]) {
-				cerr << "error: input must be sorted: `"
-					<< sam.rname << "'\n";
-				exit(EXIT_FAILURE);
+	for (vector<SAMRecord> privatePairs;;) {
+		privatePairs.clear();
+#pragma omp critical(in)
+		for (SAMRecord sam;;) {
+			if (in >> sam == false) {
+				privatePairs.swap(pairs);
+				assert(pairs.empty());
+				break;
 			}
-			seen[id0] = true;
 
-#pragma omp task firstprivate(alignments)
-			writeEstimates(out, alignments, contigLens, empiricalPDF);
-			alignments.clear();
-		}
-		// Clear unused fields.
-		sam.qname.clear();
+			if (sam.isUnmapped() || sam.isMateUnmapped()
+					|| !sam.isPaired() || sam.rname == sam.mrnm
+					|| sam.mapq < opt::minMapQ)
+				continue;
+			// Clear unused fields.
+			sam.qname.clear();
 #if SAM_SEQ_QUAL
-		sam.seq.clear();
-		sam.qual.clear();
+			sam.seq.clear();
+			sam.qual.clear();
 #endif
-		alignments.push_back(sam);
+
+			assert(!pairs.empty());
+			if (sam.rname == pairs.front().rname) {
+				pairs.push_back(sam);
+			} else {
+				ContigID id(sam.rname);
+				if (seen[id]) {
+					cerr << "error: input must be sorted: `"
+						<< sam.rname << "'\n";
+					exit(EXIT_FAILURE);
+				}
+				seen[id] = true;
+
+				privatePairs.swap(pairs);
+				assert(pairs.empty());
+				pairs.push_back(sam);
+				break;
+			}
+		}
+
+		if (privatePairs.empty())
+			break;
+		writeEstimates(out, privatePairs, contigLens, empiricalPDF);
 	}
 	assert(in.eof());
-	writeEstimates(out, alignments, contigLens, empiricalPDF);
 
 	if (opt::dot)
 		out << "}\n";
