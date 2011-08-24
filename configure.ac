@@ -71,10 +71,10 @@ AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
 	[use LAM/MPI (default is to use Open MPI)]))
 
-AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk],
+AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 	[set the maximum k-mer length (default is 64)]),
-	[max_kmer="$enableval"], [max_kmer=64])
-AC_DEFINE_UNQUOTED(MAX_KMER, [$max_kmer], [maximum k-mer length]) 
+	[], [enable_maxk=64])
+AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 AC_ARG_ENABLE(popcnt, AS_HELP_STRING([--disable-popcnt],
 	[do not use the popcnt instruction]))
