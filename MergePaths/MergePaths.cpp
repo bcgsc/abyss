@@ -52,6 +52,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -s, --seed-length=L   minimum length of a seed contig [0]\n"
 "  -o, --out=FILE        write result to FILE\n"
+"      --greedy          use the greedy algorithm [default]\n"
+"      --no-greedy       do not use the greedy algorithm\n"
 "  -g, --graph=FILE      write the path overlap graph to FILE\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
@@ -68,6 +70,9 @@ namespace opt {
 	/** Minimum length of a seed contig. */
 	static unsigned seedLen;
 
+	/** Use a greedy algorithm. */
+	static int greedy = true;
+
 	/** Write the path overlap graph to this file. */
 	static string graphPath;
 }
@@ -78,6 +83,8 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
+	{ "greedy",      no_argument,       &opt::greedy, true },
+	{ "no-greedy",   no_argument,       &opt::greedy, false },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
@@ -369,7 +376,7 @@ static void extendPaths(ContigID id, const ContigPathMap& paths,
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
 
-	if (!opt::graphPath.empty())
+	if (!opt::greedy)
 		findPathOverlaps(paths,
 				ContigNode(pathIt->first, false), pathIt->second,
 				gout);
@@ -639,6 +646,8 @@ static void removeSmallOverlaps(PathGraph& g,
 /** Output the path overlap graph. */
 static void outputPathGraph(PathGraph& pathGraph)
 {
+	if (opt::graphPath.empty())
+		return;
 	ofstream out(opt::graphPath.c_str());
 	assert_good(out, opt::graphPath);
 	write_dot(out, pathGraph);
@@ -783,6 +792,9 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	if (!opt::graphPath.empty())
+		opt::greedy = false;
+
 	gDebugPrint = opt::verbose > 1;
 
 #if _OPENMP
@@ -796,7 +808,7 @@ int main(int argc, char** argv)
 	removeRepeats(originalPathMap);
 
 	PathGraph gout;
-	if (!opt::graphPath.empty()) {
+	if (!opt::greedy) {
 		// Create the vertices of the path overlap graph.
 		PathGraph(g_contigLengths.size()).swap(gout);
 		// Remove the non-seed contigs.
@@ -823,7 +835,7 @@ int main(int argc, char** argv)
 	if (gDebugPrint)
 		cout << '\n';
 
-	if (!opt::graphPath.empty()) {
+	if (!opt::greedy) {
 		addMissingEdges(gout, originalPathMap);
 		removeTransitiveEdges(gout);
 		removeSmallOverlaps(gout, originalPathMap);
