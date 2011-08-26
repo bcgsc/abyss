@@ -694,7 +694,11 @@ static void assemblePathGraph(
 		for (ContigPath::const_iterator it2 = it1->begin();
 				it2 != it1->end(); ++it2) {
 			ContigNode seed(*it2);
-			paths[ContigID(seed)] = seed.sense() ? pathrc : path;
+			if (find(path.begin(), path.end(), seed) != path.end()) {
+				paths[ContigID(seed)] = seed.sense() ? pathrc : path;
+			} else {
+				// This seed was not included in the merged path.
+			}
 		}
 	}
 
