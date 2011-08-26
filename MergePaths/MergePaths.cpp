@@ -688,12 +688,13 @@ static void assemblePathGraph(
 	// Replace each path with the merged path.
 	for (ContigPaths::const_iterator it1 = seedPaths.begin();
 			it1 != seedPaths.end(); ++it1) {
+		const ContigPath& path(mergedPaths[it1 - seedPaths.begin()]);
+		ContigPath pathrc(path);
+		pathrc.reverseComplement();
 		for (ContigPath::const_iterator it2 = it1->begin();
 				it2 != it1->end(); ++it2) {
-			ContigPath path(mergedPaths[it1 - seedPaths.begin()]);
-			if (it2->sense())
-				path.reverseComplement();
-			paths[ContigID(*it2)] = path;
+			ContigNode seed(*it2);
+			paths[ContigID(seed)] = seed.sense() ? pathrc : path;
 		}
 	}
 
