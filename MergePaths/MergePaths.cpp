@@ -13,6 +13,7 @@
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "Uncompress.h"
+#include <boost/tuple/tuple.hpp>
 #include <algorithm>
 #include <cassert>
 #include <climits> // for UINT_MAX
@@ -34,6 +35,7 @@
 #endif
 
 using namespace std;
+using boost::tie;
 
 #define PROGRAM "MergePaths"
 
@@ -1214,8 +1216,10 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 	return consensus;
 }
 
-/** Return a pivot suitable for aligning the two paths. */
-static ContigNode findPivot(
+/** Return a pivot suitable for aligning the two paths if one exists,
+ * otherwise return false.
+ */
+static pair<ContigNode, bool> findPivot(
 		const ContigPath& path1, const ContigPath& path2)
 {
 	for (ContigPath::const_iterator it = path2.begin();
@@ -1224,13 +1228,9 @@ static ContigNode findPivot(
 			continue;
 		if (count(it, path2.end(), *it) == 1
 				&& count(path1.begin(), path1.end(), *it) == 1)
-			return *it;
+			return make_pair(*it, true);
 	}
-	// These two paths share not even one unique seed.
-	cerr << "error: no unique seed\n"
-		<< path1 << '\n' << path2 << '\n';
-	assert(false);
-	exit(EXIT_FAILURE);
+	return make_pair(ContigNode(0), false);
 }
 
 /** Find an equivalent region of the two specified paths.
@@ -1247,10 +1247,18 @@ static ContigPath align(
 		orientation = DIR_B;
 		return path1;
 	}
+
+	// Find a suitable pivot.
 	if (find(path1.begin(), path1.end(), pivot) == path1.end()
-			|| find(path2.begin(), path2.end(), pivot) == path2.end())
-		pivot = findPivot(path1, path2);
+			|| find(path2.begin(), path2.end(), pivot)
+				== path2.end()) {
+		bool good;
+		tie(pivot, good) = findPivot(path1, path2);
+		if (!good)
+			return ContigPath();
+	}
 	assert(find(path1.begin(), path1.end(), pivot) != path1.end());
+
 	ContigPath::const_iterator it2 = find(path2.begin(), path2.end(),
 			pivot);
 	assert(it2 != path2.end());
