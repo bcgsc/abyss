@@ -359,7 +359,7 @@ static ContigPaths mergeSeedPaths(
 		const ContigPathMap& paths, const ContigPaths& seedPaths)
 {
 	if (opt::verbose > 0)
-		cout << "Merging paths\n";
+		cout << "\nMerging paths\n";
 
 	ContigPaths out;
 	out.reserve(seedPaths.size());
@@ -378,10 +378,12 @@ static void extendPaths(ContigID id, const ContigPathMap& paths,
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
 
-	if (!opt::greedy)
+	if (!opt::greedy) {
 		findPathOverlaps(paths,
 				ContigNode(pathIt->first, false), pathIt->second,
 				gout);
+		return;
+	}
 
 	pair<ContigPathMap::iterator, bool> inserted;
 	#pragma omp critical(out)
