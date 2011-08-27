@@ -373,17 +373,10 @@ static ContigPaths mergeSeedPaths(
  * add the result to the specified container.
  */
 static void extendPaths(ContigID id, const ContigPathMap& paths,
-		ContigPathMap& out, PathGraph& gout)
+		ContigPathMap& out)
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
 	assert(pathIt != paths.end());
-
-	if (!opt::greedy) {
-		findPathOverlaps(paths,
-				ContigNode(pathIt->first, false), pathIt->second,
-				gout);
-		return;
-	}
 
 	pair<ContigPathMap::iterator, bool> inserted;
 	#pragma omp critical(out)
@@ -746,7 +739,6 @@ static ContigPathMap readPaths(const string& filePath)
 	return paths;
 }
 
-#if _OPENMP
 /** Store it in out and increment it.
  * @return true if out != last
  */
@@ -757,7 +749,37 @@ bool atomicInc(T& it, T last, T& out)
 	out = it == last ? it : it++;
 	return out != last;
 }
-#endif
+
+/** Build the path overlap graph. */
+static void buildPathGraph(PathGraph& g, const ContigPathMap& paths)
+{
+	// Create the vertices of the path overlap graph.
+	PathGraph(g_contigLengths.size()).swap(g);
+
+	// Remove the non-seed contigs.
+	typedef graph_traits<PathGraph>::vertex_iterator vertex_iterator;
+	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
+	for (vertex_iterator u = vit.first; u != vit.second; ++u)
+		if (paths.count(ContigID(*u)) == 0)
+			remove_vertex(*u, g);
+
+	// Find the overlapping paths.
+	ContigPathMap::const_iterator sharedIt = paths.begin();
+	#pragma omp parallel
+	for (ContigPathMap::const_iterator it;
+			atomicInc(sharedIt, paths.end(), it);)
+		findPathOverlaps(paths,
+				ContigNode(it->first, false), it->second, g);
+	if (gDebugPrint)
+		cout << '\n';
+
+	addMissingEdges(g, paths);
+	removeTransitiveEdges(g);
+	removeSmallOverlaps(g, paths);
+	if (opt::verbose > 0)
+		printGraphStats(cout, g);
+	outputPathGraph(g);
+}
 
 int main(int argc, char** argv)
 {
@@ -816,17 +838,13 @@ int main(int argc, char** argv)
 
 	removeRepeats(originalPathMap);
 
-	PathGraph gout;
 	if (!opt::greedy) {
-		// Create the vertices of the path overlap graph.
-		PathGraph(g_contigLengths.size()).swap(gout);
-		// Remove the non-seed contigs.
-		typedef graph_traits<PathGraph>::vertex_iterator
-			vertex_iterator;
-		pair<vertex_iterator, vertex_iterator> vit = gout.vertices();
-		for (vertex_iterator u = vit.first; u != vit.second; ++u)
-			if (originalPathMap.count(ContigID(*u)) == 0)
-				remove_vertex(*u, gout);
+		// Assemble the path overlap graph.
+		PathGraph pathGraph;
+		buildPathGraph(pathGraph, originalPathMap);
+		if (!opt::out.empty())
+			assemblePathGraph(pathGraph, originalPathMap);
+		exit(EXIT_SUCCESS);
 	}
 
 	ContigPathMap resultsPathMap;
@@ -835,25 +853,14 @@ int main(int argc, char** argv)
 	#pragma omp parallel
 	for (ContigPathMap::iterator it;
 			atomicInc(sharedIt, originalPathMap.end(), it);)
-		extendPaths(it->first, originalPathMap, resultsPathMap, gout);
+		extendPaths(it->first, originalPathMap, resultsPathMap);
 #else
 	for (ContigPathMap::const_iterator it = originalPathMap.begin();
 			it != originalPathMap.end(); ++it)
-		extendPaths(it->first, originalPathMap, resultsPathMap, gout);
+		extendPaths(it->first, originalPathMap, resultsPathMap);
 #endif
 	if (gDebugPrint)
 		cout << '\n';
-
-	if (!opt::greedy) {
-		addMissingEdges(gout, originalPathMap);
-		removeTransitiveEdges(gout);
-		removeSmallOverlaps(gout, originalPathMap);
-		printGraphStats(cout, gout);
-		outputPathGraph(gout);
-		if (!opt::out.empty())
-			assemblePathGraph(gout, originalPathMap);
-		exit(EXIT_SUCCESS);
-	}
 
 	set<ContigID> repeats = removeRepeats(resultsPathMap);
 
@@ -885,7 +892,7 @@ int main(int argc, char** argv)
 				continue; // subsumed
 			ContigPath old = oldIt->second;
 			resultsPathMap.erase(oldIt);
-			extendPaths(*it, originalPathMap, resultsPathMap, gout);
+			extendPaths(*it, originalPathMap, resultsPathMap);
 			if (gDebugPrint) {
 				if (resultsPathMap[*it] == old)
 					cout << "no change\n";
