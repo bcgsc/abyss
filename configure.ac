@@ -137,9 +137,9 @@ if test $ac_cv_header_boost_graph_graph_traits_hpp != yes; then
 	be downloaded from here: http://www.boost.org/users/download/
 	It is not necessary to compile Boost before installing it. The
 	following commands will download and install Boost for ABySS:
-	wget http://downloads.sourceforge.net/project/boost/boost/1.46.1/boost_1_46_1.tar.bz2
-	tar jxf boost_1_46_1.tar.bz2
-	ln -s boost_1_46_1/boost boost
+	wget http://downloads.sourceforge.net/project/boost/boost/1.47.0/boost_1_47_0.tar.bz2
+	tar jxf boost_1_47_0.tar.bz2
+	ln -s boost_1_47_0/boost boost
 	])
 fi
 
