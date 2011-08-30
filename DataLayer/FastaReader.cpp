@@ -246,8 +246,10 @@ next_record:
 
 	if (opt::qualityThreshold > 0 && !q.empty()) {
 		assert(s.length() == q.length());
-		static const char ASCII[] =" !\"#$%&'()*+,-./0123456789"
-			":;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefgh";
+		static const char ASCII[] =
+			" !\"#$%&'()*+,-./0123456789:;<=>?"
+			"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+			"`abcdefghijklmnopqrstuvwxyz{|}~";
 		assert(qualityOffset > (unsigned)ASCII[0]);
 		const char* goodQual = ASCII + (qualityOffset - ASCII[0])
 			+ opt::qualityThreshold;
@@ -265,9 +267,9 @@ next_record:
 		// Convert to standard quality (ASCII 33).
 		for (string::iterator it = q.begin(); it != q.end(); ++it) {
 			int x = *it - qualityOffset;
-			if (x < -5 || x > 40) {
+			if (x < -5 || x > 41) {
 				die() << "quality " << x
-					<< " is out of range -5 <= q <= 40 near\n"
+					<< " is out of range -5 <= q <= 41 near\n"
 					<< q << '\n'
 					<< string(it - q.begin(), ' ') << "^\n";
 				exit(EXIT_FAILURE);
