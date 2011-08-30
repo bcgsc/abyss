@@ -51,4 +51,4 @@ fi
 
 # Map the reads.
 echo >&2 $bowtie $target "${query[@]}"
-exec abyss-tofastq "${query[@]}" |$bowtie $target -
+exec abyss-tofastq -i "${query[@]}" |$bowtie $target -

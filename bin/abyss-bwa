@@ -52,6 +52,6 @@ fi
 
 # Map the reads.
 echo >&2 $bwa_aln $target "${query[@]}"
-exec abyss-tofastq "${query[@]}" \
+exec abyss-tofastq -i "${query[@]}" \
 	|$bwa_aln $target - \
-	|bwa samse $target - <(abyss-tofastq "${query[@]}")
+	|bwa samse $target - <(abyss-tofastq -i "${query[@]}")
