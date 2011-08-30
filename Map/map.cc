@@ -98,11 +98,16 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 		a.rname = idPos.first;
 		a.pos = idPos.second;
 		a.flag = rc ? SAMAlignment::FREVERSE : 0;
-		a.mapq = m.count > 1 ? 0 : 255;
+
+		// Set the mapq to the alignment score.
+		assert(m.qstart < m.qend);
+		unsigned matches = m.qend - m.qstart;
+		a.mapq = m.count > 1 ? 0 : min(matches, 255U);
+
 		ostringstream ss;
 		if (m.qstart > 0)
 			ss << m.qstart << 'S';
-		ss << m.qend - m.qstart << 'M';
+		ss << matches << 'M';
 		if (m.qend < qlength)
 			ss << qlength - m.qend << 'S';
 		a.cigar = ss.str();
