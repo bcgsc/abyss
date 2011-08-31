@@ -76,6 +76,10 @@ void assign(It first, It last)
 	assert(size_t(last - first)
 			< std::numeric_limits<size_type>::max());
 
+	// An index for SAIS, which must be signed.
+	typedef int32_t sais_size_type;
+	assert(sizeof (size_type) == sizeof (sais_size_type));
+
 	m_sampleSA = 1;
 
 	// Translate the alphabet.
@@ -92,8 +96,10 @@ void assign(It first, It last)
 	size_t n = last - first;
 	m_sa.resize(n + 1);
 	m_sa[0] = n;
-	int status = saisxx(first, &m_sa[1], (int)n,
-			(int)m_alphabet.size());
+	int status = saisxx(first,
+			reinterpret_cast<sais_size_type*>(&m_sa[1]),
+			(sais_size_type)n,
+			(sais_size_type)m_alphabet.size());
 	assert(status == 0);
 	if (status != 0)
 		abort();
