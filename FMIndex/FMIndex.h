@@ -3,7 +3,7 @@
 
 #include "BitArrays.h"
 #include "IOUtil.h"
-#include "sais.h"
+#include "sais.hxx"
 #include <algorithm>
 #include <cassert>
 #include <iostream>

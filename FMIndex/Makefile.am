@@ -15,4 +15,4 @@ libfmindex_a_SOURCES = \
 	BitArrays.h \
 	bit_array.cc bit_array.h \
 	FMIndex.h \
-	sais.h
+	sais.hxx
