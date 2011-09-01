@@ -63,6 +63,7 @@ else
 lib?=$(name)
 $(lib)?=$(in)
 endif
+pe?=$(lib)
 
 ifdef in
 override in:=$(strip $(in))
@@ -142,7 +143,7 @@ endif
 # DistanceEst parameters
 s?=200
 n?=10
-libs=$(lib) $(mp)
+libs=$(pe) $(mp)
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
 
@@ -158,7 +159,7 @@ endif
 pcopt += -p$p
 
 # Remove environment variables.
-unexport in se $(libs)
+unexport in se $(lib) $(pe) $(mp)
 
 ifdef mp
 default: scaffolds
@@ -173,9 +174,9 @@ se-contigs: $(name)-se-contigs.fa
 
 se-dot: $(name)-3.dot
 
-pe-sam: $(addsuffix -3.sam.gz, $(lib))
+pe-sam: $(addsuffix -3.sam.gz, $(pe))
 
-pe-bam: $(addsuffix -3.bam.bai, $(lib))
+pe-bam: $(addsuffix -3.bam.bai, $(pe))
 
 pe-contigs: $(name)-contigs.fa
 
@@ -258,13 +259,13 @@ endif
 		|sort -snk3 -k4 \
 		|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
-dist=$(addsuffix -3.dist, $(lib))
+dist=$(addsuffix -3.dist, $(pe))
 
 ifneq ($(name)-3.dist, $(dist))
 $(name)-3.dist: $(dist)
 	abyss-joindist $^ >$@
 
-$(name)-3.bam: $(addsuffix -3.bam, $(lib))
+$(name)-3.bam: $(addsuffix -3.bam, $(pe))
 	samtools merge -r $@ $^
 endif
 
