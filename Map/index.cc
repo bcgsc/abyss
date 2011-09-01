@@ -2,6 +2,7 @@
 #include "FastaIndex.h"
 #include "FMIndex.h"
 #include "IOUtil.h"
+#include "StringUtil.h"
 #include <algorithm>
 #include <cctype> // for toupper
 #include <cstdlib>
@@ -84,6 +85,16 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 		std::cerr << "Reading `" << path << "'...\n";
 	std::vector<FMIndex::value_type> s;
 	readFile(path, s);
+
+	size_t MAX_SIZE = numeric_limits<FMIndex::sais_size_type>::max();
+	if (s.size() > MAX_SIZE) {
+		std::cerr << PROGRAM << ": `" << path << "', "
+			<< toSI(s.size())
+			<< "B, must be smaller than " 
+			<< toSI(MAX_SIZE) << "B\n";
+		exit(EXIT_FAILURE);
+	}
+
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
 	fm.setAlphabet("-ACGT");
 	fm.assign(s.begin(), s.end());

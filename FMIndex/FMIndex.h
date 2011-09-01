@@ -51,6 +51,9 @@ class FMIndex
 	/** An index. */
 	typedef uint32_t size_type;
 
+	/** An index for SAIS, which must be signed. */
+	typedef int32_t sais_size_type;
+
 	/** A symbol. */
 	typedef uint8_t T;
 
@@ -76,10 +79,6 @@ void assign(It first, It last)
 	assert(size_t(last - first)
 			< std::numeric_limits<size_type>::max());
 
-	// An index for SAIS, which must be signed.
-	typedef int32_t sais_size_type;
-	assert(sizeof (size_type) == sizeof (sais_size_type));
-
 	m_sampleSA = 1;
 
 	// Translate the alphabet.
@@ -96,6 +95,8 @@ void assign(It first, It last)
 	size_t n = last - first;
 	m_sa.resize(n + 1);
 	m_sa[0] = n;
+
+	assert(sizeof (size_type) == sizeof (sais_size_type));
 	int status = saisxx(first,
 			reinterpret_cast<sais_size_type*>(&m_sa[1]),
 			(sais_size_type)n,
