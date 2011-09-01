@@ -87,9 +87,9 @@ a single-processor machine, using two threads will help performance.
 Do not group together all the files containing the forwards reads
 followed by all the files containing the reverse reads.
 
-Reads without mates should be placed in a file specified by the `se'
-(single-end) parameter. Reads without mates in the paired-end files
-will slow down the paired-end assembler considerably during the
+Reads without mates should be placed in a file specified by the
+parameter `se' (single-end). Reads without mates in the paired-end
+files will slow down the paired-end assembler considerably during the
 ParseAligns stage.
 
 abyss-pe is a driver script implemented as a Makefile and runs a
@@ -137,15 +137,18 @@ ${name}-contigs.fa.
 
 * Scaffolding using a mate-pair library
 
-A long-distance mate-pair library may be used to scaffold an assembly.
-Specify the name of the mate-pair library using the mp parameter. The
-scaffolds will be stored in ${name}-scaffolds.fa. Here's an example of
-assembling a data set with two paired-end libraries and a mate-pair
-library:
+Long-distance mate-pair libraries may be used to scaffold an assembly.
+Specify the names of the mate-pair libraries using the parameter `mp'.
+The scaffolds will be stored in the file ${name}-scaffolds.fa. Here's
+an example of assembling a data set with two paired-end libraries and
+two mate-pair libraries:
 
-abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1' \
+abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' \
 	pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
-	mp='mp1_1.fa mp1_2.fa'
+	mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa'
+
+By default, the mate-pair libraries are used only for scaffolding and
+do not contribute towards the consensus sequence.
 
 * Parallel assembly
 
@@ -157,7 +160,7 @@ mpirun, which is describe in the mpirun man page.
 
 The paired-end assembly stage is multithreaded but runs on a single
 machine. The number of threads to use may be specified with the
-parameter j. The default is the same as np. ABySS is multithreaded
+parameter `j'. The default is the same as `np'. ABySS is multithreaded
 using pthread and OpenMP, which requires a modern compiler such as
 GCC 4.4 or greater.
 
