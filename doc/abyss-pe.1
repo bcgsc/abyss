@@ -23,9 +23,18 @@ input files. Use this variable when assembling data from a single
 library.
 .TP
 \fBlib\fR
-list of libraries. Use this varible when assembling data from multiple
-fragment libraries. For each library in lib, a variable with the same
-name must specify the files containing those reads.
+list of paired-end libraries. Use this varible when assembling data
+from multiple fragment libraries. For each library in lib, a variable
+with the same name must specify the files containing those reads.
+.TP
+\fBpe\fR
+list of paired-end libraries that will be used only for merging
+contigs and will not contribute toward the consensus sequence.
+.TP
+\fBmp\fR
+list of mate-pair libraries that will be used for scaffolding. By
+default mate-pair libraries do not contribute toward the consensus
+sequence.
 .TP
 \fBse\fR
 files containing single-end reads
@@ -73,7 +82,8 @@ default is the value of np.
 .TP
 .B aligner
 specify the program to use to align reads to contigs. May be
-aligner=bwa or aligner=bowtie. The default is to use KAligner.
+aligner=map, aligner=bwa or aligner=bowtie. The default is to use
+KAligner.
 .TP
 \fBABYSS_OPTIONS\fR
 additional options to the single-end assembler, ABYSS
@@ -103,20 +113,26 @@ specifies a directory to use for temporary files.
 The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
 used to specify the parameters name, k and np, respectively.
 .SH EXAMPLES
-.SS "Single library"
- abyss-pe k=25 n=10 name=ecoli in='reads1.fa reads2.fa'
-.SS "Multiple libraries"
- abyss-pe k=25 n=10 name=ecoli lib='lib1 lib2' \\
+.SS "One paired-end library"
+ abyss-pe k=64 name=ecoli in='reads1.fa reads2.fa'
+.SS "Multiple paired-end libraries"
+ abyss-pe k=64 name=ecoli lib='lib1 lib2' \\
 .br
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \\
 .br
-	se='se1.fa se2.fa' \\
+	se='se1.fa se2.fa'
+.SS "Paired-end and mate-pair libraries
+ abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' \\
 .br
-	lib2_n=25
+	pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \\
+.br
+	mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \\
+.br
+	se='se1.fa se2.fa'
 .SS MPI
- abyss-pe np=8 k=25 n=10 name=ecoli in='reads1.fa reads2.fa'
+ abyss-pe np=8 k=64 name=ecoli in='reads1.fa reads2.fa'
 .SS SGE
- qsub -N ecoli -t 25 -pe openmpi 8 \\
+ qsub -N ecoli -t 64 -pe openmpi 8 \\
 .br
 	abyss-pe n=10 in='reads1.fa reads2.fa'
 .SH "SEE ALSO"
@@ -124,6 +140,6 @@ make(1), ABYSS(1)
 .SH AUTHOR
 Written by Shaun Jackman.
 .SH "REPORTING BUGS"
-Report bugs to <abyss-users@bcgsc.ca>.
+Report bugs to <abyss-users@googlegroups.com>.
 .SH COPYRIGHT
-Copyright 2009 Canada's Michael Smith Genome Science Centre
+Copyright 2011 Canada's Michael Smith Genome Science Centre
