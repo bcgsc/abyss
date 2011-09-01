@@ -65,7 +65,8 @@ static void usage()
 }
 
 void parse_parameters (int argc, char **argv){
-  if (argc == 1) usage();
+  if (argc < 3)
+	  usage();
   int argno;
   for (argno = 1; argno < argc; argno++){
     if (argv[argno][0] == '-'){
