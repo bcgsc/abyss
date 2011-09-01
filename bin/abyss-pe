@@ -123,6 +123,9 @@ p?=0.9
 pbopt += -p$p
 
 # KAligner parameters
+ifdef mp
+aligner?=map
+endif
 ifdef aligner
 align?=abyss-${aligner}
 endif
