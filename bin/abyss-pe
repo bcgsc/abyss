@@ -1,4 +1,4 @@
-#!/usr/bin/make -Rf
+#!/usr/bin/make -rRf
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
