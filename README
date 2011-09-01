@@ -45,7 +45,7 @@ To run ABySS, its executables should be found in your PATH.
 Assemble short reads in a file named reads.fa into contigs in a
 file named contigs.fa with the following command:
 
-ABYSS -k25 reads.fa -o contigs.fa
+ABYSS -k64 reads.fa -o contigs.fa
 
 where -k is an appropriate k-mer length. The only method to find the
 optimal value of k is to run multiple trials and inspect the results.
@@ -67,7 +67,7 @@ To assemble paired short reads in two files named reads1.fa and
 reads2.fa into contigs in a file named ecoli-contigs.fa, run the
 command:
 
-abyss-pe k=25 n=10 in='reads1.fa reads2.fa' name=ecoli
+abyss-pe k=64 in='reads1.fa reads2.fa' name=ecoli
 
 where k is the k-mer length as before.
 n is the minimum number of pairs needed to consider joining two
@@ -125,7 +125,7 @@ Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
 Single-end reads are stored in two files se1.fa and se2.fa.
 
 The command line to assemble this example data set is...
-abyss-pe k=25 n=10 name=ecoli lib='lib1 lib2' \
+abyss-pe k=64 name=ecoli lib='lib1 lib2' \
 	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
 	se='se1.fa se2.fa'
 
@@ -165,7 +165,7 @@ Open MPI integrates well with SGE (Sun Grid Engine). For example, to
 submit an array of jobs to assemble every odd value of k between 51
 and 63 using 64 processes for each job:
 
-qsub -pe openmpi 64 -t 51-63:2 -N testing abyss-pe in=reads.fa n=10
+qsub -pe openmpi 64 -t 51-63:2 -N testing abyss-pe in=reads.fa
 
 For more information on using SGE and qsub, please refer to the qsub
 manual page. Open MPI must have been compiled with support for SGE
