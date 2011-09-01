@@ -135,6 +135,18 @@ check that the empirical distribution agrees with the expected
 distribution. The assembled contigs will be stored in
 ${name}-contigs.fa.
 
+* Scaffolding using a mate-pair library
+
+A long-distance mate-pair library may be used to scaffold an assembly.
+Specify the name of the mate-pair library using the mp parameter. The
+scaffolds will be stored in ${name}-scaffolds.fa. Here's an example of
+assembling a data set with two paired-end libraries and a mate-pair
+library:
+
+abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1' \
+	pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
+	mp='mp1_1.fa mp1_2.fa'
+
 * Parallel assembly
 
 The `np' option of abyss-pe specifies the number of processes to
