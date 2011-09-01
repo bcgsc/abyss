@@ -187,7 +187,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	}
 
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	fm.setAlphabet("\nACGT");
+	fm.setAlphabet("-ACGT");
 	fm.assign(s.begin(), s.end());
 }
 
