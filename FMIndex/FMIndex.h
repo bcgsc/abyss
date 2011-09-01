@@ -190,10 +190,10 @@ size_t locate(size_t i) const
 	}
 
 	/** Search for an exact match. */
-	template <typename T>
-	std::pair<size_t, size_t> findExact(const T& q) const
+	template <typename String>
+	std::pair<size_t, size_t> findExact(const String& q) const
 	{
-		T s(q.size());
+		String s(q.size());
 		std::transform(q.begin(), q.end(), s.begin(),
 				Translate(*this));
 		return findExact(s.begin(), s.end());
