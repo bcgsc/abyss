@@ -252,9 +252,11 @@ next_record:
 			// the third read of an indexed run.
 			o << '/' << (fields[7] == "3" ? "2" : fields[7]);
 			id = o.str();
+			comment = fields[7];
+			comment += isChaste(fields.back(), line)
+				? ":N:0:" : ":Y:0:";
 			s = fields[8];
 			q = fields[9];
-			comment.clear();
 			qualityOffset = 64;
 			checkSeqQual(s, q);
 		} else {
