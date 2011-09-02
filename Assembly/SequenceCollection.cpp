@@ -2,6 +2,7 @@
 #include "SequenceCollection.h"
 #include "Log.h"
 #include "Common/Options.h"
+#include "MemoryUtil.h"
 #include "StringUtil.h" // for toSI
 #include "Timer.h"
 #include <algorithm>
@@ -9,7 +10,6 @@
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
-#include <unistd.h> // for sbrk
 
 using namespace std;
 
@@ -127,18 +127,14 @@ void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 		it->second.clearFlag(flag);
 }
 
-/** Start of the data segment. */
-static intptr_t sbrk0 = reinterpret_cast<intptr_t>(sbrk(0));
-
 /** Print the load of the hash table. */
 void SequenceCollectionHash::printLoad() const
 {
-	ptrdiff_t bytes = reinterpret_cast<intptr_t>(sbrk(0)) - sbrk0;
 	size_t size = m_data.size();
 	size_t buckets = m_data.bucket_count();
 	logger(1) << "Hash load: " << size << " / " << buckets << " = "
 		<< setprecision(3) << (float)size / buckets
-		<< " using " << toSI(bytes) << "B" << endl;
+		<< " using " << toSI(getMemoryUsage()) << "B" << endl;
 }
 
 /** Return an iterator pointing to the specified k-mer or its
