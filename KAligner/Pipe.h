@@ -13,7 +13,9 @@ class Pipe {
 	/** Ready to use after constructed. Not thread safe. */
 	Pipe(unsigned size = 1024) : m_open(true)
 	{
+#if SEM_VALUE_MAX
 		assert(size <= SEM_VALUE_MAX);
+#endif
 		assert(size > 0);
 		sem_init(&m_sem_in, 0, size);
 		sem_init(&m_sem_out, 0, 0);
