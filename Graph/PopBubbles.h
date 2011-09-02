@@ -58,7 +58,7 @@ bool isBubble(const Graph& g, It first, It last)
 		std::pair<Ait, Ait> adj = adjacent_vertices(~*it, g);
 		transform(adj.first, adj.second,
 				inserter(sources, sources.end()),
-				mem_fun_ref(&V::operator~));
+				std::mem_fun_ref(&V::operator~));
 	}
 	std::set<V> bubble(first, last);
 	return sources == bubble && targets == bubble;
@@ -139,7 +139,8 @@ int longestPath(const Graph& g, const Bubble& topo)
 		for (tie(eit, elast) = out_edges(u, g); eit != elast; ++eit) {
 			E e = *eit;
 			V v = target(e, g);
-			distance[v] = max(distance[v], distance[u] + weight[e]);
+			distance[v] = std::max(
+					distance[v], distance[u] + weight[e]);
 		}
 	}
 	V v = topo.back();
