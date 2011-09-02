@@ -200,18 +200,17 @@ next_record:
 				goto next_record;
 			}
 			id = fields[0];
-			comment.clear();
 			switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
 			  case 0: case 1: // FPAIRED
-				comment += "0:";
+				comment = "0:";
 				break;
 			  case 0x41: // FPAIRED|FREAD1
 				id += "/1";
-				comment += "1:";
+				comment = "1:";
 				break;
 			  case 0x81: // FPAIRED|FREAD2
 				id += "/2";
-				comment += "2:";
+				comment = "2:";
 				break;
 			  default:
 				die() << "invalid flags: `" << id << "' near"
