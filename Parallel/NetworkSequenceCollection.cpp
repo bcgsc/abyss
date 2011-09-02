@@ -5,6 +5,7 @@
 #include "FastaWriter.h"
 #include "Histogram.h"
 #include "Log.h"
+#include "StringUtil.h"
 #include <climits> // for UINT_MAX
 #include <cmath> // for roundf
 #include <cstdio>
@@ -431,8 +432,10 @@ void NetworkSequenceCollection::runControl()
 				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
 				assert(!m_data.empty());
 				m_data.shrink();
-				printf("Loaded %lu k-mer\n",
-						m_comm.reduce(m_data.size()));
+				cout << "Loaded " << m_data.size() << " k-mer. "
+					"At least "
+					<< toSI(m_data.size() * sizeof (value_type))
+					<< "B of RAM is required.\n";
 
 				Histogram h(m_comm.reduce(
 						AssemblyAlgorithms::coverageHistogram(
