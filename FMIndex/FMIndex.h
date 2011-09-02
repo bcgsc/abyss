@@ -110,7 +110,7 @@ void assign(It first, It last)
 
 	// Construct the Burrows-Wheeler transform.
 	std::vector<T> bwt;
-	std::cerr << "Building the Burrows–Wheeler transform...\n";
+	std::cerr << "Building the Burrows-Wheeler transform...\n";
 	bwt.resize(m_sa.size());
 	for (size_t i = 0; i < m_sa.size(); i++)
 		bwt[i] = m_sa[i] == 0 ? SENTINEL() : first[m_sa[i] - 1];
