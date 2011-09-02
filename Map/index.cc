@@ -2,6 +2,7 @@
 #include "FastaIndex.h"
 #include "FMIndex.h"
 #include "IOUtil.h"
+#include "MemoryUtil.h"
 #include "StringUtil.h"
 #include <algorithm>
 #include <cctype> // for toupper
@@ -69,6 +70,9 @@ static void indexFasta(const string& faPath, const string& faiPath)
 	cerr << "Reading `" << faPath << "'...\n";
 	FastaIndex fai;
 	fai.index(faPath);
+
+	if (opt::verbose > 0)
+		cerr << "Read " << fai.size() << " contigs.\n";
 
 	cerr << "Writing `" << faiPath << "'...\n";
 	ofstream out(faiPath.c_str());
@@ -188,6 +192,14 @@ int main(int argc, char **argv)
 
 	FMIndex fm;
 	buildFMIndex(fm, faPath);
+
+	if (opt::verbose > 0) {
+		size_t bp = fm.size();
+		ssize_t bytes = getMemoryUsage();
+		cerr << "Read " << toSI(bp) << "B. "
+			"Used " << toSI(bytes) << "B of memory and "
+				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
+	}
 
 	cerr << "Writing `" << fmPath << "'...\n";
 	ofstream fout;
