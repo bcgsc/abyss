@@ -48,12 +48,6 @@ struct Match
 /** An FM index. */
 class FMIndex
 {
-	/** An index. */
-	typedef uint32_t size_type;
-
-	/** An index for SAIS, which must be signed. */
-	typedef int32_t sais_size_type;
-
 	/** A symbol. */
 	typedef uint8_t T;
 
@@ -61,6 +55,12 @@ class FMIndex
 	static T SENTINEL() { return std::numeric_limits<T>::max(); }
 
   public:
+	/** An index. */
+	typedef uint32_t size_type;
+
+	/** An index for SAIS, which must be signed. */
+	typedef int32_t sais_size_type;
+
 	/** The type of a symbol. */
 	typedef T value_type;
 
