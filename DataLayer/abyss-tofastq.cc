@@ -35,7 +35,6 @@ static const char USAGE_MESSAGE[] =
 "      --fastq             ouput FASTQ format [default]\n"
 "      --fasta             ouput FASTA format\n"
 "      --chastity          discard unchaste reads [default]\n"
-"                          for qseq, export and SAM files only\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
 "      --no-trim-masked    do not trim masked bases from the ends\n"

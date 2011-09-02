@@ -30,7 +30,6 @@ static const char USAGE_MESSAGE[] =
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz.\n"
 "\n"
 "      --chastity                 discard unchaste reads [default]\n"
-"                                 for qseq, export and SAM files only\n"
 "      --no-chastity              do not discard unchaste reads\n"
 "      --trim-masked              trim masked bases from the ends of reads\n"
 "                                 [default]\n"

@@ -5,6 +5,7 @@
 #include <cassert>
 #include <fstream>
 #include <istream>
+#include <limits> // for numeric_limits
 #include <ostream>
 
 /** Read a FASTA, FASTQ, export, qseq or SAM file. */
@@ -56,8 +57,21 @@ class FastaReader {
 		/** Read a single line. */
 		std::istream& getline(std::string& s)
 		{
-			m_line++;
-			return std::getline(m_in, s);
+			if (std::getline(m_in, s))
+				m_line++;
+			return m_in;
+		}
+
+		/** Ignore the specified number of lines. */
+		std::istream& ignoreLines(unsigned n)
+		{
+			for (unsigned i = 0; i < n; ++i) {
+				if (m_in.ignore(
+						std::numeric_limits<std::streamsize>::max(),
+						'\n'))
+					m_line++;
+			}
+			return m_in;
 		}
 
 		std::ostream& die();
