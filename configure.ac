@@ -71,6 +71,12 @@ AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
 	[use LAM/MPI (default is to use Open MPI)]))
 
+AC_ARG_ENABLE(fm, AS_HELP_STRING([--enable-fm],
+	[specify the width of the FM-index in bits (default is 64-bit)]),
+	[], [enable_fm=64])
+AC_DEFINE_UNQUOTED(FMBITS, $enable_fm,
+				   [Width of bits of the FM-index in bits])
+
 AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 	[set the maximum k-mer length (default is 64)]),
 	[], [enable_maxk=64])

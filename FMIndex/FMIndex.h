@@ -1,12 +1,14 @@
 #ifndef FMINDEX_H
 #define FMINDEX_H 1
 
+#include "config.h"
 #include "BitArrays.h"
 #include "IOUtil.h"
 #include "sais.hxx"
 #include <boost/integer.hpp>
 #include <algorithm>
 #include <cassert>
+#include <cstdlib> // for exit
 #include <iostream>
 #include <limits> // for numeric_limits
 #include <stdint.h>
@@ -57,11 +59,10 @@ class FMIndex
 
   public:
 	/** An index. */
-	typedef uint32_t size_type;
+	typedef boost::uint_t<FMBITS>::exact size_type;
 
 	/** An index for SAIS, which must be signed. */
-	typedef boost::int_t<
-		std::numeric_limits<size_type>::digits>::exact sais_size_type;
+	typedef boost::int_t<FMBITS>::exact sais_size_type;
 
 	/** The type of a symbol. */
 	typedef T value_type;
@@ -298,13 +299,14 @@ size_t locate(size_t i) const
 		setAlphabet(s.begin(), s.end());
 	}
 
-	/** The version number. */
-	static const char* FM_VERSION() { return "FM 1"; }
+#define STRINGIFY(X) #X
+#define FM_VERSION_BITS(BITS) "FM " STRINGIFY(BITS) " 1"
+#define FM_VERSION FM_VERSION_BITS(FMBITS)
 
 /** Store an index. */
 friend std::ostream& operator<<(std::ostream& out, const FMIndex& o)
 {
-	out << FM_VERSION() << '\n'
+	out << FM_VERSION << '\n'
 		<< o.m_sampleSA << '\n';
 
 	out << o.m_alphabet.size() << '\n';
@@ -324,7 +326,12 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	std::string version;
 	std::getline(in, version);
 	assert(in);
-	assert(version == FM_VERSION());
+	if (version != FM_VERSION) {
+		std::cerr << "error: the version of this FM-index, `"
+			<< version << "', does not match the version required "
+			"by this program, `" FM_VERSION "'.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	in >> o.m_sampleSA;
 	assert(in);
