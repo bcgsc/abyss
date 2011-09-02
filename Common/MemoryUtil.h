@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include <fstream>
-#include <unistd.h> // for getpagesize
+#include <unistd.h>
 
 /** Return the number of bytes used by the data and stack segments.
  * @return -1 on error
@@ -16,7 +16,9 @@ static inline ssize_t getMemoryUsage()
 	return in >> size >> resident >> share >> text >> lib >> data
 		? data * getpagesize() : -1;
 #else
-	return -1;
+	/** Start of the data segment. */
+	static intptr_t sbrk0 = reinterpret_cast<intptr_t>(sbrk(0));
+	return reinterpret_cast<intptr_t>(sbrk(0)) - sbrk0;
 #endif
 }
 
