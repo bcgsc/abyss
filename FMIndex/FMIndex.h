@@ -4,6 +4,7 @@
 #include "BitArrays.h"
 #include "IOUtil.h"
 #include "sais.hxx"
+#include <boost/integer.hpp>
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -59,7 +60,8 @@ class FMIndex
 	typedef uint32_t size_type;
 
 	/** An index for SAIS, which must be signed. */
-	typedef int32_t sais_size_type;
+	typedef boost::int_t<
+		std::numeric_limits<size_type>::digits>::exact sais_size_type;
 
 	/** The type of a symbol. */
 	typedef T value_type;
