@@ -174,6 +174,8 @@ se-contigs: $(name)-se-contigs.fa
 
 se-dot: $(name)-3.dot
 
+pe-index: $(name)-3.fa.fm
+
 pe-sam: $(addsuffix -3.sam.gz, $(pe))
 
 pe-bam: $(addsuffix -3.bam.bai, $(pe))
@@ -181,6 +183,8 @@ pe-bam: $(addsuffix -3.bam.bai, $(pe))
 pe-contigs: $(name)-contigs.fa
 
 pe-dot: $(name)-contigs.dot
+
+mp-index: $(name)-6.fa.fm
 
 mp-sam: $(addsuffix -6.sam.gz, $(mp))
 
@@ -193,12 +197,16 @@ all: pe-bam default
 clean:
 	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123]
 
-.PHONY: default se-contigs se-dot pe-sam pe-bam pe-contigs pe-dot \
-	mp-sam mp-bam scaffolds all clean
+.PHONY: default se-contigs se-dot \
+	pe-index pe-sam pe-bam pe-contigs pe-dot \
+	mp-index mp-sam mp-bam scaffolds all clean
 .DELETE_ON_ERROR:
 .SECONDARY:
 
 # Utilities
+
+%.fa.fm: %.fa
+	abyss-index $v $<
 
 %.bam: %.sam.gz
 	samtools view -Sb $< -o $@
