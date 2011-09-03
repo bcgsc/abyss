@@ -432,7 +432,8 @@ void NetworkSequenceCollection::runControl()
 				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
 				assert(!m_data.empty());
 				m_data.shrink();
-				cout << "Loaded " << m_data.size() << " k-mer. "
+				size_t numLoaded = m_comm.reduce(m_data.size());
+				cout << "Loaded " << numLoaded << " k-mer. "
 					"At least "
 					<< toSI(m_data.size() * sizeof (value_type))
 					<< "B of RAM is required.\n";
