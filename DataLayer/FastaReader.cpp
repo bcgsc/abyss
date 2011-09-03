@@ -138,8 +138,12 @@ next_record:
 			if (c != '+') {
 				string line;
 				getline(line);
-				die() << "expected `+' and saw `" << c << "' near\n"
-					<< c << line << "\n^\n";
+				die() << "expected `+' and saw ";
+				if (m_in.eof())
+					cerr << "end-of-file\n";
+				else
+					cerr << "`" << c << "' near\n"
+					<< c << line << "\n";
 				exit(EXIT_FAILURE);
 			}
 			m_in.ignore(numeric_limits<streamsize>::max(), '\n');
