@@ -124,7 +124,7 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 {
 	Match m = fmIndex.find(rec.seq, opt::k);
 	string rcqseq = reverseComplement(rec.seq);
-	Match rcm = fmIndex.find(rcqseq, max(opt::k, m.qspan() + 1));
+	Match rcm = fmIndex.find(rcqseq, max(opt::k, m.qspan()));
 	bool rc = rcm.qspan() > m.qspan();
 
 	SAMRecord sam = toSAM(faIndex, rc ? rcm : m, rc, rec.seq.size());
@@ -135,6 +135,13 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	if (rc)
 		reverse(sam.qual.begin(), sam.qual.end());
 #endif
+
+	if (m.qstart == rec.seq.size() - rcm.qend
+			&& m.qspan() == rcm.qspan()) {
+		// This matching sequence maps to both strands.
+		sam.mapq = 0;
+	}
+
 #pragma omp critical(cout)
 	{
 		cout << sam << '\n';
