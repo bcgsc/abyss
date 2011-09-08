@@ -958,8 +958,9 @@ int main(int argc, char** argv)
 	string allPaths(argv[optind++]);
 
 	// Load the graph from the adjacency file
-	Graph g;
 	ifstream fin(adjFile.c_str());
+	assert_good(fin, adjFile);
+	Graph g;
 	fin >> g;
 	assert(fin.eof());
 
