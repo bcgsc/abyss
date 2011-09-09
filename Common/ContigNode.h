@@ -7,9 +7,8 @@
 #include "StringUtil.h"
 #include <cassert>
 #include <cstdlib> // for strtoul
+#include <iostream>
 #include <string>
-#include <istream>
-#include <ostream>
 
 /** A tuple of a contig ID and an orientation. */
 class ContigNode {
@@ -65,7 +64,15 @@ class ContigNode {
 	std::string ambiguousSequence() const
 	{
 		assert(m_ambig);
-		assert(m_id < 100000);
+		if (m_id > 100000) {
+			std::cerr
+				<< "warning: scaffold gap is longer than 100 kbp: "
+				<< *this << '\n';
+		} else if (m_id > 1000000) {
+			std::cerr << "error: scaffold gap is longer than 1 Mbp: "
+				<< *this << '\n';
+			exit(EXIT_FAILURE);
+		}
 		return std::string(m_id, 'N');
 	}
 
