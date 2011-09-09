@@ -788,6 +788,30 @@ static ContigPath alignMulti(const Graph& g,
 	if (identity < opt::identity)
 		return ContigPath();
 
+	if (identity == 1) {
+		// A perfect match must be caused by two palindromes.
+		ContigID palindrome0 = solutions[0][longestPrefix];
+		ContigID palindrome1 = solutions[0].rbegin()[longestSuffix];
+		if (opt::verbose > 0)
+			cerr << "Palindrome: " << palindrome0 << '\n'
+				<< "Palindrome: " << palindrome1 << '\n';
+#ifndef NDEBUG
+		string s0 = getSequence(ContigNode(palindrome0, false));
+		string s1 = getSequence(ContigNode(palindrome1, false));
+		assert(s0 == reverseComplement(s0));
+		assert(s1 == reverseComplement(s1));
+		for (vector<Path>::const_iterator it = solutions.begin();
+				it != solutions.end(); ++it) {
+			const ContigPath& path = *it;
+			assert(ContigID(path[longestPrefix]) == palindrome0);
+			assert(ContigID(path.rbegin()[longestSuffix])
+					== palindrome1);
+			assert(path.size() == solutions[0].size());
+		}
+#endif
+		return solutions[0];
+	}
+
 	ContigID id = outputNewContig(solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
 	ContigPath path(vppath);
