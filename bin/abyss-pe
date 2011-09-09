@@ -2,6 +2,8 @@
 # Run the ABySS paired-end assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
+SHELL=/bin/bash -o pipefail
+
 # Integrate with Sun Grid Engine (SGE)
 ifdef JOB_NAME
 name?=$(JOB_NAME)
