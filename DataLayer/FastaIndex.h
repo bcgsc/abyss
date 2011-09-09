@@ -56,6 +56,13 @@ class FastaIndex
 	/** Return the number of contigs. */
 	size_t size() { return m_data.size(); }
 
+	/** Return the size of the FASTA file. */
+	size_t fileSize() const
+	{
+		assert(!m_data.empty());
+		return m_data.back().offset + m_data.back().size + 1;
+	}
+
 	/** Index the specified FASTA file. */
 	void index(const std::string& path)
 	{

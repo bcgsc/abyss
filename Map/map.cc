@@ -198,6 +198,39 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	fm.assign(s.begin(), s.end());
 }
 
+/** Return the size of the specified file. */
+static streampos fileSize(const string& path)
+{
+	std::ifstream in(path.c_str());
+	assert_good(in, path);
+	in.seekg(0, std::ios::end);
+	assert_good(in, path);
+	return in.tellg();
+}
+
+/** Check that the indexes are up to date. */
+static void checkIndexes(const string& path,
+		const FMIndex& fmIndex, const FastaIndex& faIndex)
+{
+	size_t fastaFileSize = fileSize(path);
+	if (fmIndex.size() != fastaFileSize) {
+		cerr << PROGRAM ": `" << path << "': "
+			"The size of the FM-index, "
+			<< fmIndex.size()
+			<< " B, does not match the size of the FASTA file, "
+			<< fastaFileSize << " B. The index is likely stale.\n";
+		exit(EXIT_FAILURE);
+	}
+	if (faIndex.fileSize() != fastaFileSize) {
+		cerr << PROGRAM ": `" << path << "': "
+			"The size of the FASTA index, "
+			<< faIndex.fileSize()
+			<< " B, does not match the size of the FASTA file, "
+			<< fastaFileSize << " B. The index is likely stale.\n";
+		exit(EXIT_FAILURE);
+	}
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -293,6 +326,9 @@ int main(int argc, char** argv)
 			cerr << "Using " << toSI(bytes) << "B of memory and "
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
+
+	// Check that the indexes are up to date.
+	checkIndexes(targetFile, fmIndex, faIndex);
 
 	// Write the SAM header.
 	cout << "@HD\tVN:1.4\n"
