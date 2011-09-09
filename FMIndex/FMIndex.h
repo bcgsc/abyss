@@ -124,6 +124,8 @@ void assign(It first, It last)
 void sampleSA(unsigned period)
 {
 	assert(period > 0);
+	if (period == m_sampleSA)
+		return;
 	assert(m_sampleSA == 1);
 	m_sampleSA = period;
 	if (m_sampleSA == 1)
@@ -131,7 +133,7 @@ void sampleSA(unsigned period)
 	std::vector<size_type>::iterator out = m_sa.begin();
 	for (size_t i = 0; i < m_sa.size(); i += m_sampleSA)
 		*out++ = m_sa[i];
-	m_sa.resize(m_sa.size() / m_sampleSA);
+	m_sa.erase(out, m_sa.end());
 	assert(!m_sa.empty());
 }
 
@@ -146,6 +148,7 @@ size_t locate(size_t i) const
 		i = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, i + 1) - 1;
 		n++;
 	}
+	assert(i / m_sampleSA < m_sa.size());
 	size_t pos = m_sa[i / m_sampleSA] + n;
 	return pos < m_occ.size() ? pos : pos - m_occ.size();
 }
