@@ -1,3 +1,73 @@
+2011-09-09  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.3.0.
+	* Use mate-pair libraries to scaffold contigs.
+	* Support CASAVA-formatted FASTQ files.
+	* Bug fix. Do not trim quality 41 bases from the ends of reads.
+	* Boost C++ Libraries are required to compile ABySS.
+
+	abyss-pe:
+	* New parameter, mp, to specify the mate-pair libraries to be used
+	for scaffolding.
+	* Increase the default value for s from 100 to 200.
+	* Set the default value for n to 10.
+	* Integrate with PBS.
+
+	abyss-scaffold:
+	* New program. Scaffold using mate-pair libraries.
+
+	DistanceEst:
+	* Ignore multimapped alignments with a mapping quality of zero.
+	* New option, -q, --min-mapq. Ignore alignments with mapping
+	quality less than this threshold. Default is 1.
+	* Do not use OpenMP 3.0.
+
+	PopBubbles:
+	* Scaffold over complex bubbles with the option --scaffold.
+	Disabled by default.
+
+	MergePaths:
+	* Fix a bug that causes PathOverlap to die with the error:
+	Distance get(edge_bundle_t, const Graph&, ContigNode, ContigNode):
+	Assertion `e.second' failed.
+	* New option, --no-greedy. Use a non-greedy algorithm that reduces
+	sequence duplication but reduces contiguity. Disabled by default.
+
+	KAligner:
+	* Performance improvements. Thanks to Tony Raymond (tgr).
+	* The output is printed in the same order as the input when
+	multithreaded. (tgr)
+
+	abyss-map:
+	* New program. Use the BWT and FM-index to find the longest common
+	substring. To use it, specify the option aligner=map to abyss-pe.
+
+	abyss-index:
+	* New program. Build a FM-index of a FASTA file.
+
+	abyss-bowtie:
+	* Use abyss-tofastq --interleave to speed up abyss-fixmate.
+
+	abyss-bwa:
+	* Use bwa index -a bwtsw by default.
+	* Use abyss-tofastq --interleave to speed up abyss-fixmate.
+
+	abyss-fac:
+	* Report N80, N50 and N20. Do not report median and mean.
+	* Increase the default minimum contig size threshold, option -t,
+	from 100 to 200.
+
+	abyss-fixmate:
+	* Set the mapping quality of both alignments to the minimum
+	mapping quality of the pair of alignments.
+
+	abyss-tofastq:
+	* New option, -i, --interleave. Interleave the files.
+
+	configure:
+	* New option, --with-boost. Specify the path for Boost.
+	* New option, --disable-popcnt. Do not use the popcnt instruction.
+
 2011-04-15  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.2.7.
