@@ -145,7 +145,7 @@ size_t locate(size_t i) const
 	size_t n = 0;
 	while (i % m_sampleSA != 0) {
 		T c = m_occ.at(i);
-		i = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, i + 1) - 1;
+		i = c == SENTINEL() ? 0 : m_cf[c] + m_occ.rank(c, i);
 		n++;
 	}
 	assert(i / m_sampleSA < m_sa.size());
