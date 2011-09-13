@@ -576,6 +576,9 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
+	// Prune tips.
+	pruneTips(g);
+
 	// Pop bubbles.
 	vector<ContigNode> popped = popBubbles(g);
 	if (opt::verbose > 0) {
