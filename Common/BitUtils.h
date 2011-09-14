@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /** The return value of the CPUID instruction. */
-struct CPUID { uint64_t a, b, c, d; };
+struct CPUID { unsigned a, b, c, d; };
 
 /** Return the result of the CPUID instruction
  * or -1 if it is not supported.
