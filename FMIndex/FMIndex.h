@@ -10,9 +10,11 @@
 #include <cassert>
 #include <cstdlib> // for exit
 #include <iostream>
+#include <iterator>
 #include <limits> // for numeric_limits
 #include <stdint.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 /** A match of a substring of a query sequence to an FM index. */
@@ -206,10 +208,13 @@ size_t locate(size_t i) const
 	}
 
 	/** Search for a matching suffix of the query. */
-	template <typename It>
-	FMInterval findSuffix(It first, It last) const
+	template <typename It, typename MemoIt>
+	FMInterval findSuffix(It first, It last, MemoIt memoIt) const
 	{
 		assert(first < last);
+		typedef typename std::iterator_traits<MemoIt>::value_type
+			Interval;
+
 		size_t l = 1, u = m_occ.size();
 		It it;
 		for (it = last - 1; it >= first && l < u; --it) {
@@ -222,6 +227,13 @@ size_t locate(size_t i) const
 				break;
 			l = l1;
 			u = u1;
+
+			Interval fmi = Interval(l, u);
+			if (*memoIt == fmi) {
+				// This vertex of the prefix DAWG has been visited.
+				break;
+			}
+			*memoIt++ = fmi;
 		}
 		return FMInterval(l, u, it - first + 1, last - first);
 	}
@@ -234,10 +246,15 @@ size_t locate(size_t i) const
 	{
 		assert(first < last);
 		FMInterval best(0, 0, 0, k > 0 ? k - 1 : 0);
+
+		// Record which vertices of the prefix DAWG have been visited.
+		std::vector<std::pair<size_type, size_type> >
+			memo(last - first);
+		std::pair<size_type, size_type>* memoIt = memo.data();
 		for (It it = last; it > first; --it) {
 			if (unsigned(it - first) < best.qspan())
 				return best;
-			FMInterval interval = findSuffix(first, it);
+			FMInterval interval = findSuffix(first, it, memoIt++);
 			if (interval.qspan() > best.qspan())
 				best = interval;
 		}
