@@ -6,7 +6,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <iostream>
-#include <limits> // for numeric_limits
 #include <sstream>
 #include <vector>
 
@@ -85,7 +84,7 @@ Sequence FastaReader::read(string& id, string& comment,
 next_record:
 	// Discard comments.
 	while (m_in.peek() == '#')
-		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
+		ignoreLines(1);
 
 	signed char recordType = m_in.peek();
 	Sequence s;
@@ -146,7 +145,7 @@ next_record:
 					<< c << line << "\n";
 				exit(EXIT_FAILURE);
 			}
-			m_in.ignore(numeric_limits<streamsize>::max(), '\n');
+			ignoreLines(1);
 			getline(q);
 			checkSeqQual(s, q);
 		} else
