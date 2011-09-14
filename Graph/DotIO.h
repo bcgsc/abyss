@@ -142,14 +142,19 @@ std::istream& read_dot_id(std::istream& in, VertexDescriptor& u)
 	return in;
 }
 
-template <typename Graph>
-std::istream& read_dot(std::istream& in, Graph& g)
+/** Read a GraphViz dot graph.
+ * @param betterEP handle parallel edges
+ */
+template <typename Graph, typename BetterEP>
+std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 {
 	assert(in);
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
 	typedef typename vertex_property<Graph>::type
 		vertex_property_type;
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
 	typedef typename edge_property<Graph>::type edge_property_type;
 
 	// Graph properties
@@ -232,18 +237,24 @@ std::istream& read_dot(std::istream& in, Graph& g)
 					exit(EXIT_FAILURE);
 				}
 				assert(in);
-				if (edge(u, v, g).second) {
-					// This edge already exists. Replace it.
-					remove_edge(u, v, g);
-				}
+
+				edge_property_type ep = defaultEdgeProp;
 				if (in >> std::ws && in.peek() == '[') {
 					// Edge properties
-					edge_property_type ep;
 					in >> expect("[") >> ep >> ignore(']');
 					assert(in);
-					add_edge(u, v, ep, g);
-				} else
-					add_edge(u, v, defaultEdgeProp, g);
+				}
+
+				edge_descriptor e;
+				bool found;
+				boost::tie(e, found) = edge(u, v, g);
+				if (found) {
+					// Parallel edge
+					ep = betterEP(g[e], ep);
+					remove_edge(e, g);
+				}
+
+				add_edge(u, v, ep, g);
 			}
 		} else {
 			std::cerr << "error: Expected `[' or `->' and saw `"

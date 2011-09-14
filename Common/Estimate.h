@@ -74,6 +74,24 @@ struct DistanceEst
 	}
 };
 
+/** Return the better of two distance estimates.
+ * Return the estimate whose error is least, or when the errors are
+ * equal, return the larger distance estimate.
+ * Add the number of pairs.
+ */
+struct BetterDistanceEst
+{
+	DistanceEst operator()(
+			const DistanceEst& a, const DistanceEst& b) const
+	{
+		bool which = a.stdDev != b.stdDev ? a.stdDev < b.stdDev
+			: a.distance > b.distance;
+		DistanceEst x = which ? a : b;
+		x.numPairs = a.numPairs + b.numPairs;
+		return x;
+	}
+};
+
 /** An estimate of the distance between two contigs. */
 struct Estimate
 {

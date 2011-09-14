@@ -5,9 +5,9 @@
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
-#include "DotIO.h"
 #include "Estimate.h"
 #include "GraphAlgorithms.h"
+#include "GraphIO.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
 #include "PopBubbles.h"
@@ -497,7 +497,7 @@ static void readGraph(const string& path, Graph& g)
 	ifstream fin(path.c_str());
 	istream& in = path == "-" ? cin : fin;
 	assert_good(in, path);
-	read_dot<DG>(in, g);
+	read_graph(in, g, BetterDistanceEst());
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
