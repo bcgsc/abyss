@@ -17,8 +17,8 @@
  *      software without specific prior written permission.
  */
 
-#include "config.h"
 #include "bit_array.h"
+#include "BitUtils.h" // for popcount
 #include <cassert>
 
 namespace wat_array {
@@ -176,20 +176,7 @@ uint64_t BitArray::RankOne(uint64_t pos) const {
 /** Return the Hamming weight of x. */
 uint64_t BitArray::PopCount(uint64_t x)
 {
-#if ENABLE_POPCNT && __GNUC__ && __x86_64__
-  __asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
-  return x;
-#else
-  x = (x & 0x5555555555555555ULL) +
-    ((x >> 1) & 0x5555555555555555ULL);
-  x = (x & 0x3333333333333333ULL) +
-    ((x >> 2) & 0x3333333333333333ULL);
-  x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-  x = x + (x >>  8);
-  x = x + (x >> 16);
-  x = x + (x >> 32);
-  return x & 0x7FLLU;
-#endif
+	return popcount(x);
 }
 
 uint64_t BitArray::PopCountMask(uint64_t x, uint64_t offset) {

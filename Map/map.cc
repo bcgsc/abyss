@@ -1,3 +1,4 @@
+#include "BitUtils.h"
 #include "DataLayer/Options.h"
 #include "FMIndex.h"
 #include "FastaIndex.h"
@@ -233,6 +234,8 @@ static void checkIndexes(const string& path,
 
 int main(int argc, char** argv)
 {
+	checkPopcnt();
+
 	string commandLine;
 	{
 		ostringstream ss;

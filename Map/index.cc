@@ -1,4 +1,5 @@
 #include "config.h"
+#include "BitUtils.h"
 #include "FastaIndex.h"
 #include "FMIndex.h"
 #include "IOUtil.h"
@@ -107,6 +108,8 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 
 int main(int argc, char **argv)
 {
+	checkPopcnt();
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
