@@ -244,13 +244,13 @@ endif
 # Estimate distances between contigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
@@ -264,7 +264,7 @@ endif
 	|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
@@ -334,13 +334,13 @@ endif
 # Estimate distances between contigs
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
@@ -354,7 +354,7 @@ endif
 	|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
-	${align} $v $(KALIGNER_OPTIONS) -j$j -k$k $(strip $($*)) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
