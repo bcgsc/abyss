@@ -433,9 +433,7 @@ static void removeWeakEdges(Graph& g)
 	}
 
 	/** Remove the weak edges. */
-	for (vector<E>::const_iterator it = weak.begin();
-			it != weak.end(); ++it)
-		remove_edge(*it, g);
+	remove_edges(g, weak.begin(), weak.end());
 	if (opt::verbose > 0) {
 		cerr << "Removed " << weak.size() << " weak edges.\n";
 		printGraphStats(cerr, g);
