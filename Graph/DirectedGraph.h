@@ -266,6 +266,15 @@ class Vertex
 	}
 
 	/** Return the properties of the edge with target v. */
+	edge_property_type& operator[](vertex_descriptor v)
+	{
+		typename Edges::iterator it
+			= find(m_edges.begin(), m_edges.end(), v);
+		assert(it != m_edges.end());
+		return it->get_property();
+	}
+
+	/** Return the properties of the edge with target v. */
 	const edge_property_type& operator[](vertex_descriptor v) const
 	{
 		typename Edges::const_iterator it
@@ -317,6 +326,7 @@ class Edge
 		return m_target == v;
 	}
 
+	edge_property_type& get_property() { return m_ep; }
 	const edge_property_type& get_property() const { return m_ep; }
 
   private:
@@ -484,6 +494,12 @@ class Edge
 	bool get(vertex_removed_t, vertex_descriptor u) const
 	{
 		return is_removed(u);
+	}
+
+	/** Return properties of edge e. */
+	edge_property_type& operator[](edge_descriptor e)
+	{
+		return m_vertices[index(e.first)][e.second];
 	}
 
 	/** Return properties of edge e. */

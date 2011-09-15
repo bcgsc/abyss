@@ -250,11 +250,10 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 				boost::tie(e, found) = edge(u, v, g);
 				if (found) {
 					// Parallel edge
-					ep = betterEP(g[e], ep);
-					remove_edge(e, g);
-				}
-
-				add_edge(u, v, ep, g);
+					edge_property_type& ref = g[e];
+					ref = betterEP(ref, ep);
+				} else
+					add_edge(u, v, ep, g);
 			}
 		} else {
 			std::cerr << "error: Expected `[' or `->' and saw `"
