@@ -632,9 +632,7 @@ static void removeSmallOverlaps(PathGraph& g,
 				edges.push_back(uv);
 		}
 	}
-	for (vector<E>::const_iterator it = edges.begin();
-			it != edges.end(); ++it)
-		remove_edge(*it, g);
+	remove_edges(g, edges.begin(), edges.end());
 	if (opt::verbose > 0)
 		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
