@@ -18,6 +18,15 @@ Function for_each_if(It first, It last, Function f, Pred p)
 	return f;
 }
 
+/** Copies each element in the range [first, last) into the range
+ * starting at result for which the predicate p is true. */
+template<class InputIt, class OutputIt, class Pred>
+OutputIt copy_if(InputIt first, InputIt last, OutputIt result,
+		Pred p)
+{
+	return remove_copy_if(first, last, result, std::not1(p));
+}
+
 /** Sorts the elements in the range [first,last) ordered by the value
  * returned by the unary function op, which is called once for each
  * element in the range [first,last). The copy constructor of the
