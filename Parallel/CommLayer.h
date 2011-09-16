@@ -53,7 +53,7 @@ class CommLayer
 		int receiveBroadcast();
 
 		// Block until all processes have reached this routine.
-		long unsigned reduce(long unsigned count);
+		long long unsigned reduce(long long unsigned count);
 		std::vector<unsigned> reduce(const std::vector<unsigned>& v);
 
 		// Send a control message

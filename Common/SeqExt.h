@@ -5,7 +5,7 @@
 #include <ostream>
 #include <stdint.h>
 
-static const int NUM_BASES = 4;
+static const unsigned NUM_BASES = 4;
 
 /** The adjacent vertices of a Kmer. */
 class SeqExt

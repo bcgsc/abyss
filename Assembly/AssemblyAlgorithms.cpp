@@ -11,7 +11,6 @@
 #include <cctype>
 #include <climits> // for UINT_MAX
 #include <cmath>
-#include <cstdio>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -30,7 +29,7 @@ void generateSequencesFromExtension(const Kmer& currSeq,
 	extSeq.shift(dir);
 
 	// Check for the existance of the 4 possible extensions
-	for (int i  = 0; i < NUM_BASES; i++) {
+	for (unsigned i = 0; i < NUM_BASES; i++) {
 		// Does this sequence have an extension?
 		if(extension.checkBase(i))
 		{
@@ -45,7 +44,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 {
 	Timer timer("LoadSequences " + inFile);
 
-	PrintDebug(0, "Reading `%s'\n", inFile.c_str());
+	logger(0) << "Reading `" << inFile << "'...\n";
 
 	if (inFile.find(".kmer") != string::npos) {
 		if (opt::rank <= 0)
@@ -54,11 +53,11 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		return;
 	}
 
-	unsigned count = 0, count_good = 0,
+	size_t count = 0, count_good = 0,
 			 count_small = 0, count_nonACGT = 0;
 	FastaReader reader(inFile.c_str(), FastaReader::FOLD_CASE);
 	for (Sequence seq; reader >> seq;) {
-		int len = seq.length();
+		size_t len = seq.length();
 		if (opt::kmerSize > len) {
 			count_small++;
 			continue;
@@ -71,7 +70,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 				= seq.find_first_of("0123") != string::npos;
 			seqCollection->setColourSpace(colourSpace);
 			if (colourSpace)
-				puts("Colour-space assembly");
+				cout << "Colour-space assembly\n";
 		}
 
 		if (isalnum(seq[0])) {
@@ -83,7 +82,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 		bool good = seq.find_first_not_of("ACGT0123") == string::npos;
 		bool discarded = true;
-		for (int i = 0; i < len - opt::kmerSize + 1; i++) {
+		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
 			Sequence kmer(seq, i, opt::kmerSize);
 			if (good || kmer.find_first_not_of("ACGT0123")
 					== string::npos) {
@@ -97,30 +96,30 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 			count_good++;
 
 		if (++count % 100000 == 0) {
-			PrintDebug(1, "Read %u reads. ", count);
+			logger(1) << "Read " << count << "reads. ";
 			seqCollection->printLoad();
 		}
 		seqCollection->pumpNetwork();
 	}
 	assert(reader.eof());
 
-	PrintDebug(1, "Read %u reads. ", count);
+	logger(1) << "Read " << count << "reads. ";
 	seqCollection->printLoad();
 
 	if (count_small > 0)
-		fprintf(stderr, "warning: discarded %u reads "
-				"shorter than %u bases\n",
-				count_small, opt::kmerSize);
+		cerr << "`" << inFile << "': "
+			"discarded " << count_small << " reads "
+			"shorter than " << opt::kmerSize << " bases\n";
 	if (reader.unchaste() > 0)
-		cerr << "warning: discarded " << reader.unchaste()
-			<< " unchaste reads" << endl;
+		cerr << "`" << inFile << "': "
+			"discarded " << reader.unchaste() << " unchaste reads\n";
 	if (count_nonACGT > 0)
-		fprintf(stderr, "warning: discarded %u reads "
-				"containing non-ACGT characters\n", count_nonACGT);
-
+		cerr << "`" << inFile << "': "
+			"discarded " << count_nonACGT
+			<< "containing non-ACGT characters\n";
 	if (count_good == 0)
-		fprintf(stderr, "warning: `%s' contains no usable sequence\n",
-				inFile.c_str());
+		cerr << "warning: `" << inFile << "': "
+			"contains no usable sequence\n";
 
 	if (opt::rank <= 0 && count == 0 && seqCollection->empty()) {
 		/* The master process did not load any data, which means that
@@ -142,20 +141,20 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 {
 	Timer timer("GenerateAdjacency");
 
-	unsigned count = 0;
-	unsigned numBasesSet = 0;
+	size_t count = 0;
+	size_t numBasesSet = 0;
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
 
 		if (++count % 1000000 == 0)
-			PrintDebug(1, "Generating adjacency: %u k-mer\n", count);
+			logger(1) << "Finding adjacent k-mer: " << count << '\n';
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			Kmer testSeq(iter->first);
 			uint8_t adjBase = testSeq.shift(dir);
-			for (int i = 0; i < NUM_BASES; i++) {
+			for (unsigned i = 0; i < NUM_BASES; i++) {
 				testSeq.setLastBase(dir, i);
 				if (seqCollection->setBaseExtension(
 							testSeq, !dir, adjBase))
@@ -166,13 +165,13 @@ void generateAdjacency(ISequenceCollection* seqCollection)
 	}
 
 	if (numBasesSet > 0)
-		PrintDebug(0, "Generated %u edges\n", numBasesSet);
+		logger(0) << "Added " << numBasesSet << " edges.\n";
 }
 
 /** Mark the specified vertex and its neighbours.
  * @return the number of marked edges
  */
-static unsigned markNeighbours(ISequenceCollection* g,
+static size_t markNeighbours(ISequenceCollection* g,
 		const ISequenceCollection::value_type& u, extDirection sense)
 {
 	vector<Kmer> adj;
@@ -186,18 +185,18 @@ static unsigned markNeighbours(ISequenceCollection* g,
 /** Mark ambiguous branches and branches from palindromes for removal.
  * @return the number of branches marked
  */
-unsigned markAmbiguous(ISequenceCollection* g)
+size_t markAmbiguous(ISequenceCollection* g)
 {
 	Timer timer(__func__);
-	unsigned progress = 0;
-	unsigned countv = 0, counte = 0;
+	size_t progress = 0;
+	size_t countv = 0, counte = 0;
 	for (ISequenceCollection::iterator it = g->begin();
 			it != g->end(); ++it) {
 		if (it->second.deleted())
 			continue;
 
 		if (++progress % 1000000 == 0)
-			PrintDebug(1, "Splitting: %u k-mer\n", progress);
+			logger(1) << "Splitting: " << progress << '\n';
 
 		if (it->first.isPalindrome()) {
 			countv += 2;
@@ -225,10 +224,10 @@ unsigned markAmbiguous(ISequenceCollection* g)
 /** Remove the edges of marked and deleted vertices.
  * @return the number of branches removed
  */
-unsigned splitAmbiguous(ISequenceCollection* pSC)
+size_t splitAmbiguous(ISequenceCollection* pSC)
 {
 	Timer timer(__func__);
-	unsigned count = 0;
+	size_t count = 0;
 	for (ISequenceCollection::iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
 		if (!it->second.deleted())
@@ -242,7 +241,7 @@ unsigned splitAmbiguous(ISequenceCollection* pSC)
 		}
 		pSC->pumpNetwork();
 	}
-	PrintDebug(0, "Split %u ambiguous branches\n", count);
+	logger(0) << "Split " << count << " ambigiuous branches.\n";
 	return count;
 }
 
@@ -264,13 +263,13 @@ void openBubbleFile(ofstream& out)
 }
 
 /** Pop bubbles. */
-int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
+size_t popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 {
 	Timer timer("PopBubbles");
-	int numPopped = 0;
+	size_t numPopped = 0;
 
 	// Set the cutoffs
-	const unsigned int maxNumBranches = 3;
+	const unsigned maxNumBranches = 3;
 	const unsigned maxLength = opt::bubbleLen - opt::kmerSize + 1;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
@@ -294,7 +293,7 @@ int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 				while(!stop)
 				{
 					size_t numBranches = branchGroup.size();
-					for (unsigned int j = 0; j < numBranches; ++j) {
+					for (unsigned j = 0; j < numBranches; ++j) {
 						// Get the extensions of this branch
 						ExtensionRecord extRec;
 						int multiplicity = -1;
@@ -339,7 +338,7 @@ int popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 	}
 
 	if (numPopped > 0)
-		printf("Removed %u bubbles\n", numPopped);
+		cout << "Removed " << numPopped << " bubbles.\n";
 	return numPopped;
 }
 
@@ -438,8 +437,8 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 		BranchGroup& group)
 {
 	const BranchRecord& best = group[0];
-	PrintDebug(5, "Popping %zu %s\n", best.size(),
-				best.front().first.str().c_str());
+	logger(5) << "Popping " << best.size() << ' '
+		<< best.front().first << '\n';
 
 	// Add the k-mer from the dead branches.
 	map<Kmer, KmerData> doomed;
@@ -482,7 +481,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 	SeqExt extension(seq.second.getExtension(dir));
 	Kmer testSeq(seq.first);
 	uint8_t extBase = testSeq.shift(dir);
-	for (int i = 0; i < NUM_BASES; i++) {
+	for (unsigned i = 0; i < NUM_BASES; i++) {
 		if (extension.checkBase(i)) {
 			testSeq.setLastBase(dir, i);
 			seqCollection->removeExtension(testSeq, !dir, extBase);
@@ -491,21 +490,21 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 }
 
 /** The number of k-mer that have been eroded. */
-static unsigned g_numEroded;
+static size_t g_numEroded;
 
 /** Return the number of k-mer that have been eroded. */
-unsigned getNumEroded()
+size_t getNumEroded()
 {
-	unsigned numEroded = g_numEroded;
+	size_t numEroded = g_numEroded;
 	g_numEroded = 0;
-	PrintDebug(0, "Eroded %u tips\n", numEroded);
+	logger(0) << "Eroded " << numEroded << " tips.\n";
 	return numEroded;
 }
 
 /** Consider the specified k-mer for erosion.
  * @return the number of k-mer eroded, zero or one
  */
-unsigned erode(ISequenceCollection* c,
+size_t erode(ISequenceCollection* c,
 		const ISequenceCollection::value_type& seq)
 {
 	if (seq.second.deleted())
@@ -536,7 +535,7 @@ static void erosionObserver(ISequenceCollection* c,
 //
 // Erode data off the ends of the graph, one by one
 //
-unsigned erodeEnds(ISequenceCollection* seqCollection)
+size_t erodeEnds(ISequenceCollection* seqCollection)
 {
 	Timer erodeEndsTimer("Erode");
 	assert(g_numEroded == 0);
@@ -552,25 +551,27 @@ unsigned erodeEnds(ISequenceCollection* seqCollection)
 	return getNumEroded();
 }
 
-static int trimSequences(SequenceCollectionHash* seqCollection,
-		int maxBranchCull);
+static size_t trimSequences(SequenceCollectionHash* seqCollection,
+		unsigned maxBranchCull);
 
 /** Trimming driver function */
 void performTrim(SequenceCollectionHash* seqCollection)
 {
 	if (opt::trimLen == 0)
 		return;
-	unsigned rounds = 0, total = 0;
-	for (int trim = 1; trim < opt::trimLen; trim *= 2) {
+	unsigned rounds = 0;
+	size_t total = 0;
+	for (unsigned trim = 1; trim < opt::trimLen; trim *= 2) {
 		rounds++;
 		total += trimSequences(seqCollection, trim);
 	}
-	unsigned count;
+	size_t count;
 	while ((count = trimSequences(seqCollection, opt::trimLen)) > 0) {
 		rounds++;
 		total += count;
 	}
-	printf("Trimmed %u branches in %u rounds\n", total, rounds);
+	cout << "Pruned " << total << " tips in "
+		<< rounds << " rounds.\n";
 }
 
 /** Return the adjacency of this sequence.
@@ -609,12 +610,13 @@ SeqContiguity checkSeqContiguity(
 }
 
 /** Prune tips shorter than maxBranchCull. */
-static int trimSequences(SequenceCollectionHash* seqCollection,
-		int maxBranchCull)
+static size_t trimSequences(SequenceCollectionHash* seqCollection,
+		unsigned maxBranchCull)
 {
 	Timer timer("TrimSequences");
-	printf("Trimming short branches: %u\n", maxBranchCull);
-	unsigned numBranchesRemoved = 0;
+	cout << "Pruning tips shorter than "
+		<< maxBranchCull << " bp...\n";
+	size_t numBranchesRemoved = 0;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
@@ -656,11 +658,11 @@ static int trimSequences(SequenceCollectionHash* seqCollection,
 		seqCollection->pumpNetwork();
 	}
 
-	unsigned numSweeped = removeMarked(seqCollection);
+	size_t numSweeped = removeMarked(seqCollection);
 
 	if (numBranchesRemoved > 0)
-		PrintDebug(0, "Trimmed %u k-mer in %u branches\n",
-				numSweeped, numBranchesRemoved);
+		logger(0) << "Pruned " << numSweeped << " k-mer in "
+			<< numBranchesRemoved << " tips.\n";
 	return numBranchesRemoved;
 }
 
@@ -737,8 +739,8 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
 	assert(!branch.empty());
 	if (branch.getState() == BS_NOEXT
 			|| branch.getState() == BS_AMBI_OPP) {
-		PrintDebug(5, "Trimming %zu %s\n", branch.size(),
-				branch.front().first.str().c_str());
+		logger(5) << "Pruning " << branch.size() << ' '
+			<< branch.front().first << '\n';
 		for (BranchRecord::iterator it = branch.begin();
 				it != branch.end(); ++it)
 			seqCollection->mark(it->first);
@@ -750,10 +752,10 @@ bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
 /** Remove all marked k-mer.
  * @return the number of removed k-mer
  */
-unsigned removeMarked(ISequenceCollection* pSC)
+size_t removeMarked(ISequenceCollection* pSC)
 {
 	Timer timer(__func__);
-	unsigned count = 0;
+	size_t count = 0;
 	for (ISequenceCollection::iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
 		if (it->second.deleted())
@@ -765,14 +767,14 @@ unsigned removeMarked(ISequenceCollection* pSC)
 		pSC->pumpNetwork();
 	}
 	if (count > 0)
-		PrintDebug(1, "Removed %u marked k-mer\n", count);
+		logger(1) << "Removed " << count << " marked k-mer.\n";
 	return count;
 }
 
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
-unsigned assembleContig(
+size_t assembleContig(
 		ISequenceCollection* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
@@ -784,7 +786,7 @@ unsigned assembleContig(
 	// Assemble the contig.
 	Sequence contig(branch);
 
-	unsigned kmerCount = branch.calculateBranchMultiplicity();
+	size_t kmerCount = branch.calculateBranchMultiplicity();
 	if (writer != NULL)
 		writer->WriteSequence(contig, id, kmerCount);
 
@@ -802,16 +804,16 @@ unsigned assembleContig(
 /** Assemble contigs.
  * @return the number of contigs assembled
  */
-unsigned assemble(SequenceCollectionHash* seqCollection,
+size_t assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter)
 {
 	Timer timer("Assemble");
 
-	unsigned kmerCount = 0;
+	size_t kmerCount = 0;
 	unsigned contigID = 0;
-	unsigned assembledKmer = 0;
-	unsigned lowCoverageKmer = 0;
-	unsigned lowCoverageContigs = 0;
+	size_t assembledKmer = 0;
+	size_t lowCoverageKmer = 0;
+	size_t lowCoverageContigs = 0;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
@@ -828,7 +830,7 @@ unsigned assemble(SequenceCollectionHash* seqCollection,
 			BranchRecord currBranch(SENSE);
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
-			unsigned removed = assembleContig(seqCollection,
+			size_t removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
 			assembledKmer += currBranch.size();
 			if (removed > 0) {
@@ -857,7 +859,7 @@ unsigned assemble(SequenceCollectionHash* seqCollection,
 		}
 
 		if (currBranch.isCanonical()) {
-			unsigned removed = assembleContig(seqCollection,
+			size_t removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
 			assembledKmer += currBranch.size();
 			if (removed > 0) {
@@ -870,18 +872,18 @@ unsigned assemble(SequenceCollectionHash* seqCollection,
 	}
 
 	if (opt::coverage > 0) {
-		printf("Found %u k-mer in %u contigs before removing "
-				"low-coverage contigs\n", assembledKmer, contigID);
-		printf("Removed %u k-mer in %u low-coverage contigs\n",
-				lowCoverageKmer, lowCoverageContigs);
+		cout << "Found " << assembledKmer << " k-mer in " << contigID
+			<< " contigs before removing low-coverage contigs.\n"
+			"Removed " << lowCoverageKmer << " k-mer in "
+				<< lowCoverageContigs << " low-coverage contigs.\n";
 	} else {
 		assert(assembledKmer <= kmerCount);
-		unsigned circularKmer = kmerCount - assembledKmer;
+		size_t circularKmer = kmerCount - assembledKmer;
 		if (circularKmer > 0)
-			printf("%u unassembled k-mer in circular contigs\n",
-					circularKmer);
-		printf("Assembled %u k-mer in %u contigs\n",
-				assembledKmer, contigID);
+			cout << "Left " << circularKmer
+				<< " unassembled k-mer in circular contigs.\n";
+		cout << "Assembled " << assembledKmer << " k-mer in "
+			<< contigID << " contigs.\n";
 	}
 	return contigID;
 }

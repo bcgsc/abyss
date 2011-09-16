@@ -7,8 +7,6 @@
 #include "Log.h"
 #include "StringUtil.h"
 #include <climits> // for UINT_MAX
-#include <cmath> // for roundf
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -27,7 +25,7 @@ void NetworkSequenceCollection::loadSequences()
 /** Receive, process, send, and synchronize.
  * @return the number of inflight messages
  */
-unsigned NetworkSequenceCollection::pumpFlushReduce()
+size_t NetworkSequenceCollection::pumpFlushReduce()
 {
 	pumpNetwork();
 	m_comm.flush();
@@ -54,7 +52,7 @@ void NetworkSequenceCollection::completeOperation()
 void NetworkSequenceCollection::run()
 {
 	/** The number of contigs and k-mer assembled. */
-	pair<unsigned, unsigned> numAssembled;
+	pair<size_t, size_t> numAssembled;
 
 	ofstream bubbleFile;
 
@@ -73,7 +71,8 @@ void NetworkSequenceCollection::run()
 			{
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
+				logger(0) << "Loaded " << m_data.size()
+					<< " k-mer.\n";
 				assert(!m_data.empty());
 				m_data.shrink();
 				m_comm.reduce(m_data.size());
@@ -97,8 +96,8 @@ void NetworkSequenceCollection::run()
 			case NAS_ADJ_COMPLETE:
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Generated %u edges\n",
-						m_numBasesAdjSet);
+				logger(0) << "Added " << m_numBasesAdjSet
+					<< " edges.\n";
 				m_comm.reduce(m_numBasesAdjSet);
 				EndState();
 				SetState(NAS_WAITING);
@@ -106,7 +105,7 @@ void NetworkSequenceCollection::run()
 			case NAS_ERODE:
 			{
 				m_comm.barrier();
-				unsigned numEroded
+				size_t numEroded
 					= AssemblyAlgorithms::erodeEnds(this);
 				EndState();
 				SetState(NAS_ERODE_WAITING);
@@ -129,7 +128,7 @@ void NetworkSequenceCollection::run()
 			{
 				assert(m_trimStep != 0);
 				m_comm.barrier();
-				int numRemoved = performNetworkTrim(this);
+				size_t numRemoved = performNetworkTrim(this);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numRemoved);
@@ -137,7 +136,7 @@ void NetworkSequenceCollection::run()
 			}
 			case NAS_REMOVE_MARKED: {
 				m_comm.barrier();
-				unsigned count
+				size_t count
 					= AssemblyAlgorithms::removeMarked(this);
 				EndState();
 				SetState(NAS_WAITING);
@@ -170,7 +169,7 @@ void NetworkSequenceCollection::run()
 
 			case NAS_DISCOVER_BUBBLES:
 			{
-				unsigned numDiscovered
+				size_t numDiscovered
 					= performNetworkDiscoverBubbles(this);
 				EndState();
 				SetState(NAS_WAITING);
@@ -181,7 +180,7 @@ void NetworkSequenceCollection::run()
 			{
 				if (!bubbleFile.is_open())
 					AssemblyAlgorithms::openBubbleFile(bubbleFile);
-				unsigned numPopped
+				size_t numPopped
 					= performNetworkPopBubbles(bubbleFile);
 				EndState();
 				SetState(NAS_WAITING);
@@ -192,7 +191,7 @@ void NetworkSequenceCollection::run()
 			{
 				m_comm.barrier();
 				pumpNetwork();
-				unsigned count
+				size_t count
 					= AssemblyAlgorithms::markAmbiguous(this);
 				EndState();
 				SetState(NAS_WAITING);
@@ -204,7 +203,7 @@ void NetworkSequenceCollection::run()
 				m_comm.barrier();
 				assert(m_comm.receiveEmpty());
 				m_comm.barrier();
-				unsigned count
+				size_t count
 					= AssemblyAlgorithms::splitAmbiguous(this);
 				EndState();
 				SetState(NAS_WAITING);
@@ -246,12 +245,12 @@ void NetworkSequenceCollection::run()
 	}
 }
 
-unsigned NetworkSequenceCollection::controlErode()
+size_t NetworkSequenceCollection::controlErode()
 {
 	SetState(NAS_ERODE);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_ERODE);
 	m_comm.barrier();
-	unsigned numEroded = AssemblyAlgorithms::erodeEnds(this);
+	size_t numEroded = AssemblyAlgorithms::erodeEnds(this);
 	EndState();
 
 	// Do not call SetState, because it clears the
@@ -277,9 +276,9 @@ unsigned NetworkSequenceCollection::controlErode()
 	completeOperation();
 	numEroded += m_comm.reduce(
 			AssemblyAlgorithms::getNumEroded());
-	printf("Eroded %u tips\n", numEroded);
+	cout << "Eroded " << numEroded << " tips.\n";
 
-	unsigned removed = m_comm.reduce(m_data.cleanup());
+	size_t removed = m_comm.reduce(m_data.cleanup());
 	m_comm.barrier();
 	assert(removed == numEroded);
 	(void)removed;
@@ -291,14 +290,14 @@ unsigned NetworkSequenceCollection::controlErode()
 /** Remove marked k-mer.
  * @return the number of k-mer removed
  */
-unsigned NetworkSequenceCollection::controlRemoveMarked()
+size_t NetworkSequenceCollection::controlRemoveMarked()
 {
 	if (opt::verbose > 0)
-		puts("Sweeping");
+		cout << "Sweeping...\n";
 	SetState(NAS_REMOVE_MARKED);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_REMOVE_MARKED);
 	m_comm.barrier();
-	unsigned count = AssemblyAlgorithms::removeMarked(this);
+	size_t count = AssemblyAlgorithms::removeMarked(this);
 	m_checkpointSum += count;
 	EndState();
 
@@ -309,15 +308,15 @@ unsigned NetworkSequenceCollection::controlRemoveMarked()
 }
 
 /** Perform a single round of trimming at the specified length. */
-unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
+size_t NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 {
 	assert(trimLen > 0);
 	m_trimStep = trimLen;
-	printf("Trimming short branches: %u\n", trimLen);
+	cout << "Pruning tips shorter than " << trimLen << " bp...\n";
 	SetState(NAS_TRIM);
 	m_comm.sendControlMessage(APC_TRIM, trimLen);
 	m_comm.barrier();
-	unsigned numRemoved = performNetworkTrim(this);
+	size_t numRemoved = performNetworkTrim(this);
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -325,11 +324,11 @@ unsigned NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 		pumpNetwork();
 	numRemoved += m_checkpointSum;
 
-	unsigned numSweeped = controlRemoveMarked();
+	size_t numSweeped = controlRemoveMarked();
 
 	if (numRemoved > 0)
-		printf("Trimmed %u k-mer in %u branches\n",
-				numSweeped, numRemoved);
+		cout << "Pruned " << numSweeped << " k-mer in "
+			<< numRemoved << " tips.\n";
 	return numRemoved;
 }
 
@@ -339,16 +338,17 @@ void NetworkSequenceCollection::controlTrim(unsigned start)
 	if (opt::trimLen == 0)
 		return;
 	unsigned rounds = 0, total = 0;
-	for (int trim = start; trim < opt::trimLen; trim *= 2) {
+	for (unsigned trim = start; trim < opt::trimLen; trim *= 2) {
 		rounds++;
 		total += controlTrimRound(trim);
 	}
-	unsigned count;
+	size_t count;
 	while ((count = controlTrimRound(opt::trimLen)) > 0) {
 		rounds++;
 		total += count;
 	}
-	printf("Trimmed %u branches in %u rounds\n", total, rounds);
+	cout << "Pruned " << total << " tips in "
+		<< rounds << " rounds.\n";
 }
 
 /** Remove low-coverage contigs. */
@@ -361,14 +361,14 @@ void NetworkSequenceCollection::controlCoverage()
 	controlMarkAmbiguous();
 
 	// Remove low-coverage contigs.
-	printf("Removing low-coverage contigs "
-			"(mean k-mer coverage < %f)\n", opt::coverage);
+	cout << "Removing low-coverage contigs "
+			"(mean k-mer coverage < " << opt::coverage << ")...\n";
 	SetState(NAS_COVERAGE);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_COVERAGE);
 	m_comm.reduce(m_data.cleanup());
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
-	pair<unsigned, unsigned> numAssembled
+	pair<size_t, size_t> numAssembled
 		= performNetworkAssembly(this);
 	EndState();
 
@@ -384,14 +384,14 @@ void NetworkSequenceCollection::controlCoverage()
 
 	numAssembled.first = m_comm.reduce(numAssembled.first);
 	numAssembled.second = m_comm.reduce(numAssembled.second);
-	printf("Found %u k-mer in %u contigs "
-			"before removing low-coverage contigs\n",
-			numAssembled.second, numAssembled.first);
+	cout << "Found " << numAssembled.second << " k-mer in "
+		<< numAssembled.first << " contigs "
+			"before removing low-coverage contigs.\n";
 
-	unsigned lowCoverageContigs = m_comm.reduce(m_lowCoverageContigs);
-	unsigned lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
-	printf("Removed %u k-mer in %u low-coverage contigs\n",
-			lowCoverageKmer, lowCoverageContigs);
+	size_t lowCoverageContigs = m_comm.reduce(m_lowCoverageContigs);
+	size_t lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
+	cout << "Removed " << lowCoverageKmer << " k-mer in "
+		<< lowCoverageContigs << " low-coverage contigs.\n";
 	EndState();
 
 	SetState(NAS_SPLIT_AMBIGUOUS);
@@ -402,8 +402,8 @@ void NetworkSequenceCollection::controlCoverage()
 	m_comm.barrier();
 	pumpNetwork();
 	m_data.wipeFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
-	unsigned removed = m_comm.reduce(m_data.cleanup());
-	printf("Removed %u marked k-mer\n", removed);
+	size_t removed = m_comm.reduce(m_data.cleanup());
+	cout << "Removed " << removed << " marked k-mer.\n";
 	EndState();
 
 	opt::coverage = 0;
@@ -429,7 +429,8 @@ void NetworkSequenceCollection::runControl()
 						NAS_LOAD_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Loaded %zu k-mer\n", m_data.size());
+				logger(0) << "Loaded " << m_data.size()
+					<< " k-mer.\n";
 				assert(!m_data.empty());
 				m_data.shrink();
 				size_t numLoaded = m_comm.reduce(m_data.size());
@@ -449,7 +450,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_GEN_ADJ:
-				puts("Generating adjacency");
+				cout << "Finding adjacenct k-mer...\n";
 				m_comm.sendControlMessage(APC_SET_STATE, NAS_GEN_ADJ);
 				m_comm.barrier();
 				m_numBasesAdjSet = 0;
@@ -465,17 +466,17 @@ void NetworkSequenceCollection::runControl()
 						NAS_ADJ_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
-				PrintDebug(0, "Generated %u edges\n",
-						m_numBasesAdjSet);
-				printf("Generated %lu edges\n",
-						m_comm.reduce(m_numBasesAdjSet));
+				logger(0) << "Added " << m_numBasesAdjSet
+					<< " edges.\n";
+				cout << "Added " << m_comm.reduce(m_numBasesAdjSet)
+					<< " edges.\n";
 				EndState();
 
 				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 			case NAS_ERODE:
 				assert(opt::erode > 0);
-				puts("Eroding tips");
+				cout << "Eroding tips...\n";
 				controlErode();
 				SetState(NAS_TRIM);
 				break;
@@ -513,12 +514,12 @@ void NetworkSequenceCollection::runControl()
 				ofstream out;
 				AssemblyAlgorithms::openBubbleFile(out);
 
-				puts("Popping bubbles");
-				unsigned numPopped = controlPopBubbles(out);
+				cout << "Popping bubbles...\n";
+				size_t numPopped = controlPopBubbles(out);
 				assert(numPopped == m_numPopped);
 				assert(out.good());
 				out.close();
-				printf("Removed %u bubbles\n", numPopped);
+				cout << "Removed " << numPopped << " bubbles.\n";
 
 				SetState(NAS_MARK_AMBIGUOUS);
 				break;
@@ -529,12 +530,12 @@ void NetworkSequenceCollection::runControl()
 				break;
 			case NAS_ASSEMBLE:
 			{
-				puts("Assembling");
+				cout << "Assembling...\n";
 				m_comm.sendControlMessage(APC_ASSEMBLE);
 				m_comm.barrier();
 				pumpNetwork();
 				FastaWriter writer(opt::contigsTempPath.c_str());
-				pair<unsigned, unsigned> numAssembled
+				pair<size_t, size_t> numAssembled
 					= performNetworkAssembly(this, &writer);
 				EndState();
 
@@ -550,8 +551,9 @@ void NetworkSequenceCollection::runControl()
 						numAssembled.first);
 				numAssembled.second = m_comm.reduce(
 						numAssembled.second);
-				printf("Assembled %u k-mer in %u contigs\n",
-						numAssembled.second, numAssembled.first);
+				cout << "Assembled " << numAssembled.second
+					<< " k-mer in " << numAssembled.first
+					<< " contigs.\n";
 
 				SetState(NAS_DONE);
 				break;
@@ -573,7 +575,8 @@ void NetworkSequenceCollection::EndState()
 //
 void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 {
-	PrintDebug(2, "SetState %u (was %u)\n", newState, m_state);
+	logger(2) << "SetState " << newState
+		<< " (was " << m_state << ")\n";
 
 	// Ensure there are no pending messages
 	assert(m_comm.transmitBufferEmpty());
@@ -588,9 +591,9 @@ void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
 /** Receive and dispatch packets.
  * @return the number of packets received
  */
-unsigned NetworkSequenceCollection::pumpNetwork()
+size_t NetworkSequenceCollection::pumpNetwork()
 {
-	for (unsigned count = 0; ; count++) {
+	for (size_t count = 0; ; count++) {
 		int senderID;
 		APMessage msg = m_comm.checkMessage(senderID);
 		switch(msg)
@@ -683,8 +686,8 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 			SetState(NetworkAssemblyState(controlMsg.argument));
 			break;
 		case APC_CHECKPOINT:
-			PrintDebug(4, "checkpoint from %u: %u\n",
-					source, controlMsg.argument);
+			logger(4) << "checkpoint from " << source << ": "
+				<< controlMsg.argument << '\n';
 			m_numReachedCheckpoint++;
 			m_checkpointSum += controlMsg.argument;
 			break;
@@ -737,11 +740,11 @@ void NetworkSequenceCollection::handle(
 }
 
 /** Distributed trimming function. */
-int NetworkSequenceCollection::performNetworkTrim(
+size_t NetworkSequenceCollection::performNetworkTrim(
 		ISequenceCollection* seqCollection)
 {
 	Timer timer("NetworkTrim");
-	int numBranchesRemoved = 0;
+	size_t numBranchesRemoved = 0;
 
 	// The branch ids
 	uint64_t branchGroupID = 0;
@@ -795,7 +798,7 @@ int NetworkSequenceCollection::performNetworkTrim(
 		seqCollection->pumpNetwork();
 	}
 
-	PrintDebug(0, "Trimmed %u branches\n", numBranchesRemoved);
+	logger(0) << "Pruned " << numBranchesRemoved << " tips.\n";
 	return numBranchesRemoved;
 }
 
@@ -803,9 +806,9 @@ int NetworkSequenceCollection::performNetworkTrim(
 // Process current branches, removing those that are finished
 // returns true if the branch list has branches remaining
 //
-int NetworkSequenceCollection::processBranchesTrim()
+size_t NetworkSequenceCollection::processBranchesTrim()
 {
-	int numBranchesRemoved = 0;
+	size_t numBranchesRemoved = 0;
 	vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
 	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
@@ -831,21 +834,22 @@ int NetworkSequenceCollection::processBranchesTrim()
 }
 
 /** Discover bubbles to pop. */
-int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
+size_t NetworkSequenceCollection::
+performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
 {
 	Timer timer("NetworkDiscoverBubbles");
-	
+
 	// The branch ids
 	uint64_t branchGroupID = 0;
 	m_finishedGroups.clear();
-	
+
 	// make sure the branch group structure is initially empty
 	assert(m_activeBranchGroups.empty());
-	
-	int count = 0;
+
+	size_t count = 0;
 
 	// Set the cutoffs
-	const unsigned int maxNumBranches = 3;
+	const unsigned maxNumBranches = 3;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
@@ -853,7 +857,7 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 			continue;
 
 		if (++count % 100000 == 0)
-			PrintDebug(1, "Popping bubbles: %u k-mer\n", count);
+			logger(1) << "Popping bubbles: " << count << '\n';
 
 		ExtensionRecord extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
@@ -888,13 +892,14 @@ int NetworkSequenceCollection::performNetworkDiscoverBubbles(ISequenceCollection
 		seqCollection->pumpNetwork();
 	assert(m_activeBranchGroups.empty());
 
-	unsigned numDiscovered = m_bubbles.size();
-	PrintDebug(1, "Discovered %u bubbles\n", numDiscovered);
+	size_t numDiscovered = m_bubbles.size();
+	logger(1) << "Discovered " << numDiscovered << " bubbles.\n";
 	return numDiscovered;
 }
 
 /** Pop bubbles discovered previously. */
-int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
+size_t NetworkSequenceCollection::
+performNetworkPopBubbles(ostream& out)
 {
 	Timer timer("NetworkPopBubbles");
 
@@ -904,7 +909,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 	pumpNetwork();
 	assert(m_comm.receiveEmpty());
 
-	unsigned numPopped = 0;
+	size_t numPopped = 0;
 	for (BranchGroupMap::iterator iter = m_bubbles.begin();
 			iter != m_bubbles.end(); iter++) {
 		assert(iter->second.getStatus() == BGS_JOINED);
@@ -923,7 +928,7 @@ int NetworkSequenceCollection::performNetworkPopBubbles(ostream& out)
 	out.flush();
 	assert(out.good());
 
-	PrintDebug(0, "Removed %u bubbles\n", numPopped);
+	logger(0) << "Removed " << numPopped << " bubbles.\n";
 	return numPopped;
 }
 
@@ -968,12 +973,12 @@ bool NetworkSequenceCollection::processBranchesDiscoverBubbles()
 }
 
 /** Discover bubbles to pop. */
-unsigned NetworkSequenceCollection::controlDiscoverBubbles()
+size_t NetworkSequenceCollection::controlDiscoverBubbles()
 {
 	SetState(NAS_DISCOVER_BUBBLES);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_DISCOVER_BUBBLES);
 
-	unsigned numDiscovered = performNetworkDiscoverBubbles(this);
+	size_t numDiscovered = performNetworkDiscoverBubbles(this);
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -981,12 +986,12 @@ unsigned NetworkSequenceCollection::controlDiscoverBubbles()
 		pumpNetwork();
 	numDiscovered += m_checkpointSum;
 	if (numDiscovered > 0 && opt::verbose > 0)
-		printf("Discovered %u bubbles\n", numDiscovered);
+		cout << "Discovered " << numDiscovered << " bubbles.\n";
 	return numDiscovered;
 }
 
 /** Pop the bubbles discovered previously. */
-int NetworkSequenceCollection::controlPopBubbles(ostream& out)
+size_t NetworkSequenceCollection::controlPopBubbles(ostream& out)
 {
 	controlDiscoverBubbles();
 	m_comm.sendControlMessage(APC_BARRIER);
@@ -1009,46 +1014,45 @@ int NetworkSequenceCollection::controlPopBubbles(ostream& out)
 			pumpNetwork();
 	}
 
-	unsigned numPopped = m_checkpointSum;
+	size_t numPopped = m_checkpointSum;
 	m_numPopped += numPopped;
 	if (numPopped > 0)
-		printf("Removed %u bubbles\n", numPopped);
+		cout << "Removed " << numPopped << " bubbles.\n";
 	return numPopped;
 }
 
 /** Mark ambiguous branches. */
-unsigned NetworkSequenceCollection::controlMarkAmbiguous()
+size_t NetworkSequenceCollection::controlMarkAmbiguous()
 {
-	puts("Marking ambiguous branches");
+	cout << "Marking ambiguous branches...\n";
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_MARK_AMBIGUOUS);
 	m_comm.barrier();
 	pumpNetwork();
-	unsigned count = AssemblyAlgorithms::markAmbiguous(this);
+	size_t count = AssemblyAlgorithms::markAmbiguous(this);
 	m_checkpointSum += count;
 	EndState();
 	m_numReachedCheckpoint++;
 	while (!checkpointReached())
 		pumpNetwork();
-	printf("Marked %u ambiguous branches\n", m_checkpointSum);
+	cout << "Marked " << m_checkpointSum << " ambiguous branches.\n";
 	return m_checkpointSum;
 }
 
 /** Remove ambiguous branches. */
-unsigned NetworkSequenceCollection::controlSplitAmbiguous()
+size_t NetworkSequenceCollection::controlSplitAmbiguous()
 {
-	puts("Splitting ambiguous branches");
+	cout << "Splitting ambiguous branches...\n";
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_SPLIT_AMBIGUOUS);
 	m_comm.barrier();
 	assert(m_comm.receiveEmpty());
 	m_comm.barrier();
-	unsigned count = AssemblyAlgorithms::splitAmbiguous(this);
+	size_t count = AssemblyAlgorithms::splitAmbiguous(this);
 	m_checkpointSum += count;
 	EndState();
 	m_numReachedCheckpoint++;
 	while (!checkpointReached())
 		pumpNetwork();
-	printf("Split %u ambiguous branches\n",
-			m_checkpointSum);
+	cout << "Split " << m_checkpointSum << " ambiguous branches.\n";
 	return m_checkpointSum;
 }
 
@@ -1057,7 +1061,7 @@ void NetworkSequenceCollection::assembleContig(
 		ISequenceCollection* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
-	unsigned removed = AssemblyAlgorithms::assembleContig(
+	size_t removed = AssemblyAlgorithms::assembleContig(
 			seqCollection, writer, branch, id);
 	if (removed > 0) {
 		m_lowCoverageContigs++;
@@ -1066,8 +1070,9 @@ void NetworkSequenceCollection::assembleContig(
 }
 
 namespace std {
-	pair<unsigned, unsigned>& operator +=(pair<unsigned, unsigned>& a,
-			pair<unsigned, unsigned> b)
+	/** Add a pair of numbers. */
+	pair<size_t, size_t>& operator+=(
+			pair<size_t, size_t>& a, pair<size_t, size_t> b)
 	{
 		a.first += b.first;
 		a.second += b.second;
@@ -1078,12 +1083,12 @@ namespace std {
 /** Assemble contigs.
  * @return the number of contigs and k-mer assembled
  */
-pair<unsigned, unsigned> NetworkSequenceCollection::
+pair<size_t, size_t> NetworkSequenceCollection::
 performNetworkAssembly(ISequenceCollection* seqCollection,
 		FastaWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
-	pair<unsigned, unsigned> numAssembled(0, 0);
+	pair<size_t, size_t> numAssembled(0, 0);
 	uint64_t branchGroupID = 0;
 	assert(m_activeBranchGroups.empty());
 
@@ -1151,14 +1156,14 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 	}
 
 	if (opt::coverage > 0) {
-		PrintDebug(0, "Found %u k-mer in %u contigs before removing "
-				"low-coverage contigs\n",
-				numAssembled.second, numAssembled.first);
-		PrintDebug(0, "Removed %u k-mer in %u low-coverage contigs\n",
-				m_lowCoverageKmer, m_lowCoverageContigs);
+		logger(0) << "Found " << numAssembled.second << " k-mer in "
+			<< numAssembled.first
+			<< " contigs before removing low-coverage contigs.\n"
+			"Removed " << m_lowCoverageKmer << " k-mer in "
+				<< m_lowCoverageContigs << " low-coverage contigs.\n";
 	} else
-		PrintDebug(0, "Assembled %u k-mer in %u contigs\n",
-				numAssembled.second, numAssembled.first);
+		cout << "Assembled " << numAssembled.second << " k-mer in "
+			<< numAssembled.first << " contigs.\n";
 	return numAssembled;
 }
 
@@ -1166,11 +1171,11 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
  * completed.
  * @return the number of contigs and k-mer assembled
  */
-pair<unsigned, unsigned> NetworkSequenceCollection::
+pair<size_t, size_t> NetworkSequenceCollection::
 processBranchesAssembly(ISequenceCollection* seqCollection,
-		FastaWriter* fileWriter, int currContigID)
+		FastaWriter* fileWriter, unsigned currContigID)
 {
-	unsigned assembledContigs = 0, assembledKmer = 0;
+	size_t assembledContigs = 0, assembledKmer = 0;
 	for (BranchGroupMap::iterator it = m_activeBranchGroups.begin();
 			it != m_activeBranchGroups.end();) {
 		if (!it->second.isActive()) {
@@ -1217,7 +1222,7 @@ void NetworkSequenceCollection::generateExtensionRequests(
 {
 	assert(first != last);
 #if !NDEBUG
-	unsigned length = first->size();
+	size_t length = first->size();
 #endif
 	unsigned branchID = 0;
 	for (BranchGroup::const_iterator it = first; it != last; ++it) {
@@ -1322,10 +1327,11 @@ void NetworkSequenceCollection::remove(const Kmer& seq)
 
 bool NetworkSequenceCollection::checkpointReached() const
 {
-	return m_numReachedCheckpoint == opt::numProc;
+	return m_numReachedCheckpoint == (unsigned)opt::numProc;
 }
 
-bool NetworkSequenceCollection::checkpointReached(int numRequired) const
+bool NetworkSequenceCollection::
+checkpointReached(unsigned numRequired) const
 {
 	return m_numReachedCheckpoint == numRequired;
 }

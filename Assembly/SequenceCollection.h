@@ -28,7 +28,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		}
 
 		// Clean up by erasing sequences flagged as deleted.
-		unsigned cleanup();
+		size_t cleanup();
 
 		/** Shrink the hash table. */
 		void shrink() {
@@ -81,7 +81,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		size_t size() const { return m_data.size(); }
 
 		// Not a network sequence collection. Nothing to do.
-		unsigned pumpNetwork() { return 0; }
+		size_t pumpNetwork() { return 0; }
 
 		/** Attach the specified observer. */
 		void attach(SeqObserver f)
@@ -216,7 +216,7 @@ struct adjacency_iterator
   private:
 	vertex_descriptor m_v;
 	SeqExt m_adj;
-	short m_i;
+	short unsigned m_i;
 }; // adjacency_iterator
 
 // VertexListGraph

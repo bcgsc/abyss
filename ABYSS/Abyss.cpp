@@ -124,7 +124,7 @@ int main(int argc, char* const* argv)
 		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
 				<< ":" << opt::kStep << endl;
 
-	for (int k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
+	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
 		opt::kmerSize = k;

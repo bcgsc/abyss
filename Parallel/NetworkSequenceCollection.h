@@ -46,24 +46,24 @@ class NetworkSequenceCollection : public ISequenceCollection
 			: m_state(NAS_WAITING), m_trimStep(0),
 			m_numPopped(0), m_numAssembled(0) { }
 
-		int performNetworkTrim(ISequenceCollection* seqCollection);
+		size_t performNetworkTrim(ISequenceCollection* seqCollection);
 
-		int performNetworkDiscoverBubbles(ISequenceCollection* c);
-		int performNetworkPopBubbles(std::ostream& out);
+		size_t performNetworkDiscoverBubbles(ISequenceCollection* c);
+		size_t performNetworkPopBubbles(std::ostream& out);
 
-		unsigned controlErode();
-		unsigned controlTrimRound(unsigned trimLen);
+		size_t controlErode();
+		size_t controlTrimRound(unsigned trimLen);
 		void controlTrim(unsigned start = 1);
-		unsigned controlRemoveMarked();
+		size_t controlRemoveMarked();
 		void controlCoverage();
-		unsigned controlDiscoverBubbles();
-		int controlPopBubbles(std::ostream& out);
-		unsigned controlMarkAmbiguous();
-		unsigned controlSplitAmbiguous();
-		unsigned controlSplit();
+		size_t controlDiscoverBubbles();
+		size_t controlPopBubbles(std::ostream& out);
+		size_t controlMarkAmbiguous();
+		size_t controlSplitAmbiguous();
+		size_t controlSplit();
 
 		// Perform a network assembly
-		std::pair<unsigned, unsigned> performNetworkAssembly(
+		std::pair<size_t, size_t> performNetworkAssembly(
 				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter = NULL);
 
@@ -82,8 +82,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 				uint8_t base);
 
 		// Receive and dispatch packets.
-		unsigned pumpNetwork();
-		unsigned pumpFlushReduce();
+		size_t pumpNetwork();
+		size_t pumpFlushReduce();
 
 		void completeOperation();
 
@@ -95,7 +95,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// test if the checkpoint has been reached
 		bool checkpointReached() const;
-		bool checkpointReached(int numRequired) const;
+		bool checkpointReached(unsigned numRequired) const;
 
 		void handle(int senderID, const SeqAddMessage& message);
 		void handle(int senderID, const SeqRemoveMessage& message);
@@ -133,10 +133,10 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void loadSequences();
 
-		std::pair<unsigned, unsigned> processBranchesAssembly(
+		std::pair<size_t, size_t> processBranchesAssembly(
 				ISequenceCollection* seqCollection,
-				FastaWriter* fileWriter, int currContigID);
-		int processBranchesTrim();
+				FastaWriter* fileWriter, unsigned currContigID);
+		size_t processBranchesTrim();
 		bool processBranchesDiscoverBubbles();
 
 		void generateExtensionRequest(
@@ -179,36 +179,36 @@ class NetworkSequenceCollection : public ISequenceCollection
 		MessageBuffer m_comm;
 
 		// The number of nodes in the network
-		unsigned int m_numDataNodes;
+		unsigned m_numDataNodes;
 
 		// the state of the assembly
 		NetworkAssemblyState m_state;
 
 		// The number of processes that have sent a checkpoint reached message, this is used by the control process to determine the state flow
-		int m_numReachedCheckpoint;
+		unsigned m_numReachedCheckpoint;
 
 		/** The sum of the values returned by the slave nodes in their
 		 * checkpoint messages.
 		 */
-		int m_checkpointSum;
+		size_t m_checkpointSum;
 
 		// the number of bases of adjacency set
-		int m_numBasesAdjSet;
+		size_t m_numBasesAdjSet;
 
 		// the current length to trim on (comes from the control node)
-		int m_trimStep;
+		unsigned m_trimStep;
 
 		/** The number of low-coverage contigs removed. */
-		unsigned m_lowCoverageContigs;
+		size_t m_lowCoverageContigs;
 
 		/** The number of low-coverage k-mer removed. */
-		unsigned m_lowCoverageKmer;
+		size_t m_lowCoverageKmer;
 
 		/** The number of bubbles popped so far. */
-		unsigned m_numPopped;
+		size_t m_numPopped;
 
 		// the number of sequences assembled so far
-		int m_numAssembled;
+		size_t m_numAssembled;
 
 		// The current branches that are active
 		BranchGroupMap m_activeBranchGroups;

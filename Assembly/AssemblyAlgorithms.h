@@ -34,12 +34,12 @@ Histogram coverageHistogram(const ISequenceCollection& c);
 void setCoverageParameters(const Histogram& h);
 
 /* Erosion. Remove k-mer from the ends of blunt contigs. */
-unsigned erodeEnds(ISequenceCollection* seqCollection);
-unsigned erode(ISequenceCollection* c,
+size_t erodeEnds(ISequenceCollection* seqCollection);
+size_t erode(ISequenceCollection* c,
 		const ISequenceCollection::value_type& seq);
-unsigned getNumEroded();
+size_t getNumEroded();
 
-unsigned removeMarked(ISequenceCollection* pSC);
+size_t removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
 SeqContiguity checkSeqContiguity(
@@ -78,10 +78,10 @@ void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& gro
 //
 
 // Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
-unsigned markAmbiguous(ISequenceCollection* seqCollection);
-unsigned splitAmbiguous(ISequenceCollection* seqCollection);
+size_t markAmbiguous(ISequenceCollection* seqCollection);
+size_t splitAmbiguous(ISequenceCollection* seqCollection);
 
-unsigned assembleContig(ISequenceCollection* seqCollection,
+size_t assembleContig(ISequenceCollection* seqCollection,
 		FastaWriter* writer, BranchRecord& branch, unsigned id);
 
 void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
@@ -96,8 +96,8 @@ void generateSequencesFromExtension(const Kmer& currSeq,
 /* Non-distributed graph algorithms. */
 
 void performTrim(SequenceCollectionHash* seqCollection);
-int popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
-unsigned assemble(SequenceCollectionHash* seqCollection,
+size_t popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
+size_t assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter = NULL);
 
 };

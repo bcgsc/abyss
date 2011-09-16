@@ -58,10 +58,10 @@ void SequenceCollectionHash::add(const Kmer& seq)
 /** Clean up by erasing sequences flagged as deleted.
  * @return the number of sequences erased
  */
-unsigned SequenceCollectionHash::cleanup()
+size_t SequenceCollectionHash::cleanup()
 {
 	Timer(__func__);
-	unsigned count = 0;
+	size_t count = 0;
 	for (iterator it = m_data.begin(); it != m_data.end();) {
 		if (it->second.deleted()) {
 			m_data.erase(it++);

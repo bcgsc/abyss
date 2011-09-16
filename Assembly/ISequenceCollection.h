@@ -66,7 +66,7 @@ class ISequenceCollection
 				extDirection dir, uint8_t base) = 0;
 
 		// Receive and dispatch packets if necessary.
-		virtual unsigned pumpNetwork() = 0;
+		virtual size_t pumpNetwork() = 0;
 
 		virtual iterator begin() = 0;
 		virtual const_iterator begin() const = 0;
