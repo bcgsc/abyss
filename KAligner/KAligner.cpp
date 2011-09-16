@@ -43,6 +43,8 @@ static const char USAGE_MESSAGE[] =
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -s, --section=S/N     split the target into N sections and align"
+"                        reads to section S [1/1]\n"
 "  -i, --ignore-multimap ignore duplicate k-mer in the target [default]\n"
 "  -m, --multimap        allow duplicate k-mer in the target\n"
 "      --no-multimap     disallow duplicate k-mer in the target\n"
@@ -64,17 +66,20 @@ namespace opt {
 	static unsigned k;
 	static int threads = 2;
 	static int printSeq;
+	static unsigned section = 1;
+	static unsigned nsections = 1;
 
 	/** Output formats */
 	static int format;
 }
 
-static const char shortopts[] = "ik:mo:j:v";
+static const char shortopts[] = "ik:mo:j:vs:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SYNC };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "section",     required_argument, NULL, 's' },
 	{ "no-multi",    no_argument,     &opt::multimap, opt::ERROR },
 	{ "multimap",    no_argument,     &opt::multimap, opt::MULTIMAP },
 	{ "ignore-multimap", no_argument, &opt::multimap, opt::IGNORE },
@@ -283,6 +288,7 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
+	char delim = '/';
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -294,6 +300,8 @@ int main(int argc, char** argv)
 			case 'i': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;
 			case 'v': opt::verbose++; break;
+			case 's': arg >> opt::section >> delim >>
+					  opt::nsections; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
 				exit(EXIT_SUCCESS);
@@ -301,6 +309,12 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (opt::section == 0 || opt::section > opt::nsections
+			|| delim != '/') {
+		cerr << PROGRAM ": -s, --section option is incorrectly set\n";
+		die = true;
 	}
 
 	if (opt::k <= 0) {
@@ -409,6 +423,8 @@ static void readContigsIntoDB(string refFastaFile,
 
 	unsigned count = 0;
 	FastaReader in(refFastaFile.c_str(), FastaReader::FOLD_CASE);
+	if (opt::nsections > 1)
+		in.split(opt::section, opt::nsections);
 	for (FastaRecord rec; in >> rec;) {
 		if (count == 0) {
 			// Detect colour-space contigs.

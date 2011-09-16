@@ -26,6 +26,10 @@ class FastaReader {
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor, std::string& qual);
 
+		/** Split the fasta file into nsections and seek to the start
+		 * of section. */
+		void split(unsigned section, unsigned nsections);
+
 		/** Return whether this stream is at end-of-file. */
 		bool eof() const { return m_in.eof(); };
 
@@ -90,6 +94,9 @@ class FastaReader {
 
 		/** Count of unchaste reads. */
 		unsigned m_unchaste;
+
+		/** Position of the end of the current section. */
+		std::streampos m_end;
 };
 
 /** A FASTA record. */

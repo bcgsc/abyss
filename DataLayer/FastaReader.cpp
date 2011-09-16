@@ -36,13 +36,50 @@ ostream& FastaReader::die()
 FastaReader::FastaReader(const char* path, int flags)
 	: m_path(path), m_fin(path),
 	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
-	m_flags(flags), m_line(0), m_unchaste(0)
+	m_flags(flags), m_line(0), m_unchaste(0),
+	m_end(numeric_limits<streamsize>::max())
 {
 	if (strcmp(path, "-") != 0)
 		assert_good(m_fin, path);
 	if (m_in.peek() == EOF)
 		cerr << m_path << ':' << m_line << ": warning: "
 			"file is empty\n";
+}
+
+/** Split the fasta file into nsections and seek to the start
+ * of section. */
+void FastaReader::split(unsigned section, unsigned nsections)
+{
+	assert(nsections >= section);
+	assert(section > 0);
+	assert(strcmp(m_path, "-") != 0);
+	if (nsections == 1)
+		return;
+	// Move the get pointer to the first entry in this section and
+	// update the m_end if there is more than one section.
+	m_in.seekg(0, ios::end);
+	streampos length = m_in.tellg();
+	assert(length > 0);
+	streampos start = length * (section - 1) / nsections;
+	streampos end = length * section / nsections;
+	assert(end > 0);
+	if (end < length) {
+		m_in.seekg(end);
+		if (m_in.peek() == '>')
+			end += 1;
+	}
+	m_end = end;
+	m_in.seekg(start);
+	if(start != 0) {
+		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
+		m_in.ignore(numeric_limits<streamsize>::max(), '>');
+		if (m_in.peek() == EOF)
+			cerr << m_path << ':' << section << ": warning: "
+				"there are no contigs in this section\n";
+		m_in.putback('>');
+	}
+	assert(m_end > 0);
+	assert(m_in.good());
 }
 
 /** Return whether this read passed the chastity filter. */
@@ -90,7 +127,8 @@ next_record:
 	Sequence s;
 
 	unsigned qualityOffset = 0;
-	if (recordType == EOF) {
+	if (recordType == EOF || m_in.tellg() >= m_end) {
+		m_in.seekg(0, ios::end);
 		m_in.get();
 		return s;
 	} else if (recordType == '>' || recordType == '@') {
