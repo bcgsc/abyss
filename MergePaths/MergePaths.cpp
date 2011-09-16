@@ -9,7 +9,6 @@
 #include "DotIO.h"
 #include "GraphAlgorithms.h"
 #include "GraphUtil.h"
-#include "Histogram.h"
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "Uncompress.h"

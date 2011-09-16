@@ -4,7 +4,6 @@
 #include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "Estimate.h"
-#include "Histogram.h"
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "GraphIO.h"
