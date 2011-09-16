@@ -24,7 +24,7 @@ Histogram Histogram::trimFraction(double fraction) const
 {
 	double low_cutoff = fraction/2;
 	double high_cutoff = 1.0f - fraction/2;
-	unsigned n = size();
+	size_type n = size();
 
 	double cumulative = 0;
 	Histogram newHist;

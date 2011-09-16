@@ -16,7 +16,8 @@
 class Histogram
 {
 	typedef int T;
-	typedef std::map<T, unsigned> Map;
+	typedef unsigned size_type;
+	typedef std::map<T, size_type> Map;
 	typedef long long unsigned accumulator;
 
   public:
@@ -36,7 +37,7 @@ class Histogram
 	 * vector is the sample, and the value at that index is the number
 	 * of times that sample was observed.
 	 */
-	explicit Histogram(std::vector<unsigned> v)
+	explicit Histogram(std::vector<size_type> v)
 	{
 		for (T i = 0; i < (T)v.size(); i++)
 			if (v[i] > 0)
@@ -45,19 +46,19 @@ class Histogram
 
 	void insert(T value) { m_map[value]++; }
 
-	void insert(T value, unsigned count) { m_map[value] += count; }
+	void insert(T value, size_type count) { m_map[value] += count; }
 
-	unsigned count(T value) const
+	size_type count(T value) const
 	{
 		Map::const_iterator iter = m_map.find(value);
 		return iter == m_map.end() ? 0 : iter->second;
 	}
 
 	/** Return the number of elements in the range [lo,hi]. */
-	unsigned count(T lo, T hi) const
+	size_type count(T lo, T hi) const
 	{
 		assert(lo <= hi);
-		unsigned n = 0;
+		size_type n = 0;
 		Map::const_iterator last = m_map.upper_bound(hi);
 		for (Map::const_iterator it = m_map.lower_bound(lo);
 				it != last; ++it)
@@ -77,9 +78,9 @@ class Histogram
 
 	bool empty() const { return m_map.empty(); }
 
-	unsigned size() const
+	size_type size() const
 	{
-		unsigned n = 0;
+		size_type n = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it)
 			n += it->second;
@@ -117,8 +118,8 @@ class Histogram
 
 	T median() const
 	{
-		unsigned half = (size() + 1) / 2;
-		unsigned n = 0;
+		size_type half = (size() + 1) / 2;
+		size_type n = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
 			n += it->second;
@@ -135,7 +136,7 @@ class Histogram
 		const unsigned SMOOTHING = 4;
 		assert(!empty());
 		Map::const_iterator minimum = m_map.begin();
-		unsigned count = 0;
+		size_type count = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
 			if (it->second <= minimum->second) {
@@ -180,14 +181,14 @@ class Histogram
 	const_iterator end() const { return m_map.end(); }
 
 	/** Return a vector representing this histogram. */
-	operator std::vector<unsigned>() const
+	operator std::vector<size_type>() const
 	{
 		assert(minimum() >= 0);
 #if 0
-		std::vector<unsigned> v(maximum()+1);
+		std::vector<size_type> v(maximum()+1);
 #else
 		// CommLayer::reduce requires the arrays have the same size.
-		std::vector<unsigned> v(65536);
+		std::vector<size_type> v(65536);
 		assert(maximum() < (T)v.size());
 #endif
 		for (Map::const_iterator it = m_map.begin();
@@ -208,7 +209,7 @@ class Histogram
 	friend std::istream& operator>>(std::istream& in, Histogram& h)
 	{
 		Histogram::T value;
-		unsigned count;
+		size_type count;
 		while (in >> value >> count)
 			h.insert(value, count);
 		assert(in.eof());
