@@ -185,6 +185,7 @@ AC_CONFIG_FILES([
 	ParseAligns/Makefile
 	PathOverlap/Makefile
 	Consensus/Makefile
+	FilterGraph/Makefile
 ])
 AC_OUTPUT
 

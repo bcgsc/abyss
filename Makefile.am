@@ -32,4 +32,5 @@ SUBDIRS = \
 	PopBubbles \
 	Scaffold \
 	SimpleGraph \
-	kmerprint
+	kmerprint \
+	FilterGraph
