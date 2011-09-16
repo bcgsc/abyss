@@ -77,9 +77,9 @@ void NetworkSequenceCollection::run()
 				m_data.shrink();
 				m_comm.reduce(m_data.size());
 
-				Histogram h(m_comm.reduce(
-						AssemblyAlgorithms::coverageHistogram(
-							m_data)));
+				Histogram myh
+					= AssemblyAlgorithms::coverageHistogram(m_data);
+				Histogram h(m_comm.reduce(myh.toVector()));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 				SetState(NAS_WAITING);
@@ -439,9 +439,9 @@ void NetworkSequenceCollection::runControl()
 					<< toSI(m_data.size() * sizeof (value_type))
 					<< "B of RAM is required.\n";
 
-				Histogram h(m_comm.reduce(
-						AssemblyAlgorithms::coverageHistogram(
-							m_data)));
+				Histogram myh
+					= AssemblyAlgorithms::coverageHistogram(m_data);
+				Histogram h(m_comm.reduce(myh.toVector()));
 				AssemblyAlgorithms::setCoverageParameters(h);
 				EndState();
 

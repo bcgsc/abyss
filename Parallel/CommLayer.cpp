@@ -124,6 +124,19 @@ vector<unsigned> CommLayer::reduce(const vector<unsigned>& v)
 	return sum;
 }
 
+/** Reduce the specified vector. */
+vector<long unsigned> CommLayer::reduce(
+		const vector<long unsigned>& v)
+{
+	logger(4) << "entering reduce\n";
+	vector<long unsigned> sum(v.size());
+	MPI_Allreduce(const_cast<long unsigned*>(&v[0]),
+			&sum[0], v.size(), MPI_UNSIGNED_LONG, MPI_SUM,
+			MPI_COMM_WORLD);
+	logger(4) << "left reduce\n";
+	return sum;
+}
+
 uint64_t CommLayer::sendCheckPointMessage(int argument)
 {
 	logger(4) << "checkpoint: " << argument << '\n';

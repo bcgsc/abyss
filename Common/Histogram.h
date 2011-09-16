@@ -16,7 +16,7 @@
 class Histogram
 {
 	typedef int T;
-	typedef unsigned size_type;
+	typedef size_t size_type;
 	typedef std::map<T, size_type> Map;
 	typedef long long unsigned accumulator;
 
@@ -181,7 +181,7 @@ class Histogram
 	const_iterator end() const { return m_map.end(); }
 
 	/** Return a vector representing this histogram. */
-	operator std::vector<size_type>() const
+	std::vector<size_type> toVector() const
 	{
 		assert(minimum() >= 0);
 #if 0
