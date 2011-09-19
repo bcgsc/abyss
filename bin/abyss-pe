@@ -194,12 +194,12 @@ mp-bam: $(addsuffix -6.bam.bai, $(mp))
 
 scaffolds: $(name)-scaffolds.fa
 
-all: pe-bam default
+all: default bam
 
 clean:
 	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123]
 
-.PHONY: default se-contigs se-dot \
+.PHONY: bam default se-contigs se-dot \
 	pe-index pe-sam pe-bam pe-contigs pe-dot \
 	mp-index mp-sam mp-bam scaffolds all clean
 .DELETE_ON_ERROR:
@@ -369,3 +369,22 @@ endif
 
 %-scaffolds.fa: %-6.fa %-6.dot %-6.path2
 	MergeContigs -vk$k -o $@ $^
+
+# Final BAM file
+
+ifdef mp
+bam: $(name)-scaffolds.bam.bai
+mpin=$(call map, deref, $(mp))
+else
+ifdef in
+bam: $(name)-contigs.bam.bai
+else
+bam: $(name)-se-contigs.bam.bai
+endif
+endif
+
+$(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(in) $(mpin) $< \
+		|${fixmate} $v ${fmopt} \
+		|sort -snk3 -k4 \
+		|samtools view -Sb - -o $@
