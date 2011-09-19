@@ -1,6 +1,7 @@
 dist_bin_SCRIPTS = \
 	abyss-bowtie \
 	abyss-bwa \
+	abyss-bwasw \
 	abyss-fac \
 	abyss-joindist \
 	abyss-kaligner \
