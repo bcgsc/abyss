@@ -61,10 +61,10 @@ class FMIndex
 
   public:
 	/** An index. */
-	typedef boost::uint_t<FMBITS>::exact size_type;
+	typedef boost::uint_t<FMBITS>::least size_type;
 
 	/** An index for SAIS, which must be signed. */
-	typedef boost::int_t<FMBITS>::exact sais_size_type;
+	typedef boost::int_t<FMBITS>::least sais_size_type;
 
 	/** The type of a symbol. */
 	typedef T value_type;
