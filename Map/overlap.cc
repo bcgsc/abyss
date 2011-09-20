@@ -1,8 +1,13 @@
 #include "BitUtils.h"
+#include "ContigGraph.h"
+#include "ContigProperties.h"
+#include "DirectedGraph.h"
 #include "DataLayer/Options.h"
 #include "FMIndex.h"
 #include "FastaIndex.h"
 #include "FastaReader.h"
+#include "GraphIO.h"
+#include "GraphUtil.h"
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "SAM.h"
@@ -41,6 +46,9 @@ static const char USAGE_MESSAGE[] =
 "  -k, --max=N             find matches less than N bp [inf]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
+"      --adj             output the results in adj format\n"
+"      --dot             output the results in dot format [default]\n"
+"      --sam             output the results in SAM format\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -62,6 +70,9 @@ namespace opt {
 
 	/** Verbose output. */
 	static int verbose;
+
+	unsigned k; // used by GraphIO
+	int format = DOT; // used by GraphIO
 }
 
 static const char shortopts[] = "j:k:m:s:v";
@@ -69,6 +80,9 @@ static const char shortopts[] = "j:k:m:s:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "adj", no_argument, &opt::format, ADJ },
+	{ "dot", no_argument, &opt::format, DOT },
+	{ "sam", no_argument, &opt::format, SAM },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "max", required_argument, NULL, 'k' },
 	{ "min", required_argument, NULL, 'm' },
@@ -79,53 +93,44 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Counts. */
-static struct {
-	unsigned unique;
-	unsigned multimapped;
-	unsigned unmapped;
-} g_count;
+/** The overlap graph. */
+typedef DirectedGraph<ContigProperties, Distance> DG;
+typedef ContigGraph<DG> Graph;
 
-/** Return a SAM record of the specified match. */
-static SAMRecord toSAM(const FastaIndex& faIndex,
-		const Match& m, bool rc, unsigned qlength)
+/** Add overlaps to the graph. */
+static void addOverlaps(Graph &g,
+		const FastaIndex& faIndex, const FMIndex& fmIndex,
+		const ContigNode& u, const FMInterval& fmi)
 {
-	SAMRecord a;
-	if (m.count == 0) {
-		// No hit.
-		a.rname = "*";
-		a.pos = -1;
-		a.flag = SAMAlignment::FUNMAP;
-		a.mapq = 0;
-		a.cigar = "*";
-	} else {
-		pair<string, size_t> idPos = faIndex[m.tstart];
-		a.rname = idPos.first;
-		a.pos = idPos.second;
-		a.flag = rc ? SAMAlignment::FREVERSE : 0;
+	typedef edge_property<Graph>::type EP;
+	typedef graph_traits<Graph>::edge_descriptor E;
 
-		// Set the mapq to the alignment score.
-		assert(m.qstart < m.qend);
-		unsigned matches = m.qend - m.qstart;
-		a.mapq = m.count > 1 ? 0 : min(matches, 255U);
-
-		ostringstream ss;
-		if (m.qstart > 0)
-			ss << m.qstart << 'S';
-		ss << matches << 'M';
-		assert(m.qend == qlength);
-		a.cigar = ss.str();
+	Distance ep(-(fmi.qend - fmi.qstart));
+	assert(ep.distance < 0);
+	for (unsigned i = fmi.l; i < fmi.u; ++i) {
+		size_t tstart = fmIndex.locate(i) + 1;
+		pair<string, size_t> idPos = faIndex[tstart];
+		ContigNode v(idPos.first, false);
+#pragma omp critical(g)
+		{
+			pair<E, bool> e = edge(u, v, g);
+			if (e.second) {
+				const EP& ep0 = g[e.first];
+				if (ep != ep0)
+					cerr << "duplicate edge: "
+						<< u << " -> " << v << ' '
+						<< ep0 << ' ' << ep
+						<< '\n';
+			} else
+				add_edge(u, v, ep, g);
+		}
 	}
-	a.mrnm = "*";
-	a.mpos = -1;
-	a.isize = 0;
-	return a;
 }
 
 /** Return the mapping of the specified sequence. */
-static void findOverlaps(
+static void findOverlaps(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
-		const string& id, const string& seq, bool rc)
+		const ContigNode& u, const string& seq)
 {
 	size_t pos = seq.size() > opt::maxOverlap
 		? seq.size() - opt::maxOverlap + 1 : 1;
@@ -135,44 +140,22 @@ static void findOverlaps(
 	fmIndex.findOverlap(suffix, back_inserter(matches),
 			opt::minOverlap);
 
-	for (Matches::const_iterator it = matches.begin();
-			it != matches.end(); ++it) {
-		const FMInterval& fmi = *it;
-		Match m(fmi.qstart + pos, fmi.qend + pos, 0, fmi.u - fmi.l);
-		for (unsigned i = fmi.l; i < fmi.u; ++i) {
-			m.tstart = fmIndex.locate(i) + 1;
-			SAMRecord sam = toSAM(faIndex, m, rc, seq.size());
-			sam.qname = id;
-#pragma omp critical(cout)
-			{
-				cout << sam << '\n';
-				assert_good(cout, "stdout");
-			}
-
-			if (sam.isUnmapped())
-#pragma omp atomic
-				g_count.unmapped++;
-			else if (sam.mapq == 0)
-#pragma omp atomic
-				g_count.multimapped++;
-			else
-#pragma omp atomic
-				g_count.unique++;
-		}
-	}
+	for (Matches::const_reverse_iterator it = matches.rbegin();
+			it != matches.rend(); ++it)
+		addOverlaps(g, faIndex, fmIndex, u, *it);
 }
 
-static void findOverlaps(
+static void findOverlaps(Graph& g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
-	findOverlaps(faIndex, fmIndex, rec.id, rec.seq, false);
-	string rcseq(reverseComplement(rec.seq));
-	findOverlaps(faIndex, fmIndex, rec.id, rcseq, true);
+	ContigNode u(rec.id, false);
+	findOverlaps(g, faIndex, fmIndex, u, rec.seq);
+	findOverlaps(g, faIndex, fmIndex, ~u, reverseComplement(rec.seq));
 }
 
 /** Map the sequences of the specified file. */
-static void findOverlaps(
+static void findOverlaps(Graph& g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
 		FastaReader& in)
 {
@@ -182,7 +165,7 @@ static void findOverlaps(
 #pragma omp critical(in)
 		good = in >> rec;
 		if (good)
-			findOverlaps(faIndex, fmIndex, rec);
+			findOverlaps(g, faIndex, fmIndex, rec);
 		else
 			break;
 	}
@@ -303,6 +286,7 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::minOverlap < opt::maxOverlap);
+	opt::k = opt::maxOverlap;
 
 	const char* fastaFile(argv[--argc]);
 	ostringstream ss;
@@ -328,6 +312,12 @@ int main(int argc, char** argv)
 			cerr << "Reading `" << fastaFile << "'...\n";
 		faIndex.index(fastaFile);
 	}
+
+	// Add the contig IDs to the dictionary.
+	for (FastaIndex::const_iterator it = faIndex.begin();
+			it != faIndex.end(); ++it)
+		ContigID::insert(it->id);
+	ContigID::lock();
 
 	// Read the FM index.
 	FMIndex fmIndex;
@@ -360,19 +350,14 @@ int main(int argc, char** argv)
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 	FastaReader fa(fastaFile, FastaReader::FOLD_CASE);
-	findOverlaps(faIndex, fmIndex, fa);
 
-	if (opt::verbose > 0) {
-		size_t unique = g_count.unique;
-		size_t mapped = unique + g_count.multimapped;
-		size_t total = mapped + g_count.unmapped;
-		cerr << "Mapped " << mapped << " of " << total << " queries ("
-			<< (float)100 * mapped / total << "%)\n"
-			<< "Mapped " << unique << " of " << total
-			<< " queries uniquely (" << (float)100 * unique / total
-			<< "%)\n";
-	}
+	Graph g(faIndex.size());
+	findOverlaps(g, faIndex, fmIndex, fa);
 
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
+
+	write_graph(cout, g, PROGRAM, commandLine);
 	cout.flush();
 	assert_good(cout, "stdout");
 	return 0;

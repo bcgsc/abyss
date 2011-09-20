@@ -43,6 +43,8 @@ struct FAIRecord
 /** An indexed FASTA (fai) file. */
 class FastaIndex
 {
+	typedef std::vector<FAIRecord> Data;
+
 	struct CompareOffset
 	{
 		/** Used with upper_bound. */
@@ -62,6 +64,10 @@ class FastaIndex
 		assert(!m_data.empty());
 		return m_data.back().offset + m_data.back().size + 1;
 	}
+
+	typedef Data::const_iterator const_iterator;
+	const_iterator begin() const { return m_data.begin(); }
+	const_iterator end() const { return m_data.end(); }
 
 	/** Index the specified FASTA file. */
 	void index(const std::string& path)
@@ -151,7 +157,6 @@ class FastaIndex
 	}
 
   private:
-	typedef std::vector<FAIRecord> Data;
 	Data m_data;
 };
 

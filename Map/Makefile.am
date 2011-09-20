@@ -32,7 +32,8 @@ abyss_overlap_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
-	-I$(top_srcdir)/FMIndex
+	-I$(top_srcdir)/FMIndex \
+	-I$(top_srcdir)/Graph
 
 abyss_overlap_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
