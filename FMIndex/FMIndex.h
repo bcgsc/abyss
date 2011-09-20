@@ -204,6 +204,49 @@ std::pair<size_t, size_t> findExact(const String& q) const
 	return findExact(s.begin(), s.end());
 }
 
+/** Search for a suffix of the query that matches a prefix of the
+ * target.
+ */
+template <typename It, typename OutIt>
+OutIt findOverlap(It first, It last, OutIt out,
+		unsigned minOverlap) const
+{
+	assert(first < last);
+
+	size_t l = 1, u = m_occ.size();
+	for (It it = last - 1; it >= first && l < u; --it) {
+		T c = *it;
+		if (c == SENTINEL())
+			break;
+		l = m_cf[c] + m_occ.rank(c, l);
+		u = m_cf[c] + m_occ.rank(c, u);
+		if (l >= u)
+			break;
+
+		if (last - it < minOverlap)
+			continue;
+
+		const char sep = 0;
+		size_t l1 = m_cf[sep] + m_occ.rank(sep, l);
+		size_t u1 = m_cf[sep] + m_occ.rank(sep, u);
+		if (l1 < u1)
+			*out++ = FMInterval(l1, u1, it - first, last - first);
+	}
+	return out;
+}
+
+/** Search for a suffix of the query that matches a prefix of the
+ * target.
+ */
+template <typename OutIt>
+OutIt findOverlap(const std::string& q, OutIt out,
+		unsigned minOverlap) const
+{
+	std::string s = q;
+	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
+	return findOverlap(s.begin(), s.end(), out, minOverlap);
+}
+
 /** Search for a matching suffix of the query. */
 template <typename It, typename MemoIt>
 FMInterval findSuffix(It first, It last, MemoIt memoIt) const
