@@ -149,11 +149,10 @@ void sampleSA(unsigned period)
 	assert(!m_sa.empty());
 }
 
-/** Return the position of the specified suffix in the original
- * string.
- */
-size_t locate(size_t i) const
+/** Return the specified element of the suffix array. */
+size_t at(size_t i) const
 {
+	assert(i < m_occ.size());
 	size_t n = 0;
 	while (i % m_sampleSA != 0) {
 		T c = m_occ.at(i);
@@ -163,6 +162,12 @@ size_t locate(size_t i) const
 	assert(i / m_sampleSA < m_sa.size());
 	size_t pos = m_sa[i / m_sampleSA] + n;
 	return pos < m_occ.size() ? pos : pos - m_occ.size();
+}
+
+/** Return the specified element of the suffix array. */
+size_t operator[](size_t i) const
+{
+	return at(i);
 }
 
 /** Decompress the index. */
@@ -380,7 +385,7 @@ Match find(const std::string& q, unsigned k) const
 	if (count == 0)
 		return Match(0, 0, 0, 0);
 	return Match(interval.qstart, interval.qend,
-			locate(interval.l), count);
+			at(interval.l), count);
 }
 
 /** Set the alphabet to [first, last). */

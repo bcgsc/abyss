@@ -109,7 +109,7 @@ static void addSuffixOverlaps(Graph &g,
 	Distance ep(-(fmi.qend - fmi.qstart));
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
-		size_t tstart = fmIndex.locate(i) + 1;
+		size_t tstart = fmIndex[i] + 1;
 		pair<string, size_t> idPos = faIndex[tstart];
 		ContigNode v(idPos.first, false);
 #pragma omp critical(g)
@@ -140,7 +140,7 @@ static void addPrefixOverlaps(Graph &g,
 	Distance ep(-(fmi.qend - fmi.qstart));
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
-		size_t tstart = fmIndex.locate(i);
+		size_t tstart = fmIndex[i];
 		pair<string, size_t> idPos = faIndex[tstart];
 		ContigNode u(idPos.first, false);
 #pragma omp critical(g)
