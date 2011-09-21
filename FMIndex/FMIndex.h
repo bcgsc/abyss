@@ -287,7 +287,7 @@ OutIt findOverlapPrefix(It first, It last, OutIt out) const
 	for (It it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
-			break;
+			return out;
 		sai = update(sai, c);
 	}
 	if (!sai.empty())
