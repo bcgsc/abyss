@@ -253,6 +253,32 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	fm.assign(s.begin(), s.end());
 }
 
+/** Parse and return the coverage from the specified FASTA comment. */
+static unsigned getCoverage(const string& comment)
+{
+	istringstream ss(comment);
+	unsigned length, coverage = 0;
+	ss >> length >> coverage;
+	return coverage;
+}
+
+/** Read contigs and add vertices to the graph. */
+static void addVertices(const string& path, Graph& g)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
+	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
+	for (FastaRecord rec; in >> rec;) {
+		const Sequence& seq = rec.seq;
+		assert(isalpha(seq[0]));
+		ContigID::insert(rec.id);
+		ContigProperties vp(seq.length(), getCoverage(rec.comment));
+		add_vertex(vp, g);
+	}
+	ContigID::lock();
+	assert(in.eof());
+}
+
 /** Return the size of the specified file. */
 static streampos fileSize(const string& path)
 {
@@ -372,12 +398,6 @@ int main(int argc, char** argv)
 		faIndex.index(fastaFile);
 	}
 
-	// Add the contig IDs to the dictionary.
-	for (FastaIndex::const_iterator it = faIndex.begin();
-			it != faIndex.end(); ++it)
-		ContigID::insert(it->id);
-	ContigID::lock();
-
 	// Read the FM index.
 	FMIndex fmIndex;
 	in.open(fmPath.c_str());
@@ -408,9 +428,10 @@ int main(int argc, char** argv)
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
-	FastaReader fa(fastaFile, FastaReader::FOLD_CASE);
 
-	Graph g(faIndex.size());
+	Graph g;
+	addVertices(fastaFile, g);
+	FastaReader fa(fastaFile, FastaReader::FOLD_CASE);
 	findOverlaps(g, faIndex, fmIndex, fa);
 
 	if (opt::verbose > 0)
