@@ -24,7 +24,7 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -478,12 +478,13 @@ static void* readFile(void* arg)
 	return NULL;
 }
 
-static double timeDiff(const timespec& start, const timespec& end)
+/** @Returns the time in seconds between [start, end]. */
+static double timeDiff(const timeval& start, const timeval& end)
 {
 	double result = (double)end.tv_sec +
-		(double)end.tv_nsec/1000000000.0;
+		(double)end.tv_usec/1000000.0;
 	result -= (double)start.tv_sec +
-		(double)start.tv_nsec/1000000000.0;
+		(double)start.tv_usec/1000000.0;
 	return result;
 }
 
@@ -491,10 +492,10 @@ static void* alignReadsToDB(void*)
 {
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
-	static timespec start, end;
+	static timeval start, end;
 
 	pthread_mutex_lock(&g_mutexCerr);
-	clock_gettime(CLOCK_REALTIME, &start);
+	gettimeofday(&start, NULL);
 	pthread_mutex_unlock(&g_mutexCerr);
 
 	for (pair<FastaRecord, size_t> recPair = g_pipeMux.nextValue();
@@ -561,7 +562,7 @@ static void* alignReadsToDB(void*)
 			if (!s.empty())
 				g_alignedCount++;
 			if (++g_readCount % 1000000 == 0) {
-				clock_gettime(CLOCK_REALTIME, &end);
+				gettimeofday(&end, NULL);
 				double result = timeDiff(start, end);
 				cerr << "Aligned " << g_readCount << " reads at "
 					<< (int)(1000000 / result) << " reads/sec.\n";
