@@ -106,7 +106,7 @@ static void addSuffixOverlaps(Graph &g,
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
 
-	Distance ep(-(fmi.qend - fmi.qstart));
+	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i] + 1;
@@ -137,7 +137,7 @@ static void addPrefixOverlaps(Graph &g,
 	typedef graph_traits<Graph>::edge_descriptor E;
 
 	assert(fmi.qstart == 0);
-	Distance ep(-(fmi.qend - fmi.qstart));
+	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i];
