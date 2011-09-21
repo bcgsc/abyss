@@ -117,13 +117,16 @@ static void addSuffixOverlaps(Graph &g,
 			pair<E, bool> e = edge(u, v, g);
 			if (e.second) {
 				const EP& ep0 = g[e.first];
-				if (ep != ep0)
-					cerr << "duplicate edge: "
-						<< u << " -> " << v << ' '
-						<< ep0 << ' ' << ep
-						<< '\n';
-			} else
+				cerr << "duplicate edge: " << u << " -> " << v << ' '
+					<< ep0 << ' ' << ep << '\n';
+				assert(ep != ep0);
+			} else if(u.sense()) {
+				// Add u- -> v+
+				add_edge(u, v, ep, static_cast<DG&>(g));
+			} else {
+				// Add u+ -> v+ and v- -> u-
 				add_edge(u, v, ep, g);
+			}
 		}
 	}
 }
@@ -136,6 +139,7 @@ static void addPrefixOverlaps(Graph &g,
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
 
+	assert(v.sense());
 	assert(fmi.qstart == 0);
 	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
@@ -148,13 +152,13 @@ static void addPrefixOverlaps(Graph &g,
 			pair<E, bool> e = edge(u, v, g);
 			if (e.second) {
 				const EP& ep0 = g[e.first];
-				if (ep != ep0)
-					cerr << "duplicate edge: "
-						<< u << " -> " << v << ' '
-						<< ep0 << ' ' << ep
-						<< '\n';
-			} else
-				add_edge(u, v, ep, g);
+				cerr << "duplicate edge: " << u << " -> " << v << ' '
+					<< ep0 << ' ' << ep << '\n';
+				assert(ep != ep0);
+			} else {
+				// Add u+ -> v-
+				add_edge(u, v, ep, static_cast<DG&>(g));
+			}
 		}
 	}
 }
@@ -175,6 +179,9 @@ static void findOverlaps(Graph &g,
 	for (Matches::const_reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
 		addSuffixOverlaps(g, faIndex, fmIndex, u, *it);
+
+	if (!u.sense())
+		return;
 
 	string prefix(seq, 0,
 			min((size_t)opt::maxOverlap, seq.size()) - 1);
