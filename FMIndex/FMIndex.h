@@ -208,7 +208,7 @@ std::pair<size_t, size_t> findExact(const String& q) const
  * target.
  */
 template <typename It, typename OutIt>
-OutIt findOverlap(It first, It last, OutIt out,
+OutIt findOverlapSuffix(It first, It last, OutIt out,
 		unsigned minOverlap) const
 {
 	assert(first < last);
@@ -239,12 +239,53 @@ OutIt findOverlap(It first, It last, OutIt out,
  * target.
  */
 template <typename OutIt>
-OutIt findOverlap(const std::string& q, OutIt out,
+OutIt findOverlapSuffix(const std::string& q, OutIt out,
 		unsigned minOverlap) const
 {
 	std::string s = q;
 	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
-	return findOverlap(s.begin(), s.end(), out, minOverlap);
+	return findOverlapSuffix(s.begin(), s.end(), out, minOverlap);
+}
+
+/** Search for a prefix of the query that matches a suffix of the
+ * target.
+ */
+template <typename It, typename OutIt>
+OutIt findOverlapPrefix(It first, It last, OutIt out) const
+{
+	assert(first < last);
+
+	size_t l = 1, u = m_occ.size();
+	const char sep = 0;
+	l = m_cf[sep] + m_occ.rank(sep, l);
+	u = m_cf[sep] + m_occ.rank(sep, u);
+
+	for (It it = last - 1; it >= first && l < u; --it) {
+		T c = *it;
+		if (c == SENTINEL())
+			break;
+		l = m_cf[c] + m_occ.rank(c, l);
+		u = m_cf[c] + m_occ.rank(c, u);
+	}
+	if (l < u)
+		*out++ = FMInterval(l, u, 0, last - first);
+	return out;
+}
+
+/** Search for a prefix of the query that matches a suffix of the
+ * target.
+ */
+template <typename OutIt>
+OutIt findOverlapPrefix(const std::string& q, OutIt out,
+		unsigned minOverlap) const
+{
+	std::string s = q;
+	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
+	typedef std::string::const_iterator It;
+	It first = s.begin();
+	for (It it = first + minOverlap; it <= s.end(); ++it)
+		out = findOverlapPrefix(first, it, out);
+	return out;
 }
 
 /** Search for a matching suffix of the query. */

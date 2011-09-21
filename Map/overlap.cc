@@ -13,6 +13,7 @@
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
+#include <algorithm>
 #include <cassert>
 #include <cctype> // for toupper
 #include <cstdlib>
@@ -97,8 +98,8 @@ static const struct option longopts[] = {
 typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
 
-/** Add overlaps to the graph. */
-static void addOverlaps(Graph &g,
+/** Add suffix overlaps to the graph. */
+static void addSuffixOverlaps(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const ContigNode& u, const FMInterval& fmi)
 {
@@ -127,6 +128,37 @@ static void addOverlaps(Graph &g,
 	}
 }
 
+/** Add prefix overlaps to the graph. */
+static void addPrefixOverlaps(Graph &g,
+		const FastaIndex& faIndex, const FMIndex& fmIndex,
+		const ContigNode& v, const FMInterval& fmi)
+{
+	typedef edge_property<Graph>::type EP;
+	typedef graph_traits<Graph>::edge_descriptor E;
+
+	assert(fmi.qstart == 0);
+	Distance ep(-(fmi.qend - fmi.qstart));
+	assert(ep.distance < 0);
+	for (unsigned i = fmi.l; i < fmi.u; ++i) {
+		size_t tstart = fmIndex.locate(i);
+		pair<string, size_t> idPos = faIndex[tstart];
+		ContigNode u(idPos.first, false);
+#pragma omp critical(g)
+		{
+			pair<E, bool> e = edge(u, v, g);
+			if (e.second) {
+				const EP& ep0 = g[e.first];
+				if (ep != ep0)
+					cerr << "duplicate edge: "
+						<< u << " -> " << v << ' '
+						<< ep0 << ' ' << ep
+						<< '\n';
+			} else
+				add_edge(u, v, ep, g);
+		}
+	}
+}
+
 /** Return the mapping of the specified sequence. */
 static void findOverlaps(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
@@ -137,12 +169,22 @@ static void findOverlaps(Graph &g,
 	string suffix(seq, pos);
 	typedef vector<FMInterval> Matches;
 	vector<FMInterval> matches;
-	fmIndex.findOverlap(suffix, back_inserter(matches),
+	fmIndex.findOverlapSuffix(suffix, back_inserter(matches),
 			opt::minOverlap);
 
 	for (Matches::const_reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
-		addOverlaps(g, faIndex, fmIndex, u, *it);
+		addSuffixOverlaps(g, faIndex, fmIndex, u, *it);
+
+	string prefix(seq, 0,
+			min((size_t)opt::maxOverlap, seq.size()) - 1);
+	matches.clear();
+	fmIndex.findOverlapPrefix(prefix, back_inserter(matches),
+			opt::minOverlap);
+
+	for (Matches::const_reverse_iterator it = matches.rbegin();
+			it != matches.rend(); ++it)
+		addPrefixOverlaps(g, faIndex, fmIndex, u, *it);
 }
 
 static void findOverlaps(Graph& g,
