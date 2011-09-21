@@ -253,18 +253,10 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	fm.assign(s.begin(), s.end());
 }
 
-/** Parse and return the coverage from the specified FASTA comment. */
-static unsigned getCoverage(const string& comment)
-{
-	istringstream ss(comment);
-	unsigned length, coverage = 0;
-	ss >> length >> coverage;
-	return coverage;
-}
-
 /** Read contigs and add vertices to the graph. */
 static void addVertices(const string& path, Graph& g)
 {
+	typedef vertex_property<Graph>::type VP;
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
 	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
@@ -272,7 +264,10 @@ static void addVertices(const string& path, Graph& g)
 		const Sequence& seq = rec.seq;
 		assert(isalpha(seq[0]));
 		ContigID::insert(rec.id);
-		ContigProperties vp(seq.length(), getCoverage(rec.comment));
+		VP vp(0, 0);
+		istringstream ss(rec.comment);
+		ss >> vp;
+		vp.length = rec.seq.length();
 		add_vertex(vp, g);
 	}
 	ContigID::lock();
