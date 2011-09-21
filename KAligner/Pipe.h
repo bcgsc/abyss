@@ -1,7 +1,7 @@
 #ifndef PIPE_H
 #define PIPE_H 1
 
-#include <semaphore.h>
+#include "Semaphore.h"
 #include <queue>
 #include <pthread.h>
 
@@ -11,22 +11,16 @@ template <class T>
 class Pipe {
   public:
 	/** Ready to use after constructed. Not thread safe. */
-	Pipe(unsigned size = 1024) : m_open(true)
+	Pipe(unsigned size = 1024)
+		: m_sem_in(size), m_sem_out(0), m_open(true)
 	{
-#if SEM_VALUE_MAX
-		assert(size <= SEM_VALUE_MAX);
-#endif
 		assert(size > 0);
-		sem_init(&m_sem_in, 0, size);
-		sem_init(&m_sem_out, 0, 0);
 		pthread_mutex_init(&m_mutex_queue, NULL);
 	}
 
 	/** Destoyr semaphores/mutexs. Not thread safe. */
 	~Pipe()
 	{
-		sem_destroy(&m_sem_in);
-		sem_destroy(&m_sem_out);
 		pthread_mutex_destroy(&m_mutex_queue);
 	}
 
@@ -34,19 +28,19 @@ class Pipe {
 	void push(T x)
 	{
 		// Block if pipe is full, or in use.
-		sem_wait(&m_sem_in);
+		m_sem_in.wait();
 		pthread_mutex_lock(&m_mutex_queue);
 		assert(m_open);
 		add(x);
 		pthread_mutex_unlock(&m_mutex_queue);
-		sem_post(&m_sem_out);
+		m_sem_out.post();
 	}
 
 	/** Get data and remove it from the buffer. */
 	std::pair<T, size_t> pop()
 	{
 		// block when pipe is empty and m_open, or in use.
-		sem_wait(&m_sem_out);
+		m_sem_out.wait();
 		pthread_mutex_lock(&m_mutex_queue);
 
 		std::pair<T, size_t> temp = remove();
@@ -56,10 +50,10 @@ class Pipe {
 		// If pipe is m_open ensure poping will allow one more push.
 		// Otherwise, let next accessor know pipe is closed.
 		if (temp.second)
-			sem_post(&m_sem_in);
+			m_sem_in.post();
 		else {
 			assert(!m_open);
-			sem_post(&m_sem_out);
+			m_sem_out.post();
 		}
 		return temp;
 	}
@@ -71,7 +65,7 @@ class Pipe {
 		pthread_mutex_lock(&m_mutex_queue);
 		m_open = false;
 		pthread_mutex_unlock(&m_mutex_queue);
-		sem_post(&m_sem_out);
+		m_sem_out.post();
 	}
 
   private:
@@ -93,7 +87,7 @@ class Pipe {
 	}
 
 	/** Semaphores to block read on empty, or write on full. */
-	sem_t m_sem_in, m_sem_out;
+	Semaphore m_sem_in, m_sem_out;
 
 	/** Mutual exclusion for reading and writing */
 	pthread_mutex_t m_mutex_queue;
