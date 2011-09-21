@@ -21,7 +21,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <pthread.h>
-#include <semaphore.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -189,9 +188,6 @@ static unsigned g_alignedCount;
 /** Guard cerr. */
 static pthread_mutex_t g_mutexCerr = PTHREAD_MUTEX_INITIALIZER;
 
-/** Controls producer thread creation. */
-static pthread_barrier_t g_barrier;
-
 /** Stores the output string and the read index number for an
  * alignment. */
 struct OutData
@@ -261,6 +257,15 @@ static void* printAlignments(void*)
 	return NULL;
 }
 
+/** Store a FastaReader and Pipe. */
+struct WorkerArg {
+	FastaReader& in;
+	Pipe<FastaRecord>& out;
+	WorkerArg(FastaReader& in, Pipe<FastaRecord>& out)
+		: in(in), out(out) { }
+	~WorkerArg() { delete &in; }
+};
+
 static pthread_t getReadFiles(const char *readsFile)
 {
 	if (opt::verbose > 0) {
@@ -269,11 +274,12 @@ static pthread_t getReadFiles(const char *readsFile)
 		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
-	pthread_t thread;
-	pthread_create(&thread, NULL, readFile, (void*)readsFile);
+	FastaReader* in = new FastaReader(readsFile, FastaReader::FOLD_CASE);
+	WorkerArg* arg = new WorkerArg(*in, *g_pipeMux.addPipe());
 
-	// Barrier to make pipe creation order deterministic.
-	pthread_barrier_wait(&g_barrier);
+	pthread_t thread;
+	pthread_create(&thread, NULL, readFile, static_cast<void*>(arg));
+
 	return thread;
 }
 
@@ -360,9 +366,6 @@ int main(int argc, char** argv)
 #endif
 		readContigsIntoDB(refFastaFile, *g_aligner_u);
 	}
-
-	// Need to initialize mutex's before threads are created.
-	pthread_barrier_init(&g_barrier, NULL, 2);
 
 	g_readCount = 0;
 
@@ -457,23 +460,21 @@ static void readContigsIntoDB(string refFastaFile,
 	}
 }
 
-static void *readFile(void* readsFile)
+/** Read each fasta record from 'in', and add it to 'pipe'. */
+static void readFile(FastaReader& in, Pipe<FastaRecord>& pipe)
 {
-	// Lock `uncompress', which is not thread safe.
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&mutex);
-	FastaReader in((const char *)readsFile,
-			FastaReader::FOLD_CASE);
-	pthread_mutex_unlock(&mutex);
-
-	Pipe<FastaRecord>& pipe = *g_pipeMux.addPipe();
-	// Pipe created, let next producer start
-	pthread_barrier_wait(&g_barrier);
-
-	for (FastaRecord rec; in >> rec; )
+	for (FastaRecord rec; in >> rec;)
 		pipe.push(rec);
 	assert(in.eof());
 	pipe.close();
+}
+
+/** Producer thread. */
+static void* readFile(void* arg)
+{
+	WorkerArg* p = static_cast<WorkerArg*>(arg);
+	readFile(p->in, p->out);
+	delete p;
 	return NULL;
 }
 
