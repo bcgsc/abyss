@@ -96,11 +96,13 @@ static struct {
 } g_count;
 
 /** Returns if the contig can be removed from the graph. */
-static bool removable(const Graph& g, vertex_descriptor v)
+static bool removable(const Graph* pg, vertex_descriptor v)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::out_edge_iterator OEit;
 	typedef GTraits::in_edge_iterator IEit;
+
+	const Graph& g = *pg;
 
 	// Check if previously removed
 	if (get(vertex_removed, g, v)) {
@@ -244,7 +246,7 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 			continue;
 		}
 
-		if (!removable(g, v))
+		if (!removable(&g, v))
 			continue;
 
 		vector<EdgeInfo> eds;
@@ -270,7 +272,7 @@ static void findShortContigs(const Graph& g,
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	copy_if(first, second, back_inserter(sc),
-			bind1st(ptr_fun(removable), g));
+			bind1st(ptr_fun(removable), &g));
 }
 
 /** Functor used for sorting contigs based on degree, then size,
