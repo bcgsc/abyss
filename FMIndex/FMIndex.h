@@ -210,15 +210,13 @@ SAInterval update(SAInterval sai, T c) const
 
 /** Search for an exact match. */
 template <typename It>
-SAInterval findExact(It first, It last) const
+SAInterval findExact(It first, It last, SAInterval sai) const
 {
 	assert(first < last);
-	SAInterval sai(*this);
-	It it;
-	for (it = last - 1; it >= first && !sai.empty(); --it) {
+	for (It it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
-			return FMInterval(0, 0);
+			return SAInterval(0, 0);
 		sai = update(sai, c);
 	}
 	return sai;
@@ -277,27 +275,6 @@ OutIt findOverlapSuffix(const std::string& q, OutIt out,
 /** Search for a prefix of the query that matches a suffix of the
  * target.
  */
-template <typename It, typename OutIt>
-OutIt findOverlapPrefix(It first, It last, OutIt out) const
-{
-	assert(first < last);
-
-	SAInterval sai(*this);
-	sai = update(sai, 0);
-	for (It it = last - 1; it >= first && !sai.empty(); --it) {
-		T c = *it;
-		if (c == SENTINEL())
-			return out;
-		sai = update(sai, c);
-	}
-	if (!sai.empty())
-		*out++ = FMInterval(sai.l, sai.u, 0, last - first);
-	return out;
-}
-
-/** Search for a prefix of the query that matches a suffix of the
- * target.
- */
 template <typename OutIt>
 OutIt findOverlapPrefix(const std::string& q, OutIt out,
 		unsigned minOverlap) const
@@ -306,8 +283,12 @@ OutIt findOverlapPrefix(const std::string& q, OutIt out,
 	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
 	typedef std::string::const_iterator It;
 	It first = s.begin();
-	for (It it = first + minOverlap; it <= s.end(); ++it)
-		out = findOverlapPrefix(first, it, out);
+	for (It it = first + minOverlap; it <= s.end(); ++it) {
+		SAInterval sai = findExact(first, it,
+				update(SAInterval(*this), 0));
+		if (!sai.empty())
+			*out++ = FMInterval(sai.l, sai.u, 0, it - first);
+	}
 	return out;
 }
 
