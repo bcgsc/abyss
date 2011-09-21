@@ -371,7 +371,8 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::minOverlap < opt::maxOverlap);
-	opt::k = opt::maxOverlap;
+	if (opt::maxOverlap != UINT_MAX)
+		opt::k = opt::maxOverlap;
 
 	const char* fastaFile(argv[--argc]);
 	ostringstream ss;
