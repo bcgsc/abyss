@@ -14,7 +14,6 @@
 #include <limits> // for numeric_limits
 #include <stdint.h>
 #include <string>
-#include <utility>
 #include <vector>
 
 /** A match of a substring of a query sequence to an FM index. */
@@ -68,6 +67,19 @@ class FMIndex
 
 	/** The type of a symbol. */
 	typedef T value_type;
+
+/** A suffix array interval. */
+struct SAInterval
+{
+	size_type l, u;
+	SAInterval(size_type l, size_type u) : l(l), u(u) { }
+	SAInterval(const FMIndex& fm) : l(1), u(fm.m_occ.size()) { }
+	bool empty() const { return l >= u; }
+	bool operator==(const SAInterval& x) const
+	{
+		return x.l == l && x.u == u;
+	}
+};
 
 FMIndex() : m_sampleSA(1) { }
 
@@ -178,26 +190,38 @@ void decompress(It out)
 	}
 }
 
+/** Extend a suffix array coordinate by one character to the left. */
+size_type update(size_type i, T c) const
+{
+	assert(c < m_cf.size());
+	return m_cf[c] + m_occ.rank(c, i);
+}
+
+/** Extend a suffix array interval by one character to the left. */
+SAInterval update(SAInterval sai, T c) const
+{
+	return SAInterval(update(sai.l, c), update(sai.u, c));
+}
+
 /** Search for an exact match. */
 template <typename It>
-std::pair<size_t, size_t> findExact(It first, It last) const
+SAInterval findExact(It first, It last) const
 {
 	assert(first < last);
-	size_t l = 1, u = m_occ.size();
+	SAInterval sai(*this);
 	It it;
-	for (it = last - 1; it >= first && l < u; --it) {
+	for (it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
-			return std::make_pair(0, 0);
-		l = m_cf[c] + m_occ.rank(c, l);
-		u = m_cf[c] + m_occ.rank(c, u);
+			return FMInterval(0, 0);
+		sai = update(sai, c);
 	}
-	return std::make_pair(l, u);
+	return sai;
 }
 
 /** Search for an exact match. */
 template <typename String>
-std::pair<size_t, size_t> findExact(const String& q) const
+SAInterval findExact(const String& q) const
 {
 	String s(q.size());
 	std::transform(q.begin(), q.end(), s.begin(), Translate(*this));
@@ -213,24 +237,22 @@ OutIt findOverlapSuffix(It first, It last, OutIt out,
 {
 	assert(first < last);
 
-	size_t l = 1, u = m_occ.size();
-	for (It it = last - 1; it >= first && l < u; --it) {
+	SAInterval sai(*this);
+	for (It it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
 			break;
-		l = m_cf[c] + m_occ.rank(c, l);
-		u = m_cf[c] + m_occ.rank(c, u);
-		if (l >= u)
+		sai = update(sai, c);
+		if (sai.empty())
 			break;
 
 		if (last - it < minOverlap)
 			continue;
 
-		const char sep = 0;
-		size_t l1 = m_cf[sep] + m_occ.rank(sep, l);
-		size_t u1 = m_cf[sep] + m_occ.rank(sep, u);
-		if (l1 < u1)
-			*out++ = FMInterval(l1, u1, it - first, last - first);
+		SAInterval sai1 = update(sai, 0);
+		if (!sai1.empty())
+			*out++ = FMInterval(sai1.l, sai1.u,
+					it - first, last - first);
 	}
 	return out;
 }
@@ -255,20 +277,16 @@ OutIt findOverlapPrefix(It first, It last, OutIt out) const
 {
 	assert(first < last);
 
-	size_t l = 1, u = m_occ.size();
-	const char sep = 0;
-	l = m_cf[sep] + m_occ.rank(sep, l);
-	u = m_cf[sep] + m_occ.rank(sep, u);
-
-	for (It it = last - 1; it >= first && l < u; --it) {
+	SAInterval sai(*this);
+	sai = update(sai, 0);
+	for (It it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
 			break;
-		l = m_cf[c] + m_occ.rank(c, l);
-		u = m_cf[c] + m_occ.rank(c, u);
+		sai = update(sai, c);
 	}
-	if (l < u)
-		*out++ = FMInterval(l, u, 0, last - first);
+	if (!sai.empty())
+		*out++ = FMInterval(sai.l, sai.u, 0, last - first);
 	return out;
 }
 
@@ -293,30 +311,25 @@ template <typename It, typename MemoIt>
 FMInterval findSuffix(It first, It last, MemoIt memoIt) const
 {
 	assert(first < last);
-	typedef typename std::iterator_traits<MemoIt>::value_type
-		Interval;
 
-	size_t l = 1, u = m_occ.size();
+	SAInterval sai(*this);
 	It it;
-	for (it = last - 1; it >= first && l < u; --it) {
+	for (it = last - 1; it >= first && !sai.empty(); --it) {
 		T c = *it;
 		if (c == SENTINEL())
 			break;
-		size_t l1 = m_cf[c] + m_occ.rank(c, l);
-		size_t u1 = m_cf[c] + m_occ.rank(c, u);
-		if (l1 >= u1)
+		SAInterval sai1 = update(sai, c);
+		if (sai1.empty())
 			break;
-		l = l1;
-		u = u1;
+		sai = sai1;
 
-		Interval fmi = Interval(l, u);
-		if (*memoIt == fmi) {
+		if (*memoIt == sai) {
 			// This vertex of the prefix DAWG has been visited.
 			break;
 		}
-		*memoIt++ = fmi;
+		*memoIt++ = sai;
 	}
-	return FMInterval(l, u, it - first + 1, last - first);
+	return FMInterval(sai.l, sai.u, it - first + 1, last - first);
 }
 
 /** Search for a matching substring of the query at least k long.
@@ -329,8 +342,8 @@ FMInterval findSubstring(It first, It last, unsigned k) const
 	FMInterval best(0, 0, 0, k > 0 ? k - 1 : 0);
 
 	// Record which vertices of the prefix DAWG have been visited.
-	std::vector<std::pair<size_type, size_type> > memo(last - first);
-	std::pair<size_type, size_type>* memoIt = memo.data();
+	std::vector<SAInterval> memo(last - first, SAInterval(0, 0));
+	SAInterval* memoIt = memo.data();
 	for (It it = last; it > first; --it) {
 		if (unsigned(it - first) < best.qspan())
 			return best;
