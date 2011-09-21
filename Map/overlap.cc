@@ -208,12 +208,12 @@ static void findOverlaps(Graph& g,
 		const FastqRecord& rec)
 {
 	ContigNode u(rec.id, false);
-	// Find u+ -> v+, v- -> u-, v+ -> u+ and u- -> v-
+	// Add edges u+ -> v+ and v- -> u-
 	findOverlapsSuffix(g, faIndex, fmIndex, u, rec.seq);
 	string rcseq = reverseComplement(rec.seq);
-	// Find u- -> v+ and v- -> u+
+	// Add edges u- -> v+
 	findOverlapsSuffix(g, faIndex, fmIndex, ~u, rcseq);
-	// Find u+ -> v- and v+ -> u-
+	// Add edges v+ -> u-
 	findOverlapsPrefix(g, faIndex, fmIndex, ~u, rcseq);
 }
 
