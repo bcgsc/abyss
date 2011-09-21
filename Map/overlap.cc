@@ -121,7 +121,7 @@ static void addSuffixOverlaps(Graph &g,
 					cerr << "duplicate edge: "
 						<< u << " -> " << v << ' '
 						<< ep0 << ' ' << ep << '\n';
-				assert(ep != ep0);
+				assert(ep0.distance < ep.distance);
 			} else if(u.sense()) {
 				// Add u- -> v+
 				add_edge(u, v, ep, static_cast<DG&>(g));
@@ -158,7 +158,7 @@ static void addPrefixOverlaps(Graph &g,
 					cerr << "duplicate edge: "
 						<< u << " -> " << v << ' '
 						<< ep0 << ' ' << ep << '\n';
-				assert(ep != ep0);
+				assert(ep0.distance < ep.distance);
 			} else {
 				// Add u+ -> v-
 				add_edge(u, v, ep, static_cast<DG&>(g));
