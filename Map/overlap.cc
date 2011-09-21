@@ -369,7 +369,9 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-	assert(opt::minOverlap < opt::maxOverlap);
+	if (opt::minOverlap == 0)
+		opt::minOverlap = opt::maxOverlap - 1;
+	opt::minOverlap = min(opt::minOverlap, opt::maxOverlap - 1);
 	if (opt::maxOverlap != UINT_MAX)
 		opt::k = opt::maxOverlap;
 
