@@ -163,8 +163,8 @@ static void addPrefixOverlaps(Graph &g,
 	}
 }
 
-/** Return the mapping of the specified sequence. */
-static void findOverlaps(Graph &g,
+/** Find suffix overlaps. */
+static void findOverlapsSuffix(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const ContigNode& u, const string& seq)
 {
@@ -179,19 +179,24 @@ static void findOverlaps(Graph &g,
 	for (Matches::const_reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
 		addSuffixOverlaps(g, faIndex, fmIndex, u, *it);
+}
 
-	if (!u.sense())
-		return;
-
+/** Find prefix overlaps. */
+static void findOverlapsPrefix(Graph &g,
+		const FastaIndex& faIndex, const FMIndex& fmIndex,
+		const ContigNode& v, const string& seq)
+{
+	assert(v.sense());
 	string prefix(seq, 0,
 			min((size_t)opt::maxOverlap, seq.size()) - 1);
-	matches.clear();
+	typedef vector<FMInterval> Matches;
+	vector<FMInterval> matches;
 	fmIndex.findOverlapPrefix(prefix, back_inserter(matches),
 			opt::minOverlap);
 
 	for (Matches::const_reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
-		addPrefixOverlaps(g, faIndex, fmIndex, u, *it);
+		addPrefixOverlaps(g, faIndex, fmIndex, v, *it);
 }
 
 static void findOverlaps(Graph& g,
@@ -199,8 +204,13 @@ static void findOverlaps(Graph& g,
 		const FastqRecord& rec)
 {
 	ContigNode u(rec.id, false);
-	findOverlaps(g, faIndex, fmIndex, u, rec.seq);
-	findOverlaps(g, faIndex, fmIndex, ~u, reverseComplement(rec.seq));
+	// Find u+ -> v+, v- -> u-, v+ -> u+ and u- -> v-
+	findOverlapsSuffix(g, faIndex, fmIndex, u, rec.seq);
+	string rcseq = reverseComplement(rec.seq);
+	// Find u- -> v+ and v- -> u+
+	findOverlapsSuffix(g, faIndex, fmIndex, ~u, rcseq);
+	// Find u+ -> v- and u- -> v+
+	findOverlapsPrefix(g, faIndex, fmIndex, ~u, rcseq);
 }
 
 /** Map the sequences of the specified file. */
