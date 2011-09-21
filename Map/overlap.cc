@@ -213,7 +213,7 @@ static void findOverlaps(Graph& g,
 	string rcseq = reverseComplement(rec.seq);
 	// Find u- -> v+ and v- -> u+
 	findOverlapsSuffix(g, faIndex, fmIndex, ~u, rcseq);
-	// Find u+ -> v- and u- -> v+
+	// Find u+ -> v- and v+ -> u-
 	findOverlapsPrefix(g, faIndex, fmIndex, ~u, rcseq);
 }
 
