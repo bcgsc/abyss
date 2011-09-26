@@ -87,7 +87,6 @@ typedef Graph::vertex_descriptor vertex_descriptor;
 static struct {
 	unsigned removed;
 	unsigned tails;
-	unsigned prev_removed;
 	unsigned too_long;
 	unsigned too_complex;
 	unsigned self_adj;
@@ -106,7 +105,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 
 	// Check if previously removed
 	if (get(vertex_removed, g, v)) {
-		g_count.prev_removed++;
+		g_count.removed++;
 		return false;
 	}
 
@@ -386,13 +385,12 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
 		printGraphStats(cerr, g);
-		cerr << "Removed: " << g_count.removed
-			<< " Too Complex: " << g_count.too_complex
-			<< " Tails: " << g_count.tails
-			<< " Previously Removed: " << g_count.prev_removed
-			<< " Too Long: " << g_count.too_long
-			<< " Self Adjacent: " << g_count.self_adj
-			<< " Parallel Edges: " << g_count.parallel_edge << '\n';
+		cerr << "Removed: " << g_count.removed/2
+			<< " Too Complex: " << g_count.too_complex/2
+			<< " Tails: " << g_count.tails/2
+			<< " Too Long: " << g_count.too_long/2
+			<< " Self Adjacent: " << g_count.self_adj/2
+			<< " Parallel Edges: " << g_count.parallel_edge/2 << '\n';
 	}
 
 	sort(g_removed.begin(), g_removed.end());
