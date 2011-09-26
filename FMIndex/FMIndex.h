@@ -249,7 +249,7 @@ OutIt findOverlapSuffix(It first, It last, OutIt out,
 		if (sai.empty())
 			break;
 
-		if (last - it < minOverlap)
+		if (unsigned(last - it) < minOverlap)
 			continue;
 
 		SAInterval sai1 = update(sai, 0);
