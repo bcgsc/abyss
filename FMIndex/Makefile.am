@@ -1,4 +1,4 @@
-lib_LIBRARIES = libfmindex.a
+noinst_LIBRARIES = libfmindex.a
 
 libfmindex_a_CPPFLAGS = -I$(top_srcdir)/Common
 
