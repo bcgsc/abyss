@@ -223,7 +223,7 @@ int main(int argc, char* const* argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'f': arg >> opt::fragPath; break;
+			case 's': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
