@@ -183,6 +183,18 @@ T bwtAt(size_t i) const
 	return m_alphabet[c];
 }
 
+/** Return the first symbol of the specified suffix. */
+T symbolAt(size_t i) const
+{
+	assert(i < m_occ.size());
+	std::vector<size_type>::const_iterator it
+		= std::upper_bound(m_cf.begin(), m_cf.end(), i);
+	assert(it != m_cf.begin());
+	T c = it - m_cf.begin() - 1;
+	assert(c < m_alphabet.size());
+	return m_alphabet[c];
+}
+
 /** Decompress the index. */
 template <typename It>
 void decompress(It out)
