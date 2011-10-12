@@ -86,6 +86,9 @@ FMIndex() : m_sampleSA(1) { }
 /** Return the size of the string not counting the sentinel. */
 size_t size() const { return m_occ.size() - 1; }
 
+/** The size of the alphabet. */
+unsigned alphabetSize() const { return m_alphabet.size(); }
+
 /** Build an FM-index of the specified file. */
 template<typename It>
 void assign(It first, It last)
@@ -168,6 +171,16 @@ size_t at(size_t i) const
 size_t operator[](size_t i) const
 {
 	return at(i);
+}
+
+/** Return the symbol at the specifed position of the BWT. */
+T bwtAt(size_t i) const
+{
+	assert(i < m_occ.size());
+	T c = m_occ.at(i);
+	assert(c != SENTINEL());
+	assert(c < m_alphabet.size());
+	return m_alphabet[c];
 }
 
 /** Decompress the index. */
