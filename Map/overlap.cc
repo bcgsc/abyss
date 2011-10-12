@@ -1,4 +1,4 @@
-#include "BitUtils.h"
+#include "BitUtil.h"
 #include "ContigGraph.h"
 #include "ContigProperties.h"
 #include "DirectedGraph.h"

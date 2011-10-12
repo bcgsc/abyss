@@ -1,5 +1,5 @@
 #include "config.h"
-#include "BitUtils.h"
+#include "BitUtil.h"
 #include "FastaIndex.h"
 #include "FMIndex.h"
 #include "IOUtil.h"

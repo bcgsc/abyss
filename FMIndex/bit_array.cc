@@ -18,7 +18,7 @@
  */
 
 #include "bit_array.h"
-#include "BitUtils.h" // for popcount
+#include "BitUtil.h" // for popcount
 #include <cassert>
 
 namespace wat_array {

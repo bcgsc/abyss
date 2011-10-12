@@ -1,4 +1,4 @@
-#include "BitUtils.h"
+#include "BitUtil.h"
 #include "DAWG.h"
 #include <algorithm>
 #include <boost/graph/depth_first_search.hpp>

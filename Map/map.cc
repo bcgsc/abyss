@@ -1,4 +1,4 @@
-#include "BitUtils.h"
+#include "BitUtil.h"
 #include "DataLayer/Options.h"
 #include "FMIndex.h"
 #include "FastaIndex.h"
