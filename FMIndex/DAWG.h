@@ -11,13 +11,16 @@
 
 using boost::graph_traits;
 
+/** An FM-index is a representation of a DAWG. */
+typedef FMIndex DAWG;
+
 // Graph
 
 namespace boost {
 
 template <>
-struct graph_traits<FMIndex> {
-	typedef FMIndex::size_type size_type;
+struct graph_traits<DAWG> {
+	typedef DAWG::size_type size_type;
 
 	// Graph
 	typedef std::pair<size_type, size_type> vertex_descriptor;
@@ -49,7 +52,7 @@ class out_edge_iterator
   public:
 	out_edge_iterator() : m_g(NULL), m_u(), m_v(), m_i(0) { }
 
-	out_edge_iterator(const FMIndex& g, vertex_descriptor u,
+	out_edge_iterator(const DAWG& g, vertex_descriptor u,
 			degree_size_type i)
 		: m_g(&g), m_u(u), m_v(), m_i(i)
 	{
@@ -99,13 +102,13 @@ class out_edge_iterator
 		}
 	}
 
-	const FMIndex* m_g;
+	const DAWG* m_g;
 	vertex_descriptor m_u;
 	vertex_descriptor m_v;
 	degree_size_type m_i;
 }; // out_edge_iterator
 
-}; // graph_traits<FMIndex>
+}; // graph_traits<DAWG>
 
 } // namespace boost
 
@@ -113,25 +116,25 @@ class out_edge_iterator
 
 static inline
 std::pair<
-	graph_traits<FMIndex>::out_edge_iterator,
-	graph_traits<FMIndex>::out_edge_iterator>
+	graph_traits<DAWG>::out_edge_iterator,
+	graph_traits<DAWG>::out_edge_iterator>
 out_edges(
-		graph_traits<FMIndex>::vertex_descriptor u,
-		const FMIndex& g)
+		graph_traits<DAWG>::vertex_descriptor u,
+		const DAWG& g)
 {
-	typedef graph_traits<FMIndex>::out_edge_iterator Eit;
+	typedef graph_traits<DAWG>::out_edge_iterator Eit;
 	return std::pair<Eit, Eit>(
 			Eit(g, u, 0),
 			Eit(g, u, g.alphabetSize()));
 }
 
 static inline
-graph_traits<FMIndex>::degree_size_type
+graph_traits<DAWG>::degree_size_type
 out_degree(
-		graph_traits<FMIndex>::vertex_descriptor u,
-		const FMIndex& g)
+		graph_traits<DAWG>::vertex_descriptor u,
+		const DAWG& g)
 {
-	typedef graph_traits<FMIndex>::out_edge_iterator Eit;
+	typedef graph_traits<DAWG>::out_edge_iterator Eit;
 	std::pair<Eit, Eit> it = out_edges(u, g);
 	return std::distance(it.first, it.second);
 }
@@ -139,23 +142,23 @@ out_degree(
 // VertexListGraph
 
 static inline
-std::pair<graph_traits<FMIndex>::vertex_iterator,
-	graph_traits<FMIndex>::vertex_iterator>
-vertices(const FMIndex& g)
+std::pair<graph_traits<DAWG>::vertex_iterator,
+	graph_traits<DAWG>::vertex_iterator>
+vertices(const DAWG& g)
 {
-	typedef graph_traits<FMIndex>::vertex_iterator Vit;
+	typedef graph_traits<DAWG>::vertex_iterator Vit;
 	return std::pair<Vit, Vit>(Vit(0, g.size() + 1), Vit());
 }
 
 // PropertyGraph
 
 static inline
-FMIndex::value_type
+DAWG::value_type
 get(boost::edge_name_t,
-		const FMIndex& g,
-		graph_traits<FMIndex>::edge_descriptor e)
+		const DAWG& g,
+		graph_traits<DAWG>::edge_descriptor e)
 {
-	graph_traits<FMIndex>::vertex_descriptor v = target(e, g);
+	graph_traits<DAWG>::vertex_descriptor v = target(e, g);
 	assert(v.first < v.second);
 	return g.symbolAt(v.first);
 }

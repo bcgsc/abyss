@@ -53,7 +53,7 @@ static const struct option longopts[] = {
 };
 
 /** A directed acyclic word graph. */
-typedef FMIndex Graph;
+typedef DAWG Graph;
 
 /** DAWG visitor. */
 struct DAWGVisitor : public default_dfs_visitor
