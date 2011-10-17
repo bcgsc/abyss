@@ -9,6 +9,7 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/range/algorithm/for_each.hpp>
+#include <boost/ref.hpp>
 #include <algorithm>
 #include <cassert>
 #include <getopt.h>
@@ -21,6 +22,8 @@
 using namespace std;
 using namespace boost::lambda;
 using boost::range::for_each;
+using boost::cref;
+using boost::ref;
 using boost::tie;
 
 #define PROGRAM "abyss-junction"
@@ -188,8 +191,8 @@ int main(int argc, char** argv)
 
 	ScaffoldGraph scaffoldG(overlapG.num_vertices() / 2);
 	if (optind < argc) {
-		for (; optind < argc; optind++)
-			readGraph(argv[optind], scaffoldG);
+		for_each(argv + optind, argv + argc,
+				bind(readGraph, _1, ref(scaffoldG)));
 	} else
 		readGraph("-", scaffoldG);
 
@@ -197,7 +200,7 @@ int main(int argc, char** argv)
 	addComplementaryEdges(scaffoldG);
 
 	for_each(vertices(overlapG),
-		bind(extendJunction, overlapG, scaffoldG, _1));
+		bind(extendJunction, cref(overlapG), cref(scaffoldG), _1));
 
 	assert_good(cout, "stdout");
 
