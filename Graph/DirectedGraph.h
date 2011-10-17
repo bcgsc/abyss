@@ -59,7 +59,8 @@ class DirectedGraph
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator
-	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+	: public std::iterator<std::input_iterator_tag,
+		const vertex_descriptor>
 {
   public:
 	vertex_iterator() { }
