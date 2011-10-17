@@ -8,6 +8,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/range/algorithm/for_each.hpp>
 #include <algorithm>
 #include <cassert>
 #include <getopt.h>
@@ -19,6 +20,7 @@
 
 using namespace std;
 using namespace boost::lambda;
+using boost::range::for_each;
 using boost::tie;
 
 #define PROGRAM "abyss-junction"
@@ -194,11 +196,8 @@ int main(int argc, char** argv)
 	// Add any missing complementary edges.
 	addComplementaryEdges(scaffoldG);
 
-	typedef graph_traits<OverlapGraph>::vertex_iterator Vit;
-	Vit v0, v1;
-	tie(v0, v1) = vertices(overlapG);
-	for_each(v0, v1,
-			bind(extendJunction, overlapG, scaffoldG, _1));
+	for_each(vertices(overlapG),
+		bind(extendJunction, overlapG, scaffoldG, _1));
 
 	assert_good(cout, "stdout");
 
