@@ -67,6 +67,12 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Counts. */
+static struct {
+	unsigned junctions;
+	unsigned supported;
+} g_count;
+
 /** No property. */
 struct NoProperty {
 	bool operator==(const NoProperty&) const { return true; }
@@ -108,6 +114,8 @@ static void addComplementaryEdges(DG& g)
 	}
 	if (opt::verbose > 0)
 		cerr << "Added " << numAdded << " complementary edges.\n";
+	if (opt::verbose > 1)
+		printGraphStats(cerr, g);
 }
 
 /** Extend junction contigs. */
@@ -129,7 +137,9 @@ void extendJunction(
 		// This junction contig is supported by the scaffold graph.
 		cout << ContigID::create() << '\t'
 			<< u << ' ' << v << ' ' << w << '\n';
+		g_count.supported++;
 	}
+	g_count.junctions++;
 }
 
 /** Allow parallel edges. */
@@ -151,7 +161,7 @@ static void readGraph(const string& path, Graph& g)
 	assert_good(in, path);
 	read_graph(in, g, AllowParallelEdges());
 	assert(in.eof());
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		printGraphStats(cerr, g);
 	ContigID::lock();
 }
@@ -203,6 +213,10 @@ int main(int argc, char** argv)
 		bind(extendJunction, cref(overlapG), cref(scaffoldG), _1));
 
 	assert_good(cout, "stdout");
+
+	if (opt::verbose > 0)
+		cerr << "Junctions: " << g_count.junctions << '\n'
+			<< "Supported: " << g_count.supported << '\n';
 
 	return 0;
 }
