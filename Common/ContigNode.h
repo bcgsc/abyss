@@ -200,4 +200,11 @@ unsigned get(vertex_index_t, const Graph&, ContigNode u)
 	return u.index();
 }
 
+/** Return the sense of the specified vertex. */
+template <typename Graph>
+bool get(vertex_sense_t, const Graph&, ContigNode u)
+{
+	return u.sense();
+}
+
 #endif

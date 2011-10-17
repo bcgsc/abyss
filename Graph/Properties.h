@@ -10,6 +10,9 @@
 /** A property indicating that this vertex has been removed. */
 enum vertex_removed_t { vertex_removed };
 
+/** The orientation of a vertex. */
+enum vertex_sense_t { vertex_sense };
+
 #if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 using boost::readable_property_map_tag;
 
@@ -25,6 +28,7 @@ using boost::vertex_index_t;
 
 namespace boost {
 	BOOST_INSTALL_PROPERTY(vertex, removed);
+	BOOST_INSTALL_PROPERTY(vertex, sense);
 }
 
 #else // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
