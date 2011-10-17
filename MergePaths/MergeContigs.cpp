@@ -35,11 +35,11 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA ADJ PATH\n"
+"Usage: " PROGRAM " [OPTION]... FASTA [OVERLAP] PATH\n"
 "Merge paths of contigs to create larger contigs.\n"
-"  FASTA  contigs in FASTA format\n"
-"  ADJ    contig adjacency graph\n"
-"  PATH   sequences of contig IDs\n"
+"  FASTA    contigs in FASTA format\n"
+"  OVERLAP  contig overlap graph\n"
+"  PATH     sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 3) {
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
@@ -319,8 +319,10 @@ int main(int argc, char** argv)
 	}
 
 	const char* contigFile = argv[optind++];
-	string adjPath(argv[optind++]);
-	string mergedPathFile(argv[optind++]);
+	string adjPath, mergedPathFile;
+	if (argc - optind == 3)
+		adjPath = string(argv[optind++]);
+	mergedPathFile = string(argv[optind++]);
 
 	// Read the contig sequence.
 	vector<Contig>& contigs = g_contigs;
@@ -336,13 +338,6 @@ int main(int argc, char** argv)
 		if (optind == argc)
 			ContigID::lock();
 	}
-
-	// Read the contig adjacency graph.
-	ifstream fin(adjPath.c_str());
-	assert_good(fin, adjPath);
-	Graph g;
-	fin >> g;
-	assert(fin.eof());
 
 	vector<string> pathIDs;
 	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
@@ -391,6 +386,16 @@ int main(int argc, char** argv)
 			it != contigs.end(); ++it)
 		if (!seen[it - contigs.begin()])
 			out << *it;
+
+	if (adjPath.empty())
+		return 0;
+
+	// Read the contig adjacency graph.
+	ifstream fin(adjPath.c_str());
+	assert_good(fin, adjPath);
+	Graph g;
+	fin >> g;
+	assert(fin.eof());
 
 	unsigned npaths = 0;
 	for (vector<Path>::const_iterator it = paths.begin();
