@@ -46,6 +46,8 @@ class Semaphore {
 };
 #else
 # include <semaphore.h>
+# include <cerrno>
+# include <cstring> // for strerror
 class Semaphore {
   public:
 	Semaphore(unsigned value)
@@ -53,11 +55,40 @@ class Semaphore {
 #if SEM_VALUE_MAX
 		assert(value <= SEM_VALUE_MAX);
 #endif
-		sem_init(&m_sem, 0, value);
+		if (sem_init(&m_sem, 0, value) == -1) {
+			std::cerr << "error: sem_init:" <<
+				strerror(errno) << std::endl;
+			assert(false);
+			exit(EXIT_FAILURE);
+		}
 	}
-	~Semaphore() { sem_destroy(&m_sem); }
-	void wait() { sem_wait(&m_sem); }
-	void post() { sem_post(&m_sem); }
+	~Semaphore()
+	{
+		if (sem_destroy(&m_sem) == -1) {
+			std::cerr << "error: sem_destroy:" <<
+				strerror(errno) << std::endl;
+			assert(false);
+			exit(EXIT_FAILURE);
+		}
+	}
+	void wait()
+	{
+		if (sem_wait(&m_sem) == -1) {
+			std::cerr << "error: sem_wait:" <<
+				strerror(errno) << std::endl;
+			assert(false);
+			exit(EXIT_FAILURE);
+		}
+	}
+	void post()
+	{
+		if (sem_post(&m_sem) == -1) {
+			std::cerr << "error: sem_post:" <<
+				strerror(errno) << std::endl;
+			assert(false);
+			exit(EXIT_FAILURE);
+		}
+	}
   private:
 	sem_t m_sem;
 };
