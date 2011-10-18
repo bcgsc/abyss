@@ -8,6 +8,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/algorithm/for_each.hpp>
 #include <boost/ref.hpp>
 #include <algorithm>
@@ -21,8 +22,9 @@
 
 using namespace std;
 using namespace boost::lambda;
-using boost::range::for_each;
+using boost::adaptors::filtered;
 using boost::cref;
+using boost::for_each;
 using boost::ref;
 using boost::tie;
 
@@ -40,6 +42,7 @@ static const char USAGE_MESSAGE[] =
 "  OVERLAP   the overlap graph\n"
 "  SCAFFOLD  a scaffold graph\n"
 "\n"
+"  -i, --ignore=FILE     ignore junctions seen in FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -49,6 +52,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by DotIO
 
+	/** Junction contigs to ignore. */
+	string ignorePath;
+
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
 
@@ -56,11 +62,12 @@ namespace opt {
  	int format = DOT; // used by DistanceEst
 }
 
-static const char shortopts[] = "v";
+static const char shortopts[] = "i:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, };
 
 static const struct option longopts[] = {
+	{ "ignore",      no_argument,       NULL, 'i' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -166,6 +173,36 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
+/** Mark contigs that have been seen previously. */
+static void markSeen(const string& filePath, vector<bool>& marked)
+{
+	if (filePath.empty())
+		return;
+	ifstream in(filePath.c_str());
+	assert_good(in, filePath);
+	string id;
+	ContigPath path;
+	while (in >> id >> path) {
+		for (ContigPath::const_iterator it = path.begin();
+				it != path.end(); ++it)
+			if (!it->ambiguous())
+				marked[it->index() / 2] = true;
+	}
+	assert(in.eof());
+}
+
+/** Return the value of the bit at the specified index. */
+struct Marked : unary_function<ContigNode, bool> {
+	typedef vector<bool> Data;
+	Marked(const Data& data) : m_data(data) { }
+	bool operator()(ContigNode u) const
+	{
+		return m_data[ContigID(u)];
+	}
+  private:
+	const Data& m_data;
+};
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -174,7 +211,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'k': arg >> opt::k; break;
+			case 'i': arg >> opt::ignorePath; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -209,7 +246,13 @@ int main(int argc, char** argv)
 	// Add any missing complementary edges.
 	addComplementaryEdges(scaffoldG);
 
-	for_each(vertices(overlapG),
+	// Read the set of contigs to ignore.
+	vector<bool> seen(num_vertices(overlapG) / 2);
+	markSeen(opt::ignorePath, seen);
+	
+	// Extend the junction contigs.
+	for_each(vertices(overlapG)
+			| filtered(!bind(Marked(seen), _1)),
 		bind(extendJunction, cref(overlapG), cref(scaffoldG), _1));
 
 	assert_good(cout, "stdout");
