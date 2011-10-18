@@ -44,6 +44,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -p, --path=PATH_FILE  paths output by SimpleGraph\n"
+"      --merged          output only merged contigs\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -54,6 +55,9 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 	static string out;
 	static string path;
+
+	/** Output only merged contigs. */
+	int onlyMerged;
 
 	/** Minimum overlap. */
 	static unsigned minOverlap = 20;
@@ -68,6 +72,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "merged",      no_argument,       &opt::onlyMerged, 1 },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "path",        required_argument, NULL, 'p' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -382,10 +387,12 @@ int main(int argc, char** argv)
 	ostream& out = opt::out == "-" ? cout
 		: (fout.open(opt::out.c_str()), fout);
 	assert_good(out, opt::out);
-	for (vector<Contig>::const_iterator it = contigs.begin();
-			it != contigs.end(); ++it)
-		if (!seen[it - contigs.begin()])
-			out << *it;
+	if (!opt::onlyMerged) {
+		for (vector<Contig>::const_iterator it = contigs.begin();
+				it != contigs.end(); ++it)
+			if (!seen[it - contigs.begin()])
+				out << *it;
+	}
 
 	if (adjPath.empty())
 		return 0;
