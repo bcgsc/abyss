@@ -96,14 +96,14 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 			count_good++;
 
 		if (++count % 100000 == 0) {
-			logger(1) << "Read " << count << "reads. ";
+			logger(1) << "Read " << count << " reads. ";
 			seqCollection->printLoad();
 		}
 		seqCollection->pumpNetwork();
 	}
 	assert(reader.eof());
 
-	logger(1) << "Read " << count << "reads. ";
+	logger(1) << "Read " << count << " reads. ";
 	seqCollection->printLoad();
 
 	if (count_small > 0)
