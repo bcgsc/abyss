@@ -320,7 +320,7 @@ int main(int argc, char** argv)
 
 	const char* contigFile = argv[optind++];
 	string adjPath, mergedPathFile;
-	if (argc - optind == 3)
+	if (argc - optind > 1)
 		adjPath = string(argv[optind++]);
 	mergedPathFile = string(argv[optind++]);
 
