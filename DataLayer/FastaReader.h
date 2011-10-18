@@ -2,6 +2,7 @@
 #define FASTAREADER_H 1
 
 #include "Sequence.h"
+#include "StringUtil.h" // for chomp
 #include <cassert>
 #include <fstream>
 #include <istream>
@@ -61,8 +62,10 @@ class FastaReader {
 		/** Read a single line. */
 		std::istream& getline(std::string& s)
 		{
-			if (std::getline(m_in, s))
+			if (std::getline(m_in, s)) {
+				chomp(s, '\r');
 				m_line++;
+			}
 			return m_in;
 		}
 
