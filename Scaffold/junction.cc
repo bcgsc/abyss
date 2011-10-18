@@ -183,10 +183,12 @@ static void markSeen(const string& filePath, vector<bool>& marked)
 	string id;
 	ContigPath path;
 	while (in >> id >> path) {
+		if (path.empty())
+			marked[ContigID(id)] = true;
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
 			if (!it->ambiguous())
-				marked[it->index() / 2] = true;
+				marked[ContigID(*it)] = true;
 	}
 	assert(in.eof());
 }
