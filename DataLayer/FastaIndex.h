@@ -90,7 +90,7 @@ class FastaIndex
 	}
 
 	/** Translate a file offset to a sequence:position coordinate. */
-	std::pair<std::string, size_t> operator[](size_t offset) const
+	std::pair<FAIRecord, size_t> operator[](size_t offset) const
 	{
 		Data::const_iterator it = std::upper_bound(
 				m_data.begin(), m_data.end(),
@@ -100,7 +100,7 @@ class FastaIndex
 		assert(it != m_data.end());
 		assert(it->offset <= offset);
 		assert(offset < it->offset + it->size);
-		return std::make_pair(it->id, offset - it->offset);
+		return std::make_pair(*it, offset - it->offset);
 	}
 
 	/** Write FASTA headers to the specified seekable stream. */
