@@ -16,39 +16,6 @@
 #include <string>
 #include <vector>
 
-/** A match of a substring of a query sequence to an FM index. */
-struct FMInterval
-{
-	FMInterval(size_t l, size_t u, unsigned qstart, unsigned qend)
-		: l(l), u(u), qstart(qstart), qend(qend) { }
-	size_t l, u;
-	unsigned qstart, qend;
-
-	unsigned qspan() const
-	{
-		assert(qstart <= qend);
-		return qend - qstart;
-	}
-};
-
-/** A match of a substring of a query sequence to a target sequence.
- */
-struct Match
-{
-	unsigned qstart, qend;
-	size_t tstart;
-	unsigned count;
-	Match(unsigned qstart, unsigned qend,
-			size_t tstart, unsigned count)
-		: qstart(qstart), qend(qend), tstart(tstart), count(count) { }
-
-	unsigned qspan() const
-	{
-		assert(qstart <= qend);
-		return qend - qstart;
-	}
-};
-
 /** An FM index. */
 class FMIndex
 {
@@ -78,6 +45,27 @@ struct SAInterval
 	bool operator==(const SAInterval& x) const
 	{
 		return x.l == l && x.u == u;
+	}
+
+	size_type size() const
+	{
+		assert(l <= u);
+		return u - l;
+	}
+};
+
+/** A match of a substring of a query sequence to an FM index. */
+struct Match : public SAInterval
+{
+	unsigned qstart, qend;
+
+	Match(size_type l, size_type u, unsigned qstart, unsigned qend)
+		: SAInterval(l, u), qstart(qstart), qend(qend) { }
+
+	unsigned qspan() const
+	{
+		assert(qstart <= qend);
+		return qend - qstart;
 	}
 };
 
@@ -279,7 +267,7 @@ OutIt findOverlapSuffix(It first, It last, OutIt out,
 
 		SAInterval sai1 = update(sai, 0);
 		if (!sai1.empty())
-			*out++ = FMInterval(sai1.l, sai1.u,
+			*out++ = Match(sai1.l, sai1.u,
 					it - first, last - first);
 	}
 	return out;
@@ -312,14 +300,14 @@ OutIt findOverlapPrefix(const std::string& q, OutIt out,
 		SAInterval sai = findExact(first, it,
 				update(SAInterval(*this), 0));
 		if (!sai.empty())
-			*out++ = FMInterval(sai.l, sai.u, 0, it - first);
+			*out++ = Match(sai.l, sai.u, 0, it - first);
 	}
 	return out;
 }
 
 /** Search for a matching suffix of the query. */
 template <typename It, typename MemoIt>
-FMInterval findSuffix(It first, It last, MemoIt memoIt) const
+Match findSuffix(It first, It last, MemoIt memoIt) const
 {
 	assert(first < last);
 
@@ -340,17 +328,17 @@ FMInterval findSuffix(It first, It last, MemoIt memoIt) const
 		}
 		*memoIt++ = sai;
 	}
-	return FMInterval(sai.l, sai.u, it - first + 1, last - first);
+	return Match(sai.l, sai.u, it - first + 1, last - first);
 }
 
 /** Search for a matching substring of the query at least k long.
  * @return the longest match
  */
 template <typename It>
-FMInterval findSubstring(It first, It last, unsigned k) const
+Match findSubstring(It first, It last, unsigned k) const
 {
 	assert(first < last);
-	FMInterval best(0, 0, 0, k > 0 ? k - 1 : 0);
+	Match best(0, 0, 0, k > 0 ? k - 1 : 0);
 
 	// Record which vertices of the prefix DAWG have been visited.
 	std::vector<SAInterval> memo(last - first, SAInterval(0, 0));
@@ -358,7 +346,7 @@ FMInterval findSubstring(It first, It last, unsigned k) const
 	for (It it = last; it > first; --it) {
 		if (unsigned(it - first) < best.qspan())
 			return best;
-		FMInterval interval = findSuffix(first, it, memoIt++);
+		Match interval = findSuffix(first, it, memoIt++);
 		if (interval.qspan() > best.qspan())
 			best = interval;
 	}
@@ -385,13 +373,8 @@ Match find(const std::string& q, unsigned k) const
 	std::string s = q;
 	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
 
-	FMInterval interval = findSubstring(s.begin(), s.end(), k);
-	assert(interval.l <= interval.u);
-	size_t count = interval.u - interval.l;
-	if (count == 0)
-		return Match(0, 0, 0, 0);
-	return Match(interval.qstart, interval.qend,
-			at(interval.l), count);
+	Match m = findSubstring(s.begin(), s.end(), k);
+	return m;
 }
 
 /** Set the alphabet to [first, last). */

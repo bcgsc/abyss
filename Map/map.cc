@@ -82,12 +82,15 @@ static struct {
 	unsigned unmapped;
 } g_count;
 
+typedef FMIndex::Match Match;
+
 /** Return a SAM record of the specified match. */
 static SAMRecord toSAM(const FastaIndex& faIndex,
-		const Match& m, bool rc, unsigned qlength)
+		const FMIndex& fmIndex, const Match& m, bool rc,
+		unsigned qlength)
 {
 	SAMRecord a;
-	if (m.count == 0) {
+	if (m.size() == 0) {
 		// No hit.
 		a.rname = "*";
 		a.pos = -1;
@@ -95,15 +98,15 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 		a.mapq = 0;
 		a.cigar = "*";
 	} else {
-		pair<string, size_t> idPos = faIndex[m.tstart];
-		a.rname = idPos.first;
+		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[m.l]];
+		a.rname = idPos.first.id;
 		a.pos = idPos.second;
 		a.flag = rc ? SAMAlignment::FREVERSE : 0;
 
 		// Set the mapq to the alignment score.
 		assert(m.qstart < m.qend);
 		unsigned matches = m.qend - m.qstart;
-		a.mapq = m.count > 1 ? 0 : min(matches, 255U);
+		a.mapq = m.size() > 1 ? 0 : min(matches, 255U);
 
 		ostringstream ss;
 		if (m.qstart > 0)
@@ -128,7 +131,8 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	Match rcm = fmIndex.find(rcqseq, max(opt::k, m.qspan()));
 	bool rc = rcm.qspan() > m.qspan();
 
-	SAMRecord sam = toSAM(faIndex, rc ? rcm : m, rc, rec.seq.size());
+	SAMRecord sam = toSAM(faIndex, fmIndex, rc ? rcm : m, rc,
+			rec.seq.size());
 	sam.qname = rec.id;
 #if SAM_SEQ_QUAL
 	sam.seq = rc ? rcqseq : rec.seq;

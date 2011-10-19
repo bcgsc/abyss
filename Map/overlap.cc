@@ -98,10 +98,12 @@ static const struct option longopts[] = {
 typedef DirectedGraph<ContigProperties, Distance> DG;
 typedef ContigGraph<DG> Graph;
 
+typedef FMIndex::Match Match;
+
 /** Add suffix overlaps to the graph. */
 static void addSuffixOverlaps(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
-		const ContigNode& u, const FMInterval& fmi)
+		const ContigNode& u, const Match& fmi)
 {
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
@@ -110,8 +112,8 @@ static void addSuffixOverlaps(Graph &g,
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i] + 1;
-		pair<string, size_t> idPos = faIndex[tstart];
-		ContigNode v(idPos.first, false);
+		pair<FAIRecord, size_t> idPos = faIndex[tstart];
+		ContigNode v(idPos.first.id, false);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
@@ -136,7 +138,7 @@ static void addSuffixOverlaps(Graph &g,
 /** Add prefix overlaps to the graph. */
 static void addPrefixOverlaps(Graph &g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
-		const ContigNode& v, const FMInterval& fmi)
+		const ContigNode& v, const Match& fmi)
 {
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
@@ -147,8 +149,8 @@ static void addPrefixOverlaps(Graph &g,
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i];
-		pair<string, size_t> idPos = faIndex[tstart];
-		ContigNode u(idPos.first, false);
+		pair<FAIRecord, size_t> idPos = faIndex[tstart];
+		ContigNode u(idPos.first.id, false);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
@@ -175,8 +177,8 @@ static void findOverlapsSuffix(Graph &g,
 	size_t pos = seq.size() > opt::maxOverlap
 		? seq.size() - opt::maxOverlap + 1 : 1;
 	string suffix(seq, pos);
-	typedef vector<FMInterval> Matches;
-	vector<FMInterval> matches;
+	typedef vector<Match> Matches;
+	vector<Match> matches;
 	fmIndex.findOverlapSuffix(suffix, back_inserter(matches),
 			opt::minOverlap);
 
@@ -193,8 +195,8 @@ static void findOverlapsPrefix(Graph &g,
 	assert(v.sense());
 	string prefix(seq, 0,
 			min((size_t)opt::maxOverlap, seq.size()) - 1);
-	typedef vector<FMInterval> Matches;
-	vector<FMInterval> matches;
+	typedef vector<Match> Matches;
+	vector<Match> matches;
 	fmIndex.findOverlapPrefix(prefix, back_inserter(matches),
 			opt::minOverlap);
 
