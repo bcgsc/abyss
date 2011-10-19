@@ -70,8 +70,11 @@ class ContigID {
 	static void setNextContigID(cstring s)
 	{
 		std::istringstream iss((std::string)s);
-		iss >> s_nextID;
-		assert(iss.eof());
+		if (iss >> s_nextID) {
+			assert(iss.eof());
+			++s_nextID;
+		} else
+			s_nextID = 0;
 	}
 
 	/** Return a unique contig ID. */
@@ -82,7 +85,7 @@ class ContigID {
 			setNextContigID(s_dict.back());
 		}
 		std::ostringstream oss;
-		oss << ++s_nextID;
+		oss << s_nextID++;
 		return insert(oss.str());
 	}
 
