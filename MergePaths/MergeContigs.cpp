@@ -42,7 +42,7 @@ static const char USAGE_MESSAGE[] =
 "  PATH     sequences of contig IDs\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
-"  -o, --out=FILE        write result to FILE\n"
+"  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
 "  -p, --path=PATH_FILE  paths output by SimpleGraph\n"
 "      --merged          output only merged contigs\n"
 "  -v, --verbose         display verbose output\n"
@@ -53,7 +53,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
-	static string out;
+	static string out = "-";
 	static string path;
 
 	/** Output only merged contigs. */
