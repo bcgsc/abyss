@@ -436,7 +436,7 @@ void NetworkSequenceCollection::runControl()
 				size_t numLoaded = m_comm.reduce(m_data.size());
 				cout << "Loaded " << numLoaded << " k-mer. "
 					"At least "
-					<< toSI(m_data.size() * sizeof (value_type))
+					<< toSI(numLoaded * sizeof (value_type))
 					<< "B of RAM is required.\n";
 
 				Histogram myh
