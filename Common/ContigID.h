@@ -55,6 +55,10 @@ class ContigID {
 	static bool empty() { return s_dict.empty(); }
 	static void lock() { s_dict.lock(); }
 	static void unlock() { s_dict.unlock(); }
+	static size_t count(const std::string& id)
+	{
+		return s_dict.count(id);
+	}
 
 	/** Create a new contig ID from s, which must be unique. */
 	static ContigID insert(const std::string& s)

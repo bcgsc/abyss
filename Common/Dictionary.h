@@ -73,6 +73,9 @@ class Dictionary {
 		/** Return the number of elements in this dictionary. */
 		size_t size() { return m_vec.size(); }
 
+		/** Return the number of elements with the specified key. */
+		size_t count(const key_type& key) { return m_map.count(key); }
+
 		/** Return the last key in this dictionary. */
 		key_reference back()
 		{
