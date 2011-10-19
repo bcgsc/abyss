@@ -41,6 +41,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --score=N           find matches at least N bp [1]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
+"  -d, --dup               identify and print duplicate sequence\n"
+"                          IDs between QUERY and TARGET\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -57,17 +59,21 @@ namespace opt {
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
+	/** Identify duplicate and subsumed sequences. */
+	static bool dup = false;
+
 	/** Verbose output. */
 	static int verbose;
 }
 
-static const char shortopts[] = "j:k:s:v";
+static const char shortopts[] = "j:k:s:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "sample", required_argument, NULL, 's' },
 	{ "score", required_argument, NULL, 'k' },
+	{ "dup", no_argument, NULL, 'd' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
@@ -122,13 +128,100 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 	return a;
 }
 
+/** Return the position of the current contig. */
+static size_t getMyPos(const Match& m, const FastaIndex& faIndex,
+		const FMIndex& fmIndex, const string& id)
+{
+	for (size_t i = m.l; i < m.u; i++) {
+		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[i]];
+		if (idPos.first.id == id)
+			return fmIndex[i];
+	}
+	return fmIndex[m.l];
+}
+
+/** Return the earlies position of all contigs in m. */
+static size_t getMinPos(const Match& m, size_t maxLen,
+		const FastaIndex& faIndex, const FMIndex& fmIndex)
+{
+	
+	size_t minPos = numeric_limits<size_t>::max();
+	for (size_t i = m.l; i < m.u; i++) {
+		size_t pos = fmIndex[i];
+		pair<FAIRecord, size_t> idPos = faIndex[pos];
+		if (idPos.first.size == maxLen && pos < minPos)
+			minPos = fmIndex[i];
+	}
+	return minPos;
+}
+
+/** Return the largest length of all contig in m. */
+static size_t getMaxLen(const Match& m, const FastaIndex& faIndex,
+		const FMIndex& fmIndex)
+{
+	size_t maxLen = 0;
+	for (size_t i = m.l; i < m.u; i++) {
+		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[i]];
+		size_t len = idPos.first.size;
+		if (len > maxLen)
+			maxLen = len;
+	}
+	return maxLen;
+}
+
+/** Print the current contig id if it is not the lartest and earliest
+ * contig in m. */
+static void printDuplicates(const Match& m, const Match& rcm,
+		const FastaIndex& faIndex, const FMIndex& fmIndex,
+		const FastqRecord& rec)
+{
+	size_t myLen = m.qspan();
+	size_t maxLen = max(getMaxLen(m, faIndex, fmIndex),
+			getMaxLen(rcm, faIndex, fmIndex));
+	if (myLen < maxLen) {
+#pragma omp atomic
+		g_count.multimapped++;
+#pragma omp critical(cout)
+		{
+			cout << rec.id << '\n';
+			assert_good(cout, "stdout");
+		}
+		return;
+	}
+	size_t myPos = getMyPos(m, faIndex, fmIndex, rec.id);
+	size_t minPos = min(getMinPos(m, maxLen, faIndex, fmIndex),
+			getMinPos(rcm, maxLen, faIndex, fmIndex));
+	if (myPos > minPos) {
+#pragma omp atomic
+		g_count.multimapped++;
+#pragma omp critical(cout)
+		{
+			cout << rec.id << '\n';
+			assert_good(cout, "stdout");
+		}
+	}
+#pragma omp atomic
+	g_count.unique++;
+	return;
+}
+
+
 /** Return the mapping of the specified sequence. */
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
-	Match m = fmIndex.find(rec.seq, opt::k);
+	Match m = fmIndex.find(rec.seq,
+			opt::dup ? rec.seq.length() : opt::k);
+
 	string rcqseq = reverseComplement(rec.seq);
-	Match rcm = fmIndex.find(rcqseq, max(opt::k, m.qspan()));
+	Match rcm = fmIndex.find(rcqseq,
+			opt::dup ? rcqseq.length() : m.qspan());
+
+	if (opt::dup) {
+		printDuplicates(m, rcm, faIndex, fmIndex, rec);
+		return;
+	}
+
 	bool rc = rcm.qspan() > m.qspan();
 
 	SAMRecord sam = toSAM(faIndex, fmIndex, rc ? rcm : m, rc,
@@ -258,6 +351,7 @@ int main(int argc, char** argv)
 			case 'j': arg >> opt::threads; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
 			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
+			case 'd': opt::dup = true; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -337,13 +431,16 @@ int main(int argc, char** argv)
 	// Check that the indexes are up to date.
 	checkIndexes(targetFile, fmIndex, faIndex);
 
-	// Write the SAM header.
-	cout << "@HD\tVN:1.4\n"
-		"@PG\tID:" PROGRAM "\tPN:" PROGRAM "\tVN:" VERSION "\t"
-		"CL:" << commandLine << '\n';
-	faIndex.writeSAMHeader(cout);
-	cout.flush();
-	assert_good(cout, "stdout");
+	if (!opt::dup) {
+		// Write the SAM header.
+		cout << "@HD\tVN:1.4\n"
+			"@PG\tID:" PROGRAM "\tPN:" PROGRAM "\tVN:" VERSION "\t"
+			"CL:" << commandLine << '\n';
+		faIndex.writeSAMHeader(cout);
+		cout.flush();
+		assert_good(cout, "stdout");
+	} else if (opt::verbose > 0)
+		cerr << "Identifying duplicates.\n";
 
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
