@@ -250,33 +250,11 @@ static void resolveForks(Graph& g, const Graph& g0)
  */
 static void pruneTips(Graph& g)
 {
-	typedef graph_traits<Graph>::adjacency_iterator Vit;
-	typedef graph_traits<Graph>::vertex_iterator Uit;
 	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	/** Identify the tips. */
 	vector<V> tips;
-	pair<Uit, Uit> urange = vertices(g);
-	for (Uit uit = urange.first; uit != urange.second; ++uit) {
-		V u = *uit;
-		if (out_degree(u, g) < 2)
-			continue;
-		pair<Vit, Vit> vrange = adjacent_vertices(u, g);
-		for (Vit vit = vrange.first; vit != vrange.second; ++vit) {
-			V v = *vit;
-			assert(v != u);
-			if (in_degree(v, g) == 1 && out_degree(v, g) == 0)
-				tips.push_back(v);
-		}
-	}
-
-	/** Remove the tips. */
-	for (vector<V>::const_iterator it = tips.begin();
-			it != tips.end(); ++it) {
-		V u = *it;
-		clear_vertex(u, g);
-		remove_vertex(u, g);
-	}
+	pruneTips(g, back_inserter(tips));
 
 	if (opt::verbose > 0) {
 		cerr << "Removed " << tips.size() << " tips.\n";

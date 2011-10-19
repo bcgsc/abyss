@@ -224,4 +224,77 @@ OutIt assemble(Graph& g, OutIt out)
 	return assemble_if(g, out, True<edge_descriptor>());
 }
 
+/** Remove tips.
+ * For an edge (u,v), remove the vertex v if deg+(u) > 1,
+ * deg-(v) = 1 and deg+(v) = 0, and p(v) is true.
+ * Stores all removed vertices in result.
+ */
+template <typename Graph, typename OutputIt, typename Pred>
+OutputIt pruneTips_if(Graph& g, OutputIt result, Pred p)
+{
+	typedef typename graph_traits<Graph>::adjacency_iterator Vit;
+	typedef typename graph_traits<Graph>::vertex_iterator Uit;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	/** Identify the tips. */
+	std::vector<V> tips;
+	std::pair<Uit, Uit> urange = vertices(g);
+	for (Uit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (out_degree(u, g) < 2)
+			continue;
+		std::pair<Vit, Vit> vrange = adjacent_vertices(u, g);
+		for (Vit vit = vrange.first; vit != vrange.second; ++vit) {
+			V v = *vit;
+			//assert(v != u);
+			if (in_degree(v, g) == 1 && out_degree(v, g) == 0 && p(v))
+				tips.push_back(v);
+		}
+	}
+
+	/** Remove the tips. */
+	remove_vertex_if(g, tips.begin(), tips.end(), True<V>());
+	copy(tips.begin(), tips.end(), result);
+
+	return result;
+}
+
+/** Remove tips.
+ * For an edge (u,v), remove the vertex v if deg+(u) > 1
+ * and deg-(v) = 1 and deg+(v) = 0.
+ * Stores all removed vertices in result.
+ */
+template <typename Graph, typename OutputIt>
+OutputIt pruneTips(Graph& g, OutputIt result)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	return pruneTips_if(g, result, True<V>());
+}
+
+/** Remove islands.
+ * For a vertex v, remove v if deg+(v) = 0, deg-(v) = 0 and p(v) is
+ * true.
+ * Stores all removed vertices in result.
+ */
+template <typename Graph, typename OutputIt, typename Pred>
+OutputIt removeIslands_if(Graph& g, OutputIt result, Pred p)
+{
+	typedef typename graph_traits<Graph>::vertex_iterator Uit;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	/** Identify and remove Islands. */
+	std::pair<Uit, Uit> urange = vertices(g);
+	for (Uit uit = urange.first; uit != urange.second; ++uit) {
+		V u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		if (p(u) && in_degree(u, g) == 0 && out_degree(u, g) == 0) {
+			*result++ = u;
+			clear_vertex(u, g);
+			remove_vertex(u, g);
+		}
+	}
+	return result;
+}
+
 #endif
