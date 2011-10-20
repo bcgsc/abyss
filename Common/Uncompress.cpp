@@ -21,6 +21,12 @@
 
 using namespace std;
 
+/** Tests whether this string starts with the specified suffix. */
+static bool startsWith(const string& s, const string& suffix)
+{
+	return s.substr(0, suffix.size()) == suffix;
+}
+
 /** Tests whether this string ends with the specified suffix. */
 static bool endsWith(const string& s, const string& suffix)
 {
@@ -31,6 +37,9 @@ static bool endsWith(const string& s, const string& suffix)
 static const char* zcatExec(const string& path)
 {
 	return
+		startsWith(path, "http://") ? "wget -O-" :
+		startsWith(path, "https://") ? "wget -O-" :
+		startsWith(path, "ftp://") ? "wget -O-" :
 		endsWith(path, ".tar") ? "tar -xOf " :
 		endsWith(path, ".tar.Z") ? "tar -zxOf " :
 		endsWith(path, ".tar.gz") ? "tar -zxOf " :
@@ -43,6 +52,7 @@ static const char* zcatExec(const string& path)
 		endsWith(path, ".xz") ? "xzdec -c" :
 		endsWith(path, ".bam") ? "samtools view -h" :
 		endsWith(path, ".sra") ? "fastq-dump -Z --split-spot" :
+		endsWith(path, ".url") ? "wget -O- -i" :
 		NULL;
 }
 
