@@ -69,6 +69,9 @@ namespace opt {
 	/** Remove tips less than this length. */
 	static unsigned minTipLen = 0;
 
+	/** Remove all contigs less than this length. */
+	static unsigned minLen = 0;
+
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 0;
 
@@ -83,7 +86,7 @@ namespace opt {
 	int format; // used by ContigProperties
 }
 
-static const char shortopts[] = "g:k:m:t:T:v";
+static const char shortopts[] = "g:k:l:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -92,6 +95,7 @@ static const struct option longopts[] = {
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "island",        required_argument, NULL, 'T' },
 	{ "tip",           required_argument, NULL, 't' },
+	{ "length",        required_argument, NULL, 'l' },
 	{ "shim",          no_argument,       &opt::shim, 1 },
 	{ "no-shim",       no_argument,       &opt::shim, 0 },
 	{ "assemble",      no_argument,       &opt::assemble, 1 },
@@ -321,13 +325,13 @@ struct sortContigs {
 	}
 };
 
-struct ShorterThanX {
+struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	const Graph& g;
 	size_t x;
 
 	ShorterThanX(const Graph& g, size_t x) : g(g), x(x) { }
 
-	bool operator()(vertex_descriptor y)
+	bool operator()(vertex_descriptor y) const
 	{
 		return g[y].length < x;
 	}
@@ -357,6 +361,22 @@ static void removeShims(Graph& g)
 	}
 }
 
+static void removeShortContigs(Graph& g)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef GTraits::vertex_iterator Vit;
+	typedef GTraits::vertex_descriptor V;
+	Vit first, second;
+	tie(first, second) = vertices(g);
+	vector<V> sc;
+	copy_if(first, second, back_inserter(sc),
+			ShorterThanX(g, opt::minLen));
+	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
+	copy(sc.begin(), sc.end(), back_inserter(g_removed));
+	if (opt::verbose > 0)
+		cerr << "Removed " << sc.size() << " short contigs.\n";
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -374,6 +394,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'l': arg >> opt::minLen; assert(arg.eof()); break;
 			case 'm': arg >> opt::minOverlap; assert(arg.eof()); break;
 			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
@@ -447,6 +468,9 @@ int main(int argc, char** argv)
 			cerr << "Removed " << g_removed.size() - s
 				<< " tips.\n";
 	}
+
+	if (opt::minLen > 0)
+		removeShortContigs(g);
 
 	if (opt::minIslandLen > 0) {
 		size_t s = g_removed.size();
