@@ -47,6 +47,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N          k-mer size\n"
 "  -T, --island=N        remove islands shorter than N [0]\n"
 "  -t, --tip=N           remove tips shorter than N [0]\n"
+"  -l, --length=N        remove contigs shorter than N [0]\n"
 "      --shim            remove filler contigs that only contribute\n"
 "                        to adjacency\n"
 "      --no-shim         disable filler contigs removal [default]\n"
