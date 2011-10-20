@@ -45,6 +45,12 @@ static const char USAGE_MESSAGE[] =
 "  ADJ    contig adjacency graph\n"
 "\n"
 "  -k, --kmer=N          k-mer size\n"
+"  -T, --island=N        remove islands shorter than N [0]\n"
+"  -t, --tip=N           remove tips shorter than N [0]\n"
+"      --shim            remove filler contigs that only contribute\n"
+"                        to adjacency\n"
+"      --no-shim         do not remove filler contigs [default]\n"
+"  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -55,22 +61,36 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by ContigProperties
 
+	/** Remove island contigs less than this length. */
+	static unsigned minIslandLen = 0;
+
+	/** Remove tips less than this length. */
+	static unsigned minTipLen = 0;
+
+	/** Remove short contigs that don't contribute any sequence. */
+	static int shim = 0;
+
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
 
-	/** The maximum distance allowed for a new edge. */
-	static int maxDistance = 0;
+	/** The minimum overlap allowed between two contigs. */
+	static int minOverlap = 10;
 
 	int format; // used by ContigProperties
 }
 
-static const char shortopts[] = "d:g:k:v";
+static const char shortopts[] = "g:k:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "kmer",          required_argument, NULL, 'k' },
+	{ "island",        required_argument, NULL, 'T' },
+	{ "tip",           required_argument, NULL, 't' },
+	{ "shim",          no_argument,       &opt::shim, 1 },
+	{ "no-shim",       no_argument,       &opt::shim, 0 },
+	{ "min-overlap",   required_argument, NULL, 'm' },
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -133,7 +153,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 	}
 
 	// Check that removing the contig will result in adjacent contigs
-	// overlapping by at least opt::maxDistance.
+	// overlapping by at least opt::minOverlap.
 	IEit iei0, iei1;
 	tie(iei0, iei1) = in_edges(v, g);
 	IEit maxuv = iei0;
@@ -146,7 +166,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 			maxvw = vw;
 
 	if (g[*maxuv].distance + (int)g[v].length + g[*maxvw].distance >
-			opt::maxDistance) {
+			-opt::minOverlap) {
 		g_count.too_long++;
 		return false;
 	}
@@ -167,8 +187,7 @@ struct EdgeInfo {
 /** Returns a list of edges that may be added when the vertex v is
  * removed. */
 static bool findNewEdges(const Graph& g, vertex_descriptor v,
-		vector<EdgeInfo>& eds,
-		vector<bool>& markedContigs)
+		vector<EdgeInfo>& eds, vector<bool>& markedContigs)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_descriptor V;
@@ -215,7 +234,7 @@ static void addNewEdges(Graph& g, const vector<EdgeInfo>& eds)
 	for (vector<EdgeInfo>::const_iterator edsit = eds.begin();
 			edsit != eds.end(); ++edsit) {
 		assert(!edge(edsit->u, edsit->w, g).second);
-		assert(edsit->ep.distance <= opt::maxDistance);
+		assert(edsit->ep.distance <= -opt::minOverlap);
 		add_edge(edsit->u, edsit->w, edsit->ep, g);
 	}
 }
@@ -231,14 +250,14 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 	vector<vertex_descriptor> out;
 	out.reserve(sc.size());
 
-	vector<bool> markedContigs;
+	vector<bool> markedContigs(g.num_vertices());
 	for (vector<vertex_descriptor>::iterator it = sc.begin();
 			it != sc.end(); ++it) {
 		V v = *it;
 		if (opt::verbose > 0 && ++g_count.checked % 10000000 == 0)
 			cerr << "Removed " << g_count.removed << "/"
 				<< g_count.checked
-				<< " contigs that have been checked.\n";
+				<< " vertices that have been checked.\n";
 
 		if (markedContigs[get(vertex_index, g, v)]) {
 			out.push_back(v);
@@ -296,6 +315,42 @@ struct sortContigs {
 	}
 };
 
+struct ShorterThanX {
+	const Graph& g;
+	size_t x;
+
+	ShorterThanX(const Graph& g, size_t x) : g(g), x(x) { }
+
+	bool operator()(vertex_descriptor y)
+	{
+		return g[y].length < x;
+	}
+};
+
+static void removeShims(Graph& g)
+{
+	if (opt::verbose > 0)
+		cerr << "Removing shims from graph...\n";
+	vector<vertex_descriptor> shortContigs;
+	findShortContigs(g, shortContigs);
+	for (unsigned i = 0; !shortContigs.empty(); ++i) {
+		if (opt::verbose > 0)
+			cerr << "Starting pass " << i << ": There are "
+				<< shortContigs.size() << " contigs to check.\n";
+		sort(shortContigs.begin(), shortContigs.end(), sortContigs(g));
+		removeContigs(g, shortContigs);
+	}
+	if (opt::verbose > 0) {
+		cerr << "Shim removal stats:\n";
+		cerr << "Removed: " << g_count.removed/2
+			<< " Too Complex: " << g_count.too_complex/2
+			<< " Tails: " << g_count.tails/2
+			<< " Too Long: " << g_count.too_long/2
+			<< " Self Adjacent: " << g_count.self_adj/2
+			<< " Parallel Edges: " << g_count.parallel_edge/2 << '\n';
+	}
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -313,9 +368,11 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'd': arg >> opt::maxDistance; assert(arg.eof()); break;
+			case 'm': arg >> opt::minOverlap; assert(arg.eof()); break;
 			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
+			case 'T': arg >> opt::minIslandLen; assert(arg.eof()); break;
+			case 't': arg >> opt::minTipLen; assert(arg.eof()); break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -324,6 +381,12 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 		}
+	}
+
+	if (opt::minOverlap < 0) {
+		cerr << PROGRAM ": "
+			<< "--min-overlap must be a positive integer.\n";
+		die = true;
 	}
 
 	if (opt::k <= 0) {
@@ -370,32 +433,45 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
-	vector<vertex_descriptor> shortContigs;
-	findShortContigs(g, shortContigs);
-	for (unsigned i = 0; !shortContigs.empty(); ++i) {
-		if (opt::verbose > 0)
-			cerr << "Starting pass " << i << ": There are "
-				<< shortContigs.size() << " contigs to check.\n";
-		sort(shortContigs.begin(), shortContigs.end(), sortContigs(g));
-		removeContigs(g, shortContigs);
-		if (opt::verbose > 0)
-			cerr << "Removed " << g_count.removed << " contigs.\n";
+	if (opt::minTipLen > 0) {
+		size_t s = g_removed.size();
+		pruneTips_if(g, back_inserter(g_removed),
+				ShorterThanX(g, opt::minTipLen));
+		if (opt::verbose)
+			cerr << "Removed " << g_removed.size() - s
+				<< " tips.\n";
 	}
+
+	if (opt::minIslandLen > 0) {
+		size_t s = g_removed.size();
+		removeIslands_if(g, back_inserter(g_removed),
+				ShorterThanX(g, opt::minIslandLen));
+		if (opt::verbose)
+			cerr << "Removed " << g_removed.size() - s
+				<< " islands.\n";
+	}
+
+	if (opt::shim)
+		removeShims(g);
 
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
 		printGraphStats(cerr, g);
-		cerr << "Removed: " << g_count.removed/2
-			<< " Too Complex: " << g_count.too_complex/2
-			<< " Tails: " << g_count.tails/2
-			<< " Too Long: " << g_count.too_long/2
-			<< " Self Adjacent: " << g_count.self_adj/2
-			<< " Parallel Edges: " << g_count.parallel_edge/2 << '\n';
 	}
 
 	sort(g_removed.begin(), g_removed.end());
+	g_removed.erase(unique(g_removed.begin(), g_removed.end()),
+			g_removed.end());
 	copy(g_removed.begin(), g_removed.end(),
 			ostream_iterator<ContigID>(cout, "\n"));
+
+	// Assemble unambiguous paths.
+	typedef vector<ContigPath> ContigPaths;
+	ContigPaths paths;
+	assemble(g, back_inserter(paths));
+	for (ContigPaths::const_iterator it = paths.begin();
+			it != paths.end(); ++it)
+		cout << ContigID::create() << '\t' << *it << '\n';
 
 	// Output the updated adjacency graph.
 	ofstream fout(opt::graphPath.c_str());
