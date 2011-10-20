@@ -461,6 +461,7 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
+	// Remove islands.
 	if (opt::minIslandLen > 0) {
 		size_t s = g_removed.size();
 		removeIslands_if(g, back_inserter(g_removed),
@@ -470,6 +471,7 @@ int main(int argc, char** argv)
 				<< " islands.\n";
 	}
 
+	// Remove tips.
 	if (opt::minTipLen > 0) {
 		size_t s = g_removed.size();
 		pruneTips_if(g, back_inserter(g_removed),
@@ -479,9 +481,11 @@ int main(int argc, char** argv)
 				<< " tips.\n";
 	}
 
+	// Remove short contigs.
 	if (opt::minLen > 0)
 		removeShortContigs(g);
 
+	// Remove shims.
 	if (opt::shim)
 		removeShims(g);
 
