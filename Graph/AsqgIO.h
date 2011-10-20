@@ -20,24 +20,29 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 	typedef typename vertex_property<Graph>::type VP;
 	typedef typename edge_property<Graph>::type EP;
 
-	for (std::string type; in >> type;) {
-		if (type == "HT") {
-			in >> ignore('\n');
+	while (in && in.peek() != EOF) {
+		switch (in.peek()) {
+		  case 'H':
+			in >> expect("HT") >> ignore('\n');
 			assert(in);
-		} else if (type == "VT") {
+			break;
+		  case 'V': {
 			ContigID u;
-			std::string seq;
-			in >> u >> seq >> ignore('\n');
+			in >> expect("VT") >> u >> std::ws >> ignore('\t');
 			assert(in);
 			VP vp;
-			put(vertex_length, vp, seq.size());
+			put(vertex_length, vp, in.gcount() - 1);
 			V x = add_vertex(vp, g);
 			assert(u == x);
-		} else if (type == "ED") {
+			in >> ignore('\n');
+			assert(in);
+			break;
+		  }
+		  case 'E': {
 			ContigID u, v;
 			unsigned s1, e1, l1, s2, e2, l2, nd;
 			bool rc;
-			in >> u >> v
+			in >> expect("ED") >> u >> v
 				>> s1 >> e1 >> l1
 				>> s2 >> e2 >> l2
 				>> rc >> nd >> ignore('\n');
@@ -47,10 +52,15 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			int d = -(e1 - s1 + 1);
 			assert(d < 0);
 			add_edge(V(u, s1 == 0), V(v, s2 > 0), EP(d), g);
-		} else {
+			break;
+		  }
+		  default: {
+			std::string s;
+			in >> s;
 			std::cerr << "error: unknown record type: `"
-				<< type << "'\n";
+				<< s << "'\n";
 			exit(EXIT_FAILURE);
+		  }
 		}
 	}
 	assert(in.eof());

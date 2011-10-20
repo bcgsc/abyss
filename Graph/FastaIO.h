@@ -19,14 +19,14 @@ std::istream& read_fasta(std::istream& in, Graph& g)
 	typedef typename vertex_property<Graph>::type VP;
 
 	for (ContigID u; in.peek() != EOF && in >> expect(">") >> u;) {
-		std::string comment, seq;
+		std::string comment;
 		getline(in, comment);
-		getline(in, seq);
 		assert(in);
 		std::istringstream ss(comment);
 		VP vp;
 		ss >> vp;
-		put(vertex_length, vp, seq.size());
+		in >> ignore('\n');
+		put(vertex_length, vp, in.gcount() - 1);
 		V x = add_vertex(vp, g);
 		assert(u == x);
 	}
