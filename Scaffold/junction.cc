@@ -82,6 +82,7 @@ static struct {
 
 /** No property. */
 struct NoProperty {
+	NoProperty(...) { }
 	bool operator==(const NoProperty&) const { return true; }
 	friend ostream& operator<<(ostream& out, const NoProperty&)
 	{

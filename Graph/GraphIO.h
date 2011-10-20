@@ -3,6 +3,7 @@
 
 #include "Graph/Options.h"
 #include "AdjIO.h"
+#include "AsqgIO.h"
 #include "DotIO.h"
 #include "FastaIO.h"
 #include "SAMIO.h"
@@ -44,6 +45,8 @@ std::istream& read_graph(std::istream& in, ContigGraph<Graph>& g,
 	switch (in.peek()) {
 	  case 'd': // digraph: GraphViz dot format
 		return read_dot<Graph>(in, g, betterEP);
+	  case 'H': // HT: ASQG format
+		return read_asqg(in, g);
 	  case '>': // FASTA format for vertices
 		return read_fasta(in, g);
 	  default: // adj format
