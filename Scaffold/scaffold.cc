@@ -34,9 +34,11 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2011 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [DIST]...\n"
+"Usage: " PROGRAM " [OPTION]... FASTA|OVERLAP DIST...\n"
 "Scaffold contigs using the distance estimate graph.\n"
-"  DIST  estimates of the distance between contigs\n"
+"  FASTA    contigs in FASTA format\n"
+"  OVERLAP  the contig overlap graph\n"
+"  DIST     estimates of the distance between contigs\n"
 "\n"
 "  -n, --npairs=N        minimum number of pairs [0]\n"
 "  -s, --seed-length=N   minimum contig length [0]\n"
@@ -122,9 +124,18 @@ struct Length {
 
 	friend istream& operator>>(istream& in, Length& o)
 	{
-		return in >> expect("l =") >> o.length;
+		if (in >> std::ws && in.peek() == 'l')
+			return in >> expect("l =") >> o.length;
+		else
+			return in >> o.length;
 	}
 };
+
+static inline
+void put(vertex_length_t, Length& vp, unsigned length)
+{
+	vp.length = length;
+}
 
 /** A distance estimate graph. */
 typedef DirectedGraph<Length, DistanceEst> DG;

@@ -93,6 +93,11 @@ struct NoProperty {
 	}
 };
 
+static inline
+void put(vertex_length_t, NoProperty&, unsigned)
+{
+}
+
 /** An overlap graph. */
 typedef DirectedGraph<NoProperty, NoProperty> DG;
 typedef ContigGraph<DG> Graph;

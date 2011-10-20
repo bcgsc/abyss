@@ -3,6 +3,7 @@
 
 #include "ContigNode.h"
 #include "Graph/Options.h"
+#include "Graph/Properties.h"
 #include "IOUtil.h"
 #include <cassert>
 #include <iostream>
@@ -60,6 +61,12 @@ struct ContigProperties {
 			return in >> o.length >> o.coverage;
 	}
 };
+
+static inline
+void put(vertex_length_t, ContigProperties& vp, unsigned length)
+{
+	vp.length = length;
+}
 
 /** The distance between two contigs. */
 struct Distance {

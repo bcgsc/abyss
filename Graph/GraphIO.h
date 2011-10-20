@@ -4,6 +4,7 @@
 #include "Graph/Options.h"
 #include "AdjIO.h"
 #include "DotIO.h"
+#include "FastaIO.h"
 #include "SAMIO.h"
 #include <cassert>
 #include <cstdlib> // for abort
@@ -43,6 +44,8 @@ std::istream& read_graph(std::istream& in, ContigGraph<Graph>& g,
 	switch (in.peek()) {
 	  case 'd': // digraph: GraphViz dot format
 		return read_dot<Graph>(in, g, betterEP);
+	  case '>': // FASTA format for vertices
+		return read_fasta(in, g);
 	  default: // adj format
 		return read_adj(in, g);
 	}
