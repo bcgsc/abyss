@@ -49,8 +49,10 @@ static const char USAGE_MESSAGE[] =
 "  -t, --tip=N           remove tips shorter than N [0]\n"
 "      --shim            remove filler contigs that only contribute\n"
 "                        to adjacency\n"
-"      --no-shim         do not remove filler contigs [default]\n"
+"      --no-shim         disable filler contigs removal [default]\n"
 "  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
+"      --assemble        assemble unambiguous paths\n"
+"      --no-assemble     disable assembling of paths [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -69,6 +71,8 @@ namespace opt {
 
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 0;
+
+	static int assemble = 0;
 
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
@@ -90,6 +94,8 @@ static const struct option longopts[] = {
 	{ "tip",           required_argument, NULL, 't' },
 	{ "shim",          no_argument,       &opt::shim, 1 },
 	{ "no-shim",       no_argument,       &opt::shim, 0 },
+	{ "assemble",      no_argument,       &opt::assemble, 1 },
+	{ "no-assemble",   no_argument,       &opt::assemble, 0 },
 	{ "min-overlap",   required_argument, NULL, 'm' },
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
@@ -465,13 +471,15 @@ int main(int argc, char** argv)
 	copy(g_removed.begin(), g_removed.end(),
 			ostream_iterator<ContigID>(cout, "\n"));
 
-	// Assemble unambiguous paths.
-	typedef vector<ContigPath> ContigPaths;
-	ContigPaths paths;
-	assemble(g, back_inserter(paths));
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		cout << ContigID::create() << '\t' << *it << '\n';
+	if (opt::assemble) {
+		// Assemble unambiguous paths.
+		typedef vector<ContigPath> ContigPaths;
+		ContigPaths paths;
+		assemble(g, back_inserter(paths));
+		for (ContigPaths::const_iterator it = paths.begin();
+				it != paths.end(); ++it)
+			cout << ContigID::create() << '\t' << *it << '\n';
+	}
 
 	// Output the updated adjacency graph.
 	ofstream fout(opt::graphPath.c_str());
