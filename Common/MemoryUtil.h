@@ -14,7 +14,7 @@ static inline ssize_t getMemoryUsage()
 	std::ifstream in("/proc/self/statm");
 	size_t size, resident, share, text, lib, data;
 	return in >> size >> resident >> share >> text >> lib >> data
-		? data * getpagesize() : -1;
+		? ssize_t(data * getpagesize()) : -1;
 #else
 	/** Start of the data segment. */
 	static intptr_t sbrk0 = reinterpret_cast<intptr_t>(sbrk(0));
