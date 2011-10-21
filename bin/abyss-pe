@@ -323,7 +323,7 @@ endif
 	ln -sf $< $@
 
 %-3.dot: %-3.adj
-	abyss-adjtodot $v -k$k $< >$@
+	abyss-todot $v -k$k $< >$@
 
 %-6.dot: %-5.adj %-5.path
 	PathOverlap --overlap $v --dot -k$k $^ >$@
