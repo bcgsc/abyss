@@ -1,5 +1,14 @@
 ABySS - assemble short reads into contigs
 
+* Quick start
+
+Install ABySS on Debian:
+	sudo apt-get install abyss
+
+Assemble a small synthetic data set:
+	abyss-pe k=25 name=test se='https://raw.github.com/dzerbino/velvet/master/data/test_reads.fa'
+	abyss-fac test-se-contigs.fa
+
 * Compiling ABySS
 
 Compiling ABySS should be as easy as
