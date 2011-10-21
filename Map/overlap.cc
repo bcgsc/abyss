@@ -267,8 +267,7 @@ static void addVertices(const string& path, Graph& g)
 		cerr << "Reading `" << path << "'...\n";
 	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;) {
-		const Sequence& seq = rec.seq;
-		assert(isalpha(seq[0]));
+		assert(isalpha(rec.seq[0]));
 		ContigID::insert(rec.id);
 		VP vp(0, 0);
 		istringstream ss(rec.comment);
