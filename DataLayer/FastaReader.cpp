@@ -70,7 +70,7 @@ void FastaReader::split(unsigned section, unsigned nsections)
 	}
 	m_end = end;
 	m_in.seekg(start);
-	if(start != 0) {
+	if (start > 0) {
 		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
 		m_in.ignore(numeric_limits<streamsize>::max(), '>');
 		if (m_in.peek() == EOF)
