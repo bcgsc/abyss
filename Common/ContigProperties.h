@@ -68,6 +68,12 @@ void put(vertex_length_t, ContigProperties& vp, unsigned length)
 	vp.length = length;
 }
 
+static inline
+void put(vertex_coverage_t, ContigProperties& vp, unsigned coverage)
+{
+	vp.coverage = coverage;
+}
+
 /** The distance between two contigs. */
 struct Distance {
 	int distance;

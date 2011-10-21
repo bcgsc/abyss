@@ -89,15 +89,16 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 	getline(in, line);
 	assert(in);
 	unsigned numSemicolons = std::count(line.begin(), line.end(), ';');
-	if (numSemicolons != 1 && numSemicolons != 2) {
-		std::cerr << "error: expected 1 or 2 semicolons and saw "
+	if (numSemicolons > 2) {
+		std::cerr << "error: expected 0, 1 or 2 semicolons and saw "
 			<< numSemicolons << '\n';
 		exit(EXIT_FAILURE);
 	}
+	bool faiFormat = numSemicolons == 0;
 	bool adjFormat = numSemicolons == 2;
 
 	// Read the vertex properties.
-	if (adjFormat) {
+	if (adjFormat || faiFormat) {
 		assert(num_vertices(g) == 0);
 		in.clear();
 		in.seekg(std::ios_base::beg);
@@ -105,6 +106,8 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 		ContigID id(-1);
 		vertex_property_type prop;
 		while (in >> id >> prop >> ignore('\n')) {
+			if (faiFormat)
+				put(vertex_coverage, prop, 0);
 			vertex_descriptor v = add_vertex(prop, g);
 			assert(v == vertex_descriptor(id, false));
 		}
@@ -112,6 +115,9 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 	}
 	assert(num_vertices(g) > 0);
 	ContigID::lock();
+
+	if (faiFormat)
+		return in;
 
 	// Read the edges.
 	in.clear();

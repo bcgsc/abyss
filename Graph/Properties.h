@@ -7,6 +7,9 @@
 # include <boost/property_map/property_map.hpp>
 #endif
 
+/** The coverage of a vertex. */
+enum vertex_coverage_t { vertex_coverage };
+
 /** The length of a vertex. */
 enum vertex_length_t { vertex_length };
 
@@ -30,6 +33,7 @@ using boost::vertex_index;
 using boost::vertex_index_t;
 
 namespace boost {
+	BOOST_INSTALL_PROPERTY(vertex, coverage);
 	BOOST_INSTALL_PROPERTY(vertex, length);
 	BOOST_INSTALL_PROPERTY(vertex, removed);
 	BOOST_INSTALL_PROPERTY(vertex, sense);

@@ -94,8 +94,8 @@ struct NoProperty {
 	}
 };
 
-static inline
-void put(vertex_length_t, NoProperty&, unsigned)
+template <typename Tag>
+void put(Tag, NoProperty&, unsigned)
 {
 }
 

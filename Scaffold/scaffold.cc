@@ -137,6 +137,11 @@ void put(vertex_length_t, Length& vp, unsigned length)
 	vp.length = length;
 }
 
+static inline
+void put(vertex_coverage_t, Length&, unsigned)
+{
+}
+
 /** A distance estimate graph. */
 typedef DirectedGraph<Length, DistanceEst> DG;
 typedef ContigGraph<DG> Graph;
