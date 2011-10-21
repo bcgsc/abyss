@@ -1,5 +1,5 @@
 noinst_LIBRARIES = libgraph.a
-bin_PROGRAMS = abyss-adjtodot
+bin_PROGRAMS = abyss-todot
 
 libgraph_a_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 
@@ -23,8 +23,8 @@ libgraph_a_SOURCES = \
 	Properties.h \
 	SAMIO.h
 
-abyss_adjtodot_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-abyss_adjtodot_LDFLAGS = -L.
-abyss_adjtodot_LDADD = libgraph.a \
+abyss_todot_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+abyss_todot_LDFLAGS = -L.
+abyss_todot_LDADD = libgraph.a \
 	$(top_builddir)/Common/libcommon.a
-abyss_adjtodot_SOURCES = adjtodot.cc
+abyss_todot_SOURCES = todot.cc
