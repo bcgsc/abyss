@@ -1,4 +1,4 @@
-/** Convert a graph from adj format to dot format.
+/** Convert a graph to dot format.
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 #include "ContigGraph.h"
@@ -18,7 +18,7 @@
 using namespace std;
 using namespace std::rel_ops;
 
-#define PROGRAM "abyss-adjtodot"
+#define PROGRAM "abyss-todot"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -28,14 +28,14 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [FILE]...\n"
-"Convert the specified graph from adj format to dot format.\n"
+"Convert the specified graph to dot format.\n"
 "\n"
 "  -k, --kmer=N   report the mean k-mer coverage, otherwise\n"
 "                 the sum k-mer coverage is reported\n"
-"      --adj             output the results in adj format\n"
-"      --dot             output the results in dot format [default]\n"
+"      --adj             output the graph in adj format\n"
+"      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
-"      --sam             output the results in SAM format\n"
+"      --sam             output the graph in SAM format\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
