@@ -182,7 +182,7 @@ static void findOverlapsSuffix(Graph &g,
 	fmIndex.findOverlapSuffix(suffix, back_inserter(matches),
 			opt::minOverlap);
 
-	for (Matches::const_reverse_iterator it = matches.rbegin();
+	for (Matches::reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
 		addSuffixOverlaps(g, faIndex, fmIndex, u, *it);
 }
@@ -200,7 +200,7 @@ static void findOverlapsPrefix(Graph &g,
 	fmIndex.findOverlapPrefix(prefix, back_inserter(matches),
 			opt::minOverlap);
 
-	for (Matches::const_reverse_iterator it = matches.rbegin();
+	for (Matches::reverse_iterator it = matches.rbegin();
 			it != matches.rend(); ++it)
 		addPrefixOverlaps(g, faIndex, fmIndex, v, *it);
 }
