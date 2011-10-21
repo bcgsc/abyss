@@ -200,7 +200,7 @@ void decompress(It out)
 	}
 
 	// Translate the character set and output the result.
-	for (std::vector<T>::const_reverse_iterator it = s.rbegin();
+	for (std::vector<T>::reverse_iterator it = s.rbegin();
 			it != s.rend(); ++it) {
 		T c = *it;
 		assert(c < m_alphabet.size());
