@@ -3,9 +3,11 @@
 
 #include "ContigID.h"
 #include "ContigGraph.h"
+#include "IOUtil.h"
+#include <algorithm> // for count
 #include <cassert>
+#include <cstdlib>
 #include <istream>
-#include <limits> // for numeric_limits
 #include <ostream>
 
 template <typename EdgeProp>
@@ -53,25 +55,61 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 	return out;
 }
 
+/** Read the edges of a graph in dist format. */
+template <typename Graph>
+std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
+		typename graph_traits<Graph>::vertex_descriptor u)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename Graph::edge_property_type EP;
+	for (std::string id; getline(in >> std::ws, id, ',');) {
+		assert(!id.empty());
+		EP ep;
+		in >> ep;
+		assert(in);
+		g.Graph::add_edge(u, V(id) ^ u.sense(), ep);
+		assert(in.peek() == ' ' || in.eof());
+	}
+	assert(in.eof());
+	return in;
+}
+
 /** Read a contig adjacency graph. */
 template <typename Graph>
 std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 {
+	assert(in);
+
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_property_type vertex_property_type;
 	typedef typename Graph::edge_property_type edge_property_type;
 
-	// Read the vertex properties.
-	g.clear();
+	// Check for ADJ or DIST format.
+	std::string line;
+	getline(in, line);
 	assert(in);
-	ContigID id(-1);
-	vertex_property_type prop;
-	while (in >> id >> prop) {
-		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		vertex_descriptor v = add_vertex(prop, g);
-		assert(v == vertex_descriptor(id, false));
+	unsigned numSemicolons = std::count(line.begin(), line.end(), ';');
+	if (numSemicolons != 1 && numSemicolons != 2) {
+		std::cerr << "error: expected 1 or 2 semicolons and saw "
+			<< numSemicolons << '\n';
+		exit(EXIT_FAILURE);
 	}
-	assert(in.eof());
+	bool adjFormat = numSemicolons == 2;
+
+	// Read the vertex properties.
+	if (adjFormat) {
+		assert(num_vertices(g) == 0);
+		in.clear();
+		in.seekg(std::ios_base::beg);
+		assert(in);
+		ContigID id(-1);
+		vertex_property_type prop;
+		while (in >> id >> prop >> ignore('\n')) {
+			vertex_descriptor v = add_vertex(prop, g);
+			assert(v == vertex_descriptor(id, false));
+		}
+		assert(in.eof());
+	}
 	assert(num_vertices(g) > 0);
 	ContigID::lock();
 
@@ -79,21 +117,23 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 	in.clear();
 	in.seekg(std::ios_base::beg);
 	assert(in);
-	while (in >> id) {
-		in.ignore(std::numeric_limits<std::streamsize>::max(), ';');
+	for (ContigID id; in >> id;) {
+		if (adjFormat)
+			in >> ignore(';');
 		vertex_descriptor u(id, false);
 		for (int sense = false; sense <= true; ++sense) {
 			std::string s;
 			getline(in, s, !sense ? ';' : '\n');
 			assert(in.good());
 			std::istringstream ss(s);
+			if (!adjFormat) {
+				readDistEdges(ss, g, u ^ sense);
+			} else
 			for (vertex_descriptor v; ss >> v >> std::ws;) {
 				if (ss.peek() == '[') {
 					ss.get();
 					edge_property_type ep;
-					ss >> ep;
-					ss.ignore(std::numeric_limits<
-							std::streamsize>::max(), ']');
+					ss >> ep >> ignore(']');
 					g.Graph::add_edge(u ^ sense, v ^ sense, ep);
 				} else
 					g.Graph::add_edge(u ^ sense, v ^ sense);
