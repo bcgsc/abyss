@@ -54,10 +54,12 @@ struct ContigProperties {
 	friend std::istream& operator >>(std::istream& in,
 			ContigProperties& o)
 	{
-		if (in >> std::ws && in.peek() == 'l')
-			return in >> expect("l =") >> o.length
-				>> expect(" C =") >> o.coverage;
-		else
+		if (in >> std::ws && in.peek() == 'l') {
+			in >> expect("l =") >> o.length;
+			if (in >> std::ws && in.peek() == 'C')
+				in >> expect("C =") >> o.coverage;
+			return in;
+		} else
 			return in >> o.length >> o.coverage;
 	}
 };
