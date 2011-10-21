@@ -87,19 +87,15 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
-/** Convert the specified graph to dot format. */
-template <typename Graph>
-void toDot(int argc, char** argv, const string& commandLine,
-		Graph& g)
+/** Read a graph from the specified files. */
+template <typename Graph, typename It>
+void readGraphs(Graph& g, It first, It last)
 {
-	if (optind < argc) {
-		for (; optind < argc; optind++)
-			readGraph(argv[optind], g);
+	if (first != last) {
+		for (It it = first; it < last; ++it)
+			readGraph(*it, g);
 	} else
 		readGraph("-", g);
-
-	write_graph(cout, g, PROGRAM, commandLine);
-	assert(cout.good());
 }
 
 int main(int argc, char** argv)
@@ -144,11 +140,14 @@ int main(int argc, char** argv)
 
 	if (opt::estimate) {
 		ContigGraph<DirectedGraph<ContigProperties, DistanceEst> > g;
-		toDot(argc, argv, commandLine, g);
+		readGraphs(g, argv + optind, argv + argc);
+		write_graph(cout, g, PROGRAM, commandLine);
 	} else {
 		ContigGraph<DirectedGraph<ContigProperties, Distance> > g;
-		toDot(argc, argv, commandLine, g);
+		readGraphs(g, argv + optind, argv + argc);
+		write_graph(cout, g, PROGRAM, commandLine);
 	}
+	assert(cout.good());
 
 	return 0;
 }
