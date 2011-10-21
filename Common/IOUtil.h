@@ -75,7 +75,7 @@ static inline void readFile(const char* path, Vector& s)
 	s.resize(in.tellg());
 	in.seekg(0, std::ios::beg);
 	assert_good(in, path);
-	in.read((char*)s.data(), s.size());
+	in.read(reinterpret_cast<char*>(&s[0]), s.size());
 	assert_good(in, path);
 	assert((size_t)in.gcount() == s.size());
 }

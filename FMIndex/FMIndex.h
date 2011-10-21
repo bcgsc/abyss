@@ -342,7 +342,7 @@ Match findSubstring(It first, It last, unsigned k) const
 
 	// Record which vertices of the prefix DAWG have been visited.
 	std::vector<SAInterval> memo(last - first, SAInterval(0, 0));
-	SAInterval* memoIt = memo.data();
+	SAInterval* memoIt = &memo[0];
 	for (It it = last; it > first; --it) {
 		if (unsigned(it - first) < best.qspan())
 			return best;
@@ -416,11 +416,11 @@ friend std::ostream& operator<<(std::ostream& out, const FMIndex& o)
 		<< o.m_sampleSA << '\n';
 
 	out << o.m_alphabet.size() << '\n';
-	out.write((char*)o.m_alphabet.data(),
+	out.write(reinterpret_cast<const char*>(&o.m_alphabet[0]),
 			o.m_alphabet.size() * sizeof o.m_alphabet[0]);
 
 	out << o.m_sa.size() << '\n';
-	out.write((char*)o.m_sa.data(),
+	out.write(reinterpret_cast<const char*>(&o.m_sa[0]),
 		o.m_sa.size() * sizeof o.m_sa[0]);
 
 	return out << o.m_occ;
@@ -451,7 +451,8 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	assert(c == '\n');
 	assert(n < std::numeric_limits<size_type>::max());
 	o.m_alphabet.resize(n);
-	in.read((char*)o.m_alphabet.data(), n * sizeof o.m_alphabet[0]);
+	in.read(reinterpret_cast<char*>(&o.m_alphabet[0]),
+			n * sizeof o.m_alphabet[0]);
 	o.setAlphabet(o.m_alphabet.begin(), o.m_alphabet.end());
 
 	in >> n;
@@ -460,7 +461,8 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	assert(c == '\n');
 	assert(n < std::numeric_limits<size_type>::max());
 	o.m_sa.resize(n);
-	in.read((char*)o.m_sa.data(), n * sizeof o.m_sa[0]);
+	in.read(reinterpret_cast<char*>(&o.m_sa[0]),
+			n * sizeof o.m_sa[0]);
 
 	in >> o.m_occ;
 	assert(in);
