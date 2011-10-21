@@ -66,10 +66,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef ContigGraph<DirectedGraph<
-	ContigProperties, Distance> > Graph;
-
 /** Read a graph from the specified file. */
+template <typename Graph>
 static void readGraph(const string& path, Graph& g)
 {
 	if (opt::verbose > 0)
@@ -82,6 +80,21 @@ static void readGraph(const string& path, Graph& g)
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 	ContigID::lock();
+}
+
+/** Convert the specified graph to dot format. */
+template <typename Graph>
+void toDot(int argc, char** argv, const string& commandLine,
+		Graph& g)
+{
+	if (optind < argc) {
+		for (; optind < argc; optind++)
+			readGraph(argv[optind], g);
+	} else
+		readGraph("-", g);
+
+	write_graph(cout, g, PROGRAM, commandLine);
+	assert(cout.good());
 }
 
 int main(int argc, char** argv)
@@ -123,14 +136,8 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	Graph g;
-	if (optind < argc) {
-		for (; optind < argc; optind++)
-			readGraph(argv[optind], g);
-	} else
-		readGraph("-", g);
+	ContigGraph<DirectedGraph<ContigProperties, Distance> > g;
+	toDot(argc, argv, commandLine, g);
 
-	write_graph(cout, g, PROGRAM, commandLine);
-	assert(cout.good());
 	return 0;
 }
