@@ -36,6 +36,7 @@ static const char USAGE_MESSAGE[] =
 "      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
 "      --sam             output the graph in SAM format\n"
+"  -e, --estimate output distance estimates\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
@@ -46,11 +47,14 @@ namespace opt {
  	unsigned k; // used by Distance
 	static int verbose;
 
+	/** Output distance estimates. */
+	bool estimate;
+
 	/** Output format */
 	int format = DOT; // used by ContigProperties
 }
 
-static const char shortopts[] = "k:v";
+static const char shortopts[] = "ek:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -59,6 +63,7 @@ static const struct option longopts[] = {
 	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
 	{ "sam",     no_argument,       &opt::format, SAM },
+	{ "estimate", no_argument,      NULL, 'e' },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -114,6 +119,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		  case '?': die = true; break;
+		  case 'e': opt::estimate = true; break;
 		  case 'k': arg >> opt::k; break;
 		  case 'v': opt::verbose++; break;
 		  case OPT_HELP:
@@ -136,8 +142,13 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	ContigGraph<DirectedGraph<ContigProperties, Distance> > g;
-	toDot(argc, argv, commandLine, g);
+	if (opt::estimate) {
+		ContigGraph<DirectedGraph<ContigProperties, DistanceEst> > g;
+		toDot(argc, argv, commandLine, g);
+	} else {
+		ContigGraph<DirectedGraph<ContigProperties, Distance> > g;
+		toDot(argc, argv, commandLine, g);
+	}
 
 	return 0;
 }
