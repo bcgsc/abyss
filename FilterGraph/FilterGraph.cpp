@@ -334,7 +334,7 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 
 	bool operator()(vertex_descriptor y) const
 	{
-		return g[y].length < x;
+		return g[y].length < x && !get(vertex_removed, g, y);
 	}
 };
 
@@ -375,7 +375,7 @@ static void removeShortContigs(Graph& g)
 	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
 	copy(sc.begin(), sc.end(), back_inserter(g_removed));
 	if (opt::verbose > 0)
-		cerr << "Removed " << sc.size() << " short contigs.\n";
+		cerr << "Removed " << sc.size()/2 << " short contigs.\n";
 }
 
 int main(int argc, char** argv)
