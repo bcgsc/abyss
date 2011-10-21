@@ -50,7 +50,7 @@ std::istream& read_graph(std::istream& in, ContigGraph<Graph>& g,
 	  case '>': // FASTA format for vertices
 		return read_fasta(in, g);
 	  default: // adj format
-		return read_adj(in, g);
+		return read_adj(in, g, betterEP);
 	}
 }
 

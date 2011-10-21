@@ -72,15 +72,15 @@ static const struct option longopts[] = {
 };
 
 /** Read a graph from the specified file. */
-template <typename Graph>
-static void readGraph(const string& path, Graph& g)
+template <typename Graph, typename BetterEP>
+static void readGraph(const string& path, Graph& g, BetterEP betterEP)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
 	ifstream fin(path.c_str());
 	istream& in = path == "-" ? cin : fin;
 	assert_good(in, path);
-	in >> g;
+	read_graph(in, g, betterEP);
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
@@ -88,14 +88,14 @@ static void readGraph(const string& path, Graph& g)
 }
 
 /** Read a graph from the specified files. */
-template <typename Graph, typename It>
-void readGraphs(Graph& g, It first, It last)
+template <typename Graph, typename It, typename BetterEP>
+void readGraphs(Graph& g, It first, It last, BetterEP betterEP)
 {
 	if (first != last) {
 		for (It it = first; it < last; ++it)
-			readGraph(*it, g);
+			readGraph(*it, g, betterEP);
 	} else
-		readGraph("-", g);
+		readGraph("-", g, betterEP);
 }
 
 int main(int argc, char** argv)
@@ -140,11 +140,13 @@ int main(int argc, char** argv)
 
 	if (opt::estimate) {
 		ContigGraph<DirectedGraph<ContigProperties, DistanceEst> > g;
-		readGraphs(g, argv + optind, argv + argc);
+		readGraphs(g, argv + optind, argv + argc,
+				BetterDistanceEst());
 		write_graph(cout, g, PROGRAM, commandLine);
 	} else {
 		ContigGraph<DirectedGraph<ContigProperties, Distance> > g;
-		readGraphs(g, argv + optind, argv + argc);
+		readGraphs(g, argv + optind, argv + argc,
+				DisallowParallelEdges());
 		write_graph(cout, g, PROGRAM, commandLine);
 	}
 	assert(cout.good());

@@ -56,27 +56,42 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 }
 
 /** Read the edges of a graph in dist format. */
-template <typename Graph>
+template <typename Graph, typename BetterEP>
 std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
-		typename graph_traits<Graph>::vertex_descriptor u)
+		typename graph_traits<Graph>::vertex_descriptor u,
+		BetterEP betterEP)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename Graph::edge_property_type EP;
 	for (std::string id; getline(in >> std::ws, id, ',');) {
 		assert(!id.empty());
+		V v(id);
+		v = v ^ u.sense();
 		EP ep;
 		in >> ep;
 		assert(in);
-		g.Graph::add_edge(u, V(id) ^ u.sense(), ep);
+		E e;
+		bool found;
+		boost::tie(e, found) = edge(u, v, g);
+		if (found) {
+			// Parallel edge
+			EP& ref = g[e];
+			ref = betterEP(ref, ep);
+		} else
+			g.Graph::add_edge(u, v, ep);
 		assert(in.peek() == ' ' || in.eof());
 	}
 	assert(in.eof());
 	return in;
 }
 
-/** Read a contig adjacency graph. */
-template <typename Graph>
-std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
+/** Read a contig adjacency graph.
+ * @param betterEP handle parallel edges
+ */
+template <typename Graph, typename BetterEP>
+std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
+		BetterEP betterEP)
 {
 	assert(in);
 
@@ -133,9 +148,10 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g)
 			assert(in.good());
 			std::istringstream ss(s);
 			if (!adjFormat) {
-				readDistEdges(ss, g, u ^ sense);
+				readDistEdges(ss, g, u ^ sense, betterEP);
 			} else
 			for (vertex_descriptor v; ss >> v >> std::ws;) {
+				assert(!edge(u ^ sense, v ^ sense, g).second);
 				if (ss.peek() == '[') {
 					ss.get();
 					edge_property_type ep;
