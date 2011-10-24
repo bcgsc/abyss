@@ -21,7 +21,7 @@ static inline CPUID cpuid(unsigned op)
 	return x;
 #else
 	(void)op;
-	x.a = x.b = x.c = x.d = -1;
+	x.a = x.b = x.c = x.d = static_cast<unsigned>(-1);
 	return x;
 #endif
 }
