@@ -50,7 +50,7 @@ class Dictionary {
 		}
 
 		/** Return the name of the specified index. */
-		key_reference name(index_type index)
+		key_reference name(index_type index) const
 		{
 			assert(index < m_vec.size());
 			return m_vec[index];
