@@ -5,9 +5,12 @@
 #include "Graph/Options.h"
 #include "Graph/Properties.h"
 #include "IOUtil.h"
+#include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <cassert>
 #include <iostream>
+
+using boost::graph_traits;
 
 /** The length and coverage of a contig. */
 struct ContigProperties {
