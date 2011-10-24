@@ -179,26 +179,6 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
-/** Mark contigs that have been seen previously. */
-static void markSeen(const string& filePath, vector<bool>& marked)
-{
-	if (filePath.empty())
-		return;
-	ifstream in(filePath.c_str());
-	assert_good(in, filePath);
-	string id;
-	ContigPath path;
-	while (in >> id >> path) {
-		if (path.empty())
-			marked[ContigID(id)] = true;
-		for (ContigPath::const_iterator it = path.begin();
-				it != path.end(); ++it)
-			if (!it->ambiguous())
-				marked[ContigID(*it)] = true;
-	}
-	assert(in.eof());
-}
-
 /** Return the value of the bit at the specified index. */
 struct Marked : unary_function<ContigNode, bool> {
 	typedef vector<bool> Data;
@@ -256,7 +236,11 @@ int main(int argc, char** argv)
 
 	// Read the set of contigs to ignore.
 	vector<bool> seen(num_vertices(overlapG) / 2);
-	markSeen(opt::ignorePath, seen);
+	if (!opt::ignorePath.empty()) {
+		ifstream in(opt::ignorePath.c_str());
+		assert_good(in, opt::ignorePath);
+		markSeenInPath(in, seen);
+	}
 	
 	// Extend the junction contigs.
 	for_each(vertices(overlapG)
