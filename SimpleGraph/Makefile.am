@@ -1,8 +1,7 @@
 bin_PROGRAMS = SimpleGraph
 
 SimpleGraph_CPPFLAGS = -pthread -I$(top_srcdir) \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/Graph
+	-I$(top_srcdir)/Common
 
 SimpleGraph_CXXFLAGS = -Wno-strict-aliasing
 

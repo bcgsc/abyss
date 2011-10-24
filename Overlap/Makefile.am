@@ -2,8 +2,7 @@ bin_PROGRAMS = Overlap
 
 Overlap_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer \
-	-I$(top_srcdir)/Graph
+	-I$(top_srcdir)/DataLayer
 
 Overlap_LDADD = \
 	$(top_builddir)/Graph/libgraph.a \

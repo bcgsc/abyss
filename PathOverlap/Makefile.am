@@ -3,8 +3,7 @@ bin_PROGRAMS = PathOverlap
 PathOverlap_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer \
-	-I$(top_srcdir)/Graph
+	-I$(top_srcdir)/DataLayer
 
 PathOverlap_LDADD = \
 	$(top_builddir)/Align/libalign.a \

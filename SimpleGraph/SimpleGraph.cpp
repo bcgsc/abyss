@@ -1,14 +1,14 @@
 #include "config.h"
-#include "ConstrainedSearch.h"
-#include "ContigGraph.h"
-#include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "IOUtil.h"
 #include "Iterator.h"
-#include "GraphIO.h"
-#include "GraphUtil.h"
 #include "Uncompress.h"
+#include "Graph/ConstrainedSearch.h"
+#include "Graph/ContigGraph.h"
+#include "Graph/ContigGraphAlgorithms.h"
+#include "Graph/GraphIO.h"
+#include "Graph/GraphUtil.h"
 #include <algorithm> // for min
 #include <climits> // for UINT_MAX
 #include <cmath>

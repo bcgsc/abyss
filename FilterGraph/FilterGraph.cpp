@@ -5,16 +5,16 @@
  */
 
 #include "Common/Options.h"
-#include "ContigGraph.h"
-#include "ContigGraphAlgorithms.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
-#include "DirectedGraph.h"
 #include "FastaReader.h"
-#include "GraphIO.h"
-#include "GraphUtil.h"
 #include "IOUtil.h"
 #include "Uncompress.h"
+#include "Graph/ContigGraph.h"
+#include "Graph/ContigGraphAlgorithms.h"
+#include "Graph/DirectedGraph.h"
+#include "Graph/GraphIO.h"
+#include "Graph/GraphUtil.h"
 #include <algorithm>
 #include <fstream>
 #include <functional>

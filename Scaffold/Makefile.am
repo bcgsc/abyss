@@ -2,8 +2,7 @@ bin_PROGRAMS = abyss-scaffold
 noinst_PROGRAMS = abyss-junction
 
 abyss_scaffold_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/Graph
+	-I$(top_srcdir)/Common
 
 abyss_scaffold_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 

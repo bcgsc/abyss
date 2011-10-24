@@ -1,18 +1,18 @@
 #include "BitUtil.h"
-#include "ContigGraph.h"
 #include "ContigProperties.h"
-#include "DirectedGraph.h"
 #include "DataLayer/Options.h"
 #include "FMIndex.h"
 #include "FastaIndex.h"
 #include "FastaReader.h"
-#include "GraphIO.h"
-#include "GraphUtil.h"
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
+#include "Graph/ContigGraph.h"
+#include "Graph/DirectedGraph.h"
+#include "Graph/GraphIO.h"
+#include "Graph/GraphUtil.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype> // for toupper

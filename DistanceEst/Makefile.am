@@ -2,8 +2,7 @@ bin_PROGRAMS = DistanceEst
 
 DistanceEst_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Align \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/Graph
+	-I$(top_srcdir)/Common
 
 DistanceEst_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 

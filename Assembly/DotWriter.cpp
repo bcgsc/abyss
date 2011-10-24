@@ -1,8 +1,8 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
 #include "DotWriter.h"
-#include "ContigGraphAlgorithms.h"
 #include "SequenceCollection.h"
+#include "Graph/ContigGraphAlgorithms.h"
 #include <cassert>
 #include <ostream>
 
