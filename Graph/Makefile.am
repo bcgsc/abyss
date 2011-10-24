@@ -10,7 +10,7 @@ libgraph_a_SOURCES = \
 	ContigGraph.h \
 	ContigGraphAlgorithms.h \
 	DepthFirstSearch.h \
-	DirectedGraph.cpp DirectedGraph.h \
+	DirectedGraph.h \
 	DotIO.h \
 	FastaIO.h \
 	GraphAlgorithms.h \
