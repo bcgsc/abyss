@@ -83,16 +83,22 @@ static inline void markSeenInPath(std::istream& in,
 		std::vector<bool>& marked)
 {
 	assert(in.good());
-	std::string id;
+	std::string s;
 	ContigPath path;
-	while (in >> id >> path) {
-		assert(marked.size() > ContigID(id));
-		if (path.empty())
-			marked[ContigID(id)] = true;
+	while (in >> s >> path) {
+		if (path.empty()) {
+			ContigID id(s);
+			assert(marked.size() > id);
+			marked[id] = true;
+		}
 		for (ContigPath::const_iterator it = path.begin();
-				it != path.end(); ++it)
-			if (!it->ambiguous())
-				marked[ContigID(*it)] = true;
+				it != path.end(); ++it) {
+			if (!it->ambiguous()) {
+				ContigID id(*it);
+				assert(marked.size() > id);
+				marked[id] = true;
+			}
+		}
 	}
 	assert(in.eof());
 }
