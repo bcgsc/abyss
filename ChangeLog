@@ -1,3 +1,34 @@
+2011-10-24  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Read sequence files in SRA format. The tool fastq-dump from the
+	sratoolkit must be installed.
+	* Read a contig overlap graph in the ASQG format of SGA.
+	* Fix compile errors for Mac OS X.
+	* Fix the bug that caused the line number of an error in a FASTQ
+	file to be reported incorrectly.
+
+	abyss-pe:
+	* Support using BWA-SW to align reads to contigs by specifying
+	aligner=bwasw.
+	* The parameter ALIGNER_OPTIONS may be used to specify a different
+	value for k when aligning using abyss-map.
+	* New target, bam, may be used to produce a final BAM file of the
+	reads aligned to the scaffolds.
+
+	KAligner:
+	* Fix the bug causing the error:
+	Assertion `qstep >= 0 && qstep <= m_hashSize' failed.
+
+	abyss-scaffold:
+	* The result is independent of the order in which the mate-pair
+	libraries are specified.
+	* Permit scaffolding contigs that have non-numeric identifiers.
+	* The overlap graph is optional.
+
+	abyss-todot:
+	* Convert adj, dist or ASQG formatted graph files to dot format.
+	* Merge multiple graph files into one.
+
 2011-09-09  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.3.0.
