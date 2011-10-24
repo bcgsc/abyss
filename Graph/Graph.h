@@ -2,7 +2,6 @@
 #define GRAPH_H 1
 
 #include <boost/graph/graph_traits.hpp>
-#include <utility> // for pair
 
 // Graph
 
@@ -33,9 +32,6 @@ struct graph_traits {
 	typedef typename G::edge_iterator edge_iterator;
 	typedef typename G::edges_size_type edges_size_type;
 };
-
-using boost::vertex_bundle_type;
-using boost::edge_bundle_type;
 
 // VertexMutablePropertyGraph
 

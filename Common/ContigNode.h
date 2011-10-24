@@ -5,6 +5,7 @@
 #include "ContigID.h"
 #include "Graph/Properties.h" // for vertex_index_t
 #include "StringUtil.h"
+#include <boost/property_map/property_map.hpp>
 #include <cassert>
 #include <cstdlib> // for strtoul
 #include <iostream>
@@ -178,7 +179,7 @@ struct ContigNodeIndexMap {
 	typedef ContigNode key_type;
 	typedef unsigned value_type;
 	typedef value_type reference;
-	typedef readable_property_map_tag category;
+	typedef boost::readable_property_map_tag category;
 
 	reference operator[](const key_type& u) const
 	{

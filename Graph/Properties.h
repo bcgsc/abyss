@@ -2,7 +2,6 @@
 #define GRAPH_PROPERTIES_H 1
 
 #include <boost/graph/properties.hpp>
-#include <boost/property_map/property_map.hpp>
 
 /** The coverage of a vertex. */
 enum vertex_coverage_t { vertex_coverage };
@@ -15,8 +14,6 @@ enum vertex_removed_t { vertex_removed };
 
 /** The orientation of a vertex. */
 enum vertex_sense_t { vertex_sense };
-
-using boost::readable_property_map_tag;
 
 using boost::edge_bundle;
 using boost::edge_bundle_t;

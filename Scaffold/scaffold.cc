@@ -23,6 +23,7 @@
 
 using namespace std;
 using namespace std::rel_ops;
+using boost::edge_bundle_type;
 using boost::tie;
 
 #define PROGRAM "abyss-scaffold"

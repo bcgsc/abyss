@@ -5,6 +5,7 @@
 #include "Graph/Options.h"
 #include "Graph/Properties.h"
 #include "IOUtil.h"
+#include <boost/property_map/property_map.hpp>
 #include <cassert>
 #include <iostream>
 
@@ -154,7 +155,7 @@ struct EdgeWeightMap {
 	typedef typename Graph::edge_descriptor key_type;
 	typedef int value_type;
 	typedef value_type reference;
-	typedef readable_property_map_tag category;
+	typedef boost::readable_property_map_tag category;
 
 	EdgeWeightMap(const Graph& g) : m_g(g) { }
 
