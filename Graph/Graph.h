@@ -1,10 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H 1
 
-#include "config.h"
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
-# include <boost/graph/graph_traits.hpp>
-#endif
+#include <boost/graph/graph_traits.hpp>
 #include <utility> // for pair
 
 // Graph
@@ -37,41 +34,8 @@ struct graph_traits {
 	typedef typename G::edges_size_type edges_size_type;
 };
 
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
-
 using boost::vertex_bundle_type;
 using boost::edge_bundle_type;
-
-#else
-
-// IncidenceGraph
-
-template <class G>
-typename graph_traits<G>::vertex_descriptor
-source(std::pair<typename graph_traits<G>::vertex_descriptor,
-		typename graph_traits<G>::vertex_descriptor> e, const G&)
-{
-	return e.first;
-}
-
-template <class G>
-typename graph_traits<G>::vertex_descriptor
-target(std::pair<typename graph_traits<G>::vertex_descriptor,
-		typename graph_traits<G>::vertex_descriptor> e, const G&)
-{
-	return e.second;
-}
-
-// PropertyGraph
-
-template<typename Graph, typename Descriptor,
-	typename Bundle, typename T>
-T get(T Bundle::* tag, const Graph& g, Descriptor x)
-{
-	return g[x].*tag;
-}
-
-#endif // HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 
 // VertexMutablePropertyGraph
 

@@ -43,7 +43,6 @@ class DirectedGraph
 	typedef EdgeProp edge_bundled;
 	typedef EdgeProp edge_property_type;
 
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 	typedef boost::directed_tag directed_category;
 	typedef boost::allow_parallel_edge_tag edge_parallel_category;
 	struct traversal_category
@@ -51,11 +50,6 @@ class DirectedGraph
 		boost::adjacency_graph_tag,
 		boost::vertex_list_graph_tag,
 		boost::edge_list_graph_tag { };
-#else
-	typedef void directed_category;
-	typedef void edge_parallel_category;
-	typedef void traversal_category;
-#endif
 
 /** Iterate through the vertices of this graph. */
 class vertex_iterator

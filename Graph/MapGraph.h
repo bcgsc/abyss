@@ -14,18 +14,12 @@ template <typename V, typename T>
 struct graph_traits<std::map<V, T> > {
 	// Graph
 	typedef V vertex_descriptor;
-#if HAVE_BOOST_GRAPH_GRAPH_TRAITS_HPP
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
 		: boost::adjacency_graph_tag,
 		boost::vertex_list_graph_tag
 		{ };
 	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
-#else
-	typedef void directed_category;
-	typedef void traversal_category;
-	typedef void edge_parallel_category;
-#endif
 
 	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
