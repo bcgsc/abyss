@@ -125,15 +125,38 @@ static char call_consensus_base(BaseCount counts, char orig_base)
 
     // Very verbose debugging output
     // char base_to_return = float(*maxIt) <= float(coverage)*0.60 ? orig_base : codeToBase(maxIt - counts.x);
+    // char new_base_to_return = *maxIt < opt::min_coverage ? orig_base : codeToBase(maxIt - counts.x);
     // float call_threshold = float(coverage)*0.60;
     // float max_base_percent = float(*maxIt) / float(coverage);
     // cerr << "Coverage: " << coverage << "\tOriginal: " << orig_base <<
     //  "\tReturning: " << base_to_return << "\tBases: " << counts <<
     //  "\tCall threshold: " << call_threshold <<
-    //  "\tMax base percent: " << max_base_percent << endl;
+    //  "\tMax base percent: " << max_base_percent << 
+    //  "\tNew base to return: " << new_base_to_return << endl;
 
-    return float(*maxIt) <= float(coverage)*0.60 ? orig_base
+    // Original version with hard-coded coverage frequency of 60%
+    // return float(*maxIt) <= float(coverage)*0.60 ? orig_base
+    //     : codeToBase(maxIt - counts.x);
+    
+    // Return the most-frequent base, so long as that base has
+    //  coverage >= min_coverage
+    return *maxIt < opt::min_coverage ? orig_base 
         : codeToBase(maxIt - counts.x);
+    
+}
+
+/* Return the frequency of the most-common base*/
+static float most_common_base_frequency(BaseCount counts)
+{
+    // Calculate coverage as before
+    unsigned coverage = accumulate(counts.x, counts.x+4, 0);
+    
+    // Call a consensus base
+    unsigned *maxIt = max_element(counts.x, counts.x+4);
+
+    // Return the frequency of the most-common base
+    return float(*maxIt) / float(coverage);
+    
 }
 
 typedef vector<Rotation> Rotations;
@@ -222,11 +245,31 @@ static string find_complex_overlap(const RotatedRead& f,
     // Call consensus bases until we run out of coverage
     ostringstream new_contig;
     char new_base = '*';
+    float current_consensus_freq = 1.0;
+    float next_consensus_freq = 1.0;
     for (unsigned i = 0; new_base != 'X'; i++) {
+        
+        // Retrieve the original base, or 'X' if we're past the end
+        //  of the original flank
         char orig_base = i < opt::read_length ? f.seq[i] : 'X';
+
+        // Call a new consensus base if possible
         new_base = call_consensus_base(counts[i], orig_base);
-        if (new_base != 'X')
+
+        // Check the frequency of the most-common base
+        current_consensus_freq = most_common_base_frequency(counts[i]);
+        next_consensus_freq = most_common_base_frequency(counts[i+1]);
+        //cerr << "Current: " << current_consensus_freq << " Next: " << next_consensus_freq << endl;
+        
+        // Bail out if we encounter two SNPs in a row
+        // Set the current base to 'X' and trim the last one
+        if ((current_consensus_freq <= 0.8) && (next_consensus_freq <= 0.8))
+            new_base = 'X';
+        
+        // If we've found a new base, add it to the growing consensus
+        if (new_base != 'X') 
             new_contig << new_base;
+        
     }
     if (opt::verbose)
         cerr << new_contig.str() << " (consensus) " << endl;
@@ -438,7 +481,7 @@ int main(int argc, char** argv)
         if (hard_cap >= 500){
             time_to_die = true;
             //cerr << "Hard cap hit - I give up!" << endl;
-            cerr << contig.size();
+            //cerr << contig.size();
             // cout << ">contig (" << contig.size() << "bp)" << endl
             //      << contig << endl;
             //cout << contig.size();
@@ -447,8 +490,8 @@ int main(int argc, char** argv)
         }
 
         // Another break if the contig grows too long
-        if (contig.size() >= 500){
-            cerr << contig.size();
+        if (contig.size() >= 1500){
+            //cerr << contig.size();
             cout << contig << endl;
             exit(1);
         }
@@ -500,7 +543,7 @@ int main(int argc, char** argv)
     }
 
     // Output the final contig
-    cerr << contig.size();
-    cout << contig << endl;
+    cout << contig << endl;    
+    
     return 0;
 }
