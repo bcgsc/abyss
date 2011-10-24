@@ -420,7 +420,7 @@ get(edge_bundle_t, const ContigGraph<G>&,
 // PropertyGraph
 
 template <typename G>
-typename vertex_property<G>::type
+typename vertex_bundle_type<G>::type
 get(vertex_bundle_t, const ContigGraph<G>& g,
 		typename ContigGraph<G>::vertex_descriptor u)
 {
@@ -428,7 +428,7 @@ get(vertex_bundle_t, const ContigGraph<G>& g,
 }
 
 template <typename G>
-typename edge_property<G>::type
+typename edge_bundle_type<G>::type
 get(edge_bundle_t, const ContigGraph<G>& g,
 		typename ContigGraph<G>::edge_descriptor e)
 {

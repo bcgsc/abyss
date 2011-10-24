@@ -25,6 +25,11 @@ using boost::vertex_bundle_t;
 using boost::vertex_index;
 using boost::vertex_index_t;
 
+using boost::edge_bundle_type;
+using boost::edge_property;
+using boost::vertex_bundle_type;
+using boost::vertex_property;
+
 namespace boost {
 	BOOST_INSTALL_PROPERTY(vertex, coverage);
 	BOOST_INSTALL_PROPERTY(vertex, length);

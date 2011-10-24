@@ -33,20 +33,4 @@ struct graph_traits {
 	typedef typename G::edges_size_type edges_size_type;
 };
 
-// VertexMutablePropertyGraph
-
-template <typename Graph>
-class vertex_property {
-  public:
-	typedef typename Graph::vertex_property_type type;
-};
-
-// EdgeMutablePropertyGraph
-
-template <typename Graph>
-class edge_property {
-  public:
-	typedef typename Graph::edge_property_type type;
-};
-
 #endif

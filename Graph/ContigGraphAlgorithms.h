@@ -138,15 +138,12 @@ void remove_vertex_if(Graph& g, It first, It last, Predicate p)
 
 /** Add the vertex and edge propeties of the path [first, last). */
 template<typename Graph, typename It, typename VP>
-typename vertex_property<Graph>::type addProp(const Graph& g,
-		It first, It last, const VP*)
+VP addProp(const Graph& g, It first, It last, const VP*)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
-	typedef typename vertex_property<Graph>::type
-		vertex_property_type;
 	assert(first != last);
-	vertex_property_type vp = get(vertex_bundle, g, *first);
+	VP vp = get(vertex_bundle, g, *first);
 	for (It it = first + 1; it != last; ++it) {
 		vertex_descriptor u = *(it - 1);
 		vertex_descriptor v = *it;
@@ -157,8 +154,7 @@ typename vertex_property<Graph>::type addProp(const Graph& g,
 }
 
 template<typename Graph, typename It>
-typename vertex_property<Graph>::type addProp(const Graph&,
-		It, It, const no_property*)
+no_property addProp(const Graph&, It, It, const no_property*)
 {
 	return no_property();
 }

@@ -229,7 +229,9 @@ get(edge_bundle_t, const std::map<V, T>&,
 	return eit->second;
 }
 
-// VertexMutablePropertyGraph
+// MutablePropertyGraph
+
+namespace boost {
 
 template <typename V, typename T>
 class vertex_property<std::map<V, T> > {
@@ -237,13 +239,13 @@ class vertex_property<std::map<V, T> > {
 	typedef no_property type;
 };
 
-// EdgeMutablePropertyGraph
-
 template <typename V, typename T>
 class edge_property<std::map<V, T> > {
   public:
 	typedef typename T::mapped_type type;
 };
+
+}
 
 template <typename V, typename T>
 std::pair<
