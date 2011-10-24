@@ -9,21 +9,24 @@
 #include <sstream>
 #include <string>
 
-/** A contig ID is represented by a numeric serial number, but is
- * formatted as a string.
+/** A contig ID is stored in memory as an integer, but is formatted as
+ * a string using a static dictionary.
  */
 class ContigID {
   public:
 	ContigID() { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(const std::string& id)
-		: m_id(s_dict.serial(id)) { };
+		: m_id(s_dict.index(id)) { };
 
-	/** Return the numeric serial number. */
+	/** Return the index of this ID. */
 	operator unsigned() const { return m_id; }
 
 	/** Return the string representation. */
-	Dictionary::key_reference str() const { return s_dict.key(m_id); }
+	Dictionary::key_reference str() const
+	{
+		return s_dict.name(m_id);
+	}
 
 	bool operator ==(const ContigID& o) const
 	{
@@ -90,7 +93,7 @@ class ContigID {
 	}
 
   private:
-	/** The numeric serial number. */
+	/** The index. */
 	unsigned m_id;
 
 	/** The contig ID dictionary. */
