@@ -5,6 +5,7 @@
  */
 
 #include "Common/Options.h"
+#include "ContigID.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
 #include "FastaReader.h"
@@ -55,6 +56,7 @@ static const char USAGE_MESSAGE[] =
 "      --assemble        assemble unambiguous paths\n"
 "      --no-assemble     disable assembling of paths [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
+"  -i, --ignore=FILE     ignore contigs seen in FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -76,10 +78,14 @@ namespace opt {
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 0;
 
+	/** Assemble unambiguous paths. */
 	static int assemble = 0;
 
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
+
+	/** Contigs to ignore. */
+	static string ignorePath;
 
 	/** The minimum overlap allowed between two contigs. */
 	static int minOverlap = 10;
@@ -87,12 +93,13 @@ namespace opt {
 	int format; // used by ContigProperties
 }
 
-static const char shortopts[] = "g:k:l:m:t:T:v";
+static const char shortopts[] = "g:i:k:l:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "graph",         required_argument, NULL, 'g' },
+	{ "ignore",        required_argument, NULL, 'i' },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "island",        required_argument, NULL, 'T' },
 	{ "tip",           required_argument, NULL, 't' },
@@ -328,13 +335,16 @@ struct sortContigs {
 
 struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	const Graph& g;
+	const vector<bool>& seen;
 	size_t x;
 
-	ShorterThanX(const Graph& g, size_t x) : g(g), x(x) { }
+	ShorterThanX(const Graph& g, const vector<bool>& seen, size_t x)
+		: g(g), seen(seen), x(x) { }
 
 	bool operator()(vertex_descriptor y) const
 	{
-		return g[y].length < x && !get(vertex_removed, g, y);
+		return g[y].length < x && !get(vertex_removed, g, y)
+			&& !seen[ContigID(y)];
 	}
 };
 
@@ -362,7 +372,7 @@ static void removeShims(Graph& g)
 	}
 }
 
-static void removeShortContigs(Graph& g)
+static void removeShortContigs(Graph& g, const vector<bool>& seen)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_iterator Vit;
@@ -371,7 +381,7 @@ static void removeShortContigs(Graph& g)
 	tie(first, second) = vertices(g);
 	vector<V> sc;
 	copy_if(first, second, back_inserter(sc),
-			ShorterThanX(g, opt::minLen));
+			ShorterThanX(g, seen, opt::minLen));
 	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
 	copy(sc.begin(), sc.end(), back_inserter(g_removed));
 	if (opt::verbose > 0)
@@ -398,6 +408,7 @@ int main(int argc, char** argv)
 			case 'l': arg >> opt::minLen; assert(arg.eof()); break;
 			case 'm': arg >> opt::minOverlap; assert(arg.eof()); break;
 			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
+			case 'i': arg >> opt::ignorePath; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; assert(arg.eof()); break;
 			case 'T': arg >> opt::minIslandLen; assert(arg.eof()); break;
 			case 't': arg >> opt::minTipLen; assert(arg.eof()); break;
@@ -432,11 +443,6 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (opt::graphPath.empty()) {
-		cerr << PROGRAM ": missing -g option\n";
-		die = true;
-	}
-
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
@@ -456,6 +462,14 @@ int main(int argc, char** argv)
 		assert(fin.eof());
 	}
 
+	// Read the set of contigs to ignore.
+	vector<bool> seen(num_vertices(g) / 2);
+	if (!opt::ignorePath.empty()) {
+		ifstream in(opt::ignorePath.c_str());
+		assert_good(in, opt::ignorePath);
+		markSeenInPath(in, seen);
+	}
+
 	if (opt::verbose > 0) {
 		cerr << "Graph stats before:\n";
 		printGraphStats(cerr, g);
@@ -465,7 +479,7 @@ int main(int argc, char** argv)
 	if (opt::minIslandLen > 0) {
 		size_t s = g_removed.size();
 		removeIslands_if(g, back_inserter(g_removed),
-				ShorterThanX(g, opt::minIslandLen));
+				ShorterThanX(g, seen, opt::minIslandLen));
 		if (opt::verbose)
 			cerr << "Removed " << g_removed.size() - s
 				<< " islands.\n";
@@ -475,7 +489,7 @@ int main(int argc, char** argv)
 	if (opt::minTipLen > 0) {
 		size_t s = g_removed.size();
 		pruneTips_if(g, back_inserter(g_removed),
-				ShorterThanX(g, opt::minTipLen));
+				ShorterThanX(g, seen, opt::minTipLen));
 		if (opt::verbose)
 			cerr << "Removed " << g_removed.size() - s
 				<< " tips.\n";
@@ -483,7 +497,7 @@ int main(int argc, char** argv)
 
 	// Remove short contigs.
 	if (opt::minLen > 0)
-		removeShortContigs(g);
+		removeShortContigs(g, seen);
 
 	// Remove shims.
 	if (opt::shim)
@@ -500,8 +514,8 @@ int main(int argc, char** argv)
 	copy(g_removed.begin(), g_removed.end(),
 			ostream_iterator<ContigID>(cout, "\n"));
 
+	// Assemble unambiguous paths.
 	if (opt::assemble) {
-		// Assemble unambiguous paths.
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
 		assemble(g, back_inserter(paths));
@@ -511,10 +525,12 @@ int main(int argc, char** argv)
 	}
 
 	// Output the updated adjacency graph.
-	ofstream fout(opt::graphPath.c_str());
-	assert_good(fout, opt::graphPath);
-	write_graph(fout, g, PROGRAM, commandLine);
-	assert_good(fout, opt::graphPath);
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		assert_good(fout, opt::graphPath);
+		write_graph(fout, g, PROGRAM, commandLine);
+		assert_good(fout, opt::graphPath);
+	}
 
 	return 0;
 }
