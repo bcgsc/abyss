@@ -3,13 +3,15 @@
 
 #include "ContigID.h" // for ContigID::lock
 #include "Graph/Options.h"
-#include "Graph.h"
 #include "IOUtil.h"
+#include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <cstdlib> // for exit
 #include <istream>
 #include <ostream>
 #include <sstream>
+
+using boost::graph_traits;
 
 template <typename Graph, typename VertexProp>
 void write_vertex(std::ostream& out, const Graph& g,

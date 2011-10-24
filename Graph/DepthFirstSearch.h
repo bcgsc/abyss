@@ -3,6 +3,8 @@
 
 #include <boost/graph/depth_first_search.hpp>
 
+using boost::graph_traits;
+
 /**
  * Perform a depth-first search starting first with vertices with
  * deg-(u) = 0 and then visiting any remaining vertices.

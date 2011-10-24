@@ -3,7 +3,7 @@
 
 #include "Common/Options.h"
 #include "DepthFirstSearch.h"
-#include "Graph.h"
+#include <boost/graph/graph_traits.hpp>
 #include <boost/unordered_map.hpp>
 #include <algorithm>
 #include <iostream>
@@ -11,6 +11,8 @@
 #include <set>
 #include <utility>
 #include <vector>
+
+using boost::graph_traits;
 
 /** Record a topological order of the vertices. */
 template <typename OutIt>

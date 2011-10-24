@@ -1,9 +1,11 @@
 #ifndef GRAPHALGORITHMS_H
 #define GRAPHALGORITHMS_H 1
 
-#include "Graph.h"
+#include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <vector>
+
+using boost::graph_traits;
 
 /**
  * Return the transitive edges.

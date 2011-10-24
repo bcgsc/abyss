@@ -13,7 +13,6 @@ libgraph_a_SOURCES = \
 	DirectedGraph.cpp DirectedGraph.h \
 	DotIO.h \
 	FastaIO.h \
-	Graph.h \
 	GraphAlgorithms.h \
 	GraphIO.h \
 	GraphUtil.h \

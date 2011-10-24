@@ -2,8 +2,11 @@
 #define GRAPHUTIL_H 1
 
 #include "Histogram.h"
+#include <boost/graph/graph_traits.hpp>
 #include <iomanip>
 #include <ostream>
+
+using boost::graph_traits;
 
 /** Return the number of vertices that have been marked as removed. */
 template <typename Graph>

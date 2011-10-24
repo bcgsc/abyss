@@ -1,11 +1,13 @@
 #ifndef SEQUENCECOLLECTION_H
 #define SEQUENCECOLLECTION_H 1
 
-#include "Graph.h"
 #include "Graph/Properties.h"
 #include "ISequenceCollection.h"
+#include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <utility>
+
+using boost::graph_traits;
 
 /** A map of Kmer to KmerData. */
 class SequenceCollectionHash : public ISequenceCollection
@@ -132,6 +134,8 @@ class SequenceCollectionHash : public ISequenceCollection
 
 // Graph
 
+namespace boost {
+
 template <>
 struct graph_traits<SequenceCollectionHash> {
 	// Graph
@@ -254,6 +258,8 @@ struct vertex_iterator
 }; // vertex_iterator
 
 }; // graph_traits<SequenceCollectionHash>
+
+} // namespace boost
 
 // IncidenceGraph
 

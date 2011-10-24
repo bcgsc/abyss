@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 
+using boost::graph_traits;
+
 /** Read a graph in ASQG format. */
 template <typename Graph>
 std::istream& read_asqg(std::istream& in, Graph& g)

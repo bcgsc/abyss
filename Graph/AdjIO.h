@@ -4,11 +4,14 @@
 #include "ContigID.h"
 #include "ContigGraph.h"
 #include "IOUtil.h"
+#include <boost/graph/graph_traits.hpp>
 #include <algorithm> // for count
 #include <cassert>
 #include <cstdlib>
 #include <istream>
 #include <ostream>
+
+using boost::graph_traits;
 
 template <typename EdgeProp>
 void write_edge_prop(std::ostream& out, const EdgeProp& ep)

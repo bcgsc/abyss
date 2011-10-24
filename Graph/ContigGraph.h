@@ -1,10 +1,12 @@
 #ifndef CONTIGGRAPH_H
 #define CONTIGGRAPH_H 1
 
-#include "Graph.h"
 #include "Graph/Properties.h"
+#include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <utility>
+
+using boost::graph_traits;
 
 /** A contig graph is a directed graph with the property that
  * the edge (u,v) implies the existence of the edge (~v,~u).

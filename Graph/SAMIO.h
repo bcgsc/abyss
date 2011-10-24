@@ -3,8 +3,10 @@
 
 #include "ContigNode.h"
 #include "ContigProperties.h" // for edge_distance
-#include "Graph.h"
+#include <boost/graph/graph_traits.hpp>
 #include <ostream>
+
+using boost::graph_traits;
 
 /** Output a graph in SAM alignment format.
  * vertex_descriptor must be convertible to a ContigNode

@@ -4,13 +4,15 @@
 #include "Algorithms.h"
 #include "ContigNode.h"
 #include "Functional.h"
-#include "Graph.h"
 #include "Iterator.h"
+#include <boost/graph/graph_traits.hpp>
 #include <algorithm>
 #include <cassert>
 #include <functional>
 #include <set>
 #include <utility>
+
+using boost::graph_traits;
 
 /** Return true if the edge e is a palindrome. */
 template<typename Graph>

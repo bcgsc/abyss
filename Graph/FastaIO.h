@@ -9,6 +9,8 @@
 #include <sstream>
 #include <string>
 
+using boost::graph_traits;
+
 /** Read the vertices from a FASTA file. */
 template <typename Graph>
 std::istream& read_fasta(std::istream& in, Graph& g)

@@ -1,10 +1,14 @@
 #ifndef MAPGRAPH_H
 #define MAPGRAPH_H 1
 
-#include "Graph.h"
+#include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <map>
 #include <utility> // for make_pair
+
+using boost::graph_traits;
+
+namespace boost {
 
 /**
  * A std::map is a model of a directed graph.
@@ -78,7 +82,9 @@ struct graph_traits<std::map<V, T> > {
 	// EdgeListGraph
 	typedef void edge_iterator;
 	typedef void edges_size_type;
-};
+}; // graph_traits<std::map>
+
+} // namespace boost
 
 // IncidenceGraph
 
