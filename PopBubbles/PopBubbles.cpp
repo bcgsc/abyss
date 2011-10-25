@@ -610,27 +610,27 @@ int main(int argc, char** argv)
 	const char* contigsPath(argv[optind++]);
 	string adjPath(argv[optind++]);
 
-	// Read the contigs.
-	Contigs& contigs = g_contigs;
-	if (opt::identity > 0) {
-		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
-		for (FastaRecord rec; in >> rec;) {
-			ContigID id = ContigID::insert(rec.id);
-			assert(contigs.size() == id);
-			contigs.push_back(rec.seq);
-		}
-		assert(in.eof());
-		assert(!contigs.empty());
-		opt::colourSpace = isdigit(contigs.front()[0]);
-		ContigID::lock();
-	}
-
 	// Read the contig adjacency graph.
 	ifstream fin(adjPath.c_str());
 	assert_good(fin, adjPath);
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
+	ContigID::lock();
+
+	// Read the contigs.
+	Contigs& contigs = g_contigs;
+	if (opt::identity > 0) {
+		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
+		for (FastaRecord rec; in >> rec;) {
+			ContigID id(rec.id);
+			assert(contigs.size() == id);
+			contigs.push_back(rec.seq);
+		}
+		assert(in.eof());
+		assert(!contigs.empty());
+		opt::colourSpace = isdigit(contigs.front()[0]);
+	}
 
 	// Remove contigs with insufficient coverage.
 	if (opt::minCoverage > 0)
