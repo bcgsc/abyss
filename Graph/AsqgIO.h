@@ -29,13 +29,13 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			assert(in);
 			break;
 		  case 'V': {
-			ContigID u;
-			in >> expect("VT") >> u >> std::ws >> ignore('\t');
+			string uname;
+			in >> expect("VT") >> uname >> std::ws >> ignore('\t');
 			assert(in);
 			VP vp;
 			put(vertex_length, vp, in.gcount() - 1);
-			V x = add_vertex(vp, g);
-			assert(u == x);
+			V u = add_vertex(vp, g);
+			put(vertex_name, g, u, uname);
 			in >> ignore('\n');
 			assert(in);
 			break;
