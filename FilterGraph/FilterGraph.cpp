@@ -491,6 +491,10 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
+	// Remove shims.
+	if (opt::shim)
+		removeShims(g, seen);
+
 	// Remove islands.
 	if (opt::minIslandLen > 0) {
 		size_t s = g_removed.size();
@@ -514,10 +518,6 @@ int main(int argc, char** argv)
 	// Remove short contigs.
 	if (opt::minLen > 0)
 		removeShortContigs(g, seen);
-
-	// Remove shims.
-	if (opt::shim)
-		removeShims(g, seen);
 
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
