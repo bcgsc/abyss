@@ -9,7 +9,6 @@
 #include <cstdlib> // for exit
 #include <istream>
 #include <ostream>
-#include <sstream>
 
 using boost::graph_traits;
 
@@ -128,19 +127,25 @@ DotWriter<Graph> dot_writer(const Graph& g)
 	return DotWriter<Graph>(g);
 }
 
-/** Read an id delimited by double quotes. */
-template <typename VertexDescriptor>
-std::istream& read_dot_id(std::istream& in, VertexDescriptor& u)
+/** Read a string delimited by double quotes. */
+static inline
+std::istream& read_dot_name(std::istream& in, std::string& s)
 {
 	if (in >> std::ws && in.peek() == '"') {
 		in.get();
-		std::string s;
 		getline(in, s, '"');
-		std::istringstream ss(s);
-		ss >> u;
-		assert(ss.eof());
 	} else
 		in.clear(std::ios::failbit);
+	return in;
+}
+
+/** Read a vertex descriptor delimited by double quotes. */
+template <typename VertexDescriptor>
+std::istream& read_dot_id(std::istream& in, VertexDescriptor& u)
+{
+	std::string s;
+	if (read_dot_name(in, s))
+		u = VertexDescriptor(s);
 	return in;
 }
 
@@ -158,6 +163,9 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 	typedef typename graph_traits<Graph>::edge_descriptor
 		edge_descriptor;
 	typedef typename edge_property<Graph>::type edge_property_type;
+
+	// Add vertices if this graph is empty.
+	bool addVertices = num_vertices(g) == 0;
 
 	// Graph properties
 	in >> expect("digraph") >> ignore('{');
@@ -189,30 +197,31 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			in.get();
 	}
 
-	vertex_descriptor u;
-	while (read_dot_id(in, u)) {
+	for (std::string uname; read_dot_name(in, uname);) {
 		char c;
 		in >> c;
 		assert(in);
 		if (c == ';') {
 			// Vertex
-			if (get(vertex_index, g, u) < num_vertices(g)) {
-				// This vertex already exists.
+			if (addVertices) {
+				vertex_descriptor u = add_vertex(g);
+				put(vertex_name, g, u, uname);
 			} else {
-				vertex_descriptor x = add_vertex(g);
-				assert(x == u);
+				vertex_descriptor u(uname);
+				assert(get(vertex_index, g, u) < num_vertices(g));
 			}
 		} else if (c == '[') {
 			// Vertex properties
 			vertex_property_type vp;
 			in >> vp >> ignore(']');
 			assert(in);
-			if (get(vertex_index, g, u) < num_vertices(g)) {
-				// This vertex already exists.
-				assert(g[u] == vp);
+			if (addVertices) {
+				vertex_descriptor u = add_vertex(vp, g);
+				put(vertex_name, g, u, uname);
 			} else {
-				vertex_descriptor x = add_vertex(vp, g);
-				assert(x == u);
+				vertex_descriptor u(uname);
+				assert(get(vertex_index, g, u) < num_vertices(g));
+				assert(g[u] == vp);
 			}
 		} else if (c == '-') {
 			// Edge
@@ -220,6 +229,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			assert(in);
 			ContigID::lock();
 
+			vertex_descriptor u(uname);
 			if (in >> std::ws && in.peek() == '{') {
 				// Subgraph
 				in >> expect("{");

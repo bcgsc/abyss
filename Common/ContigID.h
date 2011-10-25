@@ -69,6 +69,12 @@ class ContigID {
 		return ContigID(s_dict.insert(s));
 	}
 
+	/** Create a new contig ID if it does not already exist. */
+	static void put(ContigID id, const std::string& s)
+	{
+		s_dict.put(id, s);
+	}
+
 	/** Set the next contig ID returned by ContigID::create. */
 	static void setNextContigID(cstring s)
 	{

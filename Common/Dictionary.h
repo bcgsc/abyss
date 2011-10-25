@@ -35,18 +35,32 @@ class Dictionary {
 			return inserted.first->second;
 		}
 
+		/** If the specified index is within this dictionary, ensure
+		 * that the key is identical, otherwise append the key to this
+		 * dictionary.
+		 */
+		void put(index_type index, const key_type& key)
+		{
+			if (index < m_vec.size()) {
+				assert(name(index) == key);
+			} else {
+				assert(!m_locked);
+				assert(index == m_vec.size());
+				index_type i = insert(key);
+				assert(i == index);
+			}
+		}
+
 		/** Return the index of the specified key. */
-		index_type index(const key_type& key)
+		index_type index(const key_type& key) const
 		{
 			Map::const_iterator it = m_map.find(key);
-			if (it != m_map.end())
-				return it->second;
-			if (m_locked) {
+			if (it == m_map.end()) {
 				std::cerr << "error: unexpected ID: `"
 					<< key << "'\n";
 				exit(EXIT_FAILURE);
 			}
-			return insert(key);
+			return it->second;
 		}
 
 		/** Return the name of the specified index. */

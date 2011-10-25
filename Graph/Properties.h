@@ -24,6 +24,8 @@ using boost::vertex_bundle;
 using boost::vertex_bundle_t;
 using boost::vertex_index;
 using boost::vertex_index_t;
+using boost::vertex_name;
+using boost::vertex_name_t;
 
 using boost::edge_bundle_type;
 using boost::edge_property;

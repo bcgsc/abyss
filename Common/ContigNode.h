@@ -208,4 +208,16 @@ bool get(vertex_sense_t, const Graph&, ContigNode u)
 	return u.sense();
 }
 
+/** Set the name of the specified vertex. */
+template <typename Graph>
+void put(vertex_name_t, const Graph&, ContigNode u,
+		const std::string& name)
+{
+	assert(name.size() > 1);
+	std::string s(name);
+	char c = chop(s);
+	assert(c == '+' || c == '-');
+	ContigID::put(u, s);
+}
+
 #endif
