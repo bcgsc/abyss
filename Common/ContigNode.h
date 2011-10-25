@@ -213,11 +213,12 @@ template <typename Graph>
 void put(vertex_name_t, const Graph&, ContigNode u,
 		const std::string& name)
 {
-	assert(name.size() > 1);
-	std::string s(name);
-	char c = chop(s);
-	assert(c == '+' || c == '-');
-	ContigID::put(u, s);
+	assert(!name.empty());
+	char c = name[name.size() - 1];
+	if (c == '+' || c == '-')
+		ContigID::put(u, std::string(name, 0, name.size() - 1));
+	else
+		ContigID::put(u, name);
 }
 
 #endif

@@ -127,7 +127,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 			if (faiFormat)
 				put(vertex_coverage, prop, 0);
 			vertex_descriptor v = add_vertex(prop, g);
-			put(vertex_name, g, v, id + "+");
+			put(vertex_name, g, v, id);
 		}
 		assert(in.eof());
 	}
