@@ -29,7 +29,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			assert(in);
 			break;
 		  case 'V': {
-			string uname;
+			std::string uname;
 			in >> expect("VT") >> uname >> std::ws >> ignore('\t');
 			assert(in);
 			VP vp;
