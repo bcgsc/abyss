@@ -77,16 +77,19 @@ class Dictionary {
 		void unlock() { m_locked = false; }
 
 		/** Return true if this dictionary is empty. */
-		bool empty() { return m_vec.empty(); }
+		bool empty() const { return m_vec.empty(); }
 
 		/** Return the number of elements in this dictionary. */
-		size_t size() { return m_vec.size(); }
+		size_t size() const { return m_vec.size(); }
 
 		/** Return the number of elements with the specified key. */
-		size_t count(const key_type& key) { return m_map.count(key); }
+		size_t count(const key_type& key) const
+		{
+			return m_map.count(key);
+		}
 
 		/** Return the last key in this dictionary. */
-		key_reference back()
+		key_reference back() const
 		{
 			assert(!m_vec.empty());
 			return m_vec.back();
