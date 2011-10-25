@@ -20,9 +20,10 @@ vector<unsigned> readContigLengths(istream& in)
 	assert(in);
 	assert(ContigID::empty());
 	vector<unsigned> lengths;
-	ContigID id;
+	string s;
 	unsigned len;
-	while (in >> id >> len) {
+	while (in >> s >> len) {
+		ContigID id = ContigID::insert(s);
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(len >= opt::k);
 		assert(id == lengths.size());

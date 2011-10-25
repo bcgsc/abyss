@@ -232,23 +232,18 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 	assert(ContigID::empty());
 	for (string line; in.peek() == '@' && getline(in, line);) {
 		istringstream ss(line);
-		string type, tag;
+		string type;
 		ss >> type;
 		if (type != "@SQ")
 			continue;
-		ss >> ws;
 
-		getline(ss, tag, ':');
-		assert(tag == "SN");
-		ContigID id;
-		ss >> id >> ws;
-
-		getline(ss, tag, ':');
-		assert(tag == "LN");
+		string s;
 		unsigned len;
-		ss >> len;
-
+		ss >> expect(" SN:") >> s >> expect(" LN:") >> len;
 		assert(ss);
+
+		ContigID id = ContigID::insert(s);
+		assert(id == lengths.size());
 		lengths.push_back(len);
 	}
 	if (lengths.empty()) {

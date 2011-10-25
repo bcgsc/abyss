@@ -615,7 +615,7 @@ int main(int argc, char** argv)
 	if (opt::identity > 0) {
 		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			ContigID id(rec.id);
+			ContigID id = ContigID::insert(rec.id);
 			assert(contigs.size() == id);
 			contigs.push_back(rec.seq);
 		}
