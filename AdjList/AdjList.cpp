@@ -172,9 +172,9 @@ static void readContigs(const string& path,
 		prefixes.push_back(reverseComplement(suffix));
 
 		// Add the suffix to the index.
-		ContigID::insert(rec.id);
 		ContigProperties vp(seq.length(), getCoverage(rec.comment));
 		ContigNode u = add_vertex(vp, g);
+		put(vertex_name, g, u, rec.id);
 		suffixMap[suffix].push_back(u);
 		suffixMap[reverseComplement(prefix)].push_back(~u);
 	}
