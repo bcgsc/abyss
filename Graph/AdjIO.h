@@ -121,13 +121,18 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 		in.clear();
 		in.seekg(std::ios_base::beg);
 		assert(in);
-		std::string id;
-		vertex_property_type prop;
-		while (in >> id >> prop >> ignore('\n')) {
-			if (faiFormat)
-				put(vertex_coverage, prop, 0);
-			vertex_descriptor v = add_vertex(prop, g);
-			put(vertex_name, g, v, id);
+		for (std::string uname; in >> uname;) {
+			vertex_property_type vp;
+			if (faiFormat) {
+				unsigned length;
+				in >> length;
+				put(vertex_length, vp, length);
+			} else
+				in >> vp;
+			in >> ignore('\n');
+			assert(in);
+			vertex_descriptor u = add_vertex(vp, g);
+			put(vertex_name, g, u, uname);
 		}
 		assert(in.eof());
 	}
