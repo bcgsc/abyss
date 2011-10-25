@@ -365,6 +365,7 @@ int main(int argc, char** argv)
 		if (opt::verbose > 0)
 			cerr << "Number of previous paths: " << count << '\n';
 	}
+	ContigID::lock();
 
 	// Record all the contigs that are seeds.
 	if (!opt::path.empty()) {
