@@ -334,7 +334,8 @@ int main(int argc, char** argv)
 	{
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			ContigID::insert(rec.id);
+			ContigID id = ContigID::insert(rec.id);
+			assert(id == contigs.size());
 			contigs.push_back(rec);
 		}
 		assert(in.eof());
