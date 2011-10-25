@@ -16,6 +16,8 @@
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
+#include <boost/lambda/bind.hpp>
+//#include <boost/lambda/lambda.hpp>
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -29,6 +31,7 @@
 
 using namespace std;
 using namespace rel_ops;
+using namespace boost::lambda;
 using boost::tie;
 
 #define PROGRAM "abyss-filtergraph"
@@ -299,8 +302,20 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 	sc.swap(out);
 }
 
+/** Return the value of the bit at the specified index. */
+struct Marked : unary_function<vertex_descriptor, bool> {
+	typedef vector<bool> Data;
+	Marked(const Data& data) : m_data(data) { }
+	bool operator()(vertex_descriptor u) const
+	{
+		return m_data[ContigID(u)];
+	}
+  private:
+	const Data& m_data;
+};
+
 /** Finds all potentially removable contigs in the graph. */
-static void findShortContigs(const Graph& g,
+static void findShortContigs(const Graph& g, const vector<bool>& seen,
 		vector<vertex_descriptor>& sc)
 {
 	typedef graph_traits<Graph> GTraits;
@@ -308,7 +323,8 @@ static void findShortContigs(const Graph& g,
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	copy_if(first, second, back_inserter(sc),
-			bind1st(ptr_fun(removable), &g));
+			compose2(logical_and<bool>(),
+				not1(Marked(seen)), bind(removable, &g, _1)));
 }
 
 /** Functor used for sorting contigs based on degree, then size,
@@ -348,12 +364,12 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	}
 };
 
-static void removeShims(Graph& g)
+static void removeShims(Graph& g, const vector<bool>& seen)
 {
 	if (opt::verbose > 0)
 		cerr << "Removing shims from graph...\n";
 	vector<vertex_descriptor> shortContigs;
-	findShortContigs(g, shortContigs);
+	findShortContigs(g, seen, shortContigs);
 	for (unsigned i = 0; !shortContigs.empty(); ++i) {
 		if (opt::verbose > 0)
 			cerr << "Starting pass " << i << ": There are "
@@ -501,7 +517,7 @@ int main(int argc, char** argv)
 
 	// Remove shims.
 	if (opt::shim)
-		removeShims(g);
+		removeShims(g, seen);
 
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
