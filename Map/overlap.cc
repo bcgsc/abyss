@@ -265,16 +265,9 @@ static void addVertices(const string& path, Graph& g)
 	typedef vertex_property<Graph>::type VP;
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
-	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
-	for (FastaRecord rec; in >> rec;) {
-		assert(isalpha(rec.seq[0]));
-		ContigID::insert(rec.id);
-		VP vp(0, 0);
-		istringstream ss(rec.comment);
-		ss >> vp;
-		vp.length = rec.seq.length();
-		add_vertex(vp, g);
-	}
+	ifstream in(path.c_str());
+	assert_good(in, path);
+	in >> g;
 	ContigID::lock();
 	assert(in.eof());
 }
