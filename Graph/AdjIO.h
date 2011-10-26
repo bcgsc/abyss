@@ -74,6 +74,9 @@ std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
 		EP ep;
 		in >> ep;
 		assert(in);
+		if (in.peek() != ' ')
+			in >> Ignore(' ');
+
 		E e;
 		bool found;
 		boost::tie(e, found) = edge(u, v, g);
@@ -83,7 +86,6 @@ std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
 			ref = betterEP(ref, ep);
 		} else
 			g.Graph::add_edge(u, v, ep);
-		assert(in.peek() == ' ' || in.eof());
 	}
 	assert(in.eof());
 	return in;
