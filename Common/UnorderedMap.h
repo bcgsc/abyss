@@ -5,6 +5,8 @@
 
 #if HAVE_UNORDERED_MAP
 # include <unordered_map>
+using std::unordered_map;
+using std::unordered_multimap;
 #elif HAVE_TR1_UNORDERED_MAP
 # include <tr1/unordered_map>
 using std::tr1::unordered_map;
