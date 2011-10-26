@@ -36,7 +36,7 @@ struct FAIRecord
 		if (!in)
 			return in;
 		assert(o.size == lineLen || lineLen == lineBinLen);
-		return in >> ignore('\n');
+		return in >> Ignore('\n');
 	}
 };
 
@@ -77,11 +77,11 @@ class FastaIndex
 		assert_good(in, path);
 		char c;
 		for (std::string id;
-				in >> c && in >> id && in >> ignore('\n');) {
+				in >> c && in >> id && in >> Ignore('\n');) {
 			assert(c == '>');
 			assert(!id.empty());
 			std::streampos offset = in.tellg();
-			in >> ignore('\n');
+			in >> Ignore('\n');
 			size_t n = in.gcount();
 			assert(n > 0);
 			m_data.push_back(FAIRecord(offset, n - 1, id));

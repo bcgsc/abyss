@@ -25,18 +25,18 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 	while (in && in.peek() != EOF) {
 		switch (in.peek()) {
 		  case 'H':
-			in >> expect("HT") >> ignore('\n');
+			in >> expect("HT") >> Ignore('\n');
 			assert(in);
 			break;
 		  case 'V': {
 			std::string uname;
-			in >> expect("VT") >> uname >> std::ws >> ignore('\t');
+			in >> expect("VT") >> uname >> std::ws >> Ignore('\t');
 			assert(in);
 			VP vp;
 			put(vertex_length, vp, in.gcount() - 1);
 			V u = add_vertex(vp, g);
 			put(vertex_name, g, u, uname);
-			in >> ignore('\n');
+			in >> Ignore('\n');
 			assert(in);
 			break;
 		  }
@@ -47,7 +47,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			in >> expect("ED") >> u >> v
 				>> s1 >> e1 >> l1
 				>> s2 >> e2 >> l2
-				>> rc >> nd >> ignore('\n');
+				>> rc >> nd >> Ignore('\n');
 			assert(in);
 			assert(e1 - s1 == e2 - s2);
 			assert(((s1 > 0) != (s2 > 0)) ^ rc);

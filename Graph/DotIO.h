@@ -168,7 +168,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 	bool addVertices = num_vertices(g) == 0;
 
 	// Graph properties
-	in >> expect("digraph") >> ignore('{');
+	in >> expect("digraph") >> Ignore('{');
 	assert(in);
 
 	edge_property_type defaultEdgeProp;
@@ -177,7 +177,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 		  case 'g': {
 			// Graph Properties
 			unsigned k;
-			in >> expect("graph [ k =") >> k >> ignore(']');
+			in >> expect("graph [ k =") >> k >> Ignore(']');
 			assert(in);
 			if (opt::k > 0)
 				assert(k == opt::k);
@@ -186,7 +186,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 		  }
 		  case 'e': // edge
 			// Default edge properties
-			in >> expect("edge [") >> defaultEdgeProp >> ignore(']');
+			in >> expect("edge [") >> defaultEdgeProp >> Ignore(']');
 			assert(in);
 			break;
 		  default:
@@ -213,7 +213,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 		} else if (c == '[') {
 			// Vertex properties
 			vertex_property_type vp;
-			in >> vp >> ignore(']');
+			in >> vp >> Ignore(']');
 			assert(in);
 			if (addVertices) {
 				vertex_descriptor u = add_vertex(vp, g);
@@ -253,7 +253,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 				edge_property_type ep = defaultEdgeProp;
 				if (in >> std::ws && in.peek() == '[') {
 					// Edge properties
-					in >> expect("[") >> ep >> ignore(']');
+					in >> expect("[") >> ep >> Ignore(']');
 					assert(in);
 				}
 

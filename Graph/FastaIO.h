@@ -29,7 +29,7 @@ std::istream& read_fasta(std::istream& in, Graph& g)
 		ss >> vp;
 		size_t n = 0;
 		while (in >> std::ws && in.peek() != '>' && in) {
-			in >> ignore('\n');
+			in >> Ignore('\n');
 			assert(in);
 			assert(in.gcount() > 1);
 			n += in.gcount() - 1;

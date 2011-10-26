@@ -52,15 +52,15 @@ static inline std::istream& operator>>(std::istream& in, expect o)
 
 /** This input stream manipulator discards characters until reaching
  * the delimeter. */
-struct ignore {
+struct Ignore {
 	const char delim;
 	size_t n;
-	ignore(const char delim,
+	Ignore(const char delim,
 			size_t n = std::numeric_limits<std::streamsize>::max())
 		: delim(delim), n(n) { }
 };
 
-static inline std::istream& operator>>(std::istream& in, ignore o)
+static inline std::istream& operator>>(std::istream& in, Ignore o)
 {
 	return in.ignore(o.n, o.delim);
 }

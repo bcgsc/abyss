@@ -129,7 +129,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 				put(vertex_length, vp, length);
 			} else
 				in >> vp;
-			in >> ignore('\n');
+			in >> Ignore('\n');
 			assert(in);
 			vertex_descriptor u = add_vertex(vp, g);
 			put(vertex_name, g, u, uname);
@@ -148,7 +148,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 	assert(in);
 	for (ContigID id; in >> id;) {
 		if (adjFormat)
-			in >> ignore(';');
+			in >> Ignore(';');
 		vertex_descriptor u(id, false);
 		for (int sense = false; sense <= true; ++sense) {
 			std::string s;
@@ -163,7 +163,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 				if (ss.peek() == '[') {
 					ss.get();
 					edge_property_type ep;
-					ss >> ep >> ignore(']');
+					ss >> ep >> Ignore(']');
 					g.Graph::add_edge(u ^ sense, v ^ sense, ep);
 				} else
 					g.Graph::add_edge(u ^ sense, v ^ sense);
