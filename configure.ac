@@ -134,7 +134,7 @@ AC_LANG([C++])
 AC_CHECK_HEADERS([ \
 	boost/graph/graph_traits.hpp \
 	google/sparse_hash_map \
-	unordered_map tr1/unordered_map ext/hash_map \
+	unordered_map tr1/unordered_map \
 ])
 
 # Check for Boost.

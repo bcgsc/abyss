@@ -11,28 +11,10 @@
 # include <tr1/unordered_map>
 # define hash_map std::tr1::unordered_map
 # define hash_multimap std::tr1::unordered_multimap
-#elif HAVE_EXT_HASH_MAP
-# define USING_EXT_HASH_MAP 1
-# undef __DEPRECATED
-# include <ext/hash_map>
-using __gnu_cxx::hash_map;
-using __gnu_cxx::hash_multimap;
 #else
-# error A hash map implementation is required.
-#endif
-
-#if USING_EXT_HASH_MAP
-# include <cstddef>
-# include <string>
-// Implement a string hash function so that a string can be used as
-// a key in STL maps and set.
-namespace __gnu_cxx {
-	template<> struct hash<std::string> {
-		size_t operator()(const std::string& s) const {
-			return hash<const char*>()(s.c_str());
-		}
-	};
-}
+# include <boost/unordered_map.hpp>
+# define hash_map boost::unordered_map
+# define hash_multimap boost::unordered_multimap
 #endif
 
 #endif

@@ -34,11 +34,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		/** Shrink the hash table. */
 		void shrink() {
-#if USING_EXT_HASH_MAP
-			m_data.resize(0);
-#else
 			m_data.rehash(0);
-#endif
 			printLoad();
 		}
 
