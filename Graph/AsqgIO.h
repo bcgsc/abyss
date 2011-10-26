@@ -22,6 +22,9 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 	typedef typename vertex_property<Graph>::type VP;
 	typedef typename edge_property<Graph>::type EP;
 
+	// Add vertices if this graph is empty.
+	bool addVertices = num_vertices(g) == 0;
+
 	while (in && in.peek() != EOF) {
 		switch (in.peek()) {
 		  case 'H':
@@ -32,12 +35,20 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			std::string uname;
 			in >> expect("VT") >> uname >> std::ws >> Ignore('\t');
 			assert(in);
-			VP vp;
-			put(vertex_length, vp, in.gcount() - 1);
-			V u = add_vertex(vp, g);
-			put(vertex_name, g, u, uname);
+			unsigned length = in.gcount() - 1;
+			assert(length > 0);
 			in >> Ignore('\n');
 			assert(in);
+
+			if (addVertices) {
+				VP vp;
+				put(vertex_length, vp, length);
+				V u = add_vertex(vp, g);
+				put(vertex_name, g, u, uname);
+			} else {
+				V u(uname, false);
+				assert(get(vertex_index, g, u) < num_vertices(g));
+			}
 			break;
 		  }
 		  case 'E': {
