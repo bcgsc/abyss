@@ -4,6 +4,7 @@
 #include "FastaReader.h"
 #include "IOUtil.h"
 #include "Uncompress.h"
+#include "UnorderedMap.h"
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
@@ -94,7 +95,7 @@ struct ContigCount {
 };
 
 /** A map of contigs. The alignments reference the contig by name. */
-typedef hash_map<string, ContigCount> ContigMap;
+typedef unordered_map<string, ContigCount> ContigMap;
 static ContigMap g_contigs;
 
 /** Read all contigs in and store the contigs in g_contigs and make a

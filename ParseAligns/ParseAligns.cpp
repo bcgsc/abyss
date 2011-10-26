@@ -6,6 +6,7 @@
 #include "SAM.h"
 #include "StringUtil.h" // for toSI
 #include "Uncompress.h"
+#include "UnorderedMap.h"
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -98,10 +99,10 @@ static ofstream fragFile;
 static Histogram histogram;
 
 /** A map of read IDs to alignments. */
-typedef hash_map<string, AlignmentVector> ReadAlignMap;
+typedef unordered_map<string, AlignmentVector> ReadAlignMap;
 
 /** A map of contig IDs to distance estimates. */
-typedef hash_map<string, EstimateRecord> EstimateMap;
+typedef unordered_map<string, EstimateRecord> EstimateMap;
 static EstimateMap estMap;
 
 static bool checkUniqueAlignments(const AlignmentVector& alignVec);

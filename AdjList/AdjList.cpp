@@ -3,12 +3,12 @@
 #include "ContigNode.h"
 #include "ContigProperties.h"
 #include "FastaReader.h"
-#include "HashMap.h"
 #include "Iterator.h"
 #include "Kmer.h"
 #include "StringUtil.h"
 #include "SuffixArray.h"
 #include "Uncompress.h"
+#include "UnorderedMap.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
@@ -138,7 +138,7 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 }
 
 /** An index of suffixes of k-1 bp. */
-typedef hash_map<Kmer, vector<ContigNode>, hashKmer> SuffixMap;
+typedef unordered_map<Kmer, vector<ContigNode>, hashKmer> SuffixMap;
 
 /** Read contigs. Add contig properties to the graph. Add prefixes to
  * the collection and add suffixes to their index.

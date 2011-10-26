@@ -2,7 +2,7 @@
 #define DICTIONARY_H 1
 
 #include "ConstString.h"
-#include "HashMap.h"
+#include "UnorderedMap.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -16,7 +16,7 @@ class Dictionary {
 		typedef cstring key_reference;
 		typedef std::vector<const_string> Vector;
 		typedef unsigned index_type;
-		typedef hash_map<key_reference, index_type> Map;
+		typedef unordered_map<key_reference, index_type> Map;
 
 		Dictionary() : m_locked(false) { }
 

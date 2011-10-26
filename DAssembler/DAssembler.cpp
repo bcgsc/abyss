@@ -1,5 +1,5 @@
 #include "config.h"
-#include "HashMap.h"
+#include "UnorderedMap.h"
 #include <algorithm>
 #include <getopt.h>
 #include <iostream>
@@ -435,7 +435,7 @@ int main(int argc, char** argv)
     // Assume the first read in the file is the seed for the assembly
     if(opt::verbose){cerr << "Reading `" << fasta_file << "'...  ";}
 
-    typedef hash_map<string, unsigned> ReadMap;
+    typedef unordered_map<string, unsigned> ReadMap;
     ReadMap read_map;
 
     bool first_read = true;

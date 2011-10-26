@@ -5,8 +5,8 @@
 #include "Align/Options.h"
 #include "ConstString.h"
 #include "Functional.h"
-#include "HashMap.h"
 #include "Kmer.h"
+#include "UnorderedMap.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring> // for strcpy
@@ -141,14 +141,15 @@ struct Position
 	}
 };
 
-typedef hash_multimap<Kmer, Position, hashKmer> SeqPosHashMultiMap;
+typedef unordered_multimap<Kmer, Position, hashKmer>
+	SeqPosHashMultiMap;
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
 typedef google::sparse_hash_map<Kmer, Position,
 		hashKmer> SeqPosHashUniqueMap;
 #else
-typedef hash_map<Kmer, Position, hashKmer> SeqPosHashUniqueMap;
+typedef unordered_map<Kmer, Position, hashKmer> SeqPosHashUniqueMap;
 #endif
 
 

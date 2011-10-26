@@ -2,6 +2,7 @@
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
+#include "UnorderedMap.h"
 #include <algorithm>
 #include <cerrno>
 #include <climits>
@@ -116,9 +117,9 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 }
 
 #if SAM_SEQ_QUAL
-typedef hash_map<string, SAMRecord> Alignments;
+typedef unordered_map<string, SAMRecord> Alignments;
 #else
-typedef hash_map<string, SAMAlignment> Alignments;
+typedef unordered_map<string, SAMAlignment> Alignments;
 #endif
 
 /** Start of the data segment. */

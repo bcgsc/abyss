@@ -10,8 +10,8 @@
 typedef google::sparse_hash_map<Kmer, KmerData,
 		hashKmer> SequenceDataHash;
 #else
-# include "HashMap.h"
-typedef hash_map<Kmer, KmerData, hashKmer> SequenceDataHash;
+# include "UnorderedMap.h"
+typedef unordered_map<Kmer, KmerData, hashKmer> SequenceDataHash;
 #endif
 
 /** The interface of a map of Kmer to KmerData. */

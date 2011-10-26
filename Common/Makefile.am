@@ -16,7 +16,6 @@ libcommon_a_SOURCES = \
 	Fcontrol.cpp Fcontrol.h \
 	Functional.h \
 	HashFunction.cpp HashFunction.h \
-	HashMap.h \
 	Histogram.cpp Histogram.h \
 	IOUtil.h \
 	Iterator.h \
@@ -32,4 +31,5 @@ libcommon_a_SOURCES = \
 	StringUtil.h \
 	SuffixArray.h \
 	Timer.cpp Timer.h \
-	Uncompress.cpp Uncompress.h
+	Uncompress.cpp Uncompress.h \
+	UnorderedMap.h
