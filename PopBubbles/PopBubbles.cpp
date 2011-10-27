@@ -611,6 +611,8 @@ int main(int argc, char** argv)
 	string adjPath(argv[optind++]);
 
 	// Read the contig adjacency graph.
+	if (opt::verbose > 0)
+		cerr << "Reading `" << adjPath << "'...\n";
 	ifstream fin(adjPath.c_str());
 	assert_good(fin, adjPath);
 	Graph g;
@@ -621,6 +623,8 @@ int main(int argc, char** argv)
 	// Read the contigs.
 	Contigs& contigs = g_contigs;
 	if (opt::identity > 0) {
+		if (opt::verbose > 0)
+			cerr << "Reading `" << contigsPath << "'...\n";
 		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			ContigID id(rec.id);
