@@ -518,6 +518,8 @@ int main(int argc, char** argv)
 	fin >> g;
 	assert(fin.eof());
 	ContigID::lock();
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
 
 	// Read the contigs.
 	Contigs& contigs = g_contigs;
@@ -596,6 +598,8 @@ int main(int argc, char** argv)
 		assert_good(fout, opt::graphPath);
 		write_graph(fout, g, PROGRAM, commandLine);
 		assert_good(fout, opt::graphPath);
+		if (opt::verbose > 0)
+			printGraphStats(cerr, g);
 	}
 
 	return 0;
