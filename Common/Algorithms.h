@@ -25,9 +25,15 @@ using std::copy_if;
  * starting at result for which the predicate p is true. */
 template<class InputIt, class OutputIt, class Pred>
 OutputIt copy_if(InputIt first, InputIt last, OutputIt result,
-		Pred p)
+		Pred pred)
 {
-	return remove_copy_if(first, last, result, std::not1(p));
+	for (; first != last; ++first) {
+		if (pred(*first)) {
+			*result = *first;
+			++result;
+		}
+	}
+	return result;
 }
 #endif
 

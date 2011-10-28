@@ -17,7 +17,7 @@
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
 #include <boost/lambda/bind.hpp>
-//#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/lambda.hpp>
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -323,8 +323,7 @@ static void findShortContigs(const Graph& g, const vector<bool>& seen,
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	copy_if(first, second, back_inserter(sc),
-			compose2(logical_and<bool>(),
-				not1(Marked(seen)), bind(removable, &g, _1)));
+			!bind(Marked(seen), _1) && bind(removable, &g, _1));
 }
 
 /** Functor used for sorting contigs based on degree, then size,
