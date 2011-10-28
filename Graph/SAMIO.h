@@ -36,8 +36,10 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 			continue;
 		const vertex_property_type& vp = g[*u];
 		out << "@SQ\tSN:" << ContigID(*u)
-			<< "\tLN:" << vp.length
-			<< "\tXC:" << vp.coverage << '\n';
+			<< "\tLN:" << vp.length;
+		if (vp.coverage > 0)
+			out << "\tXC:" << vp.coverage;
+		out << '\n';
 	}
 
 	std::pair<edge_iterator, edge_iterator> eit = edges(g);
