@@ -2,7 +2,7 @@
 #define SAMIO_H 1
 
 #include "ContigNode.h"
-#include "ContigProperties.h" // for edge_distance
+#include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
 #include <ostream>
 

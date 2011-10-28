@@ -3,6 +3,9 @@
 
 #include <boost/graph/properties.hpp>
 
+/** The distance between two vertices. */
+enum edge_distance_t { edge_distance };
+
 /** The coverage of a vertex. */
 enum vertex_coverage_t { vertex_coverage };
 
@@ -33,6 +36,7 @@ using boost::vertex_bundle_type;
 using boost::vertex_property;
 
 namespace boost {
+	BOOST_INSTALL_PROPERTY(edge, distance);
 	BOOST_INSTALL_PROPERTY(vertex, coverage);
 	BOOST_INSTALL_PROPERTY(vertex, length);
 	BOOST_INSTALL_PROPERTY(vertex, removed);

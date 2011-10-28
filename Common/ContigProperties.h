@@ -119,9 +119,6 @@ static inline ContigProperties& operator+=(
 	return a;
 }
 
-/** The distance between two vertices. */
-enum edge_distance_t { edge_distance };
-
 /** Return the distance between two vertices. */
 template <typename Graph>
 int get(edge_distance_t, const Graph& g,
