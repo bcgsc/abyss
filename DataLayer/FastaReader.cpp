@@ -185,7 +185,6 @@ next_record:
 			}
 			ignoreLines(1);
 			getline(q);
-			checkSeqQual(s, q);
 		} else
 			q.clear();
 
@@ -202,7 +201,7 @@ next_record:
 			assert(s.length() > 2);
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
-			q.erase(0, 2);
+			q.erase(0, 1);
 		} else if (opt::trimMasked) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
@@ -215,6 +214,8 @@ next_record:
 				q.erase(0, trimFront);
 			}
 		}
+		if (!q.empty())
+			checkSeqQual(s, q);
 		if (flagFoldCase())
 			transform(s.begin(), s.end(), s.begin(), ::toupper);
 
