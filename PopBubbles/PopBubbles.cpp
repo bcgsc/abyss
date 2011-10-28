@@ -20,6 +20,7 @@
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
+#include "Graph/PopBubbles.h"
 #include <algorithm>
 #include <climits> // for UINT_MAX
 #include <fstream>
@@ -126,31 +127,6 @@ static vector<ContigID> g_popped;
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
 typedef Graph::adjacency_iterator adjacency_iterator;
-
-/** Record a topological order of the vertices. */
-template <typename OutIt>
-struct TopoVisitor : public boost::default_dfs_visitor
-{
-	TopoVisitor(OutIt it) : m_it(it) { }
-
-	template <typename Vertex, typename Graph>
-	void finish_vertex(const Vertex& u, Graph&) { *m_it++ = u; }
-
-  private:
-	OutIt m_it;
-};
-
-/** Record a topological order of the vertices. */
-template <typename Graph, typename It>
-static void topologicalSort(const Graph& g, It it)
-{
-	using boost::default_color_type;
-	using boost::vector_property_map;
-	typedef vector_property_map<
-		default_color_type, ContigNodeIndexMap> ColorMap;
-	depthFirstSearch(g, TopoVisitor<It>(it),
-			ColorMap(num_vertices(g)));
-}
 
 /** Return the distance from vertex u to v. */
 static int getDistance(const Graph& g,
@@ -340,83 +316,6 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 	g_count.popped++;
 	popBubble(g, v, tail);
 	return true;
-}
-
-/** Return true if the specified sequence of vertices is a bubble. */
-template <typename Graph, typename It>
-static bool isBubble(const Graph& g, It first, It last)
-{
-	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
-	typedef typename graph_traits<Graph>::vertex_descriptor V;
-	assert(last - first > 1);
-	if (last - first == 2)
-		return false; // unambiguous edge
-	if (*first == ~last[-1])
-		return false; // palindrome
-	set<V> targets(first, first + 1);
-	for (It it = first; it != last - 1; ++it) {
-		pair<Ait, Ait> adj = adjacent_vertices(*it, g);
-		targets.insert(adj.first, adj.second);
-	}
-	set<V> sources(last - 1, last);
-	for (It it = first + 1; it != last; ++it) {
-		pair<Ait, Ait> adj = adjacent_vertices(~*it, g);
-		transform(adj.first, adj.second,
-				inserter(sources, sources.end()),
-				mem_fun_ref(&V::operator~));
-	}
-	set<V> bubble(first, last);
-	return sources == bubble && targets == bubble;
-}
-
-typedef vector<ContigNode> Bubble;
-typedef vector<Bubble> Bubbles;
-
-/** Discover bubbles. */
-static Bubbles discoverBubbles(const Graph& g)
-{
-	typedef graph_traits<Graph>::vertex_descriptor V;
-
-	vector<V> topo(num_vertices(g));
-	topologicalSort(g, topo.rbegin());
-
-	Bubbles bubbles;
-	typedef vector<V>::const_iterator It;
-	for (It first = topo.begin(); first != topo.end(); ++first) {
-		int sum = out_degree(*first, g);
-		if (sum < 2)
-			continue;
-		if (opt::verbose > 3)
-			cerr << "* " << *first << '\n';
-		for (It it = first + 1; it != topo.end(); ++it) {
-			unsigned indeg = in_degree(*it, g);
-			unsigned outdeg = out_degree(*it, g);
-			sum -= indeg;
-
-			if (opt::verbose > 3)
-				cerr << *it << '\t' << indeg << '\t' << outdeg
-					<< '\t' << sum
-					<< '\t' << sum + (int)outdeg << '\n';
-
-			if (indeg == 0 || sum < 0)
-				break;
-			if (sum == 0) {
-				It last = it + 1;
-				if (isBubble(g, first, last)) {
-					if (opt::verbose > 3)
-						cerr << "good\n";
-					bubbles.push_back(Bubble(first, last));
-					first = it - 1;
-				}
-				break;
-			}
-
-			if (outdeg == 0)
-				break;
-			sum += outdeg;
-		}
-	}
-	return bubbles;
 }
 
 /** Add distances to a path. */
