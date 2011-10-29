@@ -24,7 +24,7 @@ class PDF
 	}
 
 	/** Return the probability of x. */
-	double getP(size_t x) const
+	double operator[](size_t x) const
 	{
 		return x < m_dist.size() ? m_dist[x] : m_minp;
 	}

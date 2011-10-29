@@ -64,13 +64,12 @@ static double computeLikelihood(int theta, const Histogram& samples,
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
 		int x = it->first + theta;
-		double p = pdf.getP(x);
 		/* When randomly selecting fragments that span a given point,
 		 * longer fragments are more likely to be selected than
 		 * shorter fragments.
 		 */
-		sum += it->second * log(p * window(x));
-		if (p > pdf.getMinP())
+		sum += it->second * log(pdf[x] * window(x));
+		if (pdf[x] > pdf.getMinP())
 			n += it->second;
 	}
 	return sum;
