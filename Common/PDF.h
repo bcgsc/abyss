@@ -8,7 +8,7 @@
 
 class Histogram;
 
-/** Probability distribution function */
+/** Probability mass function */
 class PDF
 {
   public:
