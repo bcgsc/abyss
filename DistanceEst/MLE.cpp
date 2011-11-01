@@ -2,7 +2,6 @@
 #include "PDF.h"
 #include <algorithm> // for swap
 #include <cassert>
-#include <climits> // for INT_MAX
 #include <limits> // for numeric_limits
 
 using namespace std;
@@ -52,11 +51,12 @@ class WindowFunction {
  * @param samples the samples
  * @param pdf the PDF scaled by the window function
  * @param window the window function used to scale the PDF
- * @param n [out] the number of samples with a non-zero probability
+ * @param c the normalizing constant of the PMF
+ * @param[out] n the number of samples with a non-zero probability
  * @return the log likelihood
  */
 static double computeLikelihood(int theta, const Histogram& samples,
-		const PDF& pdf, const WindowFunction& window,
+		const PDF& pdf, const WindowFunction& window, double c,
 		unsigned &n)
 {
 	n = 0;
@@ -64,11 +64,12 @@ static double computeLikelihood(int theta, const Histogram& samples,
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
 		int x = it->first + theta;
+
 		/* When randomly selecting fragments that span a given point,
 		 * longer fragments are more likely to be selected than
 		 * shorter fragments.
 		 */
-		sum += it->second * log(pdf[x] * window(x));
+		sum += it->second * log(pdf[x] * window(x) / c);
 		if (pdf[x] > pdf.getMinP())
 			n += it->second;
 	}
@@ -78,16 +79,23 @@ static double computeLikelihood(int theta, const Histogram& samples,
 /** Return the most likely distance between two contigs. */
 static int maximumLikelihoodEstimate(int first, int last,
 		const Histogram& samples,
-		const PDF& pdf, const WindowFunction& window,
+		const PDF& pdf,
+		unsigned len0, unsigned len1,
 		unsigned &n)
 {
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
 	unsigned bestn = 0;
 	for (int theta = first; theta < last; theta++) {
+		// Calculate the normalizing constant of the PMF.
+		WindowFunction window(len0, len1, theta);
+		double c = 0;
+		for (int i = first; i < last; ++i)
+			c += pdf[i] * window(i);
+
 		unsigned trialn;
 		double likelihood = computeLikelihood(theta, samples,
-				pdf, window, trialn);
+				pdf, window, c, trialn);
 		if (likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
 			bestTheta = theta;
@@ -116,8 +124,6 @@ int maximumLikelihoodEstimate(int first, int last,
 		swap(len0, len1);
 
 	Histogram h(samples.begin(), samples.end());
-	int d0 = maximumLikelihoodEstimate(first, last, h,
-			pdf, WindowFunction(len0, INT_MAX/2, 0), n);
 	return maximumLikelihoodEstimate(first, last, h,
-			pdf, WindowFunction(len0, len1, d0), n);
+			pdf, len0, len1, n);
 }
