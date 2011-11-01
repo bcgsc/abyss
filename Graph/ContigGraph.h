@@ -82,6 +82,11 @@ class in_edge_iterator
 		return m_it == it.m_it;
 	}
 
+	bool operator!=(const in_edge_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
 	in_edge_iterator& operator++() { ++m_it; return *this; }
 
 	in_edge_iterator operator++(int)
