@@ -358,6 +358,18 @@ map<ContigNode, int> makeDistanceMap(const Graph& g,
 	return distances;
 }
 
+/** Print a distance map. */
+static void printDistanceMap(ostream& out, const Graph& g,
+		const ContigNode& u, const ContigPath& path)
+{
+	typedef map<ContigNode, int> DistanceMap;
+	DistanceMap distanceMap = makeDistanceMap(g, u, path);
+	for (DistanceMap::const_iterator it = distanceMap.begin();
+			it != distanceMap.end(); ++it)
+		out << '"' << u << "\" -> \"" << it->first
+			<< "\" [d=" << it->second << "]\n";
+}
+
 /** Find a path for the specified distance estimates.
  * @param out [out] the solution path
  */
@@ -530,6 +542,9 @@ static void handleEstimate(const Graph& g,
 		assert(solutions.size() == 1);
 		assert(bestSol != solutions.end());
 		ContigPath& path = *bestSol;
+		if (opt::verbose > 1)
+			printDistanceMap(vout, g, origin, path);
+
 		extend(g, path.back(), back_inserter(path));
 		out.insert(out.end(), path.begin(), path.end());
 		stats.uniqueEnd++;
