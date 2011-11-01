@@ -514,10 +514,9 @@ static overlap_align mergeContigs_SW(Sequence& seq, const Sequence& s,
  * generate a consensus sequence of the overlapping region. The result
  * is stored in the first argument.
  */
-static void mergeContigs(Sequence& seq, const Sequence& s,
-	const ContigNode& node, const Path& path)
+static void mergeContigs(unsigned overlap, Sequence& seq,
+		const Sequence& s, const ContigNode& node, const Path& path)
 {
-	unsigned overlap = opt::k - 1;
 	assert(s.length() > overlap);
 	Sequence ao;
 	Sequence bo(s, 0, overlap);
@@ -540,7 +539,7 @@ static void mergeContigs(Sequence& seq, const Sequence& s,
 	}
 }
 
-static Sequence mergePath(const Path& path)
+static Sequence mergePath(const Graph&g, const Path& path)
 {
 	Sequence seq;
 	Path::const_iterator prev_it;
@@ -560,7 +559,10 @@ static Sequence mergePath(const Path& path)
 				mergeContigs_SW(seq, getSequence(*it),
 					*it, path);
 #else
-			mergeContigs(seq, getSequence(*it), *it, path);
+			int d = get(edge_bundle, g, *(it-1), *it).distance;
+			assert(d < 0);
+			unsigned overlap = -d;
+			mergeContigs(overlap, seq, getSequence(*it), *it, path);
 #endif
 		}
 		prev_it = it;
@@ -607,7 +609,7 @@ static ContigPath alignPair(const Graph& g,
 		// This entire sequence may be deleted.
 		const ContigPath& sol(fstSol.empty() ? sndSol : fstSol);
 		assert(!sol.empty());
-		Sequence consensus(mergePath(sol));
+		Sequence consensus(mergePath(g, sol));
 		assert(consensus.size() > opt::k - 1);
 		string::iterator first = consensus.begin() + opt::k - 1;
 		transform(first, consensus.end(), first, ::tolower);
@@ -632,8 +634,8 @@ static ContigPath alignPair(const Graph& g,
 		return path;
 	}
 
-	Sequence fstPathContig(mergePath(fstSol));
-	Sequence sndPathContig(mergePath(sndSol));
+	Sequence fstPathContig(mergePath(g, fstSol));
+	Sequence sndPathContig(mergePath(g, sndSol));
 	if (fstPathContig == sndPathContig) {
 		// A perfect match must be caused by palindrome.
 		assert(fstSol.size() == sndSol.size());
@@ -754,7 +756,7 @@ static ContigPath alignMulti(const Graph& g,
 		Path path(solIter->begin() + longestPrefix,
 				solIter->end() - longestSuffix);
 		if (!path.empty()) {
-			amb_seqs.push_back(mergePath(path));
+			amb_seqs.push_back(mergePath(g, path));
 			coverage += calculatePathProperties(g, path).coverage;
 		} else {
 			// The prefix and suffix paths overlap by k-1 bp.
