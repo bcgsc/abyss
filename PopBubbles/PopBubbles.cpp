@@ -3,6 +3,7 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
+#include "dialign.h"
 #include "config.h"
 #include "Common/Options.h"
 #include "ConstString.h"
@@ -13,7 +14,6 @@
 #include "Iterator.h"
 #include "Sequence.h"
 #include "Uncompress.h"
-#include "alignGlobal.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DepthFirstSearch.h"
@@ -98,9 +98,12 @@ namespace opt {
 
 	/** Number of threads. */
 	static int threads = 1;
+	static int dialign_debug;
+	static string dialign_score;
+	static string dialign_prob;
 }
 
-static const char shortopts[] = "b:c:g:j:k:p:v";
+static const char shortopts[] = "b:c:g:j:k:p:vD:M:P:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -117,6 +120,9 @@ static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
+	{ "dialign-d",   required_argument, NULL, 'D' },
+	{ "dialign-m",   required_argument, NULL, 'M' },
+	{ "dialign-p",   required_argument, NULL, 'P' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -180,7 +186,6 @@ static struct {
 	unsigned scaffold;
 	unsigned notSimple;
 	unsigned tooLong;
-	unsigned tooMany;
 	unsigned dissimilar;
 } g_count;
 
@@ -203,24 +208,65 @@ static unsigned getLength(const Graph* g, vertex_descriptor v)
 	return (*g)[v].length;
 }
 
+/** @return the distance from v to the previous contig. */
+static int getInDist(const Graph* g,
+		vertex_descriptor v)
+{
+	assert(in_degree(v, *g) == 1);
+	typedef graph_traits<Graph>::in_edge_iterator IEit;
+	pair<IEit, IEit> ies = in_edges(v, *g);
+	return (*g)[*ies.first].distance;
+}
+
+/** @return the distance from v to the next contig. */
+static int getOutDist(const Graph* g,
+		vertex_descriptor v)
+{
+	assert(out_degree(v, *g) == 1);
+	typedef graph_traits<Graph>::out_edge_iterator OEit;
+	pair<OEit, OEit> oes = out_edges(v, *g);
+	return (*g)[*oes.first].distance;
+}
+
 /** Align the sequences of [first,last).
  * @return the identity of the global alignment
  */
 template <typename It>
-static float getAlignmentIdentity(It first, It last)
+static float getAlignmentIdentity(const Graph& g, It first, It last)
 {
-	assert(distance(first, last) == 2);
-	(void)last;
-	string seqa = getSequence(*first);
-	++first;
-	string seqb = getSequence(*first);
+	unsigned nbranches = distance(first, last);
+	vector<string> seqs(nbranches);
+	transform(first, last, seqs.begin(), getSequence);
+	vector<int> inDists(nbranches);
+	transform(first, last, inDists.begin(),
+			bind1st(ptr_fun(getInDist), &g));
+	vector<int> outDists(nbranches);
+	transform(first, last, outDists.begin(),
+			bind1st(ptr_fun(getOutDist), &g));
 
-	NWAlignment alignment;
-	unsigned matches = alignGlobal(seqa, seqb, alignment);
+	int max_in_overlap = -(*min_element(inDists.begin(),
+			inDists.end()));
+	assert(max_in_overlap >= 0);
+	int max_out_overlap = -(*min_element(outDists.begin(),
+			outDists.end()));
+	assert(max_out_overlap >= 0);
+	vector<string> fixed_seqs;
+
+	for (unsigned i = 0; i < seqs.size(); i++) {
+		int n = seqs[i].size();
+		int l = -inDists[i], r = -outDists[i];
+		assert(n > l + r);
+		fixed_seqs.push_back(seqs[i].substr(l, n - l - r));
+	}
+
+	string alignment;
+	unsigned matches;
+	string consensus = dialign(fixed_seqs, alignment, matches);
 	if (opt::verbose > 2)
 #pragma omp critical(cerr)
-		cerr << alignment;
-	return (float)matches / alignment.size();
+		cerr << alignment << consensus << '\n';
+	return (float)(matches + max_in_overlap + max_out_overlap) /
+		(consensus.size() + max_in_overlap + max_out_overlap);
 }
 
 /** Pop the specified bubble if it is a simple bubble.
@@ -271,17 +317,6 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 		cerr << "-> " << tail << '\n';
 	}
 
-	const unsigned MAX_BRANCHES = opt::identity > 0 ? 2 : UINT_MAX;
-	if (nbranches > MAX_BRANCHES) {
-		// Too many branches.
-#pragma omp atomic
-		g_count.tooMany++;
-		if (opt::verbose > 1)
-#pragma omp critical(cerr)
-			cerr << nbranches << " paths (too many)\n";
-		return false;
-	}
-
 	vector<unsigned> lengths(nbranches);
 	transform(adj.first, adj.second, lengths.begin(),
 			bind1st(ptr_fun(getLength), &g));
@@ -299,7 +334,7 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 	}
 
 	float identity = opt::identity == 0 ? 0
-		: getAlignmentIdentity(adj.first, adj.second);
+		: getAlignmentIdentity(g, adj.first, adj.second);
 	bool dissimilar = identity < opt::identity;
 	if (opt::verbose > 1)
 #pragma omp critical(cerr)
@@ -474,6 +509,9 @@ int main(int argc, char** argv)
 			case 'g': arg >> opt::graphPath; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
+			case 'D': arg >> opt::dialign_debug; break;
+			case 'M': arg >> opt::dialign_score; break;
+			case 'P': arg >> opt::dialign_prob; break;
 			case 'p': arg >> opt::identity; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -505,6 +543,13 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	init_parameters();
+	set_parameters_dna();
+	para->DEBUG = opt::dialign_debug;
+	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
+	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
+	initDialign();
 
 	const char* contigsPath(argv[optind++]);
 	string adjPath(argv[optind++]);
@@ -559,6 +604,8 @@ int main(int argc, char** argv)
 	else
 		copy(g_popped.begin(), g_popped.end(),
 				ostream_iterator<ContigID>(cout, "\n"));
+	free_prob_dist(pdist);
+	free(para);
 
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << g_count.bubbles/2
@@ -566,7 +613,6 @@ int main(int argc, char** argv)
 			<< " Scaffolds: " << g_count.scaffold/2
 			<< " Complex: " << g_count.notSimple/2
 			<< " Too long: " << g_count.tooLong/2
-			<< " Too many: " << g_count.tooMany/2
 			<< " Dissimilar: " << g_count.dissimilar/2
 			<< '\n';
 
