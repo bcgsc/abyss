@@ -3,10 +3,10 @@
 
 #include <vector>
 
-class PDF;
+class PMF;
 
 int maximumLikelihoodEstimate(int first, int last,
-		const std::vector<int>& samples, const PDF& pdf,
+		const std::vector<int>& samples, const PMF& pmf,
 		unsigned len0, unsigned len1, bool rf, unsigned& n);
 
 #endif

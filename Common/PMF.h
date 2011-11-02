@@ -1,5 +1,5 @@
-#ifndef STATS_H
-#define STATS_H 1
+#ifndef PMF_H
+#define PMF_H 1
 
 #include "Histogram.h"
 #include <cassert>
@@ -9,11 +9,11 @@
 class Histogram;
 
 /** Probability mass function */
-class PDF
+class PMF
 {
   public:
-	/** Construct a PDF from a histogram. */
-	PDF(const Histogram& h) : m_dist(h.maximum() + 1), m_stdDev(h.sd())
+	/** Construct a PMF from a histogram. */
+	PMF(const Histogram& h) : m_dist(h.maximum() + 1), m_stdDev(h.sd())
 	{
 		unsigned count = h.size();
 		m_minp = (double)1 / count;
@@ -49,7 +49,7 @@ class PDF
 
 namespace std {
 	template<>
-	inline void swap(PDF&, PDF&) { assert(false); }
+	inline void swap(PMF&, PMF&) { assert(false); }
 }
 
 #endif

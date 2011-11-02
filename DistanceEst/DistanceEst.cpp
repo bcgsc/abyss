@@ -2,7 +2,7 @@
 #include "Histogram.h"
 #include "IOUtil.h"
 #include "MLE.h"
-#include "PDF.h"
+#include "PMF.h"
 #include "SAM.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -97,7 +97,7 @@ typedef vector<SAMRecord> AlignPairVec;
  * @return the estimated distance
  */
 static int estimateDistance(unsigned len0, unsigned len1,
-		const AlignPairVec& pairs, const PDF& pdf,
+		const AlignPairVec& pairs, const PMF& pmf,
 		unsigned& numPairs)
 {
 	// The provisional fragment sizes are calculated as if the contigs
@@ -132,14 +132,14 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			it != fragments.end(); ++it)
 		fragmentSizes.push_back(it->second - it->first);
 
-	return maximumLikelihoodEstimate(-opt::k+1, pdf.getMaxIdx(),
-			fragmentSizes, pdf, len0, len1, opt::rf, numPairs);
+	return maximumLikelihoodEstimate(-opt::k+1, pmf.getMaxIdx(),
+			fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
 }
 
 static void writeEstimate(ostream& out,
 		const ContigNode& id0, const ContigNode& id1,
 		unsigned len0, unsigned len1,
-		const AlignPairVec& pairs, const PDF& pdf)
+		const AlignPairVec& pairs, const PMF& pmf)
 {
 	if (pairs.size() < opt::npairs)
 		return;
@@ -147,8 +147,8 @@ static void writeEstimate(ostream& out,
 	Estimate est;
 	est.contig = id1;
 	est.distance = estimateDistance(len0, len1,
-			pairs, pdf, est.numPairs);
-	est.stdDev = pdf.getSampleStdDev(est.numPairs);
+			pairs, pmf, est.numPairs);
+	est.stdDev = pmf.getSampleStdDev(est.numPairs);
 
 	if (est.numPairs >= opt::npairs) {
 		if (opt::dot) {
@@ -169,7 +169,7 @@ static void writeEstimate(ostream& out,
 /** Generate distance estimates for the specified alignments. */
 static void writeEstimates(ostream& out,
 		const vector<SAMRecord>& pairs,
-		const vector<unsigned>& lengthVec, const PDF& pdf)
+		const vector<unsigned>& lengthVec, const PMF& pmf)
 {
 	assert(!pairs.empty());
 	ContigID id0(pairs.front().rname);
@@ -199,7 +199,7 @@ static void writeEstimates(ostream& out,
 			writeEstimate(opt::dot ? out : ss,
 					ContigNode(id0, sense0), it->first,
 					len0, lengthVec[it->first.id()],
-					it->second, pdf);
+					it->second, pmf);
 	}
 	if (!opt::dot)
 #pragma omp critical(out)
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
 			"n: " << h.size() << " "
 			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
 			<< h.barplot() << endl;
-	PDF empiricalPDF(h);
+	PMF pmf(h);
 
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;
@@ -419,7 +419,7 @@ int main(int argc, char** argv)
 		readPairs(it, last, records);
 		if (records.empty())
 			break;
-		writeEstimates(out, records, contigLens, empiricalPDF);
+		writeEstimates(out, records, contigLens, pmf);
 	}
 	assert(in.eof());
 

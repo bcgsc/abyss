@@ -23,7 +23,7 @@ libcommon_a_SOURCES = \
 	Log.cpp Log.h \
 	MemoryUtil.h \
 	Options.cpp Options.h \
-	PDF.h \
+	PMF.h \
 	SeqExt.cpp SeqExt.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \

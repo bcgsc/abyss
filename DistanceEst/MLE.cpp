@@ -1,5 +1,5 @@
 #include "MLE.h"
-#include "PDF.h"
+#include "PMF.h"
 #include <boost/tuple/tuple.hpp>
 #include <algorithm> // for swap
 #include <cassert>
@@ -47,21 +47,21 @@ class WindowFunction {
 
 /** Compute the log likelihood that these samples came from the
  * specified distribution shifted by the parameter theta.
- * @param theta the parameter of the PDF
+ * @param theta the parameter of the PMF, f_theta(x)
  * @param samples the samples
- * @param pdf the PDF
+ * @param pmf the probability mass function
  * @return the log likelihood
  */
 static pair<double, unsigned>
-computeLikelihood(int theta, const Histogram& samples, const PDF& pdf)
+computeLikelihood(int theta, const Histogram& samples, const PMF& pmf)
 {
 	double sum = 0.0f;
 	unsigned n = 0;
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
 		int x = it->first + theta;
-		sum += it->second * log(pdf[x]);
-		if (pdf[x] > pdf.getMinP())
+		sum += it->second * log(pmf[x]);
+		if (pmf[x] > pmf.getMinP())
 			n += it->second;
 	}
 	return make_pair(sum, n);
@@ -72,7 +72,7 @@ computeLikelihood(int theta, const Histogram& samples, const PDF& pdf)
 static pair<int, unsigned>
 maximumLikelihoodEstimate(int first, int last,
 		const Histogram& samples,
-		const PDF& pdf,
+		const PMF& pmf,
 		unsigned len0, unsigned len1)
 {
 	unsigned nsamples = samples.size();
@@ -89,11 +89,11 @@ maximumLikelihoodEstimate(int first, int last,
 		// Calculate the normalizing constant of the PMF.
 		double c = 0;
 		for (int i = first; i < last; ++i)
-			c += pdf[i] * window(i);
+			c += pmf[i] * window(i);
 
 		double likelihood;
 		unsigned n;
-	   	tie(likelihood, n) = computeLikelihood(theta, samples, pdf);
+	   	tie(likelihood, n) = computeLikelihood(theta, samples, pmf);
 		likelihood -= nsamples * log(c);
 		if (likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
@@ -112,7 +112,7 @@ maximumLikelihoodEstimate(int first, int last,
  * @param[out] n the number of samples with a non-zero probability
  */
 int maximumLikelihoodEstimate(int first, int last,
-		const vector<int>& samples, const PDF& pdf,
+		const vector<int>& samples, const PMF& pmf,
 		unsigned len0, unsigned len1, bool rf,
 		unsigned& n)
 {
@@ -137,7 +137,7 @@ int maximumLikelihoodEstimate(int first, int last,
 		int d;
 		tie(d, n) = maximumLikelihoodEstimate(
 				first, last, h,
-				pdf, len0, len1);
+				pmf, len0, len1);
 		return d;
 	} else {
 		// This library is oriented forward-reverse.
@@ -152,7 +152,7 @@ int maximumLikelihoodEstimate(int first, int last,
 		int d;
 		tie(d, n) = maximumLikelihoodEstimate(
 				0, last, h,
-				pdf, len0, len1);
+				pmf, len0, len1);
 		return max(first, d - 2 * (int)overlap);
 	}
 }
