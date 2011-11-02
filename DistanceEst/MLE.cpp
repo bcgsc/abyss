@@ -1,10 +1,13 @@
 #include "MLE.h"
 #include "PDF.h"
+#include <boost/tuple/tuple.hpp>
 #include <algorithm> // for swap
 #include <cassert>
 #include <limits> // for numeric_limits
+#include <utility>
 
 using namespace std;
+using boost::tie;
 
 namespace opt {
 	extern unsigned k;
@@ -52,15 +55,14 @@ class WindowFunction {
  * @param pdf the PDF scaled by the window function
  * @param window the window function used to scale the PDF
  * @param c the normalizing constant of the PMF
- * @param[out] n the number of samples with a non-zero probability
  * @return the log likelihood
  */
-static double computeLikelihood(int theta, const Histogram& samples,
-		const PDF& pdf, const WindowFunction& window, double c,
-		unsigned &n)
+static pair<double, unsigned>
+computeLikelihood(int theta, const Histogram& samples,
+		const PDF& pdf, const WindowFunction& window, double c)
 {
-	n = 0;
 	double sum = 0.0f;
+	unsigned n = 0;
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
 		int x = it->first + theta;
@@ -73,15 +75,16 @@ static double computeLikelihood(int theta, const Histogram& samples,
 		if (pdf[x] > pdf.getMinP())
 			n += it->second;
 	}
-	return sum;
+	return make_pair(sum, n);
 }
 
-/** Return the most likely distance between two contigs. */
-static int maximumLikelihoodEstimate(int first, int last,
+/** Return the most likely distance between two contigs and the number
+ * of pairs that support that estimate. */
+static pair<int, unsigned>
+maximumLikelihoodEstimate(int first, int last,
 		const Histogram& samples,
 		const PDF& pdf,
-		unsigned len0, unsigned len1,
-		unsigned &n)
+		unsigned len0, unsigned len1)
 {
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
@@ -93,23 +96,25 @@ static int maximumLikelihoodEstimate(int first, int last,
 		for (int i = first; i < last; ++i)
 			c += pdf[i] * window(i);
 
-		unsigned trialn;
-		double likelihood = computeLikelihood(theta, samples,
-				pdf, window, c, trialn);
+		double likelihood;
+		unsigned n;
+	   	tie(likelihood, n) = computeLikelihood(theta, samples,
+				pdf, window, c);
 		if (likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
 			bestTheta = theta;
-			bestn = trialn;
+			bestn = n;
 		}
 	}
-	n = bestn;
-	return bestTheta;
+	return make_pair(bestTheta, bestn);
 }
 
-/** Return the most likely distance between two contigs.
+/** Return the most likely distance between two contigs and the number
+ * of pairs that support that distance estimate.
  * @param len0 the length of the first contig in bp
  * @param len1 the length of the second contig in bp
  * @param rf whether the fragment library is oriented reverse-forward
+ * @param[out] n the number of samples with a non-zero probability
  */
 int maximumLikelihoodEstimate(int first, int last,
 		const vector<int>& samples, const PDF& pdf,
@@ -134,9 +139,11 @@ int maximumLikelihoodEstimate(int first, int last,
 	if (rf) {
 		// This library is oriented reverse-forward.
 		Histogram h(samples.begin(), samples.end());
-		return maximumLikelihoodEstimate(
+		int d;
+		tie(d, n) = maximumLikelihoodEstimate(
 				first, last, h,
-				pdf, len0, len1, n);
+				pdf, len0, len1);
+		return d;
 	} else {
 		// This library is oriented forward-reverse.
 		// Subtract 2*x from each sample.
@@ -147,9 +154,10 @@ int maximumLikelihoodEstimate(int first, int last,
 			assert(*it > 2 * (int)overlap);
 			h.insert(*it - 2 * overlap);
 		}
-		int d = maximumLikelihoodEstimate(
+		int d;
+		tie(d, n) = maximumLikelihoodEstimate(
 				0, last, h,
-				pdf, len0, len1, n);
+				pdf, len0, len1);
 		return max(first, d - 2 * (int)overlap);
 	}
 }
