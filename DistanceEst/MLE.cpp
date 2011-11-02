@@ -85,7 +85,7 @@ maximumLikelihoodEstimate(int first, int last,
 	for (int theta = first; theta < last; theta++) {
 		// Calculate the normalizing constant of the PMF, f_theta(x).
 		double c = 0;
-		for (int i = first; i < last; ++i)
+		for (int i = 0; i <= (int)pmf.getMaxIdx(); ++i)
 			c += pmf[i] * window(i - theta);
 
 		double likelihood;
