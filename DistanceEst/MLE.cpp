@@ -46,30 +46,21 @@ class WindowFunction {
 };
 
 /** Compute the log likelihood that these samples came from the
- * specified distribution shifted by the parameter theta and scaled by
- * the specified window function.
+ * specified distribution shifted by the parameter theta.
  * @param theta the parameter of the PDF
  * @param samples the samples
- * @param pdf the PDF scaled by the window function
- * @param window the window function used to scale the PDF
- * @param c the normalizing constant of the PMF
+ * @param pdf the PDF
  * @return the log likelihood
  */
 static pair<double, unsigned>
-computeLikelihood(int theta, const Histogram& samples,
-		const PDF& pdf, const WindowFunction& window, double c)
+computeLikelihood(int theta, const Histogram& samples, const PDF& pdf)
 {
 	double sum = 0.0f;
 	unsigned n = 0;
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
 		int x = it->first + theta;
-
-		/* When randomly selecting fragments that span a given point,
-		 * longer fragments are more likely to be selected than
-		 * shorter fragments.
-		 */
-		sum += it->second * log(pdf[x] * window(x) / c);
+		sum += it->second * log(pdf[x]);
 		if (pdf[x] > pdf.getMinP())
 			n += it->second;
 	}
@@ -84,20 +75,26 @@ maximumLikelihoodEstimate(int first, int last,
 		const PDF& pdf,
 		unsigned len0, unsigned len1)
 {
+	unsigned nsamples = samples.size();
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
 	unsigned bestn = 0;
 	for (int theta = first; theta < last; theta++) {
-		// Calculate the normalizing constant of the PMF.
+		/* When randomly selecting fragments that span a given point,
+		 * longer fragments are more likely to be selected than
+		 * shorter fragments.
+		 */
 		WindowFunction window(len0, len1, theta);
+
+		// Calculate the normalizing constant of the PMF.
 		double c = 0;
 		for (int i = first; i < last; ++i)
 			c += pdf[i] * window(i);
 
 		double likelihood;
 		unsigned n;
-	   	tie(likelihood, n) = computeLikelihood(theta, samples,
-				pdf, window, c);
+	   	tie(likelihood, n) = computeLikelihood(theta, samples, pdf);
+		likelihood -= nsamples * log(c);
 		if (likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
 			bestTheta = theta;
