@@ -18,31 +18,27 @@ namespace opt {
  */
 class WindowFunction {
 	public:
-		WindowFunction(int len0, int len1, int d)
+		WindowFunction(int len0, int len1)
+			: x1(len0), x2(len1), x3(len0 + len1)
 		{
 			assert(len0 > 0);
 			assert(len1 > 0);
 			assert(len0 <= len1);
-			x0 = d;
-			x1 = d + len0;
-			x2 = d + len1;
-			x3 = d + len0 + len1;
-			y = len0;
 		}
 
 		/** Return this window function evaluated at x. */
-		double operator ()(int x) const
+		double operator()(int x) const
 		{
-			return (x <= x0 ? 1
-					: x < x1 ? x - x0
-					: x < x2 ? y
+			return (x <= 0 ? 1
+					: x < x1 ? x
+					: x < x2 ? x1
 					: x < x3 ? x3 - x
-					: 1) / (double)y;
+					: 1) / (double)x1;
 		}
 
 	private:
 		/** Parameters of this window function. */
-		int x0, x1, x2, x3, y;
+		int x1, x2, x3;
 };
 
 /** Compute the log likelihood that these samples came from the
@@ -75,21 +71,21 @@ maximumLikelihoodEstimate(int first, int last,
 		const PMF& pmf,
 		unsigned len0, unsigned len1)
 {
+	/* When randomly selecting fragments that span a given point,
+	 * longer fragments are more likely to be selected than
+	 * shorter fragments.
+	 */
+	WindowFunction window(len0, len1);
+
 	unsigned nsamples = samples.size();
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
 	unsigned bestn = 0;
 	for (int theta = first; theta < last; theta++) {
-		/* When randomly selecting fragments that span a given point,
-		 * longer fragments are more likely to be selected than
-		 * shorter fragments.
-		 */
-		WindowFunction window(len0, len1, theta);
-
-		// Calculate the normalizing constant of the PMF.
+		// Calculate the normalizing constant of the PMF, f_theta(x).
 		double c = 0;
 		for (int i = first; i < last; ++i)
-			c += pmf[i] * window(i);
+			c += pmf[i] * window(i - theta);
 
 		double likelihood;
 		unsigned n;
