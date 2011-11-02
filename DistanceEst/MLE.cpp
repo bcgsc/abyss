@@ -23,8 +23,6 @@ class WindowFunction {
 			assert(len0 > 0);
 			assert(len1 > 0);
 			assert(len0 <= len1);
-			if (d < 0)
-				d = 0;
 			x0 = d;
 			x1 = d + len0;
 			x2 = d + len1;
