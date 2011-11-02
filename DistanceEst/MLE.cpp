@@ -51,16 +51,17 @@ class WindowFunction {
 static pair<double, unsigned>
 computeLikelihood(int theta, const Histogram& samples, const PMF& pmf)
 {
-	double sum = 0.0f;
-	unsigned n = 0;
+	double likelihood = 0;
+	unsigned nsamples = 0;
 	for (Histogram::const_iterator it = samples.begin();
 			it != samples.end(); ++it) {
-		int x = it->first + theta;
-		sum += it->second * log(pmf[x]);
-		if (pmf[x] > pmf.getMinP())
-			n += it->second;
+		double p = pmf[it->first + theta];
+		unsigned n = it->second;
+		likelihood += n * log(p);
+		if (p > pmf.getMinP())
+			nsamples += n;
 	}
-	return make_pair(sum, n);
+	return make_pair(likelihood, nsamples);
 }
 
 /** Return the most likely distance between two contigs and the number
