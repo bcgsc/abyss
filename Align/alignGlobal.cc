@@ -158,12 +158,12 @@ unsigned alignGlobal(const string& seqA, const string& seqB,
 	// Initialize the score matrix.
 	for (unsigned i = 0; i <= lenA; i++) {
 		f[i][0] = g[i][0] = i == 0 ? 0
-			: GAP_OPEN + GAP_EXTEND * (i-1);
+			: GAP_OPEN + GAP_EXTEND * ((int)i - 1);
 		h[i][0] = INT_MIN/2;
 	}
 	for (unsigned j = 0; j <= lenB; j++) {
 		f[0][j] = h[0][j] = j == 0 ? 0
-			: GAP_OPEN + GAP_EXTEND * (j-1);
+			: GAP_OPEN + GAP_EXTEND * ((int)j - 1);
 		g[0][j] = INT_MIN/2;
 	}
 
