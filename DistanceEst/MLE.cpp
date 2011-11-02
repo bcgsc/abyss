@@ -58,7 +58,7 @@ computeLikelihood(int theta, const Histogram& samples, const PMF& pmf)
 		double p = pmf[it->first + theta];
 		unsigned n = it->second;
 		likelihood += n * log(p);
-		if (p > pmf.getMinP())
+		if (p > pmf.minProbability())
 			nsamples += n;
 	}
 	return make_pair(likelihood, nsamples);
@@ -85,7 +85,7 @@ maximumLikelihoodEstimate(int first, int last,
 	for (int theta = first; theta < last; theta++) {
 		// Calculate the normalizing constant of the PMF, f_theta(x).
 		double c = 0;
-		for (int i = 0; i <= (int)pmf.getMaxIdx(); ++i)
+		for (int i = pmf.minValue(); i <= (int)pmf.maxValue(); ++i)
 			c += pmf[i] * window(i - theta);
 
 		double likelihood;

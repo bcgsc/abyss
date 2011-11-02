@@ -132,7 +132,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			it != fragments.end(); ++it)
 		fragmentSizes.push_back(it->second - it->first);
 
-	return maximumLikelihoodEstimate(-opt::k+1, pmf.getMaxIdx(),
+	return maximumLikelihoodEstimate(-opt::k+1, pmf.maxValue(),
 			fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
 }
 

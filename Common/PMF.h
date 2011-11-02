@@ -29,9 +29,15 @@ class PMF
 		return x < m_dist.size() ? m_dist[x] : m_minp;
 	}
 
-	double getMinP() const { return m_minp; }
+	/** Return the minimum probability. */
+	double minProbability() const { return m_minp; }
 
-	size_t getMaxIdx() const {
+	/** Return the minimum value. */
+	size_t minValue() const { return 0; }
+
+	/** Return the maximum value. */
+	size_t maxValue() const
+	{
 		assert(!m_dist.empty());
 		return m_dist.size() - 1;
 	}
