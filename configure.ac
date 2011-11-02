@@ -88,6 +88,12 @@ if test "$enable_popcnt" != no; then
 	AC_DEFINE(ENABLE_POPCNT, 1, [Define to use the popcnt instruction])
 fi
 
+AC_ARG_ENABLE(samseqqual,
+	AS_HELP_STRING([--enable-samseqqual],
+		[enable SAM sequence and quality fields]),
+	AC_DEFINE_UNQUOTED(SAM_SEQ_QUAL, 1,
+		[Define to use SAM sequence and quality fields]))
+
 # Set compiler flags.
 AC_SUBST(CPPFLAGS,
 		 "-I$srcdir $boost_cppflags $mpi_cppflags $CPPFLAGS")

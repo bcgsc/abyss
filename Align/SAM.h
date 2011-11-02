@@ -1,6 +1,7 @@
 #ifndef SAM_H
 #define SAM_H 1
 
+#include "config.h" // for SAM_SEQ_QUAL
 #include "Aligner.h"
 #include <algorithm> // for swap
 #include <cstdlib> // for exit
@@ -8,9 +9,6 @@
 #include <limits> // for numeric_limits
 #include <sstream>
 #include <string>
-
-/** If undefined, do not use SAM sequence or quality. */
-/*#define SAM_SEQ_QUAL 1*/
 
 /** A SAM alignment of a single query. */
 struct SAMAlignment {
