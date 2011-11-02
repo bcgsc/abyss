@@ -109,21 +109,47 @@ static int maximumLikelihoodEstimate(int first, int last,
 /** Return the most likely distance between two contigs.
  * @param len0 the length of the first contig in bp
  * @param len1 the length of the second contig in bp
+ * @param rf whether the fragment library is oriented reverse-forward
  */
 int maximumLikelihoodEstimate(int first, int last,
 		const vector<int>& samples, const PDF& pdf,
-		unsigned len0, unsigned len1,
+		unsigned len0, unsigned len1, bool rf,
 		unsigned& n)
 {
-	// Convert the lengths of the contigs from bp to k-mer.
-	assert(len0 >= opt::k);
-	assert(len1 >= opt::k);
-	len0 -= opt::k - 1;
-	len1 -= opt::k - 1;
+	// The aligner is unable to map reads to the ends of the sequence.
+	// Correct for this lack of sensitivity by subtracting x from the
+	// length of each sequence, where x is k-1 for an aligner that
+	// requires a match of at least k bp. When the fragment library
+	// is oriented forward-reverse, subtract 2*x from each sample.
+	assert(first < 0);
+	unsigned overlap = -first;
+	assert(len0 > overlap);
+	assert(len1 > overlap);
+	len0 -= overlap;
+	len1 -= overlap;
+
 	if (len0 > len1)
 		swap(len0, len1);
 
-	Histogram h(samples.begin(), samples.end());
-	return maximumLikelihoodEstimate(first, last, h,
-			pdf, len0, len1, n);
+	if (rf) {
+		// This library is oriented reverse-forward.
+		Histogram h(samples.begin(), samples.end());
+		return maximumLikelihoodEstimate(
+				first, last, h,
+				pdf, len0, len1, n);
+	} else {
+		// This library is oriented forward-reverse.
+		// Subtract 2*x from each sample.
+		Histogram h;
+		typedef vector<int> Samples;
+		for (Samples::const_iterator it = samples.begin();
+				it != samples.end(); ++it) {
+			assert(*it > 2 * (int)overlap);
+			h.insert(*it - 2 * overlap);
+		}
+		int d = maximumLikelihoodEstimate(
+				0, last, h,
+				pdf, len0, len1, n);
+		return max(first, d - 2 * (int)overlap);
+	}
 }
