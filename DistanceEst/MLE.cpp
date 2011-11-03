@@ -1,5 +1,6 @@
 #include "MLE.h"
 #include "PMF.h"
+#include "Graph/Options.h" // for opt::k
 #include <boost/tuple/tuple.hpp>
 #include <algorithm> // for swap
 #include <cassert>
@@ -8,10 +9,6 @@
 
 using namespace std;
 using boost::tie;
-
-namespace opt {
-	extern unsigned k;
-}
 
 /** This window function is a triangle with a flat top, or a rectangle
  * with sloped sides.
@@ -113,17 +110,20 @@ int maximumLikelihoodEstimate(int first, int last,
 		unsigned len0, unsigned len1, bool rf,
 		unsigned& n)
 {
+	assert(first < last);
+	assert(!samples.empty());
+
 	// The aligner is unable to map reads to the ends of the sequence.
-	// Correct for this lack of sensitivity by subtracting x from the
-	// length of each sequence, where x is k-1 for an aligner that
+	// Correct for this lack of sensitivity by subtracting l from the
+	// length of each sequence, where l is k-1 for an aligner that
 	// requires a match of at least k bp. When the fragment library
-	// is oriented forward-reverse, subtract 2*x from each sample.
-	assert(first < 0);
-	unsigned overlap = -first;
-	assert(len0 > overlap);
-	assert(len1 > overlap);
-	len0 -= overlap;
-	len1 -= overlap;
+	// is oriented forward-reverse, subtract 2*l from each sample.
+	assert(opt::k > 0);
+	unsigned l = opt::k - 1;
+	assert(len0 > l);
+	assert(len1 > l);
+	len0 -= l;
+	len1 -= l;
 
 	if (len0 > len1)
 		swap(len0, len1);
@@ -138,18 +138,18 @@ int maximumLikelihoodEstimate(int first, int last,
 		return d;
 	} else {
 		// This library is oriented forward-reverse.
-		// Subtract 2*x from each sample.
+		// Subtract 2*l from each sample.
 		Histogram h;
 		typedef vector<int> Samples;
 		for (Samples::const_iterator it = samples.begin();
 				it != samples.end(); ++it) {
-			assert(*it > 2 * (int)overlap);
-			h.insert(*it - 2 * overlap);
+			assert(*it > 2 * (int)l);
+			h.insert(*it - 2 * l);
 		}
 		int d;
 		tie(d, n) = maximumLikelihoodEstimate(
 				0, last, h,
 				pmf, len0, len1);
-		return max(first, d - 2 * (int)overlap);
+		return max(first, d - 2 * (int)l);
 	}
 }
