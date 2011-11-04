@@ -22,7 +22,6 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -367,8 +366,10 @@ int main(int argc, char** argv)
 	OverlapGraph overlapGraph(graph.num_vertices() / 2);
 
 	/** The canonical edges of scaffoldGraph. */
-	typedef set<edge_descriptor> Edges;
+	unsigned numOverlaps = num_edges(scaffoldGraph) / 2;
+	typedef vector<edge_descriptor> Edges;
 	Edges edges;
+	edges.reserve(numOverlaps);
 
 	// Create the set of canonical edges and the overlap subgraph.
 	std::pair<vertex_iterator, vertex_iterator>
@@ -378,14 +379,16 @@ int main(int argc, char** argv)
 			vit = out_edges(*u, scaffoldGraph);
 		for (out_edge_iterator e = vit.first; e != vit.second; ++e) {
 			vertex_descriptor v = target(*e, scaffoldGraph);
-			if (edges.count(edge_descriptor(~v, ~*u)) > 0)
+			assert(*u != v);
+			if (v < *u)
 				continue;
-			edges.insert(*e);
+			edges.push_back(*e);
 			const Overlap& ep = get(edge_bundle, scaffoldGraph, e);
 			if (ep.overlap > 0)
 				add_edge(*u, v, ep, overlapGraph);
 		}
 	}
+	assert(edges.size() == numOverlaps);
 
 	// First, give priority to overlapping edges (not scaffolded).
 	for (Edges::const_iterator it = edges.begin();
