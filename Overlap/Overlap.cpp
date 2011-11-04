@@ -14,7 +14,6 @@
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
-#include "Graph/MapGraph.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>

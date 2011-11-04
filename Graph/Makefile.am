@@ -16,7 +16,6 @@ libgraph_a_SOURCES = \
 	GraphAlgorithms.h \
 	GraphIO.h \
 	GraphUtil.h \
-	MapGraph.h \
 	Options.h \
 	PopBubbles.h \
 	Properties.h \
