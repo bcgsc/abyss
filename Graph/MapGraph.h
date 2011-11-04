@@ -151,6 +151,21 @@ vertices(const std::map<V, T>& g)
 	return make_pair(g.begin(), g.end());
 }
 
+// AdjacencyMatrix
+
+template <typename V, typename T>
+std::pair<
+	typename graph_traits<std::map<V, T> >::edge_descriptor, bool>
+edge(
+		typename graph_traits<std::map<V, T> >::vertex_descriptor u,
+		typename graph_traits<std::map<V, T> >::vertex_descriptor v,
+		std::map<V, T>& g)
+{
+	typename std::map<V, T>::const_iterator it = g.find(u);
+	return std::make_pair(make_pair(u, v),
+			it == g.end() ? false : it->second.count(v) > 0);
+}
+
 // VertexMutableGraph
 
 template <typename V, typename T>

@@ -173,10 +173,12 @@ static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 			comment.str(), seq);
 }
 
+/** An overlap of two sequences. */
 struct Overlap {
-	const Estimate est;
-	const unsigned overlap;
-	const bool mask;
+	Estimate est;
+	unsigned overlap;
+	bool mask;
+
 	Overlap() : est(), overlap(UINT_MAX), mask(false) { }
 	Overlap(const Estimate& est, unsigned overlap, bool mask)
 		: est(est), overlap(overlap), mask(mask) { }
@@ -414,7 +416,7 @@ int main(int argc, char** argv)
 			it != edges.end(); ++it) {
 		const ContigNode& t = source(*it, overlapGraph),
 			  h = target(*it, overlapGraph);
-		if (overlapGraph[t].count(h) == 0) {
+		if (!edge(t, h, overlapGraph).second) {
 			// This edge is scaffolded.
 			continue;
 		}
@@ -438,7 +440,7 @@ int main(int argc, char** argv)
 			it != edges.end(); ++it) {
 		const ContigNode& t = source(*it, scaffoldGraph),
 			  h = target(*it, scaffoldGraph);
-		if (scaffoldGraph[t].count(h) == 0) {
+		if (!edge(t, h, scaffoldGraph).second) {
 			// This edge involved a vertex that has already been used
 			// and removed.
 			continue;
