@@ -81,7 +81,13 @@ static const struct option longopts[] = {
 };
 
 /* A contig sequence. */
-typedef FastaRecord Contig;
+struct Contig {
+	Contig(const string& comment, const string& seq)
+		: comment(comment), seq(seq) { }
+	Contig(const FastaRecord& o) : comment(o.comment), seq(o.seq) { }
+	string comment;
+	string seq;
+};
 
 /** The contig sequences. */
 static vector<Contig> g_contigs;
@@ -210,7 +216,7 @@ static Contig mergePath(const Graph& g, const Path& path)
 	}
 	ostringstream ss;
 	ss << seq.size() << ' ' << coverage;
-	return Contig("", ss.str(), seq);
+	return Contig(ss.str(), seq);
 }
 
 /** Return a FASTA comment for the specified path. */
@@ -385,9 +391,16 @@ int main(int argc, char** argv)
 	assert_good(out, opt::out);
 	if (!opt::onlyMerged) {
 		for (vector<Contig>::const_iterator it = contigs.begin();
-				it != contigs.end(); ++it)
-			if (!seen[it - contigs.begin()])
-				out << *it;
+				it != contigs.end(); ++it) {
+			ContigID id(it - contigs.begin());
+			if (!seen[id]) {
+				const Contig& contig = *it;
+				out << '>' << id;
+				if (!contig.comment.empty())
+					out << ' ' << contig.comment;
+				out << '\n' << contig.seq << '\n';
+			}
+		}
 	}
 
 	if (adjPath.empty())
@@ -412,10 +425,10 @@ int main(int argc, char** argv)
 		if (path.empty())
 			continue;
 		Contig contig = mergePath(g, path);
-		contig.id = pathIDs[it - paths.begin()];
-		FastaRecord rec(contig);
-		rec.comment += ' ' + pathToComment(path);
-		out << rec;
+		out << '>' << pathIDs[it - paths.begin()]
+			<< ' ' << contig.comment
+			<< ' ' << pathToComment(path) << '\n'
+			<< contig.seq << '\n';
 		assert_good(out, opt::out);
 		npaths++;
 	}
