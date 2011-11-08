@@ -44,7 +44,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
-"  -p, --path=PATH_FILE  paths output by SimpleGraph\n"
 "      --merged          output only merged contigs\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -55,7 +54,6 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by ContigProperties
 	static string out = "-";
-	static string path;
 
 	/** Output only merged contigs. */
 	int onlyMerged;
@@ -67,7 +65,7 @@ namespace opt {
 	static float minIdentity = 0.9;
 }
 
-static const char shortopts[] = "k:o:p:v";
+static const char shortopts[] = "k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -302,7 +300,6 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
-			case 'p': arg >> opt::path; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -325,6 +322,11 @@ int main(int argc, char** argv)
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	}
+
+	if (argc - optind > 2) {
+		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
 
@@ -365,8 +367,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		if (optind == argc)
-			ContigID::lock();
+		ContigID::lock();
 	}
 
 	vector<string> pathIDs;
@@ -376,37 +377,6 @@ int main(int argc, char** argv)
 	vector<bool> seen(contigs.size());
 	seenContigs(seen, paths);
 	markRemovedContigs(seen, pathIDs, paths);
-
-	// Record all the contigs that were in a previous path.
-	if (argc - optind > 0) {
-		unsigned count = 0;
-		for (; optind < argc; optind++) {
-			vector<Path> prevPaths = readPaths(argv[optind]);
-			seenContigs(seen, prevPaths);
-			count += prevPaths.size();
-		}
-		if (opt::verbose > 0)
-			cerr << "Number of previous paths: " << count << '\n';
-	}
-	ContigID::lock();
-
-	// Record all the contigs that are seeds.
-	if (!opt::path.empty()) {
-		if (opt::verbose > 0)
-			cerr << "Reading `" << opt::path << "'..." << endl;
-		vector<bool> seenPivots(contigs.size());
-		ifstream fin(opt::path.c_str());
-		assert_good(fin, opt::path);
-		for (ContigID id; fin >> id;) {
-			fin.ignore(numeric_limits<streamsize>::max(), '\n');
-			assert(id < contigs.size());
-			// Only count a pivot as seen if it was in a final path.
-			if (seen[id])
-				seenPivots[id] = true;
-		}
-		assert(fin.eof());
-		seen = seenPivots;
-	}
 
 	// Output those contigs that were not seen in a path.
 	ofstream fout;
