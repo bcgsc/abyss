@@ -199,6 +199,19 @@ static void mergeContigs(const Graph& g,
 	}
 }
 
+/** Return a FASTA comment for the specified path. */
+static void pathToComment(ostream& out, const ContigPath& path)
+{
+	assert(path.size() > 1);
+	out << path.front();
+	if (path.size() == 3)
+		out << ',' << path[1];
+	else if (path.size() > 3)
+		out << ",...";
+	out << ',' << path.back();
+}
+
+/** Merge the specified path. */
 static Contig mergePath(const Graph& g, const Path& path)
 {
 	Sequence seq;
@@ -215,22 +228,9 @@ static Contig mergePath(const Graph& g, const Path& path)
 		}
 	}
 	ostringstream ss;
-	ss << seq.size() << ' ' << coverage;
+	ss << seq.size() << ' ' << coverage << ' ';
+	pathToComment(ss, path);
 	return Contig(ss.str(), seq);
-}
-
-/** Return a FASTA comment for the specified path. */
-static inline string pathToComment(const ContigPath& path)
-{
-	assert(path.size() > 1);
-	ostringstream s;
-	s << path.front();
-	if (path.size() == 3)
-		s << ',' << path[1];
-	else if (path.size() > 3)
-		s << ",...";
-	s << ',' << path.back();
-	return s.str();
 }
 
 /** Read contig paths from the specified file.
@@ -426,8 +426,7 @@ int main(int argc, char** argv)
 			continue;
 		Contig contig = mergePath(g, path);
 		out << '>' << pathIDs[it - paths.begin()]
-			<< ' ' << contig.comment
-			<< ' ' << pathToComment(path) << '\n'
+			<< ' ' << contig.comment << '\n'
 			<< contig.seq << '\n';
 		assert_good(out, opt::out);
 		npaths++;
