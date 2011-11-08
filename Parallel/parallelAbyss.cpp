@@ -81,11 +81,13 @@ int main(int argc, char** argv)
 	logger(0) << "Running on host " << hostname << endl;
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	NetworkSequenceCollection networkSeqs;
-	if (opt::rank == 0)
+	if (opt::rank == 0) {
+		NetworkSequenceCollection networkSeqs;
 		networkSeqs.runControl();
-	else
+	} else {
+		NetworkSequenceCollection networkSeqs;
 		networkSeqs.run();
+	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
