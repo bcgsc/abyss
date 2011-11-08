@@ -332,6 +332,8 @@ int main(int argc, char** argv)
 	// Read the contig sequence.
 	vector<Contig>& contigs = g_contigs;
 	{
+		if (opt::verbose > 0)
+			cerr << "Reading `" << contigFile << "'..." << endl;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			ContigID id = ContigID::insert(rec.id);
@@ -370,6 +372,8 @@ int main(int argc, char** argv)
 
 	// Record all the contigs that are seeds.
 	if (!opt::path.empty()) {
+		if (opt::verbose > 0)
+			cerr << "Reading `" << opt::path << "'..." << endl;
 		vector<bool> seenPivots(contigs.size());
 		ifstream fin(opt::path.c_str());
 		assert_good(fin, opt::path);
@@ -400,6 +404,8 @@ int main(int argc, char** argv)
 		return 0;
 
 	// Read the contig adjacency graph.
+	if (opt::verbose > 0)
+		cerr << "Reading `" << adjPath << "'..." << endl;
 	ifstream fin(adjPath.c_str());
 	assert_good(fin, adjPath);
 	Graph g;
