@@ -7,6 +7,7 @@
 #include "Dictionary.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
+#include "MemoryUtil.h"
 #include "smith_waterman.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
@@ -159,10 +160,10 @@ static void mergeContigs(const Graph& g,
 	} while (chomp(seq, 'n'));
 
 	// Try an overlap alignment.
-	if (opt::verbose > 1)
+	if (opt::verbose > 2)
 		cerr << '\n';
 	vector<overlap_align> overlaps;
-	alignOverlap(ao, bo, 0, overlaps, false, opt::verbose > 1);
+	alignOverlap(ao, bo, 0, overlaps, false, opt::verbose > 2);
 	bool good = false;
 	if (!overlaps.empty()) {
 		assert(overlaps.size() == 1);
@@ -172,7 +173,7 @@ static void mergeContigs(const Graph& g,
 		float identity = (float)matches / consensus.size();
 		good = matches >= opt::minOverlap
 			&& identity >= opt::minIdentity;
-		if (opt::verbose > 1)
+		if (opt::verbose > 2)
 			cerr << matches << " / " << consensus.size()
 				<< " = " << identity
 				<< (matches < opt::minOverlap ? " (too few)"
@@ -243,6 +244,7 @@ static vector<Path> readPaths(const string& inPath,
 		assert_good(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
 
+	unsigned count = 0;
 	vector<Path> paths;
 	string id;
 	Path path;
@@ -250,7 +252,16 @@ static vector<Path> readPaths(const string& inPath,
 		paths.push_back(path);
 		if (ids != NULL)
 			ids->push_back(id);
+
+		++count;
+		if (opt::verbose > 1 && count % 1000000 == 0)
+			cerr << "Read " << count << " paths. "
+				"Using " << toSI(getMemoryUsage())
+				<< "B of memory.\n";
 	}
+	if (opt::verbose > 0)
+		cerr << "Read " << count << " paths. "
+			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
 	assert(in.eof());
 	return paths;
 }
@@ -334,12 +345,23 @@ int main(int argc, char** argv)
 	{
 		if (opt::verbose > 0)
 			cerr << "Reading `" << contigFile << "'..." << endl;
+		unsigned count = 0;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			ContigID id = ContigID::insert(rec.id);
 			assert(id == contigs.size());
 			contigs.push_back(rec);
+
+			++count;
+			if (opt::verbose > 1 && count % 1000000 == 0)
+				cerr << "Read " << count << " sequences. "
+					"Using " << toSI(getMemoryUsage())
+					<< "B of memory.\n";
 		}
+		if (opt::verbose > 0)
+			cerr << "Read " << count << " sequences. "
+				"Using " << toSI(getMemoryUsage())
+				<< "B of memory.\n";
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
@@ -349,8 +371,6 @@ int main(int argc, char** argv)
 
 	vector<string> pathIDs;
 	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
-	if (opt::verbose > 0)
-		cerr << "Number of paths: " << paths.size() << '\n';
 
 	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
@@ -411,6 +431,9 @@ int main(int argc, char** argv)
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
+	if (opt::verbose > 0)
+		cerr << "Read " << num_vertices(g) << " vertices. "
+			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
 
 	unsigned npaths = 0;
 	for (vector<Path>::const_iterator it = paths.begin();
