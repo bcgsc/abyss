@@ -325,7 +325,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind > 2) {
+	if (argc - optind > 3) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
