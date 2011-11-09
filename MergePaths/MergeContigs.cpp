@@ -90,12 +90,12 @@ struct Contig {
 };
 
 /** The contig sequences. */
-static vector<Contig> g_contigs;
+typedef vector<Contig> Contigs;
 
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
-static Sequence sequence(const ContigNode& id)
+static Sequence sequence(const Contigs& contigs, const ContigNode& id)
 {
 	if (id.ambiguous()) {
 		string s(id.ambiguousSequence());
@@ -103,7 +103,7 @@ static Sequence sequence(const ContigNode& id)
 			transform(s.begin(), s.end(), s.begin(), ::tolower);
 		return string(opt::k - 1, 'N') + s;
 	} else {
-		const Sequence& seq = g_contigs[id.id()].seq;
+		const Sequence& seq = contigs[id.id()].seq;
 		return id.sense() ? reverseComplement(seq) : seq;
 	}
 }
@@ -139,14 +139,14 @@ typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 typedef ContigPath Path;
 
 /** Append the sequence of contig v to seq. */
-static void mergeContigs(const Graph& g,
+static void mergeContigs(const Graph& g, const Contigs& contigs,
 		vertex_descriptor u, vertex_descriptor v,
 		Sequence& seq, const Path& path)
 {
 	int d = get(edge_bundle, g, u, v).distance;
 	assert(d < 0);
 	unsigned overlap = -d;
-	const Sequence& s = sequence(v);
+	const Sequence& s = sequence(contigs, v);
 	assert(s.length() > overlap);
 	Sequence ao;
 	Sequence bo(s, 0, overlap);
@@ -212,7 +212,8 @@ static void pathToComment(ostream& out, const ContigPath& path)
 }
 
 /** Merge the specified path. */
-static Contig mergePath(const Graph& g, const Path& path)
+static Contig mergePath(const Graph& g, const Contigs& contigs,
+		const Path& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
@@ -221,10 +222,10 @@ static Contig mergePath(const Graph& g, const Path& path)
 		if (!it->ambiguous())
 			coverage += g[*it].coverage;
 		if (seq.empty()) {
-			seq = sequence(*it);
+			seq = sequence(contigs, *it);
 		} else {
 			assert(it != path.begin());
-			mergeContigs(g, *(it-1), *it, seq, path);
+			mergeContigs(g, contigs, *(it-1), *it, seq, path);
 		}
 	}
 	ostringstream ss;
@@ -349,7 +350,7 @@ int main(int argc, char** argv)
 	mergedPathFile = string(argv[optind++]);
 
 	// Read the contig sequence.
-	vector<Contig>& contigs = g_contigs;
+	Contigs contigs;
 	{
 		if (opt::verbose > 0)
 			cerr << "Reading `" << contigFile << "'..." << endl;
@@ -390,7 +391,7 @@ int main(int argc, char** argv)
 		: (fout.open(opt::out.c_str()), fout);
 	assert_good(out, opt::out);
 	if (!opt::onlyMerged) {
-		for (vector<Contig>::const_iterator it = contigs.begin();
+		for (Contigs::const_iterator it = contigs.begin();
 				it != contigs.end(); ++it) {
 			ContigID id(it - contigs.begin());
 			if (!seen[id]) {
@@ -424,7 +425,7 @@ int main(int argc, char** argv)
 		const Path& path = *it;
 		if (path.empty())
 			continue;
-		Contig contig = mergePath(g, path);
+		Contig contig = mergePath(g, contigs, path);
 		out << '>' << pathIDs[it - paths.begin()]
 			<< ' ' << contig.comment << '\n'
 			<< contig.seq << '\n';
