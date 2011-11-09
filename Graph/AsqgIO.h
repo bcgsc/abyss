@@ -60,15 +60,10 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 				>> s2 >> e2 >> l2
 				>> rc >> nd >> Ignore('\n');
 			assert(in);
+			assert(s1 < e1 && e1 < l1 && s2 < e2 && e2 < l2);
 			assert(e1 - s1 == e2 - s2);
-			if (((s1 > 0) != (s2 > 0)) == rc) {
-				std::cerr << "error: incorrectly oriented edge\n"
-					"ED\t" << u << ' ' << v
-					<< ' ' << s1 << ' ' << e1 << ' ' << l1
-					<< ' ' << s2 << ' ' << e2 << ' ' << l2
-					<< ' ' << rc << ' ' << nd << '\n';
-				exit(EXIT_FAILURE);
-			}
+			assert(e1 - s1 + 1 < l1 && e2 - s2 + 1 < l2);
+			assert(((s1 > 0) == (s2 > 0)) == rc);
 			int d = -(e1 - s1 + 1);
 			assert(d < 0);
 			add_edge(V(u, s1 == 0), V(v, s2 > 0), EP(d), g);
