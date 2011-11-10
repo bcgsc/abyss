@@ -19,6 +19,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 	assert(in);
 
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename vertex_property<Graph>::type VP;
 	typedef typename edge_property<Graph>::type EP;
 
@@ -49,11 +50,11 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			break;
 		  }
 		  case 'E': {
-			ContigID u, v;
+			ContigID uname, vname;
 			unsigned s1, e1, l1, s2, e2, l2;
 			bool rc;
 			int nd;
-			in >> expect("ED") >> u >> v
+			in >> expect("ED") >> uname >> vname
 				>> s1 >> e1 >> l1
 				>> s2 >> e2 >> l2
 				>> rc >> nd >> Ignore('\n');
@@ -64,7 +65,15 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			assert(((s1 > 0) == (s2 > 0)) == rc);
 			int d = -(e1 - s1 + 1);
 			assert(d < 0);
-			add_edge(V(u, s1 == 0), V(v, s2 > 0), EP(d), g);
+			EP ep(d);
+			V u(uname, s1 == 0), v(vname, s2 > 0);
+			std::pair<E, bool> e = edge(u, v, g);
+			if (e.second) {
+				// Ignore duplicate edges that are self loops.
+				assert(g[e.first] == ep);
+				assert(u == v);
+			} else
+				add_edge(u, v, ep, g);
 			break;
 		  }
 		  default: {
