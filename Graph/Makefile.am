@@ -1,5 +1,5 @@
 noinst_LIBRARIES = libgraph.a
-bin_PROGRAMS = abyss-todot
+bin_PROGRAMS = abyss-gc abyss-todot
 
 libgraph_a_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 
@@ -26,3 +26,7 @@ abyss_todot_LDFLAGS = -L.
 abyss_todot_LDADD = libgraph.a \
 	$(top_builddir)/Common/libcommon.a
 abyss_todot_SOURCES = todot.cc
+
+abyss_gc_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+abyss_gc_LDADD = $(top_builddir)/Common/libcommon.a
+abyss_gc_SOURCES = gc.cc
