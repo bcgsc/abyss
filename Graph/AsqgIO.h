@@ -32,17 +32,14 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			assert(in);
 			break;
 		  case 'V': {
-			std::string uname;
-			in >> expect("VT") >> uname >> std::ws >> Ignore('\t');
+			std::string uname, seq;
+			in >> expect("VT") >> uname >> seq >> Ignore('\n');
 			assert(in);
-			unsigned length = in.gcount() - 1;
-			assert(length > 0);
-			in >> Ignore('\n');
-			assert(in);
+			assert(!seq.empty());
 
 			if (addVertices) {
 				VP vp;
-				put(vertex_length, vp, length);
+				put(vertex_length, vp, seq.size());
 				V u = add_vertex(vp, g);
 				put(vertex_name, g, u, uname);
 			} else {
