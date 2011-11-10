@@ -53,8 +53,9 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 		  }
 		  case 'E': {
 			ContigID u, v;
-			unsigned s1, e1, l1, s2, e2, l2, nd;
+			unsigned s1, e1, l1, s2, e2, l2;
 			bool rc;
+			int nd;
 			in >> expect("ED") >> u >> v
 				>> s1 >> e1 >> l1
 				>> s2 >> e2 >> l2
