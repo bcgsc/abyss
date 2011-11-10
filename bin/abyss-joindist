@@ -13,7 +13,9 @@ pod2usage(-verbose => 2) if $opt{man};
 my (%id, %a, %b);
 
 while (<>) {
-	my ($id, $a, $b) = /([0-9]*) *([-+0-9., ]*) *; *([-+0-9., ]*)/;
+	chomp;
+	my ($id, $rest) = split ' ', $_, 2;
+	my ($a, $b) = split ';', $rest, 2;
 	my @a = split ' ', $a;
 	my @b = split ' ', $b;
 	$id{$id} = 1;
