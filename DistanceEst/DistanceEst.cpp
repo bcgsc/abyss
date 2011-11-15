@@ -57,7 +57,6 @@ namespace opt {
 	unsigned k; // used by MLE
 
 	/** Output in dot format. */
-	static int dot;
 	int format = DIST; // used by Estimate
 
 	static unsigned seedLen;
@@ -77,8 +76,8 @@ static const char shortopts[] = "j:k:n:o:q:s:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "dist",        no_argument,       &opt::dot, 0, },
-	{ "dot",         no_argument,       &opt::dot, 1, },
+	{ "dist",        no_argument,       &opt::format, DIST, },
+	{ "dot",         no_argument,       &opt::format, DOT, },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
@@ -153,7 +152,7 @@ static void writeEstimate(ostream& out,
 	est.stdDev = pmf.getSampleStdDev(est.numPairs);
 
 	if (est.numPairs >= opt::npairs) {
-		if (opt::dot) {
+		if (opt::format == DOT) {
 			if (id0.sense())
 				est.contig.flip();
 #pragma omp critical(out)
@@ -181,7 +180,7 @@ static void writeEstimates(ostream& out,
 		return; // Skip contigs shorter than the seed length.
 
 	ostringstream ss;
-	if (!opt::dot)
+	if (opt::format == DIST)
 		ss << pairs.front().rname;
 
 	typedef map<ContigNode, AlignPairVec> Pairs;
@@ -193,17 +192,17 @@ static void writeEstimates(ostream& out,
 			.push_back(*it);
 
 	for (int sense0 = false; sense0 <= true; sense0++) {
-		if (!opt::dot && sense0)
+		if (opt::format == DIST && sense0)
 			ss << " ;";
 		const Pairs& x = dataMap[sense0 ^ opt::rf];
 		for (Pairs::const_iterator it = x.begin();
 				it != x.end(); ++it)
-			writeEstimate(opt::dot ? out : ss,
+			writeEstimate(opt::format == DOT ? out : ss,
 					ContigNode(id0, sense0), it->first,
 					len0, lengthVec[it->first.id()],
 					it->second, pmf);
 	}
-	if (!opt::dot)
+	if (opt::format == DIST)
 #pragma omp critical(out)
 		out << ss.str() << '\n';
 	assert(out.good());
@@ -343,9 +342,6 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (opt::dot)
-		opt::format = DOT;
-
 	if (opt::seedLen < 2*opt::k)
 		cerr << "warning: the seed-length should be at least twice k:"
 			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
@@ -371,7 +367,7 @@ int main(int argc, char** argv)
 	}
 	ostream& out = opt::out.empty() ? cout : outFile;
 
-	if (opt::dot)
+	if (opt::format == DOT)
 		out << "digraph dist {\ngraph ["
 			"k=" << opt::k << " "
 			"s=" << opt::seedLen << " "
@@ -425,7 +421,7 @@ int main(int argc, char** argv)
 	}
 	assert(in.eof());
 
-	if (opt::dot)
+	if (opt::format == DOT)
 		out << "}\n";
 	return 0;
 }
