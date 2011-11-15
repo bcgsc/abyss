@@ -56,8 +56,8 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by MLE
 
-	/** Output in dot format. */
-	int format = DIST; // used by Estimate
+	/** Output graph format. */
+	int format = DIST;
 
 	static unsigned seedLen;
 	static unsigned npairs;
@@ -145,20 +145,19 @@ static void writeEstimate(ostream& out,
 	if (pairs.size() < opt::npairs)
 		return;
 
-	Estimate est;
-	est.contig = id1;
+	DistanceEst est;
 	est.distance = estimateDistance(len0, len1,
 			pairs, pmf, est.numPairs);
 	est.stdDev = pmf.getSampleStdDev(est.numPairs);
 
 	if (est.numPairs >= opt::npairs) {
 		if (opt::format == DOT) {
-			if (id0.sense())
-				est.contig.flip();
+			ContigNode v = id1 ^ id0.sense();
 #pragma omp critical(out)
-			out << '"' << id0 << "\" -> " << est << '\n';
+			out << '"' << id0 << "\" -> \"" << v << "\""
+				" [" << est << "]\n";
 		} else
-			out << ' ' << est;
+			out << ' ' << id1 << ',' << est;
 	} else if (opt::verbose > 1) {
 #pragma omp critical(cerr)
 		cerr << "warning: " << id0 << ',' << id1 << ' '
