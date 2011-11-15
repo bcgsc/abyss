@@ -61,7 +61,7 @@ namespace opt {
 	static string out;
 
  	/** Output format */
- 	int format = ADJ; // used by Estimate
+ 	int format = DIST; // used by Estimate
 }
 
 static const char shortopts[] = "d:j:k:o:v";
