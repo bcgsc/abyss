@@ -4,6 +4,7 @@
 #include "Graph/Options.h"
 #include "AdjIO.h"
 #include "AsqgIO.h"
+#include "DistIO.h"
 #include "DotIO.h"
 #include "FastaIO.h"
 #include "SAMIO.h"
@@ -23,6 +24,8 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	switch (opt::format) {
 	  case ADJ:
 		return out << adj_writer<Graph>(g);
+	  case DIST:
+		return write_dist(out, g);
 	  case DOT: case DOT_MEANCOV:
 		return out << dot_writer(g);
 	  case SAM:

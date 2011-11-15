@@ -44,7 +44,8 @@ static const char USAGE_MESSAGE[] =
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
 "                        less than this threshold [1]\n"
 "  -o, --out=FILE        write result to FILE\n"
-"      --dot             output overlaps in dot format\n"
+"      --dist            output graph in dist format [default]\n"
+"      --dot             output graph in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -57,7 +58,7 @@ namespace opt {
 
 	/** Output in dot format. */
 	static int dot;
-	int format = ADJ; // used by Estimate
+	int format = DIST; // used by Estimate
 
 	static unsigned seedLen;
 	static unsigned npairs;
@@ -76,6 +77,7 @@ static const char shortopts[] = "j:k:n:o:q:s:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "dist",        no_argument,       &opt::dot, 0, },
 	{ "dot",         no_argument,       &opt::dot, 1, },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },

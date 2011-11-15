@@ -44,7 +44,7 @@ struct DistanceEst
 	friend std::ostream& operator<<(std::ostream& out,
 			const DistanceEst& o)
 	{
-		if (opt::format == DOT) {
+		if (opt::format != DIST) {
 			out << "d=" << o.distance;
 			if (o.stdDev > 0 || o.numPairs > 0)
 				out << " e=" << std::fixed << std::setprecision(1)
@@ -103,7 +103,7 @@ struct Estimate
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
-		if (opt::format == DOT)
+		if (opt::format != DIST)
 			return out << '"' << o.contig << "\" ["
 				"d=" << o.distance << " "
 				"e=" << std::fixed << std::setprecision(1)

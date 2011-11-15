@@ -33,6 +33,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N   report the mean k-mer coverage, otherwise\n"
 "                 the sum k-mer coverage is reported\n"
 "      --adj             output the graph in adj format\n"
+"      --dist            output the graph in dist format\n"
 "      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
 "      --sam             output the graph in SAM format\n"
@@ -60,6 +61,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "adj",     no_argument,       &opt::format, ADJ },
+	{ "dist",    no_argument,       &opt::format, DIST },
 	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
 	{ "sam",     no_argument,       &opt::format, SAM },
