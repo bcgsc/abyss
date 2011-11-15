@@ -93,41 +93,29 @@ struct BetterDistanceEst
 };
 
 /** An estimate of the distance between two contigs. */
-struct Estimate
+struct Estimate : public DistanceEst
 {
 	ContigNode contig;
-	int distance;
-	unsigned numPairs;
-	float stdDev;
 
 	friend std::ostream& operator<<(std::ostream& out,
 			const Estimate& o)
 	{
 		if (opt::format != DIST)
 			return out << '"' << o.contig << "\" ["
-				"d=" << o.distance << " "
-				"e=" << std::fixed << std::setprecision(1)
-					<< o.stdDev << " "
-				"n=" << o.numPairs << ']';
+				<< static_cast<const DistanceEst&>(o) << ']';
 		else
 			return out << o.contig << ','
-				<< o.distance << ','
-				<< o.numPairs << ','
-				<< std::fixed << std::setprecision(1) << o.stdDev;
+				<< static_cast<const DistanceEst&>(o);
 	}
 
 	friend std::istream& operator>>(std::istream& in, Estimate& o)
 	{
 		in >> std::ws;
-		std::string sID;
-		char comma0, comma1;
-		getline(in, sID, ',')
-			>> o.distance >> comma0
-			>> o.numPairs >> comma1
-			>> o.stdDev;
-		if (in)
-			o.contig = ContigNode(sID);
-		return in;
+		std::string id;
+		if (!getline(in, id, ','))
+			return in;
+		o.contig = ContigNode(id);
+		return in >> static_cast<DistanceEst&>(o);
 	}
 };
 
