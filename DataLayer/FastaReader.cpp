@@ -129,7 +129,7 @@ next_record:
 	unsigned qualityOffset = 0;
 	if (recordType == EOF || m_in.tellg() >= m_end) {
 		m_in.seekg(0, ios::end);
-		m_in.get();
+		m_in.clear(std::ios::eofbit | std::ios::failbit);
 		return s;
 	} else if (recordType == '>' || recordType == '@') {
 		// Read the header.
