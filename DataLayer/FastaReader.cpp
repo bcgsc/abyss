@@ -327,6 +327,8 @@ next_record:
 		if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);
 			s.erase(0, trimFront);
+			q.erase(trimBack);
+			q.erase(0, trimFront);
 		}
 	}
 
