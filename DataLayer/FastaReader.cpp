@@ -324,7 +324,11 @@ next_record:
 
 		size_t trimFront = q.find_first_of(goodQual);
 		size_t trimBack = q.find_last_of(goodQual) + 1;
-		if (trimFront > 0 || trimBack < q.length()) {
+		if (trimFront >= trimBack) {
+			// The entire read is poor quality.
+			s.erase(1);
+			q.erase(1);
+		} else if (trimFront > 0 || trimBack < q.length()) {
 			s.erase(trimBack);
 			s.erase(0, trimFront);
 			q.erase(trimBack);
