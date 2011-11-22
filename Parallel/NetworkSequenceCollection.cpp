@@ -1162,7 +1162,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			"Removed " << m_lowCoverageKmer << " k-mer in "
 				<< m_lowCoverageContigs << " low-coverage contigs.\n";
 	} else
-		cout << "Assembled " << numAssembled.second << " k-mer in "
+		logger(0) << "Assembled " << numAssembled.second << " k-mer in "
 			<< numAssembled.first << " contigs.\n";
 	return numAssembled;
 }
