@@ -12,8 +12,11 @@
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "Graph/ContigGraph.h"
+#include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
+#include "Graph/GraphUtil.h"
+#include "Graph/Options.h"
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -44,7 +47,12 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
+"  -g, --graph=FILE      write the contig overlap graph to FILE\n"
 "      --merged          output only merged contigs\n"
+"      --adj             output the graph in adj format [default]\n"
+"      --dot             output the graph in dot format\n"
+"      --dot-meancov     same as above but give the mean coverage\n"
+"      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -53,7 +61,15 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
+
+	/** Output FASTA path. */
 	static string out = "-";
+
+	/** Output graph path. */
+	static string graphPath;
+
+	/** Output graph format. */
+	int format;
 
 	/** Output only merged contigs. */
 	int onlyMerged;
@@ -65,11 +81,16 @@ namespace opt {
 	static float minIdentity = 0.9;
 }
 
-static const char shortopts[] = "k:o:v";
+static const char shortopts[] = "g:k:o:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "adj", no_argument, &opt::format, ADJ },
+	{ "dot", no_argument, &opt::format, DOT },
+	{ "dot-meancov", no_argument, &opt::format, DOT_MEANCOV },
+	{ "sam", no_argument, &opt::format, SAM },
+	{ "graph", required_argument, NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "merged",      no_argument,       &opt::onlyMerged, 1 },
 	{ "out",         required_argument, NULL, 'o' },
@@ -295,9 +316,49 @@ static void markRemovedContigs(vector<bool>& marked,
 			marked[ContigID(pathIDs[it - paths.begin()])] = true;
 }
 
+/** Output the updated overlap graph. */
+static void outputGraph(Graph& g,
+		const vector<string>& pathIDs, const vector<Path>& paths,
+		const string& commandLine)
+{
+	for (vector<Path>::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		const Path& path = *it;
+		const string& id = pathIDs[it - paths.begin()];
+		if (path.empty()) {
+			remove_vertex(ContigNode(id, false), g);
+		} else {
+			ContigID::insert(id);
+			merge(g, path.begin(), path.end());
+			remove_vertex_if(g, path.begin(), path.end(),
+					not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		}
+	}
+
+	const string& graphPath = opt::graphPath;
+	assert(!graphPath.empty());
+	if (opt::verbose > 0)
+		cerr << "Writing `" << graphPath << "'..." << endl;
+	ofstream fout(graphPath.c_str());
+	assert_good(fout, graphPath);
+	write_graph(fout, g, PROGRAM, commandLine);
+	assert_good(fout, graphPath);
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
+}
+
 int main(int argc, char** argv)
 {
 	opt::trimMasked = false;
+
+	string commandLine;
+	{
+		ostringstream ss;
+		char** last = argv + argc - 1;
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		ss << *last;
+		commandLine = ss.str();
+	}
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -305,6 +366,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
 			case 'v': opt::verbose++; break;
@@ -448,6 +510,9 @@ int main(int argc, char** argv)
 		if (seen[i])
 			minCovUsed = min(minCovUsed, cov);
 	}
+
+	if (!opt::graphPath.empty())
+		outputGraph(g, pathIDs, paths, commandLine);
 
 	cerr << "The minimum coverage of single-end contigs is "
 		<< minCov << ".\n"
