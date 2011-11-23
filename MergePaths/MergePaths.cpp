@@ -707,6 +707,8 @@ static void assemblePathGraph(
 /** Read a set of paths from the specified file. */
 static ContigPathMap readPaths(const string& filePath)
 {
+	if (opt::verbose > 0)
+		cerr << "Reading `" << filePath << "'..." << endl;
 	ifstream in(filePath.c_str());
 	assert_good(in, filePath);
 
@@ -830,6 +832,8 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
+	if (opt::verbose > 0)
+		cerr << "Reading `" << argv[optind] << "'..." << endl;
 	g_contigLengths = readContigLengths(argv[optind++]);
 	ContigPathMap originalPathMap = readPaths(argv[optind++]);
 
