@@ -52,6 +52,13 @@ class KmerData
 		m_multiplicity[ANTISENSE] = 0;
 	}
 
+	KmerData(extDirection dir, unsigned multiplicity) : m_flags(0)
+	{
+		assert(multiplicity <= COVERAGE_MAX);
+		m_multiplicity[dir] = multiplicity;
+		m_multiplicity[!dir] = 0;
+	}
+
 	KmerData(unsigned multiplicity, ExtensionRecord ext)
 		: m_flags(0), m_ext(ext)
 	{
@@ -70,10 +77,10 @@ class KmerData
 
 	static const unsigned COVERAGE_MAX = 32767;
 
-	void addMultiplicity(extDirection dir)
+	void addMultiplicity(extDirection dir, unsigned n = 1)
 	{
-		if (m_multiplicity[dir] < COVERAGE_MAX)
-			++m_multiplicity[dir];
+		m_multiplicity[dir]
+			= std::min(m_multiplicity[dir] + n, COVERAGE_MAX);
 		assert(m_multiplicity[dir] > 0);
 	}
 

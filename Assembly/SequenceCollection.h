@@ -21,7 +21,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		SequenceCollectionHash();
 
-		void add(const Kmer& seq);
+		void add(const Kmer& seq, unsigned coverage = 1);
 
 		/** Remove the specified sequence if it exists. */
 		void remove(const Kmer& seq)

@@ -67,7 +67,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter = NULL);
 
-		void add(const Kmer& seq);
+		void add(const Kmer& seq, unsigned coverage = 1);
 		void remove(const Kmer& seq);
 		void setFlag(const Kmer& seq, SeqFlag flag);
 

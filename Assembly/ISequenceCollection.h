@@ -24,7 +24,7 @@ class ISequenceCollection
 
 		virtual ~ISequenceCollection() { }
 
-		virtual void add(const Kmer& seq) = 0;
+		virtual void add(const Kmer& seq, unsigned coverage = 1) = 0;
 		virtual void remove(const Kmer& seq) = 0;
 
 		virtual void setFlag(const Kmer& seq, SeqFlag flag) = 0;

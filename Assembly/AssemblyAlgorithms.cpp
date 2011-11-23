@@ -39,6 +39,32 @@ void generateSequencesFromExtension(const Kmer& currSeq,
 	}
 }
 
+/** Load k-mer with coverage data.
+ * @return the number of k-mer loaded
+ */
+static size_t loadKmer(ISequenceCollection& g, FastaReader& in)
+{
+	assert(opt::rank == -1);
+	size_t count = 0;
+	for (FastaRecord rec; in >> rec;) {
+		assert(rec.seq.size() == opt::kmerSize);
+		istringstream iss(rec.id);
+		unsigned coverage = 1;
+		iss >> coverage;
+		assert(iss);
+		assert(iss.eof());
+		g.add(Kmer(rec.seq), coverage);
+
+		if (++count % 1000000 == 0) {
+			logger(1) << "Read " << count << " k-mer. ";
+			g.printLoad();
+		}
+		g.pumpNetwork();
+	}
+	assert(in.eof());
+	return count;
+}
+
 /** Load sequence data into the collection. */
 void loadSequences(ISequenceCollection* seqCollection, string inFile)
 {
@@ -56,6 +82,12 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	size_t count = 0, count_good = 0,
 			 count_small = 0, count_nonACGT = 0;
 	FastaReader reader(inFile.c_str(), FastaReader::FOLD_CASE);
+	if (inFile.size() > 3
+			&& equal(inFile.end() - 3, inFile.end(), ".jf")) {
+		// Load k-mer with coverage data.
+		count = loadKmer(*seqCollection, reader);
+		count_good = count;
+	} else
 	for (Sequence seq; reader >> seq;) {
 		size_t len = seq.length();
 		if (opt::kmerSize > len) {

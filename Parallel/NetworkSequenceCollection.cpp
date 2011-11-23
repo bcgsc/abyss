@@ -1308,12 +1308,15 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 }
 
 /** Add a k-mer to this collection. */
-void NetworkSequenceCollection::add(const Kmer& seq)
+void NetworkSequenceCollection::add(const Kmer& seq,
+		unsigned coverage)
 {
-	if (isLocal(seq))
-		m_data.add(seq);
-	else
+	if (isLocal(seq)) {
+		m_data.add(seq, coverage);
+	} else {
+		assert(coverage == 1);
 		m_comm.sendSeqAddMessage(computeNodeID(seq), seq);
+	}
 }
 
 /** Remove a k-mer from this collection. */

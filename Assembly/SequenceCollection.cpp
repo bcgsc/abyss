@@ -36,7 +36,7 @@ SequenceCollectionHash::SequenceCollectionHash()
 }
 
 /** Add the specified k-mer to this collection. */
-void SequenceCollectionHash::add(const Kmer& seq)
+void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
 {
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
@@ -50,9 +50,9 @@ void SequenceCollectionHash::add(const Kmer& seq)
 			m_data.set_deleted_key(rc);
 		}
 #endif
-		m_data.insert(make_pair(seq, KmerData()));
+		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
 	} else
-		it->second.addMultiplicity(rc ? ANTISENSE : SENSE);
+		it->second.addMultiplicity(rc ? ANTISENSE : SENSE, coverage);
 }
 
 /** Clean up by erasing sequences flagged as deleted.
