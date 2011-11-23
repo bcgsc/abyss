@@ -136,6 +136,8 @@ int main(int argc, char** argv)
 	string estFile(argv[optind++]);
 
 	// Read the contig adjacency graph.
+	if (opt::verbose > 0)
+		cerr << "Reading `" << adjFile << "'..." << endl;
 	ifstream fin(adjFile.c_str());
 	assert_good(fin, adjFile);
 	Graph g;
@@ -603,6 +605,8 @@ static void* worker(void* pArg)
 static void generatePathsThroughEstimates(const Graph& g,
 		const string& estPath)
 {
+	if (opt::verbose > 0)
+		cerr << "Reading `" << estPath << "'..." << endl;
 	ifstream inStream(estPath.c_str());
 	assert_good(inStream, estPath);
 
