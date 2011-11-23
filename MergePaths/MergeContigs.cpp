@@ -159,6 +159,18 @@ typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 typedef ContigPath Path;
 
+/** Return the properties of the specified vertex, unless u is
+ * ambiguous, in which case return the length of the ambiguous
+ * sequence.
+ */
+static inline
+ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
+{
+	return u.ambiguous()
+		? ContigProperties(u.length() + opt::k - 1, 0)
+		: g[u];
+}
+
 /** Append the sequence of contig v to seq. */
 static void mergeContigs(const Graph& g, const Contigs& contigs,
 		vertex_descriptor u, vertex_descriptor v,
