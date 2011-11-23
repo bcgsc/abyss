@@ -215,6 +215,8 @@ static unsigned calculatePathLength(const Graph& g,
 		const ContigNode& origin,
 		const ContigPath& path, size_t prefix = 0, size_t suffix = 0)
 {
+	if (prefix + suffix == path.size())
+		return 0;
 	assert(prefix + suffix < path.size());
 	int length = addProp(g, path.begin() + prefix,
 			path.end() - suffix).length;
@@ -312,7 +314,8 @@ static ContigPath constructAmbiguousPath(const Graph &g,
 
 		// Account for the overlap on the right.
 		int dist = length + getDistance(g,
-				*(longestPath.rbegin() + longestSuffix),
+				longestSuffix == longestPath.size() ? origin
+				: *(longestPath.rbegin() + longestSuffix),
 				*(longestPath.rbegin() + longestSuffix - 1));
 
 		// Add k-1 because it is the convention.
