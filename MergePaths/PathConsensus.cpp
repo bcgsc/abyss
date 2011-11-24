@@ -983,7 +983,9 @@ int main(int argc, char** argv)
 	string adjFile(argv[optind++]);
 	string allPaths(argv[optind++]);
 
-	// Load the graph from the adjacency file
+	// Read the contig overlap graph.
+	if (opt::verbose > 0)
+		cerr << "Reading `" << adjFile << "'..." << endl;
 	ifstream fin(adjFile.c_str());
 	assert_good(fin, adjFile);
 	Graph g;
@@ -993,6 +995,8 @@ int main(int argc, char** argv)
 	// Read contigs
 	Contigs& contigs = g_contigs;
 	{
+		if (opt::verbose > 0)
+			cerr << "Reading `" << contigFile << "'..." << endl;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			ContigID id(rec.id);
