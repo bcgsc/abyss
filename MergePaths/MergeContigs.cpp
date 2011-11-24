@@ -157,7 +157,6 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
-typedef ContigPath Path;
 
 /** Return the properties of the specified vertex, unless u is
  * ambiguous, in which case return the length of the ambiguous
@@ -174,7 +173,7 @@ ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
 /** Append the sequence of contig v to seq. */
 static void mergeContigs(const Graph& g, const Contigs& contigs,
 		vertex_descriptor u, vertex_descriptor v,
-		Sequence& seq, const Path& path)
+		Sequence& seq, const ContigPath& path)
 {
 	int d = get(edge_bundle, g, u, v).distance;
 	assert(d < 0);
@@ -246,11 +245,11 @@ static void pathToComment(ostream& out, const ContigPath& path)
 
 /** Merge the specified path. */
 static Contig mergePath(const Graph& g, const Contigs& contigs,
-		const Path& path)
+		const ContigPath& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
-	for (Path::const_iterator it = path.begin();
+	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
 		if (!it->ambiguous())
 			coverage += g[*it].coverage;
@@ -267,10 +266,13 @@ static Contig mergePath(const Graph& g, const Contigs& contigs,
 	return Contig(ss.str(), seq);
 }
 
+/** A container of ContigPath. */
+typedef vector<ContigPath> ContigPaths;
+
 /** Read contig paths from the specified file.
  * @param ids [out] the string ID of the paths
  */
-static vector<Path> readPaths(const string& inPath,
+static ContigPaths readPaths(const string& inPath,
 		vector<string>* ids = NULL)
 {
 	if (ids != NULL)
@@ -283,9 +285,9 @@ static vector<Path> readPaths(const string& inPath,
 	istream& in = inPath == "-" ? cin : fin;
 
 	unsigned count = 0;
-	vector<Path> paths;
+	ContigPaths paths;
 	string id;
-	Path path;
+	ContigPath path;
 	while (in >> id >> path) {
 		paths.push_back(path);
 		if (ids != NULL)
@@ -306,11 +308,11 @@ static vector<Path> readPaths(const string& inPath,
 
 /** Finds all contigs used in each path in paths, and
  * marks them as seen in the vector seen. */
-static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
+static void seenContigs(vector<bool>& seen, const ContigPaths& paths)
 {
-	for (vector<Path>::const_iterator it = paths.begin();
+	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it)
-		for (Path::const_iterator itc = it->begin();
+		for (ContigPath::const_iterator itc = it->begin();
 				itc != it->end(); ++itc)
 			if (itc->id() < seen.size())
 				seen[itc->id()] = true;
@@ -320,9 +322,9 @@ static void seenContigs(vector<bool>& seen, const vector<Path>& paths)
  * should be removed.
  */
 static void markRemovedContigs(vector<bool>& marked,
-		const vector<string>& pathIDs, const vector<Path>& paths)
+		const vector<string>& pathIDs, const ContigPaths& paths)
 {
-	for (vector<Path>::const_iterator it = paths.begin();
+	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it)
 		if (it->empty())
 			marked[ContigID(pathIDs[it - paths.begin()])] = true;
@@ -330,12 +332,12 @@ static void markRemovedContigs(vector<bool>& marked,
 
 /** Output the updated overlap graph. */
 static void outputGraph(Graph& g,
-		const vector<string>& pathIDs, const vector<Path>& paths,
+		const vector<string>& pathIDs, const ContigPaths& paths,
 		const string& commandLine)
 {
-	for (vector<Path>::const_iterator it = paths.begin();
+	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		const Path& path = *it;
+		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (path.empty()) {
 			remove_vertex(ContigNode(id, false), g);
@@ -452,7 +454,7 @@ int main(int argc, char** argv)
 	}
 
 	vector<string> pathIDs;
-	vector<Path> paths = readPaths(mergedPathFile, &pathIDs);
+	ContigPaths paths = readPaths(mergedPathFile, &pathIDs);
 
 	// Record all the contigs that are in a path.
 	vector<bool> seen(contigs.size());
@@ -494,9 +496,9 @@ int main(int argc, char** argv)
 			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
 
 	unsigned npaths = 0;
-	for (vector<Path>::const_iterator it = paths.begin();
+	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		const Path& path = *it;
+		const ContigPath& path = *it;
 		if (path.empty())
 			continue;
 		Contig contig = mergePath(g, contigs, path);
