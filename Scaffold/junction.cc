@@ -146,9 +146,7 @@ void extendJunction(
 	typedef graph_traits<OverlapGraph>::vertex_descriptor V;
 	V u = source(*in_edges(v, overlapG).first, overlapG);
 	V w = *adjacent_vertices(v, overlapG).first;
-	if (edge(u, v, scaffoldG).second
-			&& edge(v, w, scaffoldG).second
-			&& edge(u, w, scaffoldG).second) {
+	if (edge(u, w, scaffoldG).second) {
 		// This junction contig is supported by the scaffold graph.
 		ContigPath path;
 		path.reserve(3);
