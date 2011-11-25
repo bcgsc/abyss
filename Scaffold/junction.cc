@@ -2,6 +2,7 @@
 #include "Common/ContigPath.h"
 #include "Common/IOUtil.h"
 #include "Graph/ContigGraph.h"
+#include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
@@ -15,6 +16,7 @@
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -148,8 +150,14 @@ void extendJunction(
 			&& edge(v, w, scaffoldG).second
 			&& edge(u, w, scaffoldG).second) {
 		// This junction contig is supported by the scaffold graph.
-		cout << ContigID::create() << '\t'
-			<< u << ' ' << v << ' ' << w << '\n';
+		ContigPath path;
+		path.reserve(3);
+		extend(overlapG, ~v, back_inserter(path));
+		path.reverseComplement();
+		path.push_back(v);
+		extend(overlapG, v, back_inserter(path));
+		assert(path.size() >= 3);
+		cout << ContigID::create() << '\t' << path << '\n';
 		g_count.supported++;
 	}
 	g_count.junctions++;
