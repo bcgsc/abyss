@@ -49,8 +49,8 @@ static const char USAGE_MESSAGE[] =
 "  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
 "  -g, --graph=FILE      write the contig overlap graph to FILE\n"
 "      --merged          output only merged contigs\n"
-"      --adj             output the graph in adj format [default]\n"
-"      --dot             output the graph in dot format\n"
+"      --adj             output the graph in adj format\n"
+"      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
 "      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
@@ -69,7 +69,7 @@ namespace opt {
 	static string graphPath;
 
 	/** Output graph format. */
-	int format;
+	int format = DOT;
 
 	/** Output only merged contigs. */
 	int onlyMerged;
