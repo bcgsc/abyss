@@ -368,7 +368,7 @@ endif
 	PathConsensus -vk$k -p1 -s /dev/null -o $@ $^
 
 %-scaffolds.fa: %-6.fa %-6.dot %-6.path2
-	MergeContigs -vk$k -o $@ $^
+	MergeContigs -vk$k -g $*-scaffolds.dot -o $@ $^
 
 # Final BAM file
 
