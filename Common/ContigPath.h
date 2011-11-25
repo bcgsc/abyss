@@ -14,31 +14,16 @@
 #include <vector>
 
 /** A sequence of ContigNode. */
-class ContigPath : public std::vector<ContigNode>
+typedef std::vector<ContigNode> ContigPath;
+
+/** Reverse and complement the specified path. */
+template<typename T>
+void reverseComplement(T first, T last)
 {
-	typedef ContigNode T;
-	typedef std::vector<T> Vector;
-
-	public:
-		ContigPath() { }
-		explicit ContigPath(size_t n, const T& x = T())
-			: Vector(n, x) { }
-		explicit ContigPath(const Vector& v) : Vector(v) { }
-
-		template <class InputIterator>
-		ContigPath(InputIterator first, InputIterator last)
-			: Vector(first, last) { }
-
-		/** Reverse the path and flip every node. */
-		void reverseComplement()
-		{
-			std::reverse(begin(), end());
-			std::for_each(begin(), end(),
-					std::mem_fun_ref(&ContigNode::flip));
-		}
-
-		using Vector::erase;
-};
+	std::reverse(first, last);
+	std::for_each(first, last,
+			std::mem_fun_ref(&ContigNode::flip));
+}
 
 /** Return the reverse complement of the specified path. */
 static inline ContigPath reverseComplement(const ContigPath& path)
@@ -47,11 +32,6 @@ static inline ContigPath reverseComplement(const ContigPath& path)
 	std::for_each(rc.begin(), rc.end(),
 			std::mem_fun_ref(&ContigNode::flip));
 	return rc;
-}
-
-namespace std {
-	template<>
-	inline void swap(ContigPath& a, ContigPath& b) { a.swap(b); }
 }
 
 static inline std::ostream& operator<<(std::ostream& out,

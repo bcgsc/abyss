@@ -151,7 +151,7 @@ void extendJunction(
 		ContigPath path;
 		path.reserve(3);
 		extend(overlapG, ~v, back_inserter(path));
-		path.reverseComplement();
+		reverseComplement(path.begin(), path.end());
 		path.push_back(v);
 		extend(overlapG, v, back_inserter(path));
 		assert(path.size() >= 3);

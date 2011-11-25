@@ -233,7 +233,7 @@ static ContigPath getPath(const ContigPathMap& paths, ContigNode u)
 	assert(it != paths.end());
 	ContigPath path = it->second;
 	if (u.sense())
-		path.reverseComplement();
+		reverseComplement(path.begin(), path.end());
 	return path;
 }
 
@@ -256,7 +256,7 @@ static void findPathOverlaps(const ContigPathMap& paths,
 
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
-			path2.reverseComplement();
+			reverseComplement(path2.begin(), path2.end());
 		addOverlapEdge(gout, seed2, seed1, path1, seed2, path2);
 	}
 }
@@ -279,7 +279,7 @@ static unsigned mergePaths(ContigPath& path,
 
 		ContigPath path2 = path2It->second;
 		if (pivot.sense())
-			path2.reverseComplement();
+			reverseComplement(path2.begin(), path2.end());
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty()) {
 			invalid.push_back(pivot);
@@ -311,7 +311,7 @@ static ContigPath mergePath(
 	assert(path1It != paths.end());
 	ContigPath path(path1It->second);
 	if (seedPath.front().sense())
-		path.reverseComplement();
+		reverseComplement(path.begin(), path.end());
 	if (opt::verbose > 1)
 #pragma omp critical(cout)
 		cout << "\n* " << seedPath << '\n'
@@ -324,7 +324,7 @@ static ContigPath mergePath(
 		assert(path2It != paths.end());
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
-			path2.reverseComplement();
+			reverseComplement(path2.begin(), path2.end());
 
 		ContigNode pivot
 			= find(path.begin(), path.end(), seed2) != path.end()
@@ -455,7 +455,7 @@ static ContigID identifySubsumedPaths(
 			continue;
 		ContigPath path2 = path2It->second;
 		if (pivot.sense())
-			path2.reverseComplement();
+			reverseComplement(path2.begin(), path2.end());
 		ContigPath consensus = align(path, path2, pivot);
 		if (consensus.empty())
 			continue;
@@ -682,7 +682,7 @@ static void assemblePathGraph(
 			it1 != seedPaths.end(); ++it1) {
 		const ContigPath& path(mergedPaths[it1 - seedPaths.begin()]);
 		ContigPath pathrc(path);
-		pathrc.reverseComplement();
+		reverseComplement(pathrc.begin(), pathrc.end());
 		for (ContigPath::const_iterator it2 = it1->begin();
 				it2 != it1->end(); ++it2) {
 			ContigNode seed(*it2);

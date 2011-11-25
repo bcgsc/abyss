@@ -230,7 +230,7 @@ static bool startsWith(ContigPath path, bool rc,
 		ContigPath::const_iterator last)
 {
 	if (rc)
-		path.reverseComplement();
+		reverseComplement(path.begin(), path.end());
 	assert(*first == path.front());
 	assert(first < last);
 	return unsigned(last - first) > path.size() ? false
@@ -260,7 +260,7 @@ static void findOverlaps(const Graph& g,
 	ContigPath rc;
 	if (v.sense) {
 		rc = paths[v.id];
-		rc.reverseComplement();
+		reverseComplement(rc.begin(), rc.end());
 	}
 	const ContigPath& path = v.sense ? rc : paths[v.id];
 

@@ -589,7 +589,7 @@ static void* worker(void* pArg)
 
 		ContigPath path;
 		handleEstimate(*arg.graph, er, true, path);
-		path.reverseComplement();
+		reverseComplement(path.begin(), path.end());
 		path.push_back(ContigNode(er.refID, false));
 		handleEstimate(*arg.graph, er, false, path);
 		if (path.size() > 1) {
