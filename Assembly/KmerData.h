@@ -45,6 +45,9 @@ struct ExtensionRecord
  */
 class KmerData
 {
+/** Maximum value of k-mer coverage. */
+#define COVERAGE_MAX 32767U
+
   public:
 	KmerData() : m_flags(0)
 	{
@@ -74,8 +77,6 @@ class KmerData
 	{
 		return m_multiplicity[SENSE] + m_multiplicity[ANTISENSE];
 	}
-
-	static const unsigned COVERAGE_MAX = 32767;
 
 	void addMultiplicity(extDirection dir, unsigned n = 1)
 	{
