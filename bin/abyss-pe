@@ -4,6 +4,10 @@
 
 SHELL=/bin/bash -o pipefail
 
+# Define this environment variable on Mac OS X to read
+# compressed files.
+export DYLD_FORCE_FLAT_NAMESPACE=1
+
 # Integrate with Sun Grid Engine (SGE)
 ifdef JOB_NAME
 name?=$(JOB_NAME)
