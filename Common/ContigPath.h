@@ -51,9 +51,8 @@ static inline std::istream& operator>>(std::istream& in,
 	std::string s;
 	if (getline(in, s)) {
 		std::istringstream ss(s);
-		copy(std::istream_iterator<ContigNode>(ss),
-				std::istream_iterator<ContigNode>(),
-				back_inserter(o));
+		for (ContigNode u; ss >> u;)
+			o.push_back(u);
 		assert(ss.eof());
 	}
 	return in;
