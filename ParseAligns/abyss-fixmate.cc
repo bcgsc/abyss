@@ -32,8 +32,8 @@ static const char USAGE_MESSAGE[] =
 "Write read pairs that align to different contigs to standard output.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
-"      --no-qname        set the qname to *\n"
-"      --qname           do not alter the qname [default]\n"
+"      --no-qname        set the qname to * [default]\n"
+"      --qname           do not alter the qname\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
 "  -v, --verbose         display verbose output\n"
@@ -45,7 +45,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static string fragPath;
 	static string histPath;
-	static int qname = 1;
+	static int qname;
 	static int verbose;
 }
 
