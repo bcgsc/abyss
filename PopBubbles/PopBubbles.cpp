@@ -573,7 +573,7 @@ int main(int argc, char** argv)
 			cerr << "Reading `" << contigsPath << "'...\n";
 		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			if (ContigID::count(rec.id) > 0)
+			if (ContigID::count(rec.id) == 0)
 				continue;
 			ContigID id(rec.id);
 			assert(contigs.size() == id);

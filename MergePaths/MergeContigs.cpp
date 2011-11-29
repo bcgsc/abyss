@@ -446,9 +446,10 @@ int main(int argc, char** argv)
 		unsigned count = 0;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			if (ContigID::count(rec.id) > 0)
+			if (!adjPath.empty()
+					&& ContigID::count(rec.id) == 0)
 				continue;
-			ContigID id = ContigID::insert(rec.id);
+			ContigID id(rec.id);
 			assert(id == contigs.size());
 			contigs.push_back(rec);
 
@@ -465,8 +466,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		if (adjPath.empty())
-			ContigID::lock();
+		ContigID::lock();
 	}
 
 	vector<string> pathIDs;
