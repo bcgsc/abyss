@@ -1,0 +1,55 @@
+#!/bin/bash
+set -eu
+
+case $1 in
+	--help)
+		cat <<EOF
+Usage: abyss-bowtie2 [OPTION]... QUERY... TARGET
+Align the sequences of the files QUERY to those of the file
+TARGET using bowtie2.
+EOF
+		exit
+		;;
+	--version)
+		cat <<EOF
+abyss-bowtie2 (ABySS)
+Written by Shaun Jackman.
+EOF
+		exit
+		;;
+esac
+
+# Parse the command line.
+bowtie2_align='bowtie2-align'
+while getopts :j:k:v opt; do
+	case $opt in
+		j) bowtie2_align="$bowtie2_align -p$OPTARG";;
+		k) ;;
+		v) ;;
+		\?) echo >&2 "abyss-bowtie2: invalid option: $OPTARG"
+			exit 1;;
+	esac
+done
+shift $((OPTIND-1))
+
+query=("$@")
+target=${query[${#query[@]}-1]}
+unset query[${#query[@]}-1]
+index=$target.1.bt2
+
+# Build the index.
+if [ ! -r $index ]; then
+	echo >&2 "Building the index $index..."
+	echo >&2 bowtie2-build $target $target
+	bowtie2-build $target $target 1>&2
+elif [ $index -ot $target ]; then
+	echo >&2 "The index $index is stale. Rebuilding the index..."
+	echo >&2 bowtie2-build $target $target
+	bowtie2-build $target $target 1>&2
+else
+	echo >&2 "The index $index is up to date."
+fi
+
+# Map the reads.
+echo >&2 $bowtie2_align $target "${query[@]}"
+exec abyss-tofastq -i "${query[@]}" |$bowtie2_align $target -
