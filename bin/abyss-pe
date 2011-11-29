@@ -382,7 +382,6 @@ endif
 
 ifdef mp
 bam: $(name)-scaffolds.bam.bai
-mpin=$(call map, deref, $(mp))
 else
 ifdef in
 bam: $(name)-contigs.bam.bai
@@ -392,7 +391,8 @@ endif
 endif
 
 $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(in) $(mpin) $< \
+	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) \
+		$(call map, deref, $(sort $(lib) $(pe) $(mp))) $< \
 		|${fixmate} $v ${fmopt} \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $@
