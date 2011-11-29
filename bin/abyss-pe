@@ -231,7 +231,7 @@ endif
 # Remove shim contigs
 
 %-1.path %-2.adj: %-1.adj
-	abyss-filtergraph $v --shim -k$k -g $*-2.adj $^ >$*-1.path
+	abyss-filtergraph $v -k$k -g $*-2.adj $^ >$*-1.path
 
 # Pop bubbles.
 
