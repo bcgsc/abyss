@@ -276,8 +276,8 @@ endif
 dist=$(addsuffix -3.dist, $(pe))
 
 ifneq ($(name)-3.dist, $(dist))
-$(name)-3.dist: $(dist)
-	abyss-joindist $^ >$@
+$(name)-3.dist: $(name)-3.fa $(dist)
+	abyss-todot $v --dist -e $^ >$@
 
 $(name)-3.bam: $(addsuffix -3.bam, $(pe))
 	samtools merge -r $@ $^
