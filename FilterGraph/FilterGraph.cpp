@@ -53,8 +53,8 @@ static const char USAGE_MESSAGE[] =
 "  -t, --tip=N           remove tips shorter than N [0]\n"
 "  -l, --length=N        remove contigs shorter than N [0]\n"
 "      --shim            remove filler contigs that only contribute\n"
-"                        to adjacency\n"
-"      --no-shim         disable filler contigs removal [default]\n"
+"                        to adjacency [default]\n"
+"      --no-shim         disable filler contigs removal\n"
 "  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
 "      --assemble        assemble unambiguous paths\n"
 "      --no-assemble     disable assembling of paths [default]\n"
@@ -79,7 +79,7 @@ namespace opt {
 	static unsigned minLen = 0;
 
 	/** Remove short contigs that don't contribute any sequence. */
-	static int shim = 0;
+	static int shim = 1;
 
 	/** Assemble unambiguous paths. */
 	static int assemble = 0;
