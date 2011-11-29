@@ -233,18 +233,16 @@ endif
 %-1.path %-2.adj: %-1.adj
 	abyss-filtergraph $v --shim -k$k -g $*-2.adj $^ >$*-1.path
 
-%-2.fa: %-1.fa %-1.adj %-1.path
-	MergeContigs -k$k -o $@ $*-1.fa $*-1.adj $*-1.path
-
 # Pop bubbles.
 
-%-2.path %-3.adj: %-2.fa %-2.adj
+%-2.path %-3.adj: %-1.fa %-2.adj
 	PopBubbles $v -j$j -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
 
-%-3.fa: %-2.fa %-2.adj %-2.path
-	MergeContigs -k$k -o $@ $*-2.fa $*-2.adj $*-2.path
+%-3.fa: %-1.fa %-2.adj %-1.path %-2.path
+	cat $*-1.path $*-2.path \
+		|MergeContigs -k$k -o $@ $*-1.fa $*-2.adj -
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
-		$*-2.path $*-2.fa >$*-indel.fa
+		$*-2.path $*-1.fa >$*-indel.fa
 
 %-se-contigs.fa: %-3.fa
 	ln -sf $< $@

@@ -421,8 +421,21 @@ int main(int argc, char** argv)
 
 	const char* contigFile = argv[optind++];
 	string adjPath, mergedPathFile;
-	if (argc - optind > 1)
+	Graph g;
+	if (argc - optind > 1) {
 		adjPath = string(argv[optind++]);
+
+		// Read the contig adjacency graph.
+		if (opt::verbose > 0)
+			cerr << "Reading `" << adjPath << "'..." << endl;
+		ifstream fin(adjPath.c_str());
+		assert_good(fin, adjPath);
+		fin >> g;
+		assert(fin.eof());
+		if (opt::verbose > 0)
+			cerr << "Read " << num_vertices(g) << " vertices. "
+				"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
+	}
 	mergedPathFile = string(argv[optind++]);
 
 	// Read the contig sequence.
@@ -433,6 +446,8 @@ int main(int argc, char** argv)
 		unsigned count = 0;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
+			if (ContigID::count(rec.id) > 0)
+				continue;
 			ContigID id = ContigID::insert(rec.id);
 			assert(id == contigs.size());
 			contigs.push_back(rec);
@@ -450,7 +465,8 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		ContigID::lock();
+		if (adjPath.empty())
+			ContigID::lock();
 	}
 
 	vector<string> pathIDs;
@@ -482,18 +498,6 @@ int main(int argc, char** argv)
 
 	if (adjPath.empty())
 		return 0;
-
-	// Read the contig adjacency graph.
-	if (opt::verbose > 0)
-		cerr << "Reading `" << adjPath << "'..." << endl;
-	ifstream fin(adjPath.c_str());
-	assert_good(fin, adjPath);
-	Graph g;
-	fin >> g;
-	assert(fin.eof());
-	if (opt::verbose > 0)
-		cerr << "Read " << num_vertices(g) << " vertices. "
-			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
 
 	unsigned npaths = 0;
 	for (ContigPaths::const_iterator it = paths.begin();
