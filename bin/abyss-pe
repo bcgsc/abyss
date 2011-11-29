@@ -129,17 +129,12 @@ m?=30
 p?=0.9
 pbopt += -p$p
 
-# KAligner parameters
-ifdef mp
+# Select the aligner program
 aligner?=map
-endif
-ifdef aligner
 align?=abyss-${aligner}
-endif
-align?=KAligner
 
 # fixmate parameters
-ifeq (${align},KAligner)
+ifeq (${align},abyss-kaligner)
 fixmate?=ParseAligns
 fmopt=-k$k
 else
