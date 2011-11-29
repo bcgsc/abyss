@@ -20,7 +20,7 @@ EOF
 esac
 
 # Parse the command line.
-bowtie2_align='bowtie2-align'
+bowtie2_align='bowtie2-align --local'
 while getopts :j:k:v opt; do
 	case $opt in
 		j) bowtie2_align="$bowtie2_align -p$OPTARG";;
