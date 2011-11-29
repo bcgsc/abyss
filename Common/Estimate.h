@@ -101,7 +101,7 @@ struct MergeDistanceEst
 		int x1 = a.distance, x2 = b.distance;
 		double v1 = a.stdDev * a.stdDev, v2 = b.stdDev * b.stdDev;
 		DistanceEst x;
-		x.distance = (x1 * v2 + x2 * v1) / (v1 + v2);
+		x.distance = (int)round((x1 * v2 + x2 * v1) / (v1 + v2));
 		x.stdDev = sqrt(v1 * v2 / (v1 + v2));
 		x.numPairs = a.numPairs + b.numPairs;
 		return x;
