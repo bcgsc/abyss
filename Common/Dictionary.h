@@ -48,6 +48,7 @@ class Dictionary {
 				assert(index == m_vec.size());
 				index_type i = insert(key);
 				assert(i == index);
+				(void)i;
 			}
 		}
 

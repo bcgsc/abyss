@@ -288,6 +288,7 @@ static bool isRepeat(const Graph& g,
 		graph_traits<Graph>::vertex_descriptor v2)
 {
 	assert(in_degree(u, g) == 2 && out_degree(u, g) == 2);
+	(void)u;
 	return out_degree(t1, g) == 2 && out_degree(t2, g) == 2
 		&& in_degree(v1, g) == 2 && in_degree(v2, g) == 2
 		&& edge(t1, v1, g).second && edge(t2, v2, g).second
