@@ -24,6 +24,8 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 	switch (opt::format) {
 	  case ADJ:
 		return out << adj_writer<Graph>(g);
+	  case ASQG:
+		return write_asqg(out, g);
 	  case DIST:
 		return write_dist(out, g);
 	  case DOT: case DOT_MEANCOV:

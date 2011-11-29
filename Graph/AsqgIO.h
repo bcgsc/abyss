@@ -12,6 +12,57 @@
 
 using boost::graph_traits;
 
+/** Write a graph in ASQG format. */
+template <typename Graph>
+std::ostream& write_asqg(std::ostream& out, Graph& g)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor E;
+	typedef typename graph_traits<Graph>::edge_iterator Eit;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_iterator Vit;
+	typedef typename vertex_bundle_type<Graph>::type VP;
+
+	out << "HT\tVN:i:1\n";
+	assert(out);
+
+	std::pair<Vit, Vit> vrange = vertices(g);
+	for (Vit uit = vrange.first; uit != vrange.second; ++uit, ++uit) {
+		V u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		const VP& vp = g[u];
+		out << "VT\t" << ContigID(u) << "\t*\tLN:i:" << vp.length;
+		if (vp.coverage > 0)
+			out << "\tXC:i:" << vp.coverage;
+		out << '\n';
+	}
+
+	std::pair<Eit, Eit> erange = edges(g);
+	for (Eit eit = erange.first; eit != erange.second; ++eit) {
+		E e = *eit;
+		V u = source(e, g);
+		V v = target(e, g);
+		if (v < u || get(vertex_removed, g, u))
+			continue;
+		assert(!get(vertex_removed, g, v));
+		int distance = g[e].distance;
+		assert(distance < 0);
+		unsigned overlap = -distance;
+		unsigned ulen = g[u].length;
+		unsigned vlen = g[v].length;
+		out << "ED\t" << ContigID(u) << ' ' << ContigID(v)
+			<< ' ' << (u.sense() ? 0 : ulen - overlap)
+			<< ' ' << (u.sense() ? overlap : ulen) - 1
+			<< ' ' << ulen
+			<< ' ' << (!v.sense() ? 0 : vlen - overlap)
+			<< ' ' << (!v.sense() ? overlap : vlen) - 1
+			<< ' ' << vlen
+			<< ' ' << (u.sense() != v.sense())
+			<< " -1\n"; // number of mismatches
+	}
+	return out;
+}
+
 /** Read a graph in ASQG format. */
 template <typename Graph>
 std::istream& read_asqg(std::istream& in, Graph& g)
@@ -34,13 +85,21 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			break;
 		  case 'V': {
 			std::string uname, seq;
-			in >> expect("VT") >> uname >> seq >> Ignore('\n');
+			in >> expect("VT") >> uname >> seq;
 			assert(in);
 			assert(!seq.empty());
 
+			unsigned length = 0;
+			if (seq == "*") {
+				in >> expect(" LN:i:") >> length;
+				assert(in);
+			} else
+				length = seq.size();
+			in >> Ignore('\n');
+
 			if (addVertices) {
 				VP vp;
-				put(vertex_length, vp, seq.size());
+				put(vertex_length, vp, length);
 				V u = add_vertex(vp, g);
 				put(vertex_name, g, u, uname);
 			} else {

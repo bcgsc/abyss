@@ -10,6 +10,6 @@ namespace opt {
 }
 
 /** Enumeration of output formats */
-enum { ADJ, DIST, DOT, DOT_MEANCOV, SAM };
+enum { ADJ, ASQG, DIST, DOT, DOT_MEANCOV, SAM };
 
 #endif
