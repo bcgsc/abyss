@@ -70,6 +70,7 @@ lib?=$(name)
 $(lib)?=$(in)
 endif
 pe?=$(lib)
+mp?=$(pe)
 
 ifdef in
 override in:=$(strip $(in))
