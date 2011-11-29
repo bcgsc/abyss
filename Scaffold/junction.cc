@@ -25,10 +25,12 @@
 using namespace std;
 using namespace boost::lambda;
 using boost::adaptors::filtered;
-using boost::cref;
 using boost::for_each;
-using boost::ref;
 using boost::tie;
+#if !__GXX_EXPERIMENTAL_CXX0X__
+using boost::cref;
+using boost::ref;
+#endif
 
 #define PROGRAM "abyss-junction"
 
