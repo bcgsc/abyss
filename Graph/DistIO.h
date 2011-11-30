@@ -26,7 +26,7 @@ std::ostream& write_dist(std::ostream& out, const Graph& g)
 		if (!sense)
 			out << ContigID(u);
 		else
-			out << "\t;";
+			out << " ;";
 		std::pair<Eit, Eit> erange = out_edges(u, g);
 		for (Eit eit = erange.first; eit != erange.second; ++eit) {
 			V v = target(*eit, g) ^ sense;
