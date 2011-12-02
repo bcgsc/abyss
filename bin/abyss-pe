@@ -66,8 +66,10 @@ map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
 in?=$(call map, deref, $(lib))
 else
+ifdef in
 lib?=$(name)
 $(lib)?=$(in)
+endif
 endif
 pe?=$(lib)
 mp?=$(pe)
