@@ -105,8 +105,9 @@ class CountKmerVisitor : public boost::default_dfs_visitor
 
 	void examine_edge(E e, const Graph& g)
 	{
-		m_s.back() = get(boost::edge_name, g, e);
-		if (m_s.size() == opt::k) {
+		char c = get(boost::edge_name, g, e);
+		m_s.back() = c;
+		if (c != '-' && m_s.size() == opt::k) {
 			V v = target(e, g);
 			unsigned count = v.second - v.first;
 			copy(m_s.rbegin(), m_s.rend(),
@@ -116,9 +117,10 @@ class CountKmerVisitor : public boost::default_dfs_visitor
 	}
 
 	/** Terminate the search at a depth of k. */
-	bool operator()(V, const Graph&) const
+	bool operator()(V u, const Graph& g) const
 	{
-		return m_s.size() > opt::k;
+		return m_s.size() > opt::k
+			|| get(boost::vertex_name, g, u) == '-';
 	}
 
   private:

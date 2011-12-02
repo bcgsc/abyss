@@ -154,6 +154,16 @@ vertices(const DAWG& g)
 
 static inline
 DAWG::value_type
+get(boost::vertex_name_t,
+		const DAWG& g,
+		graph_traits<DAWG>::vertex_descriptor u)
+{
+	assert(u.first < u.second);
+	return u.first == 0 ? '$' : g.symbolAt(u.first);
+}
+
+static inline
+DAWG::value_type
 get(boost::edge_name_t,
 		const DAWG& g,
 		graph_traits<DAWG>::edge_descriptor e)
