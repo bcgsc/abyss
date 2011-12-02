@@ -4,7 +4,7 @@
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "SAM.h"
-#include "StringUtil.h" // for toSI
+#include "StringUtil.h"
 #include "Uncompress.h"
 #include "UnorderedMap.h"
 #include <algorithm>
@@ -599,12 +599,6 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 		if (coverage[i] > 1)
 			return false;
 	return true;
-}
-
-static bool endsWith(const string& s, const string& suffix)
-{
-	ssize_t i = s.length() - suffix.length();
-	return i < 0 ? false : s.substr(i) == suffix;
 }
 
 static bool replaceSuffix(string& s,

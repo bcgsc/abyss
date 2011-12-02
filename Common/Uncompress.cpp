@@ -12,6 +12,7 @@
 
 #include "Fcontrol.h"
 #include "SignalHandler.h"
+#include "StringUtil.h"
 #include <cassert>
 #include <cstdio> // for perror
 #include <cstdlib>
@@ -20,19 +21,6 @@
 #include <unistd.h>
 
 using namespace std;
-
-/** Tests whether this string starts with the specified suffix. */
-static bool startsWith(const string& s, const string& suffix)
-{
-	return s.substr(0, suffix.size()) == suffix;
-}
-
-/** Tests whether this string ends with the specified suffix. */
-static bool endsWith(const string& s, const string& suffix)
-{
-	ssize_t i = s.length() - suffix.length();
-	return i < 0 ? false : s.substr(i) == suffix;
-}
 
 static const char* zcatExec(const string& path)
 {
