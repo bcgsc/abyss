@@ -29,6 +29,9 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
+"      --both              build both FAI and FM indexes [default]\n"
+"      --fai               build a FAI index\n"
+"      --fm                build a FM index\n"
 "  -s, --sample=N          sample the suffix array [16]\n"
 "  -d, --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
@@ -41,6 +44,10 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	/** Sample the suffix array. */
 	static unsigned sampleSA = 16;
+
+	/** Which indexes to create. */
+	enum { NONE, FAI, FM, BOTH };
+	static int indexes = BOTH;
 
 	/** Decompress the index. */
 	static bool decompress;
@@ -57,6 +64,9 @@ static const char shortopts[] = "cds:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "both", no_argument, &opt::indexes, opt::BOTH },
+	{ "fai", no_argument, &opt::indexes, opt::FAI },
+	{ "fm", no_argument, &opt::indexes, opt::FM },
 	{ "decompress", no_argument, NULL, 'd' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "stdout", no_argument, NULL, 'c' },
@@ -190,8 +200,11 @@ int main(int argc, char **argv)
 	ss << faPath << ".fai";
 	string faiPath(ss.str());
 
-	if (!opt::toStdout)
+	if (opt::indexes & opt::FAI)
 		indexFasta(faPath, faiPath);
+
+	if ((opt::indexes & opt::FM) == 0)
+		return 0;
 
 	FMIndex fm;
 	buildFMIndex(fm, faPath);
