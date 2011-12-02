@@ -88,39 +88,34 @@ class CountKmerVisitor : public boost::default_dfs_visitor
 	CountKmerVisitor(vector<char>& s) : m_s(s)
 	{
 		assert(m_s.empty());
-		m_s.reserve(opt::k + 1);
+		m_s.reserve(opt::k);
 	}
 
-	void discover_vertex(V, const Graph&)
-	{
-		assert(m_s.size() <= opt::k);
-		m_s.push_back('x');
-	}
-
-	void finish_vertex(V, const Graph&)
-	{
-		assert(!m_s.empty());
-		m_s.pop_back();
-	}
-
-	void examine_edge(E e, const Graph& g)
-	{
-		char c = get(boost::edge_name, g, e);
-		m_s.back() = c;
-		if (c != '-' && m_s.size() == opt::k) {
-			V v = target(e, g);
-			unsigned count = v.second - v.first;
-			copy(m_s.rbegin(), m_s.rend(),
-					ostream_iterator<char>(cout));
-			cout << '\t' << count << '\n';
-		}
-	}
-
-	/** Terminate the search at a depth of k. */
 	bool operator()(V u, const Graph& g) const
 	{
-		return m_s.size() > opt::k
-			|| get(boost::vertex_name, g, u) == '-';
+		assert(m_s.size() < opt::k);
+		if (u.first == 0)
+			return false;
+		char c = get(boost::vertex_name, g, u);
+		m_s.push_back(c);
+		if (c == '-')
+			return true;
+		if (m_s.size() < opt::k)
+			return false;
+		assert(m_s.size() == opt::k);
+		unsigned count = u.second - u.first;
+		copy(m_s.rbegin(), m_s.rend(),
+				ostream_iterator<char>(cout));
+		cout << '\t' << count << '\n';
+		return true;
+	}
+
+	void finish_vertex(V u, const Graph&)
+	{
+		if (m_s.empty())
+			assert(u.first == 0);
+		else
+			m_s.pop_back();
 	}
 
   private:
