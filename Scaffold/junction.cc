@@ -56,6 +56,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by DotIO
 
+	/** Do not check for evidence in the scaffold graph. */
+	bool noScaffoldGraph;
+
 	/** Junction contigs to ignore. */
 	string ignorePath;
 
@@ -148,7 +151,8 @@ void extendJunction(
 	typedef graph_traits<OverlapGraph>::vertex_descriptor V;
 	V u = source(*in_edges(v, overlapG).first, overlapG);
 	V w = *adjacent_vertices(v, overlapG).first;
-	if (edge(u, w, scaffoldG).second) {
+	if (opt::noScaffoldGraph
+			|| edge(u, w, scaffoldG).second) {
 		// This junction contig is supported by the scaffold graph.
 		ContigPath path;
 		path.reserve(3);
@@ -236,11 +240,10 @@ int main(int argc, char** argv)
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
 				bind(readGraph, _1, ref(scaffoldG)));
+		// Add any missing complementary edges.
+		addComplementaryEdges(scaffoldG);
 	} else
-		readGraph("-", scaffoldG);
-
-	// Add any missing complementary edges.
-	addComplementaryEdges(scaffoldG);
+		opt::noScaffoldGraph = true;
 
 	// Read the set of contigs to ignore.
 	vector<bool> seen(num_vertices(overlapG) / 2);
@@ -257,9 +260,11 @@ int main(int argc, char** argv)
 
 	assert_good(cout, "stdout");
 
-	if (opt::verbose > 0)
-		cerr << "Junctions: " << g_count.junctions << '\n'
-			<< "Supported: " << g_count.supported << '\n';
+	if (opt::verbose > 0) {
+		cerr << "Junctions: " << g_count.junctions << '\n';
+		if (!opt::noScaffoldGraph)
+			cerr << "Supported: " << g_count.supported << '\n';
+	}
 
 	return 0;
 }
