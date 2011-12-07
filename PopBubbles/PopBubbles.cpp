@@ -228,6 +228,12 @@ static int getOutDist(const Graph* g,
 	return (*g)[*oes.first].distance;
 }
 
+/** @return the length of sequence between overlaps of v. */
+static int getInsertLen(const Graph* g, vertex_descriptor v)
+{
+	return getLength(g, v) - getOutDist(g, v) - getInDist(g, v);
+}
+
 /** Align the sequences of [first,last).
  * @return the identity of the global alignment
  */
@@ -235,14 +241,15 @@ template <typename It>
 static float getAlignmentIdentity(const Graph& g, It first, It last)
 {
 	unsigned nbranches = distance(first, last);
-	vector<string> seqs(nbranches);
-	transform(first, last, seqs.begin(), getSequence);
 	vector<int> inDists(nbranches);
 	transform(first, last, inDists.begin(),
 			bind1st(ptr_fun(getInDist), &g));
 	vector<int> outDists(nbranches);
 	transform(first, last, outDists.begin(),
 			bind1st(ptr_fun(getOutDist), &g));
+	vector<int> insertLens(nbranches);
+	transform(first, last, insertLens.begin(),
+			bind1st(ptr_fun(getInsertLen), &g));
 
 	int max_in_overlap = -(*min_element(inDists.begin(),
 			inDists.end()));
@@ -250,8 +257,20 @@ static float getAlignmentIdentity(const Graph& g, It first, It last)
 	int max_out_overlap = -(*min_element(outDists.begin(),
 			outDists.end()));
 	assert(max_out_overlap >= 0);
-	vector<string> fixed_seqs;
+	int min_insert_len = *min_element(insertLens.begin(),
+			insertLens.end());
+	int max_insert_len = *max_element(insertLens.begin(),
+			insertLens.end());
 
+	float max_identity =
+		(float)(min_insert_len + max_in_overlap + max_out_overlap) /
+		(max_insert_len + max_in_overlap + max_out_overlap);
+	if (min_insert_len <= 0 || max_identity < opt::identity)
+		return max_identity;
+
+	vector<string> seqs(nbranches);
+	transform(first, last, seqs.begin(), getSequence);
+	vector<string> fixed_seqs;
 	for (unsigned i = 0; i < seqs.size(); i++) {
 		int n = seqs[i].size();
 		int l = -inDists[i], r = -outDists[i];
