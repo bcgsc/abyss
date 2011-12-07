@@ -53,8 +53,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -s, --seed-length=L   minimum length of a seed contig [0]\n"
 "  -o, --out=FILE        write result to FILE\n"
-"      --greedy          use the greedy algorithm [default]\n"
-"      --no-greedy       do not use the greedy algorithm\n"
+"      --no-greedy       use the non-greedy algorithm [default]\n"
+"      --greedy          use the greedy algorithm\n"
 "  -g, --graph=FILE      write the path overlap graph to FILE\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
@@ -72,7 +72,7 @@ namespace opt {
 	static unsigned seedLen;
 
 	/** Use a greedy algorithm. */
-	static int greedy = true;
+	static int greedy;
 
 	/** Write the path overlap graph to this file. */
 	static string graphPath;
