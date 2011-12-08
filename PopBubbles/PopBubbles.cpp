@@ -14,6 +14,7 @@
 #include "Iterator.h"
 #include "Sequence.h"
 #include "Uncompress.h"
+#include "alignGlobal.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DepthFirstSearch.h"
@@ -234,6 +235,20 @@ static int getInsertLen(const Graph* g, vertex_descriptor v)
 	return getInDist(g, v) + getLength(g, v) + getOutDist(g, v);
 }
 
+/** Align the specified pair of sequences.
+ * @return the number of matches and size of the consensus
+ */
+static pair<unsigned, unsigned> alignPair(
+		const string& seqa, const string& seqb)
+{
+	NWAlignment alignment;
+	unsigned matches = alignGlobal(seqa, seqb, alignment);
+	if (opt::verbose > 2)
+#pragma omp critical(cerr)
+		cerr << alignment;
+	return make_pair(matches, alignment.size());
+}
+
 /** Align the specified sequences.
  * @return the number of matches and size of the consensus
  */
@@ -246,6 +261,18 @@ static pair<unsigned, unsigned> alignMulti(const vector<string>& seqs)
 #pragma omp critical(cerr)
 		cerr << alignment << consensus << '\n';
 	return make_pair(matches, consensus.size());
+}
+
+/** Align the specified sequences.
+ * @return the number of matches and size of the consensus
+ */
+static pair<unsigned, unsigned> align(const vector<string>& seqs)
+{
+	assert(seqs.size() > 1);
+	if (seqs.size() == 2)
+		return alignPair(seqs[0], seqs[1]);
+	else
+		return alignMulti(seqs);
 }
 
 /** Align the sequences of [first,last).
@@ -293,7 +320,7 @@ static float getAlignmentIdentity(const Graph& g, It first, It last)
 	}
 
 	unsigned matches, consensusSize;
-	tie(matches, consensusSize) = alignMulti(seqs);
+	tie(matches, consensusSize) = align(seqs);
 	return (float)(matches + max_in_overlap + max_out_overlap) /
 		(consensusSize + max_in_overlap + max_out_overlap);
 }
