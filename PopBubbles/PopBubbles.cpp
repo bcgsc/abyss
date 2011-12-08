@@ -270,17 +270,17 @@ static float getAlignmentIdentity(const Graph& g, It first, It last)
 
 	vector<string> seqs(nbranches);
 	transform(first, last, seqs.begin(), getSequence);
-	vector<string> fixed_seqs;
 	for (unsigned i = 0; i < seqs.size(); i++) {
+		// Remove the overlapping sequence.
 		int n = seqs[i].size();
 		int l = -inDists[i], r = -outDists[i];
 		assert(n > l + r);
-		fixed_seqs.push_back(seqs[i].substr(l, n - l - r));
+		seqs[i] = seqs[i].substr(l, n - l - r);
 	}
 
 	string alignment;
 	unsigned matches;
-	string consensus = dialign(fixed_seqs, alignment, matches);
+	string consensus = dialign(seqs, alignment, matches);
 	if (opt::verbose > 2)
 #pragma omp critical(cerr)
 		cerr << alignment << consensus << '\n';
