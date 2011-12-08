@@ -57,6 +57,7 @@ static const char USAGE_MESSAGE[] =
 "  ADJ    contig adjacency graph\n"
 "\n"
 "  -k, --kmer=N          k-mer size\n"
+"  -a, --branches=N      maximum number of branches, default: 2\n"
 "  -b, --bubble-length=N pop bubbles shorter than N bp\n"
 "                        default is 10000\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
@@ -76,6 +77,9 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
+
+	/** Maximum number of branches. */
+	static unsigned maxBranches = 2;
 
 	/** Pop bubbles shorter than this threshold. */
 	static unsigned maxLength = 10000;
@@ -104,11 +108,12 @@ namespace opt {
 	static string dialign_prob;
 }
 
-static const char shortopts[] = "b:c:g:j:k:p:vD:M:P:";
+static const char shortopts[] = "a:b:c:g:j:k:p:vD:M:P:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "branches",      required_argument, NULL, 'a' },
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "coverage",      required_argument, NULL, 'c' },
 	{ "dot",           no_argument,       &opt::dot, 1, },
@@ -187,6 +192,7 @@ static struct {
 	unsigned scaffold;
 	unsigned notSimple;
 	unsigned tooLong;
+	unsigned tooMany;
 	unsigned dissimilar;
 } g_count;
 
@@ -371,6 +377,16 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 		copy(adj.first, adj.second,
 				ostream_iterator<ContigNode>(cerr, " "));
 		cerr << "-> " << tail << '\n';
+	}
+
+	if (nbranches > opt::maxBranches) {
+		// Too many branches.
+#pragma omp atomic
+		g_count.tooMany++;
+		if (opt::verbose > 1)
+#pragma omp critical(cerr)
+			cerr << nbranches << " paths (too many)\n";
+		return false;
 	}
 
 	vector<unsigned> lengths(nbranches);
@@ -560,6 +576,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'a': arg >> opt::maxBranches; break;
 			case 'b': arg >> opt::maxLength; break;
 			case 'c': arg >> opt::minCoverage; break;
 			case 'g': arg >> opt::graphPath; break;
@@ -671,6 +688,7 @@ int main(int argc, char** argv)
 			<< " Scaffolds: " << g_count.scaffold/2
 			<< " Complex: " << g_count.notSimple/2
 			<< " Too long: " << g_count.tooLong/2
+			<< " Too many: " << g_count.tooMany/2
 			<< " Dissimilar: " << g_count.dissimilar/2
 			<< '\n';
 
