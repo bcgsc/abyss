@@ -231,7 +231,7 @@ static int getOutDist(const Graph* g,
 /** @return the length of sequence between overlaps of v. */
 static int getInsertLen(const Graph* g, vertex_descriptor v)
 {
-	return getLength(g, v) - getOutDist(g, v) - getInDist(g, v);
+	return getInDist(g, v) + getLength(g, v) + getOutDist(g, v);
 }
 
 /** Align the sequences of [first,last).
