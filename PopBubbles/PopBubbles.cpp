@@ -234,6 +234,20 @@ static int getInsertLen(const Graph* g, vertex_descriptor v)
 	return getInDist(g, v) + getLength(g, v) + getOutDist(g, v);
 }
 
+/** Align the specified sequences.
+ * @return the number of matches and size of the consensus
+ */
+static pair<unsigned, unsigned> alignMulti(const vector<string>& seqs)
+{
+	string alignment;
+	unsigned matches;
+	string consensus = dialign(seqs, alignment, matches);
+	if (opt::verbose > 2)
+#pragma omp critical(cerr)
+		cerr << alignment << consensus << '\n';
+	return make_pair(matches, consensus.size());
+}
+
 /** Align the sequences of [first,last).
  * @return the identity of the global alignment
  */
@@ -278,14 +292,10 @@ static float getAlignmentIdentity(const Graph& g, It first, It last)
 		seqs[i] = seqs[i].substr(l, n - l - r);
 	}
 
-	string alignment;
-	unsigned matches;
-	string consensus = dialign(seqs, alignment, matches);
-	if (opt::verbose > 2)
-#pragma omp critical(cerr)
-		cerr << alignment << consensus << '\n';
+	unsigned matches, consensusSize;
+	tie(matches, consensusSize) = alignMulti(seqs);
 	return (float)(matches + max_in_overlap + max_out_overlap) /
-		(consensus.size() + max_in_overlap + max_out_overlap);
+		(consensusSize + max_in_overlap + max_out_overlap);
 }
 
 /** Pop the specified bubble if it is a simple bubble.
