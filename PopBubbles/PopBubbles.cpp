@@ -22,6 +22,8 @@
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
 #include "Graph/PopBubbles.h"
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/lambda.hpp>
 #include <algorithm>
 #include <climits> // for UINT_MAX
 #include <fstream>
@@ -40,7 +42,11 @@
 #endif
 
 using namespace std;
+using namespace boost::lambda;
 using boost::tie;
+#if !__GXX_EXPERIMENTAL_CXX0X__
+using boost::cref;
+#endif
 
 #define PROGRAM "PopBubbles"
 
@@ -215,32 +221,6 @@ static unsigned getLength(const Graph* g, vertex_descriptor v)
 	return (*g)[v].length;
 }
 
-/** @return the distance from v to the previous contig. */
-static int getInDist(const Graph* g,
-		vertex_descriptor v)
-{
-	assert(in_degree(v, *g) == 1);
-	typedef graph_traits<Graph>::in_edge_iterator IEit;
-	pair<IEit, IEit> ies = in_edges(v, *g);
-	return (*g)[*ies.first].distance;
-}
-
-/** @return the distance from v to the next contig. */
-static int getOutDist(const Graph* g,
-		vertex_descriptor v)
-{
-	assert(out_degree(v, *g) == 1);
-	typedef graph_traits<Graph>::out_edge_iterator OEit;
-	pair<OEit, OEit> oes = out_edges(v, *g);
-	return (*g)[*oes.first].distance;
-}
-
-/** @return the length of sequence between overlaps of v. */
-static int getInsertLen(const Graph* g, vertex_descriptor v)
-{
-	return getInDist(g, v) + getLength(g, v) + getOutDist(g, v);
-}
-
 /** Align the specified pair of sequences.
  * @return the number of matches and size of the consensus
  */
@@ -282,21 +262,27 @@ static pair<unsigned, unsigned> align(const vector<string>& seqs)
 }
 
 /** Align the sequences of [first,last).
+ * @param t the vertex to the left of the bubble
+ * @param v the vertex to the right of the bubble
  * @return the identity of the global alignment
  */
 template <typename It>
-static float getAlignmentIdentity(const Graph& g, It first, It last)
+static float getAlignmentIdentity(const Graph& g,
+		vertex_descriptor t, vertex_descriptor v,
+		It first, It last)
 {
 	unsigned nbranches = distance(first, last);
 	vector<int> inDists(nbranches);
 	transform(first, last, inDists.begin(),
-			bind1st(ptr_fun(getInDist), &g));
+			bind(getDistance, cref(g), t, _1));
 	vector<int> outDists(nbranches);
 	transform(first, last, outDists.begin(),
-			bind1st(ptr_fun(getOutDist), &g));
+			bind(getDistance, cref(g), _1, v));
 	vector<int> insertLens(nbranches);
 	transform(first, last, insertLens.begin(),
-			bind1st(ptr_fun(getInsertLen), &g));
+			bind(getDistance, cref(g), t, _1)
+				+ bind(getLength, &g, _1)
+				+ bind(getDistance, cref(g), _1, v));
 
 	int max_in_overlap = -(*min_element(inDists.begin(),
 			inDists.end()));
@@ -406,7 +392,7 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 	}
 
 	float identity = opt::identity == 0 ? 0
-		: getAlignmentIdentity(g, adj.first, adj.second);
+		: getAlignmentIdentity(g, v, tail, adj.first, adj.second);
 	bool dissimilar = identity < opt::identity;
 	if (opt::verbose > 1)
 #pragma omp critical(cerr)
