@@ -3,9 +3,9 @@
 
 bool uncompress_init();
 
-/** Call the initalizer to force the Uncompress.o object file to be
- * linked in.
- */
-const bool init_uncompress = uncompress_init();
+namespace {
+const bool uncompressInitialized = uncompress_init();
+bool getUncompressInitialized() { return uncompressInitialized; }
+}
 
 #endif
