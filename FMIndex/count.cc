@@ -112,9 +112,10 @@ class CountKmerVisitor : public boost::default_dfs_visitor
 
 	void finish_vertex(V u, const Graph&)
 	{
-		if (m_s.empty())
+		if (m_s.empty()) {
 			assert(u.first == 0);
-		else
+			(void)u;
+		} else
 			m_s.pop_back();
 	}
 
