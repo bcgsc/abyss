@@ -3,11 +3,12 @@
 #include "ContigID.h"
 #include "ContigLength.h"
 #include "ContigPath.h"
+#include "Functional.h" // for mem_var
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "Uncompress.h"
+#include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
-#include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/DotIO.h"
 #include "Graph/GraphAlgorithms.h"
@@ -672,7 +673,7 @@ static void assemblePathGraph(
 		PathGraph& pathGraph, ContigPathMap& paths)
 {
 	ContigPaths seedPaths;
-	assemble(pathGraph, back_inserter(seedPaths));
+	assembleDFS(pathGraph, back_inserter(seedPaths));
 	ContigPaths mergedPaths = mergeSeedPaths(paths, seedPaths);
 	if (opt::verbose > 1)
 		cout << '\n';
