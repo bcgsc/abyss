@@ -1257,11 +1257,26 @@ static ContigPath align(
 		const ContigPath& path1, const ContigPath& path2,
 		ContigNode pivot, dir_type& orientation)
 {
-	if (path1 == path2 && &path1 != &path2) {
-		// These two paths are identical. Ignore the trivial alignment
-		// when aligning a path to itself.
+	if (&path1 == &path2) {
+		// Ignore the trivial alignment when aligning a path to
+		// itself.
+	} else if (path1 == path2) {
+		// These two paths are identical.
 		orientation = DIR_B;
 		return path1;
+	} else {
+		ContigPath::const_iterator it
+			= search(path1.begin(), path1.end(),
+				path2.begin(), path2.end());
+		if (it != path1.end()) {
+			// path2 is subsumed in path1.
+			// Determine the orientation of the edge.
+			orientation
+				= it == path1.begin() ? DIR_R
+				: it + path2.size() == path1.end() ? DIR_F
+				: DIR_B;
+			return path1;
+		}
 	}
 
 	// Find a suitable pivot.
