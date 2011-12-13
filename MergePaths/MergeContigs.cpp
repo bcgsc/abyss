@@ -335,6 +335,18 @@ static void outputGraph(Graph& g,
 		const vector<string>& pathIDs, const ContigPaths& paths,
 		const string& commandLine)
 {
+	// Add the path vertices.
+	for (ContigPaths::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		const ContigPath& path = *it;
+		const string& id = pathIDs[it - paths.begin()];
+		if (!path.empty()) {
+			ContigID::insert(id);
+			merge(g, path.begin(), path.end());
+		}
+	}
+
+	// Remove the vertices that are used in paths.
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const ContigPath& path = *it;
@@ -342,13 +354,12 @@ static void outputGraph(Graph& g,
 		if (path.empty()) {
 			remove_vertex(ContigNode(id, false), g);
 		} else {
-			ContigID::insert(id);
-			merge(g, path.begin(), path.end());
 			remove_vertex_if(g, path.begin(), path.end(),
 					not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 		}
 	}
 
+	// Output the graph.
 	const string& graphPath = opt::graphPath;
 	assert(!graphPath.empty());
 	if (opt::verbose > 0)
