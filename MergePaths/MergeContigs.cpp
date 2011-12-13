@@ -449,7 +449,9 @@ int main(int argc, char** argv)
 			if (!adjPath.empty()
 					&& ContigID::count(rec.id) == 0)
 				continue;
-			ContigID id(rec.id);
+			ContigID id = adjPath.empty()
+				? ContigID::insert(rec.id)
+				: ContigID(rec.id);
 			assert(id == contigs.size());
 			contigs.push_back(rec);
 
