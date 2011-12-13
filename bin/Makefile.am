@@ -9,7 +9,4 @@ dist_bin_SCRIPTS = \
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
-	abyss-joindist \
-	abyss-split \
-	abyss2ace \
-	abyss2afg
+	abyss-joindist
