@@ -165,12 +165,12 @@ pcopt += -p$p
 # Remove environment variables.
 unexport in se $(lib) $(pe) $(mp)
 
-ifdef in
+ifneq ($(in),)
 default: pe-contigs pe-dot
 else
 default: se-contigs se-dot
 endif
-ifdef mp
+ifneq ($(mp),)
 default: scaffolds
 endif
 
