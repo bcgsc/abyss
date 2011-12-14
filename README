@@ -11,10 +11,10 @@ Assemble a small synthetic data set:
 
 * Compiling ABySS
 
-Compiling ABySS should be as easy as
-./configure && make
+To compile and install ABySS in /usr/local:
+./configure && make && sudo make install
 
-To install ABySS in a specified directory
+To install ABySS in a specified directory:
 ./configure --prefix=/opt/ABySS && make && sudo make install
 
 GCC uses OpenMP for parallelization, which requires a modern compiler
@@ -86,20 +86,15 @@ qseq, export, SRA, SAM or BAM format and compressed with gz, bz2 or xz
 and may be tarred.
 The assembled contigs will be stored in ${name}-contigs.fa.
 
-The suffix of the read identifier for a pair of reads must be one of
-'1' and '2', or 'A' and 'B', or 'F' and 'R', or 'F3' and 'R3', or
-'forward' and 'reverse'. The reads may be interleaved in the same file
-or found in different files. If the mates are in different files, it's
-highly recommended to place each pair of files adjacent on the command
-line and to use an even number of threads. Even if you are running on
-a single-processor machine, using two threads will help performance.
-Do not group together all the files containing the forwards reads
-followed by all the files containing the reverse reads.
+A pair of reads must be named with the suffixes '/1' and '/2' to
+identify the first and second read, or the reads may be named
+identically. The paired reads may be in separate files or interleaved
+in a single file.
 
 Reads without mates should be placed in a file specified by the
 parameter `se' (single-end). Reads without mates in the paired-end
 files will slow down the paired-end assembler considerably during the
-ParseAligns stage.
+abyss-fixmate stage.
 
 abyss-pe is a driver script implemented as a Makefile and runs a
 single-end assembly, as described above, and the following commands,
@@ -108,8 +103,6 @@ which must be found in your PATH:
 ABYSS - the single-end assembler
 AdjList - finds overlaps of length k-1 between contigs
 PopBubbles - collapses variation
-KAligner - aligns reads to contigs
-ParseAligns - finds pairs of reads in alignments
 DistanceEst - estimates distances between contigs
 Overlap - find overlaps between blunt contigs
 SimpleGraph - finds paths between pairs of contigs
