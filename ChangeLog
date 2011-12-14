@@ -1,3 +1,55 @@
+2011-12-13  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.3.2.
+	* Enable scaffolding by default.
+	* Remove small shim contigs.
+	* Improved distance estimates.
+	* Reduce sequence duplication.
+	* Read compressed files on Mac OS X.
+
+	abyss-pe:
+	* Enable scaffolding by default. If the mp parameter is not
+	specified, use a default value of ${pe} or ${lib}.
+	* Support using bowtie2 to align reads to contigs by specifying
+	aligner=bowtie2.
+	* The default aligner is abyss-map.
+	* Output the scaffold overlap graph, ${name}-scaffolds.dot.
+	* Set DYLD_FORCE_FLAT_NAMESPACE to read compressed files on OS X.
+
+	ABYSS:
+	* Can read k-mer count data from a Jellyfish file with extension
+	.jf for k-mer counts or .jfq for q-mer counts. Jellyfish must be
+	installed.
+	* Bug fix. Fix the bug causing the error
+	bool chomp(std::string&, char): Assertion `s.length() > 1' failed.
+
+	abyss-filtergraph:
+	* New program. Remove small shim contigs that add no useful
+	sequence to the assembly. Thanks to Tony Raymond (tgr).
+
+	PopBubbles:
+	* New option, -a, --branches. Specify the maximum number of
+	branches of a bubble that may be popped. Default is 2.
+	* Use DIALIGN-TX for multiple sequence alignment. Thanks to tgr.
+
+	DistanceEst:
+	* Improved distance estimates.
+
+	abyss-joindist:
+	* Remove this program. Use abyss-todot instead.
+
+	MergePaths:
+	* Use a non-greedy algorithm that reduces sequence duplication but
+	may reduce contiguity. The greedy algorithm may be used by
+	specifying the option --greedy.
+
+	abyss-fixmate:
+	* Do not output query names by default.
+
+	configure:
+	* New option, --enable-samseqqual. Enable SAM sequence and quality
+	fields.
+
 2011-10-24  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.3.1.
