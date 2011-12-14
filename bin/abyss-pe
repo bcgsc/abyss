@@ -50,6 +50,9 @@ endif
 endif
 
 mpirun?=$(shell which mpirun)
+ifeq ($(mpirun),)
+mpirun=mpirun
+endif
 
 path?=$(shell if ! which ABYSS >/dev/null 2>/dev/null; then \
 	dirname $(MAKEFILE_LIST); fi)
