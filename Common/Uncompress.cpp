@@ -28,6 +28,7 @@ static const char* zcatExec(const string& path)
 		startsWith(path, "http://") ? "wget -O-" :
 		startsWith(path, "https://") ? "wget -O-" :
 		startsWith(path, "ftp://") ? "wget -O-" :
+		endsWith(path, ".ar") ? "ar -p" :
 		endsWith(path, ".tar") ? "tar -xOf " :
 		endsWith(path, ".tar.Z") ? "tar -zxOf " :
 		endsWith(path, ".tar.gz") ? "tar -zxOf " :
