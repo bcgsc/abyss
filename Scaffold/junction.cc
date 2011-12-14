@@ -9,8 +9,6 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/range/adaptor/filtered.hpp>
-#include <boost/range/algorithm/for_each.hpp>
 #include <boost/ref.hpp>
 #include <algorithm>
 #include <cassert>
@@ -24,8 +22,6 @@
 
 using namespace std;
 using namespace boost::lambda;
-using boost::adaptors::filtered;
-using boost::for_each;
 using boost::tie;
 #if !__GXX_EXPERIMENTAL_CXX0X__
 using boost::cref;
@@ -191,18 +187,6 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
-/** Return the value of the bit at the specified index. */
-struct Marked : unary_function<ContigNode, bool> {
-	typedef vector<bool> Data;
-	Marked(const Data& data) : m_data(data) { }
-	bool operator()(ContigNode u) const
-	{
-		return m_data[ContigID(u)];
-	}
-  private:
-	const Data& m_data;
-};
-
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -252,11 +236,12 @@ int main(int argc, char** argv)
 		assert_good(in, opt::ignorePath);
 		markSeenInPath(in, seen);
 	}
-	
+
 	// Extend the junction contigs.
-	for_each(vertices(overlapG)
-			| filtered(!bind(Marked(seen), _1)),
-		bind(extendJunction, cref(overlapG), cref(scaffoldG), _1));
+	graph_traits<OverlapGraph>::vertex_iterator uit, ulast;
+	for (tie(uit, ulast) = vertices(overlapG); uit != ulast; ++uit)
+		if (!seen[ContigID(*uit)])
+			extendJunction(overlapG, scaffoldG, *uit);
 
 	assert_good(cout, "stdout");
 
