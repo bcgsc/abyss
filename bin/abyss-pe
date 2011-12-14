@@ -35,6 +35,22 @@ np?=$(NSLOTS)
 endif
 endif
 
+# Integrate with Load Sharing Facitily (LSF)
+ifdef LSB_JOBNAME
+name?=$(LSB_JOBNAME)
+endif
+ifdef LSB_JOBINDEX
+k?=$(LSB_JOBINDEX)
+endif
+ifdef LSB_DJOB_NUMPROC
+ifneq ($(LSB_DJOB_NUMPROC), 1)
+np?=$(LSB_DJOB_NUMPROC)
+endif
+endif
+ifdef LSF_BINDIR
+mpirun?=$(LSF_BINDIR)/mpirun.lsf
+endif
+
 # Integrate with IBM LoadLeveler
 ifdef LOADL_JOB_NAME
 name?=$(LOADL_JOB_NAME)
