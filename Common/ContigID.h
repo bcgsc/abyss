@@ -79,10 +79,9 @@ class ContigID {
 	static void setNextContigID(cstring s)
 	{
 		std::istringstream iss((std::string)s);
-		if (iss >> s_nextID) {
-			assert(iss.eof());
+		if (iss >> s_nextID && iss.eof())
 			++s_nextID;
-		} else
+		else
 			s_nextID = 0;
 	}
 
