@@ -172,7 +172,7 @@ static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 
 /** An overlap of two sequences. */
 struct Overlap {
-	Estimate est;
+	DistanceEst est;
 	unsigned overlap;
 	bool mask;
 
