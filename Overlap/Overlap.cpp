@@ -171,14 +171,13 @@ static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
 }
 
 /** An overlap of two sequences. */
-struct Overlap {
-	DistanceEst est;
+struct Overlap : public DistanceEst {
 	unsigned overlap;
 	bool mask;
 
-	Overlap() : est(), overlap(UINT_MAX), mask(false) { }
-	Overlap(const Estimate& est, unsigned overlap, bool mask)
-		: est(est), overlap(overlap), mask(mask) { }
+	Overlap() : overlap(UINT_MAX), mask(false) { }
+	Overlap(const DistanceEst& est, unsigned overlap, bool mask)
+		: DistanceEst(est), overlap(overlap), mask(mask) { }
 
 	bool operator==(const Overlap& o) const
 	{
@@ -194,7 +193,7 @@ struct Overlap {
 	friend ostream& operator<<(ostream& out, const Overlap& o)
 	{
 		return out << "d="
-			<< (o.overlap > 0 ? -(int)o.overlap : o.est.distance);
+			<< (o.overlap > 0 ? -(int)o.overlap : o.distance);
 	}
 };
 
@@ -206,7 +205,7 @@ static FastaRecord createGapContig(
 	assert(opt::scaffold);
 	assert(o.overlap == 0);
 	stats.scaffold++;
-	int distance = o.est.distance;
+	int distance = o.distance;
 	if (opt::verbose > 0)
 		cout << u << '\t' << v << "\t(" << distance << ")\n";
 	assert(distance < 100000);
