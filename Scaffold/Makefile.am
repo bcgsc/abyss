@@ -1,5 +1,4 @@
-bin_PROGRAMS = abyss-scaffold
-noinst_PROGRAMS = abyss-junction
+bin_PROGRAMS = abyss-scaffold abyss-junction
 
 abyss_scaffold_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
