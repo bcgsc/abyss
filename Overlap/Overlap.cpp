@@ -47,16 +47,16 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIGS ADJ DIST\n"
-"Find overlaps between blunt contigs that have negative distance estimates.\n"
-"Output the small contigs that fill in the gaps.\n"
+"Find overlaps between blunt contigs that have negative distance\n"
+"estimates. Add edges to the overlap graph.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
 "                        default is 5 bases\n"
 "      --scaffold        join contigs with Ns [default]\n"
 "      --no-scaffold     do not scaffold\n"
-"      --mask-repeat     join contigs at a simple repeat and mask the repeat\n"
-"                        [default]\n"
+"      --mask-repeat     join contigs at a simple repeat and mask\n"
+"                        the repeat sequence [default]\n"
 "      --no-merge-repeat don't join contigs at a repeat\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -o, --out=FILE        write result to FILE\n"
@@ -304,7 +304,7 @@ static void findOverlap(const Graph& g,
 	const ContigNode& pair = est.contig;
 	const ContigNode& t = rc ? pair : ref;
 	const ContigNode& h = rc ? ref : pair;
-	if (g.out_degree(t) > 0 || g.in_degree(h) > 0
+	if (out_degree(t, g) > 0 || in_degree(h, g) > 0
 			|| edge(t, h, out).second)
 		return;
 
@@ -446,7 +446,7 @@ int main(int argc, char** argv)
 		out_edge_iterator;
 
 	/** The overlapping edges (d<0) of scaffoldGraph. */
-	OverlapGraph overlapGraph(graph.num_vertices() / 2);
+	OverlapGraph overlapGraph(num_vertices(graph) / 2);
 
 	/** The canonical edges of scaffoldGraph. */
 	unsigned numOverlaps = num_edges(scaffoldGraph) / 2;
@@ -487,7 +487,7 @@ int main(int argc, char** argv)
 		if (contiguous_out(overlapGraph, t)) {
 			stats.overlap++;
 			assert(*adjacent_vertices(t, overlapGraph).first == h);
-			graph.add_edge(t, h, overlap);
+			add_edge(t, h, overlap, graph);
 
 			// Clear the out-edges of t and the in-edges of h.
 			clear_out_edges(t, scaffoldGraph);
@@ -518,10 +518,10 @@ int main(int argc, char** argv)
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			Graph::vertex_descriptor v = graph.add_vertex(
-					ContigProperties(contig.seq.length(), 0));
-			graph.add_edge(t, v);
-			graph.add_edge(v, h);
+			vertex_descriptor v = add_vertex(
+					ContigProperties(contig.seq.length(), 0), graph);
+			add_edge(t, v, graph);
+			add_edge(v, h, graph);
 		} else
 			stats.ambiguous++;
 	}
