@@ -29,12 +29,12 @@ static const char* zcatExec(const string& path)
 		startsWith(path, "https://") ? "wget -O-" :
 		startsWith(path, "ftp://") ? "wget -O-" :
 		endsWith(path, ".ar") ? "ar -p" :
-		endsWith(path, ".tar") ? "tar -xOf " :
-		endsWith(path, ".tar.Z") ? "tar -zxOf " :
-		endsWith(path, ".tar.gz") ? "tar -zxOf " :
-		endsWith(path, ".tar.bz2") ? "tar -jxOf " :
+		endsWith(path, ".tar") ? "tar -xOf" :
+		endsWith(path, ".tar.Z") ? "tar -zxOf" :
+		endsWith(path, ".tar.gz") ? "tar -zxOf" :
+		endsWith(path, ".tar.bz2") ? "tar -jxOf" :
 		endsWith(path, ".tar.xz") ?
-			"tar --use-compress-program=xzdec -xOf " :
+			"tar --use-compress-program=xzdec -xOf" :
 		endsWith(path, ".Z") ? "gunzip -c" :
 		endsWith(path, ".gz") ? "gunzip -c" :
 		endsWith(path, ".bz2") ? "bunzip2 -c" :
