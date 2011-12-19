@@ -14,6 +14,10 @@
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
+#include "Graph/GraphUtil.h"
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/ref.hpp>
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -27,6 +31,11 @@
 #include <vector>
 
 using namespace std;
+using namespace boost::lambda;
+#if !__GXX_EXPERIMENTAL_CXX0X__
+using boost::cref;
+using boost::ref;
+#endif
 
 #define PROGRAM "Overlap"
 
@@ -176,6 +185,7 @@ struct Overlap : public DistanceEst {
 	bool mask;
 
 	Overlap() : overlap(UINT_MAX), mask(false) { }
+	Overlap(int) { assert(false); }
 	Overlap(const DistanceEst& est, unsigned overlap, bool mask)
 		: DistanceEst(est), overlap(overlap), mask(mask) { }
 
@@ -221,8 +231,67 @@ static FastaRecord createGapContig(
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
-typedef ContigGraph<DirectedGraph<
-	no_property, Overlap> > OverlapGraph;
+typedef ContigGraph<DirectedGraph<NoProperty, Overlap> > OverlapGraph;
+
+/**
+ * Check for an overlap between the specified pair of contigs.
+ * Add the size of the overlap to the edge properties. Add the
+ * complementary edge if it does not exist in the graph.
+ * @param goverlap the contig overlap graph
+ * @param g the scaffold graph
+ * @return true if the contigs overlap
+ */
+static bool checkEdgeForOverlap(const Graph& goverlap,
+		OverlapGraph& g,
+		graph_traits<OverlapGraph>::edge_descriptor e)
+{
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef edge_bundle_type<OverlapGraph>::type EP;
+
+	V u = source(e, g), v = target(e, g);
+	assert(u != v);
+	assert(u != ~v);
+	EP& ep = g[e];
+	if (ep.overlap != UINT_MAX) {
+		// Found the complementary overlap.
+		return ep.overlap > 0 || opt::scaffold;
+	}
+	if (ep.distance >= 0 && !opt::scaffold) {
+		// Positive distance estimate and not scaffolding.
+		return false;
+	}
+	if (out_degree(u, goverlap) > 0 || in_degree(v, goverlap) > 0) {
+		// Not blunt.
+		return false;
+	}
+
+	bool mask = false;
+	unsigned overlap
+		= ep.distance - (int)allowedError(ep.stdDev) <= 0
+		? findOverlap(u, v, mask) : 0;
+	if (mask && !opt::mask) {
+		// Ambiguous overlap.
+		return false;
+	}
+	if (overlap == 0 && !opt::scaffold) {
+		// No overlap and not scaffolding.
+		return false;
+	}
+	ep.overlap = overlap;
+	ep.mask = mask;
+	pair<E, bool> ecomplement = edge(~v, ~u, g);
+	if (ecomplement.second) {
+		// Modify the complementary edge.
+		g[ecomplement.first] = ep;
+	} else {
+		// Add the complementary edge.
+		assert(~v != u);
+		add_edge(~v, ~u, ep,
+				static_cast<OverlapGraph::base_type&>(g));
+	}
+	return true;
+}
 
 static void findOverlap(const Graph& g,
 		ContigID refID, bool rc, const Estimate& est,
@@ -329,25 +398,40 @@ int main(int argc, char** argv)
 	fin >> graph;
 	assert(fin.eof());
 
+	// Open the output file.
 	ofstream out(opt::out.c_str());
-	assert(out.is_open());
+	assert_good(out, opt::out);
+
+	// Read the scaffold graph.
 	ifstream in(estPath.c_str());
 	assert_good(in, estPath);
 
 	// Find overlapping contigs.
 	OverlapGraph scaffoldGraph(graph.num_vertices() / 2);
-	for (EstimateRecord er; in >> er;) {
-		for (int rc = false; rc <= true; ++rc) {
-			const vector<Estimate>& ests = er.estimates[rc];
-			for (EstimateVector::const_iterator iter = ests.begin();
-					iter != ests.end(); ++iter)
-				findOverlap(graph, er.refID, rc, *iter,
-						scaffoldGraph);
+	if (in.peek() == 'd') {
+		// dot graph format
+		in >> scaffoldGraph;
+		assert(in.eof());
+		if (opt::verbose > 0)
+			printGraphStats(cout, scaffoldGraph);
+		remove_edge_if(
+				!bind(checkEdgeForOverlap,
+					cref(graph), ref(scaffoldGraph), _1),
+				static_cast<OverlapGraph::base_type&>(scaffoldGraph));
+	} else {
+		// dist graph format
+		for (EstimateRecord er; in >> er;) {
+			for (int sense = false; sense <= true; ++sense) {
+				const vector<Estimate>& ests = er.estimates[sense];
+				for (EstimateVector::const_iterator it = ests.begin();
+						it != ests.end(); ++it)
+					findOverlap(graph, er.refID, sense, *it,
+							scaffoldGraph);
+			}
 		}
+		assert(in.eof());
 	}
-	assert(in.eof());
 	in.close();
-	ContigID::unlock();
 
 	if (opt::verbose > 1)
 		cout << dot_writer(scaffoldGraph);
