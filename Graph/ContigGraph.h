@@ -14,6 +14,8 @@ using boost::graph_traits;
 template <typename G>
 class ContigGraph : public G {
   public:
+	typedef G base_type;
+
 	// Graph
 	typedef typename graph_traits<G>::vertex_descriptor
 		vertex_descriptor;
