@@ -91,7 +91,7 @@ static int uncompress(const char *path)
 			execlp(arg0, arg0, arg1, arg2, path, NULL);
 		// Calling perror after vfork is not allowed, but we're about
 		// to exit and an error message would be really helpful.
-		perror(zcat);
+		perror(arg0);
 		_exit(EXIT_FAILURE);
 	} else {
 		close(fd[1]);
