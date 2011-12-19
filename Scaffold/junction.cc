@@ -83,25 +83,6 @@ static struct {
 	unsigned supported;
 } g_count;
 
-/** No property. */
-struct NoProperty {
-	NoProperty(...) { }
-	bool operator==(const NoProperty&) const { return true; }
-	friend ostream& operator<<(ostream& out, const NoProperty&)
-	{
-		return out;
-	}
-	friend istream& operator>>(istream& in, NoProperty&)
-	{
-		return in;
-	}
-};
-
-template <typename Tag>
-void put(Tag, NoProperty&, unsigned)
-{
-}
-
 /** An overlap graph. */
 typedef DirectedGraph<NoProperty, NoProperty> DG;
 typedef ContigGraph<DG> Graph;

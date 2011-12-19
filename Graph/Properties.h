@@ -1,6 +1,8 @@
 #ifndef GRAPH_PROPERTIES_H
 #define GRAPH_PROPERTIES_H 1
 
+#include <istream>
+#include <ostream>
 #include <boost/graph/properties.hpp>
 
 /** The distance between two vertices. */
@@ -41,6 +43,27 @@ namespace boost {
 	BOOST_INSTALL_PROPERTY(vertex, length);
 	BOOST_INSTALL_PROPERTY(vertex, removed);
 	BOOST_INSTALL_PROPERTY(vertex, sense);
+}
+
+/** No property. */
+struct NoProperty
+{
+	NoProperty(...) { }
+	bool operator==(const NoProperty&) const { return true; }
+	friend std::ostream& operator<<(std::ostream& out,
+			const NoProperty&)
+	{
+		return out;
+	}
+	friend std::istream& operator>>(std::istream& in, NoProperty&)
+	{
+		return in;
+	}
+};
+
+template <typename Tag>
+void put(Tag, NoProperty&, unsigned)
+{
 }
 
 #endif

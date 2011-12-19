@@ -47,26 +47,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** No property. */
-struct NoProperty
-{
-	NoProperty(...) { }
-	bool operator==(const NoProperty&) const { return true; }
-	friend ostream& operator<<(ostream& out, const NoProperty&)
-	{
-		return out;
-	}
-	friend istream& operator>>(istream& in, NoProperty&)
-	{
-		return in;
-	}
-};
-
-template <typename Tag>
-void put(Tag, NoProperty&, unsigned)
-{
-}
-
 /** Read a graph from the specified file. */
 template <typename Graph, typename BetterEP>
 static void readGraph(const string& path, Graph& g, BetterEP betterEP)
