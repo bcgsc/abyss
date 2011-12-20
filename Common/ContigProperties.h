@@ -63,6 +63,9 @@ struct ContigProperties {
 			if (in >> std::ws && in.peek() == 'C')
 				in >> expect("C =") >> o.coverage;
 			return in;
+		} else if (in.peek() == 'C') {
+			return in >> expect("C=") >> o.coverage
+				>> expect(", l=") >> o.length;
 		} else
 			return in >> o.length >> o.coverage;
 	}
@@ -104,7 +107,11 @@ struct Distance {
 
 	friend std::istream& operator>>(std::istream& in, Distance& o)
 	{
-		return in >> expect(" d =") >> o.distance;
+		in >> expect(" d = ");
+		if (in.peek() == '"')
+			return in >> expect("\"") >> o.distance >> expect("\"");
+		else
+			return in >> o.distance;
 	}
 };
 
