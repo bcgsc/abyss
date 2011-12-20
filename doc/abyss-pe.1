@@ -100,14 +100,12 @@ Print the commands that would be executed, but do not execute them.
 .SH "ENVIRONMENT VARIABLES"
 Any parameter that may be specified on the command line may also be
 specified in an environment variable.
-
 .TP
-PATH
-should contain the directory where ABYSS was installed.
-
+\fBPATH\fR
+must contain the directory where the ABySS executables are installed
 .TP
-TMPDIR
-specifies a directory to use for temporary files.
+\fBTMPDIR\fR
+specifies a directory to use for temporary files
 .SS "SGE integration"
 The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
 used to specify the parameters name, k and np, respectively.
