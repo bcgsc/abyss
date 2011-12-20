@@ -669,13 +669,13 @@ int main(int argc, char** argv)
 	free(para);
 
 	if (opt::verbose > 0)
-		cerr << "Bubbles: " << g_count.bubbles/2
-			<< " Popped: " << g_count.popped/2
-			<< " Scaffolds: " << g_count.scaffold/2
-			<< " Complex: " << g_count.notSimple/2
-			<< " Too long: " << g_count.tooLong/2
-			<< " Too many: " << g_count.tooMany/2
-			<< " Dissimilar: " << g_count.dissimilar/2
+		cerr << "Bubbles: " << (g_count.bubbles + 1) / 2
+			<< " Popped: " << (g_count.popped + 1) / 2
+			<< " Scaffolds: " << (g_count.scaffold + 1) / 2
+			<< " Complex: " << (g_count.notSimple + 1) / 2
+			<< " Too long: " << (g_count.tooLong + 1) / 2
+			<< " Too many: " << (g_count.tooMany + 1) / 2
+			<< " Dissimilar: " << (g_count.dissimilar + 1) / 2
 			<< '\n';
 
 	if (!opt::graphPath.empty()) {
