@@ -38,6 +38,8 @@ static const char USAGE_MESSAGE[] =
 "  HIST  distribution of fragments size\n"
 "  PAIR  alignments between contigs\n"
 "\n"
+"      --mind=N          minimum distance between contigs\n"
+"      --maxd=N          maximum distance between contigs\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
@@ -59,6 +61,12 @@ namespace opt {
 	/** Output graph format. */
 	int format = DIST;
 
+	/** Minimum distance between contigs. */
+	static int minDist = numeric_limits<int>::min();
+
+	/** Maximum distance between contigs. */
+	static int maxDist = numeric_limits<int>::max();
+
 	static unsigned seedLen;
 	static unsigned npairs;
 	static unsigned minMapQ = 1;
@@ -73,12 +81,14 @@ namespace opt {
 
 static const char shortopts[] = "j:k:n:o:q:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MIND, OPT_MAXD };
 
 static const struct option longopts[] = {
 	{ "dist",        no_argument,       &opt::format, DIST, },
 	{ "dot",         no_argument,       &opt::format, DOT, },
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "mind",        required_argument, NULL, OPT_MIND },
+	{ "maxd",        required_argument, NULL, OPT_MAXD },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "min-mapq",    required_argument, NULL, 'q' },
@@ -133,7 +143,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			it != fragments.end(); ++it)
 		fragmentSizes.push_back(it->second - it->first);
 
-	return maximumLikelihoodEstimate(-opt::k+1, pmf.maxValue(),
+	return maximumLikelihoodEstimate(opt::minDist, opt::maxDist,
 			fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
 }
 
@@ -296,6 +306,14 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case OPT_MIND:
+				arg >> opt::minDist;
+				assert(arg.eof());
+				break;
+			case OPT_MAXD:
+				arg >> opt::maxDist;
+				assert(arg.eof());
+				break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'n': arg >> opt::npairs; break;
@@ -405,6 +423,15 @@ int main(int argc, char** argv)
 			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
 			<< h.barplot() << endl;
 	PMF pmf(h);
+
+	if (opt::minDist == numeric_limits<int>::min())
+		opt::minDist = -opt::k + 1;
+	if (opt::maxDist == numeric_limits<int>::max())
+		opt::maxDist = pmf.maxValue();
+	if (opt::verbose > 0)
+		cerr << "Minimum and maximum distance are set to "
+			<< opt::minDist << " and " << opt::maxDist << " bp.\n";
+	assert(opt::minDist < opt::maxDist);
 
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;
