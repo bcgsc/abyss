@@ -169,6 +169,7 @@ n?=10
 libs=$(pe) $(mp)
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
+deopt=$v -j$j -k$k -s$($*_s) -n$($*_n) $(DISTANCEEST_OPTIONS)
 
 # SimpleGraph parameters
 ifdef d
@@ -283,17 +284,17 @@ endif
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
+	|DistancEst $(deopt) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
+	|DistancEst $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
 	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|DistanceEst $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-3.hist
+		|DistancEst $(deopt) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(pe))
 
@@ -373,17 +374,17 @@ endif
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+	|DistanceEst --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+	|DistanceEst --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
 	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|DistanceEst --dot $v -j$j -k$k -s$($*_s) -n$($*_n) -o $@ $*-6.hist
+		|DistanceEst --dot $(deopt) -o $@ $*-6.hist
 
 # Scaffold
 
