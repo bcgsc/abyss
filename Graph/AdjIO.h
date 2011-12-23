@@ -108,7 +108,8 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 	std::string line;
 	getline(in, line);
 	assert(in);
-	unsigned numSemicolons = std::count(line.begin(), line.end(), ';');
+	unsigned numSemicolons
+		= std::count(line.begin(), line.end(), ';');
 	if (numSemicolons > 2) {
 		std::cerr << "error: expected 0, 1 or 2 semicolons and saw "
 			<< numSemicolons << '\n';

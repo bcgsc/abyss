@@ -40,7 +40,8 @@ void MessageBuffer::sendRemoveExtension(int nodeID,
 void MessageBuffer::sendSeqDataRequest(int nodeID,
 		IDType group, IDType id, const Kmer& seq)
 {
-	queueMessage(nodeID, new SeqDataRequest(seq, group, id), SM_IMMEDIATE);
+	queueMessage(nodeID,
+			new SeqDataRequest(seq, group, id), SM_IMMEDIATE);
 }
 
 // Send a sequence data response
@@ -48,17 +49,21 @@ void MessageBuffer::sendSeqDataResponse(int nodeID,
 		IDType group, IDType id, const Kmer& seq,
 		ExtensionRecord extRec, int multiplicity)
 {
-	queueMessage(nodeID, new SeqDataResponse(seq, group, id, extRec, multiplicity), SM_IMMEDIATE);
+	queueMessage(nodeID,
+			new SeqDataResponse(seq, group, id, extRec, multiplicity),
+			SM_IMMEDIATE);
 }
 
 // Send a set base message
 void MessageBuffer::sendSetBaseExtension(int nodeID,
 		const Kmer& seq, extDirection dir, uint8_t base)
 {
-	queueMessage(nodeID, new SetBaseMessage(seq, dir, base), SM_BUFFERED);
+	queueMessage(nodeID,
+			new SetBaseMessage(seq, dir, base), SM_BUFFERED);
 }
 
-void MessageBuffer::queueMessage(int nodeID, Message* message, SendMode mode)
+void MessageBuffer::queueMessage(
+		int nodeID, Message* message, SendMode mode)
 {
 	if (opt::verbose >= 9)
 		cout << opt::rank << " to " << nodeID << ": " << *message;
@@ -75,8 +80,8 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 	size_t numMsgs = m_msgQueues[nodeID].size();
 		
 	// check if the messages should be sent
-	if((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE) && numMsgs > 0)
-	{
+	if ((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE)
+			&& numMsgs > 0) {
 		// Calculate the total size of the message
 		size_t totalSize = 0;
 		for(size_t i = 0; i < numMsgs; i++)
@@ -90,7 +95,8 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		// Copy the messages into the buffer
 		size_t offset = 0;
 		for(size_t i = 0; i < numMsgs; i++)
-			offset += m_msgQueues[nodeID][i]->serialize(buffer + offset);
+			offset += m_msgQueues[nodeID][i]->serialize(
+					buffer + offset);
 
 		assert(offset == totalSize);
 		sendBufferedMessage(nodeID, buffer, totalSize);

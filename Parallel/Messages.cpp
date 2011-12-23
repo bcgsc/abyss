@@ -70,11 +70,13 @@ size_t SetFlagMessage::unserialize(const char* buffer)
 {
 	size_t offset = 0;
 	offset += Message::unserialize(buffer);
-	offset += unserializeData(&m_flag, buffer + offset, sizeof(m_flag));
+	offset += unserializeData(
+			&m_flag, buffer + offset, sizeof(m_flag));
 	return offset;
 }
 
-void SetFlagMessage::handle(int senderID, NetworkSequenceCollection& handler)
+void SetFlagMessage::handle(
+		int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handle(senderID, *this);
 }
@@ -98,7 +100,8 @@ size_t RemoveExtensionMessage::unserialize(const char* buffer)
 	return offset;
 }
 
-void RemoveExtensionMessage::handle(int senderID, NetworkSequenceCollection& handler)
+void RemoveExtensionMessage::handle(
+		int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handle(senderID, *this);
 }
@@ -118,11 +121,13 @@ size_t SetBaseMessage::unserialize(const char* buffer)
 	size_t offset = 0;
 	offset += Message::unserialize(buffer);
 	offset += unserializeData(&m_dir, buffer + offset, sizeof(m_dir));
-	offset += unserializeData(&m_base, buffer + offset, sizeof(m_base));
+	offset += unserializeData(
+			&m_base, buffer + offset, sizeof(m_base));
 	return offset;
 }
 
-void SetBaseMessage::handle(int senderID, NetworkSequenceCollection& handler)
+void SetBaseMessage::handle(
+		int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handle(senderID, *this);
 }
@@ -132,7 +137,8 @@ size_t SeqDataRequest::serialize(char* buffer)
 	size_t offset = 0;
 	buffer[offset++] = TYPE;
 	offset += m_seq.serialize(buffer + offset);
-	offset += serializeData(&m_group, buffer + offset, sizeof(m_group));
+	offset += serializeData(
+			&m_group, buffer + offset, sizeof(m_group));
 	offset += serializeData(&m_id, buffer + offset, sizeof(m_id));
 	return offset;
 }
@@ -141,12 +147,14 @@ size_t SeqDataRequest::unserialize(const char* buffer)
 {
 	size_t offset = 0;
 	offset += Message::unserialize(buffer);
-	offset += unserializeData(&m_group, buffer + offset, sizeof(m_group));
+	offset += unserializeData(
+			&m_group, buffer + offset, sizeof(m_group));
 	offset += unserializeData(&m_id, buffer + offset, sizeof(m_id));
 	return offset;
 }
 
-void SeqDataRequest::handle(int senderID, NetworkSequenceCollection& handler)
+void SeqDataRequest::handle(
+		int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handle(senderID, *this);
 }
@@ -156,10 +164,14 @@ size_t SeqDataResponse::serialize(char* buffer)
 	size_t offset = 0;
 	buffer[offset++] = TYPE;
 	offset += m_seq.serialize(buffer + offset);
-	offset += serializeData(&m_group, buffer + offset, sizeof(m_group));
-	offset += serializeData(&m_id, buffer + offset, sizeof(m_id));
-	offset += serializeData(&m_extRecord, buffer + offset, sizeof(m_extRecord));
-	offset += serializeData(&m_multiplicity, buffer + offset, sizeof(m_multiplicity));
+	offset += serializeData(
+			&m_group, buffer + offset, sizeof(m_group));
+	offset += serializeData(
+			&m_id, buffer + offset, sizeof(m_id));
+	offset += serializeData(
+			&m_extRecord, buffer + offset, sizeof(m_extRecord));
+	offset += serializeData(
+			&m_multiplicity, buffer + offset, sizeof(m_multiplicity));
 	return offset;
 }
 
@@ -167,14 +179,19 @@ size_t SeqDataResponse::unserialize(const char* buffer)
 {
 	size_t offset = 0;
 	offset += Message::unserialize(buffer);
-	offset += unserializeData(&m_group, buffer + offset, sizeof(m_group));
-	offset += unserializeData(&m_id, buffer + offset, sizeof(m_id));
-	offset += unserializeData(&m_extRecord, buffer + offset, sizeof(m_extRecord));
-	offset += unserializeData(&m_multiplicity, buffer + offset, sizeof(m_multiplicity));
+	offset += unserializeData(
+			&m_group, buffer + offset, sizeof(m_group));
+	offset += unserializeData(
+			&m_id, buffer + offset, sizeof(m_id));
+	offset += unserializeData(
+			&m_extRecord, buffer + offset, sizeof(m_extRecord));
+	offset += unserializeData(
+			&m_multiplicity, buffer + offset, sizeof(m_multiplicity));
 	return offset;
 }
 
-void SeqDataResponse::handle(int senderID, NetworkSequenceCollection& handler)
+void SeqDataResponse::handle(
+		int senderID, NetworkSequenceCollection& handler)
 {
 	handler.handle(senderID, *this);
 }

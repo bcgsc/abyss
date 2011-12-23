@@ -573,7 +573,8 @@ void NetworkSequenceCollection::EndState()
 //
 // Set the state
 //
-void NetworkSequenceCollection::SetState(NetworkAssemblyState newState)
+void NetworkSequenceCollection::SetState(
+		NetworkAssemblyState newState)
 {
 	logger(2) << "SetState " << newState
 		<< " (was " << m_state << ")\n";
@@ -607,8 +608,9 @@ size_t NetworkSequenceCollection::pumpNetwork()
 				{
 					MessagePtrVector msgs;
 					m_comm.receiveBufferedMessage(msgs);
-					for(MessagePtrVector::iterator iter = msgs.begin(); iter != msgs.end(); iter++)
-					{
+					for (MessagePtrVector::iterator
+							iter = msgs.begin();
+							iter != msgs.end(); iter++) {
 						// Handle each message based on its type
 						(*iter)->handle(senderID, *this);
 						// Delete the message
@@ -729,14 +731,17 @@ void NetworkSequenceCollection::handle(
 	bool found = m_data.getSeqData(kmer, extRec, multiplicity);
 	assert(found);
 	(void)found;
-	m_comm.sendSeqDataResponse(senderID, message.m_group, message.m_id,
+	m_comm.sendSeqDataResponse(
+			senderID, message.m_group, message.m_id,
 			kmer, extRec, multiplicity);
 }
 
 void NetworkSequenceCollection::handle(
 		int /*senderID*/, const SeqDataResponse& message)
 {
-	processSequenceExtension(message.m_group, message.m_id, message.m_seq, message.m_extRecord, message.m_multiplicity);
+	processSequenceExtension(
+			message.m_group, message.m_id, message.m_seq,
+			message.m_extRecord, message.m_multiplicity);
 }
 
 /** Distributed trimming function. */
@@ -755,7 +760,8 @@ size_t NetworkSequenceCollection::performNetworkTrim(
 			continue;
 
 		extDirection dir;
-		// dir will be set to the trimming direction if the sequence can be trimmed
+		// dir will be set to the trimming direction if the sequence
+		// can be trimmed.
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
 				*iter, dir);
 		if (status == SC_CONTIGUOUS)
@@ -811,8 +817,8 @@ size_t NetworkSequenceCollection::processBranchesTrim()
 	size_t numBranchesRemoved = 0;
 	vector<BranchGroupMap::iterator> removeBranches;
 	// Check if any of the current branches have gone inactive
-	for(BranchGroupMap::iterator iter = m_activeBranchGroups.begin(); iter != m_activeBranchGroups.end(); iter++)
-	{
+	for (BranchGroupMap::iterator iter = m_activeBranchGroups.begin();
+			iter != m_activeBranchGroups.end(); iter++) {
 		if(!iter->second.isActive())
 		{
 			assert(iter->second.size() == 1);
@@ -1098,7 +1104,8 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			continue;
 
 		extDirection dir;
-		// dir will be set to the assembly direction if the sequence can be assembled
+		// dir will be set to the assembly direction if the sequence
+		// can be assembled.
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
 				*iter, dir, true);
 		if (status == SC_CONTIGUOUS)
@@ -1162,8 +1169,8 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			"Removed " << m_lowCoverageKmer << " k-mer in "
 				<< m_lowCoverageContigs << " low-coverage contigs.\n";
 	} else
-		logger(0) << "Assembled " << numAssembled.second << " k-mer in "
-			<< numAssembled.first << " contigs.\n";
+		logger(0) << "Assembled " << numAssembled.second
+			<< " k-mer in " << numAssembled.first << " contigs.\n";
 	return numAssembled;
 }
 
@@ -1274,7 +1281,8 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 		const ExtensionRecord& extRec, int multiplicity,
 		unsigned maxLength)
 {
-	BranchGroupMap::iterator iter = m_activeBranchGroups.find(groupID);
+	BranchGroupMap::iterator iter
+		= m_activeBranchGroups.find(groupID);
 	assert(iter != m_activeBranchGroups.end());
 	Kmer currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
@@ -1358,7 +1366,7 @@ bool NetworkSequenceCollection::setBaseExtension(
 		m_comm.sendSetBaseExtension(nodeID, seq, dir, base);
 	}
 
-	// As this call delegates, the return value is meaningless so return false
+	// As this call delegates, the return value is meaningless.
 	return false;
 }
 

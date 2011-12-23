@@ -167,9 +167,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	}
 }
 
-//
-// Generate the adjacency information for each sequence in the collection
-//
+/** Generate the adjacency information for each sequence in the
+ * collection. */
 void generateAdjacency(ISequenceCollection* seqCollection)
 {
 	Timer timer("GenerateAdjacency");
@@ -342,9 +341,11 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 								maxLength);
 					}
 
-					// At this point all branches should have the same length or one will be a noext
+					// At this point all branches should have the same
+					// length or one will be a noext.
 					branchGroup.updateStatus(maxLength);
-					BranchGroupStatus status = branchGroup.getStatus();
+					BranchGroupStatus status
+						= branchGroup.getStatus();
 					if (status == BGS_TOOLONG
 							|| status == BGS_TOOMANYBRANCHES
 							|| status == BGS_NOEXT) {
@@ -657,7 +658,8 @@ static size_t trimSequences(SequenceCollectionHash* seqCollection,
 			continue;
 
 		extDirection dir;
-		// dir will be set to the trimming direction if the sequence can be trimmed
+		// dir will be set to the trimming direction if the sequence
+		// can be trimmed.
 		SeqContiguity status = checkSeqContiguity(*iter, dir);
 
 		if (status == SC_CONTIGUOUS)
@@ -676,14 +678,16 @@ static size_t trimSequences(SequenceCollectionHash* seqCollection,
 		{
 			ExtensionRecord extRec;
 			int multiplicity = -1;
-			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
+			bool success = seqCollection->getSeqData(
+					currSeq, extRec, multiplicity);
 			assert(success);
 			(void)success;
 			processLinearExtensionForBranch(currBranch,
 					currSeq, extRec, multiplicity, maxBranchCull);
 		}
 
-		// The branch has ended check it for removal, returns true if it was removed
+		// The branch has ended check it for removal, returns true if
+		// it was removed.
 		if(processTerminatedBranchTrim(seqCollection, currBranch))
 		{
 			numBranchesRemoved++;
@@ -718,11 +722,16 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
 	}
 }
 
-// Process the extension for this branch for the trimming algorithm
-// CurrSeq is the current sequence being inspected (the next member to be added to the branch). The extension record is the extensions of that sequence and
-// multiplicity is the number of times that kmer appears in the data set
-// After processing currSeq is unchanged if the branch is no longer active or else it is the generated extension
-// If the parameter addKmer is true, add the k-mer to the branch.
+/**
+ * Process the extension for this branch for the trimming algorithm
+ * CurrSeq is the current sequence being inspected (the next member to
+ * be added to the branch). The extension record is the extensions of
+ * that sequence and multiplicity is the number of times that kmer
+ * appears in the data set. After processing currSeq is unchanged if
+ * the branch is no longer active or else it is the generated
+ * extension. If the parameter addKmer is true, add the k-mer to the
+ * branch.
+ */
 bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer)
@@ -884,7 +893,8 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 		{
 			ExtensionRecord extRec;
 			int multiplicity = -1;
-			bool success = seqCollection->getSeqData(currSeq, extRec, multiplicity);
+			bool success = seqCollection->getSeqData(
+					currSeq, extRec, multiplicity);
 			assert(success);
 			(void)success;
 			processLinearExtensionForBranch(currBranch,

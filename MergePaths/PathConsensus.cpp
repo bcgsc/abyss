@@ -383,9 +383,9 @@ static ContigProperties calculatePathProperties(const Graph& g,
 	return addProp(g, path.begin(), path.end());
 }
 
-/* Resolve ambiguous region using pairwise alignment (needleman-wunsch)
- * ('solutions' contain exactly two paths, from a source contig
- * to a dest contig)
+/* Resolve ambiguous region using pairwise alignment
+ * (Needleman-Wunsch) ('solutions' contain exactly two paths, from a
+ * source contig to a dest contig)
  */
 static ContigPath alignPair(const Graph& g,
 		const ContigPaths& solutions, ofstream& out)
@@ -418,8 +418,8 @@ static ContigPath alignPair(const Graph& g,
 			return ContigPath();
 
 		unsigned coverage = calculatePathProperties(g, sol).coverage;
-		ContigID id
-			= outputNewContig(solutions, 1, 1, consensus, coverage, out);
+		ContigID id = outputNewContig(
+				solutions, 1, 1, consensus, coverage, out);
 		ContigPath path;
 		path.push_back(solutions.front().front());
 		path.push_back(ContigNode(id, false));
@@ -496,7 +496,8 @@ static ContigPath alignMulti(const Graph& g,
 	Path vppath;
 	size_t longestPrefix;
 	bool commonPrefix = true;
-	for (longestPrefix = 0; longestPrefix < min_len; longestPrefix++) {
+	for (longestPrefix = 0;
+			longestPrefix < min_len; longestPrefix++) {
 		const ContigNode& common_path_node = firstSol[longestPrefix];
 		for (vector<Path>::const_iterator solIter = solutions.begin();
 				solIter != solutions.end(); ++solIter) {

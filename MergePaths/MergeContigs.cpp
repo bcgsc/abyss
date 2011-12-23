@@ -445,7 +445,8 @@ int main(int argc, char** argv)
 		assert(fin.eof());
 		if (opt::verbose > 0)
 			cerr << "Read " << num_vertices(g) << " vertices. "
-				"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
+				"Using " << toSI(getMemoryUsage())
+				<< "B of memory.\n";
 	}
 	mergedPathFile = string(argv[optind++]);
 

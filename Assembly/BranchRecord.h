@@ -10,11 +10,18 @@
 
 enum BranchState
 {
-	BS_ACTIVE, // can be extended
-	BS_NOEXT, // the branch has ended because of a lack of sequence to extend to
-	BS_AMBI_SAME, // the branch has ended because the extension from this branch is ambigious
-	BS_AMBI_OPP, // the branch has ended because the extension to this branch is ambigiuous
-	BS_TOO_LONG, // the branch is too long
+	// The branch can be extended.
+	BS_ACTIVE,
+	// The branch has ended because of a lack of sequence to extend to
+	BS_NOEXT,
+	// The branch has ended because the extension from this branch is
+	// ambigious.
+	BS_AMBI_SAME,
+	// The branch has ended because the extension to this branch is
+	// ambigiuous.
+	BS_AMBI_OPP,
+	// The branch is too long.
+	BS_TOO_LONG,
 };
 
 /** A sequence of Kmer. */

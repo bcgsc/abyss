@@ -32,7 +32,7 @@ enum NetworkAssemblyState
 	NAS_CLEAR_FLAGS, // clear the flags
 	NAS_ASSEMBLE, // assembling the data
 	NAS_ASSEMBLE_COMPLETE, // assembling is complete
-	NAS_WAITING, // non-control process is waiting, this just loops over the network function
+	NAS_WAITING, // non-control process is waiting
 	NAS_DONE // finished, clean up and exit
 };
 
@@ -90,7 +90,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// run the assembly
 		void run();
 
-		// run the assembly from the controller's point of view (rank 0 node)
+		// run the assembly from the controller's point of view
 		void runControl();
 
 		// test if the checkpoint has been reached
@@ -101,7 +101,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void handle(int senderID, const SeqRemoveMessage& message);
 		void handle(int senderID, const SetBaseMessage& message);
 		void handle(int senderID, const SetFlagMessage& message);
-		void handle(int senderID, const RemoveExtensionMessage& message);
+		void handle(int senderID, const RemoveExtensionMessage& m);
 		void handle(int senderID, const SeqDataRequest& message);
 		void handle(int senderID, const SeqDataResponse& message);
 
@@ -160,7 +160,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 				FastaWriter* fileWriter,
 				BranchRecord& branch, unsigned id);
 
-		// Check if a branch is redundant with a previously output branch
+		// Check if a branch is redundant with a previously output
+		// branch.
 		bool isBranchRedundant(const BranchRecord& branch);
 
 		void parseControlMessage(int source);
@@ -175,7 +176,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		SequenceCollectionHash m_data;
 
-		// The communications layer implements the functions over the network
+		// The communications layer implements the functions over the
+		// network.
 		MessageBuffer m_comm;
 
 		// The number of nodes in the network
@@ -184,7 +186,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 		// the state of the assembly
 		NetworkAssemblyState m_state;
 
-		// The number of processes that have sent a checkpoint reached message, this is used by the control process to determine the state flow
+		// The number of processes that have sent a checkpoint reached
+		// message, this is used by the control process to determine
+		// the state flow.
 		unsigned m_numReachedCheckpoint;
 
 		/** The sum of the values returned by the slave nodes in their
@@ -216,7 +220,8 @@ class NetworkSequenceCollection : public ISequenceCollection
 		/** Bubbles, which are branch groups that have joined. */
 		BranchGroupMap m_bubbles;
 
-		// List of IDs of finished groups, used for sanity checking during bubble popping
+		// List of IDs of finished groups, used for sanity checking
+		// during bubble popping.
 		std::set<uint64_t> m_finishedGroups;
 
 		static const size_t MAX_ACTIVE = 50;

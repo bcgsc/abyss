@@ -38,13 +38,14 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... QUERY... TARGET\n"
-"Align the sequences of the files QUERY against those of the file TARGET.\n"
+"Align the sequences of the files QUERY to those of TARGET.\n"
 "All perfect matches of at least k bases will be found.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -s, --section=S/N     split the target into N sections and align"
 "                        reads to section S [1/1]\n"
-"  -i, --ignore-multimap ignore duplicate k-mer in the target [default]\n"
+"  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
+"                        [default]\n"
 "  -m, --multimap        allow duplicate k-mer in the target\n"
 "      --no-multimap     disallow duplicate k-mer in the target\n"
 "  -j, --threads=N       use N threads [2] up to one per query file\n"
@@ -145,7 +146,8 @@ static size_t countKmer(const string& path)
 			  case '\n':
 				break;
 			  default:
-				cerr << "error: unexpected character: `" << c << "'\n";
+				cerr << "error: unexpected character: "
+					"`" << c << "'\n";
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -274,7 +276,8 @@ static pthread_t getReadFiles(const char *readsFile)
 		pthread_mutex_unlock(&g_mutexCerr);
 	}
 
-	FastaReader* in = new FastaReader(readsFile, FastaReader::FOLD_CASE);
+	FastaReader* in = new FastaReader(
+			readsFile, FastaReader::FOLD_CASE);
 	WorkerArg* arg = new WorkerArg(*in, *g_pipeMux.addPipe());
 
 	pthread_t thread;
@@ -370,8 +373,8 @@ int main(int argc, char** argv)
 	g_readCount = 0;
 
 	vector<pthread_t> producer_threads;
-	transform(argv + optind, argv + argc, back_inserter(producer_threads),
-			getReadFiles);
+	transform(argv + optind, argv + argc,
+			back_inserter(producer_threads), getReadFiles);
 
 	vector<pthread_t> threads;
 	for (int i = 0; i < opt::threads; i++) {
@@ -439,7 +442,8 @@ static void readContigsIntoDB(string refFastaFile,
 				assert(isalpha(rec.seq[0]));
 		}
 
-		cout << "@SQ\tSN:" << rec.id << "\tLN:" << rec.seq.length() << '\n';
+		cout << "@SQ\tSN:" << rec.id
+			<< "\tLN:" << rec.seq.length() << '\n';
 		aligner.addReferenceSequence(rec.id, rec.seq);
 
 		count++;

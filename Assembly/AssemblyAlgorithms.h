@@ -26,8 +26,9 @@ namespace AssemblyAlgorithms
 void loadSequences(ISequenceCollection* seqCollection,
 		std::string inFile);
 
-// Generate the adjacency information for all the sequences in the collection
-// This is required before any other algorithm can run
+/** Generate the adjacency information for all the sequences in the
+ * collection. This is required before any other algorithm can run.
+ */
 void generateAdjacency(ISequenceCollection* seqCollection);
 
 Histogram coverageHistogram(const ISequenceCollection& c);
@@ -47,7 +48,8 @@ SeqContiguity checkSeqContiguity(
 		extDirection& outDir, bool considerMarks = false);
 
 // process a terminated branch for trimming
-bool processTerminatedBranchTrim(ISequenceCollection* seqCollection, BranchRecord& branch);
+bool processTerminatedBranchTrim(
+		ISequenceCollection* seqCollection, BranchRecord& branch);
 
 bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
 
@@ -56,7 +58,8 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
 		unsigned maxLength, bool addKmer = true);
 
-// Populate the branch group with the initial extensions to this sequence
+/** Populate the branch group with the initial extensions to this
+ * sequence. */
 void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
 		const SeqExt& extension);
 
@@ -69,15 +72,13 @@ bool processBranchGroupExtension(BranchGroup& group,
 void openBubbleFile(std::ofstream& out);
 void writeBubble(std::ostream& out, const BranchGroup& group,
 		unsigned id);
-void collapseJoinedBranches(ISequenceCollection* seqCollection, BranchGroup& group);
+void collapseJoinedBranches(
+		ISequenceCollection* seqCollection, BranchGroup& group);
 
-//
-//
-// Split the remaining ambiguous nodes to allow for a non-redundant assembly
-//
-//
-
-// Remove extensions to/from ambiguous sequences to avoid generating redundant/wrong contigs
+/* Split the remaining ambiguous nodes to allow for a non-redundant
+ * assembly. Remove extensions to/from ambiguous sequences to avoid
+ * generating redundant/wrong contigs.
+ */
 size_t markAmbiguous(ISequenceCollection* seqCollection);
 size_t splitAmbiguous(ISequenceCollection* seqCollection);
 

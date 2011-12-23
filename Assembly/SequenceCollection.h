@@ -44,7 +44,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Set flag for sequence seq
 		void setFlag(const Kmer& seq, SeqFlag flag);
 
-		// Clear the specified flag from every sequence in the collection
+		// Clear the specified flag from every sequence in the
+		// collection.
 		void wipeFlag(SeqFlag flag);
 
 		bool setBaseExtension(const Kmer& seq, extDirection dir,

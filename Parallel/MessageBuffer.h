@@ -57,14 +57,16 @@ class MessageBuffer : public CommLayer
 				const Kmer& seq, extDirection dir, uint8_t base);
 
 		void flush();
-		void queueMessage(int nodeID, Message* message, SendMode mode);
+		void queueMessage
+			(int nodeID, Message* message, SendMode mode);
 
 		// clear out a queue
 		void clearQueue(int nodeID);
 		bool transmitBufferEmpty() const;
 
-		// check if a queue is full, if so, send the messages
-		// if the immediate mode flag is set, send even if the queue is not full
+		// check if a queue is full, if so, send the messages if the
+		// immediate mode flag is set, send even if the queue is not
+		// full.
 		void checkQueueForSend(int nodeID, SendMode mode);
 		
 	private:

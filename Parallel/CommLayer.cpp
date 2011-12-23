@@ -249,13 +249,13 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 				assert(false);
 				break;
 		}
-		
+
 		// Unserialize the new message from the buffer
 		offset += pNewMessage->unserialize(
 				(char*)m_rxBuffer + offset);
-		//pNewMessage->print();
-		
-		// Constructed message will be deleted in the NetworkSequenceCollection calling function
+
+		// Constructed message will be deleted in the
+		// NetworkSequenceCollection calling function.
 		outmessages.push_back(pNewMessage);
 	}
 	assert(offset == size);

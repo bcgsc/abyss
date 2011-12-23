@@ -36,7 +36,8 @@ class Message
 		Message(const Kmer& seq) : m_seq(seq) { }
 		virtual ~Message() { }
 
-		virtual void handle(int senderID, NetworkSequenceCollection& handler) = 0;
+		virtual void handle(
+				int senderID, NetworkSequenceCollection& handler) = 0;
 
 		virtual size_t getNetworkSize() const
 		{

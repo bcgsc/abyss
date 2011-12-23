@@ -243,8 +243,8 @@ static bool findNewEdges(const Graph& g, vertex_descriptor v,
 			}
 		}
 	}
-	for (vector<V>::const_iterator it = marked.begin(); it != marked.end();
-			it++)
+	for (vector<V>::const_iterator it = marked.begin();
+			it != marked.end(); it++)
 		markedContigs[get(vertex_index, g, *it)] = true;
 	return true;
 }
@@ -373,7 +373,8 @@ static void removeShims(Graph& g, const vector<bool>& seen)
 		if (opt::verbose > 0)
 			cerr << "Starting pass " << i << ": There are "
 				<< shortContigs.size() << " contigs to check.\n";
-		sort(shortContigs.begin(), shortContigs.end(), sortContigs(g));
+		sort(shortContigs.begin(), shortContigs.end(),
+				sortContigs(g));
 		removeContigs(g, shortContigs);
 	}
 	if (opt::verbose > 0) {
@@ -419,21 +420,31 @@ int main(int argc, char** argv)
 					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-			case '?': die = true; break;
-			case 'l': arg >> opt::minLen; assert(arg.eof()); break;
-			case 'm': arg >> opt::minOverlap; assert(arg.eof()); break;
-			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
-			case 'i': arg >> opt::ignorePath; assert(arg.eof()); break;
-			case 'k': arg >> opt::k; assert(arg.eof()); break;
-			case 'T': arg >> opt::minIslandLen; assert(arg.eof()); break;
-			case 't': arg >> opt::minTipLen; assert(arg.eof()); break;
-			case 'v': opt::verbose++; break;
-			case OPT_HELP:
-				cout << USAGE_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_VERSION:
-				cout << VERSION_MESSAGE;
-				exit(EXIT_SUCCESS);
+		  case '?':
+			die = true;
+			break;
+		  case 'l':
+			arg >> opt::minLen; assert(arg.eof()); break;
+		  case 'm':
+			arg >> opt::minOverlap; assert(arg.eof()); break;
+		  case 'g':
+			arg >> opt::graphPath; assert(arg.eof()); break;
+		  case 'i':
+			arg >> opt::ignorePath; assert(arg.eof()); break;
+		  case 'k':
+			arg >> opt::k; assert(arg.eof()); break;
+		  case 'T':
+			arg >> opt::minIslandLen; assert(arg.eof()); break;
+		  case 't':
+			arg >> opt::minTipLen; assert(arg.eof()); break;
+		  case 'v':
+			opt::verbose++; break;
+		  case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		  case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
 		}
 	}
 

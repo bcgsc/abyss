@@ -13,7 +13,8 @@ class PMF
 {
   public:
 	/** Construct a PMF from a histogram. */
-	PMF(const Histogram& h) : m_dist(h.maximum() + 1), m_stdDev(h.sd())
+	PMF(const Histogram& h)
+		: m_dist(h.maximum() + 1), m_stdDev(h.sd())
 	{
 		unsigned count = h.size();
 		m_minp = (double)1 / count;

@@ -34,14 +34,14 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Write read pairs that align to the same contig to FRAGMENTS or HISTOGRAM.\n"
-"Write read pairs that align to different contigs to standard output.\n"
-"Alignments may be in FILE(s) or standard input.\n"
+"Write pairs that map to the same contig to the file SAME.\n"
+"Write pairs that map to different contigs to standard output.\n"
+"Alignments may be read from FILE(s) or standard input.\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
-"  -f, --frag=FRAGMENTS  write fragment sizes to this file\n"
-"  -h, --hist=HISTOGRAM  write the fragment size histogram to this file\n"
+"  -f, --frag=SAME       write fragment sizes to this file\n"
+"  -h, --hist=FILE       write the fragment size histogram to FILE\n"
 "      --sam             alignments are in SAM format\n"
 "      --kaligner        alignments are in KAligner format\n"
 "  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
@@ -121,7 +121,8 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	return r - f;
 }
 
-static void addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
+static void addEstimate(EstimateMap& map, const Alignment& a,
+		Estimate& est, bool reverse)
 {
 	//count up the number of estimates that agree
 	bool placed = false;

@@ -21,8 +21,8 @@ BranchGroupStatus BranchGroup::updateStatus(unsigned maxLength)
 	}
 
 	// Check if any branches are too long or any sequence has a loop
-	for(BranchGroupData::const_iterator iter = m_branches.begin(); iter != m_branches.end(); ++iter)
-	{
+	for (BranchGroupData::const_iterator iter = m_branches.begin();
+			iter != m_branches.end(); ++iter) {
 		if (iter->isTooLong(maxLength)) {
 			m_status = BGS_TOOLONG;
 			return m_status;

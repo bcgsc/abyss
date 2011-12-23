@@ -8,7 +8,6 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
-#include <cstring> // for memset
 #include <getopt.h>
 #include <iostream>
 #include <numeric>
@@ -28,13 +27,13 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... CONTIG\n"
 "\n"
-"Read alignments from KAligner and read sequences from standard input.\n"
+"Read alignments from KAligner from standard input.\n"
 "Ensure that the --seq option was used when running KAligner.\n"
 "Call a consensus at each position of each contig and write the\n"
-"consensus in FASTA format to OUTPUT and in pileup format to PILEUP.\n"
+"consensus in FASTA format to OUTPUT.\n"
 "  CONTIG  contigs in FASTA format\n"
 "\n"
-"  -o, --out=OUTPUT      write converted sequences in fasta format to this file\n"
+"  -o, --out=OUTPUT      write the output FASTA file to OUTPUT\n"
 "  -p, --pileup=PILEUP   write the pileup to PILEUP\n"
 "      --nt              output nucleotide contigs [default]\n"
 "      --cs              output colour-space contigs\n"
@@ -184,7 +183,8 @@ static void buildBaseQuality()
 		// the final consensus.
 		if (opt::csToNt) {
 			bool good = false;
-			for (AlignmentVector::const_iterator alignIter = alignments.begin();
+			for (AlignmentVector::const_iterator
+					alignIter = alignments.begin();
 					alignIter != alignments.end(); ++alignIter) {
 				if (alignIter->read_start_pos == 0) {
 					good = true;
@@ -196,7 +196,8 @@ static void buildBaseQuality()
 		}
 
 		// For each alignment for the read.
-		for (AlignmentVector::const_iterator alignIter = alignments.begin();
+		for (AlignmentVector::const_iterator
+				alignIter = alignments.begin();
 				alignIter != alignments.end(); ++alignIter) {
 			string seqrc;
 			Alignment a;
@@ -211,7 +212,8 @@ static void buildBaseQuality()
 
 			ContigMap::iterator contigIt = g_contigs.find(a.contig);
 			if (contigIt == g_contigs.end()) {
-				cerr << "error: unexpected contig ID: `" << a.contig << "'\n";
+				cerr << "error: unexpected contig ID: `" << a.contig
+					<< "'\n";
 				exit(EXIT_FAILURE);
 			}
 
@@ -225,7 +227,8 @@ static void buildBaseQuality()
 
 				read_max = a.read_start_pos + countsVec.size() -
 					a.contig_start_pos;
-				read_max = read_max < a.read_length ? read_max : a.read_length;
+				read_max = read_max < a.read_length
+					? read_max : a.read_length;
 			} else {
 				read_min = a.read_start_pos;
 				read_max = read_min + a.align_length + 1;
@@ -286,8 +289,11 @@ static void fixUnknown(Sequence& ntSeq, const Sequence& csSeq )
 	size_t index = ntSeq.find_first_of('N');
 	size_t rindex = ntSeq.find_last_of('N');
 	char base;
-	/*if (index == 0) {
-		//for (index = ntSeq.find_first_of("ACGT"); index > 0; index--)
+#if 0
+	if (index == 0) {
+#if 0
+		for (index = ntSeq.find_first_of("ACGT"); index > 0; index--)
+#endif
 		index = ntSeq.find_first_of("ACGT");
 		while (index != 0) {
 			base = colourToNucleotideSpace(ntSeq.at(index),
@@ -297,7 +303,8 @@ static void fixUnknown(Sequence& ntSeq, const Sequence& csSeq )
 			index = ntSeq.find_first_of("ACGT");
 		}
 		index = ntSeq.find_first_of('N');
-	}*/
+	}
+#endif
 
 	if (index == 0 || rindex == ntSeq.length() - 1) {
 		ntSeq = ntSeq.substr(ntSeq.find_first_of("ACGT"),
@@ -372,14 +379,16 @@ static void consensus(const string& outPath, const string& pileupPath)
 		unsigned sumBest = 0;
 		unsigned sumSecond = 0;
 		for (unsigned x = 0; x < seqLength; x++) {
-			char c = selectBase(it->second.counts[x], sumBest, sumSecond);
+			char c = selectBase(
+					it->second.counts[x], sumBest, sumSecond);
 			outSeq[x] = islower(contig.seq[x]) ? tolower(c) : c;
 		}
 
 		if (outSeq.find_first_of("ACGT") != string::npos) {
 			// Check that the average percent agreement was enough to
 			// write the contig to file.
-			float percentAgreement = sumBest / (float)(sumBest + sumSecond);
+			float percentAgreement
+				= sumBest / (float)(sumBest + sumSecond);
 			if (isnan(percentAgreement) || percentAgreement < .9) {
 				numIgnored++;
 				if (opt::csToNt) {
@@ -396,7 +405,8 @@ static void consensus(const string& outPath, const string& pileupPath)
 				comment << outSeq.length() << ' ' << contig.coverage;
 				if (!contig.comment.empty())
 					comment << ' ' << contig.comment;
-				outFile << FastaRecord(it->first, comment.str(), outSeq);
+				outFile << FastaRecord(
+						it->first, comment.str(), outSeq);
 				assert(outFile.good());
 			}
 
