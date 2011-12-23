@@ -406,11 +406,16 @@ int main(int argc, char** argv)
 			<< " RF: " << numRF << setprecision(3)
 			<< " (" << (float)100*numRF/numTotal << "%)"
 			<< endl;
-	if (numFR < numRF) {
-		cerr << "The mate pairs of this library are oriented "
-			"reverse-forward (RF)." << endl;
-		opt::rf = true;
+
+	// Determine the orientation of the library.
+	opt::rf = numFR < numRF;
+	if (opt::rf) {
+		cerr << "The library " << distanceCountFile
+			<< " is oriented reverse-forward (RF).\n";
 		distanceHist = distanceHist.negate();
+	} else {
+		cerr << "The library " << distanceCountFile
+			<< " is oriented forward-reverse (FR).\n";
 	}
 
 	distanceHist.eraseNegative();
