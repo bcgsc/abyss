@@ -169,7 +169,7 @@ n?=10
 libs=$(pe) $(mp)
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v -j$j -k$k -s$($*_s) -n$($*_n) $(DISTANCEEST_OPTIONS)
+deopt=$v -j$j -k$k -s$($*_s) -n$($*_n) $($*_de) $(DISTANCEEST_OPTIONS)
 
 # SimpleGraph parameters
 ifdef d
