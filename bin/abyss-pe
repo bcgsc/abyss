@@ -151,12 +151,13 @@ m?=30
 p?=0.9
 pbopt += -p$p
 
-# Select the aligner program
+# Aligner parameters
 aligner?=map
 align?=abyss-${aligner}
+mapopt=$v -j$j -k$($*_k) $(ALIGNER_OPTIONS)
 
 # fixmate parameters
-ifeq (${align},abyss-kaligner)
+ifeq ($(align),abyss-kaligner)
 fixmate?=ParseAligns
 fmopt=-k$k
 else
@@ -167,9 +168,10 @@ endif
 s?=200
 n?=10
 libs=$(pe) $(mp)
+$(foreach i,$(libs),$(eval $i_k?=$k))
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v -j$j -k$k -s$($*_s) -n$($*_n) $($*_de) $(DISTANCEEST_OPTIONS)
+deopt=$v -j$j -k$($*_k) -s$($*_s) -n$($*_n) $($*_de) $(DISTANCEEST_OPTIONS)
 
 # SimpleGraph parameters
 ifdef d
@@ -271,13 +273,13 @@ endif
 # Estimate distances between contigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
@@ -291,7 +293,7 @@ endif
 	|DistancEst $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|DistancEst $(deopt) -o $@ $*-3.hist
@@ -361,13 +363,13 @@ endif
 # Estimate distances between contigs
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
@@ -381,7 +383,7 @@ endif
 	|DistanceEst --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) $(strip $($*)) $< \
+	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst --dot $(deopt) -o $@ $*-6.hist
