@@ -40,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "      --mind=N          minimum distance between contigs\n"
 "      --maxd=N          maximum distance between contigs\n"
+"      --fr              force the orientation to forward-reverse\n"
+"      --rf              force the orientation to reverse-forward\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
@@ -72,7 +74,7 @@ namespace opt {
 	static unsigned minMapQ = 1;
 
 	/** Reverse-forward mate pair orientation. */
-	static bool rf = false;
+	static int rf = -1;
 
 	static int verbose;
 	static string out;
@@ -81,14 +83,18 @@ namespace opt {
 
 static const char shortopts[] = "j:k:n:o:q:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MIND, OPT_MAXD };
+enum { OPT_HELP = 1, OPT_VERSION,
+	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF
+};
 
 static const struct option longopts[] = {
 	{ "dist",        no_argument,       &opt::format, DIST, },
 	{ "dot",         no_argument,       &opt::format, DOT, },
-	{ "kmer",        required_argument, NULL, 'k' },
+	{ "fr",          no_argument,       &opt::rf, false },
+	{ "rf",          no_argument,       &opt::rf, true },
 	{ "mind",        required_argument, NULL, OPT_MIND },
 	{ "maxd",        required_argument, NULL, OPT_MAXD },
+	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "min-mapq",    required_argument, NULL, 'q' },
@@ -400,23 +406,28 @@ int main(int argc, char** argv)
 	unsigned numRF = distanceHist.count(INT_MIN, 0);
 	unsigned numFR = distanceHist.count(1, INT_MAX);
 	unsigned numTotal = distanceHist.size();
-	if (opt::verbose > 0)
+	bool libRF = numFR < numRF;
+	if (opt::verbose > 0) {
 		cerr << "Mate orientation FR: " << numFR << setprecision(3)
 			<< " (" << (float)100*numFR/numTotal << "%)"
 			<< " RF: " << numRF << setprecision(3)
-			<< " (" << (float)100*numRF/numTotal << "%)"
-			<< endl;
+			<< " (" << (float)100*numRF/numTotal << "%)\n"
+			<< "The library " << distanceCountFile << " is oriented "
+			<< (libRF
+					? "reverse-forward (RF)" : "forward-reverse (FR)")
+			<< ".\n";
+	}
 
 	// Determine the orientation of the library.
-	opt::rf = numFR < numRF;
-	if (opt::rf) {
-		cerr << "The library " << distanceCountFile
-			<< " is oriented reverse-forward (RF).\n";
+	if (opt::rf == -1)
+		opt::rf = libRF;
+	if (opt::rf)
 		distanceHist = distanceHist.negate();
-	} else {
-		cerr << "The library " << distanceCountFile
-			<< " is oriented forward-reverse (FR).\n";
-	}
+	if (opt::rf != libRF)
+		cerr << "warning: The orientation is forced to "
+			<< (opt::rf
+					? "reverse-forward (RF)" : "forward-reverse (FR)")
+			<< " which differs from the detected orientation.\n";
 
 	distanceHist.eraseNegative();
 	Histogram h = distanceHist.trimFraction(0.0001);
