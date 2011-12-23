@@ -335,7 +335,7 @@ uint8_t Kmer::shiftPrepend(uint8_t base)
 		unsigned index = 0;
 		shiftIn = rightShiftByte(m_seq, i, index, shiftIn);
 	}
-	return lastBase;	
+	return lastBase;
 }
 
 uint8_t Kmer::leftShiftByte(char* pSeq,
@@ -343,10 +343,10 @@ uint8_t Kmer::leftShiftByte(char* pSeq,
 {
 	// save the first base
 	uint8_t outBase = (pSeq[byteNum] >> 6) & 0x3;
-	
+
 	// shift left one position
 	pSeq[byteNum] <<= 2;
-	
+
 	// Set the new base
 	setBaseCode(pSeq, byteNum, index, base);
 
@@ -358,13 +358,13 @@ uint8_t Kmer::rightShiftByte(char* pSeq,
 {
 	// save the last base
 	uint8_t outBase = pSeq[byteNum] & 0x3;
-	
+
 	// shift right one position
 	pSeq[byteNum] >>= 2;
-	
+
 	// add the new base
 	setBaseCode(pSeq, byteNum, index, base);
-	
+
 	return outBase;
 }
 
@@ -423,7 +423,7 @@ static unsigned seqIndexToByteNumber(unsigned seqIndex)
 
 static unsigned seqIndexToBaseIndex(unsigned seqIndex)
 {
-	return seqIndex % 4; 
+	return seqIndex % 4;
 }
 
 /** Return true if this sequence is a palindrome. */

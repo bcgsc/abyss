@@ -67,18 +67,13 @@ void MessageBuffer::queueMessage(
 {
 	if (opt::verbose >= 9)
 		cout << opt::rank << " to " << nodeID << ": " << *message;
-	m_msgQueues[nodeID].push_back(message);	
-	checkQueueForSend(nodeID, mode);	
+	m_msgQueues[nodeID].push_back(message);
+	checkQueueForSend(nodeID, mode);
 }
 
-//
-//
-//
 void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 {
-	
 	size_t numMsgs = m_msgQueues[nodeID].size();
-		
 	// check if the messages should be sent
 	if ((numMsgs == MAX_MESSAGES || mode == SM_IMMEDIATE)
 			&& numMsgs > 0) {
@@ -86,12 +81,12 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		size_t totalSize = 0;
 		for(size_t i = 0; i < numMsgs; i++)
 		{
-			totalSize += m_msgQueues[nodeID][i]->getNetworkSize();	
+			totalSize += m_msgQueues[nodeID][i]->getNetworkSize();
 		}
-		
+
 		// Generate a buffer for all the messages
 		char* buffer = new char[totalSize];
-		
+
 		// Copy the messages into the buffer
 		size_t offset = 0;
 		for(size_t i = 0; i < numMsgs; i++)
@@ -107,12 +102,10 @@ void MessageBuffer::checkQueueForSend(int nodeID, SendMode mode)
 		m_txPackets++;
 		m_txMessages += numMsgs;
 		m_txBytes += totalSize;
-	}	
+	}
 }
-	
-//
+
 // Clear a queue of messages
-//
 void MessageBuffer::clearQueue(int nodeID)
 {
 	size_t numMsgs = m_msgQueues[nodeID].size();
@@ -125,9 +118,7 @@ void MessageBuffer::clearQueue(int nodeID)
 	m_msgQueues[nodeID].clear();
 }
 
-//
 // Flush the message buffer by sending all messages that are queued
-//
 void MessageBuffer::flush()
 {
 	// Send all messages in all queues

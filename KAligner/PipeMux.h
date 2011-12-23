@@ -34,12 +34,10 @@ class PipeMux {
 		pthread_mutex_init(m, NULL);
 
 		pthread_rwlock_wrlock(&m_rwlock_vecs);
-		
 		m_pipes.push_back(p);
 		m_mutex_pipes.push_back(m);
-		
 		pthread_rwlock_unlock(&m_rwlock_vecs);
-		
+
 		return p;
 	}
 

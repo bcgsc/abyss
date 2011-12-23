@@ -68,7 +68,7 @@ class MessageBuffer : public CommLayer
 		// immediate mode flag is set, send even if the queue is not
 		// full.
 		void checkQueueForSend(int nodeID, SendMode mode);
-		
+
 	private:
 		static const size_t MAX_MESSAGES = 100;
 		MessageQueues m_msgQueues;

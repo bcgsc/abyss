@@ -105,7 +105,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	if (s.size() > MAX_SIZE) {
 		std::cerr << PROGRAM << ": `" << path << "', "
 			<< toSI(s.size())
-			<< "B, must be smaller than " 
+			<< "B, must be smaller than "
 			<< toSI(MAX_SIZE) << "B\n";
 		exit(EXIT_FAILURE);
 	}

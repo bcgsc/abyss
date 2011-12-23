@@ -144,7 +144,6 @@ static size_t getMyPos(const Match& m, const FastaIndex& faIndex,
 static size_t getMinPos(const Match& m, size_t maxLen,
 		const FastaIndex& faIndex, const FMIndex& fmIndex)
 {
-	
 	size_t minPos = numeric_limits<size_t>::max();
 	for (size_t i = m.l; i < m.u; i++) {
 		size_t pos = fmIndex[i];
@@ -286,7 +285,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	if (s.size() > MAX_SIZE) {
 		std::cerr << PROGRAM << ": `" << path << "', "
 			<< toSI(s.size())
-			<< "B, must be smaller than " 
+			<< "B, must be smaller than "
 			<< toSI(MAX_SIZE) << "B\n";
 		exit(EXIT_FAILURE);
 	}

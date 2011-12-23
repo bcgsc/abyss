@@ -796,7 +796,7 @@ size_t NetworkSequenceCollection::performNetworkTrim(
 			}
 		}
 	}
-	
+
 	// Clear out the remaining branches
 	while(!m_activeBranchGroups.empty())
 	{
@@ -892,7 +892,7 @@ performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
 		processBranchesDiscoverBubbles();
 		seqCollection->pumpNetwork();
 	}
-	
+
 	// Wait until the groups finish extending.
 	while (processBranchesDiscoverBubbles())
 		seqCollection->pumpNetwork();
@@ -1153,7 +1153,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			}
 		}
 	}
-	
+
 	// Clear out the remaining branches
 	while(!m_activeBranchGroups.empty())
 	{
