@@ -160,15 +160,6 @@ typedef vector<const_string> Contigs;
 static Contigs g_contigs;
 AmbPath2Contig g_ambpath_contig;
 
-#if 0
-static set< pair<ContigNode, ContigNode> > g_edges_irregular;
-#endif
-
-#if 0
-static double g_coverage_mean;
-static double g_coverage_variance;
-#endif
-
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
@@ -237,48 +228,6 @@ static ContigPaths readPath(const string& inPath,
 	return paths;
 }
 
-#if 0
-/** Read ambiguous path info from SimpleGraph verbose output.
- * format:
- * 275+ 1181+ 1287- 614+
- * 275+ 1198+ 1287- 614+
- * 275+ 73N 1287- 614+
- *
- * Store path info in "g_amb_paths"
- */
-static void readAmbPaths(const string& ambPath)
-{
-	ifstream fin(ambPath.c_str());
-	if (opt::verbose > 0)
-		cerr << "Reading `" << ambPath << "'..." << endl;
-	if (ambPath != "-")
-		assert_good(fin, ambPath);
-	istream& in = ambPath == "-" ? cin : fin;
-
-	vector<Path> paths;
-	string id;
-	Path path;
-	bool isAmbPath;
-	while (in >> path) {
-		isAmbPath = false;
-		for (Path::iterator it = path.begin();
-			it != path.end(); it++)
-			if (it->ambiguous()) {
-				isAmbPath = true;
-				assert(!paths.empty());
-				g_amb_paths.insert(
-					map<Path, vector<Path> >::value_type(
-					path, paths));
-				paths.clear();
-				break;
-			}
-		if (!isAmbPath)
-			paths.push_back(path);
-	}
-	assert(in.eof());
-}
-#endif
-
 /** Mark every contig in path as seen. */
 static void markSeen(vector<bool>& seen, const ContigPath& path,
 		bool flag)
@@ -297,101 +246,6 @@ static void markSeen(vector<bool>& seen, const vector<Path>& paths,
 			it != paths.end(); ++it)
 		markSeen(seen, *it, flag);
 }
-
-#if 0
-/* read in adj file, store which contigs have irregular overlaps
- * (>=k-1 or non-exact match)
- */
-static void ReadAdj(const string& irregularAdj)
-{
-	ifstream in_adj(irregularAdj.c_str());
-	assert_good(in_adj, irregularAdj);
-	while (!in_adj.eof()) {
-		char line[65536];
-		in_adj.getline(line, 65536);
-		string s = line;
-		vector<string> strs;
-		size_t start_pos = 0, delimit_pos;
-		while (start_pos < s.length()
-			&& (delimit_pos = s.find(';', start_pos))
-			!= string::npos) {
-			//get first, second parts
-			if (delimit_pos > start_pos + 1)
-				strs.push_back(s.substr(start_pos,
-					delimit_pos-start_pos));
-			else
-				strs.push_back("");
-			start_pos = delimit_pos+1;
-		}
-		//ignore lines that do not have two ';'s
-		if (strs.size() < 2)
-			continue;
-		//get the last part
-		if (start_pos + 1 < s.length())
-			strs.push_back(s.substr(start_pos));
-		else
-			strs.push_back("");
-		assert(strs.size() == 3);
-		size_t space_pos;
-		assert ((space_pos = strs[0].find(' '))
-			!= string::npos);
-		string t_id = strs[0].substr(0,space_pos);
-		if (!strs[1].empty()) {
-			start_pos = 0;
-			while (start_pos < strs[1].length()
-				&& (delimit_pos = strs[1].find_first_of(" \t", start_pos))
-				!= string::npos) {
-				if (delimit_pos > start_pos) {
-					string h_id =
-						strs[1].substr(start_pos, delimit_pos-start_pos-1);
-					bool h_sense =
-						(strs[1][delimit_pos-1] == '+'? false : true);
-
-					g_edges_irregular.insert(pair<ContigNode, ContigNode>(
-						ContigNode(t_id, false),
-						ContigNode(h_id, h_sense) ));
-
-					g_edges_irregular.insert(pair<ContigNode, ContigNode>(
-						ContigNode(h_id, !h_sense),
-						ContigNode(t_id, true) ));
-				}
-				start_pos = delimit_pos + 1;
-			}
-		}
-		if (!strs[2].empty()) {
-			start_pos = 0;
-			while (start_pos < strs[2].length()
-				&& (delimit_pos = strs[2].find_first_of(' ', start_pos))
-				!= string::npos) {
-				if (delimit_pos > start_pos) {
-					string h_id =
-						strs[2].substr(start_pos, delimit_pos-start_pos-1);
-					bool h_sense =
-						(strs[2][delimit_pos-1] == '+'? false : true);
-
-					g_edges_irregular.insert(pair<ContigNode, ContigNode>(
-						ContigNode(h_id, h_sense),
-						ContigNode(t_id, false) ));
-
-					g_edges_irregular.insert(pair<ContigNode, ContigNode>(
-						ContigNode(t_id, true),
-						ContigNode(h_id, !h_sense) ));
-
-				}
-				start_pos = delimit_pos + 1;
-			}
-		}
-	}
-	in_adj.close();
-	if (opt::verbose > 1) {
-		cerr << "g_edges_irregular:\n";
-		set< pair<ContigNode, ContigNode> >::const_iterator it =
-			g_edges_irregular.begin();
-		for (; it != g_edges_irregular.end(); it++)
-			cerr << it->first << " to " << it->second << '\n';
-	}
-}
-#endif
 
 struct NewVertex {
 	Graph::vertex_descriptor t, u, v;
@@ -474,42 +328,6 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	return s;
 }
 
-#if 0
-/** Merge the specified two contigs,
- * With modified Overlap, we no longer assume overlap is k-1, instead,
- * do a smith-waterman alignment between contigs to determine their
- * overlap.
-*/
-static overlap_align mergeContigs_SW(Sequence& seq, const Sequence& s,
-	const ContigNode& node, const Path& path)
-{
-	vector<overlap_align> overlaps;
-	overlaps.reserve(1); /* only need the longest overlap */
-	do {
-		unsigned len = min(seq.length(), s.length());
-		assert(len > opt::k - 1);
-		alignOverlap(seq.substr(seq.length()-len),
-			s.substr(0, len),
-			seq.length()-len, overlaps, false,
-			opt::verbose > 1);
-	} while (overlaps.empty() && chomp(seq, 'n'));
-
-	if (overlaps.empty()) {
-		cerr << "warning: the head of `" << node << "' "
-			"does not match the tail of the previous contig\n"
-			<< seq << '\n' << s << '\n' << path << endl;
-		seq += 'n';
-		seq += s;
-		return overlap_align();
-	} else {
-		seq.erase(overlaps[0].overlap_t_pos);
-		seq += overlaps[0].overlap_str;
-		seq += Sequence(s, overlaps[0].overlap_h_pos+1);
-		return overlaps[0];
-	}
-}
-#endif
-
 /** Merge the specified two contigs, default overlap is k-1,
  * generate a consensus sequence of the overlapping region. The result
  * is stored in the first argument.
@@ -548,40 +366,15 @@ static Sequence mergePath(const Graph&g, const Path& path)
 		if (seq.empty()) {
 			seq = getSequence(*it);
 		} else {
-#if 0
-			if (g_edges_irregular.find(
-					pair<ContigNode, ContigNode>(
-					*prev_it, *it))
-					== g_edges_irregular.end())
-				mergeContigs(seq, getSequence(*it),
-					*it, path);
-			else
-				mergeContigs_SW(seq, getSequence(*it),
-					*it, path);
-#else
 			int d = get(edge_bundle, g, *(it-1), *it).distance;
 			assert(d < 0);
 			unsigned overlap = -d;
 			mergeContigs(overlap, seq, getSequence(*it), *it, path);
-#endif
 		}
 		prev_it = it;
 	}
 	return seq;
 }
-
-#if 0
-/** Validate path coverage, at 95% confidence interval. */
-static bool validCoverage(unsigned pathLen, unsigned pathCover)
-{
-	double cover_mean
-		= (double)pathCover / (pathLen + opt::k - 1);
-	double cover_deviation
-		= sqrt(g_coverage_variance / (pathLen + opt::k - 1));
-	return cover_mean <= g_coverage_mean + 1.96*cover_deviation
-		&& cover_mean >= g_coverage_mean - 1.96*cover_deviation;
-}
-#endif
 
 /** Calculate the ContigProperties of a path. */
 static ContigProperties calculatePathProperties(const Graph& g,
@@ -839,23 +632,6 @@ static ContigPath align(const Graph& g, const vector<Path>& sequences,
 	}
 }
 
-#if 0
-static void calculateCoverageStatistics(const Graph& g)
-{
-	double coverage = 0, variance = 0;
-	unsigned num = g.num_vertices() / 2;
-	for (unsigned i = 0; i < num; ++i) {
-		ContigNode u(i, false);
-		double c = (double)g[u].coverage / (g[u].length - opt::k + 1);
-		coverage += c;
-		variance += c * c;
-	}
-	g_coverage_mean = coverage / num;
-	g_coverage_variance = (variance - 2 * g_coverage_mean * coverage)
-		/ num + g_coverage_mean * g_coverage_mean;
-}
-#endif
-
 /** Return the consensus sequence of the specified gap. */
 static ContigPath fillGap(const Graph& g,
 		const AmbPathConstraint& apConstraint,
@@ -1008,11 +784,6 @@ int main(int argc, char** argv)
 		opt::colourSpace = isdigit(contigs[0][0]);
 	}
 	ContigID::lock();
-
-#if 0
-	// Get contig k-mer-coverage statistics.
-	calculateCoverageStatistics(g);
-#endif
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
