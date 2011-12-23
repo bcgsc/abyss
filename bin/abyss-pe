@@ -286,17 +286,17 @@ endif
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|DistancEst $(deopt) -o $@ $*-3.hist
+	|DistanceEst $(deopt) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|DistancEst $(deopt) -o $@ $*-3.hist
+	|DistanceEst $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|${fixmate} $v ${fmopt} -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|DistancEst $(deopt) -o $@ $*-3.hist
+		|DistanceEst $(deopt) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(pe))
 
