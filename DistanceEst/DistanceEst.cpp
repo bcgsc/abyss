@@ -106,7 +106,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef vector<SAMRecord> AlignPairVec;
+/** A collection of aligned read pairs. */
+typedef vector<SAMRecord> Pairs;
 
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
@@ -114,7 +115,7 @@ typedef vector<SAMRecord> AlignPairVec;
  * @return the estimated distance
  */
 static int estimateDistance(unsigned len0, unsigned len1,
-		const AlignPairVec& pairs, const PMF& pmf,
+		const Pairs& pairs, const PMF& pmf,
 		unsigned& numPairs)
 {
 	// The provisional fragment sizes are calculated as if the contigs
@@ -122,7 +123,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	typedef vector<pair<int, int> > Fragments;
 	Fragments fragments;
 	fragments.reserve(pairs.size());
-	for (AlignPairVec::const_iterator it = pairs.begin();
+	for (Pairs::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it) {
 		int a0 = it->targetAtQueryStart();
 		int a1 = it->mateTargetAtQueryStart();
@@ -156,7 +157,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 static void writeEstimate(ostream& out,
 		const ContigNode& id0, const ContigNode& id1,
 		unsigned len0, unsigned len1,
-		const AlignPairVec& pairs, const PMF& pmf)
+		const Pairs& pairs, const PMF& pmf)
 {
 	if (pairs.size() < opt::npairs)
 		return;
@@ -198,9 +199,9 @@ static void writeEstimates(ostream& out,
 	if (opt::format == DIST)
 		ss << pairs.front().rname;
 
-	typedef map<ContigNode, AlignPairVec> Pairs;
-	Pairs dataMap[2];
-	for (AlignPairVec::const_iterator it = pairs.begin();
+	typedef map<ContigNode, Pairs> PairsMap;
+	PairsMap dataMap[2];
+	for (Pairs::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it)
 		dataMap[it->isReverse()][ContigNode(it->mrnm,
 				it->isReverse() == it->isMateReverse())]
@@ -209,8 +210,8 @@ static void writeEstimates(ostream& out,
 	for (int sense0 = false; sense0 <= true; sense0++) {
 		if (opt::format == DIST && sense0)
 			ss << " ;";
-		const Pairs& x = dataMap[sense0 ^ opt::rf];
-		for (Pairs::const_iterator it = x.begin();
+		const PairsMap& x = dataMap[sense0 ^ opt::rf];
+		for (PairsMap::const_iterator it = x.begin();
 				it != x.end(); ++it)
 			writeEstimate(opt::format == DOT ? out : ss,
 					ContigNode(id0, sense0), it->first,
