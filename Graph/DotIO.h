@@ -176,12 +176,16 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 		switch (in.peek()) {
 		  case 'g': {
 			// Graph Properties
-			unsigned k;
-			in >> expect("graph [ k =") >> k >> Ignore(']');
-			assert(in);
-			if (opt::k > 0)
-				assert(k == opt::k);
-			opt::k = k;
+			in >> expect("graph [ ");
+			if (in.peek() == 'k') {
+				unsigned k;
+				in >> expect("k =") >> k;
+				assert(in);
+				if (opt::k > 0)
+					assert(k == opt::k);
+				opt::k = k;
+			}
+			in >> Ignore(']');
 			break;
 		  }
 		  case 'e': // edge
