@@ -91,7 +91,7 @@ while (<>) {
 	next if /^#/ || /^@/;
 
 	if (/^>([^ ]+)/) {
-		my ($id) = $1;
+		my $id = $1;
 		die "error: duplicate sequence ID `$id'"
 			if exists $ctg_seqs{$id};
 		chomp ($ctg_seqs{$id} = <>);
