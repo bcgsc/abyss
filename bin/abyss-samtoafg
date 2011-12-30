@@ -1,0 +1,208 @@
+#!/usr/bin/perl
+use strict;
+use Getopt::Long;
+use Pod::Usage;
+
+sub version {
+	print <<EOF;
+abyss-samtoafg (ABySS)
+Written by Shaun Jackman.
+
+Copyright 2012 Canada's Michael Smith Genome Science Centre
+EOF
+	exit;
+}
+
+my ($opt_eid, $opt_iid, $opt_mean, $opt_sd) = (1, 1);
+Getopt::Long::Configure(qw'bundling');
+GetOptions(
+	'eid|e=s' => \$opt_eid,
+	'iid|i=s' => \$opt_iid,
+	'mean|m=i' => \$opt_mean,
+	'sd|s=i' => \$opt_sd,
+	'help' => sub { pod2usage(-verbose => 1) },
+	'man' => sub { pod2usage(-verbose => 2) },
+	'version' => \&version);
+
+for (@ARGV) { die "cannot read `$_'" unless $_ eq '-' || -r }
+
+# Output the library record (LIB).
+print "{LIB\neid:$opt_eid\niid:$opt_iid\n";
+print "{DST\nmea:$opt_mean\nstd:$opt_sd\n}\n"
+	if defined $opt_mean && defined $opt_sd;
+print "}\n";
+
+sub getMateID($)
+{
+	my $id = shift;
+	return $id =~ s%/1$%/2% || $id =~ s%/2$%/1%
+		? $id : undef;
+}
+
+my ($g_red_iid, $g_frg_iid, %reds, %frgs, %ctg_seqs, %tles);
+
+# Output a read (RED) and possibly a fragment (FRG).
+sub createRead($$$)
+{
+	my ($eid, $seq, $qlt) = @_;
+	die "error: duplicate sequence ID `$eid'" if exists $reds{$eid};
+	my $red_iid = ++$g_red_iid;
+
+	(my $frg_eid = $eid) =~ s/\/[12]$//;
+	my ($my_frg_iid, $mate_iid);
+	if (exists $frgs{$frg_eid}) {
+		$my_frg_iid = delete $frgs{$frg_eid};
+		my $mate_eid = getMateID($eid);
+		die unless defined $mate_eid;
+		$mate_iid = delete $reds{$mate_eid};
+		die unless defined $mate_iid;
+	} else {
+		$my_frg_iid = $frgs{$frg_eid} = ++$g_frg_iid;
+		$reds{$eid} = $red_iid;
+	}
+
+	# Output a read (RED) record.
+	my $qlength = length $seq;
+	print "{RED\nclr:0,$qlength\niid:$red_iid\neid:$eid\n",
+		"frg:$my_frg_iid\n",
+		"seq:\n$seq\n.\nqlt:\n$qlt\n.\n}\n";
+
+	# Output a fragment (FRG) record.
+	if (defined $mate_iid) {
+		print "{FRG\nrds:$mate_iid,$red_iid\nlib:$opt_iid\n",
+			"eid:$frg_eid\niid:$my_frg_iid\ntyp:I\n}\n";
+	}
+
+	return $red_iid;
+}
+
+# Return the left and right soft clipping of this CIGAR string.
+sub parseCigar($)
+{
+	my $cigar = shift;
+	my $clipLeft = $cigar =~ /^([0-9]+)S/ ? $1 : 0;
+	my $clipRight = $cigar =~ /([0-9]+)S$/ ? $1 : 0;
+	return ($clipLeft, $clipRight);
+}
+
+# Record the alignment (TLE) records.
+while (<>) {
+	chomp;
+	next if /^#/ || /^@/;
+
+	if (/^>([^ ]+)/) {
+		my ($id) = $1;
+		die "error: duplicate sequence ID `$id'"
+			if exists $ctg_seqs{$id};
+		chomp ($ctg_seqs{$id} = <>);
+		next;
+	}
+
+	my ($qid, $flag, $tid, $tstart, $mapq, $cigar,
+		$rnext, $pnext, $tlen, $qseq, $qqual) = split '\t';
+	die unless defined $qqual;
+
+	$tstart--; # convert to zero-based coordinate
+	$qid .= "/1" if $flag & 0x40; #FREAD1
+	$qid .= "/2" if $flag & 0x80; #FREAD2
+
+	my $rc = $flag & 0x10; #FREVERSE
+	if ($rc) {
+		# Reverse and complement the sequence.
+		$qseq =~ tr/ACGTacgt/TGCAtgca/;
+		$qseq = reverse $qseq;
+		$qqual = reverse $qqual;
+	}
+	my $riid = createRead($qid, $qseq, $qqual);
+	next if $flag & 0x4; #FUNMAP
+
+	my $qlength = length $qseq;
+	die if length $qqual != $qlength;
+	my ($qstart, $clipRight) = parseCigar($cigar);
+	my $qend = $qlength - $clipRight;
+	die unless $qstart < $qend;
+
+	die "no contig `$tid'" unless exists $ctg_seqs{$tid};
+	my $clr = $rc ? "$qend,$qstart" : "$qstart,$qend";
+	$tles{$tid} .= "{TLE\nclr:$clr\noff:$tstart\nsrc:$riid\n}\n";
+}
+
+# Output the contig (CTG) and alignment (TLE) records.
+my $ctg_iid = 0;
+for my $ctg_eid (sort {$a<=>$b} keys %tles) {
+	my $seq = $ctg_seqs{$ctg_eid};
+
+	# Split long lines.
+	my $qlt = 'I' x (length $seq);
+	$seq =~ s/.{60}/$&\n/sg;
+	$qlt =~ s/.{60}/$&\n/sg;
+
+	# Contig sequence.
+	$ctg_iid++;
+	print "{CTG\niid:$ctg_iid\n",
+		"eid:$ctg_eid\n",
+		"seq:\n", $seq, "\n.\n",
+		"qlt:\n", $qlt, "\n.\n";
+
+	print $tles{$ctg_eid};
+
+	print "}\n";
+}
+
+=pod
+
+=head1 NAME
+
+abyss-samtoafg - create an AMOS AFG file from a SAM file
+
+=head1 SYNOPSIS
+
+B<abyss-samtoafg> F<contigs.fa> F<alignments.sam> >F<assembly.afg>
+
+B<bank-transact> B<-cb> F<assembly.bnk> B<-m> F<assembly.afg>
+
+B<hawkeye> F<assembly.bnk>
+
+=head1 DESCRIPTION
+
+Create an AMOS AFG file from a FASTA file and a SAM file.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-e>,B<--eid>
+
+the EID of the library
+
+=item B<-i>,B<--iid>
+
+the IID of the library
+
+=item B<-m>,B<--mean>
+
+the mean of the fragment-size
+
+=item B<-s>,B<--sd>
+
+the standard deviation of the fragment-size
+
+=back
+
+=head1 AUTHOR
+
+Written by Shaun Jackman.
+
+=head1 REPORTING BUGS
+
+Report bugs to <abyss-users@bcgsc.ca>.
+
+=head1 COPYRIGHT
+
+Copyright 2012 Canada's Michael Smith Genome Science Centre
+
+=head1 SEE ALSO
+
+http://www.bcgsc.ca/platform/bioinfo/software/abyss
+
+http://amos.sourceforge.net/hawkeye

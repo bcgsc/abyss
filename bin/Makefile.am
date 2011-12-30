@@ -5,7 +5,8 @@ dist_bin_SCRIPTS = \
 	abyss-bwasw \
 	abyss-fac \
 	abyss-kaligner \
-	abyss-pe
+	abyss-pe \
+	abyss-samtoafg
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
