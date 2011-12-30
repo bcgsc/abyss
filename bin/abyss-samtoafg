@@ -39,7 +39,9 @@ sub getMateID($)
 		? $id : undef;
 }
 
-my ($g_red_iid, $g_frg_iid, %reds, %frgs, %ctg_seqs, %tles);
+my ($g_red_iid, $g_frg_iid,
+	@ctg_eids, @ctg_seqs,
+	%reds, %frgs, %tles);
 
 # Output a read (RED) and possibly a fragment (FRG).
 sub createRead($$$)
@@ -91,10 +93,10 @@ while (<>) {
 	next if /^#/ || /^@/;
 
 	if (/^>([^ ]+)/) {
-		my $id = $1;
-		die "error: duplicate sequence ID `$id'"
-			if exists $ctg_seqs{$id};
-		chomp ($ctg_seqs{$id} = <>);
+		my $eid = $1;
+		chomp (my $seq = <>);
+		push @ctg_eids, $eid;
+		push @ctg_seqs, $seq;
 		next;
 	}
 
@@ -122,15 +124,15 @@ while (<>) {
 	my $qend = $qlength - $clipRight;
 	die unless $qstart < $qend;
 
-	die "no contig `$tid'" unless exists $ctg_seqs{$tid};
 	my $clr = $rc ? "$qend,$qstart" : "$qstart,$qend";
 	$tles{$tid} .= "{TLE\nclr:$clr\noff:$tstart\nsrc:$riid\n}\n";
 }
 
 # Output the contig (CTG) and alignment (TLE) records.
 my $ctg_iid = 0;
-for my $ctg_eid (sort {$a<=>$b} keys %tles) {
-	my $seq = $ctg_seqs{$ctg_eid};
+for my $ctg_eid (@ctg_eids) {
+	my $seq = shift @ctg_seqs;
+	next if length $tles{$ctg_eid} == 0;
 
 	# Split long lines.
 	my $qlt = 'I' x (length $seq);
