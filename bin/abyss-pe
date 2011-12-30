@@ -391,13 +391,13 @@ endif
 # Scaffold
 
 %-6.path1: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold -vk$k -s$s -n$n -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v -k$k -s$s -n$n -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-6.path2: %-6.fa %-6.dot %-6.path1
-	PathConsensus -vk$k -p1 -s /dev/null -o $@ $^
+	PathConsensus $v -k$k -p1 -s /dev/null -o $@ $^
 
 %-scaffolds.fa: %-6.fa %-6.dot %-6.path2
-	MergeContigs -vk$k -g $*-scaffolds.dot -o $@ $^
+	MergeContigs $v -k$k -g $*-scaffolds.dot -o $@ $^
 
 # Final BAM file
 
