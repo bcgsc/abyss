@@ -3,6 +3,7 @@
 #include "Common/Options.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
+#include "Uncompress.h"
 #include "alignGlobal.h"
 #include <algorithm>
 #include <cassert>

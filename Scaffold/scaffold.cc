@@ -4,6 +4,7 @@
 #include "ContigProperties.h"
 #include "Estimate.h"
 #include "IOUtil.h"
+#include "Uncompress.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"

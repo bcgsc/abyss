@@ -4,6 +4,7 @@
  */
 
 #include "SequenceCollection.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <getopt.h>

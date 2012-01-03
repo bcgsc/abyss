@@ -1,5 +1,6 @@
 #include "BitUtil.h"
 #include "DAWG.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/property_map/property_map.hpp>

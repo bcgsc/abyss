@@ -5,6 +5,7 @@
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "StringUtil.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <cctype> // for toupper
 #include <cstdlib>

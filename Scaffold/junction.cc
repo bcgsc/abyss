@@ -6,6 +6,7 @@
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
+#include "Uncompress.h"
 #include <boost/graph/graph_traits.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "Uncompress.h"
 #include "UnorderedMap.h"
 #include <algorithm>
 #include <getopt.h>

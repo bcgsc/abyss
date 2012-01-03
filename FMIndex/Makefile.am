@@ -11,11 +11,13 @@ libfmindex_a_SOURCES = \
 	sais.hxx
 
 abyss_dawg_SOURCES = abyss-dawg.cc
-abyss_dawg_LDADD = libfmindex.a
+abyss_dawg_LDADD = libfmindex.a \
+	$(top_builddir)/Common/libcommon.a
 abyss_dawg_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
 
 abyss_count_SOURCES = count.cc
-abyss_count_LDADD = libfmindex.a
+abyss_count_LDADD = libfmindex.a \
+	$(top_builddir)/Common/libcommon.a
 abyss_count_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common

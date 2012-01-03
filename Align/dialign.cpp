@@ -1,6 +1,7 @@
 #include "dialign.h"
 #include "Common/Options.h"
 #include "Sequence.h"
+#include "Uncompress.h"
 #include <algorithm> // for min
 #include <cassert>
 #include <cmath> // for log
