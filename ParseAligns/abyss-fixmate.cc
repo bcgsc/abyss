@@ -299,10 +299,23 @@ int main(int argc, char* const* argv)
 	}
 
 	if (opt::verbose > 0) {
-		if (numFR < numRF)
-			g_histogram = g_histogram.negate();
-		g_histogram.eraseNegative();
-		printHistogramStats(g_histogram.trimFraction(0.0001));
+		size_t numTotal = numFR + numRF;
+
+		// Print the statistics of the forward-reverse distribution.
+		if ((float)numFR / numTotal > 0.001) {
+			Histogram h = g_histogram;
+			h.eraseNegative();
+			cerr << "FR ";
+			printHistogramStats(h.trimFraction(0.0001));
+		}
+
+		// Print the statistics of the reverse-forward distribution.
+		if ((float)numRF / numTotal > 0.001) {
+			Histogram h = g_histogram.negate();
+			h.eraseNegative();
+			cerr << "RF ";
+			printHistogramStats(h.trimFraction(0.0001));
+		}
 	}
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
