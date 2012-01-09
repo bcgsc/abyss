@@ -216,6 +216,18 @@ static string percent(size_t x, size_t n)
 	return ss.str();
 }
 
+/** Print statistics of the specified histogram. */
+static void printHistogramStats(const Histogram& h)
+{
+	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
+		"median: " << setprecision(4) << h.median() << " "
+		"sd: " << setprecision(4) << h.sd() << " "
+		"n: " << h.size() << " "
+		"min: " << h.minimum() << " "
+		"max: " << h.maximum() << '\n'
+		<< h.barplot() << endl;
+}
+
 int main(int argc, char* const* argv)
 {
 	bool die = false;
@@ -286,17 +298,12 @@ int main(int argc, char* const* argv)
 		histFile.close();
 	}
 
-	if (numFR < numRF)
-		g_histogram = g_histogram.negate();
-	g_histogram.eraseNegative();
-	Histogram h = g_histogram.trimFraction(0.0001);
-	if (opt::verbose > 0)
-		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
-			"median: " << setprecision(4) << h.median() << " "
-			"sd: " << setprecision(4) << h.sd() << " "
-			"n: " << h.size() << " "
-			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
-			<< h.barplot() << endl;
+	if (opt::verbose > 0) {
+		if (numFR < numRF)
+			g_histogram = g_histogram.negate();
+		g_histogram.eraseNegative();
+		printHistogramStats(g_histogram.trimFraction(0.0001));
+	}
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
 		cerr << "error: The mate pairs of this library are oriented "
