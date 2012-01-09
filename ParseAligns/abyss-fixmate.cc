@@ -79,7 +79,10 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 {
 	if ((a0.isRead1() && a1.isRead1())
 			|| (a0.isRead2() && a1.isRead2())) {
-		cerr << "error: duplicate read ID `" << a0.qname << "'\n";
+		cerr << "error: duplicate read ID `" << a0.qname
+			<< (a0.isRead1() ? "/1" : "")
+			<< (a0.isRead2() ? "/2" : "")
+			<< "'\n";
 		exit(EXIT_FAILURE);
 	}
 
