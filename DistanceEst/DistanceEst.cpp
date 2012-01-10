@@ -397,11 +397,6 @@ int main(int argc, char** argv)
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
 
-	// Read the contig lengths.
-	vector<unsigned> contigLens;
-	readContigLengths(in, contigLens);
-	ContigID::lock();
-
 	// Read the fragment size distribution.
 	Histogram distanceHist = loadHist(distanceCountFile);
 	unsigned numRF = distanceHist.count(INT_MIN, 0);
@@ -450,6 +445,11 @@ int main(int argc, char** argv)
 		cerr << "Minimum and maximum distance are set to "
 			<< opt::minDist << " and " << opt::maxDist << " bp.\n";
 	assert(opt::minDist < opt::maxDist);
+
+	// Read the contig lengths.
+	vector<unsigned> contigLens;
+	readContigLengths(in, contigLens);
+	ContigID::lock();
 
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;
