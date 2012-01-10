@@ -116,17 +116,24 @@ class Histogram
 		return sqrt(variance());
 	}
 
-	T median() const
+	/** Return the specified percentile. */
+	T percentile(float p) const
 	{
-		size_type half = (size() + 1) / 2;
+		size_type x = ceil(p * size());
 		size_type n = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
 			n += it->second;
-			if (n >= half)
+			if (n >= x)
 				return it->first;
 		}
 		return maximum();
+	}
+
+	/** Return the median. */
+	T median() const
+	{
+		return percentile(0.5);
 	}
 
 	/** Return the first local minimum or zero if a minimum is not
@@ -167,6 +174,24 @@ class Histogram
 		for (Map::iterator it = m_map.begin(); it != m_map.end();) {
 			if (m_map.count(it->first - 1) == 0
 					&& m_map.count(it->first + 1) == 0)
+				m_map.erase(it++);
+			else
+				++it;
+		}
+	}
+
+	/** Remove outliers from the histogram. A sample is an outlier
+	 * if it is outside the range [Q1 - k*(Q3-Q1), Q3 + k*(Q3-Q1)]
+	 * where k = 20.
+	 */
+	void removeOutliers()
+	{
+		T q1 = percentile(0.25);
+		T q3 = percentile(0.75);
+		T l = q1 - 20 * (q3 - q1);
+		T u = q3 + 20 * (q3 - q1);
+		for (Map::iterator it = m_map.begin(); it != m_map.end();) {
+			if (it->first < l || it->first > u)
 				m_map.erase(it++);
 			else
 				++it;

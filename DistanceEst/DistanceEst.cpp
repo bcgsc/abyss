@@ -427,6 +427,7 @@ int main(int argc, char** argv)
 
 	distanceHist.eraseNegative();
 	distanceHist.removeNoise();
+	distanceHist.removeOutliers();
 	Histogram h = distanceHist.trimFraction(0.0001);
 	if (opt::verbose > 0)
 		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "

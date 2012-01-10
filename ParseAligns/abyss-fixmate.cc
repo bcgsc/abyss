@@ -309,6 +309,7 @@ int main(int argc, char* const* argv)
 			Histogram h = g_histogram;
 			h.eraseNegative();
 			h.removeNoise();
+			h.removeOutliers();
 			cerr << "FR ";
 			printHistogramStats(h.trimFraction(0.0001));
 		}
@@ -318,6 +319,7 @@ int main(int argc, char* const* argv)
 			Histogram h = g_histogram.negate();
 			h.eraseNegative();
 			h.removeNoise();
+			h.removeOutliers();
 			cerr << "RF ";
 			printHistogramStats(h.trimFraction(0.0001));
 		}

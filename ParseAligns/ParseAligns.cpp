@@ -556,6 +556,8 @@ int main(int argc, char* const* argv)
 	if (numFR < numRF)
 		histogram = histogram.negate();
 	histogram.eraseNegative();
+	histogram.removeNoise();
+	histogram.removeOutliers();
 	Histogram h = histogram.trimFraction(0.0001);
 	if (opt::verbose > 0)
 		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
