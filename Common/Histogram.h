@@ -159,6 +159,20 @@ class Histogram
 				++it;
 	}
 
+	/** Remove noise from the histogram. Noise is defined as a
+	 * sample x where h[x-1] == 0 && h[x+1] == 0.
+	 */
+	void removeNoise()
+	{
+		for (Map::iterator it = m_map.begin(); it != m_map.end();) {
+			if (m_map.count(it->first - 1) == 0
+					&& m_map.count(it->first + 1) == 0)
+				m_map.erase(it++);
+			else
+				++it;
+		}
+	}
+
 	/** Negate each element of this histogram. */
 	Histogram negate() const
 	{

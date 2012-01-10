@@ -431,6 +431,7 @@ int main(int argc, char** argv)
 			<< " which differs from the detected orientation.\n";
 
 	distanceHist.eraseNegative();
+	distanceHist.removeNoise();
 	Histogram h = distanceHist.trimFraction(0.0001);
 	if (opt::verbose > 0)
 		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "

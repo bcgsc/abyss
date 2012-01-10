@@ -308,6 +308,7 @@ int main(int argc, char* const* argv)
 		if ((float)numFR / numTotal > 0.001) {
 			Histogram h = g_histogram;
 			h.eraseNegative();
+			h.removeNoise();
 			cerr << "FR ";
 			printHistogramStats(h.trimFraction(0.0001));
 		}
@@ -316,6 +317,7 @@ int main(int argc, char* const* argv)
 		if ((float)numRF / numTotal > 0.001) {
 			Histogram h = g_histogram.negate();
 			h.eraseNegative();
+			h.removeNoise();
 			cerr << "RF ";
 			printHistogramStats(h.trimFraction(0.0001));
 		}
