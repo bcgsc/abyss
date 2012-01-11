@@ -187,6 +187,7 @@ pcopt += -p$p
 # Remove environment variables.
 unexport in se $(lib) $(pe) $(mp)
 
+default: $(name)-3.fa
 ifneq ($(in),)
 default: pe-contigs pe-dot
 else
