@@ -1242,7 +1242,7 @@ static pair<ContigNode, bool> findPivot(
 			it != path2.end(); ++it) {
 		if (it->ambiguous())
 			continue;
-		if (count(it, path2.end(), *it) == 1
+		if (count(path2.begin(), path2.end(), *it) == 1
 				&& count(path1.begin(), path1.end(), *it) == 1)
 			return make_pair(*it, true);
 	}
