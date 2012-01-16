@@ -5,6 +5,7 @@
 #include "Estimate.h"
 #include "IOUtil.h"
 #include "Uncompress.h"
+#include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
@@ -595,7 +596,7 @@ int main(int argc, char** argv)
 	// Assemble the paths.
 	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
-	assemble(g, back_inserter(paths));
+	assembleDFS(g, back_inserter(paths));
 	sort(paths.begin(), paths.end());
 	if (opt::verbose > 0) {
 		unsigned n = 0;
