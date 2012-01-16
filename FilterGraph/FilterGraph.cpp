@@ -366,13 +366,13 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 static void removeShims(Graph& g, const vector<bool>& seen)
 {
 	if (opt::verbose > 0)
-		cerr << "Removing shims from graph...\n";
+		cerr << "Removing shim contigs from the graph...\n";
 	vector<vertex_descriptor> shortContigs;
 	findShortContigs(g, seen, shortContigs);
 	for (unsigned i = 0; !shortContigs.empty(); ++i) {
 		if (opt::verbose > 0)
-			cerr << "Starting pass " << i << ": There are "
-				<< shortContigs.size() << " contigs to check.\n";
+			cerr << "Pass " << i + 1 << ": Checking "
+				<< shortContigs.size() << " contigs.\n";
 		sort(shortContigs.begin(), shortContigs.end(),
 				sortContigs(g));
 		removeContigs(g, shortContigs);
