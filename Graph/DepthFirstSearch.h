@@ -1,6 +1,7 @@
 #ifndef DEPTHFIRSTSEARCH_H
 #define DEPTHFIRSTSEARCH_H 1
 
+#include "Graph/ContigGraphAlgorithms.h" // for contiguous_in
 #include <boost/graph/depth_first_search.hpp>
 
 using boost::graph_traits;
@@ -34,6 +35,16 @@ void depthFirstSearch(const Graph& g, Visitor vis, ColorMap color)
 	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 		V u = *uit;
 		if (get(color, u) == white && in_degree(u, g) == 0) {
+			vis.start_vertex(u, g);
+			boost::detail::depth_first_visit_impl(g, u, vis, color,
+					boost::detail::nontruth2());
+		}
+	}
+
+	// Visit vertices where discontiguous-(u).
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
+		V u = *uit;
+		if (get(color, u) == white && !contiguous_in(g, u)) {
 			vis.start_vertex(u, g);
 			boost::detail::depth_first_visit_impl(g, u, vis, color,
 					boost::detail::nontruth2());
