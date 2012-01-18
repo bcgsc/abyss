@@ -7,7 +7,6 @@ libcommon_a_SOURCES = \
 	BitUtil.h \
 	ConstString.h \
 	ContigID.h ContigID.cpp \
-	ContigLength.h ContigLength.cpp \
 	ContigNode.h \
 	ContigPath.h \
 	ContigProperties.h \

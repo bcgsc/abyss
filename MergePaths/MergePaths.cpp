@@ -1,7 +1,6 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "ContigID.h"
-#include "ContigLength.h"
 #include "ContigPath.h"
 #include "Functional.h" // for mem_var
 #include "IOUtil.h"
@@ -30,6 +29,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -65,7 +65,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k; // used by readContigLengths
+	unsigned k; // used by GraphIO
 	static string out;
 	static int threads = 1;
 
@@ -779,6 +779,35 @@ static void buildPathGraph(PathGraph& g, const ContigPathMap& paths)
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
 	outputPathGraph(g);
+}
+
+/** Read contig lengths. */
+static vector<unsigned> readContigLengths(istream& in)
+{
+	assert(in);
+	assert(ContigID::empty());
+	vector<unsigned> lengths;
+	string s;
+	unsigned len;
+	while (in >> s >> len) {
+		ContigID id = ContigID::insert(s);
+		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		assert(len >= opt::k);
+		assert(id == lengths.size());
+		lengths.push_back(len - opt::k + 1);
+	}
+	assert(in.eof());
+	assert(!lengths.empty());
+	ContigID::lock();
+	return lengths;
+}
+
+/** Read contig lengths. */
+static vector<unsigned> readContigLengths(const string& path)
+{
+	ifstream in(path.c_str());
+	assert_good(in, path);
+	return readContigLengths(in);
 }
 
 int main(int argc, char** argv)
