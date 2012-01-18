@@ -99,9 +99,6 @@ static const struct option longopts[] = {
 
 typedef map<ContigID, ContigPath> ContigPathMap;
 
-/** Lengths of contigs in k-mer. */
-static vector<unsigned> g_contigLengths;
-
 /** Orientation of an edge. */
 enum dir_type {
 	DIR_X, // u--v none
@@ -110,9 +107,14 @@ enum dir_type {
 	DIR_B, // u<>v both
 };
 
-static ContigPath align(const ContigPath& p1, const ContigPath& p2,
+/** Lengths of contigs measured in k-mer. */
+typedef vector<unsigned> Lengths;
+
+static ContigPath align(const Lengths& lengths,
+		const ContigPath& p1, const ContigPath& p2,
 		ContigNode pivot);
-static ContigPath align(const ContigPath& p1, const ContigPath& p2,
+static ContigPath align(const Lengths& lengths,
+		const ContigPath& p1, const ContigPath& p2,
 		ContigNode pivot, dir_type& orientation);
 
 static bool gDebugPrint;
@@ -194,7 +196,8 @@ typedef ContigGraph<DirectedGraph<> > PathGraph;
  * @param pivot the pivot at which to seed the alignment
  * @return whether an overlap was found
  */
-static bool addOverlapEdge(PathGraph& gout, ContigNode pivot,
+static bool addOverlapEdge(const Lengths& lengths,
+		PathGraph& gout, ContigNode pivot,
 		ContigNode seed1, const ContigPath& path1,
 		ContigNode seed2, const ContigPath& path2)
 {
@@ -202,7 +205,8 @@ static bool addOverlapEdge(PathGraph& gout, ContigNode pivot,
 
 	// Determine the orientation of the overlap edge.
 	dir_type orientation = DIR_X;
-	ContigPath consensus = align(path1, path2, pivot, orientation);
+	ContigPath consensus = align(lengths,
+			path1, path2, pivot, orientation);
 	if (consensus.empty())
 		return false;
 	assert(orientation != DIR_X);
@@ -239,7 +243,8 @@ static ContigPath getPath(const ContigPathMap& paths, ContigNode u)
 }
 
 /** Find the overlaps between paths and add edges to the graph. */
-static void findPathOverlaps(const ContigPathMap& paths,
+static void findPathOverlaps(const Lengths& lengths,
+		const ContigPathMap& paths,
 		const ContigNode& seed1, const ContigPath& path1,
 		PathGraph& gout)
 {
@@ -258,14 +263,16 @@ static void findPathOverlaps(const ContigPathMap& paths,
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
 			reverseComplement(path2.begin(), path2.end());
-		addOverlapEdge(gout, seed2, seed1, path1, seed2, path2);
+		addOverlapEdge(lengths,
+				gout, seed2, seed1, path1, seed2, path2);
 	}
 }
 
 /** Attempt to merge the paths specified in mergeQ with path.
  * @return the number of paths merged
  */
-static unsigned mergePaths(ContigPath& path,
+static unsigned mergePaths(const Lengths& lengths,
+		ContigPath& path,
 		deque<ContigNode>& mergeQ, set<ContigNode>& seen,
 		const ContigPathMap& paths)
 {
@@ -281,7 +288,7 @@ static unsigned mergePaths(ContigPath& path,
 		ContigPath path2 = path2It->second;
 		if (pivot.sense())
 			reverseComplement(path2.begin(), path2.end());
-		ContigPath consensus = align(path, path2, pivot);
+		ContigPath consensus = align(lengths, path, path2, pivot);
 		if (consensus.empty()) {
 			invalid.push_back(pivot);
 			continue;
@@ -302,7 +309,7 @@ static unsigned mergePaths(ContigPath& path,
 /** Merge the paths of the specified seed path.
  * @return the merged contig path
  */
-static ContigPath mergePath(
+static ContigPath mergePath(const Lengths& lengths,
 		const ContigPathMap& paths, const ContigPath& seedPath)
 {
 	assert(!seedPath.empty());
@@ -330,7 +337,7 @@ static ContigPath mergePath(
 		ContigNode pivot
 			= find(path.begin(), path.end(), seed2) != path.end()
 			? seed2 : seed1;
-		ContigPath consensus = align(path, path2, pivot);
+		ContigPath consensus = align(lengths, path, path2, pivot);
 		if (consensus.empty()) {
 			// This seed could be removed from the seed path.
 			if (opt::verbose > 1)
@@ -355,7 +362,7 @@ typedef vector<ContigPath> ContigPaths;
 /** Merge the specified seed paths.
  * @return the merged contig paths
  */
-static ContigPaths mergeSeedPaths(
+static ContigPaths mergeSeedPaths(const Lengths& lengths,
 		const ContigPathMap& paths, const ContigPaths& seedPaths)
 {
 	if (opt::verbose > 0)
@@ -365,14 +372,15 @@ static ContigPaths mergeSeedPaths(
 	out.reserve(seedPaths.size());
 	for (ContigPaths::const_iterator it = seedPaths.begin();
 			it != seedPaths.end(); ++it)
-		out.push_back(mergePath(paths, *it));
+		out.push_back(mergePath(lengths, paths, *it));
 	return out;
 }
 
 /** Extend the specified path as long as is unambiguously possible and
  * add the result to the specified container.
  */
-static void extendPaths(ContigID id, const ContigPathMap& paths,
+static void extendPaths(const Lengths& lengths,
+		ContigID id, const ContigPathMap& paths,
 		ContigPathMap& out)
 {
 	ContigPathMap::const_iterator pathIt = paths.find(id);
@@ -393,7 +401,7 @@ static void extendPaths(ContigID id, const ContigPathMap& paths,
 	seen.insert(ContigNode(id, false));
 	deque<ContigNode> mergeQ;
 	appendToMergeQ(mergeQ, seen, path);
-	while (mergePaths(path, mergeQ, seen, paths) > 0)
+	while (mergePaths(lengths, path, mergeQ, seen, paths) > 0)
 		;
 
 	if (!mergeQ.empty() && gDebugPrint) {
@@ -424,16 +432,16 @@ static bool equalIgnoreAmbiguos(const ContigPath& a,
 }
 
 /** Return whether this path is a cycle. */
-static bool isCycle(const ContigPath& path)
+static bool isCycle(const Lengths& lengths, const ContigPath& path)
 {
-	return !align(path, path, path.front()).empty();
+	return !align(lengths, path, path, path.front()).empty();
 }
 
 /** Identify paths subsumed by the specified path.
  * @param overlaps [out] paths that are found to overlap
  * @return the ID of the subsuming path
  */
-static ContigID identifySubsumedPaths(
+static ContigID identifySubsumedPaths(const Lengths& lengths,
 		ContigPathMap::const_iterator path1It,
 		ContigPathMap& paths,
 		set<ContigID>& out,
@@ -457,7 +465,7 @@ static ContigID identifySubsumedPaths(
 		ContigPath path2 = path2It->second;
 		if (pivot.sense())
 			reverseComplement(path2.begin(), path2.end());
-		ContigPath consensus = align(path, path2, pivot);
+		ContigPath consensus = align(lengths, path, path2, pivot);
 		if (consensus.empty())
 			continue;
 		if (equalIgnoreAmbiguos(consensus, path)) {
@@ -466,12 +474,12 @@ static ContigID identifySubsumedPaths(
 			out.insert(path2It->first);
 		} else if (equalIgnoreAmbiguos(consensus, path2)) {
 			// This path is larger. Use it as the seed.
-			return identifySubsumedPaths(path2It, paths, out,
+			return identifySubsumedPaths(lengths, path2It, paths, out,
 					overlaps);
-		} else if (isCycle(consensus)) {
+		} else if (isCycle(lengths, consensus)) {
 			// The consensus path is a cycle.
-			bool isCyclePath1 = isCycle(path);
-			bool isCyclePath2 = isCycle(path2);
+			bool isCyclePath1 = isCycle(lengths, path);
+			bool isCyclePath2 = isCycle(lengths, path2);
 			if (!isCyclePath1 && !isCyclePath2) {
 				// Neither path is a cycle.
 				if (gDebugPrint)
@@ -509,13 +517,15 @@ static ContigID identifySubsumedPaths(
  * @return the next iterator after path1it
  */
 static ContigPathMap::const_iterator removeSubsumedPaths(
+		const Lengths& lengths,
 		ContigPathMap::const_iterator path1It, ContigPathMap& paths,
 		ContigID& seed, set<ContigID>& overlaps)
 {
 	if (gDebugPrint)
 		cout << '\n';
 	set<ContigID> eq;
-	seed = identifySubsumedPaths(path1It, paths, eq, overlaps);
+	seed = identifySubsumedPaths(lengths,
+			path1It, paths, eq, overlaps);
 	++path1It;
 	for (set<ContigID>::const_iterator it = eq.begin();
 			it != eq.end(); ++it) {
@@ -529,14 +539,16 @@ static ContigPathMap::const_iterator removeSubsumedPaths(
 /** Remove paths subsumed by another path.
  * @return paths that are found to overlap
  */
-static set<ContigID> removeSubsumedPaths(ContigPathMap& paths)
+static set<ContigID> removeSubsumedPaths(const Lengths& lengths,
+		ContigPathMap& paths)
 {
 	set<ContigID> overlaps, seen;
 	for (ContigPathMap::const_iterator iter = paths.begin();
 			iter != paths.end();) {
 		if (seen.count(iter->first) == 0) {
 			ContigID seed;
-			iter = removeSubsumedPaths(iter, paths, seed, overlaps);
+			iter = removeSubsumedPaths(lengths,
+					iter, paths, seed, overlaps);
 			seen.insert(seed);
 		} else
 			++iter;
@@ -548,7 +560,8 @@ static set<ContigID> removeSubsumedPaths(ContigPathMap& paths)
  * outgoing edges, (u,v1) and (u,v2), add the edge (v1,v2) if v1 < v2,
  * and add the edge (v2,v1) if v2 < v1.
  */
-static void addMissingEdges(PathGraph& g, const ContigPathMap& paths)
+static void addMissingEdges(const Lengths& lengths,
+		PathGraph& g, const ContigPathMap& paths)
 {
 	typedef graph_traits<PathGraph>::adjacency_iterator Vit;
 	typedef graph_traits<PathGraph>::vertex_iterator Uit;
@@ -578,8 +591,8 @@ static void addMissingEdges(PathGraph& g, const ContigPathMap& paths)
 				if (find(path2.begin(), path2.end(), u)
 						== path2.end())
 					continue;
-				numAdded
-					+= addOverlapEdge(g, u, v1, path1, v2, path2);
+				numAdded += addOverlapEdge(lengths,
+						g, u, v1, path1, v2, path2);
 			}
 		}
 	}
@@ -669,12 +682,13 @@ static void outputSortedPaths(const ContigPathMap& paths)
 }
 
 /** Assemble the path overlap graph. */
-static void assemblePathGraph(
+static void assemblePathGraph(const Lengths& lengths,
 		PathGraph& pathGraph, ContigPathMap& paths)
 {
 	ContigPaths seedPaths;
 	assembleDFS(pathGraph, back_inserter(seedPaths));
-	ContigPaths mergedPaths = mergeSeedPaths(paths, seedPaths);
+	ContigPaths mergedPaths = mergeSeedPaths(lengths,
+			paths, seedPaths);
 	if (opt::verbose > 1)
 		cout << '\n';
 
@@ -700,13 +714,14 @@ static void assemblePathGraph(
 	// Remove the subsumed paths.
 	if (opt::verbose > 0)
 		cout << "Removing redundant contigs\n";
-	removeSubsumedPaths(paths);
+	removeSubsumedPaths(lengths, paths);
 
 	outputSortedPaths(paths);
 }
 
 /** Read a set of paths from the specified file. */
-static ContigPathMap readPaths(const string& filePath)
+static ContigPathMap readPaths(const Lengths& lengths,
+		const string& filePath)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << filePath << "'..." << endl;
@@ -719,7 +734,7 @@ static ContigPathMap readPaths(const string& filePath)
 	ContigPath path;
 	while (in >> id >> path) {
 		// Ignore seed contigs shorter than the threshold length.
-		unsigned len = g_contigLengths[id] + opt::k - 1;
+		unsigned len = lengths[id] + opt::k - 1;
 		if (len < opt::seedLen) {
 			tooSmall++;
 			continue;
@@ -751,10 +766,11 @@ bool atomicInc(T& it, T last, T& out)
 }
 
 /** Build the path overlap graph. */
-static void buildPathGraph(PathGraph& g, const ContigPathMap& paths)
+static void buildPathGraph(const Lengths& lengths,
+		PathGraph& g, const ContigPathMap& paths)
 {
 	// Create the vertices of the path overlap graph.
-	PathGraph(g_contigLengths.size()).swap(g);
+	PathGraph(lengths.size()).swap(g);
 
 	// Remove the non-seed contigs.
 	typedef graph_traits<PathGraph>::vertex_iterator vertex_iterator;
@@ -768,12 +784,12 @@ static void buildPathGraph(PathGraph& g, const ContigPathMap& paths)
 	#pragma omp parallel
 	for (ContigPathMap::const_iterator it;
 			atomicInc(sharedIt, paths.end(), it);)
-		findPathOverlaps(paths,
+		findPathOverlaps(lengths, paths,
 				ContigNode(it->first, false), it->second, g);
 	if (gDebugPrint)
 		cout << '\n';
 
-	addMissingEdges(g, paths);
+	addMissingEdges(lengths, g, paths);
 	removeTransitiveEdges(g);
 	removeSmallOverlaps(g, paths);
 	if (opt::verbose > 0)
@@ -782,11 +798,11 @@ static void buildPathGraph(PathGraph& g, const ContigPathMap& paths)
 }
 
 /** Read contig lengths. */
-static vector<unsigned> readContigLengths(istream& in)
+static Lengths readContigLengths(istream& in)
 {
 	assert(in);
 	assert(ContigID::empty());
-	vector<unsigned> lengths;
+	Lengths lengths;
 	string s;
 	unsigned len;
 	while (in >> s >> len) {
@@ -803,7 +819,7 @@ static vector<unsigned> readContigLengths(istream& in)
 }
 
 /** Read contig lengths. */
-static vector<unsigned> readContigLengths(const string& path)
+static Lengths readContigLengths(const string& path)
 {
 	ifstream in(path.c_str());
 	assert_good(in, path);
@@ -864,17 +880,19 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		cerr << "Reading `" << argv[optind] << "'..." << endl;
-	g_contigLengths = readContigLengths(argv[optind++]);
-	ContigPathMap originalPathMap = readPaths(argv[optind++]);
+
+	Lengths lengths = readContigLengths(argv[optind++]);
+	ContigPathMap originalPathMap = readPaths(
+			lengths, argv[optind++]);
 
 	removeRepeats(originalPathMap);
 
 	if (!opt::greedy) {
 		// Assemble the path overlap graph.
 		PathGraph pathGraph;
-		buildPathGraph(pathGraph, originalPathMap);
+		buildPathGraph(lengths, pathGraph, originalPathMap);
 		if (!opt::out.empty())
-			assemblePathGraph(pathGraph, originalPathMap);
+			assemblePathGraph(lengths, pathGraph, originalPathMap);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -884,11 +902,13 @@ int main(int argc, char** argv)
 	#pragma omp parallel
 	for (ContigPathMap::iterator it;
 			atomicInc(sharedIt, originalPathMap.end(), it);)
-		extendPaths(it->first, originalPathMap, resultsPathMap);
+		extendPaths(lengths,
+				it->first, originalPathMap, resultsPathMap);
 #else
 	for (ContigPathMap::const_iterator it = originalPathMap.begin();
 			it != originalPathMap.end(); ++it)
-		extendPaths(it->first, originalPathMap, resultsPathMap);
+		extendPaths(lengths,
+				it->first, originalPathMap, resultsPathMap);
 #endif
 	if (gDebugPrint)
 		cout << '\n';
@@ -897,7 +917,8 @@ int main(int argc, char** argv)
 
 	if (gDebugPrint)
 		cout << "\nRemoving redundant contigs\n";
-	set<ContigID> overlaps = removeSubsumedPaths(resultsPathMap);
+	set<ContigID> overlaps = removeSubsumedPaths(lengths,
+			resultsPathMap);
 
 	if (!overlaps.empty() && !repeats.empty()) {
 		// Remove the newly-discovered repeat contigs from the
@@ -923,7 +944,8 @@ int main(int argc, char** argv)
 				continue; // subsumed
 			ContigPath old = oldIt->second;
 			resultsPathMap.erase(oldIt);
-			extendPaths(*it, originalPathMap, resultsPathMap);
+			extendPaths(lengths,
+					*it, originalPathMap, resultsPathMap);
 			if (gDebugPrint) {
 				if (resultsPathMap[*it] == old)
 					cout << "no change\n";
@@ -935,7 +957,7 @@ int main(int argc, char** argv)
 			cout << '\n';
 
 		removeRepeats(resultsPathMap);
-		overlaps = removeSubsumedPaths(resultsPathMap);
+		overlaps = removeSubsumedPaths(lengths, resultsPathMap);
 		if (!overlaps.empty() && gDebugPrint) {
 			cout << "\nOverlapping contigs:";
 			copy(overlaps.begin(), overlaps.end(),
@@ -950,17 +972,24 @@ int main(int argc, char** argv)
 }
 
 /** Return the length of the specified contig in k-mer. */
-static unsigned length(const ContigNode& contig)
+static unsigned getLength(const Lengths& lengths,
+		const ContigNode& u)
 {
-	return contig.ambiguous() ? contig.length()
-		: g_contigLengths.at(contig.id());
+	return u.ambiguous() ? u.length()
+		: lengths.at(u.id());
 }
 
-/** Add the number of k-mer in two contigs. */
-static unsigned addLength(unsigned addend, const ContigNode& contig)
+/** Functor to add the number of k-mer in two contigs. */
+struct AddLength
 {
-	return addend + length(contig);
-}
+	AddLength(const Lengths& lengths) : m_lengths(lengths) { }
+	unsigned operator()(unsigned addend, const ContigNode& u) const
+	{
+		return addend + getLength(m_lengths, u);
+	}
+  private:
+	const Lengths& m_lengths;
+};
 
 /** Attempt to fill in gaps in one path with the sequence from the
  * other path and store the consensus at result if an alignment is
@@ -968,7 +997,8 @@ static unsigned addLength(unsigned addend, const ContigNode& contig)
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool alignCoordinates(iterator& first1, iterator last1,
+static bool alignCoordinates(const Lengths& lengths,
+		iterator& first1, iterator last1,
 		iterator& first2, iterator last2, oiterator& result)
 {
 	oiterator out = result;
@@ -1000,10 +1030,10 @@ static bool alignCoordinates(iterator& first1, iterator last1,
 				ambiguous1 = 0;
 			}
 		} else if (ambiguous1 > 0) {
-			ambiguous1 -= length(*it2);
+			ambiguous1 -= getLength(lengths, *it2);
 			*out++ = *it2++;
 		} else if (ambiguous2 > 0) {
-			ambiguous2 -= length(*it1);
+			ambiguous2 -= getLength(lengths, *it1);
 			*out++ = *it1++;
 		} else
 			assert(false);
@@ -1028,7 +1058,8 @@ static bool alignCoordinates(iterator& first1, iterator last1,
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool buildConsensus(iterator it1, iterator it1e,
+static bool buildConsensus(const Lengths& lengths,
+		iterator it1, iterator it1e,
 		iterator it2, iterator it2e, oiterator& out)
 {
 	iterator it1b = it1 + 1;
@@ -1050,9 +1081,9 @@ static bool buildConsensus(iterator it1, iterator it1e,
 	unsigned ambiguous1 = it1->length();
 	unsigned ambiguous2 = it2a->length();
 	unsigned unambiguous1 = accumulate(it1b, it1e,
-			0, addLength);
+			0, AddLength(lengths));
 	unsigned unambiguous2 = accumulate(it2, it2a,
-			0, addLength);
+			0, AddLength(lengths));
 	if (ambiguous1 < unambiguous2
 			|| ambiguous2 < unambiguous1) {
 		// Two gaps overlap and either of the gaps is smaller
@@ -1076,7 +1107,7 @@ static bool buildConsensus(iterator it1, iterator it1e,
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool alignAtSeed(
+static bool alignAtSeed(const Lengths& lengths,
 		iterator& it1, iterator it1e, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
@@ -1093,8 +1124,8 @@ static bool alignAtSeed(
 	for (iterator it2e = it2;
 			(it2e = find(it2e, last2, *it1e)) != last2; ++it2e) {
 		oiterator myOut = out;
-		if (buildConsensus(it1, it1e, it2, it2e, myOut)
-				&& align(it1e, last1, it2e, last2, myOut)) {
+		if (buildConsensus(lengths, it1, it1e, it2, it2e, myOut)
+				&& align(lengths, it1e, last1, it2e, last2, myOut)) {
 			unsigned len = myOut - out;
 			if (len <= bestLen) {
 				bestLen = len;
@@ -1103,7 +1134,8 @@ static bool alignAtSeed(
 		}
 	}
 	if (bestLen != UINT_MAX) {
-		bool good = buildConsensus(it1, it1e, it2, bestIt2e, out);
+		bool good = buildConsensus(lengths,
+				it1, it1e, it2, bestIt2e, out);
 		assert(good);
 		it1 = it1e;
 		it2 = bestIt2e;
@@ -1117,7 +1149,8 @@ static bool alignAtSeed(
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool alignAmbiguous(iterator& it1, iterator last1,
+static bool alignAmbiguous(const Lengths& lengths,
+		iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
@@ -1129,13 +1162,13 @@ static bool alignAmbiguous(iterator& it1, iterator last1,
 	for (iterator it1e = it1; it1e != last1; ++it1e) {
 		if (it1e->ambiguous())
 			continue;
-		if (alignAtSeed(it1, it1e, last1, it2, last2, out))
+		if (alignAtSeed(lengths, it1, it1e, last1, it2, last2, out))
 			return true;
 	}
 
 	// No valid seeded alignment. Check whether path2 fits entirely
 	// within the gap of path1.
-	return alignCoordinates(it1, last1, it2, last2, out);
+	return alignCoordinates(lengths, it1, last1, it2, last2, out);
 }
 
 /** Align the next pair of contigs.
@@ -1143,7 +1176,8 @@ static bool alignAmbiguous(iterator& it1, iterator last1,
  * @return true if an alignment is found
  */
 template <class iterator, class oiterator>
-static bool alignOne(iterator& it1, iterator last1,
+static bool alignOne(const Lengths& lengths,
+		iterator& it1, iterator last1,
 		iterator& it2, iterator last2, oiterator& out)
 {
 	// Check for a trivial alignment.
@@ -1167,12 +1201,13 @@ static bool alignOne(iterator& it1, iterator last1,
 	return
 		it1->ambiguous() && it2->ambiguous()
 			? (it1->length() > it2->length()
-				? alignAmbiguous(it1, last1, it2, last2, out)
-				: alignAmbiguous(it2, last2, it1, last1, out))
+				? alignAmbiguous(lengths, it1, last1, it2, last2, out)
+				: alignAmbiguous(lengths, it2, last2, it1, last1, out)
+			)
 		: it1->ambiguous()
-			? alignAmbiguous(it1, last1, it2, last2, out)
+			? alignAmbiguous(lengths, it1, last1, it2, last2, out)
 		: it2->ambiguous()
-			? alignAmbiguous(it2, last2, it1, last1, out)
+			? alignAmbiguous(lengths, it2, last2, it1, last1, out)
 			: (*out++ = *it1, *it1++ == *it2++);
 }
 
@@ -1182,13 +1217,14 @@ static bool alignOne(iterator& it1, iterator last1,
  * or zero otherwise
  */
 template <class iterator, class oiterator>
-static dir_type align(iterator it1, iterator last1,
+static dir_type align(const Lengths& lengths,
+		iterator it1, iterator last1,
 		iterator it2, iterator last2, oiterator& out)
 {
 	assert(it1 != last1);
 	assert(it2 != last2);
 	while (it1 != last1 && it2 != last2)
-		if (!alignOne(it1, last1, it2, last2, out))
+		if (!alignOne(lengths, it1, last1, it2, last2, out))
 			return DIR_X;
 	assert(it1 == last1 || it2 == last2);
 	out = copy(it1, last1, out);
@@ -1204,7 +1240,8 @@ static dir_type align(iterator it1, iterator last1,
  * @param[out] orientation the orientation of the alignment
  * @return the consensus sequence
  */
-static ContigPath align(const ContigPath& p1, const ContigPath& p2,
+static ContigPath align(const Lengths& lengths,
+		const ContigPath& p1, const ContigPath& p2,
 		ContigPath::const_iterator pivot1,
 		ContigPath::const_iterator pivot2,
 		dir_type& orientation)
@@ -1215,13 +1252,15 @@ static ContigPath align(const ContigPath& p1, const ContigPath& p2,
 		rit2 = ContigPath::const_reverse_iterator(pivot2+1);
 	ContigPath alignmentr(p1.rend() - rit1 + p2.rend() - rit2);
 	ContigPath::iterator rout = alignmentr.begin();
-	dir_type alignedr = align(rit1, p1.rend(), rit2, p2.rend(), rout);
+	dir_type alignedr = align(lengths,
+			rit1, p1.rend(), rit2, p2.rend(), rout);
 	alignmentr.erase(rout, alignmentr.end());
 
 	ContigPath::const_iterator it1 = pivot1, it2 = pivot2;
 	ContigPath alignmentf(p1.end() - it1 + p2.end() - it2);
 	ContigPath::iterator fout = alignmentf.begin();
-	dir_type alignedf = align(it1, p1.end(), it2, p2.end(), fout);
+	dir_type alignedf = align(lengths,
+			it1, p1.end(), it2, p2.end(), fout);
 	alignmentf.erase(fout, alignmentf.end());
 
 	ContigPath consensus;
@@ -1282,7 +1321,7 @@ static pair<ContigNode, bool> findPivot(
  * @param[out] orientation the orientation of the alignment
  * @return the consensus sequence
  */
-static ContigPath align(
+static ContigPath align(const Lengths& lengths,
 		const ContigPath& path1, const ContigPath& path2,
 		ContigNode pivot, dir_type& orientation)
 {
@@ -1340,7 +1379,8 @@ static ContigPath align(
 			// trivial alignment, which we'll ignore.
 			continue;
 		}
-		consensus = align(path1, path2, it1, it2, orientation);
+		consensus = align(lengths,
+				path1, path2, it1, it2, orientation);
 		if (!consensus.empty())
 			return consensus;
 	}
@@ -1350,10 +1390,10 @@ static ContigPath align(
 /** Find an equivalent region of the two specified paths.
  * @return the consensus sequence
  */
-static ContigPath align(
+static ContigPath align(const Lengths& lengths,
 		const ContigPath& path1, const ContigPath& path2,
 		ContigNode pivot)
 {
 	dir_type orientation;
-	return align(path1, path2, pivot, orientation);
+	return align(lengths, path1, path2, pivot, orientation);
 }
