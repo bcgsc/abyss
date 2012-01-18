@@ -39,8 +39,10 @@ std::string toSI(T n)
 		s << n/1e3 << " k";
 	else if (n < 1000000000)
 		s << n/1e6 << " M";
-	else
+	else if (n < 1000000000000)
 		s << n/1e9 << " G";
+	else
+		s << n/1e12 << " T";
 	return s.str();
 }
 
