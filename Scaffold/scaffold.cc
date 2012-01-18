@@ -591,7 +591,6 @@ int main(int argc, char** argv)
 
 	// Remove weak edges.
 	removeWeakEdges(g);
-	Graph g1(g);
 
 	// Assemble the paths.
 	typedef vector<ContigPath> ContigPaths;
@@ -616,7 +615,7 @@ int main(int argc, char** argv)
 	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		out << ContigID::create() << '\t'
-			<< addDistEst(g0, g1, *it) << '\n';
+			<< addDistEst(g0, g, *it) << '\n';
 	}
 	assert_good(out, opt::out);
 
