@@ -28,18 +28,17 @@ static inline bool chomp(std::string& s, char c = '\n')
 }
 
 /** Return the SI representation of n. */
-template <typename T>
-std::string toSI(T n)
+static inline std::string toSI(double n)
 {
 	std::ostringstream s;
 	s << std::setprecision(3);
-	if (n < 1000)
+	if (n < 1e3)
 		s << n << ' ';
-	else if (n < 1000000)
+	else if (n < 1e6)
 		s << n/1e3 << " k";
-	else if (n < 1000000000)
+	else if (n < 1e9)
 		s << n/1e6 << " M";
-	else if (n < 1000000000000)
+	else if (n < 1e12)
 		s << n/1e9 << " G";
 	else
 		s << n/1e12 << " T";
