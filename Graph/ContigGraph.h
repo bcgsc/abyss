@@ -409,12 +409,12 @@ bool get(vertex_removed_t tag, const ContigGraph<G>& g,
 }
 
 template <typename G>
-void put(vertex_removed_t, ContigGraph<G>& g,
+void put(vertex_removed_t tag, ContigGraph<G>& g,
 		typename ContigGraph<G>::vertex_descriptor u,
-		bool removed)
+		bool flag)
 {
-	assert(removed);
-	return g.remove_vertex(u);
+	put(tag, static_cast<G&>(g), u, flag);
+	put(tag, static_cast<G&>(g), ~u, flag);
 }
 
 /** Return the properties of the edge of iterator eit. */

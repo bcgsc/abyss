@@ -424,16 +424,22 @@ class Edge
 			remove_edge(*v, u);
 	}
 
+	/** Set the vertex_removed property. */
+	void put(vertex_removed_t, vertex_descriptor u, bool flag)
+	{
+		unsigned i = index(u);
+		if (i >= m_removed.size())
+			m_removed.resize(i + 1);
+		m_removed[i] = flag;
+	}
+
 	/** Remove vertex u from this graph. It is assumed that there
 	 * are no edges to or from vertex u. It is best to call
 	 * clear_vertex before remove_vertex.
 	 */
 	void remove_vertex(vertex_descriptor u)
 	{
-		unsigned i = index(u);
-		if (i >= m_removed.size())
-			m_removed.resize(i + 1);
-		m_removed[i] = true;
+		put(vertex_removed, u, true);
 	}
 
 	/** Return the number of vertices. */
@@ -705,12 +711,11 @@ bool get(vertex_removed_t tag, const DirectedGraph<VP, EP>& g,
 }
 
 template <typename VP, typename EP>
-void put(vertex_removed_t, DirectedGraph<VP, EP>& g,
+void put(vertex_removed_t tag, DirectedGraph<VP, EP>& g,
 		typename DirectedGraph<VP, EP>::vertex_descriptor u,
-		bool removed)
+		bool flag)
 {
-	assert(removed);
-	return g.remove_vertex(u);
+	g.put(tag, u, flag);
 }
 
 /** Return the properties of the edge of iterator eit. */
