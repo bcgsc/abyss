@@ -17,6 +17,7 @@
 #include <climits>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <sstream>
@@ -500,6 +501,44 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
+
+/** A container of contig paths. */
+typedef vector<ContigPath> ContigPaths;
+
+/** Update the scaffold graph. */
+static void updateGraph(Graph& g, const ContigPaths& paths)
+{
+	// Clear the removed flag.
+	typedef graph_traits<Graph>::vertex_iterator Vit;
+	Vit uit, ulast;
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit)
+		put(vertex_removed, g, *uit, false);
+
+	// Add a vertex for each path
+	// and remove the vertices that are used in paths.
+	for (ContigPaths::const_iterator it = paths.begin();
+			it != paths.end(); ++it) {
+		merge(g, it->begin(), it->end());
+		remove_vertex_if(g, it->begin(), it->end(),
+				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+	}
+}
+
+/** Print the assembly contiguity statistics. */
+static void printContiguityStats(Graph& g)
+{
+	typedef graph_traits<Graph>::vertex_iterator Vit;
+	Histogram h;
+	Vit uit, ulast;
+	for (tie(uit, ulast) = vertices(g); uit != ulast; ++++uit) {
+		typedef graph_traits<Graph>::vertex_descriptor V;
+		V u = *uit;
+		if (!get(vertex_removed, g, u))
+			h.insert(g[u].length);
+	}
+	printContiguityStats(cerr, h, opt::minContigLength);
+}
+
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -593,7 +632,6 @@ int main(int argc, char** argv)
 	removeWeakEdges(g);
 
 	// Assemble the paths.
-	typedef vector<ContigPath> ContigPaths;
 	ContigPaths paths;
 	assembleDFS(g, back_inserter(paths));
 	sort(paths.begin(), paths.end());
@@ -625,6 +663,12 @@ int main(int argc, char** argv)
 		assert_good(out, opt::graphPath);
 		write_dot(out, g);
 		assert_good(out, opt::graphPath);
+	}
+
+	// Print assembly contiguity statistics.
+	if (opt::verbose > 0) {
+		updateGraph(g, paths);
+		printContiguityStats(g);
 	}
 
 	return 0;

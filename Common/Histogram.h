@@ -2,6 +2,7 @@
 #define HISTOGRAM_H 1
 
 #include <cassert>
+#include <climits> // for INT_MAX
 #include <cmath>
 #include <istream>
 #include <map>
@@ -290,6 +291,26 @@ class Histogram
 namespace std {
 	template<>
 	inline void swap(Histogram&, Histogram&) { assert(false); }
+}
+
+/** Print assembly contiguity statistics. */
+static inline std::ostream& printContiguityStats(
+		std::ostream& out, const Histogram& h0,
+		unsigned minSize)
+{
+	Histogram h = h0.trimLow(minSize);
+	unsigned n50 = h.n50();
+	return out << "n\tn:" << minSize << "\tn:N50\t"
+		"min\tN80\tN50\tN20\tmax\tsum\n"
+		<< h0.size() << '\t'
+		<< h.size() << '\t'
+		<< h.count(n50, INT_MAX) << '\t'
+		<< h.minimum() << '\t'
+		<< h.weightedPercentile(1 - 0.8) << '\t'
+		<< n50 << '\t'
+		<< h.weightedPercentile(1 - 0.2) << '\t'
+		<< h.maximum() << '\t'
+		<< h.sum() << '\n';
 }
 
 #endif
