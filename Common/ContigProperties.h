@@ -12,6 +12,56 @@
 
 using boost::graph_traits;
 
+/** Contig length property. */
+struct Length
+{
+	unsigned length;
+
+	bool operator==(const Length& o) const
+	{
+		return length == o.length;
+	}
+
+	Length& operator+=(const Length& o)
+	{
+		length += o.length;
+		return *this;
+	}
+
+	template <typename T>
+	Length& operator+=(const T& o)
+	{
+		assert((int)length + (int)o.distance > 0);
+		length += o.distance;
+		return *this;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out,
+			const Length& o)
+	{
+		return out << "l=" << o.length;
+	}
+
+	friend std::istream& operator>>(std::istream& in, Length& o)
+	{
+		if (in >> std::ws && in.peek() == 'l')
+			return in >> expect("l =") >> o.length;
+		else
+			return in >> o.length;
+	}
+};
+
+static inline
+void put(vertex_length_t, Length& vp, unsigned length)
+{
+	vp.length = length;
+}
+
+static inline
+void put(vertex_coverage_t, Length&, unsigned)
+{
+}
+
 /** The length and coverage of a contig. */
 struct ContigProperties {
 	unsigned length;
