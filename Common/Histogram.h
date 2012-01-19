@@ -87,6 +87,17 @@ class Histogram
 		return n;
 	}
 
+	/** Return the sum. */
+	accumulator sum() const
+	{
+		accumulator total = 0;
+		for (Map::const_iterator it = m_map.begin();
+				it != m_map.end(); ++it)
+			total += (accumulator)it->first * it->second;
+		return total;
+	}
+
+	/** Return the mean. */
 	double mean() const
 	{
 		accumulator n = 0, total = 0;
@@ -135,6 +146,23 @@ class Histogram
 	{
 		return percentile(0.5);
 	}
+
+	/** Return the specified weighted percentile. */
+	T weightedPercentile(float p) const
+	{
+		accumulator x = ceil(p * sum());
+		accumulator total = 0;
+		for (Map::const_iterator it = m_map.begin();
+				it != m_map.end(); ++it) {
+			total += (accumulator)it->first * it->second;
+			if (total >= x)
+				return it->first;
+		}
+		return maximum();
+	}
+
+	/** Return the N50. */
+	T n50() const { return weightedPercentile(0.5); }
 
 	/** Return the first local minimum or zero if a minimum is not
 	 * found. */
