@@ -482,6 +482,21 @@ static void readGraph(const string& path, Graph& g)
 	ContigID::lock();
 }
 
+/** Return the scaffold length of [first, last), not counting gaps. */
+template<typename It>
+unsigned addLength(const Graph& g, It first, It last)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	assert(first != last);
+	unsigned length = g[*first].length;
+	for (It it = first + 1; it != last; ++it) {
+		V u = *(it - 1);
+		V v = *it;
+		length += min(0, get(edge_bundle, g, u, v).distance);
+		length += g[v].length;
+	}
+	return length;
+}
 
 /** A container of contig paths. */
 typedef vector<ContigPath> ContigPaths;
@@ -502,7 +517,7 @@ static Histogram buildScaffoldLengthHistogram(
 	// and add the lengths of the scaffolds.
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		h.insert(addProp(g, it->begin(), it->end()).length);
+		h.insert(addLength(g, it->begin(), it->end()));
 		remove_vertex_if(g, it->begin(), it->end(),
 				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 	}
