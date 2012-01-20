@@ -135,7 +135,7 @@ struct PoorSupport {
 };
 
 /** Remove short vertices and unsupported edges from the graph. */
-static void filterGraph(Graph& g)
+static void filterGraph(Graph& g, unsigned minContigLength)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::edge_descriptor E;
@@ -148,7 +148,7 @@ static void filterGraph(Graph& g)
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
 		V u = *uit;
-		if (g[u].length < opt::minContigLength)
+		if (g[u].length < minContigLength)
 			clear_vertex(u, g);
 		if (out_degree(u, g) == 0 && in_degree(u, g) == 0) {
 			remove_vertex(u, g);
@@ -533,59 +533,17 @@ static Histogram buildScaffoldLengthHistogram(
 	return h;
 }
 
-int main(int argc, char** argv)
+/** Build scaffold paths.
+ * @param output write the results
+ * @return the scaffold N50
+ */
+unsigned scaffold(const Graph& g0, unsigned minContigLength,
+		bool output)
 {
-	bool die = false;
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
-		istringstream arg(optarg != NULL ? optarg : "");
-		switch (c) {
-			case '?': die = true; break;
-			case 'k': arg >> opt::k; break;
-			case 'g': arg >> opt::graphPath; break;
-			case 'n': arg >> opt::minNumPairs; break;
-			case 'o': arg >> opt::out; break;
-			case 's': arg >> opt::minContigLength; break;
-			case 'v': opt::verbose++; break;
-			case OPT_MIN_GAP: arg >> opt::minGap; break;
-			case OPT_HELP:
-				cout << USAGE_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_VERSION:
-				cout << VERSION_MESSAGE;
-				exit(EXIT_SUCCESS);
-		}
-	}
-
-	if (opt::k <= 0) {
-		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
-		die = true;
-	}
-
-	if (argc - optind < 0) {
-		cerr << PROGRAM ": missing arguments\n";
-		die = true;
-	}
-
-	if (die) {
-		cerr << "Try `" << PROGRAM
-			<< " --help' for more information.\n";
-		exit(EXIT_FAILURE);
-	}
-
-	Graph g;
-	if (optind < argc) {
-		for (; optind < argc; optind++)
-			readGraph(argv[optind], g);
-	} else
-		readGraph("-", g);
-
-	// Add any missing complementary edges.
-	addComplementaryEdges(g);
-	Graph g0(g);
+	Graph g(g0);
 
 	// Filter the graph.
-	filterGraph(g);
+	filterGraph(g, minContigLength);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
@@ -642,6 +600,13 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
+	static const unsigned STATS_MIN_LENGTH = 200;
+	if (!output) {
+		Histogram h = buildScaffoldLengthHistogram(g, paths);
+		printContiguityStats(cerr, h, STATS_MIN_LENGTH);
+		return h.trimLow(STATS_MIN_LENGTH).n50();
+	}
+
 	// Output the paths.
 	ofstream fout(opt::out.c_str());
 	ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
@@ -663,10 +628,108 @@ int main(int argc, char** argv)
 	}
 
 	// Print assembly contiguity statistics.
-	if (opt::verbose > 0) {
-		Histogram h = buildScaffoldLengthHistogram(g, paths);
-		printContiguityStats(cerr, h, opt::minContigLength);
+	Histogram h = buildScaffoldLengthHistogram(g, paths);
+	printContiguityStats(cerr, h, STATS_MIN_LENGTH);
+	return h.trimLow(STATS_MIN_LENGTH).n50();
+}
+
+/** Run abyss-scaffold. */
+int main(int argc, char** argv)
+{
+	bool die = false;
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+		  case '?':
+			die = true;
+			break;
+		  case 'k':
+			arg >> opt::k;
+			assert(arg.eof());
+			break;
+		  case 'g':
+			arg >> opt::graphPath;
+			assert(arg.eof());
+			break;
+		  case 'n':
+			arg >> opt::minNumPairs;
+			assert(arg.eof());
+			break;
+		  case 'o':
+			arg >> opt::out;
+			assert(arg.eof());
+			break;
+		  case 's':
+			arg >> opt::minContigLength;
+			assert(arg.eof());
+			break;
+		  case 'v':
+			opt::verbose++;
+			break;
+		  case OPT_MIN_GAP:
+			arg >> opt::minGap;
+			assert(arg.eof());
+			break;
+		  case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		  case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
+		}
 	}
+
+	if (opt::k <= 0) {
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (argc - optind < 0) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	Graph g;
+	if (optind < argc) {
+		for (; optind < argc; optind++)
+			readGraph(argv[optind], g);
+	} else
+		readGraph("-", g);
+
+	// Add any missing complementary edges.
+	addComplementaryEdges(g);
+
+	if (opt::minContigLength > 0) {
+		scaffold(g, opt::minContigLength, true);
+		return 0;
+	}
+
+	// Find the value of s that maximizes the scaffold N50.
+	unsigned bests = 0, bestN50 = 0;
+	for (unsigned i = 6; i < 15; ++i) {
+		unsigned s = "\1\2\5"[i % 3] * exp10(i / 3);
+		unsigned n50 = scaffold(g, s, false);
+		cerr << "Scaffold N50 is " << n50 << " at s=" << s << ".\n";
+		if (opt::verbose > 0)
+			cerr << '\n';
+		if (n50 < bestN50)
+			break;
+		if (n50 > bestN50) {
+			bestN50 = n50;
+			bests = s;
+		}
+	}
+
+	bestN50 = scaffold(g, bests, true);
+	cerr << "Best scaffold N50 is " << bestN50
+		<< " at s=" << bests << ".\n";
 
 	return 0;
 }
