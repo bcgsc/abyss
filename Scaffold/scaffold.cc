@@ -666,7 +666,7 @@ int main(int argc, char** argv)
 		  case 's':
 			arg >> opt::minContigLength;
 			if (arg.peek() == '-') {
-				opt::minContigLengthEnd = UINT_MAX;
+				opt::minContigLengthEnd = 100 * opt::minContigLength;
 				arg >> expect("-") >> opt::minContigLengthEnd;
 				assert(opt::minContigLength
 						<= opt::minContigLengthEnd);
@@ -724,18 +724,14 @@ int main(int argc, char** argv)
 	const unsigned PERDECADE = 3;
 	unsigned bests = 0, bestN50 = 0;
 	unsigned ifirst = round(PERDECADE * log10(opt::minContigLength));
-	unsigned ilast = opt::minContigLengthEnd == UINT_MAX
-		? ifirst + 2 * PERDECADE
-		: round(PERDECADE * log10(opt::minContigLengthEnd)) + 1;
+	unsigned ilast
+		= round(PERDECADE * log10(opt::minContigLengthEnd)) + 1;
 	for (unsigned i = ifirst; i < ilast; ++i) {
 		unsigned s = "\1\2\5"[i % PERDECADE] * exp10(i / PERDECADE);
 		unsigned n50 = scaffold(g, s, false);
 		cerr << "Scaffold N50 is " << n50 << " at s=" << s << ".\n";
 		if (opt::verbose > 0)
 			cerr << '\n';
-		if (opt::minContigLengthEnd == UINT_MAX
-				&& n50 < bestN50)
-			break;
 		if (n50 > bestN50) {
 			bestN50 = n50;
 			bests = s;
