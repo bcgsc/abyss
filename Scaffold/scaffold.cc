@@ -486,38 +486,36 @@ static void readGraph(const string& path, Graph& g)
 /** A container of contig paths. */
 typedef vector<ContigPath> ContigPaths;
 
-/** Update the scaffold graph. */
-static void updateGraph(Graph& g, const ContigPaths& paths)
+/** Build the scaffold length histogram. */
+static Histogram buildScaffoldLengthHistogram(
+		Graph& g, const ContigPaths& paths)
 {
+	Histogram h;
+
 	// Clear the removed flag.
 	typedef graph_traits<Graph>::vertex_iterator Vit;
 	Vit uit, ulast;
 	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit)
 		put(vertex_removed, g, *uit, false);
 
-	// Add a vertex for each path
-	// and remove the vertices that are used in paths.
+	// Remove the vertices that are used in paths
+	// and add the lengths of the scaffolds.
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		merge(g, it->begin(), it->end());
+		h.insert(addProp(g, it->begin(), it->end()).length);
 		remove_vertex_if(g, it->begin(), it->end(),
 				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 	}
-}
 
-/** Print the assembly contiguity statistics. */
-static void printContiguityStats(Graph& g)
-{
-	typedef graph_traits<Graph>::vertex_iterator Vit;
-	Histogram h;
-	Vit uit, ulast;
+	// Add the contigs that were not used in paths.
 	for (tie(uit, ulast) = vertices(g); uit != ulast; ++++uit) {
 		typedef graph_traits<Graph>::vertex_descriptor V;
 		V u = *uit;
 		if (!get(vertex_removed, g, u))
 			h.insert(g[u].length);
 	}
-	printContiguityStats(cerr, h, opt::minContigLength);
+
+	return h;
 }
 
 int main(int argc, char** argv)
@@ -651,8 +649,8 @@ int main(int argc, char** argv)
 
 	// Print assembly contiguity statistics.
 	if (opt::verbose > 0) {
-		updateGraph(g, paths);
-		printContiguityStats(g);
+		Histogram h = buildScaffoldLengthHistogram(g, paths);
+		printContiguityStats(cerr, h, opt::minContigLength);
 	}
 
 	return 0;
