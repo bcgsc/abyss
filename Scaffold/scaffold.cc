@@ -166,6 +166,35 @@ static void filterGraph(Graph& g)
 		cerr << "Removed " << numRemovedE << " edges.\n";
 }
 
+/** Return true if the specified edge is a cycle. */
+static bool isCycle(Graph& g, graph_traits<Graph>::edge_descriptor e)
+{
+	return edge(target(e, g), source(e, g), g).second;
+}
+
+/** Remove simple cycles of length two from the graph. */
+static void removeCycles(Graph& g)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::edge_iterator Eit;
+
+	// Identify the cycles.
+	vector<E> cycles;
+	Eit eit, elast;
+	for (tie(eit, elast) = edges(g); eit != elast; ++eit) {
+		E e = *eit;
+		if (isCycle(g, e))
+			cycles.push_back(e);
+	}
+
+	/** Remove the cycles. */
+	remove_edges(g, cycles.begin(), cycles.end());
+	if (opt::verbose > 0) {
+		cerr << "Removed " << cycles.size() << " cyclic edges.\n";
+		printGraphStats(cerr, g);
+	}
+}
+
 /** Find edges in g0 that resolve forks in g.
  * For a pair of edges (u,v1) and (u,v2) in g, if exactly one of the
  * edges (v1,v2) or (v2,v1) exists in g0, add that edge to g.
@@ -546,6 +575,9 @@ int main(int argc, char** argv)
 	filterGraph(g);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
+
+	// Remove cycles.
+	removeCycles(g);
 
 	// Resolve forks.
 	resolveForks(g, g0);
