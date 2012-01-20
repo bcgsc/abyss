@@ -45,7 +45,9 @@ static const char USAGE_MESSAGE[] =
 "  DIST     estimates of the distance between contigs\n"
 "\n"
 "  -n, --npairs=N        minimum number of pairs [0]\n"
-"  -s, --seed-length=N   minimum contig length [0]\n"
+"  -s, --seed-length=N   minimum contig length [200]\n"
+"          or -s N0-N1   Find the value of s in [N0,N1]\n"
+"                        that maximizes the scaffold N50.\n"
 "  -k, --kmer=N          length of a k-mer\n"
 "      --min-gap=N       minimum scaffold gap length to output [50]\n"
 "  -o, --out=FILE        write the paths to FILE\n"
@@ -63,7 +65,8 @@ namespace opt {
 	static unsigned minNumPairs;
 
 	/** Minimum contig length. */
-	static unsigned minContigLength;
+	static unsigned minContigLength = 200;
+	static unsigned minContigLengthEnd;
 
 	/** Minimum scaffold gap length to output. */
 	static int minGap = 50;
@@ -600,7 +603,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	static const unsigned STATS_MIN_LENGTH = 200;
+	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (!output) {
 		Histogram h = buildScaffoldLengthHistogram(g, paths);
 		printContiguityStats(cerr, h, STATS_MIN_LENGTH);
@@ -662,6 +665,12 @@ int main(int argc, char** argv)
 			break;
 		  case 's':
 			arg >> opt::minContigLength;
+			if (arg.peek() == '-') {
+				opt::minContigLengthEnd = UINT_MAX;
+				arg >> expect("-") >> opt::minContigLengthEnd;
+				assert(opt::minContigLength
+						<= opt::minContigLengthEnd);
+			}
 			assert(arg.eof());
 			break;
 		  case 'v':
@@ -706,20 +715,26 @@ int main(int argc, char** argv)
 	// Add any missing complementary edges.
 	addComplementaryEdges(g);
 
-	if (opt::minContigLength > 0) {
+	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
 		return 0;
 	}
 
 	// Find the value of s that maximizes the scaffold N50.
+	const unsigned PERDECADE = 3;
 	unsigned bests = 0, bestN50 = 0;
-	for (unsigned i = 6; i < 15; ++i) {
-		unsigned s = "\1\2\5"[i % 3] * exp10(i / 3);
+	unsigned ifirst = round(PERDECADE * log10(opt::minContigLength));
+	unsigned ilast = opt::minContigLengthEnd == UINT_MAX
+		? ifirst + 2 * PERDECADE
+		: round(PERDECADE * log10(opt::minContigLengthEnd)) + 1;
+	for (unsigned i = ifirst; i < ilast; ++i) {
+		unsigned s = "\1\2\5"[i % PERDECADE] * exp10(i / PERDECADE);
 		unsigned n50 = scaffold(g, s, false);
 		cerr << "Scaffold N50 is " << n50 << " at s=" << s << ".\n";
 		if (opt::verbose > 0)
 			cerr << '\n';
-		if (n50 < bestN50)
+		if (opt::minContigLengthEnd == UINT_MAX
+				&& n50 < bestN50)
 			break;
 		if (n50 > bestN50) {
 			bestN50 = n50;
