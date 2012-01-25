@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# fac (FASTA count)
+# abyss-fac (FASTA count)
 # Calculate assembly contiguity statistics, such as N50.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;
@@ -22,29 +22,22 @@ sub eng($)
 	return substr($x / 1000000000, 0, 5) . 'e9';
 }
 
-my ($short, $sum, $ambiguous, $any, $other);
+my ($short, $sum);
 my @x;
 
 sub count($$)
 {
 	my $id = shift;
 	my $seq = uc shift;
-	#print $id, length $seq;
-	#print "\n";
 	my $x = $seq =~ tr/ACGT//;
 	my $colourspace = $seq =~ tr/0123//;
 	die unless $x == 0 || $colourspace == 0;
 	$x = $colourspace if $x == 0;
-	my $myambiguous = $seq =~ tr/KYSBWRDMHV//;
-	my $myany = $seq =~ tr/N//;
 	if ($x < $opt_threshold) {
 		$short++;
 		return;
 	}
 	$sum += $x;
-	$ambiguous += $myambiguous;
-	$any += $myany;
-	$other += (length $seq) - $x - $myambiguous - $myany;
 	push @x, $x;
 }
 
@@ -52,7 +45,6 @@ sub fac($)
 {
 	my $path = shift;
 	$short = $sum = 0;
-	$ambiguous = $any = $other = 0;
 	@x = ();
 
 	my $id;
@@ -73,24 +65,18 @@ sub fac($)
 
 	my $n = @x;
 	if ($n > 0) {
-		#my $mean = int $sum / $n;
-
 		@x = sort { $a <=> $b } @x;
 		my $min = $x[0];
-		#my $q1 = $x[@x/4];
-		#my $q2 = $x[@x/2];
-		#my $q3 = $x[@x*3/4];
 		my $max = $x[-1];
 
 		my $n50_target = defined $opt_genome_size
 				? $opt_genome_size : $sum;
-		my ($nn20, $n20, $n20sum,
+		my ($n20, $n20sum,
 			$nn50, $n50, $n50sum,
-			$nn80, $n80, $n80sum);
+			$n80, $n80sum);
 		while (@x > 0 && $n80sum < 0.8 * $n50_target) {
 			my $x = pop @x;
 			if ($n20sum < 0.2 * $n50_target) {
-				$nn20++;
 				$n20 = $x;
 				$n20sum += $x;
 			}
@@ -100,48 +86,23 @@ sub fac($)
 				$n50sum += $x;
 			}
 			if ($n80sum < 0.8 * $n50_target) {
-				$nn80++;
 				$n80 = $x;
 				$n80sum += $x;
 			}
 		}
-		#my $np = int 100 * $n50sum / $sum;
 
-		my $ntotal = eng $short + $n;
-		my $neng = eng $n;
-		my $sumeng = eng $sum;
-
-=pod
-		print "$ntotal$," if $opt_threshold > 0;
-		print $n, $nn50, $min, $q2, $mean, $n50, $max;
-		#printf "$,%#.3g", $sum;
-		print $, . eng($sum);
-		print "$,ambig=$ambiguous" if $ambiguous > 0;
-		print "$,any=$any" if $any > 0;
-		print "$,other=$other" if $other > 0;
-		print "$,$path" if $opt_filename;
-		print "\n";
-=cut
-
+		my $ntotal = $short + $n;
 		format Spaces =
-@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<< @*
-$ntotal, $neng, $nn50, $min, $n80, $n50, $n20, $max, $sumeng, $path
+@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@<<<<<<<@*
+eng($ntotal), eng($n), $nn50, $min, $n80, $n50, $n20, $max, eng($sum), $path
 .
 		format Pipes =
 |@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@<<<<<<|@*|
-$ntotal, $neng, $nn50, $min, $n80, $n50, $n20, $max, $sumeng, $path
+eng($ntotal), eng($n), $nn50, $min, $n80, $n50, $n20, $max, eng($sum), $path
 .
 		$~ = $opt_jira ? 'Pipes' : 'Spaces';
 		$^ = $opt_jira ? 'Pipes_TOP' : 'Spaces_TOP';
-		$: = '/- ';
 		write;
-=pod
-		print "$,ambig=$ambiguous" if $ambiguous > 0;
-		print "$,any=$any" if $any > 0;
-		print "$,other=$other" if $other > 0;
-		print "$,$path" if $opt_filename;
-		print "\n";
-=cut
 	} else {
 		print STDERR "warning: `$path' is empty\n";
 	}
@@ -155,16 +116,6 @@ format Pipes_TOP =
 ||n    ||n:@<<<||n:N50 ||min   ||N80   ||N50   ||N20   ||max   ||sum   ||
 $opt_threshold
 .
-
-=pod
-$, = "\t";
-if ($opt_threshold > 0) {
-	print 'n', "n:$opt_threshold$,";
-} else {
-	print "n$,";
-}
-print 'n:N50', 'min', 'median', 'mean', 'N50', 'max', "sum\n";
-=cut
 
 @ARGV = ('-') if @ARGV == 0;
 fac $_ foreach @ARGV;
