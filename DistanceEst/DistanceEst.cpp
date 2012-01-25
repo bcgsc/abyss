@@ -397,6 +397,10 @@ int main(int argc, char** argv)
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
 
+	// The fragment size histogram may not be written out until after
+	// the alignments complete. Wait for the alignments to complete.
+	in.peek();
+
 	// Read the fragment size distribution.
 	Histogram distanceHist = loadHist(distanceCountFile);
 	unsigned numRF = distanceHist.count(INT_MIN, 0);
