@@ -419,3 +419,18 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 		|${fixmate} $v ${fmopt} \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $@
+
+# Align the variants to the assembly.
+
+%.fa.bwt: %.fa
+	bwa index $<
+
+%-variants.bam: %.fa.bwt
+	bwa bwasw -t$j $*.fa <(cat $(name)-bubbles.fa $(name)-indel.fa) \
+		|samtools view -Su - |samtools sort -o - - >$@
+
+%-variants.vcf.gz: %.fa %-variants.bam
+	samtools mpileup -Buf $^ |bcftools view -vp1 - |bgzip >$@
+
+%.gz.tbi: %.gz
+	tabix $<
