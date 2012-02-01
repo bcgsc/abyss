@@ -266,22 +266,6 @@ static void pruneTips(Graph& g)
 	}
 }
 
-/** Return true if the specified vertex is a repeat. */
-static bool isRepeat(const Graph& g,
-		graph_traits<Graph>::vertex_descriptor t1,
-		graph_traits<Graph>::vertex_descriptor t2,
-		graph_traits<Graph>::vertex_descriptor u,
-		graph_traits<Graph>::vertex_descriptor v1,
-		graph_traits<Graph>::vertex_descriptor v2)
-{
-	assert(in_degree(u, g) == 2 && out_degree(u, g) == 2);
-	(void)u;
-	return out_degree(t1, g) == 2 && out_degree(t2, g) == 2
-		&& in_degree(v1, g) == 2 && in_degree(v2, g) == 2
-		&& edge(t1, v1, g).second && edge(t2, v2, g).second
-		&& !edge(t1, v2, g).second && !edge(t2, v1, g).second;
-}
-
 /** Remove repetitive vertices from this graph.
  * input: digraph g { t1->v1 t2->v2 t1->u t2->u u->v1 u->v2 }
  * operation: remove vertex u
@@ -290,41 +274,56 @@ static bool isRepeat(const Graph& g,
 static void removeRepeats(Graph& g)
 {
 	typedef graph_traits<Graph>::adjacency_iterator Ait;
-	typedef graph_traits<Graph>::vertex_iterator Vit;
+	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	vector<V> repeats;
-	pair<Vit, Vit> urange = vertices(g);
-	for (Vit uit = urange.first; uit != urange.second; ++uit) {
-		V u = *uit;
-		if (in_degree(u, g) != 2 || out_degree(u, g) != 2)
-			continue;
-
+	vector<E> transitive;
+	find_transitive_edges(g, back_inserter(transitive));
+	for (vector<E>::const_iterator it = transitive.begin();
+			it != transitive.end(); ++it) {
+		// Iterate through the transitive edges, u->w1.
+		V u = source(*it, g), w1 = target(*it, g);
 		Ait vit, vlast;
-		tie(vit, vlast) = adjacent_vertices(u, g);
-		V v1 = *vit;
-		++vit;
-		V v2 = *vit;
-		++vit;
-		assert(vit == vlast);
-		assert(v1 != v2 && v1 != u && v2 != u);
-
-		Ait tit, tlast;
-		tie(tit, tlast) = adjacent_vertices(~u, g);
-		V t1 = ~*tit;
-		++tit;
-		V t2 = ~*tit;
-		++tit;
-		assert(tit == tlast);
-		assert(t1 != t2 && t1 != u && t2 != u);
-
-		if (isRepeat(g, t1, t2, u, v1, v2))
-			repeats.push_back(u);
-		else if (isRepeat(g, t1, t2, u, v2, v1))
-			repeats.push_back(u);
+		for (tie(vit, vlast) = adjacent_vertices(u, g);
+				vit != vlast; ++vit) {
+			V v = *vit;
+			assert(u != v); // no self loops
+			if (!edge(v, w1, g).second)
+				continue;
+			// u->w1 is a transitive edge spanning u->v->w1.
+			Ait wit, wlast;
+			for (tie(wit, wlast) = adjacent_vertices(v, g);
+					wit != wlast; ++wit) {
+				// For each edge v->w2, check that an edge
+				// w1->w2 or w2->w1 exists. If not, v is a repeat.
+				V w2 = *wit;
+				assert(v != w2); // no self loops
+				if (w1 != w2
+						&& !edge(w1, w2, g).second
+						&& !edge(w2, w1, g).second) {
+					repeats.push_back(v);
+					break;
+				}
+			}
+		}
 	}
 
-	/** Remove the repetitive vertices. */
+	// Identify vertices that are repetitive in both directions.
+	sort(repeats.begin(), repeats.end());
+	repeats.erase(unique(repeats.begin(), repeats.end()),
+			repeats.end());
+	if (!repeats.empty()) {
+		vector<V>::iterator out = repeats.begin();
+		for (vector<V>::const_iterator it = repeats.begin();
+				it != repeats.end() - 1; ++it) {
+			if (it[0] == ~it[1])
+				*out++ = *it;
+		}
+		repeats.erase(out, repeats.end());
+	}
+
+	// Remove the repetitive vertices.
 	for (vector<V>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		V u = *it;
