@@ -309,37 +309,34 @@ static void removeRepeats(Graph& g)
 		}
 	}
 
-	// Identify vertices that are repetitive in both directions.
 	sort(repeats.begin(), repeats.end());
 	repeats.erase(unique(repeats.begin(), repeats.end()),
 			repeats.end());
-	if (!repeats.empty()) {
-		vector<V>::iterator out = repeats.begin();
-		for (vector<V>::const_iterator it = repeats.begin();
-				it != repeats.end() - 1; ++it) {
-			if (it[0] == ~it[1])
-				*out++ = *it;
-		}
-		repeats.erase(out, repeats.end());
-	}
-
-	// Remove the repetitive vertices.
-	for (vector<V>::const_iterator it = repeats.begin();
-			it != repeats.end(); ++it) {
-		V u = *it;
-		clear_vertex(u, g);
-		remove_vertex(u, g);
-	}
-	if (opt::verbose > 0) {
-		cerr << "Removed "
-			<< repeats.size() << " repetitive vertices.\n";
-		printGraphStats(cerr, g);
-	}
 	if (opt::verbose > 1) {
-		cerr << "Repeats: ";
+		cerr << "Ambiguous: ";
 		copy(repeats.begin(), repeats.end(),
 				ostream_iterator<ContigNode>(cerr, " "));
 		cerr << '\n';
+	}
+
+	// Remove the repetitive vertices.
+	unsigned numRemoved = 0;
+	for (vector<V>::const_iterator it = repeats.begin();
+			it != repeats.end(); ++it) {
+		V u = *it;
+		clear_out_edges(u, g);
+		if (it != repeats.begin() && it[-1] == ~u) {
+			remove_vertex(u, g);
+			numRemoved++;
+		}
+	}
+
+	if (opt::verbose > 0) {
+		cerr << "Cleared "
+			<< repeats.size() << " ambiguous vertices.\n"
+			<< "Removed "
+			<< numRemoved << " ambiguous vertices.\n";
+		printGraphStats(cerr, g);
 	}
 }
 
