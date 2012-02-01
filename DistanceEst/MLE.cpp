@@ -89,7 +89,7 @@ maximumLikelihoodEstimate(int first, int last,
 		unsigned n;
 	   	tie(likelihood, n) = computeLikelihood(theta, samples, pmf);
 		likelihood -= nsamples * log(c);
-		if (likelihood > bestLikelihood) {
+		if (n > 0 && likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
 			bestTheta = theta;
 			bestn = n;
