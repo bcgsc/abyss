@@ -46,7 +46,7 @@ static const char USAGE_MESSAGE[] =
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
-"                        less than this threshold [1]\n"
+"                        less than this threshold [10]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "      --dist            output graph in dist format [default]\n"
 "      --dot             output graph in dot format\n"
@@ -71,7 +71,7 @@ namespace opt {
 
 	static unsigned seedLen;
 	static unsigned npairs;
-	static unsigned minMapQ = 1;
+	static unsigned minMapQ = 10;
 
 	/** Reverse-forward mate pair orientation. */
 	static int rf = -1;
