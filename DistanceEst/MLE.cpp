@@ -69,6 +69,9 @@ maximumLikelihoodEstimate(int first, int last,
 		const PMF& pmf,
 		unsigned len0, unsigned len1)
 {
+	first = max(first, (int)pmf.minValue() - samples.maximum());
+	last = min(last, (int)pmf.maxValue() - samples.minimum());
+
 	/* When randomly selecting fragments that span a given point,
 	 * longer fragments are more likely to be selected than
 	 * shorter fragments.
@@ -79,7 +82,7 @@ maximumLikelihoodEstimate(int first, int last,
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
 	unsigned bestn = 0;
-	for (int theta = first; theta < last; theta++) {
+	for (int theta = first; theta <= last; theta++) {
 		// Calculate the normalizing constant of the PMF, f_theta(x).
 		double c = 0;
 		for (int i = pmf.minValue(); i <= (int)pmf.maxValue(); ++i)
