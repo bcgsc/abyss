@@ -433,4 +433,4 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 	samtools mpileup -Buf $^ |bcftools view -vp1 - |bgzip >$@
 
 %.gz.tbi: %.gz
-	tabix $<
+	tabix -pvcf $<
