@@ -602,7 +602,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (!output) {
 		Histogram h = buildScaffoldLengthHistogram(g, paths);
-		printContiguityStats(cerr, h, STATS_MIN_LENGTH);
+		printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
 		return h.trimLow(STATS_MIN_LENGTH).n50();
 	}
 
@@ -628,7 +628,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
-	printContiguityStats(cerr, h, STATS_MIN_LENGTH);
+	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 

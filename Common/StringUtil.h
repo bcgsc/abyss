@@ -45,6 +45,22 @@ static inline std::string toSI(double n)
 	return s.str();
 }
 
+/** Return the engineering representation of n. */
+static inline std::string toEng(double n)
+{
+	std::ostringstream s;
+	s << std::setprecision(4);
+	if (n < 1e7)
+		s << n;
+	else if (n < 1e9)
+		s << n/1e6 << "e6";
+	else if (n < 1e12)
+		s << n/1e9 << "e9";
+	else
+		s << n/1e12 << "e12";
+	return s.str();
+}
+
 /** Return true if the second string is a prefix of the string s. */
 template <size_t N>
 bool startsWith(const std::string& s, const char (&prefix)[N])

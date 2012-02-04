@@ -302,15 +302,15 @@ static inline std::ostream& printContiguityStats(
 	unsigned n50 = h.n50();
 	return out << "n\tn:" << minSize << "\tn:N50\t"
 		"min\tN80\tN50\tN20\tmax\tsum\n"
-		<< h0.size() << '\t'
-		<< h.size() << '\t'
-		<< h.count(n50, INT_MAX) << '\t'
-		<< h.minimum() << '\t'
-		<< h.weightedPercentile(1 - 0.8) << '\t'
-		<< n50 << '\t'
-		<< h.weightedPercentile(1 - 0.2) << '\t'
-		<< h.maximum() << '\t'
-		<< h.sum() << '\n';
+		<< toEng(h0.size()) << '\t'
+		<< toEng(h.size()) << '\t'
+		<< toEng(h.count(n50, INT_MAX)) << '\t'
+		<< toEng(h.minimum()) << '\t'
+		<< toEng(h.weightedPercentile(1 - 0.8)) << '\t'
+		<< toEng(n50) << '\t'
+		<< toEng(h.weightedPercentile(1 - 0.2)) << '\t'
+		<< toEng(h.maximum()) << '\t'
+		<< toEng(h.sum());
 }
 
 #endif

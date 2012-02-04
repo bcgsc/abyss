@@ -6,6 +6,7 @@
 #include "DataLayer/Options.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
+#include "Histogram.h"
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "smith_waterman.h"
@@ -492,6 +493,7 @@ int main(int argc, char** argv)
 	markRemovedContigs(seen, pathIDs, paths);
 
 	// Output those contigs that were not seen in a path.
+	Histogram lengthHistogram;
 	ofstream fout;
 	ostream& out = opt::out == "-" ? cout
 		: (fout.open(opt::out.c_str()), fout);
@@ -506,6 +508,8 @@ int main(int argc, char** argv)
 				if (!contig.comment.empty())
 					out << ' ' << contig.comment;
 				out << '\n' << contig.seq << '\n';
+				if (opt::verbose > 0)
+					lengthHistogram.insert(contig.seq.length());
 			}
 		}
 	}
@@ -525,6 +529,8 @@ int main(int argc, char** argv)
 			<< contig.seq << '\n';
 		assert_good(out, opt::out);
 		npaths++;
+		if (opt::verbose > 0)
+			lengthHistogram.insert(contig.seq.length());
 	}
 
 	if (npaths == 0)
@@ -554,5 +560,10 @@ int main(int argc, char** argv)
 		cerr << "Consider increasing the coverage threshold "
 			"parameter, c, to " << minCovUsed << ".\n";
 
+	if (opt::verbose > 0) {
+		const unsigned STATS_MIN_LENGTH = 200; // bp
+		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
+			<< '\t' << opt::out << '\n';
+	}
 	return 0;
 }
