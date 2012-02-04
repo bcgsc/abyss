@@ -717,13 +717,14 @@ int main(int argc, char** argv)
 	}
 
 	// Find the value of s that maximizes the scaffold N50.
-	const unsigned PERDECADE = 3;
 	unsigned bests = 0, bestN50 = 0;
-	unsigned ifirst = round(PERDECADE * log10(opt::minContigLength));
-	unsigned ilast
-		= round(PERDECADE * log10(opt::minContigLengthEnd)) + 1;
-	for (unsigned i = ifirst; i < ilast; ++i) {
-		unsigned s = "\1\2\5"[i % PERDECADE] * exp10(i / PERDECADE);
+	const double STEP = cbrt(10); // Three steps per decade.
+	for (unsigned s = opt::minContigLength;
+			s < opt::minContigLengthEnd * STEP; s *= STEP) {
+		// Round to 1 figure.
+		double nearestDecade = exp10(floor(log10(s)));
+		s = round(0.3 + s / nearestDecade) * nearestDecade;
+
 		unsigned n50 = scaffold(g, s, false);
 		cerr << "Scaffold N50 is " << n50 << " at s=" << s << ".\n";
 		if (opt::verbose > 0)
