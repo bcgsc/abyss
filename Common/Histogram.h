@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H 1
 
+#include "StringUtil.h" // for toEng
 #include <cassert>
 #include <climits> // for INT_MAX
 #include <cmath>

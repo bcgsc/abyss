@@ -45,12 +45,13 @@ static inline std::string toSI(double n)
 	return s.str();
 }
 
-/** Return the engineering representation of n. */
-static inline std::string toEng(double n)
+/** Return the engineering string representation of n. */
+template <typename T>
+static inline std::string toEng(T n)
 {
 	std::ostringstream s;
 	s << std::setprecision(4);
-	if (n < 1e7)
+	if (n < 10000000)
 		s << n;
 	else if (n < 1e9)
 		s << n/1e6 << "e6";
