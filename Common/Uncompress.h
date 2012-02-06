@@ -5,6 +5,7 @@ bool uncompress_init();
 
 namespace {
 const bool uncompressInitialized = uncompress_init();
+bool getUncompressInitialized() __attribute__((unused));
 bool getUncompressInitialized() { return uncompressInitialized; }
 }
 

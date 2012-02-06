@@ -15,6 +15,7 @@
 #include "Graph/PopBubbles.h"
 #include <cassert>
 #include <climits>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <functional>
@@ -722,7 +723,7 @@ int main(int argc, char** argv)
 	for (unsigned s = opt::minContigLength;
 			s < opt::minContigLengthEnd * STEP; s *= STEP) {
 		// Round to 1 figure.
-		double nearestDecade = exp10(floor(log10(s)));
+		double nearestDecade = pow(10, floor(log10(s)));
 		s = round(0.3 + s / nearestDecade) * nearestDecade;
 
 		unsigned n50 = scaffold(g, s, false);

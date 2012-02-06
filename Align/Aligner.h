@@ -55,7 +55,7 @@ struct Alignment
 	{
 		unsigned tend = contig_start_pos + align_length;
 		return !isRC ? contig_start_pos - read_start_pos
-			: tend + read_start_pos;
+			: int(tend + read_start_pos);
 	}
 
 	/** Return the distance between the specified alignments.

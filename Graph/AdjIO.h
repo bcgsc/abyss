@@ -10,7 +10,9 @@
 #include <cstdlib>
 #include <istream>
 #include <ostream>
+#include <utility>
 
+using namespace std::rel_ops;
 using boost::graph_traits;
 
 template <typename EdgeProp>
