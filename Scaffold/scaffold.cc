@@ -602,8 +602,13 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (!output) {
+		static bool printHeader = true;
 		Histogram h = buildScaffoldLengthHistogram(g, paths);
-		printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
+		printContiguityStats(cerr, h, STATS_MIN_LENGTH,
+				printHeader)
+			<< "\ts=" << minContigLength << '\n';
+		if (opt::verbose == 0)
+			printHeader = false;
 		return h.trimLow(STATS_MIN_LENGTH).n50();
 	}
 
@@ -727,7 +732,6 @@ int main(int argc, char** argv)
 		s = round(0.3 + s / nearestDecade) * nearestDecade;
 
 		unsigned n50 = scaffold(g, s, false);
-		cerr << "Scaffold N50 is " << n50 << " at s=" << s << ".\n";
 		if (opt::verbose > 0)
 			cerr << '\n';
 		if (n50 > bestN50) {
