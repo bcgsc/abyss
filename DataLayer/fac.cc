@@ -66,14 +66,20 @@ static const struct option longopts[] = {
 /** FastaReader flags. */
 static const int FASTAREADER_FLAGS = FastaReader::FOLD_CASE;
 
+/** Return true for [ACGT]. */
+static bool isACGT(char c)
+{
+	return c == 'A' || c == 'C' || c == 'G' || c == 'T';
+}
+
 /** Print contiguity statistics. */
 static void printContiguityStatistics(const char* path)
 {
 	// Read the sequences and count the lengths.
 	Histogram h;
 	FastaReader in(path, FASTAREADER_FLAGS);
-	for (FastaRecord record; in >> record;)
-		h.insert(record.seq.size());
+	for (string s; in >> s;)
+		h.insert(count_if(s.begin(), s.end(), isACGT));
 	assert(in.eof());
 
 	// Print the table header.
