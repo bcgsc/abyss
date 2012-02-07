@@ -14,6 +14,13 @@ char nucleotideToColourSpace(char a, char b);
 uint8_t baseToCode(char base);
 char codeToBase(uint8_t code);
 
+/** Return true if c is one of [ACGTacgt]. */
+static inline bool isACGT(char c)
+{
+	return c == 'A' || c == 'C' || c == 'G' || c == 'T'
+		|| c == 'a' || c == 'c' || c == 'g' || c == 't';
+}
+
 unsigned ambiguityToBitmask(char c);
 unsigned bitmaskToAmbiguity(unsigned x);
 

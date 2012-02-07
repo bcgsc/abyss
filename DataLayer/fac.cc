@@ -4,6 +4,7 @@
 #include "config.h"
 #include "Common/Histogram.h"
 #include "Common/IOUtil.h"
+#include "Common/Sequence.h" // for isACGT
 #include "DataLayer/FastaReader.h"
 #include "DataLayer/Options.h"
 #include <algorithm>
@@ -64,13 +65,7 @@ static const struct option longopts[] = {
 };
 
 /** FastaReader flags. */
-static const int FASTAREADER_FLAGS = FastaReader::FOLD_CASE;
-
-/** Return true for [ACGT]. */
-static bool isACGT(char c)
-{
-	return c == 'A' || c == 'C' || c == 'G' || c == 'T';
-}
+static const int FASTAREADER_FLAGS = FastaReader::NO_FOLD_CASE;
 
 /** Print contiguity statistics. */
 static void printContiguityStatistics(const char* path)

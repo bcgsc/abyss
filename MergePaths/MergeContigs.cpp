@@ -10,6 +10,7 @@
 #include "IOUtil.h"
 #include "MemoryUtil.h"
 #include "smith_waterman.h"
+#include "Sequence.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "Graph/ContigGraph.h"
@@ -509,7 +510,9 @@ int main(int argc, char** argv)
 					out << ' ' << contig.comment;
 				out << '\n' << contig.seq << '\n';
 				if (opt::verbose > 0)
-					lengthHistogram.insert(contig.seq.length());
+					lengthHistogram.insert(
+						count_if(contig.seq.begin(), contig.seq.end(),
+							isACGT));
 			}
 		}
 	}
@@ -530,7 +533,9 @@ int main(int argc, char** argv)
 		assert_good(out, opt::out);
 		npaths++;
 		if (opt::verbose > 0)
-			lengthHistogram.insert(contig.seq.length());
+			lengthHistogram.insert(
+					count_if(contig.seq.begin(), contig.seq.end(),
+						isACGT));
 	}
 
 	if (npaths == 0)
