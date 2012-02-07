@@ -1,15 +1,3 @@
-/**
- *
- * Resolve ambiguity ("N"s) in paths after MergePaths
- * by using pairwise/multiple sequence alignment
- * (pairwise: Needleman-Wunsch)
- * (multi: based on Dialign program by A.R.Subramanian)
- *
- * Author: Rong She (rshe@bcgsc.ca)
- *
- * Last Modified: July 2010
- */
-
 #include "dialign.h"
 #include "config.h"
 #include "Common/Options.h"
@@ -44,7 +32,7 @@ using namespace std;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Rong She and Shaun Jackman.\n"
+"Written by Shaun Jackman and Rong She.\n"
 "\n"
 "Copyright 2012 Canada's Michael Smith Genome Science Centre\n";
 
