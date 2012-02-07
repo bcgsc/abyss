@@ -21,6 +21,20 @@ static inline void assert_good(const std::ios& stream,
 	}
 }
 
+/** Print an error message and exit if stream is not eof. */
+static inline void assert_eof(std::istream& in,
+		const std::string& path)
+{
+	if (!in.eof()) {
+		in.clear();
+		std::string s;
+		std::getline(in, s);
+		std::cerr << "error: `" << path << "': "
+			"Expected end-of-file and saw `" << s << "'\n";
+		exit(EXIT_FAILURE);
+	}
+}
+
 /** This input stream manipulator skips the specified string. */
 struct expect {
 	const char* s;
