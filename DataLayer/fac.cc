@@ -26,6 +26,7 @@ static const char USAGE_MESSAGE[] =
 "Calculate assembly contiguity statistics.\n"
 "\n"
 "  -s, -t, --min-length=N  ignore sequences shorter than N bp [200]\n"
+"  -d, --delimiter=S       use S instead of tab for field delimiter\n"
 "  -j, --pipes             separate columns with pipes\n"
 "      --chastity          discard unchaste sequences [default]\n"
 "      --no-chastity       do not discard unchaste sequences\n"
@@ -40,16 +41,17 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned minLength = 200;
-	static bool pipes;
+	static string delimiter;
 	static int verbose;
 }
 
-static const char shortopts[] = "js:t:v";
+static const char shortopts[] = "d:js:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "min-length", no_argument, NULL, 's' },
+	{ "delimiter", required_argument, NULL, 'd' },
 	{ "pipes", no_argument, NULL, 'j' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -70,8 +72,9 @@ static void printContiguityStatistics(const char* path)
 	for (FastaRecord record; in >> record;)
 		h.insert(record.seq.size());
 	static bool printHeader = true;
-	printContiguityStats(cout, h, opt::minLength, printHeader)
-		<< '\t' << path << '\n';
+	printContiguityStats(cout, h, opt::minLength,
+			printHeader, opt::delimiter)
+		<< opt::delimiter << path << '\n';
 	printHeader = false;
 	assert(in.eof());
 }
@@ -90,8 +93,11 @@ int main(int argc, char** argv)
 		  case '?':
 			die = true;
 			break;
+		  case 'd':
+			arg >> opt::delimiter;
+			break;
 		  case 'j':
-			opt::pipes = true;
+			opt::delimiter = "\t|";
 			break;
 		  case 's': case 't':
 			arg >> opt::minLength;

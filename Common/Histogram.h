@@ -297,22 +297,30 @@ namespace std {
 /** Print assembly contiguity statistics. */
 static inline std::ostream& printContiguityStats(
 		std::ostream& out, const Histogram& h0,
-		unsigned minSize, bool printHeader = true)
+		unsigned minSize, bool printHeader = true,
+		const std::string& sep = "\t")
 {
 	Histogram h = h0.trimLow(minSize);
 	unsigned n50 = h.n50();
 	if (printHeader)
-		out << "n\tn:" << minSize << "\tn:N50\t"
-			"min\tN80\tN50\tN20\tmax\tsum\n";
+		out << "n" << sep
+			<< "n:" << minSize << sep
+			<< "n:N50" << sep
+			<< "min" << sep
+			<< "N80" << sep
+			<< "N50" << sep
+			<< "N20" << sep
+			<< "max" << sep
+			<< "sum\n";
 	return out
-		<< toEng(h0.size()) << '\t'
-		<< toEng(h.size()) << '\t'
-		<< toEng(h.count(n50, INT_MAX)) << '\t'
-		<< toEng(h.minimum()) << '\t'
-		<< toEng(h.weightedPercentile(1 - 0.8)) << '\t'
-		<< toEng(n50) << '\t'
-		<< toEng(h.weightedPercentile(1 - 0.2)) << '\t'
-		<< toEng(h.maximum()) << '\t'
+		<< toEng(h0.size()) << sep
+		<< toEng(h.size()) << sep
+		<< toEng(h.count(n50, INT_MAX)) << sep
+		<< toEng(h.minimum()) << sep
+		<< toEng(h.weightedPercentile(1 - 0.8)) << sep
+		<< toEng(n50) << sep
+		<< toEng(h.weightedPercentile(1 - 0.2)) << sep
+		<< toEng(h.maximum()) << sep
 		<< toEng(h.sum());
 }
 
