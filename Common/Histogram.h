@@ -297,12 +297,14 @@ namespace std {
 /** Print assembly contiguity statistics. */
 static inline std::ostream& printContiguityStats(
 		std::ostream& out, const Histogram& h0,
-		unsigned minSize)
+		unsigned minSize, bool printHeader = true)
 {
 	Histogram h = h0.trimLow(minSize);
 	unsigned n50 = h.n50();
-	return out << "n\tn:" << minSize << "\tn:N50\t"
-		"min\tN80\tN50\tN20\tmax\tsum\n"
+	if (printHeader)
+		out << "n\tn:" << minSize << "\tn:N50\t"
+			"min\tN80\tN50\tN20\tmax\tsum\n";
+	return out
 		<< toEng(h0.size()) << '\t'
 		<< toEng(h.size()) << '\t'
 		<< toEng(h.count(n50, INT_MAX)) << '\t'

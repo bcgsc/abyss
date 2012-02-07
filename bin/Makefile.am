@@ -3,11 +3,11 @@ dist_bin_SCRIPTS = \
 	abyss-bowtie2 \
 	abyss-bwa \
 	abyss-bwasw \
-	abyss-fac \
 	abyss-kaligner \
 	abyss-pe \
 	abyss-samtoafg
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
+	abyss-fac \
 	abyss-joindist

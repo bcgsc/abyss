@@ -1,5 +1,13 @@
-bin_PROGRAMS = abyss-tofastq
+bin_PROGRAMS = abyss-fac abyss-tofastq
 noinst_LIBRARIES = libdatalayer.a
+
+abyss_fac_CPPFLAGS = -I$(top_srcdir) \
+	-I$(top_srcdir)/Common
+
+abyss_fac_LDADD = libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a
+
+abyss_fac_SOURCES = fac.cc
 
 abyss_tofastq_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
