@@ -27,7 +27,7 @@ static const char USAGE_MESSAGE[] =
 "Calculate assembly contiguity statistics.\n"
 "\n"
 "  -s, -t, --min-length=N  ignore sequences shorter than N bp [200]\n"
-"  -d, --delimiter=S       use S instead of tab for field delimiter\n"
+"  -d, --delimiter=S       use S for the field delimiter [\\t]\n"
 "  -j, --jira              separate columns with pipes\n"
 "      --chastity          discard unchaste sequences [default]\n"
 "      --no-chastity       do not discard unchaste sequences\n"
@@ -42,7 +42,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned minLength = 200;
-	static string delimiter;
+	static string delimiter = "\t";
 	static bool jira;
 	static int verbose;
 }
@@ -121,7 +121,8 @@ int main(int argc, char** argv)
 			die = true;
 			break;
 		  case 'd':
-			arg >> opt::delimiter;
+			opt::delimiter = arg.str();
+			arg.clear(ios::eofbit);
 			break;
 		  case 'j':
 			opt::delimiter = "\t|";
