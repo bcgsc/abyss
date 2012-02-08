@@ -397,9 +397,9 @@ static ContigPath alignPair(const Graph& g,
 
 		unsigned match = opt::k - 1;
 		float identity = (float)match / consensus.size();
-		if (opt::verbose > 1)
+		if (opt::verbose > 2)
 			cerr << consensus << '\n';
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << identity
 				<< (identity < opt::identity ? " (too low)\n" : "\n");
 		if (identity < opt::identity)
@@ -427,7 +427,7 @@ static ContigPath alignPair(const Graph& g,
 		assert(it.second != sndSol.end());
 		assert(*it.first == ~*it.second);
 		assert(std::equal(it.first+1, It(fstSol.end()), it.second+1));
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << "Palindrome: " << ContigID(*it.first) << '\n';
 		return solutions[0];
 	}
@@ -438,7 +438,7 @@ static ContigPath alignPair(const Graph& g,
 			fstPathContig.length(), sndPathContig.length());
 	float lengthRatio = (float)minLength / maxLength;
 	if (lengthRatio < opt::identity) {
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << minLength << '\t' << maxLength
 				<< '\t' << lengthRatio << "\t(different length)\n";
 		return ContigPath();
@@ -448,9 +448,9 @@ static ContigPath alignPair(const Graph& g,
 	unsigned match = alignGlobal(fstPathContig, sndPathContig,
 		   	align);
 	float identity = (float)match / align.size();
-	if (opt::verbose > 1)
+	if (opt::verbose > 2)
 		cerr << align;
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << identity
 			<< (identity < opt::identity ? " (too low)\n" : "\n");
 	if (identity < opt::identity)
@@ -525,7 +525,7 @@ static ContigPath alignMulti(const Graph& g,
 	}
 	reverse(vspath.begin(), vspath.end());
 
-	if (opt::verbose > 0 && vppath.size() + vspath.size() > 2)
+	if (opt::verbose > 1 && vppath.size() + vspath.size() > 2)
 		cerr << vppath << " * " << vspath << '\n';
 
 	// Get sequence of ambiguous region in paths
@@ -554,7 +554,7 @@ static ContigPath alignMulti(const Graph& g,
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	float lengthRatio = (float)minLength / maxLength;
 	if (lengthRatio < opt::identity) {
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << minLength << '\t' << maxLength
 				<< '\t' << lengthRatio << "\t(different length)\n";
 		return ContigPath();
@@ -563,10 +563,10 @@ static ContigPath alignMulti(const Graph& g,
 	string alignment;
 	unsigned matches;
 	Sequence consensus = dialign(amb_seqs, alignment, matches);
-	if (opt::verbose > 1)
+	if (opt::verbose > 2)
 	   	cerr << alignment << consensus << '\n';
 	float identity = (float)matches / consensus.size();
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << identity
 			<< (identity < opt::identity ? " (too low)\n" : "\n");
 	if (identity < opt::identity)
@@ -576,7 +576,7 @@ static ContigPath alignMulti(const Graph& g,
 		// A perfect match must be caused by two palindromes.
 		ContigID palindrome0 = solutions[0][longestPrefix];
 		ContigID palindrome1 = solutions[0].rbegin()[longestSuffix];
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << "Palindrome: " << palindrome0 << '\n'
 				<< "Palindrome: " << palindrome1 << '\n';
 #ifndef NDEBUG
@@ -627,7 +627,7 @@ static ContigPath fillGap(const Graph& g,
 		vector<bool>& seen,
 		ofstream& outFasta)
 {
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << "\n* " << apConstraint.source << ' '
 			<< apConstraint.dist << "N "
 			<< apConstraint.dest << '\n';
@@ -650,21 +650,21 @@ static ContigPath fillGap(const Graph& g,
 	bool tooManySolutions = solutions.size() > opt::numBranches;
 	if (tooComplex) {
 		stats.tooComplex++;
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << solutions.size() << " paths (too complex)\n";
 	} else if (tooManySolutions) {
 		stats.numTooManySolutions++;
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << solutions.size() << " paths (too many)\n";
 	} else if (solutions.empty()) {
 		stats.numNoSolutions++;
-		if (opt::verbose > 0)
+		if (opt::verbose > 1)
 			cerr << "no paths\n";
 	} else {
-		if (opt::verbose > 1)
+		if (opt::verbose > 2)
 			copy(solutions.begin(), solutions.end(),
 					ostream_iterator<ContigPath>(cerr, "\n"));
-		else if (opt::verbose > 0)
+		else if (opt::verbose > 1)
 			cerr << solutions.size() << " paths\n";
 		consensus = align(g, solutions, outFasta);
 		if (!consensus.empty()) {
@@ -673,7 +673,7 @@ static ContigPath fillGap(const Graph& g,
 				// Mark contigs that are used in a consensus.
 				markSeen(seen, solutions, true);
 			}
-			if (opt::verbose > 0)
+			if (opt::verbose > 1)
 				cerr << consensus << '\n';
 		} else
 			stats.notMerged++;
@@ -805,7 +805,7 @@ int main(int argc, char** argv)
 		ambIt->second = fillGap(g, ambIt->first, seen, fa);
 	assert_good(fa, opt::consensusPath);
 	fa.close();
-	if (opt::verbose > 0)
+	if (opt::verbose > 1)
 		cerr << '\n';
 
 	// Unmark contigs that are used in a path.

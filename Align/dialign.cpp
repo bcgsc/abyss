@@ -403,7 +403,7 @@ string dialign(const vector<string>& amb_seqs,
 		free_alignment(salgn);
 	}
 
-	if (opt::verbose > 2)
+	if (opt::verbose > 3)
 		simple_print_alignment_default(algn);
 	string consensus = get_alignment_consensus(algn);
 	matches = countMatches(*algn, consensus);
