@@ -728,7 +728,7 @@ int main(int argc, char** argv)
 	unsigned ilast = round(log(opt::minContigLengthEnd) / log(STEP));
 	for (unsigned i = round(log(opt::minContigLength) / log(STEP));
 			i <= ilast; ++i) {
-		unsigned s = pow(STEP, i);
+		unsigned s = pow(STEP, (int)i);
 
 		// Round to 1 figure.
 		double nearestDecade = pow(10, floor(log10(s)));
