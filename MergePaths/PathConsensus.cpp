@@ -610,15 +610,10 @@ static ContigPath alignMulti(const Graph& g,
 static ContigPath align(const Graph& g, const vector<Path>& sequences,
 		ofstream& out)
 {
-	assert(!sequences.empty());
-	switch (sequences.size()) {
-	  case 1:
-		return sequences.front();
-	  case 2:
-		return alignPair(g, sequences, out);
-	  default:
-		return alignMulti(g, sequences, out);
-	}
+	assert(sequences.size() > 1);
+	return sequences.size() == 2
+		? alignPair(g, sequences, out)
+		: alignMulti(g, sequences, out);
 }
 
 /** Return the consensus sequence of the specified gap. */
@@ -660,7 +655,12 @@ static ContigPath fillGap(const Graph& g,
 		stats.numNoSolutions++;
 		if (opt::verbose > 1)
 			cerr << "no paths\n";
+	} else if (solutions.size() == 1) {
+		if (opt::verbose > 1)
+			cerr << "1 path\n" << solutions.front() << '\n';
+		stats.numMerged++;
 	} else {
+		assert(solutions.size() > 1);
 		if (opt::verbose > 2)
 			copy(solutions.begin(), solutions.end(),
 					ostream_iterator<ContigPath>(cerr, "\n"));
@@ -669,10 +669,8 @@ static ContigPath fillGap(const Graph& g,
 		consensus = align(g, solutions, outFasta);
 		if (!consensus.empty()) {
 			stats.numMerged++;
-			if (solutions.size() > 1) {
-				// Mark contigs that are used in a consensus.
-				markSeen(seen, solutions, true);
-			}
+			// Mark contigs that are used in a consensus.
+			markSeen(seen, solutions, true);
 			if (opt::verbose > 1)
 				cerr << consensus << '\n';
 		} else
