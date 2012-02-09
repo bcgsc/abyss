@@ -138,13 +138,13 @@ AC_CHECK_LIB([dl], [dlsym])
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
-	boost/graph/graph_traits.hpp \
+	boost/property_map/property_map.hpp \
 	google/sparse_hash_map \
 	unordered_map tr1/unordered_map \
 ])
 
 # Check for Boost.
-if test $ac_cv_header_boost_graph_graph_traits_hpp != yes; then
+if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
 	AC_MSG_ERROR([ABySS requires the Boost C++ libraries, which may
 	be downloaded from here: http://www.boost.org/users/download/
 	It is not necessary to compile Boost before installing it. The
