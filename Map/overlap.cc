@@ -324,23 +324,34 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		  case '?':
-			die = true; break;
+			die = true;
+			break;
 		  case 'j':
-			arg >> opt::threads; assert(arg.eof()); break;
+			arg >> opt::threads;
+			break;
 		  case 'm':
-			arg >> opt::minOverlap; assert(arg.eof()); break;
+			arg >> opt::minOverlap;
+			break;
 		  case 'k':
-			arg >> opt::maxOverlap; assert(arg.eof()); break;
+			arg >> opt::maxOverlap;
+			break;
 		  case 's':
-			arg >> opt::sampleSA; assert(arg.eof()); break;
+			arg >> opt::sampleSA;
+			break;
 		  case 'v':
-			opt::verbose++; break;
+			opt::verbose++;
+			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

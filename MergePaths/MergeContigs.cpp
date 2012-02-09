@@ -393,7 +393,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'g': arg >> opt::graphPath; assert(arg.eof()); break;
+			case 'g': arg >> opt::graphPath; break;
 			case 'k': arg >> opt::k; break;
 			case 'o': arg >> opt::out; break;
 			case 'v': opt::verbose++; break;
@@ -403,6 +403,11 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

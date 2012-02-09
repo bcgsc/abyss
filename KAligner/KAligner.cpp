@@ -318,6 +318,11 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (opt::section == 0 || opt::section > opt::nsections

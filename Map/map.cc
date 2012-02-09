@@ -347,9 +347,9 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'j': arg >> opt::threads; assert(arg.eof()); break;
-			case 'k': arg >> opt::k; assert(arg.eof()); break;
-			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
+			case 'j': arg >> opt::threads; break;
+			case 'k': arg >> opt::k; break;
+			case 's': arg >> opt::sampleSA; break;
 			case 'd': opt::dup = true; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -358,6 +358,11 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

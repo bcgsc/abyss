@@ -424,27 +424,40 @@ int main(int argc, char** argv)
 			die = true;
 			break;
 		  case 'l':
-			arg >> opt::minLen; assert(arg.eof()); break;
+			arg >> opt::minLen;
+			break;
 		  case 'm':
-			arg >> opt::minOverlap; assert(arg.eof()); break;
+			arg >> opt::minOverlap;
+			break;
 		  case 'g':
-			arg >> opt::graphPath; assert(arg.eof()); break;
+			arg >> opt::graphPath;
+			break;
 		  case 'i':
-			arg >> opt::ignorePath; assert(arg.eof()); break;
+			arg >> opt::ignorePath;
+			break;
 		  case 'k':
-			arg >> opt::k; assert(arg.eof()); break;
+			arg >> opt::k;
+			break;
 		  case 'T':
-			arg >> opt::minIslandLen; assert(arg.eof()); break;
+			arg >> opt::minIslandLen;
+			break;
 		  case 't':
-			arg >> opt::minTipLen; assert(arg.eof()); break;
+			arg >> opt::minTipLen;
+			break;
 		  case 'v':
-			opt::verbose++; break;
+			opt::verbose++;
+			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

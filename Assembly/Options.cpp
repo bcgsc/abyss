@@ -149,9 +149,7 @@ void parse(int argc, char* const* argv)
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
-		istringstream arg;
-		if (optarg != NULL)
-			arg.str(optarg);
+		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?':
 				die = true;

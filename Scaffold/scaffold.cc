@@ -651,19 +651,15 @@ int main(int argc, char** argv)
 			break;
 		  case 'k':
 			arg >> opt::k;
-			assert(arg.eof());
 			break;
 		  case 'g':
 			arg >> opt::graphPath;
-			assert(arg.eof());
 			break;
 		  case 'n':
 			arg >> opt::minNumPairs;
-			assert(arg.eof());
 			break;
 		  case 'o':
 			arg >> opt::out;
-			assert(arg.eof());
 			break;
 		  case 's':
 			arg >> opt::minContigLength;
@@ -673,14 +669,12 @@ int main(int argc, char** argv)
 				assert(opt::minContigLength
 						<= opt::minContigLengthEnd);
 			}
-			assert(arg.eof());
 			break;
 		  case 'v':
 			opt::verbose++;
 			break;
 		  case OPT_MIN_GAP:
 			arg >> opt::minGap;
-			assert(arg.eof());
 			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
@@ -688,6 +682,11 @@ int main(int argc, char** argv)
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

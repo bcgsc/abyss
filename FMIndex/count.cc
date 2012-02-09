@@ -167,7 +167,6 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case 'k':
 			arg >> opt::k;
-			assert(arg.eof());
 			break;
 		  case 'v':
 			opt::verbose++;
@@ -178,6 +177,11 @@ int main(int argc, char** argv)
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

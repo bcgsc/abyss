@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 			case '?': die = true; break;
 			case 'c': opt::toStdout = true; break;
 			case 'd': opt::decompress = true; break;
-			case 's': arg >> opt::sampleSA; assert(arg.eof()); break;
+			case 's': arg >> opt::sampleSA; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -137,6 +137,11 @@ int main(int argc, char **argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 

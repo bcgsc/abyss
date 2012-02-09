@@ -316,11 +316,9 @@ int main(int argc, char** argv)
 			case '?': die = true; break;
 			case OPT_MIND:
 				arg >> opt::minDist;
-				assert(arg.eof());
 				break;
 			case OPT_MAXD:
 				arg >> opt::maxDist;
-				assert(arg.eof());
 				break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
@@ -335,6 +333,11 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 
