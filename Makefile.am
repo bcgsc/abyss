@@ -34,3 +34,6 @@ SUBDIRS = \
 	SimpleGraph \
 	kmerprint \
 	FilterGraph
+
+README.html: %.html: %
+	markdown $< >$@

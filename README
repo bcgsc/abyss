@@ -1,190 +1,271 @@
-ABySS - assemble short reads into contigs
+ABySS - assemble short reads
+============================
 
-* Quick start
+ABySS is a *de novo* sequence assembler intended for short paired-end
+reads and large genomes.
 
-Install ABySS on Debian:
+Quick Start
+===========
+
+## Install ABySS on Debian or Ubuntu
+
+Run the command
+
 	sudo apt-get install abyss
 
-Assemble a small synthetic data set:
+or download and install the
+[deb package](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
+
+## Install ABySS on Mac OS X
+
+Download and install the
+[app](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
+
+## Assemble a small synthetic data set
+
 	abyss-pe k=25 name=test se='https://raw.github.com/dzerbino/velvet/master/data/test_reads.fa'
 	abyss-fac test-se-contigs.fa
 
-* Compiling ABySS
+Dependencies
+============
+
+ABySS requires the following libraries:
+
+* [Boost](http://www.boost.org)
+* [sparsehash](http://code.google.com/p/sparsehash)
+* [Open MPI](http://www.open-mpi.org)
+
+ABySS requires a C++ compiler that supports
+[OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
+
+Compiling ABySS from source
+===========================
 
 To compile and install ABySS in /usr/local:
-./configure && make && sudo make install
+
+	./configure && make && sudo make install
 
 To install ABySS in a specified directory:
-./configure --prefix=/opt/ABySS && make && sudo make install
 
-GCC uses OpenMP for parallelization, which requires a modern compiler
-such as GCC 4.4 or greater. If you have an older compiler it is best
-to upgrade your compiler if possible. If you have multiple versions of
-GCC installed, you can specify a different compiler:
-	./configure CC=gcc-4.4 CXX=g++-4.4
-If you cannot upgrade GCC, you can ignore the compiler warnings:
-	make AM_CXXFLAGS=-Wall
+	./configure --prefix=/opt/ABySS && make && sudo make install
+
+ABySS uses OpenMP for parallelization, which requires a modern
+compiler such as GCC 4.2 or greater. If you have an older compiler, it
+is best to upgrade your compiler if possible. If you have multiple
+versions of GCC installed, you can specify a different compiler:
+
+	./configure CC=gcc-4.6 CXX=g++-4.6
 
 ABySS requires the Boost C++ libraries. Many systems come with Boost
-installed. If yours does not, you may download Boost here:
-http://www.boost.org/users/download/
-The Boost header file directory should be found at /usr/include/boost,
-in the ABySS source directory, or its location specified to configure:
-./configure --with-boost=/usr/local/include
-It is not necessary to compile Boost before installing it.
+installed. If yours does not, you can download
+[Boost](http://www.boost.org/users/download).
+It is not necessary to compile Boost before installing it. The Boost
+header file directory should be found at /usr/include/boost, in the
+ABySS source directory, or its location specified to configure:
+
+	./configure --with-boost=/usr/local/include
 
 If you wish to build the parallel assembler with MPI support,
 MPI should be found in /usr/include and /usr/lib or its location
 specified to configure:
-./configure --with-mpi=/usr/lib/openmpi && make
 
-ABySS should be built using Google sparsehash to reduce memory usage,
-although it will build without. Google sparsehash should be found in
+	./configure --with-mpi=/usr/lib/openmpi
+
+ABySS should be built using the sparsehash library to reduce memory
+usage, although it will build without. sparsehash should be found in
 /usr/include or its location specified to configure:
-./configure CPPFLAGS=-I/usr/local/include
+
+	./configure CPPFLAGS=-I/usr/local/include
 
 The default maximum k-mer size is 64 and may be decreased to reduce
 memory usage or increased at compile time:
-./configure --enable-maxk=96 && make
 
-To run ABySS, its executables should be found in your PATH.
+	./configure --enable-maxk=96
 
-* Single-end assembly
+You may ignore compiler warnings like so:
 
-Assemble short reads in a file named reads.fa into contigs in a
-file named contigs.fa with the following command:
+	make AM_CXXFLAGS=-Wall
 
-ABYSS -k64 reads.fa -o contigs.fa
+To run ABySS, its executables should be found in your `PATH`. If you
+installed ABySS in `/opt/ABySS`, add `/opt/ABySS/bin` to your `PATH`:
 
-where -k is an appropriate k-mer length. The only method to find the
-optimal value of k is to run multiple trials and inspect the results.
-The following shell snippet will assemble for every value of k from 20
-to 40.
+	PATH=/opt/ABySS/bin:$PATH
 
-for k in {20..40}; do
-	ABYSS -k$k reads.fa -o contigs-k$k.fa
-done
+Assembling a paired-end library
+===============================
 
-The maximum value for k is 64. This limit may be changed at compile
-time using the --enable-maxk option of configure. It may be decreased
-to 32 to decrease memory usage, which is particularly useful for large
-parallel jobs, or increased to 96.
-
-* Paired-end assembly
-
-To assemble paired short reads in two files named reads1.fa and
-reads2.fa into contigs in a file named ecoli-contigs.fa, run the
+To assemble paired reads in two files named `reads1.fa` and
+`reads2.fa` into contigs in a file named `ecoli-contigs.fa`, run the
 command:
 
-abyss-pe k=64 in='reads1.fa reads2.fa' name=ecoli
+	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa'
 
-where k is the k-mer length as before.
-n is the minimum number of pairs needed to consider joining two
-contigs. The optimal value for n must be found by trial.
-in specifies the input files to read, which may be in FASTA, FASTQ,
-qseq, export, SRA, SAM or BAM format and compressed with gz, bz2 or xz
-and may be tarred.
-The assembled contigs will be stored in ${name}-contigs.fa.
+The parameter `in` specifies the input files to read, which may be in
+FASTA, FASTQ, qseq, export, SRA, SAM or BAM format and compressed with
+gz, bz2 or xz and may be tarred. The assembled contigs will be stored
+in `${name}-contigs.fa`.
 
-A pair of reads must be named with the suffixes '/1' and '/2' to
+A pair of reads must be named with the suffixes `/1` and `/2` to
 identify the first and second read, or the reads may be named
 identically. The paired reads may be in separate files or interleaved
 in a single file.
 
 Reads without mates should be placed in a file specified by the
-parameter `se' (single-end). Reads without mates in the paired-end
+parameter `se` (single-end). Reads without mates in the paired-end
 files will slow down the paired-end assembler considerably during the
-abyss-fixmate stage.
+`abyss-fixmate` stage.
 
-abyss-pe is a driver script implemented as a Makefile and runs a
-single-end assembly, as described above, and the following commands,
-which must be found in your PATH:
-
-ABYSS - the single-end assembler
-AdjList - finds overlaps of length k-1 between contigs
-PopBubbles - collapses variation
-DistanceEst - estimates distances between contigs
-Overlap - find overlaps between blunt contigs
-SimpleGraph - finds paths between pairs of contigs
-MergePaths - merges consistent paths
-Consensus - for a colour-space assembly, convert the colour-space
-            contigs to nucleotide contigs
-
-* Paired-end assembly of multiple fragment libraries
+Assembling multiple libraries
+=============================
 
 The distribution of fragment sizes of each library is calculated
 empirically by aligning paired reads to the contigs produced by the
 single-end assembler, and the distribution is stored in a file with
-the extension .hist, such as ecoli-4.hist. The N50 of the single-end
-assembly must be well over the fragment-size to obtain an accurate
-empirical distribution.
+the extension `.hist`, such as `ecoli-3.hist`. The N50 of the
+single-end assembly must be well over the fragment-size to obtain an
+accurate empirical distribution.
 
 Here's an example scenario of assembling a data set with two different
 fragment libraries and single-end reads:
 
-Library lib1 has reads in two files, lib1_1.fa and lib1_2.fa.
-Library lib2 has reads in two files, lib2_1.fa and lib2_2.fa.
-Single-end reads are stored in two files se1.fa and se2.fa.
+ * Library `pe200` has reads in two files,
+   `pe200_1.fa` and `pe200_2.fa`.
+ * Library `pe500` has reads in two files,
+   `pe500_1.fa` and `pe500_2.fa`.
+ * Single-end reads are stored in two files, `se1.fa` and `se2.fa`.
 
-The command line to assemble this example data set is...
-abyss-pe k=64 name=ecoli lib='lib1 lib2' \
-	lib1='lib1_1.fa lib1_2.fa' lib2='lib2_1.fa lib2_2.fa' \
-	se='se1.fa se2.fa'
+The command line to assemble this example data set is:
+
+	abyss-pe k=64 name=ecoli lib='pe200 pe500' \
+		pe200='pe200_1.fa pe200_2.fa' pe500='pe500_1.fa pe500_2.fa' \
+		se='se1.fa se2.fa'
 
 The empirical distribution of fragment sizes will be stored in two
-files named lib1-3.hist and lib2-3.hist. These files may be plotted to
-check that the empirical distribution agrees with the expected
-distribution. The assembled contigs will be stored in
-${name}-contigs.fa.
+files named `pe200-3.hist` and `pe500-3.hist`. These files may be
+plotted to check that the empirical distribution agrees with the
+expected distribution. The assembled contigs will be stored in
+`${name}-contigs.fa`.
 
-* Scaffolding using a mate-pair library
+Scaffolding
+===========
 
 Long-distance mate-pair libraries may be used to scaffold an assembly.
-Specify the names of the mate-pair libraries using the parameter `mp'.
-The scaffolds will be stored in the file ${name}-scaffolds.fa. Here's
-an example of assembling a data set with two paired-end libraries and
-two mate-pair libraries:
+Specify the names of the mate-pair libraries using the parameter `mp`.
+The scaffolds will be stored in the file `${name}-scaffolds.fa`.
+Here's an example of assembling a data set with two paired-end
+libraries and two mate-pair libraries:
 
-abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' \
-	pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
-	mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa'
+	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' \
+		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
+		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa'
 
 By default, the mate-pair libraries are used only for scaffolding and
 do not contribute towards the consensus sequence.
 
-* Parallel assembly
+Optimizing the parameter k
+==========================
 
-The `np' option of abyss-pe specifies the number of processes to
-use for the ABYSS-P parallel MPI job. Without any MPI configuration,
-this will allow you to make use of multiple cores on a single machine.
-To use multiple machines for assembly, you must create a hostfile for
-mpirun, which is describe in the mpirun man page.
+To find the optimal value of `k`, run multiple assemblies and inspect
+the assembly contiguity statistics. The following shell snippet will
+assemble for every value of `k` from 20 to 40.
 
-The paired-end assembly stage is multithreaded but runs on a single
-machine. The number of threads to use may be specified with the
-parameter `j'. The default is the same as `np'. ABySS is multithreaded
-using pthread and OpenMP, which requires a modern compiler such as
-GCC 4.4 or greater.
+	export k
+	for k in {20..40}; do
+		mkdir k$k
+		abyss-pe -C k$k name=ecoli in=../reads.fa
+	done
+	abyss-fac k*/ecoli-contigs.fa
 
-Open MPI integrates well with SGE (Sun Grid Engine). For example, to
-submit an array of jobs to assemble every odd value of k between 51
-and 63 using 64 processes for each job:
+The default maximum value for `k` is 64. This limit may be changed at
+compile time using the `--enable-maxk` option of configure. It may be
+decreased to 32 to decrease memory usage or increased to 96.
 
-qsub -pe openmpi 64 -t 51-63:2 -N testing abyss-pe in=reads.fa
+Parallel processing
+===================
 
-For more information on using SGE and qsub, please refer to the qsub
-manual page. Open MPI must have been compiled with support for SGE
-using the ./configure --with-sge option.
+The `np` option of `abyss-pe` specifies the number of processes to
+use for the parallel MPI job. Without any MPI configuration, this will
+allow you to use multiple cores on a single machine. To use multiple
+machines for assembly, you must create a `hostfile` for `mpirun`,
+which is described in the `mpirun` man page.
 
-* See also
+*Do not* run `mpirun -np 8 abyss-pe`. To run ABySS with 8 threads, use
+`abyss-pe np=8`. The `abyss-pe` driver script will start the MPI
+process: `mpirun -np 8 ABYSS-P`.
 
-Try `ABYSS --help' for more information on command line options, or
-see the manual page in the files `ABYSS.1' and `abyss-pe.1'.
-Please refer to the mpirun manual page for information on configuring
-parallel jobs.
+The paired-end assembly stage is multithreaded, but must run on a
+single machine. The number of threads to use may be specified with the
+parameter `j`. The default value for `j` is the value of `np`.
 
-Written by Jared Simpson and Shaun Jackman.
-Subscribe to the users' mailing list at
-http://groups.google.com/group/abyss-users
-Contact the users' mailing list at <abyss-users@googlegroups.com>
-or the authors directly at <abyss@bcgsc.ca>.
+Running ABySS on a cluster
+==========================
+
+ABySS integrates well with cluster job schedulers, such as:
+
+ * SGE (Sun Grid Engine)
+ * Portable Batch System (PBS)
+ * Load Sharing Facility (LSF)
+ * IBM LoadLeveler
+
+For example, to submit an array of jobs to assemble every odd value of
+`k` between 51 and 63 using 64 processes for each job:
+
+	mkdir k{51..63}
+	qsub -N ecoli -pe openmpi 64 -t 51-63:2 \
+		<<<'abyss-pe -C k$SGE_TASK_ID in=/data/reads.fa'
+
+ABySS programs
+==============
+
+`abyss-pe` is a driver script implemented as a Makefile. Any option of
+`make` may be used with `abyss-pe`. Particularly useful options are:
+
+ * `-C dir`, `--directory=dir`
+   Change to the directory `dir` and store the results there.
+ * `-n`, `--dry-run`
+   Print the commands that would be executed, but do not execute
+   them.
+
+`abyss-pe` uses the following programs, which must be found in your
+`PATH`:
+
+ * `ABYSS`: de Bruijn graph assembler
+ * `ABYSS-P`: parallel (MPI) de Bruijn graph assembler
+ * `AdjList`: find overlapping sequences
+ * `DistanceEst`: estimate the distance between sequences
+ * `MergeContigs`: merge sequences
+ * `MergePaths`: merge overlapping paths
+ * `Overlap`: find overlapping sequences using paired-end reads
+ * `PathConsensus`: find a consensus sequence of ambiguous paths
+ * `PathOverlap`: find overlapping paths
+ * `PopBubbles`: remove bubbles from the sequence overlap graph
+ * `SimpleGraph`: find paths through the overlap graph
+ * `abyss-fac`: calculate assembly contiguity statistics
+ * `abyss-filtergraph`: remove shim contigs from the overlap graph
+ * `abyss-fixmate`: fill the paired-end fields of SAM alignments
+ * `abyss-map`: map reads to a reference sequence
+ * `abyss-scaffold`: scaffold contigs using distance estimates
+ * `abyss-todot`: convert graph formats and merge graphs
+
+Assembly Parameters
+===================
+
+To enable verbose logging, use `abyss-pe v=-v`
+
+Please see the
+[abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
+manual page for more information on assembly parameters.
+
+Mailing List
+============
+
+Subscribe to the
+[ABySS mailing list](http://groups.google.com/group/abyss-users),
+<abyss-users@googlegroups.com>.
+
+Authors
+=======
+
+Written by Shaun Jackman, Tony Raymond and Jared Simpson.
+
+Copyright 2012 Canada's Michael Smith Genome Science Centre
