@@ -2,9 +2,8 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
-docdir = $(datadir)/doc
-pkgdocdir = $(docdir)/$(PACKAGE)
-dist_pkgdoc_DATA = ChangeLog COPYRIGHT LICENSE README
+dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
+	README README.css README.html
 
 EXTRA_DIST=doxygen.conf
 
@@ -36,4 +35,4 @@ SUBDIRS = \
 	FilterGraph
 
 README.html: %.html: %
-	markdown $< >$@
+	multimarkdown $< >$@
