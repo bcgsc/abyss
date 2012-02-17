@@ -1,5 +1,10 @@
-ABySS - assemble short reads
-============================
+Title: ABySS README
+Author: Shaun Jackman
+Affiliation: Canada's Michael Smith Genome Science Centre
+CSS: README.css
+
+ABySS
+=====
 
 ABySS is a *de novo* sequence assembler intended for short paired-end
 reads and large genomes.
@@ -14,16 +19,20 @@ Run the command
 	sudo apt-get install abyss
 
 or download and install the
-[deb package](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
+[Debian package](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
 
 ## Install ABySS on Mac OS X
 
 Download and install the
-[app](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
+[Mac OS X app](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
 
 ## Assemble a small synthetic data set
 
-	abyss-pe k=25 name=test se='https://raw.github.com/dzerbino/velvet/master/data/test_reads.fa'
+	abyss-pe k=25 name=test \
+	se='http://raw.github.com/dzerbino/velvet/master/data/test_reads.fa'
+
+## Calculate assembly contiguity statistics
+
 	abyss-fac test-se-contigs.fa
 
 Dependencies
@@ -41,13 +50,17 @@ ABySS requires a C++ compiler that supports
 Compiling ABySS from source
 ===========================
 
-To compile and install ABySS in /usr/local:
+To compile and install ABySS in `/usr/local`:
 
-	./configure && make && sudo make install
+	./configure
+	make
+	sudo make install
 
 To install ABySS in a specified directory:
 
-	./configure --prefix=/opt/ABySS && make && sudo make install
+	./configure --prefix=/opt/abyss
+	make
+	sudo make install
 
 ABySS uses OpenMP for parallelization, which requires a modern
 compiler such as GCC 4.2 or greater. If you have an older compiler, it
@@ -60,20 +73,20 @@ ABySS requires the Boost C++ libraries. Many systems come with Boost
 installed. If yours does not, you can download
 [Boost](http://www.boost.org/users/download).
 It is not necessary to compile Boost before installing it. The Boost
-header file directory should be found at /usr/include/boost, in the
-ABySS source directory, or its location specified to configure:
+header file directory should be found at `/usr/include/boost`, in the
+ABySS source directory, or its location specified to `configure`:
 
 	./configure --with-boost=/usr/local/include
 
 If you wish to build the parallel assembler with MPI support,
-MPI should be found in /usr/include and /usr/lib or its location
-specified to configure:
+MPI should be found in `/usr/include` and `/usr/lib` or its location
+specified to `configure`:
 
 	./configure --with-mpi=/usr/lib/openmpi
 
 ABySS should be built using the sparsehash library to reduce memory
 usage, although it will build without. sparsehash should be found in
-/usr/include or its location specified to configure:
+`/usr/include` or its location specified to `configure`:
 
 	./configure CPPFLAGS=-I/usr/local/include
 
@@ -82,14 +95,14 @@ memory usage or increased at compile time:
 
 	./configure --enable-maxk=96
 
-You may ignore compiler warnings like so:
+If you encounter compiler warnings, you may ignore them like so:
 
 	make AM_CXXFLAGS=-Wall
 
 To run ABySS, its executables should be found in your `PATH`. If you
-installed ABySS in `/opt/ABySS`, add `/opt/ABySS/bin` to your `PATH`:
+installed ABySS in `/opt/abyss`, add `/opt/abyss/bin` to your `PATH`:
 
-	PATH=/opt/ABySS/bin:$PATH
+	PATH=/opt/abyss/bin:$PATH
 
 Assembling a paired-end library
 ===============================
@@ -159,8 +172,8 @@ libraries and two mate-pair libraries:
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa'
 
-By default, the mate-pair libraries are used only for scaffolding and
-do not contribute towards the consensus sequence.
+The mate-pair libraries are used only for scaffolding and do not
+contribute towards the consensus sequence.
 
 Optimizing the parameter k
 ==========================
@@ -191,7 +204,7 @@ which is described in the `mpirun` man page.
 
 *Do not* run `mpirun -np 8 abyss-pe`. To run ABySS with 8 threads, use
 `abyss-pe np=8`. The `abyss-pe` driver script will start the MPI
-process: `mpirun -np 8 ABYSS-P`.
+process, like so: `mpirun -np 8 ABYSS-P`.
 
 The paired-end assembly stage is multithreaded, but must run on a
 single machine. The number of threads to use may be specified with the
@@ -220,9 +233,9 @@ ABySS programs
 `abyss-pe` is a driver script implemented as a Makefile. Any option of
 `make` may be used with `abyss-pe`. Particularly useful options are:
 
- * `-C dir`, `--directory=dir`
+ * `-C dir`, `--directory=dir`  
    Change to the directory `dir` and store the results there.
- * `-n`, `--dry-run`
+ * `-n`, `--dry-run`  
    Print the commands that would be executed, but do not execute
    them.
 
@@ -263,9 +276,15 @@ Subscribe to the
 [ABySS mailing list](http://groups.google.com/group/abyss-users),
 <abyss-users@googlegroups.com>.
 
+For questions related to transcriptome assembly, contact the
+[Trans-ABySS mailing list](http://groups.google.com/group/trans-abyss),
+<trans-abyss@googlegroups.com>.
+
 Authors
 =======
 
-Written by Shaun Jackman, Tony Raymond and Jared Simpson.
+This document is written by Shaun Jackman.
+
+ABySS is written by Shaun Jackman, Tony Raymond and Jared Simpson.
 
 Copyright 2012 Canada's Michael Smith Genome Science Centre
