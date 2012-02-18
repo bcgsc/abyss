@@ -46,7 +46,7 @@ Download and install the
 ## Assemble a small synthetic data set
 
 	abyss-pe k=25 name=test \
-	se='http://raw.github.com/dzerbino/velvet/master/data/test_reads.fa'
+	se=http://raw.github.com/dzerbino/velvet/master/data/test_reads.fa
 
 ## Calculate assembly contiguity statistics
 
@@ -290,11 +290,13 @@ Mailing List
 ============
 
 Subscribe to the
-[ABySS mailing list](http://groups.google.com/group/abyss-users),
+[ABySS mailing list]
+(http://groups.google.com/group/abyss-users),
 <abyss-users@googlegroups.com>.
 
 For questions related to transcriptome assembly, contact the
-[Trans-ABySS mailing list](http://groups.google.com/group/trans-abyss),
+[Trans-ABySS mailing list]
+(http://groups.google.com/group/trans-abyss),
 <trans-abyss@googlegroups.com>.
 
 Authors
