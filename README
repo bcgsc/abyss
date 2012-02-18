@@ -13,6 +13,8 @@ Contents
 ========
 
 * [Quick Start]
+	* [Install ABySS on Debian or Ubuntu]
+	* [Install ABySS on Mac OS X]
 * [Dependencies]
 * [Compiling ABySS from source]
 * [Assembling a paired-end library]
