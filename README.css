@@ -1,0 +1,39 @@
+/* Font */
+body { font: 12pt Georgia, Palatino, Times, serif; }
+h1, h2, h3, h4 {
+	font-family: Verdana, Helvetica, Arial, sans-serif;
+	font-weight: normal;
+}
+h1 { font-size: 18pt; }
+h2, h3, h4 { font-size: 14pt; }
+a { text-decoration: none; }
+code { font: 12pt Courier, monospace; }
+pre { font: 12pt Courier, monospace; }
+
+/* Colour and border */
+a {
+	color: #222222;
+	border-bottom: 1pt dashed #888888;
+}
+a:hover {
+	color: #ffffff;
+	background: #222222;
+}
+pre {
+	background-color: #dddddd;
+	border: #777777 1pt solid;
+}
+
+/* Layout */
+p {
+	text-align: justify;
+	min-width: 18pc;
+	max-width: 42pc;
+}
+pre {
+	word-wrap: break-word;
+	max-width: 42pc;
+	margin: 1pc;
+	padding-left: 1pc;
+	padding-right: 1pc;
+}
