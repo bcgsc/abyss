@@ -2,7 +2,7 @@
 #define SAM_H 1
 
 #include "config.h" // for SAM_SEQ_QUAL
-#include "Aligner.h"
+#include "Alignment.h"
 #include <algorithm> // for swap
 #include <cstdlib> // for exit
 #include <iostream>

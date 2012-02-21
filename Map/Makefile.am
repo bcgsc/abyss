@@ -1,7 +1,6 @@
 bin_PROGRAMS = abyss-index abyss-map abyss-overlap
 
 abyss_index_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/FMIndex
@@ -14,7 +13,6 @@ abyss_index_LDADD = \
 abyss_index_SOURCES = index.cc
 
 abyss_map_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/FMIndex
@@ -29,7 +27,6 @@ abyss_map_LDADD = \
 abyss_map_SOURCES = map.cc
 
 abyss_overlap_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Align \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
 	-I$(top_srcdir)/FMIndex

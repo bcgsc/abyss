@@ -1,4 +1,4 @@
-#include "Aligner.h"
+#include "Alignment.h"
 #include "Estimate.h"
 #include "Histogram.h"
 #include "IOUtil.h"
@@ -97,6 +97,8 @@ static struct {
 
 static ofstream fragFile;
 static Histogram histogram;
+
+typedef vector<Alignment> AlignmentVector;
 
 /** A map of read IDs to alignments. */
 typedef unordered_map<string, AlignmentVector> ReadAlignMap;

@@ -1,4 +1,4 @@
-#include "Aligner.h"
+#include "Alignment.h"
 #include "Common/Options.h"
 #include "ContigID.h"
 #include "FastaReader.h"
@@ -141,6 +141,8 @@ static void readContigs(const string& contigsPath)
 	assert(contigsFile.eof());
 	assert(count > 0);
 }
+
+typedef vector<Alignment> AlignmentVector;
 
 static void readAlignment(string& line, string& readID,
 		Sequence& seq, AlignmentVector& alignments)

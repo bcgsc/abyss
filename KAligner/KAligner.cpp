@@ -1,7 +1,7 @@
 #include "Aligner.h"
-#include "Align/Options.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
+#include "KAligner/Options.h"
 #include "FastaReader.h"
 #include "Iterator.h"
 #include "IOUtil.h"
