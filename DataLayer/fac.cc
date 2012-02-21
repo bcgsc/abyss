@@ -83,6 +83,7 @@ static void printContiguityStatistics(const char* path)
 	// Print the table header.
 	static bool printHeader = true;
 	if (opt::format == JIRA && printHeader) {
+		printHeader = false;
 		const char* sep = "\t||";
 		cout << "||"
 			<< "n" << sep
@@ -96,6 +97,7 @@ static void printContiguityStatistics(const char* path)
 			<< "sum" << sep
 			<< "name" << sep << '\n';
 	} else if (opt::format == MMD && printHeader) {
+		printHeader = false;
 		const char* sep = "\t|";
 		cout << "n" << sep
 			<< "n:" << opt::minLength << sep
@@ -118,7 +120,6 @@ static void printContiguityStatistics(const char* path)
 			<< "------" << sep
 			<< "------" << '\n';
 	}
-	printHeader = false;
 
 	// Print the table.
 	if (opt::format == JIRA)
