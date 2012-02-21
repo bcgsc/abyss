@@ -28,7 +28,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -s, -t, --min-length=N  ignore sequences shorter than N bp [200]\n"
 "  -d, --delimiter=S       use S for the field delimiter [\\t]\n"
-"  -j, --jira              separate columns with pipes\n"
+"  -j, --jira              output JIRA format\n"
+"  -m, --mmd               output MultiMarkdown format\n"
 "      --chastity          discard unchaste sequences [default]\n"
 "      --no-chastity       do not discard unchaste sequences\n"
 "      --trim-masked       trim masked bases from the end\n"
@@ -43,11 +44,12 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static unsigned minLength = 200;
 	static string delimiter = "\t";
-	static bool jira;
+	static int format;
 	static int verbose;
 }
+enum { TAB, JIRA, MMD };
 
-static const char shortopts[] = "d:js:t:v";
+static const char shortopts[] = "d:jms:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -55,6 +57,7 @@ static const struct option longopts[] = {
 	{ "min-length", no_argument, NULL, 's' },
 	{ "delimiter", required_argument, NULL, 'd' },
 	{ "jira", no_argument, NULL, 'j' },
+	{ "mmd", no_argument, NULL, 'm' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked", no_argument, &opt::trimMasked, 1 },
@@ -79,8 +82,7 @@ static void printContiguityStatistics(const char* path)
 
 	// Print the table header.
 	static bool printHeader = true;
-	if (opt::jira && printHeader) {
-		printHeader = false;
+	if (opt::format == JIRA && printHeader) {
 		const char* sep = "\t||";
 		cout << "||"
 			<< "n" << sep
@@ -91,16 +93,40 @@ static void printContiguityStatistics(const char* path)
 			<< "N50" << sep
 			<< "N20" << sep
 			<< "max" << sep
-			<< "sum" << sep << '\n';
+			<< "sum" << sep
+			<< "name" << sep << '\n';
+	} else if (opt::format == MMD && printHeader) {
+		const char* sep = "\t|";
+		cout << "n" << sep
+			<< "n:" << opt::minLength << sep
+			<< "n:N50" << sep
+			<< "min" << sep
+			<< "N80" << sep
+			<< "N50" << sep
+			<< "N20" << sep
+			<< "max" << sep
+			<< "sum" << sep
+			<< "name" << '\n'
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << sep
+			<< "------" << '\n';
 	}
+	printHeader = false;
 
 	// Print the table.
-	if (opt::jira)
+	if (opt::format == JIRA)
 		cout << '|';
 	printContiguityStats(cout, h, opt::minLength,
 			printHeader, opt::delimiter)
 		<< opt::delimiter << path;
-	if (opt::jira)
+	if (opt::format == JIRA)
 		cout << opt::delimiter;
 	cout << '\n';
 	printHeader = false;
@@ -124,7 +150,11 @@ int main(int argc, char** argv)
 			break;
 		  case 'j':
 			opt::delimiter = "\t|";
-			opt::jira = true;
+			opt::format = JIRA;
+			break;
+		  case 'm':
+			opt::delimiter = "\t|";
+			opt::format = MMD;
 			break;
 		  case 's': case 't':
 			arg >> opt::minLength;
