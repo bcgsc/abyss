@@ -5,6 +5,7 @@
 #include "PMF.h"
 #include "SAM.h"
 #include "Uncompress.h"
+#include "Graph/Options.h" // for opt::k
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -60,7 +61,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k;
+	unsigned k; // used by Estimate.h
 
 	/** Output graph format. */
 	int format = DIST;
