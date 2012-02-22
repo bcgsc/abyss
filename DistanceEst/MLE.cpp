@@ -1,6 +1,5 @@
 #include "MLE.h"
 #include "PMF.h"
-#include "Graph/Options.h" // for opt::k
 #include <boost/tuple/tuple.hpp>
 #include <algorithm> // for swap
 #include <cassert>
@@ -108,7 +107,8 @@ maximumLikelihoodEstimate(int first, int last,
  * @param rf whether the fragment library is oriented reverse-forward
  * @param[out] n the number of samples with a non-zero probability
  */
-int maximumLikelihoodEstimate(int first, int last,
+int maximumLikelihoodEstimate(unsigned k,
+		int first, int last,
 		const vector<int>& samples, const PMF& pmf,
 		unsigned len0, unsigned len1, bool rf,
 		unsigned& n)
@@ -117,16 +117,15 @@ int maximumLikelihoodEstimate(int first, int last,
 	assert(!samples.empty());
 
 	// The aligner is unable to map reads to the ends of the sequence.
-	// Correct for this lack of sensitivity by subtracting l from the
-	// length of each sequence, where l is k-1 for an aligner that
-	// requires a match of at least k bp. When the fragment library
-	// is oriented forward-reverse, subtract 2*l from each sample.
-	assert(opt::k > 0);
-	unsigned l = opt::k - 1;
-	assert(len0 > l);
-	assert(len1 > l);
-	len0 -= l;
-	len1 -= l;
+	// Correct for this lack of sensitivity by subtracting k-1 bp from
+	// the length of each sequence, where the aligner requires a match
+	// of at least k bp. When the fragment library is oriented
+	// forward-reverse, subtract 2*(k-1) from each sample.
+	assert(k > 0);
+	assert(len0 >= k);
+	assert(len1 >= k);
+	len0 -= k - 1;
+	len1 -= k - 1;
 
 	if (len0 > len1)
 		swap(len0, len1);
@@ -141,18 +140,18 @@ int maximumLikelihoodEstimate(int first, int last,
 		return d;
 	} else {
 		// This library is oriented forward-reverse.
-		// Subtract 2*l from each sample.
+		// Subtract 2*(k-1) from each sample.
 		Histogram h;
 		typedef vector<int> Samples;
 		for (Samples::const_iterator it = samples.begin();
 				it != samples.end(); ++it) {
-			assert(*it > 2 * (int)l);
-			h.insert(*it - 2 * l);
+			assert(*it > 2 * (int)(k - 1));
+			h.insert(*it - 2 * (k - 1));
 		}
 		int d;
 		tie(d, n) = maximumLikelihoodEstimate(
 				0, last, h,
 				pmf, len0, len1);
-		return max(first, d - 2 * (int)l);
+		return max(first, d - 2 * (int)(k - 1));
 	}
 }

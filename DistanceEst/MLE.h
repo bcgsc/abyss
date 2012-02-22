@@ -5,7 +5,8 @@
 
 class PMF;
 
-int maximumLikelihoodEstimate(int first, int last,
+int maximumLikelihoodEstimate(unsigned k,
+		int first, int last,
 		const std::vector<int>& samples, const PMF& pmf,
 		unsigned len0, unsigned len1, bool rf, unsigned& n);
 
