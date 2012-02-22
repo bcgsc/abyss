@@ -38,11 +38,13 @@ static const char USAGE_MESSAGE[] =
 "  HIST  distribution of fragments size\n"
 "  PAIR  alignments between contigs\n"
 "\n"
-"      --mind=N          minimum distance between contigs\n"
+"      --mind=N          minimum distance between contigs [-(k-1)]\n"
 "      --maxd=N          maximum distance between contigs\n"
 "      --fr              force the orientation to forward-reverse\n"
 "      --rf              force the orientation to reverse-forward\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -K, --min-align=N     the minimal alignment size [k]\n"
+"  -k, --kmer=N          set --mind to -(k-1) bp\n"
+"                        and -K,--min-align to k bp\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
@@ -58,10 +60,13 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k; // used by MLE
+	unsigned k;
 
 	/** Output graph format. */
 	int format = DIST;
+
+	/** The minimal alignment size. */
+	static int minAlign;
 
 	/** Minimum distance between contigs. */
 	static int minDist = numeric_limits<int>::min();
@@ -81,7 +86,7 @@ namespace opt {
 	static int threads = 1;
 }
 
-static const char shortopts[] = "j:k:n:o:q:s:v";
+static const char shortopts[] = "j:k:K:n:o:q:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION,
 	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF
@@ -92,6 +97,7 @@ static const struct option longopts[] = {
 	{ "dot",         no_argument,       &opt::format, DOT, },
 	{ "fr",          no_argument,       &opt::rf, false },
 	{ "rf",          no_argument,       &opt::rf, true },
+	{ "min-align",   required_argument, NULL, 'K' },
 	{ "mind",        required_argument, NULL, OPT_MIND },
 	{ "maxd",        required_argument, NULL, OPT_MAXD },
 	{ "kmer",        required_argument, NULL, 'k' },
@@ -150,7 +156,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 			it != fragments.end(); ++it)
 		fragmentSizes.push_back(it->second - it->first);
 
-	return maximumLikelihoodEstimate(opt::k,
+	return maximumLikelihoodEstimate(opt::minAlign,
 			opt::minDist, opt::maxDist,
 			fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
 }
@@ -321,6 +327,9 @@ int main(int argc, char** argv)
 			case OPT_MAXD:
 				arg >> opt::maxDist;
 				break;
+			case 'K':
+				arg >> opt::minAlign;
+				break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case 'n': arg >> opt::npairs; break;
@@ -446,6 +455,8 @@ int main(int argc, char** argv)
 			<< h.barplot() << endl;
 	PMF pmf(h);
 
+	if (opt::minAlign == 0)
+		opt::minAlign = opt::k;
 	if (opt::minDist == numeric_limits<int>::min())
 		opt::minDist = -opt::k + 1;
 	if (opt::maxDist == numeric_limits<int>::max())
