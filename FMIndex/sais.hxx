@@ -581,7 +581,7 @@ typedef typename std::iterator_traits<string_type>::value_type char_type;
   assert((std::numeric_limits<savalue_type>::min)() == (std::numeric_limits<index_type>::min)());
   if((n < 0) || (k <= 0)) { return -1; }
   if(n <= 1) { if(n == 1) { U[0] = T[0]; } return n; }
-  pidx = saisxx_private::suffixsort(T, A, 0, n, k, true);
+  pidx = saisxx_private::suffixsort(T, A, (index_type)0, n, k, true);
   if(0 <= pidx) {
     U[0] = T[n - 1];
     for(i = 0; i < pidx; ++i) { U[i + 1] = (char_type)A[i]; }
