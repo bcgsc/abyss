@@ -33,6 +33,7 @@ static const char USAGE_MESSAGE[] =
 "      --both              build both FAI and FM indexes [default]\n"
 "      --fai               build a FAI index\n"
 "      --fm                build a FM index\n"
+"      --bwt               build the BWT\n"
 "  -s, --sample=N          sample the suffix array [16]\n"
 "  -d, --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
@@ -49,6 +50,9 @@ namespace opt {
 	/** Which indexes to create. */
 	enum { NONE, FAI, FM, BOTH };
 	static int indexes = BOTH;
+
+	/** Output the BWT. */
+	static int bwt;
 
 	/** Decompress the index. */
 	static bool decompress;
@@ -68,6 +72,7 @@ static const struct option longopts[] = {
 	{ "both", no_argument, &opt::indexes, opt::BOTH },
 	{ "fai", no_argument, &opt::indexes, opt::FAI },
 	{ "fm", no_argument, &opt::indexes, opt::FM },
+	{ "bwt", no_argument, &opt::bwt, true },
 	{ "decompress", no_argument, NULL, 'd' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "stdout", no_argument, NULL, 'c' },
@@ -113,8 +118,22 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
 	fm.setAlphabet("-ACGT");
-	fm.assign(s.begin(), s.end());
-	fm.sampleSA(opt::sampleSA);
+	if (opt::bwt) {
+		string bwtPath = string(path) + ".bwt";
+		cerr << "Writing `" << bwtPath << "'...\n";
+		ofstream fout;
+		if (!opt::toStdout)
+			fout.open(bwtPath.c_str());
+		ostream& out = opt::toStdout ? cout : fout;
+		assert_good(out, bwtPath);
+
+		fm.buildBWT(s.begin(), s.end(), out);
+		out.flush();
+		assert_good(out, bwtPath);
+	} else {
+		fm.assign(s.begin(), s.end());
+		fm.sampleSA(opt::sampleSA);
+	}
 }
 
 int main(int argc, char **argv)
@@ -222,6 +241,9 @@ int main(int argc, char **argv)
 			"Used " << toSI(bytes) << "B of memory and "
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
+
+	if (opt::bwt)
+		return 0;
 
 	cerr << "Writing `" << fmPath << "'...\n";
 	ofstream fout;

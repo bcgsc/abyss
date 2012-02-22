@@ -77,17 +77,11 @@ size_t size() const { return m_occ.size() - 1; }
 /** The size of the alphabet. */
 unsigned alphabetSize() const { return m_alphabet.size(); }
 
-/** Build an FM-index of the specified file. */
-template<typename It>
-void assign(It first, It last)
+/** Encode the alphabet of [first, last). */
+template <typename It>
+void encode(It first, It last)
 {
 	assert(first < last);
-	assert(size_t(last - first)
-			< std::numeric_limits<size_type>::max());
-
-	m_sampleSA = 1;
-
-	// Translate the alphabet.
 	if (m_alphabet.empty())
 		setAlphabet(first, last);
 	std::transform(first, last, first, Translate(*this));
@@ -95,10 +89,76 @@ void assign(It first, It last)
 
 	std::cerr << "The alphabet has "
 		<< m_alphabet.size() << " symbols.\n";
+}
+
+/** Decode the alphabet of [first, last). */
+template <typename It>
+void decode(It first, It last) const
+{
+	assert(first < last);
+	assert(!m_alphabet.empty());
+	for (It it = first; it < last; ++it)
+		*it = m_alphabet[*it];
+}
+
+/** Build the BWT of [first, last). */
+template<typename It>
+size_type buildBWT(It first, It last) const
+{
+	assert(first < last);
+	assert(size_t(last - first)
+			< std::numeric_limits<size_type>::max());
+	std::cerr << "Building the BWT...\n";
+	size_t n = last - first;
+	std::vector<sais_size_type> sa(n);
+	assert(sizeof (size_type) == sizeof (sais_size_type));
+	sais_size_type sentinel = saisxx_bwt(first, first,
+			&sa[0],
+			(sais_size_type)n,
+			(sais_size_type)m_alphabet.size());
+	assert(sentinel >= 0);
+	if (sentinel < 0)
+		abort();
+	return sentinel;
+}
+
+/** Build the BWT of [first, last) and write the result to out. */
+template<typename It>
+std::ostream& buildBWT(It first, It last, std::ostream& out)
+{
+	assert(first < last);
+	assert(out);
+
+	// Construct the BWT.
+	encode(first, last);
+	sais_size_type sentinel = buildBWT(first, last);
+	assert(sentinel <= last - first);
+	decode(first, last);
+
+	// Output the BWT.
+	out.write(reinterpret_cast<char*>(&first[0]),
+			sentinel);
+	out.put('$');
+	out.write(reinterpret_cast<char*>(&first[sentinel]),
+			last - first - sentinel);
+	assert(out);
+	return out;
+}
+
+/** Build an FM-index of the specified data. */
+template<typename It>
+void assign(It first, It last)
+{
+	assert(first < last);
+	assert(size_t(last - first)
+			< std::numeric_limits<size_type>::max());
+
+	encode(first, last);
 
 	// Construct the suffix array.
 	std::cerr << "Building the suffix array...\n";
 	size_t n = last - first;
+	m_sampleSA = 1;
 	m_sa.resize(n + 1);
 	m_sa[0] = n;
 
