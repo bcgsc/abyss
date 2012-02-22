@@ -100,7 +100,7 @@ static void indexFasta(const string& faPath, const string& faiPath)
 }
 
 /** Build an FM index of the specified file. */
-static void buildFMIndex(FMIndex& fm, const char* path)
+static size_t buildFMIndex(FMIndex& fm, const char* path)
 {
 	if (opt::verbose > 0)
 		std::cerr << "Reading `" << path << "'...\n";
@@ -134,6 +134,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 		fm.assign(s.begin(), s.end());
 		fm.sampleSA(opt::sampleSA);
 	}
+	return s.size();
 }
 
 int main(int argc, char **argv)
@@ -232,14 +233,13 @@ int main(int argc, char **argv)
 		return 0;
 
 	FMIndex fm;
-	buildFMIndex(fm, faPath);
+	size_t n = buildFMIndex(fm, faPath);
 
 	if (opt::verbose > 0) {
-		size_t bp = fm.size();
 		ssize_t bytes = getMemoryUsage();
-		cerr << "Read " << toSI(bp) << "B. "
+		cerr << "Read " << toSI(n) << "B. "
 			"Used " << toSI(bytes) << "B of memory and "
-				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
+				<< setprecision(3) << (float)bytes / n << " B/bp.\n";
 	}
 
 	if (opt::bwt)
