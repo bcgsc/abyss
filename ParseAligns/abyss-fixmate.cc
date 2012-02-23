@@ -1,10 +1,10 @@
 #include "Histogram.h"
+#include "IOUtil.h"
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "UnorderedMap.h"
 #include <algorithm>
-#include <cerrno>
 #include <climits>
 #include <cstdlib>
 #include <fstream>
@@ -191,20 +191,12 @@ static void readAlignments(istream& in, Alignments* pMap)
 	assert_eof(in);
 }
 
-static void assert_open(ifstream& f, const string& p)
-{
-	if (!f.is_open()) {
-		cerr << p << ": " << strerror(errno) << endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
 static void readAlignmentsFile(string path, Alignments* pMap)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'..." << endl;
 	ifstream fin(path.c_str());
-	assert_open(fin, path);
+	assert_good(fin, path);
 	readAlignments(fin, pMap);
 	fin.close();
 }
