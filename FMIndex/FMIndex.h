@@ -441,6 +441,7 @@ Match find(const std::string& q, unsigned k) const
 template <typename It>
 void setAlphabet(It first, It last)
 {
+	assert(first < last);
 	std::vector<bool> mask(std::numeric_limits<T>::max());
 	for (It it = first; it < last; ++it) {
 		assert((size_t)*it < mask.size());
@@ -462,6 +463,7 @@ void setAlphabet(It first, It last)
 /** Set the alphabet to the characters of s. */
 void setAlphabet(const std::string& s)
 {
+	assert(!s.empty());
 	setAlphabet(s.begin(), s.end());
 }
 
