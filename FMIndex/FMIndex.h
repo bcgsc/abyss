@@ -108,7 +108,7 @@ size_type buildBWT(It first, It last) const
 	assert(first < last);
 	assert(size_t(last - first)
 			< std::numeric_limits<size_type>::max());
-	std::cerr << "Building the BWT...\n";
+	std::cerr << "Building the Burrows-Wheeler transform...\n";
 	size_t n = last - first;
 	std::vector<sais_size_type> sa(n);
 	assert(sizeof (size_type) == sizeof (sais_size_type));
