@@ -138,7 +138,7 @@ std::ostream& buildBWT(It first, It last, std::ostream& out)
 	// Output the BWT.
 	out.write(reinterpret_cast<char*>(&first[0]),
 			sentinel);
-	out.put('$');
+	out.put('\0');
 	out.write(reinterpret_cast<char*>(&first[sentinel]),
 			last - first - sentinel);
 	assert(out);
