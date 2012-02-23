@@ -34,6 +34,7 @@ static const char USAGE_MESSAGE[] =
 "      --fai               build a FAI index\n"
 "      --fm                build a FM index\n"
 "      --bwt               build the BWT\n"
+"  -a, --alphabet=STRING   use the alphabet STRING [-ACGT]\n"
 "  -s, --sample=N          sample the suffix array [16]\n"
 "  -d, --decompress        decompress the index FILE\n"
 "  -c, --stdout            write output to standard output\n"
@@ -54,6 +55,9 @@ namespace opt {
 	/** Output the BWT. */
 	static int bwt;
 
+	/** The alphabet. */
+	static string alphabet = "-ACGT";
+
 	/** Decompress the index. */
 	static bool decompress;
 
@@ -64,7 +68,7 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "cds:v";
+static const char shortopts[] = "a:cds:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -73,6 +77,7 @@ static const struct option longopts[] = {
 	{ "fai", no_argument, &opt::indexes, opt::FAI },
 	{ "fm", no_argument, &opt::indexes, opt::FM },
 	{ "bwt", no_argument, &opt::bwt, true },
+	{ "alphabet", optional_argument, NULL, 'a' },
 	{ "decompress", no_argument, NULL, 'd' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "stdout", no_argument, NULL, 'c' },
@@ -116,8 +121,13 @@ static size_t buildFMIndex(FMIndex& fm, const char* path)
 		exit(EXIT_FAILURE);
 	}
 
+	// Set the alphabet.
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	fm.setAlphabet("-ACGT");
+	if (opt::alphabet.empty())
+		fm.setAlphabet(s.begin(), s.end());
+	else
+		fm.setAlphabet(opt::alphabet);
+
 	if (opt::bwt) {
 		string bwtPath = string(path) + ".bwt";
 		cerr << "Writing `" << bwtPath << "'...\n";
@@ -147,6 +157,10 @@ int main(int argc, char **argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'a':
+				opt::alphabet = arg.str();
+				arg.clear(ios::eofbit);
+				break;
 			case 'c': opt::toStdout = true; break;
 			case 'd': opt::decompress = true; break;
 			case 's': arg >> opt::sampleSA; break;
