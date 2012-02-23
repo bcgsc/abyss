@@ -79,16 +79,12 @@ unsigned alphabetSize() const { return m_alphabet.size(); }
 
 /** Encode the alphabet of [first, last). */
 template <typename It>
-void encode(It first, It last)
+void encode(It first, It last) const
 {
 	assert(first < last);
-	if (m_alphabet.empty())
-		setAlphabet(first, last);
+	assert(!m_alphabet.empty());
 	std::transform(first, last, first, Translate(*this));
 	std::replace(first, last, SENTINEL(), T(0));
-
-	std::cerr << "The alphabet has "
-		<< m_alphabet.size() << " symbols.\n";
 }
 
 /** Decode the alphabet of [first, last). */
@@ -124,7 +120,7 @@ size_type buildBWT(It first, It last) const
 
 /** Build the BWT of [first, last) and write the result to out. */
 template<typename It>
-std::ostream& buildBWT(It first, It last, std::ostream& out)
+std::ostream& buildBWT(It first, It last, std::ostream& out) const
 {
 	assert(first < last);
 	assert(out);

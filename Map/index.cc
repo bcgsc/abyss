@@ -123,9 +123,11 @@ static size_t buildFMIndex(FMIndex& fm, const char* path)
 
 	// Set the alphabet.
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	if (opt::alphabet.empty())
+	if (opt::alphabet.empty()) {
 		fm.setAlphabet(s.begin(), s.end());
-	else
+		std::cerr << "The alphabet has "
+			<< fm.alphabetSize() << " symbols.\n";
+	} else
 		fm.setAlphabet(opt::alphabet);
 
 	if (opt::bwt) {
