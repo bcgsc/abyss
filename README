@@ -23,8 +23,8 @@ Contents
 * [Optimizing the parameter k]
 * [Parallel processing]
 * [Running ABySS on a cluster]
-* [ABySS programs]
 * [Assembly Parameters]
+* [ABySS programs]
 * [Mailing List]
 * [Authors]
 
@@ -246,6 +246,34 @@ For example, to submit an array of jobs to assemble every odd value of
 	qsub -N ecoli -pe openmpi 64 -t 51-63:2 \
 		<<<'abyss-pe -C k$SGE_TASK_ID in=/data/reads.fa'
 
+Assembly Parameters
+===================
+
+Parameters of the driver script, `abyss-pe`
+
+ * `a`	maximum number of alleles [`4`]
+ * `b`	maximum bubble length (bp) [`3k`]
+ * `c`	minimum contig k-mer coverage [`sqrt(median)`]
+ * `d`	allowable distance estimate error (bp) [`6`]
+ * `e`	minimum erosion k-mer coverage [`sqrt(median)`]
+ * `E`	minimum erosion k-mer coverage per strand [`1`]
+ * `j`	number of threads [`2`]
+ * `k`	size of k-mer
+ * `l`	minimum alignment length (bp) [`k`]
+ * `m`	minimum overlap (bp) [`30`]
+ * `n`	minimum number of pairs [`10`]
+ * `p`	minimum sequence identity [`0.9`]
+ * `q`	minimum base quality [`3`]
+ * `s`	minimum contig seed size (bp) [`200`]
+ * `t`	minimum tip size (bp) [`2k`]
+ * `v`	verbose logging [`disabled`]
+
+Use `abyss-pe v=-v` to enable verbose logging.
+
+Please see the
+[abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
+manual page for more information on assembly parameters.
+
 ABySS programs
 ==============
 
@@ -278,15 +306,6 @@ ABySS programs
  * `abyss-map`: map reads to a reference sequence
  * `abyss-scaffold`: scaffold contigs using distance estimates
  * `abyss-todot`: convert graph formats and merge graphs
-
-Assembly Parameters
-===================
-
-To enable verbose logging, use `abyss-pe v=-v`
-
-Please see the
-[abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
-manual page for more information on assembly parameters.
 
 Mailing List
 ============
