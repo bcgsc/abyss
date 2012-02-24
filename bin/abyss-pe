@@ -192,7 +192,7 @@ ifneq ($(in),)
 default: contigs contigs-dot
 endif
 ifneq ($(mp),)
-default: scaffolds
+default: scaffolds scaffolds-dot
 endif
 
 unitigs: $(name)-unitigs.fa
@@ -217,6 +217,8 @@ mp-bam: $(addsuffix -6.bam.bai, $(mp))
 
 scaffolds: $(name)-scaffolds.fa
 
+scaffolds-dot: $(name)-scaffolds.dot
+
 all: default bam
 
 clean:
@@ -224,7 +226,8 @@ clean:
 
 .PHONY: bam default unitigs unitigs-dot \
 	pe-index pe-sam pe-bam contigs contigs-dot \
-	mp-index mp-sam mp-bam scaffolds all clean
+	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
+	all clean
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -398,8 +401,14 @@ endif
 %-6.path2: %-6.fa %-6.dot %-6.path1
 	PathConsensus $v -k$k -p1 -s /dev/null -o $@ $^
 
-%-scaffolds.fa: %-6.fa %-6.dot %-6.path2
-	MergeContigs $v -k$k -g $*-scaffolds.dot -o $@ $^
+%-7.fa %-7.dot: %-6.fa %-6.dot %-6.path2
+	MergeContigs $v -k$k -o $*-7.fa -g $*-7.dot $^
+
+%-scaffolds.fa: %-7.fa
+	ln -sf $< $@
+
+%-scaffolds.dot: %-7.dot
+	ln -sf $< $@
 
 # Final BAM file
 
