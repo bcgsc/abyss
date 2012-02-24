@@ -408,6 +408,7 @@ int main(int argc, char** argv)
 
 	if (opt::format == DOT)
 		out << "digraph dist {\ngraph ["
+			"k=" << opt::k << " "
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
 
