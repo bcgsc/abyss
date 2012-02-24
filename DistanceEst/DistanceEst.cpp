@@ -43,9 +43,9 @@ static const char USAGE_MESSAGE[] =
 "      --maxd=N          maximum distance between contigs\n"
 "      --fr              force the orientation to forward-reverse\n"
 "      --rf              force the orientation to reverse-forward\n"
-"  -K, --min-align=N     the minimal alignment size [k]\n"
+"  -l, --min-align=N     the minimal alignment size [k]\n"
 "  -k, --kmer=N          set --mind to -(k-1) bp\n"
-"                        and -K,--min-align to k bp\n"
+"                        and -l,--min-align to k bp\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
@@ -87,7 +87,7 @@ namespace opt {
 	static int threads = 1;
 }
 
-static const char shortopts[] = "j:k:K:n:o:q:s:v";
+static const char shortopts[] = "j:k:l:n:o:q:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION,
 	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF
@@ -98,7 +98,7 @@ static const struct option longopts[] = {
 	{ "dot",         no_argument,       &opt::format, DOT, },
 	{ "fr",          no_argument,       &opt::rf, false },
 	{ "rf",          no_argument,       &opt::rf, true },
-	{ "min-align",   required_argument, NULL, 'K' },
+	{ "min-align",   required_argument, NULL, 'l' },
 	{ "mind",        required_argument, NULL, OPT_MIND },
 	{ "maxd",        required_argument, NULL, OPT_MAXD },
 	{ "kmer",        required_argument, NULL, 'k' },
@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 			case OPT_MAXD:
 				arg >> opt::maxDist;
 				break;
-			case 'K':
+			case 'l':
 				arg >> opt::minAlign;
 				break;
 			case 'j': arg >> opt::threads; break;

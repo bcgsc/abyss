@@ -111,9 +111,6 @@ endif
 # ABYSS parameters
 q ?= 3
 abyssopt += -k$k -q$q
-ifdef l
-$(error argument l is deprecated)
-endif
 ifdef e
 abyssopt += -e$e
 endif
@@ -154,7 +151,7 @@ pbopt += -p$p
 # Aligner parameters
 aligner?=map
 align?=abyss-${aligner}
-mapopt=$v -j$j -k$($*_k) $(ALIGNER_OPTIONS)
+mapopt=$v -j$j -k$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
@@ -166,13 +163,14 @@ fmopt=$(FIXMATE_OPTIONS)
 endif
 
 # DistanceEst parameters
+l?=$k
 s?=200
 n?=10
 libs=$(pe) $(mp)
-$(foreach i,$(libs),$(eval $i_k?=$k))
+$(foreach i,$(libs),$(eval $i_l?=$l))
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v -j$j -k$k -K$($*_k) -s$($*_s) -n$($*_n) $($*_de) \
+deopt=$v -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
 	$(DISTANCEEST_OPTIONS)
 
 # SimpleGraph parameters
