@@ -151,12 +151,12 @@ pbopt += -p$p
 # Aligner parameters
 aligner?=map
 align?=abyss-${aligner}
-mapopt=$v -j$j -k$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
+mapopt=$v -j$j -l$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
 fixmate?=ParseAligns
-fmopt=-k$k $(FIXMATE_OPTIONS)
+fmopt=-l$($*_l) $(FIXMATE_OPTIONS)
 else
 fixmate?=abyss-fixmate
 fmopt=$(FIXMATE_OPTIONS)

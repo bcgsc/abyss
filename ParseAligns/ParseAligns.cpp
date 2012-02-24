@@ -38,7 +38,7 @@ static const char USAGE_MESSAGE[] =
 "Write pairs that map to different contigs to standard output.\n"
 "Alignments may be read from FILE(s) or standard input.\n"
 "\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -l, --min-align=N     minimum alignment length\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=SAME       write fragment sizes to this file\n"
 "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
@@ -67,13 +67,13 @@ namespace opt {
  	int format = ADJ; // used by Estimate
 }
 
-static const char shortopts[] = "d:k:f:h:c:v";
+static const char shortopts[] = "d:l:f:h:c:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "dist",    required_argument, NULL, 'd' },
-	{ "kmer",    required_argument, NULL, 'k' },
+	{ "min-align", required_argument, NULL, 'l' },
 	{ "frag",    required_argument, NULL, 'f' },
 	{ "hist",    required_argument, NULL, 'h' },
 	{ "kaligner",no_argument, &opt::inputFormat, opt::KALIGNER },

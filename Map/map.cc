@@ -38,7 +38,7 @@ static const char USAGE_MESSAGE[] =
 "Map the sequences of the files QUERY to those of the file TARGET.\n"
 "The index files TARGET.fai and TARGET.fm will be used if present.\n"
 "\n"
-"  -k, --score=N           find matches at least N bp [1]\n"
+"  -l, --min-align=N       find matches at least N bp [1]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
 "  -d, --dup               identify and print duplicate sequence\n"
@@ -66,13 +66,13 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "j:k:s:dv";
+static const char shortopts[] = "j:k:l:s:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "sample", required_argument, NULL, 's' },
-	{ "score", required_argument, NULL, 'k' },
+	{ "min-align", required_argument, NULL, 'l' },
 	{ "dup", no_argument, NULL, 'd' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "verbose", no_argument, NULL, 'v' },
@@ -348,7 +348,9 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'j': arg >> opt::threads; break;
-			case 'k': arg >> opt::k; break;
+			case 'k': case 'l':
+				arg >> opt::k;
+				break;
 			case 's': arg >> opt::sampleSA; break;
 			case 'd': opt::dup = true; break;
 			case 'v': opt::verbose++; break;

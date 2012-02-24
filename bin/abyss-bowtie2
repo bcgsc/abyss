@@ -21,10 +21,10 @@ esac
 
 # Parse the command line.
 bowtie2_align='bowtie2-align --local'
-while getopts :j:k:v opt; do
+while getopts :j:l:v opt; do
 	case $opt in
 		j) bowtie2_align="$bowtie2_align -p$OPTARG";;
-		k) ;;
+		l) ;;
 		v) ;;
 		\?) echo >&2 "abyss-bowtie2: invalid option: $OPTARG"
 			exit 1;;

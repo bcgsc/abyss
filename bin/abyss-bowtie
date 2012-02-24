@@ -21,10 +21,10 @@ esac
 
 # Parse the command line.
 bowtie='bowtie -S'
-while getopts :j:k:v opt; do
+while getopts :j:l:v opt; do
 	case $opt in
 		j) bowtie="$bowtie -p$OPTARG";;
-		k) ;;
+		l) ;;
 		v) ;;
 		\?) echo >&2 "abyss-bowtie: invalid option: $OPTARG"; exit 1;;
 	esac

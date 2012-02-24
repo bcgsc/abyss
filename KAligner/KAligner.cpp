@@ -41,7 +41,7 @@ static const char USAGE_MESSAGE[] =
 "Align the sequences of the files QUERY to those of TARGET.\n"
 "All perfect matches of at least k bases will be found.\n"
 "\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -k, -l, --kmer=N      k-mer size and minimum alignment length\n"
 "  -s, --section=S/N     split the target into N sections and align"
 "                        reads to section S [1/1]\n"
 "  -i, --ignore-multimap ignore duplicate k-mer in the target\n"
@@ -73,7 +73,8 @@ namespace opt {
 	static int format;
 }
 
-static const char shortopts[] = "ik:mo:j:vs:";
+static const char shortopts[] = "ij:k:l:mo:s:v";
+
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SYNC };
 
@@ -304,7 +305,9 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'k': arg >> opt::k; break;
+			case 'k': case 'l':
+				arg >> opt::k;
+				break;
 			case 'm': opt::multimap = opt::MULTIMAP; break;
 			case 'i': opt::multimap = opt::IGNORE; break;
 			case 'j': arg >> opt::threads; break;

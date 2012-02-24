@@ -22,10 +22,10 @@ esac
 # Parse the command line.
 bwasw='bwa bwasw'
 bwa_index='bwa index -a bwtsw'
-while getopts :j:k:v opt; do
+while getopts :j:l:v opt; do
 	case $opt in
 		j) bwasw="$bwasw -t$OPTARG";;
-		k) ;;
+		l) ;;
 		v) ;;
 		\?) echo >&2 "abyss-bwasw: invalid option: $OPTARG"; exit 1;;
 	esac
