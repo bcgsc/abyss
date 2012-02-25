@@ -2,7 +2,25 @@
 # Run the ABySS assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
+# Mandatory parameters
+ifndef name
+error::
+	@>&2 echo 'abyss-pe: missing parameter `name`' 
+endif
+ifndef k
+error::
+	@>&2 echo 'abyss-pe: missing parameter `k`'
+endif
+ifeq ($(lib)$(in)$(se),)
+error::
+	@>&2 echo 'abyss-pe: missing parameter `lib`, `in` or `se`'
+endif
+
 default:
+
+error::
+	@>&2 echo 'Try `abyss-pe help` for more information.'
+	@false
 
 help:
 	@printf '\
@@ -11,8 +29,8 @@ Assemble reads into contigs and scaffolds. ABySS is a de novo\n\
 sequence assembler intended for short paired-end reads and large\n\
 genomes. See the abyss-pe man page for documentation of assembly\n\
 parameters and commands. abyss-pe is a Makefile script, and so\n\
-options of make may also be used with abyss-pe. See the make man\n\
-page for documentation of the options of make.\n\
+options of `make` may also be used with abyss-pe. See the `make`\n\
+man page for documentation.\n\
 \n\
 Report bugs to <abyss-users@bcgsc.ca>.\n'
 
@@ -98,10 +116,6 @@ ifdef path
 PATH:=$(path):$(PATH)
 endif
 
-ifndef name
-$(error missing argument name)
-endif
-
 ifdef lib
 map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
@@ -120,14 +134,6 @@ override in:=$(strip $(in))
 endif
 ifdef se
 override se:=$(strip $(se))
-endif
-
-# Mandatory parameters
-ifeq ($(in)$(se),)
-$(error missing argument in, lib or se)
-endif
-ifndef k
-$(error missing argument k)
 endif
 
 # ABYSS parameters
