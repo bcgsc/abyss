@@ -266,7 +266,7 @@ Parameters of the driver script, `abyss-pe`
  * `p`	minimum sequence identity [`0.9`]
  * `q`	minimum base quality [`3`]
  * `s`	minimum contig seed size required for contigs (bp) [`200`]
- * `S`	minimum contig seed size reqiured for scaffolds (bp) [`s`]
+ * `S`	minimum contig seed size required for scaffolds (bp) [`s`]
  * `t`	minimum tip size (bp) [`2k`]
  * `v`	verbose logging [`disabled`]
 
