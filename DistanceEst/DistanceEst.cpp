@@ -43,9 +43,8 @@ static const char USAGE_MESSAGE[] =
 "      --maxd=N          maximum distance between contigs\n"
 "      --fr              force the orientation to forward-reverse\n"
 "      --rf              force the orientation to reverse-forward\n"
-"  -l, --min-align=N     the minimal alignment size [k]\n"
 "  -k, --kmer=N          set --mind to -(k-1) bp\n"
-"                        and -l,--min-align to k bp\n"
+"  -l, --min-align=N     the minimal alignment size [1]\n"
 "  -n, --npairs=NPAIRS   minimum number of pairs\n"
 "  -s, --seed-length=L   minimum length of the seed contigs\n"
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
@@ -67,7 +66,7 @@ namespace opt {
 	int format = DIST;
 
 	/** The minimal alignment size. */
-	static int minAlign;
+	static int minAlign = 1;
 
 	/** Minimum distance between contigs. */
 	static int minDist = numeric_limits<int>::min();
@@ -394,6 +393,8 @@ int main(int argc, char** argv)
 		cerr << "warning: the seed-length should be at least twice k:"
 			" k=" << opt::k << ", s=" << opt::seedLen << '\n';
 
+	assert(opt::minAlign > 0);
+
 #if _OPENMP
 	if (opt::threads > 0)
 		omp_set_num_threads(opt::threads);
@@ -466,8 +467,6 @@ int main(int argc, char** argv)
 			<< h.barplot() << endl;
 	PMF pmf(h);
 
-	if (opt::minAlign == 0)
-		opt::minAlign = opt::k;
 	if (opt::minDist == numeric_limits<int>::min())
 		opt::minDist = -opt::k + 1;
 	if (opt::maxDist == numeric_limits<int>::max())
