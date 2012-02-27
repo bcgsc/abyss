@@ -219,7 +219,7 @@ N?=$n
 # Remove environment variables.
 unexport in se $(lib) $(pe) $(mp)
 
-default: unitigs unitigs-dot
+default: unitigs
 ifneq ($(in),)
 default: contigs contigs-dot
 endif
