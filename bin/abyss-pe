@@ -445,22 +445,26 @@ endif
 
 # Final BAM file
 
-ifdef mp
+ifneq ($(mp),)
 bam: $(name)-scaffolds.bam.bai
 else
-ifdef in
+ifneq ($(in),)
 bam: $(name)-contigs.bam.bai
 else
 bam: $(name)-unitigs.bam.bai
 endif
 endif
 
+$(name)-unitigs.bam: %.bam: %.fa
+	$(align) $v -j$j -l$l $(ALIGNER_OPTIONS) $(se) $< \
+		|samtools view -Su - |samtools sort -o - - >$@
+
 $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
-	${align} $v -j$j -k$k $(ALIGNER_OPTIONS) \
+	${align} $v -j$j -l$l $(ALIGNER_OPTIONS) \
 		$(call map, deref, $(sort $(lib) $(pe) $(mp))) $< \
-		|${fixmate} $v ${fmopt} \
+		|$(fixmate) $v $(fmopt) \
 		|sort -snk3 -k4 \
-		|samtools view -Sb - -o $@
+		|samtools view -Sb - >$@
 
 # Align the variants to the assembly.
 
@@ -482,10 +486,10 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 stats: $(name)-stats
 
 $(name)-stats: %-stats: %-unitigs.fa
-ifdef in
+ifneq ($(in),)
 $(name)-stats: %-stats: %-contigs.fa
 endif
-ifdef mp
+ifneq ($(mp),)
 $(name)-stats: %-stats: %-scaffolds.fa
 endif
 $(name)-stats:
