@@ -251,26 +251,24 @@ Assembly Parameters
 
 Parameters of the driver script, `abyss-pe`
 
- * `a`	maximum number of alleles [`4`]
- * `b`	maximum bubble length (bp) [`10000`]
- * `c`	minimum contig k-mer coverage [`sqrt(median)`]
- * `d`	allowable distance estimate error (bp) [`6`]
- * `e`	minimum erosion k-mer coverage [`sqrt(median)`]
- * `E`	minimum erosion k-mer coverage per strand [`1`]
- * `j`	number of threads [`2`]
- * `k`	size of k-mer
- * `l`	minimum alignment length (bp) [`k`]
- * `m`	minimum overlap (bp) [`30`]
- * `n`	minimum number of pairs required for contigs [`10`]
- * `n`	minimum number of pairs required for scaffolds [`n`]
- * `p`	minimum sequence identity [`0.9`]
- * `q`	minimum base quality [`3`]
- * `s`	minimum contig seed size required for contigs (bp) [`200`]
- * `S`	minimum contig seed size required for scaffolds (bp) [`s`]
- * `t`	minimum tip size (bp) [`2k`]
- * `v`	verbose logging [`disabled`]
-
-Use `abyss-pe v=-v` to enable verbose logging.
+ * `a`: maximum number of branches of a bubble [`2`]
+ * `b`: maximum length of a bubble (bp) [`10000`]
+ * `c`: minimum mean k-mer coverage of a unitig [`sqrt(median)`]
+ * `d`: allowable error of a distance estimate (bp) [`6`]
+ * `e`: minimum erosion k-mer coverage [`sqrt(median)`]
+ * `E`: minimum erosion k-mer coverage per strand [`1`]
+ * `j`: number of threads [`2`]
+ * `k`: size of k-mer (bp)
+ * `l`: minimum alignment length of a read (bp) [`k`]
+ * `m`: minimum overlap of two unitigs (bp) [`30`]
+ * `n`: minimum number of pairs required for building contigs [`10`]
+ * `N`: minimum number of pairs required for building scaffolds [`n`]
+ * `p`: minimum sequence identity of a bubble [`0.9`]
+ * `q`: minimum base quality [`3`]
+ * `s`: minimum unitig size required for building contigs (bp) [`200`]
+ * `S`: minimum contig size required for buidling scaffolds (bp) [`s`]
+ * `t`: minimum tip size (bp) [`2k`]
+ * `v`: use `v=-v` to enable verbose logging [`disabled`]
 
 Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)

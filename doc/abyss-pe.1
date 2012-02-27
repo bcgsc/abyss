@@ -39,46 +39,70 @@ sequence.
 \fBse\fR
 files containing single-end reads
 .TP
-\fBk\fR, \fBSGE_TASK_ID\fR
-k-mer size
+.B a
+maximum number of branches of a bubble [2]
 .TP
-\fBq\fR
-quality threshold. Trim bases from the ends of reads whose quality is
-less than the threshold. (default: 3)
+.B b
+maximum length of a bubble (bp) [10000]
 .TP
-\fBe\fR
-erosion k-mer coverage threshold
+.B c
+minimum mean k-mer coverage of a unitig [sqrt(median)]
 .TP
-\fBc\fR
-mean k-mer coverage threshold
+.B d
+allowable error of a distance estimate (bp) [6]
 .TP
-\fBb\fR
-pop bubbles shorter than N bp (default: 10000).
+.B e
+minimum erosion k-mer coverage [sqrt(median)]
 .TP
-\fBp\fR
-pop bubbles with identity at least p (default: 0.9)
+.B E
+minimum erosion k-mer coverage per strand [1]
 .TP
-\fBn\fR
-minimum number of pairs (default: 10). The optimal value for this
-parameter depends on coverage, but 10 is a reasonable default.
+.B j
+number of threads [2]
 .TP
-\fBs\fR
-minimum length of a seed contig in bp (default: 200). The seed length
-should be at least twice the value of k. If more sequence is assembled
-than the expected genome size, try increasing s.
+.B k
+size of k-mer (bp)
 .TP
-\fBd\fR
-acceptable error in bp of a distance estimate (default: 6).
+.B l
+minimum alignment length of a read (bp) [k]
+.TP
+.B m
+minimum overlap of two unitigs (bp) [30]
+.TP
+.B n
+minimum number of pairs required for building contigs [10]
+.TP
+.B N
+minimum number of pairs required for building scaffolds [n]
+.TP
+.B p
+minimum sequence identity of a bubble [0.9]
+.TP
+.B q
+minimum base quality [3]
+.br
+Trim bases from the ends of reads whose quality is less q.
+.TP
+.B s
+minimum unitig size required for building contigs (bp) [200]
+.br
+The seed length should be at least twice the value of k. If more
+sequence is assembled than the expected genome size, try increasing s.
+.TP
+.B S
+minimum contig size required for building scaffolds (bp) [s]
+.TP
+.B t
+minimum tip size (bp) [2k]
+.TP
+.B v
+v=-v to enable verbose logging
 .TP
 \fBnp\fR, \fBNSLOTS\fR
 the number of processes of an MPI assembly
 .TP
 \fBmpirun\fR
 the path to mpirun
-.TP
-\fBj\fR
-the number of threads to use (default: 2). If np is specified, the
-default is the value of np.
 .TP
 .B aligner
 specify the program to use to align reads to contigs:
@@ -90,9 +114,6 @@ additional options to the single-end assembler, ABYSS
 .TP
 \fBcs\fR
 convert colour-space contigs to nucleotide contigs following assembly
-.TP
-\fBv=-v\fR
-enable verbose logging
 .SS "Options of make"
 .TP
 \fB-n\fR
