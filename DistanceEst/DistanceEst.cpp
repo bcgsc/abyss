@@ -154,8 +154,17 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	vector<int> fragmentSizes;
 	fragmentSizes.reserve(fragments.size());
 	for (Fragments::const_iterator it = fragments.begin();
-			it != fragments.end(); ++it)
-		fragmentSizes.push_back(it->second - it->first);
+			it != fragments.end(); ++it) {
+		int x = it->second - it->first;
+		if (!opt::rf && x <= 2 * int(opt::minAlign - 1)) {
+			cerr << PROGRAM ": error: The observed fragment of size "
+				<< x << " bp is shorter than 2*l "
+				"(l=" << opt::minAlign << "). "
+				"Decrease l to " << x / 2 << ".\n";
+			exit(EXIT_FAILURE);
+		}
+		fragmentSizes.push_back(x);
+	}
 
 	return maximumLikelihoodEstimate(opt::minAlign,
 			opt::minDist, opt::maxDist,
