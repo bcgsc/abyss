@@ -226,6 +226,7 @@ endif
 ifneq ($(mp),)
 default: scaffolds scaffolds-dot
 endif
+default: stats
 
 unitigs: $(name)-unitigs.fa
 
