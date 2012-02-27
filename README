@@ -261,10 +261,12 @@ Parameters of the driver script, `abyss-pe`
  * `k`	size of k-mer
  * `l`	minimum alignment length (bp) [`k`]
  * `m`	minimum overlap (bp) [`30`]
- * `n`	minimum number of pairs [`10`]
+ * `n`	minimum number of pairs required for contigs [`10`]
+ * `n`	minimum number of pairs required for scaffolds [`n`]
  * `p`	minimum sequence identity [`0.9`]
  * `q`	minimum base quality [`3`]
- * `s`	minimum contig seed size (bp) [`200`]
+ * `s`	minimum contig seed size required for contigs (bp) [`200`]
+ * `S`	minimum contig seed size reqiured for scaffolds (bp) [`s`]
  * `t`	minimum tip size (bp) [`2k`]
  * `v`	verbose logging [`disabled`]
 

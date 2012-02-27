@@ -212,6 +212,10 @@ pcopt += -a$a
 endif
 pcopt += -p$p
 
+# Scaffold parameters
+S?=$s
+N?=$n
+
 # Remove environment variables.
 unexport in se $(lib) $(pe) $(mp)
 
@@ -424,7 +428,7 @@ endif
 # Scaffold
 
 %-6.path1: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $v -k$k -s$s -n$n -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-6.path2: %-6.fa %-6.dot %-6.path1
 	PathConsensus $v -k$k -p1 -s /dev/null -o $@ $^
