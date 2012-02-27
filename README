@@ -252,7 +252,7 @@ Assembly Parameters
 Parameters of the driver script, `abyss-pe`
 
  * `a`	maximum number of alleles [`4`]
- * `b`	maximum bubble length (bp) [`3k`]
+ * `b`	maximum bubble length (bp) [`10000`]
  * `c`	minimum contig k-mer coverage [`sqrt(median)`]
  * `d`	allowable distance estimate error (bp) [`6`]
  * `e`	minimum erosion k-mer coverage [`sqrt(median)`]
