@@ -251,12 +251,13 @@ scaffolds: $(name)-scaffolds.fa
 
 scaffolds-dot: $(name)-scaffolds.dot
 
-all: default bam
+all: default bam stats
 
 clean:
 	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123]
 
-.PHONY: bam default unitigs unitigs-dot \
+.PHONY: bam default stats \
+	unitigs unitigs-dot \
 	pe-index pe-sam pe-bam contigs contigs-dot \
 	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
 	all clean help version
@@ -475,3 +476,17 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 
 %.gz.tbi: %.gz
 	tabix -pvcf $<
+
+# Calculate assembly contiguity statistics.
+
+stats: $(name)-stats
+
+$(name)-stats: %-stats: %-unitigs.fa
+ifdef in
+$(name)-stats: %-stats: %-contigs.fa
+endif
+ifdef mp
+$(name)-stats: %-stats: %-scaffolds.fa
+endif
+$(name)-stats:
+	abyss-fac $(FAC_OPTIONS) $^ |tee $@
