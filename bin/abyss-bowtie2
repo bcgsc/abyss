@@ -14,7 +14,9 @@ EOF
 		cat <<EOF
 abyss-bowtie2 (ABySS)
 Written by Shaun Jackman.
+
 EOF
+		bowtie2 --version
 		exit
 		;;
 esac

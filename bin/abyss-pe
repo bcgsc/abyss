@@ -41,6 +41,26 @@ Written by Shaun Jackman.\n\
 \n\
 Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
 
+versions: version
+	@ABYSS --version
+	@-ABYSS-P --version
+	@AdjList --version
+	@DistanceEst --version
+	@MergeContigs --version
+	@MergePaths --version
+	@Overlap --version
+	@PathConsensus --version
+	@PathOverlap --version
+	@PopBubbles --version
+	@SimpleGraph --version
+	@abyss-fac --version
+	@abyss-filtergraph --version
+	@abyss-fixmate --version
+	@abyss-map --version
+	@abyss-scaffold --version
+	@abyss-todot --version
+	@$(align) --version
+
 # Set pipefail to require that all commands of a pipe must succeed.
 SHELL=/bin/bash -o pipefail
 
@@ -266,7 +286,7 @@ clean:
 	unitigs unitigs-dot \
 	pe-index pe-sam pe-bam contigs contigs-dot \
 	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
-	all clean help version
+	all clean help version versions
 .DELETE_ON_ERROR:
 .SECONDARY:
 

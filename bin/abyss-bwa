@@ -15,6 +15,7 @@ EOF
 abyss-bwa (ABySS)
 Written by Shaun Jackman.
 EOF
+		bwa 2>&1 |head -n4
 		exit
 		;;
 esac
