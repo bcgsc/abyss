@@ -42,24 +42,27 @@ Written by Shaun Jackman.\n\
 Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
 
 versions: version
-	@ABYSS --version
-	@-ABYSS-P --version
-	@AdjList --version
-	@DistanceEst --version
-	@MergeContigs --version
-	@MergePaths --version
-	@Overlap --version
-	@PathConsensus --version
-	@PathOverlap --version
-	@PopBubbles --version
-	@SimpleGraph --version
-	@abyss-fac --version
-	@abyss-filtergraph --version
-	@abyss-fixmate --version
-	@abyss-map --version
-	@abyss-scaffold --version
-	@abyss-todot --version
-	@$(align) --version
+	@ABYSS --version; echo
+	@-ABYSS-P --version; echo
+	@AdjList --version; echo
+	@DistanceEst --version; echo
+	@MergeContigs --version; echo
+	@MergePaths --version; echo
+	@Overlap --version; echo
+	@PathConsensus --version; echo
+	@PathOverlap --version; echo
+	@PopBubbles --version; echo
+	@SimpleGraph --version; echo
+	@abyss-fac --version; echo
+	@abyss-filtergraph --version; echo
+	@abyss-fixmate --version; echo
+	@abyss-map --version; echo
+	@abyss-scaffold --version; echo
+	@abyss-todot --version; echo
+	@$(align) --version; echo
+	@awk --version; echo
+	@sort --version; echo
+	@-mpirun --version
 
 # Set pipefail to require that all commands of a pipe must succeed.
 SHELL=/bin/bash -o pipefail
