@@ -428,9 +428,7 @@ Match find(const std::string& q, unsigned k) const
 {
 	std::string s = q;
 	std::transform(s.begin(), s.end(), s.begin(), Translate(*this));
-
-	Match m = findSubstring(s.begin(), s.end(), k);
-	return m;
+	return findSubstring(s.begin(), s.end(), k);
 }
 
 /** Set the alphabet to [first, last). */
