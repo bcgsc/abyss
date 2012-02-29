@@ -418,18 +418,28 @@ static ContigPath alignPair(const Graph& g,
 	Sequence fstPathContig(mergePath(g, fstSol));
 	Sequence sndPathContig(mergePath(g, sndSol));
 	if (fstPathContig == sndPathContig) {
-		// A perfect match must be caused by palindrome.
-		assert(fstSol.size() == sndSol.size());
-		typedef ContigPath::const_iterator It;
-		pair<It, It> it = mismatch(
-				fstSol.begin(), fstSol.end(), sndSol.begin());
-		assert(it.first != fstSol.end());
-		assert(it.second != sndSol.end());
-		assert(*it.first == ~*it.second);
-		assert(std::equal(it.first+1, It(fstSol.end()), it.second+1));
-		if (opt::verbose > 1)
-			cerr << "Palindrome: " << ContigID(*it.first) << '\n';
-		return solutions[0];
+		// These two paths have identical sequence.
+		if (fstSol.size() == sndSol.size()) {
+			// A perfect match must be caused by palindrome.
+			typedef ContigPath::const_iterator It;
+			pair<It, It> it = mismatch(
+					fstSol.begin(), fstSol.end(), sndSol.begin());
+			assert(it.first != fstSol.end());
+			assert(it.second != sndSol.end());
+			assert(*it.first == ~*it.second);
+			assert(equal(it.first+1, It(fstSol.end()), it.second+1));
+			if (opt::verbose > 1)
+				cerr << "Palindrome: " << ContigID(*it.first) << '\n';
+			return solutions[0];
+		} else {
+			// The paths are different lengths.
+			cerr << PROGRAM ": warning: "
+				"Two paths have identical sequence, which may be "
+				"caused by a transitive edge in the overlap graph.\n"
+				<< '\t' << fstSol << '\n'
+				<< '\t' << sndSol << '\n';
+			return solutions[fstSol.size() > sndSol.size() ? 0 : 1];
+		}
 	}
 
 	unsigned minLength = min(
