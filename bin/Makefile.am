@@ -9,5 +9,5 @@ dist_bin_SCRIPTS = \
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
-	abyss-fac \
+	abyss-fac.pl \
 	abyss-joindist
