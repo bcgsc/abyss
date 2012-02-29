@@ -24,8 +24,9 @@ libcommon_a_SOURCES = \
 	MemoryUtil.h \
 	Options.cpp Options.h \
 	PMF.h \
-	SeqExt.cpp SeqExt.h \
+	SAM.h \
 	Sense.h \
+	SeqExt.cpp SeqExt.h \
 	Sequence.cpp Sequence.h \
 	SignalHandler.cpp SignalHandler.h \
 	StringUtil.h \

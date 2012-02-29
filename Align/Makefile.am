@@ -3,7 +3,6 @@ noinst_LIBRARIES = libalign.a
 libalign_a_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 
 libalign_a_SOURCES = \
-	SAM.h \
 	alignGlobal.cc alignGlobal.h \
 	dialign.cpp dialign.h dna_diag_prob.cc \
 	smith_waterman.cpp smith_waterman.h
