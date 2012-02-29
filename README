@@ -52,7 +52,7 @@ Download and install the
 
 ## Calculate assembly contiguity statistics
 
-	abyss-fac test-se-contigs.fa
+	abyss-fac test-unitigs.fa
 
 Dependencies
 ============
