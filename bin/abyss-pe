@@ -178,16 +178,16 @@ pbopt += -p$p
 
 # Aligner parameters
 aligner?=map
-align?=abyss-${aligner}
+align?=abyss-$(aligner)
 mapopt=$v -j$j -l$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
 fixmate?=ParseAligns
-fmopt=-l$($*_l) $(FIXMATE_OPTIONS)
+fmopt=$v -l$($*_l) $(FIXMATE_OPTIONS)
 else
 fixmate?=abyss-fixmate
-fmopt=$(FIXMATE_OPTIONS)
+fmopt=$v $(FIXMATE_OPTIONS)
 endif
 
 # DistanceEst parameters
@@ -316,13 +316,13 @@ endif
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-3.hist \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-3.hist \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
 
@@ -336,7 +336,7 @@ endif
 
 %-3.dist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-3.hist \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst $(deopt) -o $@ $*-3.hist
 
@@ -403,13 +403,13 @@ endif
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
 
@@ -423,7 +423,7 @@ endif
 
 %-6.dist.dot: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
-		|${fixmate} $v ${fmopt} -h $*-6.hist \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|DistanceEst --dot $(deopt) -o $@ $*-6.hist
 
@@ -461,9 +461,9 @@ $(name)-unitigs.bam: %.bam: %.fa
 		|samtools view -Su - |samtools sort -o - - >$@
 
 $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
-	${align} $v -j$j -l$l $(ALIGNER_OPTIONS) \
+	$(align) $v -j$j -l$l $(ALIGNER_OPTIONS) \
 		$(call map, deref, $(sort $(lib) $(pe) $(mp))) $< \
-		|$(fixmate) $v $(fmopt) \
+		|$(fixmate) $(fmopt) \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - >$@
 
