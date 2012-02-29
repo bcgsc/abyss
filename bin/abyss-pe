@@ -417,7 +417,7 @@ else
 # Convert colour-space sequence to nucleotides
 
 %-6.fa: %-cs.fa
-	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \
+	KAligner $v --seq -m -j$j -l$l $(in) $(se) $< \
 		|Consensus $v -o $@ $<
 
 endif
