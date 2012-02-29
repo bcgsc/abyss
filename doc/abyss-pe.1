@@ -1,6 +1,6 @@
 .TH abyss-pe "1" "2011-Dec" "abyss-pe (ABySS) 1.3.2" "User Commands"
 .SH NAME
-abyss-pe - assemble reads into paired-end contigs
+abyss-pe - assemble reads into contigs
 .SH SYNOPSIS
 .B abyss-pe
 [\fIOPTION\fR]...  [\fIPARAMETER\fR=\fIVALUE\fR]...
@@ -15,8 +15,8 @@ with abyss-pe.
 .SS "Parameters of abyss-pe"
 .TP
 \fBname\fR, \fBJOB_NAME\fR
-The name of this assembly. The resulting contigs will be stored in
-${name}-contigs.fa.
+The name of this assembly. The resulting scaffolds will be stored in
+${name}-scaffolds.fa.
 .TP
 \fBin\fR
 input files. Use this variable when assembling data from a single
@@ -29,12 +29,12 @@ with the same name must specify the files containing those reads.
 .TP
 \fBpe\fR
 list of paired-end libraries that will be used only for merging
-contigs and will not contribute toward the consensus sequence.
+unitigs into contigs and will not contribute toward the consensus
+sequence.
 .TP
 \fBmp\fR
-list of mate-pair libraries that will be used for scaffolding. By
-default mate-pair libraries do not contribute toward the consensus
-sequence.
+list of mate-pair libraries that will be used for scaffolding.
+Mate-pair libraries do not contribute toward the consensus sequence.
 .TP
 \fBse\fR
 files containing single-end reads
@@ -113,20 +113,28 @@ map, kaligner, bwa, bwasw, bowtie or bowtie2
 convert colour-space contigs to nucleotide contigs following assembly
 .SS "Options of make"
 .TP
-\fB-n\fR
+\fB-n\fR, \fB--dry-run\fR
 Print the commands that would be executed, but do not execute them.
 .SH "ENVIRONMENT VARIABLES"
 Any parameter that may be specified on the command line may also be
 specified in an environment variable.
 .TP
 \fBPATH\fR
-must contain the directory where the ABySS executables are installed
+must contain the directory where the ABySS executables are installed.
+Use `abyss-pe versions` to check that PATH is configured correctly.
 .TP
 \fBTMPDIR\fR
 specifies a directory to use for temporary files
-.SS "SGE integration"
+.SS "Scheduler integration"
+ABySS integrates well with cluster job schedulers, such as:
+ * SGE (Sun Grid Engine)
+ * Portable Batch System (PBS)
+ * Load Sharing Facility (LSF)
+ * IBM LoadLeveler
+
 The SGE environment variables JOB_NAME, SGE_TASK_ID and NSLOTS may be
-used to specify the parameters name, k and np, respectively.
+used to specify the parameters name, k and np, respectively, and
+similarly for other schedulers.
 .SH EXAMPLES
 .SS "One paired-end library"
  abyss-pe k=64 name=ecoli in='reads1.fa reads2.fa'
