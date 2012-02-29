@@ -1,3 +1,11 @@
+#if __APPLE_CC__
+/* Work around a bug in i686-apple-darwin11-llvm-gcc 4.2.1
+ * Undefined symbols for architecture x86_64:
+ *  "___builtin_expect", referenced from:
+ */
+#define NDEBUG 1
+#endif
+
 #include "BitUtil.h"
 #include "ContigProperties.h"
 #include "DataLayer/Options.h"
