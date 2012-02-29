@@ -61,7 +61,7 @@ np?=$(NSLOTS)
 endif
 endif
 
-# Integrate with Portable Batch System (PBS).
+# Integrate with Portable Batch System (PBS)
 ifdef PBS_JOBNAME
 name?=$(PBS_JOBNAME)
 endif
@@ -105,11 +105,13 @@ np?=$(NSLOTS)
 endif
 endif
 
+# Determine the path to mpirun
 mpirun?=$(shell which mpirun)
 ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
+# Determine the path to the ABySS executables
 path?=$(shell if ! which ABYSS >/dev/null 2>/dev/null; then \
 	dirname $(MAKEFILE_LIST); fi)
 ifdef path
@@ -129,6 +131,7 @@ endif
 pe?=$(lib)
 mp?=$(pe)
 
+# Strip spaces from the file paths
 ifdef in
 override in:=$(strip $(in))
 endif
@@ -157,7 +160,7 @@ pbopt += -b$b
 endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
-# Common paired-end parameters
+# Number of threads
 ifdef PE_HOSTFILE
 hostname?=$(shell hostname -f)
 j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
@@ -216,9 +219,10 @@ pcopt += -p$p
 S?=$s
 N?=$n
 
-# Remove environment variables.
+# Remove environment variables
 unexport in se $(lib) $(pe) $(mp)
 
+# Determine the default target
 default: unitigs
 ifneq ($(in),)
 default: contigs contigs-dot
@@ -228,6 +232,7 @@ default: scaffolds scaffolds-dot
 endif
 default: stats
 
+# Define the commands (phony targets)
 unitigs: $(name)-unitigs.fa
 
 unitigs-dot: $(name)-unitigs.dot
@@ -276,7 +281,7 @@ clean:
 %.bam.bai: %.bam
 	samtools index $<
 
-# Single-end assembly
+# Assemble unitigs
 
 %-1.fa:
 ifdef np
@@ -284,6 +289,8 @@ ifdef np
 else
 	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 endif
+
+# Find overlapping contigs
 
 %-1.adj: %-1.fa
 	AdjList $v -k$k -m$m $< >$@
@@ -293,7 +300,7 @@ endif
 %-2.adj: %-1.adj
 	abyss-filtergraph $v -k$k -g $@ $^ >$*-1.path
 
-# Pop bubbles.
+# Pop bubbles
 
 %-2.path %-3.adj: %-1.fa %-2.adj
 	PopBubbles $v -j$j -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
@@ -312,7 +319,7 @@ endif
 %-unitigs.dot: %-3.dot
 	ln -sf $< $@
 
-# Estimate distances between contigs
+# Estimate distances between unitigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
@@ -355,7 +362,7 @@ endif
 %-4.fa %-4.adj: %-3.fa %-3.adj %-3.dist
 	Overlap $v $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-4.fa $^
 
-# Paired-end assembly
+# Assemble contigs
 
 %-4.path1: %-4.adj %-3.dist
 	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
@@ -383,6 +390,8 @@ else
 
 %-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
+
+# Convert colour-space sequence to nucleotides
 
 %-6.fa: %-cs.fa
 	KAligner $v --seq -m -j$j -k$k $(in) $(se) $< \
@@ -444,7 +453,7 @@ endif
 %-scaffolds.dot: %-7.dot
 	ln -sf $< $@
 
-# Final BAM file
+# Create the final BAM file
 
 ifneq ($(mp),)
 bam: $(name)-scaffolds.bam.bai
@@ -467,7 +476,7 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 		|sort -snk3 -k4 \
 		|samtools view -Sb - >$@
 
-# Align the variants to the assembly.
+# Align the variants to the assembly
 
 %.fa.bwt: %.fa
 	bwa index $<
@@ -482,7 +491,7 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 %.gz.tbi: %.gz
 	tabix -pvcf $<
 
-# Calculate assembly contiguity statistics.
+# Calculate assembly contiguity statistics
 
 stats: $(name)-stats
 
