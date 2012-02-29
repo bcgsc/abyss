@@ -209,6 +209,12 @@ static void printDuplicates(const Match& m, const Match& rcm,
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
+	if (rec.seq.empty()) {
+		cerr << PROGRAM ": error: "
+			"the sequence `" << rec.id << "' is empty\n";
+		exit(EXIT_FAILURE);
+	}
+
 	Match m = fmIndex.find(rec.seq,
 			opt::dup ? rec.seq.length() : opt::k);
 
