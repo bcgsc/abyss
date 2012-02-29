@@ -18,25 +18,25 @@ with abyss-pe.
 The name of this assembly. The resulting scaffolds will be stored in
 ${name}-scaffolds.fa.
 .TP
-\fBin\fR
+.B in
 input files. Use this variable when assembling data from a single
 library.
 .TP
-\fBlib\fR
+.B lib
 list of paired-end libraries. Use this varible when assembling data
 from multiple fragment libraries. For each library in lib, a variable
 with the same name must specify the files containing those reads.
 .TP
-\fBpe\fR
+.B pe
 list of paired-end libraries that will be used only for merging
 unitigs into contigs and will not contribute toward the consensus
 sequence.
 .TP
-\fBmp\fR
+.B mp
 list of mate-pair libraries that will be used for scaffolding.
 Mate-pair libraries do not contribute toward the consensus sequence.
 .TP
-\fBse\fR
+.B se
 files containing single-end reads
 .TP
 .B a
@@ -101,7 +101,7 @@ v=-v to enable verbose logging
 \fBnp\fR, \fBNSLOTS\fR
 the number of processes of an MPI assembly
 .TP
-\fBmpirun\fR
+.B mpirun
 the path to mpirun
 .TP
 .B aligner
@@ -109,7 +109,7 @@ the program to use to align the reads to the contigs [map]
 .br
 map, kaligner, bwa, bwasw, bowtie or bowtie2
 .TP
-\fBcs\fR
+.B cs
 convert colour-space contigs to nucleotide contigs following assembly
 .SS "Options of make"
 .TP
@@ -119,11 +119,11 @@ Print the commands that would be executed, but do not execute them.
 Any parameter that may be specified on the command line may also be
 specified in an environment variable.
 .TP
-\fBPATH\fR
+.B PATH
 must contain the directory where the ABySS executables are installed.
 Use `abyss-pe versions` to check that PATH is configured correctly.
 .TP
-\fBTMPDIR\fR
+.B TMPDIR
 specifies a directory to use for temporary files
 .SS "Scheduler integration"
 ABySS integrates well with cluster job schedulers, such as:
