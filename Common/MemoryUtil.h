@@ -22,7 +22,7 @@ static inline ssize_t getMemoryUsage()
 	int status = task_info(mach_task_self(),
 			TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count);
 	assert(status == KERN_SUCCESS);
-	return status == KERN_SUCCESS ? t_info.virtual_size : -1;
+	return status == KERN_SUCCESS ? (ssize_t)t_info.virtual_size : -1;
 #elif HAVE_GETPAGESIZE
 	std::ifstream in("/proc/self/statm");
 	size_t size, resident, share, text, lib, data;
