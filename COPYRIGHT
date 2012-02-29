@@ -1,4 +1,4 @@
-Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=174
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ABySS
 Upstream-Contact: Shaun Jackman <sjackman@bcgsc.ca>
 Source: http://www.bcgsc.ca/platform/bioinfo/software/abyss
