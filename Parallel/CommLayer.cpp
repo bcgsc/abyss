@@ -26,6 +26,7 @@ CommLayer::CommLayer()
 
 CommLayer::~CommLayer()
 {
+	MPI_Cancel(&m_request);
 	delete[] m_rxBuffer;
 	logger(1) << "Sent " << m_msgID << " control, "
 		<< m_txPackets << " packets, "
