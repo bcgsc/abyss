@@ -225,7 +225,13 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			} else {
 				vertex_descriptor u(uname);
 				assert(get(vertex_index, g, u) < num_vertices(g));
-				assert(g[u] == vp);
+				if (g[u] != vp) {
+					std::cerr << "error: "
+						"vertex properties do not agree: "
+						"\"" << uname << "\" "
+						"[" << g[u] << "] [" << vp << "]\n";
+					exit(EXIT_FAILURE);
+				}
 			}
 		} else if (c == '-') {
 			// Edge
