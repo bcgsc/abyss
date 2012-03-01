@@ -24,7 +24,7 @@ class BitArrays
 
   public:
 
-/** Count the occurences of the symbols of s. */
+/** Count the occurrences of the symbols of s. */
 void assign(const std::vector<T>& s)
 {
 	assert(!s.empty());
@@ -62,7 +62,7 @@ size_t size() const
 	return m_data.front().length();
 }
 
-/** Return the number of occurences of the specified symbol. */
+/** Return the number of occurrences of the specified symbol. */
 size_t count(T c) const
 {
 	return m_data[c].one_num();

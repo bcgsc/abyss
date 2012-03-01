@@ -174,9 +174,9 @@ void assign(It first, It last)
 	for (size_t i = 0; i < m_sa.size(); i++)
 		bwt[i] = m_sa[i] == 0 ? SENTINEL() : first[m_sa[i] - 1];
 
-	std::cerr << "Building the character occurence table...\n";
+	std::cerr << "Building the character occurrence table...\n";
 	m_occ.assign(bwt);
-	countOccurences();
+	countOccurrences();
 }
 
 /** Sample the suffix array. */
@@ -522,7 +522,7 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 
 	in >> o.m_occ;
 	assert(in);
-	o.countOccurences();
+	o.countOccurrences();
 
 	return in;
 }
@@ -530,7 +530,7 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 private:
 
 /** Build the cumulative frequency table m_cf from m_occ. */
-void countOccurences()
+void countOccurrences()
 {
 	assert(!m_alphabet.empty());
 	m_cf.resize(m_alphabet.size());
