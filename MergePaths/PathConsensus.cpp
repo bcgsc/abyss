@@ -164,6 +164,17 @@ static const Sequence getSequence(ContigNode id)
 	}
 }
 
+/** Return the distance from vertex u to v. */
+static int getDistance(const Graph& g,
+		graph_traits<Graph>::vertex_descriptor u,
+		graph_traits<Graph>::vertex_descriptor v)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	pair<E, bool> e = edge(u, v, g);
+	assert(e.second);
+	return g[e.first].distance;
+}
+
 /** Read contig paths from the specified file.
  * @param ids [out] the string ID of the paths
  * @param isAmb [out] whether the path contains a gap
@@ -235,15 +246,18 @@ static void markSeen(vector<bool>& seen, const vector<Path>& paths,
 		markSeen(seen, *it, flag);
 }
 
-struct NewVertex {
-	Graph::vertex_descriptor t, u, v;
-	Graph::vertex_property_type vp;
-	NewVertex(
-			Graph::vertex_descriptor t,
-			Graph::vertex_descriptor u,
-			Graph::vertex_descriptor v,
-			const Graph::vertex_property_type& vp)
-		: t(t), u(u), v(v), vp(vp) { }
+/** A new vertex and two edges that will be added to the graph. */
+struct NewVertex
+{
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef vertex_property<Graph>::type VP;
+	typedef edge_property<Graph>::type EP;
+	V t, u, v;
+	VP vpu;
+	EP eptu, epuv;
+	NewVertex(V t, V u, V v, const VP& vpu,
+			const EP& eptu, const EP& epuv)
+		: t(t), u(u), v(v), vpu(vpu), eptu(eptu), epuv(epuv) { }
 };
 typedef vector<NewVertex> NewVertices;
 
@@ -251,7 +265,7 @@ typedef vector<NewVertex> NewVertices;
 static NewVertices g_newVertices;
 
 /** Output a new contig. */
-static ContigID outputNewContig(
+static ContigID outputNewContig(const Graph& g,
 	const vector<Path>& solutions,
 	size_t longestPrefix, size_t longestSuffix,
 	const Sequence& seq, const unsigned coverage,
@@ -260,17 +274,12 @@ static ContigID outputNewContig(
 	assert(!solutions.empty());
 	assert(longestPrefix > 0);
 	assert(longestSuffix > 0);
+
 	ContigID id(ContigID::create());
-
-	// Record the newly-created contig to be added to the graph later.
-	g_newVertices.push_back(NewVertex(
-				*(solutions[0].begin() + longestPrefix - 1),
-				ContigNode(id, false),
-				*(solutions[0].rbegin() + longestSuffix - 1),
-				ContigProperties(seq.length(), coverage)));
-
 	out << '>' << id.str() << ' ' << seq.length()
 		<< ' ' << coverage << ' ';
+
+	int dtu = INT_MAX, duv = INT_MAX;
 	for (vector<Path>::const_iterator it = solutions.begin();
 			it != solutions.end(); it++) {
 		if (it != solutions.begin())
@@ -284,10 +293,22 @@ static ContigID outputNewContig(
 			copy(first, last - 1,
 					ostream_iterator<ContigNode>(out, ","));
 			out << *(last - 1);
+			dtu = min(dtu, getDistance(g, first[-1], first[0]));
+			duv = min(duv, getDistance(g, last[-1], last[0]));
 		} else
 			out << '*';
 	}
 	out << '\n' << seq << '\n';
+	assert(dtu < INT_MAX);
+	assert(duv < INT_MAX);
+
+	// Record the newly-created contig to be added to the graph later.
+	g_newVertices.push_back(NewVertex(
+				*(solutions[0].begin() + longestPrefix - 1),
+				ContigNode(id, false),
+				*(solutions[0].rbegin() + longestSuffix - 1),
+				ContigProperties(seq.length(), coverage),
+				dtu, duv));
 	return id;
 }
 
@@ -406,7 +427,7 @@ static ContigPath alignPair(const Graph& g,
 			return ContigPath();
 
 		unsigned coverage = calculatePathProperties(g, sol).coverage;
-		ContigID id = outputNewContig(
+		ContigID id = outputNewContig(g,
 				solutions, 1, 1, consensus, coverage, out);
 		ContigPath path;
 		path.push_back(solutions.front().front());
@@ -468,7 +489,7 @@ static ContigPath alignPair(const Graph& g,
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
-	ContigID id = outputNewContig(solutions, 1, 1,
+	ContigID id = outputNewContig(g, solutions, 1, 1,
 			align.consensus(), coverage, out);
 	ContigPath path;
 	path.push_back(solutions.front().front());
@@ -606,7 +627,7 @@ static ContigPath alignMulti(const Graph& g,
 		return solutions[0];
 	}
 
-	ContigID id = outputNewContig(solutions,
+	ContigID id = outputNewContig(g, solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
 	ContigPath path(vppath);
 	path.push_back(ContigNode(id, false));
@@ -890,10 +911,10 @@ int main(int argc, char** argv)
 		// Add the newly-created consensus contigs to the graph.
 		for (NewVertices::const_iterator it = g_newVertices.begin();
 				it != g_newVertices.end(); ++it) {
-			Graph::vertex_descriptor u = add_vertex(it->vp, g);
+			Graph::vertex_descriptor u = add_vertex(it->vpu, g);
 			assert(u == it->u);
-			add_edge(it->t, it->u, g);
-			add_edge(it->u, it->v, g);
+			add_edge(it->t, it->u, it->eptu, g);
+			add_edge(it->u, it->v, it->epuv, g);
 		}
 		write_graph(fout, g, PROGRAM, commandLine);
 		assert_good(fout, opt::graphPath);
