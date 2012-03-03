@@ -16,6 +16,7 @@
 #include "Graph/GraphIO.h"
 #include <algorithm>
 #include <cctype>
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
