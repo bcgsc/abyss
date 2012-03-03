@@ -48,7 +48,7 @@ Download and install the
 ## Assemble a small synthetic data set
 
 	abyss-pe k=25 name=test \
-	se=http://raw.github.com/dzerbino/velvet/master/data/test_reads.fa
+	se=https://raw.github.com/dzerbino/velvet/master/data/test_reads.fa
 
 ## Calculate assembly contiguity statistics
 
