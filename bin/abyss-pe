@@ -2,68 +2,6 @@
 # Run the ABySS assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 
-# Mandatory parameters
-ifndef name
-error::
-	@>&2 echo 'abyss-pe: missing parameter `name`' 
-endif
-ifndef k
-error::
-	@>&2 echo 'abyss-pe: missing parameter `k`'
-endif
-ifeq ($(lib)$(in)$(se),)
-error::
-	@>&2 echo 'abyss-pe: missing parameter `lib`, `in` or `se`'
-endif
-
-default:
-
-error::
-	@>&2 echo 'Try `abyss-pe help` for more information.'
-	@false
-
-help:
-	@printf '\
-Usage: abyss-pe [OPTION]... [PARAMETER=VALUE]... [COMMAND]...\n\
-Assemble reads into contigs and scaffolds. ABySS is a de novo\n\
-sequence assembler intended for short paired-end reads and large\n\
-genomes. See the abyss-pe man page for documentation of assembly\n\
-parameters and commands. abyss-pe is a Makefile script, and so\n\
-options of `make` may also be used with abyss-pe. See the `make`\n\
-man page for documentation.\n\
-\n\
-Report bugs to <abyss-users@bcgsc.ca>.\n'
-
-version:
-	@printf '\
-abyss-pe (ABySS) 1.3.2\n\
-Written by Shaun Jackman.\n\
-\n\
-Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
-
-versions: version
-	@ABYSS --version; echo
-	@-ABYSS-P --version; echo
-	@AdjList --version; echo
-	@DistanceEst --version; echo
-	@MergeContigs --version; echo
-	@MergePaths --version; echo
-	@Overlap --version; echo
-	@PathConsensus --version; echo
-	@PathOverlap --version; echo
-	@PopBubbles --version; echo
-	@SimpleGraph --version; echo
-	@abyss-fac --version; echo
-	@abyss-filtergraph --version; echo
-	@abyss-fixmate --version; echo
-	@abyss-map --version; echo
-	@abyss-scaffold --version; echo
-	@abyss-todot --version; echo
-	@$(align) --version; echo
-	@awk --version; echo
-	@sort --version; echo
-	@-mpirun --version
-
 # Set pipefail to require that all commands of a pipe must succeed.
 SHELL=/bin/bash -o pipefail
 
@@ -244,6 +182,71 @@ N?=$n
 
 # Remove environment variables
 unexport in se $(lib) $(pe) $(mp)
+
+# Check the mandatory parameters
+
+ifndef name
+error::
+	@>&2 echo 'abyss-pe: missing parameter `name`'
+endif
+ifndef k
+error::
+	@>&2 echo 'abyss-pe: missing parameter `k`'
+endif
+ifeq ($(lib)$(in)$(se),)
+error::
+	@>&2 echo 'abyss-pe: missing parameter `lib`, `in` or `se`'
+endif
+
+default:
+
+error::
+	@>&2 echo 'Try `abyss-pe help` for more information.'
+	@false
+
+# Help and version messages
+
+help:
+	@printf '\
+Usage: abyss-pe [OPTION]... [PARAMETER=VALUE]... [COMMAND]...\n\
+Assemble reads into contigs and scaffolds. ABySS is a de novo\n\
+sequence assembler intended for short paired-end reads and large\n\
+genomes. See the abyss-pe man page for documentation of assembly\n\
+parameters and commands. abyss-pe is a Makefile script, and so\n\
+options of `make` may also be used with abyss-pe. See the `make`\n\
+man page for documentation.\n\
+\n\
+Report bugs to <abyss-users@bcgsc.ca>.\n'
+
+version:
+	@printf '\
+abyss-pe (ABySS) 1.3.2\n\
+Written by Shaun Jackman.\n\
+\n\
+Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
+
+versions: version
+	@ABYSS --version; echo
+	@-ABYSS-P --version; echo
+	@AdjList --version; echo
+	@DistanceEst --version; echo
+	@MergeContigs --version; echo
+	@MergePaths --version; echo
+	@Overlap --version; echo
+	@PathConsensus --version; echo
+	@PathOverlap --version; echo
+	@PopBubbles --version; echo
+	@SimpleGraph --version; echo
+	@abyss-fac --version; echo
+	@abyss-filtergraph --version; echo
+	@abyss-fixmate --version; echo
+	@abyss-map --version; echo
+	@abyss-scaffold --version; echo
+	@abyss-todot --version; echo
+	@$(align) --version; echo
+	@awk --version; echo
+	@sort --version; echo
+	@-mpirun --version
 
 # Determine the default target
 default: unitigs
