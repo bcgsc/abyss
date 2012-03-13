@@ -36,7 +36,7 @@ np?=$(NSLOTS)
 endif
 endif
 
-# Integrate with Load Sharing Facitily (LSF)
+# Integrate with Load Sharing Facility (LSF)
 ifdef LSB_JOBNAME
 name?=$(LSB_JOBNAME)
 endif
