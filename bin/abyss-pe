@@ -220,7 +220,7 @@ Report bugs to <abyss-users@bcgsc.ca>.\n'
 
 version:
 	@printf '\
-abyss-pe (ABySS) 1.3.2\n\
+abyss-pe (ABySS) 1.3.3\n\
 Written by Shaun Jackman.\n\
 \n\
 Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'

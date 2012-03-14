@@ -1,3 +1,66 @@
+2012-03-13  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.3.3.
+	* New parameter, l. Specify the minimum alignment length when
+	aligning the reads to the contigs.
+	* Improve the scaffolding algorithm that identifies repeats.
+	* Improve the documentation.
+
+	abyss-pe:
+	* New parameter, l. Specify the minimum alignment length when
+	aligning the reads to the contigs. This option may be specified
+	per library. The default value is k.
+	* New parameter, S. Specify the minimum contig size required for
+	building scaffolds.
+	* New parameter, N. Specify the minimum number of pairs required
+	for building scaffolds.
+	* Integrate with Load Sharing Facility (LSF).
+	* Calculate the assembly contiguity statistics.
+
+	KAligner, abyss-map:
+	* Rename the minimum alignment length option -k to -l.
+
+	DistanceEst:
+	* Dual licensed under the GPL and BCCA-Academic licenses.
+	* New options, --fr and --rf. Specify the orientation of the
+	library. The default behaviour is to detect the orientation.
+	* New options, --mind and --maxd. Specify the minimum and maximum
+	distances for the maximum likelihood estimator.
+	* New option, -l, --min-align. Specify the minimum alignment
+	length of the aligner, which can improve distance estimates.
+	* Increase the default minimum mapping quality, -q, to 10, was 1.
+
+	MergePaths:
+	* Bug fix. Fix the bug causing the error:
+	Assertion `count(it2+1, path2.end(), pivot) == 0' failed.
+
+	PathConsensus:
+	* Bug fix. Fix the bug causing the error:
+	Assertion `fstSol.size() == sndSol.size()' failed.
+
+	MergeContigs:
+	* Calculate the assembly contiguity statistics.
+
+	abyss-scaffold:
+	* Improve the algorithm that identifies repeats.
+	* Remove simple cycles from the scaffold graph.
+	* Calculate the assembly contiguity statistics.
+	* The option -s may specify a range, such as -s200-10000,
+	to find the value of s that maximizes the scaffold N50.
+
+	abyss-fac:
+	* New option, -m, --mmd. Output MultiMarkdown format.
+
+	abyss-index:
+	* New option, -a, --alphabet. Specify the alphabet.
+	* New option, --bwt. Output the Burrows-Wheeler transform.
+
+	abyss-samtoafg:
+	* New script. Convert a SAM file to an AMOS AFG file.
+
+	README, README.html, abyss-pe.1:
+	* Improve the documentation.
+
 2011-12-13  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.3.2.
