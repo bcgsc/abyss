@@ -4,6 +4,7 @@
 #include "Sequence.h"
 #include "StringUtil.h" // for chomp
 #include <cassert>
+#include <cstdlib> // for exit
 #include <fstream>
 #include <istream>
 #include <limits> // for numeric_limits
@@ -22,7 +23,17 @@ class FastaReader {
 		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
 		FastaReader(const char* path, int flags);
-		~FastaReader() { assert(m_in.eof()); }
+
+		~FastaReader()
+		{
+			if (!m_in.eof()) {
+				std::string line;
+				getline(line);
+				die() << "expected end-of-file near\n"
+					<< line << '\n';
+				exit(EXIT_FAILURE);
+			}
+		}
 
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor, std::string& qual);

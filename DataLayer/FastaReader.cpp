@@ -193,7 +193,8 @@ next_record:
 			exit(EXIT_FAILURE);
 		}
 
-		if (isColourSpace(s) && !isdigit(s[0])) {
+		bool colourSpace = isColourSpace(s);
+		if (colourSpace && !isdigit(s[0])) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
@@ -202,7 +203,12 @@ next_record:
 			anchor = colourToNucleotideSpace(s[0], s[1]);
 			s.erase(0, 2);
 			q.erase(0, 1);
-		} else if (opt::trimMasked) {
+		}
+
+		if (!q.empty())
+			checkSeqQual(s, q);
+
+		if (opt::trimMasked && !colourSpace) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
 			size_t trimFront = s.find_first_not_of("acgtn");
@@ -214,8 +220,6 @@ next_record:
 				q.erase(0, trimFront);
 			}
 		}
-		if (!q.empty())
-			checkSeqQual(s, q);
 		if (flagFoldCase())
 			transform(s.begin(), s.end(), s.begin(), ::toupper);
 
