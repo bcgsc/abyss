@@ -145,7 +145,8 @@ next_record:
 			goto next_record;
 
 		// Casava FASTQ format
-		if (comment.size() > 3 && comment[1] == ':' && comment[3]) {
+		if (comment.size() > 3
+				&& comment[1] == ':' && comment[3] == ':') {
 			// read, chastity, flags, index: 1:Y:0:AAAAAA
 			if (opt::chastityFilter && comment[2] == 'Y') {
 				m_unchaste++;
