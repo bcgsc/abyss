@@ -480,7 +480,7 @@ int main(int argc, char* const* argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
-			case 'k': arg >> opt::k; break;
+			case 'l': arg >> opt::k; break;
 			case 'c': arg >> opt::c; break;
 			case 'd': arg >> opt::distPath; break;
 			case 'f': arg >> opt::fragPath; break;
