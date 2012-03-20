@@ -1,14 +1,13 @@
 #ifndef HASHFUNCTION_H
 #define HASHFUNCTION_H 1
 
+#include "city.h"
 #include <stddef.h>
 #include <stdint.h>
 
-uint32_t hashlittle(const void *key, size_t length, uint32_t initval);
-
-static inline uint32_t hashmem(const void *p, size_t n)
+static inline uint64_t hashmem(const void *p, size_t n)
 {
-	return hashlittle(p, n, 0);
+	return CityHash64(static_cast<const char*>(p), n);
 }
 
 #endif

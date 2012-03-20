@@ -246,12 +246,6 @@ Files: Common/city.cc Common/city.h
 Copyright: Copyright 2011 Google, Inc.
 License: Expat
 
-Files: Common/HashFunction.cpp
-Copyright: public-domain
-License: public-domain
- You can use this free for any purpose. It's in the public domain.
- It has no warranty.
-
 Files: dialign/*
 Copyright: Copyright 2008 Amarendran R. Subramanian
 License: LGPL-2.1+

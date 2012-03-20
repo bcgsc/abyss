@@ -15,7 +15,7 @@ libcommon_a_SOURCES = \
 	Estimate.h \
 	Fcontrol.cpp Fcontrol.h \
 	Functional.h \
-	HashFunction.cpp HashFunction.h \
+	HashFunction.h \
 	Histogram.cpp Histogram.h \
 	IOUtil.h \
 	Iterator.h \
