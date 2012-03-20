@@ -119,9 +119,15 @@ static void addComplementaryEdges(DG& g)
 	for (Eit eit = erange.first; eit != erange.second; ++eit) {
 		E e = *eit;
 		V u = source(e, g), v = target(e, g);
-		if (!edge(~v, ~u, g).second) {
+		E f;
+		bool found;
+		tie(f, found) = edge(~v, ~u, g);
+		if (!found) {
 			add_edge(~v, ~u, g[e], g);
 			numAdded++;
+		} else if (g[e] != g[f]) {
+			// The edge properties do not agree. Select the better.
+			g[e] = g[f] = BetterDistanceEst()(g[e], g[f]);
 		}
 	}
 	if (opt::verbose > 0)
