@@ -106,7 +106,7 @@ namespace std {
 /** Return the hash of the null-terminated string s. */
 static inline size_t hash(const char* s)
 {
-	return hashlittle(s, strlen(s), 0);
+	return hashmem(s, strlen(s));
 }
 
 namespace std {

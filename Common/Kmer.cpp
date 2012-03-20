@@ -63,7 +63,7 @@ size_t Kmer::getHashCode() const
 {
 	// Hash numbytes - 1 to avoid getting different hash values for
 	// the same sequence for n % 4 != 0 sequences.
-	return hashlittle(m_seq, bytes() - 1, 131);
+	return hashmem(m_seq, bytes() - 1);
 }
 
 /** Return the string representation of this sequence. */
