@@ -132,7 +132,7 @@ class Histogram
 	/** Return the specified percentile. */
 	T percentile(float p) const
 	{
-		size_type x = ceil(p * size());
+		size_type x = (size_type)ceil(p * size());
 		size_type n = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
@@ -152,7 +152,7 @@ class Histogram
 	/** Return the specified weighted percentile. */
 	T weightedPercentile(float p) const
 	{
-		accumulator x = ceil(p * sum());
+		accumulator x = (accumulator)ceil(p * sum());
 		accumulator total = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
