@@ -3,7 +3,7 @@ Parallel=Parallel
 endif
 
 dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
-	README README.css README.html
+	README.css README.html README.md
 
 EXTRA_DIST=doxygen.conf
 
@@ -34,5 +34,5 @@ SUBDIRS = \
 	kmerprint \
 	FilterGraph
 
-README.html: %.html: %
+%.html: %.md
 	multimarkdown $< >$@
