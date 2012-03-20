@@ -242,6 +242,10 @@ Files: Common/* DistanceEst/* ParseAligns/*
 Copyright: Copyright 2012 Genome Sciences Centre
 License: BCCA-Academic or GPL-3+
 
+Files: Common/city.cc Common/city.h
+Copyright: Copyright 2011 Google, Inc.
+License: Expat
+
 Files: Common/HashFunction.cpp
 Copyright: public-domain
 License: public-domain
@@ -307,6 +311,8 @@ License: BSD-3-clause
 
 Files: FMIndex/sais.hxx
 Copyright: Copyright 2010 Yuta Mori
+License: Expat
+
 License: Expat
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation

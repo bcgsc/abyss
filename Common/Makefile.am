@@ -33,4 +33,5 @@ libcommon_a_SOURCES = \
 	SuffixArray.h \
 	Timer.cpp Timer.h \
 	Uncompress.cpp Uncompress.h \
-	UnorderedMap.h
+	UnorderedMap.h \
+	city.cc city.h
