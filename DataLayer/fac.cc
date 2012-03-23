@@ -73,6 +73,14 @@ static const int FASTAREADER_FLAGS = FastaReader::NO_FOLD_CASE;
 /** Print contiguity statistics. */
 static void printContiguityStatistics(const char* path)
 {
+	static bool printHeader = true;
+	if (string(path) == "---") {
+		if (printHeader == false)
+			cout << '\n';
+		printHeader = true;
+		return;
+	}
+
 	// Read the sequences and count the lengths.
 	Histogram h;
 	FastaReader in(path, FASTAREADER_FLAGS);
@@ -81,7 +89,6 @@ static void printContiguityStatistics(const char* path)
 	assert(in.eof());
 
 	// Print the table header.
-	static bool printHeader = true;
 	if (opt::format == JIRA && printHeader) {
 		printHeader = false;
 		const char* sep = "\t||";
