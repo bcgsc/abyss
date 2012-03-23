@@ -86,12 +86,24 @@ static inline void readFile(const char* path, Vector& s)
 	std::ifstream in(path);
 	assert_good(in, path);
 	in.seekg(0, std::ios::end);
-	s.resize(in.tellg());
+	ssize_t n = in.tellg();
+	assert(n > 0);
+	s.resize(n);
 	in.seekg(0, std::ios::beg);
 	assert_good(in, path);
-	in.read(reinterpret_cast<char*>(&s[0]), s.size());
+	char *p = reinterpret_cast<char*>(&s[0]);
+#if __MACH__
+	// Read 1 GB at a time. Reads of 2 GB or more fail.
+	const ssize_t N = 1024 * 1024 * 1024;
+	for (; n > N; n -= N, p += N) {
+		in.read(p, N);
+		assert_good(in, path);
+		assert(in.gcount() == N);
+	}
+#endif
+	in.read(p, n);
 	assert_good(in, path);
-	assert((size_t)in.gcount() == s.size());
+	assert(in.gcount() == n);
 }
 
 #endif
