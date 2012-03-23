@@ -13,7 +13,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
-#include <sstream>
 #include <string>
 
 using namespace std;
@@ -33,7 +32,8 @@ static const char USAGE_MESSAGE[] =
 "      --both              build both FAI and FM indexes [default]\n"
 "      --fai               build a FAI index\n"
 "      --fm                build a FM index\n"
-"      --bwt               build the BWT\n"
+"      --fa2bwt            build the BWT directly without the SA\n"
+"      --bwt2fm            build the FM index from the BWT\n"
 "  -a, --alphabet=STRING   use the alphabet STRING [-ACGT]\n"
 "  -s, --sample=N          sample the suffix array [16]\n"
 "  -d, --decompress        decompress the index FILE\n"
@@ -52,8 +52,11 @@ namespace opt {
 	enum { NONE, FAI, FM, BOTH };
 	static int indexes = BOTH;
 
-	/** Output the BWT. */
-	static int bwt;
+	/** Build the BWT directly without the SA. */
+	static int fa2bwt;
+
+	/** Build the FM index from the BWT. */
+	static int bwt2fm;
 
 	/** The alphabet. */
 	static string alphabet = "-ACGT";
@@ -76,7 +79,8 @@ static const struct option longopts[] = {
 	{ "both", no_argument, &opt::indexes, opt::BOTH },
 	{ "fai", no_argument, &opt::indexes, opt::FAI },
 	{ "fm", no_argument, &opt::indexes, opt::FM },
-	{ "bwt", no_argument, &opt::bwt, true },
+	{ "fa2bwt", no_argument, &opt::fa2bwt, true },
+	{ "bwt2fm", no_argument, &opt::bwt2fm, true },
 	{ "alphabet", optional_argument, NULL, 'a' },
 	{ "decompress", no_argument, NULL, 'd' },
 	{ "sample", required_argument, NULL, 's' },
@@ -104,13 +108,34 @@ static void indexFasta(const string& faPath, const string& faiPath)
 	assert_good(out, faiPath);
 }
 
+/** Build the FM index from the BWT. */
+static void buildFMIndexFromBWT(FMIndex& fm, const string& path)
+{
+	if (opt::verbose > 0)
+		cerr << "Reading `" << path << "'...\n";
+	std::vector<FMIndex::value_type> bwt;
+	readFile(path.c_str(), bwt);
+	assert(bwt.size() > 1);
+
+	if (opt::alphabet.empty()) {
+		fm.setAlphabet(bwt.begin(), bwt.end());
+		std::cerr << "The alphabet has "
+			<< fm.alphabetSize() << " symbols.\n";
+	} else
+		fm.setAlphabet(opt::alphabet);
+
+	fm.encode(bwt.begin(), bwt.end());
+	fm.sampleSA(opt::sampleSA);
+	fm.assignBWT(bwt.begin(), bwt.end());
+}
+
 /** Build an FM index of the specified file. */
-static size_t buildFMIndex(FMIndex& fm, const char* path)
+static void buildFMIndex(FMIndex& fm, const string& path)
 {
 	if (opt::verbose > 0)
 		std::cerr << "Reading `" << path << "'...\n";
 	std::vector<FMIndex::value_type> s;
-	readFile(path, s);
+	readFile(path.c_str(), s);
 
 	size_t MAX_SIZE = numeric_limits<FMIndex::sais_size_type>::max();
 	if (s.size() > MAX_SIZE) {
@@ -130,23 +155,17 @@ static size_t buildFMIndex(FMIndex& fm, const char* path)
 	} else
 		fm.setAlphabet(opt::alphabet);
 
-	if (opt::bwt) {
-		string bwtPath = string(path) + ".bwt";
-		cerr << "Writing `" << bwtPath << "'...\n";
-		ofstream fout;
-		if (!opt::toStdout)
-			fout.open(bwtPath.c_str());
-		ostream& out = opt::toStdout ? cout : fout;
-		assert_good(out, bwtPath);
-
-		fm.buildBWT(s.begin(), s.end(), out);
-		out.flush();
-		assert_good(out, bwtPath);
+	if (opt::fa2bwt) {
+		// Build the BWT first.
+		s.push_back(0);
+		fm.buildBWT(s.begin(), s.end() - 1);
+		fm.sampleSA(opt::sampleSA);
+		fm.assignBWT(s.begin(), s.end());
 	} else {
+		// Construct the suffix array first.
 		fm.assign(s.begin(), s.end());
 		fm.sampleSA(opt::sampleSA);
 	}
-	return s.size();
 }
 
 int main(int argc, char **argv)
@@ -222,10 +241,7 @@ int main(int argc, char **argv)
 		out.flush();
 		assert_good(out, faPath);
 
-		ostringstream ss;
-		ss << faPath << ".fai";
-		string faiPath(ss.str());
-		in.open(faiPath.c_str());
+		in.open((faPath + ".fai").c_str());
 		FastaIndex faIndex;
 		if (in) {
 			in >> faIndex;
@@ -234,33 +250,30 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	const char* faPath(argv[optind]);
-	ostringstream ss;
-	ss << faPath << ".fm";
-	string fmPath = opt::toStdout ? "-" : ss.str();
-	ss.str("");
-	ss << faPath << ".fai";
-	string faiPath(ss.str());
 
-	if (opt::indexes & opt::FAI)
-		indexFasta(faPath, faiPath);
-
-	if ((opt::indexes & opt::FM) == 0)
-		return 0;
-
+	string path = argv[optind];
 	FMIndex fm;
-	size_t n = buildFMIndex(fm, faPath);
+	if (opt::bwt2fm) {
+		buildFMIndexFromBWT(fm, path);
+	} else {
+		if (opt::indexes & opt::FAI)
+			indexFasta(path, path + ".fai");
+
+		if ((opt::indexes & opt::FM) == 0)
+			return 0;
+
+		buildFMIndex(fm, path);
+	}
 
 	if (opt::verbose > 0) {
+		size_t n = fm.size();
 		ssize_t bytes = getMemoryUsage();
 		cerr << "Read " << toSI(n) << "B. "
 			"Used " << toSI(bytes) << "B of memory and "
 				<< setprecision(3) << (float)bytes / n << " B/bp.\n";
 	}
 
-	if (opt::bwt)
-		return 0;
-
+	string fmPath = opt::toStdout ? "-" : path + ".fm";
 	cerr << "Writing `" << fmPath << "'...\n";
 	ofstream fout;
 	if (!opt::toStdout)

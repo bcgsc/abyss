@@ -84,7 +84,6 @@ void encode(It first, It last) const
 	assert(first < last);
 	assert(!m_alphabet.empty());
 	std::transform(first, last, first, Translate(*this));
-	std::replace(first, last, SENTINEL(), T(0));
 }
 
 /** Decode the alphabet of [first, last). */
@@ -97,13 +96,19 @@ void decode(It first, It last) const
 		*it = m_alphabet[*it];
 }
 
-/** Build the BWT of [first, last). */
+/** Build the BWT of [first, last).
+ * The BWT including the sentinel is stored in [first, last].
+ * @return the position of the sentinel
+ */
 template<typename It>
 size_type buildBWT(It first, It last) const
 {
 	assert(first < last);
 	assert(size_t(last - first)
 			< std::numeric_limits<size_type>::max());
+	encode(first, last);
+	std::replace(first, last, SENTINEL(), T(0));
+
 	std::cerr << "Building the Burrows-Wheeler transform...\n";
 	size_t n = last - first;
 	std::vector<sais_size_type> sa(n);
@@ -115,30 +120,56 @@ size_type buildBWT(It first, It last) const
 	assert(sentinel >= 0);
 	if (sentinel < 0)
 		abort();
+	// Insert the sentinel.
+	std::copy_backward(first + sentinel, last, last + 1);
+	first[sentinel] = SENTINEL();
 	return sentinel;
 }
 
-/** Build the BWT of [first, last) and write the result to out. */
-template<typename It>
-std::ostream& buildBWT(It first, It last, std::ostream& out) const
+/** Set the specified element of the sampled suffix array. */
+void setSA(size_t sai, size_t pos)
 {
-	assert(first < last);
-	assert(out);
+	if (sai % m_sampleSA == 0) {
+		size_t i = sai / m_sampleSA;
+		assert(i < m_sa.size());
+		m_sa[i] = pos;
+	}
+}
 
-	// Construct the BWT.
-	encode(first, last);
-	sais_size_type sentinel = buildBWT(first, last);
-	assert(sentinel <= last - first);
-	decode(first, last);
+/** Construct the suffix array from the FM index. */
+void constructSuffixArray()
+{
+	// The length of the original string.
+	size_t n = m_occ.size() - 1;
+	assert(n > 0);
+	assert(m_sampleSA > 0);
+	m_sa.resize(n / m_sampleSA + 1);
+	size_t sai = 0;
+	for (size_t i = n; i > 0; i--) {
+		setSA(sai, i);
+		T c = m_occ.at(sai);
+		assert(c != SENTINEL());
+		sai = m_cf[c] + m_occ.rank(c, sai);
+		assert(sai > 0);
+	}
+	setSA(sai, 0);
+}
 
-	// Output the BWT.
-	out.write(reinterpret_cast<char*>(&first[0]),
-			sentinel);
-	out.put('\0');
-	out.write(reinterpret_cast<char*>(&first[sentinel]),
-			last - first - sentinel);
-	assert(out);
-	return out;
+/** Build an FM-index of the specified BWT. */
+template<typename It>
+void assignBWT(It first, It last)
+{
+	assert(last - first > 1);
+	assert(size_t(last - first)
+			< std::numeric_limits<size_type>::max());
+
+	std::cerr << "Building the character occurrence table...\n";
+	m_occ.assign(first, last);
+	countOccurrences();
+
+	// Construct the suffix array from the FM index.
+	std::cerr << "Building the suffix array...\n";
+	constructSuffixArray();
 }
 
 /** Build an FM-index of the specified data. */
@@ -150,6 +181,7 @@ void assign(It first, It last)
 			< std::numeric_limits<size_type>::max());
 
 	encode(first, last);
+	std::replace(first, last, SENTINEL(), T(0));
 
 	// Construct the suffix array.
 	std::cerr << "Building the suffix array...\n";
@@ -175,7 +207,7 @@ void assign(It first, It last)
 		bwt[i] = m_sa[i] == 0 ? SENTINEL() : first[m_sa[i] - 1];
 
 	std::cerr << "Building the character occurrence table...\n";
-	m_occ.assign(bwt);
+	m_occ.assign(bwt.begin(), bwt.end());
 	countOccurrences();
 }
 
@@ -187,7 +219,7 @@ void sampleSA(unsigned period)
 		return;
 	assert(m_sampleSA == 1);
 	m_sampleSA = period;
-	if (m_sampleSA == 1)
+	if (m_sampleSA == 1 || m_sa.empty())
 		return;
 	std::vector<size_type>::iterator out = m_sa.begin();
 	for (size_t i = 0; i < m_sa.size(); i += m_sampleSA)
@@ -431,7 +463,10 @@ Match find(const std::string& q, unsigned k) const
 	return findSubstring(s.begin(), s.end(), k);
 }
 
-/** Set the alphabet to [first, last). */
+/** Set the alphabet to [first, last).
+ * The character '\0' is treated specially and not included in the
+ * alphabet.
+ */
 template <typename It>
 void setAlphabet(It first, It last)
 {
@@ -441,6 +476,9 @@ void setAlphabet(It first, It last)
 		assert((size_t)*it < mask.size());
 		mask[*it] = true;
 	}
+
+	// Remove the character '\0' from the alphabet.
+	mask[0] = false;
 
 	m_alphabet.clear();
 	m_mapping.clear();

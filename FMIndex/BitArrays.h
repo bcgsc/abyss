@@ -24,26 +24,25 @@ class BitArrays
 
   public:
 
-/** Count the occurrences of the symbols of s. */
-void assign(const std::vector<T>& s)
+/** Count the occurrences of the symbols of [first, last). */
+template<typename It>
+void assign(It first, It last)
 {
-	assert(!s.empty());
+	assert(first < last);
 	m_data.clear();
 
 	// Determine the size of the alphabet ignoring the sentinel.
 	T n = 0;
-	for (std::vector<T>::const_iterator it = s.begin();
-			it != s.end(); ++it)
+	for (It it = first; it != last; ++it)
 		if (*it != SENTINEL())
 			n = std::max(n, *it);
 	n++;
 
 	assert(n < std::numeric_limits<T>::max());
-	m_data.resize(n, wat_array::BitArray(s.size()));
+	m_data.resize(n, wat_array::BitArray(last - first));
 
-	typedef std::vector<T>::const_iterator It;
 	size_t i = 0;
-	for (It it = s.begin(); it != s.end(); ++it, ++i) {
+	for (It it = first; it != last; ++it, ++i) {
 		T c = *it;
 		if (c == SENTINEL())
 			continue;
