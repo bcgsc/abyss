@@ -148,8 +148,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 			"discarded " << reader.unchaste() << " unchaste reads\n";
 	if (count_nonACGT > 0)
 		cerr << "`" << inFile << "': "
-			"discarded " << count_nonACGT
-			<< "containing non-ACGT characters\n";
+			"discarded " << count_nonACGT << " reads "
+			"containing non-ACGT characters\n";
 	if (count_good == 0)
 		cerr << "warning: `" << inFile << "': "
 			"contains no usable sequence\n";
