@@ -414,6 +414,13 @@ int main(int argc, char** argv)
 			cerr << "Reading `" << targetFile << "'...\n";
 		faIndex.index(targetFile);
 	}
+	if (opt::verbose > 0) {
+		ssize_t bytes = getMemoryUsage();
+		if (bytes > 0)
+			cerr << "Using " << toSI(bytes) << "B of memory and "
+				<< setprecision(3) << (float)bytes / faIndex.size()
+				<< " B/sequence.\n";
+	}
 
 	// Read the FM index.
 	FMIndex fmIndex;
