@@ -146,6 +146,21 @@ class FastaIndex
 	{
 		assert(in.good());
 		o.m_data.clear();
+
+		// Count the number of records.
+		if (in.seekg(0, std::ios::beg)) {
+			size_t n = 0;
+			while (in)
+				if (in.get() == '\n')
+					n++;
+			o.m_data.reserve(n);
+			in.clear();
+			in.seekg(0, std::ios::beg);
+			assert(in.good());
+		} else
+			in.clear();
+
+		// Read the records.
 		for (FAIRecord rec; in >> rec;) {
 			if (!o.m_data.empty())
 				assert(rec.offset > o.m_data.back().offset);
