@@ -21,7 +21,7 @@ class ContigNode {
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(unsigned id, int sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
-	ContigNode(std::string id, bool sense)
+	ContigNode(const std::string& id, bool sense)
 		: m_ambig(false),
 		m_id(ContigID(id)), m_sense(sense) { }
 #else
@@ -29,7 +29,7 @@ class ContigNode {
 		: m_sense(sense), m_id(id), m_ambig(false) { }
 	ContigNode(unsigned id, int sense)
 		: m_sense(sense), m_id(id), m_ambig(false) { }
-	ContigNode(std::string id, bool sense)
+	ContigNode(const std::string& id, bool sense)
 		: m_sense(sense), m_id(ContigID(id)),
 		m_ambig(false) { }
 #endif
