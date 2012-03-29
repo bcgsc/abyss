@@ -2,12 +2,12 @@
 #define FASTA_INDEX_H 1
 
 #include "IOUtil.h"
+#include <boost/tuple/tuple.hpp>
 #include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iterator> // for ostream_iterator
 #include <string>
-#include <utility>
 #include <vector>
 
 /** A record of an indexed FASTA file. */
@@ -55,6 +55,8 @@ class FastaIndex
 	};
 
   public:
+	typedef boost::tuple<const FAIRecord&, size_t> SeqPos;
+
 	/** Return the number of contigs. */
 	size_t size() { return m_data.size(); }
 
@@ -90,7 +92,7 @@ class FastaIndex
 	}
 
 	/** Translate a file offset to a sequence:position coordinate. */
-	std::pair<FAIRecord, size_t> operator[](size_t offset) const
+	SeqPos operator[](size_t offset) const
 	{
 		Data::const_iterator it = std::upper_bound(
 				m_data.begin(), m_data.end(),
@@ -100,7 +102,7 @@ class FastaIndex
 		assert(it != m_data.end());
 		assert(it->offset <= offset);
 		assert(offset < it->offset + it->size);
-		return std::make_pair(*it, offset - it->offset);
+		return SeqPos(*it, offset - it->offset);
 	}
 
 	/** Write FASTA headers to the specified seekable stream. */

@@ -104,9 +104,9 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 		a.mapq = 0;
 		a.cigar = "*";
 	} else {
-		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[m.l]];
-		a.rname = idPos.first.id;
-		a.pos = idPos.second;
+		FastaIndex::SeqPos seqPos = faIndex[fmIndex[m.l]];
+		a.rname = seqPos.get<0>().id;
+		a.pos = seqPos.get<1>();
 		a.flag = rc ? SAMAlignment::FREVERSE : 0;
 
 		// Set the mapq to the alignment score.
@@ -133,8 +133,7 @@ static size_t getMyPos(const Match& m, const FastaIndex& faIndex,
 		const FMIndex& fmIndex, const string& id)
 {
 	for (size_t i = m.l; i < m.u; i++) {
-		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[i]];
-		if (idPos.first.id == id)
+		if (faIndex[fmIndex[i]].get<0>().id == id)
 			return fmIndex[i];
 	}
 	return fmIndex[m.l];
@@ -147,8 +146,7 @@ static size_t getMinPos(const Match& m, size_t maxLen,
 	size_t minPos = numeric_limits<size_t>::max();
 	for (size_t i = m.l; i < m.u; i++) {
 		size_t pos = fmIndex[i];
-		pair<FAIRecord, size_t> idPos = faIndex[pos];
-		if (idPos.first.size == maxLen && pos < minPos)
+		if (faIndex[pos].get<0>().size == maxLen && pos < minPos)
 			minPos = fmIndex[i];
 	}
 	return minPos;
@@ -160,8 +158,7 @@ static size_t getMaxLen(const Match& m, const FastaIndex& faIndex,
 {
 	size_t maxLen = 0;
 	for (size_t i = m.l; i < m.u; i++) {
-		pair<FAIRecord, size_t> idPos = faIndex[fmIndex[i]];
-		size_t len = idPos.first.size;
+		size_t len = faIndex[fmIndex[i]].get<0>().size;
 		if (len > maxLen)
 			maxLen = len;
 	}
