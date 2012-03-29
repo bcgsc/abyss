@@ -83,6 +83,7 @@ class FastaIndex
 			assert(c == '>');
 			assert(!id.empty());
 			std::streampos offset = in.tellg();
+			assert(offset > 0);
 			in >> Ignore('\n');
 			size_t n = in.gcount();
 			assert(n > 0);
