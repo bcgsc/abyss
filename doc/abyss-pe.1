@@ -115,6 +115,62 @@ convert colour-space contigs to nucleotide contigs following assembly
 .TP
 \fB-n\fR, \fB--dry-run\fR
 Print the commands that would be executed, but do not execute them.
+.SS "Commands of abyss-pe"
+.TP
+.B default
+Equivalent to `scaffolds scaffolds-dot stats'.
+.TP
+.B unitigs
+Assemble unitigs.
+.TP
+.B unitigs-dot
+Output the unitig overlap graph.
+.TP
+.B pe-sam
+Map paired-end reads to the unitigs and output a SAM file.
+.TP
+.B pe-bam
+Map paired-end reads to the unitigs and output a BAM file.
+.TP
+.B pe-index
+Generate an index of the unitigs used by abyss-map.
+.TP
+.B contigs
+Assemble contigs.
+.TP
+.B contigs-dot
+Output the contig overlap graph.
+.TP
+.B mp-sam
+Map mate-pair reads to the contigs and output a SAM file.
+.TP
+.B mp-bam
+Map mate-pair reads to the contigs and output a BAM file.
+.TP
+.B mp-index
+Generate an index of the contigs used by abyss-map.
+.TP
+.B scaffolds
+Assemble scaffolds.
+.TP
+.B scaffolds-dot
+Output the scaffold overlap graph.
+.TP
+.B stats
+Display assembly contiguity statistics.
+.TP
+.B clean
+Remove intermediate files.
+.TP
+.B version
+Display the version of abyss-pe.
+.TP
+.B versions
+Display the versions of all programs used by abyss-pe.
+.TP
+.B help
+Display a helpful message.
+
 .SH "ENVIRONMENT VARIABLES"
 Any parameter that may be specified on the command line may also be
 specified in an environment variable.
