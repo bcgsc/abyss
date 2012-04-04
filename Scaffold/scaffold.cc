@@ -739,7 +739,7 @@ int main(int argc, char** argv)
 
 		// Round to 1 figure.
 		double nearestDecade = pow(10, floor(log10(s)));
-		s = (unsigned)round(s / nearestDecade) * nearestDecade;
+		s = unsigned(round(s / nearestDecade) * nearestDecade);
 
 		unsigned n50 = scaffold(g, s, false);
 		if (opt::verbose > 0)
