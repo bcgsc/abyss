@@ -66,6 +66,17 @@ np?=$(NSLOTS)
 endif
 endif
 
+# Integrate with SLURM
+ifdef SLURM_JOB_NAME
+name?=$(SLURM_JOB_NAME)
+endif
+ifdef SLURM_JOBID
+k?=$(SLURM_JOBID)
+endif
+ifdef SLURM_NTASKS
+np?=$(SLURM_NTASKS)
+endif
+
 # Determine the path to mpirun
 mpirun?=$(shell which mpirun)
 ifeq ($(mpirun),)
