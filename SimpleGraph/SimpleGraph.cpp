@@ -60,6 +60,9 @@ namespace opt {
 	static int verbose;
 	static string out;
 
+	/** The acceptable error of a distance estimate. */
+	unsigned distanceError = 6;
+
  	/** Output format */
  	int format = DIST; // used by Estimate
 }

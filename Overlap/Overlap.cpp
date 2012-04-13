@@ -72,6 +72,9 @@ namespace opt {
 	static int mask = 1;
 	static int scaffold = 1;
 
+	/** The acceptable error of a distance estimate. */
+	unsigned distanceError = 6;
+
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
 

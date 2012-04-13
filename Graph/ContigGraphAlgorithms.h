@@ -3,6 +3,7 @@
 
 #include "Algorithms.h"
 #include "ContigNode.h"
+#include "Estimate.h" // for BetterDistanceEst
 #include "Functional.h"
 #include "Iterator.h"
 #include <boost/graph/graph_traits.hpp>
@@ -293,6 +294,34 @@ OutputIt removeIslands_if(Graph& g, OutputIt result, Pred p)
 		}
 	}
 	return result;
+}
+
+/** Add missing complementary edges. */
+template <typename Graph>
+size_t addComplementaryEdges(Graph& g)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef typename GTraits::edge_descriptor E;
+	typedef typename GTraits::edge_iterator Eit;
+	typedef typename GTraits::vertex_descriptor V;
+
+	std::pair<Eit, Eit> erange = edges(g);
+	size_t numAdded = 0;
+	for (Eit eit = erange.first; eit != erange.second; ++eit) {
+		E e = *eit;
+		V u = source(e, g), v = target(e, g);
+		E f;
+		bool found;
+		tie(f, found) = edge(~v, ~u, g);
+		if (!found) {
+			add_edge(~v, ~u, g[e], g);
+			numAdded++;
+		} else if (g[e] != g[f]) {
+			// The edge properties do not agree. Select the better.
+			g[e] = g[f] = BetterDistanceEst()(g[e], g[f]);
+		}
+	}
+	return numAdded;
 }
 
 #endif

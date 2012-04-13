@@ -92,30 +92,6 @@ typedef Graph OverlapGraph;
 /** A scaffold graph. */
 typedef Graph ScaffoldGraph;
 
-/** Add missing complementary edges. */
-static void addComplementaryEdges(DG& g)
-{
-	typedef graph_traits<DG> GTraits;
-	typedef GTraits::edge_descriptor E;
-	typedef GTraits::edge_iterator Eit;
-	typedef GTraits::vertex_descriptor V;
-
-	pair<Eit, Eit> erange = edges(g);
-	unsigned numAdded = 0;
-	for (Eit eit = erange.first; eit != erange.second; ++eit) {
-		E e = *eit;
-		V u = source(e, g), v = target(e, g);
-		if (!edge(~v, ~u, g).second) {
-			add_edge(~v, ~u, g[e], g);
-			numAdded++;
-		}
-	}
-	if (opt::verbose > 0)
-		cerr << "Added " << numAdded << " complementary edges.\n";
-	if (opt::verbose > 1)
-		printGraphStats(cerr, g);
-}
-
 /** Extend junction contigs. */
 void extendJunction(
 		const OverlapGraph& overlapG,
@@ -212,7 +188,11 @@ int main(int argc, char** argv)
 		for_each(argv + optind, argv + argc,
 				bind(readGraph, _1, ref(scaffoldG)));
 		// Add any missing complementary edges.
-		addComplementaryEdges(scaffoldG);
+		size_t numAdded = addComplementaryEdges<DG>(scaffoldG);
+		if (opt::verbose > 0)
+			cerr << "Added " << numAdded << " complementary edges.\n";
+		if (opt::verbose > 1)
+			printGraphStats(cerr, scaffoldG);
 	} else
 		opt::noScaffoldGraph = true;
 

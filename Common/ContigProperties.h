@@ -168,8 +168,8 @@ struct Distance {
 /** Add the specified distance (overlap) to the specified contig
  * length.
  */
-static inline ContigProperties& operator+=(
-		ContigProperties& a, const Distance& b)
+template <typename T>
+ContigProperties& operator+=(ContigProperties& a, const T& b)
 {
 	assert((int)a.length + (int)b.distance > 0);
 	a.length += b.distance;
@@ -226,5 +226,14 @@ struct EdgeWeightMap {
   private:
 	const Graph& m_g;
 };
+
+/** Return the edge weight. */
+template <typename Graph>
+typename EdgeWeightMap<Graph>::value_type
+get(edge_weight_t, const Graph& g,
+		typename graph_traits<Graph>::edge_descriptor e)
+{
+	return EdgeWeightMap<Graph>(g)[e];
+}
 
 #endif

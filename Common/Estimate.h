@@ -64,7 +64,10 @@ struct DistanceEst
 			if (in.peek() == ']') {
 				o.stdDev = o.numPairs = 0;
 				return in;
-			} else
+			} else if (in.peek() == ',')
+				return in >> expect(", e =") >> o.stdDev
+					>> expect(", n =") >> o.numPairs;
+			else
 				return in >> expect(" e =") >> o.stdDev
 					>> expect(" n =") >> o.numPairs;
 		} else
@@ -81,6 +84,12 @@ struct DistanceEst
  */
 struct BetterDistanceEst
 {
+	NoProperty operator()(
+			const NoProperty& a, const NoProperty&) const
+	{
+		return a;
+	}
+
 	DistanceEst operator()(
 			const DistanceEst& a, const DistanceEst& b) const
 	{

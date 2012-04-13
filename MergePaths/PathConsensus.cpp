@@ -84,7 +84,7 @@ namespace opt {
 	/** The the number of bases to continue the constrained search of
 	 * the graph beyond the size of the ambiguous gap in the path.
 	 */
-	static unsigned distanceError = 6;
+	unsigned distanceError = 6;
 }
 
 static const char shortopts[] = "d:k:o:s:g:a:p:vD:M:P:";

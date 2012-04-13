@@ -106,34 +106,6 @@ static const struct option longopts[] = {
 typedef DirectedGraph<Length, DistanceEst> DG;
 typedef ContigGraph<DG> Graph;
 
-/** Add missing complementary edges. */
-static void addComplementaryEdges(DG& g)
-{
-	typedef graph_traits<Graph> GTraits;
-	typedef GTraits::edge_descriptor E;
-	typedef GTraits::edge_iterator Eit;
-	typedef GTraits::vertex_descriptor V;
-
-	std::pair<Eit, Eit> erange = edges(g);
-	unsigned numAdded = 0;
-	for (Eit eit = erange.first; eit != erange.second; ++eit) {
-		E e = *eit;
-		V u = source(e, g), v = target(e, g);
-		E f;
-		bool found;
-		tie(f, found) = edge(~v, ~u, g);
-		if (!found) {
-			add_edge(~v, ~u, g[e], g);
-			numAdded++;
-		} else if (g[e] != g[f]) {
-			// The edge properties do not agree. Select the better.
-			g[e] = g[f] = BetterDistanceEst()(g[e], g[f]);
-		}
-	}
-	if (opt::verbose > 0)
-		cerr << "Added " << numAdded << " complementary edges.\n";
-}
-
 /** Return whether the specified edges has sufficient support. */
 struct PoorSupport {
 	PoorSupport(Graph& g) : m_g(g) { }
@@ -720,7 +692,11 @@ int main(int argc, char** argv)
 		readGraph("-", g);
 
 	// Add any missing complementary edges.
-	addComplementaryEdges(g);
+	size_t numAdded = addComplementaryEdges<DG>(g);
+	if (opt::verbose > 0) {
+		cerr << "Added " << numAdded << " complementary edges.\n";
+		printGraphStats(cerr, g);
+	}
 
 	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
