@@ -177,13 +177,16 @@ static int getDistance(const Graph& g,
 }
 
 /** Read contig paths from the specified file.
- * @param ids [out] the string ID of the paths
- * @param isAmb [out] whether the path contains a gap
+ * @param[in] inPath the filename of the contig paths
+ * @param[out] ids the string ID of the paths
+ * @param[out] isAmb whether the path contains a gap
  */
-static ContigPaths readPath(const string& inPath,
+static ContigPaths readPaths(const string& inPath,
 	vector<string>& ids, vector<bool>& isAmb)
 {
-	assert(ids.empty()); //this seed is contigID of the path
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	assert(ids.empty());
 	assert(isAmb.empty());
 	assert(g_ambpath_contig.empty());
 	ifstream fin(inPath.c_str());
@@ -196,33 +199,25 @@ static ContigPaths readPath(const string& inPath,
 	ContigPaths paths;
 	string id;
 	Path path;
-	Path::iterator prev, next;
 	while (in >> id >> path) {
 		paths.push_back(path);
 		ids.push_back(id);
+		isAmb.push_back(false);
 
-		if (path.size() <= 2) {
-			isAmb.push_back(false);
+		if (path.size() <= 2)
 			continue;
-		}
-
-		/* contig with Ns must have prev and next */
-		bool cur_is_amb = false;
-		prev = path.begin();
-		next = path.begin();
-		Path::iterator it = path.begin();
-		it++; next++; next++;
-		for (; next != path.end(); it++, prev++, next++) {
-			if (it->ambiguous()) {
-				cur_is_amb = true;
-				/* add the entry to g_ambpath_contig
-				(value 0: unprocessed/no proper paths) */
+		for (Path::iterator it = path.begin() + 2;
+				it != path.end(); ++it) {
+			V t = it[-2], u = it[-1], v = it[0];
+			if (u.ambiguous()) {
+				assert(!t.ambiguous());
+				assert(!v.ambiguous());
 				g_ambpath_contig.insert(AmbPath2Contig::value_type(
-					AmbPathConstraint(*prev, *next, -it->id()),
+					AmbPathConstraint(t, v, u.length()),
 					ContigPath()));
+				isAmb.back() = true;
 			}
 		}
-		isAmb.push_back(cur_is_amb);
 	}
 	assert(in.eof());
 	return paths;
@@ -811,7 +806,7 @@ int main(int argc, char** argv)
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;
-	ContigPaths paths = readPath(allPaths, pathIDs, isAmbPath);
+	ContigPaths paths = readPaths(allPaths, pathIDs, isAmbPath);
 	stats.numAmbPaths = g_ambpath_contig.size();
 	if (opt::verbose > 0)
 		cerr << "Read " << paths.size() << " paths\n";
