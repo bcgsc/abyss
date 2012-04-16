@@ -60,6 +60,11 @@ static const char USAGE_MESSAGE[] =
 "      --no-assemble     disable assembling of paths [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -i, --ignore=FILE     ignore contigs seen in FILE\n"
+"      --adj             output the graph in adj format [default]\n"
+"      --asqg            output the graph in asqg format\n"
+"      --dot             output the graph in dot format\n"
+"      --dot-meancov     same as above but give the mean coverage\n"
+"      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -93,7 +98,8 @@ namespace opt {
 	/** The minimum overlap allowed between two contigs. */
 	static int minOverlap = 10;
 
-	int format; // used by ContigProperties
+	/** Output graph format. */
+	int format = ADJ; // used by ContigProperties
 }
 
 static const char shortopts[] = "g:i:k:l:m:t:T:v";
@@ -101,6 +107,11 @@ static const char shortopts[] = "g:i:k:l:m:t:T:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "adj",           no_argument,       &opt::format, ADJ },
+	{ "asqg",          no_argument,       &opt::format, ASQG },
+	{ "dot",           no_argument,       &opt::format, DOT },
+	{ "dot-meancov",   no_argument,       &opt::format, DOT_MEANCOV },
+	{ "sam",           no_argument,       &opt::format, SAM },
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "ignore",        required_argument, NULL, 'i' },
 	{ "kmer",          required_argument, NULL, 'k' },
@@ -198,7 +209,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 struct EdgeInfo {
 	vertex_descriptor u;
 	vertex_descriptor w;
-	Distance ep;
+	edge_bundle_type<Graph>::type ep;
 
 	EdgeInfo(vertex_descriptor u, vertex_descriptor w, int ep)
 		: u(u), w(w), ep(ep) {}
