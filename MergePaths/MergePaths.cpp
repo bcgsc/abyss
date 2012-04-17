@@ -1051,7 +1051,11 @@ static bool alignCoordinates(const Lengths& lengths,
 
 	assert(ambiguous1 == 0 || ambiguous2 == 0);
 	int ambiguous = ambiguous1 + ambiguous2;
-	*out++ = ContigNode(max(1, ambiguous), 'N');
+	assert(out > result);
+	if (out[-1].ambiguous())
+		assert(ambiguous == 0);
+	else
+		*out++ = ContigNode(max(1, ambiguous), 'N');
 	first1 = it1;
 	first2 = it2;
 	result = out;
