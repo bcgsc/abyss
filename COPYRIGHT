@@ -242,12 +242,18 @@ Files: Common/* DistanceEst/* ParseAligns/*
 Copyright: Copyright 2012 Genome Sciences Centre
 License: BCCA-Academic or GPL-3+
 
+Files: Common/cholesky.hpp
+Copyright: Copyright 2005 Gunter Winkler, Konstantin Kutzkow
+License: LGPL-2.1+
+
 Files: Common/city.cc Common/city.h
 Copyright: Copyright 2011 Google, Inc.
 License: Expat
 
 Files: dialign/*
 Copyright: Copyright 2008 Amarendran R. Subramanian
+License: LGPL-2.1+
+
 License: LGPL-2.1+
  On Debian systems, see `/usr/share/common-licenses/LGPL-2.1'.
  .
