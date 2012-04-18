@@ -10,6 +10,9 @@
 #include <sstream>
 #include <string>
 
+/** The dictionary of contig names. */
+extern Dictionary g_contigNames;
+
 /** A contig ID is stored in memory as an integer, but is formatted as
  * a string using a static dictionary.
  */
@@ -18,7 +21,7 @@ class ContigID {
 	ContigID() { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(const std::string& id)
-		: m_id(s_dict.index(id)) { };
+		: m_id(g_contigNames.index(id)) { };
 
 	/** Return the index of this ID. */
 	operator unsigned() const { return m_id; }
@@ -26,7 +29,7 @@ class ContigID {
 	/** Return the string representation. */
 	Dictionary::key_reference str() const
 	{
-		return s_dict.name(m_id);
+		return g_contigNames.name(m_id);
 	}
 
 	bool operator ==(const ContigID& o) const
@@ -56,24 +59,24 @@ class ContigID {
 		return out << o.str();
 	}
 
-	static bool empty() { return s_dict.empty(); }
-	static void lock() { s_dict.lock(); }
-	static void unlock() { s_dict.unlock(); }
+	static bool empty() { return g_contigNames.empty(); }
+	static void lock() { g_contigNames.lock(); }
+	static void unlock() { g_contigNames.unlock(); }
 	static size_t count(const std::string& id)
 	{
-		return s_dict.count(id);
+		return g_contigNames.count(id);
 	}
 
 	/** Create a new contig ID from s, which must be unique. */
 	static ContigID insert(const std::string& s)
 	{
-		return ContigID(s_dict.insert(s));
+		return ContigID(g_contigNames.insert(s));
 	}
 
 	/** Create a new contig ID if it does not already exist. */
 	static void put(ContigID id, const std::string& s)
 	{
-		s_dict.put(id, s);
+		g_contigNames.put(id, s);
 	}
 
 	/** Set the next contig ID returned by ContigID::create. */
@@ -90,8 +93,8 @@ class ContigID {
 	static ContigID create()
 	{
 		if (s_nextID == 0) {
-			assert(!s_dict.empty());
-			setNextContigID(s_dict.back());
+			assert(!g_contigNames.empty());
+			setNextContigID(g_contigNames.back());
 		}
 		std::ostringstream oss;
 		oss << s_nextID++;
@@ -101,9 +104,6 @@ class ContigID {
   private:
 	/** The index. */
 	unsigned m_id;
-
-	/** The contig ID dictionary. */
-	static Dictionary s_dict;
 
 	/** The next unique contig ID. */
 	static unsigned s_nextID;

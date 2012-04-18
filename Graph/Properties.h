@@ -22,6 +22,8 @@ enum vertex_sense_t { vertex_sense };
 
 using boost::edge_bundle;
 using boost::edge_bundle_t;
+using boost::edge_name;
+using boost::edge_name_t;
 using boost::edge_weight;
 using boost::edge_weight_t;
 using boost::no_property;

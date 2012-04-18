@@ -7,7 +7,6 @@
 #include <cassert>
 #include <functional>
 #include <istream>
-#include <iterator>
 #include <sstream>
 #include <string>
 #include <ostream>
@@ -38,10 +37,11 @@ static inline std::ostream& operator<<(std::ostream& out,
 		const ContigPath& o)
 {
 	assert(!o.empty());
-	ContigPath::const_iterator last = o.end() - 1;
-	copy(o.begin(), last,
-			std::ostream_iterator<ContigNode>(out, " "));
-	return out << *last;
+	ContigPath::const_iterator it = o.begin();
+	out << get(g_contigNames, *it);
+	for (++it; it != o.end(); ++it)
+		out << ' ' << get(g_contigNames, *it);
+	return out;
 }
 
 static inline std::istream& operator>>(std::istream& in,

@@ -200,7 +200,8 @@ get(edge_bundle_t, const Graph& g, ContigNode u, ContigNode v)
 		std::pair<edge_descriptor, bool> e = edge(u, v, g);
 		if (!e.second)
 			std::cerr << "error: no edge "
-				<< u << " -> " << v << '\n';
+				<< get(vertex_name, g, u) << " -> "
+				<< get(vertex_name, g, v) << '\n';
 		assert(e.second);
 		return g[e.first];
 	}

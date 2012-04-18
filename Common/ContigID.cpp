@@ -1,5 +1,5 @@
 #include "ContigID.h"
 
-Dictionary ContigID::s_dict;
+Dictionary g_contigNames;
 
 unsigned ContigID::s_nextID;

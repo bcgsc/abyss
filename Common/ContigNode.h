@@ -9,7 +9,9 @@
 #include <cassert>
 #include <cstdlib> // for strtoul
 #include <iostream>
+#include <stdint.h> // for intptr_t
 #include <string>
+#include <utility>
 
 /** A tuple of a contig ID and an orientation. */
 class ContigNode {
@@ -68,10 +70,10 @@ class ContigNode {
 		if (m_id > 100000) {
 			std::cerr
 				<< "warning: scaffold gap is longer than 100 kbp: "
-				<< *this << '\n';
+				<< length() << '\n';
 		} else if (m_id > 1000000) {
 			std::cerr << "error: scaffold gap is longer than 1 Mbp: "
-				<< *this << '\n';
+				<< length() << '\n';
 			exit(EXIT_FAILURE);
 		}
 		return std::string(m_id, 'N');
@@ -208,6 +210,48 @@ bool get(vertex_sense_t, const Graph&, ContigNode u)
 	return u.sense();
 }
 
+/** The string representation of a vertex name. */
+struct VertexName : std::pair<intptr_t, char>
+{
+	typedef std::pair<intptr_t, char> Base;
+
+	VertexName(const char* s, char c)
+		: Base(reinterpret_cast<intptr_t>(s), c)
+	{
+		assert(c == '+' || c == '-');
+	}
+
+	VertexName(unsigned n, char c) : Base(n, c)
+	{
+		assert(c == 'N');
+	}
+
+	friend std::ostream& operator<<(
+			std::ostream& out, const VertexName& o)
+	{
+		if (o.second == 'N')
+			out << o.first;
+		else
+			out << reinterpret_cast<const char*>(o.first);
+		return out << o.second;
+	}
+};
+
+/** Return the name of the specified vertex. */
+static inline VertexName get(const Dictionary& pmap, ContigNode u)
+{
+	return u.ambiguous()
+		? VertexName(u.length(), 'N')
+		: VertexName(get(pmap, u.id()), u.sense() ? '-' : '+');
+}
+
+/** Return the name of the specified vertex. */
+template <typename Graph>
+VertexName get(vertex_name_t, const Graph&, ContigNode u)
+{
+	return get(g_contigNames, u);
+}
+
 /** Set the name of the specified vertex. */
 template <typename Graph>
 void put(vertex_name_t, const Graph&, ContigNode u,
@@ -219,6 +263,38 @@ void put(vertex_name_t, const Graph&, ContigNode u,
 		ContigID::put(u, std::string(name, 0, name.size() - 1));
 	else
 		ContigID::put(u, name);
+}
+
+/** The string representation of an edge name. */
+struct EdgeName : std::pair<VertexName, VertexName>
+{
+	typedef std::pair<VertexName, VertexName> Base;
+
+	EdgeName(Base::first_type a, Base::second_type b)
+		: Base(a, b) { }
+
+	friend std::ostream& operator<<(
+			std::ostream& out, const EdgeName& o)
+	{
+		return out << '"' << o.first << "\" -> \"" << o.second << '"';
+	}
+};
+
+/** Return the name of the specified edge. */
+static inline EdgeName get(const Dictionary& pmap,
+		std::pair<ContigNode, ContigNode> e)
+{
+	return EdgeName(get(pmap, e.first), get(pmap, e.second));
+}
+
+/** Return the name of the specified edge. */
+template <typename Graph>
+EdgeName get(edge_name_t, const Graph& g,
+		std::pair<ContigNode, ContigNode> e)
+{
+	return EdgeName(
+			get(vertex_name, g, source(e, g)),
+			get(vertex_name, g, target(e, g)));
 }
 
 #endif

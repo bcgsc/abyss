@@ -102,4 +102,10 @@ class Dictionary {
 		bool m_locked;
 };
 
+static inline Dictionary::key_reference get(
+		const Dictionary& pmap, Dictionary::index_type key)
+{
+	return pmap.name(key);
+}
+
 #endif
