@@ -297,14 +297,15 @@ static bool checkEdgeForOverlap(const Graph& goverlap,
 }
 
 static void findOverlap(const Graph& g,
-		ContigID refID, bool rc, const Estimate& est,
+		ContigID refID, bool rc,
+		const ContigNode& pair,
+		const DistanceEst& est,
 		OverlapGraph& out)
 {
-	if (refID == est.contig.id()
+	if (refID == pair.id()
 			|| (est.distance >= 0 && !opt::scaffold))
 		return;
 	ContigNode ref(refID, false);
-	const ContigNode& pair = est.contig;
 	const ContigNode& t = rc ? pair : ref;
 	const ContigNode& h = rc ? ref : pair;
 	if (out_degree(t, g) > 0 || in_degree(h, g) > 0
@@ -430,10 +431,13 @@ int main(int argc, char** argv)
 		// dist graph format
 		for (EstimateRecord er; in >> er;) {
 			for (int sense = false; sense <= true; ++sense) {
-				const vector<Estimate>& ests = er.estimates[sense];
-				for (EstimateVector::const_iterator it = ests.begin();
+				typedef vector<
+					pair<ContigNode, DistanceEst> > Estimates;
+				const Estimates& ests = er.estimates[sense];
+				for (Estimates::const_iterator it = ests.begin();
 						it != ests.end(); ++it)
-					findOverlap(graph, er.refID, sense, *it,
+					findOverlap(graph, er.refID, sense,
+							it->first, it->second,
 							scaffoldGraph);
 			}
 		}

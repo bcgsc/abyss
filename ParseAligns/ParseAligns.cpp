@@ -123,6 +123,9 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 	return r - f;
 }
 
+typedef pair<ContigNode, DistanceEst> Estimate;
+typedef vector<Estimate> Estimates;
+
 static void addEstimate(EstimateMap& map, const Alignment& a,
 		Estimate& est, bool reverse)
 {
@@ -131,13 +134,12 @@ static void addEstimate(EstimateMap& map, const Alignment& a,
 	bool a_isRC = a.isRC != reverse;
 	EstimateMap::iterator estimatesIt = map.find(a.contig);
 	if (estimatesIt != map.end()) {
-		EstimateVector& estimates =
-			estimatesIt->second.estimates[a_isRC];
-		for (EstimateVector::iterator estIt = estimates.begin();
+		Estimates& estimates = estimatesIt->second.estimates[a_isRC];
+		for (Estimates::iterator estIt = estimates.begin();
 				estIt != estimates.end(); ++estIt) {
-			if (estIt->contig.id() == est.contig.id()) {
-				estIt->numPairs++;
-				estIt->distance += est.distance;
+			if (estIt->first.id() == est.first.id()) {
+				estIt->second.numPairs++;
+				estIt->second.distance += est.second.distance;
 				placed = true;
 				break;
 			}
@@ -183,11 +185,11 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
-		est.contig = ContigNode(last.contig,
+		est.first = ContigNode(last.contig,
 				largest.isRC != last.isRC);
-		est.distance = distance - opt::k;
-		est.numPairs = 1;
-		est.stdDev = 0;
+		est.second.distance = distance - opt::k;
+		est.second.numPairs = 1;
+		est.second.stdDev = 0;
 		addEstimate(estMap, largest, est, false);
 	}
 
@@ -197,10 +199,10 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned first_end =
 			first.read_start_pos + first.align_length - opt::k;
 		int distance = last.read_start_pos - first_end;
-		est.contig = ContigNode(last.contig, first.isRC != last.isRC);
-		est.distance = distance - opt::k;
-		est.numPairs = 1;
-		est.stdDev = 0;
+		est.first = ContigNode(last.contig, first.isRC != last.isRC);
+		est.second.distance = distance - opt::k;
+		est.second.numPairs = 1;
+		est.second.stdDev = 0;
 		addEstimate(estMap, first, est, false);
 	}
 
@@ -211,11 +213,11 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = first.read_start_pos - largest_end;
-		est.contig = ContigNode(first.contig,
+		est.first = ContigNode(first.contig,
 				largest.isRC != first.isRC);
-		est.distance = distance - opt::k;
-		est.numPairs = 1;
-		est.stdDev = 0;
+		est.second.distance = distance - opt::k;
+		est.second.numPairs = 1;
+		est.second.stdDev = 0;
 		addEstimate(estMap, largest, est, false);
 	}
 
@@ -264,13 +266,17 @@ static void generateDistFile()
 			if (refIsRC)
 				distFile << " ;";
 
-			for (EstimateVector::iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+			for (Estimates::iterator vecIt
+					= mapIt->second.estimates[refIsRC].begin();
 					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				vecIt->distance = (int)round((double)vecIt->distance /
-						(double)vecIt->numPairs);
-				if (vecIt->numPairs >= opt::c && vecIt->numPairs != 0
+				vecIt->second.distance
+					= (int)round((double)vecIt->second.distance /
+							(double)vecIt->second.numPairs);
+				if (vecIt->second.numPairs >= opt::c
+						&& vecIt->second.numPairs != 0
 						/*&& vecIt->distance > 1 - opt::k*/)
-					distFile << ' ' << *vecIt;
+					distFile << ' ' << vecIt->first
+						<< ',' << vecIt->second;
 			}
 		}
 		distFile << '\n';

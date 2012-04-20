@@ -388,6 +388,8 @@ static void printDistanceMap(ostream& out, const Graph& g,
 			<< "\" [d=" << it->second << "]\n";
 }
 
+typedef std::vector<std::pair<ContigNode, DistanceEst> > Estimates;
+
 /** Find a path for the specified distance estimates.
  * @param out [out] the solution path
  */
@@ -407,12 +409,14 @@ static void handleEstimate(const Graph& g,
 	unsigned minNumPairs = UINT_MAX;
 	// generate the reachable set
 	Constraints constraints;
-	for (EstimateVector::const_iterator iter
+	for (Estimates::const_iterator iter
 				= er.estimates[dirIdx].begin();
 			iter != er.estimates[dirIdx].end(); ++iter) {
-		minNumPairs = min(minNumPairs, iter->numPairs);
-		constraints.push_back(Constraint(iter->contig,
-					iter->distance + allowedError(iter->stdDev)));
+		ContigNode v = iter->first;
+		const DistanceEst& ep = iter->second;
+		minNumPairs = min(minNumPairs, ep.numPairs);
+		constraints.push_back(Constraint(v,
+					ep.distance + allowedError(ep.stdDev)));
 	}
 
 	vout << "Constraints:";
@@ -447,13 +451,15 @@ static void handleEstimate(const Graph& g,
 
 		// Remove solutions whose distance estimates are not correct.
 		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
-		for (EstimateVector::const_iterator iter
+		for (Estimates::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
-			vout << *iter << '\t';
+			ContigNode v = iter->first;
+			const DistanceEst& ep = iter->second;
+			vout << v << ',' << ep << '\t';
 
 			map<ContigNode, int>::iterator dmIter
-				= distanceMap.find(iter->contig);
+				= distanceMap.find(v);
 			if (dmIter == distanceMap.end()) {
 				// This contig is a repeat.
 				ignoredCount++;
@@ -464,10 +470,10 @@ static void handleEstimate(const Graph& g,
 			// translate distance by -overlap to match
 			// coordinate space used by the estimate
 			int actualDistance = dmIter->second;
-			int diff = actualDistance - iter->distance;
-			unsigned buffer = allowedError(iter->stdDev);
+			int diff = actualDistance - ep.distance;
+			unsigned buffer = allowedError(ep.stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
-			bool repeat = repeats.count(ContigID(iter->contig)) > 0;
+			bool repeat = repeats.count(ContigID(v)) > 0;
 			bool ignored = invalid && repeat;
 			if (ignored)
 				ignoredCount++;
@@ -478,7 +484,7 @@ static void handleEstimate(const Graph& g,
 			vout << "dist: " << actualDistance
 				<< " diff: " << diff
 				<< " buffer: " << buffer
-				<< " n: " << iter->numPairs
+				<< " n: " << ep.numPairs
 				<< (ignored ? " ignored" : invalid ? " invalid" : "")
 				<< '\n';
 		}
@@ -503,16 +509,18 @@ static void handleEstimate(const Graph& g,
 		map<ContigNode, int> distanceMap
 			= makeDistanceMap(g, origin, *solIter);
 		int sumDiff = 0;
-		for (EstimateVector::const_iterator iter
+		for (Estimates::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
-			if (repeats.count(ContigID(iter->contig)) > 0)
+			ContigNode v = iter->first;
+			const DistanceEst& ep = iter->second;
+			if (repeats.count(ContigID(v)) > 0)
 				continue;
 			map<ContigNode, int>::iterator dmIter
-				= distanceMap.find(iter->contig);
+				= distanceMap.find(v);
 			assert(dmIter != distanceMap.end());
 			int actualDistance = dmIter->second;
-			int diff = actualDistance - iter->distance;
+			int diff = actualDistance - ep.distance;
 			sumDiff += abs(diff);
 		}
 
@@ -597,9 +605,9 @@ static void* worker(void* pArg)
 			break;
 
 		// Flip the anterior distance estimates.
-		for (EstimateVector::iterator it = er.estimates[1].begin();
+		for (Estimates::iterator it = er.estimates[1].begin();
 				it != er.estimates[1].end(); ++it)
-			it->contig.flip();
+			it->first.flip();
 
 		ContigPath path;
 		handleEstimate(*arg.graph, er, true, path);

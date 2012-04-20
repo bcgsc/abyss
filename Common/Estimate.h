@@ -9,10 +9,11 @@
 #include <cmath> // for ceilf
 #include <iomanip>
 #include <istream>
-#include <iterator>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace opt {
 	/** The acceptable error of a distance estimate. */
@@ -117,33 +118,6 @@ struct MergeDistanceEst
 	}
 };
 
-/** An estimate of the distance between two contigs. */
-struct Estimate : public DistanceEst
-{
-	ContigNode contig;
-
-	friend std::ostream& operator<<(std::ostream& out,
-			const Estimate& o)
-	{
-		if (opt::format != DIST)
-			return out << '"' << o.contig << "\" ["
-				<< static_cast<const DistanceEst&>(o) << ']';
-		else
-			return out << o.contig << ','
-				<< static_cast<const DistanceEst&>(o);
-	}
-
-	friend std::istream& operator>>(std::istream& in, Estimate& o)
-	{
-		in >> std::ws;
-		std::string id;
-		if (!getline(in, id, ','))
-			return in;
-		o.contig = ContigNode(id);
-		return in >> static_cast<DistanceEst&>(o);
-	}
-};
-
 /** Return the allowed error for the given estimate. */
 static inline unsigned allowedError(float stddev)
 {
@@ -152,13 +126,14 @@ static inline unsigned allowedError(float stddev)
 	return (unsigned)ceilf(NUM_SIGMA * stddev + opt::distanceError);
 }
 
-typedef std::vector<Estimate> EstimateVector;
-
 /** Distance estimates to and from a particular contig. */
 struct EstimateRecord
 {
+	typedef std::pair<ContigNode, DistanceEst> Estimate;
+	typedef std::vector<Estimate> Estimates;
+
 	ContigID refID;
-	EstimateVector estimates[2];
+	Estimates estimates[2];
 
 	/** Read the distance estimates for one contig. */
 	friend std::istream& operator >>(std::istream& in,
@@ -177,9 +152,11 @@ struct EstimateRecord
 			std::string s;
 			std::getline(in, s, !rc ? ';' : '\n');
 			std::istringstream ss(s);
-			std::copy(std::istream_iterator<Estimate>(ss),
-					std::istream_iterator<Estimate>(),
-					std::back_inserter(o.estimates[rc]));
+			for (Estimate ep; getline(ss >> std::ws, s, ',');) {
+				ep.first = ContigNode(s);
+				if (ss >> ep.second)
+					o.estimates[rc].push_back(ep);
+			}
 			assert(ss.eof());
 		}
 
