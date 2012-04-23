@@ -51,7 +51,7 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
 		for (out_edge_iterator e = adj.first; e != adj.second; ++e) {
 			vertex_descriptor v = target(*e, g);
 			assert(!get(vertex_removed, g, v));
-			out << ' ' << (v ^ sense);
+			out << ' ' << get(vertex_name, g, v ^ sense);
 			write_edge_prop(out, get(edge_bundle, g, e));
 		}
 		if (sense)

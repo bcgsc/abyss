@@ -126,7 +126,8 @@ static string sequence(const ContigNode& id)
 	return id.sense() ? reverseComplement(seq) : seq;
 }
 
-static unsigned findOverlap(const ContigNode& t_id,
+static unsigned findOverlap(const Graph& g,
+		const ContigNode& t_id,
 		const ContigNode& h_id,
 		bool& mask)
 {
@@ -143,7 +144,8 @@ static unsigned findOverlap(const ContigNode& t_id,
 	}
 
 	if (opt::verbose > 0) {
-		cout << t_id << '\t' << h_id;
+		cout << get(vertex_name, g, t_id)
+			<< '\t' << get(vertex_name, g, h_id);
 		for (vector<unsigned>::const_iterator i = overlaps.begin();
 				i != overlaps.end(); ++i)
 			cout << '\t' << *i;
@@ -173,11 +175,14 @@ static unsigned findOverlap(const ContigNode& t_id,
 	return overlaps[0];
 }
 
-static FastaRecord newContig(const ContigNode& t, const ContigNode& h,
+static FastaRecord newContig(const Graph& g,
+		const ContigNode& u, const ContigNode& v,
 		int dist, const string& seq)
 {
 	ostringstream comment;
-	comment << seq.length() << " 0 " << t << ' ' << h << ' ' << dist;
+	comment << seq.length() << " 0 "
+		<< get(vertex_name, g, u) << ' '
+		<< get(vertex_name, g, v) << ' ' << dist;
 	return FastaRecord((string)ContigID::create().str(),
 			comment.str(), seq);
 }
@@ -211,7 +216,7 @@ struct Overlap : public DistanceEst {
 };
 
 /** Create a contig representing the gap between contigs u and v. */
-static FastaRecord createGapContig(
+static FastaRecord createGapContig(const Graph& g,
 		const ContigNode& u, const ContigNode& v,
 		const Overlap& o)
 {
@@ -220,14 +225,16 @@ static FastaRecord createGapContig(
 	stats.scaffold++;
 	int distance = o.distance;
 	if (opt::verbose > 0)
-		cout << u << '\t' << v << "\t(" << distance << ")\n";
+		cout << get(vertex_name, g, u)
+			<< '\t' << get(vertex_name, g, v)
+			<< "\t(" << distance << ")\n";
 	assert(distance < 100000);
 	string gap = distance <= 0 ? string("n")
 		: string(distance, 'N');
 	const string& useq = sequence(u);
 	const string& vseq = sequence(v);
 	unsigned overlap = opt::k - 1; // by convention
-	return newContig(u, v, distance,
+	return newContig(g, u, v, distance,
 			useq.substr(useq.length() - overlap) + gap
 			+ vseq.substr(0, overlap));
 }
@@ -272,7 +279,7 @@ static bool checkEdgeForOverlap(const Graph& goverlap,
 	bool mask = false;
 	unsigned overlap
 		= ep.distance - (int)allowedError(ep.stdDev) <= 0
-		? findOverlap(u, v, mask) : 0;
+		? findOverlap(goverlap, u, v, mask) : 0;
 	if (mask && !opt::mask) {
 		// Ambiguous overlap.
 		return false;
@@ -315,7 +322,7 @@ static void findOverlap(const Graph& g,
 	bool mask = false;
 	unsigned overlap
 		= est.distance - (int)allowedError(est.stdDev) <= 0
-		? findOverlap(t, h, mask) : 0;
+		? findOverlap(g, t, h, mask) : 0;
 	if (mask && !opt::mask)
 		return;
 	if (overlap > 0 || opt::scaffold)
@@ -525,7 +532,8 @@ int main(int argc, char** argv)
 			// This edge is not scaffolded.
 		} else if (contiguous_out(scaffoldGraph, t)) {
 			assert(*adjacent_vertices(t, scaffoldGraph).first == h);
-			FastaRecord contig = createGapContig(t, h, overlap);
+			FastaRecord contig = createGapContig(graph,
+					t, h, overlap);
 			out << contig;
 			assert(out.good());
 

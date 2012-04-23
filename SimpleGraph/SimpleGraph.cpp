@@ -164,11 +164,14 @@ int main(int argc, char** argv)
 	generatePathsThroughEstimates(g, estFile);
 }
 
-static ostream& printConstraints(ostream& out, Constraints s)
+/** Print a set of constraints. */
+static ostream& printConstraints(ostream& out,
+		const Graph& g, const Constraints& s)
 {
 	for (Constraints::const_iterator it = s.begin();
 			it != s.end(); ++it)
-		out << ' ' << it->first << ',' << it->second;
+		out << ' ' << get(vertex_name, g, it->first)
+			<< ',' << it->second;
 	return out;
 }
 
@@ -384,8 +387,8 @@ static void printDistanceMap(ostream& out, const Graph& g,
 	DistanceMap distanceMap = makeDistanceMap(g, u, path);
 	for (DistanceMap::const_iterator it = distanceMap.begin();
 			it != distanceMap.end(); ++it)
-		out << '"' << u << "\" -> \"" << it->first
-			<< "\" [d=" << it->second << "]\n";
+		out << get(edge_name, g, make_pair(u, it->first))
+			<< " [d=" << it->second << "]\n";
 }
 
 typedef std::vector<std::pair<ContigNode, DistanceEst> > Estimates;
@@ -404,7 +407,7 @@ static void handleEstimate(const Graph& g,
 	ostringstream vout_ss;
 	ostream bitBucket(NULL);
 	ostream& vout = opt::verbose > 0 ? vout_ss : bitBucket;
-	vout << "\n* " << origin << '\n';
+	vout << "\n* " << get(vertex_name, g, origin) << '\n';
 
 	unsigned minNumPairs = UINT_MAX;
 	// generate the reachable set
@@ -420,7 +423,7 @@ static void handleEstimate(const Graph& g,
 	}
 
 	vout << "Constraints:";
-	printConstraints(vout, constraints) << '\n';
+	printConstraints(vout, g, constraints) << '\n';
 
 	ContigPaths solutions;
 	unsigned numVisited = 0;
@@ -456,7 +459,7 @@ static void handleEstimate(const Graph& g,
 				iter != er.estimates[dirIdx].end(); ++iter) {
 			ContigNode v = iter->first;
 			const DistanceEst& ep = iter->second;
-			vout << v << ',' << ep << '\t';
+			vout << get(vertex_name, g, v) << ',' << ep << '\t';
 
 			map<ContigNode, int>::iterator dmIter
 				= distanceMap.find(v);
@@ -549,7 +552,7 @@ static void handleEstimate(const Graph& g,
 	} else if (solutions.empty()) {
 		stats.noValidPaths++;
 	} else if (repeats.count(er.refID) > 0) {
-		vout << "Repeat: " << ContigNode(er.refID, dirIdx) << '\n';
+		vout << "Repeat: " << get(vertex_name, g, origin) << '\n';
 		stats.repeat++;
 	} else if (solutions.size() > 1) {
 		ContigPath path

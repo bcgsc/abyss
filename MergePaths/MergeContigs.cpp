@@ -225,8 +225,8 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 		seq += o.overlap_str;
 		seq += Sequence(s, o.overlap_h_pos + 1);
 	} else {
-		cerr << "warning: the head of `" << v << "' "
-			"does not match the tail of the previous contig\n"
+		cerr << "warning: the head of " << get(vertex_name, g, v)
+			<< " does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
 		seq += 'n';
 		seq += s;
@@ -234,15 +234,16 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 }
 
 /** Return a FASTA comment for the specified path. */
-static void pathToComment(ostream& out, const ContigPath& path)
+static void pathToComment(ostream& out,
+		const Graph& g, const ContigPath& path)
 {
 	assert(path.size() > 1);
-	out << path.front();
+	out << get(vertex_name, g, path.front());
 	if (path.size() == 3)
-		out << ',' << path[1];
+		out << ',' << get(vertex_name, g, path[1]);
 	else if (path.size() > 3)
 		out << ",...";
-	out << ',' << path.back();
+	out << ',' << get(vertex_name, g, path.back());
 }
 
 /** Merge the specified path. */
@@ -264,7 +265,7 @@ static Contig mergePath(const Graph& g, const Contigs& contigs,
 	}
 	ostringstream ss;
 	ss << seq.size() << ' ' << coverage << ' ';
-	pathToComment(ss, path);
+	pathToComment(ss, g, path);
 	return Contig(ss.str(), seq);
 }
 

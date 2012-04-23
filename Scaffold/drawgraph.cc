@@ -213,7 +213,8 @@ int main(int argc, char** argv)
 			size_t ui = get(vertex_index, g, u);
 			ssize_t x1 = (ssize_t)b[ui];
 			ssize_t x0 = x1 - g[u].length;
-			cerr << u << '\t' << x0 << '\t' << x1 << '\n';
+			cerr << get(vertex_name, g, u)
+				<< '\t' << x0 << '\t' << x1 << '\n';
 		}
 	}
 
@@ -251,18 +252,14 @@ int main(int argc, char** argv)
 		double w = l * W;
 		double x = pos * W - w / 2;
 		double y = yi * H;
-		cout << '"' << u << "\""
+		cout << '"' << get(vertex_name, g, u) << "\""
 			" [pos=\"" << x << ",-" << y << "\""
 			" width=" << w / dpi << "]\n";
 	}
 
 	// Write the edges.
-	for (tie(eit, elast) = edges(g); eit != elast; ++eit) {
-		E e = *eit;
-		V u = source(e, g);
-		V v = target(e, g);
-		cout << '"' << u << "\" -> \"" << v << "\"\n";
-	}
+	for (tie(eit, elast) = edges(g); eit != elast; ++eit)
+		cout << get(edge_name, g, *eit) << '\n';
 
 	cout << "}\n";
 	assert_good(cout, "stdout");

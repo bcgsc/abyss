@@ -183,18 +183,17 @@ static void writeEstimate(ostream& out,
 			pairs, pmf, est.numPairs);
 	est.stdDev = pmf.getSampleStdDev(est.numPairs);
 
-	ContigNode v = id1 ^ id0.sense();
+	std::pair<ContigNode, ContigNode> e(id0, id1 ^ id0.sense());
 	if (est.numPairs >= opt::npairs) {
 		if (opt::format == DOT) {
 #pragma omp critical(out)
-			out << '"' << id0 << "\" -> \"" << v << "\""
-				" [" << est << "]\n";
+			out << get(g_contigNames, e) << " [" << est << "]\n";
 		} else
-			out << ' ' << id1 << ',' << est;
+			out << ' ' << get(g_contigNames, id1) << ',' << est;
 	} else if (opt::verbose > 1) {
 #pragma omp critical(cerr)
-		cerr << "warning: " << '"' << id0 << "\" -> \"" << v << "\""
-				" [d=" << est.distance << "] "
+		cerr << "warning: " << get(g_contigNames, e)
+			<< " [d=" << est.distance << "] "
 			<< est.numPairs << " of " << pairs.size()
 			<< " pairs fit the expected distribution\n";
 	}

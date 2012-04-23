@@ -81,8 +81,8 @@ namespace opt {
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
 
- 	/** Output format */
- 	int format = DOT; // used by DistanceEst
+	/** Output format */
+	int format = DOT; // used by DistanceEst
 }
 
 static const char shortopts[] = "g:k:n:o:s:v";
@@ -209,14 +209,17 @@ static void resolveForks(Graph& g, const Graph& g0)
 				pair<E, bool> e21 = edge(v2, v1, g0);
 				if (e12.second && e21.second) {
 					if (opt::verbose > 1)
-						cerr << "cycle: " << v1 << ' ' << v2 << '\n';
+						cerr << "cycle: " << get(vertex_name, g, v1)
+							<< ' ' << get(vertex_name, g, v2) << '\n';
 				} else if (e12.second || e21.second) {
 					E e = e12.second ? e12.first : e21.first;
 					V v = source(e, g0), w = target(e, g0);
 					add_edge(v, w, g0[e], g);
 					numEdges++;
 					if (opt::verbose > 1)
-						cerr << u << " -> " << v << " -> " << w
+						cerr << get(vertex_name, g, u)
+							<< " -> " << get(vertex_name, g, v)
+							<< " -> " << get(vertex_name, g, w)
 							<< " [" << g0[e] << "]\n";
 				}
 			}
@@ -292,9 +295,10 @@ static void removeRepeats(Graph& g)
 	repeats.erase(unique(repeats.begin(), repeats.end()),
 			repeats.end());
 	if (opt::verbose > 1) {
-		cerr << "Ambiguous: ";
-		copy(repeats.begin(), repeats.end(),
-				ostream_iterator<ContigNode>(cerr, " "));
+		cerr << "Ambiguous:";
+		for (vector<V>::const_iterator it = repeats.begin();
+				it != repeats.end(); ++it)
+			cerr << ' ' << get(vertex_name, g, *it);
 		cerr << '\n';
 	}
 
@@ -385,8 +389,8 @@ static void removeWeakEdges(Graph& g)
 		for (vector<E>::const_iterator it = weak.begin();
 				it != weak.end(); ++it) {
 			E e = *it;
-			cerr << "\t\"" << source(e, g) << "\"->\"" << target(e, g)
-				<< "\" [" << g[e] << "]\n";
+			cerr << '\t' << get(edge_name, g, e)
+				<< " [" << g[e] << "]\n";
 		}
 	}
 
@@ -555,9 +559,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 	if (opt::verbose > 1) {
-		cerr << "Popped: ";
-		copy(popped.begin(), popped.end(),
-				ostream_iterator<ContigNode>(cerr, " "));
+		cerr << "Popped:";
+		for (vector<ContigNode>::const_iterator it = popped.begin();
+				it != popped.end(); ++it)
+			cerr << ' ' << get(vertex_name, g, *it);
 		cerr << '\n';
 	}
 

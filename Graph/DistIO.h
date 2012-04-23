@@ -31,7 +31,8 @@ std::ostream& write_dist(std::ostream& out, const Graph& g)
 		for (Eit eit = erange.first; eit != erange.second; ++eit) {
 			V v = target(*eit, g) ^ sense;
 			assert(!get(vertex_removed, g, v));
-			out << ' ' << v << ',' << get(edge_bundle, g, eit);
+			out << ' ' << get(vertex_name, g, v)
+				<< ',' << get(edge_bundle, g, eit);
 		}
 		if (sense)
 			out << '\n';

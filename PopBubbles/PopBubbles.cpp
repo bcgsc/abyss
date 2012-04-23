@@ -11,7 +11,6 @@
 #include "ContigProperties.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
-#include "Iterator.h"
 #include "Sequence.h"
 #include "Uncompress.h"
 #include "alignGlobal.h"
@@ -180,11 +179,11 @@ static void popBubble(Graph& g,
 	if (opt::dot)
 #pragma omp critical(cout)
 	{
-		cout << '"' << v << "\" -> {";
-		copy(sorted.begin(), sorted.end(),
-				affix_ostream_iterator<ContigNode>(cout,
-					" \"", "\""));
-		cout << " } -> \"" << tail << "\"\n";
+		cout << '"' << get(vertex_name, g, v) << "\" -> {";
+		for (vector<vertex_descriptor>::const_iterator
+				it = sorted.begin(); it != sorted.end(); ++it)
+			cout << " \"" << get(vertex_name, g, *it) << '"';
+		cout << " } -> \"" << get(vertex_name, g, tail) << "\"\n";
 	}
 #pragma omp critical(g_popped)
 	transform(sorted.begin() + 1, sorted.end(),
@@ -359,10 +358,11 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 	if (opt::verbose > 2)
 #pragma omp critical(cerr)
 	{
-		cerr << "\n* " << v << " -> ";
-		copy(adj.first, adj.second,
-				ostream_iterator<ContigNode>(cerr, " "));
-		cerr << "-> " << tail << '\n';
+		cerr << "\n* " << get(vertex_name, g, v) << " ->";
+		for (adjacency_iterator it = adj.first;
+				it != adj.second; ++it)
+			cerr << ' ' << get(vertex_name, g, *it);
+		cerr << " -> " << get(vertex_name, g, tail) << '\n';
 	}
 
 	if (nbranches > opt::maxBranches) {

@@ -85,14 +85,15 @@ Bubbles discoverBubbles(const Graph& g)
 		if (sum < 2)
 			continue;
 		if (opt::verbose > 3)
-			std::cerr << "* " << *first << '\n';
+			std::cerr << "* " << get(vertex_name, g, *first) << '\n';
 		for (It it = first + 1; it != topo.end(); ++it) {
 			unsigned indeg = in_degree(*it, g);
 			unsigned outdeg = out_degree(*it, g);
 			sum -= indeg;
 
 			if (opt::verbose > 3)
-				std::cerr << *it << '\t' << indeg << '\t' << outdeg
+				std::cerr << get(vertex_name, g, *it)
+					<< '\t' << indeg << '\t' << outdeg
 					<< '\t' << sum
 					<< '\t' << sum + (int)outdeg << '\n';
 

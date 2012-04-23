@@ -275,7 +275,8 @@ static void generateDistFile()
 				if (vecIt->second.numPairs >= opt::c
 						&& vecIt->second.numPairs != 0
 						/*&& vecIt->distance > 1 - opt::k*/)
-					distFile << ' ' << vecIt->first
+					distFile
+						<< ' ' << get(g_contigNames, vecIt->first)
 						<< ',' << vecIt->second;
 			}
 		}

@@ -298,7 +298,8 @@ static unsigned mergePaths(const Lengths& lengths,
 		path.swap(consensus);
 		if (gDebugPrint)
 #pragma omp critical(cout)
-			cout << pivot << '\t' << path2 << '\n'
+			cout << get(g_contigNames, pivot)
+				<< '\t' << path2 << '\n'
 				<< '\t' << path << '\n';
 		merged++;
 	}
@@ -323,7 +324,8 @@ static ContigPath mergePath(const Lengths& lengths,
 	if (opt::verbose > 1)
 #pragma omp critical(cout)
 		cout << "\n* " << seedPath << '\n'
-			<< seedPath.front() << '\t' << path << '\n';
+			<< get(g_contigNames, seedPath.front())
+			<< '\t' << path << '\n';
 	for (ContigPath::const_iterator it = seedPath.begin() + 1;
 			it != seedPath.end(); ++it) {
 		ContigNode seed2 = *it;
@@ -342,13 +344,15 @@ static ContigPath mergePath(const Lengths& lengths,
 			// This seed could be removed from the seed path.
 			if (opt::verbose > 1)
 #pragma omp critical(cout)
-				cout << seed2 << '\t' << path2 << '\n'
+				cout << get(g_contigNames, seed2)
+					<< '\t' << path2 << '\n'
 					<< "\tinvalid\n";
 		} else {
 			path.swap(consensus);
 			if (opt::verbose > 1)
 #pragma omp critical(cout)
-				cout << seed2 << '\t' << path2 << '\n'
+				cout << get(g_contigNames, seed2)
+					<< '\t' << path2 << '\n'
 					<< '\t' << path << '\n';
 		}
 		seed1 = seed2;
@@ -394,7 +398,7 @@ static void extendPaths(const Lengths& lengths,
 
 	if (gDebugPrint)
 		#pragma omp critical(cout)
-		cout << "\n* " << ContigNode(id, false) << '\n'
+		cout << "\n* " << id << "+\n"
 			<< '\t' << path << '\n';
 
 	set<ContigNode> seen;
@@ -410,7 +414,7 @@ static void extendPaths(const Lengths& lengths,
 			cout << "invalid\n";
 			for (deque<ContigNode>::const_iterator it
 					= mergeQ.begin(); it != mergeQ.end(); ++it)
-				cout << *it << '\t'
+				cout << get(g_contigNames, *it) << '\t'
 					<< paths.find(ContigID(*it))->second << '\n';
 		}
 	}
@@ -452,7 +456,8 @@ static ContigID identifySubsumedPaths(const Lengths& lengths,
 	ContigID id(path1It->first);
 	const ContigPath& path = path1It->second;
 	if (gDebugPrint)
-		vout << ContigNode(id, false) << '\t' << path << '\n';
+		vout << get(g_contigNames, ContigNode(id, false))
+			<< '\t' << path << '\n';
 
 	for (ContigPath::const_iterator it = path.begin();
 			it != path.end(); ++it) {
@@ -470,7 +475,8 @@ static ContigID identifySubsumedPaths(const Lengths& lengths,
 			continue;
 		if (equalIgnoreAmbiguos(consensus, path)) {
 			if (gDebugPrint)
-				vout << pivot << '\t' << path2 << '\n';
+				vout << get(g_contigNames, pivot)
+					<< '\t' << path2 << '\n';
 			out.insert(path2It->first);
 		} else if (equalIgnoreAmbiguos(consensus, path2)) {
 			// This path is larger. Use it as the seed.
@@ -483,14 +489,16 @@ static ContigID identifySubsumedPaths(const Lengths& lengths,
 			if (!isCyclePath1 && !isCyclePath2) {
 				// Neither path is a cycle.
 				if (gDebugPrint)
-					vout << pivot << '\t' << path2 << '\n'
+					vout << get(g_contigNames, pivot)
+						<< '\t' << path2 << '\n'
 						<< "ignored\t" << consensus << '\n';
 				overlaps.insert(id);
 				overlaps.insert(path2It->first);
 			} else {
 				// At least one path is a cycle.
 				if (gDebugPrint)
-					vout << pivot << '\t' << path2 << '\n'
+					vout << get(g_contigNames, pivot)
+						<< '\t' << path2 << '\n'
 						<< "cycle\t" << consensus << '\n';
 				if (isCyclePath1 && isCyclePath2)
 					out.insert(path2It->first);
@@ -501,7 +509,8 @@ static ContigID identifySubsumedPaths(const Lengths& lengths,
 			}
 		} else {
 			if (gDebugPrint)
-				vout << pivot << '\t' << path2 << '\n'
+				vout << get(g_contigNames, pivot)
+					<< '\t' << path2 << '\n'
 					<< "ignored\t" << consensus << '\n';
 			overlaps.insert(id);
 			overlaps.insert(path2It->first);

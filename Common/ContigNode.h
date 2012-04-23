@@ -125,15 +125,6 @@ class ContigNode {
 		return in;
 	}
 
-	friend std::ostream& operator <<(std::ostream& out,
-			const ContigNode& o)
-	{
-		if (o.ambiguous())
-			return out << o.m_id << 'N';
-		else
-			return out << ContigID(o.id()) << (o.sense() ? '-' : '+');
-	}
-
 	/** Return the length of this ambiguous contig in k-mer. */
 	unsigned length() const { assert(m_ambig); return m_id; }
 

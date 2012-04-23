@@ -17,7 +17,8 @@ void write_vertex(std::ostream& out, const Graph& g,
 		typename graph_traits<Graph>::vertex_descriptor u,
 		const VertexProp*)
 {
-	out << '"' << u << "\" [" << get(vertex_bundle, g, u) << "]\n";
+	out << '"' << get(vertex_name, g, u) << "\""
+		" [" << get(vertex_bundle, g, u) << "]\n";
 }
 
 template <typename Graph>
@@ -42,7 +43,7 @@ void write_edges(std::ostream& out, const Graph& g,
 	for (out_edge_iterator e = adj.first; e != adj.second; ++e) {
 		vertex_descriptor v = target(*e, g);
 		assert(!get(vertex_removed, g, v));
-		out << '"' << u << "\" -> \"" << v << '"';
+		out << get(edge_name, g, *e);
 		const edge_property_type& ep = get(edge_bundle, g, e);
 		if (!(ep == edge_property_type()))
 			out << " [" << ep << ']';
@@ -60,13 +61,13 @@ void write_edges(std::ostream& out, const Graph& g,
 	unsigned outdeg = out_degree(u, g);
 	if (outdeg == 0)
 		return;
-	out << '"' << u << "\" ->";
+	out << '"' << get(vertex_name, g, u) << "\" ->";
 	if (outdeg > 1)
 		out << " {";
 	std::pair<adjacency_iterator, adjacency_iterator>
 		adj = adjacent_vertices(u, g);
 	for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-		out << " \"" << *v << '"';
+		out << " \"" << get(vertex_name, g, *v) << '"';
 	if (outdeg > 1)
 		out << " }";
 	out << '\n';

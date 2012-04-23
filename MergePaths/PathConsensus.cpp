@@ -286,9 +286,10 @@ static ContigID outputNewContig(const Graph& g,
 			last = path.end() - longestSuffix;
 		assert(first <= last);
 		if (first < last) {
-			copy(first, last - 1,
-					ostream_iterator<ContigNode>(out, ","));
-			out << *(last - 1);
+			ContigPath::const_iterator it = first;
+			out << get(vertex_name, g, *it);
+			for (++it; it != last; ++it)
+				out << ',' << get(vertex_name, g, *it);
 			dtu = min(dtu, getDistance(g, first[-1], first[0]));
 			duv = min(duv, getDistance(g, last[-1], last[0]));
 		} else
@@ -337,7 +338,8 @@ static string createConsensus(const Sequence& a, const Sequence& b)
  * generate a consensus sequence of the overlapping region. The result
  * is stored in the first argument.
  */
-static void mergeContigs(unsigned overlap, Sequence& seq,
+static void mergeContigs(const Graph& g,
+		unsigned overlap, Sequence& seq,
 		const Sequence& s, const ContigNode& node, const Path& path)
 {
 	assert(s.length() > overlap);
@@ -350,8 +352,9 @@ static void mergeContigs(unsigned overlap, Sequence& seq,
 		o = createConsensus(ao, bo);
 	} while (o.empty() && chomp(seq, 'n'));
 	if (o.empty()) {
-		cerr << "warning: the head of `" << node << "' "
-			"does not match the tail of the previous contig\n"
+		cerr << "warning: the head of "
+			<< get(vertex_name, g, node)
+			<< " does not match the tail of the previous contig\n"
 			<< ao << '\n' << bo << '\n' << path << endl;
 		seq += 'n';
 		seq += s;
@@ -374,7 +377,8 @@ static Sequence mergePath(const Graph&g, const Path& path)
 			int d = get(edge_bundle, g, *(it-1), *it).distance;
 			assert(d < 0);
 			unsigned overlap = -d;
-			mergeContigs(overlap, seq, getSequence(*it), *it, path);
+			mergeContigs(g, overlap, seq,
+					getSequence(*it), *it, path);
 		}
 		prev_it = it;
 	}
@@ -650,9 +654,10 @@ static ContigPath fillGap(const Graph& g,
 		ofstream& outFasta)
 {
 	if (opt::verbose > 1)
-		cerr << "\n* " << apConstraint.source << ' '
+		cerr << "\n* "
+			<< get(vertex_name, g, apConstraint.source) << ' '
 			<< apConstraint.dist << "N "
-			<< apConstraint.dest << '\n';
+			<< get(vertex_name, g, apConstraint.dest) << '\n';
 
 	Constraints constraints;
 	constraints.push_back(Constraint(apConstraint.dest,
