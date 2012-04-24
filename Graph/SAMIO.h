@@ -35,7 +35,7 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
  		if (get(vertex_removed, g, *u))
 			continue;
 		const vertex_property_type& vp = g[*u];
-		out << "@SQ\tSN:" << ContigID(*u)
+		out << "@SQ\tSN:" << get(vertex_contig_name, g, *u)
 			<< "\tLN:" << vp.length;
 		if (vp.coverage > 0)
 			out << "\tXC:" << vp.coverage;
@@ -52,9 +52,9 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 		unsigned flag = u.sense() == v.sense() ? 0 : 0x10; //FREVERSE
 		unsigned alen = -distance;
 		unsigned pos = 1 + (u.sense() ? 0 : g[u].length - alen);
-		out << ContigID(v) // QNAME
+		out << get(vertex_contig_name, g, v) // QNAME
 			<< '\t' << flag // FLAG
-			<< '\t' << ContigID(u) // RNAME
+			<< '\t' << get(vertex_contig_name, g, u) // RNAME
 			<< '\t' << pos // POS
 			<< "\t255\t"; // MAPQ
 		// CIGAR

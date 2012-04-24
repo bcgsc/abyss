@@ -2,7 +2,6 @@
 #include "ContigPath.h"
 #include "Estimate.h"
 #include "IOUtil.h"
-#include "Iterator.h"
 #include "Uncompress.h"
 #include "Graph/ConstrainedSearch.h"
 #include "Graph/ContigGraph.h"
@@ -434,8 +433,9 @@ static void handleEstimate(const Graph& g,
 	set<ContigID> repeats = findRepeats(er.refID, solutions);
 	if (!repeats.empty()) {
 		vout << "Repeats:";
-		copy(repeats.begin(), repeats.end(),
-				affix_ostream_iterator<ContigID>(vout, " "));
+		for (set<ContigID>::const_iterator it = repeats.begin();
+				it != repeats.end(); ++it)
+			vout << ' ' << get(g_contigNames, *it);
 		vout << '\n';
 	}
 
@@ -622,7 +622,8 @@ static void* worker(void* pArg)
 			static pthread_mutex_t outMutex
 				= PTHREAD_MUTEX_INITIALIZER;
 			pthread_mutex_lock(&outMutex);
-			*arg.out << er.refID << '\t' << path << '\n';
+			*arg.out << get(g_contigNames, er.refID)
+				<< '\t' << path << '\n';
 			assert(arg.out->good());
 			pthread_mutex_unlock(&outMutex);
 		}

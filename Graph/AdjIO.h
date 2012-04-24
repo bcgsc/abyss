@@ -44,7 +44,8 @@ std::ostream& write_adj(std::ostream& out, const Graph& g)
  		if (get(vertex_removed, g, *u))
 			continue;
 		if (!sense)
-			out << ContigID(*u) << get(vertex_bundle, g, *u);
+			out << get(vertex_contig_name, g, *u)
+				<< get(vertex_bundle, g, *u);
 		out << "\t;";
 		std::pair<out_edge_iterator, out_edge_iterator>
 			adj = out_edges(*u, g);

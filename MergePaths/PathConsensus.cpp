@@ -271,9 +271,9 @@ static ContigID outputNewContig(const Graph& g,
 	assert(longestPrefix > 0);
 	assert(longestSuffix > 0);
 
-	ContigID id(ContigID::create());
-	out << '>' << id.str() << ' ' << seq.length()
-		<< ' ' << coverage << ' ';
+	ContigNode u(ContigID::create(), false);
+	out << '>' << get(vertex_contig_name, g, u)
+		<< ' ' << seq.length() << ' ' << coverage << ' ';
 
 	int dtu = INT_MAX, duv = INT_MAX;
 	for (vector<Path>::const_iterator it = solutions.begin();
@@ -302,11 +302,11 @@ static ContigID outputNewContig(const Graph& g,
 	// Record the newly-created contig to be added to the graph later.
 	g_newVertices.push_back(NewVertex(
 				*(solutions[0].begin() + longestPrefix - 1),
-				ContigNode(id, false),
+				u,
 				*(solutions[0].rbegin() + longestSuffix - 1),
 				ContigProperties(seq.length(), coverage),
 				dtu, duv));
-	return id;
+	return ContigID(u);
 }
 
 /** Return a consensus sequence of a and b.
@@ -450,7 +450,8 @@ static ContigPath alignPair(const Graph& g,
 			assert(*it.first == ~*it.second);
 			assert(equal(it.first+1, It(fstSol.end()), it.second+1));
 			if (opt::verbose > 1)
-				cerr << "Palindrome: " << ContigID(*it.first) << '\n';
+				cerr << "Palindrome: "
+					<< get(vertex_contig_name, g, *it.first) << '\n';
 			return solutions[0];
 		} else {
 			// The paths are different lengths.
@@ -608,8 +609,10 @@ static ContigPath alignMulti(const Graph& g,
 		ContigID palindrome0 = solutions[0][longestPrefix];
 		ContigID palindrome1 = solutions[0].rbegin()[longestSuffix];
 		if (opt::verbose > 1)
-			cerr << "Palindrome: " << palindrome0 << '\n'
-				<< "Palindrome: " << palindrome1 << '\n';
+			cerr << "Palindrome: "
+				<< get(g_contigNames, palindrome0) << '\n'
+				<< "Palindrome: "
+				<< get(g_contigNames, palindrome1) << '\n';
 #ifndef NDEBUG
 		string s0 = getSequence(ContigNode(palindrome0, false));
 		string s1 = getSequence(ContigNode(palindrome1, false));
@@ -855,7 +858,7 @@ int main(int argc, char** argv)
 	// Output those contigs that were not seen in ambiguous path.
 	for (unsigned id = 0; id < contigs.size(); ++id)
 		if (seen[id])
-			out << ContigID(id) << '\n';
+			out << get(g_contigNames, id) << '\n';
 
 	for (ContigPaths::const_iterator path = paths.begin();
 			path != paths.end(); ++path) {

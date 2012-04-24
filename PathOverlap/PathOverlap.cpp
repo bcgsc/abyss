@@ -500,10 +500,10 @@ static void assembleOverlappingPaths(Graph& g,
 	ContigID::setNextContigID(pathIDs.back());
 	for (Paths::const_iterator it = merges.begin();
 			it != merges.end(); ++it) {
-		ContigID id = ContigID::create();
+		string id(get(g_contigNames, ContigID::create()));
 		if (opt::verbose > 0)
 			cerr << id << '\t' << *it << '\n';
-		pathIDs.push_back((string)id.str());
+		pathIDs.push_back(id);
 		paths.push_back(mergePaths(paths, overlapMap, *it));
 
 		// Remove the merged paths.
@@ -642,7 +642,7 @@ int main(int argc, char** argv)
 		for (vector<ContigID>::const_iterator it
 				= s_trimmedContigs.begin();
 				it != s_trimmedContigs.end(); ++it)
-			out << ContigID(*it) << '\n';
+			out << get(g_contigNames, *it) << '\n';
 		assert_good(out, opt::repeatContigs);
 	}
 

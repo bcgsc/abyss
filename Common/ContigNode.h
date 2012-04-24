@@ -201,6 +201,14 @@ bool get(vertex_sense_t, const Graph&, ContigNode u)
 	return u.sense();
 }
 
+/** Return the contig name of the specified vertex. */
+template <typename Graph>
+cstring get(vertex_contig_name_t, const Graph&, ContigNode u)
+{
+	assert(!u.ambiguous());
+	return get(g_contigNames, u.id());
+}
+
 /** The string representation of a vertex name. */
 struct VertexName : std::pair<intptr_t, char>
 {

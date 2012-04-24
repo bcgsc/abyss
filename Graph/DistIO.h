@@ -1,7 +1,6 @@
 #ifndef DISTIO_H
 #define DISTIO_H 1
 
-#include "ContigID.h"
 #include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <ostream>
@@ -24,7 +23,7 @@ std::ostream& write_dist(std::ostream& out, const Graph& g)
 			continue;
 		bool sense = get(vertex_sense, g, u);
 		if (!sense)
-			out << ContigID(u);
+			out << get(vertex_contig_name, g, u);
 		else
 			out << " ;";
 		std::pair<Eit, Eit> erange = out_edges(u, g);

@@ -176,14 +176,15 @@ static unsigned findOverlap(const Graph& g,
 }
 
 static FastaRecord newContig(const Graph& g,
-		const ContigNode& u, const ContigNode& v,
+		const ContigNode& t, const ContigNode& v,
 		int dist, const string& seq)
 {
+	ContigNode u(ContigID::create(), false);
 	ostringstream comment;
 	comment << seq.length() << " 0 "
-		<< get(vertex_name, g, u) << ' '
+		<< get(vertex_name, g, t) << ' '
 		<< get(vertex_name, g, v) << ' ' << dist;
-	return FastaRecord((string)ContigID::create().str(),
+	return FastaRecord(string(get(vertex_contig_name, g, u)),
 			comment.str(), seq);
 }
 

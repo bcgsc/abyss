@@ -511,7 +511,7 @@ int main(int argc, char** argv)
 			ContigID id(it - contigs.begin());
 			if (!seen[id]) {
 				const Contig& contig = *it;
-				out << '>' << id;
+				out << '>' << get(g_contigNames, id);
 				if (!contig.comment.empty())
 					out << ' ' << contig.comment;
 				out << '\n' << contig.seq << '\n';

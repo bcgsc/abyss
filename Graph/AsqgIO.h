@@ -31,7 +31,8 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 		if (get(vertex_removed, g, u))
 			continue;
 		const VP& vp = g[u];
-		out << "VT\t" << ContigID(u) << "\t*\tLN:i:" << vp.length;
+		out << "VT\t" << get(vertex_contig_name, g, u)
+			<< "\t*\tLN:i:" << vp.length;
 		if (vp.coverage > 0)
 			out << "\tXC:i:" << vp.coverage;
 		out << '\n';
@@ -50,7 +51,8 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 		unsigned overlap = -distance;
 		unsigned ulen = g[u].length;
 		unsigned vlen = g[v].length;
-		out << "ED\t" << ContigID(u) << ' ' << ContigID(v)
+		out << "ED\t" << get(vertex_contig_name, g, u)
+			<< ' ' << get(vertex_contig_name, g, v)
 			<< ' ' << (u.sense() ? 0 : ulen - overlap)
 			<< ' ' << (u.sense() ? overlap : ulen) - 1
 			<< ' ' << ulen

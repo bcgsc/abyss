@@ -665,11 +665,13 @@ int main(int argc, char** argv)
 	g_popped.erase(unique(g_popped.begin(), g_popped.end()),
 			g_popped.end());
 
-	if (opt::dot)
+	if (opt::dot) {
 		cout << "}\n";
-	else
-		copy(g_popped.begin(), g_popped.end(),
-				ostream_iterator<ContigID>(cout, "\n"));
+	} else {
+		for (vector<ContigID>::const_iterator it = g_popped.begin();
+				it != g_popped.end(); ++it)
+			cout << get(g_contigNames, *it) << '\n';
+	}
 	free_prob_dist(pdist);
 	free(para);
 
@@ -696,13 +698,14 @@ int main(int argc, char** argv)
 			assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
 					it != paths.end(); ++it)
-				cout << ContigID::create() << '\t'
-					<< addDistance(gorig, *it) << '\n';
+				cout << get(g_contigNames, ContigID::create())
+					<< '\t' << addDistance(gorig, *it) << '\n';
 		} else {
 			assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
 					it != paths.end(); ++it)
-				cout << ContigID::create() << '\t' << *it << '\n';
+				cout << get(g_contigNames, ContigID::create())
+					<< '\t' << *it << '\n';
 		}
 		paths.clear();
 

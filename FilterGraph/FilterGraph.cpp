@@ -561,8 +561,9 @@ int main(int argc, char** argv)
 	sort(g_removed.begin(), g_removed.end());
 	g_removed.erase(unique(g_removed.begin(), g_removed.end()),
 			g_removed.end());
-	copy(g_removed.begin(), g_removed.end(),
-			ostream_iterator<ContigID>(cout, "\n"));
+	for (vector<ContigID>::const_iterator it = g_removed.begin();
+			it != g_removed.end(); ++it)
+		cout << get(g_contigNames, *it) << '\n';
 
 	// Assemble unambiguous paths.
 	if (opt::assemble) {
@@ -571,7 +572,8 @@ int main(int argc, char** argv)
 		assemble(g, back_inserter(paths));
 		for (ContigPaths::const_iterator it = paths.begin();
 				it != paths.end(); ++it)
-			cout << ContigID::create() << '\t' << *it << '\n';
+			cout << get(g_contigNames, ContigID::create())
+				<< '\t' << *it << '\n';
 	}
 
 	// Output the updated adjacency graph.

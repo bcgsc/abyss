@@ -26,12 +26,6 @@ class ContigID {
 	/** Return the index of this ID. */
 	operator unsigned() const { return m_id; }
 
-	/** Return the string representation. */
-	Dictionary::key_reference str() const
-	{
-		return g_contigNames.name(m_id);
-	}
-
 	bool operator ==(const ContigID& o) const
 	{
 		return m_id == o.m_id;
@@ -53,11 +47,10 @@ class ContigID {
 		return in;
 	}
 
-	friend std::ostream& operator <<(std::ostream& out,
-			const ContigID& o)
-	{
-		return out << o.str();
-	}
+	/** The insertion operator is not implemented to prevent
+	 * unintentional use of the cast operator (unsigned).
+	 */
+	friend std::ostream& operator<<(std::ostream&, const ContigID&);
 
 	static bool empty() { return g_contigNames.empty(); }
 	static void lock() { g_contigNames.lock(); }

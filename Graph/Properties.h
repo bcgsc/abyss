@@ -8,6 +8,9 @@
 /** The distance between two vertices. */
 enum edge_distance_t { edge_distance };
 
+/** The name of a contig without an orientation. */
+enum vertex_contig_name_t { vertex_contig_name };
+
 /** The coverage of a vertex. */
 enum vertex_coverage_t { vertex_coverage };
 
@@ -41,6 +44,7 @@ using boost::vertex_property;
 
 namespace boost {
 	BOOST_INSTALL_PROPERTY(edge, distance);
+	BOOST_INSTALL_PROPERTY(vertex, contig_name);
 	BOOST_INSTALL_PROPERTY(vertex, coverage);
 	BOOST_INSTALL_PROPERTY(vertex, length);
 	BOOST_INSTALL_PROPERTY(vertex, removed);

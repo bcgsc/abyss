@@ -4,7 +4,6 @@
 #include "ContigPath.h"
 #include "Functional.h" // for mem_var
 #include "IOUtil.h"
-#include "Iterator.h"
 #include "Uncompress.h"
 #include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
@@ -149,10 +148,11 @@ static set<ContigID> removeRepeats(ContigPathMap& paths)
 	set<ContigID> repeats = findRepeats(paths);
 	if (gDebugPrint) {
 		cout << "Repeats:";
-		if (!repeats.empty())
-			copy(repeats.begin(), repeats.end(),
-					affix_ostream_iterator<ContigID>(cout, " "));
-		else
+		if (!repeats.empty()) {
+			for (set<ContigID>::const_iterator it = repeats.begin();
+					it != repeats.end(); ++it)
+				cout << ' ' << get(g_contigNames, *it);
+		} else
 			cout << " none";
 		cout << '\n';
 	}
@@ -173,7 +173,7 @@ static set<ContigID> removeRepeats(ContigPathMap& paths)
 	for (set<ContigID>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it)
 		if (paths.erase(*it) > 0)
-			ss << ' ' << ContigID(*it);
+			ss << ' ' << get(g_contigNames, *it);
 
 	if (opt::verbose > 0 && removed > 0)
 		cout << "Removing paths in repeats:" << ss.str() << '\n';
@@ -398,7 +398,7 @@ static void extendPaths(const Lengths& lengths,
 
 	if (gDebugPrint)
 		#pragma omp critical(cout)
-		cout << "\n* " << id << "+\n"
+		cout << "\n* " << get(g_contigNames, id) << "+\n"
 			<< '\t' << path << '\n';
 
 	set<ContigNode> seen;
@@ -686,7 +686,8 @@ static void outputSortedPaths(const ContigPathMap& paths)
 	assert_good(out, opt::out);
 	for (vector<ContigPath>::const_iterator it = sortedPaths.begin();
 			it != sortedPaths.end(); ++it)
-		out << ContigID::create() << '\t' << *it << '\n';
+		out << get(g_contigNames, ContigID::create())
+			<< '\t' << *it << '\n';
 	assert_good(out, opt::out);
 }
 
@@ -944,8 +945,9 @@ int main(int argc, char** argv)
 		// Reassemble the paths that were found to overlap.
 		if (gDebugPrint) {
 			cout << "\nReassembling overlapping contigs:";
-			copy(overlaps.begin(), overlaps.end(),
-					affix_ostream_iterator<ContigID>(cout, " "));
+			for (set<ContigID>::const_iterator it = overlaps.begin();
+					it != overlaps.end(); ++it)
+				cout << ' ' << get(g_contigNames, *it);
 			cout << '\n';
 		}
 
@@ -974,8 +976,9 @@ int main(int argc, char** argv)
 		overlaps = removeSubsumedPaths(lengths, resultsPathMap);
 		if (!overlaps.empty() && gDebugPrint) {
 			cout << "\nOverlapping contigs:";
-			copy(overlaps.begin(), overlaps.end(),
-					affix_ostream_iterator<ContigID>(cout, " "));
+			for (set<ContigID>::const_iterator it = overlaps.begin();
+					it != overlaps.end(); ++it)
+				cout << ' ' << get(g_contigNames, *it);
 			cout << '\n';
 		}
 	}
