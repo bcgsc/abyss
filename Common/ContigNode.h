@@ -203,7 +203,8 @@ bool get(vertex_sense_t, const Graph&, ContigNode u)
 
 /** Return the contig name of the specified vertex. */
 template <typename Graph>
-cstring get(vertex_contig_name_t, const Graph&, ContigNode u)
+Dictionary::name_reference
+get(vertex_contig_name_t, const Graph&, ContigNode u)
 {
 	assert(!u.ambiguous());
 	return get(g_contigNames, u.id());

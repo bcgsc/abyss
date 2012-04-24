@@ -9,69 +9,72 @@
 #include <string>
 #include <vector>
 
-/** A dictionary of strings that assigns each string an index. */
-class Dictionary {
+/** A bidirectional map of indices and names. */
+class Dictionary
+{
 	public:
-		typedef std::string key_type;
-		typedef cstring key_reference;
-		typedef std::vector<const_string> Vector;
 		typedef unsigned index_type;
-		typedef unordered_map<key_reference, index_type> Map;
+		typedef unsigned index_reference;
+		typedef std::string name_type;
+		typedef cstring name_reference;
+
+		typedef std::vector<const_string> Vector;
+		typedef unordered_map<name_reference, index_type> Map;
 
 		Dictionary() : m_locked(false) { }
 
-		/** Insert the specified key. */
-		index_type insert(const key_type& key)
+		/** Insert the specified name. */
+		index_reference insert(const name_type& name)
 		{
-			m_vec.push_back(key);
+			m_vec.push_back(name);
 			std::pair<Map::const_iterator, bool> inserted
 				= m_map.insert(Map::value_type(
 							m_vec.back(), m_map.size()));
 			if (!inserted.second) {
 				std::cerr << "error: duplicate ID: `"
-					<< key << "'\n";
+					<< name << "'\n";
 				exit(EXIT_FAILURE);
 			}
 			return inserted.first->second;
 		}
 
 		/** If the specified index is within this dictionary, ensure
-		 * that the key is identical, otherwise append the key to this
-		 * dictionary.
+		 * that the name is identical, otherwise append the name to
+		 * this dictionary.
 		 */
-		void put(index_type index, const key_type& key)
+		void put(index_type index, const name_type& name)
 		{
 			if (index < m_vec.size()) {
-				assert(name(index) == key);
+				assert(getName(index) == name);
 			} else {
 				assert(!m_locked);
 				assert(index == m_vec.size());
-				index_type i = insert(key);
+				index_type i = insert(name);
 				assert(i == index);
 				(void)i;
 			}
 		}
 
-		/** Return the index of the specified key. */
-		index_type index(const key_type& key) const
+		/** Return the index of the specified name. */
+		index_reference getIndex(const name_type& name) const
 		{
-			Map::const_iterator it = m_map.find(key);
+			Map::const_iterator it = m_map.find(name);
 			if (it == m_map.end()) {
 				std::cerr << "error: unexpected ID: `"
-					<< key << "'\n";
+					<< name << "'\n";
 				exit(EXIT_FAILURE);
 			}
 			return it->second;
 		}
 
 		/** Return the name of the specified index. */
-		key_reference name(index_type index) const
+		name_reference getName(index_type index) const
 		{
 			assert(index < m_vec.size());
 			return m_vec[index];
 		}
 
-		/** Lock this dictionary. No further keys may be added. */
+		/** Lock this dictionary. No further elements may be added. */
 		void lock() { m_locked = true; }
 
 		/** Unlock this dictionary. */
@@ -83,14 +86,14 @@ class Dictionary {
 		/** Return the number of elements in this dictionary. */
 		size_t size() const { return m_vec.size(); }
 
-		/** Return the number of elements with the specified key. */
-		size_t count(const key_type& key) const
+		/** Return the number of elements with the specified name. */
+		size_t count(const name_type& name) const
 		{
-			return m_map.count(key);
+			return m_map.count(name);
 		}
 
-		/** Return the last key in this dictionary. */
-		key_reference back() const
+		/** Return the last name in this dictionary. */
+		name_reference back() const
 		{
 			assert(!m_vec.empty());
 			return m_vec.back();
@@ -102,16 +105,22 @@ class Dictionary {
 		bool m_locked;
 };
 
-static inline Dictionary::key_reference get(
-		const Dictionary& pmap, Dictionary::index_type key)
+static inline Dictionary::name_reference get(
+		const Dictionary& pmap, Dictionary::index_type index)
 {
-	return pmap.name(key);
+	return pmap.getName(index);
 }
 
-static inline void put(Dictionary& pmap, Dictionary::index_type key,
-		const Dictionary::key_type& value)
+static inline void put(Dictionary& pmap, Dictionary::index_type index,
+		const Dictionary::name_type& name)
 {
-	pmap.put(key, value);
+	pmap.put(index, name);
+}
+
+static inline Dictionary::index_reference get(
+		const Dictionary& pmap, Dictionary::name_type name)
+{
+	return pmap.getIndex(name);
 }
 
 #endif

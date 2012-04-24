@@ -21,7 +21,7 @@ class ContigID {
 	ContigID() { }
 	explicit ContigID(unsigned id) : m_id(id) { };
 	explicit ContigID(const std::string& id)
-		: m_id(g_contigNames.index(id)) { };
+		: m_id(get(g_contigNames, id)) { };
 
 	/** Return the index of this ID. */
 	operator unsigned() const { return m_id; }
