@@ -338,16 +338,20 @@ static void outputGraph(Graph& g,
 		const vector<string>& pathIDs, const ContigPaths& paths,
 		const string& commandLine)
 {
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	// Add the path vertices.
+	g_contigNames.unlock();
 	for (ContigPaths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (!path.empty()) {
-			g_contigNames.insert(id);
-			merge(g, path.begin(), path.end());
+			V u = merge(g, path.begin(), path.end());
+			put(vertex_name, g, u, id);
 		}
 	}
+	g_contigNames.lock();
 
 	// Remove the vertices that are used in paths.
 	for (ContigPaths::const_iterator it = paths.begin();
@@ -469,10 +473,10 @@ int main(int argc, char** argv)
 			if (!adjPath.empty()
 					&& g_contigNames.count(rec.id) == 0)
 				continue;
-			ContigID id = adjPath.empty()
-				? ContigID(g_contigNames.insert(rec.id))
-				: ContigID(rec.id);
-			assert(id == contigs.size());
+			if (adjPath.empty())
+				put(g_contigNames, contigs.size(), rec.id);
+			else
+				assert(get(g_contigNames, rec.id) == contigs.size());
 			contigs.push_back(rec);
 
 			++count;

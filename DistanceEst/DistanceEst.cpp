@@ -275,8 +275,7 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 		ss >> expect(" SN:") >> s >> expect(" LN:") >> len;
 		assert(ss);
 
-		ContigID id(g_contigNames.insert(s));
-		assert(id == lengths.size());
+		put(g_contigNames, lengths.size(), s);
 		lengths.push_back(len);
 	}
 	if (lengths.empty()) {

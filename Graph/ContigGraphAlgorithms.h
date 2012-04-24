@@ -175,7 +175,8 @@ typename vertex_property<Graph>::type addProp(const Graph& g,
  * Remove the vertices [first, last).
  */
 template<typename Graph, typename It>
-void merge(Graph& g, It first, It last)
+typename graph_traits<Graph>::vertex_descriptor
+merge(Graph& g, It first, It last)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor
 		vertex_descriptor;
@@ -183,6 +184,7 @@ void merge(Graph& g, It first, It last)
 	vertex_descriptor u = add_vertex(addProp(g, first, last), g);
 	copy_in_edges(g, *first, u);
 	copy_out_edges(g, *(last - 1), u);
+	return u;
 }
 
 /** Assemble unambiguous paths. Write the paths to out.

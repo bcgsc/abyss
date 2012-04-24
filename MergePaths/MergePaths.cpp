@@ -816,10 +816,9 @@ static Lengths readContigLengths(istream& in)
 	string s;
 	unsigned len;
 	while (in >> s >> len) {
-		ContigID id(g_contigNames.insert(s));
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
+		put(g_contigNames, lengths.size(), s);
 		assert(len >= opt::k);
-		assert(id == lengths.size());
 		lengths.push_back(len - opt::k + 1);
 	}
 	assert(in.eof());

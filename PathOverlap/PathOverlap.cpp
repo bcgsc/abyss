@@ -384,16 +384,19 @@ static void addPathOverlapEdges(Graph& g,
 		const Paths& paths, const vector<string>& pathIDs,
 		const Overlaps& overlaps)
 {
+	typedef graph_traits<Graph>::vertex_descriptor V;
 	const bool allowParallelEdge = opt::mode == opt::ASSEMBLE;
 
 	// Add the path vertices.
 	g_contigNames.unlock();
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
-		if (it->empty())
-			continue;
-		g_contigNames.insert(pathIDs[it - paths.begin()]);
-		merge(g, it->begin(), it->end());
+		const ContigPath& path = *it;
+		const string& id = pathIDs[it - paths.begin()];
+		if (!path.empty()) {
+			V u = merge(g, path.begin(), path.end());
+			put(vertex_name, g, u, id);
+		}
 	}
 	g_contigNames.lock();
 
