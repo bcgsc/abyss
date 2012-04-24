@@ -811,12 +811,12 @@ static void buildPathGraph(const Lengths& lengths,
 static Lengths readContigLengths(istream& in)
 {
 	assert(in);
-	assert(ContigID::empty());
+	assert(g_contigNames.empty());
 	Lengths lengths;
 	string s;
 	unsigned len;
 	while (in >> s >> len) {
-		ContigID id = ContigID::insert(s);
+		ContigID id(g_contigNames.insert(s));
 		in.ignore(numeric_limits<streamsize>::max(), '\n');
 		assert(len >= opt::k);
 		assert(id == lengths.size());
@@ -824,7 +824,7 @@ static Lengths readContigLengths(istream& in)
 	}
 	assert(in.eof());
 	assert(!lengths.empty());
-	ContigID::lock();
+	g_contigNames.lock();
 	return lengths;
 }
 

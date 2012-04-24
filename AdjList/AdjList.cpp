@@ -240,7 +240,7 @@ int main(int argc, char** argv)
 			readContigs(argv[optind], g, prefixes, suffixMap);
 	} else
 		readContigs("-", g, prefixes, suffixMap);
-	ContigID::lock();
+	g_contigNames.lock();
 
 	// Add the overlap edges of exactly k-1 bp.
 	if (opt::verbose > 0)

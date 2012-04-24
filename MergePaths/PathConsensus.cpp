@@ -810,7 +810,7 @@ int main(int argc, char** argv)
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0][0]);
 	}
-	ContigID::lock();
+	g_contigNames.lock();
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;

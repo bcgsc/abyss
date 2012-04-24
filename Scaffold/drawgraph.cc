@@ -99,7 +99,7 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
-	ContigID::lock();
+	g_contigNames.lock();
 }
 
 /** Solve Ax = b for x using Cholesky decomposition.

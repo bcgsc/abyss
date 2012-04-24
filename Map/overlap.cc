@@ -274,7 +274,7 @@ static void addVertices(const string& path, Graph& g)
 	ifstream in(path.c_str());
 	assert_good(in, path);
 	in >> g;
-	ContigID::lock();
+	g_contigNames.lock();
 	assert(in.eof());
 }
 

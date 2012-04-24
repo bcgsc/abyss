@@ -387,15 +387,15 @@ static void addPathOverlapEdges(Graph& g,
 	const bool allowParallelEdge = opt::mode == opt::ASSEMBLE;
 
 	// Add the path vertices.
-	ContigID::unlock();
+	g_contigNames.unlock();
 	for (Paths::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		if (it->empty())
 			continue;
-		ContigID::insert(pathIDs[it - paths.begin()]);
+		g_contigNames.insert(pathIDs[it - paths.begin()]);
 		merge(g, it->begin(), it->end());
 	}
-	ContigID::lock();
+	g_contigNames.lock();
 
 	// Remove the single-end contigs that are in paths.
 	for (Paths::const_iterator it = paths.begin();

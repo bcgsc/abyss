@@ -52,26 +52,6 @@ class ContigID {
 	 */
 	friend std::ostream& operator<<(std::ostream&, const ContigID&);
 
-	static bool empty() { return g_contigNames.empty(); }
-	static void lock() { g_contigNames.lock(); }
-	static void unlock() { g_contigNames.unlock(); }
-	static size_t count(const std::string& id)
-	{
-		return g_contigNames.count(id);
-	}
-
-	/** Create a new contig ID from s, which must be unique. */
-	static ContigID insert(const std::string& s)
-	{
-		return ContigID(g_contigNames.insert(s));
-	}
-
-	/** Create a new contig ID if it does not already exist. */
-	static void put(ContigID id, const std::string& s)
-	{
-		g_contigNames.put(id, s);
-	}
-
 	/** Set the next contig ID returned by ContigID::create. */
 	static void setNextContigID(cstring s)
 	{
@@ -91,7 +71,7 @@ class ContigID {
 		}
 		std::ostringstream oss;
 		oss << s_nextID++;
-		return insert(oss.str());
+		return ContigID(g_contigNames.insert(oss.str()));
 	}
 
   private:

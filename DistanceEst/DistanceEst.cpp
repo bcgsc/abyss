@@ -262,7 +262,7 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 {
 	assert(in);
 	assert(lengths.empty());
-	assert(ContigID::empty());
+	assert(g_contigNames.empty());
 	for (string line; in.peek() == '@' && getline(in, line);) {
 		istringstream ss(line);
 		string type;
@@ -275,7 +275,7 @@ static void readContigLengths(istream& in, vector<unsigned>& lengths)
 		ss >> expect(" SN:") >> s >> expect(" LN:") >> len;
 		assert(ss);
 
-		ContigID id = ContigID::insert(s);
+		ContigID id(g_contigNames.insert(s));
 		assert(id == lengths.size());
 		lengths.push_back(len);
 	}
@@ -478,7 +478,7 @@ int main(int argc, char** argv)
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
 	readContigLengths(in, contigLens);
-	ContigID::lock();
+	g_contigNames.lock();
 
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;

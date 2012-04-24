@@ -344,7 +344,7 @@ static void outputGraph(Graph& g,
 		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (!path.empty()) {
-			ContigID::insert(id);
+			g_contigNames.insert(id);
 			merge(g, path.begin(), path.end());
 		}
 	}
@@ -467,10 +467,10 @@ int main(int argc, char** argv)
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			if (!adjPath.empty()
-					&& ContigID::count(rec.id) == 0)
+					&& g_contigNames.count(rec.id) == 0)
 				continue;
 			ContigID id = adjPath.empty()
-				? ContigID::insert(rec.id)
+				? ContigID(g_contigNames.insert(rec.id))
 				: ContigID(rec.id);
 			assert(id == contigs.size());
 			contigs.push_back(rec);
@@ -488,7 +488,7 @@ int main(int argc, char** argv)
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
-		ContigID::lock();
+		g_contigNames.lock();
 	}
 
 	vector<string> pathIDs;

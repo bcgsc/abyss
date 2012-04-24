@@ -1,7 +1,7 @@
 #ifndef DOTIO_H
 #define DOTIO_H 1
 
-#include "ContigID.h" // for ContigID::lock
+#include "ContigID.h" // for g_contigNames.lock
 #include "Graph/Options.h"
 #include "IOUtil.h"
 #include <boost/graph/graph_traits.hpp>
@@ -238,7 +238,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			// Edge
 			in >> expect(">");
 			assert(in);
-			ContigID::lock();
+			g_contigNames.lock();
 
 			vertex_descriptor u(uname);
 			if (in >> std::ws && in.peek() == '{') {

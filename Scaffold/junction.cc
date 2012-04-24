@@ -143,7 +143,7 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 1)
 		printGraphStats(cerr, g);
-	ContigID::lock();
+	g_contigNames.lock();
 }
 
 int main(int argc, char** argv)

@@ -461,7 +461,7 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
-	ContigID::lock();
+	g_contigNames.lock();
 }
 
 /** Return the scaffold length of [first, last), not counting gaps. */
@@ -599,7 +599,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	ofstream fout(opt::out.c_str());
 	ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
 	assert_good(out, opt::out);
-	ContigID::unlock();
+	g_contigNames.unlock();
 	for (vector<ContigPath>::const_iterator it = paths.begin();
 			it != paths.end(); ++it) {
 		out << get(g_contigNames, ContigID::create()) << '\t'

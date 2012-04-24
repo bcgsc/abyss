@@ -108,4 +108,10 @@ static inline Dictionary::key_reference get(
 	return pmap.name(key);
 }
 
+static inline void put(Dictionary& pmap, Dictionary::index_type key,
+		const Dictionary::key_type& value)
+{
+	pmap.put(key, value);
+}
+
 #endif

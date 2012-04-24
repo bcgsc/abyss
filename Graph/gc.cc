@@ -59,7 +59,7 @@ static void readGraph(const string& path, Graph& g, BetterEP betterEP)
 	read_graph(in, g, betterEP);
 	assert(in.eof());
 	printGraphStats(cout, g);
-	ContigID::lock();
+	g_contigNames.lock();
 }
 
 /** Read a graph from the specified files. */

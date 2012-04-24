@@ -143,7 +143,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 		assert(in.eof());
 	}
 	assert(num_vertices(g) > 0);
-	ContigID::lock();
+	g_contigNames.lock();
 
 	if (faiFormat)
 		return in;
