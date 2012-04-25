@@ -797,6 +797,7 @@ int main(int argc, char** argv)
 	Graph g;
 	fin >> g;
 	assert(fin.eof());
+	g_contigNames.lock();
 
 	// Read contigs
 	Contigs& contigs = g_contigs;
@@ -805,15 +806,13 @@ int main(int argc, char** argv)
 			cerr << "Reading `" << contigFile << "'..." << endl;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			ContigID id(rec.id);
-			assert(contigs.size() == id);
+			assert(contigs.size() == get(g_contigNames, rec.id));
 			contigs.push_back(rec.seq);
 		}
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0][0]);
 	}
-	g_contigNames.lock();
 
 	vector<string> pathIDs;
 	vector<bool> isAmbPath;

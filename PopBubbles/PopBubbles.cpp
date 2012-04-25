@@ -639,8 +639,7 @@ int main(int argc, char** argv)
 		for (FastaRecord rec; in >> rec;) {
 			if (g_contigNames.count(rec.id) == 0)
 				continue;
-			ContigID id(rec.id);
-			assert(contigs.size() == id);
+			assert(contigs.size() == get(g_contigNames, rec.id));
 			contigs.push_back(rec.seq);
 		}
 		assert(in.eof());

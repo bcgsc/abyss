@@ -152,10 +152,10 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 	in.clear();
 	in.seekg(std::ios_base::beg);
 	assert(in);
-	for (ContigID id; in >> id;) {
+	for (std::string name; in >> name;) {
 		if (adjFormat)
 			in >> Ignore(';');
-		vertex_descriptor u(id, false);
+		vertex_descriptor u(name, false);
 		for (int sense = false; sense <= true; ++sense) {
 			std::string s;
 			getline(in, s, !sense ? ';' : '\n');

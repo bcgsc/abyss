@@ -1,7 +1,6 @@
 #ifndef ASQGIO_H
 #define ASQGIO_H 1
 
-#include "Common/ContigID.h"
 #include "Common/IOUtil.h"
 #include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
@@ -111,7 +110,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			break;
 		  }
 		  case 'E': {
-			ContigID uname, vname;
+			std::string uname, vname;
 			unsigned s1, e1, l1, s2, e2, l2;
 			bool rc;
 			int nd;

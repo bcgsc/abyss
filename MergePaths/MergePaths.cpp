@@ -739,10 +739,11 @@ static ContigPathMap readPaths(const Lengths& lengths,
 
 	unsigned tooSmall = 0;
 	ContigPathMap paths;
-	ContigID id;
+	std::string name;
 	ContigPath path;
-	while (in >> id >> path) {
+	while (in >> name >> path) {
 		// Ignore seed contigs shorter than the threshold length.
+		ContigID id(get(g_contigNames, name));
 		unsigned len = lengths[id] + opt::k - 1;
 		if (len < opt::seedLen) {
 			tooSmall++;

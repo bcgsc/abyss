@@ -205,7 +205,7 @@ static void writeEstimates(ostream& out,
 		const vector<unsigned>& lengthVec, const PMF& pmf)
 {
 	assert(!pairs.empty());
-	ContigID id0(pairs.front().rname);
+	ContigID id0(get(g_contigNames, pairs.front().rname));
 	assert(id0 < lengthVec.size());
 	unsigned len0 = lengthVec[id0];
 	if (len0 < opt::seedLen)
@@ -312,7 +312,8 @@ static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 
 	// Check that the input is sorted.
 	if (it != last && !out.empty()
-			&& ContigID(it->rname) < ContigID(out.front().rname)) {
+			&& get(g_contigNames, it->rname)
+				< get(g_contigNames, out.front().rname)) {
 		cerr << "error: input must be sorted: saw `"
 			<< out.front().rname << "' before `"
 			<< it->rname << "'\n";

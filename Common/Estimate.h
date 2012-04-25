@@ -142,11 +142,11 @@ struct EstimateRecord
 		o.estimates[false].clear();
 		o.estimates[true].clear();
 
-		ContigID id;
-		in >> id;
+		std::string name;
+		in >> name;
 		if (!in)
 			return in;
-		o.refID = id;
+		o.refID = ContigID(get(g_contigNames, name));
 
 		for (int rc = false; rc <= true; ++rc) {
 			std::string s;

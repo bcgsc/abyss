@@ -328,9 +328,14 @@ static void markRemovedContigs(vector<bool>& marked,
 		const vector<string>& pathIDs, const ContigPaths& paths)
 {
 	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		if (it->empty())
-			marked[ContigID(pathIDs[it - paths.begin()])] = true;
+			it != paths.end(); ++it) {
+		if (it->empty()) {
+			size_t i = get(g_contigNames,
+					pathIDs[it - paths.begin()]);
+			assert(i < marked.size());
+			marked[i] = true;
+		}
+	}
 }
 
 /** Output the updated overlap graph. */

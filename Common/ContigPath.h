@@ -66,9 +66,9 @@ static inline void markSeenInPath(std::istream& in,
 	ContigPath path;
 	while (in >> s >> path) {
 		if (path.empty()) {
-			ContigID id(s);
-			assert(marked.size() > id);
-			marked[id] = true;
+			size_t i = get(g_contigNames, s);
+			assert(i < marked.size());
+			marked[i] = true;
 		}
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it) {

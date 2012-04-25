@@ -45,8 +45,6 @@ class ContigID {
   public:
 	ContigID() { }
 	explicit ContigID(unsigned id) : m_id(id) { };
-	explicit ContigID(const std::string& id)
-		: m_id(get(g_contigNames, id)) { };
 
 	/** Return the index of this ID. */
 	operator unsigned() const { return m_id; }
@@ -59,17 +57,6 @@ class ContigID {
 	bool operator <(const ContigID& o) const
 	{
 		return m_id < o.m_id;
-	}
-
-	friend std::istream& operator >>(std::istream& in,
-			ContigID& o)
-	{
-		std::string s;
-		if (in >> s)
-			o = ContigID(s);
-		else
-			o.m_id = 1<<29; // invalid value
-		return in;
 	}
 
 	/** The insertion operator is not implemented to prevent
