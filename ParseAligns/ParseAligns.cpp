@@ -185,8 +185,9 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
-		est.first = ContigNode(last.contig,
-				largest.isRC != last.isRC);
+		est.first = find_vertex(
+				last.contig, largest.isRC != last.isRC,
+				g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;
@@ -199,7 +200,9 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned first_end =
 			first.read_start_pos + first.align_length - opt::k;
 		int distance = last.read_start_pos - first_end;
-		est.first = ContigNode(last.contig, first.isRC != last.isRC);
+		est.first = find_vertex(
+				last.contig, first.isRC != last.isRC,
+				g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;
@@ -213,8 +216,9 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		unsigned largest_end =
 			largest.read_start_pos + largest.align_length - opt::k;
 		int distance = first.read_start_pos - largest_end;
-		est.first = ContigNode(first.contig,
-				largest.isRC != first.isRC);
+		est.first = find_vertex(
+				first.contig, largest.isRC != first.isRC,
+				g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;

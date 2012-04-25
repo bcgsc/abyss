@@ -115,12 +115,13 @@ static void addSuffixOverlaps(Graph &g,
 {
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i] + 1;
-		ContigNode v(faIndex[tstart].get<0>().id, false);
+		V v = find_vertex(faIndex[tstart].get<0>().id, false, g);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
@@ -149,6 +150,7 @@ static void addPrefixOverlaps(Graph &g,
 {
 	typedef edge_property<Graph>::type EP;
 	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	assert(v.sense());
 	assert(fmi.qstart == 0);
@@ -156,7 +158,7 @@ static void addPrefixOverlaps(Graph &g,
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
 		size_t tstart = fmIndex[i];
-		ContigNode u(faIndex[tstart].get<0>().id, false);
+		V u = find_vertex(faIndex[tstart].get<0>().id, false, g);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
@@ -215,7 +217,8 @@ static void findOverlaps(Graph& g,
 		const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
 {
-	ContigNode u(rec.id, false);
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	V u = find_vertex(rec.id, false, g);
 	// Add edges u+ -> v+ and v- -> u-
 	findOverlapsSuffix(g, faIndex, fmIndex, u, rec.seq);
 	string rcseq = reverseComplement(rec.seq);

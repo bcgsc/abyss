@@ -219,8 +219,9 @@ static void writeEstimates(ostream& out,
 	PairsMap dataMap[2];
 	for (Pairs::const_iterator it = pairs.begin();
 			it != pairs.end(); ++it)
-		dataMap[it->isReverse()][ContigNode(it->mrnm,
-				it->isReverse() == it->isMateReverse())]
+		dataMap[it->isReverse()][find_vertex(
+				it->mrnm, it->isReverse() == it->isMateReverse(),
+				g_contigNames)]
 			.push_back(*it);
 
 	for (int sense0 = false; sense0 <= true; sense0++) {

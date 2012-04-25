@@ -364,7 +364,7 @@ static void outputGraph(Graph& g,
 		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (path.empty()) {
-			remove_vertex(ContigNode(id, false), g);
+			remove_vertex(find_vertex(id, false, g), g);
 		} else {
 			remove_vertex_if(g, path.begin(), path.end(),
 					not1(std::mem_fun_ref(&ContigNode::ambiguous)));

@@ -23,17 +23,11 @@ class ContigNode {
 		: m_ambig(false), m_id(id), m_sense(sense) { }
 	ContigNode(unsigned id, int sense)
 		: m_ambig(false), m_id(id), m_sense(sense) { }
-	ContigNode(const std::string& id, bool sense)
-		: m_ambig(false),
-		m_id(ContigID(id)), m_sense(sense) { }
 #else
 	ContigNode(unsigned id, bool sense)
 		: m_sense(sense), m_id(id), m_ambig(false) { }
 	ContigNode(unsigned id, int sense)
 		: m_sense(sense), m_id(id), m_ambig(false) { }
-	ContigNode(const std::string& id, bool sense)
-		: m_sense(sense), m_id(get(g_contigNames, id)),
-		m_ambig(false) { }
 #endif
 
 	explicit ContigNode(unsigned i) : m_int(i) { }
@@ -49,15 +43,6 @@ class ContigNode {
 		assert(c == 'N');
 		(void)c;
 		assert(n > 0);
-	}
-
-	ContigNode(std::string id)
-	{
-		char c = chop(id);
-		assert(c == '+' || c == '-' || c == 'N');
-		*this = c == 'N'
-			? ContigNode(strtoul(id.c_str(), NULL, 0), 'N')
-			: ContigNode(id, c == '-');
 	}
 
 	bool ambiguous() const { return m_ambig; }
@@ -115,15 +100,6 @@ class ContigNode {
 	}
 
 	ContigNode& operator++() { ++m_int; return *this; }
-
-	friend std::istream& operator >>(std::istream& in,
-			ContigNode& o)
-	{
-		std::string s;
-		if (in >> s)
-			o = ContigNode(s);
-		return in;
-	}
 
 	/** Return the length of this ambiguous contig in k-mer. */
 	unsigned length() const { assert(m_ambig); return m_id; }
@@ -295,6 +271,26 @@ EdgeName get(edge_name_t, const Graph& g,
 	return EdgeName(
 			get(vertex_name, g, source(e, g)),
 			get(vertex_name, g, target(e, g)));
+}
+
+/** Find the vertex with the specified name. */
+static inline ContigNode find_vertex(
+		std::string name, bool sense, const Dictionary& pmap)
+{
+	assert(!name.empty());
+	return ContigNode(get(pmap, name), sense);
+}
+
+/** Find the vertex with the specified name. */
+static inline ContigNode find_vertex(
+		std::string name, const Dictionary& pmap)
+{
+	assert(!name.empty());
+	char c = chop(name);
+	assert(c == '+' || c == '-' || c == 'N');
+	return c == 'N'
+		? ContigNode(strtoul(name.c_str(), NULL, 0), 'N')
+		: find_vertex(name, c == '-', pmap);
 }
 
 #endif

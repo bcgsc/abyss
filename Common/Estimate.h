@@ -153,7 +153,7 @@ struct EstimateRecord
 			std::getline(in, s, !rc ? ';' : '\n');
 			std::istringstream ss(s);
 			for (Estimate ep; getline(ss >> std::ws, s, ',');) {
-				ep.first = ContigNode(s);
+				ep.first = find_vertex(s, g_contigNames);
 				if (ss >> ep.second)
 					o.estimates[rc].push_back(ep);
 			}

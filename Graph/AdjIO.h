@@ -70,9 +70,9 @@ std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename Graph::edge_property_type EP;
-	for (std::string id; getline(in >> std::ws, id, ',');) {
-		assert(!id.empty());
-		V v(id);
+	for (std::string vname; getline(in >> std::ws, vname, ',');) {
+		assert(!vname.empty());
+		V v = find_vertex(vname, g);
 		v = v ^ u.sense();
 		EP ep;
 		in >> ep;
@@ -155,7 +155,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 	for (std::string name; in >> name;) {
 		if (adjFormat)
 			in >> Ignore(';');
-		vertex_descriptor u(name, false);
+		vertex_descriptor u = find_vertex(name, false, g);
 		for (int sense = false; sense <= true; ++sense) {
 			std::string s;
 			getline(in, s, !sense ? ';' : '\n');
@@ -164,7 +164,8 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 			if (!adjFormat) {
 				readDistEdges(ss, g, u ^ sense, betterEP);
 			} else
-			for (vertex_descriptor v; ss >> v >> std::ws;) {
+			for (std::string vname; ss >> vname >> std::ws;) {
+				vertex_descriptor v = find_vertex(vname, g);
 				assert(!edge(u ^ sense, v ^ sense, g).second);
 				if (ss.peek() == '[') {
 					ss.get();

@@ -141,12 +141,13 @@ std::istream& read_dot_name(std::istream& in, std::string& s)
 }
 
 /** Read a vertex descriptor delimited by double quotes. */
-template <typename VertexDescriptor>
-std::istream& read_dot_id(std::istream& in, VertexDescriptor& u)
+template <typename Graph>
+std::istream& read_dot_id(std::istream& in, const Graph& g,
+		typename graph_traits<Graph>::vertex_descriptor& u)
 {
 	std::string s;
 	if (read_dot_name(in, s))
-		u = VertexDescriptor(s);
+		u = find_vertex(s, g);
 	return in;
 }
 
@@ -212,7 +213,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 				vertex_descriptor u = add_vertex(g);
 				put(vertex_name, g, u, uname);
 			} else {
-				vertex_descriptor u(uname);
+				vertex_descriptor u = find_vertex(uname, g);
 				assert(get(vertex_index, g, u) < num_vertices(g));
 			}
 		} else if (c == '[') {
@@ -224,7 +225,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 				vertex_descriptor u = add_vertex(vp, g);
 				put(vertex_name, g, u, uname);
 			} else {
-				vertex_descriptor u(uname);
+				vertex_descriptor u = find_vertex(uname, g);
 				assert(get(vertex_index, g, u) < num_vertices(g));
 				if (g[u] != vp) {
 					std::cerr << "error: "
@@ -240,11 +241,11 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			assert(in);
 			g_contigNames.lock();
 
-			vertex_descriptor u(uname);
+			vertex_descriptor u = find_vertex(uname, g);
 			if (in >> std::ws && in.peek() == '{') {
 				// Subgraph
 				in >> expect("{");
-				for (vertex_descriptor v; read_dot_id(in, v);)
+				for (vertex_descriptor v; read_dot_id(in, g, v);)
 					add_edge(u, v, defaultEdgeProp, g);
 				if (in.fail())
 					in.clear();
@@ -252,8 +253,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 				assert(in);
 			} else {
 				vertex_descriptor v;
-				read_dot_id(in, v);
-				if (in.fail()) {
+				if (!read_dot_id(in, g, v)) {
 					in.clear();
 					std::cerr << "error: Expected `\"' and saw `"
 						<< (char)in.peek() << "'.\n";

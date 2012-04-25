@@ -104,7 +104,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 				V u = add_vertex(vp, g);
 				put(vertex_name, g, u, uname);
 			} else {
-				V u(uname, false);
+				V u = find_vertex(uname, false, g);
 				assert(get(vertex_index, g, u) < num_vertices(g));
 			}
 			break;
@@ -126,7 +126,8 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			int d = -(e1 - s1 + 1);
 			assert(d < 0);
 			EP ep(d);
-			V u(uname, s1 == 0), v(vname, s2 > 0);
+			V u = find_vertex(uname, s1 == 0, g);
+			V v = find_vertex(vname, s2 > 0, g);
 			std::pair<E, bool> e = edge(u, v, g);
 			if (e.second) {
 				// Ignore duplicate edges that are self loops.

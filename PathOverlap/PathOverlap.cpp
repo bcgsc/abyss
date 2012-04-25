@@ -178,6 +178,8 @@ static ContigPath getPath(const Paths& paths, const ContigNode& u)
 static Paths readPaths(Graph& g,
 		const string& inPath, vector<string>& pathIDs)
 {
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	assert(pathIDs.empty());
 	ifstream fin(inPath.c_str());
 	if (opt::verbose > 0)
@@ -193,7 +195,7 @@ static Paths readPaths(Graph& g,
 	while (in >> id >> path) {
 		if (path.empty()) {
 			// Remove this contig from the graph.
-			ContigNode u(id, false);
+			V u = find_vertex(id, false, g);
 			clear_vertex(u, g);
 			remove_vertex(u, g);
 		} else {

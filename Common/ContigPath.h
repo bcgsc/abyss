@@ -51,8 +51,8 @@ static inline std::istream& operator>>(std::istream& in,
 	std::string s;
 	if (getline(in, s)) {
 		std::istringstream ss(s);
-		for (ContigNode u; ss >> u;)
-			o.push_back(u);
+		for (std::string name; ss >> name;)
+			o.push_back(find_vertex(name, g_contigNames));
 		assert(ss.eof());
 	}
 	return in;

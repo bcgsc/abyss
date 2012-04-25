@@ -767,4 +767,21 @@ add_edge(
 	return g.add_edge(u, v, ep);
 }
 
+// NamedGraph
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertex_descriptor
+find_vertex(const std::string& name, const DirectedGraph<VP, EP>&)
+{
+	return find_vertex(name, g_contigNames);
+}
+
+template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertex_descriptor
+find_vertex(const std::string& name, bool sense,
+		const DirectedGraph<VP, EP>&)
+{
+	return find_vertex(name, sense, g_contigNames);
+}
+
 #endif
