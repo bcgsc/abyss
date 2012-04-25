@@ -5,7 +5,6 @@
 #include "Dictionary.h"
 #include <boost/property_map/property_map.hpp>
 #include <cassert>
-#include <istream>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -38,26 +37,15 @@ static inline std::string createContigName()
 	return ss.str();
 }
 
-/** A contig ID is stored in memory as an integer, but is formatted as
- * a string using a static dictionary.
- */
-class ContigID {
+/** A contig index. */
+class ContigID
+{
   public:
 	ContigID() { }
-	explicit ContigID(unsigned id) : m_id(id) { };
+	explicit ContigID(unsigned index) : m_index(index) { };
 
-	/** Return the index of this ID. */
-	operator unsigned() const { return m_id; }
-
-	bool operator ==(const ContigID& o) const
-	{
-		return m_id == o.m_id;
-	}
-
-	bool operator <(const ContigID& o) const
-	{
-		return m_id < o.m_id;
-	}
+	/** Return the index. */
+	operator unsigned() const { return m_index; }
 
 	/** The insertion operator is not implemented to prevent
 	 * unintentional use of the cast operator (unsigned).
@@ -66,7 +54,7 @@ class ContigID {
 
   private:
 	/** The index. */
-	unsigned m_id;
+	unsigned m_index;
 };
 
 /** A property map of a ContigID to an index. */
