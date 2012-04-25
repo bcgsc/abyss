@@ -13,6 +13,31 @@
 /** The dictionary of contig names. */
 extern Dictionary g_contigNames;
 
+/** The next unique contig name. */
+extern unsigned g_nextContigName;
+
+/** Set the next contig name returned by createContigName. */
+static inline void setNextContigName(cstring s)
+{
+	std::istringstream iss((std::string)s);
+	if (iss >> g_nextContigName && iss.eof())
+		++g_nextContigName;
+	else
+		g_nextContigName = 0;
+}
+
+/** Return the next unique contig name. */
+static inline std::string createContigName()
+{
+	if (g_nextContigName == 0) {
+		assert(!g_contigNames.empty());
+		setNextContigName(g_contigNames.back());
+	}
+	std::ostringstream ss;
+	ss << g_nextContigName++;
+	return ss.str();
+}
+
 /** A contig ID is stored in memory as an integer, but is formatted as
  * a string using a static dictionary.
  */
@@ -52,34 +77,9 @@ class ContigID {
 	 */
 	friend std::ostream& operator<<(std::ostream&, const ContigID&);
 
-	/** Set the next contig ID returned by ContigID::create. */
-	static void setNextContigID(cstring s)
-	{
-		std::istringstream iss((std::string)s);
-		if (iss >> s_nextID && iss.eof())
-			++s_nextID;
-		else
-			s_nextID = 0;
-	}
-
-	/** Return a unique contig ID. */
-	static ContigID create()
-	{
-		if (s_nextID == 0) {
-			assert(!g_contigNames.empty());
-			setNextContigID(g_contigNames.back());
-		}
-		std::ostringstream oss;
-		oss << s_nextID++;
-		return ContigID(g_contigNames.insert(oss.str()));
-	}
-
   private:
 	/** The index. */
 	unsigned m_id;
-
-	/** The next unique contig ID. */
-	static unsigned s_nextID;
 };
 
 /** A property map of a ContigID to an index. */

@@ -179,13 +179,11 @@ static FastaRecord newContig(const Graph& g,
 		const ContigNode& t, const ContigNode& v,
 		int dist, const string& seq)
 {
-	ContigNode u(ContigID::create(), false);
 	ostringstream comment;
 	comment << seq.length() << " 0 "
 		<< get(vertex_name, g, t) << ' '
 		<< get(vertex_name, g, v) << ' ' << dist;
-	return FastaRecord(string(get(vertex_contig_name, g, u)),
-			comment.str(), seq);
+	return FastaRecord(createContigName(), comment.str(), seq);
 }
 
 /** An overlap of two sequences. */
@@ -541,6 +539,7 @@ int main(int argc, char** argv)
 			// Add the new contig to the adjacency graph.
 			vertex_descriptor v = add_vertex(
 					ContigProperties(contig.seq.length(), 0), graph);
+			put(vertex_name, graph, v, contig.id);
 			add_edge(t, v, graph);
 			add_edge(v, h, graph);
 		} else

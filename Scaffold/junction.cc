@@ -115,8 +115,7 @@ void extendJunction(
 		path.push_back(v);
 		extend(overlapG, v, back_inserter(path));
 		assert(path.size() >= 3);
-		cout << get(g_contigNames, ContigID::create())
-			<< '\t' << path << '\n';
+		cout << createContigName() << '\t' << path << '\n';
 		g_count.supported++;
 	}
 	g_count.junctions++;

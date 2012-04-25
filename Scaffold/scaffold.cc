@@ -601,10 +601,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	assert_good(out, opt::out);
 	g_contigNames.unlock();
 	for (vector<ContigPath>::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
-		out << get(g_contigNames, ContigID::create()) << '\t'
+			it != paths.end(); ++it)
+		out << createContigName() << '\t'
 			<< addDistEst(g0, g, *it) << '\n';
-	}
 	assert_good(out, opt::out);
 
 	// Output the graph.

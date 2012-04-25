@@ -500,13 +500,15 @@ static void assembleOverlappingPaths(Graph& g,
 
 	// Merge overlapping paths.
 	assert(!pathIDs.empty());
-	ContigID::setNextContigID(pathIDs.back());
+	setNextContigName(pathIDs.back());
 	for (Paths::const_iterator it = merges.begin();
 			it != merges.end(); ++it) {
-		string id(get(g_contigNames, ContigID::create()));
+		string name = createContigName();
 		if (opt::verbose > 0)
-			cerr << id << '\t' << *it << '\n';
-		pathIDs.push_back(id);
+			cerr << name << '\t' << *it << '\n';
+		Vertex u(paths.size(), false);
+		put(vertex_name, g, ContigNode(u), name);
+		pathIDs.push_back(name);
 		paths.push_back(mergePaths(paths, overlapMap, *it));
 
 		// Remove the merged paths.

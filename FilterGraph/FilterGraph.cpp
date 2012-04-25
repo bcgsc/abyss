@@ -567,13 +567,17 @@ int main(int argc, char** argv)
 
 	// Assemble unambiguous paths.
 	if (opt::assemble) {
+		size_t numContigs = num_vertices(g) / 2;
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
 		assemble(g, back_inserter(paths));
 		for (ContigPaths::const_iterator it = paths.begin();
-				it != paths.end(); ++it)
-			cout << get(g_contigNames, ContigID::create())
-				<< '\t' << *it << '\n';
+				it != paths.end(); ++it) {
+			ContigNode u(numContigs + it - paths.begin(), false);
+			string name = createContigName();
+			put(vertex_name, g, u, name);
+			cout << name << '\t' << *it << '\n';
+		}
 	}
 
 	// Output the updated adjacency graph.

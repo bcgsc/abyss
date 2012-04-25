@@ -686,8 +686,7 @@ static void outputSortedPaths(const ContigPathMap& paths)
 	assert_good(out, opt::out);
 	for (vector<ContigPath>::const_iterator it = sortedPaths.begin();
 			it != sortedPaths.end(); ++it)
-		out << get(g_contigNames, ContigID::create())
-			<< '\t' << *it << '\n';
+		out << createContigName() << '\t' << *it << '\n';
 	assert_good(out, opt::out);
 }
 

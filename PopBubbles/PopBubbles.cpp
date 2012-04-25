@@ -693,19 +693,27 @@ int main(int argc, char** argv)
 		// Assemble unambiguous paths.
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
+		size_t numContigs = num_vertices(g) / 2;
 		if (opt::scaffold) {
 			Graph gorig = g;
 			assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
-					it != paths.end(); ++it)
-				cout << get(g_contigNames, ContigID::create())
-					<< '\t' << addDistance(gorig, *it) << '\n';
+					it != paths.end(); ++it) {
+				ContigNode u(numContigs + it - paths.begin(), false);
+				string name = createContigName();
+				put(vertex_name, g, u, name);
+				cout << name << '\t'
+					<< addDistance(gorig, *it) << '\n';
+			}
 		} else {
 			assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
-					it != paths.end(); ++it)
-				cout << get(g_contigNames, ContigID::create())
-					<< '\t' << *it << '\n';
+					it != paths.end(); ++it) {
+				ContigNode u(numContigs + it - paths.begin(), false);
+				string name = createContigName();
+				put(vertex_name, g, u, name);
+				cout << name << '\t' << *it << '\n';
+			}
 		}
 		paths.clear();
 

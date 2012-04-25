@@ -261,7 +261,7 @@ typedef vector<NewVertex> NewVertices;
 static NewVertices g_newVertices;
 
 /** Output a new contig. */
-static ContigID outputNewContig(const Graph& g,
+static ContigNode outputNewContig(const Graph& g,
 	const vector<Path>& solutions,
 	size_t longestPrefix, size_t longestSuffix,
 	const Sequence& seq, const unsigned coverage,
@@ -271,8 +271,11 @@ static ContigID outputNewContig(const Graph& g,
 	assert(longestPrefix > 0);
 	assert(longestSuffix > 0);
 
-	ContigNode u(ContigID::create(), false);
-	out << '>' << get(vertex_contig_name, g, u)
+	size_t numContigs = num_vertices(g) / 2;
+	ContigNode u(numContigs + g_newVertices.size(), false);
+	string name = createContigName();
+	put(vertex_name, g, u, name);
+	out << '>' << name
 		<< ' ' << seq.length() << ' ' << coverage << ' ';
 
 	int dtu = INT_MAX, duv = INT_MAX;
@@ -306,7 +309,7 @@ static ContigID outputNewContig(const Graph& g,
 				*(solutions[0].rbegin() + longestSuffix - 1),
 				ContigProperties(seq.length(), coverage),
 				dtu, duv));
-	return ContigID(u);
+	return u;
 }
 
 /** Return a consensus sequence of a and b.
@@ -427,11 +430,11 @@ static ContigPath alignPair(const Graph& g,
 			return ContigPath();
 
 		unsigned coverage = calculatePathProperties(g, sol).coverage;
-		ContigID id = outputNewContig(g,
+		ContigNode u = outputNewContig(g,
 				solutions, 1, 1, consensus, coverage, out);
 		ContigPath path;
 		path.push_back(solutions.front().front());
-		path.push_back(ContigNode(id, false));
+		path.push_back(u);
 		path.push_back(solutions.front().back());
 		return path;
 	}
@@ -490,11 +493,11 @@ static ContigPath alignPair(const Graph& g,
 
 	unsigned coverage = calculatePathProperties(g, fstSol).coverage
 		+ calculatePathProperties(g, sndSol).coverage;
-	ContigID id = outputNewContig(g, solutions, 1, 1,
+	ContigNode u = outputNewContig(g, solutions, 1, 1,
 			align.consensus(), coverage, out);
 	ContigPath path;
 	path.push_back(solutions.front().front());
-	path.push_back(ContigNode(id, false));
+	path.push_back(u);
 	path.push_back(solutions.front().back());
 	return path;
 }
@@ -630,10 +633,10 @@ static ContigPath alignMulti(const Graph& g,
 		return solutions[0];
 	}
 
-	ContigID id = outputNewContig(g, solutions,
+	ContigNode u = outputNewContig(g, solutions,
 		longestPrefix, longestSuffix, consensus, coverage, out);
 	ContigPath path(vppath);
-	path.push_back(ContigNode(id, false));
+	path.push_back(u);
 	path.insert(path.end(), vspath.begin(), vspath.end());
 	return path;
 }
@@ -821,7 +824,7 @@ int main(int argc, char** argv)
 
 	// Start numbering new contigs from the last
 	if (!pathIDs.empty())
-		ContigID::setNextContigID(pathIDs.back());
+		setNextContigName(pathIDs.back());
 
 	// Prepare output fasta file
 	ofstream fa(opt::consensusPath.c_str());

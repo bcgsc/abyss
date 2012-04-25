@@ -2,4 +2,4 @@
 
 Dictionary g_contigNames;
 
-unsigned ContigID::s_nextID;
+unsigned g_nextContigName;
