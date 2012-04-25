@@ -501,6 +501,7 @@ static void assembleOverlappingPaths(Graph& g,
 			IsPathOverlap(g, overlapMap));
 
 	// Merge overlapping paths.
+	g_contigNames.unlock();
 	assert(!pathIDs.empty());
 	setNextContigName(pathIDs.back());
 	for (Paths::const_iterator it = merges.begin();
@@ -520,6 +521,7 @@ static void assembleOverlappingPaths(Graph& g,
 				paths[it2->id() - Vertex::s_offset].clear();
 		}
 	}
+	g_contigNames.lock();
 }
 
 int main(int argc, char** argv)

@@ -840,9 +840,11 @@ int main(int argc, char** argv)
 	vector<bool> seen(contigs.size());
 
 	// resolve ambiguous paths recorded in g_ambpath_contig
+	g_contigNames.unlock();
 	for (AmbPath2Contig::iterator ambIt = g_ambpath_contig.begin();
 			ambIt != g_ambpath_contig.end(); ambIt++)
 		ambIt->second = fillGap(g, ambIt->first, seen, fa);
+	g_contigNames.lock();
 	assert_good(fa, opt::consensusPath);
 	fa.close();
 	if (opt::verbose > 1)

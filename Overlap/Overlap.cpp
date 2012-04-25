@@ -412,6 +412,7 @@ int main(int argc, char** argv)
 	Graph graph;
 	fin >> graph;
 	assert(fin.eof());
+	g_contigNames.lock();
 
 	// Open the output file.
 	ofstream out(opt::out.c_str());
@@ -516,6 +517,7 @@ int main(int argc, char** argv)
 	overlapGraph.clear();
 
 	// Second, handle scaffolded edges.
+	g_contigNames.unlock();
 	for (Edges::const_iterator it = edges.begin();
 			it != edges.end(); ++it) {
 		const ContigNode& t = source(*it, scaffoldGraph),
@@ -545,6 +547,7 @@ int main(int argc, char** argv)
 		} else
 			stats.ambiguous++;
 	}
+	g_contigNames.lock();
 	out.close();
 
 	if (!opt::graphPath.empty()) {

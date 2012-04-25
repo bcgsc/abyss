@@ -690,6 +690,7 @@ int main(int argc, char** argv)
 				bind1st(ptr_fun(removeContig), &g));
 
 		// Assemble unambiguous paths.
+		g_contigNames.unlock();
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
 		size_t numContigs = num_vertices(g) / 2;
@@ -714,6 +715,7 @@ int main(int argc, char** argv)
 				cout << name << '\t' << *it << '\n';
 			}
 		}
+		g_contigNames.lock();
 		paths.clear();
 
 		// Output the updated adjacency graph.
