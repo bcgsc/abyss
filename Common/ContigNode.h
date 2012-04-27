@@ -13,122 +13,143 @@
 #include <string>
 #include <utility>
 
-/** A tuple of a contig ID and an orientation. */
-class ContigNode {
-  public:
-	ContigNode() { }
+/** A vertex of a contig graph, which is a pair of a contig index and
+ * an orientation.
+ */
+class ContigNode
+{
+public:
 
-#if WORDS_BIGENDIAN
-	ContigNode(unsigned id, bool sense)
-		: m_ambig(false), m_id(id), m_sense(sense) { }
-	ContigNode(unsigned id, int sense)
-		: m_ambig(false), m_id(id), m_sense(sense) { }
-#else
-	ContigNode(unsigned id, bool sense)
-		: m_sense(sense), m_id(id), m_ambig(false) { }
-	ContigNode(unsigned id, int sense)
-		: m_sense(sense), m_id(id), m_ambig(false) { }
-#endif
+ContigNode() { }
 
-	explicit ContigNode(unsigned i) : m_int(i) { }
+ContigNode(const ContigNode& o) : m_index(o.m_index) { }
 
-	/** Create an ambiguous contig. */
-	ContigNode(unsigned n, char c)
-#if WORDS_BIGENDIAN
-		: m_ambig(true), m_id(n), m_sense(false)
-#else
-		: m_sense(false), m_id(n), m_ambig(true)
-#endif
-	{
-		assert(c == 'N');
-		(void)c;
-		assert(n > 0);
+/** Construct from a vertex index. */
+explicit ContigNode(unsigned index) : m_index(index) { }
+
+/** Construct from a contig index and an orientation. */
+ContigNode(unsigned index, bool sense)
+	: m_index(2 * index + sense) { }
+
+/** Construct from a contig index and an orientation. */
+ContigNode(unsigned index, int sense)
+	: m_index(2 * index + sense)
+{
+	assert(sense == 0 || sense == 1);
+}
+
+/** Construct an ambiguous ContigNode. */
+ContigNode(unsigned n, char c)
+	: m_index(-(int)n)
+{
+	assert(n > 0);
+	assert(c == 'N');
+	(void)c;
+}
+
+bool operator==(const ContigNode& o) const
+{
+	return m_index == o.m_index;
+}
+
+bool operator!=(const ContigNode& o) const
+{
+	return m_index != o.m_index;
+}
+
+bool operator<(const ContigNode& o) const
+{
+	return m_index < o.m_index;
+}
+
+/** Return the complement of this vertex. */
+ContigNode operator~() const
+{
+	assert(!ambiguous());
+	return ContigNode(m_index ^ 1);
+}
+
+/** Return the complement of this vertex if sense is true. */
+ContigNode operator^(bool sense) const
+{
+	assert(!ambiguous());
+	return ContigNode(m_index ^ sense);
+}
+
+/** Return whether this ContigNode is ambiguous. */
+bool ambiguous() const
+{
+	return m_index < 0;
+}
+
+/** Return the vertex index. */
+unsigned index() const
+{
+	assert(!ambiguous());
+	return m_index;
+}
+
+/** Return the contig index. */
+unsigned id() const
+{
+	return ambiguous() ? m_index : m_index / 2;
+}
+
+/** Return the contig index as a ContigID. */
+operator ContigID() const
+{
+	assert(!ambiguous());
+	return ContigID(id());
+}
+
+/** Return the orientation of this vertex. */
+bool sense() const
+{
+	assert(!ambiguous());
+	return m_index & 1;
+}
+
+/** Return the length in k-mer of this ambiguous contig. */
+unsigned length() const
+{
+	assert(ambiguous());
+	return -m_index;
+}
+
+/** Return the string of Ns. */
+std::string ambiguousSequence() const
+{
+	assert(ambiguous());
+	unsigned n = length();
+	if (n > 100000) {
+		std::cerr
+			<< "warning: scaffold gap is longer than 100 kbp: "
+			<< n << '\n';
+	} else if (n > 1000000) {
+		std::cerr << "error: scaffold gap is longer than 1 Mbp: "
+			<< n << '\n';
+		exit(EXIT_FAILURE);
 	}
+	return std::string(n, 'N');
+}
 
-	bool ambiguous() const { return m_ambig; }
-	unsigned id() const { return m_ambig ? -m_id : m_id; }
-	bool sense() const { assert(!m_ambig); return m_sense; }
+/** Flip the orientation of this vertex. */
+void flip()
+{
+	if (!ambiguous())
+		m_index ^= 1;
+}
 
-	std::string ambiguousSequence() const
-	{
-		assert(m_ambig);
-		if (m_id > 100000) {
-			std::cerr
-				<< "warning: scaffold gap is longer than 100 kbp: "
-				<< length() << '\n';
-		} else if (m_id > 1000000) {
-			std::cerr << "error: scaffold gap is longer than 1 Mbp: "
-				<< length() << '\n';
-			exit(EXIT_FAILURE);
-		}
-		return std::string(m_id, 'N');
-	}
+/** Increment this vertex index. */
+ContigNode& operator++()
+{
+	assert(!ambiguous());
+	++m_index;
+	return *this;
+}
 
-	void flip() { if (!m_ambig) m_sense = !m_sense; }
-
-	/** Return the contig ID. */
-	operator ContigID() const
-	{
-		assert(!m_ambig);
-		return ContigID(m_id);
-	}
-
-	bool operator ==(const ContigNode& o) const
-	{
-		return hash() == o.hash();
-	}
-
-	bool operator !=(const ContigNode& o) const
-	{
-		return !(*this == o);
-	}
-
-	bool operator <(const ContigNode& o) const
-	{
-		return hash() < o.hash();
-	}
-
-	const ContigNode operator~() const
-	{
-		assert(!m_ambig);
-		return ContigNode(m_id, !m_sense);
-	}
-
-	const ContigNode operator^(bool flip) const
-	{
-		return flip ? ~*this : *this;
-	}
-
-	ContigNode& operator++() { ++m_int; return *this; }
-
-	/** Return the length of this ambiguous contig in k-mer. */
-	unsigned length() const { assert(m_ambig); return m_id; }
-
-	/** Return a value that can be used as an index of an array. */
-	unsigned index() const
-	{
-		assert(!m_ambig);
-		return hash();
-	}
-
-  private:
-	/** Return the hash value of this contig. */
-	unsigned hash() const { return m_int; }
-
-	union {
-		unsigned m_int;
-		struct {
-#if WORDS_BIGENDIAN
-			unsigned m_ambig:1;
-			unsigned m_id:30;
-			unsigned m_sense:1;
-#else
-			unsigned m_sense:1;
-			unsigned m_id:30;
-			unsigned m_ambig:1;
-#endif
-		};
-	};
+private:
+	int m_index;
 };
 
 /** Return the hash value of this ContigNode. */
