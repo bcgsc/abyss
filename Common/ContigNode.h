@@ -133,11 +133,12 @@ std::string ambiguousSequence() const
 	return std::string(n, 'N');
 }
 
-/** Flip the orientation of this vertex. */
-void flip()
+/** Toggle the orientation of this vertex if sense is true. */
+ContigNode& operator^=(bool sense)
 {
 	if (!ambiguous())
-		m_index ^= 1;
+		m_index ^= sense;
+	return *this;
 }
 
 /** Increment this vertex index. */

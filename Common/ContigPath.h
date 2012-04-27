@@ -20,16 +20,16 @@ template<typename T>
 void reverseComplement(T first, T last)
 {
 	std::reverse(first, last);
-	std::for_each(first, last,
-			std::mem_fun_ref(&ContigNode::flip));
+	for (T it = first; it < last; ++it)
+		*it ^= 1;
 }
 
 /** Return the reverse complement of the specified path. */
 static inline ContigPath reverseComplement(const ContigPath& path)
 {
 	ContigPath rc(path.rbegin(), path.rend());
-	std::for_each(rc.begin(), rc.end(),
-			std::mem_fun_ref(&ContigNode::flip));
+	for (ContigPath::iterator it = rc.begin(); it < rc.end(); ++it)
+		*it ^= 1;
 	return rc;
 }
 

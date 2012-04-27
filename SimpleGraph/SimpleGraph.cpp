@@ -610,7 +610,7 @@ static void* worker(void* pArg)
 		// Flip the anterior distance estimates.
 		for (Estimates::iterator it = er.estimates[1].begin();
 				it != er.estimates[1].end(); ++it)
-			it->first.flip();
+			it->first ^= 1;
 
 		ContigPath path;
 		handleEstimate(*arg.graph, er, true, path);
