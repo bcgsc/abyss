@@ -405,7 +405,7 @@ template <typename G>
 bool get(vertex_removed_t tag, const ContigGraph<G>& g,
 		typename ContigGraph<G>::vertex_descriptor u)
 {
-	return g.get(tag, u);
+	return get(tag, static_cast<const G&>(g), u);
 }
 
 template <typename G>

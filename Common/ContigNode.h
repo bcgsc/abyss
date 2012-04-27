@@ -158,12 +158,6 @@ static inline unsigned hash_value(const ContigNode& o)
 	return o.index();
 }
 
-/** Return a numeric index of the specified vertex. */
-static inline unsigned index(const ContigNode& o)
-{
-	return o.index();
-}
-
 /** Vertex index property map of a ContigNode. */
 struct ContigNodeIndexMap {
 	typedef ContigNode key_type;
