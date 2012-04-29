@@ -21,7 +21,8 @@ void reverseComplement(T first, T last)
 {
 	std::reverse(first, last);
 	for (T it = first; it < last; ++it)
-		*it ^= 1;
+		if (!it->ambiguous())
+			*it ^= 1;
 }
 
 /** Return the reverse complement of the specified path. */
@@ -29,7 +30,8 @@ static inline ContigPath reverseComplement(const ContigPath& path)
 {
 	ContigPath rc(path.rbegin(), path.rend());
 	for (ContigPath::iterator it = rc.begin(); it < rc.end(); ++it)
-		*it ^= 1;
+		if (!it->ambiguous())
+			*it ^= 1;
 	return rc;
 }
 

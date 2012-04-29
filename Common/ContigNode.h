@@ -136,8 +136,8 @@ std::string ambiguousSequence() const
 /** Toggle the orientation of this vertex if sense is true. */
 ContigNode& operator^=(bool sense)
 {
-	if (!ambiguous())
-		m_index ^= sense;
+	assert(!ambiguous());
+	m_index ^= sense;
 	return *this;
 }
 
