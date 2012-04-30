@@ -45,6 +45,8 @@ static const char USAGE_MESSAGE[] =
 "      --max-cost=COST   maximum computational cost\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -j, --threads=THREADS use THREADS parallel threads [1]\n"
+"      --extend          extend unambiguous paths\n"
+"      --no-extend       do not extend unambiguous paths [default]\n"
 "      --scaffold        join contigs with Ns [default]\n"
 "      --no-scaffold     do not scaffold\n"
 "  -v, --verbose         display verbose output\n"
@@ -56,6 +58,7 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by ContigProperties
 	static unsigned threads = 1;
+	static int extend;
 	static int scaffold = 1;
 	static int verbose;
 	static string out;
@@ -76,6 +79,8 @@ static const struct option longopts[] = {
 	{ "dist-error",  required_argument, NULL, 'd' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
+	{ "extend",      no_argument,       &opt::extend, 1 },
+	{ "no-extend",   no_argument,       &opt::extend, 0 },
 	{ "scaffold",    no_argument,       &opt::scaffold, 1 },
 	{ "no-scaffold", no_argument,       &opt::scaffold, 0 },
 	{ "threads",     required_argument,	NULL, 'j' },
@@ -542,7 +547,8 @@ static void handleEstimate(const Graph& g,
 		ContigPath path
 			= constructAmbiguousPath(g, origin, solutions);
 		if (!path.empty()) {
-			extend(g, path.back(), back_inserter(path));
+			if (opt::extend)
+				extend(g, path.back(), back_inserter(path));
 			vout << path << '\n';
 			if (opt::scaffold) {
 				out.insert(out.end(), path.begin(), path.end());
@@ -557,8 +563,8 @@ static void handleEstimate(const Graph& g,
 		ContigPath& path = *bestSol;
 		if (opt::verbose > 1)
 			printDistanceMap(vout, g, origin, path);
-
-		extend(g, path.back(), back_inserter(path));
+		if (opt::extend)
+			extend(g, path.back(), back_inserter(path));
 		out.insert(out.end(), path.begin(), path.end());
 		stats.uniqueEnd++;
 		g_minNumPairsUsed = min(g_minNumPairsUsed, minNumPairs);
