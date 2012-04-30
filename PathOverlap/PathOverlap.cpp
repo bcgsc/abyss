@@ -180,6 +180,8 @@ static Paths readPaths(Graph& g,
 {
 	assert(pathIDs.empty());
 	ifstream fin(inPath.c_str());
+	if (opt::verbose > 0)
+		cerr << "Reading `" << inPath << "'..." << endl;
 	if (inPath != "-")
 		assert_good(fin, inPath);
 	istream& in = inPath == "-" ? cin : fin;
@@ -568,6 +570,8 @@ int main(int argc, char** argv)
 	}
 
 	const char *adjPath = argv[optind++];
+	if (opt::verbose > 0)
+		cerr << "Reading `" << adjPath << "'..." << endl;
 	ifstream fin(adjPath);
 	assert_good(fin, adjPath);
 	Graph g;
