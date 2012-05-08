@@ -331,7 +331,7 @@ static bool popSimpleBubble(Graph* pg, vertex_descriptor v)
 		return false;
 	}
 	vertex_descriptor tail = *g.adjacent_vertices(v1).first;
-	if (v == ~tail // Palindrome
+	if (v == get(vertex_complement, g, tail) // Palindrome
 			|| g.in_degree(tail) != nbranches) {
 #pragma omp atomic
 		g_count.notSimple++;

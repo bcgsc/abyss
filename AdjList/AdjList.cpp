@@ -118,23 +118,27 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 	Suffixes suffixes;
 	SuffixArray sa(opt::minOverlap);
 
+	typedef graph_traits<Graph>::vertex_descriptor V;
 	typedef graph_traits<Graph>::vertex_iterator Vit;
 	pair<Vit, Vit> vertices = g.vertices();
 	for (Vit it = vertices.first; it != vertices.second; ++it) {
 		ContigNode u(*it);
 		if (out_degree(u, g) > 0)
 			continue;
-		string suffix(reverseComplement(
-					prefixes[(~u).index()]).str());
+		size_t uci = get(vertex_index, g,
+				get(vertex_complement, g, u));
+		assert(uci < prefixes.size());
+		string suffix(reverseComplement(prefixes[uci]).str());
 		suffixes.push_back(Suffix(suffix, u));
 		sa.insert(suffixes.back());
 	}
 	sa.construct();
 
 	for (Suffixes::const_iterator it = suffixes.begin();
-			it != suffixes.end(); ++it)
-		addOverlapsSA(g, sa,
-				~it->second, reverseComplement(it->first));
+			it != suffixes.end(); ++it) {
+		V uc = get(vertex_complement, g, it->second);
+		addOverlapsSA(g, sa, uc, reverseComplement(it->first));
+	}
 }
 
 /** An index of suffixes of k-1 bp. */
@@ -176,7 +180,8 @@ static void readContigs(const string& path,
 		ContigNode u = add_vertex(vp, g);
 		put(vertex_name, g, u, rec.id);
 		suffixMap[suffix].push_back(u);
-		suffixMap[reverseComplement(prefix)].push_back(~u);
+		suffixMap[reverseComplement(prefix)].push_back(
+				get(vertex_complement, g, u));
 	}
 	assert(in.eof());
 }
@@ -243,6 +248,7 @@ int main(int argc, char** argv)
 	g_contigNames.lock();
 
 	// Add the overlap edges of exactly k-1 bp.
+	typedef graph_traits<Graph>::vertex_descriptor V;
 	if (opt::verbose > 0)
 		cerr << "Finding overlaps of exactly k-1 bp...\n";
 	for (vector<Kmer>::const_iterator it = prefixes.begin();
@@ -250,9 +256,11 @@ int main(int argc, char** argv)
 		ContigNode v(it - prefixes.begin());
 		const SuffixMap::mapped_type& edges = suffixMap[*it];
 		for (SuffixMap::mapped_type::const_iterator
-				itu = edges.begin(); itu != edges.end(); ++itu)
-			add_edge(~v, ~*itu, -(int)opt::k + 1,
-					static_cast<DG&>(g));
+				itu = edges.begin(); itu != edges.end(); ++itu) {
+			V uc = get(vertex_complement, g, *itu);
+			V vc = get(vertex_complement, g, v);
+			add_edge(vc, uc, -(int)opt::k + 1, static_cast<DG&>(g));
+		}
 	}
 	SuffixMap().swap(suffixMap);
 

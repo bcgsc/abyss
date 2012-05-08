@@ -24,7 +24,8 @@ struct IsPalindrome : std::unary_function<
 	bool operator()(
 			typename graph_traits<Graph>::edge_descriptor e) const
 	{
-		return source(e, m_g) == ~target(e, m_g);
+		return source(e, m_g)
+			== get(vertex_complement, m_g, target(e, m_g));
 	}
   private:
 	const Graph& m_g;
@@ -44,7 +45,7 @@ template<typename Graph>
 bool contiguous_in(const Graph& g,
 		typename graph_traits<Graph>::vertex_descriptor u)
 {
-	return contiguous_out(g, ~u);
+	return contiguous_out(g, get(vertex_complement, g, u));
 }
 
 /** Add the outgoing edges of vertex u to vertex uout. */
@@ -65,7 +66,8 @@ void copy_out_edges(Graph &g,
 	edge_property_type palindrome_ep;
 	for (out_edge_iterator e = edges.first; e != edges.second; ++e) {
 		vertex_descriptor v = target(*e, g);
-		if (~v == u) {
+		vertex_descriptor vc = get(vertex_complement, g, v);
+		if (vc == u) {
 			// When ~v == u, adding the edge (~v,~u), which is (u,~u),
 			// would invalidate our iterator. Add the edge after this
 			// loop completes.
@@ -75,8 +77,10 @@ void copy_out_edges(Graph &g,
 			g.add_edge(uout, v, g[*e]);
 	}
 	if (palindrome) {
-		g.add_edge(uout, ~u, palindrome_ep);
-		g.add_edge(uout, ~uout, palindrome_ep);
+		vertex_descriptor uc = get(vertex_complement, g, u);
+		vertex_descriptor uoutc = get(vertex_complement, g, uout);
+		g.add_edge(uout, uc, palindrome_ep);
+		g.add_edge(uout, uoutc, palindrome_ep);
 	}
 }
 
@@ -86,7 +90,9 @@ void copy_in_edges(Graph& g,
 		typename Graph::vertex_descriptor u,
 		typename Graph::vertex_descriptor v)
 {
-	copy_out_edges(g, ~u, ~v);
+	copy_out_edges(g,
+			get(vertex_complement, g, u),
+			get(vertex_complement, g, v));
 }
 
 /** Assemble a path of unambigous out edges starting at vertex u.
@@ -312,11 +318,13 @@ size_t addComplementaryEdges(Graph& g)
 	for (Eit eit = erange.first; eit != erange.second; ++eit) {
 		E e = *eit;
 		V u = source(e, g), v = target(e, g);
+		V uc = get(vertex_complement, g, u);
+		V vc = get(vertex_complement, g, v);
 		E f;
 		bool found;
-		tie(f, found) = edge(~v, ~u, g);
+		tie(f, found) = edge(vc, uc, g);
 		if (!found) {
-			add_edge(~v, ~u, g[e], g);
+			add_edge(vc, uc, g[e], g);
 			numAdded++;
 		} else if (g[e] != g[f]) {
 			// The edge properties do not agree. Select the better.

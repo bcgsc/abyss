@@ -307,8 +307,9 @@ static void removeRepeats(Graph& g)
 	for (vector<V>::const_iterator it = repeats.begin();
 			it != repeats.end(); ++it) {
 		V u = *it;
+		V uc = get(vertex_complement, g, u);
 		clear_out_edges(u, g);
-		if (it != repeats.begin() && it[-1] == ~u) {
+		if (it != repeats.begin() && it[-1] == uc) {
 			remove_vertex(u, g);
 			numRemoved++;
 		}

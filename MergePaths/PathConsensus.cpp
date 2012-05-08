@@ -450,7 +450,8 @@ static ContigPath alignPair(const Graph& g,
 					fstSol.begin(), fstSol.end(), sndSol.begin());
 			assert(it.first != fstSol.end());
 			assert(it.second != sndSol.end());
-			assert(*it.first == ~*it.second);
+			assert(*it.first
+					== get(vertex_complement, g, *it.second));
 			assert(equal(it.first+1, It(fstSol.end()), it.second+1));
 			if (opt::verbose > 1)
 				cerr << "Palindrome: "

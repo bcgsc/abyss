@@ -110,7 +110,8 @@ void extendJunction(
 		// This junction contig is supported by the scaffold graph.
 		ContigPath path;
 		path.reserve(3);
-		extend(overlapG, ~v, back_inserter(path));
+		extend(overlapG, get(vertex_complement, overlapG, v),
+				back_inserter(path));
 		reverseComplement(path.begin(), path.end());
 		path.push_back(v);
 		extend(overlapG, v, back_inserter(path));

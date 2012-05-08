@@ -65,7 +65,7 @@ class in_edge_iterator
 	static edge_descriptor complement(const edge_descriptor& e)
 	{
 		return std::pair<vertex_descriptor, vertex_descriptor>(
-				~e.second, ~e.first);
+				e.second ^ 1, e.first ^ 1);
 	}
 
   public:
@@ -113,7 +113,7 @@ class in_edge_iterator
 	/** Return the in degree of vertex v. */
 	degree_size_type in_degree(vertex_descriptor v) const
 	{
-		return G::out_degree(~v);
+		return G::out_degree(get(vertex_complement, *this, v));
 	}
 
 	/** Remove all out edges from vertex u. */
@@ -122,12 +122,14 @@ class in_edge_iterator
 		std::pair<adjacency_iterator, adjacency_iterator>
 			adj = G::adjacent_vertices(u);
 		for (adjacency_iterator v = adj.first; v != adj.second; ++v) {
-			if (~*v == u) {
+			vertex_descriptor uc = get(vertex_complement, *this, u);
+			vertex_descriptor vc = get(vertex_complement, *this, *v);
+			if (vc == u) {
 				// When ~v == u, removing (~v,~u), which is (u,~u),
 				// would invalidate our iterator. This edge will be
 				// removed by clear_out_edges.
 			} else
-				G::remove_edge(~*v, ~u);
+				G::remove_edge(vc, uc);
 		}
 		G::clear_out_edges(u);
 	}
@@ -135,7 +137,7 @@ class in_edge_iterator
 	/** Remove all in edges from vertex v. */
 	void clear_in_edges(vertex_descriptor v)
 	{
-		clear_out_edges(~v);
+		clear_out_edges(get(vertex_complement, *this, v));
 	}
 
 	/** Remove all edges to and from vertex v. */
@@ -161,16 +163,18 @@ class in_edge_iterator
 	void remove_vertex(vertex_descriptor v)
 	{
 		G::remove_vertex(v);
-		G::remove_vertex(~v);
+		G::remove_vertex(get(vertex_complement, *this, v));
 	}
 
 	/** Add edge (u,v) to this graph. */
 	std::pair<edge_descriptor, bool>
 	add_edge(vertex_descriptor u, vertex_descriptor v)
 	{
+		vertex_descriptor uc = get(vertex_complement, *this, u);
+		vertex_descriptor vc = get(vertex_complement, *this, v);
 		std::pair<edge_descriptor, bool> e = G::add_edge(u, v);
-		if (u != ~v)
-			G::add_edge(~v, ~u);
+		if (u != vc)
+			G::add_edge(vc, uc);
 		return e;
 	}
 
@@ -179,18 +183,22 @@ class in_edge_iterator
 	add_edge(vertex_descriptor u, vertex_descriptor v,
 			const edge_property_type& ep)
 	{
+		vertex_descriptor uc = get(vertex_complement, *this, u);
+		vertex_descriptor vc = get(vertex_complement, *this, v);
 		std::pair<edge_descriptor, bool> e = G::add_edge(u, v, ep);
-		if (u != ~v)
-			G::add_edge(~v, ~u, ep);
+		if (u != vc)
+			G::add_edge(vc, uc, ep);
 		return e;
 	}
 
 	/** Remove the edge (u,v) from this graph. */
 	void remove_edge(vertex_descriptor u, vertex_descriptor v)
 	{
+		vertex_descriptor uc = get(vertex_complement, *this, u);
+		vertex_descriptor vc = get(vertex_complement, *this, v);
 		G::remove_edge(u, v);
-		if (u != ~v)
-			G::remove_edge(~v, ~u);
+		if (u != vc)
+			G::remove_edge(vc, uc);
 	}
 
 	/** Remove the edge e from this graph. */
@@ -245,7 +253,7 @@ in_edges(
 	typedef typename ContigGraph<G>::out_edge_iterator
 		out_edge_iterator;
 	std::pair<out_edge_iterator, out_edge_iterator> it
-		= out_edges(~u, g);
+		= out_edges(get(vertex_complement, g, u), g);
 	return std::pair<in_edge_iterator, in_edge_iterator>(
 			it.first, it.second);
 }
@@ -414,7 +422,7 @@ void put(vertex_removed_t tag, ContigGraph<G>& g,
 		bool flag)
 {
 	put(tag, static_cast<G&>(g), u, flag);
-	put(tag, static_cast<G&>(g), ~u, flag);
+	put(tag, static_cast<G&>(g), get(vertex_complement, g, u), flag);
 }
 
 /** Return the properties of the edge of iterator eit. */

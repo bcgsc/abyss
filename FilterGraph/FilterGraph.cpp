@@ -152,6 +152,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::out_edge_iterator OEit;
 	typedef GTraits::in_edge_iterator IEit;
+	typedef GTraits::vertex_descriptor V;
 
 	const Graph& g = *pg;
 
@@ -178,7 +179,9 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 	OEit oei0, oei1;
 	tie(oei0, oei1) = out_edges(v, g);
 	for (OEit vw = oei0; vw != oei1; ++vw) {
-		if (v == target(*vw, g) || ~v == target(*vw, g)) {
+		V w = target(*vw, g);
+		V vc = get(vertex_complement, g, v);
+		if (v == w || vc == w) {
 			g_count.self_adj++;
 			return false;
 		}

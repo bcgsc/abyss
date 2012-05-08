@@ -8,6 +8,9 @@
 /** The distance between two vertices. */
 enum edge_distance_t { edge_distance };
 
+/** The complementary vertex of a skew-symmetric graph. */
+enum vertex_complement_t { vertex_complement };
+
 /** The name of a contig without an orientation. */
 enum vertex_contig_name_t { vertex_contig_name };
 
@@ -44,6 +47,7 @@ using boost::vertex_property;
 
 namespace boost {
 	BOOST_INSTALL_PROPERTY(edge, distance);
+	BOOST_INSTALL_PROPERTY(vertex, complement);
 	BOOST_INSTALL_PROPERTY(vertex, contig_name);
 	BOOST_INSTALL_PROPERTY(vertex, coverage);
 	BOOST_INSTALL_PROPERTY(vertex, length);

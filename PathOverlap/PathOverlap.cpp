@@ -222,7 +222,7 @@ static SeedMap makeSeedMap(const Paths& paths)
 		seedMap.insert(make_pair(it->front(),
 					Vertex(it - paths.begin(), false)));
 		assert(!it->back().ambiguous());
-		seedMap.insert(make_pair(~it->back(),
+		seedMap.insert(make_pair(it->back() ^ 1,
 					Vertex(it - paths.begin(), true)));
 	}
 	return seedMap;

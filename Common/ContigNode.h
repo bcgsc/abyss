@@ -62,13 +62,6 @@ bool operator<(const ContigNode& o) const
 	return m_index < o.m_index;
 }
 
-/** Return the complement of this vertex. */
-ContigNode operator~() const
-{
-	assert(!ambiguous());
-	return ContigNode(m_index ^ 1);
-}
-
 /** Return the complement of this vertex if sense is true. */
 ContigNode operator^(bool sense) const
 {
@@ -184,6 +177,14 @@ template <typename Graph>
 unsigned get(vertex_index_t, const Graph&, ContigNode u)
 {
 	return u.index();
+}
+
+/** Return the complement of the specified vertex. */
+template <typename Graph>
+ContigNode get(vertex_complement_t, const Graph&, ContigNode u)
+{
+	assert(!u.ambiguous());
+	return u ^ 1;
 }
 
 /** Return the sense of the specified vertex. */

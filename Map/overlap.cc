@@ -219,13 +219,14 @@ static void findOverlaps(Graph& g,
 {
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	V u = find_vertex(rec.id, false, g);
+	V uc = get(vertex_complement, g, u);
 	// Add edges u+ -> v+ and v- -> u-
 	findOverlapsSuffix(g, faIndex, fmIndex, u, rec.seq);
 	string rcseq = reverseComplement(rec.seq);
 	// Add edges u- -> v+
-	findOverlapsSuffix(g, faIndex, fmIndex, ~u, rcseq);
+	findOverlapsSuffix(g, faIndex, fmIndex, uc, rcseq);
 	// Add edges v+ -> u-
-	findOverlapsPrefix(g, faIndex, fmIndex, ~u, rcseq);
+	findOverlapsPrefix(g, faIndex, fmIndex, uc, rcseq);
 }
 
 /** Map the sequences of the specified file. */

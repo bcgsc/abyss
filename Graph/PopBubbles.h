@@ -44,11 +44,12 @@ template <typename Graph, typename It>
 bool isBubble(const Graph& g, It first, It last)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
+	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	assert(last - first > 1);
 	if (last - first == 2)
 		return false; // unambiguous edge
-	if (*first == ~last[-1])
+	if (*first == get(vertex_complement, g, last[-1]))
 		return false; // palindrome
 	std::set<V> targets(first, first + 1);
 	for (It it = first; it != last - 1; ++it) {
@@ -57,10 +58,9 @@ bool isBubble(const Graph& g, It first, It last)
 	}
 	std::set<V> sources(last - 1, last);
 	for (It it = first + 1; it != last; ++it) {
-		std::pair<Ait, Ait> adj = adjacent_vertices(~*it, g);
-		transform(adj.first, adj.second,
-				inserter(sources, sources.end()),
-				std::mem_fun_ref(&V::operator~));
+		std::pair<Iit, Iit> adj = in_edges(*it, g);
+		for (Iit eit = adj.first; eit != adj.second; ++eit)
+			sources.insert(source(*eit, g));
 	}
 	std::set<V> bubble(first, last);
 	return sources == bubble && targets == bubble;

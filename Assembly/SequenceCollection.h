@@ -307,6 +307,15 @@ vertices(const SequenceCollectionHash& g)
 
 // PropertyGraph
 
+/** Return the reverse complement of the specified k-mer. */
+static inline
+graph_traits<SequenceCollectionHash>::vertex_descriptor
+get(vertex_complement_t, const SequenceCollectionHash&,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return reverseComplement(u);
+}
+
 static inline
 bool get(vertex_removed_t, const SequenceCollectionHash& g,
 		graph_traits<SequenceCollectionHash>::vertex_descriptor u)

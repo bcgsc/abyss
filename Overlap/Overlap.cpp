@@ -259,8 +259,10 @@ static bool checkEdgeForOverlap(const Graph& goverlap,
 	typedef edge_bundle_type<OverlapGraph>::type EP;
 
 	V u = source(e, g), v = target(e, g);
+	V uc = get(vertex_complement, g, u);
+	V vc = get(vertex_complement, g, v);
 	assert(u != v);
-	assert(u != ~v);
+	assert(u != vc);
 	EP& ep = g[e];
 	if (ep.overlap != UINT_MAX) {
 		// Found the complementary overlap.
@@ -289,14 +291,14 @@ static bool checkEdgeForOverlap(const Graph& goverlap,
 	}
 	ep.overlap = overlap;
 	ep.mask = mask;
-	pair<E, bool> ecomplement = edge(~v, ~u, g);
+	pair<E, bool> ecomplement = edge(vc, uc, g);
 	if (ecomplement.second) {
 		// Modify the complementary edge.
 		g[ecomplement.first] = ep;
 	} else {
 		// Add the complementary edge.
-		assert(~v != u);
-		add_edge(~v, ~u, ep,
+		assert(vc != u);
+		add_edge(vc, uc, ep,
 				static_cast<OverlapGraph::base_type&>(g));
 	}
 	return true;
