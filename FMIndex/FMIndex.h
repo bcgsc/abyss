@@ -537,22 +537,16 @@ friend std::istream& operator>>(std::istream& in, FMIndex& o)
 	assert(in);
 
 	size_t n;
-	char c;
-
-	in >> n;
+	in >> n >> expect("\n");
 	assert(in);
-	c = in.get();
-	assert(c == '\n');
 	assert(n < std::numeric_limits<size_type>::max());
 	o.m_alphabet.resize(n);
 	in.read(reinterpret_cast<char*>(&o.m_alphabet[0]),
 			n * sizeof o.m_alphabet[0]);
 	o.setAlphabet(o.m_alphabet.begin(), o.m_alphabet.end());
 
-	in >> n;
+	in >> n >> expect("\n");
 	assert(in);
-	c = in.get();
-	assert(c == '\n');
 	assert(n < std::numeric_limits<size_type>::max());
 	o.m_sa.resize(n);
 	in.read(reinterpret_cast<char*>(&o.m_sa[0]),

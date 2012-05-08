@@ -1,5 +1,6 @@
 #include "Histogram.h"
 #include "IOUtil.h"
+#include "MemoryUtil.h"
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
@@ -125,9 +126,6 @@ typedef unordered_map<string, SAMRecord> Alignments;
 typedef unordered_map<string, SAMAlignment> Alignments;
 #endif
 
-/** Start of the data segment. */
-static intptr_t sbrk0 = reinterpret_cast<intptr_t>(sbrk(0));
-
 static void printProgress(const Alignments& map)
 {
 	if (opt::verbose == 0)
@@ -139,13 +137,12 @@ static void printProgress(const Alignments& map)
 
 	size_t buckets = map.bucket_count();
 	if (stats.alignments % 1000000 == 0 || buckets != prevBuckets) {
-		ptrdiff_t bytes = reinterpret_cast<intptr_t>(sbrk(0)) - sbrk0;
 		prevBuckets = buckets;
 		size_t size = map.size();
 		cerr << "Read " << stats.alignments << " alignments. "
 			<< "Hash load: " << size << " / " << buckets
 			<< " = " << (float)size / buckets
-			<< " using " << toSI(bytes) << "B." << endl;
+			<< " using " << toSI(getMemoryUsage()) << "B." << endl;
 	}
 }
 
