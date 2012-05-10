@@ -610,8 +610,10 @@ static ContigPath alignMulti(const Graph& g,
 
 	if (identity == 1) {
 		// A perfect match must be caused by two palindromes.
-		ContigID palindrome0 = solutions[0][longestPrefix];
-		ContigID palindrome1 = solutions[0].rbegin()[longestSuffix];
+		ContigID palindrome0
+			= solutions[0][longestPrefix].contigIndex();
+		ContigID palindrome1
+			= solutions[0].rbegin()[longestSuffix].contigIndex();
 		if (opt::verbose > 1)
 			cerr << "Palindrome: "
 				<< get(g_contigNames, palindrome0) << '\n'
@@ -625,8 +627,8 @@ static ContigPath alignMulti(const Graph& g,
 		for (vector<Path>::const_iterator it = solutions.begin();
 				it != solutions.end(); ++it) {
 			const ContigPath& path = *it;
-			assert(ContigID(path[longestPrefix]) == palindrome0);
-			assert(ContigID(path.rbegin()[longestSuffix])
+			assert(path[longestPrefix].contigIndex() == palindrome0);
+			assert(path.rbegin()[longestSuffix].contigIndex()
 					== palindrome1);
 			assert(path.size() == solutions[0].size());
 		}

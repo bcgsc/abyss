@@ -261,7 +261,8 @@ OutputIt pruneTips_if(Graph& g, OutputIt result, Pred p)
 
 	/** Remove the tips. */
 	remove_vertex_if(g, tips.begin(), tips.end(), True<V>());
-	copy(tips.begin(), tips.end(), result);
+	std::transform(tips.begin(), tips.end(), result,
+			std::mem_fun_ref(&ContigNode::contigIndex));
 
 	return result;
 }
@@ -296,7 +297,7 @@ OutputIt removeIslands_if(Graph& g, OutputIt result, Pred p)
 		if (get(vertex_removed, g, u))
 			continue;
 		if (p(u) && in_degree(u, g) == 0 && out_degree(u, g) == 0) {
-			*result++ = u;
+			*result++ = u.contigIndex();
 			clear_vertex(u, g);
 			remove_vertex(u, g);
 		}

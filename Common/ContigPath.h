@@ -2,7 +2,6 @@
 #define CONTIGPATH_H 1
 
 #include "ContigNode.h"
-#include "ContigID.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -75,9 +74,9 @@ static inline void markSeenInPath(std::istream& in,
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it) {
 			if (!it->ambiguous()) {
-				ContigID id(*it);
-				assert(marked.size() > id);
-				marked[id] = true;
+				size_t i = it->contigIndex();
+				assert(i < marked.size());
+				marked[i] = true;
 			}
 		}
 	}

@@ -187,7 +187,7 @@ static set<ContigID> findRepeats(ContigID seed,
 		count[seed]++;
 		for (ContigPath::const_iterator it = solIt->begin();
 				it != solIt->end(); ++it)
-			count[ContigID(*it)]++;
+			count[it->contigIndex()]++;
 		for (map<ContigID, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
@@ -476,7 +476,7 @@ static void handleEstimate(const Graph& g,
 			int diff = actualDistance - ep.distance;
 			unsigned buffer = allowedError(ep.stdDev);
 			bool invalid = (unsigned)abs(diff) > buffer;
-			bool repeat = repeats.count(ContigID(v)) > 0;
+			bool repeat = repeats.count(v.contigIndex()) > 0;
 			bool ignored = invalid && repeat;
 			if (ignored)
 				ignoredCount++;
@@ -517,7 +517,7 @@ static void handleEstimate(const Graph& g,
 				iter != er.estimates[dirIdx].end(); ++iter) {
 			ContigNode v = iter->first;
 			const DistanceEst& ep = iter->second;
-			if (repeats.count(ContigID(v)) > 0)
+			if (repeats.count(v.contigIndex()) > 0)
 				continue;
 			map<ContigNode, int>::iterator dmIter
 				= distanceMap.find(v);

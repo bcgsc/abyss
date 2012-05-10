@@ -131,7 +131,7 @@ static set<ContigID> findRepeats(const ContigPathMap& paths)
 		for (ContigPath::const_iterator it = path.begin();
 				it != path.end(); ++it)
 			if (!it->ambiguous())
-				count[ContigID(*it)]++;
+				count[it->contigIndex()]++;
 		for (map<ContigID, unsigned>::const_iterator
 				it = count.begin(); it != count.end(); ++it)
 			if (it->second > 1)
@@ -234,7 +234,7 @@ static bool addOverlapEdge(const Lengths& lengths,
 /** Return the specified path. */
 static ContigPath getPath(const ContigPathMap& paths, ContigNode u)
 {
-	ContigPathMap::const_iterator it = paths.find(ContigID(u));
+	ContigPathMap::const_iterator it = paths.find(u.contigIndex());
 	assert(it != paths.end());
 	ContigPath path = it->second;
 	if (u.sense())
@@ -256,7 +256,7 @@ static void findPathOverlaps(const Lengths& lengths,
 		if (seed2.ambiguous())
 			continue;
 		ContigPathMap::const_iterator path2It
-			= paths.find(ContigID(seed2));
+			= paths.find(seed2.contigIndex());
 		if (path2It == paths.end())
 			continue;
 
@@ -281,7 +281,7 @@ static unsigned mergePaths(const Lengths& lengths,
 	for (ContigNode pivot; !mergeQ.empty(); mergeQ.pop_front()) {
 		pivot = mergeQ.front();
 		ContigPathMap::const_iterator path2It
-			= paths.find(ContigID(pivot));
+			= paths.find(pivot.contigIndex());
 		if (path2It == paths.end())
 			continue;
 
@@ -316,7 +316,7 @@ static ContigPath mergePath(const Lengths& lengths,
 	assert(!seedPath.empty());
 	ContigNode seed1 = seedPath.front();
 	ContigPathMap::const_iterator path1It
-		= paths.find(ContigID(seed1));
+		= paths.find(seed1.contigIndex());
 	assert(path1It != paths.end());
 	ContigPath path(path1It->second);
 	if (seedPath.front().sense())
@@ -330,7 +330,7 @@ static ContigPath mergePath(const Lengths& lengths,
 			it != seedPath.end(); ++it) {
 		ContigNode seed2 = *it;
 		ContigPathMap::const_iterator path2It
-			= paths.find(ContigID(seed2));
+			= paths.find(seed2.contigIndex());
 		assert(path2It != paths.end());
 		ContigPath path2 = path2It->second;
 		if (seed2.sense())
@@ -415,7 +415,7 @@ static void extendPaths(const Lengths& lengths,
 			for (deque<ContigNode>::const_iterator it
 					= mergeQ.begin(); it != mergeQ.end(); ++it)
 				cout << get(g_contigNames, *it) << '\t'
-					<< paths.find(ContigID(*it))->second << '\n';
+					<< paths.find(it->contigIndex())->second << '\n';
 		}
 	}
 }
@@ -464,7 +464,8 @@ static ContigID identifySubsumedPaths(const Lengths& lengths,
 		ContigNode pivot = *it;
 		if (pivot.ambiguous() || pivot.id() == id)
 			continue;
-		ContigPathMap::iterator path2It = paths.find(ContigID(pivot));
+		ContigPathMap::iterator path2It
+			= paths.find(pivot.contigIndex());
 		if (path2It == paths.end())
 			continue;
 		ContigPath path2 = path2It->second;
@@ -650,7 +651,7 @@ static void removeSmallOverlaps(PathGraph& g,
 				continue;
 			ContigPath pathv = getPath(paths, v);
 			if (pathu.back() == pathv.front()
-					&& paths.count(pathu.back()) > 0)
+					&& paths.count(pathu.back().contigIndex()) > 0)
 				edges.push_back(uv);
 		}
 	}
@@ -711,7 +712,8 @@ static void assemblePathGraph(const Lengths& lengths,
 				it2 != it1->end(); ++it2) {
 			ContigNode seed(*it2);
 			if (find(path.begin(), path.end(), seed) != path.end()) {
-				paths[ContigID(seed)] = seed.sense() ? pathrc : path;
+				paths[seed.contigIndex()]
+					= seed.sense() ? pathrc : path;
 			} else {
 				// This seed was not included in the merged path.
 			}
@@ -786,7 +788,7 @@ static void buildPathGraph(const Lengths& lengths,
 	typedef graph_traits<PathGraph>::vertex_iterator vertex_iterator;
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 	for (vertex_iterator u = vit.first; u != vit.second; ++u)
-		if (paths.count(ContigID(*u)) == 0)
+		if (paths.count((*u).contigIndex()) == 0)
 			remove_vertex(*u, g);
 
 	// Find the overlapping paths.

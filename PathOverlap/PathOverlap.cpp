@@ -312,7 +312,7 @@ static void recordTrimmedContigs(
 {
 	for (ContigPath::const_iterator it = first; it != last; ++it)
 		if (!it->ambiguous())
-			s_trimmedContigs.push_back(ContigID(*it));
+			s_trimmedContigs.push_back(it->contigIndex());
 }
 
 /** Remove ambiguous contigs from the ends of the path. */

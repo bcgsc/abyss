@@ -89,7 +89,7 @@ unsigned id() const
 }
 
 /** Return the contig index as a ContigID. */
-operator ContigID() const
+ContigID contigIndex() const
 {
 	assert(!ambiguous());
 	return ContigID(id());
@@ -308,6 +308,22 @@ static inline ContigNode find_vertex(
 	return c == 'N'
 		? ContigNode(strtoul(name.c_str(), NULL, 0), 'N')
 		: find_vertex(name, c == '-', pmap);
+}
+
+/** A property map of a ContigNode to a contig index. */
+struct ContigIndexMap {
+	typedef ContigNode key_type;
+	typedef unsigned value_type;
+	typedef value_type reference;
+	typedef boost::readable_property_map_tag category;
+};
+
+/** Return a numeric index of the specified contig. */
+static inline
+ContigIndexMap::reference
+get(const ContigIndexMap&, ContigIndexMap::key_type u)
+{
+	return u.contigIndex();
 }
 
 #endif

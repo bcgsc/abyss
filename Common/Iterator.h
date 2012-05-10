@@ -3,6 +3,36 @@
 
 #include <iterator>
 
+/** A counting output iterator. */
+class CountingOutputIterator
+{
+  public:
+    explicit CountingOutputIterator(size_t& count) : m_count(count)
+	{
+		m_count = 0;
+	}
+
+	CountingOutputIterator& operator++()
+	{
+		++m_count;
+		return *this;
+	}
+
+    CountingOutputIterator& operator*()
+	{
+		return *this;
+	}
+
+	template<typename T>
+	CountingOutputIterator& operator=(const T&)
+	{
+		return *this;
+	}
+
+  private:
+    size_t& m_count;
+};
+
 /** An output stream iterator, like ostream_iterator, that outputs the
  * a delimiter before and after the item.
  */

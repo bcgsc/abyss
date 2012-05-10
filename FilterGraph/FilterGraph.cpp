@@ -310,7 +310,7 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 
 		clear_vertex(v, g);
 		remove_vertex(v, g);
-		g_removed.push_back(v);
+		g_removed.push_back(v.contigIndex());
 		g_count.removed++;
 	}
 	sc.swap(out);
@@ -322,7 +322,7 @@ struct Marked : unary_function<vertex_descriptor, bool> {
 	Marked(const Data& data) : m_data(data) { }
 	bool operator()(vertex_descriptor u) const
 	{
-		return m_data[ContigID(u)];
+		return m_data[u.contigIndex()];
 	}
   private:
 	const Data& m_data;
@@ -373,7 +373,7 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	bool operator()(vertex_descriptor y) const
 	{
 		return g[y].length < x && !get(vertex_removed, g, y)
-			&& !seen[ContigID(y)];
+			&& !seen[y.contigIndex()];
 	}
 };
 
@@ -413,7 +413,8 @@ static void removeShortContigs(Graph& g, const vector<bool>& seen)
 	copy_if(first, second, back_inserter(sc),
 			ShorterThanX(g, seen, opt::minLen));
 	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
-	copy(sc.begin(), sc.end(), back_inserter(g_removed));
+	transform(sc.begin(), sc.end(), back_inserter(g_removed),
+			mem_fun_ref(&ContigNode::contigIndex));
 	if (opt::verbose > 0)
 		cerr << "Removed " << sc.size()/2 << " short contigs.\n";
 }

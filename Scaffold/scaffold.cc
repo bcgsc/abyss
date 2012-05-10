@@ -4,6 +4,7 @@
 #include "ContigProperties.h"
 #include "Estimate.h"
 #include "IOUtil.h"
+#include "Iterator.h"
 #include "Uncompress.h"
 #include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
@@ -239,11 +240,11 @@ static void pruneTips(Graph& g)
 	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	/** Identify the tips. */
-	vector<V> tips;
-	pruneTips(g, back_inserter(tips));
+	size_t n = 0;
+	pruneTips(g, CountingOutputIterator(n));
 
 	if (opt::verbose > 0) {
-		cerr << "Removed " << tips.size() << " tips.\n";
+		cerr << "Removed " << n << " tips.\n";
 		printGraphStats(cerr, g);
 	}
 }

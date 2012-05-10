@@ -188,7 +188,7 @@ static void popBubble(Graph& g,
 #pragma omp critical(g_popped)
 	transform(sorted.begin() + 1, sorted.end(),
 			back_inserter(g_popped),
-			mem_fun_ref(&ContigNode::operator ContigID));
+			mem_fun_ref(&ContigNode::contigIndex));
 }
 
 static struct {
@@ -476,8 +476,12 @@ static void scaffoldBubble(Graph& g, const Bubble& bubble)
 	}
 	assert(isBubble(g, bubble.begin(), bubble.end()));
 
-	g_popped.insert(g_popped.end(),
-			bubble.begin() + 1, bubble.end() - 1);
+	assert(bubble.size() > 2);
+	size_t n = bubble.size() - 2;
+	g_popped.reserve(g_popped.size() + n);
+	for (Bubble::const_iterator it = bubble.begin() + 1;
+			it != bubble.end() - 1; ++it)
+		g_popped.push_back(it->contigIndex());
 
 	add_edge(u, w, max(longestPath(g, bubble), 1), g);
 }
@@ -526,7 +530,7 @@ static void filterGraph(Graph& g)
 			removedKmer += getKmerLength(vp);
 			clear_vertex(u, g);
 			remove_vertex(u, g);
-			g_popped.push_back(u);
+			g_popped.push_back(u.contigIndex());
 		}
 	}
 	if (opt::verbose > 0) {

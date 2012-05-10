@@ -3,7 +3,6 @@
 
 #include "ConstString.h"
 #include "Dictionary.h"
-#include <boost/property_map/property_map.hpp>
 #include <cassert>
 #include <ostream>
 #include <sstream>
@@ -56,20 +55,5 @@ class ContigID
 	/** The index. */
 	unsigned m_index;
 };
-
-/** A property map of a ContigID to an index. */
-struct ContigIDIndexMap {
-	typedef ContigID key_type;
-	typedef unsigned value_type;
-	typedef value_type reference;
-	typedef boost::readable_property_map_tag category;
-};
-
-/** Return a numeric index of the specified contig. */
-static inline
-unsigned get(const ContigIDIndexMap&, ContigID u)
-{
-	return u;
-}
 
 #endif

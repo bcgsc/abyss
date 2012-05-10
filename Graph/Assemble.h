@@ -1,7 +1,7 @@
 #ifndef ASSEMBLE_H
 #define ASSEMBLE_H 1
 
-#include "Common/ContigID.h" // for ContigIDIndexMap
+#include "Common/ContigNode.h" // for ContigIndexMap
 #include "Common/Iterator.h" // for output_iterator_traits
 #include "Graph/DepthFirstSearch.h"
 
@@ -59,7 +59,7 @@ template<typename Graph, typename OutIt>
 void assembleDFS(const Graph& g, OutIt out)
 {
 	typedef boost::vector_property_map<
-		boost::default_color_type, ContigIDIndexMap> ColorMap;
+		boost::default_color_type, ContigIndexMap> ColorMap;
 	depthFirstSearch(g, AssembleVisitor<OutIt>(out),
 			ColorMap(num_vertices(g) / 2));
 }
