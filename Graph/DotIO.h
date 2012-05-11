@@ -41,8 +41,7 @@ void write_edges(std::ostream& out, const Graph& g,
 	std::pair<out_edge_iterator, out_edge_iterator>
 		adj = out_edges(u, g);
 	for (out_edge_iterator e = adj.first; e != adj.second; ++e) {
-		vertex_descriptor v = target(*e, g);
-		assert(!get(vertex_removed, g, v));
+		assert(!get(vertex_removed, g, target(*e, g)));
 		out << get(edge_name, g, *e);
 		const edge_property_type& ep = get(edge_bundle, g, e);
 		if (!(ep == edge_property_type()))
@@ -215,6 +214,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			} else {
 				vertex_descriptor u = find_vertex(uname, g);
 				assert(get(vertex_index, g, u) < num_vertices(g));
+				(void)u;
 			}
 		} else if (c == '[') {
 			// Vertex properties

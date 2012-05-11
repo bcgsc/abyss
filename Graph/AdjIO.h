@@ -73,7 +73,7 @@ std::istream& readDistEdges(std::istream& in, ContigGraph<Graph>& g,
 	for (std::string vname; getline(in >> std::ws, vname, ',');) {
 		assert(!vname.empty());
 		V v = find_vertex(vname, g);
-		v = v ^ u.sense();
+		v = v ^ get(vertex_sense, g, u);
 		EP ep;
 		in >> ep;
 		assert(in);

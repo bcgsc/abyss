@@ -3,7 +3,7 @@
 
 #include "config.h" // for WORDS_BIGENDIAN
 #include "ContigID.h"
-#include "Graph/Properties.h" // for vertex_index_t
+#include "Graph/Properties.h"
 #include "StringUtil.h"
 #include <boost/property_map/property_map.hpp>
 #include <cassert>
@@ -313,7 +313,7 @@ static inline ContigNode find_vertex(
 /** A property map of a ContigNode to a contig index. */
 struct ContigIndexMap {
 	typedef ContigNode key_type;
-	typedef unsigned value_type;
+	typedef ContigID value_type;
 	typedef value_type reference;
 	typedef boost::readable_property_map_tag category;
 };
@@ -322,6 +322,14 @@ struct ContigIndexMap {
 static inline
 ContigIndexMap::reference
 get(const ContigIndexMap&, ContigIndexMap::key_type u)
+{
+	return u.contigIndex();
+}
+
+/** Return a numeric index of the specified vertex. */
+template <typename Graph>
+ContigIndexMap::reference
+get(vertex_contig_index_t, const Graph&, ContigIndexMap::key_type u)
 {
 	return u.contigIndex();
 }

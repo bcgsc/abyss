@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 	// Extend the junction contigs.
 	graph_traits<OverlapGraph>::vertex_iterator uit, ulast;
 	for (tie(uit, ulast) = vertices(overlapG); uit != ulast; ++uit)
-		if (!seen[(*uit).contigIndex()])
+		if (!seen[get(vertex_contig_index, overlapG, *uit)])
 			extendJunction(overlapG, scaffoldG, *uit);
 
 	assert_good(cout, "stdout");

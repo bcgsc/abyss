@@ -50,15 +50,17 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 		unsigned overlap = -distance;
 		unsigned ulen = g[u].length;
 		unsigned vlen = g[v].length;
+		bool usense = get(vertex_sense, g, u);
+		bool vsense = get(vertex_sense, g, v);
 		out << "ED\t" << get(vertex_contig_name, g, u)
 			<< ' ' << get(vertex_contig_name, g, v)
-			<< ' ' << (u.sense() ? 0 : ulen - overlap)
-			<< ' ' << (u.sense() ? overlap : ulen) - 1
+			<< ' ' << (usense ? 0 : ulen - overlap)
+			<< ' ' << (usense ? overlap : ulen) - 1
 			<< ' ' << ulen
-			<< ' ' << (!v.sense() ? 0 : vlen - overlap)
-			<< ' ' << (!v.sense() ? overlap : vlen) - 1
+			<< ' ' << (!vsense ? 0 : vlen - overlap)
+			<< ' ' << (!vsense ? overlap : vlen) - 1
 			<< ' ' << vlen
-			<< ' ' << (u.sense() != v.sense())
+			<< ' ' << (usense != vsense)
 			<< " -1\n"; // number of mismatches
 	}
 	return out;
@@ -106,6 +108,7 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 			} else {
 				V u = find_vertex(uname, false, g);
 				assert(get(vertex_index, g, u) < num_vertices(g));
+				(void)u;
 			}
 			break;
 		  }

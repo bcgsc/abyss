@@ -310,7 +310,7 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 
 		clear_vertex(v, g);
 		remove_vertex(v, g);
-		g_removed.push_back(v.contigIndex());
+		g_removed.push_back(get(vertex_contig_index, g, v));
 		g_count.removed++;
 	}
 	sc.swap(out);
@@ -319,12 +319,14 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 /** Return the value of the bit at the specified index. */
 struct Marked : unary_function<vertex_descriptor, bool> {
 	typedef vector<bool> Data;
-	Marked(const Data& data) : m_data(data) { }
+	Marked(const Graph& g, const Data& data)
+		: m_g(g), m_data(data) { }
 	bool operator()(vertex_descriptor u) const
 	{
-		return m_data[u.contigIndex()];
+		return m_data[get(vertex_contig_index, m_g, u)];
 	}
   private:
+	const Graph& m_g;
 	const Data& m_data;
 };
 
@@ -337,7 +339,7 @@ static void findShortContigs(const Graph& g, const vector<bool>& seen,
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	copy_if(first, second, back_inserter(sc),
-			!bind(Marked(seen), _1) && bind(removable, &g, _1));
+			!bind(Marked(g, seen), _1) && bind(removable, &g, _1));
 }
 
 /** Functor used for sorting contigs based on degree, then size,
@@ -373,7 +375,7 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	bool operator()(vertex_descriptor y) const
 	{
 		return g[y].length < x && !get(vertex_removed, g, y)
-			&& !seen[y.contigIndex()];
+			&& !seen[get(vertex_contig_index, g, y)];
 	}
 };
 

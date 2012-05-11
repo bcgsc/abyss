@@ -297,7 +297,7 @@ OutputIt removeIslands_if(Graph& g, OutputIt result, Pred p)
 		if (get(vertex_removed, g, u))
 			continue;
 		if (p(u) && in_degree(u, g) == 0 && out_degree(u, g) == 0) {
-			*result++ = u.contigIndex();
+			*result++ = get(vertex_contig_index, g, u);
 			clear_vertex(u, g);
 			remove_vertex(u, g);
 		}

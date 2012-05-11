@@ -589,7 +589,8 @@ static void addMissingEdges(const Lengths& lengths,
 			++vit1;
 			assert(v1 != u);
 			ContigPath path1 = getPath(paths, v1);
-			if (find(path1.begin(), path1.end(), u) == path1.end())
+			if (find(path1.begin(), path1.end(),
+						ContigPath::value_type(u)) == path1.end())
 				continue;
 			for (Vit vit2 = vit1; vit2 != vrange.second; ++vit2) {
 				V v2 = *vit2;
@@ -598,8 +599,8 @@ static void addMissingEdges(const Lengths& lengths,
 				if (edge(v1, v2, g).second || edge(v2, v1, g).second)
 					continue;
 				ContigPath path2 = getPath(paths, v2);
-				if (find(path2.begin(), path2.end(), u)
-						== path2.end())
+				if (find(path2.begin(), path2.end(),
+							ContigPath::value_type(u)) == path2.end())
 					continue;
 				numAdded += addOverlapEdge(lengths,
 						g, u, v1, path1, v2, path2);
@@ -788,7 +789,7 @@ static void buildPathGraph(const Lengths& lengths,
 	typedef graph_traits<PathGraph>::vertex_iterator vertex_iterator;
 	pair<vertex_iterator, vertex_iterator> vit = g.vertices();
 	for (vertex_iterator u = vit.first; u != vit.second; ++u)
-		if (paths.count((*u).contigIndex()) == 0)
+		if (paths.count(get(vertex_contig_index, g, *u)) == 0)
 			remove_vertex(*u, g);
 
 	// Find the overlapping paths.

@@ -119,7 +119,7 @@ struct Vertex {
 		return id == v.id && sense == v.sense;
 	}
 
-	operator ContigNode() const
+	ContigNode descriptor() const
 	{
 		return ContigNode(s_offset + id, sense);
 	}
@@ -411,7 +411,8 @@ static void addPathOverlapEdges(Graph& g,
 	// Add the path edges.
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it) {
-		Vertex u = it->source, v = it->target;
+		V u = it->source.descriptor();
+		V v = it->target.descriptor();
 		if (allowParallelEdge || !edge(u, v, g).second)
 			add_edge(u, v, it->distance, static_cast<DG&>(g));
 		else if (opt::verbose > 0)
@@ -428,7 +429,8 @@ typedef map<edge_descriptor, unsigned> OverlapMap;
 
 /** Return the number of contigs by which the two paths overlap. */
 static unsigned getOverlap(const OverlapMap& pmap,
-		const ContigNode& u, const ContigNode& v)
+		graph_traits<Graph>::vertex_descriptor u,
+		graph_traits<Graph>::vertex_descriptor v)
 {
 	if (isPath(u) && isPath(v)) {
 		// Both vertices are paths.
@@ -492,7 +494,9 @@ static void assembleOverlappingPaths(Graph& g,
 	for (Overlaps::const_iterator it = overlaps.begin();
 			it != overlaps.end(); ++it)
 		overlapMap.insert(OverlapMap::value_type(
-				OverlapMap::key_type(it->source, it->target),
+				OverlapMap::key_type(
+					it->source.descriptor(),
+					it->target.descriptor()),
 				it->overlap));
 
 	// Assemble unambiguously overlapping paths.
@@ -510,7 +514,7 @@ static void assembleOverlappingPaths(Graph& g,
 		if (opt::verbose > 0)
 			cerr << name << '\t' << *it << '\n';
 		Vertex u(paths.size(), false);
-		put(vertex_name, g, ContigNode(u), name);
+		put(vertex_name, g, u.descriptor(), name);
 		pathIDs.push_back(name);
 		paths.push_back(mergePaths(paths, overlapMap, *it));
 

@@ -206,12 +206,12 @@ typedef vector<const_string> Contigs;
 static Contigs g_contigs;
 
 /** Return the sequence of vertex u. */
-static string getSequence(vertex_descriptor u)
+static string getSequence(const Graph* g, vertex_descriptor u)
 {
-	assert(!u.ambiguous());
-	assert(u.id() < g_contigs.size());
-	string seq(g_contigs[u.id()]);
-	return u.sense() ? reverseComplement(seq) : seq;
+	size_t i = get(vertex_contig_index, *g, u);
+	assert(i < g_contigs.size());
+	string seq(g_contigs[i]);
+	return get(vertex_sense, *g, u) ? reverseComplement(seq) : seq;
 }
 
 /** Return the length of vertex v. */
@@ -301,7 +301,7 @@ static float getAlignmentIdentity(const Graph& g,
 		return max_identity;
 
 	vector<string> seqs(nbranches);
-	transform(first, last, seqs.begin(), getSequence);
+	transform(first, last, seqs.begin(), bind(getSequence, &g, _1));
 	for (unsigned i = 0; i < seqs.size(); i++) {
 		// Remove the overlapping sequence.
 		int n = seqs[i].size();
@@ -530,7 +530,7 @@ static void filterGraph(Graph& g)
 			removedKmer += getKmerLength(vp);
 			clear_vertex(u, g);
 			remove_vertex(u, g);
-			g_popped.push_back(u.contigIndex());
+			g_popped.push_back(get(vertex_contig_index, g, u));
 		}
 	}
 	if (opt::verbose > 0) {

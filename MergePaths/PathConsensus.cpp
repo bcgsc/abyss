@@ -208,7 +208,7 @@ static ContigPaths readPaths(const string& inPath,
 			continue;
 		for (Path::iterator it = path.begin() + 2;
 				it != path.end(); ++it) {
-			V t = it[-2], u = it[-1], v = it[0];
+			ContigPath::value_type t = it[-2], u = it[-1], v = it[0];
 			if (u.ambiguous()) {
 				assert(!t.ambiguous());
 				assert(!v.ambiguous());

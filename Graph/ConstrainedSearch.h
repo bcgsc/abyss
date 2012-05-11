@@ -23,7 +23,8 @@ typedef std::vector<Constraint> Constraints;
 typedef std::vector<ContigPath> ContigPaths;
 
 bool constrainedSearch(const Graph& g,
-		ContigNode origin, Constraints& constraints,
+		graph_traits<Graph>::vertex_descriptor origin,
+		Constraints& constraints,
 		ContigPaths& superPaths, unsigned& compCost);
 
 #endif

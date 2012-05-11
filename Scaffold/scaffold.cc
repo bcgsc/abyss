@@ -554,7 +554,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	pruneTips(g);
 
 	// Pop bubbles.
-	vector<ContigNode> popped = popBubbles(g);
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	vector<V> popped = popBubbles(g);
 	if (opt::verbose > 0) {
 		cerr << "Removed " << popped.size()
 			<< " vertices in bubbles.\n";
@@ -562,7 +563,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	}
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
-		for (vector<ContigNode>::const_iterator it = popped.begin();
+		for (vector<V>::const_iterator it = popped.begin();
 				it != popped.end(); ++it)
 			cerr << ' ' << get(vertex_name, g, *it);
 		cerr << '\n';
