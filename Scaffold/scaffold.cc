@@ -699,7 +699,7 @@ int main(int argc, char** argv)
 		readGraph("-", g);
 
 	// Add any missing complementary edges.
-	size_t numAdded = addComplementaryEdges<DG>(g);
+	size_t numAdded = addComplementaryEdges(g);
 	if (opt::verbose > 0) {
 		cerr << "Added " << numAdded << " complementary edges.\n";
 		printGraphStats(cerr, g);

@@ -153,7 +153,9 @@ static inline unsigned hash_value(const ContigNode& o)
 }
 
 /** Vertex index property map of a ContigNode. */
-struct ContigNodeIndexMap {
+struct ContigNodeIndexMap
+	: boost::put_get_helper<unsigned, ContigNodeIndexMap>
+{
 	typedef ContigNode key_type;
 	typedef unsigned value_type;
 	typedef value_type reference;
@@ -165,34 +167,20 @@ struct ContigNodeIndexMap {
 	}
 };
 
-/** Return a numeric index of the specified vertex. */
-static inline
-unsigned get(ContigNodeIndexMap, ContigNode u)
+/** Contig index property map of a ContigNode. */
+struct ContigIndexMap
+	: boost::put_get_helper<ContigID, ContigIndexMap>
 {
-	return u.index();
-}
+	typedef ContigNode key_type;
+	typedef ContigID value_type;
+	typedef value_type reference;
+	typedef boost::readable_property_map_tag category;
 
-/** Return a numeric index of the specified vertex. */
-template <typename Graph>
-unsigned get(vertex_index_t, const Graph&, ContigNode u)
-{
-	return u.index();
-}
-
-/** Return the complement of the specified vertex. */
-template <typename Graph>
-ContigNode get(vertex_complement_t, const Graph&, ContigNode u)
-{
-	assert(!u.ambiguous());
-	return u ^ 1;
-}
-
-/** Return the sense of the specified vertex. */
-template <typename Graph>
-bool get(vertex_sense_t, const Graph&, ContigNode u)
-{
-	return u.sense();
-}
+	reference operator[](const key_type& u) const
+	{
+		return u.contigIndex();
+	}
+};
 
 /** Return the contig name of the specified vertex. */
 template <typename Graph>
@@ -308,30 +296,6 @@ static inline ContigNode find_vertex(
 	return c == 'N'
 		? ContigNode(strtoul(name.c_str(), NULL, 0), 'N')
 		: find_vertex(name, c == '-', pmap);
-}
-
-/** A property map of a ContigNode to a contig index. */
-struct ContigIndexMap {
-	typedef ContigNode key_type;
-	typedef ContigID value_type;
-	typedef value_type reference;
-	typedef boost::readable_property_map_tag category;
-};
-
-/** Return a numeric index of the specified contig. */
-static inline
-ContigIndexMap::reference
-get(const ContigIndexMap&, ContigIndexMap::key_type u)
-{
-	return u.contigIndex();
-}
-
-/** Return a numeric index of the specified vertex. */
-template <typename Graph>
-ContigIndexMap::reference
-get(vertex_contig_index_t, const Graph&, ContigIndexMap::key_type u)
-{
-	return u.contigIndex();
 }
 
 #endif

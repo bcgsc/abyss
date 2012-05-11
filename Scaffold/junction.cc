@@ -189,7 +189,7 @@ int main(int argc, char** argv)
 		for_each(argv + optind, argv + argc,
 				bind(readGraph, _1, ref(scaffoldG)));
 		// Add any missing complementary edges.
-		size_t numAdded = addComplementaryEdges<DG>(scaffoldG);
+		size_t numAdded = addComplementaryEdges(scaffoldG);
 		if (opt::verbose > 0)
 			cerr << "Added " << numAdded << " complementary edges.\n";
 		if (opt::verbose > 1)

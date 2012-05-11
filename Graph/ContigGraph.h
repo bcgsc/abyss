@@ -1,6 +1,7 @@
 #ifndef CONTIGGRAPH_H
 #define CONTIGGRAPH_H 1
 
+#include "ContigID.h"
 #include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
 #include <cassert>
@@ -450,6 +451,44 @@ get(edge_bundle_t, const ContigGraph<G>& g,
 		typename ContigGraph<G>::edge_descriptor e)
 {
 	return g[e];
+}
+
+// PropertyGraph
+
+namespace boost {
+template <typename G>
+struct property_map<ContigGraph<G>, vertex_index_t>
+{
+	typedef typename property_map<G, vertex_index_t>::type type;
+	typedef type const_type;
+};
+}
+
+/** Return the complement of the specified vertex. */
+template <typename G>
+typename graph_traits<G>::vertex_descriptor
+get(vertex_complement_t, const ContigGraph<G>&,
+		typename graph_traits<G>::vertex_descriptor u)
+{
+	return u ^ 1;
+}
+
+/** Return the contig index of the specified vertex. */
+template <typename G>
+ContigID
+get(vertex_contig_index_t, const ContigGraph<G>&,
+		typename graph_traits<G>::vertex_descriptor u)
+{
+	return u.contigIndex();
+}
+
+/** Return the sense of the specified vertex. */
+template <typename G>
+bool
+get(vertex_sense_t, const ContigGraph<G>&,
+		typename graph_traits<G>::vertex_descriptor u)
+{
+	return u.sense();
 }
 
 // VertexMutablePropertyGraph

@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 		readGraph("-", g);
 
 	// Add any missing complementary edges.
-	addComplementaryEdges<DG>(g);
+	addComplementaryEdges(g);
 
 	size_t n = num_vertices(g);
 	Matrix a(n, n);

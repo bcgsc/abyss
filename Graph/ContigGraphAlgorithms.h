@@ -2,6 +2,7 @@
 #define CONTIGGRAPHALGORITHMS_H 1
 
 #include "Algorithms.h"
+#include "ContigGraph.h"
 #include "ContigNode.h"
 #include "Estimate.h" // for BetterDistanceEst
 #include "Functional.h"
@@ -306,9 +307,10 @@ OutputIt removeIslands_if(Graph& g, OutputIt result, Pred p)
 }
 
 /** Add missing complementary edges. */
-template <typename Graph>
-size_t addComplementaryEdges(Graph& g)
+template <typename DG>
+size_t addComplementaryEdges(ContigGraph<DG>& g)
 {
+	typedef ContigGraph<DG> Graph;
 	typedef graph_traits<Graph> GTraits;
 	typedef typename GTraits::edge_descriptor E;
 	typedef typename GTraits::edge_iterator Eit;
@@ -325,7 +327,7 @@ size_t addComplementaryEdges(Graph& g)
 		bool found;
 		tie(f, found) = edge(vc, uc, g);
 		if (!found) {
-			add_edge(vc, uc, g[e], g);
+			add_edge(vc, uc, g[e], static_cast<DG&>(g));
 			numAdded++;
 		} else if (g[e] != g[f]) {
 			// The edge properties do not agree. Select the better.

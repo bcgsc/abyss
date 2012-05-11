@@ -754,6 +754,32 @@ get(edge_bundle_t, const DirectedGraph<VP, EP>& g,
 	return g[e];
 }
 
+// PropertyGraph vertex_index
+
+namespace boost {
+template <typename VP, typename EP>
+struct property_map<DirectedGraph<VP, EP>, vertex_index_t>
+{
+	typedef ContigNodeIndexMap type;
+	typedef type const_type;
+};
+}
+
+template <typename VP, typename EP>
+ContigNodeIndexMap
+get(vertex_index_t, const DirectedGraph<VP, EP>&)
+{
+	return ContigNodeIndexMap();
+}
+
+template <typename VP, typename EP>
+ContigNodeIndexMap::reference
+get(vertex_index_t tag, const DirectedGraph<VP, EP>& g,
+		typename DirectedGraph<VP, EP>::vertex_descriptor u)
+{
+	return get(get(tag, g), u);
+}
+
 // VertexMutablePropertyGraph
 
 template <typename VP, typename EP>

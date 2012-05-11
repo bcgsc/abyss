@@ -32,9 +32,12 @@ template <typename Graph, typename It>
 void topologicalSort(const Graph& g, It it)
 {
 	using boost::default_color_type;
+	using boost::property_map;
 	using boost::vector_property_map;
-	typedef vector_property_map<
-		default_color_type, ContigNodeIndexMap> ColorMap;
+	typedef typename property_map<Graph, vertex_index_t>::type
+		VertexIndexMap;
+	typedef vector_property_map<default_color_type, VertexIndexMap>
+		ColorMap;
 	depthFirstSearch(g, TopoVisitor<It>(it),
 			ColorMap(num_vertices(g)));
 }
