@@ -541,3 +541,8 @@ $(name)-stats: %-stats: %-scaffolds.fa
 endif
 $(name)-stats:
 	abyss-fac $(FAC_OPTIONS) $^ |tee $@
+
+# Create an AGP file and FASTA file of scaftigs from scaffolds
+
+%.agp %-agp.fa: %.fa
+	abyss-fatoagp $(FATOAGP_OPTIONS) -f $*-agp.fa $< >$*.agp

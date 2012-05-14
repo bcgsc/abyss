@@ -3,6 +3,7 @@ dist_bin_SCRIPTS = \
 	abyss-bowtie2 \
 	abyss-bwa \
 	abyss-bwasw \
+	abyss-fatoagp \
 	abyss-kaligner \
 	abyss-pe \
 	abyss-samtoafg
