@@ -546,3 +546,13 @@ $(name)-stats:
 
 %.agp %-agp.fa: %.fa
 	abyss-fatoagp $(FATOAGP_OPTIONS) -f $*-agp.fa $< >$*.agp
+
+# Align the contigs to the reference
+
+%-$(ref).sam.gz: %.fa
+	bwa bwasw -t$j $(BWASW_OPTIONS) $($(ref)) $< |gzip >$@
+
+# Find breakpoints in the alignments
+
+%.break: %.sam.gz
+	sam2break $(SAM2BREAK_OPTIONS) $< >$@
