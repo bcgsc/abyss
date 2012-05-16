@@ -136,7 +136,7 @@ static void printContiguityStatistics(const char* path)
 		<< opt::delimiter << path;
 	if (opt::format == JIRA)
 		cout << opt::delimiter;
-	cout << '\n';
+	cout << endl;
 	printHeader = false;
 }
 
