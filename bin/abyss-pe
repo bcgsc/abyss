@@ -145,7 +145,7 @@ j:=2
 endif
 
 # AdjList parameters
-m?=30
+m?=50
 
 # PopBubbles parameters
 p?=0.9
