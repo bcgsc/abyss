@@ -50,6 +50,10 @@ static const char USAGE_MESSAGE[] =
 "  -q, --min-mapq=N      ignore alignments with mapping quality\n"
 "                        less than this threshold [10]\n"
 "  -o, --out=FILE        write result to FILE\n"
+"      --mle             use the MLE [default]\n"
+"                        (maximum likelihood estimator)\n"
+"      --mean            use the difference of the population mean\n"
+"                        and the sample mean\n"
 "      --dist            output graph in dist format [default]\n"
 "      --dot             output graph in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -58,6 +62,9 @@ static const char USAGE_MESSAGE[] =
 "      --version         output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+/** Which estimator to use. See opt::method. */
+enum { MLE, MEAN };
 
 namespace opt {
 	unsigned k; // used by Estimate.h
@@ -81,6 +88,9 @@ namespace opt {
 	/** Reverse-forward mate pair orientation. */
 	static int rf = -1;
 
+	/** Which estimator to use. */
+	static int method = MLE;
+
 	static int verbose;
 	static string out;
 	static int threads = 1;
@@ -100,6 +110,8 @@ static const struct option longopts[] = {
 	{ "min-align",   required_argument, NULL, 'l' },
 	{ "mind",        required_argument, NULL, OPT_MIND },
 	{ "maxd",        required_argument, NULL, OPT_MAXD },
+	{ "mle",         no_argument,       &opt::method, MLE },
+	{ "mean",        no_argument,       &opt::method, MEAN },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
@@ -114,6 +126,30 @@ static const struct option longopts[] = {
 
 /** A collection of aligned read pairs. */
 typedef vector<SAMRecord> Pairs;
+
+/** Estimate the distance between two contigs using the difference of
+ * the population mean and the sample mean.
+ * @param numPairs [out] the number of pairs that agree with the
+ * expected distribution
+ * @return the estimated distance
+ */
+static int estimateDistanceUsingMean(
+		const std::vector<int>& samples, const PMF& pmf,
+		unsigned& numPairs)
+{
+	Histogram h(samples.begin(), samples.end());
+	int d = pmf.mean() - h.mean();
+
+	// Count the number of samples that agree with the distribution.
+	unsigned n = 0;
+	for (Histogram::const_iterator it = h.begin();
+			it != h.end(); ++it)
+		if (pmf[it->first + d] > pmf.minProbability())
+			n += it->second;
+
+	numPairs = n;
+	return d;
+}
 
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
@@ -165,9 +201,21 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		fragmentSizes.push_back(x);
 	}
 
-	return maximumLikelihoodEstimate(opt::minAlign,
-			opt::minDist, opt::maxDist,
-			fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
+	switch (opt::method) {
+	  case MLE:
+		// Use the maximum likelihood estimator.
+		return maximumLikelihoodEstimate(opt::minAlign,
+				opt::minDist, opt::maxDist,
+				fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
+	  case MEAN:
+		// Use the difference of the population mean
+		// and the sample mean.
+		return estimateDistanceUsingMean(
+				fragmentSizes, pmf, numPairs);
+	  default:
+		assert(false);
+		abort();
+	}
 }
 
 static void writeEstimate(ostream& out,

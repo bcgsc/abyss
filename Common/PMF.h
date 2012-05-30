@@ -14,7 +14,7 @@ class PMF
   public:
 	/** Construct a PMF from a histogram. */
 	PMF(const Histogram& h)
-		: m_dist(h.maximum() + 1), m_stdDev(h.sd())
+		: m_dist(h.maximum() + 1), m_mean(h.mean()), m_stdDev(h.sd())
 	{
 		unsigned count = h.size();
 		m_minp = (double)1 / count;
@@ -43,6 +43,12 @@ class PMF
 		return m_dist.size() - 1;
 	}
 
+	/** Return the mean of this distribution. */
+	double mean() const { return m_mean; }
+
+	/** Return the standard deviation of the sampled mean
+	 * of n observations.
+	 */
 	double getSampleStdDev(unsigned n) const
 	{
 		return m_stdDev / sqrt(n);
@@ -50,6 +56,7 @@ class PMF
 
   private:
 	std::vector<double> m_dist;
+	double m_mean;
 	double m_stdDev;
 	double m_minp;
 };
