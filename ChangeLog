@@ -1,3 +1,29 @@
+2012-05-30  Shaun Jackman  <sjackman@bcgsc.ca>
+
+	* Release version 1.3.4.
+	* Do not extend paths, which can cause misassemblies.
+	* Increase the default value of m from 30 to 50.
+	* Various portability fixes.
+
+	abyss-pe:
+	* Increase the default value of m from 30 to 50 to reduce the
+	likelihood of misassemblies.
+	* Integrate with SLURM. Thanks to Timothy Carlson.
+
+	ABYSS:
+	* Use CityHash64 rather than Bob Jenkins' hashlittle.
+
+	SimpleGraph:
+	* Do not extend paths. Closes #8. Extending paths can cause
+	misassemblies when the de Bruijn graph is incomplete.
+
+	MergePaths:
+	* Bug fix. Closes #6. Fix the bug causing the error:
+	Assertion `!m_ambig' failed.
+
+	abyss-fatoagp:
+	* New script. Create a FASTA file of scaftigs and an AGP file.
+
 2012-03-13  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.3.3.
