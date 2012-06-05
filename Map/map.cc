@@ -43,6 +43,8 @@ static const char USAGE_MESSAGE[] =
 "  -s, --sample=N          sample the suffix array [1]\n"
 "  -d, --dup               identify and print duplicate sequence\n"
 "                          IDs between QUERY and TARGET\n"
+"      --chastity          discard unchaste reads\n"
+"      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -76,6 +78,8 @@ static const struct option longopts[] = {
 	{ "dup", no_argument, NULL, 'd' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "verbose", no_argument, NULL, 'v' },
+	{ "chastity", no_argument, &opt::chastityFilter, 1 },
+	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -344,6 +348,9 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
+	opt::chastityFilter = false;
+	opt::trimMasked = false;
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -458,8 +465,6 @@ int main(int argc, char** argv)
 	} else if (opt::verbose > 0)
 		cerr << "Identifying duplicates.\n";
 
-	opt::chastityFilter = false;
-	opt::trimMasked = false;
 	FastaInterleave fa(argv + optind, argv + argc,
 			FastaReader::FOLD_CASE);
 	find(faIndex, fmIndex, fa);
