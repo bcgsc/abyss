@@ -7,6 +7,7 @@
 #include "Common/Sequence.h" // for isACGT
 #include "DataLayer/FastaReader.h"
 #include "DataLayer/Options.h"
+#include "Uncompress.h"
 #include <algorithm>
 #include <getopt.h>
 #include <iostream>
