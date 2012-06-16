@@ -155,7 +155,13 @@ next_record:
 			// read, chastity, flags, index: 1:Y:0:AAAAAA
 			if (opt::chastityFilter && comment[2] == 'Y') {
 				m_unchaste++;
-				ignoreLines(recordType == '@' ? 3 : 1);
+				if (recordType == '@') {
+					ignoreLines(3);
+				} else {
+					while (m_in.peek() != '>' && m_in.peek() != '#'
+							&& ignoreLines(1))
+						;
+				}
 				goto next_record;
 			}
 			if (id.size() > 2 && id.rbegin()[1] != '/') {
