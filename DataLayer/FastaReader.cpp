@@ -119,6 +119,11 @@ Sequence FastaReader::read(string& id, string& comment,
 		char& anchor, string& q)
 {
 next_record:
+	id.clear();
+	comment.clear();
+	anchor = 0;
+	q.clear();
+
 	// Discard comments.
 	while (m_in.peek() == '#')
 		ignoreLines(1);
