@@ -560,9 +560,8 @@ int main(int argc, char** argv)
 		minCovUsed = numeric_limits<float>::infinity();
 	for (unsigned i = 0; i < contigs.size(); i++) {
 		ContigProperties vp = g[ContigNode(i, false)];
-		if (vp.coverage == 0)
+		if (vp.coverage == 0 || vp.length < opt::k)
 			continue;
-		assert((int)vp.length - opt::k + 1 > 0);
 		float cov = (float)vp.coverage / (vp.length - opt::k + 1);
 		minCov = min(minCov, cov);
 		if (seen[i])
