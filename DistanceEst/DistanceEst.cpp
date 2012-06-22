@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cassert>
 #include <climits>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -138,7 +139,7 @@ static int estimateDistanceUsingMean(
 		unsigned& numPairs)
 {
 	Histogram h(samples.begin(), samples.end());
-	int d = pmf.mean() - h.mean();
+	int d = (int)round(pmf.mean() - h.mean());
 
 	// Count the number of samples that agree with the distribution.
 	unsigned n = 0;
