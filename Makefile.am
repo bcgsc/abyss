@@ -25,6 +25,7 @@ SUBDIRS = \
 	KAligner \
 	Map \
 	MergePaths \
+	Misc \
 	Overlap \
 	ParseAligns \
 	PathOverlap \

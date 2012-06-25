@@ -12,6 +12,8 @@ AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_CHECK_TOOL(GHC, ghc)
+AM_CONDITIONAL([HAVE_GHC], [test "$GHC"])
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
@@ -182,6 +184,7 @@ AC_CONFIG_FILES([
 	DAssembler/Makefile
 	DistanceEst/Makefile
 	Map/Makefile
+	Misc/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
 	Scaffold/Makefile
