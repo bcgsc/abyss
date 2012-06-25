@@ -191,6 +191,10 @@ pcopt += -p$p
 S?=$s
 N?=$n
 
+# BWA-SW parameters
+bwaswopt=-t$j
+BWASW_OPTIONS='-b9 -q16 -r1 -w500'
+
 # Remove environment variables
 unexport in se $(lib) $(pe) $(mp)
 
@@ -550,7 +554,7 @@ $(name)-stats:
 # Align the contigs to the reference
 
 %-$(ref).sam.gz: %.fa
-	bwa bwasw -t$j $(BWASW_OPTIONS) $($(ref)) $< |gzip >$@
+	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |gzip >$@
 
 # Find breakpoints in the alignments
 
