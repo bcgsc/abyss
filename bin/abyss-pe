@@ -555,4 +555,4 @@ $(name)-stats:
 # Find breakpoints in the alignments
 
 %.break: %.sam.gz
-	sam2break $(SAM2BREAK_OPTIONS) $< >$@
+	abyss-samtobreak $(SAMTOBREAK_OPTIONS) $< >$@
