@@ -1,5 +1,5 @@
 Title: ABySS README
-Author: Shaun Jackman
+Author: Shaun Jackman, Anthony Raymond
 Affiliation: Canada's Michael Smith Genome Science Centre
 CSS: README.css
 
