@@ -5,7 +5,7 @@ libalign_a_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 libalign_a_SOURCES = \
 	alignGlobal.cc alignGlobal.h \
 	dialign.cpp dialign.h dna_diag_prob.cc \
-	smith_waterman.cpp smith_waterman.h
+	smith_waterman.cpp smith_waterman.h Options.h
 
 bin_PROGRAMS = abyss-align abyss-mergepairs
 

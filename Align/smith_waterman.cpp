@@ -7,6 +7,7 @@
 
 #include "smith_waterman.h"
 #include "Sequence.h"
+#include "Align/Options.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -15,18 +16,19 @@
 
 using namespace std;
 
-/** The score of a match. */
-static const int MATCH_SCORE = 5;
+namespace opt {
+	/** The score of a match. */
+	int match = 5;
 
-/** The score of a mismatch. */
-static const int MISMATCH_SCORE = -4;
+	/** The score of a mismatch. */
+	int mismatch = -4;
 
-/** gap open penalty */
-static const int GAP_OPEN_SCORE = -12;
+	/** gap open penalty */
+	int gap_open = -12;
 
-/** gap extend penalty */
-static const int GAP_EXTEND_SCORE = -4;
-
+	/** gap extend penalty */
+	int gap_extend = -4;
+}
 /** Print the specified alignment. */
 static ostream& printAlignment(ostream& out,
 		const string& aseq, const string& bseq,
@@ -81,13 +83,13 @@ static bool isMatch(char a, char b, char& c)
 static int matchScore(const char a, const char b)
 {
 	char consensus;
-	return isMatch(a, b, consensus) ? MATCH_SCORE : MISMATCH_SCORE;
+	return isMatch(a, b, consensus) ? opt::match : opt::mismatch;
 }
 
 /** Return the score of a gap, either newly opened or extended. */
 static int gapScore(bool prev_is_gap)
 {
-	return prev_is_gap ? GAP_EXTEND_SCORE : GAP_OPEN_SCORE;
+	return prev_is_gap ? opt::gap_extend : opt::gap_open;
 }
 
 //the backtrack step in smith_waterman

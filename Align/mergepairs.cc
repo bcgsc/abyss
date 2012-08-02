@@ -1,6 +1,7 @@
 #include "smith_waterman.h"
 #include "config.h"
 #include "DataLayer/Options.h"
+#include "Align/Options.h"
 #include "Common/Options.h"
 #include "FastaReader.h"
 #include "IOUtil.h"
@@ -252,6 +253,13 @@ static void alignFiles(const char* reads1, const char* reads2)
 int main(int argc, char** argv)
 {
 	bool die = false;
+
+	//defaults for alignment parameters
+	opt::match = 1;
+	opt::mismatch = -2;
+	opt::gap_open = -10000;
+	opt::gap_extend = -10000;
+
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
