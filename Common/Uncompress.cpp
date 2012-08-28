@@ -22,12 +22,18 @@
 
 using namespace std;
 
-static const char* zcatExec(const string& path)
+static const char* wgetExec(const string& path)
 {
 	return
 		startsWith(path, "http://") ? "wget -O-" :
 		startsWith(path, "https://") ? "wget -O-" :
 		startsWith(path, "ftp://") ? "wget -O-" :
+		NULL;
+}
+
+static const char* zcatExec(const string& path)
+{
+	return
 		endsWith(path, ".ar") ? "ar -p" :
 		endsWith(path, ".tar") ? "tar -xOf" :
 		endsWith(path, ".tar.Z") ? "tar -zxOf" :
@@ -56,7 +62,8 @@ extern "C" {
  */
 static int uncompress(const char *path)
 {
-	const char *zcat = zcatExec(path);
+	const char *wget = wgetExec(path);
+	const char *zcat = wget != NULL ? wget : zcatExec(path);
 	assert(zcat != NULL);
 
 	int fd[2];
@@ -127,8 +134,19 @@ FILE *fopen(const char *path, const char *mode)
 		fprintf(stderr, "error: dlsym fopen: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-	return zcatExec(path) == NULL ? real_fopen(path, mode)
-		: funcompress(path);
+
+	// open a web address
+	if (wgetExec(path) != NULL)
+		return funcompress(path);
+	
+	// to check if the file exists, we need to attempt to open it
+	FILE* stream = real_fopen(path, mode);
+	if (!stream || zcatExec(path) == NULL)
+		return stream;
+	else {
+		fclose(stream);
+		return funcompress(path);
+	}
 }
 
 /** If the specified file is compressed, return a pipe that
@@ -143,8 +161,19 @@ FILE *fopen64(const char *path, const char *mode)
 		fprintf(stderr, "error: dlsym fopen64: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-	return zcatExec(path) == NULL ? real_fopen64(path, mode)
-		: funcompress(path);
+
+	// open a web address
+	if (wgetExec(path) != NULL)
+		return funcompress(path);
+	
+	// to check if the file exists, we need to attempt to open it
+	FILE* stream = real_fopen64(path, mode);
+	if (!stream || zcatExec(path) == NULL)
+		return stream;
+	else {
+		fclose(stream);
+		return funcompress(path);
+	}
 }
 
 typedef int (*open_t)(const char *path, int flags, mode_t mode);
@@ -161,8 +190,19 @@ int open(const char *path, int flags, mode_t mode)
 		fprintf(stderr, "error: dlsym open: %s\n", dlerror());
 		exit(EXIT_FAILURE);
 	}
-	return zcatExec(path) == NULL ? real_open(path, flags, mode)
-		: uncompress(path);
+
+	// open a web address
+	if (wgetExec(path) != NULL)
+		return uncompress(path);
+	
+	// to check if the file exists, we need to attempt to open it
+	int filedesc = real_open(path, flags, mode);
+	if (filedesc < 0 || zcatExec(path) == NULL)
+		return filedesc;
+	else {
+		close(filedesc);
+		return uncompress(path);
+	}
 }
 
 } // extern "C"
