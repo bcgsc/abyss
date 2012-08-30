@@ -149,6 +149,9 @@ static int estimateDistanceUsingMean(
 	return d;
 }
 
+/** Global variable to track a recommended minAlign parameter */
+unsigned g_recMA;
+
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
  * expected distribution
@@ -186,23 +189,26 @@ static int estimateDistance(unsigned len0, unsigned len1,
 
 	vector<int> fragmentSizes;
 	fragmentSizes.reserve(fragments.size());
+	unsigned ma = opt::minAlign;
 	for (Fragments::const_iterator it = fragments.begin();
 			it != fragments.end(); ++it) {
 		int x = it->second - it->first;
-		if (!opt::rf && x <= 2 * int(opt::minAlign - 1)) {
-			cerr << PROGRAM ": error: The observed fragment of size "
+		if (!opt::rf && opt::method == MLE 
+				&& x <= 2 * int(ma - 1)) {
+			unsigned align = x / 2;
+			cerr << PROGRAM ": warning: The observed fragment of size "
 				<< x << " bp is shorter than 2*l "
-				"(l=" << opt::minAlign << "). "
-				"Decrease l to " << x / 2 << ".\n";
-			exit(EXIT_FAILURE);
+				"(l=" << opt::minAlign << ").\n";
+			ma = min(ma, align);
 		}
 		fragmentSizes.push_back(x);
 	}
 
+	g_recMA = min(g_recMA, ma);
 	switch (opt::method) {
 	  case MLE:
 		// Use the maximum likelihood estimator.
-		return maximumLikelihoodEstimate(opt::minAlign,
+		return maximumLikelihoodEstimate(ma,
 				opt::minDist, opt::maxDist,
 				fragmentSizes, pmf, len0, len1, opt::rf, numPairs);
 	  case MEAN:
@@ -530,6 +536,7 @@ int main(int argc, char** argv)
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;
 	assert(in);
+	g_recMA = opt::minAlign;
 #pragma omp parallel
 	for (vector<SAMRecord> records;;) {
 		records.clear();
@@ -539,6 +546,10 @@ int main(int argc, char** argv)
 			break;
 		writeEstimates(out, records, contigLens, pmf);
 	}
+	if (g_recMA != opt::minAlign)
+		cerr << PROGRAM << ": warning: MLE will be more accurate if "
+			"l is decreased to " << g_recMA << ".\n";
+
 	assert(in.eof());
 
 	if (opt::format == DOT)
