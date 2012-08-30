@@ -10,6 +10,11 @@
 #include <sstream>
 #include <string>
 
+namespace opt {
+	/** The minimal alignment size. */
+	static unsigned minAlign = 1;
+}
+
 /** A SAM alignment of a single query. */
 struct SAMAlignment {
 	std::string rname;
@@ -93,6 +98,8 @@ struct SAMAlignment {
 		CigarCoord(const std::string& cigar)
 			: qlen(0), qstart(0), qspan(0), tspan(0)
 		{
+			if (cigar == "*")
+				return;
 			std::istringstream in(cigar);
 			bool first = true;
 			unsigned len;
@@ -333,6 +340,11 @@ struct SAMRecord : SAMAlignment {
 			o.qname.resize(l - 2);
 			assert(!o.qname.empty());
 		}
+
+		// Set the unmapped flag if the alignment is not long enough.
+		CigarCoord a(o.cigar);
+		if (a.qspan < opt::minAlign || a.tspan < opt::minAlign)
+			o.flag |= FUNMAP;
 		return in;
 	}
 };

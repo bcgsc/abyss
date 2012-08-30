@@ -73,9 +73,6 @@ namespace opt {
 	/** Output graph format. */
 	int format = DIST;
 
-	/** The minimal alignment size. */
-	static int minAlign = 1;
-
 	/** Minimum distance between contigs. */
 	static int minDist = numeric_limits<int>::min();
 

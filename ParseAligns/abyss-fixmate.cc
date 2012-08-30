@@ -35,6 +35,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "      --no-qname        set the qname to * [default]\n"
 "      --qname           do not alter the qname\n"
+"  -l, --min-align=N     the minimal alignment size [1]\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -50,13 +51,14 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "h:s:v";
+static const char shortopts[] = "h:l:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "qname",    no_argument,      &opt::qname, 1 },
 	{ "no-qname", no_argument,      &opt::qname, 0 },
+	{ "min-align", required_argument, NULL, 'l' },
 	{ "hist",    required_argument, NULL, 'h' },
 	{ "same",    required_argument, NULL, 's' },
 	{ "verbose", no_argument,       NULL, 'v' },
@@ -228,6 +230,9 @@ int main(int argc, char* const* argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'l':
+				arg >> opt::minAlign;
+				break;
 			case 's': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
 			case 'v': opt::verbose++; break;

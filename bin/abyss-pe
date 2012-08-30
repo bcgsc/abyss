@@ -159,11 +159,10 @@ mapopt=$v -j$j -l$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
 fixmate?=ParseAligns
-fmopt=$v -l$($*_l) $(FIXMATE_OPTIONS)
 else
 fixmate?=abyss-fixmate
-fmopt=$v $(FIXMATE_OPTIONS)
 endif
+fmopt=$v -l$($*_l) $(FIXMATE_OPTIONS)
 
 # DistanceEst parameters
 l?=$k
