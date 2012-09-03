@@ -329,7 +329,7 @@ size_t addComplementaryEdges(ContigGraph<DG>& g)
 		if (!found) {
 			add_edge(vc, uc, g[e], static_cast<DG&>(g));
 			numAdded++;
-		} else if (g[e] != g[f]) {
+		} else if (!(g[e] == g[f])) {
 			// The edge properties do not agree. Select the better.
 			g[e] = g[f] = BetterDistanceEst()(g[e], g[f]);
 		}
