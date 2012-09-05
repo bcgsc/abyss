@@ -196,9 +196,10 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		if (!opt::rf && opt::method == MLE 
 				&& x <= 2 * int(ma - 1)) {
 			unsigned align = x / 2;
-			cerr << PROGRAM ": warning: The observed fragment of size "
-				<< x << " bp is shorter than 2*l "
-				"(l=" << opt::minAlign << ").\n";
+			if (opt::verbose > 0)
+				cerr << PROGRAM ": warning: The observed fragment of "
+					"size " << x << " bp is shorter than 2*l "
+					"(l=" << opt::minAlign << ").\n";
 			ma = min(ma, align);
 		}
 		fragmentSizes.push_back(x);
@@ -546,7 +547,7 @@ int main(int argc, char** argv)
 			break;
 		writeEstimates(out, records, contigLens, pmf);
 	}
-	if (g_recMA != opt::minAlign)
+	if (opt::verbose > 0 && g_recMA != opt::minAlign)
 		cerr << PROGRAM << ": warning: MLE will be more accurate if "
 			"l is decreased to " << g_recMA << ".\n";
 
