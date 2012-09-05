@@ -197,6 +197,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 				&& x <= 2 * int(ma - 1)) {
 			unsigned align = x / 2;
 			if (opt::verbose > 0)
+#pragma omp critical(cerr)
 				cerr << PROGRAM ": warning: The observed fragment of "
 					"size " << x << " bp is shorter than 2*l "
 					"(l=" << opt::minAlign << ").\n";
@@ -205,6 +206,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		fragmentSizes.push_back(x);
 	}
 
+#pragma omp critical(g_recMA)
 	g_recMA = min(g_recMA, ma);
 	switch (opt::method) {
 	  case MLE:
