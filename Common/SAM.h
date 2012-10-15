@@ -281,6 +281,15 @@ struct SAMRecord : SAMAlignment {
 		mpos = o.pos;
 		isize = isMateUnmapped() ? 0
 			: o.targetAtQueryStart() - targetAtQueryStart();
+
+		// Fix unaligned mates
+		if (!o.isUnmapped() && isUnmapped()) {
+			rname = o.rname;
+			pos = o.pos;
+		} else if (o.isUnmapped() && !isUnmapped()) {
+			mrnm = "=";
+			mpos = pos;
+		}
 	}
 
 	/**

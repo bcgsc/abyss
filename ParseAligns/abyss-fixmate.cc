@@ -92,6 +92,7 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 	if (!opt::qname)
 		a0.qname = a1.qname = "*";
 
+	fixMate(a0, a1);
 	if (a0.isUnmapped() && a1.isUnmapped()) {
 		// Both reads are unaligned.
 		stats.bothUnaligned++;
@@ -101,24 +102,25 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 	} else if (a0.rname != a1.rname) {
 		// Different targets.
 		stats.numDifferent++;
-		fixMate(a0, a1);
 		// Set the mapping quality of both reads to their minimum.
 		a0.mapq = a1.mapq = min(a0.mapq, a1.mapq);
-		cout << a0 << '\n' << a1 << '\n';
+		if (!opt::histPath.empty())
+			cout << a0 << '\n' << a1 << '\n';
 	} else if (a0.isReverse() == a1.isReverse()) {
 		// Same target, FF orientation.
 		stats.numFF++;
 	} else {
 		// Same target, FR or RF orientation.
-		fixMate(a0, a1);
 		g_histogram.insert(a0.isReverse() ? a1.isize : a0.isize);
 		if (!opt::fragPath.empty()) {
 			g_fragFile << a0 << '\n' << a1 << '\n';
 			assert(g_fragFile.good());
-		} else if (opt::histPath.empty()) {
-			cout << a0 << '\n' << a1 << '\n';
-			assert(cout.good());
 		}
+	}
+
+	if (opt::histPath.empty()) {
+		cout << a0 << '\n' << a1 << '\n';
+		assert(cout.good());
 	}
 }
 
@@ -184,6 +186,8 @@ static void readAlignments(istream& in, Alignments* pMap)
 			getline(in, line);
 			assert(in);
 			cout << line << '\n';
+			if (!opt::fragPath.empty())
+				g_fragFile << line << '\n';
 		} else if (in >> sam)
 			handleAlignment(sam, *pMap);
 	}
@@ -272,6 +276,20 @@ int main(int argc, char* const* argv)
 	}
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
+
+	// Print the unpaired alignments.
+	if (opt::histPath.empty()) {
+		for (Alignments::iterator it = alignments.begin();
+				it != alignments.end(); it++) {
+#if SAM_SEQ_QUAL
+			SAMRecord& a0 = it->second;
+#else
+			SAMRecord a0(it->second, it->first);
+#endif
+			cout << a0 << '\n';
+			assert(cout.good());
+		}
+	}
 
 	unsigned numRF = g_histogram.count(INT_MIN, 0);
 	unsigned numFR = g_histogram.count(1, INT_MAX);
