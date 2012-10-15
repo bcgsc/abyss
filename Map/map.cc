@@ -232,7 +232,14 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 
 	SAMRecord sam = toSAM(faIndex, fmIndex, rc ? rcm : m, rc,
 			rec.seq.size());
+	if (rec.id[0] == '@') {
+		cerr << PROGRAM ": error: "
+			"the query ID `" << rec.id << "' is invalid since it "
+			"begins with `@'\n";
+		exit(EXIT_FAILURE);
+	}
 	sam.qname = rec.id;
+
 #if SAM_SEQ_QUAL
 	sam.seq = rc ? rcqseq : rec.seq;
 	sam.qual = rec.qual.empty() ? "*" : rec.qual;
