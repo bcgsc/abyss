@@ -34,6 +34,8 @@ static const char USAGE_MESSAGE[] =
 "  -o, --prefix=PREFIX     the prefix of all output files [out]\n"
 "  -p, --identity=N        minimum overlap identity [0.9]\n"
 "  -m, --matches=N         minimum number of matches in overlap [10]\n"
+"  -l, --length=N          trim bases from 3' end of reads until\n"
+"                          reads are a maximum of N bp long [0]\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
@@ -68,7 +70,7 @@ static struct {
 	unsigned pid_low;
 } stats;
 
-static const char shortopts[] = "o:p:m:q:v";
+static const char shortopts[] = "o:p:m:q:l:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -77,6 +79,7 @@ static const struct option longopts[] = {
 	{ "identity",         required_argument, NULL, 'p' },
 	{ "matches",          required_argument, NULL, 'm' },
 	{ "verbose",          no_argument,       NULL, 'v' },
+	{ "length",           no_argument,       NULL, 'l' },
 	{ "chastity",         no_argument,       &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument,       &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument,       &opt::trimMasked, 1 },
@@ -269,6 +272,7 @@ int main(int argc, char** argv)
 			case 'p': arg >> opt::identity; break;
 			case 'm': arg >> opt::min_matches; break;
 			case 'q': arg >> opt::qualityThreshold; break;
+			case 'l': arg >> opt::maxLength; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 					  cerr << USAGE_MESSAGE;
