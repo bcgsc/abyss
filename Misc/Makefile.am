@@ -8,5 +8,5 @@ CLEANFILES=*.hi
 
 GHC_FLAGS=-O2
 
-abyss-samtobreak: $(abyss_samtobreak_SOURCES)
+abyss-samtobreak$(EXEEXT): $(abyss_samtobreak_SOURCES)
 	$(GHC) $(GHC_FLAGS) -hidir $(dir $@) -odir $(dir $@) -o $@ $^
