@@ -23,6 +23,7 @@ SUBDIRS = \
 	DAssembler \
 	DistanceEst \
 	KAligner \
+	Layout \
 	Map \
 	MergePaths \
 	Misc \

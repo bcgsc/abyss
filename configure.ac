@@ -183,6 +183,7 @@ AC_CONFIG_FILES([
 	AdjList/Makefile
 	DAssembler/Makefile
 	DistanceEst/Makefile
+	Layout/Makefile
 	Map/Makefile
 	Misc/Makefile
 	Overlap/Makefile

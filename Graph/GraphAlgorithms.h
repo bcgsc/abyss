@@ -44,13 +44,15 @@ void find_transitive_edges(const Graph& g, OutIt out)
 		for (adjacency_iterator vit = vrange.first;
 				vit != vrange.second; ++vit) {
 			vertex_descriptor v = *vit;
-			assert(u != v); // no self loops
+			if (u == v) // ignore self loops
+				continue;
 			std::pair<adjacency_iterator, adjacency_iterator>
 				wrange = adjacent_vertices(v, g);
 			for (adjacency_iterator wit = wrange.first;
 					wit != wrange.second; ++wit) {
 				vertex_descriptor w = *wit;
-				assert(v != w); // no self loops
+				if (v == w) // ignore self loops
+					continue;
 				seen[get(vertex_index, g, w)] = true;
 			}
 		}
