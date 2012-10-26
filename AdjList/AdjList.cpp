@@ -41,7 +41,7 @@ static const char USAGE_MESSAGE[] =
 "Overlaps of fewer than k-1 bases are found using a suffix array.\n"
 "\n"
 "  -k, --kmer=K          find overlaps of up to K-1 bases\n"
-"  -m, --min-overlap=M   require a minimum overlap of M bases [30]\n"
+"  -m, --min-overlap=M   require a minimum overlap of M bases [50]\n"
 "      --adj             output the results in adj format [default]\n"
 "      --dot             output the results in dot format\n"
 "      --sam             output the results in SAM format\n"
@@ -56,7 +56,7 @@ namespace opt {
 	int format; // used by GraphIO
 
 	/** The minimum required amount of overlap. */
-	static unsigned minOverlap = 30;
+	static unsigned minOverlap = 50;
 }
 
 static const char shortopts[] = "k:m:v";

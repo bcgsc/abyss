@@ -51,7 +51,7 @@ static const char USAGE_MESSAGE[] =
 "Output is written to standard output. The index files FILE.fai\n"
 "and FILE.fm will be used if present.\n"
 "\n"
-"  -m, --min=N             find matches at least N bp [30]\n"
+"  -m, --min=N             find matches at least N bp [50]\n"
 "  -k, --max=N             find matches less than N bp [inf]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
@@ -66,7 +66,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	/** Find matches at least k bp. */
-	static unsigned minOverlap = 30;
+	static unsigned minOverlap = 50;
 
 	/** Find matches less than k bp. */
 	static unsigned maxOverlap = UINT_MAX;
