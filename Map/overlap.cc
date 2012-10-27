@@ -19,6 +19,7 @@
 #include "Uncompress.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/DirectedGraph.h"
+#include "Graph/GraphAlgorithms.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
 #include <algorithm>
@@ -55,6 +56,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --max=N             find matches less than N bp [inf]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
+"      --tred              remove transitive edges [default]\n"
+"      --no-tred           do not remove transitive edges\n"
 "      --adj             output the results in adj format\n"
 "      --dot             output the results in dot format [default]\n"
 "      --sam             output the results in SAM format\n"
@@ -73,6 +76,9 @@ namespace opt {
 
 	/** Sample the suffix array. */
 	static unsigned sampleSA;
+
+	/** Remove transitive edges. */
+	static int tred = true;
 
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
@@ -97,6 +103,8 @@ static const struct option longopts[] = {
 	{ "min", required_argument, NULL, 'm' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "threads", required_argument, NULL, 'j' },
+	{ "tred", no_argument, &opt::tred, true },
+	{ "no-tred", no_argument, &opt::tred, false },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -453,6 +461,16 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
+
+	// Remove transitive edges.
+	if (opt::tred) {
+		unsigned numTransitive = remove_transitive_edges(g);
+		if (opt::verbose > 0) {
+			cerr << "Removed " << numTransitive
+				<< " transitive edges.\n";
+			printGraphStats(cerr, g);
+		}
+	}
 
 	write_graph(cout, g, PROGRAM, commandLine);
 	cout.flush();

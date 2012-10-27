@@ -40,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N          length of a k-mer\n"
 "  -o, --out=FILE        write the paths to FILE\n"
 "  -g, --graph=FILE      write the graph to FILE\n"
+"      --tred            remove transitive edges\n"
+"      --no-tred         do not remove transitive edges [default]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -61,6 +63,9 @@ namespace opt {
 	/** Write the graph to this file. */
 	static string graphPath;
 
+	/** Remove transitive edges. */
+	static int tred;
+
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
 
@@ -78,6 +83,8 @@ static const struct option longopts[] = {
 	{ "min-overlap", required_argument, NULL, 'm' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "min-length",  required_argument, NULL, 's' },
+	{ "tred",        no_argument, &opt::tred, true },
+	{ "no-tred",     no_argument, &opt::tred, false },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -241,10 +248,13 @@ int main(int argc, char** argv)
 	filterEdges(g, opt::minOverlap);
 
 	// Remove transitive edges.
-	unsigned numTransitive = remove_transitive_edges(g);
-	if (opt::verbose > 0) {
-		cerr << "Removed " << numTransitive << " transitive edges.\n";
-		printGraphStats(cerr, g);
+	if (opt::tred) {
+		unsigned numTransitive = remove_transitive_edges(g);
+		if (opt::verbose > 0) {
+			cerr << "Removed " << numTransitive
+				<< " transitive edges.\n";
+			printGraphStats(cerr, g);
+		}
 	}
 
 	/** A container of contig paths. */
