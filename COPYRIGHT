@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ABySS
-Upstream-Contact: Shaun Jackman <sjackman@bcgsc.ca>
+Upstream-Contact: Shaun Jackman <sjackman@gmail.com>
 Source: http://www.bcgsc.ca/platform/bioinfo/software/abyss
 
 License: BCCA-Academic
@@ -249,6 +249,10 @@ License: LGPL-2.1+
 Files: Common/city.cc Common/city.h
 Copyright: Copyright 2011 Google, Inc.
 License: Expat
+
+Files: Layout/*
+Copyright: Copyright 2012 Shaun Jackman
+License: BCCA-Academic or GPL-3+
 
 Files: dialign/*
 Copyright: Copyright 2008 Amarendran R. Subramanian
