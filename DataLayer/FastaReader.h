@@ -22,7 +22,7 @@ class FastaReader {
 		bool flagFoldCase() { return ~m_flags & NO_FOLD_CASE; }
 		bool flagConvertQual() { return m_flags & CONVERT_QUALITY; }
 
-		FastaReader(const char* path, int flags);
+		FastaReader(const char* path, int flags, int len = 0);
 
 		~FastaReader()
 		{
@@ -111,6 +111,9 @@ class FastaReader {
 
 		/** Position of the end of the current section. */
 		std::streampos m_end;
+
+		/** Trim sequences to this length. 0 is unlimited. */
+		const int m_maxLength;
 };
 
 /** A FASTA record. */

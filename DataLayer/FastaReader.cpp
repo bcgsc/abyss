@@ -25,9 +25,6 @@ namespace opt {
 
 	/** quality offset, usually 33 or 64 */
 	int qualityOffset;
-
-	/** maximum read length, 0 is unlimited */
-	int maxLength;
 }
 
 /** Output an error message. */
@@ -36,11 +33,12 @@ ostream& FastaReader::die()
 	return cerr << m_path << ':' << m_line << ": error: ";
 }
 
-FastaReader::FastaReader(const char* path, int flags)
+FastaReader::FastaReader(const char* path, int flags, int len)
 	: m_path(path), m_fin(path),
 	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
 	m_flags(flags), m_line(0), m_unchaste(0),
-	m_end(numeric_limits<streamsize>::max())
+	m_end(numeric_limits<streamsize>::max()),
+	m_maxLength(len)
 {
 	if (strcmp(path, "-") != 0)
 		assert_good(m_fin, path);
@@ -333,9 +331,9 @@ next_record:
 
 	// Trim from the 3' end to the maximum length. Then, trim based on
 	// quality.
-	if (opt::maxLength > 0) {
-		s.erase(opt::maxLength);
-		q.erase(opt::maxLength);
+	if (m_maxLength > 0) {
+		s.erase(m_maxLength);
+		q.erase(m_maxLength);
 	}
 
 	if (opt::qualityThreshold > 0 && !q.empty()) {

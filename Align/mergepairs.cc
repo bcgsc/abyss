@@ -34,8 +34,10 @@ static const char USAGE_MESSAGE[] =
 "  -o, --prefix=PREFIX     the prefix of all output files [out]\n"
 "  -p, --identity=N        minimum overlap identity [0.9]\n"
 "  -m, --matches=N         minimum number of matches in overlap [10]\n"
-"  -l, --length=N          trim bases from 3' end of reads until\n"
-"                          reads are a maximum of N bp long [0]\n"
+"  -1, --length1=N         trim bases from 3' end of first read\n"
+"                          down to a maximum of N bp long [inf]\n"
+"  -2, --length2=N         trim bases from 3' end of second read\n"
+"                          down to a maximum of N bp long [inf]\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
@@ -57,6 +59,12 @@ namespace opt {
 	static string prefix = "out";
 	static float identity = 0.9;
 	static unsigned min_matches = 10;
+
+	/** Max length of read 1. */
+	static int max_len_1 = 0;
+
+	/** Max length of read 2. */
+	static int max_len_2 = 0;
 }
 
 static struct {
@@ -70,7 +78,7 @@ static struct {
 	unsigned pid_low;
 } stats;
 
-static const char shortopts[] = "o:p:m:q:l:v";
+static const char shortopts[] = "o:p:m:q:1:2:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -79,7 +87,8 @@ static const struct option longopts[] = {
 	{ "identity",         required_argument, NULL, 'p' },
 	{ "matches",          required_argument, NULL, 'm' },
 	{ "verbose",          no_argument,       NULL, 'v' },
-	{ "length",           no_argument,       NULL, 'l' },
+	{ "length1",          no_argument,       NULL, '1' },
+	{ "length2",          no_argument,       NULL, '2' },
 	{ "chastity",         no_argument,       &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument,       &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument,       &opt::trimMasked, 1 },
@@ -198,8 +207,8 @@ static void alignFiles(const char* reads1, const char* reads2)
 {
 	if (opt::verbose > 0)
 		cerr << "Merging `" << reads1 << "' with `" << reads2 << "'\n";
-	FastaReader r1(reads1, FastaReader::NO_FOLD_CASE);
-	FastaReader r2(reads2, FastaReader::NO_FOLD_CASE);
+	FastaReader r1(reads1, FastaReader::NO_FOLD_CASE, opt::max_len_1);
+	FastaReader r2(reads2, FastaReader::NO_FOLD_CASE, opt::max_len_2);
 
 	// Openning the output files
 	string name(opt::prefix);
@@ -272,7 +281,8 @@ int main(int argc, char** argv)
 			case 'p': arg >> opt::identity; break;
 			case 'm': arg >> opt::min_matches; break;
 			case 'q': arg >> opt::qualityThreshold; break;
-			case 'l': arg >> opt::maxLength; break;
+			case '1': arg >> opt::max_len_1; break;
+			case '2': arg >> opt::max_len_2; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 					  cerr << USAGE_MESSAGE;
