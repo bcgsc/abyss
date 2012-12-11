@@ -128,8 +128,18 @@ static void addSuffixOverlaps(Graph &g,
 	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
-		size_t tstart = fmIndex[i] + 1;
-		V v = find_vertex(faIndex[tstart].get<0>().id, false, g);
+		size_t toffset = fmIndex[i] + 1;
+		FastaIndex::SeqPos seqPos = faIndex[toffset];
+		const FAIRecord& tseq = seqPos.get<0>();
+		size_t tstart = seqPos.get<1>();
+		size_t tend = tstart + fmi.qspan();
+		assert(tend < tseq.size);
+		(void)tend;
+		if (tstart > 0) {
+			// This match is due to an ambiguity code in the target sequence.
+			continue;
+		}
+		V v = find_vertex(tseq.id, false, g);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
@@ -165,8 +175,17 @@ static void addPrefixOverlaps(Graph &g,
 	Distance ep(-fmi.qspan());
 	assert(ep.distance < 0);
 	for (unsigned i = fmi.l; i < fmi.u; ++i) {
-		size_t tstart = fmIndex[i];
-		V u = find_vertex(faIndex[tstart].get<0>().id, false, g);
+		size_t toffset = fmIndex[i];
+		FastaIndex::SeqPos seqPos = faIndex[toffset];
+		const FAIRecord& tseq = seqPos.get<0>();
+		size_t tstart = seqPos.get<1>();
+		size_t tend = tstart + fmi.qspan();
+		assert(tstart > 0);
+		if (tend < tseq.size) {
+			// This match is due to an ambiguity code in the target sequence.
+			continue;
+		}
+		V u = find_vertex(tseq.id, false, g);
 #pragma omp critical(g)
 		{
 			pair<E, bool> e = edge(u, v, g);
