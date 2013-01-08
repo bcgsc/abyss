@@ -18,8 +18,6 @@ using namespace std;
 namespace opt {
 	static unsigned k;
 	static bool strands;
-	static bool sequence;
-	static bool adj;
 }
 
 static const struct option longopts[] = {
@@ -31,28 +29,22 @@ static const char shortopts[] = "k:";
 static void print(const SequenceCollectionHash::value_type& seq)
 {
 	const KmerData& data = seq.second;
-	if (opt::sequence)
-		cout << seq.first.str() << '\t';
-	if (opt::adj)
-		cout << data.getExtension(SENSE) << '\t'
-			<< data.getExtension(ANTISENSE) << '\t';
-	cout << data.getMultiplicity() << '\n';
+	cout << seq.first.str()
+		<< '\t' << data.getMultiplicity()
+		<< '\t' << data.getExtension(SENSE)
+		<< '\t' << data.getExtension(ANTISENSE)
+		<< '\n';
 }
 
 static void print(const SequenceCollectionHash::value_type& seq,
 		extDirection sense)
 {
 	const KmerData& data = seq.second;
-	if (opt::sequence) {
-		if (sense)
-			cout << reverseComplement(seq.first).str();
-		else
-			cout << seq.first.str();
-		cout << '\t';
-	}
-	if (opt::adj)
-		cout << data.getExtension(sense) << '\t';
-	cout << data.getMultiplicity(sense) << '\n';
+	cout << (sense ? reverseComplement(seq.first).str()
+			: seq.first.str())
+		<< '\t' << data.getMultiplicity(sense)
+		<< '\t' << data.getExtension(sense)
+		<< '\n';
 }
 
 static void printFile(const char* path)
