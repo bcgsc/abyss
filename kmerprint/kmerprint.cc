@@ -3,6 +3,7 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
+#include "Sequence.h"
 #include "SequenceCollection.h"
 #include "Uncompress.h"
 #include <algorithm>
@@ -15,16 +16,76 @@ using namespace std;
 
 #define PROGRAM "kmerprint"
 
+static const char VERSION_MESSAGE[] =
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+"Written by Shaun Jackman.\n"
+"\n"
+"Copyright 2013 Shaun Jackman\n";
+
+static const char USAGE_MESSAGE[] =
+"Usage: " PROGRAM " [OPTION]... GRAPH...\n"
+"Convert a binary de Bruijn graph to plain text.\n"
+"  GRAPH  the binary de Bruijn graph\n"
+"\n"
+"  -k, --kmer=N          length of a k-mer\n"
+"      --ray             output in Ray Cloud Browser format\n"
+"      --tsv             output in TSV format [default]\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+/** Output formats. */
+enum {
+	TSV, // Tab-separated values
+	RAY, // Ray Cloud Browser
+};
+
 namespace opt {
 	static unsigned k;
 	static bool strands;
+
+	/** Output file format. */
+	static int format;
 }
 
+static const char shortopts[] = "k:";
+
+enum { OPT_HELP = 1, OPT_VERSION };
+
 static const struct option longopts[] = {
-	{ "kmer",    required_argument, NULL, 'k' },
+	{ "kmer", required_argument, NULL, 'k' },
+	{ "ray", no_argument, &opt::format, RAY },
+	{ "tsv", no_argument, &opt::format, TSV },
+	{ "help", no_argument, NULL, OPT_HELP },
+	{ "version", no_argument, NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
 };
 
-static const char shortopts[] = "k:";
+/** Print de Bruijn graph edges in Ray format. */
+static void printRayEdges(const SeqExt& e)
+{
+	bool dirty = false;
+	for (unsigned i = 0; i < NUM_BASES; ++i) {
+		if (e.checkBase(i)) {
+			if (dirty)
+				cout << ' ';
+			cout << codeToBase(i);
+			dirty = true;
+		}
+	}
+}
+
+/** Print this k-mer in Ray format. */
+static void printRay(const SequenceCollectionHash::value_type& seq)
+{
+	const KmerData& data = seq.second;
+	cout << seq.first.str() << ';' << data.getMultiplicity() << ';';
+	printRayEdges(data.getExtension(SENSE));
+	cout << ';';
+	printRayEdges(data.getExtension(ANTISENSE));
+	cout << '\n';
+}
 
 static void print(const SequenceCollectionHash::value_type& seq)
 {
@@ -55,7 +116,9 @@ static void printFile(const char* path)
 			it != c.end(); ++it) {
 		if (it->second.deleted())
 			continue;
-		if (opt::strands) {
+		if (opt::format == RAY) {
+			printRay(*it);
+		} else if (opt::strands) {
 			print(*it, SENSE);
 			print(*it, ANTISENSE);
 		} else
@@ -65,19 +128,43 @@ static void printFile(const char* path)
 
 int main(int argc, char* argv[])
 {
-	assert(argc > 1);
-
+	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-			case '?': exit(EXIT_FAILURE);
-			case 'k': arg >> opt::k; break;
+		  case '?':
+			  exit(EXIT_FAILURE);
+		  case 'k':
+			  arg >> opt::k;
+			  break;
+		  case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		  case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
+		}
+		if (optarg != NULL && !arg.eof()) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (opt::k <= 0) {
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		die = true;
+	}
+
+	if (argc - optind < 1) {
+		cerr << PROGRAM ": missing arguments\n";
+		die = true;
+	}
+
+	if (die) {
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
