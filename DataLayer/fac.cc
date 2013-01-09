@@ -27,7 +27,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Calculate assembly contiguity statistics.\n"
 "\n"
-"  -s, -t, --min-length=N  ignore sequences shorter than N bp [200]\n"
+"  -s, -t, --min-length=N  ignore sequences shorter than N bp [500]\n"
 "  -d, --delimiter=S       use S for the field delimiter [\\t]\n"
 "  -j, --jira              output JIRA format\n"
 "  -m, --mmd               output MultiMarkdown format\n"
@@ -43,7 +43,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	static unsigned minLength = 200;
+	static unsigned minLength = 500;
 	static string delimiter = "\t";
 	static int format;
 	static int verbose;
