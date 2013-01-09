@@ -1,6 +1,7 @@
 #ifndef SEQEXT_H
 #define SEQEXT_H 1
 
+#include "Sequence.h" // for codeToBase
 #include <cassert>
 #include <ostream>
 #include <stdint.h>
@@ -84,11 +85,10 @@ class SeqExt
 				const SeqExt& o)
 		{
 			assert(o.m_record < 1<<NUM_BASES);
-			return out
-				<< (o.checkBase(0) ? 'A' : '-')
-				<< (o.checkBase(1) ? 'C' : '-')
-				<< (o.checkBase(2) ? 'G' : '-')
-				<< (o.checkBase(3) ? 'T' : '-');
+			for (unsigned i = 0; i < NUM_BASES; ++i)
+				if (o.checkBase(i))
+					out << codeToBase(i);
+			return out;
 		}
 
 	private:

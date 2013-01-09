@@ -35,18 +35,13 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** Output formats. */
-enum {
-	TSV, // Tab-separated values
-	RAY, // Ray Cloud Browser
-};
-
 namespace opt {
 	static unsigned k;
 	static bool strands;
 
-	/** Output file format. */
-	static int format;
+	/** The output field separator character. */
+	static int ofsInt = '\t';
+	static char ofs;
 }
 
 static const char shortopts[] = "k:";
@@ -55,45 +50,20 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer", required_argument, NULL, 'k' },
-	{ "ray", no_argument, &opt::format, RAY },
-	{ "tsv", no_argument, &opt::format, TSV },
+	{ "ray", no_argument, &opt::ofsInt, ';' },
+	{ "tsv", no_argument, &opt::ofsInt, '\t' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Print de Bruijn graph edges in Ray format. */
-static void printRayEdges(const SeqExt& e)
-{
-	bool dirty = false;
-	for (unsigned i = 0; i < NUM_BASES; ++i) {
-		if (e.checkBase(i)) {
-			if (dirty)
-				cout << ' ';
-			cout << codeToBase(i);
-			dirty = true;
-		}
-	}
-}
-
-/** Print this k-mer in Ray format. */
-static void printRay(const SequenceCollectionHash::value_type& seq)
-{
-	const KmerData& data = seq.second;
-	cout << seq.first.str() << ';' << data.getMultiplicity() << ';';
-	printRayEdges(data.getExtension(SENSE));
-	cout << ';';
-	printRayEdges(data.getExtension(ANTISENSE));
-	cout << '\n';
-}
-
 static void print(const SequenceCollectionHash::value_type& seq)
 {
 	const KmerData& data = seq.second;
 	cout << seq.first.str()
-		<< '\t' << data.getMultiplicity()
-		<< '\t' << data.getExtension(SENSE)
-		<< '\t' << data.getExtension(ANTISENSE)
+		<< opt::ofs << data.getMultiplicity()
+		<< opt::ofs << data.getExtension(SENSE)
+		<< opt::ofs << data.getExtension(ANTISENSE)
 		<< '\n';
 }
 
@@ -103,8 +73,8 @@ static void print(const SequenceCollectionHash::value_type& seq,
 	const KmerData& data = seq.second;
 	cout << (sense ? reverseComplement(seq.first).str()
 			: seq.first.str())
-		<< '\t' << data.getMultiplicity(sense)
-		<< '\t' << data.getExtension(sense)
+		<< opt::ofs << data.getMultiplicity(sense)
+		<< opt::ofs << data.getExtension(sense)
 		<< '\n';
 }
 
@@ -116,9 +86,7 @@ static void printFile(const char* path)
 			it != c.end(); ++it) {
 		if (it->second.deleted())
 			continue;
-		if (opt::format == RAY) {
-			printRay(*it);
-		} else if (opt::strands) {
+		if (opt::strands) {
 			print(*it, SENSE);
 			print(*it, ANTISENSE);
 		} else
@@ -151,6 +119,7 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+	opt::ofs = opt::ofsInt;
 
 	if (opt::k <= 0) {
 		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
