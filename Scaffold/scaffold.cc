@@ -107,6 +107,22 @@ static const struct option longopts[] = {
 typedef DirectedGraph<Length, DistanceEst> DG;
 typedef ContigGraph<DG> Graph;
 
+/** Return whether this edge is invalid.
+ * An edge is invalid when the overlap is larger than the length of
+ * either of its incident sequences.
+ */
+struct InvalidEdge {
+	InvalidEdge(Graph& g) : m_g(g) { }
+	bool operator()(graph_traits<Graph>::edge_descriptor e) const
+	{
+		int d = m_g[e].distance;
+		int ulength = m_g[source(e, m_g)].length;
+		int vlength = m_g[target(e, m_g)].length;
+		return d + ulength <= 0 || d + vlength <= 0;
+	}
+	const Graph& m_g;
+};
+
 /** Return whether the specified edges has sufficient support. */
 struct PoorSupport {
 	PoorSupport(Graph& g) : m_g(g) { }
@@ -704,6 +720,14 @@ int main(int argc, char** argv)
 		cerr << "Added " << numAdded << " complementary edges.\n";
 		printGraphStats(cerr, g);
 	}
+
+	// Remove invalid edges.
+	unsigned numBefore = num_edges(g);
+	remove_edge_if(InvalidEdge(g), static_cast<DG&>(g));
+	unsigned numRemoved = numBefore - num_edges(g);
+	if (numRemoved > 0)
+		cerr << "waning: Removed "
+			<< numRemoved << " invalid edges.\n";
 
 	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
