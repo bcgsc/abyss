@@ -59,6 +59,8 @@ struct Match : public SAInterval
 {
 	unsigned qstart, qend;
 
+	Match() : SAInterval(0, 0), qstart(0), qend(0) { }
+
 	Match(size_type l, size_type u, unsigned qstart, unsigned qend)
 		: SAInterval(l, u), qstart(qstart), qend(qend) { }
 

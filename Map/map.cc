@@ -9,6 +9,8 @@
 #include "SAM.h"
 #include "StringUtil.h"
 #include "Uncompress.h"
+#include <boost/algorithm/string/join.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <algorithm>
 #include <cassert>
 #include <cctype> // for toupper
@@ -25,6 +27,8 @@
 #endif
 
 using namespace std;
+using namespace boost;
+using namespace boost::algorithm;
 
 #define PROGRAM "abyss-map"
 
@@ -103,6 +107,36 @@ static struct {
 } g_count;
 
 typedef FMIndex::Match Match;
+
+static string toXA(const FastaIndex& faIndex,
+		const FMIndex& fmIndex, const Match& m, bool rc,
+		unsigned qlength, unsigned seq_start)
+{
+	FastaIndex::SeqPos seqPos = faIndex[fmIndex[m.l]];
+	string rname = seqPos.get<0>().id;
+	int pos = seqPos.get<1>() + 1;
+
+	// Set the mapq to the alignment score.
+	assert(m.qstart < m.qend);
+	unsigned matches = m.qend - m.qstart;
+
+	unsigned qstart = seq_start + m.qstart;
+	unsigned qend = m.qend + seq_start;
+	unsigned short flag = rc ? SAMAlignment::FREVERSE : 0;
+
+	ostringstream ss;
+	if (qstart > 0)
+		ss << qstart << 'S';
+	ss << matches << 'M';
+	if (qend < qlength)
+		ss << qlength - qend << 'S';
+	string cigar = ss.str();
+
+	stringstream xa_tag;
+	xa_tag << rname << ',' << pos << ',' << cigar << ",0," << flag;
+
+	return xa_tag.str();
+}
 
 /** Return a SAM record of the specified match. */
 static SAMRecord toSAM(const FastaIndex& faIndex,
@@ -215,6 +249,16 @@ static void printDuplicates(const Match& m, const Match& rcm,
 	return;
 }
 
+pair<Match, Match> findMatch(const FMIndex& fmIndex, const string& seq)
+{
+	Match m = fmIndex.find(seq,
+			opt::dup ? seq.length() : opt::k);
+
+	string rcqseq = reverseComplement(seq);
+	Match rcm = fmIndex.find(rcqseq,
+			opt::dup ? rcqseq.length() : m.qspan());
+	return make_pair(m, rcm);
+}
 
 static queue<string> g_pq;
 
@@ -228,12 +272,8 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		exit(EXIT_FAILURE);
 	}
 
-	Match m = fmIndex.find(rec.seq,
-			opt::dup ? rec.seq.length() : opt::k);
-
-	string rcqseq = reverseComplement(rec.seq);
-	Match rcm = fmIndex.find(rcqseq,
-			opt::dup ? rcqseq.length() : m.qspan());
+	Match m, rcm;
+	tie(m, rcm) = findMatch(fmIndex, rec.seq);
 
 	if (opt::dup) {
 		printDuplicates(m, rcm, faIndex, fmIndex, rec);
@@ -242,7 +282,32 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 
 	bool rc = rcm.qspan() > m.qspan();
 
-	SAMRecord sam = toSAM(faIndex, fmIndex, rc ? rcm : m, rc,
+	vector<string> alts;
+	Match mm = rc ? rcm : m;
+	string mseq = rc ? reverseComplement(rec.seq) : rec.seq;
+	if (mm.qstart > 0) {
+		cerr << mseq << '\n';
+		string seq = mseq.substr(0, mm.qstart);
+		cerr << seq << '\n';
+		Match m1, rcm1;
+		tie(m1, rcm1) = findMatch(fmIndex, seq);
+		bool rc1 = rcm.qspan() > m.qspan();
+		alts.push_back(toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
+				rc ^ rc1, mseq.size(), 0));
+	}
+
+	if (mm.qend < mseq.size()) {
+		cerr << mseq << '\n';
+		string seq = mseq.substr(mm.qend, mseq.length() - mm.qend);
+		cerr << seq << '\n';
+		Match m2, rcm2;
+		tie(m2, rcm2) = findMatch(fmIndex, seq);
+		bool rc2 = rcm.qspan() > m.qspan();
+		alts.push_back(toXA(faIndex, fmIndex, rc2 ? rcm2 : m2,
+				rc ^ rc2, mseq.size(), mm.qend));
+	}
+
+	SAMRecord sam = toSAM(faIndex, fmIndex, mm, rc,
 			rec.seq.size());
 	if (rec.id[0] == '@') {
 		cerr << PROGRAM ": error: "
@@ -253,7 +318,7 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	sam.qname = rec.id;
 
 #if SAM_SEQ_QUAL
-	sam.seq = rc ? rcqseq : rec.seq;
+	sam.seq = mseq;
 	sam.qual = rec.qual.empty() ? "*" : rec.qual;
 	if (rc)
 		reverse(sam.qual.begin(), sam.qual.end());
@@ -276,7 +341,10 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 					g_pq.pop();
 			}
 			if (print) {
-				cout << sam << '\n';
+				cout << sam;
+				if (alts.size() > 0)
+					cout << "\tXA:Z:" << join(alts, ";");
+				cout << '\n';
 				assert_good(cout, "stdout");
 			}
 		}
