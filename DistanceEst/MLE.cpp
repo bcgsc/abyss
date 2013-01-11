@@ -150,7 +150,7 @@ int maximumLikelihoodEstimate(unsigned l,
 		}
 		int d;
 		tie(d, n) = maximumLikelihoodEstimate(
-				0, last, h,
+				first, last, h,
 				pmf, len0, len1);
 		return max(first, d - 2 * (int)(l - 1));
 	}
