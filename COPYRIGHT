@@ -238,7 +238,7 @@ Files: *
 Copyright: Copyright 2012 Genome Sciences Centre
 License: BCCA-Academic
 
-Files: Common/* DistanceEst/* ParseAligns/*
+Files: Common/* DataLayer/* DistanceEst/* FMIndex/* Map/* ParseAligns/*
 Copyright: Copyright 2012 Genome Sciences Centre
 License: BCCA-Academic or GPL-3+
 
