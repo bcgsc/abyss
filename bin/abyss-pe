@@ -481,16 +481,20 @@ endif
 %-6.path1: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
 	abyss-scaffold $v -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
-%-6.path2: %-6.fa %-6.dot %-6.path1
-	PathConsensus $v -k$k -p1 -s /dev/null -o $@ $^
+%-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path1
+	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
 
-%-7.fa %-7.dot: %-6.fa %-6.dot %-6.path2
-	MergeContigs $v -k$k -o $*-7.fa -g $*-7.dot $^
+%-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
+	cat $(wordlist 1, 2, $^) \
+		|MergeContigs $v -k$k -o $*-8.fa - $(wordlist 3, 4, $^)
 
-%-scaffolds.fa: %-7.fa
+%-8.dot: %-7.adj %-7.path
+	PathOverlap --overlap $v --dot -k$k $^ >$@
+
+%-scaffolds.fa: %-8.fa
 	ln -sf $< $@
 
-%-scaffolds.dot: %-7.dot
+%-scaffolds.dot: %-8.dot
 	ln -sf $< $@
 
 # Create the final BAM file
