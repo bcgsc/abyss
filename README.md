@@ -66,6 +66,10 @@ ABySS requires the following libraries:
 ABySS requires a C++ compiler that supports
 [OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
 
+ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
+since they contain a bug. Download an earlier version such as
+[Boost 1.50.0](http://downloads.sourceforge.net/project/boost/boost/1.50.0/boost_1_50_0.tar.bz2).
+
 Compiling ABySS from source
 ===========================
 
