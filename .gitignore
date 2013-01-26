@@ -8,3 +8,7 @@ depcomp
 install-sh
 missing
 _*
+*.swp
+*.swo
+*.swn
+*~
