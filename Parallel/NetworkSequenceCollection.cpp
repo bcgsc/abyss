@@ -14,6 +14,11 @@
 
 using namespace std;
 
+// Don't load data into the control process when we have at least
+// DEDICATE_CONTROL_AT total processes. This is needed because the
+// control node uses a lot of memory at large NP.
+const int DEDICATE_CONTROL_AT = 1000;
+
 void NetworkSequenceCollection::loadSequences()
 {
 	Timer timer("LoadSequences");
@@ -431,7 +436,7 @@ void NetworkSequenceCollection::runControl()
 				pumpNetwork();
 				logger(0) << "Loaded " << m_data.size()
 					<< " k-mer.\n";
-				assert(!m_data.empty());
+				assert(!m_data.empty() || opt::numProc >= DEDICATE_CONTROL_AT);
 				m_data.shrink();
 				size_t numLoaded = m_comm.reduce(m_data.size());
 				cout << "Loaded " << numLoaded << " k-mer. "
@@ -1392,5 +1397,9 @@ bool NetworkSequenceCollection::isLocal(const Kmer& seq) const
 /** Return the process ID to which the specified kmer belongs. */
 int NetworkSequenceCollection::computeNodeID(const Kmer& seq) const
 {
-	return seq.getCode() % (unsigned)opt::numProc;
+	if (opt::numProc < DEDICATE_CONTROL_AT) {
+		return seq.getCode() % (unsigned)opt::numProc;
+	} else {
+		return seq.getCode() % (unsigned)(opt::numProc - 1) + 1;
+	}
 }
