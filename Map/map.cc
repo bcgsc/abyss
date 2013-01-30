@@ -112,6 +112,8 @@ static string toXA(const FastaIndex& faIndex,
 		const FMIndex& fmIndex, const Match& m, bool rc,
 		unsigned qlength, unsigned seq_start)
 {
+	if (m.size() == 0)
+		return "";
 	FastaIndex::SeqPos seqPos = faIndex[fmIndex[m.l]];
 	string rname = seqPos.get<0>().id;
 	int pos = seqPos.get<1>() + 1;
@@ -286,25 +288,26 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	Match mm = rc ? rcm : m;
 	string mseq = rc ? reverseComplement(rec.seq) : rec.seq;
 	if (mm.qstart > 0) {
-		cerr << mseq << '\n';
 		string seq = mseq.substr(0, mm.qstart);
-		cerr << seq << '\n';
 		Match m1, rcm1;
 		tie(m1, rcm1) = findMatch(fmIndex, seq);
-		bool rc1 = rcm.qspan() > m.qspan();
-		alts.push_back(toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
-				rc ^ rc1, mseq.size(), 0));
+		bool rc1 = rcm1.qspan() > m1.qspan();
+		Match tmp = rc1 ? rcm1 : m1;
+		string xa = toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
+				rc ^ rc1, mseq.size(), 0);
+		if (xa != "")
+			alts.push_back(xa);
 	}
 
 	if (mm.qend < mseq.size()) {
-		cerr << mseq << '\n';
 		string seq = mseq.substr(mm.qend, mseq.length() - mm.qend);
-		cerr << seq << '\n';
 		Match m2, rcm2;
 		tie(m2, rcm2) = findMatch(fmIndex, seq);
-		bool rc2 = rcm.qspan() > m.qspan();
-		alts.push_back(toXA(faIndex, fmIndex, rc2 ? rcm2 : m2,
-				rc ^ rc2, mseq.size(), mm.qend));
+		bool rc2 = rcm2.qspan() > m2.qspan();
+		string xa = toXA(faIndex, fmIndex, rc2 ? rcm2 : m2,
+				rc ^ rc2, mseq.size(), mm.qend);
+		if (xa != "")
+			alts.push_back(xa);
 	}
 
 	SAMRecord sam = toSAM(faIndex, fmIndex, mm, rc,
