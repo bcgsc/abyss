@@ -538,7 +538,14 @@ int main(int argc, char** argv)
 
 	// Estimate the distances between contigs.
 	istream_iterator<SAMRecord> it(in), last;
+	if (contigLens.size() == 1) {
+		// When mapping to a single contig, no alignments spanning
+		// contigs are expected.
+		assert(in.eof());
+		exit(EXIT_SUCCESS);
+	}
 	assert(in);
+
 	g_recMA = opt::minAlign;
 #pragma omp parallel
 	for (vector<SAMRecord> records;;) {

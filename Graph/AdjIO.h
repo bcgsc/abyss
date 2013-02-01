@@ -101,6 +101,11 @@ template <typename Graph, typename BetterEP>
 std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 		BetterEP betterEP)
 {
+	if (in.eof()) {
+		// Allow reading an empty file if the graph is not empty.
+		assert(num_vertices(g) > 0);
+		return in;
+	}
 	assert(in);
 
 	typedef typename Graph::vertex_descriptor vertex_descriptor;
