@@ -34,7 +34,8 @@ SUBDIRS = \
 	Scaffold \
 	SimpleGraph \
 	kmerprint \
-	FilterGraph
+	FilterGraph \
+	GapFiller
 
 %.html: %.md
 	-multimarkdown $< >$@

@@ -191,6 +191,7 @@ AC_CONFIG_FILES([
 	PathOverlap/Makefile
 	Consensus/Makefile
 	FilterGraph/Makefile
+	GapFiller/Makefile
 ])
 AC_OUTPUT
 
