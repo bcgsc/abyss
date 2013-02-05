@@ -228,6 +228,7 @@ struct SAMRecord : SAMAlignment {
 #if SAM_SEQ_QUAL
 	std::string seq;
 	std::string qual;
+	std::string tags;
 #endif
 
 	SAMRecord() { }
@@ -237,10 +238,12 @@ struct SAMRecord : SAMAlignment {
 			const std::string& qname = "*",
 #if SAM_SEQ_QUAL
 			const std::string& seq = "*",
-			const std::string& qual = "*"
+			const std::string& qual = "*",
+			const std::string& tags = ""
 #else
 			const std::string& /*seq*/ = "*",
-			const std::string& /*qual*/ = "*"
+			const std::string& /*qual*/ = "*",
+			const std::string& /*tags*/ = ""
 #endif
 			) :
 		SAMAlignment(a),
@@ -251,7 +254,8 @@ struct SAMRecord : SAMAlignment {
 #if SAM_SEQ_QUAL
 		,
 		seq(seq),
-		qual(qual)
+		qual(qual),
+		tags(tags)
 #endif
 	{
 	}
@@ -328,6 +332,8 @@ struct SAMRecord : SAMAlignment {
 			>> o.cigar >> o.mrnm >> o.mpos >> o.isize;
 #if SAM_SEQ_QUAL
 		in >> o.seq >> o.qual;
+		if (in.peek() != '\n')
+			in >> o.tags;
 #endif
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		if (!in)
