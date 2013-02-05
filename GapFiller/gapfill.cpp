@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <map>
 
 
 using namespace std;
@@ -22,10 +23,10 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 //TODO
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+"Usage: " PROGRAM " [OPTION]... ALIGNS CONTIGS\n"
 "Write read pairs that map to the same contig to the file SAME.\n"
 "Write read pairs that map to different contigs to stdout.\n"
-"Alignments may be in FILE(s) or standard input.\n"
+"Alignments may be in ALIGNS or standard input.\n"
 "\n"
 "      --no-qname        set the qname to * [default]\n"
 "      --qname           do not alter the qname\n"
@@ -61,20 +62,57 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-typedef map<string, FastaRecord> Scaffolds
+typedef map<string, FastaRecord> Scaffolds;
+typedef multimap<string, SAMRecord> Alignments;
 
-static void readContigs(string path, Scaffolds& scaffs)
+static struct {
+	int seqs;
+	int scaffolds;
+	int aligns;
+	int split_same;
+} stats;
+
+static void readScaffolds(string path, Scaffolds& scaffs)
 {
-	FastaReader in(path.c_str());
+	FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
 	FastaRecord rec;
 	while (in >> rec) {
-		size_t i = rec.seq.find_first_of("N")
+		// Store only scaffolded sequences
+		stats.seqs++;
+		size_t i = rec.seq.find_first_of("N");
 		if (i != string::npos) {
-			
+			stats.scaffolds++;
+			assert(scaffs.find(rec.id) == scaffs.end());
+			scaffs.insert(make_pair(rec.id, rec));
 		}
 	}
 }
 
+static void readAlignments(string path, Alignments& aligns)
+//		Scaffolds& scaffs)
+{
+	ifstream in(path.c_str());
+	SAMRecord rec;
+	while (in.peek() == '@') {
+		string tmp;
+		getline(in, tmp);
+		assert(in);
+	}
+
+	while (in >> rec) {
+		// If aligns to either side of gap store in aligns.
+		// Lets start with just reads that align to the same contig...
+		stats.aligns++;
+		if (rec.tags.size() >= 2 && rec.tags[0] == 'X'
+				&& rec.tags[1] == 'A'
+				&& rec.tags.find(rec.rname, 2) != string::npos) {
+			stats.split_same++;
+			aligns.insert(make_pair(rec.rname, rec));
+		}
+		assert(in);
+	}
+	assert(in.eof());
+}
 
 int main(int argc, char* const* argv)
 {
@@ -99,7 +137,7 @@ int main(int argc, char* const* argv)
 		}
 	}
 
-	if (argc - optind != 1) {
+	if (argc - optind != 2) {
 		cerr << PROGRAM ": incorrect number of arguments\n";
 		die = true;
 	}
@@ -110,11 +148,20 @@ int main(int argc, char* const* argv)
 		exit(EXIT_FAILURE);
 	}
 
-	readScaffolds();
-	readAlignments();
+	Scaffolds scaffs;
+	readScaffolds(argv[optind++], scaffs);
+	cerr << "sequences: " << stats.seqs << "\tscaffolds: "
+		<< stats.scaffolds << '\n';
 
-	fillGaps();
-	writeContigs();
+	Alignments aligns;
+	readAlignments(argv[optind++], aligns);
+	cerr << "aligns: " << stats.aligns << "\tsplit: "
+		<< stats.split_same << '\n';
+
+	
+
+	//fillGaps();
+	//writeContigs();
 
 	return 0;
 }
