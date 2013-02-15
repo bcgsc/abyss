@@ -141,7 +141,7 @@ FILE *fopen(const char *path, const char *mode)
 	
 	// to check if the file exists, we need to attempt to open it
 	FILE* stream = real_fopen(path, mode);
-	if (!stream || zcatExec(path) == NULL)
+	if (string(mode) != "r" || !stream || zcatExec(path) == NULL)
 		return stream;
 	else {
 		fclose(stream);
@@ -168,7 +168,7 @@ FILE *fopen64(const char *path, const char *mode)
 	
 	// to check if the file exists, we need to attempt to open it
 	FILE* stream = real_fopen64(path, mode);
-	if (!stream || zcatExec(path) == NULL)
+	if (string(mode) != "r" || !stream || zcatExec(path) == NULL)
 		return stream;
 	else {
 		fclose(stream);
@@ -197,7 +197,8 @@ int open(const char *path, int flags, mode_t mode)
 	
 	// to check if the file exists, we need to attempt to open it
 	int filedesc = real_open(path, flags, mode);
-	if (filedesc < 0 || zcatExec(path) == NULL)
+	if (mode != ios_base::in || filedesc < 0
+			|| zcatExec(path) == NULL)
 		return filedesc;
 	else {
 		close(filedesc);
