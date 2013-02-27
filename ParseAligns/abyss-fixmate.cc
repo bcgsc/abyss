@@ -5,6 +5,7 @@
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "UnorderedMap.h"
+#include "ContigID.h"
 #include <algorithm>
 #include <climits>
 #include <cstdlib>
@@ -40,6 +41,7 @@ static const char USAGE_MESSAGE[] =
 "  -l, --min-align=N     the minimal alignment size [1]\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
+"  -c, --cov=FILE        write the physical coverage to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -49,23 +51,25 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	static string fragPath;
 	static string histPath;
+	static string covPath;
 	static int qname;
 	static int verbose;
 }
 
-static const char shortopts[] = "h:l:s:v";
+static const char shortopts[] = "h:c:l:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "qname",    no_argument,      &opt::qname, 1 },
-	{ "no-qname", no_argument,      &opt::qname, 0 },
+	{ "qname",     no_argument,       &opt::qname, 1 },
+	{ "no-qname",  no_argument,       &opt::qname, 0 },
 	{ "min-align", required_argument, NULL, 'l' },
-	{ "hist",    required_argument, NULL, 'h' },
-	{ "same",    required_argument, NULL, 's' },
-	{ "verbose", no_argument,       NULL, 'v' },
-	{ "help",    no_argument,       NULL, OPT_HELP },
-	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ "hist",      required_argument, NULL, 'h' },
+	{ "cov",       required_argument, NULL, 'c' },
+	{ "same",      required_argument, NULL, 's' },
+	{ "verbose",   no_argument,       NULL, 'v' },
+	{ "help",      no_argument,       NULL, OPT_HELP },
+	{ "version",   no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -79,6 +83,8 @@ static struct {
 
 static ofstream g_fragFile;
 static Histogram g_histogram;
+static ofstream g_covFile;
+static vector< vector<int> > g_contigCov;
 
 static void handlePair(SAMRecord& a0, SAMRecord& a1)
 {
@@ -113,6 +119,14 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		stats.numFF++;
 	} else {
 		// Same target, FR or RF orientation.
+		SAMRecord a = a0.isize >= 0 ? a0 : a1;
+		unsigned inx = get(g_contigNames, a.rname);
+		g_contigCov[inx][a.pos]++;
+		assert(a.isize >= 0);
+		unsigned end = a.pos + a.isize;
+		if (end >= g_contigCov[inx].size())
+			end = g_contigCov[inx].size() - 1;
+		g_contigCov[inx][end]--;
 		g_histogram.insert(a0.isReverse() ? a1.isize : a0.isize);
 		if (!opt::fragPath.empty()) {
 			g_fragFile << a0 << '\n' << a1 << '\n';
@@ -180,6 +194,45 @@ static void assert_eof(istream& in)
 	exit(EXIT_FAILURE);
 }
 
+/** Print physical coverage in wiggle format. */
+static void printCov(string file)
+{
+	ofstream out(file.c_str());
+	for (unsigned i = 0; i < g_contigCov.size(); i++) {
+		out << "variableStep\tchrom=" << get(g_contigNames, i) << '\n';
+		int prev = g_contigCov[i][0];
+		if (prev != 0) out << "0\t" << prev << '\n';
+		for (unsigned j = 1; j < g_contigCov[i].size(); j++) {
+			prev += g_contigCov[i][j];
+			if (prev != 0) out << j << "\t" << prev << '\n';
+		}
+	}
+}
+
+void parseTag(string line) {
+	stringstream ss(line);
+	string tag;
+	char type[2];
+	string id;
+	char delim;
+	unsigned length;
+	ss >> tag;
+	if (tag != "@SQ")
+		return;
+	while (ss >> type[0] >> type[1] >> delim) {
+		assert(delim == ':');
+		if (type[0] == 'S' && type[1] == 'N')
+			ss >> id;
+		else if (type[0] == 'L' && type[1] == 'N')
+			ss >> length;
+	}
+
+	assert(length > 0);
+	assert(id.size() > 0);
+	put(g_contigNames, g_contigCov.size(), id);
+	g_contigCov.push_back(vector<int>(length));	
+}
+
 static void readAlignments(istream& in, Alignments* pMap)
 {
 	for (SAMRecord sam; in >> ws;) {
@@ -187,12 +240,16 @@ static void readAlignments(istream& in, Alignments* pMap)
 			string line;
 			getline(in, line);
 			assert(in);
+
+			parseTag(line);
+
 			cout << line << '\n';
 			if (!opt::fragPath.empty())
 				g_fragFile << line << '\n';
 		} else if (in >> sam)
 			handleAlignment(sam, *pMap);
 	}
+	printCov(opt::covPath);
 	assert_eof(in);
 }
 
@@ -241,6 +298,7 @@ int main(int argc, char* const* argv)
 				break;
 			case 's': arg >> opt::fragPath; break;
 			case 'h': arg >> opt::histPath; break;
+			case 'c': arg >> opt::covPath; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
