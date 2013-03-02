@@ -38,6 +38,8 @@ static const char USAGE_MESSAGE[] =
 "Map the sequences of the files QUERY to those of the file TARGET.\n"
 "The index files TARGET.fai and TARGET.fm will be used if present.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -l, --min-align=N       find matches at least N bp [1]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -s, --sample=N          sample the suffix array [1]\n"

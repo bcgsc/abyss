@@ -30,6 +30,8 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [FILE]...\n"
 "Convert the specified graph to dot format.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -k, --kmer=N   report the mean k-mer coverage, otherwise\n"
 "                 the sum k-mer coverage is reported\n"
 "      --adj             output the graph in adj format\n"

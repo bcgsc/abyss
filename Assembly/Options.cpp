@@ -29,6 +29,8 @@ static const char USAGE_MESSAGE[] =
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz.\n"
 "\n"
+" Options:\n"
+"\n"
 "      --chastity        discard unchaste reads [default]\n"
 "      --no-chastity     do not discard unchaste reads\n"
 "      --trim-masked     trim masked bases from the ends of reads\n"

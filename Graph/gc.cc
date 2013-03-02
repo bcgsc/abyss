@@ -25,6 +25,8 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [FILE]...\n"
 "Count the number of vertices and edges in a graph.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"

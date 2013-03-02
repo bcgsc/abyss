@@ -31,6 +31,7 @@ static const char USAGE_MESSAGE[] =
 "Attempt to merge reads in READS1 with reads in READS2\n"
 "\n"
 " Options:\n"
+"\n"
 "  -o, --prefix=PREFIX     the prefix of all output files [out]\n"
 "  -p, --identity=N        minimum overlap identity [0.9]\n"
 "  -m, --matches=N         minimum number of matches in overlap [10]\n"

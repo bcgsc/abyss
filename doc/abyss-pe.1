@@ -3,7 +3,7 @@
 abyss-pe - assemble reads into contigs
 .SH SYNOPSIS
 .B abyss-pe
-[\fIOPTION\fR]...  [\fIPARAMETER\fR=\fIVALUE\fR]...
+[\fIOPTION\fR]...  [\fIPARAMETER\fR=\fIVALUE\fR]...  [\fIMAKE_TARGET\fR]...
 .SH DESCRIPTION
 Assemble the reads of the input files into contigs. The reads may be
 in FASTA, FASTQ, qseq, export, SRA, SAM or BAM format and may be
@@ -23,9 +23,11 @@ input files. Use this variable when assembling data from a single
 library.
 .TP
 .B lib
-list of paired-end libraries. Use this varible when assembling data
-from multiple fragment libraries. For each library in lib, a variable
-with the same name must specify the files containing those reads.
+a quoted list of whitespace-separated paired-end library names. Use
+this varible when assembling data from multiple paired-end libraries.
+For each library name in lib, the user must define a variable on
+the command line with the same name, which indicates the read files for
+that library. See \fBEXAMPLES\fR below for a concrete example of usage.
 .TP
 .B pe
 list of paired-end libraries that will be used only for merging
@@ -115,7 +117,7 @@ convert colour-space contigs to nucleotide contigs following assembly
 .TP
 \fB-n\fR, \fB--dry-run\fR
 Print the commands that would be executed, but do not execute them.
-.SS "Commands of abyss-pe"
+.SS "Make targets for abyss-pe"
 .TP
 .B default
 Equivalent to `scaffolds scaffolds-dot stats'.

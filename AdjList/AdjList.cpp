@@ -40,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "Overlaps of exactly k-1 bases are found using a hash table.\n"
 "Overlaps of fewer than k-1 bases are found using a suffix array.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -k, --kmer=K          find overlaps of up to K-1 bases\n"
 "  -m, --min-overlap=M   require a minimum overlap of M bases [50]\n"
 "      --adj             output the results in adj format [default]\n"

@@ -52,6 +52,8 @@ static const char USAGE_MESSAGE[] =
 "Output is written to standard output. The index files FILE.fai\n"
 "and FILE.fm will be used if present.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -m, --min=N             find matches at least N bp [50]\n"
 "  -k, --max=N             find matches less than N bp [inf]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"

@@ -38,6 +38,8 @@ static const char USAGE_MESSAGE[] =
 "Write pairs that map to different contigs to standard output.\n"
 "Alignments may be read from FILE(s) or standard input.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -l, --min-align=N     minimum alignment length\n"
 "  -d, --dist=DISTANCE   write distance estimates to this file\n"
 "  -f, --frag=SAME       write fragment sizes to this file\n"

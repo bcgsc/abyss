@@ -8,6 +8,14 @@ ABYSS \- assemble short reads into contigs
 Assemble all input files, FILE, which may be in FASTA, FASTQ, qseq,
 export, SRA, SAM or BAM format and may be compressed with gz, bz2 or
 xz and may be tarred.
+
+Users wishing to run a full assembly with ABySS are recommended to
+use abyss-pe as their entry point rather than the ABYSS program.
+abyss-pe is a Makefile that coordinates many of the ABySS tools
+(including ABYSS) in order to run the full ABySS assembly pipeline.
+abyss-pe is capable of doing many things that ABYSS is not,
+such as leveraging the distance information provided by paired end
+reads and mate pair reads.
 .TP
 \fB--chastity\fR
 discard unchaste reads [default]

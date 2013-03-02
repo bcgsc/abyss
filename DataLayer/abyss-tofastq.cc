@@ -30,6 +30,8 @@ static const char USAGE_MESSAGE[] =
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz\n"
 "and may be tarred.\n"
 "\n"
+" Options:\n"
+"\n"
 "      --cat               concatenate the records [default]\n"
 "  -i, --interleave        interleave the records\n"
 "      --fastq             ouput FASTQ format [default]\n"

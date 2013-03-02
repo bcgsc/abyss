@@ -47,8 +47,10 @@ Download and install the
 
 ## Assemble a small synthetic data set
 
+	wget http://www.bcgsc.ca/platform/bioinfo/software/abyss/releases/1.3.4/test-data.tar.gz
+	tar xzvf test-data.tar.gz
 	abyss-pe k=25 name=test \
-	se=https://raw.github.com/dzerbino/velvet/master/data/test_reads.fa
+		in='test-data/reads1.fastq test-data/reads2.fastq'
 
 ## Calculate assembly contiguity statistics
 
@@ -310,6 +312,9 @@ ABySS programs
  * `abyss-map`: map reads to a reference sequence
  * `abyss-scaffold`: scaffold contigs using distance estimates
  * `abyss-todot`: convert graph formats and merge graphs
+
+For a flowchart showing the relationship between these programs,
+see doc/flowchart.pdf.
 
 Mailing List
 ============

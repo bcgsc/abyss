@@ -33,6 +33,8 @@ static const char USAGE_MESSAGE[] =
 "Write read pairs that map to different contigs to stdout.\n"
 "Alignments may be in FILE(s) or standard input.\n"
 "\n"
+" Options:\n"
+"\n"
 "      --no-qname        set the qname to * [default]\n"
 "      --qname           do not alter the qname\n"
 "  -l, --min-align=N     the minimal alignment size [1]\n"

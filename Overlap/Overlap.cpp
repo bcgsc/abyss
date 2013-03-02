@@ -50,6 +50,8 @@ static const char USAGE_MESSAGE[] =
 "Find overlaps between blunt contigs that have negative distance\n"
 "estimates. Add edges to the overlap graph.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
 "                        default is 5 bases\n"

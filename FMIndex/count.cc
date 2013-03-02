@@ -29,6 +29,8 @@ static const char USAGE_MESSAGE[] =
 "Count k-mer of the specified file.\n"
 "The index file TARGET.fm will be used if present.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -k, --kmer              the size of a k-mer\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"

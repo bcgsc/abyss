@@ -31,6 +31,8 @@ static const char USAGE_MESSAGE[] =
 "Output a directed acyclic word graph (DAWG) of the specified file.\n"
 "The index file TARGET.fm will be used if present.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"

@@ -29,6 +29,8 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... FILE\n"
 "Build an FM-index of FILE and store it in FILE.fm.\n"
 "\n"
+" Options:\n"
+"\n"
 "      --both              build both FAI and FM indexes [default]\n"
 "      --fai               build a FAI index\n"
 "      --fm                build a FM index\n"

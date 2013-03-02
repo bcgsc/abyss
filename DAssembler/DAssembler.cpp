@@ -50,7 +50,12 @@ static const struct option longopts[] = {
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [READS]\n"
 "Assemble a single contig from reads in a single orientation.\n"
+"\n"
+" Arguments:\n"
+"\n"
 "  READS  fasta-formatted reads file: the first read is used as the seed.\n"
+"\n"
+" Options:\n"
 "\n"
 "  -o, --max_overlap=INT            maximum tier overlap for consensus calling"
 " [10]\n"

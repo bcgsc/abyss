@@ -27,6 +27,8 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Calculate assembly contiguity statistics.\n"
 "\n"
+" Options:\n"
+"\n"
 "  -s, -t, --min-length=N  ignore sequences shorter than N bp [500]\n"
 "  -d, --delimiter=S       use S for the field delimiter [\\t]\n"
 "  -j, --jira              output JIRA format\n"
