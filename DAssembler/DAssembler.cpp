@@ -22,7 +22,7 @@ static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Rod Docking.\n"
 "\n"
-"Copyright 2012 Canada's Michael Smith Genome Science Centre\n";
+"Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 namespace opt {
     static unsigned max_overlap = 10;

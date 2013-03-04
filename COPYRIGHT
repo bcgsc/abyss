@@ -235,11 +235,11 @@ License: BCCA-Academic
  its sole discretion may assign this Agreement without notice to You.
 
 Files: *
-Copyright: Copyright 2012 Genome Sciences Centre
+Copyright: Copyright 2013 Genome Sciences Centre
 License: BCCA-Academic
 
 Files: Common/* DataLayer/* DistanceEst/* FMIndex/* Map/* ParseAligns/*
-Copyright: Copyright 2012 Genome Sciences Centre
+Copyright: Copyright 2013 Genome Sciences Centre
 License: BCCA-Academic or GPL-3+
 
 Files: Common/cholesky.hpp
