@@ -478,10 +478,10 @@ endif
 
 # Scaffold
 
-%-6.path1: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
+%-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
 	abyss-scaffold $v -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
-%-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path1
+%-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path
 	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
