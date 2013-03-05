@@ -1,3 +1,63 @@
+2013-03-04  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.3.5
+	* Standardized --help message format.
+	* Improve documentation.
+	* Merge overlapping read pairs.
+	* Layout and merge contigs using sequence overlap graph.
+	* Attempt to fill scaffold gap with consensus of all paths between
+	contigs.
+
+	abyss-pe:
+	* Attempt to fill scaffold gap with consensus of all paths between
+	contigs. 
+
+	AdjList:
+	* Increase the default value of m from 30 to 50.
+
+	abyss-overlap:
+	* Increase the default value of m from 30 to 50.
+	* New options, --tred and --no-tred. Remove transitive edges.
+	Default --tred.
+
+	abyss-mergepairs:
+	* New program. Merges overlapping read pairs.
+
+	ABYSS-P:
+	* Bug fix. Exit when there is a problem reading a file.
+	* Don't store sequences in the rank 0 process when using at least
+	1000 cores. Improves memory distribution with large number of
+	cores.
+
+	abyss-fac:
+	* Increase the default value of t from 200 to 500.
+
+	DistanceEst:
+	* Bug fix. Exit with success if there is only one contig. Fixes
+	this error:
+	DistanceEst: DistanceEst.cpp:534: int main(int, char**): Assertion `in' failed.
+	* Bug fix. Fix the bug causing this error:
+	DistanceEst: error: The observed fragment of size 128 bp is shorter than 2*l (l=71). Decrease l to 64.
+	* Bug fix. Correctly estimate distance using MLE when l=0.
+
+	abyss-layout:
+	* New program. Layout contigs using the sequence overlap graph.
+
+	abyss-map:
+	* Return helpful error when query ID starts with '@`
+	* New options, --chastity and --no-chastity. Ignore chastity
+	failed reads. Default --no-chastity.
+
+	abyss-samtobreak:
+	* New script. Calculate contig and scaffold contiguity and
+	correctness metrics.
+
+	abyss-fixmate:
+	* New option, l. Minimum alignment length. Set unmapped flag if
+	the CIGAR match length is too small.
+	* Print all alignments when the histogram output file not given.
+	* Print SAM header to the same file when given.
+
 2012-05-30  Shaun Jackman  <sjackman@bcgsc.ca>
 
 	* Release version 1.3.4.
