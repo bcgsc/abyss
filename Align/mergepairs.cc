@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define PROGRAM "abyss-align"
+#define PROGRAM "abyss-mergepairs"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
