@@ -5,4 +5,4 @@ compiler:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libboost-dev libopenmpi-dev libsparsehash-dev
-script: ./autogen.sh && ./configure && make
+script: ./autogen.sh && ./configure --with-mpi=/usr/lib/openmpi && make
