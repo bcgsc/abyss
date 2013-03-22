@@ -37,4 +37,4 @@ SUBDIRS = \
 	FilterGraph
 
 %.html: %.md
-	multimarkdown $< >$@
+	-multimarkdown $< >$@
