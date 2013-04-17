@@ -149,10 +149,10 @@ class Histogram
 		return percentile(0.5);
 	}
 
-	/** Return the specified weighted percentile. */
-	T weightedPercentile(float p) const
+	/** Return the largest weight in the arg min of partial sum of
+	 * weights. */
+	T argMin(accumulator x) const
 	{
-		accumulator x = (accumulator)ceil(p * sum());
 		accumulator total = 0;
 		for (Map::const_iterator it = m_map.begin();
 				it != m_map.end(); ++it) {
@@ -161,6 +161,12 @@ class Histogram
 				return it->first;
 		}
 		return maximum();
+	}
+
+	/** Return the specified weighted percentile. */
+	T weightedPercentile(float p) const
+	{
+		return argMin((accumulator)ceil(p * sum()));
 	}
 
 	/** Return the N50. */
@@ -298,30 +304,45 @@ namespace std {
 static inline std::ostream& printContiguityStats(
 		std::ostream& out, const Histogram& h0,
 		unsigned minSize, bool printHeader = true,
-		const std::string& sep = "\t")
+		const std::string& sep = "\t",
+		const long long unsigned expSize = 0)
 {
 	Histogram h = h0.trimLow(minSize);
-	unsigned n50 = h.n50();
-	if (printHeader)
+	if (printHeader) {
 		out << "n" << sep
 			<< "n:" << minSize << sep
-			<< "n:N50" << sep
-			<< "min" << sep
+			<< "n:N50" << sep;
+		if (expSize > 0)
+			out << "n:NG50" << sep
+				<< "NG50" << sep;
+		out << "min" << sep
 			<< "N80" << sep
 			<< "N50" << sep
 			<< "N20" << sep
 			<< "max" << sep
 			<< "sum\n";
-	return out
-		<< toEng(h0.size()) << sep
+	}
+	unsigned n50 = h.n50();
+	out << toEng(h0.size()) << sep
 		<< toEng(h.size()) << sep
-		<< toEng(h.count(n50, INT_MAX)) << sep
+		<< toEng(h.count(n50, INT_MAX)) << sep;
+	long long unsigned sum = h.sum();
+	if (expSize > 0) {
+		unsigned ng50;
+		if (sum < expSize/2)
+			ng50 = h.minimum();
+		else
+			ng50 = h.argMin(sum - expSize/2);
+		out << toEng(h.count(ng50, INT_MAX)) << sep
+			<< toEng(ng50) << sep;
+	}
+	return out
 		<< toEng(h.minimum()) << sep
 		<< toEng(h.weightedPercentile(1 - 0.8)) << sep
 		<< toEng(n50) << sep
 		<< toEng(h.weightedPercentile(1 - 0.2)) << sep
 		<< toEng(h.maximum()) << sep
-		<< toEng(h.sum());
+		<< toEng(sum);
 }
 
 #endif
