@@ -40,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked       trim masked bases from the end\n"
 "      --no-trim-masked    do not trim masked bases from the ends\n"
 "                          of sequences [default]\n"
+"      --count-ambig       count ambiguity codes in sequences\n"
+"      --no-count-ambig    do not count ambiguity codes in sequences [default]\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -52,6 +54,7 @@ namespace opt {
 	static string delimiter = "\t";
 	static int format;
 	static int verbose;
+	static int countAmbig;
 }
 enum { TAB, JIRA, MMD };
 
@@ -69,6 +72,8 @@ static const struct option longopts[] = {
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked", no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked", no_argument, &opt::trimMasked, 0 },
+	{ "count-ambig", no_argument, &opt::countAmbig, 1 },
+	{ "no-count-ambig", no_argument, &opt::countAmbig, 0 },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -92,7 +97,8 @@ static void printContiguityStatistics(const char* path)
 	Histogram h;
 	FastaReader in(path, FASTAREADER_FLAGS);
 	for (string s; in >> s;)
-		h.insert(count_if(s.begin(), s.end(), isACGT));
+		h.insert(opt::countAmbig ? s.length() :
+				count_if(s.begin(), s.end(), isACGT));
 	assert(in.eof());
 
 	// Print the table header.
