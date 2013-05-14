@@ -29,37 +29,25 @@ static inline CPUID cpuid(unsigned op)
 /** Return whether this processor has the POPCNT instruction. */
 static inline bool havePopcnt() { return cpuid(1).c & (1 << 23); }
 
-/** Ensure that this machine has the popcount instruction. */
-static inline void checkPopcnt()
-{
-#if ENABLE_POPCNT
-	if (!havePopcnt()) {
-		std::cerr <<
-"error: " PACKAGE " has been compiled to use the POPCNT\n"
-"instruction, which this machine lacks. Recompile using\n"
-"configure --disable-popcnt to disable this feature.\n";
-		exit(EXIT_FAILURE);
-	}
-#endif
-}
+const bool hasPopcnt = havePopcnt() && __GNUC__ && __x86_64__;
 
 /** Return the Hamming weight of x. */
 static inline uint64_t popcount(uint64_t x)
 {
-#if ENABLE_POPCNT && __GNUC__ && __x86_64__
-  __asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
-  return x;
-#else
-  x = (x & 0x5555555555555555ULL) +
-    ((x >> 1) & 0x5555555555555555ULL);
-  x = (x & 0x3333333333333333ULL) +
-    ((x >> 2) & 0x3333333333333333ULL);
-  x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-  x = x + (x >>  8);
-  x = x + (x >> 16);
-  x = x + (x >> 32);
-  return x & 0x7FLLU;
-#endif
+	if (hasPopcnt) {
+		__asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
+		return x;
+	} else {
+		x = (x & 0x5555555555555555ULL) +
+			((x >> 1) & 0x5555555555555555ULL);
+		x = (x & 0x3333333333333333ULL) +
+			((x >> 2) & 0x3333333333333333ULL);
+		x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+		x = x + (x >>  8);
+		x = x + (x >> 16);
+		x = x + (x >> 32);
+		return x & 0x7FLLU;
+	}
 }
 
 #endif

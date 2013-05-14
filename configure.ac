@@ -86,9 +86,6 @@ AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 AC_ARG_ENABLE(popcnt, AS_HELP_STRING([--disable-popcnt],
 	[do not use the popcnt instruction]))
-if test "$enable_popcnt" != no; then
-	AC_DEFINE(ENABLE_POPCNT, 1, [Define to use the popcnt instruction])
-fi
 
 AC_ARG_ENABLE(samseqqual,
 	AS_HELP_STRING([--enable-samseqqual],

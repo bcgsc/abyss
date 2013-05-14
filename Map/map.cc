@@ -346,8 +346,6 @@ static void checkIndexes(const string& path,
 
 int main(int argc, char** argv)
 {
-	checkPopcnt();
-
 	string commandLine;
 	{
 		ostringstream ss;

@@ -160,8 +160,6 @@ static void readFMIndex(FMIndex& g, const string& faPath)
 
 int main(int argc, char** argv)
 {
-	checkPopcnt();
-
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
