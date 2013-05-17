@@ -84,9 +84,6 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 	[], [enable_maxk=64])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
-AC_ARG_ENABLE(popcnt, AS_HELP_STRING([--disable-popcnt],
-	[do not use the popcnt instruction]))
-
 AC_ARG_ENABLE(samseqqual,
 	AS_HELP_STRING([--enable-samseqqual],
 		[enable SAM sequence and quality fields]),
