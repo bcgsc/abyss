@@ -3,7 +3,6 @@
 
 #include "config.h"
 #include <cstdlib> // for exit
-#include <iostream>
 #include <stdint.h>
 
 /** The return value of the CPUID instruction. */
@@ -29,15 +28,19 @@ static inline CPUID cpuid(unsigned op)
 /** Return whether this processor has the POPCNT instruction. */
 static inline bool havePopcnt() { return cpuid(1).c & (1 << 23); }
 
-const bool hasPopcnt = havePopcnt() && __GNUC__ && __x86_64__;
+static const bool hasPopcnt = havePopcnt();
 
 /** Return the Hamming weight of x. */
 static inline uint64_t popcount(uint64_t x)
 {
+#if __GNUC__ && __x86_64__
 	if (hasPopcnt) {
 		__asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
 		return x;
 	} else {
+#else
+	{
+#endif
 		x = (x & 0x5555555555555555ULL) +
 			((x >> 1) & 0x5555555555555555ULL);
 		x = (x & 0x3333333333333333ULL) +
