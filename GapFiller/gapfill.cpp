@@ -349,11 +349,11 @@ int main(int argc, char* const* argv)
 
 	if (opt::verbose)
 		cerr << "Contigs: " << stats.seqs
-			<< " Scaffolds: " << stats.scaffolds
+			<< "\nScaffolds: " << stats.scaffolds
 			<< "\nGaps: " << stats.gaps
-			<< " Gaps filled: " << stats.gaps_filled
+			<< "\nGaps filled: " << stats.gaps_filled
 			<< "\nN's removed: " << stats.n_removed
-			<< " Bases added: " << stats.bases_added << '\n';
+			<< "\nBases added: " << stats.bases_added << '\n';
 
 	printFixedContigs(scaffs, argv[argc-2], cout);
 
