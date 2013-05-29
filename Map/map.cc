@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string>
 #include <utility>
+#include <queue>
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -208,6 +209,8 @@ static void printDuplicates(const Match& m, const Match& rcm,
 }
 
 
+static queue<string> g_pq;
+
 /** Return the mapping of the specified sequence. */
 static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		const FastqRecord& rec)
@@ -255,10 +258,21 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		sam.mapq = 0;
 	}
 
+	bool printed = false;
+	while (!printed) { // spinlock :(
 #pragma omp critical(cout)
-	{
-		cout << sam << '\n';
-		assert_good(cout, "stdout");
+		{
+#pragma omp critical(g_pq)
+			{
+				printed = g_pq.front() == rec.id;
+				if (printed)
+					g_pq.pop();
+			}
+			if (printed) {
+				cout << sam << '\n';
+				assert_good(cout, "stdout");
+			}
+		}
 	}
 
 	if (sam.isUnmapped())
@@ -280,7 +294,11 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	for (FastqRecord rec;;) {
 		bool good;
 #pragma omp critical(in)
-		good = in >> rec;
+		{
+			good = in >> rec;
+#pragma omp critical(g_pq)
+			g_pq.push(rec.id);
+		}
 		if (good)
 			find(faIndex, fmIndex, rec);
 		else
