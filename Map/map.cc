@@ -46,6 +46,9 @@ static const char USAGE_MESSAGE[] =
 "  -s, --sample=N          sample the suffix array [1]\n"
 "  -d, --dup               identify and print duplicate sequence\n"
 "                          IDs between QUERY and TARGET\n"
+"      --order             print alignments in the same order as\n"
+"                          read from QUERY\n"
+"      --no-order          print alignments ASAP [default]\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -67,6 +70,8 @@ namespace opt {
 	/** Identify duplicate and subsumed sequences. */
 	static bool dup = false;
 
+	static int order;
+
 	/** Verbose output. */
 	static int verbose;
 }
@@ -80,6 +85,8 @@ static const struct option longopts[] = {
 	{ "min-align", required_argument, NULL, 'l' },
 	{ "dup", no_argument, NULL, 'd' },
 	{ "threads", required_argument, NULL, 'j' },
+	{ "order", no_argument, &opt::order, 1 },
+	{ "no-order", no_argument, &opt::order, 0 },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -258,22 +265,22 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		sam.mapq = 0;
 	}
 
-	bool printed = false;
-	while (!printed) { // spinlock :(
+	bool print = opt::order == 0;
+	do {
 #pragma omp critical(cout)
 		{
 #pragma omp critical(g_pq)
-			{
-				printed = g_pq.front() == rec.id;
-				if (printed)
+			if (!print) {
+				print = g_pq.front() == rec.id;
+				if (print)
 					g_pq.pop();
 			}
-			if (printed) {
+			if (print) {
 				cout << sam << '\n';
 				assert_good(cout, "stdout");
 			}
 		}
-	}
+	} while (!print); // spinlock :(
 
 	if (sam.isUnmapped())
 #pragma omp atomic
@@ -296,8 +303,10 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 #pragma omp critical(in)
 		{
 			good = in >> rec;
+			if (opt::order) {
 #pragma omp critical(g_pq)
-			g_pq.push(rec.id);
+				g_pq.push(rec.id);
+			}
 		}
 		if (good)
 			find(faIndex, fmIndex, rec);
