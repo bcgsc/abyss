@@ -292,7 +292,6 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		Match m1, rcm1;
 		tie(m1, rcm1) = findMatch(fmIndex, seq);
 		bool rc1 = rcm1.qspan() > m1.qspan();
-		Match tmp = rc1 ? rcm1 : m1;
 		string xa = toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
 				rc ^ rc1, mseq.size(), 0);
 		if (xa != "")

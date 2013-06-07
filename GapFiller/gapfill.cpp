@@ -166,7 +166,6 @@ static void alignReadToGapFlanks(string seg1,
 {
 	//overlap align end of first segment to start of read
 	vector<overlap_align> overlaps1;
-	unsigned start_pos = 0;
 	{
 		string a(seg1), b(read);
 		if (seg1.size() > opt::max_overlap)
@@ -181,7 +180,6 @@ static void alignReadToGapFlanks(string seg1,
 
 	//overlap align start of second segment to end of read
 	vector<overlap_align> overlaps2;
-	start_pos = 0;
 	{
 		string a(read), b(seg2);
 		if (read.size() > opt::max_overlap)
