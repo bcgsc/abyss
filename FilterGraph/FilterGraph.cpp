@@ -65,6 +65,7 @@ static const char USAGE_MESSAGE[] =
 "      --no-assemble     disable assembling of paths [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -i, --ignore=FILE     ignore contigs seen in FILE\n"
+"  -r, --remove=FILE     remove contigs seen in FILE\n"
 "      --adj             output the graph in adj format [default]\n"
 "      --asqg            output the graph in asqg format\n"
 "      --dot             output the graph in dot format\n"
@@ -100,6 +101,9 @@ namespace opt {
 	/** Contigs to ignore. */
 	static string ignorePath;
 
+	/** Contigs to remove. */
+	static string removePath;
+
 	/** The minimum overlap allowed between two contigs. */
 	static int minOverlap = 10;
 
@@ -107,7 +111,7 @@ namespace opt {
 	int format = ADJ; // used by ContigProperties
 }
 
-static const char shortopts[] = "g:i:k:l:m:t:T:v";
+static const char shortopts[] = "g:i:r:k:l:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -119,6 +123,7 @@ static const struct option longopts[] = {
 	{ "sam",           no_argument,       &opt::format, SAM },
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "ignore",        required_argument, NULL, 'i' },
+	{ "remove",        required_argument, NULL, 'r' },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "island",        required_argument, NULL, 'T' },
 	{ "tip",           required_argument, NULL, 't' },
@@ -279,6 +284,14 @@ static void addNewEdges(Graph& g, const vector<EdgeInfo>& eds)
 	}
 }
 
+static void removeContig(vertex_descriptor v, Graph& g)
+{
+		clear_vertex(v, g);
+		remove_vertex(v, g);
+		g_removed.push_back(get(vertex_contig_index, g, v));
+		g_count.removed++;
+}
+
 /** Remove the specified contig from the adjacency graph. */
 static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 {
@@ -313,10 +326,7 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 		else
 			continue;
 
-		clear_vertex(v, g);
-		remove_vertex(v, g);
-		g_removed.push_back(get(vertex_contig_index, g, v));
-		g_count.removed++;
+		removeContig(v, g);
 	}
 	sc.swap(out);
 }
@@ -457,6 +467,9 @@ int main(int argc, char** argv)
 		  case 'i':
 			arg >> opt::ignorePath;
 			break;
+		  case 'r':
+			arg >> opt::removePath;
+			break;
 		  case 'k':
 			arg >> opt::k;
 			break;
@@ -534,6 +547,22 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0) {
 		cerr << "Graph stats before:\n";
 		printGraphStats(cerr, g);
+	}
+
+	// Remove list of contigs
+	if (!opt::removePath.empty()) {
+		ifstream in(opt::removePath.c_str());
+		assert(in.good());
+		string s;
+		size_t b = g_removed.size();
+		while (in >> s) {
+			size_t i = get(g_contigNames, s);
+			removeContig(ContigNode(i,0), g);
+		}
+		assert(in.eof());
+		if (opt::verbose)
+			cerr << "Removed " << g_removed.size() - b
+				<< " contigs.\n";
 	}
 
 	// Remove shims.
