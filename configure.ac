@@ -104,6 +104,7 @@ AC_DEFINE(OMPI_SKIP_MPICXX, 1,
 AC_CHECK_HEADERS([mpi.h])
 if test "$enable_mpich"; then
 	AC_CHECK_LIB([pthread], [pthread_create])
+	AC_CHECK_LIB([mpl], [MPL_env2int])
 	AC_CHECK_LIB([mpich], [MPI_Init])
 	ac_cv_lib_mpi_MPI_Init=$ac_cv_lib_mpich_MPI_Init
 elif test "$enable_lammpi"; then
