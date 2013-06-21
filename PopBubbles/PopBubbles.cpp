@@ -244,13 +244,18 @@ static pair<unsigned, unsigned> alignPair(
  */
 static pair<unsigned, unsigned> alignMulti(const vector<string>& seqs)
 {
-	string alignment;
-	unsigned matches;
-	string consensus = dialign(seqs, alignment, matches);
+	string alignment = seqs[0];
+	unsigned matches = 0;
+	NWAlignment align;
+	for (unsigned j = 0; j < seqs.size() - 1; j++) {
+		matches = min(matches, alignGlobal(alignment,
+					seqs[j+1], align));
+		alignment = align.match_align;
+	}
 	if (opt::verbose > 2)
 #pragma omp critical(cerr)
-		cerr << alignment << consensus << '\n';
-	return make_pair(matches, consensus.size());
+		cerr << align;
+	return make_pair(matches, alignment.size());
 }
 
 /** Align the specified sequences.
