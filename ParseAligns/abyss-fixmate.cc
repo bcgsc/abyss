@@ -410,8 +410,9 @@ int main(int argc, char* const* argv)
 	}
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
-		cerr << "error: The mate pairs of this library are oriented "
-			"forward-forward (FF), which is not supported by ABySS."
+		cerr << PROGRAM ": error: The mate pairs of this library are "
+			"oriented forward-forward (FF), which is not supported "
+			"by ABySS."
 			<< endl;
 		exit(EXIT_FAILURE);
 	}
