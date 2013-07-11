@@ -74,7 +74,7 @@ since they contain a bug. Later versions will of Boost compile without error.
 Compiling ABySS from GitHub
 ===========================
 
-When installing ABySS from github source the following tools are
+When installing ABySS from GitHub source the following tools are
 required:
 
 * [Autoconf](www.gnu.org/software/autoconf)
