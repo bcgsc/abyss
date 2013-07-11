@@ -77,8 +77,8 @@ Compiling ABySS from GitHub
 When installing ABySS from GitHub source the following tools are
 required:
 
-* [Autoconf](www.gnu.org/software/autoconf)
-* [Automake](www.gnu.org/software/automake)
+* [Autoconf](http://www.gnu.org/software/autoconf)
+* [Automake](http://www.gnu.org/software/automake)
 
 To generate the configure script and make files:
 
