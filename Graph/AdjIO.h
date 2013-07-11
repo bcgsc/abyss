@@ -130,7 +130,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 	if (adjFormat || faiFormat) {
 		assert(num_vertices(g) == 0);
 		in.clear();
-		in.seekg(std::ios_base::beg);
+		in.seekg(0, std::ios::beg);
 		assert(in);
 		for (std::string uname; in >> uname;) {
 			vertex_property_type vp;
@@ -155,7 +155,7 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 
 	// Read the edges.
 	in.clear();
-	in.seekg(std::ios_base::beg);
+	in.seekg(0, std::ios::beg);
 	assert(in);
 	for (std::string name; in >> name;) {
 		if (adjFormat)
