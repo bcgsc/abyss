@@ -366,6 +366,13 @@ int main(int argc, char* const* argv)
 		"FF         " << percent(stats.numFF, sum) << "\n"
 		"Different  " << percent(stats.numDifferent, sum) << "\n"
 		"Total      " << sum << endl;
+	
+	if (alignments.size() == sum) {
+		cerr << PROGRAM ": error: All reads are mateless. This "
+			"can happen when first and second read IDs do not match."
+			<< endl;
+		exit(EXIT_FAILURE);
+	}
 
 	if (!opt::fragPath.empty())
 		g_fragFile.close();
