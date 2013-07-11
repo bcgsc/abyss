@@ -69,8 +69,22 @@ ABySS requires a C++ compiler that supports
 [OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
 
 ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
-since they contain a bug. Download an earlier version such as
-[Boost 1.50.0](http://downloads.sourceforge.net/project/boost/boost/1.50.0/boost_1_50_0.tar.bz2).
+since they contain a bug. Later versions will of Boost compile without error.
+
+Compiling ABySS from GitHub
+===========================
+
+When installing ABySS from github source the following tools are
+required:
+
+* [Autoconf](www.gnu.org/software/autoconf)
+* [Automake](www.gnu.org/software/automake)
+
+To generate the configure script and make files:
+
+	./autogen.sh
+
+See "Compiling ABySS from source" for further steps.
 
 Compiling ABySS from source
 ===========================
