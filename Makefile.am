@@ -2,6 +2,10 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
+if SAM_SEQ_QUAL
+GapFiller=GapFiller
+endif
+
 dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
 	README.css README.html README.md
 
@@ -35,7 +39,7 @@ SUBDIRS = \
 	SimpleGraph \
 	kmerprint \
 	FilterGraph \
-	GapFiller
+	$(GapFiller)
 
 %.html: %.md
 	-multimarkdown $< >$@

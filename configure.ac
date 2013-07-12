@@ -89,6 +89,7 @@ AC_ARG_ENABLE(samseqqual,
 		[enable SAM sequence and quality fields]),
 	AC_DEFINE_UNQUOTED(SAM_SEQ_QUAL, 1,
 		[Define to use SAM sequence and quality fields]))
+AM_CONDITIONAL([SAM_SEQ_QUAL], [test "$enable_samseqqual"])
 
 # Set compiler flags.
 AC_SUBST(CPPFLAGS,
