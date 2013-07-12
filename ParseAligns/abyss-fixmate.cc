@@ -86,6 +86,17 @@ static Histogram g_histogram;
 static ofstream g_covFile;
 static vector< vector<int> > g_contigCov;
 
+static void incrementRange(SAMRecord& a)
+{
+	unsigned inx = get(g_contigNames, a.rname);
+	g_contigCov[inx][a.pos]++;
+	assert(a.isize >= 0);
+	unsigned end = a.pos + a.isize;
+	if (end >= g_contigCov[inx].size())
+		end = g_contigCov[inx].size() - 1;
+	g_contigCov[inx][end]--;
+}
+
 static void handlePair(SAMRecord& a0, SAMRecord& a1)
 {
 	if ((a0.isRead1() && a1.isRead1())
@@ -120,13 +131,7 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 	} else {
 		// Same target, FR or RF orientation.
 		SAMRecord a = a0.isize >= 0 ? a0 : a1;
-		unsigned inx = get(g_contigNames, a.rname);
-		g_contigCov[inx][a.pos]++;
-		assert(a.isize >= 0);
-		unsigned end = a.pos + a.isize;
-		if (end >= g_contigCov[inx].size())
-			end = g_contigCov[inx].size() - 1;
-		g_contigCov[inx][end]--;
+		incrementRange(a);
 		g_histogram.insert(a0.isReverse() ? a1.isize : a0.isize);
 		if (!opt::fragPath.empty()) {
 			g_fragFile << a0 << '\n' << a1 << '\n';
