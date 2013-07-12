@@ -53,6 +53,9 @@ static const char USAGE_MESSAGE[] =
 "      --order             print alignments in the same order as\n"
 "                          read from QUERY\n"
 "      --no-order          print alignments ASAP [default]\n"
+"      --multi             Align unaligned segments of primary\n"
+"                          alignment\n"
+"      --no-multi          don't Align unaligned segments [default]\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -74,6 +77,10 @@ namespace opt {
 	/** Identify duplicate and subsumed sequences. */
 	static bool dup = false;
 
+	/** Align unaligned segments of primary alignment. */
+	static int multi;
+
+	/** Ensure output order matches input order. */
 	static int order;
 
 	/** Verbose output. */
@@ -91,6 +98,8 @@ static const struct option longopts[] = {
 	{ "threads", required_argument, NULL, 'j' },
 	{ "order", no_argument, &opt::order, 1 },
 	{ "no-order", no_argument, &opt::order, 0 },
+	{ "multi", no_argument, &opt::multi, 1 },
+	{ "no-multi", no_argument, &opt::multi, 0 },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -108,6 +117,7 @@ static struct {
 
 typedef FMIndex::Match Match;
 
+#if SAM_SEQ_QUAL
 static string toXA(const FastaIndex& faIndex,
 		const FMIndex& fmIndex, const Match& m, bool rc,
 		unsigned qlength, unsigned seq_start)
@@ -139,6 +149,7 @@ static string toXA(const FastaIndex& faIndex,
 
 	return xa_tag.str();
 }
+#endif
 
 /** Return a SAM record of the specified match. */
 static SAMRecord toSAM(const FastaIndex& faIndex,
@@ -287,27 +298,33 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	vector<string> alts;
 	Match mm = rc ? rcm : m;
 	string mseq = rc ? reverseComplement(rec.seq) : rec.seq;
-	if (mm.qstart > 0) {
-		string seq = mseq.substr(0, mm.qstart);
-		Match m1, rcm1;
-		tie(m1, rcm1) = findMatch(fmIndex, seq);
-		bool rc1 = rcm1.qspan() > m1.qspan();
-		string xa = toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
-				rc ^ rc1, mseq.size(), 0);
-		if (xa != "")
-			alts.push_back(xa);
-	}
 
-	if (mm.qend < mseq.size()) {
-		string seq = mseq.substr(mm.qend, mseq.length() - mm.qend);
-		Match m2, rcm2;
-		tie(m2, rcm2) = findMatch(fmIndex, seq);
-		bool rc2 = rcm2.qspan() > m2.qspan();
-		string xa = toXA(faIndex, fmIndex, rc2 ? rcm2 : m2,
-				rc ^ rc2, mseq.size(), mm.qend);
-		if (xa != "")
-			alts.push_back(xa);
+#if SAM_SEQ_QUAL
+	if (opt::multi) {
+		if (mm.qstart > 0) {
+			string seq = mseq.substr(0, mm.qstart);
+			Match m1, rcm1;
+			tie(m1, rcm1) = findMatch(fmIndex, seq);
+			bool rc1 = rcm1.qspan() > m1.qspan();
+			string xa = toXA(faIndex, fmIndex, rc1 ? rcm1 : m1,
+					rc ^ rc1, mseq.size(), 0);
+			if (xa != "")
+				alts.push_back(xa);
+		}
+
+		if (mm.qend < mseq.size()) {
+			string seq =
+				mseq.substr(mm.qend, mseq.length() - mm.qend);
+			Match m2, rcm2;
+			tie(m2, rcm2) = findMatch(fmIndex, seq);
+			bool rc2 = rcm2.qspan() > m2.qspan();
+			string xa = toXA(faIndex, fmIndex, rc2 ? rcm2 : m2,
+					rc ^ rc2, mseq.size(), mm.qend);
+			if (xa != "")
+				alts.push_back(xa);
+		}
 	}
+#endif
 
 	SAMRecord sam = toSAM(faIndex, fmIndex, mm, rc,
 			rec.seq.size());
@@ -344,8 +361,10 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 			}
 			if (print) {
 				cout << sam;
+#if SAM_SEQ_QUAL
 				if (alts.size() > 0)
 					cout << "\tXA:Z:" << join(alts, ";");
+#endif
 				cout << '\n';
 				assert_good(cout, "stdout");
 			}
@@ -480,6 +499,17 @@ int main(int argc, char** argv)
 				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
+	}
+
+#ifndef SAM_SEQ_QUAL
+# define SAM_SEQ_QUAL 0
+#endif
+
+	if (opt::multi && !SAM_SEQ_QUAL) {
+		cerr << PROGRAM ": multiple alignments not supported with "
+			"this install. Recompile ABySS with `./configure "
+			"--enable-samseqqual'.\n";
+		die = true;
 	}
 
 	if (argc - optind < 2) {
