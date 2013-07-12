@@ -130,8 +130,10 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		stats.numFF++;
 	} else {
 		// Same target, FR or RF orientation.
-		SAMRecord a = a0.isize >= 0 ? a0 : a1;
-		incrementRange(a);
+		if (!opt::covPath.empty()) {
+			SAMRecord a = a0.isize >= 0 ? a0 : a1;
+			incrementRange(a);
+		}
 		g_histogram.insert(a0.isReverse() ? a1.isize : a0.isize);
 		if (!opt::fragPath.empty()) {
 			g_fragFile << a0 << '\n' << a1 << '\n';
@@ -246,7 +248,8 @@ static void readAlignments(istream& in, Alignments* pMap)
 			getline(in, line);
 			assert(in);
 
-			parseTag(line);
+			if (!opt::covPath.empty())
+				parseTag(line);
 
 			cout << line << '\n';
 			if (!opt::fragPath.empty())
@@ -254,7 +257,8 @@ static void readAlignments(istream& in, Alignments* pMap)
 		} else if (in >> sam)
 			handleAlignment(sam, *pMap);
 	}
-	printCov(opt::covPath);
+	if (!opt::covPath.empty())
+		printCov(opt::covPath);
 	assert_eof(in);
 }
 
