@@ -132,6 +132,14 @@ AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
 # Check for the dynamic linking library.
 AC_CHECK_LIB([dl], [dlsym])
 
+# Check for popcnt instruction.
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[#include <stdint.h>],
+					  [uint64_t x = 0;]],
+					 [[__asm__("popcnt %1,%0" : "=r" (x) : "r" (x));]])],
+	[AC_DEFINE([HAVE_POPCNT], 1, [Define to 1 if you have popcnt.])],
+	[AC_DEFINE([HAVE_POPCNT], 0, [Define to 0 if you do not have popcnt.])])
+
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
