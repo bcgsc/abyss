@@ -1,3 +1,40 @@
+2013-07-15  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.3.6
+	* Improved documentation for GitHub devs.
+	* ABYSS-P performance improvement.
+	* Various portability and bug fixes.
+	
+	abyss-mergepairs:
+	* Fix program name.
+
+	abyss-fac:
+	* New option --exp-size to give the expected genome size needed
+	for NG50 calculation.
+	* New option --count-ambig include ambiguities in calculations.
+
+	ABYSS/ABYSS-P:
+	* Performance improvement. Runtime reduced by ~20%.
+	* Fix support for MPICH.
+
+	abyss-map:
+	* No longer require POPCNT instruction.
+	* New option --order to force output order the same as input.
+
+	abyss-filtergraph:
+	* New option --remove to remove specified contigs from graph.
+
+	PopBubbles:
+	* Bug fix. Setting branches > 2 will now work.
+
+	abyss-fixmate:
+	* Improved error when first and second read IDs do not match.
+	* New option --cov to compute and store the physical coverage in
+	a Wiggle file.
+
+	AdjIO:
+	* Bug fix for non-GCC compilers.
+
 2013-03-04  Anthony Raymond  <traymond@bcgsc.ca>
 
 	* Release version 1.3.5
