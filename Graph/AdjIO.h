@@ -169,7 +169,8 @@ std::istream& read_adj(std::istream& in, ContigGraph<Graph>& g,
 			if (!adjFormat) {
 				readDistEdges(ss, g, u ^ sense, betterEP);
 			} else
-			for (std::string vname; ss >> vname >> std::ws;) {
+			for (std::string vname; ss >> vname;) {
+				ss >> std::ws;
 				vertex_descriptor v = find_vertex(vname, g);
 				assert(!edge(u ^ sense, v ^ sense, g).second);
 				if (ss.peek() == '[') {
