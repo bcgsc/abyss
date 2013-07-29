@@ -127,16 +127,40 @@ class out_edge_iterator
 };
 
 /** Iterate through adjacent vertices. */
-class adjacency_iterator : public Edges::const_iterator
+class adjacency_iterator : 
+	public std::iterator<std::input_iterator_tag, vertex_descriptor> 
 {
-	typedef typename Edges::const_iterator It;
+	typedef typename Edges::const_iterator const_iterator;
+
   public:
 	adjacency_iterator() { }
-	adjacency_iterator(const It& it) : It(it) { }
+	adjacency_iterator(const const_iterator& it) : m_it(it) { }
+
 	vertex_descriptor operator*() const
 	{
-		return It::operator*().target();
+		return m_it->target();
 	}
+
+	bool operator==(const adjacency_iterator& it) const
+	{
+		return m_it == it.m_it;
+	}
+	
+	bool operator!=(const adjacency_iterator& it) const
+	{
+		return m_it != it.m_it;
+	}
+
+	adjacency_iterator& operator++() { ++m_it; return *this; }
+	adjacency_iterator operator ++(int)
+	{
+		adjacency_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const_iterator m_it;
 };
 
 /** Iterate through edges. */
