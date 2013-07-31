@@ -33,24 +33,21 @@ static const bool hasPopcnt = havePopcnt();
 /** Return the Hamming weight of x. */
 static inline uint64_t popcount(uint64_t x)
 {
-#if __GNUC__ && __x86_64__
+#if HAVE_POPCNT && __GNUC__ && __x86_64__
 	if (hasPopcnt) {
 		__asm__("popcnt %1,%0" : "=r" (x) : "r" (x));
 		return x;
-	} else {
-#else
-	{
-#endif
-		x = (x & 0x5555555555555555ULL) +
-			((x >> 1) & 0x5555555555555555ULL);
-		x = (x & 0x3333333333333333ULL) +
-			((x >> 2) & 0x3333333333333333ULL);
-		x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-		x = x + (x >>  8);
-		x = x + (x >> 16);
-		x = x + (x >> 32);
-		return x & 0x7FLLU;
 	}
+#endif
+	x = (x & 0x5555555555555555ULL) +
+		((x >> 1) & 0x5555555555555555ULL);
+	x = (x & 0x3333333333333333ULL) +
+		((x >> 2) & 0x3333333333333333ULL);
+	x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+	x = x + (x >>  8);
+	x = x + (x >> 16);
+	x = x + (x >> 32);
+	return x & 0x7FLLU;
 }
 
 #endif

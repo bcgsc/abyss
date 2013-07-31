@@ -224,8 +224,12 @@ next_record:
 		if (opt::trimMasked && !colourSpace) {
 			// Removed masked (lower case) sequence at the beginning
 			// and end of the read.
-			size_t trimFront = s.find_first_not_of("acgtn");
-			size_t trimBack = s.find_last_not_of("acgtn") + 1;
+			size_t trimFront = 0;
+			while (trimFront <= s.length() && islower(s[trimFront]))
+				trimFront++;
+			size_t trimBack = s.length();
+			while (trimBack > 0 && islower(s[trimBack - 1]))
+				trimBack--;
 			s.erase(trimBack);
 			s.erase(0, trimFront);
 			if (!q.empty()) {
