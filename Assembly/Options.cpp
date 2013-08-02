@@ -108,7 +108,7 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-static const char shortopts[] = "b:c:e:E:g:k:o:q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:l:o:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
@@ -133,6 +133,7 @@ static const struct option longopts[] = {
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
+	{ "logger",	required_argument, NULL, 'l' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -207,6 +208,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case 'v':
 				verbose++;
+				break;
+			case 'l':
+				arg >> opt::verbose;
 				break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;

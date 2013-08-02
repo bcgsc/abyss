@@ -130,6 +130,9 @@ ifdef b
 abyssopt += -b$b
 pbopt += -b$b
 endif
+ifdef l
+abyssopt += -l$l
+endif
 abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Number of threads
