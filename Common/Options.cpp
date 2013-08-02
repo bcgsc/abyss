@@ -11,5 +11,5 @@ namespace opt {
 	int numProc = 1;
 
 	/** Verbose output */
-	int verbose;
+	int verbose = 0;
 }
