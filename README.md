@@ -288,7 +288,7 @@ Parameters of the driver script, `abyss-pe`
  * `s`: minimum unitig size required for building contigs (bp) [`200`]
  * `S`: minimum contig size required for building scaffolds (bp) [`s`]
  * `t`: minimum tip size (bp) [`2k`]
- * `v`: use `v=-v` to enable verbose logging [`disabled`]
+ * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose [`disabled`]
 
 Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
