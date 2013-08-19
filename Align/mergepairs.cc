@@ -72,6 +72,7 @@ static struct {
 	unsigned total_reads;
 	unsigned merged_reads;
 	unsigned unmerged_reads;
+	unsigned unchaste_reads;
 	unsigned no_alignment;
 	unsigned too_many_aligns;
 	unsigned low_matches;
@@ -256,6 +257,8 @@ static void alignFiles(const char* reads1, const char* reads2)
 		}
 	}
 	r2 >> rec2;
+	stats.unchaste_reads = r1.unchaste();
+	stats.total_reads += r1.unchaste();
 	assert(r1.eof());
 	assert(r2.eof());
 	unmerged1.close();
@@ -320,9 +323,10 @@ int main(int argc, char** argv)
 
 	alignFiles(reads1, reads2);
 
-	cerr << "Read merging stats: total=" << stats.total_reads
+	cerr << "Pair merging stats: total=" << stats.total_reads
 		<< " merged=" << stats.merged_reads
-		<< " unmerged=" << stats.unmerged_reads << '\n'
+		<< " unmerged=" << stats.unmerged_reads
+		<< " unchaste=" << stats.unchaste_reads << '\n'
 		<< "no_alignment=" << stats.no_alignment
 		<< " too_many_aligns=" << stats.too_many_aligns
 		<< " too_few_matches=" << stats.low_matches
