@@ -66,14 +66,14 @@ typedef map<string, Scaffold> Scaffolds;
 typedef multimap<string, SAMRecord> Alignments;
 
 static struct {
-	int seqs;
-	int scaffolds;
-	int aligns;
-	int split_same;
-	int gaps;
-	int gaps_filled;
-	int n_removed;
-	int bases_added;
+	unsigned long long seqs;
+	unsigned long long scaffolds;
+	unsigned long long aligns;
+	unsigned long long split_same;
+	unsigned long long gaps;
+	unsigned long long gaps_filled;
+	unsigned long long n_removed;
+	unsigned long long bases_added;
 } stats;
 
 static void readScaffolds(const char* path, Scaffolds& scaffs)
