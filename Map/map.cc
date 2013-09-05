@@ -173,7 +173,8 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 		// Set the mapq to the alignment score.
 		assert(m.qstart < m.qend);
 		unsigned matches = m.qend - m.qstart;
-		a.mapq = m.size() > 1 ? 0 : min(matches, 255U);
+		assert (m.num != 0);
+		a.mapq = m.size() > 1 || m.num > 1 ? 0 : min(matches, 255U);
 
 		ostringstream ss;
 		if (m.qstart > 0)
@@ -295,6 +296,11 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 
 	bool rc = rcm.qspan() > m.qspan();
 
+	// if both matches are the same length, sum up the number of times
+	// each were seen.
+	if (rcm.qspan() == m.qspan())
+		rc ? rcm.num += m.num : m.num += rcm.num;
+
 	vector<string> alts;
 	Match mm = rc ? rcm : m;
 	string mseq = rc ? reverseComplement(rec.seq) : rec.seq;
@@ -342,12 +348,6 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 	if (rc)
 		reverse(sam.qual.begin(), sam.qual.end());
 #endif
-
-	if (m.qstart == rec.seq.size() - rcm.qend
-			&& m.qspan() == rcm.qspan()) {
-		// This matching sequence maps to both strands.
-		sam.mapq = 0;
-	}
 
 	bool print = opt::order == 0;
 	do {

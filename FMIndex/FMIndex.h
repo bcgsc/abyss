@@ -57,12 +57,13 @@ struct SAInterval
 /** A match of a substring of a query sequence to an FM index. */
 struct Match : public SAInterval
 {
-	unsigned qstart, qend;
+	unsigned qstart, qend, num;
 
-	Match() : SAInterval(0, 0), qstart(0), qend(0) { }
+	Match() : SAInterval(0, 0), qstart(0), qend(0), num(0) { }
 
-	Match(size_type l, size_type u, unsigned qstart, unsigned qend)
-		: SAInterval(l, u), qstart(qstart), qend(qend) { }
+	Match(size_type l, size_type u, unsigned qstart, unsigned qend,
+			unsigned num = 1)
+		: SAInterval(l, u), qstart(qstart), qend(qend), num(num) { }
 
 	unsigned qspan() const
 	{
@@ -439,6 +440,8 @@ Match findSubstring(It first, It last, unsigned k) const
 		Match interval = findSuffix(first, it, memoIt++);
 		if (interval.qspan() > best.qspan())
 			best = interval;
+		else if (interval.qspan() == best.qspan())
+			best.num++;
 	}
 	return best;
 }
