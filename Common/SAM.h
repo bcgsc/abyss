@@ -2,7 +2,9 @@
 #define SAM_H 1
 
 #include "config.h" // for SAM_SEQ_QUAL
+#include "IOUtil.h"
 #include "Alignment.h"
+#include "ContigID.h" // for g_contigNames
 #include <algorithm> // for swap
 #include <cstdlib> // for exit
 #include <iostream>
@@ -369,6 +371,33 @@ static inline void fixMate(SAMRecord& a0, SAMRecord& a1)
 {
 	a0.fixMate(a1);
 	a1.fixMate(a0);
+}
+
+/** Read contig lengths from SAM headers. */
+static inline void readContigLengths(std::istream& in, std::vector<unsigned>& lengths)
+{
+	assert(in);
+	assert(lengths.empty());
+	assert(g_contigNames.empty());
+	for (std::string line; in.peek() == '@' && getline(in, line);) {
+		std::istringstream ss(line);
+		std::string type;
+		ss >> type;
+		if (type != "@SQ")
+			continue;
+
+		std::string s;
+		unsigned len;
+		ss >> expect(" SN:") >> s >> expect(" LN:") >> len;
+		assert(ss);
+
+		put(g_contigNames, lengths.size(), s);
+		lengths.push_back(len);
+	}
+	if (lengths.empty()) {
+		std::cerr << "error: no @SQ records in the SAM header\n";
+		exit(EXIT_FAILURE);
+	}
 }
 
 #endif

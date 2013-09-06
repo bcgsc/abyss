@@ -318,33 +318,6 @@ static Histogram loadHist(const string& path)
 	return hist;
 }
 
-/** Read contig lengths from SAM headers. */
-static void readContigLengths(istream& in, vector<unsigned>& lengths)
-{
-	assert(in);
-	assert(lengths.empty());
-	assert(g_contigNames.empty());
-	for (string line; in.peek() == '@' && getline(in, line);) {
-		istringstream ss(line);
-		string type;
-		ss >> type;
-		if (type != "@SQ")
-			continue;
-
-		string s;
-		unsigned len;
-		ss >> expect(" SN:") >> s >> expect(" LN:") >> len;
-		assert(ss);
-
-		put(g_contigNames, lengths.size(), s);
-		lengths.push_back(len);
-	}
-	if (lengths.empty()) {
-		cerr << PROGRAM ": error: no @SQ records in the SAM header\n";
-		exit(EXIT_FAILURE);
-	}
-}
-
 /** Copy records from [it, last) to out and stop before alignments to
  * the next target sequence.
  * @param[in,out] it an input iterator
