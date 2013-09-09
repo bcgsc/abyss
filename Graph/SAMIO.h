@@ -1,8 +1,9 @@
 #ifndef SAMIO_H
 #define SAMIO_H 1
 
-#include "ContigNode.h"
 #include "Graph/Properties.h"
+#include <istream>
+#include <sstream>
 #include <boost/graph/graph_traits.hpp>
 #include <ostream>
 
@@ -65,6 +66,34 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 		out << "*\t0\t0\t*\t*\n";
 	}
 	return out;
+}
+
+template <typename Graph>
+std::istream& read_sam_header(std::istream& in, Graph& g)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename vertex_property<Graph>::type VP;
+	assert(in);
+	for (std::string line; in.peek() == '@' && getline(in, line);) {
+		std::istringstream ss(line);
+		std::string type;
+		ss >> type;
+		if (type != "@SQ")
+			continue;
+
+		std::string s;
+		VP vp;
+		ss >> expect(" SN:") >> s >> expect(" LN:") >> vp;
+		assert(ss);
+
+		V u = add_vertex(vp, g);
+		put(vertex_name, g, u, s);
+	}
+	if (g.num_vertices() == 0) {
+		std::cerr << "error: no @SQ records in the SAM header\n";
+		exit(EXIT_FAILURE);
+	}
+	return in;
 }
 
 #endif

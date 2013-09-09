@@ -48,6 +48,8 @@ std::istream& read_graph(std::istream& in, ContigGraph<Graph>& g,
 	in >> std::ws;
 	assert(in);
 	switch (in.peek()) {
+	  case '@': // @SQ: SAM format
+		return read_sam_header(in, g);
 	  case 'd': // digraph: GraphViz dot format
 		return read_dot<Graph>(in, g, betterEP);
 	  case 'H': // HT: ASQG format

@@ -73,6 +73,11 @@ static int calculateReverseReadStart(int read_start_pos,
 	return read_length - qend;
 }
 
+bool operator<(const Alignment& a1) const
+{
+	return read_start_pos < a1.read_start_pos;
+}
+
 friend std::istream& operator >>(std::istream& in, Alignment& a)
 {
 	return in >> a.contig

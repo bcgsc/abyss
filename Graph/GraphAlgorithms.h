@@ -122,7 +122,6 @@ void find_complex_transitive_edges(Graph& g, OutIt out)
 	for (boost::tie(efirst, elast) = edges(g); efirst != elast;
 			efirst++) {
 		vertex_descriptor u = source(*efirst, g);
-		vertex_descriptor v = target(*efirst, g);
 
 		Constraint c = std::make_pair(target(*efirst, g), 100000);
 		Constraints cs;
