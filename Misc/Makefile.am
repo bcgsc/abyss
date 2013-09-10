@@ -1,4 +1,4 @@
-if HAVE_GHC
+if HAVE_GHC_MMAP
 bin_PROGRAMS = abyss-samtobreak
 endif
 

@@ -13,7 +13,9 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_TOOL(GHC, ghc)
-AM_CONDITIONAL([HAVE_GHC], [test "$GHC"])
+AC_CHECK_TOOL(GHC_PKG, ghc-pkg)
+AM_CONDITIONAL([HAVE_GHC_MMAP], ["$GHC_PKG" list |grep -q mmap])
+
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
