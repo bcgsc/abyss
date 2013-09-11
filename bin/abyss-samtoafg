@@ -105,6 +105,7 @@ while (<>) {
 	die unless defined $qqual;
 
 	$tstart--; # convert to zero-based coordinate
+	next if $flag & 0x100; # secondary alignment
 	$qid .= "/1" if $flag & 0x40; #FREAD1
 	$qid .= "/2" if $flag & 0x80; #FREAD2
 
