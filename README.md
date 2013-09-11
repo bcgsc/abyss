@@ -42,8 +42,9 @@ or download and install the
 
 ## Install ABySS on Mac OS X
 
-Download and install the
-[Mac OS X app](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
+Install [Homebrew](http://brew.sh/), and run the command
+
+	brew install abyss
 
 ## Assemble a small synthetic data set
 
