@@ -174,7 +174,7 @@ static SAMRecord toSAM(const FastaIndex& faIndex,
 		assert(m.qstart < m.qend);
 		unsigned matches = m.qend - m.qstart;
 		assert (m.num != 0);
-		a.mapq = m.size() > 1 || m.num > 1 ? 0 : min(matches, 255U);
+		a.mapq = m.size() > 1 || m.num > 1 ? 0 : min(matches, 254U);
 
 		ostringstream ss;
 		if (m.qstart > 0)
