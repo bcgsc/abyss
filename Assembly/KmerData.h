@@ -115,6 +115,18 @@ class KmerData
 		return isFlagSet(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	}
 
+	/** Mark both senses of this sequence. */
+	void mark()
+	{
+		setFlag(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+	}
+
+	/** Mark one sense of this sequence. */
+	void mark(extDirection sense)
+	{
+		setFlag(sense == SENSE ? SF_MARK_SENSE : SF_MARK_ANTISENSE);
+	}
+
 	ExtensionRecord extension() const { return m_ext; }
 
 	SeqExt getExtension(extDirection dir) const

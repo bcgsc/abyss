@@ -544,7 +544,7 @@ size_t erode(ISequenceCollection* c,
 	if (seq.second.deleted())
 		return 0;
 	extDirection dir;
-	SeqContiguity contiguity = checkSeqContiguity(seq, dir);
+	SeqContiguity contiguity = checkSeqContiguity(seq.second, dir);
 	if (contiguity == SC_CONTIGUOUS)
 		return 0;
 
@@ -613,14 +613,14 @@ void performTrim(SequenceCollectionHash* seqCollection)
  * no edges
  */
 SeqContiguity checkSeqContiguity(
-		const ISequenceCollection::value_type& seq,
+		const ISequenceCollection::mapped_type& vp,
 		extDirection& outDir, bool considerMarks)
 {
-	assert(!seq.second.deleted());
-	bool child = seq.second.hasExtension(SENSE)
-		&& !(considerMarks && seq.second.marked(SENSE));
-	bool parent = seq.second.hasExtension(ANTISENSE)
-		&& !(considerMarks && seq.second.marked(ANTISENSE));
+	assert(!vp.deleted());
+	bool child = vp.hasExtension(SENSE)
+		&& !(considerMarks && vp.marked(SENSE));
+	bool parent = vp.hasExtension(ANTISENSE)
+		&& !(considerMarks && vp.marked(ANTISENSE));
 	if(!child && !parent)
 	{
 		//this sequence is completely isolated
@@ -660,7 +660,7 @@ static size_t trimSequences(SequenceCollectionHash* seqCollection,
 		extDirection dir;
 		// dir will be set to the trimming direction if the sequence
 		// can be trimmed.
-		SeqContiguity status = checkSeqContiguity(*iter, dir);
+		SeqContiguity status = checkSeqContiguity(iter->second, dir);
 
 		if (status == SC_CONTIGUOUS)
 			continue;
@@ -864,7 +864,8 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 		kmerCount++;
 
 		extDirection dir;
-		SeqContiguity status = checkSeqContiguity(*iter, dir, true);
+		SeqContiguity status = checkSeqContiguity(
+				iter->second, dir, true);
 		if (status == SC_CONTIGUOUS)
 			continue;
 		else if(status == SC_ISLAND)

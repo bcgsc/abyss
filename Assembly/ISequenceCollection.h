@@ -18,6 +18,7 @@ typedef unordered_map<Kmer, KmerData, hashKmer> SequenceDataHash;
 class ISequenceCollection
 {
 	public:
+		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;

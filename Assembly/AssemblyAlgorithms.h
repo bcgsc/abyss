@@ -44,7 +44,7 @@ size_t removeMarked(ISequenceCollection* pSC);
 
 // Check whether a sequence can be trimmed
 SeqContiguity checkSeqContiguity(
-		const ISequenceCollection::value_type& seq,
+		const ISequenceCollection::mapped_type& seq,
 		extDirection& outDir, bool considerMarks = false);
 
 // process a terminated branch for trimming

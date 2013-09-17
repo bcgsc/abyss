@@ -250,8 +250,8 @@ Files: Common/city.cc Common/city.h
 Copyright: Copyright 2011 Google, Inc.
 License: Expat
 
-Files: Layout/*
-Copyright: Copyright 2012 Shaun Jackman
+Files: dbgfm/* Layout/*
+Copyright: Copyright 2013 Shaun Jackman
 License: BCCA-Academic or GPL-3+
 
 Files: dialign/*

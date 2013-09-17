@@ -25,6 +25,7 @@ SUBDIRS = \
 	AdjList \
 	Consensus \
 	DAssembler \
+	dbgfm \
 	DistanceEst \
 	KAligner \
 	Layout \

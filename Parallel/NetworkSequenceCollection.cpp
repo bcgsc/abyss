@@ -768,7 +768,7 @@ size_t NetworkSequenceCollection::performNetworkTrim(
 		// dir will be set to the trimming direction if the sequence
 		// can be trimmed.
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
-				*iter, dir);
+				iter->second, dir);
 		if (status == SC_CONTIGUOUS)
 			continue;
 		else if(status == SC_ISLAND)
@@ -1112,7 +1112,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		// dir will be set to the assembly direction if the sequence
 		// can be assembled.
 		SeqContiguity status = AssemblyAlgorithms::checkSeqContiguity(
-				*iter, dir, true);
+				iter->second, dir, true);
 		if (status == SC_CONTIGUOUS)
 			continue;
 		else if(status == SC_ISLAND)
