@@ -3,7 +3,7 @@ bin_PROGRAMS = SimpleGraph
 SimpleGraph_CPPFLAGS = -pthread -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
 
-SimpleGraph_CXXFLAGS = -Wno-strict-aliasing
+SimpleGraph_CXXFLAGS = $(AM_CXXFLAGS) -Wno-strict-aliasing
 
 SimpleGraph_LDADD = \
 	$(top_builddir)/Graph/libgraph.a \
