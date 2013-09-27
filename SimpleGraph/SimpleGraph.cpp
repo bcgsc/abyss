@@ -258,7 +258,7 @@ struct ComparePathLength
 		unsigned lenA = calculatePathLength(m_g, m_origin, a);
 		unsigned lenB = calculatePathLength(m_g, m_origin, b);
 		return lenA < lenB
-			|| lenA == lenB && a.size() < b.size();
+			|| (lenA == lenB && a.size() < b.size());
 	}
   private:
 	const Graph& m_g;
