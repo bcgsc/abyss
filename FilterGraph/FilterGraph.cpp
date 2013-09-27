@@ -57,6 +57,7 @@ static const char USAGE_MESSAGE[] =
 "  -T, --island=N        remove islands shorter than N [0]\n"
 "  -t, --tip=N           remove tips shorter than N [0]\n"
 "  -l, --length=N        remove contigs shorter than N [0]\n"
+"  -L, --max-length=N    remove contigs longer than N [0]\n"
 "      --shim            remove filler contigs that only contribute\n"
 "                        to adjacency [default]\n"
 "      --no-shim         disable filler contigs removal\n"
@@ -89,6 +90,9 @@ namespace opt {
 	/** Remove all contigs less than this length. */
 	static unsigned minLen = 0;
 
+	/** Remove all contigs less than this length. */
+	static unsigned maxLen = 0;
+
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
@@ -111,7 +115,7 @@ namespace opt {
 	int format = ADJ; // used by ContigProperties
 }
 
-static const char shortopts[] = "g:i:r:k:l:m:t:T:v";
+static const char shortopts[] = "g:i:r:k:l:L:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -128,6 +132,7 @@ static const struct option longopts[] = {
 	{ "island",        required_argument, NULL, 'T' },
 	{ "tip",           required_argument, NULL, 't' },
 	{ "length",        required_argument, NULL, 'l' },
+	{ "max-length",    required_argument, NULL, 'L' },
 	{ "shim",          no_argument,       &opt::shim, 1 },
 	{ "no-shim",       no_argument,       &opt::shim, 0 },
 	{ "assemble",      no_argument,       &opt::assemble, 1 },
@@ -394,6 +399,21 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool> {
 	}
 };
 
+struct LongerThanX : unary_function<vertex_descriptor, bool> {
+	const Graph& g;
+	const vector<bool>& seen;
+	size_t x;
+
+	LongerThanX(const Graph& g, const vector<bool>& seen, size_t x)
+		: g(g), seen(seen), x(x) { }
+
+	bool operator()(vertex_descriptor y) const
+	{
+		return g[y].length > x && !get(vertex_removed, g, y)
+			&& !seen[get(vertex_contig_index, g, y)];
+	}
+};
+
 static void removeShims(Graph& g, const vector<bool>& seen)
 {
 	if (opt::verbose > 0)
@@ -419,7 +439,8 @@ static void removeShims(Graph& g, const vector<bool>& seen)
 	}
 }
 
-static void removeShortContigs(Graph& g, const vector<bool>& seen)
+template <typename pred>
+static void removeContigs_if(Graph& g, pred p)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_iterator Vit;
@@ -427,8 +448,7 @@ static void removeShortContigs(Graph& g, const vector<bool>& seen)
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	vector<V> sc;
-	copy_if(first, second, back_inserter(sc),
-			ShorterThanX(g, seen, opt::minLen));
+	copy_if(first, second, back_inserter(sc), p);
 	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
 	transform(sc.begin(), sc.end(), back_inserter(g_removed),
 			mem_fun_ref(&ContigNode::contigIndex));
@@ -457,6 +477,9 @@ int main(int argc, char** argv)
 			break;
 		  case 'l':
 			arg >> opt::minLen;
+			break;
+		  case 'L':
+			arg >> opt::maxLen;
 			break;
 		  case 'm':
 			arg >> opt::minOverlap;
@@ -591,7 +614,11 @@ int main(int argc, char** argv)
 
 	// Remove short contigs.
 	if (opt::minLen > 0)
-		removeShortContigs(g, seen);
+		removeContigs_if(g, ShorterThanX(g, seen, opt::minLen));
+
+	// Remove long contigs.
+	if (opt::maxLen > 0)
+		removeContigs_if(g, LongerThanX(g, seen, opt::maxLen));
 
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
