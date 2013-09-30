@@ -73,13 +73,13 @@ vertex_index_sense
 orientVertex(const DBGFM& g, const Kmer& u)
 {
 	struct vertex_index_sense x;
-	std::pair<size_t, size_t> sai = g.m_fm.findInterval(u.str());
+	std::pair<size_t, size_t> sai = g.m_fm.interval(u.str());
 	if (sai.first <= sai.second) {
 		x.i = sai.first;
 		x.sense = false;
 		return x;
 	}
-	sai = g.m_fm.findInterval(reverseComplement(u).str());
+	sai = g.m_fm.interval(reverseComplement(u).str());
 	if (sai.first <= sai.second) {
 		x.i = sai.first;
 		x.sense = true;
@@ -249,7 +249,7 @@ get(vertex_index_t, const DBGFM& g,
 		graph_traits<DBGFM>::vertex_descriptor u)
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
-	std::pair<Vi, Vi> x = g.m_fm.findInterval(u.str());
+	std::pair<Vi, Vi> x = g.m_fm.interval(u.str());
 	assert(x.first <= x.second);
 	return x.first;
 }
