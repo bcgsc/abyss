@@ -11,6 +11,7 @@
 #include "dbgfm/dbgfm.h"
 #include <cassert>
 #include <utility>
+#include <limits.h>
 
 namespace dbg {
 
