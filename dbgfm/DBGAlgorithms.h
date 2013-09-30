@@ -10,6 +10,7 @@
 #include "Common/Log.h"
 #include "dbgfm/dbgfm.h"
 #include <cassert>
+#include <climits> // for UINT_MAX
 #include <utility>
 
 namespace dbg {
