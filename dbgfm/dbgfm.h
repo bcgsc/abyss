@@ -321,7 +321,8 @@ graph_traits<DBGFM>::vertices_size_type
 num_vertices(const DBGFM& g)
 {
 	size_t numChars = g.m_fm.getBWLen() - 1;
-	size_t numStrings = g.m_fm.getNumStrings() - 1;
+	size_t numStrings = g.m_fm.getNumStrings();
+	assert(numChars > numStrings * g.m_k);
 	return numChars - numStrings * g.m_k;
 }
 
