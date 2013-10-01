@@ -12,6 +12,7 @@
 #include <cassert>
 #include <climits> // for UINT_MAX
 #include <utility>
+#include <limits.h>
 
 namespace dbg {
 
