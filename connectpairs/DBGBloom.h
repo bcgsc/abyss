@@ -103,8 +103,8 @@ struct graph_traits<DBGBloom> {
 	typedef size_t vertices_size_type;
 
 	// EdgeListGraph
+	typedef size_t edges_size_type;
 	typedef void edge_iterator;
-	typedef void edges_size_type;
 
 // AdjacencyGraph
 /** Iterate through the adjacent vertices of a vertex. */
@@ -291,10 +291,7 @@ static inline
 graph_traits<DBGBloom>::vertices_size_type
 num_vertices(const DBGBloom& g)
 {
-	// todo
-	(void)g;
-	assert(false);
-	abort();
+	return std::count(g.m_bloom.begin(), g.m_bloom.end(), true);
 }
 
 static inline
@@ -304,6 +301,20 @@ vertices(const DBGBloom& g)
 {
 	typedef graph_traits<DBGBloom>::vertex_iterator Vit;
 	return std::make_pair(Vit(g, 0), Vit(g, g.m_fa.size()));
+}
+
+// EdgeListGraph
+
+static inline
+graph_traits<DBGBloom>::edges_size_type
+num_edges(const DBGBloom& g)
+{
+	typedef graph_traits<DBGBloom>::vertex_iterator Vit;
+	size_t n = 0;
+	std::pair<Vit, Vit> urange = vertices(g);
+	for (Vit uit = urange.first; uit != urange.second; ++uit)
+		n += out_degree(*uit, g);
+	return n;
 }
 
 // PropertyGraph
