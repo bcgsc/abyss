@@ -33,6 +33,9 @@ class DBGBloom {
 	/** The size of a k-mer */
 	unsigned m_k;
 
+	/** The contents of the FASTA file. */
+	std::string m_fa;
+
 	/** The bloom filter */
 	std::vector<bool> m_bloom;
 
@@ -47,10 +50,9 @@ class DBGBloom {
 	void open(const std::string& path)
 	{
 		assert(!path.empty());
-		std::string s;
-		readFile(path.c_str(), s);
-		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
-			std::string kmer = s.substr(i, m_k);
+		readFile(path.c_str(), m_fa);
+		for (size_t i = 0; i < m_fa.size() - m_k + 1; ++i) {
+			std::string kmer = m_fa.substr(i, m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				Kmer u(kmer);
@@ -181,16 +183,19 @@ vertex_exists(graph_traits<DBGBloom>::vertex_descriptor u,
 struct vertex_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
 {
-	/** Return whether this vertex is present. */
-	bool exists() const
-	{
-		return m_g.m_bloom[m_i];
-	}
-
 	/** Skip to the next vertex that is present. */
 	void next()
 	{
-		for (; m_i < m_g.m_bloom.size() && !exists(); ++m_i) {
+		for (; m_i < m_g.m_fa.size() - m_g.m_k + 1; ++m_i) {
+			std::string kmer = m_g.m_fa.substr(m_i, m_g.m_k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				m_u = Kmer(kmer);
+				size_t ui = m_u.getHashCode() % m_g.m_bloom.size();
+				assert(m_g.m_bloom[ui]);
+				return;
+			} else
+				m_i += pos;
 		}
 	}
 
@@ -203,9 +208,7 @@ struct vertex_iterator
 
 	const vertex_descriptor operator*() const
 	{
-		// todo
-		assert(false);
-		abort();
+		return m_u;
 	}
 
 	bool operator==(const vertex_iterator& it) const
@@ -220,7 +223,7 @@ struct vertex_iterator
 
 	vertex_iterator& operator++()
 	{
-		assert(m_i < m_g.m_bloom.size());
+		assert(m_i < m_g.m_fa.size());
 		++m_i;
 		next();
 		return *this;
@@ -229,6 +232,7 @@ struct vertex_iterator
   private:
 	const DBGBloom& m_g;
 	size_t m_i;
+	Kmer m_u;
 }; // vertex_iterator
 
 }; // graph_traits<DBGBloom>
@@ -295,7 +299,7 @@ std::pair<graph_traits<DBGBloom>::vertex_iterator,
 vertices(const DBGBloom& g)
 {
 	typedef graph_traits<DBGBloom>::vertex_iterator Vit;
-	return std::make_pair(Vit(g, 0), Vit(g, g.m_bloom.size()));
+	return std::make_pair(Vit(g, 0), Vit(g, g.m_fa.size()));
 }
 
 // PropertyGraph
