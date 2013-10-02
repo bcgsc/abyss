@@ -46,6 +46,9 @@ static void processReads()
  */
 int main(int argc, const char* argv[])
 {
+	assert(opt::k > 0);
+	Kmer::setLength(opt::k);
+	
 	assert(argc > 1);
 	DBGBloom g(opt::k);
 	loadBloomFilter(g, argv[1]);
