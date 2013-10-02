@@ -11,6 +11,10 @@
 
 using namespace std;
 
+namespace opt {
+	unsigned k = 32;
+}
+
 /** Load the bloom filter. */
 static void loadBloomFilter(DBGBloom& g, const string& path)
 {
@@ -41,10 +45,8 @@ static void processReads()
  */
 int main(int argc, const char* argv[])
 {
-	const unsigned k = 32;
-
 	assert(argc > 1);
-	DBGBloom g(k);
+	DBGBloom g(opt::k);
 	loadBloomFilter(g, argv[1]);
 
 	write_dot(cout, g);
