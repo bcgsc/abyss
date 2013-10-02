@@ -54,13 +54,12 @@ class DBGBloom {
 		assert(k < 40);
 	}
 
-	/** Load the Bloom filter. */
-	void open(const std::string& path)
+	/** Load the Bloom filter from a string. */
+	void assign(const std::string& s)
 	{
-		assert(!path.empty());
-		readFile(path.c_str(), m_fa);
-		for (size_t i = 0; i < m_fa.size() - m_k + 1; ++i) {
-			std::string kmer = m_fa.substr(i, m_k);
+		m_fa = s;
+		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
+			std::string kmer = s.substr(i, m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				Kmer u(kmer);
@@ -69,6 +68,14 @@ class DBGBloom {
 			} else
 				i += pos;
 		}
+	}
+
+	/** Load the Bloom filter from a file. */
+	void open(const std::string& path)
+	{
+		assert(!path.empty());
+		readFile(path.c_str(), m_fa);
+		assign(m_fa);
 	}
 
   private:
