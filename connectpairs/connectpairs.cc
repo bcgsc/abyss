@@ -5,6 +5,8 @@
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
+#include "Graph/DotIO.h"
+
 #include <cassert>
 
 using namespace std;
@@ -44,6 +46,8 @@ int main(int argc, const char* argv[])
 	assert(argc > 1);
 	DBGBloom g(k);
 	loadBloomFilter(g, argv[1]);
+
+	write_dot(cout, g);
 
 	processReads();
 

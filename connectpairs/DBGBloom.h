@@ -22,6 +22,14 @@ using boost::graph_traits;
 /** de Bruijn Graph data structure using a Bloom filter. */
 class DBGBloom {
   public:
+	/** The bundled vertex properties. */
+	typedef no_property vertex_bundled;
+	typedef no_property vertex_property_type;
+
+	/** The bundled edge properties. */
+	typedef no_property edge_bundled;
+	typedef no_property edge_property_type;
+
 	/** The size of a k-mer */
 	unsigned m_k;
 
@@ -288,6 +296,30 @@ get(vertex_complement_t, const DBGBloom&,
 		graph_traits<DBGBloom>::vertex_descriptor u)
 {
 	return reverseComplement(u);
+}
+
+/** Return the name of the specified vertex. */
+static inline
+Kmer get(vertex_name_t, const DBGBloom&,
+		graph_traits<DBGBloom>::vertex_descriptor u)
+{
+	return u;
+}
+
+static inline
+bool
+get(vertex_removed_t, const DBGBloom&,
+		graph_traits<DBGBloom>::vertex_descriptor)
+{
+	return false;
+}
+
+static inline
+no_property
+get(vertex_bundle_t, const DBGBloom&,
+		graph_traits<DBGBloom>::edge_descriptor)
+{
+	return no_property();
 }
 
 static inline
