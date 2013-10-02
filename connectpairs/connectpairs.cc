@@ -1,31 +1,50 @@
+/**
+ * Connect pairs using a Bloom filter de Bruijn graph
+ */
+
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
+
 #include <cassert>
 
-void buildDBGBloom() { assert(false); abort(); }
+using namespace std;
 
-void findPaths() { assert(false); abort(); }
+/** Load the bloom filter. */
+static void loadBloomFilter(DBGBloom& g, const string& path)
+{
+	g.open(path);
+}
 
-void mergePathts() { assert(false); abort(); }
+static void findPaths() { assert(false); abort(); }
 
-void buildRead() { assert(false); abort(); }
+static void mergePathts() { assert(false); abort(); }
 
-void processRead()
+static void buildRead() { assert(false); abort(); }
+
+static void processRead()
 {
 	findPaths();
 	mergePathts();
 	buildRead();
 }
 
-void processReads()
+static void processReads()
 {
 	// for each read
 	processRead();
 }
 
-int main()
+/**
+ * Connect pairs using a Bloom filter de Bruijn graph
+ */
+int main(int argc, const char* argv[])
 {
-	buildDBGBloom();
+	const unsigned k = 32;
+
+	assert(argc > 1);
+	DBGBloom g(k);
+	loadBloomFilter(g, argv[1]);
+
 	processReads();
 
 	return 0;
