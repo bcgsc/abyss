@@ -247,19 +247,6 @@ struct vertex_iterator
 
 } // namespace boost
 
-// BidirectionalGraph
-
-static inline
-graph_traits<DBGBloom>::degree_size_type
-in_degree(graph_traits<DBGBloom>::vertex_descriptor u,
-		const DBGBloom& g)
-{
-	// todo
-	(void)u; (void)g;
-	assert(false);
-	abort();
-}
-
 // AdjacencyGraph
 
 static inline
@@ -286,6 +273,16 @@ out_degree(
 	typedef graph_traits<DBGBloom>::adjacency_iterator Ait;
 	std::pair<Ait, Ait> adj = adjacent_vertices(u, g);
 	return std::distance(adj.first, adj.second);
+}
+
+// BidirectionalGraph
+
+static inline
+graph_traits<DBGBloom>::degree_size_type
+in_degree(graph_traits<DBGBloom>::vertex_descriptor u,
+		const DBGBloom& g)
+{
+	return out_degree(reverseComplement(u), g);
 }
 
 // VertexListGraph
