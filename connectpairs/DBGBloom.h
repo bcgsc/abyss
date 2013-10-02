@@ -6,11 +6,13 @@
 #ifndef DBGBLOOM_H
 #define DBGBLOOM_H 1
 
+#include "Common/HashFunction.h"
 #include "Common/IOUtil.h"
 #include "Common/Kmer.h"
 #include "Common/SeqExt.h" // for NUM_BASES
 #include "Graph/Properties.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib> // for abort
 #include <fstream>
@@ -18,6 +20,12 @@
 #include <vector>
 
 using boost::graph_traits;
+
+/** The hash function used by the Bloom filter. */
+static inline size_t bloomHash(const Kmer& u)
+{
+	return hashmem(&u, sizeof u);
+}
 
 /** de Bruijn Graph data structure using a Bloom filter. */
 class DBGBloom {
@@ -56,7 +64,7 @@ class DBGBloom {
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				Kmer u(kmer);
-				size_t ui = u.getHashCode() % m_bloom.size();
+				size_t ui = bloomHash(u) % m_bloom.size();
 				m_bloom[ui] = true;
 			} else
 				i += pos;
@@ -116,8 +124,7 @@ struct adjacency_iterator
   public:
 	adjacency_iterator(const DBGBloom& g) : m_g(g), m_i(NUM_BASES) { }
 
-	adjacency_iterator(const DBGBloom& g,
-			vertex_descriptor u)
+	adjacency_iterator(const DBGBloom& g, vertex_descriptor u)
 		: m_g(g), m_v(u), m_i(0)
 	{
 		m_v.shift(SENSE);
@@ -161,7 +168,7 @@ graph_traits<DBGBloom>::vertices_size_type
 get(vertex_index_t, const DBGBloom& g,
 		graph_traits<DBGBloom>::vertex_descriptor u)
 {
-	return u.getHashCode() % g.m_bloom.size();
+	return bloomHash(u) % g.m_bloom.size();
 }
 
 // Subgraph
@@ -173,12 +180,13 @@ vertex_exists(graph_traits<DBGBloom>::vertex_descriptor u,
 		const DBGBloom& g)
 {
 	typedef graph_traits<DBGBloom>::vertices_size_type Vi;
-	Vi vi = get(vertex_index, g, u);
-	assert(vi < g.m_bloom.size());
-	return g.m_bloom[vi];
+	Vi ui = get(vertex_index, g, u);
+	assert(ui < g.m_bloom.size());
+	return g.m_bloom[ui];
 }
 
 // VertexListGraph
+
 /** Iterate through the vertices of this graph. */
 struct vertex_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
@@ -191,7 +199,7 @@ struct vertex_iterator
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				m_u = Kmer(kmer);
-				size_t ui = m_u.getHashCode() % m_g.m_bloom.size();
+				size_t ui = bloomHash(m_u) % m_g.m_bloom.size();
 				assert(m_g.m_bloom[ui]);
 				return;
 			} else
@@ -239,20 +247,6 @@ struct vertex_iterator
 
 } // namespace boost
 
-// IncidenceGraph
-
-static inline
-graph_traits<DBGBloom>::degree_size_type
-out_degree(
-		graph_traits<DBGBloom>::vertex_descriptor u,
-		const DBGBloom& g)
-{
-	// todo
-	(void)u; (void)g;
-	assert(false);
-	abort();
-}
-
 // BidirectionalGraph
 
 static inline
@@ -279,6 +273,19 @@ adjacent_vertices(
 		adjacency_iterator;
 	return std::make_pair(adjacency_iterator(g, u),
 			adjacency_iterator(g));
+}
+
+// IncidenceGraph
+
+static inline
+graph_traits<DBGBloom>::degree_size_type
+out_degree(
+		graph_traits<DBGBloom>::vertex_descriptor u,
+		const DBGBloom& g)
+{
+	typedef graph_traits<DBGBloom>::adjacency_iterator Ait;
+	std::pair<Ait, Ait> adj = adjacent_vertices(u, g);
+	return std::distance(adj.first, adj.second);
 }
 
 // VertexListGraph
