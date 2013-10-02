@@ -37,17 +37,28 @@ class DBGBloom {
 	std::vector<bool> m_bloom;
 
 	/** Constructor. */
-	DBGBloom(unsigned k) : m_k(k) { }
+	DBGBloom(unsigned k)
+		: m_k(k), m_bloom(1 << k)
+	{
+		assert(k < 40);
+	}
 
 	/** Load the Bloom filter. */
 	void open(const std::string& path)
 	{
 		assert(!path.empty());
-		std::ifstream in(path.c_str());
-		assert_good(in, path);
-		// todo
-		assert(false);
-		abort();
+		std::string s;
+		readFile(path.c_str(), s);
+		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
+			std::string kmer = s.substr(i, m_k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				Kmer u(kmer);
+				size_t ui = u.getHashCode() % m_bloom.size();
+				m_bloom[ui] = true;
+			} else
+				i += pos;
+		}
 	}
 
   private:

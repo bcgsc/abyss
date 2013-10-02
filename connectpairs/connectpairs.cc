@@ -6,6 +6,7 @@
 #include "DBGBloomAlgorithms.h"
 
 #include "Graph/DotIO.h"
+#include "Graph/Options.h"
 
 #include <cassert>
 
