@@ -9,5 +9,6 @@ abyss_connectpairs_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 abyss_connectpairs_SOURCES = connectpairs.cc \
+	BloomFilter.h \
 	DBGBloom.h \
 	DBGBloomAlgorithms.h

@@ -6,7 +6,8 @@
 #ifndef DBGBLOOM_H
 #define DBGBLOOM_H 1
 
-#include "Common/HashFunction.h"
+#include "BloomFilter.h"
+
 #include "Common/IOUtil.h"
 #include "Common/Kmer.h"
 #include "Common/SeqExt.h" // for NUM_BASES
@@ -17,15 +18,8 @@
 #include <cstdlib> // for abort
 #include <fstream>
 #include <string>
-#include <vector>
 
 using boost::graph_traits;
-
-/** The hash function used by the Bloom filter. */
-static inline size_t bloomHash(const Kmer& u)
-{
-	return hashmem(&u, sizeof u);
-}
 
 /** de Bruijn Graph data structure using a Bloom filter. */
 class DBGBloom {
@@ -45,7 +39,7 @@ class DBGBloom {
 	std::string m_fa;
 
 	/** The bloom filter */
-	std::vector<bool> m_bloom;
+	BloomFilter m_bloom;
 
 	/** Constructor. */
 	DBGBloom(unsigned k)
@@ -61,11 +55,9 @@ class DBGBloom {
 		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
 			std::string kmer = s.substr(i, m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
-			if (pos == std::string::npos) {
-				Kmer u(kmer);
-				size_t ui = bloomHash(u) % m_bloom.size();
-				m_bloom[ui] = true;
-			} else
+			if (pos == std::string::npos)
+				m_bloom.insert(Kmer(kmer));
+			else
 				i += pos;
 		}
 	}
@@ -175,7 +167,7 @@ graph_traits<DBGBloom>::vertices_size_type
 get(vertex_index_t, const DBGBloom& g,
 		graph_traits<DBGBloom>::vertex_descriptor u)
 {
-	return bloomHash(u) % g.m_bloom.size();
+	return g.m_bloom.hash(u) % g.m_bloom.size();
 }
 
 // Subgraph
@@ -186,10 +178,7 @@ bool
 vertex_exists(graph_traits<DBGBloom>::vertex_descriptor u,
 		const DBGBloom& g)
 {
-	typedef graph_traits<DBGBloom>::vertices_size_type Vi;
-	Vi ui = get(vertex_index, g, u);
-	assert(ui < g.m_bloom.size());
-	return g.m_bloom[ui];
+	return g.m_bloom[u];
 }
 
 // VertexListGraph
@@ -206,8 +195,7 @@ struct vertex_iterator
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				m_u = Kmer(kmer);
-				size_t ui = bloomHash(m_u) % m_g.m_bloom.size();
-				assert(m_g.m_bloom[ui]);
+				assert(m_g.m_bloom[m_u]);
 				return;
 			} else
 				m_i += pos;
@@ -298,7 +286,11 @@ static inline
 graph_traits<DBGBloom>::vertices_size_type
 num_vertices(const DBGBloom& g)
 {
-	return std::count(g.m_bloom.begin(), g.m_bloom.end(), true);
+	size_t n = 0;
+	for (size_t i = 0; i < g.m_bloom.size(); ++i)
+		if (g.m_bloom[i])
+			++n;
+	return n;
 }
 
 static inline
