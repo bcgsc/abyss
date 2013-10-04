@@ -105,7 +105,9 @@ struct graph_traits<DBGBloom> {
 	typedef Kmer vertex_descriptor;
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
-		: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
+		: boost::adjacency_graph_tag,
+		boost::incidence_graph_tag,
+		boost::vertex_list_graph_tag
 		{ };
 	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
 
@@ -115,7 +117,6 @@ struct graph_traits<DBGBloom> {
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
 	typedef unsigned degree_size_type;
-	typedef void out_edge_iterator;
 
 	// BidirectionalGraph
 	typedef void in_edge_iterator;
@@ -183,30 +184,69 @@ struct adjacency_iterator
 	short unsigned m_i;
 }; // adjacency_iterator
 
-// PropertyGraph vertex_index
-
-static inline
-graph_traits<DBGBloom>::vertices_size_type
-get(const DBGBloomIndexMap& pmap,
-		graph_traits<DBGBloom>::vertex_descriptor u)
+/** IncidenceGraph */
+struct out_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
 {
-	return pmap.m_g.m_bloom.hash(u) % pmap.m_g.m_bloom.size();
-}
+	/** Skip to the next edge that is present. */
+	void next()
+	{
+		for (; m_i < NUM_BASES; ++m_i) {
+			m_v.setLastBase(SENSE, m_i);
+			if (vertex_exists(m_v, *m_g))
+				break;
+		}
+	}
 
-static inline
-DBGBloomIndexMap
-get(vertex_index_t, const DBGBloom& g)
-{
-	return DBGBloomIndexMap(g);
-}
+  public:
+	out_edge_iterator() { }
 
-static inline
-graph_traits<DBGBloom>::vertices_size_type
-get(vertex_index_t tag, const DBGBloom& g,
-		graph_traits<DBGBloom>::vertex_descriptor u)
-{
-	return get(get(tag, g), u);
-}
+	out_edge_iterator(const DBGBloom& g) : m_g(&g), m_i(NUM_BASES) { }
+
+	out_edge_iterator(const DBGBloom& g, vertex_descriptor u)
+		: m_g(&g), m_v(u), m_i(0)
+	{
+		m_v.shift(SENSE);
+		next();
+	}
+
+	edge_descriptor operator*() const
+	{
+		assert(m_i < NUM_BASES);
+		return edge_descriptor(m_u, m_v);
+	}
+
+	bool operator==(const out_edge_iterator& it) const
+	{
+		return m_i == it.m_i;
+	}
+
+	bool operator!=(const out_edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	out_edge_iterator& operator++()
+	{
+		assert(m_i < NUM_BASES);
+		++m_i;
+		next();
+		return *this;
+	}
+
+	out_edge_iterator operator++(int)
+	{
+		out_edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const DBGBloom* m_g;
+	vertex_descriptor m_u;
+	vertex_descriptor m_v;
+	unsigned m_i;
+}; // out_edge_iterator
 
 // Subgraph
 
@@ -317,6 +357,17 @@ out_degree(
 	return std::distance(adj.first, adj.second);
 }
 
+static inline
+std::pair<graph_traits<DBGBloom>::out_edge_iterator,
+	graph_traits<DBGBloom>::out_edge_iterator>
+out_edges(
+		graph_traits<DBGBloom>::vertex_descriptor u,
+		const DBGBloom& g)
+{
+	typedef graph_traits<DBGBloom>::out_edge_iterator Oit;
+	return std::make_pair(Oit(g, u), Oit(g));
+}
+
 // BidirectionalGraph
 
 static inline
@@ -361,6 +412,23 @@ num_edges(const DBGBloom& g)
 	for (Vit uit = urange.first; uit != urange.second; ++uit)
 		n += out_degree(*uit, g);
 	return n;
+}
+
+// PropertyGraph vertex_index
+
+static inline
+DBGBloomIndexMap
+get(vertex_index_t, const DBGBloom& g)
+{
+	return DBGBloomIndexMap(g);
+}
+
+static inline
+graph_traits<DBGBloom>::vertices_size_type
+get(vertex_index_t tag, const DBGBloom& g,
+		graph_traits<DBGBloom>::vertex_descriptor u)
+{
+	return get(get(tag, g), u);
 }
 
 // PropertyGraph
