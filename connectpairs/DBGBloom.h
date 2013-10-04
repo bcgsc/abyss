@@ -75,10 +75,30 @@ class DBGBloom {
 	DBGBloom(const DBGBloom&);
 }; // class DBGBloom
 
+/** PropertyGraph vertex_index */
+struct DBGBloomIndexMap
+	: boost::put_get_helper<size_t, DBGBloomIndexMap>
+{
+	typedef Kmer key_type;
+	typedef size_t value_type;
+	typedef value_type reference;
+	typedef boost::readable_property_map_tag category;
+
+	const DBGBloom& m_g;
+
+	DBGBloomIndexMap(const DBGBloom& g) : m_g(g) { }
+
+	reference operator[](const key_type& u) const
+	{
+		return m_g.m_bloom.hash(u) % m_g.m_bloom.size();
+	}
+};
+
 // Graph
 
 namespace boost {
 
+/** Graph traits */
 template <>
 struct graph_traits<DBGBloom> {
 	// Graph
@@ -88,6 +108,8 @@ struct graph_traits<DBGBloom> {
 		: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
 		{ };
 	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+
+	static vertex_descriptor null_vertex() { return Kmer(); }
 
 	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
@@ -106,6 +128,7 @@ struct graph_traits<DBGBloom> {
 	typedef void edge_iterator;
 
 // AdjacencyGraph
+
 /** Iterate through the adjacent vertices of a vertex. */
 struct adjacency_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
@@ -160,14 +183,29 @@ struct adjacency_iterator
 	short unsigned m_i;
 }; // adjacency_iterator
 
-// PropertyGraph
+// PropertyGraph vertex_index
 
 static inline
 graph_traits<DBGBloom>::vertices_size_type
-get(vertex_index_t, const DBGBloom& g,
+get(const DBGBloomIndexMap& pmap,
 		graph_traits<DBGBloom>::vertex_descriptor u)
 {
-	return g.m_bloom.hash(u) % g.m_bloom.size();
+	return pmap.m_g.m_bloom.hash(u) % pmap.m_g.m_bloom.size();
+}
+
+static inline
+DBGBloomIndexMap
+get(vertex_index_t, const DBGBloom& g)
+{
+	return DBGBloomIndexMap(g);
+}
+
+static inline
+graph_traits<DBGBloom>::vertices_size_type
+get(vertex_index_t tag, const DBGBloom& g,
+		graph_traits<DBGBloom>::vertex_descriptor u)
+{
+	return get(get(tag, g), u);
 }
 
 // Subgraph
@@ -190,12 +228,12 @@ struct vertex_iterator
 	/** Skip to the next vertex that is present. */
 	void next()
 	{
-		for (; m_i < m_g.m_fa.size() - m_g.m_k + 1; ++m_i) {
-			std::string kmer = m_g.m_fa.substr(m_i, m_g.m_k);
+		for (; m_i < m_g->m_fa.size() - m_g->m_k + 1; ++m_i) {
+			std::string kmer = m_g->m_fa.substr(m_i, m_g->m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
 				m_u = Kmer(kmer);
-				assert(m_g.m_bloom[m_u]);
+				assert(m_g->m_bloom[m_u]);
 				return;
 			} else
 				m_i += pos;
@@ -203,8 +241,10 @@ struct vertex_iterator
 	}
 
   public:
+	vertex_iterator() { }
+
 	vertex_iterator(const DBGBloom& g, size_t i)
-		: m_g(g), m_i(i)
+		: m_g(&g), m_i(i)
 	{
 		next();
 	}
@@ -226,19 +266,26 @@ struct vertex_iterator
 
 	vertex_iterator& operator++()
 	{
-		assert(m_i < m_g.m_fa.size());
+		assert(m_i < m_g->m_fa.size());
 		++m_i;
 		next();
 		return *this;
 	}
 
   private:
-	const DBGBloom& m_g;
+	const DBGBloom* m_g;
 	size_t m_i;
 	Kmer m_u;
 }; // vertex_iterator
 
 }; // graph_traits<DBGBloom>
+
+/** PropertyGraph vertex_index */
+template<>
+struct property_map<DBGBloom, vertex_index_t> {
+	typedef DBGBloomIndexMap type;
+	typedef type const_type;
+};
 
 } // namespace boost
 
