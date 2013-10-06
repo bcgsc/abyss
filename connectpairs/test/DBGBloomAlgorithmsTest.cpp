@@ -1,0 +1,46 @@
+#include "DBGBloomAlgorithms.h"
+#include "Sequence.h"
+#include <gtest/gtest.h>
+#include <string>
+
+using namespace std;
+
+TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
+{
+	// Merged seq: GATG
+	// Read 1:     GAT  =>
+	// Read 2:      TAC <=
+
+	const int k = 2;
+	Kmer::setLength(k);
+	DBGBloom g(k);
+	
+	string mergedSeq = "GATG";
+	FastaRecord read1, read2;
+	read1.id = "read/1";
+	read1.seq = mergedSeq.substr(0,3);
+	read2.id = "read/2";
+	read2.seq = reverseComplement(mergedSeq.substr(1,3));
+
+	// TODO: DBGBloom should automatically 
+	// load reverse complement of input sequences
+
+	g.assign(read1.seq);
+	g.assign(reverseComplement(read1.seq));
+	g.assign(read2.seq);
+	g.assign(reverseComplement(read2.seq));
+	
+	vector<FastaRecord> mergedSeqs;
+	PathSearchResult result;
+	result = connectPairs(read1, read2, g, mergedSeqs, 1, 4);
+
+	EXPECT_EQ(FOUND_PATH, result);
+	ASSERT_EQ(1, mergedSeqs.size());
+	EXPECT_EQ("GATG", mergedSeqs[0].seq);
+}
+
+int main(int argc, char** argv)
+{
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+}
