@@ -204,7 +204,7 @@ struct out_edge_iterator
 	out_edge_iterator(const DBGBloom& g) : m_g(&g), m_i(NUM_BASES) { }
 
 	out_edge_iterator(const DBGBloom& g, vertex_descriptor u)
-		: m_g(&g), m_v(u), m_i(0)
+		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.shift(SENSE);
 		next();
