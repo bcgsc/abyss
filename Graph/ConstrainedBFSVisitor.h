@@ -54,26 +54,26 @@ public:
 			m_minDepth(minDepth),
 			m_maxDepth(maxDepth),
 			m_colorMap(colorMap),
-			m_bFoundGoal(false)
-	{
-		m_maxDepthVisited = 0;
-	}
+			m_bFoundGoal(false),
+			m_maxDepthVisited(0) {}
 
-
-	/* useful for debugging 
+#if 0	
+	// for debugging
 	void examine_vertex(const V& v, const G& g)
 	{
 		std::cout << "visiting vertex: " << v << "\n";
 	}
-	*/
+#endif
 
 	void examine_edge(const E& e, const G& g)
 	{
 		V u = source(e, g);
 		V v = target(e, g);
 
+#if 0
 		// useful for debugging
-		//std::cout << "visiting edge: (" << u << ", " << v << ")\n";
+		std::cout << "visiting edge: (" << u << ", " << v << ")\n";
+#endif		
 
 		m_predecessors[v].push_back(u);
 
@@ -103,8 +103,10 @@ public:
 	{
 		PathList pathsFound;
 		PathSearchResult result = pathsToGoal(pathsFound, 1);
-		if (result == FOUND_PATH)
+		if (result == FOUND_PATH) {
+			assert(pathsFound.size() == 1);
 			uniquePath = pathsFound[0];
+		}
 		return result;
 	}
 
@@ -119,7 +121,7 @@ public:
 
 		if (exceededMaxPaths)
 			return TOO_MANY_PATHS;
-		else if (pathsFound.size() == 0)
+		else if (pathsFound.empty())
 			return NO_PATH;
 		else
 			return FOUND_PATH;
@@ -155,7 +157,7 @@ private:
 			}
 		}
 
-		if (back != m_start && m_predecessors[back].size() == 0) {
+		if (back != m_start && m_predecessors[back].empty()) {
 			deadEndPaths++;
 		}
 

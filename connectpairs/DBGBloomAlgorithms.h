@@ -10,30 +10,26 @@
 #include "Graph/BreadthFirstSearch.h"
 #include "Graph/ConstrainedBFSVisitor.h"
 
-using namespace std;
-
 #define SUPPRESS_UNUSED_WARNING(a) (void)a
 
 typedef ConstrainedBFSVisitor<DBGBloom>::Path Path;
 typedef ConstrainedBFSVisitor<DBGBloom>::PathList PathList;
 
-inline static Sequence pathToSeq(Path path)
+static inline Sequence pathToSeq(Path path)
 {
 	Sequence seq;
 	assert(path.size() > 0);
 	seq.append(path[0].str());
-	for (unsigned i = 1; i < path.size(); i++) {
-		string kmer = path[i].str();
-		seq.append(kmer.substr(kmer.length() - 1, 1));
-	}
+	for (unsigned i = 1; i < path.size(); i++)
+		seq.append(1, path[i].getLastBaseChar());
 	return seq;
 }
 
 static PathSearchResult connectPairs(
-	FastaRecord& read1, 
-	FastaRecord& read2, 
+	const FastaRecord& read1, 
+	const FastaRecord& read2, 
 	const DBGBloom& g,
-	vector<FastaRecord>& mergedSeqs,
+	std::vector<FastaRecord>& mergedSeqs,
 	int maxPaths = 2,
 	int maxMergedSeqLen = NO_LIMIT)
 {
@@ -46,12 +42,12 @@ static PathSearchResult connectPairs(
 	if (read1.seq.length() < k || read2.seq.length() < k)
 		return NO_PATH;
 
-	string kmer1Str = read1.seq.substr(0, k);
-	string kmer2Str = read2.seq.substr(0, k); 
+	std::string kmer1Str = read1.seq.substr(0, k);
+	std::string kmer2Str = read2.seq.substr(0, k); 
 
 	// TODO: advance to next kmers in the reads instead of giving up
-	if (kmer1Str.find_first_not_of("AGCTagct") != string::npos ||
-		kmer2Str.find_first_not_of("AGCTagct") != string::npos)
+	if (kmer1Str.find_first_not_of("AGCTagct") != std::string::npos ||
+		kmer2Str.find_first_not_of("AGCTagct") != std::string::npos)
 		return NO_PATH;
 	
 	// TODO: add option for mate pair orientation (RF)
@@ -64,7 +60,7 @@ static PathSearchResult connectPairs(
 		return NO_PATH;
 
 	int maxPathLen;
-	if (maxMergedSeqLen== NO_LIMIT) {
+	if (maxMergedSeqLen == NO_LIMIT) {
 		maxPathLen = NO_LIMIT;
 	} else {
 		assert(maxMergedSeqLen > 0);
@@ -79,7 +75,7 @@ static PathSearchResult connectPairs(
 	PathSearchResult result = visitor.pathsToGoal(pathsFound, maxPaths);
 
 	if (result == FOUND_PATH) {
-		string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
+		std::string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
 		for (unsigned i = 0; i < pathsFound.size(); i++) {
 			FastaRecord mergedSeq;
 			mergedSeq.id = mergedId;
