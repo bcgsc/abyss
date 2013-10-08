@@ -1,3 +1,4 @@
+#include "Graph/Path.h"
 #include "Graph/BreadthFirstSearch.h"
 #include "Graph/ConstrainedBFSVisitor.h"
 #include "Graph/DefaultColorMap.h"
@@ -48,7 +49,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 	Path uniquePath;
 	PathSearchResult result = visitor.uniquePathToGoal(uniquePath);
 
-	ASSERT_EQ(result, UNIQUE_PATH);
+	ASSERT_EQ(result, FOUND_PATH);
 	ASSERT_EQ(visitor.pathToString(uniquePath), "0,2,3");
 }
 
@@ -98,7 +99,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
 
 	Path uniquePath;
 
-	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), MULTIPLE_PATHS);
+	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_PATHS);
 }
 
 }
