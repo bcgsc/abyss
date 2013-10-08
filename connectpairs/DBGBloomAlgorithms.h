@@ -25,7 +25,7 @@ static inline Sequence pathToSeq(Path path)
 	return seq;
 }
 
-static PathSearchResult connectPairs(
+static inline PathSearchResult connectPairs(
 	const FastaRecord& read1, 
 	const FastaRecord& read2, 
 	const DBGBloom& g,
