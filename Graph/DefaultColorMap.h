@@ -6,21 +6,6 @@
 #include <boost/graph/properties.hpp>
 #include <boost/functional/hash/hash.hpp>
 
-/*
-namespace boost
-{
-	template <> struct hash<Kmer>
-	{
-		size_t operator()(const Kmer& kmer) const
-		{
-			return kmer.getHashCode();
-		}
-	};
-}
-*/
-
-//template <typename G,
-	//typename hash_fn = boost::hash<typename boost::graph_traits<G>::vertex_descriptor> >
 template <typename G>
 class DefaultColorMap
 {
@@ -31,7 +16,6 @@ public:
 	typedef boost::default_color_type value_type;
 	typedef boost::read_write_property_map_tag category;
 
-//	unordered_map<key_type, value_type, hash_fn> map;
 	unordered_map<key_type, value_type> map;
 };
 
@@ -44,7 +28,6 @@ struct property_traits< DefaultColorMap<G> > {
 	typedef typename DefaultColorMap<G>::category category;
 };
 }
-
 
 template <typename G>
 typename DefaultColorMap<G>::value_type
