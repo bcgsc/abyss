@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 template <typename G>
 class ConstrainedBFSVisitor : public boost::default_bfs_visitor
@@ -150,7 +151,9 @@ private:
 		if (back == m_start) {
 			if (pathToStart.size() > m_minDepth) {
 				if (maxPaths == NO_MAX || (int)(pathList.size()) < maxPaths) {
-					pathList.push_back(reversePath(pathToStart));
+					Path reversedPath(pathToStart);
+					reverse(reversedPath.begin(), reversedPath.end());
+					pathList.push_back(reversedPath);
 				} else {
 					exceededMaxPaths = true;
 				}
@@ -166,15 +169,6 @@ private:
 			pathsToGoal(pathToStart, pathList, maxPaths, exceededMaxPaths, fullDepthPaths, deadEndPaths);
 			pathToStart.pop_back();
 		}
-	}
-
-
-	Path reversePath(Path path)
-	{
-		Path reversed;
-		for (int i = path.size() - 1; i >= 0; i--)
-			reversed.push_back(path[i]);
-		return reversed;
 	}
 
 };
