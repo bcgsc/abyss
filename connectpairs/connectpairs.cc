@@ -2,6 +2,8 @@
  * Connect pairs using a Bloom filter de Bruijn graph
  */
 
+#include "config.h"
+
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
@@ -14,6 +16,9 @@
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
+#if _OPENMP
+# include <omp.h>
+#endif
 
 #undef USESEQAN
 
@@ -44,6 +49,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
+"  -j, --threads=N         use N parallel threads [1]\n"
 "  -k, --kmer=N            the size of a k-mer\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
@@ -63,23 +69,27 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+	/** The number of parallel threads. */
+	static unsigned threads = 1;
+
 	/** The size of a k-mer. */
 	unsigned k;
 }
 
 /** Counters */
-struct {
+static struct {
 	size_t noPath;
 	size_t uniquePath;
 	size_t multiplePaths;
 	size_t tooManyPaths;
 } g_count;
 
-static const char shortopts[] = "k:q:v";
+static const char shortopts[] = "j:k:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
@@ -166,17 +176,22 @@ static void connectPair(const DBGBloom& g,
 	switch (result) {
 	  case NO_PATH:
 		assert(paths.empty());
+#pragma omp atomic
 		++g_count.noPath;
 		break;
 	  case FOUND_PATH:
 		assert(!paths.empty());
 		if (paths.size() == 1) {
+#pragma omp atomic
 			++g_count.uniquePath;
+#pragma omp critical(cout)
 			cout << paths.front();
 		} else
+#pragma omp atomic
 			++g_count.multiplePaths;
 		break;
 	  case TOO_MANY_PATHS:
+#pragma omp atomic
 		++g_count.tooManyPaths;
 		break;
 	}
@@ -185,8 +200,16 @@ static void connectPair(const DBGBloom& g,
 /** Connect read pairs. */
 static void connectPairs(const DBGBloom& g, FastaInterleave& in)
 {
-	for (FastaRecord a, b; in >> a >> b;)
-		connectPair(g, a, b);
+#pragma omp parallel
+	for (FastaRecord a, b;;) {
+		bool good;
+#pragma omp critical(in)
+		good = in >> a >> b;
+		if (good)
+			connectPair(g, a, b);
+		else
+			break;
+	}
 }
 
 /**
@@ -202,6 +225,8 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
+		  case 'j':
+			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
 		  case 'q':
@@ -237,6 +262,11 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	Kmer::setLength(opt::k);
 
