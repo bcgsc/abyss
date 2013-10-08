@@ -6,6 +6,7 @@
 #include "DBGBloomAlgorithms.h"
 
 #include "Common/Options.h"
+#include "DataLayer/FastaInterleave.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
@@ -38,7 +39,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... READS1 READS2\n"
+"Usage: " PROGRAM " [OPTION]... REFERENCE READS1 READS2\n"
 "Connect the pairs READS1 and READS2 and close the gap using\n"
 "a Bloom filter de Bruijn graph.\n"
 "\n"
@@ -66,6 +67,13 @@ namespace opt {
 	/** The size of a k-mer. */
 	unsigned k;
 }
+
+/** Counters */
+struct {
+	size_t noPath;
+	size_t uniquePath;
+	size_t multiplePaths;
+} g_count;
 
 static const char shortopts[] = "k:q:v";
 
@@ -134,23 +142,42 @@ static void seqanTests()
 }
 #endif
 
-static void findPaths() { assert(false); abort(); }
-
-static void mergePathts() { assert(false); abort(); }
-
-static void buildRead() { assert(false); abort(); }
-
-static void processRead()
+/** Connect a read pair. */
+static void connectPair(const DBGBloom& g,
+	const FastaRecord& read1, const FastaRecord& read2)
 {
-	findPaths();
-	mergePathts();
-	buildRead();
+	const unsigned maxNumPaths = 2;
+	const unsigned maxPathLen = 1000;
+
+	vector<FastaRecord> paths;
+	PathSearchResult result
+		= connectPairs(read1, read2, g, paths,
+				maxNumPaths, maxPathLen);
+	switch (result) {
+	  case NO_PATH:
+		assert(paths.empty());
+		++g_count.noPath;
+		break;
+	  case FOUND_PATH:
+		++g_count.uniquePath;
+		assert(paths.size() == 1);
+		cout << paths.front();
+		break;
+	  case TOO_MANY_PATHS:
+		assert(paths.size() > 1);
+		++g_count.multiplePaths;
+		if (opt::verbose > 1)
+			cerr << "Multiple paths:\t"
+				<< paths.size() << '\t' << paths.front().id;
+		break;
+	}
 }
 
-static void processReads()
+/** Connect read pairs. */
+static void connectPairs(const DBGBloom& g, FastaInterleave& in)
 {
-	// for each read
-	processRead();
+	for (FastaRecord a, b; in >> a >> b;)
+		connectPair(g, a, b);
 }
 
 /**
@@ -191,12 +218,12 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
+	if (argc - optind < 3) {
 		cerr << PROGRAM ": missing arguments\n";
 		die = true;
 	}
 
-	if (argc - optind > 2) {
+	if (argc - optind > 3) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -213,15 +240,37 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
+	if (opt::verbose > 0)
+		cerr << "Constructing the Bloom filter\n";
 	DBGBloom g(opt::k);
 	assert(optind < argc);
 	loadBloomFilter(g, argv[optind]);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
-	write_dot(cout, g);
+	if (opt::verbose > 0)
+		cerr << "Connecting read pairs\n";
+	FastaInterleave in(argv + optind + 1, argv + argc,
+			FastaReader::FOLD_CASE);
+	connectPairs(g, in);
 
-	processReads();
+	if (opt::verbose > 0) {
+		size_t n = g_count.uniquePath + g_count.noPath
+			+ g_count.multiplePaths;
+		cerr <<
+			"Unique path: " << g_count.uniquePath
+				<< " (" << setprecision(3) << (float)100
+					* g_count.uniquePath / n << "%)\n"
+			"No path: " << g_count.noPath
+				<< " (" << setprecision(3) << (float)100
+					* g_count.noPath / n << "%)\n"
+			"Multiple paths: " << g_count.multiplePaths
+				<< " (" << setprecision(3) << (float)100
+					* g_count.multiplePaths / n << "%)\n";
+	}
+
+	cout.flush();
+	assert_good(cout, "stdout");
 
 	return 0;
 }
