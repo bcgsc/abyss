@@ -611,6 +611,7 @@ int main(int argc, char** argv)
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
 		assemble(g, back_inserter(paths));
+		g_contigNames.unlock();
 		for (ContigPaths::const_iterator it = paths.begin();
 				it != paths.end(); ++it) {
 			ContigNode u(numContigs + it - paths.begin(), false);
@@ -618,6 +619,7 @@ int main(int argc, char** argv)
 			put(vertex_name, g, u, name);
 			cout << name << '\t' << *it << '\n';
 		}
+		g_contigNames.lock();
 	}
 
 	// Output the updated adjacency graph.
