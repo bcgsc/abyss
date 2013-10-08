@@ -58,7 +58,7 @@ public:
 			m_bFoundGoal(false),
 			m_maxDepthVisited(0) {}
 
-#if 0	
+#if 0
 	// for debugging
 	void examine_vertex(const V& v, const G& g)
 	{
@@ -74,7 +74,7 @@ public:
 #if 0
 		// useful for debugging
 		std::cout << "visiting edge: (" << u << ", " << v << ")\n";
-#endif		
+#endif
 
 		m_predecessors[v].push_back(u);
 
