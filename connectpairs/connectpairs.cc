@@ -10,7 +10,6 @@
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
-#include "Graph/GraphUtil.h"
 
 #include <cassert>
 #include <getopt.h>
@@ -39,7 +38,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... REFERENCE READS1 READS2\n"
+"Usage: " PROGRAM " [OPTION]... [READS1 READS2]...\n"
 "Connect the pairs READS1 and READS2 and close the gap using\n"
 "a Bloom filter de Bruijn graph.\n"
 "\n"
@@ -73,6 +72,7 @@ struct {
 	size_t noPath;
 	size_t uniquePath;
 	size_t multiplePaths;
+	size_t tooManyPaths;
 } g_count;
 
 static const char shortopts[] = "k:q:v";
@@ -95,9 +95,19 @@ static const struct option longopts[] = {
 };
 
 /** Load the bloom filter. */
-static void loadBloomFilter(DBGBloom& g, const string& path)
+template <typename It>
+void loadBloomFilter(DBGBloom& g, It first, It last)
 {
-	g.open(path);
+	if (opt::verbose > 0)
+		cerr << "Constructing the Bloom filter\n";
+	for (It it = first; it != last; ++it) {
+		std::string path = *it;
+		if (opt::verbose > 0)
+			cerr << "Reading `" << path << "'...\n";
+		g.open(path);
+	}
+	if (opt::verbose > 0)
+		cerr << "Loaded " << num_vertices(g) << " k-mer\n";
 }
 
 #if USESEQAN
@@ -159,16 +169,15 @@ static void connectPair(const DBGBloom& g,
 		++g_count.noPath;
 		break;
 	  case FOUND_PATH:
-		++g_count.uniquePath;
-		assert(paths.size() == 1);
-		cout << paths.front();
+		assert(!paths.empty());
+		if (paths.size() == 1) {
+			++g_count.uniquePath;
+			cout << paths.front();
+		} else
+			++g_count.multiplePaths;
 		break;
 	  case TOO_MANY_PATHS:
-		assert(paths.size() > 1);
-		++g_count.multiplePaths;
-		if (opt::verbose > 1)
-			cerr << "Multiple paths:\t"
-				<< paths.size() << '\t' << paths.front().id;
+		++g_count.tooManyPaths;
 		break;
 	}
 }
@@ -218,13 +227,8 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 3) {
+	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
-		die = true;
-	}
-
-	if (argc - optind > 3) {
-		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
 
@@ -240,33 +244,33 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
-	if (opt::verbose > 0)
-		cerr << "Constructing the Bloom filter\n";
 	DBGBloom g(opt::k);
-	assert(optind < argc);
-	loadBloomFilter(g, argv[optind]);
-	if (opt::verbose > 0)
-		printGraphStats(cerr, g);
+	loadBloomFilter(g, argv + optind, argv + argc);
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
-	FastaInterleave in(argv + optind + 1, argv + argc,
+	FastaInterleave in(argv + optind, argv + argc,
 			FastaReader::FOLD_CASE);
 	connectPairs(g, in);
+	assert(in.eof());
 
 	if (opt::verbose > 0) {
 		size_t n = g_count.uniquePath + g_count.noPath
-			+ g_count.multiplePaths;
+			+ g_count.multiplePaths + g_count.tooManyPaths;
 		cerr <<
-			"Unique path: " << g_count.uniquePath
-				<< " (" << setprecision(3) << (float)100
-					* g_count.uniquePath / n << "%)\n"
+			"Total number of read pairs: " << n << "\n"
 			"No path: " << g_count.noPath
 				<< " (" << setprecision(3) << (float)100
 					* g_count.noPath / n << "%)\n"
+			"Unique path: " << g_count.uniquePath
+				<< " (" << setprecision(3) << (float)100
+					* g_count.uniquePath / n << "%)\n"
 			"Multiple paths: " << g_count.multiplePaths
 				<< " (" << setprecision(3) << (float)100
-					* g_count.multiplePaths / n << "%)\n";
+					* g_count.multiplePaths / n << "%)\n"
+			"Too many paths: " << g_count.tooManyPaths
+				<< " (" << setprecision(3) << (float)100
+					* g_count.tooManyPaths / n << "%)\n";
 	}
 
 	cout.flush();
