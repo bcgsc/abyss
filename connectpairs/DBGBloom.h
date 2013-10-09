@@ -55,9 +55,12 @@ class DBGBloom {
 		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
 			std::string kmer = s.substr(i, m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
-			if (pos == std::string::npos)
-				m_bloom.insert(Kmer(kmer));
-			else
+			if (pos == std::string::npos) {
+				Kmer u(kmer);
+				m_bloom.insert(u);
+				u.reverseComplement();
+				m_bloom.insert(u);
+			} else
 				i += pos;
 		}
 	}
