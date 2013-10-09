@@ -82,6 +82,7 @@ static struct {
 	size_t uniquePath;
 	size_t multiplePaths;
 	size_t tooManyPaths;
+	size_t tooManyBranches;
 } g_count;
 
 static const char shortopts[] = "j:k:q:v";
@@ -168,11 +169,12 @@ static void connectPair(const DBGBloom& g,
 {
 	const unsigned maxNumPaths = 2;
 	const unsigned maxPathLen = 1000;
+	const unsigned maxBranches = 1000;
 
 	vector<FastaRecord> paths;
 	PathSearchResult result
 		= connectPairs(read1, read2, g, paths,
-				maxNumPaths, maxPathLen);
+				maxNumPaths, maxPathLen, maxBranches);
 	switch (result) {
 	  case NO_PATH:
 		assert(paths.empty());
@@ -193,6 +195,10 @@ static void connectPair(const DBGBloom& g,
 	  case TOO_MANY_PATHS:
 #pragma omp atomic
 		++g_count.tooManyPaths;
+		break;
+	  case TOO_MANY_BRANCHES:
+#pragma omp atomic
+		++g_count.tooManyBranches;
 		break;
 	}
 }

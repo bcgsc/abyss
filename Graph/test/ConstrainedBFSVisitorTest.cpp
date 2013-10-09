@@ -11,6 +11,7 @@ using namespace boost;
 
 typedef adjacency_list<> Graph;
 typedef ConstrainedBFSVisitor<Graph>::Path Path;
+typedef ConstrainedBFSVisitor<Graph>::PathList PathList;
 
 namespace {
 
@@ -41,9 +42,10 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 	int goal = 3;
 	int minDepth = 0;
 	int maxDepth = 2;
+	int maxBranches = 3;
 
 	DefaultColorMap<Graph> colorMap;
-	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, colorMap);
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
 	Path uniquePath;
@@ -59,9 +61,10 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
 	int goal = 3;
 	int minDepth = 0;
 	int maxDepth = 1;
+	int maxBranches = 3;
 
 	DefaultColorMap<Graph> colorMap;
-	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, colorMap);
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
 	Path uniquePath;
@@ -76,9 +79,10 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMinDepthLimit)
 	int goal = 3;
 	int minDepth = 3;
 	int maxDepth = 10;
+	int maxBranches = 3;
 
 	DefaultColorMap<Graph> colorMap;
-	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, colorMap);
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
 	Path uniquePath;
@@ -92,14 +96,58 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
 	int goal = 3;
 	int minDepth = 0;
 	int maxDepth = 3;
+	int maxBranches = 3;
 
 	DefaultColorMap<Graph> colorMap;
-	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, colorMap);
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
 
 	Path uniquePath;
 
 	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_PATHS);
+}
+
+TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
+{
+	int start = 0;
+	int goal = 3;
+	int minDepth = 0;
+	int maxDepth = 3;
+	int maxBranches = 3;
+
+	DefaultColorMap<Graph> colorMap;
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
+	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
+
+	PathList paths;
+	PathSearchResult result = visitor.pathsToGoal(paths, 2);
+
+	EXPECT_EQ(result, FOUND_PATH);
+	ASSERT_EQ(paths.size(), 2);
+
+	string path1 = visitor.pathToString(paths[0]);
+	string path2 = visitor.pathToString(paths[1]);
+
+	EXPECT_TRUE(path1 != path2);
+	ASSERT_TRUE(path1 == "0,1,3" || path1 == "0,2,3");
+	ASSERT_TRUE(path2 == "0,1,3" || path2 == "0,2,3");
+}
+
+TEST_F(ConstrainedBFSVisitorTest, RespectBranchLimit)
+{
+	int start = 0;
+	int goal = 3;
+	int minDepth = 0;
+	int maxDepth = 3;
+	int maxBranches = 1;
+
+	DefaultColorMap<Graph> colorMap;
+	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
+	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
+
+	Path uniquePath;
+
+	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_BRANCHES);
 }
 
 }

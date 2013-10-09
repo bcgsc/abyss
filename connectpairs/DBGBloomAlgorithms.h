@@ -31,7 +31,8 @@ static inline PathSearchResult connectPairs(
 	const DBGBloom& g,
 	std::vector<FastaRecord>& mergedSeqs,
 	int maxPaths = 2,
-	int maxMergedSeqLen = NO_LIMIT)
+	int maxMergedSeqLen = NO_LIMIT,
+	int maxBranches = NO_LIMIT)
 {
 	SUPPRESS_UNUSED_WARNING(connectPairs);
 
@@ -68,7 +69,7 @@ static inline PathSearchResult connectPairs(
 	}
 
 	DefaultColorMap<DBGBloom> colorMap;
-	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen, colorMap);
+	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen, maxBranches, colorMap);
 	breadthFirstSearch(g, kmer1, visitor, colorMap);
 
 	PathList pathsFound;

@@ -27,20 +27,24 @@ private:
 
 	typedef std::vector<V> Predecessors;
 	typedef unordered_map<V, Predecessors> PredecessorMap;
+	typedef unordered_map<V, unsigned> OutDegreeMap;
 	typedef unordered_map<V, depth_t> DepthMap;
 
 	static const int NO_MAX = -1;
 
 	PredecessorMap m_predecessors;
+	OutDegreeMap m_outDegree;
 	DepthMap m_depthMap;
 	const V& m_start;
 	const V& m_goal;
 	depth_t m_minDepth;
 	depth_t m_maxDepth;
+	int m_maxBranches;
 	DefaultColorMap<G>& m_colorMap;
 	bool m_bFoundGoal;
-
 	depth_t m_maxDepthVisited;
+	unsigned m_branches;
+	bool m_tooManyBranches;
 
 public:
 
@@ -49,14 +53,18 @@ public:
 		const V& goal,
 		depth_t minDepth,
 		depth_t maxDepth,
+		unsigned maxBranches,
 		DefaultColorMap<G>& colorMap) :
 			m_start(start),
 			m_goal(goal),
 			m_minDepth(minDepth),
 			m_maxDepth(maxDepth),
+			m_maxBranches(maxBranches),
 			m_colorMap(colorMap),
 			m_bFoundGoal(false),
-			m_maxDepthVisited(0) {}
+			m_maxDepthVisited(0),
+			m_branches(1),
+			m_tooManyBranches(false) {}
 
 #if 0
 	// for debugging
@@ -68,24 +76,51 @@ public:
 
 	void examine_edge(const E& e, const G& g)
 	{
+
 		V u = source(e, g);
 		V v = target(e, g);
 
 #if 0
-		// useful for debugging
+		// for debugging
 		std::cout << "visiting edge: (" << u << ", " << v << ")\n";
 #endif
 
+		if (m_tooManyBranches) {
+			put(m_colorMap, v, boost::black_color);
+			return;
+		}
+
+		// record history of traversal, so that we can trace 
+		// backwards from goal to start in pathsToGoal()
+
 		m_predecessors[v].push_back(u);
+
+		// track depth of nodes and go no deeper than m_maxDepth
 
 		if (get(m_colorMap, v) == boost::white_color) // tree edge
 			m_depthMap[v] = m_depthMap[u] + 1;
 
-		if (m_depthMap[v] >= m_maxDepth) // limit depth of traversal
+		if (m_depthMap[v] >= m_maxDepth)
 			put(m_colorMap, v, boost::black_color);
 
 		if (m_depthMap[v] > m_maxDepthVisited)
 			m_maxDepthVisited = m_depthMap[v];
+
+		// track number of branches and abort if we exceed m_maxBranches 
+
+		if (m_outDegree.find(u) == m_outDegree.end())
+			m_outDegree[u] = 0;
+
+		m_outDegree[u]++;
+
+		if (m_outDegree[u] > 1)
+			m_branches++;
+
+		if (m_maxBranches != NO_MAX && m_branches > (unsigned)m_maxBranches) {
+			m_tooManyBranches = true;
+			put(m_colorMap, v, boost::black_color);
+		}
+
 	}
 
 	static std::string pathToString(const Path& path)
@@ -113,6 +148,9 @@ public:
 
 	PathSearchResult pathsToGoal(PathList& pathsFound, int maxPaths)
 	{
+		if (m_tooManyBranches)
+			return TOO_MANY_BRANCHES;
+
 		Path reversePath;
 		reversePath.push_back(m_goal);
 		bool exceededMaxPaths = false;
