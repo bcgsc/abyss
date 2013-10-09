@@ -8,6 +8,6 @@ enum PathSearchResult {
 	NO_PATH 
 };
 
-extern const int NO_LIMIT = -1;
+const unsigned NO_LIMIT = 0;
 
 #endif

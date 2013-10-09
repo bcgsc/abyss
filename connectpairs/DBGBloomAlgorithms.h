@@ -30,9 +30,9 @@ static inline PathSearchResult connectPairs(
 	const FastaRecord& read2, 
 	const DBGBloom& g,
 	std::vector<FastaRecord>& mergedSeqs,
-	int maxPaths = 2,
-	int maxMergedSeqLen = NO_LIMIT,
-	int maxBranches = NO_LIMIT)
+	unsigned maxPaths = 2,
+	unsigned maxMergedSeqLen = NO_LIMIT,
+	unsigned maxBranches = NO_LIMIT)
 {
 	SUPPRESS_UNUSED_WARNING(connectPairs);
 
@@ -60,7 +60,7 @@ static inline PathSearchResult connectPairs(
 	if (!graph_traits<DBGBloom>::vertex_exists(kmer1, g) || !graph_traits<DBGBloom>::vertex_exists(kmer2, g)) 
 		return NO_PATH;
 
-	int maxPathLen;
+	unsigned maxPathLen;
 	if (maxMergedSeqLen == NO_LIMIT) {
 		maxPathLen = NO_LIMIT;
 	} else {

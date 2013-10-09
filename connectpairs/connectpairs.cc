@@ -169,7 +169,7 @@ static void connectPair(const DBGBloom& g,
 {
 	const unsigned maxNumPaths = 2;
 	const unsigned maxPathLen = 1000;
-	const unsigned maxBranches = 1000;
+	const unsigned maxBranches = NO_LIMIT;
 
 	vector<FastaRecord> paths;
 	PathSearchResult result

@@ -30,8 +30,6 @@ private:
 	typedef unordered_map<V, unsigned> OutDegreeMap;
 	typedef unordered_map<V, depth_t> DepthMap;
 
-	static const int NO_MAX = -1;
-
 	PredecessorMap m_predecessors;
 	OutDegreeMap m_outDegree;
 	DepthMap m_depthMap;
@@ -39,7 +37,7 @@ private:
 	const V& m_goal;
 	depth_t m_minDepth;
 	depth_t m_maxDepth;
-	int m_maxBranches;
+	unsigned m_maxBranches;
 	DefaultColorMap<G>& m_colorMap;
 	bool m_bFoundGoal;
 	depth_t m_maxDepthVisited;
@@ -116,7 +114,7 @@ public:
 		if (m_outDegree[u] > 1)
 			m_branches++;
 
-		if (m_maxBranches != NO_MAX && m_branches > (unsigned)m_maxBranches) {
+		if (m_maxBranches != NO_LIMIT && m_branches > m_maxBranches) {
 			m_tooManyBranches = true;
 			put(m_colorMap, v, boost::black_color);
 		}
@@ -146,7 +144,7 @@ public:
 		return result;
 	}
 
-	PathSearchResult pathsToGoal(PathList& pathsFound, int maxPaths)
+	PathSearchResult pathsToGoal(PathList& pathsFound, unsigned maxPaths)
 	{
 		if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
@@ -174,7 +172,7 @@ public:
 private:
 
 	void pathsToGoal(Path& pathToStart, PathList& pathList,
-		int maxPaths, bool& exceededMaxPaths, unsigned long& fullDepthPaths, unsigned long& deadEndPaths)
+		unsigned maxPaths, bool& exceededMaxPaths, unsigned long& fullDepthPaths, unsigned long& deadEndPaths)
 	{
 		if (pathToStart.size() > (depth_t)(m_maxDepth + 1)) {
 			fullDepthPaths++;
@@ -188,7 +186,7 @@ private:
 
 		if (back == m_start) {
 			if (pathToStart.size() > m_minDepth) {
-				if (maxPaths == NO_MAX || (int)(pathList.size()) < maxPaths) {
+				if (maxPaths == NO_LIMIT || pathList.size() < maxPaths) {
 					pathList.push_back(pathToStart);
 					reverse(pathList.back().begin(), pathList.back().end());
 				} else {
