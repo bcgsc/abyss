@@ -181,19 +181,17 @@ struct vertex_iterator
 {
 	typedef graph_traits<DBGFM>::vertices_size_type It;
 
-	/** Return whether this vertex is present. */
-	bool exists() const
-	{
-		std::string s = DBGQuery::extractSubstring(
-				&m_g.m_fm, m_it, m_g.m_k);
-		return s.size() == m_g.m_k
-			&& s.find('$') == std::string::npos;
-	}
-
 	/** Skip to the next vertex that is present. */
 	void next()
 	{
-		for (; m_it < m_last && !exists(); m_it++) {
+		for (; m_it < m_last; ++m_it) {
+			std::string s = DBGQuery::extractSubstring(
+					&m_g.m_fm, m_it, m_g.m_k);
+			if (s.size() == m_g.m_k
+					&& s.find('$') == std::string::npos) {
+				m_u = vertex_descriptor(s);
+				break;
+			}
 		}
 	}
 
@@ -206,11 +204,8 @@ struct vertex_iterator
 
 	const vertex_descriptor operator*() const
 	{
-		std::string s = DBGQuery::extractSubstring(
-				&m_g.m_fm, m_it, m_g.m_k);
-		assert(s.size() == m_g.m_k);
-		assert(s.find('$') == std::string::npos);
-		return vertex_descriptor(s);
+		assert(m_it < m_last);
+		return m_u;
 	}
 
 	bool operator==(const vertex_iterator& it) const
@@ -235,6 +230,7 @@ struct vertex_iterator
 	const DBGFM& m_g;
 	It m_last;
 	It m_it;
+	vertex_descriptor m_u;
 }; // vertex_iterator
 
 }; // graph_traits<DBGFM>
