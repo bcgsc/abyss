@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <cstdlib> // for abort
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -85,6 +86,7 @@ orientVertex(const DBGFM& g, const Kmer& u)
 		x.sense = true;
 		return x;
 	}
+	std::cerr << "error: " << __func__ << ": " << u << '\n';
 	assert(false);
 	abort();
 }
@@ -185,11 +187,14 @@ struct vertex_iterator
 	void next()
 	{
 		for (; m_it < m_last; ++m_it) {
-			std::string s = DBGQuery::extractSubstring(
-					&m_g.m_fm, m_it, m_g.m_k);
+			std::pair<std::string, size_t> x
+				= DBGQuery::extractSubstringAndIndex(
+						&m_g.m_fm, m_it, m_g.m_k);
+			const std::string& s = x.first;
 			if (s.size() == m_g.m_k
 					&& s.find('$') == std::string::npos) {
 				m_u = vertex_descriptor(s);
+				m_ui = x.second;
 				break;
 			}
 		}
@@ -226,11 +231,19 @@ struct vertex_iterator
 		return *this;
 	}
 
+	/** Return the vertex index of this iterator. */
+	vertices_size_type index() const
+	{
+		assert(m_it < m_last);
+		return m_ui;
+	}
+
   private:
 	const DBGFM& m_g;
 	It m_last;
 	It m_it;
 	vertex_descriptor m_u;
+	vertices_size_type m_ui;
 }; // vertex_iterator
 
 }; // graph_traits<DBGFM>
@@ -268,6 +281,28 @@ get(vertex_bundle_t, DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = get(vertex_index, g, u);
+	assert(ui < g.m_vpmap.size());
+	return g.m_vpmap[ui];
+}
+
+static inline
+const vertex_bundle_type<DBGFM>::type&
+get(vertex_bundle_t, const DBGFM& g,
+		const graph_traits<DBGFM>::vertex_iterator& uit)
+{
+	typedef graph_traits<DBGFM>::vertices_size_type Vi;
+	Vi ui = uit.index();
+	assert(ui < g.m_vpmap.size());
+	return g.m_vpmap[ui];
+}
+
+static inline
+vertex_bundle_type<DBGFM>::type&
+get(vertex_bundle_t, DBGFM& g,
+		const graph_traits<DBGFM>::vertex_iterator& uit)
+{
+	typedef graph_traits<DBGFM>::vertices_size_type Vi;
+	Vi ui = uit.index();
 	assert(ui < g.m_vpmap.size());
 	return g.m_vpmap[ui];
 }

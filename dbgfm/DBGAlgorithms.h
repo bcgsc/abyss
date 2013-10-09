@@ -37,7 +37,7 @@ generateAdjacency(Graph& g)
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
 		V u = *uit;
-		VP& up = get(vertex_bundle, g, u);
+		VP& up = get(vertex_bundle, g, uit);
 		if (up.deleted())
 			continue;
 
@@ -108,7 +108,7 @@ markAmbiguous(Graph& g)
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
 		V u = *uit;
-		VP& up = get(vertex_bundle, g, u);
+		VP& up = get(vertex_bundle, g, uit);
 		if (up.deleted())
 			continue;
 
@@ -191,7 +191,7 @@ assemble(Graph& g, FastaWriter* fileWriter)
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
 		V u = *uit;
-		const VP& up = get(vertex_bundle, g, u);
+		const VP& up = get(vertex_bundle, g, uit);
 		if (up.deleted())
 			continue;
 
