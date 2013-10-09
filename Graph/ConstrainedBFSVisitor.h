@@ -151,9 +151,8 @@ private:
 		if (back == m_start) {
 			if (pathToStart.size() > m_minDepth) {
 				if (maxPaths == NO_MAX || (int)(pathList.size()) < maxPaths) {
-					Path reversedPath(pathToStart);
-					reverse(reversedPath.begin(), reversedPath.end());
-					pathList.push_back(reversedPath);
+					pathList.push_back(pathToStart);
+					reverse(pathList.back().begin(), pathList.back().end());
 				} else {
 					exceededMaxPaths = true;
 				}
