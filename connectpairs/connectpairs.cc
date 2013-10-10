@@ -292,7 +292,8 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0) {
 		size_t n = g_count.uniquePath + g_count.noPath
-			+ g_count.multiplePaths + g_count.tooManyPaths;
+			+ g_count.multiplePaths + g_count.tooManyPaths
+			+ g_count.tooManyBranches;
 		cerr <<
 			"Total number of read pairs: " << n << "\n"
 			"No path: " << g_count.noPath
@@ -306,7 +307,10 @@ int main(int argc, char** argv)
 					* g_count.multiplePaths / n << "%)\n"
 			"Too many paths: " << g_count.tooManyPaths
 				<< " (" << setprecision(3) << (float)100
-					* g_count.tooManyPaths / n << "%)\n";
+					* g_count.tooManyPaths / n << "%)\n"
+			"Too many branches: " << g_count.tooManyBranches
+				<< " (" << setprecision(3) << (float)100
+					* g_count.tooManyBranches / n << "%)\n";
 	}
 
 	cout.flush();
