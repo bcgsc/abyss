@@ -10,7 +10,7 @@
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
 
-#include "dbg_query.h"
+#include "fm_index.h"
 
 #include <cassert>
 #include <cstdlib> // for abort
@@ -183,18 +183,28 @@ struct vertex_iterator
 {
 	typedef graph_traits<DBGFM>::vertices_size_type It;
 
+	/** Increment */
+	void increment()
+	{
+		assert(m_it < m_last);
+		++m_it;
+		char c = m_g.m_fm.getChar(m_ui);
+		if (c == EOF) {
+			assert(m_it == m_last);
+			return;
+		}
+		assert(!m_s.empty());
+		m_s.resize(m_s.size() - 1);
+		m_s.insert(m_s.begin(), c);
+		m_ui = m_g.m_fm.LF(m_ui);
+	}
+
 	/** Skip to the next vertex that is present. */
 	void next()
 	{
-		for (; m_it < m_last; ++m_it) {
-			std::pair<std::string, size_t> x
-				= DBGQuery::extractSubstringAndIndex(
-						&m_g.m_fm, m_it, m_g.m_k);
-			const std::string& s = x.first;
-			if (s.size() == m_g.m_k
-					&& s.find('$') == std::string::npos) {
-				m_u = vertex_descriptor(s);
-				m_ui = x.second;
+		for (; m_it < m_last; increment()) {
+			if (m_s.find('$') == std::string::npos) {
+				m_u = vertex_descriptor(m_s);
 				break;
 			}
 		}
@@ -202,7 +212,8 @@ struct vertex_iterator
 
   public:
 	vertex_iterator(const DBGFM& g, const It& it)
-		: m_g(g), m_last(m_g.m_fm.getBWLen()), m_it(it)
+		: m_g(g), m_last(m_g.m_fm.getBWLen()), m_it(it),
+		m_s(g.m_k, '$'), m_ui(0)
 	{
 		next();
 	}
@@ -226,7 +237,7 @@ struct vertex_iterator
 	vertex_iterator& operator++()
 	{
 		assert(m_it < m_last);
-		++m_it;
+		increment();
 		next();
 		return *this;
 	}
@@ -242,6 +253,7 @@ struct vertex_iterator
 	const DBGFM& m_g;
 	It m_last;
 	It m_it;
+	std::string m_s;
 	vertex_descriptor m_u;
 	vertices_size_type m_ui;
 }; // vertex_iterator
