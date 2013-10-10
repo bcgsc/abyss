@@ -188,7 +188,7 @@ struct vertex_iterator
 	{
 		assert(m_it < m_last);
 		++m_it;
-		char c = m_g.m_fm.getChar(m_ui);
+		char c = m_g->m_fm.getChar(m_ui);
 		if (c == EOF) {
 			assert(m_it == m_last);
 			return;
@@ -196,7 +196,7 @@ struct vertex_iterator
 		assert(!m_s.empty());
 		m_s.resize(m_s.size() - 1);
 		m_s.insert(m_s.begin(), c);
-		m_ui = m_g.m_fm.LF(m_ui);
+		m_ui = m_g->m_fm.LF(m_ui);
 	}
 
 	/** Skip to the next vertex that is present. */
@@ -212,7 +212,7 @@ struct vertex_iterator
 
   public:
 	vertex_iterator(const DBGFM& g, const It& it)
-		: m_g(g), m_last(m_g.m_fm.getBWLen()), m_it(it),
+		: m_g(&g), m_last(m_g->m_fm.getBWLen()), m_it(it),
 		m_s(g.m_k, '$'), m_ui(0)
 	{
 		next();
@@ -256,7 +256,7 @@ struct vertex_iterator
 	}
 
   private:
-	const DBGFM& m_g;
+	const DBGFM* m_g;
 	It m_last;
 	It m_it;
 	std::string m_s;
