@@ -36,9 +36,9 @@ addSimpleEdges(Graph& g)
 	size_t numBasesSet = 0;
 
 	std::pair<Vit, Vit> urange = vertices(g);
+	Vit vit = urange.first;
+	V v = *vit;
 	Vit uit = urange.first;
-	size_t vpos = uit.position();
-	V v = *uit;
 	for (++uit; uit != urange.second; ++uit) {
 		V u = *uit;
 		VP& up = get(vertex_bundle, g, uit);
@@ -48,15 +48,15 @@ addSimpleEdges(Graph& g)
 		if (++count % 1000000 == 0)
 			logger(1) << "Adding simple edges: " << count << '\n';
 
-		// Check whether this vertex is adjacent to the previous.
-		if (vpos - uit.position() == 1) {
+		if (vit.position() - uit.position() == 1) {
+			// These two k-mer are adjacent in the original sequence.
 			up.setBaseExtension(SENSE, v.getLastBase());
-			VP& vp = get(vertex_bundle, g, v);
+			VP& vp = get(vertex_bundle, g, vit);
 			vp.setBaseExtension(ANTISENSE, u.getFirstBase());
 			numBasesSet += 2;
 		}
 
-		vpos = uit.position();
+		vit = uit;
 		v = u;
 		pumpNetwork(g);
 	}
