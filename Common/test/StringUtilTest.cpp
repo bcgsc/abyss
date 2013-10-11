@@ -29,12 +29,12 @@ TEST(chomp_test, base_cases)
 	string anotherString = "\n";
 	EXPECT_TRUE(1 == anotherString.length());
 	EXPECT_TRUE(chomp(anotherString));
-	
+
 	// test .length=2
 	string greatString = "ab";
 	EXPECT_FALSE(chomp(greatString));
 	EXPECT_EQ(2, greatString.length());
-	
+
 	string badString = "a\n";
 	EXPECT_TRUE(chomp(badString));
 	EXPECT_EQ(1, badString.length());
@@ -49,7 +49,7 @@ TEST(toSI_test, all_the_cases)
 	EXPECT_EQ("-1.23e-13 ", toSI(-0.000000000000123456));
 	EXPECT_EQ("0 ", toSI(0));
 	EXPECT_EQ("-0 ", toSI(-0.000));
-	
+
 	//trivially all posible values
 	EXPECT_EQ("1.23 k", toSI(1234));
 	EXPECT_EQ("123 M", toSI(123440111));
@@ -118,7 +118,7 @@ TEST(endsWith_test, any_cases)
 	EXPECT_FALSE(endsWith("hello", "hello"));
 	EXPECT_FALSE(endsWith("", ""));
 	EXPECT_TRUE(endsWith("hello", ""));
-	
+
 	// EXPECT_FALSE(endsWith("hello", NULL));
 	// NULL is not valid
 	EXPECT_TRUE(endsWith("hello", "ello"));
