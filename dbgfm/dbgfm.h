@@ -9,6 +9,7 @@
 #include "Assembly/KmerData.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
+#include "FMIndex/bit_array.h"
 
 #include "fm_index.h"
 
@@ -47,26 +48,63 @@ class DBGFM {
 	/** The FM index */
 	FMIndex m_fm;
 
+	/** Map suffix array indices to vertex indices. */
+	wat_array::BitArray m_rank;
+
 	/** Vertex property map */
 	std::vector<vertex_bundled> m_vpmap;
 
 	/** Construct a de Bruijn graph. */
 	DBGFM(unsigned k, const std::string& fmPath)
-		: m_k(k), m_fm(fmPath)
+		: m_k(k), m_fm(fmPath), m_rank(m_fm.getBWLen())
 	{
-		m_vpmap.resize(m_fm.getBWLen());
+		// Map suffix array indices to vertex indices.
+		std::string s(m_k, '$');
+		size_t index = 0;
+		size_t n = m_fm.getBWLen() - 1;
+		for (size_t i = 0; i < n; ++i) {
+			char c = m_fm.getChar(index);
+			assert(c != EOF);
+			s.resize(s.size() - 1);
+			s.insert(s.begin(), c);
+			index = m_fm.LF(index);
+			m_rank.SetBit(s.find('$') == std::string::npos, index);
+		}
+		m_rank.Build();
+
+		m_vpmap.resize(m_rank.one_num());
+
+#ifndef NDEBUG
+		// Check that we have the expected number of k-mer.
+		size_t numChars = m_fm.getBWLen() - 1;
+		size_t numStrings = m_fm.getNumStrings();
+		assert(numChars > numStrings * m_k);
+		assert(numChars - numStrings * m_k == m_rank.one_num());
+#endif
 	}
 
 	/** Return the vertex property. */
-	const vertex_bundled& operator[](size_t i) const
+	const vertex_bundled& operator[](size_t sai) const
 	{
+		assert(sai < m_rank.length());
+		size_t i = m_rank.Rank(1, sai);
+		assert(i < m_vpmap.size());
+		return m_vpmap[i];
+	}
+
+	/** Return the vertex property. */
+	vertex_bundled& operator[](size_t sai)
+	{
+		assert(sai < m_rank.length());
+		size_t i = m_rank.Rank(1, sai);
+		assert(i < m_vpmap.size());
 		return m_vpmap[i];
 	}
 
 	/** Return the reoriented vertex property. */
 	vertex_bundled operator[](const vertex_index_sense& x) const
 	{
-		return x.sense ? ~m_vpmap[x.i] : m_vpmap[x.i];
+		return x.sense ? ~(*this)[x.i] : (*this)[x.i];
 	}
 
   private:
@@ -294,8 +332,8 @@ get(vertex_bundle_t, const DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = get(vertex_index, g, u);
-	assert(ui < g.m_vpmap.size());
-	return g.m_vpmap[ui];
+	assert(ui < g.m_rank.length());
+	return g[ui];
 }
 
 static inline
@@ -305,8 +343,8 @@ get(vertex_bundle_t, DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = get(vertex_index, g, u);
-	assert(ui < g.m_vpmap.size());
-	return g.m_vpmap[ui];
+	assert(ui < g.m_rank.length());
+	return g[ui];
 }
 
 static inline
@@ -316,8 +354,8 @@ get(vertex_bundle_t, const DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = uit.index();
-	assert(ui < g.m_vpmap.size());
-	return g.m_vpmap[ui];
+	assert(ui < g.m_rank.length());
+	return g[ui];
 }
 
 static inline
@@ -327,8 +365,8 @@ get(vertex_bundle_t, DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = uit.index();
-	assert(ui < g.m_vpmap.size());
-	return g.m_vpmap[ui];
+	assert(ui < g.m_rank.length());
+	return g[ui];
 }
 
 // IncidenceGraph
@@ -375,10 +413,7 @@ static inline
 graph_traits<DBGFM>::vertices_size_type
 num_vertices(const DBGFM& g)
 {
-	size_t numChars = g.m_fm.getBWLen() - 1;
-	size_t numStrings = g.m_fm.getNumStrings();
-	assert(numChars > numStrings * g.m_k);
-	return numChars - numStrings * g.m_k;
+	return g.m_rank.one_num();
 }
 
 static inline
@@ -427,8 +462,8 @@ put(vertex_mark_out_t, DBGFM& g,
 	(void)flag;
 	assert(flag);
 	vertex_index_sense x = orientVertex(g, u);
-	assert(x.i < g.m_vpmap.size());
-	g.m_vpmap[x.i].setFlag(
+	assert(x.i < g.m_rank.length());
+	g[x.i].setFlag(
 			x.sense ? SF_MARK_ANTISENSE : SF_MARK_SENSE);
 }
 
@@ -440,8 +475,8 @@ put(vertex_mark_in_t, DBGFM& g,
 	(void)flag;
 	assert(flag);
 	vertex_index_sense x = orientVertex(g, u);
-	assert(x.i < g.m_vpmap.size());
-	g.m_vpmap[x.i].setFlag(
+	assert(x.i < g.m_rank.length());
+	g[x.i].setFlag(
 			x.sense ? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 }
 
