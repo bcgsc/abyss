@@ -249,6 +249,12 @@ struct vertex_iterator
 		return m_ui;
 	}
 
+	/** Return the position in the original text. */
+	size_t position()
+	{
+		return m_last - m_it;
+	}
+
   private:
 	const DBGFM& m_g;
 	It m_last;

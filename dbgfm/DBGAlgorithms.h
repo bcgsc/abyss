@@ -19,6 +19,53 @@ using AssemblyAlgorithms::checkSeqContiguity;
 using AssemblyAlgorithms::extendBranch;
 using AssemblyAlgorithms::processLinearExtensionForBranch;
 
+/** Add edges for the (k+1)-mer found in the original sequence.
+ * @return the number of edges added
+*/
+template<typename Graph>
+size_t
+addSimpleEdges(Graph& g)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_iterator Vit;
+	typedef typename vertex_bundle_type<Graph>::type VP;
+
+	Timer timer(__func__);
+
+	size_t count = 0;
+	size_t numBasesSet = 0;
+
+	std::pair<Vit, Vit> urange = vertices(g);
+	Vit uit = urange.first;
+	size_t vpos = uit.position();
+	V v = *uit;
+	for (++uit; uit != urange.second; ++uit) {
+		V u = *uit;
+		VP& up = get(vertex_bundle, g, uit);
+		if (up.deleted())
+			continue;
+
+		if (++count % 1000000 == 0)
+			logger(1) << "Adding simple edges: " << count << '\n';
+
+		// Check whether this vertex is adjacent to the previous.
+		if (vpos - uit.position() == 1) {
+			up.setBaseExtension(SENSE, v.getLastBase());
+			VP& vp = get(vertex_bundle, g, v);
+			vp.setBaseExtension(ANTISENSE, u.getFirstBase());
+			numBasesSet += 2;
+		}
+
+		vpos = uit.position();
+		v = u;
+		pumpNetwork(g);
+	}
+
+	if (numBasesSet > 0)
+		logger(0) << "Added " << numBasesSet << " simple edges.\n";
+	return numBasesSet;
+}
+
 /** Generate the adjacency information for each sequence in the
  * collection.
  */
@@ -33,7 +80,8 @@ generateAdjacency(Graph& g)
 	Timer timer("GenerateAdjacency");
 
 	size_t count = 0;
-	size_t numBasesSet = 0;
+	size_t numBasesSet = addSimpleEdges(g);
+
 	std::pair<Vit, Vit> urange = vertices(g);
 	for (Vit uit = urange.first; uit != urange.second; ++uit) {
 		V u = *uit;
@@ -45,6 +93,11 @@ generateAdjacency(Graph& g)
 			logger(1) << "Finding adjacent k-mer: " << count << '\n';
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
+			if (up.hasExtension(dir)) {
+				// This vertex already has edges. Skip it.
+				continue;
+			}
+
 			V v = u;
 			v.shift(dir);
 			for (unsigned i = 0; i < NUM_BASES; i++) {
