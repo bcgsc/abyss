@@ -271,6 +271,13 @@ assemble(Graph& g, FastaWriter* fileWriter)
 		}
 		assert(status == SC_ENDPOINT);
 
+		if (dir == SENSE) {
+			// Assemble contigs from the tail to the head following
+			// in-edges.
+			pumpNetwork(g);
+			continue;
+		}
+
 		BranchRecord currBranch(dir);
 		currBranch.push_back(std::make_pair(u, up));
 		Kmer v = u;
@@ -283,14 +290,12 @@ assemble(Graph& g, FastaWriter* fileWriter)
 					UINT_MAX);
 		}
 
-		if (currBranch.isCanonical()) {
-			size_t removed = assembleContig(g,
-					fileWriter, currBranch, contigID++);
-			assembledKmer += currBranch.size();
-			if (removed > 0) {
-				lowCoverageContigs++;
-				lowCoverageKmer += removed;
-			}
+		size_t removed = assembleContig(g,
+				fileWriter, currBranch, contigID++);
+		assembledKmer += currBranch.size();
+		if (removed > 0) {
+			lowCoverageContigs++;
+			lowCoverageKmer += removed;
 		}
 
 		pumpNetwork(g);
