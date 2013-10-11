@@ -231,6 +231,7 @@ assemble(Graph& g, FastaWriter* fileWriter)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	typedef typename graph_traits<Graph>::vertex_iterator Vit;
+	typedef typename graph_traits<Graph>::vertices_size_type Vi;
 	typedef typename vertex_bundle_type<Graph>::type VP;
 
 	Timer timer("Assemble");
@@ -280,14 +281,29 @@ assemble(Graph& g, FastaWriter* fileWriter)
 
 		BranchRecord currBranch(dir);
 		currBranch.push_back(std::make_pair(u, up));
-		Kmer v = u;
+		V v = u;
+		Vi vi = uit.index();
 		extendBranch(currBranch, v, up.getExtension(dir));
 		assert(currBranch.isActive());
 		while (currBranch.isActive()) {
-			const VP& vp = g[orientVertex(g, v)];
+			char c = v.getFirstBaseChar();
+			size_t viupper = g.m_fm.getPC(c) + g.m_fm.getOcc(c, vi) - 1;
+			vi = g.m_fm.getPC(c) + g.m_fm.getOcc(c, vi - 1);
+			if (vi != viupper) {
+				vertex_index_sense voriented = orientVertex(g, v);
+				if (voriented.sense == true) {
+					std::cerr << "error: misoriented vertex: "
+						<< v << '\n';
+					abort();
+				}
+				vi = voriented.i;
+			}
+			const VP& vp = g[vi];
 			processLinearExtensionForBranch(currBranch, v,
 					vp.extension(), vp.getMultiplicity(),
 					UINT_MAX);
+			if (currBranch.isActive() && vp.marked(dir))
+				currBranch.terminate(BS_AMBI_OPP);
 		}
 
 		size_t removed = assembleContig(g,

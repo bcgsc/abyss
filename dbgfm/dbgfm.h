@@ -57,6 +57,12 @@ class DBGFM {
 		m_vpmap.resize(m_fm.getBWLen());
 	}
 
+	/** Return the vertex property. */
+	const vertex_bundled& operator[](size_t i) const
+	{
+		return m_vpmap[i];
+	}
+
 	/** Return the reoriented vertex property. */
 	vertex_bundled operator[](const vertex_index_sense& x) const
 	{
