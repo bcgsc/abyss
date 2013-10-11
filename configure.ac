@@ -177,6 +177,7 @@ AC_CONFIG_FILES([
 	Align/Makefile
 	Assembly/Makefile
 	Common/Makefile
+	Common/test/Makefile
 	DataLayer/Makefile
 	FMIndex/Makefile
 	Graph/Makefile
@@ -202,7 +203,6 @@ AC_CONFIG_FILES([
 	Consensus/Makefile
 	FilterGraph/Makefile
 	GapFiller/Makefile
-	Unittest/Makefile
 ])
 AC_OUTPUT
 
