@@ -286,10 +286,13 @@ assemble(Graph& g, FastaWriter* fileWriter)
 		extendBranch(currBranch, v, up.getExtension(dir));
 		assert(currBranch.isActive());
 		while (currBranch.isActive()) {
-			char c = v.getFirstBaseChar();
-			size_t viupper = g.m_fm.getPC(c) + g.m_fm.getOcc(c, vi) - 1;
-			vi = g.m_fm.getPC(c) + g.m_fm.getOcc(c, vi - 1);
-			if (vi != viupper) {
+			size_t viupper = vi;
+			if (g.m_fm.updateInterval(vi, viupper,
+						v.getFirstBaseChar())) {
+				// The interval is open.
+				assert(vi == viupper);
+			} else {
+				// The interval is closed.
 				vertex_index_sense voriented = orientVertex(g, v);
 				if (voriented.sense == true) {
 					std::cerr << "error: misoriented vertex: "
