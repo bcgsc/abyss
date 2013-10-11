@@ -39,6 +39,7 @@ SUBDIRS = \
 	SimpleGraph \
 	kmerprint \
 	FilterGraph \
+	Unittest \
 	$(GapFiller)
 
 %.html: %.md

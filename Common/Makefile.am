@@ -36,5 +36,3 @@ libcommon_a_SOURCES = \
 	UnorderedMap.h \
 	cholesky.hpp \
 	city.cc city.h
-
-SUBDIRS = test
