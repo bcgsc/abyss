@@ -9,7 +9,7 @@ TEST(chop_test, base_case_2)
 	EXPECT_EQ('e', chop(myString));
 	EXPECT_EQ(1, myString.length());
 }
-	
+
 TEST(chop_test, trivial_gt_length2)
 {
 	string myString = "something";
@@ -17,12 +17,12 @@ TEST(chop_test, trivial_gt_length2)
 	EXPECT_EQ('g', chop(myString));
 	EXPECT_EQ(8, myString.length());
 	EXPECT_EQ('n', chop(myString));
-	EXPECT_EQ(7, myString.length());  
+	EXPECT_EQ(7, myString.length());
 }
 
 TEST(chomp_test, base_cases)
 {
-	// test .length=1 
+	// test .length=1
 	string myString = "a";
 	EXPECT_TRUE(1 == myString.length());
 	EXPECT_FALSE(chomp(myString));
@@ -42,7 +42,7 @@ TEST(chomp_test, base_cases)
 
 TEST(toSI_test, all_the_cases)
 {
-	// negative and zero values	
+	// negative and zero values
 	EXPECT_EQ ("-0.000123 ", toSI(-0.0001234));
 	EXPECT_EQ("1e-13 ", toSI(0.0000000000001));
 	EXPECT_EQ("-1.2e-13 ", toSI(-0.00000000000012));
@@ -59,28 +59,27 @@ TEST(toSI_test, all_the_cases)
 	EXPECT_EQ("23.4 G", toSI(23440222111));
 }
 
-template <typename T> 
+template <typename T>
 class MultiTypes{
  public:
  	T myVar;
-    void type_int() { ::testing::StaticAssertTypeEq<int, T>(); }
-    void type_double() { ::testing::StaticAssertTypeEq<double, T>(); }
-    void type_string() { ::testing::StaticAssertTypeEq<string, T>(); }
+	void type_int() { ::testing::StaticAssertTypeEq<int, T>(); }
+	void type_double() { ::testing::StaticAssertTypeEq<double, T>(); }
+	void type_string() { ::testing::StaticAssertTypeEq<string, T>(); }
 };
 
 TEST(toEng_test, integer_cases)
-{ 
-    EXPECT_EQ("1234", toEng(1234)); 
-    
-	MultiTypes<int> temp; 
+{
+	EXPECT_EQ("1234", toEng(1234));
+
+	MultiTypes<int> temp;
 	temp.type_int();
-	temp.myVar = 1234;	
+	temp.myVar = 1234;
 	EXPECT_EQ(temp.myVar, 1234);
 	EXPECT_EQ("1234", toEng(temp.myVar));
-	
-    temp.myVar = 12345678;	
-	EXPECT_EQ("12.35e6", toEng(temp.myVar));
+	temp.myVar = 12345678;
 
+	EXPECT_EQ("12.35e6", toEng(temp.myVar));
 	temp.myVar = 123456789;
 	EXPECT_EQ ("123.5e6" , toEng(temp.myVar));
 }
@@ -93,7 +92,6 @@ TEST(toEng_test, double_cases)
 	temp.myVar = 123.456;
 	EXPECT_EQ (temp.myVar, 123.456);
 	EXPECT_EQ ("123.5", toEng(temp.myVar));
-	
 	temp.myVar = 123456789.9;
 	EXPECT_EQ ("123.5e6", toEng(temp.myVar));
 }
@@ -118,10 +116,10 @@ TEST(endsWith_test, any_cases)
 {
 	// suffix should not be the string itself
 	EXPECT_FALSE(endsWith("hello", "hello"));
-	EXPECT_FALSE(endsWith("", "")); 
+	EXPECT_FALSE(endsWith("", ""));
 	EXPECT_TRUE(endsWith("hello", ""));
 	
-	// EXPECT_FALSE(endsWith("hello", NULL)); 
+	// EXPECT_FALSE(endsWith("hello", NULL));
 	// NULL is not valid
 	EXPECT_TRUE(endsWith("hello", "ello"));
 	EXPECT_TRUE(endsWith("hello", "o"));
