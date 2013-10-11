@@ -54,8 +54,12 @@ class Kmer
 
 	bool isPalindrome() const;
 	bool isPalindrome(extDirection dir) const;
+
+	uint8_t getFirstBase() const { return at(0); }
+	uint8_t getLastBase() const { return at(s_length - 1); }
+	char getFirstBaseChar() const { return codeToBase(getFirstBase()); }
+	char getLastBaseChar() const { return codeToBase(getLastBase()); }
 	void setLastBase(extDirection dir, uint8_t base);
-	uint8_t getLastBaseChar() const;
 
 	uint8_t shift(extDirection dir, uint8_t base = 0)
 	{

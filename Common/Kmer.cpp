@@ -403,11 +403,6 @@ void Kmer::set(unsigned i, uint8_t base)
 			seqIndexToByteNumber(i), seqIndexToBaseIndex(i), base);
 }
 
-uint8_t Kmer::getLastBaseChar() const
-{
-	return codeToBase(at(s_length - 1));
-}
-
 // get a base code by the byte number and sub index
 static uint8_t getBaseCode(const char* pSeq,
 		unsigned byteNum, unsigned index)
