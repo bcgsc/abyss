@@ -282,15 +282,15 @@ assemble(Graph& g, FastaWriter* fileWriter)
 		BranchRecord currBranch(dir);
 		currBranch.push_back(std::make_pair(u, up));
 		V v = u;
-		size_t vi = uit.sai();
+		size_t vsai = uit.sai();
 		extendBranch(currBranch, v, up.getExtension(dir));
 		assert(currBranch.isActive());
 		while (currBranch.isActive()) {
-			size_t viupper = vi;
-			if (g.m_fm.updateInterval(vi, viupper,
+			size_t vsaiupper = vsai;
+			if (g.m_fm.updateInterval(vsai, vsaiupper,
 						v.getFirstBaseChar())) {
 				// The interval is open.
-				assert(vi == viupper);
+				assert(vsai == vsaiupper);
 			} else {
 				// The interval is closed.
 				vertex_index_sense voriented = orientVertexSAI(g, v);
@@ -299,10 +299,10 @@ assemble(Graph& g, FastaWriter* fileWriter)
 						<< v << '\n';
 					abort();
 				}
-				vi = voriented.i;
+				vsai = voriented.i;
 			}
-			Vi vindex = g.saiToIndex(vi);
-			const VP& vp = g[vindex];
+			Vi vi = g.saiToIndex(vsai);
+			const VP& vp = g[vi];
 			processLinearExtensionForBranch(currBranch, v,
 					vp.extension(), vp.getMultiplicity(),
 					UINT_MAX);

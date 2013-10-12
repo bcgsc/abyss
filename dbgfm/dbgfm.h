@@ -61,15 +61,15 @@ class DBGFM {
 	{
 		// Map suffix array indices to vertex indices.
 		std::string s(m_k, '$');
-		size_t index = 0;
+		size_t sai = 0;
 		size_t n = m_fm.getBWLen() - 1;
 		for (size_t i = 0; i < n; ++i) {
-			char c = m_fm.getChar(index);
+			char c = m_fm.getChar(sai);
 			assert(c != EOF);
 			s.resize(s.size() - 1);
 			s.insert(s.begin(), c);
-			index = m_fm.LF(index);
-			m_rank.SetBit(s.find('$') == std::string::npos, index);
+			sai = m_fm.LF(sai);
+			m_rank.SetBit(s.find('$') == std::string::npos, sai);
 		}
 		m_rank.Build();
 
@@ -241,28 +241,26 @@ struct adjacency_iterator
 struct vertex_iterator
 	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
 {
-	typedef graph_traits<DBGFM>::vertices_size_type It;
-
 	/** Increment */
 	void increment()
 	{
-		assert(m_it < m_last);
-		++m_it;
-		char c = m_g->m_fm.getChar(m_ui);
+		assert(m_i < m_last);
+		++m_i;
+		char c = m_g->m_fm.getChar(m_sai);
 		if (c == EOF) {
-			assert(m_it == m_last);
+			assert(m_i == m_last);
 			return;
 		}
 		assert(!m_s.empty());
 		m_s.resize(m_s.size() - 1);
 		m_s.insert(m_s.begin(), c);
-		m_ui = m_g->m_fm.LF(m_ui);
+		m_sai = m_g->m_fm.LF(m_sai);
 	}
 
 	/** Skip to the next vertex that is present. */
 	void next()
 	{
-		for (; m_it < m_last; increment()) {
+		for (; m_i < m_last; increment()) {
 			if (m_s.find('$') == std::string::npos) {
 				m_u = vertex_descriptor(m_s);
 				break;
@@ -271,22 +269,22 @@ struct vertex_iterator
 	}
 
   public:
-	vertex_iterator(const DBGFM& g, const It& it)
-		: m_g(&g), m_last(m_g->m_fm.getBWLen()), m_it(it),
-		m_s(g.m_k, '$'), m_ui(0)
+	vertex_iterator(const DBGFM& g, size_t i)
+		: m_g(&g), m_last(m_g->m_fm.getBWLen()), m_i(i), m_sai(0),
+		m_s(g.m_k, '$')
 	{
 		next();
 	}
 
 	const vertex_descriptor operator*() const
 	{
-		assert(m_it < m_last);
+		assert(m_i < m_last);
 		return m_u;
 	}
 
 	bool operator==(const vertex_iterator& it) const
 	{
-		return m_it == it.m_it;
+		return m_i == it.m_i;
 	}
 
 	bool operator!=(const vertex_iterator& it) const
@@ -296,7 +294,7 @@ struct vertex_iterator
 
 	vertex_iterator& operator++()
 	{
-		assert(m_it < m_last);
+		assert(m_i < m_last);
 		increment();
 		next();
 		return *this;
@@ -305,30 +303,30 @@ struct vertex_iterator
 	/** Return the suffix array index of this iterator. */
 	size_t sai() const
 	{
-		assert(m_it < m_last);
-		return m_ui;
+		assert(m_i < m_last);
+		return m_sai;
 	}
 
 	/** Return the vertex index of this iterator. */
 	vertices_size_type index() const
 	{
-		assert(m_it < m_last);
-		return m_g->saiToIndex(m_ui);
+		assert(m_i < m_last);
+		return m_g->saiToIndex(m_sai);
 	}
 
 	/** Return the position in the original text. */
 	size_t position()
 	{
-		return m_last - m_it;
+		return m_last - m_i;
 	}
 
   private:
 	const DBGFM* m_g;
-	It m_last;
-	It m_it;
+	size_t m_last;
+	size_t m_i;
+	size_t m_sai;
 	std::string m_s;
 	vertex_descriptor m_u;
-	vertices_size_type m_ui;
 }; // vertex_iterator
 
 }; // graph_traits<DBGFM>
@@ -349,10 +347,10 @@ get(vertex_index_t, const DBGFM& g,
 		graph_traits<DBGFM>::vertex_descriptor u)
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
-	std::pair<Vi, Vi> x = g.m_fm.findInterval(u.str());
+	std::pair<size_t, size_t> x = g.m_fm.findInterval(u.str());
 	assert(x.first <= x.second);
 	assert(x.first < g.m_rank.length());
-	size_t i = g.saiToIndex(x.first);
+	Vi i = g.saiToIndex(x.first);
 	assert(i < num_vertices(g));
 	return i;
 }
