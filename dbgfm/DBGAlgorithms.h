@@ -282,7 +282,7 @@ assemble(Graph& g, FastaWriter* fileWriter)
 		BranchRecord currBranch(dir);
 		currBranch.push_back(std::make_pair(u, up));
 		V v = u;
-		Vi vi = uit.index();
+		size_t vi = uit.sai();
 		extendBranch(currBranch, v, up.getExtension(dir));
 		assert(currBranch.isActive());
 		while (currBranch.isActive()) {
@@ -293,7 +293,7 @@ assemble(Graph& g, FastaWriter* fileWriter)
 				assert(vi == viupper);
 			} else {
 				// The interval is closed.
-				vertex_index_sense voriented = orientVertex(g, v);
+				vertex_index_sense voriented = orientVertexSAI(g, v);
 				if (voriented.sense == true) {
 					std::cerr << "error: misoriented vertex: "
 						<< v << '\n';
@@ -301,7 +301,8 @@ assemble(Graph& g, FastaWriter* fileWriter)
 				}
 				vi = voriented.i;
 			}
-			const VP& vp = g[vi];
+			Vi vindex = g.saiToIndex(vi);
+			const VP& vp = g[vindex];
 			processLinearExtensionForBranch(currBranch, v,
 					vp.extension(), vp.getMultiplicity(),
 					UINT_MAX);

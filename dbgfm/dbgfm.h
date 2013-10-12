@@ -40,6 +40,7 @@ struct vertex_index_sense {
 /** de Bruijn Graph data structure using an FM-Index */
 class DBGFM {
   public:
+	typedef size_t vertices_size_type;
 	typedef KmerData vertex_bundled;
 
 	/** The size of a k-mer */
@@ -83,20 +84,23 @@ class DBGFM {
 #endif
 	}
 
-	/** Return the vertex property. */
-	const vertex_bundled& operator[](size_t sai) const
+	/** Convert a suffix array index to a vertex index. */
+	vertices_size_type saiToIndex(size_t sai) const
 	{
 		assert(sai < m_rank.length());
-		size_t i = m_rank.Rank(1, sai);
+		return m_rank.Rank(1, sai);
+	}
+
+	/** Return the vertex property. */
+	const vertex_bundled& operator[](vertices_size_type i) const
+	{
 		assert(i < m_vpmap.size());
 		return m_vpmap[i];
 	}
 
 	/** Return the vertex property. */
-	vertex_bundled& operator[](size_t sai)
+	vertex_bundled& operator[](vertices_size_type i)
 	{
-		assert(sai < m_rank.length());
-		size_t i = m_rank.Rank(1, sai);
 		assert(i < m_vpmap.size());
 		return m_vpmap[i];
 	}
@@ -112,10 +116,11 @@ class DBGFM {
 	DBGFM(const DBGFM&);
 }; // class DBGFM
 
-/** Return the index of this vertex and its orientation. */
+/** Return the suffix array index of this vertex and its orientation.
+ */
 static inline
 vertex_index_sense
-orientVertex(const DBGFM& g, const Kmer& u)
+orientVertexSAI(const DBGFM& g, const Kmer& u)
 {
 	struct vertex_index_sense x;
 	std::pair<size_t, size_t> sai = g.m_fm.findInterval(u.str());
@@ -133,6 +138,17 @@ orientVertex(const DBGFM& g, const Kmer& u)
 	std::cerr << "error: " << __func__ << ": " << u << '\n';
 	assert(false);
 	abort();
+}
+
+/** Return the index of this vertex and its orientation. */
+static inline
+vertex_index_sense
+orientVertex(const DBGFM& g, const Kmer& u)
+{
+	vertex_index_sense x = orientVertexSAI(g, u);
+	assert(x.i < g.m_rank.length());
+	x.i = g.saiToIndex(x.i);
+	return x;
 }
 
 // Graph
@@ -286,11 +302,18 @@ struct vertex_iterator
 		return *this;
 	}
 
+	/** Return the suffix array index of this iterator. */
+	size_t sai() const
+	{
+		assert(m_it < m_last);
+		return m_ui;
+	}
+
 	/** Return the vertex index of this iterator. */
 	vertices_size_type index() const
 	{
 		assert(m_it < m_last);
-		return m_ui;
+		return m_g->saiToIndex(m_ui);
 	}
 
 	/** Return the position in the original text. */
@@ -312,6 +335,12 @@ struct vertex_iterator
 
 } // namespace boost
 
+// VertexListGraph
+
+static inline
+graph_traits<DBGFM>::vertices_size_type
+num_vertices(const DBGFM& g);
+
 // PropertyGraph
 
 static inline
@@ -322,7 +351,10 @@ get(vertex_index_t, const DBGFM& g,
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	std::pair<Vi, Vi> x = g.m_fm.findInterval(u.str());
 	assert(x.first <= x.second);
-	return x.first;
+	assert(x.first < g.m_rank.length());
+	size_t i = g.saiToIndex(x.first);
+	assert(i < num_vertices(g));
+	return i;
 }
 
 static inline
@@ -332,7 +364,7 @@ get(vertex_bundle_t, const DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = get(vertex_index, g, u);
-	assert(ui < g.m_rank.length());
+	assert(ui < num_vertices(g));
 	return g[ui];
 }
 
@@ -343,7 +375,7 @@ get(vertex_bundle_t, DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = get(vertex_index, g, u);
-	assert(ui < g.m_rank.length());
+	assert(ui < num_vertices(g));
 	return g[ui];
 }
 
@@ -354,7 +386,7 @@ get(vertex_bundle_t, const DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = uit.index();
-	assert(ui < g.m_rank.length());
+	assert(ui < num_vertices(g));
 	return g[ui];
 }
 
@@ -365,7 +397,7 @@ get(vertex_bundle_t, DBGFM& g,
 {
 	typedef graph_traits<DBGFM>::vertices_size_type Vi;
 	Vi ui = uit.index();
-	assert(ui < g.m_rank.length());
+	assert(ui < num_vertices(g));
 	return g[ui];
 }
 
@@ -462,7 +494,7 @@ put(vertex_mark_out_t, DBGFM& g,
 	(void)flag;
 	assert(flag);
 	vertex_index_sense x = orientVertex(g, u);
-	assert(x.i < g.m_rank.length());
+	assert(x.i < num_vertices(g));
 	g[x.i].setFlag(
 			x.sense ? SF_MARK_ANTISENSE : SF_MARK_SENSE);
 }
@@ -475,7 +507,7 @@ put(vertex_mark_in_t, DBGFM& g,
 	(void)flag;
 	assert(flag);
 	vertex_index_sense x = orientVertex(g, u);
-	assert(x.i < g.m_rank.length());
+	assert(x.i < num_vertices(g));
 	g[x.i].setFlag(
 			x.sense ? SF_MARK_SENSE : SF_MARK_ANTISENSE);
 }
