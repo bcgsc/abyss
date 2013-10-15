@@ -168,6 +168,12 @@ if test -z $OPENMP_CXXFLAGS; then
 	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
 fi
 
+# Check for gtest
+AC_LANG([C++])
+AC_CHECK_HEADERS([gtest/gtest.h])
+AC_CHECK_LIB([gtest_main],[main])
+AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes -a $ac_cv_lib_gtest_main_main = yes])
+
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
