@@ -8,6 +8,9 @@ endif
 
 if HAVE_GTEST
 Unittest=Unittest
+else
+check:
+	@echo -e "\n-----------------------------------------\n-----------------------------------------\n-----------------------------------------\nTo use 'make check' command, please setup\ngtest header&library as shown on the Wiki\n<<gtest setup to use "make check" command>>\n-----------------------------------------\n-----------------------------------------\n-----------------------------------------\n"
 endif
 
 dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
