@@ -5,19 +5,19 @@ using namespace std;
 TEST(chop_test, base_case_2)
 {
 	string myString = "me";
-	EXPECT_EQ(2, myString.length());
+	EXPECT_EQ((unsigned)2, myString.length());
 	EXPECT_EQ('e', chop(myString));
-	EXPECT_EQ(1, myString.length());
+	EXPECT_EQ((unsigned)1, myString.length());
 }
 
 TEST(chop_test, trivial_gt_length2)
 {
 	string myString = "something";
-	EXPECT_EQ(9, myString.length());
+	EXPECT_EQ((unsigned)9, myString.length());
 	EXPECT_EQ('g', chop(myString));
-	EXPECT_EQ(8, myString.length());
+	EXPECT_EQ((unsigned)8, myString.length());
 	EXPECT_EQ('n', chop(myString));
-	EXPECT_EQ(7, myString.length());
+	EXPECT_EQ((unsigned)7, myString.length());
 }
 
 TEST(chomp_test, base_cases)
@@ -33,11 +33,11 @@ TEST(chomp_test, base_cases)
 	// test .length=2
 	string greatString = "ab";
 	EXPECT_FALSE(chomp(greatString));
-	EXPECT_EQ(2, greatString.length());
+	EXPECT_EQ((unsigned)2, greatString.length());
 
 	string badString = "a\n";
 	EXPECT_TRUE(chomp(badString));
-	EXPECT_EQ(1, badString.length());
+	EXPECT_EQ((unsigned)1, badString.length());
 }
 
 TEST(toSI_test, all_the_cases)

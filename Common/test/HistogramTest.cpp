@@ -16,21 +16,21 @@ TEST(emptyTest, base_cases)
 // test Histogram.count()
 TEST(countTest, non_negative_cases)
 {
-	EXPECT_EQ(hi.size(), 2);
+	EXPECT_EQ(hi.size(), (unsigned)2);
 	hi.insert(6);
 	hi.insert(8);
-	hi.insert(10,5);
-	EXPECT_EQ(hi.size(),9);
-	EXPECT_EQ(hi.count(INT_MIN, INT_MAX),9);
-	EXPECT_EQ(hi.count(8, 10),6);
+	hi.insert(10, 5);
+	EXPECT_EQ(hi.size(), (unsigned)9);
+	EXPECT_EQ(hi.count(INT_MIN, INT_MAX), (unsigned)9);
+	EXPECT_EQ(hi.count(8, 10), (unsigned)6);
 	hi.insert(12);
-	EXPECT_EQ(hi.size(),10);
-	EXPECT_EQ(hi.count(INT_MIN, INT_MAX), 10);
+	EXPECT_EQ(hi.size(), (unsigned)10);
+	EXPECT_EQ(hi.count(INT_MIN, INT_MAX), (unsigned)10);
 }
 
 // test Histogram.sum()
 TEST(sumTest, trivial_cases)
 {
 	Histogram hello;
-	EXPECT_EQ(hello.sum(), 0);
+	EXPECT_EQ(hello.sum(), (unsigned)0);
 }
