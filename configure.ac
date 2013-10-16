@@ -69,6 +69,14 @@ if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_ldflags="-L$with_mpi/lib"
 fi
 
+# GTest
+AC_ARG_WITH(gtest, AS_HELP_STRING([--with-gtest=PATH],
+	[specify prefix directory for the installed gtest library]))
+if test "$with_gtest" -a -d "$with_gtest"; then
+	gtest_cppflags="-I$with_gtest/include"
+	gtest_ldflags="-L$with_gtest/lib"
+fi
+
 AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
 	[use MPICH (default is to use Open MPI)]))
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
@@ -94,8 +102,8 @@ AM_CONDITIONAL([SAM_SEQ_QUAL], [test "$enable_samseqqual"])
 
 # Set compiler flags.
 AC_SUBST(CPPFLAGS,
-		 "-I$srcdir $boost_cppflags $mpi_cppflags $CPPFLAGS")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $LDFLAGS")
+		 "-I$srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $CPPFLAGS")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $gtest_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"
@@ -124,15 +132,6 @@ AM_CONDITIONAL([HAVE_LIBMPI],
 	[test $ac_cv_header_mpi_h = yes -a $ac_cv_lib_mpi_MPI_Init = yes])
 AC_SUBST(MPI_LIBS, "$LIBS")
 LIBS="$libs"
-
-# Check for gtest
-libs="$LIBS"
-AC_CHECK_HEADERS([gtest/gtest.h])
-AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([gtest_main],[main])
-AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes -a $ac_cv_lib_gtest_main_main = yes])
-AC_SUBST(GTEST_LIBS, "$LIBS")
-LIBS=$libs
 
 # Check for the math library.
 AC_CHECK_LIB([m], [sqrt])
@@ -170,6 +169,15 @@ if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
 	ln -s boost_1_50_0/boost boost
 	])
 fi
+
+# Check for gtest
+libs="$LIBS"
+AC_CHECK_HEADERS([gtest/gtest.h])
+AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([gtest_main],[main])
+AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes -a $ac_cv_lib_gtest_main_main = yes])
+AC_SUBST(GTEST_LIBS, "$LIBS")
+LIBS=$libs
 
 # Check for OpenMP.
 AC_OPENMP
