@@ -10,7 +10,9 @@ if HAVE_GTEST
 Unittest=Unittest
 else
 check:
-	@echo -e "\n-----------------------------------------\n-----------------------------------------\n-----------------------------------------\nTo use 'make check' command, please setup\ngtest header&library as shown on the Wiki\n<<gtest setup to use "make check" command>>\n-----------------------------------------\n-----------------------------------------\n-----------------------------------------\n"
+	@echo "error: To use 'make check' command, please setup"; \
+	echo "       gtest header&library as shown on the Wiki"; \
+	false
 endif
 
 dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
