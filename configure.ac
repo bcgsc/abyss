@@ -203,6 +203,7 @@ AC_CONFIG_FILES([
 	dialign/Makefile
 	kmerprint/Makefile
 	AdjList/Makefile
+	connectpairs/Makefile
 	DAssembler/Makefile
 	DistanceEst/Makefile
 	Layout/Makefile

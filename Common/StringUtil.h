@@ -87,4 +87,22 @@ bool endsWith(const std::string& s, const std::string& suffix)
 			suffix.begin());
 }
 
+static inline 
+bool isReadNamePair(const std::string& name1, const std::string& name2) 
+{
+	assert(!name1.empty() && !name2.empty());
+
+	if (name1 == name2)
+		return true;
+
+	if (endsWith(name1,"/1") && endsWith(name2,"/2")) {
+		int len1 = name1.length();
+		int len2 = name2.length();
+		assert(len1 > 2 && len2 > 2);
+		return name1.compare(0, len1-2, name2, 0, len2-2) == 0;
+	}
+
+	return false;
+}
+
 #endif

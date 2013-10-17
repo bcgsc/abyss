@@ -32,6 +32,7 @@ SUBDIRS = \
 	Align \
 	ABYSS $(Parallel) \
 	AdjList \
+	connectpairs \
 	Consensus \
 	DAssembler \
 	DistanceEst \
