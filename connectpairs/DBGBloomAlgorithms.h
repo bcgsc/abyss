@@ -26,8 +26,8 @@ static inline Sequence pathToSeq(Path path)
 }
 
 static inline PathSearchResult connectPairs(
-	const FastaRecord& read1, 
-	const FastaRecord& read2, 
+	const FastaRecord& read1,
+	const FastaRecord& read2,
 	const DBGBloom& g,
 	std::vector<FastaRecord>& mergedSeqs,
 	unsigned maxPaths = 2,
@@ -44,20 +44,20 @@ static inline PathSearchResult connectPairs(
 		return NO_PATH;
 
 	std::string kmer1Str = read1.seq.substr(0, k);
-	std::string kmer2Str = read2.seq.substr(0, k); 
+	std::string kmer2Str = read2.seq.substr(0, k);
 
 	// TODO: advance to next kmers in the reads instead of giving up
 	if (kmer1Str.find_first_not_of("AGCTagct") != std::string::npos ||
 		kmer2Str.find_first_not_of("AGCTagct") != std::string::npos)
 		return NO_PATH;
-	
+
 	// TODO: add option for mate pair orientation (RF)
 	Kmer kmer1(kmer1Str);
 	Kmer kmer2(kmer2Str);
 	kmer2.reverseComplement();
 
 	// TODO: advance to next kmers in the reads instead of giving up
-	if (!graph_traits<DBGBloom>::vertex_exists(kmer1, g) || !graph_traits<DBGBloom>::vertex_exists(kmer2, g)) 
+	if (!graph_traits<DBGBloom>::vertex_exists(kmer1, g) || !graph_traits<DBGBloom>::vertex_exists(kmer2, g))
 		return NO_PATH;
 
 	unsigned maxPathLen;
