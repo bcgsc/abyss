@@ -12,5 +12,6 @@ abyss_connectpairs_LDADD = \
 
 abyss_connectpairs_SOURCES = connectpairs.cc \
 	BloomFilter.h \
+	CountingBloomFilter.h \
 	DBGBloom.h \
 	DBGBloomAlgorithms.h
