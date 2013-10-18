@@ -52,6 +52,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -k, --kmer=N            the size of a k-mer\n"
+"  -g, --genome-size=N     an estimate of the size of the genome\n"
+"                          in bp [3e9]\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
@@ -75,6 +77,9 @@ namespace opt {
 
 	/** The size of a k-mer. */
 	unsigned k;
+
+	/** An estimate of the size of the genome. */
+	size_t genomeSize = 3e9;
 }
 
 /** Counters */
@@ -86,13 +91,14 @@ static struct {
 	size_t tooManyBranches;
 } g_count;
 
-static const char shortopts[] = "j:k:q:v";
+static const char shortopts[] = "g:j:k:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "genome-size",      required_argument, NULL, 'g' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -232,6 +238,12 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
+		  case 'g': {
+			double g;
+			arg >> g;
+			opt::genomeSize = g;
+			break;
+		  }
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -281,7 +293,8 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
-	DBGBloom g(opt::k);
+	assert(opt::genomeSize > 0);
+	DBGBloom g(opt::k, opt::genomeSize);
 	loadBloomFilter(g, argv + optind, argv + argc);
 
 	if (opt::verbose > 0)

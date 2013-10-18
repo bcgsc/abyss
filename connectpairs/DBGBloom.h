@@ -41,12 +41,12 @@ class DBGBloom {
 	/** The bloom filter */
 	BloomFilter m_bloom;
 
-	/** Constructor. */
-	DBGBloom(unsigned k)
-		: m_k(k), m_bloom(1 << k)
-	{
-		assert(k < 40);
-	}
+	/** Construct a graph.
+	 * @param k the size of a k-mer
+	 * @param g the estimated size of the genome
+	 */
+	DBGBloom(unsigned k, size_t g)
+		: m_k(k), m_bloom(8 * g) { }
 
 	/** Load the Bloom filter from a string. */
 	void assign(const std::string& s)
