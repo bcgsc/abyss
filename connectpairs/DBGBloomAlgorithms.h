@@ -73,7 +73,8 @@ static inline PathSearchResult connectPairs(
 	}
 
 	DefaultColorMap<DBGBloom> colorMap;
-	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen, maxBranches, colorMap);
+	// note: maxDepth param is maxPathLen - 1 because the start node is at depth 0 
+	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen - 1, maxBranches, colorMap);
 	breadthFirstSearch(g, kmer1, visitor, colorMap);
 
 	PathList pathsFound;
