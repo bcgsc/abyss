@@ -22,4 +22,10 @@ common_sequence_SOURCES = $(top_srcdir)/Common/test/Sequence.cc
 common_sequence_CPPFLAGS = -I$(top_srcdir)
 common_sequence_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += BloomFilter
+check_PROGRAMS += BloomFilter
+BloomFilter_SOURCES = $(top_srcdir)/connectpairs/test/BloomFilter.cc
+BloomFilter_CPPFLAGS = -I$(top_srcdir)
+BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
