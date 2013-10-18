@@ -28,4 +28,10 @@ BloomFilter_SOURCES = $(top_srcdir)/connectpairs/test/BloomFilter.cc
 BloomFilter_CPPFLAGS = -I$(top_srcdir)
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += dbgbloom_algorithms
+check_PROGRAMS += dbgbloom_algorithms
+dbgbloom_algorithms_SOURCES = $(top_srcdir)/connectpairs/test/DBGBloomAlgorithmsTest.cpp
+dbgbloom_algorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+dbgbloom_algorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
