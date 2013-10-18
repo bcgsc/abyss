@@ -13,10 +13,12 @@
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
+#include "Align/alignGlobal.h"
 
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
+#include <boost/tuple/tuple.hpp>
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -33,6 +35,7 @@ using namespace std;
 #if USESEQAN
 using namespace seqan;
 #endif
+using boost::tie;
 
 #define PROGRAM "abyss-connectpairs"
 
@@ -177,6 +180,7 @@ static void connectPair(const DBGBloom& g,
 	const unsigned maxNumPaths = 2;
 	const unsigned maxPathLen = 1000;
 	const unsigned maxBranches = NO_LIMIT;
+	const unsigned maxMismatch = 2;
 
 	vector<FastaRecord> paths;
 	PathSearchResult result
@@ -195,9 +199,20 @@ static void connectPair(const DBGBloom& g,
 			++g_count.uniquePath;
 #pragma omp critical(cout)
 			cout << paths.front();
-		} else
+		} else {
+			NWAlignment aln;
+			unsigned matches, size;
+			tie(matches, size) = align(paths, aln);
+			assert(size >= matches);
+			if (size - matches <= maxMismatch) {
+				FastaRecord read = paths.front();
+				read.seq = aln.match_align;
+#pragma omp critical(cout)
+				cout << read;
+			}
 #pragma omp atomic
 			++g_count.multiplePaths;
+		}
 		break;
 	  case TOO_MANY_PATHS:
 #pragma omp atomic

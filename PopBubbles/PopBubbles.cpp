@@ -218,51 +218,6 @@ static unsigned getLength(const Graph* g, vertex_descriptor v)
 	return (*g)[v].length;
 }
 
-/** Align the specified pair of sequences.
- * @return the number of matches and size of the consensus
- */
-static pair<unsigned, unsigned> alignPair(
-		const string& seqa, const string& seqb)
-{
-	NWAlignment alignment;
-	unsigned matches = alignGlobal(seqa, seqb, alignment);
-	if (opt::verbose > 2)
-#pragma omp critical(cerr)
-		cerr << alignment;
-	return make_pair(matches, alignment.size());
-}
-
-/** Align the specified sequences.
- * @return the number of matches and size of the consensus
- */
-static pair<unsigned, unsigned> alignMulti(const vector<string>& seqs)
-{
-	string alignment = seqs[0];
-	unsigned matches = 0;
-	NWAlignment align;
-	for (unsigned j = 0; j < seqs.size() - 1; j++) {
-		matches = min(matches, alignGlobal(alignment,
-					seqs[j+1], align));
-		alignment = align.match_align;
-	}
-	if (opt::verbose > 2)
-#pragma omp critical(cerr)
-		cerr << align;
-	return make_pair(matches, alignment.size());
-}
-
-/** Align the specified sequences.
- * @return the number of matches and size of the consensus
- */
-static pair<unsigned, unsigned> align(const vector<string>& seqs)
-{
-	assert(seqs.size() > 1);
-	if (seqs.size() == 2)
-		return alignPair(seqs[0], seqs[1]);
-	else
-		return alignMulti(seqs);
-}
-
 /** Align the sequences of [first,last).
  * @param t the vertex to the left of the bubble
  * @param v the vertex to the right of the bubble

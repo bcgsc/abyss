@@ -3,8 +3,10 @@
 
 #include <cassert>
 #include <cctype>
-#include <ostream>
+#include <utility>
+#include <iostream>
 #include <string>
+#include <vector>
 
 /** The result of a Needleman-Wunsch alignment. */
 struct NWAlignment {
@@ -38,5 +40,53 @@ struct NWAlignment {
 unsigned alignGlobal(
 		const std::string& a, const std::string& b,
 		NWAlignment& align);
+
+/** Align the specified pair of sequences.
+ * @return the number of matches and size of the consensus
+ */
+static std::pair<unsigned, unsigned> alignPair(
+		const std::string& seqa, const std::string& seqb, NWAlignment& align)
+{
+	unsigned matches = alignGlobal(seqa, seqb, align);
+	return std::make_pair(matches, align.size());
+}
+
+/** Align the specified sequences.
+ * @return the number of matches and size of the consensus
+ */
+template <typename Seq>
+static std::pair<unsigned, unsigned> alignMulti(
+		const std::vector<Seq>& seqs, NWAlignment& align)
+{
+	Seq alignment = seqs[0];
+	unsigned matches = 0;
+	for (unsigned j = 0; j < seqs.size() - 1; j++) {
+		matches = std::min(matches, alignGlobal(alignment,
+					seqs[j+1], align));
+		alignment = align.match_align;
+	}
+	return std::make_pair(matches, alignment.size());
+}
+
+/** Align the specified sequences.
+ * @return the number of matches and size of the consensus
+ */
+template <typename Seq>
+static std::pair<unsigned, unsigned> align(
+		const std::vector<Seq>& seqs, NWAlignment& aln)
+{
+	assert(seqs.size() > 1);
+	if (seqs.size() == 2)
+		return alignPair(seqs[0], seqs[1], aln);
+	else
+		return alignMulti(seqs, aln);
+}
+
+template <typename Seq>
+static std::pair<unsigned, unsigned> align(const std::vector<Seq>& seqs)
+{
+	NWAlignment aln;
+	return align(seqs, aln);
+}
 
 #endif

@@ -133,6 +133,16 @@ struct FastaRecord
 			const Sequence& seq)
 		: id(id), comment(comment), anchor(0), seq(seq) { }
 
+	operator Sequence() const { return seq; }
+
+	FastaRecord& operator=(const std::string& s)
+	{
+		seq = s;
+		return *this;
+	}
+
+	size_t size() const { return seq.size(); }
+
 	friend FastaReader& operator >>(FastaReader& in, FastaRecord& o)
 	{
 		std::string q;
