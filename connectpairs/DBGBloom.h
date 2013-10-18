@@ -387,11 +387,7 @@ static inline
 graph_traits<DBGBloom>::vertices_size_type
 num_vertices(const DBGBloom& g)
 {
-	size_t n = 0;
-	for (size_t i = 0; i < g.m_bloom.size(); ++i)
-		if (g.m_bloom[i])
-			++n;
-	return n;
+	return g.m_bloom.popcount();
 }
 
 static inline

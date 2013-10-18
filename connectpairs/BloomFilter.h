@@ -3,6 +3,7 @@
 
 #include "Common/HashFunction.h"
 #include "Common/Kmer.h"
+#include <algorithm>
 #include <vector>
 
 /** A Bloom filter. */
@@ -22,6 +23,12 @@ class BloomFilter {
 
 	/** Return the size of the bit array. */
 	size_t size() const { return m_array.size(); }
+
+	/** Return the population count, i.e. the number of set bits. */
+	size_t popcount() const
+	{
+		return std::count(m_array.begin(), m_array.end(), true);
+	}
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
