@@ -1,3 +1,7 @@
+/**
+ * A counting Bloom filter
+ * Copyright 2013 Shaun Jackman
+ */
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
 

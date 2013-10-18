@@ -1,5 +1,6 @@
 /**
  * Connect pairs using a Bloom filter de Bruijn graph
+ * Copyright 2013 Shaun Jackman
  */
 
 #include "config.h"

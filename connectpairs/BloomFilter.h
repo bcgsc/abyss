@@ -1,3 +1,7 @@
+/**
+ * A Bloom filter
+ * Copyright 2013 Shaun Jackman
+ */
 #ifndef BLOOMFILTER_H
 #define BLOOMFILTER_H 1
 
