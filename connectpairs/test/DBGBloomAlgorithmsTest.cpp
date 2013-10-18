@@ -1,5 +1,5 @@
-#include "DBGBloomAlgorithms.h"
-#include "Sequence.h"
+#include "connectpairs/DBGBloomAlgorithms.h"
+#include "Common/Sequence.h"
 #include <gtest/gtest.h>
 #include <string>
 
@@ -22,13 +22,8 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	read2.id = "read/2";
 	read2.seq = reverseComplement(mergedSeq.substr(1,3));
 
-	// TODO: DBGBloom should automatically 
-	// load reverse complement of input sequences
-
 	g.assign(read1.seq);
-	g.assign(reverseComplement(read1.seq));
 	g.assign(read2.seq);
-	g.assign(reverseComplement(read2.seq));
 	
 	vector<FastaRecord> mergedSeqs;
 	PathSearchResult result;
@@ -37,10 +32,4 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	EXPECT_EQ(FOUND_PATH, result);
 	ASSERT_EQ(1, mergedSeqs.size());
 	EXPECT_EQ("GATG", mergedSeqs[0].seq);
-}
-
-int main(int argc, char** argv)
-{
-	::testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
 }
