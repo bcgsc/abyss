@@ -34,4 +34,10 @@ dbgbloom_algorithms_SOURCES = $(top_srcdir)/connectpairs/test/DBGBloomAlgorithms
 dbgbloom_algorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 dbgbloom_algorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += ConstrainedBFSVisitor
+check_PROGRAMS += ConstrainedBFSVisitor
+ConstrainedBFSVisitor_SOURCES = $(top_srcdir)/Graph/test/ConstrainedBFSVisitorTest.cpp
+ConstrainedBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+ConstrainedBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
