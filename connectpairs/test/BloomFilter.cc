@@ -22,7 +22,8 @@ TEST(BloomFilter, base)
 	x.insert(b);
 	EXPECT_EQ(x.popcount(), 2);
 	EXPECT_TRUE(x[b]);
-	x.insert(c);
+	EXPECT_TRUE(x[x.hash(b) % x.size()]);
+	x.insert(x.hash(c) % x.size());
 	EXPECT_EQ(x.popcount(), 3);
 	EXPECT_TRUE(x[c]);
 	EXPECT_TRUE(x[x.hash(c) % x.size()]);

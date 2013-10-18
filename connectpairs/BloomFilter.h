@@ -43,6 +43,13 @@ class BloomFilter {
 		return m_array[hash(key) % m_array.size()];
 	}
 
+	/** Add the object with the specified index to this set. */
+	void insert(size_t index)
+	{
+		assert(index < m_array.size());
+		m_array[index] = true;
+	}
+
 	/** Add the object to this set. */
 	void insert(const key_type& key)
 	{
