@@ -8,12 +8,14 @@
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
+#include "Align/alignGlobal.h"
+#include "Common/IOUtil.h"
 #include "Common/Options.h"
 #include "DataLayer/FastaInterleave.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
-#include "Align/alignGlobal.h"
+#include "Graph/GraphUtil.h"
 
 #include <cassert>
 #include <getopt.h>
@@ -57,6 +59,7 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N            the size of a k-mer\n"
 "  -g, --genome-size=N     an estimate of the size of the genome\n"
 "                          in bp [3e9]\n"
+"  -G, --graph=FILE        write the de Bruijn graph to FILE\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
@@ -83,6 +86,9 @@ namespace opt {
 
 	/** An estimate of the size of the genome. */
 	size_t genomeSize = 3e9;
+
+	/** Write the de Bruijn graph to this file. */
+	static string graphPath;
 }
 
 /** Counters */
@@ -94,7 +100,7 @@ static struct {
 	size_t tooManyBranches;
 } g_count;
 
-static const char shortopts[] = "g:j:k:q:v";
+static const char shortopts[] = "g:G:j:k:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -102,6 +108,7 @@ static const struct option longopts[] = {
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "genome-size",      required_argument, NULL, 'g' },
+	{ "graph",            required_argument, NULL, 'G' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -259,6 +266,8 @@ int main(int argc, char** argv)
 			opt::genomeSize = g;
 			break;
 		  }
+		  case 'G':
+			arg >> opt::graphPath; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -311,6 +320,14 @@ int main(int argc, char** argv)
 	assert(opt::genomeSize > 0);
 	DBGBloom g(opt::k, opt::genomeSize);
 	loadBloomFilter(g, argv + optind, argv + argc);
+
+	if (!opt::graphPath.empty()) {
+		if (opt::verbose > 0)
+			printGraphStats(cerr, g);
+		ofstream out(opt::graphPath.c_str());
+		assert_good(out, opt::graphPath);
+		write_dot(out, g);
+	}
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
