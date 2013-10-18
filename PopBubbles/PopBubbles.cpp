@@ -3,7 +3,6 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
-#include "dialign.h"
 #include "config.h"
 #include "Common/Options.h"
 #include "ConstString.h"
@@ -113,12 +112,9 @@ namespace opt {
 
 	/** Number of threads. */
 	static int threads = 1;
-	static int dialign_debug;
-	static string dialign_score;
-	static string dialign_prob;
 }
 
-static const char shortopts[] = "a:b:c:g:j:k:p:vD:M:P:";
+static const char shortopts[] = "a:b:c:g:j:k:p:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -136,9 +132,6 @@ static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
-	{ "dialign-d",   required_argument, NULL, 'D' },
-	{ "dialign-m",   required_argument, NULL, 'M' },
-	{ "dialign-p",   required_argument, NULL, 'P' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -582,9 +575,6 @@ int main(int argc, char** argv)
 			case 'g': arg >> opt::graphPath; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
-			case 'D': arg >> opt::dialign_debug; break;
-			case 'M': arg >> opt::dialign_score; break;
-			case 'P': arg >> opt::dialign_prob; break;
 			case 'p': arg >> opt::identity; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
@@ -621,13 +611,6 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-
-	init_parameters();
-	set_parameters_dna();
-	para->DEBUG = opt::dialign_debug;
-	para->SCR_MATRIX_FILE_NAME = (char*)opt::dialign_score.c_str();
-	para->DIAG_PROB_FILE_NAME = (char*)opt::dialign_prob.c_str();
-	initDialign();
 
 	const char* contigsPath(argv[optind++]);
 	string adjPath(argv[optind++]);
@@ -685,8 +668,6 @@ int main(int argc, char** argv)
 				it != g_popped.end(); ++it)
 			cout << get(g_contigNames, *it) << '\n';
 	}
-	free_prob_dist(pdist);
-	free(para);
 
 	if (opt::verbose > 0)
 		cerr << "Bubbles: " << (g_count.bubbles + 1) / 2
