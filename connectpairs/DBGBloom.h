@@ -6,7 +6,7 @@
 #ifndef DBGBLOOM_H
 #define DBGBLOOM_H 1
 
-#include "BloomFilter.h"
+#include "CountingBloomFilter.h"
 
 #include "Common/IOUtil.h"
 #include "Common/Kmer.h"
@@ -39,7 +39,7 @@ class DBGBloom {
 	std::string m_fa;
 
 	/** The bloom filter */
-	BloomFilter m_bloom;
+	CountingBloomFilter m_bloom;
 
 	/** Construct a graph.
 	 * @param k the size of a k-mer
