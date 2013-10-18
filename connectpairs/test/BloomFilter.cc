@@ -9,7 +9,7 @@ using namespace std;
 TEST(BloomFilter, base)
 {
 	BloomFilter x(100);
-	EXPECT_EQ(x.size(), 100);
+	EXPECT_EQ(x.size(), 100U);
 
 	Kmer::setLength(16);
 	Kmer a("AGATGTGCTGCCGCCT");
@@ -18,14 +18,14 @@ TEST(BloomFilter, base)
 	Kmer d("GATCGTGGCGGGCGAT");
 
 	x.insert(a);
-	EXPECT_EQ(x.popcount(), 1);
+	EXPECT_EQ(x.popcount(), 1U);
 	EXPECT_TRUE(x[a]);
 	x.insert(b);
-	EXPECT_EQ(x.popcount(), 2);
+	EXPECT_EQ(x.popcount(), 2U);
 	EXPECT_TRUE(x[b]);
 	EXPECT_TRUE(x[x.hash(b) % x.size()]);
 	x.insert(x.hash(c) % x.size());
-	EXPECT_EQ(x.popcount(), 3);
+	EXPECT_EQ(x.popcount(), 3U);
 	EXPECT_TRUE(x[c]);
 	EXPECT_TRUE(x[x.hash(c) % x.size()]);
 
@@ -35,7 +35,7 @@ TEST(BloomFilter, base)
 TEST(CountingBloomFilter, base)
 {
 	CountingBloomFilter x(100);
-	EXPECT_EQ(x.size(), 100);
+	EXPECT_EQ(x.size(), 100U);
 
 	Kmer::setLength(16);
 	Kmer a("AGATGTGCTGCCGCCT");
@@ -44,23 +44,23 @@ TEST(CountingBloomFilter, base)
 	Kmer d("GATCGTGGCGGGCGAT");
 
 	x.insert(a);
-	EXPECT_EQ(x.popcount(), 0);
+	EXPECT_EQ(x.popcount(), 0U);
 	EXPECT_FALSE(x[a]);
 	x.insert(a);
-	EXPECT_EQ(x.popcount(), 1);
+	EXPECT_EQ(x.popcount(), 1U);
 	EXPECT_TRUE(x[a]);
 	x.insert(b);
-	EXPECT_EQ(x.popcount(), 1);
+	EXPECT_EQ(x.popcount(), 1U);
 	EXPECT_FALSE(x[b]);
 	x.insert(c);
-	EXPECT_EQ(x.popcount(), 1);
+	EXPECT_EQ(x.popcount(), 1U);
 	EXPECT_FALSE(x[c]);
 	x.insert(b);
-	EXPECT_EQ(x.popcount(), 2);
+	EXPECT_EQ(x.popcount(), 2U);
 	EXPECT_TRUE(x[b]);
 	EXPECT_TRUE(x[x.hash(b) % x.size()]);
 	x.insert(x.hash(c) % x.size());
-	EXPECT_EQ(x.popcount(), 3);
+	EXPECT_EQ(x.popcount(), 3U);
 	EXPECT_TRUE(x[c]);
 
 	EXPECT_FALSE(x[d]);
