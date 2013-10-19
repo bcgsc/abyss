@@ -8,6 +8,8 @@ enum PathSearchResult {
 	NO_PATH
 };
 
+enum Direction { FORWARD, REVERSE };
+
 const unsigned NO_LIMIT = 0;
 
 #endif

@@ -40,4 +40,10 @@ ConstrainedBFSVisitor_SOURCES = $(top_srcdir)/Graph/test/ConstrainedBFSVisitorTe
 ConstrainedBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 ConstrainedBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += BidirectionalBFS
+check_PROGRAMS += BidirectionalBFS
+BidirectionalBFS_SOURCES = $(top_srcdir)/Graph/test/BidirectionalBFSTest.cpp
+BidirectionalBFS_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+BidirectionalBFS_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
