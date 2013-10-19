@@ -28,11 +28,11 @@ BloomFilter_SOURCES = $(top_srcdir)/connectpairs/test/BloomFilter.cc
 BloomFilter_CPPFLAGS = -I$(top_srcdir)
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
-UNIT_TESTS += dbgbloom_algorithms
-check_PROGRAMS += dbgbloom_algorithms
-dbgbloom_algorithms_SOURCES = $(top_srcdir)/connectpairs/test/DBGBloomAlgorithmsTest.cpp
-dbgbloom_algorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-dbgbloom_algorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+UNIT_TESTS += DBGBloomAlgorithms
+check_PROGRAMS += DBGBloomAlgorithms
+DBGBloomAlgorithms_SOURCES = $(top_srcdir)/connectpairs/test/DBGBloomAlgorithmsTest.cpp
+DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+DBGBloomAlgorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += ConstrainedBFSVisitor
 check_PROGRAMS += ConstrainedBFSVisitor
