@@ -123,7 +123,7 @@ TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
 	PathSearchResult result = visitor.pathsToGoal(paths, 2);
 
 	EXPECT_EQ(result, FOUND_PATH);
-	ASSERT_EQ(paths.size(), 2);
+	ASSERT_EQ(paths.size(), 2u);
 
 	string path1 = visitor.pathToString(paths[0]);
 	string path2 = visitor.pathToString(paths[1]);

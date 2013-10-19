@@ -11,7 +11,6 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	// Read 1:     GAT  =>
 	// Read 2:      TAC <=
 
-
 	const int k = 2;
 	Kmer::setLength(k);
 	const int readLength = 3;
@@ -32,6 +31,6 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	result = connectPairs(read1, read2, g, mergedSeqs, 1, 4);
 
 	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1, mergedSeqs.size());
+	ASSERT_EQ(1u, mergedSeqs.size());
 	EXPECT_EQ("GATG", mergedSeqs[0].seq);
 }
