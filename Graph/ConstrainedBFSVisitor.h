@@ -119,18 +119,6 @@ public:
 
 	}
 
-	static std::string pathToString(const Path<V>& path)
-	{
-		std::stringstream s;
-		for (unsigned int i = 0; i < path.size(); i++) {
-			if (i > 0)
-				s << ",";
-			s << path[i];
-		}
-		return s.str();
-	}
-
-
 	PathSearchResult uniquePathToGoal(Path<V>& uniquePath)
 	{
 		std::vector< Path<V> > pathsFound;

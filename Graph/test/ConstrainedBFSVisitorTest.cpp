@@ -52,7 +52,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 	PathSearchResult result = visitor.uniquePathToGoal(uniquePath);
 
 	ASSERT_EQ(result, FOUND_PATH);
-	ASSERT_EQ(visitor.pathToString(uniquePath), "0,2,3");
+	ASSERT_EQ(uniquePath.str(), "0,2,3");
 }
 
 TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
@@ -125,8 +125,8 @@ TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
 	EXPECT_EQ(result, FOUND_PATH);
 	ASSERT_EQ(paths.size(), 2u);
 
-	string path1 = visitor.pathToString(paths[0]);
-	string path2 = visitor.pathToString(paths[1]);
+	string path1 = paths[0].str();
+	string path2 = paths[1].str();
 
 	EXPECT_TRUE(path1 != path2);
 	ASSERT_TRUE(path1 == "0,1,3" || path1 == "0,2,3");
