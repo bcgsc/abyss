@@ -23,7 +23,13 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
 	DBGBloom g(k, mergedSeq.size());
+
+	// The reads are added twice here because kmers with
+	// coverage of 1 are treated as errors by DBGBloom and
+	// are removed.
 	g.assign(read1.seq);
+	g.assign(read1.seq);
+	g.assign(read2.seq);
 	g.assign(read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
