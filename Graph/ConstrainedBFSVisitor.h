@@ -19,8 +19,6 @@ public:
 
 	typedef typename boost::graph_traits<G>::vertex_descriptor V;
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
-	typedef std::vector<V> Path;
-	typedef std::vector<Path> PathList;
 	typedef unsigned short depth_t;
 
 private:
@@ -121,7 +119,7 @@ public:
 
 	}
 
-	static std::string pathToString(const Path& path)
+	static std::string pathToString(const Path<V>& path)
 	{
 		std::stringstream s;
 		for (unsigned int i = 0; i < path.size(); i++) {
@@ -133,9 +131,9 @@ public:
 	}
 
 
-	PathSearchResult uniquePathToGoal(Path& uniquePath)
+	PathSearchResult uniquePathToGoal(Path<V>& uniquePath)
 	{
-		PathList pathsFound;
+		std::vector< Path<V> > pathsFound;
 		PathSearchResult result = pathsToGoal(pathsFound, 1);
 		if (result == FOUND_PATH) {
 			assert(pathsFound.size() == 1);
@@ -144,12 +142,12 @@ public:
 		return result;
 	}
 
-	PathSearchResult pathsToGoal(PathList& pathsFound, unsigned maxPaths)
+	PathSearchResult pathsToGoal(std::vector< Path<V> >& pathsFound, unsigned maxPaths)
 	{
 		if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
 
-		Path reversePath;
+		Path<V> reversePath;
 		reversePath.push_back(m_goal);
 		bool exceededMaxPaths = false;
 		unsigned long fullDepthPaths = 0;
@@ -171,7 +169,7 @@ public:
 
 private:
 
-	void pathsToGoal(Path& pathToStart, PathList& pathList,
+	void pathsToGoal(Path<V>& pathToStart, std::vector< Path<V> >& pathList,
 		unsigned maxPaths, bool& exceededMaxPaths, unsigned long& fullDepthPaths, unsigned long& deadEndPaths)
 	{
 		if (pathToStart.size() > (depth_t)(m_maxDepth + 1)) {

@@ -16,10 +16,7 @@
 
 #define SUPPRESS_UNUSED_WARNING(a) (void)a
 
-typedef ConstrainedBFSVisitor<DBGBloom>::Path Path;
-typedef ConstrainedBFSVisitor<DBGBloom>::PathList PathList;
-
-static inline Sequence pathToSeq(Path path)
+static inline Sequence pathToSeq(Path<Kmer> path)
 {
 	Sequence seq;
 	assert(path.size() > 0);
@@ -77,7 +74,7 @@ static inline PathSearchResult connectPairs(
 	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen - 1, maxBranches, colorMap);
 	breadthFirstSearch(g, kmer1, visitor, colorMap);
 
-	PathList pathsFound;
+	std::vector< Path<Kmer> > pathsFound;
 	PathSearchResult result = visitor.pathsToGoal(pathsFound, maxPaths);
 
 	if (result == FOUND_PATH) {

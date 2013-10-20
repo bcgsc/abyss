@@ -13,6 +13,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS,
 
 // note: vertex_descriptor for adjacency_list<> is int
 typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
+// note: edge_descriptor for adjacency_list<> is int
 typedef boost::graph_traits<Graph>::edge_descriptor Edge;
 
 class TestVisitor : public BidirectionalBFSVisitor<Graph>

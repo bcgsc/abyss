@@ -10,8 +10,8 @@ using namespace std;
 using namespace boost;
 
 typedef adjacency_list<> Graph;
-typedef ConstrainedBFSVisitor<Graph>::Path Path;
-typedef ConstrainedBFSVisitor<Graph>::PathList PathList;
+typedef graph_traits<Graph>::vertex_descriptor V;
+typedef std::vector< Path<V> > PathList;
 
 namespace {
 
@@ -48,7 +48,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path uniquePath;
+	Path<V> uniquePath;
 	PathSearchResult result = visitor.uniquePathToGoal(uniquePath);
 
 	ASSERT_EQ(result, FOUND_PATH);
@@ -67,7 +67,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path uniquePath;
+	Path<V> uniquePath;
 
 	EXPECT_EQ(visitor.getMaxDepthVisited(), 1);
 	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), NO_PATH);
@@ -85,7 +85,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMinDepthLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path uniquePath;
+	Path<V> uniquePath;
 
 	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), NO_PATH);
 }
@@ -102,7 +102,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
 
-	Path uniquePath;
+	Path<V> uniquePath;
 
 	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_PATHS);
 }
@@ -145,7 +145,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectBranchLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path uniquePath;
+	Path<V> uniquePath;
 
 	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_BRANCHES);
 }
