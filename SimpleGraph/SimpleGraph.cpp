@@ -94,6 +94,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 static void generatePathsThroughEstimates(const Graph& g,
 		const string& estPath);
 

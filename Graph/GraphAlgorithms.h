@@ -1,9 +1,12 @@
 #ifndef GRAPHALGORITHMS_H
 #define GRAPHALGORITHMS_H 1
 
+#include "Graph/Properties.h"
+#include "ConstrainedSearch.h"
 #include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <vector>
+#include <boost/tuple/tuple.hpp>
 
 using boost::graph_traits;
 
@@ -102,4 +105,51 @@ unsigned remove_transitive_edges(Graph& g)
 	return transitive.size();
 }
 
+/**
+ * Find transitive edges when more than one intermediate vertex exists
+ * between u and w.
+ */
+template <typename Graph, typename OutIt>
+void find_complex_transitive_edges(Graph& g, OutIt out)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef typename GTraits::vertex_descriptor vertex_descriptor;
+	typedef typename GTraits::edge_iterator edge_iterator;
+	typedef typename Graph::edge_property_type edge_property_type;
+
+	//ConstrainedSearch<Graph> anyPath(100000, 2, false);
+	edge_iterator efirst, elast;
+	for (boost::tie(efirst, elast) = edges(g); efirst != elast;
+			efirst++) {
+		vertex_descriptor u = source(*efirst, g);
+		vertex_descriptor v = target(*efirst, g);
+
+		Constraint c = std::make_pair(target(*efirst, g), 100000);
+		Constraints cs;
+		cs.push_back(c);
+		ContigPaths cp;
+
+		unsigned numVisited = 0;
+		constrainedSearch(g, u, cs, cp, numVisited);
+		if (cp.size() > 1)
+			*out++ = *efirst;
+	}
+}
+
+/**
+ * Remove transitive edges from the specified graph.
+ * Find and remove the subset of edges (u,w) in E for which there
+ * exists a vertex path v such that the edges (u,v) and (v,w) exist in E.
+ * @return the number of transitive edges removed from g
+ */
+template <typename Graph>
+unsigned remove_complex_transitive_edges(Graph& g)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	std::vector<edge_descriptor> transitive;
+	find_complex_transitive_edges(g, back_inserter(transitive));
+	remove_edges(g, transitive.begin(), transitive.end());
+	return transitive.size();
+}
 #endif

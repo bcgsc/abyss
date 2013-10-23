@@ -145,6 +145,7 @@ struct AmbPathConstraint {
 	}
 };
 
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef ContigPath Path;
 typedef vector<Path> ContigPaths;
 typedef map<AmbPathConstraint, ContigPath> AmbPath2Contig;

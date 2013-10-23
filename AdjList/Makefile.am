@@ -5,7 +5,6 @@ AdjList_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/DataLayer
 
 AdjList_LDADD = \
-	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a
 

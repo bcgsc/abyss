@@ -8,8 +8,7 @@ MergePaths_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
 MergePaths_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/Graph/libgraph.a
+	$(top_builddir)/Common/libcommon.a
 
 MergePaths_SOURCES = \
 	MergePaths.cpp
@@ -21,7 +20,6 @@ MergeContigs_CPPFLAGS = -I$(top_srcdir) \
 
 MergeContigs_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a
 
@@ -35,7 +33,6 @@ PathConsensus_CPPFLAGS = -I$(top_srcdir) \
 
 PathConsensus_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/dialign/libdialign.a

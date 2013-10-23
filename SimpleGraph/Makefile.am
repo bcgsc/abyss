@@ -6,7 +6,6 @@ SimpleGraph_CPPFLAGS = -I$(top_srcdir) \
 SimpleGraph_CXXFLAGS = $(AM_CXXFLAGS) -Wno-strict-aliasing
 
 SimpleGraph_LDADD = \
-	$(top_builddir)/Graph/libgraph.a \
 	$(top_builddir)/Common/libcommon.a \
 	-lpthread
 
