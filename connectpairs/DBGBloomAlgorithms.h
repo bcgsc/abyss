@@ -48,18 +48,38 @@ static inline PathSearchResult connectPairs(
 	std::string kmer2Str = read2.seq.substr(0, k);
 
 	// TODO: advance to next kmers in the reads instead of giving up
-	if (kmer1Str.find_first_not_of("AGCTagct") != std::string::npos ||
-		kmer2Str.find_first_not_of("AGCTagct") != std::string::npos)
+
+	if (kmer1Str.find_first_not_of("AGCTagct") != std::string::npos) {
+		std::cerr << "failed to connect read pair: non-AGCT char in first kmer "
+			<< "(read id = " << read1.id << ", kmer = " << kmer1Str << ")\n";
 		return NO_PATH;
+	}
+
+	if (kmer2Str.find_first_not_of("AGCTagct") != std::string::npos) {
+		std::cerr << "failed to connect read pair: non-AGCT char in first kmer "
+			<< "(read id = " << read2.id << ", kmer = " << kmer2Str << ")\n";
+		return NO_PATH;
+	}
 
 	// TODO: add option for mate pair orientation (RF)
+
 	Kmer kmer1(kmer1Str);
 	Kmer kmer2(kmer2Str);
 	kmer2.reverseComplement();
 
 	// TODO: advance to next kmers in the reads instead of giving up
-	if (!graph_traits<DBGBloom>::vertex_exists(kmer1, g) || !graph_traits<DBGBloom>::vertex_exists(kmer2, g))
+
+	if (!graph_traits<DBGBloom>::vertex_exists(kmer1, g)) {
+		std::cerr << "failed to connect read pair: bloom filter miss on first kmer "
+			<< "(read id = " << read1.id << ", kmer = " << kmer1 << ")\n";
 		return NO_PATH;
+	}
+
+	if (!graph_traits<DBGBloom>::vertex_exists(kmer2, g)) {
+		std::cerr << "failed to connect read pair: bloom filter miss on last kmer "
+			<< "(read id = " << read2.id << ", rc(kmer) = " << kmer2 << ")\n";
+		return NO_PATH;
+	}
 
 	unsigned maxPathLen;
 	if (maxMergedSeqLen == NO_LIMIT) {
