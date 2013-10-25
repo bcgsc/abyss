@@ -1,0 +1,78 @@
+#!/bin/bash
+set -eu
+
+case $1 in
+	--help)
+		cat <<EOF
+Usage: abyss-bwamem [OPTION]... QUERY... TARGET
+Align the sequences of the files QUERY to those of the file
+TARGET using bwa.
+EOF
+		exit
+		;;
+	--version)
+		cat <<EOF
+abyss-bwamem (ABySS)
+Written by Shaun Jackman.
+EOF
+		bwa 2>&1 |head -n4
+		exit
+		;;
+esac
+
+# Parse the command line.
+bwamem='bwa mem'
+bwa_index='bwa index'
+while getopts :j:l:v opt; do
+	case $opt in
+		j) bwamem="$bwamem -t$OPTARG";;
+		l) bwamem="$bwamem -k$OPTARG";;
+		v) ;;
+		\?) echo >&2 "abyss-bwamem: invalid option: $OPTARG"; exit 1;;
+	esac
+done
+shift $((OPTIND-1))
+
+query=("$@")
+target=${query[${#query[@]}-1]}
+unset query[${#query[@]}-1]
+index=$target.bwt
+
+# Build the index.
+if [ ! -r $index ]; then
+	echo >&2 "Building the index $index..."
+	echo >&2 $bwa_index $target $target
+	$bwa_index $target $target 1>&2
+elif [ $index -ot $target ]; then
+	echo >&2 "The index $index is stale. Rebuilding the index..."
+	echo >&2 $bwa_index $target $target
+	$bwa_index $target $target 1>&2
+else
+	echo >&2 "The index $index is up to date."
+fi
+
+# Map the reads.
+echo >&2 $bwamem $target "${query[@]}"
+#exec $bwamem $target "${query[@]}" | abyss-tofastq -i "${query[@]}"
+
+
+
+exec abyss-tofastq "${query[@]}" \
+	|$bwamem $target - \
+	|awk '
+BEGIN {
+	OFS = "\t"
+}
+/^@/ { print; next }
+$1 == x { next }
+{ x = $1 }
+sub("/1$", "", $1) > 0 {
+	$2 = or($2, 0x41)
+	print; next
+}
+sub("/[23]$", "", $1) > 0 {
+	$2 = or($2, 0x81)
+	print; next
+}
+{ print }
+'
