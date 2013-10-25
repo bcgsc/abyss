@@ -269,6 +269,9 @@ default: contigs contigs-dot
 endif
 ifneq ($(mp),)
 default: scaffolds scaffolds-dot
+ifneq ($(rna),)
+default: rna-scaffs rna-scaffs-dot
+endif
 endif
 default: stats
 
@@ -296,6 +299,10 @@ mp-bam: $(addsuffix -6.bam.bai, $(mp))
 scaffolds: $(name)-scaffolds.fa
 
 scaffolds-dot: $(name)-scaffolds.dot
+
+rna-scaffs: $(name)-trans-scaffs.fa
+
+rna-scaffs-dot: $(name)-trans-scaffs.dot
 
 all: default bam stats
 
@@ -486,7 +493,7 @@ endif
 
 %-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $v -k$k -o $*-8.fa - $(wordlist 3, 4, $^)
+		|MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-8.dot: %-7.adj %-7.path
 	PathOverlap --overlap $v --dot -k$k $^ >$@
@@ -495,6 +502,38 @@ endif
 	ln -sf $< $@
 
 %-scaffolds.dot: %-8.dot
+	ln -sf $< $@
+
+# Transcriptome assisted scaffolding
+
+%.fa.bwt: %.fa
+	bwa index $<
+
+%-8.sam.gz: $(name)-8.fa.bwt
+	bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
+		|gzip >$@
+
+%-8.dist.dot: %-8.sam.gz
+	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
+		|grep -v "l=" >$@
+
+%-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(rna))
+	abyss-scaffold $v -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+
+%-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
+	PathConsensus $v -k$k $(pcopt) -s $*-9.fa -g $*-9.adj -o $*-9.path $^
+
+%-10.fa: %-8.fa %-9.fa %-9.adj %-9.path
+	cat $(wordlist 1, 2, $^) \
+		|MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
+
+%-10.dot: %-9.adj %-9.path
+	PathOverlap --overlap $v --dot -k$k $^ >$@
+
+%-trans-scaffs.fa: %-10.fa
+	ln -sf $< $@
+
+%-trans-scaffs.dot: %-10.dot
 	ln -sf $< $@
 
 # Create the final BAM file
@@ -521,9 +560,6 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 		|samtools view -Sb - >$@
 
 # Align the variants to the assembly
-
-%.fa.bwt: %.fa
-	bwa index $<
 
 %-variants.bam: %.fa.bwt
 	bwa bwasw -t$j $*.fa <(cat $(name)-bubbles.fa $(name)-indel.fa) \
