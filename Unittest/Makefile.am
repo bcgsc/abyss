@@ -32,6 +32,7 @@ UNIT_TESTS += DBGBloomAlgorithms
 check_PROGRAMS += DBGBloomAlgorithms
 DBGBloomAlgorithms_SOURCES = $(top_srcdir)/connectpairs/test/DBGBloomAlgorithmsTest.cpp
 DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 DBGBloomAlgorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += ConstrainedBFSVisitor

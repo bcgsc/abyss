@@ -5,6 +5,106 @@
 
 using namespace std;
 
+namespace {
+
+/**
+ * Test fixture for the getStartKmerPos function.
+ *
+ * getStartKmerPos chooses the kmer at the
+ * end of the longest string of kmer matches with
+ * within the read.
+ *
+ * Once the longest match region is identified,
+ * the kmer should be selected at the end of the
+ * region that is closest to the gap between
+ * read pairs.
+ */
+class GetStartKmerPosTest : public ::testing::Test {
+
+protected:
+
+	FastaRecord testRead;
+	static const int k = 2;
+	// set this large to avoid false positives
+	static const int bloomFilterSize = 100000;
+
+	GetStartKmerPosTest() {
+		Kmer::setLength(k);
+		testRead.seq = "TACAGTG";
+	}
+
+};
+
+TEST_F(GetStartKmerPosTest, FullReadMatch)
+{
+	const string& seq = testRead.seq;
+
+	DBGBloom g(k, bloomFilterSize);
+
+	// reads are added twice here because kmers with
+	// coverage of 1 are treated as errors and removed
+	g.assign(seq);
+	g.assign(seq);
+
+	EXPECT_EQ(seq.length() - k, getStartKmerPos(testRead, g));
+	// true indicates revese complement (second read)
+	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+}
+
+TEST_F(GetStartKmerPosTest, FullReadMismatch)
+{
+	DBGBloom g(k, bloomFilterSize);
+	EXPECT_EQ(NO_MATCH, getStartKmerPos(testRead, g));
+}
+
+TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
+{
+	const string& seq = testRead.seq;
+
+	DBGBloom g(k, bloomFilterSize);
+
+	// This loop creates kmer match vector 101101
+	for (unsigned i = 0; i < seq.length(); i++) {
+		// non-matching kmers
+		if (i == 1 || i == 4)
+			continue;
+		string kmer = seq.substr(i, k);
+		// the kmers are added twice here because kmers with
+		// coverage of 1 are treated as errors and removed
+		g.assign(kmer);
+		g.assign(kmer);
+	}
+
+	EXPECT_EQ(3, getStartKmerPos(testRead, g));
+	// true indicates revese complement (second read)
+	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+}
+
+TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
+{
+	const string& seq = testRead.seq;
+
+	DBGBloom g(k, bloomFilterSize);
+
+	// This loop creates kmer match vector 110011
+	for (unsigned i = 0; i < seq.length(); i++) {
+		// non-matching kmers
+		if (i == 0 || i == 3)
+			continue;
+		string kmer = seq.substr(i, k);
+		// the kmers are added twice here because kmers with
+		// coverage of 1 are treated as errors and removed
+		g.assign(kmer);
+		g.assign(kmer);
+	}
+
+	EXPECT_EQ(5, getStartKmerPos(testRead, g));
+	// true indicates revese complement (second read)
+	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+}
+
+}
+
 TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 {
 	// Merged seq: GATG
