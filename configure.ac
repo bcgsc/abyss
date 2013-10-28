@@ -157,6 +157,10 @@ AC_CHECK_HEADERS([ \
 	google/sparse_hash_map \
 	unordered_map tr1/unordered_map \
 ])
+AC_CHECK_HEADERS([ \
+	unordered_set tr1/unordered_set \
+	boost/unordered_set.hpp \
+])
 
 # Check for Boost.
 if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
