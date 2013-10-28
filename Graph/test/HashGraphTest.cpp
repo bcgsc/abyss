@@ -4,7 +4,7 @@
 
 using namespace std;
 
-TEST(HashGraphTest, AddEdge)
+TEST(HashGraphTest, GetOutEdges)
 {
 	HashGraph<string> g;
 
