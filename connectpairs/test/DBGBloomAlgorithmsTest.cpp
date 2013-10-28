@@ -75,7 +75,7 @@ TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 		g.assign(kmer);
 	}
 
-	EXPECT_EQ(3, getStartKmerPos(testRead, g));
+	EXPECT_EQ(3u, getStartKmerPos(testRead, g));
 	// true indicates revese complement (second read)
 	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
 }
@@ -98,7 +98,7 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 		g.assign(kmer);
 	}
 
-	EXPECT_EQ(5, getStartKmerPos(testRead, g));
+	EXPECT_EQ(5u, getStartKmerPos(testRead, g));
 	// true indicates revese complement (second read)
 	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
 }
