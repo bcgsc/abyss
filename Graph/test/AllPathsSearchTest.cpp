@@ -70,7 +70,7 @@ TEST_F(AllPathsSearchTest, StartNodeEqualsGoal)
 TEST_F(AllPathsSearchTest, SinglePath)
 {
 	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(simpleAcyclicGraph, 0, 3, paths);
+	PathSearchResult result = allPathsSearch(simpleAcyclicGraph, 0, 3, 1, 2, paths);
 
 	EXPECT_EQ(FOUND_PATH, result);
 	ASSERT_EQ(1u, paths.size());
@@ -80,7 +80,7 @@ TEST_F(AllPathsSearchTest, SinglePath)
 TEST_F(AllPathsSearchTest, CyclicGraph)
 {
 	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(cyclicGraph, 0, 6, paths);
+	PathSearchResult result = allPathsSearch(cyclicGraph, 0, 6, 4, 6, paths);
 
 	set<string> expectedPaths;
 	expectedPaths.insert("0,1,3,5,6");
@@ -97,6 +97,40 @@ TEST_F(AllPathsSearchTest, CyclicGraph)
 
 	// check that each path is unique
 	for (unsigned i = 0; i < 3; i++)
+		ASSERT_TRUE(paths[i].str() != paths[i+1].str());
+}
+
+TEST_F(AllPathsSearchTest, RespectsMaxPathsLimit)
+{
+	vector< Path<Vertex> > paths;
+	PathSearchResult result = allPathsSearch(cyclicGraph, 0, 6, 3, NO_LIMIT, paths);
+	EXPECT_EQ(TOO_MANY_PATHS, result);
+}
+
+TEST_F(AllPathsSearchTest, RespectsMaxDepthLimit)
+{
+	vector< Path<Vertex> > paths;
+	PathSearchResult result = allPathsSearch(cyclicGraph, 0, 6, 4, 5, paths);
+
+	// We expect the fourth path ("0,1,2,3,4,5,6")
+	// to be excluded by the depth limit.  Note that
+	// the depth of the start node is 0, and so a
+	// path of length 7 reaches depth 6.
+
+	set<string> expectedPaths;
+	expectedPaths.insert("0,1,3,5,6");
+	expectedPaths.insert("0,1,2,3,5,6");
+	expectedPaths.insert("0,1,3,4,5,6");
+
+	EXPECT_EQ(FOUND_PATH, result);
+	ASSERT_EQ(3u, paths.size());
+
+	// check that each path is one of the expected ones
+	for (unsigned i = 0; i < 3; i++)
+		ASSERT_TRUE(expectedPaths.find(paths[i].str()) != expectedPaths.end());
+
+	// check that each path is unique
+	for (unsigned i = 0; i < 2; i++)
 		ASSERT_TRUE(paths[i].str() != paths[i+1].str());
 }
 

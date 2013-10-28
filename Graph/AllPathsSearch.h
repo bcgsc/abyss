@@ -15,6 +15,18 @@ PathSearchResult allPathsSearch(
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
 	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
 {
+	return allPathsSearch(g, start, goal, NO_LIMIT, NO_LIMIT, pathsFound);
+}
+
+template <class IncidenceGraph>
+PathSearchResult allPathsSearch(
+	const IncidenceGraph& g,
+	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor start,
+	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
+	unsigned maxPaths,
+	unsigned maxDepth,
+	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
+{
     BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<IncidenceGraph>));
     typedef typename boost::graph_traits<IncidenceGraph>::vertex_descriptor V;
     typedef typename boost::graph_traits<IncidenceGraph>::edge_descriptor E;
@@ -31,18 +43,24 @@ PathSearchResult allPathsSearch(
 
 	while(!path.empty()) {
 
-		if (path.back() == goal)
+		if (path.back() == goal) {
+			if (maxPaths != NO_LIMIT && pathsFound.size() >= maxPaths)
+				return TOO_MANY_PATHS;
 			pathsFound.push_back(path);
+		}
 
 		// find next unvisited node and append to path
 		while(!path.empty()) {
-			if (eiStack.back().first == eiStack.back().second) {
+			if ((maxDepth != NO_LIMIT && (path.size() - 1) >= maxDepth) ||
+				eiStack.back().first == eiStack.back().second) 
+			{
 				visited.erase(path.back());
 				path.pop_back();
 				eiStack.pop_back();
 				assert(path.empty() == eiStack.empty());
 				if (!path.empty())
 					eiStack.back().first++;
+
 			} else {
 				V v = target(*(eiStack.back().first), g);
 				if (visited.find(v) != visited.end()) {
