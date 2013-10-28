@@ -47,4 +47,10 @@ BidirectionalBFS_SOURCES = $(top_srcdir)/Graph/test/BidirectionalBFSTest.cpp
 BidirectionalBFS_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 BidirectionalBFS_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += AllPathsSearch
+check_PROGRAMS += AllPathsSearch
+AllPathsSearch_SOURCES = $(top_srcdir)/Graph/test/AllPathsSearchTest.cpp
+AllPathsSearch_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+AllPathsSearch_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
