@@ -15,7 +15,7 @@ PathSearchResult allPathsSearch(
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
 	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
 {
-	return allPathsSearch(g, start, goal, NO_LIMIT, NO_LIMIT, pathsFound);
+	return allPathsSearch(g, start, goal, NO_LIMIT, NO_LIMIT, NO_LIMIT, pathsFound);
 }
 
 template <class IncidenceGraph>
@@ -24,6 +24,7 @@ PathSearchResult allPathsSearch(
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor start,
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
 	unsigned maxPaths,
+	unsigned minDepth,
 	unsigned maxDepth,
 	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
 {
@@ -43,7 +44,8 @@ PathSearchResult allPathsSearch(
 
 	while(!path.empty()) {
 
-		if (path.back() == goal) {
+		if (path.back() == goal && 
+			(minDepth == NO_LIMIT || (path.size() - 1) >= minDepth)) {
 			if (maxPaths != NO_LIMIT && pathsFound.size() >= maxPaths)
 				return TOO_MANY_PATHS;
 			pathsFound.push_back(path);
