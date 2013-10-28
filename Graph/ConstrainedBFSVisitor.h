@@ -5,6 +5,8 @@
 #include "Common/IOUtil.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/Path.h"
+#include "Graph/HashGraph.h"
+#include "Graph/AllPathsSearch.h"
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <iostream>
@@ -24,11 +26,10 @@ public:
 private:
 
 	typedef std::vector<V> Predecessors;
-	typedef unordered_map<V, Predecessors> PredecessorMap;
 	typedef unordered_map<V, unsigned> OutDegreeMap;
 	typedef unordered_map<V, depth_t> DepthMap;
 
-	PredecessorMap m_predecessors;
+	HashGraph<V> m_traversalGraph;
 	OutDegreeMap m_outDegree;
 	DepthMap m_depthMap;
 	const V& m_start;
@@ -86,10 +87,10 @@ public:
 			return;
 		}
 
-		// record history of traversal, so that we can trace 
+		// record history of traversal, so that we can trace
 		// backwards from goal to start in pathsToGoal()
 
-		m_predecessors[v].push_back(u);
+		add_edge(v, u, m_traversalGraph);
 
 		// track depth of nodes and go no deeper than m_maxDepth
 
@@ -102,14 +103,9 @@ public:
 		if (m_depthMap[v] > m_maxDepthVisited)
 			m_maxDepthVisited = m_depthMap[v];
 
-		// track number of branches and abort if we exceed m_maxBranches 
+		// track number of branches and abort if we exceed m_maxBranches
 
-		if (m_outDegree.find(u) == m_outDegree.end())
-			m_outDegree[u] = 0;
-
-		m_outDegree[u]++;
-
-		if (m_outDegree[u] > 1)
+		if (in_degree(u, m_traversalGraph) > 1)
 			m_branches++;
 
 		if (m_maxBranches != NO_LIMIT && m_branches > m_maxBranches) {
@@ -135,61 +131,20 @@ public:
 		if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
 
-		Path<V> reversePath;
-		reversePath.push_back(m_goal);
-		bool exceededMaxPaths = false;
-		unsigned long fullDepthPaths = 0;
-		unsigned long deadEndPaths = 0;
-		pathsToGoal(reversePath, pathsFound, maxPaths, exceededMaxPaths, fullDepthPaths, deadEndPaths);
+		PathSearchResult result = allPathsSearch(m_traversalGraph,
+				m_goal, m_start, maxPaths, m_minDepth, m_maxDepth, pathsFound);
 
-		if (exceededMaxPaths)
-			return TOO_MANY_PATHS;
-		else if (pathsFound.empty())
-			return NO_PATH;
-		else
-			return FOUND_PATH;
+		if (result == FOUND_PATH) {
+			for (unsigned i = 0; i < pathsFound.size(); i++)
+				reverse(pathsFound[i].begin(), pathsFound[i].end());
+		}
+
+		return result;
 	}
 
 	depth_t getMaxDepthVisited()
 	{
 		return m_maxDepthVisited;
-	}
-
-private:
-
-	void pathsToGoal(Path<V>& pathToStart, std::vector< Path<V> >& pathList,
-		unsigned maxPaths, bool& exceededMaxPaths, unsigned long& fullDepthPaths, unsigned long& deadEndPaths)
-	{
-		if (pathToStart.size() > (depth_t)(m_maxDepth + 1)) {
-			fullDepthPaths++;
-			return;
-		}
-
-		if (exceededMaxPaths)
-			return;
-
-		V back = pathToStart.back();
-
-		if (back == m_start) {
-			if (pathToStart.size() > m_minDepth) {
-				if (maxPaths == NO_LIMIT || pathList.size() < maxPaths) {
-					pathList.push_back(pathToStart);
-					reverse(pathList.back().begin(), pathList.back().end());
-				} else {
-					exceededMaxPaths = true;
-				}
-			}
-		}
-
-		if (back != m_start && m_predecessors[back].empty()) {
-			deadEndPaths++;
-		}
-
-		for (unsigned int i = 0; i < m_predecessors[back].size(); i++) {
-			pathToStart.push_back(m_predecessors[back][i]);
-			pathsToGoal(pathToStart, pathList, maxPaths, exceededMaxPaths, fullDepthPaths, deadEndPaths);
-			pathToStart.pop_back();
-		}
 	}
 
 };
