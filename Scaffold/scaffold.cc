@@ -57,6 +57,8 @@ static const char USAGE_MESSAGE[] =
 "                        that maximizes the scaffold N50.\n"
 "  -k, --kmer=N          length of a k-mer\n"
 "      --min-gap=N       minimum scaffold gap length to output [50]\n"
+"      --complex         remove complex transitive edges\n"
+"      --no-complex      don't remove complex transitive edges [default]\n"
 "  -o, --out=FILE        write the paths to FILE\n"
 "  -g, --graph=FILE      write the graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -89,11 +91,14 @@ namespace opt {
 
 	/** Output format */
 	int format = DOT; // used by DistanceEst
+
+	/** Remove complex transitive edges */
+	static int comp_trans;
 }
 
 static const char shortopts[] = "g:k:n:o:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_COMP };
 
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
@@ -102,6 +107,8 @@ static const struct option longopts[] = {
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
+	{ "complex",     no_argument, &opt::comp_trans, 1 },
+	{ "no-complex",  no_argument, &opt::comp_trans, 0 },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -561,7 +568,12 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	removeRepeats(g);
 
 	// Remove transitive edges.
-	unsigned numTransitive = remove_transitive_edges(g);
+	unsigned numTransitive;
+	if (opt::comp_trans)
+		numTransitive = remove_complex_transitive_edges(g);
+	else
+		numTransitive = remove_transitive_edges(g);
+
 	if (opt::verbose > 0) {
 		cerr << "Removed " << numTransitive << " transitive edges.\n";
 		printGraphStats(cerr, g);
