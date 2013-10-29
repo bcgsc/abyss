@@ -44,7 +44,7 @@ unsigned alignGlobal(
 /** Align the specified pair of sequences.
  * @return the number of matches and size of the consensus
  */
-static std::pair<unsigned, unsigned> alignPair(
+static inline std::pair<unsigned, unsigned> alignPair(
 		const std::string& seqa, const std::string& seqb, NWAlignment& align)
 {
 	unsigned matches = alignGlobal(seqa, seqb, align);
