@@ -31,7 +31,7 @@ public:
 
 	TestVisitor() : rank(0) { }
 
-	void examine_vertex(Vertex u, const Graph& g, Direction dir)
+	void examine_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(g);
 
@@ -44,10 +44,11 @@ public:
 		rankMap[u] = rank++;
 	}
 
-	void common_edge(Edge e, const Graph& g)
+	BFSVisitorResult common_edge(const Edge& e, const Graph& g)
 	{
 		SUPPRESS_UNUSED_WARNING(g);
 		commonEdges.push_back(e);
+		return SUCCESS;
 	}
 
 };

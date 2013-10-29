@@ -3,6 +3,8 @@
 
 #include "Common/Warnings.h"
 
+enum BFSVisitorResult { SUCCESS, ABORT_SEARCH, SKIP_ELEMENT };
+
 template <class Graph>
 class BidirectionalBFSVisitor {
 
@@ -13,62 +15,65 @@ public:
 
 	BidirectionalBFSVisitor() { }
 
-	virtual void discover_vertex(Vertex u, const Graph& g, Direction dir)
+	virtual void discover_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(u);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
 	}
 
-	virtual void examine_vertex(Vertex u, const Graph& g, Direction dir)
+	virtual void examine_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(u);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
 	}
 
-	virtual void finish_vertex(Vertex u, const Graph& g, Direction dir)
+	virtual void finish_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(u);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
 	}
 
-	virtual void examine_edge(Edge e, const Graph& g, Direction dir)
+	virtual void examine_edge(const Edge& e, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(e);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
 	}
 
-	virtual void common_edge(Edge e, const Graph& g)
+	virtual BFSVisitorResult common_edge(const Edge& e, const Graph& g)
 	{
 		SUPPRESS_UNUSED_WARNING(e);
 		SUPPRESS_UNUSED_WARNING(g);
+		return SUCCESS;
 	}
 
-	virtual void tree_edge(Edge e, const Graph& g, Direction dir)
+	virtual BFSVisitorResult tree_edge(const Edge& e, const Graph& g, Direction dir)
+	{
+		SUPPRESS_UNUSED_WARNING(e);
+		SUPPRESS_UNUSED_WARNING(g);
+		SUPPRESS_UNUSED_WARNING(dir);
+		return SUCCESS;
+	}
+
+	virtual BFSVisitorResult non_tree_edge(const Edge& e, const Graph& g, Direction dir)
+	{
+		SUPPRESS_UNUSED_WARNING(e);
+		SUPPRESS_UNUSED_WARNING(g);
+		SUPPRESS_UNUSED_WARNING(dir);
+		return SUCCESS;
+	}
+
+	virtual void gray_target(const Edge& e, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(e);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
 	}
 
-	virtual void non_tree_edge(Edge e, const Graph& g, Direction dir)
-	{
-		SUPPRESS_UNUSED_WARNING(e);
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
-	}
-
-	virtual void gray_target(Edge e, const Graph& g, Direction dir)
-	{
-		SUPPRESS_UNUSED_WARNING(e);
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
-	}
-
-	virtual void black_target(Edge e, const Graph& g, Direction dir)
+	virtual void black_target(const Edge& e, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(e);
 		SUPPRESS_UNUSED_WARNING(g);

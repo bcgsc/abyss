@@ -13,7 +13,8 @@ using boost::property_traits;
 using boost::color_traits;
 
 template <class BidirectionalGraph, class Buffer, class ColorMap>
-inline void bidirectionalBFS_visit_edge(
+inline BFSVisitorResult
+bidirectionalBFS_visit_edge(
 	const BidirectionalGraph& g,
 	typename boost::graph_traits<BidirectionalGraph>::edge_descriptor e,
 	Buffer& Q,
@@ -39,29 +40,41 @@ inline void bidirectionalBFS_visit_edge(
 	ColorValue v_color = get(color, v);
 	ColorValue other_v_color = get(other_color, v);
 
+	BFSVisitorResult result;
+
 	if (other_v_color != Color::white()) {
 		// Tricky point: Each common edge is visited
 		// by both the forward and reverse traversal.
-		// To avoid redundant visitor events, we only 
-		// report a common edge when we encounter it 
+		// To avoid redundant visitor events, we only
+		// report a common edge when we encounter it
 		// in the forward direction.
-		if (dir == FORWARD)
-			vis.common_edge(e, g);
+		if (dir == FORWARD) {
+			// A return value of SKIP_ELEMENT is silently
+			// ignored here because it has no logical consequence
+			if (vis.common_edge(e, g) == ABORT_SEARCH)
+				return ABORT_SEARCH;
+		}
 		put(color, v, Color::black());
 	}
 	else if (v_color == Color::white()) {
-		vis.tree_edge(e, g, dir);
+		result = vis.tree_edge(e, g, dir);
+		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
+			return result;
 		put(color, v, Color::gray());
 		vis.discover_vertex(v, g, dir);
 		Q.push(v);
 	}
 	else {
-		vis.non_tree_edge(e, g, dir);
+		result = vis.non_tree_edge(e, g, dir);
+		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
+			return result;
 		if (v_color == Color::gray())
 			vis.gray_target(e, g, dir);
 		else
 			vis.black_target(e, g, dir);
 	}
+
+	return SUCCESS;
 }
 
 template <class BidirectionalGraph, class Buffer, class ColorMap>
@@ -82,6 +95,7 @@ void bidirectionalBFS(
 	function_requires< boost::ReadWritePropertyMapConcept<ColorMap, Vertex> >();
 	typedef typename property_traits<ColorMap>::value_type ColorValue;
 	typedef color_traits<ColorValue> Color;
+
 	typename GTraits::out_edge_iterator oei, oei_end;
 	typename GTraits::in_edge_iterator iei, iei_end;
 
@@ -93,7 +107,6 @@ void bidirectionalBFS(
 	Q2.push(s2);
 
 	Direction dir = FORWARD;
-
 	while (!Q1.empty() || !Q2.empty()) {
 
 		Buffer& Q = (dir == FORWARD) ? Q1 : Q2;
@@ -103,11 +116,19 @@ void bidirectionalBFS(
 		vis.examine_vertex(u, g, dir);
 
 		if (dir == FORWARD) {
-			for (boost::tie(oei, oei_end) = out_edges(u, g); oei != oei_end; ++oei)
-				bidirectionalBFS_visit_edge(g, *oei, Q, vis, color1, color2, dir);
+			for (boost::tie(oei, oei_end) = out_edges(u, g); oei != oei_end; ++oei) {
+				if (bidirectionalBFS_visit_edge(g, *oei, Q, vis,
+					color1, color2, dir) == ABORT_SEARCH) {
+					return;
+				}
+			}
 		} else {
-			for (boost::tie(iei, iei_end) = in_edges(u, g); iei != iei_end; ++iei)
-				bidirectionalBFS_visit_edge(g, *iei, Q, vis, color1, color2, dir);
+			for (boost::tie(iei, iei_end) = in_edges(u, g); iei != iei_end; ++iei) {
+				if (bidirectionalBFS_visit_edge(g, *iei, Q, vis,
+					color1, color2, dir) == ABORT_SEARCH) {
+					return;
+				}
+			}
 		}
 
 		put(color, u, Color::black());

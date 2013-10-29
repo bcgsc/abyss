@@ -59,4 +59,11 @@ graph_HashGraph_SOURCES = $(top_srcdir)/Graph/test/HashGraphTest.cpp
 graph_HashGraph_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 graph_HashGraph_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += graph_ConstrainedBidiBFSVisitor
+check_PROGRAMS += graph_ConstrainedBidiBFSVisitor
+graph_ConstrainedBidiBFSVisitor_SOURCES = \
+	$(top_srcdir)/Graph/test/ConstrainedBidiBFSVisitorTest.cpp
+graph_ConstrainedBidiBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+graph_ConstrainedBidiBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
