@@ -105,7 +105,7 @@ public:
 
 		// track number of branches and abort if we exceed m_maxBranches
 
-		if (in_degree(u, m_traversalGraph) > 1)
+		if (m_maxBranches != NO_LIMIT && ++m_outDegree[u] > 1)
 			m_branches++;
 
 		if (m_maxBranches != NO_LIMIT && m_branches > m_maxBranches) {

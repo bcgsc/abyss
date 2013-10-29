@@ -44,29 +44,6 @@ TEST_F(HashGraphTest, GetOutEdges)
 	edge_descriptor edge1 = *ei;
 	EXPECT_TRUE(edge1 == expectedEdge1 || edge1 == expectedEdge2);
 
-
-	ei++;
-	ASSERT_TRUE(ei != ei_end);
-	edge_descriptor edge2 = *ei;
-	EXPECT_TRUE(edge2 != edge1);
-	EXPECT_TRUE(edge2 == expectedEdge1 || edge2 == expectedEdge2);
-	
-	ei++;
-	EXPECT_TRUE(ei == ei_end);
-}
-
-TEST_F(HashGraphTest, GetInEdges)
-{
-	edge_descriptor expectedEdge1(b, d);
-	edge_descriptor expectedEdge2(c, d);
-	
-	out_edge_iterator ei, ei_end;
-	boost::tie(ei, ei_end) = in_edges(d, simpleCyclicGraph);
-
-	ASSERT_TRUE(ei != ei_end);
-	edge_descriptor edge1 = *ei;
-	EXPECT_TRUE(edge1 == expectedEdge1 || edge1 == expectedEdge2);
-
 	ei++;
 	ASSERT_TRUE(ei != ei_end);
 	edge_descriptor edge2 = *ei;
