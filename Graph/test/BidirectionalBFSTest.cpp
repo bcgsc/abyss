@@ -44,9 +44,10 @@ public:
 		rankMap[u] = rank++;
 	}
 
-	BFSVisitorResult common_edge(const Edge& e, const Graph& g)
+	BFSVisitorResult common_edge(const Edge& e, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(g);
+		SUPPRESS_UNUSED_WARNING(dir);
 		commonEdges.push_back(e);
 		return SUCCESS;
 	}
@@ -116,7 +117,12 @@ TEST_F(BidirectionalBFSTest, IdentifiesCommonEdge)
 
 	TestVisitor::EdgeList& commonEdges = visitor.commonEdges;
 
-	ASSERT_TRUE(commonEdges.size() == 1);
+	// Note: Each common edge is visited twice.  It is
+	// visited once by the forward traversal and once
+	// by the reverse traversal.
+
+	ASSERT_TRUE(commonEdges.size() == 2);
+	ASSERT_TRUE(commonEdges[0] == commonEdges[1]);
 	ASSERT_TRUE(source(commonEdges[0], linearGraph) == 1u);
 	ASSERT_TRUE(target(commonEdges[0], linearGraph) == 2u);
 }

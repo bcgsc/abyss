@@ -2,6 +2,7 @@
 #define CONSTRAINED_BIDI_BFS_VISITOR_H
 
 #include "Common/UnorderedMap.h"
+#include "Common/UnorderedSet.h"
 #include "Common/IOUtil.h"
 #include "Graph/Path.h"
 #include "Graph/HashGraph.h"
@@ -12,52 +13,77 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <boost/functional/hash.hpp> // for boost::hash_combine
 
 template <typename G>
 class ConstrainedBidiBFSVisitor : public BidirectionalBFSVisitor<G>
 {
-public:
+
+protected:
 
 	typedef typename boost::graph_traits<G>::vertex_descriptor V;
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
 	typedef unsigned short depth_t;
-
-private:
-
+	typedef std::vector< Path<V> > PathList;
 	typedef unordered_map<V, depth_t> DepthMap;
 
-	HashGraph<V> m_forwardTraversalGraph;
-	HashGraph<V> m_reverseTraversalGraph;
-	DepthMap m_depthMap;
+	struct EdgeHash {
+		std::size_t operator()(const E& e) const {
+			std::size_t hash = 0;
+			boost::hash_combine(hash, std::min(e.m_source, e.m_target));
+			boost::hash_combine(hash, std::max(e.m_source, e.m_target));
+			return hash;
+		}
+	};
+
+	typedef unordered_set<E, EdgeHash> EdgeSet;
+
+	const G& m_graph;
 	const V& m_start;
 	const V& m_goal;
 	unsigned m_maxPaths;
-	depth_t m_minDepth;
-	depth_t m_maxDepth;
-	bool m_bFoundGoal;
-	bool m_tooManyPaths;
-	depth_t m_maxDepthVisited;
 
-	std::vector< Path<V> > m_pathsFound;
+	/** records history of forward/reverse traversals */
+	HashGraph<V> m_traversalGraph[2];
+
+	/** records depth of vertices during forward/reverse traversal */
+	DepthMap m_depthMap[2];
+
+	/** depth limits for forward/reverse traversal */
+	depth_t m_maxDepth[2];
+
+	/** edges that connect the forward and reverse traversals */
+	EdgeSet m_commonEdges;
+
+	depth_t m_minPathLength;
+	depth_t m_maxPathLength;
+	bool m_tooManyPaths;
+
+	PathList m_pathsFound;
 
 public:
 
 	ConstrainedBidiBFSVisitor(
+		const G& graph,
 		const V& start,
 		const V& goal,
 		unsigned maxPaths,
-		depth_t minDepth,
-		depth_t maxDepth) :
+		depth_t minPathLength,
+		depth_t maxPathLength) :
+			m_graph(graph),
 			m_start(start),
 			m_goal(goal),
 			m_maxPaths(maxPaths),
-			m_minDepth(minDepth),
-			m_maxDepth(maxDepth),
-			m_bFoundGoal(false),
-			m_tooManyPaths(false),
-			m_maxDepthVisited(0)
+			m_minPathLength(minPathLength),
+			m_maxPathLength(maxPathLength),
+			m_tooManyPaths(false)
 	{
-		// edge case: start == goal
+
+		depth_t maxDepth = maxPathLength - 1;
+		m_maxDepth[FORWARD] = maxDepth / 2 + maxDepth % 2;
+		m_maxDepth[REVERSE] = maxDepth / 2;
+
+		// special case
 		if (start == goal) {
 			Path<V> path;
 			path.push_back(start);
@@ -65,107 +91,54 @@ public:
 		}
 	}
 
-#if 0
+#if 1
 	// for debugging
 	void examine_vertex(const V& v, const G& g, Direction dir)
 	{
-		std::cout << "visiting vertex: " << v << "\n";
+		SUPPRESS_UNUSED_WARNING(g);
+		std::cout << "visiting vertex: " << v << " from dir: " << dir << "\n";
 	}
-#endif
 
-	void record_edge_traversal(const E& e, const G& g, Direction dir)
+	void examine_edge(const E& e, const G& g, Direction dir)
 	{
-		V u = source(e, g);
-		V v = target(e, g);
-
-#if 0
-		// for debugging
-		std::cout << "visiting edge: (" << u << ", " << v << ")\n";
-#endif
-
-		// record history of traversal, so that we can retrace
-		// paths from a common edge to start/goal.
-
-		if (dir == FORWARD)
-			add_edge(v, u, m_forwardTraversalGraph);
-		else
-			add_edge(u, v, m_reverseTraversalGraph);
+		SUPPRESS_UNUSED_WARNING(g);
+		std::cout << "visiting edge: " << e << " from dir: " << dir << "\n";
 	}
+#endif
 
 	BFSVisitorResult tree_edge(const E& e, const G& g, Direction dir)
 	{
-		record_edge_traversal(e, g, dir);
+		recordEdgeTraversal(e, g, dir);
 
 		V u = source(e, g);
 		V v = target(e, g);
 
-		if (m_depthMap[u] == m_maxDepth)
+		if (!updateVertexDepth(u, v, dir))
 			return SKIP_ELEMENT;
-
-		m_depthMap[v] = m_depthMap[u] + 1;
-		if (m_depthMap[v] > m_maxDepthVisited)
-			m_maxDepthVisited = m_depthMap[v];
 
 		return SUCCESS;
 	}
 
 	BFSVisitorResult non_tree_edge(const E& e, const G& g, Direction dir)
 	{
-		record_edge_traversal(e, g, dir);
+		recordEdgeTraversal(e, g, dir);
 		return SUCCESS;
 	}
 
-	BFSVisitorResult common_edge(const E& e, const G& g)
+	BFSVisitorResult common_tree_edge(const E& e, const G& g, Direction dir)
 	{
-		if (m_pathsFound.size() == m_maxPaths) {
-			m_tooManyPaths = true;
-			return ABORT_SEARCH;
-		}
-
 		V u = source(e, g);
 		V v = target(e, g);
 
-		// find paths from common edge to start vertex (forward traversal)
+		if (!updateVertexDepth(u, v, dir))
+			return SKIP_ELEMENT;
 
-		unsigned maxPathsToStart = m_maxPaths - m_pathsFound.size();
-		std::vector< Path<V> > pathsToStart;
-		PathSearchResult result = allPathsSearch(
-			m_forwardTraversalGraph, u, m_start, maxPathsToStart,
-			m_minDepth, m_maxDepth, pathsToStart);
+		return recordCommonEdge(e);
+	}
 
-		if (result == TOO_MANY_PATHS) {
-			m_tooManyPaths = true;
-			return ABORT_SEARCH;
-		} else if (result == FOUND_PATH) {
-
-			// find paths from common edge to goal vertex (reverse traversal)
-
-			unsigned maxPathsToGoal = (m_maxPaths - m_pathsFound.size()) / pathsToStart.size();
-			std::vector< Path<V> > pathsToGoal;
-			result = allPathsSearch(m_forwardTraversalGraph, v, m_goal,
-				maxPathsToGoal, m_minDepth, m_maxDepth, pathsToGoal);
-
-			if (result == TOO_MANY_PATHS) {
-				m_tooManyPaths = true;
-				return ABORT_SEARCH;
-			} else if (result == FOUND_PATH) {
-
-				// merge paths from start to common edge
-				// and common edge to goal
-
-				for (unsigned i = 0; i < pathsToStart.size(); i++) {
-					for(unsigned j = 0; j < pathsToGoal.size(); j++) {
-						m_pathsFound.push_back(pathsToStart[i]);
-						reverse(m_pathsFound.back().begin(), m_pathsFound.back().end());
-						m_pathsFound.back().insert(m_pathsFound.back().end(),
-							pathsToGoal[j].begin(), pathsToGoal[j].end());
-					}
-				}
-			}
-
-		}
-
-		return SUCCESS;
+	BFSVisitorResult common_non_tree_edge(const E& e, const G& g)
+	{
+		return recordCommonEdge(e);
 	}
 
 	PathSearchResult uniquePathToGoal(Path<V>& path)
@@ -181,11 +154,17 @@ public:
 		return result;
 	}
 
-	PathSearchResult pathsToGoal(std::vector< Path<V> >& pathsFound)
+	PathSearchResult pathsToGoal(PathList& pathsFound)
 	{
+		if (m_tooManyPaths)
+			return TOO_MANY_PATHS;
+
+		buildPaths();
+
 		if (m_tooManyPaths) {
 			return TOO_MANY_PATHS;
-		} else if (m_pathsFound.empty()) {
+		}
+		else if (m_pathsFound.empty()) {
 			return NO_PATH;
 		} else {
 			pathsFound = m_pathsFound;
@@ -193,9 +172,121 @@ public:
 		}
 	}
 
-	depth_t getMaxDepthVisited()
+protected:
+
+	BFSVisitorResult recordCommonEdge(const E& e)
 	{
-		return m_maxDepthVisited;
+		m_commonEdges.insert(e);
+		if (m_commonEdges.size() > m_maxPaths) {
+			m_tooManyPaths = true;
+			return ABORT_SEARCH;
+		}
+		return SUCCESS;
+	}
+
+	/**
+	 * Record history of edge traversal, so that we can retrace
+	 * paths from a common edge to start/goal.
+	 */
+	void recordEdgeTraversal(const E& e, const G& g, Direction dir)
+	{
+		V u = source(e, g);
+		V v = target(e, g);
+
+		if (dir == FORWARD)
+			add_edge(v, u, m_traversalGraph[FORWARD]);
+		else
+			add_edge(u, v, m_traversalGraph[REVERSE]);
+	}
+
+	/**
+	 * Record the depth of a newly visited vertex.
+	 * @return true if the vertex is visitable is less than the max
+	 * depth limit false otherwise.
+	 */
+	bool updateVertexDepth(const V& u, const V& v, Direction dir)
+	{
+		const V* parent;
+		const V* child;
+
+		if (dir == FORWARD) {
+			parent = &u;
+			child = &v;
+		} else {
+			parent = &v;
+			child = &u;
+		}
+
+		depth_t parentDepth = m_depthMap[dir][*parent];
+		if (parentDepth == m_maxDepth[dir])
+			return false;
+
+		m_depthMap[dir][*child] = parentDepth + 1;
+		return true;
+	}
+
+	void buildPaths()
+	{
+		typename EdgeSet::const_iterator i = m_commonEdges.begin();
+		for (; i != m_commonEdges.end(); i++) {
+			if (buildPaths(*i) == TOO_MANY_PATHS)
+				break;
+		}
+	}
+
+	PathSearchResult buildPaths(const E& common_edge)
+	{
+
+		V u = source(common_edge, m_graph);
+		V v = target(common_edge, m_graph);
+
+		// find paths from common edge to start vertex (forward traversal)
+
+		unsigned maxPathsToStart = m_maxPaths - m_pathsFound.size();
+
+		PathList pathsToStart;
+		PathSearchResult result = allPathsSearch(
+			m_traversalGraph[FORWARD], u, m_start, maxPathsToStart,
+			0, m_maxDepth[FORWARD], pathsToStart);
+
+		if (result == FOUND_PATH) {
+
+			// find paths from common edge to goal vertex (reverse traversal)
+
+			unsigned maxPathsToGoal =
+				(m_maxPaths - m_pathsFound.size()) / pathsToStart.size();
+
+			PathList pathsToGoal;
+			result = allPathsSearch(m_traversalGraph[REVERSE], v, m_goal,
+				maxPathsToGoal, 0, m_maxDepth[REVERSE], pathsToGoal);
+
+			if (result == FOUND_PATH)
+				buildPaths(pathsToStart, pathsToGoal);
+
+		} // result == FOUND_PATH (common edge => start)
+
+		if (result == TOO_MANY_PATHS)
+			m_tooManyPaths = true;
+
+		return result;
+	}
+
+	void buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
+	{
+		typename PathList::const_iterator pathToStart = pathsToStart.begin();
+		for (; pathToStart != pathsToStart.end(); pathToStart++) {
+			typename PathList::const_iterator pathToGoal = pathsToGoal.begin();
+			for(; pathToGoal != pathsToGoal.end(); pathToGoal++) {
+				if (pathToStart->size() + pathToGoal->size() < m_minPathLength ||
+					pathToStart->size() + pathToGoal->size() > m_maxPathLength)
+					continue;
+				m_pathsFound.push_back(*pathToStart);
+				Path<V>& mergedPath = m_pathsFound.back();
+				reverse(mergedPath.begin(), mergedPath.end());
+				m_pathsFound.back().insert(mergedPath.end(), 
+					pathToGoal->begin(), pathToGoal->end());
+			}
+		}
 	}
 
 };

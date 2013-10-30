@@ -43,18 +43,22 @@ bidirectionalBFS_visit_edge(
 	BFSVisitorResult result;
 
 	if (other_v_color != Color::white()) {
-		// Tricky point: Each common edge is visited
-		// by both the forward and reverse traversal.
-		// To avoid redundant visitor events, we only
-		// report a common edge when we encounter it
-		// in the forward direction.
-		if (dir == FORWARD) {
-			// A return value of SKIP_ELEMENT is silently
-			// ignored here because it has no logical consequence
-			if (vis.common_edge(e, g) == ABORT_SEARCH)
-				return ABORT_SEARCH;
-		}
-		put(color, v, Color::black());
+		// We have encountered a common edge, i.e. an
+		// edge where one vertex has been visited by
+		// the forward traversal and the other has
+		// been visited by the reverse traversal.
+		// Each common edge is once by the forward
+		// traversal and once by the reverse traversal.
+		BFSVisitorResult result;
+		result = vis.common_edge(e, g, dir);
+		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
+			return result;
+		if (v_color == Color::white())
+			result = vis.common_tree_edge(e, g, dir);
+		else
+			result = vis.common_non_tree_edge(e, g, dir);
+		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
+			return result;
 	}
 	else if (v_color == Color::white()) {
 		result = vis.tree_edge(e, g, dir);
