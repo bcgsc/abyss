@@ -44,7 +44,7 @@ PathSearchResult allPathsSearch(
 
 	while(!path.empty()) {
 
-		if (path.back() == goal && 
+		if (path.back() == goal &&
 			(minDepth == NO_LIMIT || (path.size() - 1) >= minDepth)) {
 			if (maxPaths != NO_LIMIT && pathsFound.size() >= maxPaths)
 				return TOO_MANY_PATHS;
@@ -54,7 +54,7 @@ PathSearchResult allPathsSearch(
 		// find next unvisited node and append to path
 		while(!path.empty()) {
 			if ((maxDepth != NO_LIMIT && (path.size() - 1) >= maxDepth) ||
-				eiStack.back().first == eiStack.back().second) 
+				eiStack.back().first == eiStack.back().second)
 			{
 				visited.erase(path.back());
 				path.pop_back();
