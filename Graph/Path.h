@@ -6,13 +6,13 @@
 #include <sstream>
 
 enum PathSearchResult {
-	FOUND_PATH,
+	FOUND_PATH = 0,
 	TOO_MANY_PATHS,
 	TOO_MANY_BRANCHES,
 	NO_PATH
 };
 
-enum Direction { FORWARD, REVERSE };
+enum Direction { FORWARD = 0, REVERSE };
 
 const unsigned NO_LIMIT = 0;
 
@@ -31,10 +31,5 @@ public:
 		return s.str();
 	}
 };
-
-/*
-template <class Graph> class PathList :
-	public std::vector<std::vector<typename boost::graph_traits<Graph>::vertex_descriptor> > {};
-*/
 
 #endif
