@@ -91,7 +91,7 @@ public:
 		}
 	}
 
-#if 1
+#if 0
 	// for debugging
 	void examine_vertex(const V& v, const G& g, Direction dir)
 	{
