@@ -53,12 +53,6 @@ bidirectionalBFS_visit_edge(
 		result = vis.common_edge(e, g, dir);
 		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
 			return result;
-		if (v_color == Color::white())
-			result = vis.common_tree_edge(e, g, dir);
-		else
-			result = vis.common_non_tree_edge(e, g, dir);
-		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
-			return result;
 	}
 	else if (v_color == Color::white()) {
 		result = vis.tree_edge(e, g, dir);

@@ -125,19 +125,16 @@ public:
 		return SUCCESS;
 	}
 
-	BFSVisitorResult common_tree_edge(const E& e, const G& g, Direction dir)
+	BFSVisitorResult common_edge(const E& e, const G& g, Direction dir)
 	{
 		V u = source(e, g);
 		V v = target(e, g);
 
-		if (!updateVertexDepth(u, v, dir))
+		const V& parent = (dir == FORWARD) ? u : v;
+
+		if (m_depthMap[dir][parent] >= m_maxDepth[dir])
 			return SKIP_ELEMENT;
 
-		return recordCommonEdge(e);
-	}
-
-	BFSVisitorResult common_non_tree_edge(const E& e, const G& g)
-	{
 		return recordCommonEdge(e);
 	}
 

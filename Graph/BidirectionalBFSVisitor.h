@@ -51,22 +51,6 @@ public:
 		return SUCCESS;
 	}
 
-	virtual BFSVisitorResult common_tree_edge(const Edge& e, const Graph& g, Direction dir)
-	{
-		SUPPRESS_UNUSED_WARNING(e);
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
-		return SUCCESS;
-	}
-
-	virtual BFSVisitorResult common_non_tree_edge(const Edge& e, const Graph& g, Direction dir)
-	{
-		SUPPRESS_UNUSED_WARNING(e);
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
-		return SUCCESS;
-	}
-
 	virtual BFSVisitorResult tree_edge(const Edge& e, const Graph& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(e);
