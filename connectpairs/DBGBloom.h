@@ -122,7 +122,7 @@ struct graph_traits<DBGBloom> {
 	typedef unsigned degree_size_type;
 
 	// BidirectionalGraph
-	class out_edge_iterator;
+	struct out_edge_iterator;
 	typedef out_edge_iterator in_edge_iterator;
 
 	// VertexListGraph
