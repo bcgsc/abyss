@@ -81,7 +81,7 @@ public:
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
 			m_tooManyPaths(false),
-			m_commonEdges(100, EdgeHash(m_graph))
+			m_commonEdges(m_maxPaths, EdgeHash(m_graph))
 	{
 
 		depth_t maxDepth = maxPathLength - 1;
@@ -179,7 +179,8 @@ protected:
 	BFSVisitorResult recordCommonEdge(const E& e)
 	{
 		m_commonEdges.insert(e);
-		if (m_commonEdges.size() > m_maxPaths) {
+		if (m_maxPaths != NO_LIMIT && 
+			m_commonEdges.size() > m_maxPaths) {
 			m_tooManyPaths = true;
 			return ABORT_SEARCH;
 		}
@@ -208,22 +209,14 @@ protected:
 	 */
 	bool updateVertexDepth(const V& u, const V& v, Direction dir)
 	{
-		const V* parent;
-		const V* child;
+		const V& parent = (dir == FORWARD) ? u : v;
+		const V& child = (dir == FORWARD) ? v : u;
 
-		if (dir == FORWARD) {
-			parent = &u;
-			child = &v;
-		} else {
-			parent = &v;
-			child = &u;
-		}
-
-		depth_t parentDepth = m_depthMap[dir][*parent];
+		depth_t parentDepth = m_depthMap[dir][parent];
 		if (parentDepth == m_maxDepth[dir])
 			return false;
 
-		m_depthMap[dir][*child] = parentDepth + 1;
+		m_depthMap[dir][child] = parentDepth + 1;
 		return true;
 	}
 
@@ -238,7 +231,6 @@ protected:
 
 	PathSearchResult buildPaths(const E& common_edge)
 	{
-
 		V u = source(common_edge, m_graph);
 		V v = target(common_edge, m_graph);
 
