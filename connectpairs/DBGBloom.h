@@ -109,7 +109,7 @@ struct graph_traits<DBGBloom> {
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
 		: boost::adjacency_graph_tag,
-		boost::incidence_graph_tag,
+		boost::bidirectional_graph_tag,
 		boost::vertex_list_graph_tag
 		{ };
 	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
@@ -122,7 +122,8 @@ struct graph_traits<DBGBloom> {
 	typedef unsigned degree_size_type;
 
 	// BidirectionalGraph
-	typedef void in_edge_iterator;
+	class out_edge_iterator;
+	typedef out_edge_iterator in_edge_iterator;
 
 	// VertexListGraph
 	typedef size_t vertices_size_type;
@@ -379,6 +380,17 @@ in_degree(graph_traits<DBGBloom>::vertex_descriptor u,
 		const DBGBloom& g)
 {
 	return out_degree(reverseComplement(u), g);
+}
+
+static inline
+std::pair<graph_traits<DBGBloom>::in_edge_iterator,
+	graph_traits<DBGBloom>::in_edge_iterator>
+in_edges(
+		graph_traits<DBGBloom>::vertex_descriptor u,
+		const DBGBloom& g)
+{
+	typedef graph_traits<DBGBloom>::out_edge_iterator Oit;
+	return std::make_pair(Oit(g, reverseComplement(u)), Oit(g));
 }
 
 // VertexListGraph
