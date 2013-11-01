@@ -28,10 +28,14 @@ protected:
 	typedef unordered_map<V, depth_t> DepthMap;
 
 	struct EdgeHash {
+		const G& m_g;
+		EdgeHash(const G& g) : m_g(g) { }
 		std::size_t operator()(const E& e) const {
 			std::size_t hash = 0;
-			boost::hash_combine(hash, std::min(e.m_source, e.m_target));
-			boost::hash_combine(hash, std::max(e.m_source, e.m_target));
+			V u = source(e, m_g);
+			V v = target(e, m_g);
+			boost::hash_combine(hash, std::min(u, v));
+			boost::hash_combine(hash, std::max(u, v));
 			return hash;
 		}
 	};
@@ -52,12 +56,12 @@ protected:
 	/** depth limits for forward/reverse traversal */
 	depth_t m_maxDepth[2];
 
-	/** edges that connect the forward and reverse traversals */
-	EdgeSet m_commonEdges;
-
 	depth_t m_minPathLength;
 	depth_t m_maxPathLength;
 	bool m_tooManyPaths;
+
+	/** edges that connect the forward and reverse traversals */
+	EdgeSet m_commonEdges;
 
 	PathList m_pathsFound;
 
@@ -76,7 +80,8 @@ public:
 			m_maxPaths(maxPaths),
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
-			m_tooManyPaths(false)
+			m_tooManyPaths(false),
+			m_commonEdges(100, EdgeHash(m_graph))
 	{
 
 		depth_t maxDepth = maxPathLength - 1;
