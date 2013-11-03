@@ -121,10 +121,6 @@ struct graph_traits<DBGBloom> {
 		edge_descriptor;
 	typedef unsigned degree_size_type;
 
-	// BidirectionalGraph
-	struct out_edge_iterator;
-	typedef out_edge_iterator in_edge_iterator;
-
 	// VertexListGraph
 	typedef size_t vertices_size_type;
 
@@ -251,6 +247,70 @@ struct out_edge_iterator
 	vertex_descriptor m_v;
 	unsigned m_i;
 }; // out_edge_iterator
+
+/** BidirectionalGraph */
+struct in_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	/** Skip to the next edge that is present. */
+	void next()
+	{
+		for (; m_i < NUM_BASES; ++m_i) {
+			m_v.setLastBase(ANTISENSE, m_i);
+			if (vertex_exists(m_v, *m_g))
+				break;
+		}
+	}
+
+  public:
+	in_edge_iterator() { }
+
+	in_edge_iterator(const DBGBloom& g) : m_g(&g), m_i(NUM_BASES) { }
+
+	in_edge_iterator(const DBGBloom& g, vertex_descriptor u)
+		: m_g(&g), m_u(u), m_v(u), m_i(0)
+	{
+		m_v.shift(ANTISENSE);
+		next();
+	}
+
+	edge_descriptor operator*() const
+	{
+		assert(m_i < NUM_BASES);
+		return edge_descriptor(m_v, m_u);
+	}
+
+	bool operator==(const in_edge_iterator& it) const
+	{
+		return m_i == it.m_i;
+	}
+
+	bool operator!=(const in_edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	in_edge_iterator& operator++()
+	{
+		assert(m_i < NUM_BASES);
+		++m_i;
+		next();
+		return *this;
+	}
+
+	in_edge_iterator operator++(int)
+	{
+		in_edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const DBGBloom* m_g;
+	vertex_descriptor m_u;
+	vertex_descriptor m_v;
+	unsigned m_i;
+}; // in_edge_iterator
 
 // Subgraph
 
@@ -389,8 +449,8 @@ in_edges(
 		graph_traits<DBGBloom>::vertex_descriptor u,
 		const DBGBloom& g)
 {
-	typedef graph_traits<DBGBloom>::out_edge_iterator Oit;
-	return std::make_pair(Oit(g, reverseComplement(u)), Oit(g));
+	typedef graph_traits<DBGBloom>::in_edge_iterator Iit;
+	return std::make_pair(Iit(g, u), Iit(g));
 }
 
 // VertexListGraph
