@@ -53,7 +53,11 @@ struct SAMAlignment {
 		FDUP = 1024,
 	};
 
-	SAMAlignment() { }
+	SAMAlignment() :
+		rname("*"),
+		pos(-1),
+		flag(FUNMAP),
+		mapq(0) { }
 
 	/** Consturct a single-end alignment. */
 	SAMAlignment(const Alignment& a) :
@@ -233,10 +237,8 @@ struct SAMRecord : SAMAlignment {
 	std::string tags;
 #endif
 
-	SAMRecord() { }
-
 	/** Consturct a single-end alignment. */
-	explicit SAMRecord(const SAMAlignment& a,
+	explicit SAMRecord(const SAMAlignment& a = SAMAlignment(),
 			const std::string& qname = "*",
 #if SAM_SEQ_QUAL
 			const std::string& seq = "*",
