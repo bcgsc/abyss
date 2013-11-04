@@ -56,6 +56,9 @@ protected:
 	/** depth limits for forward/reverse traversal */
 	depth_t m_maxDepth[2];
 
+	/** max depth for forward/reverse traversal */
+	depth_t m_maxDepthVisited[2];
+
 	depth_t m_minPathLength;
 	depth_t m_maxPathLength;
 	bool m_tooManyPaths;
@@ -88,6 +91,9 @@ public:
 		m_maxDepth[FORWARD] = maxDepth / 2 + maxDepth % 2;
 		m_maxDepth[REVERSE] = maxDepth / 2;
 
+		m_maxDepthVisited[FORWARD] = 0;
+		m_maxDepthVisited[REVERSE] = 0;
+
 		// special case
 		if (start == goal) {
 			Path<V> path;
@@ -113,14 +119,10 @@ public:
 
 	BFSVisitorResult tree_edge(const E& e, const G& g, Direction dir)
 	{
-		recordEdgeTraversal(e, g, dir);
-
-		V u = source(e, g);
-		V v = target(e, g);
-
-		if (!updateVertexDepth(u, v, dir))
+		if (!updateTargetDepth(e, g, dir))
 			return SKIP_ELEMENT;
 
+		recordEdgeTraversal(e, g, dir);
 		return SUCCESS;
 	}
 
@@ -174,12 +176,17 @@ public:
 		}
 	}
 
+	depth_t getMaxDepthVisited(Direction dir)
+	{
+		return m_maxDepthVisited[dir];
+	}
+
 protected:
 
 	BFSVisitorResult recordCommonEdge(const E& e)
 	{
 		m_commonEdges.insert(e);
-		if (m_maxPaths != NO_LIMIT && 
+		if (m_maxPaths != NO_LIMIT &&
 			m_commonEdges.size() > m_maxPaths) {
 			m_tooManyPaths = true;
 			return ABORT_SEARCH;
@@ -207,16 +214,21 @@ protected:
 	 * @return true if the vertex is visitable is less than the max
 	 * depth limit false otherwise.
 	 */
-	bool updateVertexDepth(const V& u, const V& v, Direction dir)
+	bool updateTargetDepth(const E& e, const G& g, Direction dir)
 	{
-		const V& parent = (dir == FORWARD) ? u : v;
-		const V& child = (dir == FORWARD) ? v : u;
+		const V& parent = (dir == FORWARD) ? source(e, g) : target(e, g);
+		const V& child = (dir == FORWARD) ? target(e, g) : source(e, g);
 
 		depth_t parentDepth = m_depthMap[dir][parent];
 		if (parentDepth == m_maxDepth[dir])
 			return false;
 
-		m_depthMap[dir][child] = parentDepth + 1;
+		depth_t childDepth = parentDepth + 1;
+		m_depthMap[dir][child] = childDepth;
+
+		if (childDepth > m_maxDepthVisited[dir])
+			m_maxDepthVisited[dir] = childDepth;
+
 		return true;
 	}
 
@@ -277,13 +289,12 @@ protected:
 				m_pathsFound.push_back(*pathToStart);
 				Path<V>& mergedPath = m_pathsFound.back();
 				reverse(mergedPath.begin(), mergedPath.end());
-				m_pathsFound.back().insert(mergedPath.end(), 
+				m_pathsFound.back().insert(mergedPath.end(),
 					pathToGoal->begin(), pathToGoal->end());
 			}
 		}
 	}
 
 };
-
 
 #endif /* CONSTRAINED_BFS_VISITOR_H */

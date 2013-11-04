@@ -13,8 +13,8 @@
 #include "DataLayer/FastaReader.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/Path.h"
-#include "Graph/BreadthFirstSearch.h"
-#include "Graph/ConstrainedBFSVisitor.h"
+#include "Graph/BidirectionalBFS.h"
+#include "Graph/ConstrainedBidiBFSVisitor.h"
 #include <climits>
 
 #if _OPENMP
@@ -38,7 +38,7 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 	unsigned k = g.m_k;
 
 	// build a vector indicating whether each kmer is a match
-	// The vector intentionally has an extra false element at 
+	// The vector intentionally has an extra false element at
 	// the end, for the second loop below.
 
 	const std::string& seq = read.seq;
@@ -99,13 +99,15 @@ static inline PathSearchResult connectPairs(
 	unsigned maxMergedSeqLen = NO_LIMIT,
 	unsigned maxBranches = NO_LIMIT)
 {
+	SUPPRESS_UNUSED_WARNING(maxBranches);
+
 	unsigned k = g.m_k;
 
 	assert(isReadNamePair(read1.id, read2.id));
 
 	if (read1.seq.length() < k || read2.seq.length() < k) {
 #pragma omp critical(cerr)
-		std::cerr 
+		std::cerr
 			<< "failed to connect read pair: first or second read length is less than k"
 			<< "(read1 = " << read1.id << ", read2 = " << read2.id  << ")\n";
 		return NO_PATH;
@@ -116,7 +118,7 @@ static inline PathSearchResult connectPairs(
 
 	if (kmer1Pos == NO_MATCH || kmer2Pos == NO_MATCH) {
 #pragma omp critical(cerr)
-		std::cerr 
+		std::cerr
 			<< "failed to connect read pair: couldn't find bloom filter match in first or second read "
 			<< "(read1 = " << read1.id << ", read2 = " << read2.id  << ")\n";
 		return NO_PATH;
@@ -126,20 +128,28 @@ static inline PathSearchResult connectPairs(
 	Kmer kmer2(read2.seq.substr(kmer2Pos, k));
 	kmer2.reverseComplement();
 
-	unsigned maxPathLen = NO_LIMIT;
-	if (maxMergedSeqLen != NO_LIMIT) {
-		maxPathLen = maxMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos;
-		// check for overflow
-		assert(maxPathLen < maxMergedSeqLen);
-	}
-
-	DefaultColorMap<DBGBloom> colorMap;
-	// note: maxDepth param is maxPathLen - 1 because the start node is at depth 0 
-	ConstrainedBFSVisitor<DBGBloom> visitor(kmer1, kmer2, 0, maxPathLen - 1, maxBranches, colorMap);
-	breadthFirstSearch(g, kmer1, visitor, colorMap);
+	unsigned maxPathLen = maxMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos;
+	assert(maxPathLen <= maxMergedSeqLen - k + 1);
+	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths, 0, maxPathLen);
+	bidirectionalBFS(g, kmer1, kmer2, visitor);
 
 	std::vector< Path<Kmer> > pathsFound;
-	PathSearchResult result = visitor.pathsToGoal(pathsFound, maxPaths);
+	PathSearchResult result = visitor.pathsToGoal(pathsFound);
+
+#if 0
+	// debugging info
+	{
+#pragma omp critical(cerr)
+		std::cerr << "search result: " << result << "\n";
+		std::cerr << "\tmaxPathLen: " << maxPathLen << "\n";
+		std::cerr << "\tkmer1Pos: " << kmer1Pos << "\n";
+		std::cerr << "\tkmer2Pos: " << kmer2Pos << "\n";
+		std::cerr << "\tmaxDepthVisited[FORWARD]: " << visitor.getMaxDepthVisited(FORWARD) << "\n";
+		std::cerr << "\tmaxDepthVisited[REVERSE]: " << visitor.getMaxDepthVisited(REVERSE) << "\n";
+		for (unsigned j = 0; j < pathsFound.size(); j++)
+			std::cerr << "\tpath " << j << " length: " << pathsFound[j].size() << "\n";
+	}
+#endif
 
 	if (result == FOUND_PATH) {
 		std::string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
