@@ -25,6 +25,9 @@ namespace opt {
 
 	/** quality offset, usually 33 or 64 */
 	int qualityOffset;
+
+	/** minimum quality for internal bases */
+	int internalQThreshold;
 }
 
 /** Output an error message. */
@@ -341,16 +344,15 @@ next_record:
 		q.erase(m_maxLength);
 	}
 
+	static const char ASCII[] =
+		" !\"#$%&'()*+,-./0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+		"`abcdefghijklmnopqrstuvwxyz{|}~";
 	if (opt::qualityThreshold > 0 && !q.empty()) {
 		assert(s.length() == q.length());
-		static const char ASCII[] =
-			" !\"#$%&'()*+,-./0123456789:;<=>?"
-			"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-			"`abcdefghijklmnopqrstuvwxyz{|}~";
 		assert(qualityOffset > (unsigned)ASCII[0]);
 		const char* goodQual = ASCII + (qualityOffset - ASCII[0])
 			+ opt::qualityThreshold;
-
 		size_t trimFront = q.find_first_of(goodQual);
 		size_t trimBack = q.find_last_of(goodQual) + 1;
 		if (trimFront >= trimBack) {
@@ -363,6 +365,18 @@ next_record:
 			q.erase(trimBack);
 			q.erase(0, trimFront);
 		}
+	}
+
+	if (opt::internalQThreshold > 0 && !q.empty()) {
+		assert(s.length() == q.length());
+		assert(qualityOffset > (unsigned)ASCII[0]);
+		const char* internalGoodQual = ASCII
+			+ (qualityOffset - ASCII[0])
+			+ opt::internalQThreshold;
+		size_t i = 0;
+		while ((i = q.find_first_not_of(internalGoodQual, i))
+				!= string::npos)
+			s[i++] = 'N';
 	}
 
 	assert(qualityOffset >= 33);

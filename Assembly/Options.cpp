@@ -39,6 +39,7 @@ static const char USAGE_MESSAGE[] =
 "                        reads\n"
 "  -q, --trim-quality=N  trim bases from the ends of reads whose\n"
 "                        quality is less than the threshold\n"
+"  -Q, --mask-quality=N  mask all low quality bases as `N'\n"
 "  --standard-quality    zero quality is `!' (33)\n"
 "                        default for FASTQ and SAM files\n"
 "  --illumina-quality    zero quality is `@' (64)\n"
@@ -209,6 +210,9 @@ void parse(int argc, char* const* argv)
 			case 'q':
 				arg >> opt::qualityThreshold;
 				break;
+			case 'Q':
+				arg >> opt::internalQThreshold;
+				break;
 			case 's':
 				getline(arg, snpPath);
 				break;
@@ -247,6 +251,7 @@ void parse(int argc, char* const* argv)
 	}
 
 	assert(opt::qualityThreshold <= 40);
+	assert(opt::internalQThreshold <= 40);
 
 	if (opt::rank <= 0
 			&& opt::coverage >= 0 && opt::erode == (unsigned)-1)
