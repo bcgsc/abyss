@@ -602,9 +602,13 @@ int main(int argc, char** argv)
 
 	// Remove tips.
 	if (opt::minTipLen > 0) {
-		size_t s = g_removed.size();
-		pruneTips_if(g, back_inserter(g_removed),
-				ShorterThanX(g, seen, opt::minTipLen));
+		size_t s, prev;
+		s = g_removed.size();
+		do {
+			prev = g_removed.size();
+			pruneTips_if(g, back_inserter(g_removed),
+					ShorterThanX(g, seen, opt::minTipLen));
+		} while (prev < g_removed.size());
 		if (opt::verbose)
 			cerr << "Removed " << g_removed.size() - s
 				<< " tips.\n";

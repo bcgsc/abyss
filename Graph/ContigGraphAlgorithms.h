@@ -254,7 +254,7 @@ OutputIt pruneTips_if(Graph& g, OutputIt result, Pred p)
 		for (Vit vit = vrange.first; vit != vrange.second; ++vit) {
 			V v = *vit;
 			//assert(v != u);
-			if (in_degree(v, g) == 1 && out_degree(v, g) == 0 && p(v))
+			if (out_degree(v, g) == 0 && p(v))
 				tips.push_back(v);
 		}
 	}
