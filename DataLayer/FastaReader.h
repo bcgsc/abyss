@@ -46,7 +46,7 @@ class FastaReader {
 		bool eof() const { return m_in.eof(); };
 
 		/** Return whether this stream is good. */
-		operator void*() const { return m_in; }
+		operator const void*() const { return m_in ? this : NULL; }
 
 		/** Return the next character of this stream. */
 		int peek() { return m_in.peek(); }
