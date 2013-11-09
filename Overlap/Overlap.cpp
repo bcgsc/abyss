@@ -32,10 +32,6 @@
 
 using namespace std;
 using namespace boost::lambda;
-#if !__GXX_EXPERIMENTAL_CXX0X__
-using boost::cref;
-using boost::ref;
-#endif
 
 #define PROGRAM "Overlap"
 
@@ -436,7 +432,8 @@ int main(int argc, char** argv)
 			printGraphStats(cout, scaffoldGraph);
 		remove_edge_if(
 				!bind(checkEdgeForOverlap,
-					cref(graph), ref(scaffoldGraph), _1),
+					boost::cref(graph), boost::ref(scaffoldGraph),
+					_1),
 				static_cast<OverlapGraph::base_type&>(scaffoldGraph));
 	} else {
 		// dist graph format

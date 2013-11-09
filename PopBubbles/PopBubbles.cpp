@@ -42,9 +42,6 @@
 using namespace std;
 using namespace boost::lambda;
 using boost::tie;
-#if !__GXX_EXPERIMENTAL_CXX0X__
-using boost::cref;
-#endif
 
 #define PROGRAM "PopBubbles"
 
@@ -231,15 +228,15 @@ static float getAlignmentIdentity(const Graph& g,
 	unsigned nbranches = distance(first, last);
 	vector<int> inDists(nbranches);
 	transform(first, last, inDists.begin(),
-			bind(getDistance, cref(g), t, _1));
+			bind(getDistance, boost::cref(g), t, _1));
 	vector<int> outDists(nbranches);
 	transform(first, last, outDists.begin(),
-			bind(getDistance, cref(g), _1, v));
+			bind(getDistance, boost::cref(g), _1, v));
 	vector<int> insertLens(nbranches);
 	transform(first, last, insertLens.begin(),
-			bind(getDistance, cref(g), t, _1)
+			bind(getDistance, boost::cref(g), t, _1)
 				+ bind(getLength, &g, _1)
-				+ bind(getDistance, cref(g), _1, v));
+				+ bind(getDistance, boost::cref(g), _1, v));
 
 	int max_in_overlap = -(*min_element(inDists.begin(),
 			inDists.end()));
