@@ -19,7 +19,8 @@ class Dictionary
 		typedef cstring name_reference;
 
 		typedef std::vector<const_string> Vector;
-		typedef unordered_map<name_reference, index_type> Map;
+		typedef unordered_map<name_reference, index_type,
+			std::hash<name_reference> > Map;
 
 		Dictionary() : m_locked(false) { }
 

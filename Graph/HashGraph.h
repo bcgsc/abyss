@@ -26,7 +26,8 @@ public:
 
 protected:
 
-	typedef unordered_map<vertex_descriptor, VertexList> VertexMap;
+	typedef unordered_map<vertex_descriptor, VertexList,
+		std::hash<vertex_descriptor> > VertexMap;
 	VertexMap m_vertices;
 
 public:

@@ -15,7 +15,9 @@ public:
 	typedef boost::default_color_type value_type;
 	typedef boost::read_write_property_map_tag category;
 
-	unordered_map<key_type, value_type> map;
+	typedef unordered_map<key_type, value_type, std::hash<key_type> >
+		map_type;
+	map_type map;
 };
 
 namespace boost {
@@ -30,12 +32,11 @@ struct property_traits< DefaultColorMap<G> > {
 
 template <typename G>
 typename DefaultColorMap<G>::value_type
-get(DefaultColorMap<G>& colorMap, typename DefaultColorMap<G>::key_type key)
+get(const DefaultColorMap<G>& colorMap, typename DefaultColorMap<G>::key_type key)
 {
-	typedef typename DefaultColorMap<G>::key_type key_type;
-	typedef typename DefaultColorMap<G>::value_type value_type;
+	typedef typename DefaultColorMap<G>::map_type::const_iterator It;
 
-	typename unordered_map<key_type, value_type>::iterator i = colorMap.map.find(key);
+	It i = colorMap.map.find(key);
 
 	if (i != colorMap.map.end())
 		return i->second;

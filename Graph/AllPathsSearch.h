@@ -33,7 +33,7 @@ PathSearchResult allPathsSearch(
     typedef typename boost::graph_traits<IncidenceGraph>::out_edge_iterator EdgeIter;
 	typedef typename std::pair<EdgeIter,EdgeIter> EdgeIterPair;
 
-	unordered_set<V> visited;
+	unordered_set<V, std::hash<V> > visited;
 	Path<V> path;
 	std::vector<EdgeIterPair> eiStack;
 

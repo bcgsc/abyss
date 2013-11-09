@@ -26,8 +26,8 @@ public:
 private:
 
 	typedef std::vector<V> Predecessors;
-	typedef unordered_map<V, unsigned> OutDegreeMap;
-	typedef unordered_map<V, depth_t> DepthMap;
+	typedef unordered_map<V, unsigned, std::hash<V> > OutDegreeMap;
+	typedef unordered_map<V, depth_t, std::hash<V> > DepthMap;
 
 	HashGraph<V> m_traversalGraph;
 	OutDegreeMap m_outDegree;
