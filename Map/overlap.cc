@@ -215,12 +215,12 @@ static void findOverlapsSuffix(Graph &g,
 		? seq.size() - opt::maxOverlap + 1 : 1;
 	string suffix(seq, pos);
 	typedef vector<Match> Matches;
-	vector<Match> matches;
+	Matches matches;
 	fmIndex.findOverlapSuffix(suffix, back_inserter(matches),
 			opt::minOverlap);
 
 	for (Matches::reverse_iterator it = matches.rbegin();
-			it != matches.rend(); ++it)
+			!(it == matches.rend()); ++it)
 		addSuffixOverlaps(g, faIndex, fmIndex, u, *it);
 }
 
@@ -233,12 +233,12 @@ static void findOverlapsPrefix(Graph &g,
 	string prefix(seq, 0,
 			min((size_t)opt::maxOverlap, seq.size()) - 1);
 	typedef vector<Match> Matches;
-	vector<Match> matches;
+	Matches matches;
 	fmIndex.findOverlapPrefix(prefix, back_inserter(matches),
 			opt::minOverlap);
 
 	for (Matches::reverse_iterator it = matches.rbegin();
-			it != matches.rend(); ++it)
+			!(it == matches.rend()); ++it)
 		addPrefixOverlaps(g, faIndex, fmIndex, v, *it);
 }
 
