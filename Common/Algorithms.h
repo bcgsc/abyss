@@ -18,9 +18,6 @@ Function for_each_if(It first, It last, Function f, Pred p)
 	return f;
 }
 
-#if __GXX_EXPERIMENTAL_CXX0X__
-using std::copy_if;
-#else
 /** Copies each element in the range [first, last) into the range
  * starting at result for which the predicate p is true. */
 template<class InputIt, class OutputIt, class Pred>
@@ -35,7 +32,6 @@ OutputIt copy_if(InputIt first, InputIt last, OutputIt result,
 	}
 	return result;
 }
-#endif
 
 /** Sorts the elements in the range [first,last) ordered by the value
  * returned by the unary function op, which is called once for each

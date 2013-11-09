@@ -356,7 +356,7 @@ static void findShortContigs(const Graph& g, const vector<bool>& seen,
 	typedef GTraits::vertex_iterator Vit;
 	Vit first, second;
 	tie(first, second) = vertices(g);
-	copy_if(first, second, back_inserter(sc),
+	::copy_if(first, second, back_inserter(sc),
 			!bind(Marked(g, seen), _1) && bind(removable, &g, _1));
 }
 
@@ -446,7 +446,7 @@ static void removeContigs_if(Graph& g, pred p)
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	vector<V> sc;
-	copy_if(first, second, back_inserter(sc), p);
+	::copy_if(first, second, back_inserter(sc), p);
 	remove_vertex_if(g, sc.begin(), sc.end(), True<V>());
 	transform(sc.begin(), sc.end(), back_inserter(g_removed),
 			mem_fun_ref(&ContigNode::contigIndex));
