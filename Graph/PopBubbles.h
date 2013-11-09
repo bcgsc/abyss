@@ -161,7 +161,6 @@ template <typename Graph>
 void scaffoldBubble(Graph& g, const Bubble& bubble)
 {
 	typedef graph_traits<Graph> GTraits;
-	typedef typename GTraits::adjacency_iterator Ait;
 	typedef typename GTraits::vertex_descriptor V;
 	assert(bubble.size() > 2);
 

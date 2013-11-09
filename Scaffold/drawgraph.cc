@@ -169,7 +169,6 @@ int main(int argc, char** argv)
 	typedef graph_traits<Graph>::edge_iterator Eit;
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	typedef graph_traits<Graph>::vertex_iterator Vit;
-	typedef edge_bundle_type<Graph>::type EP;
 
 	Graph g;
 	if (optind < argc) {

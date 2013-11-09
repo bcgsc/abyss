@@ -142,8 +142,6 @@ struct PoorSupport {
 static void filterGraph(Graph& g, unsigned minContigLength)
 {
 	typedef graph_traits<Graph> GTraits;
-	typedef GTraits::edge_descriptor E;
-	typedef GTraits::edge_iterator Eit;
 	typedef GTraits::vertex_descriptor V;
 	typedef GTraits::vertex_iterator Vit;
 
@@ -258,8 +256,6 @@ static void resolveForks(Graph& g, const Graph& g0)
  */
 static void pruneTips(Graph& g)
 {
-	typedef graph_traits<Graph>::vertex_descriptor V;
-
 	/** Identify the tips. */
 	size_t n = 0;
 	pruneTips(g, CountingOutputIterator(n));

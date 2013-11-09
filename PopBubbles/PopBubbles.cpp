@@ -422,7 +422,6 @@ static int longestPath(const Graph& g, const Bubble& topo)
  */
 static void scaffoldBubble(Graph& g, const Bubble& bubble)
 {
-	typedef graph_traits<Graph>::adjacency_iterator Ait;
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	assert(opt::scaffold);
 	assert(bubble.size() > 2);

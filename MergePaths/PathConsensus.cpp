@@ -188,8 +188,6 @@ static int getDistance(const Graph& g,
 static ContigPaths readPaths(const string& inPath,
 	vector<string>& ids, vector<bool>& isAmb)
 {
-	typedef graph_traits<Graph>::vertex_descriptor V;
-
 	assert(ids.empty());
 	assert(isAmb.empty());
 	assert(g_ambpath_contig.empty());

@@ -24,10 +24,6 @@ public:
 	typedef typename GraphTraits::degree_size_type degree_size_type;
 	typedef typename GraphTraits::vertex_iterator vertex_iterator;
 
-	typedef unordered_map<vertex_descriptor, EdgeList> EdgeMap;
-	typedef std::pair<vertex_descriptor, EdgeList> EdgeMapEntry;
-	typedef typename EdgeMap::iterator EdgeMapIterator;
-
 protected:
 
 	typedef unordered_map<vertex_descriptor, VertexList> VertexMap;

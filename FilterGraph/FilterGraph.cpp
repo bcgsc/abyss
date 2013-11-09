@@ -302,8 +302,6 @@ static void removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_descriptor V;
-	typedef GTraits::out_edge_iterator OEit;
-	typedef GTraits::in_edge_iterator IEit;
 
 	vector<vertex_descriptor> out;
 	out.reserve(sc.size());

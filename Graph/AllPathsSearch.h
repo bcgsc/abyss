@@ -30,7 +30,6 @@ PathSearchResult allPathsSearch(
 {
     BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<IncidenceGraph>));
     typedef typename boost::graph_traits<IncidenceGraph>::vertex_descriptor V;
-    typedef typename boost::graph_traits<IncidenceGraph>::edge_descriptor E;
     typedef typename boost::graph_traits<IncidenceGraph>::out_edge_iterator EdgeIter;
 	typedef typename std::pair<EdgeIter,EdgeIter> EdgeIterPair;
 

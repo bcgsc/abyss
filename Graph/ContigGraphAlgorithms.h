@@ -199,7 +199,6 @@ merge(Graph& g, It first, It last)
 template<typename Graph, typename OutIt, typename Predicate>
 OutIt assemble_if(Graph& g, OutIt out, Predicate pred0)
 {
-	typedef typename Graph::vertex_descriptor vertex_descriptor;
 	typedef typename Graph::vertex_iterator vertex_iterator;
 	// pred(e) = !isPalindrome(e) && pred0(e)
 	binary_compose<std::logical_and<bool>,

@@ -301,7 +301,6 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 /** Read contigs and add vertices to the graph. */
 static void addVertices(const string& path, Graph& g)
 {
-	typedef vertex_property<Graph>::type VP;
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
 	ifstream in(path.c_str());

@@ -53,8 +53,6 @@ size_t cholesky_decompose(const MATRIX& A, TRIA& L)
 {
   using namespace ublas;
 
-  typedef typename MATRIX::value_type T;
-
   assert( A.size1() == A.size2() );
   assert( A.size1() == L.size1() );
   assert( A.size2() == L.size2() );
@@ -94,8 +92,6 @@ template < class MATRIX >
 size_t cholesky_decompose(MATRIX& A)
 {
   using namespace ublas;
-
-  typedef typename MATRIX::value_type T;
 
   const MATRIX& A_c(A);
 

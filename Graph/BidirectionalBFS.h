@@ -26,7 +26,6 @@ bidirectionalBFS_visit_edge(
 	function_requires< boost::BidirectionalGraphConcept<BidirectionalGraph> >();
 	typedef graph_traits<BidirectionalGraph> GTraits;
 	typedef typename GTraits::vertex_descriptor Vertex;
-	typedef typename GTraits::edge_descriptor Edge;
 	function_requires< boost::ReadWritePropertyMapConcept<ColorMap, Vertex> >();
 	typedef typename property_traits<ColorMap>::value_type ColorValue;
 	typedef color_traits<ColorValue> Color;
@@ -89,7 +88,6 @@ void bidirectionalBFS(
 	function_requires< boost::BidirectionalGraphConcept<BidirectionalGraph> >();
 	typedef graph_traits<BidirectionalGraph> GTraits;
 	typedef typename GTraits::vertex_descriptor Vertex;
-	typedef typename GTraits::edge_descriptor Edge;
 	function_requires< boost::ReadWritePropertyMapConcept<ColorMap, Vertex> >();
 	typedef typename property_traits<ColorMap>::value_type ColorValue;
 	typedef color_traits<ColorValue> Color;

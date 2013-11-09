@@ -23,8 +23,6 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 		vertex_property_type;
 	typedef typename graph_traits<Graph>::edge_iterator
 		edge_iterator;
-	typedef typename edge_property<Graph>::type
-		edge_property_type;
 
 	out << "@HD\tVN:1.0\n"
 		"@PG\tID:" << program << "\tVN:" VERSION "\t"
