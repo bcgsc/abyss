@@ -551,6 +551,8 @@ template<typename string_type, typename sarray_type, typename index_type>
 int
 saisxx(string_type T, sarray_type SA, index_type n, index_type k = 256) {
 typedef typename std::iterator_traits<sarray_type>::value_type savalue_type;
+  savalue_type unused;
+  (void)unused;
   assert((std::numeric_limits<index_type>::min)() < 0);
   assert((std::numeric_limits<savalue_type>::min)() < 0);
   assert((std::numeric_limits<savalue_type>::max)() == (std::numeric_limits<index_type>::max)());
@@ -574,6 +576,8 @@ index_type
 saisxx_bwt(string_type T, string_type U, sarray_type A, index_type n, index_type k = 256) {
 typedef typename std::iterator_traits<sarray_type>::value_type savalue_type;
 typedef typename std::iterator_traits<string_type>::value_type char_type;
+  savalue_type unused;
+  (void)unused;
   index_type i, pidx;
   assert((std::numeric_limits<index_type>::min)() < 0);
   assert((std::numeric_limits<savalue_type>::min)() < 0);
