@@ -13,7 +13,6 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include <boost/functional/hash.hpp> // for boost::hash_combine
 
 template <typename G>
 class ConstrainedBidiBFSVisitor : public BidirectionalBFSVisitor<G>
@@ -31,12 +30,9 @@ protected:
 		const G& m_g;
 		EdgeHash(const G& g) : m_g(g) { }
 		std::size_t operator()(const E& e) const {
-			std::size_t hash = 0;
 			V u = source(e, m_g);
 			V v = target(e, m_g);
-			boost::hash_combine(hash, std::min(u, v));
-			boost::hash_combine(hash, std::max(u, v));
-			return hash;
+			return std::hash<V>()(u) ^ std::hash<V>()(v);
 		}
 	};
 

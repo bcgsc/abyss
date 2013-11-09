@@ -4,7 +4,6 @@
 #include "UnorderedMap.h"
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
-#include <boost/functional/hash/hash.hpp>
 
 template <typename G>
 class DefaultColorMap
