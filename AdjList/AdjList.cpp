@@ -144,7 +144,8 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 }
 
 /** An index of suffixes of k-1 bp. */
-typedef unordered_map<Kmer, vector<ContigNode>, hashKmer> SuffixMap;
+typedef unordered_map<Kmer, vector<ContigNode>, std::hash<Kmer> >
+	SuffixMap;
 
 /** Read contigs. Add contig properties to the graph. Add prefixes to
  * the collection and add suffixes to their index.

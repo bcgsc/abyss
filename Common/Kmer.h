@@ -122,34 +122,14 @@ static inline Kmer reverseComplement(const Kmer& seq)
 	return rc;
 }
 
-struct hashKmer
-{
-	size_t operator()(const Kmer& o) const { return o.getHashCode(); }
-};
-
-// define default hash function to use with STL/boost containers
-
 namespace std {
 	template <typename T> struct hash;
-	template <> struct hash<Kmer>
-	{
-		size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
-	};
-	namespace tr1 { 
-		template <typename T> struct hash;
-		template <> struct hash<Kmer>
+	template <> struct hash<Kmer> {
+		size_t operator()(const Kmer& kmer) const
 		{
-			size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
-		};
-	}
-}
-
-namespace boost {
-	template <typename T> struct hash;
-	template <> struct hash<Kmer>
-	{
-		size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
+			return kmer.getHashCode();
+		}
 	};
-}
+} // namespace std
 
 #endif
