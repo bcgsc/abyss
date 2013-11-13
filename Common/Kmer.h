@@ -4,6 +4,7 @@
 #include "config.h"
 #include "Sense.h"
 #include "Sequence.h"
+#include "Common/Hash.h"
 #include <cassert>
 #include <cstring> // for memcpy
 #include <stdint.h>
@@ -124,12 +125,24 @@ static inline Kmer reverseComplement(const Kmer& seq)
 
 namespace std {
 	template <typename T> struct hash;
-	template <> struct hash<Kmer> {
-		size_t operator()(const Kmer& kmer) const
-		{
-			return kmer.getHashCode();
-		}
+	template <> struct hash<Kmer>
+	{
+		size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
 	};
-} // namespace std
+	namespace tr1 {
+		template <typename T> struct hash;
+		template <> struct hash<Kmer> {
+			size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
+		};
+	}
+}
+
+namespace boost {
+	template <typename T> struct hash;
+	template <> struct hash<Kmer>
+	{
+		size_t operator()(const Kmer& kmer) const { return kmer.getHashCode(); }
+	};
+}
 
 #endif

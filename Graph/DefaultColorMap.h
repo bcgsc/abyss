@@ -15,7 +15,7 @@ public:
 	typedef boost::default_color_type value_type;
 	typedef boost::read_write_property_map_tag category;
 
-	typedef unordered_map<key_type, value_type, std::hash<key_type> >
+	typedef unordered_map<key_type, value_type, hash<key_type> >
 		map_type;
 	map_type map;
 };

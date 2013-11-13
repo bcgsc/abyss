@@ -54,15 +54,15 @@ struct Position
 	}
 };
 
-typedef unordered_multimap<Kmer, Position, std::hash<Kmer> >
+typedef unordered_multimap<Kmer, Position, hash<Kmer> >
 	SeqPosHashMultiMap;
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
-typedef google::sparse_hash_map<Kmer, Position, std::hash<Kmer> >
+typedef google::sparse_hash_map<Kmer, Position, hash<Kmer> >
 	SeqPosHashUniqueMap;
 #else
-typedef unordered_map<Kmer, Position, std::hash<Kmer> >
+typedef unordered_map<Kmer, Position, hash<Kmer> >
 	SeqPosHashUniqueMap;
 #endif
 

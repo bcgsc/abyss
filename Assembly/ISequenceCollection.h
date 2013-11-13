@@ -7,11 +7,11 @@
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
-typedef google::sparse_hash_map<Kmer, KmerData, std::hash<Kmer> >
+typedef google::sparse_hash_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #else
 # include "UnorderedMap.h"
-typedef unordered_map<Kmer, KmerData, std::hash<Kmer> >
+typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #endif
 

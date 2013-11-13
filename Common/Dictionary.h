@@ -20,7 +20,7 @@ class Dictionary
 
 		typedef std::vector<const_string> Vector;
 		typedef unordered_map<name_reference, index_type,
-			std::hash<name_reference> > Map;
+			hash<name_reference> > Map;
 
 		Dictionary() : m_locked(false) { }
 

@@ -2,6 +2,7 @@
 #define UNORDEREDMAP_H 1
 
 #include "config.h"
+#include "Common/Hash.h"
 
 #if HAVE_UNORDERED_MAP
 # include <unordered_map>

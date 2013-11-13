@@ -2,6 +2,7 @@
 #define UNORDEREDSET_H 1
 
 #include "config.h"
+#include "Common/Hash.h"
 
 #if HAVE_UNORDERED_SET
 # include <unordered_set>

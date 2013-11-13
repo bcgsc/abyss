@@ -24,7 +24,7 @@ protected:
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
 	typedef unsigned short depth_t;
 	typedef std::vector< Path<V> > PathList;
-	typedef unordered_map<V, depth_t, std::hash<V> > DepthMap;
+	typedef unordered_map<V, depth_t, hash<V> > DepthMap;
 
 	struct EdgeHash {
 		const G& m_g;
@@ -32,7 +32,7 @@ protected:
 		std::size_t operator()(const E& e) const {
 			V u = source(e, m_g);
 			V v = target(e, m_g);
-			return std::hash<V>()(u) ^ std::hash<V>()(v);
+			return hash<V>()(u) ^ hash<V>()(v);
 		}
 	};
 
