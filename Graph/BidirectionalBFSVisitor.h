@@ -15,11 +15,13 @@ public:
 
 	BidirectionalBFSVisitor() { }
 
-	virtual void discover_vertex(const Vertex& u, const Graph& g, Direction dir)
+	virtual BFSVisitorResult discover_vertex(const Vertex& u, const Graph& g, Direction dir, unsigned numFrontierNodes)
 	{
 		SUPPRESS_UNUSED_WARNING(u);
 		SUPPRESS_UNUSED_WARNING(g);
 		SUPPRESS_UNUSED_WARNING(dir);
+		SUPPRESS_UNUSED_WARNING(numFrontierNodes);
+		return SUCCESS;
 	}
 
 	virtual void examine_vertex(const Vertex& u, const Graph& g, Direction dir)

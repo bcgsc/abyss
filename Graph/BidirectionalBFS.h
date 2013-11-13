@@ -54,11 +54,13 @@ bidirectionalBFS_visit_edge(
 			return result;
 	}
 	else if (v_color == Color::white()) {
+		result = vis.discover_vertex(v, g, dir, Q.size());
+		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
+			return result;
 		result = vis.tree_edge(e, g, dir);
 		if (result == SKIP_ELEMENT || result == ABORT_SEARCH)
 			return result;
 		put(color, v, Color::gray());
-		vis.discover_vertex(v, g, dir);
 		Q.push(v);
 	}
 	else {
@@ -97,8 +99,8 @@ void bidirectionalBFS(
 
 	put(color1, s1, Color::gray());
 	put(color2, s2, Color::gray());
-	vis.discover_vertex(s1, g, FORWARD);
-	vis.discover_vertex(s2, g, REVERSE);
+	vis.discover_vertex(s1, g, FORWARD, Q1.size());
+	vis.discover_vertex(s2, g, REVERSE, Q2.size());
 	Q1.push(s1);
 	Q2.push(s2);
 

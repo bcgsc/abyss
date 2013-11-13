@@ -99,8 +99,6 @@ static inline PathSearchResult connectPairs(
 	unsigned maxMergedSeqLen = NO_LIMIT,
 	unsigned maxBranches = NO_LIMIT)
 {
-	SUPPRESS_UNUSED_WARNING(maxBranches);
-
 	unsigned k = g.m_k;
 
 	assert(isReadNamePair(read1.id, read2.id));
@@ -130,7 +128,7 @@ static inline PathSearchResult connectPairs(
 
 	unsigned maxPathLen = maxMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos;
 	assert(maxPathLen <= maxMergedSeqLen - k + 1);
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths, 0, maxPathLen);
+	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths, 0, maxPathLen, maxBranches);
 	bidirectionalBFS(g, kmer1, kmer2, visitor);
 
 	std::vector< Path<Kmer> > pathsFound;
@@ -139,11 +137,13 @@ static inline PathSearchResult connectPairs(
 #if 0
 	// debugging info
 	{
-#pragma omp critical(cerr)
+# pragma omp critical(cerr)
 		std::cerr << "search result: " << result << "\n";
 		std::cerr << "\tmaxPathLen: " << maxPathLen << "\n";
 		std::cerr << "\tkmer1Pos: " << kmer1Pos << "\n";
 		std::cerr << "\tkmer2Pos: " << kmer2Pos << "\n";
+		std::cerr << "\tnumNodesVisited: " << visitor.getNumNodesVisited() << "\n";
+		std::cerr << "\tmaxActiveBranches: " << visitor.getMaxActiveBranches() << "\n";
 		std::cerr << "\tmaxDepthVisited[FORWARD]: " << visitor.getMaxDepthVisited(FORWARD) << "\n";
 		std::cerr << "\tmaxDepthVisited[REVERSE]: " << visitor.getMaxDepthVisited(REVERSE) << "\n";
 		for (unsigned j = 0; j < pathsFound.size(); j++)
