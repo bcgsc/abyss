@@ -153,16 +153,12 @@ AC_COMPILE_IFELSE(
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
-	tr1/functional \
 	functional \
+	tr1/functional \
 	boost/functional/hash.hpp \
-])
-AC_CHECK_HEADERS([ \
 	boost/property_map/property_map.hpp \
 	google/sparse_hash_map \
 	unordered_map tr1/unordered_map \
-])
-AC_CHECK_HEADERS([ \
 	unordered_set tr1/unordered_set \
 	boost/unordered_set.hpp \
 ])
