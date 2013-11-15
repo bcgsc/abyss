@@ -77,6 +77,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
+const unsigned g_progressStep = 1000;
+
 namespace opt {
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
@@ -98,6 +100,8 @@ static struct {
 	size_t multiplePaths;
 	size_t tooManyPaths;
 	size_t tooManyBranches;
+	size_t readPairsProcessed;
+	size_t readPairsMerged;
 } g_count;
 
 static const char shortopts[] = "g:G:j:k:q:v";
@@ -193,6 +197,16 @@ static void connectPair(const DBGBloom& g,
 	PathSearchResult result
 		= connectPairs(read1, read2, g, paths,
 				maxNumPaths, maxPathLen, maxBranches);
+
+	if (opt::verbose >= 2)
+#pragma omp critical(progress)
+	{
+		if(++g_count.readPairsProcessed % g_progressStep == 0) {
+			cerr << "Merged " << g_count.readPairsMerged << " of "
+				<< g_count.readPairsProcessed << " read pairs\n";
+		}
+	}
+
 	switch (result) {
 	  case NO_PATH:
 		assert(paths.empty());
@@ -201,6 +215,8 @@ static void connectPair(const DBGBloom& g,
 		break;
 	  case FOUND_PATH:
 		assert(!paths.empty());
+#pragma omp critical(progress)
+		++g_count.readPairsMerged;
 		if (paths.size() == 1) {
 #pragma omp atomic
 			++g_count.uniquePath;
