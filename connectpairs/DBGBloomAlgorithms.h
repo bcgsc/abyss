@@ -79,9 +79,9 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 			if (matchLength >= maxMatchLength) {
 				maxMatchPos = matchPos;
 				maxMatchLength = matchLength;
-				matchLength = 0;
-				matchPosSet = false;
 			}
+			matchLength = 0;
+			matchPosSet = false;
 		}
 	}
 	assert(maxMatchLength > 0);
