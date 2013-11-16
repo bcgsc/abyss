@@ -1,6 +1,8 @@
 #ifndef CONSTSTRING_H
 #define CONSTSTRING_H 1
 
+#include "Common/Hash.h"
+#include "Common/HashFunction.h"
 #include <cassert>
 #include <cstring>
 #include <ostream>
@@ -101,35 +103,13 @@ namespace std {
 	}
 }
 
-#include "HashFunction.h"
-
-namespace std {
-	template <typename T> struct hash;
+NAMESPACE_STD_HASH_BEGIN
 	template <> struct hash<cstring> {
 		size_t operator()(const cstring& s) const
 		{
 			return hashmem(s.c_str(), strlen(s.c_str()));
 		}
 	};
-	namespace tr1 {
-		template <typename T> struct hash;
-		template <> struct hash<cstring> {
-			size_t operator()(const cstring& s) const
-			{
-				return hashmem(s.c_str(), strlen(s.c_str()));
-			}
-		};
-	}
-} // namespace std
-
-namespace boost {
-	template <typename T> struct hash;
-	template <> struct hash<cstring> {
-		size_t operator()(const cstring& s) const
-		{
-			return hashmem(s.c_str(), strlen(s.c_str()));
-		}
-	};
-}
+NAMESPACE_STD_HASH_END
 
 #endif

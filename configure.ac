@@ -37,6 +37,18 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
+# Check for std::hash and std::tr1::hash.
+AC_LANG_PUSH([C++])
+AC_CHECK_TYPE([std::hash<int>],
+	AC_DEFINE(HAVE_STD_HASH, [1],
+		[Define if the system provides std::hash]),
+	[], [#include <functional>])
+AC_CHECK_TYPE([std::tr1::hash<int>],
+	AC_DEFINE(HAVE_STD_TR1_HASH, [1],
+		[Define if the system provides std::tr1::hash]),
+	[], [#include <tr1/functional>])
+AC_LANG_POP([C++])
+
 # Checks for library functions.
 AC_CHECK_FUNCS([dup2 gethostname getopt_long getpagesize \
 				memset strdup strerror strtoul])
