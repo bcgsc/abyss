@@ -126,3 +126,33 @@ TEST(endsWith_test, any_cases)
 	EXPECT_FALSE(endsWith("hell", "hello"));
 	EXPECT_FALSE(endsWith("hell", "heaven"));
 }
+
+TEST(SIToBytes_test, unit_conversions)
+{
+	EXPECT_EQ(1024u, SIToBytes("1024"));
+	EXPECT_EQ(1024u, SIToBytes("1024b"));
+	EXPECT_EQ(1024u, SIToBytes("1k"));
+	EXPECT_EQ(1536u, SIToBytes("1.5k"));
+	EXPECT_EQ(1048576u, SIToBytes("1M"));
+	EXPECT_EQ(1073741824u, SIToBytes("1G"));
+	EXPECT_EQ(1099511627776u, SIToBytes("1T"));
+}
+
+TEST(SIToBytes_test, error_handling)
+{
+	unsigned long long bytes;
+
+	// non-number
+
+	istringstream nonNumber("not-a-number");
+	bytes = SIToBytes(nonNumber);
+	EXPECT_EQ(0u, bytes);
+	EXPECT_TRUE(nonNumber.fail());
+
+	// unrecognized suffix
+
+	istringstream illegalUnits("1024y");
+	bytes = SIToBytes(nonNumber);
+	EXPECT_EQ(0u, bytes);
+	EXPECT_TRUE(nonNumber.fail());
+}

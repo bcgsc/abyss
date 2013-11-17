@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 /** Return the last character of s and remove it. */
 static inline char chop(std::string& s)
@@ -103,6 +104,50 @@ bool isReadNamePair(const std::string& name1, const std::string& name2)
 	}
 
 	return false;
+}
+
+static inline
+unsigned long long SIToBytes(std::istringstream& iss)
+{
+	double size;
+	char units;
+
+	iss >> size;
+	if (iss.fail()) {
+		// not prefixed by a number
+		return 0;
+	}
+
+	iss >> units;
+	if (iss.fail() && iss.eof()) {
+		// no units given => assume bytes
+		units = 'b';
+	}
+
+	switch(tolower(units)) {
+		case 'k':
+			size *= 1024; break;
+		case 'm':
+			size *= pow(1024,2); break;
+		case 'g':
+			size *= pow(1024,3); break;
+		case 't':
+			size *= pow(1024,4); break;
+		case 'b':
+			break;
+		default:
+			iss.setstate(std::ios::failbit);
+			return 0;
+	}
+
+	return (unsigned long long)ceil(size);
+}
+
+static inline
+unsigned long long SIToBytes(const std::string& str)
+{
+	std::istringstream iss(str);
+	return SIToBytes(iss);
 }
 
 #endif
