@@ -55,3 +55,19 @@ void FastaWriter::WriteSequence(const Sequence& seq, unsigned id,
 	if (n < 0)
 		die(m_path);
 }
+
+void FastaWriter::WriteSequence(const Sequence& seq, unsigned long long id, const std::string& comment)
+{
+	assert(m_fileHandle != NULL);
+	int n = fprintf(m_fileHandle, ">%llu %s\n%s\n", id, comment.c_str(), seq.c_str());
+	if (n < 0)
+		die(m_path);
+}
+
+void FastaWriter::WriteSequence(const Sequence& seq, const std::string& id, const std::string& comment)
+{
+	assert(m_fileHandle != NULL);
+	int n = fprintf(m_fileHandle, ">%s %s\n%s\n", id.c_str(), comment.c_str(), seq.c_str());
+	if (n < 0)
+		die(m_path);
+}

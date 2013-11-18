@@ -3,6 +3,7 @@
 #include "NetworkSequenceCollection.h"
 #include "Assembly/Options.h"
 #include "Common/Options.h"
+#include "DataLayer/FastaReader.h"
 #include "Timer.h"
 #include "Uncompress.h"
 #include <cerrno>
@@ -18,37 +19,36 @@
 
 using namespace std;
 
-/** Execute a shell command and check its return status. */
-static void systemx(const string& command)
-{
-	if (opt::verbose > 0)
-		cout << command << endl;
-	int ret = system(command.c_str());
-	if (ret == 0)
-		return;
-	cerr << "error: command failed: `" << command << "'\n";
-	if (ret == -1)
-		cerr << "system() failed: " << strerror(errno) << endl;
-	exit(ret == -1 ? EXIT_FAILURE : ret);
-}
+static const char* FASTA_SUFFIX = ".fa";
 
-/** Concatenate files using the specified command and remove them. */
-static void concatenateFiles(const string& dest,
-		const string& prefix, const string& suffix,
-		const string& command = "cat")
+static void mergeFastaFiles(const string& outputPath, const string& inputPathPrefix, bool generateNewIds = false)
 {
-	cout << "Concatenating to " << dest << endl;
-	ostringstream s;
-	s << command;
-	for (int i = 0; i < opt::numProc; i++)
-		s << ' ' << prefix << i << suffix;
-	s << " >'" << dest << '\'';
-	systemx(s.str());
+	cout << "Concatenating fasta files to " << outputPath << endl;
+
+	// write merged FASTA file
+
+	FastaWriter writer(outputPath.c_str());
+	uint64_t seqid = 0;
+	for(int i = 0; i < opt::numProc; i++) {
+		ostringstream filename;
+		filename << inputPathPrefix << i << FASTA_SUFFIX;
+		assert(filename.good());
+		FastaReader reader(filename.str().c_str(), FastaReader::NO_FOLD_CASE);
+		for (FastaRecord rec; reader >> rec;) {
+			if (generateNewIds)
+				writer.WriteSequence(rec.seq, seqid++, rec.comment);
+			else
+				writer.WriteSequence(rec.seq, rec.id, rec.comment);
+		}
+		assert(reader.eof());
+	}
+
+	// remove temp FASTA files
 
 	bool die = false;
 	for (int i = 0; i < opt::numProc; i++) {
-		s.str("");
-		s << prefix << i << suffix;
+		ostringstream s;
+		s << inputPathPrefix << i << FASTA_SUFFIX;
 		const char* path = s.str().c_str();
 		if (unlink(path) == -1) {
 			cerr << "error: removing `" << path << "': "
@@ -97,10 +97,9 @@ int main(int argc, char** argv)
 	MPI_Finalize();
 
 	if (opt::rank == 0) {
-		concatenateFiles(opt::contigsPath, "contigs-", ".fa",
-				"awk '/^>/ { $1=\">\" i++ } { print }'");
+		mergeFastaFiles(opt::contigsPath, "contigs-", true);
 		if (!opt::snpPath.empty())
-			concatenateFiles(opt::snpPath, "snp-", ".fa");
+			mergeFastaFiles(opt::snpPath, "snp-");
 		cout << "Done." << endl;
 	}
 

@@ -24,6 +24,12 @@ class FastaWriter {
 			WriteSequence(seq, id, multiplicity, "");
 		}
 
+		void WriteSequence(const Sequence& seq, unsigned long long id,
+				const std::string& comment);
+
+		void WriteSequence(const Sequence& seq, const std::string& id,
+				const std::string& comment);
+
 	private:
 		const char *m_path;
 		FILE* m_fileHandle;
