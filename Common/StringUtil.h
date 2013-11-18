@@ -106,11 +106,10 @@ bool isReadNamePair(const std::string& name1, const std::string& name2)
 	return false;
 }
 
-static inline
-unsigned long long SIToBytes(std::istringstream& iss)
+static inline size_t SIToBytes(std::istringstream& iss)
 {
 	double size;
-	char units;
+	std::string units;
 
 	iss >> size;
 	if (iss.fail()) {
@@ -121,10 +120,16 @@ unsigned long long SIToBytes(std::istringstream& iss)
 	iss >> units;
 	if (iss.fail() && iss.eof()) {
 		// no units given => assume bytes
-		units = 'b';
+		units = "b";
+	}
+	
+	if (units.size() > 1) {
+		// unrecognized multichar suffix
+		iss.setstate(std::ios::failbit);
+		return 0;
 	}
 
-	switch(tolower(units)) {
+	switch(tolower(units[0])) {
 		case 'k':
 			size *= 1024; break;
 		case 'm':
@@ -140,11 +145,10 @@ unsigned long long SIToBytes(std::istringstream& iss)
 			return 0;
 	}
 
-	return (unsigned long long)ceil(size);
+	return (size_t)ceil(size);
 }
 
-static inline
-unsigned long long SIToBytes(const std::string& str)
+static inline size_t SIToBytes(const std::string& str)
 {
 	std::istringstream iss(str);
 	return SIToBytes(iss);

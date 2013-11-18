@@ -155,4 +155,11 @@ TEST(SIToBytes_test, error_handling)
 	bytes = SIToBytes(nonNumber);
 	EXPECT_EQ(0u, bytes);
 	EXPECT_TRUE(nonNumber.fail());
+
+	// valid string should set eof
+
+	istringstream valid("500M");
+	bytes = SIToBytes(valid);
+	EXPECT_EQ(524288000u, bytes);
+	EXPECT_TRUE(valid.eof());
 }
