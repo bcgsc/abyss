@@ -221,7 +221,11 @@ static void connectPair(const DBGBloom& g,
 	{
 		if(++g_count.readPairsProcessed % g_progressStep == 0) {
 			cerr << "Merged " << g_count.readPairsMerged << " of "
-				<< g_count.readPairsProcessed << " read pairs\n";
+				<< g_count.readPairsProcessed << " read pairs "
+				<< "(no path: " << g_count.noPath << ", "
+				<< "too many paths: " << g_count.tooManyPaths << ", "
+				<< "too many branches: " << g_count.tooManyBranches
+				<< ")\n";
 		}
 	}
 
