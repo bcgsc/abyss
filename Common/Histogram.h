@@ -169,6 +169,19 @@ class Histogram
 		return argMin((accumulator)ceil(p * sum()));
 	}
 
+	/** Return the expected value */
+	double expectedValue() const
+	{
+		double value = 0;
+		accumulator acc = sum();
+		for (Map::const_iterator it = m_map.begin();
+				it != m_map.end(); it++) {
+			value += (double)it->first * it->first
+				* it->second / acc;
+		}
+		return value;
+	}
+
 	/** Return the N50. */
 	T n50() const { return weightedPercentile(0.5); }
 
@@ -341,6 +354,7 @@ static inline std::ostream& printContiguityStats(
 		<< toEng(h.weightedPercentile(1 - 0.8)) << sep
 		<< toEng(n50) << sep
 		<< toEng(h.weightedPercentile(1 - 0.2)) << sep
+		<< toEng(h.expectedValue()) << sep
 		<< toEng(h.maximum()) << sep
 		<< toEng(sum);
 }

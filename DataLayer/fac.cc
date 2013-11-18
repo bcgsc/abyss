@@ -116,6 +116,7 @@ static void printContiguityStatistics(const char* path)
 			<< "N80" << sep
 			<< "N50" << sep
 			<< "N20" << sep
+			<< "e-size" << sep
 			<< "max" << sep
 			<< "sum" << sep
 			<< "name" << sep << '\n';
@@ -132,6 +133,7 @@ static void printContiguityStatistics(const char* path)
 			<< "N80" << sep
 			<< "N50" << sep
 			<< "N20" << sep
+			<< "e-size" << sep
 			<< "max" << sep
 			<< "sum" << sep
 			<< "name" << '\n';
@@ -139,6 +141,7 @@ static void printContiguityStatistics(const char* path)
 			cout << "------" << sep
 				<< "------" << sep;
 		cout << "------" << sep
+			<< "------" << sep
 			<< "------" << sep
 			<< "------" << sep
 			<< "------" << sep
