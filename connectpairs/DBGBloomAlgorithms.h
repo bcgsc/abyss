@@ -16,6 +16,7 @@
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
 #include <climits>
+#include <algorithm> // for std::max
 
 #if _OPENMP
 # include <omp.h>
@@ -96,6 +97,7 @@ static inline PathSearchResult connectPairs(
 	const DBGBloom& g,
 	std::vector<FastaRecord>& mergedSeqs,
 	unsigned maxPaths = 2,
+	unsigned minMergedSeqLen = 0,
 	unsigned maxMergedSeqLen = NO_LIMIT,
 	unsigned maxBranches = NO_LIMIT)
 {
@@ -128,7 +130,11 @@ static inline PathSearchResult connectPairs(
 
 	unsigned maxPathLen = maxMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos;
 	assert(maxPathLen <= maxMergedSeqLen - k + 1);
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths, 0, maxPathLen, maxBranches);
+	unsigned minPathLen = (unsigned)std::max(0,
+			(int)(minMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos));
+
+	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths,
+			minPathLen, maxPathLen, maxBranches);
 	bidirectionalBFS(g, kmer1, kmer2, visitor);
 
 	std::vector< Path<Kmer> > pathsFound;

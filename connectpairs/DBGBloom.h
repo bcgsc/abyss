@@ -43,10 +43,10 @@ class DBGBloom {
 
 	/** Construct a graph.
 	 * @param k the size of a k-mer
-	 * @param g the estimated size of the genome
+	 * @param n the size of the bloom filter in bits
 	 */
-	DBGBloom(unsigned k, size_t g)
-		: m_k(k), m_bloom(8 * g) { }
+	DBGBloom(unsigned k, size_t n)
+		: m_k(k), m_bloom(n) { }
 
 	/** Load the Bloom filter from a string. */
 	void assign(const std::string& s)

@@ -11,6 +11,7 @@
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
 #include "Common/Options.h"
+#include "Common/StringUtil.h"
 #include "DataLayer/FastaInterleave.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
@@ -57,14 +58,17 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
 "  -k, --kmer=N            the size of a k-mer\n"
-"  -g, --genome-size=N     an estimate of the size of the genome\n"
-"                          in bp [3e9]\n"
+"  -b, --bloom-size=N      size of bloom filter [500M]\n"
+"  -B, --max-branches=N    max branches in de Bruijn graph traversal [10000]\n"
+"  -f, --min-frag=N        min fragment size in base pairs [0]\n"
+"  -F, --max-frag=N        max fragment size in base pairs [1000]\n"
 "  -G, --graph=FILE        write the de Bruijn graph to FILE\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
 "      --no-trim-masked    do not trim masked bases from the ends\n"
 "                          of reads [default]\n"
+"  -P, --max-paths=N       build consensus seq from at most N joining paths [2]\n"
 "  -q, --trim-quality=N    trim bases from the ends of reads whose\n"
 "                          quality is less than the threshold\n"
 "      --standard-quality  zero quality is `!' (33)\n"
@@ -83,14 +87,26 @@ namespace opt {
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
+	/** The size of the bloom filter in bytes. */
+	size_t bloomSize = 500 * 1024 * 1024;
+
+	/** Max active branches during de Bruijn graph traversal */
+	unsigned maxBranches = 10000;
+
 	/** The size of a k-mer. */
 	unsigned k;
 
-	/** An estimate of the size of the genome. */
-	size_t genomeSize = 3e9;
+	/** The minimum fragment size */
+	unsigned minFrag = 0;
+
+	/** The maximum fragment size */
+	unsigned maxFrag = 1000;
 
 	/** Write the de Bruijn graph to this file. */
 	static string graphPath;
+
+	/** Max paths between read 1 and read 2 */
+	unsigned maxPaths = 2;
 }
 
 /** Counters */
@@ -104,19 +120,23 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "g:G:j:k:q:v";
+static const char shortopts[] = "b:B:f:F:G:j:k:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "min-frag",         required_argument, NULL, 'f' },
+	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
-	{ "genome-size",      required_argument, NULL, 'g' },
 	{ "graph",            required_argument, NULL, 'G' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
+	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
@@ -188,15 +208,13 @@ static void seqanTests()
 static void connectPair(const DBGBloom& g,
 	const FastaRecord& read1, const FastaRecord& read2)
 {
-	const unsigned maxNumPaths = 2;
-	const unsigned maxPathLen = 1000;
-	const unsigned maxBranches = 1000;
 	const unsigned maxMismatch = 2;
 
 	vector<FastaRecord> paths;
 	PathSearchResult result
 		= connectPairs(read1, read2, g, paths,
-				maxNumPaths, maxPathLen, maxBranches);
+				opt::maxPaths, opt::minFrag,
+				opt::maxFrag, opt::maxBranches);
 
 	if (opt::verbose >= 2)
 #pragma omp critical(progress)
@@ -276,18 +294,22 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
-		  case 'g': {
-			double g;
-			arg >> g;
-			opt::genomeSize = g;
-			break;
-		  }
+		  case 'b':
+			opt::bloomSize = SIToBytes(arg); break;
+		  case 'B':
+			arg >> opt::maxBranches; break;
+		  case 'f':
+			arg >> opt::minFrag; break;
+		  case 'F':
+			arg >> opt::maxFrag; break;
 		  case 'G':
 			arg >> opt::graphPath; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'P':
+			arg >> opt::maxPaths; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 'v':
@@ -299,7 +321,7 @@ int main(int argc, char** argv)
 			cerr << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		}
-		if (optarg != NULL && !arg.eof()) {
+		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
 				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
@@ -333,8 +355,11 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
-	assert(opt::genomeSize > 0);
-	DBGBloom g(opt::k, opt::genomeSize);
+	assert(opt::bloomSize > 0);
+	// Specify bloom filter size in bits. Divide by two
+	// because counting bloom filter requires twice as
+	// much space.
+	DBGBloom g(opt::k, opt::bloomSize * 8 / 2);
 	loadBloomFilter(g, argv + optind, argv + argc);
 
 	if (!opt::graphPath.empty()) {
