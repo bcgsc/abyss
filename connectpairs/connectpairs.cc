@@ -111,6 +111,7 @@ namespace opt {
 
 /** Counters */
 static struct {
+	size_t noStartOrGoalKmer;
 	size_t noPath;
 	size_t uniquePath;
 	size_t multiplePaths;
@@ -210,11 +211,12 @@ static void connectPair(const DBGBloom& g,
 {
 	const unsigned maxMismatch = 2;
 
-	vector<FastaRecord> paths;
-	PathSearchResult result
-		= connectPairs(read1, read2, g, paths,
+	SearchResult result
+		= connectPairs(read1, read2, g,
 				opt::maxPaths, opt::minFrag,
 				opt::maxFrag, opt::maxBranches);
+
+	vector<FastaRecord>& paths = result.mergedSeqs;
 
 	if (opt::verbose >= 2)
 #pragma omp critical(progress)
@@ -222,18 +224,23 @@ static void connectPair(const DBGBloom& g,
 		if(++g_count.readPairsProcessed % g_progressStep == 0) {
 			cerr << "Merged " << g_count.readPairsMerged << " of "
 				<< g_count.readPairsProcessed << " read pairs "
-				<< "(no path: " << g_count.noPath << ", "
+				<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
+				<< "no path: " << g_count.noPath << ", "
 				<< "too many paths: " << g_count.tooManyPaths << ", "
 				<< "too many branches: " << g_count.tooManyBranches
 				<< ")\n";
 		}
 	}
 
-	switch (result) {
+	switch (result.pathResult) {
 	  case NO_PATH:
 		assert(paths.empty());
+		if (result.foundStartKmer && result.foundGoalKmer)
 #pragma omp atomic
-		++g_count.noPath;
+			++g_count.noPath;
+		else
+#pragma omp atomic
+			++g_count.noStartOrGoalKmer;
 		break;
 	  case FOUND_PATH:
 		assert(!paths.empty());
@@ -387,6 +394,9 @@ int main(int argc, char** argv)
 			+ g_count.tooManyBranches;
 		cerr <<
 			"Total number of read pairs: " << n << "\n"
+			"No start/goal kmer: " << g_count.noStartOrGoalKmer
+				<< " (" << setprecision(3) << (float)100
+					* g_count.noStartOrGoalKmer / n << "%)\n"
 			"No path: " << g_count.noPath
 				<< " (" << setprecision(3) << (float)100
 					* g_count.noPath / n << "%)\n"

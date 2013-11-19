@@ -133,10 +133,9 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	g.assign(read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
-	PathSearchResult result;
-	result = connectPairs(read1, read2, g, mergedSeqs, 1, 0, 4);
+	SearchResult result = connectPairs(read1, read2, g, 1, 0, 4);
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1u, mergedSeqs.size());
-	EXPECT_EQ("GATG", mergedSeqs[0].seq);
+	EXPECT_EQ(FOUND_PATH, result.pathResult);
+	ASSERT_EQ(1u, result.mergedSeqs.size());
+	EXPECT_EQ("GATG", result.mergedSeqs[0].seq);
 }

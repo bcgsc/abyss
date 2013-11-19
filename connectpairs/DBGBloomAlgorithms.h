@@ -24,6 +24,47 @@
 
 #define NO_MATCH UINT_MAX
 
+struct SearchResult
+{
+	PathSearchResult pathResult;
+	std::vector<FastaRecord> mergedSeqs;
+	bool foundStartKmer;
+	bool foundGoalKmer;
+	unsigned startKmerPos;
+	unsigned goalKmerPos;
+	unsigned long long numNodesVisited;
+	unsigned maxActiveBranches;
+	unsigned maxDepthVisitedForward;
+	unsigned maxDepthVisitedReverse;
+
+	SearchResult() :
+		pathResult(NO_PATH),
+		foundStartKmer(false),
+		foundGoalKmer(false),
+		startKmerPos(NO_MATCH),
+		goalKmerPos(NO_MATCH),
+		numNodesVisited(0),
+		maxActiveBranches(0),
+		maxDepthVisitedForward(0),
+		maxDepthVisitedReverse(0) {}
+
+	friend std::ostream& operator <<(std::ostream& out,
+		const SearchResult& o)
+	{
+		out << "Path result: " << o.pathResult << "\n"
+			<< "\tpathsFound: " << o.mergedSeqs.size() << "\n";
+		for (unsigned i = 0; i < o.mergedSeqs.size(); i++)
+			out << "\t\tPath " << i << " length: " << o.mergedSeqs[i].size() << "\n";
+		out << "\tstartKmerPos: " << o.startKmerPos << "\n"
+			<< "\tgoalKmerPos: " << o.goalKmerPos << "\n"
+			<< "\tnumNodesVisited: " << o.numNodesVisited << "\n"
+			<< "\tmaxActiveBranches: " << o.maxActiveBranches << "\n"
+			<< "\tmaxDepthVisitedForward: " << o.maxDepthVisitedForward << "\n"
+			<< "\tmaxDepthVisitedReverse: " << o.maxDepthVisitedReverse << "\n";
+		return out;
+	}
+};
+
 static inline Sequence pathToSeq(Path<Kmer> path)
 {
 	Sequence seq;
@@ -91,11 +132,10 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 	return maxMatchPos + maxMatchLength - 1;
 }
 
-static inline PathSearchResult connectPairs(
+static inline SearchResult connectPairs(
 	const FastaRecord& read1,
 	const FastaRecord& read2,
 	const DBGBloom& g,
-	std::vector<FastaRecord>& mergedSeqs,
 	unsigned maxPaths = 2,
 	unsigned minMergedSeqLen = 0,
 	unsigned maxMergedSeqLen = NO_LIMIT,
@@ -103,71 +143,69 @@ static inline PathSearchResult connectPairs(
 {
 	unsigned k = g.m_k;
 
+	SearchResult result;
+
 	assert(isReadNamePair(read1.id, read2.id));
 
 	if (read1.seq.length() < k || read2.seq.length() < k) {
-#pragma omp critical(cerr)
-		std::cerr
-			<< "failed to connect read pair: first or second read length is less than k"
-			<< "(read1 = " << read1.id << ", read2 = " << read2.id  << ")\n";
-		return NO_PATH;
+		result.pathResult = NO_PATH;
+		return result;
 	}
 
-	unsigned kmer1Pos = getStartKmerPos(read1, g, false);
-	unsigned kmer2Pos = getStartKmerPos(read2, g, true);
+	unsigned startKmerPos = getStartKmerPos(read1, g, false);
+	unsigned goalKmerPos = getStartKmerPos(read2, g, true);
 
-	if (kmer1Pos == NO_MATCH || kmer2Pos == NO_MATCH) {
-#pragma omp critical(cerr)
-		std::cerr
-			<< "failed to connect read pair: couldn't find bloom filter match in first or second read "
-			<< "(read1 = " << read1.id << ", read2 = " << read2.id  << ")\n";
-		return NO_PATH;
+	if (startKmerPos != NO_MATCH) {
+		result.startKmerPos = startKmerPos;
+		result.foundStartKmer = true;
 	}
 
-	Kmer kmer1(read1.seq.substr(kmer1Pos, k));
-	Kmer kmer2(read2.seq.substr(kmer2Pos, k));
-	kmer2.reverseComplement();
+	if (goalKmerPos != NO_MATCH) {
+		result.goalKmerPos = goalKmerPos;
+		result.foundGoalKmer = true;
+	}
 
-	unsigned maxPathLen = maxMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos;
+	if (startKmerPos == NO_MATCH || goalKmerPos == NO_MATCH) {
+		result.pathResult = NO_PATH;
+		return result;
+	}
+
+	Kmer startKmer(read1.seq.substr(startKmerPos, k));
+	Kmer goalKmer(read2.seq.substr(goalKmerPos, k));
+	goalKmer.reverseComplement();
+
+	unsigned maxPathLen = maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
 	assert(maxPathLen <= maxMergedSeqLen - k + 1);
 	unsigned minPathLen = (unsigned)std::max(0,
-			(int)(minMergedSeqLen - k + 1 - kmer1Pos - kmer2Pos));
+			(int)(minMergedSeqLen - k + 1 - startKmerPos - goalKmerPos));
 
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, kmer1, kmer2, maxPaths,
+	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer, maxPaths,
 			minPathLen, maxPathLen, maxBranches);
-	bidirectionalBFS(g, kmer1, kmer2, visitor);
+	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
-	std::vector< Path<Kmer> > pathsFound;
-	PathSearchResult result = visitor.pathsToGoal(pathsFound);
+	std::vector< Path<Kmer> > paths;
+	result.pathResult = visitor.pathsToGoal(paths);
+	result.numNodesVisited = visitor.getNumNodesVisited();
+	result.maxActiveBranches = visitor.getMaxActiveBranches();
+	result.maxDepthVisitedForward = visitor.getMaxDepthVisited(FORWARD);
+	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 
-#if 0
-	// debugging info
-	{
-# pragma omp critical(cerr)
-		std::cerr << "search result: " << result << "\n";
-		std::cerr << "\tmaxPathLen: " << maxPathLen << "\n";
-		std::cerr << "\tkmer1Pos: " << kmer1Pos << "\n";
-		std::cerr << "\tkmer2Pos: " << kmer2Pos << "\n";
-		std::cerr << "\tnumNodesVisited: " << visitor.getNumNodesVisited() << "\n";
-		std::cerr << "\tmaxActiveBranches: " << visitor.getMaxActiveBranches() << "\n";
-		std::cerr << "\tmaxDepthVisited[FORWARD]: " << visitor.getMaxDepthVisited(FORWARD) << "\n";
-		std::cerr << "\tmaxDepthVisited[REVERSE]: " << visitor.getMaxDepthVisited(REVERSE) << "\n";
-		for (unsigned j = 0; j < pathsFound.size(); j++)
-			std::cerr << "\tpath " << j << " length: " << pathsFound[j].size() << "\n";
-	}
-#endif
-
-	if (result == FOUND_PATH) {
+	if (result.pathResult == FOUND_PATH) {
 		std::string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
-		std::string seqPrefix = read1.seq.substr(0, kmer1Pos);
-		std::string seqSuffix = reverseComplement(read2.seq.substr(0, kmer2Pos));
-		for (unsigned i = 0; i < pathsFound.size(); i++) {
+		std::string seqPrefix = read1.seq.substr(0, startKmerPos);
+		std::string seqSuffix = reverseComplement(read2.seq.substr(0, goalKmerPos));
+		for (unsigned i = 0; i < paths.size(); i++) {
 			FastaRecord mergedSeq;
 			mergedSeq.id = mergedId;
-			mergedSeq.seq = seqPrefix + pathToSeq(pathsFound[i]) + seqSuffix;
-			mergedSeqs.push_back(mergedSeq);
+			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
+			result.mergedSeqs.push_back(mergedSeq);
 		}
 	}
+
+#if 0
+# pragma omp critical(cerr)
+	std::cerr << result;
+#endif
 
 	return result;
 }
