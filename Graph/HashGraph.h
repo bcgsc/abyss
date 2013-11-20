@@ -28,6 +28,8 @@ protected:
 
 	typedef unordered_map<vertex_descriptor, VertexList,
 		hash<vertex_descriptor> > VertexMap;
+	typedef typename VertexMap::const_iterator VertexMapIterator;
+	typedef std::pair<vertex_descriptor, VertexList> VertexMapEntry;
 	VertexMap m_vertices;
 
 public:
@@ -35,19 +37,17 @@ public:
 	std::pair<vertex_iterator, vertex_iterator>
 	get_successors(const vertex_descriptor& v) const
 	{
-		typename VertexMap::const_iterator i = m_vertices.find(v);
-		vertex_iterator begin, end;
-		if (i != m_vertices.end()) {
-			begin = i->second.begin();
-			end = i->second.end();
-		}
+		VertexMapIterator i = m_vertices.find(v);
+		assert(i != m_vertices.end());
+		vertex_iterator begin = i->second.begin();
+		vertex_iterator end = i->second.end();
 		return std::pair<vertex_iterator, vertex_iterator> (begin, end);
 	}
 
 	degree_size_type
 	out_degree(const vertex_descriptor& v) const
 	{
-		typename VertexMap::const_iterator i = m_vertices.find(v);
+		VertexMapIterator i = m_vertices.find(v);
 		if (i == m_vertices.end())
 			return 0;
 		return i->second.size();
@@ -62,10 +62,17 @@ public:
 			successors.push_back(v);
 			edgeInserted = true;
 		}
+		// add target vertex to graph if it doesn't exist
+		VertexMapIterator i = m_vertices.find(v);
+		if (i == m_vertices.end()) {
+			bool inserted;
+			VertexMapEntry entry(v, VertexList());
+			boost::tie(i, inserted) = m_vertices.insert(entry);
+			assert(inserted);
+		}
 		return std::pair<edge_descriptor, bool>
 			(edge_descriptor(u, v), edgeInserted);
 	}
-
 };
 
 namespace boost {

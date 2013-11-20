@@ -87,6 +87,9 @@ public:
 			return;
 		}
 
+		if (v == m_goal)
+			m_bFoundGoal = true;
+
 		// record history of traversal, so that we can trace
 		// backwards from goal to start in pathsToGoal()
 
@@ -130,6 +133,8 @@ public:
 	{
 		if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
+		else if (!m_bFoundGoal)
+			return NO_PATH;
 
 		PathSearchResult result = allPathsSearch(m_traversalGraph,
 				m_goal, m_start, maxPaths, m_minDepth, m_maxDepth, pathsFound);

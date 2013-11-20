@@ -130,7 +130,10 @@ public:
 	void examine_edge(const E& e, const G& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(g);
-		std::cout << "visiting edge: " << e << " from dir: " << dir << "\n";
+		V u = source(e, g);
+		V v = target(e, g);
+		std::cout << "visiting edge: (" << u << "," << v
+			<< ") from dir: " << dir << "\n";
 	}
 #endif
 
@@ -242,6 +245,28 @@ protected:
 			m_tooManyPaths = true;
 			return ABORT_SEARCH;
 		}
+
+		/**
+		 * Tricky point:
+		 *
+		 * Recording the common edges in the both the
+		 * forward and reverse traversal histories
+		 * is necessary for edge cases where forward
+		 * or reverse traversals are limited to
+		 * a depth of zero. (In other words,
+		 * the traversal graph has zero edges
+		 * and exactly one vertex which is either
+		 * the start or the goal vertex.)
+		 *
+		 * I cannot find a way to add a vertex
+		 * with a specific vertex_descriptor
+		 * to a graph using the Boost graph API.
+		 * The only way seems to be creating an edge
+		 * that has the given vertex_descriptor
+		 * as the source or target.
+		 */
+		recordEdgeTraversal(e, m_graph, FORWARD);
+		recordEdgeTraversal(e, m_graph, REVERSE);
 		return SUCCESS;
 	}
 
