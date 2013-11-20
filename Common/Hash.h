@@ -3,15 +3,18 @@
 
 #include "config.h"
 
-#if HAVE_TR1_FUNCTIONAL
-# include <tr1/functional>
-using std::tr1::hash;
-#elif HAVE_FUNCTIONAL
+#if HAVE_STD_HASH
 # include <functional>
 using std::hash;
+# define NAMESPACE_STD_HASH_BEGIN namespace std {
+# define NAMESPACE_STD_HASH_END }
+#elif HAVE_STD_TR1_HASH
+# include <tr1/functional>
+using std::tr1::hash;
+# define NAMESPACE_STD_HASH_BEGIN namespace std { namespace tr1 {
+# define NAMESPACE_STD_HASH_END } }
 #else
-# include <boost/functional/hash.hpp>
-using boost::hash;
+# error One of either std::hash or std::tr1::hash is required.
 #endif
 
 #endif
