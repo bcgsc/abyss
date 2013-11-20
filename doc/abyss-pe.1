@@ -38,6 +38,10 @@ sequence.
 list of mate-pair libraries that will be used for scaffolding.
 Mate-pair libraries do not contribute toward the consensus sequence.
 .TP
+.B rna
+list of RNA-Seq assemblies that will be used for rescaffolding.
+RNA libraries do not contribute toward the consensus sequence.
+.TP
 .B se
 files containing single-end reads
 .TP
@@ -158,6 +162,12 @@ Assemble scaffolds.
 .B scaffolds-dot
 Output the scaffold overlap graph.
 .TP
+.B rna-scaffs
+Rescaffold using RNA-Seq assembled contigs.
+.TP
+.B rna-scaffs-dot
+Output the RNA scaffold overlap graph.
+.TP
 .B stats
 Display assembly contiguity statistics.
 .TP
@@ -210,6 +220,12 @@ similarly for other schedulers.
 	mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \\
 .br
 	se='se1.fa se2.fa'
+.SS "Including RNA-Seq assemblies
+ abyss-pe k=64 name=ecoli lib=pe1 mp=mp1 rna=rna1 \\
+.br
+	pe1='pe1_1.fa pe1_2.fa' mp1='mp1_1.fa mp1_2.fa' \\
+.br
+	rna1=rna1.fa
 .SS MPI
  abyss-pe np=8 k=64 name=ecoli in='reads1.fa reads2.fa'
 .SS SGE

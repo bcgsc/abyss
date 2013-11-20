@@ -215,6 +215,23 @@ libraries and two mate-pair libraries:
 The mate-pair libraries are used only for scaffolding and do not
 contribute towards the consensus sequence.
 
+Rescaffolding with RNA-Seq contigs
+================================
+
+Long sequences such as RNA-Seq contigs can now be used to rescaffold
+an assembly. Sequences are aligned using BWA-MEM to the assembled scaffolds.
+Additional scaffolds are then formed between scaffolds that can be linked
+unambiguously when considering all BWA-MEM alignments.
+
+Similar to scaffolding, the names of the datasets can be specified with
+the `rna` parameter. These scaffolds will be stored in the file
+`${name}-trans-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly:
+
+	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' rna=rna1 \
+		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
+		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
+		rna1=rna1.fa
+
 Optimizing the parameter k
 ==========================
 
