@@ -1,3 +1,51 @@
+2013-11-20  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.3.7
+	* Use long sequences to rescaffold scaffolds. May be run by
+	adding libraries to the `long’ parameter. When Scaffolding
+	with RNA-Seq contigs from a Trans-ABySS assembly, the genic
+	contiguity is greatly improved.
+	* Added support gcc 4.8+, and Mac OS X 10.9 Mavericks with clang.
+	* Licensed as GPL for non-commercial purposes.
+
+	abyss-fac:
+	* Added e-size to contiguity statistics as described in the GAGE
+	paper.
+
+	abyss-filtergraph:
+	* Bug fix. `--assemble’ will not fail an assertion.
+	* New option, --max-length, used to remove contigs over the
+	specified threshold.
+	* Trim 2-in 0-out tips when removing tips.
+
+	abyss-map:
+	* Bug fix. Correctly set mapq=0 for reads that multi map.
+
+	abyss-longseqdist:
+	* New program. Generate distance estimates between all contigs a
+	single read maps to.
+
+	abyss-mergepairs:
+	* Report number of reads chastity filtered.
+
+	abyss-overlap:
+	* Bug fix. Handle ambiguity codes.
+
+	abyss-pe:
+	* Support BWA-MEM with assembly. Run using parameter
+	`aligner=bwamem’.
+	* Added another scaffolding stage using long sequences. May be
+	run by adding libraries to the `long’ parameter.
+
+	ABYSS-P:
+	* Bug fix. Do not use awk to merge fasta files.
+
+	abyss-samtobreak:
+	* Building bug fix. Check that ghc modules are installed.
+
+	UnitTest:
+	* The Google C++ testing framework has been added to ABySS.
+
 2013-07-15  Anthony Raymond  <traymond@bcgsc.ca>
 
 	* Release version 1.3.6
