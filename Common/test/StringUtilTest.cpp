@@ -130,7 +130,6 @@ TEST(endsWith_test, any_cases)
 TEST(SIToBytes_test, unit_conversions)
 {
 	EXPECT_EQ(1024u, SIToBytes("1024"));
-	EXPECT_EQ(1024u, SIToBytes("1024b"));
 	EXPECT_EQ(1024u, SIToBytes("1k"));
 	EXPECT_EQ(1536u, SIToBytes("1.5k"));
 	EXPECT_EQ(1048576u, SIToBytes("1M"));

@@ -119,10 +119,12 @@ static inline size_t SIToBytes(std::istringstream& iss)
 
 	iss >> units;
 	if (iss.fail() && iss.eof()) {
-		// no units given => assume bytes
-		units = "b";
+		// no units given; clear fail flag
+		// and assume bytes
+		iss.clear(std::ios::eofbit);
+		return (size_t)ceil(size);
 	}
-	
+
 	if (units.size() > 1) {
 		// unrecognized multichar suffix
 		iss.setstate(std::ios::failbit);
@@ -138,8 +140,6 @@ static inline size_t SIToBytes(std::istringstream& iss)
 			size *= pow(1024,3); break;
 		case 't':
 			size *= pow(1024,4); break;
-		case 'b':
-			break;
 		default:
 			iss.setstate(std::ios::failbit);
 			return 0;
