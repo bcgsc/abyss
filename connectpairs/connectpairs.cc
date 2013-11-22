@@ -68,6 +68,7 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
+"  -M, --max-mismatches       max mismatches allowed between all paths [2]\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
 "  -P, --max-paths=N          build consensus seq from at most N joining paths [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
@@ -111,6 +112,9 @@ namespace opt {
 
 	/** Prefix for output files */
 	static string outputPrefix;
+
+	/** Max mismatches allowed when building consensus seqs */
+	unsigned maxMismatches = 2;
 }
 
 /** Counters */
@@ -126,7 +130,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:G:j:k:o:q:v";
+static const char shortopts[] = "b:B:f:F:G:j:k:M:o:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -142,6 +146,8 @@ static const struct option longopts[] = {
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
+	{ "output-prefix",    required_argument, NULL, 'o' },
+	{ "max-mismatches",   required_argument, NULL, 'M' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
@@ -216,8 +222,6 @@ static void connectPair(const DBGBloom& g,
 	ofstream& mergedStream, ofstream& read1Stream,
 	ofstream& read2Stream)
 {
-	const unsigned maxMismatch = 2;
-
 	SearchResult result
 		= connectPairs(read1, read2, g,
 				opt::maxPaths, opt::minFrag,
@@ -265,7 +269,7 @@ static void connectPair(const DBGBloom& g,
 			unsigned matches, size;
 			tie(matches, size) = align(paths, aln);
 			assert(size >= matches);
-			if (size - matches <= maxMismatch) {
+			if (size - matches <= opt::maxMismatches) {
 				FastaRecord read = paths.front();
 				read.seq = aln.match_align;
 #pragma omp atomic
@@ -343,6 +347,8 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'M':
+			arg >> opt::maxMismatches; break;
 		  case 'o':
 			arg >> opt::outputPrefix; break;
 		  case 'P':
