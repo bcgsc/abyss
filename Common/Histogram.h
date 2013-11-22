@@ -332,6 +332,7 @@ static inline std::ostream& printContiguityStats(
 			<< "N80" << sep
 			<< "N50" << sep
 			<< "N20" << sep
+			<< "e-size" << sep
 			<< "max" << sep
 			<< "sum\n";
 	}
@@ -354,7 +355,7 @@ static inline std::ostream& printContiguityStats(
 		<< toEng(h.weightedPercentile(1 - 0.8)) << sep
 		<< toEng(n50) << sep
 		<< toEng(h.weightedPercentile(1 - 0.2)) << sep
-		<< toEng(h.expectedValue()) << sep
+		<< toEng((unsigned)h.expectedValue()) << sep
 		<< toEng(h.maximum()) << sep
 		<< toEng(sum);
 }
