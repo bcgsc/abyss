@@ -1,6 +1,6 @@
 Title: ABySS README
 Author: Shaun Jackman, Anthony Raymond
-Affiliation: Canada's Michael Smith Genome Science Centre
+Affiliation: Canada's Michael Smith Genome Sciences Centre
 CSS: README.css
 
 ABySS
@@ -368,6 +368,6 @@ This document is written by Shaun Jackman.
 
 ABySS is written by Shaun Jackman, Tony Raymond and Jared Simpson.
 
-Copyright 2012 Canada's Michael Smith Genome Science Centre
+Copyright 2013 Canada's Michael Smith Genome Sciences Centre
 
 [![githalytics.com](https://cruel-carlota.pagodabox.com/af4811df3b40b7d096f6085db2969f0e "githalytics.com")](http://githalytics.com/sjackman/abyss)
