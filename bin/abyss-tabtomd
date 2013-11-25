@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+exec awk '
+BEGIN { OFS = "\t|" }
+{ $1 = $1; print }
+NR == 1 {
+	printf "%s", "---"
+	for (i = 1; i < NF; ++i)
+		printf "%s", OFS "---"
+	print ""
+}
+' "$@" |column -t

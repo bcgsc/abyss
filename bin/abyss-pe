@@ -90,6 +90,9 @@ ifdef path
 PATH:=$(path):$(PATH)
 endif
 
+# Programs
+MARKDOWN=multimarkdown
+
 ifdef lib
 map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
@@ -573,17 +576,32 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 
 # Calculate assembly contiguity statistics
 
-stats: $(name)-stats
+stats: $(name)-stats.tab $(name)-stats $(name)-stats.csv $(name)-stats.md
+ifneq ($(shell which $(MARKDOWN) 2>/dev/null),)
+stats: $(name)-stats.html
+endif
 
-$(name)-stats: %-stats: %-unitigs.fa
+%-stats: %-stats.tab
+	ln -sf $< $@
+
+$(name)-stats.tab: %-stats.tab: %-unitigs.fa
 ifneq ($(in),)
-$(name)-stats: %-stats: %-contigs.fa
+$(name)-stats.tab: %-stats.tab: %-contigs.fa
 endif
 ifneq ($(mp),)
-$(name)-stats: %-stats: %-scaffolds.fa
+$(name)-stats.tab: %-stats.tab: %-scaffolds.fa
 endif
-$(name)-stats:
+$(name)-stats.tab:
 	abyss-fac $(FAC_OPTIONS) $^ |tee $@
+
+%.csv: %.tab
+	tr '\t' , <$< >$@
+
+%.md: %.tab
+	abyss-tabtomd $< >$@
+
+%.html: %.md
+	$(MARKDOWN) $< >$@
 
 # Create an AGP file and FASTA file of scaftigs from scaffolds
 

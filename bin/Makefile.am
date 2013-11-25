@@ -12,4 +12,5 @@ dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
 	abyss-fac.pl \
-	abyss-joindist
+	abyss-joindist \
+	abyss-tabtomd
