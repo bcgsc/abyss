@@ -332,9 +332,10 @@ static inline std::ostream& printContiguityStats(
 			<< "N80" << sep
 			<< "N50" << sep
 			<< "N20" << sep
-			<< "e-size" << sep
+			<< "E-size" << sep
 			<< "max" << sep
-			<< "sum\n";
+			<< "sum" << sep
+			<< "name" << '\n';
 	}
 	unsigned n50 = h.n50();
 	out << toEng(h0.size()) << sep
