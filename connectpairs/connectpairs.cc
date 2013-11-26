@@ -130,7 +130,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:G:j:k:M:o:q:v";
+static const char shortopts[] = "b:B:f:F:G:j:k:M:o:P:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
