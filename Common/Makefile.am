@@ -35,5 +35,7 @@ libcommon_a_SOURCES = \
 	Timer.cpp Timer.h \
 	Uncompress.cpp Uncompress.h \
 	UnorderedMap.h \
+	UnorderedSet.h \
+	Warnings.h \
 	cholesky.hpp \
 	city.cc city.h

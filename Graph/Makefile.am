@@ -8,11 +8,18 @@ abyss_todot_SOURCES = todot.cc
 
 EXTRA_DIST = \
 	AdjIO.h \
+	AllPathsSearch.h \
 	AsqgIO.h \
 	Assemble.h \
+	BidirectionalBFS.h \
+	BidirectionalBFSVisitor.h \
+	BreadthFirstSearch.h \
+	ConstrainedBFSVisitor.h \
+	ConstrainedBidiBFSVisitor.h \
 	ConstrainedSearch.h \
 	ContigGraph.h \
 	ContigGraphAlgorithms.h \
+	DefaultColorMap.h \
 	DepthFirstSearch.h \
 	DirectedGraph.h \
 	DistIO.h \
@@ -21,7 +28,9 @@ EXTRA_DIST = \
 	GraphAlgorithms.h \
 	GraphIO.h \
 	GraphUtil.h \
+	HashGraph.h \
 	Options.h \
+	Path.h \
 	PopBubbles.h \
 	Properties.h \
 	SAMIO.h
