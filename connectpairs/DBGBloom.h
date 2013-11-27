@@ -12,6 +12,8 @@
 #include "Common/Kmer.h"
 #include "Common/SeqExt.h" // for NUM_BASES
 #include "Graph/Properties.h"
+#include "Common/Uncompress.h"
+#include "DataLayer/FastaReader.h"
 
 #include <algorithm>
 #include <cassert>
@@ -35,9 +37,6 @@ class DBGBloom {
 	/** The size of a k-mer */
 	unsigned m_k;
 
-	/** The contents of the FASTA file. */
-	std::string m_fa;
-
 	/** The bloom filter */
 	CountingBloomFilter m_bloom;
 
@@ -51,7 +50,6 @@ class DBGBloom {
 	/** Load the Bloom filter from a string. */
 	void assign(const std::string& s)
 	{
-		m_fa = s;
 		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
 			std::string kmer = s.substr(i, m_k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
@@ -66,14 +64,23 @@ class DBGBloom {
 	}
 
 	/** Load the Bloom filter from a file. */
-	void open(const std::string& path)
+	void open(const std::string& path, bool verbose=false)
 	{
 		assert(!path.empty());
-		readFile(path.c_str(), m_fa);
-		assign(m_fa);
+		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
+		uint64_t count = 0;
+		for (std::string seq; in >> seq; count++) {
+			if (verbose && count % LOAD_PROGRESS_STEP == 0)
+				std::cerr << "Loaded " << count << " reads into bloom filter\n";
+			assign(seq);
+		}
+		assert(in.eof());
+		if (verbose)
+			std::cerr << "Loaded " << count << " reads into bloom filter\n";
 	}
 
   private:
+	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** Copy constructor. */
 	DBGBloom(const DBGBloom&);
 }; // class DBGBloom
@@ -123,6 +130,7 @@ struct graph_traits<DBGBloom> {
 
 	// VertexListGraph
 	typedef size_t vertices_size_type;
+	typedef void vertex_iterator;
 
 	// EdgeListGraph
 	typedef size_t edges_size_type;
@@ -323,65 +331,6 @@ vertex_exists(graph_traits<DBGBloom>::vertex_descriptor u,
 	return g.m_bloom[u];
 }
 
-// VertexListGraph
-
-/** Iterate through the vertices of this graph. */
-struct vertex_iterator
-	: public std::iterator<std::input_iterator_tag, vertex_descriptor>
-{
-	/** Skip to the next vertex that is present. */
-	void next()
-	{
-		for (; m_i < m_g->m_fa.size() - m_g->m_k + 1; ++m_i) {
-			std::string kmer = m_g->m_fa.substr(m_i, m_g->m_k);
-			size_t pos = kmer.find_last_not_of("ACGTacgt");
-			if (pos == std::string::npos) {
-				m_u = Kmer(kmer);
-				assert(m_g->m_bloom[m_u]);
-				return;
-			} else
-				m_i += pos;
-		}
-	}
-
-  public:
-	vertex_iterator() { }
-
-	vertex_iterator(const DBGBloom& g, size_t i)
-		: m_g(&g), m_i(i)
-	{
-		next();
-	}
-
-	const vertex_descriptor operator*() const
-	{
-		return m_u;
-	}
-
-	bool operator==(const vertex_iterator& it) const
-	{
-		return m_i == it.m_i;
-	}
-
-	bool operator!=(const vertex_iterator& it) const
-	{
-		return !(*this == it);
-	}
-
-	vertex_iterator& operator++()
-	{
-		assert(m_i < m_g->m_fa.size());
-		++m_i;
-		next();
-		return *this;
-	}
-
-  private:
-	const DBGBloom* m_g;
-	size_t m_i;
-	Kmer m_u;
-}; // vertex_iterator
-
 }; // graph_traits<DBGBloom>
 
 /** PropertyGraph vertex_index */
@@ -460,29 +409,6 @@ graph_traits<DBGBloom>::vertices_size_type
 num_vertices(const DBGBloom& g)
 {
 	return g.m_bloom.popcount();
-}
-
-static inline
-std::pair<graph_traits<DBGBloom>::vertex_iterator,
-	graph_traits<DBGBloom>::vertex_iterator>
-vertices(const DBGBloom& g)
-{
-	typedef graph_traits<DBGBloom>::vertex_iterator Vit;
-	return std::make_pair(Vit(g, 0), Vit(g, g.m_fa.size()));
-}
-
-// EdgeListGraph
-
-static inline
-graph_traits<DBGBloom>::edges_size_type
-num_edges(const DBGBloom& g)
-{
-	typedef graph_traits<DBGBloom>::vertex_iterator Vit;
-	size_t n = 0;
-	std::pair<Vit, Vit> urange = vertices(g);
-	for (Vit uit = urange.first; uit != urange.second; ++uit)
-		n += out_degree(*uit, g);
-	return n;
 }
 
 // PropertyGraph vertex_index

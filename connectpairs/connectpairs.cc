@@ -62,7 +62,6 @@ static const char USAGE_MESSAGE[] =
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal [10000]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
-"  -G, --graph=FILE           write the de Bruijn graph to FILE\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -130,7 +129,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:G:j:k:M:o:P:q:v";
+static const char shortopts[] = "b:B:f:F:j:k:M:o:P:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -141,7 +140,6 @@ static const struct option longopts[] = {
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
-	{ "graph",            required_argument, NULL, 'G' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -168,7 +166,7 @@ void loadBloomFilter(DBGBloom& g, It first, It last)
 		std::string path = *it;
 		if (opt::verbose > 0)
 			cerr << "Reading `" << path << "'...\n";
-		g.open(path);
+		g.open(path, opt::verbose >= 2);
 	}
 	if (opt::verbose > 0)
 		cerr << "Loaded " << num_vertices(g) << " k-mer\n";
@@ -341,8 +339,6 @@ int main(int argc, char** argv)
 			arg >> opt::minFrag; break;
 		  case 'F':
 			arg >> opt::maxFrag; break;
-		  case 'G':
-			arg >> opt::graphPath; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -424,14 +420,6 @@ int main(int argc, char** argv)
 	// much space.
 	DBGBloom g(opt::k, opt::bloomSize * 8 / 2);
 	loadBloomFilter(g, argv + optind, argv + argc);
-
-	if (!opt::graphPath.empty()) {
-		if (opt::verbose > 0)
-			printGraphStats(cerr, g);
-		ofstream out(opt::graphPath.c_str());
-		assert_good(out, opt::graphPath);
-		write_dot(out, g);
-	}
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
