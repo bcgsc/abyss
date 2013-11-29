@@ -42,12 +42,15 @@ void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_data.end()) {
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
-		if (m_data.empty()) {
+		static bool setDeletedKey = false;
+		if (!setDeletedKey) {
 			/* sparse_hash_set requires that set_deleted_key()
 			 * is called before calling erase(). */
 			Kmer rc(reverseComplement(seq));
-			assert(rc != seq);
-			m_data.set_deleted_key(rc);
+			if (rc != seq) {
+				m_data.set_deleted_key(rc);
+				setDeletedKey = true;
+			}
 		}
 #endif
 		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
