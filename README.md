@@ -364,9 +364,15 @@ For questions related to transcriptome assembly, contact the
 Authors
 =======
 
-This document is written by Shaun Jackman.
+- **[Shaun Jackman](http://sjackman.ca)**
+  — [GitHub/sjackman](https://github.com/sjackman)
+  — [@sjackman](https://twitter.com/sjackman)
+- **Tony Raymond** — [GitHub/traymond](https://github.com/traymond)
+- **Ben Vandervalk** — [GitHub/benvvalk ](https://github.com/benvvalk)
+- **Mimi Ko** — [GitHub/mimiko](https://github.com/mimiko)
+- **Jared Simpson** — [GitHub/jts](https://github.com/jts)
 
-ABySS is written by Shaun Jackman, Tony Raymond and Jared Simpson.
+Supervised by [**Dr. İnanç Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 
 Copyright 2013 Canada's Michael Smith Genome Sciences Centre
 
