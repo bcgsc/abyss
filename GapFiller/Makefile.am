@@ -13,4 +13,4 @@ abyss_gapfill_LDADD = \
     $(top_builddir)/DataLayer/libdatalayer.a \
     $(top_builddir)/Common/libcommon.a
 
-abyss_gapfill_SOURCES = gapfill.cpp
+abyss_gapfill_SOURCES = gapfill.cpp gapfill.h
