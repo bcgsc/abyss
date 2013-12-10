@@ -272,8 +272,8 @@ default: contigs contigs-dot
 endif
 ifneq ($(mp),)
 default: scaffolds scaffolds-dot
-ifneq ($(rna),)
-default: rna-scaffs rna-scaffs-dot
+ifneq ($(long),)
+default: long-scaffs long-scaffs-dot
 endif
 endif
 default: stats
@@ -303,9 +303,9 @@ scaffolds: $(name)-scaffolds.fa
 
 scaffolds-dot: $(name)-scaffolds.dot
 
-rna-scaffs: $(name)-trans-scaffs.fa
+long-scaffs: $(name)-long-scaffs.fa
 
-rna-scaffs-dot: $(name)-trans-scaffs.dot
+long-scaffs-dot: $(name)-long-scaffs.dot
 
 all: default bam stats
 
@@ -520,7 +520,7 @@ endif
 	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
 		|grep -v "l=" >$@
 
-%-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(rna))
+%-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
 	abyss-scaffold $v -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
@@ -533,10 +533,10 @@ endif
 %-10.dot: %-9.adj %-9.path
 	PathOverlap --overlap $v --dot -k$k $^ >$@
 
-%-trans-scaffs.fa: %-10.fa
+%-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
 
-%-trans-scaffs.dot: %-10.dot
+%-long-scaffs.dot: %-10.dot
 	ln -sf $< $@
 
 # Create the final BAM file
