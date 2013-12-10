@@ -14,6 +14,7 @@ public:
 	typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
 
 	BidirectionalBFSVisitor() { }
+	virtual ~BidirectionalBFSVisitor() { }
 
 	virtual void discover_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
