@@ -85,7 +85,7 @@ namespace opt {
 	unsigned k;
 
 	/** An estimate of the size of the genome. */
-	size_t genomeSize = 3e9;
+	size_t genomeSize = 3000000000;
 
 	/** Write the de Bruijn graph to this file. */
 	static string graphPath;
@@ -263,7 +263,7 @@ int main(int argc, char** argv)
 		  case 'g': {
 			double g;
 			arg >> g;
-			opt::genomeSize = g;
+			opt::genomeSize = (size_t)g;
 			break;
 		  }
 		  case 'G':
