@@ -19,30 +19,28 @@
 using namespace std;
 using namespace boost;
 
-#define PROGRAM "abyss-scaffold"
+#define PROGRAM "abyss-longseqdist"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman.\n"
+"Written by Anthony Raymond.\n"
 "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA|OVERLAP DIST...\n"
-"Scaffold contigs using the distance estimate graph.\n"
+"Usage: " PROGRAM " [OPTION]... SAM >DIST\n"
+"Generate distance estimates between all contigs a single\n"
+"read maps to.\n"
 "\n"
 " Arguments:\n"
 "\n"
-"  FASTA    contigs in FASTA format\n"
-"  OVERLAP  the contig overlap graph\n"
-"  DIST     estimates of the distance between contigs\n"
+"  SAM       BWA-MEM alignments of long sequences to the assembly\n"
+"  DIST      estimates of the distance between contigs\n"
 "\n"
 " Options:\n"
 "\n"
 "  -k, --kmer=N          length of a k-mer\n"
 "      --min-gap=N       minimum scaffold gap length to output [200]\n"
-"  -o, --out=FILE        write the paths to FILE\n"
-"  -g, --graph=FILE      write the graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -54,9 +52,6 @@ namespace opt {
 
 	/** Minimum scaffold gap length to output. */
 	static int minGap = 200;
-
-	/** Write the paths to this file. */
-	static string out;
 
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
@@ -72,7 +67,6 @@ enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP };
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "min-gap",     required_argument, NULL, OPT_MIN_GAP },
-	{ "out",         required_argument, NULL, 'o' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -160,9 +154,6 @@ int main(int argc, char** argv)
 		  case 'k':
 			arg >> opt::k;
 			break;
-		  case 'o':
-			arg >> opt::out;
-			break;
 		  case 'v':
 			opt::verbose++;
 			break;
@@ -188,8 +179,8 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 0) {
-		cerr << PROGRAM ": missing arguments\n";
+	if (argc - optind != 0) {
+		cerr << PROGRAM ": incorrect number of arguments\n";
 		die = true;
 	}
 
