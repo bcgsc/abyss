@@ -142,13 +142,14 @@ next_record:
 		string header;
 		getline(header);
 		istringstream headerStream(header);
-		headerStream >> recordType >> id >> ws;
-		std::getline(headerStream, comment);
 
 		// Ignore SAM headers.
-		if (id.length() == 2 && isupper(id[0]) && isupper(id[1])
-				&& comment.length() > 2 && comment[2] == ':')
+		if (header[0] == '@' && isalpha(header[1])
+				&& isalpha(header[2]) && header[3] == '\t')
 			goto next_record;
+
+		headerStream >> recordType >> id >> ws;
+		std::getline(headerStream, comment);
 
 		// Casava FASTQ format
 		if (comment.size() > 3
