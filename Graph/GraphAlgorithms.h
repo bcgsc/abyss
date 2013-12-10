@@ -115,7 +115,6 @@ void find_complex_transitive_edges(Graph& g, OutIt out)
 	typedef graph_traits<Graph> GTraits;
 	typedef typename GTraits::vertex_descriptor vertex_descriptor;
 	typedef typename GTraits::edge_iterator edge_iterator;
-	typedef typename Graph::edge_property_type edge_property_type;
 
 	//ConstrainedSearch<Graph> anyPath(100000, 2, false);
 	edge_iterator efirst, elast;

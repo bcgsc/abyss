@@ -87,7 +87,6 @@ static void processQuery(vector<Alignment>& recs, Graph& g)
 {
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	typedef graph_traits<Graph>::edge_descriptor E;
-	typedef vertex_property<Graph>::type VP;
 	typedef edge_property<Graph>::type EP;
 	if (recs.size() <= 1)
 		return;
