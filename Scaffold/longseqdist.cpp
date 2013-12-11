@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind != 0) {
+	if (argc - optind != 1) {
 		cerr << PROGRAM ": incorrect number of arguments\n";
 		die = true;
 	}
