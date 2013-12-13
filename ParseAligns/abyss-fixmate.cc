@@ -285,15 +285,23 @@ static string percent(size_t x, size_t n)
 	return ss.str();
 }
 
-/** Print statistics of the specified histogram. */
-static void printHistogramStats(const Histogram& h)
+/** Print statistics of the specified histogram. h not passed by
+  * reference because we want to make a copy
+ **/
+static void printHistogramStats(Histogram h)
 {
+	unsigned n_orig = h.size();
+	h.eraseNegative();
+	h.removeNoise();
+	h.removeOutliers();
+	h = h.trimFraction(0.0001);
 	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
 		"median: " << setprecision(4) << h.median() << " "
 		"sd: " << setprecision(4) << h.sd() << " "
 		"n: " << h.size() << " "
 		"min: " << h.minimum() << " "
-		"max: " << h.maximum() << '\n'
+		"max: " << h.maximum() << " "
+		"ignored: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
 }
 
@@ -402,22 +410,14 @@ int main(int argc, char* const* argv)
 
 		// Print the statistics of the forward-reverse distribution.
 		if ((float)numFR / numTotal > 0.001) {
-			Histogram h = g_histogram;
-			h.eraseNegative();
-			h.removeNoise();
-			h.removeOutliers();
 			cerr << "FR ";
-			printHistogramStats(h.trimFraction(0.0001));
+			printHistogramStats(g_histogram);
 		}
 
 		// Print the statistics of the reverse-forward distribution.
 		if ((float)numRF / numTotal > 0.001) {
-			Histogram h = g_histogram.negate();
-			h.eraseNegative();
-			h.removeNoise();
-			h.removeOutliers();
 			cerr << "RF ";
-			printHistogramStats(h.trimFraction(0.0001));
+			printHistogramStats(g_histogram.negate());
 		}
 	}
 
