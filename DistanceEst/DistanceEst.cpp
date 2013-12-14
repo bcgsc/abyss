@@ -157,6 +157,13 @@ static int estimateDistanceUsingMean(
 /** Global variable to track a recommended minAlign parameter */
 unsigned g_recMA;
 
+static struct {
+	/* Fragment stats are considered only for fragments aligning
+	 * to different contigs, and where the contig is >=opt::seedLen. */
+	unsigned total_frags;
+	unsigned dup_frags;
+} stats;
+
 /** Estimate the distance between two contigs.
  * @param numPairs [out] the number of pairs that agree with the
  * expected distribution
@@ -185,10 +192,15 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	}
 
 	// Remove duplicate fragments.
+	unsigned orig = fragments.size();
 	sort(fragments.begin(), fragments.end());
 	fragments.erase(unique(fragments.begin(), fragments.end()),
 			fragments.end());
 	numPairs = fragments.size();
+	assert((int)orig - (int)numPairs >= 0);
+	stats.total_frags += orig;
+	stats.dup_frags += orig - numPairs;
+
 	if (numPairs < opt::npairs)
 		return INT_MIN;
 
@@ -534,6 +546,14 @@ int main(int argc, char** argv)
 			break;
 		writeEstimates(out, records, contigLens, pmf);
 	}
+
+	if (opt::verbose > 0) {
+		cerr << "Estimated duplicate fragment rate: "
+			<< stats.dup_frags << "/"
+			<< stats.total_frags << " ("
+			<< setprecision(3) << (float)100 * stats.dup_frags / stats.total_frags << "%)\n";
+	}
+
 	if (opt::verbose > 0 && g_recMA != opt::minAlign)
 		cerr << PROGRAM << ": warning: MLE will be more accurate if "
 			"l is decreased to " << g_recMA << ".\n";
