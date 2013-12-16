@@ -1,11 +1,11 @@
 #include "Common/Histogram.h"
 #include "gtest/gtest.h"
 
-Histogram hi;
 
 // test Histogram.empty()
 TEST(emptyTest, base_cases)
 {
+	Histogram hi;
 	EXPECT_TRUE(hi.empty());
 	hi.insert(2);
 	EXPECT_FALSE(hi.empty());
@@ -16,6 +16,9 @@ TEST(emptyTest, base_cases)
 // test Histogram.count()
 TEST(countTest, non_negative_cases)
 {
+	Histogram hi;
+	hi.insert(2);
+	hi.insert(4);
 	EXPECT_EQ(hi.size(), (unsigned)2);
 	hi.insert(6);
 	hi.insert(8);
