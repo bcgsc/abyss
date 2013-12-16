@@ -41,6 +41,8 @@ protected:
 	const G& m_graph;
 	const V& m_start;
 	const V& m_goal;
+
+	/** maximum number of paths to discover before aborting search */
 	unsigned m_maxPaths;
 
 	/** records history of forward/reverse traversals */
@@ -57,7 +59,20 @@ protected:
 
 	depth_t m_minPathLength;
 	depth_t m_maxPathLength;
+
+	/** maximum number of frontier nodes allowed at any given
+	  * time during forward/reverse traversal */
+	unsigned m_maxBranches;
+
+	/** the max number of frontier nodes we had at any time
+	  * during forward/reverse traversal (up to a limit
+	  * of m_maxBranches) */
+	unsigned m_peakActiveBranches;
+
+	bool m_tooManyBranches;
 	bool m_tooManyPaths;
+
+	unsigned long long m_numNodesVisited;
 
 	/** edges that connect the forward and reverse traversals */
 	EdgeSet m_commonEdges;
@@ -72,14 +87,20 @@ public:
 		const V& goal,
 		unsigned maxPaths,
 		depth_t minPathLength,
-		depth_t maxPathLength) :
+		depth_t maxPathLength,
+		unsigned maxBranches
+		) :
 			m_graph(graph),
 			m_start(start),
 			m_goal(goal),
 			m_maxPaths(maxPaths),
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
+			m_maxBranches(maxBranches),
+			m_peakActiveBranches(0),
+			m_tooManyBranches(false),
 			m_tooManyPaths(false),
+			m_numNodesVisited(0),
 			m_commonEdges(m_maxPaths, EdgeHash(m_graph))
 	{
 
@@ -109,9 +130,35 @@ public:
 	void examine_edge(const E& e, const G& g, Direction dir)
 	{
 		SUPPRESS_UNUSED_WARNING(g);
-		std::cout << "visiting edge: " << e << " from dir: " << dir << "\n";
+		V u = source(e, g);
+		V v = target(e, g);
+		std::cout << "visiting edge: (" << u << "," << v
+			<< ") from dir: " << dir << "\n";
 	}
 #endif
+
+	BFSVisitorResult discover_vertex(const V& v, const G& g,
+			Direction dir, unsigned numActiveBranches)
+	{
+		SUPPRESS_UNUSED_WARNING(v);
+		SUPPRESS_UNUSED_WARNING(g);
+		SUPPRESS_UNUSED_WARNING(dir);
+
+		if (m_maxBranches != NO_LIMIT &&
+			numActiveBranches >= m_maxBranches) {
+			m_tooManyBranches = true;
+			return ABORT_SEARCH;
+		}
+
+		m_numNodesVisited++;
+
+		// include new branch started by vertex v
+		numActiveBranches++;
+		if (numActiveBranches > m_peakActiveBranches)
+			m_peakActiveBranches = numActiveBranches;
+
+		return SUCCESS;
+	}
 
 	BFSVisitorResult tree_edge(const E& e, const G& g, Direction dir)
 	{
@@ -158,13 +205,14 @@ public:
 	{
 		if (m_tooManyPaths)
 			return TOO_MANY_PATHS;
+		else if (m_tooManyBranches)
+			return TOO_MANY_BRANCHES;
 
 		buildPaths();
 
 		if (m_tooManyPaths) {
 			return TOO_MANY_PATHS;
-		}
-		else if (m_pathsFound.empty()) {
+		} else if (m_pathsFound.empty()) {
 			return NO_PATH;
 		} else {
 			pathsFound = m_pathsFound;
@@ -177,6 +225,16 @@ public:
 		return m_maxDepthVisited[dir];
 	}
 
+	unsigned getMaxActiveBranches()
+	{
+		return m_peakActiveBranches;
+	}
+
+	unsigned long long getNumNodesVisited()
+	{
+		return m_numNodesVisited;
+	}
+
 protected:
 
 	BFSVisitorResult recordCommonEdge(const E& e)
@@ -187,6 +245,28 @@ protected:
 			m_tooManyPaths = true;
 			return ABORT_SEARCH;
 		}
+
+		/**
+		 * Tricky point:
+		 *
+		 * Recording the common edges in the both the
+		 * forward and reverse traversal histories
+		 * is necessary for edge cases where forward
+		 * or reverse traversals are limited to
+		 * a depth of zero. (In other words,
+		 * the traversal graph has zero edges
+		 * and exactly one vertex which is either
+		 * the start or the goal vertex.)
+		 *
+		 * I cannot find a way to add a vertex
+		 * with a specific vertex_descriptor
+		 * to a graph using the Boost graph API.
+		 * The only way seems to be creating an edge
+		 * that has the given vertex_descriptor
+		 * as the source or target.
+		 */
+		recordEdgeTraversal(e, m_graph, FORWARD);
+		recordEdgeTraversal(e, m_graph, REVERSE);
 		return SUCCESS;
 	}
 

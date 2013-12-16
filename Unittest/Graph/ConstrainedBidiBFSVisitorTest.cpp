@@ -49,7 +49,7 @@ protected:
 
 TEST_F(ConstrainedBidiBFSVisitorTest, IdentifyUniquePath)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 3, 1, 1, 3);
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 3, 1, 1, 3, 2);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 3, visitor);
 
 	Path<V> uniquePath;
@@ -61,7 +61,7 @@ TEST_F(ConstrainedBidiBFSVisitorTest, IdentifyUniquePath)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, StartEqualsGoal)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 0, 1, 1, 1);
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 0, 1, 1, 1, 2);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 0, visitor);
 
 	Path<V> uniquePath;
@@ -73,7 +73,7 @@ TEST_F(ConstrainedBidiBFSVisitorTest, StartEqualsGoal)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, SingleEdgeToGoal)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 1, 1, 1, 2);
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 1, 1, 1, 2, 2);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 1, visitor);
 
 	Path<V> uniquePath;
@@ -85,7 +85,7 @@ TEST_F(ConstrainedBidiBFSVisitorTest, SingleEdgeToGoal)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathLength)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 5, 6);
+	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 5, 6, 2);
 	bidirectionalBFS(cyclicGraph, 0, 6, visitor);
 
 	vector< Path<V> > paths;
@@ -113,7 +113,7 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathLength)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMinPathLength)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 6, 7);
+	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 6, 7, 2);
 	bidirectionalBFS(cyclicGraph, 0, 6, visitor);
 
 	vector< Path<V> > paths;
@@ -141,7 +141,7 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMinPathLength)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathsLimit)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 1, 1, 3);
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 1, 1, 3, 2);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	Path<V> uniquePath;
@@ -150,7 +150,40 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathsLimit)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, ReturnMultiplePaths)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3);
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 2);
+	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
+
+	PathList paths;
+	PathSearchResult result = visitor.pathsToGoal(paths);
+
+	EXPECT_EQ(FOUND_PATH, result);
+	ASSERT_EQ(2u, paths.size());
+
+	string path1 = paths[0].str();
+	string path2 = paths[1].str();
+
+	EXPECT_TRUE(path1 != path2);
+	ASSERT_TRUE(path1 == "0,1,3" || path1 == "0,2,3");
+	ASSERT_TRUE(path2 == "0,1,3" || path2 == "0,2,3");
+}
+
+TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxBranches)
+{
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 1);
+	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
+
+	PathList paths;
+	PathSearchResult result = visitor.pathsToGoal(paths);
+
+	EXPECT_EQ(TOO_MANY_BRANCHES, result);
+	EXPECT_EQ(0u, paths.size());
+	// expect early exit from traversal
+	EXPECT_EQ(3u, visitor.getNumNodesVisited());
+}
+
+TEST_F(ConstrainedBidiBFSVisitorTest, NoLimitForBranches)
+{
+	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, NO_LIMIT);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	PathList paths;

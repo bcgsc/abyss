@@ -26,7 +26,7 @@ protected:
 	FastaRecord testRead;
 	static const int k = 2;
 	// set this large to avoid false positives
-	static const int bloomFilterSize = 100000;
+	static const int bloomFilterSize = 1000000;
 
 	GetStartKmerPosTest() {
 		Kmer::setLength(k);
@@ -122,7 +122,7 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	read2.id = "read/2";
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
-	DBGBloom g(k, mergedSeq.size());
+	DBGBloom g(k, 1000000);
 
 	// The reads are added twice here because kmers with
 	// coverage of 1 are treated as errors by DBGBloom and
@@ -133,10 +133,9 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	g.assign(read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
-	PathSearchResult result;
-	result = connectPairs(read1, read2, g, mergedSeqs, 1, 4);
+	SearchResult result = connectPairs(read1, read2, g, 1, 0, 4);
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1u, mergedSeqs.size());
-	EXPECT_EQ("GATG", mergedSeqs[0].seq);
+	EXPECT_EQ(FOUND_PATH, result.pathResult);
+	ASSERT_EQ(1u, result.mergedSeqs.size());
+	EXPECT_EQ("GATG", result.mergedSeqs[0].seq);
 }
