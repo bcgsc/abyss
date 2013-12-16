@@ -133,13 +133,13 @@ static inline size_t SIToBytes(std::istringstream& iss)
 
 	switch(tolower(units[0])) {
 		case 'k':
-			size *= 1024; break;
+			size *= (size_t)1<<10; break;
 		case 'm':
-			size *= pow(1024,2); break;
+			size *= (size_t)1<<20; break;
 		case 'g':
-			size *= pow(1024,3); break;
+			size *= (size_t)1<<30; break;
 		case 't':
-			size *= pow(1024,4); break;
+			size *= (size_t)1<<40; break;
 		default:
 			iss.setstate(std::ios::failbit);
 			return 0;
