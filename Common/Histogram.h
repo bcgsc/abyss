@@ -222,7 +222,8 @@ class Histogram
 	{
 		for (Map::iterator it = m_map.begin(); it != m_map.end();) {
 			if (m_map.count(it->first - 1) == 0
-					&& m_map.count(it->first + 1) == 0)
+					&& m_map.count(it->first + 1) == 0
+					&& m_map.size() > 1)
 				m_map.erase(it++);
 			else
 				++it;
