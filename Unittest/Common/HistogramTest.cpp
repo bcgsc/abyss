@@ -37,3 +37,17 @@ TEST(sumTest, trivial_cases)
 	Histogram hello;
 	EXPECT_EQ(hello.sum(), (unsigned)0);
 }
+
+// test Histogram.removeNoise()
+TEST(removeNoise, one_entry)
+{
+	Histogram hi;
+	hi.insert(10, 5);
+	EXPECT_EQ(hi.size(), 5u);
+	hi.removeNoise();
+	EXPECT_EQ(hi.size(), 5u);
+	hi.insert(20, 10);
+	EXPECT_EQ(hi.size(), 15u);
+	hi.removeNoise();
+	EXPECT_EQ(hi.size(), 10u);
+}
