@@ -11,6 +11,7 @@
 #include "Common/IOUtil.h"
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 /** A Bloom filter. */
 class BloomFilter : public virtual BloomFilterBase
@@ -64,10 +65,9 @@ class BloomFilter : public virtual BloomFilterBase
 		out << Kmer::length() << '\n';
 		size_t bits = o.size();
 		out << bits << '\n';
-		// integer division with round up
-		size_t bytes = (bits + 8) / 8;
+		size_t bytes = (bits + 7) / 8;
 		for (size_t i = 0, j = 0; i < bytes; i++) {
-			char byte = 0;
+			uint8_t byte = 0;
 			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
 				byte <<= 1;
 				if (o.m_array[j])
@@ -104,17 +104,15 @@ class BloomFilter : public virtual BloomFilterBase
 		assert(in);
 
 		o.m_array.resize(bits);
-		// integer division with round up
-		size_t bytes = (bits + 8) / 8;
-
+		size_t bytes = (bits + 7) / 8;
 		for (size_t i = 0, j = 0; i < bytes; i++) {
-			char byte;
-			in >> byte;
+			uint8_t byte;
+			in.read((char *)&byte, 1);
 			assert(in);
-			for (k = 0; k < 8 && j < bits; k++, j++)
+			for (k = 0; k < 8 && j < bits; k++, j++) {
 				o.m_array[i*8 + k] = byte & 1 << (7 - k);
+			}
 		}
-
 		return in;
 	}
 

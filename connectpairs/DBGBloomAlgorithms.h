@@ -144,7 +144,13 @@ static inline SearchResult connectPairs(
 {
 	SearchResult result;
 
-	assert(isReadNamePair(read1.id, read2.id));
+	if (!isReadNamePair(read1.id, read2.id)) {
+#pragma omp critical(cerr)
+		std::cerr << "error: name mismatch between paired end reads.\n"
+			<< "Read 1: " << read1.id << "\n"
+			<< "Read 2: " << read2.id << "\n";
+		exit(EXIT_FAILURE);
+	}
 
 	if (read1.seq.length() < k || read2.seq.length() < k) {
 		result.pathResult = NO_PATH;

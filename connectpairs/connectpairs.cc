@@ -63,6 +63,7 @@ static const char USAGE_MESSAGE[] =
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal [10000]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
+"  -i, --input-bloom=FILE     load bloom filter from FILE\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -113,9 +114,6 @@ namespace opt {
 	/** Prefix for output files */
 	static string outputPrefix;
 
-	/** Bloom filter output file */
-	static string outputBloomPath;
-
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
 }
@@ -133,7 +131,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:j:k:M:o:P:q:v";
+static const char shortopts[] = "b:B:f:F:i:j:k:M:o:P:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -142,6 +140,7 @@ static const struct option longopts[] = {
 	{ "max-branches",     required_argument, NULL, 'B' },
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
+	{ "input-bloom",      required_argument, NULL, 'i' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
@@ -327,6 +326,8 @@ int main(int argc, char** argv)
 			arg >> opt::minFrag; break;
 		  case 'F':
 			arg >> opt::maxFrag; break;
+		  case 'i':
+			arg >> opt::inputBloomPath; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -389,31 +390,52 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	// Specify bloom filter size in bits. Divide by two
-	// because counting bloom filter requires twice as
-	// much space.
-	size_t bits = opt::bloomSize * 8 / 2;
-	CountingBloomFilter bloom(bits);
+	BloomFilterBase* bloom = NULL;
 
-	for (int i = optind; i < argc; i++)
-		bloom.loadFile(opt::k, string(argv[i]), opt::verbose);
+	if (!opt::inputBloomPath.empty()) {
 
-	DBGBloom g(bloom);
+		if (opt::verbose)
+			std::cerr << "Loading bloom filter from `"
+				<< opt::inputBloomPath << "'...\n";
 
-	string name(opt::outputPrefix);
-	name.append("_merged.fa");
-	ofstream mergedStream(name.c_str());
-	assert_good(mergedStream, name);
+		const char* inputPath = opt::inputBloomPath.c_str();
+		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
+		assert_good(inputBloom, inputPath);
+		BloomFilter* loadedBloom = new BloomFilter();
+		inputBloom >> *loadedBloom;
+		assert_good(inputBloom, inputPath);
+		//assert(inputBloom.eof());
+		inputBloom.close();
+		bloom = loadedBloom;
 
-	name = opt::outputPrefix;
-	name.append("_reads_1.fq");
-	ofstream read1Stream(name.c_str());
-	assert_good(read1Stream, name);
+	} else {
 
-	name = opt::outputPrefix;
-	name.append("_reads_2.fq");
-	ofstream read2Stream(name.c_str());
-	assert_good(read2Stream, name);
+		// Specify bloom filter size in bits. Divide by two
+		// because counting bloom filter requires twice as
+		// much space.
+		size_t bits = opt::bloomSize * 8 / 2;
+		bloom = new CountingBloomFilter(bits);
+		for (int i = optind; i < argc; i++)
+			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+
+	}
+
+	DBGBloom g(*bloom);
+
+	string mergedOutputPath(opt::outputPrefix);
+	mergedOutputPath.append("_merged.fa");
+	ofstream mergedStream(mergedOutputPath.c_str());
+	assert_good(mergedStream, mergedOutputPath);
+
+	string read1OutputPath(opt::outputPrefix);
+	read1OutputPath.append("_reads_1.fq");
+	ofstream read1Stream(read1OutputPath.c_str());
+	assert_good(read1Stream, read1OutputPath);
+
+	string read2OutputPath(opt::outputPrefix);
+	read2OutputPath.append("_reads_2.fq");
+	ofstream read2Stream(read2OutputPath.c_str());
+	assert_good(read2Stream, read2OutputPath);
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
@@ -456,8 +478,14 @@ int main(int argc, char** argv)
 				<< "%)\n";
 	}
 
-	cout.flush();
-	assert_good(cout, "stdout");
+	assert_good(mergedStream, mergedOutputPath.c_str());
+	mergedStream.close();
+	assert_good(read1Stream, read1OutputPath.c_str());
+	read1Stream.close();
+	assert_good(read2Stream, read2OutputPath.c_str());
+	read2Stream.close();
+
+	delete bloom;
 
 	return 0;
 }
