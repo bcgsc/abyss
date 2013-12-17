@@ -82,14 +82,16 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	}
 
 	size_t count = 0, count_good = 0,
-			 count_small = 0, count_nonACGT = 0;
+			 count_small = 0, count_nonACGT = 0,
+			 count_reversed = 0;
 	FastaReader reader(inFile.c_str(), FastaReader::FOLD_CASE);
 	if (endsWith(inFile, ".jf") || endsWith(inFile, ".jfq")) {
 		// Load k-mer with coverage data.
 		count = loadKmer(*seqCollection, reader);
 		count_good = count;
 	} else
-	for (Sequence seq; reader >> seq;) {
+	for (FastaRecord rec; reader >> rec;) {
+		Sequence seq = rec.seq;
 		size_t len = seq.length();
 		if (opt::kmerSize > len) {
 			count_small++;
@@ -115,6 +117,13 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 		bool good = seq.find_first_not_of("ACGT0123") == string::npos;
 		bool discarded = true;
+
+		if (rec.id.size() > 2
+				&& rec.id.substr(rec.id.size()-2) == "/1") {
+			seq = reverseComplement(seq);
+			count_reversed++;
+		}
+
 		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
 			Sequence kmer(seq, i, opt::kmerSize);
 			if (good || kmer.find_first_not_of("ACGT0123")
@@ -139,6 +148,9 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	logger(1) << "Read " << count << " reads. ";
 	seqCollection->printLoad();
 
+	if (count_reversed > 0)
+		cerr << "`" << inFile << "': "
+			"reversed " << count_reversed << " strand-specific reads\n";
 	if (count_small > 0)
 		cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "

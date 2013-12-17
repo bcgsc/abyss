@@ -2,6 +2,7 @@
 #include "SequenceCollection.h"
 #include "Log.h"
 #include "Common/Options.h"
+#include "Assembly/Options.h"
 #include "MemoryUtil.h"
 #include "StringUtil.h" // for toSI
 #include "Timer.h"
@@ -109,9 +110,9 @@ bool SequenceCollectionHash::setBaseExtension(
 	if (it == m_data.end())
 		return false;
 	bool palindrome = kmer.isPalindrome();
-	if (!rc || palindrome)
+	if (opt::ss || !rc || palindrome)
 		it->second.setBaseExtension(dir, base);
-	if (rc || palindrome)
+	if (!opt::ss && (rc || palindrome))
 		it->second.setBaseExtension(!dir, complementBaseCode(base));
 	return true;
 }
@@ -124,9 +125,9 @@ void SequenceCollectionHash::removeExtension(const Kmer& kmer,
 	SequenceCollectionHash::iterator it = find(kmer, rc);
 	assert(it != m_data.end());
 	bool palindrome = kmer.isPalindrome();
-	if (!rc || palindrome)
+	if (opt::ss || !rc || palindrome)
 		it->second.removeExtension(dir, ext);
-	if (rc || palindrome)
+	if (!opt::ss && (rc || palindrome))
 		it->second.removeExtension(!dir, ~ext);
 	notify(*it);
 }
@@ -163,7 +164,7 @@ SequenceCollectionHash::iterator SequenceCollectionHash::find(
 		const Kmer& key, bool& rc)
 {
 	SequenceCollectionHash::iterator it = find(key);
-	if (it != m_data.end()) {
+	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
 	} else {
@@ -179,7 +180,7 @@ SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
 		const Kmer& key, bool& rc) const
 {
 	SequenceCollectionHash::const_iterator it = find(key);
-	if (it != m_data.end()) {
+	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
 	} else {

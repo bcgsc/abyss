@@ -20,7 +20,7 @@ namespace opt {
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Jared Simpson and Shaun Jackman.\n"
+"Written by Jared Simpson, Shaun Jackman and Anthony Raymond.\n"
 "\n"
 "Copyright 2013 Canada's Michael Smith Genome Sciences Centre\n";
 
@@ -43,6 +43,8 @@ static const char USAGE_MESSAGE[] =
 "                        default for FASTQ and SAM files\n"
 "  --illumina-quality    zero quality is `@' (64)\n"
 "                        default for qseq and export files\n"
+"      --SS              assemble in strand-specific mode\n"
+"      --no-SS           do not assemble in strand-specific mode\n"
 "  -o, --out=FILE        write the contigs to FILE\n"
 "  -k, --kmer=N          k-mer size\n"
 "  -t, --trim-length=N   maximum length of dangling edges to trim\n"
@@ -88,6 +90,9 @@ float coverage = -1;
 /** Pop bubbles shorter than N bp. */
 int bubbleLen = -1;
 
+/** Whether to run a strand-specific assembly. */
+int ss = 0;
+
 /** coverage histogram path */
 string coverageHistPath;
 
@@ -123,6 +128,8 @@ static const struct option longopts[] = {
 	{ "trim-quality",   required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "SS",          no_argument,       &opt::ss, 1 },
+	{ "no-SS",       no_argument,       &opt::ss, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubble-length", required_argument, NULL, 'b' },

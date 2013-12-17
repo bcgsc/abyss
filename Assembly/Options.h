@@ -14,6 +14,7 @@ namespace opt {
 	extern unsigned trimLen;
 	extern float coverage;
 	extern unsigned bubbleLen;
+	extern unsigned ss;
 	extern std::string coverageHistPath;
 	extern std::string contigsPath;
 	extern std::string contigsTempPath;
