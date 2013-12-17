@@ -9,11 +9,9 @@
 #include <vector>
 
 /** A counting Bloom filter. */
-class CountingBloomFilter
+class CountingBloomFilter : public virtual BloomFilterBase
 {
   public:
-	/** The key type. */
-	typedef BloomFilter::key_type key_type;
 
 	/** The maximum count of an element in this multiset. */
 	static const unsigned MAX_COUNT = 2;
@@ -21,12 +19,6 @@ class CountingBloomFilter
 	/** Constructor */
 	CountingBloomFilter(size_t n)
 		: m_data(MAX_COUNT, BloomFilter(n)) { }
-
-	/** Return the hash value of this object. */
-	static size_t hash(const key_type& key)
-	{
-		return BloomFilter::hash(key);
-	}
 
 	/** Return the size of the bit array. */
 	size_t size() const { return m_data.back().size(); }
@@ -67,6 +59,12 @@ class CountingBloomFilter
 	void insert(const key_type& key)
 	{
 		insert(hash(key) % m_data.back().size());
+	}
+
+	/** Get the Bloom filter for a given level */
+	const BloomFilter& getBloomFilter(unsigned level)
+	{
+		return m_data.at(level);
 	}
 
   private:

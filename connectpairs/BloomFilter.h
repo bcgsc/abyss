@@ -5,25 +5,19 @@
 #ifndef BLOOMFILTER_H
 #define BLOOMFILTER_H 1
 
+#include "BloomFilterBase.h"
 #include "Common/HashFunction.h"
 #include "Common/Kmer.h"
 #include <algorithm>
 #include <vector>
 
 /** A Bloom filter. */
-class BloomFilter {
+class BloomFilter : public virtual BloomFilterBase
+{
   public:
-	/** The key type. */
-	typedef Kmer key_type;
 
 	/** Constructor. */
 	BloomFilter(size_t n) : m_array(n) { }
-
-	/** Return the hash value of this object. */
-	static size_t hash(const key_type& key)
-	{
-		return hashmem(&key, sizeof key);
-	}
 
 	/** Return the size of the bit array. */
 	size_t size() const { return m_array.size(); }

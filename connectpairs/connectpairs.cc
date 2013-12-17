@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <boost/tuple/tuple.hpp>
+
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -103,14 +104,17 @@ namespace opt {
 	/** The maximum fragment size */
 	unsigned maxFrag = 1000;
 
-	/** Write the de Bruijn graph to this file. */
-	static string graphPath;
+	/** Bloom filter input file */
+	static string inputBloomPath;
 
 	/** Max paths between read 1 and read 2 */
 	unsigned maxPaths = 2;
 
 	/** Prefix for output files */
 	static string outputPrefix;
+
+	/** Bloom filter output file */
+	static string outputBloomPath;
 
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
@@ -155,22 +159,6 @@ static const struct option longopts[] = {
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-/** Load the bloom filter. */
-template <typename It>
-void loadBloomFilter(DBGBloom& g, It first, It last)
-{
-	if (opt::verbose > 0)
-		cerr << "Constructing the Bloom filter\n";
-	for (It it = first; it != last; ++it) {
-		std::string path = *it;
-		if (opt::verbose > 0)
-			cerr << "Reading `" << path << "'...\n";
-		g.open(path, opt::verbose >= 2);
-	}
-	if (opt::verbose > 0)
-		cerr << "Loaded " << num_vertices(g) << " k-mer\n";
-}
 
 #if USESEQAN
 const string r1 =
@@ -221,7 +209,7 @@ static void connectPair(const DBGBloom& g,
 	ofstream& read2Stream)
 {
 	SearchResult result
-		= connectPairs(read1, read2, g,
+		= connectPairs(opt::k, read1, read2, g,
 				opt::maxPaths, opt::minFrag,
 				opt::maxFrag, opt::maxBranches);
 
@@ -399,6 +387,19 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
+	assert(opt::bloomSize > 0);
+
+	// Specify bloom filter size in bits. Divide by two
+	// because counting bloom filter requires twice as
+	// much space.
+	size_t bits = opt::bloomSize * 8 / 2;
+	CountingBloomFilter bloom(bits);
+
+	for (int i = optind; i < argc; i++)
+		bloom.loadFile(opt::k, string(argv[i]), opt::verbose);
+
+	DBGBloom g(bloom);
+
 	string name(opt::outputPrefix);
 	name.append("_merged.fa");
 	ofstream mergedStream(name.c_str());
@@ -413,13 +414,6 @@ int main(int argc, char** argv)
 	name.append("_reads_2.fq");
 	ofstream read2Stream(name.c_str());
 	assert_good(read2Stream, name);
-
-	assert(opt::bloomSize > 0);
-	// Specify bloom filter size in bits. Divide by two
-	// because counting bloom filter requires twice as
-	// much space.
-	DBGBloom g(opt::k, opt::bloomSize * 8 / 2);
-	loadBloomFilter(g, argv + optind, argv + argc);
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";

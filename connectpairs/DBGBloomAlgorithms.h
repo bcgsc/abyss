@@ -75,10 +75,10 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 	return seq;
 }
 
-static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& g, bool rc = false)
+static inline unsigned getStartKmerPos(unsigned k,
+	const FastaRecord& read, const DBGBloom& g,
+	bool rc = false)
 {
-	unsigned k = g.m_k;
-
 	// build a vector indicating whether each kmer is a match
 	// The vector intentionally has an extra false element at
 	// the end, for the second loop below.
@@ -133,6 +133,7 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 }
 
 static inline SearchResult connectPairs(
+	unsigned k,
 	const FastaRecord& read1,
 	const FastaRecord& read2,
 	const DBGBloom& g,
@@ -141,8 +142,6 @@ static inline SearchResult connectPairs(
 	unsigned maxMergedSeqLen = NO_LIMIT,
 	unsigned maxBranches = NO_LIMIT)
 {
-	unsigned k = g.m_k;
-
 	SearchResult result;
 
 	assert(isReadNamePair(read1.id, read2.id));
@@ -152,8 +151,8 @@ static inline SearchResult connectPairs(
 		return result;
 	}
 
-	unsigned startKmerPos = getStartKmerPos(read1, g, false);
-	unsigned goalKmerPos = getStartKmerPos(read2, g, true);
+	unsigned startKmerPos = getStartKmerPos(k, read1, g, false);
+	unsigned goalKmerPos = getStartKmerPos(k, read2, g, true);
 
 	if (startKmerPos != NO_MATCH) {
 		result.startKmerPos = startKmerPos;

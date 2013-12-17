@@ -25,8 +25,15 @@ common_sequence_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = connectpairs/BloomFilter.cc
-BloomFilter_CPPFLAGS = -I$(top_srcdir)
+BloomFilter_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += connectpairs_DBGBloom
+check_PROGRAMS += connectpairs_DBGBloom
+connectpairs_DBGBloom_SOURCES = connectpairs/DBGBloomTest.cpp
+connectpairs_DBGBloom_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+connectpairs_DBGBloom_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+connectpairs_DBGBloom_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += connectpairs_DBGBloomAlgorithms
 check_PROGRAMS += connectpairs_DBGBloomAlgorithms

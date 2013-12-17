@@ -37,70 +37,60 @@ protected:
 
 TEST_F(GetStartKmerPosTest, FullReadMatch)
 {
-	const string& seq = testRead.seq;
+	BloomFilter bloom(bloomFilterSize);
+	bloom.loadSeq(k, testRead.seq);
+	DBGBloom g(bloom);
 
-	DBGBloom g(k, bloomFilterSize);
-
-	// reads are added twice here because kmers with
-	// coverage of 1 are treated as errors and removed
-	g.assign(seq);
-	g.assign(seq);
-
-	EXPECT_EQ(seq.length() - k, getStartKmerPos(testRead, g));
+	EXPECT_EQ(testRead.seq.length() - k, getStartKmerPos(k, testRead, g));
 	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+	EXPECT_EQ(getStartKmerPos(k, testRead, g), getStartKmerPos(k, testRead, g, true));
 }
 
 TEST_F(GetStartKmerPosTest, FullReadMismatch)
 {
-	DBGBloom g(k, bloomFilterSize);
-	EXPECT_EQ(NO_MATCH, getStartKmerPos(testRead, g));
+	BloomFilter bloom(bloomFilterSize);
+	DBGBloom g(bloom);
+	EXPECT_EQ(NO_MATCH, getStartKmerPos(k, testRead, g));
 }
 
 TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 {
 	const string& seq = testRead.seq;
-
-	DBGBloom g(k, bloomFilterSize);
+	BloomFilter bloom(bloomFilterSize);
+	DBGBloom g(bloom);
 
 	// This loop creates kmer match vector 101101
-	for (unsigned i = 0; i < seq.length(); i++) {
+	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
 		// non-matching kmers
 		if (i == 1 || i == 4)
 			continue;
-		string kmer = seq.substr(i, k);
-		// the kmers are added twice here because kmers with
-		// coverage of 1 are treated as errors and removed
-		g.assign(kmer);
-		g.assign(kmer);
+		bloom.loadSeq(k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(3u, getStartKmerPos(testRead, g));
+	EXPECT_EQ(3u, getStartKmerPos(k, testRead, g));
 	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+	EXPECT_EQ(getStartKmerPos(k, testRead, g),
+		getStartKmerPos(k, testRead, g, true));
 }
 
 TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 {
 	const string& seq = testRead.seq;
-
-	DBGBloom g(k, bloomFilterSize);
+	BloomFilter bloom(bloomFilterSize);
+	DBGBloom g(bloom);
 
 	// This loop creates kmer match vector 110011
-	for (unsigned i = 0; i < seq.length(); i++) {
+	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
 		// non-matching kmers
 		if (i == 0 || i == 3)
 			continue;
-		string kmer = seq.substr(i, k);
-		// the kmers are added twice here because kmers with
-		// coverage of 1 are treated as errors and removed
-		g.assign(kmer);
-		g.assign(kmer);
+		bloom.loadSeq(k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(5u, getStartKmerPos(testRead, g));
+	EXPECT_EQ(5u, getStartKmerPos(k, testRead, g));
 	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(testRead, g), getStartKmerPos(testRead, g, true));
+	EXPECT_EQ(getStartKmerPos(k, testRead, g),
+		getStartKmerPos(k, testRead, g, true));
 }
 
 }
@@ -122,18 +112,14 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	read2.id = "read/2";
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
-	DBGBloom g(k, 1000000);
+	BloomFilter bloom(1000);
+	DBGBloom g(bloom);
 
-	// The reads are added twice here because kmers with
-	// coverage of 1 are treated as errors by DBGBloom and
-	// are removed.
-	g.assign(read1.seq);
-	g.assign(read1.seq);
-	g.assign(read2.seq);
-	g.assign(read2.seq);
+	bloom.loadSeq(k, read1.seq);
+	bloom.loadSeq(k, read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
-	SearchResult result = connectPairs(read1, read2, g, 1, 0, 4);
+	SearchResult result = connectPairs(k, read1, read2, g, 1, 0, 4);
 
 	EXPECT_EQ(FOUND_PATH, result.pathResult);
 	ASSERT_EQ(1u, result.mergedSeqs.size());
