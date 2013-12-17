@@ -101,6 +101,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void store(const char* path);
 		bool isAdjacencyLoaded() const { return m_adjacencyLoaded; }
 		void setColourSpace(bool flag);
+		void setDeletedKey();
 
 	private:
 		iterator find(const Kmer& key) { return m_data.find(key); }

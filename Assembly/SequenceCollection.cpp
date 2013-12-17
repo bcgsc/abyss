@@ -35,24 +35,40 @@ SequenceCollectionHash::SequenceCollectionHash()
 #endif
 }
 
+/** sparse_hash_set requires that set_deleted_key()
+ * is called before calling erase(). This key cannot
+ * be an existing kmer in m_data. This function sets
+ * the deleted key and should be called after all
+ * data has been loaded.
+ */
+void SequenceCollectionHash::setDeletedKey()
+{
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
+	for (SequenceDataHash::iterator it = m_data.begin();
+			it != m_data.end(); it++) {
+		Kmer rc(reverseComplement(it->first));
+		bool isrc;
+		SequenceDataHash::iterator search = find(rc, isrc);
+		// If this is false, we should have a palindrome or we're
+		// doing a SS assembly.
+		if (isrc || search == m_data.end()) {
+			m_data.set_deleted_key(rc);
+			return;
+		}
+	}
+	logger(1) << "error: unable to set deleted key.\n";
+	exit(EXIT_FAILURE);
+#else
+	return;
+#endif
+}
+
 /** Add the specified k-mer to this collection. */
 void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
 {
 	bool rc;
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_data.end()) {
-#if HAVE_GOOGLE_SPARSE_HASH_MAP
-		static bool setDeletedKey = false;
-		if (!setDeletedKey) {
-			/* sparse_hash_set requires that set_deleted_key()
-			 * is called before calling erase(). */
-			Kmer rc(reverseComplement(seq));
-			if (rc != seq) {
-				m_data.set_deleted_key(rc);
-				setDeletedKey = true;
-			}
-		}
-#endif
 		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
 	} else
 		it->second.addMultiplicity(rc ? ANTISENSE : SENSE, coverage);

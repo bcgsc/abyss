@@ -58,6 +58,7 @@ static void assemble(const string& pathIn, const string& pathOut)
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
 	size_t numLoaded = g.size();
 	cout << "Loaded " << numLoaded << " k-mer\n";
+	g.setDeletedKey();
 	g.shrink();
 	if (g.empty()) {
 		cerr << "error: no usable sequence\n";

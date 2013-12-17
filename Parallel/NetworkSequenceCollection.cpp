@@ -79,6 +79,7 @@ void NetworkSequenceCollection::run()
 				logger(0) << "Loaded " << m_data.size()
 					<< " k-mer.\n";
 				assert(!m_data.empty());
+				m_data.setDeletedKey();
 				m_data.shrink();
 				m_comm.reduce(m_data.size());
 
@@ -437,6 +438,7 @@ void NetworkSequenceCollection::runControl()
 				logger(0) << "Loaded " << m_data.size()
 					<< " k-mer.\n";
 				assert(!m_data.empty() || opt::numProc >= DEDICATE_CONTROL_AT);
+				m_data.setDeletedKey();
 				m_data.shrink();
 				size_t numLoaded = m_comm.reduce(m_data.size());
 				cout << "Loaded " << numLoaded << " k-mer. "
