@@ -8,6 +8,7 @@
 #include "BloomFilterBase.h"
 #include "Common/HashFunction.h"
 #include "Common/Kmer.h"
+#include "Common/IOUtil.h"
 #include <algorithm>
 #include <vector>
 
@@ -15,6 +16,9 @@
 class BloomFilter : public virtual BloomFilterBase
 {
   public:
+
+	/** Constructor. */
+	BloomFilter() { }
 
 	/** Constructor. */
 	BloomFilter(size_t n) : m_array(n) { }
@@ -54,7 +58,68 @@ class BloomFilter : public virtual BloomFilterBase
 		m_array[hash(key) % m_array.size()] = true;
 	}
 
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	{
+		out << BLOOM_VERSION << '\n';
+		out << Kmer::length() << '\n';
+		size_t bits = o.size();
+		out << bits << '\n';
+		// integer division with round up
+		size_t bytes = (bits + 8) / 8;
+		for (size_t i = 0, j = 0; i < bytes; i++) {
+			char byte = 0;
+			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
+				byte <<= 1;
+				if (o.m_array[j])
+					byte |= 1;
+			}
+			out << byte;
+		}
+		return out;
+	}
+
+	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
+	{
+		unsigned bloomVersion, k;
+		in >> bloomVersion >> expect("\n");
+		assert(in);
+		if (bloomVersion != BLOOM_VERSION) {
+			std::cerr << "error: bloom filter version (`"
+				<< bloomVersion << "'), does not match version required "
+				"by this program (`" << BLOOM_VERSION << "').\n";
+			exit(EXIT_FAILURE);
+		}
+
+		in >> k >> expect("\n");
+		assert(in);
+		if (k != Kmer::length()) {
+			std::cerr << "error: this program must be run with the same kmer "
+				"size as the bloom filter being loaded (k="
+				<< k << ").\n";
+			exit(EXIT_FAILURE);
+		}
+
+		size_t bits;
+		in >> bits >> expect("\n");
+		assert(in);
+
+		o.m_array.resize(bits);
+		// integer division with round up
+		size_t bytes = (bits + 8) / 8;
+
+		for (size_t i = 0, j = 0; i < bytes; i++) {
+			char byte;
+			in >> byte;
+			assert(in);
+			for (k = 0; k < 8 && j < bits; k++, j++)
+				o.m_array[i*8 + k] = byte & 1 << (7 - k);
+		}
+
+		return in;
+	}
+
   private:
+	static const unsigned BLOOM_VERSION = 1;
 	std::vector<bool> m_array;
 };
 

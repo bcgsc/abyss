@@ -32,6 +32,43 @@ TEST(BloomFilter, base)
 	EXPECT_FALSE(x[d]);
 }
 
+TEST(BloomFilter, serialization)
+{
+	BloomFilter origBloom(20);
+	EXPECT_EQ(origBloom.size(), 20U);
+
+	Kmer::setLength(16);
+	Kmer a("AGATGTGCTGCCGCCT");
+	Kmer b("TGGACAGCGTTACCTC");
+	Kmer c("TAATAACAGTCCCTAT");
+
+	origBloom.insert(a);
+	origBloom.insert(b);
+	origBloom.insert(c);
+
+	EXPECT_TRUE(origBloom[a]);
+	EXPECT_TRUE(origBloom[b]);
+	EXPECT_TRUE(origBloom[c]);
+
+	size_t origSize = origBloom.size();
+	size_t origPopcount = origBloom.popcount();
+
+	stringstream ss;
+	ss << origBloom;
+	ASSERT_TRUE(ss.good());
+
+	BloomFilter copyBloom;
+	ss >> copyBloom;
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(copyBloom.size(), origSize);
+	EXPECT_EQ(copyBloom.popcount(), origPopcount);
+
+	EXPECT_TRUE(copyBloom[a]);
+	EXPECT_TRUE(copyBloom[b]);
+	EXPECT_TRUE(copyBloom[c]);
+}
+
 TEST(CountingBloomFilter, base)
 {
 	CountingBloomFilter x(100);
