@@ -30,7 +30,7 @@ class CountingBloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Return the estimated false positive rate */
-	double FPR()
+	double FPR() const
 	{
 		return (double)popcount() / size();
 	}
@@ -75,6 +75,7 @@ class CountingBloomFilter : public virtual BloomFilterBase
 
   private:
 	std::vector<BloomFilter> m_data;
+
 };
 
 #endif

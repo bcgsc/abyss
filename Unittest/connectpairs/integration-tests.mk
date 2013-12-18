@@ -14,6 +14,8 @@ b?=100M
 k?=20
 # number of synthetic read pairs
 N?=5000
+# error rate of synthetic reads
+e?=0.005
 # path to abyss-connectpairs binary
 connectpairs?=abyss-connectpairs
 # path to abyss-bloom binary
@@ -25,10 +27,11 @@ tmpdir=tmp
 # phony targets
 #------------------------------------------------------------
 
-.PHONY: all \
-	run_test \
-	save_and_load_test
+tests=run_test \
+	save_and_load_test \
+	union_test
 
+.PHONY: all $(tests)
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -36,10 +39,7 @@ tmpdir=tmp
 # top level rules
 #------------------------------------------------------------
 
-all: tests
-
-tests: run_test \
-	save_and_load_test
+all: $(tests)
 
 clean:
 	rm -rf $(tmpdir)
@@ -65,7 +65,7 @@ $(tmpdir)/e%_merged.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir
 # run_test
 #------------------------------------------------------------
 
-run_test: $(tmpdir) $(tmpdir)/e0.005_merged.fa
+run_test: $(tmpdir) $(tmpdir)/e$e_merged.fa
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
@@ -75,18 +75,30 @@ run_test: $(tmpdir) $(tmpdir)/e0.005_merged.fa
 #------------------------------------------------------------
 
 save_and_load_test: $(tmpdir) \
-	$(tmpdir)/e0.005.bloom \
-	$(tmpdir)/e0.005_merged.fa \
-	$(tmpdir)/e0.005_reads_1.fq \
-	$(tmpdir)/e0.005_reads_2.fq
-	/usr/bin/time -v $(connectpairs) -j$j -v -v -k$k -o $(tmpdir)/e0.005_loaded \
-		-i $(word 2,$^) $(tmpdir)/e0.005_1.fq $(tmpdir)/e0.005_2.fq
-	diff $(tmpdir)/e0.005_merged.fa $(tmpdir)/e0.005_loaded_merged.fa
-	diff $(tmpdir)/e0.005_reads_1.fq $(tmpdir)/e0.005_loaded_reads_1.fq
-	diff $(tmpdir)/e0.005_reads_2.fq $(tmpdir)/e0.005_loaded_reads_2.fq
+	$(tmpdir)/e$e_merged.fa \
+	$(tmpdir)/e$e_reads_1.fq \
+	$(tmpdir)/e$e_reads_2.fq
+	$(bloom) build -v -k$k -l2 -b$b $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	/usr/bin/time -v $(connectpairs) -j$j -v -v -k$k -o $(tmpdir)/e$e_loaded \
+		-i $(tmpdir)/e$e_l2.bloom  $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_loaded_merged.fa
+	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_loaded_reads_1.fq
+	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_loaded_reads_2.fq
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
 
-$(tmpdir)/e%.bloom: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq 
-	$(bloom) build -v -v -k$k -b$b $@ $^
+#------------------------------------------------------------
+# union_test
+#------------------------------------------------------------
+
+union_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e_1.bloom $(tmpdir)/e$e_1.fq
+	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e_2.bloom $(tmpdir)/e$e_2.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_union.bloom $(tmpdir)/e$e_1.bloom $(tmpdir)/e$e_2.bloom
+	cmp $(tmpdir)/e$e.bloom $(tmpdir)/e$e_union.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'

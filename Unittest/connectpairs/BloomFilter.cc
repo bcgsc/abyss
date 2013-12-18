@@ -69,6 +69,40 @@ TEST(BloomFilter, serialization)
 	EXPECT_TRUE(copyBloom[c]);
 }
 
+TEST(BloomFilter, loadAsUnion)
+{
+	size_t bits = 100;
+	BloomFilter bloom1(bits);
+	BloomFilter bloom2(bits);
+
+	Kmer a("AGATGTGCTGCCGCCT");
+	Kmer b("TGGACAGCGTTACCTC");
+
+	bloom1.insert(a);
+	bloom2.insert(b);
+
+	EXPECT_TRUE(bloom1[a]);
+	EXPECT_FALSE(bloom1[b]);
+	EXPECT_FALSE(bloom2[a]);
+	EXPECT_TRUE(bloom2[b]);
+
+	BloomFilter unionBloom;
+	
+	stringstream ss;
+	ss << bloom1;
+	ASSERT_TRUE(ss.good());
+	ss << bloom2;
+	ASSERT_TRUE(ss.good());
+
+	ss >> unionBloom;
+	ss >> unionBloom;
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(unionBloom.size(), bits);
+	EXPECT_TRUE(unionBloom[a]);
+	EXPECT_TRUE(unionBloom[b]);
+}
+
 TEST(CountingBloomFilter, base)
 {
 	CountingBloomFilter x(100);

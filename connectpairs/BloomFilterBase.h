@@ -9,12 +9,9 @@
 
 class BloomFilterBase
 {
-private:
-
-	static const unsigned LOAD_PROGRESS_STEP = 100000;
-
 public:
 
+	static const unsigned BLOOM_VERSION = 1;
 	typedef Kmer key_type;
 
 	/** Constructor. */
@@ -33,7 +30,7 @@ public:
 	virtual size_t popcount() const = 0;
 
 	/** Return the estimated false positive rate */
-	virtual double FPR() = 0;
+	virtual double FPR() const = 0;
 
 	/** Return the hash value of this object. */
 	static size_t hash(const key_type& key)
@@ -72,6 +69,10 @@ public:
 		if (verbose)
 			std::cerr << "Loaded " << count << " reads into bloom filter\n";
 	}
+
+private:
+
+	static const unsigned LOAD_PROGRESS_STEP = 100000;
 
 };
 

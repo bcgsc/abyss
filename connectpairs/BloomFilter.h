@@ -34,7 +34,7 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Return the estimated false positive rate */
-	double FPR()
+	double FPR() const
 	{
 		return (double)popcount() / size();
 	}
@@ -63,25 +63,6 @@ class BloomFilter : public virtual BloomFilterBase
 	void insert(const key_type& key)
 	{
 		m_array[hash(key) % m_array.size()] = true;
-	}
-
-	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
-	{
-		out << BLOOM_VERSION << '\n';
-		out << Kmer::length() << '\n';
-		size_t bits = o.size();
-		out << bits << '\n';
-		size_t bytes = (bits + 7) / 8;
-		for (size_t i = 0, j = 0; i < bytes; i++) {
-			uint8_t byte = 0;
-			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
-				byte <<= 1;
-				if (o.m_array[j])
-					byte |= 1;
-			}
-			out << byte;
-		}
-		return out;
 	}
 
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
@@ -116,15 +97,38 @@ class BloomFilter : public virtual BloomFilterBase
 			in.read((char *)&byte, 1);
 			assert(in);
 			for (k = 0; k < 8 && j < bits; k++, j++) {
-				o.m_array[i*8 + k] = byte & 1 << (7 - k);
+				size_t index = i*8 + k;
+				bool bit = o.m_array[index];
+				o.m_array[index] = bit | (byte & 1 << (7 - k));
 			}
 		}
 		return in;
 	}
 
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	{
+		out << BLOOM_VERSION << '\n';
+		out << Kmer::length() << '\n';
+		size_t bits = o.size();
+		out << bits << '\n';
+		size_t bytes = (bits + 7) / 8;
+		for (size_t i = 0, j = 0; i < bytes; i++) {
+			uint8_t byte = 0;
+			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
+				byte <<= 1;
+				if (o.m_array[j])
+					byte |= 1;
+			}
+			out << byte;
+		}
+		return out;
+	}
+
   private:
+
 	static const unsigned BLOOM_VERSION = 1;
 	std::vector<bool> m_array;
+
 };
 
 #endif
