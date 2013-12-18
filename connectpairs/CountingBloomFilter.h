@@ -29,6 +29,12 @@ class CountingBloomFilter : public virtual BloomFilterBase
 		return m_data.back().popcount();
 	}
 
+	/** Return the estimated false positive rate */
+	double FPR()
+	{
+		return (double)popcount() / size();
+	}
+
 	/** Return whether the element with this index has count >=
 	 * MAX_COUNT.
 	 */

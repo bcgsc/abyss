@@ -33,6 +33,12 @@ class BloomFilter : public virtual BloomFilterBase
 		return std::count(m_array.begin(), m_array.end(), true);
 	}
 
+	/** Return the estimated false positive rate */
+	double FPR()
+	{
+		return (double)popcount() / size();
+	}
+
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
 	{

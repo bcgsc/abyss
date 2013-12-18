@@ -60,7 +60,7 @@ static const char USAGE_MESSAGE[] =
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -B, --max-branches=N       max branches in de Bruijn graph traversal [10000]\n"
+"  -B, --max-branches=N       max branches in de Bruijn graph traversal [350]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
@@ -69,9 +69,9 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
-"  -M, --max-mismatches       max mismatches allowed between all paths [2]\n"
+"  -M, --max-mismatches       max mismatches between merged paths [2]\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
-"  -P, --max-paths=N          build consensus seq from at most N joining paths [2]\n"
+"  -P, --max-paths=N          merge at most N alternate paths [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
@@ -94,7 +94,7 @@ namespace opt {
 	size_t bloomSize = 500 * 1024 * 1024;
 
 	/** Max active branches during de Bruijn graph traversal */
-	unsigned maxBranches = 10000;
+	unsigned maxBranches = 350;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -404,7 +404,6 @@ int main(int argc, char** argv)
 		BloomFilter* loadedBloom = new BloomFilter();
 		inputBloom >> *loadedBloom;
 		assert_good(inputBloom, inputPath);
-		//assert(inputBloom.eof());
 		inputBloom.close();
 		bloom = loadedBloom;
 
@@ -419,6 +418,10 @@ int main(int argc, char** argv)
 			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
 
 	}
+
+	if (opt::verbose)
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bloom->FPR() << "%\n";
 
 	DBGBloom g(*bloom);
 
@@ -446,8 +449,13 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0) {
 		cerr <<
-			"Merged " << g_count.uniquePath + g_count.multiplePaths
-				<< " of " << g_count.readPairsProcessed << " read pairs\n"
+			"Processed " << g_count.readPairsProcessed << " read pairs\n"
+			"Merged (Unique path + Multiple paths): "
+				<< g_count.uniquePath + g_count.multiplePaths
+				<< " (" << setprecision(3) <<  (float)100
+				    * (g_count.uniquePath + g_count.multiplePaths) /
+				   g_count.readPairsProcessed
+				<< "%)\n"
 			"No start/goal kmer: " << g_count.noStartOrGoalKmer
 				<< " (" << setprecision(3) << (float)100
 					* g_count.noStartOrGoalKmer / g_count.readPairsProcessed
@@ -475,7 +483,9 @@ int main(int argc, char** argv)
 			"Too many mismatches: " << g_count.tooManyMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyMismatches / g_count.readPairsProcessed
-				<< "%)\n";
+				<< "%)\n"
+			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+				<< "%\n";
 	}
 
 	assert_good(mergedStream, mergedOutputPath.c_str());

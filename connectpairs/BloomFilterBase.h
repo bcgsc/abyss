@@ -13,7 +13,7 @@ private:
 
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 
-public: 
+public:
 
 	typedef Kmer key_type;
 
@@ -25,12 +25,15 @@ public:
 
 	/** Return whether the object is present in this set. */
 	virtual bool operator[](const key_type& key) const = 0;
-	
+
 	/** Return the size of the bit array. */
 	virtual size_t size() const = 0;
 
 	/** Return the population count, i.e. the number of set bits. */
 	virtual size_t popcount() const = 0;
+
+	/** Return the estimated false positive rate */
+	virtual double FPR() = 0;
 
 	/** Return the hash value of this object. */
 	static size_t hash(const key_type& key)
