@@ -47,6 +47,8 @@ static const char USAGE_MESSAGE[] =
 "      --adj             output the results in adj format [default]\n"
 "      --dot             output the results in dot format\n"
 "      --sam             output the results in SAM format\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -56,6 +58,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by GraphIO
 	int format; // used by GraphIO
+
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
 
 	/** The minimum required amount of overlap. */
 	static unsigned minOverlap = 50;
@@ -71,6 +76,8 @@ static const struct option longopts[] = {
 	{ "adj",     no_argument,       &opt::format, ADJ },
 	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "sam",     no_argument,       &opt::format, SAM },
+	{ "SS",      no_argument,       &opt::ss, 1 },
+	{ "no-SS",   no_argument,       &opt::ss, 0 },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
@@ -102,6 +109,8 @@ static void addOverlapsSA(Graph& g, const SuffixArray& sa,
 		pair<It, It> range = sa.equal_range(q);
 		for (It it = range.first; it != range.second; ++it) {
 			ContigNode u(it->second);
+			if (opt::ss && u.sense() != v.sense())
+				continue;
 			if (seen.insert(u).second) {
 				// Add the longest overlap between two vertices.
 				unsigned overlap = it->first.size();
@@ -262,6 +271,8 @@ int main(int argc, char** argv)
 				itu = edges.begin(); itu != edges.end(); ++itu) {
 			V uc = get(vertex_complement, g, *itu);
 			V vc = get(vertex_complement, g, v);
+			if (opt::ss && uc.sense() != vc.sense())
+				continue;
 			add_edge(vc, uc, -(int)opt::k + 1, static_cast<DG&>(g));
 		}
 	}
