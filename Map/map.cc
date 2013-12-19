@@ -56,6 +56,8 @@ static const char USAGE_MESSAGE[] =
 "      --multi             Align unaligned segments of primary\n"
 "                          alignment\n"
 "      --no-multi          don't Align unaligned segments [default]\n"
+"      --SS                expect contigs to be oriented correctly\n"
+"      --no-SS             no assumption about contig orientation\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -73,6 +75,9 @@ namespace opt {
 
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
+
+	/** Run a strand-specific RNA-Seq alignments. */
+	static int ss;
 
 	/** Identify duplicate and subsumed sequences. */
 	static bool dup = false;
@@ -100,6 +105,8 @@ static const struct option longopts[] = {
 	{ "no-order", no_argument, &opt::order, 0 },
 	{ "multi", no_argument, &opt::multi, 1 },
 	{ "no-multi", no_argument, &opt::multi, 0 },
+	{ "SS", no_argument, &opt::ss, 1 },
+	{ "no-SS", no_argument, &opt::ss, 0 },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -113,6 +120,8 @@ static struct {
 	unsigned unique;
 	unsigned multimapped;
 	unsigned unmapped;
+	unsigned suboptimal;
+	unsigned subunmapped;
 } g_count;
 
 typedef FMIndex::Match Match;
@@ -294,12 +303,27 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		return;
 	}
 
-	bool rc = rcm.qspan() > m.qspan();
+	bool rc;
+	if (opt::ss) {
+		rc = rec.id.size() > 2
+			&& rec.id.substr(rec.id.size()-2) == "/1";
+		bool prc = rcm.qspan() > m.qspan();
+		if (prc != rc && (rcm.qspan() != opt::k - 1
+					|| m.qspan() != opt::k - 1))
+#pragma omp atomic
+			g_count.suboptimal++;
+			if ((rc && (rcm.qspan() == opt::k - 1))
+					|| (!rc && (m.qspan() == opt::k - 1)))
+#pragma omp atomic
+				g_count.subunmapped++;
+	} else {
+		rc = rcm.qspan() > m.qspan();
 
-	// if both matches are the same length, sum up the number of times
-	// each were seen.
-	if (rcm.qspan() == m.qspan())
-		rc ? rcm.num += m.num : m.num += rcm.num;
+		// if both matches are the same length, sum up the number of times
+		// each were seen.
+		if (rcm.qspan() == m.qspan())
+			rc ? rcm.num += m.num : m.num += rcm.num;
+	}
 
 	vector<string> alts;
 	Match mm = rc ? rcm : m;
@@ -612,6 +636,11 @@ int main(int argc, char** argv)
 			<< "Mapped " << unique << " of " << total
 			<< " reads uniquely (" << (float)100 * unique / total
 			<< "%)\n";
+		if (opt::ss)
+			cerr << "Mapped " << g_count.suboptimal
+				<< " reads to the opposite strand of the optimal mapping.\n"
+				<< g_count.subunmapped
+				<< " unmapped suboptimal decisions.\n";
 	}
 
 	cout.flush();
