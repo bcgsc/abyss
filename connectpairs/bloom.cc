@@ -27,8 +27,8 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage 1: " PROGRAM " build [OPTIONS] <OUTPUT_BLOOM_FILE> <READS_FILE_1> [<READS_FILE_2>]...\n"
-"Usage 2: " PROGRAM " union [OPTIONS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> [<BLOOM_FILE_2>]...\n"
+"Usage 1: " PROGRAM " build [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <READS_FILE_1> [<READS_FILE_2>]...\n"
+"Usage 2: " PROGRAM " union [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> [<BLOOM_FILE_2>]...\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -240,21 +240,26 @@ int union_(int argc, char** argv)
 		dieWithUsageError();
 	}
 
+	const char* outputPath = argv[optind];
+	optind++;
+
 	BloomFilter unionBloom;
 
-	for (int i = optind + 1; i < argc; i++) {
+	for (int i = optind; i < argc; i++) {
 		const char* path = argv[i];
 		if (opt::verbose)
 			std::cerr << "Loading bloom filter from `"
 				<< path << "'...\n";
 		ifstream input(path, ios_base::in | ios_base::binary);
 		assert_good(input, path);
-		input >> unionBloom;
+		// The second arg is the "load as union" flag.
+		// Loading the first input BF with the flag as false
+		// sets the required size for remaining input bloom filters.
+		unionBloom.read(input, i > optind);
 		assert_good(input, path);
 		input.close();
 	}
 
-	const char* outputPath = argv[optind];
 	if (opt::verbose)
 		std::cerr << "Writing union of bloom filters to `"
 			<< outputPath << "'...\n";

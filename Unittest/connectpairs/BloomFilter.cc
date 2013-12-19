@@ -69,7 +69,7 @@ TEST(BloomFilter, serialization)
 	EXPECT_TRUE(copyBloom[c]);
 }
 
-TEST(BloomFilter, loadAsUnion)
+TEST(BloomFilter, union_)
 {
 	size_t bits = 100;
 	BloomFilter bloom1(bits);
@@ -95,7 +95,8 @@ TEST(BloomFilter, loadAsUnion)
 	ASSERT_TRUE(ss.good());
 
 	ss >> unionBloom;
-	ss >> unionBloom;
+	ASSERT_TRUE(ss.good());
+	unionBloom.read(ss, true);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);

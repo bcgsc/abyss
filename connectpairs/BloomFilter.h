@@ -67,6 +67,31 @@ class BloomFilter : public virtual BloomFilterBase
 
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
 	{
+		o.read(in);
+		return in;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	{
+		out << BLOOM_VERSION << '\n';
+		out << Kmer::length() << '\n';
+		size_t bits = o.size();
+		out << bits << '\n';
+		size_t bytes = (bits + 7) / 8;
+		for (size_t i = 0, j = 0; i < bytes; i++) {
+			uint8_t byte = 0;
+			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
+				byte <<= 1;
+				if (o.m_array[j])
+					byte |= 1;
+			}
+			out << byte;
+		}
+		return out;
+	}
+
+	void read(std::istream& in, bool union_=false)
+	{
 		unsigned bloomVersion, k;
 		in >> bloomVersion >> expect("\n");
 		assert(in);
@@ -90,7 +115,14 @@ class BloomFilter : public virtual BloomFilterBase
 		in >> bits >> expect("\n");
 		assert(in);
 
-		o.m_array.resize(bits);
+		if(union_ && bits != size()) {
+			std::cerr << "error: attempt union of bloom filters "
+				"with different sizes.\n";
+			exit(EXIT_FAILURE);
+		} else {
+			m_array.resize(bits);
+		}
+
 		size_t bytes = (bits + 7) / 8;
 		for (size_t i = 0, j = 0; i < bytes; i++) {
 			uint8_t byte;
@@ -98,30 +130,12 @@ class BloomFilter : public virtual BloomFilterBase
 			assert(in);
 			for (k = 0; k < 8 && j < bits; k++, j++) {
 				size_t index = i*8 + k;
-				bool bit = o.m_array[index];
-				o.m_array[index] = bit | (byte & 1 << (7 - k));
+				bool bit = (byte & 1 << (7 - k));
+				if (union_)
+					bit |= m_array[index];
+				m_array[index] = bit;
 			}
 		}
-		return in;
-	}
-
-	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
-	{
-		out << BLOOM_VERSION << '\n';
-		out << Kmer::length() << '\n';
-		size_t bits = o.size();
-		out << bits << '\n';
-		size_t bytes = (bits + 7) / 8;
-		for (size_t i = 0, j = 0; i < bytes; i++) {
-			uint8_t byte = 0;
-			for (unsigned k = 0; k < 8 && j < bits; k++, j++) {
-				byte <<= 1;
-				if (o.m_array[j])
-					byte |= 1;
-			}
-			out << byte;
-		}
-		return out;
 	}
 
   private:
