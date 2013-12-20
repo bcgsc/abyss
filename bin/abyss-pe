@@ -133,7 +133,7 @@ ifdef b
 abyssopt += -b$b
 pbopt += -b$b
 endif
-abyssopt += $v --coverage-hist=coverage.hist -s $*-bubbles.fa
+abyssopt += $v $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Number of threads
 ifdef PE_HOSTFILE
@@ -157,7 +157,7 @@ pbopt += -p$p
 # Aligner parameters
 aligner?=map
 align?=abyss-$(aligner)
-mapopt=$v -j$j -l$($*_l) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
+mapopt=$v -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
@@ -343,7 +343,7 @@ endif
 # Find overlapping contigs
 
 %-1.adj: %-1.fa
-	AdjList $v -k$k -m$m $< >$@
+	AdjList $(SS) $v -k$k -m$m $< >$@
 
 # Remove shim contigs
 
