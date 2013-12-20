@@ -54,6 +54,7 @@ static const char USAGE_MESSAGE[] =
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
 "                             default for qseq and export files\n"
+"  -w, --window M/N           build a bloom filter for subwindow M of N\n"
 "\n"
 " Options for `" PROGRAM " union': (none)\n"
 "\n"
@@ -243,7 +244,7 @@ int union_(int argc, char** argv)
 	const char* outputPath = argv[optind];
 	optind++;
 
-	BloomFilter unionBloom;
+	BloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
 		const char* path = argv[i];
@@ -252,20 +253,19 @@ int union_(int argc, char** argv)
 				<< path << "'...\n";
 		ifstream input(path, ios_base::in | ios_base::binary);
 		assert_good(input, path);
-		// The second arg is the "load as union" flag.
-		// Loading the first input BF with the flag as false
-		// sets the required size for remaining input bloom filters.
-		unionBloom.read(input, i > optind);
+		bloom.read(input, i > optind);
 		assert_good(input, path);
 		input.close();
 	}
 
-	if (opt::verbose)
+	if (opt::verbose) {
 		std::cerr << "Writing union of bloom filters to `"
 			<< outputPath << "'...\n";
+	}
+
 	ofstream output(outputPath, ios_base::out | ios_base::binary);
 	assert_good(output, outputPath);
-	output << unionBloom;
+	output << bloom;
 	output.flush();
 	assert_good(output, outputPath);
 	output.close();

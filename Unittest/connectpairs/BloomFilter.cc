@@ -1,5 +1,7 @@
 #include "connectpairs/BloomFilter.h"
 #include "connectpairs/CountingBloomFilter.h"
+#include "connectpairs/BloomFilterWindow.h"
+#include "connectpairs/CountingBloomFilterWindow.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -61,8 +63,8 @@ TEST(BloomFilter, serialization)
 	ss >> copyBloom;
 	ASSERT_TRUE(ss.good());
 
-	EXPECT_EQ(copyBloom.size(), origSize);
-	EXPECT_EQ(copyBloom.popcount(), origPopcount);
+	EXPECT_EQ(origSize, copyBloom.size());
+	EXPECT_EQ(origPopcount, copyBloom.popcount());
 
 	EXPECT_TRUE(copyBloom[a]);
 	EXPECT_TRUE(copyBloom[b]);
@@ -87,7 +89,7 @@ TEST(BloomFilter, union_)
 	EXPECT_TRUE(bloom2[b]);
 
 	BloomFilter unionBloom;
-	
+
 	stringstream ss;
 	ss << bloom1;
 	ASSERT_TRUE(ss.good());
@@ -103,6 +105,40 @@ TEST(BloomFilter, union_)
 	EXPECT_TRUE(unionBloom[a]);
 	EXPECT_TRUE(unionBloom[b]);
 }
+
+/*
+TEST(BloomFilter, concat_with_union_op)
+{
+	size_t bits = 6;
+	BloomFilter bloom1(bits/2);
+	BloomFilter bloom2(bits/2);
+
+	bloom1.insert(0);
+	bloom1.insert(2);
+	bloom2.insert(1);
+
+	EXPECT_TRUE(bloom1[0]);
+	EXPECT_TRUE(bloom1[2]);
+	EXPECT_TRUE(bloom2[1]);
+
+	stringstream ss;
+	ss << bloom1;
+	ASSERT_TRUE(ss.good());
+	ss << bloom2;
+	ASSERT_TRUE(ss.good());
+
+	BloomFilter catBloom;
+	ss >> catBloom;
+	ASSERT_TRUE(ss.good());
+	catBloom.read(ss, BLOOM_CAT);
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(bloom1.popcount() + bloom2.popcount(), catBloom.popcount());
+	EXPECT_TRUE(catBloom[0]);
+	EXPECT_TRUE(catBloom[2]);
+	EXPECT_TRUE(catBloom[4]);
+}
+*/
 
 TEST(CountingBloomFilter, base)
 {
@@ -136,4 +172,117 @@ TEST(CountingBloomFilter, base)
 	EXPECT_TRUE(x[c]);
 
 	EXPECT_FALSE(x[d]);
+}
+
+TEST(BloomFilter, shrink)
+{
+	BloomFilter big(10);
+	BloomFilter small;
+
+	big.insert(1);
+	big.insert(8);
+
+	EXPECT_EQ(2, big.popcount());
+	EXPECT_TRUE(big[1]);
+	EXPECT_TRUE(big[8]);
+
+	stringstream ss;
+	ss << big;
+	ASSERT_TRUE(ss.good());
+	// arg 1: load union?, arg 2: shrink factor
+	small.read(ss, false, 2);
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(5, small.size());
+	EXPECT_EQ(2, small.popcount());
+	EXPECT_TRUE(small[1]);
+	EXPECT_TRUE(small[3]);
+}
+
+TEST(BloomFilter, window)
+{
+	size_t bits = 100;
+	size_t pos1 = 25;
+	size_t pos2 = 80;
+
+	BloomFilter bloom(bits);
+
+	// set a bit in both halves of bloom filter
+	// bit array
+	bloom.insert(pos1);
+	bloom.insert(pos2);
+
+	EXPECT_TRUE(bloom[pos1]);
+	EXPECT_TRUE(bloom[pos2]);
+	EXPECT_EQ(2, bloom.popcount());
+
+	BloomFilterWindow window1(bits, 0, bits/2 - 1);
+	window1.insert(pos1);
+	EXPECT_TRUE(window1[pos1]);
+
+	BloomFilterWindow window2(bits, bits/2, bits - 1);
+	window2.insert(pos2);
+	EXPECT_TRUE(window2[pos2]);
+
+	stringstream ss;
+	ss << window1;
+	ASSERT_TRUE(ss.good());
+	ss << window2;
+	ASSERT_TRUE(ss.good());
+
+	BloomFilter unionBloom;
+	ss >> unionBloom;
+	ASSERT_TRUE(ss.good());
+	// true means load the union
+	unionBloom.read(ss, true);
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(2, unionBloom.popcount());
+	EXPECT_TRUE(unionBloom[pos1]);
+	EXPECT_TRUE(unionBloom[pos2]);
+}
+
+TEST(CountingBloomFilter, window)
+{
+	size_t bits = 100;
+	size_t pos1 = 25;
+	size_t pos2 = 80;
+
+	CountingBloomFilter countingBloom(bits);
+
+	// set a bit in both halves of the second level
+	// bloom filter
+	countingBloom.insert(pos1);
+	countingBloom.insert(pos1);
+	countingBloom.insert(pos2);
+	countingBloom.insert(pos2);
+
+	EXPECT_TRUE(countingBloom[pos1]);
+	EXPECT_TRUE(countingBloom[pos2]);
+	EXPECT_EQ(2, countingBloom.getBloomFilter(1).popcount());
+
+	CountingBloomFilterWindow window1(bits, 0, bits/2 - 1);
+	window1.insert(pos1);
+	window1.insert(pos1);
+
+	CountingBloomFilterWindow window2(bits, bits/2, bits - 1);
+	window2.insert(pos2);
+	window2.insert(pos2);
+
+	stringstream ss;
+	ss << window1.getBloomFilter(1);
+	ASSERT_TRUE(ss.good());
+	ss << window2.getBloomFilter(1);
+	ASSERT_TRUE(ss.good());
+
+	BloomFilter unionBloom;
+	ss >> unionBloom;
+	ASSERT_TRUE(ss.good());
+	// true means load the union
+	unionBloom.read(ss, true);
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(2, unionBloom.popcount());
+	EXPECT_TRUE(unionBloom[pos1]);
+	EXPECT_TRUE(unionBloom[pos2]);
 }
