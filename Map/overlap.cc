@@ -63,6 +63,8 @@ static const char USAGE_MESSAGE[] =
 "      --adj             output the results in adj format\n"
 "      --dot             output the results in dot format [default]\n"
 "      --sam             output the results in SAM format\n"
+"      --SS                expect contigs to be oriented correctly\n"
+"      --no-SS             no assumption about contig orientation\n"
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
@@ -78,6 +80,9 @@ namespace opt {
 
 	/** Sample the suffix array. */
 	static unsigned sampleSA;
+
+	/** Run a strand-specific overlaping algorithm. */
+	static int ss;
 
 	/** Remove transitive edges. */
 	static int tred = true;
@@ -105,6 +110,8 @@ static const struct option longopts[] = {
 	{ "min", required_argument, NULL, 'm' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "threads", required_argument, NULL, 'j' },
+	{ "SS", no_argument, &opt::ss, 1 },
+	{ "no-SS", no_argument, &opt::ss, 0 },
 	{ "tred", no_argument, &opt::tred, true },
 	{ "no-tred", no_argument, &opt::tred, false },
 	{ "verbose", no_argument, NULL, 'v' },
@@ -251,11 +258,13 @@ static void findOverlaps(Graph& g,
 	V uc = get(vertex_complement, g, u);
 	// Add edges u+ -> v+ and v- -> u-
 	findOverlapsSuffix(g, faIndex, fmIndex, u, rec.seq);
-	string rcseq = reverseComplement(rec.seq);
-	// Add edges u- -> v+
-	findOverlapsSuffix(g, faIndex, fmIndex, uc, rcseq);
-	// Add edges v+ -> u-
-	findOverlapsPrefix(g, faIndex, fmIndex, uc, rcseq);
+	if (!opt::ss) {
+		string rcseq = reverseComplement(rec.seq);
+		// Add edges u- -> v+
+		findOverlapsSuffix(g, faIndex, fmIndex, uc, rcseq);
+		// Add edges v+ -> u-
+		findOverlapsPrefix(g, faIndex, fmIndex, uc, rcseq);
+	}
 }
 
 /** Map the sequences of the specified file. */
