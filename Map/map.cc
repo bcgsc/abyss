@@ -243,8 +243,12 @@ static void printDuplicates(const Match& m, const Match& rcm,
 		const FastqRecord& rec)
 {
 	size_t myLen = m.qspan();
-	size_t maxLen = max(getMaxLen(m, faIndex, fmIndex),
-			getMaxLen(rcm, faIndex, fmIndex));
+	size_t maxLen;
+	if (opt::ss)
+		maxLen = getMaxLen(m, faIndex, fmIndex);
+	else
+		maxLen = max(getMaxLen(m, faIndex, fmIndex),
+				getMaxLen(rcm, faIndex, fmIndex));
 	if (myLen < maxLen) {
 #pragma omp atomic
 		g_count.multimapped++;
@@ -256,8 +260,12 @@ static void printDuplicates(const Match& m, const Match& rcm,
 		return;
 	}
 	size_t myPos = getMyPos(m, faIndex, fmIndex, rec.id);
-	size_t minPos = min(getMinPos(m, maxLen, faIndex, fmIndex),
-			getMinPos(rcm, maxLen, faIndex, fmIndex));
+	size_t minPos;
+	if (opt::ss)
+		minPos = getMinPos(m, maxLen, faIndex, fmIndex);
+	else
+		minPos = min(getMinPos(m, maxLen, faIndex, fmIndex),
+				getMinPos(rcm, maxLen, faIndex, fmIndex));
 	if (myPos > minPos) {
 #pragma omp atomic
 		g_count.multimapped++;
