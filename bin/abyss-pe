@@ -153,6 +153,11 @@ endif
 # AdjList parameters
 m?=50
 
+# filtergraph parameters
+ifdef xtip
+fgopt := -t$(shell echo $k*2 |bc)
+endif
+
 # PopBubbles parameters
 p?=0.9
 pbopt += -p$p
@@ -201,7 +206,7 @@ bwaswopt=-t$j
 BWASW_OPTIONS='-b9 -q16 -r1 -w500'
 
 # Remove environment variables
-unexport in se $(lib) $(pe) $(mp)
+unexport in se $(lib) $(pe) $(mp) $(long)
 
 # Check the mandatory parameters
 
@@ -353,7 +358,7 @@ endif
 # Remove shim contigs
 
 %-2.adj: %-1.adj
-	abyss-filtergraph $v $(FILTERGRAPH_OPTIONS) -k$k -g $@ $^ >$*-1.path
+	abyss-filtergraph $v $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $@ $^ >$*-1.path
 
 # Pop bubbles
 
