@@ -604,6 +604,9 @@ endif
 ifneq ($(mp),)
 $(name)-stats.tab: %-stats.tab: %-scaffolds.fa
 endif
+ifneq ($(long),)
+$(name)-stats.tab: %-stats.tab: %-long-scaffs.fa
+endif
 $(name)-stats.tab:
 	abyss-fac $(FAC_OPTIONS) $^ |tee $@
 
