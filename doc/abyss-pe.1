@@ -85,9 +85,14 @@ minimum number of pairs required for building scaffolds [n]
 minimum sequence identity of a bubble [0.9]
 .TP
 .B q
-minimum base quality [3]
+minimum base quality when trimming [3]
 .br
 Trim bases from the ends of reads whose quality is less q.
+.TP
+.B Q
+minimum base quality [0]
+.br
+Mask all bases of reads whose quality is less than Q as `N'.
 .TP
 .B s
 minimum unitig size required for building contigs (bp) [200]
