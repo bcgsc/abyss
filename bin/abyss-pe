@@ -303,6 +303,8 @@ scaffolds: $(name)-scaffolds.fa
 
 scaffolds-dot: $(name)-scaffolds.dot
 
+scaftigs: $(name)-scaftigs.fa $(name)-scaftigs.agp
+
 long-scaffs: $(name)-long-scaffs.fa
 
 long-scaffs-dot: $(name)-long-scaffs.dot
@@ -505,6 +507,14 @@ endif
 	ln -sf $< $@
 
 %-scaffolds.dot: %-8.dot
+	ln -sf $< $@
+
+# Scaftig
+
+%-scaftigs.fa: %-scaffolds-agp.fa
+	ln -sf $< $@
+
+%-scaftigs.agp: %-scaffolds.agp
 	ln -sf $< $@
 
 # Transcriptome assisted scaffolding
