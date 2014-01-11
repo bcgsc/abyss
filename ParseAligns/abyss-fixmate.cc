@@ -17,6 +17,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <boost/unordered_map.hpp>
 
 using namespace std;
 
@@ -148,9 +149,9 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 }
 
 #if SAM_SEQ_QUAL
-typedef unordered_map<string, SAMRecord> Alignments;
+typedef boost::unordered_map<string, SAMRecord> Alignments;
 #else
-typedef unordered_map<string, SAMAlignment> Alignments;
+typedef boost::unordered_map<string, SAMAlignment> Alignments;
 #endif
 
 static void printProgress(const Alignments& map)
@@ -184,7 +185,9 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 		SAMRecord a0(it.first->second, it.first->first);
 #endif
 		handlePair(a0, sam);
-		map.erase(it.first);
+
+		// erase() is slow on older compilers so we use quick_erase()
+		map.quick_erase(it.first);
 	}
 	stats.alignments++;
 	printProgress(map);
