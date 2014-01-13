@@ -13,6 +13,7 @@
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/FastaInterleave.h"
+#include "DataLayer/FastaConcat.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
@@ -64,6 +65,7 @@ static const char USAGE_MESSAGE[] =
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
+"  -I, --interleaved          input reads files are interleaved\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -87,11 +89,15 @@ static const char USAGE_MESSAGE[] =
 const unsigned g_progressStep = 1000;
 
 namespace opt {
+
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
+
+	/** Input read files are interleaved? */
+	bool interleaved = false;
 
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 350;
@@ -116,6 +122,7 @@ namespace opt {
 
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
+
 }
 
 /** Counters */
@@ -131,7 +138,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:i:j:k:M:o:P:q:v";
+static const char shortopts[] = "b:B:f:F:i:Ij:k:M:o:P:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -141,6 +148,7 @@ static const struct option longopts[] = {
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
+	{ "interleaved",      no_argument, NULL, 'I' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
@@ -290,7 +298,8 @@ static void connectPair(const DBGBloom& g,
 }
 
 /** Connect read pairs. */
-static void connectPairs(const DBGBloom& g, FastaInterleave& in,
+template <typename FastaStream>
+static void connectPairs(const DBGBloom& g, FastaStream& in,
 	ofstream& mergedStream, ofstream& read1Stream, ofstream& read2Stream)
 {
 #pragma omp parallel
@@ -328,6 +337,8 @@ int main(int argc, char** argv)
 			arg >> opt::maxFrag; break;
 		  case 'i':
 			arg >> opt::inputBloomPath; break;
+		  case 'I':
+			opt::interleaved = true; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -442,10 +453,18 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
-	FastaInterleave in(argv + optind, argv + argc,
-			FastaReader::FOLD_CASE);
-	connectPairs(g, in, mergedStream, read1Stream, read2Stream);
-	assert(in.eof());
+
+	if (opt::interleaved) {
+		FastaConcat in(argv + optind, argv + argc,
+				FastaReader::FOLD_CASE);
+		connectPairs(g, in, mergedStream, read1Stream, read2Stream);
+		assert(in.eof());
+	} else {
+		FastaInterleave in(argv + optind, argv + argc,
+				FastaReader::FOLD_CASE);
+		connectPairs(g, in, mergedStream, read1Stream, read2Stream);
+		assert(in.eof());
+	}
 
 	if (opt::verbose > 0) {
 		cerr <<

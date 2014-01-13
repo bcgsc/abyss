@@ -2,6 +2,8 @@
 
 # Test abyss-connectpairs
 
+SHELL=/bin/bash -o pipefail
+
 #------------------------------------------------------------
 # testing params
 #------------------------------------------------------------
@@ -29,7 +31,8 @@ tmpdir=tmp
 
 tests=run_test \
 	save_and_load_test \
-	union_test
+	union_test \
+	interleaved_files_test
 
 .PHONY: all $(tests)
 .DELETE_ON_ERROR:
@@ -61,6 +64,9 @@ $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
 $(tmpdir)/e%_merged.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
 	/usr/bin/time -v $(connectpairs) -j$j -v -v -b$b -k$k -o $(tmpdir)/e$* $^
 
+$(tmpdir)/e%_l2.bloom: $(tmpdir) $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
+	$(bloom) build -v -k$k -l2 -b$b $@ $(filter-out $<, $^)
+
 #------------------------------------------------------------
 # run_test
 #------------------------------------------------------------
@@ -74,12 +80,10 @@ run_test: $(tmpdir) $(tmpdir)/e$e_merged.fa
 # save_and_load_test
 #------------------------------------------------------------
 
-save_and_load_test: $(tmpdir) \
+save_and_load_test: $(tmpdir)/e$e_l2.bloom \
 	$(tmpdir)/e$e_merged.fa \
 	$(tmpdir)/e$e_reads_1.fq \
 	$(tmpdir)/e$e_reads_2.fq
-	$(bloom) build -v -k$k -l2 -b$b $(tmpdir)/e$e_l2.bloom \
-		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	/usr/bin/time -v $(connectpairs) -j$j -v -v -k$k -o $(tmpdir)/e$e_loaded \
 		-i $(tmpdir)/e$e_l2.bloom  $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_loaded_merged.fa
@@ -88,6 +92,38 @@ save_and_load_test: $(tmpdir) \
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
+
+#------------------------------------------------------------
+# interleaved_files_test
+#------------------------------------------------------------
+
+HALF_FASTQ_LINES:=$(shell echo '$N * 2 * 4 / 2' | bc)
+
+interleaved_files_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_merged.fa \
+		$(tmpdir)/e$e_interleaved_a.fq \
+		$(tmpdir)/e$e_interleaved_b.fq
+	/usr/bin/time -v $(connectpairs) -I -j$j -v -v -b$b -k$k \
+		-i $(tmpdir)/e$e_l2.bloom -o $(tmpdir)/e$e_interleaved \
+		$(tmpdir)/e$e_interleaved_a.fq \
+		$(tmpdir)/e$e_interleaved_b.fq
+	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_interleaved_merged.fa
+	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_interleaved_reads_1.fq
+	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_interleaved_reads_2.fq
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+$(tmpdir)/e%_interleaved.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
+	paste -d'\n' <(cat $(tmpdir)/e$e_1.fq | paste - - - -) \
+		<(cat $(tmpdir)/e$e_2.fq | paste - - - -) | \
+		tr '\t' '\n' > $(tmpdir)/e$e_interleaved.fq
+
+#split -a 1 --additional-suffix .fq -n l/2 -d $< $(tmpdir)/e$*_interleaved_
+$(tmpdir)/e%_interleaved_a.fq $(tmpdir)/e%_interleaved_b.fq: \
+	$(tmpdir)/e%_interleaved.fq
+	head -n $(HALF_FASTQ_LINES) $< > $(tmpdir)/e$*_interleaved_a.fq
+	tail -n $(HALF_FASTQ_LINES) $< > $(tmpdir)/e$*_interleaved_b.fq
 
 #------------------------------------------------------------
 # union_test
