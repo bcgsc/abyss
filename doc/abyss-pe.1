@@ -103,6 +103,13 @@ sequence is assembled than the expected genome size, try increasing s.
 .B S
 minimum contig size required for building scaffolds (bp) [s]
 .TP
+.B SS
+SS=--SS to assemble in strand-specific mode
+.br
+Requires that all libraries are strand-specific RNA-Seq libraries.
+Assumes that the first read in a read pair is reveresed WRT the
+transcripts sequenced.
+.TP
 .B t
 minimum tip size (bp) [2k]
 .TP

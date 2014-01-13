@@ -20,6 +20,8 @@ Contents
 * [Assembling a paired-end library]
 * [Assembling multiple libraries]
 * [Scaffolding]
+* [Rescaffolding with long sequences]
+* [Assembling a strand-specific RNA-Seq library]
 * [Optimizing the parameter k]
 * [Parallel processing]
 * [Running ABySS on a cluster]
@@ -219,10 +221,10 @@ contribute towards the consensus sequence.
 Rescaffolding with long sequences
 =================================
 
-Long sequences such as RNA-Seq contigs can now be used to rescaffold
-an assembly. Sequences are aligned using BWA-MEM to the assembled scaffolds.
-Additional scaffolds are then formed between scaffolds that can be linked
-unambiguously when considering all BWA-MEM alignments.
+Long sequences such as RNA-Seq contigs can be used to rescaffold an
+assembly. Sequences are aligned using BWA-MEM to the assembled
+scaffolds. Additional scaffolds are then formed between scaffolds that
+can be linked unambiguously when considering all BWA-MEM alignments.
 
 Similar to scaffolding, the names of the datasets can be specified with
 the `long` parameter. These scaffolds will be stored in the file
@@ -232,6 +234,21 @@ the `long` parameter. These scaffolds will be stored in the file
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
 		long1=long1.fa
+
+Assembling a strand-specific RNA-Seq library
+============================================
+
+Strand-specific RNA-Seq libraries can be assembled such that the
+resulting unitigs, conitgs and scaffolds are oriented correctly with
+respect to the original transcripts that were sequenced. In order to
+run ABySS in strand-specific mode, the `SS` parameter must be used as
+in the following example:
+
+	abyss-pe name=SS-RNA k=64 in='reads1.fa reads2.fa' SS=--SS
+
+The expected orientation for the read sequences with respect to the
+original RNA is RF. i.e. the first read in a read pair is always in
+reverse orientation.
 
 Optimizing the parameter k
 ==========================
