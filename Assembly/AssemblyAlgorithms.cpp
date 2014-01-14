@@ -118,7 +118,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		bool good = seq.find_first_not_of("ACGT0123") == string::npos;
 		bool discarded = true;
 
-		if (rec.id.size() > 2
+		if (opt::ss && rec.id.size() > 2
 				&& rec.id.substr(rec.id.size()-2) == "/1") {
 			seq = reverseComplement(seq);
 			count_reversed++;
@@ -150,7 +150,7 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 	if (count_reversed > 0)
 		cerr << "`" << inFile << "': "
-			"reversed " << count_reversed << " strand-specific reads\n";
+			"reversed " << count_reversed << " reads\n";
 	if (count_small > 0)
 		cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "
