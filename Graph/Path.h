@@ -12,7 +12,7 @@ enum PathSearchResult {
 	NO_PATH
 };
 
-static const char* PathSearchResultLabel[] = {
+const char* PathSearchResultLabel[] = {
 	"FOUND_PATH",
 	"TOO_MANY_PATHS",
 	"TOO_MANY_BRANCHES",
@@ -23,7 +23,7 @@ enum Direction { FORWARD = 0, REVERSE };
 
 const unsigned NO_LIMIT = 0;
 
-template <class Vertex> class Path : public std::vector<Vertex> 
+template <class Vertex> class Path : public std::vector<Vertex>
 {
 public:
 
