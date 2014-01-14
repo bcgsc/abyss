@@ -12,6 +12,13 @@ enum PathSearchResult {
 	NO_PATH
 };
 
+static const char* PathSearchResultLabel[] = {
+	"FOUND_PATH",
+	"TOO_MANY_PATHS",
+	"TOO_MANY_BRANCHES",
+	"NO_PATH"
+};
+
 enum Direction { FORWARD = 0, REVERSE };
 
 const unsigned NO_LIMIT = 0;

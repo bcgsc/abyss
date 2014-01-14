@@ -24,6 +24,10 @@ connectpairs?=abyss-connectpairs
 bloom?=abyss-bloom
 # temp dir for test outputs
 tmpdir=tmp
+# shared options to connectpairs
+cp_opts=-j$j -v -v -k$k
+# user options to connectpairs
+CP_OPTS?=
 
 #------------------------------------------------------------
 # phony targets
@@ -62,7 +66,7 @@ $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
 	wgsim -S 0 -e $* -N $N -r 0 -R 0 $< $(tmpdir)/e$*_1.fq $(tmpdir)/e$*_2.fq
 
 $(tmpdir)/e%_merged.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
-	/usr/bin/time -v $(connectpairs) -j$j -v -v -b$b -k$k -o $(tmpdir)/e$* $^
+	/usr/bin/time -v $(connectpairs) $(cp_opts) -b$b -o $(tmpdir)/e$* $(CP_OPTS) $^
 
 $(tmpdir)/e%_l2.bloom: $(tmpdir) $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
 	$(bloom) build -v -k$k -l2 -b$b $@ $(filter-out $<, $^)
@@ -84,8 +88,8 @@ save_and_load_test: $(tmpdir)/e$e_l2.bloom \
 	$(tmpdir)/e$e_merged.fa \
 	$(tmpdir)/e$e_reads_1.fq \
 	$(tmpdir)/e$e_reads_2.fq
-	/usr/bin/time -v $(connectpairs) -j$j -v -v -k$k -o $(tmpdir)/e$e_loaded \
-		-i $(tmpdir)/e$e_l2.bloom  $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	/usr/bin/time -v $(connectpairs) $(cp_opts) -o $(tmpdir)/e$e_loaded \
+		-i $(tmpdir)/e$e_l2.bloom $(CP_OPTS) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_loaded_merged.fa
 	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_loaded_reads_1.fq
 	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_loaded_reads_2.fq
@@ -103,8 +107,9 @@ interleaved_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_merged.fa \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
-	/usr/bin/time -v $(connectpairs) -I -j$j -v -v -b$b -k$k \
+	/usr/bin/time -v $(connectpairs) $(cp_opts) -I -b$b \
 		-i $(tmpdir)/e$e_l2.bloom -o $(tmpdir)/e$e_interleaved \
+		$(CP_OPTS) \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
 	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_interleaved_merged.fa

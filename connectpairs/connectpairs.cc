@@ -80,6 +80,7 @@ static const char USAGE_MESSAGE[] =
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
 "                             default for qseq and export files\n"
+"  -t, --trace-file FILE      write graph search stats to FILE\n"
 "  -v, --verbose              display verbose output\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
@@ -123,6 +124,9 @@ namespace opt {
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
 
+	/** Output file for graph search stats */
+	static string tracefilePath;
+
 }
 
 /** Counters */
@@ -138,7 +142,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:i:Ij:k:M:o:P:q:v";
+static const char shortopts[] = "b:B:f:F:i:Ij:k:M:o:P:q:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -161,6 +165,7 @@ static const struct option longopts[] = {
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "trace-file",       required_argument, NULL, 't' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
@@ -211,9 +216,12 @@ static void seqanTests()
 
 /** Connect a read pair. */
 static void connectPair(const DBGBloom& g,
-	const FastqRecord& read1, const FastqRecord& read2,
-	ofstream& mergedStream, ofstream& read1Stream,
-	ofstream& read2Stream)
+	const FastqRecord& read1,
+	const FastqRecord& read2,
+	ofstream& mergedStream,
+	ofstream& read1Stream,
+	ofstream& read2Stream,
+	ofstream& traceStream)
 {
 	SearchResult result
 		= connectPairs(opt::k, read1, read2, g,
@@ -221,6 +229,13 @@ static void connectPair(const DBGBloom& g,
 				opt::maxFrag, opt::maxBranches);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
+
+	if (!opt::tracefilePath.empty()) 
+#pragma omp critical(tracefile)
+	{
+		traceStream << result;
+		assert_good(traceStream, opt::tracefilePath);
+	}
 
 #pragma omp atomic
 	++g_count.readPairsProcessed;
@@ -299,8 +314,12 @@ static void connectPair(const DBGBloom& g,
 
 /** Connect read pairs. */
 template <typename FastaStream>
-static void connectPairs(const DBGBloom& g, FastaStream& in,
-	ofstream& mergedStream, ofstream& read1Stream, ofstream& read2Stream)
+static void connectPairs(const DBGBloom& g,
+	FastaStream& in,
+	ofstream& mergedStream,
+	ofstream& read1Stream,
+	ofstream& read2Stream,
+	ofstream& traceStream)
 {
 #pragma omp parallel
 	for (FastqRecord a, b;;) {
@@ -308,7 +327,8 @@ static void connectPairs(const DBGBloom& g, FastaStream& in,
 #pragma omp critical(in)
 		good = in >> a >> b;
 		if (good)
-			connectPair(g, a, b, mergedStream, read1Stream, read2Stream);
+			connectPair(g, a, b, mergedStream, read1Stream,
+				read2Stream, traceStream);
 		else
 			break;
 	}
@@ -351,6 +371,8 @@ int main(int argc, char** argv)
 			arg >> opt::maxPaths; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 't':
+			arg >> opt::tracefilePath; break;
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
@@ -434,6 +456,17 @@ int main(int argc, char** argv)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom->FPR() << "%\n";
 
+	ofstream traceStream;
+	if (!opt::tracefilePath.empty()) {
+		if (opt::verbose)
+			cerr << "Writing graph search stats to `"
+				<< opt::tracefilePath << "'\n";
+		traceStream.open(opt::tracefilePath.c_str());
+		assert(traceStream.is_open());
+		SearchResult::printHeaders(traceStream);
+		assert_good(traceStream, opt::tracefilePath);
+	}
+
 	DBGBloom g(*bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
@@ -457,12 +490,14 @@ int main(int argc, char** argv)
 	if (opt::interleaved) {
 		FastaConcat in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, mergedStream, read1Stream, read2Stream);
+		connectPairs(g, in, mergedStream, read1Stream,
+				read2Stream, traceStream);
 		assert(in.eof());
 	} else {
 		FastaInterleave in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, mergedStream, read1Stream, read2Stream);
+		connectPairs(g, in, mergedStream, read1Stream,
+				read2Stream, traceStream);
 		assert(in.eof());
 	}
 
@@ -513,6 +548,11 @@ int main(int argc, char** argv)
 	read1Stream.close();
 	assert_good(read2Stream, read2OutputPath.c_str());
 	read2Stream.close();
+
+	if (!opt::tracefilePath.empty()) {
+		assert_good(traceStream, opt::tracefilePath);
+		traceStream.close();
+	}
 
 	delete bloom;
 

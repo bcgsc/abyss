@@ -26,6 +26,7 @@
 
 struct SearchResult
 {
+	std::string readNamePrefix;
 	PathSearchResult pathResult;
 	std::vector<FastaRecord> mergedSeqs;
 	bool foundStartKmer;
@@ -48,19 +49,43 @@ struct SearchResult
 		maxDepthVisitedForward(0),
 		maxDepthVisitedReverse(0) {}
 
+	static std::ostream& printHeaders(std::ostream& out)
+	{
+		out << "read_id" << "\t"
+			<< "search_result" << "\t"
+			<< "num_paths" << "\t"
+			<< "path_lengths" << "\t"
+			<< "start_kmer_pos" << "\t"
+			<< "end_kmer_pos" << "\t"
+			<< "nodes_visited" << "\t"
+			<< "max_breadth" << "\t"
+			<< "max_depth_forward" << "\t"
+			<< "max_depth_reverse" << "\n";
+		return out;
+	}
+
 	friend std::ostream& operator <<(std::ostream& out,
 		const SearchResult& o)
 	{
-		out << "Path result: " << o.pathResult << "\n"
-			<< "\tpathsFound: " << o.mergedSeqs.size() << "\n";
-		for (unsigned i = 0; i < o.mergedSeqs.size(); i++)
-			out << "\t\tPath " << i << " length: " << o.mergedSeqs[i].size() << "\n";
-		out << "\tstartKmerPos: " << o.startKmerPos << "\n"
-			<< "\tgoalKmerPos: " << o.goalKmerPos << "\n"
-			<< "\tnumNodesVisited: " << o.numNodesVisited << "\n"
-			<< "\tmaxActiveBranches: " << o.maxActiveBranches << "\n"
-			<< "\tmaxDepthVisitedForward: " << o.maxDepthVisitedForward << "\n"
-			<< "\tmaxDepthVisitedReverse: " << o.maxDepthVisitedReverse << "\n";
+		out << o.readNamePrefix << "\t"
+			<< PathSearchResultLabel[o.pathResult] << "\t"
+			<< o.mergedSeqs.size() << "\t";
+		if (o.mergedSeqs.size() == 0) {
+			out << "NA" << "\t";
+		} else {
+			for (unsigned i = 0; i < o.mergedSeqs.size(); i++) {
+				out << o.mergedSeqs[i].seq.size();
+				if (i < o.mergedSeqs.size() - 1)
+					out << ",";
+			}
+			out << "\t";
+		}
+		out << o.startKmerPos << "\t"
+			<< o.goalKmerPos << "\t"
+			<< o.numNodesVisited << "\t"
+			<< o.maxActiveBranches << "\t"
+			<< o.maxDepthVisitedForward << "\t"
+			<< o.maxDepthVisitedReverse << "\n";
 		return out;
 	}
 };
@@ -189,6 +214,7 @@ static inline SearchResult connectPairs(
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<Kmer> > paths;
+	result.readNamePrefix = read1.id.substr(0, read1.id.find_last_of("/"));
 	result.pathResult = visitor.pathsToGoal(paths);
 	result.numNodesVisited = visitor.getNumNodesVisited();
 	result.maxActiveBranches = visitor.getMaxActiveBranches();
@@ -196,12 +222,11 @@ static inline SearchResult connectPairs(
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 
 	if (result.pathResult == FOUND_PATH) {
-		std::string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
 		std::string seqPrefix = read1.seq.substr(0, startKmerPos);
 		std::string seqSuffix = reverseComplement(read2.seq.substr(0, goalKmerPos));
 		for (unsigned i = 0; i < paths.size(); i++) {
 			FastaRecord mergedSeq;
-			mergedSeq.id = mergedId;
+			mergedSeq.id = result.readNamePrefix;
 			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
 			result.mergedSeqs.push_back(mergedSeq);
 		}
