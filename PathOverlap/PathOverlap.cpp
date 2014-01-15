@@ -32,7 +32,7 @@ static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
 "Written by Shaun Jackman and Tony Raymond.\n"
 "\n"
-"Copyright 2013 Canada's Michael Smith Genome Sciences Centre\n";
+"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char *USAGE_MESSAGE =
 "Usage: " PROGRAM " [OPTION]... ADJ PATH\n"

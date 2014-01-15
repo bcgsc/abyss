@@ -1,6 +1,6 @@
 /**
  * Algorithms for a de Bruijn Graph using a Bloom filter
- * Copyright 2013 Canada's Michael Smith Genome Science Centre
+ * Copyright 2014 Canada's Michael Smith Genome Science Centre
  */
 #ifndef DBGBLOOMALGORITHMS_H
 #define DBGBLOOMALGORITHMS_H 1

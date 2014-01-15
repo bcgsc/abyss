@@ -419,6 +419,6 @@ Authors
 
 Supervised by [**Dr. İnanç Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 
-Copyright 2013 Canada's Michael Smith Genome Sciences Centre
+Copyright 2014 Canada's Michael Smith Genome Sciences Centre
 
 [![githalytics.com](https://cruel-carlota.pagodabox.com/af4811df3b40b7d096f6085db2969f0e "githalytics.com")](http://githalytics.com/sjackman/abyss)

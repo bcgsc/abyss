@@ -23,11 +23,11 @@ License: GPL-NC-3+
  Debian may redistribute this software package.
 
 Files: *
-Copyright: Copyright 2013 Canada's Michael Smith Genome Sciences Centre
+Copyright: Copyright 2014 Canada's Michael Smith Genome Sciences Centre
 License: GPL-NC-3+
 
 Files: Common/* DataLayer/* DistanceEst/* FMIndex/* Map/* ParseAligns/*
-Copyright: Copyright 2013 Canada's Michael Smith Genome Sciences Centre
+Copyright: Copyright 2014 Canada's Michael Smith Genome Sciences Centre
 License: GPL-3+
 
 Files: Common/cholesky.hpp
