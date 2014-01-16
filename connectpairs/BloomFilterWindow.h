@@ -19,48 +19,62 @@ public:
 
 	/** Constructor.
 	 *
-	 * @param bits size in bits of the containing bloom filter
+	 * @param fullBloomSize size in bits of the containing bloom filter
 	 * @param startBitPos index of first bit in the window
 	 * @param endBitPos index of last bit in the window
 	 */
-	BloomFilterWindow(size_t bits, size_t startBitPos, size_t endBitPos) :
-		m_bits(bits),
+	BloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos) :
+		BloomFilter(endBitPos - startBitPos + 1),
+		m_fullBloomSize(fullBloomSize),
 		m_startBitPos(startBitPos),
-		m_endBitPos(endBitPos)//,
+		m_endBitPos(endBitPos)
 	{
+		assert(startBitPos < fullBloomSize);
+		assert(endBitPos < fullBloomSize);
 		assert(startBitPos <= endBitPos);
-		m_array.resize(endBitPos - startBitPos + 1, 0);
 	}
 
 	/** Return whether the specified bit is set. */
 	virtual bool operator[](size_t i) const
 	{
-		assert(i >= m_startBitPos && i <= m_endBitPos);
-		return m_array[i - m_startBitPos];
+		if (i >= m_startBitPos && i <= m_endBitPos)
+			return BloomFilter::operator[](i - m_startBitPos);
+		return false;
 	}
 
 	/** Return whether the object is present in this set. */
 	virtual bool operator[](const key_type& key) const
 	{
-		size_t i = hash(key) % m_bits;
-		if (i < m_startBitPos || i > m_endBitPos)
-			return false;
-		return m_array[i - m_startBitPos];
+		return (*this)[hash(key) % m_fullBloomSize];
 	}
 
 	/** Add the object with the specified index to this set. */
 	virtual void insert(size_t i)
 	{
-		if (i < m_startBitPos || i > m_endBitPos)
-			return;
-		m_array[i - m_startBitPos] = true;
+		if (i >= m_startBitPos && i <= m_endBitPos)
+			BloomFilter::insert(i - m_startBitPos);
+	}
+
+	/** Add the object to this set. */
+	virtual void insert(const key_type& key)
+	{
+		insert(hash(key) % m_fullBloomSize);
+	}
+
+	/**
+	 * Return the full size of the containing bloom
+	 * filter (in bits).
+	 */
+	size_t getFullBloomSize() const
+	{
+		return m_fullBloomSize;
 	}
 
 protected:
 
 	virtual void writeBloomDimensions(std::ostream& out) const
 	{
-		out << m_bits
+		out << m_fullBloomSize
 			<< '\t' << m_startBitPos
 			<< '\t' << m_endBitPos
 			<< '\n';
@@ -68,7 +82,7 @@ protected:
 
 private:
 
-	size_t m_bits;
+	size_t m_fullBloomSize;
 	size_t m_startBitPos, m_endBitPos;
 };
 

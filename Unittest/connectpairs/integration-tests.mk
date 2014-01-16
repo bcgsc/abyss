@@ -37,6 +37,7 @@ tests=run_test \
 	save_and_load_test \
 	union_test \
 	interleaved_files_test
+	window_test
 
 .PHONY: all $(tests)
 .DELETE_ON_ERROR:
@@ -140,6 +141,24 @@ union_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e_2.bloom $(tmpdir)/e$e_2.fq
 	$(bloom) union -v -k$k $(tmpdir)/e$e_union.bloom $(tmpdir)/e$e_1.bloom $(tmpdir)/e$e_2.bloom
 	cmp $(tmpdir)/e$e.bloom $(tmpdir)/e$e_union.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# window_test
+#------------------------------------------------------------
+
+window_test: $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -l2 -b$b $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -l2 -w1/2 -b$b $(tmpdir)/e$e_l2_window1.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -l2 -w2/2 -b$b $(tmpdir)/e$e_l2_window2.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_concat.bloom \
+		$(tmpdir)/e$e_l2_window1.bloom $(tmpdir)/e$e_l2_window2.bloom
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_concat.bloom
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'

@@ -60,7 +60,7 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Add the object to this set. */
-	void insert(const key_type& key)
+	virtual void insert(const key_type& key)
 	{
 		m_array[hash(key) % m_array.size()] = true;
 	}
@@ -71,31 +71,36 @@ class BloomFilter : public virtual BloomFilterBase
 		return in;
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	/** Write the bloom filter to a stream */
+	virtual void write(std::ostream& out) const
 	{
 		out << BLOOM_VERSION << '\n';
+		assert(out);
 		out << Kmer::length() << '\n';
-
-		o.writeBloomDimensions(out);
+		assert(out);
+		writeBloomDimensions(out);
 		assert(out);
 
-		size_t bits = o.size();
+		size_t bits = size();
 		size_t bytes = (bits + 7) / 8;
 		for (size_t i = 0, j = 0; i < bytes; i++) {
 			uint8_t byte = 0;
 			for (unsigned k = 0; k < 8; k++, j++) {
 				byte <<= 1;
-				if (j < bits && o.m_array[j]) {
+				if (j < bits && m_array[j]) {
 					byte |= 1;
 				}
 			}
 			out << byte;
+			assert(out);
 		}
-		return out;
 	}
 
+	/** Read the bloom filter from a stream */
 	void read(std::istream& in, bool union_, unsigned shrinkFactor = 1)
 	{
+		// read bloom filter file format version
+
 		unsigned bloomVersion;
 		in >> bloomVersion >> expect("\n");
 		assert(in);
@@ -105,6 +110,8 @@ class BloomFilter : public virtual BloomFilterBase
 				"by this program (`" << BLOOM_VERSION << "').\n";
 			exit(EXIT_FAILURE);
 		}
+
+		// read bloom filter k value
 
 		unsigned k;
 		in >> k >> expect("\n");
@@ -116,6 +123,8 @@ class BloomFilter : public virtual BloomFilterBase
 			exit(EXIT_FAILURE);
 		}
 
+		// read bloom filter dimensions
+
 		size_t size, startBitPos, endBitPos;
 		in >> size
 		   >> expect("\t") >> startBitPos
@@ -125,6 +134,10 @@ class BloomFilter : public virtual BloomFilterBase
 		assert(in);
 		assert(startBitPos < size);
 		assert(endBitPos < size);
+		assert(startBitPos <= endBitPos);
+
+		// shrink factor allows building a smaller, less
+		// accurate filter from a large file
 
 		if (size % shrinkFactor != 0) {
 			std::cerr << "error: the number of bits in the original bloom "
@@ -134,8 +147,6 @@ class BloomFilter : public virtual BloomFilterBase
 		}
 
 		size /= shrinkFactor;
-		size_t offset = startBitPos;
-		size_t bits = endBitPos - startBitPos + 1;
 
 		if(union_ && size != this->size()) {
 			std::cerr << "error: can't union bloom filters "
@@ -145,9 +156,13 @@ class BloomFilter : public virtual BloomFilterBase
 			m_array.resize(size);
 		}
 
+		// read bit vector
+
 		if (!union_)
 			m_array.assign(size, 0);
 
+		size_t offset = startBitPos;
+		size_t bits = endBitPos - startBitPos + 1;
 		size_t bytes = (bits + 7) / 8;
 		for (size_t i = 0, j = offset; i < bytes; i++) {
 			uint8_t byte;
@@ -163,8 +178,6 @@ class BloomFilter : public virtual BloomFilterBase
 
   protected:
 
-	std::vector<bool> m_array;
-
 	virtual void writeBloomDimensions(std::ostream& out) const
 	{
 		out << size()
@@ -175,6 +188,7 @@ class BloomFilter : public virtual BloomFilterBase
 
   private:
 
+	std::vector<bool> m_array;
 	static const unsigned BLOOM_VERSION = 2;
 
 };

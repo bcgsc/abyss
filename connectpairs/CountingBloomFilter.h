@@ -9,7 +9,7 @@
 #include <vector>
 
 /** A counting Bloom filter. */
-class CountingBloomFilter : public virtual BloomFilterBase
+class CountingBloomFilter : public BloomFilterBase
 {
   public:
 
@@ -26,6 +26,7 @@ class CountingBloomFilter : public virtual BloomFilterBase
 			m_data.push_back(new BloomFilter(n));
 	}
 
+	/** Destructor */
 	~CountingBloomFilter()
 	{
 		typedef std::vector<BloomFilter*>::iterator Iterator;
@@ -41,8 +42,6 @@ class CountingBloomFilter : public virtual BloomFilterBase
 		assert(m_data.back() != NULL);
 		return m_data.back()->size();
 	}
-
-
 
 	/** Return the number of elements with count >= MAX_COUNT. */
 	size_t popcount() const
@@ -74,7 +73,7 @@ class CountingBloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	void insert(size_t index)
+	virtual void insert(size_t index)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; ++i) {
 			assert(m_data.at(i) != NULL);
@@ -86,7 +85,7 @@ class CountingBloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Add the object to this counting multiset. */
-	void insert(const key_type& key)
+	virtual void insert(const key_type& key)
 	{
 		assert(m_data.back() != NULL);
 		insert(hash(key) % m_data.back()->size());
@@ -97,6 +96,12 @@ class CountingBloomFilter : public virtual BloomFilterBase
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);
+	}
+
+	virtual void write(std::ostream& out) const
+	{
+		assert(m_data.back() != NULL);
+		out << *m_data.back();
 	}
 
   protected:

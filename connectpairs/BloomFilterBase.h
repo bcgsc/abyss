@@ -38,6 +38,16 @@ public:
 		return hashmem(&key, sizeof key);
 	}
 
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilterBase& o)
+	{
+		o.write(out);
+		return out;
+	}
+
+	/** Write bloom filter to a stream */
+	virtual void write(std::ostream& out) const = 0;
+
 	void loadSeq(unsigned k, const std::string& seq)
 	{
 		for (size_t i = 0; i < seq.size() - k + 1; ++i) {

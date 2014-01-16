@@ -7,7 +7,10 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
+#include "connectpairs/BloomFilter.h"
 #include "connectpairs/CountingBloomFilter.h"
+#include "connectpairs/BloomFilterWindow.h"
+#include "connectpairs/CountingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>
@@ -69,9 +72,17 @@ namespace opt {
 
 	/** Number of levels for counting bloom filter. */
 	unsigned levels = 1;
+
+	/** Index of bloom filter window.
+	  ("M" for -w option) */
+	unsigned windowIndex = 0;
+
+	/** Number of windows in complete bloom filter.
+	  ("N" for -w option) */
+	unsigned windows = 0;
 }
 
-static const char shortopts[] = "b:k:l:q:v";
+static const char shortopts[] = "b:k:l:q:vw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -89,6 +100,7 @@ static const struct option longopts[] = {
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
+	{ "window",           required_argument, NULL, 'w' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -164,6 +176,11 @@ int build(int argc, char** argv)
 			arg >> opt::levels; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 'w':
+			arg >> opt::windowIndex;
+			arg >> expect("/");
+			arg >> opt::windows;
+			break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -186,48 +203,58 @@ int build(int argc, char** argv)
 	char* outputPath = argv[optind];
 	optind++;
 
-	if (opt::levels == 1) {
+	BloomFilterBase* bloom = NULL;
 
-		// Specify bloom filter size in bits.
-		BloomFilter bloom(opt::bloomSize * 8);
+	// bloom filter size in bits
+	size_t bits = opt::bloomSize * 8;
 
-		for (int i = optind; i < argc; i++)
-			bloom.loadFile(opt::k, argv[i], opt::verbose);
+	// if we are building a counting bloom filter, reduce
+	// the size of each level so that the overall bloom filter
+	// fits within the memory limit (specified by -b)
+	bits /= opt::levels;
 
-		if (opt::verbose)
-			cerr << "Writing bloom filter to `"
-				<< outputPath << "'...\n";
+	if (opt::windows == 0) {
 
-		ofstream outputFile(outputPath, ios_base::out | ios_base::binary);
-		assert_good(outputFile, outputPath);
-		outputFile << bloom;
-		outputFile.flush();
-		assert_good(outputFile, outputPath);
-		outputFile.close();
-
+		if (opt::levels == 1)
+			bloom = new BloomFilter(bits);
+		else
+			bloom = new CountingBloomFilter(bits);
 
 	} else {
 
-		// Specify bloom filter size in bits. Divide by two
-		// because counting bloom filter requires twice as
-		// much space.
-		CountingBloomFilter bloom(opt::bloomSize * 8 / 2);
+		size_t bitsPerWindow = bits / opt::windows;
+		size_t startBitPos = (opt::windowIndex - 1) * bitsPerWindow;
+		size_t endBitPos;
 
-		for (int i = optind; i < argc; i++)
-			bloom.loadFile(opt::k, argv[i], opt::verbose);
+		if (opt::windowIndex < opt::windows)
+			endBitPos = opt::windowIndex * bitsPerWindow - 1;
+		else
+			endBitPos = bits - 1;
 
-		if (opt::verbose)
-			cerr << "Writing bloom filter to `"
-				<< outputPath << "'...\n";
-
-		ofstream outputFile(outputPath, ios_base::out | ios_base::binary);
-		assert_good(outputFile, outputPath);
-		outputFile << bloom.getBloomFilter(1);
-		outputFile.flush();
-		assert_good(outputFile, outputPath);
-		outputFile.close();
+		if (opt::levels == 1)
+			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
+		else
+			bloom = new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
 
 	}
+
+	assert(bloom != NULL);
+
+	for (int i = optind; i < argc; i++)
+		bloom->loadFile(opt::k, argv[i], opt::verbose);
+
+	if (opt::verbose)
+		cerr << "Writing bloom filter to `"
+			<< outputPath << "'...\n";
+
+	ofstream outputFile(outputPath, ios_base::out | ios_base::binary);
+	assert_good(outputFile, outputPath);
+	outputFile << *bloom;
+	outputFile.flush();
+	assert_good(outputFile, outputPath);
+	outputFile.close();
+
+	delete bloom;
 
 	return 0;
 }
