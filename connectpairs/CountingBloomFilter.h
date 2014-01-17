@@ -92,7 +92,7 @@ class CountingBloomFilter : public BloomFilterBase
 	}
 
 	/** Get the Bloom filter for a given level */
-	const BloomFilter& getBloomFilter(unsigned level)
+	BloomFilter& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);

@@ -46,6 +46,8 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -l, --levels=N             build a counting bloom filter with N levels\n"
 "                             and output the last level\n"
+"  -L, --init-level='N=FILE'  initialize level N of counting bloom filter\n"
+"                             from FILE\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -73,6 +75,12 @@ namespace opt {
 	/** Number of levels for counting bloom filter. */
 	unsigned levels = 1;
 
+	/**
+	 * Files used to initialize levels of counting
+	 * bloom filter (-L option).
+	 */
+	vector< vector<string> > levelInitPaths;
+
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
 	unsigned windowIndex = 0;
@@ -82,7 +90,7 @@ namespace opt {
 	unsigned windows = 0;
 }
 
-static const char shortopts[] = "b:k:l:q:vw:";
+static const char shortopts[] = "b:k:l:L:q:vw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -90,6 +98,7 @@ static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "levels",           required_argument, NULL, 'l' },
+	{ "init-level",       required_argument, NULL, 'L' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -160,6 +169,24 @@ void parseGlobalOpts(int argc, char** argv)
 	Kmer::setLength(opt::k);
 }
 
+void initBloomFilterLevels(CountingBloomFilter& bf)
+{
+	assert(opt::levels >= 2);
+	assert(opt::levelInitPaths.size() <= opt::levels);
+
+	for (unsigned i = 0; i < opt::levelInitPaths.size(); i++) {
+		BloomFilter& bloom = bf.getBloomFilter(i);
+		vector<string>& paths = opt::levelInitPaths.at(i);
+		for (unsigned j = 0; j < paths.size(); j++) {
+			string path = paths.at(j);
+			ifstream in(path.c_str());
+			assert(in.is_open());
+			bloom.read(in, j > 0);
+			assert(in);
+		}
+	}
+}
+
 int build(int argc, char** argv)
 {
 	parseGlobalOpts(argc, argv);
@@ -174,6 +201,21 @@ int build(int argc, char** argv)
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'l':
 			arg >> opt::levels; break;
+		  case 'L':
+			{
+				unsigned level;
+				arg >> level >> expect("=");
+				if (arg.fail() || arg.eof())
+					break;
+				string path;
+				arg >> path;
+				if (arg.fail())
+					break;
+				if (level > opt::levelInitPaths.size())
+					opt::levelInitPaths.resize(level);
+				opt::levelInitPaths[level-1].push_back(path);
+				break;
+			}
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 'w':
@@ -192,6 +234,19 @@ int build(int argc, char** argv)
 	if (opt::levels > 2)
 	{
 		cerr << PROGRAM ": --levels > 2 is not currently supported\n";
+		dieWithUsageError();
+	}
+
+	if (!opt::levelInitPaths.empty() && opt::levels < 2)
+	{
+		cerr << PROGRAM ": -L can only be used with counting bloom "
+			"filters (-l >= 2)\n";
+		dieWithUsageError();
+	}
+
+	if (opt::levelInitPaths.size() > opt::levels) {
+		cerr << PROGRAM ": level arg to -L is greater than number"
+			" of bloom filter levels (-l)\n";
 		dieWithUsageError();
 	}
 
@@ -217,8 +272,12 @@ int build(int argc, char** argv)
 
 		if (opt::levels == 1)
 			bloom = new BloomFilter(bits);
-		else
-			bloom = new CountingBloomFilter(bits);
+		else {
+			CountingBloomFilter* countingBloom =
+				new CountingBloomFilter(bits);
+			initBloomFilterLevels(*countingBloom);
+			bloom = countingBloom;
+		}
 
 	} else {
 
@@ -233,8 +292,12 @@ int build(int argc, char** argv)
 
 		if (opt::levels == 1)
 			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
-		else
-			bloom = new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
+		else {
+			CountingBloomFilter* countingBloom =
+				new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
+			initBloomFilterLevels(*countingBloom);
+			bloom = countingBloom;
+		}
 
 	}
 
