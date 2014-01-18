@@ -1198,7 +1198,8 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 			assert(branch.getState() == BS_NOEXT
 					|| branch.getState() == BS_AMBI_SAME
 					|| branch.getState() == BS_AMBI_OPP);
-			if (branch.isCanonical()) {
+			if ((opt::ss && branch.getDirection() == SENSE)
+					|| (!opt::ss && branch.isCanonical())) {
 				assembledContigs++;
 				assembledKmer += branch.size();
 				assembleContig(seqCollection, fileWriter, branch,

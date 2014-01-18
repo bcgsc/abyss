@@ -242,7 +242,7 @@ size_t markAmbiguous(ISequenceCollection* g)
 		if (++progress % 1000000 == 0)
 			logger(1) << "Splitting: " << progress << '\n';
 
-		if (it->first.isPalindrome()) {
+		if (!opt::ss && it->first.isPalindrome()) {
 			countv += 2;
 			g->mark(it->first);
 			counte += markNeighbours(g, *it, SENSE);
@@ -250,7 +250,7 @@ size_t markAmbiguous(ISequenceCollection* g)
 			for (extDirection sense = SENSE;
 					sense <= ANTISENSE; ++sense) {
 				if (it->second.getExtension(sense).isAmbiguous()
-						|| it->first.isPalindrome(sense)) {
+						|| (!opt::ss && it->first.isPalindrome(sense))) {
 					countv++;
 					g->mark(it->first, sense);
 					counte += markNeighbours(g, *it, sense);
@@ -749,7 +749,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 		unsigned maxLength, bool addKmer)
 {
 	/** Stop contig assembly at palindromes. */
-	const bool stopAtPalindromes = maxLength == UINT_MAX;
+	const bool stopAtPalindromes = !opt::ss && maxLength == UINT_MAX;
 
 	extDirection dir = branch.getDirection();
 	if (branch.isTooLong(maxLength)) {
@@ -913,7 +913,8 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 					currSeq, extRec, multiplicity, UINT_MAX);
 		}
 
-		if (currBranch.isCanonical()) {
+		if ((opt::ss && currBranch.getDirection() == SENSE)
+				|| (!opt::ss && currBranch.isCanonical())) {
 			size_t removed = assembleContig(seqCollection,
 					fileWriter, currBranch, contigID++);
 			assembledKmer += currBranch.size();

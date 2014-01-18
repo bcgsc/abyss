@@ -71,8 +71,10 @@ void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_data.end()) {
 		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
-	} else
+	} else {
+		assert(!rc || !opt::ss);
 		it->second.addMultiplicity(rc ? ANTISENSE : SENSE, coverage);
+	}
 }
 
 /** Clean up by erasing sequences flagged as deleted.
@@ -109,11 +111,16 @@ bool SequenceCollectionHash::setBaseExtension(
 	SequenceCollectionHash::iterator it = find(kmer, rc);
 	if (it == m_data.end())
 		return false;
-	bool palindrome = kmer.isPalindrome();
-	if (opt::ss || !rc || palindrome)
+	if (opt::ss) {
+		assert(!rc);
 		it->second.setBaseExtension(dir, base);
-	if (!opt::ss && (rc || palindrome))
-		it->second.setBaseExtension(!dir, complementBaseCode(base));
+	} else {
+		bool palindrome = kmer.isPalindrome();
+		if (!rc || palindrome)
+			it->second.setBaseExtension(dir, base);
+		if (rc || palindrome)
+			it->second.setBaseExtension(!dir, complementBaseCode(base));
+	}
 	return true;
 }
 
@@ -124,11 +131,16 @@ void SequenceCollectionHash::removeExtension(const Kmer& kmer,
 	bool rc;
 	SequenceCollectionHash::iterator it = find(kmer, rc);
 	assert(it != m_data.end());
-	bool palindrome = kmer.isPalindrome();
-	if (opt::ss || !rc || palindrome)
+	if (opt::ss) {
+		assert(!rc);
 		it->second.removeExtension(dir, ext);
-	if (!opt::ss && (rc || palindrome))
-		it->second.removeExtension(!dir, ~ext);
+	} else {
+		bool palindrome = kmer.isPalindrome();
+		if (!rc || palindrome)
+			it->second.removeExtension(dir, ext);
+		if (rc || palindrome)
+			it->second.removeExtension(!dir, ~ext);
+	}
 	notify(*it);
 }
 
@@ -210,6 +222,7 @@ bool SequenceCollectionHash::getSeqData(const Kmer& key,
 {
 	bool rc;
 	SequenceCollectionHash::const_iterator it = find(key, rc);
+	assert(!rc || !opt::ss);
 	if (it == m_data.end())
 		return false;
 	const KmerData data = it->second;
