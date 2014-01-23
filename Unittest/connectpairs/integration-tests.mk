@@ -37,7 +37,7 @@ CP_OPTS?=
 # global vars
 #------------------------------------------------------------
 
-HALF_BLOOM_SIZE:=$(shell echo $b / 2 | bc)
+b_div_2:=$(shell echo $b / 2 | bc)
 
 #------------------------------------------------------------
 # phony targets
@@ -49,7 +49,8 @@ tests=run_test \
 	interleaved_files_test \
 	window_test \
 	parallel_load_2_files_test \
-	parallel_load_3_files_test
+	parallel_load_3_files_test \
+	parallel_load_2_windows_3_files_test
 
 .PHONY: all $(tests)
 .DELETE_ON_ERROR:
@@ -179,10 +180,10 @@ window_test: $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 parallel_load_2_files_test: $(tmpdir)/e$e_l2.bloom \
 				$(tmpdir)/e$e_1.fq \
 				$(tmpdir)/e$e_2.fq
-	echo 'HALF_BLOOM_SIZE: $(HALF_BLOOM_SIZE)'
-	$(bloom) build -v -k$k -b$(HALF_BLOOM_SIZE) $(tmpdir)/e$e_l1_read1.bloom \
+	echo 'b_div_2: $(b_div_2)'
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read1.bloom \
 		$(tmpdir)/e$e_1.fq
-	$(bloom) build -v -k$k -b$(HALF_BLOOM_SIZE) $(tmpdir)/e$e_l1_read2.bloom \
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read2.bloom \
 		$(tmpdir)/e$e_2.fq
 	$(bloom) build -v -k$k -b$b -l2 -L 1=$(tmpdir)/e$e_l1_read2.bloom \
 		$(tmpdir)/e$e_l2_read1.bloom $(tmpdir)/e$e_1.fq
@@ -207,11 +208,11 @@ parallel_load_3_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_reads_1of3.fq \
 		$(tmpdir)/e$e_reads_2of3.fq \
 		$(tmpdir)/e$e_reads_3of3.fq
-	$(bloom) build -v -k$k -b$(HALF_BLOOM_SIZE) $(tmpdir)/e$e_l1_1of3.bloom \
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_1of3.bloom \
 		$(tmpdir)/e$e_reads_1of3.fq
-	$(bloom) build -v -k$k -b$(HALF_BLOOM_SIZE) $(tmpdir)/e$e_l1_2of3.bloom \
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_2of3.bloom \
 		$(tmpdir)/e$e_reads_2of3.fq
-	$(bloom) build -v -k$k -b$(HALF_BLOOM_SIZE) $(tmpdir)/e$e_l1_3of3.bloom \
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_3of3.bloom \
 		$(tmpdir)/e$e_reads_3of3.fq
 	$(bloom) build -v -k$k -b$b -l2 \
 		-L 1=$(tmpdir)/e$e_l1_2of3.bloom \
@@ -240,3 +241,71 @@ $(tmpdir)/e%_reads_1of3.fq \
 	awk '{ print > "$(tmpdir)/e$e_reads_" \
 		int((NR-1)/$(FASTQ_CHUNK_SIZE))+1 \
 		"of"$(FASTQ_CHUNKS)".fq"}' $<
+
+#------------------------------------------------------------
+# parallel_load_2_windows_3_files_test
+#------------------------------------------------------------
+
+parallel_load_2_windows_3_files_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq \
+		$(tmpdir)/e$e_reads_2of3.fq \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w1/2 $(tmpdir)/e$e_l1_1of3_window1.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w2/2 $(tmpdir)/e$e_l1_1of3_window2.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w1/2 $(tmpdir)/e$e_l1_2of3_window1.bloom \
+		$(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w2/2 $(tmpdir)/e$e_l1_2of3_window2.bloom \
+		$(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w1/2 $(tmpdir)/e$e_l1_3of3_window1.bloom \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) \
+		-w2/2 $(tmpdir)/e$e_l1_3of3_window2.bloom \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_2of3_window1.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3_window1.bloom \
+		-w 1/2 $(tmpdir)/e$e_l2_1of3_window1.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_2of3_window2.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3_window2.bloom \
+		-w 2/2 $(tmpdir)/e$e_l2_1of3_window2.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3_window1.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3_window1.bloom \
+		-w 1/2 $(tmpdir)/e$e_l2_2of3_window1.bloom \
+		$(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3_window2.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3_window2.bloom \
+		-w 2/2 $(tmpdir)/e$e_l2_2of3_window2.bloom \
+		$(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3_window1.bloom \
+		-L 1=$(tmpdir)/e$e_l1_2of3_window1.bloom \
+		-w 1/2 $(tmpdir)/e$e_l2_3of3_window1.bloom \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3_window2.bloom \
+		-L 1=$(tmpdir)/e$e_l1_2of3_window2.bloom \
+		-w 2/2 $(tmpdir)/e$e_l2_3of3_window2.bloom \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_union.bloom \
+		$(tmpdir)/e$e_l2_1of3_window1.bloom \
+		$(tmpdir)/e$e_l2_1of3_window2.bloom \
+		$(tmpdir)/e$e_l2_2of3_window1.bloom \
+		$(tmpdir)/e$e_l2_2of3_window2.bloom \
+		$(tmpdir)/e$e_l2_3of3_window1.bloom \
+		$(tmpdir)/e$e_l2_3of3_window2.bloom
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_union.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'

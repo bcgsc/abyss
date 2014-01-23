@@ -106,40 +106,6 @@ TEST(BloomFilter, union_)
 	EXPECT_TRUE(unionBloom[b]);
 }
 
-/*
-TEST(BloomFilter, concat_with_union_op)
-{
-	size_t bits = 6;
-	BloomFilter bloom1(bits/2);
-	BloomFilter bloom2(bits/2);
-
-	bloom1.insert(0);
-	bloom1.insert(2);
-	bloom2.insert(1);
-
-	EXPECT_TRUE(bloom1[0]);
-	EXPECT_TRUE(bloom1[2]);
-	EXPECT_TRUE(bloom2[1]);
-
-	stringstream ss;
-	ss << bloom1;
-	ASSERT_TRUE(ss.good());
-	ss << bloom2;
-	ASSERT_TRUE(ss.good());
-
-	BloomFilter catBloom;
-	ss >> catBloom;
-	ASSERT_TRUE(ss.good());
-	catBloom.read(ss, BLOOM_CAT);
-	ASSERT_TRUE(ss.good());
-
-	EXPECT_EQ(bloom1.popcount() + bloom2.popcount(), catBloom.popcount());
-	EXPECT_TRUE(catBloom[0]);
-	EXPECT_TRUE(catBloom[2]);
-	EXPECT_TRUE(catBloom[4]);
-}
-*/
-
 TEST(CountingBloomFilter, base)
 {
 	CountingBloomFilter x(100);
@@ -189,7 +155,6 @@ TEST(BloomFilter, shrink)
 	stringstream ss;
 	ss << big;
 	ASSERT_TRUE(ss.good());
-	// arg 1: load union?, arg 2: shrink factor
 	small.read(ss, false, 2);
 	ASSERT_TRUE(ss.good());
 

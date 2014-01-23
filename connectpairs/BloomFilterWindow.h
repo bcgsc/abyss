@@ -80,6 +80,20 @@ protected:
 			<< '\n';
 	}
 
+	virtual void readBloomDimensions(std::istream& in,
+		size_t& size, size_t& startBitPos,
+		size_t& endBitPos)
+	{
+		BloomFilter::readBloomDimensions(in, size,
+				startBitPos, endBitPos);
+
+		m_fullBloomSize = size;
+		m_startBitPos = startBitPos;
+		m_endBitPos = endBitPos;
+
+		size = endBitPos - startBitPos + 1;
+	}
+
 private:
 
 	size_t m_fullBloomSize;

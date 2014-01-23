@@ -179,6 +179,8 @@ void initBloomFilterLevels(CountingBloomFilter& bf)
 		vector<string>& paths = opt::levelInitPaths.at(i);
 		for (unsigned j = 0; j < paths.size(); j++) {
 			string path = paths.at(j);
+			cerr << "Loading `" << path << "' into level "
+				<< i + 1 << " of counting bloom filter...\n";
 			ifstream in(path.c_str());
 			assert(in.is_open());
 			bloom.read(in, j > 0);

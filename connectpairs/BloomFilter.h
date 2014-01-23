@@ -97,7 +97,8 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Read the bloom filter from a stream */
-	void read(std::istream& in, bool union_, unsigned shrinkFactor = 1)
+	void read(std::istream& in, bool
+			loadUnion = false, unsigned shrinkFactor = 1)
 	{
 		// read bloom filter file format version
 
@@ -126,18 +127,10 @@ class BloomFilter : public virtual BloomFilterBase
 		// read bloom filter dimensions
 
 		size_t size, startBitPos, endBitPos;
-		in >> size
-		   >> expect("\t") >> startBitPos
-		   >> expect("\t") >> endBitPos
-		   >> expect("\n");
+		readBloomDimensions(in, size, startBitPos, endBitPos);
 
-		assert(in);
-		assert(startBitPos < size);
-		assert(endBitPos < size);
-		assert(startBitPos <= endBitPos);
-
-		// shrink factor allows building a smaller, less
-		// accurate filter from a large file
+		// shrink factor allows building a smaller
+		// bloom filter from a larger one
 
 		if (size % shrinkFactor != 0) {
 			std::cerr << "error: the number of bits in the original bloom "
@@ -148,7 +141,7 @@ class BloomFilter : public virtual BloomFilterBase
 
 		size /= shrinkFactor;
 
-		if(union_ && size != this->size()) {
+		if(loadUnion && size != this->size()) {
 			std::cerr << "error: can't union bloom filters "
 				"with different sizes.\n";
 			exit(EXIT_FAILURE);
@@ -158,7 +151,7 @@ class BloomFilter : public virtual BloomFilterBase
 
 		// read bit vector
 
-		if (!union_)
+		if (!loadUnion)
 			m_array.assign(size, 0);
 
 		size_t offset = startBitPos;
@@ -184,6 +177,21 @@ class BloomFilter : public virtual BloomFilterBase
 			<< '\t' << 0
 			<< '\t' << size() - 1
 			<< '\n';
+	}
+
+	virtual void readBloomDimensions(std::istream& in,
+		size_t& size, size_t& startBitPos,
+		size_t& endBitPos)
+	{
+		in >> size
+		   >> expect("\t") >> startBitPos
+		   >> expect("\t") >> endBitPos
+		   >> expect("\n");
+
+		assert(in);
+		assert(startBitPos < size);
+		assert(endBitPos < size);
+		assert(startBitPos <= endBitPos);
 	}
 
   private:
