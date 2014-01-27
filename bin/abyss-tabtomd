@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 exec awk '
-BEGIN { OFS = "\t|" }
+BEGIN { FS = "\t"; OFS = "\t|" }
 { $1 = $1; print }
 NR == 1 {
 	printf "%s", "---"
@@ -9,4 +9,4 @@ NR == 1 {
 		printf "%s", OFS "---"
 	print ""
 }
-' "$@" |column -t
+' "$@" |column -ts"$(printf '\t')"
