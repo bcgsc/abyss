@@ -252,7 +252,7 @@ parallel_load_3_files_test: $(tmpdir)/e$e_l2.bloom \
 abyss_bloom_dist_2_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_1.fq \
 		$(tmpdir)/e$e_2.fq
-	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) \
+	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
 		files='e$e_1.fq e$e_2.fq'
 	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/dist.bloom
 	@echo '------------------'
@@ -267,7 +267,7 @@ abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_reads_1of3.fq \
 		$(tmpdir)/e$e_reads_2of3.fq \
 		$(tmpdir)/e$e_reads_3of3.fq
-	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) \
+	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
 		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
 	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/dist.bloom
 	@echo '------------------'

@@ -235,7 +235,7 @@ int build(int argc, char** argv)
 
 	if (opt::levels > 2)
 	{
-		cerr << PROGRAM ": --levels > 2 is not currently supported\n";
+		cerr << PROGRAM ": -l > 2 is not currently supported\n";
 		dieWithUsageError();
 	}
 
@@ -252,23 +252,37 @@ int build(int argc, char** argv)
 		dieWithUsageError();
 	}
 
+	// bloom filter size in bits
+	size_t bits = opt::bloomSize * 8;
+
+	if (bits % opt::levels != 0) {
+		cerr << PROGRAM ": bloom filter size (-b) must be evenly divisible "
+			<< "by number of bloom filter levels (-l)\n";
+		dieWithUsageError();
+	}
+
+	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
+		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
+			<< "b is bloom filter size (-b), "
+			<< "l is number of levels (-l), and "
+			<< "w is number of windows (-w)\n";
+		dieWithUsageError();
+	}
+
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
 		dieWithUsageError();
 	}
 
-	char* outputPath = argv[optind];
-	optind++;
-
-	BloomFilterBase* bloom = NULL;
-
-	// bloom filter size in bits
-	size_t bits = opt::bloomSize * 8;
-
 	// if we are building a counting bloom filter, reduce
 	// the size of each level so that the overall bloom filter
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
+
+	string outputPath(argv[optind]);
+	optind++;
+
+	BloomFilterBase* bloom = NULL;
 
 	if (opt::windows == 0) {
 
@@ -312,12 +326,19 @@ int build(int argc, char** argv)
 		cerr << "Writing bloom filter to `"
 			<< outputPath << "'...\n";
 
-	ofstream outputFile(outputPath, ios_base::out | ios_base::binary);
-	assert_good(outputFile, outputPath);
-	outputFile << *bloom;
-	outputFile.flush();
-	assert_good(outputFile, outputPath);
-	outputFile.close();
+	ostream* out;
+	if (outputPath == "-")
+		out = &cout;
+	else
+		out = new ofstream(outputPath.c_str(), ios_base::out | ios_base::binary);
+
+	assert_good(*out, outputPath);
+	*out << *bloom;
+	out->flush();
+	assert_good(*out, outputPath);
+
+	if (outputPath != "-")
+		delete out;
 
 	delete bloom;
 
