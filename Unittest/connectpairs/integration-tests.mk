@@ -254,7 +254,7 @@ abyss_bloom_dist_2_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_2.fq
 	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
 		files='e$e_1.fq e$e_2.fq'
-	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/dist.bloom
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist.bloom.gz)
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
@@ -269,7 +269,7 @@ abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_reads_3of3.fq
 	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
 		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
-	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/dist.bloom
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist.bloom.gz)
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'

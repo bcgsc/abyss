@@ -169,6 +169,38 @@ void parseGlobalOpts(int argc, char** argv)
 	Kmer::setLength(opt::k);
 }
 
+static inline istream* openInputStream(const string& path)
+{
+	if (path == "-")
+		return &cin;
+	return new ifstream(path.c_str());
+}
+
+static inline ostream* openOutputStream(const string& path)
+{
+	if (path == "-")
+		return &cout;
+	return new ofstream(path.c_str());
+}
+
+static inline void closeInputStream(istream* in, const string& path)
+{
+	if (path == "-")
+		return;
+	ifstream* ifs = static_cast<ifstream*>(in);
+	ifs->close();
+	delete ifs;
+}
+
+static inline void closeOutputStream(ostream* out, const string& path)
+{
+	if (path == "-")
+		return;
+	ofstream* ofs = static_cast<ofstream*>(out);
+	ofs->close();
+	delete ofs;
+}
+
 void initBloomFilterLevels(CountingBloomFilter& bf)
 {
 	assert(opt::levels >= 2);
@@ -181,10 +213,11 @@ void initBloomFilterLevels(CountingBloomFilter& bf)
 			string path = paths.at(j);
 			cerr << "Loading `" << path << "' into level "
 				<< i + 1 << " of counting bloom filter...\n";
-			ifstream in(path.c_str());
-			assert(in.is_open());
-			bloom.read(in, j > 0);
-			assert(in);
+			istream* in = openInputStream(path);
+			assert(*in);
+			bloom.read(*in, j > 0);
+			assert(*in);
+			closeInputStream(in, path);
 		}
 	}
 }
@@ -326,19 +359,14 @@ int build(int argc, char** argv)
 		cerr << "Writing bloom filter to `"
 			<< outputPath << "'...\n";
 
-	ostream* out;
-	if (outputPath == "-")
-		out = &cout;
-	else
-		out = new ofstream(outputPath.c_str(), ios_base::out | ios_base::binary);
+	ostream* out = openOutputStream(outputPath);
 
 	assert_good(*out, outputPath);
 	*out << *bloom;
 	out->flush();
 	assert_good(*out, outputPath);
 
-	if (outputPath != "-")
-		delete out;
+	closeOutputStream(out, outputPath);
 
 	delete bloom;
 
@@ -354,21 +382,21 @@ int union_(int argc, char** argv)
 		dieWithUsageError();
 	}
 
-	const char* outputPath = argv[optind];
+	string outputPath(argv[optind]);
 	optind++;
 
 	BloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
-		const char* path = argv[i];
+		string path(argv[i]);
 		if (opt::verbose)
 			std::cerr << "Loading bloom filter from `"
 				<< path << "'...\n";
-		ifstream input(path, ios_base::in | ios_base::binary);
-		assert_good(input, path);
-		bloom.read(input, i > optind);
-		assert_good(input, path);
-		input.close();
+		istream* in = openInputStream(path);
+		assert_good(*in, path);
+		bloom.read(*in, i > optind);
+		assert_good(*in, path);
+		closeInputStream(in, path);
 	}
 
 	if (opt::verbose) {
@@ -376,12 +404,14 @@ int union_(int argc, char** argv)
 			<< outputPath << "'...\n";
 	}
 
-	ofstream output(outputPath, ios_base::out | ios_base::binary);
-	assert_good(output, outputPath);
-	output << bloom;
-	output.flush();
-	assert_good(output, outputPath);
-	output.close();
+	ostream* out = openOutputStream(outputPath);
+
+	assert_good(*out, outputPath);
+	*out << bloom;
+	out->flush();
+	assert_good(*out, outputPath);
+
+	closeOutputStream(out, outputPath);
 
 	return 0;
 }
