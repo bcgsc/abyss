@@ -17,6 +17,9 @@ public:
 	/** Constructor. */
 	BloomFilterBase() { }
 
+	/** Destructor. */
+	virtual ~BloomFilterBase() { }
+
 	/** Add the object to this set. */
 	virtual void insert(const key_type& key) = 0;
 

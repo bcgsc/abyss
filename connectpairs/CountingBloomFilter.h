@@ -27,7 +27,7 @@ class CountingBloomFilter : public BloomFilterBase
 	}
 
 	/** Destructor */
-	~CountingBloomFilter()
+	virtual ~CountingBloomFilter()
 	{
 		typedef std::vector<BloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
