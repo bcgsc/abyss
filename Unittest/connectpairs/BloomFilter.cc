@@ -148,7 +148,7 @@ TEST(BloomFilter, shrink)
 	big.insert(1);
 	big.insert(8);
 
-	EXPECT_EQ(2, big.popcount());
+	EXPECT_EQ(2U, big.popcount());
 	EXPECT_TRUE(big[1]);
 	EXPECT_TRUE(big[8]);
 
@@ -158,8 +158,8 @@ TEST(BloomFilter, shrink)
 	small.read(ss, false, 2);
 	ASSERT_TRUE(ss.good());
 
-	EXPECT_EQ(5, small.size());
-	EXPECT_EQ(2, small.popcount());
+	EXPECT_EQ(5U, small.size());
+	EXPECT_EQ(2U, small.popcount());
 	EXPECT_TRUE(small[1]);
 	EXPECT_TRUE(small[3]);
 }
@@ -179,7 +179,7 @@ TEST(BloomFilter, window)
 
 	EXPECT_TRUE(bloom[pos1]);
 	EXPECT_TRUE(bloom[pos2]);
-	EXPECT_EQ(2, bloom.popcount());
+	EXPECT_EQ(2U, bloom.popcount());
 
 	BloomFilterWindow window1(bits, 0, bits/2 - 1);
 	window1.insert(pos1);
@@ -202,7 +202,7 @@ TEST(BloomFilter, window)
 	unionBloom.read(ss, true);
 	ASSERT_TRUE(ss.good());
 
-	EXPECT_EQ(2, unionBloom.popcount());
+	EXPECT_EQ(2U, unionBloom.popcount());
 	EXPECT_TRUE(unionBloom[pos1]);
 	EXPECT_TRUE(unionBloom[pos2]);
 }
@@ -224,7 +224,7 @@ TEST(CountingBloomFilter, window)
 
 	EXPECT_TRUE(countingBloom[pos1]);
 	EXPECT_TRUE(countingBloom[pos2]);
-	EXPECT_EQ(2, countingBloom.getBloomFilter(1).popcount());
+	EXPECT_EQ(2U, countingBloom.getBloomFilter(1).popcount());
 
 	CountingBloomFilterWindow window1(bits, 0, bits/2 - 1);
 	window1.insert(pos1);
@@ -247,7 +247,7 @@ TEST(CountingBloomFilter, window)
 	unionBloom.read(ss, true);
 	ASSERT_TRUE(ss.good());
 
-	EXPECT_EQ(2, unionBloom.popcount());
+	EXPECT_EQ(2U, unionBloom.popcount());
 	EXPECT_TRUE(unionBloom[pos1]);
 	EXPECT_TRUE(unionBloom[pos2]);
 }
