@@ -15,7 +15,8 @@ abyss_connectpairs_SOURCES = connectpairs.cc \
 	BloomFilter.h \
 	CountingBloomFilter.h \
 	DBGBloom.h \
-	DBGBloomAlgorithms.h
+	DBGBloomAlgorithms.h \
+	connectpairs.h
 
 abyss_bloom_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \

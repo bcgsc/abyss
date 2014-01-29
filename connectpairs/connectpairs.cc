@@ -5,6 +5,7 @@
 
 #include "config.h"
 
+#include "connectpairs.h"
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
@@ -12,7 +13,6 @@
 #include "Common/IOUtil.h"
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
-#include "DataLayer/FastaInterleave.h"
 #include "DataLayer/FastaConcat.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
@@ -66,6 +66,8 @@ static const char USAGE_MESSAGE[] =
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
 "  -I, --interleaved          input reads files are interleaved\n"
+"      --mask                 mask new and changed bases as lower case\n"
+"      --no-mask              do not mask bases [default]\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -127,6 +129,9 @@ namespace opt {
 	/** Output file for graph search stats */
 	static string tracefilePath;
 
+	/** Mask bases not in reads. */
+	static int mask = 0;
+
 }
 
 /** Counters */
@@ -157,6 +162,8 @@ static const struct option longopts[] = {
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
+	{ "mask",             no_argument, &opt::mask, 1 },
+	{ "no-mask",          no_argument, &opt::mask, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
@@ -214,6 +221,35 @@ static void seqanTests()
 }
 #endif
 
+/** Uppercase only bases that are present in original reads.
+ *  @return number of mis-matching bases. */
+static unsigned maskNew(const FastqRecord& read1, const FastqRecord& read2,
+		FastaRecord& merged)
+{
+	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
+	transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+	transform(r2.begin(), r2.end(), r2.begin(), ::tolower);
+	transform(merged.seq.begin(), merged.seq.end(), merged.seq.begin(),
+			::tolower);
+	unsigned mismatches = 0;
+	for (unsigned i = 0; i < r1.size(); i++) {
+		assert(i < merged.seq.size());
+		if (r1[i] == merged.seq[i])
+			merged.seq[i] = toupper(r1[i]);
+		else
+			mismatches++;
+	}
+	for (unsigned i = 0; i < r2.size(); i++) {
+		assert(r2.size() <= merged.seq.size());
+		unsigned merged_loc = i + merged.seq.size() - r2.size();
+		if (r2[i] == merged.seq[merged_loc])
+			merged.seq[merged_loc] = toupper(r2[i]);
+		else
+			mismatches++;
+	}
+	return mismatches;
+}
+
 /** Connect a read pair. */
 static void connectPair(const DBGBloom& g,
 	const FastqRecord& read1,
@@ -268,10 +304,16 @@ static void connectPair(const DBGBloom& g,
 	  case FOUND_PATH:
 		assert(!paths.empty());
 		if (paths.size() == 1) {
+			if (opt::mask && maskNew(read1, read2, paths.front()) > opt::maxMismatches) {
 #pragma omp atomic
-			++g_count.uniquePath;
+				++g_count.tooManyMismatches;
+			} else {
+#pragma omp atomic
+				++g_count.uniquePath;
 #pragma omp critical(mergedStream)
-			mergedStream << paths.front();
+				mergedStream << paths.front();
+				break;
+			}
 		} else {
 			NWAlignment aln;
 			unsigned matches, size;
@@ -280,19 +322,25 @@ static void connectPair(const DBGBloom& g,
 			if (size - matches <= opt::maxMismatches) {
 				FastaRecord read = paths.front();
 				read.seq = aln.match_align;
+				if (opt::mask && maskNew(read1, read2, read) > opt::maxMismatches) {
 #pragma omp atomic
-				++g_count.multiplePaths;
+					++g_count.tooManyMismatches;
+				} else {
+#pragma omp atomic
+					++g_count.multiplePaths;
 #pragma omp critical(mergedStream)
-				mergedStream << read;
+					mergedStream << read;
+					break;
+				}
 			} else {
 #pragma omp atomic
 				++g_count.tooManyMismatches;
-#pragma omp critical(read1Stream)
-				read1Stream << read1;
-#pragma omp critical(read2Stream)
-				read2Stream << read2;
 			}
 		}
+#pragma omp critical(read1Stream)
+		read1Stream << read1;
+#pragma omp critical(read2Stream)
+		read2Stream << read2;
 		break;
 	  case TOO_MANY_PATHS:
 #pragma omp atomic
