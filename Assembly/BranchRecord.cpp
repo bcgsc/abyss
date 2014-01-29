@@ -10,10 +10,10 @@ int BranchRecord::calculateBranchMultiplicity() const
 	for (BranchData::const_iterator it = m_data.begin();
 			it != m_data.end(); ++it) {
 		int m = it->second.getMultiplicity();
-		assert(m > 0);
+		assert(m >= 0);
 		total += m;
 	}
-	assert(total > 0);
+	assert(total >= 0);
 	return total;
 }
 
