@@ -8,7 +8,8 @@ dist_bin_SCRIPTS = \
 	abyss-kaligner \
 	abyss-pe \
 	abyss-samtoafg \
-	abyss-tabtomd
+	abyss-tabtomd \
+	abyss-bloom-dist.mk
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
