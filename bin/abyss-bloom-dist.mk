@@ -23,6 +23,9 @@ override b:=$(shell echo '$b' | \
 	sed 's/g/*1024^3/I' | \
 	bc)
 
+# strip leading or trailing whitespace from files list
+override files:=$(strip $(files))
+
 # compute mem limits (in gigabytes) for SGE_RREQ lines below
 b_gb:=$(shell echo '$b / 1024^3' | bc -l)
 l1_mem_gb:=$(shell echo '$(b_gb) / $w + 1.05' | bc -l | xargs printf '%.1f')
@@ -37,11 +40,11 @@ windows:=$(shell seq 1 $w)
 l1_bloom_files:=\
 	$(foreach window,$(windows),\
 		$(foreach file,$(files),\
-			$(name)_l1_w$(window)_$(file).bloom.gz))
+			$(name)_l1_w$(window)_$(notdir $(file)).bloom.gz))
 l2_bloom_files:=\
 	$(foreach window,$(windows),\
 		$(foreach file,$(files),\
-			$(name)_l2_w$(window)_$(file).bloom.gz))
+			$(name)_l2_w$(window)_$(notdir $(file)).bloom.gz))
 
 #------------------------------------------------------------
 # functions
@@ -58,6 +61,7 @@ getWindow=$(subst w,,$(word 3,$(call splitBloomFilename,$1)))
 # arg 1: filename of the form $(name)_l<level>_w<window>_<readfile>.bloom
 # output: <readfile>
 getReadFilename=$(subst $(space),_,$(wordlist 4,999,$(call splitBloomFilename,$1)))
+getReadFilePath=$(filter %$(call getReadFilename,$1),$(files))
 
 # arg 1: filename of the form $(name)_l1_w<window>_<readfile>.bloom
 # output: list of bloom filter files for level 1, window <window>, excluding
@@ -105,7 +109,7 @@ build: args_check $(name).bloom.gz
 $(name)_l1_%.bloom.gz: $(files)
 	SGE_RREQ="-N l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
 	abyss-bloom build -v -k$k -b$b -w$(call getWindow,$@)/$w \
-		- $(call getReadFilename,$@) | gzip -c > $@
+		- $(call getReadFilePath,$@) | gzip -c > $@
 
 # level 2 bloom filter files
 $(name)_l2_%.bloom.gz: $(l1_bloom_files)
@@ -114,7 +118,7 @@ $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 		abyss-bloom build -v -k$k -b$(b_times_l) -l2 \
 		-w$(call getWindow,$@)/$w \
 		$(foreach i,$(wordlist 2,999,$(files)),-L1=-) \
-		- $(call getReadFilename,$@) | \
+		- $(call getReadFilePath,$@) | \
 			gzip -c > $@
 
 # final output file
@@ -141,4 +145,5 @@ debug:
 	@echo 'l2_bloom_files="$(l2_bloom_files)"'
 	@echo '$$(call getWindow, $(word 1,$(l1_bloom_files))): $(call getWindow,$(word 1,$(l1_bloom_files)))'
 	@echo '$$(call getReadFilename, $(word 1,$(l1_bloom_files))): $(call getReadFilename,$(word 1,$(l1_bloom_files)))'
+	@echo '$$(call getReadFilePath, $(word 1,$(l1_bloom_files))): $(call getReadFilePath,$(word 1,$(l1_bloom_files)))'
 	@echo '$$(call getSiblingBloomFiles, $(word 1,$(l1_bloom_files))): $(call getSiblingBloomFiles,$(word 1,$(l1_bloom_files)))'
