@@ -107,13 +107,13 @@ build: args_check $(name).bloom.gz
 
 # level 1 bloom filter files
 $(name)_l1_%.bloom.gz: $(files)
-	SGE_RREQ="-N l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
+	SGE_RREQ="-N $(name)_l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
 	abyss-bloom build -v -k$k -b$b -w$(call getWindow,$@)/$w \
 		- $(call getReadFilePath,$@) | gzip -c > $@
 
 # level 2 bloom filter files
 $(name)_l2_%.bloom.gz: $(l1_bloom_files)
-	SGE_RREQ="-N l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
+	SGE_RREQ="-N $(name)_l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
 	zcat $(call getSiblingBloomFiles,$(subst l2,l1,$@)) | \
 		abyss-bloom build -v -k$k -b$(b_times_l) -l2 \
 		-w$(call getWindow,$@)/$w \
@@ -123,7 +123,7 @@ $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 
 # final output file
 $(name).bloom.gz: $(l2_bloom_files)
-	SGE_RREQ="-N union -l mem_token=$(union_mem_gb)G,mem_free=$(union_mem_gb)G,h_vmem=$(union_mem_gb)G" \
+	SGE_RREQ="-N $(name)_union -l mem_token=$(union_mem_gb)G,mem_free=$(union_mem_gb)G,h_vmem=$(union_mem_gb)G" \
 	zcat $(l2_bloom_files) | \
 		abyss-bloom union -v -k$k - \
 		$(foreach i,$(l2_bloom_files),-) | \
