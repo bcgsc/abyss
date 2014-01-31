@@ -355,9 +355,13 @@ int build(int argc, char** argv)
 	for (int i = optind; i < argc; i++)
 		bloom->loadFile(opt::k, argv[i], opt::verbose);
 
-	if (opt::verbose)
+	if (opt::verbose) {
+		cerr << "Successfully loaded bloom filter.\n";
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bloom->FPR() << "%\n";
 		cerr << "Writing bloom filter to `"
 			<< outputPath << "'...\n";
+	}
 
 	ostream* out = openOutputStream(outputPath);
 
@@ -400,6 +404,9 @@ int union_(int argc, char** argv)
 	}
 
 	if (opt::verbose) {
+		cerr << "Successfully loaded bloom filter.\n";
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.FPR() << "%\n";
 		std::cerr << "Writing union of bloom filters to `"
 			<< outputPath << "'...\n";
 	}

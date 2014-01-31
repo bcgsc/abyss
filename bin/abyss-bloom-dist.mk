@@ -83,6 +83,9 @@ args_check:
 ifndef name
 	$(error $(PROGRAM_NAME): missing required parameter 'name')
 endif
+ifeq (_,$(findstring _,$(name)))
+	$(error $(PROGRAM_NAME): sorry, 'name' parameter ('$(name)') must not contain underscores)
+endif
 ifndef k
 	$(error $(PROGRAM_NAME): missing required parameter 'k')
 endif
