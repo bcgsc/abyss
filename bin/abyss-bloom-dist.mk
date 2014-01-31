@@ -130,7 +130,9 @@ $(name).bloom.gz: $(l2_bloom_files)
 	zcat $(l2_bloom_files) | \
 		abyss-bloom union -v -k$k - \
 		$(foreach i,$(l2_bloom_files),-) | \
-			gzip -c > $@
+			gzip -c > $@ && \
+	rm -f $(l1_bloom_files) && \
+	rm -f $(l2_bloom_files)
 
 #------------------------------------------------------------
 # debugging rules
