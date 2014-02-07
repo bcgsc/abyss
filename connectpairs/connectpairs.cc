@@ -73,6 +73,7 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
+"  -m, --read-mismatches      max mismatches between paths and reads [disabled]\n"
 "  -M, --max-mismatches       max mismatches between merged paths [2]\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
 "  -P, --max-paths=N          merge at most N alternate paths [2]\n"
@@ -129,8 +130,11 @@ namespace opt {
 	/** Output file for graph search stats */
 	static string tracefilePath;
 
-	/** Mask bases not in reads. */
+	/** Mask bases not in reads */
 	static int mask = 0;
+
+	/** Max mismatches between consensus and original reads */
+	static int maxReadMismatches = -1;
 
 }
 
@@ -143,6 +147,7 @@ static struct {
 	size_t tooManyPaths;
 	size_t tooManyBranches;
 	size_t tooManyMismatches;
+	size_t tooManyReadMismatches;
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
 } g_count;
@@ -167,6 +172,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
+	{ "read-mismatches",  required_argument, NULL, 'm' },
 	{ "max-mismatches",   required_argument, NULL, 'M' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
@@ -227,10 +233,12 @@ static unsigned maskNew(const FastqRecord& read1, const FastqRecord& read2,
 		FastaRecord& merged)
 {
 	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
-	transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
-	transform(r2.begin(), r2.end(), r2.begin(), ::tolower);
-	transform(merged.seq.begin(), merged.seq.end(), merged.seq.begin(),
-			::tolower);
+	if (opt::mask) {
+		transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+		transform(r2.begin(), r2.end(), r2.begin(), ::tolower);
+		transform(merged.seq.begin(), merged.seq.end(), merged.seq.begin(),
+				::tolower);
+	}
 	unsigned mismatches = 0;
 	for (unsigned i = 0; i < r1.size(); i++) {
 		assert(i < merged.seq.size());
@@ -286,7 +294,8 @@ static void connectPair(const DBGBloom& g,
 				<< "no path: " << g_count.noPath << ", "
 				<< "too many paths: " << g_count.tooManyPaths << ", "
 				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many mismatches: " << g_count.tooManyMismatches
+				<< "too many mismatches: " << g_count.tooManyMismatches << ", "
+				<< "too many read mismatches: " << g_count.tooManyReadMismatches
 				<< ")\n";
 		}
 	}
@@ -304,9 +313,9 @@ static void connectPair(const DBGBloom& g,
 	  case FOUND_PATH:
 		assert(!paths.empty());
 		if (paths.size() == 1) {
-			if (opt::mask && maskNew(read1, read2, paths.front()) > opt::maxMismatches) {
+			if (maskNew(read1, read2, paths.front()) > opt::maxMismatches) {
 #pragma omp atomic
-				++g_count.tooManyMismatches;
+				++g_count.tooManyReadMismatches;
 			} else {
 #pragma omp atomic
 				++g_count.uniquePath;
@@ -322,9 +331,9 @@ static void connectPair(const DBGBloom& g,
 			if (size - matches <= opt::maxMismatches) {
 				FastaRecord read = paths.front();
 				read.seq = aln.match_align;
-				if (opt::mask && maskNew(read1, read2, read) > opt::maxMismatches) {
+				if (maskNew(read1, read2, read) > opt::maxMismatches) {
 #pragma omp atomic
-					++g_count.tooManyMismatches;
+					++g_count.tooManyReadMismatches;
 				} else {
 #pragma omp atomic
 					++g_count.multiplePaths;
@@ -411,6 +420,8 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'm':
+			arg >> opt::maxReadMismatches; break;
 		  case 'M':
 			arg >> opt::maxMismatches; break;
 		  case 'o':
@@ -585,6 +596,10 @@ int main(int argc, char** argv)
 			"Too many mismatches: " << g_count.tooManyMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyMismatches / g_count.readPairsProcessed
+				<< "%)\n"
+			"Too many read mismatches: " << g_count.tooManyReadMismatches
+				<< " (" << setprecision(3) << (float)100
+					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
 				<< "%)\n"
 			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
 				<< "%\n";
