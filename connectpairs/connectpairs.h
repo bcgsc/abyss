@@ -1,6 +1,7 @@
 #ifndef CONNECTPAIRS_H
 #define CONNECTPAIRS_H
 #include "DataLayer/FastaInterleave.h"
+#include <algorithm>
 
 /** Uppercase only bases that are present in original reads.
  *  @return number of mis-matching bases. */
