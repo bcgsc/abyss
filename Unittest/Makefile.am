@@ -73,4 +73,11 @@ graph_ConstrainedBidiBFSVisitor_SOURCES = \
 graph_ConstrainedBidiBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 graph_ConstrainedBidiBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += connectpairs_connectpairs
+check_PROGRAMS += connectpairs_connectpairs
+connectpairs_connectpairs_SOURCES = \
+	connectpairs/connectpairsTest.cpp
+connectpairs_connectpairs_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+connectpairs_connectpairs_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 TESTS = $(UNIT_TESTS)
