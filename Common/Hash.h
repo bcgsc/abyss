@@ -14,7 +14,9 @@ using std::tr1::hash;
 # define NAMESPACE_STD_HASH_BEGIN namespace std { namespace tr1 {
 # define NAMESPACE_STD_HASH_END } }
 #else
-# error One of either std::hash or std::tr1::hash is required.
+using boost::hash;
+# define NAMESPACE_STD_HASH_BEGIN namespace boost {
+# define NAMESPACE_STD_HASH_END }
 #endif
 
 #endif

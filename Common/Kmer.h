@@ -124,6 +124,7 @@ static inline Kmer reverseComplement(const Kmer& seq)
 }
 
 NAMESPACE_STD_HASH_BEGIN
+	template <typename T> struct hash;
 	template <> struct hash<Kmer> {
 		size_t operator()(const Kmer& kmer) const
 		{
