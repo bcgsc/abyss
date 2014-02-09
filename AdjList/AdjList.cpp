@@ -144,7 +144,7 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 }
 
 /** An index of suffixes of k-1 bp. */
-#ifdef defined(HAVE_STD_HASH) || defined(HAVE_STD_TR1_HASH)
+#if defined(HAVE_STD_HASH) || defined(HAVE_STD_TR1_HASH)
 typedef unordered_map<Kmer, vector<ContigNode>, hash<Kmer> >
 	SuffixMap;
 #else
