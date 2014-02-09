@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <boost/dynamic_bitset.hpp>
+#include <algorithm>
 
 /** A Bloom filter. */
 class BloomFilter : public virtual BloomFilterBase
@@ -30,7 +32,7 @@ class BloomFilter : public virtual BloomFilterBase
 	/** Return the population count, i.e. the number of set bits. */
 	size_t popcount() const
 	{
-		return std::count(m_array.begin(), m_array.end(), true);
+		return m_array.count();
 	}
 
 	/** Return the estimated false positive rate */
@@ -83,16 +85,21 @@ class BloomFilter : public virtual BloomFilterBase
 
 		size_t bits = size();
 		size_t bytes = (bits + 7) / 8;
-		for (size_t i = 0, j = 0; i < bytes; i++) {
-			uint8_t byte = 0;
-			for (unsigned k = 0; k < 8; k++, j++) {
-				byte <<= 1;
-				if (j < bits && m_array[j]) {
-					byte |= 1;
+		char buf[IO_BUFFER_SIZE];
+		for (size_t i = 0, j = 0; i < bytes;) {
+			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
+			for (size_t k = 0; k < writeSize; k++) {
+				buf[k] = 0;
+				for (unsigned l = 0; l < 8; l++, j++) {
+					buf[k] <<= 1;
+					if (j < bits && m_array[j]) {
+						buf[k] |= 1;
+					}
 				}
 			}
-			out << byte;
+			out.write(buf, writeSize);
 			assert(out);
+			i += writeSize;
 		}
 	}
 
@@ -152,21 +159,27 @@ class BloomFilter : public virtual BloomFilterBase
 		// read bit vector
 
 		if (!loadUnion)
-			m_array.assign(size, 0);
+			m_array.reset();
 
 		size_t offset = startBitPos;
 		size_t bits = endBitPos - startBitPos + 1;
 		size_t bytes = (bits + 7) / 8;
-		for (size_t i = 0, j = offset; i < bytes; i++) {
-			uint8_t byte;
-			in.read((char *)&byte, 1);
+
+		char buf[IO_BUFFER_SIZE];
+		for (size_t i = 0, j = offset; i < bytes; ) {
+			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
+			in.read(buf, readSize);
 			assert(in);
-			for (k = 0; k < 8 && j < offset + bits; k++, j++) {
-				bool bit = byte & (1 << (7 - k));
-				size_t index = j % size;
-				m_array[index] = m_array[index] | bit;
+			for (k = 0; k < readSize; k++) {
+				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
+					bool bit = buf[k] & (1 << (7 - l));
+					size_t index = j % size;
+					m_array[index] |= bit;
+				}
 			}
+			i += readSize;
 		}
+
 	}
 
   protected:
@@ -196,8 +209,9 @@ class BloomFilter : public virtual BloomFilterBase
 
   private:
 
-	std::vector<bool> m_array;
+	boost::dynamic_bitset<> m_array;
 	static const unsigned BLOOM_VERSION = 2;
+	static const size_t IO_BUFFER_SIZE = 32 * 1024;
 
 };
 
