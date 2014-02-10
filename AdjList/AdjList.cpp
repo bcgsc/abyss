@@ -116,7 +116,7 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 {
 	// Construct a suffix array of the blunt contigs.
 	typedef pair<string, ContigNode> Suffix;
-	typedef vector<Suffix> Suffixes;
+	typedef list<Suffix> Suffixes;
 	Suffixes suffixes;
 	SuffixArray sa(opt::minOverlap);
 
