@@ -206,7 +206,9 @@ static inline SearchResult connectPairs(
 
 	unsigned maxPathLen = maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
 	assert(maxPathLen <= maxMergedSeqLen - k + 1);
-	unsigned minPathLen = (unsigned)std::max(0,
+	unsigned longestReadLen = std::max(read1.seq.length(), read2.seq.length());
+	// note: do not allow paths that are shorter than the reads
+	unsigned minPathLen = (unsigned)std::max((int)(longestReadLen - k + 1),
 			(int)(minMergedSeqLen - k + 1 - startKmerPos - goalKmerPos));
 
 	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer, maxPaths,
