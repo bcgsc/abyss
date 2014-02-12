@@ -72,6 +72,8 @@ static const char USAGE_MESSAGE[] =
 "      --scaffold        scaffold over bubbles that have\n"
 "                        insufficient identity\n"
 "      --no-scaffold     disable scaffolding [default]\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "      --dot             output bubbles in dot format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
@@ -107,6 +109,9 @@ namespace opt {
 
 	int format; // used by ContigProperties
 
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
+
 	/** Number of threads. */
 	static int threads = 1;
 }
@@ -125,6 +130,8 @@ static const struct option longopts[] = {
 	{ "identity",      required_argument, NULL, 'p' },
 	{ "scaffold",      no_argument,       &opt::scaffold, 1},
 	{ "no-scaffold",   no_argument,       &opt::scaffold, 0},
+	{ "SS",            no_argument,       &opt::ss, 1 },
+	{ "no-SS",         no_argument,       &opt::ss, 0 },
 	{ "threads",       required_argument, NULL, 'j' },
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "help",          no_argument,       NULL, OPT_HELP },
@@ -642,7 +649,10 @@ int main(int argc, char** argv)
 		size_t numContigs = num_vertices(g) / 2;
 		if (opt::scaffold) {
 			Graph gorig = g;
-			assemble(g, back_inserter(paths));
+			if (opt::ss)
+				assemble_stranded(g, back_inserter(paths));
+			else
+				assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
 					it != paths.end(); ++it) {
 				ContigNode u(numContigs + it - paths.begin(), false);
@@ -652,7 +662,10 @@ int main(int argc, char** argv)
 					<< addDistance(gorig, *it) << '\n';
 			}
 		} else {
-			assemble(g, back_inserter(paths));
+			if (opt::ss)
+				assemble_stranded(g, back_inserter(paths));
+			else
+				assemble(g, back_inserter(paths));
 			for (ContigPaths::const_iterator it = paths.begin();
 					it != paths.end(); ++it) {
 				ContigNode u(numContigs + it - paths.begin(), false);

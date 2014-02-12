@@ -231,6 +231,32 @@ OutIt assemble(Graph& g, OutIt out)
 	return assemble_if(g, out, True<edge_descriptor>());
 }
 
+/** Return true if the edge e is +ve sense. */
+template<typename Graph>
+struct IsPositive : std::unary_function<
+		typename graph_traits<Graph>::edge_descriptor, bool>
+{
+	IsPositive(const Graph& g) : m_g(g) { }
+	bool operator()(
+			typename graph_traits<Graph>::edge_descriptor e) const
+	{
+		return !get(vertex_sense, m_g, source(e, m_g))
+			&& !get(vertex_sense, m_g, target(e, m_g));
+	}
+  private:
+	const Graph& m_g;
+};
+
+/** Assemble unambiguous paths in forward orientation only.
+ * Write the paths to out. */
+template<typename Graph, typename OutIt>
+OutIt assemble_stranded(Graph& g, OutIt out)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor
+		edge_descriptor;
+	return assemble_if(g, out, IsPositive<Graph>(g));
+}
+
 /** Remove tips.
  * For an edge (u,v), remove the vertex v if deg+(u) > 1,
  * deg-(v) = 1 and deg+(v) = 0, and p(v) is true.

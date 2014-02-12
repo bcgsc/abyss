@@ -363,7 +363,7 @@ endif
 # Pop bubbles
 
 %-2.path %-3.adj: %-1.fa %-2.adj
-	PopBubbles $v -j$j -k$k $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
+	PopBubbles $v -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
 
 %-3.fa: %-1.fa %-2.adj %-2.path
 	MergeContigs $v -k$k -o $@ $^
