@@ -56,6 +56,8 @@ static const char USAGE_MESSAGE[] =
 "      --mask-repeat     join contigs at a simple repeat and mask\n"
 "                        the repeat sequence [default]\n"
 "      --no-merge-repeat don't join contigs at a repeat\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -69,6 +71,9 @@ namespace opt {
 	static unsigned minimum_overlap = 5;
 	static int mask = 1;
 	static int scaffold = 1;
+
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
 
 	/** The acceptable error of a distance estimate. */
 	unsigned distanceError = 6;
@@ -94,6 +99,8 @@ static const struct option longopts[] = {
 	{ "no-scaffold", no_argument,   &opt::scaffold, 0 },
 	{ "mask-repeat",    no_argument, &opt::mask, 1 },
 	{ "no-merge-repeat", no_argument, &opt::mask, 0 },
+	{ "SS",            no_argument,       &opt::ss, 1 },
+	{ "no-SS",         no_argument,       &opt::ss, 0 },
 	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
@@ -534,8 +541,13 @@ int main(int argc, char** argv)
 			// This edge is not scaffolded.
 		} else if (contiguous_out(scaffoldGraph, t)) {
 			assert(*adjacent_vertices(t, scaffoldGraph).first == h);
+			ContigNode t1 = t, h1 = h;
+			if (opt::ss && t.sense() && h.sense()) {
+				t1 = h ^ true;
+				h1 = t ^ true;
+			}
 			FastaRecord contig = createGapContig(graph,
-					t, h, overlap);
+					t1, h1, overlap);
 			out << contig;
 			assert(out.good());
 
@@ -543,8 +555,8 @@ int main(int argc, char** argv)
 			vertex_descriptor v = add_vertex(
 					ContigProperties(contig.seq.length(), 0), graph);
 			put(vertex_name, graph, v, contig.id);
-			add_edge(t, v, graph);
-			add_edge(v, h, graph);
+			add_edge(t1, v, graph);
+			add_edge(v, h1, graph);
 		} else
 			stats.ambiguous++;
 	}

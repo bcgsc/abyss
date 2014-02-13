@@ -420,7 +420,7 @@ endif
 # Find overlaps between contigs
 
 %-4.fa %-4.adj: %-3.fa %-3.adj %-3.dist
-	Overlap $v $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-4.fa $^
+	Overlap $v $(SS) $(OVERLAP_OPTIONS) -k$k -g $*-4.adj -o $*-4.fa $^
 
 # Assemble contigs
 
