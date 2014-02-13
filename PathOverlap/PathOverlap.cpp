@@ -56,6 +56,8 @@ static const char *USAGE_MESSAGE =
 "      --adj             output the graph in adj format [default]\n"
 "      --dot             output the graph in dot format\n"
 "      --sam             output the graph in SAM format\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -73,6 +75,9 @@ namespace opt {
 
 	/** Output the IDs of contigs in overlaps to this file. */
 	static string repeatContigs;
+
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
 
 	/** Mode of operation. */
 	enum {
@@ -101,6 +106,8 @@ static const struct option longopts[] = {
 	{ "adj",          no_argument,       &opt::format, ADJ, },
 	{ "dot",          no_argument,       &opt::format, DOT, },
 	{ "sam",          no_argument,       &opt::format, SAM, },
+	{ "SS",           no_argument,       &opt::ss, 1 },
+	{ "no-SS",        no_argument,       &opt::ss, 0 },
 	{ "repeats",      required_argument, NULL, 'r' },
 	{ "verbose",      no_argument,       NULL, 'v' },
 	{ "help",         no_argument,       NULL, OPT_HELP },
@@ -472,15 +479,21 @@ static ContigPath mergePaths(const Paths& paths,
 
 /** Return true if the edge e is a path overlap. */
 struct IsPathOverlap : unary_function<edge_descriptor, bool> {
-	IsPathOverlap(const Graph& g, const OverlapMap& pmap)
-		: m_g(g), m_pmap(pmap) { }
+	IsPathOverlap(const Graph& g, const OverlapMap& pmap,
+			const IsPositive<Graph>& pred)
+		: m_g(g), m_pmap(pmap), m_isPositive(pred) { }
 	bool operator()(edge_descriptor e) const
 	{
-		return getOverlap(m_pmap, source(e, m_g), target(e, m_g));
+		bool stranded = true;
+		if (opt::ss)
+			stranded = m_isPositive(e);
+		return stranded &&
+			getOverlap(m_pmap, source(e, m_g), target(e, m_g));
 	}
   private:
 	const Graph& m_g;
 	const OverlapMap& m_pmap;
+	const IsPositive<Graph>& m_isPositive;
 };
 
 /** Assemble overlapping paths. */
@@ -507,7 +520,7 @@ static void assembleOverlappingPaths(Graph& g,
 	// Assemble unambiguously overlapping paths.
 	Paths merges;
 	assemble_if(g, back_inserter(merges),
-			IsPathOverlap(g, overlapMap));
+			IsPathOverlap(g, overlapMap, IsPositive<Graph>(g)));
 
 	// Merge overlapping paths.
 	g_contigNames.unlock();

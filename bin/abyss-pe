@@ -431,7 +431,7 @@ endif
 	MergePaths $v $(MERGEPATHS_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
-	PathOverlap --assemble $v -k$k $^ >$@
+	PathOverlap --assemble $(SS) $v -k$k $^ >$@
 
 ifndef cs
 
