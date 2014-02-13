@@ -103,13 +103,13 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 
 static inline unsigned getStartKmerPos(unsigned k,
 	const FastaRecord& read, const DBGBloom& g,
-	bool rc = false)
+	bool rc = false, bool longSearch = false)
 {
 	if (read.seq.size() < k)
 		return NO_MATCH;
 
 	// build a vector indicating whether each kmer is a match
-	// The vector intentionally has an extra false element at
+	// Note: the vector intentionally has an extra false element at
 	// the end, for the second loop below.
 
 	const std::string& seq = read.seq;
@@ -117,8 +117,11 @@ static inline unsigned getStartKmerPos(unsigned k,
 	bool foundMatch = false;
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
 		std::string kmerStr = seq.substr(i,k);
-		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
+		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		if (pos != std::string::npos) {
+			i += pos;
 			continue;
+		}
 		Kmer kmer(kmerStr);
 		if (rc)
 			kmer.reverseComplement();
@@ -147,7 +150,8 @@ static inline unsigned getStartKmerPos(unsigned k,
 		} else {
 			// Note: match has an extra false element at the end,
 			// so this else block will get executed at least once.
-			if (matchLength >= maxMatchLength) {
+			if ((longSearch && matchLength > maxMatchLength) ||
+				(!longSearch && matchLength >= maxMatchLength)) {
 				maxMatchPos = matchPos;
 				maxMatchLength = matchLength;
 			}
@@ -157,8 +161,10 @@ static inline unsigned getStartKmerPos(unsigned k,
 	}
 	assert(maxMatchLength > 0);
 
-	// return the kmer closest to the gap between read pairs
-	return maxMatchPos + maxMatchLength - 1;
+	if (longSearch)
+		return maxMatchPos;
+	else
+		return maxMatchPos + maxMatchLength - 1;
 }
 
 struct BaseChangeScore
@@ -241,7 +247,8 @@ static inline SearchResult connectPairs(
 	unsigned minMergedSeqLen = 0,
 	unsigned maxMergedSeqLen = NO_LIMIT,
 	unsigned maxBranches = NO_LIMIT,
-	bool fixErrors = false)
+	bool fixErrors = false,
+	bool longSearch = false)
 {
 	SearchResult result;
 
@@ -258,8 +265,8 @@ static inline SearchResult connectPairs(
 		return result;
 	}
 
-	unsigned startKmerPos = getStartKmerPos(k, read1, g, false);
-	unsigned goalKmerPos = getStartKmerPos(k, read2, g, true);
+	unsigned startKmerPos = getStartKmerPos(k, read1, g, false, longSearch);
+	unsigned goalKmerPos = getStartKmerPos(k, read2, g, true, longSearch);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;

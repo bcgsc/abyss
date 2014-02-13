@@ -37,16 +37,18 @@ TEST_F(GetStartKmerPosTest, FullReadMatch)
 	bloom.loadSeq(k, testRead.seq);
 	DBGBloom g(bloom);
 
-	EXPECT_EQ(testRead.seq.length() - k, getStartKmerPos(k, testRead, g));
+	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, false, true));
 	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(k, testRead, g), getStartKmerPos(k, testRead, g, true));
+	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, true, true));
 }
 
 TEST_F(GetStartKmerPosTest, FullReadMismatch)
 {
 	BloomFilter bloom(bloomFilterSize);
+	// Leave the bloom filter empty to generate a mismatch
+	// for every kmer in the read.
 	DBGBloom g(bloom);
-	EXPECT_EQ(NO_MATCH, getStartKmerPos(k, testRead, g));
+	EXPECT_EQ(NO_MATCH, getStartKmerPos(k, testRead, g, false, true));
 }
 
 TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
@@ -63,7 +65,7 @@ TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 		bloom.loadSeq(k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(3u, getStartKmerPos(k, testRead, g));
+	EXPECT_EQ(2U, getStartKmerPos(k, testRead, g, false, true));
 	// true indicates revese complement (second read)
 	EXPECT_EQ(getStartKmerPos(k, testRead, g),
 		getStartKmerPos(k, testRead, g, true));
@@ -75,7 +77,7 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 	BloomFilter bloom(bloomFilterSize);
 	DBGBloom g(bloom);
 
-	// This loop creates kmer match vector 110011
+	// This loop creates kmer match vector 011011
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
 		// non-matching kmers
 		if (i == 0 || i == 3)
@@ -83,10 +85,9 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 		bloom.loadSeq(k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(5u, getStartKmerPos(k, testRead, g));
+	EXPECT_EQ(1U, getStartKmerPos(k, testRead, g, false, true));
 	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(k, testRead, g),
-		getStartKmerPos(k, testRead, g, true));
+	EXPECT_EQ(1U, getStartKmerPos(k, testRead, g, true, true));
 }
 
 class CorrectSingleBaseErrorTest : public testing::Test {

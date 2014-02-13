@@ -75,6 +75,10 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
+"  -l, --long-search          start path search as close as possible\n"
+"                             to the beginnings of reads. Takes more time\n"
+"                             but improves results when bloom filter false\n"
+"                             positive rate is high [disabled]\n"
 "  -m, --read-mismatches      max mismatches between paths and reads [disabled]\n"
 "  -M, --max-mismatches       max mismatches between merged paths [2]\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
@@ -104,6 +108,13 @@ namespace opt {
 
 	/** Input read files are interleaved? */
 	bool interleaved = false;
+
+	/**
+	 * Choose start/goal kmers for path search as close as
+	 * possible to beginning (5' end) of reads. Improves
+	 * results when bloom filter FPR is high.
+	 */
+	bool longSearch = false;
 
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 350;
@@ -160,7 +171,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:ef:F:i:Ij:k:M:o:P:q:t:v";
+static const char shortopts[] = "b:B:ef:F:i:Ij:k:lM:o:P:q:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -172,6 +183,7 @@ static const struct option longopts[] = {
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
 	{ "interleaved",      no_argument, NULL, 'I' },
+	{ "long-search",      no_argument, NULL, 'l' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
@@ -249,7 +261,7 @@ static void connectPair(const DBGBloom& g,
 		= connectPairs(opt::k, read1, read2, g,
 				opt::maxPaths, opt::minFrag,
 				opt::maxFrag, opt::maxBranches,
-				opt::fixErrors);
+				opt::fixErrors, opt::longSearch);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 
@@ -401,6 +413,8 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'l':
+			opt::longSearch = true; break;
 		  case 'm':
 			arg >> opt::maxReadMismatches; break;
 		  case 'M':
