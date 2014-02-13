@@ -17,6 +17,7 @@ using std::tr1::hash;
 using boost::hash;
 # define NAMESPACE_STD_HASH_BEGIN namespace boost {
 # define NAMESPACE_STD_HASH_END }
+#include <boost/functional/hash.hpp>
 #endif
 
 #endif
