@@ -427,8 +427,8 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
-		cerr << PROGRAM ": missing arguments\n";
+	if (argc - optind < 1) {
+		cerr << PROGRAM ": missing input file arguments\n";
 		die = true;
 	}
 
