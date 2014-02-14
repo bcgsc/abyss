@@ -104,6 +104,9 @@ static inline unsigned getStartKmerPos(unsigned k,
 	const FastaRecord& read, const DBGBloom& g,
 	bool rc = false)
 {
+	if (read.seq.size() < k)
+		return NO_MATCH;
+
 	// build a vector indicating whether each kmer is a match
 	// The vector intentionally has an extra false element at
 	// the end, for the second loop below.

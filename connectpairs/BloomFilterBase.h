@@ -53,6 +53,8 @@ public:
 
 	void loadSeq(unsigned k, const std::string& seq)
 	{
+		if (seq.size() < k)
+			return;
 		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
 			std::string kmer = seq.substr(i, k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
