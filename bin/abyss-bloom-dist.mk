@@ -1,6 +1,9 @@
 #!/usr/bin/make -rRf
 
-SHELL=/bin/bash -o pipefail
+# Setting the SHELL variable does not work under SGE's qmake utility,
+# so we must do this instead.
+BEGIN_SHELL=/bin/bash -o pipefail -c '
+END_SHELL='
 
 #------------------------------------------------------------
 # optional params
@@ -73,6 +76,9 @@ getSiblingBloomFiles=$(filter-out $1,$(filter $(name)_l1_w$(call getWindow,$1)_%
 #------------------------------------------------------------
 
 .PHONY: args_check build
+# don't automatically delete intermediate bloom files, because they can
+# take a long time to build!
+.SECONDARY: $(l1_bloom_files) $(l2_bloom_files)
 default: build
 
 #------------------------------------------------------------
@@ -111,28 +117,32 @@ build: args_check $(name).bloom.gz
 # level 1 bloom filter files
 $(name)_l1_%.bloom.gz: $(files)
 	SGE_RREQ="-N $(name)_l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
-	abyss-bloom build -v -k$k -b$b -w$(call getWindow,$@)/$w \
-		- $(call getReadFilePath,$@) | gzip -c > $@
+	$(BEGIN_SHELL) \
+		abyss-bloom build -v -k$k -b$b -w$(call getWindow,$@)/$w \
+			- $(call getReadFilePath,$@) | gzip -c > $@ \
+	$(END_SHELL)
 
 # level 2 bloom filter files
 $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 	SGE_RREQ="-N $(name)_l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
-	zcat $(call getSiblingBloomFiles,$(subst l2,l1,$@)) | \
-		abyss-bloom build -v -k$k -b$(b_times_l) -l2 \
-		-w$(call getWindow,$@)/$w \
-		$(foreach i,$(wordlist 2,999,$(files)),-L1=-) \
-		- $(call getReadFilePath,$@) | \
-			gzip -c > $@
+	$(BEGIN_SHELL) \
+		zcat $(call getSiblingBloomFiles,$(subst l2,l1,$@)) | \
+			abyss-bloom build -v -k$k -b$(b_times_l) -l2 \
+			-w$(call getWindow,$@)/$w \
+			$(foreach i,$(wordlist 2,999,$(files)),-L1=-) \
+			- $(call getReadFilePath,$@) | \
+				gzip -c > $@ \
+	$(END_SHELL)
 
 # final output file
 $(name).bloom.gz: $(l2_bloom_files)
 	SGE_RREQ="-N $(name)_union -l mem_token=$(union_mem_gb)G,mem_free=$(union_mem_gb)G,h_vmem=$(union_mem_gb)G" \
-	zcat $(l2_bloom_files) | \
-		abyss-bloom union -v -k$k - \
-		$(foreach i,$(l2_bloom_files),-) | \
-			gzip -c > $@ && \
-	rm -f $(l1_bloom_files) && \
-	rm -f $(l2_bloom_files)
+	$(BEGIN_SHELL) \
+		zcat $(l2_bloom_files) | \
+			abyss-bloom union -v -k$k - \
+			$(foreach i,$(l2_bloom_files),-) | \
+				gzip -c > $@ \
+	$(END_SHELL)
 
 #------------------------------------------------------------
 # debugging rules
