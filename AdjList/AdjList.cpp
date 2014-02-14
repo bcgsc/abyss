@@ -118,7 +118,6 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 	typedef pair<string, ContigNode> Suffix;
 	typedef vector<Suffix> Suffixes;
 	Suffixes suffixes;
-	SuffixArray sa(opt::minOverlap);
 
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	typedef graph_traits<Graph>::vertex_iterator Vit;
@@ -132,8 +131,12 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 		assert(uci < prefixes.size());
 		string suffix(reverseComplement(prefixes[uci]).str());
 		suffixes.push_back(Suffix(suffix, u));
-		sa.insert(suffixes.back());
 	}
+
+	SuffixArray sa(opt::minOverlap);
+	for (Suffixes::const_iterator it = suffixes.begin();
+			it != suffixes.end(); ++it)
+		sa.insert(*it);
 	sa.construct();
 
 	for (Suffixes::const_iterator it = suffixes.begin();
