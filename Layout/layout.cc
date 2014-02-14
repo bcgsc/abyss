@@ -47,6 +47,8 @@ static const char USAGE_MESSAGE[] =
 "  -g, --graph=FILE      write the graph to FILE\n"
 "      --tred            remove transitive edges\n"
 "      --no-tred         do not remove transitive edges [default]\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -71,6 +73,9 @@ namespace opt {
 	/** Remove transitive edges. */
 	static int tred;
 
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
+
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
 
@@ -90,6 +95,8 @@ static const struct option longopts[] = {
 	{ "min-length",  required_argument, NULL, 's' },
 	{ "tred",        no_argument, &opt::tred, true },
 	{ "no-tred",     no_argument, &opt::tred, false },
+	{ "SS",          no_argument,       &opt::ss, 1 },
+	{ "no-SS",       no_argument,       &opt::ss, 0 },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -267,7 +274,7 @@ int main(int argc, char** argv)
 
 	// Assemble the paths.
 	ContigPaths paths;
-	assembleDFS(g, back_inserter(paths));
+	assembleDFS(g, back_inserter(paths), opt::ss);
 	sort(paths.begin(), paths.end());
 	if (opt::verbose > 0) {
 		unsigned n = 0;
