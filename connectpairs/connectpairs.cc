@@ -62,6 +62,8 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal [350]\n"
+"  -e, --fix-errors           find and fix single-base errors when reads\n"
+"                             have no kmers in the bloom filter [disabled]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
@@ -105,6 +107,12 @@ namespace opt {
 
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 350;
+
+	/**
+	 * Find and fix single base errors when a read has no
+	 * kmers in the bloom filter.
+	 */
+	bool fixErrors = false;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -152,13 +160,14 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:i:Ij:k:M:o:P:q:t:v";
+static const char shortopts[] = "b:B:ef:F:i:Ij:k:M:o:P:q:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "fix-errors",       no_argument, NULL, 'e' },
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
@@ -239,7 +248,8 @@ static void connectPair(const DBGBloom& g,
 	SearchResult result
 		= connectPairs(opt::k, read1, read2, g,
 				opt::maxPaths, opt::minFrag,
-				opt::maxFrag, opt::maxBranches);
+				opt::maxFrag, opt::maxBranches,
+				opt::fixErrors);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 
@@ -377,6 +387,8 @@ int main(int argc, char** argv)
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
 			arg >> opt::maxBranches; break;
+		  case 'e':
+			opt::fixErrors = true; break;
 		  case 'f':
 			arg >> opt::minFrag; break;
 		  case 'F':

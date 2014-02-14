@@ -5,21 +5,17 @@
 
 using namespace std;
 
-namespace {
-
 /**
  * Test fixture for the getStartKmerPos function.
  *
  * getStartKmerPos chooses the kmer at the
- * end of the longest string of kmer matches with
- * within the read.
- *
- * Once the longest match region is identified,
- * the kmer should be selected at the end of the
- * region that is closest to the gap between
- * read pairs.
+ * beginning of the longest series kmer matches with
+ * within the read.  In the case where there are
+ * two equal-length series of matches,
+ * getStartKmerPos choose the kmer position closest
+ * to the beginning (5' end) of the read.
  */
-class GetStartKmerPosTest : public ::testing::Test {
+class GetStartKmerPosTest : public testing::Test {
 
 protected:
 
@@ -93,6 +89,69 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 		getStartKmerPos(k, testRead, g, true));
 }
 
+class CorrectSingleBaseErrorTest : public testing::Test {
+
+protected:
+
+	FastaRecord correctRead;
+	FastaRecord singleErrorRead;
+	string simulatedFalsePositive;
+	static const int k = 6;
+	static const size_t errorPos1 = 4;
+	// set this large to avoid false positives
+	static const int bloomFilterSize = 1000000;
+
+	CorrectSingleBaseErrorTest() {
+		Kmer::setLength(k);
+		correctRead.seq = "TACAGTGCC";
+		singleErrorRead.seq = correctRead.seq;
+		singleErrorRead.seq[errorPos1] = 'C';
+		simulatedFalsePositive = "TGCAGT";
+	}
+
+};
+
+
+TEST_F(CorrectSingleBaseErrorTest, SingleError)
+{
+	BloomFilter bloom(bloomFilterSize);
+	bloom.loadSeq(k, correctRead.seq);
+	DBGBloom g(bloom);
+
+	size_t correctedPos = numeric_limits<size_t>::max();
+	FastaRecord read = singleErrorRead;
+	bool success = correctSingleBaseError(g, k, read, correctedPos);
+
+	ASSERT_TRUE(success);
+	EXPECT_EQ(read.seq, read.seq);
+	EXPECT_TRUE(correctedPos == errorPos1);
+}
+
+TEST_F(CorrectSingleBaseErrorTest, NoError)
+{
+	BloomFilter bloom(bloomFilterSize);
+	bloom.loadSeq(k, singleErrorRead.seq);
+	DBGBloom g(bloom);
+
+	size_t correctedPos = numeric_limits<size_t>::max();
+	FastaRecord read = singleErrorRead;
+	bool success = correctSingleBaseError(g, k, read, correctedPos);
+	ASSERT_FALSE(success);
+}
+
+TEST_F(CorrectSingleBaseErrorTest, SkipFalsePositive)
+{
+	BloomFilter bloom(bloomFilterSize);
+	bloom.loadSeq(k, correctRead.seq);
+	bloom.loadSeq(k, simulatedFalsePositive);
+	DBGBloom g(bloom);
+
+	size_t correctedPos = numeric_limits<size_t>::max();
+	FastaRecord read = singleErrorRead;
+	bool success = correctSingleBaseError(g, k, read, correctedPos);
+	ASSERT_TRUE(success);
+	EXPECT_EQ(read.seq, read.seq);
+	EXPECT_TRUE(correctedPos == errorPos1);
 }
 
 TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
@@ -124,4 +183,5 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	EXPECT_EQ(FOUND_PATH, result.pathResult);
 	ASSERT_EQ(1u, result.mergedSeqs.size());
 	EXPECT_EQ("GATG", result.mergedSeqs[0].seq);
+
 }
