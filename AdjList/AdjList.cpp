@@ -22,6 +22,7 @@
 #include <set>
 #include <sstream>
 #include <vector>
+#include <deque>
 
 using namespace std;
 
@@ -116,7 +117,7 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 {
 	// Construct a suffix array of the blunt contigs.
 	typedef pair<string, ContigNode> Suffix;
-	typedef vector<Suffix> Suffixes;
+	typedef deque<Suffix> Suffixes;
 	Suffixes suffixes;
 	SuffixArray sa(opt::minOverlap);
 
@@ -144,8 +145,13 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 }
 
 /** An index of suffixes of k-1 bp. */
+#if defined(HAVE_STD_HASH) || defined(HAVE_STD_TR1_HASH)
 typedef unordered_map<Kmer, vector<ContigNode>, hash<Kmer> >
 	SuffixMap;
+#else
+typedef unordered_map<Kmer, vector<ContigNode>, boost::hash<Kmer> >
+	SuffixMap;
+#endif
 
 /** Read contigs. Add contig properties to the graph. Add prefixes to
  * the collection and add suffixes to their index.
