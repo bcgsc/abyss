@@ -499,7 +499,7 @@ endif
 # Scaffold
 
 %-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $v -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(SS) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path
 	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
@@ -539,7 +539,7 @@ endif
 		|grep -v "l=" >$@
 
 %-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $v -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(SS) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
 	PathConsensus $v -k$k $(pcopt) -s $*-9.fa -g $*-9.adj -o $*-9.path $^

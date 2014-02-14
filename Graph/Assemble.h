@@ -56,12 +56,13 @@ class AssembleVisitor : public boost::default_dfs_visitor
 
 /** Assemble unambiguous paths. Write the paths to out. */
 template<typename Graph, typename OutIt>
-void assembleDFS(const Graph& g, OutIt out)
+void assembleDFS(const Graph& g, OutIt out, bool ss = false)
 {
+	(void)ss;
 	typedef boost::vector_property_map<
 		boost::default_color_type, ContigIndexMap> ColorMap;
 	depthFirstSearch(g, AssembleVisitor<OutIt>(out),
-			ColorMap(num_vertices(g) / 2));
+			ColorMap(num_vertices(g) / 2), ss);
 }
 
 #endif

@@ -59,6 +59,8 @@ static const char USAGE_MESSAGE[] =
 "      --min-gap=N       minimum scaffold gap length to output [50]\n"
 "      --complex         remove complex transitive edges\n"
 "      --no-complex      don't remove complex transitive edges [default]\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
 "  -o, --out=FILE        write the paths to FILE\n"
 "  -g, --graph=FILE      write the graph to FILE\n"
 "  -v, --verbose         display verbose output\n"
@@ -86,6 +88,9 @@ namespace opt {
 	/** Write the graph to this file. */
 	static string graphPath;
 
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
+
 	/** Verbose output. */
 	int verbose; // used by PopBubbles
 
@@ -109,6 +114,8 @@ static const struct option longopts[] = {
 	{ "seed-length", required_argument, NULL, 's' },
 	{ "complex",     no_argument, &opt::comp_trans, 1 },
 	{ "no-complex",  no_argument, &opt::comp_trans, 0 },
+	{ "SS",          no_argument,       &opt::ss, 1 },
+	{ "no-SS",       no_argument,       &opt::ss, 0 },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
@@ -603,7 +610,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 
 	// Assemble the paths.
 	ContigPaths paths;
-	assembleDFS(g, back_inserter(paths));
+	assembleDFS(g, back_inserter(paths), opt::ss);
 	sort(paths.begin(), paths.end());
 	if (opt::verbose > 0) {
 		unsigned n = 0;
