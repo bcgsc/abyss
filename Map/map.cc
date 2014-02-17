@@ -286,8 +286,13 @@ pair<Match, Match> findMatch(const FMIndex& fmIndex, const string& seq)
 			opt::dup ? seq.length() : opt::k);
 
 	string rcqseq = reverseComplement(seq);
-	Match rcm = fmIndex.find(rcqseq,
-			opt::dup ? rcqseq.length() : opt::k);
+	Match rcm;
+	if (opt::ss)
+		rcm = fmIndex.find(rcqseq,
+				opt::dup ? rcqseq.length() : opt::k);
+	else
+		rcm = fmIndex.find(rcqseq,
+				opt::dup ? rcqseq.length() : m.qspan());
 	return make_pair(m, rcm);
 }
 
