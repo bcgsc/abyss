@@ -22,6 +22,12 @@ common_sequence_SOURCES = Common/Sequence.cc
 common_sequence_CPPFLAGS = -I$(top_srcdir)
 common_sequence_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += common_KmerIterator
+check_PROGRAMS += common_KmerIterator
+common_KmerIterator_SOURCES = Common/KmerIteratorTest.cpp
+common_KmerIterator_CPPFLAGS = -I$(top_srcdir)
+common_KmerIterator_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = connectpairs/BloomFilter.cc
