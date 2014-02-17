@@ -646,8 +646,10 @@ int main(int argc, char** argv)
 			<< "%)\n";
 		if (opt::ss)
 			cerr << "Mapped " << g_count.suboptimal
+				<< " (" << (float)100 * g_count.suboptimal / total << "%)"
 				<< " reads to the opposite strand of the optimal mapping.\n"
-				<< g_count.subunmapped
+				<< "Made " << g_count.subunmapped << " ("
+				<< (float)100 * g_count.subunmapped / total << "%)"
 				<< " unmapped suboptimal decisions.\n";
 	}
 
