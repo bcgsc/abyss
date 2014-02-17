@@ -20,6 +20,8 @@ class BloomFilter : public virtual BloomFilterBase
 {
   public:
 
+	static const size_t IO_BUFFER_SIZE = 32 * 1024;
+
 	/** Constructor. */
 	BloomFilter() { }
 
@@ -211,8 +213,6 @@ class BloomFilter : public virtual BloomFilterBase
 
 	boost::dynamic_bitset<> m_array;
 	static const unsigned BLOOM_VERSION = 2;
-	static const size_t IO_BUFFER_SIZE = 32 * 1024;
-
 };
 
 #endif
