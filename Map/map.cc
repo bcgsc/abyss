@@ -287,7 +287,7 @@ pair<Match, Match> findMatch(const FMIndex& fmIndex, const string& seq)
 
 	string rcqseq = reverseComplement(seq);
 	Match rcm = fmIndex.find(rcqseq,
-			opt::dup ? rcqseq.length() : m.qspan());
+			opt::dup ? rcqseq.length() : opt::k);
 	return make_pair(m, rcm);
 }
 
@@ -316,14 +316,14 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 		rc = rec.id.size() > 2
 			&& rec.id.substr(rec.id.size()-2) == "/1";
 		bool prc = rcm.qspan() > m.qspan();
-		if (prc != rc && (rcm.qspan() != opt::k - 1
-					|| m.qspan() != opt::k - 1))
+		if (prc != rc && ((rc && rcm.size() > 0)
+					|| (!rc && m.size() > 0)))
 #pragma omp atomic
 			g_count.suboptimal++;
-			if ((rc && (rcm.qspan() == opt::k - 1))
-					|| (!rc && (m.qspan() == opt::k - 1)))
+		if (prc != rc && ((rc && rcm.size() == 0 && m.size() > 0)
+				|| (!rc && m.size() == 0 && rcm.size() > 0)))
 #pragma omp atomic
-				g_count.subunmapped++;
+			g_count.subunmapped++;
 	} else {
 		rc = rcm.qspan() > m.qspan();
 
