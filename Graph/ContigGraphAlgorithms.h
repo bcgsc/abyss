@@ -259,7 +259,7 @@ OutIt assemble_stranded(Graph& g, OutIt out)
 
 /** Remove tips.
  * For an edge (u,v), remove the vertex v if deg+(u) > 1,
- * deg-(v) = 1 and deg+(v) = 0, and p(v) is true.
+ * deg+(v) = 0, and p(v) is true.
  * Stores all removed vertices in result.
  */
 template <typename Graph, typename OutputIt, typename Pred>
@@ -293,6 +293,21 @@ OutputIt pruneTips_if(Graph& g, OutputIt result, Pred p)
 	return result;
 }
 
+/** Return true if the vertex is a normal 1-in 0-out tip. */
+template<typename Graph>
+struct IsTip : std::unary_function<
+		typename graph_traits<Graph>::vertex_descriptor, bool>
+{
+	IsTip(const Graph& g) : m_g(g) { }
+	bool operator()(
+			typename graph_traits<Graph>::vertex_descriptor v) const
+	{
+		return in_degree(v, m_g) == 1;
+	}
+  private:
+	const Graph& m_g;
+};
+
 /** Remove tips.
  * For an edge (u,v), remove the vertex v if deg+(u) > 1
  * and deg-(v) = 1 and deg+(v) = 0.
@@ -302,7 +317,7 @@ template <typename Graph, typename OutputIt>
 OutputIt pruneTips(Graph& g, OutputIt result)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
-	return pruneTips_if(g, result, True<V>());
+	return pruneTips_if(g, result, IsTip<Graph>(g));
 }
 
 /** Remove islands.
