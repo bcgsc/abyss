@@ -119,7 +119,8 @@ $(name)_l1_%.bloom.gz: $(files)
 	SGE_RREQ="-N $(name)_l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
 	$(BEGIN_SHELL) \
 		abyss-bloom build -v -k$k $(build_opts) -b$b -w$(call getWindow,$@)/$w \
-			- $(call getReadFilePath,$@) | gzip -c > $@ \
+			- $(call getReadFilePath,$@) | gzip -c > $@.incomplete && \
+		mv $@.incomplete $@ \
 	$(END_SHELL)
 
 # level 2 bloom filter files
@@ -131,7 +132,8 @@ $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 			-w$(call getWindow,$@)/$w \
 			$(foreach i,$(wordlist 2,999,$(files)),-L1=-) \
 			- $(call getReadFilePath,$@) | \
-				gzip -c > $@ \
+				gzip -c > $@.incomplete && \
+		mv $@.incomplete $@ \
 	$(END_SHELL)
 
 # final output file
@@ -141,7 +143,8 @@ $(name).bloom.gz: $(l2_bloom_files)
 		zcat $(l2_bloom_files) | \
 			abyss-bloom union -v -k$k - \
 			$(foreach i,$(l2_bloom_files),-) | \
-				gzip -c > $@ \
+				gzip -c > $@.incomplete && \
+		mv $@.incomplete $@ \
 	$(END_SHELL)
 
 #------------------------------------------------------------
