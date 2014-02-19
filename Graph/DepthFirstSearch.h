@@ -39,8 +39,10 @@ void depthFirstSearch(const Graph& g, Visitor vis, ColorMap color, bool ss = fal
 			boost::detail::depth_first_visit_impl(g, u, vis, color,
 					boost::detail::nontruth2());
 		}
-		if (ss)
+		if (ss) {
 			++uit;
+			assert(uit != ulast);
+		}
 	}
 
 	// Visit vertices where discontiguous-(u).
@@ -51,8 +53,10 @@ void depthFirstSearch(const Graph& g, Visitor vis, ColorMap color, bool ss = fal
 			boost::detail::depth_first_visit_impl(g, u, vis, color,
 					boost::detail::nontruth2());
 		}
-		if (ss)
+		if (ss) {
 			++uit;
+			assert(uit != ulast);
+		}
 	}
 
 	// Visit the remaining vertices.
