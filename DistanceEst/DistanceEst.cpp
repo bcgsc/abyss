@@ -548,10 +548,14 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::verbose > 0) {
-		cerr << "Estimated duplicate fragment rate: "
+		float prop_dups = (float)100 * stats.dup_frags / stats.total_frags;
+		cerr << "Duplicate rate of spanning fragments: "
 			<< stats.dup_frags << "/"
 			<< stats.total_frags << " ("
-			<< setprecision(3) << (float)100 * stats.dup_frags / stats.total_frags << "%)\n";
+			<< setprecision(3) << prop_dups << "%)\n";
+		if (prop_dups > 0.5)
+			cerr << PROGRAM << ": warning: duplicate rate of fragments "
+				"spanning more than one contig is high.\n";
 	}
 
 	if (opt::verbose > 0 && g_recMA != opt::minAlign)
