@@ -22,7 +22,7 @@ AUMAKE_VERSION=`automake --version 2>/dev/null | awk '/^automake/ { print $4 }'`
 #       compare_version 1.2.10  1.3.0
 #       # => -1
 #
-function compare_version() {
+compare_version () {
     echo $1 $2 | awk '
     { split($1, a, ".");
       split($2, b, ".");
