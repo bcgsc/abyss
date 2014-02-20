@@ -1,7 +1,7 @@
-AC_PREREQ(2.59)
+AC_PREREQ(2.62)
 AC_INIT(ABySS, 1.3.7, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
-AM_INIT_AUTOMAKE(foreign subdir-objects)
+AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/Abyss.cpp])
 AC_CONFIG_HEADER([config.h])
 
