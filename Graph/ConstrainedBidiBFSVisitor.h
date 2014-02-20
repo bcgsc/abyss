@@ -112,7 +112,7 @@ public:
 		m_maxDepthVisited[REVERSE] = 0;
 
 		// special case
-		if (start == goal) {
+		if (start == goal && 1 >= m_minPathLength) {
 			Path<V> path;
 			path.push_back(start);
 			m_pathsFound.push_back(path);
