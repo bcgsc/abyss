@@ -25,7 +25,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FILE...\n"
+"Usage: " PROGRAM " -k<kmer> -o<output.fa> [OPTION]... FILE...\n"
 "Assemble the input files, FILE, which may be in FASTA, FASTQ,\n"
 "qseq, export, SAM or BAM format and compressed with gz, bz2 or xz.\n"
 "\n"

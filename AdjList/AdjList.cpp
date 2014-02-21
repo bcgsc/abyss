@@ -34,7 +34,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... [FILE]...\n"
 "Find overlaps of [m,k) bases. Contigs may be read from FILE(s)\n"
 "or standard input. Output is written to standard output.\n"
 "Overlaps of exactly k-1 bases are found using a hash table.\n"

@@ -42,7 +42,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... CONTIGS ADJ DIST\n"
+"Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... CONTIGS ADJ DIST\n"
 "Find overlaps between blunt contigs that have negative distance\n"
 "estimates. Add edges to the overlap graph.\n"
 "\n"

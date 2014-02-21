@@ -38,7 +38,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA ADJ PATH\n"
+"Usage: " PROGRAM " -k<kmer> -s<consensus.fa> -o<out.path> [OPTION]... FASTA ADJ PATH\n"
 "Align sequences of ambiguous paths and output a consensus\n"
 "sequence.\n"
 "\n"

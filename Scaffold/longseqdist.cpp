@@ -28,7 +28,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... SAM >DIST\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... SAM >DIST\n"
 "Generate distance estimates between all contigs a single\n"
 "read maps to.\n"
 "\n"

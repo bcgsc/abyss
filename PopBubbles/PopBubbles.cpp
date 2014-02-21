@@ -52,7 +52,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA ADJ\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... FASTA ADJ\n"
 "Identify and pop simple bubbles.\n"
 "\n"
 " Arguments:\n"

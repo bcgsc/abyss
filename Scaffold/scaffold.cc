@@ -40,7 +40,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA|OVERLAP DIST...\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... FASTA|OVERLAP DIST...\n"
 "Scaffold contigs using the distance estimate graph.\n"
 "\n"
 " Arguments:\n"

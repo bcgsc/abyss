@@ -35,7 +35,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... HIST [PAIR]\n"
+"Usage: " PROGRAM " -k<kmer> -s<seed-length> -n<npairs> [OPTION]... HIST [PAIR]\n"
 "Estimate distances between contigs using paired-end alignments.\n"
 "\n"
 " Arguments:\n"

@@ -43,7 +43,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... ADJ\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ\n"
 "Remove short contigs that do not contribute any relevant\n"
 "information to the assembly.\n"
 "\n"

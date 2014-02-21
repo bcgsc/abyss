@@ -23,7 +23,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Shaun Jackman\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... GRAPH...\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... GRAPH...\n"
 "Convert a binary de Bruijn graph to plain text.\n"
 "\n"
 " Arguments:\n"

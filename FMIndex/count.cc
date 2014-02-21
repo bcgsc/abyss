@@ -25,7 +25,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FASTA]\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... [FASTA]\n"
 "Count k-mer of the specified file.\n"
 "The index file TARGET.fm will be used if present.\n"
 "\n"

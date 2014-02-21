@@ -35,7 +35,7 @@ PROGRAM " (ABySS) " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char *USAGE_MESSAGE =
-"Usage: " PROGRAM " [OPTION]... ADJ PATH\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ PATH\n"
 "Find paths that overlap. Either output the graph of overlapping\n"
 "paths, assemble overlapping paths into larger paths, or trim the\n"
 "overlapping paths.\n"

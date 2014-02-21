@@ -33,7 +33,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... ADJ DIST\n"
+"Usage: " PROGRAM " -k<kmer> -o<out.path> [OPTION]... ADJ DIST\n"
 "Find paths through contigs using distance estimates.\n"
 "\n"
 " Arguments:\n"

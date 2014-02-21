@@ -41,7 +41,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... FASTA [OVERLAP] PATH\n"
+"Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... FASTA [OVERLAP] PATH\n"
 "Merge paths of contigs to create larger contigs.\n"
 "\n"
 " Arguments:\n"

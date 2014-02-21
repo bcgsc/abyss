@@ -37,7 +37,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... QUERY... TARGET\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... QUERY... TARGET\n"
 "Align the sequences of the files QUERY to those of TARGET.\n"
 "All perfect matches of at least k bases will be found.\n"
 "\n"
