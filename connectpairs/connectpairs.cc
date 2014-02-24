@@ -52,7 +52,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [READS1 READS2]...\n"
+"Usage: " PROGRAM " -k <kmer_size> -o <output_prefix> [options]... <reads1> [reads2]...\n"
 "Connect the pairs READS1 and READS2 and close the gap using\n"
 "a Bloom filter de Bruijn graph.\n"
 "\n"
@@ -61,7 +61,8 @@ static const char USAGE_MESSAGE[] =
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -B, --max-branches=N       max branches in de Bruijn graph traversal [350]\n"
+"  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
+"                             use 'nolimit' for no limit [350]\n"
 "  -e, --fix-errors           find and fix single-base errors when reads\n"
 "                             have no kmers in the bloom filter [disabled]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
@@ -79,10 +80,15 @@ static const char USAGE_MESSAGE[] =
 "                             to the beginnings of reads. Takes more time\n"
 "                             but improves results when bloom filter false\n"
 "                             positive rate is high [disabled]\n"
-"  -m, --read-mismatches      max mismatches between paths and reads [disabled]\n"
-"  -M, --max-mismatches       max mismatches between merged paths [2]\n"
+"  -m, --read-mismatches      max mismatches between paths and reads; use\n"
+"                             'nolimit' for no limit [nolimit]\n"
+"  -M, --max-mismatches       max mismatches between all alternate paths;\n"
+"                             use 'nolimit' for no limit [2]\n"
+"  -n  --no-limits            disable all limits; equivalent to\n"
+"                             '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
-"  -P, --max-paths=N          merge at most N alternate paths [2]\n"
+"  -P, --max-paths=N          merge at most N alternate paths; use 'nolimit'\n"
+"                             for no limit [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
@@ -153,7 +159,7 @@ namespace opt {
 	static int mask = 0;
 
 	/** Max mismatches between consensus and original reads */
-	static int maxReadMismatches = -1;
+	static unsigned maxReadMismatches = NO_LIMIT;
 
 }
 
@@ -171,7 +177,7 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:ef:F:i:Ij:k:lM:o:P:q:t:v";
+static const char shortopts[] = "b:B:ef:F:i:Ij:k:lm:M:no:P:q:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -190,6 +196,7 @@ static const struct option longopts[] = {
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "mask",             no_argument, &opt::mask, 1 },
 	{ "no-mask",          no_argument, &opt::mask, 0 },
+	{ "no-limits",        no_argument, NULL, 'n' },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
@@ -304,7 +311,7 @@ static void connectPair(const DBGBloom& g,
 	  case FOUND_PATH:
 		assert(!paths.empty());
 		if (paths.size() == 1) {
-			if (maskNew(read1, read2, paths.front(), opt::mask) > opt::maxMismatches) {
+			if (maskNew(read1, read2, paths.front(), opt::mask) > opt::maxReadMismatches) {
 #pragma omp atomic
 				++g_count.tooManyReadMismatches;
 			} else {
@@ -322,7 +329,7 @@ static void connectPair(const DBGBloom& g,
 			if (size - matches <= opt::maxMismatches) {
 				FastaRecord read = paths.front();
 				read.seq = aln.match_align;
-				if (maskNew(read1, read2, read, opt::mask) > opt::maxMismatches) {
+				if (maskNew(read1, read2, read, opt::mask) > opt::maxReadMismatches) {
 #pragma omp atomic
 					++g_count.tooManyReadMismatches;
 				} else {
@@ -383,6 +390,25 @@ static void connectPairs(const DBGBloom& g,
 }
 
 /**
+ * Set the value for a commandline option, using "nolimit"
+ * to represent NO_LIMIT.
+ */
+static inline void setMaxOption(unsigned& arg, istream& in)
+{
+	string str;
+	getline(in, str);
+	if (in && str == "nolimit") {
+		arg = NO_LIMIT;
+	} else {
+		istringstream ss(str);
+		ss >> arg;
+		// copy state bits (fail, bad, eof) to
+		// original stream
+		in.clear(ss.rdstate());
+	}
+}
+
+/**
  * Connect pairs using a Bloom filter de Bruijn graph
  */
 int main(int argc, char** argv)
@@ -398,7 +424,7 @@ int main(int argc, char** argv)
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
-			arg >> opt::maxBranches; break;
+			setMaxOption(opt::maxBranches, arg); break;
 		  case 'e':
 			opt::fixErrors = true; break;
 		  case 'f':
@@ -416,13 +442,19 @@ int main(int argc, char** argv)
 		  case 'l':
 			opt::longSearch = true; break;
 		  case 'm':
-			arg >> opt::maxReadMismatches; break;
+			setMaxOption(opt::maxReadMismatches, arg); break;
+		  case 'n':
+			opt::maxBranches = NO_LIMIT;
+			opt::maxReadMismatches = NO_LIMIT;
+			opt::maxMismatches = NO_LIMIT;
+			opt::maxPaths = NO_LIMIT;
+			break;
 		  case 'M':
-			arg >> opt::maxMismatches; break;
+			setMaxOption(opt::maxMismatches, arg); break;
 		  case 'o':
 			arg >> opt::outputPrefix; break;
 		  case 'P':
-			arg >> opt::maxPaths; break;
+			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 't':
@@ -430,10 +462,10 @@ int main(int argc, char** argv)
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
-			cerr << USAGE_MESSAGE;
+			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
-			cerr << VERSION_MESSAGE;
+			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {

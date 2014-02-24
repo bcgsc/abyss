@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <climits>
 
 enum PathSearchResult {
 	FOUND_PATH = 0,
@@ -21,7 +22,7 @@ const char* PathSearchResultLabel[] = {
 
 enum Direction { FORWARD = 0, REVERSE };
 
-const unsigned NO_LIMIT = 0;
+const unsigned NO_LIMIT = UINT_MAX;
 
 template <class Vertex> class Path : public std::vector<Vertex>
 {
