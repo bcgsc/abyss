@@ -277,7 +277,7 @@ static inline SearchResult connectPairs(
 	if (startKmerPos == NO_MATCH && fixErrors) {
 		correctedRead1 = read1;
 		if (correctSingleBaseError(g, k, correctedRead1, unused)) {
-			startKmerPos = getStartKmerPos(k, correctedRead1, g, false);
+			startKmerPos = getStartKmerPos(k, correctedRead1, g, false, longSearch);
 			assert(startKmerPos != NO_MATCH);
 			pRead1 = &correctedRead1;
 		}
@@ -286,7 +286,7 @@ static inline SearchResult connectPairs(
 	if (goalKmerPos == NO_MATCH && fixErrors) {
 		correctedRead2 = read2;
 		if (correctSingleBaseError(g, k, correctedRead2, unused)) {
-			goalKmerPos = getStartKmerPos(k, correctedRead2, g, true);
+			goalKmerPos = getStartKmerPos(k, correctedRead2, g, true, longSearch);
 			assert(goalKmerPos != NO_MATCH);
 			pRead2 = &correctedRead2;
 		}
