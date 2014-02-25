@@ -128,6 +128,21 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 	EXPECT_TRUE(correctedPos == errorPos1);
 }
 
+TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
+{
+	BloomFilter bloom(bloomFilterSize);
+	bloom.loadSeq(k, correctRead.seq);
+	DBGBloom g(bloom);
+
+	size_t correctedPos = numeric_limits<size_t>::max();
+	FastaRecord read = singleErrorRead;
+	bool success = correctSingleBaseError(g, k, read, correctedPos, true);
+
+	ASSERT_TRUE(success);
+	EXPECT_EQ(read.seq, read.seq);
+	EXPECT_TRUE(correctedPos == errorPos1);
+}
+
 TEST_F(CorrectSingleBaseErrorTest, NoError)
 {
 	BloomFilter bloom(bloomFilterSize);

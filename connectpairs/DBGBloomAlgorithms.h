@@ -187,7 +187,8 @@ static inline bool correctSingleBaseError(
 		const DBGBloom& g,
 		unsigned k,
 		FastaRecord& read,
-		size_t& correctedPos)
+		size_t& correctedPos,
+		bool rc = false)
 {
 	if (read.seq.length() < k)
 		return false;
@@ -211,13 +212,14 @@ static inline bool correctSingleBaseError(
 				continue;
 			overlapStr[changePos] = bases[j];
 			size_t score = 0;
-			for (KmerIterator it(overlapStr, k); it != KmerIterator::end(); it++) {
+			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end(); it++) {
 				if (graph_traits<DBGBloom>::vertex_exists(*it, g))
 					score++;
 			}
 			if (score > minScore)
 				scores.push_back(BaseChangeScore(i, bases[j], score));
 		}
+
 	}
 
 	if (scores.size() == 0)
@@ -234,6 +236,7 @@ static inline bool correctSingleBaseError(
 
 	correctedPos = bestScore.m_pos;
 	read.seq[correctedPos] = bestScore.m_base;
+
 	return true;
 }
 
@@ -285,7 +288,7 @@ static inline SearchResult connectPairs(
 
 	if (goalKmerPos == NO_MATCH && fixErrors) {
 		correctedRead2 = read2;
-		if (correctSingleBaseError(g, k, correctedRead2, unused)) {
+		if (correctSingleBaseError(g, k, correctedRead2, unused, true)) {
 			goalKmerPos = getStartKmerPos(k, correctedRead2, g, true, longSearch);
 			assert(goalKmerPos != NO_MATCH);
 			pRead2 = &correctedRead2;

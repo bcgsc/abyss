@@ -20,6 +20,8 @@ struct KmerIterator
 				continue;
 			}
 			m_kmer = Kmer(kmerStr);
+			if (m_rc)
+				m_kmer.reverseComplement();
 			return;
 		}
 		m_pos = std::numeric_limits<std::size_t>::max();
@@ -32,8 +34,8 @@ public:
 		m_pos(std::numeric_limits<std::size_t>::max()),
 		m_kmer() { }
 
-	KmerIterator(const Sequence& seq, unsigned k)
-		: m_seq(seq), m_k(k), m_pos(0), m_kmer()
+	KmerIterator(const Sequence& seq, unsigned k, bool rc = false)
+		: m_seq(seq), m_k(k), m_rc(rc), m_pos(0), m_kmer()
 	{
 		next();
 	}
@@ -82,6 +84,7 @@ private:
 
 	const Sequence m_seq;
 	unsigned m_k;
+	bool m_rc;
 	size_t m_pos;
 	Kmer m_kmer;
 	static const KmerIterator m_end;
