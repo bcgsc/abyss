@@ -42,7 +42,12 @@ AC_LANG_PUSH([C++])
 AC_CHECK_TYPE([std::hash<int>],
 	AC_DEFINE(HAVE_STD_HASH, [1],
 		[Define if the system provides std::hash]),
-	[], [#include <functional>])
+	[], [
+#ifdef __FUJITSU
+#include <string>
+#else
+#include <functional>
+#endif])
 AC_CHECK_TYPE([std::tr1::hash<int>],
 	AC_DEFINE(HAVE_STD_TR1_HASH, [1],
 		[Define if the system provides std::tr1::hash]),
