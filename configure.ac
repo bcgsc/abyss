@@ -95,6 +95,14 @@ if test "$with_gtest" -a -d "$with_gtest"; then
 	gtest_ldflags="-L$with_gtest/lib"
 fi
 
+# SQLite
+AC_ARG_WITH(sqlite, AS_HELP_STRING([--with-sqlite=PATH],
+	[specify prefix directory for the installed sqlite library]))
+if test "$with_sqlite" -a -d "$with_sqlite"; then
+	sqlite_cppflags="-I$with_sqlite/include"
+	sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
+fi
+
 AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
 	[use MPICH (default is to use Open MPI)]))
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
@@ -118,8 +126,8 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 boost_ver=1.55.0
 boost_ver_dir=boost_1_55_0
 AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $gtest_ldflags $LDFLAGS")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $gtest_ldflags $sqlite_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"
@@ -200,6 +208,18 @@ AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes -a $ac_cv_l
 AC_SUBST(GTEST_LIBS, "$LIBS")
 LIBS=$libs
 
+# Check for SQLite
+libs="$LIBS"
+AC_CHECK_HEADERS([sqlite3.h])
+AC_CHECK_LIB([sqlite3],[main])
+if test $ac_cv_header_sqlite3_h != yes -o $ac_cv_lib_sqlite3_main != yes; then
+	AC_MSG_ERROR([ABySS requires the SQLite3 header and library, which may
+				  be downloaded from here: https://www.sqlite.org/download.html
+	])
+fi
+AC_SUBST(SQLITE_LIBS, "$LIBS")
+LIBS=$libs
+
 # Check for OpenMP.
 AC_OPENMP
 if test -z $OPENMP_CXXFLAGS; then
@@ -244,6 +264,7 @@ AC_CONFIG_FILES([
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
+	DataBase/Makefile
 ])
 AC_OUTPUT
 

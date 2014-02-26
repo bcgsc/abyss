@@ -1,0 +1,30 @@
+#! /bin/sh
+
+set -eu
+
+if [ $# != 2 ]
+then
+	echo -e "usage:\nabyss-db-viewer inputDB.file output.file"
+	exit 1
+fi
+rm -f $2
+tableArray=()
+sqlite3 $1 "select name from sqlite_master where type='table' order by rootpage;" > temp
+while read line
+do
+	tableArray+=(`echo ${line} | tr " " "\n"`)
+done < temp
+rm -f temp
+if [ ${#tableArray[@]} -gt 0 ]
+then
+	for table in ${tableArray[@]}
+	do
+		echo -e "${table}\n" >> $2
+		echo -e ".mode column\n.headers on\n.output ${table}\nselect * from ${table};\n.q" > $table
+		sqlite3 $1 < $table
+
+		cat $table >> $2
+		echo -e "\n\n" >> $2
+		rm -f $table
+	done
+fi

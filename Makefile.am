@@ -26,6 +26,7 @@ SUBDIRS = \
 	Graph \
 	dialign \
 	Align \
+	DataBase \
 	ABYSS $(Parallel) \
 	AdjList \
 	Bloom \
