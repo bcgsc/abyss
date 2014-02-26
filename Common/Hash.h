@@ -4,7 +4,11 @@
 #include "config.h"
 
 #if HAVE_STD_HASH
+#ifdef __FUJITSU
+# include <string>
+#else
 # include <functional>
+#endif
 using std::hash;
 # define NAMESPACE_STD_HASH_BEGIN namespace std {
 # define NAMESPACE_STD_HASH_END }
