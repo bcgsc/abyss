@@ -263,7 +263,7 @@ static void connectPair(const DBGBloom& g,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
-	SearchResult result =
+	ConnectPairsResult result =
 		connectPairs(opt::k, read1, read2, g, params);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
@@ -535,7 +535,7 @@ int main(int argc, char** argv)
 				<< opt::tracefilePath << "'\n";
 		traceStream.open(opt::tracefilePath.c_str());
 		assert(traceStream.is_open());
-		SearchResult::printHeaders(traceStream);
+		ConnectPairsResult::printHeaders(traceStream);
 		assert_good(traceStream, opt::tracefilePath);
 	}
 

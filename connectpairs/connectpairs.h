@@ -14,7 +14,7 @@
 # include <omp.h>
 #endif
 
-struct SearchResult
+struct ConnectPairsResult
 {
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
@@ -31,7 +31,7 @@ struct SearchResult
 	unsigned pathMismatches;
 	unsigned readMismatches;
 
-	SearchResult() :
+	ConnectPairsResult() :
 		pathResult(NO_PATH),
 		foundStartKmer(false),
 		foundGoalKmer(false),
@@ -63,7 +63,7 @@ struct SearchResult
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
-		const SearchResult& o)
+		const ConnectPairsResult& o)
 	{
 		out << o.readNamePrefix << "\t"
 			<< PathSearchResultLabel[o.pathResult] << "\t"
@@ -116,14 +116,14 @@ struct ConnectPairsParams {
 
 };
 
-static inline SearchResult connectPairs(
+static inline ConnectPairsResult connectPairs(
 	unsigned k,
 	const FastaRecord& read1,
 	const FastaRecord& read2,
 	const DBGBloom& g,
 	const ConnectPairsParams& params)
 {
-	SearchResult result;
+	ConnectPairsResult result;
 
 	if (!isReadNamePair(read1.id, read2.id)) {
 #pragma omp critical(cerr)

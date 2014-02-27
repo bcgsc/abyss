@@ -62,7 +62,7 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	params.minMergedSeqLen = 0;
 	params.maxMergedSeqLen = 4;
 
-	SearchResult result = connectPairs(k, read1, read2, g, params);
+	ConnectPairsResult result = connectPairs(k, read1, read2, g, params);
 
 	EXPECT_EQ(FOUND_PATH, result.pathResult);
 	ASSERT_EQ(1u, result.mergedSeqs.size());
