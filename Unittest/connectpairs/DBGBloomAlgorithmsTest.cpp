@@ -194,7 +194,13 @@ TEST(DBGBloomAlgorithmsTest, MergeOverlappingPair)
 	bloom.loadSeq(k, read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
-	SearchResult result = connectPairs(k, read1, read2, g, 1, 0, 4);
+
+	ConnectPairsParams params;
+	params.maxPaths = 1;
+	params.minMergedSeqLen = 0;
+	params.maxMergedSeqLen = 4;
+
+	SearchResult result = connectPairs(k, read1, read2, g, params);
 
 	EXPECT_EQ(FOUND_PATH, result.pathResult);
 	ASSERT_EQ(1u, result.mergedSeqs.size());

@@ -16,8 +16,11 @@
 #include "Graph/Path.h"
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
+#include "Align/alignGlobal.h"
+#include "connectpairs/connectpairs.h"
 #include <climits>
 #include <algorithm> // for std::max
+#include <boost/tuple/tuple.hpp>
 
 #if _OPENMP
 # include <omp.h>
@@ -30,6 +33,7 @@ struct SearchResult
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
 	std::vector<FastaRecord> mergedSeqs;
+	FastaRecord consensusSeq;
 	bool foundStartKmer;
 	bool foundGoalKmer;
 	unsigned startKmerPos;
@@ -38,6 +42,8 @@ struct SearchResult
 	unsigned maxActiveBranches;
 	unsigned maxDepthVisitedForward;
 	unsigned maxDepthVisitedReverse;
+	unsigned pathMismatches;
+	unsigned readMismatches;
 
 	SearchResult() :
 		pathResult(NO_PATH),
@@ -48,7 +54,10 @@ struct SearchResult
 		numNodesVisited(0),
 		maxActiveBranches(0),
 		maxDepthVisitedForward(0),
-		maxDepthVisitedReverse(0) {}
+		maxDepthVisitedReverse(0),
+		pathMismatches(0),
+		readMismatches(0)
+	{}
 
 	static std::ostream& printHeaders(std::ostream& out)
 	{
@@ -61,7 +70,9 @@ struct SearchResult
 			<< "nodes_visited" << "\t"
 			<< "max_breadth" << "\t"
 			<< "max_depth_forward" << "\t"
-			<< "max_depth_reverse" << "\n";
+			<< "max_depth_reverse" << "\t"
+			<< "path_mismatches" << "\t"
+			<< "read_mismatches" << "\n";
 		return out;
 	}
 
@@ -86,7 +97,10 @@ struct SearchResult
 			<< o.numNodesVisited << "\t"
 			<< o.maxActiveBranches << "\t"
 			<< o.maxDepthVisitedForward << "\t"
-			<< o.maxDepthVisitedReverse << "\n";
+			<< o.maxDepthVisitedReverse << "\t"
+			<< o.pathMismatches << "\t"
+			<< o.readMismatches << "\n";
+
 		return out;
 	}
 };
@@ -240,18 +254,37 @@ static inline bool correctSingleBaseError(
 	return true;
 }
 
+struct ConnectPairsParams {
+
+	unsigned minMergedSeqLen;
+	unsigned maxMergedSeqLen;
+	unsigned maxPaths;
+	unsigned maxBranches;
+	unsigned maxPathMismatches;
+	unsigned maxReadMismatches;
+	bool fixErrors;
+	bool longSearch;
+	bool maskBases;
+
+	ConnectPairsParams() :
+		minMergedSeqLen(0),
+		maxMergedSeqLen(1000),
+		maxPaths(NO_LIMIT),
+		maxBranches(NO_LIMIT),
+		maxPathMismatches(NO_LIMIT),
+		maxReadMismatches(NO_LIMIT),
+		fixErrors(false),
+		longSearch(false),
+		maskBases(false) {}
+
+};
 
 static inline SearchResult connectPairs(
 	unsigned k,
 	const FastaRecord& read1,
 	const FastaRecord& read2,
 	const DBGBloom& g,
-	unsigned maxPaths = 2,
-	unsigned minMergedSeqLen = 0,
-	unsigned maxMergedSeqLen = NO_LIMIT,
-	unsigned maxBranches = NO_LIMIT,
-	bool fixErrors = false,
-	bool longSearch = false)
+	const ConnectPairsParams& params)
 {
 	SearchResult result;
 
@@ -268,8 +301,11 @@ static inline SearchResult connectPairs(
 		return result;
 	}
 
-	unsigned startKmerPos = getStartKmerPos(k, read1, g, false, longSearch);
-	unsigned goalKmerPos = getStartKmerPos(k, read2, g, true, longSearch);
+	unsigned startKmerPos = getStartKmerPos(k, read1, g,
+			false, params.longSearch);
+
+	unsigned goalKmerPos = getStartKmerPos(k, read2, g,
+			true, params.longSearch);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
@@ -277,19 +313,21 @@ static inline SearchResult connectPairs(
 	FastaRecord correctedRead2;
 	size_t unused;
 
-	if (startKmerPos == NO_MATCH && fixErrors) {
+	if (startKmerPos == NO_MATCH && params.fixErrors) {
 		correctedRead1 = read1;
 		if (correctSingleBaseError(g, k, correctedRead1, unused)) {
-			startKmerPos = getStartKmerPos(k, correctedRead1, g, false, longSearch);
+			startKmerPos = getStartKmerPos(k, correctedRead1, g,
+				false, params.longSearch);
 			assert(startKmerPos != NO_MATCH);
 			pRead1 = &correctedRead1;
 		}
 	}
 
-	if (goalKmerPos == NO_MATCH && fixErrors) {
+	if (goalKmerPos == NO_MATCH && params.fixErrors) {
 		correctedRead2 = read2;
 		if (correctSingleBaseError(g, k, correctedRead2, unused, true)) {
-			goalKmerPos = getStartKmerPos(k, correctedRead2, g, true, longSearch);
+			goalKmerPos = getStartKmerPos(k, correctedRead2, g,
+				true, params.longSearch);
 			assert(goalKmerPos != NO_MATCH);
 			pRead2 = &correctedRead2;
 		}
@@ -309,18 +347,18 @@ static inline SearchResult connectPairs(
 	Kmer goalKmer(pRead2->seq.substr(goalKmerPos, k));
 	goalKmer.reverseComplement();
 
-	unsigned maxPathLen = maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
-	assert(maxPathLen <= maxMergedSeqLen - k + 1);
+	unsigned maxPathLen = params.maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
+	assert(maxPathLen <= params.maxMergedSeqLen - k + 1);
 
 	unsigned minPathLen = (unsigned)std::max((int)0,
-			(int)(minMergedSeqLen - k + 1 - startKmerPos - goalKmerPos));
+			(int)(params.minMergedSeqLen - k + 1 - startKmerPos - goalKmerPos));
 	// do not allow merged seqs that are shorter than the reads
 	minPathLen = std::max(minPathLen, (unsigned)std::max(
 				pRead1->seq.length() - k + 1 - startKmerPos,
 				pRead2->seq.length() - k + 1 - goalKmerPos));
 
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer, maxPaths,
-			minPathLen, maxPathLen, maxBranches);
+	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer,
+			params.maxPaths, minPathLen, maxPathLen, params.maxBranches);
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<Kmer> > paths;
@@ -332,14 +370,43 @@ static inline SearchResult connectPairs(
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 
 	if (result.pathResult == FOUND_PATH) {
+
+		// build sequences for connecting paths
+
 		std::string seqPrefix = pRead1->seq.substr(0, startKmerPos);
 		std::string seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
 		for (unsigned i = 0; i < paths.size(); i++) {
 			FastaRecord mergedSeq;
-			mergedSeq.id = result.readNamePrefix;
+			std::stringstream index;
+			index << i;
+			assert(index);
+			mergedSeq.id = result.readNamePrefix + "_" + index.str();
 			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
 			result.mergedSeqs.push_back(mergedSeq);
 		}
+
+		// calc consensus seq and mismatch stats
+
+		if (paths.size() == 1) {
+
+			result.readMismatches =
+				maskNew(read1, read2, result.mergedSeqs.front(), params.maskBases);
+
+		} else {
+
+			NWAlignment aln;
+			unsigned matches, size;
+			boost::tie(matches, size) = align(result.mergedSeqs, aln);
+			assert(size >= matches);
+			result.pathMismatches = size - matches;
+
+			result.consensusSeq.id = result.readNamePrefix;
+			result.consensusSeq.seq = aln.match_align;
+			result.readMismatches =
+				maskNew(read1, read2, result.consensusSeq, params.maskBases);
+
+		}
+
 	}
 
 #if 0

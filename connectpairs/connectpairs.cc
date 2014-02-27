@@ -22,7 +22,6 @@
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
-#include <boost/tuple/tuple.hpp>
 
 #if _OPENMP
 # include <omp.h>
@@ -40,7 +39,6 @@ using namespace std;
 #if USESEQAN
 using namespace seqan;
 #endif
-using boost::tie;
 
 #define PROGRAM "abyss-connectpairs"
 
@@ -64,7 +62,7 @@ static const char USAGE_MESSAGE[] =
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
 "                             use 'nolimit' for no limit [350]\n"
 "  -e, --fix-errors           find and fix single-base errors when reads\n"
-"                             have no kmers in the bloom filter [disabled]\n"
+"                             have no kmers in bloom filter [disabled]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
@@ -259,16 +257,14 @@ static void seqanTests()
 static void connectPair(const DBGBloom& g,
 	const FastqRecord& read1,
 	const FastqRecord& read2,
+	const ConnectPairsParams& params,
 	ofstream& mergedStream,
 	ofstream& read1Stream,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
-	SearchResult result
-		= connectPairs(opt::k, read1, read2, g,
-				opt::maxPaths, opt::minFrag,
-				opt::maxFrag, opt::maxBranches,
-				opt::fixErrors, opt::longSearch);
+	SearchResult result =
+		connectPairs(opt::k, read1, read2, g, params);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 
@@ -292,67 +288,56 @@ static void connectPair(const DBGBloom& g,
 				<< "no path: " << g_count.noPath << ", "
 				<< "too many paths: " << g_count.tooManyPaths << ", "
 				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many mismatches: " << g_count.tooManyMismatches << ", "
-				<< "too many read mismatches: " << g_count.tooManyReadMismatches
+				<< "too many path mismatches: " << g_count.tooManyMismatches << ", "
+				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches
 				<< ")\n";
 		}
 	}
 
 	switch (result.pathResult) {
+
 	  case NO_PATH:
 		assert(paths.empty());
 		if (result.foundStartKmer && result.foundGoalKmer)
 #pragma omp atomic
 			++g_count.noPath;
-		else
+		else {
 #pragma omp atomic
 			++g_count.noStartOrGoalKmer;
+		}
 		break;
+
 	  case FOUND_PATH:
 		assert(!paths.empty());
-		if (paths.size() == 1) {
-			if (maskNew(read1, read2, paths.front(), opt::mask) > opt::maxReadMismatches) {
-#pragma omp atomic
-				++g_count.tooManyReadMismatches;
-			} else {
-#pragma omp atomic
-				++g_count.uniquePath;
-#pragma omp critical(mergedStream)
-				mergedStream << paths.front();
-				break;
-			}
-		} else {
-			NWAlignment aln;
-			unsigned matches, size;
-			tie(matches, size) = align(paths, aln);
-			assert(size >= matches);
-			if (size - matches <= opt::maxMismatches) {
-				FastaRecord read = paths.front();
-				read.seq = aln.match_align;
-				if (maskNew(read1, read2, read, opt::mask) > opt::maxReadMismatches) {
-#pragma omp atomic
-					++g_count.tooManyReadMismatches;
-				} else {
-#pragma omp atomic
-					++g_count.multiplePaths;
-#pragma omp critical(mergedStream)
-					mergedStream << read;
-					break;
-				}
-			} else {
+		if (result.pathMismatches > params.maxPathMismatches ||
+			result.readMismatches > params.maxReadMismatches) {
+			if (result.pathMismatches > params.maxPathMismatches)
 #pragma omp atomic
 				++g_count.tooManyMismatches;
-			}
-		}
+			else
+				++g_count.tooManyReadMismatches;
 #pragma omp critical(read1Stream)
-		read1Stream << read1;
+			read1Stream << read1;
 #pragma omp critical(read2Stream)
-		read2Stream << read2;
+			read2Stream << read2;
+		}
+		else if (paths.size() > 1) {
+#pragma omp atomic
+			++g_count.multiplePaths;
+			mergedStream << result.consensusSeq;
+		}
+		else {
+#pragma omp atomic
+			++g_count.uniquePath;
+			mergedStream << paths.front();
+		}
 		break;
+
 	  case TOO_MANY_PATHS:
 #pragma omp atomic
 		++g_count.tooManyPaths;
 		break;
+
 	  case TOO_MANY_BRANCHES:
 #pragma omp atomic
 		++g_count.tooManyBranches;
@@ -371,6 +356,7 @@ static void connectPair(const DBGBloom& g,
 template <typename FastaStream>
 static void connectPairs(const DBGBloom& g,
 	FastaStream& in,
+	const ConnectPairsParams& params,
 	ofstream& mergedStream,
 	ofstream& read1Stream,
 	ofstream& read2Stream,
@@ -382,7 +368,7 @@ static void connectPairs(const DBGBloom& g,
 #pragma omp critical(in)
 		good = in >> a >> b;
 		if (good)
-			connectPair(g, a, b, mergedStream, read1Stream,
+			connectPair(g, a, b, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 		else
 			break;
@@ -573,16 +559,28 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
 
+	ConnectPairsParams params;
+
+	params.minMergedSeqLen = opt::minFrag;
+	params.maxMergedSeqLen = opt::maxFrag;
+	params.maxPaths = opt::maxPaths;
+	params.maxBranches = opt::maxBranches;
+	params.maxPathMismatches = opt::maxMismatches;
+	params.maxReadMismatches = opt::maxReadMismatches;
+	params.fixErrors = opt::fixErrors;
+	params.longSearch = opt::longSearch;
+	params.maskBases = opt::mask;
+
 	if (opt::interleaved) {
 		FastaConcat in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, mergedStream, read1Stream,
+		connectPairs(g, in, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 		assert(in.eof());
 	} else {
 		FastaInterleave in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, mergedStream, read1Stream,
+		connectPairs(g, in, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 		assert(in.eof());
 	}
@@ -620,11 +618,11 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyBranches / g_count.readPairsProcessed
 				<< "%)\n"
-			"Too many mismatches: " << g_count.tooManyMismatches
+			"Too many path mismatches: " << g_count.tooManyMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyMismatches / g_count.readPairsProcessed
 				<< "%)\n"
-			"Too many read mismatches: " << g_count.tooManyReadMismatches
+			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
 				<< "%)\n"

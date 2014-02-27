@@ -1,11 +1,12 @@
 #ifndef CONNECTPAIRS_H
 #define CONNECTPAIRS_H
+
 #include "DataLayer/FastaInterleave.h"
 #include <algorithm>
 
 /** Uppercase only bases that are present in original reads.
  *  @return number of mis-matching bases. */
-static inline unsigned maskNew(const FastqRecord& read1, const FastqRecord& read2,
+static inline unsigned maskNew(const FastaRecord& read1, const FastaRecord& read2,
 		FastaRecord& merged, int mask = 0)
 {
 	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);

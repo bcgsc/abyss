@@ -46,7 +46,10 @@ check_PROGRAMS += connectpairs_DBGBloomAlgorithms
 connectpairs_DBGBloomAlgorithms_SOURCES = connectpairs/DBGBloomAlgorithmsTest.cpp
 connectpairs_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 connectpairs_DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
-connectpairs_DBGBloomAlgorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+connectpairs_DBGBloomAlgorithms_LDADD = \
+	$(top_builddir)/Align/libalign.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(GTEST_LIBS)
 
 UNIT_TESTS += graph_ConstrainedBFSVisitor
 check_PROGRAMS += graph_ConstrainedBFSVisitor
