@@ -1,6 +1,7 @@
 #ifndef BIDIRECTION_BFS_VISITOR_H
 #define BIDIRECTION_BFS_VISITOR_H 1
 
+#include "Graph/Path.h"
 #include "Common/Warnings.h"
 
 enum BFSVisitorResult { SUCCESS, ABORT_SEARCH, SKIP_ELEMENT };

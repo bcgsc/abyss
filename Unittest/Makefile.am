@@ -45,9 +45,7 @@ UNIT_TESTS += connectpairs_DBGBloomAlgorithms
 check_PROGRAMS += connectpairs_DBGBloomAlgorithms
 connectpairs_DBGBloomAlgorithms_SOURCES = connectpairs/DBGBloomAlgorithmsTest.cpp
 connectpairs_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 connectpairs_DBGBloomAlgorithms_LDADD = \
-	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \
 	$(GTEST_LIBS)
 
@@ -87,6 +85,9 @@ check_PROGRAMS += connectpairs_connectpairs
 connectpairs_connectpairs_SOURCES = \
 	connectpairs/connectpairsTest.cpp
 connectpairs_connectpairs_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_connectpairs_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+connectpairs_connectpairs_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+connectpairs_connectpairs_LDADD = \
+	$(top_builddir)/Align/libalign.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 TESTS = $(UNIT_TESTS)
