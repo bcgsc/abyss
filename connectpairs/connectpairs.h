@@ -9,6 +9,7 @@
 #include "Graph/DefaultColorMap.h"
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
+#include <limits>
 
 #if _OPENMP
 # include <omp.h>
@@ -30,6 +31,7 @@ struct ConnectPairsResult
 	unsigned maxDepthVisitedReverse;
 	unsigned pathMismatches;
 	unsigned readMismatches;
+	size_t memUsage;
 
 	ConnectPairsResult() :
 		pathResult(NO_PATH),
@@ -42,7 +44,8 @@ struct ConnectPairsResult
 		maxDepthVisitedForward(0),
 		maxDepthVisitedReverse(0),
 		pathMismatches(0),
-		readMismatches(0)
+		readMismatches(0),
+		memUsage(0)
 	{}
 
 	static std::ostream& printHeaders(std::ostream& out)
@@ -58,7 +61,8 @@ struct ConnectPairsResult
 			<< "max_depth_forward" << "\t"
 			<< "max_depth_reverse" << "\t"
 			<< "path_mismatches" << "\t"
-			<< "read_mismatches" << "\n";
+			<< "read_mismatches" << "\t"
+			<< "mem_usage" << "\n";
 		return out;
 	}
 
@@ -85,7 +89,8 @@ struct ConnectPairsResult
 			<< o.maxDepthVisitedForward << "\t"
 			<< o.maxDepthVisitedReverse << "\t"
 			<< o.pathMismatches << "\t"
-			<< o.readMismatches << "\n";
+			<< o.readMismatches << "\t"
+			<< o.memUsage << "\n";
 
 		return out;
 	}
@@ -102,6 +107,7 @@ struct ConnectPairsParams {
 	bool fixErrors;
 	bool longSearch;
 	bool maskBases;
+	size_t memLimit;
 
 	ConnectPairsParams() :
 		minMergedSeqLen(0),
@@ -112,7 +118,9 @@ struct ConnectPairsParams {
 		maxReadMismatches(NO_LIMIT),
 		fixErrors(false),
 		longSearch(false),
-		maskBases(false) {}
+		maskBases(false),
+		memLimit(std::numeric_limits<std::size_t>::max())
+	{}
 
 };
 
@@ -195,7 +203,8 @@ static inline ConnectPairsResult connectPairs(
 				pRead2->seq.length() - k + 1 - goalKmerPos));
 
 	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer,
-			params.maxPaths, minPathLen, maxPathLen, params.maxBranches);
+			params.maxPaths, minPathLen, maxPathLen, params.maxBranches,
+			params.memLimit);
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<Kmer> > paths;
@@ -205,6 +214,7 @@ static inline ConnectPairsResult connectPairs(
 	result.maxActiveBranches = visitor.getMaxActiveBranches();
 	result.maxDepthVisitedForward = visitor.getMaxDepthVisited(FORWARD);
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
+	result.memUsage = visitor.approxMemUsage();
 
 	if (result.pathResult == FOUND_PATH) {
 

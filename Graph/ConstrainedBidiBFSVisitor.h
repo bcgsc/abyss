@@ -8,6 +8,7 @@
 #include "Graph/HashGraph.h"
 #include "Graph/BidirectionalBFSVisitor.h"
 #include "Graph/AllPathsSearch.h"
+#include "Common/MemUtils.h"
 #include <boost/graph/graph_traits.hpp>
 #include <iostream>
 #include <sstream>
@@ -19,6 +20,9 @@ class ConstrainedBidiBFSVisitor : public BidirectionalBFSVisitor<G>
 {
 
 protected:
+
+	static const float MEM_CHECK_FREQ = 0.001;
+	static const size_t MEM_COUNTER_ROLLOVER = 1 / 0.001;
 
 	typedef typename boost::graph_traits<G>::vertex_descriptor V;
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
@@ -64,6 +68,13 @@ protected:
 	  * time during forward/reverse traversal */
 	unsigned m_maxBranches;
 
+	/** memory limit for graph search */
+	size_t m_memLimit;
+	/** controls frequency of memory limit checks */
+	size_t m_memCheckCounter;
+	/** true if we have exceeded the memory limit */
+	bool m_exceededMemLimit;
+
 	/** the max number of frontier nodes we had at any time
 	  * during forward/reverse traversal (up to a limit
 	  * of m_maxBranches) */
@@ -88,7 +99,8 @@ public:
 		unsigned maxPaths,
 		depth_t minPathLength,
 		depth_t maxPathLength,
-		unsigned maxBranches
+		unsigned maxBranches,
+		size_t memLimit
 		) :
 			m_graph(graph),
 			m_start(start),
@@ -97,6 +109,9 @@ public:
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
 			m_maxBranches(maxBranches),
+			m_memLimit(memLimit),
+			m_memCheckCounter(0),
+			m_exceededMemLimit(false),
 			m_peakActiveBranches(0),
 			m_tooManyBranches(false),
 			m_tooManyPaths(false),
@@ -165,14 +180,12 @@ public:
 		if (!updateTargetDepth(e, g, dir))
 			return SKIP_ELEMENT;
 
-		recordEdgeTraversal(e, g, dir);
-		return SUCCESS;
+		return recordEdgeTraversal(e, g, dir);
 	}
 
 	BFSVisitorResult non_tree_edge(const E& e, const G& g, Direction dir)
 	{
-		recordEdgeTraversal(e, g, dir);
-		return SUCCESS;
+		return recordEdgeTraversal(e, g, dir);
 	}
 
 	BFSVisitorResult common_edge(const E& e, const G& g, Direction dir)
@@ -207,6 +220,8 @@ public:
 			return TOO_MANY_PATHS;
 		else if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
+		else if (m_exceededMemLimit)
+			return EXCEEDED_MEM_LIMIT;
 
 		buildPaths();
 
@@ -233,6 +248,15 @@ public:
 	unsigned long long getNumNodesVisited()
 	{
 		return m_numNodesVisited;
+	}
+
+	size_t approxMemUsage()
+	{
+		return
+			m_traversalGraph[FORWARD].approxMemSize() +
+			m_traversalGraph[REVERSE].approxMemSize() +
+			approxMemSize(m_depthMap[FORWARD]) +
+			approxMemSize(m_depthMap[REVERSE]);
 	}
 
 protected:
@@ -265,8 +289,24 @@ protected:
 		 * that has the given vertex_descriptor
 		 * as the source or target.
 		 */
-		recordEdgeTraversal(e, m_graph, FORWARD);
-		recordEdgeTraversal(e, m_graph, REVERSE);
+
+		BFSVisitorResult result = recordEdgeTraversal(e, m_graph, FORWARD);
+		if (result != SUCCESS)
+			return result;
+
+		return recordEdgeTraversal(e, m_graph, REVERSE);
+	}
+
+	BFSVisitorResult checkMemLimit()
+	{
+		m_memCheckCounter++;
+		if (m_memCheckCounter >= MEM_COUNTER_ROLLOVER) {
+			m_memCheckCounter = 0;
+			if (approxMemUsage() > m_memLimit) {
+				m_exceededMemLimit = true;
+				return ABORT_SEARCH;
+			}
+		}
 		return SUCCESS;
 	}
 
@@ -274,8 +314,12 @@ protected:
 	 * Record history of edge traversal, so that we can retrace
 	 * paths from a common edge to start/goal.
 	 */
-	void recordEdgeTraversal(const E& e, const G& g, Direction dir)
+	BFSVisitorResult recordEdgeTraversal(const E& e, const G& g, Direction dir)
 	{
+		BFSVisitorResult result = checkMemLimit();
+		if (result != SUCCESS)
+			return result;
+
 		V u = source(e, g);
 		V v = target(e, g);
 
@@ -283,6 +327,8 @@ protected:
 			add_edge(v, u, m_traversalGraph[FORWARD]);
 		else
 			add_edge(u, v, m_traversalGraph[REVERSE]);
+
+		return result;
 	}
 
 	/**

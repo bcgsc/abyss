@@ -78,9 +78,9 @@ static const char USAGE_MESSAGE[] =
 "                             to the beginnings of reads. Takes more time\n"
 "                             but improves results when bloom filter false\n"
 "                             positive rate is high [disabled]\n"
-"  -m, --read-mismatches      max mismatches between paths and reads; use\n"
+"  -m, --read-mismatches=N    max mismatches between paths and reads; use\n"
 "                             'nolimit' for no limit [nolimit]\n"
-"  -M, --max-mismatches       max mismatches between all alternate paths;\n"
+"  -M, --max-mismatches=N     max mismatches between all alternate paths;\n"
 "                             use 'nolimit' for no limit [2]\n"
 "  -n  --no-limits            disable all limits; equivalent to\n"
 "                             '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
@@ -93,7 +93,10 @@ static const char USAGE_MESSAGE[] =
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
 "                             default for qseq and export files\n"
-"  -t, --trace-file FILE      write graph search stats to FILE\n"
+"  -s, --search-mem=N         mem limit for graph searches; multiply by the\n"
+"                             number of threads (-j) to get the total mem used\n"
+"                             for graph traversal [500M]\n"
+"  -t, --trace-file=FILE      write graph search stats to FILE\n"
 "  -v, --verbose              display verbose output\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
@@ -150,6 +153,9 @@ namespace opt {
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
 
+	/** Max mem used per thread during graph traversal */
+	static size_t searchMem = 500 * 1024 * 1024;
+
 	/** Output file for graph search stats */
 	static string tracefilePath;
 
@@ -171,11 +177,13 @@ static struct {
 	size_t tooManyBranches;
 	size_t tooManyMismatches;
 	size_t tooManyReadMismatches;
+	size_t exceededMemLimit;
+	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:ef:F:i:Ij:k:lm:M:no:P:q:t:v";
+static const char shortopts[] = "b:B:ef:F:i:Ij:k:lm:M:no:P:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -204,6 +212,7 @@ static const struct option longopts[] = {
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "search-mem",       required_argument, NULL, 's' },
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "help",             no_argument, NULL, OPT_HELP },
@@ -288,8 +297,9 @@ static void connectPair(const DBGBloom& g,
 				<< "no path: " << g_count.noPath << ", "
 				<< "too many paths: " << g_count.tooManyPaths << ", "
 				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many path mismatches: " << g_count.tooManyMismatches << ", "
-				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches
+				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
+				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+				<< "exceeded mem limit: " << g_count.exceededMemLimit
 				<< ")\n";
 		}
 	}
@@ -342,6 +352,10 @@ static void connectPair(const DBGBloom& g,
 #pragma omp atomic
 		++g_count.tooManyBranches;
 		break;
+
+	  case EXCEEDED_MEM_LIMIT:
+#pragma omp atomic
+		++g_count.exceededMemLimit;
 	}
 
 	if (result.pathResult != FOUND_PATH) {
@@ -443,6 +457,8 @@ int main(int argc, char** argv)
 			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 's':
+			opt::searchMem = SIToBytes(arg); break;
 		  case 't':
 			arg >> opt::tracefilePath; break;
 		  case 'v':
@@ -570,6 +586,7 @@ int main(int argc, char** argv)
 	params.fixErrors = opt::fixErrors;
 	params.longSearch = opt::longSearch;
 	params.maskBases = opt::mask;
+	params.memLimit = opt::searchMem;
 
 	if (opt::interleaved) {
 		FastaConcat in(argv + optind, argv + argc,
@@ -618,13 +635,17 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyBranches / g_count.readPairsProcessed
 				<< "%)\n"
-			"Too many path mismatches: " << g_count.tooManyMismatches
+			"Too many path/path mismatches: " << g_count.tooManyMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyMismatches / g_count.readPairsProcessed
 				<< "%)\n"
 			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
+				<< "%)\n"
+			"Exceeded mem limit: " << g_count.exceededMemLimit
+				<< " (" << setprecision(3) << (float)100
+					* g_count.exceededMemLimit / g_count.readPairsProcessed
 				<< "%)\n"
 			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
 				<< "%\n";
