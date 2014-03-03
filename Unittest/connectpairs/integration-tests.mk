@@ -66,7 +66,8 @@ tests=run_test \
 all: $(tests)
 
 clean:
-	rm -rf $(tmpdir)
+	rm -f $(tmpdir)/*
+	rmdir $(tmpdir) || true
 
 #------------------------------------------------------------
 # common rules
