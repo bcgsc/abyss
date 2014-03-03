@@ -38,7 +38,12 @@ public:
 	/** Return the hash value of this object. */
 	static size_t hash(const key_type& key)
 	{
-		return hashmem(&key, sizeof key);
+		if (key.isCanonical())
+			return hashmem(&key, sizeof key);
+
+		key_type copy(key);
+		copy.reverseComplement();
+		return hashmem(&copy, sizeof copy);
 	}
 
 	/** Operator for writing the bloom filter to a stream */
@@ -59,10 +64,7 @@ public:
 			std::string kmer = seq.substr(i, k);
 			size_t pos = kmer.find_last_not_of("ACGTacgt");
 			if (pos == std::string::npos) {
-				Kmer u(kmer);
-				insert(u);
-				u.reverseComplement();
-				insert(u);
+				insert(Kmer(kmer));
 			} else
 				i += pos;
 		}
