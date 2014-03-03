@@ -63,6 +63,8 @@ tests=run_test \
 # top level rules
 #------------------------------------------------------------
 
+.PHONY: all clean tmpdir
+
 all: $(tests)
 
 clean:
@@ -74,9 +76,9 @@ clean:
 #------------------------------------------------------------
 
 $(tmpdir):
-	mkdir -p $@
+	mkdir -p $(tmpdir)
 
-$(tmpdir)/test_reference.fa: $(tmpdir)
+$(tmpdir)/test_reference.fa: | $(tmpdir)
 	curl https://raw.github.com/dzerbino/velvet/master/data/test_reference.fa \
 		|abyss-tofastq --fasta >$@
 
