@@ -16,6 +16,12 @@ common_bitutil_SOURCES = Common/BitUtilTest.cpp
 common_bitutil_CPPFLAGS = -I$(top_srcdir)
 common_bitutil_LDADD = $(GTEST_LIBS)
 
+UNIT_TESTS += common_kmer
+check_PROGRAMS += common_kmer
+common_kmer_SOURCES = Common/KmerTest.cpp
+common_kmer_CPPFLAGS = -I$(top_srcdir)
+common_kmer_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 UNIT_TESTS += common_sequence
 check_PROGRAMS += common_sequence
 common_sequence_SOURCES = Common/Sequence.cc
