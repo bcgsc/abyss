@@ -161,6 +161,9 @@ endif
 # PopBubbles parameters
 p?=0.9
 pbopt += -p$p
+ifdef a
+pbopt += -a$a
+endif
 
 # Aligner parameters
 aligner?=map
