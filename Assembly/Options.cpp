@@ -114,7 +114,7 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-static const char shortopts[] = "b:c:e:E:g:k:o:q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:o:Q:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
