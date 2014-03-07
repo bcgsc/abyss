@@ -172,6 +172,12 @@ endif
 
 # Aligner parameters
 aligner?=map$(ssq_t)
+ifeq ($(SS),--SS)
+ ifneq ($(aligner),map$(ssq_t))
+  $(warning warning: setting aligner to abyss-map$(ssq_t) since other aligners do not support ss=1)
+  override aligner=map$(ssq_t)
+ endif
+endif
 align?=abyss-$(aligner)
 mapopt=$v -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
