@@ -136,6 +136,9 @@ endif
 ifdef Q
 abyssopt += -Q$Q
 endif
+ifdef ss
+SS=--SS
+endif
 abyssopt += $v $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Number of threads
