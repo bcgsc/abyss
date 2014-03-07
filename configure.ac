@@ -110,13 +110,6 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 	[], [enable_maxk=64])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
-AC_ARG_ENABLE(samseqqual,
-	AS_HELP_STRING([--enable-samseqqual],
-		[enable SAM sequence and quality fields]),
-	AC_DEFINE_UNQUOTED(SAM_SEQ_QUAL, 1,
-		[Define to use SAM sequence and quality fields]))
-AM_CONDITIONAL([SAM_SEQ_QUAL], [test "$enable_samseqqual"])
-
 # Set compiler flags.
 AC_SUBST(CPPFLAGS,
 		 "-I$srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $CPPFLAGS")

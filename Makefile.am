@@ -2,10 +2,6 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
-if SAM_SEQ_QUAL
-GapFiller=GapFiller
-endif
-
 if HAVE_GTEST
 Unittest=Unittest
 else
@@ -49,8 +45,8 @@ SUBDIRS = \
 	SimpleGraph \
 	kmerprint \
 	FilterGraph \
-	$(Unittest) \
-	$(GapFiller)
+	GapFiller \
+	$(Unittest)
 
 %.html: %.md
 	-multimarkdown $< >$@

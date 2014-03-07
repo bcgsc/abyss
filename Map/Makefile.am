@@ -1,4 +1,4 @@
-bin_PROGRAMS = abyss-index abyss-map abyss-overlap
+bin_PROGRAMS = abyss-index abyss-map abyss-map-ssq abyss-overlap
 
 abyss_index_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
@@ -25,6 +25,15 @@ abyss_map_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 abyss_map_SOURCES = map.cc
+
+abyss_map_ssq_CPPFLAGS = $(abyss_map_CPPFLAGS) \
+	-D SAM_SEQ_QUAL=1
+
+abyss_map_ssq_CXXFLAGS = $(abyss_map_CXXFLAGS)
+
+abyss_map_ssq_LDADD = $(abyss_map_LDADD)
+
+abyss_map_ssq_SOURCES = $(abyss_map_SOURCES)
 
 abyss_overlap_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
