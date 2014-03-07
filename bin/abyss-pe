@@ -165,8 +165,13 @@ ifdef a
 pbopt += -a$a
 endif
 
+# Keep sequence and quality strings of read alignments
+ifdef ssq
+ssq_t :=-ssq
+endif
+
 # Aligner parameters
-aligner?=map
+aligner?=map$(ssq_t)
 align?=abyss-$(aligner)
 mapopt=$v -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
@@ -174,11 +179,12 @@ mapopt=$v -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 ifeq ($(align),abyss-kaligner)
 fixmate?=ParseAligns
 else
-fixmate?=abyss-fixmate
+fixmate?=abyss-fixmate$(ssq_t)
 endif
 fmopt=$v -l$($*_l) $(FIXMATE_OPTIONS)
 
 # DistanceEst parameters
+DistanceEst?=DistanceEst$(ssq_t)
 l?=$k
 s?=200
 n?=10
@@ -398,17 +404,17 @@ endif
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|DistanceEst $(deopt) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|DistanceEst $(deopt) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|DistanceEst $(deopt) -o $@ $*-3.hist
+		|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(pe))
 
@@ -487,17 +493,17 @@ endif
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|DistanceEst --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|DistanceEst --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|DistanceEst --dot $(deopt) -o $@ $*-6.hist
+		|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 # Scaffold
 
