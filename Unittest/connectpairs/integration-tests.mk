@@ -249,15 +249,30 @@ parallel_load_3_files_test: $(tmpdir)/e$e_l2.bloom \
 	@echo '------------------'
 
 #------------------------------------------------------------
+# abyss_bloom_dist_1_file_test
+#------------------------------------------------------------
+
+abyss_bloom_dist_1_file_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_1.fq \
+		$(tmpdir)/e$e_2.fq
+	cat $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq > $(tmpdir)/e$e_1cat2.fq
+	$(bloom_dist) -C $(tmpdir) name=dist-1-file k=$k b=$(b_div_2) w=2 \
+		files='e$e_1cat2.fq'
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-1-file.bloom.gz)
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
 # abyss_bloom_dist_2_files_test
 #------------------------------------------------------------
 
 abyss_bloom_dist_2_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_1.fq \
 		$(tmpdir)/e$e_2.fq
-	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
+	$(bloom_dist) -C $(tmpdir) name=dist-2-files k=$k b=$(b_div_2) w=2 \
 		files='e$e_1.fq e$e_2.fq'
-	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist.bloom.gz)
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-2-files.bloom.gz)
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
@@ -270,9 +285,9 @@ abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_reads_1of3.fq \
 		$(tmpdir)/e$e_reads_2of3.fq \
 		$(tmpdir)/e$e_reads_3of3.fq
-	$(bloom_dist) -C $(tmpdir) name=dist k=$k b=$(b_div_2) w=2 \
+	$(bloom_dist) -C $(tmpdir) name=dist-3-files k=$k b=$(b_div_2) w=2 \
 		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
-	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist.bloom.gz)
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-3-files.bloom.gz)
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'

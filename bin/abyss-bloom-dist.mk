@@ -127,7 +127,7 @@ $(name)_l1_%.bloom.gz: $(files)
 $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 	SGE_RREQ="-N $(name)_l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
 	$(BEGIN_SHELL) \
-		zcat $(call getSiblingBloomFiles,$(subst l2,l1,$@)) | \
+		$(if $(word 2,$(files)), zcat $(call getSiblingBloomFiles,$(subst l2,l1,$@)) |,) \
 			abyss-bloom build -v -k$k $(build_opts) -b$(b_times_l) -l2 \
 			-w$(call getWindow,$@)/$w \
 			$(foreach i,$(wordlist 2,999,$(files)),-L1=-) \
