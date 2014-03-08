@@ -37,7 +37,11 @@ public:
 	KmerIterator(const Sequence& seq, unsigned k, bool rc = false)
 		: m_seq(seq), m_k(k), m_rc(rc), m_pos(0), m_kmer()
 	{
-		next();
+		if (seq.size() < k) {
+			m_pos = std::numeric_limits<std::size_t>::max();
+		} else {
+			next();
+		}
 	}
 
 	const Kmer& operator*() const

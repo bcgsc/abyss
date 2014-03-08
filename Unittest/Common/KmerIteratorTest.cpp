@@ -31,9 +31,17 @@ TEST(KmerIteratorTest, IllegalChars)
 	ASSERT_EQ(KmerIterator::end(), i);
 }
 
-TEST(KmerIteratorTest, SeqLengthLessThanK)
+TEST(KmerIteratorTest, SeqLengthOneLessThanK)
 {
 	unsigned k = 3;
+	Kmer::setLength(k);
+	KmerIterator i("AG", k);
+	ASSERT_EQ(KmerIterator::end(), i);
+}
+
+TEST(KmerIteratorTest, SeqLengthMuchLessThanK)
+{
+	unsigned k = 10;
 	Kmer::setLength(k);
 	KmerIterator i("AG", k);
 	ASSERT_EQ(KmerIterator::end(), i);
