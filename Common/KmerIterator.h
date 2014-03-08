@@ -14,11 +14,22 @@ struct KmerIterator
 	{
 		for(; m_pos < m_seq.size() - m_k + 1; m_pos++) {
 			std::string kmerStr = m_seq.substr(m_pos, m_k);
-			size_t pos = kmerStr.find_first_not_of("AGCTagct");
-			if (pos != std::string::npos) {
-				m_pos += pos;
-				continue;
+
+			if (m_pos_invalid >= m_pos + m_k) {
+				// no invalid characters in current kmer, move along
+			} else {
+				size_t pos = m_seq.find_first_not_of("AGCTagct", m_pos);
+				if (pos == std::string::npos) {
+					m_pos_invalid = std::numeric_limits<std::size_t>::max();
+				} else if (pos >= m_pos + m_k) {
+					m_pos_invalid = pos;
+				} else {
+					pos = kmerStr.find_last_not_of("AGCTagct");
+					m_pos += pos;
+					continue;
+				}
 			}
+
 			m_kmer = Kmer(kmerStr);
 			if (m_rc)
 				m_kmer.reverseComplement();
@@ -32,10 +43,11 @@ public:
 	KmerIterator() :
 		m_seq(),
 		m_pos(std::numeric_limits<std::size_t>::max()),
+		m_pos_invalid(0),
 		m_kmer() { }
 
 	KmerIterator(const Sequence& seq, unsigned k, bool rc = false)
-		: m_seq(seq), m_k(k), m_rc(rc), m_pos(0), m_kmer()
+		: m_seq(seq), m_k(k), m_rc(rc), m_pos(0), m_pos_invalid(0), m_kmer()
 	{
 		if (seq.size() < k) {
 			m_pos = std::numeric_limits<std::size_t>::max();
@@ -90,6 +102,7 @@ private:
 	unsigned m_k;
 	bool m_rc;
 	size_t m_pos;
+	size_t m_pos_invalid;
 	Kmer m_kmer;
 	static const KmerIterator m_end;
 };
