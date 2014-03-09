@@ -49,7 +49,8 @@ static void mergeFastaFiles(const string& outputPath, const string& inputPathPre
 	for (int i = 0; i < opt::numProc; i++) {
 		ostringstream s;
 		s << inputPathPrefix << i << FASTA_SUFFIX;
-		const char* path = s.str().c_str();
+		string str(s.str());
+		const char* path = str.c_str();
 		if (unlink(path) == -1) {
 			cerr << "error: removing `" << path << "': "
 				<< strerror(errno) << endl;
