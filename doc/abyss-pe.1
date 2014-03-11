@@ -145,10 +145,16 @@ Assemble unitigs.
 Output the unitig overlap graph.
 .TP
 .B pe-sam
-Map paired-end reads to the unitigs and output a SAM file.
+Map paired-end reads to the unitigs and output a SAM file. SAM file
+will only contain reads mapping to different contigs, and the read
+ID, sequence and quality strings will be replaced with '*'
+characters.
 .TP
 .B pe-bam
-Map paired-end reads to the unitigs and output a BAM file.
+Map paired-end reads to the unitigs and output a BAM file. BAM file
+will only contain reads mapping to different contigs, and the read
+ID, sequence and quality strings will be replaced with '*'
+characters.
 .TP
 .B pe-index
 Generate an index of the unitigs used by abyss-map.
@@ -160,10 +166,16 @@ Assemble contigs.
 Output the contig overlap graph.
 .TP
 .B mp-sam
-Map mate-pair reads to the contigs and output a SAM file.
+Map mate-pair reads to the contigs and output a SAM file. SAM file
+will only contain reads mapping to different contigs, and the read
+ID, sequence and quality strings will be replaced with '*'
+characters.
 .TP
 .B mp-bam
-Map mate-pair reads to the contigs and output a BAM file.
+Map mate-pair reads to the contigs and output a BAM file. BAM file
+will only contain reads mapping to different contigs, and the read
+ID, sequence and quality strings will be replaced with '*'
+characters.
 .TP
 .B mp-index
 Generate an index of the contigs used by abyss-map.
