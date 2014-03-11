@@ -344,6 +344,7 @@ clean:
 	unitigs unitigs-dot \
 	pe-index pe-sam pe-bam contigs contigs-dot \
 	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
+	scaftigs long-scaffs long-scaffs-dot \
 	all clean help version versions
 .DELETE_ON_ERROR:
 .SECONDARY:
