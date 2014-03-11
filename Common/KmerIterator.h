@@ -12,7 +12,9 @@ struct KmerIterator
 {
 	void next()
 	{
-		for(; m_pos < m_seq.size() - m_k + 1; m_pos++) {
+		for(; m_pos + m_k < m_seq.size() + 1; m_pos++) {
+			//TODO(daattali) substr() and find_first_not_of() might be
+			// slow and could be improved for better performance
 			std::string kmerStr = m_seq.substr(m_pos, m_k);
 
 			if (m_pos_invalid >= m_pos + m_k) {
@@ -49,16 +51,12 @@ public:
 	KmerIterator(const Sequence& seq, unsigned k, bool rc = false)
 		: m_seq(seq), m_k(k), m_rc(rc), m_pos(0), m_pos_invalid(0), m_kmer()
 	{
-		if (seq.size() < k) {
-			m_pos = std::numeric_limits<std::size_t>::max();
-		} else {
-			next();
-		}
+		next();
 	}
 
 	const Kmer& operator*() const
 	{
-		assert(m_pos < m_seq.size() - m_k + 1);
+		assert(m_pos + m_k < m_seq.size() + 1);
 		return m_kmer;
 	}
 
@@ -74,7 +72,7 @@ public:
 
 	KmerIterator& operator++()
 	{
-		assert(m_pos < m_seq.size() - m_k + 1);
+		assert(m_pos + m_k < m_seq.size() + 1);
 		m_pos++;
 		next();
 		return *this;
