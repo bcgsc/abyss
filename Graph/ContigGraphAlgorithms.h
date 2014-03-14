@@ -252,8 +252,6 @@ struct IsPositive : std::unary_function<
 template<typename Graph, typename OutIt>
 OutIt assemble_stranded(Graph& g, OutIt out)
 {
-	typedef typename graph_traits<Graph>::edge_descriptor
-		edge_descriptor;
 	return assemble_if(g, out, IsPositive<Graph>(g));
 }
 
@@ -316,7 +314,6 @@ struct IsTip : std::unary_function<
 template <typename Graph, typename OutputIt>
 OutputIt pruneTips(Graph& g, OutputIt result)
 {
-	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	return pruneTips_if(g, result, IsTip<Graph>(g));
 }
 
