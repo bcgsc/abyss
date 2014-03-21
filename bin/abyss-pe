@@ -657,3 +657,30 @@ $(name)-stats.tab:
 
 %.break: %.sam.gz
 	abyss-samtobreak $(SAMTOBREAK_OPTIONS) $< >$@
+
+# Report ABySS configuration variable(s) and value(s) currently set.
+
+override varList := a b c d e E j k l m n N p q s S t v cs pi \
+	np pe lib mp se SS hostname xtip \
+	ssq ssq_ti libs path name in mpirun \
+	aligner long ref fixmate DistanceEst \
+	map deref abyssopt fgopt pbopt \
+	mapopt fmopt deopt \
+	pcopt sgopt bwaswopt \
+	ABYSS_OPTIONS FILTERGRAPH_OPTIONS POPBUBBLES_OPTIONS \
+	OVERLAP_OPTIONS SIMPLEGRAPH_OPTIONS MERGEPATHS_OPTIONS \
+	SCAFFOLD_OPTIONS ALIGNER_OPTIONS MAP_OPTIONS FAC_OPTIONS \
+	FIXMATE_OPTIONS BWASW_OPTIONS FATOAGP_OPTIONS SAMTOBREAK_OPTIONS \
+	MARKDOWN
+
+.PHONY: env
+env:
+	@echo -e "\
+	List of ABySS configuration variables currently set:\n\n\
+	[environment], if variable was inherited from the environment.\n\
+	[command line], if variable was defined on the command line.\n\
+	[file], if variable was defined in (this) makefile.\n\
+	[override], if variable was defined with an override directive in (this) makefile.\n"
+
+	@$(foreach var,$(varList),\
+		echo -e $(var)" = "$($(var))"\t["$(origin $(var))"]" | grep -v "undefined";)
