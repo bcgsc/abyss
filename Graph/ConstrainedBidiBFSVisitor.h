@@ -223,16 +223,12 @@ public:
 		else if (m_exceededMemLimit)
 			return EXCEEDED_MEM_LIMIT;
 
-		buildPaths();
+		PathSearchResult result = buildPaths();
 
-		if (m_tooManyPaths) {
-			return TOO_MANY_PATHS;
-		} else if (m_pathsFound.empty()) {
-			return NO_PATH;
-		} else {
+		if (result == FOUND_PATH)
 			pathsFound = m_pathsFound;
-			return FOUND_PATH;
-		}
+
+		return result;
 	}
 
 	depth_t getMaxDepthVisited(Direction dir)
@@ -354,13 +350,29 @@ protected:
 		return true;
 	}
 
-	void buildPaths()
+	PathSearchResult buildPaths()
 	{
+		PathSearchResult overallResult = NO_PATH;
+
+		// m_pathsFound will already contain one sol'n
+		// in the special case where start_kmer == goal_kmer
+		if (!m_pathsFound.empty())
+			overallResult = FOUND_PATH;
+
 		typename EdgeSet::const_iterator i = m_commonEdges.begin();
 		for (; i != m_commonEdges.end(); i++) {
-			if (buildPaths(*i) == TOO_MANY_PATHS)
+			PathSearchResult result = buildPaths(*i);
+			if (result == FOUND_PATH) {
+				overallResult = FOUND_PATH;
+			}
+			else if (result != FOUND_PATH && result != NO_PATH) {
+				// we have encountered a failure case
+				// (e.g. TOO_MANY_PATHS)
+				overallResult = result;
 				break;
+			}
 		}
+		return overallResult;
 	}
 
 	PathSearchResult buildPaths(const E& common_edge)
