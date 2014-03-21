@@ -401,7 +401,7 @@ protected:
 				maxPathsToGoal, 0, m_maxDepth[REVERSE], pathsToGoal);
 
 			if (result == FOUND_PATH)
-				buildPaths(pathsToStart, pathsToGoal);
+				result = buildPaths(pathsToStart, pathsToGoal);
 
 		} // result == FOUND_PATH (common edge => start)
 
@@ -411,8 +411,9 @@ protected:
 		return result;
 	}
 
-	void buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
+	PathSearchResult buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
 	{
+		bool addedPath = false;
 		typename PathList::const_iterator pathToStart = pathsToStart.begin();
 		for (; pathToStart != pathsToStart.end(); pathToStart++) {
 			typename PathList::const_iterator pathToGoal = pathsToGoal.begin();
@@ -425,8 +426,10 @@ protected:
 				reverse(mergedPath.begin(), mergedPath.end());
 				m_pathsFound.back().insert(mergedPath.end(),
 					pathToGoal->begin(), pathToGoal->end());
+				addedPath = true;
 			}
 		}
+		return (addedPath ? FOUND_PATH : NO_PATH);
 	}
 
 };
