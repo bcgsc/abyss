@@ -336,11 +336,13 @@ static void connectPair(const DBGBloom& g,
 		else if (paths.size() > 1) {
 #pragma omp atomic
 			++g_count.multiplePaths;
+#pragma omp critical(mergedStream)
 			mergedStream << result.consensusSeq;
 		}
 		else {
 #pragma omp atomic
 			++g_count.uniquePath;
+#pragma omp critical(mergedStream)
 			mergedStream << paths.front();
 		}
 		break;
