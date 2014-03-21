@@ -10,6 +10,7 @@ enum PathSearchResult {
 	FOUND_PATH = 0,
 	TOO_MANY_PATHS,
 	TOO_MANY_BRANCHES,
+	PATH_CONTAINS_CYCLE,
 	EXCEEDED_MEM_LIMIT,
 	NO_PATH
 };
@@ -18,6 +19,7 @@ const char* PathSearchResultLabel[] = {
 	"FOUND_PATH",
 	"TOO_MANY_PATHS",
 	"TOO_MANY_BRANCHES",
+	"PATH_CONTAINS_CYCLE",
 	"EXCEEDED_MEM_LIMIT",
 	"NO_PATH"
 };

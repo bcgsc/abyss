@@ -36,6 +36,7 @@ PathSearchResult allPathsSearch(
 	unordered_set<V, hash<V> > visited;
 	Path<V> path;
 	std::vector<EdgeIterPair> eiStack;
+	unordered_set<V> cycleVertices;
 
 	path.push_back(start);
 	visited.insert(start);
@@ -47,6 +48,8 @@ PathSearchResult allPathsSearch(
 			(minDepth == NO_LIMIT || (path.size() - 1) >= minDepth)) {
 			if (maxPaths != NO_LIMIT && pathsFound.size() >= maxPaths)
 				return TOO_MANY_PATHS;
+			if (!cycleVertices.empty())
+				return PATH_CONTAINS_CYCLE;
 			pathsFound.push_back(path);
 		}
 
@@ -56,6 +59,7 @@ PathSearchResult allPathsSearch(
 				eiStack.back().first == eiStack.back().second)
 			{
 				visited.erase(path.back());
+				cycleVertices.erase(path.back());
 				path.pop_back();
 				eiStack.pop_back();
 				assert(path.empty() == eiStack.empty());
@@ -65,6 +69,7 @@ PathSearchResult allPathsSearch(
 			} else {
 				V v = target(*(eiStack.back().first), g);
 				if (visited.find(v) != visited.end()) {
+					cycleVertices.insert(v);
 					eiStack.back().first++;
 				} else {
 					path.push_back(v);

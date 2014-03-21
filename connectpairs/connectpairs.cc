@@ -177,6 +177,7 @@ static struct {
 	size_t tooManyBranches;
 	size_t tooManyMismatches;
 	size_t tooManyReadMismatches;
+	size_t containsCycle;
 	size_t exceededMemLimit;
 	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
@@ -299,6 +300,7 @@ static void connectPair(const DBGBloom& g,
 				<< "too many branches: " << g_count.tooManyBranches << ", "
 				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
 				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+				<< "contains cycle: " << g_count.containsCycle << ", "
 				<< "exceeded mem limit: " << g_count.exceededMemLimit
 				<< ")\n";
 		}
@@ -353,9 +355,15 @@ static void connectPair(const DBGBloom& g,
 		++g_count.tooManyBranches;
 		break;
 
+	  case PATH_CONTAINS_CYCLE:
+#pragma omp atomic
+		++g_count.containsCycle;
+		break;
+
 	  case EXCEEDED_MEM_LIMIT:
 #pragma omp atomic
 		++g_count.exceededMemLimit;
+		break;
 	}
 
 	if (result.pathResult != FOUND_PATH) {
@@ -642,6 +650,10 @@ int main(int argc, char** argv)
 			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
+				<< "%)\n"
+			"Contains cycle: " << g_count.containsCycle
+				<< " (" << setprecision(3) << (float)100
+					* g_count.containsCycle / g_count.readPairsProcessed
 				<< "%)\n"
 			"Exceeded mem limit: " << g_count.exceededMemLimit
 				<< " (" << setprecision(3) << (float)100
