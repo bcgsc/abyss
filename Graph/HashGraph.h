@@ -15,25 +15,28 @@ public:
 
 	typedef HashGraph<VertexType> Graph;
 	typedef boost::graph_traits<Graph> GraphTraits;
-	typedef typename GraphTraits::VertexList VertexList;
-	typedef typename GraphTraits::EdgeList EdgeList;
-
 	typedef typename GraphTraits::vertex_descriptor vertex_descriptor;
 	typedef typename GraphTraits::edge_descriptor edge_descriptor;
 	typedef typename GraphTraits::out_edge_iterator out_edge_iterator;
 	typedef typename GraphTraits::degree_size_type degree_size_type;
 	typedef typename GraphTraits::vertex_iterator vertex_iterator;
 
+	typedef typename GraphTraits::VertexList VertexList;
+	typedef typename GraphTraits::VertexListIterator VertexListIterator;
+	typedef typename GraphTraits::EdgeList EdgeList;
+
 protected:
 
 	typedef unordered_map<vertex_descriptor, VertexList,
 		hash<vertex_descriptor> > VertexMap;
 	typedef std::pair<vertex_descriptor, VertexList> VertexMapEntry;
+
 	VertexMap m_vertices;
 	size_t m_numEdges;
 
-
 public:
+
+	typedef typename VertexMap::const_iterator VertexMapIterator;
 
 	HashGraph() : m_numEdges(0) {}
 
@@ -49,14 +52,22 @@ public:
 		return entry_bytes + filled_bucket_bytes + empty_bucket_bytes;
 	}
 
-	std::pair<vertex_iterator, vertex_iterator>
+	std::pair<VertexMapIterator, VertexMapIterator>
+	get_vertex_map_entries() const
+	{
+		return std::pair<VertexMapIterator, VertexMapIterator>
+			(m_vertices.begin(), m_vertices.end());
+	}
+
+	std::pair<VertexListIterator, VertexListIterator>
 	get_successors(const vertex_descriptor& v) const
 	{
 		typename VertexMap::const_iterator i = m_vertices.find(v);
 		assert(i != m_vertices.end());
-		vertex_iterator begin = i->second.begin();
-		vertex_iterator end = i->second.end();
-		return std::pair<vertex_iterator, vertex_iterator> (begin, end);
+		VertexListIterator begin = i->second.begin();
+		VertexListIterator end = i->second.end();
+		return std::pair<VertexListIterator, VertexListIterator>
+			(begin, end);
 	}
 
 	degree_size_type
@@ -126,7 +137,9 @@ struct graph_traits< HashGraph<VertexType> > {
 
 	// VertexListGraph
 	typedef std::vector<vertex_descriptor> VertexList;
-	typedef typename VertexList::const_iterator vertex_iterator;
+	typedef typename
+		std::vector<vertex_descriptor>::const_iterator
+		VertexListIterator;
 	typedef unsigned vertices_size_type;
 
 	// EdgeListGraph
@@ -141,6 +154,64 @@ struct graph_traits< HashGraph<VertexType> > {
 	// IncidenceGraph
 	typedef std::vector<edge_descriptor> EdgeList;
 	typedef unsigned degree_size_type;
+
+	class vertex_iterator
+		: public std::iterator<std::input_iterator_tag,
+			const vertex_descriptor>
+	{
+		protected:
+
+			void init(bool end)
+			{
+				boost::tie(m_it, m_end) = m_g->get_vertex_map_entries();
+				if (end)
+					m_it = m_end;
+			}
+
+		public:
+
+			vertex_iterator() {}
+
+			vertex_iterator(const HashGraph<VertexType>& g, bool end) : m_g(&g)
+			{
+				init(end);
+			}
+
+			vertex_descriptor operator *() const
+			{
+				return m_it->first;
+			}
+
+			bool operator ==(const vertex_iterator& it) const
+			{
+				return m_it == it.m_it;
+			}
+
+			bool operator !=(const vertex_iterator& it) const
+			{
+				return m_it != it.m_it;
+			}
+
+			vertex_iterator& operator ++()
+			{
+				vertex_descriptor v = m_it->first;
+				++m_it;
+				return *this;
+			}
+
+			vertex_iterator operator++(int)
+			{
+				vertex_iterator it = *this;
+				++*this;
+				return it;
+			}
+
+		private:
+
+			const HashGraph<VertexType>* m_g;
+			typename HashGraph<VertexType>::VertexMapIterator m_it, m_end;
+
+	};
 
 	struct out_edge_iterator
 		: public std::iterator<std::input_iterator_tag, edge_descriptor>
@@ -203,8 +274,8 @@ struct graph_traits< HashGraph<VertexType> > {
 
 		const HashGraph<VertexType>* m_g;
 		vertex_descriptor m_v;
-		vertex_iterator m_successor;
-		vertex_iterator m_successor_end;
+		VertexListIterator m_successor;
+		VertexListIterator m_successor_end;
 
 	}; // out_edge_iterator
 
@@ -234,6 +305,19 @@ out_degree(
 	const HashGraph<VertexType>& g)
 {
 	return g.out_degree(v);
+}
+
+// VertexListGraph
+
+template <class VertexType>
+std::pair<
+	typename HashGraph<VertexType>::vertex_iterator,
+	typename HashGraph<VertexType>::vertex_iterator>
+vertices(const HashGraph<VertexType>& g)
+{
+	typedef typename HashGraph<VertexType>::vertex_iterator vertex_iterator;
+	return std::pair<vertex_iterator, vertex_iterator>
+		(vertex_iterator(g, false), vertex_iterator(g, true));
 }
 
 // MutableGraph
