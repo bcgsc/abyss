@@ -3,6 +3,8 @@
 
 #include "Common/UnorderedMap.h"
 #include "Common/UnorderedSet.h"
+#include "Common/Warnings.h"
+#include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
 #include <vector>
 #include <cassert>
@@ -16,10 +18,14 @@ public:
 	typedef HashGraph<VertexType> Graph;
 	typedef boost::graph_traits<Graph> GraphTraits;
 	typedef typename GraphTraits::vertex_descriptor vertex_descriptor;
+	typedef typename GraphTraits::vertex_property_type vertex_property_type;
 	typedef typename GraphTraits::edge_descriptor edge_descriptor;
+	typedef typename GraphTraits::edge_property_type edge_property_type;
 	typedef typename GraphTraits::out_edge_iterator out_edge_iterator;
+	typedef typename GraphTraits::adjacency_iterator adjacency_iterator;
 	typedef typename GraphTraits::degree_size_type degree_size_type;
 	typedef typename GraphTraits::vertex_iterator vertex_iterator;
+	typedef typename GraphTraits::vertices_size_type vertices_size_type;
 
 	typedef typename GraphTraits::VertexList VertexList;
 	typedef typename GraphTraits::VertexListIterator VertexListIterator;
@@ -57,6 +63,11 @@ public:
 	{
 		return std::pair<VertexMapIterator, VertexMapIterator>
 			(m_vertices.begin(), m_vertices.end());
+	}
+
+	vertices_size_type num_vertices() const
+	{
+		return m_vertices.size();
 	}
 
 	std::pair<VertexListIterator, VertexListIterator>
@@ -129,9 +140,6 @@ struct graph_traits< HashGraph<VertexType> > {
 		boost::vertex_list_graph_tag,
 		boost::edge_list_graph_tag { };
 
-	// AdjacencyGraph
-	typedef void adjacency_iterator;
-
 	// BidirectionalGraph
 	typedef void in_edge_iterator;
 
@@ -146,10 +154,10 @@ struct graph_traits< HashGraph<VertexType> > {
 	typedef void edges_size_type;
 
 	// PropertyGraph
-	typedef void vertex_bundled;
-	typedef void vertex_property_type;
-	typedef void edge_bundled;
-	typedef void edge_property_type;
+	typedef no_property vertex_bundled;
+	typedef no_property vertex_property_type;
+	typedef no_property edge_bundled;
+	typedef no_property edge_property_type;
 
 	// IncidenceGraph
 	typedef std::vector<edge_descriptor> EdgeList;
@@ -211,6 +219,64 @@ struct graph_traits< HashGraph<VertexType> > {
 			const HashGraph<VertexType>* m_g;
 			typename HashGraph<VertexType>::VertexMapIterator m_it, m_end;
 
+	};
+
+	struct adjacency_iterator
+		: public std::iterator<std::input_iterator_tag, vertex_descriptor>
+	{
+		protected:
+
+			void init(bool end)
+			{
+				boost::tie(m_successor, m_successor_end) = m_g->get_successors(m_v);
+				if (end)
+					m_successor = m_successor_end;
+			}
+
+		public:
+
+			adjacency_iterator() { }
+
+			adjacency_iterator(const HashGraph<VertexType>& g, vertex_descriptor v, bool end)
+				: m_g(&g), m_v(v)
+			{
+				init(end);
+			}
+
+			vertex_descriptor operator*() const
+			{
+				return *m_successor;
+			}
+
+			bool operator==(const adjacency_iterator& it) const
+			{
+				return m_successor == it.m_successor;
+			}
+
+			bool operator!=(const adjacency_iterator& it) const
+			{
+				return !(*this == it);
+			}
+
+			adjacency_iterator& operator++()
+			{
+				m_successor++;
+				return *this;
+			}
+
+			adjacency_iterator operator++(int)
+			{
+				adjacency_iterator it = *this;
+				++*this;
+				return it;
+			}
+
+		private:
+
+			const HashGraph<VertexType>* m_g;
+			vertex_descriptor m_v;
+			VertexListIterator m_successor;
+			VertexListIterator m_successor_end;
 	};
 
 	struct out_edge_iterator
@@ -307,6 +373,21 @@ out_degree(
 	return g.out_degree(v);
 }
 
+// AdjacencyGraph
+
+template <class VertexType>
+std::pair<
+	typename HashGraph<VertexType>::adjacency_iterator,
+	typename HashGraph<VertexType>::adjacency_iterator>
+adjacent_vertices(
+	typename HashGraph<VertexType>::vertex_descriptor v,
+	const HashGraph<VertexType>& g)
+{
+	typedef typename HashGraph<VertexType>::adjacency_iterator adjacency_iterator;
+	return std::pair<adjacency_iterator, adjacency_iterator>
+		(adjacency_iterator(g, v, false), adjacency_iterator(g, v, true));
+}
+
 // VertexListGraph
 
 template <class VertexType>
@@ -320,6 +401,13 @@ vertices(const HashGraph<VertexType>& g)
 		(vertex_iterator(g, false), vertex_iterator(g, true));
 }
 
+template <class VertexType>
+typename HashGraph<VertexType>::vertices_size_type
+num_vertices(const HashGraph<VertexType>& g)
+{
+	return g.num_vertices();
+}
+
 // MutableGraph
 
 template <class VertexType>
@@ -330,6 +418,39 @@ add_edge(
 	HashGraph<VertexType>& g)
 {
 	return g.add_edge(u, v);
+}
+
+// PropertyGraph
+// (dummy functions so that HashGraph
+// works with DotIO.h routines)
+
+template <class VertexType>
+bool get(vertex_removed_t, const HashGraph<VertexType>& g,
+		typename HashGraph<VertexType>::vertex_descriptor v)
+{
+	SUPPRESS_UNUSED_WARNING(g);
+	SUPPRESS_UNUSED_WARNING(v);
+	return false;
+}
+
+template <class VertexType>
+void put(vertex_removed_t tag, HashGraph<VertexType>& g,
+		typename HashGraph<VertexType>::vertex_descriptor v,
+		bool flag)
+{
+	SUPPRESS_UNUSED_WARNING(tag);
+	SUPPRESS_UNUSED_WARNING(g);
+	SUPPRESS_UNUSED_WARNING(v);
+	return;
+}
+
+template <class VertexType>
+typename HashGraph<VertexType>::vertex_descriptor
+get(vertex_name_t, const HashGraph<VertexType>& g,
+		typename HashGraph<VertexType>::vertex_descriptor v)
+{
+	SUPPRESS_UNUSED_WARNING(g);
+	return v;
 }
 
 #endif

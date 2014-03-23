@@ -7,9 +7,11 @@
 #include "Graph/ConstrainedBidiBFSVisitor.h"
 #include "Align/alignGlobal.h"
 #include "Graph/DefaultColorMap.h"
+#include "Graph/DotIO.h"
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <limits>
+#include <fstream>
 
 #if _OPENMP
 # include <omp.h>
@@ -108,6 +110,8 @@ struct ConnectPairsParams {
 	bool longSearch;
 	bool maskBases;
 	size_t memLimit;
+	std::string dotPath;
+	std::ofstream* dotStream;
 
 	ConnectPairsParams() :
 		minMergedSeqLen(0),
@@ -119,7 +123,8 @@ struct ConnectPairsParams {
 		fixErrors(false),
 		longSearch(false),
 		maskBases(false),
-		memLimit(std::numeric_limits<std::size_t>::max())
+		memLimit(std::numeric_limits<std::size_t>::max()),
+		dotStream(NULL)
 	{}
 
 };
@@ -215,6 +220,16 @@ static inline ConnectPairsResult connectPairs(
 	result.maxDepthVisitedForward = visitor.getMaxDepthVisited(FORWARD);
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 	result.memUsage = visitor.approxMemUsage();
+
+	// write traversal graph to dot file (-d option)
+
+	if (!params.dotPath.empty()) {
+		HashGraph<Kmer> traversalGraph;
+		visitor.getTraversalGraph(traversalGraph);
+		write_dot(*params.dotStream, traversalGraph,
+			result.readNamePrefix);
+		assert_good(*params.dotStream, params.dotPath);
+	}
 
 	if (result.pathResult == FOUND_PATH) {
 

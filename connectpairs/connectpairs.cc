@@ -61,6 +61,7 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
 "                             use 'nolimit' for no limit [350]\n"
+"  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
 "  -e, --fix-errors           find and fix single-base errors when reads\n"
 "                             have no kmers in bloom filter [disabled]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
@@ -126,6 +127,9 @@ namespace opt {
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 350;
 
+	/** multi-graph DOT file containing graph traversals */
+	static string dotPath;
+
 	/**
 	 * Find and fix single base errors when a read has no
 	 * kmers in the bloom filter.
@@ -184,13 +188,14 @@ static struct {
 	size_t readPairsMerged;
 } g_count;
 
-static const char shortopts[] = "b:B:ef:F:i:Ij:k:lm:M:no:P:q:s:t:v";
+static const char shortopts[] = "b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "dot-file",         required_argument, NULL, 'd' },
 	{ "fix-errors",       no_argument, NULL, 'e' },
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
@@ -435,6 +440,8 @@ int main(int argc, char** argv)
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
 			setMaxOption(opt::maxBranches, arg); break;
+		  case 'd':
+			arg >> opt::dotPath; break;
 		  case 'e':
 			opt::fixErrors = true; break;
 		  case 'f':
@@ -554,6 +561,16 @@ int main(int argc, char** argv)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom->FPR() << "%\n";
 
+
+	ofstream dotStream;
+	if (!opt::dotPath.empty()) {
+		if (opt::verbose)
+			cerr << "Writing graph traversals to "
+				"dot file `" << opt::dotPath << "'\n";
+		dotStream.open(opt::dotPath.c_str());
+		assert_good(dotStream, opt::dotPath);
+	}
+
 	ofstream traceStream;
 	if (!opt::tracefilePath.empty()) {
 		if (opt::verbose)
@@ -597,6 +614,8 @@ int main(int argc, char** argv)
 	params.longSearch = opt::longSearch;
 	params.maskBases = opt::mask;
 	params.memLimit = opt::searchMem;
+	params.dotPath = opt::dotPath;
+	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;
 
 	if (opt::interleaved) {
 		FastaConcat in(argv + optind, argv + argc,
@@ -671,6 +690,11 @@ int main(int argc, char** argv)
 	read1Stream.close();
 	assert_good(read2Stream, read2OutputPath.c_str());
 	read2Stream.close();
+
+	if (!opt::dotPath.empty()) {
+		assert_good(dotStream, opt::dotPath);
+		dotStream.close();
+	}
 
 	if (!opt::tracefilePath.empty()) {
 		assert_good(traceStream, opt::tracefilePath);

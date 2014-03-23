@@ -74,13 +74,21 @@ void write_edges(std::ostream& out, const Graph& g,
 template <typename Graph>
 std::ostream& write_dot(std::ostream& out, const Graph& g)
 {
+	return write_dot(out, g, "adj");
+}
+
+/** Output a GraphViz dot graph. */
+template <typename Graph>
+std::ostream& write_dot(std::ostream& out, const Graph& g,
+	const std::string& graphName)
+{
 	typedef typename graph_traits<Graph>::vertex_iterator
 		vertex_iterator;
 	typedef typename vertex_property<Graph>::type
 		vertex_property_type;
 	typedef typename edge_property<Graph>::type edge_property_type;
 
-	out << "digraph adj {\n";
+	out << "digraph " << graphName << " {\n";
 
 	// Graph properties
 	if (opt::k > 0)

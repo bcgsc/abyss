@@ -5,6 +5,10 @@
 
 using namespace std;
 
+// workaround: opt::k must be defined because
+// it is used by write_dot(..)
+namespace opt { unsigned k = 0; }
+
 TEST(maskNew, read1)
 {
 	FastqRecord r1("1", "", "ACGTACGT", "BBBBBBBB");

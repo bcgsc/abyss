@@ -255,6 +255,26 @@ public:
 			approxMemSize(m_depthMap[REVERSE]);
 	}
 
+	void getTraversalGraph(HashGraph<V>& traversalGraph)
+	{
+		typedef typename HashGraph<V>::vertex_iterator vertex_iterator;
+		typedef typename HashGraph<V>::adjacency_iterator adjacency_iterator;
+
+		Direction dir[] = { FORWARD, REVERSE };
+		for (unsigned i = 0; i < 2; i++) {
+			HashGraph<V>& g = m_traversalGraph[dir[i]];
+			vertex_iterator vi, vi_end;
+			boost::tie(vi, vi_end) = vertices(g);
+			for(; vi != vi_end; vi++) {
+				adjacency_iterator ai, ai_end;
+				boost::tie(ai, ai_end) = adjacent_vertices(*vi, g);
+				for(; ai != ai_end; ai++) {
+					add_edge(*ai, *vi, traversalGraph);
+				}
+			}
+		}
+	}
+
 protected:
 
 	BFSVisitorResult recordCommonEdge(const E& e)
