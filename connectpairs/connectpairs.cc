@@ -22,6 +22,7 @@
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
+#include <cstring>
 
 #if _OPENMP
 # include <omp.h>
@@ -94,6 +95,7 @@ static const char USAGE_MESSAGE[] =
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
 "                             default for qseq and export files\n"
+"  -r, --read-name=STR        only process reads with names that contain STR\n"
 "  -s, --search-mem=N         mem limit for graph searches; multiply by the\n"
 "                             number of threads (-j) to get the total mem used\n"
 "                             for graph traversal [500M]\n"
@@ -157,6 +159,9 @@ namespace opt {
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
 
+	/** Only process reads that contain this substring. */
+	static string readName;
+
 	/** Max mem used per thread during graph traversal */
 	static size_t searchMem = 500 * 1024 * 1024;
 
@@ -186,9 +191,10 @@ static struct {
 	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
+	size_t skipped;
 } g_count;
 
-static const char shortopts[] = "b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:s:t:v";
+static const char shortopts[] = "b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -218,6 +224,7 @@ static const struct option longopts[] = {
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "read-name",        required_argument, NULL, 'r' },
 	{ "search-mem",       required_argument, NULL, 's' },
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "verbose",          no_argument, NULL, 'v' },
@@ -278,20 +285,101 @@ static void connectPair(const DBGBloom& g,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
-	ConnectPairsResult result =
-		connectPairs(opt::k, read1, read2, g, params);
-
-	vector<FastaRecord>& paths = result.mergedSeqs;
-
-	if (!opt::tracefilePath.empty()) 
-#pragma omp critical(tracefile)
-	{
-		traceStream << result;
-		assert_good(traceStream, opt::tracefilePath);
-	}
+	bool skip = false;
 
 #pragma omp atomic
 	++g_count.readPairsProcessed;
+
+	if (!opt::readName.empty() &&
+		read1.id.find(opt::readName) == string::npos) {
+#pragma omp atomic
+		++g_count.skipped;
+		skip = true;
+	}
+
+	if (!skip) {
+
+		ConnectPairsResult result =
+			connectPairs(opt::k, read1, read2, g, params);
+
+		vector<FastaRecord>& paths = result.mergedSeqs;
+
+		if (!opt::tracefilePath.empty())
+#pragma omp critical(tracefile)
+		{
+			traceStream << result;
+			assert_good(traceStream, opt::tracefilePath);
+		}
+
+		switch (result.pathResult) {
+
+			case NO_PATH:
+				assert(paths.empty());
+				if (result.foundStartKmer && result.foundGoalKmer)
+#pragma omp atomic
+					++g_count.noPath;
+				else {
+#pragma omp atomic
+					++g_count.noStartOrGoalKmer;
+				}
+				break;
+
+			case FOUND_PATH:
+				assert(!paths.empty());
+				if (result.pathMismatches > params.maxPathMismatches ||
+						result.readMismatches > params.maxReadMismatches) {
+					if (result.pathMismatches > params.maxPathMismatches)
+#pragma omp atomic
+						++g_count.tooManyMismatches;
+					else
+						++g_count.tooManyReadMismatches;
+#pragma omp critical(read1Stream)
+					read1Stream << read1;
+#pragma omp critical(read2Stream)
+					read2Stream << read2;
+				}
+				else if (paths.size() > 1) {
+#pragma omp atomic
+					++g_count.multiplePaths;
+#pragma omp critical(mergedStream)
+					mergedStream << result.consensusSeq;
+				}
+				else {
+#pragma omp atomic
+					++g_count.uniquePath;
+#pragma omp critical(mergedStream)
+					mergedStream << paths.front();
+				}
+				break;
+
+			case TOO_MANY_PATHS:
+#pragma omp atomic
+				++g_count.tooManyPaths;
+				break;
+
+			case TOO_MANY_BRANCHES:
+#pragma omp atomic
+				++g_count.tooManyBranches;
+				break;
+
+			case PATH_CONTAINS_CYCLE:
+#pragma omp atomic
+				++g_count.containsCycle;
+				break;
+
+			case EXCEEDED_MEM_LIMIT:
+#pragma omp atomic
+				++g_count.exceededMemLimit;
+				break;
+		}
+
+		if (result.pathResult != FOUND_PATH) {
+#pragma omp critical(read1Stream)
+			read1Stream << read1;
+#pragma omp critical(read2Stream)
+			read2Stream << read2;
+		}
+	}
 
 	if (opt::verbose >= 2)
 #pragma omp critical(cerr)
@@ -306,79 +394,12 @@ static void connectPair(const DBGBloom& g,
 				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
 				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
 				<< "contains cycle: " << g_count.containsCycle << ", "
-				<< "exceeded mem limit: " << g_count.exceededMemLimit
+				<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
+				<< "skipped: " << g_count.skipped
 				<< ")\n";
 		}
 	}
 
-	switch (result.pathResult) {
-
-	  case NO_PATH:
-		assert(paths.empty());
-		if (result.foundStartKmer && result.foundGoalKmer)
-#pragma omp atomic
-			++g_count.noPath;
-		else {
-#pragma omp atomic
-			++g_count.noStartOrGoalKmer;
-		}
-		break;
-
-	  case FOUND_PATH:
-		assert(!paths.empty());
-		if (result.pathMismatches > params.maxPathMismatches ||
-			result.readMismatches > params.maxReadMismatches) {
-			if (result.pathMismatches > params.maxPathMismatches)
-#pragma omp atomic
-				++g_count.tooManyMismatches;
-			else
-				++g_count.tooManyReadMismatches;
-#pragma omp critical(read1Stream)
-			read1Stream << read1;
-#pragma omp critical(read2Stream)
-			read2Stream << read2;
-		}
-		else if (paths.size() > 1) {
-#pragma omp atomic
-			++g_count.multiplePaths;
-#pragma omp critical(mergedStream)
-			mergedStream << result.consensusSeq;
-		}
-		else {
-#pragma omp atomic
-			++g_count.uniquePath;
-#pragma omp critical(mergedStream)
-			mergedStream << paths.front();
-		}
-		break;
-
-	  case TOO_MANY_PATHS:
-#pragma omp atomic
-		++g_count.tooManyPaths;
-		break;
-
-	  case TOO_MANY_BRANCHES:
-#pragma omp atomic
-		++g_count.tooManyBranches;
-		break;
-
-	  case PATH_CONTAINS_CYCLE:
-#pragma omp atomic
-		++g_count.containsCycle;
-		break;
-
-	  case EXCEEDED_MEM_LIMIT:
-#pragma omp atomic
-		++g_count.exceededMemLimit;
-		break;
-	}
-
-	if (result.pathResult != FOUND_PATH) {
-#pragma omp critical(read1Stream)
-		read1Stream << read1;
-#pragma omp critical(read2Stream)
-		read2Stream << read2;
-	}
 }
 
 /** Connect read pairs. */
@@ -474,6 +495,8 @@ int main(int argc, char** argv)
 			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 'r':
+			arg >> opt::readName; break;
 		  case 's':
 			opt::searchMem = SIToBytes(arg); break;
 		  case 't':
@@ -679,6 +702,10 @@ int main(int argc, char** argv)
 			"Exceeded mem limit: " << g_count.exceededMemLimit
 				<< " (" << setprecision(3) << (float)100
 					* g_count.exceededMemLimit / g_count.readPairsProcessed
+				<< "%)\n"
+			"Skipped: " << g_count.skipped
+				<< " (" << setprecision(3) << (float)100
+					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n"
 			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
 				<< "%\n";
