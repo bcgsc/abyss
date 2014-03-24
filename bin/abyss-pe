@@ -665,7 +665,7 @@ override varList := a b c d e E j k l m n N p q s S t v cs pi \
 	ssq ssq_ti libs path name in mpirun \
 	aligner long ref fixmate DistanceEst \
 	map deref abyssopt fgopt pbopt \
-	mapopt fmopt deopt \
+	align mapopt fmopt deopt \
 	pcopt sgopt bwaswopt \
 	ABYSS_OPTIONS FILTERGRAPH_OPTIONS POPBUBBLES_OPTIONS \
 	OVERLAP_OPTIONS SIMPLEGRAPH_OPTIONS MERGEPATHS_OPTIONS \
