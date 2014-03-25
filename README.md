@@ -134,7 +134,8 @@ usage, although it will build without. sparsehash should be found in
 	./configure CPPFLAGS=-I/usr/local/include
 
 The default maximum k-mer size is 64 and may be decreased to reduce
-memory usage or increased at compile time:
+memory usage or increased at compile time. This value must be a
+multiple of 32 (i.e. 32, 64, 96, 128, etc):
 
 	./configure --enable-maxk=96
 
