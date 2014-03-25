@@ -8,7 +8,9 @@
 #include <boost/graph/graph_traits.hpp>
 #include <vector>
 #include <cassert>
-#include <iostream>
+#include <sstream>
+
+#define	DEFAULT_VERTEX_COLOR "gray"
 
 template <class VertexType>
 class HashGraph
@@ -36,8 +38,10 @@ protected:
 	typedef unordered_map<vertex_descriptor, VertexList,
 		hash<vertex_descriptor> > VertexMap;
 	typedef std::pair<vertex_descriptor, VertexList> VertexMapEntry;
+	typedef unordered_map<vertex_descriptor, std::string> VertexColorMap;
 
 	VertexMap m_vertices;
+	VertexColorMap m_vertexColor;
 	size_t m_numEdges;
 
 public:
@@ -56,6 +60,19 @@ public:
 		size_t empty_bucket_bytes = (1.0 - m_vertices.load_factor()) *
 			m_vertices.bucket_count() * pointer_size;
 		return entry_bytes + filled_bucket_bytes + empty_bucket_bytes;
+	}
+
+	void set_vertex_color(const vertex_descriptor& v, const std::string& color)
+	{
+		m_vertexColor[v] = color;
+	}
+
+	std::string get_vertex_color(const vertex_descriptor& v) const
+	{
+		typename VertexColorMap::const_iterator i = m_vertexColor.find(v);
+		if (i == m_vertexColor.end())
+			return DEFAULT_VERTEX_COLOR;
+		return i->second;
 	}
 
 	std::pair<VertexMapIterator, VertexMapIterator>
@@ -154,8 +171,8 @@ struct graph_traits< HashGraph<VertexType> > {
 	typedef void edges_size_type;
 
 	// PropertyGraph
-	typedef no_property vertex_bundled;
-	typedef no_property vertex_property_type;
+	typedef std::string vertex_bundled;
+	typedef std::string vertex_property_type;
 	typedef no_property edge_bundled;
 	typedef no_property edge_property_type;
 
@@ -451,6 +468,18 @@ get(vertex_name_t, const HashGraph<VertexType>& g,
 {
 	SUPPRESS_UNUSED_WARNING(g);
 	return v;
+}
+
+template <class VertexType>
+std::string
+get(vertex_bundle_t, const HashGraph<VertexType>& g,
+		typename HashGraph<VertexType>::vertex_descriptor v)
+{
+	const std::string& color = g.get_vertex_color(v);
+	std::ostringstream ss;
+	ss << "color=" << color;
+	assert(ss);
+	return ss.str();
 }
 
 #endif

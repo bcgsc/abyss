@@ -129,6 +129,65 @@ struct ConnectPairsParams {
 
 };
 
+static inline void colorPath(HashGraph<Kmer>& graph, unsigned k,
+	const Sequence& seq, const std::string& color,
+	bool addEdges = true)
+{
+	KmerIterator it(seq, k);
+	if (it != it.end()) {
+		graph.set_vertex_color(*it, color);
+		Kmer prev = *it;
+		++it;
+		for(; it != it.end(); prev=*it, ++it) {
+			if (addEdges)
+				add_edge(prev, *it, graph);
+			graph.set_vertex_color(*it, color);
+		}
+	}
+}
+
+/** Write a color-coded traversal graph to a DOT file. */
+static inline void writeDot(
+	HashGraph<Kmer>& traversalGraph,
+	unsigned k,
+	const FastaRecord& read1,
+	const FastaRecord& read2,
+	const ConnectPairsParams& params,
+	const ConnectPairsResult& result)
+{
+	const std::string pathColor("darkgreen");
+	const std::string solutionColor("green");
+	const std::string read1Color("blue");
+	const std::string read2Color("red");
+
+	// color kmers for the paths / consensus
+
+	const std::vector<FastaRecord>& paths = result.mergedSeqs;
+
+	if (paths.size() == 1) {
+		colorPath(traversalGraph, k, paths.front(), solutionColor);
+	} else if (paths.size() > 1) {
+		for (unsigned i = 0; i < paths.size(); i++)
+			colorPath(traversalGraph, k, paths.at(i), pathColor);
+		colorPath(traversalGraph, k, result.consensusSeq, solutionColor);
+	}
+
+	// color the reads
+
+	colorPath(traversalGraph, k, read1.seq, read1Color);
+	colorPath(traversalGraph, k, reverseComplement(read2.seq),
+		read2Color);
+
+	// write out the dot file
+
+	// GraphViz utils don't like colons in graph names
+	std::string graphName = result.readNamePrefix;
+	std::replace(graphName.begin(), graphName.end(), ':', '_');
+
+	write_dot(*params.dotStream, traversalGraph, graphName);
+	assert_good(*params.dotStream, params.dotPath);
+};
+
 static inline ConnectPairsResult connectPairs(
 	unsigned k,
 	const FastaRecord& read1,
@@ -223,14 +282,6 @@ static inline ConnectPairsResult connectPairs(
 
 	// write traversal graph to dot file (-d option)
 
-	if (!params.dotPath.empty()) {
-		HashGraph<Kmer> traversalGraph;
-		visitor.getTraversalGraph(traversalGraph);
-		write_dot(*params.dotStream, traversalGraph,
-			result.readNamePrefix);
-		assert_good(*params.dotStream, params.dotPath);
-	}
-
 	if (result.pathResult == FOUND_PATH) {
 
 		// build sequences for connecting paths
@@ -269,6 +320,12 @@ static inline ConnectPairsResult connectPairs(
 
 		}
 
+	}
+
+	if (!params.dotPath.empty()) {
+		HashGraph<Kmer> traversalGraph;
+		visitor.getTraversalGraph(traversalGraph);
+		writeDot(traversalGraph, k, read1, read2, params, result);
 	}
 
 #if 0
