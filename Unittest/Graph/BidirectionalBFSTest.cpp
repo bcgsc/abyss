@@ -8,6 +8,8 @@
 
 using namespace std;
 
+static const bool DEBUG = false;
+
 typedef boost::adjacency_list<boost::vecS, boost::vecS,
 	boost::bidirectionalS> Graph;
 
@@ -31,25 +33,78 @@ public:
 
 	TestVisitor() : rank(0) { }
 
+	BFSVisitorResult discover_vertex(const Vertex& u, const Graph& g, Direction dir,
+		unsigned numFrontierNodes)
+	{
+		if (DEBUG)
+			cerr << dir << ": discover_vertex " << u << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
+		SUPPRESS_UNUSED_WARNING(numFrontierNodes);
+		return SUCCESS;
+	}
+
 	void examine_vertex(const Vertex& u, const Graph& g, Direction dir)
 	{
+		if (DEBUG)
+			cerr << dir << ": examine_vertex " << u << "\n";
+
 		SUPPRESS_UNUSED_WARNING(g);
-
-#if 0
-		// for debugging
-		cerr << "visiting vertex: " << u << ", dir: " << dir << "\n";
-#endif
-
 		dirMap[u] = dir;
 		rankMap[u] = rank++;
 	}
 
+	void examine_edge(const Edge& e, const Graph& g, Direction dir)
+	{
+		if (DEBUG)
+			cerr << dir << ": examine_edge " << e << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
+	}
+
+	BFSVisitorResult tree_edge(const Edge& e, const Graph& g, Direction dir)
+	{
+		if (DEBUG)
+			cerr << dir << ": tree_edge " << e << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
+		return SUCCESS;
+	}
+
 	BFSVisitorResult common_edge(const Edge& e, const Graph& g, Direction dir)
 	{
+		if (DEBUG)
+			cerr << dir << ": common_edge " << e << "\n";
+
 		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
 		commonEdges.push_back(e);
 		return SUCCESS;
+	}
+
+	BFSVisitorResult non_tree_edge(const Edge& e, const Graph& g, Direction dir)
+	{
+		if (DEBUG)
+			cerr << dir << ": non_tree_edge " << e << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
+		commonEdges.push_back(e);
+		return SUCCESS;
+	}
+
+	void gray_target(const Edge& e, const Graph& g, Direction dir)
+	{
+		if (DEBUG)
+			cerr << dir << ": gray_target " << e << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
+	}
+
+	void black_target(const Edge& e, const Graph& g, Direction dir)
+	{
+		if (DEBUG)
+			cerr << dir << ": black_target " << e << "\n";
+
+		SUPPRESS_UNUSED_WARNING(g);
 	}
 
 };
