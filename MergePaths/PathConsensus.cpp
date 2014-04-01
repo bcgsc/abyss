@@ -28,6 +28,7 @@
 #include <vector>
 
 using namespace std;
+using boost::tie;
 
 #define PROGRAM "PathConsensus"
 
@@ -599,9 +600,11 @@ static ContigPath alignMulti(const Graph& g,
 		return ContigPath();
 	}
 
-	string alignment;
-	unsigned matches;
-	Sequence consensus = dialign(amb_seqs, alignment, matches);
+	unsigned matches, consensusSize;
+	NWAlignment alignment;
+	tie(matches, consensusSize) = align(amb_seqs, alignment);
+	string consensus = alignment.consensus();
+
 	if (opt::verbose > 2)
 	   	cerr << alignment << consensus << '\n';
 	float identity = (float)matches / consensus.size();
