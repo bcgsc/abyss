@@ -331,6 +331,12 @@ Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
 manual page for more information on assembly parameters.
 
+Possibly, `abyss-pe` parameters can have same names as existing environment variables'. The parameters then cannot be used until the environment variables are unset. To detect such occasions, run the command: 
+
+	abyss-pe env [options]
+ 
+Above command will report all `abyss-pe` parameters that are set from various origins. However it will not operate ABySS programs.
+
 ABySS programs
 ==============
 
