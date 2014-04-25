@@ -115,6 +115,7 @@ endif
 build: args_check $(name).bloom.gz
 
 # level 1 bloom filter files
+
 $(name)_l1_%.bloom.gz: $(files)
 	SGE_RREQ="-N $(name)_l1 -l mem_token=$(l1_mem_gb)G,mem_free=$(l1_mem_gb)G,h_vmem=$(l1_mem_gb)G" \
 	$(BEGIN_SHELL) \
@@ -124,6 +125,18 @@ $(name)_l1_%.bloom.gz: $(files)
 	$(END_SHELL)
 
 # level 2 bloom filter files
+
+ifeq (1,$(words $(files)))
+$(name)_l2_%.bloom.gz: $(l1_bloom_files)
+	SGE_RREQ="-N $(name)_l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
+	$(BEGIN_SHELL) \
+		abyss-bloom build -v -k$k $(build_opts) -b$(b_times_l) -l2 \
+			-w$(call getWindow,$@)/$w \
+			- $(call getReadFilePath,$@) | \
+				gzip -c > $@.incomplete && \
+		mv $@.incomplete $@ \
+	$(END_SHELL)
+else
 $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 	SGE_RREQ="-N $(name)_l2 -l mem_token=$(l2_mem_gb)G,mem_free=$(l2_mem_gb)G,h_vmem=$(l2_mem_gb)G" \
 	$(BEGIN_SHELL) \
@@ -135,8 +148,14 @@ $(name)_l2_%.bloom.gz: $(l1_bloom_files)
 				gzip -c > $@.incomplete && \
 		mv $@.incomplete $@ \
 	$(END_SHELL)
+endif
 
 # final output file
+
+ifeq (1,$(words $(l2_bloom_files)))
+$(name).bloom.gz: $(l2_bloom_files)
+	cp $< $@
+else
 $(name).bloom.gz: $(l2_bloom_files)
 	SGE_RREQ="-N $(name)_union -l mem_token=$(union_mem_gb)G,mem_free=$(union_mem_gb)G,h_vmem=$(union_mem_gb)G" \
 	$(BEGIN_SHELL) \
@@ -146,6 +165,7 @@ $(name).bloom.gz: $(l2_bloom_files)
 				gzip -c > $@.incomplete && \
 		mv $@.incomplete $@ \
 	$(END_SHELL)
+endif
 
 #------------------------------------------------------------
 # debugging rules

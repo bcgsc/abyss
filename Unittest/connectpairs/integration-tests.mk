@@ -52,6 +52,7 @@ tests=run_test \
 	window_test \
 	parallel_load_2_files_test \
 	parallel_load_3_files_test \
+	abyss_bloom_dist_1_file_test \
 	abyss_bloom_dist_2_files_test \
 	abyss_bloom_dist_3_files_test
 
