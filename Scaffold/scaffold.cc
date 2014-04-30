@@ -746,7 +746,7 @@ int main(int argc, char** argv)
 	remove_edge_if(InvalidEdge(g), static_cast<DG&>(g));
 	unsigned numRemoved = numBefore - num_edges(g);
 	if (numRemoved > 0)
-		cerr << "waning: Removed "
+		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
 
 	if (opt::minContigLengthEnd == 0) {
