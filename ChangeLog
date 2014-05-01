@@ -1,3 +1,60 @@
+2014-05-01  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.5.0
+	* Assemble strand-specific RNA-Seq libraries into strand-specific
+	contigs.
+	* New parameters, Q and xtip. Improves assembly in high-coverage
+	regions by removing recurrent read errors.
+	* Portability fixes for Fujitsu C Compiler.
+
+	abyss-pe:
+	* New parameter, `Q`, to mask low quality bases to N. 
+	* New parameter, `xtip=1`, to remove 2-in 0-out tips.
+	* New parameter, `ss=1`, to perform strand-specific assembly
+	using ssRNA-Seq libraries.
+	* New command, `scaftigs`. Breaks scaffold sequences at 'N's and
+	produce a scaftigs.fa file.
+	* Include long-scaffs.fa in FAC statistics if `long` parameter
+	used.
+
+	abyss-fixmate:
+	* Performance improvement for GCC-4.6 and older.
+
+	DistanceEst:
+	* Report an estimation of duplicate fragments from read pairs
+	mapping to different contigs.
+
+	abyss-fixmate:
+	* Report number of fragments removed as noise and outliers.
+
+	ABYSS/ABYSS-P:
+	* New option, --SS, to support strand-specific assembly.
+
+	abyss-layout:
+	* New option, --SS, to support strand-specific assembly.
+
+	abyss-map:
+	* New option, --SS, to support strand-specific assembly.
+
+	abyss-overlap:
+	* New option, --SS, to support strand-specific assembly.
+
+	abyss-PathOverlap:
+	* New option, --SS, to support strand-specific assembly.
+
+	abyss-scaffold:
+	* New option, --SS, to support strand-specific assembly.
+	* Don't prune xtips when scaffolding.
+
+	AdjList:
+	* New option, --SS, to support strand-specific assembly.
+
+	Overlap:
+	* New option, --SS, to support strand-specific assembly.
+
+	PopBubbles:
+	* New option, --SS, to support strand-specific assembly.
+
 2013-11-20  Anthony Raymond  <traymond@bcgsc.ca>
 
 	* Release version 1.3.7
