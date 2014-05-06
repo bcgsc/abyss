@@ -83,7 +83,9 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 	size_t count = 0, count_good = 0,
 			 count_small = 0, count_nonACGT = 0;
-	FastaReader reader(inFile.c_str(), FastaReader::NO_FOLD_CASE);
+	int fastaFlags = opt::maskCov ?  FastaReader::NO_FOLD_CASE :
+			FastaReader::FOLD_CASE;
+	FastaReader reader(inFile.c_str(), fastaFlags);
 	if (endsWith(inFile, ".jf") || endsWith(inFile, ".jfq")) {
 		// Load k-mer with coverage data.
 		count = loadKmer(*seqCollection, reader);
