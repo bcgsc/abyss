@@ -4,6 +4,7 @@
 #include "Graph/BidirectionalBFS.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
+#include <limits>
 #include <gtest/gtest.h>
 
 using namespace std;
@@ -13,6 +14,8 @@ typedef adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS> Graph;
 typedef graph_traits<Graph>::vertex_descriptor V;
 typedef graph_traits<Graph>::edge_descriptor e;
 typedef std::vector< Path<V> > PathList;
+
+static const size_t NO_MEM_LIMIT = std::numeric_limits<std::size_t>::max();
 
 namespace {
 
@@ -49,7 +52,8 @@ protected:
 
 TEST_F(ConstrainedBidiBFSVisitorTest, IdentifyUniquePath)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 3, 1, 1, 3, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleAcyclicGraph, 0, 3, 1, 1, 3, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 3, visitor);
 
 	Path<V> uniquePath;
@@ -61,7 +65,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, IdentifyUniquePath)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, StartEqualsGoal)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 0, 1, 1, 1, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleAcyclicGraph, 0, 0, 1, 1, 1, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 0, visitor);
 
 	Path<V> uniquePath;
@@ -73,7 +78,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, StartEqualsGoal)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, SingleEdgeToGoal)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleAcyclicGraph, 0, 1, 1, 1, 2, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleAcyclicGraph, 0, 1, 1, 1, 2, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleAcyclicGraph, 0, 1, visitor);
 
 	Path<V> uniquePath;
@@ -85,7 +91,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, SingleEdgeToGoal)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathLength)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 5, 6, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(cyclicGraph, 0, 6, 4, 5, 6, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(cyclicGraph, 0, 6, visitor);
 
 	vector< Path<V> > paths;
@@ -113,7 +120,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathLength)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMinPathLength)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(cyclicGraph, 0, 6, 4, 6, 7, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(cyclicGraph, 0, 6, 4, 6, 7, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(cyclicGraph, 0, 6, visitor);
 
 	vector< Path<V> > paths;
@@ -141,7 +149,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMinPathLength)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathsLimit)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 1, 1, 3, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleCyclicGraph, 0, 3, 1, 1, 3, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	Path<V> uniquePath;
@@ -150,7 +159,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxPathsLimit)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, ReturnMultiplePaths)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 2);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 2, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	PathList paths;
@@ -169,7 +179,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, ReturnMultiplePaths)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxBranches)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 1);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, 1, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	PathList paths;
@@ -183,7 +194,8 @@ TEST_F(ConstrainedBidiBFSVisitorTest, RespectMaxBranches)
 
 TEST_F(ConstrainedBidiBFSVisitorTest, NoLimitForBranches)
 {
-	ConstrainedBidiBFSVisitor<Graph> visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, NO_LIMIT);
+	ConstrainedBidiBFSVisitor<Graph>
+		visitor(simpleCyclicGraph, 0, 3, 2, 1, 3, NO_LIMIT, NO_MEM_LIMIT);
 	bidirectionalBFS(simpleCyclicGraph, 0, 3, visitor);
 
 	PathList paths;

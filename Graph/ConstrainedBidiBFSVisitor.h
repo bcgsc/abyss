@@ -8,6 +8,7 @@
 #include "Graph/HashGraph.h"
 #include "Graph/BidirectionalBFSVisitor.h"
 #include "Graph/AllPathsSearch.h"
+#include "Common/MemUtils.h"
 #include <boost/graph/graph_traits.hpp>
 #include <iostream>
 #include <sstream>
@@ -19,6 +20,9 @@ class ConstrainedBidiBFSVisitor : public BidirectionalBFSVisitor<G>
 {
 
 protected:
+
+	static const float MEM_CHECK_FREQ = 0.001;
+	static const size_t MEM_COUNTER_ROLLOVER = 1 / 0.001;
 
 	typedef typename boost::graph_traits<G>::vertex_descriptor V;
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
@@ -64,6 +68,13 @@ protected:
 	  * time during forward/reverse traversal */
 	unsigned m_maxBranches;
 
+	/** memory limit for graph search */
+	size_t m_memLimit;
+	/** controls frequency of memory limit checks */
+	size_t m_memCheckCounter;
+	/** true if we have exceeded the memory limit */
+	bool m_exceededMemLimit;
+
 	/** the max number of frontier nodes we had at any time
 	  * during forward/reverse traversal (up to a limit
 	  * of m_maxBranches) */
@@ -88,7 +99,8 @@ public:
 		unsigned maxPaths,
 		depth_t minPathLength,
 		depth_t maxPathLength,
-		unsigned maxBranches
+		unsigned maxBranches,
+		size_t memLimit
 		) :
 			m_graph(graph),
 			m_start(start),
@@ -97,6 +109,9 @@ public:
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
 			m_maxBranches(maxBranches),
+			m_memLimit(memLimit),
+			m_memCheckCounter(0),
+			m_exceededMemLimit(false),
 			m_peakActiveBranches(0),
 			m_tooManyBranches(false),
 			m_tooManyPaths(false),
@@ -112,7 +127,7 @@ public:
 		m_maxDepthVisited[REVERSE] = 0;
 
 		// special case
-		if (start == goal) {
+		if (start == goal && 1 >= m_minPathLength) {
 			Path<V> path;
 			path.push_back(start);
 			m_pathsFound.push_back(path);
@@ -165,14 +180,12 @@ public:
 		if (!updateTargetDepth(e, g, dir))
 			return SKIP_ELEMENT;
 
-		recordEdgeTraversal(e, g, dir);
-		return SUCCESS;
+		return recordEdgeTraversal(e, g, dir);
 	}
 
 	BFSVisitorResult non_tree_edge(const E& e, const G& g, Direction dir)
 	{
-		recordEdgeTraversal(e, g, dir);
-		return SUCCESS;
+		return recordEdgeTraversal(e, g, dir);
 	}
 
 	BFSVisitorResult common_edge(const E& e, const G& g, Direction dir)
@@ -207,17 +220,15 @@ public:
 			return TOO_MANY_PATHS;
 		else if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
+		else if (m_exceededMemLimit)
+			return EXCEEDED_MEM_LIMIT;
 
-		buildPaths();
+		PathSearchResult result = buildPaths();
 
-		if (m_tooManyPaths) {
-			return TOO_MANY_PATHS;
-		} else if (m_pathsFound.empty()) {
-			return NO_PATH;
-		} else {
+		if (result == FOUND_PATH)
 			pathsFound = m_pathsFound;
-			return FOUND_PATH;
-		}
+
+		return result;
 	}
 
 	depth_t getMaxDepthVisited(Direction dir)
@@ -233,6 +244,35 @@ public:
 	unsigned long long getNumNodesVisited()
 	{
 		return m_numNodesVisited;
+	}
+
+	size_t approxMemUsage()
+	{
+		return
+			m_traversalGraph[FORWARD].approxMemSize() +
+			m_traversalGraph[REVERSE].approxMemSize() +
+			approxMemSize(m_depthMap[FORWARD]) +
+			approxMemSize(m_depthMap[REVERSE]);
+	}
+
+	void getTraversalGraph(HashGraph<V>& traversalGraph)
+	{
+		typedef typename HashGraph<V>::vertex_iterator vertex_iterator;
+		typedef typename HashGraph<V>::adjacency_iterator adjacency_iterator;
+
+		Direction dir[] = { FORWARD, REVERSE };
+		for (unsigned i = 0; i < 2; i++) {
+			HashGraph<V>& g = m_traversalGraph[dir[i]];
+			vertex_iterator vi, vi_end;
+			boost::tie(vi, vi_end) = vertices(g);
+			for(; vi != vi_end; vi++) {
+				adjacency_iterator ai, ai_end;
+				boost::tie(ai, ai_end) = adjacent_vertices(*vi, g);
+				for(; ai != ai_end; ai++) {
+					add_edge(*ai, *vi, traversalGraph);
+				}
+			}
+		}
 	}
 
 protected:
@@ -265,8 +305,24 @@ protected:
 		 * that has the given vertex_descriptor
 		 * as the source or target.
 		 */
-		recordEdgeTraversal(e, m_graph, FORWARD);
-		recordEdgeTraversal(e, m_graph, REVERSE);
+
+		BFSVisitorResult result = recordEdgeTraversal(e, m_graph, FORWARD);
+		if (result != SUCCESS)
+			return result;
+
+		return recordEdgeTraversal(e, m_graph, REVERSE);
+	}
+
+	BFSVisitorResult checkMemLimit()
+	{
+		m_memCheckCounter++;
+		if (m_memCheckCounter >= MEM_COUNTER_ROLLOVER) {
+			m_memCheckCounter = 0;
+			if (approxMemUsage() > m_memLimit) {
+				m_exceededMemLimit = true;
+				return ABORT_SEARCH;
+			}
+		}
 		return SUCCESS;
 	}
 
@@ -274,8 +330,12 @@ protected:
 	 * Record history of edge traversal, so that we can retrace
 	 * paths from a common edge to start/goal.
 	 */
-	void recordEdgeTraversal(const E& e, const G& g, Direction dir)
+	BFSVisitorResult recordEdgeTraversal(const E& e, const G& g, Direction dir)
 	{
+		BFSVisitorResult result = checkMemLimit();
+		if (result != SUCCESS)
+			return result;
+
 		V u = source(e, g);
 		V v = target(e, g);
 
@@ -283,6 +343,8 @@ protected:
 			add_edge(v, u, m_traversalGraph[FORWARD]);
 		else
 			add_edge(u, v, m_traversalGraph[REVERSE]);
+
+		return result;
 	}
 
 	/**
@@ -308,13 +370,29 @@ protected:
 		return true;
 	}
 
-	void buildPaths()
+	PathSearchResult buildPaths()
 	{
+		PathSearchResult overallResult = NO_PATH;
+
+		// m_pathsFound will already contain one sol'n
+		// in the special case where start_kmer == goal_kmer
+		if (!m_pathsFound.empty())
+			overallResult = FOUND_PATH;
+
 		typename EdgeSet::const_iterator i = m_commonEdges.begin();
 		for (; i != m_commonEdges.end(); i++) {
-			if (buildPaths(*i) == TOO_MANY_PATHS)
+			PathSearchResult result = buildPaths(*i);
+			if (result == FOUND_PATH) {
+				overallResult = FOUND_PATH;
+			}
+			else if (result != FOUND_PATH && result != NO_PATH) {
+				// we have encountered a failure case
+				// (e.g. TOO_MANY_PATHS)
+				overallResult = result;
 				break;
+			}
 		}
+		return overallResult;
 	}
 
 	PathSearchResult buildPaths(const E& common_edge)
@@ -343,7 +421,7 @@ protected:
 				maxPathsToGoal, 0, m_maxDepth[REVERSE], pathsToGoal);
 
 			if (result == FOUND_PATH)
-				buildPaths(pathsToStart, pathsToGoal);
+				result = buildPaths(pathsToStart, pathsToGoal);
 
 		} // result == FOUND_PATH (common edge => start)
 
@@ -353,8 +431,9 @@ protected:
 		return result;
 	}
 
-	void buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
+	PathSearchResult buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
 	{
+		bool addedPath = false;
 		typename PathList::const_iterator pathToStart = pathsToStart.begin();
 		for (; pathToStart != pathsToStart.end(); pathToStart++) {
 			typename PathList::const_iterator pathToGoal = pathsToGoal.begin();
@@ -367,8 +446,10 @@ protected:
 				reverse(mergedPath.begin(), mergedPath.end());
 				m_pathsFound.back().insert(mergedPath.end(),
 					pathToGoal->begin(), pathToGoal->end());
+				addedPath = true;
 			}
 		}
+		return (addedPath ? FOUND_PATH : NO_PATH);
 	}
 
 };

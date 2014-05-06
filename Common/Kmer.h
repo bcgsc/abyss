@@ -52,6 +52,8 @@ class Kmer
 	}
 
 	void reverseComplement();
+	bool isCanonical() const;
+	void canonicalize();
 
 	bool isPalindrome() const;
 	bool isPalindrome(extDirection dir) const;

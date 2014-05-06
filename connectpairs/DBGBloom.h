@@ -34,53 +34,12 @@ class DBGBloom {
 	typedef no_property edge_bundled;
 	typedef no_property edge_property_type;
 
-	/** The size of a k-mer */
-	unsigned m_k;
-
 	/** The bloom filter */
-	CountingBloomFilter m_bloom;
+	const BloomFilterBase& m_bloom;
 
-	/** Construct a graph.
-	 * @param k the size of a k-mer
-	 * @param n the size of the bloom filter in bits
-	 */
-	DBGBloom(unsigned k, size_t n)
-		: m_k(k), m_bloom(n) { }
-
-	/** Load the Bloom filter from a string. */
-	void assign(const std::string& s)
-	{
-		for (size_t i = 0; i < s.size() - m_k + 1; ++i) {
-			std::string kmer = s.substr(i, m_k);
-			size_t pos = kmer.find_last_not_of("ACGTacgt");
-			if (pos == std::string::npos) {
-				Kmer u(kmer);
-				m_bloom.insert(u);
-				u.reverseComplement();
-				m_bloom.insert(u);
-			} else
-				i += pos;
-		}
-	}
-
-	/** Load the Bloom filter from a file. */
-	void open(const std::string& path, bool verbose=false)
-	{
-		assert(!path.empty());
-		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
-		uint64_t count = 0;
-		for (std::string seq; in >> seq; count++) {
-			if (verbose && count % LOAD_PROGRESS_STEP == 0)
-				std::cerr << "Loaded " << count << " reads into bloom filter\n";
-			assign(seq);
-		}
-		assert(in.eof());
-		if (verbose)
-			std::cerr << "Loaded " << count << " reads into bloom filter\n";
-	}
+	DBGBloom(const BloomFilterBase& bloom) : m_bloom(bloom) { }
 
   private:
-	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** Copy constructor. */
 	DBGBloom(const DBGBloom&);
 }; // class DBGBloom

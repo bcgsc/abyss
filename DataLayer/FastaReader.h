@@ -45,6 +45,9 @@ class FastaReader {
 		/** Return whether this stream is at end-of-file. */
 		bool eof() const { return m_in.eof(); };
 
+		/** Return true if failbit or badbit of stream is set. */
+		bool fail() const { return m_in.fail(); };
+
 		/** Return whether this stream is good. */
 		operator const void*() const { return m_in ? this : NULL; }
 

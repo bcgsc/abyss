@@ -291,6 +291,27 @@ void Kmer::reverseComplement()
 		m_seq[i] = swapBases[(uint8_t)m_seq[i]];
 }
 
+bool Kmer::isCanonical() const
+{
+	for (unsigned i = 0, j = s_length - 1;
+		i < s_length / 2 + s_length % 2; i++, j--) {
+		uint8_t base = getBaseCode(m_seq,
+			seqIndexToByteNumber(i), seqIndexToBaseIndex(i));
+		uint8_t rcBase = 0x3 & ~getBaseCode(m_seq,
+			seqIndexToByteNumber(j), seqIndexToBaseIndex(j));
+		if (base == rcBase)
+			continue;
+		return rcBase > base;
+	}
+	return true;
+}
+
+void Kmer::canonicalize()
+{
+	if (!isCanonical())
+		reverseComplement();
+}
+
 void Kmer::setLastBase(extDirection dir, uint8_t base)
 {
 	set(dir == SENSE ? s_length - 1 : 0, base);

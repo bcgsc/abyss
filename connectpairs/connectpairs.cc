@@ -5,6 +5,7 @@
 
 #include "config.h"
 
+#include "connectpairs.h"
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
@@ -12,7 +13,7 @@
 #include "Common/IOUtil.h"
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
-#include "DataLayer/FastaInterleave.h"
+#include "DataLayer/FastaConcat.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
@@ -21,7 +22,8 @@
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
-#include <boost/tuple/tuple.hpp>
+#include <cstring>
+
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -38,7 +40,6 @@ using namespace std;
 #if USESEQAN
 using namespace seqan;
 #endif
-using boost::tie;
 
 #define PROGRAM "abyss-connectpairs"
 
@@ -50,7 +51,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [READS1 READS2]...\n"
+"Usage: " PROGRAM " -k <kmer_size> -o <output_prefix> [options]... <reads1> [reads2]...\n"
 "Connect the pairs READS1 and READS2 and close the gap using\n"
 "a Bloom filter de Bruijn graph.\n"
 "\n"
@@ -59,23 +60,46 @@ static const char USAGE_MESSAGE[] =
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -B, --max-branches=N       max branches in de Bruijn graph traversal [10000]\n"
+"  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
+"                             use 'nolimit' for no limit [350]\n"
+"  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
+"  -e, --fix-errors           find and fix single-base errors when reads\n"
+"                             have no kmers in bloom filter [disabled]\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
+"  -i, --input-bloom=FILE     load bloom filter from FILE\n"
+"  -I, --interleaved          input reads files are interleaved\n"
+"      --mask                 mask new and changed bases as lower case\n"
+"      --no-mask              do not mask bases [default]\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
-"  -M, --max-mismatches       max mismatches allowed between all paths [2]\n"
+"  -l, --long-search          start path search as close as possible\n"
+"                             to the beginnings of reads. Takes more time\n"
+"                             but improves results when bloom filter false\n"
+"                             positive rate is high [disabled]\n"
+"  -m, --read-mismatches=N    max mismatches between paths and reads; use\n"
+"                             'nolimit' for no limit [nolimit]\n"
+"  -M, --max-mismatches=N     max mismatches between all alternate paths;\n"
+"                             use 'nolimit' for no limit [2]\n"
+"  -n  --no-limits            disable all limits; equivalent to\n"
+"                             '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
-"  -P, --max-paths=N          build consensus seq from at most N joining paths [2]\n"
+"  -P, --max-paths=N          merge at most N alternate paths; use 'nolimit'\n"
+"                             for no limit [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
 "                             default for qseq and export files\n"
+"  -r, --read-name=STR        only process reads with names that contain STR\n"
+"  -s, --search-mem=N         mem limit for graph searches; multiply by the\n"
+"                             number of threads (-j) to get the total mem used\n"
+"                             for graph traversal [500M]\n"
+"  -t, --trace-file=FILE      write graph search stats to FILE\n"
 "  -v, --verbose              display verbose output\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
@@ -85,14 +109,34 @@ static const char USAGE_MESSAGE[] =
 const unsigned g_progressStep = 1000;
 
 namespace opt {
+
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
+	/** Input read files are interleaved? */
+	bool interleaved = false;
+
+	/**
+	 * Choose start/goal kmers for path search as close as
+	 * possible to beginning (5' end) of reads. Improves
+	 * results when bloom filter FPR is high.
+	 */
+	bool longSearch = false;
+
 	/** Max active branches during de Bruijn graph traversal */
-	unsigned maxBranches = 10000;
+	unsigned maxBranches = 350;
+
+	/** multi-graph DOT file containing graph traversals */
+	static string dotPath;
+
+	/**
+	 * Find and fix single base errors when a read has no
+	 * kmers in the bloom filter.
+	 */
+	bool fixErrors = false;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -103,8 +147,8 @@ namespace opt {
 	/** The maximum fragment size */
 	unsigned maxFrag = 1000;
 
-	/** Write the de Bruijn graph to this file. */
-	static string graphPath;
+	/** Bloom filter input file */
+	static string inputBloomPath;
 
 	/** Max paths between read 1 and read 2 */
 	unsigned maxPaths = 2;
@@ -114,6 +158,22 @@ namespace opt {
 
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = 2;
+
+	/** Only process reads that contain this substring. */
+	static string readName;
+
+	/** Max mem used per thread during graph traversal */
+	static size_t searchMem = 500 * 1024 * 1024;
+
+	/** Output file for graph search stats */
+	static string tracefilePath;
+
+	/** Mask bases not in reads */
+	static int mask = 0;
+
+	/** Max mismatches between consensus and original reads */
+	static unsigned maxReadMismatches = NO_LIMIT;
+
 }
 
 /** Counters */
@@ -125,52 +185,53 @@ static struct {
 	size_t tooManyPaths;
 	size_t tooManyBranches;
 	size_t tooManyMismatches;
+	size_t tooManyReadMismatches;
+	size_t containsCycle;
+	size_t exceededMemLimit;
+	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
+	size_t skipped;
 } g_count;
 
-static const char shortopts[] = "b:B:f:F:j:k:M:o:P:q:v";
+static const char shortopts[] = "b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "dot-file",         required_argument, NULL, 'd' },
+	{ "fix-errors",       no_argument, NULL, 'e' },
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
+	{ "input-bloom",      required_argument, NULL, 'i' },
+	{ "interleaved",      no_argument, NULL, 'I' },
+	{ "long-search",      no_argument, NULL, 'l' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
+	{ "mask",             no_argument, &opt::mask, 1 },
+	{ "no-mask",          no_argument, &opt::mask, 0 },
+	{ "no-limits",        no_argument, NULL, 'n' },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
+	{ "read-mismatches",  required_argument, NULL, 'm' },
 	{ "max-mismatches",   required_argument, NULL, 'M' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "read-name",        required_argument, NULL, 'r' },
+	{ "search-mem",       required_argument, NULL, 's' },
+	{ "trace-file",       required_argument, NULL, 't' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-/** Load the bloom filter. */
-template <typename It>
-void loadBloomFilter(DBGBloom& g, It first, It last)
-{
-	if (opt::verbose > 0)
-		cerr << "Constructing the Bloom filter\n";
-	for (It it = first; it != last; ++it) {
-		std::string path = *it;
-		if (opt::verbose > 0)
-			cerr << "Reading `" << path << "'...\n";
-		g.open(path, opt::verbose >= 2);
-	}
-	if (opt::verbose > 0)
-		cerr << "Loaded " << num_vertices(g) << " k-mer\n";
-}
 
 #if USESEQAN
 const string r1 =
@@ -216,19 +277,109 @@ static void seqanTests()
 
 /** Connect a read pair. */
 static void connectPair(const DBGBloom& g,
-	const FastqRecord& read1, const FastqRecord& read2,
-	ofstream& mergedStream, ofstream& read1Stream,
-	ofstream& read2Stream)
+	const FastqRecord& read1,
+	const FastqRecord& read2,
+	const ConnectPairsParams& params,
+	ofstream& mergedStream,
+	ofstream& read1Stream,
+	ofstream& read2Stream,
+	ofstream& traceStream)
 {
-	SearchResult result
-		= connectPairs(read1, read2, g,
-				opt::maxPaths, opt::minFrag,
-				opt::maxFrag, opt::maxBranches);
-
-	vector<FastaRecord>& paths = result.mergedSeqs;
+	bool skip = false;
 
 #pragma omp atomic
 	++g_count.readPairsProcessed;
+
+	if (!opt::readName.empty() &&
+		read1.id.find(opt::readName) == string::npos) {
+#pragma omp atomic
+		++g_count.skipped;
+		skip = true;
+	}
+
+	if (!skip) {
+
+		ConnectPairsResult result =
+			connectPairs(opt::k, read1, read2, g, params);
+
+		vector<FastaRecord>& paths = result.mergedSeqs;
+
+		if (!opt::tracefilePath.empty())
+#pragma omp critical(tracefile)
+		{
+			traceStream << result;
+			assert_good(traceStream, opt::tracefilePath);
+		}
+
+		switch (result.pathResult) {
+
+			case NO_PATH:
+				assert(paths.empty());
+				if (result.foundStartKmer && result.foundGoalKmer)
+#pragma omp atomic
+					++g_count.noPath;
+				else {
+#pragma omp atomic
+					++g_count.noStartOrGoalKmer;
+				}
+				break;
+
+			case FOUND_PATH:
+				assert(!paths.empty());
+				if (result.pathMismatches > params.maxPathMismatches ||
+						result.readMismatches > params.maxReadMismatches) {
+					if (result.pathMismatches > params.maxPathMismatches)
+#pragma omp atomic
+						++g_count.tooManyMismatches;
+					else
+						++g_count.tooManyReadMismatches;
+#pragma omp critical(read1Stream)
+					read1Stream << read1;
+#pragma omp critical(read2Stream)
+					read2Stream << read2;
+				}
+				else if (paths.size() > 1) {
+#pragma omp atomic
+					++g_count.multiplePaths;
+#pragma omp critical(mergedStream)
+					mergedStream << result.consensusSeq;
+				}
+				else {
+#pragma omp atomic
+					++g_count.uniquePath;
+#pragma omp critical(mergedStream)
+					mergedStream << paths.front();
+				}
+				break;
+
+			case TOO_MANY_PATHS:
+#pragma omp atomic
+				++g_count.tooManyPaths;
+				break;
+
+			case TOO_MANY_BRANCHES:
+#pragma omp atomic
+				++g_count.tooManyBranches;
+				break;
+
+			case PATH_CONTAINS_CYCLE:
+#pragma omp atomic
+				++g_count.containsCycle;
+				break;
+
+			case EXCEEDED_MEM_LIMIT:
+#pragma omp atomic
+				++g_count.exceededMemLimit;
+				break;
+		}
+
+		if (result.pathResult != FOUND_PATH) {
+#pragma omp critical(read1Stream)
+			read1Stream << read1;
+#pragma omp critical(read2Stream)
+			read2Stream << read2;
+		}
+	}
 
 	if (opt::verbose >= 2)
 #pragma omp critical(cerr)
@@ -240,71 +391,26 @@ static void connectPair(const DBGBloom& g,
 				<< "no path: " << g_count.noPath << ", "
 				<< "too many paths: " << g_count.tooManyPaths << ", "
 				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many mismatches: " << g_count.tooManyMismatches
+				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
+				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+				<< "contains cycle: " << g_count.containsCycle << ", "
+				<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
+				<< "skipped: " << g_count.skipped
 				<< ")\n";
 		}
 	}
 
-	switch (result.pathResult) {
-	  case NO_PATH:
-		assert(paths.empty());
-		if (result.foundStartKmer && result.foundGoalKmer)
-#pragma omp atomic
-			++g_count.noPath;
-		else
-#pragma omp atomic
-			++g_count.noStartOrGoalKmer;
-		break;
-	  case FOUND_PATH:
-		assert(!paths.empty());
-		if (paths.size() == 1) {
-#pragma omp atomic
-			++g_count.uniquePath;
-#pragma omp critical(mergedStream)
-			mergedStream << paths.front();
-		} else {
-			NWAlignment aln;
-			unsigned matches, size;
-			tie(matches, size) = align(paths, aln);
-			assert(size >= matches);
-			if (size - matches <= opt::maxMismatches) {
-				FastaRecord read = paths.front();
-				read.seq = aln.match_align;
-#pragma omp atomic
-				++g_count.multiplePaths;
-#pragma omp critical(mergedStream)
-				mergedStream << read;
-			} else {
-#pragma omp atomic
-				++g_count.tooManyMismatches;
-#pragma omp critical(read1Stream)
-				read1Stream << read1;
-#pragma omp critical(read2Stream)
-				read2Stream << read2;
-			}
-		}
-		break;
-	  case TOO_MANY_PATHS:
-#pragma omp atomic
-		++g_count.tooManyPaths;
-		break;
-	  case TOO_MANY_BRANCHES:
-#pragma omp atomic
-		++g_count.tooManyBranches;
-		break;
-	}
-
-	if (result.pathResult != FOUND_PATH) {
-#pragma omp critical(read1Stream)
-		read1Stream << read1;
-#pragma omp critical(read2Stream)
-		read2Stream << read2;
-	}
 }
 
 /** Connect read pairs. */
-static void connectPairs(const DBGBloom& g, FastaInterleave& in,
-	ofstream& mergedStream, ofstream& read1Stream, ofstream& read2Stream)
+template <typename FastaStream>
+static void connectPairs(const DBGBloom& g,
+	FastaStream& in,
+	const ConnectPairsParams& params,
+	ofstream& mergedStream,
+	ofstream& read1Stream,
+	ofstream& read2Stream,
+	ofstream& traceStream)
 {
 #pragma omp parallel
 	for (FastqRecord a, b;;) {
@@ -312,9 +418,29 @@ static void connectPairs(const DBGBloom& g, FastaInterleave& in,
 #pragma omp critical(in)
 		good = in >> a >> b;
 		if (good)
-			connectPair(g, a, b, mergedStream, read1Stream, read2Stream);
+			connectPair(g, a, b, params, mergedStream, read1Stream,
+				read2Stream, traceStream);
 		else
 			break;
+	}
+}
+
+/**
+ * Set the value for a commandline option, using "nolimit"
+ * to represent NO_LIMIT.
+ */
+static inline void setMaxOption(unsigned& arg, istream& in)
+{
+	string str;
+	getline(in, str);
+	if (in && str == "nolimit") {
+		arg = NO_LIMIT;
+	} else {
+		istringstream ss(str);
+		ss >> arg;
+		// copy state bits (fail, bad, eof) to
+		// original stream
+		in.clear(ss.rdstate());
 	}
 }
 
@@ -334,30 +460,54 @@ int main(int argc, char** argv)
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
-			arg >> opt::maxBranches; break;
+			setMaxOption(opt::maxBranches, arg); break;
+		  case 'd':
+			arg >> opt::dotPath; break;
+		  case 'e':
+			opt::fixErrors = true; break;
 		  case 'f':
 			arg >> opt::minFrag; break;
 		  case 'F':
 			arg >> opt::maxFrag; break;
+		  case 'i':
+			arg >> opt::inputBloomPath; break;
+		  case 'I':
+			opt::interleaved = true; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'l':
+			opt::longSearch = true; break;
+		  case 'm':
+			setMaxOption(opt::maxReadMismatches, arg); break;
+		  case 'n':
+			opt::maxBranches = NO_LIMIT;
+			opt::maxReadMismatches = NO_LIMIT;
+			opt::maxMismatches = NO_LIMIT;
+			opt::maxPaths = NO_LIMIT;
+			break;
 		  case 'M':
-			arg >> opt::maxMismatches; break;
+			setMaxOption(opt::maxMismatches, arg); break;
 		  case 'o':
 			arg >> opt::outputPrefix; break;
 		  case 'P':
-			arg >> opt::maxPaths; break;
+			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 'r':
+			arg >> opt::readName; break;
+		  case 's':
+			opt::searchMem = SIToBytes(arg); break;
+		  case 't':
+			arg >> opt::tracefilePath; break;
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
-			cerr << USAGE_MESSAGE;
+			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
-			cerr << VERSION_MESSAGE;
+			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
@@ -377,8 +527,8 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
-		cerr << PROGRAM ": missing arguments\n";
+	if (argc - optind < 1) {
+		cerr << PROGRAM ": missing input file arguments\n";
 		die = true;
 	}
 
@@ -399,39 +549,120 @@ int main(int argc, char** argv)
 	seqanTests();
 #endif
 
-	string name(opt::outputPrefix);
-	name.append("_merged.fa");
-	ofstream mergedStream(name.c_str());
-	assert_good(mergedStream, name);
-
-	name = opt::outputPrefix;
-	name.append("_reads_1.fq");
-	ofstream read1Stream(name.c_str());
-	assert_good(read1Stream, name);
-
-	name = opt::outputPrefix;
-	name.append("_reads_2.fq");
-	ofstream read2Stream(name.c_str());
-	assert_good(read2Stream, name);
-
 	assert(opt::bloomSize > 0);
-	// Specify bloom filter size in bits. Divide by two
-	// because counting bloom filter requires twice as
-	// much space.
-	DBGBloom g(opt::k, opt::bloomSize * 8 / 2);
-	loadBloomFilter(g, argv + optind, argv + argc);
+
+	BloomFilterBase* bloom = NULL;
+
+	if (!opt::inputBloomPath.empty()) {
+
+		if (opt::verbose)
+			std::cerr << "Loading bloom filter from `"
+				<< opt::inputBloomPath << "'...\n";
+
+		const char* inputPath = opt::inputBloomPath.c_str();
+		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
+		assert_good(inputBloom, inputPath);
+		BloomFilter* loadedBloom = new BloomFilter();
+		inputBloom >> *loadedBloom;
+		assert_good(inputBloom, inputPath);
+		inputBloom.close();
+		bloom = loadedBloom;
+
+	} else {
+
+		// Specify bloom filter size in bits. Divide by two
+		// because counting bloom filter requires twice as
+		// much space.
+		size_t bits = opt::bloomSize * 8 / 2;
+		bloom = new CountingBloomFilter(bits);
+		for (int i = optind; i < argc; i++)
+			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+
+	}
+
+	if (opt::verbose)
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bloom->FPR() << "%\n";
+
+
+	ofstream dotStream;
+	if (!opt::dotPath.empty()) {
+		if (opt::verbose)
+			cerr << "Writing graph traversals to "
+				"dot file `" << opt::dotPath << "'\n";
+		dotStream.open(opt::dotPath.c_str());
+		assert_good(dotStream, opt::dotPath);
+	}
+
+	ofstream traceStream;
+	if (!opt::tracefilePath.empty()) {
+		if (opt::verbose)
+			cerr << "Writing graph search stats to `"
+				<< opt::tracefilePath << "'\n";
+		traceStream.open(opt::tracefilePath.c_str());
+		assert(traceStream.is_open());
+		ConnectPairsResult::printHeaders(traceStream);
+		assert_good(traceStream, opt::tracefilePath);
+	}
+
+	DBGBloom g(*bloom);
+
+	string mergedOutputPath(opt::outputPrefix);
+	mergedOutputPath.append("_merged.fa");
+	ofstream mergedStream(mergedOutputPath.c_str());
+	assert_good(mergedStream, mergedOutputPath);
+
+	string read1OutputPath(opt::outputPrefix);
+	read1OutputPath.append("_reads_1.fq");
+	ofstream read1Stream(read1OutputPath.c_str());
+	assert_good(read1Stream, read1OutputPath);
+
+	string read2OutputPath(opt::outputPrefix);
+	read2OutputPath.append("_reads_2.fq");
+	ofstream read2Stream(read2OutputPath.c_str());
+	assert_good(read2Stream, read2OutputPath);
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
-	FastaInterleave in(argv + optind, argv + argc,
-			FastaReader::FOLD_CASE);
-	connectPairs(g, in, mergedStream, read1Stream, read2Stream);
-	assert(in.eof());
+
+	ConnectPairsParams params;
+
+	params.minMergedSeqLen = opt::minFrag;
+	params.maxMergedSeqLen = opt::maxFrag;
+	params.maxPaths = opt::maxPaths;
+	params.maxBranches = opt::maxBranches;
+	params.maxPathMismatches = opt::maxMismatches;
+	params.maxReadMismatches = opt::maxReadMismatches;
+	params.fixErrors = opt::fixErrors;
+	params.longSearch = opt::longSearch;
+	params.maskBases = opt::mask;
+	params.memLimit = opt::searchMem;
+	params.dotPath = opt::dotPath;
+	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;
+
+	if (opt::interleaved) {
+		FastaConcat in(argv + optind, argv + argc,
+				FastaReader::FOLD_CASE);
+		connectPairs(g, in, params, mergedStream, read1Stream,
+				read2Stream, traceStream);
+		assert(in.eof());
+	} else {
+		FastaInterleave in(argv + optind, argv + argc,
+				FastaReader::FOLD_CASE);
+		connectPairs(g, in, params, mergedStream, read1Stream,
+				read2Stream, traceStream);
+		assert(in.eof());
+	}
 
 	if (opt::verbose > 0) {
 		cerr <<
-			"Merged " << g_count.uniquePath + g_count.multiplePaths
-				<< " of " << g_count.readPairsProcessed << " read pairs\n"
+			"Processed " << g_count.readPairsProcessed << " read pairs\n"
+			"Merged (Unique path + Multiple paths): "
+				<< g_count.uniquePath + g_count.multiplePaths
+				<< " (" << setprecision(3) <<  (float)100
+				    * (g_count.uniquePath + g_count.multiplePaths) /
+				   g_count.readPairsProcessed
+				<< "%)\n"
 			"No start/goal kmer: " << g_count.noStartOrGoalKmer
 				<< " (" << setprecision(3) << (float)100
 					* g_count.noStartOrGoalKmer / g_count.readPairsProcessed
@@ -456,14 +687,48 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyBranches / g_count.readPairsProcessed
 				<< "%)\n"
-			"Too many mismatches: " << g_count.tooManyMismatches
+			"Too many path/path mismatches: " << g_count.tooManyMismatches
 				<< " (" << setprecision(3) << (float)100
 					* g_count.tooManyMismatches / g_count.readPairsProcessed
-				<< "%)\n";
+				<< "%)\n"
+			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
+				<< " (" << setprecision(3) << (float)100
+					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
+				<< "%)\n"
+			"Contains cycle: " << g_count.containsCycle
+				<< " (" << setprecision(3) << (float)100
+					* g_count.containsCycle / g_count.readPairsProcessed
+				<< "%)\n"
+			"Exceeded mem limit: " << g_count.exceededMemLimit
+				<< " (" << setprecision(3) << (float)100
+					* g_count.exceededMemLimit / g_count.readPairsProcessed
+				<< "%)\n"
+			"Skipped: " << g_count.skipped
+				<< " (" << setprecision(3) << (float)100
+					* g_count.skipped / g_count.readPairsProcessed
+				<< "%)\n"
+			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+				<< "%\n";
 	}
 
-	cout.flush();
-	assert_good(cout, "stdout");
+	assert_good(mergedStream, mergedOutputPath.c_str());
+	mergedStream.close();
+	assert_good(read1Stream, read1OutputPath.c_str());
+	read1Stream.close();
+	assert_good(read2Stream, read2OutputPath.c_str());
+	read2Stream.close();
+
+	if (!opt::dotPath.empty()) {
+		assert_good(dotStream, opt::dotPath);
+		dotStream.close();
+	}
+
+	if (!opt::tracefilePath.empty()) {
+		assert_good(traceStream, opt::tracefilePath);
+		traceStream.close();
+	}
+
+	delete bloom;
 
 	return 0;
 }

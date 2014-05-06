@@ -4,19 +4,31 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <climits>
 
 enum PathSearchResult {
 	FOUND_PATH = 0,
 	TOO_MANY_PATHS,
 	TOO_MANY_BRANCHES,
+	PATH_CONTAINS_CYCLE,
+	EXCEEDED_MEM_LIMIT,
 	NO_PATH
+};
+
+const char* PathSearchResultLabel[] = {
+	"FOUND_PATH",
+	"TOO_MANY_PATHS",
+	"TOO_MANY_BRANCHES",
+	"PATH_CONTAINS_CYCLE",
+	"EXCEEDED_MEM_LIMIT",
+	"NO_PATH"
 };
 
 enum Direction { FORWARD = 0, REVERSE };
 
-const unsigned NO_LIMIT = 0;
+const unsigned NO_LIMIT = UINT_MAX;
 
-template <class Vertex> class Path : public std::vector<Vertex> 
+template <class Vertex> class Path : public std::vector<Vertex>
 {
 public:
 

@@ -60,6 +60,8 @@ static const char USAGE_MESSAGE[] =
 "                        either strand\n"
 "  --coverage-hist=FILE  write the k-mer coverage histogram to FILE\n"
 "  -g, --graph=FILE      generate a graph in dot format\n"
+"  -m, --mask-cov        do not include kmers containing masked bases in\n"
+"                        coverage calculations [experimental]\n"
 "  -s, --snp=FILE        record popped bubbles in FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -94,6 +96,12 @@ int bubbleLen = -1;
 /** Whether to run a strand-specific assembly. */
 int ss = 0;
 
+/**
+ * do not include kmers containing masked bases in
+ * coverage calculations (experimental)
+ */
+bool maskCov = false;
+
 /** coverage histogram path */
 string coverageHistPath;
 
@@ -114,7 +122,7 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-static const char shortopts[] = "b:c:e:E:g:k:o:Q:q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:mo:Q:q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 
@@ -138,6 +146,7 @@ static const struct option longopts[] = {
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "erode-strand", required_argument, NULL, 'E' },
 	{ "no-erode",    no_argument,       (int*)&erode, 0 },
+	{ "mask-cov",    required_argument, NULL, 'm' },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
@@ -191,6 +200,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case COVERAGE_HIST:
 				getline(arg, coverageHistPath);
+				break;
+			case 'm':
+				maskCov = true;
 				break;
 			case 'o':
 				getline(arg, contigsPath);

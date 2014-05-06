@@ -6,64 +6,17 @@
 #define DBGBLOOMALGORITHMS_H 1
 
 #include "Common/Kmer.h"
+#include "Common/KmerIterator.h"
 #include "Common/Warnings.h"
 #include "DBGBloom.h"
 #include "Common/StringUtil.h"
 #include "Common/Sequence.h"
 #include "DataLayer/FastaReader.h"
-#include "Graph/DefaultColorMap.h"
 #include "Graph/Path.h"
-#include "Graph/BidirectionalBFS.h"
-#include "Graph/ConstrainedBidiBFSVisitor.h"
 #include <climits>
 #include <algorithm> // for std::max
 
-#if _OPENMP
-# include <omp.h>
-#endif
-
 #define NO_MATCH UINT_MAX
-
-struct SearchResult
-{
-	PathSearchResult pathResult;
-	std::vector<FastaRecord> mergedSeqs;
-	bool foundStartKmer;
-	bool foundGoalKmer;
-	unsigned startKmerPos;
-	unsigned goalKmerPos;
-	unsigned long long numNodesVisited;
-	unsigned maxActiveBranches;
-	unsigned maxDepthVisitedForward;
-	unsigned maxDepthVisitedReverse;
-
-	SearchResult() :
-		pathResult(NO_PATH),
-		foundStartKmer(false),
-		foundGoalKmer(false),
-		startKmerPos(NO_MATCH),
-		goalKmerPos(NO_MATCH),
-		numNodesVisited(0),
-		maxActiveBranches(0),
-		maxDepthVisitedForward(0),
-		maxDepthVisitedReverse(0) {}
-
-	friend std::ostream& operator <<(std::ostream& out,
-		const SearchResult& o)
-	{
-		out << "Path result: " << o.pathResult << "\n"
-			<< "\tpathsFound: " << o.mergedSeqs.size() << "\n";
-		for (unsigned i = 0; i < o.mergedSeqs.size(); i++)
-			out << "\t\tPath " << i << " length: " << o.mergedSeqs[i].size() << "\n";
-		out << "\tstartKmerPos: " << o.startKmerPos << "\n"
-			<< "\tgoalKmerPos: " << o.goalKmerPos << "\n"
-			<< "\tnumNodesVisited: " << o.numNodesVisited << "\n"
-			<< "\tmaxActiveBranches: " << o.maxActiveBranches << "\n"
-			<< "\tmaxDepthVisitedForward: " << o.maxDepthVisitedForward << "\n"
-			<< "\tmaxDepthVisitedReverse: " << o.maxDepthVisitedReverse << "\n";
-		return out;
-	}
-};
 
 static inline Sequence pathToSeq(Path<Kmer> path)
 {
@@ -75,12 +28,15 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 	return seq;
 }
 
-static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& g, bool rc = false)
+static inline unsigned getStartKmerPos(unsigned k,
+	const FastaRecord& read, const DBGBloom& g,
+	bool rc = false, bool longSearch = false)
 {
-	unsigned k = g.m_k;
+	if (read.seq.size() < k)
+		return NO_MATCH;
 
 	// build a vector indicating whether each kmer is a match
-	// The vector intentionally has an extra false element at
+	// Note: the vector intentionally has an extra false element at
 	// the end, for the second loop below.
 
 	const std::string& seq = read.seq;
@@ -88,8 +44,11 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 	bool foundMatch = false;
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
 		std::string kmerStr = seq.substr(i,k);
-		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
+		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		if (pos != std::string::npos) {
+			i += pos;
 			continue;
+		}
 		Kmer kmer(kmerStr);
 		if (rc)
 			kmer.reverseComplement();
@@ -118,7 +77,8 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 		} else {
 			// Note: match has an extra false element at the end,
 			// so this else block will get executed at least once.
-			if (matchLength >= maxMatchLength) {
+			if ((longSearch && matchLength > maxMatchLength) ||
+				(!longSearch && matchLength >= maxMatchLength)) {
 				maxMatchPos = matchPos;
 				maxMatchLength = matchLength;
 			}
@@ -128,86 +88,114 @@ static inline unsigned getStartKmerPos(const FastaRecord& read, const DBGBloom& 
 	}
 	assert(maxMatchLength > 0);
 
-	// return the kmer closest to the gap between read pairs
-	return maxMatchPos + maxMatchLength - 1;
+	if (longSearch)
+		return maxMatchPos;
+	else
+		return maxMatchPos + maxMatchLength - 1;
 }
 
-static inline SearchResult connectPairs(
-	const FastaRecord& read1,
-	const FastaRecord& read2,
-	const DBGBloom& g,
-	unsigned maxPaths = 2,
-	unsigned minMergedSeqLen = 0,
-	unsigned maxMergedSeqLen = NO_LIMIT,
-	unsigned maxBranches = NO_LIMIT)
+struct BaseChangeScore
 {
-	unsigned k = g.m_k;
 
-	SearchResult result;
+	size_t m_pos;
+	char m_base;
+	unsigned m_score;
 
-	assert(isReadNamePair(read1.id, read2.id));
+public:
 
-	if (read1.seq.length() < k || read2.seq.length() < k) {
-		result.pathResult = NO_PATH;
-		return result;
+	BaseChangeScore() : m_pos(0), m_base('N'), m_score(0) { }
+
+	BaseChangeScore(size_t pos, char base, unsigned score)
+		: m_pos(pos), m_base(base), m_score(score) { }
+
+};
+
+static inline bool correctSingleBaseError(
+		const DBGBloom& g,
+		unsigned k,
+		FastaRecord& read,
+		size_t& correctedPos,
+		bool rc = false)
+{
+	if (read.seq.length() < k)
+		return false;
+
+	SUPPRESS_UNUSED_WARNING(correctedPos);
+
+	const std::string bases = "AGCT";
+	const size_t minScore = 3;
+	std::vector<BaseChangeScore> scores;
+
+	for (size_t i = 0; i < read.seq.length(); i++) {
+
+		size_t overlapStart = std::max((int)(i - k + 1), 0);
+		size_t overlapEnd = std::min(i + k - 1, read.seq.length() - 1);
+		assert(overlapStart < overlapEnd);
+		Sequence overlapStr = read.seq.substr(overlapStart, overlapEnd - overlapStart + 1);
+		size_t changePos = i - overlapStart;
+
+		for (size_t j = 0; j < bases.size(); j++) {
+			if (read.seq[i] == bases[j])
+				continue;
+			overlapStr[changePos] = bases[j];
+			size_t score = 0;
+			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end(); it++) {
+				if (graph_traits<DBGBloom>::vertex_exists(*it, g))
+					score++;
+			}
+			if (score > minScore)
+				scores.push_back(BaseChangeScore(i, bases[j], score));
+		}
+
 	}
 
-	unsigned startKmerPos = getStartKmerPos(read1, g, false);
-	unsigned goalKmerPos = getStartKmerPos(read2, g, true);
+	if (scores.size() == 0)
+		return false;
 
-	if (startKmerPos != NO_MATCH) {
-		result.startKmerPos = startKmerPos;
-		result.foundStartKmer = true;
-	}
-
-	if (goalKmerPos != NO_MATCH) {
-		result.goalKmerPos = goalKmerPos;
-		result.foundGoalKmer = true;
-	}
-
-	if (startKmerPos == NO_MATCH || goalKmerPos == NO_MATCH) {
-		result.pathResult = NO_PATH;
-		return result;
-	}
-
-	Kmer startKmer(read1.seq.substr(startKmerPos, k));
-	Kmer goalKmer(read2.seq.substr(goalKmerPos, k));
-	goalKmer.reverseComplement();
-
-	unsigned maxPathLen = maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
-	assert(maxPathLen <= maxMergedSeqLen - k + 1);
-	unsigned minPathLen = (unsigned)std::max(0,
-			(int)(minMergedSeqLen - k + 1 - startKmerPos - goalKmerPos));
-
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer, maxPaths,
-			minPathLen, maxPathLen, maxBranches);
-	bidirectionalBFS(g, startKmer, goalKmer, visitor);
-
-	std::vector< Path<Kmer> > paths;
-	result.pathResult = visitor.pathsToGoal(paths);
-	result.numNodesVisited = visitor.getNumNodesVisited();
-	result.maxActiveBranches = visitor.getMaxActiveBranches();
-	result.maxDepthVisitedForward = visitor.getMaxDepthVisited(FORWARD);
-	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
-
-	if (result.pathResult == FOUND_PATH) {
-		std::string mergedId = read1.id.substr(0, read1.id.find_last_of("/"));
-		std::string seqPrefix = read1.seq.substr(0, startKmerPos);
-		std::string seqSuffix = reverseComplement(read2.seq.substr(0, goalKmerPos));
-		for (unsigned i = 0; i < paths.size(); i++) {
-			FastaRecord mergedSeq;
-			mergedSeq.id = mergedId;
-			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
-			result.mergedSeqs.push_back(mergedSeq);
+	BaseChangeScore bestScore;
+	bool bestScoreSet = false;
+	for (size_t i = 0; i < scores.size(); i++) {
+		if (!bestScoreSet || scores[i].m_score > bestScore.m_score) {
+			bestScore = scores[i];
+			bestScoreSet = true;
 		}
 	}
 
-#if 0
-# pragma omp critical(cerr)
-	std::cerr << result;
-#endif
+	correctedPos = bestScore.m_pos;
+	read.seq[correctedPos] = bestScore.m_base;
 
-	return result;
+	return true;
+}
+
+/** Uppercase only bases that are present in original reads.
+ *  @return number of mis-matching bases. */
+static inline unsigned maskNew(const FastaRecord& read1, const FastaRecord& read2,
+		FastaRecord& merged, int mask = 0)
+{
+	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
+	if (mask) {
+		transform(r1.begin(), r1.end(), r1.begin(), ::tolower);
+		transform(r2.begin(), r2.end(), r2.begin(), ::tolower);
+		transform(merged.seq.begin(), merged.seq.end(), merged.seq.begin(),
+				::tolower);
+	}
+	unsigned mismatches = 0;
+	for (unsigned i = 0; i < r1.size(); i++) {
+		assert(i < merged.seq.size());
+		if (r1[i] == merged.seq[i])
+			merged.seq[i] = toupper(r1[i]);
+		else
+			mismatches++;
+	}
+	for (unsigned i = 0; i < r2.size(); i++) {
+		assert(r2.size() <= merged.seq.size());
+		unsigned merged_loc = i + merged.seq.size() - r2.size();
+		if (r2[i] == merged.seq[merged_loc])
+			merged.seq[merged_loc] = toupper(r2[i]);
+		else
+			mismatches++;
+	}
+	return mismatches;
 }
 
 #endif

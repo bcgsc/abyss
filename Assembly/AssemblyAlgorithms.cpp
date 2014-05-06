@@ -84,7 +84,9 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 	size_t count = 0, count_good = 0,
 			 count_small = 0, count_nonACGT = 0,
 			 count_reversed = 0;
-	FastaReader reader(inFile.c_str(), FastaReader::FOLD_CASE);
+	int fastaFlags = opt::maskCov ?  FastaReader::NO_FOLD_CASE :
+			FastaReader::FOLD_CASE;
+	FastaReader reader(inFile.c_str(), fastaFlags);
 	if (endsWith(inFile, ".jf") || endsWith(inFile, ".jfq")) {
 		// Load k-mer with coverage data.
 		count = loadKmer(*seqCollection, reader);
@@ -126,9 +128,15 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 
 		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
 			Sequence kmer(seq, i, opt::kmerSize);
-			if (good || kmer.find_first_not_of("ACGT0123")
+			if (good || kmer.find_first_not_of("acgtACGT0123")
 					== string::npos) {
-				seqCollection->add(Kmer(kmer));
+				if (good || kmer.find_first_of("acgt") == string::npos)
+					seqCollection->add(Kmer(kmer));
+				else {
+					transform(kmer.begin(), kmer.end(), kmer.begin(),
+							::toupper);
+					seqCollection->add(Kmer(kmer), 0);
+				}
 				discarded = false;
 			}
 		}

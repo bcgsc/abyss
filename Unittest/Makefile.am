@@ -16,24 +16,44 @@ common_bitutil_SOURCES = Common/BitUtilTest.cpp
 common_bitutil_CPPFLAGS = -I$(top_srcdir)
 common_bitutil_LDADD = $(GTEST_LIBS)
 
+UNIT_TESTS += common_kmer
+check_PROGRAMS += common_kmer
+common_kmer_SOURCES = Common/KmerTest.cpp
+common_kmer_CPPFLAGS = -I$(top_srcdir)
+common_kmer_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 UNIT_TESTS += common_sequence
 check_PROGRAMS += common_sequence
 common_sequence_SOURCES = Common/Sequence.cc
 common_sequence_CPPFLAGS = -I$(top_srcdir)
 common_sequence_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += common_KmerIterator
+check_PROGRAMS += common_KmerIterator
+common_KmerIterator_SOURCES = Common/KmerIteratorTest.cpp
+common_KmerIterator_CPPFLAGS = -I$(top_srcdir)
+common_KmerIterator_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = connectpairs/BloomFilter.cc
-BloomFilter_CPPFLAGS = -I$(top_srcdir)
+BloomFilter_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += connectpairs_DBGBloom
+check_PROGRAMS += connectpairs_DBGBloom
+connectpairs_DBGBloom_SOURCES = connectpairs/DBGBloomTest.cpp
+connectpairs_DBGBloom_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+connectpairs_DBGBloom_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+connectpairs_DBGBloom_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += connectpairs_DBGBloomAlgorithms
 check_PROGRAMS += connectpairs_DBGBloomAlgorithms
 connectpairs_DBGBloomAlgorithms_SOURCES = connectpairs/DBGBloomAlgorithmsTest.cpp
 connectpairs_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
-connectpairs_DBGBloomAlgorithms_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+connectpairs_DBGBloomAlgorithms_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(GTEST_LIBS)
 
 UNIT_TESTS += graph_ConstrainedBFSVisitor
 check_PROGRAMS += graph_ConstrainedBFSVisitor
@@ -65,5 +85,15 @@ graph_ConstrainedBidiBFSVisitor_SOURCES = \
 	Graph/ConstrainedBidiBFSVisitorTest.cpp
 graph_ConstrainedBidiBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 graph_ConstrainedBidiBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += connectpairs_connectpairs
+check_PROGRAMS += connectpairs_connectpairs
+connectpairs_connectpairs_SOURCES = \
+	connectpairs/connectpairsTest.cpp
+connectpairs_connectpairs_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+connectpairs_connectpairs_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+connectpairs_connectpairs_LDADD = \
+	$(top_builddir)/Align/libalign.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 TESTS = $(UNIT_TESTS)
