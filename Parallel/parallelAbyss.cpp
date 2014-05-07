@@ -33,7 +33,8 @@ static void mergeFastaFiles(const string& outputPath, const string& inputPathPre
 		ostringstream filename;
 		filename << inputPathPrefix << i << FASTA_SUFFIX;
 		assert(filename.good());
-		FastaReader reader(filename.str().c_str(), FastaReader::NO_FOLD_CASE);
+		string str(filename.str());
+		FastaReader reader(str.c_str(), FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; reader >> rec;) {
 			if (generateNewIds)
 				writer.WriteSequence(rec.seq, seqid++, rec.comment);
