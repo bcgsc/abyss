@@ -54,6 +54,8 @@ static const char USAGE_MESSAGE[] =
 " Options:\n"
 "\n"
 "  -k, --kmer=N          k-mer size\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation\n"
 "  -T, --island=N        remove islands shorter than N [0]\n"
 "  -t, --tip=N           remove tips shorter than N [0]\n"
 "  -l, --length=N        remove contigs shorter than N [0]\n"
@@ -81,6 +83,9 @@ static const char USAGE_MESSAGE[] =
 namespace opt {
 	unsigned k; // used by ContigProperties
 
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
+
 	/** Remove island contigs less than this length. */
 	static unsigned minIslandLen = 0;
 
@@ -90,7 +95,7 @@ namespace opt {
 	/** Remove all contigs less than this length. */
 	static unsigned minLen = 0;
 
-	/** Remove all contigs less than this length. */
+	/** Remove all contigs more than this length. */
 	static unsigned maxLen = 0;
 
 	/** Remove short contigs that don't contribute any sequence. */
@@ -128,6 +133,8 @@ static const struct option longopts[] = {
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "ignore",        required_argument, NULL, 'i' },
 	{ "remove",        required_argument, NULL, 'r' },
+	{ "SS",            no_argument,       &opt::ss, 1 },
+	{ "no-SS",         no_argument,       &opt::ss, 0 },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "island",        required_argument, NULL, 'T' },
 	{ "tip",           required_argument, NULL, 't' },
@@ -639,7 +646,10 @@ int main(int argc, char** argv)
 		size_t numContigs = num_vertices(g) / 2;
 		typedef vector<ContigPath> ContigPaths;
 		ContigPaths paths;
-		assemble(g, back_inserter(paths));
+		if (opt::ss)
+			assemble_stranded(g, back_inserter(paths));
+		else
+			assemble(g, back_inserter(paths));
 		g_contigNames.unlock();
 		for (ContigPaths::const_iterator it = paths.begin();
 				it != paths.end(); ++it) {
