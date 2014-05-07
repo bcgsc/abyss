@@ -1,3 +1,19 @@
+2014-05-07  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.5.1
+	* Fix an issue with strand-specific RNA-Seq assembly when running
+	`abyss-filtergraph --assemble --SS`.
+	* Portability fixes for Fujitsu C Compiler (FCC).
+
+	abyss-filtergraph:
+	* Assemble contigs in forward orientation with `--assemble --SS`
+
+	abyss-pe:
+	* Fix some cases where abyss-pe uses incorrect executables
+
+	ABYSS-P:
+	* Portability fix with FCC
+
 2014-05-01  Anthony Raymond  <traymond@bcgsc.ca>
 
 	* Release version 1.5.0
