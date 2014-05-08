@@ -54,7 +54,8 @@ tests=run_test \
 	parallel_load_3_files_test \
 	abyss_bloom_dist_1_file_test \
 	abyss_bloom_dist_2_files_test \
-	abyss_bloom_dist_3_files_test
+	abyss_bloom_dist_3_files_test \
+	abyss_bloom_illegal_chars_test
 
 .PHONY: all $(tests)
 .DELETE_ON_ERROR:
@@ -289,6 +290,16 @@ abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
 	$(bloom_dist) -C $(tmpdir) name=dist-3-files k=$k b=$(b_div_2) w=2 \
 		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
 	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-3-files.bloom.gz)
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_illegal_chars_test
+#------------------------------------------------------------
+
+abyss_bloom_illegal_chars_test:
+	$(bloom) build -v -k3 -b1M $(tmpdir)/illegal_char_test.bloom <(echo -e ">test\nAGCTagctAGCTnqrsAGCTNQRS") 
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'

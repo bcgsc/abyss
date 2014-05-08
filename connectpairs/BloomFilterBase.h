@@ -75,7 +75,7 @@ public:
 		assert(!path.empty());
 		if (verbose)
 			std::cerr << "Reading `" << path << "'...\n";
-		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
+		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 		uint64_t count = 0;
 		for (std::string seq; in >> seq; count++) {
 			if (verbose && count % LOAD_PROGRESS_STEP == 0)
