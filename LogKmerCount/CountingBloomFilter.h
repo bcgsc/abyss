@@ -1,6 +1,6 @@
 /**
  * A counting Bloom filter
- * Copyright 2013 Shaun Jackman
+ * Copyright 2014 bcgsc
  */
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
@@ -9,6 +9,7 @@
 #include <vector>
 
 /** A counting Bloom filter. */
+template<class T>
 class CountingBloomFilter : public BloomFilterBase
 {
   public:

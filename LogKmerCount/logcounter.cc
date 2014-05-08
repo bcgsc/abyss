@@ -1,7 +1,9 @@
 /**
  * logarithmic k-mer count based on a Bloom filter
- * Copyright 2014 Justin Chu
+ * Copyright 2014 BCGSC
  */
+
+//TODO: add common files to common directory!
 
 #include "config.h"
 
@@ -26,6 +28,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [READS]...\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
+"  -s, --seed=N               the seed value used\n"
 //"  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
@@ -56,6 +59,9 @@ namespace opt {
 	/** The size of a k-mer. */
 	unsigned k;
 
+	/** The seed value to use for random number gen **/
+	unsigned s;
+
 //	/** Prefix for output files */
 //	static string outputPrefix;
 }
@@ -65,7 +71,7 @@ namespace opt {
 //
 //} g_count;
 
-static const char shortopts[] = "j:k:q:v";
+static const char shortopts[] = "j:k:s:q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -73,6 +79,7 @@ static const struct option longopts[] = {
 //	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "seed",             required_argument, NULL, 's' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -117,6 +124,8 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 's':
+			arg >> opt::s; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 'v':
