@@ -20,6 +20,12 @@ class BloomFilter : public virtual BloomFilterBase
 {
   public:
 
+	enum LoadType {
+		LOAD_OVERWRITE,
+		LOAD_UNION,
+		LOAD_INTERSECT
+	};
+
 	static const size_t IO_BUFFER_SIZE = 32 * 1024;
 
 	/** Constructor. */
@@ -71,7 +77,7 @@ class BloomFilter : public virtual BloomFilterBase
 
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
 	{
-		o.read(in, false);
+		o.read(in, LOAD_OVERWRITE);
 		return in;
 	}
 
@@ -106,8 +112,8 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Read the bloom filter from a stream */
-	void read(std::istream& in, bool
-			loadUnion = false, unsigned shrinkFactor = 1)
+	void read(std::istream& in, LoadType loadType = LOAD_OVERWRITE,
+			unsigned shrinkFactor = 1)
 	{
 		// read bloom filter file format version
 
@@ -150,8 +156,9 @@ class BloomFilter : public virtual BloomFilterBase
 
 		size /= shrinkFactor;
 
-		if(loadUnion && size != this->size()) {
-			std::cerr << "error: can't union bloom filters "
+		if((loadType == LOAD_UNION || loadType == LOAD_INTERSECT)
+			&& size != this->size()) {
+			std::cerr << "error: can't union/intersect two bloom filters "
 				"with different sizes.\n";
 			exit(EXIT_FAILURE);
 		} else {
@@ -160,7 +167,7 @@ class BloomFilter : public virtual BloomFilterBase
 
 		// read bit vector
 
-		if (!loadUnion)
+		if (loadType == LOAD_OVERWRITE)
 			m_array.reset();
 
 		size_t offset = startBitPos;
@@ -176,7 +183,16 @@ class BloomFilter : public virtual BloomFilterBase
 				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
 					bool bit = buf[k] & (1 << (7 - l));
 					size_t index = j % size;
-					m_array[index] |= bit;
+					switch (loadType)
+					{
+					case LOAD_OVERWRITE:
+					case LOAD_UNION:
+						m_array[index] |= bit;
+						break;
+					case LOAD_INTERSECT:
+						m_array[index] &= bit;
+						break;
+					}
 				}
 			}
 			i += readSize;

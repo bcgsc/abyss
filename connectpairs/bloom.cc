@@ -215,7 +215,9 @@ void initBloomFilterLevels(CountingBloomFilter& bf)
 				<< i + 1 << " of counting bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			bloom.read(*in, j > 0);
+			BloomFilter::LoadType loadType = (j > 0) ?
+				BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
+			bloom.read(*in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
@@ -398,7 +400,9 @@ int union_(int argc, char** argv)
 				<< path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-		bloom.read(*in, i > optind);
+		BloomFilter::LoadType loadType = (i > optind) ?
+			BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
+		bloom.read(*in, loadType);
 		assert_good(*in, path);
 		closeInputStream(in, path);
 	}

@@ -98,12 +98,54 @@ TEST(BloomFilter, union_)
 
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, true);
+	unionBloom.read(ss, BloomFilter::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);
 	EXPECT_TRUE(unionBloom[a]);
 	EXPECT_TRUE(unionBloom[b]);
+}
+
+TEST(BloomFilter, intersect)
+{
+	size_t bits = 100;
+	BloomFilter bloom1(bits);
+	BloomFilter bloom2(bits);
+
+	Kmer a("AGATGTGCTGCCGCCT");
+	Kmer b("TGGACAGCGTTACCTC");
+	Kmer c("AGCTAGCTAGCTAGCT");
+
+	bloom1.insert(a);
+	bloom2.insert(b);
+
+	bloom1.insert(c);
+	bloom2.insert(c);
+
+	EXPECT_TRUE(bloom1[a]);
+	EXPECT_TRUE(bloom1[c]);
+	EXPECT_FALSE(bloom1[b]);
+	EXPECT_FALSE(bloom2[a]);
+	EXPECT_TRUE(bloom2[b]);
+	EXPECT_TRUE(bloom2[c]);
+
+	BloomFilter intersectBloom;
+
+	stringstream ss;
+	ss << bloom1;
+	ASSERT_TRUE(ss.good());
+	ss << bloom2;
+	ASSERT_TRUE(ss.good());
+
+	ss >> intersectBloom;
+	ASSERT_TRUE(ss.good());
+	intersectBloom.read(ss, BloomFilter::LOAD_INTERSECT);
+	ASSERT_TRUE(ss.good());
+
+	EXPECT_EQ(intersectBloom.size(), bits);
+	EXPECT_FALSE(intersectBloom[a]);
+	EXPECT_FALSE(intersectBloom[b]);
+	EXPECT_TRUE(intersectBloom[c]);
 }
 
 TEST(CountingBloomFilter, base)
@@ -155,7 +197,7 @@ TEST(BloomFilter, shrink)
 	stringstream ss;
 	ss << big;
 	ASSERT_TRUE(ss.good());
-	small.read(ss, false, 2);
+	small.read(ss, BloomFilter::LOAD_OVERWRITE, 2);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(5U, small.size());
@@ -198,8 +240,7 @@ TEST(BloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	// true means load the union
-	unionBloom.read(ss, true);
+	unionBloom.read(ss, BloomFilter::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
@@ -243,8 +284,7 @@ TEST(CountingBloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	// true means load the union
-	unionBloom.read(ss, true);
+	unionBloom.read(ss, BloomFilter::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
