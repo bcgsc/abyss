@@ -85,8 +85,7 @@ mpirun=mpirun
 endif
 
 # Determine the path to the ABySS executables
-path?=$(shell if ! which ABYSS >/dev/null 2>/dev/null; then \
-	dirname $(MAKEFILE_LIST); fi)
+path?=$(shell dirname `which $(MAKEFILE_LIST)`)
 ifdef path
 PATH:=$(path):$(PATH)
 endif
@@ -270,6 +269,7 @@ Written by Shaun Jackman and Anthony Raymond.\n\
 Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
 
 versions: version
+	@echo PATH=$(PATH)
 	@ABYSS --version; echo
 	@-ABYSS-P --version; echo
 	@AdjList --version; echo
