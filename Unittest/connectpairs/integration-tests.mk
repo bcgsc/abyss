@@ -176,6 +176,20 @@ union_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	@echo '------------------'
 
 #------------------------------------------------------------
+# intersect_test
+#------------------------------------------------------------
+
+intersect_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -b$b $(tmpdir)/e$e_1.bloom $(tmpdir)/e$e_1.fq
+	$(bloom) intersect -v -k$k $(tmpdir)/e$e_intersect.bloom \
+		$(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.bloom
+	cmp $(tmpdir)/e$e_intersect.bloom $(tmpdir)/e$e_1.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
 # window_test
 #------------------------------------------------------------
 
