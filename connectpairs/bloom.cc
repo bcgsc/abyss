@@ -141,7 +141,7 @@ void parseGlobalOpts(int argc, char** argv)
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
-			cerr << USAGE_MESSAGE;
+			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
 			cerr << VERSION_MESSAGE;
@@ -484,14 +484,22 @@ int main(int argc, char** argv)
 	string command(argv[1]);
 	optind++;
 
-	if (command == "build")
+	if (command == "--help" || command == "-h") {
+		cout << USAGE_MESSAGE;
+		return EXIT_SUCCESS;
+	}
+	else if (command == "build") {
 		return build(argc, argv);
-	else if (command == "union")
+	}
+	else if (command == "union") {
 		return combine(argc, argv, BloomFilter::LOAD_UNION);
-	else if (command == "intersect")
+	}
+	else if (command == "intersect") {
 		return combine(argc, argv, BloomFilter::LOAD_INTERSECT);
-	else if (command == "info")
+	}
+	else if (command == "info") {
 		return info(argc, argv);
+	}
 
 	dieWithUsageError();
 }
