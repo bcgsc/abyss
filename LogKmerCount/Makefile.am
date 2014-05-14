@@ -11,4 +11,5 @@ logcounter_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a
 
-logcounter_SOURCES = logcounter.cc
+logcounter_SOURCES = logcounter.cc \
+	plc.h

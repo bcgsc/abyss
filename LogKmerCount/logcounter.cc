@@ -6,10 +6,17 @@
 //TODO: add common files to common directory!
 
 #include "config.h"
+#include "plc.h"
+
+#include "Common/IOUtil.h"
+#include "Common/Options.h"
+#include "Common/StringUtil.h"
+#include "DataLayer/Options.h"
 
 #include <cassert>
 #include <getopt.h>
 #include <iostream>
+#include <cstring>
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -93,21 +100,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-template <typename It>
-void loadBloomFilter(DBGBloom& g, It first, It last)
-{
-	if (opt::verbose > 0)
-		cerr << "Constructing the Bloom filter\n";
-	for (It it = first; it != last; ++it) {
-		std::string path = *it;
-		if (opt::verbose > 0)
-			cerr << "Reading `" << path << "'...\n";
-		g.open(path, opt::verbose >= 2);
-	}
-	if (opt::verbose > 0)
-		cerr << "Loaded " << num_vertices(g) << " k-mer\n";
-}
-
 int main(int argc, char** argv)
 {
 	bool die = false;
@@ -118,8 +110,8 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
-		  case 'b':
-			opt::bloomSize = SIToBytes(arg); break;
+//		  case 'b':
+//			opt::bloomSize = SIToBytes(arg); break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -149,16 +141,22 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind < 2) {
-		cerr << PROGRAM ": missing arguments\n";
-		die = true;
-	}
-
 	if (die) {
 		cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	//set seed
+	srand (opt::s);
+
+	//new plc
+	plc test;
+	for (unsigned i = 0; i < opt::k; ++i)
+	{
+		++test;
+	}
+	cout << test.toFloat() << endl;
 
 	assert_good(cout, "stdout");
 
