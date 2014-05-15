@@ -14,8 +14,8 @@ class CountingBloomFilter : public BloomFilterBase
 {
   public:
 
-	/** The maximum count of an element in this multiset. */
-	static const unsigned MAX_COUNT = 2;
+//	/** The maximum count of an element in this multiset. */
+//	static const unsigned MAX_COUNT = 2;
 
 	/** Constructor */
 	CountingBloomFilter() {}

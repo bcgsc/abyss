@@ -14,6 +14,8 @@
 using namespace std;
 
 static const unsigned mantissa = 1;
+static const uint8_t mantiMask = 0xFF >> (8 - mantissa);
+static const uint8_t addMask = 0x80 >> (7 - mantissa);
 
 class plc {
 public:
@@ -24,17 +26,13 @@ public:
 
 	void operator++()
 	{
-		//check if at max value
-		if (m_val > 0xFF) {
-			return;
-		}
 		//from 0-1
-		if (m_val <= mantissa) {
+		if (m_val <= mantiMask) {
 			++m_val;
 		} else {
 			//this shifts the first bit off and creates the value
 			//need to get the correct transition probability
-			unsigned shiftVal = 1 << ((m_val >> mantissa) - 1);
+			size_t shiftVal = 1 << ((m_val >> mantissa) - 1);
 			if (rand() % shiftVal == 0) {
 				++m_val;
 			}
@@ -43,11 +41,10 @@ public:
 
 	float toFloat()
 	{
-		if (m_val <= mantissa)
+		if (m_val <= mantiMask)
 			return float(m_val);
-		//the following needs to modified if mantissa is changed
-		return float((m_val & 0x01) | 0x02)
-				* pow(2.0, (m_val >> mantissa) - mantissa);
+		return float((m_val & mantiMask) | addMask)
+				* pow(2.0, (m_val >> mantissa) - 1);
 	}
 
 	/*

@@ -6,6 +6,8 @@
 
 static const uint8_t numericBitMask = 0x1F;
 static const unsigned mantissa = 1;
+static const uint8_t mantiMask = 0xFF >> (8 - mantissa);
+static const uint8_t addMask = 0x80 >> (7 - mantissa);
 
 class plc {
 public:
@@ -20,7 +22,7 @@ public:
 		uint8_t maskedVal = m_val & numericBitMask;
 
 		//check if at max value
-		if (maskedVal > 0x1F) {
+		if (maskedVal == 0x1F) {
 			return;
 		}
 
@@ -44,8 +46,8 @@ public:
 		if (maskedVal <= mantissa)
 			return float(maskedVal);
 		//the following needs to modified if mantissa is changed
-		return float((maskedVal & 0x01) | 0x02)
-				* pow(2.0, (maskedVal >> mantissa) - mantissa);
+		return float((maskedVal & mantiMask) | addMask)
+				* pow(2.0, (maskedVal >> mantissa) - 1);
 	}
 
 	/*
