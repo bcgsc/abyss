@@ -1,6 +1,9 @@
 /**
  * A minifloat like datatype for probablistic log counts (PLC) of elements
  * Contains unique functionalities for minimizing collision
+ * Mantissa = 1 bits
+ * Exponent = 4 bits
+ * ControlBits = 3 bits
  * Copyright 2014 bcgsc
  */
 

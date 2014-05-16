@@ -7,6 +7,7 @@
 
 #include "BloomFilter.h"
 #include <vector>
+#include <math.h>
 
 /** A counting Bloom filter. */
 template<class T>
@@ -23,90 +24,91 @@ class CountingBloomFilter : public BloomFilterBase
 	/** Constructor */
 	CountingBloomFilter(size_t n)
 	{
-		for (unsigned i = 0; i < MAX_COUNT; i++)
-			m_data.push_back(new BloomFilter(n));
+		m_data = new std::vector<T>(n);
 	}
 
 	/** Destructor */
 	virtual ~CountingBloomFilter()
 	{
-		typedef std::vector<BloomFilter*>::iterator Iterator;
-		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
-			assert(*i != NULL);
-			delete *i;
-		}
+		delete m_data;
 	}
 
-	/** Return the size of the bit array. */
+	/** Return the size (in discrete elements) of the bit array. */
 	size_t size() const
 	{
-		assert(m_data.back() != NULL);
-		return m_data.back()->size();
-	}
-
-	/** Return the number of elements with count >= MAX_COUNT. */
-	size_t popcount() const
-	{
-		assert(m_data.back() != NULL);
-		return m_data.back()->popcount();
+		return m_data.size();
 	}
 
 	/** Return the estimated false positive rate */
 	double FPR() const
 	{
-		return (double)popcount() / size();
+		return pow(1.0 - pow(1.0 - 1.0 / double(m_data.size()),
+				double(uniqueEntries) * hashNum),
+				double(hashNum));
 	}
 
-	/** Return whether the element with this index has count >=
-	 * MAX_COUNT.
+	/** Return the count of the single element (debugging purposes)
 	 */
 	bool operator[](size_t i) const
 	{
-		assert(m_data.back() != NULL);
-		return (*m_data.back())[i];
+		return m_data[i];
 	}
 
-	/** Return whether this element has count >= MAX_COUNT. */
-	bool operator[](const key_type& key) const
+	/** Return the count of this element. */
+	T operator[](const key_type& key) const
 	{
-		assert(m_data.back() != NULL);
-		return (*m_data.back())[hash(key) % m_data.back()->size()];
-	}
-
-	/** Add the object with the specified index to this multiset. */
-	virtual void insert(size_t index)
-	{
-		for (unsigned i = 0; i < MAX_COUNT; ++i) {
-			assert(m_data.at(i) != NULL);
-			if (!(*m_data[i])[index]) {
-				m_data[i]->insert(index);
+		T currentMin = m_data[hash(key, 0) % m_data.size()];
+		for (unsigned int i = 1; i < hashNum; ++i) {
+			T min = m_data[hash(key, i) % m_data.size()];
+			if (min < currentMin) {
+				currentMin = min;
+			}
+			if (0 == currentMin) {
 				break;
 			}
 		}
+		return currentMin;
 	}
 
-	/** Add the object to this counting multiset. */
+	/** Add the object with the specified index (debugging purposes). */
+	virtual void insert(size_t index)
+	{
+		++m_data[index];
+	}
+
+	/** Add the object to this counting multiset.
+	 *  If all values are the same update all
+	 *  If some values are larger only update smallest counts*/
 	virtual void insert(const key_type& key)
 	{
-		assert(m_data.back() != NULL);
-		insert(hash(key) % m_data.back()->size());
-	}
 
-	/** Get the Bloom filter for a given level */
-	BloomFilter& getBloomFilter(unsigned level)
-	{
-		assert(m_data.at(level) != NULL);
-		return *m_data.at(level);
+		//check for which elements to update
+		for (unsigned int i = 1; i < hashNum; ++i)
+		{
+			if()
+			insert(hash(key, i) % m_data.size());
+		}
+
+		//update only those elements
+
+		T currentMin = m_data[hash(key, 0) % m_data.size()];
+		for (unsigned int i = 1; i < hashNum; ++i)
+		{
+			if()
+			insert(hash(key, i) % m_data.size());
+		}
 	}
 
 	virtual void write(std::ostream& out) const
 	{
-		assert(m_data.back() != NULL);
-		out << *m_data.back();
+		assert(m_data != NULL);
+		out << *m_data;
 	}
 
   protected:
-	std::vector<BloomFilter*> m_data;
+	std::vector<T> m_data;
+	unsigned hashNum;
+	unsigned uniqueEntries;
 
 };
 
