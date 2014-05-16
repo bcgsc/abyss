@@ -12,24 +12,24 @@ reads and large genomes.
 Contents
 ========
 
-* [Quick Start]
-	* [Install ABySS on Debian or Ubuntu]
-	* [Install ABySS on Mac OS X]
-* [Dependencies]
-* [Compiling ABySS from source]
-* [Assembling a paired-end library]
-* [Assembling multiple libraries]
-* [Scaffolding]
-* [Rescaffolding with long sequences]
-* [Assembling a strand-specific RNA-Seq library]
-* [Optimizing the parameter k]
-* [Parallel processing]
-* [Running ABySS on a cluster]
-* [Assembly Parameters]
-* [ABySS programs]
-* [Publications]
-* [Mailing List]
-* [Authors]
+* [Quick Start](#quick-start)
+	* [Install ABySS on Debian or Ubuntu](#install-abyss-on-debian-or-ubuntu)
+	* [Install ABySS on Mac OS X](#install-abyss-on-mac-os-x)
+* [Dependencies](#dependencies)
+* [Compiling ABySS from source](#compiling-abyss-from-source)
+* [Assembling a paired-end library](#assembling-a-paired-end-library)
+* [Assembling multiple libraries](#assembling-multiple-libraries)
+* [Scaffolding](#scaffolding)
+* [Rescaffolding with long sequences](#rescaffolding-with-long-sequences)
+* [Assembling a strand-specific RNA-Seq library](#assembling-a-strand-specific-rna-seq-library)
+* [Optimizing the parameter k](#optimizing-the-parameter-k)
+* [Parallel processing](#parallel-processing)
+* [Running ABySS on a cluster](#running-abyss-on-a-cluster)
+* [Assembly Parameters](#assembly-parameters)
+* [ABySS programs](#abyss-programs)
+* [Publications](#publications)
+* [Mailing List](#mailing-list)
+* [Authors](#authors)
 
 Quick Start
 ===========
