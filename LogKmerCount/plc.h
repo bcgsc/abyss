@@ -43,8 +43,7 @@ public:
 	{
 		if (m_val <= mantiMask)
 			return float(m_val);
-		return float((m_val & mantiMask) | addMask)
-				* pow(2.0, (m_val >> mantissa) - 1);
+		return ldexp((m_val & mantiMask) | addMask, (m_val >> mantissa) - 1);
 	}
 
 	/*

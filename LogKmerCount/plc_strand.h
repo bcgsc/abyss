@@ -48,9 +48,7 @@ public:
 
 		if (maskedVal <= mantissa)
 			return float(maskedVal);
-		//the following needs to modified if mantissa is changed
-		return float((maskedVal & mantiMask) | addMask)
-				* pow(2.0, (maskedVal >> mantissa) - 1);
+		return ldexp((maskedVal & mantiMask) | addMask, (maskedVal >> mantissa) - 1);
 	}
 
 	/*

@@ -81,21 +81,17 @@ class CountingBloomFilter : public BloomFilterBase
 	 *  If some values are larger only update smallest counts*/
 	virtual void insert(const key_type& key)
 	{
-
 		//check for which elements to update
-		for (unsigned int i = 1; i < hashNum; ++i)
-		{
-			if()
-			insert(hash(key, i) % m_data.size());
-		}
+		T minEle = this[key];
 
 		//update only those elements
-
 		T currentMin = m_data[hash(key, 0) % m_data.size()];
-		for (unsigned int i = 1; i < hashNum; ++i)
-		{
-			if()
-			insert(hash(key, i) % m_data.size());
+		for (unsigned int i = 1; i < hashNum; ++i) {
+			size_t hashVal = hash(key, i) % m_data.size();
+			T val = m_data[hashVal];
+			if (minEle == val) {
+				insert(hashVal);
+			}
 		}
 	}
 

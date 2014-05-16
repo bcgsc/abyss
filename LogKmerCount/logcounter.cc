@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 	{
 		++test;
 	}
-	cout << test.toFloat() << endl;
+	cout << size_t(test.toFloat()) << endl;
 
 	assert_good(cout, "stdout");
 
