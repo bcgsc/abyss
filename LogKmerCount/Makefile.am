@@ -12,4 +12,6 @@ logcounter_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 logcounter_SOURCES = logcounter.cc \
+	BloomFilterBase.h \
+	CountingBloomFilter.h \
 	plc.h

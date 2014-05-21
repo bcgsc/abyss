@@ -6,6 +6,7 @@ libcommon_a_SOURCES = \
 	Algorithms.h \
 	Alignment.h \
 	BitUtil.h \
+	BloomFilterBase.h \
 	ConstString.h \
 	ContigID.h ContigID.cpp \
 	ContigNode.h \

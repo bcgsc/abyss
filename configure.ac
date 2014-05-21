@@ -236,6 +236,7 @@ AC_CONFIG_FILES([
 	FilterGraph/Makefile
 	GapFiller/Makefile
 	Unittest/Makefile
+	LogKmerCount/Makefile
 ])
 AC_OUTPUT
 

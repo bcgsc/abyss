@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "plc.h"
+#include "CountingBloomFilter.h"
 
 #include "Common/IOUtil.h"
 #include "Common/Options.h"
@@ -36,7 +37,8 @@ static const char USAGE_MESSAGE[] =
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -s, --seed=N               the seed value used\n"
-//"  -b, --bloom-size=N         size of bloom filter [500M]\n"
+"  -b, --bloom-size=N         size of bloom filter [500M]\n"
+"  -"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -60,8 +62,8 @@ namespace opt {
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
-//	/** The size of the bloom filter in bytes. */
-//	size_t bloomSize = 500 * 1024 * 1024;
+	/** The size of the bloom filter in bytes. */
+	size_t bloomSize = 500 * 1024 * 1024;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -73,9 +75,8 @@ namespace opt {
 //	static string outputPrefix;
 }
 
-/** Counters */
+///** Counters */
 //static struct {
-//
 //} g_count;
 
 static const char shortopts[] = "j:k:s:q:v";
@@ -83,7 +84,7 @@ static const char shortopts[] = "j:k:s:q:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-//	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "seed",             required_argument, NULL, 's' },
@@ -110,8 +111,8 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
-//		  case 'b':
-//			opt::bloomSize = SIToBytes(arg); break;
+		  case 'b':
+			opt::bloomSize = SIToBytes(arg); break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -147,18 +148,32 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
+
 	//set seed
 	srand (opt::s);
 
-	//new plc
-	plc test;
-	for (unsigned i = 0; i < opt::k; ++i)
-	{
-		++test;
-	}
-	cout << size_t(test.toFloat()) << endl;
+	Kmer::setLength(opt::k);
 
-	assert_good(cout, "stdout");
+	assert(opt::bloomSize > 0);
+
+	BloomFilterBase* bloom = NULL;
+
+	//size determined by
+	bloom = new CountingBloomFilter<plc>(opt::bloomSize);
+	for (int i = optind; i < argc; i++)
+		bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+
+	//RUN TESTs (REMOVE/MOVE ME LATER)
+
+	const Kmer testSeq = "CTGGCCCTTTATGCGCCAAACCGTT";
+
+	cout << bloom[testSeq] << endl;
+
+	//get counts for known added sequence
 
 	return 0;
 }

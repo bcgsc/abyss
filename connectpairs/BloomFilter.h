@@ -5,8 +5,7 @@
 #ifndef BLOOMFILTER_H
 #define BLOOMFILTER_H 1
 
-#include "BloomFilterBase.h"
-#include "Common/HashFunction.h"
+#include "Common/BloomFilterBase.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
 #include <algorithm>

@@ -1,10 +1,10 @@
 #ifndef BLOOMFILTERBASE_H
 #define BLOOMFILTERBASE_H
 
-#include "Common/Kmer.h"
-#include "Common/HashFunction.h"
-#include "Common/Uncompress.h"
-#include "DataLayer/FastaReader.h"
+#include "Kmer.h"
+#include "HashFunction.h"
+#include "Uncompress.h"
+#include "FastaReader.h"
 #include <iostream>
 
 class BloomFilterBase
@@ -44,6 +44,17 @@ public:
 		key_type copy(key);
 		copy.reverseComplement();
 		return hashmem(&copy, sizeof copy);
+	}
+
+	/** Return the hash value of this object given seed. */
+	static size_t hash(const key_type& key, size_t seed)
+	{
+		if (key.isCanonical())
+			return hashmem(&key, sizeof key, seed);
+
+		key_type copy(key);
+		copy.reverseComplement();
+		return hashmem(&copy, sizeof copy, seed);
 	}
 
 	/** Operator for writing the bloom filter to a stream */

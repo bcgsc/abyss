@@ -5,7 +5,7 @@
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
 
-#include "BloomFilter.h"
+#include "BloomFilterBase.h"
 #include <vector>
 #include <math.h>
 
@@ -14,9 +14,6 @@ template<class T>
 class CountingBloomFilter : public BloomFilterBase
 {
   public:
-
-//	/** The maximum count of an element in this multiset. */
-//	static const unsigned MAX_COUNT = 2;
 
 	/** Constructor */
 	CountingBloomFilter() {}
@@ -37,6 +34,12 @@ class CountingBloomFilter : public BloomFilterBase
 	size_t size() const
 	{
 		return m_data.size();
+	}
+
+	/** Return the number of elements with count >= MAX_COUNT. */
+	size_t popcount() const
+	{
+		return uniqueEntries;
 	}
 
 	/** Return the estimated false positive rate */
@@ -93,6 +96,10 @@ class CountingBloomFilter : public BloomFilterBase
 				insert(hashVal);
 			}
 		}
+		if(minEle == 0)
+			++uniqueEntries;
+		else
+			++replicateEntries;
 	}
 
 	virtual void write(std::ostream& out) const
@@ -101,10 +108,27 @@ class CountingBloomFilter : public BloomFilterBase
 		out << *m_data;
 	}
 
+	//overloaded from BloomFilterBase
+	//need to impliment tracking of directionality
+//	void loadSeq(unsigned k, const std::string& seq)
+//	{
+//		if (seq.size() < k)
+//			return;
+//		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+//			std::string kmer = seq.substr(i, k);
+//			size_t pos = kmer.find_last_not_of("ACGTacgt");
+//			if (pos == std::string::npos) {
+//				insert(Kmer(kmer));
+//			} else
+//				i += pos;
+//		}
+//	}
+
   protected:
 	std::vector<T> m_data;
 	unsigned hashNum;
-	unsigned uniqueEntries;
+	size_t uniqueEntries;
+	size_t replicateEntries;
 
 };
 
