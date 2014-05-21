@@ -8,7 +8,7 @@
  */
 
 static const uint8_t numericBitMask = 0x1F;
-static const unsigned mantissa = 1;
+static const unsigned mantissa = 2;
 static const uint8_t mantiMask = 0xFF >> (8 - mantissa);
 static const uint8_t addMask = 0x80 >> (7 - mantissa);
 
@@ -48,7 +48,8 @@ public:
 
 		if (maskedVal <= mantissa)
 			return float(maskedVal);
-		return ldexp((maskedVal & mantiMask) | addMask, (maskedVal >> mantissa) - 1);
+		return ldexp((maskedVal & mantiMask) | addMask,
+				(maskedVal >> mantissa) - 1);
 	}
 
 	/*
@@ -57,6 +58,16 @@ public:
 	uint8_t rawValue()
 	{
 		return m_val;
+	}
+
+	void setFWBit()
+	{
+		m_val &= 0x40;
+	}
+
+	void setRVBit()
+	{
+		m_val &= 0x80;
 	}
 
 private:

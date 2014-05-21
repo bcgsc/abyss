@@ -13,7 +13,7 @@
 
 using namespace std;
 
-static const unsigned mantissa = 1;
+static const unsigned mantissa = 2;
 static const uint8_t mantiMask = 0xFF >> (8 - mantissa);
 static const uint8_t addMask = 0x80 >> (7 - mantissa);
 
