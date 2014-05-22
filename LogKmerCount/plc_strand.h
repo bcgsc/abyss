@@ -1,14 +1,14 @@
 /**
  * A minifloat like datatype for probablistic log counts (PLC) of elements
  * Contains unique functionalities for minimizing collision
- * Mantissa = 1 bits
+ * Mantissa = 3 bits
  * Exponent = 4 bits
- * ControlBits = 3 bits
+ * ControlBit = 1 bits
  * Copyright 2014 bcgsc
  */
 
-static const uint8_t numericBitMask = 0x1F;
-static const unsigned mantissa = 2;
+static const uint8_t numericBitMask = 0x7F;
+static const unsigned mantissa = 3;
 static const uint8_t mantiMask = 0xFF >> (8 - mantissa);
 static const uint8_t addMask = 0x80 >> (7 - mantissa);
 
@@ -60,12 +60,7 @@ public:
 		return m_val;
 	}
 
-	void setFWBit()
-	{
-		m_val &= 0x40;
-	}
-
-	void setRVBit()
+	void setStrandBit()
 	{
 		m_val &= 0x80;
 	}
