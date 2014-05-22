@@ -25,7 +25,7 @@ public:
 		uint8_t maskedVal = m_val & numericBitMask;
 
 		//check if at max value
-		if (maskedVal == 0x1F) {
+		if (maskedVal == numericBitMask) {
 			return;
 		}
 
