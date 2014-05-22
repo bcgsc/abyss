@@ -15,12 +15,13 @@
 #include <boost/dynamic_bitset.hpp>
 #include <algorithm>
 
+#define BLOOM_VERSION 2
+#define IO_BUFFER_SIZE (unsigned long)(32*1024)
+
 /** A Bloom filter. */
 class BloomFilter : public virtual BloomFilterBase
 {
   public:
-
-	static const size_t IO_BUFFER_SIZE = 32 * 1024;
 
 	/** Constructor. */
 	BloomFilter() { }
@@ -212,7 +213,6 @@ class BloomFilter : public virtual BloomFilterBase
   private:
 
 	boost::dynamic_bitset<> m_array;
-	static const unsigned BLOOM_VERSION = 2;
 };
 
 #endif
