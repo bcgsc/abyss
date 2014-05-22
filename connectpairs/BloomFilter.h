@@ -15,8 +15,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <algorithm>
 
-#define BLOOM_VERSION 2
-#define IO_BUFFER_SIZE (unsigned long)(32*1024)
+static const unsigned BLOOM_VERSION = 2;
+static const unsigned long IO_BUFFER_SIZE = 32*1024;
 
 /** A Bloom filter. */
 class BloomFilter : public virtual BloomFilterBase
