@@ -1,10 +1,10 @@
 #ifndef COUNTINGBLOOMFILTERWINDOW_H
 #define COUNTINGBLOOMFILTERWINDOW_H 1
 
-#include "connectpairs/CountingBloomFilter.h"
+#include "connectpairs/CascadingBloomFilter.h"
 #include <vector>
 
-class CountingBloomFilterWindow : public CountingBloomFilter
+class CascadingBloomFilterWindow : public CascadingBloomFilter
 {
   public:
 
@@ -14,7 +14,7 @@ class CountingBloomFilterWindow : public CountingBloomFilter
 	 * @param startBitPos index of first bit in the window
 	 * @param endBitPos index of last bit in the window
 	 */
-	CountingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos)
+	CascadingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos)
 		: m_fullBloomSize(fullBloomSize)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; i++)

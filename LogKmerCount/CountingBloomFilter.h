@@ -5,12 +5,12 @@
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
 
-#include "BloomFilterBase.h"
+#include "Common/BloomFilterBase.h"
 #include <vector>
 #include <math.h>
 
 /** A counting Bloom filter. */
-template<class T>
+template<typename NumericType>
 class CountingBloomFilter : public BloomFilterBase
 {
   public:
@@ -21,7 +21,7 @@ class CountingBloomFilter : public BloomFilterBase
 	/** Constructor */
 	CountingBloomFilter(size_t n)
 	{
-		m_data = new std::vector<T>(n);
+		m_data = new std::vector<NumericType>(n);
 	}
 
 	/** Destructor */
@@ -52,17 +52,17 @@ class CountingBloomFilter : public BloomFilterBase
 
 	/** Return the count of the single element (debugging purposes)
 	 */
-	bool operator[](size_t i) const
+	NumericType operator[](size_t i) const
 	{
 		return m_data[i];
 	}
 
 	/** Return the count of this element. */
-	T operator[](const key_type& key) const
+	NumericType operator[](const key_type& key) const
 	{
-		T currentMin = m_data[hash(key, 0) % m_data.size()];
+		NumericType currentMin = m_data[hash(key, 0) % m_data.size()];
 		for (unsigned int i = 1; i < hashNum; ++i) {
-			T min = m_data[hash(key, i) % m_data.size()];
+			NumericType min = m_data[hash(key, i) % m_data.size()];
 			if (min < currentMin) {
 				currentMin = min;
 			}
@@ -85,13 +85,13 @@ class CountingBloomFilter : public BloomFilterBase
 	virtual void insert(const key_type& key)
 	{
 		//check for which elements to update
-		T minEle = this[key];
+		NumericType minEle = this[key];
 
 		//update only those elements
-		T currentMin = m_data[hash(key, 0) % m_data.size()];
+		NumericType currentMin = m_data[hash(key, 0) % m_data.size()];
 		for (unsigned int i = 1; i < hashNum; ++i) {
 			size_t hashVal = hash(key, i) % m_data.size();
-			T val = m_data[hashVal];
+			NumericType val = m_data[hashVal];
 			if (minEle == val) {
 				insert(hashVal);
 			}

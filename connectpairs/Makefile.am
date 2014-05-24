@@ -13,9 +13,7 @@ abyss_connectpairs_LDADD = \
 
 abyss_connectpairs_SOURCES = connectpairs.cc \
 	BloomFilter.h \
-	CountingBloomFilter.h \
-	DBGBloom.h \
-	DBGBloomAlgorithms.h \
+	CascadingBloomFilter.h \
 	connectpairs.h
 
 abyss_bloom_CPPFLAGS = -I$(top_srcdir) \
@@ -31,4 +29,4 @@ abyss_bloom_LDADD = \
 
 abyss_bloom_SOURCES = bloom.cc \
 	BloomFilter.h \
-	CountingBloomFilter.h
+	CascadingBloomFilter.h

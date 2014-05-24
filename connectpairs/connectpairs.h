@@ -1,7 +1,8 @@
 #ifndef CONNECTPAIRS_H
 #define CONNECTPAIRS_H
 
-#include "connectpairs/DBGBloomAlgorithms.h"
+#include "Common/DBGBloomAlgorithms.h"
+#include "connectpairs/CascadingBloomFilter.h"
 #include "DataLayer/FastaInterleave.h"
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
@@ -192,7 +193,7 @@ static inline ConnectPairsResult connectPairs(
 	unsigned k,
 	const FastaRecord& read1,
 	const FastaRecord& read2,
-	const DBGBloom& g,
+	const DBGBloom<CascadingBloomFilter>& g,
 	const ConnectPairsParams& params)
 {
 	ConnectPairsResult result;
@@ -266,7 +267,7 @@ static inline ConnectPairsResult connectPairs(
 				pRead1->seq.length() - k + 1 - startKmerPos,
 				pRead2->seq.length() - k + 1 - goalKmerPos));
 
-	ConstrainedBidiBFSVisitor<DBGBloom> visitor(g, startKmer, goalKmer,
+	ConstrainedBidiBFSVisitor<DBGBloom<CascadingBloomFilter> > visitor(g, startKmer, goalKmer,
 			params.maxPaths, minPathLen, maxPathLen, params.maxBranches,
 			params.memLimit);
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);

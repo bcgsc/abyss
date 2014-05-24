@@ -8,9 +8,9 @@
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
 #include "connectpairs/BloomFilter.h"
-#include "connectpairs/CountingBloomFilter.h"
+#include "connectpairs/CascadingBloomFilter.h"
 #include "connectpairs/BloomFilterWindow.h"
-#include "connectpairs/CountingBloomFilterWindow.h"
+#include "connectpairs/CascadingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>
@@ -24,8 +24,8 @@ using namespace std;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond and\n"
-"Ben Vandervalk.\n"
+"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond, \n"
+"Ben Vandervalk, and Justin Chu.\n"
 "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
@@ -201,7 +201,7 @@ static inline void closeOutputStream(ostream* out, const string& path)
 	delete ofs;
 }
 
-void initBloomFilterLevels(CountingBloomFilter& bf)
+void initBloomFilterLevels(CascadingBloomFilter& bf)
 {
 	assert(opt::levels >= 2);
 	assert(opt::levelInitPaths.size() <= opt::levels);
@@ -322,8 +322,8 @@ int build(int argc, char** argv)
 		if (opt::levels == 1)
 			bloom = new BloomFilter(bits);
 		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilter(bits);
+			CascadingBloomFilter* countingBloom =
+				new CascadingBloomFilter(bits);
 			initBloomFilterLevels(*countingBloom);
 			bloom = countingBloom;
 		}
@@ -342,8 +342,8 @@ int build(int argc, char** argv)
 		if (opt::levels == 1)
 			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
 		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
+			CascadingBloomFilter* countingBloom =
+				new CascadingBloomFilterWindow(bits, startBitPos, endBitPos);
 			initBloomFilterLevels(*countingBloom);
 			bloom = countingBloom;
 		}

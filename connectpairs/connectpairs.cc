@@ -6,8 +6,9 @@
 #include "config.h"
 
 #include "connectpairs.h"
-#include "DBGBloom.h"
-#include "DBGBloomAlgorithms.h"
+#include "CascadingBloomFilter.h"
+#include "Common/DBGBloom.h"
+#include "Common/DBGBloomAlgorithms.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
@@ -45,8 +46,8 @@ using namespace seqan;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond and\n"
-"Ben Vandervalk.\n"
+"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond, \n"
+"Ben Vandervalk and Justin Chu.\n"
 "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
 
@@ -276,7 +277,7 @@ static void seqanTests()
 #endif
 
 /** Connect a read pair. */
-static void connectPair(const DBGBloom& g,
+static void connectPair(const DBGBloom<CascadingBloomFilter>& g,
 	const FastqRecord& read1,
 	const FastqRecord& read2,
 	const ConnectPairsParams& params,
@@ -404,7 +405,7 @@ static void connectPair(const DBGBloom& g,
 
 /** Connect read pairs. */
 template <typename FastaStream>
-static void connectPairs(const DBGBloom& g,
+static void connectPairs(const DBGBloom<CascadingBloomFilter>& g,
 	FastaStream& in,
 	const ConnectPairsParams& params,
 	ofstream& mergedStream,
@@ -551,7 +552,7 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	BloomFilterBase* bloom = NULL;
+	CascadingBloomFilter* bloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
 
@@ -574,7 +575,7 @@ int main(int argc, char** argv)
 		// because counting bloom filter requires twice as
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
-		bloom = new CountingBloomFilter(bits);
+		bloom = new CascadingBloomFilter(bits);
 		for (int i = optind; i < argc; i++)
 			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
 
@@ -605,7 +606,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom g(*bloom);
+	DBGBloom<CascadingBloomFilter> g(*bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");

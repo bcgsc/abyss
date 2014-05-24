@@ -1,5 +1,5 @@
 /**
- * A counting Bloom filter
+ * A cascading Bloom filter
  * Copyright 2013 Shaun Jackman
  */
 #ifndef COUNTINGBLOOMFILTER_H
@@ -8,8 +8,8 @@
 #include "BloomFilter.h"
 #include <vector>
 
-/** A counting Bloom filter. */
-class CountingBloomFilter : public BloomFilterBase
+/** A cascading Bloom filter. */
+class CascadingBloomFilter : public BloomFilterBase
 {
   public:
 
@@ -17,10 +17,10 @@ class CountingBloomFilter : public BloomFilterBase
 	static const unsigned MAX_COUNT = 2;
 
 	/** Constructor */
-	CountingBloomFilter() {}
+	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CountingBloomFilter(size_t n)
+	CascadingBloomFilter(size_t n)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; i++)
 			m_data.push_back(new BloomFilter(n));

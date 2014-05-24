@@ -28,8 +28,9 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 	return seq;
 }
 
+template <typename Graph>
 static inline unsigned getStartKmerPos(unsigned k,
-	const FastaRecord& read, const DBGBloom& g,
+	const FastaRecord& read, const Graph& g,
 	bool rc = false, bool longSearch = false)
 {
 	if (read.seq.size() < k)
@@ -52,7 +53,7 @@ static inline unsigned getStartKmerPos(unsigned k,
 		Kmer kmer(kmerStr);
 		if (rc)
 			kmer.reverseComplement();
-		if (graph_traits<DBGBloom>::vertex_exists(kmer, g)) {
+		if (graph_traits<Graph>::vertex_exists(kmer, g)) {
 			foundMatch = true;
 			match[i] = true;
 		}
@@ -110,8 +111,9 @@ public:
 
 };
 
+template <typename Graph>
 static inline bool correctSingleBaseError(
-		const DBGBloom& g,
+		const Graph& g,
 		unsigned k,
 		FastaRecord& read,
 		size_t& correctedPos,
@@ -140,7 +142,7 @@ static inline bool correctSingleBaseError(
 			overlapStr[changePos] = bases[j];
 			size_t score = 0;
 			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end(); it++) {
-				if (graph_traits<DBGBloom>::vertex_exists(*it, g))
+				if (graph_traits<Graph>::vertex_exists(*it, g))
 					score++;
 			}
 			if (score > minScore)

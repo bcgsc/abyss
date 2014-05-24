@@ -23,9 +23,6 @@ public:
 	/** Add the object to this set. */
 	virtual void insert(const key_type& key) = 0;
 
-	/** Return whether the object is present in this set. */
-	virtual bool operator[](const key_type& key) const = 0;
-
 	/** Return the size of the bit array. */
 	virtual size_t size() const = 0;
 
