@@ -219,7 +219,6 @@ struct graph_traits< HashGraph<VertexType> > {
 
 			vertex_iterator& operator ++()
 			{
-				vertex_descriptor v = m_it->first;
 				++m_it;
 				return *this;
 			}
@@ -458,6 +457,7 @@ void put(vertex_removed_t tag, HashGraph<VertexType>& g,
 	SUPPRESS_UNUSED_WARNING(tag);
 	SUPPRESS_UNUSED_WARNING(g);
 	SUPPRESS_UNUSED_WARNING(v);
+	SUPPRESS_UNUSED_WARNING(flag);
 	return;
 }
 

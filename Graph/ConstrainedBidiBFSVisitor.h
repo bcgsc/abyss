@@ -21,9 +21,6 @@ class ConstrainedBidiBFSVisitor : public BidirectionalBFSVisitor<G>
 
 protected:
 
-	static const float MEM_CHECK_FREQ = 0.001;
-	static const size_t MEM_COUNTER_ROLLOVER = 1 / 0.001;
-
 	typedef typename boost::graph_traits<G>::vertex_descriptor V;
 	typedef typename boost::graph_traits<G>::edge_descriptor E;
 	typedef unsigned short depth_t;
@@ -315,6 +312,7 @@ protected:
 
 	BFSVisitorResult checkMemLimit()
 	{
+		const size_t MEM_COUNTER_ROLLOVER = 1 / 0.001;
 		m_memCheckCounter++;
 		if (m_memCheckCounter >= MEM_COUNTER_ROLLOVER) {
 			m_memCheckCounter = 0;
