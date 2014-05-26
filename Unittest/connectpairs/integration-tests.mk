@@ -80,7 +80,7 @@ $(tmpdir):
 	mkdir -p $(tmpdir)
 
 $(tmpdir)/test_reference.fa: | $(tmpdir)
-	curl https://raw.github.com/dzerbino/velvet/master/data/test_reference.fa \
+	curl -L https://raw.github.com/dzerbino/velvet/master/data/test_reference.fa \
 		|abyss-tofastq --fasta >$@
 
 $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
