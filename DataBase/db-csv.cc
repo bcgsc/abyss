@@ -1,8 +1,8 @@
 /**
- * Export DB table to CSV
+ * Populate database and export to CSV
  */
+
 #include "DB.h"
-#include <sstream>
 using namespace std;
 
 static const char USAGE_MESSAGE[] =
@@ -18,7 +18,7 @@ template <typename D>
 static bool existTable (D& db, const string& tablename)
 {
 	bool exists = false;
-	DB::db_mat V;
+	DB::dbVec V;
 	V = db.readSqlToVec ("select name from sqlite_master where type='table';");
 	unsigned i = 0;
 	while (i<V.size()) {
@@ -37,7 +37,7 @@ static string createCSV (D& db, const string& tablename, const char* csvname)
 	ofstream csvfile(csvname);
 	stringstream pStream, sStream, msg;
 	string pstr, sstr;
-	DB::db_mat headers, values;
+	DB::dbVec headers, values;
 
 	pStream << "pragma table_info (" << tablename << ");";
 	pstr = pStream.str();
@@ -70,7 +70,7 @@ int main (int argc, char** argv)
 		cout << USAGE_MESSAGE;
 		exit(EXIT_FAILURE);
 	} else {
-		DB db (argv[1], 0);
+		DB db (argv[1]);
 		string tablename (db.getProperTableName (argv[2]));
 		if (!existTable (db, tablename)) {
 			cout << "Table " << "'" << argv[2] << "' doesn't exist in " << argv[1] << "." << endl;

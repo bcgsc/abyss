@@ -27,4 +27,6 @@ then
 		echo -e "\n\n" >> $2
 		rm -f $table
 	done
+	echo -e "Done! Check ${2} now."
+	exit 0
 fi

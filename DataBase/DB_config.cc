@@ -1,12 +1,15 @@
-// DB_config.cc
+/**
+ * Prompt for metadata.
+ */
 #include <iostream>
 #include <fstream>
 #include <string>
 using namespace std;
 
-int main () {
+int main ()
+{
 	string species, strain, library;
-	ofstream outputFile("db.txt");
+	ofstream outputFile("db.txt"); // temporary repository until the end of run
 
 	cout << "Enter a species name: ";
 	cin >> species;

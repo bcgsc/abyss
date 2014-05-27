@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include <map>
 
 namespace opt {
 	extern std::string url;
