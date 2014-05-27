@@ -38,11 +38,18 @@ class DB {
 		closeDB ();
 	}
 
-	bool query (const std::string& s) {
-		char* errMsg = 0;
+	/** Manually toggle foreign_keys option on at each transaction.
+	  * This limitation is specific to sqlite version ~3.
+	  */
+	std::string activeForeignKey (const std::string& s) {
 		std::string s_pragma("pragma foreign_keys=on; ");
-		s_pragma += s;
-		const char* statement = s_pragma.c_str();
+		return s_pragma += s;
+	}
+	
+	bool query (const std::string& s) {
+		char* errMsg = 0;	
+		std::string new_s (activeForeignKey(s));	
+		const char* statement = new_s.c_str();
 		int rc = sqlite3_exec (db, statement, callback, 0, &errMsg);
 		if (rc != SQLITE_OK) {
 			std::cerr << "SQL error: " << errMsg << std::endl;
