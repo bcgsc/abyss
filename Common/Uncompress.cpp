@@ -51,6 +51,7 @@ static const char* zcatExec(const string& path)
 		endsWith(path, ".jfq") ? "jellyfish qdump" :
 		endsWith(path, ".sra") ? "fastq-dump -Z --split-spot" :
 		endsWith(path, ".url") ? "wget -O- -i" :
+	        endsWith(path, ".fqz") ? "fqz_comp -d" :
 		NULL;
 }
 
