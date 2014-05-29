@@ -5,20 +5,18 @@
 #ifndef BLOOMFILTER_H
 #define BLOOMFILTER_H 1
 
-#include "Common/BloomFilterBase.h"
+#include "Bloom/Bloom.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
-#include <algorithm>
 
 /** A Bloom filter. */
-class BloomFilter : public virtual BloomFilterBase
+class BloomFilter
 {
   public:
-
 	static const size_t IO_BUFFER_SIZE = 32 * 1024;
 
 	/** Constructor. */
@@ -43,29 +41,29 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Return whether the specified bit is set. */
-	virtual bool operator[](size_t i) const
+	bool operator[](size_t i) const
 	{
 		assert(i < m_array.size());
 		return m_array[i];
 	}
 
 	/** Return whether the object is present in this set. */
-	virtual bool operator[](const key_type& key) const
+	bool operator[](const Bloom::key_type& key) const
 	{
-		return m_array[hash(key) % m_array.size()];
+		return m_array[Bloom::hash(key) % m_array.size()];
 	}
 
 	/** Add the object with the specified index to this set. */
-	virtual void insert(size_t index)
+	void insert(size_t index)
 	{
 		assert(index < m_array.size());
 		m_array[index] = true;
 	}
 
 	/** Add the object to this set. */
-	virtual void insert(const key_type& key)
+	void insert(const Bloom::key_type& key)
 	{
-		m_array[hash(key) % m_array.size()] = true;
+		m_array[Bloom::hash(key) % m_array.size()] = true;
 	}
 
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
@@ -75,7 +73,7 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
 	/** Write the bloom filter to a stream */
-	virtual void write(std::ostream& out) const
+	void write(std::ostream& out) const
 	{
 		out << BLOOM_VERSION << '\n';
 		assert(out);
@@ -183,9 +181,47 @@ class BloomFilter : public virtual BloomFilterBase
 
 	}
 
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
+	}
+
+	void loadFile(unsigned k, const std::string& path, bool verbose = false)
+	{
+		assert(!path.empty());
+		if (verbose)
+			std::cerr << "Reading `" << path << "'...\n";
+		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
+		uint64_t count = 0;
+		for (std::string seq; in >> seq; count++) {
+			if (verbose && count % LOAD_PROGRESS_STEP == 0)
+				std::cerr << "Loaded " << count << " reads into bloom filter\n";
+			loadSeq(k, seq);
+		}
+		assert(in.eof());
+		if (verbose)
+			std::cerr << "Loaded " << count << " reads into bloom filter\n";
+	}
+
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	{
+		o.write(out);
+		return out;
+	}
+
   protected:
 
-	virtual void writeBloomDimensions(std::ostream& out) const
+	void writeBloomDimensions(std::ostream& out) const
 	{
 		out << size()
 			<< '\t' << 0
@@ -193,7 +229,7 @@ class BloomFilter : public virtual BloomFilterBase
 			<< '\n';
 	}
 
-	virtual void readBloomDimensions(std::istream& in,
+	void readBloomDimensions(std::istream& in,
 		size_t& size, size_t& startBitPos,
 		size_t& endBitPos)
 	{
@@ -209,9 +245,14 @@ class BloomFilter : public virtual BloomFilterBase
 	}
 
   private:
-
+//	Bloom bloom;
 	boost::dynamic_bitset<> m_array;
 	static const unsigned BLOOM_VERSION = 2;
+
+  protected:
+
+    static const unsigned LOAD_PROGRESS_STEP = 100000;
+
 };
 
 #endif

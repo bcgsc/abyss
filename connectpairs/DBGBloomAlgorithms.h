@@ -15,7 +15,6 @@
 #include "Graph/Path.h"
 #include <climits>
 #include <algorithm> // for std::max
-
 #define NO_MATCH UINT_MAX
 
 static inline Sequence pathToSeq(Path<Kmer> path)
@@ -28,10 +27,9 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 	return seq;
 }
 
-template <typename Graph>
-static inline unsigned getStartKmerPos(unsigned k,
-	const FastaRecord& read, const Graph& g,
-	bool rc = false, bool longSearch = false)
+template<typename Graph>
+static inline unsigned getStartKmerPos(unsigned k, const FastaRecord& read,
+		const Graph& g, bool rc = false, bool longSearch = false)
 {
 	if (read.seq.size() < k)
 		return NO_MATCH;
@@ -44,7 +42,7 @@ static inline unsigned getStartKmerPos(unsigned k,
 	std::vector<bool> match(seq.length() - k + 2, false);
 	bool foundMatch = false;
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
-		std::string kmerStr = seq.substr(i,k);
+		std::string kmerStr = seq.substr(i, k);
 		size_t pos = kmerStr.find_first_not_of("AGCTagct");
 		if (pos != std::string::npos) {
 			i += pos;
@@ -53,7 +51,7 @@ static inline unsigned getStartKmerPos(unsigned k,
 		Kmer kmer(kmerStr);
 		if (rc)
 			kmer.reverseComplement();
-		if (graph_traits<Graph>::vertex_exists(kmer, g)) {
+		if (vertex_exists(kmer, g)) {
 			foundMatch = true;
 			match[i] = true;
 		}
@@ -78,8 +76,9 @@ static inline unsigned getStartKmerPos(unsigned k,
 		} else {
 			// Note: match has an extra false element at the end,
 			// so this else block will get executed at least once.
-			if ((longSearch && matchLength > maxMatchLength) ||
-				(!longSearch && matchLength >= maxMatchLength)) {
+			if ((longSearch && matchLength > maxMatchLength)
+					|| (!longSearch && matchLength >= maxMatchLength))
+			{
 				maxMatchPos = matchPos;
 				maxMatchLength = matchLength;
 			}
@@ -95,8 +94,7 @@ static inline unsigned getStartKmerPos(unsigned k,
 		return maxMatchPos + maxMatchLength - 1;
 }
 
-struct BaseChangeScore
-{
+struct BaseChangeScore {
 
 	size_t m_pos;
 	char m_base;
@@ -104,20 +102,17 @@ struct BaseChangeScore
 
 public:
 
-	BaseChangeScore() : m_pos(0), m_base('N'), m_score(0) { }
+	BaseChangeScore() :
+			m_pos(0), m_base('N'), m_score(0){}
 
-	BaseChangeScore(size_t pos, char base, unsigned score)
-		: m_pos(pos), m_base(base), m_score(score) { }
+	BaseChangeScore(size_t pos, char base, unsigned score) :
+			m_pos(pos), m_base(base), m_score(score){}
 
 };
 
-template <typename Graph>
-static inline bool correctSingleBaseError(
-		const Graph& g,
-		unsigned k,
-		FastaRecord& read,
-		size_t& correctedPos,
-		bool rc = false)
+template<typename Graph>
+static inline bool correctSingleBaseError(const Graph& g, unsigned k,
+		FastaRecord& read, size_t& correctedPos, bool rc = false)
 {
 	if (read.seq.length() < k)
 		return false;
@@ -130,10 +125,11 @@ static inline bool correctSingleBaseError(
 
 	for (size_t i = 0; i < read.seq.length(); i++) {
 
-		size_t overlapStart = std::max((int)(i - k + 1), 0);
+		size_t overlapStart = std::max((int) (i - k + 1), 0);
 		size_t overlapEnd = std::min(i + k - 1, read.seq.length() - 1);
 		assert(overlapStart < overlapEnd);
-		Sequence overlapStr = read.seq.substr(overlapStart, overlapEnd - overlapStart + 1);
+		Sequence overlapStr = read.seq.substr(overlapStart,
+				overlapEnd - overlapStart + 1);
 		size_t changePos = i - overlapStart;
 
 		for (size_t j = 0; j < bases.size(); j++) {
@@ -141,8 +137,10 @@ static inline bool correctSingleBaseError(
 				continue;
 			overlapStr[changePos] = bases[j];
 			size_t score = 0;
-			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end(); it++) {
-				if (graph_traits<Graph>::vertex_exists(*it, g))
+			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end();
+					it++)
+			{
+				if (vertex_exists(*it, g))
 					score++;
 			}
 			if (score > minScore)
@@ -171,8 +169,8 @@ static inline bool correctSingleBaseError(
 
 /** Uppercase only bases that are present in original reads.
  *  @return number of mis-matching bases. */
-static inline unsigned maskNew(const FastaRecord& read1, const FastaRecord& read2,
-		FastaRecord& merged, int mask = 0)
+static inline unsigned maskNew(const FastaRecord& read1,
+		const FastaRecord& read2, FastaRecord& merged, int mask = 0)
 {
 	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
 	if (mask) {

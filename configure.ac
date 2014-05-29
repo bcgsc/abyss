@@ -237,6 +237,7 @@ AC_CONFIG_FILES([
 	GapFiller/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
+	Bloom/Makefile
 ])
 AC_OUTPUT
 

@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include <iostream>
 
 using namespace std;
@@ -37,6 +36,16 @@ public:
 				++m_val;
 			}
 		}
+	}
+
+	bool operator==(plc val)
+	{
+		return val.rawValue() == m_val;
+	}
+
+	operator bool()
+	{
+		return m_val;
 	}
 
 	float toFloat()

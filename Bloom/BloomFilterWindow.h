@@ -1,7 +1,7 @@
 #ifndef BLOOMFILTERWINDOW_H
 #define BLOOMFILTERWINDOW_H 1
 
-#include "BloomFilterBase.h"
+#include "BloomFilter.h"
 #include "Common/HashFunction.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"

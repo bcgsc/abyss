@@ -6,13 +6,11 @@ libcommon_a_SOURCES = \
 	Algorithms.h \
 	Alignment.h \
 	BitUtil.h \
-	BloomFilterBase.h \
 	ConstString.h \
 	ContigID.h ContigID.cpp \
 	ContigNode.h \
 	ContigPath.h \
 	ContigProperties.h \
-	DBGBloom.h DBGBloomAlgorithms.h \
 	Dictionary.h \
 	Estimate.h \
 	Fcontrol.cpp Fcontrol.h \

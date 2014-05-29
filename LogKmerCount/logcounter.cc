@@ -3,8 +3,6 @@
  * Copyright 2014 BCGSC
  */
 
-//TODO: add common files to common directory!
-
 #include "config.h"
 #include "plc.h"
 #include "CountingBloomFilter.h"
@@ -38,7 +36,6 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -s, --seed=N               the seed value used\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
@@ -160,20 +157,10 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	BloomFilterBase* bloom = NULL;
-
 	//size determined by
-	bloom = new CountingBloomFilter<plc>(opt::bloomSize);
-	for (int i = optind; i < argc; i++)
-		bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
-
-	//RUN TESTs (REMOVE/MOVE ME LATER)
-
-	const Kmer testSeq = "CTGGCCCTTTATGCGCCAAACCGTT";
-
-	cout << bloom[testSeq] << endl;
-
-	//get counts for known added sequence
+	CountingBloomFilter<plc> bloom(opt::bloomSize);
+//	for (int i = optind; i < argc; i++)
+//		bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
 
 	return 0;
 }

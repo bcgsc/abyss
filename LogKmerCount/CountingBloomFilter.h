@@ -5,29 +5,33 @@
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
 
-#include "Common/BloomFilterBase.h"
+#include "Bloom/BloomFilterProperties.h"
 #include <vector>
 #include <math.h>
+#include <cassert>
+
+using namespace Bloom;
 
 /** A counting Bloom filter. */
 template<typename NumericType>
-class CountingBloomFilter : public BloomFilterBase
-{
-  public:
+class CountingBloomFilter {
+public:
 
 	/** Constructor */
-	CountingBloomFilter() {}
+	CountingBloomFilter()
+	{
+		m_data = std::vector<NumericType>();
+	}
 
 	/** Constructor */
 	CountingBloomFilter(size_t n)
 	{
-		m_data = new std::vector<NumericType>(n);
+		m_data = std::vector<NumericType>(n);
 	}
 
 	/** Destructor */
 	virtual ~CountingBloomFilter()
 	{
-		delete m_data;
 	}
 
 	/** Return the size (in discrete elements) of the bit array. */
@@ -45,8 +49,10 @@ class CountingBloomFilter : public BloomFilterBase
 	/** Return the estimated false positive rate */
 	double FPR() const
 	{
-		return pow(1.0 - pow(1.0 - 1.0 / double(m_data.size()),
-				double(uniqueEntries) * hashNum),
+		return pow(
+				1.0
+						- pow(1.0 - 1.0 / double(m_data.size()),
+								double(uniqueEntries) * hashNum),
 				double(hashNum));
 	}
 
@@ -85,7 +91,7 @@ class CountingBloomFilter : public BloomFilterBase
 	virtual void insert(const key_type& key)
 	{
 		//check for which elements to update
-		NumericType minEle = this[key];
+		NumericType minEle = this->operator [](key);
 
 		//update only those elements
 		NumericType currentMin = m_data[hash(key, 0) % m_data.size()];
@@ -96,7 +102,7 @@ class CountingBloomFilter : public BloomFilterBase
 				insert(hashVal);
 			}
 		}
-		if(minEle == 0)
+		if (minEle)
 			++uniqueEntries;
 		else
 			++replicateEntries;
@@ -104,11 +110,10 @@ class CountingBloomFilter : public BloomFilterBase
 
 	virtual void write(std::ostream& out) const
 	{
-		assert(m_data != NULL);
-		out << *m_data;
+		assert(!m_data.empty());
+		out.write(reinterpret_cast<const char *>(&m_data), sizeof(NumericType));
 	}
 
-	//overloaded from BloomFilterBase
 	//need to impliment tracking of directionality
 //	void loadSeq(unsigned k, const std::string& seq)
 //	{
@@ -124,8 +129,8 @@ class CountingBloomFilter : public BloomFilterBase
 //		}
 //	}
 
-  protected:
-	std::vector<T> m_data;
+protected:
+	std::vector<NumericType> m_data;
 	unsigned hashNum;
 	size_t uniqueEntries;
 	size_t replicateEntries;

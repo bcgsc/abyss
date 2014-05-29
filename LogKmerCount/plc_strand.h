@@ -41,6 +41,16 @@ public:
 		}
 	}
 
+	bool operator==(plc val)
+	{
+		return val.rawValue() & numericBitMask == m_val & numericBitMask;
+	}
+
+	operator bool()
+	{
+		return m_val & numericBitMask;
+	}
+
 	float toFloat()
 	{
 		//extract numeric section of plc

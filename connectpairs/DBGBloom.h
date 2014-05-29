@@ -6,8 +6,6 @@
 #ifndef DBGBLOOM_H
 #define DBGBLOOM_H 1
 
-#include "BloomFilterBase.h"
-
 #include "Common/IOUtil.h"
 #include "Common/Kmer.h"
 #include "Common/SeqExt.h" // for NUM_BASES
@@ -23,9 +21,8 @@
 
 using boost::graph_traits;
 
-/** de Bruijn Graph data structure using a Bloom filter. */
-template <typename BloomFilter>
-class DBGBloom: public BloomFilter {
+template <typename BF>
+class DBGBloom: public BF {
   public:
 	/** The bundled vertex properties. */
 	typedef no_property vertex_bundled;
@@ -36,33 +33,34 @@ class DBGBloom: public BloomFilter {
 	typedef no_property edge_property_type;
 
 	/** The bloom filter */
-	const BloomFilter& m_bloom;
+	const BF& m_bloom;
 
-	DBGBloom(const BloomFilter& bloom) : m_bloom(bloom), m_depthThresh(0) { }
+	DBGBloom(const BF& bloom) : m_bloom(bloom), m_depthThresh(0) { }
 
-	DBGBloom(const BloomFilter& bloom, unsigned depthThresh) :
+	DBGBloom(const BF& bloom, unsigned depthThresh) :
 		m_bloom(bloom), m_depthThresh(depthThresh)  { }
 
 	const unsigned m_depthThresh;
 
   private:
 	/** Copy constructor. */
-	DBGBloom(const DBGBloom<BloomFilter>&);
+	DBGBloom(const DBGBloom<BF>&);
 
 }; // class DBGBloom
 
 /** PropertyGraph vertex_index */
+template <typename Graph>
 struct DBGBloomIndexMap
-	: boost::put_get_helper<size_t, DBGBloomIndexMap>
+	: boost::put_get_helper<size_t, Graph >
 {
 	typedef Kmer key_type;
 	typedef size_t value_type;
 	typedef value_type reference;
 	typedef boost::readable_property_map_tag category;
 
-	const DBGBloom<BloomFilter>& m_g;
+	const Graph& m_g;
 
-	DBGBloomIndexMap(const DBGBloom<BloomFilter>& g) : m_g(g) { }
+	DBGBloomIndexMap(const Graph& g) : m_g(g) { }
 
 	reference operator[](const key_type& u) const
 	{
@@ -75,8 +73,8 @@ struct DBGBloomIndexMap
 namespace boost {
 
 /** Graph traits */
-template <>
-struct graph_traits<DBGBloom<BloomFilter> > {
+template <typename BF>
+struct graph_traits< DBGBloom<BF> > {
 	// Graph
 	typedef Kmer vertex_descriptor;
 	typedef boost::directed_tag directed_category;
@@ -119,9 +117,9 @@ struct adjacency_iterator
 	}
 
   public:
-	adjacency_iterator(const DBGBloom<BloomFilter>& g) : m_g(g), m_i(NUM_BASES) { }
+	adjacency_iterator(const DBGBloom<BF>& g) : m_g(g), m_i(NUM_BASES) { }
 
-	adjacency_iterator(const DBGBloom<BloomFilter>& g, vertex_descriptor u)
+	adjacency_iterator(const DBGBloom<BF>& g, vertex_descriptor u)
 		: m_g(g), m_v(u), m_i(0)
 	{
 		m_v.shift(SENSE);
@@ -153,7 +151,7 @@ struct adjacency_iterator
 	}
 
   private:
-	const DBGBloom<BloomFilter>& m_g;
+	const DBGBloom<BF>& m_g;
 	vertex_descriptor m_v;
 	short unsigned m_i;
 }; // adjacency_iterator
@@ -175,9 +173,9 @@ struct out_edge_iterator
   public:
 	out_edge_iterator() { }
 
-	out_edge_iterator(const DBGBloom<BloomFilter>& g) : m_g(&g), m_i(NUM_BASES) { }
+	out_edge_iterator(const DBGBloom<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
-	out_edge_iterator(const DBGBloom<BloomFilter>& g, vertex_descriptor u)
+	out_edge_iterator(const DBGBloom<BF>& g, vertex_descriptor u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.shift(SENSE);
@@ -216,7 +214,7 @@ struct out_edge_iterator
 	}
 
   private:
-	const DBGBloom<BloomFilter>* m_g;
+	const DBGBloom<BF>* m_g;
 	vertex_descriptor m_u;
 	vertex_descriptor m_v;
 	unsigned m_i;
@@ -239,9 +237,9 @@ struct in_edge_iterator
   public:
 	in_edge_iterator() { }
 
-	in_edge_iterator(const DBGBloom<BloomFilter>& g) : m_g(&g), m_i(NUM_BASES) { }
+	in_edge_iterator(const DBGBloom<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
-	in_edge_iterator(const DBGBloom<BloomFilter>& g, vertex_descriptor u)
+	in_edge_iterator(const DBGBloom<BF>& g, vertex_descriptor u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.shift(ANTISENSE);
@@ -280,116 +278,107 @@ struct in_edge_iterator
 	}
 
   private:
-	const DBGBloom<BloomFilter>* m_g;
+	const DBGBloom<BF>* m_g;
 	vertex_descriptor m_u;
 	vertex_descriptor m_v;
 	unsigned m_i;
 }; // in_edge_iterator
 
+}; // graph_traits<DBGBloom>
+
+} // namespace boost
+
 // Subgraph
 
 /** Return whether this vertex exists in the subgraph. */
-static inline
-bool
-vertex_exists(graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+template <typename Graph>
+static inline bool
+vertex_exists(typename graph_traits<Graph>::vertex_descriptor u, const Graph& g)
 {
 	return g.m_bloom[u] > g.m_depthThresh;
 }
 
-}; // graph_traits<DBGBloom<BloomFilter> >
-
-/** PropertyGraph vertex_index */
-template<typename BloomFilter>
-struct property_map<DBGBloom<BloomFilter>, vertex_index_t> {
-	typedef DBGBloomIndexMap type;
-	typedef type const_type;
-};
-
-} // namespace boost
-
-// AdjacencyGraph
-
+template <typename Graph>
 static inline
-std::pair<graph_traits<DBGBloom<BloomFilter> >::adjacency_iterator,
-	graph_traits<DBGBloom<BloomFilter> >::adjacency_iterator>
+std::pair<typename graph_traits<Graph>::adjacency_iterator,
+		typename graph_traits<Graph>::adjacency_iterator>
 adjacent_vertices(
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+		typename graph_traits<Graph>::vertex_descriptor u, const Graph& g)
 {
-	typedef graph_traits<DBGBloom<BloomFilter> >::adjacency_iterator
-		adjacency_iterator;
-	return std::make_pair(adjacency_iterator(g, u),
-			adjacency_iterator(g));
+	typedef typename graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+	return std::make_pair(adjacency_iterator(g, u), adjacency_iterator(g));
 }
 
 // IncidenceGraph
-
+template <typename Graph>
 static inline
-graph_traits<DBGBloom<BloomFilter> >::degree_size_type
+typename graph_traits<Graph>::degree_size_type
 out_degree(
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const Graph& g)
 {
-	typedef graph_traits<DBGBloom<BloomFilter> >::adjacency_iterator Ait;
+	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
 	std::pair<Ait, Ait> adj = adjacent_vertices(u, g);
 	return std::distance(adj.first, adj.second);
 }
 
-static inline
-std::pair<graph_traits<DBGBloom<BloomFilter> >::out_edge_iterator,
-	graph_traits<DBGBloom<BloomFilter> >::out_edge_iterator>
+template <typename Graph>
+static inline typename
+std::pair<typename graph_traits<Graph>::out_edge_iterator,
+	typename graph_traits<Graph>::out_edge_iterator>
 out_edges(
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const Graph& g)
 {
-	typedef graph_traits<DBGBloom<BloomFilter> >::out_edge_iterator Oit;
+	typedef typename graph_traits<Graph>::out_edge_iterator Oit;
 	return std::make_pair(Oit(g, u), Oit(g));
 }
 
 // BidirectionalGraph
-
+template <typename Graph>
 static inline
-graph_traits<DBGBloom<BloomFilter> >::degree_size_type
-in_degree(graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+typename graph_traits<Graph>::degree_size_type
+in_degree(typename graph_traits<Graph>::vertex_descriptor u,
+		const Graph& g)
 {
 	return out_degree(reverseComplement(u), g);
 }
 
+template <typename Graph>
 static inline
-std::pair<graph_traits<DBGBloom<BloomFilter> >::in_edge_iterator,
-	graph_traits<DBGBloom<BloomFilter> >::in_edge_iterator>
+std::pair<typename graph_traits<Graph>::in_edge_iterator,
+	typename graph_traits<Graph>::in_edge_iterator>
 in_edges(
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u,
-		const DBGBloom<BloomFilter>& g)
+		typename graph_traits<Graph>::vertex_descriptor u,
+		const Graph& g)
 {
-	typedef graph_traits<DBGBloom<BloomFilter> >::in_edge_iterator Iit;
+	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	return std::make_pair(Iit(g, u), Iit(g));
 }
 
 // VertexListGraph
-
+template <typename Graph>
 static inline
-graph_traits<DBGBloom<BloomFilter> >::vertices_size_type
-num_vertices(const DBGBloom<BloomFilter>& g)
+typename graph_traits<Graph>::vertices_size_type
+num_vertices(const Graph& g)
 {
 	return g.m_bloom.popcount();
 }
 
 // PropertyGraph vertex_index
-
+template<typename Graph>
 static inline
-DBGBloomIndexMap
-get(vertex_index_t, const DBGBloom<BloomFilter>& g)
+DBGBloomIndexMap<Graph>
+get(vertex_index_t, const Graph& g)
 {
-	return DBGBloomIndexMap(g);
+	return DBGBloomIndexMap<Graph>(g);
 }
 
+template <typename Graph>
 static inline
-graph_traits<DBGBloom<BloomFilter> >::vertices_size_type
-get(vertex_index_t tag, const DBGBloom<BloomFilter>& g,
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u)
+typename graph_traits<Graph>::vertices_size_type
+get(vertex_index_t tag, const Graph& g,
+		typename graph_traits<Graph>::vertex_descriptor u)
 {
 	return get(get(tag, g), u);
 }
@@ -397,42 +386,47 @@ get(vertex_index_t tag, const DBGBloom<BloomFilter>& g,
 // PropertyGraph
 
 /** Return the reverse complement of the specified k-mer. */
+template <typename Graph>
 static inline
-graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor
-get(vertex_complement_t, const DBGBloom<BloomFilter>&,
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u)
+typename graph_traits<Graph>::vertex_descriptor
+get(vertex_complement_t, const Graph&,
+		typename graph_traits<Graph>::vertex_descriptor u)
 {
 	return reverseComplement(u);
 }
 
 /** Return the name of the specified vertex. */
+template <typename Graph>
 static inline
-Kmer get(vertex_name_t, const DBGBloom<BloomFilter>&,
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor u)
+Kmer get(vertex_name_t, const Graph&,
+		typename graph_traits<Graph>::vertex_descriptor u)
 {
 	return u;
 }
 
+template <typename Graph>
 static inline
 bool
-get(vertex_removed_t, const DBGBloom<BloomFilter>&,
-		graph_traits<DBGBloom<BloomFilter> >::vertex_descriptor)
+get(vertex_removed_t, const Graph&,
+		typename graph_traits<Graph>::vertex_descriptor)
 {
 	return false;
 }
 
+template <typename Graph>
 static inline
 no_property
-get(vertex_bundle_t, const DBGBloom<BloomFilter>&,
-		graph_traits<DBGBloom<BloomFilter> >::edge_descriptor)
+get(vertex_bundle_t, const Graph&,
+		typename graph_traits<Graph>::edge_descriptor)
 {
 	return no_property();
 }
 
+template <typename Graph>
 static inline
 no_property
-get(edge_bundle_t, const DBGBloom<BloomFilter>&,
-		graph_traits<DBGBloom<BloomFilter> >::edge_descriptor)
+get(edge_bundle_t, const Graph&,
+		typename graph_traits<Graph>::edge_descriptor)
 {
 	return no_property();
 }

@@ -6,15 +6,16 @@
 #include "config.h"
 
 #include "connectpairs.h"
-#include "CascadingBloomFilter.h"
-#include "Common/DBGBloom.h"
-#include "Common/DBGBloomAlgorithms.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "DBGBloom.h"
+#include "DBGBloomAlgorithms.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/FastaConcat.h"
+#include "DataLayer/FastaInterleave.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
@@ -277,7 +278,8 @@ static void seqanTests()
 #endif
 
 /** Connect a read pair. */
-static void connectPair(const DBGBloom<CascadingBloomFilter>& g,
+template <typename Graph>
+static void connectPair(const Graph& g,
 	const FastqRecord& read1,
 	const FastqRecord& read2,
 	const ConnectPairsParams& params,
@@ -404,8 +406,8 @@ static void connectPair(const DBGBloom<CascadingBloomFilter>& g,
 }
 
 /** Connect read pairs. */
-template <typename FastaStream>
-static void connectPairs(const DBGBloom<CascadingBloomFilter>& g,
+template <typename Graph, typename FastaStream>
+static void connectPairs(const Graph& g,
 	FastaStream& in,
 	const ConnectPairsParams& params,
 	ofstream& mergedStream,
@@ -434,7 +436,7 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 {
 	string str;
 	getline(in, str);
-	if (in && str == "nolimit") {
+	if (in.good() && str == "nolimit") {
 		arg = NO_LIMIT;
 	} else {
 		istringstream ss(str);
@@ -552,7 +554,7 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	CascadingBloomFilter* bloom = NULL;
+	BloomFilter* bloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
 
@@ -575,16 +577,15 @@ int main(int argc, char** argv)
 		// because counting bloom filter requires twice as
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
-		bloom = new CascadingBloomFilter(bits);
+		CascadingBloomFilter *tempBloom = new CascadingBloomFilter(bits);
 		for (int i = optind; i < argc; i++)
-			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
-
+			tempBloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+		bloom = &tempBloom->getBloomFilter(tempBloom->MAX_COUNT-1);
 	}
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom->FPR() << "%\n";
-
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -606,7 +607,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<CascadingBloomFilter> g(*bloom);
+	DBGBloom<BloomFilter> g(*bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");

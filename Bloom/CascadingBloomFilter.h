@@ -2,14 +2,15 @@
  * A cascading Bloom filter
  * Copyright 2013 Shaun Jackman
  */
-#ifndef COUNTINGBLOOMFILTER_H
-#define COUNTINGBLOOMFILTER_H 1
+#ifndef CascadingBLOOMFILTER_H
+#define CascadingBLOOMFILTER_H 1
 
+#include "Bloom/Bloom.h"
 #include "BloomFilter.h"
 #include <vector>
 
-/** A cascading Bloom filter. */
-class CascadingBloomFilter : public BloomFilterBase
+/** A Cascading Bloom filter. */
+class CascadingBloomFilter : BloomFilter
 {
   public:
 
@@ -27,7 +28,7 @@ class CascadingBloomFilter : public BloomFilterBase
 	}
 
 	/** Destructor */
-	virtual ~CountingBloomFilter()
+	~CascadingBloomFilter()
 	{
 		typedef std::vector<BloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
@@ -66,14 +67,14 @@ class CascadingBloomFilter : public BloomFilterBase
 	}
 
 	/** Return whether this element has count >= MAX_COUNT. */
-	bool operator[](const key_type& key) const
+	bool operator[](const Bloom::key_type& key) const
 	{
 		assert(m_data.back() != NULL);
-		return (*m_data.back())[hash(key) % m_data.back()->size()];
+		return (*m_data.back())[Bloom::hash(key) % m_data.back()->size()];
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	virtual void insert(size_t index)
+	void insert(size_t index)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; ++i) {
 			assert(m_data.at(i) != NULL);
@@ -84,11 +85,11 @@ class CascadingBloomFilter : public BloomFilterBase
 		}
 	}
 
-	/** Add the object to this counting multiset. */
-	virtual void insert(const key_type& key)
+	/** Add the object to this Cascading multiset. */
+	void insert(const Bloom::key_type& key)
 	{
 		assert(m_data.back() != NULL);
-		insert(hash(key) % m_data.back()->size());
+		insert(Bloom::hash(key) % m_data.back()->size());
 	}
 
 	/** Get the Bloom filter for a given level */
@@ -98,10 +99,27 @@ class CascadingBloomFilter : public BloomFilterBase
 		return *m_data.at(level);
 	}
 
-	virtual void write(std::ostream& out) const
+	void write(std::ostream& out) const
 	{
 		assert(m_data.back() != NULL);
 		out << *m_data.back();
+	}
+
+	void loadFile(unsigned k, const std::string& path, bool verbose = false)
+	{
+		assert(!path.empty());
+		if (verbose)
+			std::cerr << "Reading `" << path << "'...\n";
+		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
+		uint64_t count = 0;
+		for (std::string seq; in >> seq; count++) {
+			if (verbose && count % LOAD_PROGRESS_STEP == 0)
+				std::cerr << "Loaded " << count << " reads into bloom filter\n";
+			loadSeq(k, seq);
+		}
+		assert(in.eof());
+		if (verbose)
+			std::cerr << "Loaded " << count << " reads into bloom filter\n";
 	}
 
   protected:

@@ -1,7 +1,7 @@
 #ifndef COUNTINGBLOOMFILTERWINDOW_H
 #define COUNTINGBLOOMFILTERWINDOW_H 1
 
-#include "connectpairs/CascadingBloomFilter.h"
+#include "CascadingBloomFilter.h"
 #include <vector>
 
 class CascadingBloomFilterWindow : public CascadingBloomFilter

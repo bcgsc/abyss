@@ -1,7 +1,7 @@
-#include "connectpairs/BloomFilter.h"
-#include "connectpairs/CountingBloomFilter.h"
-#include "connectpairs/BloomFilterWindow.h"
-#include "connectpairs/CountingBloomFilterWindow.h"
+#include "Bloom/BloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/CascadingBloomFilterWindow.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -106,9 +106,9 @@ TEST(BloomFilter, union_)
 	EXPECT_TRUE(unionBloom[b]);
 }
 
-TEST(CountingBloomFilter, base)
+TEST(CascadingBloomFilter, base)
 {
-	CountingBloomFilter x(100);
+	CascadingBloomFilter x(100);
 	EXPECT_EQ(x.size(), 100U);
 
 	Kmer::setLength(16);
@@ -207,30 +207,30 @@ TEST(BloomFilter, window)
 	EXPECT_TRUE(unionBloom[pos2]);
 }
 
-TEST(CountingBloomFilter, window)
+TEST(CascadingBloomFilter, window)
 {
 	size_t bits = 100;
 	size_t pos1 = 25;
 	size_t pos2 = 80;
 
-	CountingBloomFilter countingBloom(bits);
+	CascadingBloomFilter CascadingBloom(bits);
 
 	// set a bit in both halves of the second level
 	// bloom filter
-	countingBloom.insert(pos1);
-	countingBloom.insert(pos1);
-	countingBloom.insert(pos2);
-	countingBloom.insert(pos2);
+	CascadingBloom.insert(pos1);
+	CascadingBloom.insert(pos1);
+	CascadingBloom.insert(pos2);
+	CascadingBloom.insert(pos2);
 
-	EXPECT_TRUE(countingBloom[pos1]);
-	EXPECT_TRUE(countingBloom[pos2]);
-	EXPECT_EQ(2U, countingBloom.getBloomFilter(1).popcount());
+	EXPECT_TRUE(CascadingBloom[pos1]);
+	EXPECT_TRUE(CascadingBloom[pos2]);
+	EXPECT_EQ(2U, CascadingBloom.getBloomFilter(1).popcount());
 
-	CountingBloomFilterWindow window1(bits, 0, bits/2 - 1);
+	CascadingBloomFilterWindow window1(bits, 0, bits/2 - 1);
 	window1.insert(pos1);
 	window1.insert(pos1);
 
-	CountingBloomFilterWindow window2(bits, bits/2, bits - 1);
+	CascadingBloomFilterWindow window2(bits, bits/2, bits - 1);
 	window2.insert(pos2);
 	window2.insert(pos2);
 

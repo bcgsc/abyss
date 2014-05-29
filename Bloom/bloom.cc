@@ -7,10 +7,10 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
-#include "connectpairs/BloomFilter.h"
-#include "connectpairs/CascadingBloomFilter.h"
-#include "connectpairs/BloomFilterWindow.h"
-#include "connectpairs/CascadingBloomFilterWindow.h"
+#include "Bloom/BloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/CascadingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>
@@ -315,7 +315,7 @@ int build(int argc, char** argv)
 	string outputPath(argv[optind]);
 	optind++;
 
-	BloomFilterBase* bloom = NULL;
+	BloomFilter* bloom = NULL;
 
 	if (opt::windows == 0) {
 
