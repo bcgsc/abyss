@@ -5,7 +5,7 @@
 #ifndef COUNTINGBLOOMFILTER_H
 #define COUNTINGBLOOMFILTER_H 1
 
-#include "Bloom/BloomFilterProperties.h"
+#include "Bloom/Bloom.h"
 #include <vector>
 #include <math.h>
 #include <cassert>
@@ -64,11 +64,11 @@ public:
 	}
 
 	/** Return the count of this element. */
-	NumericType operator[](const key_type& key) const
+	NumericType operator[](const Bloom::key_type& key) const
 	{
-		NumericType currentMin = m_data[hash(key, 0) % m_data.size()];
+		NumericType currentMin = m_data[Bloom::hash(key, 0) % m_data.size()];
 		for (unsigned int i = 1; i < hashNum; ++i) {
-			NumericType min = m_data[hash(key, i) % m_data.size()];
+			NumericType min = m_data[Bloom::hash(key, i) % m_data.size()];
 			if (min < currentMin) {
 				currentMin = min;
 			}
@@ -88,15 +88,15 @@ public:
 	/** Add the object to this counting multiset.
 	 *  If all values are the same update all
 	 *  If some values are larger only update smallest counts*/
-	virtual void insert(const key_type& key)
+	virtual void insert(const Bloom::key_type& key)
 	{
 		//check for which elements to update
-		NumericType minEle = this->operator [](key);
+		NumericType minEle = this[key];
 
 		//update only those elements
-		NumericType currentMin = m_data[hash(key, 0) % m_data.size()];
+		NumericType currentMin = m_data[Bloom::hash(key, 0) % m_data.size()];
 		for (unsigned int i = 1; i < hashNum; ++i) {
-			size_t hashVal = hash(key, i) % m_data.size();
+			size_t hashVal = Bloom::hash(key, i) % m_data.size();
 			NumericType val = m_data[hashVal];
 			if (minEle == val) {
 				insert(hashVal);
