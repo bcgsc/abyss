@@ -149,7 +149,7 @@ static const struct option longopts[] = {
 	{ "erode",       required_argument, NULL, 'e' },
 	{ "erode-strand", required_argument, NULL, 'E' },
 	{ "no-erode",    no_argument,       (int*)&erode, 0 },
-	{ "mask-cov",    required_argument, NULL, 'm' },
+	{ "mask-cov",    no_argument, NULL, 'm' },
 	{ "graph",       required_argument, NULL, 'g' },
 	{ "snp",         required_argument, NULL, 's' },
 	{ "verbose",     no_argument,       NULL, 'v' },
