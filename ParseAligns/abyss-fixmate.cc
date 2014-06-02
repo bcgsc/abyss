@@ -39,6 +39,9 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "      --no-qname        set the qname to * [default]\n"
 "      --qname           do not alter the qname\n"
+"      --all             print all alignments\n"
+"      --diff            print alignments that align to different\n"
+"                        contigs [default]\n"
 "  -l, --min-align=N     the minimal alignment size [1]\n"
 "  -s, --same=SAME       write properly-paired reads to this file\n"
 "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
@@ -55,6 +58,7 @@ namespace opt {
 	static string covPath;
 	static int qname;
 	static int verbose;
+	static int print_all;
 }
 
 static const char shortopts[] = "h:c:l:s:v";
@@ -64,6 +68,8 @@ enum { OPT_HELP = 1, OPT_VERSION };
 static const struct option longopts[] = {
 	{ "qname",     no_argument,       &opt::qname, 1 },
 	{ "no-qname",  no_argument,       &opt::qname, 0 },
+	{ "all",       no_argument,       &opt::print_all, 1 },
+	{ "diff",      no_argument,       &opt::print_all, 0 },
 	{ "min-align", required_argument, NULL, 'l' },
 	{ "hist",      required_argument, NULL, 'h' },
 	{ "cov",       required_argument, NULL, 'c' },
@@ -124,7 +130,7 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		stats.numDifferent++;
 		// Set the mapping quality of both reads to their minimum.
 		a0.mapq = a1.mapq = min(a0.mapq, a1.mapq);
-		if (!opt::histPath.empty())
+		if (!opt::print_all)
 			cout << a0 << '\n' << a1 << '\n';
 	} else if (a0.isReverse() == a1.isReverse()) {
 		// Same target, FF orientation.
@@ -142,7 +148,7 @@ static void handlePair(SAMRecord& a0, SAMRecord& a1)
 		}
 	}
 
-	if (opt::histPath.empty()) {
+	if (opt::print_all) {
 		cout << a0 << '\n' << a1 << '\n';
 		assert(cout.good());
 	}
@@ -358,7 +364,7 @@ int main(int argc, char* const* argv)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 
 	// Print the unpaired alignments.
-	if (opt::histPath.empty()) {
+	if (opt::print_all) {
 		for (Alignments::iterator it = alignments.begin();
 				it != alignments.end(); it++) {
 #if SAM_SEQ_QUAL
