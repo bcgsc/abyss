@@ -59,13 +59,16 @@ static const char USAGE_MESSAGE[] =
 "                        with coverage less than this threshold on\n"
 "                        either strand\n"
 "  --coverage-hist=FILE  write the k-mer coverage histogram to FILE\n"
-"  -g, --graph=FILE      generate a graph in dot format\n"
 "  -m, --mask-cov        do not include kmers containing masked bases in\n"
 "                        coverage calculations [experimental]\n"
 "  -s, --snp=FILE        record popped bubbles in FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+"\n"
+" ABYSS Options: (won't work with ABYSS-P)\n"
+"\n"
+"  -g, --graph=FILE      generate a graph in dot format\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
