@@ -34,7 +34,7 @@ class Dictionary
 			if (!inserted.second) {
 				std::cerr << "error: duplicate ID: `"
 					<< name << "'\n";
-				exit(EXIT_FAILURE);
+				abort();
 			}
 			return inserted.first->second;
 		}
@@ -63,7 +63,7 @@ class Dictionary
 			if (it == m_map.end()) {
 				std::cerr << "error: unexpected ID: `"
 					<< name << "'\n";
-				exit(EXIT_FAILURE);
+				abort();
 			}
 			return it->second;
 		}
