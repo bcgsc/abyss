@@ -159,8 +159,8 @@ int main(int argc, char** argv)
 
 	//size determined by
 	CountingBloomFilter<plc> bloom(opt::bloomSize);
-//	for (int i = optind; i < argc; i++)
-//		bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+	for (int i = optind; i < argc; i++)
+		Bloom::loadFile(bloom, opt::k, string(argv[i]), opt::verbose);
 
 	return 0;
 }

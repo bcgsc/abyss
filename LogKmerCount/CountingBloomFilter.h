@@ -10,23 +10,19 @@
 #include <math.h>
 #include <cassert>
 
-using namespace Bloom;
-
 /** A counting Bloom filter. */
 template<typename NumericType>
 class CountingBloomFilter {
 public:
 
 	/** Constructor */
-	CountingBloomFilter()
+	CountingBloomFilter(): m_data(0)
 	{
-		m_data = std::vector<NumericType>();
 	}
 
 	/** Constructor */
-	CountingBloomFilter(size_t n)
+	CountingBloomFilter(size_t n): m_data(n)
 	{
-		m_data = std::vector<NumericType>(n);
 	}
 
 	/** Destructor */
@@ -80,7 +76,7 @@ public:
 	}
 
 	/** Add the object with the specified index (debugging purposes). */
-	virtual void insert(size_t index)
+	void insert(size_t index)
 	{
 		++m_data[index];
 	}
@@ -88,10 +84,10 @@ public:
 	/** Add the object to this counting multiset.
 	 *  If all values are the same update all
 	 *  If some values are larger only update smallest counts*/
-	virtual void insert(const Bloom::key_type& key)
+	void insert(const Bloom::key_type& key)
 	{
 		//check for which elements to update
-		NumericType minEle = this[key];
+		NumericType minEle = (*this)[key];
 
 		//update only those elements
 		NumericType currentMin = m_data[Bloom::hash(key, 0) % m_data.size()];
@@ -108,26 +104,26 @@ public:
 			++replicateEntries;
 	}
 
-	virtual void write(std::ostream& out) const
+	void write(std::ostream& out) const
 	{
 		assert(!m_data.empty());
 		out.write(reinterpret_cast<const char *>(&m_data), sizeof(NumericType));
 	}
 
-	//need to impliment tracking of directionality
-//	void loadSeq(unsigned k, const std::string& seq)
-//	{
-//		if (seq.size() < k)
-//			return;
-//		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
-//			std::string kmer = seq.substr(i, k);
-//			size_t pos = kmer.find_last_not_of("ACGTacgt");
-//			if (pos == std::string::npos) {
-//				insert(Kmer(kmer));
-//			} else
-//				i += pos;
-//		}
-//	}
+	//TODO: need to implement tracking of directionality
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
+	}
 
 protected:
 	std::vector<NumericType> m_data;
