@@ -28,12 +28,14 @@ SUBDIRS = \
 	Align \
 	ABYSS $(Parallel) \
 	AdjList \
+	Bloom \
 	connectpairs \
 	Consensus \
 	DAssembler \
 	DistanceEst \
 	KAligner \
 	Layout \
+	LogKmerCount \
 	Map \
 	MergePaths \
 	Misc \

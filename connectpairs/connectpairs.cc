@@ -579,7 +579,7 @@ int main(int argc, char** argv)
 		size_t bits = opt::bloomSize * 8 / 2;
 		CascadingBloomFilter *tempBloom = new CascadingBloomFilter(bits);
 		for (int i = optind; i < argc; i++)
-			tempBloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+			Bloom::loadFile(*bloom, opt::k, string(argv[i]), opt::verbose);
 		bloom = &tempBloom->getBloomFilter(tempBloom->MAX_COUNT-1);
 	}
 
