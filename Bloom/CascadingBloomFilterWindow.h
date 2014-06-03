@@ -1,6 +1,7 @@
 #ifndef COUNTINGBLOOMFILTERWINDOW_H
 #define COUNTINGBLOOMFILTERWINDOW_H 1
 
+#include "Bloom.h"
 #include "CascadingBloomFilter.h"
 #include <vector>
 
@@ -22,15 +23,15 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	virtual void insert(size_t i)
+	void insert(size_t i)
 	{
-		CountingBloomFilter::insert(i);
+		CascadingBloomFilter::insert(i);
 	}
 
 	/** Add the object to this counting multiset. */
-	void insert(const key_type& key)
+	void insert(const Bloom::key_type& key)
 	{
-		insert(hash(key) % m_fullBloomSize);
+		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
   private:

@@ -1,4 +1,15 @@
 bin_PROGRAMS = abyss-bloom
+noinst_LIBRARIES = libbloom.a
+
+libbloom_a_CPPFLAGS = -I$(top_srcdir) \
+	-I$(top_srcdir)/Common \
+	-I$(top_srcdir)/DataLayer
+
+libbloom_a_SOURCES = \
+	Bloom.h \
+	BloomFilter.h \
+	CascadingBloomFilter.h \
+	CascadingBloomFilterWindow.h
 
 abyss_bloom_CPPFLAGS = -I$(top_srcdir) \
 -I$(top_srcdir)/Common \
@@ -12,6 +23,4 @@ $(top_builddir)/Align/libalign.a \
 $(top_builddir)/Common/libcommon.a
 
 abyss_bloom_SOURCES = bloom.cc \
-BloomFilter.h \
-BloomFilterProperties.h \
-CascadingBloomFilter.h
+	Bloom/bloom.a

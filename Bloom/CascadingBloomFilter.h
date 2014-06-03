@@ -10,7 +10,7 @@
 #include <vector>
 
 /** A Cascading Bloom filter. */
-class CascadingBloomFilter : BloomFilter
+class CascadingBloomFilter : public BloomFilter
 {
   public:
 
@@ -103,23 +103,6 @@ class CascadingBloomFilter : BloomFilter
 	{
 		assert(m_data.back() != NULL);
 		out << *m_data.back();
-	}
-
-	void loadFile(unsigned k, const std::string& path, bool verbose = false)
-	{
-		assert(!path.empty());
-		if (verbose)
-			std::cerr << "Reading `" << path << "'...\n";
-		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
-		uint64_t count = 0;
-		for (std::string seq; in >> seq; count++) {
-			if (verbose && count % LOAD_PROGRESS_STEP == 0)
-				std::cerr << "Loaded " << count << " reads into bloom filter\n";
-			loadSeq(k, seq);
-		}
-		assert(in.eof());
-		if (verbose)
-			std::cerr << "Loaded " << count << " reads into bloom filter\n";
 	}
 
   protected:

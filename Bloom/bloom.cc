@@ -7,6 +7,7 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
+#include "Bloom/Bloom.h"
 #include "Bloom/BloomFilter.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/BloomFilterWindow.h"
@@ -353,7 +354,7 @@ int build(int argc, char** argv)
 	assert(bloom != NULL);
 
 	for (int i = optind; i < argc; i++)
-		bloom->loadFile(opt::k, argv[i], opt::verbose);
+		Bloom::loadFile(*bloom, opt::k, argv[i], opt::verbose);
 
 	if (opt::verbose) {
 		cerr << "Successfully loaded bloom filter.\n";

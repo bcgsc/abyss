@@ -1,6 +1,7 @@
 #ifndef BLOOMFILTERWINDOW_H
 #define BLOOMFILTERWINDOW_H 1
 
+#include "Bloom.h"
 #include "BloomFilter.h"
 #include "Common/HashFunction.h"
 #include "Common/Kmer.h"
@@ -43,9 +44,9 @@ public:
 	}
 
 	/** Return whether the object is present in this set. */
-	virtual bool operator[](const key_type& key) const
+	bool operator[](const Bloom::key_type& key) const
 	{
-		return (*this)[hash(key) % m_fullBloomSize];
+		return (*this)[Bloom::hash(key) % m_fullBloomSize];
 	}
 
 	/** Add the object with the specified index to this set. */
@@ -56,9 +57,9 @@ public:
 	}
 
 	/** Add the object to this set. */
-	virtual void insert(const key_type& key)
+	void insert(const Bloom::key_type& key)
 	{
-		insert(hash(key) % m_fullBloomSize);
+		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
 	/**
@@ -72,7 +73,7 @@ public:
 
 protected:
 
-	virtual void writeBloomDimensions(std::ostream& out) const
+	void writeBloomDimensions(std::ostream& out) const
 	{
 		out << m_fullBloomSize
 			<< '\t' << m_startBitPos
@@ -80,7 +81,7 @@ protected:
 			<< '\n';
 	}
 
-	virtual void readBloomDimensions(std::istream& in,
+	void readBloomDimensions(std::istream& in,
 		size_t& size, size_t& startBitPos,
 		size_t& endBitPos)
 	{

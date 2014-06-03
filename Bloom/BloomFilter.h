@@ -195,23 +195,6 @@ class BloomFilter
 		}
 	}
 
-	void loadFile(unsigned k, const std::string& path, bool verbose = false)
-	{
-		assert(!path.empty());
-		if (verbose)
-			std::cerr << "Reading `" << path << "'...\n";
-		FastaReader in(path.c_str(), FastaReader::NO_FOLD_CASE);
-		uint64_t count = 0;
-		for (std::string seq; in >> seq; count++) {
-			if (verbose && count % LOAD_PROGRESS_STEP == 0)
-				std::cerr << "Loaded " << count << " reads into bloom filter\n";
-			loadSeq(k, seq);
-		}
-		assert(in.eof());
-		if (verbose)
-			std::cerr << "Loaded " << count << " reads into bloom filter\n";
-	}
-
 	/** Operator for writing the bloom filter to a stream */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
@@ -245,13 +228,8 @@ class BloomFilter
 	}
 
   private:
-//	Bloom bloom;
 	boost::dynamic_bitset<> m_array;
 	static const unsigned BLOOM_VERSION = 2;
-
-  protected:
-
-    static const unsigned LOAD_PROGRESS_STEP = 100000;
 
 };
 
