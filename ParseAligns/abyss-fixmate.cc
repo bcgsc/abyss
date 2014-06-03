@@ -377,6 +377,7 @@ int main(int argc, char* const* argv)
 #else
 			SAMRecord a0(it->second, it->first);
 #endif
+			a0.noMate();
 			cout << a0 << '\n';
 			assert(cout.good());
 		}

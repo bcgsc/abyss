@@ -300,6 +300,8 @@ struct SAMRecord : SAMAlignment {
 		}
 	}
 
+	void noMate() { flag &= ~FPAIRED; }
+
 	/**
 	 * Return the position of the first base of the mate query on the
 	 * target extrapolated from the start of the alignment.
