@@ -35,7 +35,7 @@ TEST_F(GetStartKmerPosTest, FullReadMatch)
 {
 	BloomFilter bloom(bloomFilterSize);
 	bloom.loadSeq(k, testRead.seq);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, false, true));
 	// true indicates revese complement (second read)
@@ -47,7 +47,7 @@ TEST_F(GetStartKmerPosTest, FullReadMismatch)
 	BloomFilter bloom(bloomFilterSize);
 	// Leave the bloom filter empty to generate a mismatch
 	// for every kmer in the read.
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 	EXPECT_EQ(NO_MATCH, getStartKmerPos(k, testRead, g, false, true));
 }
 
@@ -55,7 +55,7 @@ TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 {
 	const string& seq = testRead.seq;
 	BloomFilter bloom(bloomFilterSize);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 101101
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -75,7 +75,7 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 {
 	const string& seq = testRead.seq;
 	BloomFilter bloom(bloomFilterSize);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 011011
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -117,7 +117,7 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 {
 	BloomFilter bloom(bloomFilterSize);
 	bloom.loadSeq(k, correctRead.seq);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -132,7 +132,7 @@ TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
 {
 	BloomFilter bloom(bloomFilterSize);
 	bloom.loadSeq(k, correctRead.seq);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -147,7 +147,7 @@ TEST_F(CorrectSingleBaseErrorTest, NoError)
 {
 	BloomFilter bloom(bloomFilterSize);
 	bloom.loadSeq(k, singleErrorRead.seq);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -160,7 +160,7 @@ TEST_F(CorrectSingleBaseErrorTest, SkipFalsePositive)
 	BloomFilter bloom(bloomFilterSize);
 	bloom.loadSeq(k, correctRead.seq);
 	bloom.loadSeq(k, simulatedFalsePositive);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;

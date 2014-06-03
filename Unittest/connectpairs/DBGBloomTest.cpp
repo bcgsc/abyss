@@ -13,7 +13,7 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	 Kmer kmer2("ACC");
 	  Kmer kmer3("CCA");
 
-	CountingBloomFilter countingBloom(bits);
+	CascadingBloomFilter countingBloom(bits);
 
 	countingBloom.insert(kmer1);
 	countingBloom.insert(kmer1);
@@ -22,11 +22,11 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	countingBloom.insert(kmer3);
 	countingBloom.insert(kmer3);
 
-	DBGBloom graph(countingBloom);
+	DBGBloom<CascadingBloomFilter> graph(countingBloom);
 
 	// test that expected edges exist
 
-	boost::graph_traits<DBGBloom>::out_edge_iterator ei, ei_end;
+	boost::graph_traits<DBGBloom<CascadingBloomFilter> >::out_edge_iterator ei, ei_end;
 
 	boost::tie(ei, ei_end) = out_edges(kmer1, graph);
 	ASSERT_TRUE(ei != ei_end);
@@ -40,7 +40,7 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	ei++;
 	EXPECT_TRUE(ei == ei_end);
 
-	DBGBloom graph2(countingBloom.getBloomFilter(1));
+	DBGBloom<BloomFilter> graph2(countingBloom.getBloomFilter(1));
 
 	// test that the same edges exist in non-counting
 	// bloom filter
