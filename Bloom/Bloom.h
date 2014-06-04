@@ -17,10 +17,10 @@
 #ifndef BLOOM_H_
 #define BLOOM_H_
 
-#include "Kmer.h"
-#include "HashFunction.h"
-#include "Uncompress.h"
-#include "FastaReader.h"
+#include "Common/Kmer.h"
+#include "Common/HashFunction.h"
+#include "Common/Uncompress.h"
+#include "DataLayer/FastaReader.h"
 #include <iostream>
 
 namespace Bloom {

@@ -19,13 +19,19 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 		: m_fullBloomSize(fullBloomSize)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; i++)
-			m_data.push_back(new BloomFilterWindow(fullBloomSize, startBitPos, endBitPos));
+			m_data.push_back(new BloomFilterWindow(m_fullBloomSize, startBitPos, endBitPos));
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	void insert(size_t i)
+	void insert(size_t index)
 	{
-		CascadingBloomFilter::insert(i);
+		for (unsigned i = 0; i < MAX_COUNT; ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*static_cast<BloomFilterWindow*>(m_data.back()))[index]) {
+				static_cast<BloomFilterWindow*>(m_data.back())->insert(index);
+				break;
+			}
+		}
 	}
 
 	/** Add the object to this counting multiset. */
@@ -34,8 +40,27 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
-  private:
+	void write(std::ostream& out) const
+	{
+		assert(m_data.back() != NULL);
+		out << *static_cast<BloomFilterWindow*>(m_data.back());
+	}
 
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const CascadingBloomFilterWindow& o)
+	{
+		o.write(out);
+		return out;
+	}
+
+	/** Get the Bloom filter for a given level */
+	BloomFilterWindow& getBloomFilter(unsigned level)
+	{
+		assert(m_data.at(level) != NULL);
+		return *static_cast<BloomFilterWindow*>(m_data.at(level));
+	}
+
+  private:
 	size_t m_fullBloomSize;
 };
 

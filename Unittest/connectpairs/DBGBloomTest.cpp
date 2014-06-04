@@ -1,4 +1,6 @@
 #include "connectpairs/DBGBloom.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilter.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -26,7 +28,7 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 
 	// test that expected edges exist
 
-	boost::graph_traits<DBGBloom<CascadingBloomFilter> >::out_edge_iterator ei, ei_end;
+	boost::graph_traits< DBGBloom<CascadingBloomFilter> >::out_edge_iterator ei, ei_end;
 
 	boost::tie(ei, ei_end) = out_edges(kmer1, graph);
 	ASSERT_TRUE(ei != ei_end);
@@ -40,20 +42,22 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	ei++;
 	EXPECT_TRUE(ei == ei_end);
 
+	boost::graph_traits< DBGBloom<BloomFilter> >::out_edge_iterator ei2, ei_end2;
+
 	DBGBloom<BloomFilter> graph2(countingBloom.getBloomFilter(1));
 
 	// test that the same edges exist in non-counting
 	// bloom filter
 
-	boost::tie(ei, ei_end) = out_edges(kmer1, graph2);
-	ASSERT_TRUE(ei != ei_end);
-	EXPECT_TRUE(target(*ei, graph2) == kmer2);
-	ei++;
-	EXPECT_TRUE(ei == ei_end);
+	boost::tie(ei2, ei_end2) = out_edges(kmer1, graph2);
+	ASSERT_TRUE(ei2 != ei_end2);
+	EXPECT_TRUE(target(*ei2, graph2) == kmer2);
+	ei2++;
+	EXPECT_TRUE(ei2 == ei_end2);
 
-	boost::tie(ei, ei_end) = out_edges(kmer2, graph2);
-	ASSERT_TRUE(ei != ei_end);
-	EXPECT_TRUE(target(*ei, graph2) == kmer3);
-	ei++;
-	EXPECT_TRUE(ei == ei_end);
+	boost::tie(ei2, ei_end2) = out_edges(kmer2, graph2);
+	ASSERT_TRUE(ei2 != ei_end2);
+	EXPECT_TRUE(target(*ei2, graph2) == kmer3);
+	ei2++;
+	EXPECT_TRUE(ei2 == ei_end2);
 }

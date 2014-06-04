@@ -1,4 +1,5 @@
 #include "connectpairs/DBGBloomAlgorithms.h"
+#include "Bloom/CascadingBloomFilter.h"
 #include "Common/Sequence.h"
 #include <gtest/gtest.h>
 #include <string>

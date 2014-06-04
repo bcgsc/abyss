@@ -36,7 +36,7 @@ public:
 	}
 
 	/** Return whether the specified bit is set. */
-	virtual bool operator[](size_t i) const
+	bool operator[](size_t i) const
 	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
 			return BloomFilter::operator[](i - m_startBitPos);
@@ -50,7 +50,7 @@ public:
 	}
 
 	/** Add the object with the specified index to this set. */
-	virtual void insert(size_t i)
+	void insert(size_t i)
 	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
 			BloomFilter::insert(i - m_startBitPos);
@@ -69,6 +69,43 @@ public:
 	size_t getFullBloomSize() const
 	{
 		return m_fullBloomSize;
+	}
+
+	/** Write the bloom filter to a stream */
+	void write(std::ostream& out) const
+	{
+		out << BloomFilter::BLOOM_VERSION << '\n';
+		assert(out);
+		out << Kmer::length() << '\n';
+		assert(out);
+		writeBloomDimensions(out);
+		assert(out);
+
+		size_t bits = size();
+		size_t bytes = (bits + 7) / 8;
+		char buf[IO_BUFFER_SIZE];
+		for (size_t i = 0, j = 0; i < bytes;) {
+			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
+			for (size_t k = 0; k < writeSize; k++) {
+				buf[k] = 0;
+				for (unsigned l = 0; l < 8; l++, j++) {
+					buf[k] <<= 1;
+					if (j < bits && BloomFilter::m_array[j]) {
+						buf[k] |= 1;
+					}
+				}
+			}
+			out.write(buf, writeSize);
+			assert(out);
+			i += writeSize;
+		}
+	}
+
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilterWindow& o)
+	{
+		o.write(out);
+		return out;
 	}
 
 protected:

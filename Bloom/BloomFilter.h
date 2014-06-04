@@ -227,7 +227,7 @@ class BloomFilter
 		assert(startBitPos <= endBitPos);
 	}
 
-  private:
+//  private:
 	boost::dynamic_bitset<> m_array;
 	static const unsigned BLOOM_VERSION = 2;
 
