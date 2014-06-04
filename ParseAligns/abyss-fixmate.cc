@@ -192,8 +192,13 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 #endif
 		handlePair(a0, sam);
 
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 104300
 		// erase() is slow on older compilers so we use quick_erase()
 		map.quick_erase(it.first);
+#else
+		map.erase(it.first);
+#endif
 	}
 	stats.alignments++;
 	printProgress(map);
