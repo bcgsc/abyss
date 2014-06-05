@@ -235,10 +235,16 @@ TEST(CascadingBloomFilter, window)
 	window2.insert(pos2);
 	window2.insert(pos2);
 
+//	stringstream ss;
+//	ss << window1.getBloomFilter(1);
+//	ASSERT_TRUE(ss.good());
+//	ss << window2.getBloomFilter(1);
+//	ASSERT_TRUE(ss.good());
+
 	stringstream ss;
-	ss << window1.getBloomFilter(1);
+	ss << window1;
 	ASSERT_TRUE(ss.good());
-	ss << window2.getBloomFilter(1);
+	ss << window2;
 	ASSERT_TRUE(ss.good());
 
 	BloomFilter unionBloom;
