@@ -21,7 +21,6 @@ TEST(maskNew, read1)
 
 	read = FastaRecord("2", "", "ACGTACGTA");
 	EXPECT_TRUE(maskNew(r1, r2, read, mask) == 0u);
-	cout << read.seq << endl;
 	EXPECT_TRUE(read.seq == "ACGTACGTa");
 }
 
