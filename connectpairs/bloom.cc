@@ -30,8 +30,10 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2013 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage 1: " PROGRAM " build [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <READS_FILE_1> [<READS_FILE_2>]...\n"
-"Usage 2: " PROGRAM " union [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> [<BLOOM_FILE_2>]...\n"
+"Usage 1: " PROGRAM " build [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <READS_FILE_1> [READS_FILE_2]...\n"
+"Usage 2: " PROGRAM " union [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
+"Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
+"Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -62,6 +64,8 @@ static const char USAGE_MESSAGE[] =
 "  -w, --window M/N           build a bloom filter for subwindow M of N\n"
 "\n"
 " Options for `" PROGRAM " union': (none)\n"
+" Options for `" PROGRAM " intersect': (none)\n"
+" Options for `" PROGRAM " info': (none)\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -137,7 +141,7 @@ void parseGlobalOpts(int argc, char** argv)
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
-			cerr << USAGE_MESSAGE;
+			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
 			cerr << VERSION_MESSAGE;
@@ -215,11 +219,21 @@ void initBloomFilterLevels(CountingBloomFilter& bf)
 				<< i + 1 << " of counting bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			bloom.read(*in, j > 0);
+			BloomFilter::LoadType loadType = (j > 0) ?
+				BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
+			bloom.read(*in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
 	}
+}
+
+void printBloomStats(ostream& os, const BloomFilterBase& bloom)
+{
+	os << "Bloom size (bits): " << bloom.size() << "\n"
+		<< "Bloom popcount (bits): " << bloom.popcount() << "\n"
+		<< "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.FPR() << "%\n";
 }
 
 int build(int argc, char** argv)
@@ -357,8 +371,7 @@ int build(int argc, char** argv)
 
 	if (opt::verbose) {
 		cerr << "Successfully loaded bloom filter.\n";
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom->FPR() << "%\n";
+		printBloomStats(cerr, *bloom);
 		cerr << "Writing bloom filter to `"
 			<< outputPath << "'...\n";
 	}
@@ -377,7 +390,7 @@ int build(int argc, char** argv)
 	return 0;
 }
 
-int union_(int argc, char** argv)
+int combine(int argc, char** argv, BloomFilter::LoadType loadType)
 {
 	parseGlobalOpts(argc, argv);
 
@@ -398,17 +411,30 @@ int union_(int argc, char** argv)
 				<< path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-		bloom.read(*in, i > optind);
+		BloomFilter::LoadType loadOp = (i > optind) ?
+				loadType : BloomFilter::LOAD_OVERWRITE;
+		bloom.read(*in, loadOp);
 		assert_good(*in, path);
 		closeInputStream(in, path);
 	}
 
 	if (opt::verbose) {
 		cerr << "Successfully loaded bloom filter.\n";
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom.FPR() << "%\n";
-		std::cerr << "Writing union of bloom filters to `"
-			<< outputPath << "'...\n";
+		printBloomStats(cerr, bloom);
+		switch(loadType) {
+			case BloomFilter::LOAD_UNION:
+				std::cerr << "Writing union of bloom filters to `"
+					<< outputPath << "'...\n";
+				break;
+			case BloomFilter::LOAD_INTERSECT:
+				std::cerr << "Writing intersection of bloom filters to `"
+					<< outputPath << "'...\n";
+				break;
+			default:
+				std::cerr << "error: expected LOAD_UNION or LOAD_INTERSECT\n";
+				assert(false);
+				break;
+		}
 	}
 
 	ostream* out = openOutputStream(outputPath);
@@ -423,6 +449,33 @@ int union_(int argc, char** argv)
 	return 0;
 }
 
+int info(int argc, char** argv)
+{
+	parseGlobalOpts(argc, argv);
+
+	if (argc - optind < 1) {
+		cerr << PROGRAM ": missing arguments\n";
+		dieWithUsageError();
+	}
+
+	BloomFilter bloom;
+	string path = argv[optind];
+
+	if (opt::verbose)
+		std::cerr << "Loading bloom filter from `"
+			<< path << "'...\n";
+
+	istream* in = openInputStream(path);
+	assert_good(*in, path);
+	*in >> bloom;
+	
+	printBloomStats(cerr, bloom);
+
+	closeInputStream(in, path);
+
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
@@ -431,10 +484,22 @@ int main(int argc, char** argv)
 	string command(argv[1]);
 	optind++;
 
-	if (command == "build")
+	if (command == "--help" || command == "-h") {
+		cout << USAGE_MESSAGE;
+		return EXIT_SUCCESS;
+	}
+	else if (command == "build") {
 		return build(argc, argv);
-	else if (command == "union")
-		return union_(argc, argv);
+	}
+	else if (command == "union") {
+		return combine(argc, argv, BloomFilter::LOAD_UNION);
+	}
+	else if (command == "intersect") {
+		return combine(argc, argv, BloomFilter::LOAD_INTERSECT);
+	}
+	else if (command == "info") {
+		return info(argc, argv);
+	}
 
 	dieWithUsageError();
 }
