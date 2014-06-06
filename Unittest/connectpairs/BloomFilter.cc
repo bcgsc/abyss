@@ -213,6 +213,7 @@ TEST(CascadingBloomFilter, window)
 	size_t bits = 100;
 	size_t pos1 = 25;
 	size_t pos2 = 80;
+	size_t pos3 = 50;
 
 	CascadingBloomFilter CascadingBloom(bits);
 
@@ -222,6 +223,7 @@ TEST(CascadingBloomFilter, window)
 	CascadingBloom.insert(pos1);
 	CascadingBloom.insert(pos2);
 	CascadingBloom.insert(pos2);
+	CascadingBloom.insert(pos3);
 
 	EXPECT_TRUE(CascadingBloom[pos1]);
 	EXPECT_TRUE(CascadingBloom[pos2]);
@@ -235,11 +237,8 @@ TEST(CascadingBloomFilter, window)
 	window2.insert(pos2);
 	window2.insert(pos2);
 
-//	stringstream ss;
-//	ss << window1.getBloomFilter(1);
-//	ASSERT_TRUE(ss.good());
-//	ss << window2.getBloomFilter(1);
-//	ASSERT_TRUE(ss.good());
+	window2.insert(pos3);
+	window1.insert(pos3);
 
 	stringstream ss;
 	ss << window1;
@@ -257,4 +256,5 @@ TEST(CascadingBloomFilter, window)
 	EXPECT_EQ(2U, unionBloom.popcount());
 	EXPECT_TRUE(unionBloom[pos1]);
 	EXPECT_TRUE(unionBloom[pos2]);
+	EXPECT_FALSE(unionBloom[pos3]);
 }
