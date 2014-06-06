@@ -70,7 +70,7 @@ namespace Bloom {
 			std::cerr << "Loaded " << count << " reads into bloom filter\n";
 	}
 
-	//Bloom filter calculation methods
+	//TODO: Bloom filter calculation methods
 	//static double calcApproxFPR(size_t numBucket, size_t numEntr,
 	//		unsigned numHash) const;
 	//static double calcRedunancyFPR(size_t numBucket, size_t numEntr,
