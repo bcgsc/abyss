@@ -175,6 +175,22 @@ union_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	@echo '------------------'
 
 #------------------------------------------------------------
+# window_single_test
+#------------------------------------------------------------
+
+window_single_test: $(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -w1/2 -b$b $(tmpdir)/e$e_window1.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -w2/2 -b$b $(tmpdir)/e$e_window2.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_concat.bloom \
+		$(tmpdir)/e$e_window1.bloom $(tmpdir)/e$e_window2.bloom
+	cmp $(tmpdir)/e$e.bloom $(tmpdir)/e$e_l2_concat.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
 # window_test
 #------------------------------------------------------------
 
@@ -190,105 +206,105 @@ window_test: $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	@echo '$@: PASSED'
 	@echo '------------------'
 
-##------------------------------------------------------------
-## parallel_load_2_files_test
-##------------------------------------------------------------
-#
-#parallel_load_2_files_test: $(tmpdir)/e$e_l2.bloom \
-#				$(tmpdir)/e$e_1.fq \
-#				$(tmpdir)/e$e_2.fq
-#	echo 'b_div_2: $(b_div_2)'
-#	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read1.bloom \
-#		$(tmpdir)/e$e_1.fq
-#	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read2.bloom \
-#		$(tmpdir)/e$e_2.fq
-#	$(bloom) build -v -k$k -b$b -l2 -L 1=$(tmpdir)/e$e_l1_read2.bloom \
-#		$(tmpdir)/e$e_l2_read1.bloom $(tmpdir)/e$e_1.fq
-#	$(bloom) build -v -k$k -b$b -l2 -L 1=$(tmpdir)/e$e_l1_read1.bloom \
-#		$(tmpdir)/e$e_l2_read2.bloom $(tmpdir)/e$e_2.fq
-#	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_union.bloom \
-#		$(tmpdir)/e$e_l2_read1.bloom \
-#		$(tmpdir)/e$e_l2_read2.bloom
-#	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_union.bloom
-#	@echo '------------------'
-#	@echo '$@: PASSED'
-#	@echo '------------------'
-#
-##------------------------------------------------------------
-## parallel_load_3_files_test
-##------------------------------------------------------------
-#
-#parallel_load_3_files_test: $(tmpdir)/e$e_l2.bloom \
-#		$(tmpdir)/e$e_reads_1of3.fq \
-#		$(tmpdir)/e$e_reads_2of3.fq \
-#		$(tmpdir)/e$e_reads_3of3.fq
-#	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_1of3.bloom \
-#		$(tmpdir)/e$e_reads_1of3.fq
-#	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_2of3.bloom \
-#		$(tmpdir)/e$e_reads_2of3.fq
-#	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_3of3.bloom \
-#		$(tmpdir)/e$e_reads_3of3.fq
-#	$(bloom) build -v -k$k -b$b -l2 \
-#		-L 1=$(tmpdir)/e$e_l1_2of3.bloom \
-#		-L 1=$(tmpdir)/e$e_l1_3of3.bloom \
-#		$(tmpdir)/e$e_l2_1of3.bloom $(tmpdir)/e$e_reads_1of3.fq
-#	$(bloom) build -v -k$k -b$b -l2 \
-#		-L 1=$(tmpdir)/e$e_l1_1of3.bloom \
-#		-L 1=$(tmpdir)/e$e_l1_3of3.bloom \
-#		$(tmpdir)/e$e_l2_2of3.bloom $(tmpdir)/e$e_reads_2of3.fq
-#	$(bloom) build -v -k$k -b$b -l2 \
-#		-L 1=$(tmpdir)/e$e_l1_1of3.bloom \
-#		-L 1=$(tmpdir)/e$e_l1_2of3.bloom \
-#		$(tmpdir)/e$e_l2_3of3.bloom $(tmpdir)/e$e_reads_3of3.fq
-#	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_union.bloom \
-#		$(tmpdir)/e$e_l2_1of3.bloom \
-#		$(tmpdir)/e$e_l2_2of3.bloom \
-#		$(tmpdir)/e$e_l2_3of3.bloom
-#	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_union.bloom
-#	@echo '------------------'
-#	@echo '$@: PASSED'
-#	@echo '------------------'
-#
-##------------------------------------------------------------
-## abyss_bloom_dist_1_file_test
-##------------------------------------------------------------
-#
-#abyss_bloom_dist_1_file_test: $(tmpdir)/e$e_l2.bloom \
-#		$(tmpdir)/e$e_1.fq \
-#		$(tmpdir)/e$e_2.fq
-#	cat $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq > $(tmpdir)/e$e_1cat2.fq
-#	$(bloom_dist) -C $(tmpdir) name=dist-1-file k=$k b=$(b_div_2) w=2 \
-#		files='e$e_1cat2.fq'
-#	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-1-file.bloom.gz)
-#	@echo '------------------'
-#	@echo '$@: PASSED'
-#	@echo '------------------'
-#
-##------------------------------------------------------------
-## abyss_bloom_dist_2_files_test
-##------------------------------------------------------------
-#
-#abyss_bloom_dist_2_files_test: $(tmpdir)/e$e_l2.bloom \
-#		$(tmpdir)/e$e_1.fq \
-#		$(tmpdir)/e$e_2.fq
-#	$(bloom_dist) -C $(tmpdir) name=dist-2-files k=$k b=$(b_div_2) w=2 \
-#		files='e$e_1.fq e$e_2.fq'
-#	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-2-files.bloom.gz)
-#	@echo '------------------'
-#	@echo '$@: PASSED'
-#	@echo '------------------'
-#
-##------------------------------------------------------------
-## abyss_bloom_dist_3_files_test
-##------------------------------------------------------------
-#
-#abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
-#		$(tmpdir)/e$e_reads_1of3.fq \
-#		$(tmpdir)/e$e_reads_2of3.fq \
-#		$(tmpdir)/e$e_reads_3of3.fq
-#	$(bloom_dist) -C $(tmpdir) name=dist-3-files k=$k b=$(b_div_2) w=2 \
-#		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
-#	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-3-files.bloom.gz)
-#	@echo '------------------'
-#	@echo '$@: PASSED'
-#	@echo '------------------'
+#------------------------------------------------------------
+# parallel_load_2_files_test
+#------------------------------------------------------------
+
+parallel_load_2_files_test: $(tmpdir)/e$e_l2.bloom \
+				$(tmpdir)/e$e_1.fq \
+				$(tmpdir)/e$e_2.fq
+	echo 'b_div_2: $(b_div_2)'
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read1.bloom \
+		$(tmpdir)/e$e_1.fq
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_read2.bloom \
+		$(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -b$b -l2 -L 1=$(tmpdir)/e$e_l1_read2.bloom \
+		$(tmpdir)/e$e_l2_read1.bloom $(tmpdir)/e$e_1.fq
+	$(bloom) build -v -k$k -b$b -l2 -L 1=$(tmpdir)/e$e_l1_read1.bloom \
+		$(tmpdir)/e$e_l2_read2.bloom $(tmpdir)/e$e_2.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_union.bloom \
+		$(tmpdir)/e$e_l2_read1.bloom \
+		$(tmpdir)/e$e_l2_read2.bloom
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_union.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# parallel_load_3_files_test
+#------------------------------------------------------------
+
+parallel_load_3_files_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq \
+		$(tmpdir)/e$e_reads_2of3.fq \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_1of3.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_2of3.bloom \
+		$(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$(b_div_2) $(tmpdir)/e$e_l1_3of3.bloom \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_2of3.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3.bloom \
+		$(tmpdir)/e$e_l2_1of3.bloom $(tmpdir)/e$e_reads_1of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3.bloom \
+		-L 1=$(tmpdir)/e$e_l1_3of3.bloom \
+		$(tmpdir)/e$e_l2_2of3.bloom $(tmpdir)/e$e_reads_2of3.fq
+	$(bloom) build -v -k$k -b$b -l2 \
+		-L 1=$(tmpdir)/e$e_l1_1of3.bloom \
+		-L 1=$(tmpdir)/e$e_l1_2of3.bloom \
+		$(tmpdir)/e$e_l2_3of3.bloom $(tmpdir)/e$e_reads_3of3.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_union.bloom \
+		$(tmpdir)/e$e_l2_1of3.bloom \
+		$(tmpdir)/e$e_l2_2of3.bloom \
+		$(tmpdir)/e$e_l2_3of3.bloom
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_union.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_dist_1_file_test
+#------------------------------------------------------------
+
+abyss_bloom_dist_1_file_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_1.fq \
+		$(tmpdir)/e$e_2.fq
+	cat $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq > $(tmpdir)/e$e_1cat2.fq
+	$(bloom_dist) -C $(tmpdir) name=dist-1-file k=$k b=$(b_div_2) w=2 \
+		files='e$e_1cat2.fq'
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-1-file.bloom.gz)
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_dist_2_files_test
+#------------------------------------------------------------
+
+abyss_bloom_dist_2_files_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_1.fq \
+		$(tmpdir)/e$e_2.fq
+	$(bloom_dist) -C $(tmpdir) name=dist-2-files k=$k b=$(b_div_2) w=2 \
+		files='e$e_1.fq e$e_2.fq'
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-2-files.bloom.gz)
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_dist_3_files_test
+#------------------------------------------------------------
+
+abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
+		$(tmpdir)/e$e_reads_1of3.fq \
+		$(tmpdir)/e$e_reads_2of3.fq \
+		$(tmpdir)/e$e_reads_3of3.fq
+	$(bloom_dist) -C $(tmpdir) name=dist-3-files k=$k b=$(b_div_2) w=2 \
+		files='e$e_reads_1of3.fq e$e_reads_2of3.fq e$e_reads_3of3.fq'
+	cmp $(tmpdir)/e$e_l2.bloom <(gunzip -c $(tmpdir)/dist-3-files.bloom.gz)
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
