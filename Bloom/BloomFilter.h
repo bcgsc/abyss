@@ -178,7 +178,6 @@ class BloomFilter
 			}
 			i += readSize;
 		}
-
 	}
 
 	void loadSeq(unsigned k, const std::string& seq)

@@ -202,13 +202,13 @@ static inline void closeOutputStream(ostream* out, const string& path)
 	delete ofs;
 }
 
-void initBloomFilterLevels(CascadingBloomFilter& bf)
+template <typename CBF>
+void initBloomFilterLevels(CBF& bf)
 {
 	assert(opt::levels >= 2);
 	assert(opt::levelInitPaths.size() <= opt::levels);
 
 	for (unsigned i = 0; i < opt::levelInitPaths.size(); i++) {
-		BloomFilter& bloom = bf.getBloomFilter(i);
 		vector<string>& paths = opt::levelInitPaths.at(i);
 		for (unsigned j = 0; j < paths.size(); j++) {
 			string path = paths.at(j);
@@ -216,11 +216,42 @@ void initBloomFilterLevels(CascadingBloomFilter& bf)
 				<< i + 1 << " of counting bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			bloom.read(*in, j > 0);
+			bf.getBloomFilter(i).read(*in, j > 0);
 			assert(*in);
 			closeInputStream(in, path);
 		}
 	}
+}
+
+template <typename BF>
+void loadFilters(BF& bf, int argc, char** argv)
+{
+	for (int i = optind; i < argc; i++)
+		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
+
+	if (opt::verbose) {
+		cerr << "Successfully loaded bloom filter.\n";
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bf.FPR() << "%\n";
+	}
+}
+
+template <typename BF>
+void buildAndOutput(BF& bf, string& outputPath)
+{
+	if (opt::verbose) {
+		cerr << "Writing bloom filter to `"
+			<< outputPath << "'...\n";
+	}
+
+	ostream* out = openOutputStream(outputPath);
+
+	assert_good(*out, outputPath);
+	*out << bf;
+	out->flush();
+	assert_good(*out, outputPath);
+
+	closeOutputStream(out, outputPath);
 }
 
 int build(int argc, char** argv)
@@ -316,17 +347,18 @@ int build(int argc, char** argv)
 	string outputPath(argv[optind]);
 	optind++;
 
-	BloomFilter* bloom = NULL;
-
 	if (opt::windows == 0) {
 
-		if (opt::levels == 1)
-			bloom = new BloomFilter(bits);
+		if (opt::levels == 1) {
+			BloomFilter bloom(bits);
+			loadFilters(bloom, argc, argv);
+			buildAndOutput(bloom, outputPath);
+		}
 		else {
-			CascadingBloomFilter* countingBloom =
-				new CascadingBloomFilter(bits);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+			CascadingBloomFilter cascadeBloom(bits);
+			initBloomFilterLevels(cascadeBloom);
+			loadFilters(cascadeBloom, argc, argv);
+			buildAndOutput(cascadeBloom, outputPath);
 		}
 
 	} else {
@@ -340,41 +372,19 @@ int build(int argc, char** argv)
 		else
 			endBitPos = bits - 1;
 
-		if (opt::levels == 1)
-			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
-		else {
-			CascadingBloomFilter* countingBloom =
-				new CascadingBloomFilterWindow(bits, startBitPos, endBitPos);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+		if (opt::levels == 1) {
+			BloomFilterWindow bloom(bits, startBitPos, endBitPos);
+			loadFilters(bloom, argc, argv);
+			buildAndOutput(bloom, outputPath);
+		} else {
+			CascadingBloomFilterWindow cascadeBloom(bits, startBitPos,
+					endBitPos);
+			initBloomFilterLevels(cascadeBloom);
+			loadFilters(cascadeBloom, argc, argv);
+			buildAndOutput(cascadeBloom, outputPath);
 		}
 
 	}
-
-	assert(bloom != NULL);
-
-	for (int i = optind; i < argc; i++)
-		Bloom::loadFile(*bloom, opt::k, argv[i], opt::verbose);
-
-	if (opt::verbose) {
-		cerr << "Successfully loaded bloom filter.\n";
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom->FPR() << "%\n";
-		cerr << "Writing bloom filter to `"
-			<< outputPath << "'...\n";
-	}
-
-	ostream* out = openOutputStream(outputPath);
-
-	assert_good(*out, outputPath);
-	*out << *bloom;
-	out->flush();
-	assert_good(*out, outputPath);
-
-	closeOutputStream(out, outputPath);
-
-	delete bloom;
-
 	return 0;
 }
 
@@ -408,18 +418,8 @@ int union_(int argc, char** argv)
 		cerr << "Successfully loaded bloom filter.\n";
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom.FPR() << "%\n";
-		std::cerr << "Writing union of bloom filters to `"
-			<< outputPath << "'...\n";
 	}
-
-	ostream* out = openOutputStream(outputPath);
-
-	assert_good(*out, outputPath);
-	*out << bloom;
-	out->flush();
-	assert_good(*out, outputPath);
-
-	closeOutputStream(out, outputPath);
+	buildAndOutput(bloom, outputPath);
 
 	return 0;
 }

@@ -2,10 +2,11 @@
 #define COUNTINGBLOOMFILTERWINDOW_H 1
 
 #include "Bloom.h"
+#include "BloomFilter.h"
 #include "CascadingBloomFilter.h"
 #include <vector>
 
-class CascadingBloomFilterWindow : public CascadingBloomFilter
+class CascadingBloomFilterWindow : private CascadingBloomFilter
 {
   public:
 
@@ -19,7 +20,27 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 		: m_fullBloomSize(fullBloomSize)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; i++)
-			m_data.push_back(new BloomFilterWindow(m_fullBloomSize, startBitPos, endBitPos));
+			m_data.push_back(new BloomFilterWindow(fullBloomSize, startBitPos, endBitPos));
+	}
+
+	/** Return the size of the bit array. */
+	size_t size() const
+	{
+		assert(m_data.back() != NULL);
+		return m_data.back()->size();
+	}
+
+	/** Return the number of elements with count >= MAX_COUNT. */
+	size_t popcount() const
+	{
+		assert(m_data.back() != NULL);
+		return m_data.back()->popcount();
+	}
+
+	/** Return the estimated false positive rate */
+	double FPR() const
+	{
+		return (double)popcount() / size();
 	}
 
 	/** Add the object with the specified index to this multiset. */
@@ -27,8 +48,8 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 	{
 		for (unsigned i = 0; i < MAX_COUNT; ++i) {
 			assert(m_data.at(i) != NULL);
-			if (!(*static_cast<BloomFilterWindow*>(m_data.back()))[index]) {
-				static_cast<BloomFilterWindow*>(m_data.back())->insert(index);
+			if (!(*m_data[i])[index]) {
+				m_data[i]->insert(index);
 				break;
 			}
 		}
@@ -37,13 +58,28 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 	/** Add the object to this counting multiset. */
 	void insert(const Bloom::key_type& key)
 	{
+		assert(m_data.back() != NULL);
 		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
 	void write(std::ostream& out) const
 	{
 		assert(m_data.back() != NULL);
-		out << *static_cast<BloomFilterWindow*>(m_data.back());
+		out << *m_data.back();
+	}
+
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
 	}
 
 	/** Operator for writing the bloom filter to a stream */
@@ -57,11 +93,12 @@ class CascadingBloomFilterWindow : public CascadingBloomFilter
 	BloomFilterWindow& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
-		return *static_cast<BloomFilterWindow*>(m_data.at(level));
+		return *m_data.at(level);
 	}
 
   private:
 	size_t m_fullBloomSize;
+	std::vector<BloomFilterWindow*> m_data;
 };
 
 #endif

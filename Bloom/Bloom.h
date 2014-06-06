@@ -53,7 +53,7 @@ namespace Bloom {
 	}
 
 	template <typename BF>
-	inline static void loadFile(BF bloomFilter, unsigned k, const std::string& path, bool verbose = false)
+	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path, bool verbose = false)
 	{
 		assert(!path.empty());
 		if (verbose)

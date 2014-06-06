@@ -10,7 +10,7 @@
 #include <vector>
 
 /** A Cascading Bloom filter. */
-class CascadingBloomFilter : public BloomFilter
+class CascadingBloomFilter
 {
   public:
 
@@ -105,7 +105,28 @@ class CascadingBloomFilter : public BloomFilter
 		out << *m_data.back();
 	}
 
-  protected:
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
+	}
+
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const CascadingBloomFilter& o)
+	{
+		o.write(out);
+		return out;
+	}
+
+  private:
 	std::vector<BloomFilter*> m_data;
 
 };

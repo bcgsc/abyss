@@ -554,7 +554,7 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	BloomFilter* bloom = NULL;
+	BloomFilter bloom;
 
 	if (!opt::inputBloomPath.empty()) {
 
@@ -565,11 +565,9 @@ int main(int argc, char** argv)
 		const char* inputPath = opt::inputBloomPath.c_str();
 		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 		assert_good(inputBloom, inputPath);
-		BloomFilter* loadedBloom = new BloomFilter();
-		inputBloom >> *loadedBloom;
+		inputBloom >> bloom;
 		assert_good(inputBloom, inputPath);
 		inputBloom.close();
-		bloom = loadedBloom;
 
 	} else {
 
@@ -577,15 +575,15 @@ int main(int argc, char** argv)
 		// because counting bloom filter requires twice as
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
-		CascadingBloomFilter *tempBloom = new CascadingBloomFilter(bits);
+		CascadingBloomFilter tempBloom(bits);
 		for (int i = optind; i < argc; i++)
-			Bloom::loadFile(*bloom, opt::k, string(argv[i]), opt::verbose);
-		bloom = &tempBloom->getBloomFilter(tempBloom->MAX_COUNT-1);
+			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+		bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
 	}
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom->FPR() << "%\n";
+			<< 100 * bloom.FPR() << "%\n";
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -607,7 +605,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<BloomFilter> g(*bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");
@@ -709,7 +707,7 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n"
-			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+			"Bloom filter FPR: " << setprecision(3) << 100 * bloom.FPR()
 				<< "%\n";
 	}
 
@@ -729,8 +727,6 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 		traceStream.close();
 	}
-
-	delete bloom;
 
 	return 0;
 }

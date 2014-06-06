@@ -49,6 +49,7 @@ tests=run_test \
 	save_and_load_test \
 	union_test \
 	interleaved_files_test \
+	window_single_test \
 	window_test \
 	parallel_load_2_files_test \
 	parallel_load_3_files_test \

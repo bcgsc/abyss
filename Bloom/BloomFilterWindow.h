@@ -10,11 +10,13 @@
 #include <vector>
 #include <iostream>
 
+//TODO many copied functions from bloomfilter.h despite inheritance need to deal with better
+
 /**
  * A bloom filter that represents a window
  * within a larger bloom filter.
  */
-class BloomFilterWindow : public BloomFilter
+class BloomFilterWindow : private BloomFilter
 {
 public:
 
@@ -33,6 +35,25 @@ public:
 		assert(startBitPos < fullBloomSize);
 		assert(endBitPos < fullBloomSize);
 		assert(startBitPos <= endBitPos);
+	}
+
+	/** Return the size of the bit array. */
+	size_t size() const
+	{
+		return BloomFilter::size();
+	}
+
+
+	/** Return the number of elements with count >= MAX_COUNT. */
+	size_t popcount() const
+	{
+		return BloomFilter::popcount();
+	}
+
+	/** Return the estimated false positive rate */
+	double FPR() const
+	{
+		return BloomFilter::FPR();
 	}
 
 	/** Return whether the specified bit is set. */
@@ -98,6 +119,95 @@ public:
 			out.write(buf, writeSize);
 			assert(out);
 			i += writeSize;
+		}
+	}
+
+	void read(std::istream& in, bool
+			loadUnion = false, unsigned shrinkFactor = 1)
+	{
+		unsigned bloomVersion;
+		in >> bloomVersion >> expect("\n");
+		assert(in);
+		if (bloomVersion != BLOOM_VERSION) {
+			std::cerr << "error: bloom filter version (`"
+				<< bloomVersion << "'), does not match version required "
+				"by this program (`" << BLOOM_VERSION << "').\n";
+			exit(EXIT_FAILURE);
+		}
+
+		// read bloom filter k value
+
+		unsigned k;
+		in >> k >> expect("\n");
+		assert(in);
+		if (k != Kmer::length()) {
+			std::cerr << "error: this program must be run with the same kmer "
+				"size as the bloom filter being loaded (k="
+				<< k << ").\n";
+			exit(EXIT_FAILURE);
+		}
+
+		// read bloom filter dimensions
+
+		size_t size, startBitPos, endBitPos;
+		readBloomDimensions(in, size, startBitPos, endBitPos);
+
+		// shrink factor allows building a smaller
+		// bloom filter from a larger one
+
+		if (size % shrinkFactor != 0) {
+			std::cerr << "error: the number of bits in the original bloom "
+				"filter must be evenly divisible by the shrink factor (`"
+				<< shrinkFactor << "')\n";
+			exit(EXIT_FAILURE);
+		}
+
+		size /= shrinkFactor;
+
+		if(loadUnion && size != this->size()) {
+			std::cerr << "error: can't union bloom filters "
+				"with different sizes.\n";
+			exit(EXIT_FAILURE);
+		} else {
+			m_array.resize(size);
+		}
+
+		// read bit vector
+
+		if (!loadUnion)
+			m_array.reset();
+
+		size_t offset = startBitPos;
+		size_t bits = endBitPos - startBitPos + 1;
+		size_t bytes = (bits + 7) / 8;
+
+		char buf[IO_BUFFER_SIZE];
+		for (size_t i = 0, j = offset; i < bytes; ) {
+			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
+			in.read(buf, readSize);
+			assert(in);
+			for (k = 0; k < readSize; k++) {
+				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
+					bool bit = buf[k] & (1 << (7 - l));
+					size_t index = j % size;
+					m_array[index] |= bit;
+				}
+			}
+			i += readSize;
+		}
+	}
+
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
 		}
 	}
 

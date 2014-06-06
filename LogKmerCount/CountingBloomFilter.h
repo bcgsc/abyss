@@ -45,11 +45,8 @@ public:
 	/** Return the estimated false positive rate */
 	double FPR() const
 	{
-		return pow(
-				1.0
-						- pow(1.0 - 1.0 / double(m_data.size()),
-								double(uniqueEntries) * hashNum),
-				double(hashNum));
+		return pow(1.0 - pow(1.0 - 1.0 / double(m_data.size()),
+				double(uniqueEntries) * hashNum), double(hashNum));
 	}
 
 	/** Return the count of the single element (debugging purposes)
