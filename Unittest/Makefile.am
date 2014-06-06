@@ -95,5 +95,8 @@ connectpairs_connectpairs_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 connectpairs_connectpairs_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+	
+##Tests for log kmer counting / Counting bloom filter
+
 
 TESTS = $(UNIT_TESTS)

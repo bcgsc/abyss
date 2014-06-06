@@ -7,10 +7,11 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
-#include "connectpairs/BloomFilter.h"
-#include "connectpairs/CountingBloomFilter.h"
-#include "connectpairs/BloomFilterWindow.h"
-#include "connectpairs/CountingBloomFilterWindow.h"
+#include "Bloom/Bloom.h"
+#include "Bloom/BloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/CascadingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>
@@ -205,13 +206,13 @@ static inline void closeOutputStream(ostream* out, const string& path)
 	delete ofs;
 }
 
-void initBloomFilterLevels(CountingBloomFilter& bf)
+template <typename CBF>
+void initBloomFilterLevels(CBF& bf)
 {
 	assert(opt::levels >= 2);
 	assert(opt::levelInitPaths.size() <= opt::levels);
 
 	for (unsigned i = 0; i < opt::levelInitPaths.size(); i++) {
-		BloomFilter& bloom = bf.getBloomFilter(i);
 		vector<string>& paths = opt::levelInitPaths.at(i);
 		for (unsigned j = 0; j < paths.size(); j++) {
 			string path = paths.at(j);
@@ -221,14 +222,46 @@ void initBloomFilterLevels(CountingBloomFilter& bf)
 			assert(*in);
 			BloomFilter::LoadType loadType = (j > 0) ?
 				BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
-			bloom.read(*in, loadType);
+			bf.getBloomFilter(i).read(*in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
 	}
 }
 
-void printBloomStats(ostream& os, const BloomFilterBase& bloom)
+template <typename BF>
+void loadFilters(BF& bf, int argc, char** argv)
+{
+	for (int i = optind; i < argc; i++)
+		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
+
+	if (opt::verbose) {
+		cerr << "Successfully loaded bloom filter.\n";
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< 100 * bf.FPR() << "%\n";
+	}
+}
+
+template <typename BF>
+void buildAndOutput(BF& bf, string& outputPath)
+{
+	if (opt::verbose) {
+		cerr << "Writing bloom filter to `"
+			<< outputPath << "'...\n";
+	}
+
+	ostream* out = openOutputStream(outputPath);
+
+	assert_good(*out, outputPath);
+	*out << bf;
+	out->flush();
+	assert_good(*out, outputPath);
+
+	closeOutputStream(out, outputPath);
+}
+
+template <typename BF>
+void printBloomStats(ostream& os, const BF& bloom)
 {
 	os << "Bloom size (bits): " << bloom.size() << "\n"
 		<< "Bloom popcount (bits): " << bloom.popcount() << "\n"
@@ -328,18 +361,18 @@ int build(int argc, char** argv)
 
 	string outputPath(argv[optind]);
 	optind++;
-
-	BloomFilterBase* bloom = NULL;
-
 	if (opt::windows == 0) {
 
-		if (opt::levels == 1)
-			bloom = new BloomFilter(bits);
+		if (opt::levels == 1) {
+			BloomFilter bloom(bits);
+			loadFilters(bloom, argc, argv);
+			buildAndOutput(bloom, outputPath);
+		}
 		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilter(bits);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+			CascadingBloomFilter countingBloom(bits);
+			initBloomFilterLevels(countingBloom);
+			loadFilters(countingBloom, argc, argv);
+			buildAndOutput(countingBloom, outputPath);
 		}
 
 	} else {
@@ -353,39 +386,18 @@ int build(int argc, char** argv)
 		else
 			endBitPos = bits - 1;
 
-		if (opt::levels == 1)
-			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
-		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+		if (opt::levels == 1) {
+			BloomFilterWindow bloom(bits, startBitPos, endBitPos);
+			loadFilters(bloom, argc, argv);
+			buildAndOutput(bloom, outputPath);
 		}
-
+		else {
+			CascadingBloomFilterWindow countingBloom(bits, startBitPos, endBitPos);
+			initBloomFilterLevels(countingBloom);
+			loadFilters(countingBloom, argc, argv);
+			buildAndOutput(countingBloom, outputPath);
+		}
 	}
-
-	assert(bloom != NULL);
-
-	for (int i = optind; i < argc; i++)
-		bloom->loadFile(opt::k, argv[i], opt::verbose);
-
-	if (opt::verbose) {
-		cerr << "Successfully loaded bloom filter.\n";
-		printBloomStats(cerr, *bloom);
-		cerr << "Writing bloom filter to `"
-			<< outputPath << "'...\n";
-	}
-
-	ostream* out = openOutputStream(outputPath);
-
-	assert_good(*out, outputPath);
-	*out << *bloom;
-	out->flush();
-	assert_good(*out, outputPath);
-
-	closeOutputStream(out, outputPath);
-
-	delete bloom;
 
 	return 0;
 }

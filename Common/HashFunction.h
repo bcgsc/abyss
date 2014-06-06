@@ -10,4 +10,9 @@ static inline uint64_t hashmem(const void *p, size_t n)
 	return CityHash64(static_cast<const char*>(p), n);
 }
 
+static inline uint64_t hashmem(const void *p, size_t n, size_t seed)
+{
+	return CityHash64WithSeed(static_cast<const char*>(p), n, seed);
+}
+
 #endif

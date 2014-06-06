@@ -1,15 +1,16 @@
 /**
- * A counting Bloom filter
+ * A cascading Bloom filter
  * Copyright 2013 Shaun Jackman
  */
-#ifndef COUNTINGBLOOMFILTER_H
-#define COUNTINGBLOOMFILTER_H 1
+#ifndef CascadingBLOOMFILTER_H
+#define CascadingBLOOMFILTER_H 1
 
+#include "Bloom/Bloom.h"
 #include "BloomFilter.h"
 #include <vector>
 
-/** A counting Bloom filter. */
-class CountingBloomFilter : public BloomFilterBase
+/** A Cascading Bloom filter. */
+class CascadingBloomFilter
 {
   public:
 
@@ -17,17 +18,17 @@ class CountingBloomFilter : public BloomFilterBase
 	static const unsigned MAX_COUNT = 2;
 
 	/** Constructor */
-	CountingBloomFilter() {}
+	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CountingBloomFilter(size_t n)
+	CascadingBloomFilter(size_t n)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; i++)
 			m_data.push_back(new BloomFilter(n));
 	}
 
 	/** Destructor */
-	virtual ~CountingBloomFilter()
+	~CascadingBloomFilter()
 	{
 		typedef std::vector<BloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
@@ -66,14 +67,14 @@ class CountingBloomFilter : public BloomFilterBase
 	}
 
 	/** Return whether this element has count >= MAX_COUNT. */
-	bool operator[](const key_type& key) const
+	bool operator[](const Bloom::key_type& key) const
 	{
 		assert(m_data.back() != NULL);
-		return (*m_data.back())[hash(key) % m_data.back()->size()];
+		return (*m_data.back())[Bloom::hash(key) % m_data.back()->size()];
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	virtual void insert(size_t index)
+	void insert(size_t index)
 	{
 		for (unsigned i = 0; i < MAX_COUNT; ++i) {
 			assert(m_data.at(i) != NULL);
@@ -84,11 +85,11 @@ class CountingBloomFilter : public BloomFilterBase
 		}
 	}
 
-	/** Add the object to this counting multiset. */
-	virtual void insert(const key_type& key)
+	/** Add the object to this Cascading multiset. */
+	void insert(const Bloom::key_type& key)
 	{
 		assert(m_data.back() != NULL);
-		insert(hash(key) % m_data.back()->size());
+		insert(Bloom::hash(key) % m_data.back()->size());
 	}
 
 	/** Get the Bloom filter for a given level */
@@ -98,13 +99,34 @@ class CountingBloomFilter : public BloomFilterBase
 		return *m_data.at(level);
 	}
 
-	virtual void write(std::ostream& out) const
+	void write(std::ostream& out) const
 	{
 		assert(m_data.back() != NULL);
 		out << *m_data.back();
 	}
 
-  protected:
+	void loadSeq(unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
+	}
+
+	/** Operator for writing the bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out, const CascadingBloomFilter& o)
+	{
+		o.write(out);
+		return out;
+	}
+
+  private:
 	std::vector<BloomFilter*> m_data;
 
 };

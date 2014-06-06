@@ -1,85 +1,95 @@
-/**
- * A Bloom filter
- * Copyright 2013 Shaun Jackman
- */
-#ifndef BLOOMFILTER_H
-#define BLOOMFILTER_H 1
+#ifndef BLOOMFILTERWINDOW_H
+#define BLOOMFILTERWINDOW_H 1
 
-#include "Bloom/Bloom.h"
+#include "Bloom.h"
+#include "BloomFilter.h"
+#include "Common/HashFunction.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include <boost/dynamic_bitset.hpp>
 
-static const unsigned BLOOM_VERSION = 2;
-static const unsigned long IO_BUFFER_SIZE = 32*1024;
+//TODO many copied functions from bloomfilter.h despite inheritance need to deal with better
 
-/** A Bloom filter. */
-class BloomFilter
+/**
+ * A bloom filter that represents a window
+ * within a larger bloom filter.
+ */
+class BloomFilterWindow : private BloomFilter
 {
-  public:
+public:
 
-	enum LoadType {
-		LOAD_OVERWRITE,
-		LOAD_UNION,
-		LOAD_INTERSECT
-	};
-
-	static const size_t IO_BUFFER_SIZE = 32 * 1024;
-
-	/** Constructor. */
-	BloomFilter() { }
-
-	/** Constructor. */
-	BloomFilter(size_t n) : m_array(n) { }
+	/** Constructor.
+	 *
+	 * @param fullBloomSize size in bits of the containing bloom filter
+	 * @param startBitPos index of first bit in the window
+	 * @param endBitPos index of last bit in the window
+	 */
+	BloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos) :
+		BloomFilter(endBitPos - startBitPos + 1),
+		m_fullBloomSize(fullBloomSize),
+		m_startBitPos(startBitPos),
+		m_endBitPos(endBitPos)
+	{
+		assert(startBitPos < fullBloomSize);
+		assert(endBitPos < fullBloomSize);
+		assert(startBitPos <= endBitPos);
+	}
 
 	/** Return the size of the bit array. */
-	size_t size() const { return m_array.size(); }
+	size_t size() const
+	{
+		return BloomFilter::size();
+	}
 
-	/** Return the population count, i.e. the number of set bits. */
+
+	/** Return the number of elements with count >= MAX_COUNT. */
 	size_t popcount() const
 	{
-		return m_array.count();
+		return BloomFilter::popcount();
 	}
 
 	/** Return the estimated false positive rate */
 	double FPR() const
 	{
-		return (double)popcount() / size();
+		return BloomFilter::FPR();
 	}
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
 	{
-		assert(i < m_array.size());
-		return m_array[i];
+		if (i >= m_startBitPos && i <= m_endBitPos)
+			return BloomFilter::operator[](i - m_startBitPos);
+		return false;
 	}
 
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return m_array[Bloom::hash(key) % m_array.size()];
+		return (*this)[Bloom::hash(key) % m_fullBloomSize];
 	}
 
 	/** Add the object with the specified index to this set. */
-	void insert(size_t index)
+	void insert(size_t i)
 	{
-		assert(index < m_array.size());
-		m_array[index] = true;
+		if (i >= m_startBitPos && i <= m_endBitPos)
+			BloomFilter::insert(i - m_startBitPos);
 	}
 
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		m_array[Bloom::hash(key) % m_array.size()] = true;
+		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
-	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
+	/**
+	 * Return the full size of the containing bloom
+	 * filter (in bits).
+	 */
+	size_t getFullBloomSize() const
 	{
-		o.read(in, LOAD_OVERWRITE);
-		return in;
+		return m_fullBloomSize;
 	}
 
 	/** Write the bloom filter to a stream */
@@ -101,7 +111,7 @@ class BloomFilter
 				buf[k] = 0;
 				for (unsigned l = 0; l < 8; l++, j++) {
 					buf[k] <<= 1;
-					if (j < bits && m_array[j]) {
+					if (j < bits && BloomFilter::m_array[j]) {
 						buf[k] |= 1;
 					}
 				}
@@ -112,12 +122,9 @@ class BloomFilter
 		}
 	}
 
-	/** Read the bloom filter from a stream */
-	void read(std::istream& in, LoadType loadType = LOAD_OVERWRITE,
-			unsigned shrinkFactor = 1)
+	void read(std::istream& in, bool
+			loadUnion = false, unsigned shrinkFactor = 1)
 	{
-		// read bloom filter file format version
-
 		unsigned bloomVersion;
 		in >> bloomVersion >> expect("\n");
 		assert(in);
@@ -157,9 +164,8 @@ class BloomFilter
 
 		size /= shrinkFactor;
 
-		if((loadType == LOAD_UNION || loadType == LOAD_INTERSECT)
-			&& size != this->size()) {
-			std::cerr << "error: can't union/intersect two bloom filters "
+		if(loadUnion && size != this->size()) {
+			std::cerr << "error: can't union bloom filters "
 				"with different sizes.\n";
 			exit(EXIT_FAILURE);
 		} else {
@@ -168,7 +174,7 @@ class BloomFilter
 
 		// read bit vector
 
-		if (loadType == LOAD_OVERWRITE)
+		if (!loadUnion)
 			m_array.reset();
 
 		size_t offset = startBitPos;
@@ -184,24 +190,14 @@ class BloomFilter
 				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
 					bool bit = buf[k] & (1 << (7 - l));
 					size_t index = j % size;
-					switch (loadType)
-					{
-					case LOAD_OVERWRITE:
-					case LOAD_UNION:
-						m_array[index] |= bit;
-						break;
-					case LOAD_INTERSECT:
-						m_array[index] &= bit;
-						break;
-					}
+					m_array[index] |= bit;
 				}
 			}
 			i += readSize;
 		}
-
 	}
-	
-		void loadSeq(unsigned k, const std::string& seq)
+
+	void loadSeq(unsigned k, const std::string& seq)
 	{
 		if (seq.size() < k)
 			return;
@@ -216,19 +212,19 @@ class BloomFilter
 	}
 
 	/** Operator for writing the bloom filter to a stream */
-	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilterWindow& o)
 	{
 		o.write(out);
 		return out;
 	}
 
-  protected:
+protected:
 
 	void writeBloomDimensions(std::ostream& out) const
 	{
-		out << size()
-			<< '\t' << 0
-			<< '\t' << size() - 1
+		out << m_fullBloomSize
+			<< '\t' << m_startBitPos
+			<< '\t' << m_endBitPos
 			<< '\n';
 	}
 
@@ -236,18 +232,20 @@ class BloomFilter
 		size_t& size, size_t& startBitPos,
 		size_t& endBitPos)
 	{
-		in >> size
-		   >> expect("\t") >> startBitPos
-		   >> expect("\t") >> endBitPos
-		   >> expect("\n");
+		BloomFilter::readBloomDimensions(in, size,
+				startBitPos, endBitPos);
 
-		assert(in);
-		assert(startBitPos < size);
-		assert(endBitPos < size);
-		assert(startBitPos <= endBitPos);
+		m_fullBloomSize = size;
+		m_startBitPos = startBitPos;
+		m_endBitPos = endBitPos;
+
+		size = endBitPos - startBitPos + 1;
 	}
 
-	boost::dynamic_bitset<> m_array;
+private:
+
+	size_t m_fullBloomSize;
+	size_t m_startBitPos, m_endBitPos;
 };
 
 #endif

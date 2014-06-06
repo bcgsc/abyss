@@ -21,7 +21,6 @@ TEST(maskNew, read1)
 
 	read = FastaRecord("2", "", "ACGTACGTA");
 	EXPECT_TRUE(maskNew(r1, r2, read, mask) == 0u);
-	cout << read.seq << endl;
 	EXPECT_TRUE(read.seq == "ACGTACGTa");
 }
 
@@ -54,7 +53,7 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
 	BloomFilter bloom(1000);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	bloom.loadSeq(k, read1.seq);
 	bloom.loadSeq(k, read2.seq);
