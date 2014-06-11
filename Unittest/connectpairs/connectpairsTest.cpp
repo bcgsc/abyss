@@ -1,4 +1,5 @@
 #include "connectpairs/connectpairs.h"
+#include "Bloom/Bloom.h"
 #include <iostream>
 
 #include <gtest/gtest.h>
@@ -55,8 +56,8 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	BloomFilter bloom(1000);
 	DBGBloom<BloomFilter> g(bloom);
 
-	bloom.loadSeq(k, read1.seq);
-	bloom.loadSeq(k, read2.seq);
+	Bloom::loadSeq(bloom, k, read1.seq);
+	Bloom::loadSeq(bloom, k, read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
 

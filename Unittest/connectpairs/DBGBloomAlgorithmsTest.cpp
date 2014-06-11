@@ -1,4 +1,5 @@
 #include "connectpairs/DBGBloomAlgorithms.h"
+#include "Bloom/Bloom.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "Common/Sequence.h"
 #include <gtest/gtest.h>
@@ -35,7 +36,7 @@ protected:
 TEST_F(GetStartKmerPosTest, FullReadMatch)
 {
 	BloomFilter bloom(bloomFilterSize);
-	bloom.loadSeq(k, testRead.seq);
+	Bloom::loadSeq(bloom, k, testRead.seq);
 	DBGBloom<BloomFilter> g(bloom);
 
 	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, false, true));
@@ -63,7 +64,7 @@ TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 		// non-matching kmers
 		if (i == 1 || i == 4)
 			continue;
-		bloom.loadSeq(k, seq.substr(i,k));
+		Bloom::loadSeq(bloom, k, seq.substr(i,k));
 	}
 
 	EXPECT_EQ(2U, getStartKmerPos(k, testRead, g, false, true));
@@ -83,7 +84,7 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 		// non-matching kmers
 		if (i == 0 || i == 3)
 			continue;
-		bloom.loadSeq(k, seq.substr(i,k));
+		Bloom::loadSeq(bloom, k, seq.substr(i,k));
 	}
 
 	EXPECT_EQ(1U, getStartKmerPos(k, testRead, g, false, true));
@@ -117,7 +118,7 @@ protected:
 TEST_F(CorrectSingleBaseErrorTest, SingleError)
 {
 	BloomFilter bloom(bloomFilterSize);
-	bloom.loadSeq(k, correctRead.seq);
+	Bloom::loadSeq(bloom, k, correctRead.seq);
 	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
@@ -132,7 +133,7 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
 {
 	BloomFilter bloom(bloomFilterSize);
-	bloom.loadSeq(k, correctRead.seq);
+	Bloom::loadSeq(bloom, k, correctRead.seq);
 	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
@@ -147,7 +148,7 @@ TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
 TEST_F(CorrectSingleBaseErrorTest, NoError)
 {
 	BloomFilter bloom(bloomFilterSize);
-	bloom.loadSeq(k, singleErrorRead.seq);
+	Bloom::loadSeq(bloom, k, singleErrorRead.seq);
 	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
@@ -159,8 +160,8 @@ TEST_F(CorrectSingleBaseErrorTest, NoError)
 TEST_F(CorrectSingleBaseErrorTest, SkipFalsePositive)
 {
 	BloomFilter bloom(bloomFilterSize);
-	bloom.loadSeq(k, correctRead.seq);
-	bloom.loadSeq(k, simulatedFalsePositive);
+	Bloom::loadSeq(bloom, k, correctRead.seq);
+	Bloom::loadSeq(bloom, k, simulatedFalsePositive);
 	DBGBloom<BloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();

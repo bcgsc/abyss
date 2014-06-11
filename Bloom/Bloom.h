@@ -52,6 +52,7 @@ namespace Bloom {
 		return hashmem(&copy, sizeof copy, seed);
 	}
 
+	/** Load a sequence file into a bloom filter */
 	template <typename BF>
 	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path, bool verbose = false)
 	{
@@ -63,11 +64,27 @@ namespace Bloom {
 		for (std::string seq; in >> seq; count++) {
 			if (verbose && count % LOAD_PROGRESS_STEP == 0)
 				std::cerr << "Loaded " << count << " reads into bloom filter\n";
-			bloomFilter.loadSeq(k, seq);
+			loadSeq(bloomFilter, k, seq);
 		}
 		assert(in.eof());
 		if (verbose)
 			std::cerr << "Loaded " << count << " reads into bloom filter\n";
+	}
+
+	/** Load a sequence (string) into a bloom filter */
+	template <typename BF>
+	inline static void loadSeq(BF& bloomFilter, unsigned k, const std::string& seq)
+	{
+		if (seq.size() < k)
+			return;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			std::string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos == std::string::npos) {
+				bloomFilter.insert(Kmer(kmer));
+			} else
+				i += pos;
+		}
 	}
 
 	//TODO: Bloom filter calculation methods
