@@ -23,7 +23,6 @@ template <class IncidenceGraph, class Buffer, class BFSVisitor,
     function_requires< boost::IncidenceGraphConcept<IncidenceGraph> >();
     typedef graph_traits<IncidenceGraph> GTraits;
     typedef typename GTraits::vertex_descriptor Vertex;
-    typedef typename GTraits::edge_descriptor Edge;
     function_requires< boost::BFSVisitorConcept<BFSVisitor, IncidenceGraph> >();
     function_requires< boost::ReadWritePropertyMapConcept<ColorMap, Vertex> >();
     typedef typename property_traits<ColorMap>::value_type ColorValue;
