@@ -110,9 +110,16 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 	[], [enable_maxk=64])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
+# Find the absolute path to the source.
+pushd $srcdir >/dev/null
+my_abs_srcdir=`pwd`
+popd >/dev/null
+
 # Set compiler flags.
+boost_ver=1.55.0
+boost_ver_dir=boost_1_55_0
 AC_SUBST(CPPFLAGS,
-		 "-I$srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $CPPFLAGS")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $gtest_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
@@ -179,10 +186,10 @@ if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
 	be downloaded from here: http://www.boost.org/users/download/
 	It is not necessary to compile Boost before installing it. The
 	following commands will download and install Boost for ABySS:
-	wget http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2
-	tar jxf boost_1_55_0.tar.bz2
-	ln -s boost_1_55_0/boost boost
-	])
+	cd $my_abs_srcdir
+	wget http://downloads.sourceforge.net/project/boost/boost/$boost_ver/$boost_ver_dir.tar.bz2
+	tar jxf $boost_ver_dir.tar.bz2
+	cd -])
 fi
 
 # Check for gtest
