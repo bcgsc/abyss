@@ -13,9 +13,6 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
 
-static const unsigned BLOOM_VERSION = 2;
-static const unsigned long IO_BUFFER_SIZE = 32*1024;
-
 /** A Bloom filter. */
 class BloomFilter
 {
@@ -82,36 +79,6 @@ class BloomFilter
 		return in;
 	}
 
-	/** Write the bloom filter to a stream */
-	void write(std::ostream& out) const
-	{
-		out << BLOOM_VERSION << '\n';
-		assert(out);
-		out << Kmer::length() << '\n';
-		assert(out);
-		writeBloomDimensions(out);
-		assert(out);
-
-		size_t bits = size();
-		size_t bytes = (bits + 7) / 8;
-		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = 0; i < bytes;) {
-			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
-			for (size_t k = 0; k < writeSize; k++) {
-				buf[k] = 0;
-				for (unsigned l = 0; l < 8; l++, j++) {
-					buf[k] <<= 1;
-					if (j < bits && m_array[j]) {
-						buf[k] |= 1;
-					}
-				}
-			}
-			out.write(buf, writeSize);
-			assert(out);
-			i += writeSize;
-		}
-	}
-
 	/** Read the bloom filter from a stream */
 	void read(std::istream& in, LoadType loadType = LOAD_OVERWRITE,
 			unsigned shrinkFactor = 1)
@@ -121,10 +88,10 @@ class BloomFilter
 		unsigned bloomVersion;
 		in >> bloomVersion >> expect("\n");
 		assert(in);
-		if (bloomVersion != BLOOM_VERSION) {
+		if (bloomVersion != Bloom::BLOOM_VERSION) {
 			std::cerr << "error: bloom filter version (`"
 				<< bloomVersion << "'), does not match version required "
-				"by this program (`" << BLOOM_VERSION << "').\n";
+				"by this program (`" << Bloom::BLOOM_VERSION << "').\n";
 			exit(EXIT_FAILURE);
 		}
 
@@ -204,19 +171,11 @@ class BloomFilter
 	/** Operator for writing the bloom filter to a stream */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
-		o.write(out);
+		Bloom::write(o, out);
 		return out;
 	}
 
   protected:
-
-	void writeBloomDimensions(std::ostream& out) const
-	{
-		out << size()
-			<< '\t' << 0
-			<< '\t' << size() - 1
-			<< '\n';
-	}
 
 	void readBloomDimensions(std::istream& in,
 		size_t& size, size_t& startBitPos,
