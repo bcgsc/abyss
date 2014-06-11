@@ -111,9 +111,7 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 # Find the absolute path to the source.
-pushd $srcdir >/dev/null
-my_abs_srcdir=`pwd`
-popd >/dev/null
+my_abs_srcdir=$(cd $srcdir; pwd)
 
 # Set compiler flags.
 boost_ver=1.55.0
