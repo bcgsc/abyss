@@ -71,7 +71,7 @@ void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
 	SequenceCollectionHash::iterator it = find(seq, rc);
 	if (it == m_data.end()) {
 		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
-	} else {
+	} else if (coverage > 0) {
 		assert(!rc || !opt::ss);
 		it->second.addMultiplicity(rc ? ANTISENSE : SENSE, coverage);
 	}
