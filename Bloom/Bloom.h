@@ -20,12 +20,22 @@
 #include "Common/Kmer.h"
 #include "Common/HashFunction.h"
 #include "Common/Uncompress.h"
+#include "Common/IOUtil.h"
 #include "DataLayer/FastaReader.h"
 #include <iostream>
 
 namespace Bloom {
 
 	typedef Kmer key_type;
+
+	/** Header section of serialized bloom filters. */
+	struct FileHeader {
+		unsigned bloomVersion;
+		unsigned k;
+		size_t fullBloomSize;
+		size_t startBitPos;
+		size_t endBitPos;
+	};
 
 	/** for verbose option to track loading progress */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
@@ -34,6 +44,15 @@ namespace Bloom {
 	/** I/O buffer size when reading/writing bloom filter files */
 	static const unsigned long IO_BUFFER_SIZE = 32*1024;
 
+	/**
+	 * How to treat existing bits in the bloom filter when
+	 * reading in new data.
+	 */
+	enum LoadType {
+		LOAD_OVERWRITE,
+		LOAD_UNION,
+		LOAD_INTERSECT
+	};
 
 	/** Return the hash value of this object. */
 	inline static size_t hash(const key_type& key)
@@ -138,6 +157,123 @@ namespace Bloom {
 	{
 		Bloom::write(bloomFilter, bloomFilter.size(), 0,
 			bloomFilter.size() - 1, out);
+	}
+
+	FileHeader readHeader(std::istream& in)
+	{
+		FileHeader header;
+
+		// read bloom filter file format version
+
+		in >> header.bloomVersion >> expect("\n");
+		assert(in);
+		if (header.bloomVersion != BLOOM_VERSION) {
+			std::cerr << "error: bloom filter version (`"
+				<< header.bloomVersion << "'), does not match version required "
+				"by this program (`" << BLOOM_VERSION << "').\n";
+			exit(EXIT_FAILURE);
+		}
+
+		// read bloom filter k value
+
+		in >> header.k >> expect("\n");
+		assert(in);
+		if (header.k != Kmer::length()) {
+			std::cerr << "error: this program must be run with the same kmer "
+				"size as the bloom filter being loaded (k="
+				<< header.k << ").\n";
+			exit(EXIT_FAILURE);
+		}
+
+		// read bloom filter dimensions
+
+		in >> header.fullBloomSize
+		   >> expect("\t") >> header.startBitPos
+		   >> expect("\t") >> header.endBitPos
+		   >> expect("\n");
+
+		assert(in);
+		assert(header.startBitPos < header.fullBloomSize);
+		assert(header.endBitPos < header.fullBloomSize);
+		assert(header.startBitPos <= header.endBitPos);
+
+		return header;
+	}
+
+	/** Read the bloom filter bit array from a stream */
+	template <typename BF>
+	static void readData(BF& bloomFilter, const FileHeader& header,
+			std::istream& in, LoadType loadType = LOAD_OVERWRITE,
+			unsigned shrinkFactor = 1)
+	{
+
+		// shrink factor allows building a smaller
+		// bloom filter from a larger one
+
+		size_t size = header.fullBloomSize;
+
+		if (size % shrinkFactor != 0) {
+			std::cerr << "error: the number of bits in the original bloom "
+				"filter must be evenly divisible by the shrink factor (`"
+				<< shrinkFactor << "')\n";
+			exit(EXIT_FAILURE);
+		}
+
+		size /= shrinkFactor;
+
+		if((loadType == LOAD_UNION || loadType == LOAD_INTERSECT)
+			&& size != bloomFilter.size()) {
+			std::cerr << "error: can't union/intersect two bloom filters "
+				"with different sizes.\n";
+			exit(EXIT_FAILURE);
+		} else {
+			bloomFilter.resize(size);
+		}
+
+		// read bit vector
+
+		if (loadType == LOAD_OVERWRITE)
+			bloomFilter.reset();
+
+		size_t offset = header.startBitPos;
+		size_t bits = header.endBitPos - header.startBitPos + 1;
+		size_t bytes = (bits + 7) / 8;
+
+		char buf[IO_BUFFER_SIZE];
+		for (size_t i = 0, j = offset; i < bytes; ) {
+			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
+			in.read(buf, readSize);
+			assert(in);
+			for (size_t k = 0; k < readSize; k++) {
+				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
+					bool bit = buf[k] & (1 << (7 - l));
+					size_t index = j % size;
+					switch (loadType)
+					{
+					case LOAD_OVERWRITE:
+					case LOAD_UNION:
+						bit |= bloomFilter[index];
+						break;
+					case LOAD_INTERSECT:
+						bit &= bloomFilter[index];
+						break;
+					}
+					bloomFilter.set(index, bit);
+				}
+			}
+			i += readSize;
+		}
+
+	}
+
+	/** Read a bloom filter from a stream */
+	template <typename BF>
+	static void read(BF& bloomFilter, std::istream& in,
+			LoadType loadType = LOAD_OVERWRITE,
+			unsigned shrinkFactor = 1)
+	{
+		FileHeader header = readHeader(in);
+		readData(bloomFilter, header, in, loadType, shrinkFactor);
 	}
 
 	//TODO: Bloom filter calculation methods

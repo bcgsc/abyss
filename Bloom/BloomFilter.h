@@ -18,14 +18,6 @@ class BloomFilter
 {
   public:
 
-	enum LoadType {
-		LOAD_OVERWRITE,
-		LOAD_UNION,
-		LOAD_INTERSECT
-	};
-
-	static const size_t IO_BUFFER_SIZE = 32 * 1024;
-
 	/** Constructor. */
 	BloomFilter() { }
 
@@ -34,6 +26,12 @@ class BloomFilter
 
 	/** Return the size of the bit array. */
 	size_t size() const { return m_array.size(); }
+
+	/** Change the size of the bit array. */
+	void resize(size_t size) { m_array.resize(size); }
+
+	/** Clear the bit array. */
+	void reset() { m_array.reset(); }
 
 	/** Return the population count, i.e. the number of set bits. */
 	size_t popcount() const
@@ -63,8 +61,14 @@ class BloomFilter
 	/** Add the object with the specified index to this set. */
 	void insert(size_t index)
 	{
+		set(index, true);
+	}
+
+	/** Set a bit to a specified value. */
+	void set(size_t index, bool val)
+	{
 		assert(index < m_array.size());
-		m_array[index] = true;
+		m_array[index] = val;
 	}
 
 	/** Add the object to this set. */
@@ -73,102 +77,14 @@ class BloomFilter
 		m_array[Bloom::hash(key) % m_array.size()] = true;
 	}
 
+	/** Operator for reading a bloom filter from a stream. */
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
 	{
-		o.read(in, LOAD_OVERWRITE);
+		Bloom::read(o, in, Bloom::LOAD_OVERWRITE);
 		return in;
 	}
 
-	/** Read the bloom filter from a stream */
-	void read(std::istream& in, LoadType loadType = LOAD_OVERWRITE,
-			unsigned shrinkFactor = 1)
-	{
-		// read bloom filter file format version
-
-		unsigned bloomVersion;
-		in >> bloomVersion >> expect("\n");
-		assert(in);
-		if (bloomVersion != Bloom::BLOOM_VERSION) {
-			std::cerr << "error: bloom filter version (`"
-				<< bloomVersion << "'), does not match version required "
-				"by this program (`" << Bloom::BLOOM_VERSION << "').\n";
-			exit(EXIT_FAILURE);
-		}
-
-		// read bloom filter k value
-
-		unsigned k;
-		in >> k >> expect("\n");
-		assert(in);
-		if (k != Kmer::length()) {
-			std::cerr << "error: this program must be run with the same kmer "
-				"size as the bloom filter being loaded (k="
-				<< k << ").\n";
-			exit(EXIT_FAILURE);
-		}
-
-		// read bloom filter dimensions
-
-		size_t size, startBitPos, endBitPos;
-		readBloomDimensions(in, size, startBitPos, endBitPos);
-
-		// shrink factor allows building a smaller
-		// bloom filter from a larger one
-
-		if (size % shrinkFactor != 0) {
-			std::cerr << "error: the number of bits in the original bloom "
-				"filter must be evenly divisible by the shrink factor (`"
-				<< shrinkFactor << "')\n";
-			exit(EXIT_FAILURE);
-		}
-
-		size /= shrinkFactor;
-
-		if((loadType == LOAD_UNION || loadType == LOAD_INTERSECT)
-			&& size != this->size()) {
-			std::cerr << "error: can't union/intersect two bloom filters "
-				"with different sizes.\n";
-			exit(EXIT_FAILURE);
-		} else {
-			m_array.resize(size);
-		}
-
-		// read bit vector
-
-		if (loadType == LOAD_OVERWRITE)
-			m_array.reset();
-
-		size_t offset = startBitPos;
-		size_t bits = endBitPos - startBitPos + 1;
-		size_t bytes = (bits + 7) / 8;
-
-		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = offset; i < bytes; ) {
-			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
-			in.read(buf, readSize);
-			assert(in);
-			for (k = 0; k < readSize; k++) {
-				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
-					bool bit = buf[k] & (1 << (7 - l));
-					size_t index = j % size;
-					switch (loadType)
-					{
-					case LOAD_OVERWRITE:
-					case LOAD_UNION:
-						m_array[index] |= bit;
-						break;
-					case LOAD_INTERSECT:
-						m_array[index] &= bit;
-						break;
-					}
-				}
-			}
-			i += readSize;
-		}
-
-	}
-	
-	/** Operator for writing the bloom filter to a stream */
+	/** Operator for writing the bloom filter to a stream. */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
 		Bloom::write(o, out);
@@ -176,21 +92,6 @@ class BloomFilter
 	}
 
   protected:
-
-	void readBloomDimensions(std::istream& in,
-		size_t& size, size_t& startBitPos,
-		size_t& endBitPos)
-	{
-		in >> size
-		   >> expect("\t") >> startBitPos
-		   >> expect("\t") >> endBitPos
-		   >> expect("\n");
-
-		assert(in);
-		assert(startBitPos < size);
-		assert(endBitPos < size);
-		assert(startBitPos <= endBitPos);
-	}
 
 	boost::dynamic_bitset<> m_array;
 };

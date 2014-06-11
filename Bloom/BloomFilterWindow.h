@@ -16,9 +16,12 @@
  * A bloom filter that represents a window
  * within a larger bloom filter.
  */
-class BloomFilterWindow : private BloomFilter
+class BloomFilterWindow : public BloomFilter
 {
 public:
+
+	/** Constructor. */
+	BloomFilterWindow() : BloomFilter() { };
 
 	/** Constructor.
 	 *
@@ -37,12 +40,32 @@ public:
 		assert(startBitPos <= endBitPos);
 	}
 
+	/**
+	 * Get the full size (in bits) of the bloom filter that
+	 * this window is a part of.
+	 */
+	size_t fullBloomSize()
+	{
+		return m_fullBloomSize;
+	}
+
+	/** Get the start bit position for the window. */
+	size_t startBitPos()
+	{
+		return m_startBitPos;
+	}
+
+	/** Get the end bit position for the window. */
+	size_t endBitPos()
+	{
+		return m_endBitPos;
+	}
+
 	/** Return the size of the bit array. */
 	size_t size() const
 	{
 		return BloomFilter::size();
 	}
-
 
 	/** Return the number of elements with count >= MAX_COUNT. */
 	size_t popcount() const
@@ -73,8 +96,20 @@ public:
 	/** Add the object with the specified index to this set. */
 	void insert(size_t i)
 	{
+		set(i, true);
+	}
+
+	/**
+	 * Set or clear position i of the bit array.
+	 *
+	 * @param i position of bit to set, relative to the entire
+	 * bloom filter (not relative to the window!)
+	 * @param val true or false
+	 */
+	void set(size_t i, bool val)
+	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
-			BloomFilter::insert(i - m_startBitPos);
+			BloomFilter::set(i - m_startBitPos, val);
 	}
 
 	/** Add the object to this set. */
@@ -83,91 +118,14 @@ public:
 		insert(Bloom::hash(key) % m_fullBloomSize);
 	}
 
-	/**
-	 * Return the full size of the containing bloom
-	 * filter (in bits).
-	 */
-	size_t getFullBloomSize() const
+	/** Operator for reading a bloom filter from a stream. */
+	friend std::istream& operator>>(std::istream& in, BloomFilterWindow& o)
 	{
-		return m_fullBloomSize;
+		o.read(in, Bloom::LOAD_OVERWRITE);
+		return in;
 	}
 
-	void read(std::istream& in, bool
-			loadUnion = false, unsigned shrinkFactor = 1)
-	{
-		unsigned bloomVersion;
-		in >> bloomVersion >> expect("\n");
-		assert(in);
-		if (bloomVersion != Bloom::BLOOM_VERSION) {
-			std::cerr << "error: bloom filter version (`"
-				<< bloomVersion << "'), does not match version required "
-				"by this program (`" << Bloom::BLOOM_VERSION << "').\n";
-			exit(EXIT_FAILURE);
-		}
-
-		// read bloom filter k value
-
-		unsigned k;
-		in >> k >> expect("\n");
-		assert(in);
-		if (k != Kmer::length()) {
-			std::cerr << "error: this program must be run with the same kmer "
-				"size as the bloom filter being loaded (k="
-				<< k << ").\n";
-			exit(EXIT_FAILURE);
-		}
-
-		// read bloom filter dimensions
-
-		size_t size, startBitPos, endBitPos;
-		readBloomDimensions(in, size, startBitPos, endBitPos);
-
-		// shrink factor allows building a smaller
-		// bloom filter from a larger one
-
-		if (size % shrinkFactor != 0) {
-			std::cerr << "error: the number of bits in the original bloom "
-				"filter must be evenly divisible by the shrink factor (`"
-				<< shrinkFactor << "')\n";
-			exit(EXIT_FAILURE);
-		}
-
-		size /= shrinkFactor;
-
-		if(loadUnion && size != this->size()) {
-			std::cerr << "error: can't union bloom filters "
-				"with different sizes.\n";
-			exit(EXIT_FAILURE);
-		} else {
-			m_array.resize(size);
-		}
-
-		// read bit vector
-
-		if (!loadUnion)
-			m_array.reset();
-
-		size_t offset = startBitPos;
-		size_t bits = endBitPos - startBitPos + 1;
-		size_t bytes = (bits + 7) / 8;
-
-		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = offset; i < bytes; ) {
-			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
-			in.read(buf, readSize);
-			assert(in);
-			for (k = 0; k < readSize; k++) {
-				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
-					bool bit = buf[k] & (1 << (7 - l));
-					size_t index = j % size;
-					m_array[index] |= bit;
-				}
-			}
-			i += readSize;
-		}
-	}
-
-	/** Operator for writing the bloom filter to a stream */
+	/** Operator for writing the bloom filter to a stream. */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilterWindow& o)
 	{
 		Bloom::write(o, o.m_fullBloomSize, o.m_startBitPos,
@@ -175,28 +133,18 @@ public:
 		return out;
 	}
 
-protected:
-
-	void writeBloomDimensions(std::ostream& out) const
+	/** Read a bloom filter window from a stream. */
+	void read(std::istream& in,
+			Bloom::LoadType loadType = Bloom::LOAD_OVERWRITE,
+			unsigned shrinkFactor = 1)
 	{
-		out << m_fullBloomSize
-			<< '\t' << m_startBitPos
-			<< '\t' << m_endBitPos
-			<< '\n';
-	}
+		Bloom::FileHeader header = Bloom::readHeader(in);
 
-	void readBloomDimensions(std::istream& in,
-		size_t& size, size_t& startBitPos,
-		size_t& endBitPos)
-	{
-		BloomFilter::readBloomDimensions(in, size,
-				startBitPos, endBitPos);
+		m_fullBloomSize = header.fullBloomSize;
+		m_startBitPos = header.startBitPos;
+		m_endBitPos = header.endBitPos;
 
-		m_fullBloomSize = size;
-		m_startBitPos = startBitPos;
-		m_endBitPos = endBitPos;
-
-		size = endBitPos - startBitPos + 1;
+		Bloom::readData(*this, header, in, loadType, shrinkFactor);
 	}
 
 private:

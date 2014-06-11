@@ -99,7 +99,7 @@ TEST(BloomFilter, union_)
 
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);
@@ -140,7 +140,7 @@ TEST(BloomFilter, intersect)
 
 	ss >> intersectBloom;
 	ASSERT_TRUE(ss.good());
-	intersectBloom.read(ss, BloomFilter::LOAD_INTERSECT);
+	Bloom::read(intersectBloom, ss, Bloom::LOAD_INTERSECT);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(intersectBloom.size(), bits);
@@ -198,7 +198,7 @@ TEST(BloomFilter, shrink)
 	stringstream ss;
 	ss << big;
 	ASSERT_TRUE(ss.good());
-	small.read(ss, BloomFilter::LOAD_OVERWRITE, 2);
+	Bloom::read(small, ss, Bloom::LOAD_OVERWRITE, 2);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(5U, small.size());
@@ -207,7 +207,29 @@ TEST(BloomFilter, shrink)
 	EXPECT_TRUE(small[3]);
 }
 
-TEST(BloomFilter, window)
+TEST(BloomFilter, windowSerialization)
+{
+	size_t bits = 100;
+	size_t pos = 80;
+
+	BloomFilterWindow window(bits, bits/2, bits-1);
+	window.insert(pos);
+	EXPECT_TRUE(window[pos]);
+
+	stringstream ss;
+	ss << window;
+	ASSERT_TRUE(ss.good());
+
+	BloomFilterWindow windowCopy;
+	ss >> windowCopy;
+	ASSERT_TRUE(ss.good());
+	EXPECT_TRUE(windowCopy[pos]);
+	EXPECT_EQ(window.fullBloomSize(), windowCopy.fullBloomSize());
+	EXPECT_EQ(window.startBitPos(), windowCopy.startBitPos());
+	EXPECT_EQ(window.endBitPos(), windowCopy.endBitPos());
+}
+
+TEST(BloomFilter, windowUnion)
 {
 	size_t bits = 100;
 	size_t pos1 = 25;
@@ -241,7 +263,7 @@ TEST(BloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
@@ -290,7 +312,7 @@ TEST(CascadingBloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());

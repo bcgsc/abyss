@@ -220,9 +220,9 @@ void initBloomFilterLevels(CBF& bf)
 				<< i + 1 << " of counting bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			BloomFilter::LoadType loadType = (j > 0) ?
-				BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
-			bf.getBloomFilter(i).read(*in, loadType);
+			Bloom::LoadType loadType = (j > 0) ?
+				Bloom::LOAD_UNION : Bloom::LOAD_OVERWRITE;
+			Bloom::read(bf.getBloomFilter(i), *in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
@@ -402,7 +402,7 @@ int build(int argc, char** argv)
 	return 0;
 }
 
-int combine(int argc, char** argv, BloomFilter::LoadType loadType)
+int combine(int argc, char** argv, Bloom::LoadType loadType)
 {
 	parseGlobalOpts(argc, argv);
 
@@ -423,9 +423,9 @@ int combine(int argc, char** argv, BloomFilter::LoadType loadType)
 				<< path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-		BloomFilter::LoadType loadOp = (i > optind) ?
-				loadType : BloomFilter::LOAD_OVERWRITE;
-		bloom.read(*in, loadOp);
+		Bloom::LoadType loadOp = (i > optind) ?
+				loadType : Bloom::LOAD_OVERWRITE;
+		Bloom::read(bloom, *in, loadOp);
 		assert_good(*in, path);
 		closeInputStream(in, path);
 	}
@@ -434,11 +434,11 @@ int combine(int argc, char** argv, BloomFilter::LoadType loadType)
 		cerr << "Successfully loaded bloom filter.\n";
 		printBloomStats(cerr, bloom);
 		switch(loadType) {
-			case BloomFilter::LOAD_UNION:
+			case Bloom::LOAD_UNION:
 				std::cerr << "Writing union of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
-			case BloomFilter::LOAD_INTERSECT:
+			case Bloom::LOAD_INTERSECT:
 				std::cerr << "Writing intersection of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
@@ -480,7 +480,7 @@ int info(int argc, char** argv)
 	istream* in = openInputStream(path);
 	assert_good(*in, path);
 	*in >> bloom;
-	
+
 	printBloomStats(cerr, bloom);
 
 	closeInputStream(in, path);
@@ -504,10 +504,10 @@ int main(int argc, char** argv)
 		return build(argc, argv);
 	}
 	else if (command == "union") {
-		return combine(argc, argv, BloomFilter::LOAD_UNION);
+		return combine(argc, argv, Bloom::LOAD_UNION);
 	}
 	else if (command == "intersect") {
-		return combine(argc, argv, BloomFilter::LOAD_INTERSECT);
+		return combine(argc, argv, Bloom::LOAD_INTERSECT);
 	}
 	else if (command == "info") {
 		return info(argc, argv);
