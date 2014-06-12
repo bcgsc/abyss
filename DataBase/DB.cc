@@ -140,7 +140,7 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 	mapKeys << "run_id, run_stage, species_name, strain_name, library_name, exec_path, command_line, ";
 	mapValues << (isrun ? "(select max(run_id) from Run_pe), (select stage from Run_pe where run_id = (select max(run_id) from Run_pe)), " : "null, null, ");
 	if (isrun && definePeVars())
-		mapValues  << "'" << peVars[2] << "', '" << peVars[1] << "', '" << peVars[0] << "', '";
+		mapValues  << "'" << peVars[0] << "', '" << peVars[1] << "', '" << peVars[2] << "', '";
 	else
 		mapValues  << "'" << initVars[2] << "', '" << initVars[1] << "', '" << initVars[0] << "', '";
 	mapValues << getPath(prog) << "', '" << cmd << "', ";
