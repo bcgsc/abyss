@@ -29,8 +29,6 @@ class BloomFilter : public virtual BloomFilterBase
 		LOAD_INTERSECT
 	};
 
-	static const size_t IO_BUFFER_SIZE = 32 * 1024;
-
 	/** Constructor. */
 	BloomFilter() { }
 
