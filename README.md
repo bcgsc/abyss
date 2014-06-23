@@ -421,7 +421,6 @@ Authors
   — [@sjackman](https://twitter.com/sjackman)
 - **Tony Raymond** — [GitHub/traymond](https://github.com/traymond)
 - **Ben Vandervalk** — [GitHub/benvvalk ](https://github.com/benvvalk)
-- **Mimi Ko** — [GitHub/mimiko](https://github.com/mimiko)
 - **Jared Simpson** — [GitHub/jts](https://github.com/jts)
 
 Supervised by [**Dr. İnanç Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
