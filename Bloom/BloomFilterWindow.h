@@ -94,20 +94,8 @@ public:
 	/** Add the object with the specified index to this set. */
 	void insert(size_t i)
 	{
-		set(i, true);
-	}
-
-	/**
-	 * Set or clear position i of the bit array.
-	 *
-	 * @param i position of bit to set, relative to the entire
-	 * bloom filter (not relative to the window!)
-	 * @param val true or false
-	 */
-	void set(size_t i, bool val)
-	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
-			BloomFilter::set(i - m_startBitPos, val);
+			BloomFilter::insert(i - m_startBitPos);
 	}
 
 	/** Add the object to this set. */

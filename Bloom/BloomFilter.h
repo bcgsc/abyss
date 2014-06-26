@@ -55,14 +55,8 @@ class BloomFilter
 	/** Add the object with the specified index to this set. */
 	void insert(size_t index)
 	{
-		set(index, true);
-	}
-
-	/** Set a bit to a specified value. */
-	void set(size_t index, bool val)
-	{
 		assert(index < m_array.size());
-		m_array[index] = val;
+		m_array[index] = true;
 	}
 
 	/** Add the object to this set. */
