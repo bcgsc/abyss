@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 	assert(opt::bloomSize > 0);
 
 	//size determined by
-	CountingBloomFilter<plc> bloom(opt::bloomSize);
+	CountingBloomFilter<plc> bloom(opt::bloomSize, 1);
 	for (int i = optind; i < argc; i++)
 		Bloom::loadFile(bloom, opt::k, string(argv[i]), opt::verbose);
 
