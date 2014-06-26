@@ -27,12 +27,6 @@ class BloomFilter
 	/** Return the size of the bit array. */
 	size_t size() const { return m_array.size(); }
 
-	/** Change the size of the bit array. */
-	void resize(size_t size) { m_array.resize(size); }
-
-	/** Clear the bit array. */
-	void reset() { m_array.reset(); }
-
 	/** Return the population count, i.e. the number of set bits. */
 	size_t popcount() const
 	{
@@ -80,15 +74,28 @@ class BloomFilter
 	/** Operator for reading a bloom filter from a stream. */
 	friend std::istream& operator>>(std::istream& in, BloomFilter& o)
 	{
-		Bloom::read(o, in, Bloom::LOAD_OVERWRITE);
+		o.read(in, Bloom::LOAD_OVERWRITE);
 		return in;
 	}
 
 	/** Operator for writing the bloom filter to a stream. */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
-		Bloom::write(o, out);
+		o.write(out);
 		return out;
+	}
+
+	/** Read a bloom filter from a stream. */
+	void read(std::istream& in, Bloom::LoadType loadType = Bloom::LOAD_OVERWRITE,
+		unsigned shrinkFactor = 1)
+	{
+		Bloom::read(m_array, in, loadType, shrinkFactor);
+	}
+
+	/** Write a bloom filter to a stream. */
+	void write(std::ostream& out) const
+	{
+		Bloom::write(m_array, out);
 	}
 
   protected:

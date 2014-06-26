@@ -78,7 +78,8 @@ namespace Bloom {
 
 	/** Load a sequence file into a bloom filter */
 	template <typename BF>
-	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path, bool verbose = false)
+	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path,
+			bool verbose = false)
 	{
 		assert(!path.empty());
 		if (verbose)
@@ -134,13 +135,13 @@ namespace Bloom {
 		size_t bits = endBitPos - startBitPos + 1;
 		size_t bytes = (bits + 7) / 8;
 		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = startBitPos; i < bytes;) {
+		for (size_t i = 0, j = 0; i < bytes;) {
 			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
 			for (size_t k = 0; k < writeSize; k++) {
 				buf[k] = 0;
 				for (unsigned l = 0; l < 8; l++, j++) {
 					buf[k] <<= 1;
-					if (j <= endBitPos && bloomFilter[j]) {
+					if (j < bits && bloomFilter[j]) {
 						buf[k] |= 1;
 					}
 				}
@@ -202,7 +203,7 @@ namespace Bloom {
 
 	/** Read the bloom filter bit array from a stream */
 	template <typename BF>
-	static void readData(BF& bloomFilter, const FileHeader& header,
+	static void readData(BF& bloomFilter, const Bloom::FileHeader& header,
 			std::istream& in, LoadType loadType = LOAD_OVERWRITE,
 			unsigned shrinkFactor = 1)
 	{
@@ -252,13 +253,12 @@ namespace Bloom {
 					{
 					case LOAD_OVERWRITE:
 					case LOAD_UNION:
-						bit |= bloomFilter[index];
+						bloomFilter[index] |= bit;
 						break;
 					case LOAD_INTERSECT:
-						bit &= bloomFilter[index];
+						bloomFilter[index] &= bit;
 						break;
 					}
-					bloomFilter.set(index, bit);
 				}
 			}
 			i += readSize;

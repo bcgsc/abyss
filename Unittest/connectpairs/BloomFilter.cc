@@ -99,7 +99,7 @@ TEST(BloomFilter, union_)
 
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);
@@ -140,7 +140,7 @@ TEST(BloomFilter, intersect)
 
 	ss >> intersectBloom;
 	ASSERT_TRUE(ss.good());
-	Bloom::read(intersectBloom, ss, Bloom::LOAD_INTERSECT);
+	intersectBloom.read(ss, Bloom::LOAD_INTERSECT);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(intersectBloom.size(), bits);
@@ -198,7 +198,7 @@ TEST(BloomFilter, shrink)
 	stringstream ss;
 	ss << big;
 	ASSERT_TRUE(ss.good());
-	Bloom::read(small, ss, Bloom::LOAD_OVERWRITE, 2);
+	small.read(ss, Bloom::LOAD_OVERWRITE, 2);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(5U, small.size());
@@ -213,6 +213,7 @@ TEST(BloomFilter, windowSerialization)
 	size_t pos = 80;
 
 	BloomFilterWindow window(bits, bits/2, bits-1);
+
 	window.insert(pos);
 	EXPECT_TRUE(window[pos]);
 
@@ -263,7 +264,7 @@ TEST(BloomFilter, windowUnion)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
@@ -312,7 +313,7 @@ TEST(CascadingBloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	Bloom::read(unionBloom, ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());

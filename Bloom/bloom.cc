@@ -222,7 +222,7 @@ void initBloomFilterLevels(CBF& bf)
 			assert(*in);
 			Bloom::LoadType loadType = (j > 0) ?
 				Bloom::LOAD_UNION : Bloom::LOAD_OVERWRITE;
-			Bloom::read(bf.getBloomFilter(i), *in, loadType);
+			bf.getBloomFilter(i).read(*in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
@@ -425,7 +425,7 @@ int combine(int argc, char** argv, Bloom::LoadType loadType)
 		assert_good(*in, path);
 		Bloom::LoadType loadOp = (i > optind) ?
 				loadType : Bloom::LOAD_OVERWRITE;
-		Bloom::read(bloom, *in, loadOp);
+		bloom.read(*in, loadOp);
 		assert_good(*in, path);
 		closeInputStream(in, path);
 	}

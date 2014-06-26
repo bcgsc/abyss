@@ -10,8 +10,6 @@
 #include <vector>
 #include <iostream>
 
-//TODO many copied functions from bloomfilter.h despite inheritance need to deal with better
-
 /**
  * A bloom filter that represents a window
  * within a larger bloom filter.
@@ -128,8 +126,7 @@ public:
 	/** Operator for writing the bloom filter to a stream. */
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilterWindow& o)
 	{
-		Bloom::write(o, o.m_fullBloomSize, o.m_startBitPos,
-			o.m_endBitPos, out);
+		o.write(out);
 		return out;
 	}
 
@@ -144,7 +141,23 @@ public:
 		m_startBitPos = header.startBitPos;
 		m_endBitPos = header.endBitPos;
 
-		Bloom::readData(*this, header, in, loadType, shrinkFactor);
+		// alter the dimensions that we pass into Bloom::readData
+		// so that we load the data into a bit array that is
+		// exactly the size of the window (not the full size of the
+		// containing bloom filter)
+
+		header.fullBloomSize = header.endBitPos - header.startBitPos + 1;
+		header.startBitPos = 0;
+		header.endBitPos = header.fullBloomSize - 1;
+
+		Bloom::readData(m_array, header, in, loadType, shrinkFactor);
+	}
+
+	/** Write a bloom filter window to a stream. */
+	void write(std::ostream& out) const
+	{
+		Bloom::write(m_array, m_fullBloomSize, m_startBitPos,
+			m_endBitPos, out);
 	}
 
 private:
