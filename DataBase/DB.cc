@@ -7,7 +7,7 @@ void DB::closeDB ()
 		cerr << "Can't close DB.\n";
 		exit(EXIT_FAILURE);
 	} else {
-		if (verbose_val > 0)
+		if (verbose_val >= 0)
 			cerr << "DB closed.\n";
 	}
 }
@@ -55,7 +55,7 @@ foreign key(strain_name) references Strains(strain_name));\
 create table if not exists Run_pe (run_id integer primary key,species_name text,strain_name,library_name text,abyss_version text,time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
 foreign key(library_name) references Libraries(library_name));";
 
-	if (query (sst.str()) && verbose_val > 1)
+	if (query (sst.str()) && verbose_val > 2)
 		cerr << sst.str() << endl;
 }
 
@@ -88,7 +88,7 @@ bool DB::isRun ()
 		}
 		stringstream uStream;
 		uStream << "update Run_pe set stage=stage+1 where run_id = (select max(run_id) from Run_pe);";
-		if (query (uStream.str()) && verbose_val >2)
+		if (query (uStream.str()) && verbose_val > 2)
 			cerr << uStream.str() << endl;
 		isrun = true;
 	}
@@ -158,6 +158,6 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 	sqlStream.str("");
 	sqlStream << "insert into " << temp << " (" << mapKeys.str() << ") values (" << mapValues.str() << ");";
 
-	if (query (sqlStream.str()) && verbose_val > 1)
+	if (query (sqlStream.str()) && verbose_val > 0)
 		cerr << sqlStream.str() << endl;
 }

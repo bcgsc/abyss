@@ -40,7 +40,7 @@ class DB {
 			std::cerr << "Can't open DB.\n";
 			exit(EXIT_FAILURE);
 		} else {
-			if (verbose_val > 0)
+			if (verbose_val >= 0)
 				std::cerr << "DB opened.\n";
 		}
 	}
