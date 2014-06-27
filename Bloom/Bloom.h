@@ -24,6 +24,10 @@
 #include "DataLayer/FastaReader.h"
 #include <iostream>
 
+#if _OPENMP
+# include <omp.h>
+#endif
+
 namespace Bloom {
 
 	typedef Kmer key_type;
@@ -86,10 +90,20 @@ namespace Bloom {
 			std::cerr << "Reading `" << path << "'...\n";
 		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 		uint64_t count = 0;
-		for (std::string seq; in >> seq; count++) {
+#pragma omp parallel
+		for (std::string seq;;) {
+			bool good;
+#pragma omp critical(in)
+			good = in >> seq;
+			if (good)
+				loadSeq(bloomFilter, k, seq);
+			else
+				break;
+#pragma omp atomic
+			count++;
 			if (verbose && count % LOAD_PROGRESS_STEP == 0)
+#pragma omp critical(cerr)
 				std::cerr << "Loaded " << count << " reads into bloom filter\n";
-			loadSeq(bloomFilter, k, seq);
 		}
 		assert(in.eof());
 		if (verbose)

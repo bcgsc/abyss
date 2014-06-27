@@ -334,3 +334,16 @@ abyss_bloom_illegal_chars_test:
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_multithreaded_test
+#------------------------------------------------------------
+
+abyss_bloom_multithreaded_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq \
+		$(tmpdir)/e$e_l2.bloom
+	$(bloom) build -v -k$k -j10 -l2 -b$b  $(tmpdir)/e$e_l2_multithreaded.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_multithreaded.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'

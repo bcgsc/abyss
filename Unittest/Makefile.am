@@ -38,6 +38,7 @@ UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = connectpairs/BloomFilter.cc
 BloomFilter_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+BloomFilter_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += connectpairs_DBGBloom
@@ -51,6 +52,7 @@ UNIT_TESTS += connectpairs_DBGBloomAlgorithms
 check_PROGRAMS += connectpairs_DBGBloomAlgorithms
 connectpairs_DBGBloomAlgorithms_SOURCES = connectpairs/DBGBloomAlgorithmsTest.cpp
 connectpairs_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+connectpairs_DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 connectpairs_DBGBloomAlgorithms_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(GTEST_LIBS)

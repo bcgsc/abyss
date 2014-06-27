@@ -19,6 +19,11 @@
 #include <fstream>
 #include <sstream>
 
+#if _OPENMP
+# include <omp.h>
+# include "Bloom/ConcurrentBloomFilter.h"
+#endif
+
 using namespace std;
 
 #define PROGRAM "abyss-bloom"
@@ -47,6 +52,7 @@ static const char USAGE_MESSAGE[] =
 " Options for `" PROGRAM " build':\n"
 "\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
+"  -j, --threads=N            use N parallel threads [1]\n"
 "  -l, --levels=N             build a counting bloom filter with N levels\n"
 "                             and output the last level\n"
 "  -L, --init-level='N=FILE'  initialize level N of counting bloom filter\n"
@@ -56,6 +62,7 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
+"  -n, --num-locks=N          number of write locks on bloom filter\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
@@ -74,6 +81,9 @@ namespace opt {
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
+	/** The number of parallel threads. */
+	unsigned threads = 1;
+
 	/** The size of a k-mer. */
 	unsigned k;
 
@@ -86,6 +96,12 @@ namespace opt {
 	 */
 	vector< vector<string> > levelInitPaths;
 
+	/**
+	 * Num of locked windows to use, when invoking with
+	 * the -j option.
+	 */
+	size_t numLocks = 1000;
+
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
 	unsigned windowIndex = 0;
@@ -95,12 +111,13 @@ namespace opt {
 	unsigned windows = 0;
 }
 
-static const char shortopts[] = "b:k:l:L:q:vw:";
+static const char shortopts[] = "b:j:k:l:L:n:q:vw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "levels",           required_argument, NULL, 'l' },
 	{ "init-level",       required_argument, NULL, 'L' },
@@ -108,6 +125,7 @@ static const struct option longopts[] = {
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
+	{ "num-locks",        required_argument, NULL, 'n' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
@@ -232,8 +250,14 @@ void initBloomFilterLevels(CBF& bf)
 template <typename BF>
 void loadFilters(BF& bf, int argc, char** argv)
 {
+#ifdef _OPENMP
+	ConcurrentBloomFilter<BF> cbf(bf, opt::numLocks);
+	for (int i = optind; i < argc; i++)
+		Bloom::loadFile(cbf, opt::k, argv[i], opt::verbose);
+#else
 	for (int i = optind; i < argc; i++)
 		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
+#endif
 
 	if (opt::verbose) {
 		cerr << "Successfully loaded bloom filter.\n";
@@ -281,6 +305,8 @@ int build(int argc, char** argv)
 			dieWithUsageError();
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'j':
+			arg >> opt::threads; break;
 		  case 'l':
 			arg >> opt::levels; break;
 		  case 'L':
@@ -298,6 +324,8 @@ int build(int argc, char** argv)
 				opt::levelInitPaths[level-1].push_back(path);
 				break;
 			}
+		  case 'n':
+			arg >> opt::numLocks; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 'w':
@@ -331,6 +359,11 @@ int build(int argc, char** argv)
 			" of bloom filter levels (-l)\n";
 		dieWithUsageError();
 	}
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	// bloom filter size in bits
 	size_t bits = opt::bloomSize * 8;
