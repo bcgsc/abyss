@@ -37,11 +37,11 @@ class DB {
 	void openDB (const char* c, const int& v) {
 		verbose_val = v;
 		if (sqlite3_open (c, &db)) {
-			std::cerr << "Can't open DB.\n";
+			std::cerr << "[" << prog << "] Can't open DB.\n";
 			exit(EXIT_FAILURE);
 		} else {
 			if (verbose_val >= 0)
-				std::cerr << "DB opened.\n";
+				std::cerr << "[" << prog << "] DB opened.\n";
 		}
 	}
 
@@ -76,17 +76,17 @@ class DB {
 	}
 
 	friend void init (DB& d, const std::string& path) {
-		d.openDB (path.c_str(), 0);
 		d.exp = 1;
+		d.openDB (path.c_str(), 0);
 	}
 
 	friend void init (DB& d, const std::string& path, const int& v, const std::string& program, const std::string& command, const dbVars& vars) {
-		// If destination is not specified, create 'ABySS.db' by default.
-		d.openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
 		d.prog = program;
 		d.cmd = command;
 		d.initVars = vars;
 		d.exp = 0;
+		// If destination is not specified, create 'ABySS.db' by default.
+		d.openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
 	}
 
 	std::string activateForeignKey (const std::string& s) {
@@ -100,7 +100,7 @@ class DB {
 		const char* statement = new_s.c_str();
 		int rc = sqlite3_exec (db, statement, callback, 0, &errMsg);
 		if (rc != SQLITE_OK) {
-			std::cerr << "SQL error: " << errMsg << std::endl;
+			std::cerr << "[" << prog << "] SQL error: " << errMsg << std::endl;
 			sqlite3_free (errMsg);
 			exit(EXIT_FAILURE);
 		} else {

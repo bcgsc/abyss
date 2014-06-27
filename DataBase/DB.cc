@@ -4,11 +4,11 @@ using namespace std;
 void DB::closeDB ()
 {
 	if (sqlite3_close (db)) {
-		cerr << "Can't close DB.\n";
+		cerr << "[" << prog << "] Can't close DB.\n";
 		exit(EXIT_FAILURE);
 	} else {
 		if (verbose_val >= 0)
-			cerr << "DB closed.\n";
+			cerr << "[" << prog << "] DB closed.\n";
 	}
 }
 
