@@ -9,17 +9,17 @@
 #include <vector>
 #include <omp.h>
 
-/** 
- * A wrapper class that makes a Bloom filter 
+/**
+ * A wrapper class that makes a Bloom filter
  * thread-safe.
  */
 template <class BloomFilterType>
-class ConcurrentBloomFilter 
+class ConcurrentBloomFilter
 {
 
 public:
 
-	/** Constructor. */
+	/** Constructor */
 	ConcurrentBloomFilter(BloomFilterType& bloom, size_t numLocks) :
 		m_bloom(bloom), m_locks(numLocks)
 	{
@@ -30,13 +30,14 @@ public:
 		m_windowSize -= m_windowSize % 8;
 		assert(numLocks < bloom.size());
 		for (size_t i = 0; i < m_locks.size(); i++)
-			omp_init_lock(&m_locks.at(i));
+			omp_init_lock(&(m_locks.at(i)));
 	}
 
+	/** Destructor */
 	~ConcurrentBloomFilter()
 	{
 		for (size_t i = 0; i < m_locks.size(); i++)
-			omp_destroy_lock(&m_locks.at(i));
+			omp_destroy_lock(&(m_locks.at(i)));
 	}
 
 	/** Return whether the specified bit is set. */
@@ -76,15 +77,15 @@ private:
 	void getLock(size_t bitIndex)
 	{
 		assert(bitIndex < m_bloom.size());
-		size_t lockIndex = bitIndex / m_windowSize;
-		omp_set_lock(&m_locks[lockIndex]);
+		size_t lockIndex = std::min(bitIndex / m_windowSize, m_locks.size() - 1);
+		omp_set_lock(&(m_locks.at(lockIndex)));
 	}
 
 	void releaseLock(size_t bitIndex)
 	{
 		assert(bitIndex < m_bloom.size());
-		size_t lockIndex = bitIndex / m_windowSize;
-		omp_unset_lock(&m_locks[lockIndex]);
+		size_t lockIndex = std::min(bitIndex / m_windowSize, m_locks.size() - 1);
+		omp_unset_lock(&(m_locks.at(lockIndex)));
 	}
 
 	BloomFilterType& m_bloom;
