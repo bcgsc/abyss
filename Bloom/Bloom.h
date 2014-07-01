@@ -90,20 +90,23 @@ namespace Bloom {
 			std::cerr << "Reading `" << path << "'...\n";
 		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 		uint64_t count = 0;
+		const size_t CHUNK_SIZE = 1000;
 #pragma omp parallel
-		for (std::string seq;;) {
-			bool good;
+		for (std::string seq[CHUNK_SIZE];;) {
+			bool good = true;
+			size_t i = 0;
 #pragma omp critical(in)
-			good = in >> seq;
-			if (good)
-				loadSeq(bloomFilter, k, seq);
-			else
+			for (; good && i < CHUNK_SIZE; i++)
+				good = in >> seq[i];
+			if (!good)
+				i--;
+			if (i == 0)
 				break;
+			for (size_t j = 0; j < i; j++) {
 #pragma omp atomic
-			count++;
-			if (verbose && count % LOAD_PROGRESS_STEP == 0)
-#pragma omp critical(cerr)
-				std::cerr << "Loaded " << count << " reads into bloom filter\n";
+				count++;
+				loadSeq(bloomFilter, k, seq[j]);
+			}
 		}
 		assert(in.eof());
 		if (verbose)
