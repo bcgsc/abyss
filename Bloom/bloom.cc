@@ -250,24 +250,15 @@ void initBloomFilterLevels(CBF& bf)
 template <typename BF>
 void loadFilters(BF& bf, int argc, char** argv)
 {
-#ifdef _OPENMP
-	ConcurrentBloomFilter<BF> cbf(bf, opt::numLocks);
-	for (int i = optind; i < argc; i++)
-		Bloom::loadFile(cbf, opt::k, argv[i], opt::verbose);
-#else
 	for (int i = optind; i < argc; i++)
 		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
-#endif
 
-	if (opt::verbose) {
+	if (opt::verbose)
 		cerr << "Successfully loaded bloom filter.\n";
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bf.FPR() << "%\n";
-	}
 }
 
 template <typename BF>
-void buildAndOutput(BF& bf, string& outputPath)
+void writeBloom(BF& bf, string& outputPath)
 {
 	if (opt::verbose) {
 		cerr << "Writing bloom filter to `"
@@ -398,14 +389,28 @@ int build(int argc, char** argv)
 
 		if (opt::levels == 1) {
 			BloomFilter bloom(bits);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<BloomFilter>
+				cbf(bloom, opt::numLocks);
+			loadFilters(cbf, argc, argv);
+#else
 			loadFilters(bloom, argc, argv);
-			buildAndOutput(bloom, outputPath);
+#endif
+			printBloomStats(cerr, bloom);
+			writeBloom(bloom, outputPath);
 		}
 		else {
-			CascadingBloomFilter countingBloom(bits);
-			initBloomFilterLevels(countingBloom);
-			loadFilters(countingBloom, argc, argv);
-			buildAndOutput(countingBloom, outputPath);
+			CascadingBloomFilter cascadingBloom(bits);
+			initBloomFilterLevels(cascadingBloom);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<CascadingBloomFilter>
+				cbf(cascadingBloom, opt::numLocks);
+			loadFilters(cbf, argc, argv);
+#else
+			loadFilters(cascadingBloom, argc, argv);
+#endif
+			printBloomStats(cerr, cascadingBloom);
+			writeBloom(cascadingBloom, outputPath);
 		}
 
 	} else {
@@ -422,13 +427,15 @@ int build(int argc, char** argv)
 		if (opt::levels == 1) {
 			BloomFilterWindow bloom(bits, startBitPos, endBitPos);
 			loadFilters(bloom, argc, argv);
-			buildAndOutput(bloom, outputPath);
+			printBloomStats(cerr, bloom);
+			writeBloom(bloom, outputPath);
 		}
 		else {
-			CascadingBloomFilterWindow countingBloom(bits, startBitPos, endBitPos);
-			initBloomFilterLevels(countingBloom);
-			loadFilters(countingBloom, argc, argv);
-			buildAndOutput(countingBloom, outputPath);
+			CascadingBloomFilterWindow cascadingBloom(bits, startBitPos, endBitPos);
+			initBloomFilterLevels(cascadingBloom);
+			loadFilters(cascadingBloom, argc, argv);
+			printBloomStats(cerr, cascadingBloom);
+			writeBloom(cascadingBloom, outputPath);
 		}
 	}
 
