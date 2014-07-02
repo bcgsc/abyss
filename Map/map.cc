@@ -83,10 +83,9 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	/** Find matches at least k bp. */
 	static unsigned k;
-	
+
 	/** Sample the suffix array. */
 	static unsigned sampleSA;
 
@@ -599,11 +598,16 @@ int main(int argc, char** argv)
 #endif
 
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-	addToDb (db, "K", opt::k);
-	addToDb (db, "SS", opt::ss);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
+	addToDb(db, "K", opt::k);
+	addToDb(db, "SS", opt::ss);
 #endif
-
 	const char* targetFile(argv[--argc]);
 	ostringstream ss;
 	ss << targetFile << ".fm";
@@ -661,7 +665,7 @@ int main(int argc, char** argv)
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
 #if _SQL
-	addToDb (db, "readContigs", faIndex.size());
+	addToDb(db, "readContigs", faIndex.size());
 #endif
 
 	// Check that the indexes are up to date.
@@ -692,9 +696,9 @@ int main(int argc, char** argv)
 			<< " reads uniquely (" << (float)100 * unique / total
 			<< "%)\n";
 #if _SQL
-		addToDb (db, "read_alignments_initial", total);
-		addToDb (db, "mapped", mapped);
-		addToDb (db, "mapped_uniq", unique);
+		addToDb(db, "read_alignments_initial", total);
+		addToDb(db, "mapped", mapped);
+		addToDb(db, "mapped_uniq", unique);
 #endif
 		if (opt::ss) {
 			cerr << "Mapped " << g_count.suboptimal
@@ -704,17 +708,16 @@ int main(int argc, char** argv)
 				<< (float)100 * g_count.subunmapped / total << "%)"
 				<< " unmapped suboptimal decisions.\n";
 #if _SQL
-			addToDb (db, "reads_map_ss", g_count.suboptimal);
+			addToDb(db, "reads_map_ss", g_count.suboptimal);
 #endif
 		} else {
 #if _SQL
-			addToDb (db, "reads_map_ss", 0);
+			addToDb(db, "reads_map_ss", 0);
 #endif
 		}
 	}
 
 	cout.flush();
 	assert_good(cout, "stdout");
-
 	return 0;
 }

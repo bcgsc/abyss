@@ -22,6 +22,7 @@ namespace opt {
 	extern std::string graphPath;
 	extern std::string snpPath;
 	extern std::vector<std::string> inFiles;
+
 	void parse(int argc, char* const* argv);
 	extern std::string assemblyCmd;
 	std::vector<std::string> getMetaValue();

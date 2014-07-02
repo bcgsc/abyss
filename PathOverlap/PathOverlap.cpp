@@ -80,7 +80,6 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	unsigned k;
 
 	/** Output format. */
@@ -708,14 +707,16 @@ int main(int argc, char** argv)
 			out << get(g_contigNames, *it) << '\n';
 		assert_good(out, opt::repeatContigs);
 	}
-
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-#endif
-
-#if _SQL
-	addToDb (db, "SS", opt::ss);
-	addToDb (db, "K", opt::k);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
+	addToDb(db, "SS", opt::ss);
+	addToDb(db, "K", opt::k);
 #endif
 
 	return 0;

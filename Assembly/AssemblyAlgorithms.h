@@ -28,7 +28,7 @@ namespace AssemblyAlgorithms
 #if _SQL
 extern std::vector<size_t> tempCounter;
 extern InsOrderedMap<std::string,int> tempStatMap;
-extern void addToDb (const std::string&, const int&);
+extern void addToDb(const std::string&, const int&);
 #endif
 
 // Read a sequence file and load them into the collection
@@ -109,6 +109,7 @@ void performTrim(SequenceCollectionHash* seqCollection);
 size_t popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
 size_t assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter = NULL);
+
 };
 
 #endif

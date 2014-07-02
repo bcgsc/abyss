@@ -88,7 +88,6 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	unsigned k; // used by Estimate.h
 
 	/** Output graph format. */
@@ -478,7 +477,13 @@ int main(int argc, char** argv)
 #endif
 
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
 #endif
 
 	string distanceCountFile(argv[optind++]);
@@ -502,16 +507,19 @@ int main(int argc, char** argv)
 			"k=" << opt::k << " "
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
+
 #if _SQL
 	vector<int> vals = make_vector<int>()
 		<< opt::k
 		<< opt::seedLen
 		<< opt::npairs;
+
 	vector<string> keys = make_vector<string>()
 		<< "K"
 		<< "SeedLen"
 		<< "NumPairs";
 #endif
+
 	// The fragment size histogram may not be written out until after
 	// the alignments complete. Wait for the alignments to complete.
 	in.peek();
@@ -532,14 +540,17 @@ int main(int argc, char** argv)
 					? "reverse-forward (RF)" : "forward-reverse (FR)")
 			<< ".\n";
 	}
+
 #if _SQL
 	vals += make_vector<int>()
 		<< numFR
 		<< numRF;
+
 	keys += make_vector<string>()
 		<< "FR_orientation"
 		<< "RF_orientation";
 #endif
+
 	// Determine the orientation of the library.
 	if (opt::rf == -1)
 		opt::rf = libRF;
@@ -571,7 +582,6 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Minimum and maximum distance are set to "
 			<< opt::minDist << " and " << opt::maxDist << " bp.\n";
-
 	assert(opt::minDist < opt::maxDist);
 
 #if _SQL
@@ -584,6 +594,7 @@ int main(int argc, char** argv)
 		<< h.size()
 		<< h.minimum()
 		<< h.maximum();
+
 	keys += make_vector<string>()
 		<< "minDist"
 		<< "maxDist"
@@ -595,7 +606,7 @@ int main(int argc, char** argv)
 		<< "max";
 
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
 
 	// Read the contig lengths.
@@ -643,6 +654,5 @@ int main(int argc, char** argv)
 
 	if (opt::format == DOT)
 		out << "}\n";
-
 	return 0;
 }

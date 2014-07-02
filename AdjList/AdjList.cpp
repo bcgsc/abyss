@@ -32,7 +32,6 @@ using namespace std;
 #if _SQL
 DB db;
 #endif
-
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Shaun Jackman.\n"
@@ -72,7 +71,6 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	unsigned k; // used by GraphIO
 	int format; // used by GraphIO
 
@@ -286,7 +284,6 @@ int main(int argc, char** argv)
 #if _SQL
 	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 #endif
-
 	opt::trimMasked = false;
 	Kmer::setLength(opt::k - 1);
 	Graph g;
@@ -333,13 +330,12 @@ int main(int argc, char** argv)
 	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
-
 #if _SQL
 	vector<int> vals = make_vector<int>()
 		<< opt::ss
 		<< opt::k;
 	vector<int> new_vals = passGraphStatsVal(g);
-	vals.insert (vals.end(), new_vals.begin(), new_vals.end());
+	vals.insert(vals.end(), new_vals.begin(), new_vals.end());
 
 	vector<string> keys = make_vector<string>()
 		<< "SS"
@@ -353,7 +349,7 @@ int main(int argc, char** argv)
 		<< "degree_max";
 
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
 
 	return 0;

@@ -349,6 +349,7 @@ static void printHistogramStats(Histogram h)
 		<< h.minimum()
 		<< h.maximum()
 		<< n_orig-h.size();
+
 	vector<string> keys = make_vector<string>()
 		<< "mean"
 		<< "median"
@@ -357,8 +358,9 @@ static void printHistogramStats(Histogram h)
 		<< "min"
 		<< "max"
 		<< "ignored";
+
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
 }
 
@@ -409,9 +411,14 @@ int main(int argc, char* const* argv)
 	}
 
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
 #endif
-
 	Alignments alignments(1);
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
@@ -421,12 +428,11 @@ int main(int argc, char* const* argv)
 			cerr << "Reading from standard input..." << endl;
 		readAlignments(cin, &alignments);
 	}
-	if (opt::verbose > 0) {
+	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
 #if _SQL
-		addToDb (db, "read_alignments_initial", stats.alignments);
+	addToDb(db, "read_alignments_initial", stats.alignments);
 #endif
-	}
 
 	// Print the unpaired alignments.
 	if (opt::print_all) {
@@ -469,6 +475,7 @@ int main(int argc, char* const* argv)
 		<< stats.numFF
 		<< stats.numDifferent
 		<< sum;
+
 	vector<string> keys = make_vector<string>()
 		<< "Mateless"
 		<< "Unaligned"
@@ -480,7 +487,7 @@ int main(int argc, char* const* argv)
 		<< "Total";
 
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
 
 	if (alignments.size() == sum) {

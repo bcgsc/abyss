@@ -183,7 +183,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-
 #if _SQL
 int getVvalue()
 {
@@ -219,6 +218,7 @@ void parse(int argc, char* const* argv)
 		copy(argv, last, ostream_iterator<const char *>(sargv, " "));
 		sargv << *last;
 	}
+
 #if  _SQL
 	opt::assemblyCmd = sargv.str();
 #endif

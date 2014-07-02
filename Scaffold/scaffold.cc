@@ -87,7 +87,6 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	unsigned k; // used by ContigProperties
 
 	/** Minimum number of pairs. */
@@ -213,7 +212,6 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
-
 #if _SQL
 	addToDb(db, "V_removed", numRemovedV);
 	addToDb(db, "E_removed", numRemovedE);
@@ -248,7 +246,7 @@ static void removeCycles(Graph& g)
 		printGraphStats(cerr, g);
 	}
 #if _SQL
-	addToDb (db, "E_removed_cyclic", cycles.size());
+	addToDb(db, "E_removed_cyclic", cycles.size());
 #endif
 }
 
@@ -304,7 +302,7 @@ static void resolveForks(Graph& g, const Graph& g0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
 #if _SQL
-	addToDb (db, "E_added_ambig", numEdges);
+	addToDb(db, "E_added_ambig", numEdges);
 #endif
 }
 
@@ -323,7 +321,7 @@ static void pruneTips(Graph& g)
 		printGraphStats(cerr, g);
 	}
 #if _SQL
-	addToDb (db, "Tips_removed", n);
+	addToDb(db, "Tips_removed", n);
 #endif
 }
 
@@ -402,8 +400,8 @@ static void removeRepeats(Graph& g)
 		printGraphStats(cerr, g);
 	}
 #if _SQL
-	addToDb (db, "V_cleared_ambg", repeats.size());
-	addToDb (db, "V_removed_ambg", numRemoved);
+	addToDb(db, "V_cleared_ambg", repeats.size());
+	addToDb(db, "V_removed_ambg", numRemoved);
 #endif
 }
 
@@ -485,7 +483,7 @@ static void removeWeakEdges(Graph& g)
 		printGraphStats(cerr, g);
 	}
 #if _SQL
-	addToDb (db, "E_removed_weak", weak.size());
+	addToDb(db, "E_removed_weak", weak.size());
 #endif
 }
 
@@ -629,12 +627,14 @@ static Histogram buildScaffoldLengthHistogram(
 		if (!get(vertex_removed, g, u))
 			h.insert(g[u].length);
 	}
+
 	return h;
 }
 
 #if _SQL
 /** Add contiguity stats to database */
-static void addCntgStatsToDb(const Histogram h, const unsigned min)
+static void addCntgStatsToDb(
+		const Histogram h, const unsigned min)
 {
 	vector<int> vals = passContiguityStatsVal(h, min);
 	vector<string> keys = make_vector<string>()
@@ -695,9 +695,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	}
 
 #if _SQL
-	addToDb (db, "Edges_transitive", numTransitive);
+	addToDb(db, "Edges_transitive", numTransitive);
 #endif
-
 	// Prune tips.
 	pruneTips(g);
 
@@ -709,11 +708,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
-
 #if _SQL
-	addToDb (db, "Vertices_bubblePopped", popped.size());
+	addToDb(db, "Vertices_bubblePopped", popped.size());
 #endif
-
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
 		for (vector<V>::const_iterator it = popped.begin();
@@ -742,10 +739,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
-
 #if _SQL
-	addToDb (db, "contigs_assembled", n);
-	addToDb (db, "scaffolds_assembled", paths.size());
+	addToDb(db, "contigs_assembled", n);
+	addToDb(db, "scaffolds_assembled", paths.size());
 #endif
 
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
@@ -785,11 +781,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
 	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
-
 #if _SQL
 	addCntgStatsToDb(h, STATS_MIN_LENGTH);
 #endif
-
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 
@@ -877,10 +871,15 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-	addToDb (db, "K", opt::k);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
+	addToDb(db, "K", opt::k);
 #endif
 
 	Graph g;
@@ -908,8 +907,9 @@ int main(int argc, char** argv)
 	if (numRemoved > 0)
 		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
+
 #if _SQL
-	addToDb (db, "Edges_invalid", numRemoved);
+	addToDb(db, "Edges_invalid", numRemoved);
 #endif
 	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
@@ -941,7 +941,7 @@ int main(int argc, char** argv)
 
 	bestN50 = scaffold(g, bests, true);
 	cerr << "Best scaffold N50 is " << bestN50
-		<< " at s=" << bests << ".\n";	
+		<< " at s=" << bests << ".\n";
 
 	return 0;
 }

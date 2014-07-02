@@ -107,13 +107,19 @@ int main(int argc, char** argv)
 		cout << "Done." << endl;
 #if _SQL
 		DB db;
-		init (db, opt::getUvalue(), opt::getVvalue(), "ABYSS-P", opt::getCommand(), opt::getMetaValue());
+		init(db,
+				opt::getUvalue(),
+				opt::getVvalue(),
+				"ABYSS-P",
+				opt::getCommand(),
+				opt::getMetaValue()
+		);
 #endif
 
 #if _SQL
-		addToDb (db, "SS", opt::ss);
-		addToDb (db, "K", opt::kmerSize);
-		addToDb (db, NSC::moveFromAaStatMap());
+		addToDb(db, "SS", opt::ss);
+		addToDb(db, "K", opt::kmerSize);
+		addToDb(db, NSC::moveFromAaStatMap());
 #endif
 	}
 

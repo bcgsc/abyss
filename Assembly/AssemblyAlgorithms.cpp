@@ -24,9 +24,9 @@ namespace AssemblyAlgorithms
 vector<size_t> tempCounter(16,0);
 InsOrderedMap<string,int> tempStatMap;
 
-void addToDb (const string& key, const int& value)
+void addToDb(const string& key, const int& value)
 {
-	tempStatMap.push_back (key, value);
+	tempStatMap.push_back(key, value);
 }
 #endif
 
@@ -233,7 +233,7 @@ size_t generateAdjacency(ISequenceCollection* seqCollection)
 	if (numBasesSet > 0) {
 		logger(0) << "Added " << numBasesSet << " edges.\n";
 #if _SQL
-		addToDb ("EdgesGenerated", numBasesSet);
+		addToDb("EdgesGenerated", numBasesSet);
 #endif
 	}
 	return numBasesSet;
@@ -284,6 +284,7 @@ size_t markAmbiguous(ISequenceCollection* g)
 				}
 			}
 		}
+
 		g->pumpNetwork();
 	}
 #if _SQL
@@ -420,13 +421,13 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 	if (numPopped > 0)
 		cout << "Removed " << numPopped << " bubbles.\n";
 #if _SQL
-	addToDb ("totalErodedTips", tempCounter[0]);
-	addToDb ("totalPrunedTips", tempCounter[1]);
-	addToDb ("prunedRounds", tempCounter[2]);
-	addToDb ("totalLowCovCntg", tempCounter[3]);
-	addToDb ("totalLowCovKmer", tempCounter[4]);
-	addToDb ("totalSplitAmbg", tempCounter[7]);
-	addToDb ("poppedBubbles", numPopped);
+	addToDb("totalErodedTips", tempCounter[0]);
+	addToDb("totalPrunedTips", tempCounter[1]);
+	addToDb("prunedRounds", tempCounter[2]);
+	addToDb("totalLowCovCntg", tempCounter[3]);
+	addToDb("totalLowCovKmer", tempCounter[4]);
+	addToDb("totalSplitAmbg", tempCounter[7]);
+	addToDb("poppedBubbles", numPopped);
 	tempCounter.assign(8,0);
 #endif
 	return numPopped;
@@ -763,9 +764,6 @@ static size_t trimSequences(SequenceCollectionHash* seqCollection,
 	if (numBranchesRemoved > 0)
 		logger(0) << "Pruned " << numSweeped << " k-mer in "
 			<< numBranchesRemoved << " tips.\n";
-#if _SQL
-
-#endif
 	return numBranchesRemoved;
 }
 
@@ -999,12 +997,12 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 		cout << "Assembled " << assembledKmer << " k-mer in "
 			<< contigID << " contigs.\n";
 #if _SQL
-		addToDb ("finalAmbgVertices", tempCounter[5]);
-		addToDb ("finalAmbgEdges", tempCounter[6]);
+		addToDb("finalAmbgVertices", tempCounter[5]);
+		addToDb("finalAmbgEdges", tempCounter[6]);
 		tempCounter.assign(8,0);
-		addToDb ("unassembledCircularCntg", circularKmer);
-		addToDb ("assembledKmerNum", assembledKmer);
-		addToDb ("assembledCntg", contigID);
+		addToDb("unassembledCircularCntg", circularKmer);
+		addToDb("assembledKmerNum", assembledKmer);
+		addToDb("assembledCntg", contigID);
 #endif
 	}
 	return contigID;
@@ -1052,9 +1050,9 @@ static float calculateCoverageThreshold(const Histogram& h)
 					"The reconstruction is " << trimmed.size()
 					<< endl;
 #if _SQL
-			addToDb ("coverageThreshold", (unsigned)roundf(cov));
-			addToDb ("medianKcoverage", median);
-			addToDb ("restruction", trimmed.size());
+			addToDb("coverageThreshold", (unsigned)roundf(cov));
+			addToDb("medianKcoverage", median);
+			addToDb("restruction", trimmed.size());
 #endif
 			return cov;
 		}

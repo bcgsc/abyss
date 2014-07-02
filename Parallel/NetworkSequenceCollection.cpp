@@ -441,11 +441,9 @@ void NetworkSequenceCollection::controlCoverage()
 void NetworkSequenceCollection::runControl()
 {
 	SetState(NAS_LOADING);
-
 	int erosionNum = 1;
 	size_t temp;
 	stringstream tempString;
-
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
 			case NAS_LOADING:
@@ -472,6 +470,7 @@ void NetworkSequenceCollection::runControl()
 					"At least "
 					<< toSI(numLoaded * sizeof (value_type))
 					<< "B of RAM is required.\n";
+
 #if _SQL
 				AssemblyAlgorithms::addToDb ("VerticesToStart", numLoaded);
 #endif
@@ -506,10 +505,12 @@ void NetworkSequenceCollection::runControl()
 				logger(0) << "Added " << m_numBasesAdjSet
 					<< " edges.\n";
 				cout << "Added " << temp << " edges.\n";
+
 #if _SQL
 				AssemblyAlgorithms::addToDb ("EdgesToStart", temp);
 #endif
 				EndState();
+
 				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 			case NAS_ERODE:
@@ -519,6 +520,8 @@ void NetworkSequenceCollection::runControl()
 				tempString << "erodedTips" << erosionNum;
 #if _SQL
 				AssemblyAlgorithms::addToDb (tempString.str(), controlErode());
+#else
+				controlErode();
 #endif
 				erosionNum++;
 				SetState(NAS_TRIM);
@@ -597,6 +600,7 @@ void NetworkSequenceCollection::runControl()
 				cout << "Assembled " << numAssembled.second
 					<< " k-mer in " << numAssembled.first
 					<< " contigs.\n";
+
 #if _SQL
 				AssemblyAlgorithms::addToDb ("assembledKmerNum", numAssembled.second);
 #endif

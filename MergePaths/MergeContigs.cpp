@@ -82,7 +82,6 @@ namespace opt {
 	string url;
 	dbVars metaVars;
 #endif
-
 	unsigned k; // used by ContigProperties
 	unsigned pathCount; // num of initial paths
 
@@ -415,7 +414,6 @@ static void outputGraph(Graph& g,
 	ofstream fout(graphPath.c_str());
 	assert_good(fout, graphPath);
 	write_graph(fout, g, PROGRAM, commandLine);
-
 	assert_good(fout, graphPath);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
@@ -491,10 +489,15 @@ int main(int argc, char** argv)
 	}
 
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-	addToDb (db, "K", opt::k);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
+	addToDb(db, "K", opt::k);
 #endif
-
 	const char* contigFile = argv[optind++];
 	string adjPath, mergedPathFile;
 	Graph g;
@@ -513,8 +516,8 @@ int main(int argc, char** argv)
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
 #if _SQL
-		addToDb (db, "Init_vertices", num_vertices(g));
-		addToDb (db, "Init_edges", num_edges(g));
+		addToDb(db, "Init_vertices", num_vertices(g));
+		addToDb(db, "Init_edges", num_edges(g));
 #endif
 	}
 	mergedPathFile = string(argv[optind++]);
@@ -547,7 +550,7 @@ int main(int argc, char** argv)
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
 #if _SQL
-		addToDb (db, "Init_seq", count);
+		addToDb(db, "Init_seq", count);
 #endif
 		assert(in.eof());
 		assert(!contigs.empty());
@@ -639,7 +642,6 @@ int main(int argc, char** argv)
 		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
 			<< '\t' << opt::out << '\n';
 	}
-
 #if _SQL
 	// assembly contiguity statistics
 	vector<int> vals = passContiguityStatsVal(lengthHistogram,200);
@@ -658,7 +660,7 @@ int main(int argc, char** argv)
 		<< "NG50";
 
 	for (unsigned a=0; a<vals.size(); a++)
-		addToDb (db, keys[a], vals[a]);
+		addToDb(db, keys[a], vals[a]);
 #endif
 
 	return 0;

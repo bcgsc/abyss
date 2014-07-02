@@ -179,9 +179,14 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
 #endif
 
 	string adjFile(argv[optind++]);
@@ -198,11 +203,10 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-
 #if _SQL
-	addToDb (db, "K", opt::k);
-	addToDb (db, "V", (num_vertices(g) - num_vertices_removed(g)));
-	addToDb (db, "E", num_edges(g));
+	addToDb(db, "K", opt::k);
+	addToDb(db, "V", (num_vertices(g) - num_vertices_removed(g)));
+	addToDb(db, "E", num_edges(g));
 #endif
 
 	// try to find paths that match the distance estimates
@@ -727,6 +731,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 		<< stats.multiEnd
 		<< stats.tooManySolutions
 		<< stats.tooComplex;
+
 	vector<string> keys = make_vector<string>()
 		<< "stat_attempted_path_total"
 		<< "stat_unique_path"
@@ -744,7 +749,6 @@ static void generatePathsThroughEstimates(const Graph& g,
 	cout << "\n"
 		"The minimum number of pairs in a distance estimate is "
 		<< g_minNumPairs << ".\n";
-
 	if (g_minNumPairsUsed != UINT_MAX) {
 		cout << "The minimum number of pairs used in a path is "
 			<< g_minNumPairsUsed << ".\n";
@@ -753,11 +757,11 @@ static void generatePathsThroughEstimates(const Graph& g,
 				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
-
 #if _SQL
 	vals += make_vector<int>()
 		<< g_minNumPairs
 		<< g_minNumPairsUsed;
+
 	keys += make_vector<string>()
 		<< "minPairNum_DistanceEst"
 		<< "minPairNum_UsedInPath";

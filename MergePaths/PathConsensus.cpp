@@ -862,10 +862,17 @@ int main(int argc, char** argv)
 	stats.numAmbPaths = g_ambpath_contig.size();
 	if (opt::verbose > 0)
 		cerr << "Read " << paths.size() << " paths\n";
+
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-	addToDb (db, "K", opt::k);
-	addToDb (db, "pathRead", paths.size());
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
+	addToDb(db, "K", opt::k);
+	addToDb(db, "pathRead", paths.size());
 #endif
 	// Start numbering new contigs from the last
 	if (!pathIDs.empty())
@@ -973,7 +980,6 @@ int main(int argc, char** argv)
 		write_graph(fout, g, PROGRAM, commandLine);
 		assert_good(fout, opt::graphPath);
 	}
-	
 #if _SQL
 	vector<int> vals = make_vector<int>()
 		<< stats.numAmbPaths
@@ -982,6 +988,7 @@ int main(int argc, char** argv)
 		<< stats.numTooManySolutions
 		<< stats.tooComplex
 		<< stats.notMerged;
+
 	vector<string> keys = make_vector<string>()
 		<< "ambg_paths"
 		<< "merged"
@@ -991,7 +998,7 @@ int main(int argc, char** argv)
 		<< "dissimilar";
 
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
 
 	return 0;

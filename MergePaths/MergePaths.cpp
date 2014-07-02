@@ -640,7 +640,7 @@ static void addMissingEdges(const Lengths& lengths,
 	if (opt::verbose > 0)
 		cout << "Added " << numAdded << " missing edges.\n";
 #if _SQL
-	addToDb (db, "addedMissingEdges", numAdded);
+	addToDb(db, "addedMissingEdges", numAdded);
 #endif
 }
 
@@ -656,8 +656,8 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 			<< nafter << " edges.\n";
 	assert(nbefore - nremoved == nafter);
 #if _SQL
-	addToDb (db, "Edges_init", nbefore);
-	addToDb (db, "Edges_removed_transitive", nremoved);
+	addToDb(db, "Edges_init", nbefore);
+	addToDb(db, "Edges_removed_transitive", nremoved);
 #endif
 }
 
@@ -698,7 +698,7 @@ static void removeSmallOverlaps(PathGraph& g,
 		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
 #if _SQL
-	addToDb (db, "Edges_removed_small_overlap", edges.size());
+	addToDb(db, "Edges_removed_small_overlap", edges.size());
 #endif
 }
 
@@ -847,7 +847,6 @@ static void buildPathGraph(const Lengths& lengths,
 	removeSmallOverlaps(g, paths);
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-
 #if _SQL
 	// graph statistics
 	vector<int> vals = passGraphStatsVal(g);
@@ -861,9 +860,8 @@ static void buildPathGraph(const Lengths& lengths,
 		<< "degree_max";
 
 	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
+		addToDb(db, keys[i], vals[i]);
 #endif
-
 	outputPathGraph(g);
 }
 
@@ -962,7 +960,13 @@ int main(int argc, char** argv)
 		cerr << "Reading `" << argv[optind] << "'..." << endl;
 
 #if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	init(db,
+			opt::url,
+			opt::verbose,
+			PROGRAM,
+			opt::getCommand(argc, argv),
+			opt::metaVars
+	);
 #endif
 
 	Lengths lengths = readContigLengths(argv[optind++]);
@@ -970,8 +974,9 @@ int main(int argc, char** argv)
 			lengths, argv[optind++]);
 
 	removeRepeats(originalPathMap);
+
 #if _SQL
-	addToDb (db, "K", opt::k);
+	addToDb(db, "K", opt::k);
 #endif
 	if (!opt::greedy) {
 		// Assemble the path overlap graph.
@@ -1054,6 +1059,7 @@ int main(int argc, char** argv)
 		}
 	}
 	originalPathMap.clear();
+
 	outputSortedPaths(resultsPathMap);
 	return 0;
 }
