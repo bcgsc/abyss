@@ -41,7 +41,12 @@ namespace Bloom {
 		size_t endBitPos;
 	};
 
-	/** for verbose option to track loading progress */
+	/**
+	 * Number of seqs to read in during each iteration of an
+	 * OpenMP bloom filter loading task
+	 */
+	static const unsigned LOAD_CHUNK_SIZE = 1000;
+	/** Print a progress message after loading this many seqs */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
 	static const unsigned BLOOM_VERSION = 2;
@@ -103,14 +108,21 @@ namespace Bloom {
 			if (i == 0)
 				break;
 			for (size_t j = 0; j < i; j++) {
-#pragma omp atomic
-				count++;
 				loadSeq(bloomFilter, k, seq[j]);
+				if (verbose)
+#pragma omp critical(cerr)
+				{
+					count++;
+					if (count % LOAD_PROGRESS_STEP == 0)
+						std::cerr << "Loaded " << count << " reads into bloom filter\n";
+				}
 			}
 		}
 		assert(in.eof());
-		if (verbose)
-			std::cerr << "Loaded " << count << " reads into bloom filter\n";
+		if (verbose) {
+			std::cerr << "Loaded " << count << " reads from `"
+				<< path << "` into bloom filter\n";
+		}
 	}
 
 	/** Load a sequence (string) into a bloom filter */
