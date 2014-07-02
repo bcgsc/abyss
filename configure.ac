@@ -240,6 +240,7 @@ AC_CONFIG_FILES([
 	Consensus/Makefile
 	FilterGraph/Makefile
 	GapFiller/Makefile
+	GapFiller2/Makefile
 	Unittest/Makefile
 ])
 AC_OUTPUT

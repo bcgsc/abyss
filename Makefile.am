@@ -46,6 +46,7 @@ SUBDIRS = \
 	kmerprint \
 	FilterGraph \
 	GapFiller \
+	GapFiller2 \
 	$(Unittest)
 
 %.html: %.md
