@@ -347,3 +347,24 @@ abyss_bloom_multithreaded_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq 
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
+
+#------------------------------------------------------------
+# connectpairs_multithreaded_test
+#------------------------------------------------------------
+
+connectpairs_multithreaded_test: $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	/usr/bin/time -v $(connectpairs) $(cp_opts) -o $(tmpdir)/e$e_singlethreaded \
+		$(CP_OPTS) -j1 $^
+	cat $(tmpdir)/e$e_singlethreaded_merged.fa | \
+		paste - - | sort | tr '\t' '\n' \
+		> $(tmpdir)/e$e_singlethreaded_merged.sorted.fa
+	/usr/bin/time -v $(connectpairs) $(cp_opts) -o $(tmpdir)/e$e_multithreaded \
+		$(CP_OPTS) -j10 $^
+	cat $(tmpdir)/e$e_multithreaded_merged.fa | \
+		paste - - | sort | tr '\t' '\n' \
+		> $(tmpdir)/e$e_multithreaded_merged.sorted.fa
+	diff $(tmpdir)/e$e_singlethreaded_merged.sorted.fa \
+		$(tmpdir)/e$e_multithreaded_merged.sorted.fa
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'

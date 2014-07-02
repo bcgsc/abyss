@@ -28,6 +28,7 @@
 
 #if _OPENMP
 # include <omp.h>
+# include "Bloom/ConcurrentBloomFilter.h"
 #endif
 
 #undef USESEQAN
@@ -576,8 +577,14 @@ int main(int argc, char** argv)
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
 		CascadingBloomFilter tempBloom(bits);
+#ifdef _OPENMP
+		ConcurrentBloomFilter<CascadingBloomFilter> cbf(tempBloom, 1000);
+		for (int i = optind; i < argc; i++)
+			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
+#else
 		for (int i = optind; i < argc; i++)
 			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+#endif
 		bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
 	}
 
