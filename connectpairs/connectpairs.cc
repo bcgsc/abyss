@@ -291,9 +291,6 @@ static void connectPair(const Graph& g,
 {
 	bool skip = false;
 
-#pragma omp atomic
-	++g_count.readPairsProcessed;
-
 	if (!opt::readName.empty() &&
 		read1.id.find(opt::readName) == string::npos) {
 #pragma omp atomic
@@ -385,25 +382,27 @@ static void connectPair(const Graph& g,
 		}
 	}
 
-	if (opt::verbose >= 2)
 #pragma omp critical(cerr)
 	{
-		if(g_count.readPairsProcessed % g_progressStep == 0) {
-			cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
-				<< g_count.readPairsProcessed << " read pairs "
-				<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
-				<< "no path: " << g_count.noPath << ", "
-				<< "too many paths: " << g_count.tooManyPaths << ", "
-				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
-				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
-				<< "contains cycle: " << g_count.containsCycle << ", "
-				<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
-				<< "skipped: " << g_count.skipped
-				<< ")\n";
+		g_count.readPairsProcessed++;
+		if (opt::verbose >= 2)
+		{
+			if(g_count.readPairsProcessed % g_progressStep == 0) {
+				cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
+					<< g_count.readPairsProcessed << " read pairs "
+					<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
+					<< "no path: " << g_count.noPath << ", "
+					<< "too many paths: " << g_count.tooManyPaths << ", "
+					<< "too many branches: " << g_count.tooManyBranches << ", "
+					<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
+					<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+					<< "contains cycle: " << g_count.containsCycle << ", "
+					<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
+					<< "skipped: " << g_count.skipped
+					<< ")\n";
+			}
 		}
 	}
-
 }
 
 /** Connect read pairs. */
