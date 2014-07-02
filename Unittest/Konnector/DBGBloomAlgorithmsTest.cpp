@@ -1,4 +1,4 @@
-#include "connectpairs/DBGBloomAlgorithms.h"
+#include "Konnector/DBGBloomAlgorithms.h"
 #include "Bloom/Bloom.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "Common/Sequence.h"

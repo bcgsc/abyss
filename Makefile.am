@@ -29,7 +29,7 @@ SUBDIRS = \
 	ABYSS $(Parallel) \
 	AdjList \
 	Bloom \
-	connectpairs \
+	Konnector \
 	Consensus \
 	DAssembler \
 	DistanceEst \

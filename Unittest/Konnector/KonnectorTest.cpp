@@ -1,4 +1,4 @@
-#include "connectpairs/connectpairs.h"
+#include "Konnector/konnector.h"
 #include "Bloom/Bloom.h"
 #include <iostream>
 

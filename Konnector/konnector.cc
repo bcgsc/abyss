@@ -5,7 +5,7 @@
 
 #include "config.h"
 
-#include "connectpairs.h"
+#include "konnector.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
