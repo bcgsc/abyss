@@ -7,10 +7,10 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
-#include "connectpairs/BloomFilter.h"
-#include "connectpairs/CountingBloomFilter.h"
-#include "connectpairs/BloomFilterWindow.h"
-#include "connectpairs/CountingBloomFilterWindow.h"
+#include "Konnector/BloomFilter.h"
+#include "Konnector/CountingBloomFilter.h"
+#include "Konnector/BloomFilterWindow.h"
+#include "Konnector/CountingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>

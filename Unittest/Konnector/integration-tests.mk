@@ -1,6 +1,6 @@
 #!/usr/bin/make -Rrf
 
-# Test abyss-connectpairs
+# Test konnector
 
 SHELL=/bin/bash -o pipefail
 
@@ -22,18 +22,18 @@ k?=20
 N?=6000
 # error rate of synthetic reads
 e?=0.005
-# path to abyss-connectpairs binary
-connectpairs?=abyss-connectpairs
+# path to konnector binary
+konnector?=konnector
 # path to abyss-bloom binary
 bloom?=abyss-bloom
 # path to abyss-bloom-dist.mk makefile
 bloom_dist=abyss-bloom-dist.mk
 # temp dir for test outputs
 tmpdir=tmp
-# shared options to connectpairs
-cp_opts=-j$j -v -v -k$k
-# user options to connectpairs
-CP_OPTS?=
+# shared options to konnector
+k_opts=-j$j -v -v -k$k
+# user options to konnector
+K_OPTS?=
 
 #------------------------------------------------------------
 # global vars
@@ -88,7 +88,7 @@ $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
 	wgsim -S 0 -e $* -N $N -r 0 -R 0 $< $(tmpdir)/e$*_1.fq $(tmpdir)/e$*_2.fq
 
 $(tmpdir)/e%_merged.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
-	/usr/bin/time -v $(connectpairs) $(cp_opts) -b$b -o $(tmpdir)/e$* $(CP_OPTS) $^
+	/usr/bin/time -v $(konnector) $(k_opts) -b$b -o $(tmpdir)/e$* $(K_OPTS) $^
 
 $(tmpdir)/e%_l2.bloom: $(tmpdir) $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
 	$(bloom) build -v -k$k -l2 -b$b $@ $(filter-out $<, $^)
@@ -125,8 +125,8 @@ save_and_load_test: $(tmpdir)/e$e_l2.bloom \
 	$(tmpdir)/e$e_merged.fa \
 	$(tmpdir)/e$e_reads_1.fq \
 	$(tmpdir)/e$e_reads_2.fq
-	/usr/bin/time -v $(connectpairs) $(cp_opts) -o $(tmpdir)/e$e_loaded \
-		-i $(tmpdir)/e$e_l2.bloom $(CP_OPTS) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_loaded \
+		-i $(tmpdir)/e$e_l2.bloom $(K_OPTS) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_loaded_merged.fa
 	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_loaded_reads_1.fq
 	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_loaded_reads_2.fq
@@ -144,9 +144,9 @@ interleaved_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(tmpdir)/e$e_merged.fa \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
-	/usr/bin/time -v $(connectpairs) $(cp_opts) -I -b$b \
+	/usr/bin/time -v $(konnector) $(k_opts) -I -b$b \
 		-i $(tmpdir)/e$e_l2.bloom -o $(tmpdir)/e$e_interleaved \
-		$(CP_OPTS) \
+		$(K_OPTS) \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
 	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_interleaved_merged.fa

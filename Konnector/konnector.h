@@ -1,7 +1,7 @@
 #ifndef CONNECTPAIRS_H
 #define CONNECTPAIRS_H
 
-#include "connectpairs/DBGBloomAlgorithms.h"
+#include "Konnector/DBGBloomAlgorithms.h"
 #include "DataLayer/FastaInterleave.h"
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"

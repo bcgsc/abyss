@@ -36,22 +36,22 @@ common_KmerIterator_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
-BloomFilter_SOURCES = connectpairs/BloomFilter.cc
+BloomFilter_SOURCES = Konnector/BloomFilter.cc
 BloomFilter_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
-UNIT_TESTS += connectpairs_DBGBloom
-check_PROGRAMS += connectpairs_DBGBloom
-connectpairs_DBGBloom_SOURCES = connectpairs/DBGBloomTest.cpp
-connectpairs_DBGBloom_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_DBGBloom_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
-connectpairs_DBGBloom_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+UNIT_TESTS += Konnector_DBGBloom
+check_PROGRAMS += Konnector_DBGBloom
+Konnector_DBGBloom_SOURCES = Konnector/DBGBloomTest.cpp
+Konnector_DBGBloom_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+Konnector_DBGBloom_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+Konnector_DBGBloom_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
-UNIT_TESTS += connectpairs_DBGBloomAlgorithms
-check_PROGRAMS += connectpairs_DBGBloomAlgorithms
-connectpairs_DBGBloomAlgorithms_SOURCES = connectpairs/DBGBloomAlgorithmsTest.cpp
-connectpairs_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_DBGBloomAlgorithms_LDADD = \
+UNIT_TESTS += Konnector_DBGBloomAlgorithms
+check_PROGRAMS += Konnector_DBGBloomAlgorithms
+Konnector_DBGBloomAlgorithms_SOURCES = Konnector/DBGBloomAlgorithmsTest.cpp
+Konnector_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+Konnector_DBGBloomAlgorithms_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(GTEST_LIBS)
 
@@ -86,13 +86,13 @@ graph_ConstrainedBidiBFSVisitor_SOURCES = \
 graph_ConstrainedBidiBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 graph_ConstrainedBidiBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
-UNIT_TESTS += connectpairs_connectpairs
-check_PROGRAMS += connectpairs_connectpairs
-connectpairs_connectpairs_SOURCES = \
-	connectpairs/connectpairsTest.cpp
-connectpairs_connectpairs_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
-connectpairs_connectpairs_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
-connectpairs_connectpairs_LDADD = \
+UNIT_TESTS += Konnector_konnector
+check_PROGRAMS += Konnector_konnector
+Konnector_konnector_SOURCES = \
+	Konnector/konnectorTest.cpp
+Konnector_konnector_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+Konnector_konnector_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+Konnector_konnector_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 

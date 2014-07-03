@@ -1,4 +1,4 @@
-#include "connectpairs/DBGBloom.h"
+#include "Konnector/DBGBloom.h"
 
 #include <gtest/gtest.h>
 #include <string>

@@ -1,7 +1,7 @@
 #ifndef COUNTINGBLOOMFILTERWINDOW_H
 #define COUNTINGBLOOMFILTERWINDOW_H 1
 
-#include "connectpairs/CountingBloomFilter.h"
+#include "Konnector/CountingBloomFilter.h"
 #include <vector>
 
 class CountingBloomFilterWindow : public CountingBloomFilter

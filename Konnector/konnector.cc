@@ -5,7 +5,7 @@
 
 #include "config.h"
 
-#include "connectpairs.h"
+#include "konnector.h"
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
@@ -41,7 +41,7 @@ using namespace std;
 using namespace seqan;
 #endif
 
-#define PROGRAM "abyss-connectpairs"
+#define PROGRAM "konnector"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
