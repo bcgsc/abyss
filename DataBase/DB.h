@@ -64,19 +64,23 @@ class DB {
 	void assemblyStatsToDb ();
 
  public:
+	enum { NO_INIT, INIT, READ };
+
 	DB () {
 		initVars.assign (3,"");
 		peVars.assign (3,"");
+		exp = NO_INIT;
 	}
 
 	~DB () {
-		if (exp == 0)
+		if (exp == INIT)
 			assemblyStatsToDb ();
-		closeDB ();
+		if (exp != NO_INIT)
+			closeDB ();
 	}
 
 	friend void init (DB& d, const std::string& path) {
-		d.exp = 1;
+		d.exp = READ;
 		d.openDB (path.c_str(), 0);
 	}
 
@@ -84,7 +88,7 @@ class DB {
 		d.prog = program;
 		d.cmd = command;
 		d.initVars = vars;
-		d.exp = 0;
+		d.exp = INIT;
 		// If destination is not specified, create 'ABySS.db' by default.
 		d.openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
 	}
