@@ -97,8 +97,7 @@ Konnector_Konnector_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 Konnector_Konnector_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
-	
-##Tests for log kmer counting / Counting bloom filter
 
+##Tests for log kmer counting / Counting bloom filter
 
 TESTS = $(UNIT_TESTS)
