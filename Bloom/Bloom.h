@@ -85,6 +85,9 @@ namespace Bloom {
 		return hashmem(&copy, sizeof copy, seed);
 	}
 
+	template <typename BF>
+	inline static void loadSeq(BF& bloomFilter, unsigned k, const std::string& seq);
+
 	/** Load a sequence file into a bloom filter */
 	template <typename BF>
 	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path,
