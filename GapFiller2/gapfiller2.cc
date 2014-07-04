@@ -70,7 +70,7 @@ static const char USAGE_MESSAGE[] =
 "  -L  --flank-length=N	      		length of flanks to be used as pseudoreads [100]\n"
 "  -D  --flank-distance=N     		distance of flank from gap [0]\n"
 "  -j, --threads=N            		use N parallel threads [1]\n"
-"  -k, --kmer:input-bloom=N:FILE       	the size of a k-mer\n"
+"  -k, --kmer=N 		      	the size of a k-mer\n"
 "  -b, --bloom-size=N        		size of bloom filter [500M]\n"
 "  -B, --max-branches=N    		max branches in de Bruijn graph traversal;\n"
 "                             		use 'nolimit' for no limit [350]\n"
@@ -328,14 +328,6 @@ static void connectPair(const DBGBloom& g,
 	}
 
 	if (!skip) {
-		/*
-		****************************************
-		FastqRecord flank1;
-		flank1.seq = flank1seq;
-		FastqRecord flank2;
-		flank2.seq = flank2seq;
-		***************************************
-		*/
 		ConnectPairsResult result = 
 			connectPairs(opt::k, read1, read2, g, params);
 		
@@ -692,8 +684,13 @@ int main(int argc, char** argv)
 			arg >> opt::minFrag; break;
 		  case 'F':
 			arg >> opt::maxFrag; break;
-		  case 'i':
-			arg >> opt::inputBloomPath; break;
+		  case 'i': {
+			string tempPath;
+			arg >> tempPath;
+			opt::bloomFilterPaths.push_back(tempPath);
+			opt::inputBloomPath = tempPath; 
+			break;
+			}
 		  case 'I':
 			opt::interleaved = true; break;
 		  case 'j':
@@ -783,7 +780,7 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::bloomSize > 0);
-
+	/*
 	BloomFilterBase* bloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
@@ -808,13 +805,14 @@ int main(int argc, char** argv)
 		for (int i = optind; i < argc; i++)
 			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
 	}
+	
 	//cout << *bloom;
 	//exit(EXIT_SUCCESS);
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom->FPR() << "%\n";
-
+*/
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -836,7 +834,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom g(*bloom);
+//	DBGBloom g(*bloom);
 
 	string scaffoldOutputPath("newscaffold.fa");	
 	ofstream scaffoldStream(scaffoldOutputPath.c_str());
@@ -901,21 +899,51 @@ int main(int argc, char** argv)
 	cerr << "Entering for loop" << endl;
 	for (unsigned i = 0; i<opt::kvector.size(); i++) {
 		opt::k = opt::kvector.at(i);
-		//Kmer::setLength(opt::k);	
+		Kmer::setLength(opt::k);	
 		unsigned gapsfound = 0;
-                /*
+                
 		BloomFilterBase* bloom = NULL;
-		if (opt::inputBloomPath.empty()) {	
-			cerr << "creating bloom filter with k value: " << opt::k << endl;
-			size_t bits = opt::bloomSize * 8 / 2;
-			cout << "before bloom = new.." << endl;
-                	bloom = new CountingBloomFilter(bits);
-			cout << "after bloom = new.." << endl;
-                	for (int j = optind; j < argc; j++)
-                        	bloom->loadFile(opt::k, string(argv[j]), opt::verbose);
+		
+		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
+
+			if (opt::verbose)
+				std::cerr << "Loading bloom filter from `"
+					<< opt::bloomFilterPaths.at(i) << "'...\n";
+
+			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
+			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
+			assert_good(inputBloom, inputPath);
+			BloomFilter* loadedBloom = new BloomFilter();
+//			char version[256];
+//			int ik;
+//			inputBloomTest.getline(version,256);
+//			inputBloomTest >> ik;
+//			if (ik == (int)opt::k) {
+//				ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
+//                        	assert_good(inputBloom, inputPath);
+				inputBloom >> *loadedBloom;
+				assert_good(inputBloom, inputPath);
+				inputBloom.close();
+				bloom = loadedBloom;
+/*			}
+			else {
+				cerr << "K value (" <<opt::k<<") doesn't match K value of Bloom Filter ("<<ik<<")."
+					<< " Ensure order of K values corresponds to order of bloom filters." << endl;
+				cerr << "Skipping to next K value." << endl;
+				continue;
+			}
+*/
+		} else {
+			// Specify bloom filter size in bits.
+			size_t bits = opt::bloomSize * 8;
+			bloom = new BloomFilter(bits);
+			for (int i = optind; i < argc; i++)
+				bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
 		}
+		
+		
 		DBGBloom g(*bloom);	
-		*/
+		
 		 	
 		FastaReader reader(scaffoldInputPath, FastaReader::FOLD_CASE);
 		cerr << "processing records" << endl;
@@ -1027,8 +1055,8 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n"
-			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
-				<< "%\n";
+		/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+				<< "%\n"*/;
 	}
 	assert_good(scaffoldStream, scaffoldOutputPath.c_str());
 	scaffoldStream.close(); 
@@ -1049,7 +1077,7 @@ int main(int argc, char** argv)
 		traceStream.close();
 	}
 
-	delete bloom;
+//	delete bloom;
 
 	return 0;
 }
