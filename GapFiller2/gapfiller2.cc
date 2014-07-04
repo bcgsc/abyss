@@ -45,7 +45,6 @@
 #include <seqan/align_split.h>
 #endif
 
-
 using namespace std;
 #if USESEQAN
 using namespace seqan;
@@ -59,6 +58,7 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Ben Vandervalk and Daniel Paulino\n"
 "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
+
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " -k <kmer size> [-k N ]... -o <output_prefix> -S <path to scaffold file> [options]... <reads1> [reads2]...\n"
 "Connect the pairs READS1 and READS2 and close the gap using\n"
@@ -159,7 +159,7 @@ namespace opt {
 	 */
 	bool fixErrors = false;
 
-	/** The size of kmer */
+	/** The size of a k-mer. */
 	unsigned k;
 	
 	/** Vector of kmers. */
@@ -461,7 +461,6 @@ static void connectPairs(const DBGBloom& g,
 			break;
 	}
 }
- 
 
 /**
  * Set the value for a commandline option, using "nolimit"
@@ -598,8 +597,7 @@ void extract(
 	transform(rightflank.begin(), rightflank.end(), rightflank.begin(), ::toupper);
 	read2.seq = reversecompliment(rightflank);
 }
-// processes one line, finds all gaps of line and runs connector on the gaps. stores results in map. Should pass in a map. This map must be permanently changeable by filler. Return void. 
-// TODO: completely redo so that each BF is only loaded once for the entire k sweep
+
 void filler(
 	FastaRecord record, 
 	int flanklength, 
@@ -701,17 +699,12 @@ int main(int argc, char** argv)
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k': {
-			// TODO: double check
-			//string tempPath;
 			unsigned tempK;
-			//char x;
-			//cout << "test";
-			arg >> tempK; // >> x >> tempPath;
-			//cout << ". after arg input" << endl;
+			arg >> tempK; 
 			opt::kvector.push_back(tempK);
-			//opt::bloomFilterPaths.push_back(tempPath);
 			opt::k = tempK;
-			break;}
+			break;
+			}
 		  case 'l':
 			opt::longSearch = true; break;
 		  case 'm':
@@ -790,7 +783,7 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::bloomSize > 0);
-	
+
 	BloomFilterBase* bloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
@@ -809,23 +802,20 @@ int main(int argc, char** argv)
 		bloom = loadedBloom;
 
 	} else {
-
-		// Specify bloom filter size in bits. Divide by two
-		// because counting bloom filter requires twice as
-		// much space.
-		cerr << "creating bloom filter with k value: " << opt::k << endl;
-		size_t bits = opt::bloomSize * 8 / 2;
-		bloom = new CountingBloomFilter(bits);
+		// Specify bloom filter size in bits.
+		size_t bits = opt::bloomSize * 8;
+		bloom = new BloomFilter(bits);
 		for (int i = optind; i < argc; i++)
 			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
-
 	}
+	//cout << *bloom;
+	//exit(EXIT_SUCCESS);
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom->FPR() << "%\n";
 
-	
+
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
 		if (opt::verbose)
@@ -847,7 +837,7 @@ int main(int argc, char** argv)
 	}
 
 	DBGBloom g(*bloom);
-	
+
 	string scaffoldOutputPath("newscaffold.fa");	
 	ofstream scaffoldStream(scaffoldOutputPath.c_str());
 	assert_good(scaffoldStream, scaffoldOutputPath);
@@ -869,7 +859,7 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		cerr << "Connecting read pairs\n";
-	
+
 	ConnectPairsParams params;
 
 	params.minMergedSeqLen = opt::minFrag;
@@ -884,8 +874,7 @@ int main(int argc, char** argv)
 	params.memLimit = opt::searchMem;
 	params.dotPath = opt::dotPath;
 	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;
-	
-	
+
 	// remove fastaInterleave
 	/*
 	if (opt::interleaved) {
@@ -907,17 +896,15 @@ int main(int argc, char** argv)
 	map<string, map<int, map<string, string> > > allmerged;
 
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
-	FastaReader reader(scaffoldInputPath, FastaReader::FOLD_CASE);
-	
-	unsigned gapsfound = 0;
-	
+
 	// iterates over each read
 	cerr << "Entering for loop" << endl;
 	for (unsigned i = 0; i<opt::kvector.size(); i++) {
 		opt::k = opt::kvector.at(i);
-	/*
-		
-                BloomFilterBase* bloom = NULL;
+		//Kmer::setLength(opt::k);	
+		unsigned gapsfound = 0;
+                /*
+		BloomFilterBase* bloom = NULL;
 		if (opt::inputBloomPath.empty()) {	
 			cerr << "creating bloom filter with k value: " << opt::k << endl;
 			size_t bits = opt::bloomSize * 8 / 2;
@@ -928,7 +915,9 @@ int main(int argc, char** argv)
                         	bloom->loadFile(opt::k, string(argv[j]), opt::verbose);
 		}
 		DBGBloom g(*bloom);	
-		 	*/
+		*/
+		 	
+		FastaReader reader(scaffoldInputPath, FastaReader::FOLD_CASE);
 		cerr << "processing records" << endl;
 		for (FastaRecord record;;) {
                 	bool good;
@@ -936,14 +925,15 @@ int main(int argc, char** argv)
                 	if (good) {
 				filler(record, opt::flankLength, g, params, opt::kvector.at(i), allmerged, gapsfound); 
 			}
-                	else
-                        	break;
-        	}
+                	else {
+				cerr << gapsfound << " gaps found." << endl;
+				break;
+        		}
+		}
 		
 		
 	}
 	cerr << "K sweep complete." << endl; 
-	cerr << gapsfound << " gaps found." << endl;
 	cerr << "Starting new scaffold creation" << endl;
 	
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
