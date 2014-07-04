@@ -53,9 +53,9 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
-"  -l, --levels=N             build a counting bloom filter with N levels\n"
+"  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
-"  -L, --init-level='N=FILE'  initialize level N of counting bloom filter\n"
+"  -L, --init-level='N=FILE'  initialize level N of cascading bloom filter\n"
 "                             from FILE\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
@@ -87,11 +87,11 @@ namespace opt {
 	/** The size of a k-mer. */
 	unsigned k;
 
-	/** Number of levels for counting bloom filter. */
+	/** Number of levels for cascading bloom filter. */
 	unsigned levels = 1;
 
 	/**
-	 * Files used to initialize levels of counting
+	 * Files used to initialize levels of cascading
 	 * bloom filter (-L option).
 	 */
 	vector< vector<string> > levelInitPaths;
@@ -235,7 +235,7 @@ void initBloomFilterLevels(CBF& bf)
 		for (unsigned j = 0; j < paths.size(); j++) {
 			string path = paths.at(j);
 			cerr << "Loading `" << path << "' into level "
-				<< i + 1 << " of counting bloom filter...\n";
+				<< i + 1 << " of cascading bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
 			Bloom::LoadType loadType = (j > 0) ?
@@ -282,6 +282,20 @@ void printBloomStats(ostream& os, const BF& bloom)
 		<< "Bloom popcount (bits): " << bloom.popcount() << "\n"
 		<< "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom.FPR() << "%\n";
+}
+
+template <typename BF>
+void printCascadingBloomStats(ostream& os, BF& bloom)
+{
+	for (unsigned i = 0; i < opt::levels; i++) {
+		os << "Stats for Bloom filter level " << i+1 << ":\n"
+			<< "\tBloom size (bits): "
+			<< bloom.getBloomFilter(i).size() << "\n"
+			<< "\tBloom popcount (bits): "
+			<< bloom.getBloomFilter(i).popcount() << "\n"
+			<< "\tBloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.getBloomFilter(i).FPR() << "%\n";
+	}
 }
 
 int build(int argc, char** argv)
@@ -340,7 +354,7 @@ int build(int argc, char** argv)
 
 	if (!opt::levelInitPaths.empty() && opt::levels < 2)
 	{
-		cerr << PROGRAM ": -L can only be used with counting bloom "
+		cerr << PROGRAM ": -L can only be used with cascading bloom "
 			"filters (-l >= 2)\n";
 		dieWithUsageError();
 	}
@@ -378,7 +392,7 @@ int build(int argc, char** argv)
 		dieWithUsageError();
 	}
 
-	// if we are building a counting bloom filter, reduce
+	// if we are building a cascading bloom filter, reduce
 	// the size of each level so that the overall bloom filter
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
@@ -409,7 +423,7 @@ int build(int argc, char** argv)
 #else
 			loadFilters(cascadingBloom, argc, argv);
 #endif
-			printBloomStats(cerr, cascadingBloom);
+			printCascadingBloomStats(cerr, cascadingBloom);
 			writeBloom(cascadingBloom, outputPath);
 		}
 
@@ -434,7 +448,7 @@ int build(int argc, char** argv)
 			CascadingBloomFilterWindow cascadingBloom(bits, startBitPos, endBitPos);
 			initBloomFilterLevels(cascadingBloom);
 			loadFilters(cascadingBloom, argc, argv);
-			printBloomStats(cerr, cascadingBloom);
+			printCascadingBloomStats(cerr, cascadingBloom);
 			writeBloom(cascadingBloom, outputPath);
 		}
 	}
