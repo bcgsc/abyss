@@ -104,7 +104,6 @@ template<typename NumericType>
       NumericType minEle = (*this)[key];
 
       //update only those elements
-      NumericType currentMin = m_data[Bloom::hash (key, 0) % m_data.size ()];
       for (unsigned int i = 1; i < hashNum; ++i)
 	{
 	  size_t hashVal = Bloom::hash (key, i) % m_data.size ();
