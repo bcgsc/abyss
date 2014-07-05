@@ -166,12 +166,16 @@ struct SAMAlignment {
 		in >> len >> type;
 		assert(in.good());
 		unsigned clip0 = 0;
-		switch (type) {
-			case 'H': case 'S':
-				clip0 = len;
-				in >> len >> type;
-				assert(in.good());
-				if (type != 'M') {
+		a.align_length = 0;
+		unsigned qlen = clip0 + a.align_length;
+		unsigned clip1 = 0;
+		while (in >> len >> type) {
+			switch (type) {
+			  case 'I': case 'X': case '=':
+				qlen += len;
+				clip1 += len;
+			  case 'D': case 'N': case 'P':
+				if (a.align_length == 0) {
 					// Ignore a malformatted CIGAR string whose first
 					// non-clipping operation is not M.
 					std::cerr << "warning: malformatted CIGAR: "
@@ -179,28 +183,18 @@ struct SAMAlignment {
 					in >> len >> type;
 					assert(in.good());
 				}
-				assert(type == 'M');
-				a.align_length = len;
 				break;
-			case 'M':
-				a.align_length = len;
-				break;
-			default:
-				std::cerr << "error: invalid CIGAR: `"
-					<< cigar << "'\n";
-				exit(EXIT_FAILURE);
-		}
-
-		unsigned qlen = clip0 + a.align_length;
-		unsigned clip1 = 0;
-		while (in >> len >> type) {
-			switch (type) {
+			  case 'M':
+				if ((unsigned)a.align_length > len) {
+					clip0 += a.align_length + clip1;
+					a.align_length = len;
+					qlen += len;
+					clip1 = 0;
+					break;
+				}
 			  case 'H': case 'S':
-			  case 'I': case 'M': case 'X': case '=':
 				qlen += len;
 				clip1 += len;
-				break;
-			  case 'D': case 'N': case 'P':
 				break;
 			  default:
 				std::cerr << "error: invalid CIGAR: `"
