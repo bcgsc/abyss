@@ -7,16 +7,22 @@
 #include "Common/Kmer.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
-#include "Konnector/BloomFilter.h"
-#include "Konnector/CountingBloomFilter.h"
-#include "Konnector/BloomFilterWindow.h"
-#include "Konnector/CountingBloomFilterWindow.h"
+#include "Bloom/Bloom.h"
+#include "Bloom/BloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/CascadingBloomFilterWindow.h"
 
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+#if _OPENMP
+# include <omp.h>
+# include "Bloom/ConcurrentBloomFilter.h"
+#endif
 
 using namespace std;
 
@@ -46,15 +52,17 @@ static const char USAGE_MESSAGE[] =
 " Options for `" PROGRAM " build':\n"
 "\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -l, --levels=N             build a counting bloom filter with N levels\n"
+"  -j, --threads=N            use N parallel threads [1]\n"
+"  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
-"  -L, --init-level='N=FILE'  initialize level N of counting bloom filter\n"
+"  -L, --init-level='N=FILE'  initialize level N of cascading bloom filter\n"
 "                             from FILE\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
+"  -n, --num-locks=N          number of write locks on bloom filter\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
@@ -73,17 +81,26 @@ namespace opt {
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
+	/** The number of parallel threads. */
+	unsigned threads = 1;
+
 	/** The size of a k-mer. */
 	unsigned k;
 
-	/** Number of levels for counting bloom filter. */
+	/** Number of levels for cascading bloom filter. */
 	unsigned levels = 1;
 
 	/**
-	 * Files used to initialize levels of counting
+	 * Files used to initialize levels of cascading
 	 * bloom filter (-L option).
 	 */
 	vector< vector<string> > levelInitPaths;
+
+	/**
+	 * Num of locked windows to use, when invoking with
+	 * the -j option.
+	 */
+	size_t numLocks = 1000;
 
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
@@ -94,12 +111,13 @@ namespace opt {
 	unsigned windows = 0;
 }
 
-static const char shortopts[] = "b:k:l:L:q:vw:";
+static const char shortopts[] = "b:j:k:l:L:n:q:vw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "levels",           required_argument, NULL, 'l' },
 	{ "init-level",       required_argument, NULL, 'L' },
@@ -107,6 +125,7 @@ static const struct option longopts[] = {
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
+	{ "num-locks",        required_argument, NULL, 'n' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
@@ -205,35 +224,78 @@ static inline void closeOutputStream(ostream* out, const string& path)
 	delete ofs;
 }
 
-void initBloomFilterLevels(CountingBloomFilter& bf)
+template <typename CBF>
+void initBloomFilterLevels(CBF& bf)
 {
 	assert(opt::levels >= 2);
 	assert(opt::levelInitPaths.size() <= opt::levels);
 
 	for (unsigned i = 0; i < opt::levelInitPaths.size(); i++) {
-		BloomFilter& bloom = bf.getBloomFilter(i);
 		vector<string>& paths = opt::levelInitPaths.at(i);
 		for (unsigned j = 0; j < paths.size(); j++) {
 			string path = paths.at(j);
 			cerr << "Loading `" << path << "' into level "
-				<< i + 1 << " of counting bloom filter...\n";
+				<< i + 1 << " of cascading bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			BloomFilter::LoadType loadType = (j > 0) ?
-				BloomFilter::LOAD_UNION : BloomFilter::LOAD_OVERWRITE;
-			bloom.read(*in, loadType);
+			Bloom::LoadType loadType = (j > 0) ?
+				Bloom::LOAD_UNION : Bloom::LOAD_OVERWRITE;
+			bf.getBloomFilter(i).read(*in, loadType);
 			assert(*in);
 			closeInputStream(in, path);
 		}
 	}
 }
 
-void printBloomStats(ostream& os, const BloomFilterBase& bloom)
+template <typename BF>
+void loadFilters(BF& bf, int argc, char** argv)
+{
+	for (int i = optind; i < argc; i++)
+		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
+
+	if (opt::verbose)
+		cerr << "Successfully loaded bloom filter.\n";
+}
+
+template <typename BF>
+void writeBloom(BF& bf, string& outputPath)
+{
+	if (opt::verbose) {
+		cerr << "Writing bloom filter to `"
+			<< outputPath << "'...\n";
+	}
+
+	ostream* out = openOutputStream(outputPath);
+
+	assert_good(*out, outputPath);
+	*out << bf;
+	out->flush();
+	assert_good(*out, outputPath);
+
+	closeOutputStream(out, outputPath);
+}
+
+template <typename BF>
+void printBloomStats(ostream& os, const BF& bloom)
 {
 	os << "Bloom size (bits): " << bloom.size() << "\n"
 		<< "Bloom popcount (bits): " << bloom.popcount() << "\n"
 		<< "Bloom filter FPR: " << setprecision(3)
 			<< 100 * bloom.FPR() << "%\n";
+}
+
+template <typename BF>
+void printCascadingBloomStats(ostream& os, BF& bloom)
+{
+	for (unsigned i = 0; i < opt::levels; i++) {
+		os << "Stats for Bloom filter level " << i+1 << ":\n"
+			<< "\tBloom size (bits): "
+			<< bloom.getBloomFilter(i).size() << "\n"
+			<< "\tBloom popcount (bits): "
+			<< bloom.getBloomFilter(i).popcount() << "\n"
+			<< "\tBloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.getBloomFilter(i).FPR() << "%\n";
+	}
 }
 
 int build(int argc, char** argv)
@@ -248,6 +310,8 @@ int build(int argc, char** argv)
 			dieWithUsageError();
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'j':
+			arg >> opt::threads; break;
 		  case 'l':
 			arg >> opt::levels; break;
 		  case 'L':
@@ -265,6 +329,8 @@ int build(int argc, char** argv)
 				opt::levelInitPaths[level-1].push_back(path);
 				break;
 			}
+		  case 'n':
+			arg >> opt::numLocks; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 'w':
@@ -288,7 +354,7 @@ int build(int argc, char** argv)
 
 	if (!opt::levelInitPaths.empty() && opt::levels < 2)
 	{
-		cerr << PROGRAM ": -L can only be used with counting bloom "
+		cerr << PROGRAM ": -L can only be used with cascading bloom "
 			"filters (-l >= 2)\n";
 		dieWithUsageError();
 	}
@@ -298,6 +364,11 @@ int build(int argc, char** argv)
 			" of bloom filter levels (-l)\n";
 		dieWithUsageError();
 	}
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
 
 	// bloom filter size in bits
 	size_t bits = opt::bloomSize * 8;
@@ -321,25 +392,39 @@ int build(int argc, char** argv)
 		dieWithUsageError();
 	}
 
-	// if we are building a counting bloom filter, reduce
+	// if we are building a cascading bloom filter, reduce
 	// the size of each level so that the overall bloom filter
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
 
 	string outputPath(argv[optind]);
 	optind++;
-
-	BloomFilterBase* bloom = NULL;
-
 	if (opt::windows == 0) {
 
-		if (opt::levels == 1)
-			bloom = new BloomFilter(bits);
+		if (opt::levels == 1) {
+			BloomFilter bloom(bits);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<BloomFilter>
+				cbf(bloom, opt::numLocks);
+			loadFilters(cbf, argc, argv);
+#else
+			loadFilters(bloom, argc, argv);
+#endif
+			printBloomStats(cerr, bloom);
+			writeBloom(bloom, outputPath);
+		}
 		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilter(bits);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+			CascadingBloomFilter cascadingBloom(bits);
+			initBloomFilterLevels(cascadingBloom);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<CascadingBloomFilter>
+				cbf(cascadingBloom, opt::numLocks);
+			loadFilters(cbf, argc, argv);
+#else
+			loadFilters(cascadingBloom, argc, argv);
+#endif
+			printCascadingBloomStats(cerr, cascadingBloom);
+			writeBloom(cascadingBloom, outputPath);
 		}
 
 	} else {
@@ -353,44 +438,25 @@ int build(int argc, char** argv)
 		else
 			endBitPos = bits - 1;
 
-		if (opt::levels == 1)
-			bloom = new BloomFilterWindow(bits, startBitPos, endBitPos);
-		else {
-			CountingBloomFilter* countingBloom =
-				new CountingBloomFilterWindow(bits, startBitPos, endBitPos);
-			initBloomFilterLevels(*countingBloom);
-			bloom = countingBloom;
+		if (opt::levels == 1) {
+			BloomFilterWindow bloom(bits, startBitPos, endBitPos);
+			loadFilters(bloom, argc, argv);
+			printBloomStats(cerr, bloom);
+			writeBloom(bloom, outputPath);
 		}
-
+		else {
+			CascadingBloomFilterWindow cascadingBloom(bits, startBitPos, endBitPos);
+			initBloomFilterLevels(cascadingBloom);
+			loadFilters(cascadingBloom, argc, argv);
+			printCascadingBloomStats(cerr, cascadingBloom);
+			writeBloom(cascadingBloom, outputPath);
+		}
 	}
-
-	assert(bloom != NULL);
-
-	for (int i = optind; i < argc; i++)
-		bloom->loadFile(opt::k, argv[i], opt::verbose);
-
-	if (opt::verbose) {
-		cerr << "Successfully loaded bloom filter.\n";
-		printBloomStats(cerr, *bloom);
-		cerr << "Writing bloom filter to `"
-			<< outputPath << "'...\n";
-	}
-
-	ostream* out = openOutputStream(outputPath);
-
-	assert_good(*out, outputPath);
-	*out << *bloom;
-	out->flush();
-	assert_good(*out, outputPath);
-
-	closeOutputStream(out, outputPath);
-
-	delete bloom;
 
 	return 0;
 }
 
-int combine(int argc, char** argv, BloomFilter::LoadType loadType)
+int combine(int argc, char** argv, Bloom::LoadType loadType)
 {
 	parseGlobalOpts(argc, argv);
 
@@ -411,8 +477,8 @@ int combine(int argc, char** argv, BloomFilter::LoadType loadType)
 				<< path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-		BloomFilter::LoadType loadOp = (i > optind) ?
-				loadType : BloomFilter::LOAD_OVERWRITE;
+		Bloom::LoadType loadOp = (i > optind) ?
+				loadType : Bloom::LOAD_OVERWRITE;
 		bloom.read(*in, loadOp);
 		assert_good(*in, path);
 		closeInputStream(in, path);
@@ -422,11 +488,11 @@ int combine(int argc, char** argv, BloomFilter::LoadType loadType)
 		cerr << "Successfully loaded bloom filter.\n";
 		printBloomStats(cerr, bloom);
 		switch(loadType) {
-			case BloomFilter::LOAD_UNION:
+			case Bloom::LOAD_UNION:
 				std::cerr << "Writing union of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
-			case BloomFilter::LOAD_INTERSECT:
+			case Bloom::LOAD_INTERSECT:
 				std::cerr << "Writing intersection of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
@@ -468,7 +534,7 @@ int info(int argc, char** argv)
 	istream* in = openInputStream(path);
 	assert_good(*in, path);
 	*in >> bloom;
-	
+
 	printBloomStats(cerr, bloom);
 
 	closeInputStream(in, path);
@@ -492,10 +558,10 @@ int main(int argc, char** argv)
 		return build(argc, argv);
 	}
 	else if (command == "union") {
-		return combine(argc, argv, BloomFilter::LOAD_UNION);
+		return combine(argc, argv, Bloom::LOAD_UNION);
 	}
 	else if (command == "intersect") {
-		return combine(argc, argv, BloomFilter::LOAD_INTERSECT);
+		return combine(argc, argv, Bloom::LOAD_INTERSECT);
 	}
 	else if (command == "info") {
 		return info(argc, argv);

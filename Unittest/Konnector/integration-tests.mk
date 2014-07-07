@@ -49,6 +49,7 @@ tests=run_test \
 	save_and_load_test \
 	union_test \
 	interleaved_files_test \
+	window_single_test \
 	window_test \
 	parallel_load_2_files_test \
 	parallel_load_3_files_test \
@@ -81,7 +82,7 @@ $(tmpdir):
 	mkdir -p $(tmpdir)
 
 $(tmpdir)/test_reference.fa: | $(tmpdir)
-	curl -L https://raw.github.com/dzerbino/velvet/master/data/test_reference.fa \
+	curl -L https://raw.githubusercontent.com/dzerbino/velvet/master/data/test_reference.fa \
 		|abyss-tofastq --fasta >$@
 
 $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
@@ -185,6 +186,22 @@ intersect_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	$(bloom) intersect -v -k$k $(tmpdir)/e$e_intersect.bloom \
 		$(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.bloom
 	cmp $(tmpdir)/e$e_intersect.bloom $(tmpdir)/e$e_1.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# window_single_test
+#------------------------------------------------------------
+
+window_single_test: $(tmpdir)/e$e.bloom $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -w1/2 -b$b $(tmpdir)/e$e_window1.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) build -v -k$k -w2/2 -b$b $(tmpdir)/e$e_window2.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	$(bloom) union -v -k$k $(tmpdir)/e$e_l2_concat.bloom \
+		$(tmpdir)/e$e_window1.bloom $(tmpdir)/e$e_window2.bloom
+	cmp $(tmpdir)/e$e.bloom $(tmpdir)/e$e_l2_concat.bloom
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
@@ -314,6 +331,40 @@ abyss_bloom_dist_3_files_test: $(tmpdir)/e$e_l2.bloom \
 
 abyss_bloom_illegal_chars_test:
 	$(bloom) build -v -k3 -b1M $(tmpdir)/illegal_char_test.bloom <(echo -e ">test\nAGCTagctAGCTnqrsAGCTNQRS") 
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# abyss_bloom_multithreaded_test
+#------------------------------------------------------------
+
+abyss_bloom_multithreaded_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq \
+		$(tmpdir)/e$e_l2.bloom
+	$(bloom) build -v -k$k -j10 -l2 -b$b  $(tmpdir)/e$e_l2_multithreaded.bloom \
+		$(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	cmp $(tmpdir)/e$e_l2.bloom $(tmpdir)/e$e_l2_multithreaded.bloom
+	@echo '------------------'
+	@echo '$@: PASSED'
+	@echo '------------------'
+
+#------------------------------------------------------------
+# konnector_multithreaded_test
+#------------------------------------------------------------
+
+konnector_multithreaded_test: $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
+	/usr/bin/time -v $(konnector) $(cp_opts) -o $(tmpdir)/e$e_singlethreaded \
+		$(CP_OPTS) -j1 $^
+	cat $(tmpdir)/e$e_singlethreaded_merged.fa | \
+		paste - - | sort | tr '\t' '\n' \
+		> $(tmpdir)/e$e_singlethreaded_merged.sorted.fa
+	/usr/bin/time -v $(konnector) $(cp_opts) -o $(tmpdir)/e$e_multithreaded \
+		$(CP_OPTS) -j10 $^
+	cat $(tmpdir)/e$e_multithreaded_merged.fa | \
+		paste - - | sort | tr '\t' '\n' \
+		> $(tmpdir)/e$e_multithreaded_merged.sorted.fa
+	diff $(tmpdir)/e$e_singlethreaded_merged.sorted.fa \
+		$(tmpdir)/e$e_multithreaded_merged.sorted.fa
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'

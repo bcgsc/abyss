@@ -1,7 +1,8 @@
-#include "Konnector/BloomFilter.h"
-#include "Konnector/CountingBloomFilter.h"
-#include "Konnector/BloomFilterWindow.h"
-#include "Konnector/CountingBloomFilterWindow.h"
+#include "Bloom/Bloom.h"
+#include "Bloom/BloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/CascadingBloomFilterWindow.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -25,11 +26,11 @@ TEST(BloomFilter, base)
 	x.insert(b);
 	EXPECT_EQ(x.popcount(), 2U);
 	EXPECT_TRUE(x[b]);
-	EXPECT_TRUE(x[x.hash(b) % x.size()]);
-	x.insert(x.hash(c) % x.size());
+	EXPECT_TRUE(x[Bloom::hash(b) % x.size()]);
+	x.insert(Bloom::hash(c) % x.size());
 	EXPECT_EQ(x.popcount(), 3U);
 	EXPECT_TRUE(x[c]);
-	EXPECT_TRUE(x[x.hash(c) % x.size()]);
+	EXPECT_TRUE(x[Bloom::hash(c) % x.size()]);
 
 	EXPECT_FALSE(x[d]);
 }
@@ -98,7 +99,7 @@ TEST(BloomFilter, union_)
 
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);
@@ -139,7 +140,7 @@ TEST(BloomFilter, intersect)
 
 	ss >> intersectBloom;
 	ASSERT_TRUE(ss.good());
-	intersectBloom.read(ss, BloomFilter::LOAD_INTERSECT);
+	intersectBloom.read(ss, Bloom::LOAD_INTERSECT);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(intersectBloom.size(), bits);
@@ -148,9 +149,9 @@ TEST(BloomFilter, intersect)
 	EXPECT_TRUE(intersectBloom[c]);
 }
 
-TEST(CountingBloomFilter, base)
+TEST(CascadingBloomFilter, base)
 {
-	CountingBloomFilter x(100);
+	CascadingBloomFilter x(100);
 	EXPECT_EQ(x.size(), 100U);
 
 	Kmer::setLength(16);
@@ -174,8 +175,8 @@ TEST(CountingBloomFilter, base)
 	x.insert(b);
 	EXPECT_EQ(x.popcount(), 2U);
 	EXPECT_TRUE(x[b]);
-	EXPECT_TRUE(x[x.hash(b) % x.size()]);
-	x.insert(x.hash(c) % x.size());
+	EXPECT_TRUE(x[Bloom::hash(b) % x.size()]);
+	x.insert(Bloom::hash(c) % x.size());
 	EXPECT_EQ(x.popcount(), 3U);
 	EXPECT_TRUE(x[c]);
 
@@ -197,7 +198,7 @@ TEST(BloomFilter, shrink)
 	stringstream ss;
 	ss << big;
 	ASSERT_TRUE(ss.good());
-	small.read(ss, BloomFilter::LOAD_OVERWRITE, 2);
+	small.read(ss, Bloom::LOAD_OVERWRITE, 2);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(5U, small.size());
@@ -206,7 +207,30 @@ TEST(BloomFilter, shrink)
 	EXPECT_TRUE(small[3]);
 }
 
-TEST(BloomFilter, window)
+TEST(BloomFilter, windowSerialization)
+{
+	size_t bits = 100;
+	size_t pos = 80;
+
+	BloomFilterWindow window(bits, bits/2, bits-1);
+
+	window.insert(pos);
+	EXPECT_TRUE(window[pos]);
+
+	stringstream ss;
+	ss << window;
+	ASSERT_TRUE(ss.good());
+
+	BloomFilterWindow windowCopy;
+	ss >> windowCopy;
+	ASSERT_TRUE(ss.good());
+	EXPECT_TRUE(windowCopy[pos]);
+	EXPECT_EQ(window.fullBloomSize(), windowCopy.fullBloomSize());
+	EXPECT_EQ(window.startBitPos(), windowCopy.startBitPos());
+	EXPECT_EQ(window.endBitPos(), windowCopy.endBitPos());
+}
+
+TEST(BloomFilter, windowUnion)
 {
 	size_t bits = 100;
 	size_t pos1 = 25;
@@ -240,7 +264,7 @@ TEST(BloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
@@ -248,46 +272,52 @@ TEST(BloomFilter, window)
 	EXPECT_TRUE(unionBloom[pos2]);
 }
 
-TEST(CountingBloomFilter, window)
+TEST(CascadingBloomFilter, window)
 {
 	size_t bits = 100;
 	size_t pos1 = 25;
 	size_t pos2 = 80;
+	size_t pos3 = 50;
 
-	CountingBloomFilter countingBloom(bits);
+	CascadingBloomFilter CascadingBloom(bits);
 
 	// set a bit in both halves of the second level
 	// bloom filter
-	countingBloom.insert(pos1);
-	countingBloom.insert(pos1);
-	countingBloom.insert(pos2);
-	countingBloom.insert(pos2);
+	CascadingBloom.insert(pos1);
+	CascadingBloom.insert(pos1);
+	CascadingBloom.insert(pos2);
+	CascadingBloom.insert(pos2);
+	CascadingBloom.insert(pos3);
 
-	EXPECT_TRUE(countingBloom[pos1]);
-	EXPECT_TRUE(countingBloom[pos2]);
-	EXPECT_EQ(2U, countingBloom.getBloomFilter(1).popcount());
+	EXPECT_TRUE(CascadingBloom[pos1]);
+	EXPECT_TRUE(CascadingBloom[pos2]);
+	EXPECT_EQ(2U, CascadingBloom.getBloomFilter(1).popcount());
 
-	CountingBloomFilterWindow window1(bits, 0, bits/2 - 1);
+	CascadingBloomFilterWindow window1(bits, 0, bits/2 - 1);
 	window1.insert(pos1);
 	window1.insert(pos1);
 
-	CountingBloomFilterWindow window2(bits, bits/2, bits - 1);
+	CascadingBloomFilterWindow window2(bits, bits/2, bits - 1);
 	window2.insert(pos2);
 	window2.insert(pos2);
+
+	window2.insert(pos3);
+	window1.insert(pos3);
 
 	stringstream ss;
-	ss << window1.getBloomFilter(1);
+	ss << window1;
 	ASSERT_TRUE(ss.good());
-	ss << window2.getBloomFilter(1);
+	ss << window2;
 	ASSERT_TRUE(ss.good());
 
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, BloomFilter::LOAD_UNION);
+	unionBloom.read(ss, Bloom::LOAD_UNION);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
 	EXPECT_TRUE(unionBloom[pos1]);
 	EXPECT_TRUE(unionBloom[pos2]);
+	EXPECT_FALSE(unionBloom[pos3]);
 }

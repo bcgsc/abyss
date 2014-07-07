@@ -54,10 +54,10 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
 	BloomFilter bloom(1000);
-	DBGBloom g(bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
-	bloom.loadSeq(k, read1.seq);
-	bloom.loadSeq(k, read2.seq);
+	Bloom::loadSeq(bloom, k, read1.seq);
+	Bloom::loadSeq(bloom, k, read2.seq);
 
 	vector<FastaRecord> mergedSeqs;
 

@@ -6,6 +6,7 @@
 #include "config.h"
 
 #include "konnector.h"
+#include "Bloom/CascadingBloomFilter.h"
 #include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
@@ -14,6 +15,7 @@
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/FastaConcat.h"
+#include "DataLayer/FastaInterleave.h"
 #include "DataLayer/Options.h"
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
@@ -26,6 +28,7 @@
 
 #if _OPENMP
 # include <omp.h>
+# include "Bloom/ConcurrentBloomFilter.h"
 #endif
 
 #undef USESEQAN
@@ -45,8 +48,8 @@ using namespace seqan;
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond and\n"
-"Ben Vandervalk.\n"
+"Written by Shaun Jackman, Hamid Mohamadi, Anthony Raymond, \n"
+"Ben Vandervalk and Justin Chu.\n"
 "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
 
@@ -276,7 +279,8 @@ static void seqanTests()
 #endif
 
 /** Connect a read pair. */
-static void connectPair(const DBGBloom& g,
+template <typename Graph>
+static void connectPair(const Graph& g,
 	const FastqRecord& read1,
 	const FastqRecord& read2,
 	const ConnectPairsParams& params,
@@ -286,9 +290,6 @@ static void connectPair(const DBGBloom& g,
 	ofstream& traceStream)
 {
 	bool skip = false;
-
-#pragma omp atomic
-	++g_count.readPairsProcessed;
 
 	if (!opt::readName.empty() &&
 		read1.id.find(opt::readName) == string::npos) {
@@ -381,30 +382,32 @@ static void connectPair(const DBGBloom& g,
 		}
 	}
 
-	if (opt::verbose >= 2)
 #pragma omp critical(cerr)
 	{
-		if(g_count.readPairsProcessed % g_progressStep == 0) {
-			cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
-				<< g_count.readPairsProcessed << " read pairs "
-				<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
-				<< "no path: " << g_count.noPath << ", "
-				<< "too many paths: " << g_count.tooManyPaths << ", "
-				<< "too many branches: " << g_count.tooManyBranches << ", "
-				<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
-				<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
-				<< "contains cycle: " << g_count.containsCycle << ", "
-				<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
-				<< "skipped: " << g_count.skipped
-				<< ")\n";
+		g_count.readPairsProcessed++;
+		if (opt::verbose >= 2)
+		{
+			if(g_count.readPairsProcessed % g_progressStep == 0) {
+				cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
+					<< g_count.readPairsProcessed << " read pairs "
+					<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
+					<< "no path: " << g_count.noPath << ", "
+					<< "too many paths: " << g_count.tooManyPaths << ", "
+					<< "too many branches: " << g_count.tooManyBranches << ", "
+					<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
+					<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+					<< "contains cycle: " << g_count.containsCycle << ", "
+					<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
+					<< "skipped: " << g_count.skipped
+					<< ")\n";
+			}
 		}
 	}
-
 }
 
 /** Connect read pairs. */
-template <typename FastaStream>
-static void connectPairs(const DBGBloom& g,
+template <typename Graph, typename FastaStream>
+static void connectPairs(const Graph& g,
 	FastaStream& in,
 	const ConnectPairsParams& params,
 	ofstream& mergedStream,
@@ -433,7 +436,7 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 {
 	string str;
 	getline(in, str);
-	if (in && str == "nolimit") {
+	if (in.good() && str == "nolimit") {
 		arg = NO_LIMIT;
 	} else {
 		istringstream ss(str);
@@ -551,7 +554,7 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	BloomFilterBase* bloom = NULL;
+	BloomFilter bloom;
 
 	if (!opt::inputBloomPath.empty()) {
 
@@ -562,11 +565,9 @@ int main(int argc, char** argv)
 		const char* inputPath = opt::inputBloomPath.c_str();
 		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 		assert_good(inputBloom, inputPath);
-		BloomFilter* loadedBloom = new BloomFilter();
-		inputBloom >> *loadedBloom;
+		inputBloom >> bloom;
 		assert_good(inputBloom, inputPath);
 		inputBloom.close();
-		bloom = loadedBloom;
 
 	} else {
 
@@ -574,16 +575,21 @@ int main(int argc, char** argv)
 		// because counting bloom filter requires twice as
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
-		bloom = new CountingBloomFilter(bits);
+		CascadingBloomFilter tempBloom(bits);
+#ifdef _OPENMP
+		ConcurrentBloomFilter<CascadingBloomFilter> cbf(tempBloom, 1000);
 		for (int i = optind; i < argc; i++)
-			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
-
+			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
+#else
+		for (int i = optind; i < argc; i++)
+			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+#endif
+		bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
 	}
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom->FPR() << "%\n";
-
+			<< 100 * bloom.FPR() << "%\n";
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -605,7 +611,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom g(*bloom);
+	DBGBloom<BloomFilter> g(bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");
@@ -707,7 +713,7 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n"
-			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+			"Bloom filter FPR: " << setprecision(3) << 100 * bloom.FPR()
 				<< "%\n";
 	}
 
@@ -727,8 +733,6 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 		traceStream.close();
 	}
-
-	delete bloom;
 
 	return 0;
 }

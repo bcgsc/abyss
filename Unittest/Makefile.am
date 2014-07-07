@@ -38,6 +38,7 @@ UNIT_TESTS += BloomFilter
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = Konnector/BloomFilter.cc
 BloomFilter_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+BloomFilter_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 BloomFilter_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
 UNIT_TESTS += Konnector_DBGBloom
@@ -51,6 +52,7 @@ UNIT_TESTS += Konnector_DBGBloomAlgorithms
 check_PROGRAMS += Konnector_DBGBloomAlgorithms
 Konnector_DBGBloomAlgorithms_SOURCES = Konnector/DBGBloomAlgorithmsTest.cpp
 Konnector_DBGBloomAlgorithms_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+Konnector_DBGBloomAlgorithms_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 Konnector_DBGBloomAlgorithms_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(GTEST_LIBS)
@@ -95,5 +97,7 @@ Konnector_konnector_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 Konnector_konnector_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+##Tests for log kmer counting / Counting bloom filter
 
 TESTS = $(UNIT_TESTS)
