@@ -163,11 +163,9 @@ struct SAMAlignment {
 		std::istringstream in(cigar);
 		unsigned len;
 		char type;
-		in >> len >> type;
-		assert(in.good());
 		unsigned clip0 = 0;
 		a.align_length = 0;
-		unsigned qlen = clip0 + a.align_length;
+		unsigned qlen = 0;
 		unsigned clip1 = 0;
 		while (in >> len >> type) {
 			switch (type) {
@@ -180,12 +178,10 @@ struct SAMAlignment {
 					// non-clipping operation is not M.
 					std::cerr << "warning: malformatted CIGAR: "
 						<< cigar << std::endl;
-					in >> len >> type;
-					assert(in.good());
 				}
 				break;
 			  case 'M':
-				if ((unsigned)a.align_length > len) {
+				if ((unsigned)a.align_length < len) {
 					clip0 += a.align_length + clip1;
 					a.align_length = len;
 					qlen += len;
