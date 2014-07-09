@@ -38,4 +38,6 @@ libcommon_a_SOURCES = \
 	UnorderedSet.h \
 	Warnings.h \
 	cholesky.hpp \
+	KmerIterator.h \
+	MemUtils.h \
 	city.cc city.h

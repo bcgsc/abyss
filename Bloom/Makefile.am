@@ -14,5 +14,7 @@ abyss_bloom_LDADD = \
 abyss_bloom_SOURCES = bloom.cc \
 	Bloom.h \
 	BloomFilter.h \
+	BloomFilterWindow.h \
+	ConcurrentBloomFilter.h \
 	CascadingBloomFilter.h \
 	CascadingBloomFilterWindow.h
