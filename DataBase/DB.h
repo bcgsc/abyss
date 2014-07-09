@@ -17,6 +17,8 @@
 #include <config.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <unistd.h>
+#include <time.h>
 
 typedef std::vector<std::vector<std::string> > dbVec; // for output
 typedef InsOrderedMap<std::string,int> dbMap; // for input
@@ -58,6 +60,12 @@ private:
 		}
 		std::cerr << "\n";
 		return 0;
+	}
+
+	static unsigned int getRand()
+	{
+		srand(time(NULL));
+		return(rand() % 2000 + 200); // milliseconds
 	}
 
 	void closeDB();
@@ -118,17 +126,25 @@ public:
 
 	bool query(const std::string& s)
 	{
+		int rc;
+		unsigned long int n;
 		char* errMsg = 0;
 		std::string new_s(activateForeignKey(s));
 		const char* statement = new_s.c_str();
-		int rc = sqlite3_exec(db, statement, callback, 0, &errMsg);
+		n = 1;
+		do {
+			rc = sqlite3_exec(db, statement, callback, 0, &errMsg);
+			if (rc == SQLITE_OK)
+				return true;
+			n++;
+			usleep(getRand());
+		} while (rc == SQLITE_BUSY && n < 30000000); // adhoc timeout
 		if (rc != SQLITE_OK) {
 			std::cerr << "[" << prog << "] SQL error: " << errMsg << std::endl;
 			sqlite3_free(errMsg);
 			exit(EXIT_FAILURE);
-		} else {
-			return true;
 		}
+		return true;
 	}
 
 	friend void addToDb(
