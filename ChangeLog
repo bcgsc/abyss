@@ -1,3 +1,38 @@
+2014-07-09  Anthony Raymond  <traymond@bcgsc.ca>
+
+	* Release version 1.5.2
+	* First official release of Konnector and abyss-bloom.
+	* More GCC 4.8+ fixes! Modified Boost install instructions.
+	* Fixed rare bug when parsing output of BWA.
+
+	ABYSS:
+	* New option, --mask-cov, use kmers with lowercased bases, but
+	don't count them towards multiplicity.
+
+	abyss-bloom:
+	* Construct reusable Bloom filter files for use with Konnector.
+	* Perform boolean operations on two or more bloom filters.
+	Currently supports union and intersection operations.
+
+	abyss-fixmate:
+	* Check for boost 1.43+ when using `unordered_map::quick_erase`.
+	* New option, --all, to report all alignments.
+	* Set mate unmapped flag for mateless reads.
+
+	abyss-longseqdist:
+	* Fixed `error: invalid CIGAR` when reading BWA output.
+
+	configure:
+	* Include mpi and boost libraries as system libraries. Silences
+	warnings (treated as errors) when compiling with GCC 4.8+.
+
+	konnector:
+	* Merge read pairs into a single sequence (pseudoread) by
+	building a Bloom filter de Bruijn graph and searching for paths
+	between the paired end reads.  Input reads may be
+	FASTA/FASTQ/SAM/BAM. The input files must be sorted by read name
+	and may not contain orphan reads.
+
 2014-05-07  Anthony Raymond  <traymond@bcgsc.ca>
 
 	* Release version 1.5.1
@@ -24,7 +59,7 @@
 	* Portability fixes for Fujitsu C Compiler.
 
 	abyss-pe:
-	* New parameter, `Q`, to mask low quality bases to N. 
+	* New parameter, `Q`, to mask low quality bases to N.
 	* New parameter, `xtip=1`, to remove 2-in 0-out tips.
 	* New parameter, `ss=1`, to perform strand-specific assembly
 	using ssRNA-Seq libraries.
@@ -125,7 +160,7 @@
 	* Improved documentation for GitHub devs.
 	* ABYSS-P performance improvement.
 	* Various portability and bug fixes.
-	
+
 	abyss-mergepairs:
 	* Fix program name.
 
@@ -168,7 +203,7 @@
 
 	abyss-pe:
 	* Attempt to fill scaffold gap with consensus of all paths between
-	contigs. 
+	contigs.
 
 	AdjList:
 	* Increase the default value of m from 30 to 50.
