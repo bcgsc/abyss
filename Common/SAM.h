@@ -200,7 +200,11 @@ struct SAMAlignment {
 		}
 		a.read_start_pos = isRC ? clip1 : clip0;
 		a.read_length = qlen;
-		assert(in.eof());
+		if (!in.eof()){
+			std::cerr << "error: invalid CIGAR: `"
+				<< cigar << "'\n";
+			exit(EXIT_FAILURE);
+		}
 		return a;
 	}
 
