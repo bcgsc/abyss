@@ -40,8 +40,8 @@ protected:
 	typedef unordered_set<E, EdgeHash> EdgeSet;
 
 	const G& m_graph;
-	const V& m_start;
-	const V& m_goal;
+	V m_start;
+	V m_goal;
 
 	/** maximum number of paths to discover before aborting search */
 	unsigned m_maxPaths;
