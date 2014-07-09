@@ -52,6 +52,7 @@ static const char USAGE_MESSAGE[] =
 " Options for `" PROGRAM " build':\n"
 "\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
+"  -B, --buffer-size=N        size of I/O buffer for each thread, in sequences [1000]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
@@ -62,7 +63,7 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
-"  -n, --num-locks=N          number of write locks on bloom filter\n"
+"  -n, --num-locks=N          number of write locks on bloom filter [1000]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "      --standard-quality     zero quality is `!' (33)\n"
@@ -78,8 +79,12 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
+
+	/** The size of the I/O buffer of each thread (number of sequences) */
+	size_t bufferSize = 1000;
 
 	/** The number of parallel threads. */
 	unsigned threads = 1;
@@ -111,12 +116,13 @@ namespace opt {
 	unsigned windows = 0;
 }
 
-static const char shortopts[] = "b:j:k:l:L:n:q:vw:";
+static const char shortopts[] = "b:B:j:k:l:L:n:q:vw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "buffer-size",      required_argument, NULL, 'B' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "levels",           required_argument, NULL, 'l' },
@@ -251,7 +257,7 @@ template <typename BF>
 void loadFilters(BF& bf, int argc, char** argv)
 {
 	for (int i = optind; i < argc; i++)
-		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose);
+		Bloom::loadFile(bf, opt::k, argv[i], opt::verbose, opt::bufferSize);
 
 	if (opt::verbose)
 		cerr << "Successfully loaded bloom filter.\n";
@@ -310,6 +316,8 @@ int build(int argc, char** argv)
 			dieWithUsageError();
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'B':
+			arg >> opt::bufferSize; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'l':

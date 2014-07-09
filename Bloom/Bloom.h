@@ -41,11 +41,6 @@ namespace Bloom {
 		size_t endBitPos;
 	};
 
-	/**
-	 * Number of seqs to read in during each iteration of an
-	 * OpenMP bloom filter loading task
-	 */
-	static const unsigned LOAD_CHUNK_SIZE = 1000;
 	/** Print a progress message after loading this many seqs */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
@@ -91,20 +86,19 @@ namespace Bloom {
 	/** Load a sequence file into a bloom filter */
 	template <typename BF>
 	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path,
-			bool verbose = false)
+			bool verbose = false, size_t taskIOBufferSize = 1000)
 	{
 		assert(!path.empty());
 		if (verbose)
 			std::cerr << "Reading `" << path << "'...\n";
 		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 		uint64_t count = 0;
-		const size_t CHUNK_SIZE = 1000;
 #pragma omp parallel
-		for (std::string seq[CHUNK_SIZE];;) {
+		for (std::string seq[taskIOBufferSize];;) {
 			bool good = true;
 			size_t i = 0;
 #pragma omp critical(in)
-			for (; good && i < CHUNK_SIZE; i++)
+			for (; good && i < taskIOBufferSize; i++)
 				good = in >> seq[i];
 			if (!good)
 				i--;
