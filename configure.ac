@@ -270,7 +270,7 @@ AC_CONFIG_FILES([
 	Consensus/Makefile
 	FilterGraph/Makefile
 	GapFiller/Makefile
-	GapFiller2/Makefile
+	Sealer/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
