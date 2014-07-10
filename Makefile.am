@@ -53,7 +53,7 @@ SUBDIRS = \
 	kmerprint \
 	FilterGraph \
 	GapFiller \
-	GapFiller2 \
+	Sealer \
 	$(Unittest)
 
 %.html: %.md
