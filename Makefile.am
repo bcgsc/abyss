@@ -48,7 +48,11 @@ SUBDIRS = \
 	kmerprint \
 	FilterGraph \
 	GapFiller \
+<<<<<<< HEAD
 	Sealer \
+=======
+	GapFiller2 \
+>>>>>>> 026d310249f124d1ded1f280ec36c622c52d72cf
 	$(Unittest)
 
 %.html: %.md
