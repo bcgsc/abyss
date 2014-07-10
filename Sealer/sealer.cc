@@ -5,9 +5,10 @@
 
 #include "config.h"
 
-#include "connectpairs/connectpairs.h"
-#include "connectpairs/DBGBloom.h"
-#include "connectpairs/DBGBloomAlgorithms.h"
+#include "Konnector/konnector.h"
+#include "Konnector/DBGBloom.h"
+#include "Konnector/DBGBloomAlgorithms.h"
+#include "Bloom/CascadingBloomFilter.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
@@ -35,6 +36,7 @@
 
 #if _OPENMP
 # include <omp.h>
+# include "Bloom/ConcurrentBloomFilter.h"
 #endif
 
 #undef USESEQAN
@@ -50,7 +52,7 @@ using namespace std;
 using namespace seqan;
 #endif
 
-#define PROGRAM "abyss-connectpairs"
+#define PROGRAM "abyss-sealer"
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -204,6 +206,7 @@ namespace opt {
 }
 
 /** Counters */
+
 static struct {
 	size_t noStartOrGoalKmer;
 	size_t noPath;
@@ -306,6 +309,7 @@ static void seqanTests()
 #endif
 
 /** Connect a read pair. */
+/*
 static void connectPair(const DBGBloom& g,
 	const FastqRecord& read1,
 	const FastqRecord& read2,
@@ -429,9 +433,10 @@ static void connectPair(const DBGBloom& g,
 		}
 	}
 
-}
+}*/
 
 /** Connect read pairs. */
+/*
 template <typename FastaStream>
 static void connectPairs(const DBGBloom& g,
 	FastaStream& in,
@@ -453,7 +458,7 @@ static void connectPairs(const DBGBloom& g,
 			break;
 	}
 }
-
+*/
 /**
  * Set the value for a commandline option, using "nolimit"
  * to represent NO_LIMIT.
@@ -516,7 +521,7 @@ int StringToInt(string num) {
 	str >> x;
 	return x;
 }
-
+/*
 BloomFilterBase* makeBF (string inputBloomPath) {
 	cerr << "makebf begins" << endl;
 	BloomFilterBase* bloom = NULL;
@@ -548,10 +553,10 @@ BloomFilterBase* makeBF (string inputBloomPath) {
 	cout << "makebf exits" <<  endl;
 	return bloom;
 }
-
+*/
 // returns merged sequence resulting from Konnector
-string merge(
-	const DBGBloom& g,
+template <typename Graph>
+string merge(const Graph& g,
 	unsigned k,
 	FastaRecord read1,
 	FastaRecord read2,
@@ -589,11 +594,10 @@ void extract(
 	transform(rightflank.begin(), rightflank.end(), rightflank.begin(), ::toupper);
 	read2.seq = reversecompliment(rightflank);
 }
-
-void filler(
-	FastaRecord record, 
+template <typename Graph>
+void filler(FastaRecord record, 
 	int flanklength, 
-	const DBGBloom& g, 
+	const Graph& g, 
 	const ConnectPairsParams& params, 
 	unsigned k, 
 	map<string, map<int, map<string, string> > > &allmerged,
@@ -792,18 +796,23 @@ int main(int argc, char** argv)
 		const char* inputPath = opt::inputBloomPath.c_str();
 		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 		assert_good(inputBloom, inputPath);
-		BloomFilter* loadedBloom = new BloomFilter();
-		inputBloom >> *loadedBloom;
+		inputBloom >> bloom;
 		assert_good(inputBloom, inputPath);
 		inputBloom.close();
-		bloom = loadedBloom;
 
 	} else {
 		// Specify bloom filter size in bits.
-		size_t bits = opt::bloomSize * 8;
-		bloom = new BloomFilter(bits);
+		size_t bits = opt::bloomSize * 8 / 2;
+		CascadingBloomFilter tempBloom(bits);
+#ifdef_OPENMP
+		ConcurrentBloomFilter<CascadingBloomfilter> cbf(tempBloom, 1000);
+		for(int i = optind; i < argc; i++)
+			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
+#else
 		for (int i = optind; i < argc; i++)
-			bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
+			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+#endif
+		bloom = tempBloom.getBloomfilter(tempBloom.MAX_COUNT-1);
 	}
 	
 	//cout << *bloom;
@@ -834,7 +843,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-//	DBGBloom g(*bloom);
+//	DBGBloom<BloomFilter> g(bloom);	
 
 	string scaffoldOutputPath("newscaffold.fa");	
 	ofstream scaffoldStream(scaffoldOutputPath.c_str());
@@ -902,7 +911,7 @@ int main(int argc, char** argv)
 		Kmer::setLength(opt::k);	
 		unsigned gapsfound = 0;
                 
-		BloomFilterBase* bloom = NULL;
+		BloomFilter bloom;
 		
 		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
 
@@ -913,36 +922,37 @@ int main(int argc, char** argv)
 			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
 			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 			assert_good(inputBloom, inputPath);
-			BloomFilter* loadedBloom = new BloomFilter();
-//			char version[256];
-//			int ik;
-//			inputBloomTest.getline(version,256);
-//			inputBloomTest >> ik;
-//			if (ik == (int)opt::k) {
-//				ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
-//                        	assert_good(inputBloom, inputPath);
-				inputBloom >> *loadedBloom;
-				assert_good(inputBloom, inputPath);
-				inputBloom.close();
-				bloom = loadedBloom;
-/*			}
-			else {
-				cerr << "K value (" <<opt::k<<") doesn't match K value of Bloom Filter ("<<ik<<")."
-					<< " Ensure order of K values corresponds to order of bloom filters." << endl;
-				cerr << "Skipping to next K value." << endl;
-				continue;
-			}
-*/
+			inputBloom >> bloom;
+			assert_good(inputBloom, inputPath);
+			inputBloom.close();
 		} else {
-			// Specify bloom filter size in bits.
-			size_t bits = opt::bloomSize * 8;
-			bloom = new BloomFilter(bits);
+			size_t bits = opt::bloomSize * 8 / 2;
+			bloom = BloomFilter(bits);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<BloomFilter> cbf(bloom, 1000); 
 			for (int i = optind; i < argc; i++)
-				bloom->loadFile(opt::k, string(argv[i]), opt::verbose);
-		}
+				Bloom::loadFile(cbf, opt::k, argv[i], opt::verbose);
+#else
+			for (int i = optind; i < argc; i++)
+				Bloom::loadFile(bloom, opt::k, argv[i], opt::verbose);
+#endif
+			
+/*			// Specify bloom filter size in bits.
+			size_t bits = opt::bloomSize * 8 / 2;
+			CascadingBloomFilter tempBloom(bits);
+#ifdef _OPENMP
+			ConcurrentBloomFilter<CascadingBloomFilter> cbf(tempBloom, 1000);
+			for (int i = optind; i < argc; i++)
+				Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
+#else
+			for (int i = optind; i < argc; i++)
+				Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+#endif
+			bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
+*/		}
 		
 		
-		DBGBloom g(*bloom);	
+		DBGBloom<BloomFilter> g(bloom);	
 		
 		 	
 		FastaReader reader(scaffoldInputPath, FastaReader::FOLD_CASE);
