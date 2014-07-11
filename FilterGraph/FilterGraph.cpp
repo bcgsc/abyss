@@ -364,7 +364,7 @@ static void findShortContigs(const Graph& g, const vector<bool>& seen,
 	Vit first, second;
 	tie(first, second) = vertices(g);
 	::copy_if(first, second, back_inserter(sc),
-			!bind(Marked(g, seen), _1) && bind(removable, &g, _1));
+			!boost::lambda::bind(Marked(g, seen), _1) && boost::lambda::bind(removable, &g, _1));
 }
 
 /** Functor used for sorting contigs based on degree, then size,

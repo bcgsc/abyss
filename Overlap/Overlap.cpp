@@ -438,7 +438,7 @@ int main(int argc, char** argv)
 		if (opt::verbose > 0)
 			printGraphStats(cout, scaffoldGraph);
 		remove_edge_if(
-				!bind(checkEdgeForOverlap,
+				!boost::lambda::bind(checkEdgeForOverlap,
 					boost::cref(graph), boost::ref(scaffoldGraph),
 					_1),
 				static_cast<OverlapGraph::base_type&>(scaffoldGraph));
