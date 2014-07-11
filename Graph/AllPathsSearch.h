@@ -1,7 +1,6 @@
 #ifndef ALLPATHS_SEARCH_H_
 #define ALLPATHS_SEARCH_H_
 
-#include "Common/Warnings.h"
 #include "Common/UnorderedSet.h"
 #include "Graph/Path.h"
 #include <boost/tuple/tuple.hpp> // for boost::tie

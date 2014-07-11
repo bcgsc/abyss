@@ -36,7 +36,6 @@ libcommon_a_SOURCES = \
 	Uncompress.cpp Uncompress.h \
 	UnorderedMap.h \
 	UnorderedSet.h \
-	Warnings.h \
 	cholesky.hpp \
 	KmerIterator.h \
 	MemUtils.h \

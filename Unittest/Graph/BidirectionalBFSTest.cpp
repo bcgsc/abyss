@@ -2,7 +2,6 @@
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/BidirectionalBFSVisitor.h"
 #include "Common/UnorderedMap.h"
-#include "Common/Warnings.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <gtest/gtest.h>
 
@@ -33,78 +32,66 @@ public:
 
 	TestVisitor() : rank(0) { }
 
-	BFSVisitorResult discover_vertex(const Vertex& u, const Graph& g, Direction dir,
-		unsigned numFrontierNodes)
+	BFSVisitorResult discover_vertex(const Vertex& u, const Graph&, Direction dir,
+		unsigned)
 	{
 		if (DEBUG)
 			cerr << dir << ": discover_vertex " << u << "\n";
 
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(numFrontierNodes);
 		return SUCCESS;
 	}
 
-	void examine_vertex(const Vertex& u, const Graph& g, Direction dir)
+	void examine_vertex(const Vertex& u, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": examine_vertex " << u << "\n";
 
-		SUPPRESS_UNUSED_WARNING(g);
 		dirMap[u] = dir;
 		rankMap[u] = rank++;
 	}
 
-	void examine_edge(const Edge& e, const Graph& g, Direction dir)
+	void examine_edge(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": examine_edge " << e << "\n";
-
-		SUPPRESS_UNUSED_WARNING(g);
 	}
 
-	BFSVisitorResult tree_edge(const Edge& e, const Graph& g, Direction dir)
+	BFSVisitorResult tree_edge(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": tree_edge " << e << "\n";
 
-		SUPPRESS_UNUSED_WARNING(g);
 		return SUCCESS;
 	}
 
-	BFSVisitorResult common_edge(const Edge& e, const Graph& g, Direction dir)
+	BFSVisitorResult common_edge(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": common_edge " << e << "\n";
 
-		SUPPRESS_UNUSED_WARNING(g);
 		commonEdges.push_back(e);
 		return SUCCESS;
 	}
 
-	BFSVisitorResult non_tree_edge(const Edge& e, const Graph& g, Direction dir)
+	BFSVisitorResult non_tree_edge(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": non_tree_edge " << e << "\n";
 
-		SUPPRESS_UNUSED_WARNING(g);
 		commonEdges.push_back(e);
 		return SUCCESS;
 	}
 
-	void gray_target(const Edge& e, const Graph& g, Direction dir)
+	void gray_target(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": gray_target " << e << "\n";
-
-		SUPPRESS_UNUSED_WARNING(g);
 	}
 
-	void black_target(const Edge& e, const Graph& g, Direction dir)
+	void black_target(const Edge& e, const Graph&, Direction dir)
 	{
 		if (DEBUG)
 			cerr << dir << ": black_target " << e << "\n";
-
-		SUPPRESS_UNUSED_WARNING(g);
 	}
 
 };
