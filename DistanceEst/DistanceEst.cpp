@@ -553,7 +553,7 @@ int main(int argc, char** argv)
 			<< stats.dup_frags << "/"
 			<< stats.total_frags << " ("
 			<< setprecision(3) << prop_dups << "%)\n";
-		if (prop_dups > 0.5)
+		if (prop_dups > 50)
 			cerr << PROGRAM << ": warning: duplicate rate of fragments "
 				"spanning more than one contig is high.\n";
 	}
