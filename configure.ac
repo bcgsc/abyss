@@ -75,8 +75,9 @@ AC_CHECK_DECL(HOST_NAME_MAX, [],
 AC_ARG_WITH(boost, AS_HELP_STRING([--with-boost=PATH],
 			[specify directory for the boost header files]))
 if test "$with_boost" -a -d "$with_boost"; then
-	boost_cppflags="-isystem$with_boost"
+	boost_cppflags="-isystem$with_boost -isystem$with_boost/include"
 fi
+
 # MPI
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	[specify prefix directory for the installed MPI parallel
