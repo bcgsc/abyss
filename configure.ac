@@ -138,7 +138,7 @@ elif test "$enable_lammpi"; then
 	AC_CHECK_LIB([lam], [lam_mutex_lock])
 	AC_CHECK_LIB([mpi], [MPI_Init])
 	AC_LANG_PUSH([C++])
-	AC_CHECK_LIB([lammpi++], [main]) 
+	AC_CHECK_LIB([lammpi++], [main])
 	AC_LANG_POP([C++])
 else
 	AC_CHECK_LIB([mpi], [MPI_Init])
