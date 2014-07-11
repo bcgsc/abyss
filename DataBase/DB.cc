@@ -25,7 +25,9 @@ dbVec DB::readSqlToVec(const string& s)
 		step = sqlite3_step(stmt);
 		if (step == SQLITE_ROW) {
 			for (int i=0; i<cols; i++)
-				temp.push_back((sqlite3_column_text(stmt, i) != NULL) ? string((const char*)sqlite3_column_text(stmt, i)) : "");
+				temp.push_back(
+					(sqlite3_column_text(stmt, i) != NULL) ? string((const char*)sqlite3_column_text(stmt, i)) : ""
+				);
 			results.push_back(temp);
 		} else if (step == SQLITE_DONE) {
 			break;
@@ -47,13 +49,19 @@ string DB::getProperTableName(const string& table)
 void DB::createTables()
 {
 	stringstream sst;
-	sst << "\
-create table if not exists Species (species_name text primary key);\
-create table if not exists Strains (strain_name text primary key,species_name text,\
+	sst
+		<< "\
+create table if not exists Species (\
+species_name text primary key);\
+create table if not exists Strains (\
+strain_name text primary key,species_name text,\
 foreign key(species_name) references Species(species_name));\
-create table if not exists Libraries (library_name text primary key,strain_name text,\
+create table if not exists Libraries (\
+library_name text primary key,strain_name text,\
 foreign key(strain_name) references Strains(strain_name));\
-create table if not exists Run_pe (run_id text primary key,species_name text,strain_name,library_name text,abyss_version text,time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
+create table if not exists Run_pe (\
+run_id text primary key,species_name text,strain_name,library_name text,abyss_version text,\
+time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
 foreign key(library_name) references Libraries(library_name));";
 
 	if (query(sst.str()) && verbose_val > 2)
@@ -63,7 +71,8 @@ foreign key(library_name) references Libraries(library_name));";
 void DB::insertToMetaTables(const dbVars& v)
 {
 	stringstream sst;
-	sst << "\
+	sst
+		<< "\
 insert or ignore into species values('" << v[3] << "');\
 insert or ignore into strains values('" << v[2] << "','" << v[3] << "');\
 insert or ignore into libraries values('" << v[1] << "','" << v[2] << "');\
@@ -89,7 +98,8 @@ string DB::initializeRun()
 			ofile << iV[0] << "\n";
 		}
 		stringstream uStream;
-		uStream << "update Run_pe set stage=stage+1 where run_id = '" << iV[0] << "';";
+		uStream
+			<< "update Run_pe set stage=stage+1 where run_id = '" << iV[0] << "';";
 		if (query (uStream.str()) && verbose_val > 2)
 			cerr << uStream.str() << endl;
 		id = iV[0];
@@ -100,7 +110,8 @@ string DB::initializeRun()
 string DB::getPath(const string& program)
 {
 	stringstream echoStream, pathStream;
-	echoStream << "echo `which " << program << "` > temp.txt";
+	echoStream
+		<< "echo `which " << program << "` > temp.txt";
 	string echoStr = echoStream.str();
 	system(echoStr.c_str());
 	ifstream ifile("temp.txt");
@@ -116,7 +127,8 @@ bool DB::definePeVars(const string& id)
 {
 	bool defined = false;
 	stringstream select_cmd;
-	select_cmd << "select species_name, strain_name, library_name from Run_pe where run_id = '" << id << "';";
+	select_cmd
+		<< "select species_name, strain_name, library_name from Run_pe where run_id = '" << id << "';";
 	dbVec v;
 	v = readSqlToVec(select_cmd.str());
 	if (v[0].size() == peVars.size()) {
@@ -136,27 +148,42 @@ void DB::assemblyStatsToDb()
 	stringstream sqlStream, mapKeys, mapValues;
 	string id = initializeRun();
 
-	sqlStream << "\
+	sqlStream
+		<< "\
 create table if not exists " << temp << " (\
 run_id text default null, run_stage integer default null, species_name text, strain_name text, library_name text, \
 exec_path text, command_line text, time_finish_" << temp << " not null default (datetime(current_timestamp,'localtime')), ";
 
-	mapKeys << "run_id, run_stage, species_name, strain_name, library_name, exec_path, command_line, ";
+	mapKeys
+		<< "run_id, run_stage, species_name, strain_name, library_name, exec_path, command_line, ";
 
 	if (id.length() == 0)
-		mapValues << "null,null,";
+		mapValues
+			<< "null,null,";
 	else
-		mapValues << "'" << id << "',(select stage from Run_pe where run_id = '" << id << "'),";
+		mapValues
+			<< "'" << id << "',(select stage from Run_pe where run_id = '" << id << "'),";
+
 	if ((id.length() > 0) && definePeVars(id))
-		mapValues  << "'" << peVars[0] << "', '" << peVars[1] << "', '" << peVars[2] << "', '";
+		mapValues
+			<< "'" << peVars[0] << "', '" << peVars[1] << "', '" << peVars[2] << "', '";
 	else
-		mapValues  << "'" << initVars[2] << "', '" << initVars[1] << "', '" << initVars[0] << "', '";
-	mapValues << getPath(prog) << "', '" << cmd << "', ";
+		mapValues
+			<< "'" << initVars[2] << "', '" << initVars[1] << "', '" << initVars[0] << "', '";
+
+	mapValues
+		<< getPath(prog) << "', '" << cmd << "', ";
 
 	while (!statMap.empty()) {
-		mapKeys << statMap.getFirst(statMap.begin()) << (statMap.size() == 1 ? "" : ", ");
-		mapValues << statMap.getSecond(statMap.begin()) << (statMap.size() == 1 ? "" : ", ");
-		sqlStream << statMap.getFirst(statMap.begin()) << (statMap.size() == 1 ? " int, foreign key(run_id) references Run_pe(run_id));" : " int, ");
+		mapKeys
+			<< statMap.getFirst(statMap.begin())
+			<< (statMap.size() == 1 ? "" : ", ");
+		mapValues
+			<< statMap.getSecond(statMap.begin())
+			<< (statMap.size() == 1 ? "" : ", ");
+		sqlStream
+			<< statMap.getFirst(statMap.begin())
+			<< (statMap.size() == 1 ? " int, foreign key(run_id) references Run_pe(run_id));" : " int, ");
 		statMap.erase(statMap.begin());
 	}
 
@@ -164,7 +191,8 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 		cerr << sqlStream.str() << endl;
 
 	sqlStream.str("");
-	sqlStream << "insert into " << temp << " (" << mapKeys.str() << ") values (" << mapValues.str() << ");";
+	sqlStream
+		<< "insert into "<< temp << " (" << mapKeys.str() << ") values (" << mapValues.str() << ");";
 
 	if (query(sqlStream.str()) && verbose_val > 0)
 		cerr << sqlStream.str() << endl;
