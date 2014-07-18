@@ -5,6 +5,7 @@
 #include "config.h"
 #include "Common/Options.h"
 #include "Common/Kmer.h"
+#include "Common/BitUtil.h"
 #include "DataLayer/Options.h"
 #include "Common/StringUtil.h"
 #include "Bloom/Bloom.h"
@@ -244,9 +245,8 @@ void initBloomFilterLevels(CBF& bf)
 				<< i + 1 << " of cascading bloom filter...\n";
 			istream* in = openInputStream(path);
 			assert(*in);
-			Bloom::LoadType loadType = (j > 0) ?
-				Bloom::LOAD_UNION : Bloom::LOAD_OVERWRITE;
-			bf.getBloomFilter(i).read(*in, loadType);
+			BitwiseOp readOp = (j > 0) ? BITWISE_OR : BITWISE_OVERWRITE;
+			bf.getBloomFilter(i).read(*in, readOp);
 			assert(*in);
 			closeInputStream(in, path);
 		}
@@ -464,7 +464,7 @@ int build(int argc, char** argv)
 	return 0;
 }
 
-int combine(int argc, char** argv, Bloom::LoadType loadType)
+int combine(int argc, char** argv, BitwiseOp readOp)
 {
 	parseGlobalOpts(argc, argv);
 
@@ -485,9 +485,8 @@ int combine(int argc, char** argv, Bloom::LoadType loadType)
 				<< path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-		Bloom::LoadType loadOp = (i > optind) ?
-				loadType : Bloom::LOAD_OVERWRITE;
-		bloom.read(*in, loadOp);
+		BitwiseOp op = (i > optind) ? readOp : BITWISE_OVERWRITE;
+		bloom.read(*in, op);
 		assert_good(*in, path);
 		closeInputStream(in, path);
 	}
@@ -495,17 +494,17 @@ int combine(int argc, char** argv, Bloom::LoadType loadType)
 	if (opt::verbose) {
 		cerr << "Successfully loaded bloom filter.\n";
 		printBloomStats(cerr, bloom);
-		switch(loadType) {
-			case Bloom::LOAD_UNION:
+		switch(readOp) {
+			case BITWISE_OR:
 				std::cerr << "Writing union of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
-			case Bloom::LOAD_INTERSECT:
+			case BITWISE_AND:
 				std::cerr << "Writing intersection of bloom filters to `"
 					<< outputPath << "'...\n";
 				break;
 			default:
-				std::cerr << "error: expected LOAD_UNION or LOAD_INTERSECT\n";
+				std::cerr << "error: expected BITWISE_OR or BITWISE_AND\n";
 				assert(false);
 				break;
 		}
@@ -566,10 +565,10 @@ int main(int argc, char** argv)
 		return build(argc, argv);
 	}
 	else if (command == "union") {
-		return combine(argc, argv, Bloom::LOAD_UNION);
+		return combine(argc, argv, BITWISE_OR);
 	}
 	else if (command == "intersect") {
-		return combine(argc, argv, Bloom::LOAD_INTERSECT);
+		return combine(argc, argv, BITWISE_AND);
 	}
 	else if (command == "info") {
 		return info(argc, argv);

@@ -45,18 +45,6 @@ namespace Bloom {
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
 	static const unsigned BLOOM_VERSION = 2;
-	/** I/O buffer size when reading/writing bloom filter files */
-	static const unsigned long IO_BUFFER_SIZE = 32*1024;
-
-	/**
-	 * How to treat existing bits in the bloom filter when
-	 * reading in new data.
-	 */
-	enum LoadType {
-		LOAD_OVERWRITE,
-		LOAD_UNION,
-		LOAD_INTERSECT
-	};
 
 	/** Return the hash value of this object. */
 	inline static size_t hash(const key_type& key)
@@ -138,52 +126,19 @@ namespace Bloom {
 		}
 	}
 
-	/** Write a bloom filter to a stream */
-	template <typename BF>
-	static void write(const BF& bloomFilter, size_t fullBloomSize,
-		size_t startBitPos, size_t endBitPos, std::ostream& out)
+	static void writeHeader(std::ostream& out, const FileHeader& header)
 	{
-
-		// file header
+		(void)writeHeader;
 
 		out << BLOOM_VERSION << '\n';
 		assert(out);
 		out << Kmer::length() << '\n';
 		assert(out);
-		out << fullBloomSize
-			<< '\t' << startBitPos
-			<< '\t' << endBitPos
+		out << header.fullBloomSize
+			<< '\t' << header.startBitPos
+			<< '\t' << header.endBitPos
 			<< '\n';
 		assert(out);
-
-		// bloom filter bits
-
-		size_t bits = endBitPos - startBitPos + 1;
-		size_t bytes = (bits + 7) / 8;
-		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = 0; i < bytes;) {
-			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
-			for (size_t k = 0; k < writeSize; k++) {
-				buf[k] = 0;
-				for (unsigned l = 0; l < 8; l++, j++) {
-					buf[k] <<= 1;
-					if (j < bits && bloomFilter[j]) {
-						buf[k] |= 1;
-					}
-				}
-			}
-			out.write(buf, writeSize);
-			assert(out);
-			i += writeSize;
-		}
-	}
-
-	/** Write a bloom filter to a stream */
-	template <typename BF>
-	static void write(const BF& bloomFilter, std::ostream& out)
-	{
-		Bloom::write(bloomFilter, bloomFilter.size(), 0,
-			bloomFilter.size() - 1, out);
 	}
 
 	FileHeader readHeader(std::istream& in)
@@ -225,81 +180,6 @@ namespace Bloom {
 		assert(header.startBitPos <= header.endBitPos);
 
 		return header;
-	}
-
-	/** Read the bloom filter bit array from a stream */
-	template <typename BF>
-	static void readData(BF& bloomFilter, const Bloom::FileHeader& header,
-			std::istream& in, LoadType loadType = LOAD_OVERWRITE,
-			unsigned shrinkFactor = 1)
-	{
-
-		// shrink factor allows building a smaller
-		// bloom filter from a larger one
-
-		size_t size = header.fullBloomSize;
-
-		if (size % shrinkFactor != 0) {
-			std::cerr << "error: the number of bits in the original bloom "
-				"filter must be evenly divisible by the shrink factor (`"
-				<< shrinkFactor << "')\n";
-			exit(EXIT_FAILURE);
-		}
-
-		size /= shrinkFactor;
-
-		if((loadType == LOAD_UNION || loadType == LOAD_INTERSECT)
-			&& size != bloomFilter.size()) {
-			std::cerr << "error: can't union/intersect two bloom filters "
-				"with different sizes.\n";
-			exit(EXIT_FAILURE);
-		} else {
-			bloomFilter.resize(size);
-		}
-
-		// read bit vector
-
-		if (loadType == LOAD_OVERWRITE)
-			bloomFilter.reset();
-
-		size_t offset = header.startBitPos;
-		size_t bits = header.endBitPos - header.startBitPos + 1;
-		size_t bytes = (bits + 7) / 8;
-
-		char buf[IO_BUFFER_SIZE];
-		for (size_t i = 0, j = offset; i < bytes; ) {
-			size_t readSize = std::min(IO_BUFFER_SIZE, bytes - i);
-			in.read(buf, readSize);
-			assert(in);
-			for (size_t k = 0; k < readSize; k++) {
-				for (unsigned l = 0; l < 8 && j < offset + bits; l++, j++) {
-					bool bit = buf[k] & (1 << (7 - l));
-					size_t index = j % size;
-					switch (loadType)
-					{
-					case LOAD_OVERWRITE:
-					case LOAD_UNION:
-						bloomFilter[index] |= bit;
-						break;
-					case LOAD_INTERSECT:
-						bloomFilter[index] &= bit;
-						break;
-					}
-				}
-			}
-			i += readSize;
-		}
-
-	}
-
-	/** Read a bloom filter from a stream */
-	template <typename BF>
-	static void read(BF& bloomFilter, std::istream& in,
-			LoadType loadType = LOAD_OVERWRITE,
-			unsigned shrinkFactor = 1)
-	{
-		FileHeader header = readHeader(in);
-		readData(bloomFilter, header, in, loadType, shrinkFactor);
 	}
 
 	//TODO: Bloom filter calculation methods

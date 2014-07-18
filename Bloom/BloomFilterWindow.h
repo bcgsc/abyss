@@ -107,7 +107,7 @@ public:
 	/** Operator for reading a bloom filter from a stream. */
 	friend std::istream& operator>>(std::istream& in, BloomFilterWindow& o)
 	{
-		o.read(in, Bloom::LOAD_OVERWRITE);
+		o.read(in, BITWISE_OVERWRITE);
 		return in;
 	}
 
@@ -119,33 +119,45 @@ public:
 	}
 
 	/** Read a bloom filter window from a stream. */
-	void read(std::istream& in,
-			Bloom::LoadType loadType = Bloom::LOAD_OVERWRITE,
-			unsigned shrinkFactor = 1)
+	void read(std::istream& in, BitwiseOp readOp = BITWISE_OVERWRITE)
 	{
 		Bloom::FileHeader header = Bloom::readHeader(in);
+		assert(in);
 
 		m_fullBloomSize = header.fullBloomSize;
 		m_startBitPos = header.startBitPos;
 		m_endBitPos = header.endBitPos;
 
-		// alter the dimensions that we pass into Bloom::readData
-		// so that we load the data into a bit array that is
-		// exactly the size of the window (not the full size of the
-		// containing bloom filter)
+		size_t bits = header.endBitPos - header.startBitPos + 1;
 
-		header.fullBloomSize = header.endBitPos - header.startBitPos + 1;
-		header.startBitPos = 0;
-		header.endBitPos = header.fullBloomSize - 1;
+		if (m_size != bits) {
+			if (readOp == BITWISE_OVERWRITE) {
+				BloomFilter::resize(bits);
+			} else {
+				std::cerr << "error: can't union/intersect bloom filters with "
+					<< "different sizes\n";
+				exit(EXIT_FAILURE);
+			}
+		}
 
-		Bloom::readData(m_array, header, in, loadType, shrinkFactor);
+		readBits(in, m_array, bits, 0, readOp);
+
+		assert(in);
 	}
 
 	/** Write a bloom filter window to a stream. */
 	void write(std::ostream& out) const
 	{
-		Bloom::write(m_array, m_fullBloomSize, m_startBitPos,
-			m_endBitPos, out);
+		Bloom::FileHeader header;
+		header.fullBloomSize = m_fullBloomSize;
+		header.startBitPos = m_startBitPos;
+		header.endBitPos = m_endBitPos;
+		Bloom::writeHeader(out, header);
+		assert(out);
+
+		size_t windowSize = m_endBitPos - m_startBitPos + 1;
+		out.write(m_array, (windowSize + 7)/8);
+		assert(out);
 	}
 
 private:

@@ -3,6 +3,7 @@
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/BloomFilterWindow.h"
 #include "Bloom/CascadingBloomFilterWindow.h"
+#include "Common/BitUtil.h"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -99,7 +100,7 @@ TEST(BloomFilter, union_)
 
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, BITWISE_OR);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(unionBloom.size(), bits);
@@ -140,7 +141,7 @@ TEST(BloomFilter, intersect)
 
 	ss >> intersectBloom;
 	ASSERT_TRUE(ss.good());
-	intersectBloom.read(ss, Bloom::LOAD_INTERSECT);
+	intersectBloom.read(ss, BITWISE_AND);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(intersectBloom.size(), bits);
@@ -181,30 +182,6 @@ TEST(CascadingBloomFilter, base)
 	EXPECT_TRUE(x[c]);
 
 	EXPECT_FALSE(x[d]);
-}
-
-TEST(BloomFilter, shrink)
-{
-	BloomFilter big(10);
-	BloomFilter small;
-
-	big.insert(1);
-	big.insert(8);
-
-	EXPECT_EQ(2U, big.popcount());
-	EXPECT_TRUE(big[1]);
-	EXPECT_TRUE(big[8]);
-
-	stringstream ss;
-	ss << big;
-	ASSERT_TRUE(ss.good());
-	small.read(ss, Bloom::LOAD_OVERWRITE, 2);
-	ASSERT_TRUE(ss.good());
-
-	EXPECT_EQ(5U, small.size());
-	EXPECT_EQ(2U, small.popcount());
-	EXPECT_TRUE(small[1]);
-	EXPECT_TRUE(small[3]);
 }
 
 TEST(BloomFilter, windowSerialization)
@@ -264,7 +241,7 @@ TEST(BloomFilter, windowUnion)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, BITWISE_OR);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
@@ -313,7 +290,7 @@ TEST(CascadingBloomFilter, window)
 	BloomFilter unionBloom;
 	ss >> unionBloom;
 	ASSERT_TRUE(ss.good());
-	unionBloom.read(ss, Bloom::LOAD_UNION);
+	unionBloom.read(ss, BITWISE_OR);
 	ASSERT_TRUE(ss.good());
 
 	EXPECT_EQ(2U, unionBloom.popcount());
