@@ -554,7 +554,8 @@ int main(int argc, char** argv)
 
 	assert(opt::bloomSize > 0);
 
-	BloomFilter bloom;
+	BloomFilter* bloom;
+	CascadingBloomFilter* cascadingBloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
 
@@ -562,10 +563,12 @@ int main(int argc, char** argv)
 			std::cerr << "Loading bloom filter from `"
 				<< opt::inputBloomPath << "'...\n";
 
+		bloom = new BloomFilter();
+
 		const char* inputPath = opt::inputBloomPath.c_str();
 		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 		assert_good(inputBloom, inputPath);
-		inputBloom >> bloom;
+		inputBloom >> *bloom;
 		assert_good(inputBloom, inputPath);
 		inputBloom.close();
 
@@ -575,21 +578,21 @@ int main(int argc, char** argv)
 		// because counting bloom filter requires twice as
 		// much space.
 		size_t bits = opt::bloomSize * 8 / 2;
-		CascadingBloomFilter tempBloom(bits);
+		cascadingBloom = new CascadingBloomFilter(bits);
 #ifdef _OPENMP
-		ConcurrentBloomFilter<CascadingBloomFilter> cbf(tempBloom, 1000);
+		ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 		for (int i = optind; i < argc; i++)
 			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
 #else
 		for (int i = optind; i < argc; i++)
-			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
+			Bloom::loadFile(cascadingBloom, opt::k, string(argv[i]), opt::verbose);
 #endif
-		bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
+		bloom = &cascadingBloom->getBloomFilter(cascadingBloom->MAX_COUNT-1);
 	}
 
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom.FPR() << "%\n";
+			<< 100 * bloom->FPR() << "%\n";
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -611,7 +614,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<BloomFilter> g(*bloom);
 
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");
@@ -713,9 +716,14 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n"
-			"Bloom filter FPR: " << setprecision(3) << 100 * bloom.FPR()
+			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
 				<< "%\n";
 	}
+
+	if (!opt::inputBloomPath.empty())
+		delete bloom;
+	else
+		delete cascadingBloom;
 
 	assert_good(mergedStream, mergedOutputPath.c_str());
 	mergedStream.close();
