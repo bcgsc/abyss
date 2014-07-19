@@ -45,7 +45,7 @@ private:
 			std::cerr << "[" << prog << "] Can't open DB.\n";
 			exit(EXIT_FAILURE);
 		} else {
-			if (verbose_val >= 0)
+			if (verbose_val >= 0 && exp != READ)
 				std::cerr << "[" << prog << "] DB opened.\n";
 		}
 	}

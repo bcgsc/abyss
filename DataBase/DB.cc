@@ -8,7 +8,7 @@ void DB::closeDB()
 		cerr << "[" << prog << "] Can't close DB.\n";
 		exit(EXIT_FAILURE);
 	} else {
-		if (verbose_val >= 0)
+		if (verbose_val >= 0 && exp != READ)
 			cerr << "[" << prog << "] DB closed.\n";
 	}
 }
