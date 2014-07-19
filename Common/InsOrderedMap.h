@@ -5,8 +5,8 @@
  * index<0>: insertion order
  */
 
-#ifndef MULTI_MAP_H
-#define MULTI_MAP_H 1
+#ifndef INS_ORDERED_MAP_H
+#define INS_ORDERED_MAP_H 1
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/random_access_index.hpp>
@@ -16,7 +16,7 @@
 using namespace boost::multi_index;
 
 template <class F, class S>
-class MultiMap {
+class InsOrderedMap {
  private:
 
 	struct aMap {
@@ -46,9 +46,9 @@ class MultiMap {
 
  public:
 
-	MultiMap() {}
+	InsOrderedMap() {}
 
-	~MultiMap() {}
+	~InsOrderedMap() {}
 
 	void push_back(const F& first, const S& second) {
 		ac.push_back(aMap(first, second));

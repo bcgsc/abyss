@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libcommon.a libmultimap.a
+noinst_LIBRARIES = libcommon.a libinsorderedmap.a
 
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
@@ -41,6 +41,6 @@ libcommon_a_SOURCES = \
 	MemUtils.h \
 	city.cc city.h
 
-libmultimap_a_CPPFLAGS = -I$(top_srcdir)
+libinsorderedmap_a_CPPFLAGS = -I$(top_srcdir)
 
-libmultimap_a_SOURCES = MultiMap.h
+libinsorderedmap_a_SOURCES = InsOrderedMap.h

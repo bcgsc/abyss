@@ -15,5 +15,5 @@ libassembly_a_SOURCES = \
 	SequenceCollection.cpp SequenceCollection.h
 
 if HAVE_SQLITE
-libassembly_a_LIBADD = $(top_builddir)/Common/libmultimap.a
+libassembly_a_LIBADD = $(top_builddir)/Common/libinsorderedmap.a
 endif

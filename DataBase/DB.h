@@ -5,7 +5,7 @@
 #ifndef DB_H
 #define DB_H 1
 
-#include "Common/MultiMap.h"
+#include "Common/InsOrderedMap.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -19,7 +19,7 @@
 #include <sqlite3.h>
 
 typedef std::vector<std::vector<std::string> > dbVec; // for output
-typedef MultiMap<std::string,int> dbMap; // for input
+typedef InsOrderedMap<std::string,int> dbMap; // for input
 typedef std::vector<std::string> dbVars;
 
 class DB {
