@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libcommon.a
+noinst_LIBRARIES = libcommon.a libmultimap.a
 
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
@@ -40,3 +40,7 @@ libcommon_a_SOURCES = \
 	KmerIterator.h \
 	MemUtils.h \
 	city.cc city.h
+
+libmultimap_a_CPPFLAGS = -I$(top_srcdir)
+
+libmultimap_a_SOURCES = MultiMap.h

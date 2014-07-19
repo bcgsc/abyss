@@ -146,9 +146,9 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 	mapValues << getPath(prog) << "', '" << cmd << "', ";
 
 	while (!statMap.empty()) {
-		mapKeys << statMap.begin()->first << (statMap.size() == 1 ? "" : ", ");
-		mapValues << statMap.begin()->second << (statMap.size() == 1 ? "" : ", ");
-		sqlStream << statMap.begin()->first << (statMap.size() == 1 ? " int, foreign key(run_id) references Run_pe(run_id));" : " int, ");
+		mapKeys << statMap.getFirst(statMap.begin()) << (statMap.size() == 1 ? "" : ", ");
+		mapValues << statMap.getSecond(statMap.begin()) << (statMap.size() == 1 ? "" : ", ");
+		sqlStream << statMap.getFirst(statMap.begin()) << (statMap.size() == 1 ? " int, foreign key(run_id) references Run_pe(run_id));" : " int, ");
 		statMap.erase(statMap.begin());
 	}
 

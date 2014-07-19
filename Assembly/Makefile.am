@@ -13,3 +13,7 @@ libassembly_a_SOURCES = \
 	KmerData.h \
 	Options.cpp Options.h \
 	SequenceCollection.cpp SequenceCollection.h
+
+if HAVE_SQLITE
+libassembly_a_LIBADD = $(top_builddir)/Common/libmultimap.a
+endif

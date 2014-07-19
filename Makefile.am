@@ -23,8 +23,8 @@ EXTRA_DIST=doxygen.conf
 SUBDIRS = \
 	bin \
 	doc \
-	Assembly \
 	Common \
+	Assembly \
 	DataLayer \
 	FMIndex \
 	Graph \

@@ -5,6 +5,7 @@
 #ifndef DB_H
 #define DB_H 1
 
+#include "Common/MultiMap.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -18,7 +19,7 @@
 #include <sqlite3.h>
 
 typedef std::vector<std::vector<std::string> > dbVec; // for output
-typedef std::map<std::string,float> dbMap; // for input
+typedef MultiMap<std::string,int> dbMap; // for input
 typedef std::vector<std::string> dbVars;
 
 class DB {
@@ -107,12 +108,12 @@ class DB {
 		}
 	}
 
-	friend void addToDb (DB& d, const std::string& key, const float& value) {
-		d.statMap[key] = value;
+	friend void addToDb (DB& d, const std::string& key, const int& value) {
+		d.statMap.push_back (key, value);
 	}
 
-	friend void addToDb (DB& d, const dbMap& m) {
-		d.statMap.insert (m.begin(), m.end());
+	friend void addToDb (DB& d, dbMap m) {
+		d.statMap.insert (m.getAC());
 	}
 
 	dbVec readSqlToVec (const std::string&);
