@@ -19,11 +19,12 @@
 
 class DB {
  private:
+	typedef std::vector<std::string> vs;
+
 	sqlite3* db;
 	sqlite3_stmt* stmt;
+	std::string prog, cmd;
 	int exp;
-	std::string prog;
-	std::string cmd;
 
 	void openDB (const char* c, const int& v) {
 		verbose_val = v;
@@ -48,20 +49,26 @@ class DB {
 
 	void closeDB ();
 	void createTables ();
+	void insertToMetaTables (const vs&);
 	bool isRun ();
 	std::string getPath (const std::string&);
+	bool definePeVars ();
 	void assemblyStatsToDb ();
 
  public:
 	typedef std::vector<std::vector<std::string> > dbVec; // for output
 	typedef std::map<std::string,float> dbMap; // for input
+	typedef vs dbVars;
 
 	dbMap statMap;
+	dbVars initVars, peVars;
 
 	// Verbosity inherited from the equivalent abyss-pe option.
 	int verbose_val;
 
 	DB () {
+		initVars.assign (3,"");
+		peVars.assign (3,"");
 	}
 
 	~DB () {
@@ -75,12 +82,13 @@ class DB {
 		exp = 1;
 	}
 
-	void init (const std::string& path, const int& v, const std::string& program, const std::string& command) {
+	void init (const std::string& path, const int& v, const std::string& program, const std::string& command, const dbVars& vars) {
 		// If destination is not specified, create 'ABySS.db' by default.
 		openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
-		exp = 0;
 		prog = program;
 		cmd = command;
+		initVars = vars;
+		exp = 0;
 	}
 
 	std::string activateForeignKey (const std::string& s) {
@@ -89,7 +97,7 @@ class DB {
 	}
 
 	bool query (const std::string& s) {
-		char* errMsg = 0;	
+		char* errMsg = 0;
 		std::string new_s (activateForeignKey(s));
 		const char* statement = new_s.c_str();
 		int rc = sqlite3_exec (db, statement, callback, 0, &errMsg);
