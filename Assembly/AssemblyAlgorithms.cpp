@@ -171,9 +171,6 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "
 			"shorter than " << opt::kmerSize << " bases\n";
-#if _SQL
-			tempCounter[10] += count_small;
-#endif
 	if (reader.unchaste() > 0)
 		cerr << "`" << inFile << "': "
 			"discarded " << reader.unchaste() << " unchaste reads\n";
@@ -182,7 +179,8 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 			"discarded " << count_nonACGT << " reads "
 			"containing non-ACGT characters\n";
 #if _SQL
-			tempCounter[11] += count_nonACGT;
+			tempCounter[0] += count_reversed;
+			tempCounter[1] += (count_small + reader.unchaste() + count_nonACGT);
 #endif
 	if (count_good == 0)
 		cerr << "warning: `" << inFile << "': "
@@ -199,6 +197,11 @@ void loadSequences(ISequenceCollection* seqCollection, string inFile)
 		assert(!opt::colourSpace);
 		seqCollection->setColourSpace(false);
 	}
+#if _SQL
+	addToDb("reversedReads", tempCounter[0]);
+	addToDb("totalDiscardedReads", tempCounter[1]);
+	tempCounter.assign(2,0);
+#endif
 }
 
 /** Generate the adjacency information for each sequence in the
@@ -289,7 +292,7 @@ size_t markAmbiguous(ISequenceCollection* g)
 	}
 #if _SQL
 	tempCounter[5] = countv;
-	tempCounter[6] = counte;
+	//tempCounter[6] = counte;
 #endif
 	logger(0) << "Marked " << counte << " edges of " << countv
 		<< " ambiguous vertices." << endl;
@@ -423,12 +426,11 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, ostream& out)
 #if _SQL
 	addToDb("totalErodedTips", tempCounter[0]);
 	addToDb("totalPrunedTips", tempCounter[1]);
-	addToDb("prunedRounds", tempCounter[2]);
 	addToDb("totalLowCovCntg", tempCounter[3]);
 	addToDb("totalLowCovKmer", tempCounter[4]);
 	addToDb("totalSplitAmbg", tempCounter[7]);
 	addToDb("poppedBubbles", numPopped);
-	tempCounter.assign(8,0);
+	tempCounter.assign(16,0);
 #endif
 	return numPopped;
 }
@@ -998,9 +1000,8 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 			<< contigID << " contigs.\n";
 #if _SQL
 		addToDb("finalAmbgVertices", tempCounter[5]);
-		addToDb("finalAmbgEdges", tempCounter[6]);
-		tempCounter.assign(8,0);
-		addToDb("unassembledCircularCntg", circularKmer);
+		//addToDb("finalAmbgEdges", tempCounter[6]);
+		tempCounter.assign(16,0);
 		addToDb("assembledKmerNum", assembledKmer);
 		addToDb("assembledCntg", contigID);
 #endif

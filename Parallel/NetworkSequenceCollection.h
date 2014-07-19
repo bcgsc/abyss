@@ -62,7 +62,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		size_t controlErode();
 		size_t controlTrimRound(unsigned trimLen);
-		void controlTrim(unsigned start = 1);
+		void controlTrim(unsigned&, unsigned start = 1);
 		size_t controlRemoveMarked();
 		void controlCoverage();
 		size_t controlDiscoverBubbles();

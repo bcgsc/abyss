@@ -114,11 +114,9 @@ int main(int argc, char** argv)
 				opt::getCommand(),
 				opt::getMetaValue()
 		);
-#endif
-
-#if _SQL
 		addToDb(db, "SS", opt::ss);
 		addToDb(db, "K", opt::kmerSize);
+		addToDb(db, "numProc", opt::numProc);
 		addToDb(db, NSC::moveFromAaStatMap());
 #endif
 	}
