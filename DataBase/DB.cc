@@ -53,7 +53,7 @@ create table if not exists Strains (strain_name text primary key,species_name te
 foreign key(species_name) references Species(species_name));\
 create table if not exists Libraries (library_name text primary key,strain_name text,\
 foreign key(strain_name) references Strains(strain_name));\
-create table if not exists Run_pe (run_id integer primary key,species_name text,strain_name,library_name text,abyss_version text,time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
+create table if not exists Run_pe (run_id text primary key,species_name text,strain_name,library_name text,abyss_version text,time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
 foreign key(library_name) references Libraries(library_name));";
 
 	if (query(sst.str()) && verbose_val > 2)
@@ -64,36 +64,37 @@ void DB::insertToMetaTables(const dbVars& v)
 {
 	stringstream sst;
 	sst << "\
-insert or ignore into species values('" << v[2] << "');\
-insert or ignore into strains values('" << v[1] << "','" << v[2] << "');\
-insert or ignore into libraries values('" << v[0] << "','" << v[1] << "');\
-insert into run_pe(run_id,species_name,strain_name,library_name,abyss_version) values(null,'" << v[2] << "','" << v[1] << "','" << v[0] << "','" << VERSION << "');";
+insert or ignore into species values('" << v[3] << "');\
+insert or ignore into strains values('" << v[2] << "','" << v[3] << "');\
+insert or ignore into libraries values('" << v[1] << "','" << v[2] << "');\
+insert into run_pe(run_id,species_name,strain_name,library_name,abyss_version) \
+values('" << v[0] << "','" << v[3] << "','" << v[2] << "','" << v[1] << "','" << VERSION << "');";
 
 	if (query(sst.str()) && verbose_val > 1)
 		cerr << sst.str() << endl;
 }
 
-bool DB::isRun()
+string DB::initializeRun()
 {
-	bool isrun = false;
+	string id("");
 	createTables();
 	ifstream ifile("db.txt");
 	if (ifile) {
 		dbVars iV;
 		string eachLine;
 		while (getline(ifile, eachLine)) iV.push_back(eachLine);
-		if (iV.size() == 3) {
+		if (iV.size() == 4) {
 			insertToMetaTables(iV);
 			ofstream ofile("db.txt");
-			ofile << "done\n";
+			ofile << iV[0] << "\n";
 		}
 		stringstream uStream;
-		uStream << "update Run_pe set stage=stage+1 where run_id = (select max(run_id) from Run_pe);";
+		uStream << "update Run_pe set stage=stage+1 where run_id = '" << iV[0] << "';";
 		if (query (uStream.str()) && verbose_val > 2)
 			cerr << uStream.str() << endl;
-		isrun = true;
+		id = iV[0];
 	}
-	return isrun;
+	return id;
 }
 
 string DB::getPath(const string& program)
@@ -111,11 +112,13 @@ string DB::getPath(const string& program)
 	return pathStream.str();
 }
 
-bool DB::definePeVars()
+bool DB::definePeVars(const string& id)
 {
 	bool defined = false;
+	stringstream select_cmd;
+	select_cmd << "select species_name, strain_name, library_name from Run_pe where run_id = '" << id << "';";
 	dbVec v;
-	v = readSqlToVec("select species_name, strain_name, library_name from Run_pe where run_id = (select max(run_id) from Run_pe);");
+	v = readSqlToVec(select_cmd.str());
 	if (v[0].size() == peVars.size()) {
 		unsigned i = 0;
 		while (i<v[0].size()) {
@@ -131,16 +134,20 @@ void DB::assemblyStatsToDb()
 {
 	string temp = getProperTableName(prog);
 	stringstream sqlStream, mapKeys, mapValues;
-	bool isrun = isRun();
+	string id = initializeRun();
 
 	sqlStream << "\
 create table if not exists " << temp << " (\
-run_id integer default null, run_stage integer default null, species_name text, strain_name text, library_name text, \
+run_id text default null, run_stage integer default null, species_name text, strain_name text, library_name text, \
 exec_path text, command_line text, time_finish_" << temp << " not null default (datetime(current_timestamp,'localtime')), ";
 
 	mapKeys << "run_id, run_stage, species_name, strain_name, library_name, exec_path, command_line, ";
-	mapValues << (isrun ? "(select max(run_id) from Run_pe), (select stage from Run_pe where run_id = (select max(run_id) from Run_pe)), " : "null, null, ");
-	if (isrun && definePeVars())
+
+	if (id.length() == 0)
+		mapValues << "null,null,";
+	else
+		mapValues << "'" << id << "',(select stage from Run_pe where run_id = '" << id << "'),";
+	if ((id.length() > 0) && definePeVars(id))
 		mapValues  << "'" << peVars[0] << "', '" << peVars[1] << "', '" << peVars[2] << "', '";
 	else
 		mapValues  << "'" << initVars[2] << "', '" << initVars[1] << "', '" << initVars[0] << "', '";

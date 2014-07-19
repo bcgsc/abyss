@@ -71,9 +71,9 @@ private:
 	void closeDB();
 	void createTables();
 	void insertToMetaTables(const dbVars&);
-	bool isRun();
+	std::string initializeRun();
 	std::string getPath(const std::string&);
-	bool definePeVars();
+	bool definePeVars(const std::string&);
 	void assemblyStatsToDb();
 
 public:
