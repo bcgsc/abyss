@@ -61,17 +61,13 @@ class DB {
 	// Verbosity inherited from the equivalent abyss-pe option.
 	int verbose_val;
 	
-	DB (const std::string& path) {
+	DB (const std::string& path) : exp(1) {
 		openDB (path.c_str(), 0);
-		exp = 1;
 	}
 	
-	DB (const std::string& path, const int& v, const std::string& program, const std::string& command) {
+	DB (const std::string& path, const int& v, const std::string& program, const std::string& command) : exp(0), prog(program), cmd(command) {
 		// If destination is not specified, create 'ABySS.db' by default.
 		openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
-		exp = 0;
-		prog = program;
-		cmd = command;
 	}
 	
 	~DB () {
