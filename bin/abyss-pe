@@ -387,7 +387,13 @@ clean:
 
 #if _SQL
 startDb:
-	@echo -e $(library)"\n"$(strain)"\n"$(species) > db.txt
+	@echo -e \
+	$(shell echo `date +%s`"_"`whoami`_)\
+	$(shell echo $$RANDOM \% 1000 \+ 1 | bc)"\n"\
+	$(library)"\n"\
+	$(strain)"\n"\
+	$(species) \
+	> db.txt
 #endif
 
 %-1.fa:
