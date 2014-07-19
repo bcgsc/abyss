@@ -57,30 +57,37 @@ class DB {
 	typedef std::map<std::string,float> dbMap; // for input
 
 	dbMap statMap;
-	
+
 	// Verbosity inherited from the equivalent abyss-pe option.
 	int verbose_val;
-	
-	DB (const std::string& path) : exp(1) {
-		openDB (path.c_str(), 0);
+
+	DB () {
 	}
-	
-	DB (const std::string& path, const int& v, const std::string& program, const std::string& command) : exp(0), prog(program), cmd(command) {
-		// If destination is not specified, create 'ABySS.db' by default.
-		openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
-	}
-	
+
 	~DB () {
 		if (exp == 0)
 			assemblyStatsToDb ();
 		closeDB ();
 	}
 
+	void init (const std::string& path) {
+		openDB (path.c_str(), 0);
+		exp = 1;
+	}
+
+	void init (const std::string& path, const int& v, const std::string& program, const std::string& command) {
+		// If destination is not specified, create 'ABySS.db' by default.
+		openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
+		exp = 0;
+		prog = program;
+		cmd = command;
+	}
+
 	std::string activateForeignKey (const std::string& s) {
 		std::string s_pragma("pragma foreign_keys=on; ");
 		return s_pragma += s;
 	}
-	
+
 	bool query (const std::string& s) {
 		char* errMsg = 0;	
 		std::string new_s (activateForeignKey(s));
@@ -93,6 +100,14 @@ class DB {
 		} else {
 			return true;
 		}
+	}
+
+	void addToDb (const std::string& key, const float& value) {
+		statMap[key] = value;
+	}
+
+	void addToDb (const dbMap& m) {
+		statMap.insert (m.begin(), m.end());
 	}
 
 	dbVec readSqlToVec (const std::string&);
