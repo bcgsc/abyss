@@ -157,6 +157,7 @@ public:
 			DB& d, dbMap m)
 	{
 		d.statMap.insert(m.getAC());
+		m.clear();
 	}
 
 	dbVec readSqlToVec(const std::string&);

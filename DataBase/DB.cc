@@ -148,6 +148,9 @@ void DB::assemblyStatsToDb()
 	stringstream sqlStream, mapKeys, mapValues;
 	string id = initializeRun();
 
+	if (temp == "ABYSS" || temp == "ABYSS_P")
+		temp = "ABYSS_assembly";
+
 	sqlStream
 		<< "\
 create table if not exists " << temp << " (\
@@ -172,7 +175,8 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 			<< "'" << initVars[2] << "', '" << initVars[1] << "', '" << initVars[0] << "', '";
 
 	mapValues
-		<< getPath(prog) << "', '" << cmd << "', ";
+		<< getPath(prog)
+		<< "', '" << cmd << "', ";
 
 	while (!statMap.empty()) {
 		mapKeys
