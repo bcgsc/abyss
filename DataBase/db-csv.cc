@@ -18,11 +18,11 @@ template <typename D>
 static bool existTable (D& db, const string& tablename)
 {
 	bool exists = false;
-	DB::dbVec V;
+	dbVec V;
 	V = db.readSqlToVec ("select name from sqlite_master where type='table';");
 	unsigned i = 0;
 	while (i<V.size()) {
-		if (tablename == (string)V[i][0]) {
+		if (tablename == V[i][0]) {
 			exists = true;
 			break;
 		}
@@ -37,7 +37,7 @@ static string createCSV (D& db, const string& tablename, const char* csvname)
 	ofstream csvfile(csvname);
 	stringstream pStream, sStream, msg;
 	string pstr, sstr;
-	DB::dbVec headers, values;
+	dbVec headers, values;
 
 	pStream << "pragma table_info (" << tablename << ");";
 	pstr = pStream.str();

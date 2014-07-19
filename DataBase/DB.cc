@@ -12,15 +12,15 @@ void DB::closeDB ()
 	}
 }
 
-DB::dbVec DB::readSqlToVec (const string& s)
+dbVec DB::readSqlToVec (const string& s)
 {
 	int cols, step;
-	DB::dbVec results;
+	dbVec results;
 	if (sqlite3_prepare (db, (const char*)s.c_str(), -1, &stmt, NULL) != SQLITE_OK)
 		exit(EXIT_FAILURE);
 	cols = sqlite3_column_count (stmt);
 	while (true) {
-		DB::vs temp;
+		dbVars temp;
 		step = sqlite3_step (stmt);
 		if (step == SQLITE_ROW) {
 			for (int i=0; i<cols; i++)
@@ -59,7 +59,7 @@ foreign key(library_name) references Libraries(library_name));";
 		cerr << sst.str() << endl;
 }
 
-void DB::insertToMetaTables (const DB::vs& v)
+void DB::insertToMetaTables (const dbVars& v)
 {
 	stringstream sst;
 	sst << "\
@@ -78,7 +78,7 @@ bool DB::isRun ()
 	createTables ();
 	ifstream ifile("db.txt");
 	if (ifile) {
-		DB::vs iV;
+		dbVars iV;
 		string eachLine;
 		while (getline (ifile, eachLine)) iV.push_back(eachLine);
 		if (iV.size() == 3) {
@@ -113,7 +113,7 @@ string DB::getPath (const string& program)
 bool DB::definePeVars ()
 {
 	bool defined = false;
-	DB::dbVec v;
+	dbVec v;
 	v = readSqlToVec ("select species_name, strain_name, library_name from Run_pe where run_id = (select max(run_id) from Run_pe);");
 	if (v[0].size() == peVars.size()) {
 		unsigned i = 0;

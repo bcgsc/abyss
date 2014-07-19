@@ -17,14 +17,21 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
+typedef std::vector<std::vector<std::string> > dbVec; // for output
+typedef std::map<std::string,float> dbMap; // for input
+typedef std::vector<std::string> dbVars;
+
 class DB {
  private:
-	typedef std::vector<std::string> vs;
-
+	dbMap statMap;
+	dbVars initVars, peVars;
 	sqlite3* db;
 	sqlite3_stmt* stmt;
 	std::string prog, cmd;
 	int exp;
+
+	// Verbosity inherited from the equivalent abyss-pe option.
+	int verbose_val;
 
 	void openDB (const char* c, const int& v) {
 		verbose_val = v;
@@ -49,23 +56,13 @@ class DB {
 
 	void closeDB ();
 	void createTables ();
-	void insertToMetaTables (const vs&);
+	void insertToMetaTables (const dbVars&);
 	bool isRun ();
 	std::string getPath (const std::string&);
 	bool definePeVars ();
 	void assemblyStatsToDb ();
 
  public:
-	typedef std::vector<std::vector<std::string> > dbVec; // for output
-	typedef std::map<std::string,float> dbMap; // for input
-	typedef vs dbVars;
-
-	dbMap statMap;
-	dbVars initVars, peVars;
-
-	// Verbosity inherited from the equivalent abyss-pe option.
-	int verbose_val;
-
 	DB () {
 		initVars.assign (3,"");
 		peVars.assign (3,"");
