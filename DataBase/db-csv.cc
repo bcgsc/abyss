@@ -71,7 +71,7 @@ int main (int argc, char** argv)
 		exit(EXIT_FAILURE);
 	} else {
 		DB db;
-		db.init (argv[1]);
+		init (db, argv[1]);
 		string tablename (db.getProperTableName (argv[2]));
 		if (!existTable (db, tablename)) {
 			cout << "Table " << "'" << argv[2] << "' doesn't exist in " << argv[1] << "." << endl;

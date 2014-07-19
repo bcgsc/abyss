@@ -74,18 +74,18 @@ class DB {
 		closeDB ();
 	}
 
-	void init (const std::string& path) {
-		openDB (path.c_str(), 0);
-		exp = 1;
+	friend void init (DB& d, const std::string& path) {
+		d.openDB (path.c_str(), 0);
+		d.exp = 1;
 	}
 
-	void init (const std::string& path, const int& v, const std::string& program, const std::string& command, const dbVars& vars) {
+	friend void init (DB& d, const std::string& path, const int& v, const std::string& program, const std::string& command, const dbVars& vars) {
 		// If destination is not specified, create 'ABySS.db' by default.
-		openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
-		prog = program;
-		cmd = command;
-		initVars = vars;
-		exp = 0;
+		d.openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
+		d.prog = program;
+		d.cmd = command;
+		d.initVars = vars;
+		d.exp = 0;
 	}
 
 	std::string activateForeignKey (const std::string& s) {
@@ -107,12 +107,12 @@ class DB {
 		}
 	}
 
-	void addToDb (const std::string& key, const float& value) {
-		statMap[key] = value;
+	friend void addToDb (DB& d, const std::string& key, const float& value) {
+		d.statMap[key] = value;
 	}
 
-	void addToDb (const dbMap& m) {
-		statMap.insert (m.begin(), m.end());
+	friend void addToDb (DB& d, const dbMap& m) {
+		d.statMap.insert (m.begin(), m.end());
 	}
 
 	dbVec readSqlToVec (const std::string&);
