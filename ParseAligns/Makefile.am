@@ -3,8 +3,15 @@ bin_PROGRAMS = abyss-fixmate abyss-fixmate-ssq ParseAligns
 abyss_fixmate_CPPFLAGS= -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
 
+if HAVE_SQLITE
+abyss_fixmate_LDADD= \
+	$(top_builddir)/DataBase/libdb.a \
+	$(SQLITE_LIBS) \
+	$(top_builddir)/Common/libcommon.a
+else
 abyss_fixmate_LDADD= \
 	$(top_builddir)/Common/libcommon.a
+endif
 
 abyss_fixmate_SOURCES=abyss-fixmate.cc
 

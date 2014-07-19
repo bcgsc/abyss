@@ -12,8 +12,15 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#if _SQL
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
+
+#if _SQL
+DB db;
+#endif
 
 static void removeLowCoverageContigs(SequenceCollectionHash& g)
 {
@@ -56,7 +63,15 @@ static void assemble(const string& pathIn, const string& pathOut)
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
 	for_each(opt::inFiles.begin(), opt::inFiles.end(),
 			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
+#if _SQL
+			addToDb (db, "totalDiscardedShortReads", AssemblyAlgorithms::tempCounter[10]);
+			addToDb (db, "totalDiscardednonACGTReads", AssemblyAlgorithms::tempCounter[11]);
+			AssemblyAlgorithms::tempCounter.assign(16,0);
+#endif
 	size_t numLoaded = g.size();
+#if _SQL
+	addToDb (db, "loadedKmer", numLoaded);
+#endif
 	cout << "Loaded " << numLoaded << " k-mer\n";
 	g.setDeletedKey();
 	g.shrink();
@@ -70,9 +85,14 @@ static void assemble(const string& pathIn, const string& pathOut)
 
 	cout << "Generating adjacency" << endl;
 	AssemblyAlgorithms::generateAdjacency(&g);
-
+#if _SQL
+	int i = 0;
+#endif
 erode:
 	if (opt::erode > 0) {
+#if _SQL
+		i++;
+#endif
 		cout << "Eroding tips" << endl;
 		AssemblyAlgorithms::erodeEnds(&g);
 		assert(AssemblyAlgorithms::erodeEnds(&g) == 0);
@@ -95,7 +115,10 @@ erode:
 	write_graph(opt::graphPath, g);
 
 	AssemblyAlgorithms::markAmbiguous(&g);
-
+#if _SQL
+	addToDb (db, "erosionNo", i);
+	addToDb (db, AssemblyAlgorithms::tempStatMap);
+#endif
 	FastaWriter writer(pathOut.c_str());
 	unsigned nContigs = AssemblyAlgorithms::assemble(&g, &writer);
 	if (nContigs == 0) {
@@ -124,7 +147,11 @@ int main(int argc, char* const* argv)
 	if (krange)
 		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
 				<< ":" << opt::kStep << endl;
-
+#if _SQL
+	init (db, opt::getUvalue(), opt::getVvalue(), "ABYSS", opt::getCommand(), opt::getMetaValue());
+	addToDb (db, "SS", opt::ss);
+	addToDb (db, "K", opt::kmerSize);
+#endif
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
@@ -149,5 +176,8 @@ int main(int argc, char* const* argv)
 			k1 << opt::contigsPath.c_str();
 		assemble(k0.str(), k1.str());
 	}
+#if _SQL
+	addToDb (db, AssemblyAlgorithms::tempStatMap);
+#endif
 	return 0;
 }

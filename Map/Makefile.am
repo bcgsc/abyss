@@ -19,10 +19,19 @@ abyss_map_CPPFLAGS = -I$(top_srcdir) \
 
 abyss_map_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
+if HAVE_SQLITE
+abyss_map_LDADD = \
+	$(top_builddir)/FMIndex/libfmindex.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(top_builddir)/DataBase/libdb.a \
+	$(SQLITE_LIBS)
+else
 abyss_map_LDADD = \
 	$(top_builddir)/FMIndex/libfmindex.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a
+endif
 
 abyss_map_SOURCES = map.cc
 

@@ -5,8 +5,15 @@ DistanceEst_CPPFLAGS = -I$(top_srcdir) \
 
 DistanceEst_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
+if HAVE_SQLITE
+DistanceEst_LDADD = \
+	$(top_builddir)/DataBase/libdb.a \
+	$(SQLITE_LIBS) \
+	$(top_builddir)/Common/libcommon.a
+else
 DistanceEst_LDADD = \
 	$(top_builddir)/Common/libcommon.a
+endif
 
 DistanceEst_SOURCES = DistanceEst.cpp MLE.cpp MLE.h
 

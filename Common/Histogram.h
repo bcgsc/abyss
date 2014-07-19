@@ -2,6 +2,7 @@
 #define HISTOGRAM_H 1
 
 #include "StringUtil.h" // for toEng
+#include "VectorUtil.h" // for make_vector
 #include <cassert>
 #include <climits> // for INT_MAX
 #include <cmath>
@@ -362,4 +363,38 @@ static inline std::ostream& printContiguityStats(
 		<< toEng(sum);
 }
 
+#if _SQL
+/** Pass assembly contiguity statistics -- values only. */
+static inline std::vector<int> passContiguityStatsVal(
+		const Histogram& h0, unsigned minSize, const long long unsigned expSize = 0)
+{
+	Histogram h = h0.trimLow(minSize);
+	unsigned n50 = h.n50();
+	long long unsigned sum = h.sum();
+
+	std::vector<int> vec = make_vector<int>()
+		<< h0.size()
+		<< h.size()
+		<< h.count(n50, INT_MAX)
+		<< h.minimum()
+		<< h.weightedPercentile(1 - 0.8)
+		<< n50
+		<< h.weightedPercentile(1 - 0.2)
+		<< (unsigned)h.expectedValue()
+		<< h.maximum()
+		<< sum;
+
+	if (expSize > 0) {
+		unsigned ng50;
+		if (sum < expSize/2)
+			ng50 = h.minimum();
+		else
+			ng50 = h.argMin(sum - expSize/2);
+		vec.push_back(h.count(ng50, INT_MAX));
+		vec.push_back(ng50);
+	}
+
+	return vec;
+}
+#endif
 #endif

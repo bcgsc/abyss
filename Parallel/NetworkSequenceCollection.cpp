@@ -14,6 +14,18 @@
 
 using namespace std;
 
+#if _SQL
+namespace NSC
+{
+	dbMap moveFromAaStatMap()
+	{
+		dbMap temp;
+		temp.insert (AssemblyAlgorithms::tempStatMap.getAC());
+		return temp;
+	}
+}
+#endif
+
 // Don't load data into the control process when we have at least
 // DEDICATE_CONTROL_AT total processes. This is needed because the
 // control node uses a lot of memory at large NP.
@@ -335,6 +347,8 @@ size_t NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	if (numRemoved > 0)
 		cout << "Pruned " << numSweeped << " k-mer in "
 			<< numRemoved << " tips.\n";
+#if _SQL
+#endif
 	return numRemoved;
 }
 
@@ -355,6 +369,10 @@ void NetworkSequenceCollection::controlTrim(unsigned start)
 	}
 	cout << "Pruned " << total << " tips in "
 		<< rounds << " rounds.\n";
+#if _SQL
+	AssemblyAlgorithms::addToDb ("prunedTips", total);
+	AssemblyAlgorithms::addToDb ("prunedInRounds", rounds);
+#endif
 }
 
 /** Remove low-coverage contigs. */
@@ -398,6 +416,10 @@ void NetworkSequenceCollection::controlCoverage()
 	size_t lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
 	cout << "Removed " << lowCoverageKmer << " k-mer in "
 		<< lowCoverageContigs << " low-coverage contigs.\n";
+#if _SQL
+	AssemblyAlgorithms::addToDb ("lowCoverageContigsNum", lowCoverageContigs);
+	AssemblyAlgorithms::addToDb ("lowCoverageKmerNum", lowCoverageKmer);
+#endif
 	EndState();
 
 	SetState(NAS_SPLIT_AMBIGUOUS);
@@ -419,6 +441,11 @@ void NetworkSequenceCollection::controlCoverage()
 void NetworkSequenceCollection::runControl()
 {
 	SetState(NAS_LOADING);
+
+	int erosionNum = 1;
+	size_t temp;
+	stringstream tempString;
+
 	while (m_state != NAS_DONE) {
 		switch (m_state) {
 			case NAS_LOADING:
@@ -445,7 +472,9 @@ void NetworkSequenceCollection::runControl()
 					"At least "
 					<< toSI(numLoaded * sizeof (value_type))
 					<< "B of RAM is required.\n";
-
+#if _SQL
+				AssemblyAlgorithms::addToDb ("VerticesToStart", numLoaded);
+#endif
 				Histogram myh
 					= AssemblyAlgorithms::coverageHistogram(m_data);
 				Histogram h(m_comm.reduce(myh.toVector()));
@@ -473,18 +502,25 @@ void NetworkSequenceCollection::runControl()
 						NAS_ADJ_COMPLETE);
 				m_comm.barrier();
 				pumpNetwork();
+				temp = m_comm.reduce(m_numBasesAdjSet);
 				logger(0) << "Added " << m_numBasesAdjSet
 					<< " edges.\n";
-				cout << "Added " << m_comm.reduce(m_numBasesAdjSet)
-					<< " edges.\n";
+				cout << "Added " << temp << " edges.\n";
+#if _SQL
+				AssemblyAlgorithms::addToDb ("EdgesToStart", temp);
+#endif
 				EndState();
-
 				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 			case NAS_ERODE:
 				assert(opt::erode > 0);
 				cout << "Eroding tips...\n";
-				controlErode();
+				tempString.str(string()); // flush
+				tempString << "erodedTips" << erosionNum;
+#if _SQL
+				AssemblyAlgorithms::addToDb (tempString.str(), controlErode());
+#endif
+				erosionNum++;
 				SetState(NAS_TRIM);
 				break;
 
@@ -561,7 +597,9 @@ void NetworkSequenceCollection::runControl()
 				cout << "Assembled " << numAssembled.second
 					<< " k-mer in " << numAssembled.first
 					<< " contigs.\n";
-
+#if _SQL
+				AssemblyAlgorithms::addToDb ("assembledKmerNum", numAssembled.second);
+#endif
 				SetState(NAS_DONE);
 				break;
 			}

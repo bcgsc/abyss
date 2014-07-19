@@ -17,13 +17,15 @@
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
-#include <sstream>
 #include <stdint.h>
-#include <string>
 #include <utility>
 #include <queue>
 #if _OPENMP
 # include <omp.h>
+#endif
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
 #endif
 
 using namespace std;
@@ -31,6 +33,10 @@ using namespace boost;
 using namespace boost::algorithm;
 
 #define PROGRAM "abyss-map"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -63,13 +69,24 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE          specify path of database repository in FILE\n"
+"  -X, --library=NAME      specify library NAME for database\n"
+"  -Y, --strain=NAME       specify strain NAME for database\n"
+"  -Z, --species=NAME      specify species NAME for database\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
+
 	/** Find matches at least k bp. */
 	static unsigned k;
-
+	
 	/** Sample the suffix array. */
 	static unsigned sampleSA;
 
@@ -92,7 +109,11 @@ namespace opt {
 	static int verbose;
 }
 
+#if _SQL
+static const char shortopts[] = "j:k:l:s:du:X:Y:Z:v";
+#else
 static const char shortopts[] = "j:k:l:s:dv";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -112,6 +133,12 @@ static const struct option longopts[] = {
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
+#if _SQL
+	{ "url", required_argument, NULL, 'u' },
+	{ "library", required_argument, NULL, 'X' },
+	{ "strain", required_argument, NULL, 'Y' },
+	{ "species", required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -530,6 +557,12 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -563,6 +596,12 @@ int main(int argc, char** argv)
 #if _OPENMP
 	if (opt::threads > 0)
 		omp_set_num_threads(opt::threads);
+#endif
+
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	addToDb (db, "K", opt::k);
+	addToDb (db, "SS", opt::ss);
 #endif
 
 	const char* targetFile(argv[--argc]);
@@ -621,6 +660,9 @@ int main(int argc, char** argv)
 			cerr << "Using " << toSI(bytes) << "B of memory and "
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
+#if _SQL
+	addToDb (db, "readContigs", faIndex.size());
+#endif
 
 	// Check that the indexes are up to date.
 	checkIndexes(targetFile, fmIndex, faIndex);
@@ -649,16 +691,30 @@ int main(int argc, char** argv)
 			<< "Mapped " << unique << " of " << total
 			<< " reads uniquely (" << (float)100 * unique / total
 			<< "%)\n";
-		if (opt::ss)
+#if _SQL
+		addToDb (db, "read_alignments_initial", total);
+		addToDb (db, "mapped", mapped);
+		addToDb (db, "mapped_uniq", unique);
+#endif
+		if (opt::ss) {
 			cerr << "Mapped " << g_count.suboptimal
 				<< " (" << (float)100 * g_count.suboptimal / total << "%)"
 				<< " reads to the opposite strand of the optimal mapping.\n"
 				<< "Made " << g_count.subunmapped << " ("
 				<< (float)100 * g_count.subunmapped / total << "%)"
 				<< " unmapped suboptimal decisions.\n";
+#if _SQL
+			addToDb (db, "reads_map_ss", g_count.suboptimal);
+#endif
+		} else {
+#if _SQL
+			addToDb (db, "reads_map_ss", 0);
+#endif
+		}
 	}
 
 	cout.flush();
 	assert_good(cout, "stdout");
+
 	return 0;
 }

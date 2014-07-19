@@ -14,17 +14,21 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <iterator>
-#include <map>
 #include <pthread.h>
 #include <set>
-#include <sstream>
-#include <string>
 #include <vector>
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
 
 #define PROGRAM "SimpleGraph"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -56,10 +60,20 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for sqlite\n"
+"  -Y, --strain=NAME     specify strain NAME for sqlite\n"
+"  -Z, --species=NAME    specify species NAME for sqlite\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
 	unsigned k; // used by ContigProperties
 	static unsigned threads = 1;
 	static int extend;
@@ -74,7 +88,11 @@ namespace opt {
  	int format = DIST; // used by Estimate
 }
 
+#if _SQL
+static const char shortopts[] = "d:j:k:o:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "d:j:k:o:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
 
@@ -87,10 +105,16 @@ static const struct option longopts[] = {
 	{ "no-extend",   no_argument,       &opt::extend, 0 },
 	{ "scaffold",    no_argument,       &opt::scaffold, 1 },
 	{ "no-scaffold", no_argument,       &opt::scaffold, 0 },
-	{ "threads",     required_argument,	NULL, 'j' },
+	{ "threads",     required_argument, NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",         required_argument, NULL, 'u' },
+	{ "library",     required_argument, NULL, 'X' },
+	{ "strain",      required_argument, NULL, 'Y' },
+	{ "species",     required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -118,6 +142,12 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -150,6 +180,10 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+#endif
+
 	string adjFile(argv[optind++]);
 	string estFile(argv[optind++]);
 
@@ -164,6 +198,12 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
+
+#if _SQL
+	addToDb (db, "K", opt::k);
+	addToDb (db, "V", (num_vertices(g) - num_vertices_removed(g)));
+	addToDb (db, "E", num_edges(g));
+#endif
 
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(g, estFile);
@@ -677,12 +717,34 @@ static void generatePathsThroughEstimates(const Graph& g,
 		"Too many solutions: " << stats.tooManySolutions << "\n"
 		"Too complex: " << stats.tooComplex << "\n";
 
+#if _SQL
+	vector<int> vals = make_vector<int>()
+		<< stats.totalAttempted
+		<< stats.uniqueEnd
+		<< stats.noPossiblePaths
+		<< stats.noValidPaths
+		<< stats.repeat
+		<< stats.multiEnd
+		<< stats.tooManySolutions
+		<< stats.tooComplex;
+	vector<string> keys = make_vector<string>()
+		<< "stat_attempted_path_total"
+		<< "stat_unique_path"
+		<< "stat_impossible_path"
+		<< "stat_no_valid_path"
+		<< "stat_repetitive"
+		<< "stat_multi_valid_path"
+		<< "stat_too_many"
+		<< "stat_too_complex";
+#endif
+
 	inStream.close();
 	outStream.close();
 
 	cout << "\n"
 		"The minimum number of pairs in a distance estimate is "
 		<< g_minNumPairs << ".\n";
+
 	if (g_minNumPairsUsed != UINT_MAX) {
 		cout << "The minimum number of pairs used in a path is "
 			<< g_minNumPairsUsed << ".\n";
@@ -691,4 +753,16 @@ static void generatePathsThroughEstimates(const Graph& g,
 				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
+
+#if _SQL
+	vals += make_vector<int>()
+		<< g_minNumPairs
+		<< g_minNumPairsUsed;
+	keys += make_vector<string>()
+		<< "minPairNum_DistanceEst"
+		<< "minPairNum_UsedInPath";
+
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb (db, keys[i], vals[i]);
+#endif
 }

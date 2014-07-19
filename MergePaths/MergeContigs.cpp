@@ -24,15 +24,20 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <iterator>
 #include <limits>
-#include <sstream>
-#include <string>
 #include <vector>
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
 
 #define PROGRAM "MergeContigs"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -63,11 +68,23 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for database\n"
+"  -Y, --strain=NAME     specify strain NAME for database\n"
+"  -Z, --species=NAME    specify species NAME for database\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
+
 	unsigned k; // used by ContigProperties
+	unsigned pathCount; // num of initial paths
 
 	/** Output FASTA path. */
 	static string out = "-";
@@ -88,7 +105,11 @@ namespace opt {
 	static float minIdentity = 0.9;
 }
 
+#if _SQL
+static const char shortopts[] = "g:k:o:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "g:k:o:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -105,6 +126,12 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",         required_argument, NULL, 'u' },
+	{ "library",     required_argument, NULL, 'X' },
+	{ "strain",      required_argument, NULL, 'Y' },
+	{ "species",     required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -310,6 +337,10 @@ static ContigPaths readPaths(const string& inPath,
 	if (opt::verbose > 0)
 		cerr << "Read " << count << " paths. "
 			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
+#if _SQL
+	addToDb(db, "Init_paths", count);
+#endif
+	opt::pathCount = count;
 	assert(in.eof());
 	return paths;
 }
@@ -384,6 +415,7 @@ static void outputGraph(Graph& g,
 	ofstream fout(graphPath.c_str());
 	assert_good(fout, graphPath);
 	write_graph(fout, g, PROGRAM, commandLine);
+
 	assert_good(fout, graphPath);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
@@ -418,6 +450,12 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -452,6 +490,11 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	addToDb (db, "K", opt::k);
+#endif
+
 	const char* contigFile = argv[optind++];
 	string adjPath, mergedPathFile;
 	Graph g;
@@ -469,6 +512,10 @@ int main(int argc, char** argv)
 			cerr << "Read " << num_vertices(g) << " vertices. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
+#if _SQL
+		addToDb (db, "Init_vertices", num_vertices(g));
+		addToDb (db, "Init_edges", num_edges(g));
+#endif
 	}
 	mergedPathFile = string(argv[optind++]);
 
@@ -499,6 +546,9 @@ int main(int argc, char** argv)
 			cerr << "Read " << count << " sequences. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
+#if _SQL
+		addToDb (db, "Init_seq", count);
+#endif
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
@@ -589,5 +639,27 @@ int main(int argc, char** argv)
 		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
 			<< '\t' << opt::out << '\n';
 	}
+
+#if _SQL
+	// assembly contiguity statistics
+	vector<int> vals = passContiguityStatsVal(lengthHistogram,200);
+	vector<string> keys = make_vector<string>()
+		<< "n"
+		<< "n200"
+		<< "nN50"
+		<< "min"
+		<< "N80"
+		<< "N50"
+		<< "N20"
+		<< "Esize"
+		<< "max"
+		<< "sum"
+		<< "nNG50"
+		<< "NG50";
+
+	for (unsigned a=0; a<vals.size(); a++)
+		addToDb (db, keys[a], vals[a]);
+#endif
+
 	return 0;
 }

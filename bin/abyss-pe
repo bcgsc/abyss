@@ -90,6 +90,18 @@ ifdef path
 PATH:=$(path):$(PATH)
 endif
 
+#if _SQL
+# Determine the location of sqlite database
+ifdef url
+ur=-u$(url)
+endif
+
+# Track data details for database
+library ?= ""
+strain ?= ""
+species ?= ""
+#endif
+
 # Programs
 MARKDOWN=multimarkdown
 
@@ -293,6 +305,9 @@ versions: version
 	@-mpirun --version
 
 # Determine the default target
+#if _SQL
+default: startDb
+#endif
 default: unitigs
 ifneq ($(in),)
 default: contigs contigs-dot
@@ -303,6 +318,9 @@ ifneq ($(long),)
 default: long-scaffs long-scaffs-dot
 endif
 endif
+#if _SQL
+default: finishDb
+#endif
 default: stats
 
 # Define the commands (phony targets)
@@ -339,14 +357,18 @@ long-scaffs-dot: $(name)-long-scaffs.dot
 all: default bam stats
 
 clean:
-	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123]
+	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123] *.txt
+
+#if _SQL
+.PHONY: startDb finishDb
+#endif
 
 .PHONY: bam default stats \
 	unitigs unitigs-dot \
 	pe-index pe-sam pe-bam contigs contigs-dot \
 	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
 	scaftigs long-scaffs long-scaffs-dot \
-	all clean help version versions
+	all clean help version versions env
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -363,17 +385,22 @@ clean:
 
 # Assemble unitigs
 
+#if _SQL
+startDb:
+	@echo -e $(library)"\n"$(strain)"\n"$(species) > db.txt
+#endif
+
 %-1.fa:
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) $(ur) -o $@ $(in) $(se)
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) $(ur) -o $@ $(in) $(se)
 endif
 
 # Find overlapping contigs
 
 %-1.adj: %-1.fa
-	AdjList $(SS) $v -k$k -m$m $< >$@
+	AdjList $(SS) $(ur) $v -k$k -m$m $< >$@
 
 # Remove shim contigs
 
@@ -386,7 +413,7 @@ endif
 	PopBubbles $v -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
 
 %-3.fa: %-1.fa %-2.adj %-2.path
-	MergeContigs $v -k$k -o $@ $^
+	MergeContigs $(ur) $v -k$k -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
 
@@ -402,30 +429,30 @@ endif
 # Estimate distances between unitigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-3.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-3.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-3.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|$(DistanceEst) $(deopt) -o $@ $*-3.hist
+		|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(pe))
 
@@ -445,22 +472,22 @@ endif
 # Assemble contigs
 
 %-4.path1: %-4.adj %-3.dist
-	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
+	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) $(ur) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.adj %-4.path1
-	MergePaths $v $(MERGEPATHS_OPTIONS) -j$j -k$k -o $@ $^
+	MergePaths $v $(MERGEPATHS_OPTIONS) $(ur) -j$j -k$k -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
-	PathOverlap --assemble $(SS) $v -k$k $^ >$@
+	PathOverlap --assemble $(SS) $(ur) $v -k$k $^ >$@
 
 ifndef cs
 
 %-5.path %-5.fa %-5.adj: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
+		|PathConsensus $v -k$k $(pcopt) $(ur) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.adj %-5.path
-	cat $(wordlist 1, 3, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 4, 5, $^)
+	cat $(wordlist 1, 3, $^) |MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 4, 5, $^)
 
 else
 
@@ -469,7 +496,7 @@ else
 	ln -sf $*-4.path3 $*-5.path
 
 %-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
-	cat $(wordlist 1, 2, $^) |MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
+	cat $(wordlist 1, 2, $^) |MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
 # Convert colour-space sequence to nucleotides
 
@@ -480,7 +507,7 @@ else
 endif
 
 %-6.dot: %-5.adj %-5.path
-	PathOverlap --overlap $v --dot -k$k $^ >$@
+	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
 
 %-contigs.fa: %-6.fa
 	ln -sf $< $@
@@ -491,45 +518,45 @@ endif
 # Estimate distances between contigs
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-6.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-6.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) -h $*-6.hist \
+	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+		|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
 
 # Scaffold
 
 %-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $v $(SS) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(SS) $(ur) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path
-	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
+	PathConsensus $v -k$k $(pcopt) $(ur) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-8.dot: %-7.adj %-7.path
-	PathOverlap --overlap $v --dot -k$k $^ >$@
+	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
 
 %-scaffolds.fa: %-8.fa
 	ln -sf $< $@
@@ -559,23 +586,29 @@ endif
 		|grep -v "l=" >$@
 
 %-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $v $(SS) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(SS) $(ur) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
 	PathConsensus $v -k$k $(pcopt) -s $*-9.fa -g $*-9.adj -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.adj %-9.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $v -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-10.dot: %-9.adj %-9.path
-	PathOverlap --overlap $v --dot -k$k $^ >$@
+	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
 
 %-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
 
 %-long-scaffs.dot: %-10.dot
 	ln -sf $< $@
+
+#if _SQL
+# Claim the end of a db reporting cycle
+finishDb:
+	rm -f db.txt
+#endif
 
 # Create the final BAM file
 
@@ -674,7 +707,6 @@ override varList := a b c d e E j k l m n N p q s S t v cs pi \
 	FIXMATE_OPTIONS BWASW_OPTIONS FATOAGP_OPTIONS SAMTOBREAK_OPTIONS \
 	MARKDOWN
 
-.PHONY: env
 env:
 	@echo -e "\
 	List of ABySS configuration variables currently set:\n\n\

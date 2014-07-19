@@ -14,14 +14,20 @@
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
-#include <sstream>
-#include <string>
 #include <boost/unordered_map.hpp>
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
+#include <math.h>
+#endif
 
 using namespace std;
 
 #define PROGRAM "abyss-fixmate"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -49,10 +55,20 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for sqlite\n"
+"  -Y, --strain=NAME     specify strain NAME for sqlite\n"
+"  -Z, --species=NAME    specify species NAME for sqlite\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
 	static string fragPath;
 	static string histPath;
 	static string covPath;
@@ -61,7 +77,11 @@ namespace opt {
 	static int print_all;
 }
 
+#if _SQL
+static const char shortopts[] = "h:c:l:s:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "h:c:l:s:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -77,6 +97,12 @@ static const struct option longopts[] = {
 	{ "verbose",   no_argument,       NULL, 'v' },
 	{ "help",      no_argument,       NULL, OPT_HELP },
 	{ "version",   no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",       required_argument, NULL, 'u' },
+	{ "library",   required_argument, NULL, 'X' },
+	{ "strain",    required_argument, NULL, 'Y' },
+	{ "species",   required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -314,6 +340,26 @@ static void printHistogramStats(Histogram h)
 		"max: " << h.maximum() << " "
 		"ignored: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
+#if _SQL
+	vector<int> vals = make_vector<int>()
+		<< round(h.mean())
+		<< h.median()
+		<< round(h.sd())
+		<< h.size()
+		<< h.minimum()
+		<< h.maximum()
+		<< n_orig-h.size();
+	vector<string> keys = make_vector<string>()
+		<< "mean"
+		<< "median"
+		<< "sd"
+		<< "n"
+		<< "min"
+		<< "max"
+		<< "ignored";
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb (db, keys[i], vals[i]);
+#endif
 }
 
 int main(int argc, char* const* argv)
@@ -337,6 +383,12 @@ int main(int argc, char* const* argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -356,6 +408,10 @@ int main(int argc, char* const* argv)
 		assert(g_fragFile.is_open());
 	}
 
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+#endif
+
 	Alignments alignments(1);
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
@@ -365,8 +421,12 @@ int main(int argc, char* const* argv)
 			cerr << "Reading from standard input..." << endl;
 		readAlignments(cin, &alignments);
 	}
-	if (opt::verbose > 0)
+	if (opt::verbose > 0) {
 		cerr << "Read " << stats.alignments << " alignments" << endl;
+#if _SQL
+		addToDb (db, "read_alignments_initial", stats.alignments);
+#endif
+	}
 
 	// Print the unpaired alignments.
 	if (opt::print_all) {
@@ -398,7 +458,31 @@ int main(int argc, char* const* argv)
 		"FF         " << percent(stats.numFF, sum) << "\n"
 		"Different  " << percent(stats.numDifferent, sum) << "\n"
 		"Total      " << sum << endl;
-	
+
+#if _SQL
+	vector<int> vals = make_vector<int>()
+		<< alignments.size()
+		<< stats.bothUnaligned
+		<< stats.oneUnaligned
+		<< numFR
+		<< numRF
+		<< stats.numFF
+		<< stats.numDifferent
+		<< sum;
+	vector<string> keys = make_vector<string>()
+		<< "Mateless"
+		<< "Unaligned"
+		<< "Singleton"
+		<< "FR"
+		<< "RF"
+		<< "FF"
+		<< "Different"
+		<< "Total";
+
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb (db, keys[i], vals[i]);
+#endif
+
 	if (alignments.size() == sum) {
 		cerr << PROGRAM ": error: All reads are mateless. This "
 			"can happen when first and second read IDs do not match."

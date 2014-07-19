@@ -7,6 +7,10 @@
 #include "SequenceCollection.h"
 #include <ostream>
 #include <vector>
+#include <string>
+#if _SQL
+#include "Common/InsOrderedMap.h"
+#endif
 
 class Histogram;
 
@@ -21,6 +25,11 @@ enum SeqContiguity
 /** De Bruijn graph assembly algorithms. */
 namespace AssemblyAlgorithms
 {
+#if _SQL
+extern std::vector<size_t> tempCounter;
+extern InsOrderedMap<std::string,int> tempStatMap;
+extern void addToDb (const std::string&, const int&);
+#endif
 
 // Read a sequence file and load them into the collection
 void loadSequences(ISequenceCollection* seqCollection,
@@ -29,7 +38,7 @@ void loadSequences(ISequenceCollection* seqCollection,
 /** Generate the adjacency information for all the sequences in the
  * collection. This is required before any other algorithm can run.
  */
-void generateAdjacency(ISequenceCollection* seqCollection);
+size_t generateAdjacency(ISequenceCollection* seqCollection);
 
 Histogram coverageHistogram(const ISequenceCollection& c);
 void setCoverageParameters(const Histogram& h);
@@ -100,7 +109,6 @@ void performTrim(SequenceCollectionHash* seqCollection);
 size_t popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
 size_t assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter = NULL);
-
 };
 
 #endif

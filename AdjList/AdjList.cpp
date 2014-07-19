@@ -18,14 +18,20 @@
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
-#include <iterator>
 #include <set>
-#include <sstream>
 #include <vector>
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
 
 #define PROGRAM "AdjList"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -52,10 +58,21 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for database\n"
+"  -Y, --strain=NAME     specify strain NAME for database\n"
+"  -Z, --species=NAME    specify species NAME for database\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
+
 	unsigned k; // used by GraphIO
 	int format; // used by GraphIO
 
@@ -66,7 +83,11 @@ namespace opt {
 	static unsigned minOverlap = 50;
 }
 
+#if _SQL
+static const char shortopts[] = "k:m:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "k:m:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -81,6 +102,12 @@ static const struct option longopts[] = {
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",     required_argument, NULL, 'u' },
+	{ "library", required_argument, NULL, 'X' },
+	{ "strain",  required_argument, NULL, 'Y' },
+	{ "species", required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -227,6 +254,12 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -249,6 +282,10 @@ int main(int argc, char** argv)
 	if (opt::minOverlap == 0)
 		opt::minOverlap = opt::k - 1;
 	opt::minOverlap = min(opt::minOverlap, opt::k - 1);
+
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+#endif
 
 	opt::trimMasked = false;
 	Kmer::setLength(opt::k - 1);
@@ -296,6 +333,28 @@ int main(int argc, char** argv)
 	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
+
+#if _SQL
+	vector<int> vals = make_vector<int>()
+		<< opt::ss
+		<< opt::k;
+	vector<int> new_vals = passGraphStatsVal(g);
+	vals.insert (vals.end(), new_vals.begin(), new_vals.end());
+
+	vector<string> keys = make_vector<string>()
+		<< "SS"
+		<< "K"
+		<< "V"
+		<< "E"
+		<< "degree0pctg"
+		<< "degree1pctg"
+		<< "degree234pctg"
+		<< "degree5pctg"
+		<< "degree_max";
+
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb (db, keys[i], vals[i]);
+#endif
 
 	return 0;
 }

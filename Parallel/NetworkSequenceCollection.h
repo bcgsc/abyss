@@ -12,6 +12,15 @@
 #include <set>
 #include <utility>
 
+#if _SQL
+#include "Common/InsOrderedMap.h"
+namespace NSC
+{
+	typedef InsOrderedMap<std::string, int> dbMap;
+	dbMap moveFromAaStatMap();
+}
+#endif
+
 enum NetworkAssemblyState
 {
 	NAS_LOADING, // loading sequences

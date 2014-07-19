@@ -13,9 +13,11 @@
 #include <cstring> // for strerror
 #include <iostream>
 #include <mpi.h>
-#include <sstream>
 #include <unistd.h> // for gethostname
 #include <vector>
+#if _SQL
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
 
@@ -103,6 +105,16 @@ int main(int argc, char** argv)
 		if (!opt::snpPath.empty())
 			mergeFastaFiles(opt::snpPath, "snp-");
 		cout << "Done." << endl;
+#if _SQL
+		DB db;
+		init (db, opt::getUvalue(), opt::getVvalue(), "ABYSS-P", opt::getCommand(), opt::getMetaValue());
+#endif
+
+#if _SQL
+		addToDb (db, "SS", opt::ss);
+		addToDb (db, "K", opt::kmerSize);
+		addToDb (db, NSC::moveFromAaStatMap());
+#endif
 	}
 
 	return 0;

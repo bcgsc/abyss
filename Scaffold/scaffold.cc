@@ -22,9 +22,11 @@
 #include <functional>
 #include <getopt.h>
 #include <iostream>
-#include <sstream>
-#include <string>
 #include <utility>
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
+#endif
 
 using namespace std;
 using namespace std::rel_ops;
@@ -32,6 +34,10 @@ using boost::edge_bundle_type;
 using boost::tie;
 
 #define PROGRAM "abyss-scaffold"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -67,10 +73,21 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for sqlite\n"
+"  -Y, --strain=NAME     specify strain NAME for sqlite\n"
+"  -Z, --species=NAME    specify species NAME for sqlite\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
+
 	unsigned k; // used by ContigProperties
 
 	/** Minimum number of pairs. */
@@ -106,7 +123,11 @@ namespace opt {
 	static int comp_trans;
 }
 
+#if _SQL
+static const char shortopts[] = "g:k:n:o:s:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "g:k:n:o:s:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP };
 
@@ -125,6 +146,12 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",         required_argument, NULL, 'u' },
+	{ "library",     required_argument, NULL, 'X' },
+	{ "strain",      required_argument, NULL, 'Y' },
+	{ "species",     required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -186,6 +213,11 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
+
+#if _SQL
+	addToDb(db, "V_removed", numRemovedV);
+	addToDb(db, "E_removed", numRemovedE);
+#endif
 }
 
 /** Return true if the specified edge is a cycle. */
@@ -215,6 +247,9 @@ static void removeCycles(Graph& g)
 		cerr << "Removed " << cycles.size() << " cyclic edges.\n";
 		printGraphStats(cerr, g);
 	}
+#if _SQL
+	addToDb (db, "E_removed_cyclic", cycles.size());
+#endif
 }
 
 /** Find edges in g0 that resolve forks in g.
@@ -268,6 +303,9 @@ static void resolveForks(Graph& g, const Graph& g0)
 	if (opt::verbose > 0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
+#if _SQL
+	addToDb (db, "E_added_ambig", numEdges);
+#endif
 }
 
 /** Remove tips.
@@ -284,6 +322,9 @@ static void pruneTips(Graph& g)
 		cerr << "Removed " << n << " tips.\n";
 		printGraphStats(cerr, g);
 	}
+#if _SQL
+	addToDb (db, "Tips_removed", n);
+#endif
 }
 
 /** Remove repetitive vertices from this graph.
@@ -360,6 +401,10 @@ static void removeRepeats(Graph& g)
 			<< numRemoved << " ambiguous vertices.\n";
 		printGraphStats(cerr, g);
 	}
+#if _SQL
+	addToDb (db, "V_cleared_ambg", repeats.size());
+	addToDb (db, "V_removed_ambg", numRemoved);
+#endif
 }
 
 /** Remove weak edges from this graph.
@@ -439,6 +484,9 @@ static void removeWeakEdges(Graph& g)
 		cerr << "Removed " << weak.size() << " weak edges.\n";
 		printGraphStats(cerr, g);
 	}
+#if _SQL
+	addToDb (db, "E_removed_weak", weak.size());
+#endif
 }
 
 static void removeLongEdges(Graph& g)
@@ -515,6 +563,22 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
+
+#if _SQL
+	vector<int> vals = passGraphStatsVal(g);
+	vector<string> keys = make_vector<string>()
+		<< "V_readGraph"
+		<< "E_readGraph"
+		<< "degree0_readGraph"
+		<< "degree1_readGraph"
+		<< "degree234_readGraph"
+		<< "degree5_readGraph"
+		<< "max_readGraph";
+
+	for(unsigned i=0; i<vals.size(); i++)
+		addToDb(db, keys[i], vals[i]);
+#endif
+
 	g_contigNames.lock();
 }
 
@@ -565,9 +629,32 @@ static Histogram buildScaffoldLengthHistogram(
 		if (!get(vertex_removed, g, u))
 			h.insert(g[u].length);
 	}
-
 	return h;
 }
+
+#if _SQL
+/** Add contiguity stats to database */
+static void addCntgStatsToDb(const Histogram h, const unsigned min)
+{
+	vector<int> vals = passContiguityStatsVal(h, min);
+	vector<string> keys = make_vector<string>()
+		<< "n"
+		<< "n200"
+		<< "nN50"
+		<< "min"
+		<< "N80"
+		<< "N50"
+		<< "N20"
+		<< "Esize"
+		<< "max"
+		<< "sum"
+		<< "nNG50"
+		<< "NG50";
+
+	for(unsigned i=0; i<vals.size(); i++)
+		addToDb(db, keys[i], vals[i]);
+}
+#endif
 
 /** Build scaffold paths.
  * @param output write the results
@@ -607,6 +694,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
+#if _SQL
+	addToDb (db, "Edges_transitive", numTransitive);
+#endif
+
 	// Prune tips.
 	pruneTips(g);
 
@@ -618,6 +709,11 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
+
+#if _SQL
+	addToDb (db, "Vertices_bubblePopped", popped.size());
+#endif
+
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
 		for (vector<V>::const_iterator it = popped.begin();
@@ -637,8 +733,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	ContigPaths paths;
 	assembleDFS(g, back_inserter(paths), opt::ss);
 	sort(paths.begin(), paths.end());
+	unsigned n = 0;
 	if (opt::verbose > 0) {
-		unsigned n = 0;
 		for (ContigPaths::const_iterator it = paths.begin();
 				it != paths.end(); ++it)
 			n += it->size();
@@ -646,6 +742,11 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
+
+#if _SQL
+	addToDb (db, "contigs_assembled", n);
+	addToDb (db, "scaffolds_assembled", paths.size());
+#endif
 
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (!output) {
@@ -656,6 +757,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< "\ts=" << minContigLength << '\n';
 		if (opt::verbose == 0)
 			printHeader = false;
+#if _SQL
+		addCntgStatsToDb(h, STATS_MIN_LENGTH);
+#endif
 		return h.trimLow(STATS_MIN_LENGTH).n50();
 	}
 
@@ -681,6 +785,11 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
 	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
+
+#if _SQL
+	addCntgStatsToDb(h, STATS_MIN_LENGTH);
+#endif
+
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 
@@ -731,6 +840,20 @@ int main(int argc, char** argv)
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+#if _SQL
+		  case 'u':
+			arg >> opt::url;
+			break;
+		  case 'X':
+			arg >> opt::metaVars[0];
+			break;
+		  case 'Y':
+			arg >> opt::metaVars[1];
+			break;
+		  case 'Z':
+			arg >> opt::metaVars[2];
+			break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -755,6 +878,11 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	addToDb (db, "K", opt::k);
+#endif
+
 	Graph g;
 	if (optind < argc) {
 		for (; optind < argc; optind++)
@@ -769,6 +897,10 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
+#if _SQL
+	addToDb(db, "add_complement_edges", numAdded);
+#endif
+
 	// Remove invalid edges.
 	unsigned numBefore = num_edges(g);
 	remove_edge_if(InvalidEdge(g), static_cast<DG&>(g));
@@ -776,7 +908,9 @@ int main(int argc, char** argv)
 	if (numRemoved > 0)
 		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
-
+#if _SQL
+	addToDb (db, "Edges_invalid", numRemoved);
+#endif
 	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
 		return 0;
@@ -807,7 +941,7 @@ int main(int argc, char** argv)
 
 	bestN50 = scaffold(g, bests, true);
 	cerr << "Best scaffold N50 is " << bestN50
-		<< " at s=" << bests << ".\n";
+		<< " at s=" << bests << ".\n";	
 
 	return 0;
 }

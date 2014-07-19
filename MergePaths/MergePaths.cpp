@@ -21,22 +21,27 @@
 #include <functional>
 #include <getopt.h>
 #include <iostream>
-#include <iterator>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <set>
-#include <sstream>
-#include <string>
 #include <vector>
 #if _OPENMP
 # include <omp.h>
+#endif
+#if _SQL
+#include "DataBase/Options.h"
+#include "DataBase/DB.h"
 #endif
 
 using namespace std;
 using boost::tie;
 
 #define PROGRAM "MergePaths"
+
+#if _SQL
+DB db;
+#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -65,10 +70,20 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
+#if _SQL
+"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -X, --library=NAME    specify library NAME for database\n"
+"  -Y, --strain=NAME     specify strain NAME for database\n"
+"  -Z, --species=NAME    specify species NAME for database\n"
+#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
+#if _SQL
+	string url;
+	dbVars metaVars;
+#endif
 	unsigned k; // used by GraphIO
 	static string out;
 	static int threads = 1;
@@ -83,7 +98,11 @@ namespace opt {
 	static string graphPath;
 }
 
+#if _SQL
+static const char shortopts[] = "g:j:k:o:s:u:X:Y:Z:v";
+#else
 static const char shortopts[] = "g:j:k:o:s:v";
+#endif
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -94,10 +113,16 @@ static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
-	{ "threads",     required_argument,	NULL, 'j' },
+	{ "threads",     required_argument, NULL, 'j' },
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
+#if _SQL
+	{ "url",         required_argument, NULL, 'u' },
+	{ "library",     required_argument, NULL, 'X' },
+	{ "strain",      required_argument, NULL, 'Y' },
+	{ "species",     required_argument, NULL, 'Z' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -614,6 +639,9 @@ static void addMissingEdges(const Lengths& lengths,
 	}
 	if (opt::verbose > 0)
 		cout << "Added " << numAdded << " missing edges.\n";
+#if _SQL
+	addToDb (db, "addedMissingEdges", numAdded);
+#endif
 }
 
 /** Remove transitive edges. */
@@ -627,6 +655,10 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 			<< nbefore << " edges leaving "
 			<< nafter << " edges.\n";
 	assert(nbefore - nremoved == nafter);
+#if _SQL
+	addToDb (db, "Edges_init", nbefore);
+	addToDb (db, "Edges_removed_transitive", nremoved);
+#endif
 }
 
 /** Remove ambiguous edges that overlap by only a small amount.
@@ -665,6 +697,9 @@ static void removeSmallOverlaps(PathGraph& g,
 	if (opt::verbose > 0)
 		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
+#if _SQL
+	addToDb (db, "Edges_removed_small_overlap", edges.size());
+#endif
 }
 
 /** Output the path overlap graph. */
@@ -812,6 +847,23 @@ static void buildPathGraph(const Lengths& lengths,
 	removeSmallOverlaps(g, paths);
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
+
+#if _SQL
+	// graph statistics
+	vector<int> vals = passGraphStatsVal(g);
+	vector<string> keys = make_vector<string>()
+		<< "V"
+		<< "E"
+		<< "degree0pctg"
+		<< "degree1pctg"
+		<< "degree234pctg"
+		<< "degree5pctg"
+		<< "degree_max";
+
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb (db, keys[i], vals[i]);
+#endif
+
 	outputPathGraph(g);
 }
 
@@ -863,6 +915,12 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
+#if _SQL
+			case 'u': arg >> opt::url; break;
+			case 'X': arg >> opt::metaVars[0]; break;
+			case 'Y': arg >> opt::metaVars[1]; break;
+			case 'Z': arg >> opt::metaVars[2]; break;
+#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -903,12 +961,18 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Reading `" << argv[optind] << "'..." << endl;
 
+#if _SQL
+	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+#endif
+
 	Lengths lengths = readContigLengths(argv[optind++]);
 	ContigPathMap originalPathMap = readPaths(
 			lengths, argv[optind++]);
 
 	removeRepeats(originalPathMap);
-
+#if _SQL
+	addToDb (db, "K", opt::k);
+#endif
 	if (!opt::greedy) {
 		// Assemble the path overlap graph.
 		PathGraph pathGraph;
@@ -990,7 +1054,6 @@ int main(int argc, char** argv)
 		}
 	}
 	originalPathMap.clear();
-
 	outputSortedPaths(resultsPathMap);
 	return 0;
 }
