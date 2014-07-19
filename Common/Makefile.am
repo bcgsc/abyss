@@ -31,6 +31,7 @@ libcommon_a_SOURCES = \
 	Sequence.cpp Sequence.h \
 	SignalHandler.cpp SignalHandler.h \
 	StringUtil.h \
+	VectorUtil.h \
 	SuffixArray.h \
 	Timer.cpp Timer.h \
 	Uncompress.cpp Uncompress.h \
