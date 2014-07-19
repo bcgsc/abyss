@@ -86,7 +86,7 @@ insert into run_pe(run_id,library_name,abyss_version) values(null,'" << iV[2] <<
 			ofile << "done\n";
 		}
 		stringstream uStream;
-		uStream << "update Run_pe set stage=stage+1;";
+		uStream << "update Run_pe set stage=stage+1 where run_id = (select max(run_id) from Run_pe);";
 		if (query (uStream.str()) && verbose_val >2)
 			cerr << uStream.str() << endl;
 		isrun = true;
