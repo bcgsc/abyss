@@ -8,10 +8,12 @@
 namespace opt {
 	extern std::string url;
 
-	std::string getCommand (int argc, char* const* argv) {
+	std::string getCommand(
+			int argc, char* const* argv)
+	{
 		std::ostringstream command;
 		char* const* last = argv + argc -1;
-		copy (argv, last, std::ostream_iterator<const char*>(command, " "));
+		copy(argv, last, std::ostream_iterator<const char*>(command, " "));
 		command << *last;
 		return command.str();
 	}

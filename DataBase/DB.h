@@ -23,7 +23,8 @@ typedef InsOrderedMap<std::string,int> dbMap; // for input
 typedef std::vector<std::string> dbVars;
 
 class DB {
- private:
+private:
+
 	dbMap statMap;
 	dbVars initVars, peVars;
 	sqlite3* db;
@@ -34,9 +35,11 @@ class DB {
 	// Verbosity inherited from the equivalent abyss-pe option.
 	int verbose_val;
 
-	void openDB (const char* c, const int& v) {
+	void openDB(
+			const char* c, const int& v)
+	{
 		verbose_val = v;
-		if (sqlite3_open (c, &db)) {
+		if (sqlite3_open(c, &db)) {
 			std::cerr << "[" << prog << "] Can't open DB.\n";
 			exit(EXIT_FAILURE);
 		} else {
@@ -45,7 +48,9 @@ class DB {
 		}
 	}
 
-	static int callback (void* info, int argc, char** argv, char** colName) {
+	static int callback(
+			void* info, int argc, char** argv, char** colName)
+	{
 		int i;
 		std::cerr << (const char*)info << std::endl;
 		for (i=0; i<argc; i++) {
@@ -55,73 +60,91 @@ class DB {
 		return 0;
 	}
 
-	void closeDB ();
-	void createTables ();
-	void insertToMetaTables (const dbVars&);
-	bool isRun ();
-	std::string getPath (const std::string&);
-	bool definePeVars ();
-	void assemblyStatsToDb ();
+	void closeDB();
+	void createTables();
+	void insertToMetaTables(const dbVars&);
+	bool isRun();
+	std::string getPath(const std::string&);
+	bool definePeVars();
+	void assemblyStatsToDb();
 
- public:
+public:
+
 	enum { NO_INIT, INIT, READ };
 
-	DB () {
-		initVars.assign (3,"");
-		peVars.assign (3,"");
+	DB()
+	{
+		initVars.assign(3,"");
+		peVars.assign(3,"");
 		exp = NO_INIT;
 	}
 
-	~DB () {
+	~DB()
+	{
 		if (exp == INIT)
-			assemblyStatsToDb ();
+			assemblyStatsToDb();
 		if (exp != NO_INIT)
-			closeDB ();
+			closeDB();
 	}
 
-	friend void init (DB& d, const std::string& path) {
+	friend void init(
+			DB& d, const std::string& path)
+	{
 		d.exp = READ;
-		d.openDB (path.c_str(), 0);
+		d.openDB(path.c_str(), 0);
 	}
 
-	friend void init (DB& d, const std::string& path, const int& v, const std::string& program, const std::string& command, const dbVars& vars) {
+	friend void init(
+			DB& d,
+			const std::string& path,
+			const int& v,
+			const std::string& program,
+			const std::string& command,
+			const dbVars& vars)
+	{
 		d.prog = program;
 		d.cmd = command;
 		d.initVars = vars;
 		d.exp = INIT;
 		// If destination is not specified, create 'ABySS.db' by default.
-		d.openDB (path.empty() ? "ABySS.db" : path.c_str(), v);
+		d.openDB(path.empty() ? "ABySS.db" : path.c_str(), v);
 	}
 
-	std::string activateForeignKey (const std::string& s) {
+	std::string activateForeignKey(const std::string& s)
+	{
 		std::string s_pragma("pragma foreign_keys=on; ");
 		return s_pragma += s;
 	}
 
-	bool query (const std::string& s) {
+	bool query(const std::string& s)
+	{
 		char* errMsg = 0;
-		std::string new_s (activateForeignKey(s));
+		std::string new_s(activateForeignKey(s));
 		const char* statement = new_s.c_str();
-		int rc = sqlite3_exec (db, statement, callback, 0, &errMsg);
+		int rc = sqlite3_exec(db, statement, callback, 0, &errMsg);
 		if (rc != SQLITE_OK) {
 			std::cerr << "[" << prog << "] SQL error: " << errMsg << std::endl;
-			sqlite3_free (errMsg);
+			sqlite3_free(errMsg);
 			exit(EXIT_FAILURE);
 		} else {
 			return true;
 		}
 	}
 
-	friend void addToDb (DB& d, const std::string& key, const int& value) {
-		d.statMap.push_back (key, value);
+	friend void addToDb(
+			DB& d, const std::string& key, const int& value)
+	{
+		d.statMap.push_back(key, value);
 	}
 
-	friend void addToDb (DB& d, dbMap m) {
-		d.statMap.insert (m.getAC());
+	friend void addToDb(
+			DB& d, dbMap m)
+	{
+		d.statMap.insert(m.getAC());
 	}
 
-	dbVec readSqlToVec (const std::string&);
-	std::string getProperTableName (const std::string&); 
+	dbVec readSqlToVec(const std::string&);
+	std::string getProperTableName(const std::string&);
 };
 
 #endif

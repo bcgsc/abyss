@@ -1,9 +1,10 @@
 #include "DB.h"
+
 using namespace std;
 
-void DB::closeDB ()
+void DB::closeDB()
 {
-	if (sqlite3_close (db)) {
+	if (sqlite3_close(db)) {
 		cerr << "[" << prog << "] Can't close DB.\n";
 		exit(EXIT_FAILURE);
 	} else {
@@ -12,19 +13,19 @@ void DB::closeDB ()
 	}
 }
 
-dbVec DB::readSqlToVec (const string& s)
+dbVec DB::readSqlToVec(const string& s)
 {
 	int cols, step;
 	dbVec results;
-	if (sqlite3_prepare (db, (const char*)s.c_str(), -1, &stmt, NULL) != SQLITE_OK)
+	if (sqlite3_prepare(db, (const char*)s.c_str(), -1, &stmt, NULL) != SQLITE_OK)
 		exit(EXIT_FAILURE);
-	cols = sqlite3_column_count (stmt);
+	cols = sqlite3_column_count(stmt);
 	while (true) {
 		dbVars temp;
-		step = sqlite3_step (stmt);
+		step = sqlite3_step(stmt);
 		if (step == SQLITE_ROW) {
 			for (int i=0; i<cols; i++)
-				temp.push_back ((sqlite3_column_text (stmt, i) != NULL) ? string((const char*)sqlite3_column_text (stmt, i)) : "");
+				temp.push_back((sqlite3_column_text(stmt, i) != NULL) ? string((const char*)sqlite3_column_text(stmt, i)) : "");
 			results.push_back(temp);
 		} else if (step == SQLITE_DONE) {
 			break;
@@ -32,18 +33,18 @@ dbVec DB::readSqlToVec (const string& s)
 			exit(EXIT_FAILURE);
 		}
 	}
-	sqlite3_finalize (stmt);
+	sqlite3_finalize(stmt);
 	return results;
 }
 
-string DB::getProperTableName (const string& table)
+string DB::getProperTableName(const string& table)
 {
 	string temp = table;
 	replace(temp.begin(), temp.end(), '-', '_');
 	return temp;
 }
 
-void DB::createTables ()
+void DB::createTables()
 {
 	stringstream sst;
 	sst << "\
@@ -55,11 +56,11 @@ foreign key(strain_name) references Strains(strain_name));\
 create table if not exists Run_pe (run_id integer primary key,species_name text,strain_name,library_name text,abyss_version text,time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
 foreign key(library_name) references Libraries(library_name));";
 
-	if (query (sst.str()) && verbose_val > 2)
+	if (query(sst.str()) && verbose_val > 2)
 		cerr << sst.str() << endl;
 }
 
-void DB::insertToMetaTables (const dbVars& v)
+void DB::insertToMetaTables(const dbVars& v)
 {
 	stringstream sst;
 	sst << "\
@@ -68,21 +69,21 @@ insert or ignore into strains values('" << v[1] << "','" << v[2] << "');\
 insert or ignore into libraries values('" << v[0] << "','" << v[1] << "');\
 insert into run_pe(run_id,species_name,strain_name,library_name,abyss_version) values(null,'" << v[2] << "','" << v[1] << "','" << v[0] << "','" << VERSION << "');";
 
-	if (query (sst.str()) && verbose_val > 1)
+	if (query(sst.str()) && verbose_val > 1)
 		cerr << sst.str() << endl;
 }
 
-bool DB::isRun ()
+bool DB::isRun()
 {
 	bool isrun = false;
-	createTables ();
+	createTables();
 	ifstream ifile("db.txt");
 	if (ifile) {
 		dbVars iV;
 		string eachLine;
-		while (getline (ifile, eachLine)) iV.push_back(eachLine);
+		while (getline(ifile, eachLine)) iV.push_back(eachLine);
 		if (iV.size() == 3) {
-			insertToMetaTables (iV);
+			insertToMetaTables(iV);
 			ofstream ofile("db.txt");
 			ofile << "done\n";
 		}
@@ -95,7 +96,7 @@ bool DB::isRun ()
 	return isrun;
 }
 
-string DB::getPath (const string& program)
+string DB::getPath(const string& program)
 {
 	stringstream echoStream, pathStream;
 	echoStream << "echo `which " << program << "` > temp.txt";
@@ -110,11 +111,11 @@ string DB::getPath (const string& program)
 	return pathStream.str();
 }
 
-bool DB::definePeVars ()
+bool DB::definePeVars()
 {
 	bool defined = false;
 	dbVec v;
-	v = readSqlToVec ("select species_name, strain_name, library_name from Run_pe where run_id = (select max(run_id) from Run_pe);");
+	v = readSqlToVec("select species_name, strain_name, library_name from Run_pe where run_id = (select max(run_id) from Run_pe);");
 	if (v[0].size() == peVars.size()) {
 		unsigned i = 0;
 		while (i<v[0].size()) {
@@ -126,7 +127,7 @@ bool DB::definePeVars ()
 	return defined;
 }
 
-void DB::assemblyStatsToDb ()
+void DB::assemblyStatsToDb()
 {
 	string temp = getProperTableName(prog);
 	stringstream sqlStream, mapKeys, mapValues;
@@ -152,12 +153,12 @@ exec_path text, command_line text, time_finish_" << temp << " not null default (
 		statMap.erase(statMap.begin());
 	}
 
-	if (query (sqlStream.str()) && verbose_val > 1)
+	if (query(sqlStream.str()) && verbose_val > 1)
 		cerr << sqlStream.str() << endl;
 
 	sqlStream.str("");
 	sqlStream << "insert into " << temp << " (" << mapKeys.str() << ") values (" << mapValues.str() << ");";
 
-	if (query (sqlStream.str()) && verbose_val > 0)
+	if (query(sqlStream.str()) && verbose_val > 0)
 		cerr << sqlStream.str() << endl;
 }

@@ -22,7 +22,6 @@ then
 		echo -e "${table}\n" >> $2
 		echo -e ".mode column\n.headers on\n.output ${table}\nselect * from ${table};\n.q" > $table
 		sqlite3 $1 < $table
-
 		cat $table >> $2
 		echo -e "\n\n" >> $2
 		rm -f $table
