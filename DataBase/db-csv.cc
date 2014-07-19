@@ -43,7 +43,7 @@ static string createCSV (D& db, const string& tablename, const char* csvname)
 	pstr = pStream.str();
 	headers = db.readSqlToVec (pstr.c_str());
 	for (unsigned i=0; i<headers.size(); i++) {
-		csvfile << (string)headers[i][1] << ((i==(headers.size()-1)) ? "" : ",");
+		csvfile << headers[i][1] << ((i == (headers.size()-1)) ? "" : ",");
 	}
 	csvfile << endl;
 
@@ -52,7 +52,7 @@ static string createCSV (D& db, const string& tablename, const char* csvname)
 	values = db.readSqlToVec (sstr.c_str());
 	for (unsigned i=0; i<values.size(); i++) {
 		for (unsigned j=0; j<values[i].size(); j++) {
-			csvfile << (string)values[i][j] << ((j==(values[i].size()-1)) ? "" : ",");
+			csvfile << values[i][j] << ((j == (values[i].size()-1)) ? "" : ",");
 		}
 		csvfile << endl;
 	}
