@@ -212,10 +212,10 @@ LIBS=$libs
 libs="$LIBS"
 AC_CHECK_HEADERS([sqlite3.h])
 AC_CHECK_LIB([sqlite3],[main])
-if test $ac_cv_header_sqlite3_h != yes -o $ac_cv_lib_sqlite3_main != yes; then
-	AC_MSG_ERROR([ABySS requires the SQLite3 header and library, which may
-				  be downloaded from here: https://www.sqlite.org/download.html
-	])
+AM_CONDITIONAL([HAVE_SQLITE], [test $ac_cv_header_sqlite3_h = yes -a $ac_cv_lib_sqlite3_main = yes])
+if (test $ac_cv_header_sqlite3_h = yes -a $ac_cv_lib_sqlite3_main = yes); then
+	AC_DEFINE(_SQL, 1, [Define to 1 if you have sqlite lib/header])
+	AC_SUBST(LDFLAGS, "-lsqlite3 $LDFLAGS")
 fi
 AC_SUBST(SQLITE_LIBS, "$LIBS")
 LIBS=$libs

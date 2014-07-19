@@ -11,6 +11,10 @@ check:
 	false
 endif
 
+if HAVE_SQLITE
+DataBase=DataBase
+endif
+
 dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
 	README.css README.html README.md
 
@@ -26,7 +30,7 @@ SUBDIRS = \
 	Graph \
 	dialign \
 	Align \
-	DataBase \
+	$(DataBase) \
 	ABYSS $(Parallel) \
 	AdjList \
 	Bloom \
