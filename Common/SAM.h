@@ -372,7 +372,7 @@ static inline void fixMate(SAMRecord& a0, SAMRecord& a1)
 }
 
 /** Read contig lengths from SAM headers. */
-static inline void readContigLengths(std::istream& in, std::vector<unsigned>& lengths)
+static inline unsigned readContigLengths(std::istream& in, std::vector<unsigned>& lengths)
 {
 	assert(in);
 	assert(lengths.empty());
@@ -396,6 +396,7 @@ static inline void readContigLengths(std::istream& in, std::vector<unsigned>& le
 		std::cerr << "error: no @SQ records in the SAM header\n";
 		exit(EXIT_FAILURE);
 	}
+	return lengths.size();
 }
 
 #endif

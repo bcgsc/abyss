@@ -604,14 +604,19 @@ int main(int argc, char** argv)
 		<< "n"
 		<< "min"
 		<< "max";
-
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
 #endif
 
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
+#if _SQL
+	vals += make_vector<int>()
+		<< readContigLengths(in, contigLens);
+
+	keys += make_vector<string>()
+		<< "CntgCounted";
+#else
 	readContigLengths(in, contigLens);
+#endif
 	g_contigNames.lock();
 
 	// Estimate the distances between contigs.
@@ -645,6 +650,18 @@ int main(int argc, char** argv)
 			cerr << PROGRAM << ": warning: duplicate rate of fragments "
 				"spanning more than one contig is high.\n";
 	}
+#if _SQL
+	vals += make_vector<int>()
+		<< stats.total_frags
+		<< stats.dup_frags;
+
+	keys += make_vector<string>()
+		<< "total_frags"
+		<< "dupl_frags";
+
+	for (unsigned i=0; i<vals.size(); i++)
+		addToDb(db, keys[i], vals[i]);
+#endif
 
 	if (opt::verbose > 0 && g_recMA != opt::minAlign)
 		cerr << PROGRAM << ": warning: MLE will be more accurate if "
