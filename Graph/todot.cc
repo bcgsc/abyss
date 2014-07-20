@@ -39,6 +39,7 @@ static const char USAGE_MESSAGE[] =
 "      --dist            output the graph in dist format\n"
 "      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
+"      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
 "  -e, --estimate output distance estimates\n"
 "  -v, --verbose  display verbose output\n"
@@ -68,6 +69,7 @@ static const struct option longopts[] = {
 	{ "dist",    no_argument,       &opt::format, DIST },
 	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
+	{ "gfa",     no_argument,       &opt::format, GFA },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "estimate", no_argument,      NULL, 'e' },
 	{ "kmer",    required_argument, NULL, 'k' },
