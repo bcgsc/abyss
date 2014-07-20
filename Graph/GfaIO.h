@@ -47,8 +47,10 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 		assert(!get(vertex_removed, g, v));
 		int distance = g[e].distance;
 		out << 'L'
-			<< '\t' << get(vertex_name, g, u)
-			<< '\t' << get(vertex_name, g, v);
+			<< '\t' << get(vertex_contig_name, g, u)
+			<< '\t' << (get(vertex_sense, g, u) ? '-' : '+')
+			<< '\t' << get(vertex_contig_name, g, v)
+			<< '\t' << (get(vertex_sense, g, v) ? '-' : '+');
 		if (distance <= 0)
 			out << '\t' << -distance << "M\n";
 		else
@@ -109,8 +111,11 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 
 		  case 'L': {
 			std::string uname, vname;
+			char usense, vsense;
 			int overlap;
-			in >> expect("L\t") >> uname >> vname >> std::ws;
+			in >> expect("L\t")
+				>> uname >> usense
+				>> vname >> vsense >> std::ws;
 			if (in.peek() == '*') {
 				in.get();
 				overlap = -1;
@@ -119,8 +124,13 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			}
 			in >> Ignore('\n');
 			assert(in);
-			V u = find_vertex(uname, g);
-			V v = find_vertex(vname, g);
+			assert(!uname.empty());
+			assert(!vname.empty());
+			assert(usense == '+' || usense == '-');
+			assert(vsense == '+' || vsense == '-');
+
+			V u = find_vertex(uname, usense == '-', g);
+			V v = find_vertex(vname, vsense == '-', g);
 			if (overlap >= 0) {
 				int d = -overlap;
 				EP ep(d);
