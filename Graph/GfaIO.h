@@ -49,7 +49,7 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 		out << 'L'
 			<< '\t' << get(vertex_name, g, u)
 			<< '\t' << get(vertex_name, g, v);
-		if (distance < 0)
+		if (distance <= 0)
 			out << '\t' << -distance << "M\n";
 		else
 			out << "\t*\n";
@@ -109,11 +109,11 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 
 		  case 'L': {
 			std::string uname, vname;
-			unsigned overlap;
+			int overlap;
 			in >> expect("L\t") >> uname >> vname >> std::ws;
 			if (in.peek() == '*') {
 				in.get();
-				overlap = 0;
+				overlap = -1;
 			} else {
 				in >> overlap >> expect("M");
 			}
@@ -121,7 +121,7 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			assert(in);
 			V u = find_vertex(uname, g);
 			V v = find_vertex(vname, g);
-			if (overlap > 0) {
+			if (overlap >= 0) {
 				int d = -overlap;
 				EP ep(d);
 				add_edge(u, v, ep, g);
