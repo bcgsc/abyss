@@ -59,6 +59,11 @@ static const char USAGE_MESSAGE[] =
 "      --SS              expect contigs to be oriented correctly\n"
 "      --no-SS           no assumption about contig orientation [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
+"      --sam             output the graph in SAM format\n"
 "  -o, --out=FILE        write result to FILE\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -101,6 +106,12 @@ static const struct option longopts[] = {
 	{ "no-merge-repeat", no_argument, &opt::mask, 0 },
 	{ "SS",            no_argument,       &opt::ss, 1 },
 	{ "no-SS",         no_argument,       &opt::ss, 0 },
+	{ "graph",         required_argument, NULL, 'g' },
+	{ "adj",           no_argument,       &opt::format, ADJ },
+	{ "asqg",          no_argument,       &opt::format, ASQG },
+	{ "dot",           no_argument,       &opt::format, DOT },
+	{ "gfa",           no_argument,       &opt::format, GFA },
+	{ "sam",           no_argument,       &opt::format, SAM },
 	{ "out",     required_argument, NULL, 'o' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
