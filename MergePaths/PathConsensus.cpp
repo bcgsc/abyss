@@ -57,6 +57,11 @@ static const char USAGE_MESSAGE[] =
 "  -o, --out=FILE        output contig paths to FILE\n"
 "  -s, --consensus=FILE  output consensus sequences to FILE\n"
 "  -g, --graph=FILE      output the contig adjacency graph to FILE\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
+"      --sam             output the graph in SAM format\n"
 "  -a, --branches=N      maximum number of sequences to align\n"
 "                        default: 4\n"
 "  -p, --identity=REAL   minimum identity, default: 0.9\n"
@@ -102,6 +107,11 @@ static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
 	{ "consensus",   required_argument, NULL, 's' },
 	{ "graph",       required_argument, NULL, 'g' },
+	{ "adj",         no_argument,       &opt::format, ADJ },
+	{ "asqg",        no_argument,       &opt::format, ASQG },
+	{ "dot",         no_argument,       &opt::format, DOT },
+	{ "gfa",         no_argument,       &opt::format, GFA },
+	{ "sam",         no_argument,       &opt::format, SAM },
 	{ "branches",    required_argument, NULL, 'a' },
 	{ "identity",    required_argument, NULL, 'p' },
 	{ "verbose",     no_argument,       NULL, 'v' },
