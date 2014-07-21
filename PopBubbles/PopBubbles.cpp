@@ -75,7 +75,12 @@ static const char USAGE_MESSAGE[] =
 "      --SS              expect contigs to be oriented correctly\n"
 "      --no-SS           no assumption about contig orientation [default]\n"
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
-"      --dot             output bubbles in dot format\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
+"      --sam             output the graph in SAM format\n"
+"      --bubble-graph    output a graph of the bubbles\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -104,8 +109,8 @@ namespace opt {
 	/** Write the contig adjacency graph to this file. */
 	static string graphPath;
 
-	/** Output bubbles in dot format. */
-	static int dot;
+	/** Output a graph of the bubbles. */
+	static int bubbleGraph;
 
 	int format; // used by ContigProperties
 
@@ -124,8 +129,13 @@ static const struct option longopts[] = {
 	{ "branches",      required_argument, NULL, 'a' },
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "coverage",      required_argument, NULL, 'c' },
-	{ "dot",           no_argument,       &opt::dot, 1, },
+	{ "bubble-graph",  no_argument,       &opt::bubbleGraph, 1, },
 	{ "graph",         required_argument, NULL, 'g' },
+	{ "adj",           no_argument,       &opt::format, ADJ },
+	{ "asqg",          no_argument,       &opt::format, ASQG },
+	{ "dot",           no_argument,       &opt::format, DOT },
+	{ "gfa",           no_argument,       &opt::format, GFA },
+	{ "sam",           no_argument,       &opt::format, SAM },
 	{ "kmer",          required_argument, NULL, 'k' },
 	{ "identity",      required_argument, NULL, 'p' },
 	{ "scaffold",      no_argument,       &opt::scaffold, 1},
@@ -178,7 +188,7 @@ static void popBubble(Graph& g,
 		adj = g.adjacent_vertices(v);
 	copy(adj.first, adj.second, sorted.begin());
 	sort(sorted.begin(), sorted.end(), CompareCoverage(g));
-	if (opt::dot)
+	if (opt::bubbleGraph)
 #pragma omp critical(cout)
 	{
 		cout << '"' << get(vertex_name, g, v) << "\" -> {";
@@ -606,7 +616,7 @@ int main(int argc, char** argv)
 	if (opt::minCoverage > 0)
 		filterGraph(g);
 
-	if (opt::dot)
+	if (opt::bubbleGraph)
 		cout << "digraph bubbles {\n";
 
 	Bubbles bubbles = discoverBubbles(g);
@@ -619,7 +629,7 @@ int main(int argc, char** argv)
 	g_popped.erase(unique(g_popped.begin(), g_popped.end()),
 			g_popped.end());
 
-	if (opt::dot) {
+	if (opt::bubbleGraph) {
 		cout << "}\n";
 	} else {
 		for (vector<ContigID>::const_iterator it = g_popped.begin();
