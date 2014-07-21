@@ -69,10 +69,10 @@ static const char USAGE_MESSAGE[] =
 "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
 "  -i, --ignore=FILE     ignore contigs seen in FILE\n"
 "  -r, --remove=FILE     remove contigs seen in FILE\n"
-"      --adj             output the graph in adj format [default]\n"
-"      --asqg            output the graph in asqg format\n"
-"      --dot             output the graph in dot format\n"
-"      --dot-meancov     same as above but give the mean coverage\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -128,7 +128,7 @@ static const struct option longopts[] = {
 	{ "adj",           no_argument,       &opt::format, ADJ },
 	{ "asqg",          no_argument,       &opt::format, ASQG },
 	{ "dot",           no_argument,       &opt::format, DOT },
-	{ "dot-meancov",   no_argument,       &opt::format, DOT_MEANCOV },
+	{ "gfa",           no_argument,       &opt::format, GFA },
 	{ "sam",           no_argument,       &opt::format, SAM },
 	{ "graph",         required_argument, NULL, 'g' },
 	{ "ignore",        required_argument, NULL, 'i' },
