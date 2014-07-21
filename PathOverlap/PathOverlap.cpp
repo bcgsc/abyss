@@ -53,8 +53,11 @@ static const char *USAGE_MESSAGE =
 "      --overlap         find overlapping paths [default]\n"
 "      --assemble        assemble overlapping paths\n"
 "      --trim            trim overlapping paths\n"
-"      --adj             output the graph in adj format [default]\n"
-"      --dot             output the graph in dot format\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gv              output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
 "      --SS              expect contigs to be oriented correctly\n"
 "      --no-SS           no assumption about contig orientation [default]\n"
@@ -103,9 +106,12 @@ static const struct option longopts[] = {
 	{ "assemble",     no_argument,       &opt::mode, opt::ASSEMBLE },
 	{ "overlap",      no_argument,       &opt::mode, opt::OVERLAP },
 	{ "trim",         no_argument,       &opt::mode, opt::TRIM },
-	{ "adj",          no_argument,       &opt::format, ADJ, },
-	{ "dot",          no_argument,       &opt::format, DOT, },
-	{ "sam",          no_argument,       &opt::format, SAM, },
+	{ "adj",          no_argument,       &opt::format, ADJ },
+	{ "asqg",         no_argument,       &opt::format, ASQG },
+	{ "dot",          no_argument,       &opt::format, DOT },
+	{ "gv",           no_argument,       &opt::format, DOT },
+	{ "gfa",          no_argument,       &opt::format, GFA },
+	{ "sam",          no_argument,       &opt::format, SAM },
 	{ "SS",           no_argument,       &opt::ss, 1 },
 	{ "no-SS",        no_argument,       &opt::ss, 0 },
 	{ "repeats",      required_argument, NULL, 'r' },
