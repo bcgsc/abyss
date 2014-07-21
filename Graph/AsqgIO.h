@@ -46,7 +46,7 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 			continue;
 		assert(!get(vertex_removed, g, v));
 		int distance = g[e].distance;
-		assert(distance < 0);
+		assert(distance <= 0);
 		unsigned overlap = -distance;
 		unsigned ulen = g[u].length;
 		unsigned vlen = g[v].length;
@@ -55,10 +55,10 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 		out << "ED\t" << get(vertex_contig_name, g, u)
 			<< ' ' << get(vertex_contig_name, g, v)
 			<< ' ' << (usense ? 0 : ulen - overlap)
-			<< ' ' << (usense ? overlap : ulen) - 1
+			<< ' ' << int((usense ? overlap : ulen) - 1)
 			<< ' ' << ulen
 			<< ' ' << (!vsense ? 0 : vlen - overlap)
-			<< ' ' << (!vsense ? overlap : vlen) - 1
+			<< ' ' << int((!vsense ? overlap : vlen) - 1)
 			<< ' ' << vlen
 			<< ' ' << (usense != vsense)
 			<< " -1\n"; // number of mismatches
