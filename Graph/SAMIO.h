@@ -46,7 +46,7 @@ std::ostream& write_sam(std::ostream& out, const Graph& g,
 		ContigNode u = source(*e, g), v = target(*e, g);
 		assert(!get(vertex_removed, g, v));
 		int distance = get(edge_distance, g, *e);
-		if (get(vertex_removed, g, u) || distance >= 0)
+		if (get(vertex_removed, g, u) || distance > 0)
 			continue;
 		unsigned flag = u.sense() == v.sense() ? 0 : 0x10; //FREVERSE
 		unsigned alen = -distance;
