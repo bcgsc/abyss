@@ -44,9 +44,11 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=K          find overlaps of up to K-1 bases\n"
 "  -m, --min-overlap=M   require a minimum overlap of M bases [50]\n"
-"      --adj             output the results in adj format [default]\n"
-"      --dot             output the results in dot format\n"
-"      --sam             output the results in SAM format\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA format\n"
+"      --sam             output the graph in SAM format\n"
 "      --SS              expect contigs to be oriented correctly\n"
 "      --no-SS           no assumption about contig orientation\n"
 "  -v, --verbose         display verbose output\n"
@@ -74,7 +76,9 @@ static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "min-overlap", required_argument, NULL, 'm' },
 	{ "adj",     no_argument,       &opt::format, ADJ },
+	{ "asqg",    no_argument,       &opt::format, ASQG },
 	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "gfa",     no_argument,       &opt::format, GFA },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "SS",      no_argument,       &opt::ss, 1 },
 	{ "no-SS",   no_argument,       &opt::ss, 0 },
