@@ -126,6 +126,11 @@ ifdef se
 override se:=$(strip $(se))
 endif
 
+# Graph file format
+graph?=dot
+# g is private. Use graph instead.
+override g:=$(graph)
+
 # ABYSS parameters
 q ?= 3
 abyssopt += -k$k -q$q
@@ -167,7 +172,7 @@ endif
 
 # AdjList parameters
 m?=50
-alopt += $v $(dbopt) $(SS) --dot -k$k -m$m
+alopt += $v $(dbopt) $(SS) -k$k -m$m
 
 # filtergraph parameters
 ifdef xtip
@@ -323,12 +328,12 @@ default: startDb
 #endif
 default: unitigs
 ifneq ($(in),)
-default: contigs contigs-dot
+default: contigs contigs-graph
 endif
 ifneq ($(mp),)
-default: scaffolds scaffolds-dot
+default: scaffolds scaffolds-graph
 ifneq ($(long),)
-default: long-scaffs long-scaffs-dot
+default: long-scaffs long-scaffs-graph
 endif
 endif
 #if _SQL
@@ -339,7 +344,7 @@ default: stats
 # Define the commands (phony targets)
 unitigs: $(name)-unitigs.fa
 
-unitigs-dot: $(name)-unitigs.dot
+unitigs-graph: $(name)-unitigs.$g
 
 pe-index: $(name)-3.fa.fm
 
@@ -349,7 +354,7 @@ pe-bam: $(addsuffix -3.bam.bai, $(pe))
 
 contigs: $(name)-contigs.fa
 
-contigs-dot: $(name)-contigs.dot
+contigs-graph: $(name)-contigs.$g
 
 mp-index: $(name)-6.fa.fm
 
@@ -359,29 +364,31 @@ mp-bam: $(addsuffix -6.bam.bai, $(mp))
 
 scaffolds: $(name)-scaffolds.fa
 
-scaffolds-dot: $(name)-scaffolds.dot
+scaffolds-graph: $(name)-scaffolds.$g
 
 scaftigs: $(name)-scaftigs.fa $(name)-scaftigs.agp
 
 long-scaffs: $(name)-long-scaffs.fa
 
-long-scaffs-dot: $(name)-long-scaffs.dot
+long-scaffs-graph: $(name)-long-scaffs.$g
 
 all: default bam stats
 
 clean:
-	rm -f *.adj *.dot *.sam.gz *.hist *.dist *.path *.path[123] *.txt
+	rm -f *.adj *.asqg *.dot *.gfa *.sam \
+		*.sam.gz *.hist *.dist *.path *.path[123]
 
 #if _SQL
 .PHONY: startDb finishDb
 #endif
 
 .PHONY: bam default stats \
-	unitigs unitigs-dot \
-	pe-index pe-sam pe-bam contigs contigs-dot \
-	mp-index mp-sam mp-bam scaffolds scaffolds-dot \
-	scaftigs long-scaffs long-scaffs-dot \
-	all clean help version versions env
+	unitigs unitigs-graph \
+	pe-index pe-sam pe-bam contigs contigs-graph \
+	mp-index mp-sam mp-bam scaffolds scaffolds-graph \
+	scaftigs long-scaffs long-scaffs-graph \
+	all clean help version versions
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -424,20 +431,20 @@ endif
 
 # Find overlapping contigs
 
-%-1.dot: %-1.fa
-	AdjList $(alopt) $< >$@
+%-1.$g: %-1.fa
+	AdjList $(alopt) --$g $< >$@
 
 # Remove shim contigs
 
-%-2.dot: %-1.dot
-	abyss-filtergraph $v --dot $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $@ $^ >$*-1.path
+%-2.$g: %-1.$g
+	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $@ $^ >$*-1.path
 
 # Pop bubbles
 
-%-2.path %-3.dot: %-1.fa %-2.dot
-	PopBubbles $v --dot -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.dot $^ >$*-2.path
+%-2.path %-3.$g: %-1.fa %-2.$g
+	PopBubbles $v --$g -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.$g $^ >$*-2.path
 
-%-3.fa: %-1.fa %-2.dot %-2.path
+%-3.fa: %-1.fa %-2.$g %-2.path
 	MergeContigs $(mcopt) -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
@@ -445,7 +452,7 @@ endif
 %-unitigs.fa: %-3.fa
 	ln -sf $< $@
 
-%-unitigs.dot: %-3.dot
+%-unitigs.$g: %-3.$g
 	ln -sf $< $@
 
 # Estimate distances between unitigs
@@ -488,37 +495,37 @@ endif
 
 # Find overlaps between contigs
 
-%-4.fa %-4.dot: %-3.fa %-3.dot %-3.dist
-	Overlap $v --dot $(SS) $(OVERLAP_OPTIONS) -k$k -g $*-4.dot -o $*-4.fa $^
+%-4.fa %-4.$g: %-3.fa %-3.$g %-3.dist
+	Overlap $v --$g $(SS) $(OVERLAP_OPTIONS) -k$k -g $*-4.$g -o $*-4.fa $^
 
 # Assemble contigs
 
-%-4.path1: %-4.dot %-3.dist
+%-4.path1: %-4.$g %-3.dist
 	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.path1 %-3.fa.fai %-4.fa.fai
 	cat $*-3.fa.fai $*-4.fa.fai \
 		|MergePaths $(mpopt) $(MERGEPATHS_OPTIONS) -o $@ - $<
 
-%-4.path3: %-4.dot %-4.path2
+%-4.path3: %-4.$g %-4.path2
 	PathOverlap --assemble $(poopt) $(SS) $^ >$@
 
 ifndef cs
 
-%-5.path %-5.fa %-5.dot: %-3.fa %-4.fa %-4.dot %-4.path3
+%-5.path %-5.fa %-5.$g: %-3.fa %-4.fa %-4.$g %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v --dot -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.dot - $(wordlist 3, 4, $^)
+		|PathConsensus $v --$g -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
 
-%-6.fa: %-3.fa %-4.fa %-5.fa %-5.dot %-5.path
+%-6.fa: %-3.fa %-4.fa %-5.fa %-5.$g %-5.path
 	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
 
 else
 
-%-5.dot %-5.path: %-4.dot %-4.path3
-	ln -sf $*-4.dot $*-5.dot
+%-5.$g %-5.path: %-4.$g %-4.path3
+	ln -sf $*-4.$g $*-5.$g
 	ln -sf $*-4.path3 $*-5.path
 
-%-cs.fa: %-3.fa %-4.fa %-4.dot %-4.path3
+%-cs.fa: %-3.fa %-4.fa %-4.$g %-4.path3
 	cat $(wordlist 1, 2, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 # Convert colour-space sequence to nucleotides
@@ -529,13 +536,13 @@ else
 
 endif
 
-%-6.dot: %-5.dot %-5.path
-	PathOverlap --overlap $(poopt) --dot $^ >$@
+%-6.$g: %-5.$g %-5.path
+	PathOverlap --overlap $(poopt) --$g $^ >$@
 
 %-contigs.fa: %-6.fa
 	ln -sf $< $@
 
-%-contigs.dot: %-6.dot
+%-contigs.$g: %-6.$g
 	ln -sf $< $@
 
 # Estimate distances between contigs
@@ -568,23 +575,23 @@ endif
 
 # Scaffold
 
-%-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
+%-6.path: $(name)-6.$g $(addsuffix -6.dist.dot, $(mp))
 	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
-%-7.path %-7.dot %-7.fa: %-6.fa %-6.dot %-6.path
-	PathConsensus $v --dot -k$k $(pcopt) -s $*-7.fa -g $*-7.dot -o $*-7.path $^
+%-7.path %-7.$g %-7.fa: %-6.fa %-6.$g %-6.path
+	PathConsensus $v --$g -k$k $(pcopt) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
 
-%-8.fa: %-6.fa %-7.fa %-7.dot %-7.path
+%-8.fa: %-6.fa %-7.fa %-7.$g %-7.path
 	cat $(wordlist 1, 2, $^) \
 		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
-%-8.dot: %-7.dot %-7.path
-	PathOverlap --overlap $(poopt) --dot $^ >$@
+%-8.$g: %-7.$g %-7.path
+	PathOverlap --overlap $(poopt) --$g $^ >$@
 
 %-scaffolds.fa: %-8.fa
 	ln -sf $< $@
 
-%-scaffolds.dot: %-8.dot
+%-scaffolds.$g: %-8.$g
 	ln -sf $< $@
 
 # Scaftig
@@ -608,23 +615,23 @@ endif
 	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
 		|grep -v "l=" >$@
 
-%-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $(scopt) -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+%-8.path: $(name)-8.$g $(addsuffix -8.dist.dot, $(long))
+	abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
 
-%-9.path %-9.dot %-9.fa: %-8.fa %-8.dot %-8.path
-	PathConsensus $v --dot -k$k $(pcopt) -s $*-9.fa -g $*-9.dot -o $*-9.path $^
+%-9.path %-9.$g %-9.fa: %-8.fa %-8.$g %-8.path
+	PathConsensus $v --$g -k$k $(pcopt) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
 
-%-10.fa: %-8.fa %-9.fa %-9.dot %-9.path
+%-10.fa: %-8.fa %-9.fa %-9.$g %-9.path
 	cat $(wordlist 1, 2, $^) \
 		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
-%-10.dot: %-9.dot %-9.path
-	PathOverlap --overlap $(poopt) --dot $^ >$@
+%-10.$g: %-9.$g %-9.path
+	PathOverlap --overlap $(poopt) --$g $^ >$@
 
 %-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
 
-%-long-scaffs.dot: %-10.dot
+%-long-scaffs.$g: %-10.$g
 	ln -sf $< $@
 
 #if _SQL
