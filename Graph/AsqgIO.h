@@ -98,11 +98,20 @@ std::istream& read_asqg(std::istream& in, Graph& g)
 				assert(in);
 			} else
 				length = seq.size();
+
+			unsigned coverage = 0;
+			if (in.peek() == '\t' && in.get() == '\t' && in.peek() == 'X') {
+				in >> expect("XC:i:") >> coverage;
+				assert(in);
+			}
+
 			in >> Ignore('\n');
+			assert(in);
 
 			if (addVertices) {
 				VP vp;
 				put(vertex_length, vp, length);
+				put(vertex_coverage, vp, coverage);
 				V u = add_vertex(vp, g);
 				put(vertex_name, g, u, uname);
 			} else {
