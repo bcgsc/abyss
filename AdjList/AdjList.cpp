@@ -47,6 +47,7 @@ static const char USAGE_MESSAGE[] =
 "      --adj             output the graph in ADJ format [default]\n"
 "      --asqg            output the graph in ASQG format\n"
 "      --dot             output the graph in GraphViz format\n"
+"      --gv              output the graph in GraphViz format\n"
 "      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
 "      --SS              expect contigs to be oriented correctly\n"
@@ -78,6 +79,7 @@ static const struct option longopts[] = {
 	{ "adj",     no_argument,       &opt::format, ADJ },
 	{ "asqg",    no_argument,       &opt::format, ASQG },
 	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "gv",      no_argument,       &opt::format, DOT },
 	{ "gfa",     no_argument,       &opt::format, GFA },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "SS",      no_argument,       &opt::ss, 1 },
