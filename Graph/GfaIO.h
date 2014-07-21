@@ -82,10 +82,11 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			break;
 
 		  case 'S': {
-			std::string uname, seq;
-			in >> expect("S\t") >> uname >> seq;
+			std::string uname, seq, quality;
+			in >> expect("S\t") >> uname >> seq >> quality;
 			assert(in);
 			assert(!seq.empty());
+			assert(!quality.empty());
 
 			unsigned length = 0;
 			if (seq == "*") {
