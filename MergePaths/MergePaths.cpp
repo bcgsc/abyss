@@ -888,8 +888,10 @@ static Lengths readContigLengths(istream& in)
 /** Read contig lengths. */
 static Lengths readContigLengths(const string& path)
 {
-	ifstream in(path.c_str());
-	assert_good(in, path);
+	ifstream fin(path.c_str());
+	if (path != "-")
+		assert_good(fin, path);
+	istream& in = path == "-" ? cin : fin;
 	return readContigLengths(in);
 }
 
