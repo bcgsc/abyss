@@ -37,7 +37,8 @@ static const char USAGE_MESSAGE[] =
 "      --adj             output the graph in adj format\n"
 "      --asqg            output the graph in asqg format\n"
 "      --dist            output the graph in dist format\n"
-"      --dot             output the graph in dot format [default]\n"
+"      --dot             output the graph in GraphViz format [default]\n"
+"      --gv              output the graph in GraphViz format\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
 "      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
@@ -68,6 +69,7 @@ static const struct option longopts[] = {
 	{ "asqg",    no_argument,       &opt::format, ASQG },
 	{ "dist",    no_argument,       &opt::format, DIST },
 	{ "dot",     no_argument,       &opt::format, DOT },
+	{ "gv",      no_argument,       &opt::format, DOT },
 	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
 	{ "gfa",     no_argument,       &opt::format, GFA },
 	{ "sam",     no_argument,       &opt::format, SAM },
