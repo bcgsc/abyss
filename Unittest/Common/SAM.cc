@@ -55,3 +55,10 @@ TEST(parseCigar, check_alignment)
 	a.read_length = 80;
 	EXPECT_EQ(a, SAMAlignment::parseCigar("40M10I20M10S", false));
 }
+
+// Check that we error when an invalid CIGAR is given.
+TEST(parseCigarDeath, invalid_cigar)
+{
+	EXPECT_DEATH(SAMAlignment::parseCigar("20SS", false), "error: invalid CIGAR: `20SS'");
+	EXPECT_DEATH(SAMAlignment::parseCigar("20m", false), "error: invalid CIGAR: `20m'");
+}

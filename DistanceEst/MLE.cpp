@@ -37,6 +37,43 @@ class WindowFunction {
 		int x1, x2, x3;
 };
 
+/** This is a normalized zero-phase Hann window function with
+ * specified size. */
+class HannWindow {
+	public:
+		HannWindow(int size) : size(size)
+		{
+			sum = getSum();
+		}
+
+		/** Return normalized Hann window value at i centered at 0. */
+		double operator()(int i) const
+		{
+			return value(i + size/2) / sum;
+		}
+
+		/** Return the Hann window value at i. */
+		double value(int i) const
+		{
+			if (i < 0 || i >= size)
+				return 0;
+			return 0.5 * (1 - cos(2 * M_PI * i/(size - 1)));
+		}
+
+		/** Get the sum of all values in this window. */
+		double getSum()
+		{
+			double sum = 0;
+			for (int i = 0; i < size; i++)
+				sum += value(i);
+			return sum;
+		}
+
+	private:
+		double sum;
+		int size;
+};
+
 /** Compute the log likelihood that these samples came from the
  * specified distribution shifted by the parameter theta.
  * @param theta the parameter of the PMF, f_theta(x)
@@ -68,8 +105,9 @@ maximumLikelihoodEstimate(int first, int last,
 		const PMF& pmf,
 		unsigned len0, unsigned len1)
 {
-	first = max(first, (int)pmf.minValue() - samples.maximum());
-	last = min(last, (int)pmf.maxValue() - samples.minimum());
+	int filterSize = 2 * (int)(0.05 * pmf.mean()) + 3; // want an odd filter size
+	first = max(first, (int)pmf.minValue() - samples.maximum()) - filterSize/2;
+	last = min(last, (int)pmf.maxValue() - samples.minimum()) + filterSize/2 + 1;
 
 	/* When randomly selecting fragments that span a given point,
 	 * longer fragments are more likely to be selected than
@@ -81,6 +119,9 @@ maximumLikelihoodEstimate(int first, int last,
 	double bestLikelihood = -numeric_limits<double>::max();
 	int bestTheta = first;
 	unsigned bestn = 0;
+	vector<double> le;
+	vector<unsigned> le_n;
+	vector<int> le_theta;
 	for (int theta = first; theta <= last; theta++) {
 		// Calculate the normalizing constant of the PMF, f_theta(x).
 		double c = 0;
@@ -91,10 +132,23 @@ maximumLikelihoodEstimate(int first, int last,
 		unsigned n;
 	   	tie(likelihood, n) = computeLikelihood(theta, samples, pmf);
 		likelihood -= nsamples * log(c);
-		if (n > 0 && likelihood > bestLikelihood) {
+		le.push_back(likelihood);
+		le_n.push_back(n);
+		le_theta.push_back(theta);
+	}
+
+	HannWindow filter(filterSize);
+	for (int i = filterSize / 2; i < (int)le.size()-(filterSize / 2); i++) {
+		double likelihood = 0;
+		for (int j = -filterSize / 2; j <= filterSize / 2; j++) {
+			assert((unsigned)(i + j) < le.size() && i + j >= 0);
+			likelihood += filter(j) * le[i + j];
+		}
+
+		if (le_n[i] > 0 && likelihood > bestLikelihood) {
 			bestLikelihood = likelihood;
-			bestTheta = theta;
-			bestn = n;
+			bestTheta = le_theta[i];
+			bestn = le_n[i];
 		}
 	}
 	return make_pair(bestTheta, bestn);

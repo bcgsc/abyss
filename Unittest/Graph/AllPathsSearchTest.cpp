@@ -1,7 +1,6 @@
 #include "Graph/Path.h"
 #include "Graph/AllPathsSearch.h"
 #include "Common/UnorderedMap.h"
-#include "Common/Warnings.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <gtest/gtest.h>
 #include <set>

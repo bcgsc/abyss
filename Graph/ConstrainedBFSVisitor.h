@@ -32,8 +32,8 @@ private:
 	HashGraph<V> m_traversalGraph;
 	OutDegreeMap m_outDegree;
 	DepthMap m_depthMap;
-	const V& m_start;
-	const V& m_goal;
+	V m_start;
+	V m_goal;
 	depth_t m_minDepth;
 	depth_t m_maxDepth;
 	unsigned m_maxBranches;

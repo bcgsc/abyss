@@ -57,6 +57,7 @@ static const char USAGE_MESSAGE[] =
 "                        that maximizes the scaffold N50.\n"
 "  -k, --kmer=N          length of a k-mer\n"
 "      --min-gap=N       minimum scaffold gap length to output [50]\n"
+"      --max-gap=N       maximum scaffold gap length to output [inf]\n"
 "      --complex         remove complex transitive edges\n"
 "      --no-complex      don't remove complex transitive edges [default]\n"
 "      --SS              expect contigs to be oriented correctly\n"
@@ -82,6 +83,10 @@ namespace opt {
 	/** Minimum scaffold gap length to output. */
 	static int minGap = 50;
 
+	/** Maximum scaffold gap length to output.
+	 * -ve value means no maximum. */
+	static int maxGap = -1;
+
 	/** Write the paths to this file. */
 	static string out;
 
@@ -103,12 +108,13 @@ namespace opt {
 
 static const char shortopts[] = "g:k:n:o:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_COMP };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP };
 
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "min-gap",     required_argument, NULL, OPT_MIN_GAP },
+	{ "max-gap",     required_argument, NULL, OPT_MAX_GAP },
 	{ "npairs",      required_argument, NULL, 'n' },
 	{ "out",         required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
@@ -435,6 +441,21 @@ static void removeWeakEdges(Graph& g)
 	}
 }
 
+static void removeLongEdges(Graph& g)
+{
+	typedef graph_traits<Graph>::edge_descriptor E;
+	typedef graph_traits<Graph>::edge_iterator Eit;
+
+	vector<E> long_e;
+	Eit eit, elast;
+	for (tie(eit, elast) = edges(g); eit != elast; ++eit) {
+		E e = *eit;
+		if (g[e].distance > opt::maxGap)
+			long_e.push_back(e);
+	}
+	remove_edges(g, long_e.begin(), long_e.end());
+}
+
 /** Return whether the specified distance estimate is an exact
  * overlap.
  */
@@ -608,6 +629,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	// Remove weak edges.
 	removeWeakEdges(g);
 
+	// Remove any edges longer than opt::maxGap.
+	if (opt::maxGap >= 0)
+		removeLongEdges(g);
+
 	// Assemble the paths.
 	ContigPaths paths;
 	assembleDFS(g, back_inserter(paths), opt::ss);
@@ -696,6 +721,9 @@ int main(int argc, char** argv)
 			break;
 		  case OPT_MIN_GAP:
 			arg >> opt::minGap;
+			break;
+		  case OPT_MAX_GAP:
+			arg >> opt::maxGap;
 			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;

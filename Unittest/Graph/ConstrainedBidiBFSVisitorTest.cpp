@@ -1,4 +1,3 @@
-#include "Common/Warnings.h"
 #include "Graph/Path.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
 #include "Graph/BidirectionalBFS.h"

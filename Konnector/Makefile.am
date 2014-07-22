@@ -12,8 +12,6 @@ konnector_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 konnector_SOURCES = konnector.cc \
-	BloomFilter.h \
-	CountingBloomFilter.h \
 	DBGBloom.h \
 	DBGBloomAlgorithms.h \
 	konnector.h

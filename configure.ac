@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 1.5.1, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 1.5.2, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/Abyss.cpp])
@@ -75,8 +75,9 @@ AC_CHECK_DECL(HOST_NAME_MAX, [],
 AC_ARG_WITH(boost, AS_HELP_STRING([--with-boost=PATH],
 			[specify directory for the boost header files]))
 if test "$with_boost" -a -d "$with_boost"; then
-	boost_cppflags="-isystem$with_boost"
+	boost_cppflags="-isystem$with_boost -isystem$with_boost/include"
 fi
+
 # MPI
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	[specify prefix directory for the installed MPI parallel
@@ -138,7 +139,7 @@ elif test "$enable_lammpi"; then
 	AC_CHECK_LIB([lam], [lam_mutex_lock])
 	AC_CHECK_LIB([mpi], [MPI_Init])
 	AC_LANG_PUSH([C++])
-	AC_CHECK_LIB([lammpi++], [main]) 
+	AC_CHECK_LIB([lammpi++], [main])
 	AC_LANG_POP([C++])
 else
 	AC_CHECK_LIB([mpi], [MPI_Init])

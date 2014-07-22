@@ -3,7 +3,6 @@
 
 #include "Common/UnorderedMap.h"
 #include "Common/UnorderedSet.h"
-#include "Common/Warnings.h"
 #include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
 #include <vector>
@@ -441,32 +440,25 @@ add_edge(
 // works with DotIO.h routines)
 
 template <class VertexType>
-bool get(vertex_removed_t, const HashGraph<VertexType>& g,
-		typename HashGraph<VertexType>::vertex_descriptor v)
+bool get(vertex_removed_t, const HashGraph<VertexType>&,
+		typename HashGraph<VertexType>::vertex_descriptor)
 {
-	SUPPRESS_UNUSED_WARNING(g);
-	SUPPRESS_UNUSED_WARNING(v);
 	return false;
 }
 
 template <class VertexType>
-void put(vertex_removed_t tag, HashGraph<VertexType>& g,
-		typename HashGraph<VertexType>::vertex_descriptor v,
-		bool flag)
+void put(vertex_removed_t, HashGraph<VertexType>&,
+		typename HashGraph<VertexType>::vertex_descriptor,
+		bool)
 {
-	SUPPRESS_UNUSED_WARNING(tag);
-	SUPPRESS_UNUSED_WARNING(g);
-	SUPPRESS_UNUSED_WARNING(v);
-	SUPPRESS_UNUSED_WARNING(flag);
 	return;
 }
 
 template <class VertexType>
 typename HashGraph<VertexType>::vertex_descriptor
-get(vertex_name_t, const HashGraph<VertexType>& g,
+get(vertex_name_t, const HashGraph<VertexType>&,
 		typename HashGraph<VertexType>::vertex_descriptor v)
 {
-	SUPPRESS_UNUSED_WARNING(g);
 	return v;
 }
 

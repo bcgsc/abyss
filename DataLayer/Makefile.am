@@ -25,4 +25,5 @@ libdatalayer_a_SOURCES = \
 	FastaInterleave.h \
 	FastaReader.cpp FastaReader.h \
 	FastaWriter.cpp FastaWriter.h \
+	FastaConcat.h \
 	Options.h

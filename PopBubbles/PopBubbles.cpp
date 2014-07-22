@@ -235,15 +235,15 @@ static float getAlignmentIdentity(const Graph& g,
 	unsigned nbranches = distance(first, last);
 	vector<int> inDists(nbranches);
 	transform(first, last, inDists.begin(),
-			bind(getDistance, boost::cref(g), t, _1));
+			boost::lambda::bind(getDistance, boost::cref(g), t, _1));
 	vector<int> outDists(nbranches);
 	transform(first, last, outDists.begin(),
-			bind(getDistance, boost::cref(g), _1, v));
+			boost::lambda::bind(getDistance, boost::cref(g), _1, v));
 	vector<int> insertLens(nbranches);
 	transform(first, last, insertLens.begin(),
-			bind(getDistance, boost::cref(g), t, _1)
-				+ bind(getLength, &g, _1)
-				+ bind(getDistance, boost::cref(g), _1, v));
+			boost::lambda::bind(getDistance, boost::cref(g), t, _1)
+				+ boost::lambda::bind(getLength, &g, _1)
+				+ boost::lambda::bind(getDistance, boost::cref(g), _1, v));
 
 	int max_in_overlap = -(*min_element(inDists.begin(),
 			inDists.end()));
@@ -263,7 +263,7 @@ static float getAlignmentIdentity(const Graph& g,
 		return max_identity;
 
 	vector<string> seqs(nbranches);
-	transform(first, last, seqs.begin(), bind(getSequence, &g, _1));
+	transform(first, last, seqs.begin(), boost::lambda::bind(getSequence, &g, _1));
 	for (unsigned i = 0; i < seqs.size(); i++) {
 		// Remove the overlapping sequence.
 		int n = seqs[i].size();

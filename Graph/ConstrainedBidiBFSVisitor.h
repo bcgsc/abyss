@@ -40,8 +40,8 @@ protected:
 	typedef unordered_set<E, EdgeHash> EdgeSet;
 
 	const G& m_graph;
-	const V& m_start;
-	const V& m_goal;
+	V m_start;
+	V m_goal;
 
 	/** maximum number of paths to discover before aborting search */
 	unsigned m_maxPaths;
@@ -133,15 +133,13 @@ public:
 
 #if 0
 	// for debugging
-	void examine_vertex(const V& v, const G& g, Direction dir)
+	void examine_vertex(const V& v, const G&, Direction dir)
 	{
-		SUPPRESS_UNUSED_WARNING(g);
 		std::cout << "visiting vertex: " << v << " from dir: " << dir << "\n";
 	}
 
 	void examine_edge(const E& e, const G& g, Direction dir)
 	{
-		SUPPRESS_UNUSED_WARNING(g);
 		V u = source(e, g);
 		V v = target(e, g);
 		std::cout << "visiting edge: (" << u << "," << v
@@ -149,13 +147,9 @@ public:
 	}
 #endif
 
-	BFSVisitorResult discover_vertex(const V& v, const G& g,
-			Direction dir, unsigned numActiveBranches)
+	BFSVisitorResult discover_vertex(const V&, const G&,
+			Direction, unsigned numActiveBranches)
 	{
-		SUPPRESS_UNUSED_WARNING(v);
-		SUPPRESS_UNUSED_WARNING(g);
-		SUPPRESS_UNUSED_WARNING(dir);
-
 		if (m_maxBranches != NO_LIMIT &&
 			numActiveBranches >= m_maxBranches) {
 			m_tooManyBranches = true;

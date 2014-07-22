@@ -7,7 +7,6 @@
 
 #include "Common/Kmer.h"
 #include "Common/KmerIterator.h"
-#include "Common/Warnings.h"
 #include "DBGBloom.h"
 #include "Common/StringUtil.h"
 #include "Common/Sequence.h"
@@ -116,8 +115,6 @@ static inline bool correctSingleBaseError(const Graph& g, unsigned k,
 {
 	if (read.seq.length() < k)
 		return false;
-
-	SUPPRESS_UNUSED_WARNING(correctedPos);
 
 	const std::string bases = "AGCT";
 	const size_t minScore = 3;

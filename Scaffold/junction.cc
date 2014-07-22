@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 	ScaffoldGraph scaffoldG(overlapG.num_vertices() / 2);
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
-				bind(readGraph, _1, boost::ref(scaffoldG)));
+				boost::lambda::bind(readGraph, _1, boost::ref(scaffoldG)));
 		// Add any missing complementary edges.
 		size_t numAdded = addComplementaryEdges(scaffoldG);
 		if (opt::verbose > 0)
