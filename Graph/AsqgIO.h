@@ -42,8 +42,13 @@ std::ostream& write_asqg(std::ostream& out, Graph& g)
 		E e = *eit;
 		V u = source(e, g);
 		V v = target(e, g);
-		if (v < u || get(vertex_removed, g, u))
+		if (get(vertex_removed, g, u))
 			continue;
+
+		// Output only the canonical edge.
+		if (u > get(vertex_complement, g, v))
+			continue;
+
 		assert(!get(vertex_removed, g, v));
 		int distance = g[e].distance;
 		assert(distance <= 0);
