@@ -16,6 +16,7 @@ Contents
 	* [Install ABySS on Debian or Ubuntu](#install-abyss-on-debian-or-ubuntu)
 	* [Install ABySS on Mac OS X](#install-abyss-on-mac-os-x)
 * [Dependencies](#dependencies)
+* [Compiling ABySS from GiHub](#compiling-abyss-from-github)
 * [Compiling ABySS from source](#compiling-abyss-from-source)
 * [Assembling a paired-end library](#assembling-a-paired-end-library)
 * [Assembling multiple libraries](#assembling-multiple-libraries)
@@ -27,6 +28,7 @@ Contents
 * [Running ABySS on a cluster](#running-abyss-on-a-cluster)
 * [Assembly Parameters](#assembly-parameters)
 * [ABySS programs](#abyss-programs)
+* [Export to SQLite Database](#export-to-sqlite-database)
 * [Publications](#publications)
 * [Mailing List](#mailing-list)
 * [Authors](#authors)
@@ -331,10 +333,10 @@ Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
 manual page for more information on assembly parameters.
 
-Possibly, `abyss-pe` parameters can have same names as existing environment variables'. The parameters then cannot be used until the environment variables are unset. To detect such occasions, run the command: 
+Possibly, `abyss-pe` parameters can have same names as existing environment variables'. The parameters then cannot be used until the environment variables are unset. To detect such occasions, run the command:
 
 	abyss-pe env [options]
- 
+
 Above command will report all `abyss-pe` parameters that are set from various origins. However it will not operate ABySS programs.
 
 ABySS programs
@@ -372,6 +374,52 @@ ABySS programs
 
 For a flowchart showing the relationship between these programs,
 see doc/flowchart.pdf.
+
+Export to SQLite Database
+=========================
+
+ABySS has a built-in support for SQLite database. With this option activated, it exports log values into a SQLite file and/or `.csv` files at runtime.
+
+## Activating the functionality
+
+Install SQLite. (See [Quick Start](#quick-start) for details)
+
+	sudo yum install sqlite3 sqlite3-devel
+	sudo apt-get install sqlite3 sqlite3-devel
+	brew install sqlite3
+
+To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in [Compiling ABySS from GiHub](#compiling-abyss-from-github) / [Compiling ABySS from source](#compiling-abyss-from-source).
+
+	./configure [other options] --with-sqlite=/path/to/sqlite3/
+	make
+	sudo make install
+
+## Database parameters
+Of `abyss-pe`:
+ * `url`: path to SQLite repository file [`ABySS.db`]
+ * `species`: name of species to archive [ ]
+ * `strain`: name of strain to archive [ ]
+ * `library`: name of library to archive [ ]
+
+For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.db':
+
+	abyss-pe url=/abyss/test.db library=Ecoli strain=O121 library=pe200 [other options]
+
+## Helper programs
+Found in your `path`:
+ * `abyss-db-txt`: create `db.txt` file, a flat file showing entire repository at a glance
+ * `abyss-db-csv`: create `.csv` file(s) of database
+
+Usage:
+
+    abyss-db-txt /your/repository /designated/dir
+    abyss-db-csv /your/repository /designated/dir program(s)
+
+For example,
+
+	abyss-db-txt repo.db ./
+	abyss-db-csv repo.db ./ DistanceEst abyss-scaffold
+	abyss-db-csv repo.db ./ *
 
 Publications
 ============
