@@ -46,11 +46,7 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 			continue;
 
 		// Output only the canonical edge.
-		if (u < v
-				|| (u == v && !get(vertex_sense, g, u))
-				|| get(vertex_complement, g, u) == v) {
-			// This edge is canonical.
-		} else
+		if (u > get(vertex_complement, g, v))
 			continue;
 
 		assert(!get(vertex_removed, g, v));
