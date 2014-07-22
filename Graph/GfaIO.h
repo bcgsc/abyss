@@ -42,8 +42,17 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 		E e = *eit;
 		V u = source(e, g);
 		V v = target(e, g);
-		if (v < u || get(vertex_removed, g, u))
+		if (get(vertex_removed, g, u))
 			continue;
+
+		// Output only the canonical edge.
+		if (u < v
+				|| (u == v && !get(vertex_sense, g, u))
+				|| get(vertex_complement, g, u) == v) {
+			// This edge is canonical.
+		} else
+			continue;
+
 		assert(!get(vertex_removed, g, v));
 		int distance = g[e].distance;
 		out << 'L'
