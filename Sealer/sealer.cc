@@ -473,6 +473,53 @@ string merge(const Graph& g,
 	}
 	else
 		return "";
+
+
+	vector<FastaRecord>& paths = result.mergedSeqs;
+	switch (result.pathResult) {
+
+		case NO_PATH:
+			assert(paths.empty());
+			if (result.foundStartKmer && result.foundGoalKmer)
+				++g_count.noPath;
+			else {
+				++g_count.noStartOrGoalKmer;
+			}
+			break;
+
+		case FOUND_PATH:
+			assert(!paths.empty());
+			if (result.pathMismatches > params.maxPathMismatches ||
+					result.readMismatches > params.maxReadMismatches) {
+				if (result.pathMismatches > params.maxPathMismatches)
+					++g_count.tooManyMismatches;
+				else
+					++g_count.tooManyReadMismatches;
+			}
+			else if (paths.size() > 1) {
+				++g_count.multiplePaths;
+			}
+			else {
+				++g_count.uniquePath;
+			}
+			break;
+
+		case TOO_MANY_PATHS:
+			++g_count.tooManyPaths;
+			break;
+
+		case TOO_MANY_BRANCHES:
+			++g_count.tooManyBranches;
+			break;
+
+		case PATH_CONTAINS_CYCLE:
+			++g_count.containsCycle;
+			break;
+
+		case EXCEEDED_MEM_LIMIT:
+			++g_count.exceededMemLimit;
+			break;
+	}
 }
 
 void insertIntoScaffold(ofstream &scaffoldStream,
