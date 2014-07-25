@@ -256,7 +256,6 @@ struct Counters {
 
 //static Counters g_count;
 
-
 static const char shortopts[] = "S:L:D:b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
@@ -560,7 +559,6 @@ void kRun(const ConnectPairsParams& params,
 	g_count.readPairsMerged = 0;
 	g_count.skipped = 0;
 
-
 	if (opt::verbose > 0)
 		cerr << "Reads inserted into k run = " << flanks.size() << endl;
 
@@ -573,6 +571,7 @@ void kRun(const ConnectPairsParams& params,
 			int startposition = read2_it->second["startposition"];
 			int endposition = read2_it->second["endposition"];
 			string tempSeq;
+			
 			tempSeq = merge(g, k, read1, read2, params, g_count);
 
 			if (!tempSeq.empty()) {
@@ -655,7 +654,6 @@ void kRun(const ConnectPairsParams& params,
 		}
 		cerr << flanks.size() << " reads left" << endl;
 	}
-
 }
 
 typedef map<string, int> property_map;
@@ -725,7 +723,6 @@ void findFlanks(FastaRecord record,
 int main(int argc, char** argv)
 {
 	bool die = false;
-
 
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -1065,7 +1062,6 @@ int main(int argc, char** argv)
 		}
 		if (opt::verbose > 0)
 			cerr << "k" << opt::k << " run complete\n\n";
-
 	}
 
 	if (opt::verbose > 0) {
