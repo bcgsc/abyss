@@ -69,6 +69,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
+"      --detailed-stats		outputs detailed stats\n"
 "      --print-flanks		outputs flank files\n"
 "      --no-cascade		do not use cascading bloom filter [default]\n"
 "  -S, --input-scaffold=FILE  	load scaffold from FILE\n"
@@ -212,11 +213,31 @@ namespace opt {
 
 	/** Output flanks files */
 	static int printFlanks = 0;
+
+	/** Output detailed stats */
+	static int detailedStats = 0;
 }
 
 /** Counters */
 
-static struct {
+//static struct {
+//	size_t noStartOrGoalKmer;
+//	size_t noPath;
+//	size_t uniquePath;
+//	size_t multiplePaths;
+//	size_t tooManyPaths;
+//	size_t tooManyBranches;
+//	size_t tooManyMismatches;
+//	size_t tooManyReadMismatches;
+//	size_t containsCycle;
+//	size_t exceededMemLimit;
+//	size_t traversalMemExceeded;
+//	size_t readPairsProcessed;
+//	size_t readPairsMerged;
+//	size_t skipped;
+//} g_count;
+
+struct Counters {
 	size_t noStartOrGoalKmer;
 	size_t noPath;
 	size_t uniquePath;
@@ -231,13 +252,17 @@ static struct {
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
 	size_t skipped;
-} g_count;
+};
+
+//static Counters g_count;
+
 
 static const char shortopts[] = "S:L:D:b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "detailed-stats",   no_argument, &opt::detailedStats, 1},
 	{ "cascade",          no_argument, &opt::cascade, 1 },
 	{ "print-flanks",     no_argument, &opt::printFlanks, 1},
 	{ "no-cascade",       no_argument, &opt::cascade, 0 },
@@ -389,19 +414,10 @@ string merge(const Graph& g,
 	unsigned k,
 	FastaRecord read1,
 	FastaRecord read2,
-	const ConnectPairsParams& params)
+	const ConnectPairsParams& params,
+	Counters& g_count)
 {
 	ConnectPairsResult result = connectPairs(k, read1, read2, g, params);
-
-	if (result.pathResult == FOUND_PATH) {
-		if (result.mergedSeqs.size() > 1)
-			return result.consensusSeq;
-		else
-			return result.mergedSeqs.front();
-	}
-	else
-		return "";
-
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 	switch (result.pathResult) {
@@ -448,6 +464,15 @@ string merge(const Graph& g,
 			++g_count.exceededMemLimit;
 			break;
 	}
+
+	if (result.pathResult == FOUND_PATH) {
+		if (result.mergedSeqs.size() > 1)
+			return result.consensusSeq;
+		else
+			return result.mergedSeqs.front();
+	}
+	else
+		return "";
 }
 
 void insertIntoScaffold(ofstream &scaffoldStream,
@@ -518,6 +543,23 @@ void kRun(const ConnectPairsParams& params,
 	map<FastaRecord, map<string, int> >::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
 	bool success;
+	Counters g_count;
+
+	g_count.noStartOrGoalKmer = 0;
+	g_count.noPath = 0;
+	g_count.uniquePath = 0;
+	g_count.multiplePaths = 0;
+	g_count.tooManyPaths = 0;
+	g_count.tooManyBranches = 0;
+	g_count.tooManyMismatches = 0;
+	g_count.tooManyReadMismatches = 0;
+	g_count.containsCycle = 0;
+	g_count.exceededMemLimit = 0;
+	g_count.traversalMemExceeded = 0;
+	g_count.readPairsProcessed = 0;
+	g_count.readPairsMerged = 0;
+	g_count.skipped = 0;
+
 
 	if (opt::verbose > 0)
 		cerr << "Reads inserted into k run = " << flanks.size() << endl;
@@ -531,7 +573,7 @@ void kRun(const ConnectPairsParams& params,
 			int startposition = read2_it->second["startposition"];
 			int endposition = read2_it->second["endposition"];
 			string tempSeq;
-			tempSeq = merge(g, k, read1, read2, params);
+			tempSeq = merge(g, k, read1, read2, params, g_count);
 
 			if (!tempSeq.empty()) {
 				success = true;
@@ -550,11 +592,70 @@ void kRun(const ConnectPairsParams& params,
 		else
 			read1_it++;
 	}
+
 	if (opt::verbose > 0) {
 		cerr << uniqueGapsClosed << " unique gaps closed for k"
 			<< k << endl;
+
+		if (opt::detailedStats > 0) {
+			cerr <<
+			//	"Processed " << initialFlankNumber << " pseudoreads\n"
+			//	"Merged (Unique path + Multiple paths): "
+			//		<< g_count.uniquePath + g_count.multiplePaths
+			//		<< /*" (" << setprecision(3) <<  (float)100
+			//		    * (g_count.uniquePath + g_count.multiplePaths) /
+			//		   initialFlankNumber
+			//		<< "%)*/"\n"
+				"No start/goal kmer: " << g_count.noStartOrGoalKmer
+					<< /*" (" << setprecision(3) << (float)100
+						* g_count.noStartOrGoalKmer / initialFlankNumber
+					<< "%)*/"\n"
+				"No path: " << g_count.noPath
+					<< /*" (" << setprecision(3) << (float)100
+						* g_count.noPath / initialFlankNumber
+					<< "%)*/"\n"
+				"Unique path: " << g_count.uniquePath
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.uniquePath / initialFlankNumber
+					<< "%)*/"\n"
+				"Multiple paths: " << g_count.multiplePaths
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.multiplePaths / initialFlankNumber
+					<< "%)*/"\n"
+				"Too many paths: " << g_count.tooManyPaths
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.tooManyPaths / initialFlankNumber
+					<< "%)*/"\n"
+				"Too many branches: " << g_count.tooManyBranches
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.tooManyBranches / initialFlankNumber
+					<< "%)*/"\n"
+				"Too many path/path mismatches: " << g_count.tooManyMismatches
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.tooManyMismatches / initialFlankNumber
+					<< "%)*/"\n"
+				"Too many path/read mismatches: " << g_count.tooManyReadMismatches
+					<< /*" (" << setprecision(3) << (float)100
+						* g_count.tooManyReadMismatches / initialFlankNumber
+					<< "%)*/"\n"
+				"Contains cycle: " << g_count.containsCycle
+					<< /*" (" << setprecision(3) << (float)100
+						* g_count.containsCycle / initialFlankNumber
+					<< "%)*/"\n"
+				"Exceeded mem limit: " << g_count.exceededMemLimit
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.exceededMemLimit / initialFlankNumber
+					<< "%)*/"\n"
+				"Skipped: " << g_count.skipped
+					<</* " (" << setprecision(3) << (float)100
+						* g_count.skipped / initialFlankNumber
+					<< "%)*/"\n"
+			/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+					<< "%\n"*/;
+		}
 		cerr << flanks.size() << " reads left" << endl;
 	}
+
 }
 
 typedef map<string, int> property_map;
@@ -624,6 +725,7 @@ void findFlanks(FastaRecord record,
 int main(int argc, char** argv)
 {
 	bool die = false;
+
 
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -848,11 +950,12 @@ int main(int argc, char** argv)
                	else {
 			if (opt::verbose > 0) {
 				cerr << gapsfound << " gaps found" << endl;
-				cerr << flanks.size() << " flanks extracted" << endl;
+				cerr << flanks.size() << " flanks extracted\n" << endl;
 			}
 			break;
         	}
 	} // flanks map should now be filled with every flank found.
+	//unsigned initialFlankNumber = flanks.size();
 
 	if (opt::printFlanks > 0) {
 		map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
@@ -902,6 +1005,7 @@ int main(int argc, char** argv)
 		opt::k = opt::kvector.at(i);
 		Kmer::setLength(opt::k);
 
+	//	Counters g_count;
 		BloomFilter bloom;
 
 		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
@@ -961,6 +1065,7 @@ int main(int argc, char** argv)
 		}
 		if (opt::verbose > 0)
 			cerr << "k" << opt::k << " run complete\n\n";
+
 	}
 
 	if (opt::verbose > 0) {
@@ -985,65 +1090,66 @@ int main(int argc, char** argv)
        	}
 	if (opt::verbose > 0) {
 		cerr << "New scaffold complete" << endl;
-		cerr << "gapsclosed = " << gapsclosed << endl;
-		cerr << "gapsclosedfinal = " << gapsclosedfinal << endl;
+		cerr << "Gaps closed = " << gapsclosed << endl;
+		cerr << (float)100 * gapsclosed / gapsfound << "%\n\n";
 	}
-	if (opt::verbose > 0) {
-		cerr <<
-			"Processed " << g_count.readPairsProcessed << " read pairs\n"
-			"Merged (Unique path + Multiple paths): "
-				<< g_count.uniquePath + g_count.multiplePaths
-				<< " (" << setprecision(3) <<  (float)100
-				    * (g_count.uniquePath + g_count.multiplePaths) /
-				   g_count.readPairsProcessed
-				<< "%)\n"
-			"No start/goal kmer: " << g_count.noStartOrGoalKmer
-				<< " (" << setprecision(3) << (float)100
-					* g_count.noStartOrGoalKmer / g_count.readPairsProcessed
-				<< "%)\n"
-			"No path: " << g_count.noPath
-				<< " (" << setprecision(3) << (float)100
-					* g_count.noPath / g_count.readPairsProcessed
-				<< "%)\n"
-			"Unique path: " << g_count.uniquePath
-				<< " (" << setprecision(3) << (float)100
-					* g_count.uniquePath / g_count.readPairsProcessed
-				<< "%)\n"
-			"Multiple paths: " << g_count.multiplePaths
-				<< " (" << setprecision(3) << (float)100
-					* g_count.multiplePaths / g_count.readPairsProcessed
-				<< "%)\n"
-			"Too many paths: " << g_count.tooManyPaths
-				<< " (" << setprecision(3) << (float)100
-					* g_count.tooManyPaths / g_count.readPairsProcessed
-				<< "%)\n"
-			"Too many branches: " << g_count.tooManyBranches
-				<< " (" << setprecision(3) << (float)100
-					* g_count.tooManyBranches / g_count.readPairsProcessed
-				<< "%)\n"
-			"Too many path/path mismatches: " << g_count.tooManyMismatches
-				<< " (" << setprecision(3) << (float)100
-					* g_count.tooManyMismatches / g_count.readPairsProcessed
-				<< "%)\n"
-			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
-				<< " (" << setprecision(3) << (float)100
-					* g_count.tooManyReadMismatches / g_count.readPairsProcessed
-				<< "%)\n"
-			"Contains cycle: " << g_count.containsCycle
-				<< " (" << setprecision(3) << (float)100
-					* g_count.containsCycle / g_count.readPairsProcessed
-				<< "%)\n"
-			"Exceeded mem limit: " << g_count.exceededMemLimit
-				<< " (" << setprecision(3) << (float)100
-					* g_count.exceededMemLimit / g_count.readPairsProcessed
-				<< "%)\n"
-			"Skipped: " << g_count.skipped
-				<< " (" << setprecision(3) << (float)100
-					* g_count.skipped / g_count.readPairsProcessed
-				<< "%)\n"
-		/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
-				<< "%\n"*/;
-	}
+
+//	if (opt::verbose > 0) {
+//		cerr <<
+//		//	"Processed " << initialFlankNumber << " pseudoreads\n"
+//			"Merged (Unique path + Multiple paths): "
+//				<< g_count.uniquePath + g_count.multiplePaths
+//				<< /*" (" << setprecision(3) <<  (float)100
+//				    * (g_count.uniquePath + g_count.multiplePaths) /
+//				   initialFlankNumber
+//				<< "%)*/"\n"
+//			"No start/goal kmer: " << g_count.noStartOrGoalKmer
+//				<< /*" (" << setprecision(3) << (float)100
+//					* g_count.noStartOrGoalKmer / initialFlankNumber
+//				<< "%)*/"\n"
+//			"No path: " << g_count.noPath
+//				<< /*" (" << setprecision(3) << (float)100
+//					* g_count.noPath / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Unique path: " << g_count.uniquePath
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.uniquePath / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Multiple paths: " << g_count.multiplePaths
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.multiplePaths / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Too many paths: " << g_count.tooManyPaths
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.tooManyPaths / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Too many branches: " << g_count.tooManyBranches
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.tooManyBranches / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Too many path/path mismatches: " << g_count.tooManyMismatches
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.tooManyMismatches / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
+//				<< /*" (" << setprecision(3) << (float)100
+//					* g_count.tooManyReadMismatches / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Contains cycle: " << g_count.containsCycle
+//				<< /*" (" << setprecision(3) << (float)100
+//					* g_count.containsCycle / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Exceeded mem limit: " << g_count.exceededMemLimit
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.exceededMemLimit / initialFlankNumber
+//				<< "%)*/"\n"
+//			"Skipped: " << g_count.skipped
+//				<</* " (" << setprecision(3) << (float)100
+//					* g_count.skipped / initialFlankNumber
+//				<< "%)*/"\n"
+//		/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
+//				<< "%\n"*/;
+//	}
 	assert_good(scaffoldStream, scaffoldOutputPath.c_str());
 	scaffoldStream.close();
 	assert_good(mergedStream, mergedOutputPath.c_str());
