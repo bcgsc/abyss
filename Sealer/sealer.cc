@@ -69,7 +69,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"      --detailed-stats		outputs detailed stats\n"
 "      --print-flanks		outputs flank files\n"
 "      --no-cascade		do not use cascading bloom filter [default]\n"
 "  -S, --input-scaffold=FILE  	load scaffold from FILE\n"
@@ -99,10 +98,10 @@ static const char USAGE_MESSAGE[] =
 "                             	to the beginnings of reads. Takes more time\n"
 "                             	but improves results when bloom filter false\n"
 "                             	positive rate is high [disabled]\n"
-"  -m, --read-mismatches=N    	max mismatches between paths and reads; use\n"
+"  -m, --flank-mismatches=N    	max mismatches between paths and flanks; use\n"
 "                             	'nolimit' for no limit [nolimit]\n"
 "  -M, --max-mismatches=N     	max mismatches between all alternate paths;\n"
-"                             	use 'nolimit' for no limit [2]\n"
+"                             	use 'nolimit' for no limit [nolimit]\n"
 "  -n  --no-limits            	disable all limits; equivalent to\n"
 "                             	'-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   	prefix of output FASTA files [required]\n"
@@ -120,6 +119,7 @@ static const char USAGE_MESSAGE[] =
 "                             	for graph traversal [500M]\n"
 "  -t, --trace-file=FILE      	write graph search stats to FILE\n"
 "  -v, --verbose              	display verbose output\n"
+"				-v -v for more detailed stats\n"
 "      --help                 	display this help and exit\n"
 "      --version              	output version information and exit\n"
 "\n"
@@ -191,7 +191,7 @@ namespace opt {
 	static string outputPrefix;
 
 	/** Max mismatches allowed when building consensus seqs */
-	unsigned maxMismatches = 2;
+	unsigned maxMismatches = NO_LIMIT;
 
 	/** Only process reads that contain this substring. */
 	static string readName;
@@ -205,8 +205,8 @@ namespace opt {
 	/** Mask bases not in reads */
 	static int mask = 0;
 
-	/** Max mismatches between consensus and original reads */
-	static unsigned maxReadMismatches = NO_LIMIT;
+	/** Max mismatches between consensus and flanks */
+	static unsigned maxFlankMismatches = NO_LIMIT;
 
 	/** Use cascading bloom filter in addition to plain bloom filter */
 	static int cascade = 0;
@@ -219,23 +219,6 @@ namespace opt {
 }
 
 /** Counters */
-
-//static struct {
-//	size_t noStartOrGoalKmer;
-//	size_t noPath;
-//	size_t uniquePath;
-//	size_t multiplePaths;
-//	size_t tooManyPaths;
-//	size_t tooManyBranches;
-//	size_t tooManyMismatches;
-//	size_t tooManyReadMismatches;
-//	size_t containsCycle;
-//	size_t exceededMemLimit;
-//	size_t traversalMemExceeded;
-//	size_t readPairsProcessed;
-//	size_t readPairsMerged;
-//	size_t skipped;
-//} g_count;
 
 struct Counters {
 	size_t noStartOrGoalKmer;
@@ -253,8 +236,6 @@ struct Counters {
 	size_t readPairsMerged;
 	size_t skipped;
 };
-
-//static Counters g_count;
 
 static const char shortopts[] = "S:L:D:b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
@@ -287,7 +268,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
-	{ "read-mismatches",  required_argument, NULL, 'm' },
+	{ "flank-mismatches",  required_argument, NULL, 'm' },
 	{ "max-mismatches",   required_argument, NULL, 'M' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
@@ -465,7 +446,9 @@ string merge(const Graph& g,
 	}
 
 	if (result.pathResult == FOUND_PATH) {
-		if (result.mergedSeqs.size() > 1)
+		if  (result.pathMismatches > params.maxPathMismatches) 
+			return "";
+		else if (result.mergedSeqs.size() > 1)
 			return result.consensusSeq;
 		else
 			return result.mergedSeqs.front();
@@ -542,8 +525,8 @@ void kRun(const ConnectPairsParams& params,
 	map<FastaRecord, map<string, int> >::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
 	bool success;
-	Counters g_count;
 
+	Counters g_count;
 	g_count.noStartOrGoalKmer = 0;
 	g_count.noPath = 0;
 	g_count.uniquePath = 0;
@@ -571,7 +554,7 @@ void kRun(const ConnectPairsParams& params,
 			int startposition = read2_it->second["startposition"];
 			int endposition = read2_it->second["endposition"];
 			string tempSeq;
-			
+
 			tempSeq = merge(g, k, read1, read2, params, g_count);
 
 			if (!tempSeq.empty()) {
@@ -596,61 +579,19 @@ void kRun(const ConnectPairsParams& params,
 		cerr << uniqueGapsClosed << " unique gaps closed for k"
 			<< k << endl;
 
-		if (opt::detailedStats > 0) {
+		if (opt::verbose > 1) {
 			cerr <<
-			//	"Processed " << initialFlankNumber << " pseudoreads\n"
-			//	"Merged (Unique path + Multiple paths): "
-			//		<< g_count.uniquePath + g_count.multiplePaths
-			//		<< /*" (" << setprecision(3) <<  (float)100
-			//		    * (g_count.uniquePath + g_count.multiplePaths) /
-			//		   initialFlankNumber
-			//		<< "%)*/"\n"
-				"No start/goal kmer: " << g_count.noStartOrGoalKmer
-					<< /*" (" << setprecision(3) << (float)100
-						* g_count.noStartOrGoalKmer / initialFlankNumber
-					<< "%)*/"\n"
-				"No path: " << g_count.noPath
-					<< /*" (" << setprecision(3) << (float)100
-						* g_count.noPath / initialFlankNumber
-					<< "%)*/"\n"
-				"Unique path: " << g_count.uniquePath
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.uniquePath / initialFlankNumber
-					<< "%)*/"\n"
-				"Multiple paths: " << g_count.multiplePaths
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.multiplePaths / initialFlankNumber
-					<< "%)*/"\n"
-				"Too many paths: " << g_count.tooManyPaths
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.tooManyPaths / initialFlankNumber
-					<< "%)*/"\n"
-				"Too many branches: " << g_count.tooManyBranches
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.tooManyBranches / initialFlankNumber
-					<< "%)*/"\n"
-				"Too many path/path mismatches: " << g_count.tooManyMismatches
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.tooManyMismatches / initialFlankNumber
-					<< "%)*/"\n"
-				"Too many path/read mismatches: " << g_count.tooManyReadMismatches
-					<< /*" (" << setprecision(3) << (float)100
-						* g_count.tooManyReadMismatches / initialFlankNumber
-					<< "%)*/"\n"
-				"Contains cycle: " << g_count.containsCycle
-					<< /*" (" << setprecision(3) << (float)100
-						* g_count.containsCycle / initialFlankNumber
-					<< "%)*/"\n"
-				"Exceeded mem limit: " << g_count.exceededMemLimit
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.exceededMemLimit / initialFlankNumber
-					<< "%)*/"\n"
-				"Skipped: " << g_count.skipped
-					<</* " (" << setprecision(3) << (float)100
-						* g_count.skipped / initialFlankNumber
-					<< "%)*/"\n"
-			/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
-					<< "%\n"*/;
+				"No start/goal kmer: " 	  	  << g_count.noStartOrGoalKmer <<"\n"
+				"No path: " 			  << g_count.noPath << "\n"
+				"Unique path: " 		  << g_count.uniquePath <<"\n"
+				"Multiple paths: " 		  << g_count.multiplePaths <<"\n"
+				"Too many paths: " 		  << g_count.tooManyPaths <<"\n"
+				"Too many branches: " 		  << g_count.tooManyBranches <<"\n"
+				"Too many path/path mismatches: " << g_count.tooManyMismatches <<"\n"
+				"Too many path/read mismatches: " << g_count.tooManyReadMismatches <<"\n"
+				"Contains cycle: " 		  << g_count.containsCycle <<"\n"
+				"Exceeded mem limit: " 		  << g_count.exceededMemLimit <<"\n"
+				"Skipped: " 			  << g_count.skipped <<"\n";
 		}
 		cerr << flanks.size() << " reads left" << endl;
 	}
@@ -769,10 +710,10 @@ int main(int argc, char** argv)
 		  case 'l':
 			opt::longSearch = true; break;
 		  case 'm':
-			setMaxOption(opt::maxReadMismatches, arg); break;
+			setMaxOption(opt::maxFlankMismatches, arg); break;
 		  case 'n':
 			opt::maxBranches = NO_LIMIT;
-			opt::maxReadMismatches = NO_LIMIT;
+			opt::maxFlankMismatches = NO_LIMIT;
 			opt::maxMismatches = NO_LIMIT;
 			opt::maxPaths = NO_LIMIT;
 			break;
@@ -925,7 +866,7 @@ int main(int argc, char** argv)
 	params.maxPaths = opt::maxPaths;
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
-	params.maxReadMismatches = opt::maxReadMismatches;
+	params.maxReadMismatches = opt::maxFlankMismatches;
 	params.fixErrors = opt::fixErrors;
 	params.longSearch = opt::longSearch;
 	params.maskBases = opt::mask;
@@ -1002,7 +943,6 @@ int main(int argc, char** argv)
 		opt::k = opt::kvector.at(i);
 		Kmer::setLength(opt::k);
 
-	//	Counters g_count;
 		BloomFilter bloom;
 
 		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
@@ -1061,7 +1001,8 @@ int main(int argc, char** argv)
 			kRun(params, opt::k, g, allmerged, flanks, gapsclosed);
 		}
 		if (opt::verbose > 0)
-			cerr << "k" << opt::k << " run complete\n\n";
+			cerr << "k" << opt::k << " run complete\n" 
+				<< "Total gaps closed so far = " << gapsclosed << "\n\n";
 	}
 
 	if (opt::verbose > 0) {
