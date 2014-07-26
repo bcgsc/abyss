@@ -382,11 +382,7 @@ ABySS has a built-in support for SQLite database. With this option activated, it
 
 ## Activating the functionality
 
-Install SQLite. (See [Quick Start](#quick-start) for details)
-
-	sudo yum install sqlite3 sqlite3-devel
-	sudo apt-get install sqlite3 sqlite3-devel
-	brew install sqlite3
+Download SQLite [here](http://www.sqlite.org/download.html) and install. (See [Quick Start](#quick-start) for details)
 
 To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in [Compiling ABySS from GiHub](#compiling-abyss-from-github) / [Compiling ABySS from source](#compiling-abyss-from-source).
 
@@ -403,7 +399,7 @@ Of `abyss-pe`:
 
 For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.db':
 
-	abyss-pe url=/abyss/test.db library=Ecoli strain=O121 library=pe200 [other options]
+	abyss-pe url=/abyss/test.db species=Ecoli strain=O121 library=pe200 [other options]
 
 ## Helper programs
 Found in your `path`:
@@ -418,7 +414,7 @@ Usage:
 For example,
 
 	abyss-db-txt repo.db
-	abyss-db-txt repo.db ./
+
 	abyss-db-csv repo.db DistanceEst
 	abyss-db-csv repo.db DistanceEst abyss-scaffold
 	abyss-db-csv repo.db --all
