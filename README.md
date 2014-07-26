@@ -408,19 +408,20 @@ For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200
 ## Helper programs
 Found in your `path`:
  * `abyss-db-txt`: create a flat file showing entire repository at a glance
- * `abyss-db-csv`: create `.csv` file(s) of database
+ * `abyss-db-csv`: create `.csv` table(s) from the repository
 
 Usage:
 
     abyss-db-txt /your/repository
-    abyss-db-csv /your/repository /designated/dir program(s)
+    abyss-db-csv /your/repository program(s)
 
 For example,
 
 	abyss-db-txt repo.db
 	abyss-db-txt repo.db ./
-	abyss-db-csv repo.db ./ DistanceEst abyss-scaffold
-	abyss-db-csv repo.db ./ *
+	abyss-db-csv repo.db DistanceEst
+	abyss-db-csv repo.db DistanceEst abyss-scaffold
+	abyss-db-csv repo.db --all
 
 Publications
 ============
