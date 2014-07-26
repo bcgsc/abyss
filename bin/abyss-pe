@@ -611,9 +611,8 @@ endif
 	ln -sf $< $@
 
 #if _SQL
-# Claim the end of a db reporting cycle
 finishDb:
-	rm -f db.txt
+	@rm -f db.txt
 #endif
 
 # Create the final BAM file
