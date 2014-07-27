@@ -60,7 +60,8 @@ create table if not exists Libraries (\
 library_name text primary key,strain_name text,\
 foreign key(strain_name) references Strains(strain_name));\
 create table if not exists Run_pe (\
-run_id text primary key,species_name text,strain_name,library_name text,abyss_version text,\
+run_id text primary key,species_name text,strain_name text,library_name text,abyss_version text,\
+pe_name text,pe_k integer,pe_lib text,\
 time_start_run not null default (datetime(current_timestamp,'localtime')),stage integer default 0,\
 foreign key(library_name) references Libraries(library_name));";
 
@@ -76,8 +77,9 @@ void DB::insertToMetaTables(const dbVars& v)
 insert or ignore into species values('" << v[3] << "');\
 insert or ignore into strains values('" << v[2] << "','" << v[3] << "');\
 insert or ignore into libraries values('" << v[1] << "','" << v[2] << "');\
-insert into run_pe(run_id,species_name,strain_name,library_name,abyss_version) \
-values('" << v[0] << "','" << v[3] << "','" << v[2] << "','" << v[1] << "','" << VERSION << "');";
+insert into run_pe(run_id,species_name,strain_name,library_name,abyss_version,pe_name,pe_k,pe_lib) \
+values('" << v[0] << "','" << v[3] << "','" << v[2] << "','" << v[1] << "','" << VERSION << "','" << v[4] <<
+ "','" << v[5] << "','" << v[6] << "');";
 
 	if (query(sst.str()) && verbose_val > 1)
 		cerr << sst.str() << endl;
@@ -92,7 +94,7 @@ string DB::initializeRun()
 		dbVars iV;
 		string eachLine;
 		while (getline(ifile, eachLine)) iV.push_back(eachLine);
-		if (iV.size() == 4) {
+		if (iV.size() == 7) {
 			insertToMetaTables(iV);
 			ofstream ofile("db.txt");
 			ofile << iV[0] << "\n";
