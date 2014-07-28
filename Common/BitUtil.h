@@ -121,7 +121,7 @@ static inline void copyBits(char* src, char* dest, size_t bits,
  *        first bit of first byte of in
  * @param bitOffset bit offset into dest
  */
-static void readBits(std::istream& in, char* dest, size_t bits,
+static inline void readBits(std::istream& in, char* dest, size_t bits,
 	size_t bitOffset = 0, BitwiseOp op = BITWISE_OVERWRITE)
 {
 	(void)readBits;

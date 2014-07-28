@@ -23,6 +23,7 @@
 #include "Common/IOUtil.h"
 #include "DataLayer/FastaReader.h"
 #include <iostream>
+#include <vector>
 
 #if _OPENMP
 # include <omp.h>
@@ -82,18 +83,20 @@ namespace Bloom {
 		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 		uint64_t count = 0;
 #pragma omp parallel
-		for (std::string seq[taskIOBufferSize];;) {
+		for (std::vector<std::string> buffer(taskIOBufferSize);;) {
+			buffer.clear();
 			bool good = true;
-			size_t i = 0;
 #pragma omp critical(in)
-			for (; good && i < taskIOBufferSize; i++)
-				good = in >> seq[i];
-			if (!good)
-				i--;
-			if (i == 0)
+			for (; good && buffer.size() < taskIOBufferSize;) {
+				std::string seq;
+				good = in >> seq;
+				if (good)
+					buffer.push_back(seq);
+			}
+			if (buffer.size() == 0)
 				break;
-			for (size_t j = 0; j < i; j++) {
-				loadSeq(bloomFilter, k, seq[j]);
+			for (size_t j = 0; j < buffer.size(); j++) {
+				loadSeq(bloomFilter, k, buffer.at(j));
 				if (verbose)
 #pragma omp critical(cerr)
 				{
@@ -126,7 +129,7 @@ namespace Bloom {
 		}
 	}
 
-	static void writeHeader(std::ostream& out, const FileHeader& header)
+	inline static void writeHeader(std::ostream& out, const FileHeader& header)
 	{
 		(void)writeHeader;
 

@@ -585,7 +585,7 @@ int main(int argc, char** argv)
 			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
 #else
 		for (int i = optind; i < argc; i++)
-			Bloom::loadFile(cascadingBloom, opt::k, string(argv[i]), opt::verbose);
+			Bloom::loadFile(*cascadingBloom, opt::k, string(argv[i]), opt::verbose);
 #endif
 		bloom = &cascadingBloom->getBloomFilter(cascadingBloom->MAX_COUNT-1);
 	}
