@@ -24,13 +24,13 @@ SUBDIRS = \
 	bin \
 	doc \
 	Common \
-	Assembly \
-	DataLayer \
-	FMIndex \
 	Graph \
+	DataLayer \
+	$(DataBase) \
+	FMIndex \
+	Assembly \
 	dialign \
 	Align \
-	$(DataBase) \
 	ABYSS $(Parallel) \
 	AdjList \
 	Bloom \
