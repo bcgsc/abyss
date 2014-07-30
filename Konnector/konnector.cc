@@ -436,7 +436,7 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 {
 	string str;
 	getline(in, str);
-	if (in.good() && str == "nolimit") {
+	if (!in.fail() && str.compare("nolimit")==0) {
 		arg = NO_LIMIT;
 	} else {
 		istringstream ss(str);
