@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libcommon.a libinsorderedmap.a
+noinst_LIBRARIES = libcommon.a
 
 libcommon_a_CPPFLAGS = -I$(top_srcdir)
 
@@ -18,6 +18,7 @@ libcommon_a_SOURCES = \
 	Hash.h \
 	HashFunction.h \
 	Histogram.cpp Histogram.h \
+	InsOrderedMap.h \
 	IOUtil.h \
 	Iterator.h \
 	Kmer.cpp Kmer.h \
@@ -41,7 +42,3 @@ libcommon_a_SOURCES = \
 	KmerIterator.h \
 	MemUtils.h \
 	city.cc city.h
-
-libinsorderedmap_a_CPPFLAGS = -I$(top_srcdir)
-
-libinsorderedmap_a_SOURCES = InsOrderedMap.h
