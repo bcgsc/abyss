@@ -558,9 +558,6 @@ void kRun(const ConnectPairsParams& params,
 
 	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
 
-//	if (opt::verbose > 0)
-//		cerr << "Reads inserted into k run = " << flanks.size() << endl;
-
 	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
 		success = false;
 		FastaRecord read1 = read1_it->first;
@@ -598,36 +595,15 @@ void kRun(const ConnectPairsParams& params,
 	printLog(logStream, "No path: " 			+ sizetToString(g_count.noPath) + "\n");
 	printLog(logStream, "Unique path: " 			+ sizetToString(g_count.uniquePath) + "\n");
 	printLog(logStream, "Multiple paths: " 			+ sizetToString(g_count.multiplePaths) + "\n");
-        printLog(logStream, "Too many paths: " 			+ sizetToString(g_count.tooManyPaths) + "\n");
-        printLog(logStream, "Too many branches: " 		+ sizetToString(g_count.tooManyBranches) + "\n");
-        printLog(logStream, "Too many path/path mismatches: " 	+ sizetToString(g_count.tooManyMismatches) + "\n");
-        printLog(logStream, "Too many path/read mismatches: " 	+ sizetToString(g_count.tooManyReadMismatches) + "\n");
-        printLog(logStream, "Contains cycle: " 			+ sizetToString(g_count.containsCycle) + "\n");
-        printLog(logStream, "Exceeded mem limit: " 		+ sizetToString(g_count.exceededMemLimit) + "\n");
-        printLog(logStream, "Skipped: " 			+ sizetToString(g_count.skipped) + "\n");
+	printLog(logStream, "Too many paths: " 			+ sizetToString(g_count.tooManyPaths) + "\n");
+	printLog(logStream, "Too many branches: " 		+ sizetToString(g_count.tooManyBranches) + "\n");
+	printLog(logStream, "Too many path/path mismatches: " 	+ sizetToString(g_count.tooManyMismatches) + "\n");
+	printLog(logStream, "Too many path/read mismatches: " 	+ sizetToString(g_count.tooManyReadMismatches) + "\n");
+	printLog(logStream, "Contains cycle: " 			+ sizetToString(g_count.containsCycle) + "\n");
+	printLog(logStream, "Exceeded mem limit: " 		+ sizetToString(g_count.exceededMemLimit) + "\n");
+	printLog(logStream, "Skipped: " 			+ sizetToString(g_count.skipped) + "\n");
 
 	printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
-
-//	if (opt::verbose > 0) {
-//		cerr << uniqueGapsClosed << " unique gaps closed for k"
-//			<< k << endl;
-//
-//		if (opt::verbose > 1) {
-//			cerr <<
-//				"No start/goal kmer: " 	  	  << g_count.noStartOrGoalKmer <<"\n"
-//				"No path: " 			  << g_count.noPath << "\n"
-//				"Unique path: " 		  << g_count.uniquePath <<"\n"
-//				"Multiple paths: " 		  << g_count.multiplePaths <<"\n"
-//				"Too many paths: " 		  << g_count.tooManyPaths <<"\n"
-//				"Too many branches: " 		  << g_count.tooManyBranches <<"\n"
-//				"Too many path/path mismatches: " << g_count.tooManyMismatches <<"\n"
-//				"Too many path/read mismatches: " << g_count.tooManyReadMismatches <<"\n"
-//				"Contains cycle: " 		  << g_count.containsCycle <<"\n"
-//				"Exceeded mem limit: " 		  << g_count.exceededMemLimit <<"\n"
-//				"Skipped: " 			  << g_count.skipped <<"\n";
-//		}
-//		cerr << flanks.size() << " reads left" << endl;
-//	}
 }
 
 typedef map<string, int> property_map;
