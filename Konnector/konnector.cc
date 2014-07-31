@@ -334,10 +334,11 @@ static void connectPair(const Graph& g,
 						++g_count.tooManyMismatches;
 					else
 						++g_count.tooManyReadMismatches;
-#pragma omp critical(read1Stream)
-					read1Stream << read1;
-#pragma omp critical(read2Stream)
-					read2Stream << read2;
+#pragma omp critical(readStream)
+					{
+						read1Stream << read1;
+						read2Stream << read2;
+					}
 				}
 				else if (paths.size() > 1) {
 #pragma omp atomic
@@ -374,10 +375,10 @@ static void connectPair(const Graph& g,
 				break;
 		}
 
-		if (result.pathResult != FOUND_PATH) {
-#pragma omp critical(read1Stream)
+		if (result.pathResult != FOUND_PATH)
+#pragma omp critical(readStream)
+		{
 			read1Stream << read1;
-#pragma omp critical(read2Stream)
 			read2Stream << read2;
 		}
 	}
