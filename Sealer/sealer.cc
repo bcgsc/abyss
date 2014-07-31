@@ -237,9 +237,6 @@ struct Counters {
 	size_t skipped;
 };
 
-//static Counters g_count;
-
-
 static const char shortopts[] = "S:L:D:b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
@@ -465,53 +462,6 @@ string merge(const Graph& g,
 	}
 	else
 		return "";
-
-
-	vector<FastaRecord>& paths = result.mergedSeqs;
-	switch (result.pathResult) {
-
-		case NO_PATH:
-			assert(paths.empty());
-			if (result.foundStartKmer && result.foundGoalKmer)
-				++g_count.noPath;
-			else {
-				++g_count.noStartOrGoalKmer;
-			}
-			break;
-
-		case FOUND_PATH:
-			assert(!paths.empty());
-			if (result.pathMismatches > params.maxPathMismatches ||
-					result.readMismatches > params.maxReadMismatches) {
-				if (result.pathMismatches > params.maxPathMismatches)
-					++g_count.tooManyMismatches;
-				else
-					++g_count.tooManyReadMismatches;
-			}
-			else if (paths.size() > 1) {
-				++g_count.multiplePaths;
-			}
-			else {
-				++g_count.uniquePath;
-			}
-			break;
-
-		case TOO_MANY_PATHS:
-			++g_count.tooManyPaths;
-			break;
-
-		case TOO_MANY_BRANCHES:
-			++g_count.tooManyBranches;
-			break;
-
-		case PATH_CONTAINS_CYCLE:
-			++g_count.containsCycle;
-			break;
-
-		case EXCEEDED_MEM_LIMIT:
-			++g_count.exceededMemLimit;
-			break;
-	}
 }
 
 void printLog(ofstream &logStream, string output) {
@@ -606,9 +556,10 @@ void kRun(const ConnectPairsParams& params,
 	g_count.readPairsMerged = 0;
 	g_count.skipped = 0;
 
+	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
 
-	if (opt::verbose > 0)
-		cerr << "Reads inserted into k run = " << flanks.size() << endl;
+	//if (opt::verbose > 0)
+	//	cerr << "Reads inserted into k run = " << flanks.size() << endl;
 
 	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
 		success = false;
@@ -619,6 +570,7 @@ void kRun(const ConnectPairsParams& params,
 			int startposition = read2_it->second["startposition"];
 			int endposition = read2_it->second["endposition"];
 			string tempSeq;
+
 			tempSeq = merge(g, k, read1, read2, params, g_count);
 
 			if (!tempSeq.empty()) {
@@ -640,26 +592,21 @@ void kRun(const ConnectPairsParams& params,
 			read1_it++;
 	}
 
-	if (opt::verbose > 0) {
-		cerr << uniqueGapsClosed << " unique gaps closed for k"
-			<< k << endl;
+	printLog(logStream, IntToString(uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
 
-		if (opt::verbose > 1) {
-			cerr <<
-				"No start/goal kmer: " 	  	  << g_count.noStartOrGoalKmer <<"\n"
-				"No path: " 			  << g_count.noPath << "\n"
-				"Unique path: " 		  << g_count.uniquePath <<"\n"
-				"Multiple paths: " 		  << g_count.multiplePaths <<"\n"
-				"Too many paths: " 		  << g_count.tooManyPaths <<"\n"
-				"Too many branches: " 		  << g_count.tooManyBranches <<"\n"
-				"Too many path/path mismatches: " << g_count.tooManyMismatches <<"\n"
-				"Too many path/read mismatches: " << g_count.tooManyReadMismatches <<"\n"
-				"Contains cycle: " 		  << g_count.containsCycle <<"\n"
-				"Exceeded mem limit: " 		  << g_count.exceededMemLimit <<"\n"
-				"Skipped: " 			  << g_count.skipped <<"\n";
-		}
-		cerr << flanks.size() << " reads left" << endl;
-	}
+	printLog(logStream, "No start/goal kmer: " 		+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
+	printLog(logStream, "No path: " 			+ sizetToString(g_count.noPath) + "\n");
+	printLog(logStream, "Unique path: " 			+ sizetToString(g_count.uniquePath) + "\n");
+	printLog(logStream, "Multiple paths: " 			+ sizetToString(g_count.multiplePaths) + "\n");
+	printLog(logStream, "Too many paths: " 			+ sizetToString(g_count.tooManyPaths) + "\n");
+	printLog(logStream, "Too many branches: " 		+ sizetToString(g_count.tooManyBranches) + "\n");
+	printLog(logStream, "Too many path/path mismatches: " 	+ sizetToString(g_count.tooManyMismatches) + "\n");
+	printLog(logStream, "Too many path/read mismatches: " 	+ sizetToString(g_count.tooManyReadMismatches) + "\n");
+	printLog(logStream, "Contains cycle: " 			+ sizetToString(g_count.containsCycle) + "\n");
+	printLog(logStream, "Exceeded mem limit: " 		+ sizetToString(g_count.exceededMemLimit) + "\n");
+	printLog(logStream, "Skipped: " 			+ sizetToString(g_count.skipped) + "\n");
+
+	printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
 
 }
 
@@ -730,7 +677,6 @@ void findFlanks(FastaRecord record,
 int main(int argc, char** argv)
 {
 	bool die = false;
-
 
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -1085,10 +1031,6 @@ int main(int argc, char** argv)
 //				cerr << "Starting K run with cascading bloom filter" << endl;
 			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream);
 		}
-		if (opt::verbose > 0)
-			cerr << "k" << opt::k << " run complete\n\n";
-
-	}
 
 		temp = "k" + IntToString(opt::k) + " run complete\n"
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
