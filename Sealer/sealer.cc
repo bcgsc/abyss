@@ -193,7 +193,7 @@ namespace opt {
 	/** Max mismatches allowed when building consensus seqs */
 	unsigned maxMismatches = NO_LIMIT;
 
-	/** Only process reads that contain this substring. */
+	/** Only process flanks that contain this substring. */
 	static string readName;
 
 	/** Max mem used per thread during graph traversal */
@@ -202,7 +202,7 @@ namespace opt {
 	/** Output file for graph search stats */
 	static string tracefilePath;
 
-	/** Mask bases not in reads */
+	/** Mask bases not in flanks */
 	static int mask = 0;
 
 	/** Max mismatches between consensus and flanks */
@@ -374,11 +374,18 @@ string reversecompliment(string str) {
         return result;
 }
 
+string sizetToString (size_t a)
+{
+	ostringstream temp;
+	temp << a;
+	return temp.str();
+}
+
 string IntToString (int a)
 {
-    ostringstream temp;
-    temp<<a;
-    return temp.str();
+	ostringstream temp;
+	temp<<a;
+	return temp.str();
 }
 
 int StringToInt(string num) {
@@ -446,7 +453,7 @@ string merge(const Graph& g,
 	}
 
 	if (result.pathResult == FOUND_PATH) {
-		if  (result.pathMismatches > params.maxPathMismatches) 
+		if  (result.pathMismatches > params.maxPathMismatches)
 			return "";
 		else if (result.mergedSeqs.size() > 1)
 			return result.consensusSeq;
@@ -455,6 +462,12 @@ string merge(const Graph& g,
 	}
 	else
 		return "";
+}
+
+void printLog(ofstream &logStream, string output) {
+	logStream << output;
+	if (opt::verbose > 0)
+		cerr << output;
 }
 
 void insertIntoScaffold(ofstream &scaffoldStream,
@@ -479,7 +492,7 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 				StringToInt(pos_it->second["gap"]) + (opt::flankLength * 2),
 				pos_it->second["seq"]
 			);
-			mergedStream << ">" << record.id << " gap closed"  << endl;
+			mergedStream << ">" << record.id << endl;
                         mergedStream << pos_it->second["seq"] << endl;
 			gapsclosedfinal++;
 		}
@@ -519,7 +532,8 @@ void kRun(const ConnectPairsParams& params,
 	const Graph& g,
 	map<string, map<int, map<string, string> > > &allmerged,
 	map<FastaRecord, map<FastaRecord, map<string, int> > > &flanks,
-	unsigned &gapsclosed)
+	unsigned &gapsclosed,
+	ofstream &logStream)
 {
 	map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
 	map<FastaRecord, map<string, int> >::iterator read2_it;
@@ -542,8 +556,10 @@ void kRun(const ConnectPairsParams& params,
 	g_count.readPairsMerged = 0;
 	g_count.skipped = 0;
 
-	if (opt::verbose > 0)
-		cerr << "Reads inserted into k run = " << flanks.size() << endl;
+	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
+
+//	if (opt::verbose > 0)
+//		cerr << "Reads inserted into k run = " << flanks.size() << endl;
 
 	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
 		success = false;
@@ -565,8 +581,9 @@ void kRun(const ConnectPairsParams& params,
 					= tempSeq;
 				gapsclosed++;
 				uniqueGapsClosed++;
-				if (gapsclosed % 100 == 0 && opt::verbose > 0)
-					cerr << gapsclosed << " gaps closed so far" << endl;
+				if (gapsclosed % 100 == 0)
+					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
+//					cerr << gapsclosed << " gaps closed so far" << endl;
 			}
 		}
 		if (success)
@@ -575,26 +592,42 @@ void kRun(const ConnectPairsParams& params,
 			read1_it++;
 	}
 
-	if (opt::verbose > 0) {
-		cerr << uniqueGapsClosed << " unique gaps closed for k"
-			<< k << endl;
+	printLog(logStream, IntToString(uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
 
-		if (opt::verbose > 1) {
-			cerr <<
-				"No start/goal kmer: " 	  	  << g_count.noStartOrGoalKmer <<"\n"
-				"No path: " 			  << g_count.noPath << "\n"
-				"Unique path: " 		  << g_count.uniquePath <<"\n"
-				"Multiple paths: " 		  << g_count.multiplePaths <<"\n"
-				"Too many paths: " 		  << g_count.tooManyPaths <<"\n"
-				"Too many branches: " 		  << g_count.tooManyBranches <<"\n"
-				"Too many path/path mismatches: " << g_count.tooManyMismatches <<"\n"
-				"Too many path/read mismatches: " << g_count.tooManyReadMismatches <<"\n"
-				"Contains cycle: " 		  << g_count.containsCycle <<"\n"
-				"Exceeded mem limit: " 		  << g_count.exceededMemLimit <<"\n"
-				"Skipped: " 			  << g_count.skipped <<"\n";
-		}
-		cerr << flanks.size() << " reads left" << endl;
-	}
+	printLog(logStream, "No start/goal kmer: " 		+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
+	printLog(logStream, "No path: " 			+ sizetToString(g_count.noPath) + "\n");
+	printLog(logStream, "Unique path: " 			+ sizetToString(g_count.uniquePath) + "\n");
+	printLog(logStream, "Multiple paths: " 			+ sizetToString(g_count.multiplePaths) + "\n");
+        printLog(logStream, "Too many paths: " 			+ sizetToString(g_count.tooManyPaths) + "\n");
+        printLog(logStream, "Too many branches: " 		+ sizetToString(g_count.tooManyBranches) + "\n");
+        printLog(logStream, "Too many path/path mismatches: " 	+ sizetToString(g_count.tooManyMismatches) + "\n");
+        printLog(logStream, "Too many path/read mismatches: " 	+ sizetToString(g_count.tooManyReadMismatches) + "\n");
+        printLog(logStream, "Contains cycle: " 			+ sizetToString(g_count.containsCycle) + "\n");
+        printLog(logStream, "Exceeded mem limit: " 		+ sizetToString(g_count.exceededMemLimit) + "\n");
+        printLog(logStream, "Skipped: " 			+ sizetToString(g_count.skipped) + "\n");
+
+	printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
+
+//	if (opt::verbose > 0) {
+//		cerr << uniqueGapsClosed << " unique gaps closed for k"
+//			<< k << endl;
+//
+//		if (opt::verbose > 1) {
+//			cerr <<
+//				"No start/goal kmer: " 	  	  << g_count.noStartOrGoalKmer <<"\n"
+//				"No path: " 			  << g_count.noPath << "\n"
+//				"Unique path: " 		  << g_count.uniquePath <<"\n"
+//				"Multiple paths: " 		  << g_count.multiplePaths <<"\n"
+//				"Too many paths: " 		  << g_count.tooManyPaths <<"\n"
+//				"Too many branches: " 		  << g_count.tooManyBranches <<"\n"
+//				"Too many path/path mismatches: " << g_count.tooManyMismatches <<"\n"
+//				"Too many path/read mismatches: " << g_count.tooManyReadMismatches <<"\n"
+//				"Contains cycle: " 		  << g_count.containsCycle <<"\n"
+//				"Exceeded mem limit: " 		  << g_count.exceededMemLimit <<"\n"
+//				"Skipped: " 			  << g_count.skipped <<"\n";
+//		}
+//		cerr << flanks.size() << " reads left" << endl;
+//	}
 }
 
 typedef map<string, int> property_map;
@@ -846,6 +879,11 @@ int main(int argc, char** argv)
 
 //	DBGBloom<BloomFilter> g(bloom);
 
+	string logOutputPath(opt::outputPrefix);
+	logOutputPath.append("_log.txt");
+	ofstream logStream(logOutputPath.c_str());
+	assert_good(logStream, logOutputPath);
+
 	string scaffoldOutputPath(opt::outputPrefix);
 	scaffoldOutputPath.append("_scaffold.fa");
 	ofstream scaffoldStream(scaffoldOutputPath.c_str());
@@ -856,8 +894,7 @@ int main(int argc, char** argv)
 	ofstream mergedStream(mergedOutputPath.c_str());
 	assert_good(mergedStream, mergedOutputPath);
 
-	if (opt::verbose > 0)
-		cerr << "Finding flanks\n";
+	printLog(logStream, "Finding flanks\n");
 
 	ConnectPairsParams params;
 
@@ -878,6 +915,7 @@ int main(int argc, char** argv)
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
 	FastaReader reader1(scaffoldInputPath, FastaReader::FOLD_CASE);
 	unsigned gapsfound = 0;
+	string temp;
 
 	for (FastaRecord record;;) {
                	bool good;
@@ -886,10 +924,14 @@ int main(int argc, char** argv)
 			findFlanks(record, opt::flankLength, gapsfound, flanks);
 		}
                	else {
-			if (opt::verbose > 0) {
-				cerr << gapsfound << " gaps found" << endl;
-				cerr << flanks.size() << " flanks extracted\n" << endl;
-			}
+			temp = IntToString(gapsfound) + " gaps found\n";
+			printLog(logStream, temp);
+			temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
+			printLog(logStream, temp);
+//			if (opt::verbose > 0) {
+//				cerr << gapsfound << " gaps found" << endl;
+//				cerr << flanks.size() << " flanks extracted\n" << endl;
+//			}
 			break;
         	}
 	} // flanks map should now be filled with every flank found.
@@ -900,12 +942,12 @@ int main(int argc, char** argv)
 		map<FastaRecord, map<string, int> >::iterator read2_it;
 
 		string read1OutputPath(opt::outputPrefix);
-		read1OutputPath.append("_reads_1.fq");
+		read1OutputPath.append("_flanks_1.fq");
 		ofstream read1Stream(read1OutputPath.c_str());
 		assert_good(read1Stream, read1OutputPath);
 
 		string read2OutputPath(opt::outputPrefix);
-		read2OutputPath.append("_reads_2.fq");
+		read2OutputPath.append("_flanks_2.fq");
 		ofstream read2Stream(read2OutputPath.c_str());
 		assert_good(read2Stream, read2OutputPath);
 
@@ -947,9 +989,12 @@ int main(int argc, char** argv)
 
 		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
 
-			if (opt::verbose)
-				std::cerr << "Loading bloom filter from `"
-					<< opt::bloomFilterPaths.at(i) << "'...\n";
+			temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(i) + "'...\n";
+			printLog(logStream, temp);
+
+//			if (opt::verbose)
+//				std::cerr << "Loading bloom filter from `"
+//					<< opt::bloomFilterPaths.at(i) << "'...\n";
 
 			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
 			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
@@ -958,8 +1003,9 @@ int main(int argc, char** argv)
 			assert_good(inputBloom, inputPath);
 			inputBloom.close();
 		} else {
-			if (opt::verbose > 0)
-				cerr << "Building bloom filter" << endl;
+			printLog(logStream, "Building bloom filter\n");
+//			if (opt::verbose > 0)
+//				cerr << "Building bloom filter" << endl;
 			size_t bits = opt::bloomSize * 8 / 2;
 			bloom = BloomFilter(bits);
 #ifdef _OPENMP
@@ -974,13 +1020,17 @@ int main(int argc, char** argv)
 
 		DBGBloom<BloomFilter> g(bloom);
 
-		if (opt::verbose > 0)
-			cerr << "Starting K run with k = " << opt::k << endl;
-		kRun(params, opt::k, g, allmerged, flanks, gapsclosed);
+		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
+		printLog(logStream, temp);
+
+//		if (opt::verbose > 0)
+//			cerr << "Starting K run with k = " << opt::k << endl;
+		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream);
 
 		if (opt::cascade == 1) {
-			if (opt::verbose > 0)
-				cerr << "Building cascading bloom filter" << endl;
+			printLog(logStream, "Building cascading bloom filter\n");
+//			if (opt::verbose > 0)
+//				cerr << "Building cascading bloom filter" << endl;
 			// Specify bloom filter size in bits.
 			size_t bits = opt::bloomSize * 8 / 2;
 			CascadingBloomFilter tempBloom(bits);
@@ -996,19 +1046,25 @@ int main(int argc, char** argv)
 
 			DBGBloom<BloomFilter> g(bloom);
 
-			if (opt::verbose > 0)
-				cerr << "Starting K run with cascading bloom filter" << endl;
-			kRun(params, opt::k, g, allmerged, flanks, gapsclosed);
+			printLog(logStream, "Starting K run with cascading bloom filter\n");
+//			if (opt::verbose > 0)
+//				cerr << "Starting K run with cascading bloom filter" << endl;
+			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream);
 		}
-		if (opt::verbose > 0)
-			cerr << "k" << opt::k << " run complete\n" 
-				<< "Total gaps closed so far = " << gapsclosed << "\n\n";
+
+		temp = "k" + IntToString(opt::k) + " run complete\n"
+				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
+		printLog(logStream, temp);
+//		if (opt::verbose > 0)
+//			cerr << "k" << opt::k << " run complete\n"
+//				<< "Total gaps closed so far = " << gapsclosed << "\n\n";
 	}
 
-	if (opt::verbose > 0) {
-		cerr << "K sweep complete" << endl;
-		cerr << "Starting new scaffold creation..." << endl;
-	}
+	printLog(logStream, "K sweep complete\nCreating new scaffold with gaps closed...\n");
+//	if (opt::verbose > 0) {
+//		cerr << "K sweep complete" << endl;
+//		cerr << "Starting new scaffold creation..." << endl;
+//	}
 
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
 	map<int, map<string, string> >::reverse_iterator pos_it;
@@ -1025,9 +1081,12 @@ int main(int argc, char** argv)
                	else
                        	break;
        	}
+	printLog(logStream, "New scaffold complete\n");
+	printLog(logStream, "Gaps closed = " + IntToString(gapsclosed) + "\n");
+	logStream << (float)100 * gapsclosed / gapsfound << "%\n\n";
 	if (opt::verbose > 0) {
-		cerr << "New scaffold complete" << endl;
-		cerr << "Gaps closed = " << gapsclosed << endl;
+//		cerr << "New scaffold complete" << endl;
+//		cerr << "Gaps closed = " << gapsclosed << endl;
 		cerr << (float)100 * gapsclosed / gapsfound << "%\n\n";
 	}
 
@@ -1091,6 +1150,8 @@ int main(int argc, char** argv)
 	scaffoldStream.close();
 	assert_good(mergedStream, mergedOutputPath.c_str());
 	mergedStream.close();
+	assert_good(logStream, logOutputPath.c_str());
+	logStream.close();
 
 	if (!opt::dotPath.empty()) {
 		assert_good(dotStream, opt::dotPath);
