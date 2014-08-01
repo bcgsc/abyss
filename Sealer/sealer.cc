@@ -402,9 +402,17 @@ string merge(const Graph& g,
 	FastaRecord read1,
 	FastaRecord read2,
 	const ConnectPairsParams& params,
-	Counters& g_count)
+	Counters& g_count,
+	ofstream& traceStream)
 {
 	ConnectPairsResult result = connectPairs(k, read1, read2, g, params);
+
+	if (!opt::tracefilePath.empty())
+#pragma omp critical(tracefile)
+	{
+			traceStream << result;
+			assert_good(traceStream, opt::tracefilePath);
+	}
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 	switch (result.pathResult) {
@@ -465,8 +473,10 @@ string merge(const Graph& g,
 }
 
 void printLog(ofstream &logStream, string output) {
+#pragma omp critical(logStream)
 	logStream << output;
 	if (opt::verbose > 0)
+#pragma omp critical(cerr)
 		cerr << output;
 }
 
@@ -533,7 +543,8 @@ void kRun(const ConnectPairsParams& params,
 	map<string, map<int, map<string, string> > > &allmerged,
 	map<FastaRecord, map<FastaRecord, map<string, int> > > &flanks,
 	unsigned &gapsclosed,
-	ofstream &logStream)
+	ofstream &logStream,
+	ofstream &traceStream)
 {
 	map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
 	map<FastaRecord, map<string, int> >::iterator read2_it;
@@ -571,7 +582,7 @@ void kRun(const ConnectPairsParams& params,
 			int endposition = read2_it->second["endposition"];
 			string tempSeq;
 
-			tempSeq = merge(g, k, read1, read2, params, g_count);
+			tempSeq = merge(g, k, read1, read2, params, g_count, traceStream);
 
 			if (!tempSeq.empty()) {
 				success = true;
@@ -636,6 +647,7 @@ void findFlanks(FastaRecord record,
 
 	// finds next gap. If no more gaps, while loop ends.
 	while (seq.string::find_first_of("Nn", offset) != string::npos) {
+#pragma omp atomic
 		gapnumber++;
 		startposition  = seq.string::find_first_of("Nn", offset);
 
@@ -663,8 +675,9 @@ void findFlanks(FastaRecord record,
 
 		FastaRecord read1, read2;
 		makePseudoReads(read1, read2, startposition, endposition, seq, flanklength, record);
-
+#pragma omp critical (flanks)
 		flanks[read1][read2]["startposition"] = startposition;
+#pragma omp critical (flanks)
 		flanks[read1][read2]["endposition"] = endposition;
 
 		offset = endposition;
@@ -897,17 +910,19 @@ int main(int argc, char** argv)
 	unsigned gapsfound = 0;
 	string temp;
 
+#pragma omp parallel
 	for (FastaRecord record;;) {
                	bool good;
+#pragma omp critical(reader1)
                	good = reader1 >> record;
                	if (good) {
 			findFlanks(record, opt::flankLength, gapsfound, flanks);
 		}
                	else {
-			temp = IntToString(gapsfound) + " gaps found\n";
-			printLog(logStream, temp);
-			temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
-			printLog(logStream, temp);
+//			temp = IntToString(gapsfound) + " gaps found\n";
+//			printLog(logStream, temp);
+//			temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
+//			printLog(logStream, temp);
 //			if (opt::verbose > 0) {
 //				cerr << gapsfound << " gaps found" << endl;
 //				cerr << flanks.size() << " flanks extracted\n" << endl;
@@ -916,6 +931,11 @@ int main(int argc, char** argv)
         	}
 	} // flanks map should now be filled with every flank found.
 	//unsigned initialFlankNumber = flanks.size();
+
+	temp = IntToString(gapsfound) + " gaps found\n";
+	printLog(logStream, temp);
+	temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
+	printLog(logStream, temp);
 
 	if (opt::printFlanks > 0) {
 		map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
@@ -955,7 +975,7 @@ int main(int argc, char** argv)
 		read2Stream.close();
 	}
 
-//	exit(EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 
 	/** map for merged sequence resutls */
 	map<string, map<int, map<string, string> > > allmerged;
@@ -1005,7 +1025,7 @@ int main(int argc, char** argv)
 
 //		if (opt::verbose > 0)
 //			cerr << "Starting K run with k = " << opt::k << endl;
-		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream);
+		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
 
 		if (opt::cascade == 1) {
 			printLog(logStream, "Building cascading bloom filter\n");
@@ -1029,7 +1049,7 @@ int main(int argc, char** argv)
 			printLog(logStream, "Starting K run with cascading bloom filter\n");
 //			if (opt::verbose > 0)
 //				cerr << "Starting K run with cascading bloom filter" << endl;
-			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream);
+			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
 		}
 
 		temp = "k" + IntToString(opt::k) + " run complete\n"
