@@ -61,7 +61,7 @@ static const char USAGE_MESSAGE[] =
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 #if _SQL
-"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -u, --db=FILE         specify path of database repository in FILE\n"
 "  -X, --library=NAME    specify library NAME for sqlite\n"
 "  -Y, --strain=NAME     specify strain NAME for sqlite\n"
 "  -Z, --species=NAME    specify species NAME for sqlite\n"
@@ -110,7 +110,7 @@ static const struct option longopts[] = {
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 #if _SQL
-	{ "url",         required_argument, NULL, 'u' },
+	{ "db",          required_argument, NULL, 'u' },
 	{ "library",     required_argument, NULL, 'X' },
 	{ "strain",      required_argument, NULL, 'Y' },
 	{ "species",     required_argument, NULL, 'Z' },

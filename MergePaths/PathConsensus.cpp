@@ -71,7 +71,7 @@ static const char USAGE_MESSAGE[] =
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 #if _SQL
-"  -u, --url=FILE        specify path of database repository in FILE\n"
+"  -u, --db=FILE         specify path of database repository in FILE\n"
 "  -X, --library=NAME    specify library NAME for database\n"
 "  -Y, --strain=NAME     specify strain NAME for database\n"
 "  -Z, --species=NAME    specify species NAME for database\n"
@@ -132,7 +132,7 @@ static const struct option longopts[] = {
 	{ "dialign-m",   required_argument, NULL, 'M' },
 	{ "dialign-p",   required_argument, NULL, 'P' },
 #if _SQL
-	{ "url",         required_argument, NULL, 'u' },
+	{ "db",          required_argument, NULL, 'u' },
 	{ "library",     required_argument, NULL, 'X' },
 	{ "strain",      required_argument, NULL, 'Y' },
 	{ "species",     required_argument, NULL, 'Z' },
