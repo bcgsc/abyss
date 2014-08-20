@@ -392,14 +392,14 @@ To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in
 
 ## Database parameters
 Of `abyss-pe`:
- * `url`: path to SQLite repository file [`ABySS.db`]
+ * `db`: path to SQLite repository file [`ABySS.db`]
  * `species`: name of species to archive [ ]
  * `strain`: name of strain to archive [ ]
  * `library`: name of library to archive [ ]
 
 For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.db':
 
-	abyss-pe url=/abyss/test.db species=Ecoli strain=O121 library=pe200 [other options]
+	abyss-pe db=/abyss/test.db species=Ecoli strain=O121 library=pe200 [other options]
 
 ## Helper programs
 Found in your `path`:

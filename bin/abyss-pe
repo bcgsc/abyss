@@ -92,8 +92,8 @@ endif
 
 #if _SQL
 # Determine the location of sqlite database
-ifdef url
-ur=-u$(url)
+ifdef db
+ur=-u$(db)
 endif
 
 # Track data details for database
