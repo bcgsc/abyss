@@ -72,7 +72,6 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 	assert(in);
 
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
-	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename vertex_property<Graph>::type VP;
 	typedef typename edge_property<Graph>::type EP;
 
