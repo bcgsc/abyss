@@ -167,7 +167,7 @@ endif
 
 # AdjList parameters
 m?=50
-alopt += $v $(dbopt) $(SS)
+alopt += $v $(dbopt) $(SS) -k$k -m$m
 
 # filtergraph parameters
 ifdef xtip
@@ -224,10 +224,10 @@ sgopt += -d$d
 endif
 
 # MergePaths parameters
-mpopt += $v $(dbopt)
+mpopt += $v $(dbopt) -j$j -k$k
 
 # PathOverlap parameters
-poopt += $v $(dbopt)
+poopt += $v $(dbopt) -k$k
 
 # PathConsensus parameters
 pcopt += $(dbopt)
@@ -237,12 +237,12 @@ endif
 pcopt += -p$p
 
 # MergeContigs parameters
-mcopt += $v $(dbopt)
+mcopt += $v $(dbopt) -k$k
 
 # Scaffold parameters
 S?=$s
 N?=$n
-scopt += $v $(dbopt) $(SS)
+scopt += $v $(dbopt) $(SS) -k$k
 
 # BWA-SW parameters
 bwaswopt=-t$j
@@ -422,7 +422,7 @@ endif
 # Find overlapping contigs
 
 %-1.adj: %-1.fa
-	AdjList $(alopt) -k$k -m$m $< >$@
+	AdjList $(alopt) $< >$@
 
 # Remove shim contigs
 
@@ -435,7 +435,7 @@ endif
 	PopBubbles $v -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
 
 %-3.fa: %-1.fa %-2.adj %-2.path
-	MergeContigs $(mcopt) -k$k -o $@ $^
+	MergeContigs $(mcopt) -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
 
@@ -497,10 +497,10 @@ endif
 	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.adj %-4.path1
-	MergePaths $(mpopt) $(MERGEPATHS_OPTIONS) -j$j -k$k -o $@ $^
+	MergePaths $(mpopt) $(MERGEPATHS_OPTIONS) -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
-	PathOverlap --assemble $(poopt) $(SS) -k$k $^ >$@
+	PathOverlap --assemble $(poopt) $(SS) $^ >$@
 
 ifndef cs
 
@@ -509,7 +509,7 @@ ifndef cs
 		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.adj %-5.path
-	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -k$k -o $@ - $(wordlist 4, 5, $^)
+	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
 
 else
 
@@ -518,7 +518,7 @@ else
 	ln -sf $*-4.path3 $*-5.path
 
 %-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
-	cat $(wordlist 1, 2, $^) |MergeContigs $(mcopt) -k$k -o $@ - $(wordlist 3, 4, $^)
+	cat $(wordlist 1, 2, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 # Convert colour-space sequence to nucleotides
 
@@ -529,7 +529,7 @@ else
 endif
 
 %-6.dot: %-5.adj %-5.path
-	PathOverlap --overlap $(poopt) --dot -k$k $^ >$@
+	PathOverlap --overlap $(poopt) --dot $^ >$@
 
 %-contigs.fa: %-6.fa
 	ln -sf $< $@
@@ -568,17 +568,17 @@ endif
 # Scaffold
 
 %-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $(scopt) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path
 	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(mcopt) -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 %-8.dot: %-7.adj %-7.path
-	PathOverlap --overlap $(poopt) --dot -k$k $^ >$@
+	PathOverlap --overlap $(poopt) --dot $^ >$@
 
 %-scaffolds.fa: %-8.fa
 	ln -sf $< $@
@@ -608,17 +608,17 @@ endif
 		|grep -v "l=" >$@
 
 %-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $(scopt) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $(scopt) -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
 	PathConsensus $v -k$k $(pcopt) -s $*-9.fa -g $*-9.adj -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.adj %-9.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(mcopt) -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 %-10.dot: %-9.adj %-9.path
-	PathOverlap --overlap $(poopt) --dot -k$k $^ >$@
+	PathOverlap --overlap $(poopt) --dot $^ >$@
 
 %-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
