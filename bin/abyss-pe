@@ -93,7 +93,7 @@ endif
 #if _SQL
 # Determine the location of sqlite database
 ifdef db
-ur=-u$(db)
+override dbopt:=--db=$(db)
 endif
 
 # Track data details for database
@@ -151,7 +151,7 @@ endif
 ifdef ss
 SS=--SS
 endif
-abyssopt += $v $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
+abyssopt += $v $(dbopt) $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 
 # Number of threads
 ifdef PE_HOSTFILE
@@ -194,7 +194,7 @@ ifeq ($(SS),--SS)
  endif
 endif
 align?=abyss-$(aligner)
-mapopt=$v -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
+mapopt=$v $(dbopt) -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # fixmate parameters
 ifeq ($(align),abyss-kaligner)
@@ -202,7 +202,7 @@ fixmate?=ParseAligns
 else
 fixmate?=abyss-fixmate$(ssq_t)
 endif
-fmopt=$v -l$($*_l) $(FIXMATE_OPTIONS)
+fmopt=$v $(dbopt) -l$($*_l) $(FIXMATE_OPTIONS)
 
 # DistanceEst parameters
 DistanceEst?=DistanceEst$(ssq_t)
@@ -213,15 +213,17 @@ libs=$(pe) $(mp)
 $(foreach i,$(libs),$(eval $i_l?=$l))
 $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
+deopt=$v $(dbopt) -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
 	$(DISTANCEEST_OPTIONS)
 
 # SimpleGraph parameters
+sgopt += $(dbopt)
 ifdef d
 sgopt += -d$d
 endif
 
 # PathConsensus parameters
+pcopt += $(dbopt)
 ifdef a
 pcopt += -a$a
 endif
@@ -401,15 +403,15 @@ startDb:
 
 %-1.fa:
 ifdef np
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) $(ur) -o $@ $(in) $(se)
+	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) $(ur) -o $@ $(in) $(se)
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 endif
 
 # Find overlapping contigs
 
 %-1.adj: %-1.fa
-	AdjList $(SS) $(ur) $v -k$k -m$m $< >$@
+	AdjList $v $(dbopt) $(SS) -k$k -m$m $< >$@
 
 # Remove shim contigs
 
@@ -422,7 +424,7 @@ endif
 	PopBubbles $v -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.adj $^ >$*-2.path
 
 %-3.fa: %-1.fa %-2.adj %-2.path
-	MergeContigs $(ur) $v -k$k -o $@ $^
+	MergeContigs $v $(dbopt) -k$k -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
 
@@ -438,30 +440,30 @@ endif
 # Estimate distances between unitigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
 	samtools view -h $< \
-	|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
+	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-3.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|$(DistanceEst) $(deopt) $(ur) -o $@ $*-3.hist
+		|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 dist=$(addsuffix -3.dist, $(pe))
 
@@ -481,22 +483,22 @@ endif
 # Assemble contigs
 
 %-4.path1: %-4.adj %-3.dist
-	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) $(ur) -j$j -k$k -o $@ $^
+	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.adj %-4.path1
-	MergePaths $v $(MERGEPATHS_OPTIONS) $(ur) -j$j -k$k -o $@ $^
+	MergePaths $v $(dbopt) $(MERGEPATHS_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path3: %-4.adj %-4.path2
-	PathOverlap --assemble $(SS) $(ur) $v -k$k $^ >$@
+	PathOverlap --assemble $v $(dbopt) $(SS) -k$k $^ >$@
 
 ifndef cs
 
 %-5.path %-5.fa %-5.adj: %-3.fa %-4.fa %-4.adj %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v -k$k $(pcopt) $(ur) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
+		|PathConsensus $v -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.adj - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.adj %-5.path
-	cat $(wordlist 1, 3, $^) |MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 4, 5, $^)
+	cat $(wordlist 1, 3, $^) |MergeContigs $v $(dbopt) -k$k -o $@ - $(wordlist 4, 5, $^)
 
 else
 
@@ -505,7 +507,7 @@ else
 	ln -sf $*-4.path3 $*-5.path
 
 %-cs.fa: %-3.fa %-4.fa %-4.adj %-4.path3
-	cat $(wordlist 1, 2, $^) |MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
+	cat $(wordlist 1, 2, $^) |MergeContigs $v $(dbopt) -k$k -o $@ - $(wordlist 3, 4, $^)
 
 # Convert colour-space sequence to nucleotides
 
@@ -516,7 +518,7 @@ else
 endif
 
 %-6.dot: %-5.adj %-5.path
-	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
+	PathOverlap --overlap $v $(dbopt) --dot -k$k $^ >$@
 
 %-contigs.fa: %-6.fa
 	ln -sf $< $@
@@ -527,45 +529,45 @@ endif
 # Estimate distances between contigs
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|gzip >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
+	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
-	$(align) $(mapopt) $(ur) $(strip $($*)) $< \
-		|$(fixmate) $(fmopt) $(ur) -h $*-6.hist \
+	$(align) $(mapopt) $(strip $($*)) $< \
+		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|$(DistanceEst) --dot $(deopt) $(ur) -o $@ $*-6.hist
+		|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
 # Scaffold
 
 %-6.path: $(name)-6.dot $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $v $(SS) $(ur) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(dbopt) $(SS) -k$k -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.adj %-7.fa: %-6.fa %-6.dot %-6.path
-	PathConsensus $v -k$k $(pcopt) $(ur) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
+	PathConsensus $v -k$k $(pcopt) -s $*-7.fa -g $*-7.adj -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.adj %-7.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $v $(dbopt) -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-8.dot: %-7.adj %-7.path
-	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
+	PathOverlap --overlap $v $(dbopt) --dot -k$k $^ >$@
 
 %-scaffolds.fa: %-8.fa
 	ln -sf $< $@
@@ -595,17 +597,17 @@ endif
 		|grep -v "l=" >$@
 
 %-8.path: $(name)-8.dot $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $v $(SS) $(ur) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	abyss-scaffold $v $(dbopt) $(SS) -k$k -s$S -n1 -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.adj %-9.fa: %-8.fa %-8.dot %-8.path
 	PathConsensus $v -k$k $(pcopt) -s $*-9.fa -g $*-9.adj -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.adj %-9.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(ur) $v -k$k -o $@ - $(wordlist 3, 4, $^)
+		|MergeContigs $v $(dbopt) -k$k -o $@ - $(wordlist 3, 4, $^)
 
 %-10.dot: %-9.adj %-9.path
-	PathOverlap --overlap $v --dot -k$k $(ur) $^ >$@
+	PathOverlap --overlap $v $(dbopt) --dot -k$k $^ >$@
 
 %-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
