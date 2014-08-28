@@ -1,5 +1,5 @@
 #ifndef VECTOR_UTIL_H
-#define VECTOR_UTIL_H_1
+#define VECTOR_UTIL_H 1
 
 #include <vector>
 
