@@ -31,7 +31,7 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 			continue;
 		const VP& vp = g[u];
 		out << "S\t" << get(vertex_contig_name, g, u)
-			<< "\t*\t*\tLN:i:" << vp.length;
+			<< "\t*\tLN:i:" << vp.length;
 		if (vp.coverage > 0)
 			out << "\tXC:i:" << vp.coverage;
 		out << '\n';
@@ -86,11 +86,10 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			break;
 
 		  case 'S': {
-			std::string uname, seq, quality;
-			in >> expect("S\t") >> uname >> seq >> quality;
+			std::string uname, seq;
+			in >> expect("S\t") >> uname >> seq;
 			assert(in);
 			assert(!seq.empty());
-			assert(!quality.empty());
 
 			unsigned length = 0;
 			if (seq == "*") {
