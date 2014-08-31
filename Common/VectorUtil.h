@@ -21,7 +21,7 @@ public:
 		return *this;
 	}
 
-	operator sv() const { return vec; }
+	operator const sv&() const { return vec; }
 
 	friend sv& operator+= (
 			sv& vec1, const mv& vec2)
