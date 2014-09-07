@@ -366,6 +366,10 @@ static void printHistogramStats(Histogram h)
 
 int main(int argc, char* const* argv)
 {
+#if _SQL
+	opt::metaVars.resize(3);
+#endif
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {

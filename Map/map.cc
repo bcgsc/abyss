@@ -537,6 +537,10 @@ int main(int argc, char** argv)
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 
+#if _SQL
+	opt::metaVars.resize(3);
+#endif
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {

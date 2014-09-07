@@ -218,7 +218,7 @@ void parse(int argc, char* const* argv)
 
 #if  _SQL
 	opt::assemblyCmd = sargv.str();
-	opt::metaVars.assign(3,"");
+	opt::metaVars.resize(3);
 #endif
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,

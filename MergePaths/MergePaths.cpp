@@ -897,6 +897,10 @@ static Lengths readContigLengths(const string& path)
 
 int main(int argc, char** argv)
 {
+#if _SQL
+	opt::metaVars.resize(3);
+#endif
+
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {

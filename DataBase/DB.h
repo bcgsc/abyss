@@ -82,8 +82,8 @@ public:
 
 	DB()
 	{
-		initVars.assign(3,"");
-		peVars.assign(3,"");
+		initVars.resize(3);
+		peVars.resize(3);
 		exp = NO_INIT;
 	}
 
