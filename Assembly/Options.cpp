@@ -70,10 +70,10 @@ static const char USAGE_MESSAGE[] =
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
 #if _SQL
-"  -u, --db=FILE        specify path of database repository in FILE\n"
-"  -X, --library=NAME    specify library NAME for database\n"
-"  -Y, --strain=NAME     specify strain NAME for database\n"
-"  -Z, --species=NAME    specify species NAME for database\n"
+"      --db=FILE         specify path of database repository in FILE\n"
+"      --library=NAME    specify library NAME for database\n"
+"      --strain=NAME     specify strain NAME for database\n"
+"      --species=NAME    specify species NAME for database\n"
 #endif
 "\n"
 " ABYSS Options: (won't work with ABYSS-P)\n"
@@ -141,13 +141,15 @@ vector<string> metaVars;
 
 /** commandline specific to assembly */
 string assemblyCmd;
-
-static const char shortopts[] = "b:c:e:E:g:k:mo:Q:q:s:t:u:X:Y:Z:v";
-#else
-static const char shortopts[] = "b:c:e:E:g:k:mo:Q:q:s:t:v";
 #endif
 
+static const char shortopts[] = "b:c:e:E:g:k:mo:Q:q:s:t:v";
+
+#if _SQL
+enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
+#else
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
+#endif
 
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
@@ -176,10 +178,10 @@ static const struct option longopts[] = {
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
 #if _SQL
-	{ "db",          required_argument, NULL, 'u' },
-	{ "library",     required_argument, NULL, 'X' },
-	{ "strain",      required_argument, NULL, 'Y' },
-	{ "species",     required_argument, NULL, 'Z' },
+	{ "db",          required_argument, NULL, OPT_DB },
+	{ "library",     required_argument, NULL, OPT_LIBRARY },
+	{ "strain",      required_argument, NULL, OPT_STRAIN },
+	{ "species",     required_argument, NULL, OPT_SPECIES },
 #endif
 	{ NULL, 0, NULL, 0 }
 };
@@ -293,16 +295,16 @@ void parse(int argc, char* const* argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 #if _SQL
-			case 'u':
+			case OPT_DB:
 				arg >> url;
 				break;
-			case 'X':
+			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];
 				break;
-			case 'Y':
+			case OPT_STRAIN:
 				arg >> opt::metaVars[1];
 				break;
-			case 'Z':
+			case OPT_SPECIES:
 				arg >> opt::metaVars[2];
 				break;
 #endif
