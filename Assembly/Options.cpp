@@ -136,7 +136,8 @@ string snpPath;
 vector<string> inFiles;
 
 #if _SQL
-string url, lbr, str, spc;
+string url;
+vector<string> metaVars;
 
 /** commandline specific to assembly */
 string assemblyCmd;
@@ -201,11 +202,7 @@ string getCommand()
 
 vector<string> getMetaValue()
 {
-	vector<string> metaV;
-	metaV.push_back (opt::lbr);
-	metaV.push_back (opt::str);
-	metaV.push_back (opt::spc);
-	return metaV;
+	return opt::metaVars;
 }
 #endif
 
@@ -221,6 +218,7 @@ void parse(int argc, char* const* argv)
 
 #if  _SQL
 	opt::assemblyCmd = sargv.str();
+	opt::metaVars.assign(3,"");
 #endif
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -299,13 +297,13 @@ void parse(int argc, char* const* argv)
 				arg >> url;
 				break;
 			case 'X':
-				arg >> opt::lbr;
+				arg >> opt::metaVars[0];
 				break;
 			case 'Y':
-				arg >> opt::str;
+				arg >> opt::metaVars[1];
 				break;
 			case 'Z':
-				arg >> opt::spc;
+				arg >> opt::metaVars[2];
 				break;
 #endif
 		}
