@@ -89,11 +89,13 @@ fi
 
 # GTest
 AC_ARG_WITH(gtest, AS_HELP_STRING([--with-gtest=PATH],
-	[specify prefix directory for the installed gtest library]))
+	[specify extracted folder for gtest]))
+gtest_src="/usr/src/gtest"
 if test "$with_gtest" -a -d "$with_gtest"; then
-	gtest_cppflags="-I$with_gtest/include"
-	gtest_ldflags="-L$with_gtest/lib"
+	gtest_cppflags="-isystem$with_gtest/include"
+	gtest_src="$with_gtest"
 fi
+AC_SUBST(GTEST, "$gtest_src")
 
 # SQLite
 AC_ARG_WITH(sqlite, AS_HELP_STRING([--with-sqlite=PATH],
@@ -127,7 +129,7 @@ boost_ver=1.55.0
 boost_ver_dir=boost_1_55_0
 AC_SUBST(CPPFLAGS,
 		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $gtest_ldflags $sqlite_ldflags $LDFLAGS")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"
@@ -203,8 +205,7 @@ fi
 libs="$LIBS"
 AC_CHECK_HEADERS([gtest/gtest.h])
 AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([gtest_main],[main])
-AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes -a $ac_cv_lib_gtest_main_main = yes])
+AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes])
 AC_SUBST(GTEST_LIBS, "$LIBS")
 LIBS=$libs
 

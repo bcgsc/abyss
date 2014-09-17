@@ -1,3 +1,22 @@
+check_LIBRARIES = libgtest.a libgtest_main.a
+
+gtest-all.cc:
+	cp $(GTEST)/src/gtest-all.cc .
+
+gtest_main.cc:
+	cp $(GTEST)/src/gtest_main.cc .
+
+clean-local:
+	rm -f gtest-all.cc gtest_main.cc
+
+libgtest_a_CPPFLAGS = -I$(top_srcdir) -isystem$(GTEST)
+nodist_libgtest_a_SOURCES = gtest-all.cc
+
+libgtest_main_a_CPPFLAGS = -I$(top_srcdir) -isystem$(GTEST)
+nodist_libgtest_main_a_SOURCES = gtest_main.cc gtest-all.cc
+
+override GTEST_LIBS := libgtest_main.a $(GTEST_LIBS)
+
 UNIT_TESTS = common_stringutil
 check_PROGRAMS = common_stringutil
 common_stringutil_SOURCES = Common/StringUtilTest.cpp
