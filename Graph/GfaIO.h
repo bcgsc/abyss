@@ -33,7 +33,7 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 		out << "S\t" << get(vertex_contig_name, g, u)
 			<< "\t*\tLN:i:" << vp.length;
 		if (vp.coverage > 0)
-			out << "\tXC:i:" << vp.coverage;
+			out << "\tKC:i:" << vp.coverage;
 		out << '\n';
 	}
 
@@ -99,8 +99,8 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 				length = seq.size();
 
 			unsigned coverage = 0;
-			if (in.peek() == '\t' && in.get() == '\t' && in.peek() == 'X') {
-				in >> expect("XC:i:") >> coverage;
+			if (in.peek() == '\t' && in.get() == '\t' && in.peek() == 'K') {
+				in >> expect("KC:i:") >> coverage;
 				assert(in);
 			}
 
