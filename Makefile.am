@@ -57,3 +57,6 @@ SUBDIRS = \
 
 %.html: %.md
 	-multimarkdown $< >$@
+
+clean-local:
+	rm -f README.html
