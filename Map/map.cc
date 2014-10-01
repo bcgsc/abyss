@@ -64,6 +64,8 @@ static const char USAGE_MESSAGE[] =
 "      --no-multi          don't Align unaligned segments [default]\n"
 "      --SS                expect contigs to be oriented correctly\n"
 "      --no-SS             no assumption about contig orientation\n"
+"      --rc                map the sequence and its reverse complement [default]\n"
+"      --no-rc             do not map the reverse complement sequence\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -94,6 +96,9 @@ namespace opt {
 
 	/** Run a strand-specific RNA-Seq alignments. */
 	static int ss;
+
+	/** Do not map the sequence's reverse complement. */
+	static int norc;
 
 	/** Identify duplicate and subsumed sequences. */
 	static bool dup = false;
@@ -127,6 +132,8 @@ static const struct option longopts[] = {
 	{ "no-multi", no_argument, &opt::multi, 0 },
 	{ "SS", no_argument, &opt::ss, 1 },
 	{ "no-SS", no_argument, &opt::ss, 0 },
+	{ "rc", no_argument, &opt::norc, 0 },
+	{ "no-rc", no_argument, &opt::norc, 1 },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -270,7 +277,7 @@ static void printDuplicates(const Match& m, const Match& rcm,
 {
 	size_t myLen = m.qspan();
 	size_t maxLen;
-	if (opt::ss)
+	if (opt::ss || opt::norc)
 		maxLen = getMaxLen(m, faIndex, fmIndex);
 	else
 		maxLen = max(getMaxLen(m, faIndex, fmIndex),
@@ -287,7 +294,7 @@ static void printDuplicates(const Match& m, const Match& rcm,
 	}
 	size_t myPos = getMyPos(m, faIndex, fmIndex, rec.id);
 	size_t minPos;
-	if (opt::ss)
+	if (opt::ss || opt::norc)
 		minPos = getMinPos(m, maxLen, faIndex, fmIndex);
 	else
 		minPos = min(getMinPos(m, maxLen, faIndex, fmIndex),
@@ -310,6 +317,8 @@ pair<Match, Match> findMatch(const FMIndex& fmIndex, const string& seq)
 {
 	Match m = fmIndex.find(seq,
 			opt::dup ? seq.length() : opt::k);
+	if (opt::norc)
+		return make_pair(m, Match());
 
 	string rcqseq = reverseComplement(seq);
 	Match rcm;
