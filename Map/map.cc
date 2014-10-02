@@ -66,6 +66,10 @@ static const char USAGE_MESSAGE[] =
 "      --no-SS             no assumption about contig orientation\n"
 "      --rc                map the sequence and its reverse complement [default]\n"
 "      --no-rc             do not map the reverse complement sequence\n"
+"  -a, --alphabet=STRING   use the alphabet STRING [-ACGT]\n"
+"      --alpha             equivalent to -a' ABCDEFGHIJKLMNOPQRSTUVWXYZ'\n"
+"      --dna               equivalent to -a'-ACGT'\n"
+"      --protein           equivalent to -a'#*ACDEFGHIKLMNPQRSTVWY'\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -100,6 +104,9 @@ namespace opt {
 	/** Do not map the sequence's reverse complement. */
 	static int norc;
 
+	/** The alphabet. */
+	static string alphabet = "-ACGT";
+
 	/** Identify duplicate and subsumed sequences. */
 	static bool dup = false;
 
@@ -115,11 +122,12 @@ namespace opt {
 
 static const char shortopts[] = "j:k:l:s:dv";
 
+enum { OPT_HELP = 1, OPT_VERSION,
+	OPT_ALPHA, OPT_DNA, OPT_PROTEIN,
 #if _SQL
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION };
+	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES,
 #endif
+};
 
 static const struct option longopts[] = {
 	{ "sample", required_argument, NULL, 's' },
@@ -134,6 +142,11 @@ static const struct option longopts[] = {
 	{ "no-SS", no_argument, &opt::ss, 0 },
 	{ "rc", no_argument, &opt::norc, 0 },
 	{ "no-rc", no_argument, &opt::norc, 1 },
+	{ "alphabet", optional_argument, NULL, 'a' },
+	{ "alpha", optional_argument, NULL, OPT_ALPHA },
+	{ "dna", optional_argument, NULL, OPT_DNA },
+	{ "protein", optional_argument, NULL, OPT_PROTEIN },
+	{ "decompress", no_argument, NULL, 'd' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "chastity", no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
@@ -495,7 +508,7 @@ static void buildFMIndex(FMIndex& fm, const char* path)
 	}
 
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
-	fm.setAlphabet("-ACGT");
+	fm.setAlphabet(opt::alphabet);
 	fm.assign(s.begin(), s.end());
 }
 
@@ -562,6 +575,19 @@ int main(int argc, char** argv)
 				break;
 			case 's': arg >> opt::sampleSA; break;
 			case 'd': opt::dup = true; break;
+			case 'a':
+				opt::alphabet = arg.str();
+				arg.clear(ios::eofbit);
+				break;
+			case OPT_ALPHA:
+				opt::alphabet = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+				break;
+			case OPT_DNA:
+				opt::alphabet = "-ACGT";
+				break;
+			case OPT_PROTEIN:
+				opt::alphabet = "#*ACDEFGHIKLMNPQRSTVWY";
+				break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
