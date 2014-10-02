@@ -67,9 +67,9 @@ static const char USAGE_MESSAGE[] =
 "      --rc                map the sequence and its reverse complement [default]\n"
 "      --no-rc             do not map the reverse complement sequence\n"
 "  -a, --alphabet=STRING   use the alphabet STRING [-ACGT]\n"
-"      --alpha             equivalent to -a' ABCDEFGHIJKLMNOPQRSTUVWXYZ'\n"
-"      --dna               equivalent to -a'-ACGT'\n"
-"      --protein           equivalent to -a'#*ACDEFGHIKLMNPQRSTVWY'\n"
+"      --alpha             equivalent to --no-rc -a' ABCDEFGHIJKLMNOPQRSTUVWXYZ'\n"
+"      --dna               equivalent to --rc    -a'-ACGT'\n"
+"      --protein           equivalent to --no-rc -a'#*ACDEFGHIKLMNPQRSTVWY'\n"
 "      --chastity          discard unchaste reads\n"
 "      --no-chastity       do not discard unchaste reads [default]\n"
 "  -v, --verbose           display verbose output\n"
@@ -581,12 +581,15 @@ int main(int argc, char** argv)
 				break;
 			case OPT_ALPHA:
 				opt::alphabet = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+				opt::norc = true;
 				break;
 			case OPT_DNA:
 				opt::alphabet = "-ACGT";
+				opt::norc = false;
 				break;
 			case OPT_PROTEIN:
 				opt::alphabet = "#*ACDEFGHIKLMNPQRSTVWY";
+				opt::norc = true;
 				break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
