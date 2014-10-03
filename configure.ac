@@ -133,8 +133,8 @@ AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 my_abs_srcdir=$(cd $srcdir; pwd)
 
 # Set compiler flags.
-boost_ver=1.55.0
-boost_ver_dir=boost_1_55_0
+boost_ver=1.56.0
+boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
 		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
