@@ -110,6 +110,14 @@ if test "$with_sqlite" -a -d "$with_sqlite"; then
 	sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
 fi
 
+# SparseHash
+AC_ARG_WITH(sparsehash, AS_HELP_STRING([--with-sparsehash=PATH],
+	[specify prefix directory for the installed spasehash library]))
+if test "$with_sparsehash" -a "$with_sparsehash" != "no" -a -d "$with_sparsehash" ; then
+	sparsehash_cppflags="-isystem$with_sparsehash/include"
+	sparsehash_ldflags="-L$with_sparsehash/lib"
+fi
+
 AC_ARG_ENABLE(fm, AS_HELP_STRING([--enable-fm],
 	[specify the width of the FM-index in bits (default is 64-bit)]),
 	[], [enable_fm=64])
@@ -128,8 +136,8 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 boost_ver=1.55.0
 boost_ver_dir=boost_1_55_0
 AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $LDFLAGS")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"
@@ -267,10 +275,13 @@ AC_CONFIG_FILES([
 	Bloom/Makefile
 	DataBase/Makefile
 ])
-AC_OUTPUT
 
-if test $ac_cv_header_google_sparse_hash_map != yes; then
-	AC_MSG_WARN([ABySS should be compiled with Google sparsehash to
+if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
+	AC_MSG_ERROR([ABySS should be compiled with Google sparsehash to
 	reduce memory usage. It may be downloaded here:
-	http://code.google.com/p/google-sparsehash])
+	http://code.google.com/p/google-sparsehash
+
+	If you do not wish to use sparsehash, specify --without-sparsehash.])
 fi
+
+AC_OUTPUT
