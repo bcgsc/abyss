@@ -87,6 +87,11 @@ if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_ldflags="-L$with_mpi/lib"
 fi
 
+AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
+	[use MPICH (default is to use Open MPI)]))
+AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
+	[use LAM/MPI (default is to use Open MPI)]))
+
 # GTest
 AC_ARG_WITH(gtest, AS_HELP_STRING([--with-gtest=PATH],
 	[specify extracted folder for gtest]))
@@ -104,11 +109,6 @@ if test "$with_sqlite" -a -d "$with_sqlite"; then
 	sqlite_cppflags="-I$with_sqlite/include"
 	sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
 fi
-
-AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
-	[use MPICH (default is to use Open MPI)]))
-AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
-	[use LAM/MPI (default is to use Open MPI)]))
 
 AC_ARG_ENABLE(fm, AS_HELP_STRING([--enable-fm],
 	[specify the width of the FM-index in bits (default is 64-bit)]),
