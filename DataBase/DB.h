@@ -37,6 +37,15 @@ private:
 	// Verbosity inherited from the equivalent abyss-pe option.
 	int verbose_val;
 
+	std::string getSqliteName()
+	{
+		std::string name("dummy"); // for a program running outside of abyss-pe
+		std::fstream fl("name.txt");
+		if (fl)
+			fl >> name;
+		return name;
+	}
+
 	void openDB(
 			const char* c, const int& v)
 	{
@@ -114,8 +123,9 @@ public:
 		d.cmd = command;
 		d.initVars = vars;
 		d.exp = INIT;
-		// If destination is not specified, create 'ABySS.db' by default.
-		d.openDB(path.empty() ? "ABySS.db" : path.c_str(), v);
+
+		std::string name(d.getSqliteName());
+		d.openDB(path.empty() ? name.c_str() : path.c_str(), v);
 	}
 
 	std::string activateForeignKey(const std::string& s)
