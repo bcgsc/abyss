@@ -385,7 +385,7 @@ long-scaffs-graph: $(name)-long-scaffs.$g
 all: default bam stats
 
 clean:
-	rm -f *.adj *.asqg *.dot *.gfa *.sam db.txt \
+	rm -f *.adj *.asqg *.dot *.gfa *.sam *.txt \
 		*.sam.gz *.hist *.dist *.path *.path[123]
 
 ifdef db
