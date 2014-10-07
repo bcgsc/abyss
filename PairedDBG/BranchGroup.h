@@ -24,13 +24,16 @@ class BranchGroup
 		typedef BranchGroupData::iterator iterator;
 		typedef BranchGroupData::const_iterator const_iterator;
 
+		typedef KmerPair V;
+		typedef KmerPairData VP;
+
 		BranchGroup()
 			: m_dir(SENSE), m_maxNumBranches(0),
 			m_noExt(false), m_status(BGS_ACTIVE)
 			{ }
 
 		BranchGroup(extDirection dir, size_t maxNumBranches,
-				const Kmer &origin)
+				const V& origin)
 			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE)
@@ -39,7 +42,7 @@ class BranchGroup
 		}
 
 		BranchGroup(extDirection dir, size_t maxNumBranches,
-				const Kmer &origin, const BranchRecord& branch)
+				const V& origin, const BranchRecord& branch)
 			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE)
@@ -68,11 +71,11 @@ class BranchGroup
 		/** Add a branch to this group and extend the new branch with
 		 * the given k-mer. */
 		void addBranch(const BranchRecord& branch,
-				const Kmer& kmer)
+				const V& kmer)
 		{
 			if (m_branches.size() < m_maxNumBranches)
 				addBranch(branch).push_back(
-						std::make_pair(kmer, KmerData()));
+						std::make_pair(kmer, VP()));
 			else
 				m_status = BGS_TOOMANYBRANCHES;
 		}
@@ -88,7 +91,7 @@ class BranchGroup
 
 		/** Return whether a branch contains the specified k-mer at
 		 * the index i. */
-		bool exists(unsigned i, const Kmer& kmer) const
+		bool exists(unsigned i, const V& kmer) const
 		{
 			for (BranchGroupData::const_iterator it
 					= m_branches.begin();
@@ -128,7 +131,7 @@ class BranchGroup
 
 		BranchGroupData m_branches;
 		extDirection m_dir;
- 		Kmer m_origin;
+ 		V m_origin;
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;

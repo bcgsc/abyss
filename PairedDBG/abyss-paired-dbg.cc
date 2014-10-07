@@ -1,4 +1,4 @@
-#include "Assembly/Options.h"
+#include "PairedDBG/Options.h"
 #include "AssemblyAlgorithms.h"
 #include "DotWriter.h"
 #include "FastaWriter.h"
@@ -22,6 +22,7 @@ using namespace std;
 DB db;
 #endif
 
+#if 0
 static void removeLowCoverageContigs(SequenceCollectionHash& g)
 {
 	AssemblyAlgorithms::markAmbiguous(&g);
@@ -53,9 +54,11 @@ static void write_graph(const string& path,
 	ofstream out(path.c_str());
 	DotWriter::write(out, c);
 }
+#endif
 
 static void assemble(const string& pathIn, const string& pathOut)
 {
+#if 0
 	Timer timer(__func__);
 	SequenceCollectionHash g;
 
@@ -118,6 +121,10 @@ erode:
 		"The signal-to-noise ratio (SNR) is "
 		<< 10 * log10((double)numAssembled / numRemoved)
 		<< " dB.\n";
+#else
+	(void)pathIn;
+	(void)pathOut;
+#endif
 }
 
 int main(int argc, char* const* argv)
@@ -169,8 +176,10 @@ int main(int argc, char* const* argv)
 			k1 << opt::contigsPath.c_str();
 		assemble(k0.str(), k1.str());
 	}
+#if 0
 #if _SQL
 	addToDb(db, AssemblyAlgorithms::tempStatMap);
+#endif
 #endif
 	return 0;
 }

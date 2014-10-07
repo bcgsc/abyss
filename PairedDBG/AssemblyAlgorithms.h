@@ -60,22 +60,22 @@ SeqContiguity checkSeqContiguity(
 bool processTerminatedBranchTrim(
 		ISequenceCollection* seqCollection, BranchRecord& branch);
 
-bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
+bool extendBranch(BranchRecord& branch, KmerPair& kmer, DinucSet ext);
 
 // Process the extensions of the current sequence for trimming
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
+		KmerPair& currSeq, DinucSetPair extensions, int multiplicity,
 		unsigned maxLength, bool addKmer = true);
 
 /** Populate the branch group with the initial extensions to this
  * sequence. */
-void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
-		const SeqExt& extension);
+void initiateBranchGroup(BranchGroup& group, const KmerPair& seq,
+		const DinucSet& extension);
 
 // process an a branch group extension
 bool processBranchGroupExtension(BranchGroup& group,
-		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord extensions, int multiplicity,
+		size_t branchIndex, const KmerPair& seq,
+		DinucSetPair extensions, int multiplicity,
 		unsigned maxLength);
 
 void openBubbleFile(std::ofstream& out);
@@ -99,9 +99,9 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 		const ISequenceCollection::value_type& seq, extDirection dir);
 
-void generateSequencesFromExtension(const Kmer& currSeq,
-		extDirection dir, SeqExt extension,
-		std::vector<Kmer>& outseqs);
+void generateSequencesFromExtension(const KmerPair& currSeq,
+		extDirection dir, DinucSet extension,
+		std::vector<KmerPair>& outseqs);
 
 /* Non-distributed graph algorithms. */
 

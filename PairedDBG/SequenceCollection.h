@@ -56,7 +56,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		// get the extensions of a sequence
 		bool getSeqData(const key_type& seq,
-				ExtensionRecord& extRecord, int& multiplicity) const;
+				DinucSetPair& extRecord, int& multiplicity) const;
 
 		const value_type& getSeqAndData(const key_type& key) const;
 
@@ -163,6 +163,7 @@ struct graph_traits<SequenceCollectionHash> {
 
 	// Other
 	typedef SequenceCollectionHash::EdgeSet EdgeSet;
+	static const unsigned NUM_EDGES = EdgeSet::NUM_EDGES;
 
 // AdjacencyGraph
 /** Iterate through the adjacent vertices of a vertex. */
@@ -172,14 +173,14 @@ struct adjacency_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		for (; m_i < NUM_BASES && !m_adj.checkBase(m_i); m_i++) {
+		for (; m_i < NUM_EDGES && !m_adj.checkBase(m_i); m_i++) {
 		}
-		if (m_i < NUM_BASES)
+		if (m_i < NUM_EDGES)
 			m_v.setLastBase(SENSE, m_i);
 	}
 
   public:
-	adjacency_iterator() : m_i(NUM_BASES) { }
+	adjacency_iterator() : m_i(NUM_EDGES) { }
 
 	adjacency_iterator(
 			vertex_descriptor u, EdgeSet adj)
@@ -191,7 +192,7 @@ struct adjacency_iterator
 
 	const vertex_descriptor& operator*() const
 	{
-		assert(m_i < NUM_BASES);
+		assert(m_i < NUM_EDGES);
 		return m_v;
 	}
 
@@ -207,7 +208,7 @@ struct adjacency_iterator
 
 	adjacency_iterator& operator++()
 	{
-		assert(m_i < NUM_BASES);
+		assert(m_i < NUM_EDGES);
 		++m_i;
 		next();
 		return *this;

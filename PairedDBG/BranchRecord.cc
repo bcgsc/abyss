@@ -48,8 +48,8 @@ BranchRecord::operator Sequence() const
 bool BranchRecord::isCanonical() const
 {
 	assert(size() > 1);
-	Kmer first = front().first;
-	Kmer last = back().first;
+	V first = front().first;
+	V last = back().first;
 	if (getDirection() == SENSE)
 		last.reverseComplement();
 	else

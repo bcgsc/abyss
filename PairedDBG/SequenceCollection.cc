@@ -2,7 +2,7 @@
 #include "SequenceCollection.h"
 #include "Log.h"
 #include "Common/Options.h"
-#include "Assembly/Options.h"
+#include "PairedDBG/Options.h"
 #include "MemoryUtil.h"
 #include "StringUtil.h" // for toSI
 #include "Timer.h"
@@ -98,7 +98,7 @@ size_t SequenceCollectionHash::cleanup()
 /** Return the complement of the specified base.
  * If the assembly is in colour space, this is a no-op.
  */
-static inline uint8_t complementBaseCode(uint8_t base)
+static inline KmerPair::Nuc complementBaseCode(KmerPair::Nuc base)
 {
 	return opt::colourSpace ? base : ~base & 0x3;
 }
@@ -139,7 +139,7 @@ void SequenceCollectionHash::removeExtension(const key_type& kmer,
 		if (!rc || palindrome)
 			it->second.removeExtension(dir, ext);
 		if (rc || palindrome)
-			it->second.removeExtension(!dir, ~ext);
+			it->second.removeExtension(!dir, ext.complement());
 	}
 	notify(*it);
 }
@@ -218,7 +218,7 @@ getSeqAndData(const key_type& key) const
 
 /** Return the data of the specified key. */
 bool SequenceCollectionHash::getSeqData(const key_type& key,
-		ExtensionRecord& extRecord, int& multiplicity) const
+		DinucSetPair& extRecord, int& multiplicity) const
 {
 	bool rc;
 	const_iterator it = find(key, rc);
@@ -226,7 +226,7 @@ bool SequenceCollectionHash::getSeqData(const key_type& key,
 	if (it == m_data.end())
 		return false;
 	const mapped_type data = it->second;
-	extRecord = rc ? ~data.extension() : data.extension();
+	extRecord = rc ? data.extension().complement() : data.extension();
 	multiplicity = data.getMultiplicity();
 	return true;
 }

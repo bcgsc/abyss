@@ -25,7 +25,7 @@ class ISequenceCollection
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
 		typedef Dinuc OutEdgeDescriptor;
-		typedef SeqExt EdgeSet;
+		typedef DinucSet EdgeSet;
 
 		virtual ~ISequenceCollection() { }
 

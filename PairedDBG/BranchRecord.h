@@ -1,8 +1,8 @@
 #ifndef PAIREDDBG_BRANCHRECORD_H
 #define PAIREDDBG_BRANCHRECORD_H 1
 
-#include "Kmer.h"
-#include "KmerData.h"
+#include "KmerPair.h"
+#include "KmerPairData.h"
 #include <algorithm> // for swap
 #include <cassert>
 #include <utility>
@@ -24,11 +24,13 @@ enum BranchState
 	BS_TOO_LONG,
 };
 
-/** A sequence of Kmer. */
+/** A sequence of KmerPair. */
 class BranchRecord
 {
 	public:
-		typedef std::pair<Kmer, KmerData> value_type;
+		typedef KmerPair V;
+		typedef KmerPairData VP;
+		typedef std::pair<V, VP> value_type;
 		typedef std::vector<value_type> BranchData;
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
@@ -107,7 +109,7 @@ class BranchRecord
 
 		/** Return true if the k-mer at position i is the specified
 		 * k-mer. */
-		bool exists(unsigned i, const Kmer& kmer) const
+		bool exists(unsigned i, const V& kmer) const
 		{
 			assert(i < m_data.size());
 			return m_data[i].first == kmer;

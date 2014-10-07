@@ -9,16 +9,17 @@
 using namespace std;
 
 typedef SequenceCollectionHash Graph;
+typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
 typedef graph_traits<Graph>::adjacency_iterator adjacency_iterator;
 
 /** Write out the specified contig. */
-static void writeContig(ostream& out, const Graph& g, const Kmer& u)
+static void writeContig(ostream& out, const Graph& g, const vertex_descriptor& u)
 {
 	if (contiguous_in(g, u))
 		return;
 	unsigned n = 1;
-	Kmer v = u;
+	vertex_descriptor v = u;
 	while (contiguous_out(g, v)) {
 		n++;
 		v = *adjacent_vertices(v, g).first;
@@ -30,7 +31,7 @@ static void writeContig(ostream& out, const Graph& g, const Kmer& u)
 }
 
 /** Write out the contigs that split at the specified sequence. */
-static void writeEdges(ostream& out, const Graph& g, const Kmer& u)
+static void writeEdges(ostream& out, const Graph& g, const vertex_descriptor& u)
 {
 	unsigned outdeg = out_degree(u, g);
 	if (outdeg == 0)
@@ -48,7 +49,7 @@ static void writeEdges(ostream& out, const Graph& g, const Kmer& u)
 }
 
 /** Write out a dot graph around the specified sequence. */
-static void write_vertex(ostream& out, const Graph& g, const Kmer& u)
+static void write_vertex(ostream& out, const Graph& g, const vertex_descriptor& u)
 {
 	if (contiguous_out(g, u))
 		writeContig(out, g, u);

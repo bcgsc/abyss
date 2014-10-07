@@ -24,12 +24,11 @@ libpaireddbg_a_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/DataLayer
 
 libpaireddbg_a_SOURCES = \
-	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
+	AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
-	DotWriter.cc DotWriter.h \
+	DotWriter.h \
 	ISequenceCollection.h \
-	KmerData.h \
 	KmerPair.h \
 	KmerPairData.h \
 	Options.cc Options.h \
