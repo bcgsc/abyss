@@ -47,7 +47,7 @@ void SequenceCollectionHash::setDeletedKey()
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 	for (SequenceDataHash::iterator it = m_data.begin();
 			it != m_data.end(); it++) {
-		Kmer rc(reverseComplement(it->first));
+		key_type rc(reverseComplement(it->first));
 		bool isrc;
 		SequenceDataHash::iterator search = find(rc, isrc);
 		// If this is false, we should have a palindrome or we're
@@ -65,12 +65,12 @@ void SequenceCollectionHash::setDeletedKey()
 }
 
 /** Add the specified k-mer to this collection. */
-void SequenceCollectionHash::add(const Kmer& seq, unsigned coverage)
+void SequenceCollectionHash::add(const key_type& seq, unsigned coverage)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(seq, rc);
+	iterator it = find(seq, rc);
 	if (it == m_data.end()) {
-		m_data.insert(make_pair(seq, KmerData(SENSE, coverage)));
+		m_data.insert(make_pair(seq, mapped_type(SENSE, coverage)));
 	} else if (coverage > 0) {
 		assert(!rc || !opt::ss);
 		it->second.addMultiplicity(rc ? ANTISENSE : SENSE, coverage);
@@ -105,10 +105,10 @@ static inline uint8_t complementBaseCode(uint8_t base)
 
 /** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
-		const Kmer& kmer, extDirection dir, uint8_t base)
+		const key_type& kmer, extDirection dir, uint8_t base)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(kmer, rc);
+	iterator it = find(kmer, rc);
 	if (it == m_data.end())
 		return false;
 	if (opt::ss) {
@@ -125,11 +125,11 @@ bool SequenceCollectionHash::setBaseExtension(
 }
 
 /** Remove the specified extensions from this k-mer. */
-void SequenceCollectionHash::removeExtension(const Kmer& kmer,
+void SequenceCollectionHash::removeExtension(const key_type& kmer,
 		extDirection dir, SeqExt ext)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(kmer, rc);
+	iterator it = find(kmer, rc);
 	assert(it != m_data.end());
 	if (opt::ss) {
 		assert(!rc);
@@ -144,17 +144,17 @@ void SequenceCollectionHash::removeExtension(const Kmer& kmer,
 	notify(*it);
 }
 
-void SequenceCollectionHash::setFlag(const Kmer& key, SeqFlag flag)
+void SequenceCollectionHash::setFlag(const key_type& key, SeqFlag flag)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(key, rc);
+	iterator it = find(key, rc);
 	assert(it != m_data.end());
 	it->second.setFlag(rc ? complement(flag) : flag);
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 {
-	for (SequenceCollectionHash::iterator it = m_data.begin();
+	for (iterator it = m_data.begin();
 			it != m_data.end(); ++it)
 		it->second.clearFlag(flag);
 }
@@ -173,9 +173,9 @@ void SequenceCollectionHash::printLoad() const
  * reverse complement. Return in rc whether the sequence is reversed.
  */
 SequenceCollectionHash::iterator SequenceCollectionHash::find(
-		const Kmer& key, bool& rc)
+		const key_type& key, bool& rc)
 {
-	SequenceCollectionHash::iterator it = find(key);
+	iterator it = find(key);
 	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
@@ -189,9 +189,9 @@ SequenceCollectionHash::iterator SequenceCollectionHash::find(
  * reverse complement. Return in rc whether the sequence is reversed.
  */
 SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
-		const Kmer& key, bool& rc) const
+		const key_type& key, bool& rc) const
 {
-	SequenceCollectionHash::const_iterator it = find(key);
+	const_iterator it = find(key);
 	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
@@ -206,10 +206,10 @@ SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
  * contain data.
  */
 const SequenceCollectionHash::value_type& SequenceCollectionHash::
-getSeqAndData(const Kmer& key) const
+getSeqAndData(const key_type& key) const
 {
 	bool rc;
-	SequenceCollectionHash::const_iterator it = find(key, rc);
+	const_iterator it = find(key, rc);
 	// rc should not be ignored. This seems quite dubious.
 	// The edges of this k-mer should be complemented.
 	assert(it != m_data.end());
@@ -217,15 +217,15 @@ getSeqAndData(const Kmer& key) const
 }
 
 /** Return the data of the specified key. */
-bool SequenceCollectionHash::getSeqData(const Kmer& key,
+bool SequenceCollectionHash::getSeqData(const key_type& key,
 		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	bool rc;
-	SequenceCollectionHash::const_iterator it = find(key, rc);
+	const_iterator it = find(key, rc);
 	assert(!rc || !opt::ss);
 	if (it == m_data.end())
 		return false;
-	const KmerData data = it->second;
+	const mapped_type data = it->second;
 	extRecord = rc ? ~data.extension() : data.extension();
 	multiplicity = data.getMultiplicity();
 	return true;

@@ -9,7 +9,7 @@
 
 using boost::graph_traits;
 
-/** A map of Kmer to KmerData. */
+/** A hash table mapping vertices to vertex properties. */
 class SequenceCollectionHash : public ISequenceCollection
 {
 	public:
@@ -21,10 +21,10 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		SequenceCollectionHash();
 
-		void add(const Kmer& seq, unsigned coverage = 1);
+		void add(const key_type& seq, unsigned coverage = 1);
 
 		/** Remove the specified sequence if it exists. */
-		void remove(const Kmer& seq)
+		void remove(const key_type& seq)
 		{
 			setFlag(seq, SF_DELETE);
 		}
@@ -42,28 +42,28 @@ class SequenceCollectionHash : public ISequenceCollection
 		void printLoad() const;
 
 		// Set flag for sequence seq
-		void setFlag(const Kmer& seq, SeqFlag flag);
+		void setFlag(const key_type& seq, SeqFlag flag);
 
 		// Clear the specified flag from every sequence in the
 		// collection.
 		void wipeFlag(SeqFlag flag);
 
-		bool setBaseExtension(const Kmer& seq, extDirection dir,
+		bool setBaseExtension(const key_type& seq, extDirection dir,
 				uint8_t base);
-		void removeExtension(const Kmer& seq,
+		void removeExtension(const key_type& seq,
 				extDirection dir, SeqExt ext);
 
 		// get the extensions of a sequence
-		bool getSeqData(const Kmer& seq,
+		bool getSeqData(const key_type& seq,
 				ExtensionRecord& extRecord, int& multiplicity) const;
 
-		const value_type& getSeqAndData(const Kmer& key) const;
+		const value_type& getSeqAndData(const key_type& key) const;
 
 		/** Return the data associated with the specified key. */
 		const mapped_type operator[](const key_type& key) const
 		{
 			bool rc;
-			SequenceCollectionHash::const_iterator it = find(key, rc);
+			const_iterator it = find(key, rc);
 			assert(it != m_data.end());
 			return rc ? ~it->second : it->second;
 		}
@@ -104,14 +104,14 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setDeletedKey();
 
 	private:
-		iterator find(const Kmer& key) { return m_data.find(key); }
-		const_iterator find(const Kmer& key) const
+		iterator find(const key_type& key) { return m_data.find(key); }
+		const_iterator find(const key_type& key) const
 		{
 			return m_data.find(key);
 		}
 
-		iterator find(const Kmer& key, bool& rc);
-		const_iterator find(const Kmer& key, bool& rc) const;
+		iterator find(const key_type& key, bool& rc);
+		const_iterator find(const key_type& key, bool& rc) const;
 
 		/** Call the observers of the specified sequence. */
 		void notify(const value_type& seq)
