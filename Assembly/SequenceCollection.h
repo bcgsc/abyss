@@ -63,7 +63,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		const mapped_type operator[](const key_type& key) const
 		{
 			bool rc;
-			SequenceCollectionHash::const_iterator it = find(key, rc);
+			const_iterator it = find(key, rc);
 			assert(it != m_data.end());
 			return rc ? ~it->second : it->second;
 		}

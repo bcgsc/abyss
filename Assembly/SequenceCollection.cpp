@@ -68,7 +68,7 @@ void SequenceCollectionHash::setDeletedKey()
 void SequenceCollectionHash::add(const key_type& seq, unsigned coverage)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(seq, rc);
+	iterator it = find(seq, rc);
 	if (it == m_data.end()) {
 		m_data.insert(make_pair(seq, mapped_type(SENSE, coverage)));
 	} else if (coverage > 0) {
@@ -108,7 +108,7 @@ bool SequenceCollectionHash::setBaseExtension(
 		const key_type& kmer, extDirection dir, uint8_t base)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(kmer, rc);
+	iterator it = find(kmer, rc);
 	if (it == m_data.end())
 		return false;
 	if (opt::ss) {
@@ -129,7 +129,7 @@ void SequenceCollectionHash::removeExtension(const key_type& kmer,
 		extDirection dir, SeqExt ext)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(kmer, rc);
+	iterator it = find(kmer, rc);
 	assert(it != m_data.end());
 	if (opt::ss) {
 		assert(!rc);
@@ -147,14 +147,14 @@ void SequenceCollectionHash::removeExtension(const key_type& kmer,
 void SequenceCollectionHash::setFlag(const key_type& key, SeqFlag flag)
 {
 	bool rc;
-	SequenceCollectionHash::iterator it = find(key, rc);
+	iterator it = find(key, rc);
 	assert(it != m_data.end());
 	it->second.setFlag(rc ? complement(flag) : flag);
 }
 
 void SequenceCollectionHash::wipeFlag(SeqFlag flag)
 {
-	for (SequenceCollectionHash::iterator it = m_data.begin();
+	for (iterator it = m_data.begin();
 			it != m_data.end(); ++it)
 		it->second.clearFlag(flag);
 }
@@ -175,7 +175,7 @@ void SequenceCollectionHash::printLoad() const
 SequenceCollectionHash::iterator SequenceCollectionHash::find(
 		const key_type& key, bool& rc)
 {
-	SequenceCollectionHash::iterator it = find(key);
+	iterator it = find(key);
 	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
@@ -191,7 +191,7 @@ SequenceCollectionHash::iterator SequenceCollectionHash::find(
 SequenceCollectionHash::const_iterator SequenceCollectionHash::find(
 		const key_type& key, bool& rc) const
 {
-	SequenceCollectionHash::const_iterator it = find(key);
+	const_iterator it = find(key);
 	if (opt::ss || it != m_data.end()) {
 		rc = false;
 		return it;
@@ -209,7 +209,7 @@ const SequenceCollectionHash::value_type& SequenceCollectionHash::
 getSeqAndData(const key_type& key) const
 {
 	bool rc;
-	SequenceCollectionHash::const_iterator it = find(key, rc);
+	const_iterator it = find(key, rc);
 	// rc should not be ignored. This seems quite dubious.
 	// The edges of this k-mer should be complemented.
 	assert(it != m_data.end());
@@ -221,7 +221,7 @@ bool SequenceCollectionHash::getSeqData(const key_type& key,
 		ExtensionRecord& extRecord, int& multiplicity) const
 {
 	bool rc;
-	SequenceCollectionHash::const_iterator it = find(key, rc);
+	const_iterator it = find(key, rc);
 	assert(!rc || !opt::ss);
 	if (it == m_data.end())
 		return false;
