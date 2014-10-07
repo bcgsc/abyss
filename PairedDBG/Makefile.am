@@ -30,6 +30,8 @@ libpaireddbg_a_SOURCES = \
 	DotWriter.cc DotWriter.h \
 	ISequenceCollection.h \
 	KmerData.h \
+	KmerPair.h \
+	KmerPairData.h \
 	Options.cc Options.h \
 	SequenceCollection.cc SequenceCollection.h
 

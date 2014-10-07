@@ -2,16 +2,16 @@
 #define PAIREDDBG_ISEQUENCECOLLECTION_H 1
 
 #include "config.h"
-#include "Kmer.h"
-#include "KmerData.h"
+#include "KmerPair.h"
+#include "KmerPairData.h"
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
-typedef google::sparse_hash_map<Kmer, KmerData, hash<Kmer> >
+typedef google::sparse_hash_map<KmerPair, KmerPairData, hash<KmerPair> >
 	SequenceDataHash;
 #else
 # include "UnorderedMap.h"
-typedef unordered_map<Kmer, KmerData, hash<Kmer> >
+typedef unordered_map<KmerPair, KmerPairData, hash<KmerPair> >
 	SequenceDataHash;
 #endif
 
@@ -24,7 +24,7 @@ class ISequenceCollection
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
-		typedef uint8_t OutEdgeDescriptor;
+		typedef Dinuc OutEdgeDescriptor;
 		typedef SeqExt EdgeSet;
 
 		virtual ~ISequenceCollection() { }
