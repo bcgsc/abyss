@@ -1,5 +1,5 @@
-#ifndef ASSEMBLYALGORITHMS_H
-#define ASSEMBLYALGORITHMS_H 1
+#ifndef PAIREDDBG_ASSEMBLYALGORITHMS_H
+#define PAIREDDBG_ASSEMBLYALGORITHMS_H 1
 
 #include "BranchGroup.h"
 #include "BranchRecord.h"

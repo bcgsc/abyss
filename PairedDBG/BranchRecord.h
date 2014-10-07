@@ -1,5 +1,5 @@
-#ifndef BRANCHRECORD_H
-#define BRANCHRECORD_H 1
+#ifndef PAIREDDBG_BRANCHRECORD_H
+#define PAIREDDBG_BRANCHRECORD_H 1
 
 #include "Kmer.h"
 #include "KmerData.h"

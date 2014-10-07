@@ -1,5 +1,5 @@
-#ifndef ASSEMBLY_OPTIONS_H
-#define ASSEMBLY_OPTIONS_H 1
+#ifndef PAIREDDBG_OPTIONS_H
+#define PAIREDDBG_OPTIONS_H 1
 
 #include <string>
 #include <vector>

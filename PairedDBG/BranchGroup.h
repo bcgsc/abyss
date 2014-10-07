@@ -1,5 +1,5 @@
-#ifndef BRANCHGROUP_H
-#define BRANCHGROUP_H 1
+#ifndef PAIREDDBG_BRANCHGROUP_H
+#define PAIREDDBG_BRANCHGROUP_H 1
 
 #include "BranchRecord.h"
 #include "SequenceCollection.h"

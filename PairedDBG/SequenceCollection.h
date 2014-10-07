@@ -1,5 +1,5 @@
-#ifndef SEQUENCECOLLECTION_H
-#define SEQUENCECOLLECTION_H 1
+#ifndef PAIREDDBG_SEQUENCECOLLECTION_H
+#define PAIREDDBG_SEQUENCECOLLECTION_H 1
 
 #include "Graph/Properties.h"
 #include "ISequenceCollection.h"

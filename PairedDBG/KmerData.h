@@ -1,5 +1,5 @@
-#ifndef KMERDATA_H
-#define KMERDATA_H 1
+#ifndef PAIREDDBG_KMERDATA_H
+#define PAIREDDBG_KMERDATA_H 1
 
 #include "Sense.h"
 #include "SeqExt.h"
