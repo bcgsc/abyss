@@ -50,7 +50,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		void wipeFlag(SeqFlag flag);
 
 		bool setBaseExtension(const key_type& seq, extDirection dir,
-				uint8_t base);
+				OutEdgeDescriptor base);
 		void removeExtension(const key_type& seq,
 				extDirection dir, EdgeSet ext);
 

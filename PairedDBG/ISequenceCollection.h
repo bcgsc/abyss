@@ -24,6 +24,7 @@ class ISequenceCollection
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
+		typedef uint8_t OutEdgeDescriptor;
 		typedef SeqExt EdgeSet;
 
 		virtual ~ISequenceCollection() { }
@@ -55,7 +56,7 @@ class ISequenceCollection
 
 		/** Remove the specified edge of this k-mer. */
 		void removeExtension(const key_type& seq,
-				extDirection dir, uint8_t base)
+				extDirection dir, OutEdgeDescriptor base)
 		{
 			removeExtension(seq, dir, EdgeSet(base));
 		}
@@ -67,7 +68,7 @@ class ISequenceCollection
 		}
 
 		virtual bool setBaseExtension(const key_type& seq,
-				extDirection dir, uint8_t base) = 0;
+				extDirection dir, OutEdgeDescriptor base) = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual size_t pumpNetwork() = 0;

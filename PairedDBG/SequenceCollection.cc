@@ -105,7 +105,7 @@ static inline uint8_t complementBaseCode(uint8_t base)
 
 /** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
-		const key_type& kmer, extDirection dir, uint8_t base)
+		const key_type& kmer, extDirection dir, OutEdgeDescriptor base)
 {
 	bool rc;
 	iterator it = find(kmer, rc);
