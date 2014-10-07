@@ -126,7 +126,7 @@ bool SequenceCollectionHash::setBaseExtension(
 
 /** Remove the specified extensions from this k-mer. */
 void SequenceCollectionHash::removeExtension(const key_type& kmer,
-		extDirection dir, SeqExt ext)
+		extDirection dir, EdgeSet ext)
 {
 	bool rc;
 	iterator it = find(kmer, rc);

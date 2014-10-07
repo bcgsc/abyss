@@ -18,6 +18,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef SequenceDataHash::value_type value_type;
 		typedef mapped_type vertex_property_type;
 		typedef no_property edge_property_type;
+		typedef ISequenceCollection::EdgeSet EdgeSet;
 
 		SequenceCollectionHash();
 
@@ -51,7 +52,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setBaseExtension(const key_type& seq, extDirection dir,
 				uint8_t base);
 		void removeExtension(const key_type& seq,
-				extDirection dir, SeqExt ext);
+				extDirection dir, EdgeSet ext);
 
 		// get the extensions of a sequence
 		bool getSeqData(const key_type& seq,
@@ -160,6 +161,9 @@ struct graph_traits<SequenceCollectionHash> {
 	typedef void edge_iterator;
 	typedef void edges_size_type;
 
+	// Other
+	typedef SequenceCollectionHash::EdgeSet EdgeSet;
+
 // AdjacencyGraph
 /** Iterate through the adjacent vertices of a vertex. */
 struct adjacency_iterator
@@ -178,7 +182,7 @@ struct adjacency_iterator
 	adjacency_iterator() : m_i(NUM_BASES) { }
 
 	adjacency_iterator(
-			vertex_descriptor u, SeqExt adj)
+			vertex_descriptor u, EdgeSet adj)
 		: m_v(u), m_adj(adj), m_i(0)
 	{
 		m_v.shift(SENSE);
@@ -211,7 +215,7 @@ struct adjacency_iterator
 
   private:
 	vertex_descriptor m_v;
-	SeqExt m_adj;
+	EdgeSet m_adj;
 	short unsigned m_i;
 }; // adjacency_iterator
 
@@ -291,7 +295,8 @@ adjacent_vertices(
 {
 	typedef graph_traits<SequenceCollectionHash>::adjacency_iterator
 		adjacency_iterator;
-	SeqExt adj = g[u].getExtension(SENSE);
+	typedef graph_traits<SequenceCollectionHash>::EdgeSet EdgeSet;
+	EdgeSet adj = g[u].getExtension(SENSE);
 	return std::make_pair(adjacency_iterator(u, adj),
 			adjacency_iterator());
 }

@@ -24,6 +24,7 @@ class ISequenceCollection
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
+		typedef SeqExt EdgeSet;
 
 		virtual ~ISequenceCollection() { }
 
@@ -50,19 +51,19 @@ class ISequenceCollection
 		virtual void printLoad() const = 0;
 
 		virtual void removeExtension(const key_type& seq,
-				extDirection dir, SeqExt ext) = 0;
+				extDirection dir, EdgeSet ext) = 0;
 
 		/** Remove the specified edge of this k-mer. */
 		void removeExtension(const key_type& seq,
 				extDirection dir, uint8_t base)
 		{
-			removeExtension(seq, dir, SeqExt(base));
+			removeExtension(seq, dir, EdgeSet(base));
 		}
 
 		/** Remove all the edges of this k-mer. */
 		void clearExtensions(const key_type& seq, extDirection dir)
 		{
-			removeExtension(seq, dir, SeqExt::mask(0xf));
+			removeExtension(seq, dir, EdgeSet::mask(0xf));
 		}
 
 		virtual bool setBaseExtension(const key_type& seq,
