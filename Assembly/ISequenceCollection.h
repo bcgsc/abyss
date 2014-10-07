@@ -15,29 +15,31 @@ typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #endif
 
-/** The interface of a map of Kmer to KmerData. */
+/** A hash table mapping vertices to vertex properties. */
 class ISequenceCollection
 {
 	public:
+		typedef SequenceDataHash::key_type key_type;
+		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
 
 		virtual ~ISequenceCollection() { }
 
-		virtual void add(const Kmer& seq, unsigned coverage = 1) = 0;
-		virtual void remove(const Kmer& seq) = 0;
+		virtual void add(const key_type& seq, unsigned coverage = 1) = 0;
+		virtual void remove(const key_type& seq) = 0;
 
-		virtual void setFlag(const Kmer& seq, SeqFlag flag) = 0;
+		virtual void setFlag(const key_type& seq, SeqFlag flag) = 0;
 
 		/** Mark the specified sequence in both directions. */
-		void mark(const Kmer& seq)
+		void mark(const key_type& seq)
 		{
 			setFlag(seq, SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 		}
 
 		/** Mark the specified sequence. */
-		void mark(const Kmer& seq, extDirection sense)
+		void mark(const key_type& seq, extDirection sense)
 		{
 			setFlag(seq, sense == SENSE
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
@@ -47,23 +49,23 @@ class ISequenceCollection
 
 		virtual void printLoad() const = 0;
 
-		virtual void removeExtension(const Kmer& seq,
+		virtual void removeExtension(const key_type& seq,
 				extDirection dir, SeqExt ext) = 0;
 
 		/** Remove the specified edge of this k-mer. */
-		void removeExtension(const Kmer& seq,
+		void removeExtension(const key_type& seq,
 				extDirection dir, uint8_t base)
 		{
 			removeExtension(seq, dir, SeqExt(base));
 		}
 
 		/** Remove all the edges of this k-mer. */
-		void clearExtensions(const Kmer& seq, extDirection dir)
+		void clearExtensions(const key_type& seq, extDirection dir)
 		{
 			removeExtension(seq, dir, SeqExt::mask(0xf));
 		}
 
-		virtual bool setBaseExtension(const Kmer& seq,
+		virtual bool setBaseExtension(const key_type& seq,
 				extDirection dir, uint8_t base) = 0;
 
 		// Receive and dispatch packets if necessary.
