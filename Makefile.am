@@ -45,6 +45,7 @@ SUBDIRS = \
 	MergePaths \
 	Misc \
 	Overlap \
+	PairedDBG \
 	ParseAligns \
 	PathOverlap \
 	PopBubbles \

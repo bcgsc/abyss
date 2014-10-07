@@ -265,6 +265,7 @@ AC_CONFIG_FILES([
 	SimpleGraph/Makefile
 	MergePaths/Makefile
 	KAligner/Makefile
+	PairedDBG/Makefile
 	ParseAligns/Makefile
 	PathOverlap/Makefile
 	Consensus/Makefile
