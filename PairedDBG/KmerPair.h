@@ -74,6 +74,13 @@ bool isPalindrome() const
 	return m_a.isPalindrome() && m_b.isPalindrome();
 }
 
+/** Return whether the specified k-mer pair edge is palindromic. */
+bool isPalindrome(extDirection dir) const
+{
+	//xxx fixme Is this correct?
+	return m_a.isPalindrome(dir) && m_b.isPalindrome(dir);
+}
+
 /** Return a string represenation. */
 std::string str() const
 {
