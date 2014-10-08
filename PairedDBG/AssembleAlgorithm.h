@@ -43,6 +43,9 @@ static inline
 size_t assemble(SequenceCollectionHash* seqCollection,
 		FastaWriter* fileWriter)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	Timer timer("Assemble");
 
 	size_t kmerCount = 0;
@@ -79,13 +82,13 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 
 		BranchRecord currBranch(dir);
 		currBranch.push_back(*iter);
-		Kmer currSeq = iter->first;
+		V currSeq = iter->first;
 		extendBranch(currBranch, currSeq,
 				iter->second.getExtension(dir));
 		assert(currBranch.isActive());
 		while(currBranch.isActive())
 		{
-			ExtensionRecord extRec;
+			DinucSetPair extRec;
 			int multiplicity = -1;
 			bool success = seqCollection->getSeqData(
 					currSeq, extRec, multiplicity);
