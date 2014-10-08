@@ -37,6 +37,9 @@ static inline
 size_t trimSequences(SequenceCollectionHash* seqCollection,
 		unsigned maxBranchCull)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	Timer timer("TrimSequences");
 	std::cout << "Pruning tips shorter than "
 		<< maxBranchCull << " bp...\n";
@@ -63,10 +66,10 @@ size_t trimSequences(SequenceCollectionHash* seqCollection,
 		}
 
 		BranchRecord currBranch(dir);
-		Kmer currSeq = iter->first;
+		V currSeq = iter->first;
 		while(currBranch.isActive())
 		{
-			ExtensionRecord extRec;
+			DinucSetPair extRec;
 			int multiplicity = -1;
 			bool success = seqCollection->getSeqData(
 					currSeq, extRec, multiplicity);
@@ -95,8 +98,11 @@ size_t trimSequences(SequenceCollectionHash* seqCollection,
 
 /** Extend this branch. */
 static inline
-bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
+bool extendBranch(BranchRecord& branch, KmerPair& kmer, DinucSet ext)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	
 	if (!ext.hasExtension()) {
 		branch.terminate(BS_NOEXT);
 		return false;
@@ -104,7 +110,7 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
 		branch.terminate(BS_AMBI_SAME);
 		return false;
 	} else {
-		std::vector<Kmer> adj;
+		std::vector<V> adj;
 		generateSequencesFromExtension(kmer, branch.getDirection(),
 				ext, adj);
 		assert(adj.size() == 1);
@@ -125,7 +131,7 @@ bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext)
  */
 static inline
 bool processLinearExtensionForBranch(BranchRecord& branch,
-		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
+		KmerPair& currSeq, DinucSetPair extensions, int multiplicity,
 		unsigned maxLength, bool addKmer)
 {
 	/** Stop contig assembly at palindromes. */
@@ -148,7 +154,7 @@ bool processLinearExtensionForBranch(BranchRecord& branch,
 
 	if (addKmer)
 		branch.push_back(std::make_pair(currSeq,
-					KmerData(multiplicity, extensions)));
+					KmerPairData(multiplicity, extensions)));
 
 	if (branch.isTooLong(maxLength)) {
 		// Too long.
