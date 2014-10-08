@@ -28,14 +28,18 @@ BranchRecord::operator Sequence() const
 		BranchData::const_iterator iter = m_data.begin();
 		outseq = iter->first.str();
 		++iter;
-		for (; iter != m_data.end(); ++iter)
-			outseq.append(1, iter->first.getLastBaseChar());
+		for (; iter != m_data.end(); ++iter) {
+			// xxx fixme This is wrong.
+			outseq.append(1, iter->first.getLastBaseChar().first);
+		}
 	} else {
 		BranchData::const_reverse_iterator iter = m_data.rbegin();
 		outseq = iter->first.str();
 		++iter;
-		for (; iter != m_data.rend(); ++iter)
-			outseq.append(1, iter->first.getLastBaseChar());
+		for (; iter != m_data.rend(); ++iter) {
+			// xxx fixme This is wrong.
+			outseq.append(1, iter->first.getLastBaseChar().first);
+		}
 	}
 	return outseq;
 }

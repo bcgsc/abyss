@@ -1,10 +1,12 @@
 #ifndef PAIREDDBG_KMERPAIR_H
 #define PAIREDDBG_KMERPAIR_H 1
 
-#include <stdint.h>
-
 #include "Dinuc.h"
+
 #include "Common/Kmer.h"
+
+#include <stdint.h>
+#include <utility>
 
 /** A pair of k-mer. */
 class KmerPair
@@ -40,10 +42,9 @@ unsigned length() const
 }
 
 /** Return the terminal nucleotides. */
-char getLastBaseChar() const
+std::pair<char, char> getLastBaseChar() const
 {
-	//xxx fixme This is not correct.
-	return m_a.getLastBaseChar();
+	return std::make_pair(m_a.getLastBaseChar(), m_b.getLastBaseChar());
 }
 
 /** Return the hash value. */
