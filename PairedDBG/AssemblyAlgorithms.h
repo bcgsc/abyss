@@ -211,11 +211,11 @@ SeqContiguity checkSeqContiguity(
 #include "AssembleAlgorithm.h"
 #include "BubbleAlgorithm.h"
 #include "CoverageAlgorithm.h"
-#include "ErodeAlgorithm.h"
 #include "LoadAlgorithm.h"
 #include "TrimAlgorithm.h"
 #endif
 
+#include "ErodeAlgorithm.h"
 #include "SplitAlgorithm.h"
 
 #endif
