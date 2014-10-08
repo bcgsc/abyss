@@ -96,10 +96,22 @@ void clear(const DinucSet& x)
 DinucSet complement() const
 {
 	//xxx fixme todo
-	assert(false);
-	return *this;
+//	assert(false);
+	uint16_t val=this->Bits;
+	DinucSet Ds=mask(reverseBits(val));
+	return Ds;
 }
-
+//can be improved
+uint16_t reverseBits(uint16_t val) const
+{
+	uint16_t y=0;
+	 for(int position=NUM_DINU-1; position>=0; position--){
+	y+=((val&1)<<position);
+	val >>= 1;
+	assert(position < 1<<NUM_DINU);
+	}	 
+	 return y;
+}
 private:
 	/** A bit vector representing a set. */
 	Bits m_data;
