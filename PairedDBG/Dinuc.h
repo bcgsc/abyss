@@ -86,6 +86,12 @@ void setBase(const Dinuc& x)
 	m_data |= 1 << x;
 }
 
+/** Remove all elements from this set. */
+void clear()
+{
+	m_data = 0;
+}
+
 /** Remove the specified elements from this set. */
 void clear(const DinucSet& x)
 {
