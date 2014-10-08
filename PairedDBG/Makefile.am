@@ -34,7 +34,7 @@ libpaireddbg_a_SOURCES = \
 	DotWriter.h \
 	ErodeAlgorithm.h \
 	ISequenceCollection.h \
-	KmerPair.h \
+	KmerPair.cc KmerPair.h \
 	KmerPairData.h \
 	LoadAlgorithm.h \
 	Options.cc Options.h \

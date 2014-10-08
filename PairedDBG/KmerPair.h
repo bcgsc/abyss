@@ -34,11 +34,19 @@ bool operator<(const KmerPair& x) const
 		: m_b < x.m_b;
 }
 
-/** Return the length of this k-mer pair. */
+/** Return the length of a the k-mer pair, including the gap. */
 unsigned length() const
 {
-	//xxx fixme This is not correct.
-	return m_a.length() + m_b.length();
+	return s_length;
+}
+
+/** Set the length of a k-mer pair, including the gap.
+ * This value is shared by all instances.
+ */
+static void setLength(unsigned length)
+{
+	assert(length >= 2 * Kmer::length());
+	s_length = length;
 }
 
 /** Return the terminal nucleotides. */
@@ -105,6 +113,9 @@ Dinuc shiftPrepend(Dinuc x)
 	Nuc b = m_b.shift(ANTISENSE, x.b());
 	return Dinuc(a, b);
 }
+
+	/** The length of a k-mer pair, including the gap. */
+	static unsigned s_length;
 
 	/** The first k-mer. */
 	Kmer m_a;
