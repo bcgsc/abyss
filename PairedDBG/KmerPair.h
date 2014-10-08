@@ -17,8 +17,11 @@ public:
 /** Default constructor. */
 KmerPair() { }
 
-/** Construct a k-mer pair. */
+/** Construct a k-mer pair from two k-mer. */
 KmerPair(const Kmer& a, const Kmer& b) : m_a(a), m_b(b) { }
+
+/** Construct a k-mer pair from two strings. */
+KmerPair(const std::string& a, const std::string& b) : m_a(a), m_b(b) { }
 
 /** Return whether the two objects are equal. */
 bool operator==(const KmerPair& x) const
