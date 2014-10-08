@@ -29,6 +29,9 @@ void openBubbleFile(std::ofstream& out)
 static inline
 size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	Timer timer("PopBubbles");
 	size_t numPopped = 0;
 
@@ -41,7 +44,7 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 		if (iter->second.deleted())
 			continue;
 
-		ExtensionRecord extRec = iter->second.extension();
+		DinucSetPair extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				// Found a potential bubble, examine each branch
@@ -59,10 +62,10 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 					size_t numBranches = branchGroup.size();
 					for (unsigned j = 0; j < numBranches; ++j) {
 						// Get the extensions of this branch
-						ExtensionRecord extRec;
+						DinucSetPair extRec;
 						int multiplicity = -1;
 
-						const Kmer& lastKmer
+						const V& lastKmer
 							= branchGroup[j].back().first;
 						bool success = seqCollection->getSeqData(
 								lastKmer, extRec, multiplicity);
@@ -119,14 +122,17 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 
 // Populate a branch group with the inital branches from a sequence
 static inline
-void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
-		const SeqExt& extension)
+void initiateBranchGroup(BranchGroup& group, const KmerPair& seq,
+		const DinucSet& extension)
 {
-	std::vector<Kmer> extSeqs;
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
+	std::vector<V> extSeqs;
 	generateSequencesFromExtension(seq, group.getDirection(),
 			extension, extSeqs);
 	assert(extSeqs.size() > 1);
-	for (std::vector<Kmer>::iterator seqIter = extSeqs.begin();
+	for (std::vector<V>::iterator seqIter = extSeqs.begin();
 			seqIter != extSeqs.end(); ++seqIter)
 		group.addBranch(BranchRecord(group.getDirection()), *seqIter);
 }
@@ -134,12 +140,15 @@ void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
 /** Process an a branch group extension. */
 static inline
 bool processBranchGroupExtension(BranchGroup& group,
-		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord ext, int multiplicity,
+		size_t branchIndex, const KmerPair& seq,
+		DinucSetPair ext, int multiplicity,
 		unsigned maxLength)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	BranchRecord& branch = group[branchIndex];
-	branch.setData(std::make_pair(seq, KmerData(multiplicity, ext)));
+	branch.setData(std::make_pair(seq, KmerPairData(multiplicity, ext)));
 
 	extDirection dir = group.getDirection();
 	if (ext.dir[!dir].isAmbiguous()) {
@@ -150,11 +159,11 @@ bool processBranchGroupExtension(BranchGroup& group,
 			return false;
 		}
 
-		std::vector<Kmer> extKmer;
+		std::vector<V> extKmer;
 		generateSequencesFromExtension(seq, !dir,
 				ext.dir[!dir], extKmer);
 		assert(extKmer.size() > 1);
-		for (std::vector<Kmer>::iterator it = extKmer.begin();
+		for (std::vector<V>::iterator it = extKmer.begin();
 				it != extKmer.end(); ++it) {
 			assert(branch.size() > 1);
 			if (!group.exists(branch.size() - 2, *it)) {
@@ -168,23 +177,23 @@ bool processBranchGroupExtension(BranchGroup& group,
 
 	if (ext.dir[dir].isAmbiguous()) {
 		// Create a new branch to follow the fork.
-		std::vector<Kmer> extKmer;
+		std::vector<V> extKmer;
 		generateSequencesFromExtension(seq, dir,
 				ext.dir[dir], extKmer);
 		assert(extKmer.size() > 1);
 		BranchRecord original = branch;
-		std::vector<Kmer>::iterator it = extKmer.begin();
-		branch.push_back(std::make_pair(*it++, KmerData()));
+		std::vector<V>::iterator it = extKmer.begin();
+		branch.push_back(std::make_pair(*it++, KmerPairData()));
 		for (; it != extKmer.end(); ++it)
 			group.addBranch(original, *it);
 		return group.isExtendable();
 	}
 
-	Kmer nextKmer = seq;
+	V nextKmer = seq;
 	if (processLinearExtensionForBranch(branch,
 			nextKmer, ext, multiplicity,
 			maxLength, false))
-		branch.push_back(std::make_pair(nextKmer, KmerData()));
+		branch.push_back(std::make_pair(nextKmer, KmerPairData()));
 	else
 		group.setNoExtension();
 	return group.isExtendable();
@@ -215,12 +224,15 @@ static inline
 void collapseJoinedBranches(ISequenceCollection* collection,
 		BranchGroup& group)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+
 	const BranchRecord& best = group[0];
 	logger(5) << "Popping " << best.size() << ' '
 		<< best.front().first << '\n';
 
 	// Add the k-mer from the dead branches.
-	std::map<Kmer, KmerData> doomed;
+	std::map<V, KmerPairData> doomed;
 	for (BranchGroup::const_iterator branchIt = group.begin() + 1;
 			branchIt != group.end(); ++branchIt) {
 		const BranchRecord& branch = *branchIt;
@@ -235,7 +247,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 		doomed.erase(it->first);
 
 	// Remove the dead k-mer from the assembly.
-	for (std::map<Kmer, KmerData>::const_iterator it = doomed.begin();
+	for (std::map<V, KmerPairData>::const_iterator it = doomed.begin();
 			it != doomed.end(); ++it)
 		removeSequenceAndExtensions(collection, *it);
 }
