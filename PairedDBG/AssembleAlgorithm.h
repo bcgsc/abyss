@@ -5,29 +5,6 @@
 
 namespace AssemblyAlgorithms {
 
-/** Remove all marked k-mer.
- * @return the number of removed k-mer
- */
-static inline
-size_t removeMarked(ISequenceCollection* pSC)
-{
-	Timer timer(__func__);
-	size_t count = 0;
-	for (ISequenceCollection::iterator it = pSC->begin();
-			it != pSC->end(); ++it) {
-		if (it->second.deleted())
-			continue;
-		if (it->second.marked()) {
-			removeSequenceAndExtensions(pSC, *it);
-			count++;
-		}
-		pSC->pumpNetwork();
-	}
-	if (count > 0)
-		logger(1) << "Removed " << count << " marked k-mer.\n";
-	return count;
-}
-
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
