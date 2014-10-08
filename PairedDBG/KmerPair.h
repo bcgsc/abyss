@@ -105,6 +105,11 @@ void reverseComplement()
 	std::swap(m_a, m_b); //xxx Is this correct?
 }
 
+friend std::ostream& operator<<(std::ostream& out, const KmerPair& x)
+{
+	return out << x.m_a.str() << '-' << x.m_b.str();
+}
+
 private:
 
 /** Shift both k-mer left. */
