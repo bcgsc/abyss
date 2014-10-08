@@ -24,15 +24,23 @@ libpaireddbg_a_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/DataLayer
 
 libpaireddbg_a_SOURCES = \
+	AdjacencyAlgorithm.h \
+	AssembleAlgorithm.h \
 	AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
+	BubbleAlgorithm.h \
+	CoverageAlgorithm.h \
 	DotWriter.h \
+	ErodeAlgorithm.h \
 	ISequenceCollection.h \
 	KmerPair.h \
 	KmerPairData.h \
+	LoadAlgorithm.h \
 	Options.cc Options.h \
-	SequenceCollection.cc SequenceCollection.h
+	SequenceCollection.cc SequenceCollection.h \
+	SplitAlgorithm.h \
+	TrimAlgorithm.h
 
 if HAVE_SQLITE
 libpaireddbg_a_LIBADD = $(top_builddir)/Common/libcommon.a
