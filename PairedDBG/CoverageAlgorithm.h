@@ -2,6 +2,9 @@
 #define PAIREDDBG_COVERAGEALGORITHM_H 1
 
 #include "Common/Histogram.h"
+#include "Common/IOUtil.h"
+#include "Common/Options.h" // for opt::rank
+#include <fstream>
 
 namespace AssemblyAlgorithms {
 

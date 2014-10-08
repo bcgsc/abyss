@@ -233,10 +233,10 @@ size_t removeMarked(ISequenceCollection* pSC)
 #include "AdjacencyAlgorithm.h"
 #include "AssembleAlgorithm.h"
 #include "BubbleAlgorithm.h"
-#include "CoverageAlgorithm.h"
 #include "LoadAlgorithm.h"
 #endif
 
+#include "CoverageAlgorithm.h"
 #include "ErodeAlgorithm.h"
 #include "SplitAlgorithm.h"
 #include "TrimAlgorithm.h"
