@@ -77,8 +77,11 @@ bool isPalindrome() const
 /** Return a string represenation. */
 std::string str() const
 {
-	//xxx fixme todo
-	return std::string("xxx");
+	assert(length() >= m_a.length());
+	std::string s(length(), 'N');
+	s.replace(0, m_a.length(), m_a.str());
+	s.replace(length() - m_b.length(), m_b.length(), m_b.str());
+	return s;
 }
 
 /** Set the last base of each k-mer. */
