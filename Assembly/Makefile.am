@@ -12,7 +12,15 @@ libassembly_a_SOURCES = \
 	ISequenceCollection.h \
 	KmerData.h \
 	Options.cpp Options.h \
-	SequenceCollection.cpp SequenceCollection.h
+	SequenceCollection.cpp SequenceCollection.h \
+	AdjacencyAlgorithm.h \
+	AssembleAlgorithm.h \
+	BubbleAlgorithm.h \
+	CoverageAlgorithm.h \
+	ErodeAlgorithm.h \
+	LoadAlgorithm.h \
+	SplitAlgorithm.h \
+	TrimAlgorithm.h
 
 if HAVE_SQLITE
 libassembly_a_LIBADD = $(top_builddir)/Common/libcommon.a
