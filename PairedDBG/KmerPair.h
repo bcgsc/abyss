@@ -133,7 +133,6 @@ Dinuc shiftPrepend(Dinuc x)
 	Kmer m_b;
 };
 
-
 /** Return the reverse complement. */
 static inline KmerPair reverseComplement(const KmerPair& u)
 {
