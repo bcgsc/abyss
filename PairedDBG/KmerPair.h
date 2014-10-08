@@ -14,6 +14,12 @@ class KmerPair
 public:
 	typedef Dinuc::Nuc Nuc;
 
+/** Default constructor. */
+KmerPair() { }
+
+/** Construct a k-mer pair. */
+KmerPair(const Kmer& a, const Kmer& b) : m_a(a), m_b(b) { }
+
 /** Return whether the two objects are equal. */
 bool operator==(const KmerPair& x) const
 {
