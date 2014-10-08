@@ -177,8 +177,9 @@ void generateSequencesFromExtension(const KmerPair& currSeq,
 #include "CoverageAlgorithm.h"
 #include "ErodeAlgorithm.h"
 #include "LoadAlgorithm.h"
-#include "SplitAlgorithm.h"
 #include "TrimAlgorithm.h"
 #endif
+
+#include "SplitAlgorithm.h"
 
 #endif

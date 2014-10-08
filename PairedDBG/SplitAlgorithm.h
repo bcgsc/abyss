@@ -10,10 +10,12 @@ static inline
 size_t markNeighbours(ISequenceCollection* g,
 		const ISequenceCollection::value_type& u, extDirection sense)
 {
-	std::vector<Kmer> adj;
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	std::vector<V> adj;
 	generateSequencesFromExtension(u.first, sense,
 			u.second.getExtension(sense), adj);
-	for (std::vector<Kmer>::iterator v = adj.begin(); v != adj.end(); ++v)
+	for (std::vector<V>::iterator v = adj.begin(); v != adj.end(); ++v)
 		g->mark(*v, !sense);
 	return adj.size();
 }
