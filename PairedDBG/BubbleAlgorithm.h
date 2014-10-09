@@ -37,7 +37,7 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 
 	// Set the cutoffs
 	const unsigned maxNumBranches = 3;
-	const unsigned maxLength = opt::bubbleLen - opt::kmerSize + 1;
+	const unsigned maxLength = opt::bubbleLen - V::length() + 1;
 
 	for (ISequenceCollection::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {

@@ -17,7 +17,7 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 	assert(opt::rank == -1);
 	size_t count = 0;
 	for (FastaRecord rec; in >> rec;) {
-		assert(rec.seq.size() == opt::kmerSize);
+		assert(rec.seq.size() == V::length());
 		std::istringstream iss(rec.id);
 		float coverage = 1;
 		iss >> coverage;
@@ -69,7 +69,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 	for (FastaRecord rec; reader >> rec;) {
 		Sequence seq = rec.seq;
 		size_t len = seq.length();
-		if (opt::kmerSize > len) {
+		if (V::length() > len) {
 			count_small++;
 			continue;
 		}
@@ -100,8 +100,8 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			count_reversed++;
 		}
 
-		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
-			Sequence kmer(seq, i, opt::kmerSize);
+		for (unsigned i = 0; i < len - V::length() + 1; i++) {
+			Sequence kmer(seq, i, V::length());
 			if (good || kmer.find_first_not_of("acgtACGT0123")
 					== std::string::npos) {
 				if (good || kmer.find_first_of("acgt") == std::string::npos)
@@ -136,7 +136,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 	if (count_small > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "
-			"shorter than " << opt::kmerSize << " bases\n";
+			"shorter than " << V::length() << " bases\n";
 	if (reader.unchaste() > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << reader.unchaste() << " unchaste reads\n";
