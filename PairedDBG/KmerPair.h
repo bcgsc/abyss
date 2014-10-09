@@ -44,7 +44,7 @@ bool operator<(const KmerPair& x) const
 }
 
 /** Return the length of a the k-mer pair, including the gap. */
-unsigned length() const
+static unsigned length()
 {
 	return s_length;
 }
