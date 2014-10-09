@@ -54,7 +54,7 @@ bool loadSequence(ISequenceCollection* seqCollection, Sequence& seq)
 	for (unsigned i = 0; i < len - KmerPair::length() + 1; ++i) {
 		Sequence kmer;
 		int gapSize = KmerPair::length() - 2 * Kmer::length();
-		if (gapSize > 0) 
+		if (gapSize > 0)
 		{
 			std::stringstream sseed;
 			sseed << Sequence(seq, i, Kmer::length()) << Sequence(seq, i + Kmer::length() + gapSize, Kmer::length());
@@ -67,27 +67,27 @@ bool loadSequence(ISequenceCollection* seqCollection, Sequence& seq)
 					<< '\n';
 				exit(EXIT_FAILURE);
 			}
-		} 
+		}
 		// if delta=0
 		else
 			kmer = Sequence(seq, i, KmerPair::length());
 
-		if (good || kmer.find_first_not_of("acgtACGT0123") == std::string::npos) 
+		if (good || kmer.find_first_not_of("acgtACGT0123") == std::string::npos)
 		{
 			if (good || kmer.find_first_of("acgt") == std::string::npos)
 			{
 				Sequence buf1(kmer, 0, Kmer::length());
 				Sequence buf2(kmer, Kmer::length(), Kmer::length());
-				seqCollection->add(KmerPair(buf1,buf2));	
+				seqCollection->add(KmerPair(buf1,buf2));
 			}
-			else 
+			else
 			{
 				transform(kmer.begin(), kmer.end(), kmer.begin(),::toupper);
 				Sequence buf1(kmer, 0, Kmer::length());
 				Sequence buf2(kmer, Kmer::length(), Kmer::length());
 				seqCollection->add(KmerPair(buf1,buf2), 0);
 			}
-			discarded = false;	
+			discarded = false;
 		}
 	}
 
