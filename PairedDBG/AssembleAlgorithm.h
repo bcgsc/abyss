@@ -2,6 +2,7 @@
 #define PAIREDDBG_ASSEMBLEALGORITHM_H 1
 
 #include <iostream>
+#include <climits>
 
 namespace AssemblyAlgorithms {
 
