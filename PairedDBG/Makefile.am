@@ -26,7 +26,7 @@ libpaireddbg_a_CPPFLAGS = -I$(top_srcdir) \
 libpaireddbg_a_SOURCES = \
 	AdjacencyAlgorithm.h \
 	AssembleAlgorithm.h \
-	AssemblyAlgorithms.h \
+	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
 	BubbleAlgorithm.h \
