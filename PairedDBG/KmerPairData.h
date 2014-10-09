@@ -119,7 +119,7 @@ class KmerPairData
 		return m_ext.dir[dir];
 	}
 
-	void setBaseExtension(extDirection dir, uint8_t base)
+	void setBaseExtension(extDirection dir, Dinuc base)
 	{
 		m_ext.dir[dir].setBase(base);
 	}

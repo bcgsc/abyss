@@ -95,14 +95,6 @@ size_t SequenceCollectionHash::cleanup()
 	return count;
 }
 
-/** Return the complement of the specified base.
- * If the assembly is in colour space, this is a no-op.
- */
-static inline KmerPair::Nuc complementBaseCode(KmerPair::Nuc base)
-{
-	return opt::colourSpace ? base : ~base & 0x3;
-}
-
 /** Add an edge to this k-mer. */
 bool SequenceCollectionHash::setBaseExtension(
 		const key_type& kmer, extDirection dir, OutEdgeDescriptor base)
@@ -119,7 +111,7 @@ bool SequenceCollectionHash::setBaseExtension(
 		if (!rc || palindrome)
 			it->second.setBaseExtension(dir, base);
 		if (rc || palindrome)
-			it->second.setBaseExtension(!dir, complementBaseCode(base));
+			it->second.setBaseExtension(!dir, base.reverseComplement());
 	}
 	return true;
 }

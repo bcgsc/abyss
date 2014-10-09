@@ -22,13 +22,22 @@ public:
 	Dinuc(Bits x) : m_data(x) { }
 
 	/** Cast to an integer. */
-	operator Bits() const { return m_data; }
+	Bits toInt() const { return m_data; }
 
 	/** Return the first nucleotide. */
 	Nuc a() const { return m_data & 0x3; }
 
 	/** Return the first nucleotide. */
 	Nuc b() const { return (m_data >> 2) & 0x3; }
+
+	/** Complement a single base. */
+	static Nuc complementNuc(Nuc x) { return 4 - x; }
+
+	/** Return the reverse complement of this dinucleotide. */
+	Dinuc reverseComplement() const
+	{
+		return Dinuc(complementNuc(b()), complementNuc(a()));
+	}
 
 private:
 	/** Two nucleotides packed into a single scalar. */
@@ -45,8 +54,11 @@ public:
 	/** A bit vector. */
 	typedef uint16_t Bits;
 
+	/** Default constructor. */
 	DinucSet() : m_data(0) { }
-	DinucSet(const Dinuc& x) : m_data(1 << x) { }
+
+	/** Construct a set containing a single element. */
+	DinucSet(const Dinuc& x) : m_data(1 << x.toInt()) { }
 
 /** Return a set with the specified bits set. */
 static DinucSet mask(Bits x)
@@ -59,7 +71,7 @@ static DinucSet mask(Bits x)
 /** Return whether the specified element is present in this set. */
 bool checkBase(const Dinuc& x) const
 {
-	return m_data & (1 << x);
+	return m_data & (1 << x.toInt());
 }
 
 /** Return the number of elements in this set. */
@@ -83,7 +95,7 @@ bool isAmbiguous() const
 /** Add the specified element to this set. */
 void setBase(const Dinuc& x)
 {
-	m_data |= 1 << x;
+	m_data |= 1 << x.toInt();
 }
 
 /** Remove all elements from this set. */

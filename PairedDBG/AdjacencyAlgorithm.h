@@ -25,7 +25,7 @@ size_t generateAdjacency(ISequenceCollection* seqCollection)
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			V testSeq(iter->first);
-			uint8_t adjBase = testSeq.shift(dir);
+			Dinuc adjBase = testSeq.shift(dir);
 			for (unsigned i = 0; i < DinucSet::NUM_EDGES; i++) {
 				testSeq.setLastBase(dir, i);
 				if (seqCollection->setBaseExtension(

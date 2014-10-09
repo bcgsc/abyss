@@ -30,7 +30,7 @@ void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 
 	DinucSet extension(seq.second.getExtension(dir));
 	V testSeq(seq.first);
-	uint8_t extBase = testSeq.shift(dir);
+	Dinuc extBase = testSeq.shift(dir);
 	for (unsigned i = 0; i < extension.NUM_EDGES; i++) {
 		if (extension.checkBase(i)) {
 			testSeq.setLastBase(dir, i);
