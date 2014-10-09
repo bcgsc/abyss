@@ -101,12 +101,12 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			Sequence kmer;
 			if (opt::delta > 0) 
 			{
-				stringstream sseed;
+				std::stringstream sseed;
 				sseed << Sequence(seq, i, opt::kmerSize) << Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize);
 				kmer = sseed.str();
 				if (sseed.str().size() != (opt::kmerSize*2)) 
 				{
-					cout << Sequence(seq, i, opt::kmerSize + opt::delta)
+					std::cout << Sequence(seq, i, opt::kmerSize + opt::delta)
 						<< '\n'
 						<< Sequence(seq, i, opt::kmerSize) << '\n'
 						<< Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize)
@@ -118,9 +118,9 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			else
 				kmer = Sequence(seq, i, opt::kmerSize);
 			
-			if (good || kmer.find_first_not_of("acgtACGT0123") == string::npos) 
+			if (good || kmer.find_first_not_of("acgtACGT0123") == std::string::npos) 
 			{
-				if (good || kmer.find_first_of("acgt") == string::npos)
+				if (good || kmer.find_first_of("acgt") == std::string::npos)
 				{
 					Sequence buf1(kmer,0,opt::kmerSize);
 					Sequence buf2(kmer,opt::kmerSize,opt::kmerSize);
