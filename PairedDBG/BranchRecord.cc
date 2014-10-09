@@ -30,7 +30,7 @@ BranchRecord::operator Sequence() const
 		++iter;
 		for (; iter != m_data.end(); ++iter) {
 			// xxx fixme This is wrong.
-			outseq.append(1, iter->first.getLastBaseChar().first);
+			outseq.append(1, iter->first.getLastBaseChar().second);
 		}
 	} else {
 		BranchData::const_reverse_iterator iter = m_data.rbegin();
@@ -38,7 +38,7 @@ BranchRecord::operator Sequence() const
 		++iter;
 		for (; iter != m_data.rend(); ++iter) {
 			// xxx fixme This is wrong.
-			outseq.append(1, iter->first.getLastBaseChar().first);
+			outseq.append(1, iter->first.getLastBaseChar().second);
 		}
 	}
 	return outseq;
