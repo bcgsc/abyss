@@ -17,52 +17,6 @@ int BranchRecord::calculateBranchMultiplicity() const
 	return total;
 }
 
-/** Build a contig from a branch. */
-BranchRecord::operator Sequence() const
-{
-	assert(!m_data.empty());
-	Sequence outseq;
-	size_t n = m_data.front().first.length() + m_data.size() - 1;
-	outseq.reserve(n);
-
-	if (m_dir == SENSE) {
-		BranchData::const_iterator iter = m_data.begin();
-		outseq = iter->first.str();
-		outseq.resize(n, 'N');
-		++iter;
-		string::iterator outa = outseq.begin() + Kmer::length();
-		string::iterator outb = outseq.begin() + KmerPair::length();
-		for (; iter != m_data.end(); ++iter) {
-			std::pair<char, char> x = iter->first.getLastBaseChar();
-			assert(*outa == 'N' || *outa == x.first);
-			*outa = x.first;
-			++outa;
-			assert(outb < outseq.end());
-			assert(*outb == 'N');
-			*outb = x.second;
-			++outb;
-		}
-	} else {
-		BranchData::const_reverse_iterator iter = m_data.rbegin();
-		outseq = iter->first.str();
-		outseq.resize(n, 'N');
-		++iter;
-		string::iterator outa = outseq.begin() + Kmer::length();
-		string::iterator outb = outseq.begin() + KmerPair::length();
-		for (; iter != m_data.rend(); ++iter) {
-			std::pair<char, char> x = iter->first.getLastBaseChar();
-			assert(*outa == 'N' || *outa == x.first);
-			*outa = x.first;
-			++outa;
-			assert(outb < outseq.end());
-			assert(*outb == 'N');
-			*outb = x.second;
-			++outb;
-		}
-	}
-	return outseq;
-}
-
 /**
  * Return whether this branch is the canonical representation of the
  * contig that it represents. A contig has two ends, and the contig

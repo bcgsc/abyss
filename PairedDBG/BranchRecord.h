@@ -3,7 +3,7 @@
 
 #include "KmerPair.h"
 #include "KmerPairData.h"
-#include <algorithm> // for swap
+#include <algorithm>
 #include <cassert>
 #include <utility>
 #include <vector>
@@ -46,6 +46,9 @@ class BranchRecord
 			std::swap(m_dir, o.m_dir);
 			std::swap(m_state, o.m_state);
 		}
+
+		template <typename It, typename OutIt>
+		void str(It it, const It last, OutIt out) const;
 
 		operator Sequence() const;
 
@@ -137,6 +140,39 @@ namespace std {
 	{
 		a.swap(b);
 	}
+}
+
+/** Generate the sequence of this contig. */
+template <typename It, typename OutIt>
+void BranchRecord::str(It it, It last, OutIt out) const
+{
+	assert(it < last);
+	std::string k0 = it->first.str();
+	std::copy(k0.begin(), k0.end(), out);
+	++it;
+	Sequence::iterator outa = out + Kmer::length();
+	Sequence::iterator outb = out + KmerPair::length();
+	for (; it != last; ++it) {
+		std::pair<char, char> x = it->first.getLastBaseChar();
+		assert(*outa == 'N' || *outa == x.first);
+		*outa = x.first;
+		++outa;
+		assert(*outb == 'N');
+		*outb = x.second;
+		++outb;
+	}
+}
+
+/** Return the sequence of this contig. */
+inline
+BranchRecord::operator Sequence() const
+{
+	assert(!m_data.empty());
+	Sequence s(m_data.front().first.length() + m_data.size() - 1, 'N');
+	m_dir == SENSE
+		? str(m_data.begin(), m_data.end(), s.begin())
+		: str(m_data.rbegin(), m_data.rend(), s.begin());
+	return s;
 }
 
 #endif
