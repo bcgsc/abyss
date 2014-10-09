@@ -4,6 +4,7 @@
 #include "Common/IOUtil.h"
 #include "Common/Options.h" // for opt::rank
 #include <fstream>
+#include <sstream>
 
 namespace AssemblyAlgorithms {
 
