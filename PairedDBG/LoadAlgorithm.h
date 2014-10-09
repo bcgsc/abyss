@@ -99,17 +99,18 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 
 		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
 			Sequence kmer;
-			if (opt::delta > 0) 
+			int gapSize = KmerPair::length() - 2 * Kmer::length();
+			if (gapSize > 0) 
 			{
 				std::stringstream sseed;
-				sseed << Sequence(seq, i, opt::kmerSize) << Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize);
+				sseed << Sequence(seq, i, opt::kmerSize) << Sequence(seq, i + opt::kmerSize + gapSize, opt::kmerSize);
 				kmer = sseed.str();
 				if (sseed.str().size() != (opt::kmerSize*2)) 
 				{
-					std::cout << Sequence(seq, i, opt::kmerSize + opt::delta)
+					std::cout << Sequence(seq, i, opt::kmerSize + gapSize)
 						<< '\n'
 						<< Sequence(seq, i, opt::kmerSize) << '\n'
-						<< Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize)
+						<< Sequence(seq, i + opt::kmerSize + gapSize, opt::kmerSize)
 						<< '\n';
 					exit(EXIT_FAILURE);
 				}
