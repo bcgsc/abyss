@@ -143,7 +143,7 @@ int main(int argc, char* const* argv)
 	);
 	addToDb(db, "SS", opt::ss);
 	addToDb(db, "k", opt::kmerSize);
-	addToDb(db, "K", opt::kmerSingleSize);
+	addToDb(db, "singleK", opt::kmerSingleSize);
 	addToDb(db, "numProc", 1);
 #endif
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
