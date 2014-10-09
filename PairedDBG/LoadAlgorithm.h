@@ -36,6 +36,65 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 	return count;
 }
 
+static inline
+bool loadSequence(ISequenceCollection* seqCollection, Sequence& seq)
+{
+	size_t len = seq.length();
+
+	if (isalnum(seq[0])) {
+		if (opt::colourSpace)
+			assert(isdigit(seq[0]));
+		else
+			assert(isalpha(seq[0]));
+	}
+
+	bool good = seq.find_first_not_of("ACGT0123") == std::string::npos;
+	bool discarded = true;
+
+	for (unsigned i = 0; i < len - KmerPair::length() + 1; ++i) {
+		Sequence kmer;
+		int gapSize = KmerPair::length() - 2 * Kmer::length();
+		if (gapSize > 0) 
+		{
+			std::stringstream sseed;
+			sseed << Sequence(seq, i, Kmer::length()) << Sequence(seq, i + Kmer::length() + gapSize, Kmer::length());
+			kmer = sseed.str();
+			if (sseed.str().size() != 2 * Kmer::length()) {
+				std::cout << Sequence(seq, i, Kmer::length() + gapSize)
+					<< '\n'
+					<< Sequence(seq, i, Kmer::length()) << '\n'
+					<< Sequence(seq, i + Kmer::length() + gapSize, Kmer::length())
+					<< '\n';
+				exit(EXIT_FAILURE);
+			}
+		} 
+		// if delta=0
+		else
+			kmer = Sequence(seq, i, KmerPair::length());
+
+		if (good || kmer.find_first_not_of("acgtACGT0123") == std::string::npos) 
+		{
+			if (good || kmer.find_first_of("acgt") == std::string::npos)
+			{
+				Sequence buf1(kmer, 0, Kmer::length());
+				Sequence buf2(kmer, Kmer::length(), Kmer::length());
+				seqCollection->add(KmerPair(buf1,buf2));	
+			}
+			else 
+			{
+				transform(kmer.begin(), kmer.end(), kmer.begin(),::toupper);
+				Sequence buf1(kmer, 0, Kmer::length());
+				Sequence buf2(kmer, Kmer::length(), Kmer::length());
+				seqCollection->add(KmerPair(buf1,buf2), 0);
+			}
+			discarded = false;	
+		}
+	}
+
+	return discarded;
+
+}
+
 /** Load sequence data into the collection. */
 static inline
 void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
@@ -63,8 +122,10 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 		count_good = count;
 	} else
 	for (FastaRecord rec; reader >> rec;) {
+
 		Sequence seq = rec.seq;
 		size_t len = seq.length();
+
 		if (KmerPair::length() > len) {
 			count_small++;
 			continue;
@@ -80,61 +141,14 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 				std::cout << "Colour-space assembly\n";
 		}
 
-		if (isalnum(seq[0])) {
-			if (opt::colourSpace)
-				assert(isdigit(seq[0]));
-			else
-				assert(isalpha(seq[0]));
-		}
-
-		bool good = seq.find_first_not_of("ACGT0123") == std::string::npos;
-		bool discarded = true;
-
 		if (opt::ss && rec.id.size() > 2
 				&& rec.id.substr(rec.id.size()-2) == "/1") {
 			seq = reverseComplement(seq);
 			count_reversed++;
 		}
 
-		for (unsigned i = 0; i < len - KmerPair::length() + 1; ++i) {
-			Sequence kmer;
-			int gapSize = KmerPair::length() - 2 * Kmer::length();
-			if (gapSize > 0) 
-			{
-				std::stringstream sseed;
-				sseed << Sequence(seq, i, Kmer::length()) << Sequence(seq, i + Kmer::length() + gapSize, Kmer::length());
-				kmer = sseed.str();
-				if (sseed.str().size() != 2 * Kmer::length()) {
-					std::cout << Sequence(seq, i, Kmer::length() + gapSize)
-						<< '\n'
-						<< Sequence(seq, i, Kmer::length()) << '\n'
-						<< Sequence(seq, i + Kmer::length() + gapSize, Kmer::length())
-						<< '\n';
-					exit(EXIT_FAILURE);
-				}
-			} 
-			// if delta=0
-			else
-				kmer = Sequence(seq, i, KmerPair::length());
-			
-			if (good || kmer.find_first_not_of("acgtACGT0123") == std::string::npos) 
-			{
-				if (good || kmer.find_first_of("acgt") == std::string::npos)
-				{
-					Sequence buf1(kmer, 0, Kmer::length());
-					Sequence buf2(kmer, Kmer::length(), Kmer::length());
-					seqCollection->add(KmerPair(buf1,buf2));	
-				}
-				else 
-				{
-					transform(kmer.begin(), kmer.end(), kmer.begin(),::toupper);
-					Sequence buf1(kmer, 0, Kmer::length());
-					Sequence buf2(kmer, Kmer::length(), Kmer::length());
-					seqCollection->add(KmerPair(buf1,buf2), 0);
-				}
-				discarded = false;	
-			}
-		}
+		bool discarded = loadSequence(seqCollection, seq);
+
 		if (discarded)
 			count_nonACGT++;
 		else
@@ -144,6 +158,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			logger(1) << "Read " << count << " reads. ";
 			seqCollection->printLoad();
 		}
+
 		seqCollection->pumpNetwork();
 	}
 	assert(reader.eof());
