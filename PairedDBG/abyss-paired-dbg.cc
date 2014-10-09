@@ -142,15 +142,16 @@ int main(int argc, char* const* argv)
 			opt::getMetaValue()
 	);
 	addToDb(db, "SS", opt::ss);
-	addToDb(db, "K", opt::kmerSize);
+	addToDb(db, "k", opt::kmerSize);
+	addToDb(db, "K", opt::kmerSingleSize);
 	addToDb(db, "numProc", 1);
 #endif
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
 		opt::kmerSize = k;
-		Kmer::setLength(k); // xxx fixme
-		KmerPair::setLength(k);
+		Kmer::setLength(opt::kmerSingleSize);
+		KmerPair::setLength(opt::kmerSize);
 
 		if (k > opt::kMin) {
 			// Reset the assembly options to defaults.

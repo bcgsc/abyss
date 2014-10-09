@@ -4,6 +4,7 @@
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include "Kmer.h"
+#include "KmerPair.h"
 #include <algorithm>
 #include <climits> // for INT_MAX
 #include <getopt.h>
@@ -51,7 +52,8 @@ static const char USAGE_MESSAGE[] =
 "      --SS              assemble in strand-specific mode\n"
 "      --no-SS           do not assemble in strand-specific mode\n"
 "  -o, --out=FILE        write the contigs to FILE\n"
-"  -k, --kmer=N          k-mer size\n"
+"  -k, --kmer=N          The length of a k-mer pair, including the gap\n"
+"  -K, --kmer-single=N   The length of a single k-mer\n"
 "  -t, --trim-length=N   maximum length of dangling edges to trim\n"
 "  -c, --coverage=FLOAT  remove contigs with mean k-mer coverage\n"
 "                        less than this threshold\n"
@@ -82,7 +84,10 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** k-mer length */
+/** The length of a single k-mer. */
+int kmerSingleSize = -1;
+
+/** The length of a k-mer pair, including the gap. */
 int kmerSize = -1;
 int k; // used by Graph
 
@@ -143,7 +148,7 @@ vector<string> metaVars;
 string assemblyCmd;
 #endif
 
-static const char shortopts[] = "b:c:e:E:g:k:mo:Q:q:s:t:v";
+static const char shortopts[] = "b:c:e:E:g:k:K:mo:Q:q:s:t:v";
 
 #if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
@@ -154,6 +159,7 @@ enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "kmer-single", required_argument, NULL, 'K' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "chastity",    no_argument,       &opt::chastityFilter, 1 },
 	{ "no-chastity", no_argument,       &opt::chastityFilter, 0 },
@@ -255,6 +261,9 @@ void parse(int argc, char* const* argv)
 				}
 				assert(kMin <= kMax);
 				break;
+			case 'K':
+				arg >> kmerSingleSize;
+				break;
 			case COVERAGE_HIST:
 				getline(arg, coverageHistPath);
 				break;
@@ -316,6 +325,10 @@ void parse(int argc, char* const* argv)
 		}
 	}
 
+	if (kmerSingleSize <= 0) {
+		cerr << PROGRAM ": missing -K,--kmer-single option\n";
+		die = true;
+	}
 	if (kmerSize <= 0) {
 		cerr << PROGRAM ": missing -k,--kmer option\n";
 		die = true;
@@ -350,7 +363,8 @@ void parse(int argc, char* const* argv)
 	if (bubbleLen == 0)
 		snpPath.clear();
 
-	Kmer::setLength(kmerSize);
+	KmerPair::setLength(kmerSize);
+	Kmer::setLength(kmerSingleSize);
 
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());
