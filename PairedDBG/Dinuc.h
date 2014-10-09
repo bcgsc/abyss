@@ -105,7 +105,7 @@ DinucSet complement() const
 }
 
 /** Reverse the bits of a uint16_t.
- * This code can be improved.
+ * @todo xxx fixme This code can be improved.
  */
 static uint16_t reverseBits(uint16_t val)
 {
