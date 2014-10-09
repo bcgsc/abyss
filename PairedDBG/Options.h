@@ -4,7 +4,7 @@
 #include "Assembly/Options.h"
 
 namespace opt {
-	extern unsigned kmerSingleSize;
+	extern unsigned singleKmerSize;
 }
 
 #endif

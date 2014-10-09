@@ -143,14 +143,14 @@ int main(int argc, char* const* argv)
 	);
 	addToDb(db, "SS", opt::ss);
 	addToDb(db, "k", opt::kmerSize);
-	addToDb(db, "singleK", opt::kmerSingleSize);
+	addToDb(db, "singleK", opt::singleKmerSize);
 	addToDb(db, "numProc", 1);
 #endif
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
 		opt::kmerSize = k;
-		Kmer::setLength(opt::kmerSingleSize);
+		Kmer::setLength(opt::singleKmerSize);
 		KmerPair::setLength(opt::kmerSize);
 
 		if (k > opt::kMin) {
