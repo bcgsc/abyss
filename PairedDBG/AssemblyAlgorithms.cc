@@ -1,4 +1,5 @@
 #include "AssemblyAlgorithms.h"
+#include "Common/InsOrderedMap.h"
 #include <string>
 #include <vector>
 
