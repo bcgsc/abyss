@@ -24,8 +24,7 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 		assert(iss);
 		assert(iss.eof());
 
-		// xxx fixme This is wrong.
-		g.add(V(rec.seq, rec.seq), std::max(1, (int)ceilf(coverage)));
+		g.add(V(rec.seq), std::max(1, (int)ceilf(coverage)));
 
 		if (++count % 1000000 == 0) {
 			logger(1) << "Read " << count << " k-mer. ";

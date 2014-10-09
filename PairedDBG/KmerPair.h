@@ -23,6 +23,16 @@ KmerPair(const Kmer& a, const Kmer& b) : m_a(a), m_b(b) { }
 /** Construct a k-mer pair from two strings. */
 KmerPair(const std::string& a, const std::string& b) : m_a(a), m_b(b) { }
 
+/** Construct a k-mer pair from one string.
+ * The first and last word of the specified string are used to construct the
+ * two k-mers. The two words may overlap.
+ */
+KmerPair(const std::string& s) :
+	m_a(s.substr(0, Kmer::length())),
+	m_b(s.substr(s.size() - Kmer::length(), Kmer::length()))
+{
+}
+
 /** Return whether the two objects are equal. */
 bool operator==(const KmerPair& x) const
 {
