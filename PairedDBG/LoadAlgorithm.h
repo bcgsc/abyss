@@ -41,9 +41,6 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 static inline
 void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<Graph>::vertex_descriptor V;
-
 	Timer timer("LoadSequences " + inFile);
 
 	logger(0) << "Reading `" << inFile << "'...\n";
@@ -69,7 +66,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 	for (FastaRecord rec; reader >> rec;) {
 		Sequence seq = rec.seq;
 		size_t len = seq.length();
-		if (V::length() > len) {
+		if (opt::kmerSize > len) {
 			count_small++;
 			continue;
 		}
@@ -100,18 +97,43 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			count_reversed++;
 		}
 
-		for (unsigned i = 0; i < len - V::length() + 1; i++) {
-			Sequence kmer(seq, i, V::length());
-			if (good || kmer.find_first_not_of("acgtACGT0123")
-					== std::string::npos) {
-				if (good || kmer.find_first_of("acgt") == std::string::npos)
-					seqCollection->add(V(kmer, kmer)); // xxx fixme
-				else {
-					transform(kmer.begin(), kmer.end(), kmer.begin(),
-							::toupper);
-					seqCollection->add(V(kmer, kmer), 0); // xxx fixme
+		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
+			Sequence kmer;
+			if (opt::delta > 0) 
+			{
+				stringstream sseed;
+				sseed << Sequence(seq, i, opt::kmerSize) << Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize);
+				kmer = sseed.str();
+				if (sseed.str().size() != (opt::kmerSize*2)) 
+				{
+					cout << Sequence(seq, i, opt::kmerSize + opt::delta)
+						<< '\n'
+						<< Sequence(seq, i, opt::kmerSize) << '\n'
+						<< Sequence(seq, i + opt::kmerSize + opt::delta, opt::kmerSize)
+						<< '\n';
+					exit(EXIT_FAILURE);
 				}
-				discarded = false;
+			} 
+			// if delta=0
+			else
+				kmer = Sequence(seq, i, opt::kmerSize);
+			
+			if (good || kmer.find_first_not_of("acgtACGT0123") == string::npos) 
+			{
+				if (good || kmer.find_first_of("acgt") == string::npos)
+				{
+					Sequence buf1(kmer,0,opt::kmerSize);
+					Sequence buf2(kmer,opt::kmerSize,opt::kmerSize);
+					seqCollection->add(KmerPair(buf1,buf2));	
+				}
+				else 
+				{
+					transform(kmer.begin(), kmer.end(), kmer.begin(),::toupper);
+					Sequence buf1(kmer,0,opt::kmerSize);
+					Sequence buf2(kmer,opt::kmerSize,opt::kmerSize);
+					seqCollection->add(KmerPair(buf1,buf2), 0);
+				}
+				discarded = false;	
 			}
 		}
 		if (discarded)
@@ -136,7 +158,7 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 	if (count_small > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "
-			"shorter than " << V::length() << " bases\n";
+			"shorter than " << opt::kmerSize << " bases\n";
 	if (reader.unchaste() > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << reader.unchaste() << " unchaste reads\n";
