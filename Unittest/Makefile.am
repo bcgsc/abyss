@@ -137,6 +137,20 @@ PairedDBG_LoadAlgorithm_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += PairedDBG_KmerPair
+check_PROGRAMS += PairedDBG_KmerPair
+PairedDBG_KmerPair_SOURCES = \
+	PairedDBG/KmerPairTest.cc
+PairedDBG_KmerPair_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_KmerPair_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_KmerPair_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 ##Tests for log kmer counting / Counting bloom filter
 
 TESTS = $(UNIT_TESTS)
