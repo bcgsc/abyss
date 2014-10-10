@@ -168,6 +168,42 @@ void generateSequencesFromExtension(const Kmer& currSeq,
 	}
 }
 
+/** Return the adjacency of this sequence.
+ * @param considerMarks when true, treat a marked vertex as having
+ * no edges
+ */
+static inline
+SeqContiguity checkSeqContiguity(
+		const ISequenceCollection::value_type& seq,
+		extDirection& outDir, bool considerMarks)
+{
+	assert(!seq.second.deleted());
+	bool child = seq.second.hasExtension(SENSE)
+		&& !(considerMarks && seq.second.marked(SENSE));
+	bool parent = seq.second.hasExtension(ANTISENSE)
+		&& !(considerMarks && seq.second.marked(ANTISENSE));
+	if(!child && !parent)
+	{
+		//this sequence is completely isolated
+		return SC_ISLAND;
+	}
+	else if(!child)
+	{
+		outDir = ANTISENSE;
+		return SC_ENDPOINT;
+	}
+	else if(!parent)
+	{
+		outDir = SENSE;
+		return SC_ENDPOINT;
+	}
+	else
+	{
+		// sequence is contiguous
+		return SC_CONTIGUOUS;
+	}
+}
+
 } // namespace AssemblyAlgorithms
 
 #include "AdjacencyAlgorithm.h"
