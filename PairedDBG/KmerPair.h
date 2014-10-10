@@ -83,15 +83,26 @@ uint64_t getHashCode() const
 /** Return whether this k-mer pair is palindromic. */
 bool isPalindrome() const
 {
-	//xxx fixme Is this correct?
-	return m_a.isPalindrome() && m_b.isPalindrome();
+	return m_a == ::reverseComplement(m_b);
 }
 
 /** Return whether the specified k-mer pair edge is palindromic. */
 bool isPalindrome(extDirection dir) const
 {
-	//xxx fixme Is this correct?
-	return m_a.isPalindrome(dir) && m_b.isPalindrome(dir);
+	Kmer a(m_a);
+	if (dir == SENSE)
+		a.shift(SENSE, 0);
+	else
+		a.setLastBase(SENSE, 0);
+
+	Kmer b(m_b);
+	if (dir == SENSE)
+		b.shift(SENSE, 0);
+	else
+		b.setLastBase(SENSE, 0);
+	b.reverseComplement();
+
+	return a == b;
 }
 
 /** Return a string represenation. */
