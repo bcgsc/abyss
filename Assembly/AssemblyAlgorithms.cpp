@@ -1,20 +1,5 @@
 #include "AssemblyAlgorithms.h"
-#include "Assembly/Options.h"
-#include "Common/Options.h"
-#include "FastaReader.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "IOUtil.h"
-#include "Log.h"
-#include "SequenceCollection.h"
-#include "StringUtil.h"
-#include "Timer.h"
-#include <algorithm>
-#include <cctype>
-#include <climits> // for UINT_MAX
-#include <cmath>
-#include <iostream>
-#include <sstream>
+#include "Common/InsOrderedMap.h"
 #include <string>
 #include <vector>
 
