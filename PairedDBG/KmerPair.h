@@ -118,7 +118,6 @@ std::string str() const
 /** Set the last base of each k-mer. */
 void setLastBase(extDirection sense, const Dinuc& x)
 {
-	// xxx fixme Is this correct?
 	m_a.setLastBase(sense, x.a());
 	m_b.setLastBase(sense, x.b());
 }
@@ -126,8 +125,9 @@ void setLastBase(extDirection sense, const Dinuc& x)
 /** Shift both k-mer. */
 Dinuc shift(extDirection sense, Dinuc x = Dinuc(0))
 {
-	// xxx fixme Is this correct?
-	return sense == SENSE ? shiftAppend(x) : shiftPrepend(x);
+	return Dinuc(
+			m_a.shift(sense, x.a()),
+			m_b.shift(sense, x.b()));
 }
 
 /** Reverse complement this k-mer pair. */
@@ -135,7 +135,7 @@ void reverseComplement()
 {
 	m_a.reverseComplement();
 	m_b.reverseComplement();
-	std::swap(m_a, m_b); //xxx Is this correct?
+	std::swap(m_a, m_b);
 }
 
 friend std::ostream& operator<<(std::ostream& out, const KmerPair& x)
@@ -144,23 +144,6 @@ friend std::ostream& operator<<(std::ostream& out, const KmerPair& x)
 }
 
 private:
-
-/** Shift both k-mer left. */
-Dinuc shiftAppend(Dinuc x)
-{
-	Nuc a = m_a.shift(SENSE, x.a());
-	Nuc b = m_b.shift(SENSE, x.b());
-	return Dinuc(a, b);
-}
-
-/** Shift both k-mer right. */
-Dinuc shiftPrepend(Dinuc x)
-{
-	//xxx fixme Is this correct?
-	Nuc a = m_a.shift(ANTISENSE, x.a());
-	Nuc b = m_b.shift(ANTISENSE, x.b());
-	return Dinuc(a, b);
-}
 
 	/** The length of a k-mer pair, including the gap. */
 	static unsigned s_length;
