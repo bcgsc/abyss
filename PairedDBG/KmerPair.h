@@ -140,7 +140,7 @@ void reverseComplement()
 
 friend std::ostream& operator<<(std::ostream& out, const KmerPair& x)
 {
-	return out << x.m_a.str() << '-' << x.m_b.str();
+	return out << x.m_a.str() << '\n' << x.m_b.str();
 }
 
 private:
