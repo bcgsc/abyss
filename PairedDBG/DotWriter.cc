@@ -24,7 +24,7 @@ static void writeContig(ostream& out, const Graph& g, const vertex_descriptor& u
 		n++;
 		v = *adjacent_vertices(v, g).first;
 	}
-	out << u << " -> " << v;
+	out << '"' << u << "\" -> \"" << v << '"';
 	if (n > 2)
 		out << " [label=" << n << ']';
 	out << '\n';
@@ -36,13 +36,13 @@ static void writeEdges(ostream& out, const Graph& g, const vertex_descriptor& u)
 	unsigned outdeg = out_degree(u, g);
 	if (outdeg == 0)
 		return;
-	out << u << " ->";
+	out << '"' << u << "\" ->";
 	if (outdeg > 1)
 		out << " {";
 	std::pair<adjacency_iterator, adjacency_iterator>
 		adj = adjacent_vertices(u, g);
 	for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-		out << ' ' << *v;
+		out << " \"" << *v << '"';
 	if (outdeg > 1)
 		out << " }";
 	out << '\n';
