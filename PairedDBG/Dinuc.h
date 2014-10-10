@@ -31,7 +31,7 @@ public:
 	Nuc b() const { return (m_data >> 2) & 0x3; }
 
 	/** Complement a single base. */
-	static Nuc complementNuc(Nuc x) { return 4 - x; }
+	static Nuc complementNuc(Nuc x) { return 3 - x; }
 
 	/** Return the reverse complement of this dinucleotide. */
 	Dinuc reverseComplement() const
