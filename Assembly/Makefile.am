@@ -19,6 +19,7 @@ libassembly_a_SOURCES = \
 	CoverageAlgorithm.h \
 	ErodeAlgorithm.h \
 	LoadAlgorithm.h \
+	SeqExt.cc SeqExt.h \
 	SplitAlgorithm.h \
 	TrimAlgorithm.h
 
