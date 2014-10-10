@@ -151,6 +151,20 @@ PairedDBG_KmerPair_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += PairedDBG_Dinuc
+check_PROGRAMS += PairedDBG_Dinuc
+PairedDBG_Dinuc_SOURCES = \
+	PairedDBG/DinucTest.cc
+PairedDBG_Dinuc_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_Dinuc_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_Dinuc_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 ##Tests for log kmer counting / Counting bloom filter
 
 TESTS = $(UNIT_TESTS)
