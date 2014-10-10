@@ -113,21 +113,13 @@ void clear(const DinucSet& x)
 /** Return the complementary nucleotides of this set. */
 DinucSet complement() const
 {
-	return mask(reverseBits(m_data));
-}
-
-/** Reverse the bits of a uint16_t.
- * @todo xxx fixme This code can be improved.
- */
-static uint16_t reverseBits(uint16_t val)
-{
-	uint16_t y = 0;
-	for (int position = NUM_EDGES - 1; position >= 0; --position) {
-		y += (val & 1) << position;
-		val >>= 1;
-		assert(position < (1 << NUM_EDGES));
+	DinucSet acc;
+	for (unsigned i = 0; i < NUM_EDGES; ++i) {
+		Dinuc x(i);
+		if (checkBase(x))
+			acc.setBase(x.reverseComplement());
 	}
-	return y;
+	return acc;
 }
 
 private:
