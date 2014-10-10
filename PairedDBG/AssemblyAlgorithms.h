@@ -160,9 +160,9 @@ void generateSequencesFromExtension(const KmerPair& currSeq,
 	// Check for the existance of the 4 possible extensions
 	for (unsigned i = 0; i < DinucSet::NUM_EDGES; i++) {
 		// Does this sequence have an extension?
-		if(extension.checkBase(i))
-		{
-			extSeq.setLastBase(dir, i);
+		Dinuc x(i);
+		if (extension.checkBase(x)) {
+			extSeq.setLastBase(dir, x);
 			outseqs.push_back(extSeq);
 		}
 	}

@@ -173,10 +173,10 @@ struct adjacency_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		for (; m_i < NUM_EDGES && !m_adj.checkBase(m_i); m_i++) {
+		for (; m_i < NUM_EDGES && !m_adj.checkBase(Dinuc(m_i)); ++m_i) {
 		}
 		if (m_i < NUM_EDGES)
-			m_v.setLastBase(SENSE, m_i);
+			m_v.setLastBase(SENSE, Dinuc(m_i));
 	}
 
   public:

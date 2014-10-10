@@ -113,7 +113,7 @@ void setLastBase(extDirection sense, const Dinuc& x)
 }
 
 /** Shift both k-mer. */
-Dinuc shift(extDirection sense, Dinuc x = 0)
+Dinuc shift(extDirection sense, Dinuc x = Dinuc(0))
 {
 	// xxx fixme Is this correct?
 	return sense == SENSE ? shiftAppend(x) : shiftPrepend(x);

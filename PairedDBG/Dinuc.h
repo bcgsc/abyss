@@ -19,7 +19,7 @@ public:
 	Dinuc(Nuc a, Nuc b) : m_data(a | (b << 2)) { }
 
 	/** Construct a Dinuc from an integer. */
-	Dinuc(Bits x) : m_data(x) { }
+	explicit Dinuc(Bits x) : m_data(x) { }
 
 	/** Cast to an integer. */
 	Bits toInt() const { return m_data; }
