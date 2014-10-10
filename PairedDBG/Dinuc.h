@@ -30,6 +30,12 @@ public:
 	/** Return the first nucleotide. */
 	Nuc b() const { return (m_data >> 2) & 0x3; }
 
+	/** Compare two dinucleotides. */
+	bool operator<(const Dinuc& x) const
+	{
+		return m_data < x.m_data;
+	}
+
 	/** Complement a single base. */
 	static Nuc complementNuc(Nuc x) { return 3 - x; }
 
@@ -38,6 +44,19 @@ public:
 	{
 		return Dinuc(complementNuc(b()), complementNuc(a()));
 	}
+
+	/** Increment this dinucleotide. */
+	Dinuc& operator++()
+	{
+		++m_data;
+		return *this;
+	}
+
+	/** Return the first dinucleotide. */
+	static Dinuc begin() { return Dinuc(0); }
+
+	/** Return the last dinucleotide. */
+	static Dinuc end() { return Dinuc(16); }
 
 private:
 	/** Two nucleotides packed into a single scalar. */
@@ -113,13 +132,12 @@ void clear(const DinucSet& x)
 /** Return the complementary nucleotides of this set. */
 DinucSet complement() const
 {
-	DinucSet acc;
-	for (unsigned i = 0; i < NUM_EDGES; ++i) {
-		Dinuc x(i);
-		if (checkBase(x))
-			acc.setBase(x.reverseComplement());
+	DinucSet x;
+	for (Dinuc i = Dinuc::begin(); i < Dinuc::end(); ++i) {
+		if (checkBase(i))
+			x.setBase(i.reverseComplement());
 	}
-	return acc;
+	return x;
 }
 
 private:
