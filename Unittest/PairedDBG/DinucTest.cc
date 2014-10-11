@@ -1,6 +1,7 @@
 #include "PairedDBG/Dinuc.h"
 
 #include <gtest/gtest.h>
+#include <iostream>
 
 using namespace std;
 
@@ -38,4 +39,27 @@ TEST(Dinuc, complementNuc)
 	EXPECT_EQ(Dinuc::complementNuc(T), A);
 	EXPECT_EQ(Dinuc::complementNuc(C), G);
 	EXPECT_EQ(Dinuc::complementNuc(G), C);
+}
+
+/* Tests mask() and operator==() as well complement(). */
+TEST(DinucSet, complement)
+{
+	Dinuc AT(A, T);
+	Dinuc CG(C, G);
+	Dinuc GT(G, T);
+
+	DinucSet ds;
+	ds.setBase(AT);
+	ds.setBase(CG);
+	ds.setBase(GT);
+
+	uint16_t x = 1 << AT.toInt() | 1 << CG.toInt() | 1 << GT.toInt();
+
+	Dinuc AC(A, C);	
+	uint16_t y = 1 << AT.toInt() | 1 << CG.toInt() | 1 << AC.toInt();
+
+	DinucSet ds_new = DinucSet::mask(x);
+	DinucSet ds_new_rc = DinucSet::mask(y);
+	EXPECT_EQ(ds, ds_new);
+	EXPECT_EQ(ds.complement(), ds_new_rc);
 }
