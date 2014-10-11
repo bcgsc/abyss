@@ -1,7 +1,6 @@
 #include "PairedDBG/Dinuc.h"
 
 #include <gtest/gtest.h>
-#include <iostream>
 
 using namespace std;
 
