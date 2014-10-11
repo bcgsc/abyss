@@ -41,16 +41,26 @@ TEST(Dinuc, complementNuc)
 }
 
 /* Tests mask() and operator==() as well complement(). */
-TEST(DinucSet, complement)
+TEST(DinucSet, general)
 {
 	Dinuc AT(A, T);
 	Dinuc CG(C, G);
 	Dinuc GT(G, T);
+	Dinuc CC(C, C);
 
 	DinucSet ds;
+	ASSERT_FALSE(ds.hasExtension());
+
 	ds.setBase(AT);
+	ASSERT_TRUE(ds.hasExtension());
 	ds.setBase(CG);
 	ds.setBase(GT);
+
+	ASSERT_EQ(ds.outDegree(), 3);
+	ASSERT_TRUE(ds.checkBase(AT));
+	ASSERT_TRUE(ds.checkBase(CG));
+	ASSERT_TRUE(ds.checkBase(GT));
+	ASSERT_FALSE(ds.checkBase(CC));
 
 	uint16_t x = 1 << AT.toInt() | 1 << CG.toInt() | 1 << GT.toInt();
 
@@ -58,7 +68,15 @@ TEST(DinucSet, complement)
 	uint16_t y = 1 << AT.toInt() | 1 << CG.toInt() | 1 << AC.toInt();
 
 	DinucSet ds_new = DinucSet::mask(x);
+	ASSERT_EQ(ds_new.outDegree(), 3);
 	DinucSet ds_new_rc = DinucSet::mask(y);
 	EXPECT_EQ(ds, ds_new);
 	EXPECT_EQ(ds.complement(), ds_new_rc);
+
+	ds.clear();
+	ASSERT_FALSE(ds.hasExtension());
+
+	ds.setBase(AT);
+	ds_new.clear(ds);
+	ASSERT_EQ(ds_new.outDegree(), 2);
 }
