@@ -87,3 +87,10 @@ TEST(KmerPair, isPalindrome_edge)
 
 	EXPECT_EQ(KmerPair::length(), 12);
 }
+
+/* TODO: Missing tests:
+*    setLastBase
+*    shift
+*    getHashCode - may not want to do
+*    getLastBaseChar
+*/

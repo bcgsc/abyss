@@ -40,7 +40,7 @@ TEST(Dinuc, complementNuc)
 	EXPECT_EQ(Dinuc::complementNuc(G), C);
 }
 
-/* Tests mask() and operator==() as well complement(). */
+/* Tests mask() and operator==() as well complement(). Probably testing too much in one test... */
 TEST(DinucSet, general)
 {
 	Dinuc AT(A, T);
