@@ -96,11 +96,11 @@ bool isPalindrome(extDirection dir) const
 		a.setLastBase(SENSE, 0);
 
 	Kmer b(m_b);
-	if (dir == SENSE)
+	b.reverseComplement();
+	if (dir == ANTISENSE)
 		b.shift(SENSE, 0);
 	else
 		b.setLastBase(SENSE, 0);
-	b.reverseComplement();
 
 	return a == b;
 }
