@@ -30,7 +30,6 @@ TEST(LoadAlgorithmTest, base)
 	expectedKmerPairs.insert(KmerPair("TAGC"));
 	expectedKmerPairs.insert(KmerPair("AACC"));
 	expectedKmerPairs.insert(KmerPair("ATCA"));
-	expectedKmerPairs.insert(KmerPair("TGAT"));
 	expectedKmerPairs.insert(KmerPair("GCTG"));
 	expectedKmerPairs.insert(KmerPair("CCGG"));
 	expectedKmerPairs.insert(KmerPair("CAGG"));
