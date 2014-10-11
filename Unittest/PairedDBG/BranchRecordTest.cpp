@@ -18,7 +18,7 @@ TEST(BranchRecordTest, Sequence)
 
 	// sequence for branch: TAGGGATT	
 	// kmer pairs:          TA  GA
-    //                       AG  AT
+	//                       AG  AT
 	//                        GG  TT
 
 	std::pair<KmerPair,KmerPairData>
