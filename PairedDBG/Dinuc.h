@@ -140,6 +140,11 @@ DinucSet complement() const
 	return x;
 }
 
+bool operator==(const DinucSet& x) const
+{
+	return m_data == x.m_data;
+}
+
 private:
 	/** A bit vector representing a set. */
 	Bits m_data;
