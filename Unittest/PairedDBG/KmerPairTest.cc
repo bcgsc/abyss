@@ -73,3 +73,15 @@ TEST(KmerPair, isPalindrome)
 	KmerPair kp_npal(pal, seq2);
 	EXPECT_FALSE(kp_npal.isPalindrome());
 }
+
+TEST(KmerPair, isPalindrome_edge)
+{
+	Kmer::setLength(4);
+
+	string epal = "CCGCNNNNAGCG";
+	KmerPair kp(epal);
+	EXPECT_FALSE(kp.isPalindrome());
+	EXPECT_FALSE(kp.isPalindrome(ANTISENSE));
+	EXPECT_TRUE(kp.isPalindrome(SENSE));
+}
+
