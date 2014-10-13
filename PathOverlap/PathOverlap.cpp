@@ -111,6 +111,9 @@ namespace opt {
 	static int verbose;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+
 static const char* shortopts = "g:k:r:v";
 
 #if _SQL
@@ -610,13 +613,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -721,17 +732,17 @@ int main(int argc, char** argv)
 			out << get(g_contigNames, *it) << '\n';
 		assert_good(out, opt::repeatContigs);
 	}
-#if _SQL
-	init(db,
+	if (haveDbParam) {
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
-	);
-	addToDb(db, "SS", opt::ss);
-	addToDb(db, "K", opt::k);
-#endif
+		);
+		addToDb(db, "SS", opt::ss);
+		addToDb(db, "K", opt::k);
+	}
 
 	return 0;
 }

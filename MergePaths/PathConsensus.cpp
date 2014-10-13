@@ -115,6 +115,11 @@ namespace opt {
 	unsigned distanceError = 6;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "d:k:o:s:g:a:p:vD:M:P:";
 
 #if _SQL
@@ -806,13 +811,21 @@ int main(int argc, char** argv)
 			exit(EXIT_SUCCESS);
 #if _SQL
 		case OPT_DB:
-			arg >> opt::url; break;
+			arg >> opt::url;
+			haveDbParam = true;
+			break;
 		case OPT_LIBRARY:
-			arg >> opt::metaVars[0]; break;
+			arg >> opt::metaVars[0];
+			haveDbParam = true;
+			break;
 		case OPT_STRAIN:
-			arg >> opt::metaVars[1]; break;
+			arg >> opt::metaVars[1];
+			haveDbParam = true;
+			break;
 		case OPT_SPECIES:
-			arg >> opt::metaVars[2]; break;
+			arg >> opt::metaVars[2];
+			haveDbParam = true;
+			break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -884,17 +897,17 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << paths.size() << " paths\n";
 
-#if _SQL
-	init(db,
+	if (haveDbParam) {
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
-	);
-	addToDb(db, "K", opt::k);
-	addToDb(db, "pathRead", paths.size());
-#endif
+		);
+		addToDb(db, "K", opt::k);
+		addToDb(db, "pathRead", paths.size());
+	}
 	// Start numbering new contigs from the last
 	if (!pathIDs.empty())
 		setNextContigName(pathIDs.back());
@@ -1001,26 +1014,26 @@ int main(int argc, char** argv)
 		write_graph(fout, g, PROGRAM, commandLine);
 		assert_good(fout, opt::graphPath);
 	}
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< stats.numAmbPaths
-		<< stats.numMerged
-		<< stats.numNoSolutions
-		<< stats.numTooManySolutions
-		<< stats.tooComplex
-		<< stats.notMerged;
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< stats.numAmbPaths
+			<< stats.numMerged
+			<< stats.numNoSolutions
+			<< stats.numTooManySolutions
+			<< stats.tooComplex
+			<< stats.notMerged;
 
-	vector<string> keys = make_vector<string>()
-		<< "ambg_paths"
-		<< "merged"
-		<< "no_paths"
-		<< "too_many_paths"
-		<< "too_complex"
-		<< "dissimilar";
+		keys = make_vector<string>()
+			<< "ambg_paths"
+			<< "merged"
+			<< "no_paths"
+			<< "too_many_paths"
+			<< "too_complex"
+			<< "dissimilar";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 
 	return 0;
 }

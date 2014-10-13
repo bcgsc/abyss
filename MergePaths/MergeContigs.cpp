@@ -104,6 +104,11 @@ namespace opt {
 	static float minIdentity = 0.9;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "g:k:o:v";
 
 #if _SQL
@@ -336,9 +341,8 @@ static ContigPaths readPaths(const string& inPath,
 	if (opt::verbose > 0)
 		cerr << "Read " << count << " paths. "
 			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
-#if _SQL
-	addToDb(db, "Init_paths", count);
-#endif
+	if (haveDbParam)
+		addToDb(db, "Init_paths", count);
 	opt::pathCount = count;
 	assert(in.eof());
 	return paths;
@@ -454,13 +458,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -496,16 +508,17 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-#if _SQL
-	init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-	);
-	addToDb(db, "K", opt::k);
-#endif
+	if (haveDbParam) {
+		init(db,
+				opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars
+		);
+		addToDb(db, "K", opt::k);
+	}
+
 	const char* contigFile = argv[optind++];
 	string adjPath, mergedPathFile;
 	Graph g;
@@ -523,10 +536,10 @@ int main(int argc, char** argv)
 			cerr << "Read " << num_vertices(g) << " vertices. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
-#if _SQL
-		addToDb(db, "Init_vertices", num_vertices(g));
-		addToDb(db, "Init_edges", num_edges(g));
-#endif
+		if (haveDbParam) {
+			addToDb(db, "Init_vertices", num_vertices(g));
+			addToDb(db, "Init_edges", num_edges(g));
+		}
 	}
 	mergedPathFile = string(argv[optind++]);
 
@@ -557,9 +570,8 @@ int main(int argc, char** argv)
 			cerr << "Read " << count << " sequences. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
-#if _SQL
-		addToDb(db, "Init_seq", count);
-#endif
+		if (haveDbParam)
+			addToDb(db, "Init_seq", count);
 		assert(in.eof());
 		assert(!contigs.empty());
 		opt::colourSpace = isdigit(contigs[0].seq[0]);
@@ -650,26 +662,26 @@ int main(int argc, char** argv)
 		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
 			<< '\t' << opt::out << '\n';
 	}
-#if _SQL
-	// assembly contiguity statistics
-	vector<int> vals = passContiguityStatsVal(lengthHistogram,200);
-	vector<string> keys = make_vector<string>()
-		<< "n"
-		<< "n200"
-		<< "nN50"
-		<< "min"
-		<< "N80"
-		<< "N50"
-		<< "N20"
-		<< "Esize"
-		<< "max"
-		<< "sum"
-		<< "nNG50"
-		<< "NG50";
+	if (haveDbParam) {
+		// assembly contiguity statistics
+		vals = passContiguityStatsVal(lengthHistogram,200);
+		keys = make_vector<string>()
+			<< "n"
+			<< "n200"
+			<< "nN50"
+			<< "min"
+			<< "N80"
+			<< "N50"
+			<< "N20"
+			<< "Esize"
+			<< "max"
+			<< "sum"
+			<< "nNG50"
+			<< "NG50";
 
-	for (unsigned a=0; a<vals.size(); a++)
-		addToDb(db, keys[a], vals[a]);
-#endif
+		for (unsigned a=0; a<vals.size(); a++)
+			addToDb(db, keys[a], vals[a]);
+	}
 
 	return 0;
 }

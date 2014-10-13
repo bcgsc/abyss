@@ -88,6 +88,11 @@ namespace opt {
  	int format = DIST; // used by Estimate
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "d:j:k:o:v";
 
 #if _SQL
@@ -149,13 +154,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -188,15 +201,14 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-#if _SQL
-	init(db,
+	if (haveDbParam)
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
-	);
-#endif
+		);
 
 	string adjFile(argv[optind++]);
 	string estFile(argv[optind++]);
@@ -212,11 +224,11 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-#if _SQL
-	addToDb(db, "K", opt::k);
-	addToDb(db, "V", (num_vertices(g) - num_vertices_removed(g)));
-	addToDb(db, "E", num_edges(g));
-#endif
+	if (haveDbParam) {
+		addToDb(db, "K", opt::k);
+		addToDb(db, "V", (num_vertices(g) - num_vertices_removed(g)));
+		addToDb(db, "E", num_edges(g));
+	}
 
 	// try to find paths that match the distance estimates
 	generatePathsThroughEstimates(g, estFile);
@@ -730,27 +742,27 @@ static void generatePathsThroughEstimates(const Graph& g,
 		"Too many solutions: " << stats.tooManySolutions << "\n"
 		"Too complex: " << stats.tooComplex << "\n";
 
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< stats.totalAttempted
-		<< stats.uniqueEnd
-		<< stats.noPossiblePaths
-		<< stats.noValidPaths
-		<< stats.repeat
-		<< stats.multiEnd
-		<< stats.tooManySolutions
-		<< stats.tooComplex;
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< stats.totalAttempted
+			<< stats.uniqueEnd
+			<< stats.noPossiblePaths
+			<< stats.noValidPaths
+			<< stats.repeat
+			<< stats.multiEnd
+			<< stats.tooManySolutions
+			<< stats.tooComplex;
 
-	vector<string> keys = make_vector<string>()
-		<< "stat_attempted_path_total"
-		<< "stat_unique_path"
-		<< "stat_impossible_path"
-		<< "stat_no_valid_path"
-		<< "stat_repetitive"
-		<< "stat_multi_valid_path"
-		<< "stat_too_many"
-		<< "stat_too_complex";
-#endif
+		keys = make_vector<string>()
+			<< "stat_attempted_path_total"
+			<< "stat_unique_path"
+			<< "stat_impossible_path"
+			<< "stat_no_valid_path"
+			<< "stat_repetitive"
+			<< "stat_multi_valid_path"
+			<< "stat_too_many"
+			<< "stat_too_complex";
+	}
 
 	inStream.close();
 	outStream.close();
@@ -766,16 +778,16 @@ static void generatePathsThroughEstimates(const Graph& g,
 				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
-#if _SQL
-	vals += make_vector<int>()
-		<< g_minNumPairs
-		<< g_minNumPairsUsed;
+	if (haveDbParam) {
+		vals += make_vector<int>()
+			<< g_minNumPairs
+			<< g_minNumPairsUsed;
 
-	keys += make_vector<string>()
-		<< "minPairNum_DistanceEst"
-		<< "minPairNum_UsedInPath";
+		keys += make_vector<string>()
+			<< "minPairNum_DistanceEst"
+			<< "minPairNum_UsedInPath";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb (db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb (db, keys[i], vals[i]);
+	}
 }

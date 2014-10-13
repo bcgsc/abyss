@@ -95,6 +95,11 @@ namespace opt {
 	static unsigned minOverlap = 50;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "k:K:m:v";
 
 #if _SQL
@@ -360,13 +365,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0]; 
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -391,9 +404,9 @@ int main(int argc, char** argv)
 		opt::minOverlap = opt::k - 1;
 	opt::minOverlap = min(opt::minOverlap, opt::k - 1);
 
-#if _SQL
-	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-#endif
+	if (haveDbParam)
+		init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+
 	opt::trimMasked = false;
 
 	// contig overlap graph
@@ -411,27 +424,28 @@ int main(int argc, char** argv)
 	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< opt::ss
-		<< opt::k;
-	vector<int> new_vals = passGraphStatsVal(g);
-	vals.insert(vals.end(), new_vals.begin(), new_vals.end());
 
-	vector<string> keys = make_vector<string>()
-		<< "SS"
-		<< "K"
-		<< "V"
-		<< "E"
-		<< "degree0pctg"
-		<< "degree1pctg"
-		<< "degree234pctg"
-		<< "degree5pctg"
-		<< "degree_max";
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< opt::ss
+			<< opt::k;
+		vector<int> new_vals = passGraphStatsVal(g);
+		vals.insert(vals.end(), new_vals.begin(), new_vals.end());
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		keys = make_vector<string>()
+			<< "SS"
+			<< "K"
+			<< "V"
+			<< "E"
+			<< "degree0pctg"
+			<< "degree1pctg"
+			<< "degree234pctg"
+			<< "degree5pctg"
+			<< "degree_max";
+
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 
 	return 0;
 }

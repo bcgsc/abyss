@@ -114,6 +114,11 @@ namespace opt {
 	static int threads = 1;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "j:k:l:n:o:q:s:v";
 
 #if _SQL
@@ -431,13 +436,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -487,15 +500,14 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-#if _SQL
-	init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-	);
-#endif
+	if (haveDbParam)
+		init(db,
+				opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars
+		);
 
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind] == NULL ? "-" : argv[optind++]);
@@ -519,17 +531,17 @@ int main(int argc, char** argv)
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
 
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< opt::k
-		<< opt::seedLen
-		<< opt::npairs;
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< opt::k
+			<< opt::seedLen
+			<< opt::npairs;
 
-	vector<string> keys = make_vector<string>()
-		<< "K"
-		<< "SeedLen"
-		<< "NumPairs";
-#endif
+		keys = make_vector<string>()
+			<< "K"
+			<< "SeedLen"
+			<< "NumPairs";
+	}
 
 	// The fragment size histogram may not be written out until after
 	// the alignments complete. Wait for the alignments to complete.
@@ -552,15 +564,15 @@ int main(int argc, char** argv)
 			<< ".\n";
 	}
 
-#if _SQL
-	vals += make_vector<int>()
-		<< numFR
-		<< numRF;
+	if (haveDbParam) {
+		vals += make_vector<int>()
+			<< numFR
+			<< numRF;
 
-	keys += make_vector<string>()
-		<< "FR_orientation"
-		<< "RF_orientation";
-#endif
+		keys += make_vector<string>()
+			<< "FR_orientation"
+			<< "RF_orientation";
+	}
 
 	// Determine the orientation of the library.
 	if (opt::rf == -1)
@@ -595,39 +607,40 @@ int main(int argc, char** argv)
 			<< opt::minDist << " and " << opt::maxDist << " bp.\n";
 	assert(opt::minDist < opt::maxDist);
 
-#if _SQL
-	vals += make_vector<int>()
-		<< opt::minDist
-		<< opt::maxDist
-		<< round(h.mean())
-		<< h.median()
-		<< round(h.sd())
-		<< h.size()
-		<< h.minimum()
-		<< h.maximum();
+	if (haveDbParam) {
+		vals += make_vector<int>()
+			<< opt::minDist
+			<< opt::maxDist
+			<< round(h.mean())
+			<< h.median()
+			<< round(h.sd())
+			<< h.size()
+			<< h.minimum()
+			<< h.maximum();
 
-	keys += make_vector<string>()
-		<< "minDist"
-		<< "maxDist"
-		<< "mean"
-		<< "median"
-		<< "sd"
-		<< "n"
-		<< "min"
-		<< "max";
-#endif
+		keys += make_vector<string>()
+			<< "minDist"
+			<< "maxDist"
+			<< "mean"
+			<< "median"
+			<< "sd"
+			<< "n"
+			<< "min"
+			<< "max";
+	}
 
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
-#if _SQL
-	vals += make_vector<int>()
-		<< readContigLengths(in, contigLens);
 
-	keys += make_vector<string>()
-		<< "CntgCounted";
-#else
-	readContigLengths(in, contigLens);
-#endif
+	if (haveDbParam) {
+		vals += make_vector<int>()
+			<< readContigLengths(in, contigLens);
+		keys += make_vector<string>()
+			<< "CntgCounted";
+	} else {
+		readContigLengths(in, contigLens);
+	}
+
 	g_contigNames.lock();
 
 	// Estimate the distances between contigs.
@@ -661,18 +674,18 @@ int main(int argc, char** argv)
 			cerr << PROGRAM << ": warning: duplicate rate of fragments "
 				"spanning more than one contig is high.\n";
 	}
-#if _SQL
-	vals += make_vector<int>()
-		<< stats.total_frags
-		<< stats.dup_frags;
+	if (haveDbParam) {
+		vals += make_vector<int>()
+			<< stats.total_frags
+			<< stats.dup_frags;
 
-	keys += make_vector<string>()
-		<< "total_frags"
-		<< "dupl_frags";
+		keys += make_vector<string>()
+			<< "total_frags"
+			<< "dupl_frags";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 
 	if (opt::verbose > 0 && g_recMA != opt::minAlign)
 		cerr << PROGRAM << ": warning: MLE will be more accurate if "

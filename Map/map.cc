@@ -112,6 +112,9 @@ namespace opt {
 	static int verbose;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+
 static const char shortopts[] = "j:k:l:s:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION,
@@ -586,11 +589,17 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
 				arg >> opt::metaVars[2]; break;
 		}

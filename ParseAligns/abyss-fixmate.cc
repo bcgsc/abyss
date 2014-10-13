@@ -77,6 +77,11 @@ namespace opt {
 	static int print_all;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "h:c:l:s:v";
 
 #if _SQL
@@ -340,28 +345,28 @@ static void printHistogramStats(Histogram h)
 		"max: " << h.maximum() << " "
 		"ignored: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< round(h.mean())
-		<< h.median()
-		<< round(h.sd())
-		<< h.size()
-		<< h.minimum()
-		<< h.maximum()
-		<< n_orig-h.size();
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< round(h.mean())
+			<< h.median()
+			<< round(h.sd())
+			<< h.size()
+			<< h.minimum()
+			<< h.maximum()
+			<< n_orig-h.size();
 
-	vector<string> keys = make_vector<string>()
-		<< "mean"
-		<< "median"
-		<< "sd"
-		<< "n"
-		<< "min"
-		<< "max"
-		<< "ignored";
+		keys = make_vector<string>()
+			<< "mean"
+			<< "median"
+			<< "sd"
+			<< "n"
+			<< "min"
+			<< "max"
+			<< "ignored";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 }
 
 int main(int argc, char* const* argv)
@@ -391,13 +396,21 @@ int main(int argc, char* const* argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -418,15 +431,15 @@ int main(int argc, char* const* argv)
 		assert(g_fragFile.is_open());
 	}
 
-#if _SQL
-	init(db,
+	if (haveDbParam)
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
-	);
-#endif
+		);
+
 	Alignments alignments(1);
 	if (optind < argc) {
 		for_each(argv + optind, argv + argc,
@@ -438,9 +451,8 @@ int main(int argc, char* const* argv)
 	}
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
-#if _SQL
-	addToDb(db, "read_alignments_initial", stats.alignments);
-#endif
+	if (haveDbParam)
+		addToDb(db, "read_alignments_initial", stats.alignments);
 
 	// Print the unpaired alignments.
 	if (opt::print_all) {
@@ -473,30 +485,30 @@ int main(int argc, char* const* argv)
 		"Different  " << percent(stats.numDifferent, sum) << "\n"
 		"Total      " << sum << endl;
 
-#if _SQL
-	vector<int> vals = make_vector<int>()
-		<< alignments.size()
-		<< stats.bothUnaligned
-		<< stats.oneUnaligned
-		<< numFR
-		<< numRF
-		<< stats.numFF
-		<< stats.numDifferent
-		<< sum;
+	if (haveDbParam) {
+		vals = make_vector<int>()
+			<< alignments.size()
+			<< stats.bothUnaligned
+			<< stats.oneUnaligned
+			<< numFR
+			<< numRF
+			<< stats.numFF
+			<< stats.numDifferent
+			<< sum;
 
-	vector<string> keys = make_vector<string>()
-		<< "Mateless"
-		<< "Unaligned"
-		<< "Singleton"
-		<< "FR"
-		<< "RF"
-		<< "FF"
-		<< "Different"
-		<< "Total";
+		keys = make_vector<string>()
+			<< "Mateless"
+			<< "Unaligned"
+			<< "Singleton"
+			<< "FR"
+			<< "RF"
+			<< "FF"
+			<< "Different"
+			<< "Total";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 
 	if (alignments.size() == sum) {
 		cerr << PROGRAM ": error: All reads are mateless. This "

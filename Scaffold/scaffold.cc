@@ -122,6 +122,11 @@ namespace opt {
 	static int comp_trans;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "g:k:n:o:s:v";
 
 #if _SQL
@@ -213,10 +218,10 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
-#if _SQL
-	addToDb(db, "V_removed", numRemovedV);
-	addToDb(db, "E_removed", numRemovedE);
-#endif
+	if (haveDbParam) {
+		addToDb(db, "V_removed", numRemovedV);
+		addToDb(db, "E_removed", numRemovedE);
+	}
 }
 
 /** Return true if the specified edge is a cycle. */
@@ -246,9 +251,8 @@ static void removeCycles(Graph& g)
 		cerr << "Removed " << cycles.size() << " cyclic edges.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "E_removed_cyclic", cycles.size());
-#endif
+	if (haveDbParam)
+		addToDb(db, "E_removed_cyclic", cycles.size());
 }
 
 /** Find edges in g0 that resolve forks in g.
@@ -302,9 +306,8 @@ static void resolveForks(Graph& g, const Graph& g0)
 	if (opt::verbose > 0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
-#if _SQL
-	addToDb(db, "E_added_ambig", numEdges);
-#endif
+	if (haveDbParam)
+		addToDb(db, "E_added_ambig", numEdges);
 }
 
 /** Remove tips.
@@ -321,9 +324,8 @@ static void pruneTips(Graph& g)
 		cerr << "Removed " << n << " tips.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "Tips_removed", n);
-#endif
+	if (haveDbParam)
+		addToDb(db, "Tips_removed", n);
 }
 
 /** Remove repetitive vertices from this graph.
@@ -400,10 +402,10 @@ static void removeRepeats(Graph& g)
 			<< numRemoved << " ambiguous vertices.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "V_cleared_ambg", repeats.size());
-	addToDb(db, "V_removed_ambg", numRemoved);
-#endif
+	if (haveDbParam) {
+		addToDb(db, "V_cleared_ambg", repeats.size());
+		addToDb(db, "V_removed_ambg", numRemoved);
+	}
 }
 
 /** Remove weak edges from this graph.
@@ -483,9 +485,8 @@ static void removeWeakEdges(Graph& g)
 		cerr << "Removed " << weak.size() << " weak edges.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "E_removed_weak", weak.size());
-#endif
+	if (haveDbParam)
+		addToDb(db, "E_removed_weak", weak.size());
 }
 
 static void removeLongEdges(Graph& g)
@@ -562,22 +563,20 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
+	if (haveDbParam) {
+		vals = passGraphStatsVal(g);
+		keys = make_vector<string>()
+			<< "V_readGraph"
+			<< "E_readGraph"
+			<< "degree0_readGraph"
+			<< "degree1_readGraph"
+			<< "degree234_readGraph"
+			<< "degree5_readGraph"
+			<< "max_readGraph";
 
-#if _SQL
-	vector<int> vals = passGraphStatsVal(g);
-	vector<string> keys = make_vector<string>()
-		<< "V_readGraph"
-		<< "E_readGraph"
-		<< "degree0_readGraph"
-		<< "degree1_readGraph"
-		<< "degree234_readGraph"
-		<< "degree5_readGraph"
-		<< "max_readGraph";
-
-	for(unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
-
+		for(unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 	g_contigNames.lock();
 }
 
@@ -637,8 +636,8 @@ static Histogram buildScaffoldLengthHistogram(
 static void addCntgStatsToDb(
 		const Histogram h, const unsigned min)
 {
-	vector<int> vals = passContiguityStatsVal(h, min);
-	vector<string> keys = make_vector<string>()
+	vals = passContiguityStatsVal(h, min);
+	keys = make_vector<string>()
 		<< "n"
 		<< "n200"
 		<< "nN50"
@@ -695,9 +694,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-#if _SQL
-	addToDb(db, "Edges_transitive", numTransitive);
-#endif
+	if (haveDbParam)
+		addToDb(db, "Edges_transitive", numTransitive);
+
 	// Prune tips.
 	pruneTips(g);
 
@@ -709,9 +708,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "Vertices_bubblePopped", popped.size());
-#endif
+
+	if (haveDbParam)
+		addToDb(db, "Vertices_bubblePopped", popped.size());
+
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
 		for (vector<V>::const_iterator it = popped.begin();
@@ -740,10 +740,11 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
-#if _SQL
-	addToDb(db, "contigs_assembled", n);
-	addToDb(db, "scaffolds_assembled", paths.size());
-#endif
+
+	if (haveDbParam) {
+		addToDb(db, "contigs_assembled", n);
+		addToDb(db, "scaffolds_assembled", paths.size());
+	}
 
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (!output) {
@@ -754,9 +755,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< "\ts=" << minContigLength << '\n';
 		if (opt::verbose == 0)
 			printHeader = false;
-#if _SQL
-		addCntgStatsToDb(h, STATS_MIN_LENGTH);
-#endif
+		if (haveDbParam)
+			addCntgStatsToDb(h, STATS_MIN_LENGTH);
 		return h.trimLow(STATS_MIN_LENGTH).n50();
 	}
 
@@ -782,9 +782,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
 	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
-#if _SQL
-	addCntgStatsToDb(h, STATS_MIN_LENGTH);
-#endif
+	if (haveDbParam)
+		addCntgStatsToDb(h, STATS_MIN_LENGTH);
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 
@@ -842,15 +841,19 @@ int main(int argc, char** argv)
 #if _SQL
 		  case OPT_DB:
 			arg >> opt::url;
+			haveDbParam = true;
 			break;
 		  case OPT_LIBRARY:
 			arg >> opt::metaVars[0];
+			haveDbParam = true;
 			break;
 		  case OPT_STRAIN:
 			arg >> opt::metaVars[1];
+			haveDbParam = true;
 			break;
 		  case OPT_SPECIES:
 			arg >> opt::metaVars[2];
+			haveDbParam = true;
 			break;
 #endif
 		}
@@ -876,16 +879,16 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-#if _SQL
-	init(db,
+	if (haveDbParam) {
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
-	);
-	addToDb(db, "K", opt::k);
-#endif
+		);
+		addToDb(db, "K", opt::k);
+	}
 
 	Graph g;
 	if (optind < argc) {
@@ -901,9 +904,8 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
-#if _SQL
-	addToDb(db, "add_complement_edges", numAdded);
-#endif
+	if (haveDbParam)
+		addToDb(db, "add_complement_edges", numAdded);
 
 	// Remove invalid edges.
 	unsigned numBefore = num_edges(g);
@@ -913,9 +915,9 @@ int main(int argc, char** argv)
 		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
 
-#if _SQL
-	addToDb(db, "Edges_invalid", numRemoved);
-#endif
+	if (haveDbParam)
+		addToDb(db, "Edges_invalid", numRemoved);
+
 	if (opt::minContigLengthEnd == 0) {
 		scaffold(g, opt::minContigLength, true);
 		return 0;

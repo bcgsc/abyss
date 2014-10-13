@@ -98,6 +98,11 @@ namespace opt {
 	static string graphPath;
 }
 
+// for sqlite params
+static bool haveDbParam(false);
+static vector<string> keys;
+static vector<int> vals;
+
 static const char shortopts[] = "g:j:k:o:s:v";
 
 #if _SQL
@@ -639,9 +644,8 @@ static void addMissingEdges(const Lengths& lengths,
 	}
 	if (opt::verbose > 0)
 		cout << "Added " << numAdded << " missing edges.\n";
-#if _SQL
-	addToDb(db, "addedMissingEdges", numAdded);
-#endif
+	if (haveDbParam)
+		addToDb(db, "addedMissingEdges", numAdded);
 }
 
 /** Remove transitive edges. */
@@ -655,10 +659,10 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 			<< nbefore << " edges leaving "
 			<< nafter << " edges.\n";
 	assert(nbefore - nremoved == nafter);
-#if _SQL
-	addToDb(db, "Edges_init", nbefore);
-	addToDb(db, "Edges_removed_transitive", nremoved);
-#endif
+	if (haveDbParam) {
+		addToDb(db, "Edges_init", nbefore);
+		addToDb(db, "Edges_removed_transitive", nremoved);
+	}
 }
 
 /** Remove ambiguous edges that overlap by only a small amount.
@@ -697,9 +701,8 @@ static void removeSmallOverlaps(PathGraph& g,
 	if (opt::verbose > 0)
 		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
-#if _SQL
-	addToDb(db, "Edges_removed_small_overlap", edges.size());
-#endif
+	if (haveDbParam)
+		addToDb(db, "Edges_removed_small_overlap", edges.size());
 }
 
 /** Output the path overlap graph. */
@@ -847,21 +850,21 @@ static void buildPathGraph(const Lengths& lengths,
 	removeSmallOverlaps(g, paths);
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-#if _SQL
-	// graph statistics
-	vector<int> vals = passGraphStatsVal(g);
-	vector<string> keys = make_vector<string>()
-		<< "V"
-		<< "E"
-		<< "degree0pctg"
-		<< "degree1pctg"
-		<< "degree234pctg"
-		<< "degree5pctg"
-		<< "degree_max";
+	if (haveDbParam) {
+		// graph statistics
+		vals = passGraphStatsVal(g);
+		keys = make_vector<string>()
+			<< "V"
+			<< "E"
+			<< "degree0pctg"
+			<< "degree1pctg"
+			<< "degree234pctg"
+			<< "degree5pctg"
+			<< "degree_max";
 
-	for (unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
-#endif
+		for (unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 	outputPathGraph(g);
 }
 
@@ -921,13 +924,21 @@ int main(int argc, char** argv)
 				exit(EXIT_SUCCESS);
 #if _SQL
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::url;
+				haveDbParam = true;
+				break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
+				arg >> opt::metaVars[0];
+				haveDbParam = true;
+				break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
+				arg >> opt::metaVars[1];
+				haveDbParam = true;
+				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+				arg >> opt::metaVars[2];
+				haveDbParam = true;
+				break;
 #endif
 		}
 		if (optarg != NULL && !arg.eof()) {
@@ -969,15 +980,14 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Reading `" << argv[optind] << "'..." << endl;
 
-#if _SQL
-	init(db,
+	if (haveDbParam)
+		init(db,
 			opt::url,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
 			opt::metaVars
 	);
-#endif
 
 	Lengths lengths = readContigLengths(argv[optind++]);
 	ContigPathMap originalPathMap = readPaths(
@@ -985,9 +995,9 @@ int main(int argc, char** argv)
 
 	removeRepeats(originalPathMap);
 
-#if _SQL
-	addToDb(db, "K", opt::k);
-#endif
+	if (haveDbParam)
+		addToDb(db, "K", opt::k);
+
 	if (!opt::greedy) {
 		// Assemble the path overlap graph.
 		PathGraph pathGraph;
