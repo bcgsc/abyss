@@ -104,7 +104,8 @@ namespace opt {
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
-	/** Only remove shims with degree . */
+	/** Only remove shims where the smaller of in/out degree is small
+	 * enough. */
 	static unsigned shimMaxDegree = 1;
 
 	/** Assemble unambiguous paths. */
