@@ -53,33 +53,33 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"  -k, --kmer=N          k-mer size\n"
-"      --SS              expect contigs to be oriented correctly\n"
-"      --no-SS           no assumption about contig orientation\n"
-"  -T, --island=N        remove islands shorter than N [0]\n"
-"  -t, --tip=N           remove tips shorter than N [0]\n"
-"  -l, --length=N        remove contigs shorter than N [0]\n"
-"  -L, --max-length=N    remove contigs longer than N [0]\n"
-"      --shim            remove filler contigs that only contribute\n"
-"                        to adjacency [default]\n"
-"      --no-shim         disable filler contigs removal\n"
+"  -k, --kmer=N            k-mer size\n"
+"      --SS                expect contigs to be oriented correctly\n"
+"      --no-SS             no assumption about contig orientation\n"
+"  -T, --island=N          remove islands shorter than N [0]\n"
+"  -t, --tip=N             remove tips shorter than N [0]\n"
+"  -l, --length=N          remove contigs shorter than N [0]\n"
+"  -L, --max-length=N      remove contigs longer than N [0]\n"
+"      --shim              remove filler contigs that only contribute\n"
+"                          to adjacency [default]\n"
+"      --no-shim           disable filler contigs removal\n"
 "      --shim-max-degree=N only remove shims where the smaller of \n"
 "                          in/out degree is smaller than N [1]\n"
-"  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
-"      --assemble        assemble unambiguous paths\n"
-"      --no-assemble     disable assembling of paths [default]\n"
-"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
-"  -i, --ignore=FILE     ignore contigs seen in FILE\n"
-"  -r, --remove=FILE     remove contigs seen in FILE\n"
-"      --adj             output the graph in ADJ format [default]\n"
-"      --asqg            output the graph in ASQG format\n"
-"      --dot             output the graph in GraphViz format\n"
-"      --gv              output the graph in GraphViz format\n"
-"      --gfa             output the graph in GFA format\n"
-"      --sam             output the graph in SAM format\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
+"  -m, --min-overlap=N     require a minimum overlap of N bases [10]\n"
+"      --assemble          assemble unambiguous paths\n"
+"      --no-assemble       disable assembling of paths [default]\n"
+"  -g, --graph=FILE        write the contig adjacency graph to FILE\n"
+"  -i, --ignore=FILE       ignore contigs seen in FILE\n"
+"  -r, --remove=FILE       remove contigs seen in FILE\n"
+"      --adj               output the graph in ADJ format [default]\n"
+"      --asqg              output the graph in ASQG format\n"
+"      --dot               output the graph in GraphViz format\n"
+"      --gv                output the graph in GraphViz format\n"
+"      --gfa               output the graph in GFA format\n"
+"      --sam               output the graph in SAM format\n"
+"  -v, --verbose           display verbose output\n"
+"      --help              display this help and exit\n"
+"      --version           output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -131,31 +131,31 @@ static const char shortopts[] = "g:i:r:k:l:L:m:t:T:v";
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SHIM_MAX_DEG };
 
 static const struct option longopts[] = {
-	{ "adj",           no_argument,       &opt::format, ADJ },
-	{ "asqg",          no_argument,       &opt::format, ASQG },
-	{ "dot",           no_argument,       &opt::format, DOT },
-	{ "gv",            no_argument,       &opt::format, DOT },
-	{ "gfa",           no_argument,       &opt::format, GFA },
-	{ "sam",           no_argument,       &opt::format, SAM },
-	{ "graph",         required_argument, NULL, 'g' },
-	{ "ignore",        required_argument, NULL, 'i' },
-	{ "remove",        required_argument, NULL, 'r' },
-	{ "SS",            no_argument,       &opt::ss, 1 },
-	{ "no-SS",         no_argument,       &opt::ss, 0 },
-	{ "kmer",          required_argument, NULL, 'k' },
-	{ "island",        required_argument, NULL, 'T' },
-	{ "tip",           required_argument, NULL, 't' },
-	{ "length",        required_argument, NULL, 'l' },
-	{ "max-length",    required_argument, NULL, 'L' },
-	{ "shim",          no_argument,       &opt::shim, 1 },
-	{ "no-shim",       no_argument,       &opt::shim, 0 },
+	{ "adj",             no_argument,       &opt::format, ADJ },
+	{ "asqg",            no_argument,       &opt::format, ASQG },
+	{ "dot",             no_argument,       &opt::format, DOT },
+	{ "gv",              no_argument,       &opt::format, DOT },
+	{ "gfa",             no_argument,       &opt::format, GFA },
+	{ "sam",             no_argument,       &opt::format, SAM },
+	{ "graph",           required_argument, NULL, 'g' },
+	{ "ignore",          required_argument, NULL, 'i' },
+	{ "remove",          required_argument, NULL, 'r' },
+	{ "SS",              no_argument,       &opt::ss, 1 },
+	{ "no-SS",           no_argument,       &opt::ss, 0 },
+	{ "kmer",            required_argument, NULL, 'k' },
+	{ "island",          required_argument, NULL, 'T' },
+	{ "tip",             required_argument, NULL, 't' },
+	{ "length",          required_argument, NULL, 'l' },
+	{ "max-length",      required_argument, NULL, 'L' },
+	{ "shim",            no_argument,       &opt::shim, 1 },
+	{ "no-shim",         no_argument,       &opt::shim, 0 },
 	{ "shim-max-degree", required_argument, NULL, OPT_SHIM_MAX_DEG },
-	{ "assemble",      no_argument,       &opt::assemble, 1 },
-	{ "no-assemble",   no_argument,       &opt::assemble, 0 },
-	{ "min-overlap",   required_argument, NULL, 'm' },
-	{ "verbose",       no_argument,       NULL, 'v' },
-	{ "help",          no_argument,       NULL, OPT_HELP },
-	{ "version",       no_argument,       NULL, OPT_VERSION },
+	{ "assemble",        no_argument,       &opt::assemble, 1 },
+	{ "no-assemble",     no_argument,       &opt::assemble, 0 },
+	{ "min-overlap",     required_argument, NULL, 'm' },
+	{ "verbose",         no_argument,       NULL, 'v' },
+	{ "help",            no_argument,       NULL, OPT_HELP },
+	{ "version",         no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
