@@ -17,7 +17,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef mapped_type vertex_property_type;
+		typedef mapped_type vertex_bundled;
 		typedef no_property edge_property_type;
+		typedef no_property edge_bundled;
 		typedef ISequenceCollection::EdgeSet EdgeSet;
 
 		SequenceCollectionHash();
@@ -323,6 +325,7 @@ get(vertex_complement_t, const SequenceCollectionHash&,
 	return reverseComplement(u);
 }
 
+/** Return whether this vertex has been removed. */
 static inline
 bool get(vertex_removed_t, const SequenceCollectionHash& g,
 		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
@@ -330,6 +333,25 @@ bool get(vertex_removed_t, const SequenceCollectionHash& g,
 	return g.getSeqAndData(u).second.deleted();
 }
 
+/** Return the name of this vertex. */
+static inline
+std::string
+get(vertex_name_t, const SequenceCollectionHash&,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return u.str("\\n");
+}
+
+/** Return the properties of this vertex. */
+static inline
+vertex_bundle_type<SequenceCollectionHash>::type
+get(vertex_bundle_t, const SequenceCollectionHash& g,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return g[u];
+}
+
+/** Return the properties of this edge. */
 static inline
 no_property get(edge_bundle_t, const SequenceCollectionHash&,
 		graph_traits<SequenceCollectionHash>::edge_descriptor)
