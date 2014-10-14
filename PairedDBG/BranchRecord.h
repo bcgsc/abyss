@@ -7,6 +7,7 @@
 #include <cassert>
 #include <utility>
 #include <vector>
+#include <iterator>
 
 enum BranchState
 {
