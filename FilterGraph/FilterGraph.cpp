@@ -201,8 +201,7 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 
 	// Check that the result will be less complex that the original
 	if (!opt::allowComplex
-			&& !(out_degree(v, g) == 1 && in_degree(v, g) > 1)
-			&& !(out_degree(v, g) > 1 && in_degree(v, g) == 1)) {
+			&& min(out_degree(v, g), in_degree(v, g)) > 1) {
 		g_count.too_complex++;
 		return false;
 	}
