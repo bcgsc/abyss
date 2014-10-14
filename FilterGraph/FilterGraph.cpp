@@ -63,6 +63,8 @@ static const char USAGE_MESSAGE[] =
 "      --shim            remove filler contigs that only contribute\n"
 "                        to adjacency [default]\n"
 "      --no-shim         disable filler contigs removal\n"
+"      --complex         remove complex shims, i.e. multi-in multi-out\n"
+"      --no-complex      don't remove complex shims [default]\n"
 "  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
 "      --assemble        assemble unambiguous paths\n"
 "      --no-assemble     disable assembling of paths [default]\n"
@@ -101,6 +103,9 @@ namespace opt {
 
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
+
+	/** Remove complex shims. i.e. multi-in multi-out short contigs. */
+	static int allowComplex = false;
 
 	/** Assemble unambiguous paths. */
 	static int assemble = 0;
@@ -144,6 +149,8 @@ static const struct option longopts[] = {
 	{ "max-length",    required_argument, NULL, 'L' },
 	{ "shim",          no_argument,       &opt::shim, 1 },
 	{ "no-shim",       no_argument,       &opt::shim, 0 },
+	{ "complex",       no_argument,       &opt::allowComplex, 1 },
+	{ "no-complex",    no_argument,       &opt::allowComplex, 0 },
 	{ "assemble",      no_argument,       &opt::assemble, 1 },
 	{ "no-assemble",   no_argument,       &opt::assemble, 0 },
 	{ "min-overlap",   required_argument, NULL, 'm' },
@@ -193,7 +200,8 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 	}
 
 	// Check that the result will be less complex that the original
-	if (!(out_degree(v, g) == 1 && in_degree(v, g) > 1)
+	if (!opt::allowComplex
+			&& !(out_degree(v, g) == 1 && in_degree(v, g) > 1)
 			&& !(out_degree(v, g) > 1 && in_degree(v, g) == 1)) {
 		g_count.too_complex++;
 		return false;
