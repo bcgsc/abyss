@@ -105,13 +105,28 @@ bool isPalindrome(extDirection dir) const
 	return a == b;
 }
 
-/** Return a string represenation. */
+/** Return a string representation of the k-mer pair, using an accurate number
+ * of Ns to separate the two k-mer.
+ */
 std::string str() const
 {
 	assert(length() >= m_a.length());
 	std::string s(length(), 'N');
 	s.replace(0, m_a.length(), m_a.str());
 	s.replace(length() - m_b.length(), m_b.length(), m_b.str());
+	return s;
+}
+
+/** Return a string representation of the k-mer pair, using the specified
+ * separator string to separate the two k-mer.
+ */
+std::string str(const char* sep) const
+{
+	std::string s;
+	s.reserve(2 * Kmer::length() + 1);
+	s += m_a.str();
+	s += sep;
+	s += m_b.str();
 	return s;
 }
 
