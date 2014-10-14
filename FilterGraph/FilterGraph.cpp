@@ -63,8 +63,8 @@ static const char USAGE_MESSAGE[] =
 "      --shim            remove filler contigs that only contribute\n"
 "                        to adjacency [default]\n"
 "      --no-shim         disable filler contigs removal\n"
-"      --complex         remove complex shims, i.e. multi-in multi-out\n"
-"      --no-complex      don't remove complex shims [default]\n"
+"      --shim-max-degree=N only remove shims where the smaller of \n"
+"                          in/out degree is smaller than N [1]\n"
 "  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
 "      --assemble        assemble unambiguous paths\n"
 "      --no-assemble     disable assembling of paths [default]\n"
@@ -104,8 +104,8 @@ namespace opt {
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
-	/** Remove complex shims. i.e. multi-in multi-out short contigs. */
-	static int allowComplex = false;
+	/** Only remove shims with degree . */
+	static unsigned shimMaxDegree = 1;
 
 	/** Assemble unambiguous paths. */
 	static int assemble = 0;
@@ -128,7 +128,7 @@ namespace opt {
 
 static const char shortopts[] = "g:i:r:k:l:L:m:t:T:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_SHIM_MAX_DEG };
 
 static const struct option longopts[] = {
 	{ "adj",           no_argument,       &opt::format, ADJ },
@@ -149,8 +149,7 @@ static const struct option longopts[] = {
 	{ "max-length",    required_argument, NULL, 'L' },
 	{ "shim",          no_argument,       &opt::shim, 1 },
 	{ "no-shim",       no_argument,       &opt::shim, 0 },
-	{ "complex",       no_argument,       &opt::allowComplex, 1 },
-	{ "no-complex",    no_argument,       &opt::allowComplex, 0 },
+	{ "shim-max-degree", required_argument, NULL, OPT_SHIM_MAX_DEG },
 	{ "assemble",      no_argument,       &opt::assemble, 1 },
 	{ "no-assemble",   no_argument,       &opt::assemble, 0 },
 	{ "min-overlap",   required_argument, NULL, 'm' },
@@ -193,15 +192,16 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 		return false;
 	}
 
+	unsigned min_degree = min(out_degree(v, g), in_degree(v, g));
+
 	// Check for tails
-	if (out_degree(v, g) == 0 || in_degree(v, g) == 0) {
+	if (min_degree == 0) {
 		g_count.tails++;
 		return false;
 	}
 
 	// Check that the result will be less complex that the original
-	if (!opt::allowComplex
-			&& min(out_degree(v, g), in_degree(v, g)) > 1) {
+	if (min_degree > opt::shimMaxDegree) {
 		g_count.too_complex++;
 		return false;
 	}
@@ -518,6 +518,9 @@ int main(int argc, char** argv)
 			break;
 		  case 'v':
 			opt::verbose++;
+			break;
+		  case OPT_SHIM_MAX_DEG:
+			arg >> opt::shimMaxDegree;
 			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
