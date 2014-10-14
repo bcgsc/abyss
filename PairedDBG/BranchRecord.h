@@ -154,8 +154,20 @@ void BranchRecord::str(It it, It last, OutIt out) const
 	Sequence::iterator outb = out + KmerPair::length();
 	for (; it != last; ++it) {
 		std::pair<char, char> x = it->first.getLastBaseChar();
-		assert(*outa == 'N' || *outa == x.first);
-		*outa = x.first;
+		if (*outa == 'N' || *outa == x.first) {
+			*outa = x.first;
+		} else {
+			char amb = ambiguityOr(*outa, x.first);
+			std::cerr << "Warning: Expected '" << *outa
+				<< "' and saw '" << x.first
+				<< "' at " << outa - out << '\n';
+			std::copy(out, outb, std::ostream_iterator<char>(std::cerr));
+			std::cerr << '\n'
+				<< std::string(outa - out - Kmer::length() + 1, ' ')
+				<< it->first.str() << '\n'
+				<< std::string(outa - out, ' ') << amb << '\n';
+			*outa = amb;
+		}
 		++outa;
 		assert(*outb == 'N');
 		*outb = x.second;
