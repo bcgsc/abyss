@@ -27,7 +27,6 @@ libpaireddbg_a_SOURCES = \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
-	BubbleAlgorithm.h \
 	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \
 	KmerPairData.h \
