@@ -24,6 +24,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef uint8_t Nuc;
 		typedef Nuc Symbol;
 		typedef SeqExt SymbolSet;
+		typedef ExtensionRecord SymbolSetPair;
 
 		SequenceCollectionHash();
 

@@ -230,7 +230,7 @@ size_t removeMarked(ISequenceCollection* pSC)
 } // namespace AssemblyAlgorithms
 
 #include "Assembly/AdjacencyAlgorithm.h"
-#include "AssembleAlgorithm.h"
+#include "Assembly/AssembleAlgorithm.h"
 #include "BubbleAlgorithm.h"
 #include "CoverageAlgorithm.h"
 #include "ErodeAlgorithm.h"

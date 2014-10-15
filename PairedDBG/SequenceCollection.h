@@ -23,6 +23,7 @@ class SequenceCollectionHash : public ISequenceCollection
 
 		typedef Dinuc Symbol;
 		typedef DinucSet SymbolSet;
+		typedef DinucSetPair SymbolSetPair;
 
 		SequenceCollectionHash();
 

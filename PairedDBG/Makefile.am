@@ -24,7 +24,6 @@ libpaireddbg_a_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/DataLayer
 
 libpaireddbg_a_SOURCES = \
-	AssembleAlgorithm.h \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
