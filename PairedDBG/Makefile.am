@@ -30,7 +30,6 @@ libpaireddbg_a_SOURCES = \
 	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \
 	KmerPairData.h \
-	LoadAlgorithm.h \
 	Options.cc Options.h \
 	SequenceCollection.cc SequenceCollection.h
 
