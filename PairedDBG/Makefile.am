@@ -34,8 +34,7 @@ libpaireddbg_a_SOURCES = \
 	LoadAlgorithm.h \
 	Options.cc Options.h \
 	SequenceCollection.cc SequenceCollection.h \
-	SplitAlgorithm.h \
-	TrimAlgorithm.h
+	SplitAlgorithm.h
 
 if HAVE_SQLITE
 libpaireddbg_a_LIBADD = $(top_builddir)/Common/libcommon.a
