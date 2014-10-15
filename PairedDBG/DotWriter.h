@@ -3,67 +3,157 @@
 
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
-#include "Graph/ContigGraphAlgorithms.h"
 #include "SequenceCollection.h"
+#include "Common/UnorderedMap.h"
+#include "Graph/ContigGraphAlgorithms.h"
 #include <cassert>
-#include <ostream>
+#include <iostream>
+#include <sstream>
 
 class DotWriter
 {
-public:
+private:
 	typedef SequenceCollectionHash Graph;
 	typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 	typedef graph_traits<Graph>::vertex_iterator vertex_iterator;
 	typedef graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+	typedef std::string VertexName;
 
-private:
+	DotWriter() : m_id(0) { }
+
+/** Complement the specified name. */
+static std::string
+complementName(std::string s)
+{
+	char c = s.back();
+	assert(c == '+' || c == '-');
+	s.back() = c == '+' ? '-' : '+';
+	return s;
+}
+
+/** Return the name of the specified vertex. */
+const VertexName&
+getName(const vertex_descriptor& u) const
+{
+	Names::const_iterator it = m_names.find(u);
+	if (it == m_names.end())
+		std::cerr << "error: cannot find vertex " << u << '\n';
+	assert(it != m_names.end());
+	return it->second;
+}
+
+/** Set the name of the specified vertex. */
+void setName(const vertex_descriptor& u, const VertexName& uname)
+{
+	std::pair<Names::const_iterator, bool> inserted
+		= m_names.insert(Names::value_type(u, uname));
+	if (!inserted.second)
+		std::cerr << "error: duplicate vertex " << u << '\n';
+	assert(inserted.second);
+	(void)inserted;
+}
 
 /** Write out the specified contig. */
-static
 void writeContig(std::ostream& out, const Graph& g, const vertex_descriptor& u)
 {
-	if (contiguous_in(g, u))
-		return;
 	unsigned n = 1;
 	vertex_descriptor v = u;
 	while (contiguous_out(g, v)) {
 		n++;
 		v = *adjacent_vertices(v, g).first;
 	}
-	out << '"' << get(vertex_name, g, u) << "\" -> \""
-		<< get(vertex_name, g, v) << '"';
-	if (n > 2)
-		out << " [label=" << n << ']';
-	out << '\n';
+
+	// Output the canonical orientation of the contig.
+	vertex_descriptor vrc = get(vertex_complement, g, v);
+	if (vrc < u)
+		return;
+
+	std::ostringstream ss;
+	ss << m_id << '+';
+	VertexName uname = ss.str();
+	VertexName vname(uname);
+	vname.back() = '-';
+	++m_id;
+
+	setName(u, uname);
+	if (u == vrc) {
+		// Palindrome
+		assert(n == 1);
+	} else
+		setName(vrc, vname);
+
+	unsigned l = n + vertex_descriptor::length() - 1;
+	out << '"' << uname << "\" [l=" << l << "]\n";
+	out << '"' << vname << "\" [l=" << l << "]\n";
 }
 
 /** Write out the contigs that split at the specified sequence. */
-static
-void writeEdges(std::ostream& out, const Graph& g, const vertex_descriptor& u)
+void
+writeEdges(std::ostream& out, const Graph& g,
+		const vertex_descriptor& u, const VertexName& uname) const
 {
-	unsigned outdeg = out_degree(u, g);
-	if (outdeg == 0)
+	if (out_degree(u, g) == 0)
 		return;
-	out << '"' << get(vertex_name, g, u) << "\" ->";
-	if (outdeg > 1)
-		out << " {";
+	out << '"' << uname << "\" -> {";
 	std::pair<adjacency_iterator, adjacency_iterator>
 		adj = adjacent_vertices(u, g);
-	for (adjacency_iterator v = adj.first; v != adj.second; ++v)
-		out << " \"" << get(vertex_name, g, *v) << '"';
-	if (outdeg > 1)
-		out << " }";
-	out << '\n';
+	for (adjacency_iterator vit = adj.first; vit != adj.second; ++vit) {
+		vertex_descriptor v = *vit;
+		const VertexName& vname = getName(v);
+		out << " \"" << vname << '"';
+		if (v.isPalindrome())
+			out << " \"" << complementName(vname) << '"';
+	}
+	out << " }\n";
 }
 
-/** Write out a dot graph around the specified sequence. */
-static
-void write_vertex(std::ostream& out, const Graph& g, const vertex_descriptor& u)
+/** Output the edges of the specified vertex. */
+void
+writeEdges(std::ostream& out, const Graph& g, const vertex_descriptor& u) const
 {
-	if (contiguous_out(g, u))
-		writeContig(out, g, u);
-	else
-		writeEdges(out, g, u);
+	std::string uname = complementName(getName(get(vertex_complement, g, u)));
+	writeEdges(out, g, u, uname);
+	if (u.isPalindrome()) {
+		uname = complementName(uname);
+		writeEdges(out, g, u, uname);
+	}
+}
+
+/** Write out a dot graph for the specified collection. */
+void writeGraph(std::ostream& out, const Graph& g)
+{
+	out << "digraph g {\n";
+	std::pair<vertex_iterator, vertex_iterator> uits = vertices(g);
+
+	// Output the vertices.
+	for (vertex_iterator uit = uits.first; uit != uits.second; ++uit) {
+		vertex_descriptor u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		if (!contiguous_in(g, u))
+			writeContig(out, g, u);
+		// Skip the second occurence of the palindrome.
+		if (u.isPalindrome()) {
+			assert(uit != uits.second);
+			++uit;
+		}
+	}
+
+	// Output the edges.
+	for (vertex_iterator uit = uits.first; uit != uits.second; ++uit) {
+		vertex_descriptor u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		if (!contiguous_out(g, u))
+			writeEdges(out, g, u);
+		// Skip the second occurence of the palindrome.
+		if (u.isPalindrome()) {
+			assert(uit != uits.second);
+			++uit;
+		}
+	}
+
+	out << "}" << std::endl;
 }
 
 public:
@@ -72,16 +162,18 @@ public:
 static
 void write(std::ostream& out, const Graph& g)
 {
-	out << "digraph g {\n";
-	std::pair<vertex_iterator, vertex_iterator> vit = vertices(g);
-	for (vertex_iterator u = vit.first; u != vit.second; ++u) {
-		if (get(vertex_removed, g, *u))
-			continue;
-		write_vertex(out, g, *u);
-	}
-	out << "}" << std::endl;
+	DotWriter dotWriter;
+	dotWriter.writeGraph(out, g);
 }
 
+private:
+	typedef unordered_map<vertex_descriptor, VertexName> Names;
+
+	/** A map of terminal k-mers to contig names. */
+	Names m_names;
+
+	/** The current contig name. */
+	unsigned m_id;
 };
 
 #endif
