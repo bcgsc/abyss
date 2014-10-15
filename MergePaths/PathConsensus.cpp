@@ -744,6 +744,7 @@ static ContigPath fillGap(const Graph& g,
 	} else if (solutions.size() == 1) {
 		if (opt::verbose > 1)
 			cerr << "1 path\n" << solutions.front() << '\n';
+		consensus = solutions.front();
 		stats.numMerged++;
 	} else {
 		assert(solutions.size() > 1);

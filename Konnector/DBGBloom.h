@@ -6,12 +6,12 @@
 #ifndef DBGBLOOM_H
 #define DBGBLOOM_H 1
 
+#include "Assembly/SeqExt.h" // for NUM_BASES
 #include "Common/IOUtil.h"
 #include "Common/Kmer.h"
-#include "Common/SeqExt.h" // for NUM_BASES
-#include "Graph/Properties.h"
 #include "Common/Uncompress.h"
 #include "DataLayer/FastaReader.h"
+#include "Graph/Properties.h"
 
 #include <algorithm>
 #include <cassert>

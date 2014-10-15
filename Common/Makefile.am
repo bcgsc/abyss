@@ -28,7 +28,6 @@ libcommon_a_SOURCES = \
 	PMF.h \
 	SAM.h \
 	Sense.h \
-	SeqExt.cpp SeqExt.h \
 	Sequence.cpp Sequence.h \
 	SignalHandler.cpp SignalHandler.h \
 	StringUtil.h \
