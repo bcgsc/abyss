@@ -20,7 +20,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef mapped_type vertex_bundled;
 		typedef no_property edge_property_type;
 		typedef no_property edge_bundled;
-		typedef ISequenceCollection::EdgeSet EdgeSet;
+
+		typedef Dinuc Symbol;
+		typedef DinucSet SymbolSet;
 
 		SequenceCollectionHash();
 
@@ -54,7 +56,7 @@ class SequenceCollectionHash : public ISequenceCollection
 		bool setBaseExtension(const key_type& seq, extDirection dir,
 				OutEdgeDescriptor base);
 		void removeExtension(const key_type& seq,
-				extDirection dir, EdgeSet ext);
+				extDirection dir, SymbolSet ext);
 
 		// get the extensions of a sequence
 		bool getSeqData(const key_type& seq,
@@ -164,8 +166,8 @@ struct graph_traits<SequenceCollectionHash> {
 	typedef void edges_size_type;
 
 	// Other
-	typedef SequenceCollectionHash::EdgeSet EdgeSet;
-	static const unsigned NUM_EDGES = EdgeSet::NUM_EDGES;
+	typedef SequenceCollectionHash::SymbolSet SymbolSet;
+	static const unsigned NUM_SYMBOLS = SymbolSet::NUM;
 
 // AdjacencyGraph
 /** Iterate through the adjacent vertices of a vertex. */
@@ -175,17 +177,17 @@ struct adjacency_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		for (; m_i < NUM_EDGES && !m_adj.checkBase(Dinuc(m_i)); ++m_i) {
+		for (; m_i < NUM_SYMBOLS && !m_adj.checkBase(Dinuc(m_i)); ++m_i) {
 		}
-		if (m_i < NUM_EDGES)
+		if (m_i < NUM_SYMBOLS)
 			m_v.setLastBase(SENSE, Dinuc(m_i));
 	}
 
   public:
-	adjacency_iterator() : m_i(NUM_EDGES) { }
+	adjacency_iterator() : m_i(NUM_SYMBOLS) { }
 
 	adjacency_iterator(
-			vertex_descriptor u, EdgeSet adj)
+			vertex_descriptor u, SymbolSet adj)
 		: m_v(u), m_adj(adj), m_i(0)
 	{
 		m_v.shift(SENSE);
@@ -194,7 +196,7 @@ struct adjacency_iterator
 
 	const vertex_descriptor& operator*() const
 	{
-		assert(m_i < NUM_EDGES);
+		assert(m_i < NUM_SYMBOLS);
 		return m_v;
 	}
 
@@ -210,7 +212,7 @@ struct adjacency_iterator
 
 	adjacency_iterator& operator++()
 	{
-		assert(m_i < NUM_EDGES);
+		assert(m_i < NUM_SYMBOLS);
 		++m_i;
 		next();
 		return *this;
@@ -218,7 +220,7 @@ struct adjacency_iterator
 
   private:
 	vertex_descriptor m_v;
-	EdgeSet m_adj;
+	SymbolSet m_adj;
 	short unsigned m_i;
 }; // adjacency_iterator
 
@@ -298,8 +300,8 @@ adjacent_vertices(
 {
 	typedef graph_traits<SequenceCollectionHash>::adjacency_iterator
 		adjacency_iterator;
-	typedef graph_traits<SequenceCollectionHash>::EdgeSet EdgeSet;
-	EdgeSet adj = g[u].getExtension(SENSE);
+	typedef graph_traits<SequenceCollectionHash>::SymbolSet SymbolSet;
+	SymbolSet adj = g[u].getExtension(SENSE);
 	return std::make_pair(adjacency_iterator(u, adj),
 			adjacency_iterator());
 }

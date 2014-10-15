@@ -9,6 +9,9 @@
 class Dinuc
 {
 public:
+	/** The number of symbols. */
+	static const unsigned NUM = 16;
+
 	/** A nucleotide. A bit vector of two bits. */
 	typedef uint8_t Nuc;
 
@@ -56,7 +59,7 @@ public:
 	static Dinuc begin() { return Dinuc(0); }
 
 	/** Return the last dinucleotide. */
-	static Dinuc end() { return Dinuc(16); }
+	static Dinuc end() { return Dinuc(NUM); }
 
 private:
 	/** Two nucleotides packed into a single scalar. */
@@ -67,8 +70,8 @@ private:
 class DinucSet
 {
 public:
-	/** The maximum number of out edges. */
-	static const unsigned NUM_EDGES = 16;
+	/** The number of symbols. */
+	static const unsigned NUM = Dinuc::NUM;
 
 	/** A bit vector. */
 	typedef uint16_t Bits;

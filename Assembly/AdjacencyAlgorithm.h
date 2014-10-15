@@ -8,6 +8,11 @@ namespace AssemblyAlgorithms {
 static inline
 size_t generateAdjacency(ISequenceCollection* seqCollection)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef Graph::Symbol Symbol;
+	typedef Graph::SymbolSet SymbolSet;
+
 	Timer timer("GenerateAdjacency");
 
 	size_t count = 0;
@@ -21,10 +26,10 @@ size_t generateAdjacency(ISequenceCollection* seqCollection)
 			logger(1) << "Finding adjacent k-mer: " << count << '\n';
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			Kmer testSeq(iter->first);
-			uint8_t adjBase = testSeq.shift(dir);
-			for (unsigned i = 0; i < NUM_BASES; i++) {
-				testSeq.setLastBase(dir, i);
+			V testSeq(iter->first);
+			Symbol adjBase = testSeq.shift(dir);
+			for (unsigned i = 0; i < SymbolSet::NUM; ++i) {
+				testSeq.setLastBase(dir, Symbol(i));
 				if (seqCollection->setBaseExtension(
 							testSeq, !dir, adjBase))
 					numBasesSet++;

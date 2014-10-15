@@ -12,6 +12,9 @@ static const unsigned NUM_BASES = 4;
 class SeqExt
 {
 	public:
+		/** The number of symbols. */
+		static const unsigned NUM = 4;
+
 		SeqExt() : m_record(0) { };
 		explicit SeqExt(uint8_t base) : m_record(1<<base) { };
 

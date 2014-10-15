@@ -158,7 +158,7 @@ void generateSequencesFromExtension(const KmerPair& currSeq,
 	extSeq.shift(dir);
 
 	// Check for the existance of the 4 possible extensions
-	for (unsigned i = 0; i < DinucSet::NUM_EDGES; i++) {
+	for (unsigned i = 0; i < DinucSet::NUM; ++i) {
 		// Does this sequence have an extension?
 		Dinuc x(i);
 		if (extension.checkBase(x)) {
@@ -229,7 +229,7 @@ size_t removeMarked(ISequenceCollection* pSC)
 
 } // namespace AssemblyAlgorithms
 
-#include "AdjacencyAlgorithm.h"
+#include "Assembly/AdjacencyAlgorithm.h"
 #include "AssembleAlgorithm.h"
 #include "BubbleAlgorithm.h"
 #include "CoverageAlgorithm.h"

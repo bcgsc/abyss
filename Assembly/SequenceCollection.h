@@ -21,6 +21,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef no_property edge_property_type;
 		typedef no_property edge_bundled;
 
+		typedef uint8_t Nuc;
+		typedef Nuc Symbol;
+		typedef SeqExt SymbolSet;
+
 		SequenceCollectionHash();
 
 		void add(const key_type& seq, unsigned coverage = 1);
