@@ -25,12 +25,18 @@ static inline
 void removeExtensionsToSequence(ISequenceCollection* seqCollection,
 		const ISequenceCollection::value_type& seq, extDirection dir)
 {
-	SeqExt extension(seq.second.getExtension(dir));
-	Kmer testSeq(seq.first);
-	uint8_t extBase = testSeq.shift(dir);
-	for (unsigned i = 0; i < NUM_BASES; i++) {
-		if (extension.checkBase(i)) {
-			testSeq.setLastBase(dir, i);
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef Graph::Symbol Symbol;
+	typedef Graph::SymbolSet SymbolSet;
+
+	SymbolSet extension(seq.second.getExtension(dir));
+	V testSeq(seq.first);
+	Symbol extBase = testSeq.shift(dir);
+	for (unsigned i = 0; i < extension.NUM; ++i) {
+		Symbol x(i);
+		if (extension.checkBase(x)) {
+			testSeq.setLastBase(dir, x);
 			seqCollection->removeExtension(testSeq, !dir, extBase);
 		}
 	}
@@ -56,6 +62,9 @@ static inline
 size_t erode(ISequenceCollection* c,
 		const ISequenceCollection::value_type& seq)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef vertex_bundle_type<Graph>::type VP;
+
 	if (seq.second.deleted())
 		return 0;
 	extDirection dir;
@@ -63,7 +72,7 @@ size_t erode(ISequenceCollection* c,
 	if (contiguity == SC_CONTIGUOUS)
 		return 0;
 
-	const KmerData& data = seq.second;
+	const VP& data = seq.second;
 	if (data.getMultiplicity() < opt::erode
 			|| data.getMultiplicity(SENSE) < opt::erodeStrand
 			|| data.getMultiplicity(ANTISENSE) < opt::erodeStrand) {
