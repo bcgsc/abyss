@@ -33,8 +33,7 @@ libpaireddbg_a_SOURCES = \
 	KmerPairData.h \
 	LoadAlgorithm.h \
 	Options.cc Options.h \
-	SequenceCollection.cc SequenceCollection.h \
-	SplitAlgorithm.h
+	SequenceCollection.cc SequenceCollection.h
 
 if HAVE_SQLITE
 libpaireddbg_a_LIBADD = $(top_builddir)/Common/libcommon.a
