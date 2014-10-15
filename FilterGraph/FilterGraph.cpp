@@ -281,12 +281,6 @@ static bool findNewEdges(const Graph& g, vertex_descriptor v,
 				marked.push_back(ed.u);
 			if (in_degree(v, g) > 1)
 				marked.push_back(ed.w);
-
-			// Don't remove a vertex if the result is a parallel edge.
-			if (edge(ed.u, ed.w, g).second) {
-				g_count.parallel_edge++;
-				return false;
-			}
 		}
 	}
 	for (vector<V>::const_iterator it = marked.begin();
@@ -300,7 +294,11 @@ static void addNewEdges(Graph& g, const vector<EdgeInfo>& eds)
 {
 	for (vector<EdgeInfo>::const_iterator edsit = eds.begin();
 			edsit != eds.end(); ++edsit) {
-		assert(!edge(edsit->u, edsit->w, g).second);
+		// Don't add parallel edges! This can happen when removing a palindrome.
+		if (edge(edsit->u, edsit->w, g).second) {
+			g_count.parallel_edge++;
+			continue;
+		}
 		assert(edsit->ep.distance <= -opt::minOverlap);
 		add_edge(edsit->u, edsit->w, edsit->ep, g);
 	}
