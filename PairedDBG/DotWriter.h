@@ -56,12 +56,15 @@ void setName(const V& u, const VertexName& uname)
 /** Write out the specified contig. */
 void writeContig(std::ostream& out, const Graph& g, const V& u)
 {
-	unsigned n = 1;
-	V v = u;
-	while (contiguous_out(g, v)) {
-		n++;
-		v = *adjacent_vertices(v, g).first;
+	unsigned n = 0;
+	unsigned c = 0;
+	V v;
+	for (v = u; contiguous_out(g, v); v = *adjacent_vertices(v, g).first) {
+		++n;
+		c += get(vertex_coverage, g, v);
 	}
+	++n;
+	c += get(vertex_coverage, g, v);
 
 	// Output the canonical orientation of the contig.
 	V vrc = get(vertex_complement, g, v);
@@ -83,8 +86,8 @@ void writeContig(std::ostream& out, const Graph& g, const V& u)
 		setName(vrc, vname);
 
 	unsigned l = n + V::length() - 1;
-	out << '"' << uname << "\" [l=" << l << "]\n";
-	out << '"' << vname << "\" [l=" << l << "]\n";
+	out << '"' << uname << "\" [l=" << l << " C=" << c << "]\n"
+		"\"" << vname << "\" [l=" << l << " C=" << c << "]\n";
 }
 
 /** Write out the contigs that split at the specified sequence. */
