@@ -351,6 +351,15 @@ get(vertex_bundle_t, const SequenceCollectionHash& g,
 	return g[u];
 }
 
+/** Return the coverage of this vertex. */
+static inline
+unsigned
+get(vertex_coverage_t, const SequenceCollectionHash& g,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return g[u].getMultiplicity();
+}
+
 /** Return the properties of this edge. */
 static inline
 no_property get(edge_bundle_t, const SequenceCollectionHash&,
