@@ -8,7 +8,7 @@ libassembly_a_SOURCES = \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.cc BranchGroup.h \
 	BranchRecord.cc BranchRecord.h \
-	DotWriter.cc DotWriter.h \
+	DotWriter.h \
 	ISequenceCollection.h \
 	KmerData.h \
 	Options.cc Options.h \

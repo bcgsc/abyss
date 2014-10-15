@@ -1,11 +1,11 @@
 #include "PairedDBG/Options.h"
 #include "AssemblyAlgorithms.h"
-#include "DotWriter.h"
 #include "FastaWriter.h"
 #include "Histogram.h"
 #include "ISequenceCollection.h"
 #include "SequenceCollection.h"
 #include "Timer.h"
+#include "Assembly/DotWriter.h"
 #include "Uncompress.h"
 #include <algorithm>
 #include <cstdio> // for setvbuf

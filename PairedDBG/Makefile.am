@@ -31,7 +31,6 @@ libpaireddbg_a_SOURCES = \
 	BranchRecord.cc BranchRecord.h \
 	BubbleAlgorithm.h \
 	CoverageAlgorithm.h \
-	DotWriter.h \
 	ErodeAlgorithm.h \
 	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \

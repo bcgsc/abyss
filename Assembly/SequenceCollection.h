@@ -17,7 +17,9 @@ class SequenceCollectionHash : public ISequenceCollection
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef mapped_type vertex_property_type;
+		typedef mapped_type vertex_bundled;
 		typedef no_property edge_property_type;
+		typedef no_property edge_bundled;
 
 		SequenceCollectionHash();
 
@@ -322,6 +324,24 @@ bool get(vertex_removed_t, const SequenceCollectionHash& g,
 		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
 {
 	return g.getSeqAndData(u).second.deleted();
+}
+
+/** Return the properties of this vertex. */
+static inline
+vertex_bundle_type<SequenceCollectionHash>::type
+get(vertex_bundle_t, const SequenceCollectionHash& g,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return g[u];
+}
+
+/** Return the coverage of this vertex. */
+static inline
+unsigned
+get(vertex_coverage_t, const SequenceCollectionHash& g,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u)
+{
+	return g[u].getMultiplicity();
 }
 
 static inline
