@@ -43,13 +43,14 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ [FASTA]\n"
 "Remove short contigs that do not contribute any relevant\n"
 "information to the assembly.\n"
 "\n"
 " Arguments:\n"
 "\n"
 "  ADJ    contig adjacency graph\n"
+"  FASTA  contigs to check consistency of ADJ edges\n"
 "\n"
 " Options:\n"
 "\n"
@@ -165,6 +166,7 @@ static vector<ContigID> g_removed;
 /** Contig adjacency graph. */
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
+typedef Graph::edge_descriptor edge_descriptor;
 
 /** Data for verbose output. */
 static struct {
@@ -469,6 +471,69 @@ static void removeContigs_if(Graph& g, pred p)
 		cerr << "Removed " << sc.size()/2 << " short contigs.\n";
 }
 
+/** Contig sequences. */
+typedef vector<const_string> Contigs;
+static Contigs g_contigs;
+
+/** Return the sequence of vertex u. */
+static string getSequence(const Graph& g, vertex_descriptor u)
+{
+	size_t i = get(vertex_contig_index, g, u);
+	assert(i < g_contigs.size());
+	string seq(g_contigs[i]);
+	return get(vertex_sense, g, u) ? reverseComplement(seq) : seq;
+}
+
+/** Return whether the specified edge is inconsistent. */
+struct is_edge_inconsistent : unary_function<edge_descriptor, bool> {
+	const Graph& g;
+
+	is_edge_inconsistent(const Graph& g)
+		: g(g) { }
+
+	bool operator()(edge_descriptor e) const
+	{
+		vertex_descriptor u = source(e, g);
+		vertex_descriptor v = target(e, g);
+
+		int overlap = g[e].distance;
+		assert(overlap < 0);
+
+		string su = getSequence(g, u);
+		string sv = getSequence(g, v);
+		const unsigned u_start = su.length() + overlap;
+
+		for (unsigned i = 0; i < (unsigned)-overlap; i++)
+			if (!(ambiguityToBitmask(su[u_start + i]) & ambiguityToBitmask(sv[i])))
+				return true;
+		return false;
+	}
+};
+
+template <typename It>
+static void remove_edge(Graph& g, It first, It last)
+{
+	for (; first != last; first++)
+		remove_edge(*first, g);
+}
+
+template<typename pred>
+static void removeEdges_if(Graph& g, pred p)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef GTraits::edge_iterator Eit;
+	typedef GTraits::edge_descriptor E;
+	Eit first, second;
+	tie(first, second) = edges(g);
+	vector<E> sc;
+	::copy_if(first, second, back_inserter(sc), p);
+	remove_edge(g, sc.begin(), sc.end());
+	if (opt::verbose > 0) {
+		cerr << "Edge removal stats:\n";
+		cerr << "Removed: " << sc.size() << '\n';
+	}
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -551,7 +616,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind > 1) {
+	if (argc - optind > 2) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -639,6 +704,24 @@ int main(int argc, char** argv)
 	// Remove long contigs.
 	if (opt::maxLen > 0)
 		removeContigs_if(g, LongerThanX(g, seen, opt::maxLen));
+
+	// Remove inconsistent edges of spaceseeds
+	if (argc - optind == 1) {
+		const char* contigsPath(argv[optind++]);
+		Contigs& contigs = g_contigs;
+		if (opt::verbose > 0)
+			cerr << "Reading `" << contigsPath << "'...\n";
+		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
+		for (FastaRecord rec; in >> rec;) {
+			if (g_contigNames.count(rec.id) == 0)
+				continue;
+			assert(contigs.size() == get(g_contigNames, rec.id));
+			contigs.push_back(rec.seq);
+		}
+		assert(in.eof());
+
+		removeEdges_if(g, is_edge_inconsistent(g));
+	}
 
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
