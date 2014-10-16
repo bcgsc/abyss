@@ -23,7 +23,24 @@ using namespace std;
 
 #if _SQL
 DB db;
+
+namespace AssemblyAlgorithms {
+
+std::vector<size_t> tempCounter(16,0);
+InsOrderedMap<std::string,int> tempStatMap;
+
+void addToDb(const std::string& key, const int& value)
+{
+	tempStatMap.push_back(key, value);
+}
+
+}
 #endif
+
+namespace AssemblyAlgorithms {
+/** The number of k-mer that have been eroded. */
+size_t g_numEroded;
+}
 
 static void removeLowCoverageContigs(SequenceCollectionHash& g)
 {
