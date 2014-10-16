@@ -143,7 +143,6 @@ processLinearExtensionForBranch(BranchRecord& branch,
 		int multiplicity,
 		unsigned maxLength, bool addKmer)
 {
-	typedef SequenceCollectionHash Graph;
 	typedef vertex_bundle_type<SequenceCollectionHash>::type VP;
 
 	/** Stop contig assembly at palindromes. */
