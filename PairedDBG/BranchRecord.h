@@ -48,11 +48,6 @@ class BranchRecord
 			std::swap(m_state, o.m_state);
 		}
 
-		template <typename It, typename OutIt>
-		void str(It it, const It last, OutIt out) const;
-
-		operator Sequence() const;
-
 		/** Return true if this sequence has no elements. */
 		bool empty() const { return m_data.empty(); }
 
@@ -125,27 +120,42 @@ class BranchRecord
 			return size() > maxLength;
 		}
 
-		int calculateBranchMultiplicity() const;
-
-		bool isCanonical() const;
-
-	private:
-		BranchData m_data;
-		extDirection m_dir;
-		BranchState m_state;
-};
-
-namespace std {
-	template <>
-	inline void swap(BranchRecord& a, BranchRecord& b)
-	{
-		a.swap(b);
+/** Calculate the total multiplicity of this branch. */
+int calculateBranchMultiplicity() const
+{
+	assert(!m_data.empty());
+	int total = 0;
+	for (BranchData::const_iterator it = m_data.begin();
+			it != m_data.end(); ++it) {
+		int m = it->second.getMultiplicity();
+		assert(m >= 0);
+		total += m;
 	}
+	assert(total >= 0);
+	return total;
+}
+
+/**
+ * Return whether this branch is the canonical representation of the
+ * contig that it represents. A contig has two ends, and the contig
+ * is output starting from the lexicographically smaller end.
+ */
+bool isCanonical() const
+{
+	assert(size() > 1);
+	V first = front().first;
+	V last = back().first;
+	if (getDirection() == SENSE)
+		last.reverseComplement();
+	else
+		first.reverseComplement();
+	assert(first != last);
+	return first < last;
 }
 
 /** Generate the sequence of this contig. */
 template <typename It, typename OutIt>
-void BranchRecord::str(It it, It last, OutIt out) const
+void str(It it, It last, OutIt out) const
 {
 	assert(it < last);
 	std::string k0 = it->first.str();
@@ -177,8 +187,7 @@ void BranchRecord::str(It it, It last, OutIt out) const
 }
 
 /** Return the sequence of this contig. */
-inline
-BranchRecord::operator Sequence() const
+operator Sequence() const
 {
 	assert(!m_data.empty());
 	Sequence s(m_data.front().first.length() + m_data.size() - 1, 'N');
@@ -186,6 +195,20 @@ BranchRecord::operator Sequence() const
 		? str(m_data.begin(), m_data.end(), s.begin())
 		: str(m_data.rbegin(), m_data.rend(), s.begin());
 	return s;
+}
+
+	private:
+		BranchData m_data;
+		extDirection m_dir;
+		BranchState m_state;
+};
+
+namespace std {
+	template <>
+	inline void swap(BranchRecord& a, BranchRecord& b)
+	{
+		a.swap(b);
+	}
 }
 
 #endif

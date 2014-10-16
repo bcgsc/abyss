@@ -24,7 +24,7 @@ libpaireddbg_a_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/DataLayer
 
 libpaireddbg_a_SOURCES = \
-	BranchRecord.cc BranchRecord.h \
+	BranchRecord.h \
 	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \
 	KmerPairData.h \

@@ -7,7 +7,7 @@ libassembly_a_CPPFLAGS = -I$(top_srcdir) \
 libassembly_a_SOURCES = \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.h \
-	BranchRecord.cc BranchRecord.h \
+	BranchRecord.h \
 	DotWriter.h \
 	ISequenceCollection.h \
 	KmerData.h \
