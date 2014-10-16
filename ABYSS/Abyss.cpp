@@ -1,4 +1,6 @@
 #include "Assembly/Options.h"
+#include "BranchRecord.h"
+#include "SequenceCollection.h"
 #include "Assembly/BranchGroup.h"
 #include "Assembly/AssemblyAlgorithms.h"
 #include "DotWriter.h"

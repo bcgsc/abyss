@@ -28,7 +28,9 @@ enum BranchState
 class BranchRecord
 {
 	public:
-		typedef std::pair<Kmer, KmerData> value_type;
+		typedef Kmer V;
+		typedef KmerData VP;
+		typedef std::pair<V, VP> value_type;
 		typedef std::vector<value_type> BranchData;
 		typedef BranchData::iterator iterator;
 		typedef BranchData::const_iterator const_iterator;
@@ -107,7 +109,7 @@ class BranchRecord
 
 		/** Return true if the k-mer at position i is the specified
 		 * k-mer. */
-		bool exists(unsigned i, const Kmer& kmer) const
+		bool exists(unsigned i, const V& kmer) const
 		{
 			assert(i < m_data.size());
 			return m_data[i].first == kmer;

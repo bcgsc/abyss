@@ -2,8 +2,8 @@
 #define NETWORKSEQUENCECOLLECTION_H 1
 
 #include "SequenceCollection.h"
-#include "BranchGroup.h"
 #include "BranchRecord.h"
+#include "BranchGroup.h"
 #include "CommLayer.h"
 #include "FastaWriter.h"
 #include "MessageBuffer.h"
