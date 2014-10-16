@@ -1,6 +1,7 @@
 #ifndef ASSEMBLY_ASSEMBLEALGORITHM_H
 #define ASSEMBLY_ASSEMBLEALGORITHM_H 1
 
+#include "DataLayer/FastaWriter.h"
 #include <iostream>
 #include <climits>
 
@@ -42,7 +43,7 @@ size_t assembleContig(
  */
 static inline
 size_t assemble(SequenceCollectionHash* seqCollection,
-		FastaWriter* fileWriter)
+		FastaWriter* fileWriter = NULL)
 {
 	typedef SequenceCollectionHash Graph;
 	typedef graph_traits<Graph>::vertex_descriptor V;

@@ -8,6 +8,21 @@
 
 namespace AssemblyAlgorithms {
 
+static inline bool
+processBranchGroupExtension(BranchGroup& group,
+		size_t branchIndex,
+		const graph_traits<SequenceCollectionHash>::vertex_descriptor& seq,
+		SequenceCollectionHash::SymbolSetPair ext,
+		int multiplicity,
+		unsigned maxLength);
+
+static inline
+void collapseJoinedBranches(ISequenceCollection* collection,
+		BranchGroup& group);
+
+static inline
+void writeBubble(std::ostream& out, const BranchGroup& group, unsigned id);
+
 /** Open the bubble file. */
 static inline
 void openBubbleFile(std::ofstream& out)

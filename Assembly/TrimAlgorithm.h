@@ -4,6 +4,10 @@
 namespace AssemblyAlgorithms {
 
 static inline
+bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
+		BranchRecord& branch);
+
+static inline
 size_t trimSequences(SequenceCollectionHash* seqCollection,
 		unsigned maxBranchCull);
 

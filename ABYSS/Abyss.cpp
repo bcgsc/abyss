@@ -1,5 +1,6 @@
 #include "Assembly/Options.h"
-#include "AssemblyAlgorithms.h"
+#include "Assembly/BranchGroup.h"
+#include "Assembly/AssemblyAlgorithms.h"
 #include "DotWriter.h"
 #include "FastaWriter.h"
 #include "Histogram.h"

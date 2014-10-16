@@ -1,5 +1,6 @@
 #include "PairedDBG/Options.h"
-#include "AssemblyAlgorithms.h"
+#include "BranchGroup.h"
+#include "Assembly/AssemblyAlgorithms.h"
 #include "FastaWriter.h"
 #include "Histogram.h"
 #include "ISequenceCollection.h"

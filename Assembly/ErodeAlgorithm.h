@@ -6,6 +6,10 @@ namespace AssemblyAlgorithms {
 /** The number of k-mer that have been eroded. */
 extern size_t g_numEroded;
 
+static inline
+void removeExtensionsToSequence(ISequenceCollection* seqCollection,
+		const ISequenceCollection::value_type& seq, extDirection dir);
+
 /**
  * Remove a k-mer and update the extension records of the k-mer that
  * extend to it.
