@@ -110,6 +110,8 @@ class SequenceCollectionHash : public ISequenceCollection
 		void setColourSpace(bool flag);
 		void setDeletedKey();
 
+		const_iterator find(const key_type& key, bool& rc) const;
+
 	private:
 		iterator find(const key_type& key) { return m_data.find(key); }
 		const_iterator find(const key_type& key) const
@@ -118,7 +120,6 @@ class SequenceCollectionHash : public ISequenceCollection
 		}
 
 		iterator find(const key_type& key, bool& rc);
-		const_iterator find(const key_type& key, bool& rc) const;
 
 		/** Call the observers of the specified sequence. */
 		void notify(const value_type& seq)

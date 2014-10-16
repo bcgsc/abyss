@@ -77,6 +77,14 @@ void writeContig(std::ostream& out, const Graph& g, const V& u)
 	*vname.rbegin() = '-';
 	++m_id;
 
+	// Reorient the contig to agree with assembleContig.
+	bool rc;
+	Graph::const_iterator it = g.find(u, rc);
+	assert(it != g.end());
+	(void)it;
+	if (rc)
+		std::swap(uname, vname);
+
 	setName(u, uname);
 	if (u == vrc) {
 		// Palindrome
