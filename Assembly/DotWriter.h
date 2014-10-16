@@ -24,9 +24,9 @@ private:
 static std::string
 complementName(std::string s)
 {
-	char c = s.back();
+	char c = *s.rbegin();
 	assert(c == '+' || c == '-');
-	s.back() = c == '+' ? '-' : '+';
+	*s.rbegin() = c == '+' ? '-' : '+';
 	return s;
 }
 
@@ -74,7 +74,7 @@ void writeContig(std::ostream& out, const Graph& g, const V& u)
 	ss << m_id << '+';
 	VertexName uname = ss.str();
 	VertexName vname(uname);
-	vname.back() = '-';
+	*vname.rbegin() = '-';
 	++m_id;
 
 	setName(u, uname);
