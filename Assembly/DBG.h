@@ -73,6 +73,10 @@ class SequenceCollectionHash : public ISequenceCollection
 		// Not a network sequence collection. Nothing to do.
 		size_t pumpNetwork() { return 0; }
 
+		/** The observer callback function. */
+		typedef void (*SeqObserver)(SequenceCollectionHash* c,
+				const value_type& seq);
+
 		/** Attach the specified observer. */
 		void attach(SeqObserver f)
 		{
@@ -210,6 +214,12 @@ void removeExtension(const key_type& kmer,
 			it->second.removeExtension(!dir, ext.complement());
 	}
 	notify(*it);
+}
+
+/** Remove the specified edge of this vertex. */
+void removeExtension(const key_type& seq, extDirection dir, Symbol base)
+{
+	removeExtension(seq, dir, SymbolSet(base));
 }
 
 void setFlag(const key_type& key, SeqFlag flag)

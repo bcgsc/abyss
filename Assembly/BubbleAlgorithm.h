@@ -16,8 +16,8 @@ processBranchGroupExtension(BranchGroup& group,
 		int multiplicity,
 		unsigned maxLength);
 
-static inline
-void collapseJoinedBranches(ISequenceCollection* collection,
+template <typename Graph>
+void collapseJoinedBranches(Graph* collection,
 		BranchGroup& group);
 
 static inline
@@ -56,7 +56,7 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 	const unsigned maxNumBranches = 3;
 	const unsigned maxLength = opt::bubbleLen - V::length() + 1;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -166,7 +166,7 @@ processBranchGroupExtension(BranchGroup& group,
 {
 	typedef SequenceCollectionHash Graph;
 	typedef graph_traits<Graph>::vertex_descriptor V;
-	typedef vertex_bundle_type<SequenceCollectionHash>::type VP;
+	typedef vertex_bundle_type<Graph>::type VP;
 
 	BranchRecord& branch = group[branchIndex];
 	branch.setData(std::make_pair(seq, VP(multiplicity, ext)));
@@ -241,20 +241,20 @@ void writeBubble(std::ostream& out, const BranchGroup& group, unsigned id)
 }
 
 /** Collapse a bubble to a single path. */
-static inline
-void collapseJoinedBranches(ISequenceCollection* collection,
+template <typename Graph>
+void collapseJoinedBranches(Graph* collection,
 		BranchGroup& group)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<Graph>::vertex_descriptor V;
-	typedef vertex_bundle_type<SequenceCollectionHash>::type VP;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename vertex_bundle_type<Graph>::type VP;
+	typedef typename std::map<V, VP> Map;
 
 	const BranchRecord& best = group[0];
 	logger(5) << "Popping " << best.size() << ' '
 		<< best.front().first << '\n';
 
 	// Add the k-mer from the dead branches.
-	std::map<V, VP> doomed;
+	Map doomed;
 	for (BranchGroup::const_iterator branchIt = group.begin() + 1;
 			branchIt != group.end(); ++branchIt) {
 		const BranchRecord& branch = *branchIt;
@@ -269,7 +269,7 @@ void collapseJoinedBranches(ISequenceCollection* collection,
 		doomed.erase(it->first);
 
 	// Remove the dead k-mer from the assembly.
-	for (std::map<V, VP>::const_iterator it = doomed.begin();
+	for (typename Map::const_iterator it = doomed.begin();
 			it != doomed.end(); ++it)
 		removeSequenceAndExtensions(collection, *it);
 }

@@ -80,8 +80,9 @@ static void assemble(const string& pathIn, const string& pathOut)
 
 	if (!pathIn.empty())
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
-	for_each(opt::inFiles.begin(), opt::inFiles.end(),
-			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
+	for_each(opt::inFiles.begin(), opt::inFiles.end(), bind1st(
+			ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>),
+			&g));
 	size_t numLoaded = g.size();
 #if _SQL
 	addToDb(db, "loadedKmer", numLoaded);

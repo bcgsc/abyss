@@ -5,19 +5,18 @@ namespace AssemblyAlgorithms {
 
 /** Generate the adjacency information for each sequence in the
  * collection. */
-static inline
-size_t generateAdjacency(ISequenceCollection* seqCollection)
+template <typename Graph>
+size_t generateAdjacency(Graph* seqCollection)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<Graph>::vertex_descriptor V;
-	typedef Graph::Symbol Symbol;
-	typedef Graph::SymbolSet SymbolSet;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename Graph::Symbol Symbol;
+	typedef typename Graph::SymbolSet SymbolSet;
 
 	Timer timer("GenerateAdjacency");
 
 	size_t count = 0;
 	size_t numBasesSet = 0;
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (typename Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;

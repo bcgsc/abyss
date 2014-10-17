@@ -3,9 +3,8 @@
 
 namespace AssemblyAlgorithms {
 
-static inline
-bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
-		BranchRecord& branch);
+template <typename Graph>
+bool processTerminatedBranchTrim(Graph* seqCollection, BranchRecord& branch);
 
 static inline
 size_t trimSequences(SequenceCollectionHash* seqCollection,
@@ -50,7 +49,7 @@ size_t trimSequences(SequenceCollectionHash* seqCollection,
 		<< maxBranchCull << " bp...\n";
 	size_t numBranchesRemoved = 0;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -184,9 +183,8 @@ processLinearExtensionForBranch(BranchRecord& branch,
 /** Trim the specified branch if it meets trimming criteria.
  * @return true if the specified branch was trimmed
  */
-static inline
-bool processTerminatedBranchTrim(ISequenceCollection* seqCollection,
-		BranchRecord& branch)
+template <typename Graph>
+bool processTerminatedBranchTrim(Graph* seqCollection, BranchRecord& branch)
 {
 	assert(!branch.isActive());
 	assert(!branch.empty());

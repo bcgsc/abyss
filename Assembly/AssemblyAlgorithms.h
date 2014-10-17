@@ -46,22 +46,19 @@ initiateBranchGroup(BranchGroup& group,
 		const graph_traits<SequenceCollectionHash>::vertex_descriptor& seq,
 		const SequenceCollectionHash::SymbolSet& extension);
 
-static inline
-void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
-		const ISequenceCollection::value_type& seq);
+template <typename Graph>
+void removeSequenceAndExtensions(Graph* seqCollection,
+		const typename Graph::value_type& seq);
 
 /** Return the kmer which are adjacent to this kmer. */
-static inline
+template <typename V, typename SymbolSet>
 void generateSequencesFromExtension(
-		const graph_traits<SequenceCollectionHash>::vertex_descriptor& currSeq,
+		const V& currSeq,
 		extDirection dir,
-		SequenceCollectionHash::SymbolSet extension,
-		std::vector<graph_traits<SequenceCollectionHash>::vertex_descriptor>& outseqs)
+		SymbolSet extension,
+		std::vector<V>& outseqs)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<SequenceCollectionHash>::vertex_descriptor V;
-	typedef Graph::Symbol Symbol;
-	typedef Graph::SymbolSet SymbolSet;
+	typedef typename SymbolSet::Symbol Symbol;
 
 	std::vector<V> extensions;
 	V extSeq(currSeq);
@@ -84,7 +81,7 @@ void generateSequencesFromExtension(
  */
 static inline
 SeqContiguity checkSeqContiguity(
-		const ISequenceCollection::value_type& seq,
+		const SequenceCollectionHash::value_type& seq,
 		extDirection& outDir, bool considerMarks = false)
 {
 	assert(!seq.second.deleted());
@@ -117,13 +114,14 @@ SeqContiguity checkSeqContiguity(
 /** Remove all marked k-mer.
  * @return the number of removed k-mer
  */
-static inline
-size_t removeMarked(ISequenceCollection* pSC)
+template <typename Graph>
+size_t removeMarked(Graph* pSC)
 {
+	typedef typename Graph::iterator iterator;
+
 	Timer timer(__func__);
 	size_t count = 0;
-	for (ISequenceCollection::iterator it = pSC->begin();
-			it != pSC->end(); ++it) {
+	for (iterator it = pSC->begin(); it != pSC->end(); ++it) {
 		if (it->second.deleted())
 			continue;
 		if (it->second.marked()) {

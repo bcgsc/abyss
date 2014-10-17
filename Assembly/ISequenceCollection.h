@@ -1,6 +1,8 @@
 #ifndef ASSEMBLY_ISEQUENCECOLLECTION_H
 #define ASSEMBLY_ISEQUENCECOLLECTION_H 1
 
+#include <boost/graph/graph_traits.hpp>
+
 /** A hash table mapping vertices to vertex properties. */
 class ISequenceCollection
 {
@@ -14,6 +16,16 @@ class ISequenceCollection
 		typedef mapped_type::Symbol Symbol;
 		typedef mapped_type::SymbolSet SymbolSet;
 		typedef mapped_type::SymbolSetPair SymbolSetPair;
+
+		typedef key_type vertex_descriptor;
+		typedef mapped_type vertex_bundled;
+		typedef std::pair<key_type, key_type> edge_descriptor;
+
+		typedef boost::directed_tag directed_category;
+		typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+		struct traversal_category
+			: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
+			{ };
 
 		virtual ~ISequenceCollection() { }
 
@@ -42,13 +54,6 @@ class ISequenceCollection
 		virtual void removeExtension(const key_type& seq,
 				extDirection dir, SymbolSet ext) = 0;
 
-		/** Remove the specified edge of this k-mer. */
-		void removeExtension(const key_type& seq,
-				extDirection dir, Symbol base)
-		{
-			removeExtension(seq, dir, SymbolSet(base));
-		}
-
 		virtual bool setBaseExtension(const key_type& seq,
 				extDirection dir, Symbol base) = 0;
 
@@ -59,12 +64,6 @@ class ISequenceCollection
 		virtual const_iterator begin() const = 0;
 		virtual iterator end() = 0;
 		virtual const_iterator end() const = 0;
-
-		// Observer pattern
-		typedef void (*SeqObserver)(ISequenceCollection* c,
-				const value_type& seq);
-		virtual void attach(SeqObserver f) = 0;
-		virtual void detach(SeqObserver f) = 0;
 
 		virtual void load(const char *path) = 0;
 

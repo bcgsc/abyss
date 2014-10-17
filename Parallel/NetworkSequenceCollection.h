@@ -55,9 +55,9 @@ class NetworkSequenceCollection : public ISequenceCollection
 			: m_state(NAS_WAITING), m_trimStep(0),
 			m_numPopped(0), m_numAssembled(0) { }
 
-		size_t performNetworkTrim(ISequenceCollection* seqCollection);
+		size_t performNetworkTrim();
 
-		size_t performNetworkDiscoverBubbles(ISequenceCollection* c);
+		size_t performNetworkDiscoverBubbles();
 		size_t performNetworkPopBubbles(std::ostream& out);
 
 		size_t controlErode();
@@ -73,7 +73,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		// Perform a network assembly
 		std::pair<size_t, size_t> performNetworkAssembly(
-				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter = NULL);
 
 		void add(const Kmer& seq, unsigned coverage = 1);
@@ -87,6 +86,13 @@ class NetworkSequenceCollection : public ISequenceCollection
 
 		void removeExtension(const Kmer& seq, extDirection dir,
 				SeqExt ext);
+
+		/** Remove the specified edge of this vertex. */
+		void removeExtension(const key_type& seq, extDirection dir, Symbol base)
+		{
+			removeExtension(seq, dir, SymbolSet(base));
+		}
+
 		bool setBaseExtension(const Kmer& seq, extDirection dir,
 				uint8_t base);
 
@@ -114,9 +120,13 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void handle(int senderID, const SeqDataRequest& message);
 		void handle(int senderID, const SeqDataResponse& message);
 
+		/** The observer callback function. */
+		typedef void (*SeqObserver)(SequenceCollectionHash* c,
+				const value_type& seq);
+
 		// Observer pattern, not implemented.
-		void attach(SeqObserver f) { (void)f; }
-		void detach(SeqObserver f) { (void)f; }
+		void attach(SeqObserver) { }
+		void detach(SeqObserver) { }
 
 		/** Load this collection from disk. */
 		void load(const char *path)
@@ -143,7 +153,6 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void loadSequences();
 
 		std::pair<size_t, size_t> processBranchesAssembly(
-				ISequenceCollection* seqCollection,
 				FastaWriter* fileWriter, unsigned currContigID);
 		size_t processBranchesTrim();
 		bool processBranchesDiscoverBubbles();
@@ -165,7 +174,7 @@ class NetworkSequenceCollection : public ISequenceCollection
 				const ExtensionRecord& extRec, int multiplicity,
 				unsigned maxLength);
 
-		void assembleContig(ISequenceCollection* seqCollection,
+		void assembleContig(
 				FastaWriter* fileWriter,
 				BranchRecord& branch, unsigned id);
 

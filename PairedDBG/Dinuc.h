@@ -76,6 +76,8 @@ static inline Dinuc reverseComplement(const Dinuc& x)
 class DinucSet
 {
 public:
+	typedef Dinuc Symbol;
+
 	/** The number of symbols. */
 	static const unsigned NUM = Dinuc::NUM;
 

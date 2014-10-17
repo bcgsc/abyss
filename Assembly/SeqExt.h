@@ -22,6 +22,8 @@ static inline uint8_t reverseComplement(uint8_t base)
 class SeqExt
 {
 	public:
+		typedef uint8_t Symbol;
+
 		/** The number of symbols. */
 		static const unsigned NUM = NUM_BASES;
 

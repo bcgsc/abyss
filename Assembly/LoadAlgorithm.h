@@ -8,11 +8,10 @@ namespace AssemblyAlgorithms {
 /** Load k-mer with coverage data.
  * @return the number of k-mer loaded
  */
-static inline
-size_t loadKmer(ISequenceCollection& g, FastaReader& in)
+template <typename Graph>
+size_t loadKmer(Graph& g, FastaReader& in)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
 
 	assert(opt::rank == -1);
 	size_t count = 0;
@@ -36,11 +35,10 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 }
 
 /** Load sequence data into the collection. */
-static inline
-void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
+template <typename Graph>
+void loadSequences(Graph* seqCollection, std::string inFile)
 {
-	typedef SequenceCollectionHash Graph;
-	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
 
 	Timer timer("LoadSequences " + inFile);
 

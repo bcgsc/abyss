@@ -10,9 +10,9 @@ namespace AssemblyAlgorithms {
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
-static inline
+template <typename Graph>
 size_t assembleContig(
-		ISequenceCollection* seqCollection, FastaWriter* writer,
+		Graph* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
 	assert(!branch.isActive());
@@ -57,7 +57,7 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 	size_t lowCoverageKmer = 0;
 	size_t lowCoverageContigs = 0;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
