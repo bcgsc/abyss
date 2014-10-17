@@ -425,12 +425,17 @@ startDb:
 	> db.txt
 #endif
 
+ifdef K
+%-1.fa %-1.$g:
+	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
+else
 ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
-%-1.fa %-1.$g:
-	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
+%-1.fa:
+	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+endif
 endif
 
 # Find overlapping contigs
