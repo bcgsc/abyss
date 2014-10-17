@@ -11,7 +11,6 @@ libassembly_a_SOURCES = \
 	BranchRecordBase.h \
 	DBG.h \
 	DotWriter.h \
-	ISequenceCollection.h \
 	Options.cc Options.h \
 	SequenceCollection.h \
 	VertexData.h \

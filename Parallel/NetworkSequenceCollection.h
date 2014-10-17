@@ -48,9 +48,29 @@ enum NetworkAssemblyState
 typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 
 /** A distributed map of Kmer to KmerData. */
-class NetworkSequenceCollection : public ISequenceCollection
+class NetworkSequenceCollection
 {
 	public:
+		typedef SequenceDataHash::key_type key_type;
+		typedef SequenceDataHash::mapped_type mapped_type;
+		typedef SequenceDataHash::value_type value_type;
+		typedef SequenceDataHash::iterator iterator;
+		typedef SequenceDataHash::const_iterator const_iterator;
+
+		typedef mapped_type::Symbol Symbol;
+		typedef mapped_type::SymbolSet SymbolSet;
+		typedef mapped_type::SymbolSetPair SymbolSetPair;
+
+		typedef key_type vertex_descriptor;
+		typedef mapped_type vertex_bundled;
+		typedef std::pair<key_type, key_type> edge_descriptor;
+
+		typedef boost::directed_tag directed_category;
+		typedef boost::disallow_parallel_edge_tag edge_parallel_category;
+		struct traversal_category
+			: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
+			{ };
+
 		NetworkSequenceCollection()
 			: m_state(NAS_WAITING), m_trimStep(0),
 			m_numPopped(0), m_numAssembled(0) { }
@@ -78,6 +98,19 @@ class NetworkSequenceCollection : public ISequenceCollection
 		void add(const Kmer& seq, unsigned coverage = 1);
 		void remove(const Kmer& seq);
 		void setFlag(const Kmer& seq, SeqFlag flag);
+
+		/** Mark the specified sequence in both directions. */
+		void mark(const key_type& seq)
+		{
+			setFlag(seq, SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+		}
+
+		/** Mark the specified sequence. */
+		void mark(const key_type& seq, extDirection sense)
+		{
+			setFlag(seq, sense == SENSE
+					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
+		}
 
 		/** Return true if this container is empty. */
 		bool empty() const { return m_data.empty(); }

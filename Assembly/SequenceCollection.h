@@ -19,7 +19,6 @@ typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #endif
 
-#include "Assembly/ISequenceCollection.h"
 #include "Assembly/DBG.h"
 
 #endif

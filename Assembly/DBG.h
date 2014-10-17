@@ -22,21 +22,22 @@
 using boost::graph_traits;
 
 /** A hash table mapping vertices to vertex properties. */
-class SequenceCollectionHash : public ISequenceCollection
+class SequenceCollectionHash
 {
 	public:
-		typedef ISequenceCollection Base;
-		typedef Base::Symbol Symbol;
-		typedef Base::SymbolSet SymbolSet;
-		typedef Base::SymbolSetPair SymbolSetPair;
-
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
-		typedef mapped_type vertex_property_type;
+		typedef SequenceDataHash::iterator iterator;
+		typedef SequenceDataHash::const_iterator const_iterator;
+
+		typedef mapped_type::Symbol Symbol;
+		typedef mapped_type::SymbolSet SymbolSet;
+		typedef mapped_type::SymbolSetPair SymbolSetPair;
+
+		typedef key_type vertex_descriptor;
 		typedef mapped_type vertex_bundled;
-		typedef no_property edge_property_type;
-		typedef no_property edge_bundled;
+		typedef std::pair<key_type, key_type> edge_descriptor;
 
 		/** Remove the specified sequence if it exists. */
 		void remove(const key_type& seq)
@@ -230,6 +231,20 @@ void setFlag(const key_type& key, SeqFlag flag)
 	it->second.setFlag(rc ? complement(flag) : flag);
 }
 
+/** Mark the specified sequence in both directions. */
+void mark(const key_type& seq)
+{
+	setFlag(seq, SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
+}
+
+/** Mark the specified sequence. */
+void mark(const key_type& seq, extDirection sense)
+{
+	setFlag(seq, sense == SENSE
+			? SF_MARK_SENSE : SF_MARK_ANTISENSE);
+}
+
+/** Clear the specified flag for all vertices. */
 void wipeFlag(SeqFlag flag)
 {
 	for (iterator it = m_data.begin();
