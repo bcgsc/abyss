@@ -728,14 +728,16 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
-	sort(g_removed.begin(), g_removed.end());
-	g_removed.erase(unique(g_removed.begin(), g_removed.end()),
-			g_removed.end());
-	for (vector<ContigID>::const_iterator it = g_removed.begin();
-			it != g_removed.end(); ++it)
-		cout << get(g_contigNames, *it) << '\n';
+	// Output the updated adjacency graph.
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		assert_good(fout, opt::graphPath);
+		write_graph(fout, g, PROGRAM, commandLine);
+		assert_good(fout, opt::graphPath);
+	}
 
-	// Assemble unambiguous paths.
+	// Assemble unambiguous paths. These need to be assembled by
+	// MergeContigs before being processed by other applications.
 	if (opt::assemble) {
 		size_t numContigs = num_vertices(g) / 2;
 		typedef vector<ContigPath> ContigPaths;
@@ -753,14 +755,6 @@ int main(int argc, char** argv)
 			cout << name << '\t' << *it << '\n';
 		}
 		g_contigNames.lock();
-	}
-
-	// Output the updated adjacency graph.
-	if (!opt::graphPath.empty()) {
-		ofstream fout(opt::graphPath.c_str());
-		assert_good(fout, opt::graphPath);
-		write_graph(fout, g, PROGRAM, commandLine);
-		assert_good(fout, opt::graphPath);
 	}
 
 	return 0;
