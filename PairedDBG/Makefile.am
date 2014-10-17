@@ -19,7 +19,6 @@ abyss_paired_dbg_LDADD = \
 abyss_paired_dbg_SOURCES = \
 	abyss-paired-dbg.cc \
 	BranchRecord.h \
-	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \
 	KmerPairData.h \
 	SequenceCollection.h

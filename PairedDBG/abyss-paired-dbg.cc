@@ -5,7 +5,6 @@
 #include "Assembly/Options.h"
 #include "FastaWriter.h"
 #include "Histogram.h"
-#include "ISequenceCollection.h"
 #include "SequenceCollection.h"
 #include "Timer.h"
 #include "Assembly/DotWriter.h"

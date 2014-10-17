@@ -49,6 +49,10 @@ class KmerData
 #define COVERAGE_MAX 32767U
 
   public:
+	typedef uint8_t Symbol;
+	typedef SeqExt SymbolSet;
+	typedef ExtensionRecord SymbolSetPair;
+
 	KmerData() : m_flags(0)
 	{
 		m_multiplicity[SENSE] = 1;

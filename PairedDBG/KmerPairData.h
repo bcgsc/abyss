@@ -46,6 +46,10 @@ class KmerPairData
 #define COVERAGE_MAX 32767U
 
   public:
+	typedef Dinuc Symbol;
+	typedef DinucSet SymbolSet;
+	typedef DinucSetPair SymbolSetPair;
+
 	KmerPairData() : m_flags(0)
 	{
 		m_multiplicity[SENSE] = 1;

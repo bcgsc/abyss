@@ -1,37 +1,19 @@
-#ifndef ISEQUENCECOLLECTION_H
-#define ISEQUENCECOLLECTION_H 1
-
-#include "config.h"
-#include "Kmer.h"
-#include "KmerData.h"
-
-#if HAVE_GOOGLE_SPARSE_HASH_MAP
-# include <google/sparse_hash_map>
-typedef google::sparse_hash_map<Kmer, KmerData, hash<Kmer> >
-	SequenceDataHash;
-#else
-# include "UnorderedMap.h"
-typedef unordered_map<Kmer, KmerData, hash<Kmer> >
-	SequenceDataHash;
-#endif
+#ifndef ASSEMBLY_ISEQUENCECOLLECTION_H
+#define ASSEMBLY_ISEQUENCECOLLECTION_H 1
 
 /** A hash table mapping vertices to vertex properties. */
 class ISequenceCollection
 {
 	public:
-		typedef uint8_t Nuc;
-		typedef SeqExt NucSet;
-		typedef ExtensionRecord NucSetPair;
-
-		typedef Nuc Symbol;
-		typedef NucSet SymbolSet;
-		typedef NucSetPair SymbolSetPair;
-
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
+
+		typedef mapped_type::Symbol Symbol;
+		typedef mapped_type::SymbolSet SymbolSet;
+		typedef mapped_type::SymbolSetPair SymbolSetPair;
 
 		virtual ~ISequenceCollection() { }
 
@@ -58,23 +40,17 @@ class ISequenceCollection
 		virtual void printLoad() const = 0;
 
 		virtual void removeExtension(const key_type& seq,
-				extDirection dir, SeqExt ext) = 0;
+				extDirection dir, SymbolSet ext) = 0;
 
 		/** Remove the specified edge of this k-mer. */
 		void removeExtension(const key_type& seq,
-				extDirection dir, uint8_t base)
+				extDirection dir, Symbol base)
 		{
-			removeExtension(seq, dir, SeqExt(base));
-		}
-
-		/** Remove all the edges of this k-mer. */
-		void clearExtensions(const key_type& seq, extDirection dir)
-		{
-			removeExtension(seq, dir, SeqExt::mask(0xf));
+			removeExtension(seq, dir, SymbolSet(base));
 		}
 
 		virtual bool setBaseExtension(const key_type& seq,
-				extDirection dir, uint8_t base) = 0;
+				extDirection dir, Symbol base) = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual size_t pumpNetwork() = 0;
