@@ -11,6 +11,7 @@ libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
 endif
 
 abyss_paired_dbg_LDADD = \
+	$(top_builddir)/Assembly/libassembly.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
 	$(libdb)
@@ -21,5 +22,4 @@ abyss_paired_dbg_SOURCES = \
 	ISequenceCollection.h \
 	KmerPair.cc KmerPair.h \
 	KmerPairData.h \
-	Options.cc Options.h \
 	SequenceCollection.h
