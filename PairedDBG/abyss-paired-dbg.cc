@@ -1,5 +1,5 @@
-#include "BranchRecord.h"
 #include "SequenceCollection.h"
+#include "BranchRecord.h"
 #include "Assembly/BranchGroup.h"
 #include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/Options.h"
