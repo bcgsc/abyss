@@ -2,18 +2,28 @@
 #define SEQEXT_H 1
 
 #include "Sequence.h" // for codeToBase
+#include "Common/Options.h" // for opt::colourSpace
 #include <cassert>
 #include <ostream>
 #include <stdint.h>
 
 static const unsigned NUM_BASES = 4;
 
+/** Return the complement of the specified base.
+ * The reverse of a single base is a no-op.
+ * If the assembly is in colour space, this is a no-op.
+ */
+static inline uint8_t reverseComplement(uint8_t base)
+{
+	return opt::colourSpace ? base : ~base & 0x3;
+}
+
 /** The adjacent vertices of a Kmer. */
 class SeqExt
 {
 	public:
 		/** The number of symbols. */
-		static const unsigned NUM = 4;
+		static const unsigned NUM = NUM_BASES;
 
 		SeqExt() : m_record(0) { };
 		explicit SeqExt(uint8_t base) : m_record(1<<base) { };
@@ -82,13 +92,12 @@ class SeqExt
 
 		/** Return the complementary adjacency. */
 		SeqExt complement() const;
-		SeqExt operator ~() const { return complement(); }
 
 		friend std::ostream& operator <<(std::ostream& out,
 				const SeqExt& o)
 		{
-			assert(o.m_record < 1<<NUM_BASES);
-			for (unsigned i = 0; i < NUM_BASES; ++i)
+			assert(o.m_record < 1 << NUM);
+			for (unsigned i = 0; i  << NUM; ++i)
 				if (o.checkBase(i))
 					out << codeToBase(i);
 			return out;

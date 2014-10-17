@@ -19,6 +19,14 @@ typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 class ISequenceCollection
 {
 	public:
+		typedef uint8_t Nuc;
+		typedef SeqExt NucSet;
+		typedef ExtensionRecord NucSetPair;
+
+		typedef Nuc Symbol;
+		typedef NucSet SymbolSet;
+		typedef NucSetPair SymbolSetPair;
+
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;

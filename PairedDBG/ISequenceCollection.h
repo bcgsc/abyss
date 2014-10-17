@@ -19,13 +19,15 @@ typedef unordered_map<KmerPair, KmerPairData, hash<KmerPair> >
 class ISequenceCollection
 {
 	public:
+		typedef Dinuc Symbol;
+		typedef DinucSet SymbolSet;
+		typedef DinucSetPair SymbolSetPair;
+
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
 		typedef SequenceDataHash::iterator iterator;
 		typedef SequenceDataHash::const_iterator const_iterator;
-		typedef Dinuc OutEdgeDescriptor;
-		typedef DinucSet EdgeSet;
 
 		virtual ~ISequenceCollection() { }
 
@@ -52,23 +54,23 @@ class ISequenceCollection
 		virtual void printLoad() const = 0;
 
 		virtual void removeExtension(const key_type& seq,
-				extDirection dir, EdgeSet ext) = 0;
+				extDirection dir, SymbolSet ext) = 0;
 
 		/** Remove the specified edge of this k-mer. */
 		void removeExtension(const key_type& seq,
-				extDirection dir, OutEdgeDescriptor base)
+				extDirection dir, Symbol base)
 		{
-			removeExtension(seq, dir, EdgeSet(base));
+			removeExtension(seq, dir, SymbolSet(base));
 		}
 
 		/** Remove all the edges of this k-mer. */
 		void clearExtensions(const key_type& seq, extDirection dir)
 		{
-			removeExtension(seq, dir, EdgeSet::mask(0xf));
+			removeExtension(seq, dir, SymbolSet::mask(0xf));
 		}
 
 		virtual bool setBaseExtension(const key_type& seq,
-				extDirection dir, OutEdgeDescriptor base) = 0;
+				extDirection dir, Symbol base) = 0;
 
 		// Receive and dispatch packets if necessary.
 		virtual size_t pumpNetwork() = 0;

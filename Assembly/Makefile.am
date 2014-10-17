@@ -8,11 +8,12 @@ libassembly_a_SOURCES = \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
 	BranchGroup.h \
 	BranchRecord.h \
+	DBG.h \
 	DotWriter.h \
 	ISequenceCollection.h \
 	KmerData.h \
 	Options.cc Options.h \
-	SequenceCollection.cc SequenceCollection.h \
+	SequenceCollection.h \
 	AdjacencyAlgorithm.h \
 	AssembleAlgorithm.h \
 	BubbleAlgorithm.h \

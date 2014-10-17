@@ -66,6 +66,12 @@ private:
 	Bits m_data;
 };
 
+/** Return the reverse complement of this dinucleotide. */
+static inline Dinuc reverseComplement(const Dinuc& x)
+{
+	return x.reverseComplement();
+}
+
 /** A set of dinucleotides. */
 class DinucSet
 {

@@ -30,7 +30,7 @@ static inline SeqFlag complement(SeqFlag flag)
 struct ExtensionRecord
 {
 	SeqExt dir[2];
-	ExtensionRecord operator ~() const
+	ExtensionRecord complement() const
 	{
 		ExtensionRecord o;
 		o.dir[SENSE] = dir[ANTISENSE].complement();
@@ -149,7 +149,7 @@ class KmerData
 		o.m_flags = complement(SeqFlag(m_flags));
 		o.m_multiplicity[0] = m_multiplicity[1];
 		o.m_multiplicity[1] = m_multiplicity[0];
-		o.m_ext = ~m_ext;
+		o.m_ext = m_ext.complement();
 		return o;
 	}
 
