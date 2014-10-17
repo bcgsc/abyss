@@ -1,8 +1,7 @@
-#ifndef KMERDATA_H
-#define KMERDATA_H 1
+#ifndef ASSEMBLY_VERTEXDATA_H
+#define ASSEMBLY_VERTEXDATA_H 1
 
-#include "Sense.h"
-#include "SeqExt.h"
+#include "Common/Sense.h"
 #include <cassert>
 #include <stdint.h>
 #include <ostream>
@@ -26,47 +25,47 @@ static inline SeqFlag complement(SeqFlag flag)
 	return SeqFlag(out);
 }
 
-/** A pair of SeqExt; one for out edges and one for in edges. */
-struct ExtensionRecord
-{
-	SeqExt dir[2];
-	ExtensionRecord complement() const
-	{
-		ExtensionRecord o;
-		o.dir[SENSE] = dir[ANTISENSE].complement();
-		o.dir[ANTISENSE] = dir[SENSE].complement();
-		return o;
-	}
-};
-
-/**
- * The data associated with a Kmer, including its coverage, flags
- * and adjacent Kmer.
- */
-class KmerData
+/** Vertex properties of a de Bruijn Graph vertex. */
+template <typename S, typename Set>
+class VertexData
 {
 /** Maximum value of k-mer coverage. */
 #define COVERAGE_MAX 32767U
 
   public:
-	typedef uint8_t Symbol;
-	typedef SeqExt SymbolSet;
-	typedef ExtensionRecord SymbolSetPair;
+	/** A symbol, such as a nucleotide or amino acid. */
+	typedef S Symbol;
 
-	KmerData() : m_flags(0)
+	/** A set of symbols. */
+	typedef Set SymbolSet;
+
+	/** A pair of edge sets; one for out edges and one for in edges. */
+	struct SymbolSetPair
+	{
+		SymbolSet dir[2];
+		SymbolSetPair complement() const
+		{
+			SymbolSetPair o;
+			o.dir[SENSE] = dir[ANTISENSE].complement();
+			o.dir[ANTISENSE] = dir[SENSE].complement();
+			return o;
+		}
+	};
+
+	VertexData() : m_flags(0)
 	{
 		m_multiplicity[SENSE] = 1;
 		m_multiplicity[ANTISENSE] = 0;
 	}
 
-	KmerData(extDirection dir, unsigned multiplicity) : m_flags(0)
+	VertexData(extDirection dir, unsigned multiplicity) : m_flags(0)
 	{
 		assert(multiplicity <= COVERAGE_MAX);
 		m_multiplicity[dir] = multiplicity;
 		m_multiplicity[!dir] = 0;
 	}
 
-	KmerData(unsigned multiplicity, ExtensionRecord ext)
+	VertexData(unsigned multiplicity, SymbolSetPair ext)
 		: m_flags(0), m_ext(ext)
 	{
 		setMultiplicity(multiplicity);
@@ -119,19 +118,19 @@ class KmerData
 		return isFlagSet(SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 	}
 
-	ExtensionRecord extension() const { return m_ext; }
+	SymbolSetPair extension() const { return m_ext; }
 
-	SeqExt getExtension(extDirection dir) const
+	SymbolSet getExtension(extDirection dir) const
 	{
 		return m_ext.dir[dir];
 	}
 
-	void setBaseExtension(extDirection dir, uint8_t base)
+	void setBaseExtension(extDirection dir, Symbol x)
 	{
-		m_ext.dir[dir].setBase(base);
+		m_ext.dir[dir].setBase(x);
 	}
 
-	void removeExtension(extDirection dir, SeqExt ext)
+	void removeExtension(extDirection dir, SymbolSet ext)
 	{
 		m_ext.dir[dir].clear(ext);
 	}
@@ -147,9 +146,9 @@ class KmerData
 	}
 
 	/** Return the complement of this data. */
-	KmerData operator~() const
+	VertexData operator~() const
 	{
-		KmerData o;
+		VertexData o;
 		o.m_flags = complement(SeqFlag(m_flags));
 		o.m_multiplicity[0] = m_multiplicity[1];
 		o.m_multiplicity[1] = m_multiplicity[0];
@@ -158,16 +157,16 @@ class KmerData
 	}
 
 	friend std::ostream& operator<<(
-			std::ostream& out, const KmerData& o)
+			std::ostream& out, const VertexData& o)
 	{
 		return out << "C="
 			<< o.m_multiplicity[0] + o.m_multiplicity[1];
 	}
 
-  protected:
+  private:
 	uint8_t m_flags;
 	uint16_t m_multiplicity[2];
-	ExtensionRecord m_ext;
+	SymbolSetPair m_ext;
 };
 
 #endif

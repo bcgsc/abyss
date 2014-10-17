@@ -2,8 +2,11 @@
 #define PAIREDDBG_SEQUENCECOLLECTION_H 1
 
 #include "config.h"
+#include "Dinuc.h"
 #include "KmerPair.h"
-#include "KmerPairData.h"
+#include "Assembly/VertexData.h"
+
+typedef VertexData<Dinuc, DinucSet> KmerPairData;
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>

@@ -1,9 +1,6 @@
 #ifndef ASSEMBLY_BRANCHRECORD_H
 #define ASSEMBLY_BRANCHRECORD_H 1
 
-#include "Kmer.h"
-#include "KmerData.h"
-
 /** Generate the sequence of this contig. */
 template <typename It, typename OutIt>
 void branchRecordToStr(It it, It last, OutIt out)

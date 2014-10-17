@@ -1,9 +1,6 @@
 #ifndef PAIREDDBG_BRANCHRECORD_H
 #define PAIREDDBG_BRANCHRECORD_H 1
 
-#include "KmerPair.h"
-#include "KmerPairData.h"
-
 /** Generate the sequence of this contig. */
 template <typename It, typename OutIt>
 void branchRecordToStr(It it, It last, OutIt out)

@@ -12,9 +12,9 @@ libassembly_a_SOURCES = \
 	DBG.h \
 	DotWriter.h \
 	ISequenceCollection.h \
-	KmerData.h \
 	Options.cc Options.h \
 	SequenceCollection.h \
+	VertexData.h \
 	AdjacencyAlgorithm.h \
 	AssembleAlgorithm.h \
 	BubbleAlgorithm.h \

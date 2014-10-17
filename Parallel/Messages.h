@@ -2,7 +2,9 @@
 #define MESSAGES_H 1
 
 #include "Kmer.h"
-#include "KmerData.h"
+#include "SeqExt.h"
+#include "VertexData.h" // for SeqFlag
+#include "Assembly/SequenceCollection.h" // for ExtensionRecord
 #include <ostream>
 
 class NetworkSequenceCollection;

@@ -3,7 +3,11 @@
 
 #include "config.h"
 #include "Kmer.h"
-#include "KmerData.h"
+#include "SeqExt.h"
+#include "VertexData.h"
+
+typedef VertexData<uint8_t, SeqExt> KmerData;
+typedef KmerData::SymbolSetPair ExtensionRecord;
 
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 # include <google/sparse_hash_map>
