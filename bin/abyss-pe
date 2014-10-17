@@ -178,8 +178,11 @@ m?=50
 alopt += $v $(dbopt) $(SS) -k$k -m$m
 
 # filtergraph parameters
+ifdef K
+fgopt += --assemble --shim-max-degree=2
+endif
 ifdef xtip
-fgopt := -t$(shell echo $k*2 |bc)
+fgopt += -t$(shell echo $k*2 |bc)
 endif
 
 # PopBubbles parameters
@@ -446,7 +449,7 @@ endif
 # Remove shim contigs
 
 %-2.$g1 %-1.path: %-1.$g %-1.fa
-	abyss-filtergraph $v --$g --assemble $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
+	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
 
 %-2.fa %-2.$g: %-1.fa %-2.$g1 %-1.path
 	MergeContigs $(mcopt) -g $*-2.$g -o $*-2.fa $^
