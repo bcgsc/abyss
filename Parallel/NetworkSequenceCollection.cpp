@@ -778,7 +778,7 @@ void NetworkSequenceCollection::handle(
 {
 	const Kmer& kmer = message.m_seq;
 	assert(isLocal(kmer));
-	ExtensionRecord extRec;
+	SymbolSetPair extRec;
 	int multiplicity = -1;
 	bool found = m_data.getSeqData(kmer, extRec, multiplicity);
 	assert(found);
@@ -918,7 +918,7 @@ performNetworkDiscoverBubbles()
 		if (++count % 100000 == 0)
 			logger(1) << "Popping bubbles: " << count << '\n';
 
-		ExtensionRecord extRec = iter->second.extension();
+		SymbolSetPair extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				BranchGroupMap::iterator groupIter
@@ -1265,7 +1265,7 @@ void NetworkSequenceCollection::generateExtensionRequest(
 		uint64_t groupID, uint64_t branchID, const Kmer& kmer)
 {
 	if (isLocal(kmer)) {
-		ExtensionRecord extRec;
+		SymbolSetPair extRec;
 		int multiplicity = -1;
 		bool success = m_data.getSeqData(kmer, extRec, multiplicity);
 		assert(success);
@@ -1297,7 +1297,7 @@ void NetworkSequenceCollection::generateExtensionRequests(
 
 void NetworkSequenceCollection::processSequenceExtension(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity)
+		const SymbolSetPair& extRec, int multiplicity)
 {
 	switch(m_state)
 	{
@@ -1334,7 +1334,7 @@ void NetworkSequenceCollection::processSequenceExtension(
 /** Process a sequence extension for trimming. */
 void NetworkSequenceCollection::processLinearSequenceExtension(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity,
+		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
 	BranchGroupMap::iterator iter
@@ -1351,7 +1351,7 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 /** Process a sequence extension for popping. */
 void NetworkSequenceCollection::processSequenceExtensionPop(
 		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity,
+		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
 	BranchGroupMap::iterator groupIt
@@ -1428,7 +1428,7 @@ bool NetworkSequenceCollection::setBaseExtension(
 
 /** Remove the specified extensions from this k-mer. */
 void NetworkSequenceCollection::removeExtension(
-		const Kmer& seq, extDirection dir, SeqExt ext)
+		const Kmer& seq, extDirection dir, SymbolSet ext)
 {
 	if (isLocal(seq)) {
 		m_data.removeExtension(seq, dir, ext);

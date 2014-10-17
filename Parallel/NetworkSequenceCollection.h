@@ -118,7 +118,7 @@ class NetworkSequenceCollection
 		void printLoad() const { m_data.printLoad(); }
 
 		void removeExtension(const Kmer& seq, extDirection dir,
-				SeqExt ext);
+				SymbolSet ext);
 
 		/** Remove the specified edge of this vertex. */
 		void removeExtension(const key_type& seq, extDirection dir, Symbol base)
@@ -197,14 +197,14 @@ class NetworkSequenceCollection
 				BranchGroup::const_iterator last);
 		void processSequenceExtension(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
-				const ExtensionRecord& extRec, int multiplicity);
+				const SymbolSetPair& extRec, int multiplicity);
 		void processLinearSequenceExtension(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
-				const ExtensionRecord& extRec, int multiplicity,
+				const SymbolSetPair& extRec, int multiplicity,
 				unsigned maxLength);
 		void processSequenceExtensionPop(
 				uint64_t groupID, uint64_t branchID, const Kmer& seq,
-				const ExtensionRecord& extRec, int multiplicity,
+				const SymbolSetPair& extRec, int multiplicity,
 				unsigned maxLength);
 
 		void assembleContig(
