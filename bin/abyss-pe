@@ -134,6 +134,9 @@ override g:=$(graph)
 # ABYSS parameters
 q ?= 3
 abyssopt += -k$k -q$q
+ifdef K
+abyssopt += -K$K
+endif
 ifdef e
 abyssopt += -e$e
 endif
@@ -422,11 +425,12 @@ startDb:
 	> db.txt
 #endif
 
-%-1.fa:
 ifdef np
+%-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+%-1.fa %-1.$g:
+	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
 endif
 
 # Find overlapping contigs
@@ -436,15 +440,18 @@ endif
 
 # Remove shim contigs
 
-%-2.$g: %-1.$g
+%-2.$g1: %-1.$g %-1.fa
 	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $@ $^ >$*-1.path
+
+%-2.fa %-2.$g: %-1.fa %-2.$g1 %-1.path
+	MergeContigs $(mcopt) -g $*-2.$g -o $*-2.fa $^
 
 # Pop bubbles
 
-%-2.path %-3.$g: %-1.fa %-2.$g
+%-2.path %-3.$g: %-2.fa %-2.$g
 	PopBubbles $v --$g -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.$g $^ >$*-2.path
 
-%-3.fa: %-1.fa %-2.$g %-2.path
+%-3.fa: %-2.fa %-2.$g %-2.path
 	MergeContigs $(mcopt) -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
