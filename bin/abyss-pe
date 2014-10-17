@@ -446,7 +446,7 @@ endif
 # Remove shim contigs
 
 %-2.$g1 %-1.path: %-1.$g %-1.fa
-	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
+	abyss-filtergraph $v --$g --assemble $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
 
 %-2.fa %-2.$g: %-1.fa %-2.$g1 %-1.path
 	MergeContigs $(mcopt) -g $*-2.$g -o $*-2.fa $^
