@@ -131,7 +131,9 @@ writeEdges(std::ostream& out, const Graph& g, const V& u) const
 /** Write out a dot graph for the specified collection. */
 void writeGraph(std::ostream& out, const Graph& g)
 {
-	out << "digraph g {\n";
+	out << "digraph g {\n"
+		"graph [k=" << V::length() << "]\n"
+		"edge [d=" << -int(V::length() - 1) << "]\n";
 	std::pair<Vit, Vit> uits = vertices(g);
 
 	// Output the vertices.
