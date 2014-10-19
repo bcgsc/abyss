@@ -78,11 +78,11 @@ public:
 
 	bool empty() { return ac.empty(); }
 
-	F getFirst(const iit& pair) { return  pair->first; }
+	const F& getFirst(const iit& pair) { return pair->first; }
 
-	S getSecond(const iit& pair) { return pair->second; }
+	const S& getSecond(const iit& pair) { return pair->second; }
 
-	aMap_cont getAC() { return ac; }
+	const aMap_cont& getAC() { return ac; }
 };
 
 #endif
