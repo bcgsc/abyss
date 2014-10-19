@@ -392,14 +392,14 @@ To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in
 
 ## Database parameters
 Of `abyss-pe`:
- * `db`: path to SQLite repository file [`ABySS.db`]
+ * `db`: path to SQLite repository file [`$(name).sqlite`]
  * `species`: name of species to archive [ ]
  * `strain`: name of strain to archive [ ]
  * `library`: name of library to archive [ ]
 
-For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.db':
+For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.sqlite':
 
-	abyss-pe db=/abyss/test.db species=Ecoli strain=O121 library=pe200 [other options]
+	abyss-pe db=/abyss/test.sqlite species=Ecoli strain=O121 library=pe200 [other options]
 
 ## Helper programs
 Found in your `path`:
@@ -413,11 +413,11 @@ Usage:
 
 For example,
 
-	abyss-db-txt repo.db
+	abyss-db-txt repo.sqlite
 
-	abyss-db-csv repo.db DistanceEst
-	abyss-db-csv repo.db DistanceEst abyss-scaffold
-	abyss-db-csv repo.db --all
+	abyss-db-csv repo.sqlite DistanceEst
+	abyss-db-csv repo.sqlite DistanceEst abyss-scaffold
+	abyss-db-csv repo.sqlite --all
 
 Publications
 ============
