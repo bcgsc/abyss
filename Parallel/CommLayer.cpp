@@ -1,8 +1,8 @@
 #include "config.h"
 #include "CommLayer.h"
-#include "Common/Options.h"
-#include "Log.h"
 #include "MessageBuffer.h"
+#include "Common/Log.h"
+#include "Common/Options.h"
 #include <mpi.h>
 #include <cstring>
 #include <vector>

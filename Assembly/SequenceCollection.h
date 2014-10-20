@@ -2,9 +2,9 @@
 #define ASSEMBLY_SEQUENCECOLLECTION_H 1
 
 #include "config.h"
-#include "Kmer.h"
 #include "SeqExt.h"
 #include "VertexData.h"
+#include "Common/Kmer.h"
 
 typedef VertexData<uint8_t, SeqExt> KmerData;
 typedef KmerData::SymbolSetPair ExtensionRecord;

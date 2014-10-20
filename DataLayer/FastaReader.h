@@ -1,8 +1,8 @@
 #ifndef FASTAREADER_H
 #define FASTAREADER_H 1
 
-#include "Sequence.h"
-#include "StringUtil.h" // for chomp
+#include "Common/Sequence.h"
+#include "Common/StringUtil.h" // for chomp
 #include <cassert>
 #include <cstdlib> // for exit
 #include <fstream>

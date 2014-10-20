@@ -1,7 +1,6 @@
 bin_PROGRAMS = ABYSS-P
 
-ABYSS_P_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Common
+ABYSS_P_CPPFLAGS = -I$(top_srcdir)
 
 if HAVE_SQLITE
 ABYSS_P_LDADD = \

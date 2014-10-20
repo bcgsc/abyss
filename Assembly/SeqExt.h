@@ -1,8 +1,8 @@
 #ifndef SEQEXT_H
 #define SEQEXT_H 1
 
-#include "Sequence.h" // for codeToBase
 #include "Common/Options.h" // for opt::colourSpace
+#include "Common/Sequence.h" // for codeToBase
 #include <cassert>
 #include <ostream>
 #include <stdint.h>

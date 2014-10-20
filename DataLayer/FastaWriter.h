@@ -1,7 +1,7 @@
 #ifndef FASTAWRITER_H
 #define FASTAWRITER_H 1
 
-#include "Sequence.h"
+#include "Common/Sequence.h"
 #include <cstdio>
 
 /** Output a FASTA file. */
