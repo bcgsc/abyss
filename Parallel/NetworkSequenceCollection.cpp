@@ -1,11 +1,11 @@
 #include "NetworkSequenceCollection.h"
+#include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/Options.h"
-#include "AssemblyAlgorithms.h"
+#include "Common/Histogram.h"
+#include "Common/Log.h"
 #include "Common/Options.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "Log.h"
-#include "StringUtil.h"
+#include "Common/StringUtil.h"
+#include "DataLayer/FastaWriter.h"
 #include <climits> // for UINT_MAX
 #include <cstdlib>
 #include <fstream>

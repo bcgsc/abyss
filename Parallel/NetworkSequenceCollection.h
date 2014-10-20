@@ -1,13 +1,13 @@
 #ifndef NETWORKSEQUENCECOLLECTION_H
 #define NETWORKSEQUENCECOLLECTION_H 1
 
-#include "SequenceCollection.h"
-#include "BranchRecord.h"
-#include "BranchGroup.h"
 #include "CommLayer.h"
-#include "FastaWriter.h"
 #include "MessageBuffer.h"
-#include "Timer.h"
+#include "Assembly/BranchRecord.h"
+#include "Assembly/BranchGroup.h"
+#include "Assembly/SequenceCollection.h"
+#include "Common/Timer.h"
+#include "DataLayer/FastaWriter.h"
 #include <ostream>
 #include <set>
 #include <utility>

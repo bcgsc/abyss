@@ -1,11 +1,11 @@
 #include "config.h"
-#include "Log.h"
 #include "NetworkSequenceCollection.h"
 #include "Assembly/Options.h"
+#include "Common/Log.h"
 #include "Common/Options.h"
+#include "Common/Timer.h"
+#include "Common/Uncompress.h"
 #include "DataLayer/FastaReader.h"
-#include "Timer.h"
-#include "Uncompress.h"
 #include <cerrno>
 #include <climits> // for HOST_NAME_MAX
 #include <cstdio> // for setvbuf
