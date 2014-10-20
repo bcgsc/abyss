@@ -1412,7 +1412,7 @@ void NetworkSequenceCollection::setFlag(const V& seq, SeqFlag flag)
 }
 
 bool NetworkSequenceCollection::setBaseExtension(
-		const V& seq, extDirection dir, uint8_t base)
+		const V& seq, extDirection dir, Symbol base)
 {
 	if (isLocal(seq)) {
 		if (m_data.setBaseExtension(seq, dir, base))

@@ -129,8 +129,7 @@ class NetworkSequenceCollection
 			removeExtension(seq, dir, SymbolSet(base));
 		}
 
-		bool setBaseExtension(const V& seq, extDirection dir,
-				uint8_t base);
+		bool setBaseExtension(const V& seq, extDirection dir, Symbol base);
 
 		// Receive and dispatch packets.
 		size_t pumpNetwork();
