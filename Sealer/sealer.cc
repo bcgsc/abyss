@@ -420,8 +420,10 @@ string merge(const Graph& g,
 		case NO_PATH:
 			assert(paths.empty());
 			if (result.foundStartKmer && result.foundGoalKmer)
+#pragma omp atomic
 				++g_count.noPath;
 			else {
+#pragma omp atomic
 				++g_count.noStartOrGoalKmer;
 			}
 			break;
@@ -431,31 +433,39 @@ string merge(const Graph& g,
 			if (result.pathMismatches > params.maxPathMismatches ||
 					result.readMismatches > params.maxReadMismatches) {
 				if (result.pathMismatches > params.maxPathMismatches)
+#pragma omp atomic
 					++g_count.tooManyMismatches;
 				else
+#pragma omp atomic
 					++g_count.tooManyReadMismatches;
 			}
 			else if (paths.size() > 1) {
+#pragma omp atomic
 				++g_count.multiplePaths;
 			}
 			else {
+#pragma omp atomic
 				++g_count.uniquePath;
 			}
 			break;
 
 		case TOO_MANY_PATHS:
+#pragma omp atomic
 			++g_count.tooManyPaths;
 			break;
 
 		case TOO_MANY_BRANCHES:
+#pragma omp atomic
 			++g_count.tooManyBranches;
 			break;
 
 		case PATH_CONTAINS_CYCLE:
+#pragma omp atomic
 			++g_count.containsCycle;
 			break;
 
 		case EXCEEDED_MEM_LIMIT:
+#pragma omp atomic
 			++g_count.exceededMemLimit;
 			break;
 	}
@@ -497,12 +507,13 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 			pos_it != allmerged[record.id].rend();
 			pos_it++)
 		{
+			int newseqsize = pos_it->second["seq"].length() - (opt::flankLength * 2);
 			modifiedSeq.replace(
 				pos_it->first - opt::flankLength,
 				StringToInt(pos_it->second["gap"]) + (opt::flankLength * 2),
 				pos_it->second["seq"]
 			);
-			mergedStream << ">" << record.id << endl;
+			mergedStream << ">" << record.id << "_" << pos_it->first << "_" << newseqsize <<  endl;
                         mergedStream << pos_it->second["seq"] << endl;
 			gapsclosedfinal++;
 		}
@@ -590,15 +601,18 @@ void kRun(const ConnectPairsParams& params,
 					= IntToString(endposition - startposition);
 				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]["seq"]
 					= tempSeq;
+//#pragma omp atomic				
 				gapsclosed++;
+//#pragma omp atomic
 				uniqueGapsClosed++;
 				if (gapsclosed % 100 == 0)
 					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
 //					cerr << gapsclosed << " gaps closed so far" << endl;
 			}
 		}
-		if (success)
+		if (success) {
 			flanks.erase(read1_it++);
+		}
 		else
 			read1_it++;
 	}
@@ -975,7 +989,7 @@ int main(int argc, char** argv)
 		read2Stream.close();
 	}
 
-	exit(EXIT_SUCCESS);
+//	exit(EXIT_SUCCESS);
 
 	/** map for merged sequence resutls */
 	map<string, map<int, map<string, string> > > allmerged;
