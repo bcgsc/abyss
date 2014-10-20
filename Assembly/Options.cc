@@ -1,9 +1,9 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
 #include "config.h"
+#include "Common/Kmer.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
-#include "Kmer.h"
 #include <algorithm>
 #include <climits> // for INT_MAX
 #include <getopt.h>

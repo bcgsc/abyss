@@ -1,12 +1,12 @@
 #ifndef CONTIGGRAPHALGORITHMS_H
 #define CONTIGGRAPHALGORITHMS_H 1
 
-#include "Algorithms.h"
-#include "ContigGraph.h"
-#include "ContigNode.h"
-#include "Estimate.h" // for BetterDistanceEst
-#include "Functional.h"
-#include "Iterator.h"
+#include "Common/Algorithms.h"
+#include "Common/ContigNode.h"
+#include "Common/Estimate.h" // for BetterDistanceEst
+#include "Common/Functional.h"
+#include "Common/Iterator.h"
+#include "Graph/ContigGraph.h"
 #include <boost/graph/graph_traits.hpp>
 #include <algorithm>
 #include <cassert>

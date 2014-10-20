@@ -1,6 +1,7 @@
 #ifndef ASSEMBLY_ASSEMBLYALGORITHMS_H
 #define ASSEMBLY_ASSEMBLYALGORITHMS_H 1
 
+#include "Assembly/BranchGroup.h"
 #include "Assembly/Options.h"
 #include "Common/Log.h"
 #include "Common/Timer.h"

@@ -1,6 +1,6 @@
-#include "FastaReader.h"
+#include "Common/IOUtil.h"
+#include "DataLayer/FastaReader.h"
 #include "DataLayer/Options.h"
-#include "IOUtil.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>

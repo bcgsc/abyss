@@ -1,14 +1,7 @@
-#include "Assembly/Options.h"
-#include "SequenceCollection.h"
-#include "BranchRecord.h"
-#include "Assembly/BranchGroup.h"
+#include "Assembly/SequenceCollection.h"
+#include "Assembly/BranchRecord.h"
 #include "Assembly/AssemblyAlgorithms.h"
-#include "DotWriter.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "SequenceCollection.h"
-#include "Timer.h"
-#include "Uncompress.h"
+#include "Assembly/DotWriter.h"
 #include <algorithm>
 #include <cstdio> // for setvbuf
 #include <fstream>

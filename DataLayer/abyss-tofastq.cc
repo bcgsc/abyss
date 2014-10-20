@@ -2,11 +2,11 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 #include "config.h"
+#include "Common/IOUtil.h"
+#include "Common/Uncompress.h"
+#include "DataLayer/FastaInterleave.h"
+#include "DataLayer/FastaReader.h"
 #include "DataLayer/Options.h"
-#include "FastaInterleave.h"
-#include "FastaReader.h"
-#include "IOUtil.h"
-#include "Uncompress.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>

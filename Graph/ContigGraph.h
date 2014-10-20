@@ -1,7 +1,7 @@
 #ifndef CONTIGGRAPH_H
 #define CONTIGGRAPH_H 1
 
-#include "ContigID.h"
+#include "Common/ContigID.h"
 #include "Graph/Properties.h"
 #include <boost/graph/graph_traits.hpp>
 #include <cassert>

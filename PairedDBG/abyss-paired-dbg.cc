@@ -1,14 +1,7 @@
-#include "SequenceCollection.h"
-#include "BranchRecord.h"
-#include "Assembly/BranchGroup.h"
+#include "PairedDBG/SequenceCollection.h"
+#include "PairedDBG/BranchRecord.h"
 #include "Assembly/AssemblyAlgorithms.h"
-#include "Assembly/Options.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "SequenceCollection.h"
-#include "Timer.h"
 #include "Assembly/DotWriter.h"
-#include "Uncompress.h"
 #include <algorithm>
 #include <cstdio> // for setvbuf
 #include <fstream>

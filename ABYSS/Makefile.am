@@ -1,9 +1,6 @@
 bin_PROGRAMS = ABYSS
 
-ABYSS_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Assembly \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer
+ABYSS_CPPFLAGS = -I$(top_srcdir)
 
 if HAVE_SQLITE
 ABYSS_LDADD = \

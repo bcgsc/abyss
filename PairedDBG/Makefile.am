@@ -2,9 +2,7 @@ bin_PROGRAMS = abyss-paired-dbg
 
 # abyss-paired-dbg
 
-abyss_paired_dbg_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer
+abyss_paired_dbg_CPPFLAGS = -I$(top_srcdir)
 
 if HAVE_SQLITE
 libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
