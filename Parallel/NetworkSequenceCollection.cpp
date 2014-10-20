@@ -678,7 +678,7 @@ size_t NetworkSequenceCollection::pumpNetwork()
 }
 
 /** Call the observers of the specified sequence. */
-void NetworkSequenceCollection::notify(const Kmer& key)
+void NetworkSequenceCollection::notify(const V& key)
 {
 	switch (m_state) {
 		case NAS_ERODE:
@@ -776,7 +776,7 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 void NetworkSequenceCollection::handle(
 		int senderID, const SeqDataRequest& message)
 {
-	const Kmer& kmer = message.m_seq;
+	const V& kmer = message.m_seq;
 	assert(isLocal(kmer));
 	SymbolSetPair extRec;
 	int multiplicity = -1;
@@ -1189,7 +1189,7 @@ performNetworkAssembly(FastaWriter* fileWriter)
 		// Generate the first extension request
 		BranchRecord& branch = inserted.first->second[0];
 		branch.push_back(*iter);
-		Kmer kmer = iter->first;
+		V kmer = iter->first;
 		AssemblyAlgorithms::extendBranch(branch,
 				kmer, iter->second.getExtension(dir));
 		assert(branch.isActive());
@@ -1262,7 +1262,7 @@ processBranchesAssembly(FastaWriter* fileWriter, unsigned currContigID)
 
 /** Send a request for the edges of vertex kmer. */
 void NetworkSequenceCollection::generateExtensionRequest(
-		uint64_t groupID, uint64_t branchID, const Kmer& kmer)
+		uint64_t groupID, uint64_t branchID, const V& kmer)
 {
 	if (isLocal(kmer)) {
 		SymbolSetPair extRec;
@@ -1296,7 +1296,7 @@ void NetworkSequenceCollection::generateExtensionRequests(
 }
 
 void NetworkSequenceCollection::processSequenceExtension(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
+		uint64_t groupID, uint64_t branchID, const V& seq,
 		const SymbolSetPair& extRec, int multiplicity)
 {
 	switch(m_state)
@@ -1333,14 +1333,14 @@ void NetworkSequenceCollection::processSequenceExtension(
 
 /** Process a sequence extension for trimming. */
 void NetworkSequenceCollection::processLinearSequenceExtension(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
+		uint64_t groupID, uint64_t branchID, const V& seq,
 		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
 	BranchGroupMap::iterator iter
 		= m_activeBranchGroups.find(groupID);
 	assert(iter != m_activeBranchGroups.end());
-	Kmer currSeq = seq;
+	V currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
 			iter->second[branchID], currSeq, extRec, multiplicity,
 			maxLength);
@@ -1350,7 +1350,7 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 
 /** Process a sequence extension for popping. */
 void NetworkSequenceCollection::processSequenceExtensionPop(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
+		uint64_t groupID, uint64_t branchID, const V& seq,
 		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
@@ -1372,7 +1372,7 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 }
 
 /** Add a k-mer to this collection. */
-void NetworkSequenceCollection::add(const Kmer& seq,
+void NetworkSequenceCollection::add(const V& seq,
 		unsigned coverage)
 {
 	if (isLocal(seq)) {
@@ -1384,7 +1384,7 @@ void NetworkSequenceCollection::add(const Kmer& seq,
 }
 
 /** Remove a k-mer from this collection. */
-void NetworkSequenceCollection::remove(const Kmer& seq)
+void NetworkSequenceCollection::remove(const V& seq)
 {
 	if (isLocal(seq))
 		m_data.remove(seq);
@@ -1403,7 +1403,7 @@ checkpointReached(unsigned numRequired) const
 	return m_numReachedCheckpoint == numRequired;
 }
 
-void NetworkSequenceCollection::setFlag(const Kmer& seq, SeqFlag flag)
+void NetworkSequenceCollection::setFlag(const V& seq, SeqFlag flag)
 {
 	if (isLocal(seq))
 		m_data.setFlag(seq, flag);
@@ -1412,7 +1412,7 @@ void NetworkSequenceCollection::setFlag(const Kmer& seq, SeqFlag flag)
 }
 
 bool NetworkSequenceCollection::setBaseExtension(
-		const Kmer& seq, extDirection dir, uint8_t base)
+		const V& seq, extDirection dir, uint8_t base)
 {
 	if (isLocal(seq)) {
 		if (m_data.setBaseExtension(seq, dir, base))
@@ -1428,7 +1428,7 @@ bool NetworkSequenceCollection::setBaseExtension(
 
 /** Remove the specified extensions from this k-mer. */
 void NetworkSequenceCollection::removeExtension(
-		const Kmer& seq, extDirection dir, SymbolSet ext)
+		const V& seq, extDirection dir, SymbolSet ext)
 {
 	if (isLocal(seq)) {
 		m_data.removeExtension(seq, dir, ext);
@@ -1440,13 +1440,13 @@ void NetworkSequenceCollection::removeExtension(
 }
 
 /** Return whether this sequence belongs to this process. */
-bool NetworkSequenceCollection::isLocal(const Kmer& seq) const
+bool NetworkSequenceCollection::isLocal(const V& seq) const
 {
 	return computeNodeID(seq) == opt::rank;
 }
 
 /** Return the process ID to which the specified kmer belongs. */
-int NetworkSequenceCollection::computeNodeID(const Kmer& seq) const
+int NetworkSequenceCollection::computeNodeID(const V& seq) const
 {
 	if (opt::numProc < DEDICATE_CONTROL_AT) {
 		return seq.getCode() % (unsigned)opt::numProc;

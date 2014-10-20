@@ -47,10 +47,13 @@ enum NetworkAssemblyState
 
 typedef std::map<uint64_t, BranchGroup> BranchGroupMap;
 
-/** A distributed map of Kmer to KmerData. */
+/** A distributed map of vertices to vertex properties. */
 class NetworkSequenceCollection
 {
 	public:
+		typedef SequenceDataHash::key_type V;
+		typedef SequenceDataHash::mapped_type VP;
+
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
 		typedef SequenceDataHash::value_type value_type;
@@ -63,7 +66,7 @@ class NetworkSequenceCollection
 
 		typedef key_type vertex_descriptor;
 		typedef mapped_type vertex_bundled;
-		typedef std::pair<key_type, key_type> edge_descriptor;
+		typedef std::pair<V, V> edge_descriptor;
 
 		typedef boost::directed_tag directed_category;
 		typedef boost::disallow_parallel_edge_tag edge_parallel_category;
@@ -95,18 +98,18 @@ class NetworkSequenceCollection
 		std::pair<size_t, size_t> performNetworkAssembly(
 				FastaWriter* fileWriter = NULL);
 
-		void add(const Kmer& seq, unsigned coverage = 1);
-		void remove(const Kmer& seq);
-		void setFlag(const Kmer& seq, SeqFlag flag);
+		void add(const V& seq, unsigned coverage = 1);
+		void remove(const V& seq);
+		void setFlag(const V& seq, SeqFlag flag);
 
 		/** Mark the specified sequence in both directions. */
-		void mark(const key_type& seq)
+		void mark(const V& seq)
 		{
 			setFlag(seq, SeqFlag(SF_MARK_SENSE | SF_MARK_ANTISENSE));
 		}
 
 		/** Mark the specified sequence. */
-		void mark(const key_type& seq, extDirection sense)
+		void mark(const V& seq, extDirection sense)
 		{
 			setFlag(seq, sense == SENSE
 					? SF_MARK_SENSE : SF_MARK_ANTISENSE);
@@ -117,16 +120,16 @@ class NetworkSequenceCollection
 
 		void printLoad() const { m_data.printLoad(); }
 
-		void removeExtension(const Kmer& seq, extDirection dir,
+		void removeExtension(const V& seq, extDirection dir,
 				SymbolSet ext);
 
 		/** Remove the specified edge of this vertex. */
-		void removeExtension(const key_type& seq, extDirection dir, Symbol base)
+		void removeExtension(const V& seq, extDirection dir, Symbol base)
 		{
 			removeExtension(seq, dir, SymbolSet(base));
 		}
 
-		bool setBaseExtension(const Kmer& seq, extDirection dir,
+		bool setBaseExtension(const V& seq, extDirection dir,
 				uint8_t base);
 
 		// Receive and dispatch packets.
@@ -181,7 +184,7 @@ class NetworkSequenceCollection
 
 	private:
 		// Observer pattern
-		void notify(const Kmer& seq);
+		void notify(const V& seq);
 
 		void loadSequences();
 
@@ -191,19 +194,19 @@ class NetworkSequenceCollection
 		bool processBranchesDiscoverBubbles();
 
 		void generateExtensionRequest(
-				uint64_t groupID, uint64_t branchID, const Kmer& seq);
+				uint64_t groupID, uint64_t branchID, const V& seq);
 		void generateExtensionRequests(uint64_t groupID,
 				BranchGroup::const_iterator first,
 				BranchGroup::const_iterator last);
 		void processSequenceExtension(
-				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				uint64_t groupID, uint64_t branchID, const V& seq,
 				const SymbolSetPair& extRec, int multiplicity);
 		void processLinearSequenceExtension(
-				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				uint64_t groupID, uint64_t branchID, const V& seq,
 				const SymbolSetPair& extRec, int multiplicity,
 				unsigned maxLength);
 		void processSequenceExtensionPop(
-				uint64_t groupID, uint64_t branchID, const Kmer& seq,
+				uint64_t groupID, uint64_t branchID, const V& seq,
 				const SymbolSetPair& extRec, int multiplicity,
 				unsigned maxLength);
 
@@ -217,8 +220,8 @@ class NetworkSequenceCollection
 
 		void parseControlMessage(int source);
 
-		bool isLocal(const Kmer& seq) const;
-		int computeNodeID(const Kmer& seq) const;
+		bool isLocal(const V& seq) const;
+		int computeNodeID(const V& seq) const;
 
 		void EndState();
 

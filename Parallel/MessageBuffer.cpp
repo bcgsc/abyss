@@ -11,26 +11,26 @@ MessageBuffer::MessageBuffer()
 		m_msgQueues[i].reserve(MAX_MESSAGES);
 }
 
-void MessageBuffer::sendSeqAddMessage(int nodeID, const Kmer& seq)
+void MessageBuffer::sendSeqAddMessage(int nodeID, const V& seq)
 {
 	queueMessage(nodeID, new SeqAddMessage(seq), SM_BUFFERED);
 }
 
-void MessageBuffer::sendSeqRemoveMessage(int nodeID, const Kmer& seq)
+void MessageBuffer::sendSeqRemoveMessage(int nodeID, const V& seq)
 {
 	queueMessage(nodeID, new SeqRemoveMessage(seq), SM_BUFFERED);
 }
 
 // Send a set flag message
 void MessageBuffer::sendSetFlagMessage(int nodeID,
-		const Kmer& seq, SeqFlag flag)
+		const V& seq, SeqFlag flag)
 {
 	queueMessage(nodeID, new SetFlagMessage(seq, flag), SM_BUFFERED);
 }
 
 // Send a remove extension message
 void MessageBuffer::sendRemoveExtension(int nodeID,
-		const Kmer& seq, extDirection dir, SeqExt ext)
+		const V& seq, extDirection dir, SymbolSet ext)
 {
 	queueMessage(nodeID, new RemoveExtensionMessage(seq, dir, ext),
 			SM_BUFFERED);
@@ -38,7 +38,7 @@ void MessageBuffer::sendRemoveExtension(int nodeID,
 
 // Send a sequence data request
 void MessageBuffer::sendSeqDataRequest(int nodeID,
-		IDType group, IDType id, const Kmer& seq)
+		IDType group, IDType id, const V& seq)
 {
 	queueMessage(nodeID,
 			new SeqDataRequest(seq, group, id), SM_IMMEDIATE);
@@ -46,8 +46,8 @@ void MessageBuffer::sendSeqDataRequest(int nodeID,
 
 // Send a sequence data response
 void MessageBuffer::sendSeqDataResponse(int nodeID,
-		IDType group, IDType id, const Kmer& seq,
-		ExtensionRecord extRec, int multiplicity)
+		IDType group, IDType id, const V& seq,
+		SymbolSetPair extRec, int multiplicity)
 {
 	queueMessage(nodeID,
 			new SeqDataResponse(seq, group, id, extRec, multiplicity),
@@ -56,7 +56,7 @@ void MessageBuffer::sendSeqDataResponse(int nodeID,
 
 // Send a set base message
 void MessageBuffer::sendSetBaseExtension(int nodeID,
-		const Kmer& seq, extDirection dir, uint8_t base)
+		const V& seq, extDirection dir, Symbol base)
 {
 	queueMessage(nodeID,
 			new SetBaseMessage(seq, dir, base), SM_BUFFERED);
