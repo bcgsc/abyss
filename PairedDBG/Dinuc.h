@@ -18,6 +18,9 @@ public:
 	/** A dinucleotide. A bit vector of four bits. */
 	typedef uint8_t Bits;
 
+	/** Default constructor. */
+	Dinuc() { }
+
 	/** Construct a Dinuc from two nucleotides. */
 	Dinuc(Nuc a, Nuc b) : m_data(a | (b << 2)) { }
 
