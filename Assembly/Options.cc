@@ -1,10 +1,10 @@
 /** Written by Shaun Jackman <sjackman@bcgsc.ca>. */
 
 #include "config.h"
-#include "Common/Kmer.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
 #include <algorithm>
+#include <cassert>
 #include <climits> // for INT_MAX
 #include <getopt.h>
 #include <iostream>
@@ -361,8 +361,6 @@ void parse(int argc, char* const* argv)
 	assert(bubbleLen == 0 || bubbleLen > kmerSize);
 	if (bubbleLen == 0)
 		snpPath.clear();
-
-	Kmer::setLength(singleKmerSize);
 
 	inFiles.resize(argc - optind);
 	copy(&argv[optind], &argv[argc], inFiles.begin());

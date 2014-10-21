@@ -89,6 +89,13 @@ int main(int argc, char** argv)
 	logger(0) << "Running on host " << hostname << endl;
 	MPI_Barrier(MPI_COMM_WORLD);
 
+#if PAIRED_DBG
+	Kmer::setLength(opt::singleKmerSize);
+	KmerPair::setLength(opt::kmerSize);
+#else
+	Kmer::setLength(opt::kmerSize);
+#endif
+
 	if (opt::rank == 0) {
 		NetworkSequenceCollection networkSeqs;
 		networkSeqs.runControl();
