@@ -52,13 +52,25 @@ void setName(const V& u, const VertexName& uname)
 	(void)inserted;
 }
 
+/** Return whether this vertex is contiguous and not palindromic. */
+bool contiguousOut(const Graph& g, const V& u)
+{
+	return contiguous_out(g, u) && !u.isPalindrome(SENSE);
+}
+
+/** Return whether this vertex is contiguous and not palindromic. */
+bool contiguousIn(const Graph& g, const V& u)
+{
+	return contiguous_in(g, u) && !u.isPalindrome(ANTISENSE);
+}
+
 /** Write out the specified contig. */
 void writeContig(std::ostream& out, const Graph& g, const V& u)
 {
 	unsigned n = 0;
 	unsigned c = 0;
 	V v;
-	for (v = u; contiguous_out(g, v); v = *adjacent_vertices(v, g).first) {
+	for (v = u; contiguousOut(g, v); v = *adjacent_vertices(v, g).first) {
 		++n;
 		c += get(vertex_coverage, g, v);
 	}
@@ -141,7 +153,7 @@ void writeGraph(std::ostream& out, const Graph& g)
 		V u = *uit;
 		if (get(vertex_removed, g, u))
 			continue;
-		if (!contiguous_in(g, u))
+		if (!contiguousIn(g, u))
 			writeContig(out, g, u);
 		// Skip the second occurence of the palindrome.
 		if (u.isPalindrome()) {
@@ -155,7 +167,7 @@ void writeGraph(std::ostream& out, const Graph& g)
 		V u = *uit;
 		if (get(vertex_removed, g, u))
 			continue;
-		if (!contiguous_out(g, u))
+		if (!contiguousOut(g, u))
 			writeEdges(out, g, u);
 		// Skip the second occurence of the palindrome.
 		if (u.isPalindrome()) {
