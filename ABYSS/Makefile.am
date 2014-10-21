@@ -16,4 +16,4 @@ ABYSS_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 endif
 
-ABYSS_SOURCES = Abyss.cpp
+ABYSS_SOURCES = abyss.cc
