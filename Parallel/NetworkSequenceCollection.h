@@ -3,7 +3,6 @@
 
 #include "CommLayer.h"
 #include "MessageBuffer.h"
-#include "Assembly/BranchRecord.h"
 #include "Assembly/BranchGroup.h"
 #include "Assembly/SequenceCollection.h"
 #include "Common/Timer.h"

@@ -1,5 +1,4 @@
 #include "Assembly/SequenceCollection.h"
-#include "Assembly/BranchRecord.h"
 #include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/DotWriter.h"
 #include <algorithm>

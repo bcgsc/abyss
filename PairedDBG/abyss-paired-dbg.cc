@@ -1,5 +1,4 @@
 #include "PairedDBG/SequenceCollection.h"
-#include "PairedDBG/BranchRecord.h"
 #include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/DotWriter.h"
 #include <algorithm>

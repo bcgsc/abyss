@@ -19,5 +19,6 @@ typedef unordered_map<KmerPair, KmerPairData, hash<KmerPair> >
 #endif
 
 #include "Assembly/DBG.h"
+#include "PairedDBG/BranchRecord.h"
 
 #endif

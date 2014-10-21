@@ -20,5 +20,6 @@ typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 #endif
 
 #include "Assembly/DBG.h"
+#include "Assembly/BranchRecord.h"
 
 #endif
