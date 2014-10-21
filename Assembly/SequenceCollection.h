@@ -14,7 +14,7 @@ typedef KmerData::SymbolSetPair ExtensionRecord;
 typedef google::sparse_hash_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #else
-# include "UnorderedMap.h"
+# include "Common/UnorderedMap.h"
 typedef unordered_map<Kmer, KmerData, hash<Kmer> >
 	SequenceDataHash;
 #endif
