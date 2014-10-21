@@ -1,4 +1,4 @@
-bin_PROGRAMS = ABYSS-P
+bin_PROGRAMS = ABYSS-P abyss-paired-dbg-mpi
 
 if HAVE_SQLITE
 libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
@@ -19,3 +19,9 @@ ABYSS_P_SOURCES = \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
 	Messages.cpp Messages.h
+
+abyss_paired_dbg_mpi_CPPFLAGS = $(ABYSS_P_CPPFLAGS) -DPAIRED_DBG
+
+abyss_paired_dbg_mpi_LDADD = $(ABYSS_P_LDADD)
+
+abyss_paired_dbg_mpi_SOURCES = $(ABYSS_P_SOURCES)

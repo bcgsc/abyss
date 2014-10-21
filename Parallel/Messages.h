@@ -1,7 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
-#include "Assembly/SequenceCollection.h"
+#include "SequenceCollection.h"
 #include <ostream>
 
 class NetworkSequenceCollection;

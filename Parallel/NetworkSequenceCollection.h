@@ -3,8 +3,8 @@
 
 #include "CommLayer.h"
 #include "MessageBuffer.h"
+#include "SequenceCollection.h"
 #include "Assembly/BranchGroup.h"
-#include "Assembly/SequenceCollection.h"
 #include "Common/Timer.h"
 #include "DataLayer/FastaWriter.h"
 #include <ostream>

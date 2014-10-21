@@ -23,6 +23,11 @@ using namespace std;
 
 static const char* FASTA_SUFFIX = ".fa";
 
+#if PAIRED_DBG
+// Define KmerPair::s_length
+# include "PairedDBG/KmerPair.cc"
+#endif
+
 static void mergeFastaFiles(const string& outputPath, const string& inputPathPrefix, bool generateNewIds = false)
 {
 	cout << "Concatenating fasta files to " << outputPath << endl;
