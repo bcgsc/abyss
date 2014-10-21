@@ -23,4 +23,4 @@ ABYSS_P_SOURCES = \
 	CommLayer.cpp CommLayer.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
-	Messages.cpp Messages.h 
+	Messages.cpp Messages.h
