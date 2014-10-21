@@ -153,9 +153,36 @@ void reverseComplement()
 	std::swap(m_a, m_b);
 }
 
+/** Print this k-mer pair. */
 friend std::ostream& operator<<(std::ostream& out, const KmerPair& x)
 {
 	return out << x.m_a.str() << '-' << x.m_b.str();
+}
+
+/** Return the number of bytes needed. */
+static unsigned serialSize()
+{
+	return sizeof(KmerPair);
+}
+
+/** Serialize this k-mer pair. */
+size_t serialize(void* dest) const
+{
+	memcpy(dest, this, sizeof *this);
+	return sizeof *this;
+}
+
+/** Unserialize this k-mer pair. */
+size_t unserialize(const void* src)
+{
+	memcpy(this, src, sizeof *this);
+	return sizeof *this;
+}
+
+/** Return a hash value that does not change with reverse complementation. */
+unsigned getCode() const
+{
+	return m_a.getCode() ^ m_b.getCode();
 }
 
 private:
