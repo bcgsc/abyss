@@ -84,6 +84,9 @@ int main(int argc, char** argv)
 	// reinitialize uncompress.
 	uncompress_init();
 
+#if PAIRED_DBG
+	opt::singleKmerSize = -1;
+#endif
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
 		cout << "Running on " << opt::numProc << " processors\n";

@@ -139,6 +139,9 @@ int main(int argc, char* const* argv)
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
+#if PAIRED_DBG
+	opt::singleKmerSize = -1;
+#endif
 	opt::parse(argc, argv);
 
 	bool krange = opt::kMin != opt::kMax;

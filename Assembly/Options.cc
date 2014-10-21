@@ -83,8 +83,12 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-/** The length of a single k-mer. */
-int singleKmerSize = -1;
+/** The length of a single k-mer.
+ * When singleKmerSize == 0, paired dBG is disabled [default].
+ * When singleKmerSize == -1, paired dBG is enabled and is an error.
+ * The caller of opt::parse should set singleKmerSize = -1 to enable paired dBG.
+ */
+int singleKmerSize = 0;
 
 /** The length of a k-mer pair, including the gap. */
 int kmerSize = -1;
@@ -324,7 +328,7 @@ void parse(int argc, char* const* argv)
 		}
 	}
 
-	if (singleKmerSize <= 0) {
+	if (singleKmerSize < 0) {
 		cerr << PROGRAM ": missing -K,--single-kmer option\n";
 		die = true;
 	}
