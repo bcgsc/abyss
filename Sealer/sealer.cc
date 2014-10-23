@@ -999,7 +999,8 @@ int main(int argc, char** argv)
 		opt::k = opt::kvector.at(i);
 		Kmer::setLength(opt::k);
 
-		BloomFilter bloom;
+		BloomFilter* bloom;
+		CascadingBloomFilter* cascadingBloom = NULL;
 
 		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
 
@@ -1010,10 +1011,12 @@ int main(int argc, char** argv)
 //				std::cerr << "Loading bloom filter from `"
 //					<< opt::bloomFilterPaths.at(i) << "'...\n";
 
+			bloom = new BloomFilter();
+
 			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
 			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
 			assert_good(inputBloom, inputPath);
-			inputBloom >> bloom;
+			inputBloom >> *bloom;
 			assert_good(inputBloom, inputPath);
 			inputBloom.close();
 		} else {
@@ -1021,18 +1024,19 @@ int main(int argc, char** argv)
 //			if (opt::verbose > 0)
 //				cerr << "Building bloom filter" << endl;
 			size_t bits = opt::bloomSize * 8 / 2;
-			bloom = BloomFilter(bits);
+			cascadingBloom = new CascadingBloomFilter(bits);
 #ifdef _OPENMP
-			ConcurrentBloomFilter<BloomFilter> cbf(bloom, 1000);
+			ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 			for (int i = optind; i < argc; i++)
 				Bloom::loadFile(cbf, opt::k, argv[i], 0 /*opt::verbose*/);
 #else
 			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(bloom, opt::k, argv[i], 0/* opt::verbose*/);
+				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0/* opt::verbose*/);
 #endif
+			bloom = &cascadingBloom->getBloomFilter(cascadingBloom->MAX_COUNT-1);
 		}
 
-		DBGBloom<BloomFilter> g(bloom);
+		DBGBloom<BloomFilter> g(*bloom);
 
 		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
 		printLog(logStream, temp);
@@ -1040,31 +1044,6 @@ int main(int argc, char** argv)
 //		if (opt::verbose > 0)
 //			cerr << "Starting K run with k = " << opt::k << endl;
 		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
-
-		if (opt::cascade == 1) {
-			printLog(logStream, "Building cascading bloom filter\n");
-//			if (opt::verbose > 0)
-//				cerr << "Building cascading bloom filter" << endl;
-			// Specify bloom filter size in bits.
-			size_t bits = opt::bloomSize * 8 / 2;
-			CascadingBloomFilter tempBloom(bits);
-#ifdef _OPENMP
-			ConcurrentBloomFilter<CascadingBloomFilter> cbf(tempBloom, 1000);
-			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(cbf, opt::k, string(argv[i]), 0/*opt::verbose*/);
-#else
-			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(tempBloom, opt::k, string(argv[i]), 0/*opt::verbose*/);
-#endif
-			bloom = tempBloom.getBloomFilter(tempBloom.MAX_COUNT-1);
-
-			DBGBloom<BloomFilter> g(bloom);
-
-			printLog(logStream, "Starting K run with cascading bloom filter\n");
-//			if (opt::verbose > 0)
-//				cerr << "Starting K run with cascading bloom filter" << endl;
-			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
-		}
 
 		temp = "k" + IntToString(opt::k) + " run complete\n"
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
