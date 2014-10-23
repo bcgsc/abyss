@@ -1,5 +1,5 @@
 /**
- * Connect pairs using a Bloom filter de Bruijn graph
+ * Close intra-scaffold gaps
  * Copyright 2014 Canada's Michael Smith Genome Science Centre
  */
 
@@ -19,8 +19,6 @@
 #include "Graph/DotIO.h"
 #include "Graph/Options.h"
 #include "Graph/GraphUtil.h"
-
-//#include "Uncompress.h"
 
 #include <cassert>
 #include <getopt.h>
@@ -70,9 +68,7 @@ static const char USAGE_MESSAGE[] =
 " Options:\n"
 "\n"
 "      --print-flanks		outputs flank files\n"
-"      --no-cascade		do not use cascading bloom filter [default]\n"
 "  -S, --input-scaffold=FILE  	load scaffold from FILE\n"
-"      --cascade			build cascading bloom filter\n"
 "  -L, --flank-length=N	      	length of flanks to be used as pseudoreads [100]\n"
 "  -D, --flank-distance=N     	distance of flank from gap [0]\n"
 "  -j, --threads=N            	use N parallel threads [1]\n"
@@ -208,9 +204,6 @@ namespace opt {
 	/** Max mismatches between consensus and flanks */
 	static unsigned maxFlankMismatches = NO_LIMIT;
 
-	/** Use cascading bloom filter in addition to plain bloom filter */
-	static int cascade = 0;
-
 	/** Output flanks files */
 	static int printFlanks = 0;
 
@@ -243,9 +236,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "detailed-stats",   no_argument, &opt::detailedStats, 1},
-	{ "cascade",          no_argument, &opt::cascade, 1 },
 	{ "print-flanks",     no_argument, &opt::printFlanks, 1},
-	{ "no-cascade",       no_argument, &opt::cascade, 0 },
 	{ "input-scaffold",   required_argument, NULL, 'S' },
 	{ "flank-length",     required_argument, NULL, 'L' },
 	{ "flank-distance",   required_argument, NULL, 'D' },
@@ -580,9 +571,6 @@ void kRun(const ConnectPairsParams& params,
 
 	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
 
-	//if (opt::verbose > 0)
-	//	cerr << "Reads inserted into k run = " << flanks.size() << endl;
-
 	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
 		success = false;
 		FastaRecord read1 = read1_it->first;
@@ -601,13 +589,12 @@ void kRun(const ConnectPairsParams& params,
 					= IntToString(endposition - startposition);
 				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]["seq"]
 					= tempSeq;
-//#pragma omp atomic				
+//#pragma omp atomic
 				gapsclosed++;
 //#pragma omp atomic
 				uniqueGapsClosed++;
 				if (gapsclosed % 100 == 0)
 					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
-//					cerr << gapsclosed << " gaps closed so far" << endl;
 			}
 		}
 		if (success) {
@@ -825,44 +812,6 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::bloomSize > 0);
-	/*
-	BloomFilterBase* bloom = NULL;
-
-	if (!opt::inputBloomPath.empty()) {
-
-		if (opt::verbose)
-			std::cerr << "Loading bloom filter from `"
-				<< opt::inputBloomPath << "'...\n";
-
-		const char* inputPath = opt::inputBloomPath.c_str();
-		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
-		assert_good(inputBloom, inputPath);
-		inputBloom >> bloom;
-		assert_good(inputBloom, inputPath);
-		inputBloom.close();
-
-	} else {
-		// Specify bloom filter size in bits.
-		size_t bits = opt::bloomSize * 8 / 2;
-		CascadingBloomFilter tempBloom(bits);
-#ifdef_OPENMP
-		ConcurrentBloomFilter<CascadingBloomfilter> cbf(tempBloom, 1000);
-		for(int i = optind; i < argc; i++)
-			Bloom::loadFile(cbf, opt::k, string(argv[i]), opt::verbose);
-#else
-		for (int i = optind; i < argc; i++)
-			Bloom::loadFile(tempBloom, opt::k, string(argv[i]), opt::verbose);
-#endif
-		bloom = tempBloom.getBloomfilter(tempBloom.MAX_COUNT-1);
-	}
-
-	//cout << *bloom;
-	//exit(EXIT_SUCCESS);
-
-	if (opt::verbose)
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< 100 * bloom->FPR() << "%\n";
-*/
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -883,8 +832,6 @@ int main(int argc, char** argv)
 		ConnectPairsResult::printHeaders(traceStream);
 		assert_good(traceStream, opt::tracefilePath);
 	}
-
-//	DBGBloom<BloomFilter> g(bloom);
 
 	string logOutputPath(opt::outputPrefix);
 	logOutputPath.append("_log.txt");
@@ -933,18 +880,9 @@ int main(int argc, char** argv)
 			findFlanks(record, opt::flankLength, gapsfound, flanks);
 		}
                	else {
-//			temp = IntToString(gapsfound) + " gaps found\n";
-//			printLog(logStream, temp);
-//			temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
-//			printLog(logStream, temp);
-//			if (opt::verbose > 0) {
-//				cerr << gapsfound << " gaps found" << endl;
-//				cerr << flanks.size() << " flanks extracted\n" << endl;
-//			}
 			break;
         	}
-	} // flanks map should now be filled with every flank found.
-	//unsigned initialFlankNumber = flanks.size();
+	}
 
 	temp = IntToString(gapsfound) + " gaps found\n";
 	printLog(logStream, temp);
@@ -989,8 +927,6 @@ int main(int argc, char** argv)
 		read2Stream.close();
 	}
 
-//	exit(EXIT_SUCCESS);
-
 	/** map for merged sequence resutls */
 	map<string, map<int, map<string, string> > > allmerged;
 	unsigned gapsclosed=0;
@@ -1007,10 +943,6 @@ int main(int argc, char** argv)
 			temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(i) + "'...\n";
 			printLog(logStream, temp);
 
-//			if (opt::verbose)
-//				std::cerr << "Loading bloom filter from `"
-//					<< opt::bloomFilterPaths.at(i) << "'...\n";
-
 			bloom = new BloomFilter();
 
 			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
@@ -1021,8 +953,7 @@ int main(int argc, char** argv)
 			inputBloom.close();
 		} else {
 			printLog(logStream, "Building bloom filter\n");
-//			if (opt::verbose > 0)
-//				cerr << "Building bloom filter" << endl;
+
 			size_t bits = opt::bloomSize * 8 / 2;
 			cascadingBloom = new CascadingBloomFilter(bits);
 #ifdef _OPENMP
@@ -1031,7 +962,7 @@ int main(int argc, char** argv)
 				Bloom::loadFile(cbf, opt::k, argv[i], 0 /*opt::verbose*/);
 #else
 			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0/* opt::verbose*/);
+				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0 /* opt::verbose*/);
 #endif
 			bloom = &cascadingBloom->getBloomFilter(cascadingBloom->MAX_COUNT-1);
 		}
@@ -1041,23 +972,14 @@ int main(int argc, char** argv)
 		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
 		printLog(logStream, temp);
 
-//		if (opt::verbose > 0)
-//			cerr << "Starting K run with k = " << opt::k << endl;
 		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
 
 		temp = "k" + IntToString(opt::k) + " run complete\n"
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
 		printLog(logStream, temp);
-//		if (opt::verbose > 0)
-//			cerr << "k" << opt::k << " run complete\n"
-//				<< "Total gaps closed so far = " << gapsclosed << "\n\n";
 	}
 
 	printLog(logStream, "K sweep complete\nCreating new scaffold with gaps closed...\n");
-//	if (opt::verbose > 0) {
-//		cerr << "K sweep complete" << endl;
-//		cerr << "Starting new scaffold creation..." << endl;
-//	}
 
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
 	map<int, map<string, string> >::reverse_iterator pos_it;
@@ -1078,67 +1000,9 @@ int main(int argc, char** argv)
 	printLog(logStream, "Gaps closed = " + IntToString(gapsclosed) + "\n");
 	logStream << (float)100 * gapsclosed / gapsfound << "%\n\n";
 	if (opt::verbose > 0) {
-//		cerr << "New scaffold complete" << endl;
-//		cerr << "Gaps closed = " << gapsclosed << endl;
 		cerr << (float)100 * gapsclosed / gapsfound << "%\n\n";
 	}
 
-//	if (opt::verbose > 0) {
-//		cerr <<
-//		//	"Processed " << initialFlankNumber << " pseudoreads\n"
-//			"Merged (Unique path + Multiple paths): "
-//				<< g_count.uniquePath + g_count.multiplePaths
-//				<< /*" (" << setprecision(3) <<  (float)100
-//				    * (g_count.uniquePath + g_count.multiplePaths) /
-//				   initialFlankNumber
-//				<< "%)*/"\n"
-//			"No start/goal kmer: " << g_count.noStartOrGoalKmer
-//				<< /*" (" << setprecision(3) << (float)100
-//					* g_count.noStartOrGoalKmer / initialFlankNumber
-//				<< "%)*/"\n"
-//			"No path: " << g_count.noPath
-//				<< /*" (" << setprecision(3) << (float)100
-//					* g_count.noPath / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Unique path: " << g_count.uniquePath
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.uniquePath / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Multiple paths: " << g_count.multiplePaths
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.multiplePaths / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Too many paths: " << g_count.tooManyPaths
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.tooManyPaths / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Too many branches: " << g_count.tooManyBranches
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.tooManyBranches / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Too many path/path mismatches: " << g_count.tooManyMismatches
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.tooManyMismatches / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Too many path/read mismatches: " << g_count.tooManyReadMismatches
-//				<< /*" (" << setprecision(3) << (float)100
-//					* g_count.tooManyReadMismatches / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Contains cycle: " << g_count.containsCycle
-//				<< /*" (" << setprecision(3) << (float)100
-//					* g_count.containsCycle / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Exceeded mem limit: " << g_count.exceededMemLimit
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.exceededMemLimit / initialFlankNumber
-//				<< "%)*/"\n"
-//			"Skipped: " << g_count.skipped
-//				<</* " (" << setprecision(3) << (float)100
-//					* g_count.skipped / initialFlankNumber
-//				<< "%)*/"\n"
-//		/*	"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
-//				<< "%\n"*/;
-//	}
 	assert_good(scaffoldStream, scaffoldOutputPath.c_str());
 	scaffoldStream.close();
 	assert_good(mergedStream, mergedOutputPath.c_str());
@@ -1155,8 +1019,6 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 		traceStream.close();
 	}
-
-//	delete bloom;
 
 	return 0;
 }
