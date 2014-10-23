@@ -491,7 +491,7 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 	map<int, map<string, string> >::reverse_iterator pos_it;
 
 	scaf_it = allmerged.find(record.id);
-	scaffoldStream << ">" << record.id << endl;
+	scaffoldStream << ">" << record.id << " " << record.comment << endl;
 	string modifiedSeq = record.seq;
 	if (scaf_it != allmerged.end()) {
 		for (pos_it = allmerged[record.id].rbegin();
