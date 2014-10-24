@@ -1,14 +1,10 @@
-#ifndef ASSEMBLYALGORITHMS_H
-#define ASSEMBLYALGORITHMS_H 1
+#ifndef ASSEMBLY_ASSEMBLYALGORITHMS_H
+#define ASSEMBLY_ASSEMBLYALGORITHMS_H 1
 
+#include "Assembly/BranchGroup.h"
 #include "Assembly/Options.h"
-#include "BranchGroup.h"
-#include "BranchRecord.h"
-#include "FastaWriter.h"
-#include "SequenceCollection.h"
 #include "Common/Log.h"
 #include "Common/Timer.h"
-#include <ostream>
 #include <vector>
 #include <string>
 #if _SQL
@@ -34,135 +30,47 @@ extern InsOrderedMap<std::string,int> tempStatMap;
 extern void addToDb(const std::string&, const int&);
 #endif
 
-// Read a sequence file and load them into the collection
 static inline
-void loadSequences(ISequenceCollection* seqCollection,
-		std::string inFile);
+bool extendBranch(BranchRecord& branch,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor& kmer,
+		SequenceCollectionHash::SymbolSet ext);
 
-/** Generate the adjacency information for all the sequences in the
- * collection. This is required before any other algorithm can run.
- */
-static inline
-size_t generateAdjacency(ISequenceCollection* seqCollection);
-
-static inline
-Histogram coverageHistogram(const ISequenceCollection& c);
-
-static inline
-void setCoverageParameters(const Histogram& h);
-
-/* Erosion. Remove k-mer from the ends of blunt contigs. */
-static inline
-size_t erodeEnds(ISequenceCollection* seqCollection);
-
-static inline
-size_t erode(ISequenceCollection* c,
-		const ISequenceCollection::value_type& seq);
-
-static inline
-size_t getNumEroded();
-
-static inline
-size_t removeMarked(ISequenceCollection* pSC);
-
-// Check whether a sequence can be trimmed
-static inline
-SeqContiguity checkSeqContiguity(
-		const ISequenceCollection::value_type& seq,
-		extDirection& outDir, bool considerMarks = false);
-
-// process a terminated branch for trimming
-static inline
-bool processTerminatedBranchTrim(
-		ISequenceCollection* seqCollection, BranchRecord& branch);
-
-static inline
-bool extendBranch(BranchRecord& branch, Kmer& kmer, SeqExt ext);
-
-// Process the extensions of the current sequence for trimming
-static inline
-bool processLinearExtensionForBranch(BranchRecord& branch,
-		Kmer& currSeq, ExtensionRecord extensions, int multiplicity,
+static inline bool
+processLinearExtensionForBranch(BranchRecord& branch,
+		graph_traits<SequenceCollectionHash>::vertex_descriptor& currSeq,
+		SequenceCollectionHash::SymbolSetPair extensions,
+		int multiplicity,
 		unsigned maxLength, bool addKmer = true);
 
-/** Populate the branch group with the initial extensions to this
- * sequence. */
-static inline
-void initiateBranchGroup(BranchGroup& group, const Kmer& seq,
-		const SeqExt& extension);
+static inline void
+initiateBranchGroup(BranchGroup& group,
+		const graph_traits<SequenceCollectionHash>::vertex_descriptor& seq,
+		const SequenceCollectionHash::SymbolSet& extension);
 
-// process an a branch group extension
-static inline
-bool processBranchGroupExtension(BranchGroup& group,
-		size_t branchIndex, const Kmer& seq,
-		ExtensionRecord extensions, int multiplicity,
-		unsigned maxLength);
-
-static inline
-void openBubbleFile(std::ofstream& out);
-
-static inline
-void writeBubble(std::ostream& out, const BranchGroup& group,
-		unsigned id);
-
-static inline
-void collapseJoinedBranches(
-		ISequenceCollection* seqCollection, BranchGroup& group);
-
-/* Split the remaining ambiguous nodes to allow for a non-redundant
- * assembly. Remove extensions to/from ambiguous sequences to avoid
- * generating redundant/wrong contigs.
- */
-static inline
-size_t markAmbiguous(ISequenceCollection* seqCollection);
-
-static inline
-size_t splitAmbiguous(ISequenceCollection* seqCollection);
-
-static inline
-size_t assembleContig(ISequenceCollection* seqCollection,
-		FastaWriter* writer, BranchRecord& branch, unsigned id);
-
-static inline
-void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
-		const ISequenceCollection::value_type& seq);
-
-static inline
-void removeExtensionsToSequence(ISequenceCollection* seqCollection,
-		const ISequenceCollection::value_type& seq, extDirection dir);
-
-static inline
-void generateSequencesFromExtension(const Kmer& currSeq,
-		extDirection dir, SeqExt extension,
-		std::vector<Kmer>& outseqs);
-
-/* Non-distributed graph algorithms. */
-
-static inline
-void performTrim(SequenceCollectionHash* seqCollection);
-
-static inline
-size_t popBubbles(SequenceCollectionHash* pSC, std::ostream& out);
-
-static inline
-size_t assemble(SequenceCollectionHash* seqCollection,
-		FastaWriter* fileWriter = NULL);
+template <typename Graph>
+void removeSequenceAndExtensions(Graph* seqCollection,
+		const typename Graph::value_type& seq);
 
 /** Return the kmer which are adjacent to this kmer. */
-static inline
-void generateSequencesFromExtension(const Kmer& currSeq,
-		extDirection dir, SeqExt extension, std::vector<Kmer>& outseqs)
+template <typename V, typename SymbolSet>
+void generateSequencesFromExtension(
+		const V& currSeq,
+		extDirection dir,
+		SymbolSet extension,
+		std::vector<V>& outseqs)
 {
-	std::vector<Kmer> extensions;
-	Kmer extSeq(currSeq);
+	typedef typename SymbolSet::Symbol Symbol;
+
+	std::vector<V> extensions;
+	V extSeq(currSeq);
 	extSeq.shift(dir);
 
 	// Check for the existance of the 4 possible extensions
-	for (unsigned i = 0; i < NUM_BASES; i++) {
+	for (unsigned i = 0; i < SymbolSet::NUM; ++i) {
 		// Does this sequence have an extension?
-		if(extension.checkBase(i))
-		{
-			extSeq.setLastBase(dir, i);
+		Symbol x(i);
+		if (extension.checkBase(x)) {
+			extSeq.setLastBase(dir, x);
 			outseqs.push_back(extSeq);
 		}
 	}
@@ -174,8 +82,8 @@ void generateSequencesFromExtension(const Kmer& currSeq,
  */
 static inline
 SeqContiguity checkSeqContiguity(
-		const ISequenceCollection::value_type& seq,
-		extDirection& outDir, bool considerMarks)
+		const SequenceCollectionHash::value_type& seq,
+		extDirection& outDir, bool considerMarks = false)
 {
 	assert(!seq.second.deleted());
 	bool child = seq.second.hasExtension(SENSE)
@@ -207,13 +115,14 @@ SeqContiguity checkSeqContiguity(
 /** Remove all marked k-mer.
  * @return the number of removed k-mer
  */
-static inline
-size_t removeMarked(ISequenceCollection* pSC)
+template <typename Graph>
+size_t removeMarked(Graph* pSC)
 {
+	typedef typename Graph::iterator iterator;
+
 	Timer timer(__func__);
 	size_t count = 0;
-	for (ISequenceCollection::iterator it = pSC->begin();
-			it != pSC->end(); ++it) {
+	for (iterator it = pSC->begin(); it != pSC->end(); ++it) {
 		if (it->second.deleted())
 			continue;
 		if (it->second.marked()) {

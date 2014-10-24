@@ -1,8 +1,7 @@
 #ifndef BRANCHGROUP_H
 #define BRANCHGROUP_H 1
 
-#include "BranchRecord.h"
-#include "SequenceCollection.h"
+#include "Common/Algorithms.h"
 #include <algorithm> // for swap
 #include <map>
 #include <utility>
@@ -30,7 +29,7 @@ class BranchGroup
 			{ }
 
 		BranchGroup(extDirection dir, size_t maxNumBranches,
-				const Kmer &origin)
+				const BranchRecord::V &origin)
 			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE)
@@ -39,7 +38,7 @@ class BranchGroup
 		}
 
 		BranchGroup(extDirection dir, size_t maxNumBranches,
-				const Kmer &origin, const BranchRecord& branch)
+				const BranchRecord::V &origin, const BranchRecord& branch)
 			: m_dir(dir), m_origin(origin),
 			m_maxNumBranches(maxNumBranches), m_noExt(false),
 			m_status(BGS_ACTIVE)
@@ -68,11 +67,11 @@ class BranchGroup
 		/** Add a branch to this group and extend the new branch with
 		 * the given k-mer. */
 		void addBranch(const BranchRecord& branch,
-				const Kmer& kmer)
+				const BranchRecord::V& kmer)
 		{
 			if (m_branches.size() < m_maxNumBranches)
 				addBranch(branch).push_back(
-						std::make_pair(kmer, KmerData()));
+						std::make_pair(kmer, BranchRecord::VP()));
 			else
 				m_status = BGS_TOOMANYBRANCHES;
 		}
@@ -88,7 +87,7 @@ class BranchGroup
 
 		/** Return whether a branch contains the specified k-mer at
 		 * the index i. */
-		bool exists(unsigned i, const Kmer& kmer) const
+		bool exists(unsigned i, const BranchRecord::V& kmer) const
 		{
 			for (BranchGroupData::const_iterator it
 					= m_branches.begin();
@@ -98,20 +97,14 @@ class BranchGroup
 			return false;
 		}
 
-		BranchGroupStatus updateStatus(unsigned maxLength);
-
 		// return the current status of the branch
 		BranchGroupStatus getStatus() const { return m_status; }
 
 		// set the no extension flag
 		void setNoExtension() { m_noExt = true; }
 
-		bool isActive() const;
-
 		// is the no extension flag set?
 		bool isNoExt() const { return m_noExt; }
-
-		bool isExtendable();
 
 		// return the direction of growth
 		extDirection getDirection() const { return m_dir; }
@@ -121,14 +114,96 @@ class BranchGroup
 		const_iterator begin() const { return m_branches.begin(); }
 		const_iterator end() const { return m_branches.end(); }
 
-		bool isAmbiguous(const SequenceCollectionHash& c) const;
+// Check the stop conditions for the bubble growth
+BranchGroupStatus
+updateStatus(unsigned maxLength)
+{
+	assert(m_branches.size() <= m_maxNumBranches);
+
+	if (m_status != BGS_ACTIVE)
+		return m_status;
+
+	// Check if the no extension flag is set
+	if(m_noExt)
+	{
+		m_status = BGS_NOEXT;
+		return m_status;
+	}
+
+	// Check if any branches are too long or any sequence has a loop
+	for (BranchGroupData::const_iterator iter = m_branches.begin();
+			iter != m_branches.end(); ++iter) {
+		if (iter->isTooLong(maxLength)) {
+			m_status = BGS_TOOLONG;
+			return m_status;
+		}
+	}
+
+	BranchGroupData::const_iterator it = m_branches.begin();
+	const BranchRecord::V& lastSeq = it->back().first;
+	while (++it != m_branches.end())
+		if (it->back().first != lastSeq)
+			return m_status = BGS_ACTIVE;
+
+	// All the branches of the bubble have joined.
+	// Remove the last base, which is identical for every branch.
+	std::for_each(m_branches.begin(), m_branches.end(),
+			std::mem_fun_ref(&BranchRecord::pop_back));
+
+	// Sort the branches by coverage.
+	sort_by_transform(m_branches.begin(), m_branches.end(),
+			std::mem_fun_ref(&BranchRecord::calculateBranchMultiplicity));
+	reverse(m_branches.begin(), m_branches.end());
+
+	return m_status = BGS_JOINED;
+}
+
+/** Return whether any branches of this group are active. */
+bool
+isActive() const
+{
+	for (BranchGroupData::const_iterator it = m_branches.begin();
+			it != m_branches.end(); ++it)
+		if (it->isActive())
+			return true;
+	return false;
+}
+
+/** Return whether this branch is extendable. */
+bool
+isExtendable()
+{
+	if (m_noExt)
+		return false;
+
+	// A group is extendable when all the branches are the same
+	// length. All the branches are lockstepped for growth.
+	BranchGroupData::iterator it = m_branches.begin();
+	unsigned length = it++->size();
+	for (; it != m_branches.end(); ++it)
+		if (it->size() != length)
+			return false;
+	return true;
+}
+
+/** Return whether this branch is ambiguous at its origin. Also
+ * returns false if the origin of the branch has since been deleted.
+ */
+bool
+isAmbiguous(const SequenceCollectionHash& g) const
+{
+	// Get fresh data from the collection to check that this bubble
+	// does in fact still exist.
+	const BranchRecord::VP& data = g.getSeqAndData(m_origin).second;
+	return data.deleted() ? false : data.isAmbiguous(m_dir);
+}
 
 	private:
 		BranchGroup& operator =(const BranchGroup& o);
 
 		BranchGroupData m_branches;
 		extDirection m_dir;
- 		Kmer m_origin;
+		BranchRecord::V m_origin;
 		size_t m_maxNumBranches;
 		bool m_noExt;
 		BranchGroupStatus m_status;

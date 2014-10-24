@@ -123,6 +123,62 @@ Konnector_konnector_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += PairedDBG_LoadAlgorithm
+check_PROGRAMS += PairedDBG_LoadAlgorithm
+PairedDBG_LoadAlgorithm_SOURCES = \
+	PairedDBG/LoadAlgorithmTest.cpp
+PairedDBG_LoadAlgorithm_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_LoadAlgorithm_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_LoadAlgorithm_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += PairedDBG_KmerPair
+check_PROGRAMS += PairedDBG_KmerPair
+PairedDBG_KmerPair_SOURCES = \
+	PairedDBG/KmerPairTest.cc
+PairedDBG_KmerPair_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_KmerPair_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_KmerPair_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += PairedDBG_Dinuc
+check_PROGRAMS += PairedDBG_Dinuc
+PairedDBG_Dinuc_SOURCES = \
+	PairedDBG/DinucTest.cc
+PairedDBG_Dinuc_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_Dinuc_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_Dinuc_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
+UNIT_TESTS += PairedDBG_BranchRecord
+check_PROGRAMS += PairedDBG_BranchRecord
+PairedDBG_BranchRecord_SOURCES = \
+	PairedDBG/BranchRecordTest.cpp
+PairedDBG_BranchRecord_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+PairedDBG_BranchRecord_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_BranchRecord_LDADD = \
+	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 ##Tests for log kmer counting / Counting bloom filter
 
 TESTS = $(UNIT_TESTS)

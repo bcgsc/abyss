@@ -1,29 +1,27 @@
-bin_PROGRAMS = ABYSS-P
-
-ABYSS_P_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Assembly \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer
+bin_PROGRAMS = ABYSS-P abyss-paired-dbg-mpi
 
 if HAVE_SQLITE
-ABYSS_P_LDADD = \
-	$(top_builddir)/DataBase/libdb.a \
-	$(SQLITE_LIBS) \
-	$(top_builddir)/Assembly/libassembly.a \
-	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(MPI_LIBS)
-else
-ABYSS_P_LDADD = \
-	$(top_builddir)/Assembly/libassembly.a \
-	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(MPI_LIBS)
+libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
 endif
+
+ABYSS_P_CPPFLAGS = -I$(top_srcdir)
+
+ABYSS_P_LDADD = \
+	$(top_builddir)/Assembly/libassembly.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(libdb) \
+	$(MPI_LIBS)
 
 ABYSS_P_SOURCES = \
 	parallelAbyss.cpp \
 	CommLayer.cpp CommLayer.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
-	Messages.cpp Messages.h 
+	Messages.cpp Messages.h
+
+abyss_paired_dbg_mpi_CPPFLAGS = $(ABYSS_P_CPPFLAGS) -DPAIRED_DBG
+
+abyss_paired_dbg_mpi_LDADD = $(ABYSS_P_LDADD)
+
+abyss_paired_dbg_mpi_SOURCES = $(ABYSS_P_SOURCES)

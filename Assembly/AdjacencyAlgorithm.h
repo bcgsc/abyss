@@ -5,14 +5,18 @@ namespace AssemblyAlgorithms {
 
 /** Generate the adjacency information for each sequence in the
  * collection. */
-static inline
-size_t generateAdjacency(ISequenceCollection* seqCollection)
+template <typename Graph>
+size_t generateAdjacency(Graph* seqCollection)
 {
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename Graph::Symbol Symbol;
+	typedef typename Graph::SymbolSet SymbolSet;
+
 	Timer timer("GenerateAdjacency");
 
 	size_t count = 0;
 	size_t numBasesSet = 0;
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (typename Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -21,10 +25,10 @@ size_t generateAdjacency(ISequenceCollection* seqCollection)
 			logger(1) << "Finding adjacent k-mer: " << count << '\n';
 
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
-			Kmer testSeq(iter->first);
-			uint8_t adjBase = testSeq.shift(dir);
-			for (unsigned i = 0; i < NUM_BASES; i++) {
-				testSeq.setLastBase(dir, i);
+			V testSeq(iter->first);
+			Symbol adjBase = testSeq.shift(dir);
+			for (unsigned i = 0; i < SymbolSet::NUM; ++i) {
+				testSeq.setLastBase(dir, Symbol(i));
 				if (seqCollection->setBaseExtension(
 							testSeq, !dir, adjBase))
 					numBasesSet++;

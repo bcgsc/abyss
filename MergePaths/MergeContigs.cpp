@@ -619,6 +619,9 @@ int main(int argc, char** argv)
 						isACGT));
 	}
 
+	if (!opt::graphPath.empty())
+		outputGraph(g, pathIDs, paths, commandLine);
+
 	if (npaths == 0)
 		return 0;
 
@@ -633,9 +636,6 @@ int main(int argc, char** argv)
 		if (seen[i])
 			minCovUsed = min(minCovUsed, cov);
 	}
-
-	if (!opt::graphPath.empty())
-		outputGraph(g, pathIDs, paths, commandLine);
 
 	cerr << "The minimum coverage of single-end contigs is "
 		<< minCov << ".\n"

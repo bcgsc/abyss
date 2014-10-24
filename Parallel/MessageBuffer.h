@@ -20,6 +20,12 @@ enum SendMode
 class MessageBuffer : public CommLayer
 {
 	public:
+		typedef SequenceCollectionHash Graph;
+		typedef graph_traits<Graph>::vertex_descriptor V;
+		typedef Graph::Symbol Symbol;
+		typedef Graph::SymbolSet SymbolSet;
+		typedef Graph::SymbolSetPair SymbolSetPair;
+
 		MessageBuffer();
 
 		void sendCheckPointMessage(int argument = 0)
@@ -42,19 +48,19 @@ class MessageBuffer : public CommLayer
 					command, argument);
 		}
 
-		void sendSeqAddMessage(int nodeID, const Kmer& seq);
-		void sendSeqRemoveMessage(int nodeID, const Kmer& seq);
+		void sendSeqAddMessage(int nodeID, const V& seq);
+		void sendSeqRemoveMessage(int nodeID, const V& seq);
 		void sendSetFlagMessage(int nodeID,
-				const Kmer& seq, SeqFlag flag);
+				const V& seq, SeqFlag flag);
 		void sendRemoveExtension(int nodeID,
-				const Kmer& seq, extDirection dir, SeqExt ext);
+				const V& seq, extDirection dir, SymbolSet ext);
 		void sendSeqDataRequest(int nodeID,
-				IDType group, IDType id, const Kmer& seq);
+				IDType group, IDType id, const V& seq);
 		void sendSeqDataResponse(int nodeID,
-				IDType group, IDType id, const Kmer& seq,
-				ExtensionRecord extRec, int multiplicity);
+				IDType group, IDType id, const V& seq,
+				SymbolSetPair extRec, int multiplicity);
 		void sendSetBaseExtension(int nodeID,
-				const Kmer& seq, extDirection dir, uint8_t base);
+				const V& seq, extDirection dir, Symbol base);
 
 		void flush();
 		void queueMessage

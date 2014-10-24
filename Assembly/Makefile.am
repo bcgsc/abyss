@@ -1,25 +1,24 @@
 noinst_LIBRARIES = libassembly.a
 
-libassembly_a_CPPFLAGS = -I$(top_srcdir) \
-	-I$(top_srcdir)/Common \
-	-I$(top_srcdir)/DataLayer
+libassembly_a_CPPFLAGS = -I$(top_srcdir)
 
 libassembly_a_SOURCES = \
 	AssemblyAlgorithms.cc AssemblyAlgorithms.h \
-	BranchGroup.cc BranchGroup.h \
-	BranchRecord.cc BranchRecord.h \
-	DotWriter.cc DotWriter.h \
-	ISequenceCollection.h \
-	KmerData.h \
+	BranchGroup.h \
+	BranchRecord.h \
+	BranchRecordBase.h \
+	DBG.h \
+	DotWriter.h \
 	Options.cc Options.h \
-	SequenceCollection.cc SequenceCollection.h \
+	SequenceCollection.h \
+	VertexData.h \
 	AdjacencyAlgorithm.h \
 	AssembleAlgorithm.h \
 	BubbleAlgorithm.h \
 	CoverageAlgorithm.h \
 	ErodeAlgorithm.h \
 	LoadAlgorithm.h \
-	SeqExt.cc SeqExt.h \
+	SeqExt.h \
 	SplitAlgorithm.h \
 	TrimAlgorithm.h
 

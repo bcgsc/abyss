@@ -48,7 +48,10 @@ unsigned Kmer::getCode() const
 	/* At k=19, this hash function always returns an even number due
 	 * to the sequence and its reverse complement overlapping when the
 	 * xor is calculated. A more general solution is needed. */
-	const unsigned NUM_BYTES = s_length < 20 ? s_length/8 : 4;
+	const unsigned NUM_BYTES
+		= s_length < 8 ? 1
+		: s_length < 20 ? s_length/8
+		: 4;
 	Kmer rc = *this;
 	rc.reverseComplement();
 

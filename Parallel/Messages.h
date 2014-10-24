@@ -1,8 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H 1
 
-#include "Kmer.h"
-#include "KmerData.h"
+#include "SequenceCollection.h"
 #include <ostream>
 
 class NetworkSequenceCollection;
@@ -32,8 +31,14 @@ typedef uint32_t IDType;
 class Message
 {
 	public:
+		typedef SequenceCollectionHash Graph;
+		typedef graph_traits<Graph>::vertex_descriptor V;
+		typedef Graph::Symbol Symbol;
+		typedef Graph::SymbolSet SymbolSet;
+		typedef Graph::SymbolSetPair SymbolSetPair;
+
 		Message() { }
-		Message(const Kmer& seq) : m_seq(seq) { }
+		Message(const V& seq) : m_seq(seq) { }
 		virtual ~Message() { }
 
 		virtual void handle(
@@ -42,7 +47,7 @@ class Message
 		virtual size_t getNetworkSize() const
 		{
 			return sizeof (uint8_t) // MessageType
-				+ Kmer::serialSize();
+				+ V::serialSize();
 		}
 
 		static MessageType readMessageType(char* buffer);
@@ -55,15 +60,15 @@ class Message
 			return out << message.m_seq.str() << '\n';
 		}
 
-		Kmer m_seq;
+		V m_seq;
 };
 
-/** Add a Kmer. */
+/** Add a vertex. */
 class SeqAddMessage : public Message
 {
 	public:
 		SeqAddMessage() { }
-		SeqAddMessage(const Kmer& seq) : Message(seq) { }
+		SeqAddMessage(const V& seq) : Message(seq) { }
 
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
@@ -71,12 +76,12 @@ class SeqAddMessage : public Message
 		static const MessageType TYPE = MT_ADD;
 };
 
-/** Remove a Kmer. */
+/** Remove a vertex. */
 class SeqRemoveMessage : public Message
 {
 	public:
 		SeqRemoveMessage() { }
-		SeqRemoveMessage(const Kmer& seq) : Message(seq) { }
+		SeqRemoveMessage(const V& seq) : Message(seq) { }
 
 		void handle(int senderID, NetworkSequenceCollection& handler);
 		size_t serialize(char* buffer);
@@ -89,7 +94,7 @@ class SetFlagMessage : public Message
 {
 	public:
 		SetFlagMessage() { }
-		SetFlagMessage(const Kmer& seq, SeqFlag flag)
+		SetFlagMessage(const V& seq, SeqFlag flag)
 			: Message(seq), m_flag(flag) { }
 
 		size_t getNetworkSize() const
@@ -110,8 +115,8 @@ class RemoveExtensionMessage : public Message
 {
 	public:
 		RemoveExtensionMessage() { }
-		RemoveExtensionMessage(const Kmer& seq,
-				extDirection dir, SeqExt ext)
+		RemoveExtensionMessage(const V& seq,
+				extDirection dir, SymbolSet ext)
 			: Message(seq), m_dir(dir), m_ext(ext) { }
 
 		size_t getNetworkSize() const
@@ -126,7 +131,7 @@ class RemoveExtensionMessage : public Message
 
 		static const MessageType TYPE = MT_REMOVE_EXT;
 		uint8_t m_dir; // extDirection
-		SeqExt m_ext;
+		SymbolSet m_ext;
 };
 
 /** Request vertex properties. */
@@ -134,7 +139,7 @@ class SeqDataRequest : public Message
 {
 	public:
 		SeqDataRequest() { }
-		SeqDataRequest(const Kmer& seq, IDType group, IDType id)
+		SeqDataRequest(const V& seq, IDType group, IDType id)
 			: Message(seq), m_group(group), m_id(id) { }
 
 		size_t getNetworkSize() const
@@ -157,8 +162,8 @@ class SeqDataResponse : public Message
 {
 	public:
 		SeqDataResponse() { }
-		SeqDataResponse(const Kmer& seq, IDType group, IDType id,
-				ExtensionRecord& extRecord, int multiplicity) :
+		SeqDataResponse(const V& seq, IDType group, IDType id,
+				SymbolSetPair& extRecord, int multiplicity) :
 			Message(seq), m_group(group), m_id(id),
 			m_extRecord(extRecord), m_multiplicity(multiplicity) { }
 
@@ -176,7 +181,7 @@ class SeqDataResponse : public Message
 		static const MessageType TYPE = MT_SEQ_DATA_RESPONSE;
 		IDType m_group;
 		IDType m_id;
-		ExtensionRecord m_extRecord;
+		SymbolSetPair m_extRecord;
 		uint16_t m_multiplicity;
 };
 
@@ -185,8 +190,8 @@ class SetBaseMessage : public Message
 {
 	public:
 		SetBaseMessage() { }
-		SetBaseMessage(const Kmer& seq,
-				extDirection dir, uint8_t base)
+		SetBaseMessage(const V& seq,
+				extDirection dir, Symbol base)
 			: Message(seq), m_dir(dir), m_base(base) { }
 
 		size_t getNetworkSize() const
@@ -201,7 +206,7 @@ class SetBaseMessage : public Message
 
 		static const MessageType TYPE = MT_SET_BASE;
 		uint8_t m_dir; // extDirection
-		uint8_t m_base;
+		Symbol m_base;
 };
 
 #endif

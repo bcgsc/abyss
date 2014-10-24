@@ -2,15 +2,20 @@
 #define ASSEMBLY_COVERAGEALGORITHM_H 1
 
 #include "Common/Histogram.h"
+#include "Common/IOUtil.h"
+#include "Common/Options.h" // for opt::rank
+#include <fstream>
 
 namespace AssemblyAlgorithms {
 
 /** Return the k-mer coverage histogram. */
 static inline
-Histogram coverageHistogram(const ISequenceCollection& c)
+Histogram coverageHistogram(const SequenceCollectionHash& c)
 {
+	typedef SequenceCollectionHash Graph;
+
 	Histogram h;
-	for (ISequenceCollection::const_iterator it = c.begin();
+	for (Graph::const_iterator it = c.begin();
 			it != c.end(); ++it) {
 		if (it->second.deleted())
 			continue;

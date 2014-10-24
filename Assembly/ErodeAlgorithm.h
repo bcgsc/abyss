@@ -6,13 +6,17 @@ namespace AssemblyAlgorithms {
 /** The number of k-mer that have been eroded. */
 extern size_t g_numEroded;
 
+template <typename Graph>
+void removeExtensionsToSequence(Graph* seqCollection,
+		const typename Graph::value_type& seq, extDirection dir);
+
 /**
  * Remove a k-mer and update the extension records of the k-mer that
  * extend to it.
  */
-static inline
-void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
-		const ISequenceCollection::value_type& seq)
+template <typename Graph>
+void removeSequenceAndExtensions(Graph* seqCollection,
+		const typename Graph::value_type& seq)
 {
 	// This removes the reverse complement as well
 	seqCollection->remove(seq.first);
@@ -21,16 +25,21 @@ void removeSequenceAndExtensions(ISequenceCollection* seqCollection,
 }
 
 /** Remove all the extensions to this sequence. */
-static inline
-void removeExtensionsToSequence(ISequenceCollection* seqCollection,
-		const ISequenceCollection::value_type& seq, extDirection dir)
+template <typename Graph>
+void removeExtensionsToSequence(Graph* seqCollection,
+		const typename Graph::value_type& seq, extDirection dir)
 {
-	SeqExt extension(seq.second.getExtension(dir));
-	Kmer testSeq(seq.first);
-	uint8_t extBase = testSeq.shift(dir);
-	for (unsigned i = 0; i < NUM_BASES; i++) {
-		if (extension.checkBase(i)) {
-			testSeq.setLastBase(dir, i);
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename Graph::Symbol Symbol;
+	typedef typename Graph::SymbolSet SymbolSet;
+
+	SymbolSet extension(seq.second.getExtension(dir));
+	V testSeq(seq.first);
+	Symbol extBase = testSeq.shift(dir);
+	for (unsigned i = 0; i < extension.NUM; ++i) {
+		Symbol x(i);
+		if (extension.checkBase(x)) {
+			testSeq.setLastBase(dir, x);
 			seqCollection->removeExtension(testSeq, !dir, extBase);
 		}
 	}
@@ -52,10 +61,11 @@ size_t getNumEroded()
 /** Consider the specified k-mer for erosion.
  * @return the number of k-mer eroded, zero or one
  */
-static inline
-size_t erode(ISequenceCollection* c,
-		const ISequenceCollection::value_type& seq)
+template <typename Graph>
+size_t erode(Graph* c, const typename Graph::value_type& seq)
 {
+	typedef typename vertex_bundle_type<Graph>::type VP;
+
 	if (seq.second.deleted())
 		return 0;
 	extDirection dir;
@@ -63,7 +73,7 @@ size_t erode(ISequenceCollection* c,
 	if (contiguity == SC_CONTIGUOUS)
 		return 0;
 
-	const KmerData& data = seq.second;
+	const VP& data = seq.second;
 	if (data.getMultiplicity() < opt::erode
 			|| data.getMultiplicity(SENSE) < opt::erodeStrand
 			|| data.getMultiplicity(ANTISENSE) < opt::erodeStrand) {
@@ -76,8 +86,8 @@ size_t erode(ISequenceCollection* c,
 
 /** The given sequence has changed. */
 static inline
-void erosionObserver(ISequenceCollection* c,
-		const ISequenceCollection::value_type& seq)
+void erosionObserver(SequenceCollectionHash* c,
+		const SequenceCollectionHash::value_type& seq)
 {
 	erode(c, seq);
 }
@@ -85,14 +95,16 @@ void erosionObserver(ISequenceCollection* c,
 //
 // Erode data off the ends of the graph, one by one
 //
-static inline
-size_t erodeEnds(ISequenceCollection* seqCollection)
+template <typename Graph>
+size_t erodeEnds(Graph* seqCollection)
 {
+	typedef typename Graph::iterator iterator;
+
 	Timer erodeEndsTimer("Erode");
 	assert(g_numEroded == 0);
 	seqCollection->attach(erosionObserver);
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		erode(seqCollection, *iter);
 		seqCollection->pumpNetwork();

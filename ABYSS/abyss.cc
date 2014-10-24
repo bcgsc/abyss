@@ -1,12 +1,10 @@
-#include "Assembly/Options.h"
-#include "AssemblyAlgorithms.h"
-#include "DotWriter.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "ISequenceCollection.h"
-#include "SequenceCollection.h"
-#include "Timer.h"
-#include "Uncompress.h"
+#if PAIRED_DBG
+# include "PairedDBG/SequenceCollection.h"
+#else
+# include "Assembly/SequenceCollection.h"
+#endif
+#include "Assembly/AssemblyAlgorithms.h"
+#include "Assembly/DotWriter.h"
 #include <algorithm>
 #include <cstdio> // for setvbuf
 #include <fstream>
@@ -61,8 +59,9 @@ static void assemble(const string& pathIn, const string& pathOut)
 
 	if (!pathIn.empty())
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
-	for_each(opt::inFiles.begin(), opt::inFiles.end(),
-			bind1st(ptr_fun(AssemblyAlgorithms::loadSequences), &g));
+	for_each(opt::inFiles.begin(), opt::inFiles.end(), bind1st(
+			ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>),
+			&g));
 	size_t numLoaded = g.size();
 #if _SQL
 	addToDb(db, "loadedKmer", numLoaded);
@@ -127,6 +126,9 @@ int main(int argc, char* const* argv)
 	// Set stdout to be line buffered.
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
+#if PAIRED_DBG
+	opt::singleKmerSize = -1;
+#endif
 	opt::parse(argc, argv);
 
 	bool krange = opt::kMin != opt::kMax;
@@ -142,14 +144,20 @@ int main(int argc, char* const* argv)
 			opt::getMetaValue()
 	);
 	addToDb(db, "SS", opt::ss);
-	addToDb(db, "K", opt::kmerSize);
+	addToDb(db, "k", opt::kmerSize);
+	addToDb(db, "singleK", opt::singleKmerSize);
 	addToDb(db, "numProc", 1);
 #endif
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
 		opt::kmerSize = k;
-		Kmer::setLength(k);
+#if PAIRED_DBG
+		Kmer::setLength(opt::singleKmerSize);
+		KmerPair::setLength(opt::kmerSize);
+#else
+		Kmer::setLength(opt::kmerSize);
+#endif
 
 		if (k > opt::kMin) {
 			// Reset the assembly options to defaults.

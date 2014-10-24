@@ -1,11 +1,11 @@
 #include "config.h"
-#include "Log.h"
 #include "NetworkSequenceCollection.h"
 #include "Assembly/Options.h"
+#include "Common/Log.h"
 #include "Common/Options.h"
+#include "Common/Timer.h"
+#include "Common/Uncompress.h"
 #include "DataLayer/FastaReader.h"
-#include "Timer.h"
-#include "Uncompress.h"
 #include <cerrno>
 #include <climits> // for HOST_NAME_MAX
 #include <cstdio> // for setvbuf
@@ -22,6 +22,11 @@
 using namespace std;
 
 static const char* FASTA_SUFFIX = ".fa";
+
+#if PAIRED_DBG
+// Define KmerPair::s_length
+# include "PairedDBG/KmerPair.cc"
+#endif
 
 static void mergeFastaFiles(const string& outputPath, const string& inputPathPrefix, bool generateNewIds = false)
 {
@@ -79,6 +84,9 @@ int main(int argc, char** argv)
 	// reinitialize uncompress.
 	uncompress_init();
 
+#if PAIRED_DBG
+	opt::singleKmerSize = -1;
+#endif
 	opt::parse(argc, argv);
 	if (opt::rank == 0)
 		cout << "Running on " << opt::numProc << " processors\n";
@@ -88,6 +96,13 @@ int main(int argc, char** argv)
 	gethostname(hostname, sizeof hostname);
 	logger(0) << "Running on host " << hostname << endl;
 	MPI_Barrier(MPI_COMM_WORLD);
+
+#if PAIRED_DBG
+	Kmer::setLength(opt::singleKmerSize);
+	KmerPair::setLength(opt::kmerSize);
+#else
+	Kmer::setLength(opt::kmerSize);
+#endif
 
 	if (opt::rank == 0) {
 		NetworkSequenceCollection networkSeqs;

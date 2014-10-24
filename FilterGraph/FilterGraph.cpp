@@ -43,41 +43,44 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ\n"
+"Usage: " PROGRAM " -k<kmer> [OPTION]... ADJ [FASTA]\n"
 "Remove short contigs that do not contribute any relevant\n"
 "information to the assembly.\n"
 "\n"
 " Arguments:\n"
 "\n"
 "  ADJ    contig adjacency graph\n"
+"  FASTA  contigs to check consistency of ADJ edges\n"
 "\n"
 " Options:\n"
 "\n"
-"  -k, --kmer=N          k-mer size\n"
-"      --SS              expect contigs to be oriented correctly\n"
-"      --no-SS           no assumption about contig orientation\n"
-"  -T, --island=N        remove islands shorter than N [0]\n"
-"  -t, --tip=N           remove tips shorter than N [0]\n"
-"  -l, --length=N        remove contigs shorter than N [0]\n"
-"  -L, --max-length=N    remove contigs longer than N [0]\n"
-"      --shim            remove filler contigs that only contribute\n"
-"                        to adjacency [default]\n"
-"      --no-shim         disable filler contigs removal\n"
-"  -m, --min-overlap=N   require a minimum overlap of N bases [10]\n"
-"      --assemble        assemble unambiguous paths\n"
-"      --no-assemble     disable assembling of paths [default]\n"
-"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
-"  -i, --ignore=FILE     ignore contigs seen in FILE\n"
-"  -r, --remove=FILE     remove contigs seen in FILE\n"
-"      --adj             output the graph in ADJ format [default]\n"
-"      --asqg            output the graph in ASQG format\n"
-"      --dot             output the graph in GraphViz format\n"
-"      --gv              output the graph in GraphViz format\n"
-"      --gfa             output the graph in GFA format\n"
-"      --sam             output the graph in SAM format\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
+"  -k, --kmer=N            k-mer size\n"
+"      --SS                expect contigs to be oriented correctly\n"
+"      --no-SS             no assumption about contig orientation\n"
+"  -T, --island=N          remove islands shorter than N [0]\n"
+"  -t, --tip=N             remove tips shorter than N [0]\n"
+"  -l, --length=N          remove contigs shorter than N [0]\n"
+"  -L, --max-length=N      remove contigs longer than N [0]\n"
+"      --shim              remove filler contigs that only contribute\n"
+"                          to adjacency [default]\n"
+"      --no-shim           disable filler contigs removal\n"
+"      --shim-max-degree=N only remove shims where the smaller of \n"
+"                          in/out degree is smaller than N [1]\n"
+"  -m, --min-overlap=N     require a minimum overlap of N bases [10]\n"
+"      --assemble          assemble unambiguous paths\n"
+"      --no-assemble       disable assembling of paths [default]\n"
+"  -g, --graph=FILE        write the contig adjacency graph to FILE\n"
+"  -i, --ignore=FILE       ignore contigs seen in FILE\n"
+"  -r, --remove=FILE       remove contigs seen in FILE\n"
+"      --adj               output the graph in ADJ format [default]\n"
+"      --asqg              output the graph in ASQG format\n"
+"      --dot               output the graph in GraphViz format\n"
+"      --gv                output the graph in GraphViz format\n"
+"      --gfa               output the graph in GFA format\n"
+"      --sam               output the graph in SAM format\n"
+"  -v, --verbose           display verbose output\n"
+"      --help              display this help and exit\n"
+"      --version           output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -102,6 +105,10 @@ namespace opt {
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
+	/** Only remove shims where the smaller of in/out degree is small
+	 * enough. */
+	static unsigned shimMaxDegree = 1;
+
 	/** Assemble unambiguous paths. */
 	static int assemble = 0;
 
@@ -123,33 +130,34 @@ namespace opt {
 
 static const char shortopts[] = "g:i:r:k:l:L:m:t:T:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_SHIM_MAX_DEG };
 
 static const struct option longopts[] = {
-	{ "adj",           no_argument,       &opt::format, ADJ },
-	{ "asqg",          no_argument,       &opt::format, ASQG },
-	{ "dot",           no_argument,       &opt::format, DOT },
-	{ "gv",            no_argument,       &opt::format, DOT },
-	{ "gfa",           no_argument,       &opt::format, GFA },
-	{ "sam",           no_argument,       &opt::format, SAM },
-	{ "graph",         required_argument, NULL, 'g' },
-	{ "ignore",        required_argument, NULL, 'i' },
-	{ "remove",        required_argument, NULL, 'r' },
-	{ "SS",            no_argument,       &opt::ss, 1 },
-	{ "no-SS",         no_argument,       &opt::ss, 0 },
-	{ "kmer",          required_argument, NULL, 'k' },
-	{ "island",        required_argument, NULL, 'T' },
-	{ "tip",           required_argument, NULL, 't' },
-	{ "length",        required_argument, NULL, 'l' },
-	{ "max-length",    required_argument, NULL, 'L' },
-	{ "shim",          no_argument,       &opt::shim, 1 },
-	{ "no-shim",       no_argument,       &opt::shim, 0 },
-	{ "assemble",      no_argument,       &opt::assemble, 1 },
-	{ "no-assemble",   no_argument,       &opt::assemble, 0 },
-	{ "min-overlap",   required_argument, NULL, 'm' },
-	{ "verbose",       no_argument,       NULL, 'v' },
-	{ "help",          no_argument,       NULL, OPT_HELP },
-	{ "version",       no_argument,       NULL, OPT_VERSION },
+	{ "adj",             no_argument,       &opt::format, ADJ },
+	{ "asqg",            no_argument,       &opt::format, ASQG },
+	{ "dot",             no_argument,       &opt::format, DOT },
+	{ "gv",              no_argument,       &opt::format, DOT },
+	{ "gfa",             no_argument,       &opt::format, GFA },
+	{ "sam",             no_argument,       &opt::format, SAM },
+	{ "graph",           required_argument, NULL, 'g' },
+	{ "ignore",          required_argument, NULL, 'i' },
+	{ "remove",          required_argument, NULL, 'r' },
+	{ "SS",              no_argument,       &opt::ss, 1 },
+	{ "no-SS",           no_argument,       &opt::ss, 0 },
+	{ "kmer",            required_argument, NULL, 'k' },
+	{ "island",          required_argument, NULL, 'T' },
+	{ "tip",             required_argument, NULL, 't' },
+	{ "length",          required_argument, NULL, 'l' },
+	{ "max-length",      required_argument, NULL, 'L' },
+	{ "shim",            no_argument,       &opt::shim, 1 },
+	{ "no-shim",         no_argument,       &opt::shim, 0 },
+	{ "shim-max-degree", required_argument, NULL, OPT_SHIM_MAX_DEG },
+	{ "assemble",        no_argument,       &opt::assemble, 1 },
+	{ "no-assemble",     no_argument,       &opt::assemble, 0 },
+	{ "min-overlap",     required_argument, NULL, 'm' },
+	{ "verbose",         no_argument,       NULL, 'v' },
+	{ "help",            no_argument,       NULL, OPT_HELP },
+	{ "version",         no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -158,6 +166,7 @@ static vector<ContigID> g_removed;
 /** Contig adjacency graph. */
 typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 typedef Graph::vertex_descriptor vertex_descriptor;
+typedef Graph::edge_descriptor edge_descriptor;
 
 /** Data for verbose output. */
 static struct {
@@ -186,15 +195,16 @@ static bool removable(const Graph* pg, vertex_descriptor v)
 		return false;
 	}
 
+	unsigned min_degree = min(out_degree(v, g), in_degree(v, g));
+
 	// Check for tails
-	if (out_degree(v, g) == 0 || in_degree(v, g) == 0) {
+	if (min_degree == 0) {
 		g_count.tails++;
 		return false;
 	}
 
 	// Check that the result will be less complex that the original
-	if (!(out_degree(v, g) == 1 && in_degree(v, g) > 1)
-			&& !(out_degree(v, g) > 1 && in_degree(v, g) == 1)) {
+	if (min_degree > opt::shimMaxDegree) {
 		g_count.too_complex++;
 		return false;
 	}
@@ -273,12 +283,6 @@ static bool findNewEdges(const Graph& g, vertex_descriptor v,
 				marked.push_back(ed.u);
 			if (in_degree(v, g) > 1)
 				marked.push_back(ed.w);
-
-			// Don't remove a vertex if the result is a parallel edge.
-			if (edge(ed.u, ed.w, g).second) {
-				g_count.parallel_edge++;
-				return false;
-			}
 		}
 	}
 	for (vector<V>::const_iterator it = marked.begin();
@@ -292,7 +296,11 @@ static void addNewEdges(Graph& g, const vector<EdgeInfo>& eds)
 {
 	for (vector<EdgeInfo>::const_iterator edsit = eds.begin();
 			edsit != eds.end(); ++edsit) {
-		assert(!edge(edsit->u, edsit->w, g).second);
+		// Don't add parallel edges! This can happen when removing a palindrome.
+		if (edge(edsit->u, edsit->w, g).second) {
+			g_count.parallel_edge++;
+			continue;
+		}
 		assert(edsit->ep.distance <= -opt::minOverlap);
 		add_edge(edsit->u, edsit->w, edsit->ep, g);
 	}
@@ -463,6 +471,69 @@ static void removeContigs_if(Graph& g, pred p)
 		cerr << "Removed " << sc.size()/2 << " short contigs.\n";
 }
 
+/** Contig sequences. */
+typedef vector<const_string> Contigs;
+static Contigs g_contigs;
+
+/** Return the sequence of vertex u. */
+static string getSequence(const Graph& g, vertex_descriptor u)
+{
+	size_t i = get(vertex_contig_index, g, u);
+	assert(i < g_contigs.size());
+	string seq(g_contigs[i]);
+	return get(vertex_sense, g, u) ? reverseComplement(seq) : seq;
+}
+
+/** Return whether the specified edge is inconsistent. */
+struct is_edge_inconsistent : unary_function<edge_descriptor, bool> {
+	const Graph& g;
+
+	is_edge_inconsistent(const Graph& g)
+		: g(g) { }
+
+	bool operator()(edge_descriptor e) const
+	{
+		vertex_descriptor u = source(e, g);
+		vertex_descriptor v = target(e, g);
+
+		int overlap = g[e].distance;
+		assert(overlap < 0);
+
+		string su = getSequence(g, u);
+		string sv = getSequence(g, v);
+		const unsigned u_start = su.length() + overlap;
+
+		for (unsigned i = 0; i < (unsigned)-overlap; i++)
+			if (!(ambiguityToBitmask(su[u_start + i]) & ambiguityToBitmask(sv[i])))
+				return true;
+		return false;
+	}
+};
+
+template <typename It>
+static void remove_edge(Graph& g, It first, It last)
+{
+	for (; first != last; first++)
+		remove_edge(*first, g);
+}
+
+template<typename pred>
+static void removeEdges_if(Graph& g, pred p)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef GTraits::edge_iterator Eit;
+	typedef GTraits::edge_descriptor E;
+	Eit first, second;
+	tie(first, second) = edges(g);
+	vector<E> sc;
+	::copy_if(first, second, back_inserter(sc), p);
+	remove_edge(g, sc.begin(), sc.end());
+	if (opt::verbose > 0) {
+		cerr << "Edge removal stats:\n";
+		cerr << "Removed: " << sc.size() << '\n';
+	}
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -512,6 +583,9 @@ int main(int argc, char** argv)
 		  case 'v':
 			opt::verbose++;
 			break;
+		  case OPT_SHIM_MAX_DEG:
+			arg >> opt::shimMaxDegree;
+			break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -542,7 +616,7 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (argc - optind > 1) {
+	if (argc - optind > 2) {
 		cerr << PROGRAM ": too many arguments\n";
 		die = true;
 	}
@@ -631,19 +705,39 @@ int main(int argc, char** argv)
 	if (opt::maxLen > 0)
 		removeContigs_if(g, LongerThanX(g, seen, opt::maxLen));
 
+	// Remove inconsistent edges of spaceseeds
+	if (argc - optind == 1) {
+		const char* contigsPath(argv[optind++]);
+		Contigs& contigs = g_contigs;
+		if (opt::verbose > 0)
+			cerr << "Reading `" << contigsPath << "'...\n";
+		FastaReader in(contigsPath, FastaReader::NO_FOLD_CASE);
+		for (FastaRecord rec; in >> rec;) {
+			if (g_contigNames.count(rec.id) == 0)
+				continue;
+			assert(contigs.size() == get(g_contigNames, rec.id));
+			contigs.push_back(rec.seq);
+		}
+		assert(in.eof());
+
+		removeEdges_if(g, is_edge_inconsistent(g));
+	}
+
 	if (opt::verbose > 0) {
 		cerr << "Graph stats after:\n";
 		printGraphStats(cerr, g);
 	}
 
-	sort(g_removed.begin(), g_removed.end());
-	g_removed.erase(unique(g_removed.begin(), g_removed.end()),
-			g_removed.end());
-	for (vector<ContigID>::const_iterator it = g_removed.begin();
-			it != g_removed.end(); ++it)
-		cout << get(g_contigNames, *it) << '\n';
+	// Output the updated adjacency graph.
+	if (!opt::graphPath.empty()) {
+		ofstream fout(opt::graphPath.c_str());
+		assert_good(fout, opt::graphPath);
+		write_graph(fout, g, PROGRAM, commandLine);
+		assert_good(fout, opt::graphPath);
+	}
 
-	// Assemble unambiguous paths.
+	// Assemble unambiguous paths. These need to be assembled by
+	// MergeContigs before being processed by other applications.
 	if (opt::assemble) {
 		size_t numContigs = num_vertices(g) / 2;
 		typedef vector<ContigPath> ContigPaths;
@@ -661,14 +755,6 @@ int main(int argc, char** argv)
 			cout << name << '\t' << *it << '\n';
 		}
 		g_contigNames.lock();
-	}
-
-	// Output the updated adjacency graph.
-	if (!opt::graphPath.empty()) {
-		ofstream fout(opt::graphPath.c_str());
-		assert_good(fout, opt::graphPath);
-		write_graph(fout, g, PROGRAM, commandLine);
-		assert_good(fout, opt::graphPath);
 	}
 
 	return 0;

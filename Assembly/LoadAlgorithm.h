@@ -8,9 +8,11 @@ namespace AssemblyAlgorithms {
 /** Load k-mer with coverage data.
  * @return the number of k-mer loaded
  */
-static inline
-size_t loadKmer(ISequenceCollection& g, FastaReader& in)
+template <typename Graph>
+size_t loadKmer(Graph& g, FastaReader& in)
 {
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
 	assert(opt::rank == -1);
 	size_t count = 0;
 	for (FastaRecord rec; in >> rec;) {
@@ -20,7 +22,7 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 		iss >> coverage;
 		assert(iss);
 		assert(iss.eof());
-		g.add(Kmer(rec.seq), std::max(1, (int)ceilf(coverage)));
+		g.add(V(rec.seq), std::max(1, (int)ceilf(coverage)));
 
 		if (++count % 1000000 == 0) {
 			logger(1) << "Read " << count << " k-mer. ";
@@ -33,9 +35,11 @@ size_t loadKmer(ISequenceCollection& g, FastaReader& in)
 }
 
 /** Load sequence data into the collection. */
-static inline
-void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
+template <typename Graph>
+void loadSequences(Graph* seqCollection, std::string inFile)
 {
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
 	Timer timer("LoadSequences " + inFile);
 
 	logger(0) << "Reading `" << inFile << "'...\n";
@@ -97,11 +101,11 @@ void loadSequences(ISequenceCollection* seqCollection, std::string inFile)
 			if (good || kmer.find_first_not_of("acgtACGT0123")
 					== std::string::npos) {
 				if (good || kmer.find_first_of("acgt") == std::string::npos)
-					seqCollection->add(Kmer(kmer));
+					seqCollection->add(V(kmer));
 				else {
 					transform(kmer.begin(), kmer.end(), kmer.begin(),
 							::toupper);
-					seqCollection->add(Kmer(kmer), 0);
+					seqCollection->add(V(kmer), 0);
 				}
 				discarded = false;
 			}

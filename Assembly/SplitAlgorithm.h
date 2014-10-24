@@ -6,14 +6,17 @@ namespace AssemblyAlgorithms {
 /** Mark the specified vertex and its neighbours.
  * @return the number of marked edges
  */
-static inline
-size_t markNeighbours(ISequenceCollection* g,
-		const ISequenceCollection::value_type& u, extDirection sense)
+template <typename Graph>
+size_t markNeighbours(Graph* g,
+		const typename Graph::value_type& u, extDirection sense)
 {
-	std::vector<Kmer> adj;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename std::vector<V> Vector;
+
+	Vector adj;
 	generateSequencesFromExtension(u.first, sense,
 			u.second.getExtension(sense), adj);
-	for (std::vector<Kmer>::iterator v = adj.begin(); v != adj.end(); ++v)
+	for (typename Vector::iterator v = adj.begin(); v != adj.end(); ++v)
 		g->mark(*v, !sense);
 	return adj.size();
 }
@@ -21,14 +24,15 @@ size_t markNeighbours(ISequenceCollection* g,
 /** Mark ambiguous branches and branches from palindromes for removal.
  * @return the number of branches marked
  */
-static inline
-size_t markAmbiguous(ISequenceCollection* g)
+template <typename Graph>
+size_t markAmbiguous(Graph* g)
 {
+	typedef typename Graph::iterator iterator;
+
 	Timer timer(__func__);
 	size_t progress = 0;
 	size_t countv = 0, counte = 0;
-	for (ISequenceCollection::iterator it = g->begin();
-			it != g->end(); ++it) {
+	for (iterator it = g->begin(); it != g->end(); ++it) {
 		if (it->second.deleted())
 			continue;
 
@@ -66,12 +70,14 @@ size_t markAmbiguous(ISequenceCollection* g)
 /** Remove the edges of marked and deleted vertices.
  * @return the number of branches removed
  */
-static inline
-size_t splitAmbiguous(ISequenceCollection* pSC)
+template <typename Graph>
+size_t splitAmbiguous(Graph* pSC)
 {
+	typedef typename Graph::iterator iterator;
+
 	Timer timer(__func__);
 	size_t count = 0;
-	for (ISequenceCollection::iterator it = pSC->begin();
+	for (iterator it = pSC->begin();
 			it != pSC->end(); ++it) {
 		if (!it->second.deleted())
 			continue;

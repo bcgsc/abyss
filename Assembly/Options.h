@@ -6,6 +6,7 @@
 
 namespace opt {
 	extern unsigned kmerSize;
+	extern unsigned singleKmerSize;
 	extern unsigned kMin;
 	extern unsigned kMax;
 	extern unsigned kStep;

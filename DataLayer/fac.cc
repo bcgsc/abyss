@@ -5,9 +5,9 @@
 #include "Common/Histogram.h"
 #include "Common/IOUtil.h"
 #include "Common/Sequence.h" // for isACGT
+#include "Common/Uncompress.h"
 #include "DataLayer/FastaReader.h"
 #include "DataLayer/Options.h"
-#include "Uncompress.h"
 #include <algorithm>
 #include <getopt.h>
 #include <iostream>

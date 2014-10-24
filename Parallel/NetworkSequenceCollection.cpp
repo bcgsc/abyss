@@ -1,11 +1,11 @@
 #include "NetworkSequenceCollection.h"
+#include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/Options.h"
-#include "AssemblyAlgorithms.h"
+#include "Common/Histogram.h"
+#include "Common/Log.h"
 #include "Common/Options.h"
-#include "FastaWriter.h"
-#include "Histogram.h"
-#include "Log.h"
-#include "StringUtil.h"
+#include "Common/StringUtil.h"
+#include "DataLayer/FastaWriter.h"
 #include <climits> // for UINT_MAX
 #include <cstdlib>
 #include <fstream>
@@ -147,7 +147,7 @@ void NetworkSequenceCollection::run()
 			{
 				assert(m_trimStep != 0);
 				m_comm.barrier();
-				size_t numRemoved = performNetworkTrim(this);
+				size_t numRemoved = performNetworkTrim();
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numRemoved);
@@ -168,7 +168,7 @@ void NetworkSequenceCollection::run()
 				m_comm.reduce(m_data.cleanup());
 				m_lowCoverageContigs = 0;
 				m_lowCoverageKmer = 0;
-				numAssembled = performNetworkAssembly(this);
+				numAssembled = performNetworkAssembly();
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage();
@@ -189,7 +189,7 @@ void NetworkSequenceCollection::run()
 			case NAS_DISCOVER_BUBBLES:
 			{
 				size_t numDiscovered
-					= performNetworkDiscoverBubbles(this);
+					= performNetworkDiscoverBubbles();
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage(numDiscovered);
@@ -243,7 +243,7 @@ void NetworkSequenceCollection::run()
 				m_comm.barrier();
 				pumpNetwork();
 				FastaWriter writer(opt::contigsTempPath.c_str());
-				numAssembled = performNetworkAssembly(this, &writer);
+				numAssembled = performNetworkAssembly(&writer);
 				EndState();
 				SetState(NAS_WAITING);
 				m_comm.sendCheckPointMessage();
@@ -334,7 +334,7 @@ size_t NetworkSequenceCollection::controlTrimRound(unsigned trimLen)
 	SetState(NAS_TRIM);
 	m_comm.sendControlMessage(APC_TRIM, trimLen);
 	m_comm.barrier();
-	size_t numRemoved = performNetworkTrim(this);
+	size_t numRemoved = performNetworkTrim();
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -388,7 +388,7 @@ void NetworkSequenceCollection::controlCoverage()
 	m_lowCoverageContigs = 0;
 	m_lowCoverageKmer = 0;
 	pair<size_t, size_t> numAssembled
-		= performNetworkAssembly(this);
+		= performNetworkAssembly();
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -580,7 +580,7 @@ void NetworkSequenceCollection::runControl()
 				pumpNetwork();
 				FastaWriter writer(opt::contigsTempPath.c_str());
 				pair<size_t, size_t> numAssembled
-					= performNetworkAssembly(this, &writer);
+					= performNetworkAssembly(&writer);
 				EndState();
 
 				m_numReachedCheckpoint++;
@@ -678,7 +678,7 @@ size_t NetworkSequenceCollection::pumpNetwork()
 }
 
 /** Call the observers of the specified sequence. */
-void NetworkSequenceCollection::notify(const Kmer& key)
+void NetworkSequenceCollection::notify(const V& key)
 {
 	switch (m_state) {
 		case NAS_ERODE:
@@ -776,9 +776,9 @@ void NetworkSequenceCollection::parseControlMessage(int source)
 void NetworkSequenceCollection::handle(
 		int senderID, const SeqDataRequest& message)
 {
-	const Kmer& kmer = message.m_seq;
+	const V& kmer = message.m_seq;
 	assert(isLocal(kmer));
-	ExtensionRecord extRec;
+	SymbolSetPair extRec;
 	int multiplicity = -1;
 	bool found = m_data.getSeqData(kmer, extRec, multiplicity);
 	assert(found);
@@ -797,16 +797,16 @@ void NetworkSequenceCollection::handle(
 }
 
 /** Distributed trimming function. */
-size_t NetworkSequenceCollection::performNetworkTrim(
-		ISequenceCollection* seqCollection)
+size_t NetworkSequenceCollection::performNetworkTrim()
 {
 	Timer timer("NetworkTrim");
+	NetworkSequenceCollection* seqCollection = this;
 	size_t numBranchesRemoved = 0;
 
 	// The branch ids
 	uint64_t branchGroupID = 0;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -893,8 +893,9 @@ size_t NetworkSequenceCollection::processBranchesTrim()
 
 /** Discover bubbles to pop. */
 size_t NetworkSequenceCollection::
-performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
+performNetworkDiscoverBubbles()
 {
+	NetworkSequenceCollection* seqCollection = this;
 	Timer timer("NetworkDiscoverBubbles");
 
 	// The branch ids
@@ -909,7 +910,7 @@ performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
 	// Set the cutoffs
 	const unsigned maxNumBranches = 3;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -917,7 +918,7 @@ performNetworkDiscoverBubbles(ISequenceCollection* seqCollection)
 		if (++count % 100000 == 0)
 			logger(1) << "Popping bubbles: " << count << '\n';
 
-		ExtensionRecord extRec = iter->second.extension();
+		SymbolSetPair extRec = iter->second.extension();
 		for (extDirection dir = SENSE; dir <= ANTISENSE; ++dir) {
 			if (extRec.dir[dir].isAmbiguous()) {
 				BranchGroupMap::iterator groupIter
@@ -1036,7 +1037,7 @@ size_t NetworkSequenceCollection::controlDiscoverBubbles()
 	SetState(NAS_DISCOVER_BUBBLES);
 	m_comm.sendControlMessage(APC_SET_STATE, NAS_DISCOVER_BUBBLES);
 
-	size_t numDiscovered = performNetworkDiscoverBubbles(this);
+	size_t numDiscovered = performNetworkDiscoverBubbles();
 	EndState();
 
 	m_numReachedCheckpoint++;
@@ -1119,11 +1120,11 @@ size_t NetworkSequenceCollection::controlSplitAmbiguous()
 
 /** Assemble a contig. */
 void NetworkSequenceCollection::assembleContig(
-		ISequenceCollection* seqCollection, FastaWriter* writer,
+		FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
 	size_t removed = AssemblyAlgorithms::assembleContig(
-			seqCollection, writer, branch, id);
+			this, writer, branch, id);
 	if (removed > 0) {
 		m_lowCoverageContigs++;
 		m_lowCoverageKmer += removed;
@@ -1145,15 +1146,15 @@ namespace std {
  * @return the number of contigs and k-mer assembled
  */
 pair<size_t, size_t> NetworkSequenceCollection::
-performNetworkAssembly(ISequenceCollection* seqCollection,
-		FastaWriter* fileWriter)
+performNetworkAssembly(FastaWriter* fileWriter)
 {
 	Timer timer("NetworkAssembly");
+	NetworkSequenceCollection* seqCollection = this;
 	pair<size_t, size_t> numAssembled(0, 0);
 	uint64_t branchGroupID = 0;
 	assert(m_activeBranchGroups.empty());
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -1171,7 +1172,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			BranchRecord currBranch(SENSE);
 			currBranch.push_back(*iter);
 			currBranch.terminate(BS_NOEXT);
-			assembleContig(seqCollection, fileWriter, currBranch,
+			assembleContig(fileWriter, currBranch,
 					m_numAssembled + numAssembled.first);
 			numAssembled.first++;
 			numAssembled.second += currBranch.size();
@@ -1188,13 +1189,13 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 		// Generate the first extension request
 		BranchRecord& branch = inserted.first->second[0];
 		branch.push_back(*iter);
-		Kmer kmer = iter->first;
+		V kmer = iter->first;
 		AssemblyAlgorithms::extendBranch(branch,
 				kmer, iter->second.getExtension(dir));
 		assert(branch.isActive());
 		generateExtensionRequest(branchGroupID++, 0, kmer);
 
-		numAssembled += processBranchesAssembly(seqCollection,
+		numAssembled += processBranchesAssembly(
 				fileWriter, numAssembled.first);
 		seqCollection->pumpNetwork();
 
@@ -1203,7 +1204,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 			while(m_activeBranchGroups.size() > LOW_ACTIVE)
 			{
 				seqCollection->pumpNetwork();
-				numAssembled += processBranchesAssembly(seqCollection,
+				numAssembled += processBranchesAssembly(
 						fileWriter, numAssembled.first);
 			}
 		}
@@ -1212,7 +1213,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
 	// Clear out the remaining branches
 	while(!m_activeBranchGroups.empty())
 	{
-		numAssembled += processBranchesAssembly(seqCollection,
+		numAssembled += processBranchesAssembly(
 				fileWriter, numAssembled.first);
 		seqCollection->pumpNetwork();
 	}
@@ -1234,8 +1235,7 @@ performNetworkAssembly(ISequenceCollection* seqCollection,
  * @return the number of contigs and k-mer assembled
  */
 pair<size_t, size_t> NetworkSequenceCollection::
-processBranchesAssembly(ISequenceCollection* seqCollection,
-		FastaWriter* fileWriter, unsigned currContigID)
+processBranchesAssembly(FastaWriter* fileWriter, unsigned currContigID)
 {
 	size_t assembledContigs = 0, assembledKmer = 0;
 	for (BranchGroupMap::iterator it = m_activeBranchGroups.begin();
@@ -1250,7 +1250,7 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 					|| (!opt::ss && branch.isCanonical())) {
 				assembledContigs++;
 				assembledKmer += branch.size();
-				assembleContig(seqCollection, fileWriter, branch,
+				assembleContig(fileWriter, branch,
 						m_numAssembled + currContigID++);
 			}
 			m_activeBranchGroups.erase(it++);
@@ -1262,10 +1262,10 @@ processBranchesAssembly(ISequenceCollection* seqCollection,
 
 /** Send a request for the edges of vertex kmer. */
 void NetworkSequenceCollection::generateExtensionRequest(
-		uint64_t groupID, uint64_t branchID, const Kmer& kmer)
+		uint64_t groupID, uint64_t branchID, const V& kmer)
 {
 	if (isLocal(kmer)) {
-		ExtensionRecord extRec;
+		SymbolSetPair extRec;
 		int multiplicity = -1;
 		bool success = m_data.getSeqData(kmer, extRec, multiplicity);
 		assert(success);
@@ -1296,8 +1296,8 @@ void NetworkSequenceCollection::generateExtensionRequests(
 }
 
 void NetworkSequenceCollection::processSequenceExtension(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity)
+		uint64_t groupID, uint64_t branchID, const V& seq,
+		const SymbolSetPair& extRec, int multiplicity)
 {
 	switch(m_state)
 	{
@@ -1333,14 +1333,14 @@ void NetworkSequenceCollection::processSequenceExtension(
 
 /** Process a sequence extension for trimming. */
 void NetworkSequenceCollection::processLinearSequenceExtension(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity,
+		uint64_t groupID, uint64_t branchID, const V& seq,
+		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
 	BranchGroupMap::iterator iter
 		= m_activeBranchGroups.find(groupID);
 	assert(iter != m_activeBranchGroups.end());
-	Kmer currSeq = seq;
+	V currSeq = seq;
 	bool active = AssemblyAlgorithms::processLinearExtensionForBranch(
 			iter->second[branchID], currSeq, extRec, multiplicity,
 			maxLength);
@@ -1350,8 +1350,8 @@ void NetworkSequenceCollection::processLinearSequenceExtension(
 
 /** Process a sequence extension for popping. */
 void NetworkSequenceCollection::processSequenceExtensionPop(
-		uint64_t groupID, uint64_t branchID, const Kmer& seq,
-		const ExtensionRecord& extRec, int multiplicity,
+		uint64_t groupID, uint64_t branchID, const V& seq,
+		const SymbolSetPair& extRec, int multiplicity,
 		unsigned maxLength)
 {
 	BranchGroupMap::iterator groupIt
@@ -1372,7 +1372,7 @@ void NetworkSequenceCollection::processSequenceExtensionPop(
 }
 
 /** Add a k-mer to this collection. */
-void NetworkSequenceCollection::add(const Kmer& seq,
+void NetworkSequenceCollection::add(const V& seq,
 		unsigned coverage)
 {
 	if (isLocal(seq)) {
@@ -1384,7 +1384,7 @@ void NetworkSequenceCollection::add(const Kmer& seq,
 }
 
 /** Remove a k-mer from this collection. */
-void NetworkSequenceCollection::remove(const Kmer& seq)
+void NetworkSequenceCollection::remove(const V& seq)
 {
 	if (isLocal(seq))
 		m_data.remove(seq);
@@ -1403,7 +1403,7 @@ checkpointReached(unsigned numRequired) const
 	return m_numReachedCheckpoint == numRequired;
 }
 
-void NetworkSequenceCollection::setFlag(const Kmer& seq, SeqFlag flag)
+void NetworkSequenceCollection::setFlag(const V& seq, SeqFlag flag)
 {
 	if (isLocal(seq))
 		m_data.setFlag(seq, flag);
@@ -1412,7 +1412,7 @@ void NetworkSequenceCollection::setFlag(const Kmer& seq, SeqFlag flag)
 }
 
 bool NetworkSequenceCollection::setBaseExtension(
-		const Kmer& seq, extDirection dir, uint8_t base)
+		const V& seq, extDirection dir, Symbol base)
 {
 	if (isLocal(seq)) {
 		if (m_data.setBaseExtension(seq, dir, base))
@@ -1428,7 +1428,7 @@ bool NetworkSequenceCollection::setBaseExtension(
 
 /** Remove the specified extensions from this k-mer. */
 void NetworkSequenceCollection::removeExtension(
-		const Kmer& seq, extDirection dir, SeqExt ext)
+		const V& seq, extDirection dir, SymbolSet ext)
 {
 	if (isLocal(seq)) {
 		m_data.removeExtension(seq, dir, ext);
@@ -1440,13 +1440,13 @@ void NetworkSequenceCollection::removeExtension(
 }
 
 /** Return whether this sequence belongs to this process. */
-bool NetworkSequenceCollection::isLocal(const Kmer& seq) const
+bool NetworkSequenceCollection::isLocal(const V& seq) const
 {
 	return computeNodeID(seq) == opt::rank;
 }
 
 /** Return the process ID to which the specified kmer belongs. */
-int NetworkSequenceCollection::computeNodeID(const Kmer& seq) const
+int NetworkSequenceCollection::computeNodeID(const V& seq) const
 {
 	if (opt::numProc < DEDICATE_CONTROL_AT) {
 		return seq.getCode() % (unsigned)opt::numProc;

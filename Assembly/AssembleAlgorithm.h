@@ -1,16 +1,18 @@
 #ifndef ASSEMBLY_ASSEMBLEALGORITHM_H
 #define ASSEMBLY_ASSEMBLEALGORITHM_H 1
 
+#include "DataLayer/FastaWriter.h"
 #include <iostream>
+#include <climits>
 
 namespace AssemblyAlgorithms {
 
 /** Assemble a contig.
  * @return the number of k-mer below the coverage threshold
  */
-static inline
+template <typename Graph>
 size_t assembleContig(
-		ISequenceCollection* seqCollection, FastaWriter* writer,
+		Graph* seqCollection, FastaWriter* writer,
 		BranchRecord& branch, unsigned id)
 {
 	assert(!branch.isActive());
@@ -41,8 +43,12 @@ size_t assembleContig(
  */
 static inline
 size_t assemble(SequenceCollectionHash* seqCollection,
-		FastaWriter* fileWriter)
+		FastaWriter* fileWriter = NULL)
 {
+	typedef SequenceCollectionHash Graph;
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef Graph::SymbolSetPair SymbolSetPair;
+
 	Timer timer("Assemble");
 
 	size_t kmerCount = 0;
@@ -51,7 +57,7 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 	size_t lowCoverageKmer = 0;
 	size_t lowCoverageContigs = 0;
 
-	for (ISequenceCollection::iterator iter = seqCollection->begin();
+	for (Graph::iterator iter = seqCollection->begin();
 			iter != seqCollection->end(); ++iter) {
 		if (iter->second.deleted())
 			continue;
@@ -79,13 +85,13 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 
 		BranchRecord currBranch(dir);
 		currBranch.push_back(*iter);
-		Kmer currSeq = iter->first;
+		V currSeq = iter->first;
 		extendBranch(currBranch, currSeq,
 				iter->second.getExtension(dir));
 		assert(currBranch.isActive());
 		while(currBranch.isActive())
 		{
-			ExtensionRecord extRec;
+			SymbolSetPair extRec;
 			int multiplicity = -1;
 			bool success = seqCollection->getSeqData(
 					currSeq, extRec, multiplicity);
