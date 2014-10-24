@@ -121,8 +121,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-const unsigned g_progressStep = 1000;
-
 namespace opt {
 
 	/** Length of flank. */
