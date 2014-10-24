@@ -1,6 +1,6 @@
-#include "PairedDBG/BranchRecord.h"
+#include "Assembly/Options.h"
 #include "Common/Options.h"
-#include "PairedDBG/Options.h"
+#include "PairedDBG/SequenceCollection.h"
 
 #include <gtest/gtest.h>
 #include <vector>

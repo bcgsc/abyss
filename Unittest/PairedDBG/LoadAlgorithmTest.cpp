@@ -1,5 +1,6 @@
-#include "PairedDBG/AssemblyAlgorithms.h"
-#include "PairedDBG/Options.h"
+#include "PairedDBG/SequenceCollection.h"
+#include "Assembly/AssemblyAlgorithms.h"
+#include "Assembly/Options.h"
 #include "Common/UnorderedSet.h"
 
 #include <gtest/gtest.h>
@@ -10,7 +11,8 @@ using namespace std;
 
 TEST(LoadAlgorithmTest, base)
 {
-	SequenceCollectionHash g;
+	typedef SequenceCollectionHash Graph;
+	Graph g;
 
 	// length of each kmer in kmer pair
 	Kmer::setLength(2);
@@ -38,8 +40,7 @@ TEST(LoadAlgorithmTest, base)
 	expectedKmerPairs.insert(KmerPair("GGGT"));
 	expectedKmerPairs.insert(KmerPair("GATT"));
 
-	for (ISequenceCollection::iterator it = g.begin();
-			it != g.end(); it++) {
+	for (Graph::const_iterator it = g.begin(); it != g.end(); ++it) {
 		KmerPair kmerPair(it->first);
 #if 0
 cerr << "visiting KmerPair: " << kmerPair << "\n";
