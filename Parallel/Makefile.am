@@ -1,4 +1,7 @@
-bin_PROGRAMS = ABYSS-P abyss-paired-dbg-mpi
+bin_PROGRAMS = ABYSS-P
+if PAIRED_DBG
+bin_PROGRAMS += abyss-paired-dbg-mpi
+endif
 
 if HAVE_SQLITE
 libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)

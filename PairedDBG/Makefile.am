@@ -1,4 +1,6 @@
+if PAIRED_DBG
 bin_PROGRAMS = abyss-paired-dbg
+endif
 
 # abyss-paired-dbg
 

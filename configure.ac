@@ -238,6 +238,9 @@ fi
 # Set compiler flags.
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
+# Build abyss-paired-dbg and abyss-paired-dbg-mpi
+AM_CONDITIONAL([PAIRED_DBG], [false])
+
 AC_CONFIG_FILES([
 	Makefile
 	ABYSS/Makefile
