@@ -123,6 +123,20 @@ Konnector_konnector_LDADD = \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += DBG_LoadAlgorithm
+check_PROGRAMS += DBG_LoadAlgorithm
+DBG_LoadAlgorithm_SOURCES = \
+	DBG/LoadAlgorithmTest.cpp
+DBG_LoadAlgorithm_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/DataLayer \
+	-I$(top_srcdir)/Common
+DBG_LoadAlgorithm_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+DBG_LoadAlgorithm_LDADD = \
+	$(top_builddir)/Assembly/libassembly.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 if PAIRED_DBG
 
 UNIT_TESTS += PairedDBG_LoadAlgorithm

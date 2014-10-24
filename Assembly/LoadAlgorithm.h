@@ -34,6 +34,41 @@ size_t loadKmer(Graph& g, FastaReader& in)
 	return count;
 }
 
+template <typename Graph>
+bool loadSequence(Graph* seqCollection, Sequence& seq)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	size_t len = seq.length();
+
+	if (isalnum(seq[0])) {
+		if (opt::colourSpace)
+			assert(isdigit(seq[0]));
+		else
+			assert(isalpha(seq[0]));
+	}
+
+	bool good = seq.find_first_not_of("ACGT0123") == std::string::npos;
+	bool discarded = true;
+
+	for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
+		Sequence kmer(seq, i, opt::kmerSize);
+		if (good || kmer.find_first_not_of("acgtACGT0123")
+				== std::string::npos) {
+			if (good || kmer.find_first_of("acgt") == std::string::npos)
+				seqCollection->add(V(kmer));
+			else {
+				transform(kmer.begin(), kmer.end(), kmer.begin(),
+						::toupper);
+				seqCollection->add(V(kmer), 0);
+			}
+			discarded = false;
+		}
+	}
+
+	return discarded;
+}
+
 /** Load sequence data into the collection. */
 template <typename Graph>
 void loadSequences(Graph* seqCollection, std::string inFile)
@@ -80,36 +115,14 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 				std::cout << "Colour-space assembly\n";
 		}
 
-		if (isalnum(seq[0])) {
-			if (opt::colourSpace)
-				assert(isdigit(seq[0]));
-			else
-				assert(isalpha(seq[0]));
-		}
-
-		bool good = seq.find_first_not_of("ACGT0123") == std::string::npos;
-		bool discarded = true;
-
 		if (opt::ss && rec.id.size() > 2
 				&& rec.id.substr(rec.id.size()-2) == "/1") {
 			seq = reverseComplement(seq);
 			count_reversed++;
 		}
 
-		for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
-			Sequence kmer(seq, i, opt::kmerSize);
-			if (good || kmer.find_first_not_of("acgtACGT0123")
-					== std::string::npos) {
-				if (good || kmer.find_first_of("acgt") == std::string::npos)
-					seqCollection->add(V(kmer));
-				else {
-					transform(kmer.begin(), kmer.end(), kmer.begin(),
-							::toupper);
-					seqCollection->add(V(kmer), 0);
-				}
-				discarded = false;
-			}
-		}
+		bool discarded = loadSequence(seqCollection, seq);
+
 		if (discarded)
 			count_nonACGT++;
 		else
