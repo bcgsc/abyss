@@ -1,5 +1,6 @@
 if PAIRED_DBG
 bin_PROGRAMS = abyss-paired-dbg
+noinst_LIBRARIES = libpaireddbg.a
 endif
 
 # abyss-paired-dbg
@@ -21,3 +22,5 @@ abyss_paired_dbg_SOURCES = \
 	BranchRecord.h \
 	KmerPair.cc KmerPair.h \
 	SequenceCollection.h
+
+libpaireddbg_a_SOURCES = KmerPair.cc KmerPair.h
