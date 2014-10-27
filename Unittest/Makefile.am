@@ -150,6 +150,7 @@ PairedDBG_LoadAlgorithm_CPPFLAGS = \
 PairedDBG_LoadAlgorithm_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 PairedDBG_LoadAlgorithm_LDADD = \
 	$(top_builddir)/PairedDBG/libpaireddbg.a \
+	$(top_builddir)/Assembly/libassembly.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
