@@ -16,7 +16,7 @@ size_t loadKmer(Graph& g, FastaReader& in)
 	assert(opt::rank == -1);
 	size_t count = 0;
 	for (FastaRecord rec; in >> rec;) {
-		assert(rec.seq.size() == opt::kmerSize);
+		assert(rec.seq.size() == V::length());
 		std::istringstream iss(rec.id);
 		float coverage = 1;
 		iss >> coverage;
@@ -51,8 +51,8 @@ bool loadSequence(Graph* seqCollection, Sequence& seq)
 	bool good = seq.find_first_not_of("ACGT0123") == std::string::npos;
 	bool discarded = true;
 
-	for (unsigned i = 0; i < len - opt::kmerSize + 1; i++) {
-		Sequence kmer(seq, i, opt::kmerSize);
+	for (unsigned i = 0; i < len - V::length() + 1; ++i) {
+		Sequence kmer(seq, i, V::length());
 		if (good || kmer.find_first_not_of("acgtACGT0123")
 				== std::string::npos) {
 			if (good || kmer.find_first_of("acgt") == std::string::npos)
@@ -73,6 +73,8 @@ bool loadSequence(Graph* seqCollection, Sequence& seq)
 template <typename Graph>
 void loadSequences(Graph* seqCollection, std::string inFile)
 {
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
 	Timer timer("LoadSequences " + inFile);
 
 	logger(0) << "Reading `" << inFile << "'...\n";
@@ -98,7 +100,7 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 	for (FastaRecord rec; reader >> rec;) {
 		Sequence seq = rec.seq;
 		size_t len = seq.length();
-		if (opt::kmerSize > len) {
+		if (V::length() > len) {
 			count_small++;
 			continue;
 		}
@@ -143,7 +145,7 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 	if (count_small > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << count_small << " reads "
-			"shorter than " << opt::kmerSize << " bases\n";
+			"shorter than " << V::length() << " bases\n";
 	if (reader.unchaste() > 0)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << reader.unchaste() << " unchaste reads\n";
