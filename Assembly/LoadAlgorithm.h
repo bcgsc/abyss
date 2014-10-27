@@ -73,8 +73,6 @@ bool loadSequence(Graph* seqCollection, Sequence& seq)
 template <typename Graph>
 void loadSequences(Graph* seqCollection, std::string inFile)
 {
-	typedef typename graph_traits<Graph>::vertex_descriptor V;
-
 	Timer timer("LoadSequences " + inFile);
 
 	logger(0) << "Reading `" << inFile << "'...\n";
