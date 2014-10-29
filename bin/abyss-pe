@@ -322,6 +322,7 @@ versions: version
 	@abyss-fixmate --version; echo
 	@abyss-map --version; echo
 	@abyss-scaffold --version; echo
+	@abyss-sealer --version; echo
 	@abyss-todot --version; echo
 	@$(align) --version; echo
 	@awk --version; echo
@@ -372,6 +373,8 @@ scaffolds: $(name)-scaffolds.fa
 
 scaffolds-graph: $(name)-scaffolds.$g
 
+seal-scaffolds: $(name)-scaffolds-sealed.fa
+
 scaftigs: $(name)-scaftigs.fa $(name)-scaftigs.agp
 
 long-scaffs: $(name)-long-scaffs.fa
@@ -392,7 +395,7 @@ clean:
 	unitigs unitigs-graph \
 	pe-index pe-sam pe-bam contigs contigs-graph \
 	mp-index mp-sam mp-bam scaffolds scaffolds-graph \
-	scaftigs long-scaffs long-scaffs-graph \
+	scaftigs long-scaffs long-scaffs-graph seal-scaffolds \
 	all clean help version versions
 
 .DELETE_ON_ERROR:
@@ -614,6 +617,12 @@ endif
 
 %-scaffolds.$g: %-8.$g
 	ln -sf $< $@
+
+# Sealed Scaffold
+$(sealer-ks)="-k90 -k80 -k70 -k60 -k50 -k40 -k30"
+
+%-scaffold-sealed.fa: %-scaffolds.fa
+	abyss-sealer -v -j$j --print-flanks -o$@ -S$< $(sealer-ks) $(in) $(se)
 
 # Scaftig
 
