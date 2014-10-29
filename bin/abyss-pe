@@ -619,10 +619,10 @@ endif
 	ln -sf $< $@
 
 # Sealed Scaffold
-$(sealer-ks)="-k90 -k80 -k70 -k60 -k50 -k40 -k30"
+sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 
-%-scaffold-sealed.fa: %-scaffolds.fa
-	abyss-sealer -v -j$j --print-flanks -o$@ -S$< $(sealer-ks) $(in) $(se)
+%-scaffolds-sealed.fa: %-scaffolds.fa
+	abyss-sealer -v -j$j --print-flanks -o$@ -S$< $(sealer_ks) $(in) $(se)
 
 # Scaftig
 
