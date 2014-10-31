@@ -61,9 +61,9 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " -k <kmer size> -k <kmer size>... -o <output_prefix> -S <path to scaffold file> [options]... <reads1> [reads2]...\n"
-"i.e. abyss-sealer -k30 -k40 -k60 -k65 -o test -S scaffold.fa read1.fa read2.fa\n\n"
-"Close gaps by using left and right flanks as reads for Konnector\n"
-"and performing a K sweep of supplied K values..\n"
+"i.e. abyss-sealer -k90 -k80 -k70 -k60 -k50 -k40 -k30 -o test -S scaffold.fa read1.fa read2.fa\n\n"
+"Close gaps by using left and right flanking sequences of gaps as 'reads' for Konnector\n"
+"and performing multiple runs with each of the supplied K values..\n"
 "\n"
 " Options:\n"
 "\n"
@@ -75,14 +75,13 @@ static const char USAGE_MESSAGE[] =
 "  -k, --kmer=N			the size of a k-mer\n"
 "  -b, --bloom-size=N        	size of bloom filter [500M]\n"
 "  -B, --max-branches=N    	max branches in de Bruijn graph traversal;\n"
-"                             	use 'nolimit' for no limit [350]\n"
+"                             	use 'nolimit' for no limit [1000]\n"
 "  -d, --dot-file=FILE        	write graph traversals to a DOT file\n"
 "  -e, --fix-errors           	find and fix single-base errors when reads\n"
 "                             	have no kmers in bloom filter [disabled]\n"
 "  -f, --min-frag=N           	min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           	max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     	load bloom filter from FILE\n"
-"  -I, --interleaved          	input reads files are interleaved\n"
 "      --mask                 	mask new and changed bases as lower case\n"
 "      --no-mask              	do not mask bases [default]\n"
 "      --chastity             	discard unchaste reads [default]\n"
@@ -102,7 +101,7 @@ static const char USAGE_MESSAGE[] =
 "                             	'-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   	prefix of output FASTA files [required]\n"
 "  -P, --max-paths=N          	merge at most N alternate paths; use 'nolimit'\n"
-"                             	for no limit [2]\n"
+"                             	for no limit [10]\n"
 "  -q, --trim-quality=N       	trim bases from the ends of reads whose\n"
 "                             	quality is less than the threshold\n"
 "      --standard-quality     	zero quality is `!' (33)\n"
@@ -115,7 +114,6 @@ static const char USAGE_MESSAGE[] =
 "                             	for graph traversal [500M]\n"
 "  -t, --trace-file=FILE      	write graph search stats to FILE\n"
 "  -v, --verbose              	display verbose output\n"
-"				-v -v for more detailed stats\n"
 "      --help                 	display this help and exit\n"
 "      --version              	output version information and exit\n"
 "\n"
@@ -149,7 +147,7 @@ namespace opt {
 	bool longSearch = false;
 
 	/** Max active branches during de Bruijn graph traversal */
-	unsigned maxBranches = 350;
+	unsigned maxBranches = 1000;
 
 	/** multi-graph DOT file containing graph traversals */
 	static string dotPath;
@@ -179,7 +177,7 @@ namespace opt {
 	static string inputBloomPath;
 
 	/** Max paths between read 1 and read 2 */
-	unsigned maxPaths = 2;
+	unsigned maxPaths = 10;
 
 	/** Prefix for output files */
 	static string outputPrefix;
