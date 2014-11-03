@@ -101,7 +101,7 @@ static const char USAGE_MESSAGE[] =
 "                             	'-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   	prefix of output FASTA files [required]\n"
 "  -P, --max-paths=N          	merge at most N alternate paths; use 'nolimit'\n"
-"                             	for no limit [10]\n"
+"                             	for no limit [2]\n"
 "  -q, --trim-quality=N       	trim bases from the ends of reads whose\n"
 "                             	quality is less than the threshold\n"
 "      --standard-quality     	zero quality is `!' (33)\n"
@@ -176,8 +176,8 @@ namespace opt {
 	/** Bloom filter input file */
 	static string inputBloomPath;
 
-	/** Max paths between read 1 and read 2 */
-	unsigned maxPaths = 10;
+	/** Max paths between left and right flanking sequences */
+	unsigned maxPaths = 2;
 
 	/** Prefix for output files */
 	static string outputPrefix;
