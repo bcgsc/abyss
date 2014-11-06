@@ -973,6 +973,11 @@ int main(int argc, char** argv)
 		temp = "k" + IntToString(opt::k) + " run complete\n"
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
 		printLog(logStream, temp);
+		
+		if (cascadingBloom != NULL)
+			delete cascadingBloom;
+		else
+			delete bloom;
 	}
 
 	printLog(logStream, "K sweep complete\nCreating new scaffold with gaps closed...\n");
