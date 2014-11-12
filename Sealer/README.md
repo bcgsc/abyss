@@ -12,7 +12,7 @@ See ABySS installation instructions.
 How to run as stand-alone application
 =====================================
 
-abyss-sealer [-k values...] [-o outputprefix] [-S assembly file] [options...] [reads...]
+`abyss-sealer [-k values...] [-o outputprefix] [-S assembly file] [options...] [reads...]`
 
 Sealer requires the following information to run:
 - draft assembly
@@ -26,11 +26,11 @@ Sample commands
 
 Without pre-built bloom filters:
 
-abyss-sealer -k90 -k80 -o run1 -S test.fa read1.fa.gz read2.fa.gz
+`abyss-sealer -k90 -k80 -o run1 -S test.fa read1.fa.gz read2.fa.gz`
 
 With pre-built bloom filters:
 
-abyss-sealer -k90 -k80 -o run1 -S test.fa -i k90.bloom -i k80.bloom read1.fa.gz read2.fa.gz
+`abyss-sealer -k90 -k80 -o run1 -S test.fa -i k90.bloom -i k80.bloom read1.fa.gz read2.fa.gz`
 
 
 Suggested parameters for first run
@@ -38,8 +38,8 @@ Suggested parameters for first run
 
 When running Sealer for the first time on a dataset, we recommend using the following parameters. *P* is the threshold for number of paths allowed to be traversed. When set to 10, Konnector will attempt to close gaps even when there are 10 different paths found. It would attempt to create a consensus sequence between these paths. The default setting is 2. The required parameter *k* sets the k-mer length, and these suggested values will provide insight for optimizing Sealer. For instance, if after the first run most gaps are closed at k90, then on the next run, using k92, k91, k90, k89, and k88 may close even more gaps. Note that these suggested k values are only applicable for datasets without a pre-built Bloom Filter. Note: the max possible k value for Sealer is 100. 
 
-- "-P 10" 
-- "-k90 -k80 -k70 -k60 -k50 -k40 -k30"  
+- `-P 10` 
+- `-k90 -k80 -k70 -k60 -k50 -k40 -k30`
 
 
 Output files
@@ -48,55 +48,41 @@ Output files
 - prefix_log.txt
 - prefix_scaffold.fa
 - prefix_merged.fa
-- prefix_flanks_1.fq  -> if "--print-flanks" option used
-- prefix_flanks_2.fq  -> if "--print-flanks" option used
+- prefix_flanks_1.fq  -> if `--print-flanks` option used
+- prefix_flanks_2.fq  -> if `--print-flanks` option used
 
 The log file contains results of each Konnector run. The structure of one run is as follows:
 
-\#\# unique gaps closed for k##		< # closed gaps with unique path + # closed gaps with multiple paths
+>\#\# unique gaps closed for k##\t		< # closed gaps with unique path + # closed gaps with multiple paths\n
+No start/goal kmer: ###		\t	< # unclosed gaps with no start/goal k-mer\n
+No path: ###			\t	< # unclosed gaps with no path found\n
+Unique path: ###		\t	< # gaps that closed with unique paths\n
+Multiple paths: ###		\t	< # gaps that closed with >1 paths. A consensus sequence between the paths are output. This will likely contain ambiguity codes\n
+Too many paths: ###		\t	< # unclosed gaps with paths greater than allowed by -P parameter (default 2)\n
+Too many branches: ###		\t	< # unclosed gaps with branches greater than allowed by -B paramter (default 1000)\n
+Too many path/path mismatches: ###\t	< # unclosed gaps with path/path mismatches greater than allowed by -M paramter (default no-limit)\n
+Too many path/read mismatches: ###\t	< # unclosed gaps with path/read mismatches greater than allowed by -m parameter (default no-limit)\n
+Contains cycle: ###		\t	< # unclosed gaps containing cycles\n
+Exceeded mem limit: ###		\n	
+Skipped: ###			\t	< # gaps skipped\n
+\#\#\# flanks left		\t		< # gaps left unclosed and will be inserted to next K run. Closed gaps no longer inserted into subsequent K runs.\n
+k## run complete\n
+Total gaps closed so far = ###	\t	< # gaps closed by all K runs so far\n
 
-No start/goal kmer: ###			< # unclosed gaps with no start/goal k-mer
 
-No path: ###				< # unclosed gaps with no path found
+The scaffold.fa file is a gap-filled version of the draft assembly inserted into Sealer. The merged.fa file contains every newly generated sequence that were inserted into gaps, including the flanking sequences. Negative sizes of new sequences indicate Konnector collapsed the pair of flanking sequences. For example:
 
-Unique path: ###			< # gaps that closed with unique paths
-
-Multiple paths: ###			< # gaps that closed with >1 paths. A consensus sequence between the paths are output. This will likely contain ambiguity codes
-
-Too many paths: ###			< # unclosed gaps with paths greater than allowed by -P parameter (default 2)
-
-Too many branches: ###			< # unclosed gaps with branches greater than allowed by -B paramter (default 1000)
-
-Too many path/path mismatches: ###	< # unclosed gaps with path/path mismatches greater than allowed by -M paramter (default no-limit)
-
-Too many path/read mismatches: ###	< # unclosed gaps with path/read mismatches greater than allowed by -m parameter (default no-limit)
-
-Contains cycle: ###			< # unclosed gaps containing cycles
-
-Exceeded mem limit: ###			
-
-Skipped: ###				< # gaps skipped
-
-### flanks left				< # gaps left unclosed and will be inserted to next K run. Closed gaps no longer inserted into subsequent K runs. 
-
-k## run complete
-
-Total gaps closed so far = ###		< # gaps closed by all K runs so far. 
-
-The scaffold.fa file is a gap-filled version of the draft assembly inserted into Sealer.
-
-The merged.fa file contains every newly generated sequence that were inserted into gaps, including the flanking sequences. Negative sizes of new sequences indicate Konnector collapsed the pair of flanking sequences. For example:
-
-\>[scaffold ID]_[original start position of gap on scaffold]_[size of new sequence]
+\>[scaffold ID]\_[original start position of gap on scaffold]\_[size of new sequence]
 ACGCGACGAGCAGCGAGCACGAGCAGCGACGAGCGACGACGAGCAGCGACGAGCG
 
-If "--print-flanks" option is enabled, Sealer outputs the flanking sequences
+
+If `--print-flanks` option is enabled, Sealer outputs the flanking sequences
 used to insert into Konnector. This may be useful should users which to double
 check if this tool is extracting the correct sequences surrounding gaps. The
 structure of these files are as follows:
 
-\>[scaffold ID]_[original start position of gap on scaffold]_[size of gap]/[1 or 2 indicating whether left or right flanking sequence]
-GCTAGCTAGCTAGCTGATCGATCGTAGCTAGCTAGCTGACTAGCTGATCAGTCGATCGATCGATCGATCGATGCTAGCTAGCTAGCTAGCTACGTAGCT
+\>[scaffold ID]\_[original start position of gap on scaffold]\_[size of gap]/[1 or 2 indicating whether left or right flank]
+GCTAGCTAGCTAGCTGATCGATCGTAGCTAGCTAGCTGACTAGCTGATCAGTCGA
 
 
 How to optimize for gap closure
