@@ -53,22 +53,23 @@ Output files
 
 The log file contains results of each Konnector run. The structure of one run is as follows:
 
-\#\# unique gaps closed for k##\t		< # closed gaps with unique path + # closed gaps with multiple paths\n
-No start/goal kmer: ###		\t	< # unclosed gaps with no start/goal k-mer\n
-No path: ###			\t	< # unclosed gaps with no path found\n
-Unique path: ###		\t	< # gaps that closed with unique paths\n
-Multiple paths: ###		\t	< # gaps that closed with >1 paths. A consensus sequence between the paths are output. This will likely contain ambiguity codes\n
-Too many paths: ###		\t	< # unclosed gaps with paths greater than allowed by -P parameter (default 2)\n
-Too many branches: ###		\t	< # unclosed gaps with branches greater than allowed by -B paramter (default 1000)\n
-Too many path/path mismatches: ###\t	< # unclosed gaps with path/path mismatches greater than allowed by -M paramter (default no-limit)\n
-Too many path/read mismatches: ###\t	< # unclosed gaps with path/read mismatches greater than allowed by -m parameter (default no-limit)\n
-Contains cycle: ###		\t	< # unclosed gaps containing cycles\n
-Exceeded mem limit: ###		\n	
-Skipped: ###			\t	< # gaps skipped\n
-\#\#\# flanks left		\t		< # gaps left unclosed and will be inserted to next K run. Closed gaps no longer inserted into subsequent K runs.\n
-k## run complete\n
-Total gaps closed so far = ###	\t	< # gaps closed by all K runs so far\n
-
+---
+## unique gaps closed for k## 	< # closed gaps with unique path + # closed gaps with multiple paths
+No start/goal kmer: ###			< # unclosed gaps with no start/goal k-mer
+No path: ###				< # unclosed gaps with no path found
+Unique path: ###			< # gaps that closed with unique paths
+Multiple paths: ###			< # gaps that closed with >1 paths. A consensus sequence between the paths are output. This will likely contain ambiguity codes
+Too many paths: ###			< # unclosed gaps with paths greater than allowed by -P parameter (default 2)
+Too many branches: ###			< # unclosed gaps with branches greater than allowed by -B paramter (default 1000)
+Too many path/path mismatches: ###	< # unclosed gaps with path/path mismatches greater than allowed by -M paramter (default no-limit)
+Too many path/read mismatches: ###	< # unclosed gaps with path/read mismatches greater than allowed by -m parameter (default no-limit)
+Contains cycle: ###			< # unclosed gaps containing cycles
+Exceeded mem limit: ###			
+Skipped: ###				< # gaps skipped
+### flanks left				< # gaps left unclosed and will be inserted to next K run. Closed gaps no longer inserted into subsequent K runs.
+k## run complete
+Total gaps closed so far = ###		< # gaps closed by all K runs so far
+---
 
 The scaffold.fa file is a gap-filled version of the draft assembly inserted into Sealer. The merged.fa file contains every newly generated sequence that were inserted into gaps, including the flanking sequences. Negative sizes of new sequences indicate Konnector collapsed the pair of flanking sequences. For example:
 
