@@ -53,7 +53,7 @@ Output files
 
 The log file contains results of each Konnector run. The structure of one run is as follows:
 
->\#\# unique gaps closed for k##\t		< # closed gaps with unique path + # closed gaps with multiple paths\n
+\#\# unique gaps closed for k##\t		< # closed gaps with unique path + # closed gaps with multiple paths\n
 No start/goal kmer: ###		\t	< # unclosed gaps with no start/goal k-mer\n
 No path: ###			\t	< # unclosed gaps with no path found\n
 Unique path: ###		\t	< # gaps that closed with unique paths\n
