@@ -32,6 +32,7 @@ With pre-built bloom filters:
 
 `abyss-sealer -k90 -k80 -o run1 -S test.fa -i k90.bloom -i k80.bloom read1.fa.gz read2.fa.gz`
 
+Note: when using pre-built bloom filters, Sealer must be compiled with the same `maxk` value  that the bloom  filter was built with. For example, if a bloom filter was built with a `maxk`of 64, Sealer must be compiled with a `maxk` of 64 as well. If different values are used between the pre-built bloom filter and Sealer, any sequences generated will be nonsensical and incorrect. 
 
 Suggested parameters for first run
 ==================================
