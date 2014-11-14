@@ -84,7 +84,11 @@ AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
 	computing library]))
 if test "$with_mpi" -a -d "$with_mpi"; then
 	mpi_cppflags="-isystem$with_mpi/include"
-	mpi_ldflags="-L$with_mpi/lib"
+	if test -d "$with_mpi/lib64"; then
+		mpi_ldflags="-L$with_mpi/lib64"
+	else
+		mpi_ldflags="-L$with_mpi/lib"
+	fi
 fi
 
 AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
