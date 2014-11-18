@@ -20,8 +20,9 @@ class ConcurrentBloomFilter
 public:
 
 	/** Constructor */
-	ConcurrentBloomFilter(BloomFilterType& bloom, size_t numLocks) :
-		m_bloom(bloom), m_locks(numLocks)
+	ConcurrentBloomFilter(BloomFilterType& bloom, size_t numLocks,
+		size_t hashSeed=0) : m_bloom(bloom), m_locks(numLocks),
+		m_hashSeed(hashSeed)
 	{
 		m_windowSize = bloom.size() / numLocks;
 		// round down to the nearest byte boundary,
@@ -54,7 +55,7 @@ public:
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return *this[Bloom::hash(key) % m_bloom.size()];
+		return *this[Bloom::hash(key, m_hashSeed) % m_bloom.size()];
 	}
 
 	/** Add the object with the specified index to this set. */
@@ -69,7 +70,7 @@ public:
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		insert(Bloom::hash(key) % m_bloom.size());
+		insert(Bloom::hash(key, m_hashSeed) % m_bloom.size());
 	}
 
 private:
@@ -90,6 +91,7 @@ private:
 
 	BloomFilterType& m_bloom;
 	std::vector<omp_lock_t> m_locks;
+	size_t m_hashSeed;
 	size_t m_windowSize;
 };
 

@@ -17,13 +17,14 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 	 * @param endBitPos index of last bit in the window
 	 * @param max_count the maximum count value of the Bloom filter
 	 */
-	CascadingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos,
-			unsigned max_count)
-		: m_fullBloomSize(fullBloomSize)
+	CascadingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos,
+			size_t endBitPos, unsigned max_count, size_t hashSeed=0)
+		: m_fullBloomSize(fullBloomSize), m_hashSeed(hashSeed)
 	{
 		m_data.reserve(max_count);
-		for (unsigned i = 0; i < max_count; ++i)
-			m_data.push_back(new BloomFilterWindow(fullBloomSize, startBitPos, endBitPos));
+		for (unsigned i = 0; i < max_count; i++)
+			m_data.push_back(new BloomFilterWindow(fullBloomSize,
+						startBitPos, endBitPos, hashSeed));
 	}
 
 	/** Return the size of the bit array. */
@@ -62,7 +63,7 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 	void insert(const Bloom::key_type& key)
 	{
 		assert(m_data.back() != NULL);
-		insert(Bloom::hash(key) % m_fullBloomSize);
+		insert(Bloom::hash(key, m_hashSeed) % m_fullBloomSize);
 	}
 
 	void write(std::ostream& out) const
@@ -87,6 +88,7 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 
   private:
 	size_t m_fullBloomSize;
+	size_t m_hashSeed;
 	std::vector<BloomFilterWindow*> m_data;
 };
 
