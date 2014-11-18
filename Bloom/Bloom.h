@@ -40,12 +40,13 @@ namespace Bloom {
 		size_t fullBloomSize;
 		size_t startBitPos;
 		size_t endBitPos;
+		size_t hashSeed;
 	};
 
 	/** Print a progress message after loading this many seqs */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
-	static const unsigned BLOOM_VERSION = 3;
+	static const unsigned BLOOM_VERSION = 4;
 
 	/** Return the hash value of this object. */
 	inline static size_t hash(const key_type& key)
@@ -137,13 +138,12 @@ namespace Bloom {
 		(void)writeHeader;
 
 		out << BLOOM_VERSION << '\n';
-		assert(out);
 		out << Kmer::length() << '\n';
-		assert(out);
 		out << header.fullBloomSize
 			<< '\t' << header.startBitPos
 			<< '\t' << header.endBitPos
 			<< '\n';
+		out << header.hashSeed << '\n';
 		assert(out);
 	}
 
@@ -179,6 +179,8 @@ namespace Bloom {
 		   >> expect("\t") >> header.startBitPos
 		   >> expect("\t") >> header.endBitPos
 		   >> expect("\n");
+
+		in >> header.hashSeed >> expect("\n");
 
 		assert(in);
 		assert(header.startBitPos < header.fullBloomSize);

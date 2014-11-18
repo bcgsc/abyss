@@ -128,6 +128,7 @@ public:
 		m_fullBloomSize = header.fullBloomSize;
 		m_startBitPos = header.startBitPos;
 		m_endBitPos = header.endBitPos;
+		m_hashSeed = header.hashSeed;
 
 		size_t bits = header.endBitPos - header.startBitPos + 1;
 
@@ -153,6 +154,8 @@ public:
 		header.fullBloomSize = m_fullBloomSize;
 		header.startBitPos = m_startBitPos;
 		header.endBitPos = m_endBitPos;
+		header.hashSeed = m_hashSeed;
+
 		Bloom::writeHeader(out, header);
 		assert(out);
 

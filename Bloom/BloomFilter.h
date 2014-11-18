@@ -117,6 +117,8 @@ class BloomFilter
 			}
 		}
 
+		m_hashSeed = header.hashSeed;
+
 		size_t bits = header.endBitPos - header.startBitPos + 1;
 		readBits(in, m_array, bits, header.startBitPos, readOp);
 		assert(in);
@@ -129,6 +131,7 @@ class BloomFilter
 		header.fullBloomSize = m_size;
 		header.startBitPos = 0;
 		header.endBitPos = m_size - 1;
+		header.hashSeed = m_hashSeed;
 
 		Bloom::writeHeader(out, header);
 		assert(out);
