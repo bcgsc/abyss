@@ -45,7 +45,7 @@ namespace Bloom {
 	/** Print a progress message after loading this many seqs */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
-	static const unsigned BLOOM_VERSION = 2;
+	static const unsigned BLOOM_VERSION = 3;
 
 	/** Return the hash value of this object. */
 	inline static size_t hash(const key_type& key)
@@ -55,7 +55,7 @@ namespace Bloom {
 
 		key_type copy(key);
 		copy.reverseComplement();
-		return hashmem(&copy, sizeof copy);
+		return hashmem(&copy, sizeof copy, 0);
 	}
 
 	/** Return the hash value of this object given seed. */

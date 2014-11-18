@@ -27,8 +27,9 @@ public:
 	 * @param startBitPos index of first bit in the window
 	 * @param endBitPos index of last bit in the window
 	 */
-	BloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos) :
-		BloomFilter(endBitPos - startBitPos + 1),
+	BloomFilterWindow(size_t fullBloomSize, size_t startBitPos,
+			size_t endBitPos, size_t hashSeed=0) :
+		BloomFilter(endBitPos - startBitPos + 1, hashSeed),
 		m_fullBloomSize(fullBloomSize),
 		m_startBitPos(startBitPos),
 		m_endBitPos(endBitPos)
@@ -88,7 +89,7 @@ public:
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return (*this)[Bloom::hash(key) % m_fullBloomSize];
+		return (*this)[Bloom::hash(key, m_hashSeed) % m_fullBloomSize];
 	}
 
 	/** Add the object with the specified index to this set. */
@@ -101,7 +102,7 @@ public:
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		insert(Bloom::hash(key) % m_fullBloomSize);
+		insert(Bloom::hash(key, m_hashSeed) % m_fullBloomSize);
 	}
 
 	/** Operator for reading a bloom filter from a stream. */

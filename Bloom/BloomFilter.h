@@ -20,10 +20,11 @@ class BloomFilter
   public:
 
 	/** Constructor. */
-	BloomFilter() : m_size(0), m_array(NULL) { }
+	BloomFilter() : m_size(0), m_hashSeed(0), m_array(NULL) { }
 
 	/** Constructor. */
-	BloomFilter(size_t n) : m_size(n)
+	BloomFilter(size_t n, size_t hashSeed=0) : m_size(n),
+		m_hashSeed(hashSeed)
 	{
 		m_array = new char[(n + 7)/8]();
 	}
@@ -70,7 +71,7 @@ class BloomFilter
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return (*this)[Bloom::hash(key) % m_size];
+		return (*this)[Bloom::hash(key, m_hashSeed) % m_size];
 	}
 
 	/** Add the object with the specified index to this set. */
@@ -83,7 +84,7 @@ class BloomFilter
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		insert(Bloom::hash(key) % m_size);
+		insert(Bloom::hash(key, m_hashSeed) % m_size);
 	}
 
 	/** Operator for reading a bloom filter from a stream. */
@@ -149,6 +150,7 @@ class BloomFilter
   protected:
 
 	size_t m_size;
+	size_t m_hashSeed;
 	char* m_array;
 };
 

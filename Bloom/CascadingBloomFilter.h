@@ -18,11 +18,11 @@ class CascadingBloomFilter
 	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CascadingBloomFilter(size_t n, size_t max_count)
+	CascadingBloomFilter(size_t n, size_t max_count, size_t hashSeed=0) : m_hashSeed(hashSeed)
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
-			m_data.push_back(new BloomFilter(n));
+			m_data.push_back(new BloomFilter(n, hashSeed));
 	}
 
 	/** Destructor */
@@ -68,7 +68,7 @@ class CascadingBloomFilter
 	bool operator[](const Bloom::key_type& key) const
 	{
 		assert(m_data.back() != NULL);
-		return (*m_data.back())[Bloom::hash(key) % m_data.back()->size()];
+		return (*m_data.back())[Bloom::hash(key, m_hashSeed) % m_data.back()->size()];
 	}
 
 	/** Add the object with the specified index to this multiset. */
@@ -87,7 +87,7 @@ class CascadingBloomFilter
 	void insert(const Bloom::key_type& key)
 	{
 		assert(m_data.back() != NULL);
-		insert(Bloom::hash(key) % m_data.back()->size());
+		insert(Bloom::hash(key, m_hashSeed) % m_data.back()->size());
 	}
 
 	/** Get the Bloom filter for a given level */
@@ -111,6 +111,7 @@ class CascadingBloomFilter
 	}
 
   private:
+	size_t m_hashSeed;
 	std::vector<BloomFilter*> m_data;
 
 };
