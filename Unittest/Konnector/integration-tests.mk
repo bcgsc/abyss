@@ -353,13 +353,13 @@ abyss_bloom_multithreaded_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq 
 #------------------------------------------------------------
 
 konnector_multithreaded_test: $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
-	/usr/bin/time -v $(konnector) $(cp_opts) -o $(tmpdir)/e$e_singlethreaded \
-		$(CP_OPTS) -j1 $^
+	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_singlethreaded \
+		$(K_OPTS) -j1 $^
 	cat $(tmpdir)/e$e_singlethreaded_merged.fa | \
 		paste - - | sort | tr '\t' '\n' \
 		> $(tmpdir)/e$e_singlethreaded_merged.sorted.fa
-	/usr/bin/time -v $(konnector) $(cp_opts) -o $(tmpdir)/e$e_multithreaded \
-		$(CP_OPTS) -j10 $^
+	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_multithreaded \
+		$(K_OPTS) -j10 $^
 	cat $(tmpdir)/e$e_multithreaded_merged.fa | \
 		paste - - | sort | tr '\t' '\n' \
 		> $(tmpdir)/e$e_multithreaded_merged.sorted.fa
