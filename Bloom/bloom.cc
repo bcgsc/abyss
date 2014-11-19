@@ -64,6 +64,7 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -B, --buffer-size=N        size of I/O buffer for each thread, in bytes [100000]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
+"  -h, --hash-seed=N          seed for hash function [0]\n"
 "  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
 "  -L, --init-level='N=FILE'  initialize level N of cascading bloom filter\n"
@@ -114,6 +115,9 @@ namespace opt {
 	/** The number of parallel threads. */
 	unsigned threads = 1;
 
+	/** Seed for Bloom filter hash function. */
+	size_t hashSeed = 0;
+
 	/** The size of a k-mer. */
 	unsigned k;
 
@@ -153,13 +157,14 @@ namespace opt {
 	OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "b:B:j:k:l:L:m:n:q:rvw:";
+static const char shortopts[] = "b:B:h:j:k:l:L:m:n:q:rvw:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
 static const struct option longopts[] = {
 	{ "bloom-size", required_argument, NULL, 'b' },
 	{ "buffer-size", required_argument, NULL, 'B' },
+	{ "hash-seed",        required_argument, NULL, 'h' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "kmer", required_argument, NULL, 'k' },
 	{ "levels", required_argument, NULL, 'l' },
@@ -359,6 +364,8 @@ int build(int argc, char** argv)
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
 			arg >> opt::bufferSize; break;
+		  case 'h':
+			arg >> opt::hashSeed; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'l':
@@ -445,10 +452,10 @@ int build(int argc, char** argv)
 	if (opt::windows == 0) {
 
 		if (opt::levels == 1) {
-			BloomFilter bloom(bits);
+			BloomFilter bloom(bits, opt::hashSeed);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<BloomFilter>
-				cbf(bloom, opt::numLocks);
+				cbf(bloom, opt::numLocks, opt::hashSeed);
 			loadFilters(cbf, argc, argv);
 #else
 			loadFilters(bloom, argc, argv);
@@ -457,11 +464,11 @@ int build(int argc, char** argv)
 			writeBloom(bloom, outputPath);
 		}
 		else {
-			CascadingBloomFilter cascadingBloom(bits, opt::levels);
+			CascadingBloomFilter cascadingBloom(bits, opt::levels, opt::hashSeed);
 			initBloomFilterLevels(cascadingBloom);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter>
-				cbf(cascadingBloom, opt::numLocks);
+				cbf(cascadingBloom, opt::numLocks, opt::hashSeed);
 			loadFilters(cbf, argc, argv);
 #else
 			loadFilters(cascadingBloom, argc, argv);
@@ -482,14 +489,16 @@ int build(int argc, char** argv)
 			endBitPos = bits - 1;
 
 		if (opt::levels == 1) {
-			BloomFilterWindow bloom(bits, startBitPos, endBitPos);
+			BloomFilterWindow bloom(bits, startBitPos,
+					endBitPos, opt::hashSeed);
 			loadFilters(bloom, argc, argv);
 			printBloomStats(cerr, bloom);
 			writeBloom(bloom, outputPath);
 		}
 		else {
 			CascadingBloomFilterWindow cascadingBloom(
-				bits, startBitPos, endBitPos, opt::levels);
+				bits, startBitPos, endBitPos, opt::levels,
+				opt::hashSeed);
 			initBloomFilterLevels(cascadingBloom);
 			loadFilters(cascadingBloom, argc, argv);
 			printCascadingBloomStats(cerr, cascadingBloom);
