@@ -75,7 +75,7 @@ namespace Bloom {
 	/** Load a sequence file into a bloom filter */
 	template <typename BF>
 	inline static void loadFile(BF& bloomFilter, unsigned k, const std::string& path,
-			bool verbose = false, size_t taskIOBufferSize = 1000)
+			bool verbose = false, size_t taskIOBufferSize = 100000)
 	{
 		assert(!path.empty());
 		if (verbose)
@@ -85,13 +85,16 @@ namespace Bloom {
 #pragma omp parallel
 		for (std::vector<std::string> buffer(taskIOBufferSize);;) {
 			buffer.clear();
+			size_t bufferSize = 0;
 			bool good = true;
 #pragma omp critical(in)
-			for (; good && buffer.size() < taskIOBufferSize;) {
+			for (; good && bufferSize < taskIOBufferSize;) {
 				std::string seq;
 				good = in >> seq;
-				if (good)
+				if (good) {
 					buffer.push_back(seq);
+					bufferSize += seq.length();
+				}
 			}
 			if (buffer.size() == 0)
 				break;
