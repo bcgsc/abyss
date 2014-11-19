@@ -128,7 +128,16 @@ public:
 		m_fullBloomSize = header.fullBloomSize;
 		m_startBitPos = header.startBitPos;
 		m_endBitPos = header.endBitPos;
-		m_hashSeed = header.hashSeed;
+
+		if (m_hashSeed != header.hashSeed) {
+			if (readOp == BITWISE_OVERWRITE) {
+				m_hashSeed = header.hashSeed;
+			} else {
+				std::cerr << "error: can't union/intersect bloom filters with "
+					<< "different hash seed values\n";
+				exit(EXIT_FAILURE);
+			}
+		}
 
 		size_t bits = header.endBitPos - header.startBitPos + 1;
 
