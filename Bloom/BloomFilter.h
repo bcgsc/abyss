@@ -107,6 +107,16 @@ class BloomFilter
 		Bloom::FileHeader header = Bloom::readHeader(in);
 		assert(in);
 
+		if (m_hashSeed != header.hashSeed) {
+			if (readOp == BITWISE_OVERWRITE) {
+				m_hashSeed = header.hashSeed;
+			} else {
+				std::cerr << "error: can't union/intersect bloom filters with "
+					<< "different hash seeds\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+
 		if (m_size != header.fullBloomSize) {
 			if (readOp == BITWISE_OVERWRITE) {
 				resize(header.fullBloomSize);
@@ -116,8 +126,6 @@ class BloomFilter
 				exit(EXIT_FAILURE);
 			}
 		}
-
-		m_hashSeed = header.hashSeed;
 
 		size_t bits = header.endBitPos - header.startBitPos + 1;
 		readBits(in, m_array, bits, header.startBitPos, readOp);
