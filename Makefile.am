@@ -32,7 +32,6 @@ SUBDIRS = \
 	dialign \
 	Align \
 	ABYSS $(Parallel) \
-	AdjList \
 	Bloom \
 	Konnector \
 	Consensus \
@@ -55,6 +54,7 @@ SUBDIRS = \
 	FilterGraph \
 	GapFiller \
 	Sealer \
+	AdjList \
 	$(Unittest)
 
 %.html: %.md

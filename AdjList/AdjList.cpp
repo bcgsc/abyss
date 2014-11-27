@@ -20,9 +20,14 @@
 #include <iostream>
 #include <set>
 #include <vector>
+
 #if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
+#endif
+
+#if PAIRED_DBG
+#include "PairedDBG/KmerPair.h"
 #endif
 
 using namespace std;
