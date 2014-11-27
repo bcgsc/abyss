@@ -192,16 +192,16 @@ static void addOverlapsSA(Graph& g, const vector<Kmer>& prefixes)
 	}
 }
 
-/** An index of suffixes of k-1 bp. */
-typedef unordered_map<Kmer, vector<ContigNode> >
-	SuffixMap;
-
 /** Read contigs. Add contig properties to the graph. Add prefixes to
  * the collection and add suffixes to their index.
  */
+template <class KmerType>
 static void readContigs(const string& path,
-		Graph& g, vector<Kmer>& prefixes, SuffixMap& suffixMap)
+		Graph& g, vector<KmerType>& prefixes,
+		unordered_map<KmerType, vector<ContigNode> >& suffixMap)
 {
+	typedef unordered_map<KmerType, vector<ContigNode> > SuffixMap;
+
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
 
@@ -222,8 +222,8 @@ static void readContigs(const string& path,
 		// Add the prefix to the collection.
 		unsigned overlap = opt::k - 1;
 		assert(seq.length() > overlap);
-		Kmer prefix(seq.substr(0, overlap));
-		Kmer suffix(seq.substr(seq.length() - overlap));
+		KmerType prefix(seq.substr(0, overlap));
+		KmerType suffix(seq.substr(seq.length() - overlap));
 		prefixes.push_back(prefix);
 		prefixes.push_back(reverseComplement(suffix));
 
@@ -236,6 +236,38 @@ static void readContigs(const string& path,
 				get(vertex_complement, g, u));
 	}
 	assert(in.eof());
+}
+
+/** Build contig overlap graph. */
+template <class KmerType>
+static void buildOverlapGraph(Graph& g, vector<KmerType>& prefixes,
+	unordered_map<KmerType, vector<ContigNode> >& suffixMap)
+{
+	// Add the overlap edges of exactly k-1 bp.
+
+	typedef graph_traits<Graph>::vertex_descriptor V;
+	typedef unordered_map<KmerType, vector<ContigNode> > SuffixMap;
+	typedef typename vector<KmerType>::const_iterator PrefixIterator;
+	typedef const typename SuffixMap::mapped_type Edges;
+	typedef typename SuffixMap::mapped_type::const_iterator SuffixIterator;
+
+	if (opt::verbose > 0)
+		cerr << "Finding overlaps of exactly k-1 bp...\n";
+	for (PrefixIterator it = prefixes.begin(); it != prefixes.end(); ++it) {
+		ContigNode v(it - prefixes.begin());
+		Edges& edges = suffixMap[*it];
+		for (SuffixIterator itu = edges.begin(); itu != edges.end(); ++itu) {
+			V uc = get(vertex_complement, g, *itu);
+			V vc = get(vertex_complement, g, v);
+			if (opt::ss && uc.sense() != vc.sense())
+				continue;
+			add_edge(vc, uc, -(int)opt::k + 1, static_cast<DG&>(g));
+		}
+	}
+	SuffixMap().swap(suffixMap);
+
+	if (opt::verbose > 0)
+		printGraphStats(cerr, g);
 }
 
 int main(int argc, char** argv)
@@ -306,46 +338,39 @@ int main(int argc, char** argv)
 	init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 #endif
 	opt::trimMasked = false;
-	Kmer::setLength(opt::k - 1);
+
+	// contig overlap graph
 	Graph g;
-	vector<Kmer> prefixes;
-	SuffixMap suffixMap(prefixes.size());
-	if (optind < argc) {
-		for (; optind < argc; optind++)
-			readContigs(argv[optind], g, prefixes, suffixMap);
-	} else
-		readContigs("-", g, prefixes, suffixMap);
-	g_contigNames.lock();
 
-	// Add the overlap edges of exactly k-1 bp.
-	typedef graph_traits<Graph>::vertex_descriptor V;
-	if (opt::verbose > 0)
-		cerr << "Finding overlaps of exactly k-1 bp...\n";
-	for (vector<Kmer>::const_iterator it = prefixes.begin();
-			it != prefixes.end(); ++it) {
-		ContigNode v(it - prefixes.begin());
-		const SuffixMap::mapped_type& edges = suffixMap[*it];
-		for (SuffixMap::mapped_type::const_iterator
-				itu = edges.begin(); itu != edges.end(); ++itu) {
-			V uc = get(vertex_complement, g, *itu);
-			V vc = get(vertex_complement, g, v);
-			if (opt::ss && uc.sense() != vc.sense())
-				continue;
-			add_edge(vc, uc, -(int)opt::k + 1, static_cast<DG&>(g));
+	if (opt::singleKmerSize > 0) {
+
+		// TODO: build overlap graph for paired dbg
+
+	} else {
+
+		Kmer::setLength(opt::k - 1);
+
+		vector<Kmer> prefixes;
+		unordered_map<Kmer, vector<ContigNode> >
+			suffixMap(prefixes.size());
+
+		if (optind < argc) {
+			for (; optind < argc; optind++)
+				readContigs(argv[optind], g, prefixes, suffixMap);
+		} else
+			readContigs("-", g, prefixes, suffixMap);
+		g_contigNames.lock();
+
+		buildOverlapGraph(g, prefixes, suffixMap);
+
+		if (opt::minOverlap < opt::k - 1) {
+			// Add the overlap edges of fewer than k-1 bp.
+			if (opt::verbose > 0)
+				cerr << "Finding overlaps of fewer than k-1 bp...\n";
+			addOverlapsSA(g, prefixes);
+			if (opt::verbose > 0)
+				printGraphStats(cerr, g);
 		}
-	}
-	SuffixMap().swap(suffixMap);
-
-	if (opt::verbose > 0)
-		printGraphStats(cerr, g);
-
-	if (opt::minOverlap < opt::k - 1) {
-		// Add the overlap edges of fewer than k-1 bp.
-		if (opt::verbose > 0)
-			cerr << "Finding overlaps of fewer than k-1 bp...\n";
-		addOverlapsSA(g, prefixes);
-		if (opt::verbose > 0)
-			printGraphStats(cerr, g);
 	}
 
 	// Output the graph.
