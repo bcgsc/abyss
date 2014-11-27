@@ -10,4 +10,4 @@ abyss_filtergraph_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a
 
-abyss_filtergraph_SOURCES = FilterGraph.cpp
+abyss_filtergraph_SOURCES = FilterGraph.cc
