@@ -47,7 +47,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"  -k, --kmer=K          find overlaps of up to K-1 bases\n"
+"  -k, --kmer=N          The length of a k-mer pair, including the gap\n"
+"  -K, --single-kmer=N   The length of a single k-mer\n"
 "  -m, --min-overlap=M   require a minimum overlap of M bases [50]\n"
 "      --adj             output the graph in ADJ format [default]\n"
 "      --asqg            output the graph in ASQG format\n"
@@ -75,6 +76,10 @@ namespace opt {
 	dbVars metaVars;
 #endif
 	unsigned k; // used by GraphIO
+
+	/** Length of a single-kmer in a kmer pair */
+	unsigned singleKmerSize = 0;
+
 	int format; // used by GraphIO
 
 	/** Run a strand-specific RNA-Seq assembly. */
@@ -84,7 +89,7 @@ namespace opt {
 	static unsigned minOverlap = 50;
 }
 
-static const char shortopts[] = "k:m:v";
+static const char shortopts[] = "k:K:m:v";
 
 #if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
@@ -94,6 +99,7 @@ enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
+	{ "single-kmer", required_argument, NULL, 'K' },
 	{ "min-overlap", required_argument, NULL, 'm' },
 	{ "adj",     no_argument,       &opt::format, ADJ },
 	{ "asqg",    no_argument,       &opt::format, ASQG },
@@ -254,6 +260,7 @@ int main(int argc, char** argv)
 		switch (c) {
 			case '?': die = true; break;
 			case 'k': arg >> opt::k; break;
+			case 'K': arg >> opt::singleKmerSize; break;
 			case 'm': arg >> opt::minOverlap; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
