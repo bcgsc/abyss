@@ -13,7 +13,7 @@ typedef VertexData<Dinuc, DinucSet> KmerPairData;
 typedef google::sparse_hash_map<KmerPair, KmerPairData, hash<KmerPair> >
 	SequenceDataHash;
 #else
-# include "UnorderedMap.h"
+# include "Common/UnorderedMap.h"
 typedef unordered_map<KmerPair, KmerPairData, hash<KmerPair> >
 	SequenceDataHash;
 #endif
