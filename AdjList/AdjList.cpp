@@ -275,6 +275,55 @@ static void buildOverlapGraph(Graph& g, vector<KmerType>& prefixes,
 		printGraphStats(cerr, g);
 }
 
+template <class KmerType>
+void loadDataStructures(Graph& g, vector<KmerType>& prefixes,
+	unordered_map<KmerType, vector<ContigNode> >& suffixMap,
+	int argc, char** argv)
+{
+	if (optind < argc) {
+		for (; optind < argc; optind++)
+			readContigs(argv[optind], g, prefixes, suffixMap);
+	} else
+		readContigs("-", g, prefixes, suffixMap);
+	g_contigNames.lock();
+}
+
+/** Build contig overlap graph for standard de Bruijn graph */
+void buildOverlapGraph(Graph& g, int argc, char** argv)
+{
+	Kmer::setLength(opt::k - 1);
+
+	vector<Kmer> prefixes;
+	unordered_map<Kmer, vector<ContigNode> >
+		suffixMap(prefixes.size());
+
+	loadDataStructures(g, prefixes, suffixMap, argc, argv);
+	buildOverlapGraph(g, prefixes, suffixMap);
+
+	if (opt::minOverlap < opt::k - 1) {
+		// Add the overlap edges of fewer than k-1 bp.
+		if (opt::verbose > 0)
+			cerr << "Finding overlaps of fewer than k-1 bp...\n";
+		addOverlapsSA(g, prefixes);
+		if (opt::verbose > 0)
+			printGraphStats(cerr, g);
+	}
+}
+
+/** Build contig overlap graph for paired de Bruijn graph */
+void buildPairedOverlapGraph(Graph& g, int argc, char** argv)
+{
+	Kmer::setLength(opt::singleKmerSize - 1);
+	KmerPair::setLength(opt::k - 1);
+
+	vector<KmerPair> prefixes;
+	unordered_map<KmerPair, vector<ContigNode> >
+		suffixMap(prefixes.size());
+
+	loadDataStructures(g, prefixes, suffixMap, argc, argv);
+	buildOverlapGraph(g, prefixes, suffixMap);
+}
+
 int main(int argc, char** argv)
 {
 	string commandLine;
@@ -347,36 +396,14 @@ int main(int argc, char** argv)
 	// contig overlap graph
 	Graph g;
 
-	if (opt::singleKmerSize > 0) {
-
-		// TODO: build overlap graph for paired dbg
-
-	} else {
-
-		Kmer::setLength(opt::k - 1);
-
-		vector<Kmer> prefixes;
-		unordered_map<Kmer, vector<ContigNode> >
-			suffixMap(prefixes.size());
-
-		if (optind < argc) {
-			for (; optind < argc; optind++)
-				readContigs(argv[optind], g, prefixes, suffixMap);
-		} else
-			readContigs("-", g, prefixes, suffixMap);
-		g_contigNames.lock();
-
-		buildOverlapGraph(g, prefixes, suffixMap);
-
-		if (opt::minOverlap < opt::k - 1) {
-			// Add the overlap edges of fewer than k-1 bp.
-			if (opt::verbose > 0)
-				cerr << "Finding overlaps of fewer than k-1 bp...\n";
-			addOverlapsSA(g, prefixes);
-			if (opt::verbose > 0)
-				printGraphStats(cerr, g);
-		}
-	}
+#if PAIRED_DBG
+	if (opt::singleKmerSize > 0)
+		buildPairedOverlapGraph(g, argc, argv);
+	else
+		buildOverlapGraph(g, argc, argv);
+#else
+	buildOverlapGraph(g, argc, argv);
+#endif
 
 	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
