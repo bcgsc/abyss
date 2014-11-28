@@ -1,4 +1,5 @@
 #include "Common/Options.h"
+#include "Common/Sequence.h"
 #include "DataLayer/Options.h"
 #include "ContigNode.h"
 #include "ContigProperties.h"
@@ -213,7 +214,7 @@ static void readContigs(const string& path,
 	unsigned count = 0;
 	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;) {
-		const Sequence& seq = rec.seq;
+		Sequence& seq = rec.seq;
 		if (count++ == 0) {
 			// Detect colour-space contigs.
 			opt::colourSpace = isdigit(seq[0]);
@@ -223,6 +224,8 @@ static void readContigs(const string& path,
 			else
 				assert(isalpha(seq[0]));
 		}
+
+		flattenAmbiguityCodes(seq);
 
 		// Add the prefix to the collection.
 		unsigned overlap = opt::k - 1;

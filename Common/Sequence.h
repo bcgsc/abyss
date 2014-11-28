@@ -21,6 +21,35 @@ static inline bool isACGT(char c)
 		|| c == 'a' || c == 'c' || c == 'g' || c == 't';
 }
 
+/**
+ * Convert each ambiguity code to the lexicographically smallest
+ * matching base.
+ */
+static inline void
+flattenAmbiguityCodes(Sequence& seq, bool skipNs=true)
+{
+	for (Sequence::iterator it = seq.begin(); it != seq.end(); ++it) {
+		switch (toupper(*it)) {
+			case 'N':
+				if (!skipNs)
+					*it = 'A';
+				break;
+			case 'M': *it = 'A'; break;
+			case 'R': *it = 'A'; break;
+			case 'W': *it = 'A'; break;
+			case 'S': *it = 'C'; break;
+			case 'Y': *it = 'C'; break;
+			case 'K': *it = 'G'; break;
+			case 'V': *it = 'A'; break;
+			case 'H': *it = 'A'; break;
+			case 'D': *it = 'A'; break;
+			case 'B': *it = 'C'; break;
+			default:
+				break;
+		}
+	}
+}
+
 unsigned ambiguityToBitmask(char c);
 unsigned bitmaskToAmbiguity(unsigned x);
 
