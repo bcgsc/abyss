@@ -55,13 +55,28 @@ void setName(const V& u, const VertexName& uname)
 /** Return whether this vertex is contiguous and not palindromic. */
 bool contiguousOut(const Graph& g, const V& u)
 {
-	return contiguous_out(g, u) && !u.isPalindrome(SENSE);
+	return contiguous_out(g, u)
+		&& !u.isPalindrome()
+		&& !u.isPalindrome(SENSE)
+		&& !(*adjacent_vertices(u, g).first).isPalindrome();
+}
+
+/** Return the in-adjacent vertex.
+ * Used because SequenceCollectionHash does not provide in_edges.
+ */
+V adjacentVertexIn(const V& u, const Graph& g)
+{
+	V uc = get(vertex_complement, g, u);
+	return get(vertex_complement, g, *adjacent_vertices(uc, g).first);
 }
 
 /** Return whether this vertex is contiguous and not palindromic. */
 bool contiguousIn(const Graph& g, const V& u)
 {
-	return contiguous_in(g, u) && !u.isPalindrome(ANTISENSE);
+	return contiguous_in(g, u)
+		&& !u.isPalindrome()
+		&& !u.isPalindrome(ANTISENSE)
+		&& !adjacentVertexIn(u, g).isPalindrome();
 }
 
 /** Write out the specified contig. */
