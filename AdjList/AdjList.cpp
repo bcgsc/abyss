@@ -313,6 +313,7 @@ void buildOverlapGraph(Graph& g, int argc, char** argv)
 	}
 }
 
+#if PAIRED_DBG
 /** Build contig overlap graph for paired de Bruijn graph */
 void buildPairedOverlapGraph(Graph& g, int argc, char** argv)
 {
@@ -326,6 +327,7 @@ void buildPairedOverlapGraph(Graph& g, int argc, char** argv)
 	loadDataStructures(g, prefixes, suffixMap, argc, argv);
 	buildOverlapGraph(g, prefixes, suffixMap);
 }
+#endif
 
 int main(int argc, char** argv)
 {
