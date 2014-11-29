@@ -53,7 +53,7 @@ static const char USAGE_MESSAGE[] =
 " Options for `" PROGRAM " build':\n"
 "\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
-"  -B, --buffer-size=N        size of I/O buffer for each thread, in sequences [1000]\n"
+"  -B, --buffer-size=N        size of I/O buffer for each thread, in bytes [100000]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
@@ -84,8 +84,8 @@ namespace opt {
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
-	/** The size of the I/O buffer of each thread (number of sequences) */
-	size_t bufferSize = 1000;
+	/** The size of the I/O buffer of each thread, in bytes  */
+	size_t bufferSize = 100000;
 
 	/** The number of parallel threads. */
 	unsigned threads = 1;
