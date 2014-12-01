@@ -206,8 +206,6 @@ static void readContigs(const string& path,
 		Graph& g, vector<KmerType>& prefixes,
 		unordered_map<KmerType, vector<ContigNode> >& suffixMap)
 {
-	typedef unordered_map<KmerType, vector<ContigNode> > SuffixMap;
-
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
 
