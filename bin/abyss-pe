@@ -176,6 +176,9 @@ endif
 # AdjList parameters
 m?=50
 alopt += $v $(dbopt) $(SS) -k$k -m$m
+ifdef K
+alopt += -K$K
+endif
 
 # filtergraph parameters
 ifdef K
@@ -433,8 +436,8 @@ startDb:
 
 ifdef K
 ifdef np
-%-1.fa %-1.$g:
-	$(mpirun) -np $(np) abyss-paired-dbg-mpi $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
+%-1.fa:
+	$(mpirun) -np $(np) abyss-paired-dbg-mpi $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa $(in) $(se)
 else
 %-1.fa %-1.$g:
 	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
