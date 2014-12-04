@@ -129,8 +129,8 @@ AC_DEFINE_UNQUOTED(FMBITS, $enable_fm,
 				   [Width of bits of the FM-index in bits])
 
 AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
-	[set the maximum k-mer length (default is 64)]),
-	[], [enable_maxk=64])
+	[set the maximum k-mer length (default is 96)]),
+	[], [enable_maxk=96])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 # Find the absolute path to the source.
