@@ -23,10 +23,8 @@
 #if _OPENMP
 # include <omp.h>
 #endif
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 using namespace boost;
@@ -34,9 +32,7 @@ using namespace boost::algorithm;
 
 #define PROGRAM "abyss-map"
 
-#if _SQL
 DB db;
-#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -75,20 +71,16 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose           display verbose output\n"
 "      --help              display this help and exit\n"
 "      --version           output version information and exit\n"
-#if _SQL
 "      --db=FILE           specify path of database repository in FILE\n"
 "      --library=NAME      specify library NAME for database\n"
 "      --strain=NAME       specify strain NAME for database\n"
 "      --species=NAME      specify species NAME for database\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	/** Find matches at least k bp. */
 	static unsigned k;
 
@@ -124,9 +116,7 @@ static const char shortopts[] = "j:k:l:s:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION,
 	OPT_ALPHA, OPT_DNA, OPT_PROTEIN,
-#if _SQL
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES,
-#endif
 };
 
 static const struct option longopts[] = {
@@ -152,12 +142,10 @@ static const struct option longopts[] = {
 	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
-#if _SQL
 	{ "db", required_argument, NULL, OPT_DB },
 	{ "library", required_argument, NULL, OPT_LIBRARY },
 	{ "strain", required_argument, NULL, OPT_STRAIN },
 	{ "species", required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -559,9 +547,8 @@ int main(int argc, char** argv)
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -598,7 +585,6 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
 				arg >> opt::url; break;
 			case OPT_LIBRARY:
@@ -607,7 +593,6 @@ int main(int argc, char** argv)
 				arg >> opt::metaVars[1]; break;
 			case OPT_SPECIES:
 				arg >> opt::metaVars[2]; break;
-#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -643,17 +628,16 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-#if _SQL
-	init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-	);
-	addToDb(db, "K", opt::k);
-	addToDb(db, "SS", opt::ss);
-#endif
+	if (opt::url.length() > 0) {
+		init(db, opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars);
+		addToDb(db, "K", opt::k);
+		addToDb(db, "SS", opt::ss);
+	}
+
 	const char* targetFile(argv[--argc]);
 	ostringstream ss;
 	ss << targetFile << ".fm";
@@ -710,9 +694,9 @@ int main(int argc, char** argv)
 			cerr << "Using " << toSI(bytes) << "B of memory and "
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
-#if _SQL
-	addToDb(db, "readContigs", faIndex.size());
-#endif
+
+	if (opt::url.length() > 0)
+		addToDb(db, "readContigs", faIndex.size());
 
 	// Check that the indexes are up to date.
 	checkIndexes(targetFile, fmIndex, faIndex);
@@ -741,11 +725,15 @@ int main(int argc, char** argv)
 			<< "Mapped " << unique << " of " << total
 			<< " reads uniquely (" << (float)100 * unique / total
 			<< "%)\n";
-#if _SQL
-		addToDb(db, "read_alignments_initial", total);
-		addToDb(db, "mapped", mapped);
-		addToDb(db, "mapped_uniq", unique);
-#endif
+
+		// TODO: This block shouldn't be in a verbose restricted section.
+		if (opt::url.length() > 0) {
+			addToDb(db, "read_alignments_initial", total);
+			addToDb(db, "mapped", mapped);
+			addToDb(db, "mapped_uniq", unique);
+			addToDb(db, "reads_map_ss", g_count.suboptimal);
+		}
+
 		if (opt::ss) {
 			cerr << "Mapped " << g_count.suboptimal
 				<< " (" << (float)100 * g_count.suboptimal / total << "%)"
@@ -753,13 +741,6 @@ int main(int argc, char** argv)
 				<< "Made " << g_count.subunmapped << " ("
 				<< (float)100 * g_count.subunmapped / total << "%)"
 				<< " unmapped suboptimal decisions.\n";
-#if _SQL
-			addToDb(db, "reads_map_ss", g_count.suboptimal);
-#endif
-		} else {
-#if _SQL
-			addToDb(db, "reads_map_ss", 0);
-#endif
 		}
 	}
 
