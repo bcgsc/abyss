@@ -90,17 +90,15 @@ ifdef path
 PATH:=$(path):$(PATH)
 endif
 
-#if _SQL
-# Determine the location of sqlite database
 ifdef db
+# Determine the location of sqlite database
 override dbopt:=--db=$(db)
-endif
 
 # Track data details for database
 library ?= ""
 strain ?= ""
 species ?= ""
-#endif
+endif
 
 # Programs
 MARKDOWN=multimarkdown
@@ -333,9 +331,9 @@ versions: version
 	@-mpirun --version
 
 # Determine the default target
-#if _SQL
+ifdef db
 default: startDb
-#endif
+endif
 default: unitigs
 ifneq ($(in),)
 default: contigs contigs-graph
@@ -346,9 +344,9 @@ ifneq ($(long),)
 default: long-scaffs long-scaffs-graph
 endif
 endif
-#if _SQL
+ifdef db
 default: finishDb
-#endif
+endif
 default: stats
 
 # Define the commands (phony targets)
@@ -390,9 +388,9 @@ clean:
 	rm -f *.adj *.asqg *.dot *.gfa *.sam \
 		*.sam.gz *.hist *.dist *.path *.path[123]
 
-#if _SQL
+ifdef db
 .PHONY: startDb finishDb
-#endif
+endif
 
 .PHONY: bam default stats \
 	unitigs unitigs-graph \
@@ -420,7 +418,7 @@ clean:
 
 # Assemble unitigs
 
-#if _SQL
+ifdef db
 startDb:
 	@echo -e \
 	$(shell echo `date +%s`"_"`whoami`_)\
@@ -432,7 +430,7 @@ startDb:
 	$(k)"\n"\
 	$(lib)$(in)$(se)\
 	> db.txt
-#endif
+endif
 
 ifdef K
 ifdef np
@@ -670,10 +668,10 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 %-long-scaffs.$g: %-10.$g
 	ln -sf $< $@
 
-#if _SQL
+ifdef db
 finishDb:
 	@rm -f db.txt
-#endif
+endif
 
 # Create the final BAM file
 
