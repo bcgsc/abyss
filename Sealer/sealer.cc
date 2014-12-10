@@ -333,7 +333,7 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 
 
 
-string reversecompliment(string str) {
+string reversecompliment(const string &str) {
         map<string, string> dict;
         dict["A"] = "T";
         dict["T"] = "A";
@@ -375,7 +375,7 @@ string IntToString (int a)
 	return temp.str();
 }
 
-int StringToInt(string num) {
+int StringToInt(string &num) {
 	stringstream str(num);
 	int x;
 	str >> x;
@@ -386,8 +386,8 @@ int StringToInt(string num) {
 template <typename Graph>
 string merge(const Graph& g,
 	unsigned k,
-	FastaRecord read1,
-	FastaRecord read2,
+	FastaRecord &read1,
+	FastaRecord &read2,
 	const ConnectPairsParams& params,
 	Counters& g_count,
 	ofstream& traceStream)
@@ -469,7 +469,7 @@ string merge(const Graph& g,
 		return "";
 }
 
-void printLog(ofstream &logStream, string output) {
+void printLog(ofstream &logStream, const string &output) {
 #pragma omp critical(logStream)
 	logStream << output;
 	if (opt::verbose > 0)
@@ -479,7 +479,7 @@ void printLog(ofstream &logStream, string output) {
 
 void insertIntoScaffold(ofstream &scaffoldStream,
 	ofstream &mergedStream,
-	FastaRecord record,
+	FastaRecord &record,
 	map<string, map<int, map<string, string> > > &allmerged,
 	unsigned &gapsclosedfinal)
 {
@@ -630,7 +630,7 @@ bool operator<(const FastaRecord& a, const FastaRecord& b)
 		return a.id < b.id;
 }
 
-void findFlanks(FastaRecord record,
+void findFlanks(FastaRecord &record,
 	int flanklength,
 	unsigned &gapnumber,
 	read1_map &flanks)
