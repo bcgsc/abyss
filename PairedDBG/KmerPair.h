@@ -68,7 +68,19 @@ static void setLength(unsigned length)
 	s_length = length;
 }
 
+/** Return the first nucleotides. */
+Dinuc front() const
+{
+	return Dinuc(m_a.front(), m_b.front());
+}
+
 /** Return the terminal nucleotides. */
+Dinuc back() const
+{
+	return Dinuc(m_a.back(), m_b.back());
+}
+
+/** Return the terminal nucleotides as characters. */
 std::pair<char, char> getLastBaseChar() const
 {
 	return std::make_pair(m_a.getLastBaseChar(), m_b.getLastBaseChar());

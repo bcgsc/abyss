@@ -58,7 +58,24 @@ class Kmer
 	bool isPalindrome() const;
 	bool isPalindrome(extDirection dir) const;
 	void setLastBase(extDirection dir, uint8_t base);
-	uint8_t getLastBaseChar() const;
+
+	/** Return the first nucleotide. */
+	uint8_t front() const
+	{
+		return at(0);
+	}
+
+	/** Return the terminal nucleotide. */
+	uint8_t back() const
+	{
+		return at(s_length - 1);
+	}
+
+	/** Return the terminal nucleotide as a character. */
+	char getLastBaseChar() const
+	{
+		return codeToBase(at(s_length - 1));
+	}
 
 	uint8_t shift(extDirection dir, uint8_t base = 0)
 	{
