@@ -1,7 +1,7 @@
 #ifndef DIRECTEDGRAPH_H
 #define DIRECTEDGRAPH_H 1
 
-#include "ContigNode.h"
+#include "Common/ContigNode.h"
 #include "Graph/Properties.h"
 #include <algorithm>
 #include <cassert>

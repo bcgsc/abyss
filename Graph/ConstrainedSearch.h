@@ -1,10 +1,10 @@
 #ifndef CONSTRAINEDSEARCH_H
 #define CONSTRAINEDSEARCH_H 1
 
-#include "ContigGraph.h"
-#include "ContigPath.h"
-#include "ContigProperties.h"
-#include "DirectedGraph.h"
+#include "Common/ContigPath.h"
+#include "Common/ContigProperties.h"
+#include "Graph/ContigGraph.h"
+#include "Graph/DirectedGraph.h"
 #include "Graph/Properties.h"
 #include <algorithm>
 #include <climits> // for INT_MIN
