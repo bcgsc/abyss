@@ -2,7 +2,7 @@
 #define GRAPHALGORITHMS_H 1
 
 #include "Graph/Properties.h"
-#include "ConstrainedSearch.h"
+#include "ConstrainedSearch.h" // for constrainedSearch
 #include <boost/graph/graph_traits.hpp>
 #include <cassert>
 #include <vector>
@@ -73,6 +73,44 @@ void find_transitive_edges(const Graph& g, OutIt out)
 			}
 		}
 	}
+}
+
+/** Remove edges from the graph that satisfy the predicate.
+ * This implementation should use edge_iterator rather than vertex_iterator and
+ * adjacency_iterator, but the de Bruijn Graph class SequenceCollectionHash
+ * does not yet implement edge_iterator.
+ * @return the number of edges removed
+ */
+template <typename Graph, typename Predicate>
+size_t
+removeEdgeIf(Predicate predicate, Graph& g)
+{
+	typedef graph_traits<Graph> GTraits;
+	typedef typename GTraits::adjacency_iterator adjacency_iterator;
+	typedef typename GTraits::edge_descriptor edge_descriptor;
+	typedef typename GTraits::vertex_descriptor vertex_descriptor;
+	typedef typename GTraits::vertex_iterator vertex_iterator;
+
+	size_t n = 0;
+	std::pair<vertex_iterator, vertex_iterator> urange = vertices(g);
+	for (vertex_iterator uit = urange.first;
+			uit != urange.second; ++uit) {
+		vertex_descriptor u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+
+		std::pair<adjacency_iterator, adjacency_iterator>
+			vrange = adjacent_vertices(u, g);
+		for (adjacency_iterator vit = vrange.first;
+				vit != vrange.second; ++vit) {
+			edge_descriptor e(u, *vit);
+			if (predicate(e)) {
+				remove_edge(e, g);
+				++n;
+			}
+		}
+	}
+	return n;
 }
 
 /** Remove the edges [first,last) from g.
