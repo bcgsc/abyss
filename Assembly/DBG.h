@@ -598,6 +598,29 @@ vertices(const SequenceCollectionHash& g)
 	return std::make_pair(g.begin(), g.end());
 }
 
+// EdgeMutableGraph
+
+/** Remove the edge (u,v) from the graph. */
+static inline
+void
+remove_edge(
+	graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+	graph_traits<SequenceCollectionHash>::vertex_descriptor v,
+	SequenceCollectionHash& g)
+{
+	g.removeExtension(u, SENSE, v.back());
+}
+
+/** Remove the edge e from the graph. */
+static inline
+void
+remove_edge(
+		graph_traits<SequenceCollectionHash>::edge_descriptor e,
+		SequenceCollectionHash& g)
+{
+	remove_edge(source(e, g), target(e, g), g);
+}
+
 // PropertyGraph
 
 /** Return the reverse complement of the specified k-mer. */
