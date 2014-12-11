@@ -21,6 +21,7 @@ abyss_paired_dbg_SOURCES = \
 	abyss-paired-dbg.cc \
 	BranchRecord.h \
 	KmerPair.cc KmerPair.h \
+	PairedDBGAlgorithms.h \
 	SequenceCollection.h
 
 libpaireddbg_a_SOURCES = KmerPair.cc KmerPair.h

@@ -1,5 +1,6 @@
 #if PAIRED_DBG
 # include "PairedDBG/SequenceCollection.h"
+# include "PairedDBG/PairedDBGAlgorithms.h"
 #else
 # include "Assembly/SequenceCollection.h"
 #endif
@@ -79,6 +80,10 @@ static void assemble(const string& pathIn, const string& pathOut)
 
 	cout << "Generating adjacency" << endl;
 	AssemblyAlgorithms::generateAdjacency(&g);
+
+#if PAIRED_DBG
+	removePairedDBGInconsistentEdges(g);
+#endif
 
 erode:
 	if (opt::erode > 0) {
