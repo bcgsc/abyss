@@ -415,6 +415,9 @@ void setColourSpace(bool flag)
 		bool m_adjacencyLoaded;
 };
 
+// Forward declaration
+class DBGEdgeIterator;
+
 // Graph
 
 namespace boost {
@@ -442,8 +445,8 @@ struct graph_traits<SequenceCollectionHash> {
 	typedef size_t vertices_size_type;
 
 	// EdgeListGraph
-	typedef void edge_iterator;
-	typedef void edges_size_type;
+	typedef size_t edges_size_type;
+	typedef DBGEdgeIterator edge_iterator;
 
 	// Other
 	typedef Graph::Symbol Symbol;
@@ -668,6 +671,96 @@ std::pair<graph_traits<SequenceCollectionHash>::vertex_iterator,
 vertices(const SequenceCollectionHash& g)
 {
 	return std::make_pair(g.begin(), g.end());
+}
+
+// EdgeListGraph
+
+/** Iterate through the edges of this graph. */
+class DBGEdgeIterator
+	: public std::iterator<std::input_iterator_tag,
+		graph_traits<SequenceCollectionHash>::edge_descriptor>
+{
+	typedef graph_traits<SequenceCollectionHash> GTraits;
+	typedef GTraits::adjacency_iterator adjacency_iterator;
+	typedef GTraits::edge_descriptor edge_descriptor;
+	typedef GTraits::edge_iterator edge_iterator;
+	typedef GTraits::vertex_iterator vertex_iterator;
+
+	void nextVertex()
+	{
+		vertex_iterator vlast = vertices(*m_g).second;
+		for (; m_vit != vlast; ++m_vit) {
+			std::pair<adjacency_iterator, adjacency_iterator>
+				adj = adjacent_vertices(*m_vit, *m_g);
+			if (adj.first != adj.second) {
+				m_eit = adj.first;
+				return;
+			}
+		}
+		// Set m_eit to a known value.
+		static const adjacency_iterator s_eitNULL;
+		m_eit = s_eitNULL;
+	}
+
+  public:
+	DBGEdgeIterator(const SequenceCollectionHash* g, const vertex_iterator& vit)
+		: m_g(g), m_vit(vit)
+	{
+		nextVertex();
+	}
+
+	edge_descriptor operator*() const
+	{
+		return edge_descriptor(*m_vit, *m_eit);
+	}
+
+	bool operator==(const edge_iterator& it) const
+	{
+		return m_vit == it.m_vit && m_eit == it.m_eit;
+	}
+
+	bool operator!=(const edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	edge_iterator& operator++()
+	{
+		if (++m_eit == adjacent_vertices(*m_vit, *m_g).second) {
+			++m_vit;
+			nextVertex();
+		}
+		return *this;
+	}
+
+	edge_iterator operator++(int)
+	{
+		edge_iterator it = *this;
+		++*this;
+		return it;
+	}
+
+  private:
+	const SequenceCollectionHash* m_g;
+	vertex_iterator m_vit;
+	adjacency_iterator m_eit;
+}; // DBGEdgeIterator
+
+/** Iterate through the edges of this graph. */
+static inline
+std::pair<
+	graph_traits<SequenceCollectionHash>::edge_iterator,
+	graph_traits<SequenceCollectionHash>::edge_iterator>
+edges(const SequenceCollectionHash& g)
+{
+	
+	typedef graph_traits<SequenceCollectionHash> GTraits;
+	typedef GTraits::vertex_iterator vertex_iterator;
+	typedef GTraits::edge_iterator edge_iterator;
+	std::pair<vertex_iterator, vertex_iterator> uit = vertices(g);
+	return std::make_pair(
+			edge_iterator(&g, uit.first),
+			edge_iterator(&g, uit.second));
 }
 
 // EdgeMutableGraph
