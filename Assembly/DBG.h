@@ -434,7 +434,6 @@ struct graph_traits<SequenceCollectionHash> {
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
 	typedef unsigned degree_size_type;
-	typedef void out_edge_iterator;
 
 	// BidirectionalGraph
 	typedef void in_edge_iterator;
@@ -506,6 +505,62 @@ struct adjacency_iterator
 	short unsigned m_i;
 }; // adjacency_iterator
 
+// IncidenceGraph
+
+/** Iterate through the out edges of a vertex. */
+struct out_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	/** Skip to the next edge that is present. */
+	void next()
+	{
+		for (; m_i < NUM_SYMBOLS && !m_adj.checkBase(Symbol(m_i)); ++m_i) {
+		}
+		if (m_i < NUM_SYMBOLS)
+			m_e.second.setLastBase(SENSE, Symbol(m_i));
+	}
+
+  public:
+	out_edge_iterator() : m_i(NUM_SYMBOLS) { }
+
+	out_edge_iterator(
+			vertex_descriptor u, SymbolSet adj)
+		: m_e(u, u), m_adj(adj), m_i(0)
+	{
+		m_e.second.shift(SENSE);
+		next();
+	}
+
+	const edge_descriptor& operator*() const
+	{
+		assert(m_i < NUM_SYMBOLS);
+		return m_e;
+	}
+
+	bool operator==(const out_edge_iterator& it) const
+	{
+		return m_i == it.m_i;
+	}
+
+	bool operator!=(const out_edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	out_edge_iterator& operator++()
+	{
+		assert(m_i < NUM_SYMBOLS);
+		++m_i;
+		next();
+		return *this;
+	}
+
+  private:
+	edge_descriptor m_e;
+	SymbolSet m_adj;
+	short unsigned m_i;
+}; // out_edge_iterator
+
 // VertexListGraph
 /** Iterate through the vertices of this graph. */
 struct vertex_iterator
@@ -551,6 +606,23 @@ struct vertex_iterator
 } // namespace boost
 
 // IncidenceGraph
+
+static inline
+std::pair<
+	graph_traits<SequenceCollectionHash>::out_edge_iterator,
+	graph_traits<SequenceCollectionHash>::out_edge_iterator>
+out_edges(
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+		const SequenceCollectionHash& g)
+{
+	typedef graph_traits<SequenceCollectionHash> GTraits;
+	typedef GTraits::out_edge_iterator out_edge_iterator;
+	typedef GTraits::SymbolSet SymbolSet;
+	SymbolSet adj = g[u].getExtension(SENSE);
+	return std::make_pair(
+			out_edge_iterator(u, adj),
+			out_edge_iterator());
+}
 
 static inline
 graph_traits<SequenceCollectionHash>::degree_size_type
