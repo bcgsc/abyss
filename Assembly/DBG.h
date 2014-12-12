@@ -438,9 +438,6 @@ struct graph_traits<SequenceCollectionHash> {
 		edge_descriptor;
 	typedef unsigned degree_size_type;
 
-	// BidirectionalGraph
-	typedef void in_edge_iterator;
-
 	// VertexListGraph
 	typedef size_t vertices_size_type;
 
@@ -564,6 +561,62 @@ struct out_edge_iterator
 	short unsigned m_i;
 }; // out_edge_iterator
 
+// BidirectionalGraph
+
+/** Iterate through the in-edges of a vertex. */
+struct in_edge_iterator
+	: public std::iterator<std::input_iterator_tag, edge_descriptor>
+{
+	/** Skip to the next edge that is present. */
+	void next()
+	{
+		for (; m_i < NUM_SYMBOLS && !m_adj.checkBase(Symbol(m_i)); ++m_i) {
+		}
+		if (m_i < NUM_SYMBOLS)
+			m_e.first.setLastBase(ANTISENSE, Symbol(m_i));
+	}
+
+  public:
+	in_edge_iterator() : m_i(NUM_SYMBOLS) { }
+
+	in_edge_iterator(
+			vertex_descriptor u, SymbolSet adj)
+		: m_e(u, u), m_adj(adj), m_i(0)
+	{
+		m_e.first.shift(ANTISENSE);
+		next();
+	}
+
+	const edge_descriptor& operator*() const
+	{
+		assert(m_i < NUM_SYMBOLS);
+		return m_e;
+	}
+
+	bool operator==(const in_edge_iterator& it) const
+	{
+		return m_i == it.m_i;
+	}
+
+	bool operator!=(const in_edge_iterator& it) const
+	{
+		return !(*this == it);
+	}
+
+	in_edge_iterator& operator++()
+	{
+		assert(m_i < NUM_SYMBOLS);
+		++m_i;
+		next();
+		return *this;
+	}
+
+  private:
+	edge_descriptor m_e;
+	SymbolSet m_adj;
+	short unsigned m_i;
+}; // in_edge_iterator
+
 // VertexListGraph
 /** Iterate through the vertices of this graph. */
 struct vertex_iterator
@@ -637,6 +690,23 @@ out_degree(
 }
 
 // BidirectionalGraph
+
+static inline
+std::pair<
+	graph_traits<SequenceCollectionHash>::in_edge_iterator,
+	graph_traits<SequenceCollectionHash>::in_edge_iterator>
+in_edges(
+		graph_traits<SequenceCollectionHash>::vertex_descriptor u,
+		const SequenceCollectionHash& g)
+{
+	typedef graph_traits<SequenceCollectionHash> GTraits;
+	typedef GTraits::in_edge_iterator in_edge_iterator;
+	typedef GTraits::SymbolSet SymbolSet;
+	SymbolSet adj = g[u].getExtension(ANTISENSE);
+	return std::make_pair(
+			in_edge_iterator(u, adj),
+			in_edge_iterator());
+}
 
 static inline
 graph_traits<SequenceCollectionHash>::degree_size_type
