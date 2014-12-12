@@ -61,13 +61,10 @@ bool contiguousOut(const Graph& g, const V& u)
 		&& !(*adjacent_vertices(u, g).first).isPalindrome();
 }
 
-/** Return the in-adjacent vertex.
- * Used because SequenceCollectionHash does not provide in_edges.
- */
+/** Return the in-adjacent vertex. */
 V adjacentVertexIn(const V& u, const Graph& g)
 {
-	V uc = get(vertex_complement, g, u);
-	return get(vertex_complement, g, *adjacent_vertices(uc, g).first);
+	return source(*in_edges(u, g).first, g);
 }
 
 /** Return whether this vertex is contiguous and not palindromic. */
