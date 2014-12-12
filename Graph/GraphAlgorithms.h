@@ -76,9 +76,6 @@ void find_transitive_edges(const Graph& g, OutIt out)
 }
 
 /** Remove edges from the graph that satisfy the predicate.
- * This implementation should use edge_iterator rather than vertex_iterator and
- * out_edge_iterator, but the de Bruijn Graph class SequenceCollectionHash
- * does not yet implement edge_iterator.
  * @return the number of edges removed
  */
 template <typename Graph, typename Predicate>
@@ -87,27 +84,15 @@ removeEdgeIf(Predicate predicate, Graph& g)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef typename GTraits::edge_descriptor edge_descriptor;
-	typedef typename GTraits::out_edge_iterator out_edge_iterator;
-	typedef typename GTraits::vertex_descriptor vertex_descriptor;
-	typedef typename GTraits::vertex_iterator vertex_iterator;
+	typedef typename GTraits::edge_iterator edge_iterator;
 
 	size_t n = 0;
-	std::pair<vertex_iterator, vertex_iterator> urange = vertices(g);
-	for (vertex_iterator uit = urange.first;
-			uit != urange.second; ++uit) {
-		vertex_descriptor u = *uit;
-		if (get(vertex_removed, g, u))
-			continue;
-
-		std::pair<out_edge_iterator, out_edge_iterator>
-			erange = out_edges(u, g);
-		for (out_edge_iterator eit = erange.first;
-				eit != erange.second; ++eit) {
-			edge_descriptor e = *eit;
-			if (predicate(e)) {
-				remove_edge(e, g);
-				++n;
-			}
+	std::pair<edge_iterator, edge_iterator> erange = edges(g);
+	for (edge_iterator eit = erange.first; eit != erange.second; ++eit) {
+		edge_descriptor e = *eit;
+		if (predicate(e)) {
+			remove_edge(e, g);
+			++n;
 		}
 	}
 	return n;
