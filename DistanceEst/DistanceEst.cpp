@@ -20,18 +20,14 @@
 #if _OPENMP
 # include <omp.h>
 #endif
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 
 #define PROGRAM "DistanceEst"
 
-#if _SQL
 DB db;
-#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -71,12 +67,10 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for sqlite\n"
 "      --strain=NAME     specify strain NAME for sqlite\n"
 "      --species=NAME    specify species NAME for sqlite\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -84,10 +78,8 @@ static const char USAGE_MESSAGE[] =
 enum { MLE, MEAN };
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	unsigned k; // used by Estimate.h
 
 	/** Output graph format. */
@@ -114,23 +106,15 @@ namespace opt {
 	static int threads = 1;
 }
 
-// for sqlite params
-static bool haveDbParam(false);
-static vector<string> keys;
-static vector<int> vals;
-
 static const char shortopts[] = "j:k:l:n:o:q:s:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION,
 	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES
 };
-#else
-enum { OPT_HELP = 1, OPT_VERSION,
-	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF
-};
-#endif
+//enum { OPT_HELP = 1, OPT_VERSION,
+//	OPT_MIND, OPT_MAXD, OPT_FR, OPT_RF
+//};
 
 static const struct option longopts[] = {
 	{ "dist",        no_argument,       &opt::format, DIST, },
@@ -151,12 +135,10 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",          required_argument, NULL, OPT_DB },
 	{ "library",     required_argument, NULL, OPT_LIBRARY },
 	{ "strain",      required_argument, NULL, OPT_STRAIN },
 	{ "species",     required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -243,7 +225,7 @@ static int estimateDistance(unsigned len0, unsigned len1,
 	for (Fragments::const_iterator it = fragments.begin();
 			it != fragments.end(); ++it) {
 		int x = it->second - it->first;
-		if (!opt::rf && opt::method == MLE 
+		if (!opt::rf && opt::method == MLE
 				&& x <= 2 * int(ma - 1)) {
 			unsigned align = x / 2;
 			if (opt::verbose > 0)
@@ -402,9 +384,8 @@ static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 
 int main(int argc, char** argv)
 {
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -434,24 +415,14 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
-				arg >> opt::url;
-				haveDbParam = true;
-				break;
+				arg >> opt::url; break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0];
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1];
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[1]; break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2];
-				haveDbParam = true;
-				break;
-#endif
+				arg >> opt::metaVars[2]; break;
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -500,7 +471,7 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-	if (haveDbParam)
+	if (opt::url.length() > 0) {
 		init(db,
 				opt::url,
 				opt::verbose,
@@ -508,6 +479,7 @@ int main(int argc, char** argv)
 				opt::getCommand(argc, argv),
 				opt::metaVars
 		);
+	}
 
 	string distanceCountFile(argv[optind++]);
 	string alignFile(argv[optind] == NULL ? "-" : argv[optind++]);
@@ -531,17 +503,15 @@ int main(int argc, char** argv)
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
 
-	if (haveDbParam) {
-		vals = make_vector<int>()
-			<< opt::k
-			<< opt::seedLen
-			<< opt::npairs;
+	vector<int> vals = make_vector<int>()
+		<< opt::k
+		<< opt::seedLen
+		<< opt::npairs;
 
-		keys = make_vector<string>()
-			<< "K"
-			<< "SeedLen"
-			<< "NumPairs";
-	}
+	vector<string> keys = make_vector<string>()
+		<< "K"
+		<< "SeedLen"
+		<< "NumPairs";
 
 	// The fragment size histogram may not be written out until after
 	// the alignments complete. Wait for the alignments to complete.
@@ -564,15 +534,13 @@ int main(int argc, char** argv)
 			<< ".\n";
 	}
 
-	if (haveDbParam) {
-		vals += make_vector<int>()
-			<< numFR
-			<< numRF;
+	vals += make_vector<int>()
+		<< numFR
+		<< numRF;
 
-		keys += make_vector<string>()
-			<< "FR_orientation"
-			<< "RF_orientation";
-	}
+	keys += make_vector<string>()
+		<< "FR_orientation"
+		<< "RF_orientation";
 
 	// Determine the orientation of the library.
 	if (opt::rf == -1)
@@ -607,39 +575,36 @@ int main(int argc, char** argv)
 			<< opt::minDist << " and " << opt::maxDist << " bp.\n";
 	assert(opt::minDist < opt::maxDist);
 
-	if (haveDbParam) {
-		vals += make_vector<int>()
-			<< opt::minDist
-			<< opt::maxDist
-			<< round(h.mean())
-			<< h.median()
-			<< round(h.sd())
-			<< h.size()
-			<< h.minimum()
-			<< h.maximum();
+	vals += make_vector<int>()
+		<< opt::minDist
+		<< opt::maxDist
+		<< round(h.mean())
+		<< h.median()
+		<< round(h.sd())
+		<< h.size()
+		<< h.minimum()
+		<< h.maximum();
 
-		keys += make_vector<string>()
-			<< "minDist"
-			<< "maxDist"
-			<< "mean"
-			<< "median"
-			<< "sd"
-			<< "n"
-			<< "min"
-			<< "max";
-	}
+	keys += make_vector<string>()
+		<< "minDist"
+		<< "maxDist"
+		<< "mean"
+		<< "median"
+		<< "sd"
+		<< "n"
+		<< "min"
+		<< "max";
 
 	// Read the contig lengths.
 	vector<unsigned> contigLens;
 
-	if (haveDbParam) {
-		vals += make_vector<int>()
-			<< readContigLengths(in, contigLens);
-		keys += make_vector<string>()
-			<< "CntgCounted";
-	} else {
-		readContigLengths(in, contigLens);
-	}
+	vals += make_vector<int>()
+		<< readContigLengths(in, contigLens);
+
+	keys += make_vector<string>()
+		<< "CntgCounted";
+
+//	readContigLengths(in, contigLens);
 
 	g_contigNames.lock();
 
@@ -674,15 +639,16 @@ int main(int argc, char** argv)
 			cerr << PROGRAM << ": warning: duplicate rate of fragments "
 				"spanning more than one contig is high.\n";
 	}
-	if (haveDbParam) {
-		vals += make_vector<int>()
-			<< stats.total_frags
-			<< stats.dup_frags;
+
+	vals += make_vector<int>()
+		<< stats.total_frags
+		<< stats.dup_frags;
 
 		keys += make_vector<string>()
 			<< "total_frags"
 			<< "dupl_frags";
 
+	if (opt::url.length() > 0) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}

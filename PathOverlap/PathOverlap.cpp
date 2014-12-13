@@ -20,18 +20,14 @@
 #include <getopt.h>
 #include <map>
 #include <vector>
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 
 #define PROGRAM "PathOverlap"
 
-#if _SQL
 DB db;
-#endif
 
 static const char *VERSION_MESSAGE =
 PROGRAM " (ABySS) " VERSION "\n"
@@ -69,20 +65,16 @@ static const char *USAGE_MESSAGE =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for sqlite\n"
 "      --strain=NAME     specify strain NAME for sqlite\n"
 "      --species=NAME    specify species NAME for sqlite\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	unsigned k;
 
 	/** Output format. */
@@ -111,16 +103,10 @@ namespace opt {
 	static int verbose;
 }
 
-// for sqlite params
-static bool haveDbParam(false);
-
 static const char* shortopts = "g:k:r:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION };
-#endif
+//enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "graph",        required_argument, NULL, 'g' },
@@ -140,12 +126,10 @@ static const struct option longopts[] = {
 	{ "verbose",      no_argument,       NULL, 'v' },
 	{ "help",         no_argument,       NULL, OPT_HELP },
 	{ "version",      no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",           required_argument, NULL, OPT_DB },
 	{ "library",      required_argument, NULL, OPT_LIBRARY },
 	{ "strain",       required_argument, NULL, OPT_STRAIN },
 	{ "species",      required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -591,9 +575,8 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -611,24 +594,14 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
-				arg >> opt::url;
-				haveDbParam = true;
-				break;
+				arg >> opt::url; break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0];
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1];
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[1]; break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2];
-				haveDbParam = true;
-				break;
-#endif
+				arg >> opt::metaVars[2]; break;
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -732,14 +705,14 @@ int main(int argc, char** argv)
 			out << get(g_contigNames, *it) << '\n';
 		assert_good(out, opt::repeatContigs);
 	}
-	if (haveDbParam) {
+
+	if (opt::url.length() > 0) {
 		init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-		);
+				opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars);
 		addToDb(db, "SS", opt::ss);
 		addToDb(db, "K", opt::k);
 	}

@@ -22,10 +22,8 @@
 #include <set>
 #include <vector>
 
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 #if PAIRED_DBG
 #include "PairedDBG/KmerPair.h"
@@ -35,9 +33,7 @@ using namespace std;
 
 #define PROGRAM "AdjList"
 
-#if _SQL
 DB db;
-#endif
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Shaun Jackman.\n"
@@ -67,20 +63,16 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for database\n"
 "      --strain=NAME     specify strain NAME for database\n"
 "      --species=NAME    specify species NAME for database\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	unsigned k; // used by GraphIO
 
 	/** Length of a single-kmer in a kmer pair */
@@ -95,18 +87,10 @@ namespace opt {
 	static unsigned minOverlap = 50;
 }
 
-// for sqlite params
-static bool haveDbParam(false);
-static vector<string> keys;
-static vector<int> vals;
-
 static const char shortopts[] = "k:K:m:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION };
-#endif
+//enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "kmer",    required_argument, NULL, 'k' },
@@ -123,12 +107,10 @@ static const struct option longopts[] = {
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
 	{ "version", no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",      required_argument, NULL, OPT_DB },
 	{ "library", required_argument, NULL, OPT_LIBRARY },
 	{ "strain",  required_argument, NULL, OPT_STRAIN },
 	{ "species", required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -343,9 +325,8 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -363,24 +344,14 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
-				arg >> opt::url;
-				haveDbParam = true;
-				break;
+				arg >> opt::url; break;
 			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; 
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
-				arg >> opt::metaVars[1];
-				haveDbParam = true;
-				break;
+				arg >> opt::metaVars[1]; break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2];
-				haveDbParam = true;
-				break;
-#endif
+				arg >> opt::metaVars[2]; break;
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -404,9 +375,8 @@ int main(int argc, char** argv)
 		opt::minOverlap = opt::k - 1;
 	opt::minOverlap = min(opt::minOverlap, opt::k - 1);
 
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
-
 	opt::trimMasked = false;
 
 	// contig overlap graph
@@ -424,25 +394,23 @@ int main(int argc, char** argv)
 	// Output the graph.
 	write_graph(cout, g, PROGRAM, commandLine);
 	assert(cout.good());
+	vector<int> vals = make_vector<int>()
+		<< opt::ss
+		<< opt::k;
+	vector<int> new_vals = passGraphStatsVal(g);
+	vals.insert(vals.end(), new_vals.begin(), new_vals.end());
 
-	if (haveDbParam) {
-		vals = make_vector<int>()
-			<< opt::ss
-			<< opt::k;
-		vector<int> new_vals = passGraphStatsVal(g);
-		vals.insert(vals.end(), new_vals.begin(), new_vals.end());
-
-		keys = make_vector<string>()
-			<< "SS"
-			<< "K"
-			<< "V"
-			<< "E"
-			<< "degree0pctg"
-			<< "degree1pctg"
-			<< "degree234pctg"
-			<< "degree5pctg"
-			<< "degree_max";
-
+	vector<string> keys = make_vector<string>()
+		<< "SS"
+		<< "K"
+		<< "V"
+		<< "E"
+		<< "degree0pctg"
+		<< "degree1pctg"
+		<< "degree234pctg"
+		<< "degree5pctg"
+		<< "degree_max";
+	if (opt::url.length() > 0) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}

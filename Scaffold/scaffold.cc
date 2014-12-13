@@ -23,10 +23,8 @@
 #include <getopt.h>
 #include <iostream>
 #include <utility>
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 using namespace std::rel_ops;
@@ -35,9 +33,7 @@ using boost::tie;
 
 #define PROGRAM "abyss-scaffold"
 
-#if _SQL
 DB db;
-#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -73,20 +69,17 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for sqlite\n"
 "      --strain=NAME     specify strain NAME for sqlite\n"
 "      --species=NAME    specify species NAME for sqlite\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
+
 	unsigned k; // used by ContigProperties
 
 	/** Minimum number of pairs. */
@@ -122,19 +115,11 @@ namespace opt {
 	static int comp_trans;
 }
 
-// for sqlite params
-static bool haveDbParam(false);
-static vector<string> keys;
-static vector<int> vals;
-
 static const char shortopts[] = "g:k:n:o:s:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP };
-#endif
+//enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP };
 
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
@@ -151,12 +136,10 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",          required_argument, NULL, OPT_DB },
 	{ "library",     required_argument, NULL, OPT_LIBRARY },
 	{ "strain",      required_argument, NULL, OPT_STRAIN },
 	{ "species",     required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -218,7 +201,7 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		addToDb(db, "V_removed", numRemovedV);
 		addToDb(db, "E_removed", numRemovedE);
 	}
@@ -251,7 +234,8 @@ static void removeCycles(Graph& g)
 		cerr << "Removed " << cycles.size() << " cyclic edges.\n";
 		printGraphStats(cerr, g);
 	}
-	if (haveDbParam)
+
+	if (opt::url.length() > 0)
 		addToDb(db, "E_removed_cyclic", cycles.size());
 }
 
@@ -306,7 +290,7 @@ static void resolveForks(Graph& g, const Graph& g0)
 	if (opt::verbose > 0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
-	if (haveDbParam)
+	if (opt::url.length() > 0) 
 		addToDb(db, "E_added_ambig", numEdges);
 }
 
@@ -324,7 +308,8 @@ static void pruneTips(Graph& g)
 		cerr << "Removed " << n << " tips.\n";
 		printGraphStats(cerr, g);
 	}
-	if (haveDbParam)
+	
+	if (opt::url.length() > 0)
 		addToDb(db, "Tips_removed", n);
 }
 
@@ -402,7 +387,7 @@ static void removeRepeats(Graph& g)
 			<< numRemoved << " ambiguous vertices.\n";
 		printGraphStats(cerr, g);
 	}
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		addToDb(db, "V_cleared_ambg", repeats.size());
 		addToDb(db, "V_removed_ambg", numRemoved);
 	}
@@ -485,7 +470,7 @@ static void removeWeakEdges(Graph& g)
 		cerr << "Removed " << weak.size() << " weak edges.\n";
 		printGraphStats(cerr, g);
 	}
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		addToDb(db, "E_removed_weak", weak.size());
 }
 
@@ -563,17 +548,18 @@ static void readGraph(const string& path, Graph& g)
 	assert(in.eof());
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
-	if (haveDbParam) {
-		vals = passGraphStatsVal(g);
-		keys = make_vector<string>()
-			<< "V_readGraph"
-			<< "E_readGraph"
-			<< "degree0_readGraph"
-			<< "degree1_readGraph"
-			<< "degree234_readGraph"
-			<< "degree5_readGraph"
-			<< "max_readGraph";
 
+	vector<int> vals = passGraphStatsVal(g);
+	vector<string> keys = make_vector<string>()
+		<< "V_readGraph"
+		<< "E_readGraph"
+		<< "degree0_readGraph"
+		<< "degree1_readGraph"
+		<< "degree234_readGraph"
+		<< "degree5_readGraph"
+		<< "max_readGraph";
+
+	if (opt::url.length() > 0) {
 		for(unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
@@ -631,13 +617,12 @@ static Histogram buildScaffoldLengthHistogram(
 	return h;
 }
 
-#if _SQL
 /** Add contiguity stats to database */
 static void addCntgStatsToDb(
 		const Histogram h, const unsigned min)
 {
-	vals = passContiguityStatsVal(h, min);
-	keys = make_vector<string>()
+	vector<int> vals = passContiguityStatsVal(h, min);
+	vector<string> keys = make_vector<string>()
 		<< "n"
 		<< "n200"
 		<< "nN50"
@@ -650,11 +635,11 @@ static void addCntgStatsToDb(
 		<< "sum"
 		<< "nNG50"
 		<< "NG50";
-
-	for(unsigned i=0; i<vals.size(); i++)
-		addToDb(db, keys[i], vals[i]);
+	if (opt::url.length() > 0) {
+		for(unsigned i=0; i<vals.size(); i++)
+			addToDb(db, keys[i], vals[i]);
+	}
 }
-#endif
 
 /** Build scaffold paths.
  * @param output write the results
@@ -694,7 +679,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	if (haveDbParam)
+	if (opt::url.length() > 0) 
 		addToDb(db, "Edges_transitive", numTransitive);
 
 	// Prune tips.
@@ -708,10 +693,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
-
-	if (haveDbParam)
+	
+	if (opt::url.length() > 0)
 		addToDb(db, "Vertices_bubblePopped", popped.size());
-
+	
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
 		for (vector<V>::const_iterator it = popped.begin();
@@ -740,8 +725,8 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
-
-	if (haveDbParam) {
+	
+	if (opt::url.length() > 0) {
 		addToDb(db, "contigs_assembled", n);
 		addToDb(db, "scaffolds_assembled", paths.size());
 	}
@@ -755,8 +740,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< "\ts=" << minContigLength << '\n';
 		if (opt::verbose == 0)
 			printHeader = false;
-		if (haveDbParam)
-			addCntgStatsToDb(h, STATS_MIN_LENGTH);
+		addCntgStatsToDb(h, STATS_MIN_LENGTH);
 		return h.trimLow(STATS_MIN_LENGTH).n50();
 	}
 
@@ -782,17 +766,15 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
 	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
-	if (haveDbParam)
-		addCntgStatsToDb(h, STATS_MIN_LENGTH);
+	addCntgStatsToDb(h, STATS_MIN_LENGTH);
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 
 /** Run abyss-scaffold. */
 int main(int argc, char** argv)
 {
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -838,24 +820,18 @@ int main(int argc, char** argv)
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
-#if _SQL
 		  case OPT_DB:
 			arg >> opt::url;
-			haveDbParam = true;
 			break;
 		  case OPT_LIBRARY:
 			arg >> opt::metaVars[0];
-			haveDbParam = true;
 			break;
 		  case OPT_STRAIN:
 			arg >> opt::metaVars[1];
-			haveDbParam = true;
 			break;
 		  case OPT_SPECIES:
 			arg >> opt::metaVars[2];
-			haveDbParam = true;
 			break;
-#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -879,14 +855,13 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-		);
+				opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars);
 		addToDb(db, "K", opt::k);
 	}
 
@@ -904,7 +879,7 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		addToDb(db, "add_complement_edges", numAdded);
 
 	// Remove invalid edges.
@@ -915,7 +890,7 @@ int main(int argc, char** argv)
 		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
 
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		addToDb(db, "Edges_invalid", numRemoved);
 
 	if (opt::minContigLengthEnd == 0) {

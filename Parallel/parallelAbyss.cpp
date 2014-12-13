@@ -15,9 +15,7 @@
 #include <mpi.h>
 #include <unistd.h> // for gethostname
 #include <vector>
-#if _SQL
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 
@@ -120,20 +118,20 @@ int main(int argc, char** argv)
 		if (!opt::snpPath.empty())
 			mergeFastaFiles(opt::snpPath, "snp-");
 		cout << "Done." << endl;
-#if _SQL
 		DB db;
-		init(db,
-				opt::getUvalue(),
-				opt::getVvalue(),
-				"ABYSS-P",
-				opt::getCommand(),
-				opt::getMetaValue()
-		);
-		addToDb(db, "SS", opt::ss);
-		addToDb(db, "K", opt::kmerSize);
-		addToDb(db, "numProc", opt::numProc);
-		addToDb(db, NSC::moveFromAaStatMap());
-#endif
+		if (opt::url.length() > 0) {
+			init(db,
+					opt::getUvalue(),
+					opt::getVvalue(),
+					"ABYSS-P",
+					opt::getCommand(),
+					opt::getMetaValue()
+			);
+			addToDb(db, "SS", opt::ss);
+			addToDb(db, "K", opt::kmerSize);
+			addToDb(db, "numProc", opt::numProc);
+			addToDb(db, NSC::moveFromAaStatMap());
+		}
 	}
 
 	return 0;

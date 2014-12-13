@@ -17,18 +17,14 @@
 #include <pthread.h>
 #include <set>
 #include <vector>
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 
 #define PROGRAM "SimpleGraph"
 
-#if _SQL
 DB db;
-#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -60,20 +56,16 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for sqlite\n"
 "      --strain=NAME     specify strain NAME for sqlite\n"
 "      --species=NAME    specify species NAME for sqlite\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	unsigned k; // used by ContigProperties
 	static unsigned threads = 1;
 	static int extend;
@@ -88,19 +80,11 @@ namespace opt {
  	int format = DIST; // used by Estimate
 }
 
-// for sqlite params
-static bool haveDbParam(false);
-static vector<string> keys;
-static vector<int> vals;
-
 static const char shortopts[] = "d:j:k:o:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
-#endif
+//enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST };
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
@@ -115,12 +99,10 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",          required_argument, NULL, OPT_DB },
 	{ "library",     required_argument, NULL, OPT_LIBRARY },
 	{ "strain",      required_argument, NULL, OPT_STRAIN },
 	{ "species",     required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -130,9 +112,8 @@ static void generatePathsThroughEstimates(const Graph& g,
 
 int main(int argc, char** argv)
 {
-#if _SQL
-	opt::metaVars.resize(3);
-#endif
+	if (opt::url.length() > 0)
+		opt::metaVars.resize(3);
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -152,24 +133,17 @@ int main(int argc, char** argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
 				arg >> opt::url;
-				haveDbParam = true;
 				break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];
-				haveDbParam = true;
 				break;
 			case OPT_STRAIN:
 				arg >> opt::metaVars[1];
-				haveDbParam = true;
 				break;
 			case OPT_SPECIES:
-				arg >> opt::metaVars[2];
-				haveDbParam = true;
-				break;
-#endif
+				arg >> opt::metaVars[2]; break;
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -201,14 +175,14 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-	if (haveDbParam)
+
+	if (opt::url.length() > 0)
 		init(db,
-			opt::url,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-		);
+				opt::url,
+				opt::verbose,
+				PROGRAM,
+				opt::getCommand(argc, argv),
+				opt::metaVars);
 
 	string adjFile(argv[optind++]);
 	string estFile(argv[optind++]);
@@ -224,7 +198,7 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		addToDb(db, "K", opt::k);
 		addToDb(db, "V", (num_vertices(g) - num_vertices_removed(g)));
 		addToDb(db, "E", num_edges(g));
@@ -742,27 +716,25 @@ static void generatePathsThroughEstimates(const Graph& g,
 		"Too many solutions: " << stats.tooManySolutions << "\n"
 		"Too complex: " << stats.tooComplex << "\n";
 
-	if (haveDbParam) {
-		vals = make_vector<int>()
-			<< stats.totalAttempted
-			<< stats.uniqueEnd
-			<< stats.noPossiblePaths
-			<< stats.noValidPaths
-			<< stats.repeat
-			<< stats.multiEnd
-			<< stats.tooManySolutions
-			<< stats.tooComplex;
+	vector<int> vals = make_vector<int>()
+		<< stats.totalAttempted
+		<< stats.uniqueEnd
+		<< stats.noPossiblePaths
+		<< stats.noValidPaths
+		<< stats.repeat
+		<< stats.multiEnd
+		<< stats.tooManySolutions
+		<< stats.tooComplex;
 
-		keys = make_vector<string>()
-			<< "stat_attempted_path_total"
-			<< "stat_unique_path"
-			<< "stat_impossible_path"
-			<< "stat_no_valid_path"
-			<< "stat_repetitive"
-			<< "stat_multi_valid_path"
-			<< "stat_too_many"
-			<< "stat_too_complex";
-	}
+	vector<string> keys = make_vector<string>()
+		<< "stat_attempted_path_total"
+		<< "stat_unique_path"
+		<< "stat_impossible_path"
+		<< "stat_no_valid_path"
+		<< "stat_repetitive"
+		<< "stat_multi_valid_path"
+		<< "stat_too_many"
+		<< "stat_too_complex";
 
 	inStream.close();
 	outStream.close();
@@ -778,15 +750,16 @@ static void generatePathsThroughEstimates(const Graph& g,
 				"threshold paramter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
-	if (haveDbParam) {
-		vals += make_vector<int>()
-			<< g_minNumPairs
-			<< g_minNumPairsUsed;
 
-		keys += make_vector<string>()
-			<< "minPairNum_DistanceEst"
-			<< "minPairNum_UsedInPath";
+	vals += make_vector<int>()
+		<< g_minNumPairs
+		<< g_minNumPairsUsed;
 
+	keys += make_vector<string>()
+		<< "minPairNum_DistanceEst"
+		<< "minPairNum_UsedInPath";
+	
+	if (opt::url.length() > 0) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb (db, keys[i], vals[i]);
 	}
