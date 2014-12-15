@@ -428,6 +428,7 @@ Simpson, Jared T., Kim Wong, Shaun D. Jackman, Jacqueline E. Schein,
 Steven JM Jones, and İnanç Birol.
 **ABySS: a parallel assembler for short read sequence data**.
 *Genome research* 19, no. 6 (2009): 1117-1123.
+[doi:10.1101/gr.089532.108](http://dx.doi.org/10.1101/gr.089532.108)
 
 ## [Trans-ABySS](http://www.nature.com/nmeth/journal/v7/n11/abs/nmeth.1517.html)
 
@@ -435,6 +436,7 @@ Robertson, Gordon, Jacqueline Schein, Readman Chiu, Richard Corbett,
 Matthew Field, Shaun D. Jackman, Karen Mungall et al.
 **De novo assembly and analysis of RNA-seq data**.
 *Nature methods* 7, no. 11 (2010): 909-912.
+[doi:10.1038/10.1038/nmeth.1517](http://dx.doi.org/10.1038/nmeth.1517)
 
 ## [ABySS-Explorer](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5290690)
 
@@ -442,6 +444,7 @@ Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones.
 **ABySS-Explorer: visualizing genome sequence assemblies**.
 *IEEE Transactions on Visualization and Computer Graphics*
 15, no. 6 (2009): 881-888.
+[doi:10.1109/TVCG.2009.116](http://dx.doi.org/10.1109/TVCG.2009.116)
 
 Mailing List
 ============
