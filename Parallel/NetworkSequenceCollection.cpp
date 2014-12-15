@@ -14,7 +14,6 @@
 
 using namespace std;
 
-#if _SQL
 namespace NSC
 {
 	dbMap moveFromAaStatMap()
@@ -25,7 +24,6 @@ namespace NSC
 		return temp;
 	}
 }
-#endif
 
 // Don't load data into the control process when we have at least
 // DEDICATE_CONTROL_AT total processes. This is needed because the
@@ -411,10 +409,12 @@ void NetworkSequenceCollection::controlCoverage()
 	size_t lowCoverageKmer = m_comm.reduce(m_lowCoverageKmer);
 	cout << "Removed " << lowCoverageKmer << " k-mer in "
 		<< lowCoverageContigs << " low-coverage contigs.\n";
-#if _SQL
-	AssemblyAlgorithms::addToDb ("totalLowCovCntg", lowCoverageContigs);
-	AssemblyAlgorithms::addToDb ("totalLowCovKmer", lowCoverageKmer);
-#endif
+
+	if (opt::url.length() > 0) {
+		AssemblyAlgorithms::addToDb ("totalLowCovCntg", lowCoverageContigs);
+		AssemblyAlgorithms::addToDb ("totalLowCovKmer", lowCoverageKmer);
+	}
+
 	EndState();
 
 	SetState(NAS_SPLIT_AMBIGUOUS);
@@ -436,10 +436,8 @@ void NetworkSequenceCollection::controlCoverage()
 void NetworkSequenceCollection::runControl()
 {
 	unsigned prunedSum = 0;
-#if _SQL
 	unsigned erosionSum = 0;
 	unsigned finalAmbg = 0;
-#endif
 	SetState(NAS_LOADING);
 	size_t temp;
 	while (m_state != NAS_DONE) {
@@ -468,9 +466,10 @@ void NetworkSequenceCollection::runControl()
 					"At least "
 					<< toSI(numLoaded * sizeof (value_type))
 					<< "B of RAM is required.\n";
-#if _SQL
-				AssemblyAlgorithms::addToDb("loadedKmer", numLoaded);
-#endif
+
+				if (opt::url.length() > 0)
+					AssemblyAlgorithms::addToDb("loadedKmer", numLoaded);
+
 				Histogram myh
 					= AssemblyAlgorithms::coverageHistogram(m_data);
 				Histogram h(m_comm.reduce(myh.toVector()));
@@ -502,20 +501,20 @@ void NetworkSequenceCollection::runControl()
 				logger(0) << "Added " << m_numBasesAdjSet
 					<< " edges.\n";
 				cout << "Added " << temp << " edges.\n";
-#if _SQL
-				AssemblyAlgorithms::addToDb ("EdgesGenerated", temp);
-#endif
+
+				if (opt::url.length() > 0)
+					AssemblyAlgorithms::addToDb ("EdgesGenerated", temp);
+
 				EndState();
 				SetState(opt::erode > 0 ? NAS_ERODE : NAS_TRIM);
 				break;
 			case NAS_ERODE:
 				assert(opt::erode > 0);
 				cout << "Eroding tips...\n";
-#if _SQL
+
 				erosionSum += controlErode();
-#else
-				controlErode();
-#endif
+				//controlErode();
+
 				SetState(NAS_TRIM);
 				break;
 
@@ -558,18 +557,19 @@ void NetworkSequenceCollection::runControl()
 				assert(out.good());
 				out.close();
 				cout << "Removed " << numPopped << " bubbles.\n";
-#if _SQL
-				AssemblyAlgorithms::addToDb ("poppedBubbles", numPopped);
-#endif
+
+				if (opt::url.length() > 0)
+					AssemblyAlgorithms::addToDb ("poppedBubbles", numPopped);
+
 				SetState(NAS_MARK_AMBIGUOUS);
 				break;
 			}
 			case NAS_MARK_AMBIGUOUS:
-#if _SQL
+
 				finalAmbg = controlMarkAmbiguous();
-#else
-				controlMarkAmbiguous();
-#endif
+
+				//controlMarkAmbiguous();
+
 				SetState(NAS_ASSEMBLE);
 				break;
 			case NAS_ASSEMBLE:
@@ -598,10 +598,12 @@ void NetworkSequenceCollection::runControl()
 				cout << "Assembled " << numAssembled.second
 					<< " k-mer in " << numAssembled.first
 					<< " contigs.\n";
-#if _SQL
-				AssemblyAlgorithms::addToDb ("assembledKmerNum", numAssembled.second);
-				AssemblyAlgorithms::addToDb ("assembledCntg", numAssembled.first);
-#endif
+
+				if (opt::url.length() > 0) {
+					AssemblyAlgorithms::addToDb ("assembledKmerNum", numAssembled.second);
+					AssemblyAlgorithms::addToDb ("assembledCntg", numAssembled.first);
+				}
+
 				SetState(NAS_DONE);
 				break;
 			}
@@ -609,11 +611,13 @@ void NetworkSequenceCollection::runControl()
 				break;
 		}
 	}
-#if _SQL
-	AssemblyAlgorithms::addToDb ("finalAmbgVertices", finalAmbg);
-	AssemblyAlgorithms::addToDb ("totalErodedTips", erosionSum);
-	AssemblyAlgorithms::addToDb ("totalPrunedTips", prunedSum);
-#endif
+
+	if (opt::url.length() > 0) {
+		AssemblyAlgorithms::addToDb ("finalAmbgVertices", finalAmbg);
+		AssemblyAlgorithms::addToDb ("totalErodedTips", erosionSum);
+		AssemblyAlgorithms::addToDb ("totalPrunedTips", prunedSum);
+	}
+
 }
 
 void NetworkSequenceCollection::EndState()
@@ -1112,9 +1116,10 @@ size_t NetworkSequenceCollection::controlSplitAmbiguous()
 	while (!checkpointReached())
 		pumpNetwork();
 	cout << "Split " << m_checkpointSum << " ambiguous branches.\n";
-#if _SQL
-	AssemblyAlgorithms::addToDb ("totalSplitAmbg", m_checkpointSum);
-#endif
+
+	if (opt::url.length() > 0)
+		AssemblyAlgorithms::addToDb ("totalSplitAmbg", m_checkpointSum);
+
 	return m_checkpointSum;
 }
 
