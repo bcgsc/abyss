@@ -109,19 +109,28 @@ string DB::initializeRun()
 	return id;
 }
 
+/** Execute the specified shell command and exit if it fails. */
+static inline void systemOrExit(const char* s)
+{
+	int status = system(s);
+	if (status != 0) {
+		std::cerr << "error: status " << status << ": " << s << '\n';
+		exit(EXIT_FAILURE);
+	}
+}
+
 string DB::getPath(const string& program)
 {
 	stringstream echoStream, pathStream;
 	echoStream
 		<< "echo `which " << program << "` > temp.txt";
-	string echoStr = echoStream.str();
-	system(echoStr.c_str());
+	systemOrExit(echoStream.str().c_str());
 	ifstream ifile("temp.txt");
 	if (ifile) {
 		string line;
 		while (getline (ifile, line)) pathStream << line;
 	}
-	system("rm -f temp.txt");
+	systemOrExit("rm -f temp.txt");
 	return pathStream.str();
 }
 
