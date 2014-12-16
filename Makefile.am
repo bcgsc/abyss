@@ -15,7 +15,11 @@ if HAVE_SQLITE
 DataBase=DataBase
 endif
 
-dist_doc_DATA = ChangeLog COPYRIGHT LICENSE \
+dist_doc_DATA = \
+	ChangeLog \
+	CITATION.bib CITATION.md \
+	COPYRIGHT \
+	LICENSE \
 	README.css README.html README.md
 
 EXTRA_DIST=doxygen.conf
