@@ -1,0 +1,9 @@
+dependencies:
+  pre:
+    - sudo apt-get update -qq
+    - sudo apt-get install libsparsehash-dev
+test:
+  override:
+    - ./autogen.sh
+    - ./configure --with-mpi=/usr/lib/openmpi
+    - make
