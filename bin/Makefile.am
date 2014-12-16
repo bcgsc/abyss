@@ -1,3 +1,10 @@
+if !HAVE_LIBMPI
+nompi=ABYSS-P
+endif
+
+ABYSS-P: $(top_builddir)/bin/abyss-nompi
+	cp $< $@
+
 dist_bin_SCRIPTS = \
 	abyss-bowtie \
 	abyss-bowtie2 \
@@ -9,9 +16,11 @@ dist_bin_SCRIPTS = \
 	abyss-pe \
 	abyss-samtoafg \
 	abyss-tabtomd \
-	abyss-bloom-dist.mk
+	abyss-bloom-dist.mk \
+	$(nompi)
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
 	abyss-fac.pl \
-	abyss-joindist
+	abyss-joindist \
+	abyss-nompi
