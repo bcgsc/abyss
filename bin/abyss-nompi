@@ -1,4 +1,6 @@
 #!/bin/bash
 
-echo >&2 error: ABySS was not configure with support for MPI
+echo >&2 "error: ABySS was not configured with support for MPI. For details"
+echo >&2 "       on compiling ABySS with MPI suppor see:"
+echo >&2 "       https://github.com/bcgsc/abyss#compiling-abyss-from-source"
 exit 1
