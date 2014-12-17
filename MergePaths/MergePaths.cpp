@@ -882,7 +882,7 @@ static Lengths readContigLengths(const string& path)
 
 int main(int argc, char** argv)
 {
-	if (opt::url.length() > 0) 
+	if (opt::url.length() > 0)
 		opt::metaVars.resize(3);
 
 	bool die = false;

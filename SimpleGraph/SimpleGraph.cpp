@@ -758,7 +758,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 	keys += make_vector<string>()
 		<< "minPairNum_DistanceEst"
 		<< "minPairNum_UsedInPath";
-	
+
 	if (opt::url.length() > 0) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb (db, keys[i], vals[i]);

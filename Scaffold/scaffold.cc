@@ -290,7 +290,7 @@ static void resolveForks(Graph& g, const Graph& g0)
 	if (opt::verbose > 0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
-	if (opt::url.length() > 0) 
+	if (opt::url.length() > 0)
 		addToDb(db, "E_added_ambig", numEdges);
 }
 
@@ -308,7 +308,7 @@ static void pruneTips(Graph& g)
 		cerr << "Removed " << n << " tips.\n";
 		printGraphStats(cerr, g);
 	}
-	
+
 	if (opt::url.length() > 0)
 		addToDb(db, "Tips_removed", n);
 }
@@ -679,7 +679,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0) 
+	if (opt::url.length() > 0)
 		addToDb(db, "Edges_transitive", numTransitive);
 
 	// Prune tips.
@@ -693,10 +693,10 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
-	
+
 	if (opt::url.length() > 0)
 		addToDb(db, "Vertices_bubblePopped", popped.size());
-	
+
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
 		for (vector<V>::const_iterator it = popped.begin();
@@ -725,7 +725,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 			<< paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
-	
+
 	if (opt::url.length() > 0) {
 		addToDb(db, "contigs_assembled", n);
 		addToDb(db, "scaffolds_assembled", paths.size());
