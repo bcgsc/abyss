@@ -51,7 +51,6 @@ class NetworkSequenceCollection
 {
 	public:
 		typedef SequenceDataHash::key_type V;
-		typedef SequenceDataHash::mapped_type VP;
 
 		typedef SequenceDataHash::key_type key_type;
 		typedef SequenceDataHash::mapped_type mapped_type;
@@ -63,15 +62,8 @@ class NetworkSequenceCollection
 		typedef mapped_type::SymbolSet SymbolSet;
 		typedef mapped_type::SymbolSetPair SymbolSetPair;
 
-		typedef key_type vertex_descriptor;
+		// Used by boost::vertex_bundle_type
 		typedef mapped_type vertex_bundled;
-		typedef std::pair<V, V> edge_descriptor;
-
-		typedef boost::directed_tag directed_category;
-		typedef boost::disallow_parallel_edge_tag edge_parallel_category;
-		struct traversal_category
-			: boost::adjacency_graph_tag, boost::vertex_list_graph_tag
-			{ };
 
 		NetworkSequenceCollection()
 			: m_state(NAS_WAITING), m_trimStep(0),
@@ -279,5 +271,17 @@ class NetworkSequenceCollection
 		static const size_t MAX_ACTIVE = 50;
 		static const size_t LOW_ACTIVE = 10;
 };
+
+// Graph
+
+namespace boost {
+
+template <>
+struct graph_traits<NetworkSequenceCollection>
+	: graph_traits<SequenceCollectionHash>
+{
+}; // graph_traits<NetworkSequenceCollection>
+
+} // namespace boost
 
 #endif
