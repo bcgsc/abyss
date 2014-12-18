@@ -7,9 +7,7 @@
 #include "Common/Timer.h"
 #include <vector>
 #include <string>
-#if _SQL
 #include "Common/InsOrderedMap.h"
-#endif
 
 class Histogram;
 
@@ -24,11 +22,9 @@ enum SeqContiguity
 /** De Bruijn graph assembly algorithms. */
 namespace AssemblyAlgorithms {
 
-#if _SQL
 extern std::vector<size_t> tempCounter;
 extern InsOrderedMap<std::string,int> tempStatMap;
 extern void addToDb(const std::string&, const int&);
-#endif
 
 static inline
 bool extendBranch(BranchRecord& branch,

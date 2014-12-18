@@ -10,7 +10,6 @@
 #include <ostream>
 #include <set>
 #include <utility>
-#if _SQL
 #include "Common/InsOrderedMap.h"
 
 namespace NSC
@@ -18,7 +17,6 @@ namespace NSC
 	typedef InsOrderedMap<std::string, int> dbMap;
 	dbMap moveFromAaStatMap();
 }
-#endif
 
 enum NetworkAssemblyState
 {

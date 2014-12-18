@@ -29,10 +29,8 @@ void performTrim(SequenceCollectionHash* seqCollection)
 	}
 	std::cout << "Pruned " << total << " tips in "
 		<< rounds << " rounds.\n";
-#if _SQL
 	tempCounter[1] += total;
 	tempCounter[2] = rounds;
-#endif
 }
 
 /** Prune tips shorter than maxBranchCull. */

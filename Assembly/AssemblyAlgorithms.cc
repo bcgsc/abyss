@@ -9,7 +9,6 @@ namespace AssemblyAlgorithms
 /** The number of k-mer that have been eroded. */
 size_t g_numEroded;
 
-#if _SQL
 std::vector<size_t> tempCounter(16,0);
 InsOrderedMap<std::string,int> tempStatMap;
 
@@ -17,6 +16,5 @@ void addToDb(const std::string& key, const int& value)
 {
 	tempStatMap.push_back(key, value);
 }
-#endif
 
 };

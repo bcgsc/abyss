@@ -125,15 +125,15 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 
 	if (numPopped > 0)
 		std::cout << "Removed " << numPopped << " bubbles.\n";
-#if _SQL
-	addToDb("totalErodedTips", tempCounter[0]);
-	addToDb("totalPrunedTips", tempCounter[1]);
-	addToDb("totalLowCovCntg", tempCounter[3]);
-	addToDb("totalLowCovKmer", tempCounter[4]);
-	addToDb("totalSplitAmbg", tempCounter[7]);
-	addToDb("poppedBubbles", numPopped);
-	tempCounter.assign(16,0);
-#endif
+	if (opt::url.length() > 0) {
+		addToDb("totalErodedTips", tempCounter[0]);
+		addToDb("totalPrunedTips", tempCounter[1]);
+		addToDb("totalLowCovCntg", tempCounter[3]);
+		addToDb("totalLowCovKmer", tempCounter[4]);
+		addToDb("totalSplitAmbg", tempCounter[7]);
+		addToDb("poppedBubbles", numPopped);
+		tempCounter.assign(16,0);
+	}
 	return numPopped;
 }
 

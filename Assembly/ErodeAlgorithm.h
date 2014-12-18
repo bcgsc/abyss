@@ -51,9 +51,7 @@ size_t getNumEroded()
 {
 	size_t numEroded = g_numEroded;
 	g_numEroded = 0;
-#if _SQL
 	tempCounter[0] += numEroded;
-#endif
 	logger(0) << "Eroded " << numEroded << " tips.\n";
 	return numEroded;
 }

@@ -9,12 +9,9 @@
 #include <getopt.h>
 #include <iostream>
 #include <vector>
-#if _SQL
 #include "DataBase/Options.h"
-#else
 #include <sstream>
 #include <iterator>
-#endif
 
 using namespace std;
 
@@ -70,12 +67,10 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for database\n"
 "      --strain=NAME     specify strain NAME for database\n"
 "      --species=NAME    specify species NAME for database\n"
-#endif
 "\n"
 " ABYSS Options: (won't work with ABYSS-P)\n"
 "\n"
@@ -143,21 +138,15 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-#if _SQL
 string url;
 vector<string> metaVars;
 
 /** commandline specific to assembly */
 string assemblyCmd;
-#endif
 
 static const char shortopts[] = "b:c:e:E:g:k:K:mo:Q:q:s:t:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST };
-#endif
 
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
@@ -186,16 +175,13 @@ static const struct option longopts[] = {
 	{ "verbose",     no_argument,       NULL, 'v' },
 	{ "help",        no_argument,       NULL, OPT_HELP },
 	{ "version",     no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",          required_argument, NULL, OPT_DB },
 	{ "library",     required_argument, NULL, OPT_LIBRARY },
 	{ "strain",      required_argument, NULL, OPT_STRAIN },
 	{ "species",     required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
-#if _SQL
 int getVvalue()
 {
 	return opt::verbose;
@@ -215,7 +201,6 @@ vector<string> getMetaValue()
 {
 	return opt::metaVars;
 }
-#endif
 
 /** Parse the specified command line. */
 void parse(int argc, char* const* argv)
@@ -227,10 +212,8 @@ void parse(int argc, char* const* argv)
 		sargv << *last;
 	}
 
-#if  _SQL
 	opt::assemblyCmd = sargv.str();
 	opt::metaVars.resize(3);
-#endif
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -306,7 +289,6 @@ void parse(int argc, char* const* argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
 				arg >> url;
 				break;
@@ -319,7 +301,6 @@ void parse(int argc, char* const* argv)
 			case OPT_SPECIES:
 				arg >> opt::metaVars[2];
 				break;
-#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"

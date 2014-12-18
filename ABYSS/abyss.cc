@@ -11,15 +11,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#if _SQL
 #include "DataBase/DB.h"
-#endif
 
 using namespace std;
 
-#if _SQL
 DB db;
-#endif
 
 static void removeLowCoverageContigs(SequenceCollectionHash& g)
 {
@@ -64,9 +60,8 @@ static void assemble(const string& pathIn, const string& pathOut)
 			ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>),
 			&g));
 	size_t numLoaded = g.size();
-#if _SQL
-	addToDb(db, "loadedKmer", numLoaded);
-#endif
+	if (opt::url.length() > 0)
+		addToDb(db, "loadedKmer", numLoaded);
 	cout << "Loaded " << numLoaded << " k-mer\n";
 	g.setDeletedKey();
 	g.shrink();
@@ -140,19 +135,20 @@ int main(int argc, char* const* argv)
 	if (krange)
 		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
 				<< ":" << opt::kStep << endl;
-#if _SQL
-	init(db,
-			opt::getUvalue(),
-			opt::getVvalue(),
-			"ABYSS",
-			opt::getCommand(),
-			opt::getMetaValue()
-	);
-	addToDb(db, "SS", opt::ss);
-	addToDb(db, "k", opt::kmerSize);
-	addToDb(db, "singleK", opt::singleKmerSize);
-	addToDb(db, "numProc", 1);
-#endif
+
+	if (opt::url.length() > 0) {
+		init(db,
+				opt::getUvalue(),
+				opt::getVvalue(),
+				"ABYSS",
+				opt::getCommand(),
+				opt::getMetaValue());
+		addToDb(db, "SS", opt::ss);
+		addToDb(db, "k", opt::kmerSize);
+		addToDb(db, "singleK", opt::singleKmerSize);
+		addToDb(db, "numProc", 1);
+	}
+
 	for (unsigned k = opt::kMin; k <= opt::kMax; k += opt::kStep) {
 		if (krange)
 			cout << "Assembling k=" << k << endl;
@@ -182,8 +178,8 @@ int main(int argc, char* const* argv)
 			k1 << opt::contigsPath.c_str();
 		assemble(k0.str(), k1.str());
 	}
-#if _SQL
-	addToDb(db, AssemblyAlgorithms::tempStatMap);
-#endif
+
+	if (opt::url.length() > 0)
+		addToDb(db, AssemblyAlgorithms::tempStatMap);
 	return 0;
 }

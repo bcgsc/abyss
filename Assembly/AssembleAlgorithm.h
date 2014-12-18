@@ -120,10 +120,8 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 			<< " contigs before removing low-coverage contigs.\n"
 			"Removed " << lowCoverageKmer << " k-mer in "
 				<< lowCoverageContigs << " low-coverage contigs.\n";
-#if _SQL
 		tempCounter[3] += lowCoverageContigs;
 		tempCounter[4] += lowCoverageKmer;
-#endif
 	} else {
 		assert(assembledKmer <= kmerCount);
 		size_t circularKmer = kmerCount - assembledKmer;
@@ -132,13 +130,13 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 				<< " unassembled k-mer in circular contigs.\n";
 		std::cout << "Assembled " << assembledKmer << " k-mer in "
 			<< contigID << " contigs.\n";
-#if _SQL
-		addToDb("finalAmbgVertices", tempCounter[5]);
-		//addToDb("finalAmbgEdges", tempCounter[6]);
-		tempCounter.assign(16,0);
-		addToDb("assembledKmerNum", assembledKmer);
-		addToDb("assembledCntg", contigID);
-#endif
+		if (opt::url.length() > 0) {
+			addToDb("finalAmbgVertices", tempCounter[5]);
+			//addToDb("finalAmbgEdges", tempCounter[6]);
+			tempCounter.assign(16,0);
+			addToDb("assembledKmerNum", assembledKmer);
+			addToDb("assembledCntg", contigID);
+		}
 	}
 	return contigID;
 }

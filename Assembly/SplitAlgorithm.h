@@ -57,10 +57,7 @@ size_t markAmbiguous(Graph* g)
 
 		g->pumpNetwork();
 	}
-#if _SQL
 	tempCounter[5] = countv;
-	//tempCounter[6] = counte;
-#endif
 	logger(0) << "Marked " << counte << " edges of " << countv
 		<< " ambiguous vertices." << std::endl;
 
@@ -90,9 +87,7 @@ size_t splitAmbiguous(Graph* pSC)
 		}
 		pSC->pumpNetwork();
 	}
-#if _SQL
 	tempCounter[7] += count;
-#endif
 	logger(0) << "Split " << count << " ambigiuous branches.\n";
 	return count;
 }

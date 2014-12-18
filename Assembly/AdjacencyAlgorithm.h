@@ -39,9 +39,8 @@ size_t generateAdjacency(Graph* seqCollection)
 
 	if (numBasesSet > 0) {
 		logger(0) << "Added " << numBasesSet << " edges.\n";
-#if _SQL
-		addToDb("EdgesGenerated", numBasesSet);
-#endif
+		if (opt::url.length() > 0)
+			addToDb("EdgesGenerated", numBasesSet);
 	}
 	return numBasesSet;
 }

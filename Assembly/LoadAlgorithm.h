@@ -153,10 +153,8 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 		std::cerr << "`" << inFile << "': "
 			"discarded " << count_nonACGT << " reads "
 			"containing non-ACGT characters\n";
-#if _SQL
 			tempCounter[0] += count_reversed;
 			tempCounter[1] += (count_small + reader.unchaste() + count_nonACGT);
-#endif
 	if (count_good == 0)
 		std::cerr << "warning: `" << inFile << "': "
 			"contains no usable sequence\n";
@@ -172,11 +170,11 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 		assert(!opt::colourSpace);
 		seqCollection->setColourSpace(false);
 	}
-#if _SQL
-	addToDb("reversedReads", tempCounter[0]);
-	addToDb("totalDiscardedReads", tempCounter[1]);
+	if (opt::url.length() > 0) {
+		addToDb("reversedReads", tempCounter[0]);
+		addToDb("totalDiscardedReads", tempCounter[1]);
+	}
 	tempCounter.assign(2,0);
-#endif
 }
 
 } // namespace AssemblyAlgorithms
