@@ -119,7 +119,7 @@ int main(int argc, char** argv)
 			mergeFastaFiles(opt::snpPath, "snp-");
 		cout << "Done." << endl;
 		DB db;
-		if (opt::url.length() > 0) {
+		if (!opt::db.empty()) {
 			init(db,
 					opt::getUvalue(),
 					opt::getVvalue(),

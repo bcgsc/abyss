@@ -60,7 +60,7 @@ static void assemble(const string& pathIn, const string& pathOut)
 			ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>),
 			&g));
 	size_t numLoaded = g.size();
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "loadedKmer", numLoaded);
 	cout << "Loaded " << numLoaded << " k-mer\n";
 	g.setDeletedKey();
@@ -136,7 +136,7 @@ int main(int argc, char* const* argv)
 		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
 				<< ":" << opt::kStep << endl;
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
 				opt::getUvalue(),
 				opt::getVvalue(),
@@ -179,7 +179,7 @@ int main(int argc, char* const* argv)
 		assemble(k0.str(), k1.str());
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, AssemblyAlgorithms::tempStatMap);
 	return 0;
 }

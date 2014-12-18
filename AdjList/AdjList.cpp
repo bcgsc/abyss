@@ -71,7 +71,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by GraphIO
 
@@ -325,7 +325,7 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -345,7 +345,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::db; break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
@@ -375,8 +375,8 @@ int main(int argc, char** argv)
 		opt::minOverlap = opt::k - 1;
 	opt::minOverlap = min(opt::minOverlap, opt::k - 1);
 
-	if (opt::url.length() > 0)
-		init (db, opt::url, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
+	if (!opt::db.empty())
+		init (db, opt::db, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 	opt::trimMasked = false;
 
 	// contig overlap graph
@@ -410,7 +410,7 @@ int main(int argc, char** argv)
 		<< "degree234pctg"
 		<< "degree5pctg"
 		<< "degree_max";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}

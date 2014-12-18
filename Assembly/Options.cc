@@ -138,7 +138,7 @@ string snpPath;
 /** input FASTA files */
 vector<string> inFiles;
 
-string url;
+string db;
 vector<string> metaVars;
 
 /** commandline specific to assembly */
@@ -189,7 +189,7 @@ int getVvalue()
 
 string getUvalue()
 {
-	return opt::url;
+	return opt::db;
 }
 
 string getCommand()
@@ -290,7 +290,7 @@ void parse(int argc, char* const* argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> url;
+				arg >> db;
 				break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];

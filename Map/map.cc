@@ -79,7 +79,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	/** Find matches at least k bp. */
 	static unsigned k;
@@ -550,7 +550,7 @@ int main(int argc, char** argv)
 	opt::chastityFilter = false;
 	opt::trimMasked = false;
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -589,7 +589,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url;
+				arg >> opt::db;
 				haveDbParam = true;
 				break;
 			case OPT_LIBRARY:
@@ -637,8 +637,8 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-	if (opt::url.length() > 0) {
-		init(db, opt::url,
+	if (!opt::db.empty()) {
+		init(db, opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -704,7 +704,7 @@ int main(int argc, char** argv)
 				<< setprecision(3) << (float)bytes / bp << " B/bp.\n";
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "readContigs", faIndex.size());
 
 	// Check that the indexes are up to date.
@@ -736,7 +736,7 @@ int main(int argc, char** argv)
 			<< "%)\n";
 
 		// TODO: This block shouldn't be in a verbose restricted section.
-		if (opt::url.length() > 0) {
+		if (!opt::db.empty()) {
 			addToDb(db, "read_alignments_initial", total);
 			addToDb(db, "mapped", mapped);
 			addToDb(db, "mapped_uniq", unique);

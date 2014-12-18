@@ -74,7 +74,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by GraphIO
 	static string out;
@@ -626,7 +626,7 @@ static void addMissingEdges(const Lengths& lengths,
 	}
 	if (opt::verbose > 0)
 		cout << "Added " << numAdded << " missing edges.\n";
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "addedMissingEdges", numAdded);
 }
 
@@ -641,7 +641,7 @@ static void removeTransitiveEdges(PathGraph& pathGraph)
 			<< nbefore << " edges leaving "
 			<< nafter << " edges.\n";
 	assert(nbefore - nremoved == nafter);
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb(db, "Edges_init", nbefore);
 		addToDb(db, "Edges_removed_transitive", nremoved);
 	}
@@ -683,7 +683,7 @@ static void removeSmallOverlaps(PathGraph& g,
 	if (opt::verbose > 0)
 		cout << "Removed " << edges.size()
 			<< " small overlap edges.\n";
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Edges_removed_small_overlap", edges.size());
 }
 
@@ -843,7 +843,7 @@ static void buildPathGraph(const Lengths& lengths,
 		<< "degree234pctg"
 		<< "degree5pctg"
 		<< "degree_max";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
@@ -882,7 +882,7 @@ static Lengths readContigLengths(const string& path)
 
 int main(int argc, char** argv)
 {
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -904,7 +904,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::db; break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
@@ -951,9 +951,9 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Reading `" << argv[optind] << "'..." << endl;
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -967,7 +967,7 @@ int main(int argc, char** argv)
 
 	removeRepeats(originalPathMap);
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "K", opt::k);
 	if (!opt::greedy) {
 		// Assemble the path overlap graph.

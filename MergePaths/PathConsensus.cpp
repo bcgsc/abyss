@@ -86,7 +86,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by ContigProperties
 	static string out;
@@ -764,7 +764,7 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		opt::metaVars.resize(3);
 	}
 
@@ -792,7 +792,7 @@ int main(int argc, char** argv)
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		case OPT_DB:
-			arg >> opt::url; break;
+			arg >> opt::db; break;
 		case OPT_LIBRARY:
 			arg >> opt::metaVars[0]; break;
 		case OPT_STRAIN:
@@ -869,9 +869,9 @@ int main(int argc, char** argv)
 	if (opt::verbose > 0)
 		cerr << "Read " << paths.size() << " paths\n";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -1002,7 +1002,7 @@ int main(int argc, char** argv)
 		<< "too_many_paths"
 		<< "too_complex"
 		<< "dissimilar";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}

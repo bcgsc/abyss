@@ -77,7 +77,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 
 	unsigned k; // used by ContigProperties
@@ -201,7 +201,7 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb(db, "V_removed", numRemovedV);
 		addToDb(db, "E_removed", numRemovedE);
 	}
@@ -235,7 +235,7 @@ static void removeCycles(Graph& g)
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "E_removed_cyclic", cycles.size());
 }
 
@@ -290,7 +290,7 @@ static void resolveForks(Graph& g, const Graph& g0)
 	if (opt::verbose > 0)
 		cerr << "Added " << numEdges
 			<< " edges to ambiguous vertices.\n";
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "E_added_ambig", numEdges);
 }
 
@@ -309,7 +309,7 @@ static void pruneTips(Graph& g)
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Tips_removed", n);
 }
 
@@ -387,7 +387,7 @@ static void removeRepeats(Graph& g)
 			<< numRemoved << " ambiguous vertices.\n";
 		printGraphStats(cerr, g);
 	}
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb(db, "V_cleared_ambg", repeats.size());
 		addToDb(db, "V_removed_ambg", numRemoved);
 	}
@@ -470,7 +470,7 @@ static void removeWeakEdges(Graph& g)
 		cerr << "Removed " << weak.size() << " weak edges.\n";
 		printGraphStats(cerr, g);
 	}
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "E_removed_weak", weak.size());
 }
 
@@ -559,7 +559,7 @@ static void readGraph(const string& path, Graph& g)
 		<< "degree5_readGraph"
 		<< "max_readGraph";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for(unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
@@ -635,7 +635,7 @@ static void addCntgStatsToDb(
 		<< "sum"
 		<< "nNG50"
 		<< "NG50";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for(unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
@@ -679,7 +679,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Edges_transitive", numTransitive);
 
 	// Prune tips.
@@ -694,7 +694,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Vertices_bubblePopped", popped.size());
 
 	if (opt::verbose > 1) {
@@ -726,7 +726,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb(db, "contigs_assembled", n);
 		addToDb(db, "scaffolds_assembled", paths.size());
 	}
@@ -773,7 +773,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 /** Run abyss-scaffold. */
 int main(int argc, char** argv)
 {
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -821,7 +821,7 @@ int main(int argc, char** argv)
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_DB:
-			arg >> opt::url;
+			arg >> opt::db;
 			break;
 		  case OPT_LIBRARY:
 			arg >> opt::metaVars[0];
@@ -855,9 +855,9 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -879,7 +879,7 @@ int main(int argc, char** argv)
 		printGraphStats(cerr, g);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "add_complement_edges", numAdded);
 
 	// Remove invalid edges.
@@ -890,7 +890,7 @@ int main(int argc, char** argv)
 		cerr << "warning: Removed "
 			<< numRemoved << " invalid edges.\n";
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Edges_invalid", numRemoved);
 
 	if (opt::minContigLengthEnd == 0) {

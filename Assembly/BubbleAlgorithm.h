@@ -125,7 +125,7 @@ size_t popBubbles(SequenceCollectionHash* seqCollection, std::ostream& out)
 
 	if (numPopped > 0)
 		std::cout << "Removed " << numPopped << " bubbles.\n";
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb("totalErodedTips", tempCounter[0]);
 		addToDb("totalPrunedTips", tempCounter[1]);
 		addToDb("totalLowCovCntg", tempCounter[3]);

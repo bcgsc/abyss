@@ -24,7 +24,7 @@ namespace opt {
 	extern std::string snpPath;
 	extern std::vector<std::string> inFiles;
 
-	extern std::string url;
+	extern std::string db;
 
 	void parse(int argc, char* const* argv);
 	extern std::string assemblyCmd;

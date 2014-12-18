@@ -78,7 +78,7 @@ static const char USAGE_MESSAGE[] =
 enum { MLE, MEAN };
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by Estimate.h
 
@@ -384,7 +384,7 @@ static void readPairs(It& it, const It& last, vector<SAMRecord>& out)
 
 int main(int argc, char** argv)
 {
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -416,7 +416,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::db; break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
@@ -471,9 +471,9 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -648,7 +648,7 @@ int main(int argc, char** argv)
 			<< "total_frags"
 			<< "dupl_frags";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}

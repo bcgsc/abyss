@@ -130,7 +130,7 @@ size_t assemble(SequenceCollectionHash* seqCollection,
 				<< " unassembled k-mer in circular contigs.\n";
 		std::cout << "Assembled " << assembledKmer << " k-mer in "
 			<< contigID << " contigs.\n";
-		if (opt::url.length() > 0) {
+		if (!opt::db.empty()) {
 			addToDb("finalAmbgVertices", tempCounter[5]);
 			//addToDb("finalAmbgEdges", tempCounter[6]);
 			tempCounter.assign(16,0);

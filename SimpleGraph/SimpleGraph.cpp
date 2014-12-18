@@ -64,7 +64,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by ContigProperties
 	static unsigned threads = 1;
@@ -112,7 +112,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 
 int main(int argc, char** argv)
 {
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url;
+				arg >> opt::db;
 				break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];
@@ -176,9 +176,9 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
 
 	if (opt::verbose > 0)
 		printGraphStats(cout, g);
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb(db, "K", opt::k);
 		addToDb(db, "V", (num_vertices(g) - num_vertices_removed(g)));
 		addToDb(db, "E", num_edges(g));
@@ -759,7 +759,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 		<< "minPairNum_DistanceEst"
 		<< "minPairNum_UsedInPath";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned i=0; i<vals.size(); i++)
 			addToDb (db, keys[i], vals[i]);
 	}

@@ -410,7 +410,7 @@ void NetworkSequenceCollection::controlCoverage()
 	cout << "Removed " << lowCoverageKmer << " k-mer in "
 		<< lowCoverageContigs << " low-coverage contigs.\n";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		AssemblyAlgorithms::addToDb ("totalLowCovCntg", lowCoverageContigs);
 		AssemblyAlgorithms::addToDb ("totalLowCovKmer", lowCoverageKmer);
 	}
@@ -467,7 +467,7 @@ void NetworkSequenceCollection::runControl()
 					<< toSI(numLoaded * sizeof (value_type))
 					<< "B of RAM is required.\n";
 
-				if (opt::url.length() > 0)
+				if (!opt::db.empty())
 					AssemblyAlgorithms::addToDb("loadedKmer", numLoaded);
 
 				Histogram myh
@@ -502,7 +502,7 @@ void NetworkSequenceCollection::runControl()
 					<< " edges.\n";
 				cout << "Added " << temp << " edges.\n";
 
-				if (opt::url.length() > 0)
+				if (!opt::db.empty())
 					AssemblyAlgorithms::addToDb ("EdgesGenerated", temp);
 
 				EndState();
@@ -558,7 +558,7 @@ void NetworkSequenceCollection::runControl()
 				out.close();
 				cout << "Removed " << numPopped << " bubbles.\n";
 
-				if (opt::url.length() > 0)
+				if (!opt::db.empty())
 					AssemblyAlgorithms::addToDb ("poppedBubbles", numPopped);
 
 				SetState(NAS_MARK_AMBIGUOUS);
@@ -599,7 +599,7 @@ void NetworkSequenceCollection::runControl()
 					<< " k-mer in " << numAssembled.first
 					<< " contigs.\n";
 
-				if (opt::url.length() > 0) {
+				if (!opt::db.empty()) {
 					AssemblyAlgorithms::addToDb ("assembledKmerNum", numAssembled.second);
 					AssemblyAlgorithms::addToDb ("assembledCntg", numAssembled.first);
 				}
@@ -612,7 +612,7 @@ void NetworkSequenceCollection::runControl()
 		}
 	}
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		AssemblyAlgorithms::addToDb ("finalAmbgVertices", finalAmbg);
 		AssemblyAlgorithms::addToDb ("totalErodedTips", erosionSum);
 		AssemblyAlgorithms::addToDb ("totalPrunedTips", prunedSum);
@@ -1117,7 +1117,7 @@ size_t NetworkSequenceCollection::controlSplitAmbiguous()
 		pumpNetwork();
 	cout << "Split " << m_checkpointSum << " ambiguous branches.\n";
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		AssemblyAlgorithms::addToDb ("totalSplitAmbg", m_checkpointSum);
 
 	return m_checkpointSum;

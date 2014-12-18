@@ -39,7 +39,7 @@ size_t generateAdjacency(Graph* seqCollection)
 
 	if (numBasesSet > 0) {
 		logger(0) << "Added " << numBasesSet << " edges.\n";
-		if (opt::url.length() > 0)
+		if (!opt::db.empty())
 			addToDb("EdgesGenerated", numBasesSet);
 	}
 	return numBasesSet;

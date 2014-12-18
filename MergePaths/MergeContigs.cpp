@@ -72,7 +72,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	unsigned k; // used by ContigProperties
 	unsigned pathCount; // num of initial paths
@@ -323,7 +323,7 @@ static ContigPaths readPaths(const string& inPath,
 	if (opt::verbose > 0)
 		cerr << "Read " << count << " paths. "
 			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "Init_paths", count);
 	opt::pathCount = count;
 	assert(in.eof());
@@ -418,7 +418,7 @@ int main(int argc, char** argv)
 		commandLine = ss.str();
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
@@ -438,7 +438,7 @@ int main(int argc, char** argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url; break;
+				arg >> opt::db; break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0]; break;
 			case OPT_STRAIN:
@@ -479,9 +479,9 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		init(db,
-				opt::url,
+				opt::db,
 				opt::verbose,
 				PROGRAM,
 				opt::getCommand(argc, argv),
@@ -507,7 +507,7 @@ int main(int argc, char** argv)
 			cerr << "Read " << num_vertices(g) << " vertices. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
-		if (opt::url.length() > 0) {
+		if (!opt::db.empty()) {
 			addToDb(db, "Init_vertices", num_vertices(g));
 			addToDb(db, "Init_edges", num_edges(g));
 		}
@@ -541,7 +541,7 @@ int main(int argc, char** argv)
 			cerr << "Read " << count << " sequences. "
 				"Using " << toSI(getMemoryUsage())
 				<< "B of memory.\n";
-		if (opt::url.length() > 0)
+		if (!opt::db.empty())
 			addToDb(db, "Init_seq", count);
 		assert(in.eof());
 		assert(!contigs.empty());
@@ -649,7 +649,7 @@ int main(int argc, char** argv)
 		<< "nNG50"
 		<< "NG50";
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		for (unsigned a=0; a<vals.size(); a++)
 			addToDb(db, keys[a], vals[a]);
 	}

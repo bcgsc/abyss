@@ -6,7 +6,7 @@
 #include <iterator>
 
 namespace opt {
-	extern std::string url;
+	extern std::string db;
 
 	std::string getCommand(
 			int argc, char* const* argv)

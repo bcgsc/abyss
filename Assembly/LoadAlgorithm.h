@@ -170,7 +170,7 @@ void loadSequences(Graph* seqCollection, std::string inFile)
 		assert(!opt::colourSpace);
 		seqCollection->setColourSpace(false);
 	}
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		addToDb("reversedReads", tempCounter[0]);
 		addToDb("totalDiscardedReads", tempCounter[1]);
 	}

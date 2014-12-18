@@ -53,7 +53,7 @@ float calculateCoverageThreshold(const Histogram& h)
 					"The median k-mer coverage is " << median << "\n"
 					"The reconstruction is " << trimmed.size()
 					<< std::endl;
-			if (opt::url.length() > 0) {
+			if (!opt::db.empty()) {
 				addToDb("coverageThreshold", (unsigned)roundf(cov));
 				addToDb("medianKcoverage", median);
 				addToDb("restruction", trimmed.size());

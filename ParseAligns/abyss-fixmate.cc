@@ -59,7 +59,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string url;
+	string db;
 	dbVars metaVars;
 	static string fragPath;
 	static string histPath;
@@ -330,7 +330,7 @@ static void printHistogramStats(Histogram h)
 		"max: " << h.maximum() << " "
 		"ignored: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		vals = make_vector<int>()
 			<< round(h.mean())
 			<< h.median()
@@ -378,7 +378,7 @@ int main(int argc, char* const* argv)
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
 			case OPT_DB:
-				arg >> opt::url;
+				arg >> opt::db;
 				break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];
@@ -408,9 +408,9 @@ int main(int argc, char* const* argv)
 		assert(g_fragFile.is_open());
 	}
 
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		init(db,
-			opt::url,
+			opt::db,
 			opt::verbose,
 			PROGRAM,
 			opt::getCommand(argc, argv),
@@ -428,7 +428,7 @@ int main(int argc, char* const* argv)
 	}
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
-	if (opt::url.length() > 0)
+	if (!opt::db.empty())
 		addToDb(db, "read_alignments_initial", stats.alignments);
 
 	// Print the unpaired alignments.
@@ -462,7 +462,7 @@ int main(int argc, char* const* argv)
 		"Different  " << percent(stats.numDifferent, sum) << "\n"
 		"Total      " << sum << endl;
 
-	if (opt::url.length() > 0) {
+	if (!opt::db.empty()) {
 		vals = make_vector<int>()
 			<< alignments.size()
 			<< stats.bothUnaligned
