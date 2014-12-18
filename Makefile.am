@@ -11,10 +11,6 @@ check:
 	false
 endif
 
-if HAVE_SQLITE
-DataBase=DataBase
-endif
-
 dist_doc_DATA = \
 	ChangeLog \
 	CITATION.bib CITATION.md \
@@ -30,7 +26,7 @@ SUBDIRS = \
 	Common \
 	Graph \
 	DataLayer \
-	$(DataBase) \
+	DataBase \
 	FMIndex \
 	Assembly \
 	dialign \

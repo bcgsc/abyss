@@ -3,9 +3,7 @@ if PAIRED_DBG
 bin_PROGRAMS += abyss-paired-dbg-mpi
 endif
 
-if HAVE_SQLITE
 libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
-endif
 
 ABYSS_P_CPPFLAGS = -I$(top_srcdir)
 

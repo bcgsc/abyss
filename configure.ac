@@ -109,7 +109,7 @@ AC_SUBST(GTEST, "$gtest_src")
 # SQLite
 AC_ARG_WITH(sqlite, AS_HELP_STRING([--with-sqlite=PATH],
 	[specify prefix directory for the installed sqlite library]))
-if test "$with_sqlite" -a -d "$with_sqlite"; then
+if test "$with_sqlite" -a "$with_sqlite" != "no" -a -d "$with_sqlite"; then
 	sqlite_cppflags="-I$with_sqlite/include"
 	sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
 fi
@@ -223,10 +223,11 @@ LIBS=$libs
 
 # Check for SQLite
 libs="$LIBS"
-AC_CHECK_HEADERS([sqlite3.h])
-AC_CHECK_LIB([sqlite3],[main])
-AM_CONDITIONAL([HAVE_SQLITE], [test $ac_cv_header_sqlite3_h = yes -a $ac_cv_lib_sqlite3_main = yes])
-if (test $ac_cv_header_sqlite3_h = yes -a $ac_cv_lib_sqlite3_main = yes); then
+if test "$with_sqlite" != "no"; then
+	AC_CHECK_HEADERS([sqlite3.h])
+	AC_CHECK_LIB([sqlite3],[main])
+fi
+if (test "$ac_cv_header_sqlite3_h" = "yes" -a "$ac_cv_lib_sqlite3_main" = "yes"); then
 	AC_DEFINE(_SQL, 1, [Define to 1 if you have sqlite lib/header])
 fi
 AC_SUBST(SQLITE_LIBS, "$LIBS")

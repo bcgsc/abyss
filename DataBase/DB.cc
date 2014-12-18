@@ -2,19 +2,9 @@
 
 using namespace std;
 
-void DB::closeDB()
-{
-	if (sqlite3_close(db)) {
-		cerr << "[" << prog << "] Can't close DB.\n";
-		exit(EXIT_FAILURE);
-	} else {
-		if (verbose_val >= 2 && exp != READ)
-			cerr << "[" << prog << "] DB closed.\n";
-	}
-}
-
 dbVec DB::readSqlToVec(const string& s)
 {
+#if _SQL
 	int cols, step;
 	dbVec results;
 	if (sqlite3_prepare(db, (const char*)s.c_str(), -1, &stmt, NULL) != SQLITE_OK)
@@ -37,6 +27,10 @@ dbVec DB::readSqlToVec(const string& s)
 	}
 	sqlite3_finalize(stmt);
 	return results;
+#else
+	(void)s;
+	return dbVec();
+#endif
 }
 
 string DB::getProperTableName(const string& table)

@@ -17,11 +17,9 @@ AdjList_LDADD += \
 	$(top_builddir)/PairedDBG/libpaireddbg.a
 endif
 
-if HAVE_SQLITE
 AdjList_LDADD += \
 	$(top_builddir)/DataBase/libdb.a \
 	$(SQLITE_LIBS)
-endif
 
 AdjList_SOURCES = \
 	AdjList.cpp

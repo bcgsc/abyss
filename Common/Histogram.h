@@ -363,11 +363,11 @@ static inline std::ostream& printContiguityStats(
 		<< toEng(sum);
 }
 
-#if _SQL
 /** Pass assembly contiguity statistics -- values only. */
 static inline std::vector<int> passContiguityStatsVal(
 		const Histogram& h0, unsigned minSize, const long long unsigned expSize = 0)
 {
+#if _SQL
 	Histogram h = h0.trimLow(minSize);
 	unsigned n50 = h.n50();
 	long long unsigned sum = h.sum();
@@ -395,6 +395,11 @@ static inline std::vector<int> passContiguityStatsVal(
 	}
 
 	return vec;
-}
+#else
+	(void)h0;
+	(void)minSize;
+	(void)expSize;
+	return make_vector<int>();
 #endif
+}
 #endif

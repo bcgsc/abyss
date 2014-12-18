@@ -7,9 +7,7 @@ endif
 
 abyss_paired_dbg_CPPFLAGS = -DPAIRED_DBG -I$(top_srcdir)
 
-if HAVE_SQLITE
 libdb = $(top_builddir)/DataBase/libdb.a $(SQLITE_LIBS)
-endif
 
 abyss_paired_dbg_LDADD = \
 	$(top_builddir)/Assembly/libassembly.a \

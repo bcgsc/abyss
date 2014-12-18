@@ -6,6 +6,7 @@
 #define DB_H 1
 
 #include "Common/InsOrderedMap.h"
+#include "config.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -16,9 +17,12 @@
 #include <algorithm>
 #include <config.h>
 #include <stdlib.h>
-#include <sqlite3.h>
 #include <unistd.h>
 #include <time.h>
+
+#if _SQL
+# include <sqlite3.h>
+#endif
 
 typedef std::vector<std::vector<std::string> > dbVec; // for output
 typedef InsOrderedMap<std::string,int> dbMap; // for input
@@ -29,8 +33,13 @@ private:
 
 	dbMap statMap;
 	dbVars initVars, peVars;
+#if _SQL
 	sqlite3* db;
 	sqlite3_stmt* stmt;
+#else
+	void* db;
+	void* stmt;
+#endif
 	std::string prog, cmd;
 	int exp;
 
@@ -50,6 +59,7 @@ private:
 			const char* c, const int& v)
 	{
 		verbose_val = v;
+#if _SQL
 		if (sqlite3_open(c, &db)) {
 			std::cerr << "[" << prog << "] Can't open DB.\n";
 			exit(EXIT_FAILURE);
@@ -57,6 +67,9 @@ private:
 			if (verbose_val >= 2 && exp != READ)
 				std::cerr << "[" << prog << "] DB opened.\n";
 		}
+#else
+		(void)c;
+#endif
 	}
 
 	static int callback(
@@ -77,7 +90,21 @@ private:
 		return(rand() % 2000 + 200); // milliseconds
 	}
 
-	void closeDB();
+	void closeDB()
+	{
+#if _SQL
+		if (sqlite3_close(db)) {
+			std::cerr << "[" << prog << "] Can't close DB.\n";
+			exit(EXIT_FAILURE);
+		} else {
+			if (verbose_val >= 2 && exp != READ)
+				std::cerr << "[" << prog << "] DB closed.\n";
+		}
+#else
+		return;
+#endif
+	}
+
 	void createTables();
 	void insertToMetaTables(const dbVars&);
 	std::string initializeRun();
@@ -136,6 +163,7 @@ public:
 
 	bool query(const std::string& s)
 	{
+#if _SQL
 		int rc;
 		unsigned long int n;
 		char* errMsg = 0;
@@ -154,6 +182,9 @@ public:
 			sqlite3_free(errMsg);
 			exit(EXIT_FAILURE);
 		}
+#else
+	(void)s;
+#endif
 		return true;
 	}
 

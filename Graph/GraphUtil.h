@@ -63,11 +63,11 @@ std::ostream& printGraphStats(std::ostream& out, const Graph& g)
 		"max: " << h.maximum() << std::endl;
 }
 
-#if _SQL
 /** Pass graph statistics  -- values only . */
 template <typename Graph>
 std::vector<int> passGraphStatsVal(const Graph& g)
 {
+#if _SQL
 	Histogram h = printHistogram(g);
 	unsigned n = h.size(),
 			 n0 = h.count(0),
@@ -83,6 +83,9 @@ std::vector<int> passGraphStatsVal(const Graph& g)
 		<< (round)(100 * n234 / n)
 		<< (round)(100 * n5 / n)
 		<< h.maximum();
-}
+#else
+	(void)g;
+	return make_vector<int>();
 #endif
+}
 #endif

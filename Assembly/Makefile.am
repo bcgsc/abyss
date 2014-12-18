@@ -22,6 +22,4 @@ libassembly_a_SOURCES = \
 	SplitAlgorithm.h \
 	TrimAlgorithm.h
 
-if HAVE_SQLITE
 libassembly_a_LIBADD = $(top_builddir)/Common/libcommon.a
-endif

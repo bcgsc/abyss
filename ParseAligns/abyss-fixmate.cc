@@ -15,19 +15,15 @@
 #include <iomanip>
 #include <iostream>
 #include <boost/unordered_map.hpp>
-#if _SQL
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
 #include <math.h>
-#endif
 
 using namespace std;
 
 #define PROGRAM "abyss-fixmate"
 
-#if _SQL
 DB db;
-#endif
 
 static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -55,20 +51,16 @@ static const char USAGE_MESSAGE[] =
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
-#if _SQL
 "      --db=FILE         specify path of database repository in FILE\n"
 "      --library=NAME    specify library NAME for sqlite\n"
 "      --strain=NAME     specify strain NAME for sqlite\n"
 "      --species=NAME    specify species NAME for sqlite\n"
-#endif
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-#if _SQL
 	string url;
 	dbVars metaVars;
-#endif
 	static string fragPath;
 	static string histPath;
 	static string covPath;
@@ -78,17 +70,12 @@ namespace opt {
 }
 
 // for sqlite params
-static bool haveDbParam(false);
 static vector<string> keys;
 static vector<int> vals;
 
 static const char shortopts[] = "h:c:l:s:v";
 
-#if _SQL
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-#else
-enum { OPT_HELP = 1, OPT_VERSION };
-#endif
 
 static const struct option longopts[] = {
 	{ "qname",     no_argument,       &opt::qname, 1 },
@@ -102,12 +89,10 @@ static const struct option longopts[] = {
 	{ "verbose",   no_argument,       NULL, 'v' },
 	{ "help",      no_argument,       NULL, OPT_HELP },
 	{ "version",   no_argument,       NULL, OPT_VERSION },
-#if _SQL
 	{ "db",        required_argument, NULL, OPT_DB },
 	{ "library",   required_argument, NULL, OPT_LIBRARY },
 	{ "strain",    required_argument, NULL, OPT_STRAIN },
 	{ "species",   required_argument, NULL, OPT_SPECIES },
-#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -345,7 +330,7 @@ static void printHistogramStats(Histogram h)
 		"max: " << h.maximum() << " "
 		"ignored: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		vals = make_vector<int>()
 			<< round(h.mean())
 			<< h.median()
@@ -371,9 +356,7 @@ static void printHistogramStats(Histogram h)
 
 int main(int argc, char* const* argv)
 {
-#if _SQL
 	opt::metaVars.resize(3);
-#endif
 
 	bool die = false;
 	for (int c; (c = getopt_long(argc, argv,
@@ -394,24 +377,18 @@ int main(int argc, char* const* argv)
 			case OPT_VERSION:
 				cout << VERSION_MESSAGE;
 				exit(EXIT_SUCCESS);
-#if _SQL
 			case OPT_DB:
 				arg >> opt::url;
-				haveDbParam = true;
 				break;
 			case OPT_LIBRARY:
 				arg >> opt::metaVars[0];
-				haveDbParam = true;
 				break;
 			case OPT_STRAIN:
 				arg >> opt::metaVars[1];
-				haveDbParam = true;
 				break;
 			case OPT_SPECIES:
 				arg >> opt::metaVars[2];
-				haveDbParam = true;
 				break;
-#endif
 		}
 		if (optarg != NULL && !arg.eof()) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -431,7 +408,7 @@ int main(int argc, char* const* argv)
 		assert(g_fragFile.is_open());
 	}
 
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		init(db,
 			opt::url,
 			opt::verbose,
@@ -451,7 +428,7 @@ int main(int argc, char* const* argv)
 	}
 	if (opt::verbose > 0)
 		cerr << "Read " << stats.alignments << " alignments" << endl;
-	if (haveDbParam)
+	if (opt::url.length() > 0)
 		addToDb(db, "read_alignments_initial", stats.alignments);
 
 	// Print the unpaired alignments.
@@ -485,7 +462,7 @@ int main(int argc, char* const* argv)
 		"Different  " << percent(stats.numDifferent, sum) << "\n"
 		"Total      " << sum << endl;
 
-	if (haveDbParam) {
+	if (opt::url.length() > 0) {
 		vals = make_vector<int>()
 			<< alignments.size()
 			<< stats.bothUnaligned

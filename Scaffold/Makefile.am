@@ -6,15 +6,10 @@ abyss_scaffold_CPPFLAGS = -I$(top_srcdir) \
 
 abyss_scaffold_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
-if HAVE_SQLITE
 abyss_scaffold_LDADD = \
 	$(top_builddir)/DataBase/libdb.a \
 	$(SQLITE_LIBS) \
 	$(top_builddir)/Common/libcommon.a
-else
-abyss_scaffold_LDADD = \
-	$(top_builddir)/Common/libcommon.a
-endif
 
 abyss_scaffold_SOURCES = scaffold.cc
 
