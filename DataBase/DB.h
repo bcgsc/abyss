@@ -58,8 +58,8 @@ private:
 	void openDB(
 			const char* c, const int& v)
 	{
-		verbose_val = v;
 #if _SQL
+		verbose_val = v;
 		if (sqlite3_open(c, &db)) {
 			std::cerr << "[" << prog << "] Can't open DB.\n";
 			exit(EXIT_FAILURE);
@@ -68,6 +68,7 @@ private:
 				std::cerr << "[" << prog << "] DB opened.\n";
 		}
 #else
+		(void)v;
 		(void)c;
 #endif
 	}
@@ -134,8 +135,15 @@ public:
 	friend void init(
 			DB& d, const std::string& path)
 	{
+#if _SQL
 		d.exp = READ;
 		d.openDB(path.c_str(), 0);
+#else
+		(void)d;
+		(void)path;
+		std::cerr << "error: `db` parameter has been used, but ABySS has not been configured to support SQLite.\n";
+		exit(EXIT_FAILURE);
+#endif
 	}
 
 	friend void init(
@@ -146,6 +154,7 @@ public:
 			const std::string& command,
 			const dbVars& vars)
 	{
+#if _SQL
 		d.prog = program;
 		d.cmd = command;
 		d.initVars = vars;
@@ -153,6 +162,16 @@ public:
 
 		std::string name(d.getSqliteName());
 		d.openDB(path.empty() ? name.c_str() : path.c_str(), v);
+#else
+		(void)d;
+		(void)path;
+		(void)v;
+		(void)program;
+		(void)command;
+		(void)vars;
+		std::cerr << "error: `db` parameter has been used, but ABySS has not been configured to support SQLite.\n";
+		exit(EXIT_FAILURE);
+#endif
 	}
 
 	std::string activateForeignKey(const std::string& s)
