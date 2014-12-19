@@ -633,6 +633,7 @@ int main(int argc, char** argv)
 		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
 			<< '\t' << opt::out << '\n';
 	}
+#if 0
 	// assembly contiguity statistics
 	vector<int> vals = passContiguityStatsVal(lengthHistogram,200);
 	vector<string> keys = make_vector<string>()
@@ -653,6 +654,6 @@ int main(int argc, char** argv)
 		for (unsigned a=0; a<vals.size(); a++)
 			addToDb(db, keys[a], vals[a]);
 	}
-
+#endif
 	return 0;
 }
