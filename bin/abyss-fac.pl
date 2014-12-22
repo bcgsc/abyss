@@ -109,11 +109,11 @@ eng($ntotal), eng($n), $nn50, $min, $n80, $n50, $n20, $max, eng($sum), $path
 }
 
 format Spaces_TOP =
-n       n:@<<<< n:N50   min     N80     N50     N20     max     sum
+n       n:@<<<< L50   min     N80     N50     N20     max     sum
 $opt_threshold
 .
 format Pipes_TOP =
-||n    ||n:@<<<||n:N50 ||min   ||N80   ||N50   ||N20   ||max   ||sum   ||
+||n    ||n:@<<<||L50 ||min   ||N80   ||N50   ||N20   ||max   ||sum   ||
 $opt_threshold
 .
 

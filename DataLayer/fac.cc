@@ -108,7 +108,7 @@ static void printContiguityStatistics(const char* path)
 		cout << "||"
 			<< "n" << sep
 			<< "n:" << opt::minLength << sep
-			<< "n:N50" << sep;
+			<< "L50" << sep;
 		if (opt::expSize > 0)
 			cout << "n:NG50" << sep
 				<< "NG50" << sep;
@@ -125,7 +125,7 @@ static void printContiguityStatistics(const char* path)
 		const char* sep = "\t|";
 		cout << "n" << sep
 			<< "n:" << opt::minLength << sep
-			<< "n:N50" << sep;
+			<< "L50" << sep;
 		if (opt::expSize > 0)
 			cout << "n:NG50" << sep
 				<< "NG50" << sep;
