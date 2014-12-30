@@ -142,7 +142,7 @@ static void addSuffixOverlaps(Graph &g,
 		const FAIRecord& tseq = seqPos.get<0>();
 		size_t tstart = seqPos.get<1>();
 		size_t tend = tstart + fmi.qspan();
-		assert(tend < tseq.size || tstart > 0);
+		assert(tend <= tseq.size);
 		(void)tend;
 		if (tstart > 0) {
 			// This match is due to an ambiguity code in the target sequence.
@@ -189,7 +189,7 @@ static void addPrefixOverlaps(Graph &g,
 		const FAIRecord& tseq = seqPos.get<0>();
 		size_t tstart = seqPos.get<1>();
 		size_t tend = tstart + fmi.qspan();
-		assert(tstart > 0 || tend < tseq.size);
+		assert(tend <= tseq.size);
 		if (tend < tseq.size) {
 			// This match is due to an ambiguity code in the target sequence.
 			continue;
