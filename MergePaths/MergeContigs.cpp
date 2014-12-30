@@ -199,12 +199,12 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 	assert(d < 0);
 	unsigned overlap = -d;
 	const Sequence& s = sequence(contigs, v);
-	assert(s.length() > overlap);
+	assert(s.length() >= overlap);
 	Sequence ao;
 	Sequence bo(s, 0, overlap);
 	Sequence o;
 	do {
-		assert(seq.length() > overlap);
+		assert(seq.length() >= overlap);
 		ao = seq.substr(seq.length() - overlap);
 		o = createConsensus(ao, bo);
 		if (!o.empty()) {
