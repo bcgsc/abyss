@@ -454,8 +454,7 @@ Subscribe to the
 (http://groups.google.com/group/abyss-users),
 <abyss-users@googlegroups.com>.
 
-Post questions to the community on
-[![Biostar](http://www.biostars.org/static/biostar.antipixel.png)](http://www.biostars.org/show/tag/abyss/).
+Post questions to the community on [Biostars](https://www.biostars.org/t/abyss/).
 
 For questions related to transcriptome assembly, contact the
 [Trans-ABySS mailing list]
