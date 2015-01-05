@@ -103,9 +103,9 @@ endif
 # Programs
 MARKDOWN=multimarkdown
 
-ifdef lib
 map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
+ifdef lib
 in?=$(call map, deref, $(lib))
 else
 ifdef in
@@ -695,7 +695,7 @@ $(name)-unitigs.bam: %.bam: %.fa
 $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 	$(align) $v -j$j -l$l $(ALIGNER_OPTIONS) \
 		$(call map, deref, $(sort $(lib) $(pe) $(mp))) $< \
-		|$(fixmate) $(fmopt) \
+		|$(fixmate) $v $(FIXMATE_OPTIONS) \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - >$@
 
