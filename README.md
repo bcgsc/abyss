@@ -30,7 +30,7 @@ Contents
 * [ABySS programs](#abyss-programs)
 * [Export to SQLite Database](#export-to-sqlite-database)
 * [Publications](#publications)
-* [Mailing List](#mailing-list)
+* [Support](#support)
 * [Authors](#authors)
 
 Quick Start
@@ -446,15 +446,16 @@ Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones.
 15, no. 6 (2009): 881-888.
 [doi:10.1109/TVCG.2009.116](http://dx.doi.org/10.1109/TVCG.2009.116)
 
-Mailing List
-============
+Support
+=======
+
+[Ask a question](https://www.biostars.org/p/new/post/?tag_val=abyss,assembly)
+on [Biostars](https://www.biostars.org/t/abyss/).
 
 Subscribe to the
 [ABySS mailing list]
 (http://groups.google.com/group/abyss-users),
 <abyss-users@googlegroups.com>.
-
-Post questions to the community on [Biostars](https://www.biostars.org/t/abyss/).
 
 For questions related to transcriptome assembly, contact the
 [Trans-ABySS mailing list]
