@@ -1,0 +1,110 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+	echo "Usage: $(basename $0) <abyss_map_sam_file> <dida_sam_file>" >&2
+	exit 1
+fi
+
+remove_cosmetic_diffs() {
+	# (1) take out @PG headers, they are expected to be different
+	# (2) in case of unmapped reads
+	#    (i) DIDA sets RNEXT = "*" instead of "="
+	#    (ii) DIDA sets SEQ and QUAL to "*" instead of actual SEQ/QUAL
+	egrep -v '^@PG' "$@" | \
+		awk 'BEGIN { OFS="\t" } !/^@/ && $2 == 4 { $7=$10=$11="*" } { print }'
+}
+
+set -eu -o pipefail
+
+abyss_map_output="$1"
+dida_output="$2"
+
+# Known types of differences:
+#
+# (i) Multiple aligns, abyss-map sets MAPQ=0 but DIDA has MAPQ>0.
+# (ii) MAPQ values are equal and > 0, but different CIGAR strings
+#      When different fragments of the same read have equal quality
+#      alignments, abyss-map will choose arbitrarily.
+# (iii) Different choice between forward and reverse complement,
+#       where both aligns have equal quality.
+# (iv) bloom filter miss
+#
+# I have not seen any other types of differences in my testing.
+#
+# - Ben V
+
+paste -d'\n' \
+	<(egrep -v '^@' $abyss_map_output | remove_cosmetic_diffs) \
+	<(egrep -v '^@' $dida_output | remove_cosmetic_diffs) \
+	| awk '\
+	BEGIN {
+		mapq_not_zero=diff_read_frags=bloom_filter_misses=diff_dir=unclassified=0;
+		aborted=0;
+		UNMAPPED_FLAG=4;
+		RC_FLAG=16;
+	}
+	{
+		line1=$0; qname1=$1; flags1=$2; mapq1=$5; cigar1=$6;
+		getline;
+		line2=$0; qname2=$1; flags2=$2; mapq2=$5; cigar2=$6;
+		if (qname1 != qname2) {
+			print "error: mismatch between read ids "qname1" and "qname2"!" > "/dev/stderr";
+			print "Ensure that read ids occur in the same order in both files." > "/dev/stderr";
+			aborted=1;
+			exit 1;
+		}
+		if (line1 != line2) {
+			if (mapq1 == 0 && mapq2 != 0) {
+				mapq_not_zero++;
+				print line1 > "mapq_not_zero.abyss-map.lines";
+				print line2 > "mapq_not_zero.dida.lines"
+			}
+			else if (mapq1 != 0 && mapq2 == 0) {
+				mapq_zero++;
+				print line1 > "mapq_zero.abyss-map.lines";
+				print line2 > "mapq_zero.dida.lines"
+			}
+			else if (mapq1 > 0 && mapq1 == mapq2) {
+				if (cigar1 != cigar2) {
+					diff_read_frags++;
+					print line1 > "diff_read_frags.abyss-map.lines";
+					print line2 > "diff_read_frags.dida.lines";
+				}
+				else if (and(flags1,RC_FLAG) != and(flags2,RC_FLAG)) {
+					diff_dir++;
+					print line1 > "diff_dir.abyss-map.lines";
+					print line2 > "diff_dir.dida.lines";
+				}
+				else {
+					unclassified++;
+					print line1 > "unclassified.abyss-map.lines";
+					print line2 > "unclassified.dida.lines";
+				}
+			}
+			else if (!and(flags1,UNMAPPED_FLAG) && and(flags2,UNMAPPED_FLAG)) {
+				bloom_filter_misses++;
+				print line1 > "bloom_filter_miss.abyss-map.lines";
+				print line2 > "bloom_filter_miss.dida.lines";
+			}
+			else if (mapq1 > 0 || mapq2 > 0) {
+				unclassified++;
+				print line1 > "unclassified.abyss-map.lines";
+				print line2 > "unclassified.dida.lines";
+			}
+		}
+	}
+	END {
+		if (aborted)
+			exit 1;
+
+		print "diff counts:";
+		print "\tdue to bloom filter misses: "bloom_filter_misses;
+		print "\tabyss-map MAPQ == 0, DIDA MAPQ != 0: "mapq_not_zero;
+		print "\tabyss-map MAPQ != 0, DIDA MAPQ == 0: "mapq_zero;
+		print "\tequal len aligns for diff frags of same read: "diff_read_frags;
+		print "\tequal len aligns for forward/reverse complement: "diff_dir;
+		print "\tunclassified diff: "unclassified;
+
+		if (bloom_filter_misses + mapq_not_zero + mapq_zero + diff_read_frags + diff_dir + unclassified > 0)
+			exit 1;
+	}'
