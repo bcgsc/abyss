@@ -289,10 +289,10 @@ int main(int argc, char** argv)
 			case '2': arg >> opt::max_len_2; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
-					  cerr << USAGE_MESSAGE;
+					  cout << USAGE_MESSAGE;
 					  exit(EXIT_SUCCESS);
 			case OPT_VERSION:
-					  cerr << VERSION_MESSAGE;
+					  cout << VERSION_MESSAGE;
 					  exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && !arg.eof()) {

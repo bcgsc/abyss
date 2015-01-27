@@ -119,10 +119,10 @@ int main(int argc, char** argv)
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
-			cerr << USAGE_MESSAGE;
+			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
-			cerr << VERSION_MESSAGE;
+			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
