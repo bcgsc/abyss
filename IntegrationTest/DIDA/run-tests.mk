@@ -1,6 +1,6 @@
 #!/usr/bin/make -rRf
 
-SHELL=/bin/bash -o pipefail
+SHELL=/bin/bash
 
 #------------------------------------------------------------
 # test input/output files
@@ -42,7 +42,7 @@ n?=10000
 default: dida_wrapper_test
 
 clean:
-	rm -f $(dida_wrapper_sam) $(abyss_map_sam) ref-* *.lines
+	rm -f $(dida_wrapper_sam) $(abyss_map_sam) ref-* *.lines $(test_reads)
 
 #------------------------------------------------------------
 # downloading/building test input data
@@ -70,10 +70,10 @@ $(test_reads): $(reads)
 #------------------------------------------------------------
 
 $(dida_wrapper_sam): $(test_reads) $(test_ref)
-	abyss-dida-wrapper -l$l $^ > $@
+	abyss-dida-wrapper -l$l -j$j $^ > $@
 
 $(abyss_map_sam): $(test_reads) $(test_ref)
-	abyss-map --order -l$l $^ > $@
+	abyss-map --order -l$l -j$j $^ > $@
 
 #------------------------------------------------------------
 # tests
