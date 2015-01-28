@@ -67,55 +67,55 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"      --print-flanks		outputs flank files\n"
-"  -S, --input-scaffold=FILE  	load scaffold from FILE\n"
-"  -L, --flank-length=N	      	length of flanks to be used as pseudoreads [100]\n"
-"  -D, --flank-distance=N     	distance of flank from gap [0]\n"
-"  -j, --threads=N            	use N parallel threads [1]\n"
-"  -k, --kmer=N			the size of a k-mer\n"
-"  -b, --bloom-size=N        	size of bloom filter [500M]\n"
-"  -B, --max-branches=N    	max branches in de Bruijn graph traversal;\n"
-"                             	use 'nolimit' for no limit [1000]\n"
-"  -d, --dot-file=FILE        	write graph traversals to a DOT file\n"
-"  -e, --fix-errors           	find and fix single-base errors when reads\n"
-"                             	have no kmers in bloom filter [disabled]\n"
-"  -f, --min-frag=N           	min fragment size in base pairs [0]\n"
-"  -F, --max-frag=N           	max fragment size in base pairs [1000]\n"
-"  -i, --input-bloom=FILE     	load bloom filter from FILE\n"
-"      --mask                 	mask new and changed bases as lower case\n"
-"      --no-mask              	do not mask bases [default]\n"
-"      --chastity             	discard unchaste reads [default]\n"
-"      --no-chastity          	do not discard unchaste reads\n"
-"      --trim-masked          	trim masked bases from the ends of reads\n"
-"      --no-trim-masked       	do not trim masked bases from the ends\n"
-"                             	of reads [default]\n"
-"  -l, --long-search          	start path search as close as possible\n"
-"                             	to the beginnings of reads. Takes more time\n"
-"                             	but improves results when bloom filter false\n"
-"                             	positive rate is high [disabled]\n"
-"  -m, --flank-mismatches=N    	max mismatches between paths and flanks; use\n"
-"                             	'nolimit' for no limit [nolimit]\n"
-"  -M, --max-mismatches=N     	max mismatches between all alternate paths;\n"
-"                             	use 'nolimit' for no limit [nolimit]\n"
-"  -n  --no-limits            	disable all limits; equivalent to\n"
-"                             	'-B nolimit -m nolimit -M nolimit -P nolimit'\n"
-"  -o, --output-prefix=FILE   	prefix of output FASTA files [required]\n"
-"  -P, --max-paths=N          	merge at most N alternate paths; use 'nolimit'\n"
-"                             	for no limit [2]\n"
-"  -q, --trim-quality=N       	trim bases from the ends of reads whose\n"
-"                             	quality is less than the threshold\n"
-"      --standard-quality     	zero quality is `!' (33)\n"
-"                             	default for FASTQ and SAM files\n"
-"      --illumina-quality     	zero quality is `@' (64)\n"
-"                             	default for qseq and export files\n"
-"  -r, --read-name=STR        	only process reads with names that contain STR\n"
-"  -s, --search-mem=N         	mem limit for graph searches; multiply by the\n"
-"                             	number of threads (-j) to get the total mem used\n"
-"                             	for graph traversal [500M]\n"
-"  -t, --trace-file=FILE      	write graph search stats to FILE\n"
-"  -v, --verbose              	display verbose output\n"
-"      --help                 	display this help and exit\n"
-"      --version              	output version information and exit\n"
+"      --print-flanks           outputs flank files\n"
+"  -S, --input-scaffold=FILE    load scaffold from FILE\n"
+"  -L, --flank-length=N         length of flanks to be used as pseudoreads [100]\n"
+"  -D, --flank-distance=N       distance of flank from gap [0]\n"
+"  -j, --threads=N              use N parallel threads [1]\n"
+"  -k, --kmer=N                 the size of a k-mer\n"
+"  -b, --bloom-size=N           size of bloom filter [500M]\n"
+"  -B, --max-branches=N         max branches in de Bruijn graph traversal;\n"
+"                               use 'nolimit' for no limit [1000]\n"
+"  -d, --dot-file=FILE          write graph traversals to a DOT file\n"
+"  -e, --fix-errors             find and fix single-base errors when reads\n"
+"                               have no kmers in bloom filter [disabled]\n"
+"  -f, --min-frag=N             min fragment size in base pairs [0]\n"
+"  -F, --max-frag=N             max fragment size in base pairs [1000]\n"
+"  -i, --input-bloom=FILE       load bloom filter from FILE\n"
+"      --mask                   mask new and changed bases as lower case\n"
+"      --no-mask                do not mask bases [default]\n"
+"      --chastity               discard unchaste reads [default]\n"
+"      --no-chastity            do not discard unchaste reads\n"
+"      --trim-masked            trim masked bases from the ends of reads\n"
+"      --no-trim-masked         do not trim masked bases from the ends\n"
+"                               of reads [default]\n"
+"  -l, --long-search            start path search as close as possible\n"
+"                               to the beginnings of reads. Takes more time\n"
+"                               but improves results when bloom filter false\n"
+"                               positive rate is high [disabled]\n"
+"  -m, --flank-mismatches=N     max mismatches between paths and flanks; use\n"
+"                               'nolimit' for no limit [nolimit]\n"
+"  -M, --max-mismatches=N       max mismatches between all alternate paths;\n"
+"                               use 'nolimit' for no limit [nolimit]\n"
+"  -n  --no-limits              disable all limits; equivalent to\n"
+"                               '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
+"  -o, --output-prefix=FILE     prefix of output FASTA files [required]\n"
+"  -P, --max-paths=N            merge at most N alternate paths; use 'nolimit'\n"
+"                               for no limit [2]\n"
+"  -q, --trim-quality=N         trim bases from the ends of reads whose\n"
+"                               quality is less than the threshold\n"
+"      --standard-quality       zero quality is `!' (33)\n"
+"                               default for FASTQ and SAM files\n"
+"      --illumina-quality       zero quality is `@' (64)\n"
+"                               default for qseq and export files\n"
+"  -r, --read-name=STR          only process reads with names that contain STR\n"
+"  -s, --search-mem=N           mem limit for graph searches; multiply by the\n"
+"                               number of threads (-j) to get the total mem used\n"
+"                               for graph traversal [500M]\n"
+"  -t, --trace-file=FILE        write graph search stats to FILE\n"
+"  -v, --verbose                display verbose output\n"
+"      --help                   display this help and exit\n"
+"      --version                output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -255,7 +255,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "output-prefix",    required_argument, NULL, 'o' },
-	{ "flank-mismatches",  required_argument, NULL, 'm' },
+	{ "flank-mismatches", required_argument, NULL, 'm' },
 	{ "max-mismatches",   required_argument, NULL, 'M' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
@@ -283,17 +283,17 @@ static void seqanTests()
 	typedef String<Dna> DS;
 	typedef Align<DS> Alignment;
 
-    //DS seq1 = "TTGT";
-    //DS seq2 = "TTAGT";
+	//DS seq1 = "TTGT";
+	//DS seq2 = "TTAGT";
 	DS ref = ins;
 	DS seq1 = r1;
 	DS seq2 = r2;
 
-    Alignment align1;
+	Alignment align1;
 	resize(rows(align1), 2);
 	assignSource(row(align1, 0), ref);
 	assignSource(row(align1, 1), seq1);
-    Alignment align2;
+	Alignment align2;
 	resize(rows(align2), 2);
 	assignSource(row(align2, 0), ref);
 	assignSource(row(align2, 1), seq2);
@@ -334,31 +334,31 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 
 
 string reversecompliment(const string &str) {
-        map<string, string> dict;
-        dict["A"] = "T";
-        dict["T"] = "A";
-        dict["G"] = "C";
-        dict["C"] = "G";
-        dict["M"] = "K";
-        dict["R"] = "Y";
-        dict["W"] = "W";
-        dict["S"] = "S";
-        dict["Y"] = "R";
-        dict["V"] = "B";
-        dict["K"] = "M";
-        dict["H"] = "D";
-        dict["D"] = "H";
-        dict["B"] = "V";
-        dict["N"] = "N";
+	map<string, string> dict;
+	dict["A"] = "T";
+	dict["T"] = "A";
+	dict["G"] = "C";
+	dict["C"] = "G";
+	dict["M"] = "K";
+	dict["R"] = "Y";
+	dict["W"] = "W";
+	dict["S"] = "S";
+	dict["Y"] = "R";
+	dict["V"] = "B";
+	dict["K"] = "M";
+	dict["H"] = "D";
+	dict["D"] = "H";
+	dict["B"] = "V";
+	dict["N"] = "N";
 
-        unsigned base = 0;
-        string result = "";
-        while (base <= str.length()) {
-                result = result + dict[str.substr(base, 1)];
-                base++;
-        }
-        reverse(result.begin(), result.end());
-        return result;
+	unsigned base = 0;
+	string result = "";
+	while (base <= str.length()) {
+		result = result + dict[str.substr(base, 1)];
+		base++;
+	}
+	reverse(result.begin(), result.end());
+	return result;
 }
 
 string sizetToString (size_t a)
@@ -501,7 +501,7 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 				pos_it->second["seq"]
 			);
 			mergedStream << ">" << record.id << "_" << pos_it->first << "_" << newseqsize <<  endl;
-                        mergedStream << pos_it->second["seq"] << endl;
+			mergedStream << pos_it->second["seq"] << endl;
 			gapsclosedfinal++;
 		}
 		scaffoldStream << modifiedSeq << endl;
@@ -602,17 +602,28 @@ void kRun(const ConnectPairsParams& params,
 
 	printLog(logStream, IntToString(uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
 
-	printLog(logStream, "No start/goal kmer: " 		+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
-	printLog(logStream, "No path: " 			+ sizetToString(g_count.noPath) + "\n");
-	printLog(logStream, "Unique path: " 			+ sizetToString(g_count.uniquePath) + "\n");
-	printLog(logStream, "Multiple paths: " 			+ sizetToString(g_count.multiplePaths) + "\n");
-	printLog(logStream, "Too many paths: " 			+ sizetToString(g_count.tooManyPaths) + "\n");
-	printLog(logStream, "Too many branches: " 		+ sizetToString(g_count.tooManyBranches) + "\n");
-	printLog(logStream, "Too many path/path mismatches: " 	+ sizetToString(g_count.tooManyMismatches) + "\n");
-	printLog(logStream, "Too many path/read mismatches: " 	+ sizetToString(g_count.tooManyReadMismatches) + "\n");
-	printLog(logStream, "Contains cycle: " 			+ sizetToString(g_count.containsCycle) + "\n");
-	printLog(logStream, "Exceeded mem limit: " 		+ sizetToString(g_count.exceededMemLimit) + "\n");
-	printLog(logStream, "Skipped: " 			+ sizetToString(g_count.skipped) + "\n");
+	printLog(logStream, "No start/goal kmer: "
+		+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
+	printLog(logStream, "No path: "
+		+ sizetToString(g_count.noPath) + "\n");
+	printLog(logStream, "Unique path: "
+		+ sizetToString(g_count.uniquePath) + "\n");
+	printLog(logStream, "Multiple paths: "
+		+ sizetToString(g_count.multiplePaths) + "\n");
+	printLog(logStream, "Too many paths: "
+		+ sizetToString(g_count.tooManyPaths) + "\n");
+	printLog(logStream, "Too many branches: "
+		+ sizetToString(g_count.tooManyBranches) + "\n");
+	printLog(logStream, "Too many path/path mismatches: "
+		+ sizetToString(g_count.tooManyMismatches) + "\n");
+	printLog(logStream, "Too many path/read mismatches: "
+		+ sizetToString(g_count.tooManyReadMismatches) + "\n");
+	printLog(logStream, "Contains cycle: "
+		+ sizetToString(g_count.containsCycle) + "\n");
+	printLog(logStream, "Exceeded mem limit: "
+		+ sizetToString(g_count.exceededMemLimit) + "\n");
+	printLog(logStream, "Skipped: "
+		+ sizetToString(g_count.skipped) + "\n");
 
 	printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
 
@@ -635,10 +646,10 @@ void findFlanks(FastaRecord &record,
 	unsigned &gapnumber,
 	read1_map &flanks)
 {
-        int offset = 0;
+	int offset = 0;
 	int endposition = 0;
-       	int startposition = 0;
-        string seq = record.seq;
+	int startposition = 0;
+	string seq = record.seq;
 	unsigned seqsize = seq.length();
 
 
@@ -646,7 +657,7 @@ void findFlanks(FastaRecord &record,
 	while (seq.string::find_first_of("Nn", offset) != string::npos) {
 #pragma omp atomic
 		gapnumber++;
-		startposition  = seq.string::find_first_of("Nn", offset);
+		startposition = seq.string::find_first_of("Nn", offset);
 
 		// if gap is at the end of the sequence (no right flank), the while loop ends.
 		if (seq.string::find_first_not_of("Nn", startposition) == string::npos)
@@ -869,15 +880,15 @@ int main(int argc, char** argv)
 
 #pragma omp parallel
 	for (FastaRecord record;;) {
-               	bool good;
+		bool good;
 #pragma omp critical(reader1)
-               	good = reader1 >> record;
-               	if (good) {
+		good = reader1 >> record;
+		if (good) {
 			findFlanks(record, opt::flankLength, gapsfound, flanks);
 		}
-               	else {
+		else {
 			break;
-        	}
+		}
 	}
 
 	temp = IntToString(gapsfound) + " gaps found\n";
@@ -974,9 +985,9 @@ int main(int argc, char** argv)
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
 		printLog(logStream, temp);
 
-	        if (!opt::inputBloomPath.empty())
+		if (!opt::inputBloomPath.empty())
 			delete bloom;
-        	else
+		else
 			delete cascadingBloom;
 	}
 
@@ -989,14 +1000,14 @@ int main(int argc, char** argv)
 
 	/** creating new scaffold with gaps closed */
 	for (FastaRecord record;;) {
-               	bool good;
-               	good = reader2 >> record;
-               	if (good) {
+		bool good;
+		good = reader2 >> record;
+		if (good) {
 			insertIntoScaffold(scaffoldStream, mergedStream, record, allmerged, gapsclosedfinal);
 		}
-               	else
-                       	break;
-       	}
+		else
+			break;
+	}
 	printLog(logStream, "New scaffold complete\n");
 	printLog(logStream, "Gaps closed = " + IntToString(gapsclosed) + "\n");
 	logStream << (float)100 * gapsclosed / gapsfound << "%\n\n";
