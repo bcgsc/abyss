@@ -348,36 +348,6 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 	}
 }
 
-
-
-string reversecompliment(const string &str) {
-	map<string, string> dict;
-	dict["A"] = "T";
-	dict["T"] = "A";
-	dict["G"] = "C";
-	dict["C"] = "G";
-	dict["M"] = "K";
-	dict["R"] = "Y";
-	dict["W"] = "W";
-	dict["S"] = "S";
-	dict["Y"] = "R";
-	dict["V"] = "B";
-	dict["K"] = "M";
-	dict["H"] = "D";
-	dict["D"] = "H";
-	dict["B"] = "V";
-	dict["N"] = "N";
-
-	unsigned base = 0;
-	string result = "";
-	while (base <= str.length()) {
-		result = result + dict[str.substr(base, 1)];
-		base++;
-	}
-	reverse(result.begin(), result.end());
-	return result;
-}
-
 string sizetToString (size_t a)
 {
 	ostringstream temp;
@@ -541,7 +511,7 @@ void makePseudoReads(
 	read2.id = record.id + "/2";
 	string rightflank = seq.substr(endposition, flanklength);
 	transform(rightflank.begin(), rightflank.end(), rightflank.begin(), ::toupper);
-	read2.seq = reversecompliment(rightflank);
+	read2.seq = reverseComplement(rightflank);
 }
 
 template <typename Graph>
