@@ -270,6 +270,16 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** A closed gap. */
+struct ClosedGap
+{
+	/** The size of the original gap. */
+	int gap;
+
+	/** The sequence that fills the gap. */
+	std::string seq;
+};
+
 #if USESEQAN
 const string r1 =
 "AGAATCAACCAACCGTTCAATGATATAATCAAGAGCGATATTGTAATCTTTGTTTCT";
@@ -375,13 +385,6 @@ string IntToString (int a)
 	return temp.str();
 }
 
-int StringToInt(string &num) {
-	stringstream str(num);
-	int x;
-	str >> x;
-	return x;
-}
-
 // returns merged sequence resulting from Konnector
 template <typename Graph>
 string merge(const Graph& g,
@@ -480,11 +483,11 @@ void printLog(ofstream &logStream, const string &output) {
 void insertIntoScaffold(ofstream &scaffoldStream,
 	ofstream &mergedStream,
 	FastaRecord &record,
-	map<string, map<int, map<string, string> > > &allmerged,
+	map<string, map<int, ClosedGap> > &allmerged,
 	unsigned &gapsclosedfinal)
 {
-	map<string, map<int, map<string, string> > >::iterator scaf_it;
-	map<int, map<string, string> >::reverse_iterator pos_it;
+	map<string, map<int, ClosedGap> >::iterator scaf_it;
+	map<int, ClosedGap>::reverse_iterator pos_it;
 
 	scaf_it = allmerged.find(record.id);
 	scaffoldStream << ">" << record.id << " " << record.comment << endl;
@@ -494,14 +497,14 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 			pos_it != allmerged[record.id].rend();
 			pos_it++)
 		{
-			int newseqsize = pos_it->second["seq"].length() - (opt::flankLength * 2);
+			int newseqsize = pos_it->second.seq.length() - (opt::flankLength * 2);
 			modifiedSeq.replace(
 				pos_it->first - opt::flankLength,
-				StringToInt(pos_it->second["gap"]) + (opt::flankLength * 2),
-				pos_it->second["seq"]
+				pos_it->second.gap + (opt::flankLength * 2),
+				pos_it->second.seq
 			);
 			mergedStream << ">" << record.id << "_" << pos_it->first << "_" << newseqsize <<  endl;
-			mergedStream << pos_it->second["seq"] << endl;
+			mergedStream << pos_it->second.seq << endl;
 			gapsclosedfinal++;
 		}
 		scaffoldStream << modifiedSeq << endl;
@@ -538,7 +541,7 @@ template <typename Graph>
 void kRun(const ConnectPairsParams& params,
 	unsigned k,
 	const Graph& g,
-	map<string, map<int, map<string, string> > > &allmerged,
+	map<string, map<int, ClosedGap> > &allmerged,
 	map<FastaRecord, map<FastaRecord, map<string, int> > > &flanks,
 	unsigned &gapsclosed,
 	ofstream &logStream,
@@ -581,9 +584,9 @@ void kRun(const ConnectPairsParams& params,
 
 			if (!tempSeq.empty()) {
 				success = true;
-				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]["gap"]
-					= IntToString(endposition - startposition);
-				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]["seq"]
+				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition].gap
+					= endposition - startposition;
+				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition].seq
 					= tempSeq;
 //#pragma omp atomic
 				gapsclosed++;
@@ -935,7 +938,7 @@ int main(int argc, char** argv)
 	}
 
 	/** map for merged sequence resutls */
-	map<string, map<int, map<string, string> > > allmerged;
+	map<string, map<int, ClosedGap> > allmerged;
 	unsigned gapsclosed=0;
 
 	for (unsigned i = 0; i<opt::kvector.size(); i++) {
