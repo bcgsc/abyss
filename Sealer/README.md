@@ -1,3 +1,26 @@
+---
+title: abyss-sealer
+author: Daniel Paulino
+date: 2014-11-13
+header: ABySS
+footer: ABySS
+section: 1
+---
+
+Name
+================================================================================
+
+abyss-sealer - Close gaps within scaffolds
+
+Synopsis
+================================================================================
+
+`abyss-sealer -k <kmer size> -k <kmer size>... -o <output_prefix> -S <path to scaffold file> [options]... <reads1> [reads2]...`
+
+For example:
+
+`abyss-sealer -k90 -k80 -k70 -k60 -k50 -k40 -k30 -o test -S scaffold.fa read1.fa read2.fa`
+
 Description
 ===========
 
@@ -153,5 +176,3 @@ Parameters of `abyss-sealer`
 * `-v,`--verbose`: display verbose output
 * `--help`: display this help and exit
 * `--version`: output version information and exit
-
-
