@@ -70,7 +70,7 @@ $(test_reads): $(reads)
 #------------------------------------------------------------
 
 $(dida_wrapper_sam): $(test_reads) $(test_ref)
-	abyss-dida-wrapper $^ > $@
+	abyss-dida-wrapper -l$l $^ > $@
 
 $(abyss_map_sam): $(test_reads) $(test_ref)
 	abyss-map --order -l$l $^ > $@
