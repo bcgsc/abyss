@@ -270,6 +270,13 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+/** Coordinates of a gap. */
+struct Coord
+{
+	int startpos;
+	int endpos;
+};
+
 /** A closed gap. */
 struct ClosedGap
 {
@@ -542,13 +549,13 @@ void kRun(const ConnectPairsParams& params,
 	unsigned k,
 	const Graph& g,
 	map<string, map<int, ClosedGap> > &allmerged,
-	map<FastaRecord, map<FastaRecord, map<string, int> > > &flanks,
+	map<FastaRecord, map<FastaRecord, Coord> > &flanks,
 	unsigned &gapsclosed,
 	ofstream &logStream,
 	ofstream &traceStream)
 {
-	map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
-	map<FastaRecord, map<string, int> >::iterator read2_it;
+	map<FastaRecord, map<FastaRecord, Coord> >::iterator read1_it;
+	map<FastaRecord, Coord>::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
 	bool success;
 
@@ -576,8 +583,8 @@ void kRun(const ConnectPairsParams& params,
 		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
 			FastaRecord read2 = read2_it->first;
 
-			int startposition = read2_it->second["startposition"];
-			int endposition = read2_it->second["endposition"];
+			int startposition = read2_it->second.startpos;
+			int endposition = read2_it->second.endpos;
 			string tempSeq;
 
 			tempSeq = merge(g, k, read1, read2, params, g_count, traceStream);
@@ -632,10 +639,6 @@ void kRun(const ConnectPairsParams& params,
 
 }
 
-typedef map<string, int> property_map;
-typedef map<FastaRecord, property_map> read2_map;
-typedef map<FastaRecord, read2_map> read1_map;
-
 bool operator<(const FastaRecord& a, const FastaRecord& b)
 {
 	if (a.id == b.id)
@@ -647,7 +650,7 @@ bool operator<(const FastaRecord& a, const FastaRecord& b)
 void findFlanks(FastaRecord &record,
 	int flanklength,
 	unsigned &gapnumber,
-	read1_map &flanks)
+	map<FastaRecord, map<FastaRecord, Coord> > &flanks)
 {
 	int offset = 0;
 	int endposition = 0;
@@ -687,9 +690,9 @@ void findFlanks(FastaRecord &record,
 		FastaRecord read1, read2;
 		makePseudoReads(read1, read2, startposition, endposition, seq, flanklength, record);
 #pragma omp critical (flanks)
-		flanks[read1][read2]["startposition"] = startposition;
+		flanks[read1][read2].startpos = startposition;
 #pragma omp critical (flanks)
-		flanks[read1][read2]["endposition"] = endposition;
+		flanks[read1][read2].endpos = endposition;
 
 		offset = endposition;
 	}
@@ -875,7 +878,7 @@ int main(int argc, char** argv)
 	params.dotPath = opt::dotPath;
 	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;
 
-	map<FastaRecord, map<FastaRecord, map<string, int> > > flanks;
+	map<FastaRecord, map<FastaRecord, Coord> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
 	FastaReader reader1(scaffoldInputPath, FastaReader::FOLD_CASE);
 	unsigned gapsfound = 0;
@@ -900,8 +903,8 @@ int main(int argc, char** argv)
 	printLog(logStream, temp);
 
 	if (opt::printFlanks > 0) {
-		map<FastaRecord, map<FastaRecord, map<string, int> > >:: iterator read1_it;
-		map<FastaRecord, map<string, int> >::iterator read2_it;
+		map<FastaRecord, map<FastaRecord, Coord> >::iterator read1_it;
+		map<FastaRecord, Coord>::iterator read2_it;
 
 		string read1OutputPath(opt::outputPrefix);
 		read1OutputPath.append("_flanks_1.fq");
@@ -919,15 +922,15 @@ int main(int argc, char** argv)
 				FastaRecord read2 = read2_it->first;
 
 				read1Stream << ">" << read1.id.substr(0,read2.id.length()-2)
-					<< "_" << read2_it->second["startposition"]
-					<< "_" << read2_it->second["endposition"]
-						- read2_it->second["startposition"] << "/1\n";
+					<< "_" << read2_it->second.startpos
+					<< "_" << read2_it->second.endpos
+						- read2_it->second.startpos << "/1\n";
 				read1Stream << read1.seq << endl;
 
 				read2Stream << ">" << read2.id.substr(0,read2.id.length()-2)
-					<< "_" << read2_it->second["startposition"]
-					<< "_" << read2_it->second["endposition"]
-						- read2_it->second["startposition"] << "/2\n";
+					<< "_" << read2_it->second.startpos
+					<< "_" << read2_it->second.endpos
+						- read2_it->second.startpos << "/2\n";
 				read2Stream << read2.seq << endl;
 			}
 		}
