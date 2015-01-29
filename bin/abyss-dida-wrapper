@@ -80,7 +80,7 @@ target_link="$(basename $target)"
 #------------------------------------------------------------
 
 dida_cmd_array=($mpirun -np $n /bin/bash -c \
-	"$dida_cmd <(abyss-tofastq ${query[@]}) $target_link")
+	"$dida_cmd <(abyss-tofastq --interleave ${query[@]}) $target_link")
 echo >&2 "${dida_cmd_array[@]}"
 "${dida_cmd_array[@]}"
 
