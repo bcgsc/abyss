@@ -270,21 +270,60 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-/** Coordinates of a gap. */
+/** The coordinates of a feature. */
 struct Coord
 {
-	int startpos;
-	int endpos;
+	int start;
+	int end;
+	
+	Coord() { }
+	Coord(int start, int end) : start(start), end(end) { }
+
+	/** Return the size of this feature. */
+	int size() const { return end - start; }
 };
 
-/** A closed gap. */
-struct ClosedGap
+/** The coordinates of a gap and its flanking scaftigs. */
+struct Gap
 {
-	/** The size of the original gap. */
-	int gap;
+	/** The left flanking scaftig. */
+	Coord left;
 
+	/** The right flanking scaftig. */
+	Coord right;
+
+	Gap() { }
+
+	Gap(int leftStart, int leftEnd, int rightStart, int rightEnd)
+		: left(leftStart, leftEnd), right(rightStart, rightEnd) { }
+
+	/** The start of the gap. */
+	int gapStart() const { return left.end; }
+
+	/** The end of the gap. */
+	int gapEnd() const { return right.start; }
+
+	/** The total size of the flanks plus the gap. */
+	int totalSize() const { return right.end - left.start; }
+
+	/** The size of the original gap. */
+	int gapSize() const { return gapEnd() - gapStart(); }
+
+	/** The size of the flanks. */
+	int flankSize() const { return left.size() + right.size(); }
+};
+
+/** The coordinates of a gap, its flanking scaftigs, and the sequence that
+ * fills it.
+ */
+struct ClosedGap : Gap
+{
 	/** The sequence that fills the gap. */
 	std::string seq;
+
+	ClosedGap() { }
+
+	ClosedGap(Gap gap, std::string seq) : Gap(gap), seq(seq) { }
 };
 
 #if USESEQAN
@@ -474,11 +513,12 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 			pos_it != allmerged[record.id].rend();
 			pos_it++)
 		{
-			int newseqsize = pos_it->second.seq.length() - (opt::flankLength * 2);
+			const ClosedGap& closedGap = pos_it->second;
+			int newseqsize = pos_it->second.seq.length() - closedGap.flankSize();
 			modifiedSeq.replace(
-				pos_it->first - opt::flankLength,
-				pos_it->second.gap + (opt::flankLength * 2),
-				pos_it->second.seq
+				closedGap.left.start,
+				closedGap.totalSize(),
+				closedGap.seq
 			);
 			mergedStream << ">" << record.id << "_" << pos_it->first << "_" << newseqsize <<  endl;
 			mergedStream << pos_it->second.seq << endl;
@@ -492,26 +532,23 @@ void insertIntoScaffold(ofstream &scaffoldStream,
 
 }
 
-void makePseudoReads(
-	FastaRecord &read1,
-	FastaRecord &read2,
-	int startposition,
-	int endposition,
-	string seq,
-	int flanklength,
-	FastaRecord record)
+std::pair<FastaRecord, FastaRecord>
+makePseudoReads(std::string seq, FastaRecord record, const Gap& gap)
 {
+	std::pair<FastaRecord, FastaRecord> scaftigs;
 	// extract left flank
-	string leftflank = seq.substr(startposition - flanklength, flanklength);
-	transform(leftflank.begin(), leftflank.end(), leftflank.begin(), ::toupper); // requires <algorithm>
-	read1.seq = leftflank;
-	read1.id = record.id + "/1";
+	std::string leftflank = seq.substr(gap.left.start, gap.left.size());
+	std::transform(leftflank.begin(), leftflank.end(), leftflank.begin(), ::toupper);
+	scaftigs.first.seq = leftflank;
+	scaftigs.first.id = record.id + "/1";
 
 	// extract right flank
-	read2.id = record.id + "/2";
-	string rightflank = seq.substr(endposition, flanklength);
-	transform(rightflank.begin(), rightflank.end(), rightflank.begin(), ::toupper);
-	read2.seq = reverseComplement(rightflank);
+	scaftigs.second.id = record.id + "/2";
+	std::string rightflank = seq.substr(gap.right.start, gap.right.size());
+	std::transform(rightflank.begin(), rightflank.end(), rightflank.begin(), ::toupper);
+	scaftigs.second.seq = reverseComplement(rightflank);
+
+	return scaftigs;
 }
 
 template <typename Graph>
@@ -519,13 +556,13 @@ void kRun(const ConnectPairsParams& params,
 	unsigned k,
 	const Graph& g,
 	map<string, map<int, ClosedGap> > &allmerged,
-	map<FastaRecord, map<FastaRecord, Coord> > &flanks,
+	map<FastaRecord, map<FastaRecord, Gap> > &flanks,
 	unsigned &gapsclosed,
 	ofstream &logStream,
 	ofstream &traceStream)
 {
-	map<FastaRecord, map<FastaRecord, Coord> >::iterator read1_it;
-	map<FastaRecord, Coord>::iterator read2_it;
+	map<FastaRecord, map<FastaRecord, Gap> >::iterator read1_it;
+	map<FastaRecord, Gap>::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
 	bool success;
 
@@ -553,18 +590,12 @@ void kRun(const ConnectPairsParams& params,
 		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
 			FastaRecord read2 = read2_it->first;
 
-			int startposition = read2_it->second.startpos;
-			int endposition = read2_it->second.endpos;
-			string tempSeq;
-
-			tempSeq = merge(g, k, read1, read2, params, g_count, traceStream);
-
+			int startposition = read2_it->second.gapStart();
+			string tempSeq = merge(g, k, read1, read2, params, g_count, traceStream);
 			if (!tempSeq.empty()) {
 				success = true;
-				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition].gap
-					= endposition - startposition;
-				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition].seq
-					= tempSeq;
+				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
+					= ClosedGap(read2_it->second, tempSeq);
 //#pragma omp atomic
 				gapsclosed++;
 //#pragma omp atomic
@@ -620,7 +651,7 @@ bool operator<(const FastaRecord& a, const FastaRecord& b)
 void findFlanks(FastaRecord &record,
 	int flanklength,
 	unsigned &gapnumber,
-	map<FastaRecord, map<FastaRecord, Coord> > &flanks)
+	map<FastaRecord, map<FastaRecord, Gap> > &flanks)
 {
 	int offset = 0;
 	int endposition = 0;
@@ -647,22 +678,24 @@ void findFlanks(FastaRecord &record,
 			offset = endposition;
 			continue;
 		}
-		// if flanks contain at least one N, move to next gap.
-		else if (seq.substr(startposition - flanklength, flanklength).string::find_first_of("Nn")
-				!= string::npos
-			or seq.substr(endposition, flanklength).string::find_first_of("Nn")
-				!= string::npos)
-		{
+
+		Gap gap(
+			max(0, startposition - flanklength),
+			startposition,
+			endposition,
+			min((int)seqsize, endposition + flanklength));
+
+		if (seq.substr(gap.left.start, gap.left.size()).string::find_first_of("Nn") != string::npos
+			|| seq.substr(gap.right.start, gap.right.size()).string::find_first_of("Nn") != string::npos) {
+			// Flank contains an N. Move to next gap.
 			offset = endposition;
 			continue;
 		}
 
-		FastaRecord read1, read2;
-		makePseudoReads(read1, read2, startposition, endposition, seq, flanklength, record);
+		std::pair<FastaRecord, FastaRecord> scaftigs =
+			makePseudoReads(seq, record, gap);
 #pragma omp critical (flanks)
-		flanks[read1][read2].startpos = startposition;
-#pragma omp critical (flanks)
-		flanks[read1][read2].endpos = endposition;
+		flanks[scaftigs.first][scaftigs.second] = gap;
 
 		offset = endposition;
 	}
@@ -848,7 +881,7 @@ int main(int argc, char** argv)
 	params.dotPath = opt::dotPath;
 	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;
 
-	map<FastaRecord, map<FastaRecord, Coord> > flanks;
+	map<FastaRecord, map<FastaRecord, Gap> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
 	FastaReader reader1(scaffoldInputPath, FastaReader::FOLD_CASE);
 	unsigned gapsfound = 0;
@@ -873,8 +906,8 @@ int main(int argc, char** argv)
 	printLog(logStream, temp);
 
 	if (opt::printFlanks > 0) {
-		map<FastaRecord, map<FastaRecord, Coord> >::iterator read1_it;
-		map<FastaRecord, Coord>::iterator read2_it;
+		map<FastaRecord, map<FastaRecord, Gap> >::iterator read1_it;
+		map<FastaRecord, Gap>::iterator read2_it;
 
 		string read1OutputPath(opt::outputPrefix);
 		read1OutputPath.append("_flanks_1.fq");
@@ -890,17 +923,14 @@ int main(int argc, char** argv)
 			FastaRecord read1 = read1_it->first;
 			for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
 				FastaRecord read2 = read2_it->first;
+				const Gap& gap = read2_it->second;
 
 				read1Stream << ">" << read1.id.substr(0,read2.id.length()-2)
-					<< "_" << read2_it->second.startpos
-					<< "_" << read2_it->second.endpos
-						- read2_it->second.startpos << "/1\n";
+					<< "_" << gap.gapStart() << "_" << gap.gapSize() << "/1\n";
 				read1Stream << read1.seq << endl;
 
 				read2Stream << ">" << read2.id.substr(0,read2.id.length()-2)
-					<< "_" << read2_it->second.startpos
-					<< "_" << read2_it->second.endpos
-						- read2_it->second.startpos << "/2\n";
+					<< "_" << gap.gapStart() << "_" << gap.gapSize() << "/2\n";
 				read2Stream << read2.seq << endl;
 			}
 		}
