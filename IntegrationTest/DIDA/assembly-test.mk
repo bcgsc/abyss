@@ -35,7 +35,7 @@ abyss_opt=v=-v k=$k name='$(assembly_name)' in='$(in)'
 # meta rules
 #------------------------------------------------------------
 
-default: $(dida_assembly_dir)/stats-8 $(standard_assembly_dir)/stats-8
+default: fasta_identity_test
 
 #------------------------------------------------------------
 # rules for downloading data
@@ -68,5 +68,12 @@ $(dida_assembly_dir)/$(assembly_name)-8.fa: $(test_read1) $(test_read2) \
 	abyss-pe -C $(dida_assembly_dir) $(abyss_opt) aligner=dida-wrapper \
 		2>&1 | tee $(dida_assembly_dir)/log
 
-%/stats-8: %/$(assembly_name)-8.fa
-	abyss-fac $^ | tee $@
+#------------------------------------------------------------
+# test rules
+#------------------------------------------------------------
+
+fasta_identity_test: \
+		$(dida_assembly_dir)/$(assembly_name)-8.fa \
+		$(standard_assembly_dir)/$(assembly_name)-8.fa
+	compare-fastx $^
+	@echo '$@: PASSED!'

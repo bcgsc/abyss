@@ -1,0 +1,14 @@
+#!/bin/bash
+set -eu -o pipefail
+
+if [ $# -ne 2 ]; then
+	echo "Usage: $(basename $0) <file1> <file2>" >&2
+	echo "Compare FASTX files without regard for sequence orientation." >&2
+	exit 1
+fi
+
+function canonical_seqs {
+	bioawk -c fastx '{print $seq; print revcomp($seq)}' "$@" | sort
+}
+
+diff <(canonical_seqs $1) <(canonical_seqs $2)
