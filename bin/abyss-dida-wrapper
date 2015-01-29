@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eu -o pipefail
 
+#------------------------------------------------------------
+# parse command line options
+#------------------------------------------------------------
+
 case $1 in
 	--help)
 		cat <<EOF
@@ -50,6 +54,10 @@ if [ $n -lt 3 ]; then
 	n = 3
 fi
 
+#------------------------------------------------------------
+# parse command line arguments (query and target files)
+#------------------------------------------------------------
+
 # Add file arguments to dida command.  Convert all input file paths
 # to absolute, since we change to a temp dir below
 
@@ -57,14 +65,19 @@ query=($(readlink -f "$@"))
 target=${query[${#query[@]}-1]}
 unset query[${#query[@]}-1]
 
-# run DIDA in a temp dir, since it makes lots of files
-# with fixed filenames
+#------------------------------------------------------------
+# set up and switch to temp sandbox dir
+#------------------------------------------------------------
 
 tmpdir=$(mktemp -d --tmpdir=.)
 pushd $tmpdir >&2
 
 ln -s "$target"
 target_link="$(basename $target)"
+
+#------------------------------------------------------------
+# run DIDA
+#------------------------------------------------------------
 
 dida_cmd_array=($mpirun -np $n /bin/bash -c \
 	"$dida_cmd <(abyss-tofastq ${query[@]}) $target_link")
@@ -73,7 +86,11 @@ echo >&2 "${dida_cmd_array[@]}"
 
 du=$(du -hsc * | tail -1 | awk '{print $1}')
 echo >&2 "dida-wrapper job used $du temp disk space"
-rm -f *
 
+#------------------------------------------------------------
+# clean up
+#------------------------------------------------------------
+
+rm -f *
 popd >&2
 rmdir $tmpdir
