@@ -12,11 +12,12 @@ Usage: abyss-dida-wrapper [OPTION]... QUERY... TARGET
 
 Options:
 
-    --help      this help message
-    -j          number of threads [1]
-    -m          path of 'mpirun' executable [mpirun]
-    -n          number of ranks in DIDA MPI job [3]
-    --version   print version info and exit
+    --help        this help message
+    -j            number of threads [1]
+    -m            path of 'mpirun' executable [mpirun]
+    -n            number of ranks in DIDA MPI job [3]
+    -x VAR=value  set environment variable for MPI job
+    --version     print version info and exit
 
 Align the sequences of the files QUERY to those of the file
 TARGET using dida-wrapper.
@@ -36,13 +37,14 @@ esac
 mpirun=mpirun
 n=3
 dida_cmd='dida-wrapper --no-clean --se'
-while getopts :j:l:m:n:v: opt; do
+while getopts :j:l:m:n:v:x: opt; do
 	case $opt in
 		j) dida_cmd="$dida_cmd -j$OPTARG";;
 		l) dida_cmd="$dida_cmd -l$OPTARG";;
 		m) mpirun="$OPTARG";;
 		n) n=$OPTARG;;
 		v) ;;
+		x) export "$OPTARG";;
 		\?) echo >&2 "$(basename 0): invalid option: $OPTARG"; exit 1;;
 	esac
 done

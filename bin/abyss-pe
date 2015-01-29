@@ -217,6 +217,7 @@ mapopt+=-n$(np)
 else
 mapopt+=-n3
 endif
+mapopt+=$(DIDA_OPTIONS)
 endif
 
 # fixmate parameters
