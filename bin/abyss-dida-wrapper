@@ -13,6 +13,7 @@ Usage: abyss-dida-wrapper [OPTION]... QUERY... TARGET
 Options:
 
     --help        this help message
+    -d STRING     additional command line opts for DIDA
     -j            number of threads [1]
     -m            path of 'mpirun' executable [mpirun]
     -n            number of ranks in DIDA MPI job [3]
@@ -36,9 +37,11 @@ esac
 
 mpirun=mpirun
 n=3
-dida_cmd='dida-wrapper --no-clean --se'
-while getopts :j:l:m:n:v:x: opt; do
+dida_cmd='dida-wrapper'
+dida_opt='--no-clean --se'
+while getopts :d:j:l:m:n:v:x: opt; do
 	case $opt in
+		d) dida_opt="$dida_opt $OPTARG";;
 		j) dida_cmd="$dida_cmd -j$OPTARG";;
 		l) dida_cmd="$dida_cmd -l$OPTARG";;
 		m) mpirun="$OPTARG";;
@@ -48,6 +51,7 @@ while getopts :j:l:m:n:v:x: opt; do
 		\?) echo >&2 "$(basename 0): invalid option: $OPTARG"; exit 1;;
 	esac
 done
+dida_cmd="$dida_cmd $dida_opt"
 shift $((OPTIND-1))
 
 # dida-wrapper requires n >= 3
