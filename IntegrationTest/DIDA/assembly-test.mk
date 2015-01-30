@@ -35,7 +35,13 @@ abyss_opt=v=-v k=$k name='$(assembly_name)' in='$(in)'
 # meta rules
 #------------------------------------------------------------
 
+.PHONY: clean fasta_identity_test
 default: fasta_identity_test
+
+clean:
+	rm -f $(standard_assembly_dir)/* $(dida_assembly_dir)/* \
+		$(test_read1) $(test_read2)
+	rmdir $(standard_assembly_dir) $(dida_assembly_dir)
 
 #------------------------------------------------------------
 # rules for downloading data
