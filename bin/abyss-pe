@@ -210,13 +210,16 @@ endif
 align?=abyss-$(aligner)
 mapopt=$v $(dbopt) -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
+# DIDA parameters
 ifeq ($(aligner),dida-wrapper)
-ifdef np
-mapopt+=-n$(np)
-else
-mapopt+=-n3
-endif
-mapopt+=-d'$(DIDA_OPTIONS)'
+   ifdef np
+       mapopt+=-n$(np)
+   else
+       mapopt+=-n3
+   endif
+   ifdef DIDA_OPTIONS
+       mapopt+=-d'$(DIDA_OPTIONS)'
+   endif
 endif
 
 # fixmate parameters
