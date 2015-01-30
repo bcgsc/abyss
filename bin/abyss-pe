@@ -211,7 +211,6 @@ align?=abyss-$(aligner)
 mapopt=$v $(dbopt) -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 ifeq ($(aligner),dida-wrapper)
-mapopt+=-m'$(mpirun)'
 ifdef np
 mapopt+=-n$(np)
 else
