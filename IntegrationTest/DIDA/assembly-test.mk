@@ -39,9 +39,8 @@ abyss_opt=v=-v k=$k name='$(assembly_name)' in='$(in)'
 default: fasta_identity_test
 
 clean:
-	rm -f $(standard_assembly_dir)/* $(dida_assembly_dir)/* \
+	rm -rf $(standard_assembly_dir)/* $(dida_assembly_dir)/* \
 		$(test_read1) $(test_read2)
-	rmdir $(standard_assembly_dir) $(dida_assembly_dir)
 
 #------------------------------------------------------------
 # rules for downloading data
