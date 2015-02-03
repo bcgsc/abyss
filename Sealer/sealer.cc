@@ -653,35 +653,28 @@ void findFlanks(FastaRecord &record,
 	unsigned &gapnumber,
 	map<FastaRecord, map<FastaRecord, Gap> > &flanks)
 {
-	int offset = 0;
-	int endposition = 0;
-	int startposition = 0;
-	string seq = record.seq;
-	unsigned seqsize = seq.length();
+	const string& seq = record.seq;
 
-
-	// finds next gap. If no more gaps, while loop ends.
-	while (seq.string::find_first_of("Nn", offset) != string::npos) {
+	// Iterate over the gaps.
+	for (size_t offset = 0;
+			seq.string::find_first_of("Nn", offset) != string::npos;) {
 #pragma omp atomic
 		gapnumber++;
-		startposition = seq.string::find_first_of("Nn", offset);
+		size_t startposition = seq.string::find_first_of("Nn", offset);
 
-		// if gap is at the end of the sequence (no right flank), the while loop ends.
-		if (seq.string::find_first_not_of("Nn", startposition) == string::npos)
+		size_t endposition = seq.string::find_first_not_of("Nn", startposition);
+		if (endposition == string::npos) {
+			std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
 			break;
-		else {
-			// position of the first non-N character
-			endposition = seq.string::find_first_not_of("Nn", startposition);
 		}
 
 		Gap gap(
-			max(0, startposition - flanklength),
+			max((ssize_t)0, (ssize_t)startposition - (ssize_t)flanklength),
 			startposition,
 			endposition,
-			min((int)seqsize, endposition + flanklength));
-
+			min(seq.length(), endposition + flanklength));
 		if (seq.substr(gap.left.start, gap.left.size()).string::find_first_of("Nn") != string::npos
-			|| seq.substr(gap.right.start, gap.right.size()).string::find_first_of("Nn") != string::npos) {
+				|| seq.substr(gap.right.start, gap.right.size()).string::find_first_of("Nn") != string::npos) {
 			// Flank contains an N. Move to next gap.
 			offset = endposition;
 			continue;
