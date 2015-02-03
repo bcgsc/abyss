@@ -673,11 +673,6 @@ void findFlanks(FastaRecord &record,
 			// position of the first non-N character
 			endposition = seq.string::find_first_not_of("Nn", startposition);
 		}
-		// if flanks are not long enough, move to next gap.
-		if (startposition-flanklength<0 || unsigned(endposition + flanklength) > seqsize) {
-			offset = endposition;
-			continue;
-		}
 
 		Gap gap(
 			max(0, startposition - flanklength),
