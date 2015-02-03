@@ -35,8 +35,8 @@ EOF
 		;;
 esac
 
-mpirun=mpirun
 n=3
+mpirun=''
 dida_cmd='dida-wrapper'
 dida_opt='--no-clean --se'
 while getopts :d:j:l:m:n:v:x: opt; do
@@ -55,9 +55,13 @@ dida_cmd="$dida_cmd $dida_opt"
 shift $((OPTIND-1))
 
 # dida-wrapper requires n >= 3
-
 if [ $n -lt 3 ]; then
 	n = 3
+fi
+
+# default mpirun cmd, if none specified
+if [ -z "$mpirun" ]; then
+	mpirun="mpirun -np $n"
 fi
 
 #------------------------------------------------------------
@@ -85,10 +89,11 @@ target_link="$(basename $target)"
 # run DIDA
 #------------------------------------------------------------
 
-dida_cmd_array=($mpirun -np $n /bin/bash -c \
-	"$dida_cmd <(abyss-tofastq --interleave ${query[@]}) $target_link")
-echo >&2 "${dida_cmd_array[@]}"
-"${dida_cmd_array[@]}"
+dida_cmd="$mpirun /bin/bash -c '$dida_cmd <(abyss-tofastq --interleave ${query[@]}) $target_link'"
+echo >&2 "$dida_cmd"
+# tricky: must use eval here to preserve nested quotes
+# (e.g. quotes in $mpirun command)
+eval "$dida_cmd"
 
 du=$(du -hsc * | tail -1 | awk '{print $1}')
 echo >&2 "dida-wrapper job used $du temp disk space"

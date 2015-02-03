@@ -211,14 +211,19 @@ align?=abyss-$(aligner)
 mapopt=$v $(dbopt) -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # DIDA parameters
+escape_quotes=$(shell echo "$(1)" | sed 's|"|\\\"|g')
 ifeq ($(aligner),dida-wrapper)
    ifdef np
        mapopt+=-n$(np)
-   else
-       mapopt+=-n3
+   endif
+   ifdef DIDA_RUN_OPTIONS
+       mapopt+=$(DIDA_RUN_OPTIONS)
+   endif
+   ifdef DIDA_MPIRUN
+       mapopt+=-m"$(call escape_quotes,$(DIDA_MPIRUN))"
    endif
    ifdef DIDA_OPTIONS
-       mapopt+=-d'$(DIDA_OPTIONS)'
+       mapopt+=-d"$(call escape_quotes,$(DIDA_OPTIONS))"
    endif
 endif
 
