@@ -8,7 +8,7 @@ set -eu -o pipefail
 case $1 in
 	--help)
 		cat <<EOF
-Usage: abyss-dida-wrapper [OPTION]... QUERY... TARGET
+Usage: abyss-dida [OPTION]... QUERY... TARGET
 
 Options:
 
@@ -21,13 +21,13 @@ Options:
     --version     print version info and exit
 
 Align the sequences of the files QUERY to those of the file
-TARGET using dida-wrapper.
+TARGET using DIDA.
 EOF
 		exit
 		;;
 	--version)
 		cat <<EOF
-abyss-dida-wrapper (ABySS)
+abyss-dida (ABySS)
 Written by Ben Vandervalk.
 EOF
 		dida-wrapper --version
