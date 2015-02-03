@@ -70,7 +70,7 @@ $(standard_assembly_dir)/$(assembly_name)-8.fa: $(test_read1) $(test_read2) \
 $(dida_assembly_dir)/$(assembly_name)-8.fa: $(test_read1) $(test_read2) \
 		| $(dida_assembly_dir)
 	abyss-pe -C $(dida_assembly_dir) $(abyss_opt) $(ABYSS_OPT) \
-		aligner=dida-wrapper
+		aligner=dida
 
 #------------------------------------------------------------
 # test rules

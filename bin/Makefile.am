@@ -17,7 +17,7 @@ dist_bin_SCRIPTS = \
 	abyss-samtoafg \
 	abyss-tabtomd \
 	abyss-bloom-dist.mk \
-	abyss-dida-wrapper
+	abyss-dida
 	$(nompi)
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \

@@ -212,7 +212,7 @@ mapopt=$v $(dbopt) -j$j -l$($*_l) $(SS) $(ALIGNER_OPTIONS) $(MAP_OPTIONS)
 
 # DIDA parameters
 escape_quotes=$(shell echo "$(1)" | sed 's|"|\\\"|g')
-ifeq ($(aligner),dida-wrapper)
+ifeq ($(aligner),dida)
    ifdef np
        mapopt+=-n$(np)
    endif
