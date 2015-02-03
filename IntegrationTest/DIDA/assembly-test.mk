@@ -65,13 +65,12 @@ $(dida_assembly_dir):
 
 $(standard_assembly_dir)/$(assembly_name)-8.fa: $(test_read1) $(test_read2) \
 		| $(standard_assembly_dir)
-	abyss-pe -C $(standard_assembly_dir) $(abyss_opt) \
-		2>&1 | tee $(standard_assembly_dir)/log
+	abyss-pe -C $(standard_assembly_dir) $(abyss_opt) $(ABYSS_OPT)
 
 $(dida_assembly_dir)/$(assembly_name)-8.fa: $(test_read1) $(test_read2) \
 		| $(dida_assembly_dir)
-	abyss-pe -C $(dida_assembly_dir) $(abyss_opt) aligner=dida-wrapper \
-		2>&1 | tee $(dida_assembly_dir)/log
+	abyss-pe -C $(dida_assembly_dir) $(abyss_opt) $(ABYSS_OPT) \
+		aligner=dida-wrapper
 
 #------------------------------------------------------------
 # test rules
