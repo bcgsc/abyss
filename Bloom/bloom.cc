@@ -170,7 +170,7 @@ void parseGlobalOpts(int argc, char** argv)
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  case OPT_VERSION:
-			cerr << VERSION_MESSAGE;
+			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		  default:
 			// end of global opts
@@ -559,7 +559,11 @@ int main(int argc, char** argv)
 
 	if (command == "--help" || command == "-h") {
 		cout << USAGE_MESSAGE;
-		return EXIT_SUCCESS;
+		exit(EXIT_SUCCESS);
+	}
+	if (command == "--version") {
+		cout << VERSION_MESSAGE;
+		exit(EXIT_SUCCESS);
 	}
 	else if (command == "build") {
 		return build(argc, argv);
