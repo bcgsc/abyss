@@ -668,17 +668,15 @@ void findFlanks(FastaRecord &record,
 			break;
 		}
 
+		size_t right_end = seq.string::find_first_of("Nn", endposition);
+		if (right_end == string::npos)
+			right_end = seq.length();
+
 		Gap gap(
-			max((ssize_t)0, (ssize_t)startposition - (ssize_t)flanklength),
+			max((ssize_t)offset, (ssize_t)startposition - (ssize_t)flanklength),
 			startposition,
 			endposition,
-			min(seq.length(), endposition + flanklength));
-		if (seq.substr(gap.left.start, gap.left.size()).string::find_first_of("Nn") != string::npos
-				|| seq.substr(gap.right.start, gap.right.size()).string::find_first_of("Nn") != string::npos) {
-			// Flank contains an N. Move to next gap.
-			offset = endposition;
-			continue;
-		}
+			min(right_end, endposition + flanklength));
 
 		std::pair<FastaRecord, FastaRecord> scaftigs =
 			makePseudoReads(seq, record, gap);
