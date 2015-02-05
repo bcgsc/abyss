@@ -1,5 +1,7 @@
 bin_PROGRAMS = abyss-sealer
 
+dist_man1_MANS = abyss-sealer.1
+
 abyss_sealer_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer
@@ -17,3 +19,7 @@ abyss_sealer_SOURCES = sealer.cc \
 	$(top_srcdir)/Konnector/DBGBloom.h \
 	$(top_srcdir)/Konnector/DBGBloomAlgorithms.h \
 	$(top_srcdir)/Konnector/konnector.h
+
+# Convert the README.md to a man page using Pandoc
+abyss-sealer.1: README.md
+	-pandoc -s -o $@ $<
