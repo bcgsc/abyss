@@ -405,6 +405,7 @@ string IntToString (int a)
 template <typename Graph>
 string merge(const Graph& g,
 	unsigned k,
+	const Gap& gap,
 	FastaRecord &read1,
 	FastaRecord &read2,
 	const ConnectPairsParams& params,
@@ -412,6 +413,9 @@ string merge(const Graph& g,
 	ofstream& traceStream)
 {
 	ConnectPairsResult result = connectPairs(k, read1, read2, g, params);
+	ostringstream ss;
+	ss << result.readNamePrefix << '_' << gap.gapStart() << '_' << gap.gapSize();
+	result.readNamePrefix = ss.str();
 
 	if (!opt::tracefilePath.empty())
 #pragma omp critical(tracefile)
@@ -591,7 +595,7 @@ void kRun(const ConnectPairsParams& params,
 			FastaRecord read2 = read2_it->first;
 
 			int startposition = read2_it->second.gapStart();
-			string tempSeq = merge(g, k, read1, read2, params, g_count, traceStream);
+			string tempSeq = merge(g, k, read2_it->second, read1, read2, params, g_count, traceStream);
 			if (!tempSeq.empty()) {
 				success = true;
 				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
