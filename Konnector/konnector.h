@@ -85,9 +85,15 @@ struct ConnectPairsResult
 			}
 			out << "\t";
 		}
-		out << o.startKmerPos << "\t"
-			<< o.goalKmerPos << "\t"
-			<< o.numNodesVisited << "\t"
+		if (o.startKmerPos == NO_MATCH)
+			out << "NA\t";
+		else
+			out << o.startKmerPos << "\t";
+		if (o.goalKmerPos == NO_MATCH)
+			out << "NA\t";
+		else
+			out << o.goalKmerPos << "\t";
+		out << o.numNodesVisited << "\t"
 			<< o.maxActiveBranches << "\t"
 			<< o.maxDepthVisitedForward << "\t"
 			<< o.maxDepthVisitedReverse << "\t"
@@ -198,6 +204,7 @@ static inline ConnectPairsResult connectPairs(
 	const ConnectPairsParams& params)
 {
 	ConnectPairsResult result;
+	result.readNamePrefix = read1.id.substr(0, read1.id.find_last_of("/"));
 
 	if (!isReadNamePair(read1.id, read2.id)) {
 #pragma omp critical(cerr)
@@ -274,7 +281,6 @@ static inline ConnectPairsResult connectPairs(
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<Kmer> > paths;
-	result.readNamePrefix = pRead1->id.substr(0, pRead1->id.find_last_of("/"));
 	result.pathResult = visitor.pathsToGoal(paths);
 	result.numNodesVisited = visitor.getNumNodesVisited();
 	result.maxActiveBranches = visitor.getMaxActiveBranches();
