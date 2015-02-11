@@ -20,6 +20,7 @@
 
 struct ConnectPairsResult
 {
+	unsigned k;
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
 	std::vector<FastaRecord> mergedSeqs;
@@ -37,6 +38,7 @@ struct ConnectPairsResult
 	size_t memUsage;
 
 	ConnectPairsResult() :
+		k(0),
 		pathResult(NO_PATH),
 		foundStartKmer(false),
 		foundGoalKmer(false),
@@ -53,7 +55,8 @@ struct ConnectPairsResult
 
 	static std::ostream& printHeaders(std::ostream& out)
 	{
-		out << "read_id" << "\t"
+		out << "k\t"
+			<< "read_id" << "\t"
 			<< "search_result" << "\t"
 			<< "num_paths" << "\t"
 			<< "path_lengths" << "\t"
@@ -72,7 +75,8 @@ struct ConnectPairsResult
 	friend std::ostream& operator <<(std::ostream& out,
 		const ConnectPairsResult& o)
 	{
-		out << o.readNamePrefix << "\t"
+		out << o.k << '\t'
+			<< o.readNamePrefix << "\t"
 			<< PathSearchResultLabel[o.pathResult] << "\t"
 			<< o.mergedSeqs.size() << "\t";
 		if (o.mergedSeqs.size() == 0) {
@@ -204,6 +208,7 @@ static inline ConnectPairsResult connectPairs(
 	const ConnectPairsParams& params)
 {
 	ConnectPairsResult result;
+	result.k = k;
 	result.readNamePrefix = read1.id.substr(0, read1.id.find_last_of("/"));
 
 	if (!isReadNamePair(read1.id, read2.id)) {
