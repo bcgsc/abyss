@@ -78,10 +78,10 @@ std::vector<int> passGraphStatsVal(const Graph& g)
 	return make_vector<int>()
 		<< num_vertices(g) - num_vertices_removed(g)
 		<< num_edges(g)
-		<< (round)(100 * n0 / n)
-		<< (round)(100 * n1 / n)
-		<< (round)(100 * n234 / n)
-		<< (round)(100 * n5 / n)
+		<< round(100.0 * n0 / n)
+		<< round(100.0 * n1 / n)
+		<< round(100.0 * n234 / n)
+		<< round(100.0 * n5 / n)
 		<< h.maximum();
 #else
 	(void)g;
