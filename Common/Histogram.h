@@ -328,7 +328,7 @@ static inline std::ostream& printContiguityStats(
 			<< "n:" << minSize << sep
 			<< "L50" << sep;
 		if (expSize > 0)
-			out << "n:NG50" << sep
+			out << "LG50" << sep
 				<< "NG50" << sep;
 		out << "min" << sep
 			<< "N80" << sep
