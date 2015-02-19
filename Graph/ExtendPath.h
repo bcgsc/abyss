@@ -13,7 +13,22 @@
 /**
  * The result of attempting to extend a path.
  */
-enum PathExtensionResult { NO_EXTENSION, HIT_BRANCHING_POINT, EXTENDED };
+enum PathExtensionResult {
+	DEAD_END,
+	BRANCHING_POINT,
+	EXTENDED_TO_BRANCHING_POINT,
+	EXTENDED_TO_DEAD_END
+};
+
+/**
+ * The result of attempting to extend a path
+ * by a single neighbouring vertex.
+ */
+enum SingleExtensionResult {
+	SE_DEAD_END,
+	SE_BRANCHING_POINT,
+	SE_EXTENDED
+};
 
 /**
  * Return true if there is a path of at least 'depth' vertices
@@ -103,7 +118,7 @@ static inline bool lookAhead(
  * @return PathExtensionResult: NO_EXTENSION, HIT_BRANCHING_POINT, or EXTENDED
  */
 template <class BidirectionalGraph>
-static inline PathExtensionResult extendPathBySingleVertex(
+static inline SingleExtensionResult extendPathBySingleVertex(
 	Path<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& path,
 	Direction dir, const BidirectionalGraph& g, unsigned trimLen = 0)
 {
@@ -118,11 +133,11 @@ static inline PathExtensionResult extendPathBySingleVertex(
 
 	if (dir == FORWARD) {
 		if (out_degree(u, g) == 0) {
-			return NO_EXTENSION;
+			return SE_DEAD_END;
 		} else if (out_degree(u, g) == 1) {
 			const V& v = target(*(out_edges(u, g).first), g);
 			path.push_back(v);
-			return EXTENDED;
+			return SE_EXTENDED;
 		} else {
 			V vNext;
 			unsigned branchCount = 0;
@@ -135,23 +150,23 @@ static inline PathExtensionResult extendPathBySingleVertex(
 				}
 			}
 			if (branchCount == 0) {
-				return NO_EXTENSION;
+				return SE_DEAD_END;
 			} else if (branchCount == 1) {
 				path.push_back(vNext);
-				return EXTENDED;
+				return SE_EXTENDED;
 			} else {
 				assert(branchCount > 1);
-				return HIT_BRANCHING_POINT;
+				return SE_BRANCHING_POINT;
 			}
 		}
 	} else {
 		assert(dir == REVERSE);
 		if (in_degree(u, g) == 0) {
-			return NO_EXTENSION;
+			return SE_DEAD_END;
 		} else if (in_degree(u, g) == 1) {
 			const V& v = source(*(in_edges(u, g).first), g);
 			path.push_front(v);
-			return EXTENDED;
+			return SE_EXTENDED;
 		} else {
 			V vNext;
 			unsigned branchCount = 0;
@@ -164,13 +179,13 @@ static inline PathExtensionResult extendPathBySingleVertex(
 				}
 			}
 			if (branchCount == 0) {
-				return NO_EXTENSION;
+				return SE_DEAD_END;
 			} else if (branchCount == 1) {
 				path.push_front(vNext);
-				return EXTENDED;
+				return SE_EXTENDED;
 			} else {
 				assert(branchCount > 1);
-				return HIT_BRANCHING_POINT;
+				return SE_BRANCHING_POINT;
 			}
 		}
 	}
@@ -199,12 +214,27 @@ PathExtensionResult extendPath(
 	typename graph_traits::in_edge_iterator iei, iei_end;
 
 	assert(path.size() > 0);
-	PathExtensionResult result = NO_EXTENSION;
+	size_t origPathLen = path.size();
+	SingleExtensionResult result;
 	do {
 		result = extendPathBySingleVertex(path, dir, g, trimLen);
-	} while (result == EXTENDED);
+	} while (result == SE_EXTENDED);
 
-	return result;
+	if (path.size() > origPathLen) {
+		if (result == SE_DEAD_END) {
+			return EXTENDED_TO_DEAD_END;
+		} else {
+			assert(result == SE_BRANCHING_POINT);
+			return EXTENDED_TO_BRANCHING_POINT;
+		}
+	} else {
+		if (result == SE_DEAD_END) {
+			return DEAD_END;
+		} else {
+			assert(result == SE_BRANCHING_POINT);
+			return BRANCHING_POINT;
+		}
+	}
 }
 
 #endif
