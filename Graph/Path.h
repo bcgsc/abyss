@@ -1,10 +1,10 @@
 #ifndef PATH_H_
 #define PATH_H_
 
-#include <vector>
 #include <string>
 #include <sstream>
 #include <climits>
+#include <deque>
 
 enum PathSearchResult {
 	FOUND_PATH = 0,
@@ -28,13 +28,13 @@ enum Direction { FORWARD = 0, REVERSE };
 
 const unsigned NO_LIMIT = UINT_MAX;
 
-template <class Vertex> class Path : public std::vector<Vertex>
+template <class Vertex> class Path : public std::deque<Vertex>
 {
 public:
 
 	std::string str() {
 		std::stringstream s;
-		typename std::vector<Vertex>::iterator i = this->begin();
+		typename std::deque<Vertex>::iterator i = this->begin();
 		for (; i != this->end(); i++) {
 			if (i != this->begin())
 				s << ",";

@@ -113,6 +113,12 @@ graph_ConstrainedBidiBFSVisitor_SOURCES = \
 graph_ConstrainedBidiBFSVisitor_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 graph_ConstrainedBidiBFSVisitor_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
 
+UNIT_TESTS += graph_ExtendPath
+check_PROGRAMS += graph_ExtendPath
+graph_ExtendPath_SOURCES = Graph/ExtendPathTest.cpp
+graph_ExtendPath_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
+graph_ExtendPath_LDADD = $(top_builddir)/Common/libcommon.a $(GTEST_LIBS)
+
 UNIT_TESTS += Konnector_konnector
 check_PROGRAMS += Konnector_konnector
 Konnector_konnector_SOURCES = \

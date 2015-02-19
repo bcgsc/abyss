@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	DirectedGraph.h \
 	DistIO.h \
 	DotIO.h \
+	ExtendPath.h \
 	FastaIO.h \
 	GfaIO.h \
 	GraphAlgorithms.h \
