@@ -6,6 +6,7 @@
 #include "DataLayer/FastaInterleave.h"
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
+#include "Graph/ExtendPath.h"
 #include "Align/alignGlobal.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/DotIO.h"
@@ -347,6 +348,83 @@ static inline ConnectPairsResult connectPairs(
 #endif
 
 	return result;
+}
+
+/**
+ * Reason a sequence could not be extended uniquely within
+ * the de Bruijn graph; or if the sequence could be extended,
+ * the reason we stopped extending.
+ */
+enum ExtendSeqResult {
+	ES_NO_START_KMER,
+	ES_DEAD_END,
+	ES_BRANCHING_POINT,
+	ES_EXTENDED_TO_BRANCHING_POINT,
+	ES_EXTENDED_TO_DEAD_END
+};
+
+/**
+ * Extend a sequence up to the next dead end or branching point in the
+ * de Bruijn graph.
+ *
+ * @param seq sequence to be extended (modified by this function)
+ * @param dir direction to extend (FORWARD or REVERSE)
+ * @param trimLen ignore branches less than or equal to this length
+ * @param k kmer size of de Bruijn graph
+ * @param g de Bruijn graph
+ * @return ExtendSeqResult (ES_NO_START_KMER, ES_DEAD_END,
+ * ES_BRANCHING_POINT, ES_EXTENDED_TO_BRANCHING_POINT,
+ * ES_EXTENDED_TO_DEAD_END)
+ */
+template <typename Graph>
+static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
+	unsigned trimLen, unsigned k, const Graph& g)
+{
+	if (seq.length() < k)
+		return ES_NO_START_KMER;
+
+	size_t origSeqLen = seq.length();
+
+	/* choose a start kmer for the path */
+
+	const unsigned minConsecutiveMatches = 3;
+	unsigned startKmerPos = NO_MATCH;
+	for (int i = minConsecutiveMatches; i >= 0; i--) {
+		startKmerPos = getStartKmerPos2(seq, k, dir, g, i);
+		if (startKmerPos != NO_MATCH)
+			break;
+	}
+	if (startKmerPos == NO_MATCH)
+		return ES_NO_START_KMER;
+
+	/* initialize the path to be extended */
+
+	Kmer startKmer(seq.substr(startKmerPos, k));
+	Path<Kmer> path;
+	path.push_back(startKmer);
+
+	/*
+	 * extend the path up to a dead end or a branching point
+	 * within the de Bruijn graph.
+	 */
+
+	PathExtensionResult result = extendPath(path, dir, g, trimLen);
+
+	/* translate and return result code */
+
+	switch(result) {
+	case EXTENDED_TO_DEAD_END:
+		return ES_EXTENDED_TO_DEAD_END;
+	case EXTENDED_TO_BRANCHING_POINT:
+		return ES_EXTENDED_TO_BRANCHING_POINT;
+	case DEAD_END:
+		return ES_DEAD_END;
+	case BRANCHING_POINT:
+		return ES_BRANCHING_POINT;
+	}
+
+	/* should never reach here */
+	assert(false);
 }
 
 #endif
