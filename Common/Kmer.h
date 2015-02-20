@@ -77,6 +77,12 @@ class Kmer
 		return codeToBase(at(s_length - 1));
 	}
 
+	/** Return the first nucleotide as a character. */
+	char getFirstBaseChar() const
+	{
+		return codeToBase(at(0));
+	}
+
 	uint8_t shift(extDirection dir, uint8_t base = 0)
 	{
 		return dir == SENSE ? shiftAppend(base) : shiftPrepend(base);

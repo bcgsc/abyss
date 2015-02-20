@@ -357,9 +357,31 @@ static inline ConnectPairsResult connectPairs(
  */
 enum ExtendSeqResult {
 	ES_NO_START_KMER,
+	/* start kmer had no neighbours */
 	ES_DEAD_END,
+	/* start kmer had two or more branches */
 	ES_BRANCHING_POINT,
+	/*
+	 * we did not make it from the start kmer to the
+	 * beginning/end of the input sequence, because
+	 * we hit a dead end.
+	 */
+	ES_INTERNAL_DEAD_END,
+	/*
+	 * we did not make it from the start kmer to the
+	 * beginning/end of the input sequence, because
+	 * we hit a branching point.
+	 */
+	ES_INTERNAL_BRANCHING_POINT,
+	/*
+	 * we successfully extended the input sequence
+	 * and stopped extending at a branching point.
+	 */
 	ES_EXTENDED_TO_BRANCHING_POINT,
+	/*
+	 * we successfully extended the input sequence
+	 * and stopped extending at a dead end.
+	 */
 	ES_EXTENDED_TO_DEAD_END
 };
 
@@ -378,7 +400,7 @@ enum ExtendSeqResult {
  */
 template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
-	unsigned trimLen, unsigned k, const Graph& g)
+	unsigned k, const Graph& g, unsigned trimLen=0, bool maskNew=true)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
@@ -408,19 +430,70 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	 * within the de Bruijn graph.
 	 */
 
-	PathExtensionResult result = extendPath(path, dir, g, trimLen);
+	PathExtensionResult pathResult = extendPath(path, dir, g, trimLen);
+
+	/*
+	 * graft path extension onto original input sequence
+	 */
+
+	if (pathResult == EXTENDED_TO_DEAD_END ||
+		pathResult == EXTENDED_TO_BRANCHING_POINT) {
+
+		/* we expect the start kmer plus some extension */
+		assert(path.size() > 1);
+
+		std::string pathSeq = pathToSeq(path);
+		std::string::iterator src = pathSeq.begin();
+		std::string::iterator dest;
+
+		if (dir == REVERSE) {
+			int prefixLen = pathSeq.length() -
+				(startKmerPos + k - 1);
+			if (prefixLen > 0) {
+				/* seq extension goes beyond start of read */
+				seq.insert(0, prefixLen, 'N');
+			}
+			dest = seq.begin();
+		} else {
+			assert(dir == FORWARD);
+			int suffixLen = pathSeq.length() -
+				(seq.length() - startKmerPos);
+			if (suffixLen > 0) {
+				/* seq extension goes beyond end of read */
+				seq.insert(seq.length(), suffixLen, 'N');
+			}
+			dest = seq.begin() + startKmerPos;
+		}
+
+		for (; src != pathSeq.end(); ++src, ++dest) {
+			assert(dest != seq.end());
+			if (maskNew && *src != *dest)
+				*src = tolower(*src);
+			*dest = *src;
+		}
+
+	}
 
 	/* translate and return result code */
 
-	switch(result) {
+	switch (pathResult)
+	{
 	case EXTENDED_TO_DEAD_END:
-		return ES_EXTENDED_TO_DEAD_END;
+		if (seq.length() > origSeqLen)
+			return ES_EXTENDED_TO_DEAD_END;
+		else
+			return ES_INTERNAL_DEAD_END;
 	case EXTENDED_TO_BRANCHING_POINT:
-		return ES_EXTENDED_TO_BRANCHING_POINT;
+		if (seq.length() > origSeqLen)
+			return ES_EXTENDED_TO_BRANCHING_POINT;
+		else
+			return ES_INTERNAL_BRANCHING_POINT;
 	case DEAD_END:
 		return ES_DEAD_END;
 	case BRANCHING_POINT:
 		return ES_BRANCHING_POINT;
+	default:
+		break;
 	}
 
 	/* should never reach here */
