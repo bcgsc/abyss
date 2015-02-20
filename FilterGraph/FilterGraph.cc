@@ -62,6 +62,7 @@ static const char USAGE_MESSAGE[] =
 "  -l, --length=N          remove contigs shorter than N [0]\n"
 "  -L, --max-length=N      remove contigs longer than N [0]\n"
 "  -c, --coverage=FLOAT    remove contigs with coverage less than FLOAT [0]\n"
+"  -C, --max-coverage=FLOAT remove contigs with coverage at least FLOAT [0]\n"
 "      --shim              remove filler contigs that only contribute\n"
 "                          to adjacency [default]\n"
 "      --no-shim           disable filler contigs removal\n"
@@ -106,6 +107,9 @@ namespace opt {
 	/** Remove contigs with coverage less than this threshold. */
 	static float minCoverage = 0;
 
+	/** Remove contigs with coverage at least this threshold. */
+	static float maxCoverage = 0;
+
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
@@ -132,7 +136,7 @@ namespace opt {
 	int format = ADJ; // used by ContigProperties
 }
 
-static const char shortopts[] = "c:g:i:r:k:l:L:m:t:T:v";
+static const char shortopts[] = "c:C:g:i:r:k:l:L:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SHIM_MAX_DEG };
 
@@ -154,6 +158,7 @@ static const struct option longopts[] = {
 	{ "length",          required_argument, NULL, 'l' },
 	{ "max-length",      required_argument, NULL, 'L' },
 	{ "coverage",        required_argument, NULL, 'c' },
+	{ "max-coverage",    required_argument, NULL, 'C' },
 	{ "shim",            no_argument,       &opt::shim, 1 },
 	{ "no-shim",         no_argument,       &opt::shim, 0 },
 	{ "shim-max-degree", required_argument, NULL, OPT_SHIM_MAX_DEG },
@@ -576,6 +581,9 @@ int main(int argc, char** argv)
 		  case 'c':
 			arg >> opt::minCoverage;
 			break;
+		  case 'C':
+			arg >> opt::maxCoverage;
+			break;
 		  case 'l':
 			arg >> opt::minLen;
 			break;
@@ -731,6 +739,11 @@ int main(int argc, char** argv)
 	// Remove contigs with low coverage.
 	if (opt::minCoverage > 0)
 		removeContigs_if(g, CoverageLessThan(g, seen, opt::minCoverage));
+
+	// Remove contigs with high coverage.
+	if (opt::maxCoverage > 0)
+		removeContigs_if(g,
+				std::not1(CoverageLessThan(g, seen, opt::maxCoverage)));
 
 	// Remove inconsistent edges of spaceseeds
 	if (argc - optind == 1) {
