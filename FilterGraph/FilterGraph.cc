@@ -61,6 +61,7 @@ static const char USAGE_MESSAGE[] =
 "  -t, --tip=N             remove tips shorter than N [0]\n"
 "  -l, --length=N          remove contigs shorter than N [0]\n"
 "  -L, --max-length=N      remove contigs longer than N [0]\n"
+"  -c, --coverage=FLOAT    remove contigs with coverage less than FLOAT [0]\n"
 "      --shim              remove filler contigs that only contribute\n"
 "                          to adjacency [default]\n"
 "      --no-shim           disable filler contigs removal\n"
@@ -102,6 +103,9 @@ namespace opt {
 	/** Remove all contigs more than this length. */
 	static unsigned maxLen = 0;
 
+	/** Remove contigs with coverage less than this threshold. */
+	static float minCoverage = 0;
+
 	/** Remove short contigs that don't contribute any sequence. */
 	static int shim = 1;
 
@@ -128,7 +132,7 @@ namespace opt {
 	int format = ADJ; // used by ContigProperties
 }
 
-static const char shortopts[] = "g:i:r:k:l:L:m:t:T:v";
+static const char shortopts[] = "c:g:i:r:k:l:L:m:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SHIM_MAX_DEG };
 
@@ -149,6 +153,7 @@ static const struct option longopts[] = {
 	{ "tip",             required_argument, NULL, 't' },
 	{ "length",          required_argument, NULL, 'l' },
 	{ "max-length",      required_argument, NULL, 'L' },
+	{ "coverage",        required_argument, NULL, 'c' },
 	{ "shim",            no_argument,       &opt::shim, 1 },
 	{ "no-shim",         no_argument,       &opt::shim, 0 },
 	{ "shim-max-degree", required_argument, NULL, OPT_SHIM_MAX_DEG },
@@ -429,6 +434,21 @@ struct LongerThanX : unary_function<vertex_descriptor, bool> {
 	}
 };
 
+struct CoverageLessThan : unary_function<vertex_descriptor, bool> {
+	const Graph& g;
+	const vector<bool>& seen;
+	size_t minCov;
+
+	CoverageLessThan(const Graph& g, const vector<bool>& seen, size_t minCov)
+		: g(g), seen(seen), minCov(minCov) { }
+
+	bool operator()(vertex_descriptor u) const
+	{
+		return g[u].coverage < minCov && !get(vertex_removed, g, u)
+			&& !seen[get(vertex_contig_index, g, u)];
+	}
+};
+
 static void removeShims(Graph& g, const vector<bool>& seen)
 {
 	if (opt::verbose > 0)
@@ -552,6 +572,9 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true;
+			break;
+		  case 'c':
+			arg >> opt::minCoverage;
 			break;
 		  case 'l':
 			arg >> opt::minLen;
@@ -704,6 +727,10 @@ int main(int argc, char** argv)
 	// Remove long contigs.
 	if (opt::maxLen > 0)
 		removeContigs_if(g, LongerThanX(g, seen, opt::maxLen));
+
+	// Remove contigs with low coverage.
+	if (opt::minCoverage > 0)
+		removeContigs_if(g, CoverageLessThan(g, seen, opt::minCoverage));
 
 	// Remove inconsistent edges of spaceseeds
 	if (argc - optind == 1) {
