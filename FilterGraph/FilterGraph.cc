@@ -61,8 +61,8 @@ static const char USAGE_MESSAGE[] =
 "  -t, --tip=N             remove tips shorter than N [0]\n"
 "  -l, --length=N          remove contigs shorter than N [0]\n"
 "  -L, --max-length=N      remove contigs longer than N [0]\n"
-"  -c, --coverage=FLOAT    remove contigs with coverage less than FLOAT [0]\n"
-"  -C, --max-coverage=FLOAT remove contigs with coverage at least FLOAT [0]\n"
+"  -c, --coverage=FLOAT    remove contigs with mean k-mer coverage less than FLOAT [0]\n"
+"  -C, --max-coverage=FLOAT remove contigs with mean k-mer coverage at least FLOAT [0]\n"
 "      --shim              remove filler contigs that only contribute\n"
 "                          to adjacency [default]\n"
 "      --no-shim           disable filler contigs removal\n"
@@ -104,10 +104,10 @@ namespace opt {
 	/** Remove all contigs more than this length. */
 	static unsigned maxLen = 0;
 
-	/** Remove contigs with coverage less than this threshold. */
+	/** Remove contigs with mean k-mer coverage less than this threshold. */
 	static float minCoverage = 0;
 
-	/** Remove contigs with coverage at least this threshold. */
+	/** Remove contigs with mean k-mer coverage at least this threshold. */
 	static float maxCoverage = 0;
 
 	/** Remove short contigs that don't contribute any sequence. */
@@ -449,7 +449,9 @@ struct CoverageLessThan : unary_function<vertex_descriptor, bool> {
 
 	bool operator()(vertex_descriptor u) const
 	{
-		return g[u].coverage < minCov && !get(vertex_removed, g, u)
+		assert(opt::k > 0);
+		float meanCoverage = (float)g[u].coverage / (g[u].length - opt::k + 1);
+		return meanCoverage < minCov && !get(vertex_removed, g, u)
 			&& !seen[get(vertex_contig_index, g, u)];
 	}
 };
@@ -736,11 +738,11 @@ int main(int argc, char** argv)
 	if (opt::maxLen > 0)
 		removeContigs_if(g, LongerThanX(g, seen, opt::maxLen));
 
-	// Remove contigs with low coverage.
+	// Remove contigs with low mean k-mer coverage.
 	if (opt::minCoverage > 0)
 		removeContigs_if(g, CoverageLessThan(g, seen, opt::minCoverage));
 
-	// Remove contigs with high coverage.
+	// Remove contigs with high mean k-mer coverage.
 	if (opt::maxCoverage > 0)
 		removeContigs_if(g,
 				std::not1(CoverageLessThan(g, seen, opt::maxCoverage)));
