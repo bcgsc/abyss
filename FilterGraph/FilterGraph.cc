@@ -493,7 +493,7 @@ static void removeContigs_if(Graph& g, pred p)
 	transform(sc.begin(), sc.end(), back_inserter(g_removed),
 			mem_fun_ref(&ContigNode::contigIndex));
 	if (opt::verbose > 0)
-		cerr << "Removed " << sc.size()/2 << " short contigs.\n";
+		cerr << "Removed " << sc.size()/2 << " contigs.\n";
 }
 
 /** Contig sequences. */
