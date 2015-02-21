@@ -68,6 +68,11 @@ static const char USAGE_MESSAGE[] =
 "  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
 "  -e, --fix-errors           find and fix single-base errors when reads\n"
 "                             have no kmers in bloom filter [disabled]\n"
+"  -E, --extend               in addition to finding a connecting path,\n"
+"                             extend the reads outwards to the next\n"
+"                             dead end or branching point in the de Brujin\n"
+"                             graph. If the reads were not successfully\n"
+"                             connected, extend them inwards as well.\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
@@ -106,6 +111,11 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 const unsigned g_progressStep = 1000;
+/*
+ * ignore branches less than this length
+ *(false positive branches)
+ */
+const unsigned g_trimLen = 3;
 
 namespace opt {
 
@@ -132,6 +142,13 @@ namespace opt {
 	 * kmers in the bloom filter.
 	 */
 	bool fixErrors = false;
+
+	/**
+	 * Extend reads outwards until the next dead or branching
+	 * point in the de Bruijn graph.  If a read pair is not
+	 * successfully connected, extend them inwards as well.
+	 */
+	bool extend = false;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -187,9 +204,10 @@ static struct {
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
 	size_t skipped;
+	size_t extended;
 } g_count;
 
-static const char shortopts[] = "b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "b:B:d:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -198,6 +216,7 @@ static const struct option longopts[] = {
 	{ "max-branches",     required_argument, NULL, 'B' },
 	{ "dot-file",         required_argument, NULL, 'd' },
 	{ "fix-errors",       no_argument, NULL, 'e' },
+	{ "extend",           no_argument, NULL, 'E' },
 	{ "min-frag",         required_argument, NULL, 'f' },
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
@@ -268,6 +287,59 @@ static void seqanTests()
 	cout << align2 << endl;
 }
 #endif
+
+/**
+ * Extend a read/pseudoread both left and right until
+ * we hit the next dead end or branching point in the
+ * de Bruijn graph.
+ *
+ * @param seq sequence to be extended
+ * @param k kmer size
+ * @param g de Bruijn graph
+ * return true if the read was extended in either
+ * (or both) directions, false otherwise
+ */
+template <typename Graph>
+static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
+{
+	ExtendSeqResult result;
+	bool extended = false;
+
+	result = extendSeq(seq, FORWARD, k, g, g_trimLen, opt::mask);
+	if (result == ES_EXTENDED_TO_DEAD_END ||
+		result == ES_EXTENDED_TO_BRANCHING_POINT) {
+		extended = true;
+	}
+
+	result = extendSeq(seq, REVERSE, k, g, g_trimLen, opt::mask);
+	if (result == ES_EXTENDED_TO_DEAD_END ||
+		result == ES_EXTENDED_TO_BRANCHING_POINT) {
+		extended = true;
+	}
+
+	return extended;
+}
+
+/**
+ * Extend the sequences of an unmerged read pair
+ * both inward and outward by traversing the de Bruijn
+ * graph up to the next dead end or branching point.
+ */
+template <typename Graph>
+static void extendReadPair(FastaRecord& read1, FastaRecord& read2,
+	unsigned k, const Graph& g)
+{
+	/* extend each read inward and outward */
+	bool extended = false;
+	extended |= extendRead(read1.seq, k, g);
+	extended |= extendRead(read2.seq, k, g);
+
+	if (extended) {
+#pragma omp atomic
+		g_count.extended++;
+	}
+}
+
 
 /** Connect a read pair. */
 template <typename Graph>
@@ -460,6 +532,8 @@ int main(int argc, char** argv)
 			arg >> opt::dotPath; break;
 		  case 'e':
 			opt::fixErrors = true; break;
+		  case 'E':
+			opt::extend = true; break;
 		  case 'f':
 			arg >> opt::minFrag; break;
 		  case 'F':
@@ -606,10 +680,21 @@ int main(int argc, char** argv)
 
 	DBGBloom<BloomFilter> g(*bloom);
 
+	/*
+	 * read pairs that were successfully connected
+	 * (and possibly extended outwards)
+	 */
+
 	string mergedOutputPath(opt::outputPrefix);
 	mergedOutputPath.append("_merged.fa");
 	ofstream mergedStream(mergedOutputPath.c_str());
 	assert_good(mergedStream, mergedOutputPath);
+
+	/*
+	 * read pairs that were not successfully connected,
+	 * but may have been extended inwards and/or outwards
+	 * (if -E option was used)
+	 */
 
 	string read1OutputPath(opt::outputPrefix);
 	read1OutputPath.append("_reads_1.fq");
