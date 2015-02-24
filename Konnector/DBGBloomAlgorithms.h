@@ -139,14 +139,14 @@ static inline unsigned getStartKmerPos2(Sequence seq,
 
 	int inc, startPos, endPos;
 	if (dir == FORWARD) {
-		inc = 1;
-		startPos = 0;
-		endPos = seq.length() - k + 1;
-	} else {
-		assert(dir == REVERSE);
 		inc = -1;
 		startPos = seq.length() - k;
 		endPos = -1;
+	} else {
+		assert(dir == REVERSE);
+		inc = 1;
+		startPos = 0;
+		endPos = seq.length() - k + 1;
 	}
 
 	unsigned matchCount = 0;
