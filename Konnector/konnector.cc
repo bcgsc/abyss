@@ -772,8 +772,7 @@ int main(int argc, char** argv)
 			"Extended: "
 				<< g_count.extended
 				<< " (" << setprecision(3) <<  (float)100
-				    * (g_count.uniquePath + g_count.multiplePaths) /
-				   g_count.readPairsProcessed
+				    * g_count.extended / g_count.readPairsProcessed
 				<< "%)\n"
 			"No start/goal kmer: " << g_count.noStartOrGoalKmer
 				<< " (" << setprecision(3) << (float)100
