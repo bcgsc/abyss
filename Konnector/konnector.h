@@ -356,6 +356,10 @@ static inline ConnectPairsResult connectPairs(
  * the reason we stopped extending.
  */
 enum ExtendSeqResult {
+	/*
+	 * could not find a start kmer in Bloom filter for
+	 * path traversal
+	 */
 	ES_NO_START_KMER,
 	/* start kmer had no neighbours */
 	ES_DEAD_END,
