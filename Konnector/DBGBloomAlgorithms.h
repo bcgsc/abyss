@@ -13,6 +13,7 @@
 #include "DataLayer/FastaReader.h"
 #include "Graph/Path.h"
 #include <climits>
+#include <string>
 #include <algorithm> // for std::max
 #define NO_MATCH UINT_MAX
 
@@ -126,12 +127,15 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
  * @return position of chosen start kmer
  */
 template<typename Graph>
-static inline unsigned getStartKmerPos2(const Sequence& seq,
+static inline unsigned getStartKmerPos2(Sequence seq,
 	unsigned k, Direction dir, const Graph& g,
 	unsigned minConsecutiveMatches=1)
 {
 	if (seq.size() < k)
 		return NO_MATCH;
+
+	/* Kmer class doesn't like lowercase chars */
+	std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
 	int inc, startPos, endPos;
 	if (dir == FORWARD) {
@@ -147,7 +151,7 @@ static inline unsigned getStartKmerPos2(const Sequence& seq,
 
 	unsigned matchCount = 0;
 	for (int i = startPos; i != endPos; i += inc) {
-		assert(i >= 0 && i <= seq.length() - k + 1);
+		assert(i >= 0 && i <= (int)(seq.length() - k + 1));
 		std::string kmerStr = seq.substr(i, k);
 		if (kmerStr.find_first_not_of("AGCTagct")
 			!= std::string::npos) {
