@@ -453,8 +453,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		std::string::iterator dest;
 
 		if (dir == REVERSE) {
-			int prefixLen = pathSeq.length() -
-				(startKmerPos + k - 1);
+			int prefixLen = pathSeq.length() - startKmerPos - k;
 			if (prefixLen > 0) {
 				/* seq extension goes beyond start of read */
 				seq.insert(0, prefixLen, 'N');
