@@ -326,26 +326,22 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
  * graph up to the next dead end or branching point.
  */
 template <typename Graph>
-static void extendReadPair(FastaRecord& read1, FastaRecord& read2,
+static bool extendReadPair(FastqRecord& read1, FastqRecord& read2,
 	unsigned k, const Graph& g)
 {
 	/* extend each read inward and outward */
 	bool extended = false;
 	extended |= extendRead(read1.seq, k, g);
 	extended |= extendRead(read2.seq, k, g);
-
-	if (extended) {
-#pragma omp atomic
-		g_count.extended++;
-	}
+	return extended;
 }
 
 
 /** Connect a read pair. */
 template <typename Graph>
 static void connectPair(const Graph& g,
-	const FastqRecord& read1,
-	const FastqRecord& read2,
+	FastqRecord& read1,
+	FastqRecord& read2,
 	const ConnectPairsParams& params,
 	ofstream& mergedStream,
 	ofstream& read1Stream,
@@ -367,6 +363,30 @@ static void connectPair(const Graph& g,
 			connectPairs(opt::k, read1, read2, g, params);
 
 		vector<FastaRecord>& paths = result.mergedSeqs;
+
+		/*
+		 * extend reads inwards or outwards up to the
+		 * next dead end or branching point in the de
+		 * Brujin graph
+		 */
+		if (opt::extend) {
+			bool extended = false;
+			if (result.pathResult == FOUND_PATH) {
+				assert(paths.size() > 0);
+				if (paths.size() == 1) {
+					extended = extendRead(paths.front().seq, opt::k, g);
+				} else {
+					assert(paths.size() > 1);
+					extended = extendRead(result.consensusSeq.seq, opt::k, g);
+				}
+			} else {
+				extended = extendReadPair(read1, read2, opt::k, g);
+			}
+			if (extended) {
+#pragma omp atomic
+				g_count.extended++;
+			}
+		}
 
 		if (!opt::tracefilePath.empty())
 #pragma omp critical(tracefile)
@@ -453,6 +473,8 @@ static void connectPair(const Graph& g,
 		{
 			if(g_count.readPairsProcessed % g_progressStep == 0) {
 				cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
+					<< g_count.readPairsProcessed << " read pairs, "
+					<< "extended " << g_count.extended << " of "
 					<< g_count.readPairsProcessed << " read pairs "
 					<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
 					<< "no path: " << g_count.noPath << ", "
@@ -743,6 +765,12 @@ int main(int argc, char** argv)
 			"Processed " << g_count.readPairsProcessed << " read pairs\n"
 			"Merged (Unique path + Multiple paths): "
 				<< g_count.uniquePath + g_count.multiplePaths
+				<< " (" << setprecision(3) <<  (float)100
+				    * (g_count.uniquePath + g_count.multiplePaths) /
+				   g_count.readPairsProcessed
+				<< "%)\n"
+			"Extended: "
+				<< g_count.extended
 				<< " (" << setprecision(3) <<  (float)100
 				    * (g_count.uniquePath + g_count.multiplePaths) /
 				   g_count.readPairsProcessed
