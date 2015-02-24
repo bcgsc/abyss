@@ -420,8 +420,10 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		return ES_NO_START_KMER;
 
 	/* initialize the path to be extended */
-
-	Kmer startKmer(seq.substr(startKmerPos, k));
+	std::string kmerStr = seq.substr(startKmerPos, k);
+	/* Kmer class doesn't like lowercase chars */
+	std::transform(kmerStr.begin(), kmerStr.end(), kmerStr.begin(), ::toupper);
+	Kmer startKmer(kmerStr);
 	Path<Kmer> path;
 	path.push_back(startKmer);
 
