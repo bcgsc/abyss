@@ -411,6 +411,10 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 	size_t origSeqLen = seq.length();
 
+#if 0
+Sequence origSeq = seq;
+#endif
+
 	/* choose a start kmer for the path */
 
 	const unsigned minConsecutiveMatches = 3;
@@ -481,28 +485,71 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 	/* translate and return result code */
 
+	ExtendSeqResult result;
+
 	switch (pathResult)
 	{
 	case EXTENDED_TO_DEAD_END:
 		if (seq.length() > origSeqLen)
-			return ES_EXTENDED_TO_DEAD_END;
+			result = ES_EXTENDED_TO_DEAD_END;
 		else
-			return ES_INTERNAL_DEAD_END;
+			result = ES_INTERNAL_DEAD_END;
+		break;
 	case EXTENDED_TO_BRANCHING_POINT:
 		if (seq.length() > origSeqLen)
-			return ES_EXTENDED_TO_BRANCHING_POINT;
+			result = ES_EXTENDED_TO_BRANCHING_POINT;
 		else
-			return ES_INTERNAL_BRANCHING_POINT;
-	case DEAD_END:
-		return ES_DEAD_END;
-	case BRANCHING_POINT:
-		return ES_BRANCHING_POINT;
-	default:
+			result = ES_INTERNAL_BRANCHING_POINT;
 		break;
+	case DEAD_END:
+		result = ES_DEAD_END;
+		break;
+	case BRANCHING_POINT:
+		result = ES_BRANCHING_POINT;
+		break;
+	default:
+		/* all other cases should be handled above */
+		assert(false);
 	}
 
-	/* should never reach here */
-	assert(false);
+#if 0
+#pragma omp critical(cerr)
+{
+	std::cerr << "-----\n";
+	std::cerr << "extend dir: " << ((dir == FORWARD) ? "forward" : "reverse") << "\n";
+	std::cerr << "startKmerPos: " << startKmerPos << "\n";
+	std::cerr << "result: " << result << "\n";
+	std::cerr << "orig len: " << origSeq.length() << "\n";
+	std::cerr << "extended len: " << seq.length() << "\n";
+	if (result == ES_EXTENDED_TO_DEAD_END ||
+		result == ES_EXTENDED_TO_BRANCHING_POINT) {
+		assert(seq.length() > origSeq.length());
+		std::string pathSeq = pathToSeq(path);
+		std::cerr << "origSeq:     ";
+		unsigned padding = seq.length() - origSeq.length();
+		if (dir == REVERSE) {
+			for (unsigned i = 0; i < padding; ++i)
+				std::cerr << "-";
+		}
+		std::cerr << origSeq;
+		if (dir == FORWARD) {
+			for (unsigned i = 0; i < padding; ++i)
+				std::cerr << "-";
+		}
+		std::cerr << "\n";
+		std::cerr << "pathSeq:     ";
+		if (dir == FORWARD) {
+			for (unsigned i = 0; i < startKmerPos; ++i)
+				std::cerr << " ";
+		}
+		std::cerr << pathSeq << "\n";
+		std::cerr << "extendedSeq: " << seq << "\n";
+	}
+	std::cerr << "-----\n";
+}
+#endif
+
+	return result;
 }
 
 #endif
