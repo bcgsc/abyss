@@ -312,6 +312,24 @@ static void seqanTests()
 #endif
 
 /**
+ * Return true if the Bloom filter contains at least 75% of the
+ * kmers in the given sequence.
+ */
+static bool bloomContainsSeq(const BloomFilter& bloom, Sequence& seq)
+{
+	unsigned totalKmers = seq.length() - opt::k + 1;
+	unsigned minMatches = (unsigned)ceil(0.75 * totalKmers);
+	unsigned matches = 0;
+	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
+		if (bloom[*it])
+			matches++;
+		if (matches > minMatches)
+			return true;
+	}
+	return false;
+}
+
+/**
  * Extend a read/pseudoread both left and right until
  * we hit the next dead end or branching point in the
  * de Bruijn graph.
@@ -343,38 +361,124 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	return extended;
 }
 
+enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
+
+/**
+ * Attempt to extend a merged read (a.k.a. pseudoread)
+ * outward to the next branching point or dead end in
+ * the de Bruijn graph.
+ *
+ * @param seq pseudoread to be extended
+ * @param k kmer size
+ * @param g de Bruijn graph in which to perform extension
+ * @return ExtendResult (ER_NOT_EXTENDED, ER_EXTENDED,
+ * ER_REDUNDANT)
+ */
+template <typename Graph>
+static inline ExtendResult
+extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
+{
+	bool redundant = false;
+	if (opt::dupBloomSize > 0) {
+		/*
+		 * Check to see if the current pseudoread
+		 * is contained in a region of the genome
+		 * that has already been assembled.
+		 */
+#pragma omp critical(dupBloom)
+		redundant = bloomContainsSeq(g_dupBloom, seq);
+		if (redundant)
+			return ER_REDUNDANT;
+	}
+	Sequence origSeq = seq;
+	bool extended = extendRead(seq, k, g);
+	if (opt::dupBloomSize > 0) {
+		/*
+		 * mark the extended read as an assembled
+		 * region of the genome.
+		 */
+#pragma omp critical(dupBloom)
+		{
+			/* must check again to avoid race conditions */
+			if (!bloomContainsSeq(g_dupBloom, origSeq))
+				Bloom::loadSeq(g_dupBloom, opt::k, seq);
+			else
+				redundant = true;
+		}
+		if (redundant)
+			return ER_REDUNDANT;
+	}
+	assert(!redundant);
+	if (extended)
+		return ER_EXTENDED;
+	else
+		return ER_NOT_EXTENDED;
+}
+
 /**
  * Extend the sequences of an unmerged read pair
  * both inward and outward by traversing the de Bruijn
  * graph up to the next dead end or branching point.
  */
 template <typename Graph>
-static bool extendReadPair(FastqRecord& read1, FastqRecord& read2,
+static bool extendReadPair(Sequence& read1, Sequence& read2,
 	unsigned k, const Graph& g)
 {
 	/* extend each read inward and outward */
 	bool extended = false;
-	extended |= extendRead(read1.seq, k, g);
-	extended |= extendRead(read2.seq, k, g);
+	extended |= extendRead(read1, k, g);
+	extended |= extendRead(read2, k, g);
 	return extended;
 }
 
 /**
- * Return true if the Bloom filter contains at least 75% of the
- * kmers in the given sequence.
+ * Attempt to extend an unmerged read pair.
  */
-static bool bloomContainsSeq(const BloomFilter& bloom, Sequence& seq)
+template <typename Graph>
+static inline ExtendResult
+extendReadPairIfNonRedundant(Sequence& read1, Sequence& read2,
+	unsigned k, const Graph& g)
 {
-	unsigned totalKmers = seq.length() - opt::k + 1;
-	unsigned minMatches = (unsigned)ceil(0.75 * totalKmers);
-	unsigned matches = 0;
-	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
-		if (bloom[*it])
-			matches++;
-		if (matches > minMatches)
-			return true;
+	bool redundant = false;
+	if (opt::dupBloomSize > 0) {
+		/*
+		 * Check to see if both reads are
+		 * in regions of the genome that have
+		 * already been assembled.
+		 */
+#pragma omp critical(dupBloom)
+		redundant = bloomContainsSeq(g_dupBloom, read1) &&
+			bloomContainsSeq(g_dupBloom, read2);
+		if (redundant)
+			return ER_REDUNDANT;
 	}
-	return false;
+	Sequence origRead1 = read1;
+	Sequence origRead2 = read2;
+	bool extended = extendReadPair(read1, read2, k, g);
+	if (opt::dupBloomSize > 0) {
+		/*
+		 * mark the extended reads as assembled
+		 * regions of the genome.
+		 */
+#pragma omp critical(dupBloom)
+		{
+			/* must check again to avoid race conditions */
+			if (!bloomContainsSeq(g_dupBloom, origRead1) &&
+					!bloomContainsSeq(g_dupBloom, origRead2)) {
+				Bloom::loadSeq(g_dupBloom, opt::k, read1);
+				Bloom::loadSeq(g_dupBloom, opt::k, read2);
+			} else {
+				redundant = true;
+			}
+		}
+		if (redundant)
+			return ER_REDUNDANT;
+	}
+	assert(!redundant);
+	if (extended)
+		return ER_EXTENDED;
+	else
+		return ER_NOT_EXTENDED;
 }
 
 /**
@@ -431,91 +535,31 @@ static void connectPair(const Graph& g,
 	 * Brujin graph
 	 */
 	if (opt::extend) {
-		bool skip = false;
-		bool extended = false;
+		ExtendResult extendResult;
 		if (result.pathResult == FOUND_PATH) {
 			assert(paths.size() > 0);
-			Sequence* seq;
 			if (paths.size() == 1) {
-				seq = &paths.front().seq;
+				extendResult = extendReadIfNonRedundant(
+					paths.front().seq, opt::k, g);
 			} else {
 				assert(paths.size() > 1);
-				seq = &result.consensusSeq.seq;
-			}
-			if (opt::dupBloomSize > 0) {
-				/*
-				 * Check to see if the current pseudoread
-				 * is contained in a region of the genome
-				 * that has already been assembled.
-				 */
-#pragma omp critical(dupBloom)
-				skip = bloomContainsSeq(g_dupBloom, *seq);
-				if (skip) {
-					g_count.skipped++;
-					return;
-				}
-			}
-			Sequence origSeq = *seq;
-			extended = extendRead(*seq, opt::k, g);
-			if (opt::dupBloomSize > 0) {
-				/*
-				 * mark the extended read as an assembled
-				 * region of the genome.
-				 */
-#pragma omp critical(dupBloom)
-				{
-					/* must check again to avoid race conditions */
-					if (!bloomContainsSeq(g_dupBloom, origSeq))
-						Bloom::loadSeq(g_dupBloom, opt::k, *seq);
-					else
-						skip = true;
-				}
-				if (skip) {
-					g_count.skipped++;
-					return;
-				}
+				extendResult = extendReadIfNonRedundant(
+					result.consensusSeq.seq, opt::k, g);
 			}
 		} else {
-			if (opt::dupBloomSize > 0) {
-				/*
-				 * Check to see if both reads are
-				 * in regions of the genome that have
-				 * already been assembled.
-				 */
-#pragma omp critical(dupBloom)
-				skip = bloomContainsSeq(g_dupBloom, read1.seq) &&
-					bloomContainsSeq(g_dupBloom, read2.seq);
-				if (skip) {
-					g_count.skipped++;
-					return;
-				}
-			}
-			Sequence origRead1 = read1.seq;
-			Sequence origRead2 = read2.seq;
-			extended = extendReadPair(read1, read2, opt::k, g);
-			if (opt::dupBloomSize > 0) {
-				/*
-				 * mark the extended reads as assembled
-				 * regions of the genome.
-				 */
-#pragma omp critical(dupBloom)
-				{
-					/* must check again to avoid race conditions */
-					if (!bloomContainsSeq(g_dupBloom, origRead1) &&
-							!bloomContainsSeq(g_dupBloom, origRead2)) {
-						Bloom::loadSeq(g_dupBloom, opt::k, read1.seq);
-						Bloom::loadSeq(g_dupBloom, opt::k, read2.seq);
-					} else {
-						skip = true;
-					}
-				}
-				if (skip) {
-					g_count.skipped++;
-					return;
-				}
-			}
+			/*
+			 * read pair could not be merged, so try
+			 * to extend each read individually (in
+			 * both directions).
+			 */
+			extendResult = extendReadPairIfNonRedundant(
+				read1.seq, read2.seq, opt::k, g);
 		}
-		if (extended) {
+		if (extendResult == ER_REDUNDANT) {
+#pragma omp atomic
+			g_count.skipped++;
+			return;
+		} else if (extendResult == ER_EXTENDED) {
 #pragma omp atomic
 			g_count.extended++;
 		}
