@@ -336,6 +336,26 @@ static bool extendReadPair(FastqRecord& read1, FastqRecord& read2,
 	return extended;
 }
 
+/**
+ * Print progress stats about reads merged/extended so far.
+ */
+static inline void printProgressMessage()
+{
+	cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
+		<< g_count.readPairsProcessed << " read pairs, "
+		<< "extended " << g_count.extended << " of "
+		<< g_count.readPairsProcessed << " read pairs "
+		<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
+		<< "no path: " << g_count.noPath << ", "
+		<< "too many paths: " << g_count.tooManyPaths << ", "
+		<< "too many branches: " << g_count.tooManyBranches << ", "
+		<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
+		<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
+		<< "contains cycle: " << g_count.containsCycle << ", "
+		<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
+		<< "skipped: " << g_count.skipped
+		<< ")\n";
+}
 
 /** Connect a read pair. */
 template <typename Graph>
@@ -348,146 +368,121 @@ static void connectPair(const Graph& g,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
-	bool skip = false;
-
+	/*
+	 * Implements the -r option, which is used to only
+	 * process a subset of the input read pairs.
+	 */
 	if (!opt::readName.empty() &&
 		read1.id.find(opt::readName) == string::npos) {
 #pragma omp atomic
 		++g_count.skipped;
-		skip = true;
+		return;
 	}
 
-	if (!skip) {
+	ConnectPairsResult result =
+		connectPairs(opt::k, read1, read2, g, params);
 
-		ConnectPairsResult result =
-			connectPairs(opt::k, read1, read2, g, params);
+	vector<FastaRecord>& paths = result.mergedSeqs;
 
-		vector<FastaRecord>& paths = result.mergedSeqs;
-
-		/*
-		 * extend reads inwards or outwards up to the
-		 * next dead end or branching point in the de
-		 * Brujin graph
-		 */
-		if (opt::extend) {
-			bool extended = false;
-			if (result.pathResult == FOUND_PATH) {
-				assert(paths.size() > 0);
-				if (paths.size() == 1) {
-					extended = extendRead(paths.front().seq, opt::k, g);
-				} else {
-					assert(paths.size() > 1);
-					extended = extendRead(result.consensusSeq.seq, opt::k, g);
-				}
+	/*
+	 * extend reads inwards or outwards up to the
+	 * next dead end or branching point in the de
+	 * Brujin graph
+	 */
+	if (opt::extend) {
+		bool extended = false;
+		if (result.pathResult == FOUND_PATH) {
+			assert(paths.size() > 0);
+			if (paths.size() == 1) {
+				extended = extendRead(paths.front().seq, opt::k, g);
 			} else {
-				extended = extendReadPair(read1, read2, opt::k, g);
+				assert(paths.size() > 1);
+				extended = extendRead(result.consensusSeq.seq, opt::k, g);
 			}
-			if (extended) {
-#pragma omp atomic
-				g_count.extended++;
-			}
+		} else {
+			extended = extendReadPair(read1, read2, opt::k, g);
 		}
+		if (extended) {
+#pragma omp atomic
+			g_count.extended++;
+		}
+	}
 
-		if (!opt::tracefilePath.empty())
+	if (!opt::tracefilePath.empty())
 #pragma omp critical(tracefile)
-		{
-			traceStream << result;
-			assert_good(traceStream, opt::tracefilePath);
-		}
+	{
+		traceStream << result;
+		assert_good(traceStream, opt::tracefilePath);
+	}
 
-		switch (result.pathResult) {
+	switch (result.pathResult) {
 
-			case NO_PATH:
-				assert(paths.empty());
-				if (result.foundStartKmer && result.foundGoalKmer)
+		case NO_PATH:
+			assert(paths.empty());
+			if (result.foundStartKmer && result.foundGoalKmer)
 #pragma omp atomic
-					++g_count.noPath;
-				else {
+				++g_count.noPath;
+			else {
 #pragma omp atomic
-					++g_count.noStartOrGoalKmer;
-				}
-				break;
+				++g_count.noStartOrGoalKmer;
+			}
+			break;
 
-			case FOUND_PATH:
-				assert(!paths.empty());
-				if (result.pathMismatches > params.maxPathMismatches ||
-						result.readMismatches > params.maxReadMismatches) {
-					if (result.pathMismatches > params.maxPathMismatches)
+		case FOUND_PATH:
+			assert(!paths.empty());
+			if (result.pathMismatches > params.maxPathMismatches ||
+					result.readMismatches > params.maxReadMismatches) {
+				if (result.pathMismatches > params.maxPathMismatches)
 #pragma omp atomic
-						++g_count.tooManyMismatches;
-					else
-						++g_count.tooManyReadMismatches;
+					++g_count.tooManyMismatches;
+				else
+					++g_count.tooManyReadMismatches;
 #pragma omp critical(readStream)
-					{
-						read1Stream << read1;
-						read2Stream << read2;
-					}
+				{
+					read1Stream << read1;
+					read2Stream << read2;
 				}
-				else if (paths.size() > 1) {
+			}
+			else if (paths.size() > 1) {
 #pragma omp atomic
 					++g_count.multiplePaths;
 #pragma omp critical(mergedStream)
-					mergedStream << result.consensusSeq;
-				}
-				else {
+				mergedStream << result.consensusSeq;
+			}
+			else {
 #pragma omp atomic
-					++g_count.uniquePath;
+				++g_count.uniquePath;
 #pragma omp critical(mergedStream)
-					mergedStream << paths.front();
-				}
-				break;
+				mergedStream << paths.front();
+			}
+			break;
 
-			case TOO_MANY_PATHS:
+		case TOO_MANY_PATHS:
 #pragma omp atomic
-				++g_count.tooManyPaths;
-				break;
+			++g_count.tooManyPaths;
+			break;
 
-			case TOO_MANY_BRANCHES:
+		case TOO_MANY_BRANCHES:
 #pragma omp atomic
-				++g_count.tooManyBranches;
-				break;
+			++g_count.tooManyBranches;
+			break;
 
-			case PATH_CONTAINS_CYCLE:
+		case PATH_CONTAINS_CYCLE:
 #pragma omp atomic
-				++g_count.containsCycle;
-				break;
+			++g_count.containsCycle;
+			break;
 
-			case EXCEEDED_MEM_LIMIT:
+		case EXCEEDED_MEM_LIMIT:
 #pragma omp atomic
-				++g_count.exceededMemLimit;
-				break;
-		}
-
-		if (result.pathResult != FOUND_PATH)
-#pragma omp critical(readStream)
-		{
-			read1Stream << read1;
-			read2Stream << read2;
-		}
+			++g_count.exceededMemLimit;
+			break;
 	}
 
-#pragma omp critical(cerr)
+	if (result.pathResult != FOUND_PATH)
+#pragma omp critical(readStream)
 	{
-		g_count.readPairsProcessed++;
-		if (opt::verbose >= 2)
-		{
-			if(g_count.readPairsProcessed % g_progressStep == 0) {
-				cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
-					<< g_count.readPairsProcessed << " read pairs, "
-					<< "extended " << g_count.extended << " of "
-					<< g_count.readPairsProcessed << " read pairs "
-					<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
-					<< "no path: " << g_count.noPath << ", "
-					<< "too many paths: " << g_count.tooManyPaths << ", "
-					<< "too many branches: " << g_count.tooManyBranches << ", "
-					<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
-					<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
-					<< "contains cycle: " << g_count.containsCycle << ", "
-					<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
-					<< "skipped: " << g_count.skipped
-					<< ")\n";
-			}
-		}
+		read1Stream << read1;
+		read2Stream << read2;
 	}
 }
 
@@ -506,11 +501,20 @@ static void connectPairs(const Graph& g,
 		bool good;
 #pragma omp critical(in)
 		good = in >> a >> b;
-		if (good)
+		if (good) {
 			connectPair(g, a, b, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
-		else
+#pragma omp atomic
+			g_count.readPairsProcessed++;
+			if (opt::verbose >= 2)
+#pragma omp critical(cerr)
+			{
+				if(g_count.readPairsProcessed % g_progressStep == 0)
+					printProgressMessage();
+			}
+		} else {
 			break;
+		}
 	}
 }
 
