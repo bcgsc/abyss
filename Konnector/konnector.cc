@@ -596,8 +596,13 @@ static void connectPair(const Graph& g,
 					++g_count.tooManyReadMismatches;
 #pragma omp critical(readStream)
 				{
-					read1Stream << read1;
-					read2Stream << read2;
+					if (opt::extend) {
+						read1Stream << (FastaRecord)read1;
+						read2Stream << (FastaRecord)read2;
+					} else {
+						read1Stream << read1;
+						read2Stream << read2;
+					}
 				}
 			}
 			else if (paths.size() > 1) {
@@ -638,8 +643,13 @@ static void connectPair(const Graph& g,
 	if (result.pathResult != FOUND_PATH)
 #pragma omp critical(readStream)
 	{
-		read1Stream << read1;
-		read2Stream << read2;
+		if (opt::extend) {
+			read1Stream << (FastaRecord)read1;
+			read2Stream << (FastaRecord)read2;
+		} else {
+			read1Stream << read1;
+			read2Stream << read2;
+		}
 	}
 }
 
@@ -885,12 +895,18 @@ int main(int argc, char** argv)
 	 */
 
 	string read1OutputPath(opt::outputPrefix);
-	read1OutputPath.append("_reads_1.fq");
+	if (opt::extend)
+		read1OutputPath.append("_reads_1.fa");
+	else
+		read1OutputPath.append("_reads_1.fq");
 	ofstream read1Stream(read1OutputPath.c_str());
 	assert_good(read1Stream, read1OutputPath);
 
 	string read2OutputPath(opt::outputPrefix);
-	read2OutputPath.append("_reads_2.fq");
+	if (opt::extend)
+		read2OutputPath.append("_reads_2.fa");
+	else
+		read2OutputPath.append("_reads_2.fq");
 	ofstream read2Stream(read2OutputPath.c_str());
 	assert_good(read2Stream, read2OutputPath);
 
