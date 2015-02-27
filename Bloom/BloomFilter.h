@@ -136,8 +136,6 @@ class BloomFilter
 		assert(out);
 	}
 
-  protected:
-
 	/** Resize the bloom filter (wipes the current data) */
 	void resize(size_t size)
 	{
@@ -147,6 +145,8 @@ class BloomFilter
 		m_array = new char[(size + 7)/8]();
 		m_size = size;
 	}
+
+  protected:
 
 	size_t m_size;
 	char* m_array;

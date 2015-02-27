@@ -66,6 +66,13 @@ static const char USAGE_MESSAGE[] =
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
 "                             use 'nolimit' for no limit [350]\n"
 "  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
+"  -D, --dup-bloom-size=N     use an additional Bloom filter to avoid\n"
+"                             assembling the same region of the genome\n"
+"                             multiple times. This option is highly\n"
+"                             recommended when the -E (--extend) option\n"
+"                             and has no effect otherwise. As a rule of\n"
+"                             thumb, the Bloom filter size should be\n"
+"                             about twice the target genome size [disabled]\n"
 "  -e, --fix-errors           find and fix single-base errors when reads\n"
 "                             have no kmers in bloom filter [disabled]\n"
 "  -E, --extend               in addition to finding a connecting path,\n"
@@ -117,6 +124,14 @@ const unsigned g_progressStep = 1000;
  */
 const unsigned g_trimLen = 3;
 
+/*
+ * Bloom filter use to keep track of portions
+ * of genome that have already been assembled.
+ * This Bloom filter is only used when the
+ * -E (--extend) option is in effect.
+ */
+BloomFilter g_dupBloom;
+
 namespace opt {
 
 	/** The number of parallel threads. */
@@ -136,6 +151,13 @@ namespace opt {
 
 	/** multi-graph DOT file containing graph traversals */
 	static string dotPath;
+
+	/**
+	 * Dup Bloom filter size.
+	 * The dup filter is used to avoid assembling duplicate
+	 * sequences when the -E (--extend) option is in effect.
+	 */
+	size_t dupBloomSize = 0;
 
 	/**
 	 * Find and fix single base errors when a read has no
@@ -207,7 +229,7 @@ static struct {
 	size_t extended;
 } g_count;
 
-static const char shortopts[] = "b:B:d:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "b:B:d:D:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -215,6 +237,7 @@ static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
 	{ "dot-file",         required_argument, NULL, 'd' },
+	{ "dup-bloom-size",   required_argument, NULL, 'D' },
 	{ "fix-errors",       no_argument, NULL, 'e' },
 	{ "extend",           no_argument, NULL, 'E' },
 	{ "min-frag",         required_argument, NULL, 'f' },
@@ -337,6 +360,24 @@ static bool extendReadPair(FastqRecord& read1, FastqRecord& read2,
 }
 
 /**
+ * Return true if the Bloom filter contains at least 90% of the
+ * kmers in the given sequence.
+ */
+static bool bloomContainsSeq(const BloomFilter& bloom, Sequence& seq)
+{
+	unsigned totalKmers = seq.length() - opt::k + 1;
+	unsigned minMatches = (unsigned)ceil(0.9 * totalKmers);
+	unsigned matches = 0;
+	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
+		if (bloom[*it])
+			matches++;
+		if (matches > minMatches)
+			return true;
+	}
+	return false;
+}
+
+/**
  * Print progress stats about reads merged/extended so far.
  */
 static inline void printProgressMessage()
@@ -390,17 +431,89 @@ static void connectPair(const Graph& g,
 	 * Brujin graph
 	 */
 	if (opt::extend) {
+		bool skip = false;
 		bool extended = false;
 		if (result.pathResult == FOUND_PATH) {
 			assert(paths.size() > 0);
+			Sequence* seq;
 			if (paths.size() == 1) {
-				extended = extendRead(paths.front().seq, opt::k, g);
+				seq = &paths.front().seq;
 			} else {
 				assert(paths.size() > 1);
-				extended = extendRead(result.consensusSeq.seq, opt::k, g);
+				seq = &result.consensusSeq.seq;
+			}
+			if (opt::dupBloomSize > 0) {
+				/*
+				 * Check to see if the current pseudoread
+				 * is contained in a region of the genome
+				 * that has already been assembled.
+				 */
+#pragma omp critical(dupBloom)
+				skip = bloomContainsSeq(g_dupBloom, *seq);
+				if (skip) {
+					g_count.skipped++;
+					return;
+				}
+			}
+			Sequence origSeq = *seq;
+			extended = extendRead(*seq, opt::k, g);
+			if (opt::dupBloomSize > 0) {
+				/*
+				 * mark the extended read as an assembled
+				 * region of the genome.
+				 */
+#pragma omp critical(dupBloom)
+				{
+					/* must check again to avoid race conditions */
+					if (!bloomContainsSeq(g_dupBloom, origSeq))
+						Bloom::loadSeq(g_dupBloom, opt::k, *seq);
+					else
+						skip = true;
+				}
+				if (skip) {
+					g_count.skipped++;
+					return;
+				}
 			}
 		} else {
+			if (opt::dupBloomSize > 0) {
+				/*
+				 * Check to see if both reads are
+				 * in regions of the genome that have
+				 * already been assembled.
+				 */
+#pragma omp critical(dupBloom)
+				skip = bloomContainsSeq(g_dupBloom, read1.seq) &&
+					bloomContainsSeq(g_dupBloom, read2.seq);
+				if (skip) {
+					g_count.skipped++;
+					return;
+				}
+			}
+			Sequence origRead1 = read1.seq;
+			Sequence origRead2 = read2.seq;
 			extended = extendReadPair(read1, read2, opt::k, g);
+			if (opt::dupBloomSize > 0) {
+				/*
+				 * mark the extended reads as assembled
+				 * regions of the genome.
+				 */
+#pragma omp critical(dupBloom)
+				{
+					/* must check again to avoid race conditions */
+					if (!bloomContainsSeq(g_dupBloom, origRead1) &&
+							!bloomContainsSeq(g_dupBloom, origRead2)) {
+						Bloom::loadSeq(g_dupBloom, opt::k, read1.seq);
+						Bloom::loadSeq(g_dupBloom, opt::k, read2.seq);
+					} else {
+						skip = true;
+					}
+				}
+				if (skip) {
+					g_count.skipped++;
+					return;
+				}
+			}
 		}
 		if (extended) {
 #pragma omp atomic
@@ -556,6 +669,8 @@ int main(int argc, char** argv)
 			setMaxOption(opt::maxBranches, arg); break;
 		  case 'd':
 			arg >> opt::dotPath; break;
+		  case 'D':
+			opt::dupBloomSize = SIToBytes(arg); break;
 		  case 'e':
 			opt::fixErrors = true; break;
 		  case 'E':
@@ -643,6 +758,9 @@ int main(int argc, char** argv)
 #endif
 
 	assert(opt::bloomSize > 0);
+
+	if (opt::dupBloomSize > 0)
+		g_dupBloom.resize(opt::dupBloomSize * 8);
 
 	BloomFilter* bloom;
 	CascadingBloomFilter* cascadingBloom = NULL;
