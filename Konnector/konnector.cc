@@ -360,13 +360,13 @@ static bool extendReadPair(FastqRecord& read1, FastqRecord& read2,
 }
 
 /**
- * Return true if the Bloom filter contains at least 90% of the
+ * Return true if the Bloom filter contains at least 75% of the
  * kmers in the given sequence.
  */
 static bool bloomContainsSeq(const BloomFilter& bloom, Sequence& seq)
 {
 	unsigned totalKmers = seq.length() - opt::k + 1;
-	unsigned minMatches = (unsigned)ceil(0.9 * totalKmers);
+	unsigned minMatches = (unsigned)ceil(0.75 * totalKmers);
 	unsigned matches = 0;
 	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
 		if (bloom[*it])
