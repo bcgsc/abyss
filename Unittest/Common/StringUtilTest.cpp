@@ -59,6 +59,38 @@ TEST(toSI_test, all_the_cases)
 	EXPECT_EQ("23.4 G", toSI(23440222111));
 }
 
+TEST(fromSI_test, all_the_cases)
+{
+	// zero values
+	EXPECT_EQ(0, fromSI("0"));
+	EXPECT_EQ(0, fromSI("0T"));
+
+	// negative values
+	EXPECT_EQ(-1.23e3, fromSI("-1.23k"));
+	EXPECT_EQ(-9.06e6, fromSI("-9.06M"));
+	EXPECT_EQ(-1.234e9, fromSI("-1.234G"));
+	EXPECT_EQ(-1.234567e12, fromSI("-1.234567T"));
+
+	// positive values
+	EXPECT_EQ(1.23e3, fromSI("1.23k"));
+	EXPECT_EQ(9.06e6, fromSI("9.06M"));
+	EXPECT_EQ(1.234e9, fromSI("1.234G"));
+	EXPECT_EQ(1.234567e12, fromSI("1.234567T"));
+}
+
+TEST(bytesToSI_test, all_the_cases)
+{
+	// zero values
+	EXPECT_EQ("0", bytesToSI(0));
+
+	// unit conversion
+	EXPECT_EQ("1", bytesToSI(1));
+	EXPECT_EQ("1k", bytesToSI(1024));
+	EXPECT_EQ("1M", bytesToSI(1048576UL));
+	EXPECT_EQ("1G", bytesToSI(1073741824UL));
+	EXPECT_EQ("1T", bytesToSI(1099511627776ULL));
+}
+
 template <typename T>
 class MultiTypes{
  public:

@@ -46,6 +46,80 @@ static inline std::string toSI(double n)
 	return s.str();
 }
 
+/** Return the SI representation of a number in bytes. */
+static inline std::string bytesToSI(size_t n)
+{
+	std::ostringstream s;
+	s << std::setprecision(3);
+	if (n < 1024)
+		s << n;
+	else if (n < (1ULL<<20))
+		s << (double)n/(1ULL<<10) << "k";
+	else if (n < (1ULL<<30))
+		s << (double)n/(1ULL<<20) << "M";
+	else if (n < (1ULL<<40))
+		s << (double)n/(1ULL<<30) << "G";
+	else
+		s << (double)n/(1ULL<<40) << "T";
+	return s.str();
+}
+
+/**
+ * Convert a quantity with SI units to the equivalent floating
+ * point number.
+ */
+static inline double fromSI(std::istringstream& iss)
+{
+	double size;
+	std::string units;
+
+	iss >> size;
+	if (iss.fail()) {
+		// not prefixed by a number
+		return 0;
+	}
+
+	iss >> units;
+	if (iss.fail() && iss.eof()) {
+		// no units given; clear fail flag
+		// and just return the number
+		iss.clear(std::ios::eofbit);
+		return size;
+	}
+
+	if (units.size() > 1) {
+		// unrecognized multichar suffix
+		iss.setstate(std::ios::failbit);
+		return 0;
+	}
+
+	switch(tolower(units[0])) {
+		case 'k':
+			size *= 1000ULL; break;
+		case 'm':
+			size *= 1000ULL*1000; break;
+		case 'g':
+			size *= 1000ULL*1000*1000; break;
+		case 't':
+			size *= 1000ULL*1000*1000*1000; break;
+		default:
+			iss.setstate(std::ios::failbit);
+			return 0;
+	}
+
+	return size;
+}
+
+/**
+ * Convert a quantity with SI units to the equivalent floating
+ * point number.
+ */
+static inline double fromSI(const std::string& str)
+{
+	std::istringstream iss(str);
+	return fromSI(iss);
+}
+
 /** Return the engineering string representation of n. */
 template <typename T>
 static inline std::string toEng(T n)
@@ -88,8 +162,8 @@ bool endsWith(const std::string& s, const std::string& suffix)
 			suffix.begin());
 }
 
-static inline 
-bool isReadNamePair(const std::string& name1, const std::string& name2) 
+static inline
+bool isReadNamePair(const std::string& name1, const std::string& name2)
 {
 	assert(!name1.empty() && !name2.empty());
 
