@@ -16,8 +16,10 @@
 enum PathExtensionResult {
 	DEAD_END,
 	BRANCHING_POINT,
+	CYCLE,
+	EXTENDED_TO_DEAD_END,
 	EXTENDED_TO_BRANCHING_POINT,
-	EXTENDED_TO_DEAD_END
+	EXTENDED_TO_CYCLE
 };
 
 /**
@@ -215,20 +217,52 @@ PathExtensionResult extendPath(
 
 	assert(path.size() > 0);
 	size_t origPathLen = path.size();
+
+	/* track visited nodes to avoid infinite traversal of cycles */
+	unordered_set<V> visited;
+	visited.insert(path.begin(), path.end());
+
 	SingleExtensionResult result;
+	bool detectedCycle = false;
 	do {
 		result = extendPathBySingleVertex(path, dir, g, trimLen);
-	} while (result == SE_EXTENDED);
+		if (result == SE_EXTENDED) {
+			std::pair<typename unordered_set<V>::iterator,bool> inserted;
+			if (dir == FORWARD) {
+				inserted = visited.insert(path.back());
+			} else {
+				assert(dir == REVERSE);
+				inserted = visited.insert(path.front());
+			}
+			if (!inserted.second)
+				detectedCycle = true;
+		}
+	} while (result == SE_EXTENDED && !detectedCycle);
+
+	/** the last kmer we added is a repeat, so remove it */
+	if (detectedCycle) {
+		if (dir == FORWARD) {
+			path.pop_back();
+		} else {
+			assert(dir == REVERSE);
+			path.pop_front();
+		}
+	}
 
 	if (path.size() > origPathLen) {
-		if (result == SE_DEAD_END) {
+		if (detectedCycle) {
+			return EXTENDED_TO_CYCLE;
+		} else if (result == SE_DEAD_END) {
 			return EXTENDED_TO_DEAD_END;
 		} else {
 			assert(result == SE_BRANCHING_POINT);
 			return EXTENDED_TO_BRANCHING_POINT;
 		}
 	} else {
-		if (result == SE_DEAD_END) {
+		assert(path.size() == origPathLen);
+		if (detectedCycle) {
+			return CYCLE;
+		} else if (result == SE_DEAD_END) {
 			return DEAD_END;
 		} else {
 			assert(result == SE_BRANCHING_POINT);

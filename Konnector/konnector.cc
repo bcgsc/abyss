@@ -348,13 +348,15 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 
 	result = extendSeq(seq, FORWARD, k, g, g_trimLen, opt::mask);
 	if (result == ES_EXTENDED_TO_DEAD_END ||
-		result == ES_EXTENDED_TO_BRANCHING_POINT) {
+		result == ES_EXTENDED_TO_BRANCHING_POINT ||
+		result == ES_EXTENDED_TO_CYCLE) {
 		extended = true;
 	}
 
 	result = extendSeq(seq, REVERSE, k, g, g_trimLen, opt::mask);
 	if (result == ES_EXTENDED_TO_DEAD_END ||
-		result == ES_EXTENDED_TO_BRANCHING_POINT) {
+		result == ES_EXTENDED_TO_BRANCHING_POINT ||
+		result == ES_EXTENDED_TO_CYCLE) {
 		extended = true;
 	}
 

@@ -365,6 +365,8 @@ enum ExtendSeqResult {
 	ES_DEAD_END,
 	/* start kmer had two or more branches */
 	ES_BRANCHING_POINT,
+	/* start kmer was part of a cycle */
+	ES_CYCLE,
 	/*
 	 * we did not make it from the start kmer to the
 	 * beginning/end of the input sequence, because
@@ -378,15 +380,26 @@ enum ExtendSeqResult {
 	 */
 	ES_INTERNAL_BRANCHING_POINT,
 	/*
+	 * we did not make from the start kmer to the
+	 * beginning/end of the input sequence, because
+	 * we hit a cycle.
+	 */
+	ES_INTERNAL_CYCLE,
+	/*
+	 * we successfully extended the input sequence
+	 * and stopped extending at a dead end.
+	 */
+	ES_EXTENDED_TO_DEAD_END,
+	/*
 	 * we successfully extended the input sequence
 	 * and stopped extending at a branching point.
 	 */
 	ES_EXTENDED_TO_BRANCHING_POINT,
 	/*
 	 * we successfully extended the input sequence
-	 * and stopped extending at a dead end.
+	 * and stopped when we hit a cycle.
 	 */
-	ES_EXTENDED_TO_DEAD_END
+	ES_EXTENDED_TO_CYCLE
 };
 
 /**
@@ -447,7 +460,8 @@ Sequence origSeq = seq;
 	 */
 
 	if (pathResult == EXTENDED_TO_DEAD_END ||
-		pathResult == EXTENDED_TO_BRANCHING_POINT) {
+		pathResult == EXTENDED_TO_BRANCHING_POINT ||
+		pathResult == EXTENDED_TO_CYCLE) {
 
 		/* we expect the start kmer plus some extension */
 		assert(path.size() > 1);
@@ -501,11 +515,19 @@ Sequence origSeq = seq;
 		else
 			result = ES_INTERNAL_BRANCHING_POINT;
 		break;
+	case EXTENDED_TO_CYCLE:
+		if (seq.length() > origSeqLen)
+			result = ES_EXTENDED_TO_CYCLE;
+		else
+			result = ES_INTERNAL_CYCLE;
 	case DEAD_END:
 		result = ES_DEAD_END;
 		break;
 	case BRANCHING_POINT:
 		result = ES_BRANCHING_POINT;
+		break;
+	case CYCLE:
+		result = ES_CYCLE;
 		break;
 	default:
 		/* all other cases should be handled above */

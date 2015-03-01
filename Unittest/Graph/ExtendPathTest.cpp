@@ -224,3 +224,122 @@ TEST(extendPath, withTrimming)
 	EXPECT_EQ(3, path2.size());
 	ASSERT_EQ(expectedPath2, path2);
 }
+
+TEST(extendPath, cycles)
+{
+	PathExtensionResult result;
+
+	/*
+	 * 2---1
+	 *  \ /
+	 *   0
+	 */
+
+	Graph g;
+	add_edge(0, 1, g);
+	add_edge(1, 2, g);
+	add_edge(2, 0, g);
+
+	Path<Vertex> pathForward;
+	pathForward.push_back(0);
+
+	Path<Vertex> expectedPathForward;
+	expectedPathForward.push_back(0);
+	expectedPathForward.push_back(1);
+	expectedPathForward.push_back(2);
+
+	result = extendPath(pathForward, FORWARD, g);
+	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(expectedPathForward, pathForward);
+
+	Path<Vertex> pathReverse;
+	pathReverse.push_back(0);
+
+	Path<Vertex> expectedPathReverse;
+	expectedPathReverse.push_back(1);
+	expectedPathReverse.push_back(2);
+	expectedPathReverse.push_back(0);
+
+	result = extendPath(pathReverse, REVERSE, g);
+	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(expectedPathReverse, pathReverse);
+
+	/*
+	 *   3---2
+	 *    \ /
+	 * 0---1
+	 */
+
+	Graph g2;
+	add_edge(0, 1, g2);
+	add_edge(1, 2, g2);
+	add_edge(2, 3, g2);
+	add_edge(3, 1, g2);
+
+	Path<Vertex> path2;
+	path2.push_back(0);
+
+	Path<Vertex> expectedPath2;
+	expectedPath2.push_back(0);
+	expectedPath2.push_back(1);
+	expectedPath2.push_back(2);
+	expectedPath2.push_back(3);
+
+	result = extendPath(path2, FORWARD, g2);
+	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(expectedPath2, path2);
+
+	/*
+	 * 2---3
+	 *  \ /
+	 *   1---0
+	 */
+
+	Graph g3;
+	add_edge(1, 0, g3);
+	add_edge(2, 1, g3);
+	add_edge(3, 2, g3);
+	add_edge(1, 3, g3);
+
+	Path<Vertex> path3;
+	path3.push_back(0);
+
+	Path<Vertex> expectedPath3;
+	expectedPath3.push_back(3);
+	expectedPath3.push_back(2);
+	expectedPath3.push_back(1);
+	expectedPath3.push_back(0);
+
+	result = extendPath(path3, REVERSE, g3);
+	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(expectedPath3, path3);
+}
+
+TEST(extendPath, cyclesAndBranches)
+{
+	PathExtensionResult result;
+
+	/*
+	 *     2
+	 *    //
+	 * 0--1--3--4
+	 */
+
+	Graph g;
+	add_edge(0, 1, g);
+	add_edge(1, 2, g);
+	add_edge(2, 1, g);
+	add_edge(1, 3, g);
+	add_edge(3, 4, g);
+
+	Path<Vertex> path;
+	path.push_back(0);
+
+	Path<Vertex> expectedPath;
+	expectedPath.push_back(0);
+	expectedPath.push_back(1);
+
+	result = extendPath(path, FORWARD, g);
+	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
+	EXPECT_EQ(expectedPath, path);
+}
