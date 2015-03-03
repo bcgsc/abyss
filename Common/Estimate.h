@@ -1,6 +1,7 @@
 #ifndef ESTIMATE_H
 #define ESTIMATE_H 1
 
+#include "Common/ContigProperties.h" // for Distance
 #include "ContigID.h"
 #include "ContigNode.h"
 #include "Graph/Options.h" // for opt::k
@@ -89,6 +90,12 @@ struct BetterDistanceEst
 			const NoProperty& a, const NoProperty&) const
 	{
 		return a;
+	}
+
+	Distance operator()(
+			const Distance& a, const Distance& b) const
+	{
+		return a.distance > b.distance ? a : b;
 	}
 
 	DistanceEst operator()(
