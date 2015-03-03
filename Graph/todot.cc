@@ -57,6 +57,9 @@ namespace opt {
 	/** Output distance estimates. */
 	bool estimate;
 
+	/** Add missing complementary edges. */
+	bool addComplementaryEdges;
+
 	/** Output format */
 	int format = DOT; // used by ContigProperties
 }
@@ -108,11 +111,13 @@ void readGraphs(Graph& g, It first, It last, BetterEP betterEP)
 	} else
 		readGraph("-", g, betterEP);
 
-	// Add any missing complementary edges.
-	size_t numAdded = addComplementaryEdges(g);
-	if (opt::verbose > 0) {
-		cerr << "Added " << numAdded << " complementary edges.\n";
-		printGraphStats(cerr, g);
+	if (opt::addComplementaryEdges) {
+		// Add any missing complementary edges. This feature is disabled.
+		size_t numAdded = addComplementaryEdges(g);
+		if (opt::verbose > 0) {
+			cerr << "Added " << numAdded << " complementary edges.\n";
+			printGraphStats(cerr, g);
+		}
 	}
 }
 
