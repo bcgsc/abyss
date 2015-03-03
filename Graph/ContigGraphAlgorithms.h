@@ -362,7 +362,7 @@ size_t addComplementaryEdges(ContigGraph<DG>& g)
 		V vc = get(vertex_complement, g, v);
 		E f;
 		bool found;
-		tie(f, found) = edge(vc, uc, g);
+		boost::tie(f, found) = edge(vc, uc, g);
 		if (!found) {
 			add_edge(vc, uc, g[e], static_cast<DG&>(g));
 			numAdded++;
