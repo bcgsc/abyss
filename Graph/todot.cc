@@ -5,6 +5,7 @@
 #include "ContigProperties.h"
 #include "DirectedGraph.h"
 #include "Estimate.h"
+#include "Graph/ContigGraphAlgorithms.h" // for addComplementaryEdges
 #include "GraphIO.h"
 #include "GraphUtil.h"
 #include "IOUtil.h"
@@ -106,6 +107,13 @@ void readGraphs(Graph& g, It first, It last, BetterEP betterEP)
 			readGraph(*it, g, betterEP);
 	} else
 		readGraph("-", g, betterEP);
+
+	// Add any missing complementary edges.
+	size_t numAdded = addComplementaryEdges(g);
+	if (opt::verbose > 0) {
+		cerr << "Added " << numAdded << " complementary edges.\n";
+		printGraphStats(cerr, g);
+	}
 }
 
 int main(int argc, char** argv)
