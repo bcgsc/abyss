@@ -31,7 +31,7 @@ struct Length
 	template <typename T>
 	Length& operator+=(const T& o)
 	{
-		assert((int)length + (int)o.distance > 0);
+		assert((int)length + (int)o.distance >= 0);
 		length += o.distance;
 		return *this;
 	}
