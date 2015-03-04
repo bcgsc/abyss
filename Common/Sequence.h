@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <cassert>
 
 typedef std::string Sequence;
 
@@ -75,6 +76,43 @@ static inline bool ambiguityIsSubset(char a, char b)
 {
 	char intersection = ambiguityAnd(a, b);
 	return intersection == a || intersection == b;
+}
+
+/**
+ * Overlay one sequence on top of another to create a new sequence.
+ * In the cases of differences, the bases in the overlaid sequence
+ * take precedence.
+ *
+ * @param overlay the sequence to be overlaid on target
+ * @param target the sequence to be modified/extended
+ * @param shift position of overlay sequence relative to target
+ * @param maskNew output bases that have been changed or added
+ * to target in lowercase.
+ */
+static inline void overlaySeq(Sequence& overlay, Sequence& target,
+	int shift, bool maskNew = false)
+{
+	Sequence::iterator src = overlay.begin();
+	Sequence::iterator dest;
+
+	if (shift < 0) {
+		target.insert(0, -shift, 'N');
+		dest = target.begin();
+	} else {
+		assert(shift >= 0);
+		if (shift + overlay.length() > target.length()) {
+			unsigned suffixLen = shift + overlay.length() -
+				target.length();
+			target.insert(target.length(), suffixLen, 'N');
+		}
+		dest = target.begin() + shift;
+	}
+	for (; src != overlay.end(); ++src, ++dest) {
+		assert(dest != target.end());
+		if (maskNew && *src != *dest)
+			*src = tolower(*src);
+		*dest = *src;
+	}
 }
 
 #endif
