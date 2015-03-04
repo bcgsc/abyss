@@ -671,6 +671,8 @@ static void connectPairs(const Graph& g,
 #pragma omp critical(in)
 		good = in >> a >> b;
 		if (good) {
+#pragma omp critical(cerr)
+			std::cerr << "processing pair: " << a.id << std::endl;
 			connectPair(g, a, b, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 #pragma omp atomic

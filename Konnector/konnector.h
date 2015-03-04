@@ -10,6 +10,7 @@
 #include "Align/alignGlobal.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/DotIO.h"
+#include "Common/Sequence.h"
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <limits>
@@ -350,6 +351,71 @@ static inline ConnectPairsResult connectPairs(
 	return result;
 }
 
+static inline unsigned getHeadKmerPos(const Sequence& seq, Direction dir,
+	unsigned k)
+{
+	assert(dir == FORWARD || dir == REVERSE);
+	return (dir == FORWARD) ?  seq.length() - k : 0;
+}
+
+static inline Kmer getHeadKmer(const Sequence& seq, Direction dir,
+	unsigned k)
+{
+	return Kmer(seq.substr(getHeadKmerPos(seq, dir, k), k));
+}
+
+template <typename Graph>
+static inline bool extendSeqThroughBubble(Sequence& seq,
+	Direction dir, unsigned k, const Graph& g, unsigned trimLen=0,
+	bool maskNew=false)
+{
+	assert(seq.length() >= k);
+	assert(dir == FORWARD || dir == REVERSE);
+
+	Kmer head = getHeadKmer(seq, dir, k);
+	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen);
+
+	/* more than two branches -- not a simple bubble */
+	if (buds.size() != 2)
+		return false;
+
+	Path<Kmer> path1, path2;
+	path1.push_back(buds.front());
+	path2.push_back(buds.back());
+	extendPath(path1, dir, g, trimLen, k+1);
+	extendPath(path2, dir, g, trimLen, k+1);
+
+	/* paths lengths not k+1 -- not a simple bubble */
+	if (path1.size() != k+1 || path2.size() != k+1)
+		return false;
+
+	Kmer head1, head2;
+	if (dir == FORWARD) {
+		head1 = path1.back();
+		head2 = path2.back();
+	} else {
+		assert(dir == REVERSE);
+		head1 = path1.front();
+		head2 = path2.front();
+	}
+
+	/* paths don't reconnect -- not a simple bubble */
+	if (head1 != head2)
+		return false;
+
+	NWAlignment alignment;
+	alignPair(pathToSeq(path1), pathToSeq(path2), alignment);
+	Sequence& consensus = alignment.match_align;
+
+	if (dir == FORWARD) {
+		overlaySeq(consensus, seq, seq.length()-k, maskNew);
+	} else {
+		overlaySeq(consensus, seq, -seq.length()+k, maskNew);
+	}
+
+	return true;
+}
+
 /**
  * Reason a sequence could not be extended uniquely within
  * the de Bruijn graph; or if the sequence could be extended,
@@ -417,7 +483,7 @@ enum ExtendSeqResult {
  */
 template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
-	unsigned k, const Graph& g, unsigned trimLen=0, bool maskNew=true)
+	unsigned k, const Graph& g, unsigned trimLen=0, bool maskNew=false)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
@@ -442,60 +508,55 @@ Sequence origSeq = seq;
 
 	/* initialize the path to be extended */
 	std::string kmerStr = seq.substr(startKmerPos, k);
-	/* Kmer class doesn't like lowercase chars */
-	std::transform(kmerStr.begin(), kmerStr.end(), kmerStr.begin(), ::toupper);
 	Kmer startKmer(kmerStr);
 	Path<Kmer> path;
 	path.push_back(startKmer);
+	PathExtensionResult pathResult;
 
-	/*
-	 * extend the path up to a dead end or a branching point
-	 * within the de Bruijn graph.
-	 */
+	bool extendedThroughBubble = false;
+	do {
 
-	PathExtensionResult pathResult = extendPath(path, dir, g, trimLen);
+		/*
+		 * extend the path up to a dead end or branching point
+		 * in the de Bruijn graph.
+		 */
 
-	/*
-	 * graft path extension onto original input sequence
-	 */
+		pathResult = extendPath(path, dir, g, trimLen);
 
-	if (pathResult == EXTENDED_TO_DEAD_END ||
-		pathResult == EXTENDED_TO_BRANCHING_POINT ||
-		pathResult == EXTENDED_TO_CYCLE) {
+		/*
+		 * graft path extension onto original input sequence
+		 */
 
-		/* we expect the start kmer plus some extension */
-		assert(path.size() > 1);
-
-		std::string pathSeq = pathToSeq(path);
-		std::string::iterator src = pathSeq.begin();
-		std::string::iterator dest;
-
-		if (dir == REVERSE) {
-			int prefixLen = pathSeq.length() - startKmerPos - k;
-			if (prefixLen > 0) {
-				/* seq extension goes beyond start of read */
-				seq.insert(0, prefixLen, 'N');
+		if (pathResult == EXTENDED_TO_DEAD_END ||
+			pathResult == EXTENDED_TO_BRANCHING_POINT ||
+			pathResult == EXTENDED_TO_CYCLE)
+		{
+			std::string pathSeq = pathToSeq(path);
+			if (dir == FORWARD) {
+				overlaySeq(pathSeq, seq, startKmerPos, maskNew);
+			} else {
+				overlaySeq(pathSeq, seq, pathSeq.length() - startKmerPos - k,
+					maskNew);
 			}
-			dest = seq.begin();
-		} else {
-			assert(dir == FORWARD);
-			int suffixLen = pathSeq.length() -
-				(seq.length() - startKmerPos);
-			if (suffixLen > 0) {
-				/* seq extension goes beyond end of read */
-				seq.insert(seq.length(), suffixLen, 'N');
-			}
-			dest = seq.begin() + startKmerPos;
 		}
 
-		for (; src != pathSeq.end(); ++src, ++dest) {
-			assert(dest != seq.end());
-			if (maskNew && *src != *dest)
-				*src = tolower(*src);
-			*dest = *src;
+		/*
+		 * extend through simple bubbles
+		 */
+		extendedThroughBubble = false;
+		if (pathResult == BRANCHING_POINT ||
+			pathResult == EXTENDED_TO_BRANCHING_POINT) {
+			if (extendSeqThroughBubble(seq, dir, k, g,
+				trimLen, maskNew)) {
+				path.clear();
+				path.push_back(getHeadKmer(seq, dir, k));
+				startKmerPos = getHeadKmerPos(seq, dir, k);
+				extendedThroughBubble = true;
+			}
 		}
 
-	}
+
+	} while (extendedThroughBubble);
 
 	/* translate and return result code */
 
