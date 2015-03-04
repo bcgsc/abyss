@@ -17,9 +17,11 @@ enum PathExtensionResult {
 	DEAD_END,
 	BRANCHING_POINT,
 	CYCLE,
+	LENGTH_LIMIT,
 	EXTENDED_TO_DEAD_END,
 	EXTENDED_TO_BRANCHING_POINT,
-	EXTENDED_TO_CYCLE
+	EXTENDED_TO_CYCLE,
+	EXTENDED_TO_LENGTH_LIMIT
 };
 
 /**
@@ -108,6 +110,41 @@ static inline bool lookAhead(
 	return false;
 }
 
+template <class BidirectionalGraph>
+static inline std::vector<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>
+trueBranches(typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor& u,
+	Direction dir, const BidirectionalGraph& g, unsigned trimLen=0)
+{
+	typedef BidirectionalGraph G;
+	typedef boost::graph_traits<G> graph_traits;
+	typedef typename graph_traits::vertex_descriptor V;
+
+	typename graph_traits::out_edge_iterator oei, oei_end;
+	typename graph_traits::in_edge_iterator iei, iei_end;
+
+	std::vector<V> branchRoots;
+
+	if (dir == FORWARD) {
+		for (boost::tie(oei, oei_end) = out_edges(u, g);
+				oei != oei_end; ++oei) {
+			const V& v = target(*oei, g);
+			if (lookAhead(v, dir, trimLen, g))
+				branchRoots.push_back(v);
+		}
+	} else {
+		assert(dir == REVERSE);
+		for (boost::tie(iei, iei_end) = in_edges(u, g);
+			iei != iei_end; ++iei) {
+			const V& v = source(*iei, g);
+			if (lookAhead(v, dir, trimLen, g)) {
+				branchRoots.push_back(v);
+			}
+		}
+	}
+
+	return branchRoots;
+}
+
 /**
  * If the given path has only one possible next/prev vertex in the graph,
  * append/prepend that vertex to the path.
@@ -131,64 +168,29 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	typename graph_traits::out_edge_iterator oei, oei_end;
 	typename graph_traits::in_edge_iterator iei, iei_end;
 
-	V& u = (dir == FORWARD) ? path.back() : path.front();
+	assert(dir == FORWARD || dir == REVERSE);
 
-	if (dir == FORWARD) {
-		if (out_degree(u, g) == 0) {
-			return SE_DEAD_END;
-		} else if (out_degree(u, g) == 1) {
-			const V& v = target(*(out_edges(u, g).first), g);
-			path.push_back(v);
-			return SE_EXTENDED;
-		} else {
-			V vNext;
-			unsigned branchCount = 0;
-			for (boost::tie(oei, oei_end) = out_edges(u, g);
-				oei != oei_end; ++oei) {
-				const V& v = target(*oei, g);
-				if (lookAhead(v, dir, trimLen, g)) {
-					branchCount++;
-					vNext = v;
-				}
-			}
-			if (branchCount == 0) {
-				return SE_DEAD_END;
-			} else if (branchCount == 1) {
-				path.push_back(vNext);
-				return SE_EXTENDED;
-			} else {
-				assert(branchCount > 1);
-				return SE_BRANCHING_POINT;
-			}
-		}
+	V& u = (dir == FORWARD) ? path.back() : path.front();
+	unsigned degree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
+
+	if (degree == 0) {
+		return SE_DEAD_END;
+	} else if (degree == 1) {
+		const V& v = (dir == FORWARD) ?
+			target(*(out_edges(u, g).first), g) :
+			source(*(in_edges(u, g).first), g);
+		path.push_back(v);
+		return SE_EXTENDED;
 	} else {
-		assert(dir == REVERSE);
-		if (in_degree(u, g) == 0) {
+		std::vector<V> neighbours = trueBranches(u, dir, g, trimLen);
+		if (neighbours.empty()) {
 			return SE_DEAD_END;
-		} else if (in_degree(u, g) == 1) {
-			const V& v = source(*(in_edges(u, g).first), g);
-			path.push_front(v);
+		} else if (neighbours.size() == 1) {
+			path.push_back(neighbours.front());
 			return SE_EXTENDED;
 		} else {
-			V vNext;
-			unsigned branchCount = 0;
-			for (boost::tie(iei, iei_end) = in_edges(u, g);
-				iei != iei_end; ++iei) {
-				const V& v = source(*iei, g);
-				if (lookAhead(v, dir, trimLen, g)) {
-					branchCount++;
-					vNext = v;
-				}
-			}
-			if (branchCount == 0) {
-				return SE_DEAD_END;
-			} else if (branchCount == 1) {
-				path.push_front(vNext);
-				return SE_EXTENDED;
-			} else {
-				assert(branchCount > 1);
-				return SE_BRANCHING_POINT;
-			}
+			assert(neighbours.size() > 1);
+			return SE_BRANCHING_POINT;
 		}
 	}
 }
@@ -207,7 +209,8 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 template <class BidirectionalGraph>
 PathExtensionResult extendPath(
 	Path<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& path,
-	Direction dir, const BidirectionalGraph& g, unsigned trimLen = 0)
+	Direction dir, const BidirectionalGraph& g, unsigned trimLen = 0,
+	unsigned maxLen = NO_LIMIT)
 {
 	typedef BidirectionalGraph G;
 	typedef boost::graph_traits<G> graph_traits;
@@ -215,16 +218,19 @@ PathExtensionResult extendPath(
 	typename graph_traits::out_edge_iterator oei, oei_end;
 	typename graph_traits::in_edge_iterator iei, iei_end;
 
-	assert(path.size() > 0);
+	assert(path.size() > 0 && path.size() <= maxLen);
 	size_t origPathLen = path.size();
 
 	/* track visited nodes to avoid infinite traversal of cycles */
 	unordered_set<V> visited;
 	visited.insert(path.begin(), path.end());
 
-	SingleExtensionResult result;
+	SingleExtensionResult result = SE_EXTENDED;
 	bool detectedCycle = false;
-	do {
+
+	while (result == SE_EXTENDED && !detectedCycle &&
+		path.size() < maxLen)
+	{
 		result = extendPathBySingleVertex(path, dir, g, trimLen);
 		if (result == SE_EXTENDED) {
 			std::pair<typename unordered_set<V>::iterator,bool> inserted;
@@ -237,7 +243,7 @@ PathExtensionResult extendPath(
 			if (!inserted.second)
 				detectedCycle = true;
 		}
-	} while (result == SE_EXTENDED && !detectedCycle);
+	}
 
 	/** the last kmer we added is a repeat, so remove it */
 	if (detectedCycle) {
@@ -254,9 +260,12 @@ PathExtensionResult extendPath(
 			return EXTENDED_TO_CYCLE;
 		} else if (result == SE_DEAD_END) {
 			return EXTENDED_TO_DEAD_END;
-		} else {
-			assert(result == SE_BRANCHING_POINT);
+		} else if (result == SE_BRANCHING_POINT) {
 			return EXTENDED_TO_BRANCHING_POINT;
+		} else {
+			assert(result == SE_EXTENDED &&
+				path.size() == maxLen);
+			return EXTENDED_TO_LENGTH_LIMIT;
 		}
 	} else {
 		assert(path.size() == origPathLen);
@@ -264,9 +273,11 @@ PathExtensionResult extendPath(
 			return CYCLE;
 		} else if (result == SE_DEAD_END) {
 			return DEAD_END;
-		} else {
-			assert(result == SE_BRANCHING_POINT);
+		} else if (result == SE_BRANCHING_POINT) {
 			return BRANCHING_POINT;
+		} else {
+			assert(origPathLen >= maxLen);
+			return LENGTH_LIMIT;
 		}
 	}
 }
