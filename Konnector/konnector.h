@@ -366,13 +366,27 @@ static inline Kmer getHeadKmer(const Sequence& seq, Direction dir,
 
 template <typename Graph>
 static inline bool extendSeqThroughBubble(Sequence& seq,
-	Direction dir, unsigned k, const Graph& g, unsigned trimLen=0,
-	bool maskNew=false)
+	Direction dir, unsigned startKmerPos, unsigned k,
+	const Graph& g, unsigned trimLen=0, bool maskNew=false)
 {
 	assert(seq.length() >= k);
 	assert(dir == FORWARD || dir == REVERSE);
 
-	Kmer head = getHeadKmer(seq, dir, k);
+	/*
+	 * unhandled case: bubble is contained entirely
+	 * within input sequence.
+	 */
+	unsigned bubbleSeqLen = 2*k + 1;
+
+	if (dir == FORWARD &&
+		startKmerPos + bubbleSeqLen <= seq.length()) {
+		return false;
+	} else if (dir == REVERSE &&
+		bubbleSeqLen <= startKmerPos) {
+		return false;
+	}
+
+	Kmer head(seq.substr(startKmerPos, k));
 	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen);
 
 	/* more than two branches -- not a simple bubble */
@@ -382,11 +396,11 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	Path<Kmer> path1, path2;
 	path1.push_back(buds.front());
 	path2.push_back(buds.back());
-	extendPath(path1, dir, g, trimLen, k+1);
-	extendPath(path2, dir, g, trimLen, k+1);
+	extendPath(path1, dir, g, trimLen, k+2);
+	extendPath(path2, dir, g, trimLen, k+2);
 
 	/* paths lengths not k+1 -- not a simple bubble */
-	if (path1.size() != k+1 || path2.size() != k+1)
+	if (path1.size() != k+2 || path2.size() != k+2)
 		return false;
 
 	Kmer head1, head2;
@@ -527,6 +541,7 @@ Sequence origSeq = seq;
 		 * graft path extension onto original input sequence
 		 */
 
+		size_t lengthBeforeOverlay = seq.length();
 		if (pathResult == EXTENDED_TO_DEAD_END ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_CYCLE)
@@ -535,10 +550,12 @@ Sequence origSeq = seq;
 			if (dir == FORWARD) {
 				overlaySeq(pathSeq, seq, startKmerPos, maskNew);
 			} else {
+				assert(dir == REVERSE);
 				overlaySeq(pathSeq, seq, pathSeq.length() - startKmerPos - k,
 					maskNew);
 			}
 		}
+		size_t lengthAfterOverlay = seq.length();
 
 		/*
 		 * extend through simple bubbles
@@ -546,8 +563,20 @@ Sequence origSeq = seq;
 		extendedThroughBubble = false;
 		if (pathResult == BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT) {
-			if (extendSeqThroughBubble(seq, dir, k, g,
-				trimLen, maskNew)) {
+			if (dir == FORWARD) {
+				startKmerPos = startKmerPos + path.size() - 1;
+				assert(startKmerPos < seq.length() - k + 1);
+			} else {
+				assert(dir == REVERSE);
+				if (lengthAfterOverlay > lengthBeforeOverlay) {
+					startKmerPos = 0;
+				} else {
+					assert(startKmerPos >= path.size() - 1);
+					startKmerPos = startKmerPos - path.size() + 1;
+				}
+			}
+			if (extendSeqThroughBubble(seq, dir, startKmerPos,
+				k, g, trimLen, maskNew)) {
 				path.clear();
 				path.push_back(getHeadKmer(seq, dir, k));
 				startKmerPos = getHeadKmerPos(seq, dir, k);
