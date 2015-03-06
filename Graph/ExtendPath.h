@@ -9,6 +9,7 @@
 #include <boost/graph/graph_concepts.hpp>
 #include <cassert>
 #include <cstdio>
+#include <iostream>
 
 /**
  * The result of attempting to extend a path.
@@ -179,14 +180,24 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 		const V& v = (dir == FORWARD) ?
 			target(*(out_edges(u, g).first), g) :
 			source(*(in_edges(u, g).first), g);
-		path.push_back(v);
+		if (dir == FORWARD) {
+			path.push_back(v);
+		} else {
+			assert(dir == REVERSE);
+			path.push_front(v);
+		}
 		return SE_EXTENDED;
 	} else {
 		std::vector<V> neighbours = trueBranches(u, dir, g, trimLen);
 		if (neighbours.empty()) {
 			return SE_DEAD_END;
 		} else if (neighbours.size() == 1) {
-			path.push_back(neighbours.front());
+			if (dir == FORWARD) {
+				path.push_back(neighbours.front());
+			} else {
+				assert(dir == REVERSE);
+				path.push_front(neighbours.front());
+			}
 			return SE_EXTENDED;
 		} else {
 			assert(neighbours.size() > 1);
