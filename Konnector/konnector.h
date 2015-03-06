@@ -550,7 +550,7 @@ Sequence origSeq = seq;
 				overlaySeq(pathSeq, seq, startKmerPos, maskNew);
 			} else {
 				assert(dir == REVERSE);
-				overlaySeq(pathSeq, seq, pathSeq.length() - startKmerPos - k,
+				overlaySeq(pathSeq, seq, -pathSeq.length() + startKmerPos + k,
 					maskNew);
 			}
 		}
