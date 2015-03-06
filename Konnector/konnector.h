@@ -354,7 +354,6 @@ static inline ConnectPairsResult connectPairs(
 static inline unsigned getHeadKmerPos(const Sequence& seq, Direction dir,
 	unsigned k)
 {
-	assert(dir == FORWARD || dir == REVERSE);
 	return (dir == FORWARD) ?  seq.length() - k : 0;
 }
 
