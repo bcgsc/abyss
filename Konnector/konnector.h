@@ -423,7 +423,7 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	if (dir == FORWARD) {
 		overlaySeq(consensus, seq, seq.length()-k, maskNew);
 	} else {
-		overlaySeq(consensus, seq, -seq.length()+k, maskNew);
+		overlaySeq(consensus, seq, -consensus.length()+k, maskNew);
 	}
 
 	return true;
