@@ -253,7 +253,7 @@ int main(int argc, char** argv)
 		for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 			V u = *uit;
 			size_t ui = get(vertex_index, g, u);
-			ssize_t x1 = (ssize_t)b[ui];
+			ssize_t x1 = (ssize_t)round(b[ui]);
 			ssize_t x0 = x1 - g[u].length;
 			std::cout
 				<< get(vertex_name, g, u)
