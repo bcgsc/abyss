@@ -185,11 +185,16 @@ int main(int argc, char** argv)
 	Vector b = ublas::zero_vector<double>(n);
 
 	// Set the origin of the layout. Pin the first contig and its reverse
-	// complement to location 0. The two vertices should be in separate
+	// complement to an extreme negative and positive position, so that the two
+	// components should not overlap. The two vertices should be in separate
 	// components. If the graph has multiple components, the matrix should be
-	// regularized by adding lambda to all values on the diagonal.
+	// regularized by adding lambda to all values on the diagonal. The
+	// components will overlap be can be separated afterward.
+	const double MAX_SCAFFOLD_SIZE = 10e6;
 	a(0, 0) = 1;
+	b[0] = -MAX_SCAFFOLD_SIZE;
 	a(1, 1) = 1;
+	b[1] = MAX_SCAFFOLD_SIZE;
 
 	// Build the information matrix.
 	Eit eit, elast;
@@ -212,6 +217,29 @@ int main(int argc, char** argv)
 
 	// Solve the equation Ax = b for x.
 	solve(a, b);
+
+	// Determine the origin and width of the layout.
+	double min_pos = std::numeric_limits<double>::max();
+	double max_pos = -std::numeric_limits<double>::max();
+	double min_rc = std::numeric_limits<double>::max();
+	for (unsigned i = 0; i < n; ++i) {
+		if (b[i] < 0) {
+			min_pos = min(min_pos, b[i]);
+			max_pos = max(max_pos, b[i]);
+		} else
+			min_rc = min(min_rc, b[i]);
+	}
+	assert(min_pos != std::numeric_limits<double>::max());
+	assert(max_pos != -std::numeric_limits<double>::max());
+	assert(min_rc != std::numeric_limits<double>::max());
+
+	// Set the origin of the positive and negative components.
+	for (unsigned i = 0; i < n; ++i) {
+		if (b[i] < 0)
+			b[i] = b[i] - min_pos;
+		else
+			b[i] = b[i] - min_rc + (max_pos - min_pos);
+	}
 
 	// Output the coordinates of each contig.
 	if (opt::verbose > 1) {
