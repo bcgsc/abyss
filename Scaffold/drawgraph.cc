@@ -184,8 +184,12 @@ int main(int argc, char** argv)
 	Matrix a(n, n);
 	Vector b = ublas::zero_vector<double>(n);
 
-	// Set the origin.
+	// Set the origin of the layout. Pin the first contig and its reverse
+	// complement to location 0. The two vertices should be in separate
+	// components. If the graph has multiple components, the matrix should be
+	// regularized by adding lambda to all values on the diagonal.
 	a(0, 0) = 1;
+	a(1, 1) = 1;
 
 	// Build the information matrix.
 	Eit eit, elast;
