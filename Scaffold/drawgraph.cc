@@ -50,6 +50,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
+"  --gv, --dot           output in GraphViz DOT format [default]\n"
+"  --tsv                 output in TSV format\n"
 "  -x, --xscale=N        set the x scale to N nt/inch [100e3]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -75,6 +77,9 @@ static const char shortopts[] = "x:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "dot", no_argument, &opt::format, DOT },
+	{ "gv", no_argument, &opt::format, DOT },
+	{ "tsv", no_argument, &opt::format, TSV },
 	{ "xscale", required_argument, NULL, 'x' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
@@ -242,17 +247,24 @@ int main(int argc, char** argv)
 	}
 
 	// Output the coordinates of each contig.
-	if (opt::verbose > 1) {
+	if (opt::format == TSV) {
+		std::cout << "Name\tSize\tLeftPos\tRightPos\n";
 		Vit uit, ulast;
 		for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 			V u = *uit;
 			size_t ui = get(vertex_index, g, u);
 			ssize_t x1 = (ssize_t)b[ui];
 			ssize_t x0 = x1 - g[u].length;
-			cerr << get(vertex_name, g, u)
-				<< '\t' << x0 << '\t' << x1 << '\n';
+			std::cout
+				<< get(vertex_name, g, u)
+				<< '\t' << g[u].length
+				<< '\t' << x0
+				<< '\t' << x1
+				<< '\n';
 		}
+		exit(EXIT_SUCCESS);
 	}
+	assert(opt::format == DOT);
 
 	// Sort the contigs by their right coordinate.
 	std::vector< std::pair<double, V> > sorted;
