@@ -595,6 +595,13 @@ num_vertices(const DirectedGraph<VP, EP>& g)
 }
 
 template <typename VP, typename EP>
+typename DirectedGraph<VP, EP>::vertex_descriptor
+vertex(typename DirectedGraph<VP, EP>::vertices_size_type ui, const DirectedGraph<VP, EP>& g)
+{
+	return g.vertex(ui);
+}
+
+template <typename VP, typename EP>
 std::pair<typename DirectedGraph<VP, EP>::vertex_iterator,
 	typename DirectedGraph<VP, EP>::vertex_iterator>
 vertices(const DirectedGraph<VP, EP>& g)
