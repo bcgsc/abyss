@@ -229,10 +229,10 @@ int main(int argc, char** argv)
 	double min_rc = std::numeric_limits<double>::max();
 	for (unsigned i = 0; i < n; ++i) {
 		if (b[i] < 0) {
-			min_pos = min(min_pos, b[i]);
+			min_pos = min(min_pos, b[i] - g[vertex(i, g)].length);
 			max_pos = max(max_pos, b[i]);
 		} else
-			min_rc = min(min_rc, b[i]);
+			min_rc = min(min_rc, b[i] - g[vertex(i, g)].length);
 	}
 	assert(min_pos != std::numeric_limits<double>::max());
 	assert(max_pos != -std::numeric_limits<double>::max());
