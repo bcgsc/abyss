@@ -243,7 +243,7 @@ fi
 AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi
-AM_CONDITIONAL([PAIRED_DBG], [false])
+AM_CONDITIONAL([PAIRED_DBG], [true])
 
 AC_CONFIG_FILES([
 	Makefile
