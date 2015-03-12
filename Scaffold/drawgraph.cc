@@ -50,9 +50,10 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
+"      --l2=REAL         set the L2 regularizer to REAL [0]\n"
+"  -x, --xscale=N        set the x scale to N nt/inch [100e3]\n"
 "      --gv, --dot       output in GraphViz DOT format [default]\n"
 "      --tsv             output in TSV format\n"
-"  -x, --xscale=N        set the x scale to N nt/inch [100e3]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
 "      --version         output version information and exit\n"
@@ -61,6 +62,9 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	unsigned k; // used by ContigProperties
+
+	/** The L2 regularizer. */
+	double l2;
 
 	/** The x scale. */
 	double xscale = 100e3; // nt/inch
@@ -74,12 +78,13 @@ namespace opt {
 
 static const char shortopts[] = "x:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_L2 };
 
 static const struct option longopts[] = {
 	{ "dot", no_argument, &opt::format, DOT },
 	{ "gv", no_argument, &opt::format, DOT },
 	{ "tsv", no_argument, &opt::format, TSV },
+	{ "l2", required_argument, NULL, OPT_L2 },
 	{ "xscale", required_argument, NULL, 'x' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
@@ -121,8 +126,8 @@ static void solve(Matrix& a, Vector& b)
 {
 	int ret = cholesky_decompose(a);
 	if (ret > 0) {
-		cerr << PROGRAM ": error: "
-			"The graph has multiple connected components.\n";
+		cerr << PROGRAM ": error: The graph has multiple connected components. "
+			"Try increasing the L2 regularizer, for example --l2=1e-323\n";
 		exit(EXIT_FAILURE);
 	}
 	cholesky_solve(a, b, ublas::lower());
@@ -138,6 +143,9 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true;
+			break;
+		  case OPT_L2:
+			arg >> opt::l2;
 			break;
 		  case 'x':
 			arg >> opt::xscale;
@@ -200,6 +208,11 @@ int main(int argc, char** argv)
 	b[0] = -MAX_SCAFFOLD_SIZE;
 	a(1, 1) = 1;
 	b[1] = MAX_SCAFFOLD_SIZE;
+
+	// Add the L2 regularizer to the matrix.
+	if (opt::l2 > 0)
+		for (unsigned i = 0; i < n; ++i)
+			a(i, i) += opt::l2;
 
 	// Build the information matrix.
 	Eit eit, elast;
