@@ -241,7 +241,9 @@ int main(int argc, char** argv)
 	double max_pos = -std::numeric_limits<double>::max();
 	double min_rc = std::numeric_limits<double>::max();
 	for (unsigned i = 0; i < n; ++i) {
-		if (b[i] < 0) {
+		if (b[i] == 0) {
+			// A disconnected vertex.
+		} else if (b[i] < 0) {
 			min_pos = min(min_pos, b[i] - g[vertex(i, g)].length);
 			max_pos = max(max_pos, b[i]);
 		} else
@@ -253,7 +255,10 @@ int main(int argc, char** argv)
 
 	// Set the origin of the positive and negative components.
 	for (unsigned i = 0; i < n; ++i) {
-		if (b[i] < 0)
+		if (b[i] == 0)
+			// A disconnected vertex.
+			b[i] = NAN;
+		else if (b[i] < 0)
 			b[i] = b[i] - min_pos;
 		else
 			b[i] = b[i] - min_rc + (max_pos - min_pos);
@@ -266,14 +271,15 @@ int main(int argc, char** argv)
 		for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 			V u = *uit;
 			size_t ui = get(vertex_index, g, u);
-			ssize_t x1 = (ssize_t)round(b[ui]);
-			ssize_t x0 = x1 - g[u].length;
-			std::cout
-				<< get(vertex_name, g, u)
-				<< '\t' << g[u].length
-				<< '\t' << x0
-				<< '\t' << x1
-				<< '\n';
+			std::cout << get(vertex_name, g, u) << '\t' << g[u].length;
+			if (std::isnan(b[ui])) {
+				// A disconnected vertex.
+				std::cout << "\tNA\tNA\n";
+			} else {
+				ssize_t x1 = (ssize_t)round(b[ui]);
+				ssize_t x0 = x1 - g[u].length;
+				std::cout << '\t' << x0 << '\t' << x1 << '\n';
+			}
 		}
 		exit(EXIT_SUCCESS);
 	}
@@ -286,7 +292,8 @@ int main(int argc, char** argv)
 	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 		V u = *uit;
 		size_t ui = get(vertex_index, g, u);
-		sorted.push_back(std::make_pair(b[ui], u));
+		double x1 = isnan(b[ui]) ? 0 : b[ui];
+		sorted.push_back(std::make_pair(x1, u));
 	}
 	sort(sorted.begin(), sorted.end());
 
@@ -300,7 +307,7 @@ int main(int argc, char** argv)
 	size_t yi = 0;
 	for (size_t i = 0; i < n; ++i) {
 		V u = sorted[i].second;
-		double pos = b[get(vertex_index, g, u)];
+		double pos = sorted[i].first;
 		size_t l = g[u].length;
 
 		if (pos - l < pos0)
