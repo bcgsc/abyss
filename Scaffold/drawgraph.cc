@@ -50,7 +50,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"      --l2=REAL         set the L2 regularizer to REAL [0]\n"
+"      --l2=REAL         set the L2 regularizer to REAL [1e-323]\n"
 "  -x, --xscale=N        set the x scale to N nt/inch [100e3]\n"
 "      --gv, --dot       output in GraphViz DOT format [default]\n"
 "      --tsv             output in TSV format\n"
@@ -64,7 +64,7 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 
 	/** The L2 regularizer. */
-	double l2;
+	double l2 = 1e-323;
 
 	/** The x scale. */
 	double xscale = 100e3; // nt/inch
@@ -126,8 +126,9 @@ static void solve(Matrix& a, Vector& b)
 {
 	int ret = cholesky_decompose(a);
 	if (ret > 0) {
-		cerr << PROGRAM ": error: The graph has multiple connected components. "
-			"Try increasing the L2 regularizer, for example --l2=1e-323\n";
+		cerr << PROGRAM ": error: The graph matrix is singular. "
+			"It may have multiple connected components. "
+			"Try increasing the L2 regularizer, for example --l2=1e-300\n";
 		exit(EXIT_FAILURE);
 	}
 	cholesky_solve(a, b, ublas::lower());
