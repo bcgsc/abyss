@@ -31,18 +31,7 @@
 # include "Bloom/ConcurrentBloomFilter.h"
 #endif
 
-#undef USESEQAN
-
-#if USESEQAN
-#include <seqan/align.h>
-#include <seqan/sequence.h>
-#include <seqan/align_split.h>
-#endif
-
 using namespace std;
-#if USESEQAN
-using namespace seqan;
-#endif
 
 #define PROGRAM "konnector"
 
@@ -268,48 +257,6 @@ static const struct option longopts[] = {
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
-
-#if USESEQAN
-const string r1 =
-"AGAATCAACCAACCGTTCAATGATATAATCAAGAGCGATATTGTAATCTTTGTTTCT";
-const string r2 =
-"CGACGTCCACCAATTCGTCCCTGTGCACGAGCAGTTTCCAGTCCAGCTTTTGTTCGT";
-const string ins =
-"AGAATCAACCAACCGTTCAATGATATAATCAAGAGCGATATTGTAATCTTTGTTTCTGTCACCCGGCCCCCACGACTCAAGGATTAGACCATAAACACCATCCTCTTCACCTATCGAACACTCAGCTTTCAGTTCAATTCCATTATTATCAAAAACATGCATAATATTAATCTTTAATCAATTTTTCACGACAATACTACTTTTATTGATAAAATTGCAACAAGTTGCTGTTGTTTTACTTTCTTTTGTACACAAAGTGTCTTTAACTTTATTTATCCCCTGCAGGAAACCTCTTATACAAAGTTGACACACCAACATCATAGATAATCGCCACCTTCTGGCGAGGAGTTCCTGCTGCAATTAATCGTCCAGCTTGTGCCCATTGTTCTGGTGTAAGTTTGGGACGACGTCCACCAATTCGTCCCTGTGCACGAGCAGTTTCCAGTCCAGCTTTTGTTCGT";
-
-static void seqanTests()
-{
-	typedef String<Dna> DS;
-	typedef Align<DS> Alignment;
-
-    //DS seq1 = "TTGT";
-    //DS seq2 = "TTAGT";
-	DS ref = ins;
-	DS seq1 = r1;
-	DS seq2 = r2;
-
-    Alignment align1;
-	resize(rows(align1), 2);
-	assignSource(row(align1, 0), ref);
-	assignSource(row(align1, 1), seq1);
-    Alignment align2;
-	resize(rows(align2), 2);
-	assignSource(row(align2, 0), ref);
-	assignSource(row(align2, 1), seq2);
-
-	Score<int> scoring(2, -2, -50, -100);
-
-	cout << splitAlignment(align1, align2, scoring) << endl;
-	cout << align1 << endl;
-	cout << align2 << endl;
-
-	cout << localAlignment(align1, scoring) << endl;
-	cout << align1 << endl;
-
-	cout << localAlignment(align2, scoring) << endl;
-	cout << align2 << endl;
-}
-#endif
 
 /**
  * Return true if the Bloom filter contains at least 75% of the
