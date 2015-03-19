@@ -51,6 +51,21 @@ flattenAmbiguityCodes(Sequence& seq, bool skipNs=true)
 	}
 }
 
+/**
+ * Return true if the given sequence contains ambiguity codes.
+ */
+static inline bool
+containsAmbiguityCodes(const Sequence& seq, bool allowN=true)
+{
+	if (allowN) {
+		return seq.find_first_of("MRWSYKVHDBmrwsykvhdbNn")
+			!= std::string::npos;
+	} else {
+		return seq.find_first_of("MRWSYKVHDBmrwsykvhdb")
+			!= std::string::npos;
+	}
+}
+
 unsigned ambiguityToBitmask(char c);
 unsigned bitmaskToAmbiguity(unsigned x);
 
