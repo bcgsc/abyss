@@ -442,9 +442,9 @@ struct LongerThanX : unary_function<vertex_descriptor, bool> {
 struct CoverageLessThan : unary_function<vertex_descriptor, bool> {
 	const Graph& g;
 	const vector<bool>& seen;
-	size_t minCov;
+	float minCov;
 
-	CoverageLessThan(const Graph& g, const vector<bool>& seen, size_t minCov)
+	CoverageLessThan(const Graph& g, const vector<bool>& seen, float minCov)
 		: g(g), seen(seen), minCov(minCov) { }
 
 	bool operator()(vertex_descriptor u) const
