@@ -259,21 +259,43 @@ static const struct option longopts[] = {
 };
 
 /**
- * Return true if the Bloom filter contains at least 75% of the
+ * Return true if the Bloom filter contains all of the
  * kmers in the given sequence.
  */
-static bool bloomContainsSeq(const BloomFilter& bloom, Sequence& seq)
+static bool bloomContainsSeq(const BloomFilter& bloom, const Sequence& seq)
 {
-	unsigned totalKmers = seq.length() - opt::k + 1;
-	unsigned minMatches = (unsigned)ceil(0.75 * totalKmers);
-	unsigned matches = 0;
-	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
-		if (bloom[*it])
-			matches++;
-		if (matches > minMatches)
-			return true;
+	if (containsAmbiguityCodes(seq)) {
+		Sequence seqCopy = seq;
+		flattenAmbiguityCodes(seqCopy, false);
+		for (KmerIterator it(seqCopy, opt::k); it != KmerIterator::end();
+			++it) {
+			if (!bloom[*it])
+				return false;
+		}
+		return true;
 	}
-	return false;
+	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
+		if (!bloom[*it])
+			return false;
+	}
+	return true;
+}
+
+/**
+ * Load the kmers of a given sequence into a Bloom filter.
+ */
+static inline void loadSeq(BloomFilter& bloom, unsigned k, const Sequence& seq)
+{
+	if (containsAmbiguityCodes(seq)) {
+		Sequence seqCopy = seq;
+		Sequence rc = reverseComplement(seqCopy);
+		flattenAmbiguityCodes(seqCopy, false);
+		flattenAmbiguityCodes(rc, false);
+		Bloom::loadSeq(bloom, k, seqCopy);
+		Bloom::loadSeq(bloom, k, rc);
+	} else {
+		Bloom::loadSeq(bloom, k, seq);
+	}
 }
 
 /**
@@ -350,7 +372,7 @@ extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
 		{
 			/* must check again to avoid race conditions */
 			if (!bloomContainsSeq(g_dupBloom, origSeq))
-				Bloom::loadSeq(g_dupBloom, opt::k, seq);
+				loadSeq(g_dupBloom, opt::k, seq);
 			else
 				redundant = true;
 		}
@@ -414,8 +436,8 @@ extendReadPairIfNonRedundant(Sequence& read1, Sequence& read2,
 			/* must check again to avoid race conditions */
 			if (!bloomContainsSeq(g_dupBloom, origRead1) &&
 					!bloomContainsSeq(g_dupBloom, origRead2)) {
-				Bloom::loadSeq(g_dupBloom, opt::k, read1);
-				Bloom::loadSeq(g_dupBloom, opt::k, read2);
+				loadSeq(g_dupBloom, opt::k, read1);
+				loadSeq(g_dupBloom, opt::k, read2);
 			} else {
 				redundant = true;
 			}
@@ -451,9 +473,77 @@ static inline void printProgressMessage()
 		<< ")\n";
 }
 
+
+/**
+ * For a successfully merged read pair, get the sequence
+ * representing the connecting path between the two reads.
+ */
+template <typename Bloom>
+static inline string getConnectingSeq(ConnectPairsResult& result,
+	unsigned k, const Bloom& bloom)
+{
+	assert(result.pathResult == FOUND_PATH);
+
+	vector<FastaRecord>& paths = result.mergedSeqs;
+	assert(paths.size() > 0);
+
+	Sequence& seq = (paths.size() == 1) ?
+		paths.front().seq : result.consensusSeq.seq;
+
+	/*
+	 * initialize sequence to the chars between the
+	 * start and goal kmers of the path search.
+	 */
+	int startPos = result.startKmerPos;
+	int endPos = seq.length() - result.goalKmerPos - k;
+	assert(startPos >= 0 && startPos <=
+		(int)(seq.length() - k + 1));
+
+	/*
+	 * extend seq left until we hit a kmer that is not in
+	 * the Bloom filter (probably a sequencing error),
+	 * or we hit the beginning of the sequence.
+	 */
+	int origStartPos = startPos;
+	for (--startPos; startPos >= 0; --startPos) {
+		string kmerStr = seq.substr(startPos, k);
+		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
+			break;
+		Kmer kmer(kmerStr);
+		if (!bloom[kmer])
+			break;
+	}
+	++startPos;
+
+	/*
+	 * extend seq right until we hit a kmer that is not in
+	 * the Bloom filter (probably a sequencing error), or
+	 * we hit the end of the sequence.
+	 */
+	int origEndPos = endPos;
+	for (++endPos; endPos < (int)(seq.length() - k + 1);
+		++endPos) {
+		string kmerStr = seq.substr(endPos, k);
+		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
+			break;
+		Kmer kmer(kmerStr);
+		if (!bloom[kmer])
+			break;
+	}
+	--endPos;
+
+	assert(startPos >= 0 && startPos <= origStartPos);
+	assert(endPos >= origEndPos && endPos <
+		(int)(seq.length() - k + 1));
+
+	return seq.substr(startPos, endPos - startPos + k);
+}
+
+
 /** Connect a read pair. */
-template <typename Graph>
+template <typename Graph, typename Bloom>
 static void connectPair(const Graph& g,
+	const Bloom& bloom,
 	FastqRecord& read1,
 	FastqRecord& read2,
 	const ConnectPairsParams& params,
@@ -485,16 +575,15 @@ static void connectPair(const Graph& g,
 	 */
 	if (opt::extend) {
 		ExtendResult extendResult;
-		if (result.pathResult == FOUND_PATH) {
+		if (result.pathResult == FOUND_PATH
+			&& result.pathMismatches <= params.maxPathMismatches
+			&& result.readMismatches <= params.maxReadMismatches) {
 			assert(paths.size() > 0);
-			if (paths.size() == 1) {
-				extendResult = extendReadIfNonRedundant(
-					paths.front().seq, opt::k, g);
-			} else {
-				assert(paths.size() > 1);
-				extendResult = extendReadIfNonRedundant(
-					result.consensusSeq.seq, opt::k, g);
-			}
+			Sequence& seq = (paths.size() == 1) ?
+				paths.front().seq : result.consensusSeq.seq;
+			seq = getConnectingSeq(result, opt::k, bloom);
+			extendResult = extendReadIfNonRedundant(
+				seq, opt::k, g);
 		} else {
 			/*
 			 * read pair could not be merged, so try
@@ -603,8 +692,9 @@ static void connectPair(const Graph& g,
 }
 
 /** Connect read pairs. */
-template <typename Graph, typename FastaStream>
+template <typename Graph, typename FastaStream, typename Bloom>
 static void connectPairs(const Graph& g,
+	const Bloom& bloom,
 	FastaStream& in,
 	const ConnectPairsParams& params,
 	ofstream& mergedStream,
@@ -618,7 +708,7 @@ static void connectPairs(const Graph& g,
 #pragma omp critical(in)
 		good = in >> a >> b;
 		if (good) {
-			connectPair(g, a, b, params, mergedStream, read1Stream,
+			connectPair(g, bloom, a, b, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 #pragma omp atomic
 			g_count.readPairsProcessed++;
@@ -880,13 +970,13 @@ int main(int argc, char** argv)
 	if (opt::interleaved) {
 		FastaConcat in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, params, mergedStream, read1Stream,
+		connectPairs(g, *bloom, in, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 		assert(in.eof());
 	} else {
 		FastaInterleave in(argv + optind, argv + argc,
 				FastaReader::FOLD_CASE);
-		connectPairs(g, in, params, mergedStream, read1Stream,
+		connectPairs(g, *bloom, in, params, mergedStream, read1Stream,
 				read2Stream, traceStream);
 		assert(in.eof());
 	}
