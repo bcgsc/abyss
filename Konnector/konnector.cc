@@ -215,7 +215,10 @@ static struct {
 	size_t readPairsProcessed;
 	size_t readPairsMerged;
 	size_t skipped;
-	size_t extended;
+	/* counts below are used only when -E is enabled */
+	size_t mergedAndExtended;
+	size_t mergedAndSkipped;
+	size_t singleEndCorrected;
 } g_count;
 
 static const char shortopts[] = "b:B:d:D:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
@@ -315,14 +318,26 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	ExtendSeqResult result;
 	bool extended = false;
 
-	result = extendSeq(seq, FORWARD, k, g, g_trimLen, opt::mask);
+	/*
+	 * offset start pos to reduce chance of hitting
+	 * a dead end on a false positive kmer
+	 */
+	const unsigned offset = 2;
+
+	int startPos = std::max(0, (int)(seq.length() - k - offset));
+	assert(startPos >= 0 && startPos <= (int)(seq.length() - k));
+	result = extendSeq(seq, FORWARD, startPos, k, g,
+		NO_LIMIT, g_trimLen, opt::mask);
 	if (result == ES_EXTENDED_TO_DEAD_END ||
 		result == ES_EXTENDED_TO_BRANCHING_POINT ||
 		result == ES_EXTENDED_TO_CYCLE) {
 		extended = true;
 	}
 
-	result = extendSeq(seq, REVERSE, k, g, g_trimLen, opt::mask);
+	startPos = std::max((int)(seq.length() - k), (int)offset);
+	assert(startPos >= 0 && startPos <= (int)(seq.length() - k));
+	result = extendSeq(seq, REVERSE, startPos, k, g,
+		NO_LIMIT, g_trimLen, opt::mask);
 	if (result == ES_EXTENDED_TO_DEAD_END ||
 		result == ES_EXTENDED_TO_BRANCHING_POINT ||
 		result == ES_EXTENDED_TO_CYCLE) {
@@ -387,88 +402,27 @@ extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
 }
 
 /**
- * Extend the sequences of an unmerged read pair
- * both inward and outward by traversing the de Bruijn
- * graph up to the next dead end or branching point.
- */
-template <typename Graph>
-static bool extendReadPair(Sequence& read1, Sequence& read2,
-	unsigned k, const Graph& g)
-{
-	/* extend each read inward and outward */
-	bool extended = false;
-	extended |= extendRead(read1, k, g);
-	extended |= extendRead(read2, k, g);
-	return extended;
-}
-
-/**
- * Attempt to extend an unmerged read pair.
- */
-template <typename Graph>
-static inline ExtendResult
-extendReadPairIfNonRedundant(Sequence& read1, Sequence& read2,
-	unsigned k, const Graph& g)
-{
-	bool redundant = false;
-	if (opt::dupBloomSize > 0) {
-		/*
-		 * Check to see if both reads are
-		 * in regions of the genome that have
-		 * already been assembled.
-		 */
-#pragma omp critical(dupBloom)
-		redundant = bloomContainsSeq(g_dupBloom, read1) &&
-			bloomContainsSeq(g_dupBloom, read2);
-		if (redundant)
-			return ER_REDUNDANT;
-	}
-	Sequence origRead1 = read1;
-	Sequence origRead2 = read2;
-	bool extended = extendReadPair(read1, read2, k, g);
-	if (opt::dupBloomSize > 0) {
-		/*
-		 * mark the extended reads as assembled
-		 * regions of the genome.
-		 */
-#pragma omp critical(dupBloom)
-		{
-			/* must check again to avoid race conditions */
-			if (!bloomContainsSeq(g_dupBloom, origRead1) &&
-					!bloomContainsSeq(g_dupBloom, origRead2)) {
-				loadSeq(g_dupBloom, opt::k, read1);
-				loadSeq(g_dupBloom, opt::k, read2);
-			} else {
-				redundant = true;
-			}
-		}
-		if (redundant)
-			return ER_REDUNDANT;
-	}
-	assert(!redundant);
-	if (extended)
-		return ER_EXTENDED;
-	else
-		return ER_NOT_EXTENDED;
-}
-
-/**
  * Print progress stats about reads merged/extended so far.
  */
 static inline void printProgressMessage()
 {
 	cerr << "Merged " << g_count.uniquePath + g_count.multiplePaths << " of "
-		<< g_count.readPairsProcessed << " read pairs, "
-		<< "extended " << g_count.extended << " of "
-		<< g_count.readPairsProcessed << " read pairs "
-		<< "(no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
+		<< g_count.readPairsProcessed << " read pairs";
+
+	if (opt::extend) {
+		cerr << ", corrected/extended " << g_count.singleEndCorrected << " of "
+			<< (g_count.readPairsProcessed - g_count.uniquePath -
+				g_count.multiplePaths) * 2
+		<< " unmerged reads";
+	}
+
+	cerr << " (no start/goal kmer: " << g_count.noStartOrGoalKmer << ", "
 		<< "no path: " << g_count.noPath << ", "
 		<< "too many paths: " << g_count.tooManyPaths << ", "
 		<< "too many branches: " << g_count.tooManyBranches << ", "
 		<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
 		<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
 		<< "contains cycle: " << g_count.containsCycle << ", "
-		<< "exceeded mem limit: " << g_count.exceededMemLimit << ", "
 		<< "skipped: " << g_count.skipped
 		<< ")\n";
 }
@@ -567,6 +521,11 @@ static void connectPair(const Graph& g,
 		connectPairs(opt::k, read1, read2, g, params);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
+	bool mergedSeqRedundant = false;
+	bool read1Corrected = false;
+	bool read1Redundant = false;
+	bool read2Corrected = false;
+	bool read2Redundant = false;
 
 	/*
 	 * extend reads inwards or outwards up to the
@@ -584,22 +543,47 @@ static void connectPair(const Graph& g,
 			seq = getConnectingSeq(result, opt::k, bloom);
 			extendResult = extendReadIfNonRedundant(
 				seq, opt::k, g);
+			if (extendResult == ER_REDUNDANT) {
+#pragma omp atomic
+				g_count.mergedAndSkipped++;
+				mergedSeqRedundant = true;
+			} else if (extendResult == ER_EXTENDED) {
+#pragma omp atomic
+				g_count.mergedAndExtended++;
+			}
 		} else {
+
 			/*
 			 * read pair could not be merged, so try
 			 * to extend each read individually (in
 			 * both directions).
 			 */
-			extendResult = extendReadPairIfNonRedundant(
-				read1.seq, read2.seq, opt::k, g);
-		}
-		if (extendResult == ER_REDUNDANT) {
+
+			read1Corrected = correctAndExtendSeq(read1.seq,
+				opt::k, g, read1.seq.length(), g_trimLen,
+				opt::mask);
+
+			if (read1Corrected) {
 #pragma omp atomic
-			g_count.skipped++;
-			return;
-		} else if (extendResult == ER_EXTENDED) {
+				g_count.singleEndCorrected++;
+				extendResult = extendReadIfNonRedundant(read1.seq,
+					opt::k, g);
+				if (extendResult == ER_REDUNDANT)
+					read1Redundant = true;
+			}
+
+			read2Corrected = correctAndExtendSeq(read2.seq,
+				opt::k, g, read2.seq.length(), g_trimLen,
+				opt::mask);
+
+			if (read2Corrected) {
 #pragma omp atomic
-			g_count.extended++;
+				g_count.singleEndCorrected++;
+				extendResult = extendReadIfNonRedundant(read2.seq,
+					opt::k, g);
+				if (extendResult == ER_REDUNDANT)
+					read2Redundant = true;
+			}
 		}
 	}
 
@@ -632,28 +616,43 @@ static void connectPair(const Graph& g,
 					++g_count.tooManyMismatches;
 				else
 					++g_count.tooManyReadMismatches;
+				if (opt::extend) {
+					if (read1Corrected || read2Corrected)
+#pragma omp critical(mergedStream)
+					{
+						if (read1Corrected && !read1Redundant)
+							mergedStream << (FastaRecord)read1;
+						if (read2Corrected && !read2Redundant)
+							mergedStream << (FastaRecord)read2;
+					}
+					if (!read1Corrected || !read2Corrected)
+#pragma omp critical(readStream)
+					{
+						if (!read1Corrected)
+							read1Stream << (FastaRecord)read1;
+						if (!read2Corrected)
+							read1Stream << (FastaRecord)read2;
+					}
+				} else
 #pragma omp critical(readStream)
 				{
-					if (opt::extend) {
-						read1Stream << (FastaRecord)read1;
-						read2Stream << (FastaRecord)read2;
-					} else {
-						read1Stream << read1;
-						read2Stream << read2;
-					}
+					read1Stream << read1;
+					read2Stream << read2;
 				}
 			}
 			else if (paths.size() > 1) {
 #pragma omp atomic
-					++g_count.multiplePaths;
+				++g_count.multiplePaths;
+				if (!mergedSeqRedundant)
 #pragma omp critical(mergedStream)
-				mergedStream << result.consensusSeq;
+					mergedStream << result.consensusSeq;
 			}
 			else {
 #pragma omp atomic
 				++g_count.uniquePath;
+				if (!mergedSeqRedundant)
 #pragma omp critical(mergedStream)
-				mergedStream << paths.front();
+					mergedStream << paths.front();
 			}
 			break;
 
@@ -678,13 +677,27 @@ static void connectPair(const Graph& g,
 			break;
 	}
 
-	if (result.pathResult != FOUND_PATH)
-#pragma omp critical(readStream)
-	{
+	if (result.pathResult != FOUND_PATH) {
 		if (opt::extend) {
-			read1Stream << (FastaRecord)read1;
-			read2Stream << (FastaRecord)read2;
-		} else {
+			if (read1Corrected || read2Corrected)
+#pragma omp critical(mergedStream)
+			{
+				if (read1Corrected && !read1Redundant)
+					mergedStream << (FastaRecord)read1;
+				if (read2Corrected && !read2Redundant)
+					mergedStream << (FastaRecord)read2;
+			}
+			if (!read1Corrected || !read2Corrected)
+#pragma omp critical(readStream)
+			{
+				if (!read1Corrected)
+					read1Stream << (FastaRecord)read1;
+				if (!read2Corrected)
+					read1Stream << (FastaRecord)read2;
+			}
+		} else
+#pragma omp critical(readStream)
+		{
 			read1Stream << read1;
 			read2Stream << read2;
 		}
@@ -923,7 +936,10 @@ int main(int argc, char** argv)
 	 */
 
 	string mergedOutputPath(opt::outputPrefix);
-	mergedOutputPath.append("_merged.fa");
+	if (opt::extend)
+		mergedOutputPath.append("_pseudoreads.fa");
+	else
+		mergedOutputPath.append("_merged.fa");
 	ofstream mergedStream(mergedOutputPath.c_str());
 	assert_good(mergedStream, mergedOutputPath);
 
@@ -990,11 +1006,6 @@ int main(int argc, char** argv)
 				    * (g_count.uniquePath + g_count.multiplePaths) /
 				   g_count.readPairsProcessed
 				<< "%)\n"
-			"Extended: "
-				<< g_count.extended
-				<< " (" << setprecision(3) <<  (float)100
-				    * g_count.extended / g_count.readPairsProcessed
-				<< "%)\n"
 			"No start/goal kmer: " << g_count.noStartOrGoalKmer
 				<< " (" << setprecision(3) << (float)100
 					* g_count.noStartOrGoalKmer / g_count.readPairsProcessed
@@ -1031,16 +1042,20 @@ int main(int argc, char** argv)
 				<< " (" << setprecision(3) << (float)100
 					* g_count.containsCycle / g_count.readPairsProcessed
 				<< "%)\n"
-			"Exceeded mem limit: " << g_count.exceededMemLimit
-				<< " (" << setprecision(3) << (float)100
-					* g_count.exceededMemLimit / g_count.readPairsProcessed
-				<< "%)\n"
 			"Skipped: " << g_count.skipped
 				<< " (" << setprecision(3) << (float)100
 					* g_count.skipped / g_count.readPairsProcessed
-				<< "%)\n"
-			"Bloom filter FPR: " << setprecision(3) << 100 * bloom->FPR()
-				<< "%\n";
+				<< "%)\n";
+			if (opt::extend) {
+				cerr << "Unmerged reads corrected/extended: "
+					<< g_count.singleEndCorrected
+					<< " (" << setprecision(3) <<  (float)100
+					* g_count.singleEndCorrected / ((g_count.readPairsProcessed -
+					g_count.uniquePath - g_count.multiplePaths) * 2)
+					<< "%)\n";
+			}
+			std::cerr << "Bloom filter FPR: " << setprecision(3)
+				<< 100 * bloom->FPR() << "%\n";
 	}
 
 	if (!opt::inputBloomPath.empty())

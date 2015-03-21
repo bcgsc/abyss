@@ -496,10 +496,15 @@ enum ExtendSeqResult {
  */
 template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
-	unsigned k, const Graph& g, unsigned trimLen=0, bool maskNew=false)
+	unsigned startKmerPos, unsigned k, const Graph& g,
+	unsigned maxLen=NO_LIMIT, unsigned trimLen=0,
+	bool maskNew=false)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
+
+	if (maxLen < seq.length())
+		maxLen = seq.length();
 
 	size_t origSeqLen = seq.length();
 
@@ -509,6 +514,7 @@ Sequence origSeq = seq;
 
 	/* choose a start kmer for the path */
 
+	/*
 	const unsigned minConsecutiveMatches = 3;
 	unsigned startKmerPos = NO_MATCH;
 	for (int i = minConsecutiveMatches; i >= 0; i--) {
@@ -518,23 +524,36 @@ Sequence origSeq = seq;
 	}
 	if (startKmerPos == NO_MATCH)
 		return ES_NO_START_KMER;
+	*/
 
 	/* initialize the path to be extended */
 	std::string kmerStr = seq.substr(startKmerPos, k);
 	Kmer startKmer(kmerStr);
 	Path<Kmer> path;
 	path.push_back(startKmer);
-	PathExtensionResult pathResult;
+	PathExtensionResult pathResult = LENGTH_LIMIT;
 
-	bool extendedThroughBubble = false;
-	do {
+	bool done = false;
+	while (!done && seq.length() < maxLen) {
 
 		/*
 		 * extend the path up to a dead end or branching point
 		 * in the de Bruijn graph.
 		 */
+		unsigned maxPathLen;
+		if (maxLen == NO_LIMIT) {
+			maxPathLen = NO_LIMIT;
+		} else if (dir == FORWARD) {
+			maxPathLen = std::max(1,
+				(int)(maxLen - startKmerPos - k + 1));
+		} else {
+			assert(dir == REVERSE);
+			maxPathLen = std::max(1,
+				(int)(maxLen - startKmerPos + 1));
+		}
 
-		pathResult = extendPath(path, dir, g, trimLen);
+		pathResult = extendPath(path, dir, g, trimLen,
+			maxPathLen);
 
 		/*
 		 * graft path extension onto original input sequence
@@ -559,9 +578,10 @@ Sequence origSeq = seq;
 		/*
 		 * extend through simple bubbles
 		 */
-		extendedThroughBubble = false;
-		if (pathResult == BRANCHING_POINT ||
-			pathResult == EXTENDED_TO_BRANCHING_POINT) {
+		done = true;
+		if (lengthAfterOverlay < maxLen &&
+			(pathResult == BRANCHING_POINT ||
+			pathResult == EXTENDED_TO_BRANCHING_POINT)) {
 			if (dir == FORWARD) {
 				startKmerPos = startKmerPos + path.size() - 1;
 				assert(startKmerPos < seq.length() - k + 1);
@@ -579,12 +599,21 @@ Sequence origSeq = seq;
 				path.clear();
 				path.push_back(getHeadKmer(seq, dir, k));
 				startKmerPos = getHeadKmerPos(seq, dir, k);
-				extendedThroughBubble = true;
+				if (seq.length() > maxLen) {
+					if (dir == FORWARD) {
+						seq = seq.substr(0, maxLen);
+					} else {
+						assert(dir == REVERSE);
+						seq = seq.substr(seq.length() - maxLen,
+							maxLen);
+					}
+				} else {
+					done = false;
+				}
 			}
 		}
 
-
-	} while (extendedThroughBubble);
+	} /* while (!done && seq.length() < maxLen) */
 
 	/* translate and return result code */
 
@@ -661,6 +690,99 @@ Sequence origSeq = seq;
 #endif
 
 	return result;
+}
+
+/**
+ * Correct the given sequence using the Bloom filter de Bruijn
+ * graph.  The correction is performed by finding the longest
+ * stretch of good kmers in the sequence and extending that
+ * region both left and right.
+ */
+template <typename Graph>
+static inline bool correctAndExtendSeq(Sequence& seq,
+	unsigned k, const Graph& g, unsigned maxLen=NO_LIMIT,
+	unsigned trimLen=0, bool maskNew=false)
+{
+	if (seq.size() < k)
+		return false;
+
+	if (maxLen < seq.length())
+		maxLen = seq.length();
+
+	/*
+	 * find longest stretch of contiguous kmers
+	 * in de Bruijn graph
+	 */
+
+	const int UNSET = -1;
+	int matchStart = UNSET;
+	unsigned matchLen = 0;
+	unsigned maxMatchLen = 0;
+	int maxMatchStart = UNSET;
+
+	for (unsigned i = 0; i < seq.length() - k + 1; ++i) {
+		std::string kmerStr = seq.substr(i, k);
+		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		if (pos != std::string::npos ||
+			!vertex_exists(Kmer(kmerStr), g)) {
+			if (matchStart != UNSET &&
+				matchLen > maxMatchLen) {
+				maxMatchLen = matchLen;
+				maxMatchStart = matchStart;
+			}
+			matchStart = UNSET;
+			matchLen = 0;
+			if (pos != std::string::npos)
+				i += pos;
+		} else {
+			if (matchStart == UNSET)
+				matchStart = i;
+			++matchLen;
+		}
+	}
+	if (maxMatchLen == 0)
+		return false;
+	if (maxMatchLen >= maxLen)
+		return true;
+
+	assert(maxMatchStart != UNSET);
+	assert(maxMatchStart >= 0);
+	assert(maxMatchLen > 0);
+
+	/* trim seq back to confident kmers */
+
+	assert(maxMatchLen < maxLen);
+	seq = seq.substr(maxMatchStart, maxMatchLen);
+
+	/* extend sequence right */
+
+	/*
+	 * note: offset starting position to reduce
+	 * probability of hitting a dead-end
+	 * (due to a false positive kmer)
+	 */
+	const unsigned extOffset = 2;
+	int extStartPos = std::max(0,
+		(int)(seq.length() - k - extOffset));
+	assert(extStartPos >= 0);
+
+	extendSeq(seq, FORWARD, (unsigned)extStartPos, k,
+		g, maxLen, trimLen, maskNew);
+
+	assert(seq.length() <= maxLen);
+	if (seq.length() == maxLen)
+		return true;
+
+	/* extend sequence left */
+
+	extStartPos = std::min((unsigned)(seq.length() - k), extOffset);
+	assert(extStartPos >= 0);
+
+	extendSeq(seq, REVERSE, (unsigned)extStartPos, k,
+		g, maxLen, trimLen, maskNew);
+	assert(seq.length() <= maxLen);
+
+	return true;
 }
 
 #endif
