@@ -446,6 +446,8 @@ enum ExtendSeqResult {
 	ES_BRANCHING_POINT,
 	/* start kmer was part of a cycle */
 	ES_CYCLE,
+	/* input seq was already max length or less */
+	ES_LENGTH_LIMIT,
 	/*
 	 * we did not make it from the start kmer to the
 	 * beginning/end of the input sequence, because
@@ -478,7 +480,12 @@ enum ExtendSeqResult {
 	 * we successfully extended the input sequence
 	 * and stopped when we hit a cycle.
 	 */
-	ES_EXTENDED_TO_CYCLE
+	ES_EXTENDED_TO_CYCLE,
+	/*
+	 * we successfully extended the input sequence
+	 * the given length limit
+	 */
+	ES_EXTENDED_TO_LENGTH_LIMIT
 };
 
 /**
@@ -646,6 +653,12 @@ Sequence origSeq = seq;
 		break;
 	case CYCLE:
 		result = ES_CYCLE;
+		break;
+	case LENGTH_LIMIT:
+		result = ES_LENGTH_LIMIT;
+		break;
+	case EXTENDED_TO_LENGTH_LIMIT:
+		result = ES_EXTENDED_TO_LENGTH_LIMIT;
 		break;
 	default:
 		/* all other cases should be handled above */
