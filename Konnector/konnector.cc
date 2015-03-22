@@ -322,26 +322,30 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	 * offset start pos to reduce chance of hitting
 	 * a dead end on a false positive kmer
 	 */
-	const unsigned offset = 2;
-
-	int startPos = std::max(0, (int)(seq.length() - k - offset));
-	assert(startPos >= 0 && startPos <= (int)(seq.length() - k));
-	result = extendSeq(seq, FORWARD, startPos, k, g,
-		NO_LIMIT, g_trimLen, opt::mask);
-	if (result == ES_EXTENDED_TO_DEAD_END ||
-		result == ES_EXTENDED_TO_BRANCHING_POINT ||
-		result == ES_EXTENDED_TO_CYCLE) {
-		extended = true;
+	const unsigned runLengthHint = 3;
+	unsigned startPos = getStartKmerPos2(seq, k, FORWARD, g,
+		runLengthHint);
+	if (startPos != NO_MATCH) {
+		assert(startPos <= seq.length() - k);
+		result = extendSeq(seq, FORWARD, startPos, k, g,
+				NO_LIMIT, g_trimLen, opt::mask);
+		if (result == ES_EXTENDED_TO_DEAD_END ||
+				result == ES_EXTENDED_TO_BRANCHING_POINT ||
+				result == ES_EXTENDED_TO_CYCLE) {
+			extended = true;
+		}
 	}
 
-	startPos = std::max((int)(seq.length() - k), (int)offset);
-	assert(startPos >= 0 && startPos <= (int)(seq.length() - k));
-	result = extendSeq(seq, REVERSE, startPos, k, g,
-		NO_LIMIT, g_trimLen, opt::mask);
-	if (result == ES_EXTENDED_TO_DEAD_END ||
-		result == ES_EXTENDED_TO_BRANCHING_POINT ||
-		result == ES_EXTENDED_TO_CYCLE) {
-		extended = true;
+	startPos = getStartKmerPos2(seq, k, REVERSE, g, runLengthHint);
+	if (startPos != NO_MATCH) {
+		assert(startPos <= seq.length() - k);
+		result = extendSeq(seq, REVERSE, startPos, k, g,
+				NO_LIMIT, g_trimLen, opt::mask);
+		if (result == ES_EXTENDED_TO_DEAD_END ||
+				result == ES_EXTENDED_TO_BRANCHING_POINT ||
+				result == ES_EXTENDED_TO_CYCLE) {
+			extended = true;
+		}
 	}
 
 	return extended;
