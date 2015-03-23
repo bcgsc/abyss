@@ -393,8 +393,16 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		return false;
 
 	Path<Kmer> path1, path2;
+	if (dir == FORWARD) {
+		path1.push_back(head);
+		path2.push_back(head);
+	}
 	path1.push_back(buds.front());
 	path2.push_back(buds.back());
+	if (dir == REVERSE) {
+		path1.push_back(head);
+		path2.push_back(head);
+	}
 	extendPath(path1, dir, g, trimLen, k+2);
 	extendPath(path2, dir, g, trimLen, k+2);
 
@@ -421,9 +429,10 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	Sequence& consensus = alignment.match_align;
 
 	if (dir == FORWARD) {
-		overlaySeq(consensus, seq, seq.length()-k, maskNew);
+		overlaySeq(consensus, seq, startKmerPos, maskNew);
 	} else {
-		overlaySeq(consensus, seq, -consensus.length()+k, maskNew);
+		overlaySeq(consensus, seq,
+			-consensus.length() + startKmerPos + k, maskNew);
 	}
 
 	return true;
