@@ -441,6 +441,7 @@ static inline string getConnectingSeq(ConnectPairsResult& result,
 	unsigned k, const Bloom& bloom)
 {
 	assert(result.pathResult == FOUND_PATH);
+	(void)bloom;
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
 	assert(paths.size() > 0);
@@ -457,46 +458,8 @@ static inline string getConnectingSeq(ConnectPairsResult& result,
 	assert(startPos >= 0 && startPos <=
 		(int)(seq.length() - k + 1));
 
-	/*
-	 * extend seq left until we hit a kmer that is not in
-	 * the Bloom filter (probably a sequencing error),
-	 * or we hit the beginning of the sequence.
-	 */
-	int origStartPos = startPos;
-	for (--startPos; startPos >= 0; --startPos) {
-		string kmerStr = seq.substr(startPos, k);
-		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
-			break;
-		Kmer kmer(kmerStr);
-		if (!bloom[kmer])
-			break;
-	}
-	++startPos;
-
-	/*
-	 * extend seq right until we hit a kmer that is not in
-	 * the Bloom filter (probably a sequencing error), or
-	 * we hit the end of the sequence.
-	 */
-	int origEndPos = endPos;
-	for (++endPos; endPos < (int)(seq.length() - k + 1);
-		++endPos) {
-		string kmerStr = seq.substr(endPos, k);
-		if (kmerStr.find_first_not_of("AGCTagct") != std::string::npos)
-			break;
-		Kmer kmer(kmerStr);
-		if (!bloom[kmer])
-			break;
-	}
-	--endPos;
-
-	assert(startPos >= 0 && startPos <= origStartPos);
-	assert(endPos >= origEndPos && endPos <
-		(int)(seq.length() - k + 1));
-
 	return seq.substr(startPos, endPos - startPos + k);
 }
-
 
 /** Connect a read pair. */
 template <typename Graph, typename Bloom>
@@ -563,6 +526,7 @@ static void connectPair(const Graph& g,
 			 * both directions).
 			 */
 
+//std::cerr << "correcting " << read1.id << " (read 1)" << std::endl;
 			read1Corrected = correctAndExtendSeq(read1.seq,
 				opt::k, g, read1.seq.length(), g_trimLen,
 				opt::mask);
@@ -576,6 +540,7 @@ static void connectPair(const Graph& g,
 					read1Redundant = true;
 			}
 
+//std::cerr << "correcting " << read2.id << " (read 2)" << std::endl;
 			read2Corrected = correctAndExtendSeq(read2.seq,
 				opt::k, g, read2.seq.length(), g_trimLen,
 				opt::mask);
