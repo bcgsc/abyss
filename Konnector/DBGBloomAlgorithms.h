@@ -48,7 +48,7 @@ static inline Sequence pathToSeq(Path<Kmer> path)
  * @return position of chosen start kmer
  */
 template<typename Graph>
-static inline unsigned getStartKmerPos(Sequence seq,
+static inline unsigned getStartKmerPos(const Sequence& seq,
 	unsigned k, Direction dir, const Graph& g,
 	unsigned numMatchesThreshold=1)
 {
@@ -56,9 +56,6 @@ static inline unsigned getStartKmerPos(Sequence seq,
 
 	if (seq.size() < k)
 		return NO_MATCH;
-
-	/* Kmer class doesn't like lowercase chars */
-	std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
 	int inc, startPos, endPos;
 	if (dir == FORWARD) {
