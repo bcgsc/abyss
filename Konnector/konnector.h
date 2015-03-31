@@ -226,11 +226,13 @@ static inline ConnectPairsResult connectPairs(
 		return result;
 	}
 
+	const unsigned numMatchesThreshold = 3;
+
 	unsigned startKmerPos = getStartKmerPos(read1, k, FORWARD, g,
-		params.kmerMatchesThreshold);
+		numMatchesThreshold);
 
 	unsigned goalKmerPos = getStartKmerPos(read2, k, FORWARD, g,
-		params.kmerMatchesThreshold);
+		numMatchesThreshold);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
