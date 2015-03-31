@@ -89,10 +89,6 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked            trim masked bases from the ends of reads\n"
 "      --no-trim-masked         do not trim masked bases from the ends\n"
 "                               of reads [default]\n"
-"  -l, --long-search            start path search as close as possible\n"
-"                               to the beginnings of reads. Takes more time\n"
-"                               but improves results when bloom filter false\n"
-"                               positive rate is high [disabled]\n"
 "  -m, --flank-mismatches=N     max mismatches between paths and flanks; use\n"
 "                               'nolimit' for no limit [nolimit]\n"
 "  -M, --max-mismatches=N       max mismatches between all alternate paths;\n"
@@ -138,13 +134,6 @@ namespace opt {
 
 	/** Input read files are interleaved? */
 	bool interleaved = false;
-
-	/**
-	 * Choose start/goal kmers for path search as close as
-	 * possible to beginning (5' end) of reads. Improves
-	 * results when bloom filter FPR is high.
-	 */
-	bool longSearch = false;
 
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 1000;
@@ -244,7 +233,6 @@ static const struct option longopts[] = {
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
 	{ "interleaved",      no_argument, NULL, 'I' },
-	{ "long-search",      no_argument, NULL, 'l' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
@@ -740,8 +728,6 @@ int main(int argc, char** argv)
 			opt::k = tempK;
 			break;
 			}
-		  case 'l':
-			opt::longSearch = true; break;
 		  case 'm':
 			setMaxOption(opt::maxFlankMismatches, arg); break;
 		  case 'n':
@@ -864,8 +850,12 @@ int main(int argc, char** argv)
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
 	params.maxReadMismatches = opt::maxFlankMismatches;
+	/*
+	 * search from the end of the scaffold flank until
+	 * we find this many matches in a row.
+	 */
+	params.kmerMatchesThreshold = 1;
 	params.fixErrors = opt::fixErrors;
-	params.longSearch = opt::longSearch;
 	params.maskBases = opt::mask;
 	params.memLimit = opt::searchMem;
 	params.dotPath = opt::dotPath;

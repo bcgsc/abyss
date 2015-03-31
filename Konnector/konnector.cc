@@ -79,10 +79,6 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
-"  -l, --long-search          start path search as close as possible\n"
-"                             to the beginnings of reads. Takes more time\n"
-"                             but improves results when bloom filter false\n"
-"                             positive rate is high [disabled]\n"
 "  -m, --read-mismatches=N    max mismatches between paths and reads; use\n"
 "                             'nolimit' for no limit [nolimit]\n"
 "  -M, --max-mismatches=N     max mismatches between all alternate paths;\n"
@@ -121,13 +117,6 @@ namespace opt {
 
 	/** Input read files are interleaved? */
 	bool interleaved = false;
-
-	/**
-	 * Choose start/goal kmers for path search as close as
-	 * possible to beginning (5' end) of reads. Improves
-	 * results when bloom filter FPR is high.
-	 */
-	bool longSearch = false;
 
 	/** Max active branches during de Bruijn graph traversal */
 	unsigned maxBranches = 350;
@@ -210,7 +199,6 @@ static const struct option longopts[] = {
 	{ "max-frag",         required_argument, NULL, 'F' },
 	{ "input-bloom",      required_argument, NULL, 'i' },
 	{ "interleaved",      no_argument, NULL, 'I' },
-	{ "long-search",      no_argument, NULL, 'l' },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
@@ -481,8 +469,6 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
-		  case 'l':
-			opt::longSearch = true; break;
 		  case 'm':
 			setMaxOption(opt::maxReadMismatches, arg); break;
 		  case 'n':
@@ -643,8 +629,8 @@ int main(int argc, char** argv)
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
 	params.maxReadMismatches = opt::maxReadMismatches;
+	params.kmerMatchesThreshold = 3;
 	params.fixErrors = opt::fixErrors;
-	params.longSearch = opt::longSearch;
 	params.maskBases = opt::mask;
 	params.memLimit = opt::searchMem;
 	params.dotPath = opt::dotPath;

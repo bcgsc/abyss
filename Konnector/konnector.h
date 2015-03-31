@@ -117,8 +117,8 @@ struct ConnectPairsParams {
 	unsigned maxBranches;
 	unsigned maxPathMismatches;
 	unsigned maxReadMismatches;
+	unsigned kmerMatchesThreshold;
 	bool fixErrors;
-	bool longSearch;
 	bool maskBases;
 	size_t memLimit;
 	std::string dotPath;
@@ -131,8 +131,8 @@ struct ConnectPairsParams {
 		maxBranches(NO_LIMIT),
 		maxPathMismatches(NO_LIMIT),
 		maxReadMismatches(NO_LIMIT),
+		kmerMatchesThreshold(1),
 		fixErrors(false),
-		longSearch(false),
 		maskBases(false),
 		memLimit(std::numeric_limits<std::size_t>::max()),
 		dotStream(NULL)
@@ -224,13 +224,11 @@ static inline ConnectPairsResult connectPairs(
 		return result;
 	}
 
-	const unsigned numMatchesThreshold = 3;
-
 	unsigned startKmerPos = getStartKmerPos(read1, k, FORWARD, g,
-		numMatchesThreshold);
+		params.kmerMatchesThreshold);
 
 	unsigned goalKmerPos = getStartKmerPos(read2, k, FORWARD, g,
-		numMatchesThreshold);
+		params.kmerMatchesThreshold);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
@@ -242,7 +240,7 @@ static inline ConnectPairsResult connectPairs(
 		correctedRead1 = read1;
 		if (correctSingleBaseError(g, k, correctedRead1, unused)) {
 			startKmerPos = getStartKmerPos(correctedRead1, k, FORWARD, g,
-					numMatchesThreshold);
+				params.kmerMatchesThreshold);
 			assert(startKmerPos != NO_MATCH);
 			pRead1 = &correctedRead1;
 		}
@@ -252,7 +250,7 @@ static inline ConnectPairsResult connectPairs(
 		correctedRead2 = read2;
 		if (correctSingleBaseError(g, k, correctedRead2, unused)) {
 			goalKmerPos = getStartKmerPos(correctedRead2, k, FORWARD, g,
-					numMatchesThreshold);
+				params.kmerMatchesThreshold);
 			assert(goalKmerPos != NO_MATCH);
 			pRead2 = &correctedRead2;
 		}
