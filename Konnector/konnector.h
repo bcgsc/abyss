@@ -224,11 +224,13 @@ static inline ConnectPairsResult connectPairs(
 		return result;
 	}
 
-	unsigned startKmerPos = getStartKmerPos(k, read1, g,
-			false, params.longSearch);
+	const unsigned numMatchesThreshold = 3;
 
-	unsigned goalKmerPos = getStartKmerPos(k, read2, g,
-			true, params.longSearch);
+	unsigned startKmerPos = getStartKmerPos(read1, k, FORWARD, g,
+		numMatchesThreshold);
+
+	unsigned goalKmerPos = getStartKmerPos(read2, k, FORWARD, g,
+		numMatchesThreshold);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
@@ -239,8 +241,8 @@ static inline ConnectPairsResult connectPairs(
 	if (startKmerPos == NO_MATCH && params.fixErrors) {
 		correctedRead1 = read1;
 		if (correctSingleBaseError(g, k, correctedRead1, unused)) {
-			startKmerPos = getStartKmerPos(k, correctedRead1, g,
-				false, params.longSearch);
+			startKmerPos = getStartKmerPos(correctedRead1, k, FORWARD, g,
+					numMatchesThreshold);
 			assert(startKmerPos != NO_MATCH);
 			pRead1 = &correctedRead1;
 		}
@@ -249,8 +251,8 @@ static inline ConnectPairsResult connectPairs(
 	if (goalKmerPos == NO_MATCH && params.fixErrors) {
 		correctedRead2 = read2;
 		if (correctSingleBaseError(g, k, correctedRead2, unused)) {
-			goalKmerPos = getStartKmerPos(k, correctedRead2, g,
-				true, params.longSearch);
+			goalKmerPos = getStartKmerPos(correctedRead2, k, FORWARD, g,
+					numMatchesThreshold);
 			assert(goalKmerPos != NO_MATCH);
 			pRead2 = &correctedRead2;
 		}

@@ -26,71 +26,86 @@ static inline Sequence pathToSeq(Path<Kmer> path)
 	return seq;
 }
 
+/**
+ * Choose a suitable starting kmer for a path search and
+ * return its position. More specifically, find the kmer
+ * closest to the end of the given sequence that is followed by
+ * at least (numMatchesThreshold - 1) consecutive kmers that
+ * are also present in the Bloom filter de Bruijn graph. If there
+ * is no sequence of matches of length numMatchesThreshold,
+ * use the longest sequence of matching kmers instead.
+ *
+ * The default behaviour of this method is to choose
+ * the last kmer in the sequence that is present in the
+ * Bloom filter de Bruijn graph.
+ *
+ * @param seq sequence in which to find start kmer
+ * @param k kmer size
+ * @param g de Bruijn graph
+ * @param numMatchesThreshold if we encounter a sequence
+ * of numMatchesThreshold consecutive kmers in the Bloom filter,
+ * choose the kmer at the beginning of that sequence
+ * @return position of chosen start kmer
+ */
 template<typename Graph>
-static inline unsigned getStartKmerPos(unsigned k, const FastaRecord& read,
-		const Graph& g, bool rc = false, bool longSearch = false)
+static inline unsigned getStartKmerPos(Sequence seq,
+	unsigned k, Direction dir, const Graph& g,
+	unsigned numMatchesThreshold=1)
 {
-	if (read.seq.size() < k)
+	assert(numMatchesThreshold > 0);
+
+	if (seq.size() < k)
 		return NO_MATCH;
 
-	// build a vector indicating whether each kmer is a match
-	// Note: the vector intentionally has an extra false element at
-	// the end, for the second loop below.
+	/* Kmer class doesn't like lowercase chars */
+	std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
-	const std::string& seq = read.seq;
-	std::vector<bool> match(seq.length() - k + 2, false);
-	bool foundMatch = false;
-	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
-		std::string kmerStr = seq.substr(i, k);
-		size_t pos = kmerStr.find_first_not_of("AGCTagct");
-		if (pos != std::string::npos) {
-			i += pos;
-			continue;
-		}
-		Kmer kmer(kmerStr);
-		if (rc)
-			kmer.reverseComplement();
-		if (vertex_exists(kmer, g)) {
-			foundMatch = true;
-			match[i] = true;
-		}
+	int inc, startPos, endPos;
+	if (dir == FORWARD) {
+		inc = -1;
+		startPos = seq.length() - k;
+		endPos = -1;
+	} else {
+		assert(dir == REVERSE);
+		inc = 1;
+		startPos = 0;
+		endPos = seq.length() - k + 1;
 	}
-	if (!foundMatch)
-		return NO_MATCH;
 
-	// find the longest string of matches
-
-	unsigned maxMatchLength = 0;
+	unsigned matchCount = 0;
+	unsigned maxMatchLen = 0;
 	unsigned maxMatchPos = 0;
-	unsigned matchLength = 0;
-	unsigned matchPos = 0;
-	bool matchPosSet = false;
-	for (unsigned i = 0; i < match.size(); i++) {
-		if (match[i]) {
-			if (!matchPosSet) {
-				matchPos = i;
-				matchPosSet = true;
+	int i;
+	for (i = startPos; i != endPos; i += inc) {
+		assert(i >= 0 && i <= (int)(seq.length() - k + 1));
+		std::string kmerStr = seq.substr(i, k);
+		if (kmerStr.find_first_not_of("AGCTagct")
+			!= std::string::npos ||
+			!vertex_exists(Kmer(kmerStr), g)) {
+			if (matchCount > maxMatchLen) {
+				assert(i - inc >= 0 &&
+					i - inc < (int)(seq.length() - k + 1));
+				maxMatchPos = i - inc;
+				maxMatchLen = matchCount;
 			}
-			matchLength++;
+			matchCount = 0;
 		} else {
-			// Note: match has an extra false element at the end,
-			// so this else block will get executed at least once.
-			if ((longSearch && matchLength > maxMatchLength)
-					|| (!longSearch && matchLength >= maxMatchLength))
-			{
-				maxMatchPos = matchPos;
-				maxMatchLength = matchLength;
-			}
-			matchLength = 0;
-			matchPosSet = false;
+			matchCount++;
+			if (matchCount >= numMatchesThreshold)
+				return i;
 		}
 	}
-	assert(maxMatchLength > 0);
-
-	if (longSearch)
-		return maxMatchPos;
+	/* handle case where first/last kmer in seq is a match */
+	if (matchCount > maxMatchLen) {
+		assert(i - inc >= 0 &&
+			i - inc < (int)(seq.length() - k + 1));
+		maxMatchPos = i - inc;
+		maxMatchLen = matchCount;
+	}
+	if (maxMatchLen == 0)
+		return NO_MATCH;
 	else
-		return maxMatchPos + maxMatchLength - 1;
+		return maxMatchPos;
 }
 
 struct BaseChangeScore {

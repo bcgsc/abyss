@@ -7,15 +7,25 @@
 
 using namespace std;
 
-/**
- * Test fixture for the getStartKmerPos function.
+/*
+ * Tests for getStartKmerPos() function, which does
+ * the following:
  *
- * getStartKmerPos chooses the kmer at the
- * beginning of the longest series kmer matches with
- * within the read.  In the case where there are
- * two equal-length series of matches,
- * getStartKmerPos choose the kmer position closest
- * to the beginning (5' end) of the read.
+ * Choose a suitable starting kmer for a path search and
+ * return its position. More specifically, find the kmer
+ * closest to the end of the given sequence that is followed by
+ * at least (numMatchesThreshold - 1) consecutive kmers that
+ * are also present in the Bloom filter de Bruijn graph. If there
+ * is no sequence of matches of length numMatchesThreshold,
+ * use the longest sequence of matching kmers instead.
+ *
+ * @param seq sequence in which to find start kmer
+ * @param k kmer size
+ * @param g de Bruijn graph
+ * @param numMatchesThreshold if we encounter a sequence
+ * of numMatchesThreshold consecutive kmers in the Bloom filter,
+ * choose the kmer at the beginning of that sequence
+ * @return position of chosen start kmer
  */
 class GetStartKmerPosTest : public testing::Test {
 
@@ -38,10 +48,10 @@ TEST_F(GetStartKmerPosTest, FullReadMatch)
 	BloomFilter bloom(bloomFilterSize);
 	Bloom::loadSeq(bloom, k, testRead.seq);
 	DBGBloom<BloomFilter> g(bloom);
+	const unsigned numMatchesThreshold = 1;
 
-	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, false, true));
-	// true indicates revese complement (second read)
-	EXPECT_EQ(0U, getStartKmerPos(k, testRead, g, true, true));
+	EXPECT_EQ(5U, getStartKmerPos(testRead, k, FORWARD, g,
+		numMatchesThreshold));
 }
 
 TEST_F(GetStartKmerPosTest, FullReadMismatch)
@@ -50,10 +60,10 @@ TEST_F(GetStartKmerPosTest, FullReadMismatch)
 	// Leave the bloom filter empty to generate a mismatch
 	// for every kmer in the read.
 	DBGBloom<BloomFilter> g(bloom);
-	EXPECT_EQ(NO_MATCH, getStartKmerPos(k, testRead, g, false, true));
+	EXPECT_EQ(NO_MATCH, getStartKmerPos(testRead, k, FORWARD, g));
 }
 
-TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
+TEST_F(GetStartKmerPosTest, NumMatchesThreshold)
 {
 	const string& seq = testRead.seq;
 	BloomFilter bloom(bloomFilterSize);
@@ -67,10 +77,31 @@ TEST_F(GetStartKmerPosTest, SelectLongestMatchRegion)
 		Bloom::loadSeq(bloom, k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(2U, getStartKmerPos(k, testRead, g, false, true));
-	// true indicates revese complement (second read)
-	EXPECT_EQ(getStartKmerPos(k, testRead, g),
-		getStartKmerPos(k, testRead, g, true));
+	unsigned numMatchesThreshold;
+
+	numMatchesThreshold = 1;
+	EXPECT_EQ(5U, getStartKmerPos(testRead, k, FORWARD, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 2;
+	EXPECT_EQ(2U, getStartKmerPos(testRead, k, FORWARD, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 3;
+	EXPECT_EQ(2U, getStartKmerPos(testRead, k, FORWARD, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 1;
+	EXPECT_EQ(0U, getStartKmerPos(testRead, k, REVERSE, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 2;
+	EXPECT_EQ(3U, getStartKmerPos(testRead, k, REVERSE, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 3;
+	EXPECT_EQ(3U, getStartKmerPos(testRead, k, REVERSE, g,
+		numMatchesThreshold));
 }
 
 TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
@@ -87,9 +118,15 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 		Bloom::loadSeq(bloom, k, seq.substr(i,k));
 	}
 
-	EXPECT_EQ(1U, getStartKmerPos(k, testRead, g, false, true));
-	// true indicates revese complement (second read)
-	EXPECT_EQ(1U, getStartKmerPos(k, testRead, g, true, true));
+	unsigned numMatchesThreshold;
+
+	numMatchesThreshold = 2;
+	EXPECT_EQ(4U, getStartKmerPos(testRead, k, FORWARD, g,
+		numMatchesThreshold));
+
+	numMatchesThreshold = 2;
+	EXPECT_EQ(2U, getStartKmerPos(testRead, k, REVERSE, g,
+		numMatchesThreshold));
 }
 
 class CorrectSingleBaseErrorTest : public testing::Test {
