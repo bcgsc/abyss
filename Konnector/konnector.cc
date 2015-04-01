@@ -323,7 +323,7 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	 * a dead end on a false positive kmer
 	 */
 	const unsigned runLengthHint = 3;
-	unsigned startPos = getStartKmerPos2(seq, k, FORWARD, g,
+	unsigned startPos = getStartKmerPos(seq, k, FORWARD, g,
 		runLengthHint);
 	if (startPos != NO_MATCH) {
 		assert(startPos <= seq.length() - k);
@@ -336,7 +336,7 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 		}
 	}
 
-	startPos = getStartKmerPos2(seq, k, REVERSE, g, runLengthHint);
+	startPos = getStartKmerPos(seq, k, REVERSE, g, runLengthHint);
 	if (startPos != NO_MATCH) {
 		assert(startPos <= seq.length() - k);
 		result = extendSeq(seq, REVERSE, startPos, k, g,
