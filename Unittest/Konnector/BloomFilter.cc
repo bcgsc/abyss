@@ -152,7 +152,7 @@ TEST(BloomFilter, intersect)
 
 TEST(CascadingBloomFilter, base)
 {
-	CascadingBloomFilter x(100);
+	CascadingBloomFilter x(100, 2);
 	EXPECT_EQ(x.size(), 100U);
 
 	Kmer::setLength(16);
@@ -256,7 +256,7 @@ TEST(CascadingBloomFilter, window)
 	size_t pos2 = 80;
 	size_t pos3 = 50;
 
-	CascadingBloomFilter CascadingBloom(bits);
+	CascadingBloomFilter CascadingBloom(bits, 2);
 
 	// set a bit in both halves of the second level
 	// bloom filter
@@ -270,11 +270,11 @@ TEST(CascadingBloomFilter, window)
 	EXPECT_TRUE(CascadingBloom[pos2]);
 	EXPECT_EQ(2U, CascadingBloom.getBloomFilter(1).popcount());
 
-	CascadingBloomFilterWindow window1(bits, 0, bits/2 - 1);
+	CascadingBloomFilterWindow window1(bits, 0, bits/2 - 1, 2);
 	window1.insert(pos1);
 	window1.insert(pos1);
 
-	CascadingBloomFilterWindow window2(bits, bits/2, bits - 1);
+	CascadingBloomFilterWindow window2(bits, bits/2, bits - 1, 2);
 	window2.insert(pos2);
 	window2.insert(pos2);
 

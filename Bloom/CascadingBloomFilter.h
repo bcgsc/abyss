@@ -14,16 +14,14 @@ class CascadingBloomFilter
 {
   public:
 
-	/** The maximum count of an element in this multiset. */
-	static const unsigned MAX_COUNT = 2;
-
 	/** Constructor */
 	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CascadingBloomFilter(size_t n)
+	CascadingBloomFilter(size_t n, size_t max_count)
 	{
-		for (unsigned i = 0; i < MAX_COUNT; i++)
+		m_data.reserve(max_count);
+		for (unsigned i = 0; i < max_count; i++)
 			m_data.push_back(new BloomFilter(n));
 	}
 
@@ -44,7 +42,7 @@ class CascadingBloomFilter
 		return m_data.back()->size();
 	}
 
-	/** Return the number of elements with count >= MAX_COUNT. */
+	/** Return the number of elements with count >= max_count. */
 	size_t popcount() const
 	{
 		assert(m_data.back() != NULL);
@@ -58,7 +56,7 @@ class CascadingBloomFilter
 	}
 
 	/** Return whether the element with this index has count >=
-	 * MAX_COUNT.
+	 * max_count.
 	 */
 	bool operator[](size_t i) const
 	{
@@ -66,7 +64,7 @@ class CascadingBloomFilter
 		return (*m_data.back())[i];
 	}
 
-	/** Return whether this element has count >= MAX_COUNT. */
+	/** Return whether this element has count >= max_count. */
 	bool operator[](const Bloom::key_type& key) const
 	{
 		assert(m_data.back() != NULL);
@@ -76,7 +74,7 @@ class CascadingBloomFilter
 	/** Add the object with the specified index to this multiset. */
 	void insert(size_t index)
 	{
-		for (unsigned i = 0; i < MAX_COUNT; ++i) {
+		for (unsigned i = 0; i < m_data.size(); ++i) {
 			assert(m_data.at(i) != NULL);
 			if (!(*m_data[i])[index]) {
 				m_data[i]->insert(index);

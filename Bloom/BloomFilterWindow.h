@@ -65,7 +65,7 @@ public:
 		return BloomFilter::size();
 	}
 
-	/** Return the number of elements with count >= MAX_COUNT. */
+	/** Return the number of elements with count >= max_count. */
 	size_t popcount() const
 	{
 		return BloomFilter::popcount();

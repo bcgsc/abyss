@@ -115,6 +115,9 @@ namespace opt {
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
+	/** The maximum count value of the BLoom filter. */
+	unsigned max_count = 2;
+
 	/** Input read files are interleaved? */
 	bool interleaved = false;
 
@@ -564,8 +567,8 @@ int main(int argc, char** argv)
 		// Specify bloom filter size in bits. Divide by two
 		// because counting bloom filter requires twice as
 		// much space.
-		size_t bits = opt::bloomSize * 8 / 2;
-		cascadingBloom = new CascadingBloomFilter(bits);
+		size_t bits = opt::bloomSize * 8 / opt::max_count;
+		cascadingBloom = new CascadingBloomFilter(bits, opt::max_count);
 #ifdef _OPENMP
 		ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 		for (int i = optind; i < argc; i++)
@@ -574,7 +577,7 @@ int main(int argc, char** argv)
 		for (int i = optind; i < argc; i++)
 			Bloom::loadFile(*cascadingBloom, opt::k, string(argv[i]), opt::verbose);
 #endif
-		bloom = &cascadingBloom->getBloomFilter(cascadingBloom->MAX_COUNT-1);
+		bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
 	}
 
 	if (opt::verbose)
