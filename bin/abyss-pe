@@ -626,7 +626,7 @@ endif
 sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 
 %-8_scaffold.fa: %-8.fa
-	abyss-sealer -v -j$j --print-flanks -o$*-8 -S$< $(sealer_ks) $(in) $(se)
+	abyss-sealer -v -j$j --print-flanks -o$*-8 -S$< $(sealer_ks) $(SEALER_OPTIONS) $(in) $(se)
 
 %-scaffolds-sealed.fa: %-8_scaffold.fa
 	ln -s $< $@
