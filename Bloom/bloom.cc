@@ -354,12 +354,6 @@ int build(int argc, char** argv)
 		}
 	}
 
-	if (opt::levels > 2)
-	{
-		cerr << PROGRAM ": -l > 2 is not currently supported\n";
-		dieWithUsageError();
-	}
-
 	if (!opt::levelInitPaths.empty() && opt::levels < 2)
 	{
 		cerr << PROGRAM ": -L can only be used with cascading bloom "
@@ -422,7 +416,7 @@ int build(int argc, char** argv)
 			writeBloom(bloom, outputPath);
 		}
 		else {
-			CascadingBloomFilter cascadingBloom(bits);
+			CascadingBloomFilter cascadingBloom(bits, opt::levels);
 			initBloomFilterLevels(cascadingBloom);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter>
@@ -453,7 +447,8 @@ int build(int argc, char** argv)
 			writeBloom(bloom, outputPath);
 		}
 		else {
-			CascadingBloomFilterWindow cascadingBloom(bits, startBitPos, endBitPos);
+			CascadingBloomFilterWindow cascadingBloom(
+				bits, startBitPos, endBitPos, opt::levels);
 			initBloomFilterLevels(cascadingBloom);
 			loadFilters(cascadingBloom, argc, argv);
 			printCascadingBloomStats(cerr, cascadingBloom);

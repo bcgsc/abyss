@@ -15,11 +15,14 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 	 * @param fullBloomSize size in bits of the containing counting bloom filter
 	 * @param startBitPos index of first bit in the window
 	 * @param endBitPos index of last bit in the window
+	 * @param max_count the maximum count value of the Bloom filter
 	 */
-	CascadingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos)
+	CascadingBloomFilterWindow(size_t fullBloomSize, size_t startBitPos, size_t endBitPos,
+			unsigned max_count)
 		: m_fullBloomSize(fullBloomSize)
 	{
-		for (unsigned i = 0; i < MAX_COUNT; i++)
+		m_data.reserve(max_count);
+		for (unsigned i = 0; i < max_count; ++i)
 			m_data.push_back(new BloomFilterWindow(fullBloomSize, startBitPos, endBitPos));
 	}
 
@@ -30,7 +33,7 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 		return m_data.back()->size();
 	}
 
-	/** Return the number of elements with count >= MAX_COUNT. */
+	/** Return the number of elements with count >= max_count. */
 	size_t popcount() const
 	{
 		assert(m_data.back() != NULL);
@@ -46,7 +49,7 @@ class CascadingBloomFilterWindow : private CascadingBloomFilter
 	/** Add the object with the specified index to this multiset. */
 	void insert(size_t index)
 	{
-		for (unsigned i = 0; i < MAX_COUNT; ++i) {
+		for (unsigned i = 0; i < m_data.size(); ++i) {
 			assert(m_data.at(i) != NULL);
 			if (!(*m_data[i])[index]) {
 				m_data[i]->insert(index);

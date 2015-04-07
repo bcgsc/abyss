@@ -15,7 +15,7 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	 Kmer kmer2("ACC");
 	  Kmer kmer3("CCA");
 
-	CascadingBloomFilter countingBloom(bits);
+	CascadingBloomFilter countingBloom(bits, 2);
 
 	countingBloom.insert(kmer1);
 	countingBloom.insert(kmer1);
