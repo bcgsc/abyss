@@ -47,9 +47,7 @@ or download and install the
 
 Install [Homebrew](http://brew.sh/), and run the commands
 
-	brew tap homebrew/science
-
-	brew install abyss
+	brew install homebrew/science/abyss
 
 ## Assemble a small synthetic data set
 
