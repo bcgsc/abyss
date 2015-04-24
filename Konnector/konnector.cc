@@ -52,6 +52,10 @@ static const char USAGE_MESSAGE[] =
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer\n"
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
+"  -c, --min-coverage=N       kmer coverage threshold for error correction [2].\n"
+"                             This option specifies the number of levels in the\n"
+"                             cascading Bloom filter; it has no effect if the Bloom\n"
+"                             filter is loaded from an external file.\n"
 "  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
 "                             use 'nolimit' for no limit [350]\n"
 "  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
@@ -129,8 +133,8 @@ namespace opt {
 	/** The size of the bloom filter in bytes. */
 	size_t bloomSize = 500 * 1024 * 1024;
 
-	/** The maximum count value of the BLoom filter. */
-	unsigned max_count = 2;
+	/** The maximum count value of the Bloom filter. */
+	unsigned minCoverage = 2;
 
 	/** Input read files are interleaved? */
 	bool interleaved = false;
@@ -221,12 +225,13 @@ static struct {
 	size_t singleEndCorrected;
 } g_count;
 
-static const char shortopts[] = "b:B:d:D:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "min-coverage",     required_argument, NULL, 'c' },
 	{ "max-branches",     required_argument, NULL, 'B' },
 	{ "dot-file",         required_argument, NULL, 'd' },
 	{ "dup-bloom-size",   required_argument, NULL, 'D' },
@@ -731,6 +736,7 @@ static inline void setMaxOption(unsigned& arg, istream& in)
 int main(int argc, char** argv)
 {
 	bool die = false;
+	bool minCovOptUsed = false;
 
 	for (int c; (c = getopt_long(argc, argv,
 					shortopts, longopts, NULL)) != -1;) {
@@ -740,6 +746,10 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'c':
+			arg >> opt::minCoverage;
+			minCovOptUsed = true;
+			break;
 		  case 'B':
 			setMaxOption(opt::maxBranches, arg); break;
 		  case 'd':
@@ -821,6 +831,12 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	if (!opt::inputBloomPath.empty() && minCovOptUsed) {
+		cerr << PROGRAM ": warning: -c option has no effect when "
+			" using a pre-built Bloom filter (-i option)\n";
+	}
+
+
 #if _OPENMP
 	if (opt::threads > 0)
 		omp_set_num_threads(opt::threads);
@@ -857,11 +873,15 @@ int main(int argc, char** argv)
 
 	} else {
 
-		// Specify bloom filter size in bits. Divide by two
-		// because counting bloom filter requires twice as
-		// much space.
-		size_t bits = opt::bloomSize * 8 / opt::max_count;
-		cascadingBloom = new CascadingBloomFilter(bits, opt::max_count);
+		if (opt::verbose)
+			std::cerr << "Using a minimum kmer coverage threshold of "
+				<< opt::minCoverage << "\n";
+
+		// Specify bloom filter size in bits and divide by number
+		// of levels in cascading Bloom filter.
+
+		size_t bits = opt::bloomSize * 8 / opt::minCoverage;
+		cascadingBloom = new CascadingBloomFilter(bits, opt::minCoverage);
 #ifdef _OPENMP
 		ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 		for (int i = optind; i < argc; i++)
@@ -870,7 +890,7 @@ int main(int argc, char** argv)
 		for (int i = optind; i < argc; i++)
 			Bloom::loadFile(*cascadingBloom, opt::k, string(argv[i]), opt::verbose);
 #endif
-		bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
+		bloom = &cascadingBloom->getBloomFilter(opt::minCoverage - 1);
 	}
 
 	if (opt::verbose)
