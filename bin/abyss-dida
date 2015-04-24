@@ -80,7 +80,7 @@ unset query[${#query[@]}-1]
 #------------------------------------------------------------
 
 tmpdir=$(mktemp -d --tmpdir=.)
-pushd $tmpdir >&2
+pushd $tmpdir > /dev/null
 
 ln -s "$target"
 target_link="$(basename $target)"
@@ -103,5 +103,5 @@ echo >&2 "dida-wrapper job used $du temp disk space"
 #------------------------------------------------------------
 
 rm -f *
-popd >&2
+popd > /dev/null
 rmdir $tmpdir
