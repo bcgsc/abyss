@@ -306,7 +306,7 @@ protected:
 
 	BFSVisitorResult checkMemLimit()
 	{
-		const size_t MEM_COUNTER_ROLLOVER = 1 / 0.001;
+		const size_t MEM_COUNTER_ROLLOVER = 1000;
 		m_memCheckCounter++;
 		if (m_memCheckCounter >= MEM_COUNTER_ROLLOVER) {
 			m_memCheckCounter = 0;

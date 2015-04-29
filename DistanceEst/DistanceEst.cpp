@@ -578,9 +578,9 @@ int main(int argc, char** argv)
 	vals += make_vector<int>()
 		<< opt::minDist
 		<< opt::maxDist
-		<< round(h.mean())
+		<< (int)round(h.mean())
 		<< h.median()
-		<< round(h.sd())
+		<< (int)round(h.sd())
 		<< h.size()
 		<< h.minimum()
 		<< h.maximum();

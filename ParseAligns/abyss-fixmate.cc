@@ -332,9 +332,9 @@ static void printHistogramStats(Histogram h)
 		<< h.barplot() << endl;
 	if (!opt::db.empty()) {
 		vals = make_vector<int>()
-			<< round(h.mean())
+			<< (int)round(h.mean())
 			<< h.median()
-			<< round(h.sd())
+			<< (int)round(h.sd())
 			<< h.size()
 			<< h.minimum()
 			<< h.maximum()

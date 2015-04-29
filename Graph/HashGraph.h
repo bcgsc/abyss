@@ -56,8 +56,8 @@ public:
 		size_t filled_bucket_bytes = m_vertices.size() *
 			(sizeof(typename VertexMap::value_type) +
 			 3 * pointer_size);
-		size_t empty_bucket_bytes = (1.0 - m_vertices.load_factor()) *
-			m_vertices.bucket_count() * pointer_size;
+		size_t empty_bucket_bytes = size_t((1.0 - m_vertices.load_factor()) *
+			m_vertices.bucket_count() * pointer_size);
 		return entry_bytes + filled_bucket_bytes + empty_bucket_bytes;
 	}
 
