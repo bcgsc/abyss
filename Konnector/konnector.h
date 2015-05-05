@@ -521,14 +521,26 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
 
-	assert(startKmerPos < seq.length()-k+1);
+	assert(startKmerPos < seq.length() - k + 1);
 
 	if (maxLen < seq.length())
 		maxLen = seq.length();
 
 	size_t origSeqLen = seq.length();
 
+	/*
+	 * temporarily switch orientation so that REVERSE and FORWARD cases
+	 * can be handled in the same way.
+	 */
+
+	if (dir == REVERSE) {
+		startKmerPos = seq.length() - startKmerPos - k;
+		assert(startKmerPos < seq.length() - k + 1);
+		seq = reverseComplement(seq);
+	}
+
 	/* initialize the path to be extended */
+
 	std::string kmerStr = seq.substr(startKmerPos, k);
 	if (kmerStr.find_first_not_of("AGCTagct") !=
 		std::string::npos)
@@ -539,78 +551,51 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	path.push_back(startKmer);
 	PathExtensionResult pathResult = LENGTH_LIMIT;
 
+	/* extend through unambiguous paths and simple bubbles */
+
 	bool done = false;
 	while (!done && seq.length() < maxLen) {
 
 		/*
-		 * extend the path up to a dead end or branching point
+		 * extend the path up to the next dead end or branching point
 		 * in the de Bruijn graph.
 		 */
 		unsigned maxPathLen;
 		if (maxLen == NO_LIMIT) {
 			maxPathLen = NO_LIMIT;
-		} else if (dir == FORWARD) {
-			maxPathLen = std::max((int)1,
-				(int)(maxLen - startKmerPos - k + 1));
 		} else {
-			assert(dir == REVERSE);
-			maxPathLen = std::max((int)1,
-				(int)(maxLen - seq.length() + startKmerPos + 1));
+			maxPathLen = (unsigned)std::max((int)1,
+				(int)(maxLen - startKmerPos - k + 1));
 		}
 
-		pathResult = extendPath(path, dir, g, trimLen,
+		pathResult = extendPath(path, FORWARD, g, trimLen,
 			maxPathLen);
 
 		/*
 		 * graft path extension onto original input sequence
 		 */
-
-		size_t lengthBeforeOverlay = seq.length();
 		if (pathResult == EXTENDED_TO_DEAD_END ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_CYCLE ||
 			pathResult == EXTENDED_TO_LENGTH_LIMIT)
 		{
 			std::string pathSeq = pathToSeq(path);
-			if (dir == FORWARD) {
-				overlaySeq(pathSeq, seq, startKmerPos, maskNew);
-			} else {
-				assert(dir == REVERSE);
-				overlaySeq(pathSeq, seq, -pathSeq.length() + startKmerPos + k,
-					maskNew);
-			}
+			overlaySeq(pathSeq, seq, startKmerPos, maskNew);
 		}
-		size_t lengthAfterOverlay = seq.length();
 
 		/*
 		 * extend through simple bubbles
 		 */
 		done = true;
-		if (lengthAfterOverlay < maxLen &&
+		if (seq.length() < maxLen &&
 			(pathResult == BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT)) {
-			if (dir == FORWARD) {
-				startKmerPos = startKmerPos + path.size() - 1;
-				assert(startKmerPos < seq.length() - k + 1);
-			} else {
-				assert(dir == REVERSE);
-				if (lengthAfterOverlay > lengthBeforeOverlay) {
-					startKmerPos = 0;
-				} else {
-					assert(startKmerPos >= path.size() - 1);
-					startKmerPos = startKmerPos - path.size() + 1;
-				}
-			}
-			if (extendSeqThroughBubble(seq, dir, startKmerPos,
+			startKmerPos = startKmerPos + path.size() - 1;
+			assert(startKmerPos < seq.length() - k + 1);
+			if (extendSeqThroughBubble(seq, FORWARD, startKmerPos,
 				k, g, trimLen, maskNew)) {
 				if (seq.length() > maxLen) {
-					if (dir == FORWARD) {
-						seq = seq.substr(0, maxLen);
-					} else {
-						assert(dir == REVERSE);
-						seq = seq.substr(seq.length() - maxLen,
-							maxLen);
-					}
+					seq = seq.substr(0, maxLen);
 				} else {
 					path.clear();
 					path.push_back(getHeadKmer(seq, dir, k));
@@ -664,6 +649,10 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		/* all other cases should be handled above */
 		assert(false);
 	}
+
+	/* switch back to original orientation */
+	if (dir == REVERSE)
+		seq = reverseComplement(seq);
 
 	return result;
 }
