@@ -528,10 +528,6 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 	size_t origSeqLen = seq.length();
 
-#if 0
-Sequence origSeq = seq;
-#endif
-
 	/* initialize the path to be extended */
 	std::string kmerStr = seq.substr(startKmerPos, k);
 	if (kmerStr.find_first_not_of("AGCTagct") !=
@@ -668,43 +664,6 @@ Sequence origSeq = seq;
 		/* all other cases should be handled above */
 		assert(false);
 	}
-
-#if 0
-#pragma omp critical(cerr)
-{
-	std::cerr << "-----\n";
-	std::cerr << "extend dir: " << ((dir == FORWARD) ? "forward" : "reverse") << "\n";
-	std::cerr << "startKmerPos: " << startKmerPos << "\n";
-	std::cerr << "result: " << result << "\n";
-	std::cerr << "orig len: " << origSeq.length() << "\n";
-	std::cerr << "extended len: " << seq.length() << "\n";
-	if (result == ES_EXTENDED_TO_DEAD_END ||
-		result == ES_EXTENDED_TO_BRANCHING_POINT) {
-		assert(seq.length() > origSeq.length());
-		std::string pathSeq = pathToSeq(path);
-		std::cerr << "origSeq:     ";
-		unsigned padding = seq.length() - origSeq.length();
-		if (dir == REVERSE) {
-			for (unsigned i = 0; i < padding; ++i)
-				std::cerr << "-";
-		}
-		std::cerr << origSeq;
-		if (dir == FORWARD) {
-			for (unsigned i = 0; i < padding; ++i)
-				std::cerr << "-";
-		}
-		std::cerr << "\n";
-		std::cerr << "pathSeq:     ";
-		if (dir == FORWARD) {
-			for (unsigned i = 0; i < startKmerPos; ++i)
-				std::cerr << " ";
-		}
-		std::cerr << pathSeq << "\n";
-		std::cerr << "extendedSeq: " << seq << "\n";
-	}
-	std::cerr << "-----\n";
-}
-#endif
 
 	return result;
 }
