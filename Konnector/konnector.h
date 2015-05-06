@@ -11,6 +11,7 @@
 #include "Graph/DefaultColorMap.h"
 #include "Graph/DotIO.h"
 #include "Common/Sequence.h"
+#include "Common/KmerSet.h"
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <limits>
@@ -440,6 +441,19 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	return true;
 }
 
+Path<Kmer> seqToPath(const Sequence& seq, unsigned k)
+{
+	assert(seq.length() >= k);
+	Path<Kmer> path;
+	Sequence seqCopy = seq;
+	flattenAmbiguityCodes(seqCopy);
+	for (unsigned i = 0; i < seq.length() - k + 1; ++i) {
+		std::string kmerStr = seq.substr(i, k);
+		path.push_back(Kmer(kmerStr));
+	}
+	return path;
+}
+
 /**
  * Reason a sequence could not be extended uniquely within
  * the de Bruijn graph; or if the sequence could be extended,
@@ -551,6 +565,11 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	path.push_back(startKmer);
 	PathExtensionResult pathResult = LENGTH_LIMIT;
 
+	/* track visited kmers to avoid traversing cycles in an infinite loop */
+
+	KmerSet visited(k);
+	visited.loadSeq(seq);
+
 	/* extend through unambiguous paths and simple bubbles */
 
 	bool done = false;
@@ -572,15 +591,38 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			maxPathLen);
 
 		/*
+		 * give up if we don't at extend beyond end
+		 * of existing sequence
+		 */
+		unsigned overlappingKmers = seq.length() - startKmerPos - k + 1;
+		if (path.size() <= overlappingKmers) {
+			done = true;
+			break;
+		}
+
+		/* check for cycle */
+		path.erase(path.begin(), path.begin() + overlappingKmers);
+		for (Path<Kmer>::iterator it = path.begin();
+			it != path.end(); ++it) {
+			if (visited.containsKmer(*it)) {
+				pathResult = EXTENDED_TO_CYCLE;
+				path.erase(it, path.end());
+				break;
+			}
+			visited.addKmer(*it);
+		}
+
+		/*
 		 * graft path extension onto original input sequence
 		 */
-		if (pathResult == EXTENDED_TO_DEAD_END ||
+		if (path.size() > 0 &&
+			(pathResult == EXTENDED_TO_DEAD_END ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_CYCLE ||
-			pathResult == EXTENDED_TO_LENGTH_LIMIT)
+			pathResult == EXTENDED_TO_LENGTH_LIMIT))
 		{
 			std::string pathSeq = pathToSeq(path);
-			overlaySeq(pathSeq, seq, startKmerPos, maskNew);
+			overlaySeq(pathSeq, seq, seq.length() - k + 1, maskNew);
 		}
 
 		/*
@@ -594,13 +636,29 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			assert(startKmerPos < seq.length() - k + 1);
 			if (extendSeqThroughBubble(seq, FORWARD, startKmerPos,
 				k, g, trimLen, maskNew)) {
-				if (seq.length() > maxLen) {
+
+				/* make sure we don't exceed extension limit */
+				if (seq.length() > maxLen)
 					seq = seq.substr(0, maxLen);
-				} else {
-					path.clear();
-					path.push_back(getHeadKmer(seq, dir, k));
-					startKmerPos = getHeadKmerPos(seq, dir, k);
+
+				/* check for cycle */
+				Path<Kmer> bubblePath = seqToPath(seq.substr(startKmerPos), k);
+				for (Path<Kmer>::iterator it = bubblePath.begin();
+					it != bubblePath.end(); ++it) {
+					if (visited.containsKmer(*it)) {
+						pathResult = EXTENDED_TO_CYCLE;
+						bubblePath.erase(it, bubblePath.end());
+						break;
+					}
+					visited.addKmer(*it);
+				}
+
+				/* set up for another round of extension */
+				if (pathResult != EXTENDED_TO_CYCLE && seq.length() < maxLen) {
 					done = false;
+					startKmerPos = seq.length() - k;
+					path.clear();
+					path.push_back(Kmer(seq.substr(startKmerPos)));
 				}
 			}
 		}
