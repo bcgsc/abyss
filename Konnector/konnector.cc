@@ -531,7 +531,6 @@ static void connectPair(const Graph& g,
 			 * both directions).
 			 */
 
-//std::cerr << "correcting " << read1.id << " (read 1)" << std::endl;
 			read1Corrected = correctAndExtendSeq(read1.seq,
 				opt::k, g, read1.seq.length(), g_trimLen,
 				opt::mask);
@@ -545,7 +544,6 @@ static void connectPair(const Graph& g,
 					read1Redundant = true;
 			}
 
-//std::cerr << "correcting " << read2.id << " (read 2)" << std::endl;
 			read2Corrected = correctAndExtendSeq(read2.seq,
 				opt::k, g, read2.seq.length(), g_trimLen,
 				opt::mask);
