@@ -665,7 +665,7 @@ static void connectPair(const Graph& g,
 				if (!read1Corrected)
 					read1Stream << (FastaRecord)read1;
 				if (!read2Corrected)
-					read1Stream << (FastaRecord)read2;
+					read2Stream << (FastaRecord)read2;
 			}
 		} else
 #pragma omp critical(readStream)
