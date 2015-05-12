@@ -91,6 +91,9 @@ static const char USAGE_MESSAGE[] =
 "  -n  --no-limits            disable all limits; equivalent to\n"
 "                             '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
+"  -p, --alt-paths-mode       output a separate pseudoread for each alternate\n"
+"                             path connecting a read pair (default is to create\n"
+"                             a consensus sequence of all connecting paths)\n"
 "  -P, --max-paths=N          merge at most N alternate paths; use 'nolimit'\n"
 "                             for no limit [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
@@ -111,17 +114,17 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 const unsigned g_progressStep = 1000;
-/*
+/**
  * ignore branches less than this length
  *(false positive branches)
  */
 const unsigned g_trimLen = 3;
-
 /*
- * Bloom filter use to keep track of portions
+ * Bloom filter to keep track of portions
  * of genome that have already been assembled.
- * This Bloom filter is only used when the
- * -E (--extend) option is in effect.
+ * This Bloom filter is only used when both
+ * the --extend and --dup-bloom-size options
+ * are in effect.
  */
 BloomFilter g_dupBloom;
 
@@ -177,6 +180,12 @@ namespace opt {
 	/** Bloom filter input file */
 	static string inputBloomPath;
 
+	/**
+	 * Output separate sequence for each alternate path
+	 * between read pairs
+	 */
+	static bool altPathsMode = false;
+
 	/** Max paths between read 1 and read 2 */
 	unsigned maxPaths = 2;
 
@@ -220,12 +229,11 @@ static struct {
 	size_t readPairsMerged;
 	size_t skipped;
 	/* counts below are used only when -E is enabled */
-	size_t mergedAndExtended;
 	size_t mergedAndSkipped;
 	size_t singleEndCorrected;
 } g_count;
 
-static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -253,6 +261,7 @@ static const struct option longopts[] = {
 	{ "output-prefix",    required_argument, NULL, 'o' },
 	{ "read-mismatches",  required_argument, NULL, 'm' },
 	{ "max-mismatches",   required_argument, NULL, 'M' },
+	{ "alt-paths-mode",   no_argument, NULL, 'p' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
@@ -369,9 +378,9 @@ enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
  * @return ExtendResult (ER_NOT_EXTENDED, ER_EXTENDED,
  * ER_REDUNDANT)
  */
-template <typename Graph>
+template <typename Graph, typename Bloom>
 static inline ExtendResult
-extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
+extendReadIfNonRedundant(Sequence& seq, Bloom& bloom, unsigned k, const Graph& g)
 {
 	bool redundant = false;
 	if (opt::dupBloomSize > 0) {
@@ -381,7 +390,7 @@ extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
 		 * that has already been assembled.
 		 */
 #pragma omp critical(dupBloom)
-		redundant = bloomContainsSeq(g_dupBloom, seq);
+		redundant = bloomContainsSeq(bloom, seq);
 		if (redundant)
 			return ER_REDUNDANT;
 	}
@@ -395,8 +404,8 @@ extendReadIfNonRedundant(Sequence& seq, unsigned k, const Graph& g)
 #pragma omp critical(dupBloom)
 		{
 			/* must check again to avoid race conditions */
-			if (!bloomContainsSeq(g_dupBloom, origSeq))
-				loadSeq(g_dupBloom, opt::k, seq);
+			if (!bloomContainsSeq(bloom, origSeq))
+				loadSeq(bloom, opt::k, seq);
 			else
 				redundant = true;
 		}
@@ -436,36 +445,6 @@ static inline void printProgressMessage()
 		<< ")\n";
 }
 
-
-/**
- * For a successfully merged read pair, get the sequence
- * representing the connecting path between the two reads.
- */
-template <typename Bloom>
-static inline string getConnectingSeq(ConnectPairsResult& result,
-	unsigned k, const Bloom& bloom)
-{
-	assert(result.pathResult == FOUND_PATH);
-	(void)bloom;
-
-	vector<FastaRecord>& paths = result.mergedSeqs;
-	assert(paths.size() > 0);
-
-	Sequence& seq = (paths.size() == 1) ?
-		paths.front().seq : result.consensusSeq.seq;
-
-	/*
-	 * initialize sequence to the chars between the
-	 * start and goal kmers of the path search.
-	 */
-	int startPos = result.startKmerPos;
-	int endPos = seq.length() - result.goalKmerPos - k;
-	assert(startPos >= 0 && startPos <=
-		(int)(seq.length() - k + 1));
-
-	return seq.substr(startPos, endPos - startPos + k);
-}
-
 /** Connect a read pair. */
 template <typename Graph, typename Bloom>
 static void connectPair(const Graph& g,
@@ -478,6 +457,8 @@ static void connectPair(const Graph& g,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
+	(void)bloom;
+
 	/*
 	 * Implements the -r option, which is used to only
 	 * process a subset of the input read pairs.
@@ -493,11 +474,11 @@ static void connectPair(const Graph& g,
 		connectPairs(opt::k, read1, read2, g, params);
 
 	vector<FastaRecord>& paths = result.mergedSeqs;
-	bool mergedSeqRedundant = false;
 	bool read1Corrected = false;
 	bool read1Redundant = false;
 	bool read2Corrected = false;
 	bool read2Redundant = false;
+	std::vector<bool> pathRedundant;
 
 	/*
 	 * extend reads inwards or outwards up to the
@@ -506,22 +487,36 @@ static void connectPair(const Graph& g,
 	 */
 	if (opt::extend) {
 		ExtendResult extendResult;
-		if (result.pathResult == FOUND_PATH
-			&& result.pathMismatches <= params.maxPathMismatches
-			&& result.readMismatches <= params.maxReadMismatches) {
+		if (result.pathResult == FOUND_PATH &&
+			result.pathMismatches <= params.maxPathMismatches &&
+			result.readMismatches <= params.maxReadMismatches) {
+			/* we found at least one connecting path */
 			assert(paths.size() > 0);
-			Sequence& seq = (paths.size() == 1) ?
-				paths.front().seq : result.consensusSeq.seq;
-			seq = getConnectingSeq(result, opt::k, bloom);
-			extendResult = extendReadIfNonRedundant(
-				seq, opt::k, g);
-			if (extendResult == ER_REDUNDANT) {
+			if (opt::altPathsMode) {
+				/* extend each alternate path */
+				for (unsigned i = 0; i < paths.size(); ++i) {
+					paths.at(i).seq = result.connectingSeqs.at(i);
+					extendResult = extendReadIfNonRedundant(
+						paths.at(i).seq, g_dupBloom, opt::k, g);
+					pathRedundant.push_back(extendResult == ER_REDUNDANT);
+				}
+			} else  {
+				/* extend consensus sequence for alternate paths */
+				if (paths.size() == 1) {
+					paths.front().seq = result.connectingSeqs.front();
+					extendResult = extendReadIfNonRedundant(
+						paths.front().seq, g_dupBloom, opt::k, g);
+				} else {
+					result.consensusSeq.seq = result.consensusConnectingSeq;
+					extendResult = extendReadIfNonRedundant(
+						result.consensusSeq.seq, g_dupBloom, opt::k, g);
+				}
+				pathRedundant.push_back(extendResult == ER_REDUNDANT);
+			}
+			if (std::find(pathRedundant.begin(), pathRedundant.end(),
+				false) == pathRedundant.end()) {
 #pragma omp atomic
 				g_count.mergedAndSkipped++;
-				mergedSeqRedundant = true;
-			} else if (extendResult == ER_EXTENDED) {
-#pragma omp atomic
-				g_count.mergedAndExtended++;
 			}
 		} else {
 
@@ -539,7 +534,7 @@ static void connectPair(const Graph& g,
 #pragma omp atomic
 				g_count.singleEndCorrected++;
 				extendResult = extendReadIfNonRedundant(read1.seq,
-					opt::k, g);
+					g_dupBloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read1Redundant = true;
 			}
@@ -552,7 +547,7 @@ static void connectPair(const Graph& g,
 #pragma omp atomic
 				g_count.singleEndCorrected++;
 				extendResult = extendReadIfNonRedundant(read2.seq,
-					opt::k, g);
+					g_dupBloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read2Redundant = true;
 			}
@@ -582,7 +577,8 @@ static void connectPair(const Graph& g,
 		case FOUND_PATH:
 			assert(!paths.empty());
 			if (result.pathMismatches > params.maxPathMismatches ||
-					result.readMismatches > params.maxReadMismatches) {
+				result.readMismatches > params.maxReadMismatches) {
+				/* pseudoread(s) exceed mismatch thresholds */
 				if (result.pathMismatches > params.maxPathMismatches)
 #pragma omp atomic
 					++g_count.tooManyMismatches;
@@ -611,20 +607,30 @@ static void connectPair(const Graph& g,
 					read1Stream << read1;
 					read2Stream << read2;
 				}
-			}
-			else if (paths.size() > 1) {
+			} else {
+				/* pseudoread(s) satisfy mismatch thresholds */
+				if (paths.size() == 1)
 #pragma omp atomic
-				++g_count.multiplePaths;
-				if (!mergedSeqRedundant)
-#pragma omp critical(mergedStream)
-					mergedStream << result.consensusSeq;
-			}
-			else {
+					++g_count.uniquePath;
+				else
 #pragma omp atomic
-				++g_count.uniquePath;
-				if (!mergedSeqRedundant)
+					++g_count.multiplePaths;
+
+				if (opt::altPathsMode) {
 #pragma omp critical(mergedStream)
-					mergedStream << paths.front();
+					for (unsigned i = 0; i < paths.size(); ++i) {
+						if (opt::dupBloomSize == 0 || !pathRedundant.at(i))
+							mergedStream << paths.at(i);
+					}
+				} else if (opt::dupBloomSize == 0 || !pathRedundant.front()) {
+					if (paths.size() == 1) {
+#pragma omp critical(mergedStream)
+						mergedStream << paths.front();
+					} else {
+#pragma omp critical(mergedStream)
+						mergedStream << result.consensusSeq;
+					}
+				}
 			}
 			break;
 
@@ -782,6 +788,8 @@ int main(int argc, char** argv)
 			setMaxOption(opt::maxMismatches, arg); break;
 		  case 'o':
 			arg >> opt::outputPrefix; break;
+		  case 'p':
+			opt::altPathsMode = true; break;
 		  case 'P':
 			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
@@ -923,10 +931,7 @@ int main(int argc, char** argv)
 	 */
 
 	string mergedOutputPath(opt::outputPrefix);
-	if (opt::extend)
-		mergedOutputPath.append("_pseudoreads.fa");
-	else
-		mergedOutputPath.append("_merged.fa");
+	mergedOutputPath.append("_pseudoreads.fa");
 	ofstream mergedStream(mergedOutputPath.c_str());
 	assert_good(mergedStream, mergedOutputPath);
 

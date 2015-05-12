@@ -26,7 +26,16 @@ struct ConnectPairsResult
 	unsigned k;
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
+	/** alternate connecting sequence(s) for read pair */
+	std::vector<Sequence> connectingSeqs;
+	/** read pairs joined with alternate connecting sequence(s) */
 	std::vector<FastaRecord> mergedSeqs;
+	/** consensus sequence for alternate connecting sequences */
+	Sequence consensusConnectingSeq;
+	/**
+	 * consensus sequence for read pairs joined by
+	 * alternate connecting sequences
+	 */
 	FastaRecord consensusSeq;
 	bool foundStartKmer;
 	bool foundGoalKmer;
@@ -304,40 +313,53 @@ static inline ConnectPairsResult connectPairs(
 
 		// build sequences for connecting paths
 
+		for (unsigned i = 0; i < paths.size(); i++)
+			result.connectingSeqs.push_back(pathToSeq(paths[i]));
+
 		std::string seqPrefix = pRead1->seq.substr(0, startKmerPos);
 		std::string seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
-		for (unsigned i = 0; i < paths.size(); i++) {
-			FastaRecord mergedSeq;
-			std::stringstream index;
-			index << i;
-			assert(index);
-			mergedSeq.id = result.readNamePrefix + "_" + index.str();
-			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
-			result.mergedSeqs.push_back(mergedSeq);
-		}
-
-		// calc consensus seq and mismatch stats
 
 		if (paths.size() == 1) {
 
+			FastaRecord mergedSeq;
+			mergedSeq.id = result.readNamePrefix;
+			mergedSeq.seq = seqPrefix + result.connectingSeqs.front() + seqSuffix;
+
 			result.readMismatches =
-				maskNew(read1, read2, result.mergedSeqs.front(), params.maskBases);
+				maskNew(read1, read2, mergedSeq, params.maskBases);
+
+			result.mergedSeqs.push_back(mergedSeq);
+			result.consensusSeq = mergedSeq;
+			result.consensusConnectingSeq = result.connectingSeqs.front();
 
 		} else {
 
 			NWAlignment aln;
 			unsigned matches, size;
-			boost::tie(matches, size) = align(result.mergedSeqs, aln);
+			boost::tie(matches, size) = align(result.connectingSeqs, aln);
 			assert(size >= matches);
 			result.pathMismatches = size - matches;
-
+			result.consensusConnectingSeq = aln.match_align;
 			result.consensusSeq.id = result.readNamePrefix;
-			result.consensusSeq.seq = aln.match_align;
+			result.consensusSeq.seq = seqPrefix + result.consensusConnectingSeq +
+				seqSuffix;
 			result.readMismatches =
 				maskNew(read1, read2, result.consensusSeq, params.maskBases);
 
+			unsigned i = 1;
+			for (std::vector<Sequence>::iterator it = result.connectingSeqs.begin();
+				it != result.connectingSeqs.end(); ++it) {
+				FastaRecord mergedSeq;
+				std::ostringstream id;
+				id << result.readNamePrefix << '_' << i++;
+				mergedSeq.id = id.str();
+				mergedSeq.seq = seqPrefix + *it + seqSuffix;
+				result.mergedSeqs.push_back(mergedSeq);
+			}
+
 		}
 
+		assert(result.connectingSeqs.size() == result.mergedSeqs.size());
 	}
 
 	if (!params.dotPath.empty()) {
