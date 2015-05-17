@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <stdint.h>
 
 /** Return the last character of s and remove it. */
 static inline char chop(std::string& s)
@@ -106,7 +107,7 @@ bool isReadNamePair(const std::string& name1, const std::string& name2)
 	return false;
 }
 
-static inline size_t SIToBytes(std::istringstream& iss)
+static inline uint64_t SIToBytes(std::istringstream& iss)
 {
 	double size;
 	std::string units;
@@ -133,19 +134,19 @@ static inline size_t SIToBytes(std::istringstream& iss)
 
 	switch(tolower(units[0])) {
 		case 'k':
-			size *= (size_t)1<<10; break;
+			size *= (uint64_t)1<<10; break;
 		case 'm':
-			size *= (size_t)1<<20; break;
+			size *= (uint64_t)1<<20; break;
 		case 'g':
-			size *= (size_t)1<<30; break;
+			size *= (uint64_t)1<<30; break;
 		case 't':
-			size *= (size_t)1<<40; break;
+			size *= (uint64_t)1<<40; break;
 		default:
 			iss.setstate(std::ios::failbit);
 			return 0;
 	}
 
-	return (size_t)ceil(size);
+	return (uint64_t)ceil(size);
 }
 
 static inline size_t SIToBytes(const std::string& str)
