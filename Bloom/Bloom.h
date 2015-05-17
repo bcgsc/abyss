@@ -23,6 +23,7 @@
 #include "Common/IOUtil.h"
 #include "DataLayer/FastaReader.h"
 #include <iostream>
+#include <stdint.h>
 
 #if _OPENMP
 # include <omp.h>
@@ -51,7 +52,7 @@ namespace Bloom {
 	/** file format version number */
 	static const unsigned BLOOM_VERSION = 2;
 	/** I/O buffer size when reading/writing bloom filter files */
-	static const unsigned long IO_BUFFER_SIZE = 32*1024;
+	static const uint64_t IO_BUFFER_SIZE = 32*1024;
 
 	/**
 	 * How to treat existing bits in the bloom filter when
@@ -165,7 +166,7 @@ namespace Bloom {
 		// bloom filter bits
 
 		size_t bits = endBitPos - startBitPos + 1;
-		size_t bytes = (bits + 7) / 8;
+		uint64_t bytes = (bits + 7) / 8;
 		char buf[IO_BUFFER_SIZE];
 		for (size_t i = 0, j = 0; i < bytes;) {
 			size_t writeSize = std::min(IO_BUFFER_SIZE, bytes - i);
