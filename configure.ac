@@ -15,6 +15,8 @@ AC_PROG_RANLIB
 AC_CHECK_TOOL(GHC, ghc)
 AC_CHECK_TOOL(GHC_PKG, ghc-pkg)
 AM_CONDITIONAL([HAVE_GHC_MMAP], ["$GHC_PKG" list |grep -q mmap])
+AC_CHECK_PROG(PANDOC, pandoc, yes)
+AM_CONDITIONAL([HAVE_PANDOC], [test x"$PANDOC" = x"yes"])
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
