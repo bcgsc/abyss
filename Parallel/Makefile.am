@@ -18,6 +18,7 @@ ABYSS_P_SOURCES = \
 	parallelAbyss.cpp \
 	CommLayer.cpp CommLayer.h \
 	NetworkSequenceCollection.cpp NetworkSequenceCollection.h \
+	SequenceCollection.h \
 	MessageBuffer.cpp MessageBuffer.h \
 	Messages.cpp Messages.h
 
