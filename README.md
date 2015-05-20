@@ -317,7 +317,8 @@ Parameters of the driver script, `abyss-pe`
  * `e`: minimum erosion k-mer coverage [`sqrt(median)`]
  * `E`: minimum erosion k-mer coverage per strand [`1`]
  * `j`: number of threads [`2`]
- * `k`: size of k-mer (bp)
+ * `k`: size of k-mer (when `K` is not set) or the span of a k-mer pair (when `K` is set)
+ * `K`: the length of a single k-mer in a k-mer pair (bp)
  * `l`: minimum alignment length of a read (bp) [`k`]
  * `m`: minimum overlap of two unitigs (bp) [`30`]
  * `n`: minimum number of pairs required for building contigs [`10`]
