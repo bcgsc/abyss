@@ -17,7 +17,7 @@ abyss_sealer_LDADD = \
 
 abyss_sealer_SOURCES = sealer.cc \
 	$(top_srcdir)/Bloom/BloomFilter.h \
-	$(top_srcdir)/connectpairs/CountingBloomFilter.h \
+	$(top_srcdir)/Bloom/CascadingBloomFilter.h \
 	$(top_srcdir)/Konnector/DBGBloom.h \
 	$(top_srcdir)/Konnector/DBGBloomAlgorithms.h \
 	$(top_srcdir)/Konnector/konnector.h
