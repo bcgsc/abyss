@@ -22,6 +22,7 @@ libcommon_a_SOURCES = \
 	IOUtil.h \
 	Iterator.h \
 	Kmer.cpp Kmer.h \
+	KmerSet.h \
 	Log.cpp Log.h \
 	MemoryUtil.h \
 	Options.cpp Options.h \
