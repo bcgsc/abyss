@@ -63,19 +63,17 @@ TEST(fromSI_test, all_the_cases)
 {
 	// zero values
 	EXPECT_EQ(0, fromSI("0"));
-	EXPECT_EQ(0, fromSI("0T"));
+	EXPECT_EQ(0, fromSI("0G"));
 
 	// negative values
 	EXPECT_EQ(-1.23e3, fromSI("-1.23k"));
 	EXPECT_EQ(-9.06e6, fromSI("-9.06M"));
 	EXPECT_EQ(-1.234e9, fromSI("-1.234G"));
-	EXPECT_EQ(-1.234567e12, fromSI("-1.234567T"));
 
 	// positive values
 	EXPECT_EQ(1.23e3, fromSI("1.23k"));
 	EXPECT_EQ(9.06e6, fromSI("9.06M"));
 	EXPECT_EQ(1.234e9, fromSI("1.234G"));
-	EXPECT_EQ(1.234567e12, fromSI("1.234567T"));
 }
 
 TEST(bytesToSI_test, all_the_cases)
@@ -88,7 +86,6 @@ TEST(bytesToSI_test, all_the_cases)
 	EXPECT_EQ("1k", bytesToSI(1024));
 	EXPECT_EQ("1M", bytesToSI(1048576UL));
 	EXPECT_EQ("1G", bytesToSI(1073741824UL));
-	EXPECT_EQ("1T", bytesToSI(1099511627776ULL));
 }
 
 template <typename T>
@@ -166,7 +163,6 @@ TEST(SIToBytes_test, unit_conversions)
 	EXPECT_EQ(1536u, SIToBytes("1.5k"));
 	EXPECT_EQ(1048576u, SIToBytes("1M"));
 	EXPECT_EQ(1073741824u, SIToBytes("1G"));
-	EXPECT_EQ(1099511627776u, SIToBytes("1T"));
 }
 
 TEST(SIToBytes_test, error_handling)

@@ -57,10 +57,8 @@ static inline std::string bytesToSI(size_t n)
 		s << (double)n/(1ULL<<10) << "k";
 	else if (n < (1ULL<<30))
 		s << (double)n/(1ULL<<20) << "M";
-	else if (n < (1ULL<<40))
-		s << (double)n/(1ULL<<30) << "G";
 	else
-		s << (double)n/(1ULL<<40) << "T";
+		s << (double)n/(1ULL<<30) << "G";
 	return s.str();
 }
 
@@ -212,8 +210,6 @@ static inline size_t SIToBytes(std::istringstream& iss)
 			size *= (size_t)1<<20; break;
 		case 'g':
 			size *= (size_t)1<<30; break;
-		case 't':
-			size *= (size_t)1<<40; break;
 		default:
 			iss.setstate(std::ios::failbit);
 			return 0;
