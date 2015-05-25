@@ -47,9 +47,9 @@ or download and install the
 
 ## Install ABySS on Mac OS X
 
-Install [Homebrew](http://brew.sh/), and run the command
+Install [Homebrew](http://brew.sh/), and run the commands
 
-	brew install abyss
+	brew install homebrew/science/abyss
 
 ## Assemble a small synthetic data set
 
