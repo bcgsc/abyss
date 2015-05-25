@@ -1,6 +1,7 @@
 AC_PREREQ(2.62)
 AC_INIT(ABySS, 1.5.2, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
+m4_include(m4/m4_ax_pthread.m4)
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/abyss.cc])
 AC_CONFIG_HEADER([config.h])
@@ -98,16 +99,6 @@ AC_ARG_ENABLE(mpich, AS_HELP_STRING([--enable-mpich],
 AC_ARG_ENABLE(lammpi, AS_HELP_STRING([--enable-lammpi],
 	[use LAM/MPI (default is to use Open MPI)]))
 
-# GTest
-AC_ARG_WITH(gtest, AS_HELP_STRING([--with-gtest=PATH],
-	[specify extracted folder for gtest]))
-gtest_src="/usr/src/gtest"
-if test "$with_gtest" -a -d "$with_gtest"; then
-	gtest_cppflags="-isystem$with_gtest/include"
-	gtest_src="$with_gtest"
-fi
-AC_SUBST(GTEST, "$gtest_src")
-
 # SQLite
 AC_ARG_WITH(sqlite, AS_HELP_STRING([--with-sqlite=PATH],
 	[specify prefix directory for the installed sqlite library]))
@@ -142,8 +133,13 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $gtest_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
+
+# Check for pthread.h / libpthread
+# (optional 'make check' dependency)
+AX_PTHREAD([have_pthread="yes"])
+AM_CONDITIONAL([HAVE_PTHREAD], [test x"$have_pthread" = x"yes"])
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"
@@ -215,14 +211,6 @@ if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
 	cd -])
 fi
 
-# Check for gtest
-libs="$LIBS"
-AC_CHECK_HEADERS([gtest/gtest.h])
-AC_CHECK_LIB([pthread], [pthread_create])
-AM_CONDITIONAL([HAVE_GTEST], [test $ac_cv_header_gtest_gtest_h = yes])
-AC_SUBST(GTEST_LIBS, "$LIBS")
-LIBS=$libs
-
 # Check for SQLite
 libs="$LIBS"
 if test "$with_sqlite" != "no"; then
@@ -281,6 +269,7 @@ AC_CONFIG_FILES([
 	FilterGraph/Makefile
 	GapFiller/Makefile
 	Sealer/Makefile
+	lib/gtest-1.7.0/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
@@ -293,6 +282,11 @@ if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != 
 	http://code.google.com/p/google-sparsehash
 
 	If you do not wish to use sparsehash, specify --without-sparsehash.])
+fi
+
+if test $ac_cv_header_pthread_h != yes -o $ac_cv_lib_pthread_pthread_create != yes; then
+	AC_MSG_WARN([Warning: Running the unit tests with 'make check' has been disabled
+	because pthread.h and/or libpthread could not be found.])
 fi
 
 AC_OUTPUT

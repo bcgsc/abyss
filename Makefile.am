@@ -2,13 +2,9 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
-if HAVE_GTEST
-Unittest=Unittest
-else
-check:
-	@echo "error: To use 'make check' command, please setup"; \
-	echo "       gtest header&library as shown on the Wiki"; \
-	false
+if HAVE_PTHREAD
+GTest=lib/gtest-1.7.0
+UnitTest=Unittest
 endif
 
 dist_doc_DATA = \
@@ -55,7 +51,8 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
-	$(Unittest)
+	$(GTest) \
+	$(UnitTest)
 
 %.html: %.md
 	-multimarkdown $< >$@
