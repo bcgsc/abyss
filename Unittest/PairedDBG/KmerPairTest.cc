@@ -85,7 +85,7 @@ TEST(KmerPair, isPalindrome_edge)
 	EXPECT_FALSE(kp.isPalindrome(ANTISENSE));
 	EXPECT_TRUE(kp.isPalindrome(SENSE));
 
-	EXPECT_EQ(KmerPair::length(), 12);
+	EXPECT_EQ(KmerPair::length(), 12u);
 }
 
 /* TODO: Missing tests:

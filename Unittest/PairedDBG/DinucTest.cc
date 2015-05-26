@@ -56,7 +56,7 @@ TEST(DinucSet, general)
 	ds.setBase(CG);
 	ds.setBase(GT);
 
-	ASSERT_EQ(ds.outDegree(), 3);
+	ASSERT_EQ(ds.outDegree(), 3u);
 	ASSERT_TRUE(ds.checkBase(AT));
 	ASSERT_TRUE(ds.checkBase(CG));
 	ASSERT_TRUE(ds.checkBase(GT));
@@ -68,7 +68,7 @@ TEST(DinucSet, general)
 	uint16_t y = 1 << AT.toInt() | 1 << CG.toInt() | 1 << AC.toInt();
 
 	DinucSet ds_new = DinucSet::mask(x);
-	ASSERT_EQ(ds_new.outDegree(), 3);
+	ASSERT_EQ(ds_new.outDegree(), 3u);
 	DinucSet ds_new_rc = DinucSet::mask(y);
 	EXPECT_EQ(ds, ds_new);
 	EXPECT_EQ(ds.complement(), ds_new_rc);
@@ -78,5 +78,5 @@ TEST(DinucSet, general)
 
 	ds.setBase(AT);
 	ds_new.clear(ds);
-	ASSERT_EQ(ds_new.outDegree(), 2);
+	ASSERT_EQ(ds_new.outDegree(), 2u);
 }

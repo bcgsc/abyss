@@ -73,10 +73,10 @@ TEST(extendPath, noExtension)
 	path.push_back(1);
 
 	extendPath(path, FORWARD, g);
-	ASSERT_EQ(2, path.size());
+	ASSERT_EQ(2u, path.size());
 
 	extendPath(path, REVERSE, g);
-	ASSERT_EQ(2, path.size());
+	ASSERT_EQ(2u, path.size());
 }
 
 TEST(extendPath, extendForward)
@@ -100,10 +100,10 @@ TEST(extendPath, extendForward)
 
 	Path<Vertex> path;
 	path.push_back(0);
-	ASSERT_EQ(1, path.size());
+	ASSERT_EQ(1u, path.size());
 
 	extendPath(path, FORWARD, g);
-	ASSERT_EQ(2, path.size());
+	ASSERT_EQ(2u, path.size());
 	ASSERT_EQ(expectedPath, path);
 }
 
@@ -128,10 +128,10 @@ TEST(extendPath, extendReverse)
 
 	Path<Vertex> path;
 	path.push_back(3);
-	ASSERT_EQ(1, path.size());
+	ASSERT_EQ(1u, path.size());
 
 	extendPath(path, REVERSE, g);
-	ASSERT_EQ(2, path.size());
+	ASSERT_EQ(2u, path.size());
 	ASSERT_EQ(expectedPath, path);
 }
 
@@ -160,11 +160,11 @@ TEST(extendPath, bidirectional)
 
 	Path<Vertex> path;
 	path.push_back(3);
-	ASSERT_EQ(1, path.size());
+	ASSERT_EQ(1u, path.size());
 
 	extendPath(path, FORWARD, g);
 	extendPath(path, REVERSE, g);
-	EXPECT_EQ(3, path.size());
+	EXPECT_EQ(3u, path.size());
 	ASSERT_EQ(expectedPath, path);
 }
 
@@ -194,7 +194,7 @@ TEST(extendPath, withTrimming)
 	path.push_back(0);
 
 	extendPath(path, FORWARD, g, trimLen);
-	ASSERT_EQ(4, path.size());
+	ASSERT_EQ(4u, path.size());
 	ASSERT_EQ(expectedPath, path);
 
 	/*
@@ -221,7 +221,7 @@ TEST(extendPath, withTrimming)
 	path2.push_back(0);
 
 	extendPath(path2, FORWARD, g2, trimLen);
-	EXPECT_EQ(3, path2.size());
+	EXPECT_EQ(3u, path2.size());
 	ASSERT_EQ(expectedPath2, path2);
 }
 
