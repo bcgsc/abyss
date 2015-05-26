@@ -22,6 +22,7 @@ Contents
 * [Assembling multiple libraries](#assembling-multiple-libraries)
 * [Scaffolding](#scaffolding)
 * [Rescaffolding with long sequences](#rescaffolding-with-long-sequences)
+* [Assembling using a paired de Bruijn graph](#assembling-using-a-paired-de-bruijn-graph)
 * [Assembling a strand-specific RNA-Seq library](#assembling-a-strand-specific-rna-seq-library)
 * [Optimizing the parameter k](#optimizing-the-parameter-k)
 * [Parallel processing](#parallel-processing)
@@ -237,6 +238,27 @@ the `long` parameter. These scaffolds will be stored in the file
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
 		long1=long1.fa
+
+Assembling using a paired de Bruijn graph
+=========================================
+
+Assemblies may be performed using a _paired de Bruijn graph_ instead
+of a standard de Bruijn graph.  In paired de Bruijn graph mode, ABySS
+uses _k-mer pairs_ in place of k-mers, where each k-mer pair consists of
+two equal-size k-mers separated by a fixed distance.  A k-mer pair
+is functionally similar to a large k-mer spanning the breadth of the k-mer
+pair, but uses less memory because the sequence in the gap is not stored.
+To assemble using paired de Bruijn graph mode, specify both individual
+k-mer size (`K`) and k-mer pair span (`k`). For example, to assemble E.
+coli with a individual k-mer size of 16 and a k-mer pair span of 64:
+
+	abyss-pe name=ecoli K=16 k=64 in='reads1.fa reads2.fa'
+
+In this example, the size of the intervening gap between k-mer pairs is
+32 bp (64 - 2\*16). Note that the `k` parameter takes on a new meaning
+in paired de Bruijn graph mode. `k` indicates kmer pair span in
+paired de Bruijn graph mode (when `K` is set), whereas `k` indicates
+k-mer size in standard de Bruijn graph mode (when `K` is not set).
 
 Assembling a strand-specific RNA-Seq library
 ============================================
