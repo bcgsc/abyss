@@ -346,9 +346,9 @@ ABySS programs
 `abyss-pe` is a driver script implemented as a Makefile. Any option of
 `make` may be used with `abyss-pe`. Particularly useful options are:
 
- * `-C dir`, `--directory=dir`  
+ * `-C dir`, `--directory=dir`
    Change to the directory `dir` and store the results there.
- * `-n`, `--dry-run`  
+ * `-n`, `--dry-run`
    Print the commands that would be executed, but do not execute
    them.
 
