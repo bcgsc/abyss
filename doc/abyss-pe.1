@@ -126,9 +126,10 @@ the number of processes of an MPI assembly
 the path to mpirun
 .TP
 .B aligner
-the program to use to align the reads to the contigs [map]
+The program to use to align the reads to the contigs [map].
 .br
-map, kaligner, bwa, bwasw, bowtie or bowtie2
+Permitted values are: map, kaligner, bwa, bwasw, bowtie, bowtie2, dida.
+See the \fBDIDA\fR section below for further info on the dida option.
 .TP
 .B cs
 convert colour-space contigs to nucleotide contigs following assembly
@@ -212,6 +213,35 @@ Display the versions of all programs used by abyss-pe.
 .TP
 .B help
 Display a helpful message.
+
+.SH "DIDA"
+
+ABySS supports the use of DIDA (Distributed Indexing Dispatched
+Alignment), an MPI-based alignment framework for computing sequence
+alignments across multiple machines. To use DIDA with ABySS, first
+download and install DIDA from http://www.bcgsc.ca/platform/bioinfo/software/dida,
+then specify `dida` as the value of the \fBaligner\fR parameter to
+\fBabyss-pe\fR.
+
+Please note that DIDA only supports the MPICH MPI library at the
+current time. The recommended runtime configuration for DIDA is 1
+MPI rank per machine and 1 thread per CPU core. Several \fBabyss-pe\fR
+parameters are available for controlling the runtime environment
+and behaviour of DIDA:
+
+.TP
+.B DIDA_MPIRUN
+The `mpirun` command used to run DIDA jobs.
+.TP
+.B DIDA_RUN_OPTIONS
+Runtime options such as number of threads per MPI rank
+and values for environment variables (e.g. PATH, LD_LIBRARY_PATH).
+Run `abyss-dida --help` for a list of available options.
+.TP
+.B DIDA_OPTIONS
+Options that are passed directly to the DIDA binary. For example,
+this can be used to control the minimum alignment length threshold.
+Run `dida-wrapper --help` for a list of available options.
 
 .SH "ENVIRONMENT VARIABLES"
 Any parameter that may be specified on the command line may also be

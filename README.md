@@ -27,6 +27,7 @@ Contents
 * [Optimizing the parameter k](#optimizing-the-parameter-k)
 * [Parallel processing](#parallel-processing)
 * [Running ABySS on a cluster](#running-abyss-on-a-cluster)
+* [Using the DIDA alignment framework](#using-the-dida-alignment-framework)
 * [Assembly Parameters](#assembly-parameters)
 * [ABySS programs](#abyss-programs)
 * [Export to SQLite Database](#export-to-sqlite-database)
@@ -326,6 +327,25 @@ For example, to submit an array of jobs to assemble every odd value of
 	mkdir k{51..63}
 	qsub -N ecoli -pe openmpi 64 -t 51-63:2 \
 		<<<'abyss-pe -C k$SGE_TASK_ID in=/data/reads.fa'
+
+Using the DIDA alignment framework
+=================================
+
+ABySS supports the use of DIDA (Distributed Indexing Dispatched Alignment),
+an MPI-based framework for computing sequence alignments in parallel across
+multiple machines.  In comparison to the standard ABySS alignment stages
+which are constrained to a single machine, DIDA offers improved performance
+and the ability to scale to larger targets.
+
+To use DIDA with ABySS, first download and install DIDA from
+http://www.bcgsc.ca/platform/bioinfo/software/dida.  Then specify an additional
+`aligner=dida` parameter when running abyss-pe, e.g.:
+
+	abyss-pe name=ecoli k=64 aligner=dida in='reads1.fa reads2.fa'
+
+Please note that DIDA only supports the MPICH MPI library at the current time.
+For further details on configuring DIDA's runtime environment and behaviour,
+please see the DIDA section of the `abyss-pe` man page.
 
 Assembly Parameters
 ===================
