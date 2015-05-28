@@ -230,7 +230,18 @@ if test -z $OPENMP_CXXFLAGS; then
 fi
 
 # Set compiler flags.
-AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
+
+AC_ARG_ENABLE([werror], AS_HELP_STRING([--disable-werror],
+	[do not treat compiler warnings as errors]))
+
+if test x"$enable_werror" = x"no"; then
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra')
+elif test x"$enable_werror" = x"yes"; then
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
+else
+	# default
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
+fi
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi
 AM_CONDITIONAL([PAIRED_DBG], [true])
