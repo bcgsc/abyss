@@ -215,7 +215,6 @@ Display the versions of all programs used by abyss-pe.
 Display a helpful message.
 
 .SH "DIDA"
-
 ABySS supports the use of DIDA (Distributed Indexing Dispatched
 Alignment), an MPI-based alignment framework for computing sequence
 alignments across multiple machines. To use DIDA with ABySS, first
@@ -223,12 +222,7 @@ download and install DIDA from http://www.bcgsc.ca/platform/bioinfo/software/did
 then specify `dida` as the value of the \fBaligner\fR parameter to
 \fBabyss-pe\fR.
 
-Please note that DIDA only supports the MPICH MPI library at the
-current time. The recommended runtime configuration for DIDA is 1
-MPI rank per machine and 1 thread per CPU core. Several \fBabyss-pe\fR
-parameters are available for controlling the runtime environment
-and behaviour of DIDA:
-
+.SS "DIDA-related abyss-pe parameters"
 .TP
 .B DIDA_MPIRUN
 The `mpirun` command used to run DIDA jobs.
@@ -242,6 +236,24 @@ Run `abyss-dida --help` for a list of available options.
 Options that are passed directly to the DIDA binary. For example,
 this can be used to control the minimum alignment length threshold.
 Run `dida-wrapper --help` for a list of available options.
+
+.SS "MPI COMPATIBILITY"
+Due to its use of multi-threading, DIDA has known deadlocking issues
+with OpenMPI.  Using the MPICH MPI library is strongly recommmended
+when running assemblies with DIDA. Testing was done with MPICH 3.1.3,
+compiled with --enable-threads=funneled.
+
+.SS "EXAMPLE"
+The recommended runtime configuration for DIDA is 1 MPI rank per
+machine and 1 thread per CPU core. For example, to run an
+assembly across 3 cluster nodes with 12 cores each, do:
+
+	abyss-pe k=64 name=ecoli in='reads1.fa reads2.fa' aligner=dida DIDA_RUN_OPTIONS='-j12' DIDA_MPIRUN='mpirun -np 3 -ppn 1 -bind-to board'
+
+This example uses the MPICH command line options for `mpirun`.
+Here, `-np 3` indicates the number of MPI ranks, `-ppn 1` indicates
+the number of MPI ranks per "node", and `-bind-to board` defines
+a "node" to be a motherboard (i.e. a full machine).
 
 .SH "ENVIRONMENT VARIABLES"
 Any parameter that may be specified on the command line may also be

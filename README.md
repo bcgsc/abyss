@@ -333,19 +333,12 @@ Using the DIDA alignment framework
 
 ABySS supports the use of DIDA (Distributed Indexing Dispatched Alignment),
 an MPI-based framework for computing sequence alignments in parallel across
-multiple machines.  In comparison to the standard ABySS alignment stages
-which are constrained to a single machine, DIDA offers improved performance
-and the ability to scale to larger targets.
-
-To use DIDA with ABySS, first download and install DIDA from
-http://www.bcgsc.ca/platform/bioinfo/software/dida.  Then specify an additional
-`aligner=dida` parameter when running abyss-pe, e.g.:
-
-	abyss-pe name=ecoli k=64 aligner=dida in='reads1.fa reads2.fa'
-
-Please note that DIDA only supports the MPICH MPI library at the current time.
-For further details on configuring DIDA's runtime environment and behaviour,
-please see the DIDA section of the `abyss-pe` man page.
+multiple machines. The DIDA software must be separately downloaded and
+installed from http://www.bcgsc.ca/platform/bioinfo/software/dida. In
+comparison to the standard ABySS alignment stages which are constrained
+to a single machine, DIDA offers improved performance and the ability to
+scale to larger targets. Please see the DIDA section of the abyss-pe man
+page (in the `doc` subdirectory) for details on usage.
 
 Assembly Parameters
 ===================
