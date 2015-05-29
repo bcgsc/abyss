@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 1.5.2, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 1.9.0, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 m4_include(m4/m4_ax_pthread.m4)
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)

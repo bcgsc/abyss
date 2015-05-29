@@ -318,7 +318,7 @@ Report bugs to <abyss-users@bcgsc.ca>.\n'
 
 version:
 	@printf '\
-abyss-pe (ABySS) 1.5.2\n\
+abyss-pe (ABySS) 1.9.0\n\
 Written by Shaun Jackman and Anthony Raymond.\n\
 \n\
 Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
