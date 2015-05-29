@@ -4,6 +4,8 @@ if HAVE_PANDOC
 dist_man1_MANS = abyss-sealer.1
 endif
 
+EXTRA_DIST = README.md
+
 abyss_sealer_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer
