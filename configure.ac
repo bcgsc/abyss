@@ -240,7 +240,7 @@ elif test x"$enable_werror" = x"yes"; then
 	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 else
 	# default
-	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra')
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 fi
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi
