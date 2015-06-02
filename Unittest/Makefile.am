@@ -188,7 +188,7 @@ PairedDBG_Dinuc_LDADD = \
 	$(top_builddir)/PairedDBG/libpaireddbg.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a $(GTEST_LIBS_)
-PairedDBG_Dinuc_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+PairedDBG_Dinuc_CXXFLAGS = $(GTEST_CXXFLAGS_) $(OPENMP_CXXFLAGS)
 PairedDBG_Dinuc_LDFLAGS = $(GTEST_LDFLAGS_)
 
 check_PROGRAMS += PairedDBG_BranchRecord
