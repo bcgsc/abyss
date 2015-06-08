@@ -109,7 +109,7 @@ fi
 
 # SparseHash
 AC_ARG_WITH(sparsehash, AS_HELP_STRING([--with-sparsehash=PATH],
-	[specify prefix directory for the installed spasehash library]))
+	[specify prefix directory for the installed sparsehash library]))
 if test "$with_sparsehash" -a "$with_sparsehash" != "no" -a -d "$with_sparsehash" ; then
 	sparsehash_cppflags="-isystem$with_sparsehash/include"
 	sparsehash_ldflags="-L$with_sparsehash/lib"
@@ -290,7 +290,7 @@ AC_CONFIG_FILES([
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
 	AC_MSG_ERROR([ABySS should be compiled with Google sparsehash to
 	reduce memory usage. It may be downloaded here:
-	http://code.google.com/p/google-sparsehash
+	https://code.google.com/p/sparsehash/
 
 	If you do not wish to use sparsehash, specify --without-sparsehash.])
 fi

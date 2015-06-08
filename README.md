@@ -69,9 +69,10 @@ Dependencies
 
 ABySS requires the following libraries:
 
-* [Boost](http://www.boost.org)
-* [sparsehash](http://code.google.com/p/sparsehash)
+* [Boost](http://www.boost.org/)
 * [Open MPI](http://www.open-mpi.org)
+* [sparsehash](https://code.google.com/p/sparsehash/)
+* [SQLite](http://www.sqlite.org/)
 
 ABySS requires a C++ compiler that supports
 [OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
@@ -136,6 +137,11 @@ usage, although it will build without. sparsehash should be found in
 `/usr/include` or its location specified to `configure`:
 
 	./configure CPPFLAGS=-I/usr/local/include
+
+If SQLite is installed in non-default directories, its location can be
+specified to `configure`:
+
+	./configure --with-sqlite=/opt/sqlite3
 
 The default maximum k-mer size is 64 and may be decreased to reduce
 memory usage or increased at compile time. This value must be a
