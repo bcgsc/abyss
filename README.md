@@ -271,7 +271,7 @@ Assembling a strand-specific RNA-Seq library
 ============================================
 
 Strand-specific RNA-Seq libraries can be assembled such that the
-resulting unitigs, conitgs and scaffolds are oriented correctly with
+resulting unitigs, contigs and scaffolds are oriented correctly with
 respect to the original transcripts that were sequenced. In order to
 run ABySS in strand-specific mode, the `SS` parameter must be used as
 in the following example:
@@ -420,17 +420,7 @@ see doc/flowchart.pdf.
 Export to SQLite Database
 =========================
 
-ABySS has a built-in support for SQLite database. With this option activated, it exports log values into a SQLite file and/or `.csv` files at runtime.
-
-## Activating the functionality
-
-Download SQLite [here](http://www.sqlite.org/download.html) and install. (See [Quick Start](#quick-start) for details)
-
-To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in [Compiling ABySS from GiHub](#compiling-abyss-from-github) / [Compiling ABySS from source](#compiling-abyss-from-source).
-
-	./configure [other options] --with-sqlite=/path/to/sqlite3/
-	make
-	sudo make install
+ABySS has a built-in support for SQLite database to export log values into a SQLite file and/or `.csv` files at runtime.
 
 ## Database parameters
 Of `abyss-pe`:
