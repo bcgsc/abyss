@@ -240,7 +240,7 @@ elif test x"$enable_werror" = x"yes"; then
 	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 else
 	# default
-	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra')
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 fi
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi
@@ -295,7 +295,7 @@ if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != 
 	If you do not wish to use sparsehash, specify --without-sparsehash.])
 fi
 
-if test $ac_cv_header_pthread_h != yes -o $ac_cv_lib_pthread_pthread_create != yes; then
+if test x"$have_pthread" != x"yes"; then
 	AC_MSG_WARN([Warning: Running the unit tests with 'make check' has been disabled
 	because pthread.h and/or libpthread could not be found.])
 fi

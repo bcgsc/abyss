@@ -893,12 +893,12 @@ int main(int argc, char** argv)
 		map<FastaRecord, Gap>::iterator read2_it;
 
 		string read1OutputPath(opt::outputPrefix);
-		read1OutputPath.append("_flanks_1.fq");
+		read1OutputPath.append("_flanks_1.fa");
 		ofstream read1Stream(read1OutputPath.c_str());
 		assert_good(read1Stream, read1OutputPath);
 
 		string read2OutputPath(opt::outputPrefix);
-		read2OutputPath.append("_flanks_2.fq");
+		read2OutputPath.append("_flanks_2.fa");
 		ofstream read2Stream(read2OutputPath.c_str());
 		assert_good(read2Stream, read2OutputPath);
 
