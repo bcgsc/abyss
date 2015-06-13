@@ -49,7 +49,10 @@ files containing single-end reads
 maximum number of branches of a bubble [2]
 .TP
 .B b
-maximum length of a bubble (bp) [10000]
+maximum length of a bubble (bp) [""]
+.br
+abyss-pe has two bubble popping stages. The default limits are 3*k bp
+for ABYSS and 10000 bp for PopBubbles.
 .TP
 .B c
 minimum mean k-mer coverage of a unitig [sqrt(median)]
@@ -58,10 +61,10 @@ minimum mean k-mer coverage of a unitig [sqrt(median)]
 allowable error of a distance estimate (bp) [6]
 .TP
 .B e
-minimum erosion k-mer coverage [sqrt(median)]
+minimum erosion k-mer coverage [round(sqrt(median))]
 .TP
 .B E
-minimum erosion k-mer coverage per strand [1]
+minimum erosion k-mer coverage per strand [1 if sqrt(median) > 2 else 0]
 .TP
 .B j
 number of threads [2]
@@ -114,7 +117,7 @@ Assumes that the first read in a read pair is reveresed WRT the
 transcripts sequenced.
 .TP
 .B t
-minimum tip size (bp) [2k]
+maximum length of blunt contigs to trim [k]
 .TP
 .B v
 v=-v to enable verbose logging
