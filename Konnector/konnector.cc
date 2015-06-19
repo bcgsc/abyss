@@ -342,7 +342,7 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	if (startPos != NO_MATCH) {
 		assert(startPos <= seq.length() - k);
 		result = extendSeq(seq, FORWARD, startPos, k, g,
-				NO_LIMIT, g_trimLen, opt::mask);
+			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
 		if (result == ES_EXTENDED_TO_DEAD_END ||
 				result == ES_EXTENDED_TO_BRANCHING_POINT ||
 				result == ES_EXTENDED_TO_CYCLE) {
@@ -354,7 +354,7 @@ static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
 	if (startPos != NO_MATCH) {
 		assert(startPos <= seq.length() - k);
 		result = extendSeq(seq, REVERSE, startPos, k, g,
-				NO_LIMIT, g_trimLen, opt::mask);
+			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
 		if (result == ES_EXTENDED_TO_DEAD_END ||
 				result == ES_EXTENDED_TO_BRANCHING_POINT ||
 				result == ES_EXTENDED_TO_CYCLE) {

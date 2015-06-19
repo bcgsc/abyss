@@ -552,7 +552,7 @@ template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	unsigned startKmerPos, unsigned k, const Graph& g,
 	unsigned maxLen=NO_LIMIT, unsigned trimLen=0,
-	bool maskNew=false)
+	bool maskNew=false, bool popBubbles=true)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
@@ -651,7 +651,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		 * extend through simple bubbles
 		 */
 		done = true;
-		if (seq.length() < maxLen &&
+		if (popBubbles && seq.length() < maxLen &&
 			(pathResult == BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT)) {
 			startKmerPos = startKmerPos + path.size() - 1;
