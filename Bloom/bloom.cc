@@ -43,6 +43,8 @@ static const char USAGE_MESSAGE[] =
 "Usage 2: " PROGRAM " union [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
 "Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
+"Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
+"Usage 6: " PROGRAM " getKmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -83,7 +85,11 @@ static const char USAGE_MESSAGE[] =
 "  -m, --method=`String'      choose distance calculation method \n"
 "                             [`jaccard'(default), `forbes', `czekanowski']\n"
 "\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+" Options for `" PROGRAM " getKmers':\n"
+"\n"
+"  -r, --inverse              get k-mers that are *NOT* in the bloom filter\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";;
 
 namespace opt {
 
@@ -126,9 +132,13 @@ namespace opt {
      -m option
      */
     string method("jaccard");
+    /* Inverse option to retrieve kmers which are not
+     in the filter
+     */
+    bool inverse = false;
 }
 
-static const char shortopts[] = "b:B:j:k:l:L:n:q:vw:m:";
+static const char shortopts[] = "b:B:j:k:l:L:m:n:q:rvw:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -152,6 +162,7 @@ static const struct option longopts[] = {
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ "window",           required_argument, NULL, 'w' },
     { "method",           required_argument, NULL, 'm' },
+    { "inverse",           required_argument, NULL, 'r' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -688,6 +699,23 @@ int memberOf(int argc, char ** argv){
     // Initalise bloom and get globals
     BloomFilter bloom;
     parseGlobalOpts(argc, argv);
+    // Arg parser to get `m' option in case set
+    for (int c; (c = getopt_long(argc, argv,
+                                 shortopts, longopts, NULL)) != -1;) {
+        istringstream arg(optarg != NULL ? optarg : "");
+        switch (c) {
+            case '?':
+                dieWithUsageError();
+            case 'r':
+                opt::inverse = true; break;
+                break;
+        }
+        if (optarg != NULL && (!arg.eof() || arg.fail())) {
+            cerr << PROGRAM ": invalid option: `-"
+            << (char)c << optarg << "'\n";
+            exit(EXIT_FAILURE);
+        }
+    }
     string path = argv[optind];
     string fasta = argv[++optind];
     unsigned k = opt::k;
@@ -749,10 +777,18 @@ int memberOf(int argc, char ** argv){
                 size_t pos = kmer.find_last_not_of("ACGTacgt");
                 
                 if (pos == std::string::npos) {
-                    if (bloom[Kmer(kmer)]){
-                        std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-                        << kcount << std::endl;
-                        std::cout << kmer << std::endl;
+                    if(!opt::inverse){
+                        if (bloom[Kmer(kmer)]){
+                            std::cout << ">kmer:" << fcount << "_" << bcount << "_"
+                            << kcount << std::endl;
+                            std::cout << kmer << std::endl;
+                        }
+                    } else {
+                        if (!bloom[Kmer(kmer)]){
+                            std::cout << ">kmer:" << fcount << "_" << bcount << "_"
+                            << kcount << std::endl;
+                            std::cout << kmer << std::endl;
+                        }
                     }
                 } else
                     i += pos;
