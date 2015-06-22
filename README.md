@@ -271,7 +271,7 @@ Assembling a strand-specific RNA-Seq library
 ============================================
 
 Strand-specific RNA-Seq libraries can be assembled such that the
-resulting unitigs, conitgs and scaffolds are oriented correctly with
+resulting unitigs, contigs and scaffolds are oriented correctly with
 respect to the original transcripts that were sequenced. In order to
 run ABySS in strand-specific mode, the `SS` parameter must be used as
 in the following example:
@@ -352,11 +352,11 @@ Assembly Parameters
 Parameters of the driver script, `abyss-pe`
 
  * `a`: maximum number of branches of a bubble [`2`]
- * `b`: maximum length of a bubble (bp) [`10000`]
+ * `b`: maximum length of a bubble (bp) [`""`]
  * `c`: minimum mean k-mer coverage of a unitig [`sqrt(median)`]
  * `d`: allowable error of a distance estimate (bp) [`6`]
- * `e`: minimum erosion k-mer coverage [`sqrt(median)`]
- * `E`: minimum erosion k-mer coverage per strand [`1`]
+ * `e`: minimum erosion k-mer coverage [`round(sqrt(median))`]
+ * `E`: minimum erosion k-mer coverage per strand [1 if sqrt(median) > 2 else 0]
  * `j`: number of threads [`2`]
  * `k`: size of k-mer (when `K` is not set) or the span of a k-mer pair (when `K` is set)
  * `K`: the length of a single k-mer in a k-mer pair (bp)
@@ -368,7 +368,7 @@ Parameters of the driver script, `abyss-pe`
  * `q`: minimum base quality [`3`]
  * `s`: minimum unitig size required for building contigs (bp) [`200`]
  * `S`: minimum contig size required for building scaffolds (bp) [`s`]
- * `t`: minimum tip size (bp) [`2k`]
+ * `t`: maximum length of blunt contigs to trim [`k`]
  * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose [`disabled`]
 
 Please see the
@@ -420,17 +420,7 @@ see doc/flowchart.pdf.
 Export to SQLite Database
 =========================
 
-ABySS has a built-in support for SQLite database. With this option activated, it exports log values into a SQLite file and/or `.csv` files at runtime.
-
-## Activating the functionality
-
-Download SQLite [here](http://www.sqlite.org/download.html) and install. (See [Quick Start](#quick-start) for details)
-
-To compile ABySS with SQLite, add configure flag `--with-sqlite` to the steps in [Compiling ABySS from GiHub](#compiling-abyss-from-github) / [Compiling ABySS from source](#compiling-abyss-from-source).
-
-	./configure [other options] --with-sqlite=/path/to/sqlite3/
-	make
-	sudo make install
+ABySS has a built-in support for SQLite database to export log values into a SQLite file and/or `.csv` files at runtime.
 
 ## Database parameters
 Of `abyss-pe`:

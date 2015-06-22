@@ -26,4 +26,4 @@ abyss_sealer_SOURCES = sealer.cc \
 
 # Convert the README.md to a man page using Pandoc
 abyss-sealer.1: README.md
-	-pandoc -s -o $@ $<
+	pandoc -s -o $@ $<
