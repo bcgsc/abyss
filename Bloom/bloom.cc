@@ -780,14 +780,14 @@ int memberOf(int argc, char ** argv){
 					if(!opt::inverse){
 						if (bloom[Kmer(kmer)]){
 							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << std::endl;
-							std::cout << kmer << std::endl;
+							<< kcount << "\n";
+							std::cout << kmer << "\n";
 						}
 					} else {
 						if (!bloom[Kmer(kmer)]){
 							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << std::endl;
-							std::cout << kmer << std::endl;
+							<< kcount << "\n";
+							std::cout << kmer << "\n";
 						}
 					}
 				} else
