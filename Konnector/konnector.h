@@ -46,7 +46,9 @@ struct ConnectPairsResult
 	unsigned maxDepthVisitedForward;
 	unsigned maxDepthVisitedReverse;
 	unsigned pathMismatches;
+	float pathIdentity;
 	unsigned readMismatches;
+	float readIdentity;
 	size_t memUsage;
 
 	ConnectPairsResult() :
@@ -61,7 +63,9 @@ struct ConnectPairsResult
 		maxDepthVisitedForward(0),
 		maxDepthVisitedReverse(0),
 		pathMismatches(0),
+		pathIdentity(0.0f),
 		readMismatches(0),
+		readIdentity(0.0f),
 		memUsage(0)
 	{}
 
@@ -79,7 +83,9 @@ struct ConnectPairsResult
 			<< "max_depth_forward" << "\t"
 			<< "max_depth_reverse" << "\t"
 			<< "path_mismatches" << "\t"
+			<< "path_identity" << "\t"
 			<< "read_mismatches" << "\t"
+			<< "read_identity" << "\t"
 			<< "mem_usage" << "\n";
 		return out;
 	}
@@ -114,7 +120,9 @@ struct ConnectPairsResult
 			<< o.maxDepthVisitedForward << "\t"
 			<< o.maxDepthVisitedReverse << "\t"
 			<< o.pathMismatches << "\t"
+			<< std::setprecision(3) << o.pathIdentity << "\t"
 			<< o.readMismatches << "\t"
+			<< std::setprecision(3) << o.readIdentity << "\t"
 			<< o.memUsage << "\n";
 
 		return out;
@@ -128,7 +136,9 @@ struct ConnectPairsParams {
 	unsigned maxPaths;
 	unsigned maxBranches;
 	unsigned maxPathMismatches;
+	float minPathIdentity;
 	unsigned maxReadMismatches;
+	float minReadIdentity;
 	unsigned kmerMatchesThreshold;
 	bool fixErrors;
 	bool maskBases;
@@ -142,7 +152,9 @@ struct ConnectPairsParams {
 		maxPaths(NO_LIMIT),
 		maxBranches(NO_LIMIT),
 		maxPathMismatches(NO_LIMIT),
+		minPathIdentity(0.0f),
 		maxReadMismatches(NO_LIMIT),
+		minReadIdentity(0.0f),
 		kmerMatchesThreshold(1),
 		fixErrors(false),
 		maskBases(false),
@@ -319,6 +331,8 @@ static inline ConnectPairsResult connectPairs(
 		std::string seqPrefix = pRead1->seq.substr(0, startKmerPos);
 		std::string seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
 
+		unsigned readPairLength = read1.seq.length() + read2.seq.length();
+
 		if (paths.size() == 1) {
 
 			FastaRecord mergedSeq;
@@ -327,6 +341,9 @@ static inline ConnectPairsResult connectPairs(
 
 			result.readMismatches =
 				maskNew(read1, read2, mergedSeq, params.maskBases);
+			result.pathIdentity = 100.0f;
+			result.readIdentity = 100.0f * (float)(readPairLength -
+				result.readMismatches) / readPairLength;
 
 			result.mergedSeqs.push_back(mergedSeq);
 			result.consensusSeq = mergedSeq;
@@ -340,11 +357,16 @@ static inline ConnectPairsResult connectPairs(
 			assert(size >= matches);
 			result.pathMismatches = size - matches;
 			result.consensusConnectingSeq = aln.match_align;
+			result.pathIdentity = 100.0f *
+				(float)(result.consensusConnectingSeq.length()
+				- result.pathMismatches) / result.consensusConnectingSeq.length();
 			result.consensusSeq.id = result.readNamePrefix;
 			result.consensusSeq.seq = seqPrefix + result.consensusConnectingSeq +
 				seqSuffix;
 			result.readMismatches =
 				maskNew(read1, read2, result.consensusSeq, params.maskBases);
+			result.readIdentity = 100.0f * (float)(readPairLength -
+				result.readMismatches) / readPairLength;
 
 			unsigned i = 1;
 			for (std::vector<Sequence>::iterator it = result.connectingSeqs.begin();

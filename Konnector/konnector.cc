@@ -108,6 +108,10 @@ static const char USAGE_MESSAGE[] =
 "                             for graph traversal [500M]\n"
 "  -t, --trace-file=FILE      write graph search stats to FILE\n"
 "  -v, --verbose              display verbose output\n"
+"  -x, --read-identity=N      min percent seq identity between consensus seq\n"
+"                             and reads [0]\n"
+"  -X, --path-identity=N      min percent seq identity across alternate\n"
+"                             connecting paths\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
 "\n"
@@ -210,6 +214,17 @@ namespace opt {
 	/** Max mismatches between consensus and original reads */
 	static unsigned maxReadMismatches = NO_LIMIT;
 
+	/**
+	 * Min percent seq identity between consensus seq
+	 * and input reads
+	 */
+	static float minReadIdentity = 0.0f;
+
+	/**
+	 * Min percent seq identity between all alternate
+	 * paths
+	 */
+	static float minPathIdentity = 0.0f;
 }
 
 /** Counters */
@@ -233,7 +248,7 @@ static struct {
 	size_t singleEndCorrected;
 } g_count;
 
-static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:v";
+static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:vx:X:";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -270,6 +285,8 @@ static const struct option longopts[] = {
 	{ "search-mem",       required_argument, NULL, 's' },
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "verbose",          no_argument, NULL, 'v' },
+	{ "read-identity",    required_argument, NULL, 'x' },
+	{ "path-identity",    required_argument, NULL, 'X' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -489,7 +506,9 @@ static void connectPair(const Graph& g,
 		ExtendResult extendResult;
 		if (result.pathResult == FOUND_PATH &&
 			result.pathMismatches <= params.maxPathMismatches &&
-			result.readMismatches <= params.maxReadMismatches) {
+			result.pathIdentity >= params.minPathIdentity &&
+			result.readMismatches <= params.maxReadMismatches &&
+			result.readIdentity >= params.minReadIdentity) {
 			/* we found at least one connecting path */
 			assert(paths.size() > 0);
 			if (opt::altPathsMode) {
@@ -577,9 +596,13 @@ static void connectPair(const Graph& g,
 		case FOUND_PATH:
 			assert(!paths.empty());
 			if (result.pathMismatches > params.maxPathMismatches ||
-				result.readMismatches > params.maxReadMismatches) {
+				result.pathIdentity < params.minPathIdentity ||
+				result.readMismatches > params.maxReadMismatches ||
+				result.readIdentity < params.minReadIdentity)
+			{
 				/* pseudoread(s) exceed mismatch thresholds */
-				if (result.pathMismatches > params.maxPathMismatches)
+				if (result.pathMismatches > params.maxPathMismatches ||
+					result.pathIdentity < params.minPathIdentity)
 #pragma omp atomic
 					++g_count.tooManyMismatches;
 				else
@@ -800,6 +823,10 @@ int main(int argc, char** argv)
 			opt::searchMem = SIToBytes(arg); break;
 		  case 't':
 			arg >> opt::tracefilePath; break;
+		  case 'x':
+			arg >> opt::minReadIdentity; break;
+		  case 'X':
+			arg >> opt::minPathIdentity; break;
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
@@ -967,7 +994,9 @@ int main(int argc, char** argv)
 	params.maxPaths = opt::maxPaths;
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
+	params.minPathIdentity = opt::minPathIdentity;
 	params.maxReadMismatches = opt::maxReadMismatches;
+	params.minReadIdentity = opt::minReadIdentity;
 	params.kmerMatchesThreshold = 3;
 	params.fixErrors = opt::fixErrors;
 	params.maskBases = opt::mask;
