@@ -319,8 +319,6 @@ static inline ConnectPairsResult connectPairs(
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 	result.memUsage = visitor.approxMemUsage();
 
-	// write traversal graph to dot file (-d option)
-
 	if (result.pathResult == FOUND_PATH) {
 
 		// build sequences for connecting paths
@@ -334,6 +332,8 @@ static inline ConnectPairsResult connectPairs(
 		unsigned readPairLength = read1.seq.length() + read2.seq.length();
 
 		if (paths.size() == 1) {
+
+			/* found a unique path between the reads */
 
 			FastaRecord mergedSeq;
 			mergedSeq.id = result.readNamePrefix;
@@ -350,6 +350,11 @@ static inline ConnectPairsResult connectPairs(
 			result.consensusConnectingSeq = result.connectingSeqs.front();
 
 		} else {
+
+			/*
+			 * multiple paths were found, so build a consensus
+			 * sequence using multiple sequence alignment.
+			 */
 
 			NWAlignment aln;
 			unsigned matches, size;
@@ -383,6 +388,8 @@ static inline ConnectPairsResult connectPairs(
 
 		assert(result.connectingSeqs.size() == result.mergedSeqs.size());
 	}
+
+	/* write traversal graph to dot file (-d option) */
 
 	if (!params.dotPath.empty()) {
 		HashGraph<Kmer> traversalGraph;
@@ -759,22 +766,14 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	return result;
 }
 
-/**
- * Correct the given sequence using the Bloom filter de Bruijn
- * graph.  The correction is performed by finding the longest
- * stretch of good kmers in the sequence and extending that
- * region both left and right.
- */
 template <typename Graph>
-static inline bool correctAndExtendSeq(Sequence& seq,
-	unsigned k, const Graph& g, unsigned maxLen=NO_LIMIT,
-	unsigned trimLen=0, bool maskNew=false)
+static inline bool trimRead(FastqRecord& read,
+	unsigned k, const Graph& g)
 {
+	Sequence& seq = read.seq;
+
 	if (seq.size() < k)
 		return false;
-
-	if (maxLen < seq.length())
-		maxLen = seq.length();
 
 	/*
 	 * find longest stretch of contiguous kmers
@@ -816,22 +815,8 @@ static inline bool correctAndExtendSeq(Sequence& seq,
 	assert(maxMatchStart != UNSET);
 	assert(maxMatchLen > 0);
 
-	unsigned maxMatchSeqLen = maxMatchLen+k-1;
-	unsigned seedSeqLen = std::min(2*k-1, maxMatchSeqLen);
-
-	Sequence correctedSeq = seq.substr(
-		maxMatchStart + maxMatchSeqLen - seedSeqLen,
-		std::string::npos);
-
-	extendSeq(correctedSeq, REVERSE, correctedSeq.length()-k, k, g, 2*k,
-		trimLen, maskNew);
-	if (correctedSeq.length() < 2*k)
-		return false;
-
-	correctedSeq = correctedSeq.substr(0, k);
-	extendSeq(correctedSeq, FORWARD, 0, k, g, 2*k+1, trimLen, maskNew);
-
-	seq = correctedSeq;
+	read.seq = read.seq.substr(maxMatchStart, maxMatchLen);
+	read.qual = read.qual.substr(maxMatchStart, maxMatchLen);
 	return true;
 }
 

@@ -73,6 +73,8 @@ static const char USAGE_MESSAGE[] =
 "                             dead end or branching point in the de Brujin\n"
 "                             graph. If the reads were not successfully\n"
 "                             connected, extend them inwards as well.\n"
+"  --fastq                    output merged reads in FASTQ format\n"
+"                             (default is FASTA)\n"
 "  -f, --min-frag=N           min fragment size in base pairs [0]\n"
 "  -F, --max-frag=N           max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE     load bloom filter from FILE\n"
@@ -111,11 +113,13 @@ static const char USAGE_MESSAGE[] =
 "  -x, --read-identity=N      min percent seq identity between consensus seq\n"
 "                             and reads [0]\n"
 "  -X, --path-identity=N      min percent seq identity across alternate\n"
-"                             connecting paths\n"
+"                             connecting paths [0]\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
+#define CORRECTED_BASE_QUAL 60
 
 const unsigned g_progressStep = 1000;
 /**
@@ -171,6 +175,11 @@ namespace opt {
 	 * successfully connected, extend them inwards as well.
 	 */
 	bool extend = false;
+
+	/**
+	 * Output pseudo-reads in FASTQ format.
+	 */
+	bool fastq = false;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -250,7 +259,7 @@ static struct {
 
 static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:vx:X:";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_FASTQ = 1, OPT_HELP, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
@@ -287,6 +296,7 @@ static const struct option longopts[] = {
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "read-identity",    required_argument, NULL, 'x' },
 	{ "path-identity",    required_argument, NULL, 'X' },
+	{ "fastq",            no_argument, NULL, OPT_FASTQ },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -332,6 +342,100 @@ static inline void loadSeq(BloomFilter& bloom, unsigned k, const Sequence& seq)
 	}
 }
 
+enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
+
+/**
+ * Calculate quality string for a pseudo-read.  A base will
+ * have a score of CORRECTED_BASE_QUAL if it was corrected
+ * by konnector or added by konnector (in the gap between
+ * paired-end reads).  For bases that are unchanged from the
+ * input reads, the original quality score is used.  In the
+ * case that the two input read(s) overlap and both provide
+ * a correct base call, the maximum of the two quality scores
+ * is used.
+ */
+static inline std::string calcQual(const FastqRecord& read1,
+	const FastqRecord& read2, Sequence& merged)
+{
+	unsigned char qualCorrected = opt::qualityOffset +
+		CORRECTED_BASE_QUAL;
+	std::string qual(merged.length(), qualCorrected);
+
+	/*
+	 * In the case that the input files are FASTA,
+	 * the quality strings for read1 / read2 will be
+	 * empty, so just return a uniform quality string.
+	 */
+	if (read1.qual.empty() || read2.qual.empty())
+		return qual;
+
+	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
+	std::string r1qual = read1.qual, r2qual = read2.qual;
+	std::reverse(r2qual.begin(), r2qual.end());
+
+	/* corrected bases from read 1 */
+	std::vector<bool> r1Corrected(merged.length(), false);
+	for (unsigned i = 0; i < r1.length(); ++i) {
+		assert(i < merged.length());
+		if (r1.at(i) == merged.at(i)) {
+			qual.at(i) = r1qual.at(i);
+		}
+		else {
+			r1Corrected.at(i) = true;
+			qual.at(i) = qualCorrected;
+		}
+	}
+
+	/* corrected bases from read 2 */
+	assert(r2.length() <= merged.length());
+	unsigned r2offset = merged.length() - r2.length();
+	for (unsigned i = 0; i < r2.length(); ++i) {
+		assert(r2offset + i < merged.length());
+		if (!r1Corrected.at(r2offset + i)) {
+			if (r2.at(i) == merged.at(r2offset + i)) {
+				qual.at(r2offset + i) = std::max(
+					qual.at(r2offset + i), r2qual.at(i));
+			}
+			else {
+				qual.at(i) = qualCorrected;
+			}
+		}
+	}
+
+	return qual;
+}
+
+static inline string calcQual(const FastqRecord& orig,
+	const Sequence& extended, unsigned extendedLeft,
+	unsigned extendedRight)
+{
+	assert(extended.length() == orig.seq.length() +
+		extendedLeft + extendedRight);
+
+	unsigned char correctedQual = opt::qualityOffset +
+		CORRECTED_BASE_QUAL;
+	string qual(extended.length(), correctedQual);
+
+	/*
+	 * In the case that the input files are FASTA,
+	 * the quality strings for read1 / read2 will be
+	 * empty, so just return a uniform quality string.
+	 */
+	if (orig.qual.empty())
+		return qual;
+
+	unsigned offset = extendedLeft;
+	for (unsigned i = 0; i < orig.seq.length(); ++i) {
+		assert(offset + i < extended.length());
+		assert(i < orig.seq.length());
+		assert(i < orig.qual.length());
+		if (orig.seq.at(i) == extended.at(offset + i))
+			qual.at(offset + i) = orig.qual.at(i);
+	}
+
+	return qual;
+}
+
 /**
  * Extend a read/pseudoread both left and right until
  * we hit the next dead end or branching point in the
@@ -344,45 +448,44 @@ static inline void loadSeq(BloomFilter& bloom, unsigned k, const Sequence& seq)
  * (or both) directions, false otherwise
  */
 template <typename Graph>
-static bool extendRead(Sequence& seq, unsigned k, const Graph& g)
+static bool extendRead(FastqRecord& rec, unsigned k, const Graph& g)
 {
-	ExtendSeqResult result;
-	bool extended = false;
+	unsigned extendedLeft = 0, extendedRight = 0;
+	Sequence extendedSeq = rec.seq;
 
 	/*
 	 * offset start pos to reduce chance of hitting
 	 * a dead end on a false positive kmer
 	 */
 	const unsigned runLengthHint = 3;
-	unsigned startPos = getStartKmerPos(seq, k, FORWARD, g,
+	unsigned startPos = getStartKmerPos(extendedSeq, k, FORWARD, g,
 		runLengthHint);
 	if (startPos != NO_MATCH) {
-		assert(startPos <= seq.length() - k);
-		result = extendSeq(seq, FORWARD, startPos, k, g,
+		assert(startPos <= extendedSeq.length() - k);
+		unsigned lengthBefore = extendedSeq.length();
+		extendSeq(extendedSeq, FORWARD, startPos, k, g,
 			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
-		if (result == ES_EXTENDED_TO_DEAD_END ||
-				result == ES_EXTENDED_TO_BRANCHING_POINT ||
-				result == ES_EXTENDED_TO_CYCLE) {
-			extended = true;
-		}
+		extendedRight = extendedSeq.length() - lengthBefore;
 	}
 
-	startPos = getStartKmerPos(seq, k, REVERSE, g, runLengthHint);
+	startPos = getStartKmerPos(extendedSeq, k, REVERSE, g, runLengthHint);
 	if (startPos != NO_MATCH) {
-		assert(startPos <= seq.length() - k);
-		result = extendSeq(seq, REVERSE, startPos, k, g,
+		assert(startPos <= extendedSeq.length() - k);
+		unsigned lengthBefore = extendedSeq.length();
+		extendSeq(extendedSeq, REVERSE, startPos, k, g,
 			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
-		if (result == ES_EXTENDED_TO_DEAD_END ||
-				result == ES_EXTENDED_TO_BRANCHING_POINT ||
-				result == ES_EXTENDED_TO_CYCLE) {
-			extended = true;
-		}
+		extendedLeft = extendedSeq.length() - lengthBefore;
 	}
 
-	return extended;
-}
+	if (extendedLeft > 0 || extendedRight > 0) {
+		rec.qual = calcQual(rec, extendedSeq,
+			extendedLeft, extendedRight);
+		rec.seq = extendedSeq;
+		return true;
+	}
 
-enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
+	return false;
+}
 
 /**
  * Attempt to extend a merged read (a.k.a. pseudoread)
@@ -397,9 +500,11 @@ enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
  */
 template <typename Graph, typename Bloom>
 static inline ExtendResult
-extendReadIfNonRedundant(Sequence& seq, Bloom& bloom, unsigned k, const Graph& g)
+extendReadIfNonRedundant(FastqRecord& seq, Bloom& bloom, unsigned k, const Graph& g)
 {
+	bool extended = false;
 	bool redundant = false;
+
 	if (opt::dupBloomSize > 0) {
 		/*
 		 * Check to see if the current pseudoread
@@ -411,8 +516,8 @@ extendReadIfNonRedundant(Sequence& seq, Bloom& bloom, unsigned k, const Graph& g
 		if (redundant)
 			return ER_REDUNDANT;
 	}
-	Sequence origSeq = seq;
-	bool extended = extendRead(seq, k, g);
+	Sequence origSeq = seq.seq;
+	extended = extendRead(seq, k, g);
 	if (opt::dupBloomSize > 0) {
 		/*
 		 * mark the extended read as an assembled
@@ -422,7 +527,7 @@ extendReadIfNonRedundant(Sequence& seq, Bloom& bloom, unsigned k, const Graph& g
 		{
 			/* must check again to avoid race conditions */
 			if (!bloomContainsSeq(bloom, origSeq))
-				loadSeq(bloom, opt::k, seq);
+				loadSeq(bloom, opt::k, seq.seq);
 			else
 				redundant = true;
 		}
@@ -434,6 +539,22 @@ extendReadIfNonRedundant(Sequence& seq, Bloom& bloom, unsigned k, const Graph& g
 		return ER_EXTENDED;
 	else
 		return ER_NOT_EXTENDED;
+}
+
+static inline FastqRecord connectingSeq(const FastqRecord& mergedSeq,
+	unsigned startKmerPos, unsigned goalKmerPos)
+{
+	FastqRecord rec;
+
+	unsigned start = startKmerPos;
+	unsigned end = mergedSeq.seq.length() - 1 - goalKmerPos;
+	assert(start <= end);
+
+	rec.id = mergedSeq.id;
+	rec.seq = mergedSeq.seq.substr(start, end - start + 1);
+	rec.qual = mergedSeq.qual.substr(start, end - start + 1);
+
+	return rec;
 }
 
 /**
@@ -462,6 +583,80 @@ static inline void printProgressMessage()
 		<< ")\n";
 }
 
+static inline void updateCounters(const ConnectPairsParams& params,
+	const ConnectPairsResult& result)
+{
+	switch (result.pathResult) {
+		case NO_PATH:
+			assert(result.mergedSeqs.empty());
+			if (result.foundStartKmer && result.foundGoalKmer)
+#pragma omp atomic
+				++g_count.noPath;
+			else
+#pragma omp atomic
+				++g_count.noStartOrGoalKmer;
+			break;
+
+		case FOUND_PATH:
+			assert(!result.mergedSeqs.empty());
+			if (result.pathMismatches > params.maxPathMismatches ||
+				result.pathIdentity < params.minPathIdentity) {
+#pragma omp atomic
+					++g_count.tooManyMismatches;
+			} else if (result.readMismatches > params.maxReadMismatches ||
+				result.readIdentity < params.minReadIdentity) {
+#pragma omp atomic
+					++g_count.tooManyReadMismatches;
+			} else {
+				if (result.mergedSeqs.size() == 1)
+#pragma omp atomic
+					++g_count.uniquePath;
+				else
+#pragma omp atomic
+					++g_count.multiplePaths;
+			}
+			break;
+
+		case TOO_MANY_PATHS:
+#pragma omp atomic
+			++g_count.tooManyPaths;
+			break;
+
+		case TOO_MANY_BRANCHES:
+#pragma omp atomic
+			++g_count.tooManyBranches;
+			break;
+
+		case PATH_CONTAINS_CYCLE:
+#pragma omp atomic
+			++g_count.containsCycle;
+			break;
+
+		case EXCEEDED_MEM_LIMIT:
+#pragma omp atomic
+			++g_count.exceededMemLimit;
+			break;
+	}
+}
+
+static inline void outputRead(const FastqRecord& read, ostream& out,
+	bool fastq = true)
+{
+	if (fastq)
+		out << read;
+	else
+		out << (FastaRecord)read;
+}
+
+static inline bool exceedsMismatchThresholds(const ConnectPairsParams& params,
+	const ConnectPairsResult& result)
+{
+	return (result.pathMismatches > params.maxPathMismatches ||
+		result.pathIdentity < params.minPathIdentity ||
+		result.readMismatches > params.maxReadMismatches ||
+		result.readIdentity < params.minReadIdentity);
+}
+
 /** Connect a read pair. */
 template <typename Graph, typename Bloom>
 static void connectPair(const Graph& g,
@@ -487,10 +682,28 @@ static void connectPair(const Graph& g,
 		return;
 	}
 
+	/* Search for connecting paths between read pair */
+
 	ConnectPairsResult result =
 		connectPairs(opt::k, read1, read2, g, params);
 
-	vector<FastaRecord>& paths = result.mergedSeqs;
+	/* Calculate quality strings for merged reads */
+
+	vector<FastqRecord> paths;
+	FastqRecord consensus;
+	if (result.pathResult == FOUND_PATH) {
+		for (unsigned i = 0; i < result.mergedSeqs.size(); ++i) {
+			FastqRecord fastq;
+			fastq.id = result.mergedSeqs.at(i).id;
+			fastq.seq = result.mergedSeqs.at(i).seq;
+			fastq.qual = calcQual(read1, read2, result.mergedSeqs.at(i).seq);
+			paths.push_back(fastq);
+		}
+		consensus.id = result.consensusSeq.id;
+		consensus.seq = result.consensusSeq.seq;
+		consensus.qual = calcQual(read1, read2, result.consensusSeq.seq);
+	}
+
 	bool read1Corrected = false;
 	bool read1Redundant = false;
 	bool read2Corrected = false;
@@ -505,31 +718,24 @@ static void connectPair(const Graph& g,
 	if (opt::extend) {
 		ExtendResult extendResult;
 		if (result.pathResult == FOUND_PATH &&
-			result.pathMismatches <= params.maxPathMismatches &&
-			result.pathIdentity >= params.minPathIdentity &&
-			result.readMismatches <= params.maxReadMismatches &&
-			result.readIdentity >= params.minReadIdentity) {
+			!exceedsMismatchThresholds(params, result)) {
 			/* we found at least one connecting path */
 			assert(paths.size() > 0);
 			if (opt::altPathsMode) {
-				/* extend each alternate path */
+				/* extend each alternate path independently */
 				for (unsigned i = 0; i < paths.size(); ++i) {
-					paths.at(i).seq = result.connectingSeqs.at(i);
+					paths.at(i) = connectingSeq(paths.at(i),
+						result.startKmerPos, result.goalKmerPos);
 					extendResult = extendReadIfNonRedundant(
-						paths.at(i).seq, g_dupBloom, opt::k, g);
+						paths.at(i), g_dupBloom, opt::k, g);
 					pathRedundant.push_back(extendResult == ER_REDUNDANT);
 				}
 			} else  {
-				/* extend consensus sequence for alternate paths */
-				if (paths.size() == 1) {
-					paths.front().seq = result.connectingSeqs.front();
-					extendResult = extendReadIfNonRedundant(
-						paths.front().seq, g_dupBloom, opt::k, g);
-				} else {
-					result.consensusSeq.seq = result.consensusConnectingSeq;
-					extendResult = extendReadIfNonRedundant(
-						result.consensusSeq.seq, g_dupBloom, opt::k, g);
-				}
+				/* extend consensus sequence for all paths */
+				consensus = connectingSeq(consensus,
+					result.startKmerPos, result.goalKmerPos);
+				extendResult = extendReadIfNonRedundant(
+					consensus, g_dupBloom, opt::k, g);
 				pathRedundant.push_back(extendResult == ER_REDUNDANT);
 			}
 			if (std::find(pathRedundant.begin(), pathRedundant.end(),
@@ -545,27 +751,21 @@ static void connectPair(const Graph& g,
 			 * both directions).
 			 */
 
-			read1Corrected = correctAndExtendSeq(read1.seq,
-				opt::k, g, read1.seq.length(), g_trimLen,
-				opt::mask);
-
+			read1Corrected = trimRead(read1, opt::k, g);
 			if (read1Corrected) {
 #pragma omp atomic
 				g_count.singleEndCorrected++;
-				extendResult = extendReadIfNonRedundant(read1.seq,
+				extendResult = extendReadIfNonRedundant(read1,
 					g_dupBloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read1Redundant = true;
 			}
 
-			read2Corrected = correctAndExtendSeq(read2.seq,
-				opt::k, g, read2.seq.length(), g_trimLen,
-				opt::mask);
-
+			read2Corrected = trimRead(read2, opt::k, g);
 			if (read2Corrected) {
 #pragma omp atomic
 				g_count.singleEndCorrected++;
-				extendResult = extendReadIfNonRedundant(read2.seq,
+				extendResult = extendReadIfNonRedundant(read2,
 					g_dupBloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read2Redundant = true;
@@ -580,121 +780,42 @@ static void connectPair(const Graph& g,
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	switch (result.pathResult) {
+	/* update stats regarding merge successes / failures */
 
-		case NO_PATH:
-			assert(paths.empty());
-			if (result.foundStartKmer && result.foundGoalKmer)
-#pragma omp atomic
-				++g_count.noPath;
-			else {
-#pragma omp atomic
-				++g_count.noStartOrGoalKmer;
+	updateCounters(params, result);
+
+	/* ouput merged / unmerged reads */
+
+	if (result.pathResult == FOUND_PATH &&
+		!exceedsMismatchThresholds(params, result)) {
+		assert(!paths.empty());
+		if (opt::altPathsMode) {
+#pragma omp critical(mergedStream)
+			for (unsigned i = 0; i < paths.size(); ++i) {
+				if (opt::dupBloomSize == 0 || !pathRedundant.at(i))
+					outputRead(paths.at(i), mergedStream, opt::fastq);
 			}
-			break;
-
-		case FOUND_PATH:
-			assert(!paths.empty());
-			if (result.pathMismatches > params.maxPathMismatches ||
-				result.pathIdentity < params.minPathIdentity ||
-				result.readMismatches > params.maxReadMismatches ||
-				result.readIdentity < params.minReadIdentity)
-			{
-				/* pseudoread(s) exceed mismatch thresholds */
-				if (result.pathMismatches > params.maxPathMismatches ||
-					result.pathIdentity < params.minPathIdentity)
-#pragma omp atomic
-					++g_count.tooManyMismatches;
-				else
-					++g_count.tooManyReadMismatches;
-				if (opt::extend) {
-					if (read1Corrected || read2Corrected)
+		} else if (opt::dupBloomSize == 0 || !pathRedundant.front()) {
 #pragma omp critical(mergedStream)
-					{
-						if (read1Corrected && !read1Redundant)
-							mergedStream << (FastaRecord)read1;
-						if (read2Corrected && !read2Redundant)
-							mergedStream << (FastaRecord)read2;
-					}
-					if (!read1Corrected || !read2Corrected)
-#pragma omp critical(readStream)
-					{
-						if (!read1Corrected)
-							read1Stream << (FastaRecord)read1;
-						if (!read2Corrected)
-							read2Stream << (FastaRecord)read2;
-					}
-				} else
-#pragma omp critical(readStream)
-				{
-					read1Stream << read1;
-					read2Stream << read2;
-				}
-			} else {
-				/* pseudoread(s) satisfy mismatch thresholds */
-				if (paths.size() == 1)
-#pragma omp atomic
-					++g_count.uniquePath;
-				else
-#pragma omp atomic
-					++g_count.multiplePaths;
-
-				if (opt::altPathsMode) {
-#pragma omp critical(mergedStream)
-					for (unsigned i = 0; i < paths.size(); ++i) {
-						if (opt::dupBloomSize == 0 || !pathRedundant.at(i))
-							mergedStream << paths.at(i);
-					}
-				} else if (opt::dupBloomSize == 0 || !pathRedundant.front()) {
-					if (paths.size() == 1) {
-#pragma omp critical(mergedStream)
-						mergedStream << paths.front();
-					} else {
-#pragma omp critical(mergedStream)
-						mergedStream << result.consensusSeq;
-					}
-				}
-			}
-			break;
-
-		case TOO_MANY_PATHS:
-#pragma omp atomic
-			++g_count.tooManyPaths;
-			break;
-
-		case TOO_MANY_BRANCHES:
-#pragma omp atomic
-			++g_count.tooManyBranches;
-			break;
-
-		case PATH_CONTAINS_CYCLE:
-#pragma omp atomic
-			++g_count.containsCycle;
-			break;
-
-		case EXCEEDED_MEM_LIMIT:
-#pragma omp atomic
-			++g_count.exceededMemLimit;
-			break;
-	}
-
-	if (result.pathResult != FOUND_PATH) {
+			outputRead(consensus, mergedStream, opt::fastq);
+		}
+	} else {
 		if (opt::extend) {
 			if (read1Corrected || read2Corrected)
 #pragma omp critical(mergedStream)
 			{
 				if (read1Corrected && !read1Redundant)
-					mergedStream << (FastaRecord)read1;
+					outputRead(read1, mergedStream, opt::fastq);
 				if (read2Corrected && !read2Redundant)
-					mergedStream << (FastaRecord)read2;
+					outputRead(read2, mergedStream, opt::fastq);
 			}
 			if (!read1Corrected || !read2Corrected)
 #pragma omp critical(readStream)
 			{
 				if (!read1Corrected)
-					read1Stream << (FastaRecord)read1;
+					read1Stream << read1;
 				if (!read2Corrected)
-					read2Stream << (FastaRecord)read2;
+					read2Stream << read2;
 			}
 		} else
 #pragma omp critical(readStream)
@@ -829,6 +950,8 @@ int main(int argc, char** argv)
 			arg >> opt::minPathIdentity; break;
 		  case 'v':
 			opt::verbose++; break;
+		  case OPT_FASTQ:
+			opt::fastq = true; break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -958,7 +1081,11 @@ int main(int argc, char** argv)
 	 */
 
 	string mergedOutputPath(opt::outputPrefix);
-	mergedOutputPath.append("_pseudoreads.fa");
+	mergedOutputPath.append("_pseudoreads");
+	if (opt::fastq)
+		mergedOutputPath.append(".fq");
+	else
+		mergedOutputPath.append(".fa");
 	ofstream mergedStream(mergedOutputPath.c_str());
 	assert_good(mergedStream, mergedOutputPath);
 
@@ -969,18 +1096,12 @@ int main(int argc, char** argv)
 	 */
 
 	string read1OutputPath(opt::outputPrefix);
-	if (opt::extend)
-		read1OutputPath.append("_reads_1.fa");
-	else
-		read1OutputPath.append("_reads_1.fq");
+	read1OutputPath.append("_reads_1.fq");
 	ofstream read1Stream(read1OutputPath.c_str());
 	assert_good(read1Stream, read1OutputPath);
 
 	string read2OutputPath(opt::outputPrefix);
-	if (opt::extend)
-		read2OutputPath.append("_reads_2.fa");
-	else
-		read2OutputPath.append("_reads_2.fq");
+	read2OutputPath.append("_reads_2.fq");
 	ofstream read2Stream(read2OutputPath.c_str());
 	assert_good(read2Stream, read2OutputPath);
 
