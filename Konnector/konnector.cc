@@ -93,6 +93,7 @@ static const char USAGE_MESSAGE[] =
 "  -n  --no-limits            disable all limits; equivalent to\n"
 "                             '-B nolimit -m nolimit -M nolimit -P nolimit'\n"
 "  -o, --output-prefix=FILE   prefix of output FASTA files [required]\n"
+"  --preserve-reads           don't correct any bases within the reads [disabled]\n"
 "  -p, --alt-paths-mode       output a separate pseudoread for each alternate\n"
 "                             path connecting a read pair (default is to create\n"
 "                             a consensus sequence of all connecting paths)\n"
@@ -194,6 +195,11 @@ namespace opt {
 	static string inputBloomPath;
 
 	/**
+	 * Do not correct bases in input read sequences.
+	 */
+	static bool preserveReads = false;
+
+	/**
 	 * Output separate sequence for each alternate path
 	 * between read pairs
 	 */
@@ -259,7 +265,7 @@ static struct {
 
 static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:vx:X:";
 
-enum { OPT_FASTQ = 1, OPT_HELP, OPT_VERSION };
+enum { OPT_FASTQ = 1, OPT_HELP, OPT_PRESERVE_READS, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
@@ -298,6 +304,7 @@ static const struct option longopts[] = {
 	{ "path-identity",    required_argument, NULL, 'X' },
 	{ "fastq",            no_argument, NULL, OPT_FASTQ },
 	{ "help",             no_argument, NULL, OPT_HELP },
+	{ "preserve-reads",   no_argument, NULL, OPT_PRESERVE_READS },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
@@ -306,6 +313,7 @@ static const struct option longopts[] = {
  * Return true if the Bloom filter contains all of the
  * kmers in the given sequence.
  */
+/*
 static bool bloomContainsSeq(const BloomFilter& bloom, const Sequence& seq)
 {
 	if (containsAmbiguityCodes(seq)) {
@@ -324,11 +332,25 @@ static bool bloomContainsSeq(const BloomFilter& bloom, const Sequence& seq)
 	}
 	return true;
 }
+*/
+
+static inline bool isSeqRedundant(const BloomFilter& assembledKmers,
+	const BloomFilter& goodKmers, Sequence seq)
+{
+	flattenAmbiguityCodes(seq, false);
+	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
+		if (goodKmers[*it] && !assembledKmers[*it])
+			return false;
+	}
+	return true;
+}
 
 /**
  * Load the kmers of a given sequence into a Bloom filter.
  */
-static inline void loadSeq(BloomFilter& bloom, unsigned k, const Sequence& seq)
+/*
+static inline void loadSeq(BloomFilter& assembledKmers,
+	const BloomFilter& goodKmers, unsigned k, const Sequence& seq)
 {
 	if (containsAmbiguityCodes(seq)) {
 		Sequence seqCopy = seq;
@@ -339,6 +361,36 @@ static inline void loadSeq(BloomFilter& bloom, unsigned k, const Sequence& seq)
 		Bloom::loadSeq(bloom, k, rc);
 	} else {
 		Bloom::loadSeq(bloom, k, seq);
+	}
+}
+*/
+
+static inline void addKmers(BloomFilter& bloom,
+	const BloomFilter& goodKmers, unsigned k,
+	const Sequence& seq)
+{
+	if (containsAmbiguityCodes(seq)) {
+		Sequence flattened = seq;
+		Sequence rcFlattened = reverseComplement(seq);
+		flattenAmbiguityCodes(flattened, false);
+		flattenAmbiguityCodes(rcFlattened, false);
+		for (KmerIterator it(flattened, k);
+			it != KmerIterator::end();++it) {
+			if (goodKmers[*it])
+				bloom.insert(*it);
+		}
+		for (KmerIterator it(rcFlattened, k);
+			it != KmerIterator::end(); ++it) {
+			if (goodKmers[*it])
+				bloom.insert(*it);
+		}
+		return;
+	} else {
+		for (KmerIterator it(seq, k);
+			it != KmerIterator::end(); ++it) {
+			if (goodKmers[*it])
+				bloom.insert(*it);
+		}
 	}
 }
 
@@ -464,7 +516,8 @@ static bool extendRead(FastqRecord& rec, unsigned k, const Graph& g)
 		assert(startPos <= extendedSeq.length() - k);
 		unsigned lengthBefore = extendedSeq.length();
 		extendSeq(extendedSeq, FORWARD, startPos, k, g,
-			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
+			NO_LIMIT, g_trimLen, opt::mask,
+			!opt::altPathsMode, opt::preserveReads);
 		extendedRight = extendedSeq.length() - lengthBefore;
 	}
 
@@ -473,7 +526,8 @@ static bool extendRead(FastqRecord& rec, unsigned k, const Graph& g)
 		assert(startPos <= extendedSeq.length() - k);
 		unsigned lengthBefore = extendedSeq.length();
 		extendSeq(extendedSeq, REVERSE, startPos, k, g,
-			NO_LIMIT, g_trimLen, opt::mask, !opt::altPathsMode);
+			NO_LIMIT, g_trimLen, opt::mask,
+			!opt::altPathsMode, opt::preserveReads);
 		extendedLeft = extendedSeq.length() - lengthBefore;
 	}
 
@@ -498,9 +552,10 @@ static bool extendRead(FastqRecord& rec, unsigned k, const Graph& g)
  * @return ExtendResult (ER_NOT_EXTENDED, ER_EXTENDED,
  * ER_REDUNDANT)
  */
-template <typename Graph, typename Bloom>
+template <typename Graph, typename BloomT1, typename BloomT2>
 static inline ExtendResult
-extendReadIfNonRedundant(FastqRecord& seq, Bloom& bloom, unsigned k, const Graph& g)
+extendReadIfNonRedundant(FastqRecord& seq, BloomT1& assembledKmers,
+	const BloomT2& goodKmers, unsigned k, const Graph& g)
 {
 	bool extended = false;
 	bool redundant = false;
@@ -512,7 +567,7 @@ extendReadIfNonRedundant(FastqRecord& seq, Bloom& bloom, unsigned k, const Graph
 		 * that has already been assembled.
 		 */
 #pragma omp critical(dupBloom)
-		redundant = bloomContainsSeq(bloom, seq);
+		redundant = isSeqRedundant(assembledKmers, goodKmers, seq);
 		if (redundant)
 			return ER_REDUNDANT;
 	}
@@ -526,8 +581,8 @@ extendReadIfNonRedundant(FastqRecord& seq, Bloom& bloom, unsigned k, const Graph
 #pragma omp critical(dupBloom)
 		{
 			/* must check again to avoid race conditions */
-			if (!bloomContainsSeq(bloom, origSeq))
-				loadSeq(bloom, opt::k, seq.seq);
+			if (!isSeqRedundant(assembledKmers, goodKmers, origSeq))
+				addKmers(assembledKmers, goodKmers, k, seq.seq);
 			else
 				redundant = true;
 		}
@@ -724,18 +779,20 @@ static void connectPair(const Graph& g,
 			if (opt::altPathsMode) {
 				/* extend each alternate path independently */
 				for (unsigned i = 0; i < paths.size(); ++i) {
-					paths.at(i) = connectingSeq(paths.at(i),
-						result.startKmerPos, result.goalKmerPos);
+					if (!opt::preserveReads)
+						paths.at(i) = connectingSeq(paths.at(i),
+							result.startKmerPos, result.goalKmerPos);
 					extendResult = extendReadIfNonRedundant(
-						paths.at(i), g_dupBloom, opt::k, g);
+						paths.at(i), g_dupBloom, bloom, opt::k, g);
 					pathRedundant.push_back(extendResult == ER_REDUNDANT);
 				}
 			} else  {
 				/* extend consensus sequence for all paths */
-				consensus = connectingSeq(consensus,
-					result.startKmerPos, result.goalKmerPos);
+				if (!opt::preserveReads)
+					consensus = connectingSeq(consensus,
+						result.startKmerPos, result.goalKmerPos);
 				extendResult = extendReadIfNonRedundant(
-					consensus, g_dupBloom, opt::k, g);
+					consensus, g_dupBloom, bloom, opt::k, g);
 				pathRedundant.push_back(extendResult == ER_REDUNDANT);
 			}
 			if (std::find(pathRedundant.begin(), pathRedundant.end(),
@@ -756,7 +813,7 @@ static void connectPair(const Graph& g,
 #pragma omp atomic
 				g_count.singleEndCorrected++;
 				extendResult = extendReadIfNonRedundant(read1,
-					g_dupBloom, opt::k, g);
+					g_dupBloom, bloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read1Redundant = true;
 			}
@@ -766,7 +823,7 @@ static void connectPair(const Graph& g,
 #pragma omp atomic
 				g_count.singleEndCorrected++;
 				extendResult = extendReadIfNonRedundant(read2,
-					g_dupBloom, opt::k, g);
+					g_dupBloom, bloom, opt::k, g);
 				if (extendResult == ER_REDUNDANT)
 					read2Redundant = true;
 			}
@@ -955,6 +1012,8 @@ int main(int argc, char** argv)
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
+		  case OPT_PRESERVE_READS:
+			opt::preserveReads = true; break;
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -1121,6 +1180,7 @@ int main(int argc, char** argv)
 	params.kmerMatchesThreshold = 3;
 	params.fixErrors = opt::fixErrors;
 	params.maskBases = opt::mask;
+	params.preserveReads = opt::preserveReads;
 	params.memLimit = opt::searchMem;
 	params.dotPath = opt::dotPath;
 	params.dotStream = opt::dotPath.empty() ? NULL : &dotStream;

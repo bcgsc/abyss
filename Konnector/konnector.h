@@ -142,6 +142,7 @@ struct ConnectPairsParams {
 	unsigned kmerMatchesThreshold;
 	bool fixErrors;
 	bool maskBases;
+	bool preserveReads;
 	size_t memLimit;
 	std::string dotPath;
 	std::ofstream* dotStream;
@@ -158,6 +159,7 @@ struct ConnectPairsParams {
 		kmerMatchesThreshold(1),
 		fixErrors(false),
 		maskBases(false),
+		preserveReads(false),
 		memLimit(std::numeric_limits<std::size_t>::max()),
 		dotStream(NULL)
 	{}
@@ -251,10 +253,10 @@ static inline ConnectPairsResult connectPairs(
 	const unsigned numMatchesThreshold = 3;
 
 	unsigned startKmerPos = getStartKmerPos(read1, k, FORWARD, g,
-		numMatchesThreshold);
+		numMatchesThreshold, params.preserveReads);
 
 	unsigned goalKmerPos = getStartKmerPos(read2, k, FORWARD, g,
-		numMatchesThreshold);
+		numMatchesThreshold, params.preserveReads);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
@@ -321,13 +323,37 @@ static inline ConnectPairsResult connectPairs(
 
 	if (result.pathResult == FOUND_PATH) {
 
-		// build sequences for connecting paths
+		/* build sequences for connecting paths */
 
-		for (unsigned i = 0; i < paths.size(); i++)
-			result.connectingSeqs.push_back(pathToSeq(paths[i]));
+		std::string seqPrefix, seqSuffix;
 
-		std::string seqPrefix = pRead1->seq.substr(0, startKmerPos);
-		std::string seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
+		if (params.preserveReads) {
+			seqPrefix = pRead1->seq;
+			seqSuffix = reverseComplement(pRead2->seq);
+			unsigned trimLeft = pRead1->seq.length() - startKmerPos;
+			unsigned trimRight = pRead2->seq.length() - goalKmerPos;
+			for (unsigned i = 0; i < paths.size(); i++) {
+				Sequence connectingSeq = pathToSeq(paths[i]);
+				/*
+				 * If the input reads overlap, we must fail because
+				 * there's no way to preserve the original read
+				 * sequences in the merged read (the reads may disagree
+				 * in the region of overlap)
+				 */
+				if (trimLeft + trimRight > connectingSeq.length()) {
+					result.pathResult = NO_PATH;
+					return result;
+				}
+				connectingSeq = connectingSeq.substr(trimLeft,
+					connectingSeq.length() - trimLeft - trimRight);
+				result.connectingSeqs.push_back(connectingSeq);
+			}
+		} else {
+			seqPrefix = pRead1->seq.substr(0, startKmerPos);
+			seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
+			for (unsigned i = 0; i < paths.size(); i++)
+				result.connectingSeqs.push_back(pathToSeq(paths[i]));
+		}
 
 		unsigned readPairLength = read1.seq.length() + read2.seq.length();
 
@@ -338,7 +364,6 @@ static inline ConnectPairsResult connectPairs(
 			FastaRecord mergedSeq;
 			mergedSeq.id = result.readNamePrefix;
 			mergedSeq.seq = seqPrefix + result.connectingSeqs.front() + seqSuffix;
-
 			result.readMismatches =
 				maskNew(read1, read2, mergedSeq, params.maskBases);
 			result.pathIdentity = 100.0f;
@@ -420,7 +445,8 @@ static inline Kmer getHeadKmer(const Sequence& seq, Direction dir,
 template <typename Graph>
 static inline bool extendSeqThroughBubble(Sequence& seq,
 	Direction dir, unsigned startKmerPos, unsigned k,
-	const Graph& g, unsigned trimLen=0, bool maskNew=false)
+	const Graph& g, unsigned trimLen=0, bool maskNew=false,
+	bool preserveSeq=false)
 {
 	assert(seq.length() >= k);
 	assert(dir == FORWARD || dir == REVERSE);
@@ -438,6 +464,11 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		bubbleSeqLen <= startKmerPos) {
 		return false;
 	}
+
+	std::string headKmer = seq.substr(startKmerPos, k);
+	if (headKmer.find_first_not_of("AGCTagct") !=
+		std::string::npos)
+		return false;
 
 	Kmer head(seq.substr(startKmerPos, k));
 	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen);
@@ -483,10 +514,33 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	Sequence& consensus = alignment.match_align;
 
 	if (dir == FORWARD) {
-		overlaySeq(consensus, seq, startKmerPos, maskNew);
+		if (preserveSeq) {
+			/*
+			 * make sure bubble extends beyond end of
+			 * original sequence
+			 */
+			assert(startKmerPos + consensus.length()
+				> seq.length());
+			overlaySeq(consensus.substr(seq.length() - startKmerPos),
+				seq, seq.length(), maskNew);
+		} else {
+			overlaySeq(consensus, seq, startKmerPos, maskNew);
+		}
 	} else {
-		overlaySeq(consensus, seq,
-			-consensus.length() + startKmerPos + k, maskNew);
+		if (preserveSeq) {
+			/*
+			 * make sure bubble extends beyond end of
+			 * original sequence
+			 */
+			assert(consensus.length() > startKmerPos + k);
+			consensus = consensus.substr(0,
+				consensus.length() - startKmerPos - k);
+			overlaySeq(consensus, seq, -consensus.length(),
+				maskNew);
+		} else {
+			overlaySeq(consensus, seq,
+				-consensus.length() + startKmerPos + k, maskNew);
+		}
 	}
 
 	return true;
@@ -581,7 +635,8 @@ template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	unsigned startKmerPos, unsigned k, const Graph& g,
 	unsigned maxLen=NO_LIMIT, unsigned trimLen=0,
-	bool maskNew=false, bool popBubbles=true)
+	bool maskNew=false, bool popBubbles=true,
+	bool preserveSeq=false)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
@@ -673,7 +728,12 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			pathResult == EXTENDED_TO_LENGTH_LIMIT))
 		{
 			std::string pathSeq = pathToSeq(path);
-			overlaySeq(pathSeq, seq, seq.length() - k + 1, maskNew);
+			if (preserveSeq)
+				overlaySeq(pathSeq.substr(k), seq,
+					seq.length(), maskNew);
+			else
+				overlaySeq(pathSeq, seq,
+					seq.length() - k + 1, maskNew);
 		}
 
 		/*
@@ -686,22 +746,28 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			startKmerPos = startKmerPos + path.size() - 1;
 			assert(startKmerPos < seq.length() - k + 1);
 			if (extendSeqThroughBubble(seq, FORWARD, startKmerPos,
-				k, g, trimLen, maskNew)) {
+				k, g, trimLen, maskNew, preserveSeq)) {
 
 				/* make sure we don't exceed extension limit */
 				if (seq.length() > maxLen)
 					seq = seq.substr(0, maxLen);
 
 				/* check for cycle */
-				Path<Kmer> bubblePath = seqToPath(seq.substr(startKmerPos), k);
-				for (Path<Kmer>::iterator it = bubblePath.begin();
-					it != bubblePath.end(); ++it) {
-					if (visited.containsKmer(*it)) {
+				for (unsigned i = startKmerPos + 1;
+					i < seq.length() - k + 1; ++i) {
+					std::string kmerStr = seq.substr(i, k);
+					size_t pos = kmerStr.find_first_not_of("AGCTagct");
+					if (pos != std::string::npos) {
+						i += pos;
+						continue;
+					}
+					Kmer kmer(kmerStr);
+					if (visited.containsKmer(kmer)) {
 						pathResult = EXTENDED_TO_CYCLE;
-						bubblePath.erase(it, bubblePath.end());
+						seq.erase(i);
 						break;
 					}
-					visited.addKmer(*it);
+					visited.addKmer(kmer);
 				}
 
 				/* set up for another round of extension */
