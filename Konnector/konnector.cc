@@ -320,29 +320,8 @@ static const struct option longopts[] = {
 
 /**
  * Return true if the Bloom filter contains all of the
- * kmers in the given sequence.
+ * "good" kmers in the given sequence.
  */
-/*
-static bool bloomContainsSeq(const BloomFilter& bloom, const Sequence& seq)
-{
-	if (containsAmbiguityCodes(seq)) {
-		Sequence seqCopy = seq;
-		flattenAmbiguityCodes(seqCopy, false);
-		for (KmerIterator it(seqCopy, opt::k); it != KmerIterator::end();
-			++it) {
-			if (!bloom[*it])
-				return false;
-		}
-		return true;
-	}
-	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
-		if (!bloom[*it])
-			return false;
-	}
-	return true;
-}
-*/
-
 static inline bool isSeqRedundant(const BloomFilter& assembledKmers,
 	const BloomFilter& goodKmers, Sequence seq)
 {
@@ -357,23 +336,6 @@ static inline bool isSeqRedundant(const BloomFilter& assembledKmers,
 /**
  * Load the kmers of a given sequence into a Bloom filter.
  */
-/*
-static inline void loadSeq(BloomFilter& assembledKmers,
-	const BloomFilter& goodKmers, unsigned k, const Sequence& seq)
-{
-	if (containsAmbiguityCodes(seq)) {
-		Sequence seqCopy = seq;
-		Sequence rc = reverseComplement(seqCopy);
-		flattenAmbiguityCodes(seqCopy, false);
-		flattenAmbiguityCodes(rc, false);
-		Bloom::loadSeq(bloom, k, seqCopy);
-		Bloom::loadSeq(bloom, k, rc);
-	} else {
-		Bloom::loadSeq(bloom, k, seq);
-	}
-}
-*/
-
 static inline void addKmers(BloomFilter& bloom,
 	const BloomFilter& goodKmers, unsigned k,
 	const Sequence& seq)
