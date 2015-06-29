@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 
 #if _OPENMP
 # include <omp.h>
@@ -101,10 +102,13 @@ static const char USAGE_MESSAGE[] =
 "                             for no limit [2]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
-"      --standard-quality     zero quality is `!' (33)\n"
-"                             default for FASTQ and SAM files\n"
-"      --illumina-quality     zero quality is `@' (64)\n"
-"                             default for qseq and export files\n"
+"      --standard-quality     zero quality is `!' (33), typically\n"
+"                             for FASTQ and SAM files [default]\n"
+"      --illumina-quality     zero quality is `@' (64), typically\n"
+"                             for qseq and export files\n"
+"  -Q, --corrected-qual       quality score for bases corrected or inserted\n"
+"                             by konnector; only relevant when --fastq is\n"
+"                             in effect [40]\n"
 "  -r, --read-name=STR        only process reads with names that contain STR\n"
 "  -s, --search-mem=N         mem limit for graph searches; multiply by the\n"
 "                             number of threads (-j) to get the total mem used\n"
@@ -119,8 +123,6 @@ static const char USAGE_MESSAGE[] =
 "      --version              output version information and exit\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
-
-#define CORRECTED_BASE_QUAL 60
 
 const unsigned g_progressStep = 1000;
 /**
@@ -208,6 +210,12 @@ namespace opt {
 	/** Max paths between read 1 and read 2 */
 	unsigned maxPaths = 2;
 
+	/**
+	 * Quality score for bases that are corrected
+	 * or inserted by konnector.
+	 */
+	uint8_t correctedQual = 40;
+
 	/** Prefix for output files */
 	static string outputPrefix;
 
@@ -260,10 +268,10 @@ static struct {
 	size_t skipped;
 	/* counts below are used only when -E is enabled */
 	size_t mergedAndSkipped;
-	size_t singleEndCorrected;
+	size_t singleEndExtended;
 } g_count;
 
-static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:r:s:t:vx:X:";
+static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:Q:r:s:t:vx:X:";
 
 enum { OPT_FASTQ = 1, OPT_HELP, OPT_PRESERVE_READS, OPT_VERSION };
 
@@ -294,6 +302,7 @@ static const struct option longopts[] = {
 	{ "alt-paths-mode",   no_argument, NULL, 'p' },
 	{ "max-paths",        required_argument, NULL, 'P' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
+	{ "corrected-qual",   required_argument, NULL, 'Q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "read-name",        required_argument, NULL, 'r' },
@@ -394,7 +403,7 @@ static inline void addKmers(BloomFilter& bloom,
 	}
 }
 
-enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
+enum ExtendResult { ER_CORRECTION_FAILED, ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
 
 /**
  * Calculate quality string for a pseudo-read.  A base will
@@ -409,9 +418,8 @@ enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
 static inline std::string calcQual(const FastqRecord& read1,
 	const FastqRecord& read2, Sequence& merged)
 {
-	unsigned char qualCorrected = opt::qualityOffset +
-		CORRECTED_BASE_QUAL;
-	std::string qual(merged.length(), qualCorrected);
+	unsigned char correctedQual = opt::qualityOffset + opt::correctedQual;
+	std::string qual(merged.length(), correctedQual);
 
 	/*
 	 * In the case that the input files are FASTA,
@@ -424,33 +432,41 @@ static inline std::string calcQual(const FastqRecord& read1,
 	Sequence r1 = read1.seq, r2 = reverseComplement(read2.seq);
 	std::string r1qual = read1.qual, r2qual = read2.qual;
 	std::reverse(r2qual.begin(), r2qual.end());
+	assert(r1.length() <= merged.length());
+	assert(r2.length() <= merged.length());
 
-	/* corrected bases from read 1 */
-	std::vector<bool> r1Corrected(merged.length(), false);
-	for (unsigned i = 0; i < r1.length(); ++i) {
-		assert(i < merged.length());
-		if (r1.at(i) == merged.at(i)) {
-			qual.at(i) = r1qual.at(i);
-		}
-		else {
-			r1Corrected.at(i) = true;
-			qual.at(i) = qualCorrected;
+	/* region covered only by read 1 */
+	unsigned r2offset = merged.length() - r2.length();
+	for (unsigned r1pos = 0; r1pos < r1.length() && r1pos < r2offset;
+		++r1pos) {
+		if (r1.at(r1pos) == merged.at(r1pos)) {
+			qual.at(r1pos) = r1qual.at(r1pos);
+		} else {
+			//r1Corrected.at(i) = true;
+			qual.at(r1pos) = correctedQual;
 		}
 	}
 
-	/* corrected bases from read 2 */
-	assert(r2.length() <= merged.length());
-	unsigned r2offset = merged.length() - r2.length();
-	for (unsigned i = 0; i < r2.length(); ++i) {
-		assert(r2offset + i < merged.length());
-		if (!r1Corrected.at(r2offset + i)) {
-			if (r2.at(i) == merged.at(r2offset + i)) {
-				qual.at(r2offset + i) = std::max(
-					qual.at(r2offset + i), r2qual.at(i));
-			}
-			else {
-				qual.at(i) = qualCorrected;
-			}
+	/* region where read 1 and read 2 overlap */
+	for (unsigned r1pos = r2offset; r1pos < r1.length(); ++r1pos) {
+		unsigned r2pos = r1pos - r2offset;
+		if (r1.at(r1pos) != merged.at(r1pos) ||
+			r2.at(r2pos) != merged.at(r1pos)) {
+			qual.at(r1pos) = correctedQual;
+		} else {
+			assert(r1.at(r1pos) == r2.at(r2pos));
+			qual.at(r1pos) = max(r1qual.at(r1pos), r2qual.at(r2pos));
+		}
+	}
+
+	/* region covered only by read 2 */
+	for (unsigned r1pos = max(r2offset, (unsigned)r1.length());
+		r1pos < merged.length(); ++r1pos) {
+		unsigned r2pos = r1pos - r2offset;
+		if (r2.at(r2pos) == merged.at(r1pos)) {
+			qual.at(r1pos) = r2qual.at(r2pos);
+		} else {
+			qual.at(r1pos) = correctedQual;
 		}
 	}
 
@@ -464,8 +480,7 @@ static inline string calcQual(const FastqRecord& orig,
 	assert(extended.length() == orig.seq.length() +
 		extendedLeft + extendedRight);
 
-	unsigned char correctedQual = opt::qualityOffset +
-		CORRECTED_BASE_QUAL;
+	unsigned char correctedQual = opt::qualityOffset + opt::correctedQual;
 	string qual(extended.length(), correctedQual);
 
 	/*
@@ -621,7 +636,7 @@ static inline void printProgressMessage()
 		<< g_count.readPairsProcessed << " read pairs";
 
 	if (opt::extend) {
-		cerr << ", corrected/extended " << g_count.singleEndCorrected << " of "
+		cerr << ", extended " << g_count.singleEndExtended << " of "
 			<< (g_count.readPairsProcessed - g_count.uniquePath -
 				g_count.multiplePaths) * 2
 		<< " unmerged reads";
@@ -712,6 +727,20 @@ static inline bool exceedsMismatchThresholds(const ConnectPairsParams& params,
 		result.readIdentity < params.minReadIdentity);
 }
 
+template <typename Graph, typename BloomT1, typename BloomT2>
+static inline ExtendResult extendUnmerged(FastqRecord& read,
+	BloomT1& assembledKmers, const BloomT2& goodKmers,
+	unsigned k, const Graph& g, bool preserveRead=false)
+{
+	bool corrected = false;
+	if (!preserveRead)
+		corrected = trimRead(read, k, g);
+	if (preserveRead || corrected)
+		return extendReadIfNonRedundant(read,
+			assembledKmers, goodKmers, k, g);
+	return ER_CORRECTION_FAILED;
+}
+
 /** Connect a read pair. */
 template <typename Graph, typename Bloom>
 static void connectPair(const Graph& g,
@@ -724,8 +753,6 @@ static void connectPair(const Graph& g,
 	ofstream& read2Stream,
 	ofstream& traceStream)
 {
-	(void)bloom;
-
 	/*
 	 * Implements the -r option, which is used to only
 	 * process a subset of the input read pairs.
@@ -759,10 +786,8 @@ static void connectPair(const Graph& g,
 		consensus.qual = calcQual(read1, read2, result.consensusSeq.seq);
 	}
 
-	bool read1Corrected = false;
-	bool read1Redundant = false;
-	bool read2Corrected = false;
-	bool read2Redundant = false;
+	bool outputRead1 = false;
+	bool outputRead2 = false;
 	std::vector<bool> pathRedundant;
 
 	/*
@@ -808,25 +833,31 @@ static void connectPair(const Graph& g,
 			 * both directions).
 			 */
 
-			read1Corrected = trimRead(read1, opt::k, g);
-			if (read1Corrected) {
+			if (!endsWith(read1.id, "/1"))
+				read1.id.append("/1");
+			if (!endsWith(read2.id, "/2"))
+				read2.id.append("/2");
+
+			extendResult = extendUnmerged(read1, g_dupBloom, bloom,
+				opt::k, g, opt::preserveReads);
+			if (extendResult != ER_CORRECTION_FAILED) {
+				if (extendResult == ER_EXTENDED)
 #pragma omp atomic
-				g_count.singleEndCorrected++;
-				extendResult = extendReadIfNonRedundant(read1,
-					g_dupBloom, bloom, opt::k, g);
-				if (extendResult == ER_REDUNDANT)
-					read1Redundant = true;
+					g_count.singleEndExtended++;
+				if (extendResult != ER_REDUNDANT)
+					outputRead1 = true;
 			}
 
-			read2Corrected = trimRead(read2, opt::k, g);
-			if (read2Corrected) {
+			extendResult = extendUnmerged(read2, g_dupBloom, bloom,
+				opt::k, g, opt::preserveReads);
+			if (extendResult != ER_CORRECTION_FAILED) {
+				if (extendResult == ER_EXTENDED)
 #pragma omp atomic
-				g_count.singleEndCorrected++;
-				extendResult = extendReadIfNonRedundant(read2,
-					g_dupBloom, bloom, opt::k, g);
-				if (extendResult == ER_REDUNDANT)
-					read2Redundant = true;
+					g_count.singleEndExtended++;
+				if (extendResult != ER_REDUNDANT)
+					outputRead2 = true;
 			}
+
 		}
 	}
 
@@ -858,20 +889,20 @@ static void connectPair(const Graph& g,
 		}
 	} else {
 		if (opt::extend) {
-			if (read1Corrected || read2Corrected)
+			if (outputRead1 || outputRead2)
 #pragma omp critical(mergedStream)
 			{
-				if (read1Corrected && !read1Redundant)
+				if (outputRead1)
 					outputRead(read1, mergedStream, opt::fastq);
-				if (read2Corrected && !read2Redundant)
+				if (outputRead2)
 					outputRead(read2, mergedStream, opt::fastq);
 			}
-			if (!read1Corrected || !read2Corrected)
+			if (!outputRead1 || !outputRead2)
 #pragma omp critical(readStream)
 			{
-				if (!read1Corrected)
+				if (!outputRead1)
 					read1Stream << read1;
-				if (!read2Corrected)
+				if (!outputRead2)
 					read2Stream << read2;
 			}
 		} else
@@ -995,6 +1026,8 @@ int main(int argc, char** argv)
 			setMaxOption(opt::maxPaths, arg); break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 'Q':
+			arg >> opt::correctedQual; break;
 		  case 'r':
 			arg >> opt::readName; break;
 		  case 's':
@@ -1062,6 +1095,15 @@ int main(int argc, char** argv)
 #if USESEQAN
 	seqanTests();
 #endif
+
+	/*
+	 * We need to set a default quality score offset
+	 * in order to generate quality scores
+	 * for bases that are corrected/inserted by
+	 * konnector (--fastq option).
+	 */
+	if (opt::qualityOffset == 0)
+		opt::qualityOffset = 33;
 
 	assert(opt::bloomSize > 0);
 
@@ -1249,10 +1291,10 @@ int main(int argc, char** argv)
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n";
 			if (opt::extend) {
-				cerr << "Unmerged reads corrected/extended: "
-					<< g_count.singleEndCorrected
+				cerr << "Unmerged reads extended: "
+					<< g_count.singleEndExtended
 					<< " (" << setprecision(3) <<  (float)100
-					* g_count.singleEndCorrected / ((g_count.readPairsProcessed -
+					* g_count.singleEndExtended / ((g_count.readPairsProcessed -
 					g_count.uniquePath - g_count.multiplePaths) * 2)
 					<< "%)\n";
 			}
