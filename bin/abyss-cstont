@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Convert colour-space FASTA sequences to nucleotide FASTA sequences.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 # Usage: cstofasta data.csfa >data.fa
