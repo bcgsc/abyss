@@ -365,7 +365,7 @@ static inline void addKmers(BloomFilter& bloom,
 	}
 }
 
-enum ExtendResult { ER_CORRECTION_FAILED, ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
+enum ExtendResult { ER_NOT_EXTENDED, ER_REDUNDANT, ER_EXTENDED };
 
 /**
  * Calculate quality string for a pseudo-read.  A base will
@@ -598,7 +598,7 @@ static inline void printProgressMessage()
 		<< g_count.readPairsProcessed << " read pairs";
 
 	if (opt::extend) {
-		cerr << ", extended " << g_count.singleEndExtended << " of "
+		cerr << ", corrected/extended " << g_count.singleEndExtended << " of "
 			<< (g_count.readPairsProcessed - g_count.uniquePath -
 				g_count.multiplePaths) * 2
 		<< " unmerged reads";
@@ -689,18 +689,26 @@ static inline bool exceedsMismatchThresholds(const ConnectPairsParams& params,
 		result.readIdentity < params.minReadIdentity);
 }
 
+/**
+ * Correct and extend an unmerged single-end read.
+ * @return true if the read was modified, false otherwise
+ */
 template <typename Graph, typename BloomT1, typename BloomT2>
-static inline ExtendResult extendUnmerged(FastqRecord& read,
+static inline bool correctAndExtend(FastqRecord& read,
 	BloomT1& assembledKmers, const BloomT2& goodKmers,
 	unsigned k, const Graph& g, bool preserveRead=false)
 {
 	bool corrected = false;
 	if (!preserveRead)
 		corrected = trimRead(read, k, g);
-	if (preserveRead || corrected)
-		return extendReadIfNonRedundant(read,
-			assembledKmers, goodKmers, k, g);
-	return ER_CORRECTION_FAILED;
+	if (preserveRead || corrected) {
+		ExtendResult extendResult =
+			extendReadIfNonRedundant(read, assembledKmers,
+				goodKmers, k, g);
+		if (extendResult == ER_EXTENDED)
+			return true;
+	}
+	return corrected;
 }
 
 /** Connect a read pair. */
@@ -791,33 +799,32 @@ static void connectPair(const Graph& g,
 
 			/*
 			 * read pair could not be merged, so try
-			 * to extend each read individually (in
+			 * to correct and extend each read individually (in
 			 * both directions).
 			 */
 
-			if (!endsWith(read1.id, "/1"))
-				read1.id.append("/1");
-			if (!endsWith(read2.id, "/2"))
-				read2.id.append("/2");
-
-			extendResult = extendUnmerged(read1, g_dupBloom, bloom,
-				opt::k, g, opt::preserveReads);
-			if (extendResult != ER_CORRECTION_FAILED) {
-				if (extendResult == ER_EXTENDED)
+			if (correctAndExtend(read1, g_dupBloom, bloom,
+				opt::k, g, opt::preserveReads)) {
+					/* avoid duplicate read IDs */
+					if (!endsWith(read1.id, "/1")) {
+						read1.id.append("/1");
+						read1.comment.clear();
+					}
+					outputRead1 = true;
 #pragma omp atomic
 					g_count.singleEndExtended++;
-				if (extendResult != ER_REDUNDANT)
-					outputRead1 = true;
 			}
 
-			extendResult = extendUnmerged(read2, g_dupBloom, bloom,
-				opt::k, g, opt::preserveReads);
-			if (extendResult != ER_CORRECTION_FAILED) {
-				if (extendResult == ER_EXTENDED)
+			if (correctAndExtend(read2, g_dupBloom, bloom,
+				opt::k, g, opt::preserveReads)) {
+					/* avoid duplicate read IDs */
+					if (!endsWith(read2.id, "/2")) {
+						read2.id.append("/2");
+						read2.comment.clear();
+					}
+					outputRead2 = true;
 #pragma omp atomic
 					g_count.singleEndExtended++;
-				if (extendResult != ER_REDUNDANT)
-					outputRead2 = true;
 			}
 
 		}
@@ -1253,7 +1260,7 @@ int main(int argc, char** argv)
 					* g_count.skipped / g_count.readPairsProcessed
 				<< "%)\n";
 			if (opt::extend) {
-				cerr << "Unmerged reads extended: "
+				cerr << "Unmerged reads corrected/extended: "
 					<< g_count.singleEndExtended
 					<< " (" << setprecision(3) <<  (float)100
 					* g_count.singleEndExtended / ((g_count.readPairsProcessed -
