@@ -3,6 +3,11 @@ Author: Shaun Jackman, Anthony Raymond
 Affiliation: Canada's Michael Smith Genome Sciences Centre
 CSS: README.css
 
+Please Note!
+============
+
+This ABySS distribution contains the exact version of Sealer that was used for evaluation in the Sealer paper. For the most up-to-date version of Sealer, please download and install the latest ABySS release: https://github.com/bcgsc/abyss/releases
+
 ABySS
 =====
 
