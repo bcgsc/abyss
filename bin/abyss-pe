@@ -560,7 +560,7 @@ ifndef cs
 
 %-5.path %-5.fa %-5.$g: %-3.fa %-4.fa %-4.$g %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v --$g -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
+		|PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.$g %-5.path
 	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
@@ -625,7 +625,7 @@ endif
 	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.$g %-7.fa: %-6.fa %-6.$g %-6.path
-	PathConsensus $v --$g -k$k $(pcopt) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
+	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.$g %-7.path
 	cat $(wordlist 1, 2, $^) \
@@ -674,7 +674,7 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 	abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.$g %-9.fa: %-8.fa %-8.$g %-8.path
-	PathConsensus $v --$g -k$k $(pcopt) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
+	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.$g %-9.path
 	cat $(wordlist 1, 2, $^) \
