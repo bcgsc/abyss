@@ -14,7 +14,7 @@ dist_doc_DATA = \
 	LICENSE \
 	README.css README.html README.md
 
-EXTRA_DIST=doxygen.conf
+EXTRA_DIST=autogen.sh doxygen.conf
 
 SUBDIRS = \
 	bin \
