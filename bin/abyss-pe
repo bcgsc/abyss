@@ -2,6 +2,7 @@
 # Run the ABySS assembler.
 # Written by Shaun Jackman <sjackman@bcgsc.ca> and
 # Anthony Raymond <traymond@bcgsc.ca>.
+#PacBio functionality written by Matthew MacManes <matthew.macmanes@unh.edu>
 
 # Set pipefail to require that all commands of a pipe must succeed.
 SHELL=/bin/bash -o pipefail
@@ -279,7 +280,7 @@ bwaswopt=-t$j
 BWASW_OPTIONS='-b9 -q16 -r1 -w500'
 
 # Remove environment variables
-unexport in se $(lib) $(pe) $(mp) $(long)
+unexport in se $(lib) $(pe) $(mp) $(long) $(pacbio)
 
 # Check the mandatory parameters
 
@@ -361,6 +362,9 @@ default: scaffolds scaffolds-graph
 ifneq ($(long),)
 default: long-scaffs long-scaffs-graph
 endif
+ifneq ($(pacbio),)
+default: pacbio-scaffs pacbio-scaffs-graph #seal-scaffolds
+endif
 endif
 ifdef db
 default: finishDb
@@ -400,6 +404,9 @@ long-scaffs: $(name)-long-scaffs.fa
 
 long-scaffs-graph: $(name)-long-scaffs.$g
 
+pacbio-scaffs: $(name)-pacbio-scaffs.fa
+
+pacbio-scaffs-graph: $(name)-pacbio-scaffs.$g
 all: default bam stats
 
 clean:
@@ -414,7 +421,7 @@ endif
 	unitigs unitigs-graph \
 	pe-index pe-sam pe-bam contigs contigs-graph \
 	mp-index mp-sam mp-bam scaffolds scaffolds-graph \
-	scaftigs long-scaffs long-scaffs-graph seal-scaffolds \
+	scaftigs long-scaffs long-scaffs-graph seal-scaffolds pacbio-scaffs pacbio-scaffs-graph \
 	all clean help version versions
 
 .DELETE_ON_ERROR:
@@ -619,7 +626,7 @@ endif
 		|sort -snk3 -k4 \
 		|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
 
-# Scaffold
+############################################################################################################### Scaffold
 
 %-6.path: $(name)-6.$g $(addsuffix -6.dist.dot, $(mp))
 	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
@@ -640,15 +647,6 @@ endif
 %-scaffolds.$g: %-8.$g
 	ln -sf $< $@
 
-# Sealed Scaffold
-sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
-
-%-8_scaffold.fa: %-8.fa
-	abyss-sealer -v -j$j --print-flanks -o$*-8 -S$< $(sealer_ks) $(SEALER_OPTIONS) $(in) $(se)
-
-%-scaffolds-sealed.fa: %-8_scaffold.fa
-	ln -s $< $@
-
 # Scaftig
 
 %-scaftigs.fa: %-scaffolds-agp.fa
@@ -657,13 +655,13 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 %-scaftigs.agp: %-scaffolds.agp
 	ln -sf $< $@
 
-# Transcriptome assisted scaffolding
+############################################################################################################### Transcriptome assisted scaffolding
 
 %.fa.bwt: %.fa
 	bwa index $<
 
 %-8.sam.gz: $(name)-8.fa.bwt
-	bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
+	bwa mem -a -t$j -S -P -E0 -O0 -k$l $(name)-8.fa $(strip $($*)) \
 		|gzip >$@
 
 %-8.dist.dot: %-8.sam.gz
@@ -693,6 +691,62 @@ ifdef db
 finishDb:
 	@rm -f db.txt
 endif
+
+
+
+############################################################################################################### END Transcriptome assisted scaffolding
+
+############################################################################################################### PACBIO assisted scaffolding
+
+%.fa.bwt: %.fa
+	bwa index $<
+
+%-10.sam.gz: $(name)-10.fa.bwt
+	bwa mem -a -x pacbio -t$j -S -P $(name)-10.fa $(strip $($*)) \
+		|gzip >$@
+
+%-10.dist.dot: %-10.sam.gz
+	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
+		|grep -v "l=" >$@
+
+%-10.path: $(name)-10.$g $(addsuffix -10.dist.dot, $(pacbio))
+	abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
+
+%-11.path %-11.$g %-11.fa: %-10.fa %-10.$g %-10.path
+	PathConsensus $v --$g -k$k $(pcopt) -s $*-11.fa -g $*-11.$g -o $*-11.path $^
+
+%-12.fa: %-10.fa %-11.fa %-11.$g %-11.path
+	cat $(wordlist 1, 2, $^) \
+		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
+
+%-12.$g: %-11.$g %-11.path
+	PathOverlap --overlap $(poopt) --$g $^ >$@
+
+%-pacbio-scaffs.fa: %-12.fa
+	ln -sf $< $@
+
+%-pacbio-scaffs.$g: %-12.$g
+	ln -sf $< $@
+
+# Sealed Scaffold
+sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
+
+%-12_scaffold.fa: %-12.fa
+	abyss-sealer -v -j$j --print-flanks -o $*-12 -S $< $(sealer_ks) $(SEALER_OPTIONS) $(in) $(se)
+
+%-scaffolds-sealed.fa: %-12_scaffold.fa
+	ln -s $< $@
+
+ifdef db
+finishDb:
+	@rm -f db.txt
+endif
+
+
+
+############################################################################################################### END PACBIO assisted scaffolding
+
+
 
 # Create the final BAM file
 
@@ -749,6 +803,9 @@ endif
 ifneq ($(long),)
 $(name)-stats.tab: %-stats.tab: %-long-scaffs.fa
 endif
+ifneq ($(pacbio),)
+$(name)-stats.tab: %-stats.tab: %-pacbio-scaffs.fa
+endif
 $(name)-stats.tab:
 	abyss-fac $(FAC_OPTIONS) $^ |tee $@
 
@@ -781,7 +838,7 @@ $(name)-stats.tab:
 override varList := a b c d e E j k l m n N p q s S t v cs pi \
 	np pe lib mp se SS hostname xtip \
 	ssq ssq_ti libs path name in mpirun \
-	aligner long ref fixmate DistanceEst \
+	aligner long pacbio ref fixmate DistanceEst \
 	map deref abyssopt fgopt pbopt \
 	align mapopt fmopt deopt \
 	pcopt sgopt bwaswopt \
