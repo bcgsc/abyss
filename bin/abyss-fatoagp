@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Convert a FASTA file of scaffolds to a FASTA file of contigs and an
 # AGP file.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.

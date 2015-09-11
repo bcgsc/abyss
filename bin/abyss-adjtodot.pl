@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Convert an ABySS adjacency file to GraphViz dot format.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
 use strict;

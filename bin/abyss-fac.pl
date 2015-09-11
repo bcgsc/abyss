@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # abyss-fac (FASTA count)
 # Calculate assembly contiguity statistics, such as N50.
 # Written by Shaun Jackman <sjackman@bcgsc.ca>.
