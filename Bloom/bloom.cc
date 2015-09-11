@@ -719,7 +719,6 @@ int memberOf(int argc, char ** argv){
 	string path = argv[optind];
 	string fasta = argv[++optind];
 	unsigned k = opt::k;
-	size_t taskIOBufferSize = 100000;
 	if (opt::verbose)
 		std::cerr << "Loading bloom filter from `"
 		<< path << "'...\n";
@@ -728,76 +727,37 @@ int memberOf(int argc, char ** argv){
 	assert_good(*in, path);
 	*in >> bloom;
 
-	// Lifted from Bloom.h `loadFilter'
 	assert(!fasta.empty());
 	if (opt::verbose)
 		std::cerr << "Reading `" << fasta << "'...\n";
 	FastaReader _in(fasta.c_str(), FastaReader::FOLD_CASE);
 
-	/* For each for-loop, create am iterative to keep track
-	 of kmers and also create FASTA headers for the output
-	 */
-	unsigned long fcount = 0;
-
-	for (std::vector<std::string> buffer(taskIOBufferSize);;) {
-		fcount++;
-		buffer.clear();
-		size_t bufferSize = 0;
-		bool good = true;
-
-		for (; good && bufferSize < taskIOBufferSize;) {
-
-			std::string seq;
-			good = _in >> seq;
-
-			if (good) {
-				buffer.push_back(seq);
-				bufferSize += seq.length();
-			}
-		}
-
-		if (buffer.size() == 0)
-			break;
-
-		unsigned long bcount = 0;
-
-		for (size_t j = 0; j < buffer.size(); j++) {
-			bcount++;
-
-			unsigned long kcount = 0;
-
-			const std::string& _seq = buffer.at(j);
-			//std::cerr << "Seq " << _seq << std::endl;
-			if (_seq.size() < k)
+	size_t seqCount=0;
+	for (FastaRecord rec; _in >> rec; ++seqCount) {
+		string& seq = rec.seq;
+		if (seq.size() < k)
+			continue;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos != string::npos) {
+				i += pos;
 				continue;
-			for (size_t i = 0; i < _seq.size() - k + 1; ++i) {
-				kcount++;
-				std::string kmer = _seq.substr(i, k);
-
-				size_t pos = kmer.find_last_not_of("ACGTacgt");
-
-				if (pos == std::string::npos) {
-					if(!opt::inverse){
-						if (bloom[Kmer(kmer)]){
-							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << "\n";
-							std::cout << kmer << "\n";
-						}
-					} else {
-						if (!bloom[Kmer(kmer)]){
-							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << "\n";
-							std::cout << kmer << "\n";
-						}
-					}
-				} else
-					i += pos;
+			}
+			if (bloom[Kmer(kmer)] || opt::inverse) {
+				cout << ">" << rec.id << ":seq:" << seqCount
+					<< ":kmer:" << i << "\n";
+				cout << kmer << "\n";
 			}
 		}
+		if (opt::verbose && seqCount % 1000 == 0)
+			cerr << "processed " << seqCount << " sequences" << endl;
 	}
 	assert(_in.eof());
+	if (opt::verbose)
+		cerr << "processed " << seqCount << " sequences" << endl;
 
-	return 1;
+	return 0;
 }
 
 int main(int argc, char** argv)
