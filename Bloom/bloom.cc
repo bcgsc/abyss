@@ -44,7 +44,7 @@ static const char USAGE_MESSAGE[] =
 "Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
-"Usage 6: " PROGRAM " getKmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 6: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -85,7 +85,7 @@ static const char USAGE_MESSAGE[] =
 "  -m, --method=`String'      choose distance calculation method \n"
 "                             [`jaccard'(default), `forbes', `czekanowski']\n"
 "\n"
-" Options for `" PROGRAM " getKmers':\n"
+" Options for `" PROGRAM " kmers':\n"
 "\n"
 "  -r, --inverse              get k-mers that are *NOT* in the bloom filter\n"
 "  --bed                      output k-mers in BED format\n"
@@ -818,7 +818,7 @@ int main(int argc, char** argv)
 	else if (command == "compare") {
 		return compare(argc, argv);
 	}
-	else if (command == "getKmers") {
+	else if (command == "kmers" || command == "getKmers") {
 		return memberOf(argc, argv);
 	}
 
