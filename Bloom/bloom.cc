@@ -88,8 +88,13 @@ static const char USAGE_MESSAGE[] =
 " Options for `" PROGRAM " getKmers':\n"
 "\n"
 "  -r, --inverse              get k-mers that are *NOT* in the bloom filter\n"
+"  --bed                      output k-mers in BED format\n"
+"  --fasta                    output k-mers in FASTA format [default]\n"
+"  --raw                      output k-mers in raw format (one per line)\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";;
+
+enum OutputFormat { BED, FASTA, RAW };
 
 namespace opt {
 
@@ -132,15 +137,18 @@ namespace opt {
 	 -m option
 	 */
 	string method("jaccard");
+
 	/* Inverse option to retrieve kmers which are not
 	 in the filter
 	 */
 	bool inverse = false;
+
+	OutputFormat format = FASTA;
 }
 
 static const char shortopts[] = "b:B:j:k:l:L:m:n:q:rvw:";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
 static const struct option longopts[] = {
 	{ "bloom-size",		  required_argument, NULL, 'b' },
@@ -163,6 +171,9 @@ static const struct option longopts[] = {
 	{ "window",			  required_argument, NULL, 'w' },
 	{ "method",			  required_argument, NULL, 'm' },
 	{ "inverse",		   required_argument, NULL, 'r' },
+	{ "bed",		      no_argument, NULL, OPT_BED },
+	{ "fasta",		      no_argument, NULL, OPT_FASTA },
+	{ "raw",		      no_argument, NULL, OPT_RAW },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -709,6 +720,15 @@ int memberOf(int argc, char ** argv){
 			case 'r':
 				opt::inverse = true; break;
 				break;
+			case OPT_BED:
+				opt::format = BED;
+				break;
+			case OPT_FASTA:
+				opt::format = FASTA;
+				break;
+			case OPT_RAW:
+				opt::format = RAW;
+				break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -745,8 +765,15 @@ int memberOf(int argc, char ** argv){
 				continue;
 			}
 			if (bloom[Kmer(kmer)] || opt::inverse) {
-				cout << ">" << rec.id << ":seq:" << seqCount
-					<< ":kmer:" << i << "\n";
+				if (opt::format == FASTA) {
+					cout << ">" << rec.id << ":seq:" << seqCount
+						<< ":kmer:" << i << "\n";
+				} else if (opt::format == BED) {
+					cout << rec.id
+						<< "\t" << i
+						<< "\t" << i + k - 1
+						<< "\t";
+				}
 				cout << kmer << "\n";
 			}
 		}
