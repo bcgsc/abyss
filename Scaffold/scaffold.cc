@@ -494,11 +494,7 @@ static void removeLongEdges(Graph& g)
  */
 static bool isOverlap(const DistanceEst& d)
 {
-	if (d.stdDev == 0) {
-		assert(d.distance < 0);
-		return true;
-	} else
-		return false;
+	return d.distance < 0 && d.stdDev == 0;
 }
 
 /** Add distance estimates to a path.
