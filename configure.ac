@@ -104,7 +104,11 @@ AC_ARG_WITH(sqlite, AS_HELP_STRING([--with-sqlite=PATH],
 	[specify prefix directory for the installed sqlite library]))
 if test "$with_sqlite" -a "$with_sqlite" != "no" -a -d "$with_sqlite"; then
 	sqlite_cppflags="-I$with_sqlite/include"
-	sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
+	if test -d "$with_sqlite/lib64"; then
+		sqlite_ldflags="-L$with_sqlite/lib64 -lsqlite3"
+	else
+		sqlite_ldflags="-L$with_sqlite/lib -lsqlite3"
+	fi
 fi
 
 # SparseHash
@@ -220,6 +224,9 @@ fi
 if (test "$ac_cv_header_sqlite3_h" = "yes" -a "$ac_cv_lib_sqlite3_main" = "yes"); then
 	AC_DEFINE(_SQL, 1, [Define to 1 if you have sqlite lib/header])
 fi
+AM_CONDITIONAL(HAVE_SQLITE3,
+	[test "$ac_cv_header_sqlite3_h" = "yes" -a "$ac_cv_lib_sqlite3_main" = "yes"],
+	[Define to 1 if you have sqlite lib/header])
 AC_SUBST(SQLITE_LIBS, "$LIBS")
 LIBS=$libs
 
