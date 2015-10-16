@@ -6,6 +6,10 @@
 #include "Common/Options.h"
 #include "Common/Kmer.h"
 #include "Common/BitUtil.h"
+#include "Common/KmerIterator.h"
+#include "Graph/Path.h"
+#include "Graph/ExtendPath.h"
+#include "Konnector/DBGBloom.h"
 #include "DataLayer/Options.h"
 #include "DataLayer/FastaReader.h"
 #include "Common/StringUtil.h"
@@ -20,7 +24,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
+#include <cmath>
 
 #if _OPENMP
 # include <omp.h>
@@ -45,6 +49,7 @@ static const char USAGE_MESSAGE[] =
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
 "Usage 6: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 7: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -91,6 +96,8 @@ static const char USAGE_MESSAGE[] =
 "  --bed                      output k-mers in BED format\n"
 "  --fasta                    output k-mers in FASTA format [default]\n"
 "  --raw                      output k-mers in raw format (one per line)\n"
+"\n"
+" Options for `" PROGRAM " trim': (none)\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";;
 
@@ -586,6 +593,8 @@ int compare(int argc, char ** argv){
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?':
+				cerr << PROGRAM ": unrecognized option: `-" << optopt
+					<< "'" << endl;
 				dieWithUsageError();
 			case 'm':
 				arg >> opt::method; break;
@@ -716,6 +725,8 @@ int memberOf(int argc, char ** argv){
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?':
+				cerr << PROGRAM ": unrecognized option: `-" << optopt
+					<< "'" << endl;
 				dieWithUsageError();
 			case 'r':
 				opt::inverse = true; break;
@@ -787,6 +798,140 @@ int memberOf(int argc, char ** argv){
 	return 0;
 }
 
+/**
+ * Calculate number of bases to trim from left end of sequence.
+ */
+int calcLeftTrim(const Sequence& seq, unsigned k, const BloomFilter& bloom,
+	size_t minBranchLen)
+{
+	// Boost graph interface for Bloom filter
+	DBGBloom<BloomFilter> g(bloom);
+
+	// if this is the first k-mer we have found in
+	// Bloom filter, starting from the left end
+	// of the sequence
+	bool firstKmerMatch = true;
+
+	KmerIterator it(seq, k);
+	for (; it != KmerIterator::end(); ++it) {
+
+		const Kmer& kmer = *it;
+
+		// assume k-mers not present in Bloom filter are
+		// due to sequencing errors and should be trimmed
+		if (!bloom[kmer])
+			continue;
+
+		// in degree, disregarding false branches
+		unsigned inDegree = trueBranches(kmer, REVERSE, g,
+				minBranchLen).size();
+		// out degree, disregarding false branches
+		unsigned outDegree = trueBranches(kmer, FORWARD, g,
+				minBranchLen).size();
+
+		if (firstKmerMatch) {
+			bool leftTip = (inDegree == 0 && outDegree == 1);
+			bool rightTip = (inDegree == 1 && outDegree == 0);
+			if (!leftTip && !rightTip)
+				break;
+		} else if (inDegree != 1 || outDegree != 1) {
+			// end of linear path
+			break;
+		}
+
+		firstKmerMatch = false;
+
+	} // for each k-mer (left to right)
+
+	if (it.pos() == 0)
+		return 0;
+
+	return k + it.pos() - 1;
+}
+
+/**
+ * Trim reads that corresponds to tips in the Bloom filter
+ * de Bruijn graph.
+ */
+int trim(int argc, char** argv)
+{
+	// parse command line opts
+	parseGlobalOpts(argc, argv);
+	unsigned k = opt::k;
+
+	// arg 1: Bloom filter
+	// args 2-n: FASTA/FASTQ files
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		dieWithUsageError();
+	}
+
+	// load Bloom filter de Bruijn graph
+	string bloomPath(argv[optind++]);
+	if (opt::verbose)
+		cerr << "Loading bloom filter from `"
+			<< bloomPath << "'...\n";
+
+	BloomFilter bloom;
+	istream *in = openInputStream(bloomPath);
+	assert_good(*in, bloomPath);
+	bloom.read(*in);
+	assert_good(*in, bloomPath);
+
+	if (opt::verbose)
+		printBloomStats(cerr, bloom);
+
+	// Calculate min length threshold for a "true branch"
+	// (not due to Bloom filter false positives)
+	const double falseBranchProbability = 0.0001;
+	const size_t minBranchLen =
+		(size_t)ceil(log(falseBranchProbability)/log(bloom.FPR()));
+
+	if (opt::verbose >= 2)
+		cerr << "min length threshold for true branches (k-mers): "
+			<< minBranchLen << endl;
+
+	// trim reads and print to STDOUT
+	for (int i = optind; i < argc; ++i) {
+
+		FastaReader in(argv[i], FastaReader::FOLD_CASE);
+		for (FastqRecord rec; in >> rec;) {
+
+			Sequence& seq = rec.seq;
+			string& qual = rec.qual;
+
+			// can't trim if read length < k; just echo
+			// back to STDOUT
+			if (seq.size() < k) {
+				cout << rec;
+				continue;
+			}
+
+			// start pos for trimmed read
+			unsigned startPos = calcLeftTrim(seq, k, bloom, minBranchLen);
+			// end pos for trimmed read
+			unsigned endPos = seq.length() - 1 -
+				calcLeftTrim(reverseComplement(seq), k, bloom, minBranchLen);
+
+			// if whole read was trimmed away
+			if (endPos < startPos)
+				continue;
+
+			// output trimmed read
+			unsigned trimmedLen = endPos - startPos + 1;
+			seq = seq.substr(startPos, trimmedLen);
+			qual = qual.substr(startPos, trimmedLen);
+			cout << rec;
+
+		} // for each read
+		assert(in.eof());
+
+	} // for each input FASTA/FASTQ file
+
+	// success
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
@@ -821,6 +966,11 @@ int main(int argc, char** argv)
 	else if (command == "kmers" || command == "getKmers") {
 		return memberOf(argc, argv);
 	}
+	else if (command == "trim") {
+		return trim(argc, argv);
+	}
 
+	cerr << PROGRAM ": unrecognized command: `" << command
+		<< "'" << endl;
 	dieWithUsageError();
 }

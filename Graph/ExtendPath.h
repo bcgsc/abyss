@@ -113,7 +113,7 @@ static inline bool lookAhead(
 
 template <class BidirectionalGraph>
 static inline std::vector<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>
-trueBranches(typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor& u,
+trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor& u,
 	Direction dir, const BidirectionalGraph& g, unsigned trimLen=0)
 {
 	typedef BidirectionalGraph G;
