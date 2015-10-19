@@ -891,11 +891,16 @@ int trim(int argc, char** argv)
 		cerr << "min length threshold for true branches (k-mers): "
 			<< minBranchLen << endl;
 
+	size_t readCount = 0;
+
 	// trim reads and print to STDOUT
 	for (int i = optind; i < argc; ++i) {
 
+		if (opt::verbose)
+			cerr << "Reading `" << argv[i] << "'..." << endl;
+
 		FastaReader in(argv[i], FastaReader::FOLD_CASE);
-		for (FastqRecord rec; in >> rec;) {
+		for (FastqRecord rec; in >> rec; ++readCount) {
 
 			Sequence& seq = rec.seq;
 			string& qual = rec.qual;
@@ -923,10 +928,17 @@ int trim(int argc, char** argv)
 			qual = qual.substr(startPos, trimmedLen);
 			cout << rec;
 
+			if (opt::verbose && (readCount+1) % 100000 == 0)
+				cerr << "Processed " << (readCount+1) << " reads"
+					<< endl;
+
 		} // for each read
 		assert(in.eof());
 
 	} // for each input FASTA/FASTQ file
+
+	if (opt::verbose)
+		cerr << "Processed " << readCount << " reads" << endl;
 
 	// success
 	return 0;
