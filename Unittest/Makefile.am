@@ -171,4 +171,8 @@ endif # PAIRED_DBG
 check_PROGRAMS += BloomDBG_RollingHashIterator
 BloomDBG_RollingHashIterator_SOURCES = BloomDBG/RollingHashIteratorTest.cpp
 
+check_PROGRAMS += BloomDBG_HashAgnosticCascadingBloom
+BloomDBG_HashAgnosticCascadingBloom_SOURCES = \
+	BloomDBG/HashAgnosticCascadingBloomTest.cpp
+
 TESTS = $(check_PROGRAMS)
