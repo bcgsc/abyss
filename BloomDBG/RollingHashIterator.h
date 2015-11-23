@@ -5,6 +5,7 @@
 #include <vector>
 #include <cassert>
 #include <limits>
+#include <string>
 #include "lib/bloomfilter-521e80c5c619a9a8e3d6389dc3b597a75bdf2aaa/rolling.h"
 
 /**
@@ -59,7 +60,7 @@ private:
 	{
 		assert(m_hashes.size() == m_numHashes);
 		assert(m_pos > 0);
-		assert(m_pos + m_k <= m_seqLen);
+		assert(m_pos + m_k <= m_seq.length());
 
 		const unsigned char charOut = m_seq[m_pos - 1];
 		const unsigned char charIn = m_seq[m_pos + m_k - 1];
@@ -88,16 +89,16 @@ private:
 	 */
 	void next()
 	{
-		if (m_seqLen < m_k) {
+		if (m_seq.length() < m_k) {
 			m_pos = std::numeric_limits<std::size_t>::max();
 			return;
 		}
 
-		while(m_pos < m_seqLen - m_k + 1) {
+		while(m_pos < m_seq.length() - m_k + 1) {
 			/* skip over k-mers with non-ACGT chars */
 			if (m_nextInvalidChar - m_pos < m_k) {
 				m_pos = m_nextInvalidChar + 1;
-				m_nextInvalidChar = m_pos + strspn(m_seq + m_pos, ACGT_CHARS);
+				m_nextInvalidChar = m_pos + strspn(m_seq.c_str() + m_pos, ACGT_CHARS);
 				m_hashes.clear();
 			} else {
 				/* we are positioned at the next valid k-mer */
@@ -105,7 +106,7 @@ private:
 					/* we don't have hash values for the
 					 * preceding k-mer, so we must compute
 					 * the hash values from scratch */
-					initHash(m_seq + m_pos);
+					initHash(m_seq.c_str() + m_pos);
 				} else {
 					/* compute new hash values based on
 					 * hash values of preceding k-mer */
@@ -125,8 +126,8 @@ public:
 	 * Default constructor. Creates an iterator pointing to
 	 * the end of the iterator range.
 	 */
-	RollingHashIterator() : m_seq(NULL), m_seqLen(0), m_k(0),
-		m_numHashes(0), m_pos(std::numeric_limits<std::size_t>::max()),
+	RollingHashIterator() : m_k(0), m_numHashes(0),
+		m_pos(std::numeric_limits<std::size_t>::max()),
 		m_hash1(0), m_rcHash1(0) {}
 
 	/**
@@ -136,26 +137,25 @@ public:
 	 * @param numHashes number of hash values to compute
 	 * for each k-mer
 	 */
-	RollingHashIterator(const char* seq, unsigned k, unsigned numHashes)
-		: m_seq(seq), m_seqLen(strlen(seq)), m_k(k),
-		m_numHashes(numHashes), m_pos(0), m_hash1(0), m_rcHash1(0)
+	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes)
+		: m_seq(seq), m_k(k), m_numHashes(numHashes), m_pos(0),
+		m_hash1(0), m_rcHash1(0)
 	{
-		assert(seq != NULL);
-		m_nextInvalidChar = strspn(seq, ACGT_CHARS);
+		m_nextInvalidChar = strspn(m_seq.c_str(), ACGT_CHARS);
 		next();
 	}
 
 	/** get reference to hash values for current k-mer */
 	const std::vector<hash_t>& operator*() const
 	{
-		assert(m_pos + m_k <= m_seqLen);
+		assert(m_pos + m_k <= m_seq.length());
 		return m_hashes;
 	}
 
 	/** get pointer to hash values for current k-mer */
 	const std::vector<hash_t>* operator->() const
 	{
-		assert(m_pos + m_k <= m_seqLen);
+		assert(m_pos + m_k <= m_seq.length());
 		return &m_hashes;
 	}
 
@@ -174,7 +174,7 @@ public:
 	/** pre-increment operator */
 	RollingHashIterator& operator++()
 	{
-		assert(m_pos + m_k <= m_seqLen);
+		assert(m_pos + m_k <= m_seq.length());
 		++m_pos;
 		next();
 		return *this;
@@ -200,12 +200,16 @@ public:
 		return m_pos;
 	}
 
+	/** return k-mer at current position */
+	std::string kmer() const
+	{
+		return std::string(m_seq, m_pos, m_k);
+	}
+
 private:
 
 	/** DNA sequence being hashed */
-	const char* m_seq;
-	/** length of DNA sequence being hashed */
-	const unsigned m_seqLen;
+	const std::string m_seq;
 	/** k-mer size */
 	unsigned m_k;
 	/** number of hash values to compute for each k-mer */
