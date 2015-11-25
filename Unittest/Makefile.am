@@ -168,6 +168,9 @@ PairedDBG_BranchRecord_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
 endif # PAIRED_DBG
 
+check_PROGRAMS += BloomDBG_RollingHash
+BloomDBG_RollingHash_SOURCES = BloomDBG/RollingHashTest.cpp
+
 check_PROGRAMS += BloomDBG_RollingHashIterator
 BloomDBG_RollingHashIterator_SOURCES = BloomDBG/RollingHashIteratorTest.cpp
 
