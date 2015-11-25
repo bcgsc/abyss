@@ -16,7 +16,7 @@ TEST(RollingHashIterator, reverseComplement)
 	/** hash forward sequence */
 
 	RollingHashIterator it(seq, k, numHashes);
-	RollingHashIterator::hash_t kmer1Hash, kmer2Hash;
+	size_t kmer1Hash, kmer2Hash;
 	kmer1Hash = it->at(0);
 	++it;
 	kmer2Hash = it->at(0);
@@ -26,7 +26,7 @@ TEST(RollingHashIterator, reverseComplement)
 	/** hash reverse complement sequence */
 
 	RollingHashIterator rcIt(rcSeq, k, numHashes);
-	RollingHashIterator::hash_t rcKmer1Hash, rcKmer2Hash;
+	size_t rcKmer1Hash, rcKmer2Hash;
 	rcKmer2Hash = rcIt->at(0);
 	++rcIt;
 	rcKmer1Hash = rcIt->at(0);
