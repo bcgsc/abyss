@@ -7,6 +7,7 @@
 #include <limits>
 #include <string>
 #include "lib/bloomfilter-521e80c5c619a9a8e3d6389dc3b597a75bdf2aaa/rolling.h"
+#include "BloomDBG/RollingHash.h"
 
 /**
  * Permitted characters in k-mers. All k-mers containing
@@ -24,65 +25,7 @@
  */
 class RollingHashIterator
 {
-public:
-
-	/** data type for hash values */
-	typedef uint64_t hash_t;
-
 private:
-
-	/**
-	 * Init hash values from a k-mer.
-	 */
-	void initHash(const char* kmer)
-	{
-		/* compute first hash value for k-mer */
-		m_hash1 = getFhval(kmer, m_k);
-
-		/* compute first hash value for reverse complement
-		 * of k-mer */
-		m_rcHash1 = getRhval(kmer, m_k);
-
-		/* determine "canonical" k-mer orientation */
-		hash_t hash = (m_hash1 < m_rcHash1) ? m_hash1 : m_rcHash1;
-
-		/* compute remaining hash values for k-mer */
-		m_hashes.clear();
-		for (size_t i = 0; i < m_numHashes; ++i)
-			m_hashes.push_back(rol(varSeed, i) ^ hash);
-	}
-
-	/**
-	 * Compute hash values for current k-mer using the
-	 * hash values of k-mer immediately to the left.
-	 */
-	void rollHash()
-	{
-		assert(m_hashes.size() == m_numHashes);
-		assert(m_pos > 0);
-		assert(m_pos + m_k <= m_seq.length());
-
-		const unsigned char charOut = m_seq[m_pos - 1];
-		const unsigned char charIn = m_seq[m_pos + m_k - 1];
-
-		/* roll first hash value for forward k-mer */
-		m_hash1 = rol(m_hash1, 1)
-			^ rol(seedTab[charOut], m_k)
-			^ seedTab[charIn];
-
-		/* roll first hash value for reverse complement k-mer */
-		m_rcHash1 = ror(m_rcHash1, 1)
-			^ ror(seedTab[charOut + cpOff], 1)
-			^ rol(seedTab[charIn + cpOff], m_k - 1);
-
-		/* determine canonical hash value */
-		uint64_t hash = (m_hash1 < m_rcHash1) ? m_hash1 : m_rcHash1;
-
-		/* compute remaining hash values */
-		for (unsigned i = 0; i < m_numHashes; i++) {
-			m_hashes.at(i) = rol(varSeed, i) ^ hash;
-		}
-	}
 
 	/**
 	 * Advance iterator right to the next valid k-mer.
@@ -99,19 +42,21 @@ private:
 			if (m_nextInvalidChar - m_pos < m_k) {
 				m_pos = m_nextInvalidChar + 1;
 				m_nextInvalidChar = m_pos + strspn(m_seq.c_str() + m_pos, ACGT_CHARS);
-				m_hashes.clear();
+				m_rollNextHash = false;
 			} else {
 				/* we are positioned at the next valid k-mer */
-				if (m_hashes.empty()) {
+				if (!m_rollNextHash) {
 					/* we don't have hash values for the
 					 * preceding k-mer, so we must compute
 					 * the hash values from scratch */
-					initHash(m_seq.c_str() + m_pos);
+					m_rollingHash.reset(m_seq.substr(m_pos, m_k));
+					m_rollNextHash = true;
 				} else {
 					/* compute new hash values based on
 					 * hash values of preceding k-mer */
 					assert(m_pos > 0);
-					rollHash();
+					m_rollingHash.rollRight(m_seq.at(m_pos - 1),
+							m_seq.at(m_pos + m_k - 1));
 				}
 				return;
 			}
@@ -127,8 +72,8 @@ public:
 	 * the end of the iterator range.
 	 */
 	RollingHashIterator() : m_k(0), m_numHashes(0),
-		m_pos(std::numeric_limits<std::size_t>::max()),
-		m_hash1(0), m_rcHash1(0) {}
+		m_rollingHash(m_k, m_numHashes),
+		m_pos(std::numeric_limits<std::size_t>::max()) {}
 
 	/**
 	 * Constructor.
@@ -138,25 +83,26 @@ public:
 	 * for each k-mer
 	 */
 	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes)
-		: m_seq(seq), m_k(k), m_numHashes(numHashes), m_pos(0),
-		m_hash1(0), m_rcHash1(0)
+		: m_seq(seq), m_k(k), m_numHashes(numHashes),
+		m_rollingHash(m_numHashes, m_k), m_rollNextHash(false),
+		m_pos(0)
 	{
 		m_nextInvalidChar = strspn(m_seq.c_str(), ACGT_CHARS);
 		next();
 	}
 
 	/** get reference to hash values for current k-mer */
-	const std::vector<hash_t>& operator*() const
+	const std::vector<size_t>& operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
-		return m_hashes;
+		return m_rollingHash.getHash();
 	}
 
 	/** get pointer to hash values for current k-mer */
-	const std::vector<hash_t>* operator->() const
+	const std::vector<size_t>* operator->() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
-		return &m_hashes;
+		return &(m_rollingHash.getHash());
 	}
 
 	/** test equality with another iterator */
@@ -174,7 +120,7 @@ public:
 	/** pre-increment operator */
 	RollingHashIterator& operator++()
 	{
-		assert(m_pos + m_k <= m_seq.length());
+
 		++m_pos;
 		next();
 		return *this;
@@ -214,18 +160,16 @@ private:
 	unsigned m_k;
 	/** number of hash values to compute for each k-mer */
 	unsigned m_numHashes;
+	/** internal state for rolling hash */
+	RollingHash m_rollingHash;
+	/** true whenever we can "roll" the hash values for
+	 * the current k-mer to compute the hash values for the
+	 * next k-mer */
+	bool m_rollNextHash;
 	/** position of current k-mer */
 	size_t m_pos;
 	/** position of next non-ACGT char */
 	size_t m_nextInvalidChar;
-	/** hash values for the current k-mer */
-	std::vector<hash_t> m_hashes;
-	/** Value of first hash function on current k-mer. */
-	hash_t m_hash1;
-	/**
-	 * Value of first hash function on reverse complement
-	 * of current k-mer */
-	hash_t m_rcHash1;
 };
 
 #endif

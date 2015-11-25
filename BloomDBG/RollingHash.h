@@ -64,7 +64,18 @@ private:
 public:
 
 	/**
-	 * Constructor.
+	 * Constructor. Construct RollingHash object when initial k-mer
+	 * is unknown.
+	 * @param numHashes number of pseudo-independent hash values to compute
+	 * for each k-mer
+	 * @param k k-mer length
+	 */
+	RollingHash(unsigned numHashes, unsigned k)
+	: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0) {}
+
+	/**
+	 * Constructor. Construct RollingHash object while specifying
+	 * initial k-mer to be hashed.
 	 * @param kmer initial k-mer for initializing hash value(s)
 	 * @param numHashes number of pseudo-independent hash values to compute
 	 * for each k-mer
@@ -130,8 +141,9 @@ public:
 	}
 
 	/** Get hash values for current k-mer */
-	std::vector<size_t> getHash()
+	const std::vector<size_t>& getHash() const
 	{
+		assert(!m_hashes.empty());
 		return m_hashes;
 	}
 
