@@ -177,5 +177,7 @@ BloomDBG_RollingHashIterator_SOURCES = BloomDBG/RollingHashIteratorTest.cpp
 check_PROGRAMS += BloomDBG_HashAgnosticCascadingBloom
 BloomDBG_HashAgnosticCascadingBloom_SOURCES = \
 	BloomDBG/HashAgnosticCascadingBloomTest.cpp
+BloomDBG_HashAgnosticCascadingBloom_CXXFLAGS = $(AM_CXXFLAGS) \
+	$(OPENMP_CXXFLAGS)
 
 TESTS = $(check_PROGRAMS)
