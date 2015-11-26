@@ -6,6 +6,20 @@
 #include <vector>
 #include <cassert>
 
+// NOTE: I'm placing these methods here until their inclusion in rolling.h.
+
+// recursive forward-strand hash value for prev k-mer
+inline uint64_t rollHashesLeft(const uint64_t fhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+	return(ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1));
+}
+
+// recursive canonical hash value for prev k-mer
+inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+	fhVal = ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
+	rhVal = rol(rhVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
+	return (rhVal<fhVal)? rhVal : fhVal;
+}
+
 class RollingHash
 {
 private:
@@ -25,29 +39,33 @@ private:
 	}
 
 	/**
-	 * Compute first hash value for next k-mer, for both
-	 * possible orientations.
+	 * Compute first hash value for a neighbouring k-mer on the right,
+	 * for both possible orientations.
 	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
+	 * @param charIn rightmost base of k-mer to the right
 	 * @return vector of hash values for next k-mer
 	 */
-	void rollHash1(unsigned char charOut, unsigned char charIn)
+	void rollHash1Right(unsigned char charOut, unsigned char charIn)
 	{
-		/* roll first hash value for forward k-mer */
-		m_hash1 = rol(m_hash1, 1)
-			^ rol(seedTab[charOut], m_k)
-			^ seedTab[charIn];
+		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
+	}
 
-		/* roll first hash value for reverse complement k-mer */
-		m_rcHash1 = ror(m_rcHash1, 1)
-			^ ror(seedTab[charOut + cpOff], 1)
-			^ rol(seedTab[charIn + cpOff], m_k - 1);
+	/**
+	 * Compute first hash value for a neighbouring k-mer on the left,
+	 * for both possible orientations.
+	 * @param charIn leftmost base of k-mer to the left
+	 * @param charOut rightmost base of current k-mer
+	 * @return vector of hash values for next k-mer
+	 */
+	void rollHash1Left(unsigned char charIn, unsigned char charOut)
+	{
+		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
 	}
 
 	/** determine canonical value for first hash function */
 	size_t canonicalHash1()
 	{
-		return (m_hash1 < m_rcHash1) ? m_hash1 : m_rcHash1;
+		return (m_rcHash1 < m_hash1) ? m_rcHash1 : m_hash1;
 	}
 
 	/** compute multiple pseudo-independent hash values using
@@ -100,9 +118,10 @@ public:
 	}
 
 	/**
-	 * Compute hash values for next k-mer without updating internal state.
+	 * Compute hash values for a neighbour k-mer on the right,
+	 * without updating internal state.
 	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
+	 * @param charIn rightmost base of k-mer to the right
 	 * @return vector of hash values for next k-mer
 	 */
 	std::vector<size_t> peekRight(unsigned char charOut, unsigned char charIn)
@@ -112,10 +131,10 @@ public:
 		size_t rcHash1Orig = m_rcHash1;
 
 		/* update first hash function */
-		rollHash1(charOut, charIn);
+		rollHash1Right(charOut, charIn);
 
 		/* get seed value for computing rest of the hash functions */
-	    size_t seed = canonicalHash1();
+		size_t seed = canonicalHash1();
 
 		/* restore state */
 		m_hash1 = hash1Orig;
@@ -126,7 +145,35 @@ public:
 	}
 
 	/**
-	 * Compute hash values for next k-mer and update internal state.
+	 * Compute hash values for a neighbour k-mer on the left,
+	 * without updating internal state.
+	 * @param charIn leftmost base of k-mer to the left
+	 * @param charOut rightmost base of current k-mer
+	 * @return vector of hash values for next k-mer
+	 */
+	std::vector<size_t> peekLeft(unsigned char charIn, unsigned char charOut)
+	{
+		/* save state */
+		size_t hash1Orig = m_hash1;
+		size_t rcHash1Orig = m_rcHash1;
+
+		/* update first hash function */
+		rollHash1Left(charIn, charOut);
+
+		/* get seed value for computing rest of the hash functions */
+		size_t seed = canonicalHash1();
+
+		/* restore state */
+		m_hash1 = hash1Orig;
+		m_rcHash1 = rcHash1Orig;
+
+		/* compute hash values */
+		return multiHash(seed);
+	}
+
+	/**
+	 * Compute hash values for next k-mer to the right and
+	 * update internal state.
 	 * @param charOut leftmost base of current k-mer
 	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
@@ -134,7 +181,23 @@ public:
 	void rollRight(unsigned char charOut, unsigned char charIn)
 	{
 		/* update first hash function */
-		rollHash1(charOut, charIn);
+		rollHash1Right(charOut, charIn);
+
+		/* compute hash values */
+		m_hashes = multiHash(canonicalHash1());
+	}
+
+	/**
+	 * Compute hash values for next k-mer to the left and
+	 * update internal state.
+	 * @param charOut leftmost base of current k-mer
+	 * @param charIn rightmost base of next k-mer
+	 * @return vector of hash values for next k-mer
+	 */
+	void rollLeft(unsigned char charIn, unsigned char charOut)
+	{
+		/* update first hash function */
+		rollHash1Left(charIn, charOut);
 
 		/* compute hash values */
 		m_hashes = multiHash(canonicalHash1());
