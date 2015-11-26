@@ -1,24 +1,10 @@
 #ifndef ABYSS_ROLLING_HASH_H
 #define ABYSS_ROLLING_HASH_H 1
 
-#include "lib/bloomfilter-521e80c5c619a9a8e3d6389dc3b597a75bdf2aaa/rolling.h"
+#include "lib/bloomfilter-7d2786630f4df915b4cce14139c4af784c5a5bb0/rolling.h"
 #include <string>
 #include <vector>
 #include <cassert>
-
-// NOTE: I'm placing these methods here until their inclusion in rolling.h.
-
-// recursive forward-strand hash value for prev k-mer
-inline uint64_t rollHashesLeft(const uint64_t fhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
-	return(ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1));
-}
-
-// recursive canonical hash value for prev k-mer
-inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
-	fhVal = ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
-	rhVal = rol(rhVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
-	return (rhVal<fhVal)? rhVal : fhVal;
-}
 
 class RollingHash
 {
