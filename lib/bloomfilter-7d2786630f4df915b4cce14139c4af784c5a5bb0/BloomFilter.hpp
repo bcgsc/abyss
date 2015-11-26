@@ -49,7 +49,7 @@ public:
         initSize(m_size);
         memset(m_filter, 0, m_sizeInBytes);
     }
-    
+
     /*
      * Loads the filter (file is a .bf file) from path specified
      */
@@ -57,14 +57,14 @@ public:
                 string const &filterFilePath) :
     m_size(filterSize), m_hashNum(hashNum), m_kmerSize(kmerSize) {
         initSize(m_size);
-        
+
         FILE *file = fopen(filterFilePath.c_str(), "rb");
         if (file == NULL) {
             cerr << "file \"" << filterFilePath << "\" could not be read."
             << endl;
             exit(1);
         }
-        
+
         long int lCurPos = ftell(file);
         fseek(file, 0, 2);
         size_t fileSize = ftell(file);
@@ -75,7 +75,7 @@ public:
             << fileSize << " vs " << m_sizeInBytes << " bytes." << endl;
             exit(1);
         }
-        
+
         size_t countRead = fread(m_filter, fileSize, 1, file);
         if (countRead != 1 && fclose(file) != 0) {
             cerr << "file \"" << filterFilePath << "\" could not be read."
@@ -83,7 +83,7 @@ public:
             exit(1);
         }
     }
-    
+
     /*
      * For precomputing hash values. kmerSize is the number of bytes of the original string used.
      */
@@ -95,7 +95,7 @@ public:
         }
         return tempHashValues;
     }
-    
+
     /*
      * For precomputing hash values. kmerSize is the number of bytes of the original string used.
      */
@@ -110,7 +110,7 @@ public:
         }
         return tempHashValues;
     }
-    
+
     /*
      * For precomputing hash values. kmerSize is the number of bytes of the original string used.
      */
@@ -130,12 +130,12 @@ public:
         }
         return tempHashValues;
     }
-    
+
     /*
      * Accepts a list of precomputed hash values. Faster than rehashing each time.
      */
     void insert(vector<size_t> const &precomputed) {
-        
+
         //iterates through hashed values adding it to the filter
         for (size_t i = 0; i < m_hashNum; ++i) {
             size_t normalizedValue = precomputed.at(i) % m_size;
@@ -145,7 +145,7 @@ public:
             //				% bitsPerChar];
         }
     }
-    
+
     void insert(const char* kmer) {
         uint64_t hVal = getChval(kmer, m_kmerSize);
         for (unsigned i = 0; i < m_hashNum; i++) {
@@ -153,7 +153,7 @@ public:
             __sync_or_and_fetch(&m_filter[hLoc / 8], (1 << (7 - hLoc % 8)));
         }
     }
-    
+
     void insert(const char * kmer, uint64_t& fhVal, uint64_t& rhVal) {
         fhVal = getFhval(kmer, m_kmerSize);
         rhVal = getRhval(kmer, m_kmerSize);
@@ -163,7 +163,7 @@ public:
             __sync_or_and_fetch(&m_filter[hLoc / 8], (1 << (7 - hLoc % 8)));
         }
     }
-    
+
     void insert(uint64_t& fhVal, uint64_t& rhVal, const char charOut,
                 const char charIn) {
         fhVal = rol(fhVal, 1)
@@ -179,7 +179,7 @@ public:
             __sync_or_and_fetch(&m_filter[hLoc / 8], (1 << (7 - hLoc % 8)));
         }
     }
-    
+
     /*
      * Accepts a list of precomputed hash values. Faster than rehashing each time.
      */
@@ -193,7 +193,7 @@ public:
         }
         return true;
     }
-    
+
     /*
      * Single pass filtering, computes hash values on the fly
      */
@@ -206,7 +206,7 @@ public:
         }
         return true;
     }
-    
+
     bool contains(const char * kmer, uint64_t& fhVal, uint64_t& rhVal) {
         fhVal = getFhval(kmer, m_kmerSize);
         rhVal = getRhval(kmer, m_kmerSize);
@@ -218,7 +218,7 @@ public:
         }
         return true;
     }
-    
+
     bool contains(uint64_t& fhVal, uint64_t& rhVal, const char charOut,
                   const char charIn) {
         fhVal = rol(fhVal, 1)
@@ -236,7 +236,7 @@ public:
         }
         return true;
     }
-    
+
     /*
      * Stores the filter as a binary file to the path specified
      * Stores uncompressed because the random data tends to
@@ -244,18 +244,18 @@ public:
      */
     void storeFilter(string const &filterFilePath) const {
         ofstream myFile(filterFilePath.c_str(), ios::out | ios::binary);
-        
+
         cerr << "Storing filter. Filter is " << m_sizeInBytes << "bytes."
         << endl;
-        
+
         assert(myFile);
         //write out each block
         myFile.write(reinterpret_cast<char*>(m_filter), m_sizeInBytes);
-        
+
         myFile.close();
         assert(myFile);
     }
-    
+
     size_t getPop() const {
         size_t i, popBF=0;
 #pragma omp parallel for reduction(+:popBF)
@@ -263,15 +263,15 @@ public:
             popBF = popBF + popCnt(m_filter[i]);
         return popBF;
     }
-    
+
     unsigned getHashNum() const {
         return m_hashNum;
     }
-    
+
     unsigned getKmerSize() const {
         return m_kmerSize;
     }
-    
+
     size_t getFilterSize() const { return m_size; }
 
     ~BloomFilter() {
@@ -279,7 +279,7 @@ public:
     }
 private:
     BloomFilter(const BloomFilter& that); //to prevent copy construction
-    
+
     /*
      * Checks filter size and initializes filter
      */
@@ -292,7 +292,7 @@ private:
         m_sizeInBytes = size / bitsPerChar;
         m_filter = new unsigned char[m_sizeInBytes];
     }
-    
+
     uint8_t* m_filter;
     size_t m_size;
     size_t m_sizeInBytes;

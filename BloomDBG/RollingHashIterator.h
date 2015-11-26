@@ -6,7 +6,6 @@
 #include <cassert>
 #include <limits>
 #include <string>
-#include "lib/bloomfilter-521e80c5c619a9a8e3d6389dc3b597a75bdf2aaa/rolling.h"
 #include "BloomDBG/RollingHash.h"
 
 /**

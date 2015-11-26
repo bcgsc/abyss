@@ -102,4 +102,16 @@ inline uint64_t rollHashesRight(uint64_t& fhVal, uint64_t& rhVal, const unsigned
     return (rhVal<fhVal)? rhVal : fhVal;
 }
 
+// recursive forward-strand hash value for prev k-mer
+inline uint64_t rollHashesLeft(const uint64_t fhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+    return(ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1));
+}
+
+// recursive canonical hash value for prev k-mer
+inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+    fhVal = ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
+    rhVal = rol(rhVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
+    return (rhVal<fhVal)? rhVal : fhVal;
+}
+
 #endif

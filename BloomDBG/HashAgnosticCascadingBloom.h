@@ -5,7 +5,7 @@
 #ifndef HASH_AGNOSTIC_CASCADING_BLOOM_H
 #define HASH_AGNOSTIC_CASCADING_BLOOM_H 1
 
-#include "lib/bloomfilter-521e80c5c619a9a8e3d6389dc3b597a75bdf2aaa/BloomFilter.hpp"
+#include "lib/bloomfilter-7d2786630f4df915b4cce14139c4af784c5a5bb0/BloomFilter.hpp"
 #include <vector>
 
 /**
