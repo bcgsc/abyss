@@ -11,52 +11,17 @@ class RollingHash
 private:
 
 	/**
-	 * Initialize forward/reverse hash values for hash function 1.
-	 * @param kmer sequence to be hashed
+	 * Determine the canonical hash value, given hash values for
+	 * forward and reverse-complement of the same k-mer.
 	 */
-	void resetHash1(const std::string& kmer)
+	size_t canonicalHash(size_t hash, size_t rcHash) const
 	{
-		/* compute first hash function for k-mer */
-		m_hash1 = getFhval(kmer.c_str(), m_k);
-
-		/* compute first hash function for reverse complement
-		 * of k-mer */
-		m_rcHash1 = getRhval(kmer.c_str(), m_k);
-	}
-
-	/**
-	 * Compute first hash value for a neighbouring k-mer on the right,
-	 * for both possible orientations.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of k-mer to the right
-	 * @return vector of hash values for next k-mer
-	 */
-	void rollHash1Right(unsigned char charOut, unsigned char charIn)
-	{
-		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
-	}
-
-	/**
-	 * Compute first hash value for a neighbouring k-mer on the left,
-	 * for both possible orientations.
-	 * @param charIn leftmost base of k-mer to the left
-	 * @param charOut rightmost base of current k-mer
-	 * @return vector of hash values for next k-mer
-	 */
-	void rollHash1Left(unsigned char charIn, unsigned char charOut)
-	{
-		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
-	}
-
-	/** determine canonical value for first hash function */
-	size_t canonicalHash1()
-	{
-		return (m_rcHash1 < m_hash1) ? m_rcHash1 : m_hash1;
+		return (rcHash < hash) ? rcHash : hash;
 	}
 
 	/** compute multiple pseudo-independent hash values using
 	 * a single seed hash value */
-	std::vector<size_t> multiHash(size_t seedHash)
+	std::vector<size_t> multiHash(size_t seedHash) const
 	{
 		std::vector<size_t> hashes(m_numHashes);
 		for (unsigned i = 0; i < m_numHashes; i++) {
@@ -66,6 +31,11 @@ private:
 	}
 
 public:
+
+	/**
+	 * Default constructor.
+	 */
+	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -96,11 +66,15 @@ public:
 	{
 		assert(kmer.length() == m_k);
 
-		/* compute forward/reverse values for first hash function */
-		resetHash1(kmer);
+		/* compute first hash function for k-mer */
+		m_hash1 = getFhval(kmer.c_str(), m_k);
+
+		/* compute first hash function for reverse complement
+		 * of k-mer */
+		m_rcHash1 = getRhval(kmer.c_str(), m_k);
 
 		/* compute hash values */
-		m_hashes = multiHash(canonicalHash1());
+		m_hashes = multiHash(canonicalHash(m_hash1, m_rcHash1));
 	}
 
 	/**
@@ -110,21 +84,16 @@ public:
 	 * @param charIn rightmost base of k-mer to the right
 	 * @return vector of hash values for next k-mer
 	 */
-	std::vector<size_t> peekRight(unsigned char charOut, unsigned char charIn)
+	std::vector<size_t> peekRight(unsigned char charOut, unsigned char charIn) const
 	{
-		/* save state */
-		size_t hash1Orig = m_hash1;
-		size_t rcHash1Orig = m_rcHash1;
+		size_t hash1 = m_hash1;
+		size_t rcHash1 = m_rcHash1;
 
 		/* update first hash function */
-		rollHash1Right(charOut, charIn);
+		rollHashesRight(hash1, rcHash1, charOut, charIn, m_k);
 
 		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash1();
-
-		/* restore state */
-		m_hash1 = hash1Orig;
-		m_rcHash1 = rcHash1Orig;
+		size_t seed = canonicalHash(hash1, rcHash1);
 
 		/* compute hash values */
 		return multiHash(seed);
@@ -137,21 +106,16 @@ public:
 	 * @param charOut rightmost base of current k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	std::vector<size_t> peekLeft(unsigned char charIn, unsigned char charOut)
+	std::vector<size_t> peekLeft(unsigned char charIn, unsigned char charOut) const
 	{
-		/* save state */
-		size_t hash1Orig = m_hash1;
-		size_t rcHash1Orig = m_rcHash1;
+		size_t hash1 = m_hash1;
+		size_t rcHash1 = m_rcHash1;
 
 		/* update first hash function */
-		rollHash1Left(charIn, charOut);
+		rollHashesLeft(hash1, rcHash1, charIn, charOut, m_k);
 
 		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash1();
-
-		/* restore state */
-		m_hash1 = hash1Orig;
-		m_rcHash1 = rcHash1Orig;
+		size_t seed = canonicalHash(hash1, rcHash1);
 
 		/* compute hash values */
 		return multiHash(seed);
@@ -167,10 +131,13 @@ public:
 	void rollRight(unsigned char charOut, unsigned char charIn)
 	{
 		/* update first hash function */
-		rollHash1Right(charOut, charIn);
+		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
+
+		/* get seed value for computing rest of the hash functions */
+		size_t seed = canonicalHash(m_hash1, m_rcHash1);
 
 		/* compute hash values */
-		m_hashes = multiHash(canonicalHash1());
+		m_hashes = multiHash(seed);
 	}
 
 	/**
@@ -183,10 +150,13 @@ public:
 	void rollLeft(unsigned char charIn, unsigned char charOut)
 	{
 		/* update first hash function */
-		rollHash1Left(charIn, charOut);
+		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
+
+		/* get seed value for computing rest of the hash functions */
+		size_t seed = canonicalHash(m_hash1, m_rcHash1);
 
 		/* compute hash values */
-		m_hashes = multiHash(canonicalHash1());
+		m_hashes = multiHash(seed);
 	}
 
 	/** Get hash values for current k-mer */
@@ -199,9 +169,9 @@ public:
 private:
 
 	/** number of hash functions to compute at each position */
-	const unsigned m_numHashes;
+	unsigned m_numHashes;
 	/** k-mer length */
-	const unsigned m_k;
+	unsigned m_k;
 	/** current values for each hash function */
 	std::vector<size_t> m_hashes;
 	/** value of first hash function for current k-mer */
