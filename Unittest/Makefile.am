@@ -180,4 +180,13 @@ BloomDBG_HashAgnosticCascadingBloom_SOURCES = \
 BloomDBG_HashAgnosticCascadingBloom_CXXFLAGS = $(AM_CXXFLAGS) \
 	$(OPENMP_CXXFLAGS)
 
+check_PROGRAMS += BloomDBG_RollingBloomDBG
+BloomDBG_RollingBloomDBG_SOURCES = BloomDBG/RollingBloomDBGTest.cpp
+BloomDBG_RollingBloomDBG_CXXFLAGS = $(AM_CXXFLAGS) \
+	$(OPENMP_CXXFLAGS)
+BloomDBG_RollingBloomDBG_LDADD = \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 TESTS = $(check_PROGRAMS)
