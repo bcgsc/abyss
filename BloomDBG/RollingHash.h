@@ -166,6 +166,17 @@ public:
 		return m_hashes;
 	}
 
+	/** Equality operator */
+	bool operator==(const RollingHash& o) const
+	{
+		return
+			m_numHashes == o.m_numHashes &&
+			m_k == o.m_k &&
+			m_hashes == o.m_hashes &&
+			m_hash1 == o.m_hash1 &&
+			m_rcHash1 == o.m_rcHash1;
+	}
+
 private:
 
 	/** number of hash functions to compute at each position */
