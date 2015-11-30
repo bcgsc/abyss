@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "BloomDBG/bloom-dbg.h"
+#include "BloomDBG/HashAgnosticCascadingBloom.h"
 #include "Common/Kmer.h"
 #include "Common/StringUtil.h"
 #include "Common/Options.h"
@@ -27,13 +28,17 @@ static const char VERSION_MESSAGE[] =
 	"Copyright 2015 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -C <read_coverage> -G <genome_size> -k <kmer_size> [options] \\\n"
+"Usage: " PROGRAM " -b <bloom_size> -H <bloom_hashes> -k <kmer_size> [options] \\\n"
 "    <FASTQ> [FASTQ]... > assembly.fasta\n"
 "\n"
 "Perform a de Bruijn graph assembly of the given FASTQ files.\n"
 "\n"
 "Options:\n"
 "\n"
+"  -b  --bloom-size=N         Bloom filter memory size with suffix\n"
+"                             of 'k', 'M', or 'G' [required]\n"
+"  -H  --num-hashes=N         number of Bloom filter hash functions\n"
+"                             [required]\n"
 "      --help                 display this help and exit\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer [required]\n"
@@ -50,6 +55,15 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 
+	/** Bloom filter size (in bits) */
+	static size_t bloomSize = 0;
+
+	/** number of cascading Bloom filter levels */
+	static unsigned bloomLevels = 2;
+
+	/** num Bloom filter hash functions */
+	static unsigned numHashes = 0;
+
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
@@ -58,7 +72,7 @@ namespace opt {
 
 }
 
-static const char shortopts[] = "C:e:f:G:j:k:v";
+static const char shortopts[] = "b:H:j:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -85,6 +99,10 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
+		  case 'b':
+			opt::bloomSize = SIToBytes(arg); break;
+		  case 'H':
+			arg >> opt::numHashes; break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -103,6 +121,16 @@ int main(int argc, char** argv)
 				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if (opt::bloomSize == 0) {
+		cerr << PROGRAM ": missing mandatory option `-b'\n";
+		die = true;
+	}
+
+	if (opt::numHashes == 0) {
+		cerr << PROGRAM ": missing mandatory option `-H'\n";
+		die = true;
 	}
 
 	if (opt::k == 0) {
@@ -127,8 +155,19 @@ int main(int argc, char** argv)
 #endif
 
 	/* set global variable for k-mer length */
-
 	Kmer::setLength(opt::k);
+
+	/* use cascading Bloom filter to remove error k-mers */
+	const size_t bitsPerByte = 8;
+	HashAgnosticCascadingBloom cascadingBloom(
+		opt::bloomSize * bitsPerByte / opt::bloomLevels,
+		opt::numHashes, opt::bloomLevels, opt::k);
+
+	/* load reads into Bloom filter */
+	for (; optind < argc; ++optind) {
+		BloomDBG::loadFile(cascadingBloom, opt::numHashes,
+			opt::k, argv[optind], opt::verbose);
+	}
 
 	return EXIT_SUCCESS;
 }
