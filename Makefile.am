@@ -29,6 +29,7 @@ SUBDIRS = \
 	Align \
 	ABYSS $(Parallel) \
 	Bloom \
+	BloomDBG \
 	Konnector \
 	Consensus \
 	DAssembler \
