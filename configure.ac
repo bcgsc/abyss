@@ -291,6 +291,7 @@ AC_CONFIG_FILES([
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
+	BloomDBG/Makefile
 	DataBase/Makefile
 ])
 
