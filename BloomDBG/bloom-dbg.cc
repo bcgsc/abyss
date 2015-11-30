@@ -34,12 +34,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Options:\n"
 "\n"
-"  -C, --read-coverage=N      approx read coverage [required]\n"
-"  -e, --seq-error-rate=N     approx sequencing error rate [0.001]\n"
-"  -f, --fpr=N                target false positive rate for Bloom\n"
-"                             filter [0.05]\n"
-"  -G, --genome-size=N        approx genome size with suffix\n"
-"                             'k', 'M', or 'G' [required]\n"
 "      --help                 display this help and exit\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "  -k, --kmer=N               the size of a k-mer [required]\n"
@@ -56,18 +50,6 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 
-	/** Approx. read coverage. */
-	static double readCoverage = 0.0;
-
-	/** Approx. sequencing error rate (fraction between 0 and 1) */
-	static double seqErrorRate = 0.001;
-
-	/** Target false positive rate (FPR) for Bloom filter */
-	static double fpr = 0.05;
-
-	/** Approx. genome size */
-	static size_t genomeSize = 0;
-
 	/** The number of parallel threads. */
 	static unsigned threads = 1;
 
@@ -81,10 +63,6 @@ static const char shortopts[] = "C:e:f:G:j:k:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "read-coverage",    required_argument, NULL, 'C' },
-	{ "seq-error-rate",   required_argument, NULL, 'e' },
-	{ "fpr",              required_argument, NULL, 'f' },
-	{ "genome-size",      required_argument, NULL, 'G' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
@@ -107,14 +85,6 @@ int main(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			die = true; break;
-		  case 'C':
-			arg >> opt::readCoverage; break;
-		  case 'e':
-			arg >> opt::seqErrorRate; break;
-		  case 'f':
-			arg >> opt::fpr; break;
-		  case 'G':
-			  opt::genomeSize = (size_t)fromSI(arg); break;
 		  case 'j':
 			arg >> opt::threads; break;
 		  case 'k':
@@ -133,16 +103,6 @@ int main(int argc, char** argv)
 				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
-	}
-
-	if (opt::readCoverage == 0.0) {
-		cerr << PROGRAM ": missing mandatory option `-C'\n";
-		die = true;
-	}
-
-	if (opt::genomeSize == 0) {
-		cerr << PROGRAM ": missing mandatory option `-G'\n";
-		die = true;
 	}
 
 	if (opt::k == 0) {
@@ -166,19 +126,9 @@ int main(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
+	/* set global variable for k-mer length */
+
 	Kmer::setLength(opt::k);
-
-	/* calculate optimal size and number of hash functions for Bloom filter */
-
-	BloomParams bloomParams = calcBloomParams(opt::genomeSize,
-			opt::readCoverage, opt::seqErrorRate, opt::k, opt::fpr);
-
-	if (opt::verbose) {
-		cerr << "Building Bloom filter with size "
-			<< bytesToSI((bloomParams.size+7)/8)
-			<< " and " << bloomParams.hashes
-			<< " hash functions" << endl;
-	}
 
 	return EXIT_SUCCESS;
 }
