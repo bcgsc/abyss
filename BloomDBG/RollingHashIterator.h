@@ -151,6 +151,12 @@ public:
 		return std::string(m_seq, m_pos, m_k);
 	}
 
+	/** return RollingHash object for current state */
+	RollingHash rollingHash()
+	{
+		return m_rollingHash;
+	}
+
 private:
 
 	/** DNA sequence being hashed */
