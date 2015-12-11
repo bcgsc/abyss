@@ -55,6 +55,12 @@ class HashAgnosticCascadingBloom
 		}
 	}
 
+	/** Return k-mer size used by Bloom filter. */
+	unsigned k() const { return m_k; }
+
+	/** Return number of hash functions used by Bloom filter */
+	unsigned numHashes() const { return m_hashes; }
+
 	/** Return the size of the bit array. */
 	size_t size() const
 	{

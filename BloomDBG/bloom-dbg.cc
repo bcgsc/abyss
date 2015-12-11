@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <iomanip>
 
 #if _OPENMP
 # include <omp.h>
@@ -28,15 +29,17 @@ static const char VERSION_MESSAGE[] =
 	"Copyright 2015 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -b <bloom_size> -H <bloom_hashes> -k <kmer_size> [options] \\\n"
-"    <FASTQ> [FASTQ]... > assembly.fasta\n"
+"Usage: " PROGRAM " -b <bloom_size> -H <bloom_hashes> -k <kmer_size> \\\n"
+"    -G <genome_size> [options] <FASTQ> [FASTQ]... > assembly.fasta\n"
 "\n"
 "Perform a de Bruijn graph assembly of the given FASTQ files.\n"
 "\n"
 "Options:\n"
 "\n"
-"  -b  --bloom-size=N         Bloom filter memory size with suffix\n"
-"                             of 'k', 'M', or 'G' [required]\n"
+"  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
+"                             'k', 'M', or 'G' [required]\n"
+"  -G  --genome-size=N        approx genome size with unit suffix\n"
+"                             'k', 'M', or 'G' [required]\n"
 "  -H  --num-hashes=N         number of Bloom filter hash functions\n"
 "                             [required]\n"
 "      --help                 display this help and exit\n"
@@ -58,6 +61,9 @@ namespace opt {
 	/** Bloom filter size (in bits) */
 	static size_t bloomSize = 0;
 
+	/** approx genome size */
+	static size_t genomeSize = 0;
+
 	/** number of cascading Bloom filter levels */
 	static unsigned bloomLevels = 2;
 
@@ -72,11 +78,14 @@ namespace opt {
 
 }
 
-static const char shortopts[] = "b:H:j:k:v";
+static const char shortopts[] = "b:G:H:j:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "genome-size",      required_argument, NULL, 'G' },
+	{ "num-hashes",       required_argument, NULL, 'H' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "kmer",             required_argument, NULL, 'k' },
@@ -101,6 +110,8 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'G':
+			  opt::genomeSize = fromSI(arg); break;
 		  case 'H':
 			arg >> opt::numHashes; break;
 		  case 'j':
@@ -125,6 +136,11 @@ int main(int argc, char** argv)
 
 	if (opt::bloomSize == 0) {
 		cerr << PROGRAM ": missing mandatory option `-b'\n";
+		die = true;
+	}
+
+	if (opt::genomeSize == 0) {
+		cerr << PROGRAM ": missing mandatory option `-G'\n";
 		die = true;
 	}
 
@@ -157,6 +173,9 @@ int main(int argc, char** argv)
 	/* set global variable for k-mer length */
 	Kmer::setLength(opt::k);
 
+	/* BloomFilter class requires size to be a multiple of 64 */
+	opt::bloomSize = BloomDBG::roundUpToMultiple(opt::bloomSize, (size_t)64);
+
 	/* use cascading Bloom filter to remove error k-mers */
 	const size_t bitsPerByte = 8;
 	HashAgnosticCascadingBloom cascadingBloom(
@@ -164,10 +183,17 @@ int main(int argc, char** argv)
 		opt::numHashes, opt::bloomLevels, opt::k);
 
 	/* load reads into Bloom filter */
-	for (; optind < argc; ++optind) {
+	for (int i = optind; i < argc; ++i) {
 		BloomDBG::loadFile(cascadingBloom, opt::numHashes,
-			opt::k, argv[optind], opt::verbose);
+			opt::k, argv[i], opt::verbose);
 	}
+	if (opt::verbose)
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< cascadingBloom.FPR() << "%" << endl;
+
+	/* second pass through FASTA files for assembling */
+	BloomDBG::assemble(argc - optind, argv + optind,
+			opt::genomeSize, cascadingBloom, cout, opt::verbose);
 
 	return EXIT_SUCCESS;
 }
