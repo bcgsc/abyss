@@ -212,16 +212,19 @@ static inline SingleExtensionResult extendPathBySingleVertex(
  * @param path path to extend (modified by this function)
  * @param dir direction to extend path (FORWARD or REVERSE)
  * @param g graph in which to perform the extension
+ * @param visited set of previously visited vertices (used
+ * to detect cycles in the de Bruijn graph)
  * @param trimLen ignore branches less than this length when
  * detecting branch points [0]
  * @return PathExtensionResult: NO_EXTENSION, HIT_BRANCHING_POINT,
  * or EXTENDED.
  */
 template <class BidirectionalGraph>
-PathExtensionResult extendPath(
+static inline PathExtensionResult extendPath(
 	Path<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& path,
-	Direction dir, const BidirectionalGraph& g, unsigned trimLen = 0,
-	unsigned maxLen = NO_LIMIT)
+	Direction dir, const BidirectionalGraph& g,
+	unordered_set<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& visited,
+	unsigned trimLen = 0, unsigned maxLen = NO_LIMIT)
 {
 	typedef BidirectionalGraph G;
 	typedef boost::graph_traits<G> graph_traits;
@@ -229,12 +232,11 @@ PathExtensionResult extendPath(
 	typename graph_traits::out_edge_iterator oei, oei_end;
 	typename graph_traits::in_edge_iterator iei, iei_end;
 
-	assert(path.size() > 0 && path.size() <= maxLen);
+	assert(path.size() > 0);
 	size_t origPathLen = path.size();
 
-	/* track visited nodes to avoid infinite traversal of cycles */
-	unordered_set<V> visited;
-	visited.insert(path.begin(), path.end());
+	if (path.size() != NO_LIMIT && path.size() >= maxLen)
+		return LENGTH_LIMIT;
 
 	SingleExtensionResult result = SE_EXTENDED;
 	bool detectedCycle = false;
@@ -291,6 +293,32 @@ PathExtensionResult extendPath(
 			return LENGTH_LIMIT;
 		}
 	}
+}
+
+/**
+ * Extend a path up to the next branching point in the graph.
+ *
+ * @param path path to extend (modified by this function)
+ * @param dir direction to extend path (FORWARD or REVERSE)
+ * @param g graph in which to perform the extension
+ * @param trimLen ignore branches less than this length when
+ * detecting branch points [0]
+ * @return PathExtensionResult: NO_EXTENSION, HIT_BRANCHING_POINT,
+ * or EXTENDED.
+ */
+template <class BidirectionalGraph>
+PathExtensionResult extendPath(
+	Path<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& path,
+	Direction dir, const BidirectionalGraph& g,
+	unsigned trimLen = 0, unsigned maxLen = NO_LIMIT)
+{
+	typedef typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor V;
+
+	/* track visited nodes to avoid infinite traversal of cycles */
+	unordered_set<V> visited;
+	visited.insert(path.begin(), path.end());
+
+	return extendPath(path, dir, g, visited, trimLen, maxLen);
 }
 
 #endif
