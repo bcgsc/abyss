@@ -184,8 +184,7 @@ int main(int argc, char** argv)
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i) {
-		BloomDBG::loadFile(cascadingBloom, opt::numHashes,
-			opt::k, argv[i], opt::verbose);
+		BloomDBG::loadFile(cascadingBloom, argv[i], opt::verbose);
 	}
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
