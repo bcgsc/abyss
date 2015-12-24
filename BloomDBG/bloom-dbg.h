@@ -42,14 +42,13 @@ namespace BloomDBG {
 	 * Load DNA sequence into Bloom filter using rolling hash.
 	 *
 	 * @param bloom target Bloom filter
-	 * @param numHashes number of Bloom filter hash functions
-	 * @param k k-mer size
 	 * @param seq DNA sequence
 	 */
 	template <typename BF>
-	inline static void loadSeq(BF& bloom, unsigned numHashes, unsigned k,
-			const std::string& seq)
+	inline static void loadSeq(BF& bloom, const std::string& seq)
 	{
+		const unsigned k = bloom.getKmerSize();
+		const unsigned numHashes = bloom.getHashNum();
 		for (RollingHashIterator it(seq, k, numHashes);
 			it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
@@ -60,14 +59,12 @@ namespace BloomDBG {
 	 * Load sequences contents of FASTA file into Bloom filter using
 	 * rolling hash.
 	 * @param bloom target Bloom filter
-	 * @param numHashes number of Bloom filter hash functions
-	 * @param k k-mer size
 	 * @param path path to FASTA file
 	 * @param verbose if true, print progress messages to STDERR
 	 */
 	template <typename BF>
-	inline static void loadFile(BF& bloom, unsigned numHashes, unsigned k,
-		const std::string& path, bool verbose = false)
+	inline static void loadFile(BF& bloom, const std::string& path,
+		bool verbose = false)
 	{
 		const size_t BUFFER_SIZE = 100000;
 		const size_t LOAD_PROGRESS_STEP = 10000;
@@ -95,7 +92,7 @@ namespace BloomDBG {
 			if (buffer.size() == 0)
 				break;
 			for (size_t j = 0; j < buffer.size(); j++) {
-				loadSeq(bloom, numHashes, k, buffer.at(j));
+				loadSeq(bloom, buffer.at(j));
 				if (verbose)
 #pragma omp critical(cerr)
 				{
@@ -118,9 +115,10 @@ namespace BloomDBG {
 	 * and false otherwise.
 	 */
 	template <typename BloomT>
-	inline static bool allKmersInBloom(const Sequence& seq,
-		const BloomT& bloom, unsigned k, unsigned numHashes)
+	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom)
 	{
+		const unsigned k = bloom.getKmerSize();
+		const unsigned numHashes = bloom.getHashNum();
 		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			if (!bloom.contains(*it))
@@ -133,9 +131,10 @@ namespace BloomDBG {
 	 * Add all k-mers of a DNA sequence to a Bloom filter.
 	 */
 	template <typename BloomT>
-	inline static void addKmersToBloom(const Sequence& seq,
-		BloomT& bloom, unsigned k, unsigned numHashes)
+	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom)
 	{
+		const unsigned k = bloom.getKmerSize();
+		const unsigned numHashes = bloom.getHashNum();
 		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
@@ -301,8 +300,8 @@ namespace BloomDBG {
 		size_t contigID = 0;
 		/* print progress message after processing this many reads */
 		const unsigned progressStep = 1000;
-		const unsigned k = goodKmerSet.k();
-		const unsigned numHashes = goodKmerSet.numHashes();
+		const unsigned k = goodKmerSet.getKmerSize();
+		const unsigned numHashes = goodKmerSet.getHashNum();
 		/* k-mers in previously assembled contigs */
 		BloomFilter assembledKmerSet(roundUpToMultiple(genomeSize, (size_t)64),
 			numHashes, k);
@@ -319,7 +318,7 @@ namespace BloomDBG {
 		 * calculate min length threshold for a "true branch"
 		 * (not due to Bloom filter false positives)
 		 */
-		const double falseBranchProbability = 0.0001;
+		const double falseBranchProbability = 0.000001;
 		const unsigned minBranchLen =
 			(unsigned)ceil(log(falseBranchProbability)/log(goodKmerSet.FPR()));
 
@@ -339,11 +338,11 @@ namespace BloomDBG {
 			bool skip = false;
 
 			/* only extend error-free reads */
-			if (!allKmersInBloom(rec.seq, goodKmerSet, k, numHashes))
+			if (!allKmersInBloom(rec.seq, goodKmerSet))
 				skip = true;
 
 			/* skip reads in previously assembled regions */
-			if (allKmersInBloom(rec.seq, assembledKmerSet, k, numHashes))
+			if (allKmersInBloom(rec.seq, assembledKmerSet))
 				skip = true;
 
 			if (!skip) {
@@ -367,8 +366,8 @@ namespace BloomDBG {
 					 * generated multiple times.
 					 */
 #pragma omp critical(out)
-					if (!allKmersInBloom(seq, assembledKmerSet, k, numHashes)) {
-						addKmersToBloom(seq, assembledKmerSet, k, numHashes);
+					if (!allKmersInBloom(seq, assembledKmerSet)) {
+						addKmersToBloom(seq, assembledKmerSet);
 						FastaRecord contig;
 						std::ostringstream id;
 						id << contigID++;
