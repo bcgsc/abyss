@@ -29,6 +29,9 @@ template <class IncidenceGraph, class Buffer, class BFSVisitor,
     typedef color_traits<ColorValue> Color;
     typename GTraits::out_edge_iterator ei, ei_end;
 
+	if (get(color, s) == Color::black())
+		return;
+
     put(color, s, Color::gray());             vis.discover_vertex(s, g);
     Q.push(s);
     while (! Q.empty()) {
