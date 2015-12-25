@@ -38,6 +38,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
+"  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
 "  -G  --genome-size=N        approx genome size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
 "  -H  --num-hashes=N         number of Bloom filter hash functions\n"
@@ -61,6 +62,9 @@ namespace opt {
 	/** Bloom filter size (in bits) */
 	static size_t bloomSize = 0;
 
+	/** path for output GraphViz file */
+	static string graphPath;
+
 	/** approx genome size */
 	static size_t genomeSize = 0;
 
@@ -78,12 +82,13 @@ namespace opt {
 
 }
 
-static const char shortopts[] = "b:G:H:j:k:v";
+static const char shortopts[] = "b:g:G:H:j:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "graph",            required_argument, NULL, 'g' },
 	{ "genome-size",      required_argument, NULL, 'G' },
 	{ "num-hashes",       required_argument, NULL, 'H' },
 	{ "help",             no_argument, NULL, OPT_HELP },
@@ -110,6 +115,8 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'g':
+			arg >> opt::graphPath; break;
 		  case 'G':
 			  opt::genomeSize = fromSI(arg); break;
 		  case 'H':
@@ -193,6 +200,17 @@ int main(int argc, char** argv)
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,
 			opt::genomeSize, cascadingBloom, cout, opt::verbose);
+
+	/* generate de Bruijn graph in GraphViz format (optional) */
+	if (!opt::graphPath.empty()) {
+		ofstream graphOut(opt::graphPath.c_str());
+		assert_good(graphOut, opt::graphPath);
+		BloomDBG::outputGraph(argc - optind, argv + optind,
+			cascadingBloom, graphOut, opt::verbose);
+		assert_good(graphOut, opt::graphPath);
+		graphOut.close();
+		assert_good(graphOut, opt::graphPath);
+	}
 
 	return EXIT_SUCCESS;
 }
