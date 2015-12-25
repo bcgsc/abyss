@@ -3,9 +3,11 @@
 
 #include "BloomDBG/RollingHashIterator.h"
 #include "Common/Uncompress.h"
+#include "Common/IOUtil.h"
 #include "DataLayer/FastaReader.h"
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
+#include "Graph/BreadthFirstSearch.h"
 #include "Common/Kmer.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingBloomDBG.h"
@@ -396,6 +398,258 @@ namespace BloomDBG {
 		if (opt::verbose) {
 			printProgressMessage(counters);
 			std::cerr << "Assembly complete" << std::endl;
+		}
+	}
+
+	/**
+	 * Trim a sequence down to the longest contiguous subsequence
+	 * of "good" k-mers.  If the sequence has length < k or contains
+	 * no good k-mers, the trimmed sequence will be the empty string.
+	 *
+	 * @param seq the DNA sequence to be trimmed
+	 * @param goodKmerSet Bloom filter containing "good" k-mers
+	 */
+	template <typename BloomT>
+	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet)
+	{
+		const unsigned k = goodKmerSet.getKmerSize();
+		const unsigned numHashes = goodKmerSet.getHashNum();
+
+		if (seq.length() < k) {
+			seq.clear();
+			return;
+		}
+
+		const unsigned UNSET = UINT_MAX;
+		unsigned prevPos = UNSET;
+		unsigned matchStart = UNSET;
+		unsigned matchLen = 0;
+		unsigned maxMatchStart = UNSET;
+		unsigned maxMatchLen = 0;
+
+		/* note: RollingHashIterator skips over k-mer
+		 * positions with non-ACGT chars */
+		for (RollingHashIterator it(seq, k, numHashes);
+			it != RollingHashIterator::end(); prevPos=it.pos(),++it) {
+			if (!goodKmerSet.contains(*it) ||
+				(prevPos != UNSET && it.pos() - prevPos > 1)) {
+				/* end any previous match */
+				if (matchStart != UNSET && matchLen > maxMatchLen) {
+					maxMatchLen = matchLen;
+					maxMatchStart = matchStart;
+				}
+				matchStart = UNSET;
+				matchLen = 0;
+			}
+			if (goodKmerSet.contains(*it)) {
+				/* initiate or extend match */
+				if (matchStart == UNSET)
+					matchStart = it.pos();
+				matchLen++;
+			}
+		}
+		/* handles case last match extends to end of seq */
+		if (matchStart != UNSET && matchLen > maxMatchLen) {
+			maxMatchStart = matchStart;
+			maxMatchLen = matchLen;
+		}
+		/* if there were no matching k-mers */
+		if (maxMatchLen == 0) {
+			seq.clear();
+			return;
+		}
+		/* trim read down to longest matching subseq */
+		seq = seq.substr(maxMatchStart, maxMatchLen);
+	}
+
+	/**
+	 * Visitor class that outputs visited nodes/edges in GraphViz format during
+	 * a breadth first traversal. An instance of this class may be passed
+	 * as an argument to the `breadthFirstSearch` function.
+	 */
+	template <typename GraphT>
+	class GraphvizBFSVisitor
+	{
+		typedef typename boost::graph_traits<GraphT>::vertex_descriptor VertexT;
+		typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeT;
+
+	public:
+
+		/** Constructor */
+		GraphvizBFSVisitor(std::ostream& out) :
+			m_out(out), m_nodesVisited(0), m_edgesVisited(0)
+		{
+			/* start directed graph (GraphViz) */
+			m_out << "digraph g {\n";
+		}
+
+		/** Destructor */
+		~GraphvizBFSVisitor()
+		{
+			/* end directed graph (GraphViz) */
+			m_out << "}\n";
+		}
+
+		/** Invoked when a vertex is initialized */
+		void initialize_vertex(const VertexT&, const GraphT&) {}
+
+		/** Invoked when a vertex is visited for the first time */
+		void discover_vertex(const VertexT& v, const GraphT&)
+		{
+			++m_nodesVisited;
+			/* declare vertex (GraphViz) */
+			m_out << '\t' << v.first.str() << ";\n";
+		}
+
+		/** Invoked each time a vertex is visited */
+		void examine_vertex(const VertexT&, const GraphT&) {}
+
+		/**
+		 * Invoked when all of a vertex's outgoing edges have been
+		 * traversed.
+		 */
+		void finish_vertex(const VertexT&, const GraphT&) {}
+
+		/**
+		 * Invoked when an edge is traversed. (Each edge
+		 * in the graph is traversed exactly once.)
+		 */
+		void examine_edge(const EdgeT& e, const GraphT& g)
+		{
+			++m_edgesVisited;
+			const VertexT& u = source(e, g);
+			const VertexT& v = target(e, g);
+
+			/* declare edge (GraphViz) */
+			m_out << '\t' << u.first.str() << " -> "
+				<< v.first.str() << ";\n";
+		}
+
+		/**
+		 * Invoked when an edge is traversed to a "gray" vertex.
+		 * A vertex is gray when some but not all of its outgoing edges
+		 * have been traversed.
+		 */
+		void gray_target(const EdgeT&, const GraphT&) {}
+
+		/**
+		 * Invoked when an edge is traversed to a "black" vertex.
+		 * A vertex is black when all of its outgoing edges have
+		 * been traversed.
+		 */
+		void black_target(const EdgeT&, const GraphT&) {}
+
+		/**
+		 * Invoked when an edge is traversed to a "gray" or
+		 * "black" vertex.
+		 */
+		void non_tree_edge(const EdgeT&, const GraphT&) {}
+
+		/**
+		 * Invoked when an edge is traversed to a "white" vertex.
+		 * A vertex is a white if it is previously unvisited.
+		 */
+		void tree_edge(const EdgeT&, const GraphT&) {}
+
+		/** Return number of distinct nodes visited */
+		size_t getNumNodesVisited() const
+		{
+			return m_nodesVisited;
+		}
+
+		/** Get number of distinct edges visited */
+		size_t getNumEdgesVisited() const
+		{
+			return m_edgesVisited;
+		}
+
+	protected:
+
+		/** output stream for GraphViz serialization */
+		std::ostream& m_out;
+		/** number of nodes visited so far */
+		size_t m_nodesVisited;
+		/** number of edges visited so far */
+		size_t m_edgesVisited;
+	};
+
+	/**
+	 * Output a GraphViz serialization of the de Bruijn graph
+	 * using FASTA files and a Bloom filter as input.
+	 *
+	 * @param argc number of input FASTA files
+	 * @param argv array of input FASTA filenames
+	 * @param kmerSet Bloom filter containing valid k-mers
+	 * @param out output stream for GraphViz serialization
+	 * @param verbose prints progress messages to STDERR if true
+	 */
+	template <typename BloomT>
+	static inline void outputGraph(int argc, char** argv,
+		const BloomT& kmerSet, std::ostream& out, bool verbose=false)
+	{
+		typedef RollingBloomDBG<BloomT> GraphT;
+		typedef std::pair<Kmer, RollingHash> V;
+
+		/* interval for progress messages */
+		const unsigned progressStep = 1000;
+		const unsigned k = kmerSet.getKmerSize();
+		const unsigned numHashes = kmerSet.getHashNum();
+
+		/* counter for progress messages */
+		size_t readsProcessed = 0;
+
+		/* Boost graph API over rolling hash Bloom filter */
+		GraphT dbg(kmerSet);
+
+		/* Marks visited nodes in breadth-first traversal */
+		DefaultColorMap<GraphT> colorMap;
+
+		/* BFS Visitor -- generates GraphViz output as nodes
+		 * and edges are traversed. */
+		GraphvizBFSVisitor<GraphT> visitor(out);
+
+		if (verbose)
+			std::cerr << "Generating GraphViz output..." << std::endl;
+
+		FastaConcat in(argv, argv + argc, FastaReader::FOLD_CASE);
+		for (FastaRecord rec;;) {
+			bool good;
+			good = in >> rec;
+			if (!good)
+				break;
+			Sequence& seq = rec.seq;
+
+			/* Trim down to longest subsequence of "good" k-mers */
+			trimSeq(seq, kmerSet);
+			if (seq.length() > 0) {
+
+				/* BFS traversal in forward dir */
+				V start(Kmer(seq.substr(0, k)),
+					RollingHash(seq.substr(0, k), numHashes, k));
+				breadthFirstSearch(dbg, start, visitor, colorMap);
+
+				/* BFS traversal in reverse dir */
+				Sequence rcSeq = reverseComplement(seq);
+				V rcStart(Kmer(rcSeq.substr(0, k)),
+					RollingHash(rcSeq.substr(0, k), numHashes, k));
+				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
+
+			}
+
+			if (++readsProcessed % progressStep == 0 && verbose) {
+				std::cerr << "processed " << readsProcessed
+					<< " (k-mers visited: " << visitor.getNumNodesVisited()
+					<< ", edges visited: " << visitor.getNumEdgesVisited()
+					<< ")" << std::endl;
+			}
+		}
+		assert(in.eof());
+		if (verbose) {
+			std::cerr << "processed " << readsProcessed
+				<< " reads (k-mers visited: " << visitor.getNumNodesVisited()
+				<< ", edges visited: " << visitor.getNumEdgesVisited()
+				<< ")" << std::endl;
+			std::cerr <<  "GraphViz generation complete" << std::endl;
 		}
 	}
 
