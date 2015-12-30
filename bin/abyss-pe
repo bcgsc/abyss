@@ -84,6 +84,18 @@ ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
+# Params for Bloom filter based assembly (abyss-bloom-dbg)
+# B is Bloom filter size (e.g. "100M")
+ifdef B
+# number of Bloom filter hash functions
+H?=1
+# genome size (e.g. "5M")
+ifndef G
+error::
+	@>&2 echo 'abyss-pe: missing parameter `G`'
+endif
+endif
+
 # Determine the path to the ABySS executables
 path?=$(shell dirname `which $(MAKEFILE_LIST)`)
 ifdef path
@@ -462,14 +474,15 @@ else
 	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
 endif
 
-else
-ifdef np
+else ifdef B
+%-1.fa:
+	abyss-bloom-dbg $v -j$j -k$k -b$B -G$G -H$H $(in) $(se) > $@
+else ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
 %-1.fa:
 	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
-endif
 endif
 
 # Find overlapping contigs
