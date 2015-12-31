@@ -121,6 +121,7 @@ namespace BloomDBG {
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
+		assert(seq.length() >= k);
 		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			if (!bloom.contains(*it))
@@ -327,8 +328,8 @@ namespace BloomDBG {
 		}
 		/* handles case last match extends to end of seq */
 		if (matchStart != UNSET && matchLen > maxMatchLen) {
-			maxMatchStart = matchStart;
 			maxMatchLen = matchLen;
+			maxMatchStart = matchStart;
 		}
 		/* if there were no matching k-mers */
 		if (maxMatchLen == 0) {
@@ -336,7 +337,7 @@ namespace BloomDBG {
 			return;
 		}
 		/* trim read down to longest matching subseq */
-		seq = seq.substr(maxMatchStart, maxMatchLen);
+		seq = seq.substr(maxMatchStart, maxMatchLen + k - 1);
 	}
 
 	/**
@@ -384,6 +385,7 @@ namespace BloomDBG {
 		const double falseBranchProbability = 0.000001;
 		const unsigned minBranchLen =
 			(unsigned)ceil(log(falseBranchProbability)/log(goodKmerSet.FPR()));
+		assert(minBranchLen >= 1);
 
 		if (verbose)
 			std::cerr << "Treating branches less than " << minBranchLen
@@ -402,11 +404,11 @@ namespace BloomDBG {
 
 			/* trim seq down to longest subsequence of "good" k-mers */
 			trimSeq(rec.seq, goodKmerSet);
-			if (rec.seq.length() < minBranchLen)
+			if (rec.seq.length() < minBranchLen + k - 1)
 				skip = true;
 
 			/* skip reads in previously assembled regions */
-			if (allKmersInBloom(rec.seq, assembledKmerSet))
+			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
 				skip = true;
 
 			if (!skip) {
