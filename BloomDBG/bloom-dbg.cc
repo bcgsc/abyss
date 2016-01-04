@@ -38,6 +38,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
+"  -c, --min-coverage=N       kmer coverage threshold for error correction [2]\n"
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
 "  -G  --genome-size=N        approx genome size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
@@ -62,14 +63,14 @@ namespace opt {
 	/** Bloom filter size (in bits) */
 	static size_t bloomSize = 0;
 
+	/** minimum k-mer coverage threshold */
+	static unsigned minCov = 2;
+
 	/** path for output GraphViz file */
 	static string graphPath;
 
 	/** approx genome size */
 	static size_t genomeSize = 0;
-
-	/** number of cascading Bloom filter levels */
-	static unsigned bloomLevels = 2;
 
 	/** num Bloom filter hash functions */
 	static unsigned numHashes = 0;
@@ -82,12 +83,13 @@ namespace opt {
 
 }
 
-static const char shortopts[] = "b:g:G:H:j:k:v";
+static const char shortopts[] = "b:c:g:G:H:j:k:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
+	{ "min-coverage",     required_argument, NULL, 'c' },
 	{ "graph",            required_argument, NULL, 'g' },
 	{ "genome-size",      required_argument, NULL, 'G' },
 	{ "num-hashes",       required_argument, NULL, 'H' },
@@ -115,6 +117,8 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'c':
+			arg >> opt::minCov; break;
 		  case 'g':
 			arg >> opt::graphPath; break;
 		  case 'G':
@@ -181,13 +185,13 @@ int main(int argc, char** argv)
 	Kmer::setLength(opt::k);
 
 	/* BloomFilter class requires size to be a multiple of 64 */
-	opt::bloomSize = BloomDBG::roundUpToMultiple(opt::bloomSize, (size_t)64);
+	const size_t bitsPerByte = 8;
+	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
+		opt::bloomSize * bitsPerByte / opt::minCov, (size_t)64);
 
 	/* use cascading Bloom filter to remove error k-mers */
-	const size_t bitsPerByte = 8;
 	HashAgnosticCascadingBloom cascadingBloom(
-		opt::bloomSize * bitsPerByte / opt::bloomLevels,
-		opt::numHashes, opt::bloomLevels, opt::k);
+		bloomLevelSize, opt::numHashes, opt::minCov, opt::k);
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i) {
