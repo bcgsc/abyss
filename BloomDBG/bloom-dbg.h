@@ -402,9 +402,8 @@ namespace BloomDBG {
 
 			bool skip = false;
 
-			/* trim seq down to longest subsequence of "good" k-mers */
-			trimSeq(rec.seq, goodKmerSet);
-			if (rec.seq.length() < minBranchLen + k - 1)
+			/* only extend error-free reads */
+			if (!allKmersInBloom(rec.seq, goodKmerSet))
 				skip = true;
 
 			/* skip reads in previously assembled regions */
