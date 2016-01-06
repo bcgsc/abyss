@@ -402,8 +402,11 @@ namespace BloomDBG {
 
 			bool skip = false;
 
+			if (rec.seq.length() < k)
+				skip = true;
+
 			/* only extend error-free reads */
-			if (!allKmersInBloom(rec.seq, goodKmerSet))
+			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
 				skip = true;
 
 			/* skip reads in previously assembled regions */
