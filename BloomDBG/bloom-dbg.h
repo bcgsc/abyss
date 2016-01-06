@@ -187,43 +187,32 @@ namespace BloomDBG {
 	}
 
 	/**
-	 * Extend a path left and right within the de Bruijn graph until
-	 * either a branching point or a dead-end is encountered.
+	 * Extend a path left (REVERSE) or right (FORWARD) within the de Bruijn
+	 * graph until either a branching point or a dead-end is encountered.
 	 */
 	template <typename GraphT>
-	inline static void extendPath(
-	Path<typename boost::graph_traits<GraphT>::vertex_descriptor>& path,
-		const GraphT& graph, unsigned minBranchLen)
+	inline static bool extendPath(
+		Path<typename boost::graph_traits<GraphT>::vertex_descriptor>& path,
+		Direction dir, unsigned minBranchLen, const GraphT& graph)
 	{
-		typedef Path<typename boost::graph_traits<GraphT>::vertex_descriptor> PathT;
-		typedef typename PathT::iterator PathIt;
-		typedef std::pair<Kmer, RollingHash> V;
-		unsigned chopLen;
-
-		/* track visited vertices to detect cycles */
-		unordered_set<V> visited;
+		unsigned origPathLen = path.size();
 
 		/*
-		 * extend path right
-		 *
-		 * note: start extending a few k-mers before the end, to reduce
-		 * the chance of hitting a dead-end at a Bloom filter false positive
+		 * Trim back the path before extension. This reduces the chance
+		 * of extending to a dead end due to a Bloom filter false positive.
 		 */
-		chopLen = std::min(path.size() - 1, (size_t)minBranchLen);
-		path.erase(path.end() - chopLen, path.end());
-		extendPath(path, FORWARD, graph, visited, minBranchLen, NO_LIMIT);
+		assert(path.size() >= 1);
+		unsigned trimLen = std::min(path.size() - 1, (size_t)minBranchLen);
+		if (dir == FORWARD)
+			path.erase(path.end() - trimLen, path.end());
+		else
+			path.erase(path.begin(), path.begin() + trimLen);
 
-		/*
-		 * extend path left
-		 *
-		 * note: start extending a few k-mers after the start, to reduce
-		 * the chance of hitting a dead-end at a Bloom filter false positive
-		 */
-		chopLen = std::min(path.size() - 1, (size_t)minBranchLen);
-		for (PathIt it = path.begin(); it != path.begin() + chopLen; ++it)
-			visited.erase(*it);
-		path.erase(path.begin(), path.begin() + chopLen);
-		extendPath(path, REVERSE, graph, visited, minBranchLen, NO_LIMIT);
+		/* Extend up to next branching point or dead end in DBG */
+		extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
+
+		/* Return true if path was extended beyond orig length */
+		return path.size() > origPathLen;
 	}
 
 	/**
@@ -262,6 +251,8 @@ namespace BloomDBG {
 	splitPath(const Path<typename boost::graph_traits<GraphT>::vertex_descriptor>& path,
 		const GraphT& dbg, unsigned minBranchLen)
 	{
+		assert(path.size() > 0);
+
 		typedef typename boost::graph_traits<GraphT>::vertex_descriptor V;
 		typedef typename Path<V>::const_iterator PathIt;
 
@@ -284,6 +275,7 @@ namespace BloomDBG {
 		if (currentPath.size() > 1)
 			splitPaths.push_back(currentPath);
 
+		assert(splitPaths.size() >= 1);
 		return splitPaths;
 	}
 
@@ -426,11 +418,23 @@ namespace BloomDBG {
 				/* split path at branching points to prevent over-assembly */
 				std::vector< Path<V> > paths =
 					splitPath(path, graph, minBranchLen);
+
+				/*
+				 * Extend first and last paths only, since
+				 * other path components are already bounded by branching
+				 * points.
+				 *
+				 * We abort if we fail to extend in either the first
+				 * or last path component, because it probably indicates
+				 * a sequencing error within the read.
+				 */
+				if (!extendPath(paths.front(), REVERSE, minBranchLen, graph))
+					continue;
+				if (!extendPath(paths.back(), FORWARD, minBranchLen, graph))
+					continue;
+
 				for(std::vector< Path<V> >::iterator it = paths.begin();
 					it != paths.end(); ++it) {
-					/* extend first and last paths only */
-					if (it == paths.begin() || it == paths.end()-1)
-						extendPath(*it, graph, minBranchLen);
 					/* convert DBG path back to sequence */
 					Sequence seq = pathToSeq(*it);
 					/*
