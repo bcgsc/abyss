@@ -191,6 +191,8 @@ namespace BloomDBG {
 	Path<typename boost::graph_traits<GraphT>::vertex_descriptor>& path,
 		const GraphT& graph, unsigned minBranchLen)
 	{
+		typedef Path<typename boost::graph_traits<GraphT>::vertex_descriptor> PathT;
+		typedef typename PathT::iterator PathIt;
 		typedef std::pair<Kmer, RollingHash> V;
 		unsigned chopLen;
 
@@ -214,6 +216,8 @@ namespace BloomDBG {
 		 * the chance of hitting a dead-end at a Bloom filter false positive
 		 */
 		chopLen = std::min(path.size() - 1, (size_t)minBranchLen);
+		for (PathIt it = path.begin(); it != path.begin() + chopLen; ++it)
+			visited.erase(*it);
 		path.erase(path.begin(), path.begin() + chopLen);
 		extendPath(path, REVERSE, graph, visited, minBranchLen, NO_LIMIT);
 	}
