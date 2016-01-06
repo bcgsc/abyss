@@ -122,11 +122,15 @@ namespace BloomDBG {
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
 		assert(seq.length() >= k);
+		unsigned validKmers = 0;
 		for (RollingHashIterator it(seq, k, numHashes);
-			 it != RollingHashIterator::end(); ++it) {
+			 it != RollingHashIterator::end(); ++it, ++validKmers) {
 			if (!bloom.contains(*it))
 				return false;
 		}
+		/* if we skipped over k-mers containing non-ACGT chars */
+		if (validKmers < seq.length() - k + 1)
+			return false;
 		return true;
 	}
 
