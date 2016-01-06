@@ -436,6 +436,7 @@ namespace BloomDBG {
 						FastaRecord contig;
 						std::ostringstream id;
 						id << contigID++;
+						id << " read:" << rec.id;
 						assert(id.good());
 						contig.id = id.str();
 						contig.seq = seq;
