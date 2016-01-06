@@ -382,10 +382,7 @@ namespace BloomDBG {
 		 * calculate min length threshold for a "true branch"
 		 * (not due to Bloom filter false positives)
 		 */
-		const double falseBranchProbability = 0.000001;
-		const unsigned minBranchLen =
-			(unsigned)ceil(log(falseBranchProbability)/log(goodKmerSet.FPR()));
-		assert(minBranchLen >= 1);
+		const unsigned minBranchLen = k + 1;
 
 		if (verbose)
 			std::cerr << "Treating branches less than " << minBranchLen
