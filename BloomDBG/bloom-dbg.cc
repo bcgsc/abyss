@@ -199,7 +199,7 @@ int main(int argc, char** argv)
 	}
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< cascadingBloom.FPR() << "%" << endl;
+			<< cascadingBloom.FPR() * 100 << "%" << endl;
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,
