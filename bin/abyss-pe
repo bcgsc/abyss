@@ -89,6 +89,8 @@ endif
 ifdef B
 # number of Bloom filter hash functions
 H?=1
+# minimum k-mer coverage
+c?=2
 # genome size (e.g. "5M")
 ifndef G
 error::
@@ -476,7 +478,7 @@ endif
 
 else ifdef B
 %-1.fa:
-	abyss-bloom-dbg $v -j$j -k$k -b$B -G$G -H$H $(in) $(se) > $@
+	abyss-bloom-dbg $v -j$j -c$c -k$k -b$B -G$G -H$H $(in) $(se) > $@
 else ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
