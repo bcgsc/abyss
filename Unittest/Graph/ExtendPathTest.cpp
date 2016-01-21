@@ -194,7 +194,6 @@ TEST(extendPath, withTrimming)
 	path.push_back(0);
 
 	extendPath(path, FORWARD, g, trimLen);
-	ASSERT_EQ(4u, path.size());
 	ASSERT_EQ(expectedPath, path);
 
 	/*
@@ -282,11 +281,13 @@ TEST(extendPath, cycles)
 	Path<Vertex> expectedPath2;
 	expectedPath2.push_back(0);
 	expectedPath2.push_back(1);
-	expectedPath2.push_back(2);
-	expectedPath2.push_back(3);
 
 	result = extendPath(path2, FORWARD, g2);
-	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	/*
+	 * note: expected result is EXTENDED_TO_BRANCHING_POINT
+	 * because vertex 1 has 2 incoming edges
+	 */
+	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
 	EXPECT_EQ(expectedPath2, path2);
 
 	/*
@@ -305,13 +306,15 @@ TEST(extendPath, cycles)
 	path3.push_back(0);
 
 	Path<Vertex> expectedPath3;
-	expectedPath3.push_back(3);
-	expectedPath3.push_back(2);
 	expectedPath3.push_back(1);
 	expectedPath3.push_back(0);
 
 	result = extendPath(path3, REVERSE, g3);
-	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	/*
+	 * note: expected result is EXTENDED_TO_BRANCHING_POINT
+	 * because vertex 1 has 2 incoming edges
+	 */
+	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
 	EXPECT_EQ(expectedPath3, path3);
 }
 

@@ -172,38 +172,41 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	assert(dir == FORWARD || dir == REVERSE);
 
 	V& u = (dir == FORWARD) ? path.back() : path.front();
-	unsigned degree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
 
-	if (degree == 0) {
+	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
+	unsigned inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
+
+	if (outDegree == 0)
 		return SE_DEAD_END;
-	} else if (degree == 1) {
-		const V& v = (dir == FORWARD) ?
-			target(*(out_edges(u, g).first), g) :
-			source(*(in_edges(u, g).first), g);
+
+	if (inDegree == 1 && outDegree == 1) {
 		if (dir == FORWARD) {
+			const V& v = target(*(out_edges(u, g).first), g);
 			path.push_back(v);
 		} else {
 			assert(dir == REVERSE);
+			const V& v = source(*(in_edges(u, g).first), g);
 			path.push_front(v);
 		}
 		return SE_EXTENDED;
-	} else {
-		std::vector<V> neighbours = trueBranches(u, dir, g, trimLen);
-		if (neighbours.empty()) {
-			return SE_DEAD_END;
-		} else if (neighbours.size() == 1) {
-			if (dir == FORWARD) {
-				path.push_back(neighbours.front());
-			} else {
-				assert(dir == REVERSE);
-				path.push_front(neighbours.front());
-			}
-			return SE_EXTENDED;
-		} else {
-			assert(neighbours.size() > 1);
-			return SE_BRANCHING_POINT;
-		}
 	}
+
+	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
+	std::vector<V> outNeighbours = trueBranches(u, dir, g, trimLen);
+	std::vector<V> inNeighbours = trueBranches(u, otherDir, g, trimLen);
+
+	if (outNeighbours.size() == 0)
+		return SE_DEAD_END;
+
+	if (inNeighbours.size() > 1 || outNeighbours.size() > 1)
+		return SE_BRANCHING_POINT;
+
+	if (dir == FORWARD)
+		path.push_back(outNeighbours.front());
+	else
+		path.push_front(outNeighbours.front());
+
+	return  SE_EXTENDED;
 }
 
 /**
