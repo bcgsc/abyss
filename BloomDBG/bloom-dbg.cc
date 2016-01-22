@@ -5,6 +5,7 @@
 #include "Common/Kmer.h"
 #include "Common/StringUtil.h"
 #include "Common/Options.h"
+#include "DataLayer/Options.h"
 #include "lib/bloomfilter-9061f087d8714109b865415f2ac05e4796d0cd74/BloomFilter.hpp"
 
 #include <getopt.h>
@@ -39,6 +40,8 @@ static const char USAGE_MESSAGE[] =
 "  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
 "  -c, --min-coverage=N       kmer coverage threshold for error correction [2]\n"
+"      --chastity             discard unchaste reads [default]\n"
+"      --no-chastity          do not discard unchaste reads\n"
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
 "  -G  --genome-size=N        approx genome size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
@@ -46,7 +49,17 @@ static const char USAGE_MESSAGE[] =
 "                             [required]\n"
 "      --help                 display this help and exit\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
+"      --trim-masked          trim masked bases from the ends of reads\n"
+"      --no-trim-masked       do not trim masked bases from the ends\n"
+"                             of reads [default]\n"
 "  -k, --kmer=N               the size of a k-mer [required]\n"
+"  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
+"                             quality is less than the threshold\n"
+"  -Q, --mask-quality=N       mask all low quality bases as `N'\n"
+"      --standard-quality     zero quality is `!' (33), typically\n"
+"                             for FASTQ and SAM files [default]\n"
+"      --illumina-quality     zero quality is `@' (64), typically\n"
+"                             for qseq and export files\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
 "\n"
@@ -83,19 +96,27 @@ namespace opt {
 
 }
 
-static const char shortopts[] = "b:c:g:G:H:j:k:v";
+static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "min-coverage",     required_argument, NULL, 'c' },
+	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
+	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "graph",            required_argument, NULL, 'g' },
 	{ "genome-size",      required_argument, NULL, 'G' },
 	{ "num-hashes",       required_argument, NULL, 'H' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
+	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
+	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "trim-quality",     required_argument, NULL, 'q' },
+	{ "mask-quality",     required_argument, NULL, 'Q' },
+	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
+	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -129,6 +150,10 @@ int main(int argc, char** argv)
 			arg >> opt::threads; break;
 		  case 'k':
 			arg >> opt::k; break;
+		  case 'q':
+			arg >> opt::qualityThreshold; break;
+		  case 'Q':
+			arg >> opt::internalQThreshold; break;
 		  case 'v':
 			++opt::verbose; break;
 		  case OPT_HELP:
