@@ -478,7 +478,7 @@ endif
 
 else ifdef B
 %-1.fa:
-	abyss-bloom-dbg $v -j$j -c$c -k$k -b$B -G$G -H$H $(in) $(se) > $@
+	abyss-bloom-dbg $v -j$j -c$c -k$k -b$B -G$G -H$H -q$q $(in) $(se) > $@
 else ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
