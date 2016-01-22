@@ -158,7 +158,6 @@ namespace BloomDBG {
 		typedef std::pair<Kmer, RollingHash> V;
 		Path<V> path;
 		assert(seq.length() >= k);
-		std::string kmer0 = seq.substr(0, k);
 		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			Kmer kmer(it.kmer());
@@ -272,7 +271,7 @@ namespace BloomDBG {
 				currentPath.push_back(*it);
 			}
 		}
-		if (currentPath.size() > 1)
+		if (currentPath.size() > 1 || splitPaths.empty())
 			splitPaths.push_back(currentPath);
 
 		assert(splitPaths.size() >= 1);
