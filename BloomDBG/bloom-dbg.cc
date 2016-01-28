@@ -13,6 +13,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <iomanip>
+#include <cstring>
 
 #if _OPENMP
 # include <omp.h>
@@ -223,6 +224,17 @@ int main(int argc, char** argv)
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i) {
+		/*
+		 * Debugging feature: If there is a ':'
+		 * separating the list of input read files into
+		 * two parts, use the first set of files
+		 * to load the Bloom filter and the second
+		 * set of files for the assembly (read extension).
+		 */
+		if (strcmp(argv[i],":") == 0) {
+			optind = i + 1;
+			break;
+		}
 		BloomDBG::loadFile(cascadingBloom, argv[i], opt::verbose);
 	}
 	if (opt::verbose)
