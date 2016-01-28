@@ -6,7 +6,7 @@
 #include "Common/StringUtil.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
-#include "lib/bloomfilter-9061f087d8714109b865415f2ac05e4796d0cd74/BloomFilter.hpp"
+#include "lib/bloomfilter-2dfba08d120d7659e8c75cf5c501b3b9040e98cb/BloomFilter.hpp"
 
 #include <getopt.h>
 #include <iostream>
