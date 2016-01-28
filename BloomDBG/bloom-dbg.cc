@@ -65,9 +65,12 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Example:\n"
 "\n"
-"  Assemble a 100 Mbp genome with 50X coverage and a k-mer size of 50bp:\n"
+"  Assemble a 100 Mbp genome using a k-mer size of 50bp. Allocate a 1GB\n"
+"  Bloom filter with 2 hash functions and require that a k-mer\n"
+"  occurs 3 times or more to be included in the assembly. (The k-mer\n"
+"  count threshold filters out k-mers due to sequencing errors.)\n"
 "\n"
-"  $ " PROGRAM " -C50 -G100M -k50 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
+"  $ " PROGRAM " -G100M -k50 -b1G -H2 -c3 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
