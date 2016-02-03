@@ -195,17 +195,7 @@ namespace BloomDBG {
 		Direction dir, unsigned minBranchLen, const GraphT& graph)
 	{
 		unsigned origPathLen = path.size();
-
-		/*
-		 * Trim back the path before extension. This reduces the chance
-		 * of extending to a dead end due to a Bloom filter false positive.
-		 */
 		assert(path.size() >= 1);
-		unsigned trimLen = std::min(path.size() - 1, (size_t)minBranchLen);
-		if (dir == FORWARD)
-			path.erase(path.end() - trimLen, path.end());
-		else
-			path.erase(path.begin(), path.begin() + trimLen);
 
 		/* Extend up to next branching point or dead end in DBG */
 		extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
