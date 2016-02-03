@@ -461,15 +461,9 @@ namespace BloomDBG {
 				 * Extend first and last paths only, since
 				 * other path components are already bounded by branching
 				 * points.
-				 *
-				 * We abort if we fail to extend in either the first
-				 * or last path component, because it probably indicates
-				 * a sequencing error within the read.
 				 */
-				if (!extendPath(paths.front(), REVERSE, minBranchLen, graph))
-					continue;
-				if (!extendPath(paths.back(), FORWARD, minBranchLen, graph))
-					continue;
+				extendPath(paths.front(), REVERSE, minBranchLen, graph);
+				extendPath(paths.back(), FORWARD, minBranchLen, graph);
 
 				for(std::vector< Path<V> >::iterator it = paths.begin();
 					it != paths.end(); ++it) {
