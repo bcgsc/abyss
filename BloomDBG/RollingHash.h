@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <boost/dynamic_bitset.hpp>
 
 class RollingHash
 {
@@ -19,8 +20,10 @@ private:
 		return (rcHash < hash) ? rcHash : hash;
 	}
 
-	/** compute multiple pseudo-independent hash values using
-	 * a single seed hash value */
+	/**
+	 * Compute multiple pseudo-independent hash values using
+	 * a single seed hash value.
+	 */
 	std::vector<size_t> multiHash(size_t seedHash) const
 	{
 		std::vector<size_t> hashes(m_numHashes);
@@ -28,6 +31,31 @@ private:
 			hashes.at(i) = rol(varSeed, i) ^ seedHash;
 		}
 		return hashes;
+	}
+
+	/**
+	 * Mask "don't care" positions in the current k-mer by
+	 * replacing them with 'X' characters.
+	 */
+	void maskKmer()
+	{
+		assert(m_kmerMask.size() > 0);
+		/*
+		 * note: dynamic_bitset stores the bits in reverse order relative
+		 * to the string representation (e.g. "1101" is stored as "1011")
+		 */
+		for(size_t i = 0; i < m_kmerMask.size(); ++i) {
+			if (!m_kmerMask.test(m_kmerMask.size() - 1 - i))
+				m_kmer.at(i) = 'X';
+		}
+	}
+
+	/**
+	 * Restore the current k-mer to its unmasked state.
+	 */
+	void unmaskKmer()
+	{
+		m_kmer = m_unmaskedKmer;
 	}
 
 public:
@@ -45,7 +73,8 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(unsigned numHashes, unsigned k)
-	: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0) {}
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		m_useKmerMask(false), m_kmerMask() {}
 
 	/**
 	 * Constructor. Construct RollingHash object while specifying
@@ -56,13 +85,102 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		m_useKmerMask(false), m_kmerMask()
 	{
+		/* init rolling hash state */
 		reset(kmer);
 	}
 
-	/** initialize hash values from seq */
+	/**
+	 * Constructor. Construct RollingHash object while specifying
+	 * initial k-mer to be hashed.  This version of the constructor
+	 * takes an additional bitmask argument that indicates which
+	 * base positions should be ignored when hashing each k-mer.
+	 * @param kmer initial k-mer for initializing hash value(s)
+	 * @param numHashes number of pseudo-independent hash values to compute
+	 * for each k-mer
+	 * @param k k-mer length
+	 * @param kmerMask bitmask indicating which base positions should
+	 * be ignored during the hash calculation of each k-mer
+	 */
+	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
+		const boost::dynamic_bitset<>& kmerMask)
+		: m_numHashes(numHashes), m_k(k), m_kmerMask(kmerMask), m_kmer(kmer),
+		m_unmaskedKmer(kmer)
+	{
+		assert(kmerMask.size() == m_k);
+
+		/* use the more efficient unmasked operations if k-mer mask is all "1"s */
+		m_useKmerMask = false;
+		for (size_t i = 0; i < m_kmerMask.size(); ++i) {
+			if (!m_kmerMask.test(i)) {
+				m_useKmerMask = true;
+				break;
+			}
+		}
+		/* init rolling hash state */
+		reset(kmer);
+	}
+
+	/**
+	 * Initialize hash state from sequence.
+	 * @param kmer k-mer used to initialize hash state
+	 */
 	void reset(const std::string& kmer)
+	{
+		if (m_useKmerMask)
+			resetMasked(kmer);
+		else
+			resetUnmasked(kmer);
+	}
+
+	/**
+	 * Initialize hash values from sequence. When computing the hash
+	 * value, mask out "don't care" positions as per the active
+	 * k-mer mask.
+	 * @param kmer k-mer used to initialize hash state
+	 */
+	void resetMasked(const std::string& kmer)
+	{
+		assert(kmer.length() == m_k);
+
+		/* store copy of k-mer for future rolling/masking ops */
+		m_kmer = kmer;
+		m_unmaskedKmer = kmer;
+
+		resetMasked();
+	}
+
+	/**
+	 * Initialize hash values from current k-mer. When computing the hash
+	 * value, mask out "don't care" positions as per the active
+	 * k-mer mask.
+	 */
+	void resetMasked()
+	{
+		/* replace "don't care" positions with 'X' */
+		maskKmer();
+
+		/* compute first hash function for k-mer */
+		m_hash1 = getFhval(m_kmer.c_str(), m_k);
+
+		/* compute first hash function for reverse complement
+		 * of k-mer */
+		m_rcHash1 = getRhval(m_kmer.c_str(), m_k);
+
+		/* compute hash values */
+		m_hashes = multiHash(canonicalHash(m_hash1, m_rcHash1));
+
+		/* restore k-mer to unmasked state */
+		unmaskKmer();
+	}
+
+	/**
+	 * Initialize hash values from sequence.
+	 * @param kmer k-mer used to initialize hash state
+	 */
+	void resetUnmasked(const std::string& kmer)
 	{
 		assert(kmer.length() == m_k);
 
@@ -78,47 +196,35 @@ public:
 	}
 
 	/**
-	 * Compute hash values for a neighbour k-mer on the right,
-	 * without updating internal state.
+	 * Compute hash values for next k-mer to the right and
+	 * update internal state.
 	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of k-mer to the right
+	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	std::vector<size_t> peekRight(unsigned char charOut, unsigned char charIn) const
+	void rollRight(unsigned char charOut, unsigned char charIn)
 	{
-		size_t hash1 = m_hash1;
-		size_t rcHash1 = m_rcHash1;
-
-		/* update first hash function */
-		rollHashesRight(hash1, rcHash1, charOut, charIn, m_k);
-
-		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash(hash1, rcHash1);
-
-		/* compute hash values */
-		return multiHash(seed);
+		if (m_useKmerMask)
+			rollRightMasked(charOut, charIn);
+		else
+			rollRightUnmasked(charOut, charIn);
 	}
 
 	/**
-	 * Compute hash values for a neighbour k-mer on the left,
-	 * without updating internal state.
-	 * @param charIn leftmost base of k-mer to the left
-	 * @param charOut rightmost base of current k-mer
+	 * Compute hash values for next k-mer to the right and
+	 * update internal state.  When computing the new hash, mask
+	 * out "don't care" positions according to the active
+	 * k-mer mask.
+	 * @param charOut leftmost base of current k-mer
+	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	std::vector<size_t> peekLeft(unsigned char charIn, unsigned char charOut) const
+	void rollRightMasked(unsigned char, unsigned char charIn)
 	{
-		size_t hash1 = m_hash1;
-		size_t rcHash1 = m_rcHash1;
-
-		/* update first hash function */
-		rollHashesLeft(hash1, rcHash1, charIn, charOut, m_k);
-
-		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash(hash1, rcHash1);
-
-		/* compute hash values */
-		return multiHash(seed);
+		assert(m_k >= 2);
+		std::rotate(m_kmer.begin(), m_kmer.begin() + 1, m_kmer.end());
+		m_kmer.at(m_k - 1) = charIn;
+		resetMasked();
 	}
 
 	/**
@@ -128,7 +234,7 @@ public:
 	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	void rollRight(unsigned char charOut, unsigned char charIn)
+	void rollRightUnmasked(unsigned char charOut, unsigned char charIn)
 	{
 		/* update first hash function */
 		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
@@ -148,6 +254,38 @@ public:
 	 * @return vector of hash values for next k-mer
 	 */
 	void rollLeft(unsigned char charIn, unsigned char charOut)
+	{
+		if (m_useKmerMask)
+			rollLeftMasked(charIn, charOut);
+		else
+			rollLeftUnmasked(charIn, charOut);
+	}
+
+	/**
+	 * Compute hash values for next k-mer to the left and
+	 * update internal state.  When computing the new hash, mask
+	 * out "don't care" positions according to the active
+	 * k-mer mask.
+	 * @param charOut leftmost base of current k-mer
+	 * @param charIn rightmost base of next k-mer
+	 * @return vector of hash values for next k-mer
+	 */
+	void rollLeftMasked(unsigned char charIn, unsigned char)
+	{
+		assert(m_k >= 2);
+		std::rotate(m_kmer.rbegin(), m_kmer.rbegin() + 1, m_kmer.rend());
+		m_kmer.at(0) = charIn;
+		resetMasked();
+	}
+
+	/**
+	 * Compute hash values for next k-mer to the left and
+	 * update internal state.
+	 * @param charOut leftmost base of current k-mer
+	 * @param charIn rightmost base of next k-mer
+	 * @return vector of hash values for next k-mer
+	 */
+	void rollLeftUnmasked(unsigned char charIn, unsigned char charOut)
 	{
 		/* update first hash function */
 		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
@@ -190,6 +328,15 @@ private:
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
 	size_t m_rcHash1;
+	/** true if the k-mer mask should be used during hashing operations */
+	bool m_useKmerMask;
+	/** k-mer mask */
+	boost::dynamic_bitset<> m_kmerMask;
+	/** current k-mer (used only when k-mer mask is in effect) */
+	std::string m_kmer;
+	/** unmasked version of current k-mer (used only when k-mer mask is in effect) */
+	std::string m_unmaskedKmer;
+
 };
 
 #endif
