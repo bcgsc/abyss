@@ -1,8 +1,12 @@
 #include "BloomDBG/RollingHash.h"
 
 #include <gtest/gtest.h>
+#include <string>
+#include <algorithm>
+#include "boost/dynamic_bitset.hpp"
 
 using namespace std;
+using namespace boost;
 
 /** test fixture for RollingHash tests */
 class RollingHashTest : public ::testing::Test
@@ -11,34 +15,31 @@ protected:
 
 	const unsigned m_numHashes;
 	const unsigned m_k;
-	const string m_leftKmer;
-	const string m_middleKmer;
-	const string m_rightKmer;
+	const dynamic_bitset<> m_kmerMask;
 
-	RollingHashTest() : m_numHashes(2), m_k(4),
-		m_leftKmer("GACG"), m_middleKmer("ACGT"), m_rightKmer("CGTC") {}
+	RollingHashTest() : m_numHashes(2), m_k(4), m_kmerMask(string("1101")) {}
 };
 
-TEST_F(RollingHashTest, peekRight)
+TEST_F(RollingHashTest, kmerMask)
 {
-	RollingHash middleKmerHash(m_middleKmer, m_numHashes, m_k);
-	RollingHash rightKmerHash(m_rightKmer, m_numHashes, m_k);
-
-	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.peekRight('A', 'C'));
-}
-
-TEST_F(RollingHashTest, peekLeft)
-{
-	RollingHash leftKmerHash(m_leftKmer, m_numHashes, m_k);
-	RollingHash middleKmerHash(m_middleKmer, m_numHashes, m_k);
-
-	ASSERT_EQ(leftKmerHash.getHash(), middleKmerHash.peekLeft('G', 'T'));
+	RollingHash kmer1Hash("GACG", m_numHashes, m_k, m_kmerMask);
+	RollingHash kmer2Hash("GATG", m_numHashes, m_k, m_kmerMask);
+	ASSERT_EQ(kmer1Hash, kmer2Hash);
 }
 
 TEST_F(RollingHashTest, rollRight)
 {
-	RollingHash middleKmerHash(m_middleKmer, m_numHashes, m_k);
-	RollingHash rightKmerHash(m_rightKmer, m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
+
+	middleKmerHash.rollRight('A', 'C');
+	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
+}
+
+TEST_F(RollingHashTest, rollRightMasked)
+{
+	RollingHash middleKmerHash("ACGG", m_numHashes, m_k, m_kmerMask);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
 
 	middleKmerHash.rollRight('A', 'C');
 	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
@@ -46,8 +47,17 @@ TEST_F(RollingHashTest, rollRight)
 
 TEST_F(RollingHashTest, rollLeft)
 {
-	RollingHash leftKmerHash(m_leftKmer, m_numHashes, m_k);
-	RollingHash middleKmerHash(m_middleKmer, m_numHashes, m_k);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+
+	middleKmerHash.rollLeft('G', 'T');
+	ASSERT_EQ(leftKmerHash.getHash(), middleKmerHash.getHash());
+}
+
+TEST_F(RollingHashTest, rollLeftMasked)
+{
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k, m_kmerMask);
+	RollingHash middleKmerHash("AGGT", m_numHashes, m_k, m_kmerMask);
 
 	middleKmerHash.rollLeft('G', 'T');
 	ASSERT_EQ(leftKmerHash.getHash(), middleKmerHash.getHash());
@@ -55,9 +65,18 @@ TEST_F(RollingHashTest, rollLeft)
 
 TEST_F(RollingHashTest, reset)
 {
-	RollingHash middleKmerHash(m_middleKmer, m_numHashes, m_k);
-	RollingHash rightKmerHash(m_rightKmer, m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
-	middleKmerHash.reset(m_rightKmer);
+	middleKmerHash.reset("CGTC");
+	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
+}
+
+TEST_F(RollingHashTest, resetMasked)
+{
+	RollingHash middleKmerHash("ACGG", m_numHashes, m_k, m_kmerMask);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
+
+	middleKmerHash.reset("CGGC");
 	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
 }
