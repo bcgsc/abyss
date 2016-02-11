@@ -78,32 +78,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
-namespace opt {
-
-	/** Bloom filter size (in bits) */
-	static size_t bloomSize = 0;
-
-	/** minimum k-mer coverage threshold */
-	static unsigned minCov = 2;
-
-	/** path for output GraphViz file */
-	static string graphPath;
-
-	/** approx genome size */
-	static size_t genomeSize = 0;
-
-	/** num Bloom filter hash functions */
-	static unsigned numHashes = 0;
-
-	/** The number of parallel threads. */
-	static unsigned threads = 1;
-
-	/** The size of a k-mer. */
-	static unsigned k;
-
-	/** Spaced seed */
-	static string spacedSeed;
-}
+/** Assembly params (stores command-line options) */
+BloomDBG::AssemblyParams params;
 
 static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:s:v";
 
@@ -147,27 +123,27 @@ int main(int argc, char** argv)
 		  case '?':
 			die = true; break;
 		  case 'b':
-			opt::bloomSize = SIToBytes(arg); break;
+			params.bloomSize = SIToBytes(arg); break;
 		  case 'c':
-			arg >> opt::minCov; break;
+			arg >> params.minCov; break;
 		  case 'g':
-			arg >> opt::graphPath; break;
+			arg >> params.graphPath; break;
 		  case 'G':
-			  opt::genomeSize = fromSI(arg); break;
+			  params.genomeSize = fromSI(arg); break;
 		  case 'H':
-			arg >> opt::numHashes; break;
+			arg >> params.numHashes; break;
 		  case 'j':
-			arg >> opt::threads; break;
+			arg >> params.threads; break;
 		  case 'k':
-			arg >> opt::k; break;
+			arg >> params.k; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 's':
-			arg >> opt::spacedSeed; break;
+			arg >> params.spacedSeed; break;
 		  case 'Q':
 			arg >> opt::internalQThreshold; break;
 		  case 'v':
-			++opt::verbose; break;
+			++params.verbose; break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -182,35 +158,35 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (opt::bloomSize == 0) {
+	if (params.bloomSize == 0) {
 		cerr << PROGRAM ": missing mandatory option `-b'\n";
 		die = true;
 	}
 
-	if (opt::genomeSize == 0) {
+	if (params.genomeSize == 0) {
 		cerr << PROGRAM ": missing mandatory option `-G'\n";
 		die = true;
 	}
 
-	if (opt::numHashes == 0) {
+	if (params.numHashes == 0) {
 		cerr << PROGRAM ": missing mandatory option `-H'\n";
 		die = true;
 	}
 
-	if (opt::k == 0) {
+	if (params.k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
 		die = true;
 	}
 
-	if (opt::spacedSeed.empty()) {
+	if (params.spacedSeed.empty()) {
 		/* spaced seed defaults to all '1's */
-		opt::spacedSeed.reserve(opt::k);
-		for (size_t i = 0; i < opt::k; ++i)
-			opt::spacedSeed.push_back('1');
-	} else if (opt::spacedSeed.length() != opt::k) {
+		params.spacedSeed.reserve(params.k);
+		for (size_t i = 0; i < params.k; ++i)
+			params.spacedSeed.push_back('1');
+	} else if (params.spacedSeed.length() != params.k) {
 		cerr << PROGRAM ": spaced seed must be exactly k bits long\n";
 		die = true;
-	} else if (opt::spacedSeed.find_first_not_of("01") != string::npos) {
+	} else if (params.spacedSeed.find_first_not_of("01") != string::npos) {
 		cerr << PROGRAM ": spaced seed must contain only '0's or '1's\n";
 		die = true;
 	}
@@ -227,21 +203,21 @@ int main(int argc, char** argv)
 	}
 
 #if _OPENMP
-	if (opt::threads > 0)
-		omp_set_num_threads(opt::threads);
+	if (params.threads > 0)
+		omp_set_num_threads(params.threads);
 #endif
 
 	/* set global variable for k-mer length */
-	Kmer::setLength(opt::k);
+	Kmer::setLength(params.k);
 
 	/* BloomFilter class requires size to be a multiple of 64 */
 	const size_t bitsPerByte = 8;
 	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
-		opt::bloomSize * bitsPerByte / opt::minCov, (size_t)64);
+		params.bloomSize * bitsPerByte / params.minCov, (size_t)64);
 
 	/* use cascading Bloom filter to remove error k-mers */
 	HashAgnosticCascadingBloom cascadingBloom(
-		bloomLevelSize, opt::numHashes, opt::minCov, opt::k);
+		bloomLevelSize, params.numHashes, params.minCov, params.k);
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i) {
@@ -256,27 +232,26 @@ int main(int argc, char** argv)
 			optind = i + 1;
 			break;
 		}
-		BloomDBG::loadFile(cascadingBloom, argv[i], opt::spacedSeed,
-			opt::verbose);
+		BloomDBG::loadFile(cascadingBloom, argv[i], params.spacedSeed,
+			params.verbose);
 	}
-	if (opt::verbose)
+	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< cascadingBloom.FPR() * 100 << "%" << endl;
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,
-		opt::genomeSize, cascadingBloom, opt::spacedSeed,
-		cout, opt::verbose);
+		cascadingBloom, params, cout);
 
 	/* generate de Bruijn graph in GraphViz format (optional) */
-	if (!opt::graphPath.empty()) {
-		ofstream graphOut(opt::graphPath.c_str());
-		assert_good(graphOut, opt::graphPath);
+	if (!params.graphPath.empty()) {
+		ofstream graphOut(params.graphPath.c_str());
+		assert_good(graphOut, params.graphPath);
 		BloomDBG::outputGraph(argc - optind, argv + optind,
-			cascadingBloom, opt::spacedSeed, graphOut, opt::verbose);
-		assert_good(graphOut, opt::graphPath);
+			cascadingBloom, params, graphOut);
+		assert_good(graphOut, params.graphPath);
 		graphOut.close();
-		assert_good(graphOut, opt::graphPath);
+		assert_good(graphOut, params.graphPath);
 	}
 
 	return EXIT_SUCCESS;
