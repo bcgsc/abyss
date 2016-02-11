@@ -27,6 +27,42 @@
 namespace BloomDBG {
 
 	/**
+	 * Parameters controlling assembly.
+	 */
+	struct AssemblyParams
+	{
+		/** Bloom filter size (in bits) */
+		size_t bloomSize;
+
+		/** minimum k-mer coverage threshold */
+		unsigned minCov;
+
+		/** path for output GraphViz file */
+		string graphPath;
+
+		/** approx genome size */
+		size_t genomeSize;
+
+		/** num Bloom filter hash functions */
+		unsigned numHashes;
+
+		/** the number of parallel threads. */
+		unsigned threads;
+
+		/** the size of a k-mer. */
+		unsigned k;
+
+		/** spaced seed */
+		string spacedSeed;
+
+		/** verbose level for progress messages */
+		int verbose;
+
+		AssemblyParams() : bloomSize(0), minCov(2), graphPath(), genomeSize(0),
+			numHashes(1), threads(1), k(0), spacedSeed(), verbose(0) {}
+	};
+
+	/**
 	 * Round up `num` to the nearest multiple of `base`.
 	 */
 	template <typename T>
@@ -414,9 +450,8 @@ namespace BloomDBG {
 	 * STDERR
 	 */
 	template <typename BloomT>
-	inline static void assemble(int argc, char** argv, size_t genomeSize,
-		const BloomT& goodKmerSet, const std::string& spacedSeed, std::ostream& out,
-		bool verbose=false)
+	inline static void assemble(int argc, char** argv, const BloomT& goodKmerSet,
+		const AssemblyParams& params, std::ostream& out)
 	{
 		/* FASTA ID for next output contig */
 		size_t contigID = 0;
@@ -424,9 +459,10 @@ namespace BloomDBG {
 		const unsigned progressStep = 1000;
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
+		const std::string& spacedSeed = params.spacedSeed;
 		/* k-mers in previously assembled contigs */
-		BloomFilter assembledKmerSet(roundUpToMultiple(genomeSize, (size_t)64),
-			numHashes, k);
+		BloomFilter assembledKmerSet(roundUpToMultiple(params.genomeSize,
+			(size_t)64), numHashes, k);
 
 		/* counters for progress messages */
 		AssemblyCounters counters;
@@ -442,7 +478,7 @@ namespace BloomDBG {
 		 */
 		const unsigned minBranchLen = k + 1;
 
-		if (verbose)
+		if (params.verbose)
 			std::cerr << "Treating branches less than " << minBranchLen
 				<< " k-mers as Bloom filter false positives" << std::endl;
 
@@ -525,7 +561,7 @@ namespace BloomDBG {
 
 #pragma omp atomic
 			counters.readsProcessed++;
-			if (verbose && counters.readsProcessed % progressStep == 0)
+			if (params.verbose && counters.readsProcessed % progressStep == 0)
 				printProgressMessage(counters);
 
 		} /* for each read */
@@ -662,8 +698,8 @@ namespace BloomDBG {
 	 */
 	template <typename BloomT>
 	static inline void outputGraph(int argc, char** argv,
-		const BloomT& kmerSet, const std::string& spacedSeed,
-		std::ostream& out, bool verbose=false)
+		const BloomT& kmerSet, const AssemblyParams& params,
+		std::ostream& out)
 	{
 		typedef RollingBloomDBG<BloomT> GraphT;
 		typedef std::pair<Kmer, RollingHash> V;
@@ -686,7 +722,7 @@ namespace BloomDBG {
 		 * and edges are traversed. */
 		GraphvizBFSVisitor<GraphT> visitor(out);
 
-		if (verbose)
+		if (params.verbose)
 			std::cerr << "Generating GraphViz output..." << std::endl;
 
 		FastaConcat in(argv, argv + argc, FastaReader::FOLD_CASE);
@@ -698,7 +734,7 @@ namespace BloomDBG {
 			Sequence& seq = rec.seq;
 
 			/* Trim down to longest subsequence of "good" k-mers */
-			trimSeq(seq, kmerSet, spacedSeed);
+			trimSeq(seq, kmerSet, params.spacedSeed);
 			if (seq.length() > 0) {
 
 				/* BFS traversal in forward dir */
@@ -714,7 +750,7 @@ namespace BloomDBG {
 
 			}
 
-			if (++readsProcessed % progressStep == 0 && verbose) {
+			if (++readsProcessed % progressStep == 0 && params.verbose) {
 				std::cerr << "processed " << readsProcessed
 					<< " (k-mers visited: " << visitor.getNumNodesVisited()
 					<< ", edges visited: " << visitor.getNumEdgesVisited()
@@ -722,7 +758,7 @@ namespace BloomDBG {
 			}
 		}
 		assert(in.eof());
-		if (verbose) {
+		if (params.verbose) {
 			std::cerr << "processed " << readsProcessed
 				<< " reads (k-mers visited: " << visitor.getNumNodesVisited()
 				<< ", edges visited: " << visitor.getNumEdgesVisited()
