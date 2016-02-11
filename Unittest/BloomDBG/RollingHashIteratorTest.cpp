@@ -79,3 +79,37 @@ TEST(RollingHashIterator, emptySeq)
 	RollingHashIterator it(seq, k, numHashes);
 	ASSERT_EQ(RollingHashIterator::end(), it);
 }
+
+TEST(RollingHashIterator, spacedSeed)
+{
+	const unsigned k = 5;
+	const unsigned numHashes = 1;
+	const char* seq = "AGNNGC";
+	const char* rcSeq = "GCNNCT";
+	const string spacedSeed = "10001";
+
+	/** hash forward sequence */
+
+	RollingHashIterator it(seq, k, numHashes, spacedSeed);
+	size_t kmer1Hash, kmer2Hash;
+	kmer1Hash = it->at(0);
+	++it;
+	kmer2Hash = it->at(0);
+	++it;
+	ASSERT_EQ(RollingHashIterator::end(), it);
+
+	/** hash reverse complement sequence */
+
+	RollingHashIterator rcIt(rcSeq, k, numHashes, spacedSeed);
+	size_t rcKmer1Hash, rcKmer2Hash;
+	rcKmer2Hash = rcIt->at(0);
+	++rcIt;
+	rcKmer1Hash = rcIt->at(0);
+	++rcIt;
+	ASSERT_EQ(RollingHashIterator::end(), rcIt);
+
+	/** check hash values are the same for forward and reverse complement */
+
+	ASSERT_EQ(kmer1Hash, rcKmer1Hash);
+	ASSERT_EQ(kmer2Hash, rcKmer2Hash);
+}

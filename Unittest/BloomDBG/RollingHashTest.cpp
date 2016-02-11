@@ -15,9 +15,9 @@ protected:
 
 	const unsigned m_numHashes;
 	const unsigned m_k;
-	const dynamic_bitset<> m_kmerMask;
+	const string m_kmerMask;
 
-	RollingHashTest() : m_numHashes(2), m_k(4), m_kmerMask(string("1101")) {}
+	RollingHashTest() : m_numHashes(2), m_k(4), m_kmerMask("1101") {}
 };
 
 TEST_F(RollingHashTest, kmerMask)

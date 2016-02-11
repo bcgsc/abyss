@@ -6,13 +6,16 @@
 #include <cassert>
 #include <limits>
 #include <string>
+#include <algorithm>
+#include <cctype>
+#include <deque>
 #include "BloomDBG/RollingHash.h"
 
 /**
  * Permitted characters in k-mers. All k-mers containing
  * other characters will be skipped.
  */
-#define ACGT_CHARS "acgtACGT"
+#define ACGT_CHARS "ACGT"
 
 /**
  * Iterate over hash values for k-mers in a
@@ -37,29 +40,48 @@ private:
 		}
 
 		while(m_pos < m_seq.length() - m_k + 1) {
-			/* skip over k-mers with non-ACGT chars */
-			if (m_nextInvalidChar - m_pos < m_k) {
-				m_pos = m_nextInvalidChar + 1;
-				m_nextInvalidChar = m_pos + strspn(m_seq.c_str() + m_pos, ACGT_CHARS);
-				m_rollNextHash = false;
-			} else {
-				/* we are positioned at the next valid k-mer */
-				if (!m_rollNextHash) {
-					/* we don't have hash values for the
-					 * preceding k-mer, so we must compute
-					 * the hash values from scratch */
-					m_rollingHash.reset(m_seq.substr(m_pos, m_k));
-					m_rollNextHash = true;
-				} else {
-					/* compute new hash values based on
-					 * hash values of preceding k-mer */
-					assert(m_pos > 0);
-					m_rollingHash.rollRight(m_seq.at(m_pos - 1),
-							m_seq.at(m_pos + m_k - 1));
+
+			/* skip k-mers with non-ACGT chars in unmasked positions */
+
+			while (!m_badCharPos.empty() && m_badCharPos.front() < m_pos)
+				m_badCharPos.pop_front();
+
+			if (!m_badCharPos.empty() && m_badCharPos.front() < m_pos + m_k) {
+				bool goodKmer = true;
+				for (size_t i = 0; i < m_badCharPos.size() &&
+					m_badCharPos.at(i) < m_pos + m_k; ++i) {
+					size_t kmerPos = m_badCharPos.at(i) - m_pos;
+					if (m_spacedSeed.at(kmerPos) == '1') {
+						goodKmer = false;
+						break;
+					}
 				}
-				return;
+				if (!goodKmer) {
+					m_rollNextHash = false;
+					++m_pos;
+					continue;
+				}
 			}
+
+			/* we are positioned at the next valid k-mer */
+
+			if (!m_rollNextHash) {
+				/* we don't have hash values for the
+				 * preceding k-mer, so we must compute
+				 * the hash values from scratch */
+				m_rollingHash.reset(m_seq.substr(m_pos, m_k));
+				m_rollNextHash = true;
+			} else {
+				/* compute new hash values based on
+				 * hash values of preceding k-mer */
+				assert(m_pos > 0);
+				m_rollingHash.rollRight(m_seq.at(m_pos - 1),
+					m_seq.at(m_pos + m_k - 1));
+			}
+			return;
+
 		}
+
 		/* there are no more valid k-mers */
 		m_pos = std::numeric_limits<std::size_t>::max();
 	}
@@ -84,9 +106,46 @@ public:
 	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes)
 		: m_seq(seq), m_k(k), m_numHashes(numHashes),
 		m_rollingHash(m_numHashes, m_k), m_rollNextHash(false),
-		m_pos(0)
+		m_pos(0), m_spacedSeed(m_k, '1')
 	{
-		m_nextInvalidChar = strspn(m_seq.c_str(), ACGT_CHARS);
+		init();
+	}
+
+	/**
+	 * Constructor.
+	 * @param seq DNA sequence to be hashed
+	 * @param k k-mer size
+	 * @param numHashes number of hash values to compute
+	 * for each k-mer
+	 * @param spacedSeed bitmask indicating which positions
+	 * to ignore when hashing k-mers
+	 */
+	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes,
+		const std::string& spacedSeed)
+		: m_seq(seq), m_k(k), m_numHashes(numHashes),
+		m_rollingHash(m_numHashes, m_k, spacedSeed), m_rollNextHash(false),
+		m_pos(0), m_spacedSeed(spacedSeed)
+	{
+		assert(m_spacedSeed.length() == m_k);
+		init();
+	}
+
+	/**
+	 * Initialize internal state of iterator.
+	 */
+	void init()
+	{
+		/* convert sequence to upper case */
+		std::transform(m_seq.begin(), m_seq.end(), m_seq.begin(), ::toupper);
+
+		/* record positions of non-ACGT chars */
+		size_t i = m_seq.find_first_not_of(ACGT_CHARS);
+		while (i != std::string::npos) {
+			m_badCharPos.push_back(i);
+			i = m_seq.find_first_not_of(ACGT_CHARS, i + 1);
+		}
+
+		/* find first "good" k-mer in sequence */
 		next();
 	}
 
@@ -119,7 +178,6 @@ public:
 	/** pre-increment operator */
 	RollingHashIterator& operator++()
 	{
-
 		++m_pos;
 		next();
 		return *this;
@@ -160,7 +218,7 @@ public:
 private:
 
 	/** DNA sequence being hashed */
-	const std::string m_seq;
+	std::string m_seq;
 	/** k-mer size */
 	unsigned m_k;
 	/** number of hash values to compute for each k-mer */
@@ -173,8 +231,10 @@ private:
 	bool m_rollNextHash;
 	/** position of current k-mer */
 	size_t m_pos;
-	/** position of next non-ACGT char */
-	size_t m_nextInvalidChar;
+	/** bitmask of k-mer positions to ignore during hashing */
+	std::string m_spacedSeed;
+	/** positions of non-ACGT chars in sequence */
+	std::deque<size_t> m_badCharPos;
 };
 
 #endif

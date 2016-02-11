@@ -39,13 +39,13 @@ private:
 	 */
 	void maskKmer()
 	{
-		assert(m_kmerMask.size() > 0);
+		assert(m_kmerMask.length() == m_k);
 		/*
 		 * note: dynamic_bitset stores the bits in reverse order relative
 		 * to the string representation (e.g. "1101" is stored as "1011")
 		 */
-		for(size_t i = 0; i < m_kmerMask.size(); ++i) {
-			if (!m_kmerMask.test(m_kmerMask.size() - 1 - i))
+		for(size_t i = 0; i < m_kmerMask.length(); ++i) {
+			if (m_kmerMask.at(i) == '0')
 				m_kmer.at(i) = 'X';
 		}
 	}
@@ -73,8 +73,23 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
-		m_useKmerMask(false), m_kmerMask() {}
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
+	{
+		initKmerMask(std::string(k, '1'));
+	}
+
+	/**
+	 * Constructor. Construct RollingHash object when initial k-mer
+	 * is unknown.
+	 * @param numHashes number of pseudo-independent hash values to compute
+	 * for each k-mer
+	 * @param k k-mer length
+	 */
+	RollingHash(unsigned numHashes, unsigned k, const std::string& kmerMask)
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
+	{
+		initKmerMask(kmerMask);
+	}
 
 	/**
 	 * Constructor. Construct RollingHash object while specifying
@@ -85,9 +100,10 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
-		m_useKmerMask(false), m_kmerMask()
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
 	{
+		initKmerMask(std::string(k, '1'));
+
 		/* init rolling hash state */
 		reset(kmer);
 	}
@@ -105,22 +121,31 @@ public:
 	 * be ignored during the hash calculation of each k-mer
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
-		const boost::dynamic_bitset<>& kmerMask)
-		: m_numHashes(numHashes), m_k(k), m_kmerMask(kmerMask), m_kmer(kmer),
-		m_unmaskedKmer(kmer)
+		const std::string& kmerMask)
+		: m_numHashes(numHashes), m_k(k), m_kmer(kmer), m_unmaskedKmer(kmer)
 	{
-		assert(kmerMask.size() == m_k);
+		initKmerMask(kmerMask);
+
+		/* init rolling hash state */
+		reset(kmer);
+	}
+
+	/**
+	 * Initialize k-mer mask (spaced seed).
+	 */
+	void initKmerMask(const std::string& kmerMask)
+	{
+		assert(kmerMask.length() == m_k);
+		m_kmerMask = kmerMask;
 
 		/* use the more efficient unmasked operations if k-mer mask is all "1"s */
 		m_useKmerMask = false;
-		for (size_t i = 0; i < m_kmerMask.size(); ++i) {
-			if (!m_kmerMask.test(i)) {
+		for (size_t i = 0; i < m_kmerMask.length(); ++i) {
+			if (m_kmerMask.at(i) == '0') {
 				m_useKmerMask = true;
 				break;
 			}
 		}
-		/* init rolling hash state */
-		reset(kmer);
 	}
 
 	/**
@@ -331,7 +356,7 @@ private:
 	/** true if the k-mer mask should be used during hashing operations */
 	bool m_useKmerMask;
 	/** k-mer mask */
-	boost::dynamic_bitset<> m_kmerMask;
+	std::string m_kmerMask;
 	/** current k-mer (used only when k-mer mask is in effect) */
 	std::string m_kmer;
 	/** unmasked version of current k-mer (used only when k-mer mask is in effect) */

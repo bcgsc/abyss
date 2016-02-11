@@ -47,11 +47,12 @@ namespace BloomDBG {
 	 * @param seq DNA sequence
 	 */
 	template <typename BF>
-	inline static void loadSeq(BF& bloom, const std::string& seq)
+	inline static void loadSeq(BF& bloom, const std::string& seq,
+		const std::string& spacedSeed)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -66,7 +67,7 @@ namespace BloomDBG {
 	 */
 	template <typename BF>
 	inline static void loadFile(BF& bloom, const std::string& path,
-		bool verbose = false)
+		const std::string& spacedSeed, bool verbose = false)
 	{
 		const size_t BUFFER_SIZE = 100000;
 		const size_t LOAD_PROGRESS_STEP = 10000;
@@ -94,7 +95,7 @@ namespace BloomDBG {
 			if (buffer.size() == 0)
 				break;
 			for (size_t j = 0; j < buffer.size(); j++) {
-				loadSeq(bloom, buffer.at(j));
+				loadSeq(bloom, buffer.at(j), spacedSeed);
 				if (verbose)
 #pragma omp critical(cerr)
 				{
@@ -117,13 +118,14 @@ namespace BloomDBG {
 	 * and false otherwise.
 	 */
 	template <typename BloomT>
-	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom)
+	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom,
+		const std::string& spacedSeed)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
 		assert(seq.length() >= k);
 		unsigned validKmers = 0;
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			 it != RollingHashIterator::end(); ++it, ++validKmers) {
 			if (!bloom.contains(*it))
 				return false;
@@ -138,11 +140,12 @@ namespace BloomDBG {
 	 * Add all k-mers of a DNA sequence to a Bloom filter.
 	 */
 	template <typename BloomT>
-	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom)
+	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom,
+		const std::string& spacedSeed)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			 it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -153,12 +156,13 @@ namespace BloomDBG {
 	 * de Bruijn graph.
 	 */
 	inline static Path< std::pair<Kmer, RollingHash> >
-	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes)
+	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes,
+		const std::string spacedSeed)
 	{
 		typedef std::pair<Kmer, RollingHash> V;
 		Path<V> path;
 		assert(seq.length() >= k);
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			 it != RollingHashIterator::end(); ++it) {
 			Kmer kmer(it.kmer());
 			path.push_back(V(kmer, it.rollingHash()));
@@ -171,17 +175,36 @@ namespace BloomDBG {
 	 * DNA sequence.
 	 */
 	inline static Sequence pathToSeq(
-		const Path< std::pair<Kmer, RollingHash> >& path)
+		const Path< std::pair<Kmer, RollingHash> >& path, unsigned k,
+		const std::string& spacedSeed)
 	{
+		assert(path.size() > 0);
+		assert(k > 0);
+		assert(spacedSeed.length() == k);
+
 		typedef std::pair<Kmer, RollingHash> V;
 		Sequence seq;
-		seq.reserve(path.size());
-		assert(path.size() > 0);
-		Path<V>::const_iterator it = path.begin();
-		assert(it != path.end());
-		seq.append(it->first.str());
-		for (++it; it != path.end(); ++it)
-			seq.append(1, it->first.getLastBaseChar());
+		seq.resize(path.size() + k - 1, 'N');
+
+		for (size_t i = 0; i < path.size(); ++i) {
+			std::string kmer = path.at(i).first.str();
+			for (size_t j = 0; j < k; ++j) {
+				assert(spacedSeed.at(j) == '0' || spacedSeed.at(j) == '1');
+				if (spacedSeed.at(j) == '1') {
+					if (seq.at(i + j) != 'N' && seq.at(i + j) != kmer.at(j)) {
+						std::cerr
+							<< "warning: inconsistent DBG path detected "
+							"at position " << i + j << ": "
+							<< seq.substr(0, i + j)
+							<< " (orig base: '" << seq.at(i + j) << "'"
+							<< ", new base: '" << kmer.at(j) << "')"
+							<< std::endl;
+					}
+					seq.at(i + j) = kmer.at(j);
+				}
+			}
+		}
+
 		return seq;
 	}
 
@@ -275,9 +298,12 @@ namespace BloomDBG {
 	 *
 	 * @param seq the DNA sequence to be trimmed
 	 * @param goodKmerSet Bloom filter containing "good" k-mers
+	 * @param spacedSeed bitmap indicating positions to be ignored
+	 * when hashing k-mers
 	 */
 	template <typename BloomT>
-	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet)
+	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet,
+		const std::string& spacedSeed)
 	{
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
@@ -296,7 +322,7 @@ namespace BloomDBG {
 
 		/* note: RollingHashIterator skips over k-mer
 		 * positions with non-ACGT chars */
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			it != RollingHashIterator::end(); prevPos=it.pos(),++it) {
 			if (!goodKmerSet.contains(*it) ||
 				(prevPos != UNSET && it.pos() - prevPos > 1)) {
@@ -335,7 +361,8 @@ namespace BloomDBG {
 	 * contigs.
 	 */
 	template <typename BloomT>
-	void trimContig(Sequence& contig, const BloomT& assembledKmerSet)
+	void trimContig(Sequence& contig, const BloomT& assembledKmerSet,
+		const std::string& spacedSeed)
 	{
 		const unsigned k = assembledKmerSet.getKmerSize();
 		const unsigned numHashes = assembledKmerSet.getHashNum();
@@ -345,7 +372,7 @@ namespace BloomDBG {
 
 		assert(contig.length() >= k);
 		Sequence firstKmer = contig.substr(0, k);
-		hashes = RollingHash(firstKmer, numHashes, k).getHash();
+		hashes = RollingHash(firstKmer, numHashes, k, spacedSeed).getHash();
 		if (assembledKmerSet.contains(hashes)) {
 			if (contig.length() == k) {
 				contig.clear();
@@ -358,7 +385,7 @@ namespace BloomDBG {
 
 		assert(contig.length() >= k);
 		Sequence lastKmer = contig.substr(contig.length() - k);
-		hashes = RollingHash(lastKmer, numHashes, k).getHash();
+		hashes = RollingHash(lastKmer, numHashes, k, spacedSeed).getHash();
 		if (assembledKmerSet.contains(hashes)) {
 			if (contig.length() == k) {
 				contig.clear();
@@ -380,13 +407,16 @@ namespace BloomDBG {
 	 * @param genomeSize approx genome size
 	 * @param goodKmerSet Bloom filter containing k-mers that
 	 * occur more than once in the input data
+	 * @param spacedSeed bitmask indicating k-mer positions to ignore
+	 * during hashing
 	 * @param out output stream for contigs (FASTA)
 	 * @param verbose set to true to print progress messages to
 	 * STDERR
 	 */
 	template <typename BloomT>
 	inline static void assemble(int argc, char** argv, size_t genomeSize,
-		const BloomT& goodKmerSet, std::ostream& out, bool verbose=false)
+		const BloomT& goodKmerSet, const std::string& spacedSeed, std::ostream& out,
+		bool verbose=false)
 	{
 		/* FASTA ID for next output contig */
 		size_t contigID = 0;
@@ -431,17 +461,17 @@ namespace BloomDBG {
 				skip = true;
 
 			/* only extend error-free reads */
-			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
+			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet, spacedSeed))
 				skip = true;
 
 			/* skip reads in previously assembled regions */
-			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
+			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet, spacedSeed))
 				skip = true;
 
 			if (!skip) {
 
 				/* convert sequence to DBG path */
-				Path<V> path = seqToPath(rec.seq, k, numHashes);
+				Path<V> path = seqToPath(rec.seq, k, numHashes, spacedSeed);
 
 				/* split path at branching points to prevent over-assembly */
 				std::vector< Path<V> > paths =
@@ -449,7 +479,7 @@ namespace BloomDBG {
 
 				/*
 				 * Extend first and last paths only, since
-				 * other path components are already bounded by branching
+				 * internal path components are bounded by branching
 				 * points.
 				 */
 				extendPath(paths.front(), REVERSE, minBranchLen, graph);
@@ -458,22 +488,22 @@ namespace BloomDBG {
 				for(std::vector< Path<V> >::iterator it = paths.begin();
 					it != paths.end(); ++it) {
 					/* convert DBG path back to sequence */
-					Sequence seq = pathToSeq(*it);
+					Sequence seq = pathToSeq(*it, k, spacedSeed);
 					/*
 					 * check against assembledKmerSet again to prevent race
 					 * condition. (Otherwise, the same contig may be
 					 * generated multiple times.)
 					 */
 #pragma omp critical(out)
-					if (!allKmersInBloom(seq, assembledKmerSet)) {
+					if (!allKmersInBloom(seq, assembledKmerSet, spacedSeed)) {
 						/*
 						 * remove redundant branching k-mers at start/end
 						 * of contig
 						 */
-						trimContig(seq, assembledKmerSet);
+						trimContig(seq, assembledKmerSet, spacedSeed);
 						if (!seq.empty()) {
 							assert(seq.length() >= k);
-							addKmersToBloom(seq, assembledKmerSet);
+							addKmersToBloom(seq, assembledKmerSet, spacedSeed);
 							FastaRecord contig;
 							std::ostringstream id;
 							id << contigID++;
@@ -625,12 +655,15 @@ namespace BloomDBG {
 	 * @param argc number of input FASTA files
 	 * @param argv array of input FASTA filenames
 	 * @param kmerSet Bloom filter containing valid k-mers
+	 * @param spacedSeed bitmask indicating which k-mer positions
+	 * to ignore during hashing
 	 * @param out output stream for GraphViz serialization
 	 * @param verbose prints progress messages to STDERR if true
 	 */
 	template <typename BloomT>
 	static inline void outputGraph(int argc, char** argv,
-		const BloomT& kmerSet, std::ostream& out, bool verbose=false)
+		const BloomT& kmerSet, const std::string& spacedSeed,
+		std::ostream& out, bool verbose=false)
 	{
 		typedef RollingBloomDBG<BloomT> GraphT;
 		typedef std::pair<Kmer, RollingHash> V;
@@ -665,7 +698,7 @@ namespace BloomDBG {
 			Sequence& seq = rec.seq;
 
 			/* Trim down to longest subsequence of "good" k-mers */
-			trimSeq(seq, kmerSet);
+			trimSeq(seq, kmerSet, spacedSeed);
 			if (seq.length() > 0) {
 
 				/* BFS traversal in forward dir */

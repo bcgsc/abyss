@@ -61,6 +61,9 @@ static const char USAGE_MESSAGE[] =
 "                             for FASTQ and SAM files [default]\n"
 "      --illumina-quality     zero quality is `@' (64), typically\n"
 "                             for qseq and export files\n"
+"  -s, --spaced-seed=STR      bitmask indicating k-mer positions to be\n"
+"                             ignored during hashing [default is string\n"
+"                             of '1's]\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
 "\n"
@@ -98,9 +101,11 @@ namespace opt {
 	/** The size of a k-mer. */
 	static unsigned k;
 
+	/** Spaced seed */
+	static string spacedSeed;
 }
 
-static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:v";
+static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -121,6 +126,7 @@ static const struct option longopts[] = {
 	{ "mask-quality",     required_argument, NULL, 'Q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "spaced-seed",      no_argument, NULL, 's' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -156,6 +162,8 @@ int main(int argc, char** argv)
 			arg >> opt::k; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 's':
+			arg >> opt::spacedSeed; break;
 		  case 'Q':
 			arg >> opt::internalQThreshold; break;
 		  case 'v':
@@ -191,6 +199,19 @@ int main(int argc, char** argv)
 
 	if (opt::k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
+		die = true;
+	}
+
+	if (opt::spacedSeed.empty()) {
+		/* spaced seed defaults to all '1's */
+		opt::spacedSeed.reserve(opt::k);
+		for (size_t i = 0; i < opt::k; ++i)
+			opt::spacedSeed.push_back('1');
+	} else if (opt::spacedSeed.length() != opt::k) {
+		cerr << PROGRAM ": spaced seed must be exactly k bits long\n";
+		die = true;
+	} else if (opt::spacedSeed.find_first_not_of("01") != string::npos) {
+		cerr << PROGRAM ": spaced seed must contain only '0's or '1's\n";
 		die = true;
 	}
 
@@ -235,7 +256,8 @@ int main(int argc, char** argv)
 			optind = i + 1;
 			break;
 		}
-		BloomDBG::loadFile(cascadingBloom, argv[i], opt::verbose);
+		BloomDBG::loadFile(cascadingBloom, argv[i], opt::spacedSeed,
+			opt::verbose);
 	}
 	if (opt::verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
@@ -243,14 +265,15 @@ int main(int argc, char** argv)
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,
-			opt::genomeSize, cascadingBloom, cout, opt::verbose);
+		opt::genomeSize, cascadingBloom, opt::spacedSeed,
+		cout, opt::verbose);
 
 	/* generate de Bruijn graph in GraphViz format (optional) */
 	if (!opt::graphPath.empty()) {
 		ofstream graphOut(opt::graphPath.c_str());
 		assert_good(graphOut, opt::graphPath);
 		BloomDBG::outputGraph(argc - optind, argv + optind,
-			cascadingBloom, graphOut, opt::verbose);
+			cascadingBloom, opt::spacedSeed, graphOut, opt::verbose);
 		assert_good(graphOut, opt::graphPath);
 		graphOut.close();
 		assert_good(graphOut, opt::graphPath);
