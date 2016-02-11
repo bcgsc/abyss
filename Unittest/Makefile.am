@@ -168,6 +168,14 @@ PairedDBG_BranchRecord_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
 endif # PAIRED_DBG
 
+check_PROGRAMS += BloomDBG_BloomDBG
+BloomDBG_BloomDBG_SOURCES = BloomDBG/BloomDBGTest.cpp
+BloomDBG_BloomDBG_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
+BloomDBG_BloomDBG_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+BloomDBG_BloomDBG_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 check_PROGRAMS += BloomDBG_RollingHash
 BloomDBG_RollingHash_SOURCES = BloomDBG/RollingHashTest.cpp
 
