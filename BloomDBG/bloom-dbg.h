@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <limits>
 
 #if _OPENMP
 # include <omp.h>
@@ -55,11 +56,24 @@ namespace BloomDBG {
 		/** spaced seed */
 		string spacedSeed;
 
+		/** maximum length of branches to trim */
+		unsigned trim;
+
 		/** verbose level for progress messages */
 		int verbose;
 
+		/** Default constructor */
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(), genomeSize(0),
-			numHashes(1), threads(1), k(0), spacedSeed(), verbose(0) {}
+			numHashes(1), threads(1), k(0), spacedSeed(),
+			trim(std::numeric_limits<unsigned>::max()),
+			verbose(0) {}
+
+		/** Return true if all required members are initialized */
+		bool initialized() const {
+			return bloomSize > 0 && genomeSize > 0 && k > 0 &&
+				!spacedSeed.empty() &&
+				trim != std::numeric_limits<unsigned>::max();
+		}
 	};
 
 	/**
@@ -453,6 +467,8 @@ namespace BloomDBG {
 	inline static void assemble(int argc, char** argv, const BloomT& goodKmerSet,
 		const AssemblyParams& params, std::ostream& out)
 	{
+		assert(params.initialized());
+
 		/* FASTA ID for next output contig */
 		size_t contigID = 0;
 		/* print progress message after processing this many reads */
@@ -472,12 +488,7 @@ namespace BloomDBG {
 		/* vertex type for de Bruijn graph */
 		typedef std::pair<Kmer, RollingHash> V;
 
-		/*
-		 * calculate min length threshold for a "true branch"
-		 * (not due to Bloom filter false positives)
-		 */
-		const unsigned minBranchLen = k + 1;
-
+		unsigned minBranchLen = params.trim + 1;
 		if (params.verbose)
 			std::cerr << "Treating branches less than " << minBranchLen
 				<< " k-mers as Bloom filter false positives" << std::endl;
@@ -701,6 +712,8 @@ namespace BloomDBG {
 		const BloomT& kmerSet, const AssemblyParams& params,
 		std::ostream& out)
 	{
+		assert(params.initialized());
+
 		typedef RollingBloomDBG<BloomT> GraphT;
 		typedef std::pair<Kmer, RollingHash> V;
 
