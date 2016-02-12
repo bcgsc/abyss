@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <cstring>
+#include <limits>
 
 #if _OPENMP
 # include <omp.h>
@@ -64,6 +65,7 @@ static const char USAGE_MESSAGE[] =
 "  -s, --spaced-seed=STR      bitmask indicating k-mer positions to be\n"
 "                             ignored during hashing [default is string\n"
 "                             of '1's]\n"
+"  -t, --trim-length          max branch length to trim, in k-mers [k]\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
 "\n"
@@ -81,7 +83,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:s:v";
+static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -103,6 +105,7 @@ static const struct option longopts[] = {
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "spaced-seed",      no_argument, NULL, 's' },
+	{ "trim-length",      no_argument, NULL, 's' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -140,6 +143,8 @@ int main(int argc, char** argv)
 			arg >> opt::qualityThreshold; break;
 		  case 's':
 			arg >> params.spacedSeed; break;
+		  case 't':
+			arg >> params.trim; break;
 		  case 'Q':
 			arg >> opt::internalQThreshold; break;
 		  case 'v':
@@ -191,6 +196,10 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (params.trim == std::numeric_limits<unsigned>::max()) {
+		params.trim = params.k;
+	}
+
 	if (argc - optind < 1) {
 		cerr << PROGRAM ": missing input file arguments\n";
 		die = true;
@@ -201,6 +210,8 @@ int main(int argc, char** argv)
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
+
+	assert(params.initialized());
 
 #if _OPENMP
 	if (params.threads > 0)
