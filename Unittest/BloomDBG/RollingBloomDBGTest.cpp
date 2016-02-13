@@ -140,3 +140,89 @@ TEST_F(RollingBloomDBGTest, in_edges)
 	ei++;
 	ASSERT_EQ(ei_end, ei);
 }
+
+/** Test fixture for RollingBloomDBG with spaced seed k-mers. */
+class RollingBloomDBGSpacedSeedTest : public ::testing::Test
+{
+protected:
+
+	const unsigned m_k;
+	const unsigned m_bloomSize;
+	const unsigned m_bloomHashes;
+	BloomFilter m_bloom;
+	Graph m_graph;
+	const std::string m_spacedSeed;
+
+	RollingBloomDBGSpacedSeedTest() : m_k(5), m_bloomSize(100000), m_bloomHashes(2),
+		m_bloom(m_bloomSize, m_bloomHashes, m_k), m_graph(m_bloom),
+		m_spacedSeed("11011")
+	{
+		Kmer::setLength(m_k);
+
+		/*
+		 * Test de Bruijn graph:
+		 *
+		 *  CGACT       ACTCT
+		 *       \     /
+		 *        GACTC
+		 *       /     \
+		 *  TGACT       ACTCG
+		 *
+		 * Masked version:
+		 *
+		 *  CG_CT       AC_CT
+		 *       \     /
+		 *        GA_TC
+		 *       /     \
+		 *  TG_CT       AC_CG
+		 *
+		 * Note: With respect to the spaced seed "11011",
+		 * GACTC is equivalent to its own reverse complement
+		 * GAGTC.  However, this does not result in
+		 * any additional edges in the graph.
+		 */
+
+		m_bloom.insert(RollingHash("CGACT", m_bloomHashes,
+			m_k, m_spacedSeed).getHash());
+		m_bloom.insert(RollingHash("TGACT", m_bloomHashes,
+			m_k, m_spacedSeed).getHash());
+		m_bloom.insert(RollingHash("GACTC", m_bloomHashes,
+			m_k, m_spacedSeed).getHash());
+		m_bloom.insert(RollingHash("ACTCT", m_bloomHashes,
+			m_k, m_spacedSeed).getHash());
+		m_bloom.insert(RollingHash("ACTCG", m_bloomHashes,
+			m_k, m_spacedSeed).getHash());
+	}
+
+};
+
+TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
+{
+	/* TEST: check that "GACTC" has the expected outgoing edges */
+
+	const V GACTC(Kmer("GACTC"),
+		RollingHash("GACTC", m_bloomHashes, m_k, m_spacedSeed));
+	const V ACTCT(Kmer("ACTCT"),
+		RollingHash("ACTCT", m_bloomHashes, m_k, m_spacedSeed));
+	const V ACTCG(Kmer("ACTCG"),
+		RollingHash("ACTCG", m_bloomHashes, m_k, m_spacedSeed));
+
+	unordered_set<V> expectedNeighbours;
+	expectedNeighbours.insert(ACTCT);
+	expectedNeighbours.insert(ACTCG);
+
+	ASSERT_EQ(2u, out_degree(GACTC, m_graph));
+	GraphTraits::out_edge_iterator ei, ei_end;
+	boost::tie(ei, ei_end) = out_edges(GACTC, m_graph);
+	ASSERT_NE(ei_end, ei);
+	unordered_set<V>::iterator neighbour =
+		expectedNeighbours.find(target(*ei, m_graph));
+	EXPECT_NE(expectedNeighbours.end(), neighbour);
+	expectedNeighbours.erase(neighbour);
+	ei++;
+	ASSERT_NE(ei_end, ei);
+	neighbour = expectedNeighbours.find(target(*ei, m_graph));
+	ASSERT_NE(expectedNeighbours.end(), neighbour);
+	ei++;
+	ASSERT_EQ(ei_end, ei);
+}
