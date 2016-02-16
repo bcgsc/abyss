@@ -248,7 +248,9 @@ public:
 	{
 		assert(m_k >= 2);
 		std::rotate(m_kmer.begin(), m_kmer.begin() + 1, m_kmer.end());
+		std::rotate(m_unmaskedKmer.begin(), m_unmaskedKmer.begin() + 1, m_unmaskedKmer.end());
 		m_kmer.at(m_k - 1) = charIn;
+		m_unmaskedKmer.at(m_k - 1) = charIn;
 		resetMasked();
 	}
 
@@ -299,7 +301,9 @@ public:
 	{
 		assert(m_k >= 2);
 		std::rotate(m_kmer.rbegin(), m_kmer.rbegin() + 1, m_kmer.rend());
+		std::rotate(m_unmaskedKmer.rbegin(), m_unmaskedKmer.rbegin() + 1, m_unmaskedKmer.rend());
 		m_kmer.at(0) = charIn;
+		m_unmaskedKmer.at(0) = charIn;
 		resetMasked();
 	}
 

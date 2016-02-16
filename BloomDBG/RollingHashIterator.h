@@ -204,9 +204,17 @@ public:
 	}
 
 	/** return k-mer at current position */
-	std::string kmer() const
+	std::string kmer(bool mask=false) const
 	{
-		return std::string(m_seq, m_pos, m_k);
+		std::string kmer(m_seq, m_pos, m_k);
+		if (mask) {
+			assert(m_spacedSeed.length() == m_k);
+			for(size_t i = 0; i < m_spacedSeed.length(); ++i) {
+				if (m_spacedSeed.at(i) == '0')
+					kmer.at(i) = 'N';
+			}
+		}
+		return kmer;
 	}
 
 	/** return RollingHash object for current state */
