@@ -353,10 +353,13 @@ Parameters of the driver script, `abyss-pe`
 
  * `a`: maximum number of branches of a bubble [`2`]
  * `b`: maximum length of a bubble (bp) [`""`]
+ * `B`: Bloom filter size (e.g. "100M")
  * `c`: minimum mean k-mer coverage of a unitig [`sqrt(median)`]
  * `d`: allowable error of a distance estimate (bp) [`6`]
  * `e`: minimum erosion k-mer coverage [`round(sqrt(median))`]
  * `E`: minimum erosion k-mer coverage per strand [1 if sqrt(median) > 2 else 0]
+ * `G`: genome size (e.g. "5M")
+ * `H`: number of Bloom filter hash functions [1]
  * `j`: number of threads [`2`]
  * `k`: size of k-mer (when `K` is not set) or the span of a k-mer pair (when `K` is set)
  * `K`: the length of a single k-mer in a k-mer pair (bp)
@@ -370,6 +373,7 @@ Parameters of the driver script, `abyss-pe`
  * `S`: minimum contig size required for building scaffolds (bp) [`s`]
  * `t`: maximum length of blunt contigs to trim [`k`]
  * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose [`disabled`]
+ * `x`: spaced seed (Bloom filter assembly only)
 
 Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)

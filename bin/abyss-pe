@@ -84,20 +84,6 @@ ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
-# Params for Bloom filter based assembly (abyss-bloom-dbg)
-# B is Bloom filter size (e.g. "100M")
-ifdef B
-# number of Bloom filter hash functions
-H?=1
-# minimum k-mer coverage
-c?=2
-# genome size (e.g. "5M")
-ifndef G
-error::
-	@>&2 echo 'abyss-pe: missing parameter `G`'
-endif
-endif
-
 # Determine the path to the ABySS executables
 path?=$(shell dirname `which $(MAKEFILE_LIST)`)
 ifdef path
@@ -143,6 +129,18 @@ graph?=dot
 # g is private. Use graph instead.
 override g:=$(graph)
 
+# Number of threads
+ifdef PE_HOSTFILE
+hostname?=$(shell hostname -f)
+j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
+endif
+ifeq ($j,)
+j:=$(np)
+endif
+ifeq ($j,)
+j:=2
+endif
+
 # ABYSS parameters
 q ?= 3
 abyssopt += -k$k -q$q
@@ -171,18 +169,24 @@ endif
 ifdef ss
 SS=--SS
 endif
-abyssopt += $v $(dbopt) $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
+abyssopt += $v
 
-# Number of threads
-ifdef PE_HOSTFILE
-hostname?=$(shell hostname -f)
-j?=$(shell awk '$$1 == "$(hostname)" {print $$2}' $(PE_HOSTFILE))
+# additional params for Bloom filter assembly (`abyss-bloom-dbg`)
+ifdef B
+abyssopt += -b$B
+ifdef j
+abyssopt += -j$j
 endif
-ifeq ($j,)
-j:=$(np)
+ifndef G
+error::
+	@>&2 echo 'abyss-pe: missing parameter `G`'
 endif
-ifeq ($j,)
-j:=2
+abyssopt += -G$G
+ifdef x
+abyssopt += -s$x
+endif
+else
+abyssopt += $(dbopt) $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 endif
 
 # AdjList parameters
@@ -478,7 +482,7 @@ endif
 
 else ifdef B
 %-1.fa:
-	abyss-bloom-dbg $v -j$j -c$c -k$k -b$B -G$G -H$H -q$q $(in) $(se) > $@
+	abyss-bloom-dbg $(abyssopt) $(ABYSS_OPTIONS) $(in) $(se) > $@
 else ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
