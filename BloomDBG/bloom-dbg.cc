@@ -2,7 +2,7 @@
 
 #include "BloomDBG/bloom-dbg.h"
 #include "BloomDBG/HashAgnosticCascadingBloom.h"
-#include "Common/Kmer.h"
+#include "BloomDBG/MaskedKmer.h"
 #include "Common/StringUtil.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
 #endif
 
 	/* set global variable for k-mer length */
-	Kmer::setLength(params.k);
+	MaskedKmer::setLength(params.k);
 
 	/* BloomFilter class requires size to be a multiple of 64 */
 	const size_t bitsPerByte = 8;

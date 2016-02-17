@@ -40,10 +40,6 @@ private:
 	void maskKmer()
 	{
 		assert(m_kmerMask.length() == m_k);
-		/*
-		 * note: dynamic_bitset stores the bits in reverse order relative
-		 * to the string representation (e.g. "1101" is stored as "1011")
-		 */
 		for(size_t i = 0; i < m_kmerMask.length(); ++i) {
 			if (m_kmerMask.at(i) == '0')
 				m_kmer.at(i) = 'X';

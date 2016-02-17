@@ -8,7 +8,7 @@
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
 #include "Graph/BreadthFirstSearch.h"
-#include "Common/Kmer.h"
+#include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingBloomDBG.h"
 #include "Common/UnorderedSet.h"
@@ -26,6 +26,11 @@
 #endif
 
 namespace BloomDBG {
+
+	/**
+	 * Type for a vertex in the de Bruijn graph.
+	 */
+	typedef std::pair<MaskedKmer, RollingHash> Vertex;
 
 	/**
 	 * Parameters controlling assembly.
@@ -205,17 +210,16 @@ namespace BloomDBG {
 	 * Translate a DNA sequence to an equivalent path in the
 	 * de Bruijn graph.
 	 */
-	inline static Path< std::pair<Kmer, RollingHash> >
+	inline static Path<Vertex>
 	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes,
 		const std::string spacedSeed)
 	{
-		typedef std::pair<Kmer, RollingHash> V;
-		Path<V> path;
+		Path<Vertex> path;
 		assert(seq.length() >= k);
 		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
 			 it != RollingHashIterator::end(); ++it) {
-			Kmer kmer(it.kmer());
-			path.push_back(V(kmer, it.rollingHash()));
+			MaskedKmer kmer(it.kmer(), spacedSeed);
+			path.push_back(Vertex(kmer, it.rollingHash()));
 		}
 		return path;
 	}
@@ -224,15 +228,13 @@ namespace BloomDBG {
 	 * Translate a path in the de Bruijn graph to an equivalent
 	 * DNA sequence.
 	 */
-	inline static Sequence pathToSeq(
-		const Path< std::pair<Kmer, RollingHash> >& path, unsigned k,
+	inline static Sequence pathToSeq(const Path<Vertex>& path, unsigned k,
 		const std::string& spacedSeed)
 	{
 		assert(path.size() > 0);
 		assert(k > 0);
 		assert(spacedSeed.length() == k);
 
-		typedef std::pair<Kmer, RollingHash> V;
 		Sequence seq;
 		seq.resize(path.size() + k - 1, 'N');
 
@@ -485,8 +487,6 @@ namespace BloomDBG {
 
 		/* Boost graph API over Bloom filter */
 		RollingBloomDBG<BloomT> graph(goodKmerSet);
-		/* vertex type for de Bruijn graph */
-		typedef std::pair<Kmer, RollingHash> V;
 
 		unsigned minBranchLen = params.trim + 1;
 		if (params.verbose)
@@ -517,11 +517,13 @@ namespace BloomDBG {
 
 			if (!skip) {
 
+				std::cerr << "Extending read: " << rec.id << std::endl;
+
 				/* convert sequence to DBG path */
-				Path<V> path = seqToPath(rec.seq, k, numHashes, spacedSeed);
+				Path<Vertex> path = seqToPath(rec.seq, k, numHashes, spacedSeed);
 
 				/* split path at branching points to prevent over-assembly */
-				std::vector< Path<V> > paths =
+				std::vector< Path<Vertex> > paths =
 					splitPath(path, graph, minBranchLen);
 
 				/*
@@ -532,7 +534,7 @@ namespace BloomDBG {
 				extendPath(paths.front(), REVERSE, minBranchLen, graph);
 				extendPath(paths.back(), FORWARD, minBranchLen, graph);
 
-				for(std::vector< Path<V> >::iterator it = paths.begin();
+				for(std::vector< Path<Vertex> >::iterator it = paths.begin();
 					it != paths.end(); ++it) {
 					/* convert DBG path back to sequence */
 					Sequence seq = pathToSeq(*it, k, spacedSeed);
@@ -715,12 +717,12 @@ namespace BloomDBG {
 		assert(params.initialized());
 
 		typedef RollingBloomDBG<BloomT> GraphT;
-		typedef std::pair<Kmer, RollingHash> V;
 
 		/* interval for progress messages */
 		const unsigned progressStep = 1000;
 		const unsigned k = kmerSet.getKmerSize();
 		const unsigned numHashes = kmerSet.getHashNum();
+		const std::string& spacedSeed = params.spacedSeed;
 
 		/* counter for progress messages */
 		size_t readsProcessed = 0;
@@ -751,14 +753,14 @@ namespace BloomDBG {
 			if (seq.length() > 0) {
 
 				/* BFS traversal in forward dir */
-				V start(Kmer(seq.substr(0, k)),
-					RollingHash(seq.substr(0, k), numHashes, k));
+				Vertex start(MaskedKmer(seq.substr(0, k), spacedSeed),
+					RollingHash(seq.substr(0, k), numHashes, k, spacedSeed));
 				breadthFirstSearch(dbg, start, visitor, colorMap);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
-				V rcStart(Kmer(rcSeq.substr(0, k)),
-					RollingHash(rcSeq.substr(0, k), numHashes, k));
+				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k), spacedSeed),
+					RollingHash(rcSeq.substr(0, k), numHashes, k, spacedSeed));
 				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
 
 			}
