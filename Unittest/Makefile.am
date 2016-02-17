@@ -197,4 +197,10 @@ BloomDBG_RollingBloomDBG_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(LDADD)
 
+check_PROGRAMS += BloomDBG_MaskedKmer
+BloomDBG_MaskedKmer_SOURCES = BloomDBG/MaskedKmerTest.cpp
+BloomDBG_MaskedKmer_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 TESTS = $(check_PROGRAMS)

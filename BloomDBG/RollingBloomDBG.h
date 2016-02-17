@@ -8,7 +8,7 @@
 
 #include "Assembly/SeqExt.h" // for NUM_BASES
 #include "Common/Hash.h"
-#include "Common/Kmer.h"
+#include "BloomDBG/MaskedKmer.h"
 #include "Graph/Properties.h"
 #include "BloomDBG/RollingHash.h"
 #include "lib/bloomfilter-2dfba08d120d7659e8c75cf5c501b3b9040e98cb/BloomFilter.hpp"
@@ -25,12 +25,12 @@
 using boost::graph_traits;
 
 NAMESPACE_STD_HASH_BEGIN
-template <> struct hash< std::pair<Kmer, RollingHash> > {
+template <> struct hash< std::pair<MaskedKmer, RollingHash> > {
 	/**
-	* Hash function for graph vertex type (vertex_descriptor),
-	* which is std::pair<Kmer, RollingHash>.
-	*/
-	size_t operator()(const std::pair<Kmer,RollingHash>& vertex) const
+	 * Hash function for graph vertex type (vertex_descriptor),
+	 * which is std::pair<MaskedKmer, RollingHash>.
+	 */
+	size_t operator()(const std::pair<MaskedKmer, RollingHash>& vertex) const
 	{
 		return vertex.second.getHash().at(0);
 	}
@@ -73,7 +73,7 @@ struct graph_traits< RollingBloomDBG<BF> > {
 	 * The second member of the pair (std::vector<size_t>) is
 	 * a set of hash values associated with the k-mer.
 	 */
-	typedef std::pair<Kmer, RollingHash> vertex_descriptor;
+	typedef std::pair<MaskedKmer, RollingHash> vertex_descriptor;
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
 		: boost::adjacency_graph_tag,
@@ -84,7 +84,7 @@ struct graph_traits< RollingBloomDBG<BF> > {
 
 	static vertex_descriptor null_vertex()
 	{
-		return vertex_descriptor(Kmer(), std::vector<size_t>());
+		return vertex_descriptor(MaskedKmer(), std::vector<size_t>());
 	}
 
 	// IncidenceGraph
@@ -109,17 +109,12 @@ struct adjacency_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		const Kmer& uKmer = m_u.first;
-		Kmer& vKmer = m_v.first;
-		const RollingHash& uHash = m_u.second;
-		RollingHash& vHash = m_v.second;
-
 		for (; m_i < NUM_BASES; ++m_i) {
-			vKmer.setLastBase(SENSE, m_i);
-			vHash = uHash;
-			vHash.rollRight(
-				uKmer.getFirstBaseChar(),
-				vKmer.getLastBaseChar());
+			m_v.first.setLastBase(SENSE, m_i);
+			m_v.second = m_u.second;
+			m_v.second.rollRight(
+				m_u.first.getFirstBaseChar(),
+				m_v.first.getLastBaseChar());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -134,8 +129,7 @@ struct adjacency_iterator
 	adjacency_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
-		Kmer& vKmer = m_v.first;
-		vKmer.shift(SENSE);
+		m_v.first.shift(SENSE);
 		next();
 	}
 
@@ -184,17 +178,12 @@ struct out_edge_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		const Kmer& uKmer = m_u.first;
-		Kmer& vKmer = m_v.first;
-		const RollingHash& uHash = m_u.second;
-		RollingHash& vHash = m_v.second;
-
 		for (; m_i < NUM_BASES; ++m_i) {
-			vKmer.setLastBase(SENSE, m_i);
-			vHash = uHash;
-			vHash.rollRight(
-				uKmer.getFirstBaseChar(),
-				vKmer.getLastBaseChar());
+			m_v.first.setLastBase(SENSE, m_i);
+			m_v.second = m_u.second;
+			m_v.second.rollRight(
+				m_u.first.getFirstBaseChar(),
+				m_v.first.getLastBaseChar());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -208,8 +197,7 @@ struct out_edge_iterator
 	out_edge_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
-		Kmer& vKmer = m_v.first;
-		vKmer.shift(SENSE);
+		m_v.first.shift(SENSE);
 		next();
 	}
 
@@ -258,17 +246,12 @@ struct in_edge_iterator
 	/** Skip to the next edge that is present. */
 	void next()
 	{
-		const Kmer& uKmer = m_u.first;
-		Kmer& vKmer = m_v.first;
-		const RollingHash& uHash = m_u.second;
-		RollingHash& vHash = m_v.second;
-
 		for (; m_i < NUM_BASES; ++m_i) {
-			vKmer.setLastBase(ANTISENSE, m_i);
-			vHash = uHash;
-			vHash.rollLeft(
-				vKmer.getFirstBaseChar(),
-				uKmer.getLastBaseChar());
+			m_v.first.setLastBase(ANTISENSE, m_i);
+			m_v.second = m_u.second;
+			m_v.second.rollLeft(
+				m_v.first.getFirstBaseChar(),
+				m_u.first.getLastBaseChar());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -282,8 +265,7 @@ struct in_edge_iterator
 	in_edge_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
-		Kmer& vKmer = m_v.first;
-		vKmer.shift(ANTISENSE);
+		m_v.first.shift(ANTISENSE);
 		next();
 	}
 
@@ -416,7 +398,7 @@ get(vertex_complement_t, const Graph&,
 /** Return the name of the specified vertex. */
 template <typename Graph>
 static inline
-Kmer get(vertex_name_t, const Graph&,
+MaskedKmer get(vertex_name_t, const Graph&,
 		typename graph_traits<Graph>::vertex_descriptor u)
 {
 	return u.first;

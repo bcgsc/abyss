@@ -13,7 +13,7 @@ typedef RollingBloomDBG<BloomFilter> Graph;
 typedef graph_traits<Graph> GraphTraits;
 
 /* each vertex is represented by
- * std::pair<Kmer, vector<size_t>>, where 'string' is the
+ * std::pair<MaskedKmer, vector<size_t>>, where 'string' is the
  * k-mer and 'vector<size_t>' is the associated set of
  * hash values */
 typedef graph_traits<Graph>::vertex_descriptor V;
@@ -32,7 +32,7 @@ protected:
 	RollingBloomDBGTest() : m_k(5), m_bloomSize(100000), m_bloomHashes(2),
 		m_bloom(m_bloomSize, m_bloomHashes, m_k), m_graph(m_bloom)
 	{
-		Kmer::setLength(m_k);
+		MaskedKmer::setLength(m_k);
 
 		/*
 		 * Test de Bruijn graph:
@@ -61,9 +61,9 @@ TEST_F(RollingBloomDBGTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(Kmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
-	const V ACTCT(Kmer("ACTCT"), RollingHash("ACTCT", m_bloomHashes, m_k));
-	const V ACTCG(Kmer("ACTCG"), RollingHash("ACTCG", m_bloomHashes, m_k));
+	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
+	const V ACTCT(MaskedKmer("ACTCT"), RollingHash("ACTCT", m_bloomHashes, m_k));
+	const V ACTCG(MaskedKmer("ACTCG"), RollingHash("ACTCG", m_bloomHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -89,9 +89,9 @@ TEST_F(RollingBloomDBGTest, adjacency_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(Kmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
-	const V ACTCT(Kmer("ACTCT"), RollingHash("ACTCT", m_bloomHashes, m_k));
-	const V ACTCG(Kmer("ACTCG"), RollingHash("ACTCG", m_bloomHashes, m_k));
+	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
+	const V ACTCT(MaskedKmer("ACTCT"), RollingHash("ACTCT", m_bloomHashes, m_k));
+	const V ACTCG(MaskedKmer("ACTCG"), RollingHash("ACTCG", m_bloomHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -117,9 +117,9 @@ TEST_F(RollingBloomDBGTest, in_edges)
 {
 	/* TEST: check that "GACTC" has the expected ingoing edges */
 
-	const V GACTC(Kmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
-	const V CGACT(Kmer("CGACT"), RollingHash("CGACT", m_bloomHashes, m_k));
-	const V TGACT(Kmer("TGACT"), RollingHash("TGACT", m_bloomHashes, m_k));
+	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_bloomHashes, m_k));
+	const V CGACT(MaskedKmer("CGACT"), RollingHash("CGACT", m_bloomHashes, m_k));
+	const V TGACT(MaskedKmer("TGACT"), RollingHash("TGACT", m_bloomHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(CGACT);
@@ -157,7 +157,7 @@ protected:
 		m_bloom(m_bloomSize, m_bloomHashes, m_k), m_graph(m_bloom),
 		m_spacedSeed("11011")
 	{
-		Kmer::setLength(m_k);
+		MaskedKmer::setLength(m_k);
 
 		/*
 		 * Test de Bruijn graph:
@@ -200,11 +200,11 @@ TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(Kmer("GACTC"),
+	const V GACTC(MaskedKmer("GACTC", m_spacedSeed),
 		RollingHash("GACTC", m_bloomHashes, m_k, m_spacedSeed));
-	const V ACTCT(Kmer("ACTCT"),
+	const V ACTCT(MaskedKmer("ACTCT", m_spacedSeed),
 		RollingHash("ACTCT", m_bloomHashes, m_k, m_spacedSeed));
-	const V ACTCG(Kmer("ACTCG"),
+	const V ACTCG(MaskedKmer("ACTCG", m_spacedSeed),
 		RollingHash("ACTCG", m_bloomHashes, m_k, m_spacedSeed));
 
 	unordered_set<V> expectedNeighbours;
