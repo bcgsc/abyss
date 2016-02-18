@@ -517,6 +517,7 @@ namespace BloomDBG {
 
 			if (!skip) {
 
+#pragma omp critical(cerr)
 				std::cerr << "Extending read: " << rec.id << std::endl;
 
 				/* convert sequence to DBG path */
