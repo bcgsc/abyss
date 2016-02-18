@@ -182,6 +182,9 @@ error::
 	@>&2 echo 'abyss-pe: missing parameter `G`'
 endif
 abyssopt += -G$G
+ifdef H
+abyssopt += -H$H
+endif
 ifdef x
 abyssopt += -s$x
 endif
