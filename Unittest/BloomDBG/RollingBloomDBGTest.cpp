@@ -158,6 +158,7 @@ protected:
 		m_spacedSeed("11011")
 	{
 		MaskedKmer::setLength(m_k);
+		MaskedKmer::setMask(m_spacedSeed);
 
 		/*
 		 * Test de Bruijn graph:
@@ -200,11 +201,11 @@ TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(MaskedKmer("GACTC", m_spacedSeed),
+	const V GACTC(MaskedKmer("GACTC"),
 		RollingHash("GACTC", m_bloomHashes, m_k, m_spacedSeed));
-	const V ACTCT(MaskedKmer("ACTCT", m_spacedSeed),
+	const V ACTCT(MaskedKmer("ACTCT"),
 		RollingHash("ACTCT", m_bloomHashes, m_k, m_spacedSeed));
-	const V ACTCG(MaskedKmer("ACTCG", m_spacedSeed),
+	const V ACTCG(MaskedKmer("ACTCG"),
 		RollingHash("ACTCG", m_bloomHashes, m_k, m_spacedSeed));
 
 	unordered_set<V> expectedNeighbours;

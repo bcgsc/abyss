@@ -5,11 +5,12 @@
 #include "Common/Hash.h"
 #include "Common/Sequence.h"
 #include <iostream>
+#include <string>
+#include <cstdlib>
 
 class MaskedKmer : public Kmer
 {
 public:
-	friend class Kmer;
 
 	/** Default constructor */
 	MaskedKmer() : Kmer() {}
@@ -18,26 +19,45 @@ public:
 	 * Constructor.
 	 * @param seq k-mer sequence
 	 */
-	explicit MaskedKmer(const Sequence& seq) : Kmer(seq)
+	explicit MaskedKmer(const Sequence& seq) : Kmer(seq) {}
+
+	/** Set global k-mer mask (a.k.a. spaced seed) */
+	static void setMask(const std::string& kmerMask)
 	{
-		std::string kmerMask(length(), '1');
-		initKmerMask(kmerMask);
+		/* setLength() must be called before setMask() */
+		assert(length() > 0);
+
+		/* set global bitmask */
+		mask() = kmerMask;
+
+		/* empty mask is equivalent to string of '1's */
+		if (kmerMask.empty())
+			return;
+
+		/* check for valid spaced seed pattern */
+		if (mask().length() != length()) {
+			std::cerr << "error: spaced seed must be exactly k bits long\n";
+			exit(EXIT_FAILURE);
+		} else if (mask().find_first_not_of("01") != std::string::npos) {
+			std::cerr << "error: spaced seed must contain only '0's or '1's\n";
+			exit(EXIT_FAILURE);
+		} else if (*mask().begin() != '1' || *mask().rbegin() != '1') {
+			std::cerr << "error: spaced seed must begin and end with '1's\n";
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	/**
-	 * Constructor.
-	 * @param seq k-mer sequence
-	 * @param kmerMask bitmask of "don't care" positions
-	 */
-	MaskedKmer(const Sequence& seq, const std::string& kmerMask) : Kmer(seq)
+	/** Get global k-mer mask */
+	static std::string& mask()
 	{
-		initKmerMask(kmerMask);
+		static std::string s_kmerMask;
+		return s_kmerMask;
 	}
 
 	/** Compare this k-mer to another */
 	int compare(const Kmer& other) const
 	{
-		if (m_nonTrivialMask) {
+		if (!mask().empty()) {
 			Kmer kmer1(*this), kmer2(other);
 			maskKmer(kmer1);
 			maskKmer(kmer2);
@@ -64,39 +84,38 @@ public:
 		return compare(other) < 0;
 	}
 
-protected:
-
-	/** Initialize variables related to masking of "don't care" positions */
-	void initKmerMask(const std::string& kmerMask)
-	{
-		/* check that mask has length k */
-		assert(kmerMask.length() == length());
-		m_kmerMask = kmerMask;
-
-		/* use more efficient unmasked operations if k-mer mask is all "1"s */
-		m_nonTrivialMask = false;
-		for (size_t i = 0; i < m_kmerMask.length(); ++i) {
-			if (m_kmerMask.at(i) == '0') {
-				m_nonTrivialMask = true;
-				break;
-			}
-		}
-	}
-
 	/** Mask out don't care positions by changing them to 'A' */
-	void maskKmer(Kmer& kmer) const
+	static void maskKmer(Kmer& kmer)
 	{
-		assert(m_kmerMask.length() == length());
-		for(size_t i = 0; i < m_kmerMask.length(); ++i) {
-			if (m_kmerMask.at(i) == '0')
+		if (mask().empty())
+			return;
+
+		assert(mask().length() == length());
+		for(size_t i = 0; i < mask().length(); ++i) {
+			if (mask().at(i) == '0')
 				kmer.set(i, baseToCode('A'));
 		}
 	}
-
-	/* true if kmerMask contains one or more '0's */
-	bool m_nonTrivialMask;
-	/* bitmask indicating "don't care" positions */
-	std::string m_kmerMask;
 };
+
+/** Return the reverse complement of the specified k-mer. */
+static inline MaskedKmer reverseComplement(const MaskedKmer& seq)
+{
+	MaskedKmer rc(seq);
+	rc.reverseComplement();
+	return rc;
+}
+
+/** Define default hash function for use with STL containers */
+NAMESPACE_STD_HASH_BEGIN
+template <> struct hash<MaskedKmer> {
+	size_t operator()(const MaskedKmer& kmer) const
+	{
+		MaskedKmer kmerCopy(kmer);
+		MaskedKmer::maskKmer(kmerCopy);
+		return kmerCopy.getHashCode();
+	}
+};
+NAMESPACE_STD_HASH_END
 
 #endif

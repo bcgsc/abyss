@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <cstring>
 #include <limits>
+#include <string>
 
 #if _OPENMP
 # include <omp.h>
@@ -183,19 +184,6 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (params.spacedSeed.empty()) {
-		/* spaced seed defaults to all '1's */
-		params.spacedSeed.reserve(params.k);
-		for (size_t i = 0; i < params.k; ++i)
-			params.spacedSeed.push_back('1');
-	} else if (params.spacedSeed.length() != params.k) {
-		cerr << PROGRAM ": spaced seed must be exactly k bits long\n";
-		die = true;
-	} else if (params.spacedSeed.find_first_not_of("01") != string::npos) {
-		cerr << PROGRAM ": spaced seed must contain only '0's or '1's\n";
-		die = true;
-	}
-
 	if (params.trim == std::numeric_limits<unsigned>::max()) {
 		params.trim = params.k;
 	}
@@ -220,6 +208,8 @@ int main(int argc, char** argv)
 
 	/* set global variable for k-mer length */
 	MaskedKmer::setLength(params.k);
+	/* set global variable for spaced seed */
+	MaskedKmer::setMask(params.spacedSeed);
 
 	/* BloomFilter class requires size to be a multiple of 64 */
 	const size_t bitsPerByte = 8;
@@ -243,8 +233,7 @@ int main(int argc, char** argv)
 			optind = i + 1;
 			break;
 		}
-		BloomDBG::loadFile(cascadingBloom, argv[i], params.spacedSeed,
-			params.verbose);
+		BloomDBG::loadFile(cascadingBloom, argv[i], params.verbose);
 	}
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)

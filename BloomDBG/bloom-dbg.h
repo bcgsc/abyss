@@ -20,6 +20,7 @@
 #include <sstream>
 #include <iomanip>
 #include <limits>
+#include <string>
 
 #if _OPENMP
 # include <omp.h>
@@ -76,7 +77,6 @@ namespace BloomDBG {
 		/** Return true if all required members are initialized */
 		bool initialized() const {
 			return bloomSize > 0 && genomeSize > 0 && k > 0 &&
-				!spacedSeed.empty() &&
 				trim != std::numeric_limits<unsigned>::max();
 		}
 	};
@@ -102,12 +102,11 @@ namespace BloomDBG {
 	 * @param seq DNA sequence
 	 */
 	template <typename BF>
-	inline static void loadSeq(BF& bloom, const std::string& seq,
-		const std::string& spacedSeed)
+	inline static void loadSeq(BF& bloom, const std::string& seq)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
+		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
 			it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -122,7 +121,7 @@ namespace BloomDBG {
 	 */
 	template <typename BF>
 	inline static void loadFile(BF& bloom, const std::string& path,
-		const std::string& spacedSeed, bool verbose = false)
+		bool verbose = false)
 	{
 		const size_t BUFFER_SIZE = 100000;
 		const size_t LOAD_PROGRESS_STEP = 10000;
@@ -150,7 +149,7 @@ namespace BloomDBG {
 			if (buffer.size() == 0)
 				break;
 			for (size_t j = 0; j < buffer.size(); j++) {
-				loadSeq(bloom, buffer.at(j), spacedSeed);
+				loadSeq(bloom, buffer.at(j));
 				if (verbose)
 #pragma omp critical(cerr)
 				{
@@ -173,14 +172,13 @@ namespace BloomDBG {
 	 * and false otherwise.
 	 */
 	template <typename BloomT>
-	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom,
-		const std::string& spacedSeed)
+	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
 		assert(seq.length() >= k);
 		unsigned validKmers = 0;
-		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
+		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
 			 it != RollingHashIterator::end(); ++it, ++validKmers) {
 			if (!bloom.contains(*it))
 				return false;
@@ -195,12 +193,11 @@ namespace BloomDBG {
 	 * Add all k-mers of a DNA sequence to a Bloom filter.
 	 */
 	template <typename BloomT>
-	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom,
-		const std::string& spacedSeed)
+	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom)
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
+		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
 			 it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -211,14 +208,13 @@ namespace BloomDBG {
 	 * de Bruijn graph.
 	 */
 	inline static Path<Vertex>
-	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes,
-		const std::string spacedSeed)
+	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes)
 	{
 		Path<Vertex> path;
 		assert(seq.length() >= k);
-		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
+		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
 			 it != RollingHashIterator::end(); ++it) {
-			MaskedKmer kmer(it.kmer(), spacedSeed);
+			MaskedKmer kmer(it.kmer());
 			path.push_back(Vertex(kmer, it.rollingHash()));
 		}
 		return path;
@@ -228,21 +224,20 @@ namespace BloomDBG {
 	 * Translate a path in the de Bruijn graph to an equivalent
 	 * DNA sequence.
 	 */
-	inline static Sequence pathToSeq(const Path<Vertex>& path, unsigned k,
-		const std::string& spacedSeed)
+	inline static Sequence pathToSeq(const Path<Vertex>& path, unsigned k)
 	{
 		assert(path.size() > 0);
 		assert(k > 0);
-		assert(spacedSeed.length() == k);
 
+		const std::string& spacedSeed = MaskedKmer::mask();
+		assert(spacedSeed.empty() || spacedSeed.length() == k);
 		Sequence seq;
 		seq.resize(path.size() + k - 1, 'N');
 
 		for (size_t i = 0; i < path.size(); ++i) {
 			std::string kmer = path.at(i).first.str();
 			for (size_t j = 0; j < k; ++j) {
-				assert(spacedSeed.at(j) == '0' || spacedSeed.at(j) == '1');
-				if (spacedSeed.at(j) == '1') {
+				if (spacedSeed.empty() || spacedSeed.at(j) == '1') {
 					if (seq.at(i + j) != 'N' && seq.at(i + j) != kmer.at(j)) {
 						std::cerr
 							<< "warning: inconsistent DBG path detected "
@@ -350,12 +345,9 @@ namespace BloomDBG {
 	 *
 	 * @param seq the DNA sequence to be trimmed
 	 * @param goodKmerSet Bloom filter containing "good" k-mers
-	 * @param spacedSeed bitmap indicating positions to be ignored
-	 * when hashing k-mers
 	 */
 	template <typename BloomT>
-	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet,
-		const std::string& spacedSeed)
+	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet)
 	{
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
@@ -374,7 +366,7 @@ namespace BloomDBG {
 
 		/* note: RollingHashIterator skips over k-mer
 		 * positions with non-ACGT chars */
-		for (RollingHashIterator it(seq, k, numHashes, spacedSeed);
+		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
 			it != RollingHashIterator::end(); prevPos=it.pos(),++it) {
 			if (!goodKmerSet.contains(*it) ||
 				(prevPos != UNSET && it.pos() - prevPos > 1)) {
@@ -413,8 +405,7 @@ namespace BloomDBG {
 	 * contigs.
 	 */
 	template <typename BloomT>
-	void trimContig(Sequence& contig, const BloomT& assembledKmerSet,
-		const std::string& spacedSeed)
+	void trimContig(Sequence& contig, const BloomT& assembledKmerSet)
 	{
 		const unsigned k = assembledKmerSet.getKmerSize();
 		const unsigned numHashes = assembledKmerSet.getHashNum();
@@ -424,7 +415,8 @@ namespace BloomDBG {
 
 		assert(contig.length() >= k);
 		Sequence firstKmer = contig.substr(0, k);
-		hashes = RollingHash(firstKmer, numHashes, k, spacedSeed).getHash();
+		hashes = RollingHash(firstKmer, numHashes, k,
+			MaskedKmer::mask()).getHash();
 		if (assembledKmerSet.contains(hashes)) {
 			if (contig.length() == k) {
 				contig.clear();
@@ -437,7 +429,8 @@ namespace BloomDBG {
 
 		assert(contig.length() >= k);
 		Sequence lastKmer = contig.substr(contig.length() - k);
-		hashes = RollingHash(lastKmer, numHashes, k, spacedSeed).getHash();
+		hashes = RollingHash(lastKmer, numHashes, k,
+			MaskedKmer::mask()).getHash();
 		if (assembledKmerSet.contains(hashes)) {
 			if (contig.length() == k) {
 				contig.clear();
@@ -459,8 +452,6 @@ namespace BloomDBG {
 	 * @param genomeSize approx genome size
 	 * @param goodKmerSet Bloom filter containing k-mers that
 	 * occur more than once in the input data
-	 * @param spacedSeed bitmask indicating k-mer positions to ignore
-	 * during hashing
 	 * @param out output stream for contigs (FASTA)
 	 * @param verbose set to true to print progress messages to
 	 * STDERR
@@ -477,7 +468,6 @@ namespace BloomDBG {
 		const unsigned progressStep = 1000;
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
-		const std::string& spacedSeed = params.spacedSeed;
 		/* k-mers in previously assembled contigs */
 		BloomFilter assembledKmerSet(roundUpToMultiple(params.genomeSize,
 			(size_t)64), numHashes, k);
@@ -508,11 +498,11 @@ namespace BloomDBG {
 				skip = true;
 
 			/* only extend error-free reads */
-			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet, spacedSeed))
+			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
 				skip = true;
 
 			/* skip reads in previously assembled regions */
-			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet, spacedSeed))
+			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
 				skip = true;
 
 			if (!skip) {
@@ -521,7 +511,7 @@ namespace BloomDBG {
 				std::cerr << "Extending read: " << rec.id << std::endl;
 
 				/* convert sequence to DBG path */
-				Path<Vertex> path = seqToPath(rec.seq, k, numHashes, spacedSeed);
+				Path<Vertex> path = seqToPath(rec.seq, k, numHashes);
 
 				/* split path at branching points to prevent over-assembly */
 				std::vector< Path<Vertex> > paths =
@@ -538,22 +528,22 @@ namespace BloomDBG {
 				for(std::vector< Path<Vertex> >::iterator it = paths.begin();
 					it != paths.end(); ++it) {
 					/* convert DBG path back to sequence */
-					Sequence seq = pathToSeq(*it, k, spacedSeed);
+					Sequence seq = pathToSeq(*it, k);
 					/*
 					 * check against assembledKmerSet again to prevent race
 					 * condition. (Otherwise, the same contig may be
 					 * generated multiple times.)
 					 */
 #pragma omp critical(out)
-					if (!allKmersInBloom(seq, assembledKmerSet, spacedSeed)) {
+					if (!allKmersInBloom(seq, assembledKmerSet)) {
 						/*
 						 * remove redundant branching k-mers at start/end
 						 * of contig
 						 */
-						trimContig(seq, assembledKmerSet, spacedSeed);
+						trimContig(seq, assembledKmerSet);
 						if (!seq.empty()) {
 							assert(seq.length() >= k);
-							addKmersToBloom(seq, assembledKmerSet, spacedSeed);
+							addKmersToBloom(seq, assembledKmerSet);
 							FastaRecord contig;
 							std::ostringstream id;
 							id << contigID++;
@@ -705,8 +695,6 @@ namespace BloomDBG {
 	 * @param argc number of input FASTA files
 	 * @param argv array of input FASTA filenames
 	 * @param kmerSet Bloom filter containing valid k-mers
-	 * @param spacedSeed bitmask indicating which k-mer positions
-	 * to ignore during hashing
 	 * @param out output stream for GraphViz serialization
 	 * @param verbose prints progress messages to STDERR if true
 	 */
@@ -723,7 +711,7 @@ namespace BloomDBG {
 		const unsigned progressStep = 1000;
 		const unsigned k = kmerSet.getKmerSize();
 		const unsigned numHashes = kmerSet.getHashNum();
-		const std::string& spacedSeed = params.spacedSeed;
+		const std::string& spacedSeed = MaskedKmer::mask();
 
 		/* counter for progress messages */
 		size_t readsProcessed = 0;
@@ -750,17 +738,17 @@ namespace BloomDBG {
 			Sequence& seq = rec.seq;
 
 			/* Trim down to longest subsequence of "good" k-mers */
-			trimSeq(seq, kmerSet, params.spacedSeed);
+			trimSeq(seq, kmerSet);
 			if (seq.length() > 0) {
 
 				/* BFS traversal in forward dir */
-				Vertex start(MaskedKmer(seq.substr(0, k), spacedSeed),
+				Vertex start(MaskedKmer(seq.substr(0, k)),
 					RollingHash(seq.substr(0, k), numHashes, k, spacedSeed));
 				breadthFirstSearch(dbg, start, visitor, colorMap);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
-				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k), spacedSeed),
+				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k)),
 					RollingHash(rcSeq.substr(0, k), numHashes, k, spacedSeed));
 				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
 

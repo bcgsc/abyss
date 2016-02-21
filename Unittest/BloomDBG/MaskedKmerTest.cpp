@@ -6,7 +6,7 @@ using namespace std;
 
 TEST(MaskedKmerTest, trivialMask)
 {
-	Kmer::setLength(4);
+	MaskedKmer::setLength(4);
 
 	MaskedKmer kmer1("ACGT");
 	MaskedKmer kmer2("ACGT");
@@ -16,11 +16,11 @@ TEST(MaskedKmerTest, trivialMask)
 
 TEST(MaskedKmerTest, nonTrivialMask)
 {
-	Kmer::setLength(4);
+	MaskedKmer::setLength(4);
+	MaskedKmer::setMask("1001");
 
-	const string mask("1001");
-	MaskedKmer kmer1("ACGT", mask);
-	MaskedKmer kmer2("ATTT", mask);
+	MaskedKmer kmer1("ACGT");
+	MaskedKmer kmer2("ATTT");
 
 	ASSERT_EQ(kmer1, kmer2);
 }
