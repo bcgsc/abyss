@@ -47,7 +47,14 @@ private:
 				m_badCharPos.pop_front();
 
 			if (!m_badCharPos.empty() && m_badCharPos.front() < m_pos + m_k) {
+				/* empty spaced seed is equivalent to a string of '1's */
+				if (m_spacedSeed.empty()) {
+					m_rollNextHash = false;
+					m_pos = m_badCharPos.front() + 1;
+					continue;
+				}
 				bool goodKmer = true;
+				assert(m_spacedSeed.length() == m_k);
 				for (size_t i = 0; i < m_badCharPos.size() &&
 					m_badCharPos.at(i) < m_pos + m_k; ++i) {
 					size_t kmerPos = m_badCharPos.at(i) - m_pos;
@@ -106,7 +113,7 @@ public:
 	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes)
 		: m_seq(seq), m_k(k), m_numHashes(numHashes),
 		m_rollingHash(m_numHashes, m_k), m_rollNextHash(false),
-		m_pos(0), m_spacedSeed(m_k, '1')
+		m_pos(0)
 	{
 		init();
 	}
@@ -126,7 +133,6 @@ public:
 		m_rollingHash(m_numHashes, m_k, spacedSeed), m_rollNextHash(false),
 		m_pos(0), m_spacedSeed(spacedSeed)
 	{
-		assert(m_spacedSeed.length() == m_k);
 		init();
 	}
 
@@ -135,6 +141,9 @@ public:
 	 */
 	void init()
 	{
+		/* note: empty spaced seed indicates no masking (string of '1's) */
+		assert(m_spacedSeed.empty() || m_spacedSeed.length() == m_k);
+
 		/* convert sequence to upper case */
 		std::transform(m_seq.begin(), m_seq.end(), m_seq.begin(), ::toupper);
 
@@ -207,7 +216,7 @@ public:
 	std::string kmer(bool mask=false) const
 	{
 		std::string kmer(m_seq, m_pos, m_k);
-		if (mask) {
+		if (mask && !m_spacedSeed.empty()) {
 			assert(m_spacedSeed.length() == m_k);
 			for(size_t i = 0; i < m_spacedSeed.length(); ++i) {
 				if (m_spacedSeed.at(i) == '0')

@@ -14,12 +14,13 @@ TEST(BloomDBG, pathToSeq)
 	const unsigned k = 5;
 	const unsigned numHashes = 2;
 
-	Kmer::setLength(k);
+	MaskedKmer::setLength(k);
+	MaskedKmer::setMask(spacedSeed);
 
 	Path<BloomDBG::Vertex> path =
-		BloomDBG::seqToPath(inputSeq, k, numHashes, spacedSeed);
+		BloomDBG::seqToPath(inputSeq, k, numHashes);
 	ASSERT_EQ(2U, path.size());
 
-	string outputSeq = BloomDBG::pathToSeq(path, k, spacedSeed);
+	string outputSeq = BloomDBG::pathToSeq(path, k);
 	ASSERT_EQ("ACNNAC", outputSeq);
 }
