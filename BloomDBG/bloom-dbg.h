@@ -275,6 +275,50 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Extend a sequence left (REVERSE) or right (FORWARD) within the de Bruijn
+	 * graph until either a branching point or a dead-end is encountered.
+	 */
+	template <typename GraphT>
+	inline static bool extendSeq(Sequence& seq, Direction dir,
+		unsigned k, unsigned numHashes, unsigned minBranchLen,
+		const GraphT& graph)
+	{
+		unsigned origLen = seq.length();
+		assert(seq.length() >= k);
+
+		/* Convert sequence to path in DBG */
+		Path<Vertex> path = seqToPath(seq, k, numHashes);
+
+		/* Extend path */
+		extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
+
+		/* Convert extended path back to sequence */
+		Sequence extendedSeq = pathToSeq(path, k);
+
+		/*
+		 * If a spaced seed is in effect, short paths may result in
+		 * sequences containing 'N's.  However, since we only extend
+		 * "perfect reads", we can replace the 'N's with the correct
+		 * bases by overlaying the seed sequence.
+		 */
+		if (dir == FORWARD) {
+			overlaySeq(seq, extendedSeq, 0);
+		} else {
+			assert(dir == REVERSE);
+			overlaySeq(seq, extendedSeq, extendedSeq.length() - seq.length());
+		}
+
+		/*
+		 * Replace orig seq with extended version.
+		 */
+		seq = extendedSeq;
+
+		/* Return true if sequence was successfully extended */
+		return seq.length() > origLen;
+	}
+
+
+	/**
 	 * Counters for tracking assembly statistics and producing
 	 * progress messages.
 	 */
@@ -551,28 +595,29 @@ namespace BloomDBG {
 
 			if (!skip) {
 
+				if (params.verbose >= 2) {
 #pragma omp critical(cerr)
-				std::cerr << "Extending read: " << rec.id << std::endl;
+					std::cerr << "Extending read: " << rec.id << std::endl;
+				}
 
-				/* convert sequence to DBG path */
-				Path<Vertex> path = seqToPath(rec.seq, k, numHashes);
-
-				/* split path at branching points to prevent over-assembly */
-				std::vector< Path<Vertex> > paths =
-					splitPath(path, graph, minBranchLen);
+				/* split seq at branching points (prevents over-assembly) */
+				std::vector<Sequence> segments = splitSeq(rec.seq, k,
+					numHashes, graph, minBranchLen);
 
 				/*
 				 * Extend first and last paths only, since
-				 * internal path components are bounded by branching
+				 * internal segments are bounded by branching
 				 * points.
 				 */
-				extendPath(paths.front(), REVERSE, minBranchLen, graph);
-				extendPath(paths.back(), FORWARD, minBranchLen, graph);
+				extendSeq(segments.front(), REVERSE, k, numHashes,
+					minBranchLen, graph);
+				extendSeq(segments.back(), FORWARD, k, numHashes,
+					minBranchLen, graph);
 
-				for(std::vector< Path<Vertex> >::iterator it = paths.begin();
-					it != paths.end(); ++it) {
-					/* convert DBG path back to sequence */
-					Sequence seq = pathToSeq(*it, k);
+				for (std::vector<Sequence>::iterator it = segments.begin();
+					 it != segments.end(); ++it) {
+					Sequence& seq = *it;
+
 					/*
 					 * check against assembledKmerSet again to prevent race
 					 * condition. (Otherwise, the same contig may be
