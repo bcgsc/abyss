@@ -339,6 +339,50 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Split a sequence at branching k-mers (degree > 2).
+	 * Branching k-mers are shared between the resulting sequence
+	 * segments.
+	 */
+	template <typename GraphT>
+	inline static std::vector<Sequence>
+	splitSeq(const Sequence& seq, unsigned k, unsigned numHashes,
+		const GraphT& dbg, unsigned minBranchLen)
+	{
+		assert(seq.length() >= k);
+
+		typedef typename boost::graph_traits<GraphT>::vertex_descriptor V;
+		typedef typename Path<V>::const_iterator PathIt;
+
+		std::vector<Sequence> segments;
+		Path<V> path = seqToPath(seq, k, numHashes);
+		PathIt start = path.begin();
+		PathIt end = path.begin();
+
+		for (; end != path.end(); ++end) {
+			unsigned inDegree =
+				trueBranches(*end, REVERSE, dbg, minBranchLen-1).size();
+			unsigned outDegree =
+				trueBranches(*end, FORWARD, dbg, minBranchLen-1).size();
+			if (inDegree > 1 || outDegree > 1) {
+				/* we've hit a branching point -- end the current
+				 * segment and start a new one */
+				Sequence segment = seq.substr(start - path.begin(),
+					end - start + k);
+				segments.push_back(segment);
+				start = end;
+			}
+		}
+		if (segments.empty() || segments.back().length() > k) {
+			Sequence segment = seq.substr(start - path.begin(),
+				end - start + k);
+			segments.push_back(segment);
+		}
+
+		assert(segments.size() >= 1);
+		return segments;
+	}
+
+	/**
 	 * Trim a sequence down to the longest contiguous subsequence
 	 * of "good" k-mers.  If the sequence has length < k or contains
 	 * no good k-mers, the trimmed sequence will be the empty string.
