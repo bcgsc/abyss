@@ -333,8 +333,6 @@ private:
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
 	size_t m_rcHash1;
-	/** true if the k-mer mask should be used during hashing operations */
-	bool m_useKmerMask;
 	/** current k-mer (used only when k-mer mask is in effect) */
 	std::string m_kmer;
 	/** unmasked version of current k-mer (used only when k-mer mask is in effect) */
