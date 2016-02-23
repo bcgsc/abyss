@@ -111,6 +111,16 @@ static inline bool lookAhead(
 	return false;
 }
 
+/**
+ * Return neighbour vertices that begin branches that are longer than trimLen.
+ *
+ * @param u root vertex
+ * @param dir direction for neighbours (FORWARD or REVERSE)
+ * @param g graph
+ * @param trimLen ignore all branches less than or equal to this length
+ * @return std::vector of neighbour vertices that start branches that are
+ * greater than trimLen vertices in length
+ */
 template <class BidirectionalGraph>
 static inline std::vector<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>
 trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor& u,
