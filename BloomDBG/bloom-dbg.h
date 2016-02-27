@@ -47,9 +47,6 @@ namespace BloomDBG {
 		/** path for output GraphViz file */
 		string graphPath;
 
-		/** approx genome size */
-		size_t genomeSize;
-
 		/** num Bloom filter hash functions */
 		unsigned numHashes;
 
@@ -69,14 +66,14 @@ namespace BloomDBG {
 		int verbose;
 
 		/** Default constructor */
-		AssemblyParams() : bloomSize(0), minCov(2), graphPath(), genomeSize(0),
+		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
 			numHashes(1), threads(1), k(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
 			verbose(0) {}
 
 		/** Return true if all required members are initialized */
 		bool initialized() const {
-			return bloomSize > 0 && genomeSize > 0 && k > 0 &&
+			return bloomSize > 0 && k > 0 &&
 				trim != std::numeric_limits<unsigned>::max();
 		}
 	};
@@ -557,8 +554,8 @@ namespace BloomDBG {
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
 		/* k-mers in previously assembled contigs */
-		BloomFilter assembledKmerSet(roundUpToMultiple(params.genomeSize,
-			(size_t)64), numHashes, k);
+		BloomFilter assembledKmerSet(goodKmerSet.size(),
+			goodKmerSet.getHashNum(), goodKmerSet.getKmerSize());
 
 		/* counters for progress messages */
 		AssemblyCounters counters;

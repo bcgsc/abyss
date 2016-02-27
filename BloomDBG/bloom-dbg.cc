@@ -46,8 +46,6 @@ static const char USAGE_MESSAGE[] =
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
-"  -G  --genome-size=N        approx genome size with unit suffix\n"
-"                             'k', 'M', or 'G' [required]\n"
 "  -H  --num-hashes=N         number of Bloom filter hash functions\n"
 "                             [required]\n"
 "      --help                 display this help and exit\n"
@@ -72,19 +70,19 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Example:\n"
 "\n"
-"  Assemble a 100 Mbp genome using a k-mer size of 50bp. Allocate a 1GB\n"
+"  Assemble a genome using a k-mer size of 50bp. Allocate a 1GB\n"
 "  Bloom filter with 2 hash functions and require that a k-mer\n"
 "  occurs 3 times or more to be included in the assembly. (The k-mer\n"
-"  count threshold filters out k-mers due to sequencing errors.)\n"
+"  count threshold filters out k-mers containing sequencing errors.)\n"
 "\n"
-"  $ " PROGRAM " -G100M -k50 -b1G -H2 -c3 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
+"  $ " PROGRAM " -k50 -b1G -H2 -c3 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:g:G:H:j:k:q:Q:s:t:v";
+static const char shortopts[] = "b:c:g:H:j:k:q:Q:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -94,7 +92,6 @@ static const struct option longopts[] = {
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "graph",            required_argument, NULL, 'g' },
-	{ "genome-size",      required_argument, NULL, 'G' },
 	{ "num-hashes",       required_argument, NULL, 'H' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
@@ -132,8 +129,6 @@ int main(int argc, char** argv)
 			arg >> params.minCov; break;
 		  case 'g':
 			arg >> params.graphPath; break;
-		  case 'G':
-			  params.genomeSize = fromSI(arg); break;
 		  case 'H':
 			arg >> params.numHashes; break;
 		  case 'j':
@@ -166,11 +161,6 @@ int main(int argc, char** argv)
 
 	if (params.bloomSize == 0) {
 		cerr << PROGRAM ": missing mandatory option `-b'\n";
-		die = true;
-	}
-
-	if (params.genomeSize == 0) {
-		cerr << PROGRAM ": missing mandatory option `-G'\n";
 		die = true;
 	}
 
