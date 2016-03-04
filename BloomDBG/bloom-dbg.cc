@@ -65,6 +65,8 @@ static const char USAGE_MESSAGE[] =
 "                             ignored during hashing [default is string\n"
 "                             of '1's]\n"
 "  -t, --trim-length          max branch length to trim, in k-mers [k]\n"
+"  -T, --trace-file=FILE      output debugging info about extension of\n"
+"                             of reads to FILE\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
 "\n"
@@ -82,7 +84,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:g:H:j:k:q:Q:s:t:v";
+static const char shortopts[] = "b:c:g:H:j:k:q:Q:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -103,7 +105,8 @@ static const struct option longopts[] = {
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
 	{ "spaced-seed",      no_argument, NULL, 's' },
-	{ "trim-length",      no_argument, NULL, 's' },
+	{ "trim-length",      no_argument, NULL, 't' },
+	{ "trace-file",       no_argument, NULL, 'T'},
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -141,6 +144,8 @@ int main(int argc, char** argv)
 			arg >> params.spacedSeed; break;
 		  case 't':
 			arg >> params.trim; break;
+		  case 'T':
+			arg >> params.tracePath; break;
 		  case 'Q':
 			arg >> opt::internalQThreshold; break;
 		  case 'v':

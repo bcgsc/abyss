@@ -65,11 +65,14 @@ namespace BloomDBG {
 		/** verbose level for progress messages */
 		int verbose;
 
+		/** output path for trace file (-T) option */
+		std::string tracePath;
+
 		/** Default constructor */
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
 			numHashes(1), threads(1), k(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
-			verbose(0) {}
+			verbose(0), tracePath() {}
 
 		/** Return true if all required members are initialized */
 		bool initialized() const {
@@ -272,22 +275,118 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Results for the extension of a read segment.
+	 * Each instance represents a row in the trace file generated
+	 * by the '-T' option for abyss-bloom-dbg.
+	 */
+	struct SeqExtensionResult
+	{
+		/** FASTA ID for origin read */
+		std::string readId;
+		/**
+		 * Index of this segment within the read. (Prior to extension,
+		 * each read is split into segments at branching k-mers.)
+		 */
+		unsigned readSegmentId;
+		/** Total number of segments after splitting the read */
+		unsigned numReadSegments;
+		/** Direction of attempted sequence extension */
+		Direction extensionDir;
+		/** Result code for attempted sequence extension (e.g. DEAD END) */
+		PathExtensionResult extensionResult;
+		/** Original length of the read segment prior to extension */
+		unsigned origLength;
+		/** Sequence length after extension */
+		unsigned extendedLength;
+		/**
+		 * True if the extended sequence was excluded from the output contigs
+		 * because it was redundant.  (An identical sequence was generated
+		 * when extending a previous read.)
+		 */
+		bool redundantContig;
+		/** Contig ID assigned to extended segment */
+		size_t contigID;
+
+		SeqExtensionResult() :
+			readId(),
+			readSegmentId(std::numeric_limits<unsigned>::max()),
+			numReadSegments(std::numeric_limits<unsigned>::max()),
+			extensionDir(FORWARD),
+			extensionResult(DEAD_END),
+			origLength(std::numeric_limits<unsigned>::max()),
+			extendedLength(std::numeric_limits<unsigned>::max()),
+			redundantContig(false),
+			contigID(std::numeric_limits<size_t>::max()) {}
+
+		bool initialized() const
+		{
+			return !readId.empty() &&
+				readSegmentId != std::numeric_limits<unsigned>::max() &&
+				numReadSegments != std::numeric_limits<unsigned>::max() &&
+				origLength != std::numeric_limits<unsigned>::max() &&
+				extendedLength != std::numeric_limits<unsigned>::max() &&
+				contigID != std::numeric_limits<size_t>::max();
+		}
+
+		static std::ostream& printHeaders(std::ostream& out)
+		{
+			out << "read_id\t"
+				<< "read_segment_id\t"
+				<< "num_read_segments\t"
+				<< "extension_dir\t"
+				<< "extension_result\t"
+				<< "orig_length\t"
+				<< "extended_length\t"
+				<< "redundant_contig\t"
+				<< "contig_id\n";
+			return out;
+		}
+
+		friend std::ostream& operator <<(std::ostream& out,
+			const SeqExtensionResult& o)
+		{
+			if (o.redundantContig) {
+				out << o.readId << '\t'
+					<< o.readSegmentId << '\t'
+					<< o.numReadSegments << '\t'
+					<< "-\t"
+					<< "-\t"
+					<< o.origLength << '\t'
+					<< "-\t"
+					<< "true" << '\t'
+					<< "-\n";
+			} else {
+				out << o.readId << '\t'
+					<< o.readSegmentId << '\t'
+					<< o.numReadSegments << '\t'
+					<< directionStr(o.extensionDir) << '\t'
+					<< pathExtensionResultStr(o.extensionResult) << '\t'
+					<< o.origLength << '\t'
+					<< o.extendedLength << '\t'
+					<< "false" << '\t'
+					<< o.contigID << '\n';
+			}
+			return out;
+		}
+	};
+
+	/**
 	 * Extend a sequence left (REVERSE) or right (FORWARD) within the de Bruijn
 	 * graph until either a branching point or a dead-end is encountered.
 	 */
 	template <typename GraphT>
-	inline static bool extendSeq(Sequence& seq, Direction dir,
+	inline static PathExtensionResult extendSeq(Sequence& seq, Direction dir,
 		unsigned k, unsigned numHashes, unsigned minBranchLen,
 		const GraphT& graph)
 	{
-		unsigned origLen = seq.length();
 		assert(seq.length() >= k);
 
 		/* Convert sequence to path in DBG */
 		Path<Vertex> path = seqToPath(seq, k, numHashes);
 
 		/* Extend path */
-		extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
+		PathExtensionResult result =
+			extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
 
 		/* Convert extended path back to sequence */
 		Sequence extendedSeq = pathToSeq(path, k);
@@ -311,7 +410,7 @@ namespace BloomDBG {
 		seq = extendedSeq;
 
 		/* Return true if sequence was successfully extended */
-		return seq.length() > origLen;
+		return result;
 	}
 
 
@@ -553,10 +652,19 @@ namespace BloomDBG {
 		const unsigned progressStep = 1000;
 		const unsigned k = goodKmerSet.getKmerSize();
 		const unsigned numHashes = goodKmerSet.getHashNum();
+
+		/* trace file output ('-T' option) */
+		std::ofstream traceOut;
+		if (!params.tracePath.empty()) {
+			traceOut.open(params.tracePath.c_str());
+			assert_good(traceOut, params.tracePath);
+			SeqExtensionResult::printHeaders(traceOut);
+			assert_good(traceOut, params.tracePath);
+		}
+
 		/* k-mers in previously assembled contigs */
 		BloomFilter assembledKmerSet(goodKmerSet.size(),
 			goodKmerSet.getHashNum(), goodKmerSet.getKmerSize());
-
 		/* counters for progress messages */
 		AssemblyCounters counters;
 
@@ -601,19 +709,42 @@ namespace BloomDBG {
 				std::vector<Sequence> segments = splitSeq(rec.seq, k,
 					numHashes, graph, minBranchLen);
 
-				/*
-				 * Extend first and last paths only, since
-				 * internal segments are bounded by branching
-				 * points.
-				 */
-				extendSeq(segments.front(), REVERSE, k, numHashes,
-					minBranchLen, graph);
-				extendSeq(segments.back(), FORWARD, k, numHashes,
-					minBranchLen, graph);
-
 				for (std::vector<Sequence>::iterator it = segments.begin();
 					 it != segments.end(); ++it) {
+
 					Sequence& seq = *it;
+
+					/*
+					 * track results of sequence extension attempt for
+					 * trace file ('-T' option).
+					 */
+					SeqExtensionResult traceResult;
+					traceResult.readId = rec.id;
+					traceResult.readSegmentId = it - segments.begin() + 1;
+					traceResult.numReadSegments = segments.size();
+					traceResult.origLength = seq.length();
+					traceResult.redundantContig = true;
+
+					/*
+					 * extend first and last segments only, since
+					 * internal segments are bounded by branching
+					 * points.
+					 */
+					if (it == segments.begin()) {
+						traceResult.extensionDir = REVERSE;
+						traceResult.extensionResult = extendSeq(seq,
+							traceResult.extensionDir, k, numHashes, minBranchLen,
+							graph);
+						traceResult.extendedLength = seq.length();
+					} else if (it == segments.end() - 1) {
+						traceResult.extensionDir = FORWARD;
+						traceResult.extensionResult = extendSeq(seq,
+							traceResult.extensionDir, k, numHashes, minBranchLen,
+							graph);
+						traceResult.extendedLength = seq.length();
+					} else {
+						traceResult.extensionResult = BRANCHING_POINT;
+					}
 
 					/*
 					 * check against assembledKmerSet again to prevent race
@@ -628,6 +759,7 @@ namespace BloomDBG {
 						 */
 						trimContig(seq, assembledKmerSet);
 						if (!seq.empty()) {
+							traceResult.redundantContig = false;
 							assert(seq.length() >= k);
 							addKmersToBloom(seq, assembledKmerSet);
 							FastaRecord contig;
@@ -641,8 +773,17 @@ namespace BloomDBG {
 							unsigned len = seq.length();
 #pragma omp atomic
 							counters.basesAssembled += len;
+							traceResult.contigID = contigID;
 						}
 					}
+
+					/* trace file output ('-T' option) */
+#pragma omp critical(traceOut)
+					if (!params.tracePath.empty()) {
+						traceOut << traceResult;
+						assert_good(traceOut, params.tracePath);
+					}
+
 				}  /* for each split path */
 #pragma omp atomic
 				counters.readsExtended++;
@@ -657,6 +798,12 @@ namespace BloomDBG {
 		} /* for each read */
 
 		assert(in.eof());
+		in.close();
+		if (!params.tracePath.empty()) {
+			traceOut.close();
+			assert_good(traceOut, params.tracePath);
+		}
+
 		if (opt::verbose) {
 			printProgressMessage(counters);
 			std::cerr << "Assembly complete" << std::endl;

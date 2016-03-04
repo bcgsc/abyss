@@ -15,15 +15,68 @@
  * The result of attempting to extend a path.
  */
 enum PathExtensionResult {
+	/** path could not be extended because of a dead end */
 	DEAD_END,
+	/** path could not be extended because of a branching point */
 	BRANCHING_POINT,
+	/** path could not be extended because of a cycle */
 	CYCLE,
+	/** path could not be extended because of caller-specified length limit */
 	LENGTH_LIMIT,
+	/** path was extended up to a dead end */
 	EXTENDED_TO_DEAD_END,
+	/** path was extended up to a branching point */
 	EXTENDED_TO_BRANCHING_POINT,
+	/** path was extended up to a cycle */
 	EXTENDED_TO_CYCLE,
+	/** path was extended up to caller-specified length limit */
 	EXTENDED_TO_LENGTH_LIMIT
 };
+
+/**
+ * Translate path extension result code to a string.
+ */
+static inline const char* pathExtensionResultStr(PathExtensionResult result)
+{
+	switch(result) {
+	case DEAD_END:
+		return "DEAD_END";
+	case BRANCHING_POINT:
+		return "BRANCHING_POINT";
+	case CYCLE:
+		return "CYCLE";
+	case LENGTH_LIMIT:
+		return "LENGTH_LIMIT";
+	case EXTENDED_TO_DEAD_END:
+		return "EXTENDED_TO_DEAD_END";
+	case EXTENDED_TO_BRANCHING_POINT:
+		return "EXTENDED_TO_BRANCHING_POINT";
+	case EXTENDED_TO_CYCLE:
+		return "EXTENDED_TO_CYCLE";
+	case EXTENDED_TO_LENGTH_LIMIT:
+		return "EXTENDED_TO_LENGTH_LIMIT";
+	default:
+		assert(false);
+	}
+}
+
+/**
+ * Return true if the path extension result code indicates
+ * that the path was successfully extended by one or more nodes.
+ */
+static inline bool pathExtended(PathExtensionResult result)
+{
+	switch(result) {
+	case DEAD_END:
+	case BRANCHING_POINT:
+	case CYCLE:
+	case LENGTH_LIMIT:
+		return false;
+	default:
+		return true;
+	}
+	assert(false);
+}
 
 /**
  * The result of attempting to extend a path
