@@ -5,6 +5,7 @@
 #include <sstream>
 #include <climits>
 #include <deque>
+#include <cassert>
 
 enum PathSearchResult {
 	FOUND_PATH = 0,
@@ -25,6 +26,18 @@ const char* PathSearchResultLabel[] = {
 };
 
 enum Direction { FORWARD = 0, REVERSE };
+
+inline static const char* directionStr(Direction dir)
+{
+	switch(dir) {
+	case FORWARD:
+		return "FORWARD";
+	case REVERSE:
+		return "REVERSE";
+	default:
+		assert(false);
+	}
+}
 
 const unsigned NO_LIMIT = UINT_MAX;
 
