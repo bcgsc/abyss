@@ -126,7 +126,7 @@ struct adjacency_iterator
 
 	adjacency_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
-	adjacency_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
+	adjacency_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.first.shift(SENSE);
@@ -194,7 +194,7 @@ struct out_edge_iterator
 
 	out_edge_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
-	out_edge_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
+	out_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.first.shift(SENSE);
@@ -262,7 +262,7 @@ struct in_edge_iterator
 
 	in_edge_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
-	in_edge_iterator(const RollingBloomDBG<BF>& g, vertex_descriptor u)
+	in_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u), m_i(0)
 	{
 		m_v.first.shift(ANTISENSE);
@@ -316,7 +316,7 @@ struct in_edge_iterator
 /** Return whether this vertex exists in the subgraph. */
 template <typename Graph>
 static inline bool
-vertex_exists(typename graph_traits<Graph>::vertex_descriptor u, const Graph& g)
+vertex_exists(const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
 	return g.m_bloom.contains(u.second.getHash());
 }
@@ -326,7 +326,7 @@ static inline
 std::pair<typename graph_traits<Graph>::adjacency_iterator,
 		typename graph_traits<Graph>::adjacency_iterator>
 adjacent_vertices(
-		typename graph_traits<Graph>::vertex_descriptor u, const Graph& g)
+		const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator adjacency_iterator;
 	return std::make_pair(adjacency_iterator(g, u), adjacency_iterator(g));
@@ -337,7 +337,7 @@ template <typename Graph>
 static inline
 typename graph_traits<Graph>::degree_size_type
 out_degree(
-		typename graph_traits<Graph>::vertex_descriptor u,
+		const typename graph_traits<Graph>::vertex_descriptor& u,
 		const Graph& g)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
@@ -350,7 +350,7 @@ static inline typename
 std::pair<typename graph_traits<Graph>::out_edge_iterator,
 	typename graph_traits<Graph>::out_edge_iterator>
 out_edges(
-		typename graph_traits<Graph>::vertex_descriptor u,
+		const typename graph_traits<Graph>::vertex_descriptor& u,
 		const Graph& g)
 {
 	typedef typename graph_traits<Graph>::out_edge_iterator Oit;
@@ -363,7 +363,7 @@ static inline
 std::pair<typename graph_traits<Graph>::in_edge_iterator,
 	typename graph_traits<Graph>::in_edge_iterator>
 in_edges(
-		typename graph_traits<Graph>::vertex_descriptor u,
+		const typename graph_traits<Graph>::vertex_descriptor& u,
 		const Graph& g)
 {
 	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
@@ -373,7 +373,7 @@ in_edges(
 template <typename Graph>
 static inline
 typename graph_traits<Graph>::degree_size_type
-in_degree(typename graph_traits<Graph>::vertex_descriptor u,
+in_degree(const typename graph_traits<Graph>::vertex_descriptor& u,
 		  const Graph& g)
 {
 	//return out_degree(reverseComplement(u), g);

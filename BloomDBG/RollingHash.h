@@ -22,15 +22,13 @@ private:
 
 	/**
 	 * Compute multiple pseudo-independent hash values using
-	 * a single seed hash value.
+	 * a single seed hash value
 	 */
-	std::vector<size_t> multiHash(size_t seedHash) const
+	void multiHash(size_t seedHash)
 	{
-		std::vector<size_t> hashes(m_numHashes);
 		for (unsigned i = 0; i < m_numHashes; i++) {
-			hashes.at(i) = rol(varSeed, i) ^ seedHash;
+			m_hashes.at(i) = rol(varSeed, i) ^ seedHash;
 		}
-		return hashes;
 	}
 
 	/**
@@ -59,7 +57,8 @@ public:
 	/**
 	 * Default constructor.
 	 */
-	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0) {}
+	RollingHash() : m_numHashes(0), m_hashes(m_numHashes), m_k(0),
+		m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -69,7 +68,8 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0) {}
+		: m_numHashes(numHashes), m_hashes(m_numHashes), m_k(k),
+		m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -81,7 +81,7 @@ public:
 	 * be ignored during the hash calculation of each k-mer
 	 */
 	RollingHash(unsigned numHashes, unsigned k, const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
 		m_spacedSeed(spacedSeed) {}
 
 	/**
@@ -93,7 +93,8 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
+		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k),
+		m_hash1(0), m_rcHash1(0)
 	{
 		/* init rolling hash state */
 		reset(kmer);
@@ -113,8 +114,8 @@ public:
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
 		const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_k(k), m_kmer(kmer), m_unmaskedKmer(kmer),
-		m_spacedSeed(spacedSeed)
+		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k), m_kmer(kmer),
+		m_unmaskedKmer(kmer), m_spacedSeed(spacedSeed)
 	{
 		/* init rolling hash state */
 		reset(kmer);
@@ -169,7 +170,7 @@ public:
 		m_rcHash1 = getRhval(m_kmer.c_str(), m_k);
 
 		/* compute hash values */
-		m_hashes = multiHash(canonicalHash(m_hash1, m_rcHash1));
+		multiHash(canonicalHash(m_hash1, m_rcHash1));
 
 		/* restore k-mer to unmasked state */
 		unmaskKmer();
@@ -191,7 +192,7 @@ public:
 		m_rcHash1 = getRhval(kmer.c_str(), m_k);
 
 		/* compute hash values */
-		m_hashes = multiHash(canonicalHash(m_hash1, m_rcHash1));
+		multiHash(canonicalHash(m_hash1, m_rcHash1));
 	}
 
 	/**
@@ -245,7 +246,7 @@ public:
 		size_t seed = canonicalHash(m_hash1, m_rcHash1);
 
 		/* compute hash values */
-		m_hashes = multiHash(seed);
+		multiHash(seed);
 	}
 
 	/**
@@ -299,7 +300,7 @@ public:
 		size_t seed = canonicalHash(m_hash1, m_rcHash1);
 
 		/* compute hash values */
-		m_hashes = multiHash(seed);
+		multiHash(seed);
 	}
 
 	/** Get hash values for current k-mer */
@@ -324,10 +325,10 @@ private:
 
 	/** number of hash functions to compute at each position */
 	unsigned m_numHashes;
-	/** k-mer length */
-	unsigned m_k;
 	/** current values for each hash function */
 	std::vector<size_t> m_hashes;
+	/** k-mer length */
+	unsigned m_k;
 	/** value of first hash function for current k-mer */
 	size_t m_hash1;
 	/** value of first hash function for current k-mer, after
