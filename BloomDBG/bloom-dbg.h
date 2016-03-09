@@ -290,17 +290,25 @@ namespace BloomDBG {
 		unsigned readSegmentId;
 		/** Total number of segments after splitting the read */
 		unsigned numReadSegments;
-		/** Direction of attempted sequence extension */
-		Direction extensionDir;
-		/** Result code for attempted sequence extension (e.g. DEAD END) */
-		PathExtensionResult extensionResult;
+		/** True if leftwards sequence extension was attempted */
+		bool extendedLeft;
+		/** True if rightwards sequence extension was attempted */
+		bool extendedRight;
+		/** Result code for attempted left sequence extension (e.g. DEAD END) */
+		PathExtensionResult leftExtensionResult;
+		/** Result code for attempted left sequence extension (e.g. DEAD END) */
+		PathExtensionResult rightExtensionResult;
 		/** Original length of the read segment prior to extension */
 		unsigned origLength;
-		/** Sequence length after extension */
+		/** length of left extension (bp) */
+		unsigned leftExtensionLength;
+		/** length of right extension (bp) */
+		unsigned rightExtensionLength;
+		/** total length of extended sequence (bp) */
 		unsigned extendedLength;
 		/**
 		 * True if the extended sequence was excluded from the output contigs
-		 * because it was redundant.  (An identical sequence was generated
+		 * because it was redundant. (An identical sequence was generated
 		 * when extending a previous read.)
 		 */
 		bool redundantContig;
@@ -311,9 +319,13 @@ namespace BloomDBG {
 			readId(),
 			readSegmentId(std::numeric_limits<unsigned>::max()),
 			numReadSegments(std::numeric_limits<unsigned>::max()),
-			extensionDir(FORWARD),
-			extensionResult(DEAD_END),
+			extendedLeft(false),
+			extendedRight(false),
+			leftExtensionResult(DEAD_END),
+			rightExtensionResult(DEAD_END),
 			origLength(std::numeric_limits<unsigned>::max()),
+			leftExtensionLength(std::numeric_limits<unsigned>::max()),
+			rightExtensionLength(std::numeric_limits<unsigned>::max()),
 			extendedLength(std::numeric_limits<unsigned>::max()),
 			redundantContig(false),
 			contigID(std::numeric_limits<size_t>::max()) {}
@@ -324,8 +336,9 @@ namespace BloomDBG {
 				readSegmentId != std::numeric_limits<unsigned>::max() &&
 				numReadSegments != std::numeric_limits<unsigned>::max() &&
 				origLength != std::numeric_limits<unsigned>::max() &&
-				extendedLength != std::numeric_limits<unsigned>::max() &&
-				contigID != std::numeric_limits<size_t>::max();
+				leftExtensionLength != std::numeric_limits<unsigned>::max() &&
+				rightExtensionLength != std::numeric_limits<unsigned>::max() &&
+				extendedLength != std::numeric_limits<unsigned>::max();
 		}
 
 		static std::ostream& printHeaders(std::ostream& out)
@@ -333,9 +346,11 @@ namespace BloomDBG {
 			out << "read_id\t"
 				<< "read_segment_id\t"
 				<< "num_read_segments\t"
-				<< "extension_dir\t"
-				<< "extension_result\t"
+				<< "left_extension_result\t"
+				<< "right_extension_result\t"
 				<< "orig_length\t"
+				<< "left_extension_len\t"
+				<< "right_extension_len\t"
 				<< "extended_length\t"
 				<< "redundant_contig\t"
 				<< "contig_id\n";
@@ -353,16 +368,32 @@ namespace BloomDBG {
 					<< "-\t"
 					<< o.origLength << '\t'
 					<< "-\t"
+					<< "-\t"
+					<< "-\t"
 					<< "true" << '\t'
 					<< "-\n";
 			} else {
 				out << o.readId << '\t'
 					<< o.readSegmentId << '\t'
-					<< o.numReadSegments << '\t'
-					<< directionStr(o.extensionDir) << '\t'
-					<< pathExtensionResultStr(o.extensionResult) << '\t'
-					<< o.origLength << '\t'
-					<< o.extendedLength << '\t'
+					<< o.numReadSegments << '\t';
+				if (o.extendedLeft)
+					out << o.leftExtensionResult << '\t';
+				else
+					out << "-\t";
+				if (o.extendedRight)
+					out << o.rightExtensionResult << '\t';
+				else
+					out << "-\t";
+				out << o.origLength << '\t';
+				if (o.extendedLeft)
+					out << o.leftExtensionLength << '\t';
+				else
+					out << "-\t";
+				if (o.extendedRight)
+					out << o.rightExtensionLength << '\t';
+				else
+					out << "-\t";
+				out << o.extendedLength << '\t'
 					<< "false" << '\t'
 					<< o.contigID << '\n';
 			}
@@ -675,6 +706,8 @@ namespace BloomDBG {
 			traceResult.readSegmentId = it - segments.begin() + 1;
 			traceResult.numReadSegments = segments.size();
 			traceResult.origLength = seq.length();
+			traceResult.leftExtensionLength = 0;
+			traceResult.rightExtensionLength = 0;
 			traceResult.redundantContig = true;
 
 			/*
@@ -683,27 +716,27 @@ namespace BloomDBG {
 			 * points.
 			 */
 			if (it == segments.begin()) {
-				traceResult.extensionDir = REVERSE;
-				traceResult.extensionResult = extendSeq(seq,
-					traceResult.extensionDir, k, numHashes, minBranchLen,
-					dbg);
-				traceResult.extendedLength = seq.length();
-			} else if (it == segments.end() - 1) {
-				traceResult.extensionDir = FORWARD;
-				traceResult.extensionResult = extendSeq(seq,
-					traceResult.extensionDir, k, numHashes, minBranchLen,
-					dbg);
-				traceResult.extendedLength = seq.length();
-			} else {
-				traceResult.extensionResult = BRANCHING_POINT;
+				traceResult.extendedLeft = true;
+				traceResult.leftExtensionResult = extendSeq(seq,
+					REVERSE, k, numHashes, minBranchLen, dbg);
+				traceResult.leftExtensionLength =
+					seq.length() - traceResult.origLength;
 			}
+			if (it == segments.end() - 1) {
+				traceResult.extendedRight = true;
+				traceResult.rightExtensionResult = extendSeq(seq,
+					FORWARD, k, numHashes, minBranchLen, dbg);
+				traceResult.rightExtensionLength =
+					seq.length() - traceResult.origLength;
+			}
+			traceResult.extendedLength = seq.length();
 
 			/*
 			 * check against assembledKmerSet again to prevent race
 			 * condition. (Otherwise, the same contig may be
 			 * generated multiple times.)
 			 */
-#pragma omp critical(out)
+#pragma omp critical(assembledKmerSet)
 			if (!allKmersInBloom(seq, assembledKmerSet)) {
 				/*
 				 * remove redundant branching k-mers at start/end
@@ -725,6 +758,11 @@ namespace BloomDBG {
 			/* trace file output ('-T' option) */
 #pragma omp critical(traceOut)
 			if (!params.tracePath.empty()) {
+				if (!traceResult.initialized()) {
+					SeqExtensionResult::printHeaders(std::cerr);
+					std::cerr << traceResult;
+					assert(traceResult.initialized());
+				}
 				traceOut << traceResult;
 				assert_good(traceOut, params.tracePath);
 			}
