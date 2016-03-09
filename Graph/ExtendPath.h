@@ -125,8 +125,7 @@ static inline bool lookAhead(
 	assert(inserted.second);
 
 	while (!q.empty()) {
-		V u = q.front();
-		q.pop_front();
+		V& u = q.front();
 		visited.insert(u);
 		typename DepthMap::const_iterator it = depthMap.find(u);
 		assert(it != depthMap.end());
@@ -159,6 +158,7 @@ static inline bool lookAhead(
 				}
 			}
 		}
+		q.pop_front();
 	}
 
 	return false;
