@@ -792,6 +792,9 @@ namespace BloomDBG {
 	{
 		assert(params.initialized());
 
+		/* per-thread I/O buffer (size is in bases) */
+		const size_t SEQ_BUFFER_SIZE = 1000000;
+
 		/* print progress message after processing this many reads */
 		const unsigned progressStep = 1000;
 		const unsigned k = goodKmerSet.getKmerSize();
@@ -820,40 +823,58 @@ namespace BloomDBG {
 
 		FastaConcat in(argv, argv + argc, FastaReader::FOLD_CASE);
 #pragma omp parallel
-		for (FastaRecord rec;;) {
-			bool good;
+		for (std::vector<FastaRecord> buffer;;) {
+
+			/* read sequences in batches to reduce I/O contention */
+			buffer.clear();
+			size_t bufferSize;
+			bool good = true;
 #pragma omp critical(in)
-			good = in >> rec;
-			if (!good)
+			for (bufferSize = 0; bufferSize < SEQ_BUFFER_SIZE;) {
+				FastaRecord rec;
+				good = in >> rec;
+				if (!good)
+					break;
+				buffer.push_back(rec);
+				bufferSize += rec.seq.length();
+			}
+			if (buffer.size() == 0)
 				break;
 
-			bool skip = false;
+			for (std::vector<FastaRecord>::iterator it = buffer.begin();
+				 it != buffer.end(); ++it) {
 
-			/* we can't extend reads shorter than k */
-			if (rec.seq.length() < k)
-				skip = true;
+				const FastaRecord& rec = *it;
+				bool skip = false;
 
-			/* only extend error-free reads */
-			if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
-				skip = true;
+				/* we can't extend reads shorter than k */
+				if (rec.seq.length() < k)
+					skip = true;
 
-			/* skip reads in previously assembled regions */
-			if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
-				skip = true;
+				/* only extend error-free reads */
+				if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
+					skip = true;
 
-			if (!skip) {
-				extendRead(rec, graph, assembledKmerSet, params,
-					counters, out, traceOut);
+				/* skip reads in previously assembled regions */
+				if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
+					skip = true;
+
+				/* extend the read left and right within the DBG */
+				if (!skip) {
+					extendRead(rec, graph, assembledKmerSet, params,
+						counters, out, traceOut);
 #pragma omp atomic
-				counters.readsExtended++;
-			}
+					counters.readsExtended++;
+				}
 
 #pragma omp atomic
-			counters.readsProcessed++;
-			if (params.verbose && counters.readsProcessed % progressStep == 0)
-				printProgressMessage(counters);
+				counters.readsProcessed++;
+				if (params.verbose && counters.readsProcessed % progressStep == 0)
+					printProgressMessage(counters);
 
-		} /* for each read */
+			} /* for each read */
+
+		} /* for each batch of reads (parallel) */
 
 		assert(in.eof());
 		if (!params.tracePath.empty()) {
