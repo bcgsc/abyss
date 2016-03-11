@@ -54,6 +54,7 @@ static const char USAGE_MESSAGE[] =
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
 "  -k, --kmer=N               the size of a k-mer [required]\n"
+"  -o, --out=FILE             write the contigs to FILE [STDOUT]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
 "  -Q, --mask-quality=N       mask all low quality bases as `N'\n"
@@ -84,7 +85,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:g:H:j:k:q:Q:s:t:T:v";
+static const char shortopts[] = "b:c:g:H:j:k:o:q:Q:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -100,6 +101,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "out",              required_argument, NULL, 'o' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "mask-quality",     required_argument, NULL, 'Q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
@@ -138,6 +140,8 @@ int main(int argc, char** argv)
 			arg >> params.threads; break;
 		  case 'k':
 			arg >> params.k; break;
+		  case 'o':
+			arg >> params.outputPath; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
 		  case 's':
@@ -206,6 +210,14 @@ int main(int argc, char** argv)
 	/* set global variable for spaced seed */
 	MaskedKmer::setMask(params.spacedSeed);
 
+	/* print contigs to STDOUT unless -o option was set */
+	ofstream outputFile;
+	if (!params.outputPath.empty()) {
+		outputFile.open(params.outputPath.c_str());
+		assert_good(outputFile, params.outputPath);
+	}
+	ostream& out = params.outputPath.empty() ? cout : outputFile;
+
 	/* BloomFilter class requires size to be a multiple of 64 */
 	const size_t bitsPerByte = 8;
 	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
@@ -236,7 +248,7 @@ int main(int argc, char** argv)
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,
-		cascadingBloom, params, cout);
+		cascadingBloom, params, out);
 
 	/* generate de Bruijn graph in GraphViz format (optional) */
 	if (!params.graphPath.empty()) {
@@ -248,6 +260,10 @@ int main(int argc, char** argv)
 		graphOut.close();
 		assert_good(graphOut, params.graphPath);
 	}
+
+	/* cleanup */
+	if (!params.outputPath.empty())
+		outputFile.close();
 
 	return EXIT_SUCCESS;
 }
