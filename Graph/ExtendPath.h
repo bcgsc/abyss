@@ -89,9 +89,65 @@ enum SingleExtensionResult {
 };
 
 /**
+ * Return true if there is a path of at least depthLimit vertices
+ * that extends from given vertex u, otherwise return false.
+ * Implemented using a bounded depth first search.
+ *
+ * @param start starting vertex for traversal
+ * @param dir direction for traversal (FORWARD or REVERSE)
+ * @param depth depth of current vertex u
+ * @param depthLimit maximum depth to probe
+ * @param g graph to use for traversal
+ * @param visited vertices that have already been visited by the DFS
+ * @return true if at least one path with length >= len
+ * extends from v in direction dir, false otherwise
+ */
+template <class Graph>
+static inline bool lookAhead(
+	const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	Direction dir, unsigned depth, unsigned depthLimit,
+	unordered_set< typename boost::graph_traits<Graph>::vertex_descriptor,
+	hash<typename boost::graph_traits<Graph>::vertex_descriptor> >& visited, const Graph& g)
+{
+    typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+    typedef typename boost::graph_traits<Graph>::out_edge_iterator OutEdgeIter;
+    typedef typename boost::graph_traits<Graph>::in_edge_iterator InEdgeIter;
+
+	OutEdgeIter oei, oei_end;
+	InEdgeIter iei, iei_end;
+
+	visited.insert(u);
+	if (depth == depthLimit)
+		return true;
+
+	if (dir == FORWARD) {
+		for (boost::tie(oei, oei_end) = out_edges(u, g);
+			oei != oei_end; ++oei) {
+			const V& v = target(*oei, g);
+			if (visited.find(v) == visited.end()) {
+				if(lookAhead(v, dir, depth+1, depthLimit, visited, g))
+					return true;
+			}
+		}
+	} else {
+		assert(dir == REVERSE);
+		for (boost::tie(iei, iei_end) = in_edges(u, g);
+			 iei != iei_end; ++iei) {
+			const V& v = source(*iei, g);
+			if (visited.find(v) == visited.end()) {
+				if(lookAhead(v, dir, depth+1, depthLimit, visited, g))
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
  * Return true if there is a path of at least 'depth' vertices
  * that extends from given vertex v, otherwise return false.
- * Implemented using a bounded breadth first search.
+ * Implemented using a bounded depth first search.
  *
  * @param start starting vertex for traversal
  * @param dir direction for traversal (FORWARD or REVERSE)
@@ -100,68 +156,14 @@ enum SingleExtensionResult {
  * @return true if at least one path with length >= len
  * extends from v in direction dir, false otherwise
  */
-template <class BidirectionalGraph>
+template <class Graph>
 static inline bool lookAhead(
-	typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor start,
-	Direction dir, unsigned depth, const BidirectionalGraph& g)
+	const typename boost::graph_traits<Graph>::vertex_descriptor& start,
+	Direction dir, unsigned depth, const Graph& g)
 {
-    typedef typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor V;
-    typedef typename boost::graph_traits<BidirectionalGraph>::out_edge_iterator OutEdgeIter;
-    typedef typename boost::graph_traits<BidirectionalGraph>::in_edge_iterator InEdgeIter;
-
-	OutEdgeIter oei, oei_end;
-	InEdgeIter iei, iei_end;
-
-	unordered_set<V, hash<V> > visited;
-	typedef unordered_map<V, unsigned> DepthMap;
-	DepthMap depthMap;
-	std::deque<V> q;
-
-	q.push_back(start);
-
-	visited.insert(start);
-	std::pair<typename DepthMap::iterator, bool> inserted =
-		depthMap.insert(std::make_pair(start, 0));
-	assert(inserted.second);
-
-	while (!q.empty()) {
-		V& u = q.front();
-		visited.insert(u);
-		typename DepthMap::const_iterator it = depthMap.find(u);
-		assert(it != depthMap.end());
-		unsigned uDepth = it->second;
-		if (uDepth == depth)
-			return true;
-		if (dir == FORWARD) {
-			for (boost::tie(oei, oei_end) = out_edges(u, g);
-				oei != oei_end; ++oei) {
-				V v = target(*oei, g);
-				if (visited.find(v) == visited.end()) {
-					visited.insert(v);
-					std::pair<typename DepthMap::iterator, bool> inserted =
-						depthMap.insert(std::make_pair(v, uDepth+1));
-					assert(inserted.second);
-					q.push_back(v);
-				}
-			}
-		} else {
-			assert(dir == REVERSE);
-			for (boost::tie(iei, iei_end) = in_edges(u, g);
-				iei != iei_end; ++iei) {
-				V v = source(*iei, g);
-				if (visited.find(v) == visited.end()) {
-					visited.insert(v);
-					std::pair<typename DepthMap::iterator, bool> inserted =
-						depthMap.insert(std::make_pair(v, uDepth+1));
-					assert(inserted.second);
-					q.push_back(v);
-				}
-			}
-		}
-		q.pop_front();
-	}
-
-	return false;
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+	unordered_set< V, hash<V> > visited;
+	return lookAhead(start, dir, 0, depth, visited, g);
 }
 
 /**
