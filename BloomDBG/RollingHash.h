@@ -27,7 +27,8 @@ private:
 	void multiHash(size_t seedHash)
 	{
 		for (unsigned i = 0; i < m_numHashes; i++) {
-			m_hashes.at(i) = rol(varSeed, i) ^ seedHash;
+            m_hashes.at(i) = seedHash * (i ^ m_kmer * varSeed);
+            m_hashes.at(i) ^= m_hashes.at(i) >> varShift;
 		}
 	}
 
