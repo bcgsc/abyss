@@ -126,7 +126,7 @@ namespace BloomDBG {
 	inline static void loadFile(BF& bloom, const std::string& path,
 		bool verbose = false)
 	{
-		const size_t BUFFER_SIZE = 100000;
+		const size_t BUFFER_SIZE = 1000000;
 		const size_t LOAD_PROGRESS_STEP = 10000;
 
 		assert(!path.empty());
@@ -159,14 +159,14 @@ namespace BloomDBG {
 					readCount++;
 					if (readCount % LOAD_PROGRESS_STEP == 0)
 						std::cerr << "Loaded " << readCount
-							<< " reads into bloom filter\n";
+							<< " reads into Bloom filter\n";
 				}
 			}
 		}
 		assert(in.eof());
 		if (verbose) {
 			std::cerr << "Loaded " << readCount << " reads from `"
-					  << path << "` into bloom filter\n";
+					  << path << "` into Bloom filter\n";
 		}
 	}
 
