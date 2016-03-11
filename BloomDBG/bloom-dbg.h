@@ -65,6 +65,9 @@ namespace BloomDBG {
 		/** verbose level for progress messages */
 		int verbose;
 
+		/** output contigs path (empty string indicates STDOUT) */
+		std::string outputPath;
+
 		/** output path for trace file (-T) option */
 		std::string tracePath;
 
@@ -72,7 +75,7 @@ namespace BloomDBG {
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
 			numHashes(1), threads(1), k(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
-			verbose(0), tracePath() {}
+			verbose(0), outputPath(), tracePath() {}
 
 		/** Return true if all required members are initialized */
 		bool initialized() const {
