@@ -664,14 +664,30 @@ namespace BloomDBG {
 		std::ostream& out)
 	{
 		FastaRecord contig;
+
+		/* set FASTA id */
 		std::ostringstream id;
 		id << contigID;
+
+		/* add FASTA comment indicating extended read id */
 		std::ostringstream comment;
 		comment << "read:" << readID;
 		assert(id.good());
 		contig.id = id.str();
 		contig.comment = comment.str();
-		contig.seq = seq;
+
+		/* set seq (in canonical orientation) */
+		Sequence rcSeq = reverseComplement(seq);
+		contig.seq = (seq < rcSeq) ? seq : rcSeq;
+		/*
+		 * remove last base so that branching
+		 * k-mers are not repeated between adjacent
+		 * contigs
+		 */
+		assert(seq.length() > 1);
+		contig.seq.erase(contig.seq.length() - 1);
+
+		/* output FASTQ record */
 		out << contig;
 		assert(out);
 	}
@@ -740,32 +756,19 @@ namespace BloomDBG {
 			 * generated multiple times.)
 			 */
 #pragma omp critical(assembledKmerSet)
-			if (!allKmersInBloom(seq, assembledKmerSet)) {
-				/*
-				 * remove redundant branching k-mers at start/end
-				 * of contig
-				 */
-				trimContig(seq, assembledKmerSet);
-				if (!seq.empty()) {
-					assert(seq.length() >= k);
-					addKmersToBloom(seq, assembledKmerSet);
-					traceResult.redundantContig = false;
-					traceResult.contigID = counters.contigID;
-					printContig(seq, counters.contigID,
-						read.id, out);
-					counters.basesAssembled += seq.length();
-					counters.contigID++;
-				}
+			if (seq.length() > k && !allKmersInBloom(seq, assembledKmerSet)) {
+				addKmersToBloom(seq, assembledKmerSet);
+				traceResult.redundantContig = false;
+				traceResult.contigID = counters.contigID;
+				printContig(seq, counters.contigID, read.id, out);
+				counters.basesAssembled += seq.length();
+				counters.contigID++;
 			}
 
 			/* trace file output ('-T' option) */
 #pragma omp critical(traceOut)
 			if (!params.tracePath.empty()) {
-				if (!traceResult.initialized()) {
-					SeqExtensionResult::printHeaders(std::cerr);
-					std::cerr << traceResult;
-					assert(traceResult.initialized());
-				}
+				assert(traceResult.initialized());
 				traceOut << traceResult;
 				assert_good(traceOut, params.tracePath);
 			}
