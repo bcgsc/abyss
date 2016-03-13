@@ -212,6 +212,185 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 }
 
 /**
+ * Return the outgoing neighbour of v if it is unique.
+ * Neighbour vertices from branches less than or equal
+ * to trimLen are ignored.
+ *
+ * @param v the subject vertex
+ * @param g the graph
+ * @param trimLen ignore branches shorter than or equal
+ * to this length
+ * @param successor if successor is non-NULL
+ * and the outgoing neighbour of v is unique, successor will
+ * be set to point to the unique outgoing neighbour.
+ * Otherwise the value of successor will become undefined.
+ * @return SingleExtensionResult (SE_DEAD_END, SE_BRANCHING_POINT,
+ * SE_EXTENDED)
+ */
+template <class Graph>
+static inline SingleExtensionResult getSuccessor(
+	const typename boost::graph_traits<Graph>::vertex_descriptor& v,
+	const Graph& g, unsigned trimLen,
+	typename boost::graph_traits<Graph>::vertex_descriptor* successor = NULL)
+{
+	typedef typename boost::graph_traits<Graph> graph_traits;
+	typedef typename graph_traits::vertex_descriptor V;
+
+	typename graph_traits::out_edge_iterator oei, oei_end;
+	boost::tie(oei, oei_end) = out_edges(v, g);
+
+	/* 0 neighbours */
+	if (oei == oei_end)
+		return SE_DEAD_END;
+
+	/* 1 neighbour */
+	const V& neighbour1 = target(*oei, g);
+	++oei;
+	if (oei == oei_end) {
+		if (successor != NULL)
+			*successor = neighbour1;
+		return SE_EXTENDED;
+	}
+
+	/* test for 2 or more branches of sufficient length */
+	unsigned trueBranches = 0;
+	if (lookAhead(neighbour1, FORWARD, trimLen, g))
+		trueBranches++;
+	for (; oei != oei_end; ++oei) {
+		const V& neighbour = target(*oei, g);
+		if (lookAhead(neighbour, FORWARD, trimLen, g)) {
+			trueBranches++;
+			if (trueBranches >= 2)
+				return SE_BRANCHING_POINT;
+			if (successor != NULL)
+				*successor = neighbour;
+		}
+	}
+
+	if (trueBranches == 0)
+		return SE_DEAD_END;
+	else if (trueBranches == 1)
+		return SE_EXTENDED;
+	else
+		return SE_BRANCHING_POINT;
+}
+
+/**
+ * Return the incoming neighbour of v if it is unique.
+ * Neighbour vertices from branches less than or equal
+ * to trimLen are ignored.
+ *
+ * @param v the subject vertex
+ * @param g the graph
+ * @param trimLen ignore branches shorter than or equal
+ * to this length
+ * @param predecessor if predecessor is non-NULL
+ * and the incoming neighbour of v is unique, predecessor will
+ * be set to point to the unique incoming neighbour.
+ * Otherwise the value of predecessor will become undefined.
+ * @return SingleExtensionResult (SE_DEAD_END, SE_BRANCHING_POINT,
+ * SE_EXTENDED)
+ */
+template <class Graph>
+static inline SingleExtensionResult getPredecessor(
+	const typename boost::graph_traits<Graph>::vertex_descriptor& v,
+	const Graph& g, unsigned trimLen,
+	typename boost::graph_traits<Graph>::vertex_descriptor* predecessor = NULL)
+{
+	typedef typename boost::graph_traits<Graph> graph_traits;
+	typedef typename graph_traits::vertex_descriptor V;
+
+	typename graph_traits::in_edge_iterator iei, iei_end;
+	boost::tie(iei, iei_end) = in_edges(v, g);
+
+	/* 0 neighbours */
+	if (iei == iei_end)
+		return SE_DEAD_END;
+
+	/* 1 neighbour */
+	const V& neighbour1 = source(*iei, g);
+	++iei;
+	if (iei == iei_end) {
+		if (predecessor != NULL)
+			*predecessor = neighbour1;
+		return SE_EXTENDED;
+	}
+
+	/* test for 2 or more branches of sufficient length */
+	unsigned trueBranches = 0;
+	if (lookAhead(neighbour1, REVERSE, trimLen, g))
+		trueBranches++;
+	for (; iei != iei_end; ++iei) {
+		const V& neighbour = source(*iei, g);
+		if (lookAhead(neighbour, REVERSE, trimLen, g)) {
+			trueBranches++;
+			if (trueBranches >= 2)
+				return SE_BRANCHING_POINT;
+			if (predecessor != NULL)
+				*predecessor = neighbour;
+		}
+	}
+	if (trueBranches == 0)
+		return SE_DEAD_END;
+	else if (trueBranches == 1)
+		return SE_EXTENDED;
+	else
+		return SE_BRANCHING_POINT;
+}
+
+/**
+ * Return the single vertex extension of v if it is unique.
+ * Neighbour vertices with branches less than or equal
+ * to trimLen are ignored.
+ *
+ * @param v the subject vertex
+ * @param dir direction for extension
+ * (FORWARD or REVERSE)
+ * @param g the graph
+ * @param trimLen ignore branches shorter than or equal
+ * to this length
+ * @param vNext if the extension of v is unique, this will
+ * be set to the unique incoming/outgoing neighbour. Otherwise the
+ * value will become undefined.
+ * @return SingleExtensionResult (SE_DEAD_END, SE_BRANCHING_POINT,
+ * SE_EXTENDED)
+ */
+template <class Graph>
+static inline SingleExtensionResult getSingleVertexExtension(
+	const typename boost::graph_traits<Graph>::vertex_descriptor& v,
+	Direction dir, const Graph& g, unsigned trimLen,
+	typename boost::graph_traits<Graph>::vertex_descriptor& vNext)
+{
+	typedef typename boost::graph_traits<Graph> graph_traits;
+	typedef typename graph_traits::vertex_descriptor V;
+
+	SingleExtensionResult result;
+
+	/*
+	 * Check number of incoming neighbours.
+	 * (We can't extend forwards if there are
+	 * multiple incoming branches.)
+	 */
+	if (dir == FORWARD) {
+		result = getPredecessor(v, g, trimLen);
+	} else {
+		assert(dir == REVERSE);
+		result = getSuccessor(v, g, trimLen);
+	}
+	if (result == SE_BRANCHING_POINT)
+		return SE_BRANCHING_POINT;
+
+	/* check number of outgoing branches */
+	if (dir == FORWARD) {
+		result = getSuccessor(v, g, trimLen, &vNext);
+	} else {
+		assert(dir == REVERSE);
+		result = getPredecessor(v, g, trimLen, &vNext);
+	}
+	return result;
+}
+
+/**
  * If the given path has only one possible next/prev vertex in the graph,
  * append/prepend that vertex to the path.
  *
@@ -231,47 +410,19 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	typedef boost::graph_traits<G> graph_traits;
 	typedef typename graph_traits::vertex_descriptor V;
 
-	typename graph_traits::out_edge_iterator oei, oei_end;
-	typename graph_traits::in_edge_iterator iei, iei_end;
-
-	assert(dir == FORWARD || dir == REVERSE);
-
-	V& u = (dir == FORWARD) ? path.back() : path.front();
-
-	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
-	unsigned inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
-
-	if (outDegree == 0)
-		return SE_DEAD_END;
-
-	if (inDegree == 1 && outDegree == 1) {
+	V& v = (dir == FORWARD) ? path.back() : path.front();
+	SingleExtensionResult result;
+	V vNext;
+	result = getSingleVertexExtension(v, dir, g, trimLen, vNext);
+	if (result == SE_EXTENDED) {
 		if (dir == FORWARD) {
-			const V& v = target(*(out_edges(u, g).first), g);
-			path.push_back(v);
+			path.push_back(vNext);
 		} else {
 			assert(dir == REVERSE);
-			const V& v = source(*(in_edges(u, g).first), g);
-			path.push_front(v);
+			path.push_front(vNext);
 		}
-		return SE_EXTENDED;
 	}
-
-	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
-	std::vector<V> outNeighbours = trueBranches(u, dir, g, trimLen);
-	std::vector<V> inNeighbours = trueBranches(u, otherDir, g, trimLen);
-
-	if (outNeighbours.size() == 0)
-		return SE_DEAD_END;
-
-	if (inNeighbours.size() > 1 || outNeighbours.size() > 1)
-		return SE_BRANCHING_POINT;
-
-	if (dir == FORWARD)
-		path.push_back(outNeighbours.front());
-	else
-		path.push_front(outNeighbours.front());
-
-	return  SE_EXTENDED;
+	return result;
 }
 
 /**
