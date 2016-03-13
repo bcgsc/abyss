@@ -117,7 +117,8 @@ inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned 
     return (rhVal<fhVal)? rhVal : fhVal;
 }
 
-
+// disable code with compilation errors
+#if 0
 // spaced-seed hash values
 // forward-strand spaced seed hash value of the base kmer, i.e. fhval(kmer_0)
 inline uint64_t getFhval(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned k) {
@@ -164,6 +165,6 @@ inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const unsig
     }
     return sVal;
 }
-
+#endif
 
 #endif
