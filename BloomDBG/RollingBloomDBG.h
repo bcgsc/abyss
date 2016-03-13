@@ -84,7 +84,7 @@ struct graph_traits< RollingBloomDBG<BF> > {
 
 	static vertex_descriptor null_vertex()
 	{
-		return vertex_descriptor(MaskedKmer(), std::vector<size_t>());
+		return std::make_pair(MaskedKmer(), std::vector<size_t>());
 	}
 
 	// IncidenceGraph
