@@ -2,7 +2,6 @@
 #include "Graph/ExtendPath.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <gtest/gtest.h>
-#include <boost/graph/reverse_graph.hpp>
 
 using namespace std;
 
@@ -61,104 +60,6 @@ TEST(extendPath, lookAhead)
 
 	depth = 4;
 	ASSERT_FALSE(lookAhead(0, FORWARD, depth, g2));
-}
-
-TEST(extendPath, getSingleVertexExtension)
-{
-	SingleExtensionResult result;
-	Vertex successor;
-	unsigned trimLen = 0;
-
-	/*
-	 * graph 1: simple path
-	 *
-	 * 0--1--2
-	 */
-
-	Graph g1;
-	add_edge(0, 1, g1);
-	add_edge(1, 2, g1);
-
-	result = getSingleVertexExtension(0, REVERSE, g1, trimLen, successor);
-	ASSERT_EQ(SE_DEAD_END, result);
-
-	result = getSingleVertexExtension(0, FORWARD, g1, trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(1u, successor);
-
-	result = getSingleVertexExtension(2u, REVERSE, g1, trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(1u, successor);
-
-	result = getSingleVertexExtension(2u, FORWARD, g1, trimLen, successor);
-	ASSERT_EQ(SE_DEAD_END, result);
-
-	result = getSingleVertexExtension(1u, FORWARD, g1, trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(2u, successor);
-
-	result = getSingleVertexExtension(1u, REVERSE, g1, trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(0u, successor);
-
-	/*
-	 * graph 2: with branch point
-	 *
-	 *      2
-	 *     /
-	 * 0--1
-	 *     \
-	 *      3
-	 */
-
-	Graph g2;
-	add_edge(0, 1, g2);
-	add_edge(1, 2, g2);
-	add_edge(1, 3, g2);
-	add_edge(3, 4, g2);
-
-	result = getSingleVertexExtension(1u, FORWARD, g2, trimLen, successor);
-	ASSERT_EQ(SE_BRANCHING_POINT, result);
-
-	/*
-	 * Note: We should not extend if there are multiple
-	 * incoming branches, even if there is only one outgoing
-	 * edge. Doing so results in overassembly.
-	 */
-	result = getSingleVertexExtension(1u, REVERSE, g2, trimLen, successor);
-	ASSERT_EQ(SE_BRANCHING_POINT, result);
-
-	result = getSingleVertexExtension(1u, FORWARD, make_reverse_graph(g2),
-		trimLen, successor);
-	ASSERT_EQ(SE_BRANCHING_POINT, result);
-
-	result = getSingleVertexExtension(1u, REVERSE, make_reverse_graph(g2),
-		trimLen, successor);
-	ASSERT_EQ(SE_BRANCHING_POINT, result);
-
-	/* graph 3: with trimLen > 0
-	 *
-	 *      2
-	 *     /
-	 * 0--1--3--4
-	 */
-
-	Graph g3;
-	add_edge(0, 1, g3);
-	add_edge(1, 2, g3);
-	add_edge(1, 3, g3);
-	add_edge(3, 4, g3);
-
-	trimLen = 1;
-
-	result = getSingleVertexExtension(1u, FORWARD, g3, trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(3u, successor);
-
-	result = getSingleVertexExtension(1u, FORWARD, make_reverse_graph(g3),
-		trimLen, successor);
-	ASSERT_EQ(SE_EXTENDED, result);
-	ASSERT_EQ(0u, successor);
 }
 
 TEST(extendPath, noExtension)
