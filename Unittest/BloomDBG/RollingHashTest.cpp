@@ -20,12 +20,12 @@ protected:
 	RollingHashTest() : m_numHashes(2), m_k(4), m_kmerMask("1001") {}
 };
 
-TEST_F(RollingHashTest, kmerMask)
+/*TEST_F(RollingHashTest, kmerMask)
 {
 	RollingHash kmer1Hash("GCCG", m_numHashes, m_k, m_kmerMask);
 	RollingHash kmer2Hash("GTTG", m_numHashes, m_k, m_kmerMask);
 	ASSERT_EQ(kmer1Hash, kmer2Hash);
-}
+}*/
 
 TEST_F(RollingHashTest, rollRight)
 {
