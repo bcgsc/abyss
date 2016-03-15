@@ -380,11 +380,11 @@ namespace BloomDBG {
 					<< o.readSegmentId << '\t'
 					<< o.numReadSegments << '\t';
 				if (o.extendedLeft)
-					out << o.leftExtensionResult << '\t';
+					out << pathExtensionResultStr(o.leftExtensionResult) << '\t';
 				else
 					out << "-\t";
 				if (o.extendedRight)
-					out << o.rightExtensionResult << '\t';
+					out << pathExtensionResultStr(o.rightExtensionResult) << '\t';
 				else
 					out << "-\t";
 				out << o.origLength << '\t';
@@ -742,11 +742,12 @@ namespace BloomDBG {
 					seq.length() - traceResult.origLength;
 			}
 			if (it == segments.end() - 1) {
+				unsigned origLength = seq.length();
 				traceResult.extendedRight = true;
 				traceResult.rightExtensionResult = extendSeq(seq,
 					FORWARD, k, numHashes, minBranchLen, dbg);
 				traceResult.rightExtensionLength =
-					seq.length() - traceResult.origLength;
+					seq.length() - origLength;
 			}
 			traceResult.extendedLength = seq.length();
 
