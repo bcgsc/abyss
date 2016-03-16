@@ -293,7 +293,7 @@ int main(int argc, char** argv)
 	for (tie(uit, ulast) = vertices(g); uit != ulast; ++uit) {
 		V u = *uit;
 		size_t ui = get(vertex_index, g, u);
-		double x1 = isnan(b[ui]) ? 0 : b[ui];
+		double x1 = std::isnan(b[ui]) ? 0 : b[ui];
 		sorted.push_back(std::make_pair(x1, u));
 	}
 	sort(sorted.begin(), sorted.end());

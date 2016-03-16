@@ -5,10 +5,10 @@
  * Exponent = 5 bits
  * Copyright 2014 bcgsc
  */
-#include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
+#include <stdint.h>
 
 using namespace std;
 
