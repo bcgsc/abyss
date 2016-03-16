@@ -19,8 +19,7 @@ typedef vector<string> vs;
 
 static bool existFile(const char* f)
 {
-	ifstream file(f);
-	return file;
+	return (bool)ifstream(f);
 }
 
 template <typename D>
