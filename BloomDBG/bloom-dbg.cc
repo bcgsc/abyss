@@ -66,10 +66,18 @@ static const char USAGE_MESSAGE[] =
 "                             ignored during hashing [default is string\n"
 "                             of '1's]\n"
 "  -t, --trim-length          max branch length to trim, in k-mers [k]\n"
-"  -T, --trace-file=FILE      output debugging info about extension of\n"
-"                             of reads to FILE\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
+"\n"
+"Debugging Options:\n"
+"\n"
+"  -C, --cov-track=FILE       WIG track with 0/1 indicating k-mers with\n"
+"                             coverage above the -c threshold. A reference"
+"                             must also be specified with -r.\n"
+"  -T, --trace-file=FILE      write debugging info about extension of\n"
+"                             each read to FILE\n"
+"  -R, --ref=FILE             specify a reference genome. FILE may be\n"
+"                             FASTA, FASTQ, SAM, or BAM and may be gzipped."
 "\n"
 "Example:\n"
 "\n"
@@ -85,13 +93,14 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:g:H:j:k:o:q:Q:s:t:T:v";
+static const char shortopts[] = "b:c:C:g:H:j:k:o:q:Q:R:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "min-coverage",     required_argument, NULL, 'c' },
+	{ "cov-track",        required_argument, NULL, 'C' },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "graph",            required_argument, NULL, 'g' },
@@ -106,6 +115,7 @@ static const struct option longopts[] = {
 	{ "mask-quality",     required_argument, NULL, 'Q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "ref",              required_argument, NULL, 'R' },
 	{ "spaced-seed",      no_argument, NULL, 's' },
 	{ "trim-length",      no_argument, NULL, 't' },
 	{ "trace-file",       no_argument, NULL, 'T'},
@@ -132,6 +142,8 @@ int main(int argc, char** argv)
 			params.bloomSize = SIToBytes(arg); break;
 		  case 'c':
 			arg >> params.minCov; break;
+		  case 'C':
+			arg >> params.covTrackPath; break;
 		  case 'g':
 			arg >> params.graphPath; break;
 		  case 'H':
@@ -144,6 +156,8 @@ int main(int argc, char** argv)
 			arg >> params.outputPath; break;
 		  case 'q':
 			arg >> opt::qualityThreshold; break;
+		  case 'R':
+			arg >> params.refPath; break;
 		  case 's':
 			arg >> params.spacedSeed; break;
 		  case 't':
@@ -180,6 +194,12 @@ int main(int argc, char** argv)
 
 	if (params.k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
+		die = true;
+	}
+
+	if (!params.covTrackPath.empty() && params.refPath.empty()) {
+		cerr << PROGRAM ": you must specify a reference with `-r' "
+			"when using `-C'\n";
 		die = true;
 	}
 
@@ -245,6 +265,11 @@ int main(int argc, char** argv)
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3)
 			<< cascadingBloom.FPR() * 100 << "%" << endl;
+
+	if (!params.covTrackPath.empty()) {
+		assert(!params.refPath.empty());
+		BloomDBG::writeCovTrack(cascadingBloom, params);
+	}
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind,

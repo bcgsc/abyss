@@ -44,6 +44,9 @@ namespace BloomDBG {
 		/** minimum k-mer coverage threshold */
 		unsigned minCov;
 
+		/** WIG track containing 0/1 for sufficient k-mer cov */
+		std::string covTrackPath;
+
 		/** path for output GraphViz file */
 		string graphPath;
 
@@ -55,6 +58,9 @@ namespace BloomDBG {
 
 		/** the size of a k-mer. */
 		unsigned k;
+
+		/** reference genome */
+		std::string refPath;
 
 		/** spaced seed */
 		string spacedSeed;
@@ -1087,6 +1093,95 @@ namespace BloomDBG {
 				<< ")" << std::endl;
 			std::cerr <<  "GraphViz generation complete" << std::endl;
 		}
+	}
+
+	/**
+	 * Write a single block of a 'variableStep' WIG file.
+	 *
+	 * @param chr chromosome name
+	 * @param start start coordinate of block
+	 * @param length length of block
+	 * @param val value of block
+	 * @param out output stream for WIG file
+	 * @param outPath path for output WIG file
+	 */
+	static inline void outputWigBlock(const std::string& chr, size_t start,
+		size_t length, unsigned val, ostream& out, const std::string& outPath)
+	{
+		assert(length > 0);
+		out << "variableStep chrom=" << chr
+			<< " span=" << length << "\n";
+		out << start << ' ' << val << '\n';
+		assert_good(out, outPath);
+	}
+
+	/**
+	 * Write a WIG file for a reference genome, using the values 0 and 1
+	 * to indicate whether or not a given k-mer had sufficient coverage
+	 * in the reads to exceed the minimum coverage threshold.
+	 *
+	 * @param goodKmerSet Bloom filter of k-mers that exceed the
+	 * minimum coverage threshold
+	 * @param params encapsulates all command line options for the
+	 * assembly, including the reference genome and the output path
+	 * for the WIG file.
+	 */
+    template <class BloomT>
+	static inline void writeCovTrack(const BloomT& goodKmerSet,
+		const AssemblyParams& params)
+	{
+		assert(!params.covTrackPath.empty());
+		assert(!params.refPath.empty());
+
+		const unsigned k = goodKmerSet.getKmerSize();
+		const unsigned numHashes = goodKmerSet.getHashNum();
+
+		std::ofstream covTrack(params.covTrackPath.c_str());
+		assert_good(covTrack, params.covTrackPath);
+
+		if (params.verbose)
+			std::cerr << "Writing 0/1 k-mer coverage track for `"
+				<< params.refPath << "` to `"
+				<< params.covTrackPath << "`" << std::endl;
+
+		FastaReader ref(params.refPath.c_str(), FastaReader::FOLD_CASE);
+		for (FastaRecord rec; ref >> rec;) {
+			std::string chr = rec.id;
+			bool firstVal = true;
+			size_t blockStart = 1;
+			size_t blockLength = 0;
+			uint8_t blockVal = 0;
+			for (RollingHashIterator it(rec.seq, k, numHashes,
+				MaskedKmer::mask()); it != RollingHashIterator::end(); ++it) {
+				uint8_t val = goodKmerSet.contains(*it) ? 1 : 0;
+				if (firstVal) {
+					firstVal = false;
+					/* WIG standard uses 1-based coords */
+					blockStart = it.pos() + 1;
+					blockLength = 1;
+					blockVal = val;
+				} else if (val != blockVal) {
+					assert(firstVal == false);
+					outputWigBlock(chr, blockStart, blockLength, blockVal,
+						covTrack, params.covTrackPath);
+					/* WIG standard uses 1-based coords */
+					blockStart = it.pos() + 1;
+					blockLength = 1;
+					blockVal = val;
+				} else {
+					blockLength++;
+				}
+			}
+			/* output last block */
+			if (blockLength > 0) {
+				outputWigBlock(chr, blockStart, blockLength, blockVal,
+					covTrack, params.covTrackPath);
+			}
+		}
+		assert(ref.eof());
+
+		assert_good(covTrack, params.covTrackPath);
+		covTrack.close();
 	}
 
 } /* BloomDBG namespace */
