@@ -1,3 +1,4 @@
+
 #ifndef _EXTENDPATH_H_
 #define _EXTENDPATH_H_
 
@@ -192,7 +193,7 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 
 	if (dir == FORWARD) {
 		for (boost::tie(oei, oei_end) = out_edges(u, g);
-				oei != oei_end; ++oei) {
+			oei != oei_end; ++oei) {
 			const V& v = target(*oei, g);
 			if (lookAhead(v, dir, trimLen, g))
 				branchRoots.push_back(v);
@@ -209,6 +210,134 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 	}
 
 	return branchRoots;
+}
+
+/**
+ * Return the depth of the graph from the given source vertex,
+ * i.e. the distance of the furthest node.  The depth is measured
+ * by means of an exhaustive breadth first search.
+ *
+ * @param root starting vertex for traversal
+ * @param dir direction for traversal (FORWARD or REVERSE)
+ * @param g graph to use for traversal
+ * @return the distance of the furthest vertex from root
+ */
+template <typename Graph>
+static inline size_t depth(
+	typename boost::graph_traits<Graph>::vertex_descriptor root,
+	Direction dir, const Graph& g)
+{
+    typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+    typedef typename boost::graph_traits<Graph>::out_edge_iterator OutEdgeIter;
+    typedef typename boost::graph_traits<Graph>::in_edge_iterator InEdgeIter;
+
+	OutEdgeIter oei, oei_end;
+	InEdgeIter iei, iei_end;
+
+	unordered_set<V, hash<V> > visited;
+	typedef unordered_map<V, size_t> DepthMap;
+	DepthMap depthMap;
+	std::deque<V> q;
+
+	q.push_back(root);
+
+	visited.insert(root);
+	std::pair<typename DepthMap::iterator, bool> inserted =
+		depthMap.insert(std::make_pair(root, 0));
+	assert(inserted.second);
+
+	size_t maxDepth = 0;
+	while (!q.empty()) {
+		V& u = q.front();
+		visited.insert(u);
+		typename DepthMap::const_iterator it = depthMap.find(u);
+		assert(it != depthMap.end());
+		size_t depth = it->second;
+		if (depth > maxDepth)
+			maxDepth = depth;
+		if (dir == FORWARD) {
+			for (boost::tie(oei, oei_end) = out_edges(u, g);
+				oei != oei_end; ++oei) {
+				V v = target(*oei, g);
+				if (visited.find(v) == visited.end()) {
+					visited.insert(v);
+					std::pair<typename DepthMap::iterator, bool> inserted =
+						depthMap.insert(std::make_pair(v, depth+1));
+					assert(inserted.second);
+					q.push_back(v);
+				}
+			}
+		} else {
+			assert(dir == REVERSE);
+			for (boost::tie(iei, iei_end) = in_edges(u, g);
+				iei != iei_end; ++iei) {
+				V v = source(*iei, g);
+				if (visited.find(v) == visited.end()) {
+					visited.insert(v);
+					std::pair<typename DepthMap::iterator, bool> inserted =
+						depthMap.insert(std::make_pair(v, depth+1));
+					assert(inserted.second);
+					q.push_back(v);
+				}
+			}
+		}
+		q.pop_front();
+	}
+
+	return maxDepth;
+}
+
+/**
+ * Return the neighbor vertex corresponding to the longest branch.  If there
+ * are no neighbour vertices, an assertion will be thrown. If there
+ * is a tie between branch lengths, the "winning" branch is chosen arbitrarily.
+ *
+ * @param u root vertex
+ * @param dir direction of branches to consider (FORWARD or REVERSE)
+ * @param g the graph
+ * @return the vertex at the head of the longest branch
+ */
+template <typename Graph>
+inline static typename boost::graph_traits<Graph>::vertex_descriptor
+longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	Direction dir, const Graph& g)
+{
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+    typedef typename boost::graph_traits<Graph>::out_edge_iterator OutEdgeIter;
+    typedef typename boost::graph_traits<Graph>::in_edge_iterator InEdgeIter;
+
+	OutEdgeIter oei, oei_end;
+	InEdgeIter iei, iei_end;
+	size_t maxDepth = 0;
+	unsigned degree = 0;
+	/* note: had to initialize to prevent compiler warnings */
+	V longestBranch = u;
+	if (dir == FORWARD) {
+		for (boost::tie(oei, oei_end) = out_edges(u, g);
+			 oei != oei_end; ++oei) {
+			degree++;
+			const V& v = target(*oei, g);
+			size_t d = depth(v, dir, g);
+			if (d >= maxDepth) {
+				maxDepth = d;
+				longestBranch = v;
+			}
+		}
+	} else {
+		assert(dir == REVERSE);
+		for (boost::tie(iei, iei_end) = in_edges(u, g);
+			 iei != iei_end; ++iei) {
+			degree++;
+			const V& v = source(*iei, g);
+			size_t d = depth(v, dir, g);
+			if (d >= maxDepth) {
+				maxDepth = d;
+				longestBranch = v;
+			}
+		}
+	}
+	assert(degree > 0);
+	return longestBranch;
 }
 
 /**
@@ -241,10 +370,11 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
 	unsigned inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
 
-	if (outDegree == 0)
+	if (outDegree == 0) {
 		return SE_DEAD_END;
+	}
 
-	if (inDegree == 1 && outDegree == 1) {
+	if (inDegree <= 1 && outDegree == 1) {
 		if (dir == FORWARD) {
 			const V& v = target(*(out_edges(u, g).first), g);
 			path.push_back(v);
@@ -257,19 +387,32 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	}
 
 	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
-	std::vector<V> outNeighbours = trueBranches(u, dir, g, trimLen);
-	std::vector<V> inNeighbours = trueBranches(u, otherDir, g, trimLen);
+	std::vector<V> longBranchesOut = trueBranches(u, dir, g, trimLen);
+	std::vector<V> longBranchesIn = trueBranches(u, otherDir, g, trimLen);
 
-	if (outNeighbours.size() == 0)
-		return SE_DEAD_END;
-
-	if (inNeighbours.size() > 1 || outNeighbours.size() > 1)
+	if (longBranchesIn.size() > 1 || longBranchesOut.size() > 1)
 		return SE_BRANCHING_POINT;
 
+	if (longBranchesOut.size() == 0) {
+		/*
+		 * If we have multiple branches that are shorter
+		 * than the trim length then choose the longest one.
+		 * (This type of situation usually occurs near
+		 * coverage gaps.)
+		 */
+		V v = longestBranch(u, dir, g);
+		if (dir == FORWARD)
+			path.push_back(v);
+		else
+			path.push_front(v);
+
+		return SE_EXTENDED;
+	}
+
 	if (dir == FORWARD)
-		path.push_back(outNeighbours.front());
+		path.push_back(longBranchesOut.front());
 	else
-		path.push_front(outNeighbours.front());
+		path.push_front(longBranchesOut.front());
 
 	return  SE_EXTENDED;
 }

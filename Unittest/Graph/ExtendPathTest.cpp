@@ -62,6 +62,54 @@ TEST(extendPath, lookAhead)
 	ASSERT_FALSE(lookAhead(0, FORWARD, depth, g2));
 }
 
+TEST(extendPath, depth)
+{
+	/*
+	 *      2
+	 *     /
+	 * 0--1
+	 *     \
+	 *      3--4
+	 */
+
+	Graph g;
+	add_edge(0, 1, g);
+	add_edge(1, 2, g);
+	add_edge(1, 3, g);
+	add_edge(3, 4, g);
+
+	/* note: depth of starting node is 0 */
+	ASSERT_EQ(3u, depth(0, FORWARD, g));
+	ASSERT_EQ(2u, depth(1, FORWARD, g));
+	ASSERT_EQ(3u, depth(4, REVERSE, g));
+	ASSERT_EQ(1u, depth(1, REVERSE, g));
+}
+
+TEST(extendPath, longestBranch)
+{
+	/*
+	 *      2
+	 *     /
+	 * 0--1
+	 *     \
+	 *      3--4
+	 *     /
+	 *    5
+	 */
+
+	Graph g;
+	add_edge(0, 1, g);
+	add_edge(1, 2, g);
+	add_edge(1, 3, g);
+	add_edge(3, 4, g);
+	add_edge(5, 3, g);
+
+	ASSERT_EQ(1u, longestBranch(0, FORWARD, g));
+	ASSERT_EQ(3u, longestBranch(1, FORWARD, g));
+	ASSERT_EQ(1u, longestBranch(3, REVERSE, g));
+	ASSERT_EQ(3u, longestBranch(4, REVERSE, g));
+}
+
 TEST(extendPath, noExtension)
 {
 	// Graph containing a single edge.
@@ -211,17 +259,29 @@ TEST(extendPath, withTrimming)
 	add_edge(3, 4, g2);
 	add_edge(3, 5, g2);
 
-	Path<Vertex> expectedPath2;
-	expectedPath2.push_back(0);
-	expectedPath2.push_back(1);
-	expectedPath2.push_back(3);
-
 	Path<Vertex> path2;
 	path2.push_back(0);
 
 	extendPath(path2, FORWARD, g2, trimLen);
-	EXPECT_EQ(3u, path2.size());
-	ASSERT_EQ(expectedPath2, path2);
+
+	/**
+	 * Note: In situations where there are
+	 * multiple branches shorter than the trim
+	 * length, we chose the longest one.  (And
+	 * if the branches are of equal length we
+	 * choose one arbitrarily.)
+	 *
+	 * This is the desired behaviour to deal
+	 * with coverage gaps in the de Bruijn
+	 * graph, which can make a legimitate branch
+	 * indistinguishable from short branches
+	 * due to read errors / Bloom filter false
+	 * positives.
+	 */
+	ASSERT_EQ(4u, path2.size());
+	ASSERT_EQ(0u, path2.at(0));
+	ASSERT_EQ(1u, path2.at(1));
+	ASSERT_EQ(3u, path2.at(2));
 }
 
 TEST(extendPath, cycles)
