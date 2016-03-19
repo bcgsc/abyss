@@ -698,6 +698,60 @@ namespace BloomDBG {
 		assert(out);
 	}
 
+	/**
+	 * Trim contiguous stretches of previously-assembled k-mers from
+	 * both ends of a contig.
+	 *
+	 * @param seq contig to be trimmed
+	 * @param assembledKmerSet Bloom filter of k-mers from previously
+	 * assembled contigs
+	 */
+	template <typename BloomT>
+	inline static void trimContigOverlaps(Sequence &seq,
+		const BloomT& assembledKmerSet)
+	{
+		const unsigned k = assembledKmerSet.getKmerSize();
+		const unsigned numHashes = assembledKmerSet.getHashNum();
+
+		/* trim previously assembled k-mers from start of sequence */
+		RollingHashIterator fwd(seq, k, numHashes, MaskedKmer::mask());
+		for (; fwd != RollingHashIterator::end(); ++fwd) {
+			if (!assembledKmerSet.contains(*fwd))
+				break;
+		}
+		if (fwd.pos() > 0)
+			seq.erase(0, fwd.pos());
+
+		/* trim previously assembled k-mers from end of sequence */
+		Sequence rcSeq = reverseComplement(seq);
+		RollingHashIterator rev(rcSeq, k, numHashes, MaskedKmer::mask());
+		for (; rev != RollingHashIterator::end(); ++rev) {
+			if (!assembledKmerSet.contains(*rev))
+				break;
+		}
+		if (rev.pos() > 0)
+			rcSeq.erase(0, rev.pos());
+
+		/* flip seq back to original orientation */
+		seq = reverseComplement(rcSeq);
+	}
+
+	/**
+	 * Split a read at branching points in the de Bruijn graph and
+	 * then extend each segment left and right, up to the next
+	 * branching point or dead end.
+	 *
+	 * @param read read to be assembled
+	 * @param dbg Boost graph interface to de Bruijn graph
+	 * @param assembledKmerSet Bloom filter containing k-mers of
+	 * previously assembled contigs
+	 * @param params command line options for the assembly
+	 * (e.g. k-mer coverage threshold)
+	 * @param counters counter variables used for generating assembly
+	 * progress messages.
+	 * @param out output stream for contigs
+	 * @param traceOut output stream for trace file (-T option)
+	 */
 	template <typename GraphT, typename BloomT>
 	inline static void extendRead(const FastaRecord& read,
 		const GraphT& dbg, BloomT& assembledKmerSet,
@@ -764,12 +818,18 @@ namespace BloomDBG {
 			 */
 #pragma omp critical(assembledKmerSet)
 			if (seq.length() > k && !allKmersInBloom(seq, assembledKmerSet)) {
-				addKmersToBloom(seq, assembledKmerSet);
-				traceResult.redundantContig = false;
-				traceResult.contigID = counters.contigID;
-				printContig(seq, counters.contigID, read.id, out);
-				counters.basesAssembled += seq.length();
-				counters.contigID++;
+
+				/* trim previously assembled k-mers from both ends */
+				trimContigOverlaps(seq, assembledKmerSet);
+
+				if (seq.length() > k) {
+					addKmersToBloom(seq, assembledKmerSet);
+					traceResult.redundantContig = false;
+					traceResult.contigID = counters.contigID;
+					printContig(seq, counters.contigID, read.id, out);
+					counters.basesAssembled += seq.length();
+					counters.contigID++;
+				}
 			}
 
 			/* trace file output ('-T' option) */
