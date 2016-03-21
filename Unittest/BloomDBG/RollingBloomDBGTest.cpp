@@ -48,22 +48,11 @@ protected:
 		 * complements of these k-mers.
 		 */
 
-		/*m_bloom.insert("CGACT");
+		m_bloom.insert("CGACT");
 		m_bloom.insert("TGACT");
 		m_bloom.insert("GACTC");
 		m_bloom.insert("ACTCT");
 		m_bloom.insert("ACTCG");
-		*/
-		m_bloom.insert(RollingHash("CGACT", m_bloomHashes,
-			m_k).getHash());
-		m_bloom.insert(RollingHash("TGACT", m_bloomHashes,
-			m_k).getHash());
-		m_bloom.insert(RollingHash("GACTC", m_bloomHashes,
-			m_k).getHash());
-		m_bloom.insert(RollingHash("ACTCT", m_bloomHashes,
-			m_k).getHash());
-		m_bloom.insert(RollingHash("ACTCG", m_bloomHashes,
-			m_k).getHash());
 	}
 
 };
