@@ -488,8 +488,12 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		path1.push_back(head);
 		path2.push_back(head);
 	}
-	extendPath(path1, dir, g, trimLen, k+2);
-	extendPath(path2, dir, g, trimLen, k+2);
+
+	ExtendPathParams params;
+	params.trimLen = trimLen;
+	params.maxLen = k + 2;
+	extendPath(path1, dir, g, params);
+	extendPath(path2, dir, g, params);
 
 	/* paths lengths not k+1 -- not a simple bubble */
 	if (path1.size() != k+2 || path2.size() != k+2)
@@ -693,8 +697,11 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 				(int)(maxLen - startKmerPos - k + 1));
 		}
 
-		pathResult = extendPath(path, FORWARD, g, trimLen,
-			maxPathLen);
+		ExtendPathParams params;
+		params.trimLen = trimLen;
+		params.maxLen = maxPathLen;
+
+		pathResult = extendPath(path, FORWARD, g, params);
 
 		/*
 		 * give up if we don't at extend beyond end

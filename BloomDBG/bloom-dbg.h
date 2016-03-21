@@ -425,8 +425,11 @@ namespace BloomDBG {
 		Path<Vertex> path = seqToPath(seq, k, numHashes);
 
 		/* Extend path */
+		ExtendPathParams params;
+		params.trimLen = minBranchLen;
+		params.maxLen = NO_LIMIT;
 		PathExtensionResult result =
-			extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
+			extendPath(path, dir, graph, params);
 
 		/* Convert extended path back to sequence */
 		Sequence extendedSeq = pathToSeq(path, k);
@@ -955,7 +958,7 @@ namespace BloomDBG {
 			assert_good(traceOut, params.tracePath);
 		}
 
-		if (opt::verbose) {
+		if (params.verbose) {
 			printProgressMessage(counters);
 			std::cerr << "Assembly complete" << std::endl;
 		}
