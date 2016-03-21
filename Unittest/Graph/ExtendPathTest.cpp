@@ -218,7 +218,8 @@ TEST(extendPath, bidirectional)
 
 TEST(extendPath, withTrimming)
 {
-	const unsigned trimLen = 1;
+	ExtendPathParams params;
+	params.trimLen = 1;
 
 	/*
 	 *       2
@@ -241,7 +242,7 @@ TEST(extendPath, withTrimming)
 	Path<Vertex> path;
 	path.push_back(0);
 
-	extendPath(path, FORWARD, g, trimLen);
+	extendPath(path, FORWARD, g, params);
 	ASSERT_EQ(expectedPath, path);
 
 	/*
@@ -262,7 +263,7 @@ TEST(extendPath, withTrimming)
 	Path<Vertex> path2;
 	path2.push_back(0);
 
-	extendPath(path2, FORWARD, g2, trimLen);
+	extendPath(path2, FORWARD, g2, params);
 
 	/**
 	 * Note: In situations where there are
