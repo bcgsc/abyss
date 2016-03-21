@@ -1,7 +1,6 @@
 #ifndef ABYSS_ROLLING_HASH_H
 #define ABYSS_ROLLING_HASH_H 1
 
-#include <iostream>
 #include "lib/bloomfilter-2dfba08d120d7659e8c75cf5c501b3b9040e98cb/rolling.h"
 #include <string>
 #include <vector>
@@ -31,6 +30,27 @@ private:
 			m_hashes.at(i) = seedHash * (i ^ m_k * varSeed);
 			m_hashes.at(i) ^= m_hashes.at(i) >> varShift;
 		}
+	}
+
+	/**
+	 * Mask "don't care" positions in the current k-mer by
+	 * replacing them with 'X' characters.
+	 */
+	void maskKmer()
+	{
+		assert(m_spacedSeed.length() == m_k);
+		for(size_t i = 0; i < m_spacedSeed.length(); ++i) {
+			if (m_spacedSeed.at(i) == '0')
+				m_kmer.at(i) = 'X';
+		}
+	}
+
+	/**
+	 * Restore the current k-mer to its unmasked state.
+	 */
+	void unmaskKmer()
+	{
+		m_kmer = m_unmaskedKmer;
 	}
 
 public:
@@ -95,8 +115,7 @@ public:
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
 		const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k), m_hash1(0), 
-		m_rcHash1(0), m_kmer(kmer),
+		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k), m_kmer(kmer),
 		m_unmaskedKmer(kmer), m_spacedSeed(spacedSeed)
 	{
 		/* init rolling hash state */
@@ -127,6 +146,8 @@ public:
 
 		/* store copy of k-mer for future rolling/masking ops */
 		m_kmer = kmer;
+		m_unmaskedKmer = kmer;
+
 		resetMasked();
 	}
 
@@ -138,15 +159,22 @@ public:
 	void resetMasked()
 	{
 		assert(m_spacedSeed.length() == m_k);
+
+		/* replace "don't care" positions with 'X' */
+		maskKmer();
+
 		/* compute first hash function for k-mer */
-		size_t hash1 = getFhval(m_hash1, m_spacedSeed.c_str(), m_kmer.c_str(), m_k);
+		m_hash1 = getFhval(m_kmer.c_str(), m_k);
 
 		/* compute first hash function for reverse complement
 		 * of k-mer */
-		size_t rcHash1 = getRhval(m_rcHash1, m_spacedSeed.c_str(), m_kmer.c_str(), m_k);
+		m_rcHash1 = getRhval(m_kmer.c_str(), m_k);
 
 		/* compute hash values */
-		multiHash(canonicalHash(hash1, rcHash1));
+		multiHash(canonicalHash(m_hash1, m_rcHash1));
+
+		/* restore k-mer to unmasked state */
+		unmaskKmer();
 	}
 
 	/**
@@ -192,20 +220,15 @@ public:
 	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	void rollRightMasked(unsigned char charOut, unsigned char charIn)
+	void rollRightMasked(unsigned char, unsigned char charIn)
 	{
 		assert(m_spacedSeed.length() == m_k);
 		assert(m_k >= 2);
 		std::rotate(m_kmer.begin(), m_kmer.begin() + 1, m_kmer.end());
 		std::rotate(m_unmaskedKmer.begin(), m_unmaskedKmer.begin() + 1, m_unmaskedKmer.end());
 		m_kmer.at(m_k - 1) = charIn;
-		
-		/* update first hash function */
-		/* get seed value for computing rest of the hash functions */
-		size_t seed = rollHashesRight(m_hash1, m_rcHash1, m_spacedSeed.c_str(), m_kmer.c_str(), charOut, charIn, m_k);
-
-		/* compute hash values */
-		multiHash(seed);
+		m_unmaskedKmer.at(m_k - 1) = charIn;
+		resetMasked();
 	}
 
 	/**
@@ -251,15 +274,15 @@ public:
 	 * @param charIn rightmost base of next k-mer
 	 * @return vector of hash values for next k-mer
 	 */
-	void rollLeftMasked(unsigned char charIn, unsigned char charOut)
+	void rollLeftMasked(unsigned char charIn, unsigned char)
 	{
 		assert(m_spacedSeed.length() == m_k);
 		assert(m_k >= 2);
 		std::rotate(m_kmer.rbegin(), m_kmer.rbegin() + 1, m_kmer.rend());
 		std::rotate(m_unmaskedKmer.rbegin(), m_unmaskedKmer.rbegin() + 1, m_unmaskedKmer.rend());
 		m_kmer.at(0) = charIn;
-		size_t seed = rollHashesLeft(m_hash1, m_rcHash1, m_spacedSeed.c_str(), m_kmer.c_str(), charIn, charOut, m_k);
-		multiHash(seed);
+		m_unmaskedKmer.at(0) = charIn;
+		resetMasked();
 	}
 
 	/**
