@@ -669,9 +669,11 @@ namespace BloomDBG {
 	}
 
     inline static void printContig(const Sequence& seq,
-		size_t contigID, const std::string& readID,
+		size_t contigID, const std::string& readID, unsigned k,
 		std::ostream& out)
 	{
+		assert(seq.length() >= k);
+
 		FastaRecord contig;
 
 		/* set FASTA id */
@@ -688,13 +690,14 @@ namespace BloomDBG {
 		/* set seq (in canonical orientation) */
 		Sequence rcSeq = reverseComplement(seq);
 		contig.seq = (seq < rcSeq) ? seq : rcSeq;
+
 		/*
 		 * remove last base so that branching
 		 * k-mers are not repeated between adjacent
 		 * contigs
 		 */
-		assert(seq.length() > 1);
-		contig.seq.erase(contig.seq.length() - 1);
+		if (seq.length() > k)
+			contig.seq.erase(contig.seq.length() - 1);
 
 		/* output FASTQ record */
 		out << contig;
@@ -737,6 +740,8 @@ namespace BloomDBG {
 
 		/* flip seq back to original orientation */
 		seq = reverseComplement(rcSeq);
+
+		assert(seq.length() >= k);
 	}
 
 	/**
@@ -820,19 +825,16 @@ namespace BloomDBG {
 			 * generated multiple times.)
 			 */
 #pragma omp critical(assembledKmerSet)
-			if (seq.length() > k && !allKmersInBloom(seq, assembledKmerSet)) {
+			if (!allKmersInBloom(seq, assembledKmerSet)) {
 
 				/* trim previously assembled k-mers from both ends */
 				trimContigOverlaps(seq, assembledKmerSet);
-
-				if (seq.length() > k) {
-					addKmersToBloom(seq, assembledKmerSet);
-					traceResult.redundantContig = false;
-					traceResult.contigID = counters.contigID;
-					printContig(seq, counters.contigID, read.id, out);
-					counters.basesAssembled += seq.length();
-					counters.contigID++;
-				}
+				addKmersToBloom(seq, assembledKmerSet);
+				traceResult.redundantContig = false;
+				traceResult.contigID = counters.contigID;
+				printContig(seq, counters.contigID, read.id, k, out);
+				counters.basesAssembled += seq.length();
+				counters.contigID++;
 			}
 
 			/* trace file output ('-T' option) */
