@@ -60,17 +60,9 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom1(bloomSize, numHashes, k);
-	/*bloom1.insert("GACTC");
+	bloom1.insert("GACTC");
 	bloom1.insert("ACTCG");
-	bloom1.insert("CTCGG");*/
-	
-	bloom1.insert(RollingHash("GACTC", numHashes,
-			k).getHash());
-	bloom1.insert(RollingHash("ACTCG", numHashes,
-			k).getHash());
-	bloom1.insert(RollingHash("CTCGG", numHashes,
-			k).getHash());
-	
+	bloom1.insert("CTCGG");
 
 	Sequence seq1 = "GACTCGG";
 
@@ -100,21 +92,11 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom2(bloomSize, numHashes, k);
-	/*bloom2.insert("GACTC");
+	bloom2.insert("GACTC");
 	bloom2.insert("ACTCT");
 	bloom2.insert("ACTCG");
 	bloom2.insert("TCTCG");
-	bloom2.insert("CTCGG");*/
-	bloom2.insert(RollingHash("GACTC", numHashes,
-			k).getHash());
-	bloom2.insert(RollingHash("ACTCT", numHashes,
-			k).getHash());
-	bloom2.insert(RollingHash("ACTCG", numHashes,
-			k).getHash());
-	bloom2.insert(RollingHash("TCTCG", numHashes,
-			k).getHash());
-	bloom2.insert(RollingHash("CTCGG", numHashes,
-			k).getHash());
+	bloom2.insert("CTCGG");
 
 	Sequence seq2 = "GACTCGG";
 
@@ -140,22 +122,11 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom3(bloomSize, numHashes, k);
-	/*bloom3.insert("TACTC");
+	bloom3.insert("TACTC");
 	bloom3.insert("GACTC");
 	bloom3.insert("ACTCG");
 	bloom3.insert("CTCGA");
-	bloom3.insert("CTCGG");*/
-	
-	bloom3.insert(RollingHash("TACTC", numHashes,
-			k).getHash());
-	bloom3.insert(RollingHash("GACTC", numHashes,
-			k).getHash());
-	bloom3.insert(RollingHash("ACTCG", numHashes,
-			k).getHash());
-	bloom3.insert(RollingHash("CTCGA", numHashes,
-			k).getHash());
-	bloom3.insert(RollingHash("CTCGG", numHashes,
-			k).getHash());
+	bloom3.insert("CTCGG");
 
 	Sequence seq3 = "ACTCG";
 
