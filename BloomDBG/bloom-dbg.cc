@@ -3,6 +3,7 @@
 #include "BloomDBG/bloom-dbg.h"
 #include "BloomDBG/HashAgnosticCascadingBloom.h"
 #include "BloomDBG/MaskedKmer.h"
+#include "BloomDBG/SpacedSeed.h"
 #include "Common/StringUtil.h"
 #include "Common/Options.h"
 #include "DataLayer/Options.h"
@@ -38,7 +39,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Perform a de Bruijn graph assembly of the given FASTQ files.\n"
 "\n"
-"Options:\n"
+"Basic Options:\n"
 "\n"
 "  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
@@ -62,18 +63,24 @@ static const char USAGE_MESSAGE[] =
 "                             for FASTQ and SAM files [default]\n"
 "      --illumina-quality     zero quality is `@' (64), typically\n"
 "                             for qseq and export files\n"
-"  -s, --spaced-seed=STR      bitmask indicating k-mer positions to be\n"
-"                             ignored during hashing [default is string\n"
-"                             of '1's]\n"
 "  -t, --trim-length          max branch length to trim, in k-mers [k]\n"
 "  -v, --verbose              display verbose output\n"
 "      --version              output version information and exit\n"
+"\n"
+"Spaced Seed Options:\n"
+"\n"
+"  -K, --single-kmer=N        use a spaced seed that consists of two k-mers\n"
+"                             separated by a gap. K must be chosen such that\n"
+"                             K <= k/2\n"
+"  -s, --spaced-seed=STR      bitmask indicating k-mer positions to be\n"
+"                             ignored during hashing. The pattern must be\n"
+"                             symmetric\n"
 "\n"
 "Debugging Options:\n"
 "\n"
 "  -C, --cov-track=FILE       WIG track with 0/1 indicating k-mers with\n"
 "                             coverage above the -c threshold. A reference"
-"                             must also be specified with -r.\n"
+"                             must also be specified with -R.\n"
 "  -T, --trace-file=FILE      write debugging info about extension of\n"
 "                             each read to FILE\n"
 "  -R, --ref=FILE             specify a reference genome. FILE may be\n"
@@ -93,7 +100,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:C:g:H:j:k:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:c:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -110,6 +117,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "single-kmer",      required_argument, NULL, 'K' },
 	{ "out",              required_argument, NULL, 'o' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
 	{ "mask-quality",     required_argument, NULL, 'Q' },
@@ -152,6 +160,10 @@ int main(int argc, char** argv)
 			arg >> params.threads; break;
 		  case 'k':
 			arg >> params.k; break;
+		  case 'K':
+			params.resetSpacedSeedParams();
+			arg >> params.K;
+			break;
 		  case 'o':
 			arg >> params.outputPath; break;
 		  case 'q':
@@ -159,7 +171,9 @@ int main(int argc, char** argv)
 		  case 'R':
 			arg >> params.refPath; break;
 		  case 's':
-			arg >> params.spacedSeed; break;
+			params.resetSpacedSeedParams();
+			arg >> params.spacedSeed;
+			break;
 		  case 't':
 			arg >> params.trim; break;
 		  case 'T':
@@ -197,6 +211,11 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (params.k > 0 && params.K > 0 && params.K > params.k/2) {
+		cerr << PROGRAM ": value of `-K' must be <= k/2\n";
+		die = true;
+	}
+
 	if (!params.covTrackPath.empty() && params.refPath.empty()) {
 		cerr << PROGRAM ": you must specify a reference with `-r' "
 			"when using `-C'\n";
@@ -227,8 +246,15 @@ int main(int argc, char** argv)
 
 	/* set global variable for k-mer length */
 	MaskedKmer::setLength(params.k);
+
 	/* set global variable for spaced seed */
-	MaskedKmer::setMask(params.spacedSeed);
+	if (params.K > 0)
+		MaskedKmer::setMask(SpacedSeed::kmerPairMask(params.k, params.K));
+	else
+		MaskedKmer::setMask(params.spacedSeed);
+
+	if (params.verbose && !MaskedKmer::mask().empty())
+		cerr << "Using spaced seed " << MaskedKmer::mask() << endl;
 
 	/* print contigs to STDOUT unless -o option was set */
 	ofstream outputFile;

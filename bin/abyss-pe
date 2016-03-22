@@ -190,13 +190,17 @@ endif
 # AdjList parameters
 m?=50
 alopt += $v $(dbopt) $(SS) -k$k -m$m
+ifndef B
 ifdef K
 alopt += -K$K
 endif
+endif
 
 # filtergraph parameters
+ifndef B
 ifdef K
 fgopt += --assemble --shim-max-degree=2
+endif
 endif
 ifdef xtip
 fgopt += -t$(shell echo $k*2 |bc)
@@ -469,7 +473,11 @@ startDb:
 	> db.txt
 endif
 
-ifdef K
+ifdef B
+%-1.fa:
+	abyss-bloom-dbg $(abyssopt) $(ABYSS_OPTIONS) $(in) $(se) > $@
+else ifdef K
+
 ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) abyss-paired-dbg-mpi $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa $(in) $(se)
@@ -478,9 +486,6 @@ else
 	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
 endif
 
-else ifdef B
-%-1.fa:
-	abyss-bloom-dbg $(abyssopt) $(ABYSS_OPTIONS) $(in) $(se) > $@
 else ifdef np
 %-1.fa:
 	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
