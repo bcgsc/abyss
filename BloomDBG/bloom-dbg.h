@@ -426,7 +426,7 @@ namespace BloomDBG {
 
 		/* Extend path */
 		ExtendPathParams params;
-		params.trimLen = minBranchLen;
+		params.trimLen = minBranchLen - 1;
 		params.maxLen = NO_LIMIT;
 		PathExtensionResult result =
 			extendPath(path, dir, graph, params);
@@ -668,6 +668,59 @@ namespace BloomDBG {
 		}
 	}
 
+	/**
+	 * Ensure that branching k-mers are not repeated in the output
+	 * contigs by selectively trimming contig ends.
+	 *
+	 * The idea is to keep a branch k-mer if the edge leading to it
+	 * is unambigous. For example, in the diagram below the contig
+	 * generated from the right side would include the branching k-mer
+	 * k5, whereas the two contigs entering on the left would discard it:
+	 *
+	 * ...-k1-k2
+	 *          \
+	 *           k5-k6-...
+	 *          /
+	 * ...-k3-k4
+	 *
+	 * @param seq the contig to trim
+	 * @param k k-mer size
+	 * @param numHashes number of Bloom filter hash functions
+	 * @param minBranchLen minimum length of a "true" branch (shorter
+	 * branches are assumed to be caused by sequencing errors or
+	 * Bloom filter false positives).
+	 */
+	template <typename GraphT>
+		inline static void trimBranchKmers(Sequence& seq,
+			unsigned k, unsigned numHashes, const unsigned minBranchLen,
+			const GraphT& dbg)
+	{
+		assert(seq.length() >= k);
+
+		if (seq.length() == k)
+			return;
+
+		Sequence firstKmer = seq.substr(0, k);
+		Vertex vFirst(MaskedKmer(firstKmer),
+			RollingHash(firstKmer, numHashes, k, MaskedKmer::mask()));
+		unsigned outDegree = trueDegree(vFirst, FORWARD, dbg, minBranchLen - 1);
+		if (outDegree > 1)
+			seq.erase(0, 1);
+
+		if (seq.length() == k)
+			return;
+
+		Sequence lastKmer = seq.substr(seq.length()-k);
+		Vertex vLast(MaskedKmer(lastKmer),
+			RollingHash(lastKmer, numHashes, k, MaskedKmer::mask()));
+		unsigned inDegree = trueDegree(vLast, REVERSE, dbg, minBranchLen - 1);
+		if (inDegree > 1)
+			seq.erase(seq.length()-1, 1);
+	}
+
+	/**
+	 * Append a contig to the output FASTA stream.
+	 */
     inline static void printContig(const Sequence& seq,
 		size_t contigID, const std::string& readID, unsigned k,
 		std::ostream& out)
@@ -819,8 +872,11 @@ namespace BloomDBG {
 			}
 			traceResult.extendedLength = seq.length();
 
+			/* ensure branching k-mers are included only once in output */
+			trimBranchKmers(seq, k, numHashes, minBranchLen, dbg);
+
 			/*
-			 * check against assembledKmerSet again to prevent race
+			 * check assembledKmerSet again to prevent race
 			 * condition. (Otherwise, the same contig may be
 			 * generated multiple times.)
 			 */
@@ -829,10 +885,16 @@ namespace BloomDBG {
 
 				/* trim previously assembled k-mers from both ends */
 				trimContigOverlaps(seq, assembledKmerSet);
+
+				/* mark remaining k-mers as assembled */
 				addKmersToBloom(seq, assembledKmerSet);
+
+				/* add contig to output FASTA */
+				printContig(seq, counters.contigID, read.id, k, out);
+
+				/* update counters / trace results */
 				traceResult.redundantContig = false;
 				traceResult.contigID = counters.contigID;
-				printContig(seq, counters.contigID, read.id, k, out);
 				counters.basesAssembled += seq.length();
 				counters.contigID++;
 			}
