@@ -59,6 +59,9 @@ namespace BloomDBG {
 		/** the size of a k-mer. */
 		unsigned k;
 
+		/** the size of a single k-mer in a k-mer pair */
+		unsigned K;
+
 		/** reference genome */
 		std::string refPath;
 
@@ -79,7 +82,7 @@ namespace BloomDBG {
 
 		/** Default constructor */
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
-			numHashes(1), threads(1), k(0), spacedSeed(),
+			numHashes(1), threads(1), k(0), K(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
 			verbose(0), outputPath(), tracePath() {}
 
@@ -87,6 +90,12 @@ namespace BloomDBG {
 		bool initialized() const {
 			return bloomSize > 0 && k > 0 &&
 				trim != std::numeric_limits<unsigned>::max();
+		}
+
+		/** Reset all spaced seed params to their default values */
+		void resetSpacedSeedParams() {
+			spacedSeed.clear();
+			K = 0;
 		}
 	};
 
