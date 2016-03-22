@@ -492,6 +492,8 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	ExtendPathParams params;
 	params.trimLen = trimLen;
 	params.maxLen = k + 2;
+	params.lookBehind = true;
+
 	extendPath(path1, dir, g, params);
 	extendPath(path2, dir, g, params);
 
@@ -700,6 +702,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		ExtendPathParams params;
 		params.trimLen = trimLen;
 		params.maxLen = maxPathLen;
+		params.lookBehind = false;
 
 		pathResult = extendPath(path, FORWARD, g, params);
 

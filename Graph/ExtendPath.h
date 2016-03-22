@@ -21,9 +21,14 @@ struct ExtendPathParams
 	unsigned trimLen;
 	/* maximum length after extension */
 	unsigned maxLen;
+	/*
+	 * if true, multiple incoming branches > trimLen
+	 * will cause a path extension to halt
+	 */
+	bool lookBehind;
 
 	/* constructor */
-	ExtendPathParams() : trimLen(0), maxLen(NO_LIMIT) {}
+	ExtendPathParams() : trimLen(0), maxLen(NO_LIMIT), lookBehind(true) {}
 };
 
 /**
@@ -381,13 +386,15 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	V& u = (dir == FORWARD) ? path.back() : path.front();
 
 	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
-	unsigned inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
-
 	if (outDegree == 0) {
 		return SE_DEAD_END;
 	}
 
-	if (inDegree <= 1 && outDegree == 1) {
+	unsigned inDegree = 0;
+	if (params.lookBehind)
+		inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
+
+	if ((!params.lookBehind || inDegree <= 1) && outDegree == 1) {
 		if (dir == FORWARD) {
 			const V& v = target(*(out_edges(u, g).first), g);
 			path.push_back(v);
@@ -401,9 +408,13 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 
 	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
 	std::vector<V> longBranchesOut = trueBranches(u, dir, g, params.trimLen);
-	std::vector<V> longBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
+	std::vector<V> longBranchesIn;
 
-	if (longBranchesIn.size() > 1 || longBranchesOut.size() > 1)
+	if (params.lookBehind)
+		longBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
+
+	if ((params.lookBehind && longBranchesIn.size() > 1) ||
+		longBranchesOut.size() > 1)
 		return SE_BRANCHING_POINT;
 
 	if (longBranchesOut.size() == 0) {
