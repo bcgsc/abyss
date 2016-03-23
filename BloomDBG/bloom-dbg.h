@@ -757,14 +757,6 @@ namespace BloomDBG {
 		Sequence rcSeq = reverseComplement(seq);
 		contig.seq = (seq < rcSeq) ? seq : rcSeq;
 
-		/*
-		 * remove last base so that branching
-		 * k-mers are not repeated between adjacent
-		 * contigs
-		 */
-		if (seq.length() > k)
-			contig.seq.erase(contig.seq.length() - 1);
-
 		/* output FASTQ record */
 		out << contig;
 		assert(out);
