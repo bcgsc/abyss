@@ -72,6 +72,10 @@ static const char USAGE_MESSAGE[] =
 "  -K, --single-kmer=N        use a spaced seed that consists of two k-mers\n"
 "                             separated by a gap. K must be chosen such that\n"
 "                             K <= k/2\n"
+"      --qr-seed=N            use a spaced seed than consists of two mirrored\n"
+"                             QR seeds separated by a gap.  The following must\n"
+"                             hold: (a) N must be prime, (b) N >= 11,\n"
+"                             (c) N <= k/2\n"
 "  -s, --spaced-seed=STR      bitmask indicating k-mer positions to be\n"
 "                             ignored during hashing. The pattern must be\n"
 "                             symmetric\n"
@@ -79,7 +83,7 @@ static const char USAGE_MESSAGE[] =
 "Debugging Options:\n"
 "\n"
 "  -C, --cov-track=FILE       WIG track with 0/1 indicating k-mers with\n"
-"                             coverage above the -c threshold. A reference"
+"                             coverage above the -c threshold. A reference\n"
 "                             must also be specified with -R.\n"
 "  -T, --trace-file=FILE      write debugging info about extension of\n"
 "                             each read to FILE\n"
@@ -102,7 +106,7 @@ BloomDBG::AssemblyParams params;
 
 static const char shortopts[] = "b:c:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, QR_SEED };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
@@ -123,6 +127,7 @@ static const struct option longopts[] = {
 	{ "mask-quality",     required_argument, NULL, 'Q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "qr-seed",          required_argument, NULL, QR_SEED },
 	{ "ref",              required_argument, NULL, 'R' },
 	{ "spaced-seed",      no_argument, NULL, 's' },
 	{ "trim-length",      no_argument, NULL, 't' },
@@ -188,6 +193,10 @@ int main(int argc, char** argv)
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
+		  case QR_SEED:
+			params.resetSpacedSeedParams();
+			arg >> params.qrSeedLen;
+			break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -213,6 +222,12 @@ int main(int argc, char** argv)
 
 	if (params.k > 0 && params.K > 0 && params.K > params.k/2) {
 		cerr << PROGRAM ": value of `-K' must be <= k/2\n";
+		die = true;
+	}
+
+	if (params.k > 0 && params.qrSeedLen > 0 &&
+		(params.qrSeedLen < 11 || params.qrSeedLen > params.k/2)) {
+		cerr << PROGRAM ": value of `--qr-seed' must be >= 11 and <= k/2\n";
 		die = true;
 	}
 
@@ -249,7 +264,9 @@ int main(int argc, char** argv)
 
 	/* set global variable for spaced seed */
 	if (params.K > 0)
-		MaskedKmer::setMask(SpacedSeed::kmerPairMask(params.k, params.K));
+		MaskedKmer::setMask(SpacedSeed::kmerPair(params.k, params.K));
+	else if (params.qrSeedLen > 0)
+		MaskedKmer::setMask(SpacedSeed::qrSeedPair(params.k, params.qrSeedLen));
 	else
 		MaskedKmer::setMask(params.spacedSeed);
 

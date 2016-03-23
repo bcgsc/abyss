@@ -65,6 +65,9 @@ namespace BloomDBG {
 		/** reference genome */
 		std::string refPath;
 
+		/** Quadratic Residue (QR) seed length */
+		unsigned qrSeedLen;
+
 		/** spaced seed */
 		string spacedSeed;
 
@@ -82,8 +85,8 @@ namespace BloomDBG {
 
 		/** Default constructor */
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
-			numHashes(1), threads(1), k(0), K(0), spacedSeed(),
-			trim(std::numeric_limits<unsigned>::max()),
+			numHashes(1), threads(1), k(0), K(0), qrSeedLen(0),
+			spacedSeed(), trim(std::numeric_limits<unsigned>::max()),
 			verbose(0), outputPath(), tracePath() {}
 
 		/** Return true if all required members are initialized */
@@ -96,6 +99,7 @@ namespace BloomDBG {
 		void resetSpacedSeedParams() {
 			spacedSeed.clear();
 			K = 0;
+			qrSeedLen = 0;
 		}
 	};
 
