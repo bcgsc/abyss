@@ -203,4 +203,7 @@ BloomDBG_MaskedKmer_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(LDADD)
 
+check_PROGRAMS += BloomDBG_SpacedSeed
+BloomDBG_SpacedSeed_SOURCES = BloomDBG/SpacedSeedTest.cpp
+
 TESTS = $(check_PROGRAMS)
