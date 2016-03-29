@@ -1,7 +1,7 @@
 #ifndef ABYSS_ROLLING_HASH_H
 #define ABYSS_ROLLING_HASH_H 1
 
-#include "lib/bloomfilter-2dfba08d120d7659e8c75cf5c501b3b9040e98cb/rolling.h"
+#include "lib/bloomfilter/rolling.h"
 #include <string>
 #include <vector>
 #include <cassert>
