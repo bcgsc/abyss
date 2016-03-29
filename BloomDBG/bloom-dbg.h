@@ -278,25 +278,6 @@ namespace BloomDBG {
 	}
 
 	/**
-	 * Extend a path left (REVERSE) or right (FORWARD) within the de Bruijn
-	 * graph until either a branching point or a dead-end is encountered.
-	 */
-	template <typename GraphT>
-	inline static bool extendPath(
-		Path<typename boost::graph_traits<GraphT>::vertex_descriptor>& path,
-		Direction dir, unsigned minBranchLen, const GraphT& graph)
-	{
-		unsigned origPathLen = path.size();
-		assert(path.size() >= 1);
-
-		/* Extend up to next branching point or dead end in DBG */
-		extendPath(path, dir, graph, minBranchLen, NO_LIMIT);
-
-		/* Return true if path was extended beyond orig length */
-		return path.size() > origPathLen;
-	}
-
-	/**
 	 * Results for the extension of a read segment.
 	 * Each instance represents a row in the trace file generated
 	 * by the '-T' option for abyss-bloom-dbg.
@@ -638,47 +619,6 @@ namespace BloomDBG {
 		}
 		/* trim read down to longest matching subseq */
 		seq = seq.substr(maxMatchStart, maxMatchLen + k - 1);
-	}
-
-	/**
-	 * Trim first and/or last k-mer from a contig if they are
-	 * branching k-mers that have already been included in other
-	 * contigs.
-	 */
-	template <typename BloomT>
-	void trimContig(Sequence& contig, const BloomT& assembledKmerSet)
-	{
-		const unsigned k = assembledKmerSet.getKmerSize();
-		const unsigned numHashes = assembledKmerSet.getHashNum();
-		std::vector<size_t> hashes;
-
-		/* trim first k-mer */
-
-		assert(contig.length() >= k);
-		Sequence firstKmer = contig.substr(0, k);
-		hashes = RollingHash(firstKmer, numHashes, k,
-			MaskedKmer::mask()).getHash();
-		if (assembledKmerSet.contains(hashes)) {
-			if (contig.length() == k) {
-				contig.clear();
-				return;
-			}
-			contig.erase(contig.begin());
-		}
-
-		/* trim last k-mer */
-
-		assert(contig.length() >= k);
-		Sequence lastKmer = contig.substr(contig.length() - k);
-		hashes = RollingHash(lastKmer, numHashes, k,
-			MaskedKmer::mask()).getHash();
-		if (assembledKmerSet.contains(hashes)) {
-			if (contig.length() == k) {
-				contig.clear();
-				return;
-			}
-			contig.erase(contig.end() - 1);
-		}
 	}
 
 	/**
