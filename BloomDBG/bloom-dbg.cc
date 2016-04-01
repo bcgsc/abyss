@@ -283,8 +283,13 @@ int main(int argc, char** argv)
 
 	/* BloomFilter class requires size to be a multiple of 64 */
 	const size_t bitsPerByte = 8;
+	/*
+	 * Note: it is (params.minCov + 1) here because we use an additional
+	 * Bloom filter in BloomDBG::assemble() to track the set of
+	 * assembled k-mers.
+	 */
 	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
-		params.bloomSize * bitsPerByte / params.minCov, (size_t)64);
+		params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
 
 	/* use cascading Bloom filter to remove error k-mers */
 	HashAgnosticCascadingBloom cascadingBloom(
