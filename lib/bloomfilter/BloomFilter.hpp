@@ -161,6 +161,19 @@ public:
 		}
 	}
 
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	void insert(const size_t precomputed[]) {
+
+		//iterates through hashed values adding it to the filter
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
+			__sync_or_and_fetch(&m_filter[normalizedValue / bitsPerChar],
+				bitMask[normalizedValue % bitsPerChar]);
+		}
+	}
+
 	void insert(const char* kmer) {
 		uint64_t hVal = getChval(kmer, m_kmerSize);
 		for (unsigned i = 0; i < m_hashNum; i++) {
