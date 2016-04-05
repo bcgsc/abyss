@@ -32,7 +32,7 @@ template <> struct hash< std::pair<MaskedKmer, RollingHash> > {
 	 */
 	size_t operator()(const std::pair<MaskedKmer, RollingHash>& vertex) const
 	{
-		return vertex.second.getHash().at(0);
+		return vertex.second.getHash()[0];
 	}
 };
 NAMESPACE_STD_HASH_END

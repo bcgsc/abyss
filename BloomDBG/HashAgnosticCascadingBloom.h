@@ -91,8 +91,30 @@ class HashAgnosticCascadingBloom
 		return m_data.back()->contains(hashes);
 	}
 
+	/**
+	 * Return true if the element with the given hash values
+	 * has count >= levels.
+	 */
+	bool contains(const size_t hashes[]) const
+	{
+		assert(m_data.back() != NULL);
+		return m_data.back()->contains(hashes);
+	}
+
 	/** Add the object with the specified index to this multiset. */
 	void insert(const std::vector<size_t>& hashes)
+	{
+		for (unsigned i = 0; i < m_data.size(); ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*m_data[i]).contains(hashes)) {
+				m_data[i]->insert(hashes);
+				break;
+			}
+		}
+	}
+
+	/** Add the object with the specified index to this multiset. */
+	void insert(const size_t hashes[])
 	{
 		for (unsigned i = 0; i < m_data.size(); ++i) {
 			assert(m_data.at(i) != NULL);

@@ -30,11 +30,11 @@ private:
 	{
 		for (unsigned i = 0; i < m_numHashes; i++) {
 #if 1
-			m_hashes.at(i) = rol(varSeed, i) ^ seedHash;
+			m_hashes[i] = rol(varSeed, i) ^ seedHash;
 #else
 			/* Hamid's version (has compile errors) */
-			m_hashes.at(i) = seedHash * (i ^ m_kmer * varSeed);
-			m_hashes.at(i) ^= m_hashes.at(i) >> varShift;
+			m_hashes[i] = seedHash * (i ^ m_kmer * varSeed);
+			m_hashes[i] ^= m_hashes[i] >> varShift;
 #endif
 		}
 	}
@@ -64,8 +64,8 @@ public:
 	/**
 	 * Default constructor.
 	 */
-	RollingHash() : m_numHashes(0), m_hashes(m_numHashes), m_k(0),
-		m_hash1(0), m_rcHash1(0), m_useSpacedSeed(false) {}
+	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0),
+		m_useSpacedSeed(false) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -75,8 +75,8 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_hashes(m_numHashes), m_k(k),
-		m_hash1(0), m_rcHash1(0), m_useSpacedSeed(false) {}
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		m_useSpacedSeed(false) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -88,7 +88,7 @@ public:
 	 * be ignored during the hash calculation of each k-mer
 	 */
 	RollingHash(unsigned numHashes, unsigned k, const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
 		m_useSpacedSeed(true)
 	{
 		initSpacedSeed(spacedSeed);
@@ -103,8 +103,8 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k),
-		m_hash1(0), m_rcHash1(0), m_useSpacedSeed(false)
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
+		m_useSpacedSeed(false)
 	{
 		/* init rolling hash state */
 		reset(kmer);
@@ -124,8 +124,7 @@ public:
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
 		const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_hashes(numHashes), m_k(k),
-		m_useSpacedSeed(true)
+		: m_numHashes(numHashes), m_k(k), m_useSpacedSeed(true)
 	{
 		initSpacedSeed(spacedSeed);
 
@@ -324,9 +323,8 @@ public:
 	}
 
 	/** Get hash values for current k-mer */
-	const std::vector<size_t>& getHash() const
+	const size_t* getHash() const
 	{
-		assert(!m_hashes.empty());
 		return m_hashes;
 	}
 
@@ -336,7 +334,7 @@ public:
 		return
 			m_numHashes == o.m_numHashes &&
 			m_k == o.m_k &&
-			m_hashes == o.m_hashes &&
+			std::equal(m_hashes, m_hashes + m_numHashes, o.m_hashes) &&
 			m_hash1 == o.m_hash1 &&
 			m_rcHash1 == o.m_rcHash1;
 	}
@@ -346,7 +344,7 @@ private:
 	/** number of hash functions to compute at each position */
 	unsigned m_numHashes;
 	/** current values for each hash function */
-	std::vector<size_t> m_hashes;
+	size_t m_hashes[MAX_HASHES];
 	/** k-mer length */
 	unsigned m_k;
 	/** value of first hash function for current k-mer */

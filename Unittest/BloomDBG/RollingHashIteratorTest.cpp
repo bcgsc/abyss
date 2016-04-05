@@ -16,9 +16,9 @@ TEST(RollingHashIterator, reverseComplement)
 
 	RollingHashIterator it(seq, k, numHashes);
 	size_t kmer1Hash, kmer2Hash;
-	kmer1Hash = it->at(0);
+	kmer1Hash = (*it)[0];
 	++it;
-	kmer2Hash = it->at(0);
+	kmer2Hash = (*it)[0];
 	++it;
 	ASSERT_EQ(RollingHashIterator::end(), it);
 
@@ -26,9 +26,9 @@ TEST(RollingHashIterator, reverseComplement)
 
 	RollingHashIterator rcIt(rcSeq, k, numHashes);
 	size_t rcKmer1Hash, rcKmer2Hash;
-	rcKmer2Hash = rcIt->at(0);
+	rcKmer2Hash = (*rcIt)[0];
 	++rcIt;
-	rcKmer1Hash = rcIt->at(0);
+	rcKmer1Hash = (*rcIt)[0];
 	++rcIt;
 	ASSERT_EQ(RollingHashIterator::end(), rcIt);
 
@@ -92,9 +92,9 @@ TEST(RollingHashIterator, spacedSeed)
 
 	RollingHashIterator it(seq, k, numHashes, spacedSeed);
 	size_t kmer1Hash, kmer2Hash;
-	kmer1Hash = it->at(0);
+	kmer1Hash = (*it)[0];
 	++it;
-	kmer2Hash = it->at(0);
+	kmer2Hash = (*it)[0];
 	++it;
 	ASSERT_EQ(RollingHashIterator::end(), it);
 
@@ -102,9 +102,9 @@ TEST(RollingHashIterator, spacedSeed)
 
 	RollingHashIterator rcIt(rcSeq, k, numHashes, spacedSeed);
 	size_t rcKmer1Hash, rcKmer2Hash;
-	rcKmer2Hash = rcIt->at(0);
+	rcKmer2Hash = (*rcIt)[0];
 	++rcIt;
-	rcKmer1Hash = rcIt->at(0);
+	rcKmer1Hash = (*rcIt)[0];
 	++rcIt;
 	ASSERT_EQ(RollingHashIterator::end(), rcIt);
 
