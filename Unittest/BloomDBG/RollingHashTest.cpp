@@ -34,9 +34,9 @@ TEST_F(RollingHashTest, rollRight)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	leftKmerHash.rollRight('G', 'T');
-	ASSERT_EQ(middleKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, leftKmerHash);
 	leftKmerHash.rollRight('A', 'C');
-	ASSERT_EQ(rightKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
 TEST_F(RollingHashTest, rollRightMasked)
@@ -46,9 +46,9 @@ TEST_F(RollingHashTest, rollRightMasked)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
 
 	leftKmerHash.rollRight('G', 'T');
-	ASSERT_EQ(middleKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, leftKmerHash);
 	leftKmerHash.rollRight('A', 'C');
-	ASSERT_EQ(rightKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
 TEST_F(RollingHashTest, rollRightMaskedMismatch)
@@ -64,9 +64,9 @@ TEST_F(RollingHashTest, rollRightMaskedMismatch)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
 
 	leftKmerHash.rollRight('G', 'T');
-	ASSERT_EQ(middleKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, leftKmerHash);
 	leftKmerHash.rollRight('A', 'C');
-	ASSERT_EQ(rightKmerHash.getHash(), leftKmerHash.getHash());
+	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
 TEST_F(RollingHashTest, rollLeft)
@@ -76,9 +76,9 @@ TEST_F(RollingHashTest, rollLeft)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	rightKmerHash.rollLeft('A', 'C');
-	ASSERT_EQ(middleKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, rightKmerHash);
 	rightKmerHash.rollLeft('G', 'T');
-	ASSERT_EQ(leftKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
 TEST_F(RollingHashTest, rollLeftMasked)
@@ -88,9 +88,9 @@ TEST_F(RollingHashTest, rollLeftMasked)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
 
 	rightKmerHash.rollLeft('A', 'C');
-	ASSERT_EQ(middleKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, rightKmerHash);
 	rightKmerHash.rollLeft('G', 'T');
-	ASSERT_EQ(leftKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
 TEST_F(RollingHashTest, rollLeftMaskedMismatch)
@@ -106,9 +106,9 @@ TEST_F(RollingHashTest, rollLeftMaskedMismatch)
 	RollingHash rightKmerHash("GGTC", m_numHashes, m_k, m_kmerMask);
 
 	rightKmerHash.rollLeft('A', 'C');
-	ASSERT_EQ(middleKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(middleKmerHash, rightKmerHash);
 	rightKmerHash.rollLeft('G', 'T');
-	ASSERT_EQ(leftKmerHash.getHash(), rightKmerHash.getHash());
+	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
 TEST_F(RollingHashTest, reset)
@@ -117,7 +117,7 @@ TEST_F(RollingHashTest, reset)
 	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	middleKmerHash.reset("CGTC");
-	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
+	ASSERT_EQ(rightKmerHash, middleKmerHash);
 }
 
 TEST_F(RollingHashTest, resetMasked)
@@ -132,5 +132,5 @@ TEST_F(RollingHashTest, resetMasked)
 	 * the k-mer mask.
 	 */
 	middleKmerHash.reset("CGGC");
-	ASSERT_EQ(rightKmerHash.getHash(), middleKmerHash.getHash());
+	ASSERT_EQ(rightKmerHash, middleKmerHash);
 }

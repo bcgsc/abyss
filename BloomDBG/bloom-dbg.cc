@@ -210,8 +210,10 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (params.numHashes == 0) {
-		cerr << PROGRAM ": missing mandatory option `-H'\n";
+	if (params.numHashes > MAX_HASHES) {
+		cerr << PROGRAM ": number of hash functions (`-H`) must "
+			"be <= " << MAX_HASHES << " (set by `configure` option "
+			"--enable-max-hashes=N)\n";
 		die = true;
 	}
 

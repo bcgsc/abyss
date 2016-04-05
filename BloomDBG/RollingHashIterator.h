@@ -159,17 +159,17 @@ public:
 	}
 
 	/** get reference to hash values for current k-mer */
-	const std::vector<size_t>& operator*() const
+	const size_t* operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
 		return m_rollingHash.getHash();
 	}
 
 	/** get pointer to hash values for current k-mer */
-	const std::vector<size_t>* operator->() const
+	const size_t* operator->() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
-		return &(m_rollingHash.getHash());
+		return m_rollingHash.getHash();
 	}
 
 	/** test equality with another iterator */
