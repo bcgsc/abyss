@@ -101,20 +101,17 @@ public:
 	 * Default constructor. Creates an iterator pointing to
 	 * the end of the iterator range.
 	 */
-	RollingHashIterator() : m_k(0), m_numHashes(0),
-		m_rollingHash(m_k, m_numHashes),
+	RollingHashIterator() : m_k(0), m_rollingHash(m_k),
 		m_pos(std::numeric_limits<std::size_t>::max()) {}
 
 	/**
 	 * Constructor.
 	 * @param seq DNA sequence to be hashed
 	 * @param k k-mer size
-	 * @param numHashes number of hash values to compute
 	 * for each k-mer
 	 */
-	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes)
-		: m_seq(seq), m_k(k), m_numHashes(numHashes),
-		m_rollingHash(m_numHashes, m_k), m_rollNextHash(false),
+	RollingHashIterator(const std::string& seq, unsigned k)
+		: m_seq(seq), m_k(k), m_rollingHash(m_k), m_rollNextHash(false),
 		m_pos(0)
 	{
 		init();
@@ -143,14 +140,7 @@ public:
 	}
 
 	/** get reference to hash values for current k-mer */
-	const size_t* operator*() const
-	{
-		assert(m_pos + m_k <= m_seq.length());
-		return m_rollingHash.getHash();
-	}
-
-	/** get pointer to hash values for current k-mer */
-	const size_t* operator->() const
+	size_t operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
 		return m_rollingHash.getHash();
@@ -223,8 +213,6 @@ private:
 	std::string m_seq;
 	/** k-mer size */
 	unsigned m_k;
-	/** number of hash values to compute for each k-mer */
-	unsigned m_numHashes;
 	/** internal state for rolling hash */
 	RollingHash m_rollingHash;
 	/** true whenever we can "roll" the hash values for

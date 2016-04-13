@@ -32,7 +32,7 @@ template <> struct hash< std::pair<MaskedKmer, RollingHash> > {
 	 */
 	size_t operator()(const std::pair<MaskedKmer, RollingHash>& vertex) const
 	{
-		return vertex.second.getHash()[0];
+		return vertex.second.getHash();
 	}
 };
 NAMESPACE_STD_HASH_END
@@ -318,7 +318,8 @@ template <typename Graph>
 static inline bool
 vertex_exists(const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
-	return g.m_bloom.contains(u.second.getHash());
+	size_t hash = u.second.getHash();
+	return g.m_bloom.contains(&hash);
 }
 
 template <typename Graph>

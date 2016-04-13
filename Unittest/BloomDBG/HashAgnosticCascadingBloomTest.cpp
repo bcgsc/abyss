@@ -9,7 +9,7 @@ typedef uint64_t hash_t;
 TEST(HashAgnosticCascadingBloom, base)
 {
 	const unsigned bloomSize = 1000;
-	const unsigned numHashes = 2;
+	const unsigned numHashes = 1;
 	const unsigned numLevels = 2;
 	const unsigned k = 16;
 
@@ -21,25 +21,31 @@ TEST(HashAgnosticCascadingBloom, base)
 	const char* c = "TAATAACAGTCCCTAT";
 	const char* d = "GATCGTGGCGGGCGAT";
 
-	RollingHashIterator itA(a, k, numHashes);
-	RollingHashIterator itB(b, k, numHashes);
-	RollingHashIterator itC(c, k, numHashes);
-	RollingHashIterator itD(d, k, numHashes);
+	RollingHashIterator itA(a, k);
+	RollingHashIterator itB(b, k);
+	RollingHashIterator itC(c, k);
+	RollingHashIterator itD(d, k);
+	size_t hash;
 
-	x.insert(*itA);
+	hash = *itA;
+	x.insert(&hash);
 	EXPECT_EQ(x.popcount(), 0U);
-	EXPECT_FALSE(x.contains(*itA));
-	x.insert(*itA);
+	EXPECT_FALSE(x.contains(&hash));
+	x.insert(&hash);
+	EXPECT_EQ(x.popcount(), 1U);
+	EXPECT_TRUE(x.contains(&hash));
+	hash = *itB;
+	x.insert(&hash);
+	EXPECT_EQ(x.popcount(), 1U);
+	EXPECT_FALSE(x.contains(&hash));
+	hash = *itC;
+	x.insert(&hash);
+	EXPECT_EQ(x.popcount(), 1U);
+	EXPECT_FALSE(x.contains(&hash));
+	hash = *itB;
+	x.insert(&hash);
 	EXPECT_EQ(x.popcount(), 2U);
-	EXPECT_TRUE(x.contains(*itA));
-	x.insert(*itB);
-	EXPECT_EQ(x.popcount(), 2U);
-	EXPECT_FALSE(x.contains(*itB));
-	x.insert(*itC);
-	EXPECT_EQ(x.popcount(), 2U);
-	EXPECT_FALSE(x.contains(*itC));
-	x.insert(*itB);
-	EXPECT_EQ(x.popcount(), 4U);
-	EXPECT_TRUE(x.contains(*itB));
-	EXPECT_FALSE(x.contains(*itD));
+	EXPECT_TRUE(x.contains(&hash));
+	hash = *itD;
+	EXPECT_FALSE(x.contains(&hash));
 }

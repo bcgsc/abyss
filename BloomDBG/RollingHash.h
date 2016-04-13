@@ -10,11 +10,11 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cstring>
 
-inline uint64_t spacedSeedHash(const char* kmerSeq, const char* spacedSeed,
-	unsigned k)
+inline uint64_t spacedSeedHash(uint64_t& fhVal, uint64_t& rhVal,
+	const char* kmerSeq, const char* spacedSeed, unsigned k)
 {
-	uint64_t fhVal = 0;
-	uint64_t rhVal = 0;
+	fhVal = 0;
+	rhVal = 0;
     for(unsigned i=0; i<k; i++) {
 		if (spacedSeed[i] != '0') {
 			fhVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
@@ -37,29 +37,12 @@ private:
 		return (rcHash < hash) ? rcHash : hash;
 	}
 
-	/**
-	 * Compute multiple pseudo-independent hash values using
-	 * a single seed hash value
-	 */
-	void multiHash(size_t seedHash)
-	{
-		for (unsigned i = 0; i < m_numHashes; i++) {
-#if 1
-			m_hashes[i] = rol(varSeed, i) ^ seedHash;
-#else
-			/* Hamid's version (has compile errors) */
-			m_hashes[i] = seedHash * (i ^ m_kmer * varSeed);
-			m_hashes[i] ^= m_hashes[i] >> varShift;
-#endif
-		}
-	}
-
 public:
 
 	/**
 	 * Default constructor.
 	 */
-	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0) {}
+	RollingHash() : m_k(0), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -68,8 +51,7 @@ public:
 	 * for each k-mer
 	 * @param k k-mer length
 	 */
-	RollingHash(unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0) {}
+	RollingHash(unsigned k) : m_k(k), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object while specifying
@@ -79,8 +61,8 @@ public:
 	 * for each k-mer
 	 * @param k k-mer length
 	 */
-	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
+	RollingHash(const std::string& kmer, unsigned k)
+		: m_k(k), m_hash1(0), m_rcHash1(0)
 	{
 		/* init rolling hash state */
 		reset(kmer);
@@ -121,10 +103,8 @@ public:
 	 */
 	void resetMasked()
 	{
-		size_t seed = spacedSeedHash(m_kmer, MaskedKmer::mask().c_str(), m_k);
-
-		/* compute hash values */
-		multiHash(seed);
+		spacedSeedHash(m_hash1, m_rcHash1, m_kmer,
+			MaskedKmer::mask().c_str(), m_k);
 	}
 
 	/**
@@ -139,9 +119,6 @@ public:
 		/* compute first hash function for reverse complement
 		 * of k-mer */
 		m_rcHash1 = getRhval(kmer.c_str(), m_k);
-
-		/* compute hash values */
-		multiHash(canonicalHash(m_hash1, m_rcHash1));
 	}
 
 	/**
@@ -187,12 +164,6 @@ public:
 	{
 		/* update first hash function */
 		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
-
-		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash(m_hash1, m_rcHash1);
-
-		/* compute hash values */
-		multiHash(seed);
 	}
 
 	/**
@@ -238,37 +209,25 @@ public:
 	{
 		/* update first hash function */
 		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
-
-		/* get seed value for computing rest of the hash functions */
-		size_t seed = canonicalHash(m_hash1, m_rcHash1);
-
-		/* compute hash values */
-		multiHash(seed);
 	}
 
-	/** Get hash values for current k-mer */
-	const size_t* getHash() const
+	/** Get hash value for current k-mer */
+	size_t getHash() const
 	{
-		return m_hashes;
+		return canonicalHash(m_hash1, m_rcHash1);
 	}
 
 	/** Equality operator */
 	bool operator==(const RollingHash& o) const
 	{
 		return
-			m_numHashes == o.m_numHashes &&
 			m_k == o.m_k &&
-			std::equal(m_hashes, m_hashes + m_numHashes, o.m_hashes) &&
 			m_hash1 == o.m_hash1 &&
 			m_rcHash1 == o.m_rcHash1;
 	}
 
 private:
 
-	/** number of hash functions to compute at each position */
-	unsigned m_numHashes;
-	/** current values for each hash function */
-	size_t m_hashes[MAX_HASHES];
 	/** k-mer length */
 	unsigned m_k;
 	/** value of first hash function for current k-mer */

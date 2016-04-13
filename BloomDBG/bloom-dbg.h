@@ -50,9 +50,6 @@ namespace BloomDBG {
 		/** path for output GraphViz file */
 		string graphPath;
 
-		/** num Bloom filter hash functions */
-		unsigned numHashes;
-
 		/** the number of parallel threads. */
 		unsigned threads;
 
@@ -85,7 +82,7 @@ namespace BloomDBG {
 
 		/** Default constructor */
 		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
-			numHashes(1), threads(1), k(0), K(0), qrSeedLen(0),
+			threads(1), k(0), K(0), qrSeedLen(0),
 			spacedSeed(), trim(std::numeric_limits<unsigned>::max()),
 			verbose(0), outputPath(), tracePath() {}
 
@@ -127,10 +124,10 @@ namespace BloomDBG {
 	inline static void loadSeq(BF& bloom, const std::string& seq)
 	{
 		const unsigned k = bloom.getKmerSize();
-		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k);
 			it != RollingHashIterator::end(); ++it) {
-			bloom.insert(*it);
+			size_t hash = *it;
+			bloom.insert(&hash);
 		}
 	}
 
@@ -197,12 +194,12 @@ namespace BloomDBG {
 	inline static bool allKmersInBloom(const Sequence& seq, const BloomT& bloom)
 	{
 		const unsigned k = bloom.getKmerSize();
-		const unsigned numHashes = bloom.getHashNum();
 		assert(seq.length() >= k);
 		unsigned validKmers = 0;
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k);
 			 it != RollingHashIterator::end(); ++it, ++validKmers) {
-			if (!bloom.contains(*it))
+			size_t hash = *it;
+			if (!bloom.contains(&hash))
 				return false;
 		}
 		/* if we skipped over k-mers containing non-ACGT chars */
@@ -218,10 +215,10 @@ namespace BloomDBG {
 	inline static void addKmersToBloom(const Sequence& seq, BloomT& bloom)
 	{
 		const unsigned k = bloom.getKmerSize();
-		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k);
 			 it != RollingHashIterator::end(); ++it) {
-			bloom.insert(*it);
+			size_t hash = *it;
+			bloom.insert(&hash);
 		}
 	}
 
@@ -230,11 +227,11 @@ namespace BloomDBG {
 	 * de Bruijn graph.
 	 */
 	inline static Path<Vertex>
-	seqToPath(const Sequence& seq, unsigned k, unsigned numHashes)
+	seqToPath(const Sequence& seq, unsigned k)
 	{
 		Path<Vertex> path;
 		assert(seq.length() >= k);
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k);
 			 it != RollingHashIterator::end(); ++it) {
 			MaskedKmer kmer(it.kmer());
 			path.push_back(Vertex(kmer, it.rollingHash()));
@@ -410,13 +407,12 @@ namespace BloomDBG {
 	 */
 	template <typename GraphT>
 	inline static PathExtensionResult extendSeq(Sequence& seq, Direction dir,
-		unsigned k, unsigned numHashes, unsigned minBranchLen,
-		const GraphT& graph)
+		unsigned k, unsigned minBranchLen, const GraphT& graph)
 	{
 		assert(seq.length() >= k);
 
 		/* Convert sequence to path in DBG */
-		Path<Vertex> path = seqToPath(seq, k, numHashes);
+		Path<Vertex> path = seqToPath(seq, k);
 
 		/* Extend path */
 		ExtendPathParams params;
@@ -523,8 +519,7 @@ namespace BloomDBG {
 	 */
 	template <typename GraphT>
 	inline static std::vector<Sequence>
-	splitSeq(const Sequence& seq, unsigned k, unsigned numHashes,
-		const GraphT& dbg, unsigned minBranchLen)
+	splitSeq(const Sequence& seq, unsigned k, const GraphT& dbg, unsigned minBranchLen)
 	{
 		assert(seq.length() >= k);
 
@@ -532,7 +527,7 @@ namespace BloomDBG {
 		typedef typename Path<V>::const_iterator PathIt;
 
 		std::vector<Sequence> segments;
-		Path<V> path = seqToPath(seq, k, numHashes);
+		Path<V> path = seqToPath(seq, k);
 		PathIt start = path.begin();
 		PathIt end = path.begin();
 
@@ -572,7 +567,6 @@ namespace BloomDBG {
 	static inline void trimSeq(Sequence& seq, const BloomT& goodKmerSet)
 	{
 		const unsigned k = goodKmerSet.getKmerSize();
-		const unsigned numHashes = goodKmerSet.getHashNum();
 
 		if (seq.length() < k) {
 			seq.clear();
@@ -588,9 +582,10 @@ namespace BloomDBG {
 
 		/* note: RollingHashIterator skips over k-mer
 		 * positions with non-ACGT chars */
-		for (RollingHashIterator it(seq, k, numHashes);
+		for (RollingHashIterator it(seq, k);
 			it != RollingHashIterator::end(); prevPos=it.pos(),++it) {
-			if (!goodKmerSet.contains(*it) ||
+			size_t hash = *it;
+			if (!goodKmerSet.contains(&hash) ||
 				(prevPos != UNSET && it.pos() - prevPos > 1)) {
 				/* end any previous match */
 				if (matchStart != UNSET && matchLen > maxMatchLen) {
@@ -600,7 +595,7 @@ namespace BloomDBG {
 				matchStart = UNSET;
 				matchLen = 0;
 			}
-			if (goodKmerSet.contains(*it)) {
+			if (goodKmerSet.contains(&hash)) {
 				/* initiate or extend match */
 				if (matchStart == UNSET)
 					matchStart = it.pos();
@@ -638,14 +633,13 @@ namespace BloomDBG {
 	 *
 	 * @param seq the contig to trim
 	 * @param k k-mer size
-	 * @param numHashes number of Bloom filter hash functions
 	 * @param minBranchLen minimum length of a "true" branch (shorter
 	 * branches are assumed to be caused by sequencing errors or
 	 * Bloom filter false positives).
 	 */
 	template <typename GraphT>
 		inline static void trimBranchKmers(Sequence& seq,
-			unsigned k, unsigned numHashes, const unsigned minBranchLen,
+			unsigned k, const unsigned minBranchLen,
 			const GraphT& dbg)
 	{
 		assert(seq.length() >= k);
@@ -654,7 +648,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence firstKmer = seq.substr(0, k);
-		Vertex vFirst(MaskedKmer(firstKmer), RollingHash(firstKmer, numHashes, k));
+		Vertex vFirst(MaskedKmer(firstKmer), RollingHash(firstKmer, k));
 		unsigned outDegree = trueDegree(vFirst, FORWARD, dbg, minBranchLen - 1);
 		if (outDegree > 1)
 			seq.erase(0, 1);
@@ -663,7 +657,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence lastKmer = seq.substr(seq.length()-k);
-		Vertex vLast(MaskedKmer(lastKmer), RollingHash(lastKmer, numHashes, k));
+		Vertex vLast(MaskedKmer(lastKmer), RollingHash(lastKmer, k));
 		unsigned inDegree = trueDegree(vLast, REVERSE, dbg, minBranchLen - 1);
 		if (inDegree > 1)
 			seq.erase(seq.length()-1, 1);
@@ -713,12 +707,12 @@ namespace BloomDBG {
 		const BloomT& assembledKmerSet)
 	{
 		const unsigned k = assembledKmerSet.getKmerSize();
-		const unsigned numHashes = assembledKmerSet.getHashNum();
 
 		/* trim previously assembled k-mers from start of sequence */
-		RollingHashIterator fwd(seq, k, numHashes);
+		RollingHashIterator fwd(seq, k);
 		for (; fwd != RollingHashIterator::end(); ++fwd) {
-			if (!assembledKmerSet.contains(*fwd))
+			size_t hash = *fwd;
+			if (!assembledKmerSet.contains(&hash))
 				break;
 		}
 		if (fwd.pos() > 0)
@@ -726,9 +720,10 @@ namespace BloomDBG {
 
 		/* trim previously assembled k-mers from end of sequence */
 		Sequence rcSeq = reverseComplement(seq);
-		RollingHashIterator rev(rcSeq, k, numHashes);
+		RollingHashIterator rev(rcSeq, k);
 		for (; rev != RollingHashIterator::end(); ++rev) {
-			if (!assembledKmerSet.contains(*rev))
+			size_t hash = *rev;
+			if (!assembledKmerSet.contains(&hash))
 				break;
 		}
 		if (rev.pos() > 0)
@@ -763,7 +758,6 @@ namespace BloomDBG {
 		std::ostream& out, std::ostream& traceOut)
 	{
 		const unsigned k = params.k;
-		const unsigned numHashes = params.numHashes;
 		const unsigned minBranchLen = params.trim + 1;
 
 		if (params.verbose >= 2) {
@@ -773,7 +767,7 @@ namespace BloomDBG {
 
 		/* split read at branching points (prevents over-assembly) */
 		std::vector<Sequence> segments = splitSeq(read.seq, k,
-			numHashes, dbg, minBranchLen);
+			dbg, minBranchLen);
 
 		for (std::vector<Sequence>::iterator it = segments.begin();
 			 it != segments.end(); ++it) {
@@ -801,7 +795,7 @@ namespace BloomDBG {
 			if (it == segments.begin()) {
 				traceResult.extendedLeft = true;
 				traceResult.leftExtensionResult = extendSeq(seq,
-					REVERSE, k, numHashes, minBranchLen, dbg);
+					REVERSE, k, minBranchLen, dbg);
 				traceResult.leftExtensionLength =
 					seq.length() - traceResult.origLength;
 			}
@@ -809,14 +803,14 @@ namespace BloomDBG {
 				unsigned origLength = seq.length();
 				traceResult.extendedRight = true;
 				traceResult.rightExtensionResult = extendSeq(seq,
-					FORWARD, k, numHashes, minBranchLen, dbg);
+					FORWARD, k, minBranchLen, dbg);
 				traceResult.rightExtensionLength =
 					seq.length() - origLength;
 			}
 			traceResult.extendedLength = seq.length();
 
 			/* ensure branching k-mers are included only once in output */
-			trimBranchKmers(seq, k, numHashes, minBranchLen, dbg);
+			trimBranchKmers(seq, k, minBranchLen, dbg);
 
 			/*
 			 * check assembledKmerSet again to prevent race
@@ -1104,7 +1098,6 @@ namespace BloomDBG {
 		/* interval for progress messages */
 		const unsigned progressStep = 1000;
 		const unsigned k = kmerSet.getKmerSize();
-		const unsigned numHashes = kmerSet.getHashNum();
 
 		/* counter for progress messages */
 		size_t readsProcessed = 0;
@@ -1136,13 +1129,13 @@ namespace BloomDBG {
 
 				/* BFS traversal in forward dir */
 				Vertex start(MaskedKmer(seq.substr(0, k)),
-					RollingHash(seq.substr(0, k), numHashes, k));
+					RollingHash(seq.substr(0, k), k));
 				breadthFirstSearch(dbg, start, visitor, colorMap);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
 				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k)),
-					RollingHash(rcSeq.substr(0, k), numHashes, k));
+					RollingHash(rcSeq.substr(0, k), k));
 				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
 
 			}
@@ -1203,7 +1196,6 @@ namespace BloomDBG {
 		assert(!params.refPath.empty());
 
 		const unsigned k = goodKmerSet.getKmerSize();
-		const unsigned numHashes = goodKmerSet.getHashNum();
 
 		std::ofstream covTrack(params.covTrackPath.c_str());
 		assert_good(covTrack, params.covTrackPath);
@@ -1220,9 +1212,10 @@ namespace BloomDBG {
 			size_t blockStart = 1;
 			size_t blockLength = 0;
 			uint8_t blockVal = 0;
-			for (RollingHashIterator it(rec.seq, k, numHashes);
+			for (RollingHashIterator it(rec.seq, k);
 				 it != RollingHashIterator::end(); ++it) {
-				uint8_t val = goodKmerSet.contains(*it) ? 1 : 0;
+				size_t hash = *it;
+				uint8_t val = goodKmerSet.contains(&hash) ? 1 : 0;
 				if (firstVal) {
 					firstVal = false;
 					/* WIG standard uses 1-based coords */
