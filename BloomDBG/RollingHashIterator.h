@@ -39,6 +39,8 @@ private:
 			return;
 		}
 
+		const std::string& spacedSeed = MaskedKmer::mask();
+
 		while(m_pos < m_seq.length() - m_k + 1) {
 
 			/* skip k-mers with non-ACGT chars in unmasked positions */
@@ -48,17 +50,17 @@ private:
 
 			if (!m_badCharPos.empty() && m_badCharPos.front() < m_pos + m_k) {
 				/* empty spaced seed is equivalent to a string of '1's */
-				if (m_spacedSeed.empty()) {
+				if (spacedSeed.empty()) {
 					m_rollNextHash = false;
 					m_pos = m_badCharPos.front() + 1;
 					continue;
 				}
 				bool goodKmer = true;
-				assert(m_spacedSeed.length() == m_k);
+				assert(spacedSeed.length() == m_k);
 				for (size_t i = 0; i < m_badCharPos.size() &&
 					m_badCharPos.at(i) < m_pos + m_k; ++i) {
 					size_t kmerPos = m_badCharPos.at(i) - m_pos;
-					if (m_spacedSeed.at(kmerPos) == '1') {
+					if (spacedSeed.at(kmerPos) == '1') {
 						goodKmer = false;
 						break;
 					}
@@ -119,30 +121,12 @@ public:
 	}
 
 	/**
-	 * Constructor.
-	 * @param seq DNA sequence to be hashed
-	 * @param k k-mer size
-	 * @param numHashes number of hash values to compute
-	 * for each k-mer
-	 * @param spacedSeed bitmask indicating which positions
-	 * to ignore when hashing k-mers
-	 */
-	RollingHashIterator(const std::string& seq, unsigned k, unsigned numHashes,
-		const std::string& spacedSeed)
-		: m_seq(seq), m_k(k), m_numHashes(numHashes),
-		m_rollingHash(m_numHashes, m_k, spacedSeed), m_rollNextHash(false),
-		m_pos(0), m_spacedSeed(spacedSeed)
-	{
-		init();
-	}
-
-	/**
 	 * Initialize internal state of iterator.
 	 */
 	void init()
 	{
 		/* note: empty spaced seed indicates no masking (string of '1's) */
-		assert(m_spacedSeed.empty() || m_spacedSeed.length() == m_k);
+		assert(MaskedKmer::mask().empty() || MaskedKmer::mask().length() == m_k);
 
 		/* convert sequence to upper case */
 		std::transform(m_seq.begin(), m_seq.end(), m_seq.begin(), ::toupper);
@@ -216,10 +200,11 @@ public:
 	std::string kmer(bool mask=false) const
 	{
 		std::string kmer(m_seq, m_pos, m_k);
-		if (mask && !m_spacedSeed.empty()) {
-			assert(m_spacedSeed.length() == m_k);
-			for(size_t i = 0; i < m_spacedSeed.length(); ++i) {
-				if (m_spacedSeed.at(i) == '0')
+		const std::string& spacedSeed = MaskedKmer::mask();
+		if (mask && !spacedSeed.empty()) {
+			assert(spacedSeed.length() == m_k);
+			for(size_t i = 0; i < spacedSeed.length(); ++i) {
+				if (spacedSeed.at(i) == '0')
 					kmer.at(i) = 'N';
 			}
 		}
@@ -248,8 +233,6 @@ private:
 	bool m_rollNextHash;
 	/** position of current k-mer */
 	size_t m_pos;
-	/** bitmask of k-mer positions to ignore during hashing */
-	std::string m_spacedSeed;
 	/** positions of non-ACGT chars in sequence */
 	std::deque<size_t> m_badCharPos;
 };

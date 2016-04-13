@@ -86,11 +86,12 @@ TEST(RollingHashIterator, spacedSeed)
 	const unsigned numHashes = 1;
 	const char* seq = "AGNNGC";
 	const char* rcSeq = "GCNNCT";
-	const string spacedSeed = "10001";
+	Kmer::setLength(k);
+	MaskedKmer::setMask("10001");
 
 	/** hash forward sequence */
 
-	RollingHashIterator it(seq, k, numHashes, spacedSeed);
+	RollingHashIterator it(seq, k, numHashes);
 	size_t kmer1Hash, kmer2Hash;
 	kmer1Hash = (*it)[0];
 	++it;
@@ -100,7 +101,7 @@ TEST(RollingHashIterator, spacedSeed)
 
 	/** hash reverse complement sequence */
 
-	RollingHashIterator rcIt(rcSeq, k, numHashes, spacedSeed);
+	RollingHashIterator rcIt(rcSeq, k, numHashes);
 	size_t rcKmer1Hash, rcKmer2Hash;
 	rcKmer2Hash = (*rcIt)[0];
 	++rcIt;

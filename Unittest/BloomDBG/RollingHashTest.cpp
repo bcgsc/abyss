@@ -17,13 +17,17 @@ protected:
 	const unsigned m_k;
 	const string m_kmerMask;
 
-	RollingHashTest() : m_numHashes(2), m_k(4), m_kmerMask("1001") {}
+	RollingHashTest() : m_numHashes(2), m_k(4)
+	{
+		Kmer::setLength(m_k);
+		MaskedKmer::setMask("1001");
+	}
 };
 
 TEST_F(RollingHashTest, kmerMask)
 {
-	RollingHash kmer1Hash("GCCG", m_numHashes, m_k, m_kmerMask);
-	RollingHash kmer2Hash("GTTG", m_numHashes, m_k, m_kmerMask);
+	RollingHash kmer1Hash("GCCG", m_numHashes, m_k);
+	RollingHash kmer2Hash("GTTG", m_numHashes, m_k);
 	ASSERT_EQ(kmer1Hash, kmer2Hash);
 }
 
@@ -41,9 +45,9 @@ TEST_F(RollingHashTest, rollRight)
 
 TEST_F(RollingHashTest, rollRightMasked)
 {
-	RollingHash leftKmerHash("GACG", m_numHashes, m_k, m_kmerMask);
-	RollingHash middleKmerHash("ACGT", m_numHashes, m_k, m_kmerMask);
-	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	leftKmerHash.rollRight('G', 'T');
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
@@ -59,9 +63,9 @@ TEST_F(RollingHashTest, rollRightMaskedMismatch)
 	 * still match the middle/right k-mers due to the effect of
 	 * the k-mer mask.
 	 */
-	RollingHash leftKmerHash("GACT", m_numHashes, m_k, m_kmerMask);
-	RollingHash middleKmerHash("ACGT", m_numHashes, m_k, m_kmerMask);
-	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
+	RollingHash leftKmerHash("GACT", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	leftKmerHash.rollRight('G', 'T');
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
@@ -83,9 +87,9 @@ TEST_F(RollingHashTest, rollLeft)
 
 TEST_F(RollingHashTest, rollLeftMasked)
 {
-	RollingHash leftKmerHash("GACG", m_numHashes, m_k, m_kmerMask);
-	RollingHash middleKmerHash("ACGT", m_numHashes, m_k, m_kmerMask);
-	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	rightKmerHash.rollLeft('A', 'C');
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
@@ -95,15 +99,15 @@ TEST_F(RollingHashTest, rollLeftMasked)
 
 TEST_F(RollingHashTest, rollLeftMaskedMismatch)
 {
-	RollingHash leftKmerHash("GACG", m_numHashes, m_k, m_kmerMask);
-	RollingHash middleKmerHash("ACGT", m_numHashes, m_k, m_kmerMask);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
 	/*
 	 * Note: first base of rightKmerHash is intentionally set to 'G'
 	 * instead of 'C'. However, the rolled hash values should
 	 * still match the left/middle k-mers due to the effect of
 	 * the k-mer mask.
 	 */
-	RollingHash rightKmerHash("GGTC", m_numHashes, m_k, m_kmerMask);
+	RollingHash rightKmerHash("GGTC", m_numHashes, m_k);
 
 	rightKmerHash.rollLeft('A', 'C');
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
@@ -122,8 +126,8 @@ TEST_F(RollingHashTest, reset)
 
 TEST_F(RollingHashTest, resetMasked)
 {
-	RollingHash middleKmerHash("ACGT", m_numHashes, m_k, m_kmerMask);
-	RollingHash rightKmerHash("CGTC", m_numHashes, m_k, m_kmerMask);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	/*
 	 * Note: third base of middleKmerHash is intentionally set to 'G'
