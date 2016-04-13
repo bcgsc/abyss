@@ -75,25 +75,9 @@ public:
 	void reset(const std::string& kmer)
 	{
 		if (!MaskedKmer::mask().empty())
-			resetMasked(kmer);
+			resetMasked(kmer.c_str());
 		else
 			resetUnmasked(kmer);
-	}
-
-	/**
-	 * Initialize hash values from sequence. When computing the hash
-	 * value, mask out "don't care" positions as per the active
-	 * k-mer mask.
-	 * @param kmer k-mer used to initialize hash state
-	 */
-	void resetMasked(const std::string& kmer)
-	{
-		assert(kmer.length() == m_k);
-
-		/* store copy of k-mer for future rolling/masking ops */
-		std::copy(kmer.c_str(), kmer.c_str() + m_k, m_kmer);
-
-		resetMasked();
 	}
 
 	/**
@@ -101,9 +85,9 @@ public:
 	 * value, mask out "don't care" positions as per the active
 	 * k-mer mask.
 	 */
-	void resetMasked()
+	void resetMasked(const char* kmer)
 	{
-		spacedSeedHash(m_hash1, m_rcHash1, m_kmer,
+		spacedSeedHash(m_hash1, m_rcHash1, kmer,
 			MaskedKmer::mask().c_str(), m_k);
 	}
 
@@ -124,16 +108,15 @@ public:
 	/**
 	 * Compute hash values for next k-mer to the right and
 	 * update internal state.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param kmer current k-mer
+	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRight(unsigned char charOut, unsigned char charIn)
+	void rollRight(const char* kmer, const char* nextKmer)
 	{
 		if (!MaskedKmer::mask().empty())
-			rollRightMasked(charOut, charIn);
+			rollRightMasked(kmer, nextKmer);
 		else
-			rollRightUnmasked(charOut, charIn);
+			rollRightUnmasked(kmer, nextKmer);
 	}
 
 	/**
@@ -141,44 +124,38 @@ public:
 	 * update internal state.  When computing the new hash, mask
 	 * out "don't care" positions according to the active
 	 * k-mer mask.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param kmer current k-mer
+	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRightMasked(unsigned char, unsigned char charIn)
+	void rollRightMasked(const char*, const char* nextKmer)
 	{
-		assert(m_k >= 2);
-		memmove(m_kmer, m_kmer + 1, m_k - 1);
-		m_kmer[m_k - 1] = charIn;
-		resetMasked();
+		resetMasked(nextKmer);
 	}
 
 	/**
 	 * Compute hash values for next k-mer to the right and
 	 * update internal state.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param kmer current k-mer
+	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRightUnmasked(unsigned char charOut, unsigned char charIn)
+	void rollRightUnmasked(const char* kmer, const char* nextKmer)
 	{
 		/* update first hash function */
-		rollHashesRight(m_hash1, m_rcHash1, charOut, charIn, m_k);
+		rollHashesRight(m_hash1, m_rcHash1, kmer[0], nextKmer[m_k-1], m_k);
 	}
 
 	/**
 	 * Compute hash values for next k-mer to the left and
 	 * update internal state.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param prevKmer k-mer we are rolling into
+	 * @param kmer current k-mer
 	 */
-	void rollLeft(unsigned char charIn, unsigned char charOut)
+	void rollLeft(const char* prevKmer, const char* kmer)
 	{
 		if (!MaskedKmer::mask().empty())
-			rollLeftMasked(charIn, charOut);
+			rollLeftMasked(prevKmer, kmer);
 		else
-			rollLeftUnmasked(charIn, charOut);
+			rollLeftUnmasked(prevKmer, kmer);
 	}
 
 	/**
@@ -186,29 +163,24 @@ public:
 	 * update internal state.  When computing the new hash, mask
 	 * out "don't care" positions according to the active
 	 * k-mer mask.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param prevKmer k-mer we are rolling into
+	 * @param kmer current k-mer
 	 */
-	void rollLeftMasked(unsigned char charIn, unsigned char)
+	void rollLeftMasked(const char* prevKmer, const char*)
 	{
-		assert(m_k >= 2);
-		memmove(m_kmer + 1, m_kmer, m_k - 1);
-		m_kmer[0] = charIn;
-		resetMasked();
+		resetMasked(prevKmer);
 	}
 
 	/**
 	 * Compute hash values for next k-mer to the left and
 	 * update internal state.
-	 * @param charOut leftmost base of current k-mer
-	 * @param charIn rightmost base of next k-mer
-	 * @return vector of hash values for next k-mer
+	 * @param prevKmer k-mer we are rolling into
+	 * @param kmer current k-mer
 	 */
-	void rollLeftUnmasked(unsigned char charIn, unsigned char charOut)
+	void rollLeftUnmasked(const char* prevKmer, const char* kmer)
 	{
 		/* update first hash function */
-		rollHashesLeft(m_hash1, m_rcHash1, charIn, charOut, m_k);
+		rollHashesLeft(m_hash1, m_rcHash1, prevKmer[0], kmer[m_k-1], m_k);
 	}
 
 	/** Get hash value for current k-mer */
@@ -235,8 +207,6 @@ private:
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
 	size_t m_rcHash1;
-	/** current k-mer (used only when k-mer mask is in effect) */
-	char m_kmer[MAX_KMER];
 };
 
 #endif

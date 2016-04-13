@@ -36,9 +36,9 @@ TEST_F(RollingHashTest, rollRight)
 	RollingHash middleKmerHash("ACGT", m_k);
 	RollingHash rightKmerHash("CGTC", m_k);
 
-	leftKmerHash.rollRight('G', 'T');
+	leftKmerHash.rollRight("GACG", "ACGT");
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
-	leftKmerHash.rollRight('A', 'C');
+	leftKmerHash.rollRight("ACGT", "CGTC");
 	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
@@ -48,9 +48,9 @@ TEST_F(RollingHashTest, rollRightMasked)
 	RollingHash middleKmerHash("ACGT", m_k);
 	RollingHash rightKmerHash("CGTC", m_k);
 
-	leftKmerHash.rollRight('G', 'T');
+	leftKmerHash.rollRight("GACG", "ACGT");
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
-	leftKmerHash.rollRight('A', 'C');
+	leftKmerHash.rollRight("ACGT", "CGTC");
 	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
@@ -66,9 +66,9 @@ TEST_F(RollingHashTest, rollRightMaskedMismatch)
 	RollingHash middleKmerHash("ACGT", m_k);
 	RollingHash rightKmerHash("CGTC", m_k);
 
-	leftKmerHash.rollRight('G', 'T');
+	leftKmerHash.rollRight("GACT", "ACGT");
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
-	leftKmerHash.rollRight('A', 'C');
+	leftKmerHash.rollRight("ACGT", "CGTC");
 	ASSERT_EQ(rightKmerHash, leftKmerHash);
 }
 
@@ -78,9 +78,9 @@ TEST_F(RollingHashTest, rollLeft)
 	RollingHash middleKmerHash("ACGT", m_k);
 	RollingHash rightKmerHash("CGTC", m_k);
 
-	rightKmerHash.rollLeft('A', 'C');
+	rightKmerHash.rollLeft("ACGT", "CGTC");
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
-	rightKmerHash.rollLeft('G', 'T');
+	rightKmerHash.rollLeft("GACG", "ACGT");
 	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
@@ -90,9 +90,9 @@ TEST_F(RollingHashTest, rollLeftMasked)
 	RollingHash middleKmerHash("ACGT", m_k);
 	RollingHash rightKmerHash("CGTC", m_k);
 
-	rightKmerHash.rollLeft('A', 'C');
+	rightKmerHash.rollLeft("ACGT", "CGTC");
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
-	rightKmerHash.rollLeft('G', 'T');
+	rightKmerHash.rollLeft("GACG", "ACGT");
 	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
@@ -108,9 +108,9 @@ TEST_F(RollingHashTest, rollLeftMaskedMismatch)
 	 */
 	RollingHash rightKmerHash("GGTC", m_k);
 
-	rightKmerHash.rollLeft('A', 'C');
+	rightKmerHash.rollLeft("ACGT", "GGTC");
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
-	rightKmerHash.rollLeft('G', 'T');
+	rightKmerHash.rollLeft("GACG", "ACGT");
 	ASSERT_EQ(leftKmerHash, rightKmerHash);
 }
 
