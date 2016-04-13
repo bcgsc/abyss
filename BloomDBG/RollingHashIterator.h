@@ -84,8 +84,8 @@ private:
 				/* compute new hash values based on
 				 * hash values of preceding k-mer */
 				assert(m_pos > 0);
-				m_rollingHash.rollRight(m_seq.at(m_pos - 1),
-					m_seq.at(m_pos + m_k - 1));
+				m_rollingHash.rollRight(m_seq.c_str() + m_pos - 1,
+					m_seq.c_str() + m_pos);
 			}
 			return;
 

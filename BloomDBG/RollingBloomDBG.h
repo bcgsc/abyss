@@ -113,8 +113,8 @@ struct adjacency_iterator
 			m_v.first.setLastBase(SENSE, m_i);
 			m_v.second = m_u.second;
 			m_v.second.rollRight(
-				m_u.first.getFirstBaseChar(),
-				m_v.first.getLastBaseChar());
+				m_u.first.str().c_str(),
+				m_v.first.str().c_str());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -182,8 +182,8 @@ struct out_edge_iterator
 			m_v.first.setLastBase(SENSE, m_i);
 			m_v.second = m_u.second;
 			m_v.second.rollRight(
-				m_u.first.getFirstBaseChar(),
-				m_v.first.getLastBaseChar());
+				m_u.first.str().c_str(),
+				m_v.first.str().c_str());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -250,8 +250,8 @@ struct in_edge_iterator
 			m_v.first.setLastBase(ANTISENSE, m_i);
 			m_v.second = m_u.second;
 			m_v.second.rollLeft(
-				m_v.first.getFirstBaseChar(),
-				m_u.first.getLastBaseChar());
+				m_v.first.str().c_str(),
+				m_u.first.str().c_str());
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
