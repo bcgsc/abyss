@@ -178,9 +178,15 @@ BloomDBG_BloomDBG_LDADD = \
 
 check_PROGRAMS += BloomDBG_RollingHash
 BloomDBG_RollingHash_SOURCES = BloomDBG/RollingHashTest.cpp
+BloomDBG_RollingHash_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
 
 check_PROGRAMS += BloomDBG_RollingHashIterator
 BloomDBG_RollingHashIterator_SOURCES = BloomDBG/RollingHashIteratorTest.cpp
+BloomDBG_RollingHashIterator_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
 
 check_PROGRAMS += BloomDBG_HashAgnosticCascadingBloom
 BloomDBG_HashAgnosticCascadingBloom_SOURCES = \

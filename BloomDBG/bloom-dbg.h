@@ -128,7 +128,7 @@ namespace BloomDBG {
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
+		for (RollingHashIterator it(seq, k, numHashes);
 			it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -200,7 +200,7 @@ namespace BloomDBG {
 		const unsigned numHashes = bloom.getHashNum();
 		assert(seq.length() >= k);
 		unsigned validKmers = 0;
-		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
+		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it, ++validKmers) {
 			if (!bloom.contains(*it))
 				return false;
@@ -219,7 +219,7 @@ namespace BloomDBG {
 	{
 		const unsigned k = bloom.getKmerSize();
 		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
+		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			bloom.insert(*it);
 		}
@@ -234,7 +234,7 @@ namespace BloomDBG {
 	{
 		Path<Vertex> path;
 		assert(seq.length() >= k);
-		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
+		for (RollingHashIterator it(seq, k, numHashes);
 			 it != RollingHashIterator::end(); ++it) {
 			MaskedKmer kmer(it.kmer());
 			path.push_back(Vertex(kmer, it.rollingHash()));
@@ -588,7 +588,7 @@ namespace BloomDBG {
 
 		/* note: RollingHashIterator skips over k-mer
 		 * positions with non-ACGT chars */
-		for (RollingHashIterator it(seq, k, numHashes, MaskedKmer::mask());
+		for (RollingHashIterator it(seq, k, numHashes);
 			it != RollingHashIterator::end(); prevPos=it.pos(),++it) {
 			if (!goodKmerSet.contains(*it) ||
 				(prevPos != UNSET && it.pos() - prevPos > 1)) {
@@ -654,8 +654,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence firstKmer = seq.substr(0, k);
-		Vertex vFirst(MaskedKmer(firstKmer),
-			RollingHash(firstKmer, numHashes, k, MaskedKmer::mask()));
+		Vertex vFirst(MaskedKmer(firstKmer), RollingHash(firstKmer, numHashes, k));
 		unsigned outDegree = trueDegree(vFirst, FORWARD, dbg, minBranchLen - 1);
 		if (outDegree > 1)
 			seq.erase(0, 1);
@@ -664,8 +663,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence lastKmer = seq.substr(seq.length()-k);
-		Vertex vLast(MaskedKmer(lastKmer),
-			RollingHash(lastKmer, numHashes, k, MaskedKmer::mask()));
+		Vertex vLast(MaskedKmer(lastKmer), RollingHash(lastKmer, numHashes, k));
 		unsigned inDegree = trueDegree(vLast, REVERSE, dbg, minBranchLen - 1);
 		if (inDegree > 1)
 			seq.erase(seq.length()-1, 1);
@@ -718,7 +716,7 @@ namespace BloomDBG {
 		const unsigned numHashes = assembledKmerSet.getHashNum();
 
 		/* trim previously assembled k-mers from start of sequence */
-		RollingHashIterator fwd(seq, k, numHashes, MaskedKmer::mask());
+		RollingHashIterator fwd(seq, k, numHashes);
 		for (; fwd != RollingHashIterator::end(); ++fwd) {
 			if (!assembledKmerSet.contains(*fwd))
 				break;
@@ -728,7 +726,7 @@ namespace BloomDBG {
 
 		/* trim previously assembled k-mers from end of sequence */
 		Sequence rcSeq = reverseComplement(seq);
-		RollingHashIterator rev(rcSeq, k, numHashes, MaskedKmer::mask());
+		RollingHashIterator rev(rcSeq, k, numHashes);
 		for (; rev != RollingHashIterator::end(); ++rev) {
 			if (!assembledKmerSet.contains(*rev))
 				break;
@@ -1107,7 +1105,6 @@ namespace BloomDBG {
 		const unsigned progressStep = 1000;
 		const unsigned k = kmerSet.getKmerSize();
 		const unsigned numHashes = kmerSet.getHashNum();
-		const std::string& spacedSeed = MaskedKmer::mask();
 
 		/* counter for progress messages */
 		size_t readsProcessed = 0;
@@ -1139,13 +1136,13 @@ namespace BloomDBG {
 
 				/* BFS traversal in forward dir */
 				Vertex start(MaskedKmer(seq.substr(0, k)),
-					RollingHash(seq.substr(0, k), numHashes, k, spacedSeed));
+					RollingHash(seq.substr(0, k), numHashes, k));
 				breadthFirstSearch(dbg, start, visitor, colorMap);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
 				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k)),
-					RollingHash(rcSeq.substr(0, k), numHashes, k, spacedSeed));
+					RollingHash(rcSeq.substr(0, k), numHashes, k));
 				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
 
 			}
@@ -1223,8 +1220,8 @@ namespace BloomDBG {
 			size_t blockStart = 1;
 			size_t blockLength = 0;
 			uint8_t blockVal = 0;
-			for (RollingHashIterator it(rec.seq, k, numHashes,
-				MaskedKmer::mask()); it != RollingHashIterator::end(); ++it) {
+			for (RollingHashIterator it(rec.seq, k, numHashes);
+				 it != RollingHashIterator::end(); ++it) {
 				uint8_t val = goodKmerSet.contains(*it) ? 1 : 0;
 				if (firstVal) {
 					firstVal = false;

@@ -183,16 +183,11 @@ protected:
 		 * any additional edges in the graph.
 		 */
 
-		m_bloom.insert(RollingHash("CGACT", m_bloomHashes,
-			m_k, m_spacedSeed).getHash());
-		m_bloom.insert(RollingHash("TGACT", m_bloomHashes,
-			m_k, m_spacedSeed).getHash());
-		m_bloom.insert(RollingHash("GACTC", m_bloomHashes,
-			m_k, m_spacedSeed).getHash());
-		m_bloom.insert(RollingHash("ACTCT", m_bloomHashes,
-			m_k, m_spacedSeed).getHash());
-		m_bloom.insert(RollingHash("ACTCG", m_bloomHashes,
-			m_k, m_spacedSeed).getHash());
+		m_bloom.insert(RollingHash("CGACT", m_bloomHashes, m_k).getHash());
+		m_bloom.insert(RollingHash("TGACT", m_bloomHashes, m_k).getHash());
+		m_bloom.insert(RollingHash("GACTC", m_bloomHashes, m_k).getHash());
+		m_bloom.insert(RollingHash("ACTCT", m_bloomHashes, m_k).getHash());
+		m_bloom.insert(RollingHash("ACTCG", m_bloomHashes, m_k).getHash());
 	}
 
 };
@@ -202,11 +197,11 @@ TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
 	const V GACTC(MaskedKmer("GACTC"),
-		RollingHash("GACTC", m_bloomHashes, m_k, m_spacedSeed));
+		RollingHash("GACTC", m_bloomHashes, m_k));
 	const V ACTCT(MaskedKmer("ACTCT"),
-		RollingHash("ACTCT", m_bloomHashes, m_k, m_spacedSeed));
+		RollingHash("ACTCT", m_bloomHashes, m_k));
 	const V ACTCG(MaskedKmer("ACTCG"),
-		RollingHash("ACTCG", m_bloomHashes, m_k, m_spacedSeed));
+		RollingHash("ACTCG", m_bloomHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);

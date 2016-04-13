@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "lib/bloomfilter/rolling.h"
+#include "BloomDBG/MaskedKmer.h"
 #include <string>
 #include <vector>
 #include <cassert>
@@ -45,8 +46,9 @@ private:
 	 */
 	void maskKmer()
 	{
+		assert(MaskedKmer::mask().length() == m_k);
 		for(size_t i = 0; i < m_k; ++i) {
-			if (m_spacedSeed[i] == '0')
+			if (MaskedKmer::mask().at(i) == '0')
 				m_kmer[i] = 'X';
 		}
 	}
@@ -64,8 +66,7 @@ public:
 	/**
 	 * Default constructor.
 	 */
-	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0),
-		m_useSpacedSeed(false) {}
+	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -75,24 +76,7 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
-		m_useSpacedSeed(false) {}
-
-	/**
-	 * Constructor. Construct RollingHash object when initial k-mer
-	 * is unknown.
-	 * @param numHashes number of pseudo-independent hash values to compute
-	 * for each k-mer
-	 * @param k k-mer length
-	 * @param spacedSeed bitmask indicating which base positions should
-	 * be ignored during the hash calculation of each k-mer
-	 */
-	RollingHash(unsigned numHashes, unsigned k, const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
-		m_useSpacedSeed(true)
-	{
-		initSpacedSeed(spacedSeed);
-	}
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object while specifying
@@ -103,47 +87,10 @@ public:
 	 * @param k k-mer length
 	 */
 	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
-		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0),
-		m_useSpacedSeed(false)
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
 	{
 		/* init rolling hash state */
 		reset(kmer);
-	}
-
-	/**
-	 * Constructor. Construct RollingHash object while specifying
-	 * initial k-mer to be hashed.  This version of the constructor
-	 * takes an additional bitmask argument that indicates which
-	 * base positions should be ignored when hashing each k-mer.
-	 * @param kmer initial k-mer for initializing hash value(s)
-	 * @param numHashes number of pseudo-independent hash values to compute
-	 * for each k-mer
-	 * @param k k-mer length
-	 * @param spacedSeed bitmask indicating which base positions should
-	 * be ignored during the hash calculation of each k-mer
-	 */
-	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k,
-		const std::string& spacedSeed)
-		: m_numHashes(numHashes), m_k(k), m_useSpacedSeed(true)
-	{
-		initSpacedSeed(spacedSeed);
-
-		/* init rolling hash state */
-		reset(kmer);
-	}
-
-	/**
-	 * Initialize the spaced seed.
-	 */
-	void initSpacedSeed(const std::string& spacedSeed)
-	{
-		if (spacedSeed.empty()) {
-			m_useSpacedSeed = false;
-		} else {
-			assert(spacedSeed.length() == m_k);
-			m_useSpacedSeed = true;
-			std::copy(spacedSeed.c_str(), spacedSeed.c_str() + m_k, m_spacedSeed);
-		}
 	}
 
 	/**
@@ -152,7 +99,7 @@ public:
 	 */
 	void reset(const std::string& kmer)
 	{
-		if (m_useSpacedSeed)
+		if (!MaskedKmer::mask().empty())
 			resetMasked(kmer);
 		else
 			resetUnmasked(kmer);
@@ -225,7 +172,7 @@ public:
 	 */
 	void rollRight(unsigned char charOut, unsigned char charIn)
 	{
-		if (m_useSpacedSeed)
+		if (!MaskedKmer::mask().empty())
 			rollRightMasked(charOut, charIn);
 		else
 			rollRightUnmasked(charOut, charIn);
@@ -278,7 +225,7 @@ public:
 	 */
 	void rollLeft(unsigned char charIn, unsigned char charOut)
 	{
-		if (m_useSpacedSeed)
+		if (!MaskedKmer::mask().empty())
 			rollLeftMasked(charIn, charOut);
 		else
 			rollLeftUnmasked(charIn, charOut);
@@ -356,10 +303,6 @@ private:
 	char m_kmer[MAX_KMER];
 	/** unmasked version of current k-mer (used only when k-mer mask is in effect) */
 	char m_unmaskedKmer[MAX_KMER];
-	/** k-mer mask */
-	char m_spacedSeed[MAX_KMER];
-	/** true when a non-trivial spaced seed is in effect */
-	bool m_useSpacedSeed;
 };
 
 #endif
