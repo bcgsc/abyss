@@ -177,9 +177,6 @@ abyssopt += -b$B
 ifdef j
 abyssopt += -j$j
 endif
-ifdef H
-abyssopt += -H$H
-endif
 ifdef x
 abyssopt += -s$x
 endif

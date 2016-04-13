@@ -8,27 +8,26 @@ using namespace std;
 TEST(RollingHashIterator, reverseComplement)
 {
 	const unsigned k = 6;
-	const unsigned numHashes = 1;
 	const char* seq = "GCAATGT";
 	const char* rcSeq = "ACATTGC";
 
 	/** hash forward sequence */
 
-	RollingHashIterator it(seq, k, numHashes);
+	RollingHashIterator it(seq, k);
 	size_t kmer1Hash, kmer2Hash;
-	kmer1Hash = (*it)[0];
+	kmer1Hash = *it;
 	++it;
-	kmer2Hash = (*it)[0];
+	kmer2Hash = *it;
 	++it;
 	ASSERT_EQ(RollingHashIterator::end(), it);
 
 	/** hash reverse complement sequence */
 
-	RollingHashIterator rcIt(rcSeq, k, numHashes);
+	RollingHashIterator rcIt(rcSeq, k);
 	size_t rcKmer1Hash, rcKmer2Hash;
-	rcKmer2Hash = (*rcIt)[0];
+	rcKmer2Hash = *rcIt;
 	++rcIt;
-	rcKmer1Hash = (*rcIt)[0];
+	rcKmer1Hash = *rcIt;
 	++rcIt;
 	ASSERT_EQ(RollingHashIterator::end(), rcIt);
 
@@ -41,12 +40,11 @@ TEST(RollingHashIterator, reverseComplement)
 TEST(RollingHashIterator, badKmers)
 {
 	const unsigned k = 3;
-	const unsigned numHashes = 1;
 
     /* skip bad k-mers in middle of sequence */
 
 	const char* seq = "AAANAAA";
-    RollingHashIterator it(seq, k, numHashes);
+    RollingHashIterator it(seq, k);
 	ASSERT_EQ(0u, it.pos());
 	++it;
 	ASSERT_EQ(4u, it.pos());
@@ -56,34 +54,31 @@ TEST(RollingHashIterator, badKmers)
 	/* all bad k-mers */
 
 	const char* seq2 = "NNNNNNN";
-	RollingHashIterator it2(seq2, k, numHashes);
+	RollingHashIterator it2(seq2, k);
 	ASSERT_EQ(RollingHashIterator::end(), it2);
 }
 
 TEST(RollingHashIterator, seqShorterThanK)
 {
 	const unsigned k = 5;
-	const unsigned numHashes = 1;
 	const char* seq = "ACGT";
 
-	RollingHashIterator it(seq, k, numHashes);
+	RollingHashIterator it(seq, k);
 	ASSERT_EQ(RollingHashIterator::end(), it);
 }
 
 TEST(RollingHashIterator, emptySeq)
 {
 	const unsigned k = 3;
-	const unsigned numHashes = 1;
 	const char* seq = "";
 
-	RollingHashIterator it(seq, k, numHashes);
+	RollingHashIterator it(seq, k);
 	ASSERT_EQ(RollingHashIterator::end(), it);
 }
 
 TEST(RollingHashIterator, spacedSeed)
 {
 	const unsigned k = 5;
-	const unsigned numHashes = 1;
 	const char* seq = "AGNNGC";
 	const char* rcSeq = "GCNNCT";
 	Kmer::setLength(k);
@@ -91,21 +86,21 @@ TEST(RollingHashIterator, spacedSeed)
 
 	/** hash forward sequence */
 
-	RollingHashIterator it(seq, k, numHashes);
+	RollingHashIterator it(seq, k);
 	size_t kmer1Hash, kmer2Hash;
-	kmer1Hash = (*it)[0];
+	kmer1Hash = *it;
 	++it;
-	kmer2Hash = (*it)[0];
+	kmer2Hash = *it;
 	++it;
 	ASSERT_EQ(RollingHashIterator::end(), it);
 
 	/** hash reverse complement sequence */
 
-	RollingHashIterator rcIt(rcSeq, k, numHashes);
+	RollingHashIterator rcIt(rcSeq, k);
 	size_t rcKmer1Hash, rcKmer2Hash;
-	rcKmer2Hash = (*rcIt)[0];
+	rcKmer2Hash = *rcIt;
 	++rcIt;
-	rcKmer1Hash = (*rcIt)[0];
+	rcKmer1Hash = *rcIt;
 	++rcIt;
 	ASSERT_EQ(RollingHashIterator::end(), rcIt);
 

@@ -24,13 +24,12 @@ TEST(BloomDBG, pathToSeq)
 	const string inputSeq = "ACGTAC";
 	const string spacedSeed = "10001";
 	const unsigned k = 5;
-	const unsigned numHashes = 2;
 
 	MaskedKmer::setLength(k);
 	MaskedKmer::setMask(spacedSeed);
 
 	Path<BloomDBG::Vertex> path =
-		BloomDBG::seqToPath(inputSeq, k, numHashes);
+		BloomDBG::seqToPath(inputSeq, k);
 	ASSERT_EQ(2U, path.size());
 
 	string outputSeq = BloomDBG::pathToSeq(path, k);
@@ -42,7 +41,7 @@ TEST(BloomDBG, splitSeq)
 {
 	const size_t bloomSize = 100000;
 	const unsigned k = 5;
-	const unsigned numHashes = 2;
+	const unsigned numHashes = 1;
 	const unsigned minBranchLen = 1;
 
 	/* it is important to reset these, since they persist between tests */
@@ -60,18 +59,23 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom1(bloomSize, numHashes, k);
-	bloom1.insert("GACTC");
-	bloom1.insert("ACTCG");
-	bloom1.insert("CTCGG");
+
+	size_t hashGACTC = RollingHash("GACTC", k).getHash();
+	size_t hashACTCG = RollingHash("ACTCG", k).getHash();
+	size_t hashCTCGG = RollingHash("CTCGG", k).getHash();
+
+	bloom1.insert(&hashGACTC);
+	bloom1.insert(&hashACTCG);
+	bloom1.insert(&hashCTCGG);
 
 	Sequence seq1 = "GACTCGG";
 
 	Graph graph1(bloom1);
 	vector<Sequence> segments1 = BloomDBG::splitSeq(seq1, k,
-		numHashes, graph1, minBranchLen);
+		graph1, minBranchLen);
 
 	V GACTC(V(MaskedKmer("GACTC"),
-		RollingHash("GACTC", numHashes, k)));
+		RollingHash("GACTC", k)));
 
 	ASSERT_EQ(1U, out_degree(GACTC, graph1));
 	ASSERT_EQ(1U, segments1.size());
@@ -92,17 +96,21 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom2(bloomSize, numHashes, k);
-	bloom2.insert("GACTC");
-	bloom2.insert("ACTCT");
-	bloom2.insert("ACTCG");
-	bloom2.insert("TCTCG");
-	bloom2.insert("CTCGG");
+
+	size_t hashACTCT = RollingHash("ACTCT", k).getHash();
+	size_t hashTCTCG = RollingHash("TCTCG", k).getHash();
+
+	bloom2.insert(&hashGACTC);
+	bloom2.insert(&hashACTCT);
+	bloom2.insert(&hashACTCG);
+	bloom2.insert(&hashTCTCG);
+	bloom2.insert(&hashCTCGG);
 
 	Sequence seq2 = "GACTCGG";
 
 	Graph graph2(bloom2);
 	vector<Sequence> segments2 = BloomDBG::splitSeq(seq2, k,
-		numHashes, graph2, minBranchLen);
+		graph2, minBranchLen);
 
 	ASSERT_EQ(3U, segments2.size());
 	ASSERT_EQ("GACTC", segments2.at(0));
@@ -122,17 +130,21 @@ TEST(BloomDBG, splitSeq)
 	 */
 
 	BloomFilter bloom3(bloomSize, numHashes, k);
-	bloom3.insert("TACTC");
-	bloom3.insert("GACTC");
-	bloom3.insert("ACTCG");
-	bloom3.insert("CTCGA");
-	bloom3.insert("CTCGG");
+
+	size_t hashTACTC = RollingHash("TACTC", k).getHash();
+	size_t hashCTCGA = RollingHash("CTCGA", k).getHash();
+
+	bloom3.insert(&hashTACTC);
+	bloom3.insert(&hashGACTC);
+	bloom3.insert(&hashACTCG);
+	bloom3.insert(&hashCTCGA);
+	bloom3.insert(&hashCTCGG);
 
 	Sequence seq3 = "ACTCG";
 
 	Graph graph3(bloom3);
 	vector<Sequence> segments3 = BloomDBG::splitSeq(seq3, k,
-		numHashes, graph3, minBranchLen);
+		graph3, minBranchLen);
 
 	ASSERT_EQ(1U, segments3.size());
 	ASSERT_EQ("ACTCG", segments3.front());
