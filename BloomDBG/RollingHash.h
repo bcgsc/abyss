@@ -10,6 +10,20 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cstring>
 
+inline uint64_t spacedSeedHash(const char* kmerSeq, const char* spacedSeed,
+	unsigned k)
+{
+	uint64_t fhVal = 0;
+	uint64_t rhVal = 0;
+    for(unsigned i=0; i<k; i++) {
+		if (spacedSeed[i] != '0') {
+			fhVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+			rhVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+		}
+	}
+	return (rhVal < fhVal) ? rhVal : fhVal;
+}
+
 class RollingHash
 {
 private:
@@ -38,27 +52,6 @@ private:
 			m_hashes[i] ^= m_hashes[i] >> varShift;
 #endif
 		}
-	}
-
-	/**
-	 * Mask "don't care" positions in the current k-mer by
-	 * replacing them with 'X' characters.
-	 */
-	void maskKmer()
-	{
-		assert(MaskedKmer::mask().length() == m_k);
-		for(size_t i = 0; i < m_k; ++i) {
-			if (MaskedKmer::mask().at(i) == '0')
-				m_kmer[i] = 'X';
-		}
-	}
-
-	/**
-	 * Restore the current k-mer to its unmasked state.
-	 */
-	void unmaskKmer()
-	{
-		std::copy(m_unmaskedKmer, m_unmaskedKmer + m_k, m_kmer);
 	}
 
 public:
@@ -117,7 +110,6 @@ public:
 
 		/* store copy of k-mer for future rolling/masking ops */
 		std::copy(kmer.c_str(), kmer.c_str() + m_k, m_kmer);
-		std::copy(kmer.c_str(), kmer.c_str() + m_k, m_unmaskedKmer);
 
 		resetMasked();
 	}
@@ -129,21 +121,10 @@ public:
 	 */
 	void resetMasked()
 	{
-		/* replace "don't care" positions with 'X' */
-		maskKmer();
-
-		/* compute first hash function for k-mer */
-		m_hash1 = getFhval(m_kmer, m_k);
-
-		/* compute first hash function for reverse complement
-		 * of k-mer */
-		m_rcHash1 = getRhval(m_kmer, m_k);
+		size_t seed = spacedSeedHash(m_kmer, MaskedKmer::mask().c_str(), m_k);
 
 		/* compute hash values */
-		multiHash(canonicalHash(m_hash1, m_rcHash1));
-
-		/* restore k-mer to unmasked state */
-		unmaskKmer();
+		multiHash(seed);
 	}
 
 	/**
@@ -192,8 +173,6 @@ public:
 		assert(m_k >= 2);
 		memmove(m_kmer, m_kmer + 1, m_k - 1);
 		m_kmer[m_k - 1] = charIn;
-		memmove(m_unmaskedKmer, m_unmaskedKmer + 1, m_k - 1);
-		m_unmaskedKmer[m_k - 1] = charIn;
 		resetMasked();
 	}
 
@@ -245,8 +224,6 @@ public:
 		assert(m_k >= 2);
 		memmove(m_kmer + 1, m_kmer, m_k - 1);
 		m_kmer[0] = charIn;
-		memmove(m_unmaskedKmer + 1, m_unmaskedKmer, m_k - 1);
-		m_unmaskedKmer[0] = charIn;
 		resetMasked();
 	}
 
@@ -301,8 +278,6 @@ private:
 	size_t m_rcHash1;
 	/** current k-mer (used only when k-mer mask is in effect) */
 	char m_kmer[MAX_KMER];
-	/** unmasked version of current k-mer (used only when k-mer mask is in effect) */
-	char m_unmaskedKmer[MAX_KMER];
 };
 
 #endif
