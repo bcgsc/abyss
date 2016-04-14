@@ -117,8 +117,6 @@ inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned 
     return (rhVal<fhVal)? rhVal : fhVal;
 }
 
-// disable code with compilation errors
-#if 0
 // spaced-seed hash values
 // forward-strand spaced seed hash value of the base kmer, i.e. fhval(kmer_0)
 inline uint64_t getFhval(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned k) {
@@ -145,8 +143,8 @@ inline uint64_t getRhval(uint64_t &kVal, const char * seedSeq, const char * kmer
 }
 
 // recursive forward-strand spaced seed hash value for next k-mer
-inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
-    kVal = rol(fhVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
+inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
+    kVal = rol(kVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     uint64_t sVal=kVal;
     for(unsigned i=0; i<k; i++) {
         if(seedSeq[i]!='1')
@@ -156,8 +154,8 @@ inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const unsi
 }
 
 // recursive forward-strand spaced seed hash value for prev k-mer
-inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
-    kVal = ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
+inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+    kVal = ror(kVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     uint64_t sVal=kVal;
     for(unsigned i=0; i<k; i++) {
         if(seedSeq[i]!='1')
@@ -165,6 +163,33 @@ inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const unsig
     }
     return sVal;
 }
-#endif
+
+// recursive canonical spaced seed hash value for next k-mer
+inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
+	fkVal = rol(fkVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
+    rkVal = ror(rkVal, 1) ^ ror(seedTab[charOut+cpOff], 1) ^ rol(seedTab[charIn+cpOff], k-1);
+    uint64_t fsVal=fkVal, rsVal=rkVal;
+    for(unsigned i=0; i<k; i++) {
+        if(seedSeq[i]!='1') {
+            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+		}
+    }
+    return (rsVal<fsVal)? rsVal : fsVal;
+}
+
+// recursive canonical spaced seed hash value for prev k-mer
+inline uint64_t rollHashesLeft(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+	fkVal = ror(fkVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
+    rkVal = rol(rkVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
+	uint64_t fsVal=fkVal, rsVal=rkVal;
+    for(unsigned i=0; i<k; i++) {
+        if(seedSeq[i]!='1') {
+            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+		}
+    }
+    return (rsVal<fsVal)? rsVal : fsVal;
+}
 
 #endif
