@@ -2,7 +2,7 @@
 #define ABYSS_ROLLING_HASH_H 1
 
 #include "config.h"
-#include "lib/bloomfilter/rolling.h"
+#include "lib/rolling-hash/rolling.h"
 #include "BloomDBG/MaskedKmer.h"
 #include <string>
 #include <vector>
