@@ -10,20 +10,6 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cstring>
 
-inline uint64_t spacedSeedHash(uint64_t& fhVal, uint64_t& rhVal,
-	const char* kmerSeq, const char* spacedSeed, unsigned k)
-{
-	fhVal = 0;
-	rhVal = 0;
-    for(unsigned i=0; i<k; i++) {
-		if (spacedSeed[i] != '0') {
-			fhVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
-			rhVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
-		}
-	}
-	return (rhVal < fhVal) ? rhVal : fhVal;
-}
-
 class RollingHash
 {
 private:
@@ -87,8 +73,16 @@ public:
 	 */
 	void resetMasked(const char* kmer)
 	{
-		spacedSeedHash(m_hash1, m_rcHash1, kmer,
-			MaskedKmer::mask().c_str(), m_k);
+		const std::string& spacedSeed = MaskedKmer::mask();
+		assert(spacedSeed.length() == m_k);
+
+		/* compute first hash function for k-mer */
+		size_t hash1 = getFhval(m_hash1, spacedSeed.c_str(), kmer, m_k);
+
+		/* compute first hash function for reverse complement of k-mer */
+		size_t rcHash1 = getRhval(m_rcHash1, spacedSeed.c_str(), kmer, m_k);
+
+		m_hash = canonicalHash(hash1, rcHash1);
 	}
 
 	/**
@@ -103,6 +97,8 @@ public:
 		/* compute first hash function for reverse complement
 		 * of k-mer */
 		m_rcHash1 = getRhval(kmer.c_str(), m_k);
+
+		m_hash = canonicalHash(m_hash1, m_rcHash1);
 	}
 
 	/**
@@ -111,12 +107,12 @@ public:
 	 * @param kmer current k-mer
 	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRight(const char* kmer, const char* nextKmer)
+	void rollRight(const char* kmer, char charIn)
 	{
 		if (!MaskedKmer::mask().empty())
-			rollRightMasked(kmer, nextKmer);
+			rollRightMasked(kmer, charIn);
 		else
-			rollRightUnmasked(kmer, nextKmer);
+			rollRightUnmasked(kmer, charIn);
 	}
 
 	/**
@@ -127,9 +123,11 @@ public:
 	 * @param kmer current k-mer
 	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRightMasked(const char*, const char* nextKmer)
+	void rollRightMasked(const char* kmer, char charIn)
 	{
-		resetMasked(nextKmer);
+		const std::string& spacedSeed = MaskedKmer::mask();
+		m_hash = rollHashesRight(m_hash1, m_rcHash1, spacedSeed.c_str(),
+			kmer, charIn, m_k);
 	}
 
 	/**
@@ -138,10 +136,11 @@ public:
 	 * @param kmer current k-mer
 	 * @param nextKmer k-mer we are rolling into
 	 */
-	void rollRightUnmasked(const char* kmer, const char* nextKmer)
+	void rollRightUnmasked(const char* kmer, char charIn)
 	{
 		/* update first hash function */
-		rollHashesRight(m_hash1, m_rcHash1, kmer[0], nextKmer[m_k-1], m_k);
+		rollHashesRight(m_hash1, m_rcHash1, kmer[0], charIn, m_k);
+		m_hash = canonicalHash(m_hash1, m_rcHash1);
 	}
 
 	/**
@@ -150,12 +149,12 @@ public:
 	 * @param prevKmer k-mer we are rolling into
 	 * @param kmer current k-mer
 	 */
-	void rollLeft(const char* prevKmer, const char* kmer)
+	void rollLeft(char charIn, const char* kmer)
 	{
 		if (!MaskedKmer::mask().empty())
-			rollLeftMasked(prevKmer, kmer);
+			rollLeftMasked(charIn, kmer);
 		else
-			rollLeftUnmasked(prevKmer, kmer);
+			rollLeftUnmasked(charIn, kmer);
 	}
 
 	/**
@@ -166,9 +165,11 @@ public:
 	 * @param prevKmer k-mer we are rolling into
 	 * @param kmer current k-mer
 	 */
-	void rollLeftMasked(const char* prevKmer, const char*)
+	void rollLeftMasked(char charIn, const char* kmer)
 	{
-		resetMasked(prevKmer);
+		const std::string& spacedSeed = MaskedKmer::mask();
+		m_hash = rollHashesLeft(m_hash1, m_rcHash1, spacedSeed.c_str(),
+			kmer, charIn, m_k);
 	}
 
 	/**
@@ -177,25 +178,71 @@ public:
 	 * @param prevKmer k-mer we are rolling into
 	 * @param kmer current k-mer
 	 */
-	void rollLeftUnmasked(const char* prevKmer, const char* kmer)
+	void rollLeftUnmasked(char charIn, const char* kmer)
 	{
 		/* update first hash function */
-		rollHashesLeft(m_hash1, m_rcHash1, prevKmer[0], kmer[m_k-1], m_k);
+		rollHashesLeft(m_hash1, m_rcHash1, charIn, kmer[m_k-1], m_k);
+		m_hash = canonicalHash(m_hash1, m_rcHash1);
 	}
 
 	/** Get hash value for current k-mer */
 	size_t getHash() const
 	{
-		return canonicalHash(m_hash1, m_rcHash1);
+		return m_hash;
 	}
 
 	/** Equality operator */
 	bool operator==(const RollingHash& o) const
 	{
-		return
-			m_k == o.m_k &&
-			m_hash1 == o.m_hash1 &&
-			m_rcHash1 == o.m_rcHash1;
+		return m_k == o.m_k && getHash() == o.getHash();
+	}
+
+	/** Inequality operator */
+	bool operator!=(const RollingHash& o) const
+	{
+		return !(*this == o);
+	}
+
+	/**
+	 * Set the base at a given position in the k-mer and update the hash
+	 * value accordingly.
+	 * @param kmer point to the k-mer char array
+	 * @param pos position of the base to be changed
+	 * @param base new value for the base
+	 */
+	void setBase(char* kmer, unsigned pos, char base)
+	{
+		if (!MaskedKmer::mask().empty())
+			setBaseMasked(kmer, pos, base);
+		else
+			setBaseUnmasked(kmer, pos, base);
+	}
+
+	/**
+	 * Set the base at a given position in the k-mer and update the hash
+	 * value accordingly.
+	 * @param kmer point to the k-mer char array
+	 * @param pos position of the base to be changed
+	 * @param base new value for the base
+	 */
+	void setBaseMasked(char* kmer, unsigned pos, char base)
+	{
+		const std::string& spacedSeed = MaskedKmer::mask();
+		assert(spacedSeed.length() == m_k);
+		m_hash = ::setBase(m_hash1, m_rcHash1, spacedSeed.c_str(), kmer,
+			pos, base, m_k);
+	}
+
+	/**
+	 * Set the base at a given position in the k-mer and update the hash
+	 * value accordingly.
+	 * @param kmer point to the k-mer char array
+	 * @param pos position of the base to be changed
+	 * @param base new value for the base
+	 */
+	void setBaseUnmasked(char* kmer, unsigned pos, char base)
+	{
+		m_hash = ::setBase(m_hash1, m_rcHash1, kmer, pos, base, m_k);
 	}
 
 private:
@@ -207,6 +254,8 @@ private:
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
 	size_t m_rcHash1;
+	/** canonical hash value */
+	size_t m_hash;
 };
 
 #endif

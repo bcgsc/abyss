@@ -31,7 +31,7 @@ namespace BloomDBG {
 	/**
 	 * Type for a vertex in the de Bruijn graph.
 	 */
-	typedef std::pair<MaskedKmer, RollingHash> Vertex;
+	typedef RollingBloomDBGVertex Vertex;
 
 	/**
 	 * Parameters controlling assembly.
@@ -233,8 +233,7 @@ namespace BloomDBG {
 		assert(seq.length() >= k);
 		for (RollingHashIterator it(seq, k);
 			 it != RollingHashIterator::end(); ++it) {
-			MaskedKmer kmer(it.kmer());
-			path.push_back(Vertex(kmer, it.rollingHash()));
+			path.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
 		}
 		return path;
 	}
@@ -254,7 +253,7 @@ namespace BloomDBG {
 		seq.resize(path.size() + k - 1, 'N');
 
 		for (size_t i = 0; i < path.size(); ++i) {
-			std::string kmer = path.at(i).first.str();
+			std::string kmer(path.at(i).kmer().c_str());
 			for (size_t j = 0; j < k; ++j) {
 				if (spacedSeed.empty() || spacedSeed.at(j) == '1') {
 					if (seq.at(i + j) != 'N' && seq.at(i + j) != kmer.at(j)) {
@@ -648,7 +647,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence firstKmer = seq.substr(0, k);
-		Vertex vFirst(MaskedKmer(firstKmer), RollingHash(firstKmer, k));
+		Vertex vFirst(firstKmer.c_str(), RollingHash(firstKmer, k));
 		unsigned outDegree = trueDegree(vFirst, FORWARD, dbg, minBranchLen - 1);
 		if (outDegree > 1)
 			seq.erase(0, 1);
@@ -657,7 +656,7 @@ namespace BloomDBG {
 			return;
 
 		Sequence lastKmer = seq.substr(seq.length()-k);
-		Vertex vLast(MaskedKmer(lastKmer), RollingHash(lastKmer, k));
+		Vertex vLast(lastKmer.c_str(), RollingHash(lastKmer, k));
 		unsigned inDegree = trueDegree(vLast, REVERSE, dbg, minBranchLen - 1);
 		if (inDegree > 1)
 			seq.erase(seq.length()-1, 1);
@@ -1001,7 +1000,7 @@ namespace BloomDBG {
 		{
 			++m_nodesVisited;
 			/* declare vertex (GraphViz) */
-			m_out << '\t' << v.first.str() << ";\n";
+			m_out << '\t' << v.kmer().c_str() << ";\n";
 		}
 
 		/** Invoked each time a vertex is visited */
@@ -1024,8 +1023,8 @@ namespace BloomDBG {
 			const VertexT& v = target(e, g);
 
 			/* declare edge (GraphViz) */
-			m_out << '\t' << u.first.str() << " -> "
-				<< v.first.str() << ";\n";
+			m_out << '\t' << u.kmer().c_str() << " -> "
+				<< v.kmer().c_str() << ";\n";
 		}
 
 		/**
@@ -1128,14 +1127,14 @@ namespace BloomDBG {
 			if (seq.length() > 0) {
 
 				/* BFS traversal in forward dir */
-				Vertex start(MaskedKmer(seq.substr(0, k)),
-					RollingHash(seq.substr(0, k), k));
+				std::string startKmer = seq.substr(0, k);
+				Vertex start(startKmer.c_str(), RollingHash(startKmer, k));
 				breadthFirstSearch(dbg, start, visitor, colorMap);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
-				Vertex rcStart(MaskedKmer(rcSeq.substr(0, k)),
-					RollingHash(rcSeq.substr(0, k), k));
+				std::string rcStartKmer = rcSeq.substr(0, k);
+				Vertex rcStart(rcStartKmer.c_str(), RollingHash(rcStartKmer, k));
 				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
 
 			}

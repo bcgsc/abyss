@@ -66,9 +66,9 @@ TEST_F(RollingBloomDBGTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_k));
-	const V ACTCT(MaskedKmer("ACTCT"), RollingHash("ACTCT", m_k));
-	const V ACTCG(MaskedKmer("ACTCG"), RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -94,9 +94,9 @@ TEST_F(RollingBloomDBGTest, adjacency_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_k));
-	const V ACTCT(MaskedKmer("ACTCT"), RollingHash("ACTCT", m_k));
-	const V ACTCG(MaskedKmer("ACTCG"), RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -122,9 +122,9 @@ TEST_F(RollingBloomDBGTest, in_edges)
 {
 	/* TEST: check that "GACTC" has the expected ingoing edges */
 
-	const V GACTC(MaskedKmer("GACTC"), RollingHash("GACTC", m_k));
-	const V CGACT(MaskedKmer("CGACT"), RollingHash("CGACT", m_k));
-	const V TGACT(MaskedKmer("TGACT"), RollingHash("TGACT", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_k));
+	const V CGACT("CGACT", RollingHash("CGACT", m_k));
+	const V TGACT("TGACT", RollingHash("TGACT", m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(CGACT);
@@ -207,12 +207,9 @@ TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC(MaskedKmer("GACTC"),
-		RollingHash("GACTC", m_k));
-	const V ACTCT(MaskedKmer("ACTCT"),
-		RollingHash("ACTCT", m_k));
-	const V ACTCG(MaskedKmer("ACTCG"),
-		RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
